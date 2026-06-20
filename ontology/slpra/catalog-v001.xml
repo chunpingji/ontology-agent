@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<catalog prefer="public" xmlns="urn:oasis:names:tc:entity:xmlns:xml:catalog">
+    <!-- SLPRA Ontology Module Catalog for Protege -->
+
+    <!-- Internal modules -->
+    <uri id="slpra-drug"
+         name="https://ontology.pharma-gmp.cn/slpra/drug/"
+         uri="slpra-drug.ttl"/>
+    <uri id="slpra-equipment"
+         name="https://ontology.pharma-gmp.cn/slpra/equipment/"
+         uri="slpra-equipment.ttl"/>
+    <uri id="slpra-contamination"
+         name="https://ontology.pharma-gmp.cn/slpra/contamination/"
+         uri="slpra-contamination.ttl"/>
+    <uri id="slpra-risk"
+         name="https://ontology.pharma-gmp.cn/slpra/risk/"
+         uri="slpra-risk.ttl"/>
+    <uri id="slpra-cleaning"
+         name="https://ontology.pharma-gmp.cn/slpra/cleaning/"
+         uri="slpra-cleaning.ttl"/>
+    <uri id="slpra-facility"
+         name="https://ontology.pharma-gmp.cn/slpra/facility/"
+         uri="slpra-facility.ttl"/>
+    <uri id="slpra-integration"
+         name="https://ontology.pharma-gmp.cn/slpra/integration/"
+         uri="slpra-integration.ttl"/>
+
+    <!-- External ontologies (download locally for offline use) -->
+    <uri id="bfo"
+         name="http://purl.obolibrary.org/obo/bfo.owl"
+         uri="lib/bfo.owl"/>
+</catalog>

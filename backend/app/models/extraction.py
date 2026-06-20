@@ -1,0 +1,71 @@
+import uuid
+from datetime import datetime, timezone
+
+from sqlalchemy import JSON, DateTime, ForeignKey, Integer, Numeric, String, Text
+from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+from app.db import Base
+
+
+def _uuid():
+    return uuid.uuid4()
+
+
+def _now():
+    return datetime.now(timezone.utc)
+
+
+class ExtractionConfig(Base):
+    __tablename__ = "extraction_configs"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
+    name: Mapped[str] = mapped_column(String(200), nullable=False)
+    target_class_iri: Mapped[str] = mapped_column(String(500), nullable=False)
+    source_type: Mapped[str] = mapped_column(String(20), nullable=False)
+    column_mapping: Mapped[dict | None] = mapped_column(JSON)
+    llm_prompt_template: Mapped[str | None] = mapped_column(Text)
+    few_shot_examples: Mapped[dict | None] = mapped_column(JSON)
+    property_constraints: Mapped[dict | None] = mapped_column(JSON)
+    is_active: Mapped[bool] = mapped_column(default=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now, onupdate=_now)
+
+
+class ExtractionJob(Base):
+    __tablename__ = "extraction_jobs"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
+    source_type: Mapped[str] = mapped_column(String(20), nullable=False)
+    source_filename: Mapped[str | None] = mapped_column(String(500))
+    source_config: Mapped[dict | None] = mapped_column(JSON)
+    status: Mapped[str] = mapped_column(String(20), default="pending")
+    total_candidates: Mapped[int] = mapped_column(Integer, default=0)
+    approved_count: Mapped[int] = mapped_column(Integer, default=0)
+    rejected_count: Mapped[int] = mapped_column(Integer, default=0)
+    error_message: Mapped[str | None] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+    candidates: Mapped[list["ExtractionCandidate"]] = relationship(
+        back_populates="job", cascade="all, delete-orphan"
+    )
+
+
+class ExtractionCandidate(Base):
+    __tablename__ = "extraction_candidates"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
+    job_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("extraction_jobs.id", ondelete="CASCADE"), nullable=False
+    )
+    target_class_iri: Mapped[str] = mapped_column(String(500), nullable=False)
+    extracted_properties: Mapped[dict] = mapped_column(JSON, nullable=False)
+    alignment_result: Mapped[str | None] = mapped_column(String(20))
+    aligned_iri: Mapped[str | None] = mapped_column(String(500))
+    match_score: Mapped[float | None] = mapped_column(Numeric(5, 4))
+    review_status: Mapped[str] = mapped_column(String(20), default="pending")
+    reviewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    committed_iri: Mapped[str | None] = mapped_column(String(500))
+
+    job: Mapped[ExtractionJob] = relationship(back_populates="candidates")

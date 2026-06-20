@@ -1,0 +1,359 @@
+@prefix rdf:   <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl:   <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+@prefix obo:   <http://purl.obolibrary.org/obo/> .
+@prefix slpra-equip: <https://ontology.pharma-gmp.cn/slpra/equipment/> .
+@prefix slpra-drug:  <https://ontology.pharma-gmp.cn/slpra/drug/> .
+@prefix slpra-facil: <https://ontology.pharma-gmp.cn/slpra/facility/> .
+
+<https://ontology.pharma-gmp.cn/slpra/equipment/>
+    a owl:Ontology ;
+    owl:versionIRI <https://ontology.pharma-gmp.cn/slpra/equipment/0.1.0> ;
+    rdfs:label "SLPRA GMP Equipment Attributes Ontology"@en ;
+    rdfs:label "SLPRA GMP设备属性本体"@zh ;
+    rdfs:comment "Module 2: GMP equipment attributes for shared-line production risk assessment."@en ;
+    owl:imports <http://purl.obolibrary.org/obo/bfo.owl> .
+
+# ============================================================
+# Classes — Equipment Hierarchy
+# ============================================================
+
+slpra-equip:Equipment a owl:Class ;
+    rdfs:subClassOf obo:BFO_0000040 ;
+    rdfs:label "Equipment"@en ;
+    rdfs:label "设备"@zh .
+
+slpra-equip:ProcessEquipment a owl:Class ;
+    rdfs:subClassOf slpra-equip:Equipment ;
+    rdfs:label "Process Equipment"@en ;
+    rdfs:label "生产设备"@zh .
+
+slpra-equip:Reactor a owl:Class ;
+    rdfs:subClassOf slpra-equip:ProcessEquipment ;
+    rdfs:label "Reactor"@en ;
+    rdfs:label "反应器"@zh .
+
+slpra-equip:Centrifuge a owl:Class ;
+    rdfs:subClassOf slpra-equip:ProcessEquipment ;
+    rdfs:label "Centrifuge"@en ;
+    rdfs:label "离心机"@zh .
+
+slpra-equip:Dryer a owl:Class ;
+    rdfs:subClassOf slpra-equip:ProcessEquipment ;
+    rdfs:label "Dryer"@en ;
+    rdfs:label "干燥设备"@zh .
+
+slpra-equip:HotAirDryer a owl:Class ;
+    rdfs:subClassOf slpra-equip:Dryer ;
+    rdfs:label "Hot Air Circulating Dryer"@en ;
+    rdfs:label "热风循环干燥箱"@zh .
+
+slpra-equip:VacuumDryer a owl:Class ;
+    rdfs:subClassOf slpra-equip:Dryer ;
+    rdfs:label "Vacuum Dryer"@en ;
+    rdfs:label "真空干燥箱"@zh .
+
+slpra-equip:HotAirBlastDryer a owl:Class ;
+    rdfs:subClassOf slpra-equip:Dryer ;
+    rdfs:label "Hot Air Blast Dryer"@en ;
+    rdfs:label "电热鼓风干燥箱"@zh .
+
+slpra-equip:ElectricVacuumDryer a owl:Class ;
+    rdfs:subClassOf slpra-equip:VacuumDryer ;
+    rdfs:label "Electric Heated Vacuum Dryer"@en ;
+    rdfs:label "电热真空干燥箱"@zh .
+
+slpra-equip:RotaryEvaporator a owl:Class ;
+    rdfs:subClassOf slpra-equip:ProcessEquipment ;
+    rdfs:label "Rotary Evaporator"@en ;
+    rdfs:label "旋蒸"@zh .
+
+slpra-equip:Granulator a owl:Class ;
+    rdfs:subClassOf slpra-equip:ProcessEquipment ;
+    rdfs:label "Granulator"@en ;
+    rdfs:label "制粒机"@zh .
+
+slpra-equip:Mixer a owl:Class ;
+    rdfs:subClassOf slpra-equip:ProcessEquipment ;
+    rdfs:label "Mixer"@en ;
+    rdfs:label "混合机"@zh .
+
+slpra-equip:TabletPress a owl:Class ;
+    rdfs:subClassOf slpra-equip:ProcessEquipment ;
+    rdfs:label "Tablet Press"@en ;
+    rdfs:label "压片机"@zh .
+
+slpra-equip:CapsuleFiller a owl:Class ;
+    rdfs:subClassOf slpra-equip:ProcessEquipment ;
+    rdfs:label "Capsule Filler"@en ;
+    rdfs:label "胶囊填充机"@zh .
+
+slpra-equip:CoatingMachine a owl:Class ;
+    rdfs:subClassOf slpra-equip:ProcessEquipment ;
+    rdfs:label "Coating Machine"@en ;
+    rdfs:label "包衣机"@zh .
+
+slpra-equip:FillingMachine a owl:Class ;
+    rdfs:subClassOf slpra-equip:ProcessEquipment ;
+    rdfs:label "Filling Machine"@en ;
+    rdfs:label "灌装机"@zh .
+
+slpra-equip:UtilityEquipment a owl:Class ;
+    rdfs:subClassOf slpra-equip:Equipment ;
+    rdfs:label "Utility Equipment"@en ;
+    rdfs:label "公用设备"@zh .
+
+slpra-equip:HVACSystem a owl:Class ;
+    rdfs:subClassOf slpra-equip:UtilityEquipment ;
+    rdfs:label "HVAC System"@en ;
+    rdfs:label "暖通空调系统"@zh .
+
+slpra-equip:WaterSystem a owl:Class ;
+    rdfs:subClassOf slpra-equip:UtilityEquipment ;
+    rdfs:label "Water System"@en ;
+    rdfs:label "水系统"@zh .
+
+slpra-equip:CompressedAirSystem a owl:Class ;
+    rdfs:subClassOf slpra-equip:UtilityEquipment ;
+    rdfs:label "Compressed Air System"@en ;
+    rdfs:label "压缩空气系统"@zh .
+
+slpra-equip:CleaningEquipment a owl:Class ;
+    rdfs:subClassOf slpra-equip:Equipment ;
+    rdfs:label "Cleaning Equipment"@en ;
+    rdfs:label "清洗设备"@zh .
+
+slpra-equip:CIPSystem a owl:Class ;
+    rdfs:subClassOf slpra-equip:CleaningEquipment ;
+    rdfs:label "CIP System"@en ;
+    rdfs:label "在线清洗系统"@zh .
+
+slpra-equip:ManualCleaningTool a owl:Class ;
+    rdfs:subClassOf slpra-equip:CleaningEquipment ;
+    rdfs:label "Manual Cleaning Tool"@en ;
+    rdfs:label "手动清洗工具"@zh .
+
+# ============================================================
+# Classes — Equipment Surface
+# ============================================================
+
+slpra-equip:EquipmentSurface a owl:Class ;
+    rdfs:subClassOf obo:BFO_0000040 ;
+    rdfs:label "Equipment Surface"@en ;
+    rdfs:label "设备表面"@zh .
+
+slpra-equip:ProductContactSurface a owl:Class ;
+    rdfs:subClassOf slpra-equip:EquipmentSurface ;
+    rdfs:label "Product Contact Surface"@en ;
+    rdfs:label "产品接触面"@zh .
+
+slpra-equip:NonContactSurface a owl:Class ;
+    rdfs:subClassOf slpra-equip:EquipmentSurface ;
+    rdfs:label "Non-Contact Surface"@en ;
+    rdfs:label "非接触面"@zh .
+
+[] a owl:AllDisjointClasses ;
+    owl:members ( slpra-equip:ProductContactSurface slpra-equip:NonContactSurface ) .
+
+# ============================================================
+# Classes — Construction Material
+# ============================================================
+
+slpra-equip:ConstructionMaterial a owl:Class ;
+    rdfs:subClassOf obo:BFO_0000040 ;
+    rdfs:label "Construction Material"@en ;
+    rdfs:label "构造材料"@zh .
+
+slpra-equip:StainlessSteel304 a owl:Class ;
+    rdfs:subClassOf slpra-equip:ConstructionMaterial ;
+    rdfs:label "304 Stainless Steel"@en ;
+    rdfs:label "304不锈钢"@zh .
+
+slpra-equip:StainlessSteel316L a owl:Class ;
+    rdfs:subClassOf slpra-equip:ConstructionMaterial ;
+    rdfs:label "316L Stainless Steel"@en ;
+    rdfs:label "316L不锈钢"@zh .
+
+slpra-equip:SS304WithHALARCoating a owl:Class ;
+    rdfs:subClassOf slpra-equip:ConstructionMaterial ;
+    rdfs:label "304 SS with HALAR Coating"@en ;
+    rdfs:label "304不锈钢衬HALAR"@zh .
+
+slpra-equip:SS316LWithHALARCoating a owl:Class ;
+    rdfs:subClassOf slpra-equip:ConstructionMaterial ;
+    rdfs:label "316L SS with HALAR Coating"@en ;
+    rdfs:label "316L不锈钢衬HALAR"@zh .
+
+slpra-equip:BorosilicateGlass a owl:Class ;
+    rdfs:subClassOf slpra-equip:ConstructionMaterial ;
+    rdfs:label "Borosilicate Glass"@en ;
+    rdfs:label "硼硅玻璃"@zh .
+
+slpra-equip:PTFE a owl:Class ;
+    rdfs:subClassOf slpra-equip:ConstructionMaterial ;
+    rdfs:label "PTFE"@en ;
+    rdfs:label "聚四氟乙烯"@zh .
+
+# ============================================================
+# Classes — Surface Coating
+# ============================================================
+
+slpra-equip:SurfaceCoating a owl:Class ;
+    rdfs:subClassOf obo:BFO_0000040 ;
+    rdfs:label "Surface Coating"@en ;
+    rdfs:label "表面涂层"@zh .
+
+slpra-equip:HALARCoating a owl:Class ;
+    rdfs:subClassOf slpra-equip:SurfaceCoating ;
+    rdfs:label "HALAR Coating (ECTFE)"@en ;
+    rdfs:label "HALAR涂层"@zh .
+
+slpra-equip:PTFECoating a owl:Class ;
+    rdfs:subClassOf slpra-equip:SurfaceCoating ;
+    rdfs:label "PTFE Coating"@en ;
+    rdfs:label "PTFE涂层"@zh .
+
+slpra-equip:GlassLining a owl:Class ;
+    rdfs:subClassOf slpra-equip:SurfaceCoating ;
+    rdfs:label "Glass Lining"@en ;
+    rdfs:label "搪瓷内衬"@zh .
+
+# ============================================================
+# Classes — Qualities
+# ============================================================
+
+slpra-equip:CleanabilityRating a owl:Class ;
+    rdfs:subClassOf obo:BFO_0000019 ;
+    rdfs:label "Cleanability Rating"@en ;
+    rdfs:label "可清洁性评级"@zh .
+
+slpra-equip:SurfaceRoughness a owl:Class ;
+    rdfs:subClassOf obo:BFO_0000019 ;
+    rdfs:label "Surface Roughness"@en ;
+    rdfs:label "表面粗糙度"@zh .
+
+slpra-equip:EquipmentComplexity a owl:Class ;
+    rdfs:subClassOf obo:BFO_0000019 ;
+    rdfs:label "Equipment Complexity"@en ;
+    rdfs:label "设备复杂度"@zh .
+
+# ============================================================
+# Classes — Roles
+# ============================================================
+
+slpra-equip:SharedEquipmentRole a owl:Class ;
+    rdfs:subClassOf obo:BFO_0000023 ;
+    rdfs:label "Shared Equipment Role"@en ;
+    rdfs:label "共线设备角色"@zh .
+
+slpra-equip:DedicatedEquipmentRole a owl:Class ;
+    rdfs:subClassOf obo:BFO_0000023 ;
+    rdfs:label "Dedicated Equipment Role"@en ;
+    rdfs:label "专用设备角色"@zh .
+
+[] a owl:AllDisjointClasses ;
+    owl:members ( slpra-equip:SharedEquipmentRole slpra-equip:DedicatedEquipmentRole ) .
+
+# ============================================================
+# Object Properties
+# ============================================================
+
+slpra-equip:hasSurface a owl:ObjectProperty ;
+    rdfs:domain slpra-equip:Equipment ;
+    rdfs:range slpra-equip:EquipmentSurface ;
+    rdfs:label "has surface"@en .
+
+slpra-equip:constructedOf a owl:ObjectProperty ;
+    rdfs:domain slpra-equip:Equipment ;
+    rdfs:range slpra-equip:ConstructionMaterial ;
+    rdfs:label "constructed of"@en ;
+    rdfs:label "主体材质"@zh .
+
+slpra-equip:hasSurfaceCoating a owl:ObjectProperty ;
+    rdfs:domain slpra-equip:EquipmentSurface ;
+    rdfs:range slpra-equip:SurfaceCoating ;
+    rdfs:label "has surface coating"@en .
+
+slpra-equip:locatedIn a owl:ObjectProperty ;
+    rdfs:domain slpra-equip:Equipment ;
+    rdfs:range slpra-facil:ProductionRoom ;
+    rdfs:label "located in"@en ;
+    rdfs:label "安装位置"@zh .
+
+slpra-equip:hasCleanabilityRating a owl:ObjectProperty ;
+    rdfs:domain slpra-equip:Equipment ;
+    rdfs:range slpra-equip:CleanabilityRating ;
+    rdfs:label "has cleanability rating"@en .
+
+slpra-equip:hasEquipmentRole a owl:ObjectProperty ;
+    rdfs:domain slpra-equip:Equipment ;
+    rdfs:range [ a owl:Class ;
+        owl:unionOf ( slpra-equip:SharedEquipmentRole slpra-equip:DedicatedEquipmentRole ) ] ;
+    rdfs:label "has equipment role"@en .
+
+slpra-equip:usedInProductionOf a owl:ObjectProperty ;
+    rdfs:domain slpra-equip:Equipment ;
+    rdfs:range slpra-drug:DrugProduct ;
+    rdfs:label "used in production of"@en ;
+    rdfs:label "用于生产"@zh .
+
+# ============================================================
+# Data Properties
+# ============================================================
+
+slpra-equip:equipmentID a owl:DatatypeProperty ;
+    rdfs:domain slpra-equip:Equipment ;
+    rdfs:range xsd:string ;
+    rdfs:label "equipment ID"@en .
+
+slpra-equip:equipmentName a owl:DatatypeProperty ;
+    rdfs:domain slpra-equip:Equipment ;
+    rdfs:range xsd:string ;
+    rdfs:label "equipment name"@en .
+
+slpra-equip:modelSpecification a owl:DatatypeProperty ;
+    rdfs:domain slpra-equip:Equipment ;
+    rdfs:range xsd:string ;
+    rdfs:label "model specification"@en .
+
+slpra-equip:surfaceArea_cm2 a owl:DatatypeProperty ;
+    rdfs:domain slpra-equip:EquipmentSurface ;
+    rdfs:range xsd:decimal ;
+    rdfs:label "surface area (cm²)"@en .
+
+slpra-equip:surfaceRoughness_Ra a owl:DatatypeProperty ;
+    rdfs:domain slpra-equip:EquipmentSurface ;
+    rdfs:range xsd:decimal ;
+    rdfs:label "surface roughness Ra (μm)"@en .
+
+slpra-equip:cleanabilityScore a owl:DatatypeProperty ;
+    rdfs:domain slpra-equip:CleanabilityRating ;
+    rdfs:range xsd:integer ;
+    rdfs:label "cleanability score (1-5)"@en .
+
+slpra-equip:isDedicatedEquipment a owl:DatatypeProperty ;
+    rdfs:domain slpra-equip:Equipment ;
+    rdfs:range xsd:boolean ;
+    rdfs:label "is dedicated equipment"@en .
+
+slpra-equip:isInCleanArea a owl:DatatypeProperty ;
+    rdfs:domain slpra-equip:Equipment ;
+    rdfs:range xsd:boolean ;
+    rdfs:label "is in clean area"@en .
+
+slpra-equip:requiresDedication a owl:DatatypeProperty ;
+    rdfs:domain slpra-equip:Equipment ;
+    rdfs:range xsd:boolean ;
+    rdfs:label "requires dedication"@en ;
+    rdfs:comment "Set by SWRL rules based on drug product classification."@en .
+
+slpra-equip:requiresInactivationValidation a owl:DatatypeProperty ;
+    rdfs:domain slpra-equip:Equipment ;
+    rdfs:range xsd:boolean ;
+    rdfs:label "requires inactivation validation"@en .
+
+slpra-equip:requiresIndependentHVAC a owl:DatatypeProperty ;
+    rdfs:domain slpra-equip:Equipment ;
+    rdfs:range xsd:boolean ;
+    rdfs:label "requires independent HVAC"@en .

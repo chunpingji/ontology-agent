@@ -1,0 +1,210 @@
+@prefix rdf:   <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl:   <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+@prefix obo:   <http://purl.obolibrary.org/obo/> .
+@prefix slpra-clean: <https://ontology.pharma-gmp.cn/slpra/cleaning/> .
+@prefix slpra-drug:  <https://ontology.pharma-gmp.cn/slpra/drug/> .
+@prefix slpra-equip: <https://ontology.pharma-gmp.cn/slpra/equipment/> .
+
+<https://ontology.pharma-gmp.cn/slpra/cleaning/>
+    a owl:Ontology ;
+    owl:versionIRI <https://ontology.pharma-gmp.cn/slpra/cleaning/0.1.0> ;
+    rdfs:label "SLPRA Cleaning Validation Model"@en ;
+    rdfs:label "SLPRA 清洁验证模型"@zh ;
+    rdfs:comment "Module 5: Cleaning processes, sampling methods, analytical methods, and validation protocols."@en ;
+    owl:imports <http://purl.obolibrary.org/obo/bfo.owl> .
+
+# ============================================================
+# Classes — Cleaning Processes
+# ============================================================
+
+slpra-clean:CleaningProcess a owl:Class ;
+    rdfs:subClassOf obo:BFO_0000015 ;
+    rdfs:label "Cleaning Process"@en ;
+    rdfs:label "清洁过程"@zh .
+
+slpra-clean:ManualCleaning a owl:Class ;
+    rdfs:subClassOf slpra-clean:CleaningProcess ;
+    rdfs:label "Manual Cleaning"@en ;
+    rdfs:label "手动清洁"@zh .
+
+slpra-clean:CIPCleaning a owl:Class ;
+    rdfs:subClassOf slpra-clean:CleaningProcess ;
+    rdfs:label "CIP Cleaning"@en ;
+    rdfs:label "CIP在线清洁"@zh .
+
+slpra-clean:SIPSterilization a owl:Class ;
+    rdfs:subClassOf slpra-clean:CleaningProcess ;
+    rdfs:label "SIP Sterilization"@en ;
+    rdfs:label "SIP灭菌"@zh .
+
+slpra-clean:InactivationProcess a owl:Class ;
+    rdfs:subClassOf slpra-clean:CleaningProcess ;
+    rdfs:label "Inactivation Process"@en ;
+    rdfs:label "灭活过程"@zh .
+
+slpra-clean:HeatInactivation a owl:Class ;
+    rdfs:subClassOf slpra-clean:InactivationProcess ;
+    rdfs:label "Heat Inactivation"@en ;
+    rdfs:label "热灭活"@zh .
+
+slpra-clean:ChemicalInactivation a owl:Class ;
+    rdfs:subClassOf slpra-clean:InactivationProcess ;
+    rdfs:label "Chemical Inactivation"@en ;
+    rdfs:label "化学灭活"@zh .
+
+slpra-clean:pHInactivation a owl:Class ;
+    rdfs:subClassOf slpra-clean:InactivationProcess ;
+    rdfs:label "pH Inactivation"@en ;
+    rdfs:label "pH灭活"@zh .
+
+# ============================================================
+# Classes — Sampling Processes
+# ============================================================
+
+slpra-clean:SamplingProcess a owl:Class ;
+    rdfs:subClassOf obo:BFO_0000015 ;
+    rdfs:label "Sampling Process"@en ;
+    rdfs:label "取样过程"@zh .
+
+slpra-clean:SwabSampling a owl:Class ;
+    rdfs:subClassOf slpra-clean:SamplingProcess ;
+    rdfs:label "Swab Sampling"@en ;
+    rdfs:label "擦拭取样"@zh .
+
+slpra-clean:RinseSampling a owl:Class ;
+    rdfs:subClassOf slpra-clean:SamplingProcess ;
+    rdfs:label "Rinse Sampling"@en ;
+    rdfs:label "淋洗取样"@zh .
+
+# ============================================================
+# Classes — Analytical Methods
+# ============================================================
+
+slpra-clean:AnalyticalMethod a owl:Class ;
+    rdfs:subClassOf obo:BFO_0000015 ;
+    rdfs:label "Analytical Method"@en ;
+    rdfs:label "分析方法"@zh .
+
+slpra-clean:HPLCMethod a owl:Class ;
+    rdfs:subClassOf slpra-clean:AnalyticalMethod ;
+    rdfs:label "HPLC Method"@en ;
+    rdfs:label "HPLC法"@zh .
+
+slpra-clean:TOCMethod a owl:Class ;
+    rdfs:subClassOf slpra-clean:AnalyticalMethod ;
+    rdfs:label "TOC Method"@en ;
+    rdfs:label "TOC法"@zh .
+
+slpra-clean:UVSpectrophotometry a owl:Class ;
+    rdfs:subClassOf slpra-clean:AnalyticalMethod ;
+    rdfs:label "UV Spectrophotometry"@en ;
+    rdfs:label "紫外分光光度法"@zh .
+
+slpra-clean:VisualInspection a owl:Class ;
+    rdfs:subClassOf slpra-clean:AnalyticalMethod ;
+    rdfs:label "Visual Inspection"@en ;
+    rdfs:label "目视检查"@zh ;
+    rdfs:comment "Minimum requirement per CFDI but insufficient as sole criterion."@en .
+
+# ============================================================
+# Classes — Validation Documents (GDC)
+# ============================================================
+
+slpra-clean:CleaningValidationProtocol a owl:Class ;
+    rdfs:subClassOf obo:BFO_0000031 ;
+    rdfs:label "Cleaning Validation Protocol"@en ;
+    rdfs:label "清洁验证方案"@zh .
+
+slpra-clean:CleaningRecord a owl:Class ;
+    rdfs:subClassOf obo:BFO_0000031 ;
+    rdfs:label "Cleaning Record"@en ;
+    rdfs:label "清洁记录"@zh .
+
+slpra-clean:CleaningHoldTimeStudy a owl:Class ;
+    rdfs:subClassOf obo:BFO_0000031 ;
+    rdfs:label "Cleaning Hold Time Study"@en ;
+    rdfs:label "清洁保持时间研究"@zh .
+
+# ============================================================
+# Classes — Temporal
+# ============================================================
+
+slpra-clean:CleaningHoldTime a owl:Class ;
+    rdfs:subClassOf obo:BFO_0000038 ;
+    rdfs:label "Cleaning Hold Time"@en ;
+    rdfs:label "清洁保持时间"@zh .
+
+# ============================================================
+# Object Properties
+# ============================================================
+
+slpra-clean:validatesCleaningOf a owl:ObjectProperty ;
+    rdfs:domain slpra-clean:CleaningValidationProtocol ;
+    rdfs:range slpra-equip:Equipment ;
+    rdfs:label "validates cleaning of"@en .
+
+slpra-clean:usesMethod a owl:ObjectProperty ;
+    rdfs:domain slpra-clean:CleaningValidationProtocol ;
+    rdfs:range slpra-clean:AnalyticalMethod ;
+    rdfs:label "uses method"@en .
+
+slpra-clean:hasSamplingPoint a owl:ObjectProperty ;
+    rdfs:domain slpra-clean:CleaningValidationProtocol ;
+    rdfs:range slpra-equip:EquipmentSurface ;
+    rdfs:label "has sampling point"@en .
+
+slpra-clean:usesSamplingMethod a owl:ObjectProperty ;
+    rdfs:domain slpra-clean:CleaningValidationProtocol ;
+    rdfs:range slpra-clean:SamplingProcess ;
+    rdfs:label "uses sampling method"@en .
+
+slpra-clean:removesResidue a owl:ObjectProperty ;
+    rdfs:domain slpra-clean:CleaningProcess ;
+    rdfs:range slpra-drug:Residue ;
+    rdfs:label "removes residue"@en .
+
+slpra-clean:hasInactivationStep a owl:ObjectProperty ;
+    rdfs:domain slpra-clean:CleaningProcess ;
+    rdfs:range slpra-clean:InactivationProcess ;
+    rdfs:label "has inactivation step"@en .
+
+slpra-clean:followsProtocol a owl:ObjectProperty ;
+    rdfs:domain slpra-clean:CleaningProcess ;
+    rdfs:range slpra-clean:CleaningValidationProtocol ;
+    rdfs:label "follows protocol"@en .
+
+# ============================================================
+# Data Properties
+# ============================================================
+
+slpra-clean:residueLimit_ug_per_cm2 a owl:DatatypeProperty ;
+    rdfs:domain slpra-clean:CleaningValidationProtocol ;
+    rdfs:range xsd:decimal ;
+    rdfs:label "residue limit (μg/cm²)"@en .
+
+slpra-clean:residueLimit_ppm a owl:DatatypeProperty ;
+    rdfs:domain slpra-clean:CleaningValidationProtocol ;
+    rdfs:range xsd:decimal ;
+    rdfs:label "residue limit (ppm)"@en .
+
+slpra-clean:recoveryFactor_percent a owl:DatatypeProperty ;
+    rdfs:domain slpra-clean:SamplingProcess ;
+    rdfs:range xsd:decimal ;
+    rdfs:label "recovery factor (%)"@en .
+
+slpra-clean:detectionLimit_ug a owl:DatatypeProperty ;
+    rdfs:domain slpra-clean:AnalyticalMethod ;
+    rdfs:range xsd:decimal ;
+    rdfs:label "detection limit (μg)"@en .
+
+slpra-clean:quantitationLimit_ug a owl:DatatypeProperty ;
+    rdfs:domain slpra-clean:AnalyticalMethod ;
+    rdfs:range xsd:decimal ;
+    rdfs:label "quantitation limit (μg)"@en .
+
+slpra-clean:holdTime_hours a owl:DatatypeProperty ;
+    rdfs:domain slpra-clean:CleaningHoldTime ;
+    rdfs:range xsd:decimal ;
+    rdfs:label "hold time (hours)"@en .

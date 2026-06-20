@@ -1,0 +1,402 @@
+@prefix rdf:   <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl:   <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+@prefix obo:   <http://purl.obolibrary.org/obo/> .
+@prefix slpra-drug: <https://ontology.pharma-gmp.cn/slpra/drug/> .
+
+<https://ontology.pharma-gmp.cn/slpra/drug/>
+    a owl:Ontology ;
+    owl:versionIRI <https://ontology.pharma-gmp.cn/slpra/drug/0.1.0> ;
+    rdfs:label "SLPRA Drug Product Risk Attributes Ontology"@en ;
+    rdfs:label "SLPRA 药品风险属性本体"@zh ;
+    rdfs:comment "Module 1: Drug product risk attributes for shared-line production risk assessment. Based on CFDI Guideline (2023-03)."@en ;
+    owl:imports <http://purl.obolibrary.org/obo/bfo.owl> .
+
+# ============================================================
+# Classes — Material Entities
+# ============================================================
+
+slpra-drug:DrugProduct a owl:Class ;
+    rdfs:subClassOf obo:BFO_0000040 ;
+    rdfs:label "Drug Product"@en ;
+    rdfs:label "药物产品"@zh ;
+    rdfs:comment "A finished dosage form drug product that bears a clinical drug role."@en .
+
+slpra-drug:ClinicalTrialDrug a owl:Class ;
+    rdfs:subClassOf slpra-drug:DrugProduct ;
+    rdfs:label "Clinical Trial Drug"@en ;
+    rdfs:label "临床试验用药"@zh .
+
+slpra-drug:CommercialDrug a owl:Class ;
+    rdfs:subClassOf slpra-drug:DrugProduct ;
+    rdfs:label "Commercial Drug"@en ;
+    rdfs:label "商业化药品"@zh .
+
+slpra-drug:CytotoxicDrug a owl:Class ;
+    rdfs:subClassOf slpra-drug:DrugProduct ;
+    rdfs:label "Cytotoxic Drug"@en ;
+    rdfs:label "细胞毒药物"@zh .
+
+slpra-drug:HormonalDrug a owl:Class ;
+    rdfs:subClassOf slpra-drug:DrugProduct ;
+    rdfs:label "Hormonal Drug"@en ;
+    rdfs:label "激素类药物"@zh .
+
+slpra-drug:PenicillinDrug a owl:Class ;
+    rdfs:subClassOf slpra-drug:DrugProduct ;
+    rdfs:label "Penicillin Drug"@en ;
+    rdfs:label "青霉素类药物"@zh .
+
+slpra-drug:BetaLactamDrug a owl:Class ;
+    rdfs:subClassOf slpra-drug:DrugProduct ;
+    rdfs:label "Beta-Lactam Drug"@en ;
+    rdfs:label "β-内酰胺类药物"@zh .
+
+slpra-drug:HighSensitizingDrug a owl:Class ;
+    rdfs:subClassOf slpra-drug:DrugProduct ;
+    rdfs:label "Highly Sensitizing Drug"@en ;
+    rdfs:label "高致敏药物"@zh .
+
+slpra-drug:HighActivityDrug a owl:Class ;
+    rdfs:subClassOf slpra-drug:DrugProduct ;
+    rdfs:label "Highly Active Drug"@en ;
+    rdfs:label "高活性药物"@zh .
+
+slpra-drug:BiologicalProduct a owl:Class ;
+    rdfs:subClassOf slpra-drug:DrugProduct ;
+    rdfs:label "Biological Product"@en ;
+    rdfs:label "生物制品"@zh .
+
+slpra-drug:TraditionalChineseMedicine a owl:Class ;
+    rdfs:subClassOf slpra-drug:DrugProduct ;
+    rdfs:label "Traditional Chinese Medicine"@en ;
+    rdfs:label "中药制剂"@zh .
+
+slpra-drug:SterileDrugProduct a owl:Class ;
+    rdfs:subClassOf slpra-drug:DrugProduct ;
+    rdfs:label "Sterile Drug Product"@en ;
+    rdfs:label "无菌药品"@zh .
+
+slpra-drug:ActivePharmaceuticalIngredient a owl:Class ;
+    rdfs:subClassOf obo:BFO_0000040 ;
+    rdfs:label "Active Pharmaceutical Ingredient"@en ;
+    rdfs:label "活性药物成分"@zh .
+
+slpra-drug:HighPotencyAPI a owl:Class ;
+    rdfs:subClassOf slpra-drug:ActivePharmaceuticalIngredient ;
+    rdfs:label "High Potency API"@en ;
+    rdfs:label "高活性API"@zh .
+
+slpra-drug:CytotoxicAPI a owl:Class ;
+    rdfs:subClassOf slpra-drug:ActivePharmaceuticalIngredient ;
+    rdfs:label "Cytotoxic API"@en ;
+    rdfs:label "细胞毒API"@zh .
+
+slpra-drug:HormonalAPI a owl:Class ;
+    rdfs:subClassOf slpra-drug:ActivePharmaceuticalIngredient ;
+    rdfs:label "Hormonal API"@en ;
+    rdfs:label "激素API"@zh .
+
+slpra-drug:Excipient a owl:Class ;
+    rdfs:subClassOf obo:BFO_0000040 ;
+    rdfs:label "Excipient"@en ;
+    rdfs:label "辅料"@zh .
+
+slpra-drug:CleaningAgent a owl:Class ;
+    rdfs:subClassOf obo:BFO_0000040 ;
+    rdfs:label "Cleaning Agent"@en ;
+    rdfs:label "清洁剂"@zh .
+
+slpra-drug:Residue a owl:Class ;
+    rdfs:subClassOf obo:BFO_0000040 ;
+    rdfs:label "Residue"@en ;
+    rdfs:label "残留物"@zh .
+
+slpra-drug:ActiveSubstanceResidue a owl:Class ;
+    rdfs:subClassOf slpra-drug:Residue ;
+    rdfs:label "Active Substance Residue"@en ;
+    rdfs:label "活性物质残留"@zh .
+
+slpra-drug:CleaningAgentResidue a owl:Class ;
+    rdfs:subClassOf slpra-drug:Residue ;
+    rdfs:label "Cleaning Agent Residue"@en ;
+    rdfs:label "清洁剂残留"@zh .
+
+slpra-drug:MicrobialResidue a owl:Class ;
+    rdfs:subClassOf slpra-drug:Residue ;
+    rdfs:label "Microbial Residue"@en ;
+    rdfs:label "微生物残留"@zh .
+
+slpra-drug:ParticulateResidue a owl:Class ;
+    rdfs:subClassOf slpra-drug:Residue ;
+    rdfs:label "Particulate Residue"@en ;
+    rdfs:label "颗粒残留"@zh .
+
+# ============================================================
+# Classes — Qualities (BFO:quality)
+# ============================================================
+
+slpra-drug:ToxicityProfile a owl:Class ;
+    rdfs:subClassOf obo:BFO_0000019 ;
+    rdfs:label "Toxicity Profile"@en ;
+    rdfs:label "毒性特征"@zh .
+
+slpra-drug:AcuteToxicity a owl:Class ;
+    rdfs:subClassOf slpra-drug:ToxicityProfile ;
+    rdfs:label "Acute Toxicity"@en ;
+    rdfs:label "急性毒性"@zh .
+
+slpra-drug:ChronicToxicity a owl:Class ;
+    rdfs:subClassOf slpra-drug:ToxicityProfile ;
+    rdfs:label "Chronic Toxicity"@en ;
+    rdfs:label "慢性毒性"@zh .
+
+slpra-drug:GenotoxicityProfile a owl:Class ;
+    rdfs:subClassOf slpra-drug:ToxicityProfile ;
+    rdfs:label "Genotoxicity Profile"@en ;
+    rdfs:label "基因毒性特征"@zh .
+
+slpra-drug:SolubilityCharacteristic a owl:Class ;
+    rdfs:subClassOf obo:BFO_0000019 ;
+    rdfs:label "Solubility Characteristic"@en ;
+    rdfs:label "溶解性特征"@zh .
+
+slpra-drug:WaterSolubility a owl:Class ;
+    rdfs:subClassOf slpra-drug:SolubilityCharacteristic ;
+    rdfs:label "Water Solubility"@en ;
+    rdfs:label "水溶性"@zh .
+
+slpra-drug:OrganicSolventSolubility a owl:Class ;
+    rdfs:subClassOf slpra-drug:SolubilityCharacteristic ;
+    rdfs:label "Organic Solvent Solubility"@en ;
+    rdfs:label "有机溶剂溶解性"@zh .
+
+slpra-drug:AcidBaseSolubility a owl:Class ;
+    rdfs:subClassOf slpra-drug:SolubilityCharacteristic ;
+    rdfs:label "Acid/Base Solubility"@en ;
+    rdfs:label "酸碱溶解性"@zh .
+
+slpra-drug:PharmacologicalActivity a owl:Class ;
+    rdfs:subClassOf obo:BFO_0000019 ;
+    rdfs:label "Pharmacological Activity"@en ;
+    rdfs:label "药理活性"@zh .
+
+slpra-drug:TherapeuticWindow a owl:Class ;
+    rdfs:subClassOf obo:BFO_0000019 ;
+    rdfs:label "Therapeutic Window"@en ;
+    rdfs:label "治疗窗"@zh .
+
+slpra-drug:SensitizationPotential a owl:Class ;
+    rdfs:subClassOf obo:BFO_0000019 ;
+    rdfs:label "Sensitization Potential"@en ;
+    rdfs:label "致敏潜力"@zh .
+
+# ============================================================
+# Classes — Roles (BFO:role)
+# ============================================================
+
+slpra-drug:ClinicalDrugRole a owl:Class ;
+    rdfs:subClassOf obo:BFO_0000023 ;
+    rdfs:label "Clinical Drug Role"@en ;
+    rdfs:label "临床药物角色"@zh .
+
+slpra-drug:PreviousProductRole a owl:Class ;
+    rdfs:subClassOf obo:BFO_0000023 ;
+    rdfs:label "Previous Product Role"@en ;
+    rdfs:label "前品角色"@zh ;
+    rdfs:comment "Role of the drug product manufactured before a changeover in shared-line assessment."@en .
+
+slpra-drug:SubsequentProductRole a owl:Class ;
+    rdfs:subClassOf obo:BFO_0000023 ;
+    rdfs:label "Subsequent Product Role"@en ;
+    rdfs:label "后品角色"@zh ;
+    rdfs:comment "Role of the drug product manufactured after a changeover in shared-line assessment."@en .
+
+# ============================================================
+# Classes — Dispositions (BFO:disposition)
+# ============================================================
+
+slpra-drug:InactivationDisposition a owl:Class ;
+    rdfs:subClassOf obo:BFO_0000016 ;
+    rdfs:label "Inactivation Disposition"@en ;
+    rdfs:label "灭活性质"@zh .
+
+slpra-drug:HeatInactivatable a owl:Class ;
+    rdfs:subClassOf slpra-drug:InactivationDisposition ;
+    rdfs:label "Heat Inactivatable"@en ;
+    rdfs:label "可热灭活"@zh .
+
+slpra-drug:ChemicalInactivatable a owl:Class ;
+    rdfs:subClassOf slpra-drug:InactivationDisposition ;
+    rdfs:label "Chemical Inactivatable"@en ;
+    rdfs:label "可化学灭活"@zh .
+
+slpra-drug:NonInactivatable a owl:Class ;
+    rdfs:subClassOf slpra-drug:InactivationDisposition ;
+    rdfs:label "Non-Inactivatable"@en ;
+    rdfs:label "不可灭活"@zh .
+
+slpra-drug:AerosolFormationDisposition a owl:Class ;
+    rdfs:subClassOf obo:BFO_0000016 ;
+    rdfs:label "Aerosol Formation Disposition"@en ;
+    rdfs:label "气溶胶形成性质"@zh .
+
+# ============================================================
+# Classes — GDC: OEB Classification
+# ============================================================
+
+slpra-drug:OEBClassification a owl:Class ;
+    rdfs:subClassOf obo:BFO_0000031 ;
+    rdfs:label "OEB Classification"@en ;
+    rdfs:label "职业暴露带分类"@zh .
+
+slpra-drug:OEB1 a owl:Class ;
+    rdfs:subClassOf slpra-drug:OEBClassification ;
+    rdfs:label "OEB 1 (>1000 μg/m³)"@en .
+
+slpra-drug:OEB2 a owl:Class ;
+    rdfs:subClassOf slpra-drug:OEBClassification ;
+    rdfs:label "OEB 2 (100-1000 μg/m³)"@en .
+
+slpra-drug:OEB3 a owl:Class ;
+    rdfs:subClassOf slpra-drug:OEBClassification ;
+    rdfs:label "OEB 3 (10-100 μg/m³)"@en .
+
+slpra-drug:OEB4 a owl:Class ;
+    rdfs:subClassOf slpra-drug:OEBClassification ;
+    rdfs:label "OEB 4 (1-10 μg/m³)"@en .
+
+slpra-drug:OEB5 a owl:Class ;
+    rdfs:subClassOf slpra-drug:OEBClassification ;
+    rdfs:label "OEB 5 (<1 μg/m³)"@en .
+
+[] a owl:AllDisjointClasses ;
+    owl:members ( slpra-drug:OEB1 slpra-drug:OEB2 slpra-drug:OEB3
+                  slpra-drug:OEB4 slpra-drug:OEB5 ) .
+
+# ============================================================
+# Object Properties
+# ============================================================
+
+slpra-drug:hasActiveIngredient a owl:ObjectProperty ;
+    rdfs:domain slpra-drug:DrugProduct ;
+    rdfs:range slpra-drug:ActivePharmaceuticalIngredient ;
+    rdfs:label "has active ingredient"@en ;
+    rdfs:label "含有活性成分"@zh .
+
+slpra-drug:hasToxicityProfile a owl:ObjectProperty ;
+    rdfs:domain slpra-drug:ActivePharmaceuticalIngredient ;
+    rdfs:range slpra-drug:ToxicityProfile ;
+    rdfs:label "has toxicity profile"@en .
+
+slpra-drug:hasSolubilityCharacteristic a owl:ObjectProperty ;
+    rdfs:domain slpra-drug:ActivePharmaceuticalIngredient ;
+    rdfs:range slpra-drug:SolubilityCharacteristic ;
+    rdfs:label "has solubility characteristic"@en .
+
+slpra-drug:hasInactivationDisposition a owl:ObjectProperty ;
+    rdfs:domain slpra-drug:ActivePharmaceuticalIngredient ;
+    rdfs:range slpra-drug:InactivationDisposition ;
+    rdfs:label "has inactivation disposition"@en ;
+    rdfs:label "灭活方式"@zh .
+
+slpra-drug:hasOEBClassification a owl:ObjectProperty ;
+    rdfs:domain slpra-drug:ActivePharmaceuticalIngredient ;
+    rdfs:range slpra-drug:OEBClassification ;
+    rdfs:label "has OEB classification"@en ;
+    owl:maxQualifiedCardinality "1"^^xsd:nonNegativeInteger .
+
+slpra-drug:hasSensitizationPotential a owl:ObjectProperty ;
+    rdfs:domain slpra-drug:DrugProduct ;
+    rdfs:range slpra-drug:SensitizationPotential ;
+    rdfs:label "has sensitization potential"@en .
+
+slpra-drug:producesResidue a owl:ObjectProperty ;
+    rdfs:domain slpra-drug:DrugProduct ;
+    rdfs:range slpra-drug:Residue ;
+    rdfs:label "produces residue"@en .
+
+# ============================================================
+# Data Properties
+# ============================================================
+
+slpra-drug:ld50_mg_per_kg a owl:DatatypeProperty ;
+    rdfs:domain slpra-drug:AcuteToxicity ;
+    rdfs:range xsd:decimal ;
+    rdfs:label "LD50 (mg/kg)"@en .
+
+slpra-drug:therapeuticWindowRatio a owl:DatatypeProperty ;
+    rdfs:domain slpra-drug:TherapeuticWindow ;
+    rdfs:range xsd:decimal ;
+    rdfs:label "therapeutic window ratio (TD50/ED50)"@en .
+
+slpra-drug:oel_ug_per_m3 a owl:DatatypeProperty ;
+    rdfs:domain slpra-drug:ActivePharmaceuticalIngredient ;
+    rdfs:range xsd:decimal ;
+    rdfs:label "OEL (μg/m³)"@en .
+
+slpra-drug:pde_mg_per_day a owl:DatatypeProperty ;
+    rdfs:domain slpra-drug:ActivePharmaceuticalIngredient ;
+    rdfs:range xsd:decimal ;
+    rdfs:label "PDE (mg/day)"@en .
+
+slpra-drug:minimumTherapeuticDose_mg a owl:DatatypeProperty ;
+    rdfs:domain slpra-drug:DrugProduct ;
+    rdfs:range xsd:decimal ;
+    rdfs:label "minimum therapeutic dose (mg)"@en .
+
+slpra-drug:maximumDailyDose_mg a owl:DatatypeProperty ;
+    rdfs:domain slpra-drug:DrugProduct ;
+    rdfs:range xsd:decimal ;
+    rdfs:label "maximum daily dose (mg)"@en .
+
+slpra-drug:dosageForm a owl:DatatypeProperty ;
+    rdfs:domain slpra-drug:DrugProduct ;
+    rdfs:range xsd:string ;
+    rdfs:label "dosage form"@en .
+
+slpra-drug:routeOfAdministration a owl:DatatypeProperty ;
+    rdfs:domain slpra-drug:DrugProduct ;
+    rdfs:range xsd:string ;
+    rdfs:label "route of administration"@en .
+
+slpra-drug:isCytotoxic a owl:DatatypeProperty ;
+    rdfs:domain slpra-drug:DrugProduct ;
+    rdfs:range xsd:boolean ;
+    rdfs:label "is cytotoxic"@en .
+
+slpra-drug:isHormonal a owl:DatatypeProperty ;
+    rdfs:domain slpra-drug:DrugProduct ;
+    rdfs:range xsd:boolean ;
+    rdfs:label "is hormonal"@en .
+
+slpra-drug:isPenicillinType a owl:DatatypeProperty ;
+    rdfs:domain slpra-drug:DrugProduct ;
+    rdfs:range xsd:boolean ;
+    rdfs:label "is penicillin type"@en .
+
+slpra-drug:isBetaLactam a owl:DatatypeProperty ;
+    rdfs:domain slpra-drug:DrugProduct ;
+    rdfs:range xsd:boolean ;
+    rdfs:label "is beta-lactam"@en .
+
+slpra-drug:isHighlySensitizing a owl:DatatypeProperty ;
+    rdfs:domain slpra-drug:DrugProduct ;
+    rdfs:range xsd:boolean ;
+    rdfs:label "is highly sensitizing"@en .
+
+slpra-drug:isHighlyActive a owl:DatatypeProperty ;
+    rdfs:domain slpra-drug:DrugProduct ;
+    rdfs:range xsd:boolean ;
+    rdfs:label "is highly active"@en .
+
+slpra-drug:hasPrionRisk a owl:DatatypeProperty ;
+    rdfs:domain slpra-drug:DrugProduct ;
+    rdfs:range xsd:boolean ;
+    rdfs:label "has prion risk"@en .
+
+slpra-drug:sensitizationLevel a owl:DatatypeProperty ;
+    rdfs:domain slpra-drug:SensitizationPotential ;
+    rdfs:range xsd:integer ;
+    rdfs:label "sensitization level (1-5)"@en .

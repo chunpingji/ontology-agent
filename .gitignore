@@ -1,0 +1,5 @@
+﻿.claude/
+.codegraph/
+frontend/node_modules/
+frontend/.next/
+

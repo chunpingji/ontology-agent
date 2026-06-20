@@ -1,0 +1,143 @@
+@prefix rdf:   <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl:   <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+@prefix obo:   <http://purl.obolibrary.org/obo/> .
+@prefix slpra-contam: <https://ontology.pharma-gmp.cn/slpra/contamination/> .
+@prefix slpra-drug:   <https://ontology.pharma-gmp.cn/slpra/drug/> .
+@prefix slpra-equip:  <https://ontology.pharma-gmp.cn/slpra/equipment/> .
+@prefix slpra-facil:  <https://ontology.pharma-gmp.cn/slpra/facility/> .
+@prefix slpra-risk:   <https://ontology.pharma-gmp.cn/slpra/risk/> .
+
+<https://ontology.pharma-gmp.cn/slpra/contamination/>
+    a owl:Ontology ;
+    owl:versionIRI <https://ontology.pharma-gmp.cn/slpra/contamination/0.1.0> ;
+    rdfs:label "SLPRA Contamination Pathway Model"@en ;
+    rdfs:label "SLPRA 污染途径模型"@zh ;
+    rdfs:comment "Module 3: Four cross-contamination pathways as defined by CFDI Guideline (2023-03)."@en ;
+    owl:imports <http://purl.obolibrary.org/obo/bfo.owl> .
+
+# ============================================================
+# Classes — Contamination Events (4 disjoint pathways)
+# ============================================================
+
+slpra-contam:ContaminationEvent a owl:Class ;
+    rdfs:subClassOf obo:BFO_0000015 ;
+    rdfs:label "Contamination Event"@en ;
+    rdfs:label "污染事件"@zh ;
+    rdfs:comment "A process in which one drug product contaminates another via one of four pathways defined by CFDI."@en .
+
+# Pathway 1: Residue (残留)
+slpra-contam:ResidueContamination a owl:Class ;
+    rdfs:subClassOf slpra-contam:ContaminationEvent ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty slpra-contam:involvesSurface ;
+        owl:someValuesFrom slpra-equip:ProductContactSurface
+    ] ;
+    rdfs:label "Residue Contamination"@en ;
+    rdfs:label "残留污染"@zh ;
+    rdfs:comment "Contamination via product residue on equipment internal (product-contact) surfaces not cleaned below acceptable limits."@en .
+
+# Pathway 2: Mechanical Transfer (机械转移)
+slpra-contam:MechanicalTransfer a owl:Class ;
+    rdfs:subClassOf slpra-contam:ContaminationEvent ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty slpra-contam:involvesSurface ;
+        owl:someValuesFrom slpra-equip:NonContactSurface
+    ] ;
+    rdfs:label "Mechanical Transfer"@en ;
+    rdfs:label "机械转移"@zh ;
+    rdfs:comment "Contamination via external equipment surfaces transferred by personnel clothing/gloves."@en .
+
+# Pathway 3: Airborne Transmission (空气传播)
+slpra-contam:AirborneTransmission a owl:Class ;
+    rdfs:subClassOf slpra-contam:ContaminationEvent ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty slpra-contam:occursInFacility ;
+        owl:someValuesFrom slpra-facil:ProductionArea
+    ] ;
+    rdfs:label "Airborne Transmission"@en ;
+    rdfs:label "空气传播"@zh ;
+    rdfs:comment "Contamination via particles or aerosols dispersed through air flow."@en .
+
+# Pathway 4: Confusion (混淆)
+slpra-contam:ConfusionEvent a owl:Class ;
+    rdfs:subClassOf slpra-contam:ContaminationEvent ;
+    rdfs:label "Confusion Event"@en ;
+    rdfs:label "混淆事件"@zh ;
+    rdfs:comment "Product/material mix-up due to system design flaws or human error."@en .
+
+slpra-contam:LabelMixup a owl:Class ;
+    rdfs:subClassOf slpra-contam:ConfusionEvent ;
+    rdfs:label "Label Mixup"@en ;
+    rdfs:label "标签混淆"@zh .
+
+slpra-contam:MaterialMixup a owl:Class ;
+    rdfs:subClassOf slpra-contam:ConfusionEvent ;
+    rdfs:label "Material Mixup"@en ;
+    rdfs:label "物料混淆"@zh .
+
+slpra-contam:DocumentMixup a owl:Class ;
+    rdfs:subClassOf slpra-contam:ConfusionEvent ;
+    rdfs:label "Document Mixup"@en ;
+    rdfs:label "文件混淆"@zh .
+
+# Four pathways are mutually exclusive
+[] a owl:AllDisjointClasses ;
+    owl:members ( slpra-contam:ResidueContamination
+                  slpra-contam:MechanicalTransfer
+                  slpra-contam:AirborneTransmission
+                  slpra-contam:ConfusionEvent ) .
+
+# ============================================================
+# Object Properties
+# ============================================================
+
+slpra-contam:hasContaminationSource a owl:ObjectProperty ;
+    rdfs:domain slpra-contam:ContaminationEvent ;
+    rdfs:range slpra-drug:DrugProduct ;
+    rdfs:label "has contamination source"@en ;
+    rdfs:label "污染源产品（前品）"@zh .
+
+slpra-contam:hasContaminationTarget a owl:ObjectProperty ;
+    rdfs:domain slpra-contam:ContaminationEvent ;
+    rdfs:range slpra-drug:DrugProduct ;
+    rdfs:label "has contamination target"@en ;
+    rdfs:label "受污染产品（后品）"@zh .
+
+slpra-contam:mediatedByEquipment a owl:ObjectProperty ;
+    rdfs:domain slpra-contam:ContaminationEvent ;
+    rdfs:range slpra-equip:Equipment ;
+    rdfs:label "mediated by equipment"@en .
+
+slpra-contam:occursInFacility a owl:ObjectProperty ;
+    rdfs:domain slpra-contam:ContaminationEvent ;
+    rdfs:range slpra-facil:ProductionArea ;
+    rdfs:label "occurs in facility"@en .
+
+slpra-contam:involvesSurface a owl:ObjectProperty ;
+    rdfs:domain slpra-contam:ContaminationEvent ;
+    rdfs:range slpra-equip:EquipmentSurface ;
+    rdfs:label "involves surface"@en .
+
+slpra-contam:hasContaminationSeverity a owl:ObjectProperty ;
+    rdfs:domain slpra-contam:ContaminationEvent ;
+    rdfs:range slpra-risk:RiskLevel ;
+    rdfs:label "has contamination severity"@en .
+
+# ============================================================
+# Data Properties
+# ============================================================
+
+slpra-contam:involvedPersonnel a owl:DatatypeProperty ;
+    rdfs:domain slpra-contam:MechanicalTransfer ;
+    rdfs:range xsd:boolean ;
+    rdfs:label "involved personnel"@en .
+
+slpra-contam:estimatedExposure_ug a owl:DatatypeProperty ;
+    rdfs:domain slpra-contam:ContaminationEvent ;
+    rdfs:range xsd:decimal ;
+    rdfs:label "estimated exposure (μg)"@en .

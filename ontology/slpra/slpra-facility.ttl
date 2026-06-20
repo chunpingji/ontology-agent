@@ -1,0 +1,171 @@
+@prefix rdf:   <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl:   <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+@prefix obo:   <http://purl.obolibrary.org/obo/> .
+@prefix slpra-facil: <https://ontology.pharma-gmp.cn/slpra/facility/> .
+
+<https://ontology.pharma-gmp.cn/slpra/facility/>
+    a owl:Ontology ;
+    owl:versionIRI <https://ontology.pharma-gmp.cn/slpra/facility/0.1.0> ;
+    rdfs:label "SLPRA Facility and Environmental Model"@en ;
+    rdfs:label "SLPRA 设施与环境模型"@zh ;
+    rdfs:comment "Module 6: Production areas, clean room classifications, and environmental monitoring."@en ;
+    owl:imports <http://purl.obolibrary.org/obo/bfo.owl> .
+
+# ============================================================
+# Classes — Facility Hierarchy
+# ============================================================
+
+slpra-facil:Facility a owl:Class ;
+    rdfs:subClassOf obo:BFO_0000040 ;
+    rdfs:label "Facility"@en ;
+    rdfs:label "设施"@zh .
+
+slpra-facil:ProductionArea a owl:Class ;
+    rdfs:subClassOf slpra-facil:Facility ;
+    rdfs:label "Production Area"@en ;
+    rdfs:label "生产区域"@zh .
+
+slpra-facil:CleanArea a owl:Class ;
+    rdfs:subClassOf slpra-facil:ProductionArea ;
+    rdfs:label "Clean Area"@en ;
+    rdfs:label "洁净区"@zh .
+
+slpra-facil:ClassAArea a owl:Class ;
+    rdfs:subClassOf slpra-facil:CleanArea ;
+    rdfs:label "Class A Area (ISO 4.8)"@en ;
+    rdfs:label "A级区"@zh .
+
+slpra-facil:ClassBArea a owl:Class ;
+    rdfs:subClassOf slpra-facil:CleanArea ;
+    rdfs:label "Class B Area (ISO 5)"@en ;
+    rdfs:label "B级区"@zh .
+
+slpra-facil:ClassCArea a owl:Class ;
+    rdfs:subClassOf slpra-facil:CleanArea ;
+    rdfs:label "Class C Area (ISO 7)"@en ;
+    rdfs:label "C级区"@zh .
+
+slpra-facil:ClassDArea a owl:Class ;
+    rdfs:subClassOf slpra-facil:CleanArea ;
+    rdfs:label "Class D Area (ISO 8)"@en ;
+    rdfs:label "D级区"@zh .
+
+[] a owl:AllDisjointClasses ;
+    owl:members ( slpra-facil:ClassAArea slpra-facil:ClassBArea
+                  slpra-facil:ClassCArea slpra-facil:ClassDArea ) .
+
+slpra-facil:GeneralArea a owl:Class ;
+    rdfs:subClassOf slpra-facil:ProductionArea ;
+    rdfs:label "General Area"@en ;
+    rdfs:label "一般区"@zh .
+
+[] a owl:AllDisjointClasses ;
+    owl:members ( slpra-facil:CleanArea slpra-facil:GeneralArea ) .
+
+slpra-facil:ProductionRoom a owl:Class ;
+    rdfs:subClassOf slpra-facil:Facility ;
+    rdfs:label "Production Room"@en ;
+    rdfs:label "生产房间"@zh .
+
+slpra-facil:Airlock a owl:Class ;
+    rdfs:subClassOf slpra-facil:Facility ;
+    rdfs:label "Airlock"@en ;
+    rdfs:label "气锁/缓冲间"@zh .
+
+slpra-facil:MaterialPassthrough a owl:Class ;
+    rdfs:subClassOf slpra-facil:Facility ;
+    rdfs:label "Material Passthrough"@en ;
+    rdfs:label "传递窗"@zh .
+
+# ============================================================
+# Classes — Flow Processes
+# ============================================================
+
+slpra-facil:MaterialFlow a owl:Class ;
+    rdfs:subClassOf obo:BFO_0000015 ;
+    rdfs:label "Material Flow"@en ;
+    rdfs:label "物料流"@zh .
+
+slpra-facil:PersonnelFlow a owl:Class ;
+    rdfs:subClassOf obo:BFO_0000015 ;
+    rdfs:label "Personnel Flow"@en ;
+    rdfs:label "人员流"@zh .
+
+slpra-facil:AirFlow a owl:Class ;
+    rdfs:subClassOf obo:BFO_0000015 ;
+    rdfs:label "Air Flow"@en ;
+    rdfs:label "气流"@zh .
+
+slpra-facil:EnvironmentalMonitoring a owl:Class ;
+    rdfs:subClassOf obo:BFO_0000015 ;
+    rdfs:label "Environmental Monitoring"@en ;
+    rdfs:label "环境监测"@zh .
+
+# ============================================================
+# Object Properties
+# ============================================================
+
+slpra-facil:containsEquipment a owl:ObjectProperty ;
+    rdfs:domain slpra-facil:ProductionRoom ;
+    rdfs:label "contains equipment"@en .
+
+slpra-facil:hasCleanlinessClass a owl:ObjectProperty ;
+    rdfs:domain slpra-facil:ProductionArea ;
+    rdfs:label "has cleanliness class"@en .
+
+slpra-facil:adjacentTo a owl:ObjectProperty ;
+    a owl:SymmetricProperty ;
+    rdfs:domain slpra-facil:ProductionRoom ;
+    rdfs:range slpra-facil:ProductionRoom ;
+    rdfs:label "adjacent to"@en .
+
+slpra-facil:connectedViaAirlock a owl:ObjectProperty ;
+    rdfs:domain slpra-facil:ProductionRoom ;
+    rdfs:range slpra-facil:Airlock ;
+    rdfs:label "connected via airlock"@en .
+
+slpra-facil:belongsToArea a owl:ObjectProperty ;
+    rdfs:domain slpra-facil:ProductionRoom ;
+    rdfs:range slpra-facil:ProductionArea ;
+    rdfs:label "belongs to area"@en .
+
+# ============================================================
+# Data Properties
+# ============================================================
+
+slpra-facil:pressureDifferential_Pa a owl:DatatypeProperty ;
+    rdfs:domain slpra-facil:ProductionRoom ;
+    rdfs:range xsd:decimal ;
+    rdfs:label "pressure differential (Pa)"@en .
+
+slpra-facil:airChangesPerHour a owl:DatatypeProperty ;
+    rdfs:domain slpra-facil:ProductionRoom ;
+    rdfs:range xsd:decimal ;
+    rdfs:label "air changes per hour"@en .
+
+slpra-facil:particleLimit_0_5um a owl:DatatypeProperty ;
+    rdfs:domain slpra-facil:CleanArea ;
+    rdfs:range xsd:integer ;
+    rdfs:label "particle limit ≥0.5μm (/m³)"@en .
+
+slpra-facil:particleLimit_5um a owl:DatatypeProperty ;
+    rdfs:domain slpra-facil:CleanArea ;
+    rdfs:range xsd:integer ;
+    rdfs:label "particle limit ≥5μm (/m³)"@en .
+
+slpra-facil:temperature_C a owl:DatatypeProperty ;
+    rdfs:domain slpra-facil:ProductionRoom ;
+    rdfs:range xsd:decimal ;
+    rdfs:label "temperature (°C)"@en .
+
+slpra-facil:relativeHumidity_percent a owl:DatatypeProperty ;
+    rdfs:domain slpra-facil:ProductionRoom ;
+    rdfs:range xsd:decimal ;
+    rdfs:label "relative humidity (%)"@en .
+
+slpra-facil:roomName a owl:DatatypeProperty ;
+    rdfs:domain slpra-facil:ProductionRoom ;
+    rdfs:range xsd:string ;
+    rdfs:label "room name"@en .

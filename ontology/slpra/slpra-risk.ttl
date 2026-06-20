@@ -1,0 +1,327 @@
+@prefix rdf:   <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl:   <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+@prefix obo:   <http://purl.obolibrary.org/obo/> .
+@prefix slpra-risk:   <https://ontology.pharma-gmp.cn/slpra/risk/> .
+@prefix slpra-drug:   <https://ontology.pharma-gmp.cn/slpra/drug/> .
+@prefix slpra-equip:  <https://ontology.pharma-gmp.cn/slpra/equipment/> .
+@prefix slpra-contam: <https://ontology.pharma-gmp.cn/slpra/contamination/> .
+
+<https://ontology.pharma-gmp.cn/slpra/risk/>
+    a owl:Ontology ;
+    owl:versionIRI <https://ontology.pharma-gmp.cn/slpra/risk/0.1.0> ;
+    rdfs:label "SLPRA Risk Assessment Rules Ontology"@en ;
+    rdfs:label "SLPRA 风险评估规则本体"@zh ;
+    rdfs:comment "Module 4: Risk assessment processes, MACO/PDE calculation model, 8 CFDI shared-line scenarios, and equipment-product compatibility matrix."@en ;
+    owl:imports <http://purl.obolibrary.org/obo/bfo.owl> .
+
+# ============================================================
+# Classes — Risk Assessment Processes
+# ============================================================
+
+slpra-risk:RiskAssessmentProcess a owl:Class ;
+    rdfs:subClassOf obo:BFO_0000015 ;
+    rdfs:label "Risk Assessment Process"@en ;
+    rdfs:label "风险评估过程"@zh .
+
+slpra-risk:HazardIdentification a owl:Class ;
+    rdfs:subClassOf slpra-risk:RiskAssessmentProcess ;
+    rdfs:label "Hazard Identification"@en ;
+    rdfs:label "危害识别"@zh .
+
+slpra-risk:ExposureAssessment a owl:Class ;
+    rdfs:subClassOf slpra-risk:RiskAssessmentProcess ;
+    rdfs:label "Exposure Assessment"@en ;
+    rdfs:label "暴露评估"@zh .
+
+slpra-risk:MACOCalculation a owl:Class ;
+    rdfs:subClassOf slpra-risk:RiskAssessmentProcess ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty slpra-risk:hasInputPDE ;
+        owl:maxQualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onDataRange xsd:decimal
+    ] ;
+    rdfs:label "MACO Calculation"@en ;
+    rdfs:label "MACO计算"@zh ;
+    rdfs:comment "Maximum Allowable Carryover calculation. MACO = (PDE × MBS) / TDD_next."@en .
+
+slpra-risk:PDECalculation a owl:Class ;
+    rdfs:subClassOf slpra-risk:RiskAssessmentProcess ;
+    rdfs:label "PDE Calculation"@en ;
+    rdfs:label "PDE计算"@zh ;
+    rdfs:comment "Permitted Daily Exposure calculation. PDE = (PoD × BW) / (F1 × F2 × F3 × F4 × F5 × MF)."@en .
+
+slpra-risk:RiskEvaluation a owl:Class ;
+    rdfs:subClassOf slpra-risk:RiskAssessmentProcess ;
+    rdfs:label "Risk Evaluation"@en ;
+    rdfs:label "风险评价"@zh .
+
+# ============================================================
+# Classes — Risk Qualities
+# ============================================================
+
+slpra-risk:RiskScore a owl:Class ;
+    rdfs:subClassOf obo:BFO_0000019 ;
+    rdfs:label "Risk Score"@en ;
+    rdfs:label "风险评分"@zh .
+
+slpra-risk:RiskLevel a owl:Class ;
+    rdfs:subClassOf obo:BFO_0000019 ;
+    rdfs:label "Risk Level"@en ;
+    rdfs:label "风险级别"@zh .
+
+# Risk Level Individuals
+slpra-risk:HighRisk a slpra-risk:RiskLevel ;
+    rdfs:label "High Risk"@en ;
+    rdfs:label "高风险"@zh .
+
+slpra-risk:MediumRisk a slpra-risk:RiskLevel ;
+    rdfs:label "Medium Risk"@en ;
+    rdfs:label "中风险"@zh .
+
+slpra-risk:LowRisk a slpra-risk:RiskLevel ;
+    rdfs:label "Low Risk"@en ;
+    rdfs:label "低风险"@zh .
+
+# ============================================================
+# Classes — Reports and Documents (GDC)
+# ============================================================
+
+slpra-risk:RiskAssessmentReport a owl:Class ;
+    rdfs:subClassOf obo:BFO_0000031 ;
+    rdfs:label "Risk Assessment Report"@en ;
+    rdfs:label "风险评估报告"@zh .
+
+# ============================================================
+# Classes — 8 CFDI Shared-Line Assessment Scenarios
+# ============================================================
+
+slpra-risk:SharedLineAssessmentScenario a owl:Class ;
+    rdfs:subClassOf obo:BFO_0000031 ;
+    rdfs:label "Shared-Line Assessment Scenario"@en ;
+    rdfs:label "共线评估情景"@zh ;
+    rdfs:comment "One of 8 special shared-line scenarios defined by CFDI Guideline (2023-03)."@en .
+
+slpra-risk:ClinicalWithCommercialScenario a owl:Class ;
+    rdfs:subClassOf slpra-risk:SharedLineAssessmentScenario ;
+    rdfs:label "Clinical + Commercial Shared Line"@en ;
+    rdfs:label "情景1：临床+商业共线"@zh .
+
+slpra-risk:CytotoxicSharedLineScenario a owl:Class ;
+    rdfs:subClassOf slpra-risk:SharedLineAssessmentScenario ;
+    rdfs:label "Cytotoxic Shared Line"@en ;
+    rdfs:label "情景2：细胞毒共线"@zh .
+
+slpra-risk:HormonalSharedLineScenario a owl:Class ;
+    rdfs:subClassOf slpra-risk:SharedLineAssessmentScenario ;
+    rdfs:label "Hormonal Shared Line"@en ;
+    rdfs:label "情景3：激素共线"@zh .
+
+slpra-risk:PenicillinSharedLineScenario a owl:Class ;
+    rdfs:subClassOf slpra-risk:SharedLineAssessmentScenario ;
+    rdfs:label "Penicillin Shared Line"@en ;
+    rdfs:label "情景4：青霉素共线"@zh ;
+    rdfs:comment "CFDI mandates fully dedicated and independent facilities for penicillin-type drugs."@en .
+
+slpra-risk:BiologicSharedLineScenario a owl:Class ;
+    rdfs:subClassOf slpra-risk:SharedLineAssessmentScenario ;
+    rdfs:label "Biologic Shared Line"@en ;
+    rdfs:label "情景5：生物制品共线"@zh .
+
+slpra-risk:HighPotencySharedLineScenario a owl:Class ;
+    rdfs:subClassOf slpra-risk:SharedLineAssessmentScenario ;
+    rdfs:label "High Potency Shared Line"@en ;
+    rdfs:label "情景6：高活性共线"@zh .
+
+slpra-risk:SterileDrugSharedLineScenario a owl:Class ;
+    rdfs:subClassOf slpra-risk:SharedLineAssessmentScenario ;
+    rdfs:label "Sterile Drug Shared Line"@en ;
+    rdfs:label "情景7：无菌药品共线"@zh .
+
+slpra-risk:MultiDosageFormScenario a owl:Class ;
+    rdfs:subClassOf slpra-risk:SharedLineAssessmentScenario ;
+    rdfs:label "Multi-Dosage Form Shared Line"@en ;
+    rdfs:label "情景8：多剂型共线"@zh .
+
+# ============================================================
+# Classes — Equipment-Product Compatibility (N-ary relation)
+# ============================================================
+
+slpra-risk:CompatibilityAssessment a owl:Class ;
+    rdfs:subClassOf obo:BFO_0000031 ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty slpra-risk:assessesEquipmentFor ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass slpra-equip:Equipment
+    ] ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty slpra-risk:assessesProductFor ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass slpra-drug:DrugProduct
+    ] ;
+    rdfs:label "Compatibility Assessment"@en ;
+    rdfs:label "相容性评估"@zh .
+
+# ============================================================
+# Object Properties
+# ============================================================
+
+slpra-risk:assessesProduct a owl:ObjectProperty ;
+    rdfs:domain slpra-risk:RiskAssessmentProcess ;
+    rdfs:range slpra-drug:DrugProduct ;
+    rdfs:label "assesses product"@en .
+
+slpra-risk:assessesEquipment a owl:ObjectProperty ;
+    rdfs:domain slpra-risk:RiskAssessmentProcess ;
+    rdfs:range slpra-equip:Equipment ;
+    rdfs:label "assesses equipment"@en .
+
+slpra-risk:identifiesHazard a owl:ObjectProperty ;
+    rdfs:domain slpra-risk:HazardIdentification ;
+    rdfs:range slpra-contam:ContaminationEvent ;
+    rdfs:label "identifies hazard"@en .
+
+slpra-risk:producesReport a owl:ObjectProperty ;
+    rdfs:domain slpra-risk:RiskAssessmentProcess ;
+    rdfs:range slpra-risk:RiskAssessmentReport ;
+    rdfs:label "produces report"@en .
+
+slpra-risk:hasRiskScore a owl:ObjectProperty ;
+    rdfs:domain slpra-risk:RiskAssessmentReport ;
+    rdfs:range slpra-risk:RiskScore ;
+    rdfs:label "has risk score"@en .
+
+slpra-risk:hasRiskLevel a owl:ObjectProperty ;
+    rdfs:domain slpra-risk:RiskAssessmentReport ;
+    rdfs:range slpra-risk:RiskLevel ;
+    rdfs:label "has risk level"@en .
+
+slpra-risk:involvesScenario a owl:ObjectProperty ;
+    rdfs:domain slpra-risk:RiskAssessmentProcess ;
+    rdfs:range slpra-risk:SharedLineAssessmentScenario ;
+    rdfs:label "involves scenario"@en .
+
+slpra-risk:assessesEquipmentFor a owl:ObjectProperty ;
+    rdfs:domain slpra-risk:CompatibilityAssessment ;
+    rdfs:range slpra-equip:Equipment ;
+    rdfs:label "assesses equipment for"@en .
+
+slpra-risk:assessesProductFor a owl:ObjectProperty ;
+    rdfs:domain slpra-risk:CompatibilityAssessment ;
+    rdfs:range slpra-drug:DrugProduct ;
+    rdfs:label "assesses product for"@en .
+
+# ============================================================
+# Data Properties — MACO/PDE Calculation Parameters
+# ============================================================
+
+slpra-risk:hasInputPDE a owl:DatatypeProperty ;
+    rdfs:domain slpra-risk:MACOCalculation ;
+    rdfs:range xsd:decimal ;
+    rdfs:label "input PDE (mg/day)"@en .
+
+slpra-risk:hasInputMBS a owl:DatatypeProperty ;
+    rdfs:domain slpra-risk:MACOCalculation ;
+    rdfs:range xsd:decimal ;
+    rdfs:label "input minimum batch size (kg)"@en .
+
+slpra-risk:hasInputTDD a owl:DatatypeProperty ;
+    rdfs:domain slpra-risk:MACOCalculation ;
+    rdfs:range xsd:decimal ;
+    rdfs:label "input total daily dose next product (mg)"@en .
+
+slpra-risk:hasMinTherapeuticDose a owl:DatatypeProperty ;
+    rdfs:domain slpra-risk:MACOCalculation ;
+    rdfs:range xsd:decimal ;
+    rdfs:label "minimum therapeutic dose previous product (mg)"@en .
+
+slpra-risk:maco_mg a owl:DatatypeProperty ;
+    rdfs:domain slpra-risk:MACOCalculation ;
+    rdfs:range xsd:decimal ;
+    rdfs:label "calculated MACO (mg)"@en .
+
+slpra-risk:hasMACOMethod a owl:DatatypeProperty ;
+    rdfs:domain slpra-risk:MACOCalculation ;
+    rdfs:range xsd:string ;
+    rdfs:label "MACO calculation method"@en ;
+    rdfs:comment "One of: PDE-based, dose-based, general-limit."@en .
+
+slpra-risk:pod_mg_per_kg_per_day a owl:DatatypeProperty ;
+    rdfs:domain slpra-risk:PDECalculation ;
+    rdfs:range xsd:decimal ;
+    rdfs:label "Point of Departure (mg/kg/day)"@en .
+
+slpra-risk:bodyWeightCorrection_kg a owl:DatatypeProperty ;
+    rdfs:domain slpra-risk:PDECalculation ;
+    rdfs:range xsd:decimal ;
+    rdfs:label "body weight correction (kg)"@en .
+
+slpra-risk:adjustmentFactor_F1 a owl:DatatypeProperty ;
+    rdfs:domain slpra-risk:PDECalculation ;
+    rdfs:range xsd:decimal ;
+    rdfs:label "F1 interspecies factor"@en .
+
+slpra-risk:adjustmentFactor_F2 a owl:DatatypeProperty ;
+    rdfs:domain slpra-risk:PDECalculation ;
+    rdfs:range xsd:decimal ;
+    rdfs:label "F2 interindividual factor"@en .
+
+slpra-risk:adjustmentFactor_F3 a owl:DatatypeProperty ;
+    rdfs:domain slpra-risk:PDECalculation ;
+    rdfs:range xsd:decimal ;
+    rdfs:label "F3 study duration factor"@en .
+
+slpra-risk:adjustmentFactor_F4 a owl:DatatypeProperty ;
+    rdfs:domain slpra-risk:PDECalculation ;
+    rdfs:range xsd:decimal ;
+    rdfs:label "F4 severity factor"@en .
+
+slpra-risk:adjustmentFactor_F5 a owl:DatatypeProperty ;
+    rdfs:domain slpra-risk:PDECalculation ;
+    rdfs:range xsd:decimal ;
+    rdfs:label "F5 NOAEL/LOAEL factor"@en .
+
+slpra-risk:modifyingFactor_MF a owl:DatatypeProperty ;
+    rdfs:domain slpra-risk:PDECalculation ;
+    rdfs:range xsd:decimal ;
+    rdfs:label "modifying factor MF"@en .
+
+slpra-risk:calculatedPDE_mg_per_day a owl:DatatypeProperty ;
+    rdfs:domain slpra-risk:PDECalculation ;
+    rdfs:range xsd:decimal ;
+    rdfs:label "calculated PDE (mg/day)"@en .
+
+slpra-risk:riskScoreValue a owl:DatatypeProperty ;
+    rdfs:domain slpra-risk:RiskScore ;
+    rdfs:range xsd:decimal ;
+    rdfs:label "risk score value"@en .
+
+slpra-risk:compatibilityResult a owl:DatatypeProperty ;
+    rdfs:domain slpra-risk:CompatibilityAssessment ;
+    rdfs:range xsd:string ;
+    rdfs:label "compatibility result"@en ;
+    rdfs:comment "One of: compatible, conditional, incompatible."@en .
+
+slpra-risk:compatibilityCondition a owl:DatatypeProperty ;
+    rdfs:domain slpra-risk:CompatibilityAssessment ;
+    rdfs:range xsd:string ;
+    rdfs:label "compatibility condition"@en .
+
+slpra-risk:requiresEnhancedDocumentation a owl:DatatypeProperty ;
+    rdfs:domain slpra-risk:RiskAssessmentReport ;
+    rdfs:range xsd:boolean ;
+    rdfs:label "requires enhanced documentation"@en .
+
+slpra-risk:requiresTSERiskAssessment a owl:DatatypeProperty ;
+    rdfs:domain slpra-risk:RiskAssessmentReport ;
+    rdfs:range xsd:boolean ;
+    rdfs:label "requires TSE risk assessment"@en .
+
+slpra-risk:requiresAsepticIntegrity a owl:DatatypeProperty ;
+    rdfs:domain slpra-risk:RiskAssessmentReport ;
+    rdfs:range xsd:boolean ;
+    rdfs:label "requires aseptic integrity assessment"@en .
