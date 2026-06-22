@@ -61,6 +61,32 @@ def build_extraction_prompt(
     return "\n".join(prompt_parts)
 
 
+async def extract_with_fallback(
+    source_data: list[dict[str, Any]],
+    target_class_iri: str,
+    property_schema: list[dict],
+    few_shot_examples: list[dict] | None = None,
+) -> tuple[list[dict[str, Any]], str | None]:
+    """LLM 抽取并在不可用时回退到结构化原始数据（FR-007, R3）。
+
+    返回 ``(entities, degraded_reason)``：``degraded_reason`` 非空表示已降级，
+    调用方应在候选上标记并向 SSE 报 ``degraded=true``，但**不**使作业失败。
+    """
+    if not settings.anthropic_api_key:
+        logger.warning("No Anthropic API key configured; falling back to structured extraction")
+        return source_data, "LLM 不可用：未配置 API Key，回退结构化抽取"
+    try:
+        entities = await extract_entities_with_llm(
+            source_data, target_class_iri, property_schema, few_shot_examples
+        )
+        if not entities:
+            return source_data, "LLM 返回为空，回退结构化抽取"
+        return entities, None
+    except Exception as exc:  # pragma: no cover - 网络/SDK 异常路径
+        logger.exception("LLM extraction failed; falling back to structured extraction")
+        return source_data, f"LLM 调用失败，回退结构化抽取：{type(exc).__name__}"
+
+
 async def extract_entities_with_llm(
     source_data: list[dict[str, Any]],
     target_class_iri: str,

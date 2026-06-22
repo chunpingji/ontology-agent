@@ -1,6 +1,20 @@
-from fastapi import APIRouter, Depends, HTTPException
+from uuid import UUID
 
-from app.dependencies import get_ontology_engine
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.orm import Session
+
+from app.db import get_db
+from app.dependencies import (
+    ROLE_SENIOR_ANALYST,
+    get_ontology_engine,
+    require_role,
+)
+from app.models.reasoning import ReasoningExecution
+from app.schemas.integration import (
+    ConclusionResponse,
+    IncrementalRequest,
+    IncrementalResponse,
+)
 from app.schemas.reasoning import (
     AssessmentRequest,
     AssessmentResponse,
@@ -12,8 +26,9 @@ from app.schemas.reasoning import (
     RuleInfo,
     ScenarioResult,
 )
-from app.services.ontology_engine import OntologyEngine
+from app.services.ontology_engine import OntologyEngine, ontology_engine
 from app.services.reasoning import engine as reasoning_engine
+from app.services.reasoning import incremental
 from app.services.reasoning.calculators import calculate_maco, calculate_pde
 from app.services.reasoning.rules import (
     contamination_risk,
@@ -74,6 +89,41 @@ def calc_maco(req: MACORequest):
         maco_value=result.value, method_used=result.method,
         all_methods=result.all_methods,
     )
+
+
+_recompute_role = require_role(ROLE_SENIOR_ANALYST)  # 触发增量重算限 senior_analyst（契约 §0）
+
+
+@router.post("/incremental", response_model=IncrementalResponse)
+def recompute_incremental(
+    req: IncrementalRequest,
+    db: Session = Depends(get_db),
+    _: object = Depends(_recompute_role),
+):
+    """事实变更后仅重算受影响子图的既有结论（禁止全量，FR-017/SC-005）。"""
+    engine = ontology_engine if ontology_engine.is_loaded else None
+    refreshed = incremental.recompute_subgraph(db, req.affected_subgraph, engine=engine)
+    return IncrementalResponse(
+        refreshed=[ConclusionResponse.model_validate(r) for r in refreshed]
+    )
+
+
+@router.get("/conclusions/{conclusion_id}", response_model=ConclusionResponse)
+def get_conclusion(conclusion_id: UUID, db: Session = Depends(get_db)):
+    """查询某结论的生效状态 / 取代链（FR-030 待签结论 effective=false）。"""
+    c = db.get(ReasoningExecution, conclusion_id)
+    if not c:
+        raise HTTPException(404)
+    return c
+
+
+@router.get("/conclusions/{conclusion_id}/trace")
+def get_conclusion_trace(conclusion_id: UUID, db: Session = Depends(get_db)):
+    """规则链溯源：返回结论触发的规则 ID + 法规依据（FR-027/SC-007）。"""
+    c = db.get(ReasoningExecution, conclusion_id)
+    if not c:
+        raise HTTPException(404)
+    return {"rules_fired": c.rules_fired or []}
 
 
 @router.get("/rules", response_model=list[RuleInfo])

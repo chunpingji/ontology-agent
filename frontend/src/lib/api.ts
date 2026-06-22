@@ -123,6 +123,200 @@ export const runSPARQL = (query: string) =>
 export const getIntegrationSpecs = () =>
   fetchAPI<IntegrationSpec[]>("/api/integration/specs");
 
+// --- Integration realtime (能力三) -----------------------------------------
+export interface Connector {
+  id: string;
+  system_type: string;
+  name: string;
+  ingest_mode: string;
+  poll_interval_seconds: number;
+  connection_config: Record<string, unknown> | null;
+  field_mapping: Record<string, unknown> | null;
+  is_active: boolean;
+  last_status: string | null;
+  last_error: string | null;
+}
+
+export interface MaterializationRun {
+  id: string;
+  connector_id: string;
+  status: string;
+  started_at: string;
+  finished_at: string | null;
+  cursor_from: Record<string, unknown> | null;
+  cursor_to: Record<string, unknown> | null;
+  change_count: number;
+  event_ids: string[] | null;
+  error_message: string | null;
+}
+
+export interface DashboardData {
+  compatibility_matrix: Array<{
+    equipment: string | null; product: string | null;
+    risk_level: string | null; conclusion_id: string;
+  }>;
+  schedule_risks: Array<{
+    date: string | null; equipment: string | null;
+    conflict: boolean; detail: string;
+  }>;
+  updated_at: string;
+}
+
+export interface RuleTrace {
+  rules_fired: Array<Record<string, unknown>>;
+}
+
+export const listConnectors = () =>
+  fetchAPI<Connector[]>("/api/integration/connectors");
+export const createConnector = (data: Partial<Connector>) =>
+  fetchAPI<Connector>("/api/integration/connectors", {
+    method: "POST", body: JSON.stringify(data),
+  });
+export const deleteConnector = (id: string) =>
+  fetchAPI<void>(`/api/integration/connectors/${id}`, { method: "DELETE" });
+export const testConnector = (id: string) =>
+  fetchAPI<{ ok: boolean; latency_ms: number | null; error: string | null }>(
+    `/api/integration/connectors/${id}/test`, { method: "POST" });
+export const syncConnector = (id: string) =>
+  fetchAPI<{ run_id: string; status: string }>(
+    `/api/integration/connectors/${id}/sync`, { method: "POST" });
+export const listConnectorRuns = (id: string) =>
+  fetchAPI<{ runs: MaterializationRun[] }>(`/api/integration/connectors/${id}/runs`);
+export const getDashboard = () =>
+  fetchAPI<DashboardData>("/api/integration/dashboard");
+export const getConclusionTrace = (id: string) =>
+  fetchAPI<RuleTrace>(`/api/reasoning/conclusions/${id}/trace`);
+
+// --- Compliance (能力六) ----------------------------------------------------
+export interface PendingConclusion {
+  id: string;
+  risk_level: string | null;
+  execution_type: string;
+}
+
+export const verifyAudit = () =>
+  fetchAPI<{ ok: boolean; verified_count?: number; head_seq?: number; broken_at_seq?: number }>(
+    "/api/compliance/audit/verify");
+export const getPendingSignatures = () =>
+  fetchAPI<{ conclusions: PendingConclusion[] }>("/api/compliance/signatures/pending");
+export const signConclusion = (data: {
+  conclusion_id: string; username: string; password: string; meaning: string;
+}) =>
+  fetchAPI<{ signature_id: string; conclusion_id: string; effective: boolean; signed_at: string }>(
+    "/api/compliance/signatures", { method: "POST", body: JSON.stringify(data) });
+
+// --- Extraction (能力二) ----------------------------------------------------
+export const listExtractionConfigs = () =>
+  fetchAPI<ExtractionConfig[]>("/api/extraction/configs");
+export const createExtractionConfig = (data: Partial<ExtractionConfig>) =>
+  fetchAPI<ExtractionConfig>("/api/extraction/configs", {
+    method: "POST", body: JSON.stringify(data),
+  });
+export const listExtractionJobs = () =>
+  fetchAPI<ExtractionJob[]>("/api/extraction/jobs");
+export const getExtractionJob = (id: string) =>
+  fetchAPI<ExtractionJob>(`/api/extraction/jobs/${id}`);
+
+export async function createExtractionJob(params: {
+  source_type: string; config_id: string; file?: File; db_source?: object;
+}): Promise<ExtractionJob> {
+  const fd = new FormData();
+  fd.append("source_type", params.source_type);
+  fd.append("config_id", params.config_id);
+  if (params.file) fd.append("file", params.file);
+  if (params.db_source) fd.append("db_source", JSON.stringify(params.db_source));
+  const res = await fetch(`${API_BASE}/api/extraction/jobs`, {
+    method: "POST", headers: identityHeaders(), body: fd,
+  });
+  if (!res.ok) throw new Error(`API ${res.status}: ${await res.text()}`);
+  return res.json();
+}
+
+export const getJobCandidates = (jobId: string) =>
+  fetchAPI<GroupedCandidates>(`/api/extraction/jobs/${jobId}/candidates`);
+export const reviewCandidate = (id: string, status: string, edited?: object) =>
+  fetchAPI<ExtractionCandidate>(`/api/extraction/candidates/${id}/review`, {
+    method: "PUT", body: JSON.stringify({ status, edited_properties: edited }),
+  });
+export const mergeCandidates = (target_id: string, source_ids: string[]) =>
+  fetchAPI<ExtractionCandidate[]>("/api/extraction/candidates/merge", {
+    method: "POST", body: JSON.stringify({ target_id, source_ids }),
+  });
+export const splitCandidate = (id: string, splits: object[]) =>
+  fetchAPI<ExtractionCandidate[]>(`/api/extraction/candidates/${id}/split`, {
+    method: "POST", body: JSON.stringify({ splits }),
+  });
+
+/** Subscribe to job progress via SSE. Returns an unsubscribe fn. */
+export function subscribeJobProgress(
+  jobId: string, onEvent: (e: JobProgressEvent) => void,
+): () => void {
+  const id = getIdentity();
+  // EventSource cannot set headers; pass identity as query for the dev gateway.
+  const url = `${API_BASE}/api/extraction/jobs/${jobId}/progress?x_user=${id.username}&x_role=${id.role}`;
+  const es = new EventSource(url);
+  es.onmessage = (ev) => {
+    try { onEvent(JSON.parse(ev.data) as JobProgressEvent); } catch { /* ignore */ }
+  };
+  return () => es.close();
+}
+
+// --- Extraction types (能力二) ---------------------------------------------
+export interface ExtractionConfig {
+  id: string;
+  name: string;
+  target_class_iri: string;
+  source_type: string;
+  column_mapping?: Record<string, string> | null;
+  llm_prompt_template?: string | null;
+  is_active?: boolean;
+}
+export interface ExtractionJob {
+  id: string;
+  source_type: string;
+  source_filename: string | null;
+  status: string;
+  total_candidates: number;
+  approved_count: number;
+  rejected_count: number;
+  error_message: string | null;
+  created_at: string;
+}
+export interface ExtractionCandidate {
+  id: string;
+  target_class_iri: string;
+  extracted_properties: Record<string, unknown>;
+  candidate_kind: string;
+  group_key: string | null;
+  is_canonical: boolean;
+  source_ref: string | null;
+  degraded_reason: string | null;
+  merged_into_id: string | null;
+  action_conditions: Record<string, unknown> | null;
+  alignment_result: string | null;
+  aligned_iri: string | null;
+  match_score: number | null;
+  review_status: string;
+  committed_iri: string | null;
+}
+export interface CandidateGroup {
+  group_key: string;
+  canonical_candidate_id: string | null;
+  candidates: ExtractionCandidate[];
+}
+export interface GroupedCandidates {
+  job_id: string;
+  groups: CandidateGroup[];
+  ungrouped: ExtractionCandidate[];
+}
+export interface JobProgressEvent {
+  job_id: string;
+  stage: string;
+  pct: number;
+  status: string;
+  degraded: boolean;
+}
+
 // Types
 export interface Module {
   key: string; iri: string; label: string | null;

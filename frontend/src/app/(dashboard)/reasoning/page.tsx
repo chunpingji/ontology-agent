@@ -1,8 +1,20 @@
 "use client";
 
-import { useState } from "react";
-import { runAssessment, calculatePDE, calculateMACO } from "@/lib/api";
-import type { AssessmentResponse, PDEResponse, MACOResult } from "@/lib/api";
+import { useCallback, useEffect, useState } from "react";
+import {
+  calculateMACO,
+  calculatePDE,
+  getPendingSignatures,
+  runAssessment,
+  verifyAudit,
+} from "@/lib/api";
+import type {
+  AssessmentResponse,
+  MACOResult,
+  PDEResponse,
+  PendingConclusion,
+} from "@/lib/api";
+import { QaSignatureDialog } from "@/components/reasoning/qa-signature-dialog";
 
 function PDECalculator() {
   const [pod, setPod] = useState("1.0");
@@ -230,6 +242,92 @@ function AssessmentPanel() {
   );
 }
 
+function PendingSignaturesPanel() {
+  const [pending, setPending] = useState<PendingConclusion[]>([]);
+  const [signing, setSigning] = useState<string | null>(null);
+  const [auditOk, setAuditOk] = useState<boolean | null>(null);
+
+  const refresh = useCallback(async () => {
+    try {
+      const r = await getPendingSignatures();
+      setPending(r.conclusions);
+    } catch (e) {
+      console.error(e);
+    }
+  }, []);
+
+  useEffect(() => {
+    refresh();
+  }, [refresh]);
+
+  const handleVerifyAudit = async () => {
+    try {
+      const r = await verifyAudit();
+      setAuditOk(r.ok);
+    } catch (e) {
+      console.error(e);
+      setAuditOk(false);
+    }
+  };
+
+  return (
+    <div className="rounded-lg border bg-white p-4">
+      <div className="mb-3 flex items-center justify-between">
+        <h3 className="font-semibold">待 QA 签名结论（21 CFR Part 11）</h3>
+        <button
+          onClick={handleVerifyAudit}
+          className="rounded border px-3 py-1 text-xs hover:bg-gray-50"
+        >
+          校验审计链
+        </button>
+      </div>
+      {auditOk !== null && (
+        <p className={`mb-3 text-xs ${auditOk ? "text-green-700" : "text-red-600"}`}>
+          审计哈希链: {auditOk ? "完整 ✓" : "已被篡改 ✗"}
+        </p>
+      )}
+      {pending.length === 0 ? (
+        <p className="text-sm text-gray-400">暂无待签名结论</p>
+      ) : (
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b text-left text-xs text-gray-500">
+              <th className="py-1">结论 ID</th>
+              <th className="py-1">风险等级</th>
+              <th className="py-1">类型</th>
+              <th className="py-1"></th>
+            </tr>
+          </thead>
+          <tbody>
+            {pending.map((c) => (
+              <tr key={c.id} className="border-b">
+                <td className="py-1 font-mono text-xs">{c.id.slice(0, 8)}</td>
+                <td className="py-1">{c.risk_level ?? "—"}</td>
+                <td className="py-1">{c.execution_type}</td>
+                <td className="py-1 text-right">
+                  <button
+                    onClick={() => setSigning(c.id)}
+                    className="rounded bg-blue-600 px-3 py-1 text-xs text-white hover:bg-blue-700"
+                  >
+                    签名
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+      {signing && (
+        <QaSignatureDialog
+          conclusionId={signing}
+          onSigned={refresh}
+          onClose={() => setSigning(null)}
+        />
+      )}
+    </div>
+  );
+}
+
 export default function ReasoningPage() {
   return (
     <div>
@@ -240,6 +338,7 @@ export default function ReasoningPage() {
           <PDECalculator />
           <MACOCalculator />
         </div>
+        <PendingSignaturesPanel />
       </div>
     </div>
   );

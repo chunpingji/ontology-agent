@@ -5,7 +5,18 @@ from pathlib import Path
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api import entities, extraction, integration, kg, ontology, reasoning
+from app.api import (
+    actions,
+    compliance,
+    entities,
+    extraction,
+    integration,
+    kg,
+    ontology,
+    reasoning,
+    reports,
+)
+from app.config import settings
 from app.services.ontology_engine import ontology_engine
 
 logger = logging.getLogger(__name__)
@@ -45,7 +56,20 @@ async def lifespan(app: FastAPI):
         _seed_from_ttl()
     except Exception as exc:  # pragma: no cover
         logger.warning("TTL projection seeding skipped: %s", exc)
+
+    # 能力三：启动期 asyncio 轮询后台任务挂载点（R4, T037）。默认关闭，避免测试期起任务。
+    poller_task = None
+    if settings.realtime_polling_enabled:  # pragma: no cover - 仅生产/手动开启
+        import asyncio
+
+        from app.services.integration.poller import run_polling_loop
+
+        poller_task = asyncio.create_task(run_polling_loop())
+
     yield
+
+    if poller_task is not None:  # pragma: no cover
+        poller_task.cancel()
     ontology_engine.close()
 
 
@@ -70,6 +94,9 @@ app.include_router(reasoning.router, prefix="/api/reasoning", tags=["reasoning"]
 app.include_router(extraction.router, prefix="/api/extraction", tags=["extraction"])
 app.include_router(kg.router, prefix="/api/kg", tags=["knowledge-graph"])
 app.include_router(integration.router, prefix="/api/integration", tags=["integration"])
+app.include_router(actions.router, prefix="/api/actions", tags=["actions"])
+app.include_router(reports.router, prefix="/api/reports", tags=["reports"])
+app.include_router(compliance.router, prefix="/api/compliance", tags=["compliance"])
 
 
 @app.get("/api/health")
