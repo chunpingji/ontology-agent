@@ -127,3 +127,8 @@ def analyst_headers():
 @pytest.fixture()
 def operator_headers():
     return {"X-User": "op", "X-Role": "operator"}
+
+
+@pytest.fixture()
+def qa_headers():
+    return {"X-User": "qa01", "X-Role": "qa"}

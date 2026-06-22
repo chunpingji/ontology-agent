@@ -35,7 +35,7 @@ def align_entity(
     2. Fuzzy match on label/name
     3. If no match above threshold -> new entity
     """
-    existing = engine.get_individuals(target_class_iri)
+    existing = engine.get_individuals(target_class_iri) or []
 
     # Step 1: Exact ID match
     if id_property:

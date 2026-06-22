@@ -1,59 +1,130 @@
 "use client";
 
+import { useEffect, useState } from "react";
+import { AlignmentReview } from "@/components/extraction/alignment-review";
+import { JobCreateForm } from "@/components/extraction/job-create-form";
+import { JobProgress } from "@/components/extraction/job-progress";
+import {
+  getExtractionJob,
+  listExtractionJobs,
+  type ExtractionJob,
+} from "@/lib/api";
+
+const STATUS_LABELS: Record<string, string> = {
+  pending: "待处理",
+  running: "运行中",
+  parsing: "解析中",
+  extracting: "抽取中",
+  aligning: "对齐中",
+  reviewing: "待审核",
+  done: "完成",
+  failed: "失败",
+};
+
 export default function ExtractionPage() {
+  const [jobs, setJobs] = useState<ExtractionJob[]>([]);
+  const [activeJobId, setActiveJobId] = useState<string | null>(null);
+  const activeJob = jobs.find((j) => j.id === activeJobId) ?? null;
+
+  async function refresh() {
+    try {
+      setJobs(await listExtractionJobs());
+    } catch {
+      /* ignore */
+    }
+  }
+
+  useEffect(() => {
+    refresh();
+  }, []);
+
+  async function handleCreated(job: ExtractionJob) {
+    setActiveJobId(job.id);
+    await refresh();
+  }
+
+  async function handleProgressDone() {
+    if (activeJobId) {
+      // 终态时刷新该作业与列表，候选数随之更新。
+      await getExtractionJob(activeJobId).catch(() => null);
+    }
+    await refresh();
+  }
+
   return (
     <div>
       <h1 className="mb-4 text-xl font-bold">文档抽取</h1>
-      <div className="rounded-lg border bg-white p-6">
-        <h2 className="mb-3 font-semibold">上传文档</h2>
-        <div className="rounded-lg border-2 border-dashed border-gray-300 p-8 text-center">
-          <p className="text-gray-500">拖放 Excel (.xlsx) 或 Word (.docx) 文件到此处</p>
-          <p className="mt-1 text-sm text-gray-400">或点击下方按钮选择文件</p>
-          <button className="mt-4 rounded bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700">
-            选择文件
-          </button>
+
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <div className="rounded-lg border bg-white p-6">
+          <h2 className="mb-3 font-semibold">创建抽取作业</h2>
+          <JobCreateForm onCreated={handleCreated} />
         </div>
-        <div className="mt-6">
-          <h3 className="mb-2 text-sm font-semibold text-gray-500">抽取流程</h3>
-          <div className="flex items-center gap-2 text-sm">
-            <span className="rounded bg-gray-100 px-3 py-1">1. 上传文档</span>
-            <span className="text-gray-300">→</span>
-            <span className="rounded bg-gray-100 px-3 py-1">2. 选择抽取配置</span>
-            <span className="text-gray-300">→</span>
-            <span className="rounded bg-gray-100 px-3 py-1">3. LLM 实体抽取</span>
-            <span className="text-gray-300">→</span>
-            <span className="rounded bg-gray-100 px-3 py-1">4. 实体对齐</span>
-            <span className="text-gray-300">→</span>
-            <span className="rounded bg-gray-100 px-3 py-1">5. 人工审核</span>
-            <span className="text-gray-300">→</span>
-            <span className="rounded bg-blue-100 px-3 py-1 text-blue-700">6. 提交到知识图谱</span>
-          </div>
+
+        <div className="rounded-lg border bg-white p-6">
+          <h2 className="mb-3 font-semibold">实时进度</h2>
+          {activeJobId ? (
+            <JobProgress jobId={activeJobId} onDone={handleProgressDone} />
+          ) : (
+            <p className="text-sm text-gray-500">创建作业后将在此显示各阶段进度。</p>
+          )}
         </div>
       </div>
 
-      <div className="mt-6 rounded-lg border bg-white p-6">
-        <h2 className="mb-3 font-semibold">抽取配置管理</h2>
-        <p className="text-sm text-gray-500">
-          分析师可以在此定义抽取配置：目标本体类、列名映射、LLM 提示词模板、few-shot 示例。
-        </p>
-        <div className="mt-4">
-          <h3 className="mb-2 text-sm font-semibold">示例配置: 设备表抽取</h3>
-          <pre className="overflow-auto rounded bg-gray-50 p-3 text-xs">
-{`{
-  "name": "设备表标准格式",
-  "target_class_iri": "https://ontology.pharma-gmp.cn/slpra/equipment/Equipment",
-  "source_type": "excel",
-  "column_mapping": {
-    "设备编号": "slpra-equip:equipmentID",
-    "设备名称": "slpra-equip:equipmentName",
-    "规格型号": "slpra-equip:modelSpecification",
-    "材质": "slpra-equip:constructedOf",
-    "区域": "slpra-equip:locatedIn",
-    "是否洁净区": "slpra-equip:isInCleanArea"
-  }
-}`}
-          </pre>
+      {activeJob && (activeJob.status === "reviewing" || activeJob.status === "done") && (
+        <div className="mt-6 rounded-lg border bg-white p-6">
+          <h2 className="mb-3 font-semibold">对齐审核 — {activeJob.source_filename ?? activeJob.source_type}</h2>
+          <AlignmentReview jobId={activeJob.id} />
         </div>
+      )}
+
+      <div className="mt-6 rounded-lg border bg-white p-6">
+        <h2 className="mb-3 font-semibold">抽取作业</h2>
+        {jobs.length === 0 ? (
+          <p className="text-sm text-gray-500">暂无作业。</p>
+        ) : (
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b text-left text-gray-500">
+                <th className="py-2">源文件</th>
+                <th className="py-2">类型</th>
+                <th className="py-2">状态</th>
+                <th className="py-2">候选数</th>
+                <th className="py-2"></th>
+              </tr>
+            </thead>
+            <tbody>
+              {jobs.map((j) => (
+                <tr key={j.id} className="border-b last:border-0">
+                  <td className="py-2">{j.source_filename ?? "—"}</td>
+                  <td className="py-2">{j.source_type}</td>
+                  <td className="py-2">
+                    <span
+                      className={`rounded px-2 py-0.5 text-xs ${
+                        j.status === "failed"
+                          ? "bg-red-100 text-red-700"
+                          : j.status === "reviewing" || j.status === "done"
+                            ? "bg-green-100 text-green-700"
+                            : "bg-blue-100 text-blue-700"
+                      }`}
+                    >
+                      {STATUS_LABELS[j.status] ?? j.status}
+                    </span>
+                  </td>
+                  <td className="py-2">{j.total_candidates}</td>
+                  <td className="py-2 text-right">
+                    <button
+                      onClick={() => setActiveJobId(j.id)}
+                      className="text-xs text-blue-600 hover:underline"
+                    >
+                      查看进度
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
     </div>
   );

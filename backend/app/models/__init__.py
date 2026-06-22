@@ -19,7 +19,12 @@ from app.models.ontology_meta import (
     OntologyRelease,
     OntologyRestriction,
 )
-from app.models.reasoning import AuditLog, ReasoningExecution
+from app.models.reasoning import (
+    ActionExecution,
+    AuditLog,
+    ElectronicSignature,
+    ReasoningExecution,
+)
 
 __all__ = [
     "EntityShadow",
@@ -35,4 +40,6 @@ __all__ = [
     "OntologyChangeLog",
     "AuditLog",
     "ReasoningExecution",
+    "ActionExecution",
+    "ElectronicSignature",
 ]

@@ -1,11 +1,12 @@
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import JSON, DateTime, ForeignKey, Integer, Numeric, String, Text
+from sqlalchemy import JSON, Boolean, DateTime, ForeignKey, Integer, Numeric, String, Text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db import Base
+from app.models.types import GUID
 
 
 def _uuid():
@@ -67,5 +68,17 @@ class ExtractionCandidate(Base):
     review_status: Mapped[str] = mapped_column(String(20), default="pending")
     reviewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     committed_iri: Mapped[str | None] = mapped_column(String(500))
+
+    # 002-extraction-realtime-reasoning（data-model §1.1）：跨源归组 / 规范实例 /
+    # 多类型候选（实例·类·关系·Action）/ LLM 回退降级 / 合并目标。
+    candidate_kind: Mapped[str] = mapped_column(String(20), default="instance", nullable=False)
+    group_key: Mapped[str | None] = mapped_column(String(500), index=True)
+    is_canonical: Mapped[bool] = mapped_column(Boolean, default=False)
+    source_ref: Mapped[str | None] = mapped_column(String(200))
+    degraded_reason: Mapped[str | None] = mapped_column(String(200))
+    merged_into_id: Mapped[uuid.UUID | None] = mapped_column(
+        GUID(), ForeignKey("extraction_candidates.id")
+    )
+    action_conditions: Mapped[dict | None] = mapped_column(JSON)
 
     job: Mapped[ExtractionJob] = relationship(back_populates="candidates")
