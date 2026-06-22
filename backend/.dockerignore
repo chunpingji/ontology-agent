@@ -1,0 +1,21 @@
+# Virtual envs / build artifacts (rebuilt inside the image by `uv sync`)
+.venv/
+venv/
+*.egg-info/
+
+# Python caches
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# Local OWL store / runtime data (provided by a volume at runtime)
+data/
+
+# VCS / tooling
+.git/
+.gitignore
+Dockerfile
+.dockerignore

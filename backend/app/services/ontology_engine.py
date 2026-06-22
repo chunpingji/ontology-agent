@@ -310,6 +310,123 @@ class OntologyEngine:
                     individuals.append(self._individual_to_info(ind))
             return individuals
 
+    # ----------------------------------------------------------------- #
+    # T-Box write methods (R1, FR-001..005) — used at publish time to
+    # project the editable metadata into the Owlready2 World. Best-effort:
+    # callers wrap in try/except since the World is a publish-time artefact.
+    # ----------------------------------------------------------------- #
+    def _target_namespace(self, module: str | None) -> owlready2.Ontology:
+        if module and module in self._ontologies:
+            return self._ontologies[module]
+        return next(iter(self._ontologies.values()))
+
+    def upsert_class(
+        self,
+        iri: str,
+        label: str | None = None,
+        comment: str | None = None,
+        parent_iri: str | None = None,
+        module: str | None = None,
+    ) -> None:
+        onto = self._target_namespace(module)
+        parent = self._world.search_one(iri=parent_iri) if parent_iri else None
+        bases = (parent,) if isinstance(parent, owlready2.ThingClass) else (owlready2.Thing,)
+        with onto:
+            cls = self._world.search_one(iri=iri)
+            if cls is None or not isinstance(cls, owlready2.ThingClass):
+                name = iri.rsplit("/", 1)[-1].rsplit("#", 1)[-1]
+                cls = owlready2.types.new_class(name, bases)
+                cls.iri = iri
+            if isinstance(parent, owlready2.ThingClass) and parent not in cls.is_a:
+                cls.is_a.append(parent)
+            self._apply_labels(cls, label, comment)
+
+    def upsert_link_type(
+        self,
+        iri: str,
+        label: str | None = None,
+        comment: str | None = None,
+        domain_iri: str | None = None,
+        range_iri: str | None = None,
+        module: str | None = None,
+        **flags,
+    ) -> None:
+        onto = self._target_namespace(module)
+        with onto:
+            prop = self._world.search_one(iri=iri)
+            if prop is None:
+                name = iri.rsplit("/", 1)[-1].rsplit("#", 1)[-1]
+                prop = owlready2.types.new_class(name, (owlready2.ObjectProperty,))
+                prop.iri = iri
+            dom = self._world.search_one(iri=domain_iri) if domain_iri else None
+            rng = self._world.search_one(iri=range_iri) if range_iri else None
+            if isinstance(dom, owlready2.ThingClass):
+                prop.domain = [dom]
+            if isinstance(rng, owlready2.ThingClass):
+                prop.range = [rng]
+            self._apply_labels(prop, label, comment)
+
+    def upsert_data_property(
+        self,
+        iri: str,
+        label: str | None = None,
+        comment: str | None = None,
+        domain_iri: str | None = None,
+        module: str | None = None,
+        **kwargs,
+    ) -> None:
+        onto = self._target_namespace(module)
+        with onto:
+            prop = self._world.search_one(iri=iri)
+            if prop is None:
+                name = iri.rsplit("/", 1)[-1].rsplit("#", 1)[-1]
+                prop = owlready2.types.new_class(name, (owlready2.DataProperty,))
+                prop.iri = iri
+            dom = self._world.search_one(iri=domain_iri) if domain_iri else None
+            if isinstance(dom, owlready2.ThingClass):
+                prop.domain = [dom]
+            self._apply_labels(prop, label, comment)
+
+    def delete_entity(self, iri: str) -> None:
+        ent = self._world.search_one(iri=iri)
+        if ent is not None:
+            owlready2.destroy_entity(ent)
+
+    def _apply_labels(self, entity, label: str | None, comment: str | None) -> None:
+        if label:
+            entity.label = [owlready2.locstr(label, lang="zh")]
+        if comment:
+            entity.comment = [owlready2.locstr(comment, lang="zh")]
+
+    def project_entities(self, entities: list[dict]) -> None:
+        """Project a list of metadata payloads into the World, then persist.
+
+        Each payload is a dict with a ``kind`` discriminator. Per-entity errors
+        are logged and skipped so one bad axiom never aborts a whole release.
+        """
+        with self._lock:
+            if not self._world or not self._ontologies:
+                logger.warning("World not loaded; skipping projection")
+                return
+            for ent in entities:
+                kind = ent.get("kind")
+                try:
+                    if kind == "class":
+                        self.upsert_class(**{k: v for k, v in ent.items() if k != "kind"})
+                    elif kind == "link_type":
+                        self.upsert_link_type(**{k: v for k, v in ent.items() if k != "kind"})
+                    elif kind == "data_property":
+                        self.upsert_data_property(
+                            **{k: v for k, v in ent.items() if k != "kind"}
+                        )
+                    # actions/restrictions are projected via TTL, not the World
+                except Exception as exc:  # pragma: no cover - best effort
+                    logger.warning("Projection failed for %s: %s", ent.get("iri"), exc)
+            try:
+                self._world.save()
+            except Exception as exc:  # pragma: no cover
+                logger.warning("World save failed: %s", exc)
+
     def _individual_to_info(self, ind) -> IndividualInfo:
         label_zh, label_en = self._get_bilingual_labels(ind)
         class_iris = [cls.iri for cls in ind.is_a if isinstance(cls, owlready2.ThingClass)]

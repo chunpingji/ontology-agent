@@ -6,6 +6,7 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db import Base
+from app.models.types import GUID
 
 
 def _uuid():
@@ -37,5 +38,7 @@ class AuditLog(Base):
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     action: Mapped[str] = mapped_column(String(100), nullable=False)
     entity_iri: Mapped[str | None] = mapped_column(String(500))
+    actor: Mapped[str | None] = mapped_column(String(100), index=True)
+    release_id: Mapped[uuid.UUID | None] = mapped_column(GUID(), index=True)
     details: Mapped[dict | None] = mapped_column(JSON)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)

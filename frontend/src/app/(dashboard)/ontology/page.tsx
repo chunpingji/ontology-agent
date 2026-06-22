@@ -1,21 +1,42 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { getModules, getClassHierarchy, getClassDetail } from "@/lib/api";
-import type { Module, TreeNode, ClassDetail } from "@/lib/api";
+import { useCallback, useEffect, useState } from "react";
+import {
+  getClassHierarchy,
+  getModules,
+  getTBoxClass,
+  type Module,
+  type TBoxClass,
+  type TreeNode,
+} from "@/lib/api";
+import { useVersionConflict } from "@/components/ontology/use-version-conflict";
+import { ConflictDialog } from "@/components/ontology/conflict-dialog";
+import { ClassPanel } from "@/components/ontology/class-panel";
+import { LinkTypePanel } from "@/components/ontology/link-type-panel";
+import { DataPropertyPanel } from "@/components/ontology/data-property-panel";
+import { ActionPanel } from "@/components/ontology/action-panel";
+import { RestrictionEditor } from "@/components/ontology/restriction-editor";
+import { OntologyMappingPanel } from "@/components/ontology/ontology-mapping-panel";
+import { RiskAttributeWizard } from "@/components/ontology/risk-attribute-wizard";
+import { TtlToolbar } from "@/components/ontology/ttl-toolbar";
+import { GraphVisualization } from "@/components/ontology/graph-visualization";
+
+const TABS = ["基本", "关系", "属性", "映射", "操作"] as const;
+type Tab = (typeof TABS)[number];
 
 function TreeItem({
   node,
   depth = 0,
+  selectedIri,
   onSelect,
 }: {
   node: TreeNode;
   depth?: number;
+  selectedIri: string | null;
   onSelect: (iri: string) => void;
 }) {
   const [expanded, setExpanded] = useState(depth < 2);
   const hasChildren = node.children.length > 0;
-
   return (
     <div>
       <button
@@ -23,53 +44,111 @@ function TreeItem({
           onSelect(node.iri);
           if (hasChildren) setExpanded(!expanded);
         }}
-        className="flex w-full items-center gap-1 rounded px-2 py-1 text-left text-sm hover:bg-blue-50"
+        className={`flex w-full items-center gap-1 rounded px-2 py-1 text-left text-sm hover:bg-blue-50 ${
+          selectedIri === node.iri ? "bg-blue-100" : ""
+        }`}
         style={{ paddingLeft: `${depth * 16 + 8}px` }}
       >
-        {hasChildren && (
-          <span className="text-xs text-gray-400">{expanded ? "▼" : "▶"}</span>
-        )}
+        {hasChildren && <span className="text-xs text-gray-400">{expanded ? "▼" : "▶"}</span>}
         <span className="font-mono text-xs text-gray-500">{node.name}</span>
         {node.label && <span className="ml-1 text-gray-700">{node.label}</span>}
-        {node.individual_count > 0 && (
-          <span className="ml-auto rounded bg-gray-100 px-1.5 text-xs text-gray-500">
-            {node.individual_count}
-          </span>
-        )}
       </button>
       {expanded &&
         node.children.map((child) => (
-          <TreeItem key={child.iri} node={child} depth={depth + 1} onSelect={onSelect} />
+          <TreeItem
+            key={child.iri}
+            node={child}
+            depth={depth + 1}
+            selectedIri={selectedIri}
+            onSelect={onSelect}
+          />
         ))}
     </div>
   );
 }
 
-export default function OntologyPage() {
+const flatten = (nodes: TreeNode[]): string[] =>
+  nodes.flatMap((n) => [n.iri, ...flatten(n.children)]);
+
+/**
+ * T-Box 知识模型维护工作台（能力一，T040）。
+ * 只读浏览器 → 可编辑工作台壳：装配类 / 关系 / 属性 / 约束 / 映射 / 操作面板、
+ * TTL 工具条与图谱，并通过 {@link useVersionConflict} 统一处理乐观并发冲突
+ * （FR-011 / FR-011a，AS-1 / AS-2）。
+ */
+export default function OntologyWorkbenchPage() {
   const [modules, setModules] = useState<Module[]>([]);
   const [selectedModule, setSelectedModule] = useState<string>("drug");
   const [tree, setTree] = useState<TreeNode[]>([]);
-  const [detail, setDetail] = useState<ClassDetail | null>(null);
+  const [selectedIri, setSelectedIri] = useState<string | null>(null);
+  const [tab, setTab] = useState<Tab>("基本");
+  const [classes, setClasses] = useState<TBoxClass[]>([]);
+  const conflict = useVersionConflict();
 
   useEffect(() => {
-    getModules().then(setModules).catch(console.error);
+    getModules().then(setModules).catch(() => {});
   }, []);
 
-  useEffect(() => {
-    if (selectedModule) {
-      getClassHierarchy(selectedModule).then(setTree).catch(() => setTree([]));
-    }
-  }, [selectedModule]);
+  const loadGraph = useCallback((nodes: TreeNode[]) => {
+    const iris = flatten(nodes);
+    Promise.allSettled(iris.map((iri) => getTBoxClass(iri))).then((results) => {
+      setClasses(
+        results
+          .filter((r): r is PromiseFulfilledResult<TBoxClass> => r.status === "fulfilled")
+          .map((r) => r.value),
+      );
+    });
+  }, []);
 
-  const handleClassSelect = (iri: string) => {
-    getClassDetail(iri).then(setDetail).catch(console.error);
+  const loadTree = useCallback(
+    (module: string) => {
+      getClassHierarchy(module)
+        .then((t) => {
+          setTree(t);
+          loadGraph(t);
+        })
+        .catch(() => {
+          setTree([]);
+          setClasses([]);
+        });
+    },
+    [loadGraph],
+  );
+
+  useEffect(() => {
+    if (selectedModule) loadTree(selectedModule);
+  }, [selectedModule, loadTree]);
+
+  // 任一面板写入后回调：刷新树 / 图谱并定位到（可能新建的）类。
+  const handleChanged = useCallback(
+    (iri?: string) => {
+      if (iri !== undefined) setSelectedIri(iri || null);
+      loadTree(selectedModule);
+    },
+    [selectedModule, loadTree],
+  );
+
+  const handleReloadAfterConflict = () => {
+    conflict.clear();
+    handleChanged(selectedIri ?? undefined);
   };
 
   return (
     <div>
-      <h1 className="mb-4 text-xl font-bold">本体编辑器</h1>
+      <div className="mb-4 flex items-center justify-between">
+        <h1 className="text-xl font-bold">T-Box 知识模型维护工作台</h1>
+        <button
+          onClick={() => {
+            setSelectedIri(null);
+            setTab("基本");
+          }}
+          className="rounded-md bg-blue-600 px-3 py-1.5 text-sm text-white hover:bg-blue-700"
+        >
+          + 新建类
+        </button>
+      </div>
 
-      <div className="mb-4 flex gap-2">
+      <div className="mb-4 flex flex-wrap gap-2">
         {modules.map((m) => (
           <button
             key={m.key}
@@ -87,99 +166,75 @@ export default function OntologyPage() {
       </div>
 
       <div className="flex gap-4">
-        <div className="w-80 shrink-0 rounded-lg border bg-white p-3">
+        {/* 左：类层次 */}
+        <div className="w-72 shrink-0 rounded-lg border bg-white p-3">
           <h2 className="mb-2 text-sm font-semibold text-gray-500">类层次</h2>
           {tree.map((node) => (
-            <TreeItem key={node.iri} node={node} onSelect={handleClassSelect} />
+            <TreeItem
+              key={node.iri}
+              node={node}
+              selectedIri={selectedIri}
+              onSelect={(iri) => setSelectedIri(iri)}
+            />
           ))}
-          {tree.length === 0 && (
-            <p className="text-sm text-gray-400">加载中...</p>
-          )}
+          {tree.length === 0 && <p className="text-sm text-gray-400">加载中…</p>}
         </div>
 
-        <div className="flex-1 rounded-lg border bg-white p-5">
-          {detail ? (
-            <div>
-              <h2 className="mb-1 text-lg font-bold">{detail.name}</h2>
-              <p className="mb-3 text-sm text-gray-500">{detail.iri}</p>
-              {detail.label_zh && (
-                <p className="mb-1 text-sm">中文: {detail.label_zh}</p>
-              )}
-              {detail.label_en && (
-                <p className="mb-1 text-sm">English: {detail.label_en}</p>
-              )}
-              {detail.comment && (
-                <p className="mb-3 text-sm text-gray-600">{detail.comment}</p>
-              )}
-
-              {detail.parent_iris.length > 0 && (
-                <div className="mb-3">
-                  <h3 className="text-sm font-semibold text-gray-500">父类</h3>
-                  {detail.parent_iris.map((p) => (
-                    <span key={p} className="mr-2 inline-block rounded bg-gray-100 px-2 py-0.5 text-xs">
-                      {p.split("/").pop()}
-                    </span>
-                  ))}
-                </div>
-              )}
-
-              {detail.object_properties.length > 0 && (
-                <div className="mb-3">
-                  <h3 className="mb-1 text-sm font-semibold text-gray-500">对象属性</h3>
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b text-left text-xs text-gray-400">
-                        <th className="pb-1">属性名</th>
-                        <th className="pb-1">值域</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {detail.object_properties.map((p) => (
-                        <tr key={p.iri} className="border-b last:border-0">
-                          <td className="py-1 font-mono text-xs">{p.name}</td>
-                          <td className="py-1 text-xs text-gray-500">
-                            {p.range.map((r) => r.split("/").pop()).join(", ")}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-
-              {detail.data_properties.length > 0 && (
-                <div className="mb-3">
-                  <h3 className="mb-1 text-sm font-semibold text-gray-500">数据属性</h3>
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b text-left text-xs text-gray-400">
-                        <th className="pb-1">属性名</th>
-                        <th className="pb-1">类型</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {detail.data_properties.map((p) => (
-                        <tr key={p.iri} className="border-b last:border-0">
-                          <td className="py-1 font-mono text-xs">{p.name}</td>
-                          <td className="py-1 text-xs text-gray-500">
-                            {p.range.join(", ")}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-
-              <p className="mt-2 text-xs text-gray-400">
-                个体数: {detail.individual_count}
-              </p>
+        {/* 中：编辑面板（分页签） */}
+        <div className="flex-1 space-y-4">
+          <div className="rounded-lg border bg-white">
+            <div className="flex gap-1 border-b px-2 pt-2">
+              {TABS.map((t) => (
+                <button
+                  key={t}
+                  onClick={() => setTab(t)}
+                  className={`rounded-t px-3 py-1.5 text-sm ${
+                    tab === t
+                      ? "border-x border-t bg-white font-semibold text-blue-700"
+                      : "text-gray-500 hover:text-gray-700"
+                  }`}
+                >
+                  {t}
+                </button>
+              ))}
             </div>
-          ) : (
-            <p className="text-gray-400">选择左侧类查看详情</p>
-          )}
+            <div className="p-4">
+              {tab === "基本" && (
+                <ClassPanel key={selectedIri ?? "new"} iri={selectedIri} conflict={conflict} onChanged={handleChanged} />
+              )}
+              {tab === "关系" && (
+                <div className="space-y-6">
+                  <LinkTypePanel selectedClassIri={selectedIri} onChanged={() => handleChanged(selectedIri ?? undefined)} />
+                  <RestrictionEditor key={selectedIri ?? "none"} classIri={selectedIri} conflict={conflict} onChanged={() => handleChanged(selectedIri ?? undefined)} />
+                </div>
+              )}
+              {tab === "属性" && (
+                <div className="space-y-6">
+                  <DataPropertyPanel selectedClassIri={selectedIri} onChanged={() => handleChanged(selectedIri ?? undefined)} />
+                  <RiskAttributeWizard selectedClassIri={selectedIri} onChanged={() => handleChanged(selectedIri ?? undefined)} />
+                </div>
+              )}
+              {tab === "映射" && (
+                <OntologyMappingPanel key={selectedIri ?? "none"} classIri={selectedIri} conflict={conflict} onChanged={() => handleChanged(selectedIri ?? undefined)} />
+              )}
+              {tab === "操作" && <ActionPanel selectedClassIri={selectedIri} />}
+            </div>
+          </div>
+
+          <TtlToolbar onPublished={() => handleChanged(selectedIri ?? undefined)} />
+        </div>
+
+        {/* 右：图谱 */}
+        <div className="w-[42%] shrink-0">
+          <GraphVisualization classes={classes} />
         </div>
       </div>
+
+      <ConflictDialog
+        conflict={conflict.conflict}
+        onReload={handleReloadAfterConflict}
+        onDismiss={conflict.clear}
+      />
     </div>
   );
 }

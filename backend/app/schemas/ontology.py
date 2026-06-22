@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-from pydantic import BaseModel
+from datetime import datetime
+
+from pydantic import BaseModel, Field
 
 
 class ModuleResponse(BaseModel):
@@ -46,3 +48,297 @@ class ClassDetailResponse(BaseModel):
     object_properties: list[PropertyInfo] = []
     data_properties: list[PropertyInfo] = []
     restrictions: list[RestrictionInfo] = []
+
+
+# ===========================================================================
+# T-Box workbench (能力一) — editable metadata schemas (contracts §2–§11)
+# ===========================================================================
+
+
+class VersionedMixin(BaseModel):
+    """Carries the opt/dev/chen/ontology-agent/specsimistic-concurrency version the client last read (R4)."""
+
+    expected_version: int = Field(..., description="客户端读取时的版本号；服务端 CAS 不匹配→409")
+
+
+# --- E5 restriction summary (embedded in ClassDetail) ----------------------
+class RestrictionSummary(BaseModel):
+    id: str
+    kind: str
+    property_iri: str | None = None
+    property_kind: str | None = None
+    filler_iri: str | None = None
+    cardinality: int | None = None
+    version: int
+    status: str
+
+
+# --- E6 mapping ------------------------------------------------------------
+class MappingCreate(BaseModel):
+    mapping_type: str
+    target: str
+    source_system: str | None = None
+
+
+class MappingUpdate(MappingCreate, VersionedMixin):
+    pass
+
+
+class Mapping(BaseModel):
+    id: str
+    class_iri: str | None = None
+    mapping_type: str
+    target: str
+    source_system: str | None = None
+    health: str = "ok"
+    version: int
+    status: str
+
+
+class MappingHealth(BaseModel):
+    ok: list[str] = []
+    unmapped: list[str] = []
+    drift: list[str] = []
+    orphan: list[str] = []
+
+
+# --- E1 class --------------------------------------------------------------
+class ClassCreate(BaseModel):
+    slpra_iri: str
+    label: str
+    comment: str | None = None
+    module: str | None = None
+    parent_iri: str | None = None
+    bfo_category: str | None = None
+    field_schema: dict | None = None
+
+
+class ClassUpdate(VersionedMixin):
+    label: str | None = None
+    comment: str | None = None
+    module: str | None = None
+    parent_iri: str | None = None
+    bfo_category: str | None = None
+    field_schema: dict | None = None
+
+
+class ClassDetail(BaseModel):
+    id: str
+    slpra_iri: str
+    label: str
+    comment: str | None = None
+    module: str | None = None
+    parent_iri: str | None = None
+    bfo_category: str | None = None
+    field_schema: dict | None = None
+    status: str
+    version: int
+    is_reviewed: bool = False
+    is_disabled: bool = False
+    confidence: float | None = None
+    restrictions: list[RestrictionSummary] = []
+    mappings: list[Mapping] = []
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
+
+
+# --- E2 link type (object property / relation) -----------------------------
+class LinkTypeCreate(BaseModel):
+    slpra_iri: str
+    label: str
+    comment: str | None = None
+    domain_iri: str | None = None
+    range_iri: str | None = None
+    inverse_iri: str | None = None
+    min_cardinality: int | None = None
+    max_cardinality: int | None = None
+    is_functional: bool = False
+    is_symmetric: bool = False
+    is_transitive: bool = False
+
+
+class LinkTypeUpdate(LinkTypeCreate, VersionedMixin):
+    slpra_iri: str | None = None  # type: ignore[assignment]
+    label: str | None = None  # type: ignore[assignment]
+
+
+class LinkTypeDetail(BaseModel):
+    id: str
+    slpra_iri: str
+    label: str
+    comment: str | None = None
+    domain_iri: str | None = None
+    range_iri: str | None = None
+    inverse_iri: str | None = None
+    min_cardinality: int | None = None
+    max_cardinality: int | None = None
+    is_functional: bool = False
+    is_symmetric: bool = False
+    is_transitive: bool = False
+    status: str
+    version: int
+    is_disabled: bool = False
+
+
+# --- E3 data property ------------------------------------------------------
+class DataPropertyCreate(BaseModel):
+    slpra_iri: str
+    label: str
+    comment: str | None = None
+    domain_iri: str | None = None
+    datatype: str = "string"
+    unit: str | None = None
+    controlled_vocab: dict | None = None
+
+
+class DataPropertyUpdate(DataPropertyCreate, VersionedMixin):
+    slpra_iri: str | None = None  # type: ignore[assignment]
+    label: str | None = None  # type: ignore[assignment]
+    datatype: str | None = None  # type: ignore[assignment]
+
+
+class RiskDataPropertyCreate(BaseModel):
+    slpra_iri: str
+    label: str
+    domain_iri: str | None = None
+    datatype: str = "string"
+    vocab: str  # OEB / PDE / sensitizer ... (key into /risk-vocabularies)
+
+
+class DataPropertyDetail(BaseModel):
+    id: str
+    slpra_iri: str
+    label: str
+    comment: str | None = None
+    domain_iri: str | None = None
+    datatype: str
+    unit: str | None = None
+    controlled_vocab: dict | None = None
+    status: str
+    version: int
+    is_disabled: bool = False
+
+
+# --- E4 action -------------------------------------------------------------
+class ActionCreate(BaseModel):
+    slpra_iri: str
+    label: str
+    comment: str | None = None
+    actor_iri: str | None = None
+    target_iri: str | None = None
+    precondition: dict | None = None
+    postcondition: dict | None = None
+    params: dict | None = None
+
+
+class ActionUpdate(ActionCreate, VersionedMixin):
+    slpra_iri: str | None = None  # type: ignore[assignment]
+    label: str | None = None  # type: ignore[assignment]
+
+
+class ActionDetail(BaseModel):
+    id: str
+    slpra_iri: str
+    label: str
+    comment: str | None = None
+    actor_iri: str | None = None
+    target_iri: str | None = None
+    precondition: dict | None = None
+    postcondition: dict | None = None
+    params: dict | None = None
+    status: str
+    version: int
+    is_disabled: bool = False
+
+
+# --- E5 restriction --------------------------------------------------------
+class RestrictionCreate(BaseModel):
+    kind: str
+    property_iri: str | None = None
+    property_kind: str | None = None
+    filler_iri: str | None = None
+    cardinality: int | None = None
+
+
+class RestrictionUpdate(RestrictionCreate, VersionedMixin):
+    kind: str | None = None  # type: ignore[assignment]
+
+
+# --- §8 validation ---------------------------------------------------------
+class ValidationIssue(BaseModel):
+    code: str
+    message: str
+    entity_iri: str | None = None
+
+
+class ReasonerStatus(BaseModel):
+    ran: bool = False
+    consistent: bool | None = None
+    note: str | None = None
+
+
+class ValidationReport(BaseModel):
+    blocking: list[ValidationIssue] = []
+    warnings: list[ValidationIssue] = []
+    reasoner: ReasonerStatus = Field(default_factory=ReasonerStatus)
+
+
+# --- §9 import / export / diff ---------------------------------------------
+class ImportResult(BaseModel):
+    added: int = 0
+    updated: int = 0
+    conflicts: list[str] = []
+
+
+class DiffResult(BaseModel):
+    turtle_preview: str = ""
+    triples_added: list[str] = []
+    triples_removed: list[str] = []
+
+
+# --- §10 release -----------------------------------------------------------
+class ReleaseCreate(BaseModel):
+    title: str
+
+
+class ChangeLogItem(BaseModel):
+    id: str
+    entity_table: str
+    entity_id: str
+    change_kind: str
+    before: dict | None = None
+    after: dict | None = None
+
+
+class ReleaseSummary(BaseModel):
+    id: str
+    release_no: str
+    title: str
+    status: str
+    ttl_commit_sha: str | None = None
+    published_at: datetime | None = None
+    created_at: datetime | None = None
+
+
+class ReleaseDetail(ReleaseSummary):
+    ttl_diff: str | None = None
+    validation_report: dict | None = None
+    change_log: list[ChangeLogItem] = []
+
+
+# --- §11 audit -------------------------------------------------------------
+class AuditEntry(BaseModel):
+    id: int
+    action: str
+    entity_iri: str | None = None
+    actor: str | None = None
+    release_id: str | None = None
+    details: dict | None = None
+    created_at: datetime | None = None
+
+
+# --- §4b risk vocabularies -------------------------------------------------
+class RiskVocabulary(BaseModel):
+    key: str
+    label: str
+    values: list[str] = []
