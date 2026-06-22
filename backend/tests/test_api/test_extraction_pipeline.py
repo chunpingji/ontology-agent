@@ -6,6 +6,9 @@ import io
 
 import openpyxl
 
+from app.services.extraction.llm_extractor import build_extraction_prompt
+from app.services.extraction.vocabulary import CONTROLLED_VOCAB
+
 
 def _xlsx_bytes() -> bytes:
     wb = openpyxl.Workbook()
@@ -28,6 +31,21 @@ def _make_config(client, headers, source_type="excel"):
     })
     assert r.status_code == 201, r.text
     return r.json()["id"]
+
+
+def test_extraction_prompt_injects_controlled_vocab():
+    """受控词表取值注入抽取提示，在生成阶段约束 LLM（FR-006 / US1-AC3）。"""
+    prompt = build_extraction_prompt(
+        source_data=[{"材质": "316L不锈钢"}],
+        target_class_iri="http://slpra.org/equipment#Equipment",
+        property_schema=[],
+        controlled_vocab=CONTROLLED_VOCAB,
+    )
+    assert "受控取值约束" in prompt
+    # 提示须含受控词表取值，使 LLM 在生成时归一化而非自由发挥。
+    assert "OEB1" in prompt
+    assert "316L不锈钢" in prompt
+    assert "µg/day" in prompt
 
 
 def test_create_job_triggers_pipeline_running(client, analyst_headers):

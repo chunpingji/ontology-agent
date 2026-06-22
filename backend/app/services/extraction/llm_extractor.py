@@ -28,6 +28,7 @@ def build_extraction_prompt(
     target_class_iri: str,
     property_schema: list[dict],
     few_shot_examples: list[dict] | None = None,
+    controlled_vocab: dict[str, list[str]] | None = None,
 ) -> str:
     prompt_parts = [
         f"## Target Ontology Class\nIRI: {target_class_iri}\n",
@@ -39,6 +40,16 @@ def build_extraction_prompt(
             f"- `{prop['iri']}` ({prop.get('name', '')}): {prop.get('description', '')}"
             f" [type: {prop.get('range', 'string')}]"
         )
+
+    # 受控取值约束：在生成阶段约束 LLM 仅从受控词表取值，降低自由文本错误
+    # （FR-006 / US1-AC3）；后处理 ``tag_controlled_vocab`` 仍作兜底归一化。
+    if controlled_vocab:
+        prompt_parts.append("\n## 受控取值约束 (Controlled Vocabulary)")
+        prompt_parts.append(
+            "下列字段若可识别，取值 MUST 归一化到对应受控词表，不得自由发挥："
+        )
+        for field, terms in controlled_vocab.items():
+            prompt_parts.append(f"- {field}: {', '.join(terms)}")
 
     if few_shot_examples:
         prompt_parts.append("\n## Examples of Correctly Extracted Entities")
@@ -66,6 +77,7 @@ async def extract_with_fallback(
     target_class_iri: str,
     property_schema: list[dict],
     few_shot_examples: list[dict] | None = None,
+    controlled_vocab: dict[str, list[str]] | None = None,
 ) -> tuple[list[dict[str, Any]], str | None]:
     """LLM 抽取并在不可用时回退到结构化原始数据（FR-007, R3）。
 
@@ -77,7 +89,8 @@ async def extract_with_fallback(
         return source_data, "LLM 不可用：未配置 API Key，回退结构化抽取"
     try:
         entities = await extract_entities_with_llm(
-            source_data, target_class_iri, property_schema, few_shot_examples
+            source_data, target_class_iri, property_schema, few_shot_examples,
+            controlled_vocab=controlled_vocab,
         )
         if not entities:
             return source_data, "LLM 返回为空，回退结构化抽取"
@@ -92,6 +105,7 @@ async def extract_entities_with_llm(
     target_class_iri: str,
     property_schema: list[dict],
     few_shot_examples: list[dict] | None = None,
+    controlled_vocab: dict[str, list[str]] | None = None,
 ) -> list[dict[str, Any]]:
     """Call Claude API to extract entities from source data."""
     if not settings.anthropic_api_key:
@@ -102,7 +116,8 @@ async def extract_entities_with_llm(
 
     client = anthropic.Anthropic(api_key=settings.anthropic_api_key)
     prompt = build_extraction_prompt(
-        source_data, target_class_iri, property_schema, few_shot_examples
+        source_data, target_class_iri, property_schema, few_shot_examples,
+        controlled_vocab=controlled_vocab,
     )
 
     message = client.messages.create(

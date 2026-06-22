@@ -17,7 +17,11 @@ from app.services.extraction.db_reader import reflect_database
 from app.services.extraction.llm_extractor import extract_with_fallback
 from app.services.extraction.parser import parse_excel, parse_word
 from app.services.extraction.progress import progress_bus
-from app.services.extraction.vocabulary import parse_action_from_text, tag_controlled_vocab
+from app.services.extraction.vocabulary import (
+    CONTROLLED_VOCAB,
+    parse_action_from_text,
+    tag_controlled_vocab,
+)
 from app.services.ontology_engine import OntologyEngine
 
 logger = logging.getLogger(__name__)
@@ -66,8 +70,10 @@ async def run_extraction_pipeline(
         _emit(job, "extracting", 40, "extracting")
 
         # Stage 2: Extract — LLM 抽取并在不可用时回退（degraded）。
+        # 受控词表注入抽取提示，在生成阶段约束取值（FR-006 / US1-AC3）。
         instances, degraded_reason = await extract_with_fallback(
             raw_rows, config.target_class_iri, property_schema=[],
+            controlled_vocab=CONTROLLED_VOCAB,
         )
         degraded = degraded_reason is not None
 
