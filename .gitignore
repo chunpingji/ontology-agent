@@ -1,5 +1,6 @@
 ﻿.claude/
 .codegraph/
+.specify/extensions/.cache/
 frontend/node_modules/
 frontend/.next/
 frontend/tsconfig.tsbuildinfo
