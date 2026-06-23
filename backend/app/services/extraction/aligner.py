@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from difflib import SequenceMatcher
 from typing import Any
 
+from app.services.extraction.semantic import Embedder, cosine_similarity
 from app.services.ontology_engine import IndividualInfo, OntologyEngine
 
 logger = logging.getLogger(__name__)
@@ -18,6 +19,7 @@ class AlignmentResult:
     match_iri: str | None = None
     match_score: float = 0.0
     match_label: str | None = None
+    method: str = "none"  # "id" | "lexical" | "semantic" | "none"（命中策略，用于审计/日志）
 
 
 def align_entity(
@@ -27,15 +29,23 @@ def align_entity(
     id_property: str | None = None,
     label_property: str | None = None,
     threshold: float = 0.85,
+    embedder: Embedder | None = None,
+    semantic_threshold: float = 0.82,
 ) -> AlignmentResult:
     """Align a candidate entity against existing individuals in the KG.
 
     Strategy:
     1. Exact match on ID property (e.g., equipmentID)
-    2. Fuzzy match on label/name
+    2. Fuzzy match on label/name —— 字面（SequenceMatcher）与语义（嵌入余弦）
+       并行，任一过阈即判定 merge，取更高置信度者。语义匹配的前置条件是实体
+       类别相等（见下方 class_iris 门控）；``embedder`` 缺省/不可用时退化为纯
+       字面匹配，行为与历史一致。
     3. If no match above threshold -> new entity
     """
     existing = engine.get_individuals(target_class_iri) or []
+    # 前置条件：实体类别相等。get_individuals 已按类返回，这里显式核验 class_iris，
+    # 防御 owlready2 cls.instances() 纳入多类/推断个体（保证语义匹配只在同类内进行）。
+    existing = [ind for ind in existing if target_class_iri in (ind.class_iris or [])]
 
     # Step 1: Exact ID match
     if id_property:
@@ -47,28 +57,55 @@ def align_entity(
                     return AlignmentResult(
                         action="merge", match_iri=ind.iri,
                         match_score=1.0, match_label=ind.label_zh or ind.label_en,
+                        method="id",
                     )
 
-    # Step 2: Fuzzy label match
+    # Step 2: Fuzzy label match —— 字面 + 语义。
     candidate_label = _get_candidate_label(candidate, label_property)
-    if candidate_label:
-        best_score = 0.0
-        best_match: IndividualInfo | None = None
-        for ind in existing:
-            ind_label = ind.label_zh or ind.label_en or ind.name
-            score = SequenceMatcher(None, candidate_label, ind_label).ratio()
-            if score > best_score:
-                best_score = score
-                best_match = ind
+    if candidate_label and existing:
+        labels = [(_ind_label(ind), ind) for ind in existing]
 
-        if best_match and best_score >= threshold:
+        use_semantic = bool(embedder) and embedder.is_available()
+        cand_vec: list[float] | None = None
+        if use_semantic:
+            embedder.embed_many([candidate_label, *[lbl for lbl, _ in labels if lbl]])
+            cand_vec = embedder.embed(candidate_label)
+
+        best_lex_score, best_lex = 0.0, None
+        best_sem_score, best_sem = 0.0, None
+        for ind_label, ind in labels:
+            if not ind_label:
+                continue
+            lex = SequenceMatcher(None, candidate_label, ind_label).ratio()
+            if lex > best_lex_score:
+                best_lex_score, best_lex = lex, ind
+            if cand_vec is not None:
+                sem = cosine_similarity(cand_vec, embedder.embed(ind_label))
+                if sem > best_sem_score:
+                    best_sem_score, best_sem = sem, ind
+
+        lex_hit = best_lex is not None and best_lex_score >= threshold
+        sem_hit = best_sem is not None and best_sem_score >= semantic_threshold
+
+        # 语义命中且不弱于字面 → 优先采信语义（捕捉同义/别名）；否则采信字面。
+        if sem_hit and (not lex_hit or best_sem_score >= best_lex_score):
             return AlignmentResult(
-                action="merge", match_iri=best_match.iri,
-                match_score=best_score,
-                match_label=best_match.label_zh or best_match.label_en,
+                action="merge", match_iri=best_sem.iri,
+                match_score=round(float(best_sem_score), 4),
+                match_label=best_sem.label_zh or best_sem.label_en, method="semantic",
+            )
+        if lex_hit:
+            return AlignmentResult(
+                action="merge", match_iri=best_lex.iri,
+                match_score=round(float(best_lex_score), 4),
+                match_label=best_lex.label_zh or best_lex.label_en, method="lexical",
             )
 
-    return AlignmentResult(action="new", match_score=0.0)
+    return AlignmentResult(action="new", match_score=0.0, method="none")
+
+
+def _ind_label(ind: IndividualInfo) -> str:
+    return ind.label_zh or ind.label_en or ind.name
 
 
 def _get_candidate_value(candidate: dict, prop_key: str) -> Any:

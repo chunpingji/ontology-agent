@@ -21,6 +21,14 @@ dependencies = [
     "reportlab>=4.1",
 ]
 
+[project.optional-dependencies]
+# 语义实体对齐后端（本地嵌入）。基础安装不含 torch；启用语义对齐时再装：
+#   uv sync --extra semantic
+# 未安装时 aligner 优雅回退字面匹配（见 services/extraction/semantic.py）。
+semantic = [
+    "sentence-transformers>=3.0",
+]
+
 # This is an application, not a library. No [build-system] is declared, so uv
 # treats it as a non-packaged ("virtual") project: `uv sync` installs only the
 # dependencies into .venv and the app runs from source (uvicorn app.main:app).

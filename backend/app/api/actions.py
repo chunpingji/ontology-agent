@@ -9,7 +9,11 @@ from sqlalchemy.orm import Session
 
 from app.db import get_db
 from app.dependencies import ROLE_QA, ROLE_SENIOR_ANALYST, require_role
-from app.models.reasoning import ActionExecution
+from app.models.reasoning import (
+    ACTION_SUPPRESSED,
+    ACTION_TERMINAL,
+    ActionExecution,
+)
 from app.schemas.reporting import (
     ActionListResponse,
     ActionPatch,
@@ -48,13 +52,25 @@ def patch_action(
     db: Session = Depends(get_db),
     identity: object = Depends(_actor),
 ):
-    """人工流转工单/任务状态（平台内部记录, FR-020/021）。"""
+    """人工流转工单/任务状态（平台内部记录, FR-020/021）。
+
+    from-status 守卫（T025, FR-003/009 动作早派发防护）：
+    - 终态（`voided`/`done`/`failed`）不可再外迁 → `409`；
+    - `suppressed` 须经 QA 签批解抑（→`pending`）后方可流转，不可直接人工流转 → `409`。
+    """
     a = db.get(ActionExecution, action_id)
     if not a:
         raise HTTPException(404)
+    if a.status in ACTION_TERMINAL:
+        raise HTTPException(409, f"动作处于终态 {a.status}，不可再流转")
+    if a.status == ACTION_SUPPRESSED:
+        raise HTTPException(409, "动作处于 suppressed，须经 QA 签批解抑后方可流转")
+    from_status = a.status
     a.status = req.status
     audit.append(db, "action.transition", actor=getattr(identity, "username", "system"),
-                 entity_iri=str(a.id), details={"status": req.status}, commit=False)
+                 entity_iri=str(a.id),
+                 details={"from": from_status, "status": req.status},
+                 commit=False)
     db.commit()
     db.refresh(a)
     return a

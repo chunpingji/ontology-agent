@@ -17,6 +17,7 @@ def _pending_conclusion(db):
         risk_level="HighRisk",
         requires_signature=True,
         effective=False,
+        lifecycle_state="pending_signature",
     )
     db.add(e)
     db.commit()

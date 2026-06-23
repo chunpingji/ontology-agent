@@ -59,7 +59,6 @@ class FactMaterializer:
         # 幂等去重：维护每实体已物化的最高版本（抗重复/乱序, FR-019/VR-3）。
         versions: dict[str, int] = dict(cursor.get("versions", {}))
         applied: list[dict] = []
-        event_ids: list[str] = []
 
         for change in pull.changes:
             eid = str(change.get("entity_id", ""))
@@ -71,8 +70,6 @@ class FactMaterializer:
             versions[eid] = ver
             self._materialize(change)
             applied.append(change)
-            event = fact_event_bus.publish(connector_id=str(connector.id), change=change)
-            event_ids.append(event["id"])
 
         new_cursor = {"version": pull.cursor_to.get("version", cursor.get("version", 0)),
                       "versions": versions}
@@ -80,7 +77,6 @@ class FactMaterializer:
         run.cursor_to = new_cursor
         run.change_count = len(applied)
         run.changes = applied
-        run.event_ids = event_ids
         run.finished_at = _now()
         connector.sync_cursor = new_cursor
         connector.last_status = "success"
@@ -94,6 +90,17 @@ class FactMaterializer:
             entity_iri=str(connector.id),
             details={"run_id": str(run.id), "change_count": len(applied)},
         )
+
+        # C-5 顺序不变式（T022）：物化事实 + 留痕**已提交**后再发布事件，确保自动重算
+        # 订阅者（独立会话）读到的是已提交结论/事实表，不读未提交物化行（research R4）。
+        event_ids: list[str] = []
+        for change in applied:
+            event = fact_event_bus.publish(connector_id=str(connector.id), change=change)
+            event_ids.append(event["id"])
+        if event_ids:
+            run.event_ids = event_ids
+            self.db.commit()
+            self.db.refresh(run)
         return run
 
     def _materialize(self, change: dict) -> None:

@@ -13,6 +13,9 @@ import os
 
 # Pin SQLite BEFORE importing app modules (app.db builds the engine at import).
 os.environ["DATABASE_URL"] = "sqlite://"
+# 关闭语义对齐，避免 sentence-transformers 若已装时在抽取测试中触发模型下载/加载；
+# 语义匹配逻辑由 test_aligner_semantic.py 注入确定性桩嵌入器独立验证。
+os.environ["SEMANTIC_ALIGNMENT_ENABLED"] = "false"
 
 import pytest  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402

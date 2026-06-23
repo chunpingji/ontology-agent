@@ -90,17 +90,28 @@ class IncrementalRequest(BaseModel):
     affected_subgraph: dict  # {"equipment": [...], "product": [...], "area": [...]}
 
 
+class ActionBrief(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    action_type: str
+    status: str
+
+
 class ConclusionResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: UUID
     execution_type: str
     risk_level: str | None = None
+    # 003：lifecycle_state 为状态真理来源；effective/superseded_by 为兼容映射（FR-014）。
+    lifecycle_state: str | None = None
     effective: bool = False
     requires_signature: bool = False
     affected_subgraph: dict | None = None
     superseded_by: UUID | None = None
     results: dict | None = None
+    actions: list[ActionBrief] | None = None
 
 
 class IncrementalResponse(BaseModel):

@@ -11,12 +11,14 @@ from pathlib import Path
 
 from sqlalchemy.orm import Session
 
+from app.config import settings
 from app.models.extraction import ExtractionCandidate, ExtractionConfig, ExtractionJob
 from app.services.extraction.aligner import align_entity
 from app.services.extraction.db_reader import reflect_database
 from app.services.extraction.llm_extractor import extract_with_fallback
 from app.services.extraction.parser import parse_excel, parse_word
 from app.services.extraction.progress import progress_bus
+from app.services.extraction.semantic import get_embedder
 from app.services.extraction.vocabulary import (
     CONTROLLED_VOCAB,
     parse_action_from_text,
@@ -84,6 +86,7 @@ async def run_extraction_pipeline(
         # Stage 3: Align + persist instance candidates.
         id_prop = _find_id_property(config.column_mapping)
         label_prop = _find_label_property(config.column_mapping)
+        embedder = get_embedder()  # 进程级单例，含跨候选标签向量缓存（语义对齐）。
         total = 0
         instance_candidates: list[ExtractionCandidate] = []
 
@@ -95,6 +98,9 @@ async def run_extraction_pipeline(
                 engine=engine,
                 id_property=id_prop,
                 label_property=label_prop,
+                threshold=settings.lexical_match_threshold,
+                embedder=embedder,
+                semantic_threshold=settings.semantic_match_threshold,
             )
             group_key = _compute_group_key(props, config.target_class_iri, id_prop)
             cand = ExtractionCandidate(

@@ -45,6 +45,22 @@ def _seed_from_ttl() -> None:
         db.close()
 
 
+_recompute_subscriber_registered = False
+
+
+def _register_recompute_subscriber() -> None:
+    """幂等注册自动重算订阅者到 `fact_event_bus`（FR-010）。"""
+    global _recompute_subscriber_registered
+    if _recompute_subscriber_registered:
+        return
+    from app.services.integration.events import fact_event_bus
+    from app.services.reasoning.recompute_subscriber import make_recompute_subscriber
+
+    fact_event_bus.subscribe(make_recompute_subscriber())
+    _recompute_subscriber_registered = True
+    logger.info("auto-recompute subscriber registered on fact_event_bus")
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     try:
@@ -56,6 +72,10 @@ async def lifespan(app: FastAPI):
         _seed_from_ttl()
     except Exception as exc:  # pragma: no cover
         logger.warning("TTL projection seeding skipped: %s", exc)
+
+    # 003 G3：注册事实变更 → 增量重算订阅者（FR-010）。幂等守卫避免重复注册
+    # （reload / 多次 lifespan）导致一次事件触发多次重算。
+    _register_recompute_subscriber()
 
     # 能力三：启动期 asyncio 轮询后台任务挂载点（R4, T037）。默认关闭，避免测试期起任务。
     poller_task = None

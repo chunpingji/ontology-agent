@@ -11,10 +11,17 @@ import logging
 
 from sqlalchemy.orm import Session
 
-from app.models.reasoning import ReasoningExecution
+from app.models.reasoning import (
+    ACTION_NON_TERMINAL,
+    ACTION_VOIDED,
+    LIFECYCLE_EFFECTIVE,
+    ActionExecution,
+    ReasoningExecution,
+)
 from app.services import audit
 from app.services.ontology_engine import OntologyEngine
 from app.services.reasoning import engine as reasoning_engine
+from app.services.reasoning.lifecycle import LifecycleState, transition
 
 logger = logging.getLogger(__name__)
 
@@ -44,11 +51,12 @@ def recompute_subgraph(
     subgraph: dict,
     engine: OntologyEngine | None = None,
 ) -> list[ReasoningExecution]:
-    """仅重算与 `subgraph` 相交的、当前生效的结论。返回刷新后的新结论。"""
+    """仅重算与 `subgraph` 相交的、当前**生效**（显式 `lifecycle_state==effective`）的
+    结论（FR-011）。旧结论经 `transition`(T5) 置 `superseded` 并作废其非终态动作，返回
+    刷新后的新结论。"""
     candidates = (
         db.query(ReasoningExecution)
-        .filter(ReasoningExecution.effective.is_(True))
-        .filter(ReasoningExecution.superseded_by.is_(None))
+        .filter(ReasoningExecution.lifecycle_state == LIFECYCLE_EFFECTIVE)
         .all()
     )
     affected = [e for e in candidates if _affected(e, subgraph)]
@@ -79,20 +87,37 @@ def recompute_subgraph(
             risk_level=risk,
             affected_subgraph={k: list(v) for k, v in subgraph.items() if v},
             requires_signature=old.requires_signature,
-            effective=not old.requires_signature,  # 需签名者待签后方生效（FR-030）
         )
         db.add(new)
         db.flush()  # 取得 new.id
-        old.superseded_by = new.id
-        old.effective = False
-        refreshed.append(new)
+        # flush 以列 default("effective") 填充 None；复位为 None 使 transition 视为初始态。
+        new.lifecycle_state = None
 
-    db.commit()
-    for r in refreshed:
-        db.refresh(r)
+        # 新结论落初始态（T1/T2）；旧结论 effective→superseded（T5）+ 链接替代。
+        new_target = (
+            LifecycleState.PENDING_SIGNATURE if old.requires_signature
+            else LifecycleState.EFFECTIVE
+        )
+        transition(db, new, new_target, actor="system", reason="增量重算生成")
+        transition(db, old, LifecycleState.SUPERSEDED, actor="system",
+                   reason="被增量重算取代", superseded_by=new.id)
 
-    # 推理步骤留痕：每条刷新结论写入哈希链，记录取代链与生效态（FR-028）。
-    for old, new in zip(affected, refreshed):
+        # 作废旧结论尚未终结的动作（非终态 → voided, FR-012），与取代同事务。
+        stale_actions = (
+            db.query(ActionExecution)
+            .filter(ActionExecution.conclusion_id == old.id)
+            .filter(ActionExecution.status.in_(ACTION_NON_TERMINAL))
+            .all()
+        )
+        for a in stale_actions:
+            a.status = ACTION_VOIDED
+            audit.append(
+                db, "action.void", actor="system", entity_iri=str(a.id),
+                details={"conclusion_id": str(old.id), "reason": "结论被增量重算取代"},
+                commit=False,
+            )
+
+        # 推理步骤留痕：刷新结论写入哈希链，记录取代链与生效态（FR-028）。
         audit.append(
             db, "reasoning.recompute", actor="system",
             entity_iri=str(new.id),
@@ -100,8 +125,11 @@ def recompute_subgraph(
                      "effective": new.effective},
             commit=False,
         )
-    if refreshed:
-        db.commit()
+        refreshed.append(new)
+
+    db.commit()
+    for r in refreshed:
+        db.refresh(r)
 
     # 结论生效后自动编排动作（FR-020）；未生效（待签）者由引擎置 suppressed。
     from app.services.reasoning.action_engine import ActionEngine

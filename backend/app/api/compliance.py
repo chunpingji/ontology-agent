@@ -13,12 +13,20 @@ from app.config import settings
 from app.db import get_db
 from app.dependencies import ROLE_QA, ROLE_SENIOR_ANALYST, require_role
 from app.models.reasoning import (
+    ACTION_NON_TERMINAL,
+    ACTION_VOIDED,
+    LIFECYCLE_PENDING_SIGNATURE,
     ActionExecution,
     AuditLog,
     ElectronicSignature,
     ReasoningExecution,
 )
 from app.services import audit
+from app.services.reasoning.lifecycle import (
+    IllegalTransition,
+    LifecycleState,
+    transition,
+)
 
 router = APIRouter()
 
@@ -106,12 +114,11 @@ def list_audit(
 
 @router.get("/signatures/pending", response_model=PendingResponse)
 def pending_signatures(db: Session = Depends(get_db), _: object = Depends(_qa)):
-    """待签名结论：requires_signature ∧ ¬effective（高风险/专用化/合规阻断）。"""
+    """待签名结论：以显式 `lifecycle_state == pending_signature` 为唯一判据（T017，
+    contracts/lifecycle-guard §3）——已 `rejected`/`superseded`/`effective` 一律不入列表。"""
     rows = (
         db.query(ReasoningExecution)
-        .filter(ReasoningExecution.requires_signature.is_(True))
-        .filter(ReasoningExecution.effective.is_(False))
-        .filter(ReasoningExecution.superseded_by.is_(None))
+        .filter(ReasoningExecution.lifecycle_state == LIFECYCLE_PENDING_SIGNATURE)
         .all()
     )
     return PendingResponse(conclusions=[PendingConclusion.model_validate(r) for r in rows])
@@ -128,12 +135,14 @@ def sign_conclusion(
     db: Session = Depends(get_db),
     identity: object = Depends(_qa),
 ):
-    """QA 电子签名：重认证→绑定结论→置 effective→解除 suppressed 动作→写审计链。"""
+    """QA 电子签名（T3, FR-008/009）：重认证→不可分割绑定签名→经 `transition` 落
+    `pending_signature → effective`（单一守卫）→解除 suppressed 动作→写审计链。对
+    `superseded`/`rejected`/已生效结论签批：transition 非法 → `409`（签批竞态）。"""
     c = db.get(ReasoningExecution, req.conclusion_id)
     if not c:
         raise HTTPException(404, "结论不存在")
-    if c.signature_id is not None or c.effective:
-        raise HTTPException(409, "结论已签名/已生效")
+    if c.signature_id is not None:
+        raise HTTPException(409, "结论已签名")
     if not _reauthenticate(req.username, req.password):
         raise HTTPException(401, "重认证失败")
 
@@ -148,9 +157,16 @@ def sign_conclusion(
     db.add(sig)
     db.flush()  # 取得 sig.id
 
-    # 不可分割绑定 + 生效（FR-030/VR-6）。
+    # 经单一守卫迁移（T3）：非法（非待签态）→ 不改状态、回滚本事务 → 409。
+    try:
+        transition(db, c, LifecycleState.EFFECTIVE, actor=req.username,
+                   reason="QA 电子签批生效")
+    except IllegalTransition as exc:
+        db.rollback()
+        raise HTTPException(409, str(exc))
+
+    # 不可分割绑定（FR-030/VR-6）。
     c.signature_id = sig.id
-    c.effective = True
 
     # 解除该结论被抑制的对外动作。
     released = (
@@ -174,4 +190,67 @@ def sign_conclusion(
     return SignResponse(
         signature_id=sig.id, conclusion_id=c.id,
         effective=True, signed_at=sig.signed_at,
+    )
+
+
+class RejectRequest(BaseModel):
+    conclusion_id: UUID
+    username: str
+    password: str
+    reason: str
+
+
+class RejectResponse(BaseModel):
+    conclusion_id: UUID
+    lifecycle_state: str
+    voided_actions: int
+
+
+@router.post("/reject", response_model=RejectResponse, status_code=201)
+def reject_conclusion(
+    req: RejectRequest,
+    db: Session = Depends(get_db),
+    identity: object = Depends(_qa),
+):
+    """QA 拒绝（T4, FR-020）：重认证→经 `transition` 落 `pending_signature → rejected`
+    （终态）→被抑制的**非终态**动作置 `voided`（每条 `action.void` 审计）→写
+    `compliance.reject` 审计。对非待签态拒绝：transition 非法 → `409`；终态不可再拒绝。"""
+    c = db.get(ReasoningExecution, req.conclusion_id)
+    if not c:
+        raise HTTPException(404, "结论不存在")
+    if not _reauthenticate(req.username, req.password):
+        raise HTTPException(401, "重认证失败")
+
+    try:
+        transition(db, c, LifecycleState.REJECTED, actor=req.username,
+                   reason=req.reason)
+    except IllegalTransition as exc:
+        db.rollback()
+        raise HTTPException(409, str(exc))
+
+    # 作废该结论尚未终结的动作（被抑/待派发等非终态 → voided, FR-012/020）。
+    voided = (
+        db.query(ActionExecution)
+        .filter(ActionExecution.conclusion_id == c.id)
+        .filter(ActionExecution.status.in_(ACTION_NON_TERMINAL))
+        .all()
+    )
+    for a in voided:
+        a.status = ACTION_VOIDED
+        audit.append(
+            db, "action.void", actor=req.username, entity_iri=str(a.id),
+            details={"conclusion_id": str(c.id), "reason": "结论被 QA 拒绝"},
+            commit=False,
+        )
+
+    audit.append(
+        db, "compliance.reject", actor=req.username, entity_iri=str(c.id),
+        details={"reason": req.reason, "voided_actions": len(voided)},
+        commit=False,
+    )
+    db.commit()
+    db.refresh(c)
+    return RejectResponse(
+        conclusion_id=c.id, lifecycle_state=c.lifecycle_state,
+        voided_actions=len(voided),
     )

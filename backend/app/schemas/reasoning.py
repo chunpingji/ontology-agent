@@ -37,6 +37,12 @@ class AssessmentResponse(BaseModel):
     maco: MACOResult | None = None
     recommendations: list[str] = []
 
+    # 003-workflow-statemachine-closure（contracts/assess-bootstrap §1）：落库自举后
+    # 追加返回工作流对象标识与初始生命周期状态（向后兼容追加字段）。
+    lifecycle_state: str | None = None
+    requires_signature: bool = False
+    effective: bool = False
+
 
 class PDERequest(BaseModel):
     pod: float
