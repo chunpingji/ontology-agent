@@ -231,3 +231,15 @@ Task: "接入闸门到 /assess（reasoning.py）"   # T014（依赖 T013）
 - **本特性不写回权威 TTL、无 T-Box 写入**（宪章 II 不触发）
 - `transition()` 统一 `commit=False`，由各入口同事务提交（迁移 + 动作作废 + 签名/取代原子化）
 - 每个 checkpoint 可暂停独立验证；每任务或逻辑组后提交
+
+---
+
+## Phase 8: Convergence
+
+**Purpose**: `/speckit-converge` 对照 spec/plan/tasks 评估现码后追加的剩余工作（append-only，不改既有任务）。本轮无 CRITICAL/HIGH、无宪章违例；以下为 partial 缺口的收口项，按严重度（MEDIUM → LOW）排列。
+
+- [ ] T033 在 `backend/app/services/reasoning/incremental.py::recompute_subgraph` 增「等价重算」守卫：当刷新结论与被取代旧结论结果实质等价时，仍保留刷新+取代与审计留痕，但 MUST NOT 重复编排/派发等价对外动作（`advisory_writeback`/`alert` 等）——避免按等价结论重复对外建议；补/改 `backend/tests/test_api/test_auto_recompute.py` 断言等价重算不新增对外动作 per spec edge "空变更重算" (partial)
+- [ ] T034 在 `backend/app/api/compliance.py::RejectResponse` 增 `rejected_at` 字段并由拒绝时间戳回填，使 `POST /api/compliance/reject` `201` 响应与契约一致；同步 `backend/tests/test_api/test_qa_reject.py` 断言响应含 `rejected_at` per contracts/lifecycle-guard §2 (partial)
+- [ ] T035 为「事实变更 → 结论刷新 ≤ 5s」近实时窗口补可执行验证：在 `backend/tests/test_api/test_auto_recompute.py` 增订阅者同步重算路径的计时断言（或显式固化同步执行保证），覆盖端到端时延判据 per SC-004 / FR-013 (partial)
+
+**Checkpoint**: 三项 partial 收口后，US1–US4 与全部 spec 边界用例完全对齐，特性达成 converged。
