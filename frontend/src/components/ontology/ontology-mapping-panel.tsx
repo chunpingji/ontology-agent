@@ -9,6 +9,7 @@ import {
   type MappingHealth,
   type TBoxMapping,
 } from "@/lib/api";
+import { Field } from "@/components/ontology/field";
 import type { useVersionConflict } from "./use-version-conflict";
 
 const MAPPING_TYPES = ["slpra_iri", "bfo", "field", "external"];
@@ -116,25 +117,38 @@ export function OntologyMappingPanel({
           </ul>
 
           <div className="space-y-2 rounded border bg-gray-50 p-2">
+            <p className="text-xs font-medium text-gray-600">新建映射</p>
             <div className="flex gap-2">
-              <select
-                value={form.mapping_type}
-                onChange={(e) => setForm({ ...form, mapping_type: e.target.value })}
-                className="w-1/3 rounded border px-2 py-1 text-sm"
-              >
-                {MAPPING_TYPES.map((t) => (
-                  <option key={t} value={t}>
-                    {t}
-                  </option>
-                ))}
-              </select>
-              <input
-                placeholder="target"
-                value={form.target}
-                onChange={(e) => setForm({ ...form, target: e.target.value })}
-                className="w-2/3 rounded border px-2 py-1 text-sm"
-              />
+              <Field label="映射类型" className="w-1/3">
+                <select
+                  value={form.mapping_type}
+                  onChange={(e) => setForm({ ...form, mapping_type: e.target.value })}
+                  className="w-full rounded border px-2 py-1 text-sm"
+                >
+                  {MAPPING_TYPES.map((t) => (
+                    <option key={t} value={t}>
+                      {t}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+              <Field label="目标 target" hint="映射指向的 IRI / 字段" className="w-2/3">
+                <input
+                  placeholder="target"
+                  value={form.target}
+                  onChange={(e) => setForm({ ...form, target: e.target.value })}
+                  className="w-full rounded border px-2 py-1 text-sm"
+                />
+              </Field>
             </div>
+            <Field label="来源系统 source" hint="可选">
+              <input
+                placeholder="source system（可选）"
+                value={form.source_system}
+                onChange={(e) => setForm({ ...form, source_system: e.target.value })}
+                className="w-full rounded border px-2 py-1 text-sm"
+              />
+            </Field>
             <button onClick={add} className="rounded bg-blue-600 px-3 py-1.5 text-sm text-white hover:bg-blue-700">
               添加映射
             </button>

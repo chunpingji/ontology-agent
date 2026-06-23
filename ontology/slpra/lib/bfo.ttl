@@ -1,0 +1,92 @@
+@prefix rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl:  <http://www.w3.org/2002/07/owl#> .
+@prefix obo:  <http://purl.obolibrary.org/obo/> .
+
+# ============================================================
+# Basic Formal Ontology (BFO 2.0, ISO/IEC 21838-2) — offline subset
+#
+# 离线上层本体：仅含 SLPRA 各模块实际引用的 BFO 顶层范畴及其规范层级与双语标签。
+# 容器内无外网（DNS 不可达），owl:imports 无法联网解析，故随包提供本地副本，
+# 使各模块的类能挂接到 BFO 父范畴（否则父范畴/父类 IRI 为空）。
+# 如需完整权威 BFO，可用 http://purl.obolibrary.org/obo/bfo.owl 覆盖本文件。
+# ============================================================
+
+<http://purl.obolibrary.org/obo/bfo.owl>
+    a owl:Ontology ;
+    rdfs:label "Basic Formal Ontology (offline subset)"@en ;
+    rdfs:label "基本形式本体（离线子集）"@zh ;
+    rdfs:comment "SLPRA-referenced BFO upper categories bundled for offline use."@en .
+
+# --- entity ---
+obo:BFO_0000001 a owl:Class ;
+    rdfs:label "entity"@en ;
+    rdfs:label "实体"@zh .
+
+# --- continuant / occurrent ---
+obo:BFO_0000002 a owl:Class ;
+    rdfs:subClassOf obo:BFO_0000001 ;
+    rdfs:label "continuant"@en ;
+    rdfs:label "持续实体"@zh .
+
+obo:BFO_0000003 a owl:Class ;
+    rdfs:subClassOf obo:BFO_0000001 ;
+    rdfs:label "occurrent"@en ;
+    rdfs:label "发生实体"@zh .
+
+# --- continuant subtypes ---
+obo:BFO_0000004 a owl:Class ;
+    rdfs:subClassOf obo:BFO_0000002 ;
+    rdfs:label "independent continuant"@en ;
+    rdfs:label "独立持续实体"@zh .
+
+obo:BFO_0000020 a owl:Class ;
+    rdfs:subClassOf obo:BFO_0000002 ;
+    rdfs:label "specifically dependent continuant"@en ;
+    rdfs:label "特定依赖持续实体"@zh .
+
+obo:BFO_0000031 a owl:Class ;
+    rdfs:subClassOf obo:BFO_0000002 ;
+    rdfs:label "generically dependent continuant"@en ;
+    rdfs:label "一般依赖持续实体"@zh .
+
+obo:BFO_0000040 a owl:Class ;
+    rdfs:subClassOf obo:BFO_0000004 ;
+    rdfs:label "material entity"@en ;
+    rdfs:label "物质实体"@zh .
+
+obo:BFO_0000019 a owl:Class ;
+    rdfs:subClassOf obo:BFO_0000020 ;
+    rdfs:label "quality"@en ;
+    rdfs:label "性质"@zh .
+
+obo:BFO_0000017 a owl:Class ;
+    rdfs:subClassOf obo:BFO_0000020 ;
+    rdfs:label "realizable entity"@en ;
+    rdfs:label "可实现实体"@zh .
+
+obo:BFO_0000016 a owl:Class ;
+    rdfs:subClassOf obo:BFO_0000017 ;
+    rdfs:label "disposition"@en ;
+    rdfs:label "倾向"@zh .
+
+obo:BFO_0000023 a owl:Class ;
+    rdfs:subClassOf obo:BFO_0000017 ;
+    rdfs:label "role"@en ;
+    rdfs:label "角色"@zh .
+
+# --- occurrent subtypes ---
+obo:BFO_0000015 a owl:Class ;
+    rdfs:subClassOf obo:BFO_0000003 ;
+    rdfs:label "process"@en ;
+    rdfs:label "过程"@zh .
+
+obo:BFO_0000008 a owl:Class ;
+    rdfs:subClassOf obo:BFO_0000003 ;
+    rdfs:label "temporal region"@en ;
+    rdfs:label "时间区域"@zh .
+
+obo:BFO_0000038 a owl:Class ;
+    rdfs:subClassOf obo:BFO_0000008 ;
+    rdfs:label "one-dimensional temporal region"@en ;
+    rdfs:label "一维时间区域"@zh .

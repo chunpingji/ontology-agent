@@ -10,7 +10,7 @@ const NAV = [
   { href: "/extraction", label: "文档抽取" },
   { href: "/reasoning", label: "推理控制台" },
   { href: "/knowledge-graph", label: "知识图谱" },
-  { href: "/integration", label: "系统集成" },
+  { href: "/integration", label: "事实源" },
 ];
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {

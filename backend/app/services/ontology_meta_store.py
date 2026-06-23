@@ -346,6 +346,27 @@ class OntologyMetaStore:
     # =================================================================== #
     # E2 Link type CRUD
     # =================================================================== #
+    def list_link_types(
+        self, domain_iri: str | None = None, include_inherited: bool = False
+    ) -> list[dict]:
+        """列出（未停用的）对象属性 / 关系；给定 domain_iri 时仅返回 domain 挂接该类的关系。
+        include_inherited=True 时沿父类链合并继承自祖先类的关系（标注 inherited_from_*）。"""
+        q = self.db.query(OntologyLinkType).filter_by(is_disabled=False)
+        if not domain_iri:
+            return [self.link_type_detail(lt) for lt in q.all()]
+        cls = self._class_by_iri(domain_iri)
+        if cls is None:
+            return []
+        if not include_inherited:
+            rows = q.filter_by(domain_class_id=cls.id).all()
+            return [self.link_type_detail(lt) for lt in rows]
+        chain = self._ancestor_chain(cls)
+        rows = q.filter(OntologyLinkType.domain_class_id.in_(list(chain))).all()
+        return [
+            self._annotate_inherited(self.link_type_detail(lt), lt.domain_class_id, cls.id, chain)
+            for lt in rows
+        ]
+
     def create_link_type(self, payload, actor: str) -> dict:
         self._validate_iri(payload.slpra_iri)
         if self.db.query(OntologyLinkType).filter_by(slpra_iri=payload.slpra_iri).first():
@@ -424,6 +445,47 @@ class OntologyMetaStore:
     # =================================================================== #
     # E3 Data property CRUD (+ risk wizard)
     # =================================================================== #
+    def list_data_properties(
+        self, domain_iri: str | None = None, include_inherited: bool = False
+    ) -> list[dict]:
+        """列出（未停用的）数据属性；给定 domain_iri 时仅返回挂接该类的属性。
+        include_inherited=True 时沿父类链合并继承自祖先类的属性（标注 inherited_from_*）。"""
+        q = self.db.query(OntologyDataProperty).filter_by(is_disabled=False)
+        if not domain_iri:
+            return [self.data_property_detail(dp) for dp in q.all()]
+        cls = self._class_by_iri(domain_iri)
+        if cls is None:
+            return []
+        if not include_inherited:
+            rows = q.filter_by(domain_class_id=cls.id).all()
+            return [self.data_property_detail(dp) for dp in rows]
+        chain = self._ancestor_chain(cls)
+        rows = q.filter(OntologyDataProperty.domain_class_id.in_(list(chain))).all()
+        return [
+            self._annotate_inherited(self.data_property_detail(dp), dp.domain_class_id, cls.id, chain)
+            for dp in rows
+        ]
+
+    def _ancestor_chain(self, cls: OntologyClass) -> dict:
+        """{class_id: OntologyClass} for cls and all ancestors via parent_class_id
+        (cycle-safe)."""
+        chain: dict = {}
+        cur: OntologyClass | None = cls
+        while cur is not None and cur.id not in chain:
+            chain[cur.id] = cur
+            cur = self.db.get(OntologyClass, cur.parent_class_id) if cur.parent_class_id else None
+        return chain
+
+    @staticmethod
+    def _annotate_inherited(detail: dict, owner_id, self_id, chain: dict) -> dict:
+        """Tag a property detail with the ancestor it is inherited from (None when
+        declared directly on the queried class)."""
+        if owner_id != self_id:
+            owner = chain.get(owner_id)
+            detail["inherited_from_iri"] = owner.slpra_iri if owner else None
+            detail["inherited_from_label"] = owner.label if owner else None
+        return detail
+
     def create_data_property(self, payload, actor: str) -> dict:
         self._validate_iri(payload.slpra_iri)
         if payload.datatype not in DATATYPES:
@@ -1084,13 +1146,46 @@ class OntologyMetaStore:
     # Seeding: project authoritative TTL into metadata (R6, T013)
     # =================================================================== #
     def project_from_ttl(self) -> int:
-        """Idempotent upsert of authoritative TTL classes into the metadata
-        tables (seed) so the existing axioms are editable in the workbench."""
+        """Idempotent upsert of authoritative TTL axioms into the metadata tables
+        (seed) so the existing classes, object properties (relations) and data
+        properties are editable in the workbench. Returns the total rows seeded."""
         try:
             base = ttl_merge.load_base_graph(Path(settings.ontology_dir))
         except Exception as exc:  # pragma: no cover
             logger.warning("project_from_ttl: could not load TTL: %s", exc)
             return 0
+
+        classes = self._seed_classes(base)
+        # Classes must be queryable (by IRI) before parents / link / data
+        # properties resolve their references; flush the pending inserts first.
+        self.db.flush()
+        parents = self._link_class_parents(base)
+        links = self._seed_link_types(base)
+        data = self._seed_data_properties(base)
+
+        total = classes + links + data
+        if total or parents:
+            self.db.commit()
+        logger.info(
+            "project_from_ttl seeded %d rows (%d classes, %d relations, %d data props), "
+            "linked %d parents",
+            total, classes, links, data, parents,
+        )
+        return total
+
+    @staticmethod
+    def _pick_label(graph, subject) -> str | None:
+        """Prefer the Chinese label, then English, then any rdfs:label."""
+        labels = list(graph.objects(subject, RDFS.label))
+        if not labels:
+            return None
+        for lang in ("zh", "en"):
+            for lit in labels:
+                if getattr(lit, "language", None) == lang:
+                    return str(lit)
+        return str(labels[0])
+
+    def _seed_classes(self, base) -> int:
         seeded = 0
         for s in set(base.subjects(RDF.type, OWL.Class)):
             if not isinstance(s, URIRef):
@@ -1100,21 +1195,139 @@ class OntologyMetaStore:
                 continue
             if self._class_by_iri(iri):
                 continue
-            label = next(iter(base.objects(s, RDFS.label)), None)
             comment = next(iter(base.objects(s, RDFS.comment)), None)
             self.db.add(
                 OntologyClass(
                     slpra_iri=iri,
-                    label=str(label) if label else iri.rsplit("/", 1)[-1],
+                    label=self._pick_label(base, s) or iri.rsplit("/", 1)[-1],
                     comment=str(comment) if comment else None,
                     status=STATUS_PUBLISHED,
                 )
             )
             seeded += 1
-        if seeded:
-            self.db.commit()
-        logger.info("project_from_ttl seeded %d classes", seeded)
         return seeded
+
+    def _link_class_parents(self, base) -> int:
+        """Backfill OntologyClass.parent_class_id from rdfs:subClassOf so the
+        editable metadata mirrors the TTL hierarchy (and subclasses can inherit
+        ancestor properties). Only managed *named* superclasses are linked —
+        anonymous owl:Restriction nodes and external (BFO) parents are skipped.
+        Idempotent: only fills rows whose parent is still unset."""
+        linked = 0
+        unset = (
+            self.db.query(OntologyClass)
+            .filter(OntologyClass.parent_class_id.is_(None))
+            .all()
+        )
+        for c in unset:
+            for sup in base.objects(URIRef(c.slpra_iri), RDFS.subClassOf):
+                if not isinstance(sup, URIRef):
+                    continue  # anonymous restriction / equivalent-class axiom
+                sup_iri = str(sup)
+                if not sup_iri.startswith(MANAGED_PREFIX):
+                    continue  # external upper ontology (e.g. BFO)
+                parent = self._class_by_iri(sup_iri)
+                if parent and parent.id != c.id:
+                    c.parent_class_id = parent.id
+                    linked += 1
+                    break  # single-parent model: first managed superclass wins
+        return linked
+
+    def _seed_link_types(self, base) -> int:
+        """Project owl:ObjectProperty → OntologyLinkType (relations)."""
+        seeded = 0
+        # First pass: create link types; collect owl:inverseOf for a second pass
+        # once all link types exist (an inverse may be defined before its target).
+        inverses: list[tuple[str, str]] = []
+        for s in set(base.subjects(RDF.type, OWL.ObjectProperty)):
+            if not isinstance(s, URIRef):
+                continue
+            iri = str(s)
+            if not iri.startswith(MANAGED_PREFIX):
+                continue
+            if self.db.query(OntologyLinkType).filter_by(slpra_iri=iri).first():
+                continue
+            domain = next(iter(base.objects(s, RDFS.domain)), None)
+            rng = next(iter(base.objects(s, RDFS.range)), None)
+            comment = next(iter(base.objects(s, RDFS.comment)), None)
+            self.db.add(
+                OntologyLinkType(
+                    slpra_iri=iri,
+                    label=self._pick_label(base, s) or iri.rsplit("/", 1)[-1],
+                    comment=str(comment) if comment else None,
+                    domain_class_id=self._class_id_or_none(domain),
+                    range_class_id=self._class_id_or_none(rng),
+                    is_functional=(s, RDF.type, OWL.FunctionalProperty) in base,
+                    is_symmetric=(s, RDF.type, OWL.SymmetricProperty) in base,
+                    is_transitive=(s, RDF.type, OWL.TransitiveProperty) in base,
+                    status=STATUS_PUBLISHED,
+                )
+            )
+            seeded += 1
+            inv = next(iter(base.objects(s, OWL.inverseOf)), None)
+            if isinstance(inv, URIRef) and str(inv).startswith(MANAGED_PREFIX):
+                inverses.append((iri, str(inv)))
+
+        if seeded:
+            self.db.flush()  # make new link types resolvable for inverse linkage
+        for iri, inv_iri in inverses:
+            lt = self.db.query(OntologyLinkType).filter_by(slpra_iri=iri).first()
+            inv = self.db.query(OntologyLinkType).filter_by(slpra_iri=inv_iri).first()
+            if lt and inv:
+                lt.inverse_link_id = inv.id
+        return seeded
+
+    def _seed_data_properties(self, base) -> int:
+        """Project owl:DatatypeProperty → OntologyDataProperty."""
+        seeded = 0
+        for s in set(base.subjects(RDF.type, OWL.DatatypeProperty)):
+            if not isinstance(s, URIRef):
+                continue
+            iri = str(s)
+            if not iri.startswith(MANAGED_PREFIX):
+                continue
+            if self.db.query(OntologyDataProperty).filter_by(slpra_iri=iri).first():
+                continue
+            domain = next(iter(base.objects(s, RDFS.domain)), None)
+            rng = next(iter(base.objects(s, RDFS.range)), None)
+            comment = next(iter(base.objects(s, RDFS.comment)), None)
+            self.db.add(
+                OntologyDataProperty(
+                    slpra_iri=iri,
+                    label=self._pick_label(base, s) or iri.rsplit("/", 1)[-1],
+                    comment=str(comment) if comment else None,
+                    domain_class_id=self._class_id_or_none(domain),
+                    datatype=self._xsd_to_datatype(rng),
+                    status=STATUS_PUBLISHED,
+                )
+            )
+            seeded += 1
+        return seeded
+
+    def _class_id_or_none(self, iri) -> uuid.UUID | None:
+        """Resolve a domain/range IRI to a seeded class id, or None if unmanaged
+        / not present (seeding must never fail on a dangling reference)."""
+        if not isinstance(iri, URIRef):
+            return None
+        c = self._class_by_iri(str(iri))
+        return c.id if c else None
+
+    @staticmethod
+    def _xsd_to_datatype(rng) -> str:
+        """Map an XSD range IRI to the workbench datatype vocabulary (DATATYPES)."""
+        if not isinstance(rng, URIRef):
+            return "string"
+        local = str(rng).rsplit("#", 1)[-1].rsplit("/", 1)[-1]
+        mapping = {
+            "string": "string", "normalizedString": "string", "token": "string",
+            "integer": "integer", "int": "integer", "long": "integer",
+            "short": "integer", "nonNegativeInteger": "integer",
+            "positiveInteger": "integer",
+            "decimal": "decimal", "float": "decimal", "double": "decimal",
+            "boolean": "boolean", "date": "date", "dateTime": "dateTime",
+            "anyURI": "anyURI",
+        }
+        return mapping.get(local, "string")
 
 
 class _Merged:

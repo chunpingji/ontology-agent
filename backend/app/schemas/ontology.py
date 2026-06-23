@@ -42,6 +42,7 @@ class ClassDetailResponse(BaseModel):
     label_en: str | None = None
     comment: str | None = None
     module: str | None = None
+    bfo_category: str | None = None
     parent_iris: list[str] = []
     children_iris: list[str] = []
     individual_count: int = 0
@@ -178,6 +179,9 @@ class LinkTypeDetail(BaseModel):
     status: str
     version: int
     is_disabled: bool = False
+    # 继承自祖先类时填充（直接声明在所查类上则为 None）
+    inherited_from_iri: str | None = None
+    inherited_from_label: str | None = None
 
 
 # --- E3 data property ------------------------------------------------------
@@ -217,6 +221,9 @@ class DataPropertyDetail(BaseModel):
     status: str
     version: int
     is_disabled: bool = False
+    # 继承自祖先类时填充（直接声明在所查类上则为 None）
+    inherited_from_iri: str | None = None
+    inherited_from_label: str | None = None
 
 
 # --- E4 action -------------------------------------------------------------

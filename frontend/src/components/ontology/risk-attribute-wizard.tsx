@@ -16,9 +16,11 @@ const MANAGED_PREFIX = "https://ontology.pharma-gmp.cn/slpra/core/";
 export function RiskAttributeWizard({
   selectedClassIri,
   onChanged,
+  onClose,
 }: {
   selectedClassIri: string | null;
   onChanged: () => void;
+  onClose?: () => void;
 }) {
   const [vocabs, setVocabs] = useState<RiskVocabulary[]>([]);
   const [vocab, setVocab] = useState<string>("");
@@ -49,6 +51,7 @@ export function RiskAttributeWizard({
       });
       setMsg(`已创建风险属性（${vocab}）`);
       onChanged();
+      onClose?.();
     } catch (e) {
       setError(String(e));
     }
@@ -94,9 +97,19 @@ export function RiskAttributeWizard({
         onChange={(e) => setForm({ ...form, label: e.target.value })}
         className="w-full rounded border px-2 py-1 text-sm"
       />
-      <button onClick={submit} className="rounded bg-rose-600 px-3 py-1.5 text-sm text-white hover:bg-rose-700">
-        创建风险属性
-      </button>
+      <div className="flex gap-2">
+        <button onClick={submit} className="rounded bg-rose-600 px-3 py-1.5 text-sm text-white hover:bg-rose-700">
+          创建风险属性
+        </button>
+        {onClose && (
+          <button
+            onClick={onClose}
+            className="rounded border px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-50"
+          >
+            取消
+          </button>
+        )}
+      </div>
     </div>
   );
 }

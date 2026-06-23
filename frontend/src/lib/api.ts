@@ -435,6 +435,7 @@ export interface TBoxLinkType {
   min_cardinality: number | null; max_cardinality: number | null;
   is_functional: boolean; is_symmetric: boolean; is_transitive: boolean;
   status: string; version: number; is_disabled: boolean;
+  inherited_from_iri?: string | null; inherited_from_label?: string | null;
 }
 export interface LinkTypeInput {
   slpra_iri?: string; label?: string; comment?: string | null;
@@ -443,6 +444,8 @@ export interface LinkTypeInput {
   is_functional?: boolean; is_symmetric?: boolean; is_transitive?: boolean;
   expected_version?: number;
 }
+export const listLinkTypes = (domainIri?: string, includeInherited = false) =>
+  fetchAPI<TBoxLinkType[]>(`/api/ontology/link-types${propQuery(domainIri, includeInherited)}`);
 export const createLinkType = (data: LinkTypeInput) =>
   fetchAPI<TBoxLinkType>("/api/ontology/link-types", { method: "POST", ...jsonBody(data) });
 export const updateLinkType = (iri: string, data: LinkTypeInput) =>
@@ -461,6 +464,7 @@ export interface TBoxDataProperty {
   domain_iri: string | null; datatype: string; unit: string | null;
   controlled_vocab: Record<string, unknown> | null;
   status: string; version: number; is_disabled: boolean;
+  inherited_from_iri?: string | null; inherited_from_label?: string | null;
 }
 export interface DataPropertyInput {
   slpra_iri?: string; label?: string; comment?: string | null;
@@ -473,6 +477,15 @@ export interface RiskDataPropertyInput {
 }
 export interface RiskVocabulary { key: string; label: string; values: string[]; }
 
+// Shared query builder for domain-scoped property listings (relations + data props).
+const propQuery = (domainIri?: string, includeInherited = false) => {
+  if (!domainIri) return "";
+  const p = new URLSearchParams({ domain_iri: domainIri });
+  if (includeInherited) p.set("include_inherited", "true");
+  return `?${p.toString()}`;
+};
+export const listDataProperties = (domainIri?: string, includeInherited = false) =>
+  fetchAPI<TBoxDataProperty[]>(`/api/ontology/data-properties${propQuery(domainIri, includeInherited)}`);
 export const createDataProperty = (data: DataPropertyInput) =>
   fetchAPI<TBoxDataProperty>("/api/ontology/data-properties", { method: "POST", ...jsonBody(data) });
 export const updateDataProperty = (iri: string, data: DataPropertyInput) =>

@@ -17,7 +17,6 @@ import { DataPropertyPanel } from "@/components/ontology/data-property-panel";
 import { ActionPanel } from "@/components/ontology/action-panel";
 import { RestrictionEditor } from "@/components/ontology/restriction-editor";
 import { OntologyMappingPanel } from "@/components/ontology/ontology-mapping-panel";
-import { RiskAttributeWizard } from "@/components/ontology/risk-attribute-wizard";
 import { TtlToolbar } from "@/components/ontology/ttl-toolbar";
 import { GraphVisualization } from "@/components/ontology/graph-visualization";
 
@@ -209,10 +208,7 @@ export default function OntologyWorkbenchPage() {
                 </div>
               )}
               {tab === "属性" && (
-                <div className="space-y-6">
-                  <DataPropertyPanel selectedClassIri={selectedIri} onChanged={() => handleChanged(selectedIri ?? undefined)} />
-                  <RiskAttributeWizard selectedClassIri={selectedIri} onChanged={() => handleChanged(selectedIri ?? undefined)} />
-                </div>
+                <DataPropertyPanel selectedClassIri={selectedIri} onChanged={() => handleChanged(selectedIri ?? undefined)} />
               )}
               {tab === "映射" && (
                 <OntologyMappingPanel key={selectedIri ?? "none"} classIri={selectedIri} conflict={conflict} onChanged={() => handleChanged(selectedIri ?? undefined)} />

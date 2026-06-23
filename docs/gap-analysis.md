@@ -1,14 +1,35 @@
 # 临床药物智能辅助生产平台 —— 方案与代码 Gap 分析
 
-> 版本：1.1 | 日期：2026-06-22
+> 版本：1.2 | 日期：2026-06-23
 >
-> 对照基准：[`临床药物智能辅助生产平台方案.md`](临床药物智能辅助生产平台方案.md)（v1.2.0）
+> 对照基准：[`临床药物智能辅助生产平台方案.md`](临床药物智能辅助生产平台方案.md)（v1.3）
 >
-> 核验对象：当前代码库 `main` 分支（已合并 `001-slpra-ontology-platform` + `002-extraction-realtime-reasoning`）
+> 核验对象：当前代码库 `main` 分支（已合并 `001-slpra-ontology-platform` + `002-extraction-realtime-reasoning` + `003-workflow-statemachine-closure`）
 >
 > 核验方式：逐条对照实际源码（`backend/app/`、`frontend/src/`、`backend/alembic/`、`backend/tests/`），以**实际接线与测试**为准，不以"有组件/接口"判定能力具备。
 
 > **状态图例**：✅ 已实现 · 🟡 部分/未接线 · ❌ 缺口（未落地）
+
+---
+
+## ⮕ v1.2 更新 —— 结论工作流状态机闭环（feature `003-workflow-statemachine-closure`）
+
+`002` 落地了结论中心的合规/动作流水线（哈希链/QA 签名/Action 引擎/增量重算/报告），但 `docs/workflow-statemachine-design.md` 核出该流水线**尚不能端到端自举**——结论无初始落库路径、QA 闸门未自动 arm、事实事件未自动订阅重算，且状态隐式分散。`003` 采纳设计文档「路线 A（务实闭环）」补齐三根线并把隐式状态固化为**显式四态生命周期 + 集中迁移守卫**。后端测试由 71 增至 **108 项全部通过**（`cd backend && pytest`）。逐项闭合证据：
+
+| 003 缺口 | v1.1 状态 | v1.2 状态 | 闭合证据 |
+|---|---|---|---|
+| **G1 结论无初始落库路径** | 🟡 隐式 | ✅ | `POST /reasoning/assess` 评估即落库 `ReasoningExecution`，同事务内 `ActionEngine.orchestrate` 编排动作；流水线从首条结论自举（`test_assess_bootstrap.py`） |
+| **G2 强制 QA 闸门未自动 arm** | 🟡 | ✅ | `reasoning/risk.py` `requires_qa_signature()`（高风险等级/需专用化/青霉素·头孢·致敏命中）→ 自动置 `pending_signature` 且动作 `suppressed`，签名后释放（`test_qa_gate.py`） |
+| **G3 事实事件→增量重算未订阅** | 🟡 | ✅ | `recompute_subscriber.py` 在 `main.py` 启动注册（幂等），桥接 `FactEventBus` → `incremental.recompute_subgraph`，仅重算相交的 effective 结论（`test_auto_recompute.py`） |
+| **显式生命周期状态机** | ❌（隐式三标志） | ✅ | `reasoning/lifecycle.py` 四态 `pending_signature/effective/superseded/rejected` + 单一 `LEGAL_TRANSITIONS` 守卫，非法跃迁抛 `IllegalTransition`（`test_lifecycle_machine.py`） |
+| **QA 拒绝 → 终态 + 动作作废** | ❌ | ✅ | `POST /compliance/reject` 转 `rejected` 终态、作废非终态动作、入审计链（`test_qa_reject.py`） |
+| **取代链 + 动作随取代作废** | 🟡 | ✅ | 增量重算 `effective → superseded`（T5），过时结论的待派发动作自动作废（`test_incremental_reasoning.py`） |
+| **语义实体对齐** | 🟡（仅 ID/词法） | ✅ | `extraction/semantic.py` Embedder + `aligner.py` 余弦相似度（阈值 0.82），method ∈ {id, lexical, semantic}（`test_aligner_semantic.py`） |
+| **历史结论状态回填** | — | ✅ | Alembic 迁移回填既有结论生命周期状态（`test_migration_backfill.py`） |
+
+**003 仍 OUT OF SCOPE（显式延后）**：路线 B —— 把迁移定义数据化为本体库可治理的 `OntologyAction`（待路线 A 跑通、需求稳定后另立特性评估）。
+
+> 状态机权威定义（`reasoning/lifecycle.py`）：`(None→effective)` 无需签批落库即生效；`(None→pending_signature)` 需签批；`(pending_signature→effective)` QA 签批；`(pending_signature→rejected)` QA 拒绝；`(effective→superseded)` 增量重算取代。`superseded`/`rejected` 为终态。仅 effective 结论被自动重算覆盖，待签结论保留等待签批。
 
 ---
 
@@ -36,15 +57,23 @@
 
 ## 0. 总体结论
 
-**方案文档 v1.2 与当前代码高度吻合，是一份诚实的状态文档**——其自标的 ✅/🟡/❌ 经逐条核验基本属实。当前版本与方案之间的 gap，等同于文档自身列出的 **P2–P5 路线图**：
+**当前代码已领先于方案文档（v1.2.0），方案的 P2–P5 路线图均已交付，且 003 又补入方案未描述的结论工作流状态机。** 经逐条核验：
 
-- **能力一（T-Box 维护工作台）**：✅ 无 gap，全栈落地。
-- **能力二（多源抽取与对齐）**：✅（v1.1 闭合）抽取流水线已接线、DB 源读取器与对齐审核 UI 已落地。
-- **能力三（实时事实源与 Action 推理）**：✅（v1.1 闭合）APS 真实连接器 + 增量物化 + Action 引擎 + 实时看板均落地。
-- **合规硬化**：✅（v1.1 闭合）审计哈希链、21 CFR Part 11 QA 电子签名、operator/QA/senior_analyst RBAC 分级落地（企业级 SSO 仍 out of scope）。
-- 后端测试由 36 项增至 **71 项全部通过**。
+- **能力一（T-Box 维护工作台）**：✅ 无 gap，全栈落地（001）。
+- **能力二（多源抽取与对齐）**：✅（002 闭合 + 003 语义增强）抽取流水线已接线、DB 源读取器、对齐审核 UI、**语义实体对齐**均落地。
+- **能力三（实时事实源与 Action 推理）**：✅ 功能闭合（002）+ **结论流水线端到端自举 + 显式生命周期状态机**（003）。
+- **合规硬化**：✅（002 + 003）审计哈希链、Part 11 QA 电子签名（自动 arm 闸门 + 拒绝终态）、operator/QA/senior_analyst RBAC 分级落地。
+- 后端测试 36（001）→ 71（002）→ **108（003）全部通过**。
 
-> 下列 §2–§4 为 v1.0 历史 gap 记录，其闭合情况见上方"v1.1 更新"对照表。
+**唯一实质性剩余技术 gap（代码也未闭合）**：
+
+| 剩余 gap | 状态 | 代码证据 | 性质 |
+|---|---|---|---|
+| 外部事实源**真实 HTTP 接入** | 🟡 框架完备、外联是 stub | `integration/aps_connector.py` 实读 `config["inline_changes"]`（确定性测试），`_probe`/HTTP 真实拉取注"留待生产接入"；ERP/MES/LIMS/CTMS 的 `fetch_material_inventory`/`fetch_lab_results`/`fetch_clinical_trial_info` 均 `return []` | 连接器抽象 + 增量物化 + 事件总线已就绪，缺的是生产凭证与真实端点接线 |
+| 企业级 **SSO** | ❌（显式权衡） | QA 重认证经可插拔共享密钥门禁，凭据不入库 | 合规约束下的设计取舍 |
+| 路线 B（数据化迁移 `OntologyAction`） | ❌（显式延后） | 003 仅交付路线 A | 待需求稳定后另立特性 |
+
+> 下列 §2–§4 为 v1.0 历史 gap 记录（已全部闭合），其闭合情况见上方"v1.1 更新""v1.2 更新"对照表，保留作沿革。
 
 ---
 
@@ -124,17 +153,28 @@
 
 ---
 
-## 6. 优先级建议（按"改动最小见效最快"排序）
+## 6. 优先级建议（v1.2 更新 —— 原 P1–P5 已全部闭合）
 
-| 优先级 | Gap | 工作量 | 理由 |
+下表 P1–P5 为 v1.0 提出的优先级，**至 v1.2 已全部落地**（002 + 003），保留作沿革：
+
+| 优先级 | Gap | 状态 | 闭合 feature |
 |---|---|---|---|
-| **P1** | 能力二抽取接线（`create_job` → pipeline + SSE） | 小 | pipeline 已实现，只差一根线；立即激活已有死代码 |
-| **P2** | 对齐审核 UI（`alignment-review.tsx`） | 中 | 后端 `aligner` 已就绪，补前端即闭环能力二 |
-| **P3** | APS 真实连接器 + 增量物化 | 中-大 | 能力三实时链路的起点 |
-| **P4** | Action 引擎 + 报告导出 | 大 | 依赖 P3 事实流 |
-| **P5** | 实时看板 + 合规硬化（哈希链/QA 电子签名/SSO） | 大 | UAT 与验证阶段 |
+| **P1** | 能力二抽取接线（`create_job` → pipeline + SSE） | ✅ | 002 |
+| **P2** | 对齐审核 UI（`alignment-review.tsx`）+ 语义对齐 | ✅ | 002 + 003 |
+| **P3** | APS 连接器 + 增量物化 | ✅（外联仍 stub） | 002 |
+| **P4** | Action 引擎 + 报告导出 | ✅ | 002 |
+| **P5** | 实时看板 + 合规硬化（哈希链/QA 电子签名/RBAC） | ✅ | 002 + 003 |
 
-> 对照方案 §11 路线图：**P0–P1 已完成**（能力一缺口闭合）；本 gap 分析对应方案的 **P2–P5**。
+**后续建议（真实剩余 gap，见 §0 表）**：
+
+| 优先级 | 项 | 工作量 | 理由 |
+|---|---|---|---|
+| **N1** | 外部事实源真实 HTTP 接入（APS 排期优先，替换 `inline_changes`） | 中 | 框架/物化/事件已就绪，只差生产端点与凭证接线 |
+| **N2** | ERP/MES/LIMS/CTMS 连接器实现（当前 `return []`） | 大 | 扩展 N1 至全事实源 |
+| **N3** | 企业级 SSO（替换共享密钥重认证） | 中 | 合规硬化收尾 |
+| **N4** | 路线 B：迁移数据化为 `OntologyAction`（本体库可治理） | 大 | 待路线 A 需求稳定后评估 |
+
+> 对照方案 §11 路线图：**P0–P5 已完成**；剩余为生产接入（N1/N2）、SSO（N3）与可选的路线 B（N4）。
 
 ---
 

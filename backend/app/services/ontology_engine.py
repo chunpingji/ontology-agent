@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import io
 import logging
 import threading
 from dataclasses import dataclass, field
@@ -9,6 +10,7 @@ from pathlib import Path
 from typing import Any
 
 import owlready2
+import rdflib
 
 from app.config import settings
 
@@ -24,6 +26,28 @@ MODULE_NAMES = {
     "integration": "https://ontology.pharma-gmp.cn/slpra/integration/",
 }
 
+# IRI → 本地 TTL 文件名。Owlready2 仅按 IRI 末段（如 "drug"）在 onto_path 中搜索文件，
+# 与实际文件名（slpra-drug.ttl）不符且不读 catalog，故按文件路径显式离线加载（VR：禁联网）。
+MODULE_FILES = {
+    "drug": "slpra-drug.ttl",
+    "equipment": "slpra-equipment.ttl",
+    "contamination": "slpra-contamination.ttl",
+    "risk": "slpra-risk.ttl",
+    "cleaning": "slpra-cleaning.ttl",
+    "facility": "slpra-facility.ttl",
+    "integration": "slpra-integration.ttl",
+}
+
+# integration owl:imports 全部内部模块，故须最后加载（依赖先就位）。
+_LOAD_ORDER = ["drug", "equipment", "contamination", "risk", "cleaning", "facility", "integration"]
+
+# 外部上层本体（BFO）：随包提供的离线本地副本。各模块的类挂在 BFO 顶层范畴下，必须先于
+# 模块加载，否则父范畴/父类 IRI 为空（owl:imports 在离线容器内无法联网解析）。
+# IRI → 相对 ontology_dir 的本地文件路径。
+_EXTERNAL_ONTOLOGIES = {
+    "http://purl.obolibrary.org/obo/bfo.owl": "lib/bfo.ttl",
+}
+
 
 @dataclass
 class ClassInfo:
@@ -35,6 +59,7 @@ class ClassInfo:
     parent_iris: list[str] = field(default_factory=list)
     children_iris: list[str] = field(default_factory=list)
     module: str | None = None
+    bfo_category: str | None = None
     individual_count: int = 0
     object_properties: list[dict] = field(default_factory=list)
     data_properties: list[dict] = field(default_factory=list)
@@ -87,28 +112,51 @@ class OntologyEngine:
             if self.is_loaded:
                 return
             self._store_path.parent.mkdir(parents=True, exist_ok=True)
+            # 物化库为权威 TTL 的派生缓存（TTL 为唯一权威源，永不回写）。每次启动重建，
+            # 既保证与权威 TTL 一致，又避免跨重启的三元组累积与历史失败遗留的空库。
+            for stale in (self._store_path, Path(f"{self._store_path}-journal")):
+                stale.unlink(missing_ok=True)
             self._world = owlready2.World(filename=str(self._store_path))
             owlready2.onto_path.insert(0, str(self._ontology_dir))
 
-            integration_iri = MODULE_NAMES["integration"]
-            try:
-                onto = self._world.get_ontology(integration_iri).load()
-                self._ontologies["integration"] = onto
-            except Exception:
-                logger.warning("Could not load integration module, loading modules individually")
-
-            for key, iri in MODULE_NAMES.items():
-                if key in self._ontologies:
-                    continue
+            # 先加载外部上层本体（BFO）的本地副本，使各模块的 BFO 父范畴可解析；
+            # 缺失/损坏时降级为空桩并标记已加载，阻止 owl:imports 触发联网下载。
+            for ext_iri, rel in _EXTERNAL_ONTOLOGIES.items():
+                onto = self._world.get_ontology(ext_iri)
+                ext_path = self._ontology_dir / rel
                 try:
-                    onto = self._world.get_ontology(iri).load()
+                    self._load_turtle(onto, ext_path)
+                except Exception:
+                    logger.warning(
+                        "Upper ontology %s not loaded from %s; parent categories may be empty",
+                        ext_iri, ext_path, exc_info=True,
+                    )
+                    onto.loaded = True
+
+            # 按文件路径离线加载各模块（integration 末位以解析内部导入）。
+            for key in _LOAD_ORDER:
+                iri = MODULE_NAMES[key]
+                path = self._ontology_dir / MODULE_FILES[key]
+                try:
+                    onto = self._world.get_ontology(iri)
+                    self._load_turtle(onto, path)
                     self._ontologies[key] = onto
                 except Exception:
-                    logger.warning("Could not load module %s (%s)", key, iri)
+                    logger.warning("Could not load module %s from %s", key, path, exc_info=True)
 
             self.is_loaded = True
             total = sum(len(list(o.classes())) for o in self._ontologies.values())
             logger.info("Loaded %d modules with %d classes total", len(self._ontologies), total)
+
+    @staticmethod
+    def _load_turtle(onto: owlready2.Ontology, path: Path) -> None:
+        """离线加载 Turtle 本体到既有 owlready2 ontology 对象。模块以 Turtle 编写，而
+        owlready2 仅原生解析 rdfxml/owlxml/ntriples，故先用 rdflib 转为 RDF/XML 再喂给
+        owlready2（纯内存转换，only_local 禁联网，不回写权威 TTL）。"""
+        graph = rdflib.Graph()
+        graph.parse(str(path), format="turtle")
+        rdfxml = graph.serialize(format="xml", encoding="utf-8")
+        onto.load(fileobj=io.BytesIO(rdfxml), only_local=True, format="rdfxml")
 
     def close(self) -> None:
         with self._lock:
@@ -127,13 +175,14 @@ class OntologyEngine:
                     continue
                 classes = list(onto.classes())
                 individuals = list(onto.individuals())
+                labels = list(onto.label or [])  # 本体无 rdfs:label 标注时 owlready2 返回 None
                 label = None
-                for lbl in onto.label:
+                for lbl in labels:
                     if hasattr(lbl, "lang") and lbl.lang == "zh":
                         label = str(lbl)
                         break
                 if not label:
-                    label = str(onto.label[0]) if onto.label else key
+                    label = str(labels[0]) if labels else key
                 result.append(ModuleInfo(
                     key=key, iri=iri, label=label,
                     class_count=len(classes), individual_count=len(individuals),
@@ -185,6 +234,7 @@ class OntologyEngine:
                 p.iri for p in cls.is_a if isinstance(p, owlready2.ThingClass)
             ]
             children_iris = [c.iri for c in cls.subclasses()]
+            bfo_category = self._bfo_category(cls)
 
             obj_props = []
             data_props = []
@@ -229,6 +279,7 @@ class OntologyEngine:
                 parent_iris=parent_iris,
                 children_iris=children_iris,
                 module=module,
+                bfo_category=bfo_category,
                 individual_count=len(list(cls.instances())),
                 object_properties=obj_props,
                 data_properties=data_props,
@@ -481,6 +532,27 @@ class OntologyEngine:
                 elif label_en is None:
                     label_en = str(lbl)
         return label_zh, label_en
+
+    def _bfo_category(self, cls) -> str | None:
+        """派生 BFO 上层范畴：自类沿 is_a 向上广度优先，返回最近的 BFO_xxxx 祖先的标签。
+        UI '基本' 页的 'BFO 范畴' 对只读引擎类显示此派生值（DB 元数据类则用其可编辑列）。
+        无 BFO 祖先（如 integration 模块仅挂接 DRON/IDMP 等外部 IRI）时返回 None。"""
+        seen: set = set()
+        level = [p for p in cls.is_a if isinstance(p, owlready2.ThingClass)]
+        while level:
+            nxt = []
+            for parent in level:
+                if parent in seen:
+                    continue
+                seen.add(parent)
+                iri = getattr(parent, "iri", "") or ""
+                if parent.name.startswith("BFO_") or "/obo/BFO_" in iri:
+                    return self._get_label(parent) or parent.name
+                nxt.extend(
+                    p for p in parent.is_a if isinstance(p, owlready2.ThingClass)
+                )
+            level = nxt
+        return None
 
     def _find_module_for_class(self, cls) -> str | None:
         cls_ns = str(cls.namespace.base_iri) if cls.namespace else ""

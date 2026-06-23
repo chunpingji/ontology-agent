@@ -6,7 +6,7 @@ const NAV_ITEMS = [
   { href: "/extraction", label: "文档抽取", desc: "从 Excel/Word 文档抽取并对齐实体", icon: "📄" },
   { href: "/reasoning", label: "推理控制台", desc: "运行风险评估、MACO/PDE 计算", icon: "⚙️" },
   { href: "/knowledge-graph", label: "知识图谱", desc: "可视化浏览实体关系网络", icon: "🕸️" },
-  { href: "/integration", label: "系统集成", desc: "MES/ERP/LIMS/CTMS 接口规范", icon: "🔌" },
+  { href: "/integration", label: "事实源", desc: "APS/ERP/MES/LIMS/CTMS 事实源对齐与实时推理", icon: "🔌" },
 ];
 
 export default function HomePage() {

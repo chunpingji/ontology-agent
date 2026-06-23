@@ -177,6 +177,17 @@ def delete_class(
 # ===========================================================================
 # T022 对象属性 / 关系
 # ===========================================================================
+@router.get("/link-types", response_model=list[LinkTypeDetail])
+def list_link_types(
+    domain_iri: str | None = None,
+    include_inherited: bool = False,
+    store: OntologyMetaStore = Depends(get_ontology_meta_store),
+):
+    """列出对象属性 / 关系；可选 domain_iri 仅返回 domain 挂接该类的关系，
+    include_inherited=true 时并入继承自祖先类的关系。"""
+    return store.list_link_types(domain_iri, include_inherited)
+
+
 @router.post("/link-types", response_model=LinkTypeDetail, status_code=201)
 def create_link_type(
     payload: LinkTypeCreate,
@@ -210,6 +221,17 @@ def delete_link_type(
 # ===========================================================================
 # T023 数据属性 + 风险向导
 # ===========================================================================
+@router.get("/data-properties", response_model=list[DataPropertyDetail])
+def list_data_properties(
+    domain_iri: str | None = None,
+    include_inherited: bool = False,
+    store: OntologyMetaStore = Depends(get_ontology_meta_store),
+):
+    """列出数据属性；可选 domain_iri 仅返回挂接该类的属性，
+    include_inherited=true 时并入继承自祖先类的属性。"""
+    return store.list_data_properties(domain_iri, include_inherited)
+
+
 @router.post("/data-properties/risk", response_model=DataPropertyDetail, status_code=201)
 def create_risk_data_property(
     payload: RiskDataPropertyCreate,
