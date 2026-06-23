@@ -17,3 +17,9 @@ backend/data/
 .env
 .env.*
 
+# Host-specific local compose overrides (ports etc.)
+docker-compose.override.yml
+
+# Generated design mockups / scratch output
+output/
+

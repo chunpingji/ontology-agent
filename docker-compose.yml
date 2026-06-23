@@ -20,6 +20,8 @@ services:
       DATABASE_URL: postgresql://slpra:slpra_dev@db:5432/slpra
       ONTOLOGY_DIR: /app/ontology/slpra
       OWL_STORE_PATH: /app/data/slpra.sqlite3
+      # LLM extraction key — injected from host env / .env, never baked into the image.
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
     volumes:
       - ./backend/app:/app/app
       - ./ontology:/app/ontology
@@ -31,12 +33,23 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    ports:
-      - "3000:3000"
-    environment:
-      NEXT_PUBLIC_API_URL: http://localhost:8000
+      # No NEXT_PUBLIC_API_URL: the bundle uses same-origin relative "/api/..."
+      # calls; the nginx edge proxy (web) routes them to the backend.
+    # Not published to the host — reachable only through the nginx proxy.
+    expose:
+      - "3000"
     depends_on:
       - backend
+
+  web:
+    image: nginx:1.27-alpine
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+    depends_on:
+      - backend
+      - frontend
 
 volumes:
   pgdata:
