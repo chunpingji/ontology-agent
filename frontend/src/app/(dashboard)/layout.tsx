@@ -3,44 +3,142 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { clsx } from "clsx";
+import { useIdentity, type Role } from "@/lib/use-identity";
 
-const NAV = [
-  { href: "/ontology", label: "本体编辑器" },
-  { href: "/entities", label: "实体管理" },
-  { href: "/extraction", label: "文档抽取" },
-  { href: "/reasoning", label: "推理控制台" },
-  { href: "/knowledge-graph", label: "知识图谱" },
-  { href: "/integration", label: "事实源" },
+// --- Nav model (single source of truth — see data-model.md §1) --------------
+interface NavItem {
+  href: string;
+  label: string;
+  icon?: string;
+  requiredRole?: Role;
+}
+interface NavGroup {
+  title: string;
+  items: NavItem[];
+}
+type NavNode = NavItem | NavGroup;
+
+const NAV: NavNode[] = [
+  { href: "/overview", label: "总览", icon: "🏠" },
+  { href: "/ontology", label: "本体工作台", icon: "🧬" },
+  {
+    title: "图谱管理",
+    items: [
+      { href: "/entities", label: "实体管理", icon: "📦" },
+      { href: "/analysis", label: "应用分析", icon: "⚙️" },
+    ],
+  },
+  { href: "/integration", label: "事实源", icon: "🔌" },
+  { href: "/approvals", label: "审批中心", icon: "✅", requiredRole: "qa" },
 ];
+
+const ROLES: { value: Role; label: string }[] = [
+  { value: "senior_analyst", label: "高级分析师" },
+  { value: "operator", label: "操作员" },
+  { value: "qa", label: "QA（质量）" },
+];
+
+function isGroup(node: NavNode): node is NavGroup {
+  return "items" in node;
+}
+
+/** Active when the path equals the href or is nested under it (sub-tabs). */
+function isActive(pathname: string, href: string): boolean {
+  return pathname === href || pathname.startsWith(`${href}/`);
+}
+
+function NavLink({
+  item,
+  active,
+  indent,
+}: {
+  item: NavItem;
+  active: boolean;
+  indent?: boolean;
+}) {
+  return (
+    <Link
+      href={item.href}
+      className={clsx(
+        "block rounded-md px-3 py-2 text-sm transition",
+        indent && "ml-2",
+        active
+          ? "bg-blue-50 font-medium text-blue-700"
+          : "text-gray-600 hover:bg-gray-50",
+      )}
+    >
+      {item.icon && <span className="mr-2">{item.icon}</span>}
+      {item.label}
+    </Link>
+  );
+}
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const { identity, role, setIdentity } = useIdentity();
+
+  const canSee = (item: NavItem) => !item.requiredRole || item.requiredRole === role;
 
   return (
     <div className="flex min-h-screen">
-      <aside className="w-56 shrink-0 border-r border-gray-200 bg-white">
+      <aside className="flex w-56 shrink-0 flex-col border-r border-gray-200 bg-white">
         <div className="px-4 py-5">
-          <Link href="/" className="text-lg font-bold text-blue-700">
+          <Link href="/overview" className="text-lg font-bold text-blue-700">
             SLPRA
           </Link>
           <p className="text-xs text-gray-400">v0.1.0</p>
         </div>
-        <nav className="space-y-1 px-2">
-          {NAV.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={clsx(
-                "block rounded-md px-3 py-2 text-sm transition",
-                pathname.startsWith(item.href)
-                  ? "bg-blue-50 font-medium text-blue-700"
-                  : "text-gray-600 hover:bg-gray-50"
-              )}
-            >
-              {item.label}
-            </Link>
-          ))}
+
+        <nav className="flex-1 space-y-1 px-2">
+          {NAV.map((node) => {
+            if (isGroup(node)) {
+              const visible = node.items.filter(canSee);
+              if (visible.length === 0) return null;
+              const groupActive = visible.some((it) => isActive(pathname, it.href));
+              return (
+                <div key={node.title} className="pt-3">
+                  <p
+                    className={clsx(
+                      "px-3 pb-1 text-xs font-semibold uppercase tracking-wide",
+                      groupActive ? "text-blue-700" : "text-gray-400",
+                    )}
+                  >
+                    {node.title}
+                  </p>
+                  <div className="space-y-1">
+                    {visible.map((it) => (
+                      <NavLink
+                        key={it.href}
+                        item={it}
+                        active={isActive(pathname, it.href)}
+                        indent
+                      />
+                    ))}
+                  </div>
+                </div>
+              );
+            }
+            if (!canSee(node)) return null;
+            return (
+              <NavLink key={node.href} item={node} active={isActive(pathname, node.href)} />
+            );
+          })}
         </nav>
+
+        <div className="border-t border-gray-100 p-3">
+          <label className="mb-1 block text-xs text-gray-400">当前身份（开发态）</label>
+          <select
+            value={role}
+            onChange={(e) => setIdentity({ username: identity.username, role: e.target.value })}
+            className="w-full rounded border px-2 py-1 text-sm"
+          >
+            {ROLES.map((r) => (
+              <option key={r.value} value={r.value}>
+                {r.label}
+              </option>
+            ))}
+          </select>
+        </div>
       </aside>
       <main className="flex-1 overflow-auto p-6">{children}</main>
     </div>

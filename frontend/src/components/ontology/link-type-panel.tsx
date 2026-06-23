@@ -33,7 +33,7 @@ const emptyForm = (domainIri: string | null): FormState => ({
   max_cardinality: "",
 });
 
-const tail = (iri: string | null) => (iri ? iri.split("/").pop() : null);
+const tail = (iri: string | null | undefined) => (iri ? iri.split("/").pop() : null);
 
 /**
  * 对象属性 / 关系面板（T033）。以「列表 + 列表元素增删改」组织：

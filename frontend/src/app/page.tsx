@@ -1,11 +1,12 @@
 import Link from "next/link";
 
+// 注:根路径 `/` 已由 next.config.ts 重定向至 `/overview`;此页作为兜底，
+// 链接与标签同步导航定稿（本体工作台 / 应用分析 等），不含旧平铺路由。
 const NAV_ITEMS = [
-  { href: "/ontology", label: "本体编辑器", desc: "浏览和管理 SLPRA 本体类层次", icon: "🧬" },
-  { href: "/entities", label: "实体管理", desc: "药品、设备、区域等个体的增删改查", icon: "📦" },
-  { href: "/extraction", label: "文档抽取", desc: "从 Excel/Word 文档抽取并对齐实体", icon: "📄" },
-  { href: "/reasoning", label: "推理控制台", desc: "运行风险评估、MACO/PDE 计算", icon: "⚙️" },
-  { href: "/knowledge-graph", label: "知识图谱", desc: "可视化浏览实体关系网络", icon: "🕸️" },
+  { href: "/overview", label: "总览", desc: "平台概览与各分区快捷入口", icon: "🏠" },
+  { href: "/ontology", label: "本体工作台", desc: "浏览和管理 SLPRA 本体类层次（TBox）", icon: "🧬" },
+  { href: "/entities", label: "实体管理", desc: "实体浏览/检索与文档抽取（ABox）", icon: "📦" },
+  { href: "/analysis", label: "应用分析", desc: "风险推理（PDE/MACO）与图谱查询/统计", icon: "⚙️" },
   { href: "/integration", label: "事实源", desc: "APS/ERP/MES/LIMS/CTMS 事实源对齐与实时推理", icon: "🔌" },
 ];
 

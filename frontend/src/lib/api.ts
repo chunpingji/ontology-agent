@@ -205,6 +205,42 @@ export const signConclusion = (data: {
   fetchAPI<{ signature_id: string; conclusion_id: string; effective: boolean; signed_at: string }>(
     "/api/compliance/signatures", { method: "POST", body: JSON.stringify(data) });
 
+// QA 拒绝（Part 11 重认证 + 原因）→ 既有后端端点 compliance.reject_conclusion。
+export interface RejectRequest {
+  conclusion_id: string; username: string; password: string; reason: string;
+}
+export interface RejectResponse {
+  conclusion_id: string; lifecycle_state: string; voided_actions: number;
+}
+export const rejectConclusion = (req: RejectRequest) =>
+  fetchAPI<RejectResponse>("/api/compliance/reject", {
+    method: "POST", body: JSON.stringify(req),
+  });
+
+// 合规审计链（append-only 只读）。注意:与 getAudit()/`/ontology/audit`（本体审计）不同,
+// 此处指向 `/compliance/audit`（合规哈希链），勿混用。
+export interface ComplianceAuditEntry {
+  seq: number | null;
+  action: string;
+  actor: string | null;
+  entity_iri: string | null;
+  prev_hash: string | null;
+  entry_hash: string | null;
+  details: Record<string, unknown> | null;
+  created_at: string | null;
+}
+export interface ComplianceAuditListResponse { entries: ComplianceAuditEntry[]; }
+export const getComplianceAudit = (params?: {
+  actor?: string; action?: string; entity_iri?: string;
+}) => {
+  const qs = params
+    ? `?${new URLSearchParams(
+        Object.entries(params).filter(([, v]) => v) as [string, string][],
+      )}`
+    : "";
+  return fetchAPI<ComplianceAuditListResponse>(`/api/compliance/audit${qs}`);
+};
+
 // --- Extraction (能力二) ----------------------------------------------------
 export const listExtractionConfigs = () =>
   fetchAPI<ExtractionConfig[]>("/api/extraction/configs");

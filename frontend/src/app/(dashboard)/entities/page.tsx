@@ -29,8 +29,6 @@ export default function EntitiesPage() {
 
   return (
     <div>
-      <h1 className="mb-4 text-xl font-bold">实体管理</h1>
-
       <div className="mb-4 flex gap-3">
         <input
           type="text"

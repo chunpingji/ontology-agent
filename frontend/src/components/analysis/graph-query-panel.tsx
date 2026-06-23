@@ -4,11 +4,10 @@ import { useEffect, useState } from "react";
 import { getKGStats, runSPARQL } from "@/lib/api";
 import type { KGStats } from "@/lib/api";
 
-export default function KnowledgeGraphPage() {
+// 图谱查询面板（自 knowledge-graph/page.tsx 迁入, T014）：KG 统计 + SPARQL。
+export function GraphQueryPanel() {
   const [stats, setStats] = useState<KGStats | null>(null);
-  const [sparql, setSparql] = useState(
-    "SELECT ?s ?p ?o WHERE { ?s ?p ?o } LIMIT 20"
-  );
+  const [sparql, setSparql] = useState("SELECT ?s ?p ?o WHERE { ?s ?p ?o } LIMIT 20");
   const [queryResult, setQueryResult] = useState<Record<string, unknown>[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -29,8 +28,6 @@ export default function KnowledgeGraphPage() {
 
   return (
     <div>
-      <h1 className="mb-4 text-xl font-bold">知识图谱</h1>
-
       {stats && (
         <div className="mb-6 grid grid-cols-4 gap-3">
           <div className="rounded-lg border bg-white p-4 text-center">
@@ -47,7 +44,7 @@ export default function KnowledgeGraphPage() {
       )}
 
       <div className="rounded-lg border bg-white p-4">
-        <h2 className="mb-3 font-semibold">SPARQL 查询</h2>
+        <h3 className="mb-3 font-semibold">SPARQL 查询</h3>
         <textarea
           value={sparql}
           onChange={(e) => setSparql(e.target.value)}
