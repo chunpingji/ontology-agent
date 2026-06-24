@@ -97,16 +97,16 @@ slpra-equip:FillingMachine   skos:closeMatch  isa88:Unit .
 # ============================================================
 # 已重基到权威命名空间：Pistoia Alliance IDMP-O V1.4（MIT 许可），EDM Council 镜像
 # 托管，FIBO/OMG-Commons 风格。三个模块命名空间逐字取自官方 QuickIDMPDev.ttl。
-# ✓ = 已核实真实存在的类/属性；⚠ = 父类/本地名待源 artifact 字节级复核。
+# ✓ 全部本地名已对源 artifact (github.com/dasawanaka/idmp · master · RDF/XML) 字节级核实。
 # 受管主语的 subClassOf 仍会被 surgical_merge 剥离 → 一律用 skos/seeAlso/subPropertyOf。
 
-# DrugProduct ⟷ IDMP 医药产品（近似匹配；⚠ 父类本地名待核）
+# DrugProduct ⟷ IDMP 医药产品（近似匹配；✓ MedicinalProduct 已核实，源标签 "medicinal product"）
 slpra-drug:DrugProduct skos:closeMatch idmp-mprd:MedicinalProduct .
 
 # 商业化药品 ⟷ IDMP 已上市医药产品（✓ AuthorizedMedicinalProduct 已核实）
 slpra-drug:CommercialDrug skos:closeMatch idmp-mprd:AuthorizedMedicinalProduct .
 
-# 临床试验用药 ⟷ IDMP 研究用医药产品（⚠ 产品类本地名待核；IMP 词族已核实存在）
+# 临床试验用药 ⟷ IDMP 研究用医药产品（✓ InvestigationalMedicinalProduct 已核实，源标签 "investigational medicinal product"）
 slpra-drug:ClinicalTrialDrug skos:closeMatch idmp-mprd:InvestigationalMedicinalProduct .
 
 # API ⟷ IDMP 化学物质（外部更宽 → broadMatch；✓ ChemicalSubstance 已核实）
@@ -115,9 +115,11 @@ slpra-drug:ActivePharmaceuticalIngredient skos:broadMatch idmp-sub:ChemicalSubst
 # 辅料 ⟷ IDMP 非活性成分（✓ InactiveIngredient 已核实，较占位 Ingredient 更精确）
 slpra-drug:Excipient skos:closeMatch idmp-sub:InactiveIngredient .
 
-# 数据属性 ⟷ IDMP 受控概念（seeAlso：SLPRA 用字面值，IDMP 用受控对象，非等价；⚠ 本地名待核）
-slpra-drug:dosageForm            rdfs:seeAlso idmp-phdf:PharmaceuticalDoseForm .
-slpra-drug:routeOfAdministration rdfs:seeAlso idmp-phdf:RouteOfAdministration .
+# 数据属性 ⟷ IDMP ISO 11239 模块（seeAlso：经核实 ISO11239 全量 artifact 无 PharmaceuticalDoseForm /
+# RouteOfAdministration 裸类——剂型/给药途径在 IDMP-O 为受控词表 + ISO11615 给药对象属性建模；
+# 故指向已核实的模块本体 IRI 而非杜撰的类。SLPRA 用字面值，IDMP 用受控对象，本即弱关联）
+slpra-drug:dosageForm            rdfs:seeAlso idmp-phdf: .
+slpra-drug:routeOfAdministration rdfs:seeAlso idmp-phdf: .
 
 # IDMP ingredient relation alignment（✓ idmp-sub:hasIngredient 已核实；subPropertyOf 非受管谓词，保留）
 slpra-drug:hasActiveIngredient rdfs:subPropertyOf idmp-sub:hasIngredient .
@@ -236,12 +238,12 @@ dron:00000001 a owl:Class ;
     rdfs:comment "DrOn clinical drug role (offline MIREOT stub)."@en .
 
 # --- IDMP-O / Pistoia·EDMC（ISO 11615 医药产品 · 11238 物质 · 11239 剂型） ---
-# 命名空间逐字取自官方 QuickIDMPDev.ttl；✓ 已核实真实存在，⚠ 本地名待源 artifact 复核。
+# 命名空间逐字取自官方 QuickIDMPDev.ttl；下列类/属性本地名均已对源 RDF/XML artifact 字节级核实(✓)。
 idmp-mprd:MedicinalProduct a owl:Class ;
-    rdfs:label "Medicinal Product"@en ;
+    rdfs:label "medicinal product"@en ;
     rdfs:label "医药产品"@zh ;
     rdfs:isDefinedBy <https://spec.pistoiaalliance.org/idmp/ontology/ISO/ISO11615-MedicinalProducts/> ;
-    rdfs:comment "IDMP-O ISO 11615 medicinal product (offline MIREOT stub; ⚠ 父类本地名待核)."@en .
+    rdfs:comment "IDMP-O ISO 11615 medicinal product (offline MIREOT stub; ✓ 已核实，源标签 medicinal product)."@en .
 
 idmp-mprd:AuthorizedMedicinalProduct a owl:Class ;
     rdfs:label "Authorized Medicinal Product"@en ;
@@ -250,10 +252,10 @@ idmp-mprd:AuthorizedMedicinalProduct a owl:Class ;
     rdfs:comment "IDMP-O ISO 11615 authorised medicinal product (offline MIREOT stub; ✓ 已核实)."@en .
 
 idmp-mprd:InvestigationalMedicinalProduct a owl:Class ;
-    rdfs:label "Investigational Medicinal Product"@en ;
+    rdfs:label "investigational medicinal product"@en ;
     rdfs:label "研究用医药产品"@zh ;
     rdfs:isDefinedBy <https://spec.pistoiaalliance.org/idmp/ontology/ISO/ISO11615-MedicinalProducts/> ;
-    rdfs:comment "IDMP-O ISO 11615 investigational medicinal product (offline MIREOT stub; ⚠ 产品类本地名待核)."@en .
+    rdfs:comment "IDMP-O ISO 11615 investigational medicinal product (offline MIREOT stub; ✓ 已核实，源标签 investigational medicinal product)."@en .
 
 idmp-sub:ChemicalSubstance a owl:Class ;
     rdfs:label "Chemical Substance"@en ;
@@ -267,17 +269,12 @@ idmp-sub:InactiveIngredient a owl:Class ;
     rdfs:isDefinedBy <https://spec.pistoiaalliance.org/idmp/ontology/ISO/ISO11238-Substances/> ;
     rdfs:comment "IDMP-O ISO 11238 inactive ingredient ≈ excipient (offline MIREOT stub; ✓ 已核实)."@en .
 
-idmp-phdf:PharmaceuticalDoseForm a owl:Class ;
-    rdfs:label "Pharmaceutical Dose Form"@en ;
-    rdfs:label "药物剂型"@zh ;
-    rdfs:isDefinedBy <https://spec.pistoiaalliance.org/idmp/ontology/ISO/ISO11239-PharmaceuticalDoseForms/> ;
-    rdfs:comment "IDMP-O ISO 11239 pharmaceutical dose form (offline MIREOT stub; ⚠ 本地名待核)."@en .
-
-idmp-phdf:RouteOfAdministration a owl:Class ;
-    rdfs:label "Route of Administration"@en ;
-    rdfs:label "给药途径"@zh ;
-    rdfs:isDefinedBy <https://spec.pistoiaalliance.org/idmp/ontology/ISO/ISO11239-PharmaceuticalDoseForms/> ;
-    rdfs:comment "IDMP-O ISO 11239 route of administration (offline MIREOT stub; ⚠ 本地名待核)."@en .
+# ISO 11239 模块未将剂型/给药途径建为裸类（源 artifact 已核实：实为受控词表 + ISO11615 给药对象
+# 属性建模）。此处仅为模块本体 stub，slpra dosageForm/routeOfAdministration 以 rdfs:seeAlso 指向它。
+idmp-phdf: a owl:Ontology ;
+    rdfs:label "ISO 11239 Pharmaceutical Dose Forms & Routes of Administration (IDMP-O)"@en ;
+    rdfs:label "ISO 11239 药物剂型与给药途径（IDMP-O）"@zh ;
+    rdfs:comment "IDMP-O ISO 11239 module — 剂型/单位/给药途径/包装的受控词表 (offline MIREOT stub; ✓ 模块 IRI 已核实)."@en .
 
 idmp-sub:hasIngredient a owl:ObjectProperty ;
     rdfs:label "has ingredient"@en ;
