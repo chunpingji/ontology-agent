@@ -13,7 +13,10 @@
 @prefix dron:  <http://purl.obolibrary.org/obo/DRON_> .
 @prefix chebi: <http://purl.obolibrary.org/obo/CHEBI_> .
 @prefix isa88: <https://w3id.org/2021/2/7/2/isa88/> .
-@prefix idmp:  <http://idmp.org/ontology/> .
+@prefix idmp-mprd: <https://spec.pistoiaalliance.org/idmp/ontology/ISO/ISO11615-MedicinalProducts/> .
+@prefix idmp-sub:  <https://spec.pistoiaalliance.org/idmp/ontology/ISO/ISO11238-Substances/> .
+@prefix idmp-phdf: <https://spec.pistoiaalliance.org/idmp/ontology/ISO/ISO11239-PharmaceuticalDoseForms/> .
+@prefix skos:  <http://www.w3.org/2004/02/skos/core#> .
 
 <https://ontology.pharma-gmp.cn/slpra/integration/>
     a owl:Ontology ;
@@ -31,42 +34,211 @@
 # ============================================================
 # External Ontology Alignment — DrOn
 # ============================================================
+# 注：DrugProduct 是受管主语，rdfs:subClassOf 会被 surgical_merge 剥离，故改用 skos
+# 映射（非受管谓词，可保留往返）。ClinicalDrugRole 用 owl:equivalentClass —— 它不在
+# MANAGED_PREDICATES 中、可安全存活，故保持不变。
 
-# DrOn drug_product (DRON_00000005) alignment
-slpra-drug:DrugProduct rdfs:subClassOf dron:00000005 .
+# DrugProduct ⟷ DrOn drug product（近似匹配）
+slpra-drug:DrugProduct skos:closeMatch dron:00000005 .
 
-# DrOn clinical_drug_role alignment
+# ClinicalDrugRole ⟷ DrOn clinical drug role（owl:equivalentClass 非受管谓词，保留）
 slpra-drug:ClinicalDrugRole owl:equivalentClass dron:00000001 .
 
 # ============================================================
-# External Ontology Alignment — ChEBI (via DrOn bridge)
+# External Ontology Alignment — ChEBI（药品/API 的化学与药理角色对齐）
 # ============================================================
+# molecular entity 远宽于 API → broadMatch；其余为药理/化学角色 closeMatch。
+# 所有 CHEBI IRI 已逐一核对 ebi.ac.uk/chebi。
 
-# ChEBI molecular_entity (CHEBI_23367)
-slpra-drug:ActivePharmaceuticalIngredient rdfs:subClassOf chebi:23367 .
+# API ⟷ ChEBI molecular entity（外部更宽 → broadMatch）
+slpra-drug:ActivePharmaceuticalIngredient skos:broadMatch chebi:23367 .
+
+# 药理 / 化学角色对齐
+slpra-drug:CytotoxicDrug       skos:closeMatch   chebi:35610 .   # antineoplastic agent
+slpra-drug:CytotoxicAPI        skos:closeMatch   chebi:35610 .   # antineoplastic agent
+slpra-drug:HormonalDrug        skos:closeMatch   chebi:24621 .   # hormone
+slpra-drug:HormonalAPI         skos:closeMatch   chebi:24621 .   # hormone
+slpra-drug:PenicillinDrug      skos:closeMatch   chebi:17334 .   # penicillin
+slpra-drug:BetaLactamDrug      skos:closeMatch   chebi:27933 .   # beta-lactam antibiotic
+slpra-drug:GenotoxicityProfile skos:relatedMatch chebi:25435 .   # mutagen（相关角色，非层级）
 
 # ============================================================
-# External Ontology Alignment — ISA-88
+# External Ontology Alignment — ISA-88 (IEC 61512-1)
 # ============================================================
+# 用 SKOS 映射而非 rdfs:subClassOf：设备类是工作台受管主语(managed subject)，而
+# rdfs:subClassOf ∈ MANAGED_PREDICATES(ttl_merge.py)，会在外科式合并时被 DB 投影
+# 剥离覆盖——外部对齐会静默丢失。skos:exactMatch/closeMatch 是非受管谓词，可逐字
+# 保留并安全往返导出。外部 IRI 的离线 stub 见下方「External Term Stubs」。
+# 说明：skos 映射在 SLPRA 类(owl:Class)间断言会产生 OWL punning，DL 推理机
+# (HermiT/Pellet)允许此用法，不影响一致性；映射为策展级、不传播 DL 包含蕴含。
 
-# ISA-88 EquipmentEntity alignment
-slpra-equip:Equipment rdfs:subClassOf isa88:EquipmentEntity .
+# 设备总类 ⟷ ISA-88 设备实体（精确匹配）
+slpra-equip:Equipment        skos:exactMatch  isa88:EquipmentEntity .
 
-# ISA-88 Unit alignment for process equipment
-slpra-equip:ProcessEquipment rdfs:subClassOf isa88:Unit .
+# 生产设备及各机型 ⟷ ISA-88 Unit（近似匹配：每台主设备即一个 S88 Unit）
+slpra-equip:ProcessEquipment skos:closeMatch  isa88:Unit .
+slpra-equip:Reactor          skos:closeMatch  isa88:Unit .
+slpra-equip:Centrifuge       skos:closeMatch  isa88:Unit .
+slpra-equip:Dryer            skos:closeMatch  isa88:Unit .
+slpra-equip:RotaryEvaporator skos:closeMatch  isa88:Unit .
+slpra-equip:Granulator       skos:closeMatch  isa88:Unit .
+slpra-equip:Mixer            skos:closeMatch  isa88:Unit .
+slpra-equip:TabletPress      skos:closeMatch  isa88:Unit .
+slpra-equip:CapsuleFiller    skos:closeMatch  isa88:Unit .
+slpra-equip:CoatingMachine   skos:closeMatch  isa88:Unit .
+slpra-equip:FillingMachine   skos:closeMatch  isa88:Unit .
 
 # ============================================================
-# External Ontology Alignment — IDMP (ISO 11615/11616)
+# External Ontology Alignment — IDMP-O (Pistoia/EDMC, ISO 11615/11238/11239)
 # ============================================================
+# 已重基到权威命名空间：Pistoia Alliance IDMP-O V1.4（MIT 许可），EDM Council 镜像
+# 托管，FIBO/OMG-Commons 风格。三个模块命名空间逐字取自官方 QuickIDMPDev.ttl。
+# ✓ = 已核实真实存在的类/属性；⚠ = 父类/本地名待源 artifact 字节级复核。
+# 受管主语的 subClassOf 仍会被 surgical_merge 剥离 → 一律用 skos/seeAlso/subPropertyOf。
 
-# IDMP MedicinalProduct alignment
-slpra-drug:DrugProduct rdfs:subClassOf idmp:MedicinalProduct .
+# DrugProduct ⟷ IDMP 医药产品（近似匹配；⚠ 父类本地名待核）
+slpra-drug:DrugProduct skos:closeMatch idmp-mprd:MedicinalProduct .
 
-# IDMP Substance alignment
-slpra-drug:ActivePharmaceuticalIngredient rdfs:subClassOf idmp:Substance .
+# 商业化药品 ⟷ IDMP 已上市医药产品（✓ AuthorizedMedicinalProduct 已核实）
+slpra-drug:CommercialDrug skos:closeMatch idmp-mprd:AuthorizedMedicinalProduct .
 
-# IDMP ingredient relation alignment
-slpra-drug:hasActiveIngredient rdfs:subPropertyOf idmp:hasIngredient .
+# 临床试验用药 ⟷ IDMP 研究用医药产品（⚠ 产品类本地名待核；IMP 词族已核实存在）
+slpra-drug:ClinicalTrialDrug skos:closeMatch idmp-mprd:InvestigationalMedicinalProduct .
+
+# API ⟷ IDMP 化学物质（外部更宽 → broadMatch；✓ ChemicalSubstance 已核实）
+slpra-drug:ActivePharmaceuticalIngredient skos:broadMatch idmp-sub:ChemicalSubstance .
+
+# 辅料 ⟷ IDMP 非活性成分（✓ InactiveIngredient 已核实，较占位 Ingredient 更精确）
+slpra-drug:Excipient skos:closeMatch idmp-sub:InactiveIngredient .
+
+# 数据属性 ⟷ IDMP 受控概念（seeAlso：SLPRA 用字面值，IDMP 用受控对象，非等价；⚠ 本地名待核）
+slpra-drug:dosageForm            rdfs:seeAlso idmp-phdf:PharmaceuticalDoseForm .
+slpra-drug:routeOfAdministration rdfs:seeAlso idmp-phdf:RouteOfAdministration .
+
+# IDMP ingredient relation alignment（✓ idmp-sub:hasIngredient 已核实；subPropertyOf 非受管谓词，保留）
+slpra-drug:hasActiveIngredient rdfs:subPropertyOf idmp-sub:hasIngredient .
+
+# ============================================================
+# External Term Stubs (offline MIREOT)
+# ============================================================
+# MIREOT 最小引用：为本模块对齐引用的外部术语提供本地 stub（类型 / 双语标签 / 来源
+# rdfs:isDefinedBy），使其在离线容器内可解析、可在编辑器显示，且不拉入外部本体的
+# 全部公理。仿照 lib/bfo.ttl 离线子集做法。如需权威全量定义，用源本体覆盖本节即可。
+# 这些 stub 主语均为外部 IRI（非 managed subject），surgical_merge 逐字保留。
+
+# --- ISA-88 / IEC 61512-1（物理模型） ---
+isa88:EquipmentEntity a owl:Class ;
+    rdfs:label "Equipment Entity"@en ;
+    rdfs:label "设备实体"@zh ;
+    rdfs:isDefinedBy <https://w3id.org/2021/2/7/2/isa88/> ;
+    rdfs:comment "ISA-88 physical model — generic equipment entity (offline MIREOT stub)."@en .
+
+isa88:Unit a owl:Class ;
+    rdfs:subClassOf isa88:EquipmentEntity ;
+    rdfs:label "Unit"@en ;
+    rdfs:label "单元"@zh ;
+    rdfs:isDefinedBy <https://w3id.org/2021/2/7/2/isa88/> ;
+    rdfs:comment "ISA-88 Unit — 围绕一台主处理设备(如反应器)的设备/控制模块集合 (offline MIREOT stub)."@en .
+
+# --- ChEBI（IRI 已逐一核对 ebi.ac.uk/chebi） ---
+chebi:23367 a owl:Class ;
+    rdfs:label "molecular entity"@en ;
+    rdfs:label "分子实体"@zh ;
+    rdfs:isDefinedBy <http://purl.obolibrary.org/obo/chebi.owl> ;
+    rdfs:comment "ChEBI molecular entity (offline MIREOT stub)."@en .
+
+chebi:35610 a owl:Class ;
+    rdfs:label "antineoplastic agent"@en ;
+    rdfs:label "抗肿瘤剂"@zh ;
+    rdfs:isDefinedBy <http://purl.obolibrary.org/obo/chebi.owl> ;
+    rdfs:comment "ChEBI antineoplastic agent (offline MIREOT stub)."@en .
+
+chebi:24621 a owl:Class ;
+    rdfs:label "hormone"@en ;
+    rdfs:label "激素"@zh ;
+    rdfs:isDefinedBy <http://purl.obolibrary.org/obo/chebi.owl> ;
+    rdfs:comment "ChEBI hormone (offline MIREOT stub)."@en .
+
+chebi:17334 a owl:Class ;
+    rdfs:label "penicillin"@en ;
+    rdfs:label "青霉素"@zh ;
+    rdfs:isDefinedBy <http://purl.obolibrary.org/obo/chebi.owl> ;
+    rdfs:comment "ChEBI penicillin (offline MIREOT stub)."@en .
+
+chebi:27933 a owl:Class ;
+    rdfs:label "beta-lactam antibiotic"@en ;
+    rdfs:label "β-内酰胺类抗生素"@zh ;
+    rdfs:isDefinedBy <http://purl.obolibrary.org/obo/chebi.owl> ;
+    rdfs:comment "ChEBI beta-lactam antibiotic (offline MIREOT stub)."@en .
+
+chebi:25435 a owl:Class ;
+    rdfs:label "mutagen"@en ;
+    rdfs:label "诱变剂"@zh ;
+    rdfs:isDefinedBy <http://purl.obolibrary.org/obo/chebi.owl> ;
+    rdfs:comment "ChEBI mutagen (offline MIREOT stub)."@en .
+
+# --- DrOn ---
+dron:00000005 a owl:Class ;
+    rdfs:label "drug product"@en ;
+    rdfs:label "药品"@zh ;
+    rdfs:isDefinedBy <http://purl.obolibrary.org/obo/dron.owl> ;
+    rdfs:comment "DrOn drug product (offline MIREOT stub)."@en .
+
+dron:00000001 a owl:Class ;
+    rdfs:label "clinical drug role"@en ;
+    rdfs:label "临床药物角色"@zh ;
+    rdfs:isDefinedBy <http://purl.obolibrary.org/obo/dron.owl> ;
+    rdfs:comment "DrOn clinical drug role (offline MIREOT stub)."@en .
+
+# --- IDMP-O / Pistoia·EDMC（ISO 11615 医药产品 · 11238 物质 · 11239 剂型） ---
+# 命名空间逐字取自官方 QuickIDMPDev.ttl；✓ 已核实真实存在，⚠ 本地名待源 artifact 复核。
+idmp-mprd:MedicinalProduct a owl:Class ;
+    rdfs:label "Medicinal Product"@en ;
+    rdfs:label "医药产品"@zh ;
+    rdfs:isDefinedBy <https://spec.pistoiaalliance.org/idmp/ontology/ISO/ISO11615-MedicinalProducts/> ;
+    rdfs:comment "IDMP-O ISO 11615 medicinal product (offline MIREOT stub; ⚠ 父类本地名待核)."@en .
+
+idmp-mprd:AuthorizedMedicinalProduct a owl:Class ;
+    rdfs:label "Authorized Medicinal Product"@en ;
+    rdfs:label "已上市医药产品"@zh ;
+    rdfs:isDefinedBy <https://spec.pistoiaalliance.org/idmp/ontology/ISO/ISO11615-MedicinalProducts/> ;
+    rdfs:comment "IDMP-O ISO 11615 authorised medicinal product (offline MIREOT stub; ✓ 已核实)."@en .
+
+idmp-mprd:InvestigationalMedicinalProduct a owl:Class ;
+    rdfs:label "Investigational Medicinal Product"@en ;
+    rdfs:label "研究用医药产品"@zh ;
+    rdfs:isDefinedBy <https://spec.pistoiaalliance.org/idmp/ontology/ISO/ISO11615-MedicinalProducts/> ;
+    rdfs:comment "IDMP-O ISO 11615 investigational medicinal product (offline MIREOT stub; ⚠ 产品类本地名待核)."@en .
+
+idmp-sub:ChemicalSubstance a owl:Class ;
+    rdfs:label "Chemical Substance"@en ;
+    rdfs:label "化学物质"@zh ;
+    rdfs:isDefinedBy <https://spec.pistoiaalliance.org/idmp/ontology/ISO/ISO11238-Substances/> ;
+    rdfs:comment "IDMP-O ISO 11238 chemical substance (offline MIREOT stub; ✓ 已核实)."@en .
+
+idmp-sub:InactiveIngredient a owl:Class ;
+    rdfs:label "Inactive Ingredient"@en ;
+    rdfs:label "非活性成分"@zh ;
+    rdfs:isDefinedBy <https://spec.pistoiaalliance.org/idmp/ontology/ISO/ISO11238-Substances/> ;
+    rdfs:comment "IDMP-O ISO 11238 inactive ingredient ≈ excipient (offline MIREOT stub; ✓ 已核实)."@en .
+
+idmp-phdf:PharmaceuticalDoseForm a owl:Class ;
+    rdfs:label "Pharmaceutical Dose Form"@en ;
+    rdfs:label "药物剂型"@zh ;
+    rdfs:isDefinedBy <https://spec.pistoiaalliance.org/idmp/ontology/ISO/ISO11239-PharmaceuticalDoseForms/> ;
+    rdfs:comment "IDMP-O ISO 11239 pharmaceutical dose form (offline MIREOT stub; ⚠ 本地名待核)."@en .
+
+idmp-phdf:RouteOfAdministration a owl:Class ;
+    rdfs:label "Route of Administration"@en ;
+    rdfs:label "给药途径"@zh ;
+    rdfs:isDefinedBy <https://spec.pistoiaalliance.org/idmp/ontology/ISO/ISO11239-PharmaceuticalDoseForms/> ;
+    rdfs:comment "IDMP-O ISO 11239 route of administration (offline MIREOT stub; ⚠ 本地名待核)."@en .
+
+idmp-sub:hasIngredient a owl:ObjectProperty ;
+    rdfs:label "has ingredient"@en ;
+    rdfs:label "含成分"@zh ;
+    rdfs:isDefinedBy <https://spec.pistoiaalliance.org/idmp/ontology/ISO/ISO11238-Substances/> ;
+    rdfs:comment "IDMP-O ISO 11238 ingredient relation (offline MIREOT stub; ✓ 已核实)."@en .
 
 # ============================================================
 # Cross-Module Bridging Properties
