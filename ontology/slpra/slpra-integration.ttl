@@ -12,6 +12,10 @@
 @prefix slpra-facil: <https://ontology.pharma-gmp.cn/slpra/facility/> .
 @prefix dron:  <http://purl.obolibrary.org/obo/DRON_> .
 @prefix chebi: <http://purl.obolibrary.org/obo/CHEBI_> .
+@prefix chmo:  <http://purl.obolibrary.org/obo/CHMO_> .
+@prefix obi:   <http://purl.obolibrary.org/obo/OBI_> .
+@prefix envo:  <http://purl.obolibrary.org/obo/ENVO_> .
+@prefix ncit:  <http://purl.obolibrary.org/obo/NCIT_> .
 @prefix isa88: <https://w3id.org/2021/2/7/2/isa88/> .
 @prefix idmp-mprd: <https://spec.pistoiaalliance.org/idmp/ontology/ISO/ISO11615-MedicinalProducts/> .
 @prefix idmp-sub:  <https://spec.pistoiaalliance.org/idmp/ontology/ISO/ISO11238-Substances/> .
@@ -23,7 +27,7 @@
     owl:versionIRI <https://ontology.pharma-gmp.cn/slpra/integration/0.1.0> ;
     rdfs:label "SLPRA Integration Module"@en ;
     rdfs:label "SLPRA 集成桥接模块"@zh ;
-    rdfs:comment "Integration module that bridges all 6 SLPRA domain modules and maps to external ontologies (BFO, DrOn, ChEBI, ISA-88, MOMO, IDMP)."@en ;
+    rdfs:comment "Integration module that bridges all 6 SLPRA domain modules and maps to external ontologies (BFO, DrOn, ChEBI, ISA-88, IDMP-O, CHMO, OBI, ENVO, NCIT)."@en ;
     owl:imports <https://ontology.pharma-gmp.cn/slpra/drug/> ;
     owl:imports <https://ontology.pharma-gmp.cn/slpra/equipment/> ;
     owl:imports <https://ontology.pharma-gmp.cn/slpra/contamination/> ;
@@ -117,6 +121,47 @@ slpra-drug:routeOfAdministration rdfs:seeAlso idmp-phdf:RouteOfAdministration .
 
 # IDMP ingredient relation alignment（✓ idmp-sub:hasIngredient 已核实；subPropertyOf 非受管谓词，保留）
 slpra-drug:hasActiveIngredient rdfs:subPropertyOf idmp-sub:hasIngredient .
+
+# ============================================================
+# External Ontology Alignment — Cleaning Module（CHMO / OBI，OBO Foundry）
+# ============================================================
+# 分析方法对到 CHMO(化学方法本体)、取样/测定对到 OBI(生物医学研究本体)。均为 OBO
+# Foundry、PURL 可解引用；IRI 已逐一经 EBI OLS 核对。受管主语用 skos(非受管谓词)。
+# TOC 法 / SIP 灭菌在 CHMO·OBI 暂无对应过程类（OBI 仅有 sterilization function，
+# 属 BFO:function 范畴不符），故不强行对齐。
+
+# 分析方法 ⟷ OBI assay（外部更宽：任何"检验材料以产出信息"的计划过程 → broadMatch）
+slpra-clean:AnalyticalMethod skos:broadMatch obi:0000070 .
+
+# HPLC 法 ⟷ CHMO 高效液相色谱法
+slpra-clean:HPLCMethod skos:closeMatch chmo:0001009 .
+
+# 紫外分光光度法 ⟷ CHMO 紫外-可见分光光度法
+slpra-clean:UVSpectrophotometry skos:closeMatch chmo:0000292 .
+
+# 取样过程 ⟷ OBI 标本采集过程
+slpra-clean:SamplingProcess skos:closeMatch obi:0000659 .
+
+# ============================================================
+# External Ontology Alignment — Facility Module（ENVO，OBO Foundry）
+# ============================================================
+# 洁净区对到 ENVO(环境本体) cleanroom；ISO 14644 等级已在 facility 模块标签注明，
+# 该标准无免费 RDF 词条 IRI，故不另设对齐。
+
+# 洁净区 ⟷ ENVO 洁净室
+slpra-facil:CleanArea skos:closeMatch envo:03600000 .
+
+# ============================================================
+# External Ontology Alignment — Contamination Module（NCIT，OBO 分发）
+# ============================================================
+# 空气传播途径对到 NCIT 空气传播；污染事件总类弱关联 NCIT"使用中污染"——CFDI 四途径
+# 为本项目特有建模，NCIT 无对应总类，故仅 relatedMatch(非等价、非层级)。
+
+# 空气传播 ⟷ NCIT 空气传播
+slpra-contam:AirborneTransmission skos:closeMatch ncit:C128353 .
+
+# 污染事件 ⟷ NCIT 使用中污染（弱关联）
+slpra-contam:ContaminationEvent skos:relatedMatch ncit:C63018 .
 
 # ============================================================
 # External Term Stubs (offline MIREOT)
@@ -239,6 +284,52 @@ idmp-sub:hasIngredient a owl:ObjectProperty ;
     rdfs:label "含成分"@zh ;
     rdfs:isDefinedBy <https://spec.pistoiaalliance.org/idmp/ontology/ISO/ISO11238-Substances/> ;
     rdfs:comment "IDMP-O ISO 11238 ingredient relation (offline MIREOT stub; ✓ 已核实)."@en .
+
+# --- CHMO（化学方法本体，OBO Foundry；IRI 经 EBI OLS 核对） ---
+chmo:0001009 a owl:Class ;
+    rdfs:label "high-performance liquid chromatography"@en ;
+    rdfs:label "高效液相色谱法"@zh ;
+    rdfs:isDefinedBy <http://purl.obolibrary.org/obo/chmo.owl> ;
+    rdfs:comment "CHMO high-performance liquid chromatography (offline MIREOT stub)."@en .
+
+chmo:0000292 a owl:Class ;
+    rdfs:label "ultraviolet-visible spectrophotometry"@en ;
+    rdfs:label "紫外-可见分光光度法"@zh ;
+    rdfs:isDefinedBy <http://purl.obolibrary.org/obo/chmo.owl> ;
+    rdfs:comment "CHMO ultraviolet-visible spectrophotometry (offline MIREOT stub)."@en .
+
+# --- OBI（生物医学研究本体，OBO Foundry） ---
+obi:0000070 a owl:Class ;
+    rdfs:label "assay"@en ;
+    rdfs:label "测定"@zh ;
+    rdfs:isDefinedBy <http://purl.obolibrary.org/obo/obi.owl> ;
+    rdfs:comment "OBI assay — 检验材料实体以产出信息的计划过程 (offline MIREOT stub)."@en .
+
+obi:0000659 a owl:Class ;
+    rdfs:label "specimen collection process"@en ;
+    rdfs:label "标本采集过程"@zh ;
+    rdfs:isDefinedBy <http://purl.obolibrary.org/obo/obi.owl> ;
+    rdfs:comment "OBI specimen collection process (offline MIREOT stub)."@en .
+
+# --- ENVO（环境本体，OBO Foundry） ---
+envo:03600000 a owl:Class ;
+    rdfs:label "cleanroom"@en ;
+    rdfs:label "洁净室"@zh ;
+    rdfs:isDefinedBy <http://purl.obolibrary.org/obo/envo.owl> ;
+    rdfs:comment "ENVO cleanroom (offline MIREOT stub)."@en .
+
+# --- NCIT（NCI 叙词表，OBO 分发） ---
+ncit:C128353 a owl:Class ;
+    rdfs:label "Airborne Transmission"@en ;
+    rdfs:label "空气传播"@zh ;
+    rdfs:isDefinedBy <http://purl.obolibrary.org/obo/ncit.owl> ;
+    rdfs:comment "NCIT airborne transmission (offline MIREOT stub)."@en .
+
+ncit:C63018 a owl:Class ;
+    rdfs:label "Contamination during Use"@en ;
+    rdfs:label "使用中污染"@zh ;
+    rdfs:isDefinedBy <http://purl.obolibrary.org/obo/ncit.owl> ;
+    rdfs:comment "NCIT contamination during use (offline MIREOT stub)."@en .
 
 # ============================================================
 # Cross-Module Bridging Properties
