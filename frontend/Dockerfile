@@ -6,7 +6,8 @@ FROM node:22-alpine AS deps
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 COPY package.json package-lock.json ./
-RUN npm ci
+# 该项目存在 peer 依赖冲突,装包需 --legacy-peer-deps(与本地 npm install 一致)
+RUN npm ci --legacy-peer-deps
 
 # ---- builder: compile the Next.js standalone bundle ----
 FROM node:22-alpine AS builder

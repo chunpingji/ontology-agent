@@ -7,6 +7,17 @@ import {
   type ExtractionConfig,
   type ExtractionJob,
 } from "@/lib/api";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 /**
  * 抽取作业创建表单（T018, US1）：选择源类型 / 抽取配置 / 上传文件，
@@ -25,17 +36,22 @@ export function JobCreateForm({ onCreated }: { onCreated: (job: ExtractionJob) =
     listExtractionConfigs()
       .then((cs) => {
         setConfigs(cs);
-        if (cs.length && !configId) setConfigId(cs[0].id);
+        // 默认选中首个配置并同步其源类型，避免类型与配置不匹配。
+        if (cs.length && !configId) {
+          setConfigId(cs[0].id);
+          setSourceType(cs[0].source_type);
+        }
       })
       .catch((e) => setError(String(e)));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // 选择配置时同步源类型，避免类型与配置不匹配。
-  useEffect(() => {
-    const cfg = configs.find((c) => c.id === configId);
+  const handleConfigChange = (v: string) => {
+    setConfigId(v);
+    const cfg = configs.find((c) => c.id === v);
     if (cfg) setSourceType(cfg.source_type);
-  }, [configId, configs]);
+  };
 
   const isDb = sourceType === "database";
 
@@ -66,76 +82,69 @@ export function JobCreateForm({ onCreated }: { onCreated: (job: ExtractionJob) =
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       {error && (
-        <div className="rounded border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-700">
+        <div className="rounded border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
           {error}
         </div>
       )}
 
-      <div>
-        <label className="mb-1 block text-sm font-medium text-gray-700">抽取配置</label>
-        <select
-          value={configId}
-          onChange={(e) => setConfigId(e.target.value)}
-          className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
-        >
-          <option value="" disabled>
-            选择配置…
-          </option>
-          {configs.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.name}（{c.source_type}）
-            </option>
-          ))}
-        </select>
+      <div className="space-y-1">
+        <Label>抽取配置</Label>
+        <Select value={configId} onValueChange={handleConfigChange}>
+          <SelectTrigger>
+            <SelectValue placeholder="选择配置…" />
+          </SelectTrigger>
+          <SelectContent>
+            {configs.map((c) => (
+              <SelectItem key={c.id} value={c.id}>
+                {c.name}（{c.source_type}）
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
-      <div>
-        <label className="mb-1 block text-sm font-medium text-gray-700">源类型</label>
-        <select
-          value={sourceType}
-          onChange={(e) => setSourceType(e.target.value)}
-          className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
-        >
-          <option value="excel">Excel (.xlsx)</option>
-          <option value="word">Word (.docx)</option>
-          <option value="database">数据库（只读反射）</option>
-        </select>
+      <div className="space-y-1">
+        <Label>源类型</Label>
+        <Select value={sourceType} onValueChange={(v) => setSourceType(v)}>
+          <SelectTrigger>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="excel">Excel (.xlsx)</SelectItem>
+            <SelectItem value="word">Word (.docx)</SelectItem>
+            <SelectItem value="database">数据库（只读反射）</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       {!isDb && (
-        <div>
-          <label className="mb-1 block text-sm font-medium text-gray-700">上传文件</label>
-          <input
+        <div className="space-y-1">
+          <Label>上传文件</Label>
+          <Input
             type="file"
             accept=".xlsx,.docx"
             onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-            className="block w-full text-sm text-gray-600 file:mr-3 file:rounded file:border-0 file:bg-blue-600 file:px-3 file:py-2 file:text-sm file:text-white hover:file:bg-blue-700"
+            className="text-muted-foreground file:mr-3 file:rounded file:border-0 file:bg-primary file:px-3 file:py-2 file:text-sm file:text-primary-foreground hover:file:bg-primary/90"
           />
         </div>
       )}
 
       {isDb && (
-        <div>
-          <label className="mb-1 block text-sm font-medium text-gray-700">
-            数据库源（JSON：dsn_ref 经环境变量注入，凭据不入库）
-          </label>
-          <textarea
+        <div className="space-y-1">
+          <Label>数据库源（JSON：dsn_ref 经环境变量注入，凭据不入库）</Label>
+          <Textarea
             value={dbSource}
             onChange={(e) => setDbSource(e.target.value)}
             rows={4}
             placeholder='{"dsn_ref": "SLPRA_SOURCE_DSN", "schema_name": "public", "include_tables": ["equipment"]}'
-            className="w-full rounded border border-gray-300 px-3 py-2 font-mono text-xs"
+            className="font-mono text-xs"
           />
         </div>
       )}
 
-      <button
-        type="submit"
-        disabled={submitting}
-        className="rounded bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700 disabled:opacity-50"
-      >
+      <Button type="submit" disabled={submitting}>
         {submitting ? "提交中…" : "创建抽取作业"}
-      </button>
+      </Button>
     </form>
   );
 }

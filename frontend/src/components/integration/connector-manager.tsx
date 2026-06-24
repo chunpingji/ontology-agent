@@ -11,6 +11,18 @@ import {
   type Connector,
   type MaterializationRun,
 } from "@/lib/api";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 /** 连接器管理：CRUD + 探活 + 同步触发 + 物化运行列表（能力三, T049）。 */
 export function ConnectorManager() {
@@ -72,107 +84,111 @@ export function ConnectorManager() {
 
   return (
     <div className="space-y-4">
-      <div className="rounded-lg border bg-white p-4">
-        <h3 className="mb-3 font-semibold">新增连接器</h3>
-        {error && <p className="mb-2 text-sm text-red-600">{error}</p>}
-        <div className="flex flex-wrap gap-2">
-          <input
-            className="rounded border px-2 py-1 text-sm"
-            placeholder="名称"
-            value={form.name}
-            onChange={(e) => setForm({ ...form, name: e.target.value })}
-          />
-          <input
-            className="w-24 rounded border px-2 py-1 text-sm"
-            placeholder="类型"
-            value={form.system_type}
-            onChange={(e) => setForm({ ...form, system_type: e.target.value })}
-          />
-          <input
-            type="number"
-            className="w-28 rounded border px-2 py-1 text-sm"
-            placeholder="轮询(秒)"
-            value={form.poll_interval_seconds}
-            onChange={(e) =>
-              setForm({ ...form, poll_interval_seconds: Number(e.target.value) })
-            }
-          />
-          <button
-            className="rounded bg-blue-600 px-3 py-1 text-sm text-white"
-            onClick={onCreate}
-          >
-            创建
-          </button>
-        </div>
-      </div>
+      <Card className="p-4">
+        <CardContent className="p-0">
+          <h3 className="mb-3 font-semibold">新增连接器</h3>
+          {error && <p className="mb-2 text-sm text-destructive">{error}</p>}
+          <div className="flex flex-wrap gap-2">
+            <Input
+              className="w-auto text-sm"
+              placeholder="名称"
+              value={form.name}
+              onChange={(e) => setForm({ ...form, name: e.target.value })}
+            />
+            <Input
+              className="w-24 text-sm"
+              placeholder="类型"
+              value={form.system_type}
+              onChange={(e) => setForm({ ...form, system_type: e.target.value })}
+            />
+            <Input
+              type="number"
+              className="w-28 text-sm"
+              placeholder="轮询(秒)"
+              value={form.poll_interval_seconds}
+              onChange={(e) =>
+                setForm({ ...form, poll_interval_seconds: Number(e.target.value) })
+              }
+            />
+            <Button size="sm" onClick={onCreate}>
+              创建
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
       <div className="space-y-3">
         {connectors.map((c) => (
-          <div key={c.id} className="rounded-lg border bg-white p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <span className="font-semibold">{c.name}</span>
-                <span className="ml-2 text-xs text-gray-400">{c.system_type}</span>
-                {c.last_status && (
-                  <span
-                    className={`ml-2 rounded px-1.5 py-0.5 text-xs ${
-                      c.last_status === "success"
-                        ? "bg-green-100 text-green-700"
-                        : "bg-amber-100 text-amber-700"
-                    }`}
+          <Card key={c.id} className="p-4">
+            <CardContent className="p-0">
+              <div className="flex items-center justify-between">
+                <div>
+                  <span className="font-semibold">{c.name}</span>
+                  <span className="ml-2 text-xs text-muted-foreground">{c.system_type}</span>
+                  {c.last_status && (
+                    <Badge
+                      variant={c.last_status === "success" ? "success" : "warning"}
+                      className="ml-2"
+                    >
+                      {c.last_status}
+                    </Badge>
+                  )}
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={busy === c.id}
+                    onClick={() => onTest(c.id)}
                   >
-                    {c.last_status}
-                  </span>
-                )}
+                    探活
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={busy === c.id}
+                    onClick={() => onSync(c.id)}
+                  >
+                    同步
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="border-destructive/40 text-destructive"
+                    onClick={() => onDelete(c.id)}
+                  >
+                    删除
+                  </Button>
+                </div>
               </div>
-              <div className="flex gap-2">
-                <button
-                  className="rounded border px-2 py-1 text-xs disabled:opacity-50"
-                  disabled={busy === c.id}
-                  onClick={() => onTest(c.id)}
-                >
-                  探活
-                </button>
-                <button
-                  className="rounded border px-2 py-1 text-xs disabled:opacity-50"
-                  disabled={busy === c.id}
-                  onClick={() => onSync(c.id)}
-                >
-                  同步
-                </button>
-                <button
-                  className="rounded border border-red-200 px-2 py-1 text-xs text-red-600"
-                  onClick={() => onDelete(c.id)}
-                >
-                  删除
-                </button>
-              </div>
-            </div>
-            {c.last_error && <p className="mt-1 text-xs text-red-500">{c.last_error}</p>}
-            {runs[c.id]?.length > 0 && (
-              <table className="mt-2 w-full text-xs">
-                <thead>
-                  <tr className="text-left text-gray-400">
-                    <th className="pr-2">状态</th>
-                    <th className="pr-2">变更数</th>
-                    <th>开始时间</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {runs[c.id].map((r) => (
-                    <tr key={r.id} className="border-t">
-                      <td className="py-1 pr-2">{r.status}</td>
-                      <td className="py-1 pr-2">{r.change_count}</td>
-                      <td className="py-1">{r.started_at}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
-          </div>
+              {c.last_error && (
+                <p className="mt-1 text-xs text-destructive">{c.last_error}</p>
+              )}
+              {runs[c.id]?.length > 0 && (
+                <Table className="mt-2 text-xs">
+                  <TableHeader>
+                    <TableRow className="text-left text-muted-foreground">
+                      <TableHead className="pr-2">状态</TableHead>
+                      <TableHead className="pr-2">变更数</TableHead>
+                      <TableHead>开始时间</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {runs[c.id].map((r) => (
+                      <TableRow key={r.id} className="border-t">
+                        <TableCell className="py-1 pr-2">{r.status}</TableCell>
+                        <TableCell className="py-1 pr-2">{r.change_count}</TableCell>
+                        <TableCell className="py-1">{r.started_at}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
         ))}
         {connectors.length === 0 && (
-          <p className="text-sm text-gray-400">暂无连接器</p>
+          <p className="text-sm text-muted-foreground">暂无连接器</p>
         )}
       </div>
     </div>

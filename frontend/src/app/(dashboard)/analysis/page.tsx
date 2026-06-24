@@ -1,8 +1,7 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
-import { clsx } from "clsx";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
   AssessmentPanel,
   MACOCalculator,
@@ -18,48 +17,41 @@ const TABS: { key: Tab; label: string }[] = [
 ];
 
 export default function AnalysisPage() {
-  const [tab, setTab] = useState<Tab>("reasoning");
-
   return (
     <div>
       <div className="mb-1 flex items-center justify-between">
         <h1 className="text-xl font-bold">应用分析</h1>
-        <Link href="/approvals" className="text-sm text-blue-600 hover:underline">
+        <Link href="/approvals" className="text-sm text-primary hover:underline">
           前往审批中心 →
         </Link>
       </div>
-      <p className="mb-5 text-sm text-gray-500">
+      <p className="mb-5 text-sm text-muted-foreground">
         知识图谱的应用 —— 风险推理（PDE/MACO/评估）与图谱查询/统计。
       </p>
 
-      <div className="mb-5 flex gap-1 border-b border-gray-200">
-        {TABS.map((t) => (
-          <button
-            key={t.key}
-            onClick={() => setTab(t.key)}
-            className={clsx(
-              "-mb-px border-b-2 px-4 py-2 text-sm transition",
-              tab === t.key
-                ? "border-blue-600 font-medium text-blue-700"
-                : "border-transparent text-gray-500 hover:text-gray-800",
-            )}
-          >
-            {t.label}
-          </button>
-        ))}
-      </div>
+      <Tabs defaultValue="reasoning">
+        <TabsList className="mb-5">
+          {TABS.map((t) => (
+            <TabsTrigger key={t.key} value={t.key}>
+              {t.label}
+            </TabsTrigger>
+          ))}
+        </TabsList>
 
-      {tab === "reasoning" ? (
-        <div className="space-y-6">
-          <AssessmentPanel />
-          <div className="grid gap-4 lg:grid-cols-2">
-            <PDECalculator />
-            <MACOCalculator />
+        <TabsContent value="reasoning">
+          <div className="space-y-6">
+            <AssessmentPanel />
+            <div className="grid gap-4 lg:grid-cols-2">
+              <PDECalculator />
+              <MACOCalculator />
+            </div>
           </div>
-        </div>
-      ) : (
-        <GraphQueryPanel />
-      )}
+        </TabsContent>
+
+        <TabsContent value="graph">
+          <GraphQueryPanel />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

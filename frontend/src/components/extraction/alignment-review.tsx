@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   getJobCandidates,
   mergeCandidates,
@@ -9,6 +9,10 @@ import {
   type ExtractionCandidate,
   type GroupedCandidates,
 } from "@/lib/api";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table";
 
 /**
  * 对齐审核闭环（T026, US2）：展示候选 / 置信度 / 跨源归组 / 规范实例标记，
@@ -19,19 +23,19 @@ export function AlignmentReview({ jobId }: { jobId: string }) {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [error, setError] = useState<string | null>(null);
 
-  async function refresh() {
-    try {
-      setData(await getJobCandidates(jobId));
-    } catch (e) {
-      setError(String(e));
-    }
-  }
+  const refresh = useCallback(
+    () =>
+      getJobCandidates(jobId)
+        .then(setData)
+        .catch((e) => setError(String(e))),
+    [jobId],
+  );
 
+  // jobId 改变时由父级以 key 重挂载（selected 经 useState 初值复位为空集）；
+  // effect 只负责拉取候选，setState 在 .then 回调中执行而非 effect 体内同步调用。
   useEffect(() => {
-    setSelected(new Set());
     refresh();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [jobId]);
+  }, [refresh]);
 
   function toggle(id: string) {
     setSelected((prev) => {
@@ -80,7 +84,7 @@ export function AlignmentReview({ jobId }: { jobId: string }) {
     }
   }
 
-  if (!data) return <p className="text-sm text-gray-500">加载候选…</p>;
+  if (!data) return <p className="text-sm text-muted-foreground">加载候选…</p>;
 
   const allGroups = [
     ...data.groups,
@@ -90,92 +94,94 @@ export function AlignmentReview({ jobId }: { jobId: string }) {
   return (
     <div className="space-y-4">
       {error && (
-        <div className="rounded border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-700">
+        <div className="rounded border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
           {error}
         </div>
       )}
 
       <div className="flex items-center gap-3">
-        <button
+        <Button
           onClick={doMerge}
           disabled={selected.size < 2}
-          className="rounded bg-purple-600 px-3 py-1.5 text-sm text-white hover:bg-purple-700 disabled:opacity-40"
+          size="sm"
         >
           合并所选（{selected.size}）
-        </button>
-        <span className="text-xs text-gray-500">先勾选的为合并目标（规范实例）</span>
+        </Button>
+        <span className="text-xs text-muted-foreground">先勾选的为合并目标（规范实例）</span>
       </div>
 
       {allGroups.map((g) => (
-        <div key={g.group_key} className="rounded-lg border">
-          <div className="flex items-center justify-between border-b bg-gray-50 px-3 py-2 text-sm">
+        <Card key={g.group_key} className="overflow-hidden">
+          <div className="flex items-center justify-between border-b bg-muted px-3 py-2 text-sm">
             <span className="font-medium">归组键：{g.group_key}</span>
-            <span className="text-xs text-gray-500">{g.candidates.length} 个候选</span>
+            <span className="text-xs text-muted-foreground">{g.candidates.length} 个候选</span>
           </div>
-          <table className="w-full text-sm">
-            <tbody>
+          <Table>
+            <TableBody>
               {g.candidates.map((c) => (
-                <tr key={c.id} className="border-b last:border-0">
-                  <td className="w-8 py-2 pl-3">
+                <TableRow key={c.id} className="border-b last:border-0">
+                  <TableCell className="w-8 py-2 pl-3">
                     <input
                       type="checkbox"
                       checked={selected.has(c.id)}
                       onChange={() => toggle(c.id)}
                     />
-                  </td>
-                  <td className="py-2">
+                  </TableCell>
+                  <TableCell className="py-2">
                     <div className="flex items-center gap-2">
-                      <span className="rounded bg-gray-100 px-1.5 py-0.5 text-xs">
+                      <Badge variant="secondary">
                         {c.candidate_kind}
-                      </span>
+                      </Badge>
                       {c.is_canonical && (
-                        <span className="rounded bg-green-100 px-1.5 py-0.5 text-xs text-green-700">
+                        <Badge variant="success">
                           规范实例
-                        </span>
+                        </Badge>
                       )}
                       {c.degraded_reason && (
-                        <span className="rounded bg-amber-100 px-1.5 py-0.5 text-xs text-amber-700">
+                        <Badge variant="warning">
                           降级
-                        </span>
+                        </Badge>
                       )}
-                      <span className="text-gray-700">
+                      <span className="text-foreground">
                         {JSON.stringify(c.extracted_properties).slice(0, 80)}
                       </span>
                     </div>
-                    <div className="mt-0.5 text-xs text-gray-400">
+                    <div className="mt-0.5 text-xs text-muted-foreground">
                       对齐：{c.alignment_result ?? "—"} · 置信度：
                       {c.match_score != null ? c.match_score.toFixed(2) : "—"} · 状态：
                       {c.review_status}
                       {c.source_ref ? ` · 源：${c.source_ref}` : ""}
                     </div>
-                  </td>
-                  <td className="py-2 pr-3 text-right">
+                  </TableCell>
+                  <TableCell className="py-2 pr-3 text-right">
                     <div className="flex justify-end gap-2">
-                      <button
+                      <Button
                         onClick={() => doReview(c.id, "confirmed")}
-                        className="rounded bg-blue-600 px-2 py-1 text-xs text-white hover:bg-blue-700"
+                        size="sm"
                       >
                         确认入库
-                      </button>
-                      <button
+                      </Button>
+                      <Button
                         onClick={() => doReview(c.id, "rejected")}
-                        className="rounded border px-2 py-1 text-xs text-gray-600 hover:bg-gray-50"
+                        variant="outline"
+                        size="sm"
                       >
                         拒绝
-                      </button>
-                      <button
+                      </Button>
+                      <Button
                         onClick={() => doSplit(c)}
-                        className="rounded border px-2 py-1 text-xs text-gray-600 hover:bg-gray-50"
+                        variant="outline"
+                        size="sm"
                       >
                         拆分
-                      </button>
+                      </Button>
                     </div>
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
-        </div>
+            </TableBody>
+          </Table>
+        </Card>
       ))}
     </div>
   );

@@ -1,6 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 import {
   createRelease,
   exportDiff,
@@ -132,19 +135,19 @@ export function TtlToolbar({ onPublished }: { onPublished: () => void }) {
     });
 
   return (
-    <div className="space-y-3 rounded-lg border bg-white p-3">
+    <div className="space-y-3 rounded-lg border border-border bg-card p-3">
       <div className="flex flex-wrap items-center gap-2">
-        <h3 className="text-sm font-semibold text-gray-700">TTL / 发布</h3>
-        <button onClick={handleValidate} disabled={busy} className="rounded border px-2.5 py-1 text-xs hover:bg-gray-50 disabled:opacity-50">
+        <h3 className="text-sm font-semibold text-foreground">TTL / 发布</h3>
+        <Button variant="outline" onClick={handleValidate} disabled={busy} size="sm" className="h-auto px-2.5 py-1 text-xs">
           校验
-        </button>
-        <button onClick={handleDiff} disabled={busy} className="rounded border px-2.5 py-1 text-xs hover:bg-gray-50 disabled:opacity-50">
+        </Button>
+        <Button variant="outline" onClick={handleDiff} disabled={busy} size="sm" className="h-auto px-2.5 py-1 text-xs">
           差异预览
-        </button>
-        <button onClick={handleExport} disabled={busy} className="rounded border px-2.5 py-1 text-xs hover:bg-gray-50 disabled:opacity-50">
+        </Button>
+        <Button variant="outline" onClick={handleExport} disabled={busy} size="sm" className="h-auto px-2.5 py-1 text-xs">
           导出 TTL
-        </button>
-        <label className="cursor-pointer rounded border px-2.5 py-1 text-xs hover:bg-gray-50">
+        </Button>
+        <label className={cn(buttonVariants({ variant: "outline", size: "sm" }), "h-auto cursor-pointer px-2.5 py-1 text-xs")}>
           导入 TTL
           <input
             type="file"
@@ -157,35 +160,35 @@ export function TtlToolbar({ onPublished }: { onPublished: () => void }) {
             }}
           />
         </label>
-        <button onClick={handleCreateRelease} disabled={busy} className="ml-auto rounded bg-blue-600 px-2.5 py-1 text-xs text-white hover:bg-blue-700 disabled:opacity-50">
+        <Button onClick={handleCreateRelease} disabled={busy} size="sm" className="ml-auto h-auto px-2.5 py-1 text-xs">
           新建发布
-        </button>
+        </Button>
       </div>
 
-      {error && <p className="rounded bg-red-50 px-2 py-1 text-xs text-red-600">{error}</p>}
-      {msg && <p className="rounded bg-green-50 px-2 py-1 text-xs text-green-700">{msg}</p>}
+      {error && <p className="rounded bg-destructive/10 px-2 py-1 text-xs text-destructive">{error}</p>}
+      {msg && <p className="rounded bg-success/10 px-2 py-1 text-xs text-success">{msg}</p>}
 
       {report && (
-        <div className="rounded border bg-gray-50 p-2 text-xs">
-          <p className="font-medium text-gray-600">
+        <div className="rounded border border-border bg-muted p-2 text-xs">
+          <p className="font-medium text-muted-foreground">
             校验：阻断 {report.blocking.length} · 警告 {report.warnings.length} · 推理机{" "}
             {report.reasoner.ran ? (report.reasoner.consistent ? "一致" : "不一致") : "未运行"}
           </p>
           {report.blocking.map((b, i) => (
-            <p key={i} className="text-red-600">• [{b.code}] {b.message}</p>
+            <p key={i} className="text-destructive">• [{b.code}] {b.message}</p>
           ))}
           {report.warnings.map((w, i) => (
-            <p key={i} className="text-amber-600">• [{w.code}] {w.message}</p>
+            <p key={i} className="text-warning">• [{w.code}] {w.message}</p>
           ))}
         </div>
       )}
 
       {diff && (
-        <div className="rounded border bg-gray-50 p-2 text-xs">
-          <p className="mb-1 font-medium text-gray-600">
+        <div className="rounded border border-border bg-muted p-2 text-xs">
+          <p className="mb-1 font-medium text-muted-foreground">
             差异：+{diff.triples_added.length} / -{diff.triples_removed.length}
           </p>
-          <pre className="max-h-40 overflow-auto whitespace-pre-wrap font-mono text-[11px] text-gray-700">
+          <pre className="max-h-40 overflow-auto whitespace-pre-wrap font-mono text-[11px] text-foreground">
             {diff.turtle_preview}
           </pre>
         </div>
@@ -193,51 +196,51 @@ export function TtlToolbar({ onPublished }: { onPublished: () => void }) {
 
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <h4 className="mb-1 text-xs font-medium text-gray-500">发布列表</h4>
+          <h4 className="mb-1 text-xs font-medium text-muted-foreground">发布列表</h4>
           <ul className="divide-y text-xs">
             {releases.map((r) => (
               <li key={r.id}>
                 <button
                   onClick={() => openRelease(r)}
-                  className={`flex w-full items-center justify-between py-1.5 text-left hover:bg-gray-50 ${
-                    active?.id === r.id ? "font-semibold text-blue-700" : ""
+                  className={`flex w-full items-center justify-between py-1.5 text-left hover:bg-accent ${
+                    active?.id === r.id ? "font-semibold text-primary" : ""
                   }`}
                 >
                   <span>{r.release_no} · {r.title}</span>
-                  <span className="rounded bg-gray-100 px-1.5 py-0.5">{r.status}</span>
+                  <Badge variant="secondary" className="font-normal">{r.status}</Badge>
                 </button>
               </li>
             ))}
-            {releases.length === 0 && <li className="py-2 text-gray-400">暂无发布</li>}
+            {releases.length === 0 && <li className="py-2 text-muted-foreground">暂无发布</li>}
           </ul>
         </div>
 
         {active && (
-          <div className="rounded border bg-gray-50 p-2">
-            <p className="mb-1 text-xs font-medium text-gray-600">
+          <div className="rounded border border-border bg-muted p-2">
+            <p className="mb-1 text-xs font-medium text-muted-foreground">
               {active.release_no} · {active.status}
             </p>
-            <p className="mb-2 text-[11px] text-gray-500">变更项 {active.change_log.length}</p>
+            <p className="mb-2 text-[11px] text-muted-foreground">变更项 {active.change_log.length}</p>
             <div className="flex flex-wrap gap-1.5">
               {active.status === "draft" && (
-                <button onClick={handleSubmit} disabled={busy} className="rounded border px-2 py-1 text-xs hover:bg-white disabled:opacity-50">
+                <Button variant="outline" onClick={handleSubmit} disabled={busy} size="sm" className="h-auto px-2 py-1 text-xs hover:bg-background">
                   提交评审
-                </button>
+                </Button>
               )}
               {active.status === "in_review" && (
                 <>
-                  <button onClick={handlePublish} disabled={busy} className="rounded bg-green-600 px-2 py-1 text-xs text-white hover:bg-green-700 disabled:opacity-50">
+                  <Button onClick={handlePublish} disabled={busy} size="sm" className="h-auto bg-success px-2 py-1 text-xs text-success-foreground hover:bg-success/90">
                     发布
-                  </button>
-                  <button onClick={handleRollback} disabled={busy} className="rounded border px-2 py-1 text-xs hover:bg-white disabled:opacity-50">
+                  </Button>
+                  <Button variant="outline" onClick={handleRollback} disabled={busy} size="sm" className="h-auto px-2 py-1 text-xs hover:bg-background">
                     回滚草稿
-                  </button>
+                  </Button>
                 </>
               )}
               {active.ttl_commit_sha && (
-                <span className="rounded bg-gray-100 px-2 py-1 font-mono text-[11px] text-gray-600">
+                <Badge variant="secondary" className="px-2 py-1 font-mono text-[11px] font-normal">
                   {active.ttl_commit_sha.slice(0, 8)}
-                </span>
+                </Badge>
               )}
             </div>
           </div>

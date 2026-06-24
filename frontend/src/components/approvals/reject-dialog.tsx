@@ -2,6 +2,18 @@
 
 import { useState } from "react";
 import { rejectConclusion } from "@/lib/api";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 
 interface Props {
   conclusionId: string;
@@ -41,48 +53,61 @@ export function RejectDialog({ conclusionId, onRejected, onClose }: Props) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="w-96 rounded-lg bg-white p-5 shadow-lg">
-        <h3 className="mb-1 font-semibold">QA 拒绝结论（21 CFR Part 11）</h3>
-        <p className="mb-3 text-xs text-gray-500">
-          拒绝前须重新认证。拒绝将使结论进入终态，并作废其被抑制的非终态动作。
-        </p>
-        {error && <p className="mb-2 text-sm text-red-600">{error}</p>}
+    <Dialog open onOpenChange={(open) => { if (!open) onClose?.(); }}>
+      <DialogContent className="w-96 max-w-[calc(100vw-2rem)]">
+        <DialogHeader>
+          <DialogTitle>QA 拒绝结论（21 CFR Part 11）</DialogTitle>
+          <DialogDescription>
+            拒绝前须重新认证。拒绝将使结论进入终态，并作废其被抑制的非终态动作。
+          </DialogDescription>
+        </DialogHeader>
+        {error && <p className="text-sm text-destructive">{error}</p>}
         <div className="space-y-2">
-          <input
-            className="w-full rounded border px-2 py-1 text-sm"
-            placeholder="用户名"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-          />
-          <input
-            type="password"
-            className="w-full rounded border px-2 py-1 text-sm"
-            placeholder="密码（重认证）"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
-          <textarea
-            className="w-full rounded border px-2 py-1 text-sm"
-            placeholder="拒绝原因"
-            rows={3}
-            value={reason}
-            onChange={(e) => setReason(e.target.value)}
-          />
+          <div className="space-y-1">
+            <Label htmlFor="qa-reject-username">用户名</Label>
+            <Input
+              id="qa-reject-username"
+              placeholder="用户名"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+            />
+          </div>
+          <div className="space-y-1">
+            <Label htmlFor="qa-reject-password">密码（重认证）</Label>
+            <Input
+              id="qa-reject-password"
+              type="password"
+              placeholder="密码（重认证）"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+          </div>
+          <div className="space-y-1">
+            <Label htmlFor="qa-reject-reason">拒绝原因</Label>
+            <Textarea
+              id="qa-reject-reason"
+              placeholder="拒绝原因"
+              rows={3}
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+            />
+          </div>
         </div>
-        <div className="mt-4 flex justify-end gap-2">
-          <button className="rounded border px-3 py-1 text-sm" onClick={onClose}>
+        <DialogFooter className="gap-2 sm:gap-2">
+          <Button variant="outline" size="sm" className="h-auto px-3 py-1" onClick={onClose}>
             取消
-          </button>
-          <button
-            className="rounded bg-red-600 px-3 py-1 text-sm text-white disabled:opacity-50"
+          </Button>
+          <Button
+            variant="destructive"
+            size="sm"
+            className="h-auto px-3 py-1"
             disabled={busy || !username || !password || !reason}
             onClick={submit}
           >
             确认拒绝
-          </button>
-        </div>
-      </div>
-    </div>
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

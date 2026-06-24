@@ -7,11 +7,13 @@ import {
   type DashboardData,
   type RuleTrace,
 } from "@/lib/api";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 
 const RISK_COLOR: Record<string, string> = {
-  HighRisk: "bg-red-500 text-white",
-  MediumRisk: "bg-amber-400",
-  LowRisk: "bg-green-300",
+  HighRisk: "bg-destructive text-destructive-foreground",
+  MediumRisk: "bg-warning text-warning-foreground",
+  LowRisk: "bg-success text-success-foreground",
 };
 
 const REFRESH_MS = 5000; // 近实时刷新（≤5s, FR-026/SC-005）
@@ -36,7 +38,7 @@ export function RealtimeInferencePanel() {
     setTrace({ id: conclusionId, rules });
   };
 
-  if (!data) return <p className="text-sm text-gray-400">加载看板…</p>;
+  if (!data) return <p className="text-sm text-muted-foreground">加载看板…</p>;
 
   const equipment = [...new Set(data.compatibility_matrix.map((c) => c.equipment))];
   const products = [...new Set(data.compatibility_matrix.map((c) => c.product))];
@@ -48,7 +50,7 @@ export function RealtimeInferencePanel() {
       <div>
         <div className="mb-2 flex items-center justify-between">
           <h3 className="font-semibold">设备 × 产品共线相容性</h3>
-          <span className="text-xs text-gray-400">
+          <span className="text-xs text-muted-foreground">
             更新于 {new Date(data.updated_at).toLocaleTimeString()}
           </span>
         </div>
@@ -73,7 +75,7 @@ export function RealtimeInferencePanel() {
                         {cell ? (
                           <button
                             className={`h-8 w-16 rounded ${
-                              RISK_COLOR[cell.risk_level || ""] || "bg-gray-100"
+                              RISK_COLOR[cell.risk_level || ""] || "bg-muted"
                             }`}
                             onClick={() => openTrace(cell.conclusion_id)}
                             title="点击查看规则链"
@@ -81,7 +83,7 @@ export function RealtimeInferencePanel() {
                             {cell.risk_level}
                           </button>
                         ) : (
-                          <div className="h-8 w-16 rounded bg-gray-50" />
+                          <div className="h-8 w-16 rounded bg-muted" />
                         )}
                       </td>
                     );
@@ -96,11 +98,11 @@ export function RealtimeInferencePanel() {
       <div>
         <h3 className="mb-2 font-semibold">未来排期风险</h3>
         {data.schedule_risks.length === 0 ? (
-          <p className="text-sm text-gray-400">无排期冲突</p>
+          <p className="text-sm text-muted-foreground">无排期冲突</p>
         ) : (
           <ul className="space-y-1 text-sm">
             {data.schedule_risks.map((r, i) => (
-              <li key={i} className="rounded border border-red-200 bg-red-50 px-3 py-1.5">
+              <li key={i} className="rounded border border-destructive/40 bg-destructive/10 px-3 py-1.5">
                 <span className="font-mono">{r.equipment}</span> · {r.date || "—"} ·{" "}
                 {r.detail}
               </li>
@@ -110,21 +112,28 @@ export function RealtimeInferencePanel() {
       </div>
 
       {trace && (
-        <div className="rounded-lg border bg-white p-4">
-          <div className="mb-2 flex items-center justify-between">
-            <h3 className="font-semibold">规则链溯源</h3>
-            <button className="text-xs text-gray-400" onClick={() => setTrace(null)}>
-              关闭
-            </button>
-          </div>
-          <ol className="space-y-1 text-sm">
-            {trace.rules.rules_fired.map((r, i) => (
-              <li key={i} className="rounded bg-gray-50 px-2 py-1 font-mono text-xs">
-                {String(r.rule_id)} — {String(r.regulation_ref ?? "")}
-              </li>
-            ))}
-          </ol>
-        </div>
+        <Card className="p-4">
+          <CardContent className="p-0">
+            <div className="mb-2 flex items-center justify-between">
+              <h3 className="font-semibold">规则链溯源</h3>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-auto p-0 text-xs text-muted-foreground"
+                onClick={() => setTrace(null)}
+              >
+                关闭
+              </Button>
+            </div>
+            <ol className="space-y-1 text-sm">
+              {trace.rules.rules_fired.map((r, i) => (
+                <li key={i} className="rounded bg-muted px-2 py-1 font-mono text-xs">
+                  {String(r.rule_id)} — {String(r.regulation_ref ?? "")}
+                </li>
+              ))}
+            </ol>
+          </CardContent>
+        </Card>
       )}
     </div>
   );

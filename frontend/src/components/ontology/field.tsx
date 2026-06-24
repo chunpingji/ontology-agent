@@ -1,4 +1,6 @@
 import type { ReactNode } from "react";
+import { cn } from "@/lib/utils";
+import { Label } from "@/components/ui/label";
 
 /**
  * 表单字段包装：在控件上方常驻一个字段标签，避免编辑已有值时 placeholder 消失
@@ -16,12 +18,12 @@ export function Field({
   children: ReactNode;
 }) {
   return (
-    <label className={`block text-[11px] font-medium text-gray-500 ${className}`}>
+    <Label className={cn("block text-[11px] font-medium text-muted-foreground", className)}>
       <span>
         {label}
-        {hint && <span className="ml-1 font-normal text-gray-400">{hint}</span>}
+        {hint && <span className="ml-1 font-normal text-muted-foreground">{hint}</span>}
       </span>
       <div className="mt-0.5 font-normal">{children}</div>
-    </label>
+    </Label>
   );
 }

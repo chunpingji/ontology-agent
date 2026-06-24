@@ -14,7 +14,7 @@ export default function HomePage() {
   return (
     <main className="mx-auto max-w-5xl px-6 py-16">
       <h1 className="mb-2 text-3xl font-bold">临床药物智能辅助生产平台</h1>
-      <p className="mb-10 text-gray-600">
+      <p className="mb-10 text-muted-foreground">
         SLPRA — Shared-Line Production Risk Assessment Platform
       </p>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -22,11 +22,11 @@ export default function HomePage() {
           <Link
             key={item.href}
             href={item.href}
-            className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm transition hover:shadow-md"
+            className="rounded-lg border border-border bg-card p-5 shadow-sm transition hover:shadow-md"
           >
             <div className="mb-2 text-2xl">{item.icon}</div>
             <h2 className="mb-1 font-semibold">{item.label}</h2>
-            <p className="text-sm text-gray-500">{item.desc}</p>
+            <p className="text-sm text-muted-foreground">{item.desc}</p>
           </Link>
         ))}
       </div>

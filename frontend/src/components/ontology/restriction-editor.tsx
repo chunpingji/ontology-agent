@@ -8,6 +8,15 @@ import {
   type TBoxRestriction,
 } from "@/lib/api";
 import type { useVersionConflict } from "./use-version-conflict";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const KINDS = ["some", "only", "exactly", "min", "max", "disjoint", "equivalent"];
 const CARD_KINDS = new Set(["exactly", "min", "max"]);
@@ -72,69 +81,78 @@ export function RestrictionEditor({
     }
   };
 
-  if (!classIri) return <p className="text-xs text-gray-400">先选择一个类</p>;
+  if (!classIri) return <p className="text-xs text-muted-foreground">先选择一个类</p>;
 
   return (
     <div className="space-y-3">
-      <h3 className="text-sm font-semibold text-gray-700">约束</h3>
-      {error && <p className="rounded bg-red-50 px-2 py-1 text-xs text-red-600">{error}</p>}
+      <h3 className="text-sm font-semibold text-foreground">约束</h3>
+      {error && <p className="rounded bg-destructive/10 px-2 py-1 text-xs text-destructive">{error}</p>}
 
       <ul className="divide-y text-sm">
         {items.map((r) => (
           <li key={r.id} className="flex items-center justify-between py-1.5">
             <span className="text-xs">
-              <span className="rounded bg-indigo-100 px-1.5 py-0.5 text-indigo-700">{r.kind}</span>
-              <span className="ml-2 font-mono text-gray-500">{r.property_iri?.split("/").pop() ?? "—"}</span>
-              {r.filler_iri && <span className="ml-1 text-gray-600">→ {r.filler_iri.split("/").pop()}</span>}
-              {r.cardinality != null && <span className="ml-1 text-gray-600">({r.cardinality})</span>}
+              <span className="rounded bg-primary/10 px-1.5 py-0.5 text-primary">{r.kind}</span>
+              <span className="ml-2 font-mono text-muted-foreground">{r.property_iri?.split("/").pop() ?? "—"}</span>
+              {r.filler_iri && <span className="ml-1 text-muted-foreground">→ {r.filler_iri.split("/").pop()}</span>}
+              {r.cardinality != null && <span className="ml-1 text-muted-foreground">({r.cardinality})</span>}
             </span>
-            <button onClick={() => remove(r)} className="text-xs text-red-500 hover:underline">
+            <Button
+              onClick={() => remove(r)}
+              variant="link"
+              size="sm"
+              className="h-auto p-0 text-xs text-destructive hover:underline"
+            >
               删除
-            </button>
+            </Button>
           </li>
         ))}
-        {items.length === 0 && <li className="py-2 text-xs text-gray-400">暂无约束</li>}
+        {items.length === 0 && <li className="py-2 text-xs text-muted-foreground">暂无约束</li>}
       </ul>
 
-      <div className="space-y-2 rounded border bg-gray-50 p-2">
-        <select
+      <div className="space-y-2 rounded border bg-muted p-2">
+        <Select
           value={form.kind}
-          onChange={(e) => setForm({ ...form, kind: e.target.value })}
-          className="w-full rounded border px-2 py-1 text-sm"
+          onValueChange={(value) => setForm({ ...form, kind: value })}
         >
-          {KINDS.map((k) => (
-            <option key={k} value={k}>
-              {k}
-            </option>
-          ))}
-        </select>
+          <SelectTrigger className="h-auto rounded px-2 py-1 text-sm">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {KINDS.map((k) => (
+              <SelectItem key={k} value={k}>
+                {k}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
         {!["disjoint", "equivalent"].includes(form.kind) && (
-          <input
+          <Input
             placeholder="on property IRI"
             value={form.property_iri}
             onChange={(e) => setForm({ ...form, property_iri: e.target.value })}
-            className="w-full rounded border px-2 py-1 font-mono text-xs"
+            className="h-auto rounded px-2 py-1 font-mono text-xs"
           />
         )}
         {FILLER_KINDS.has(form.kind) && (
-          <input
+          <Input
             placeholder="filler / 目标类 IRI"
             value={form.filler_iri}
             onChange={(e) => setForm({ ...form, filler_iri: e.target.value })}
-            className="w-full rounded border px-2 py-1 font-mono text-xs"
+            className="h-auto rounded px-2 py-1 font-mono text-xs"
           />
         )}
         {CARD_KINDS.has(form.kind) && (
-          <input
+          <Input
             placeholder="基数"
             value={form.cardinality}
             onChange={(e) => setForm({ ...form, cardinality: e.target.value })}
-            className="w-full rounded border px-2 py-1 text-sm"
+            className="h-auto rounded px-2 py-1 text-sm"
           />
         )}
-        <button onClick={add} className="rounded bg-blue-600 px-3 py-1.5 text-sm text-white hover:bg-blue-700">
+        <Button onClick={add} size="sm" className="h-auto rounded px-3 py-1.5 text-sm">
           添加约束
-        </button>
+        </Button>
       </div>
     </div>
   );

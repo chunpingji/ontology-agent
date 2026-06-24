@@ -3,6 +3,18 @@
 import { useState } from "react";
 import { calculateMACO, calculatePDE, runAssessment } from "@/lib/api";
 import type { AssessmentResponse, MACOResult, PDEResponse } from "@/lib/api";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 // 推理面板（自 reasoning/page.tsx 抽出, T013）：PDE / MACO 计算器与风险评估。
 // PendingSignaturesPanel 不在此 —— 签批已迁往审批中心。
@@ -39,32 +51,31 @@ export function PDECalculator() {
   ];
 
   return (
-    <div className="rounded-lg border bg-white p-4">
+    <Card className="p-4">
       <h3 className="mb-3 font-semibold">PDE 计算器</h3>
-      <p className="mb-3 text-xs text-gray-500">PDE = (PoD x BW) / (F1 x F2 x F3 x F4 x F5 x MF)</p>
+      <p className="mb-3 text-xs text-muted-foreground">PDE = (PoD x BW) / (F1 x F2 x F3 x F4 x F5 x MF)</p>
       <div className="grid grid-cols-4 gap-2">
         {fields.map((f) => (
           <div key={f.label}>
-            <label className="text-xs text-gray-500">{f.label}</label>
-            <input
+            <label className="text-xs text-muted-foreground">{f.label}</label>
+            <Input
               type="number"
               step="any"
               value={f.value}
               onChange={(e) => f.set(e.target.value)}
-              className="w-full rounded border px-2 py-1 text-sm"
             />
           </div>
         ))}
       </div>
-      <button onClick={handleCalc} className="mt-3 rounded bg-blue-600 px-4 py-1.5 text-sm text-white hover:bg-blue-700">
+      <Button onClick={handleCalc} size="sm" className="mt-3">
         计算 PDE
-      </button>
+      </Button>
       {result && (
-        <div className="mt-3 rounded bg-blue-50 p-3">
+        <div className="mt-3 rounded bg-primary/10 p-3">
           <p className="font-bold">PDE = {result.pde_value.toFixed(6)} mg/day</p>
         </div>
       )}
-    </div>
+    </Card>
   );
 }
 
@@ -88,57 +99,62 @@ export function MACOCalculator() {
   };
 
   return (
-    <div className="rounded-lg border bg-white p-4">
+    <Card className="p-4">
       <h3 className="mb-3 font-semibold">MACO 计算器</h3>
-      <p className="mb-3 text-xs text-gray-500">取 4 种方法最小值 (CFDI 指南)</p>
+      <p className="mb-3 text-xs text-muted-foreground">取 4 种方法最小值 (CFDI 指南)</p>
       <div className="grid grid-cols-3 gap-2">
         <div>
-          <label className="text-xs text-gray-500">PDE (mg/day)</label>
-          <input type="number" step="any" value={pde} onChange={(e) => setPde(e.target.value)} placeholder="可选" className="w-full rounded border px-2 py-1 text-sm" />
+          <label className="text-xs text-muted-foreground">PDE (mg/day)</label>
+          <Input type="number" step="any" value={pde} onChange={(e) => setPde(e.target.value)} placeholder="可选" />
         </div>
         <div>
-          <label className="text-xs text-gray-500">MBS 最小批量 (g)</label>
-          <input type="number" value={mbs} onChange={(e) => setMbs(e.target.value)} className="w-full rounded border px-2 py-1 text-sm" />
+          <label className="text-xs text-muted-foreground">MBS 最小批量 (g)</label>
+          <Input type="number" value={mbs} onChange={(e) => setMbs(e.target.value)} />
         </div>
         <div>
-          <label className="text-xs text-gray-500">TDD next (mg)</label>
-          <input type="number" value={tddNext} onChange={(e) => setTddNext(e.target.value)} className="w-full rounded border px-2 py-1 text-sm" />
+          <label className="text-xs text-muted-foreground">TDD next (mg)</label>
+          <Input type="number" value={tddNext} onChange={(e) => setTddNext(e.target.value)} />
         </div>
         <div>
-          <label className="text-xs text-gray-500">最小治疗剂量 (mg)</label>
-          <input type="number" step="any" value={minDose} onChange={(e) => setMinDose(e.target.value)} placeholder="可选" className="w-full rounded border px-2 py-1 text-sm" />
+          <label className="text-xs text-muted-foreground">最小治疗剂量 (mg)</label>
+          <Input type="number" step="any" value={minDose} onChange={(e) => setMinDose(e.target.value)} placeholder="可选" />
         </div>
         <div>
-          <label className="text-xs text-gray-500">LD50 (mg/kg)</label>
-          <input type="number" step="any" value={ld50} onChange={(e) => setLd50(e.target.value)} placeholder="可选" className="w-full rounded border px-2 py-1 text-sm" />
+          <label className="text-xs text-muted-foreground">LD50 (mg/kg)</label>
+          <Input type="number" step="any" value={ld50} onChange={(e) => setLd50(e.target.value)} placeholder="可选" />
         </div>
         <div>
-          <label className="text-xs text-gray-500">给药途径</label>
-          <select value={route} onChange={(e) => setRoute(e.target.value)} className="w-full rounded border px-2 py-1 text-sm">
-            <option value="oral">口服</option>
-            <option value="intravenous">注射</option>
-            <option value="topical">外用</option>
-          </select>
+          <label className="text-xs text-muted-foreground">给药途径</label>
+          <Select value={route} onValueChange={setRoute}>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="oral">口服</SelectItem>
+              <SelectItem value="intravenous">注射</SelectItem>
+              <SelectItem value="topical">外用</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </div>
-      <button onClick={handleCalc} className="mt-3 rounded bg-green-600 px-4 py-1.5 text-sm text-white hover:bg-green-700">
+      <Button onClick={handleCalc} size="sm" className="mt-3 bg-success text-success-foreground hover:bg-success/90">
         计算 MACO
-      </button>
+      </Button>
       {result && (
-        <div className="mt-3 rounded bg-green-50 p-3">
+        <div className="mt-3 rounded bg-success/10 p-3">
           <p className="font-bold">MACO = {result.maco_value.toFixed(6)} {result.unit || "mg"}</p>
-          <p className="text-sm text-gray-600">采用方法: {result.method_used}</p>
+          <p className="text-sm text-muted-foreground">采用方法: {result.method_used}</p>
           <div className="mt-2">
-            <p className="text-xs text-gray-500">全部方法对比:</p>
+            <p className="text-xs text-muted-foreground">全部方法对比:</p>
             {Object.entries(result.all_methods).map(([method, val]) => (
-              <p key={method} className={`text-xs ${method === result.method_used ? "font-bold text-green-700" : "text-gray-500"}`}>
+              <p key={method} className={`text-xs ${method === result.method_used ? "font-bold text-success" : "text-muted-foreground"}`}>
                 {method}: {(val as number).toFixed(6)} mg {method === result.method_used && "← 最小值"}
               </p>
             ))}
           </div>
         </div>
       )}
-    </div>
+    </Card>
   );
 }
 
@@ -164,37 +180,37 @@ export function AssessmentPanel() {
   };
 
   return (
-    <div className="rounded-lg border bg-white p-4">
+    <Card className="p-4">
       <h3 className="mb-3 font-semibold">风险评估</h3>
       <div className="space-y-2">
         <div>
-          <label className="text-xs text-gray-500">药品 IRI</label>
-          <input type="text" value={drugIri} onChange={(e) => setDrugIri(e.target.value)} className="w-full rounded border px-2 py-1 text-sm" />
+          <label className="text-xs text-muted-foreground">药品 IRI</label>
+          <Input type="text" value={drugIri} onChange={(e) => setDrugIri(e.target.value)} />
         </div>
         <div>
-          <label className="text-xs text-gray-500">设备 IRI (每行一个)</label>
-          <textarea value={equipIris} onChange={(e) => setEquipIris(e.target.value)} rows={3} className="w-full rounded border px-2 py-1 text-sm" />
+          <label className="text-xs text-muted-foreground">设备 IRI (每行一个)</label>
+          <Textarea value={equipIris} onChange={(e) => setEquipIris(e.target.value)} rows={3} />
         </div>
-        <button onClick={handleAssess} disabled={loading} className="rounded bg-red-600 px-4 py-1.5 text-sm text-white hover:bg-red-700 disabled:opacity-50">
+        <Button onClick={handleAssess} disabled={loading} variant="destructive" size="sm">
           {loading ? "评估中..." : "运行评估"}
-        </button>
+        </Button>
       </div>
 
       {result && (
         <div className="mt-4 space-y-3">
-          <div className={`rounded p-3 ${result.risk_level === "HighRisk" ? "bg-red-50" : result.risk_level === "MediumRisk" ? "bg-yellow-50" : "bg-green-50"}`}>
+          <div className={`rounded p-3 ${result.risk_level === "HighRisk" ? "bg-destructive/10" : result.risk_level === "MediumRisk" ? "bg-warning/10" : "bg-success/10"}`}>
             <p className="font-bold">风险等级: {result.risk_level}</p>
             <p className="text-sm">设备专用化: {result.requires_dedication ? "必须专用" : "允许共线"}</p>
           </div>
 
           {result.rules_fired.length > 0 && (
             <div>
-              <h4 className="text-sm font-semibold text-gray-500">触发的规则 ({result.rules_fired.length})</h4>
+              <h4 className="text-sm font-semibold text-muted-foreground">触发的规则 ({result.rules_fired.length})</h4>
               {result.rules_fired.map((r, i) => (
                 <div key={i} className="mt-1 rounded border p-2 text-xs">
-                  <span className="font-mono font-bold text-blue-600">{r.rule_id}</span>
-                  <span className="ml-2 text-gray-600">{r.description}</span>
-                  {r.regulation_ref && <span className="ml-2 text-gray-400">[{r.regulation_ref}]</span>}
+                  <span className="font-mono font-bold text-primary">{r.rule_id}</span>
+                  <span className="ml-2 text-muted-foreground">{r.description}</span>
+                  {r.regulation_ref && <span className="ml-2 text-muted-foreground">[{r.regulation_ref}]</span>}
                 </div>
               ))}
             </div>
@@ -202,18 +218,18 @@ export function AssessmentPanel() {
 
           {result.scenarios.length > 0 && (
             <div>
-              <h4 className="text-sm font-semibold text-gray-500">识别的 CFDI 情景</h4>
+              <h4 className="text-sm font-semibold text-muted-foreground">识别的 CFDI 情景</h4>
               {result.scenarios.map((s, i) => (
-                <span key={i} className="mr-2 inline-block rounded bg-purple-100 px-2 py-0.5 text-xs text-purple-700">
+                <Badge key={i} variant="secondary" className="mr-2">
                   {s.scenario_name}
-                </span>
+                </Badge>
               ))}
             </div>
           )}
 
           {result.recommendations.length > 0 && (
             <div>
-              <h4 className="text-sm font-semibold text-gray-500">建议</h4>
+              <h4 className="text-sm font-semibold text-muted-foreground">建议</h4>
               <ul className="list-inside list-disc text-sm">
                 {result.recommendations.map((r, i) => (
                   <li key={i}>{r}</li>
@@ -223,12 +239,12 @@ export function AssessmentPanel() {
           )}
 
           {result.maco && (
-            <div className="rounded bg-gray-50 p-3">
+            <div className="rounded bg-muted p-3">
               <p className="text-sm font-semibold">MACO = {result.maco.maco_value.toFixed(6)} mg ({result.maco.method_used})</p>
             </div>
           )}
         </div>
       )}
-    </div>
+    </Card>
   );
 }

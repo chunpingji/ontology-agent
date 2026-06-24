@@ -2,6 +2,17 @@
 
 import { useState } from "react";
 import { signConclusion } from "@/lib/api";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 interface Props {
   conclusionId: string;
@@ -32,47 +43,59 @@ export function QaSignatureDialog({ conclusionId, onSigned, onClose }: Props) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="w-96 rounded-lg bg-white p-5 shadow-lg">
-        <h3 className="mb-1 font-semibold">QA 电子签名（21 CFR Part 11）</h3>
-        <p className="mb-3 text-xs text-gray-500">
-          签名前须重新认证。签名将不可分割地绑定此结论并使其生效。
-        </p>
-        {error && <p className="mb-2 text-sm text-red-600">{error}</p>}
+    <Dialog open onOpenChange={(open) => { if (!open) onClose?.(); }}>
+      <DialogContent className="w-96 max-w-[calc(100vw-2rem)]">
+        <DialogHeader>
+          <DialogTitle>QA 电子签名（21 CFR Part 11）</DialogTitle>
+          <DialogDescription>
+            签名前须重新认证。签名将不可分割地绑定此结论并使其生效。
+          </DialogDescription>
+        </DialogHeader>
+        {error && <p className="text-sm text-destructive">{error}</p>}
         <div className="space-y-2">
-          <input
-            className="w-full rounded border px-2 py-1 text-sm"
-            placeholder="用户名"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-          />
-          <input
-            type="password"
-            className="w-full rounded border px-2 py-1 text-sm"
-            placeholder="密码（重认证）"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
-          <input
-            className="w-full rounded border px-2 py-1 text-sm"
-            placeholder="签名含义"
-            value={meaning}
-            onChange={(e) => setMeaning(e.target.value)}
-          />
+          <div className="space-y-1">
+            <Label htmlFor="qa-sign-username">用户名</Label>
+            <Input
+              id="qa-sign-username"
+              placeholder="用户名"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+            />
+          </div>
+          <div className="space-y-1">
+            <Label htmlFor="qa-sign-password">密码（重认证）</Label>
+            <Input
+              id="qa-sign-password"
+              type="password"
+              placeholder="密码（重认证）"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+          </div>
+          <div className="space-y-1">
+            <Label htmlFor="qa-sign-meaning">签名含义</Label>
+            <Input
+              id="qa-sign-meaning"
+              placeholder="签名含义"
+              value={meaning}
+              onChange={(e) => setMeaning(e.target.value)}
+            />
+          </div>
         </div>
-        <div className="mt-4 flex justify-end gap-2">
-          <button className="rounded border px-3 py-1 text-sm" onClick={onClose}>
+        <DialogFooter className="gap-2 sm:gap-2">
+          <Button variant="outline" size="sm" className="h-auto px-3 py-1" onClick={onClose}>
             取消
-          </button>
-          <button
-            className="rounded bg-blue-600 px-3 py-1 text-sm text-white disabled:opacity-50"
+          </Button>
+          <Button
+            size="sm"
+            className="h-auto px-3 py-1"
             disabled={busy || !username || !password}
             onClick={submit}
           >
             签名并生效
-          </button>
-        </div>
-      </div>
-    </div>
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

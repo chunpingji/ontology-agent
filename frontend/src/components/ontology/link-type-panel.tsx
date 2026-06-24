@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   createLinkType,
   deleteLinkType,
@@ -9,6 +9,8 @@ import {
   type TBoxLinkType,
 } from "@/lib/api";
 import { Field } from "@/components/ontology/field";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 const MANAGED_PREFIX = "https://ontology.pharma-gmp.cn/slpra/core/";
 
@@ -41,10 +43,14 @@ const tail = (iri: string | null | undefined) => (iri ? iri.split("/").pop() : n
  */
 export function LinkTypePanel({
   selectedClassIri,
+  focusedLinkIri = null,
   onChanged,
+  onFocusLink,
 }: {
   selectedClassIri: string | null;
+  focusedLinkIri?: string | null;
   onChanged: () => void;
+  onFocusLink?: (iri: string) => void;
 }) {
   const [items, setItems] = useState<TBoxLinkType[]>([]);
   const [mode, setMode] = useState<Mode>("list");
@@ -52,6 +58,11 @@ export function LinkTypePanel({
   const [form, setForm] = useState<FormState>(emptyForm(selectedClassIri));
   const [msg, setMsg] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // 被图谱联动聚焦的关系行：滚动到可见处（列表渲染后）。
+  const focusedRowRef = useRef<HTMLLIElement | null>(null);
+  useEffect(() => {
+    if (focusedLinkIri) focusedRowRef.current?.scrollIntoView({ block: "nearest" });
+  }, [focusedLinkIri, items]);
 
   const load = useCallback(() => {
     listLinkTypes(selectedClassIri ?? undefined, true)
@@ -62,9 +73,10 @@ export function LinkTypePanel({
       .catch((e) => setError(String(e)));
   }, [selectedClassIri]);
 
+  // selectedClassIri 改变时由父级以 key 重挂载（mode 经 useState 初值复位为 "list"）；
+  // effect 只负责加载，避免在 effect 体内同步 setState 触发级联渲染。
   useEffect(() => {
     load();
-    setMode("list");
   }, [load]);
 
   const backToList = () => {
@@ -150,23 +162,24 @@ export function LinkTypePanel({
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-gray-700">
+        <h3 className="text-sm font-semibold text-foreground">
           对象属性 / 关系
-          <span className="ml-1 text-xs font-normal text-gray-400">({items.length})</span>
+          <span className="ml-1 text-xs font-normal text-muted-foreground">({items.length})</span>
         </h3>
         {mode === "list" && (
-          <button
+          <Button
             onClick={startCreate}
-            className="rounded bg-blue-600 px-2.5 py-1 text-xs text-white hover:bg-blue-700"
+            size="sm"
+            className="h-auto rounded px-2.5 py-1 text-xs"
           >
             + 关系
-          </button>
+          </Button>
         )}
       </div>
 
-      {error && <p className="rounded bg-red-50 px-2 py-1 text-xs text-red-600">{error}</p>}
+      {error && <p className="rounded bg-destructive/10 px-2 py-1 text-xs text-destructive">{error}</p>}
       {msg && mode === "list" && (
-        <p className="rounded bg-green-50 px-2 py-1 text-xs text-green-600">{msg}</p>
+        <p className="rounded bg-success/10 px-2 py-1 text-xs text-success">{msg}</p>
       )}
 
       {/* 列表视图 */}
@@ -174,52 +187,65 @@ export function LinkTypePanel({
         <ul className="divide-y rounded border text-sm">
           {items.map((lt) => {
             const inherited = lt.inherited_from_iri != null;
+            const focused = lt.slpra_iri === focusedLinkIri;
             return (
               <li
                 key={lt.id}
-                className={`flex items-center justify-between gap-2 px-2 py-1.5 ${inherited ? "bg-gray-50/60" : ""}`}
+                ref={focused ? focusedRowRef : undefined}
+                className={`flex items-center justify-between gap-2 px-2 py-1.5 ${
+                  focused ? "bg-primary/10 ring-1 ring-inset ring-primary/40" : inherited ? "bg-muted/60" : ""
+                }`}
               >
-                <div className="min-w-0">
+                <button
+                  type="button"
+                  onClick={() => onFocusLink?.(lt.slpra_iri)}
+                  title="在图谱中高亮该关系"
+                  className="min-w-0 flex-1 cursor-pointer text-left"
+                >
                   <div className="flex items-center gap-2">
-                    <span className="truncate font-mono text-xs text-gray-500">{tail(lt.slpra_iri)}</span>
-                    {lt.label && <span className="truncate text-gray-800">{lt.label}</span>}
+                    <span className="truncate font-mono text-xs text-muted-foreground">{tail(lt.slpra_iri)}</span>
+                    {lt.label && <span className="truncate text-foreground">{lt.label}</span>}
                     {inherited && (
                       <span
-                        className="shrink-0 rounded bg-amber-50 px-1.5 py-0.5 text-[10px] text-amber-700"
+                        className="shrink-0 rounded bg-warning/10 px-1.5 py-0.5 text-[10px] text-warning"
                         title={`继承自 ${lt.inherited_from_label ?? lt.inherited_from_iri}`}
                       >
                         继承自 {lt.inherited_from_label ?? tail(lt.inherited_from_iri)}
                       </span>
                     )}
                   </div>
-                  <div className="mt-0.5 flex flex-wrap items-center gap-1 text-[11px] text-gray-400">
-                    <span className="rounded bg-gray-100 px-1.5 py-0.5 font-mono">
+                  <div className="mt-0.5 flex flex-wrap items-center gap-1 text-[11px] text-muted-foreground">
+                    <span className="rounded bg-muted px-1.5 py-0.5 font-mono">
                       {tail(lt.domain_iri) ?? "—"} → {tail(lt.range_iri) ?? "—"}
                     </span>
-                    {lt.is_functional && <span className="rounded bg-gray-100 px-1.5 py-0.5">functional</span>}
-                    {lt.is_symmetric && <span className="rounded bg-gray-100 px-1.5 py-0.5">symmetric</span>}
-                    {lt.is_transitive && <span className="rounded bg-gray-100 px-1.5 py-0.5">transitive</span>}
+                    {lt.is_functional && <span className="rounded bg-muted px-1.5 py-0.5">functional</span>}
+                    {lt.is_symmetric && <span className="rounded bg-muted px-1.5 py-0.5">symmetric</span>}
+                    {lt.is_transitive && <span className="rounded bg-muted px-1.5 py-0.5">transitive</span>}
                   </div>
-                </div>
+                </button>
                 <div className="flex shrink-0 gap-1">
                   {inherited ? (
-                    <span className="rounded border border-dashed px-2 py-0.5 text-xs text-gray-400">
+                    <span className="rounded border border-dashed px-2 py-0.5 text-xs text-muted-foreground">
                       只读
                     </span>
                   ) : (
                     <>
-                      <button
+                      <Button
+                        variant="outline"
+                        size="sm"
                         onClick={() => startEdit(lt)}
-                        className="rounded border px-2 py-0.5 text-xs text-gray-600 hover:bg-gray-50"
+                        className="h-auto rounded px-2 py-0.5 text-xs text-muted-foreground"
                       >
                         编辑
-                      </button>
-                      <button
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
                         onClick={() => remove(lt)}
-                        className="rounded border border-red-200 px-2 py-0.5 text-xs text-red-600 hover:bg-red-50"
+                        className="h-auto rounded border-destructive/40 px-2 py-0.5 text-xs text-destructive hover:bg-destructive/10"
                       >
                         删除
-                      </button>
+                      </Button>
                     </>
                   )}
                 </div>
@@ -227,7 +253,7 @@ export function LinkTypePanel({
             );
           })}
           {items.length === 0 && (
-            <li className="px-2 py-3 text-center text-xs text-gray-400">
+            <li className="px-2 py-3 text-center text-xs text-muted-foreground">
               {selectedClassIri ? "该类暂无关系" : "暂无关系"}
             </li>
           )}
@@ -236,84 +262,87 @@ export function LinkTypePanel({
 
       {/* 新建 / 编辑表单 */}
       {(mode === "create" || mode === "edit") && (
-        <div className="space-y-2 rounded border bg-gray-50 p-2">
-          <p className="text-xs font-medium text-gray-600">
+        <div className="space-y-2 rounded border bg-muted p-2">
+          <p className="text-xs font-medium text-muted-foreground">
             {mode === "edit" ? "编辑关系" : "新建对象属性 / 关系"}
           </p>
           <Field label="IRI" hint="关系唯一标识">
-            <input
+            <Input
               placeholder="IRI"
               value={form.slpra_iri}
               disabled={mode === "edit"}
               onChange={(e) => setForm({ ...form, slpra_iri: e.target.value })}
-              className="w-full rounded border px-2 py-1 font-mono text-xs disabled:bg-gray-100 disabled:text-gray-400"
+              className="h-auto rounded px-2 py-1 font-mono text-xs shadow-none disabled:bg-muted disabled:text-muted-foreground"
             />
           </Field>
           <Field label="标签" hint="显示名称">
-            <input
+            <Input
               placeholder="标签"
               value={form.label}
               onChange={(e) => setForm({ ...form, label: e.target.value })}
-              className="w-full rounded border px-2 py-1 text-sm"
+              className="h-auto rounded px-2 py-1 text-sm shadow-none"
             />
           </Field>
           <Field label="定义域 domain" hint="关系起点（主语）类 IRI">
-            <input
+            <Input
               placeholder="domain IRI"
               value={form.domain_iri}
               onChange={(e) => setForm({ ...form, domain_iri: e.target.value })}
-              className="w-full rounded border px-2 py-1 font-mono text-xs"
+              className="h-auto rounded px-2 py-1 font-mono text-xs shadow-none"
             />
           </Field>
           <Field label="值域 range" hint="关系指向（宾语）类 IRI">
-            <input
+            <Input
               placeholder="range IRI"
               value={form.range_iri}
               onChange={(e) => setForm({ ...form, range_iri: e.target.value })}
-              className="w-full rounded border px-2 py-1 font-mono text-xs"
+              className="h-auto rounded px-2 py-1 font-mono text-xs shadow-none"
             />
           </Field>
           <div className="flex gap-2">
             <Field label="最小基数 min" className="w-1/2">
-              <input
+              <Input
                 placeholder="min 基数"
                 value={form.min_cardinality}
                 onChange={(e) => setForm({ ...form, min_cardinality: e.target.value })}
-                className="w-full rounded border px-2 py-1 text-sm"
+                className="h-auto rounded px-2 py-1 text-sm shadow-none"
               />
             </Field>
             <Field label="最大基数 max" className="w-1/2">
-              <input
+              <Input
                 placeholder="max 基数"
                 value={form.max_cardinality}
                 onChange={(e) => setForm({ ...form, max_cardinality: e.target.value })}
-                className="w-full rounded border px-2 py-1 text-sm"
+                className="h-auto rounded px-2 py-1 text-sm shadow-none"
               />
             </Field>
           </div>
           {mode === "create" && (
             <Field label="逆属性 inverse" hint="可选，已存在关系的 IRI">
-              <input
+              <Input
                 placeholder="逆属性 IRI（可选）"
                 value={form.inverse_iri}
                 onChange={(e) => setForm({ ...form, inverse_iri: e.target.value })}
-                className="w-full rounded border px-2 py-1 font-mono text-xs"
+                className="h-auto rounded px-2 py-1 font-mono text-xs shadow-none"
               />
             </Field>
           )}
           <div className="flex gap-2">
-            <button
+            <Button
               onClick={submitForm}
-              className="rounded bg-blue-600 px-3 py-1.5 text-sm text-white hover:bg-blue-700"
+              size="sm"
+              className="h-auto rounded px-3 py-1.5 text-sm"
             >
               {mode === "edit" ? "保存" : "创建关系"}
-            </button>
-            <button
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
               onClick={backToList}
-              className="rounded border px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-50"
+              className="h-auto rounded px-3 py-1.5 text-sm text-muted-foreground"
             >
               取消
-            </button>
+            </Button>
           </div>
         </div>
       )}

@@ -1,5 +1,14 @@
 "use client";
 
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 import type { ConflictState } from "./use-version-conflict";
 
 /**
@@ -19,38 +28,47 @@ export function ConflictDialog({
 }) {
   if (!conflict) return null;
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
-      <div className="w-[28rem] rounded-lg bg-white p-5 shadow-xl">
-        <h3 className="mb-2 text-base font-bold text-amber-700">他人已更新该实体</h3>
-        <p className="mb-1 text-sm text-gray-600">{conflict.message}</p>
+    <Dialog
+      open
+      onOpenChange={(o) => {
+        if (!o) onDismiss();
+      }}
+    >
+      <DialogContent className="w-[28rem] max-w-[28rem]">
+        <DialogHeader>
+          <DialogTitle className="text-base font-bold text-warning">他人已更新该实体</DialogTitle>
+          <DialogDescription className="text-sm text-muted-foreground">{conflict.message}</DialogDescription>
+        </DialogHeader>
         {conflict.currentVersion != null && (
-          <p className="mb-4 text-xs text-gray-400">
+          <p className="text-xs text-muted-foreground">
             服务端当前版本：v{conflict.currentVersion}
           </p>
         )}
-        <div className="flex justify-end gap-2">
-          <button
+        <DialogFooter className="flex justify-end gap-2">
+          <Button
+            variant="ghost"
             onClick={onDismiss}
-            className="rounded-md px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-100"
+            className="h-auto px-3 py-1.5 text-sm text-muted-foreground hover:bg-accent"
           >
             放弃
-          </button>
+          </Button>
           {onViewDiff && (
-            <button
+            <Button
+              variant="outline"
               onClick={onViewDiff}
-              className="rounded-md border px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50"
+              className="h-auto px-3 py-1.5 text-sm"
             >
               查看差异
-            </button>
+            </Button>
           )}
-          <button
+          <Button
             onClick={onReload}
-            className="rounded-md bg-blue-600 px-3 py-1.5 text-sm text-white hover:bg-blue-700"
+            className="h-auto px-3 py-1.5 text-sm"
           >
             重新加载最新
-          </button>
-        </div>
-      </div>
-    </div>
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

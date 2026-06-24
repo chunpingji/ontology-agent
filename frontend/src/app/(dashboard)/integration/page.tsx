@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { ConnectorManager } from "@/components/integration/connector-manager";
 import { RealtimeInferencePanel } from "@/components/integration/realtime-inference-panel";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 type Tab = "dashboard" | "connectors";
 
@@ -12,30 +13,31 @@ export default function IntegrationPage() {
   return (
     <div>
       <h1 className="mb-4 text-xl font-bold">实时事实源与推理看板</h1>
-      <div className="mb-6 flex gap-2 border-b">
-        <button
-          className={`px-3 py-2 text-sm ${
-            tab === "dashboard"
-              ? "border-b-2 border-blue-600 font-semibold text-blue-600"
-              : "text-gray-500"
-          }`}
-          onClick={() => setTab("dashboard")}
-        >
-          实时看板
-        </button>
-        <button
-          className={`px-3 py-2 text-sm ${
-            tab === "connectors"
-              ? "border-b-2 border-blue-600 font-semibold text-blue-600"
-              : "text-gray-500"
-          }`}
-          onClick={() => setTab("connectors")}
-        >
-          连接器管理
-        </button>
-      </div>
+      <Tabs value={tab} onValueChange={(v) => setTab(v as Tab)}>
+        <div className="mb-6 border-b">
+          <TabsList className="h-auto gap-2 bg-transparent p-0">
+            <TabsTrigger
+              value="dashboard"
+              className="rounded-none border-b-2 border-transparent bg-transparent px-3 py-2 text-sm text-muted-foreground shadow-none data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:font-semibold data-[state=active]:text-primary data-[state=active]:shadow-none"
+            >
+              实时看板
+            </TabsTrigger>
+            <TabsTrigger
+              value="connectors"
+              className="rounded-none border-b-2 border-transparent bg-transparent px-3 py-2 text-sm text-muted-foreground shadow-none data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:font-semibold data-[state=active]:text-primary data-[state=active]:shadow-none"
+            >
+              连接器管理
+            </TabsTrigger>
+          </TabsList>
+        </div>
 
-      {tab === "dashboard" ? <RealtimeInferencePanel /> : <ConnectorManager />}
+        <TabsContent value="dashboard" className="mt-0">
+          <RealtimeInferencePanel />
+        </TabsContent>
+        <TabsContent value="connectors" className="mt-0">
+          <ConnectorManager />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

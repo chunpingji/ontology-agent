@@ -3,6 +3,17 @@
 import { useEffect, useState } from "react";
 import { getKGStats, runSPARQL } from "@/lib/api";
 import type { KGStats } from "@/lib/api";
+import { Card } from "@/components/ui/card";
+import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from "@/components/ui/table";
 
 // 图谱查询面板（自 knowledge-graph/page.tsx 迁入, T014）：KG 统计 + SPARQL。
 export function GraphQueryPanel() {
@@ -30,68 +41,69 @@ export function GraphQueryPanel() {
     <div>
       {stats && (
         <div className="mb-6 grid grid-cols-4 gap-3">
-          <div className="rounded-lg border bg-white p-4 text-center">
-            <p className="text-2xl font-bold text-blue-600">{stats.total_entities}</p>
-            <p className="text-sm text-gray-500">总实体数</p>
-          </div>
+          <Card className="p-4 text-center">
+            <p className="text-2xl font-bold text-primary">{stats.total_entities}</p>
+            <p className="text-sm text-muted-foreground">总实体数</p>
+          </Card>
           {Object.entries(stats.by_module).map(([mod, count]) => (
-            <div key={mod} className="rounded-lg border bg-white p-4 text-center">
+            <Card key={mod} className="p-4 text-center">
               <p className="text-xl font-bold">{count}</p>
-              <p className="text-sm text-gray-500">{mod}</p>
-            </div>
+              <p className="text-sm text-muted-foreground">{mod}</p>
+            </Card>
           ))}
         </div>
       )}
 
-      <div className="rounded-lg border bg-white p-4">
+      <Card className="p-4">
         <h3 className="mb-3 font-semibold">SPARQL 查询</h3>
-        <textarea
+        <Textarea
           value={sparql}
           onChange={(e) => setSparql(e.target.value)}
           rows={4}
-          className="w-full rounded border px-3 py-2 font-mono text-sm"
+          className="w-full font-mono text-sm"
         />
-        <button
+        <Button
           onClick={handleQuery}
-          className="mt-2 rounded bg-blue-600 px-4 py-1.5 text-sm text-white hover:bg-blue-700"
+          size="sm"
+          className="mt-2"
         >
           执行查询
-        </button>
+        </Button>
 
-        {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
+        {error && <p className="mt-2 text-sm text-destructive">{error}</p>}
 
         {queryResult && (
           <div className="mt-4 overflow-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b bg-gray-50 text-left text-xs text-gray-500">
+            <Table className="w-full text-sm">
+              <TableHeader>
+                <TableRow className="bg-muted text-left text-xs text-muted-foreground">
                   {queryResult.length > 0 &&
                     Object.keys(queryResult[0]).map((col) => (
-                      <th key={col} className="px-3 py-2">{col}</th>
+                      <TableHead key={col} className="px-3 py-2">{col}</TableHead>
                     ))}
-                </tr>
-              </thead>
-              <tbody>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {queryResult.map((row, i) => (
-                  <tr key={i} className="border-b">
+                  <TableRow key={i}>
                     {Object.values(row).map((val, j) => (
-                      <td key={j} className="px-3 py-1.5 text-xs">
+                      <TableCell key={j} className="px-3 py-1.5 text-xs">
                         {typeof val === "object" ? JSON.stringify(val) : String(val)}
-                      </td>
+                      </TableCell>
                     ))}
-                  </tr>
+                  </TableRow>
                 ))}
-              </tbody>
-            </table>
-            <p className="mt-2 text-xs text-gray-400">{queryResult.length} 行结果</p>
+              </TableBody>
+            </Table>
+            <p className="mt-2 text-xs text-muted-foreground">{queryResult.length} 行结果</p>
           </div>
         )}
-      </div>
+      </Card>
 
-      <div className="mt-6 rounded-lg border bg-white p-6 text-center">
-        <p className="text-gray-400">力导向图可视化 (D3.js) — Phase 3 实现</p>
-        <p className="text-xs text-gray-300">节点=实体, 边=对象属性关系</p>
-      </div>
+      <Card className="mt-6 p-6 text-center">
+        <p className="text-muted-foreground">力导向图可视化 (D3.js) — Phase 3 实现</p>
+        <p className="text-xs text-muted-foreground">节点=实体, 边=对象属性关系</p>
+      </Card>
     </div>
   );
 }

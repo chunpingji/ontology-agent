@@ -9,6 +9,17 @@ import {
   listExtractionJobs,
   type ExtractionJob,
 } from "@/lib/api";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 const STATUS_LABELS: Record<string, string> = {
   pending: "待处理",
@@ -87,78 +98,96 @@ export default function ExtractionPage() {
   return (
     <div>
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <div className="rounded-lg border bg-white p-6">
-          <h2 className="mb-3 font-semibold">创建抽取作业</h2>
-          <JobCreateForm onCreated={handleCreated} />
-        </div>
+        <Card>
+          <CardHeader>
+            <CardTitle>创建抽取作业</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <JobCreateForm onCreated={handleCreated} />
+          </CardContent>
+        </Card>
 
-        <div className="rounded-lg border bg-white p-6">
-          <h2 className="mb-3 font-semibold">实时进度</h2>
-          {activeJobId ? (
-            <JobProgress jobId={activeJobId} onDone={handleProgressDone} />
-          ) : (
-            <p className="text-sm text-gray-500">创建作业后将在此显示各阶段进度。</p>
-          )}
-        </div>
+        <Card>
+          <CardHeader>
+            <CardTitle>实时进度</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {activeJobId ? (
+              <JobProgress key={activeJobId} jobId={activeJobId} onDone={handleProgressDone} />
+            ) : (
+              <p className="text-sm text-muted-foreground">创建作业后将在此显示各阶段进度。</p>
+            )}
+          </CardContent>
+        </Card>
       </div>
 
       {activeJob && (activeJob.status === "reviewing" || activeJob.status === "done") && (
-        <div className="mt-6 rounded-lg border bg-white p-6">
-          <h2 className="mb-3 font-semibold">
-            对齐审核 — {activeJob.source_filename ?? activeJob.source_type}
-          </h2>
-          <AlignmentReview jobId={activeJob.id} />
-        </div>
+        <Card className="mt-6">
+          <CardHeader>
+            <CardTitle>
+              对齐审核 — {activeJob.source_filename ?? activeJob.source_type}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <AlignmentReview key={activeJob.id} jobId={activeJob.id} />
+          </CardContent>
+        </Card>
       )}
 
-      <div className="mt-6 rounded-lg border bg-white p-6">
-        <h2 className="mb-3 font-semibold">抽取作业</h2>
-        {jobs.length === 0 ? (
-          <p className="text-sm text-gray-500">暂无作业。</p>
-        ) : (
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b text-left text-gray-500">
-                <th className="py-2">源文件</th>
-                <th className="py-2">类型</th>
-                <th className="py-2">状态</th>
-                <th className="py-2">候选数</th>
-                <th className="py-2"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {jobs.map((j) => (
-                <tr key={j.id} className="border-b last:border-0">
-                  <td className="py-2">{j.source_filename ?? "—"}</td>
-                  <td className="py-2">{j.source_type}</td>
-                  <td className="py-2">
-                    <span
-                      className={`rounded px-2 py-0.5 text-xs ${
-                        j.status === "failed"
-                          ? "bg-red-100 text-red-700"
-                          : j.status === "reviewing" || j.status === "done"
-                            ? "bg-green-100 text-green-700"
-                            : "bg-blue-100 text-blue-700"
-                      }`}
-                    >
-                      {STATUS_LABELS[j.status] ?? j.status}
-                    </span>
-                  </td>
-                  <td className="py-2">{j.total_candidates}</td>
-                  <td className="py-2 text-right">
-                    <button
-                      onClick={() => setActiveJobId(j.id)}
-                      className="text-xs text-blue-600 hover:underline"
-                    >
-                      查看进度
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </div>
+      <Card className="mt-6">
+        <CardHeader>
+          <CardTitle>抽取作业</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {jobs.length === 0 ? (
+            <p className="text-sm text-muted-foreground">暂无作业。</p>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow className="border-b text-left text-muted-foreground">
+                  <TableHead className="py-2">源文件</TableHead>
+                  <TableHead className="py-2">类型</TableHead>
+                  <TableHead className="py-2">状态</TableHead>
+                  <TableHead className="py-2">候选数</TableHead>
+                  <TableHead className="py-2"></TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {jobs.map((j) => (
+                  <TableRow key={j.id} className="border-b last:border-0">
+                    <TableCell className="py-2">{j.source_filename ?? "—"}</TableCell>
+                    <TableCell className="py-2">{j.source_type}</TableCell>
+                    <TableCell className="py-2">
+                      <Badge
+                        variant={
+                          j.status === "failed"
+                            ? "destructive"
+                            : j.status === "reviewing" || j.status === "done"
+                              ? "success"
+                              : "default"
+                        }
+                      >
+                        {STATUS_LABELS[j.status] ?? j.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="py-2">{j.total_candidates}</TableCell>
+                    <TableCell className="py-2 text-right">
+                      <Button
+                        variant="link"
+                        size="sm"
+                        onClick={() => setActiveJobId(j.id)}
+                        className="h-auto p-0 text-xs"
+                      >
+                        查看进度
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

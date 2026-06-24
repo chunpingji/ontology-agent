@@ -11,6 +11,10 @@ import {
   type TBoxClass,
 } from "@/lib/api";
 import type { useVersionConflict } from "./use-version-conflict";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 
 const MANAGED_PREFIX = "https://ontology.pharma-gmp.cn/slpra/core/";
 
@@ -95,81 +99,87 @@ export function ClassPanel({
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-gray-700">{cls ? "编辑类" : "新建类"}</h3>
+        <h3 className="text-sm font-semibold text-foreground">{cls ? "编辑类" : "新建类"}</h3>
         {cls && (
           <span className="flex items-center gap-2 text-xs">
-            <span className="rounded bg-gray-100 px-2 py-0.5">v{cls.version}</span>
-            <span className="rounded bg-gray-100 px-2 py-0.5">{cls.status}</span>
-            {cls.is_reviewed && <span className="rounded bg-green-100 px-2 py-0.5 text-green-700">已审核</span>}
-            {cls.is_disabled && <span className="rounded bg-red-100 px-2 py-0.5 text-red-700">已停用</span>}
+            <Badge variant="secondary">v{cls.version}</Badge>
+            <Badge variant="secondary">{cls.status}</Badge>
+            {cls.is_reviewed && <Badge variant="success">已审核</Badge>}
+            {cls.is_disabled && <Badge variant="destructive">已停用</Badge>}
           </span>
         )}
       </div>
 
-      {error && <p className="rounded bg-red-50 px-2 py-1 text-xs text-red-600">{error}</p>}
+      {error && <p className="rounded bg-destructive/10 px-2 py-1 text-xs text-destructive">{error}</p>}
 
       <Field label="IRI">
-        <input
+        <Input
           value={form.slpra_iri}
           disabled={!!cls}
           onChange={(e) => setForm({ ...form, slpra_iri: e.target.value })}
-          className="w-full rounded border px-2 py-1 font-mono text-xs disabled:bg-gray-50"
+          className="h-auto rounded px-2 py-1 font-mono text-xs shadow-none disabled:bg-muted"
         />
       </Field>
       <Field label="标签">
-        <input
+        <Input
           value={form.label}
           onChange={(e) => setForm({ ...form, label: e.target.value })}
-          className="w-full rounded border px-2 py-1 text-sm"
+          className="h-auto rounded px-2 py-1 text-sm shadow-none"
         />
       </Field>
       <Field label="注释">
-        <textarea
+        <Textarea
           value={form.comment}
           onChange={(e) => setForm({ ...form, comment: e.target.value })}
-          className="w-full rounded border px-2 py-1 text-sm"
+          className="min-h-0 rounded px-2 py-1 text-sm shadow-none"
           rows={2}
         />
       </Field>
       <Field label="父类 IRI">
-        <input
+        <Input
           value={form.parent_iri}
           onChange={(e) => setForm({ ...form, parent_iri: e.target.value })}
-          className="w-full rounded border px-2 py-1 font-mono text-xs"
+          className="h-auto rounded px-2 py-1 font-mono text-xs shadow-none"
         />
       </Field>
       <Field label="BFO 范畴">
-        <input
+        <Input
           value={form.bfo_category}
           onChange={(e) => setForm({ ...form, bfo_category: e.target.value })}
-          className="w-full rounded border px-2 py-1 text-sm"
+          className="h-auto rounded px-2 py-1 text-sm shadow-none"
         />
       </Field>
 
       <div className="flex flex-wrap gap-2 pt-1">
-        <button onClick={handleSave} className="rounded bg-blue-600 px-3 py-1.5 text-sm text-white hover:bg-blue-700">
+        <Button onClick={handleSave} size="sm" className="h-auto rounded px-3 py-1.5 text-sm">
           保存
-        </button>
+        </Button>
         {cls && (
           <>
-            <button
+            <Button
+              variant="outline"
+              size="sm"
               onClick={guarded(() => reviewClass(cls.slpra_iri, cls.version))}
-              className="rounded border px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50"
+              className="h-auto rounded px-3 py-1.5 text-sm text-foreground"
             >
               标记已审核
-            </button>
-            <button
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
               onClick={guarded(() => disableClass(cls.slpra_iri, cls.version))}
-              className="rounded border px-3 py-1.5 text-sm text-amber-700 hover:bg-amber-50"
+              className="h-auto rounded px-3 py-1.5 text-sm text-warning hover:bg-warning/10"
             >
               停用
-            </button>
-            <button
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
               onClick={guarded(() => deleteClass(cls.slpra_iri, cls.version).then(() => ({ ok: true })))}
-              className="rounded border px-3 py-1.5 text-sm text-red-600 hover:bg-red-50"
+              className="h-auto rounded px-3 py-1.5 text-sm text-destructive hover:bg-destructive/10"
             >
               删除
-            </button>
+            </Button>
           </>
         )}
       </div>
@@ -180,7 +190,7 @@ export function ClassPanel({
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label className="block">
-      <span className="mb-0.5 block text-xs font-medium text-gray-500">{label}</span>
+      <span className="mb-0.5 block text-xs font-medium text-muted-foreground">{label}</span>
       {children}
     </label>
   );

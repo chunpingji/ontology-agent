@@ -2,8 +2,16 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { clsx } from "clsx";
+import { cn } from "@/lib/utils";
 import { useIdentity, type Role } from "@/lib/use-identity";
+import { Separator } from "@/components/ui/separator";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 // --- Nav model (single source of truth — see data-model.md §1) --------------
 interface NavItem {
@@ -59,12 +67,12 @@ function NavLink({
   return (
     <Link
       href={item.href}
-      className={clsx(
-        "block rounded-md px-3 py-2 text-sm transition",
+      className={cn(
+        "block rounded-md px-3 py-2 text-sm transition-colors",
         indent && "ml-2",
         active
-          ? "bg-blue-50 font-medium text-blue-700"
-          : "text-gray-600 hover:bg-gray-50",
+          ? "bg-primary/10 font-medium text-primary"
+          : "text-muted-foreground hover:bg-muted hover:text-foreground",
       )}
     >
       {item.icon && <span className="mr-2">{item.icon}</span>}
@@ -81,12 +89,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   return (
     <div className="flex min-h-screen">
-      <aside className="flex w-56 shrink-0 flex-col border-r border-gray-200 bg-white">
+      <aside className="flex w-56 shrink-0 flex-col border-r border-border bg-card">
         <div className="px-4 py-5">
-          <Link href="/overview" className="text-lg font-bold text-blue-700">
+          <Link href="/overview" className="text-lg font-bold text-primary">
             SLPRA
           </Link>
-          <p className="text-xs text-gray-400">v0.1.0</p>
+          <p className="text-xs text-muted-foreground">v0.1.0</p>
         </div>
 
         <nav className="flex-1 space-y-1 px-2">
@@ -98,9 +106,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               return (
                 <div key={node.title} className="pt-3">
                   <p
-                    className={clsx(
+                    className={cn(
                       "px-3 pb-1 text-xs font-semibold uppercase tracking-wide",
-                      groupActive ? "text-blue-700" : "text-gray-400",
+                      groupActive ? "text-primary" : "text-muted-foreground",
                     )}
                   >
                     {node.title}
@@ -125,19 +133,28 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           })}
         </nav>
 
-        <div className="border-t border-gray-100 p-3">
-          <label className="mb-1 block text-xs text-gray-400">当前身份（开发态）</label>
-          <select
+        <div className="p-3">
+          <Separator className="mb-3" />
+          <label className="mb-1 block text-xs text-muted-foreground">
+            当前身份（开发态）
+          </label>
+          <Select
             value={role}
-            onChange={(e) => setIdentity({ username: identity.username, role: e.target.value })}
-            className="w-full rounded border px-2 py-1 text-sm"
+            onValueChange={(value) =>
+              setIdentity({ username: identity.username, role: value })
+            }
           >
-            {ROLES.map((r) => (
-              <option key={r.value} value={r.value}>
-                {r.label}
-              </option>
-            ))}
-          </select>
+            <SelectTrigger className="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {ROLES.map((r) => (
+                <SelectItem key={r.value} value={r.value}>
+                  {r.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       </aside>
       <main className="flex-1 overflow-auto p-6">{children}</main>

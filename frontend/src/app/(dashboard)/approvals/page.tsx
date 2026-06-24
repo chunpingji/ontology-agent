@@ -11,6 +11,16 @@ import {
 import { QaSignatureDialog } from "@/components/approvals/qa-signature-dialog";
 import { RejectDialog } from "@/components/approvals/reject-dialog";
 import { useIdentity } from "@/lib/use-identity";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from "@/components/ui/table";
 
 type VerifyResult = {
   ok: boolean;
@@ -61,9 +71,9 @@ export default function ApprovalsPage() {
     return (
       <div>
         <h1 className="mb-4 text-xl font-bold">审批中心</h1>
-        <div className="rounded-lg border border-amber-200 bg-amber-50 p-6">
-          <p className="font-medium text-amber-800">需要 QA 角色</p>
-          <p className="mt-1 text-sm text-amber-700">
+        <div className="rounded-lg border border-warning/40 bg-warning/10 p-6">
+          <p className="font-medium text-warning">需要 QA 角色</p>
+          <p className="mt-1 text-sm text-warning">
             电子签批、QA 拒绝与审计治理操作仅对 QA 角色开放。请使用左下角身份切换器切换到
             QA 后再进入。后端对治理端点亦有 <code>require_role(qa)</code> 硬约束。
           </p>
@@ -75,64 +85,72 @@ export default function ApprovalsPage() {
   return (
     <div>
       <h1 className="mb-1 text-xl font-bold">审批中心</h1>
-      <p className="mb-5 text-sm text-gray-500">
+      <p className="mb-5 text-sm text-muted-foreground">
         QA 治理工作台 —— 待签结论、21 CFR Part 11 电子签批 / 拒绝、审计链验真。
       </p>
 
       <div className="space-y-6">
-        <section className="rounded-lg border bg-white p-4">
+        <section className="rounded-lg border bg-card p-4">
           <h2 className="mb-3 font-semibold">待签结论</h2>
           {pending.length === 0 ? (
-            <p className="text-sm text-gray-400">暂无待签名结论</p>
+            <p className="text-sm text-muted-foreground">暂无待签名结论</p>
           ) : (
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b text-left text-xs text-gray-500">
-                  <th className="py-1">结论 ID</th>
-                  <th className="py-1">风险等级</th>
-                  <th className="py-1">类型</th>
-                  <th className="py-1 text-right">操作</th>
-                </tr>
-              </thead>
-              <tbody>
+            <Table className="text-sm">
+              <TableHeader>
+                <TableRow className="text-left text-xs text-muted-foreground">
+                  <TableHead className="py-1">结论 ID</TableHead>
+                  <TableHead className="py-1">风险等级</TableHead>
+                  <TableHead className="py-1">类型</TableHead>
+                  <TableHead className="py-1 text-right">操作</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {pending.map((c) => (
-                  <tr key={c.id} className="border-b last:border-0">
-                    <td className="py-1.5 font-mono text-xs">{c.id.slice(0, 8)}</td>
-                    <td className="py-1.5">{c.risk_level ?? "—"}</td>
-                    <td className="py-1.5">{c.execution_type}</td>
-                    <td className="py-1.5 text-right">
-                      <button
+                  <TableRow key={c.id}>
+                    <TableCell className="py-1.5 font-mono text-xs">{c.id.slice(0, 8)}</TableCell>
+                    <TableCell className="py-1.5">
+                      <Badge variant="secondary">{c.risk_level ?? "—"}</Badge>
+                    </TableCell>
+                    <TableCell className="py-1.5">{c.execution_type}</TableCell>
+                    <TableCell className="py-1.5 text-right">
+                      <Button
+                        variant="default"
+                        size="sm"
                         onClick={() => setSigning(c.id)}
-                        className="mr-2 rounded bg-blue-600 px-3 py-1 text-xs text-white hover:bg-blue-700"
+                        className="mr-2 h-auto px-3 py-1 text-xs"
                       >
                         签批
-                      </button>
-                      <button
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
                         onClick={() => setRejecting(c.id)}
-                        className="rounded border border-red-300 px-3 py-1 text-xs text-red-700 hover:bg-red-50"
+                        className="h-auto border-destructive/40 px-3 py-1 text-xs text-destructive hover:bg-destructive/10 hover:text-destructive"
                       >
                         拒绝
-                      </button>
-                    </td>
-                  </tr>
+                      </Button>
+                    </TableCell>
+                  </TableRow>
                 ))}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           )}
         </section>
 
-        <section className="rounded-lg border bg-white p-4">
+        <section className="rounded-lg border bg-card p-4">
           <div className="mb-3 flex items-center justify-between">
             <h2 className="font-semibold">审计哈希链</h2>
-            <button
+            <Button
+              variant="outline"
+              size="sm"
               onClick={handleVerify}
-              className="rounded border px-3 py-1 text-xs hover:bg-gray-50"
+              className="h-auto px-3 py-1 text-xs"
             >
               校验审计链
-            </button>
+            </Button>
           </div>
           {verify && (
-            <p className={`mb-3 text-xs ${verify.ok ? "text-green-700" : "text-red-600"}`}>
+            <p className={`mb-3 text-xs ${verify.ok ? "text-success" : "text-destructive"}`}>
               {verify.ok
                 ? `链完整 ✓${
                     verify.verified_count != null ? `（已校验 ${verify.verified_count} 条）` : ""
@@ -143,33 +161,33 @@ export default function ApprovalsPage() {
             </p>
           )}
           {audit.length === 0 ? (
-            <p className="text-sm text-gray-400">暂无审计条目</p>
+            <p className="text-sm text-muted-foreground">暂无审计条目</p>
           ) : (
             <div className="overflow-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b bg-gray-50 text-left text-xs text-gray-500">
-                    <th className="px-2 py-1">seq</th>
-                    <th className="px-2 py-1">动作</th>
-                    <th className="px-2 py-1">操作者</th>
-                    <th className="px-2 py-1">实体</th>
-                    <th className="px-2 py-1">时间</th>
-                  </tr>
-                </thead>
-                <tbody>
+              <Table className="text-sm">
+                <TableHeader>
+                  <TableRow className="bg-muted text-left text-xs text-muted-foreground">
+                    <TableHead className="px-2 py-1">seq</TableHead>
+                    <TableHead className="px-2 py-1">动作</TableHead>
+                    <TableHead className="px-2 py-1">操作者</TableHead>
+                    <TableHead className="px-2 py-1">实体</TableHead>
+                    <TableHead className="px-2 py-1">时间</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
                   {audit.map((e, i) => (
-                    <tr key={e.entry_hash ?? `${e.seq}-${i}`} className="border-b last:border-0">
-                      <td className="px-2 py-1 font-mono text-xs">{e.seq ?? "—"}</td>
-                      <td className="px-2 py-1 text-xs">{e.action}</td>
-                      <td className="px-2 py-1 text-xs">{e.actor ?? "—"}</td>
-                      <td className="px-2 py-1 font-mono text-xs text-gray-500">
+                    <TableRow key={e.entry_hash ?? `${e.seq}-${i}`}>
+                      <TableCell className="px-2 py-1 font-mono text-xs">{e.seq ?? "—"}</TableCell>
+                      <TableCell className="px-2 py-1 text-xs">{e.action}</TableCell>
+                      <TableCell className="px-2 py-1 text-xs">{e.actor ?? "—"}</TableCell>
+                      <TableCell className="px-2 py-1 font-mono text-xs text-muted-foreground">
                         {e.entity_iri ? e.entity_iri.split("/").pop() : "—"}
-                      </td>
-                      <td className="px-2 py-1 text-xs text-gray-500">{e.created_at ?? "—"}</td>
-                    </tr>
+                      </TableCell>
+                      <TableCell className="px-2 py-1 text-xs text-muted-foreground">{e.created_at ?? "—"}</TableCell>
+                    </TableRow>
                   ))}
-                </tbody>
-              </table>
+                </TableBody>
+              </Table>
             </div>
           )}
         </section>

@@ -10,6 +10,16 @@ import {
   type TBoxMapping,
 } from "@/lib/api";
 import { Field } from "@/components/ontology/field";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 import type { useVersionConflict } from "./use-version-conflict";
 
 const MAPPING_TYPES = ["slpra_iri", "bfo", "field", "external"];
@@ -80,82 +90,90 @@ export function OntologyMappingPanel({
   const healthBadge = (() => {
     if (!health || !classIri) return null;
     const label = health.ok.includes(classIri)
-      ? { t: "映射健全", c: "bg-green-100 text-green-700" }
+      ? { t: "映射健全", c: "bg-success/10 text-success" }
       : health.drift.includes(classIri)
-        ? { t: "映射漂移", c: "bg-amber-100 text-amber-700" }
+        ? { t: "映射漂移", c: "bg-warning/10 text-warning" }
         : health.orphan.includes(classIri)
-          ? { t: "孤立映射", c: "bg-purple-100 text-purple-700" }
-          : { t: "未映射", c: "bg-red-100 text-red-700" };
+          ? { t: "孤立映射", c: "bg-primary/10 text-primary" }
+          : { t: "未映射", c: "bg-destructive/10 text-destructive" };
     return <span className={`rounded px-2 py-0.5 text-xs ${label.c}`}>{label.t}</span>;
   })();
 
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-gray-700">映射</h3>
+        <h3 className="text-sm font-semibold text-foreground">映射</h3>
         {healthBadge}
       </div>
-      {error && <p className="rounded bg-red-50 px-2 py-1 text-xs text-red-600">{error}</p>}
+      {error && <p className="rounded bg-destructive/10 px-2 py-1 text-xs text-destructive">{error}</p>}
 
       {!classIri ? (
-        <p className="text-xs text-gray-400">先选择一个类</p>
+        <p className="text-xs text-muted-foreground">先选择一个类</p>
       ) : (
         <>
           <ul className="divide-y text-sm">
             {maps.map((m) => (
               <li key={m.id} className="flex items-center justify-between py-1.5">
                 <span className="text-xs">
-                  <span className="rounded bg-gray-100 px-1.5 py-0.5">{m.mapping_type}</span>
-                  <span className="ml-2 font-mono text-gray-600">{m.target}</span>
+                  <Badge variant="secondary" className="font-normal">{m.mapping_type}</Badge>
+                  <span className="ml-2 font-mono text-muted-foreground">{m.target}</span>
                 </span>
-                <button onClick={() => remove(m)} className="text-xs text-red-500 hover:underline">
+                <Button
+                  variant="link"
+                  onClick={() => remove(m)}
+                  className="h-auto p-0 text-xs text-destructive hover:underline"
+                >
                   删除
-                </button>
+                </Button>
               </li>
             ))}
-            {maps.length === 0 && <li className="py-2 text-xs text-gray-400">暂无映射</li>}
+            {maps.length === 0 && <li className="py-2 text-xs text-muted-foreground">暂无映射</li>}
           </ul>
 
-          <div className="space-y-2 rounded border bg-gray-50 p-2">
-            <p className="text-xs font-medium text-gray-600">新建映射</p>
+          <div className="space-y-2 rounded border border-border bg-muted p-2">
+            <p className="text-xs font-medium text-muted-foreground">新建映射</p>
             <div className="flex gap-2">
               <Field label="映射类型" className="w-1/3">
-                <select
+                <Select
                   value={form.mapping_type}
-                  onChange={(e) => setForm({ ...form, mapping_type: e.target.value })}
-                  className="w-full rounded border px-2 py-1 text-sm"
+                  onValueChange={(v) => setForm({ ...form, mapping_type: v })}
                 >
-                  {MAPPING_TYPES.map((t) => (
-                    <option key={t} value={t}>
-                      {t}
-                    </option>
-                  ))}
-                </select>
+                  <SelectTrigger className="h-auto w-full px-2 py-1 text-sm">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {MAPPING_TYPES.map((t) => (
+                      <SelectItem key={t} value={t}>
+                        {t}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </Field>
               <Field label="目标 target" hint="映射指向的 IRI / 字段" className="w-2/3">
-                <input
+                <Input
                   placeholder="target"
                   value={form.target}
                   onChange={(e) => setForm({ ...form, target: e.target.value })}
-                  className="w-full rounded border px-2 py-1 text-sm"
+                  className="h-auto w-full px-2 py-1 text-sm"
                 />
               </Field>
             </div>
             <Field label="来源系统 source" hint="可选">
-              <input
+              <Input
                 placeholder="source system（可选）"
                 value={form.source_system}
                 onChange={(e) => setForm({ ...form, source_system: e.target.value })}
-                className="w-full rounded border px-2 py-1 text-sm"
+                className="h-auto w-full px-2 py-1 text-sm"
               />
             </Field>
-            <button onClick={add} className="rounded bg-blue-600 px-3 py-1.5 text-sm text-white hover:bg-blue-700">
+            <Button onClick={add} size="sm" className="text-sm">
               添加映射
-            </button>
+            </Button>
           </div>
 
           {health && (
-            <div className="flex flex-wrap gap-2 pt-1 text-xs text-gray-500">
+            <div className="flex flex-wrap gap-2 pt-1 text-xs text-muted-foreground">
               <span>健全 {health.ok.length}</span>
               <span>未映射 {health.unmapped.length}</span>
               <span>漂移 {health.drift.length}</span>
