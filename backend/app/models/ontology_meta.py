@@ -42,6 +42,13 @@ HEALTH_STATES = ("ok", "unmapped", "drift", "orphan")
 CHANGE_KINDS = ("create", "update", "delete", "disable")
 ROLE_NAMES = ("senior_analyst", "operator", "qa")
 
+# --- declarative rule layer vocabularies (spec 006, data-model.md §A) --------
+LOGIC_ROLES = ("defined", "production")
+RULE_GROUPS = ("equipment_dedication", "scenario_identification", "contamination_risk")
+CONFLICT_DIMENSIONS = ("dedication", "risk_level")
+CONFLICT_STRATEGIES = ("safety_override", "max_severity")
+OVERRIDE_DIRECTIONS = ("restrictive_wins", "permissive_wins")
+
 
 def _uuid() -> uuid.UUID:
     return uuid.uuid4()
@@ -240,3 +247,64 @@ class OntologyChangeLog(Base):
     __table_args__ = (
         UniqueConstraint("release_id", "entity_table", "entity_id", name="uq_changelog_entity"),
     )
+
+
+# --- E11 ontology_classification_criterion (declarative defined criterion) ---
+class OntologyClassificationCriterion(VersionMixin, TimestampMixin, Base):
+    """Declarative "底层属性条件 → 风险分类" unit (spec 006, data-model.md §A/E11).
+
+    Not IRI-bearing: a criterion is a class expression *hung off* its target
+    class (projected as `target_class owl:equivalentClass _:c<id>`), so it
+    reuses `VersionMixin`+`TimestampMixin` rather than `NamedEntityMixin`.
+    E11 only ever stores `logic_role='defined'` (necessary-and-sufficient);
+    production rules live in E12.
+    """
+
+    __tablename__ = "ontology_classification_criterion"
+
+    id: Mapped[uuid.UUID] = mapped_column(GUID(), primary_key=True, default=_uuid)
+    criterion_key: Mapped[str] = mapped_column(String(50), unique=True, nullable=False)
+    target_class_id: Mapped[uuid.UUID] = mapped_column(
+        GUID(), ForeignKey("ontology_class.id"), nullable=False
+    )
+    logic_role: Mapped[str] = mapped_column(String(20), nullable=False, default="defined")
+    pattern: Mapped[dict] = mapped_column(JSON, nullable=False)
+    regulation_ref: Mapped[str | None] = mapped_column(String(200))
+    is_disabled: Mapped[bool] = mapped_column(Boolean, default=False)
+
+
+# --- E12 ontology_decision_rule (production rule R-ED/R-SC/R-CP) -------------
+class OntologyDecisionRule(NamedEntityMixin, Base):
+    """Production rule beyond DL-definable expressivity (data-model.md §A/E12).
+
+    IRI-bearing managed subject `slpra:DecisionRule_<rule_key>`; the engine
+    assembles by `rule_group`. `consequent` mirrors `RuleResult.conclusion`
+    so the external `AssessmentResult` shape is preserved.
+    """
+
+    __tablename__ = "ontology_decision_rule"
+
+    rule_key: Mapped[str] = mapped_column(String(50), unique=True, nullable=False)
+    rule_group: Mapped[str] = mapped_column(String(40), nullable=False)
+    antecedent: Mapped[dict] = mapped_column(JSON, nullable=False)
+    consequent: Mapped[dict] = mapped_column(JSON, nullable=False)
+    priority: Mapped[int] = mapped_column(Integer, nullable=False, default=100)
+    regulation_ref: Mapped[str | None] = mapped_column(String(200))
+
+
+# --- E13 ontology_conflict_policy (conflict resolution strategy) -------------
+class OntologyConflictPolicy(NamedEntityMixin, Base):
+    """Declarative conflict-resolution strategy (data-model.md §A/E13).
+
+    Externalises `resolve_dedication_conflict` / `resolve_risk_level` as
+    `slpra:ConflictPolicy_<dimension>` named resources: the priority lattice
+    and override direction are data, not Python `if` branches.
+    """
+
+    __tablename__ = "ontology_conflict_policy"
+
+    dimension: Mapped[str] = mapped_column(String(40), unique=True, nullable=False)
+    strategy: Mapped[str] = mapped_column(String(30), nullable=False)
+    priority_lattice: Mapped[dict | None] = mapped_column(JSON)
+    override_direction: Mapped[str | None] = mapped_column(String(20))
+    regulation_ref: Mapped[str | None] = mapped_column(String(200))

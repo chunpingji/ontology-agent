@@ -7,6 +7,7 @@ from app.db import get_db
 from app.dependencies import (
     ROLE_SENIOR_ANALYST,
     get_ontology_engine,
+    get_ontology_meta_store,
     require_role,
 )
 from app.models.reasoning import ActionExecution, ReasoningExecution
@@ -29,17 +30,16 @@ from app.schemas.reasoning import (
 )
 from app.services import audit
 from app.services.ontology_engine import OntologyEngine, ontology_engine
+from app.services.ontology_meta_store import OntologyMetaStore
 from app.services.reasoning import engine as reasoning_engine
 from app.services.reasoning import incremental, risk
 from app.services.reasoning.action_engine import ActionEngine
 from app.services.reasoning.calculators import calculate_maco, calculate_pde
-from app.services.reasoning.lifecycle import IllegalTransition, LifecycleState, transition
-from app.services.reasoning.rules import (
-    contamination_risk,
-    drug_classification,
-    equipment_dedication,
-    scenario_identification,
+from app.services.reasoning.defaults import (
+    default_classification_criteria,
+    default_decision_rules,
 )
+from app.services.reasoning.lifecycle import IllegalTransition, LifecycleState, transition
 
 router = APIRouter()
 
@@ -103,12 +103,26 @@ def run_assessment(
     req: AssessmentRequest,
     db: Session = Depends(get_db),
     engine: OntologyEngine = Depends(get_ontology_engine),
+    store: OntologyMetaStore = Depends(get_ontology_meta_store),
     identity: object = Depends(_assess_role),
 ):
     """评估即落库（G1/G2, FR-001~007）：返回结论的同时持久化为带唯一标识与初始
-    生命周期状态的工作流对象，自动 arm QA 闸门并编排动作（单事务原子）。"""
+    生命周期状态的工作流对象，自动 arm QA 闸门并编排动作（单事务原子）。
+
+    US3 (spec 006): the decision logic is loaded from the editable E11/E12/E13
+    declarative artifacts (active draft store). Editing a threshold, adding a
+    rule, or flipping a conflict policy via the workbench changes assessments
+    with no source change (FR-016). Empty tables → ``None`` → the engine falls
+    back to its single-source in-code defaults (golden-master parity, FR-012)."""
     try:
-        result = reasoning_engine.run_assessment(engine, req.drug_iri, req.equipment_iris)
+        result = reasoning_engine.run_assessment(
+            engine,
+            req.drug_iri,
+            req.equipment_iris,
+            criteria=store.active_classification_criteria() or None,
+            decision_rules=store.active_decision_rules() or None,
+            policies=store.active_conflict_policies() or None,
+        )
     except ValueError as e:
         raise HTTPException(400, str(e))
 
@@ -253,20 +267,27 @@ def get_conclusion_trace(conclusion_id: UUID, db: Session = Depends(get_db)):
 
 @router.get("/rules", response_model=list[RuleInfo])
 def list_rules():
-    rules = []
-    groups = [
-        ("drug_classification", drug_classification.ALL_RULES),
-        ("equipment_dedication", equipment_dedication.ALL_RULES),
-        ("contamination_risk", contamination_risk.ALL_RULES),
-        ("scenario_identification", scenario_identification.ALL_RULES),
+    """内置规则知识目录（声明式单一源）。
+
+    T043：不再内省已弃用的 `rules/*.ALL_RULES`，而是从声明式制品（`defaults.py`，
+    E11 分类判据 + E12 决策规则）派生——含每条的法规依据。可编辑的活跃草稿层在
+    `/api/ontology/classification-criteria` 与 `/api/ontology/decision-rules`。"""
+    rules: list[RuleInfo] = [
+        RuleInfo(
+            rule_id=c.key,
+            group="drug_classification",
+            description=c.description,
+            regulation_ref=c.regulation_ref,
+        )
+        for c in default_classification_criteria()
     ]
-    for group_name, group_rules in groups:
-        for fn in group_rules:
-            doc = fn.__doc__ or ""
-            rule_id = doc.split(":")[0].strip() if ":" in doc else fn.__name__
-            rules.append(RuleInfo(
-                rule_id=rule_id,
-                group=group_name,
-                description=doc.strip(),
-            ))
+    rules += [
+        RuleInfo(
+            rule_id=r.key,
+            group=r.rule_group,
+            description=r.description,
+            regulation_ref=r.regulation_ref,
+        )
+        for r in default_decision_rules()
+    ]
     return rules

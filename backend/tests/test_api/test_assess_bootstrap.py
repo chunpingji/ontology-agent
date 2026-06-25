@@ -36,7 +36,7 @@ def _low_risk_result() -> AssessmentResult:
 @pytest.fixture
 def patch_assess(monkeypatch):
     monkeypatch.setattr(reasoning_engine, "run_assessment",
-                        lambda engine, drug_iri, equipment_iris: _low_risk_result())
+                        lambda engine, drug_iri, equipment_iris, **kwargs: _low_risk_result())
 
 
 _ASSESS_BODY = {"drug_iri": "D-100", "equipment_iris": ["EQ-1"], "assessment_type": "full"}

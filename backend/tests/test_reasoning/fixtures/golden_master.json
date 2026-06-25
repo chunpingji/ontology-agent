@@ -1,0 +1,144 @@
+{
+  "biologic_prion_dedicate": {
+    "requires_dedication": true,
+    "risk_level": "LowRisk",
+    "rule_ids": [
+      "R-ED3",
+      "R-SC5"
+    ],
+    "scenario_iris": [
+      "BiologicSharedLineScenario"
+    ]
+  },
+  "contamination_highrisk": {
+    "requires_dedication": false,
+    "risk_level": "HighRisk",
+    "rule_ids": [
+      "R-CP1",
+      "R-CP2"
+    ],
+    "scenario_iris": []
+  },
+  "contamination_lowrisk": {
+    "requires_dedication": false,
+    "risk_level": "LowRisk",
+    "rule_ids": [
+      "R-CP3"
+    ],
+    "scenario_iris": []
+  },
+  "cytotoxic_inactivatable_shared": {
+    "requires_dedication": false,
+    "risk_level": "LowRisk",
+    "rule_ids": [
+      "R-DC1",
+      "R-ED4",
+      "R-SC2"
+    ],
+    "scenario_iris": [
+      "CytotoxicSharedLineScenario"
+    ]
+  },
+  "cytotoxic_noninactivatable_dedicate": {
+    "requires_dedication": true,
+    "risk_level": "LowRisk",
+    "rule_ids": [
+      "R-DC1",
+      "R-ED2",
+      "R-SC2"
+    ],
+    "scenario_iris": [
+      "CytotoxicSharedLineScenario"
+    ]
+  },
+  "dc1_genotoxic_cytotoxic": {
+    "requires_dedication": false,
+    "risk_level": "LowRisk",
+    "rule_ids": [
+      "R-DC1",
+      "R-SC2"
+    ],
+    "scenario_iris": [
+      "CytotoxicSharedLineScenario"
+    ]
+  },
+  "dc2_oeb4_highactivity": {
+    "requires_dedication": false,
+    "risk_level": "LowRisk",
+    "rule_ids": [
+      "R-DC2",
+      "R-SC6"
+    ],
+    "scenario_iris": [
+      "HighPotencySharedLineScenario"
+    ]
+  },
+  "dc3_sensitization_absent": {
+    "requires_dedication": false,
+    "risk_level": "LowRisk",
+    "rule_ids": [],
+    "scenario_iris": []
+  },
+  "dc3_sensitization_below": {
+    "requires_dedication": false,
+    "risk_level": "LowRisk",
+    "rule_ids": [],
+    "scenario_iris": []
+  },
+  "dc3_sensitization_high": {
+    "requires_dedication": false,
+    "risk_level": "LowRisk",
+    "rule_ids": [
+      "R-DC3"
+    ],
+    "scenario_iris": []
+  },
+  "dc4_betalactam": {
+    "requires_dedication": false,
+    "risk_level": "LowRisk",
+    "rule_ids": [
+      "R-DC4"
+    ],
+    "scenario_iris": []
+  },
+  "dc4_betalactam_false": {
+    "requires_dedication": false,
+    "risk_level": "LowRisk",
+    "rule_ids": [],
+    "scenario_iris": []
+  },
+  "highactivity_oeb5_dedicate": {
+    "requires_dedication": true,
+    "risk_level": "LowRisk",
+    "rule_ids": [
+      "R-DC2",
+      "R-ED5",
+      "R-SC6"
+    ],
+    "scenario_iris": [
+      "HighPotencySharedLineScenario"
+    ]
+  },
+  "hormonal_hvac": {
+    "requires_dedication": false,
+    "risk_level": "LowRisk",
+    "rule_ids": [
+      "R-ED6",
+      "R-SC3"
+    ],
+    "scenario_iris": [
+      "HormonalSharedLineScenario"
+    ]
+  },
+  "penicillin_dedication": {
+    "requires_dedication": true,
+    "risk_level": "LowRisk",
+    "rule_ids": [
+      "R-ED1",
+      "R-SC4"
+    ],
+    "scenario_iris": [
+      "PenicillinSharedLineScenario"
+    ]
+  }
+}

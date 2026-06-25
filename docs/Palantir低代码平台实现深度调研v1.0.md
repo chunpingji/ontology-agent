@@ -359,6 +359,48 @@ Agent 通过**六类工具**与本体交互([agent-studio/tools](https://www.pal
 
 ---
 
+## 十、(自研补编)006「声明式规则层」在本架构中的定位
+
+> **性质声明**:本节非 Palantir 官方信源,而是自研 ontology-agent 团队基于本报告框架,对 `006-declarative-rule-layer` 特性所做的定位分析(2026-06-25)。与上文「厂商文档描述」性质不同,特此区隔,勿与一手结论混读。
+
+起因是一个常被问到的概念问题:**声明式规则是否属于"标准本体建模"?在本报告里对应哪一层、哪个模块?** 答案需要先把"声明式规则"拆开看。
+
+### 10.1 结论:沿 OWL 表达力边界切两半
+
+声明式规则不是一个整体。006 已沿 OWL 的能力边界把规则知识切成三类制品,逻辑地位各异:
+
+| 006 制品 | 本质 | 标准 OWL 本体建模? |
+|---|---|---|
+| **E11 分类判据**(投影为 `owl:equivalentClass` 充要公理 + OWL2 datatype facet) | 可判定的定义型分类 | ✅ 严格属于——OWL DL「定义类(defined class)+ 推理机做 classification/subsumption」的经典内容;plan 明确"未来可被真正 DL 推理机直接消费" |
+| **E12 决策规则**(`slpra:DecisionRule` 产生式) | 前件→结论,超出充要表达力 | ⚠️ 超出 OWL DL,落在 W3C「规则层」(SWRL/RIF/SHACL-AF) |
+| **E13 冲突策略**(`slpra:ConflictPolicy` 优先/覆盖) | 带优先级与覆盖方向的非单调元级聚合(安全优先) | ❌ 不属于——业务/产生式规则引擎范畴;OWL 的单调、开放世界 DL 无法原生表达优先级与覆盖 |
+
+> **要点**:充要可表达的留在 OWL T-Box(`owl:equivalentClass`);超出的用**本体原生但非 OWL 公理**的自定义资源(`slpra:DecisionRule` / `slpra:ConflictPolicy`)承载。这是一次沿标准能力边界的克制切分,而非把一切硬塞进 T-Box。
+
+### 10.2 映射到本报告的层级与模块
+
+关键前提:**Palantir 文档里没有独立的「规则/Rule」一等构造**。语义层只有四类(Object/Link/Action/Function),一切判定逻辑被收进**动词(kinetic)侧的 Function**(*"piece of code-based logic that takes in input parameters and returns an output"*,§1.1);而在 §〇 的 **Data + Logic + Action + Security** 四支柱里,声明式规则在概念上正落在 **Logic** 支柱——但 Palantir 用 Function 来承载它,而非用 T-Box 公理。
+
+由此逐制品/组件映射:
+
+| 006 制品 / 组件 | Palantir·层级 | Palantir·模块 |
+|---|---|---|
+| E11 分类判据 | 本体语义层·**动词侧** | **Function(动词·计算)** / 派生分类 |
+| E12 决策规则 | 本体语义层·动词侧 | **Function**;治理精神近 **AIP Logic**(§7.1 无代码逻辑) |
+| E13 冲突策略 | 本体语义层·动词侧 + 运行时 | 无直接对应;最近似 **Action 条件校验 / AIP Logic 治理** |
+| `interpreter.py` / `policy.py` 解释器 | 运行时对象后端 | **Functions on Objects** 的执行运行时 |
+| `/ontology/rules` 三标签编辑入口 | **消费层** | **OMS/Action-type 编辑器** + **AIP Logic 无代码构建**精神 |
+| 推断溯源(`rules_fired` + `dct:source` 法规出处) | **安全/治理横切** | **View reasoning**(§7.2)+ retrieval citation + 审计 |
+
+> **要点**:006 的声明式规则层整体落在「本体语义层 · 动词(kinetic)侧」,以 **Function** 为主模块;编辑入口属消费层、近 AIP Logic;溯源属横切治理。它对应的是 P0#1「名词×动词」轴里的**动词那一极**,而非名词侧(Object/Link Type)。
+
+### 10.3 对齐点与有意识的超越
+
+- **Logic 支柱的"去代码化"**:Palantir 的 Logic 是 **code-based Function**(规则即代码);006 刻意做成**声明式、数据驱动、可编辑**(规则即数据,不改源码不重部署,FR-003)。这其实**比报告里的 Palantir 文档本身更靠近 AIP Logic 的无代码精神**,也直接服务于专家自助维护 T-Box 的目标(见 007 规划)。换言之:同属动词侧 Logic 支柱,但把它从代码降为可编辑制品——这是与 Palantir 的对齐点,也是有意识的超越点。
+- **两种"标准"视角并存**:**W3C/OWL 视角**把规则当作本体之上一个独立的层(SWRL/RIF/SHACL),纯 OWL T-Box 只管充要定义;**Palantir 视角**根本不设独立规则层,把全部决策逻辑折进 Function。006 同时脚踏两边——充要部分留在 OWL T-Box,超出部分用本体原生自定义资源表达——是个相当克制且原则化的折中。
+
+---
+
 ## 主要信源(全部 Palantir 官方一手)
 
 - [ontology/core-concepts](https://www.palantir.com/docs/foundry/ontology/core-concepts)

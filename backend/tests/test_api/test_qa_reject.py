@@ -35,7 +35,7 @@ def _high_risk_result() -> AssessmentResult:
 def pending_id(client, db, analyst_headers, monkeypatch):
     """落库一条高风险待签结论，返回其 execution_id。"""
     monkeypatch.setattr(reasoning_engine, "run_assessment",
-                        lambda engine, drug_iri, equipment_iris: _high_risk_result())
+                        lambda engine, drug_iri, equipment_iris, **kwargs: _high_risk_result())
     body = client.post("/api/reasoning/assess", headers=analyst_headers,
                        json=_ASSESS_BODY).json()
     assert body["lifecycle_state"] == "pending_signature"

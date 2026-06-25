@@ -39,7 +39,7 @@ def _result(drug_iri):
 @pytest.fixture
 def patched(monkeypatch):
     monkeypatch.setattr(reasoning_engine, "run_assessment",
-                        lambda engine, drug_iri, equipment_iris: _result(drug_iri))
+                        lambda engine, drug_iri, equipment_iris, **kwargs: _result(drug_iri))
 
 
 def _assess(client, headers, drug):

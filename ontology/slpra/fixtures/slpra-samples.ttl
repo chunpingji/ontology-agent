@@ -1,0 +1,173 @@
+# SLPRA 样本/演示个体 (A-Box) —— 非规范 FIXTURE，勿当权威 T-Box
+#
+# 按设计规约「TTL 只存 T-Box（+ 枚举/参考个体）；事务性 A-Box 存 SQLite/Postgres」，
+# 本文件从 slpra-integration.ttl 外移而来。它不在 OntologyEngine.MODULE_FILES 的加载
+# 清单内，也不在 ontology/slpra/*.ttl 顶层 glob 范围（位于 fixtures/ 子目录），故不进
+# 生产 T-Box 物化、不被现有测试自动加载；仅供演示/手动按需加载，或后续 seed 进 DB。
+# 权威 T-Box 见 ../slpra-*.ttl；枚举/参考个体（如 RiskLevel）仍留在各自模块 TTL。
+
+@prefix rdf:   <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl:   <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+@prefix slpra-drug:  <https://ontology.pharma-gmp.cn/slpra/drug/> .
+@prefix slpra-equip: <https://ontology.pharma-gmp.cn/slpra/equipment/> .
+@prefix slpra-contam:<https://ontology.pharma-gmp.cn/slpra/contamination/> .
+@prefix slpra-risk:  <https://ontology.pharma-gmp.cn/slpra/risk/> .
+@prefix slpra-facil: <https://ontology.pharma-gmp.cn/slpra/facility/> .
+
+# ============================================================
+# Sample Facility Individuals (from user equipment table)
+# ============================================================
+
+# Production Areas
+slpra-facil:GeneralArea_SouthPlatform_Lower a slpra-facil:GeneralArea ;
+    rdfs:label "一般区南平台下"@zh .
+
+slpra-facil:GeneralArea_NorthPlatform_Lower a slpra-facil:GeneralArea ;
+    rdfs:label "一般区北平台下"@zh .
+
+slpra-facil:CleanArea_PurificationRoom a slpra-facil:CleanArea ;
+    rdfs:label "洁净区精制间"@zh .
+
+slpra-facil:CleanArea_DryingRoom a slpra-facil:CleanArea ;
+    rdfs:label "洁净区干燥间"@zh .
+
+slpra-facil:GeneralArea_DryingRoom a slpra-facil:GeneralArea ;
+    rdfs:label "一般区干燥间"@zh .
+
+slpra-facil:GeneralArea_5F_South a slpra-facil:GeneralArea ;
+    rdfs:label "五楼一般区南"@zh .
+
+# ============================================================
+# Sample Equipment Individuals (from user equipment table)
+# ============================================================
+
+# Centrifuges
+slpra-equip:CT64201 a slpra-equip:Centrifuge ;
+    slpra-equip:equipmentID "CT64201" ;
+    slpra-equip:equipmentName "离心机"@zh ;
+    slpra-equip:modelSpecification "800" ;
+    slpra-equip:constructedOf [ a slpra-equip:SS304WithHALARCoating ] ;
+    slpra-equip:isInCleanArea false ;
+    slpra-equip:hasEquipmentRole [ a slpra-equip:SharedEquipmentRole ] .
+
+slpra-equip:CT64202 a slpra-equip:Centrifuge ;
+    slpra-equip:equipmentID "CT64202" ;
+    slpra-equip:equipmentName "离心机"@zh ;
+    slpra-equip:modelSpecification "600" ;
+    slpra-equip:constructedOf [ a slpra-equip:StainlessSteel316L ] ;
+    slpra-equip:isInCleanArea false ;
+    slpra-equip:hasEquipmentRole [ a slpra-equip:SharedEquipmentRole ] .
+
+slpra-equip:CT64204 a slpra-equip:Centrifuge ;
+    slpra-equip:equipmentID "CT64204" ;
+    slpra-equip:equipmentName "离心机"@zh ;
+    slpra-equip:modelSpecification "600" ;
+    slpra-equip:constructedOf [ a slpra-equip:StainlessSteel316L ] ;
+    slpra-equip:isInCleanArea true ;
+    slpra-equip:hasEquipmentRole [ a slpra-equip:SharedEquipmentRole ] .
+
+slpra-equip:CT64209 a slpra-equip:Centrifuge ;
+    slpra-equip:equipmentID "CT64209" ;
+    slpra-equip:equipmentName "离心机"@zh ;
+    slpra-equip:modelSpecification "450" ;
+    slpra-equip:constructedOf [ a slpra-equip:SS304WithHALARCoating ] ;
+    slpra-equip:isInCleanArea true ;
+    slpra-equip:hasEquipmentRole [ a slpra-equip:SharedEquipmentRole ] .
+
+# Dryers
+slpra-equip:DE64201 a slpra-equip:HotAirDryer ;
+    slpra-equip:equipmentID "DE64201" ;
+    slpra-equip:equipmentName "热风循环干燥箱"@zh ;
+    slpra-equip:modelSpecification "48盘" ;
+    slpra-equip:constructedOf [ a slpra-equip:StainlessSteel316L ] ;
+    slpra-equip:isInCleanArea false ;
+    slpra-equip:hasEquipmentRole [ a slpra-equip:SharedEquipmentRole ] .
+
+slpra-equip:DE64203 a slpra-equip:VacuumDryer ;
+    slpra-equip:equipmentID "DE64203" ;
+    slpra-equip:equipmentName "真空干燥箱"@zh ;
+    slpra-equip:modelSpecification "24盘" ;
+    slpra-equip:constructedOf [ a slpra-equip:SS304WithHALARCoating ] ;
+    slpra-equip:isInCleanArea true ;
+    slpra-equip:hasEquipmentRole [ a slpra-equip:SharedEquipmentRole ] .
+
+slpra-equip:DE64205 a slpra-equip:ElectricVacuumDryer ;
+    slpra-equip:equipmentID "DE64205" ;
+    slpra-equip:equipmentName "电热真空干燥箱"@zh ;
+    slpra-equip:modelSpecification "8盘" ;
+    slpra-equip:constructedOf [ a slpra-equip:SS304WithHALARCoating ] ;
+    slpra-equip:isInCleanArea false ;
+    slpra-equip:hasEquipmentRole [ a slpra-equip:SharedEquipmentRole ] .
+
+slpra-equip:DE64207 a slpra-equip:HotAirBlastDryer ;
+    slpra-equip:equipmentID "DE64207" ;
+    slpra-equip:equipmentName "电热鼓风干燥箱"@zh ;
+    slpra-equip:modelSpecification "BGX-198" ;
+    slpra-equip:constructedOf [ a slpra-equip:StainlessSteel316L ] ;
+    slpra-equip:isInCleanArea false ;
+    slpra-equip:hasEquipmentRole [ a slpra-equip:SharedEquipmentRole ] .
+
+# Rotary Evaporators
+slpra-equip:EE64201 a slpra-equip:RotaryEvaporator ;
+    slpra-equip:equipmentID "EE64201" ;
+    slpra-equip:equipmentName "旋蒸"@zh ;
+    slpra-equip:modelSpecification "20L" ;
+    slpra-equip:constructedOf [ a slpra-equip:BorosilicateGlass ] ;
+    slpra-equip:isInCleanArea false ;
+    slpra-equip:hasEquipmentRole [ a slpra-equip:SharedEquipmentRole ] .
+
+slpra-equip:EE64203 a slpra-equip:RotaryEvaporator ;
+    slpra-equip:equipmentID "EE64203" ;
+    slpra-equip:equipmentName "旋蒸"@zh ;
+    slpra-equip:modelSpecification "10L" ;
+    slpra-equip:constructedOf [ a slpra-equip:BorosilicateGlass ] ;
+    slpra-equip:isInCleanArea false ;
+    slpra-equip:hasEquipmentRole [ a slpra-equip:SharedEquipmentRole ] .
+
+# ============================================================
+# Sample Drug Product Individual (for risk assessment demo)
+# ============================================================
+
+slpra-drug:DrugX a slpra-drug:ClinicalTrialDrug, slpra-drug:CytotoxicDrug ;
+    slpra-drug:dosageForm "powder" ;
+    slpra-drug:routeOfAdministration "intravenous" ;
+    slpra-drug:isCytotoxic true ;
+    slpra-drug:isHighlyActive true ;
+    slpra-drug:hasActiveIngredient slpra-drug:API_CompoundX .
+
+slpra-drug:API_CompoundX a slpra-drug:CytotoxicAPI ;
+    slpra-drug:pde_mg_per_day "0.002"^^xsd:decimal ;
+    slpra-drug:oel_ug_per_m3 "0.5"^^xsd:decimal ;
+    slpra-drug:hasOEBClassification [ a slpra-drug:OEB5 ] ;
+    slpra-drug:hasToxicityProfile [
+        a slpra-drug:GenotoxicityProfile ;
+        slpra-drug:ld50_mg_per_kg "15.0"^^xsd:decimal
+    ] ;
+    slpra-drug:hasInactivationDisposition [ a slpra-drug:ChemicalInactivatable ] ;
+    slpra-drug:hasSolubilityCharacteristic [ a slpra-drug:WaterSolubility ] .
+
+# ============================================================
+# Sample Risk Assessment Scenario
+# ============================================================
+
+# Scenario: DrugX (cytotoxic, OEB5) on shared centrifuge CT64201
+slpra-risk:Assessment_DrugX_CT64201 a slpra-risk:RiskAssessmentProcess ;
+    slpra-risk:assessesProduct slpra-drug:DrugX ;
+    slpra-risk:assessesEquipment slpra-equip:CT64201 ;
+    slpra-risk:involvesScenario [ a slpra-risk:CytotoxicSharedLineScenario ] ;
+    slpra-risk:involvesScenario [ a slpra-risk:ClinicalWithCommercialScenario ] .
+
+# Contamination event: residue pathway for DrugX on CT64201
+slpra-contam:CE_DrugX_CT64201_Residue a slpra-contam:ResidueContamination ;
+    slpra-contam:hasContaminationSource slpra-drug:DrugX ;
+    slpra-contam:mediatedByEquipment slpra-equip:CT64201 ;
+    slpra-contam:hasContaminationSeverity slpra-risk:HighRisk .
+
+# Compatibility assessment
+slpra-risk:Compat_DrugX_CT64201 a slpra-risk:CompatibilityAssessment ;
+    slpra-risk:assessesEquipmentFor slpra-equip:CT64201 ;
+    slpra-risk:assessesProductFor slpra-drug:DrugX ;
+    slpra-risk:compatibilityResult "conditional" ;
+    slpra-risk:compatibilityCondition "Requires validated chemical inactivation and enhanced cleaning validation. OEB5 classification recommends dedicated equipment."@en .

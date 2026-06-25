@@ -34,13 +34,20 @@ def _run_migrations() -> None:
 
 
 def _seed_from_ttl() -> None:
-    """Idempotently project the authoritative TTL into the metadata tables (T013)."""
+    """Idempotently project the authoritative TTL into the metadata tables (T013).
+
+    Then seed the declarative rule layer (spec 006 T013/T014): the new
+    `hasBetaLactamRing` data property + R-DC1~4 classification criteria, which
+    reference the E1–E3 entities seeded above and so must run after them.
+    """
     from app.db import SessionLocal
     from app.services.ontology_meta_store import OntologyMetaStore
+    from app.services.reasoning.seed_declarative import seed_declarative_rules
 
     db = SessionLocal()
     try:
         OntologyMetaStore(db=db, engine=ontology_engine).project_from_ttl()
+        seed_declarative_rules(db)
     finally:
         db.close()
 

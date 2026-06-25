@@ -6,16 +6,12 @@ import logging
 from typing import Any
 
 from app.services.ontology_engine import OntologyEngine
-from app.services.reasoning.calculators import MACOResult, calculate_maco, calculate_pde
-from app.services.reasoning.conflict_resolver import (
-    resolve_dedication_conflict,
-    resolve_risk_level,
-)
-from app.services.reasoning.rules import (
-    contamination_risk,
-    drug_classification,
-    equipment_dedication,
-    scenario_identification,
+from app.services.reasoning import interpreter, policy
+from app.services.reasoning.calculators import MACOResult, calculate_maco
+from app.services.reasoning.defaults import (
+    default_classification_criteria,
+    default_conflict_policies,
+    default_decision_rules,
 )
 
 logger = logging.getLogger(__name__)
@@ -35,7 +31,22 @@ def run_assessment(
     engine: OntologyEngine,
     drug_iri: str,
     equipment_iris: list[str],
+    *,
+    criteria: list | None = None,
+    decision_rules: list | None = None,
+    policies: list | None = None,
 ) -> AssessmentResult:
+    # US3 (T034): the engine consumes the editable E11/E12/E13 artifacts the
+    # assessment route loads from the active draft store. When absent (engine
+    # unit tests / CLI) we fall back to the single-source in-code defaults, so
+    # behaviour is byte-for-byte identical (FR-016; golden-master parity,
+    # FR-012 / SC-004). Changing a threshold, adding a rule, or flipping a
+    # conflict policy is therefore pure data — no code change reaches here.
+    criteria = criteria if criteria is not None else default_classification_criteria()
+    decision_rules = decision_rules if decision_rules is not None else default_decision_rules()
+    policies = policies if policies is not None else default_conflict_policies()
+    policy_by_dim = {p.dimension: p for p in policies}
+
     result = AssessmentResult()
 
     drug = engine.get_individual(drug_iri)
@@ -47,75 +58,59 @@ def run_assessment(
 
     api_iri = _extract_object_prop(drug_props, "hasActiveIngredient")
     api_props: dict[str, Any] = {}
+    api_class_iris: list[str] = []
     api_individual = None
     if api_iri:
         api_individual = engine.get_individual(api_iri)
         if api_individual:
             api_props = _extract_api_properties(api_individual)
+            # The API's own class memberships carry its external (ChEBI/ATC)
+            # alignments — the signal the US2 `external_alignment` criteria read.
+            api_class_iris = [str(c) for c in api_individual.class_iris]
 
-    # --- Rule Group 1: Drug Classification ---
-    for rule_fn in drug_classification.ALL_RULES:
-        r = rule_fn(drug_props=drug_props, api_props=api_props)
-        if r.fired:
-            result.rules_fired.append({
-                "rule_id": r.rule_id, "rule_group": "drug_classification",
-                "description": r.description, "inputs": r.inputs,
-                "conclusion": r.conclusion, "regulation_ref": r.regulation_ref,
-            })
-            if "add_class" in r.conclusion:
-                drug_classes.append(r.conclusion["add_class"])
-
-    # --- Rule Group 2: Equipment Dedication ---
-    inactivation_classes = api_props.get("inactivation_classes", [])
-    oeb_classes = api_props.get("oeb_classes", [])
-    has_prion_risk = drug_props.get("hasPrionRisk", False)
-
-    dedication_conclusions = []
-    for rule_fn in equipment_dedication.ALL_RULES:
-        r = rule_fn(
-            drug_classes=drug_classes,
-            inactivation_classes=inactivation_classes,
-            oeb_classes=oeb_classes,
-            has_prion_risk=has_prion_risk,
-        )
-        if r.fired:
-            result.rules_fired.append({
-                "rule_id": r.rule_id, "rule_group": "equipment_dedication",
-                "description": r.description, "inputs": r.inputs,
-                "conclusion": r.conclusion, "regulation_ref": r.regulation_ref,
-            })
-            dedication_conclusions.append(r.conclusion)
-
-    result.requires_dedication = resolve_dedication_conflict(dedication_conclusions)
-
-    # --- Rule Group 4: Scenario Identification ---
+    # --- Rule Group 1: Drug Classification (declarative, T017) ---
+    # Hardcoded R-DC1~4 are demoted to declarative criteria evaluated by the
+    # interpreter over a three-valued (OWA) fact view. A class lights up IFF its
+    # criterion is TRUE; FALSE *and* UNKNOWN both leave it unlit, so the external
+    # AssessmentResult shape is byte-for-byte preserved (golden-master parity).
+    # Drug- and API-level scalars the production rules read, extracted up-front
+    # so a single fact view backs classification *and* R-ED/R-SC/R-CP.
     dosage_form = _extract_literal_prop(drug_props, "dosageForm")
-    for rule_fn in scenario_identification.ALL_RULES:
-        r = rule_fn(
-            drug_classes=drug_classes,
-            co_product_classes=[],
-            is_shared=True,
-            source_form=dosage_form,
-            target_form=None,
-        )
-        if r.fired:
-            result.rules_fired.append({
-                "rule_id": r.rule_id, "rule_group": "scenario_identification",
-                "description": r.description, "inputs": r.inputs,
-                "conclusion": r.conclusion, "regulation_ref": r.regulation_ref,
-            })
-            result.scenarios.append({
-                "scenario_iri": r.conclusion.get("scenario", ""),
-                "scenario_name": r.conclusion.get("scenario", ""),
-                "requirements": {
-                    k: v for k, v in r.conclusion.items() if k != "scenario"
-                },
-            })
-
-    # --- Rule Group 3: Contamination Risk (per equipment) ---
     pde_value = _extract_numeric_prop(api_props, "pde_mg_per_day")
-    risk_levels = []
 
+    facts = _build_facts(drug_classes, drug_props, api_props, api_class_iris, dosage_form, pde_value)
+    for criterion in criteria:
+        if interpreter.evaluate(criterion.pattern, facts) is interpreter.TRUE:
+            result.rules_fired.append({
+                "rule_id": criterion.key, "rule_group": "drug_classification",
+                "description": criterion.description,
+                "inputs": interpreter.referenced_facts(criterion.pattern, facts),
+                "conclusion": {"add_class": criterion.target_class},
+                "regulation_ref": criterion.regulation_ref,
+            })
+            drug_classes.append(criterion.target_class)
+            facts.drug_classes.append(criterion.target_class)
+
+    # --- Rule Group 2: Equipment Dedication (declarative E12 + E13, T034) ---
+    # R-ED1~6 are now interpreter ASTs over the shared fact view; the published
+    # `dedication` conflict policy (E13) aggregates their conclusions.
+    dedication_conclusions = _fire_group(decision_rules, "equipment_dedication", facts, result)
+    result.requires_dedication = policy.resolve_dedication_conflict(
+        dedication_conclusions, policy_by_dim.get("dedication")
+    )
+
+    # --- Rule Group 4: Scenario Identification (declarative E12, T034) ---
+    for conclusion in _fire_group(decision_rules, "scenario_identification", facts, result):
+        result.scenarios.append({
+            "scenario_iri": conclusion.get("scenario", ""),
+            "scenario_name": conclusion.get("scenario", ""),
+            "requirements": {k: v for k, v in conclusion.items() if k != "scenario"},
+        })
+
+    # --- Rule Group 3: Contamination Risk (per equipment × pathway, T034) ---
+    # Each (equipment, pathway) gets its own fact slice; R-CP1~4 evaluate over it
+    # and the `risk_level` conflict policy (E13) takes the max-severity level.
+    risk_levels: list[str] = []
     for eq_iri in equipment_iris:
         eq = engine.get_individual(eq_iri)
         if eq is None:
@@ -125,26 +120,12 @@ def run_assessment(
         area_type = _detect_area_type(eq_props)
 
         for pathway in ["residue", "airborne", "mechanical", "confusion"]:
-            for rule_fn in contamination_risk.ALL_RULES:
-                r = rule_fn(
-                    pathway=pathway,
-                    pde=pde_value,
-                    cleanability_score=cleanability,
-                    dosage_form=dosage_form,
-                    area_type=area_type,
-                    source_form=dosage_form,
-                    target_form=None,
-                )
-                if r.fired:
-                    result.rules_fired.append({
-                        "rule_id": r.rule_id, "rule_group": "contamination_risk",
-                        "description": r.description, "inputs": r.inputs,
-                        "conclusion": r.conclusion, "regulation_ref": r.regulation_ref,
-                    })
-                    if "risk_level" in r.conclusion:
-                        risk_levels.append(r.conclusion["risk_level"])
+            cp_facts = _facts_for_pathway(facts, pathway, cleanability, area_type)
+            for conclusion in _fire_group(decision_rules, "contamination_risk", cp_facts, result):
+                if "risk_level" in conclusion:
+                    risk_levels.append(conclusion["risk_level"])
 
-    result.risk_level = resolve_risk_level(risk_levels)
+    result.risk_level = policy.resolve_risk_level(risk_levels, policy_by_dim.get("risk_level"))
 
     # --- MACO Calculation ---
     if pde_value and pde_value > 0:
@@ -173,6 +154,120 @@ def run_assessment(
         result.recommendations.append(f"MACO极低 ({result.maco.value:.6f} mg)，建议采用专属性分析方法 (HPLC)")
 
     return result
+
+
+def _fire_group(
+    decision_rules: list, group: str, facts: interpreter.Facts, result: AssessmentResult
+) -> list[dict]:
+    """Evaluate every E12 rule in `group` against `facts`; record the TRUE ones in
+    `result.rules_fired` and return their consequents (deterministic
+    priority→key order) for the E13 conflict policy to aggregate.
+
+    A rule fires IFF its antecedent evaluates to TRUE — FALSE *and* UNKNOWN both
+    leave it unfired (OWA 否→未知), so the external AssessmentResult shape is
+    preserved (golden-master parity, FR-012)."""
+    conclusions: list[dict] = []
+    ordered = sorted(
+        (r for r in decision_rules if r.rule_group == group),
+        key=lambda r: (r.priority, r.key),
+    )
+    for rule in ordered:
+        if interpreter.evaluate(rule.antecedent, facts) is interpreter.TRUE:
+            result.rules_fired.append({
+                "rule_id": rule.key, "rule_group": group,
+                "description": rule.description,
+                "inputs": interpreter.referenced_facts(rule.antecedent, facts),
+                "conclusion": rule.consequent,
+                "regulation_ref": rule.regulation_ref,
+            })
+            conclusions.append(rule.consequent)
+    return conclusions
+
+
+def _build_facts(
+    drug_classes: list[str],
+    drug_props: dict,
+    api_props: dict,
+    api_class_iris: list[str] | None,
+    dosage_form: str | None,
+    pde_value: float | None,
+) -> interpreter.Facts:
+    """Normalise the drug + API individuals into the interpreter's fact view for
+    BOTH classification (R-DC) and the production rules (R-ED/R-SC/R-CP).
+
+    OWA (FR-010): a fact is asserted ONLY when the source individual actually
+    carries it — absence surfaces as a missing key (→ UNKNOWN), never a
+    fabricated 0/False. The one legacy exception kept for parity is
+    `hasPrionRisk`, which the original engine defaulted to False.
+    """
+    relations: dict[str, list] = {}
+    data_values: dict[str, Any] = {}
+    alignments: dict[str, list] = {}
+    scalars: dict[str, Any] = {}
+
+    # -- classification relations / data values (R-DC) --
+    tox = api_props.get("toxicity_profile_classes")
+    if tox is not None:
+        relations["hasToxicityProfile"] = tox
+    oeb = api_props.get("oeb_classes")
+    if oeb is not None:
+        relations["hasOEBClassification"] = oeb  # reused by R-ED5
+
+    if "sensitization_level" in drug_props:
+        data_values["sensitizationLevel"] = drug_props["sensitization_level"]
+    if "has_beta_lactam_ring" in api_props:
+        data_values["hasBetaLactamRing"] = api_props["has_beta_lactam_ring"]
+
+    # US2: the API's class memberships (ChEBI/ATC external classes) are the
+    # alignment fact the `external_alignment` criteria evaluate via the
+    # `hasActiveIngredient` relation. Asserted only when an API individual exists
+    # (key absent → UNKNOWN, never a negative assertion).
+    if api_class_iris:
+        alignments["hasActiveIngredient"] = list(api_class_iris)
+
+    # -- production-rule facts (R-ED / R-SC / R-CP) --
+    # Object relations the dedication/scenario rules read. Empty list → no
+    # asserted filler → UNKNOWN under class_membership (parity with legacy
+    # `any(... for c in [])` → not fired).
+    relations["hasInactivationProfile"] = api_props.get("inactivation_classes", [])  # R-ED2/4
+    relations["coProduct"] = []  # single-product assessment carries no co-products (R-SC1)
+    scalars["isShared"] = True  # legacy `is_shared=True` default (R-SC2/3/5/6/7/8)
+    scalars["hasPrionRisk"] = drug_props.get("hasPrionRisk", False)  # legacy default (R-ED3)
+    if dosage_form is not None:
+        scalars["dosageForm"] = dosage_form  # R-CP2/3
+    if pde_value is not None:
+        scalars["pde"] = pde_value  # R-CP1
+    # Dosage-form relation (R-SC8 / R-CP4) needs BOTH a source and a target form;
+    # this single-product assessment has no target form, so `formRelation` stays
+    # absent → UNKNOWN → those two rules stay unfired (parity with the legacy
+    # `target_form=None` wiring).
+
+    return interpreter.Facts(
+        drug_classes=list(drug_classes),
+        relations=relations,
+        data_values=data_values,
+        alignments=alignments,
+        scalars=scalars,
+    )
+
+
+def _facts_for_pathway(
+    base: interpreter.Facts, pathway: str, cleanability: int | None, area_type: str
+) -> interpreter.Facts:
+    """Clone `base` with the per-(equipment, pathway) contamination scalars set
+    (the drug/API-level scalars in `base` are carried through unchanged)."""
+    scalars = dict(base.scalars)
+    scalars["pathway"] = pathway
+    scalars["areaType"] = area_type
+    if cleanability is not None:
+        scalars["cleanability"] = cleanability  # R-CP1/3
+    return interpreter.Facts(
+        drug_classes=base.drug_classes,
+        relations=base.relations,
+        data_values=base.data_values,
+        alignments=base.alignments,
+        scalars=scalars,
+    )
 
 
 def _extract_object_prop(props: dict, prop_name: str) -> str | None:

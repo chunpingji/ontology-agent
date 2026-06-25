@@ -349,3 +349,110 @@ class RiskVocabulary(BaseModel):
     key: str
     label: str
     values: list[str] = []
+
+
+# ===========================================================================
+# 声明式规则层 (能力六 / spec 006) — E11/E12/E13 可版本化规则数据 (US3, T035)
+# ===========================================================================
+
+
+# --- E11 分类判据 (充要定义) ------------------------------------------------
+class ClassificationCriterionCreate(BaseModel):
+    criterion_key: str
+    target_class_iri: str = Field(..., description="判据点亮的目标风险类 slpra_iri")
+    pattern: dict = Field(..., description="解释器模式 AST（受限词汇）")
+    regulation_ref: str | None = None
+    logic_role: str = "defined"
+
+
+class ClassificationCriterionUpdate(VersionedMixin):
+    target_class_iri: str | None = None
+    pattern: dict | None = None
+    regulation_ref: str | None = None
+    logic_role: str | None = None
+    is_disabled: bool | None = None
+
+
+class ClassificationCriterionDetail(BaseModel):
+    id: str
+    criterion_key: str
+    target_class_iri: str | None = None
+    target_class_label: str | None = None
+    pattern: dict
+    regulation_ref: str | None = None
+    logic_role: str
+    status: str
+    version: int
+    is_disabled: bool = False
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
+
+
+# --- E12 决策规则 (产生式 R-ED / R-SC / R-CP) -------------------------------
+class DecisionRuleCreate(BaseModel):
+    rule_key: str
+    rule_group: str = Field(
+        ..., description="equipment_dedication | scenario_identification | contamination_risk"
+    )
+    antecedent: dict = Field(..., description="解释器前件模式 AST")
+    consequent: dict = Field(..., description="命中结论（逐字镜像 RuleResult.conclusion）")
+    priority: int = 100
+    regulation_ref: str | None = None
+    label: str | None = None
+    comment: str | None = None
+
+
+class DecisionRuleUpdate(VersionedMixin):
+    rule_group: str | None = None
+    antecedent: dict | None = None
+    consequent: dict | None = None
+    priority: int | None = None
+    regulation_ref: str | None = None
+    label: str | None = None
+    comment: str | None = None
+    is_disabled: bool | None = None
+
+
+class DecisionRuleDetail(BaseModel):
+    id: str
+    slpra_iri: str
+    rule_key: str
+    rule_group: str
+    antecedent: dict
+    consequent: dict
+    priority: int
+    regulation_ref: str | None = None
+    label: str
+    comment: str | None = None
+    status: str
+    version: int
+    is_disabled: bool = False
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
+
+
+# --- E13 冲突消解策略 (固定维度集，仅 GET/PUT) ------------------------------
+class ConflictPolicyUpdate(VersionedMixin):
+    strategy: str | None = None
+    priority_lattice: dict | None = None
+    override_direction: str | None = None
+    regulation_ref: str | None = None
+    comment: str | None = None
+    is_disabled: bool | None = None
+
+
+class ConflictPolicyDetail(BaseModel):
+    id: str
+    slpra_iri: str
+    dimension: str
+    strategy: str
+    priority_lattice: dict | None = None
+    override_direction: str | None = None
+    regulation_ref: str | None = None
+    label: str
+    comment: str | None = None
+    status: str
+    version: int
+    is_disabled: bool = False
+    created_at: datetime | None = None
+    updated_at: datetime | None = None

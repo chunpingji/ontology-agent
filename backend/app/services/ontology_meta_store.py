@@ -28,6 +28,7 @@ from app.models.ontology_meta import (
     MAPPING_TYPES,
     PROPERTY_KINDS,
     RESTRICTION_KINDS,
+    RULE_GROUPS,
     STATUS_DRAFT,
     STATUS_IN_REVIEW,
     STATUS_PUBLISHED,
@@ -35,14 +36,28 @@ from app.models.ontology_meta import (
     OntologyAction,
     OntologyChangeLog,
     OntologyClass,
+    OntologyClassificationCriterion,
     OntologyClassMapping,
+    OntologyConflictPolicy,
     OntologyDataProperty,
+    OntologyDecisionRule,
     OntologyLinkType,
     OntologyRelease,
     OntologyRestriction,
 )
 from app.models.reasoning import AuditLog
 from app.services import ttl_merge
+from app.services.reasoning import interpreter
+from app.services.reasoning.defaults import (
+    VERIFIED_EXTERNAL_ALIGNMENTS,
+    ClassificationCriterion as CriterionSpec,
+    ConflictPolicy as ConflictPolicySpec,
+    DecisionRule as DecisionRuleSpec,
+)
+from app.services.reasoning.seed_declarative import (
+    CONFLICT_POLICY_PREFIX,
+    DECISION_RULE_PREFIX,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -67,6 +82,49 @@ RISK_VOCABULARIES = {
 
 def _now() -> datetime:
     return datetime.now(timezone.utc)
+
+
+def _classification_pattern_refs(node: dict) -> tuple[set[str], set[str]]:
+    """Collect (property names, class names) a classification pattern references,
+    for the release consistency gate (T018). Recurses through and/or operands.
+    `external_alignment` references an external IRI (not a managed local name),
+    so its alignment is checked by the US2 `alignment_verified` gate, not here."""
+    props: set[str] = set()
+    classes: set[str] = set()
+    op = node.get("op")
+    if op in ("and", "or"):
+        for child in node.get("operands", []):
+            p, c = _classification_pattern_refs(child)
+            props |= p
+            classes |= c
+    elif op == "some_values_from":
+        props.add(node["property"])
+        classes.add(node["filler_class"])
+    elif op == "class_membership":
+        props.add(node["property"])
+        classes.update(node.get("classes", []))
+    elif op in ("datatype_facet", "boolean_has_value"):
+        props.add(node["property"])
+    return props, classes
+
+
+def _classification_alignment_refs(node: dict) -> set[str]:
+    """Collect the external alignment IRIs an `external_alignment` pattern names,
+    for the US2 release gate (T026 / FR-014). Recurses through and/or operands.
+    Unlike managed local names, an alignment IRI must have been byte-verified
+    against its authoritative source (research.md R3) before the criterion may
+    project an axiom onto a managed class — the gate blocks any IRI absent from
+    `defaults.VERIFIED_EXTERNAL_ALIGNMENTS`."""
+    out: set[str] = set()
+    op = node.get("op")
+    if op in ("and", "or"):
+        for child in node.get("operands", []):
+            out |= _classification_alignment_refs(child)
+    elif op == "external_alignment":
+        align = node.get("alignment")
+        if align:
+            out.add(align)
+    return out
 
 
 class OntologyMetaStore:
@@ -614,6 +672,322 @@ class OntologyMetaStore:
         return self._require_class(iri).id if iri else None
 
     # =================================================================== #
+    # 声明式规则层 (能力六 / spec 006) — E11/E12/E13 可版本化规则数据
+    #
+    # The metadata rows are the draft source of truth: edits CAS-bump `version`
+    # (→409 on conflict, R4) and reset `status=draft` so they (a) are read
+    # immediately by the engine via the `active_*` loaders below (US3/FR-016:
+    # change a threshold or add a rule = pure data, no source change) and (b)
+    # land in the next release batch (T040). `publish_release` flips them back
+    # to published; the surgical merge (T032) projects them into the TTL.
+    # =================================================================== #
+
+    # --- E11 classification-criterion (defined criteria) -------------------
+    def classification_criterion_detail(self, c: OntologyClassificationCriterion) -> dict:
+        target = self.db.get(OntologyClass, c.target_class_id) if c.target_class_id else None
+        return {
+            "id": str(c.id),
+            "criterion_key": c.criterion_key,
+            "target_class_iri": target.slpra_iri if target else None,
+            "target_class_label": target.label if target else None,
+            "pattern": c.pattern,
+            "regulation_ref": c.regulation_ref,
+            "logic_role": c.logic_role,
+            "status": c.status,
+            "version": c.version,
+            "is_disabled": c.is_disabled,
+            "created_at": c.created_at,
+            "updated_at": c.updated_at,
+        }
+
+    def _require_criterion(self, criterion_key: str) -> OntologyClassificationCriterion:
+        c = (
+            self.db.query(OntologyClassificationCriterion)
+            .filter_by(criterion_key=criterion_key)
+            .first()
+        )
+        if not c:
+            raise HTTPException(status_code=404, detail=f"分类判据不存在：{criterion_key}")
+        return c
+
+    def list_classification_criteria(self) -> list[dict]:
+        return [
+            self.classification_criterion_detail(c)
+            for c in self.db.query(OntologyClassificationCriterion)
+            .order_by(OntologyClassificationCriterion.criterion_key)
+            .all()
+        ]
+
+    def create_classification_criterion(self, payload, actor: str) -> dict:
+        if (
+            self.db.query(OntologyClassificationCriterion)
+            .filter_by(criterion_key=payload.criterion_key)
+            .first()
+        ):
+            raise HTTPException(status_code=400, detail="criterion_key 已存在")
+        target = self._require_class(payload.target_class_iri)
+        uid = self._user_id(actor)
+        c = OntologyClassificationCriterion(
+            criterion_key=payload.criterion_key,
+            target_class_id=target.id,
+            logic_role=payload.logic_role,
+            pattern=payload.pattern,
+            regulation_ref=payload.regulation_ref,
+            created_by=uid,
+            updated_by=uid,
+        )
+        self.db.add(c)
+        self.db.commit()
+        self.db.refresh(c)
+        self.audit(
+            "classification_criterion.create",
+            payload.criterion_key,
+            actor,
+            details={"target_class_iri": target.slpra_iri},
+        )
+        return self.classification_criterion_detail(c)
+
+    def update_classification_criterion(self, criterion_key: str, payload, actor: str) -> dict:
+        c = self._require_criterion(criterion_key)
+        changes: dict = {"updated_by": self._user_id(actor), "status": STATUS_DRAFT}
+        if payload.target_class_iri is not None:
+            changes["target_class_id"] = self._require_class(payload.target_class_iri).id
+        for f in ("pattern", "regulation_ref", "logic_role", "is_disabled"):
+            v = getattr(payload, f, None)
+            if v is not None:
+                changes[f] = v
+        c = self._cas_update(
+            OntologyClassificationCriterion, c.id, payload.expected_version, changes
+        )
+        self.audit("classification_criterion.update", criterion_key, actor)
+        return self.classification_criterion_detail(c)
+
+    def delete_classification_criterion(
+        self, criterion_key: str, expected_version: int, actor: str
+    ) -> None:
+        c = self._require_criterion(criterion_key)
+        self._cas_update(
+            OntologyClassificationCriterion,
+            c.id,
+            expected_version,
+            {"is_disabled": True, "status": STATUS_DRAFT},
+        )
+        self.audit("classification_criterion.delete", criterion_key, actor)
+
+    # --- E12 decision-rule (production rules R-ED / R-SC / R-CP) -----------
+    def decision_rule_detail(self, r: OntologyDecisionRule) -> dict:
+        return {
+            "id": str(r.id),
+            "slpra_iri": r.slpra_iri,
+            "rule_key": r.rule_key,
+            "rule_group": r.rule_group,
+            "antecedent": r.antecedent,
+            "consequent": r.consequent,
+            "priority": r.priority,
+            "regulation_ref": r.regulation_ref,
+            "label": r.label,
+            "comment": r.comment,
+            "status": r.status,
+            "version": r.version,
+            "is_disabled": r.is_disabled,
+            "created_at": r.created_at,
+            "updated_at": r.updated_at,
+        }
+
+    def _require_decision_rule(self, rule_key: str) -> OntologyDecisionRule:
+        r = self.db.query(OntologyDecisionRule).filter_by(rule_key=rule_key).first()
+        if not r:
+            raise HTTPException(status_code=404, detail=f"决策规则不存在：{rule_key}")
+        return r
+
+    def list_decision_rules(self, rule_group: str | None = None) -> list[dict]:
+        q = self.db.query(OntologyDecisionRule)
+        if rule_group:
+            q = q.filter_by(rule_group=rule_group)
+        return [
+            self.decision_rule_detail(r)
+            for r in q.order_by(
+                OntologyDecisionRule.rule_group,
+                OntologyDecisionRule.priority,
+                OntologyDecisionRule.rule_key,
+            ).all()
+        ]
+
+    def create_decision_rule(self, payload, actor: str) -> dict:
+        if payload.rule_group not in RULE_GROUPS:
+            raise HTTPException(
+                status_code=400,
+                detail=f"rule_group 必须是 {', '.join(RULE_GROUPS)} 之一",
+            )
+        if self.db.query(OntologyDecisionRule).filter_by(rule_key=payload.rule_key).first():
+            raise HTTPException(status_code=400, detail="rule_key 已存在")
+        slpra_iri = DECISION_RULE_PREFIX + payload.rule_key
+        uid = self._user_id(actor)
+        r = OntologyDecisionRule(
+            slpra_iri=slpra_iri,
+            label=payload.label or payload.rule_key,
+            comment=payload.comment,
+            rule_key=payload.rule_key,
+            rule_group=payload.rule_group,
+            antecedent=payload.antecedent,
+            consequent=payload.consequent,
+            priority=payload.priority,
+            regulation_ref=payload.regulation_ref,
+            created_by=uid,
+            updated_by=uid,
+        )
+        self.db.add(r)
+        self.db.commit()
+        self.db.refresh(r)
+        self.audit("decision_rule.create", slpra_iri, actor, details={"rule_key": r.rule_key})
+        return self.decision_rule_detail(r)
+
+    def update_decision_rule(self, rule_key: str, payload, actor: str) -> dict:
+        r = self._require_decision_rule(rule_key)
+        if payload.rule_group is not None and payload.rule_group not in RULE_GROUPS:
+            raise HTTPException(
+                status_code=400,
+                detail=f"rule_group 必须是 {', '.join(RULE_GROUPS)} 之一",
+            )
+        changes: dict = {"updated_by": self._user_id(actor), "status": STATUS_DRAFT}
+        for f in (
+            "rule_group",
+            "antecedent",
+            "consequent",
+            "priority",
+            "regulation_ref",
+            "label",
+            "comment",
+            "is_disabled",
+        ):
+            v = getattr(payload, f, None)
+            if v is not None:
+                changes[f] = v
+        r = self._cas_update(OntologyDecisionRule, r.id, payload.expected_version, changes)
+        self.audit("decision_rule.update", r.slpra_iri, actor)
+        return self.decision_rule_detail(r)
+
+    def delete_decision_rule(self, rule_key: str, expected_version: int, actor: str) -> None:
+        r = self._require_decision_rule(rule_key)
+        self._cas_update(
+            OntologyDecisionRule,
+            r.id,
+            expected_version,
+            {"is_disabled": True, "status": STATUS_DRAFT},
+        )
+        self.audit("decision_rule.delete", r.slpra_iri, actor)
+
+    # --- E13 conflict-policy (fixed dimension set; GET / PUT only) ----------
+    def conflict_policy_detail(self, p: OntologyConflictPolicy) -> dict:
+        return {
+            "id": str(p.id),
+            "slpra_iri": p.slpra_iri,
+            "dimension": p.dimension,
+            "strategy": p.strategy,
+            "priority_lattice": p.priority_lattice,
+            "override_direction": p.override_direction,
+            "regulation_ref": p.regulation_ref,
+            "label": p.label,
+            "comment": p.comment,
+            "status": p.status,
+            "version": p.version,
+            "is_disabled": p.is_disabled,
+            "created_at": p.created_at,
+            "updated_at": p.updated_at,
+        }
+
+    def _require_conflict_policy(self, dimension: str) -> OntologyConflictPolicy:
+        p = self.db.query(OntologyConflictPolicy).filter_by(dimension=dimension).first()
+        if not p:
+            raise HTTPException(status_code=404, detail=f"冲突消解策略不存在：{dimension}")
+        return p
+
+    def list_conflict_policies(self) -> list[dict]:
+        return [
+            self.conflict_policy_detail(p)
+            for p in self.db.query(OntologyConflictPolicy)
+            .order_by(OntologyConflictPolicy.dimension)
+            .all()
+        ]
+
+    def get_conflict_policy(self, dimension: str) -> dict:
+        return self.conflict_policy_detail(self._require_conflict_policy(dimension))
+
+    def update_conflict_policy(self, dimension: str, payload, actor: str) -> dict:
+        p = self._require_conflict_policy(dimension)
+        changes: dict = {"updated_by": self._user_id(actor), "status": STATUS_DRAFT}
+        for f in (
+            "strategy",
+            "priority_lattice",
+            "override_direction",
+            "regulation_ref",
+            "comment",
+            "is_disabled",
+        ):
+            v = getattr(payload, f, None)
+            if v is not None:
+                changes[f] = v
+        p = self._cas_update(OntologyConflictPolicy, p.id, payload.expected_version, changes)
+        self.audit("conflict_policy.update", p.slpra_iri, actor)
+        return self.conflict_policy_detail(p)
+
+    # --- active-state loaders (engine consumes these at assessment time) ----
+    # ORM rows → the in-code `defaults.*` dataclasses the engine already speaks,
+    # so the assessment path is data-driven while `run_assessment`'s fallback to
+    # the in-code defaults keeps golden-master parity (FR-012 / SC-004). Only
+    # `is_disabled=False` rows participate (draft *and* published), mirroring the
+    # surgical-merge projection (`build_managed_graph`).
+    def active_classification_criteria(self) -> list[CriterionSpec]:
+        specs: list[CriterionSpec] = []
+        for c in (
+            self.db.query(OntologyClassificationCriterion)
+            .filter_by(is_disabled=False)
+            .order_by(OntologyClassificationCriterion.criterion_key)
+            .all()
+        ):
+            target_iri = self._iri_of_class(c.target_class_id)
+            if not target_iri:
+                continue  # dangling target (defensive) → skip
+            specs.append(
+                CriterionSpec(
+                    key=c.criterion_key,
+                    target_class=target_iri.rsplit("/", 1)[-1],
+                    pattern=c.pattern,
+                    regulation_ref=c.regulation_ref or "",
+                    description=c.criterion_key,
+                    logic_role=c.logic_role,
+                )
+            )
+        return specs
+
+    def active_decision_rules(self) -> list[DecisionRuleSpec]:
+        return [
+            DecisionRuleSpec(
+                key=r.rule_key,
+                rule_group=r.rule_group,
+                antecedent=r.antecedent,
+                consequent=r.consequent,
+                regulation_ref=r.regulation_ref or "",
+                description=r.comment or r.rule_key,
+                priority=r.priority,
+            )
+            for r in self.db.query(OntologyDecisionRule).filter_by(is_disabled=False).all()
+        ]
+
+    def active_conflict_policies(self) -> list[ConflictPolicySpec]:
+        return [
+            ConflictPolicySpec(
+                dimension=p.dimension,
+                strategy=p.strategy,
+                regulation_ref=p.regulation_ref or "",
+                description=p.comment or p.dimension,
+                priority_lattice=p.priority_lattice,
+                override_direction=p.override_direction,
+            )
+            for p in self.db.query(OntologyConflictPolicy).filter_by(is_disabled=False).all()
+        ]
+
+    # =================================================================== #
     # E5 Restriction CRUD
     # =================================================================== #
     def create_restriction(self, owner_iri: str, payload, actor: str) -> dict:
@@ -866,6 +1240,67 @@ class OntologyMetaStore:
                     }
                 )
 
+        # E11 classification criteria (spec 006, T018 / FR-014): a defined
+        # criterion projects an owl:equivalentClass axiom — block the release if
+        # its target/pattern/referenced property/filler cannot be resolved, so an
+        # unresolvable axiom never reaches the authoritative TTL.
+        class_names = {
+            c.slpra_iri.rsplit("/", 1)[-1] for c in classes
+        }
+        prop_names = {
+            lt.slpra_iri.rsplit("/", 1)[-1]
+            for lt in self.db.query(OntologyLinkType).filter_by(is_disabled=False).all()
+        } | {
+            dp.slpra_iri.rsplit("/", 1)[-1]
+            for dp in self.db.query(OntologyDataProperty).filter_by(is_disabled=False).all()
+        }
+        for crit in (
+            self.db.query(OntologyClassificationCriterion).filter_by(is_disabled=False).all()
+        ):
+            ckey = crit.criterion_key
+            entity = f"criterion:{ckey}"
+            target = self.db.get(OntologyClass, crit.target_class_id)
+            if target is None or target.is_disabled:
+                blocking.append({
+                    "code": "criterion_target_unresolved",
+                    "message": f"判据目标类不可解析/已停用：{ckey}",
+                    "entity_iri": entity,
+                })
+            try:
+                interpreter.validate_pattern(crit.pattern)
+            except interpreter.PatternError as exc:
+                blocking.append({
+                    "code": "criterion_pattern_invalid",
+                    "message": f"判据模式非法：{ckey}：{exc}",
+                    "entity_iri": entity,
+                })
+                continue  # refs are unreliable on a malformed pattern
+            ref_props, ref_classes = _classification_pattern_refs(crit.pattern)
+            for p in sorted(ref_props - prop_names):
+                blocking.append({
+                    "code": "criterion_property_unresolved",
+                    "message": f"判据引用属性不可解析：{ckey} → {p}",
+                    "entity_iri": entity,
+                })
+            for c in sorted(ref_classes - class_names):
+                blocking.append({
+                    "code": "criterion_filler_unresolved",
+                    "message": f"判据引用类不可解析：{ckey} → {c}",
+                    "entity_iri": entity,
+                })
+            # US2 (T026 / FR-014, 宪章 II NON-NEGOTIABLE): an external_alignment
+            # criterion projects an existential onto a managed class with an
+            # external IRI filler — block release unless that IRI was byte-verified
+            # (research.md R3); an unverified term must never reach authoritative TTL.
+            for align in sorted(
+                _classification_alignment_refs(crit.pattern) - VERIFIED_EXTERNAL_ALIGNMENTS
+            ):
+                blocking.append({
+                    "code": "criterion_alignment_unverified",
+                    "message": f"判据外部对齐未经字节级核实：{ckey} → {align}",
+                    "entity_iri": entity,
+                })
+
         reasoner = {"ran": False, "consistent": None, "note": "无 JVM/HermiT，规则式校验已执行（优雅降级）"}
         return {"blocking": blocking, "warnings": warnings, "reasoner": reasoner}
 
@@ -979,12 +1414,16 @@ class OntologyMetaStore:
         )
         self.db.add(r)
         self.db.flush()
-        # aggregate current draft editable entities into the change log
+        # aggregate current draft editable entities into the change log. The
+        # declarative rule layer (E12/E13, spec 006) is IRI-bearing like the
+        # E1–E4 entities, so a draft rule/policy edit lands in the batch (T040).
         for model, table in (
             (OntologyClass, "ontology_class"),
             (OntologyLinkType, "ontology_link_type"),
             (OntologyDataProperty, "ontology_data_property"),
             (OntologyAction, "ontology_action"),
+            (OntologyDecisionRule, "ontology_decision_rule"),
+            (OntologyConflictPolicy, "ontology_conflict_policy"),
         ):
             for e in self.db.query(model).filter_by(status=STATUS_DRAFT).all():
                 kind = "create" if e.version == 1 else "update"
@@ -999,6 +1438,26 @@ class OntologyMetaStore:
                         after={"slpra_iri": e.slpra_iri, "label": e.label},
                     )
                 )
+        # E11 criteria are not IRI-bearing (class expressions hung off a target
+        # class); key the change log by `criterion_key` + target IRI instead.
+        for c in (
+            self.db.query(OntologyClassificationCriterion)
+            .filter_by(status=STATUS_DRAFT)
+            .all()
+        ):
+            kind = "disable" if c.is_disabled else ("create" if c.version == 1 else "update")
+            self.db.add(
+                OntologyChangeLog(
+                    release_id=r.id,
+                    entity_table="ontology_classification_criterion",
+                    entity_id=c.id,
+                    change_kind=kind,
+                    after={
+                        "criterion_key": c.criterion_key,
+                        "target_class_iri": self._iri_of_class(c.target_class_id),
+                    },
+                )
+            )
         self.db.commit()
         self.db.refresh(r)
         self.audit("release.create", None, actor, release_id=r.id, details={"no": release_no})
@@ -1054,6 +1513,9 @@ class OntologyMetaStore:
             ("ontology_link_type", OntologyLinkType),
             ("ontology_data_property", OntologyDataProperty),
             ("ontology_action", OntologyAction),
+            ("ontology_decision_rule", OntologyDecisionRule),
+            ("ontology_conflict_policy", OntologyConflictPolicy),
+            ("ontology_classification_criterion", OntologyClassificationCriterion),
         ):
             for e in self.db.query(model).filter_by(status=STATUS_DRAFT).all():
                 e.status = STATUS_PUBLISHED

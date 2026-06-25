@@ -25,9 +25,17 @@ from app.schemas.ontology import (
     ClassDetail,
     ClassDetailResponse,
     ClassUpdate,
+    ClassificationCriterionCreate,
+    ClassificationCriterionDetail,
+    ClassificationCriterionUpdate,
+    ConflictPolicyDetail,
+    ConflictPolicyUpdate,
     DataPropertyCreate,
     DataPropertyDetail,
     DataPropertyUpdate,
+    DecisionRuleCreate,
+    DecisionRuleDetail,
+    DecisionRuleUpdate,
     DiffResult,
     ImportResult,
     LinkTypeCreate,
@@ -307,6 +315,114 @@ def delete_action(
 ):
     store.delete_action(iri, expected_version, identity.username)
     return Response(status_code=204)
+
+
+# ===========================================================================
+# 声明式规则层 (能力六 / spec 006) — E11/E12/E13 可版本化规则数据 (US3)
+#   均限 senior_analyst（FR-017）；路径用无斜杠键参（criterion_key / rule_key /
+#   dimension），声明在贪婪 GET /classes/{class_iri:path} 之前，互不冲突。改一个
+#   阈值 / 加一条规则 / 翻转一个冲突策略都是纯数据写入——无需改动源码 (FR-016)。
+# ===========================================================================
+# --- E11 分类判据（充要定义，T037）---
+@router.get("/classification-criteria", response_model=list[ClassificationCriterionDetail])
+def list_classification_criteria(store: OntologyMetaStore = Depends(get_ontology_meta_store)):
+    return store.list_classification_criteria()
+
+
+@router.post(
+    "/classification-criteria", response_model=ClassificationCriterionDetail, status_code=201
+)
+def create_classification_criterion(
+    payload: ClassificationCriterionCreate,
+    identity: Identity = Depends(_writer),
+    store: OntologyMetaStore = Depends(get_ontology_meta_store),
+):
+    return store.create_classification_criterion(payload, identity.username)
+
+
+@router.put(
+    "/classification-criteria/{criterion_key}", response_model=ClassificationCriterionDetail
+)
+def update_classification_criterion(
+    criterion_key: str,
+    payload: ClassificationCriterionUpdate,
+    identity: Identity = Depends(_writer),
+    store: OntologyMetaStore = Depends(get_ontology_meta_store),
+):
+    return store.update_classification_criterion(criterion_key, payload, identity.username)
+
+
+@router.delete("/classification-criteria/{criterion_key}", status_code=204)
+def delete_classification_criterion(
+    criterion_key: str,
+    expected_version: int,
+    identity: Identity = Depends(_writer),
+    store: OntologyMetaStore = Depends(get_ontology_meta_store),
+):
+    store.delete_classification_criterion(criterion_key, expected_version, identity.username)
+    return Response(status_code=204)
+
+
+# --- E12 决策规则（产生式 R-ED / R-SC / R-CP，T038）---
+@router.get("/decision-rules", response_model=list[DecisionRuleDetail])
+def list_decision_rules(
+    rule_group: str | None = None,
+    store: OntologyMetaStore = Depends(get_ontology_meta_store),
+):
+    return store.list_decision_rules(rule_group)
+
+
+@router.post("/decision-rules", response_model=DecisionRuleDetail, status_code=201)
+def create_decision_rule(
+    payload: DecisionRuleCreate,
+    identity: Identity = Depends(_writer),
+    store: OntologyMetaStore = Depends(get_ontology_meta_store),
+):
+    return store.create_decision_rule(payload, identity.username)
+
+
+@router.put("/decision-rules/{rule_key}", response_model=DecisionRuleDetail)
+def update_decision_rule(
+    rule_key: str,
+    payload: DecisionRuleUpdate,
+    identity: Identity = Depends(_writer),
+    store: OntologyMetaStore = Depends(get_ontology_meta_store),
+):
+    return store.update_decision_rule(rule_key, payload, identity.username)
+
+
+@router.delete("/decision-rules/{rule_key}", status_code=204)
+def delete_decision_rule(
+    rule_key: str,
+    expected_version: int,
+    identity: Identity = Depends(_writer),
+    store: OntologyMetaStore = Depends(get_ontology_meta_store),
+):
+    store.delete_decision_rule(rule_key, expected_version, identity.username)
+    return Response(status_code=204)
+
+
+# --- E13 冲突消解策略（固定维度集，仅 GET/PUT，T039）---
+@router.get("/conflict-policies", response_model=list[ConflictPolicyDetail])
+def list_conflict_policies(store: OntologyMetaStore = Depends(get_ontology_meta_store)):
+    return store.list_conflict_policies()
+
+
+@router.get("/conflict-policies/{dimension}", response_model=ConflictPolicyDetail)
+def get_conflict_policy(
+    dimension: str, store: OntologyMetaStore = Depends(get_ontology_meta_store)
+):
+    return store.get_conflict_policy(dimension)
+
+
+@router.put("/conflict-policies/{dimension}", response_model=ConflictPolicyDetail)
+def update_conflict_policy(
+    dimension: str,
+    payload: ConflictPolicyUpdate,
+    identity: Identity = Depends(_writer),
+    store: OntologyMetaStore = Depends(get_ontology_meta_store),
+):
+    return store.update_conflict_policy(dimension, payload, identity.username)
 
 
 # ===========================================================================

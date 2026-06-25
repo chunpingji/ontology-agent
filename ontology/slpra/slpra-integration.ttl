@@ -20,6 +20,7 @@
 @prefix idmp-mprd: <https://spec.pistoiaalliance.org/idmp/ontology/ISO/ISO11615-MedicinalProducts/> .
 @prefix idmp-sub:  <https://spec.pistoiaalliance.org/idmp/ontology/ISO/ISO11238-Substances/> .
 @prefix idmp-phdf: <https://spec.pistoiaalliance.org/idmp/ontology/ISO/ISO11239-PharmaceuticalDoseForms/> .
+@prefix atc:   <https://atcddd.fhi.no/atc_ddd_index/?code=> .
 @prefix skos:  <http://www.w3.org/2004/02/skos/core#> .
 
 <https://ontology.pharma-gmp.cn/slpra/integration/>
@@ -60,11 +61,27 @@ slpra-drug:ActivePharmaceuticalIngredient skos:broadMatch chebi:23367 .
 # 药理 / 化学角色对齐
 slpra-drug:CytotoxicDrug       skos:closeMatch   chebi:35610 .   # antineoplastic agent
 slpra-drug:CytotoxicAPI        skos:closeMatch   chebi:35610 .   # antineoplastic agent
+slpra-drug:AntineoplasticDrug  skos:closeMatch   chebi:35610 .   # antineoplastic agent（新增可推断类，§8.0；✓ T021 核实）
 slpra-drug:HormonalDrug        skos:closeMatch   chebi:24621 .   # hormone
 slpra-drug:HormonalAPI         skos:closeMatch   chebi:24621 .   # hormone
 slpra-drug:PenicillinDrug      skos:closeMatch   chebi:17334 .   # penicillin
 slpra-drug:BetaLactamDrug      skos:closeMatch   chebi:27933 .   # beta-lactam antibiotic
 slpra-drug:GenotoxicityProfile skos:relatedMatch chebi:25435 .   # mutagen（相关角色，非层级）
+
+# ============================================================
+# External Ontology Alignment — ATC（WHO 解剖治疗化学分类）
+# ============================================================
+# §8.0 可推断风险类的法规溯源层：ChEBI 化学/药理角色驱动运行期推断，ATC 治疗分类仅作
+# 物化溯源（named-IRI provenance，不入 T026 alignment_verified 门禁——该门禁仅校验进入
+# 推断的 ChEBI IRI）。IRI 用 WHO 协作中心 ATC/DDD 索引可解引用地址（WHOCC 2024 起迁至
+# atcddd.fhi.no）。抗肿瘤/青霉素与各自 ATC 组语义近似 → closeMatch；HormonalDrug 跨
+# G03(性激素)+H02(皮质激素)两组、为二者上位的策展聚合 → relatedMatch（关联、非等价）。
+# ✓ 四个 ATC 码及标签均经 T021 字节级核实（2026-06-24）。
+
+slpra-drug:AntineoplasticDrug skos:closeMatch   atc:L01 .   # ANTINEOPLASTIC AGENTS（✓ T021 核实）
+slpra-drug:PenicillinDrug     skos:closeMatch   atc:J01C .  # BETA-LACTAM ANTIBACTERIALS, PENICILLINS（✓ T021 核实）
+slpra-drug:HormonalDrug       skos:relatedMatch atc:G03 .   # SEX HORMONES AND MODULATORS OF THE GENITAL SYSTEM（✓ T021 核实）
+slpra-drug:HormonalDrug       skos:relatedMatch atc:H02 .   # CORTICOSTEROIDS FOR SYSTEMIC USE（✓ T021 核实）
 
 # ============================================================
 # External Ontology Alignment — ISA-88 (IEC 61512-1)
@@ -224,6 +241,31 @@ chebi:25435 a owl:Class ;
     rdfs:isDefinedBy <http://purl.obolibrary.org/obo/chebi.owl> ;
     rdfs:comment "ChEBI mutagen (offline MIREOT stub)."@en .
 
+# --- ATC（WHO 解剖治疗化学分类码；IRI/标签经 T021 字节级核实 ✓；§8.0 溯源用，非推断驱动） ---
+atc:L01 a owl:Class ;
+    rdfs:label "ANTINEOPLASTIC AGENTS"@en ;
+    rdfs:label "抗肿瘤药"@zh ;
+    rdfs:isDefinedBy <https://atcddd.fhi.no/atc_ddd_index/> ;
+    rdfs:comment "WHO ATC L01 antineoplastic agents (offline MIREOT stub; ✓ T021 核实)."@en .
+
+atc:J01C a owl:Class ;
+    rdfs:label "BETA-LACTAM ANTIBACTERIALS, PENICILLINS"@en ;
+    rdfs:label "β-内酰胺类抗菌药，青霉素类"@zh ;
+    rdfs:isDefinedBy <https://atcddd.fhi.no/atc_ddd_index/> ;
+    rdfs:comment "WHO ATC J01C beta-lactam antibacterials, penicillins (offline MIREOT stub; ✓ T021 核实)."@en .
+
+atc:G03 a owl:Class ;
+    rdfs:label "SEX HORMONES AND MODULATORS OF THE GENITAL SYSTEM"@en ;
+    rdfs:label "性激素及生殖系统调节剂"@zh ;
+    rdfs:isDefinedBy <https://atcddd.fhi.no/atc_ddd_index/> ;
+    rdfs:comment "WHO ATC G03 sex hormones and modulators of the genital system (offline MIREOT stub; ✓ T021 核实)."@en .
+
+atc:H02 a owl:Class ;
+    rdfs:label "CORTICOSTEROIDS FOR SYSTEMIC USE"@en ;
+    rdfs:label "全身用皮质激素"@zh ;
+    rdfs:isDefinedBy <https://atcddd.fhi.no/atc_ddd_index/> ;
+    rdfs:comment "WHO ATC H02 corticosteroids for systemic use (offline MIREOT stub; ✓ T021 核实)."@en .
+
 # --- DrOn ---
 dron:00000005 a owl:Class ;
     rdfs:label "drug product"@en ;
@@ -365,159 +407,3 @@ slpra-contam:hasContaminationSeverity rdfs:range slpra-risk:RiskLevel .
             owl:someValuesFrom slpra-facil:CleanArea
         ]
     ] .
-
-# ============================================================
-# Sample Facility Individuals (from user equipment table)
-# ============================================================
-
-# Production Areas
-slpra-facil:GeneralArea_SouthPlatform_Lower a slpra-facil:GeneralArea ;
-    rdfs:label "一般区南平台下"@zh .
-
-slpra-facil:GeneralArea_NorthPlatform_Lower a slpra-facil:GeneralArea ;
-    rdfs:label "一般区北平台下"@zh .
-
-slpra-facil:CleanArea_PurificationRoom a slpra-facil:CleanArea ;
-    rdfs:label "洁净区精制间"@zh .
-
-slpra-facil:CleanArea_DryingRoom a slpra-facil:CleanArea ;
-    rdfs:label "洁净区干燥间"@zh .
-
-slpra-facil:GeneralArea_DryingRoom a slpra-facil:GeneralArea ;
-    rdfs:label "一般区干燥间"@zh .
-
-slpra-facil:GeneralArea_5F_South a slpra-facil:GeneralArea ;
-    rdfs:label "五楼一般区南"@zh .
-
-# ============================================================
-# Sample Equipment Individuals (from user equipment table)
-# ============================================================
-
-# Centrifuges
-slpra-equip:CT64201 a slpra-equip:Centrifuge ;
-    slpra-equip:equipmentID "CT64201" ;
-    slpra-equip:equipmentName "离心机"@zh ;
-    slpra-equip:modelSpecification "800" ;
-    slpra-equip:constructedOf [ a slpra-equip:SS304WithHALARCoating ] ;
-    slpra-equip:isInCleanArea false ;
-    slpra-equip:hasEquipmentRole [ a slpra-equip:SharedEquipmentRole ] .
-
-slpra-equip:CT64202 a slpra-equip:Centrifuge ;
-    slpra-equip:equipmentID "CT64202" ;
-    slpra-equip:equipmentName "离心机"@zh ;
-    slpra-equip:modelSpecification "600" ;
-    slpra-equip:constructedOf [ a slpra-equip:StainlessSteel316L ] ;
-    slpra-equip:isInCleanArea false ;
-    slpra-equip:hasEquipmentRole [ a slpra-equip:SharedEquipmentRole ] .
-
-slpra-equip:CT64204 a slpra-equip:Centrifuge ;
-    slpra-equip:equipmentID "CT64204" ;
-    slpra-equip:equipmentName "离心机"@zh ;
-    slpra-equip:modelSpecification "600" ;
-    slpra-equip:constructedOf [ a slpra-equip:StainlessSteel316L ] ;
-    slpra-equip:isInCleanArea true ;
-    slpra-equip:hasEquipmentRole [ a slpra-equip:SharedEquipmentRole ] .
-
-slpra-equip:CT64209 a slpra-equip:Centrifuge ;
-    slpra-equip:equipmentID "CT64209" ;
-    slpra-equip:equipmentName "离心机"@zh ;
-    slpra-equip:modelSpecification "450" ;
-    slpra-equip:constructedOf [ a slpra-equip:SS304WithHALARCoating ] ;
-    slpra-equip:isInCleanArea true ;
-    slpra-equip:hasEquipmentRole [ a slpra-equip:SharedEquipmentRole ] .
-
-# Dryers
-slpra-equip:DE64201 a slpra-equip:HotAirDryer ;
-    slpra-equip:equipmentID "DE64201" ;
-    slpra-equip:equipmentName "热风循环干燥箱"@zh ;
-    slpra-equip:modelSpecification "48盘" ;
-    slpra-equip:constructedOf [ a slpra-equip:StainlessSteel316L ] ;
-    slpra-equip:isInCleanArea false ;
-    slpra-equip:hasEquipmentRole [ a slpra-equip:SharedEquipmentRole ] .
-
-slpra-equip:DE64203 a slpra-equip:VacuumDryer ;
-    slpra-equip:equipmentID "DE64203" ;
-    slpra-equip:equipmentName "真空干燥箱"@zh ;
-    slpra-equip:modelSpecification "24盘" ;
-    slpra-equip:constructedOf [ a slpra-equip:SS304WithHALARCoating ] ;
-    slpra-equip:isInCleanArea true ;
-    slpra-equip:hasEquipmentRole [ a slpra-equip:SharedEquipmentRole ] .
-
-slpra-equip:DE64205 a slpra-equip:ElectricVacuumDryer ;
-    slpra-equip:equipmentID "DE64205" ;
-    slpra-equip:equipmentName "电热真空干燥箱"@zh ;
-    slpra-equip:modelSpecification "8盘" ;
-    slpra-equip:constructedOf [ a slpra-equip:SS304WithHALARCoating ] ;
-    slpra-equip:isInCleanArea false ;
-    slpra-equip:hasEquipmentRole [ a slpra-equip:SharedEquipmentRole ] .
-
-slpra-equip:DE64207 a slpra-equip:HotAirBlastDryer ;
-    slpra-equip:equipmentID "DE64207" ;
-    slpra-equip:equipmentName "电热鼓风干燥箱"@zh ;
-    slpra-equip:modelSpecification "BGX-198" ;
-    slpra-equip:constructedOf [ a slpra-equip:StainlessSteel316L ] ;
-    slpra-equip:isInCleanArea false ;
-    slpra-equip:hasEquipmentRole [ a slpra-equip:SharedEquipmentRole ] .
-
-# Rotary Evaporators
-slpra-equip:EE64201 a slpra-equip:RotaryEvaporator ;
-    slpra-equip:equipmentID "EE64201" ;
-    slpra-equip:equipmentName "旋蒸"@zh ;
-    slpra-equip:modelSpecification "20L" ;
-    slpra-equip:constructedOf [ a slpra-equip:BorosilicateGlass ] ;
-    slpra-equip:isInCleanArea false ;
-    slpra-equip:hasEquipmentRole [ a slpra-equip:SharedEquipmentRole ] .
-
-slpra-equip:EE64203 a slpra-equip:RotaryEvaporator ;
-    slpra-equip:equipmentID "EE64203" ;
-    slpra-equip:equipmentName "旋蒸"@zh ;
-    slpra-equip:modelSpecification "10L" ;
-    slpra-equip:constructedOf [ a slpra-equip:BorosilicateGlass ] ;
-    slpra-equip:isInCleanArea false ;
-    slpra-equip:hasEquipmentRole [ a slpra-equip:SharedEquipmentRole ] .
-
-# ============================================================
-# Sample Drug Product Individual (for risk assessment demo)
-# ============================================================
-
-slpra-drug:DrugX a slpra-drug:ClinicalTrialDrug, slpra-drug:CytotoxicDrug ;
-    slpra-drug:dosageForm "powder" ;
-    slpra-drug:routeOfAdministration "intravenous" ;
-    slpra-drug:isCytotoxic true ;
-    slpra-drug:isHighlyActive true ;
-    slpra-drug:hasActiveIngredient slpra-drug:API_CompoundX .
-
-slpra-drug:API_CompoundX a slpra-drug:CytotoxicAPI ;
-    slpra-drug:pde_mg_per_day "0.002"^^xsd:decimal ;
-    slpra-drug:oel_ug_per_m3 "0.5"^^xsd:decimal ;
-    slpra-drug:hasOEBClassification [ a slpra-drug:OEB5 ] ;
-    slpra-drug:hasToxicityProfile [
-        a slpra-drug:GenotoxicityProfile ;
-        slpra-drug:ld50_mg_per_kg "15.0"^^xsd:decimal
-    ] ;
-    slpra-drug:hasInactivationDisposition [ a slpra-drug:ChemicalInactivatable ] ;
-    slpra-drug:hasSolubilityCharacteristic [ a slpra-drug:WaterSolubility ] .
-
-# ============================================================
-# Sample Risk Assessment Scenario
-# ============================================================
-
-# Scenario: DrugX (cytotoxic, OEB5) on shared centrifuge CT64201
-slpra-risk:Assessment_DrugX_CT64201 a slpra-risk:RiskAssessmentProcess ;
-    slpra-risk:assessesProduct slpra-drug:DrugX ;
-    slpra-risk:assessesEquipment slpra-equip:CT64201 ;
-    slpra-risk:involvesScenario [ a slpra-risk:CytotoxicSharedLineScenario ] ;
-    slpra-risk:involvesScenario [ a slpra-risk:ClinicalWithCommercialScenario ] .
-
-# Contamination event: residue pathway for DrugX on CT64201
-slpra-contam:CE_DrugX_CT64201_Residue a slpra-contam:ResidueContamination ;
-    slpra-contam:hasContaminationSource slpra-drug:DrugX ;
-    slpra-contam:mediatedByEquipment slpra-equip:CT64201 ;
-    slpra-contam:hasContaminationSeverity slpra-risk:HighRisk .
-
-# Compatibility assessment
-slpra-risk:Compat_DrugX_CT64201 a slpra-risk:CompatibilityAssessment ;
-    slpra-risk:assessesEquipmentFor slpra-equip:CT64201 ;
-    slpra-risk:assessesProductFor slpra-drug:DrugX ;
-    slpra-risk:compatibilityResult "conditional" ;
-    slpra-risk:compatibilityCondition "Requires validated chemical inactivation and enhanced cleaning validation. OEB5 classification recommends dedicated equipment."@en .

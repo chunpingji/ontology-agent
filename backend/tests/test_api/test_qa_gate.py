@@ -56,7 +56,7 @@ def _low_risk_result() -> AssessmentResult:
 
 def _patch(monkeypatch, result):
     monkeypatch.setattr(reasoning_engine, "run_assessment",
-                        lambda engine, drug_iri, equipment_iris: result)
+                        lambda engine, drug_iri, equipment_iris, **kwargs: result)
 
 
 def test_high_risk_armed_pending_with_suppressed_actions(client, db, analyst_headers, monkeypatch):

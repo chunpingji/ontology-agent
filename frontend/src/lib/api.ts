@@ -668,3 +668,134 @@ export const getAudit = (params?: Record<string, string>) => {
   const qs = params ? `?${new URLSearchParams(params)}` : "";
   return fetchAPI<AuditEntry[]>(`/api/ontology/audit${qs}`);
 };
+
+// ===========================================================================
+// 声明式规则层 (能力六 / spec 006) — E11/E12/E13 可版本化规则数据 (US3, T041)
+//
+// 规则即数据：判据阈值 / 决策规则 / 冲突策略全部走与 T-Box 一致的
+// fetchAPI + 乐观并发(expected_version) 通道。模式（pattern/antecedent）是
+// 受限词汇的 AST——见 RulePattern；前端表单只暴露解释器 VOCABULARY 内的算子。
+// ===========================================================================
+
+/** 解释器受限模式 AST 节点（与 backend interpreter.VOCABULARY 对齐）。 */
+export type RulePattern =
+  | { op: "some_values_from"; property: string; filler_class: string }
+  | { op: "class_membership"; property: string; classes: string[] }
+  | { op: "datatype_facet"; property: string; cmp: PatternCmp; value: number }
+  | { op: "boolean_has_value"; property: string; value: boolean }
+  | { op: "external_alignment"; property: string; alignment: string }
+  | { op: "class_present"; class: string }
+  | { op: "literal_eq"; key: string; value: unknown }
+  | { op: "literal_cmp"; key: string; cmp: PatternCmp; value: unknown }
+  | { op: "and"; operands: RulePattern[] }
+  | { op: "or"; operands: RulePattern[] };
+
+export type PatternCmp = "gt" | "ge" | "lt" | "le" | "eq" | "ne";
+/** 受限表单直接暴露的算子（叶子节点，单一谓词/阈值），排除 and/or 复合与底层 literal_*。 */
+export const PATTERN_OPS = [
+  "datatype_facet",
+  "boolean_has_value",
+  "class_membership",
+  "some_values_from",
+  "external_alignment",
+  "class_present",
+] as const;
+export const PATTERN_CMP_OPS: PatternCmp[] = ["gt", "ge", "lt", "le", "eq", "ne"];
+
+// --- E11 分类判据 (充要定义) ------------------------------------------------
+export interface TBoxClassificationCriterion {
+  id: string; criterion_key: string;
+  target_class_iri: string | null; target_class_label: string | null;
+  pattern: RulePattern; regulation_ref: string | null; logic_role: string;
+  status: string; version: number; is_disabled: boolean;
+  created_at: string | null; updated_at: string | null;
+}
+export interface CriterionCreateInput {
+  criterion_key: string; target_class_iri: string; pattern: RulePattern;
+  regulation_ref?: string | null; logic_role?: string;
+}
+export interface CriterionUpdateInput {
+  expected_version: number; target_class_iri?: string | null;
+  pattern?: RulePattern; regulation_ref?: string | null;
+  logic_role?: string | null; is_disabled?: boolean | null;
+}
+export const listClassificationCriteria = () =>
+  fetchAPI<TBoxClassificationCriterion[]>("/api/ontology/classification-criteria");
+export const createClassificationCriterion = (data: CriterionCreateInput) =>
+  fetchAPI<TBoxClassificationCriterion>("/api/ontology/classification-criteria", {
+    method: "POST", ...jsonBody(data),
+  });
+export const updateClassificationCriterion = (key: string, data: CriterionUpdateInput) =>
+  fetchAPI<TBoxClassificationCriterion>(
+    `/api/ontology/classification-criteria/${encodeURIComponent(key)}`,
+    { method: "PUT", ...jsonBody(data) },
+  );
+export const deleteClassificationCriterion = (key: string, expectedVersion: number) =>
+  fetchAPI<void>(
+    `/api/ontology/classification-criteria/${encodeURIComponent(key)}?expected_version=${expectedVersion}`,
+    { method: "DELETE" },
+  );
+
+// --- E12 决策规则 (产生式 R-ED / R-SC / R-CP) -------------------------------
+export type DecisionRuleGroup =
+  | "equipment_dedication" | "scenario_identification" | "contamination_risk";
+export const DECISION_RULE_GROUPS: DecisionRuleGroup[] = [
+  "equipment_dedication", "scenario_identification", "contamination_risk",
+];
+export interface TBoxDecisionRule {
+  id: string; slpra_iri: string; rule_key: string; rule_group: DecisionRuleGroup;
+  antecedent: RulePattern; consequent: Record<string, unknown>; priority: number;
+  regulation_ref: string | null; label: string; comment: string | null;
+  status: string; version: number; is_disabled: boolean;
+  created_at: string | null; updated_at: string | null;
+}
+export interface DecisionRuleCreateInput {
+  rule_key: string; rule_group: DecisionRuleGroup; antecedent: RulePattern;
+  consequent: Record<string, unknown>; priority?: number;
+  regulation_ref?: string | null; label?: string | null; comment?: string | null;
+}
+export interface DecisionRuleUpdateInput {
+  expected_version: number; rule_group?: DecisionRuleGroup | null;
+  antecedent?: RulePattern; consequent?: Record<string, unknown>;
+  priority?: number | null; regulation_ref?: string | null;
+  label?: string | null; comment?: string | null; is_disabled?: boolean | null;
+}
+export const listDecisionRules = (ruleGroup?: DecisionRuleGroup) =>
+  fetchAPI<TBoxDecisionRule[]>(
+    `/api/ontology/decision-rules${ruleGroup ? `?rule_group=${ruleGroup}` : ""}`,
+  );
+export const createDecisionRule = (data: DecisionRuleCreateInput) =>
+  fetchAPI<TBoxDecisionRule>("/api/ontology/decision-rules", { method: "POST", ...jsonBody(data) });
+export const updateDecisionRule = (key: string, data: DecisionRuleUpdateInput) =>
+  fetchAPI<TBoxDecisionRule>(`/api/ontology/decision-rules/${encodeURIComponent(key)}`, {
+    method: "PUT", ...jsonBody(data),
+  });
+export const deleteDecisionRule = (key: string, expectedVersion: number) =>
+  fetchAPI<void>(
+    `/api/ontology/decision-rules/${encodeURIComponent(key)}?expected_version=${expectedVersion}`,
+    { method: "DELETE" },
+  );
+
+// --- E13 冲突消解策略 (固定维度集，仅 GET/PUT) ------------------------------
+export interface TBoxConflictPolicy {
+  id: string; slpra_iri: string; dimension: string; strategy: string;
+  priority_lattice: Record<string, number> | null;
+  override_direction: string | null; regulation_ref: string | null;
+  label: string; comment: string | null;
+  status: string; version: number; is_disabled: boolean;
+  created_at: string | null; updated_at: string | null;
+}
+export interface ConflictPolicyUpdateInput {
+  expected_version: number; strategy?: string | null;
+  priority_lattice?: Record<string, number> | null;
+  override_direction?: string | null; regulation_ref?: string | null;
+  comment?: string | null; is_disabled?: boolean | null;
+}
+export const listConflictPolicies = () =>
+  fetchAPI<TBoxConflictPolicy[]>("/api/ontology/conflict-policies");
+export const getConflictPolicy = (dimension: string) =>
+  fetchAPI<TBoxConflictPolicy>(`/api/ontology/conflict-policies/${encodeURIComponent(dimension)}`);
+export const updateConflictPolicy = (dimension: string, data: ConflictPolicyUpdateInput) =>
+  fetchAPI<TBoxConflictPolicy>(`/api/ontology/conflict-policies/${encodeURIComponent(dimension)}`, {
+    method: "PUT", ...jsonBody(data),
+  });

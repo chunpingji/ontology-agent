@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import {
   getClassHierarchy,
   getModules,
@@ -138,16 +139,24 @@ export default function OntologyWorkbenchPage() {
     <div>
       <div className="mb-4 flex items-center justify-between">
         <h1 className="text-xl font-bold">T-Box 知识模型维护工作台</h1>
-        <Button
-          onClick={() => {
-            selectNode(null);
-            setTab("基本");
-          }}
-          size="sm"
-          className="h-auto px-3 py-1.5 text-sm"
-        >
-          + 新建类
-        </Button>
+        <div className="flex items-center gap-2">
+          <Link
+            href="/ontology/rules"
+            className="rounded border px-3 py-1.5 text-sm text-muted-foreground hover:bg-accent"
+          >
+            声明式规则 →
+          </Link>
+          <Button
+            onClick={() => {
+              selectNode(null);
+              setTab("基本");
+            }}
+            size="sm"
+            className="h-auto px-3 py-1.5 text-sm"
+          >
+            + 新建类
+          </Button>
+        </div>
       </div>
 
       <div className="mb-4 flex flex-wrap gap-2">
