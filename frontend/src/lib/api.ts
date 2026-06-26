@@ -146,6 +146,7 @@ export interface MaterializationRun {
   cursor_from: Record<string, unknown> | null;
   cursor_to: Record<string, unknown> | null;
   change_count: number;
+  changes: Array<Record<string, unknown>> | null;
   event_ids: string[] | null;
   error_message: string | null;
 }
@@ -182,10 +183,135 @@ export const syncConnector = (id: string) =>
     `/api/integration/connectors/${id}/sync`, { method: "POST" });
 export const listConnectorRuns = (id: string) =>
   fetchAPI<{ runs: MaterializationRun[] }>(`/api/integration/connectors/${id}/runs`);
+/** 向**既有**连接器增量推送已归一化变更骨架（webhook 追加 inline_changes 并即时同步）。 */
+export const webhookConnector = (id: string, changes: Array<Record<string, unknown>>) =>
+  fetchAPI<{ accepted: boolean }>(`/api/integration/connectors/${id}/webhook`, {
+    method: "POST", body: JSON.stringify({ changes }),
+  });
 export const getDashboard = () =>
   fetchAPI<DashboardData>("/api/integration/dashboard");
 export const getConclusionTrace = (id: string) =>
   fetchAPI<RuleTrace>(`/api/reasoning/conclusions/${id}/trace`);
+
+// --- 研发文档事实源 doc_repo（能力三 / 007）--------------------------------
+// 复用既有 connector CRUD 与 /api/entities 检索（不新建路由/检索框架）。
+export const DOCUMENT_NS = "https://ontology.pharma-gmp.cn/slpra/document/";
+
+/** 研发阶段受控词表（skos:notation 1–6 定序；与 slpra-document.ttl 一一对应）。 */
+export const DEVELOPMENT_PHASES: Array<{ iri: string; label: string; notation: string }> = [
+  { iri: `${DOCUMENT_NS}Phase_DrugDiscovery`, label: "药物发现", notation: "1" },
+  { iri: `${DOCUMENT_NS}Phase_Preclinical`, label: "临床前", notation: "2" },
+  { iri: `${DOCUMENT_NS}Phase_ClinicalI`, label: "临床Ⅰ期", notation: "3" },
+  { iri: `${DOCUMENT_NS}Phase_ClinicalII_III`, label: "临床Ⅱ/Ⅲ期", notation: "4" },
+  { iri: `${DOCUMENT_NS}Phase_NDA_BLA`, label: "NDA/BLA 申报", notation: "5" },
+  { iri: `${DOCUMENT_NS}Phase_PostMarket`, label: "上市后", notation: "6" },
+];
+
+/** 研发阶段 IRI → 中文标签（未知回退 local-name）。 */
+export const phaseLabel = (iri: string | null | undefined): string => {
+  if (!iri) return "—";
+  const hit = DEVELOPMENT_PHASES.find((p) => p.iri === iri);
+  return hit ? hit.label : iri.split(/[#/]/).pop() || iri;
+};
+
+/** doc_repo 文档类型 local-name → 中文标签（与 slpra-document.ttl 6 子类一致）。 */
+export const DOC_TYPE_LABELS: Record<string, string> = {
+  RegulatoryDocument: "法规文档",
+  INDDossier: "IND 申报资料",
+  TechTransferReport: "技术转移报告",
+  ProcessValidationReport: "工艺验证报告",
+  StabilityReport: "稳定性报告",
+  NDA_BLADossier: "NDA/BLA 申报资料",
+  PVReport: "药物警戒报告",
+};
+export const docTypeLabel = (classIri: string | null | undefined): string => {
+  if (!classIri) return "—";
+  const ln = classIri.split(/[#/]/).pop() || classIri;
+  return DOC_TYPE_LABELS[ln] || ln;
+};
+
+export type DocRepoAccessMode = "inline" | "upload" | "http";
+
+export interface DocRepoConnectorInput {
+  name: string;
+  accessMode: DocRepoAccessMode;
+  pollIntervalSeconds?: number;
+  /** http 模式：EDMS/eTMF 端点 URL。 */
+  baseUrl?: string;
+  /** http 模式：凭据**环境变量名**引用（如 "EDMS_TOKEN"）——绝不传明文 token（FR-010）。 */
+  tokenRef?: string;
+  apiKeyRef?: string;
+  /** inline 模式：归一化变更骨架数组。 */
+  inlineChanges?: Array<Record<string, unknown>>;
+  /** upload 模式：文档上传信封数组。 */
+  uploadPayload?: Array<Record<string, unknown>>;
+}
+
+/** 据接入模式构建 doc_repo 的 connection_config（凭据**仅以变量名引用**入库，无明文）。 */
+export const buildDocRepoConfig = (input: DocRepoConnectorInput): Record<string, unknown> => {
+  if (input.accessMode === "http") {
+    const cfg: Record<string, unknown> = { access_mode: "http", base_url: input.baseUrl || "" };
+    if (input.tokenRef) cfg.token_ref = input.tokenRef;
+    if (input.apiKeyRef) cfg.api_key_ref = input.apiKeyRef;
+    return cfg;
+  }
+  if (input.accessMode === "upload") {
+    return { access_mode: "upload", upload_payload: input.uploadPayload || [] };
+  }
+  return { access_mode: "inline", inline_changes: input.inlineChanges || [] };
+};
+
+/** 创建 doc_repo 连接器（复用既有 createConnector；system_type 固定 doc_repo）。 */
+export const createDocRepoConnector = (input: DocRepoConnectorInput) =>
+  createConnector({
+    name: input.name || "研发文档事实源",
+    system_type: "doc_repo",
+    ingest_mode: "poll",
+    poll_interval_seconds: input.pollIntervalSeconds ?? 2,
+    connection_config: buildDocRepoConfig(input),
+  });
+
+/** 仅列出 doc_repo 连接器（客户端过滤；复用 listConnectors）。 */
+export const listDocRepoConnectors = () =>
+  listConnectors().then((cs) =>
+    cs.filter((c) => (c.system_type || "").toLowerCase() === "doc_repo"),
+  );
+
+/** 连接器的接入模式（connection_config.access_mode；未知回退 inline）。 */
+export const docRepoMode = (c: Connector): DocRepoAccessMode => {
+  const m = String(c.connection_config?.access_mode ?? "inline");
+  return m === "upload" || m === "http" ? m : "inline";
+};
+
+/**
+ * 某连接器历史上物化过的文档个体 IRI 集合（facts#<entity_id>）。
+ * EntityShadow 不存连接器归属——文档→连接器的唯一回链是各 run 的 applied changes，
+ * 故经既有 /runs 端点只读重建归属（无新建后端字段 / 迁移）。
+ */
+export const connectorDocIris = async (connectorId: string): Promise<string[]> => {
+  const { runs } = await listConnectorRuns(connectorId);
+  const iris = new Set<string>();
+  for (const r of runs) {
+    for (const ch of r.changes ?? []) {
+      const eid = ch?.entity_id;
+      if (typeof eid === "string" && eid) iris.add(`http://slpra.org/facts#${eid}`);
+    }
+  }
+  return [...iris];
+};
+
+/** 列出研发文档个体（module=document），可按研发阶段过滤（US3 FR-005）。 */
+export const listDocuments = (developmentPhaseIri?: string, pageSize = 100) => {
+  const params: Record<string, string> = { module: "document", page_size: String(pageSize) };
+  if (developmentPhaseIri) params.development_phase = developmentPhaseIri;
+  return searchEntities(params);
+};
+
+/** 列出"抽取自"某文档的派生实体（extractedFrom 回链；客户端过滤，复用 /api/entities）。 */
+export const listExtractedFrom = async (docIri: string, pageSize = 200): Promise<EntityShadow[]> => {
+  const res = await searchEntities({ page_size: String(pageSize) });
+  return res.items.filter((e) => (e.properties_json?.extractedFrom as string) === docIri);
+};
 
 // --- Compliance (能力六) ----------------------------------------------------
 export interface PendingConclusion {
@@ -252,6 +378,22 @@ export const listExtractionJobs = () =>
   fetchAPI<ExtractionJob[]>("/api/extraction/jobs");
 export const getExtractionJob = (id: string) =>
   fetchAPI<ExtractionJob>(`/api/extraction/jobs/${id}`);
+
+// 研发文档内容抽取（007 US2）：由文档个体人工发起 → 入队（pending）→ 手动 start。
+// 候选进入既有对齐复核队列，确认后入事实层并携 extractedFrom 溯源回链（FR-004/Q1）。
+export interface DocExtractionRequest {
+  doc_ref: string; // 文档个体 IRI（facts#…，溯源锚点）
+  content_ref: string; // 外部正文引用（按需取，平台不存全文，Q2）
+  config_id: string;
+}
+/** 文档个体 → 创建 pending 的 doc_repo 抽取作业（不自动发起，Q1）。 */
+export const enqueueDocumentExtraction = (req: DocExtractionRequest) =>
+  fetchAPI<ExtractionJob>("/api/extraction/jobs/from-document", {
+    method: "POST", body: JSON.stringify(req),
+  });
+/** 手动发起待抽取作业（授权角色）：置 running 并运行抽取管线。 */
+export const startExtractionJob = (jobId: string) =>
+  fetchAPI<ExtractionJob>(`/api/extraction/jobs/${jobId}/start`, { method: "POST" });
 
 export async function createExtractionJob(params: {
   source_type: string; config_id: string; file?: File; db_source?: object;

@@ -13,9 +13,10 @@ from datetime import datetime, timezone
 
 from sqlalchemy.orm import Session
 
+from app.models.entity_shadow import EntityShadow
 from app.models.integration import FactMaterializationRun, IntegrationConnector
 from app.services import audit
-from app.services.integration.aps_connector import APSConnector
+from app.services.integration.connector_factory import connector_for, doc_type_to_class_map
 from app.services.integration.events import fact_event_bus
 from app.services.kg_store import KGStore
 from app.services.ontology_engine import IndividualInfo, OntologyEngine
@@ -47,14 +48,16 @@ class FactMaterializer:
         self.db.commit()
         self.db.refresh(run)
 
-        aps = APSConnector(connector.connection_config, connector.field_mapping,
-                           timeout=float(connector.poll_interval_seconds or 2) + 3.0)
+        conn = connector_for(connector)
         try:
-            pull = await aps.fetch_incremental(cursor)
+            pull = await conn.fetch_incremental(cursor)
         except (asyncio.TimeoutError, ConnectionError) as exc:
             return self._fail(run, connector, "timeout", str(exc) or "timeout")
         except Exception as exc:  # noqa: BLE001
             return self._fail(run, connector, "error", f"{type(exc).__name__}: {exc}")
+
+        # doc_repo：entity_type → 托管文档类 IRI 映射（非 doc_repo 为空 → 走原 facts# 分支）。
+        doc_map = doc_type_to_class_map(connector)
 
         # 幂等去重：维护每实体已物化的最高版本（抗重复/乱序, FR-019/VR-3）。
         versions: dict[str, int] = dict(cursor.get("versions", {}))
@@ -68,7 +71,7 @@ class FactMaterializer:
             if ver <= versions.get(eid, 0):
                 continue  # 重复或乱序旧版本 → 跳过（幂等）
             versions[eid] = ver
-            self._materialize(change)
+            self._materialize(change, doc_map)
             applied.append(change)
 
         new_cursor = {"version": pull.cursor_to.get("version", cursor.get("version", 0)),
@@ -103,13 +106,22 @@ class FactMaterializer:
             self.db.refresh(run)
         return run
 
-    def _materialize(self, change: dict) -> None:
-        """归一化一条变更为 A-Box 事实个体并写影子表。"""
+    def _materialize(self, change: dict, doc_type_to_class: dict | None = None) -> None:
+        """归一化一条变更为 A-Box 事实个体并写影子表。
+
+        文档记录（doc_repo）：`class_iri` 取托管 T-Box 文档类（`doc_type_to_class[entity_type]`），
+        A-Box 个体仍落 `facts#<entity_id>`——"记录是事实"，但类挂托管层 → `_detect_module`
+        归 document、经 surgical_merge 与权威 T-Box 对齐（个体永不入 TTL, SC-004）。
+        其余事实源：保持原 `facts#<entity_type>` 类 IRI（零回归 C1.4）。
+        """
+        doc_type_to_class = doc_type_to_class or {}
         eid = str(change.get("entity_id"))
+        etype = change.get("entity_type", "Fact")
+        class_iri = doc_type_to_class.get(etype, f"{_FACT_BASE_IRI}{etype}")
         info = IndividualInfo(
             iri=f"{_FACT_BASE_IRI}{eid}",
             name=eid,
-            class_iris=[f"{_FACT_BASE_IRI}{change.get('entity_type', 'Fact')}"],
+            class_iris=[class_iri],
             label_zh=change.get("label"),
             properties={**(change.get("fields") or {}), "_version": change.get("version")},
         )
@@ -118,6 +130,26 @@ class FactMaterializer:
         except Exception:  # noqa: BLE001  # pragma: no cover
             pass
         self.kg.sync_individual_to_shadow(info)
+
+        # FR-013 生命周期：新版本若声明 supersedes，则标记被取代的旧记录（绝不删行）。
+        supersedes = (change.get("fields") or {}).get("supersedes")
+        if supersedes:
+            self._mark_superseded(str(supersedes))
+
+    def _mark_superseded(self, old_eid: str) -> None:
+        """把被取代的旧文档记录影子行 approvalStatus 置 superseded（容忍旧行不存在）。"""
+        old = (
+            self.db.query(EntityShadow)
+            .filter(EntityShadow.iri == f"{_FACT_BASE_IRI}{old_eid}")
+            .one_or_none()
+        )
+        if old is None:
+            return  # 旧记录尚未物化（如乱序到达）→ 容忍，不报错
+        props = dict(old.properties_json or {})
+        props["approvalStatus"] = "superseded"
+        old.properties_json = props
+        self.db.commit()
+        self.db.refresh(old)
 
     def _fail(self, run: FactMaterializationRun, connector: IntegrationConnector,
               status: str, message: str) -> FactMaterializationRun:

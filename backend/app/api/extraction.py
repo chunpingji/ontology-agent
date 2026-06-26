@@ -27,9 +27,11 @@ from app.dependencies import (
     get_ontology_engine,
     require_role,
 )
+from app.models.entity_shadow import EntityShadow
 from app.models.extraction import ExtractionCandidate, ExtractionConfig, ExtractionJob
 from app.schemas.extraction import (
     CandidateGroup,
+    DocExtractionRequest,
     ExtractionCandidateResponse,
     ExtractionConfigCreate,
     ExtractionConfigResponse,
@@ -138,6 +140,72 @@ async def create_job(
     return job
 
 
+@router.post("/jobs/from-document", response_model=ExtractionJobResponse, status_code=202)
+def enqueue_document_extraction(
+    req: DocExtractionRequest,
+    db: Session = Depends(get_db),
+    identity: Identity = Depends(_analyst),
+):
+    """文档 approved/新版本事件 → 入待抽取队列（007 US2，FR-007/Q1）。
+
+    创建 `pending` 的 doc_repo 作业，**不自动发起**抽取管线（记录是事实自动物化、内容是候选
+    人工发起）；由授权角色经 `POST /jobs/{job_id}/start` 手动发起 `run_extraction_pipeline`。
+    """
+    config = db.get(ExtractionConfig, req.config_id)
+    if not config:
+        raise HTTPException(404, "extraction config not found")
+
+    job = ExtractionJob(
+        source_type="doc_repo",
+        source_filename=req.doc_ref,
+        source_config={"doc_ref": req.doc_ref, "content_ref": req.content_ref,
+                       "config_id": str(req.config_id)},
+        status="pending",  # Q1：入队不自动发起
+    )
+    db.add(job)
+    db.commit()
+    db.refresh(job)
+
+    audit.append(
+        db, "extraction.job.enqueue", actor=identity.username, entity_iri=str(job.id),
+        details={"source_type": "doc_repo", "doc_ref": req.doc_ref},
+    )
+    return job
+
+
+@router.post("/jobs/{job_id}/start", response_model=ExtractionJobResponse, status_code=202)
+async def start_extraction_job(
+    job_id: UUID,
+    background: BackgroundTasks,
+    db: Session = Depends(get_db),
+    engine: OntologyEngine = Depends(get_ontology_engine),
+    identity: Identity = Depends(_analyst),
+):
+    """手动发起待抽取作业（授权角色，Q1）：置 running 并后台运行流水线。"""
+    job = db.get(ExtractionJob, job_id)
+    if not job:
+        raise HTTPException(404)
+    if job.status != "pending":
+        raise HTTPException(409, "job already started")
+
+    cfg_id = (job.source_config or {}).get("config_id")
+    config = db.get(ExtractionConfig, UUID(cfg_id)) if cfg_id else None
+    if not config:
+        raise HTTPException(404, "extraction config not found")
+
+    job.status = "running"
+    db.commit()
+    db.refresh(job)
+
+    audit.append(
+        db, "extraction.job.start", actor=identity.username, entity_iri=str(job.id),
+        details={"source_type": job.source_type},
+    )
+
+    background.add_task(_run_pipeline_bg, job.id, config.id, None, engine, db)
+    return job
+
+
 @router.get("/jobs/{job_id}", response_model=ExtractionJobResponse)
 def get_job(job_id: UUID, db: Session = Depends(get_db)):
     job = db.get(ExtractionJob, job_id)
@@ -188,11 +256,36 @@ def list_candidates(job_id: UUID, db: Session = Depends(get_db)):
     )
 
 
+_FACTS_NS = "http://slpra.org/facts#"
+
+
+def _document_phase(doc_iri: str, db: Session) -> str | None:
+    """取文档个体（facts# 影子行）的研发阶段 IRI；不存在则 None（不臆造）。"""
+    shadow = db.query(EntityShadow).filter(EntityShadow.iri == doc_iri).one_or_none()
+    if shadow is None:
+        return None
+    return (shadow.properties_json or {}).get("hasDevelopmentPhase")
+
+
 def _commit_candidate(candidate: ExtractionCandidate, engine, db: Session) -> str:
-    """确认入库：落 committed_iri 并尽力投影到 KG/影子表（VR-2）。"""
+    """确认入库：落 committed_iri 并尽力投影到 KG/影子表（VR-2）。
+
+    doc_repo 来源候选（`source_ref` 为 facts# 文档 IRI）额外注入溯源回链 `extractedFrom`
+    并缺省继承文档阶段（007 US2，FR-004/SC-002，data-model §4）；非文档候选行为不变（零回归）。
+    """
     iri = candidate.aligned_iri or f"{candidate.target_class_iri}_{candidate.id.hex[:8]}"
     candidate.committed_iri = iri
     candidate.review_status = "committed"
+
+    src = candidate.source_ref or ""
+    if src.startswith(_FACTS_NS):  # 仅 doc_repo 来源候选注入回链
+        props = dict(candidate.extracted_properties or {})
+        props["extractedFrom"] = src                       # C4.1：回链文档个体
+        phase = _document_phase(src, db)
+        if phase:
+            props.setdefault("hasDevelopmentPhase", phase)  # C4.3：缺省继承、冲突不覆盖
+        candidate.extracted_properties = props
+
     try:  # best-effort World projection; fake engine 下为 no-op
         engine.project_entities([candidate.extracted_properties])
     except Exception:  # pragma: no cover

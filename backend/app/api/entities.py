@@ -21,11 +21,13 @@ def list_entities(
     q: str | None = None,
     module: str | None = None,
     class_iri: str | None = None,
+    development_phase: str | None = None,
     page: int = 1,
     page_size: int = 20,
     kg: KGStore = Depends(get_kg_store),
 ):
     items, total = kg.search_entities(query=q, module=module, class_iri=class_iri,
+                                      development_phase=development_phase,
                                       page=page, page_size=page_size)
     return EntitySearchResponse(
         items=[EntityShadowResponse.model_validate(i) for i in items],

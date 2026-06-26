@@ -56,6 +56,7 @@ class KGStore:
         query: str | None = None,
         module: str | None = None,
         class_iri: str | None = None,
+        development_phase: str | None = None,
         page: int = 1,
         page_size: int = 20,
     ) -> tuple[list[EntityShadow], int]:
@@ -65,6 +66,13 @@ class KGStore:
             q = q.filter(EntityShadow.module == module)
         if class_iri:
             q = q.filter(EntityShadow.class_iri == class_iri)
+        # 按研发阶段检索（007 US3，FR-005/SC-008）：过滤 properties_json.hasDevelopmentPhase
+        # ——复用既有影子表与查询，不新增检索框架。文档与派生实体同维过滤（C2.1/C2.2）。
+        if development_phase:
+            q = q.filter(
+                EntityShadow.properties_json["hasDevelopmentPhase"].as_string()
+                == development_phase
+            )
         if query:
             pattern = f"%{query}%"
             q = q.filter(or_(
@@ -103,6 +111,7 @@ class KGStore:
             "risk": "/slpra/risk/",
             "cleaning": "/slpra/cleaning/",
             "facility": "/slpra/facility/",
+            "document": "/slpra/document/",
         }
         for cls_iri in class_iris:
             for mod, prefix in module_prefixes.items():

@@ -13,6 +13,7 @@ from app.services.reasoning.defaults import (
     default_conflict_policies,
     default_decision_rules,
 )
+from app.services.reasoning.phase_context import phase_provenance_note
 
 logger = logging.getLogger(__name__)
 
@@ -25,6 +26,9 @@ class AssessmentResult:
         self.risk_level: str = "LowRisk"
         self.maco: MACOResult | None = None
         self.recommendations: list[str] = []
+        # 研发阶段溯源上下文（007 US3，FR-011：仅标注，非 golden-master 对外字段）。
+        # 缺省 None → 不参与 canonical 投影，对外 AssessmentResult 形状不变（SC-007）。
+        self.phase_context: dict | None = None
 
 
 def run_assessment(
@@ -55,6 +59,12 @@ def run_assessment(
 
     drug_classes = [str(c) for c in drug.class_iris]
     drug_props = drug.properties
+
+    # 研发阶段：仅作溯源标注（FR-011/Q3）。读自药物个体的 hasDevelopmentPhase，挂到
+    # result.phase_context；**不**进入 _build_facts → 任何规则前件都无法引用（红线）。
+    phase_iri = _extract_object_prop(drug_props, "hasDevelopmentPhase")
+    if phase_iri:
+        result.phase_context = phase_provenance_note(phase_iri)
 
     api_iri = _extract_object_prop(drug_props, "hasActiveIngredient")
     api_props: dict[str, Any] = {}

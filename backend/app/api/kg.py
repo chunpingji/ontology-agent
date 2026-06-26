@@ -98,6 +98,7 @@ def _detect_module(class_iris: list[str]) -> str:
         "drug": "/slpra/drug/", "equipment": "/slpra/equipment/",
         "contamination": "/slpra/contamination/", "risk": "/slpra/risk/",
         "cleaning": "/slpra/cleaning/", "facility": "/slpra/facility/",
+        "document": "/slpra/document/",
     }
     for cls_iri in class_iris:
         for mod, prefix in prefixes.items():

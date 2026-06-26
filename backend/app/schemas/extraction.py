@@ -103,3 +103,11 @@ class DBSourceSpec(BaseModel):
     dsn_ref: str  # 环境变量名（凭据经 env 注入，不入库, R7）
     schema_name: str | None = None
     include_tables: list[str] | None = None
+
+
+class DocExtractionRequest(BaseModel):
+    """文档批准/新版本事件 → 入待抽取队列（007 US2，FR-007/Q1 手动发起）。"""
+
+    doc_ref: str       # 文档个体 IRI（facts#…，溯源锚点；版本指针经 content_ref 承载）
+    content_ref: str   # 外部正文引用（按需取，不入库全文, Q2）
+    config_id: UUID

@@ -1,0 +1,148 @@
+@prefix rdf:   <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl:   <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+@prefix skos:  <http://www.w3.org/2004/02/skos/core#> .
+@prefix obo:   <http://purl.obolibrary.org/obo/> .
+@prefix slpra-doc: <https://ontology.pharma-gmp.cn/slpra/document/> .
+
+<https://ontology.pharma-gmp.cn/slpra/document/>
+    a owl:Ontology ;
+    owl:versionIRI <https://ontology.pharma-gmp.cn/slpra/document/0.1.0> ;
+    rdfs:label "SLPRA R&D Document Fact-Source Ontology"@en ;
+    rdfs:label "SLPRA 研发文档事实源本体"@zh ;
+    rdfs:comment "Module 8: R&D-phase regulatory documents as a capability-3 external fact-source. Documents-as-records (lifecycle metadata) materialize as A-Box individuals under facts#; this T-Box only declares the document class hierarchy, the DevelopmentPhase enumeration, and traceability properties (extractedFrom / hasDevelopmentPhase). No named individuals of document classes appear here (A-Box lives in facts# + DB shadow table, never in authoritative TTL)."@en ;
+    owl:imports <http://purl.obolibrary.org/obo/bfo.owl> .
+
+# ============================================================
+# Classes — Regulatory Documents (GDC, ⊑ BFO generically dependent continuant)
+# ============================================================
+
+slpra-doc:RegulatoryDocument a owl:Class ;
+    rdfs:subClassOf obo:BFO_0000031 ;
+    rdfs:label "Regulatory Document"@en ;
+    rdfs:label "法规文档"@zh ;
+    rdfs:comment "An R&D-phase document tracked as a first-class traceability/compliance anchor (ALCOA+). Its lifecycle metadata (type/version/status/development phase/source system/SHA) is the fact; its internal business entities are extraction candidates."@en .
+
+slpra-doc:INDDossier a owl:Class ;
+    rdfs:subClassOf slpra-doc:RegulatoryDocument ;
+    rdfs:label "IND Dossier"@en ;
+    rdfs:label "IND 申报资料"@zh .
+
+slpra-doc:TechTransferReport a owl:Class ;
+    rdfs:subClassOf slpra-doc:RegulatoryDocument ;
+    rdfs:label "Technology Transfer Report"@en ;
+    rdfs:label "技术转移报告"@zh .
+
+slpra-doc:ProcessValidationReport a owl:Class ;
+    rdfs:subClassOf slpra-doc:RegulatoryDocument ;
+    rdfs:label "Process Validation Report"@en ;
+    rdfs:label "工艺验证报告"@zh .
+
+slpra-doc:StabilityReport a owl:Class ;
+    rdfs:subClassOf slpra-doc:RegulatoryDocument ;
+    rdfs:label "Stability Report"@en ;
+    rdfs:label "稳定性报告"@zh .
+
+slpra-doc:NDA_BLADossier a owl:Class ;
+    rdfs:subClassOf slpra-doc:RegulatoryDocument ;
+    rdfs:label "NDA/BLA Dossier"@en ;
+    rdfs:label "NDA/BLA 申报资料"@zh .
+
+slpra-doc:PVReport a owl:Class ;
+    rdfs:subClassOf slpra-doc:RegulatoryDocument ;
+    rdfs:label "Pharmacovigilance Report"@en ;
+    rdfs:label "药物警戒报告"@zh .
+
+# ============================================================
+# Classes — Development Phase (⊑ BFO process; cross-cutting traceability dimension)
+# ============================================================
+
+slpra-doc:DevelopmentPhase a owl:Class ;
+    rdfs:subClassOf obo:BFO_0000015 ;
+    rdfs:label "Development Phase"@en ;
+    rdfs:label "研发阶段"@zh ;
+    rdfs:comment "The drug R&D lifecycle phase a document or entity is situated in. Shared reference-value individuals (enumeration), hand-authored in T-Box like risk:RiskLevel; used as traceability metadata and risk/compliance context."@en .
+
+# Development Phase Individuals (ordered enumeration via skos:notation)
+slpra-doc:Phase_DrugDiscovery a slpra-doc:DevelopmentPhase ;
+    skos:notation "1" ;
+    rdfs:label "Drug Discovery"@en ;
+    rdfs:label "药物发现"@zh ;
+    rdfs:comment "Target identification, hit-to-lead, lead optimization."@en .
+
+slpra-doc:Phase_Preclinical a slpra-doc:DevelopmentPhase ;
+    skos:notation "2" ;
+    rdfs:label "Preclinical"@en ;
+    rdfs:label "临床前"@zh ;
+    rdfs:comment "Nonclinical safety/efficacy studies prior to first-in-human."@en .
+
+slpra-doc:Phase_ClinicalI a slpra-doc:DevelopmentPhase ;
+    skos:notation "3" ;
+    rdfs:label "Clinical Phase I"@en ;
+    rdfs:label "临床Ⅰ期"@zh ;
+    rdfs:comment "First-in-human safety, tolerability, pharmacokinetics."@en .
+
+slpra-doc:Phase_ClinicalII_III a slpra-doc:DevelopmentPhase ;
+    skos:notation "4" ;
+    rdfs:label "Clinical Phase II/III"@en ;
+    rdfs:label "临床Ⅱ/Ⅲ期"@zh ;
+    rdfs:comment "Efficacy and confirmatory clinical trials."@en .
+
+slpra-doc:Phase_NDA_BLA a slpra-doc:DevelopmentPhase ;
+    skos:notation "5" ;
+    rdfs:label "NDA/BLA Submission"@en ;
+    rdfs:label "NDA/BLA 申报"@zh ;
+    rdfs:comment "Marketing authorization application and review."@en .
+
+slpra-doc:Phase_PostMarket a slpra-doc:DevelopmentPhase ;
+    skos:notation "6" ;
+    rdfs:label "Post-Market"@en ;
+    rdfs:label "上市后"@zh ;
+    rdfs:comment "Commercial manufacturing, pharmacovigilance, lifecycle management."@en .
+
+# ============================================================
+# Object Properties — Traceability (cross-cutting: NO rdfs:domain by design)
+# ============================================================
+# hasDevelopmentPhase / extractedFrom intentionally omit rdfs:domain: they apply to
+# both documents and business entities, so a RegulatoryDocument domain would mis-infer
+# business entities as documents (US2). Range is constrained.
+
+slpra-doc:hasDevelopmentPhase a owl:ObjectProperty ;
+    rdfs:range slpra-doc:DevelopmentPhase ;
+    rdfs:label "has development phase"@en ;
+    rdfs:label "处于研发阶段"@zh .
+
+slpra-doc:extractedFrom a owl:ObjectProperty ;
+    rdfs:range slpra-doc:RegulatoryDocument ;
+    rdfs:label "extracted from"@en ;
+    rdfs:label "抽取自"@zh ;
+    rdfs:comment "Links a candidate business entity (capability-2 extraction) back to the source document record (provenance back-link)."@en .
+
+# ============================================================
+# Datatype Properties — Document lifecycle metadata (domain RegulatoryDocument)
+# ============================================================
+
+slpra-doc:documentVersion a owl:DatatypeProperty ;
+    rdfs:domain slpra-doc:RegulatoryDocument ;
+    rdfs:range xsd:string ;
+    rdfs:label "document version"@en ;
+    rdfs:label "文档版本"@zh .
+
+slpra-doc:approvalStatus a owl:DatatypeProperty ;
+    rdfs:domain slpra-doc:RegulatoryDocument ;
+    rdfs:range xsd:string ;
+    rdfs:label "approval status"@en ;
+    rdfs:label "审批状态"@zh .
+
+slpra-doc:sourceSystem a owl:DatatypeProperty ;
+    rdfs:domain slpra-doc:RegulatoryDocument ;
+    rdfs:range xsd:string ;
+    rdfs:label "source system"@en ;
+    rdfs:label "来源系统"@zh .
+
+slpra-doc:contentHash a owl:DatatypeProperty ;
+    rdfs:domain slpra-doc:RegulatoryDocument ;
+    rdfs:range xsd:string ;
+    rdfs:label "content hash (SHA-256)"@en ;
+    rdfs:label "内容哈希 (SHA-256)"@zh .

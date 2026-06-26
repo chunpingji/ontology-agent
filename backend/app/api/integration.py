@@ -35,7 +35,7 @@ from app.schemas.integration import (
     TestConnectionResponse,
     WebhookResponse,
 )
-from app.services.integration.aps_connector import APSConnector
+from app.services.integration.connector_factory import connector_for
 from app.services.integration.events import fact_event_bus
 from app.services.integration.materializer import FactMaterializer
 
@@ -104,12 +104,9 @@ async def test_connector(
     c = db.get(IntegrationConnector, connector_id)
     if not c:
         raise HTTPException(404)
-    aps = APSConnector(
-        c.connection_config, c.field_mapping,
-        timeout=float(c.poll_interval_seconds or 2) + 3.0,
-    )
+    conn = connector_for(c)
     t0 = time.monotonic()
-    ok = await aps.test_connection()
+    ok = await conn.test_connection()
     latency_ms = int((time.monotonic() - t0) * 1000)
     if not ok:
         return TestConnectionResponse(ok=False, latency_ms=latency_ms, error="探活失败/超时")

@@ -2,10 +2,11 @@
 
 import { useState } from "react";
 import { ConnectorManager } from "@/components/integration/connector-manager";
+import { DocRepoPanel } from "@/components/integration/doc-repo-panel";
 import { RealtimeInferencePanel } from "@/components/integration/realtime-inference-panel";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-type Tab = "dashboard" | "connectors";
+type Tab = "dashboard" | "connectors" | "documents";
 
 export default function IntegrationPage() {
   const [tab, setTab] = useState<Tab>("dashboard");
@@ -28,6 +29,12 @@ export default function IntegrationPage() {
             >
               连接器管理
             </TabsTrigger>
+            <TabsTrigger
+              value="documents"
+              className="rounded-none border-b-2 border-transparent bg-transparent px-3 py-2 text-sm text-muted-foreground shadow-none data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:font-semibold data-[state=active]:text-primary data-[state=active]:shadow-none"
+            >
+              研发文档溯源
+            </TabsTrigger>
           </TabsList>
         </div>
 
@@ -36,6 +43,9 @@ export default function IntegrationPage() {
         </TabsContent>
         <TabsContent value="connectors" className="mt-0">
           <ConnectorManager />
+        </TabsContent>
+        <TabsContent value="documents" className="mt-0">
+          <DocRepoPanel />
         </TabsContent>
       </Tabs>
     </div>

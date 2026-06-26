@@ -57,6 +57,11 @@ async def run_extraction_pipeline(
         if config.source_type == "database":
             return await _run_database_branch(job, config, source_ref, db)
 
+        # 研发文档源（007 US2）：source_ref = 文档个体 IRI（供 extractedFrom 回链），
+        # 按 content_ref 按需取正文 → LLM 抽取 → 对齐 → 候选入复核队列（review_status='pending'）。
+        if config.source_type == "doc_repo":
+            return await _run_doc_repo_branch(job, config, engine, db)
+
         # Stage 1: Parse
         if config.source_type == "excel":
             raw_rows = parse_excel(file_path, column_mapping=config.column_mapping or {})
@@ -198,6 +203,97 @@ async def _run_database_branch(
     job.status = "reviewing"
     db.commit()
     _emit(job, "reviewing", 100, "reviewing")
+    return job
+
+
+def fetch_document_content(
+    content_ref: str | None, source_config: dict | None = None
+) -> list[dict]:
+    """按 `content_ref` 外部引用按需取文档正文（Q2：平台不持久化全文）。
+
+    返回结构化字段行（`list[dict]`），供 `extract_with_fallback` 在降级时直通。
+    inline/上传过渡模式从 `source_config['inline_content']` 取（测试/过渡）；`http` 模式（US4）
+    经外部端点取。正文仅在抽取过程中存在，不回写 `source_config`、不另建持久化全文列。
+    """
+    return [dict(r) for r in ((source_config or {}).get("inline_content") or [])]
+
+
+async def _run_doc_repo_branch(
+    job: ExtractionJob,
+    config: ExtractionConfig,
+    engine: OntologyEngine,
+    db: Session,
+) -> ExtractionJob:
+    """研发文档源分支（007 US2，content-extraction C2）。
+
+    `source_ref = job.source_config['doc_ref']`（文档个体 IRI，非 `source_filename`）——每个候选
+    据此携溯源来源，确认入库时 `_commit_candidate` 注入 `extractedFrom` 回链（C4）。复用既有
+    `align_entity`/`_compute_group_key`/`extract_with_fallback`（降级）——doc_repo 不另起
+    对齐栈（宪章 V）。
+    """
+    source_cfg = job.source_config or {}
+    source_ref = source_cfg["doc_ref"]          # 文档个体 IRI（溯源锚点）
+    content_ref = source_cfg.get("content_ref")
+
+    job.status = "extracting"
+    db.commit()
+    _emit(job, "extracting", 40, "extracting")
+
+    # 按需取正文（Q2：不持久化全文）。
+    raw_rows = fetch_document_content(content_ref, source_cfg)
+
+    instances, degraded_reason = await extract_with_fallback(
+        raw_rows, config.target_class_iri, property_schema=[],
+        controlled_vocab=CONTROLLED_VOCAB,
+    )
+    degraded = degraded_reason is not None
+
+    job.status = "aligning"
+    db.commit()
+    _emit(job, "aligning", 70, "aligning", degraded=degraded)
+
+    id_prop = _find_id_property(config.column_mapping)
+    label_prop = _find_label_property(config.column_mapping)
+    embedder = get_embedder()
+    total = 0
+    instance_candidates: list[ExtractionCandidate] = []
+
+    for entity_data in instances:
+        props = tag_controlled_vocab(dict(entity_data))
+        alignment = align_entity(
+            candidate=props,
+            target_class_iri=config.target_class_iri,
+            engine=engine,
+            id_property=id_prop,
+            label_property=label_prop,
+            threshold=settings.lexical_match_threshold,
+            embedder=embedder,
+            semantic_threshold=settings.semantic_match_threshold,
+        )
+        group_key = _compute_group_key(props, config.target_class_iri, id_prop)
+        cand = ExtractionCandidate(
+            job_id=job.id,
+            target_class_iri=config.target_class_iri,
+            extracted_properties=props,
+            candidate_kind="instance",
+            group_key=group_key,
+            source_ref=source_ref,            # = 文档个体 IRI（C2.1）
+            degraded_reason=degraded_reason,
+            alignment_result=alignment.action,
+            aligned_iri=alignment.match_iri,
+            match_score=alignment.match_score,
+            review_status="pending",          # C2.2：不自动断言，一律入复核队列
+        )
+        db.add(cand)
+        instance_candidates.append(cand)
+        total += 1
+
+    _mark_canonical(instance_candidates)
+
+    job.total_candidates = total
+    job.status = "reviewing"
+    db.commit()
+    _emit(job, "reviewing", 100, "reviewing", degraded=degraded)
     return job
 
 
