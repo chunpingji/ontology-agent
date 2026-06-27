@@ -33,7 +33,7 @@
 |---|------|---------|------|------|
 | D1 | **skos:altLabel / owl:sameAs 同义词增强** | §10 尾部"尚未实现"第 2 项 | `type_spans` 仅匹配 `rdfs:label`，不利用同义词属性 | 对中英文表述不一致的实体召回有损（如"API" vs "活性成分"） |
 | D2 | **Object Property 关系抽取** | §10 第 3 项 | 仅抽取 `DatatypeProperty` 值，实体间关系（"含有"、"生产于"等）未覆盖 | 知识图谱缺少实体关联边 |
-| D3 | **向量数据库替代进程内缓存** | §10 第 1 项 | `type_spans` 用 numpy 矩阵乘 + `_index_cache` dict；当前 SLPRA ~201 类，性能可接受 | 本体规模超 1000+ 类时需评估 Faiss/Milvus |
+| D3 | **向量数据库替代进程内缓存** | §10 第 1 项 | `type_spans` 用 numpy 矩阵乘 + `_index_cache` dict；当前 SLPRA ~201 类，性能可接受 | 选型 **LanceDB**（嵌入式、零运维、列存向量原生）；embedding 模型与 GLiNER backbone 对齐——GLiNER multi-v2.1 编码器为 `mdeberta-v3-base`（768-dim），阶段二语义匹配的 `SentenceTransformerEmbedder` 应切换到同维同语系模型（如 `bge-base-zh-v1.5` 768-dim 或直接复用 mdeberta token embedding），确保向量空间一致、避免跨模型 cosine 偏移 |
 
 ---
 
