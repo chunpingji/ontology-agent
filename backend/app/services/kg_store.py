@@ -47,6 +47,9 @@ class KGStore:
             count += 1
         return count
 
+    def get_shadow(self, iri: str) -> EntityShadow | None:
+        return self.db.query(EntityShadow).filter(EntityShadow.iri == iri).first()
+
     def delete_shadow(self, iri: str) -> None:
         self.db.query(EntityShadow).filter(EntityShadow.iri == iri).delete()
         self.db.commit()

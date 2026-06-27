@@ -234,13 +234,13 @@ export default function OntologyWorkbenchPage() {
                 <TabsContent value="关系" className="mt-0">
                   <div className="space-y-6">
                     <LinkTypePanel
-                      key={selectedIri ?? "none"}
+                      key={`link-${selectedIri ?? "none"}`}
                       selectedClassIri={selectedIri}
                       focusedLinkIri={focusedLinkIri}
                       onFocusLink={setFocusedLinkIri}
                       onChanged={() => handleChanged(selectedIri ?? undefined)}
                     />
-                    <RestrictionEditor key={selectedIri ?? "none"} classIri={selectedIri} conflict={conflict} onChanged={() => handleChanged(selectedIri ?? undefined)} />
+                    <RestrictionEditor key={`restr-${selectedIri ?? "none"}`} classIri={selectedIri} conflict={conflict} onChanged={() => handleChanged(selectedIri ?? undefined)} />
                   </div>
                 </TabsContent>
                 <TabsContent value="属性" className="mt-0">

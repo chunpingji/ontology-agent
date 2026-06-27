@@ -1,31 +1,38 @@
 <!--
 Sync Impact Report
 ==================
-Version change: (template, unratified) → 1.0.0
-Rationale: Initial ratification — first concrete constitution replacing the unfilled
-template. MAJOR baseline established.
+Version change: 1.0.0 → 1.1.0
+Rationale: MINOR amendment — codifies the air-gap / offline-first operating
+posture established by feature 008 (gliner-ner-extraction). New principle added
+and the Security & Compliance section materially expanded; no principle removed
+or redefined (not MAJOR); more than wording (not PATCH).
 
-Principles defined (5):
+Principles (6, was 5):
   I.   规范驱动开发 (Spec-Driven Development)
   II.  本体权威性与保真 (Ontology Authority & Fidelity) — NON-NEGOTIABLE
   III. 可追溯与审计 (Traceability & Auditability)
   IV.  测试纪律与契约优先 (Test Discipline & Contract-First)
   V.   最小复杂度与复用 (Minimal Complexity & Reuse)
+  VI.  离线优先与优雅降级 (Offline-First & Graceful Degradation) — ADDED
 
-Added sections:
-  - 安全与合规 (Security & Compliance)
-  - 开发工作流与质量门禁 (Development Workflow & Quality Gates)
-  - Governance
+Added sections / content:
+  + Principle VI. 离线优先与优雅降级 (Offline-First & Graceful Degradation)
+  + 安全与合规：新增「模型权重溯源与离线交付」条款（权重不入 git、SHA256 交付、收货校验）
+  + 开发工作流与质量门禁：评审清单增列「离线优先与降级语义」核查项
+
+Renamed principles: none.
+Removed sections: none.
 
 Templates requiring updates:
   ✅ .specify/templates/plan-template.md — Constitution Check gate is generic
-     ("Gates determined based on constitution file"); resolves against these
-     principles with no edit needed.
+     ("[Gates determined based on constitution file]"); resolves against the new
+     Principle VI with no edit needed.
   ✅ .specify/templates/spec-template.md — principle-agnostic; no change required.
   ✅ .specify/templates/tasks-template.md — principle-agnostic; no change required.
   ✅ CLAUDE.md — SPECKIT managed block points at active plan; no change required.
+  ✅ README.md — 008 已记录 air-gap 模型交付与离线运行，与 Principle VI 一致，无需改动。
 
-Follow-up TODOs: none. Ratification date set to first-adoption date 2026-06-20.
+Follow-up TODOs: none. Ratification date retained (2026-06-20); Last Amended 2026-06-26.
 -->
 
 # SLPRA 本体智能平台 Constitution
@@ -91,13 +98,34 @@ Follow-up TODOs: none. Ratification date set to first-adoption date 2026-06-20.
 **Rationale**: 平台为内网、小并发、长生命周期系统；克制复杂度优先于炫技，便于维护
 与审计。
 
+### VI. 离线优先与优雅降级 (Offline-First & Graceful Degradation)
+
+平台以 **air-gap（无外网）** 为默认运行姿态，运行期 MUST NOT 依赖出网：
+- 默认本地优先：结构化源走确定性映射，自由文本走本地零样本 NER / 本地嵌入器；凡
+  需出网的能力（云端 LLM 等）MUST 默认关闭，仅在**显式开启且配置就绪**时方可触发
+  （如 `llm_cloud_enabled AND anthropic_api_key`）。
+- 离线 MUST NOT 被标记为降级（`degraded`）：关闭可选云端/模型能力是**正常态**；
+  `degraded` 仅当某能力被显式开启却**不可兑现**时为真，且 MUST 附非空原因。
+- 可选本地模型（NER / 嵌入器）在缺包、缺权重或功能关闭时 MUST **静默降级**——
+  结构化主路径**零回归**，作业不失败、不标 `degraded`，仅记 `WARNING` 供运维可见。
+- 运行期 MUST 强制离线：`local_files_only=True` 固定于代码，辅以
+  `HF_HUB_OFFLINE` / `TRANSFORMERS_OFFLINE`，杜绝任何远程 repo 解析或权重外发。
+- 本地模型推理（CPU 同步阻塞）MUST 经 `asyncio.to_thread` 卸载，不得阻塞事件循环。
+
+**Rationale**: 平台部署于临床制药内网 / air-gap 主机，运行期严禁出网。把「离线正常、
+云端可选、缺件降级不失败」固化为原则，确保任一特性默认即可在断网主机零回归运行，
+云端能力始终是可审计的显式增量而非隐性依赖。
+
 ## 安全与合规 (Security & Compliance)
 
 - 写/发布端点 MUST 基于角色门禁（最小权限）：`senior_analyst` 方可编辑与发布，
   `operator` / `qa` 按职责只读或受限。
 - 身份经可信网关注入（`X-User`/`X-Role`），SSO MUST 设计为可插拔后续接入。
 - 临床/制药领域数据 MUST 按内网部署与最小暴露原则处理；密钥与凭据 MUST NOT 入库
-  或提交至版本库。
+  或提交至版本库（如 `anthropic_api_key` 仅经环境注入）。
+- 模型权重溯源与离线交付：大体量模型权重 MUST NOT 入 git（`backend/models/` 已忽略），
+  MUST 经制品库随 SHA256 校验和交付，收货端逐字校验后方可加载；`fetch_models.sh`
+  与生成的 `MODELS.sha256` 为可审计的交付凭据。
 - 与推理绑定的合规判定属能力三范围，在其特性正式纳入前 MUST NOT 在能力一中隐式实现。
 
 ## 开发工作流与质量门禁 (Development Workflow & Quality Gates)
@@ -105,7 +133,8 @@ Follow-up TODOs: none. Ratification date set to first-adoption date 2026-06-20.
 - `plan.md` MUST 含 Constitution Check，并在 Phase 0 前与 Phase 1 后各评估一次；
   违例 MUST 在 Complexity Tracking 中论证，否则阻断。
 - 数据库结构变更 MUST 经 Alembic 迁移；启动应用迁移后由 TTL 幂等投影补种。
-- 代码评审 MUST 核查：本体保真、双存储一致、版本/审计落点、角色门禁、依赖最小化。
+- 代码评审 MUST 核查：本体保真、双存储一致、版本/审计落点、角色门禁、依赖最小化、
+  离线优先与降级语义（缺件零回归、离线非 `degraded`）。
 - 范围变更 MUST 经澄清并回写规范后方可进入实现。
 
 ## Governance
@@ -119,4 +148,4 @@ Follow-up TODOs: none. Ratification date set to first-adoption date 2026-06-20.
 - **合规审查**：所有 PR/评审 MUST 验证对本宪章的遵从；复杂度 MUST 被论证；运行期
   开发指引以 `CLAUDE.md` 的 SPECKIT 区块所指计划为准。
 
-**Version**: 1.0.0 | **Ratified**: 2026-06-20 | **Last Amended**: 2026-06-20
+**Version**: 1.1.0 | **Ratified**: 2026-06-20 | **Last Amended**: 2026-06-26

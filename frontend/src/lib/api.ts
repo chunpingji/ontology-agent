@@ -453,6 +453,7 @@ export interface ExtractionJob {
   id: string;
   source_type: string;
   source_filename: string | null;
+  document_path: string | null;
   status: string;
   total_candidates: number;
   approved_count: number;
@@ -490,9 +491,31 @@ export interface GroupedCandidates {
 export interface JobProgressEvent {
   job_id: string;
   stage: string;
+  annotation_stage?: string;
   pct: number;
   status: string;
   degraded: boolean;
+}
+
+export async function pauseAnnotation(jobId: string): Promise<void> {
+  await fetch(`${API_BASE}/api/extraction/jobs/${jobId}/annotation/pause`, {
+    method: "POST",
+    headers: identityHeaders(),
+  });
+}
+
+export async function resumeAnnotation(jobId: string): Promise<void> {
+  await fetch(`${API_BASE}/api/extraction/jobs/${jobId}/annotation/resume`, {
+    method: "POST",
+    headers: identityHeaders(),
+  });
+}
+
+export async function rerunAnnotation(jobId: string): Promise<void> {
+  await fetch(`${API_BASE}/api/extraction/jobs/${jobId}/annotation/rerun`, {
+    method: "POST",
+    headers: identityHeaders(),
+  });
 }
 
 // Types
@@ -941,3 +964,72 @@ export const updateConflictPolicy = (dimension: string, data: ConflictPolicyUpda
   fetchAPI<TBoxConflictPolicy>(`/api/ontology/conflict-policies/${encodeURIComponent(dimension)}`, {
     method: "PUT", ...jsonBody(data),
   });
+
+// ===========================================================================
+// 文档标注 + 自动抽取 + 系统配置 + 全类列表 (UI 改进)
+// ===========================================================================
+
+export interface PropertyTriple {
+  iri: string;
+  label: string;
+  value: string;
+}
+
+export interface EntityTriple {
+  entity_text: string;
+  entity_class_iri: string;
+  entity_class_label: string;
+  segment_index: number;
+  span_start: number;
+  span_end: number;
+  properties: PropertyTriple[];
+}
+
+export interface AnnotatedDocument {
+  source_type: string;
+  filename: string | null;
+  content: unknown;
+  warnings?: string[];
+  triples?: EntityTriple[];
+}
+export const getAnnotatedDocument = (jobId: string) =>
+  fetchAPI<AnnotatedDocument>(`/api/extraction/jobs/${jobId}/annotated-document`);
+
+export async function createAutoExtractionJob(params: {
+  file: File; source_type: string; target_class_iris?: string[];
+}): Promise<ExtractionJob> {
+  const fd = new FormData();
+  fd.append("file", params.file);
+  fd.append("source_type", params.source_type);
+  if (params.target_class_iris) {
+    fd.append("target_class_iris", JSON.stringify(params.target_class_iris));
+  }
+  const res = await fetch(`${API_BASE}/api/extraction/jobs/auto`, {
+    method: "POST", headers: identityHeaders(), body: fd,
+  });
+  if (!res.ok) throw new Error(`API ${res.status}: ${await res.text()}`);
+  return res.json();
+}
+
+export interface SystemConfigEntry {
+  key: string;
+  value: unknown;
+  updated_at: string | null;
+}
+export const listSystemConfigs = () =>
+  fetchAPI<SystemConfigEntry[]>("/api/system-config");
+export const getSystemConfig = (key: string) =>
+  fetchAPI<SystemConfigEntry>(`/api/system-config/${encodeURIComponent(key)}`);
+export const updateSystemConfig = (key: string, value: unknown) =>
+  fetchAPI<SystemConfigEntry>(`/api/system-config/${encodeURIComponent(key)}`, {
+    method: "PUT", ...jsonBody({ value }),
+  });
+
+export interface OntologyClassFlat {
+  iri: string;
+  name: string;
+  label: string | null;
+  module_key: string;
+}
+export const getAllClasses = () =>
+  fetchAPI<OntologyClassFlat[]>("/api/ontology/all-classes");

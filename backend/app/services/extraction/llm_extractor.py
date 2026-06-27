@@ -79,25 +79,32 @@ async def extract_with_fallback(
     few_shot_examples: list[dict] | None = None,
     controlled_vocab: dict[str, list[str]] | None = None,
 ) -> tuple[list[dict[str, Any]], str | None]:
-    """LLM 抽取并在不可用时回退到结构化原始数据（FR-007, R3）。
+    """云端 LLM（opt-in）抽取并在不可用时回退结构化原始数据（FR-002/003/007, R2/R3）。
 
-    返回 ``(entities, degraded_reason)``：``degraded_reason`` 非空表示已降级，
-    调用方应在候选上标记并向 SSE 报 ``degraded=true``，但**不**使作业失败。
+    air-gap 默认：云端 LLM 为可选增强，需 ``llm_cloud_enabled AND anthropic_api_key``
+    双条件齐备才触发；否则结构化源原样返回、``degraded_reason=None``——**离线为正常态，
+    非降级**。``degraded_reason`` 仅在云端被显式开启却无法兑现（无 Key / 调用失败 /
+    返回空）时非空；非空表示已降级，调用方应在候选上标记并向 SSE 报 ``degraded=true``，
+    但**不**使作业失败。
     """
+    # 云端关（默认）→ 离线正常态，结构化原样返回、不降级。
+    if not settings.llm_cloud_enabled:
+        return source_data, None
+    # 云端显式开启却缺 Key → 无法兑现，真实降级（配置缺失）。
     if not settings.anthropic_api_key:
-        logger.warning("No Anthropic API key configured; falling back to structured extraction")
-        return source_data, "LLM 不可用：未配置 API Key，回退结构化抽取"
+        logger.warning("云端 LLM 已开启但未配置 API Key；回退结构化抽取")
+        return source_data, "云端 LLM 已开启但未配置 API Key，回退结构化抽取"
     try:
         entities = await extract_entities_with_llm(
             source_data, target_class_iri, property_schema, few_shot_examples,
             controlled_vocab=controlled_vocab,
         )
         if not entities:
-            return source_data, "LLM 返回为空，回退结构化抽取"
+            return source_data, "云端 LLM 返回为空，回退结构化抽取"
         return entities, None
     except Exception as exc:  # pragma: no cover - 网络/SDK 异常路径
-        logger.exception("LLM extraction failed; falling back to structured extraction")
-        return source_data, f"LLM 调用失败，回退结构化抽取：{type(exc).__name__}"
+        logger.exception("云端 LLM 抽取失败；回退结构化抽取")
+        return source_data, f"云端 LLM 调用失败，回退结构化抽取：{type(exc).__name__}"
 
 
 async def extract_entities_with_llm(

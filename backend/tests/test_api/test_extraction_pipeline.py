@@ -83,8 +83,12 @@ def test_progress_sse_emits_stages(client, analyst_headers):
         assert stage in body
 
 
-def test_excel_instance_candidates_and_llm_degraded(client, analyst_headers):
-    """LLM 不可用（测试默认无 key）→ 回退、候选带 degraded_reason、作业完成（FR-007）。"""
+def test_excel_instance_candidates_offline_not_degraded(client, analyst_headers):
+    """air-gap 默认（云端关、无 key）→ 结构化抽取成功、候选**非降级**（FR-002/003）。
+
+    008 翻转门控：离线为正常态，`degraded_reason` 恒为 None；`degraded` 仅源于
+    云端被显式开启却无法兑现。
+    """
     cfg_id = _make_config(client, analyst_headers)
     job = client.post(
         "/api/extraction/jobs",
@@ -96,7 +100,7 @@ def test_excel_instance_candidates_and_llm_degraded(client, analyst_headers):
     members = cands["ungrouped"] + [c for g in cands["groups"] for c in g["candidates"]]
     assert len(members) >= 2
     assert all(m["candidate_kind"] == "instance" for m in members)
-    assert all(m["degraded_reason"] for m in members)
+    assert all(m["degraded_reason"] is None for m in members)  # 离线非降级（门控翻转后）
     # 受控词表归一化注入（316L不锈钢 / 304不锈钢）。
     assert any("_controlled_vocab" in m["extracted_properties"] for m in members)
 

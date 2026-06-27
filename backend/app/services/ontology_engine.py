@@ -23,6 +23,8 @@ MODULE_NAMES = {
     "risk": "https://ontology.pharma-gmp.cn/slpra/risk/",
     "cleaning": "https://ontology.pharma-gmp.cn/slpra/cleaning/",
     "facility": "https://ontology.pharma-gmp.cn/slpra/facility/",
+    "personnel": "https://ontology.pharma-gmp.cn/slpra/personnel/",
+    "document": "https://ontology.pharma-gmp.cn/slpra/document/",
     "integration": "https://ontology.pharma-gmp.cn/slpra/integration/",
 }
 
@@ -35,11 +37,13 @@ MODULE_FILES = {
     "risk": "slpra-risk.ttl",
     "cleaning": "slpra-cleaning.ttl",
     "facility": "slpra-facility.ttl",
+    "personnel": "slpra-personnel.ttl",
+    "document": "slpra-document.ttl",
     "integration": "slpra-integration.ttl",
 }
 
 # integration owl:imports 全部内部模块，故须最后加载（依赖先就位）。
-_LOAD_ORDER = ["drug", "equipment", "contamination", "risk", "cleaning", "facility", "integration"]
+_LOAD_ORDER = ["drug", "equipment", "contamination", "risk", "cleaning", "facility", "personnel", "document", "integration"]
 
 # 外部上层本体（BFO）：随包提供的离线本地副本。各模块的类挂在 BFO 顶层范畴下，必须先于
 # 模块加载，否则父范畴/父类 IRI 为空（owl:imports 在离线容器内无法联网解析）。
@@ -360,6 +364,61 @@ class OntologyEngine:
                 for ind in onto.individuals():
                     individuals.append(self._individual_to_info(ind))
             return individuals
+
+    def get_data_properties_by_domain(self, class_iri: str) -> list[dict]:
+        """返回 rdfs:domain 包含此类的数据属性 ``[{iri, name, label}]``。
+
+        规避 ``get_class_properties()`` 不返回 ``rdfs:domain`` 声明属性的 bug；
+        与 ``data_property_domain_classes()`` 同机制，但按单类过滤。
+        """
+        with self._lock:
+            cls = self._world.search_one(iri=class_iri)
+            if cls is None or not isinstance(cls, owlready2.ThingClass):
+                return []
+            props: list[dict] = []
+            seen: set[str] = set()
+            for prop in self._world.data_properties():
+                if cls in prop.domain and prop.iri not in seen:
+                    seen.add(prop.iri)
+                    props.append({
+                        "iri": prop.iri,
+                        "name": prop.name,
+                        "label": self._get_label(prop) or prop.name,
+                    })
+            return props
+
+    def data_property_labels(self) -> list[str]:
+        """返回所有数据属性的标签（优先中文），供 NER 种子标签第三源使用。"""
+        with self._lock:
+            if not self._world:
+                return []
+            labels: list[str] = []
+            seen: set[str] = set()
+            for prop in self._world.data_properties():
+                lbl = self._get_label(prop)
+                if lbl and lbl not in seen:
+                    seen.add(lbl)
+                    labels.append(lbl)
+            return labels
+
+    def data_property_domain_classes(self) -> list[tuple[str, str]]:
+        """返回声明为某数据属性 rdfs:domain 的类 ``(iri, label)`` 列表（NER 种子用）。
+
+        注：owlready2 ``cls.get_class_properties()`` **不**返回经 ``rdfs:domain`` 声明
+        的数据属性（仅返回注解/限制属性），故 ``get_class_detail`` 的属性面板对这些类为空、
+        NER 标签退化为类名兜底。此处直接按属性 domain 反查规避；根因修复留待后续 feature
+        （见 document_annotator 的告警记录）。返回去重、按首次出现保序。
+        """
+        with self._lock:
+            if not self._world:
+                return []
+            out: dict[str, str] = {}
+            for prop in self._world.data_properties():
+                for dom in prop.domain:
+                    iri = getattr(dom, "iri", None)
+                    if iri and iri not in out:
+                        out[iri] = self._get_label(dom) or getattr(dom, "name", iri)
+            return list(out.items())
 
     # ----------------------------------------------------------------- #
     # T-Box write methods (R1, FR-001..005) — used at publish time to

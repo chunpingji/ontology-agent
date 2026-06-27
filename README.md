@@ -38,11 +38,58 @@
 ## 前置条件
 
 - Docker + Docker Compose v2（`>= 2.24`,override 用到了 `!override` 标签）
-- LLM 抽取需要 `ANTHROPIC_API_KEY`,从宿主环境或 `.env` 注入,**不会**写进镜像:
+- 抽取引擎**默认本地、离线优先**（008）：结构化源走确定性映射,自由文本（Word 正文 /
+  Excel 自由文本列）走本地零样本 NER。**云端 LLM 为可选项,默认关闭**,仅在显式开启且
+  配置 Key 时触发;关闭即离线正常态,**非降级**。
+- 云端 LLM（可选）需要 `ANTHROPIC_API_KEY`,从宿主环境或 `.env` 注入,**不会**写进镜像;
+  同时显式打开 `LLM_CLOUD_ENABLED`:
 
   ```bash
   echo 'ANTHROPIC_API_KEY=sk-ant-...' >> .env
+  echo 'LLM_CLOUD_ENABLED=true'       >> .env   # 缺省 false → 纯本地,不出网
   ```
+
+---
+
+## 本地抽取模型（air-gap：GLiNER NER + 中文嵌入器）
+
+平台部署于 **air-gap（无网络）** 环境,运行期**严禁出网**。本地 NER（`urchade/gliner_multi-v2.1`）
+与语义对齐嵌入器（`BAAI/bge-small-zh-v1.5`）的权重在**有网的预备环境**一次性下载,随制品库
+（artifact repo）连同 SHA256 校验和交付到 air-gap 主机,运行期纯本地加载。
+
+权重**不入 git**（`.gitignore` 已忽略 `backend/models/`）;`backend/scripts/fetch_models.sh`
+与生成的 `MODELS.sha256` 才是可审计的交付凭据。
+
+**1. 安装可选依赖**(后端容器/环境):本地 NER 走 `gliner` extra,语义对齐走 `semantic` extra:
+
+```bash
+cd backend
+uv sync --extra gliner --extra semantic     # 仅需 NER 用 --extra gliner
+```
+
+**2. 预备环境（有网）下载权重 + 生成校验和**:
+
+```bash
+pip install -U "huggingface_hub[cli]"        # 仅预备环境需要
+backend/scripts/fetch_models.sh              # 下载两模型 → backend/models/ + MODELS.sha256
+```
+
+**3. air-gap 主机收货校验**(证明权重逐字未被篡改/截断):
+
+```bash
+backend/scripts/fetch_models.sh --verify     # 按 MODELS.sha256 校验本地权重
+```
+
+**4. 运行期强制离线**(env,杜绝任何远程 repo 解析):
+
+```bash
+echo 'HF_HUB_OFFLINE=1'      >> .env         # huggingface_hub 全程离线
+echo 'TRANSFORMERS_OFFLINE=1' >> .env         # transformers 全程离线
+```
+
+> 配套 `local_files_only=True`(代码内已固定),即便环境变量遗漏也绝不外发。
+> 缺权重/缺包/功能关闭时本地 NER 静默降级——结构化主路径零回归,作业不失败、不标 degraded。
+> 启动期 `lifespan` 会预热两模型,消除首作业冷启动;预热失败同样不阻断启动。
 
 ---
 

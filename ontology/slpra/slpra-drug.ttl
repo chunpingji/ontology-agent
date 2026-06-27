@@ -324,42 +324,50 @@ slpra-drug:producesResidue a owl:ObjectProperty ;
 slpra-drug:ld50_mg_per_kg a owl:DatatypeProperty ;
     rdfs:domain slpra-drug:AcuteToxicity ;
     rdfs:range xsd:decimal ;
-    rdfs:label "LD50 (mg/kg)"@en .
+    rdfs:label "LD50 (mg/kg)"@en ;
+    rdfs:label "LD50 (mg/kg)"@zh .
 
 slpra-drug:therapeuticWindowRatio a owl:DatatypeProperty ;
     rdfs:domain slpra-drug:TherapeuticWindow ;
     rdfs:range xsd:decimal ;
-    rdfs:label "therapeutic window ratio (TD50/ED50)"@en .
+    rdfs:label "therapeutic window ratio (TD50/ED50)"@en ;
+    rdfs:label "治疗窗比率 (TD50/ED50)"@zh .
 
 slpra-drug:oel_ug_per_m3 a owl:DatatypeProperty ;
     rdfs:domain slpra-drug:ActivePharmaceuticalIngredient ;
     rdfs:range xsd:decimal ;
-    rdfs:label "OEL (μg/m³)"@en .
+    rdfs:label "OEL (μg/m³)"@en ;
+    rdfs:label "职业暴露限值 (μg/m³)"@zh .
 
 slpra-drug:pde_mg_per_day a owl:DatatypeProperty ;
     rdfs:domain slpra-drug:ActivePharmaceuticalIngredient ;
     rdfs:range xsd:decimal ;
-    rdfs:label "PDE (mg/day)"@en .
+    rdfs:label "PDE (mg/day)"@en ;
+    rdfs:label "PDE (mg/天)"@zh .
 
 slpra-drug:minimumTherapeuticDose_mg a owl:DatatypeProperty ;
     rdfs:domain slpra-drug:DrugProduct ;
     rdfs:range xsd:decimal ;
-    rdfs:label "minimum therapeutic dose (mg)"@en .
+    rdfs:label "minimum therapeutic dose (mg)"@en ;
+    rdfs:label "最小治疗剂量 (mg)"@zh .
 
 slpra-drug:maximumDailyDose_mg a owl:DatatypeProperty ;
     rdfs:domain slpra-drug:DrugProduct ;
     rdfs:range xsd:decimal ;
-    rdfs:label "maximum daily dose (mg)"@en .
+    rdfs:label "maximum daily dose (mg)"@en ;
+    rdfs:label "最大日剂量 (mg)"@zh .
 
 slpra-drug:dosageForm a owl:DatatypeProperty ;
     rdfs:domain slpra-drug:DrugProduct ;
     rdfs:range xsd:string ;
-    rdfs:label "dosage form"@en .
+    rdfs:label "dosage form"@en ;
+    rdfs:label "制剂剂型"@zh .
 
 slpra-drug:routeOfAdministration a owl:DatatypeProperty ;
     rdfs:domain slpra-drug:DrugProduct ;
     rdfs:range xsd:string ;
-    rdfs:label "route of administration"@en .
+    rdfs:label "route of administration"@en ;
+    rdfs:label "给药途径"@zh .
 
 slpra-drug:isCytotoxic a owl:DatatypeProperty ;
     rdfs:domain slpra-drug:DrugProduct ;
@@ -399,4 +407,5 @@ slpra-drug:hasPrionRisk a owl:DatatypeProperty ;
 slpra-drug:sensitizationLevel a owl:DatatypeProperty ;
     rdfs:domain slpra-drug:SensitizationPotential ;
     rdfs:range xsd:integer ;
-    rdfs:label "sensitization level (1-5)"@en .
+    rdfs:label "sensitization level (1-5)"@en ;
+    rdfs:label "致敏级别 (1-5)"@zh .

@@ -15,6 +15,7 @@ from app.api import (
     ontology,
     reasoning,
     reports,
+    system_config,
 )
 from app.config import settings
 from app.services.ontology_engine import ontology_engine
@@ -68,6 +69,25 @@ def _register_recompute_subscriber() -> None:
     logger.info("auto-recompute subscriber registered on fact_event_bus")
 
 
+def _warmup_local_models() -> None:
+    """预热本地 NER / 语义嵌入模型（008 FR-014，消除首作业冷启动，SC-007）。
+
+    ``get_gliner_extractor()`` / ``get_embedder()`` 在对应功能关闭或缺包时返回
+    ``None``（零开销）；返回实例时 ``is_available()`` 触发本地权重惰性加载，缺权重则
+    静默降级。任何异常都不阻断启动（air-gap / 缺权重环境仍可启动，结构化主路径零回归）。
+    """
+    from app.services.extraction.gliner_extractor import get_gliner_extractor
+    from app.services.extraction.semantic import get_embedder
+
+    for name, factory in (("GLiNER NER", get_gliner_extractor), ("语义嵌入", get_embedder)):
+        try:
+            backend = factory()
+            if backend is not None and backend.is_available():
+                logger.info("%s 模型预热完成", name)
+        except Exception as exc:  # pragma: no cover - 缺权重/加载失败不阻断启动
+            logger.warning("%s 模型预热跳过：%s", name, exc)
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     try:
@@ -83,6 +103,10 @@ async def lifespan(app: FastAPI):
     # 003 G3：注册事实变更 → 增量重算订阅者（FR-010）。幂等守卫避免重复注册
     # （reload / 多次 lifespan）导致一次事件触发多次重算。
     _register_recompute_subscriber()
+
+    # 008 FR-014/SC-007：启动期预热本地 NER / 嵌入模型，消除首作业冷启动。
+    # 功能关闭/缺包/缺权重均零开销或静默降级，不阻断启动。
+    _warmup_local_models()
 
     # 能力三：启动期 asyncio 轮询后台任务挂载点（R4, T037）。默认关闭，避免测试期起任务。
     poller_task = None
@@ -124,6 +148,7 @@ app.include_router(integration.router, prefix="/api/integration", tags=["integra
 app.include_router(actions.router, prefix="/api/actions", tags=["actions"])
 app.include_router(reports.router, prefix="/api/reports", tags=["reports"])
 app.include_router(compliance.router, prefix="/api/compliance", tags=["compliance"])
+app.include_router(system_config.router, prefix="/api/system-config", tags=["system-config"])
 
 
 @app.get("/api/health")

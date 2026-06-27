@@ -1,0 +1,239 @@
+@prefix rdf:   <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl:   <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+@prefix skos:  <http://www.w3.org/2004/02/skos/core#> .
+@prefix obo:   <http://purl.obolibrary.org/obo/> .
+@prefix slpra-pers: <https://ontology.pharma-gmp.cn/slpra/personnel/> .
+
+<https://ontology.pharma-gmp.cn/slpra/personnel/>
+    a owl:Ontology ;
+    owl:versionIRI <https://ontology.pharma-gmp.cn/slpra/personnel/0.1.0> ;
+    rdfs:label "SLPRA Personnel Role & Responsibility Ontology"@en ;
+    rdfs:label "SLPRA 人员角色与职责本体"@zh ;
+    rdfs:comment "Module 9: GxP responsible parties (BFO material entities) and the roles (BFO:role) they bear in shared-line production QRM. Roles are derived from CFDI《药品共线生产质量风险管理指南》(2023) — a process/lifecycle-organized guideline with no dedicated org chapter; each role's rdfs:comment cites the clause it is grounded in. skos:notation carries a stable role code so the existing free-text ElectronicSignature.signer_role and the multi-party co-signature matrix can migrate from string literals to managed ontology references (legacy RBAC codes qa/operator are preserved verbatim). T-Box only: NO named individuals — actual person/organization assignments are A-Box and live in the DB shadow table + facts#, never in authoritative TTL."@en ;
+    owl:imports <http://purl.obolibrary.org/obo/bfo.owl> .
+
+# ============================================================
+# Classes — Agents / Responsible Parties (⊑ BFO material entity)
+#   Bearers of roles. Organizations are object aggregates; persons are
+#   the natural-person job holders. Actual instances are A-Box (DB/facts#).
+# ============================================================
+
+slpra-pers:Agent a owl:Class ;
+    rdfs:subClassOf obo:BFO_0000040 ;
+    rdfs:label "Agent (Responsible Party)"@en ;
+    rdfs:label "责任主体/参与方"@zh ;
+    rdfs:comment "Any party that can bear a GxP role and be held accountable in QRM — a natural person or an organization."@en .
+
+slpra-pers:Person a owl:Class ;
+    rdfs:subClassOf slpra-pers:Agent ;
+    rdfs:label "Person"@en ;
+    rdfs:label "自然人（岗位人员）"@zh .
+
+slpra-pers:Organization a owl:Class ;
+    rdfs:subClassOf slpra-pers:Agent ;
+    rdfs:label "Organization"@en ;
+    rdfs:label "组织"@zh .
+
+[] a owl:AllDisjointClasses ;
+    owl:members ( slpra-pers:Person slpra-pers:Organization ) .
+
+slpra-pers:MarketingAuthorizationHolder a owl:Class ;
+    rdfs:subClassOf slpra-pers:Organization ;
+    rdfs:label "Marketing Authorization Holder (MAH)"@en ;
+    rdfs:label "上市许可持有人"@zh ;
+    rdfs:comment "持有人。CFDI 共线生产指南 §2.2 主责原则：对持有品种共线生产的可行性与可控性负主体责任。"@zh .
+
+slpra-pers:ContractManufacturer a owl:Class ;
+    rdfs:subClassOf slpra-pers:Organization ;
+    rdfs:label "Contract Manufacturer (CMO/CDMO)"@en ;
+    rdfs:label "受托药品生产企业"@zh ;
+    rdfs:comment "受托生产方。CFDI 共线生产指南 §1.3、§2.2：根据共线情况开展共线生产风险评估并形成报告。"@zh .
+
+slpra-pers:APIRegistrant a owl:Class ;
+    rdfs:subClassOf slpra-pers:Organization ;
+    rdfs:label "API Registrant"@en ;
+    rdfs:label "原料药登记人"@zh ;
+    rdfs:comment "CFDI 共线生产指南 §1.3：适用范围明确含原料药登记人。"@zh .
+
+[] a owl:AllDisjointClasses ;
+    owl:members ( slpra-pers:MarketingAuthorizationHolder
+                  slpra-pers:ContractManufacturer
+                  slpra-pers:APIRegistrant ) .
+
+# ============================================================
+# Classes — GxP Roles (⊑ BFO role); mirrors slpra-equip:*EquipmentRole.
+#   Two tiers: accountability roles (borne by organizations / management)
+#   and functional roles (borne by persons). Each leaf carries a stable
+#   skos:notation role code + the grounding guideline clause.
+# ============================================================
+
+slpra-pers:GxPRole a owl:Class ;
+    rdfs:subClassOf obo:BFO_0000023 ;
+    rdfs:label "GxP Role"@en ;
+    rdfs:label "GxP 角色"@zh ;
+    rdfs:comment "A role realized by an agent within GMP shared-line production quality risk management."@en .
+
+slpra-pers:AccountabilityRole a owl:Class ;
+    rdfs:subClassOf slpra-pers:GxPRole ;
+    rdfs:label "Accountability Role"@en ;
+    rdfs:label "责任主体角色"@zh ;
+    rdfs:comment "Governance-tier role carrying decision/approval accountability; typically borne by an organization or senior management."@en .
+
+slpra-pers:FunctionalRole a owl:Class ;
+    rdfs:subClassOf slpra-pers:GxPRole ;
+    rdfs:label "Functional Role"@en ;
+    rdfs:label "专业职能角色"@zh ;
+    rdfs:comment "Operating-tier role carrying a domain competency; typically borne by a natural person."@en .
+
+[] a owl:AllDisjointClasses ;
+    owl:members ( slpra-pers:AccountabilityRole slpra-pers:FunctionalRole ) .
+
+# --- Accountability tier ---
+
+slpra-pers:MAHRole a owl:Class ;
+    rdfs:subClassOf slpra-pers:AccountabilityRole ;
+    skos:notation "mah" ;
+    rdfs:label "MAH Primary-Responsibility Role"@en ;
+    rdfs:label "上市许可持有人（主责）角色"@zh ;
+    rdfs:comment "主体责任：提供品种药理毒理/HBEL 信息，审核批准受托企业共线生产风险评估报告并定期审核控制措施，评估清洁方法重现性，主导上市后风险管理。依据 CFDI 共线生产指南 §2.2 / §4.2.2 / §5.3。"@zh .
+
+slpra-pers:ContractManufacturerRole a owl:Class ;
+    rdfs:subClassOf slpra-pers:AccountabilityRole ;
+    skos:notation "cmo" ;
+    rdfs:label "Contract Manufacturer Role"@en ;
+    rdfs:label "受托生产企业角色"@zh ;
+    rdfs:comment "开展共线生产风险评估、变更控制、清洁验证执行；新增共线品种时通报持有人。依据 §1.3 / §2.2 / §5.3。"@zh .
+
+slpra-pers:ManagementRole a owl:Class ;
+    rdfs:subClassOf slpra-pers:AccountabilityRole ;
+    skos:notation "mgmt" ;
+    rdfs:label "Senior Management Role"@en ;
+    rdfs:label "企业管理层角色"@zh ;
+    rdfs:comment "定期审核回顾各阶段共线策略，重大变更后重新评估并审批。依据 §2.3 生命周期原则 / §2.4。"@zh .
+
+[] a owl:AllDisjointClasses ;
+    owl:members ( slpra-pers:MAHRole
+                  slpra-pers:ContractManufacturerRole
+                  slpra-pers:ManagementRole ) .
+
+# --- Functional tier ---
+
+slpra-pers:ToxicologyExpertRole a owl:Class ;
+    rdfs:subClassOf slpra-pers:FunctionalRole ;
+    skos:notation "tox" ;
+    rdfs:label "Toxicology Expert Role"@en ;
+    rdfs:label "毒理学专家角色"@zh ;
+    rdfs:comment "制定 HBEL（PDE/ADE），危害分级；无 NOEL/LOEL 时以 TTC 估算 HBEL「需要毒理学专家的参与」——指南唯一显式要求参与的专业角色。依据 §3.1 / 附录1 危害等级判定。"@zh .
+
+slpra-pers:RnDRole a owl:Class ;
+    rdfs:subClassOf slpra-pers:FunctionalRole ;
+    skos:notation "rnd" ;
+    rdfs:label "R&D Role"@en ;
+    rdfs:label "研发角色"@zh ;
+    rdfs:comment "汇总/审核/分析临床前·临床药学·毒理·药效数据，识别最难清洁组分，设计清洁工艺、残留限度与检测方法。依据 §3「评估工作需研发、注册及具有药理、毒理学背景知识的人员参与」。"@zh .
+
+slpra-pers:RegulatoryAffairsRole a owl:Class ;
+    rdfs:subClassOf slpra-pers:FunctionalRole ;
+    skos:notation "ra" ;
+    rdfs:label "Regulatory Affairs Role"@en ;
+    rdfs:label "注册法规角色"@zh ;
+    rdfs:comment "参与研发阶段危害评估，确保法律法规优先（明确要求专用设施的品种不得共线）。依据 §3 / §2.1 法律法规优先原则。"@zh .
+
+slpra-pers:QualityAssuranceRole a owl:Class ;
+    rdfs:subClassOf slpra-pers:FunctionalRole ;
+    skos:notation "qa" ;
+    rdfs:label "Quality Assurance (QA) Role"@en ;
+    rdfs:label "质量保证（QA）角色"@zh ;
+    rdfs:comment "审核批准风险评估报告与清洁验证报告，变更控制，偏差调查与纠正预防。依据 §2.2 / §4.2.2 / §5.1.2。映射既有 RBAC 角色码 qa。"@zh .
+
+slpra-pers:QualityControlRole a owl:Class ;
+    rdfs:subClassOf slpra-pers:FunctionalRole ;
+    skos:notation "qc" ;
+    rdfs:label "Quality Control / Analytical Role"@en ;
+    rdfs:label "质量控制（分析检测）角色"@zh ;
+    rdfs:comment "开发并验证足够灵敏的残留检测方法（HPLC/TOC 等），取样回收率研究，目视检查（需确认视力/照度）。依据 §3.2 / §4.2 / §4.2.3。"@zh .
+
+slpra-pers:CleaningValidationRole a owl:Class ;
+    rdfs:subClassOf slpra-pers:FunctionalRole ;
+    skos:notation "cv" ;
+    rdfs:label "Cleaning Validation Role"@en ;
+    rdfs:label "清洁验证角色"@zh ;
+    rdfs:comment "清洁工艺设计开发→验证→持续确认三阶段：制定清洁验证方案与可接受限度、人员培训、批准最终验证报告。依据 §4.2 全节。"@zh .
+
+slpra-pers:ProductionOperatorRole a owl:Class ;
+    rdfs:subClassOf slpra-pers:FunctionalRole ;
+    skos:notation "operator" ;
+    rdfs:label "Production Operator Role"@en ;
+    rdfs:label "生产操作（一线操作人员）角色"@zh ;
+    rdfs:comment "参与可操作性评估（设备组装/运行/干预/拆卸/维修/清洁），执行规程，更衣与人流/物流管理。依据 §2.5 / §5.1.2。映射既有 RBAC 角色码 operator。"@zh .
+
+slpra-pers:EquipmentEngineeringRole a owl:Class ;
+    rdfs:subClassOf slpra-pers:FunctionalRole ;
+    skos:notation "eng" ;
+    rdfs:label "Equipment Engineering Role"@en ;
+    rdfs:label "设备工程角色"@zh ;
+    rdfs:comment "设备设计便于清洁，预防性维护，管道气密性测试、阀门点检、快接口检查。依据 §5.1.1 表5.1 共用设备模块控制措施。"@zh .
+
+slpra-pers:HVACEngineeringRole a owl:Class ;
+    rdfs:subClassOf slpra-pers:FunctionalRole ;
+    skos:notation "hvac" ;
+    rdfs:label "HVAC / Facility Engineering Role"@en ;
+    rdfs:label "暖通空调（设施工程）角色"@zh ;
+    rdfs:comment "洁净区分级与压差/气流设计，过滤器选型/更换周期与压差监测，防止空气传播交叉污染。依据 §5.1.3 表5.3 空气传播风险控制措施。"@zh .
+
+slpra-pers:EHSRole a owl:Class ;
+    rdfs:subClassOf slpra-pers:FunctionalRole ;
+    skos:notation "ehs" ;
+    rdfs:label "EHS / Occupational Health Role"@en ;
+    rdfs:label "EHS（职业健康防护）角色"@zh ;
+    rdfs:comment "高毒/高活/激素类/细胞毒产品的人员防护与职业暴露限值（OEL）控制，保护操作员工健康安全。依据 §5.3 / 术语 OEL。会签矩阵既有责任角色之一。"@zh .
+
+slpra-pers:PharmacovigilanceRole a owl:Class ;
+    rdfs:subClassOf slpra-pers:FunctionalRole ;
+    skos:notation "pv" ;
+    rdfs:label "Pharmacovigilance Role"@en ;
+    rdfs:label "药物警戒角色"@zh ;
+    rdfs:comment "上市后不良反应监测、过敏反应跟踪、客户投诉归类与共线关联分析。依据 §4.1.8（青霉素/β-内酰胺）/ §5.3。"@zh .
+
+[] a owl:AllDisjointClasses ;
+    owl:members ( slpra-pers:ToxicologyExpertRole
+                  slpra-pers:RnDRole
+                  slpra-pers:RegulatoryAffairsRole
+                  slpra-pers:QualityAssuranceRole
+                  slpra-pers:QualityControlRole
+                  slpra-pers:CleaningValidationRole
+                  slpra-pers:ProductionOperatorRole
+                  slpra-pers:EquipmentEngineeringRole
+                  slpra-pers:HVACEngineeringRole
+                  slpra-pers:EHSRole
+                  slpra-pers:PharmacovigilanceRole ) .
+
+# ============================================================
+# Object Properties
+# ============================================================
+
+slpra-pers:bearsRole a owl:ObjectProperty ;
+    rdfs:domain slpra-pers:Agent ;
+    rdfs:range slpra-pers:GxPRole ;
+    rdfs:label "bears role"@en ;
+    rdfs:label "承担角色"@zh ;
+    rdfs:comment "Realization link: an agent is the bearer of a GxP role (BFO bearer-of / realizable). Mirrors slpra-equip:hasEquipmentRole."@en .
+
+slpra-pers:accountableForSignoff a owl:ObjectProperty ;
+    rdfs:domain slpra-pers:GxPRole ;
+    rdfs:label "accountable for sign-off"@en ;
+    rdfs:label "负责会签维度"@zh ;
+    rdfs:comment "Links a role to the assessment dimension whose conclusion it must co-sign (multi-party co-signature matrix). Range intentionally left open pending the risk-dimension class IRIs in slpra-risk; constrain when wired."@en .
+
+# ============================================================
+# Datatype Properties
+# ============================================================
+
+slpra-pers:roleCode a owl:DatatypeProperty ;
+    rdfs:domain slpra-pers:GxPRole ;
+    rdfs:range xsd:string ;
+    rdfs:label "role code"@en ;
+    rdfs:label "角色代码"@zh ;
+    rdfs:comment "Stable machine code for a role (same value as the class-level skos:notation). Target for migrating the free-text ElectronicSignature.signer_role to a managed reference."@en .

@@ -1,17 +1,21 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { AlignmentReview } from "@/components/extraction/alignment-review";
+import { useEffect, useRef, useState } from "react";
+import { ExtractionDrawer } from "@/components/extraction/extraction-drawer";
 import { JobCreateForm } from "@/components/extraction/job-create-form";
 import { JobProgress } from "@/components/extraction/job-progress";
 import {
+  createAutoExtractionJob,
   getExtractionJob,
   listExtractionJobs,
+  rerunAnnotation,
   type ExtractionJob,
 } from "@/lib/api";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Table,
   TableBody,
@@ -32,15 +36,22 @@ const STATUS_LABELS: Record<string, string> = {
   failed: "失败",
 };
 
-// 进行中流持久化（research D1）：把当前关注的作业 id 存入 sessionStorage，
-// 切换子 Tab / 组件重挂载后据此重订阅进度流（服务端为权威）。
 const ACTIVE_JOB_KEY = "slpra.extraction.activeJobId";
 const TERMINAL_STATUS = new Set(["done", "failed"]);
+const CLINICAL_KEYWORDS = ["临床备样", "生产信息", "备样生产"];
 
 export default function ExtractionPage() {
   const [jobs, setJobs] = useState<ExtractionJob[]>([]);
   const [activeJobId, setActiveJobIdState] = useState<string | null>(null);
-  const activeJob = jobs.find((j) => j.id === activeJobId) ?? null;
+  const [drawerJobId, setDrawerJobId] = useState<string | null>(null);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [advancedOpen, setAdvancedOpen] = useState(false);
+
+  const [file, setFile] = useState<File | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [clinicalHint, setClinicalHint] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
 
   const setActiveJobId = (id: string | null) => {
     setActiveJobIdState(id);
@@ -57,9 +68,6 @@ export default function ExtractionPage() {
     }
   }
 
-  // On mount: reload the job list and restore any in-flight job from
-  // sessionStorage. Restoring activeJobId remounts <JobProgress>, which
-  // re-subscribes to the SSE stream; the server replays the current stage/pct.
   useEffect(() => {
     listExtractionJobs().then(setJobs).catch(() => {});
     const saved =
@@ -79,6 +87,35 @@ export default function ExtractionPage() {
       });
   }, []);
 
+  function handleFileChange(f: File | null) {
+    setFile(f);
+    if (f) {
+      setClinicalHint(CLINICAL_KEYWORDS.some((kw) => f.name.includes(kw)));
+    } else {
+      setClinicalHint(false);
+    }
+  }
+
+  async function handleAutoExtract() {
+    if (!file) return;
+    setError(null);
+    setSubmitting(true);
+    try {
+      const ext = file.name.toLowerCase();
+      const sourceType = ext.endsWith(".docx") ? "word" : "excel";
+      const job = await createAutoExtractionJob({ file, source_type: sourceType });
+      setActiveJobId(job.id);
+      setFile(null);
+      setClinicalHint(false);
+      if (fileRef.current) fileRef.current.value = "";
+      await refresh();
+    } catch (err) {
+      setError(String(err));
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
   async function handleCreated(job: ExtractionJob) {
     setActiveJobId(job.id);
     await refresh();
@@ -86,7 +123,6 @@ export default function ExtractionPage() {
 
   async function handleProgressDone() {
     if (activeJobId) {
-      // 终态时刷新该作业与列表，候选数随之更新;并清除进行中标记。
       await getExtractionJob(activeJobId).catch(() => null);
       if (typeof window !== "undefined") {
         window.sessionStorage.removeItem(ACTIVE_JOB_KEY);
@@ -95,15 +131,42 @@ export default function ExtractionPage() {
     await refresh();
   }
 
+  function openDrawer(jobId: string) {
+    setDrawerJobId(jobId);
+    setDrawerOpen(true);
+  }
+
   return (
     <div>
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle>创建抽取作业</CardTitle>
+            <CardTitle>实体抽取</CardTitle>
           </CardHeader>
-          <CardContent>
-            <JobCreateForm onCreated={handleCreated} />
+          <CardContent className="space-y-4">
+            {error && (
+              <div className="rounded border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                {error}
+              </div>
+            )}
+            <div className="space-y-1">
+              <Label>上传文件</Label>
+              <Input
+                ref={fileRef}
+                type="file"
+                accept=".xlsx,.docx"
+                onChange={(e) => handleFileChange(e.target.files?.[0] ?? null)}
+                className="text-muted-foreground file:mr-3 file:rounded file:border-0 file:bg-primary file:px-3 file:py-2 file:text-sm file:text-primary-foreground hover:file:bg-primary/90"
+              />
+            </div>
+            {clinicalHint && (
+              <p className="text-sm text-blue-600">
+                检测到临床备样/生产信息文件 — 将抽取所有本体模块的目标类
+              </p>
+            )}
+            <Button onClick={handleAutoExtract} disabled={!file || submitting}>
+              {submitting ? "提交中..." : "实体抽取"}
+            </Button>
           </CardContent>
         </Card>
 
@@ -115,24 +178,25 @@ export default function ExtractionPage() {
             {activeJobId ? (
               <JobProgress key={activeJobId} jobId={activeJobId} onDone={handleProgressDone} />
             ) : (
-              <p className="text-sm text-muted-foreground">创建作业后将在此显示各阶段进度。</p>
+              <p className="text-sm text-muted-foreground">上传文件后将在此显示各阶段进度。</p>
             )}
           </CardContent>
         </Card>
       </div>
 
-      {activeJob && (activeJob.status === "reviewing" || activeJob.status === "done") && (
-        <Card className="mt-6">
-          <CardHeader>
-            <CardTitle>
-              对齐审核 — {activeJob.source_filename ?? activeJob.source_type}
-            </CardTitle>
-          </CardHeader>
+      <Card className="mt-6">
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle className="text-base">高级配置</CardTitle>
+          <Button variant="ghost" size="sm" onClick={() => setAdvancedOpen(!advancedOpen)}>
+            {advancedOpen ? "收起" : "展开"}
+          </Button>
+        </CardHeader>
+        {advancedOpen && (
           <CardContent>
-            <AlignmentReview key={activeJob.id} jobId={activeJob.id} />
+            <JobCreateForm onCreated={handleCreated} />
           </CardContent>
-        </Card>
-      )}
+        )}
+      </Card>
 
       <Card className="mt-6">
         <CardHeader>
@@ -171,7 +235,7 @@ export default function ExtractionPage() {
                       </Badge>
                     </TableCell>
                     <TableCell className="py-2">{j.total_candidates}</TableCell>
-                    <TableCell className="py-2 text-right">
+                    <TableCell className="py-2 text-right space-x-2">
                       <Button
                         variant="link"
                         size="sm"
@@ -180,6 +244,29 @@ export default function ExtractionPage() {
                       >
                         查看进度
                       </Button>
+                      {j.document_path && (
+                        <Button
+                          variant="link"
+                          size="sm"
+                          onClick={() => openDrawer(j.id)}
+                          className="h-auto p-0 text-xs"
+                        >
+                          查看标注
+                        </Button>
+                      )}
+                      {TERMINAL_STATUS.has(j.status) && (
+                        <Button
+                          variant="link"
+                          size="sm"
+                          onClick={async () => {
+                            await rerunAnnotation(j.id);
+                            setActiveJobId(j.id);
+                          }}
+                          className="h-auto p-0 text-xs"
+                        >
+                          重新标注
+                        </Button>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))}
@@ -188,6 +275,12 @@ export default function ExtractionPage() {
           )}
         </CardContent>
       </Card>
+
+      <ExtractionDrawer
+        jobId={drawerJobId}
+        open={drawerOpen}
+        onOpenChange={setDrawerOpen}
+      />
     </div>
   );
 }

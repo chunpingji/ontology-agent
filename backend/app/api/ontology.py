@@ -68,6 +68,27 @@ _writer = require_role(ROLE_SENIOR_ANALYST)
 # ===========================================================================
 # 只读浏览（Owlready2 引擎）—— 顶层只读端点
 # ===========================================================================
+@router.get("/all-classes")
+def all_classes(engine: OntologyEngine = Depends(get_ontology_engine)):
+    """全类扁平列表（含模块归属），供系统配置/自动抽取选择目标类。"""
+    result: list[dict] = []
+    for mod in engine.get_modules():
+        for node in engine.get_class_hierarchy(mod.key):
+            _flatten_tree(node, mod.key, result)
+    return result
+
+
+def _flatten_tree(node, module_key: str, out: list[dict]) -> None:
+    out.append({
+        "iri": node.iri,
+        "name": node.name,
+        "label": node.label,
+        "module_key": module_key,
+    })
+    for child in node.children:
+        _flatten_tree(child, module_key, out)
+
+
 @router.get("/modules", response_model=list[ModuleResponse])
 def list_modules(engine: OntologyEngine = Depends(get_ontology_engine)):
     modules = engine.get_modules()

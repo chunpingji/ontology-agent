@@ -22,9 +22,17 @@ services:
       OWL_STORE_PATH: /app/data/slpra.sqlite3
       # LLM extraction key — injected from host env / .env, never baked into the image.
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      # air-gap：强制 huggingface_hub / transformers 全程离线，杜绝任何远程 repo
+      # 解析或权重外发（配套代码内 local_files_only=True，008 Principle VI）。
+      HF_HUB_OFFLINE: "1"
+      TRANSFORMERS_OFFLINE: "1"
     volumes:
       - ./backend/app:/app/app
       - ./ontology:/app/ontology
+      # 本地模型权重（GLiNER + 中文嵌入器）不入镜像，经制品库交付到宿主
+      # backend/models/，运行期挂载到 /app/models（gliner_model_path /
+      # semantic_embedding_model 相对后端根解析至此）。缺权重则静默降级。
+      - ./backend/models:/app/models
       - backend_data:/app/data
     depends_on:
       - db

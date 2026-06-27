@@ -11,13 +11,8 @@ import {
 } from "@/lib/api";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table";
+import { Separator } from "@/components/ui/separator";
 
-/**
- * 对齐审核闭环（T026, US2）：展示候选 / 置信度 / 跨源归组 / 规范实例标记，
- * 承载确认、拒绝、合并、拆分（FR-009/010）。仅 `confirmed` 入库。
- */
 export function AlignmentReview({ jobId }: { jobId: string }) {
   const [data, setData] = useState<GroupedCandidates | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -31,8 +26,6 @@ export function AlignmentReview({ jobId }: { jobId: string }) {
     [jobId],
   );
 
-  // jobId 改变时由父级以 key 重挂载（selected 经 useState 初值复位为空集）；
-  // effect 只负责拉取候选，setState 在 .then 回调中执行而非 effect 体内同步调用。
   useEffect(() => {
     refresh();
   }, [refresh]);
@@ -73,7 +66,6 @@ export function AlignmentReview({ jobId }: { jobId: string }) {
   }
 
   async function doSplit(c: ExtractionCandidate) {
-    // 简化：把单个候选拆成两份副本，分析师随后分别编辑。
     try {
       await splitCandidate(c.id, [
         { ...c.extracted_properties }, { ...c.extracted_properties },
@@ -84,105 +76,129 @@ export function AlignmentReview({ jobId }: { jobId: string }) {
     }
   }
 
-  if (!data) return <p className="text-sm text-muted-foreground">加载候选…</p>;
+  if (!data) return <p className="px-4 py-6 text-sm text-muted-foreground">加载候选…</p>;
 
   const allGroups = [
     ...data.groups,
     { group_key: "（未归组）", canonical_candidate_id: null, candidates: data.ungrouped },
   ].filter((g) => g.candidates.length > 0);
 
+  const totalCandidates = allGroups.reduce((s, g) => s + g.candidates.length, 0);
+
+  if (totalCandidates === 0) {
+    return <p className="px-4 py-6 text-sm text-muted-foreground">暂无候选实体</p>;
+  }
+
   return (
-    <div className="space-y-4">
+    <div className="flex h-full flex-col">
+      {/* Header bar */}
+      <div className="flex items-center justify-between px-4 py-3">
+        <h3 className="text-sm font-semibold">候选实体</h3>
+        <Badge variant="secondary">{totalCandidates}</Badge>
+      </div>
+      <Separator />
+
+      {/* Merge toolbar */}
+      <div className="flex items-center gap-2 px-3 py-2">
+        <Button onClick={doMerge} disabled={selected.size < 2} size="sm" className="h-7 text-xs">
+          合并所选（{selected.size}）
+        </Button>
+        <span className="text-[10px] text-muted-foreground">先勾选 = 合并目标</span>
+      </div>
+
       {error && (
-        <div className="rounded border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+        <div className="mx-3 mb-2 rounded border border-destructive/40 bg-destructive/10 px-2 py-1 text-xs text-destructive">
           {error}
         </div>
       )}
 
-      <div className="flex items-center gap-3">
-        <Button
-          onClick={doMerge}
-          disabled={selected.size < 2}
-          size="sm"
-        >
-          合并所选（{selected.size}）
-        </Button>
-        <span className="text-xs text-muted-foreground">先勾选的为合并目标（规范实例）</span>
-      </div>
-
-      {allGroups.map((g) => (
-        <Card key={g.group_key} className="overflow-hidden">
-          <div className="flex items-center justify-between border-b bg-muted px-3 py-2 text-sm">
-            <span className="font-medium">归组键：{g.group_key}</span>
-            <span className="text-xs text-muted-foreground">{g.candidates.length} 个候选</span>
-          </div>
-          <Table>
-            <TableBody>
+      {/* Candidate list */}
+      <div className="flex-1 overflow-y-auto px-2 pb-2 space-y-3">
+        {allGroups.map((g) => (
+          <div key={g.group_key}>
+            <div className="flex items-center justify-between px-2 py-1 text-xs text-muted-foreground">
+              <span className="font-medium truncate">{g.group_key}</span>
+              <span>{g.candidates.length}</span>
+            </div>
+            <div className="space-y-1">
               {g.candidates.map((c) => (
-                <TableRow key={c.id} className="border-b last:border-0">
-                  <TableCell className="w-8 py-2 pl-3">
+                <div
+                  key={c.id}
+                  className="rounded-md border bg-card p-2.5 text-sm"
+                >
+                  {/* Top: checkbox + badges */}
+                  <div className="flex items-start gap-2">
                     <input
                       type="checkbox"
                       checked={selected.has(c.id)}
                       onChange={() => toggle(c.id)}
+                      className="mt-0.5 shrink-0"
                     />
-                  </TableCell>
-                  <TableCell className="py-2">
-                    <div className="flex items-center gap-2">
-                      <Badge variant="secondary">
-                        {c.candidate_kind}
-                      </Badge>
-                      {c.is_canonical && (
-                        <Badge variant="success">
-                          规范实例
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-1">
+                        <Badge variant="secondary" className="text-[10px]">
+                          {c.candidate_kind}
                         </Badge>
-                      )}
-                      {c.degraded_reason && (
-                        <Badge variant="warning">
-                          降级
+                        {c.is_canonical && (
+                          <Badge variant="success" className="text-[10px]">规范</Badge>
+                        )}
+                        {c.degraded_reason && (
+                          <Badge variant="warning" className="text-[10px]">降级</Badge>
+                        )}
+                        <Badge
+                          variant={c.review_status === "confirmed" ? "success" : c.review_status === "rejected" ? "destructive" : "outline"}
+                          className="text-[10px]"
+                        >
+                          {c.review_status}
                         </Badge>
-                      )}
-                      <span className="text-foreground">
-                        {JSON.stringify(c.extracted_properties).slice(0, 80)}
-                      </span>
+                      </div>
+
+                      {/* Properties */}
+                      <p className="mt-1 break-all text-xs text-foreground leading-snug">
+                        {JSON.stringify(c.extracted_properties).slice(0, 120)}
+                      </p>
+
+                      {/* Metadata */}
+                      <p className="mt-0.5 text-[10px] text-muted-foreground leading-relaxed">
+                        对齐：{c.alignment_result ?? "—"} · 置信度：
+                        {c.match_score != null ? c.match_score.toFixed(2) : "—"}
+                        {c.source_ref ? ` · 源：${c.source_ref}` : ""}
+                      </p>
                     </div>
-                    <div className="mt-0.5 text-xs text-muted-foreground">
-                      对齐：{c.alignment_result ?? "—"} · 置信度：
-                      {c.match_score != null ? c.match_score.toFixed(2) : "—"} · 状态：
-                      {c.review_status}
-                      {c.source_ref ? ` · 源：${c.source_ref}` : ""}
-                    </div>
-                  </TableCell>
-                  <TableCell className="py-2 pr-3 text-right">
-                    <div className="flex justify-end gap-2">
-                      <Button
-                        onClick={() => doReview(c.id, "confirmed")}
-                        size="sm"
-                      >
-                        确认入库
-                      </Button>
-                      <Button
-                        onClick={() => doReview(c.id, "rejected")}
-                        variant="outline"
-                        size="sm"
-                      >
-                        拒绝
-                      </Button>
-                      <Button
-                        onClick={() => doSplit(c)}
-                        variant="outline"
-                        size="sm"
-                      >
-                        拆分
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="mt-2 flex gap-1.5">
+                    <Button
+                      onClick={() => doReview(c.id, "confirmed")}
+                      size="sm"
+                      className="h-6 flex-1 text-xs"
+                    >
+                      确认入库
+                    </Button>
+                    <Button
+                      onClick={() => doReview(c.id, "rejected")}
+                      variant="outline"
+                      size="sm"
+                      className="h-6 flex-1 text-xs"
+                    >
+                      拒绝
+                    </Button>
+                    <Button
+                      onClick={() => doSplit(c)}
+                      variant="outline"
+                      size="sm"
+                      className="h-6 text-xs"
+                    >
+                      拆分
+                    </Button>
+                  </div>
+                </div>
               ))}
-            </TableBody>
-          </Table>
-        </Card>
-      ))}
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

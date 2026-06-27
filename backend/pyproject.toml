@@ -25,9 +25,34 @@ dependencies = [
 # 语义实体对齐后端（本地嵌入）。基础安装不含 torch；启用语义对齐时再装：
 #   uv sync --extra semantic
 # 未安装时 aligner 优雅回退字面匹配（见 services/extraction/semantic.py）。
+# torch 显式列出并经下方 [tool.uv.sources] 钉到 CPU 索引——目标机为纯 CPU，
+# 排除 nvidia-cuda-* 运行时（多 GB），镜像瘦身。
 semantic = [
     "sentence-transformers>=3.0",
+    "torch>=2.2",
 ]
+
+# 本地零样本 NER 后端（GLiNER，离线实体抽取）。基础安装不含 torch；启用本地
+# NER 时再装：
+#   uv sync --extra gliner
+# 未安装/缺权重时 gliner_extractor 优雅降级、跳过 NER 分支（见
+# services/extraction/gliner_extractor.py），结构化主路径零回归。
+gliner = [
+    "gliner>=0.2.13",
+    "torch>=2.2",
+]
+
+# torch → PyTorch CPU 轮子索引（air-gap 目标机无 GPU）。`explicit = true` 意味着
+# 仅被 [tool.uv.sources] 显式指派的包才从此索引解析，其余包仍走默认 PyPI；
+# 故只有 torch 走 CPU 索引，绝不拉 nvidia-cuda-*。仅 `uv sync` 生效；Docker 内
+# 的 pip 不读本配置，CPU torch 由 Dockerfile 的 --index-url 单独保证。
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
+[tool.uv.sources]
+torch = [{ index = "pytorch-cpu" }]
 
 # This is an application, not a library. No [build-system] is declared, so uv
 # treats it as a non-packaged ("virtual") project: `uv sync` installs only the

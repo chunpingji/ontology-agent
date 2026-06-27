@@ -24,6 +24,12 @@
     <uri id="slpra-integration"
          name="https://ontology.pharma-gmp.cn/slpra/integration/"
          uri="slpra-integration.ttl"/>
+    <uri id="slpra-personnel"
+         name="https://ontology.pharma-gmp.cn/slpra/personnel/"
+         uri="slpra-personnel.ttl"/>
+    <uri id="slpra-document"
+         name="https://ontology.pharma-gmp.cn/slpra/document/"
+         uri="slpra-document.ttl"/>
 
     <!-- External ontologies (download locally for offline use) -->
     <uri id="bfo"

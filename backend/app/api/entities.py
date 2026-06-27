@@ -36,11 +36,29 @@ def list_entities(
 
 
 @router.get("/{iri:path}", response_model=IndividualResponse)
-def get_entity(iri: str, engine: OntologyEngine = Depends(get_ontology_engine)):
+def get_entity(
+    iri: str,
+    engine: OntologyEngine = Depends(get_ontology_engine),
+    kg: KGStore = Depends(get_kg_store),
+):
+    # T-Box-declared individuals live in the owlready2 World; A-Box facts
+    # (materialized records / documents / extracted entities, e.g. facts#...)
+    # live only in the EntityShadow DB table. Resolve the World first, then
+    # fall back to the shadow row so fact-source individuals open in detail view.
     info = engine.get_individual(iri)
-    if info is None:
+    if info is not None:
+        return IndividualResponse(**info.__dict__)
+    shadow = kg.get_shadow(iri)
+    if shadow is None:
         raise HTTPException(404, f"Entity not found: {iri}")
-    return IndividualResponse(**info.__dict__)
+    return IndividualResponse(
+        iri=shadow.iri,
+        name=iri.rsplit("/", 1)[-1].rsplit("#", 1)[-1],
+        class_iris=[shadow.class_iri] if shadow.class_iri else [],
+        label_zh=shadow.label_zh,
+        label_en=shadow.label_en,
+        properties=shadow.properties_json or {},
+    )
 
 
 @router.post("", response_model=IndividualResponse, status_code=201)

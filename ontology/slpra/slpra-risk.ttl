@@ -253,47 +253,56 @@ slpra-risk:hasMACOMethod a owl:DatatypeProperty ;
 slpra-risk:pod_mg_per_kg_per_day a owl:DatatypeProperty ;
     rdfs:domain slpra-risk:PDECalculation ;
     rdfs:range xsd:decimal ;
-    rdfs:label "Point of Departure (mg/kg/day)"@en .
+    rdfs:label "Point of Departure (mg/kg/day)"@en ;
+    rdfs:label "NOAEL/起始剂量 (mg/kg/天)"@zh .
 
 slpra-risk:bodyWeightCorrection_kg a owl:DatatypeProperty ;
     rdfs:domain slpra-risk:PDECalculation ;
     rdfs:range xsd:decimal ;
-    rdfs:label "body weight correction (kg)"@en .
+    rdfs:label "body weight correction (kg)"@en ;
+    rdfs:label "体重校正因子 (kg)"@zh .
 
 slpra-risk:adjustmentFactor_F1 a owl:DatatypeProperty ;
     rdfs:domain slpra-risk:PDECalculation ;
     rdfs:range xsd:decimal ;
-    rdfs:label "F1 interspecies factor"@en .
+    rdfs:label "F1 interspecies factor"@en ;
+    rdfs:label "F1 种间差异系数"@zh .
 
 slpra-risk:adjustmentFactor_F2 a owl:DatatypeProperty ;
     rdfs:domain slpra-risk:PDECalculation ;
     rdfs:range xsd:decimal ;
-    rdfs:label "F2 interindividual factor"@en .
+    rdfs:label "F2 interindividual factor"@en ;
+    rdfs:label "F2 个体间差异系数"@zh .
 
 slpra-risk:adjustmentFactor_F3 a owl:DatatypeProperty ;
     rdfs:domain slpra-risk:PDECalculation ;
     rdfs:range xsd:decimal ;
-    rdfs:label "F3 study duration factor"@en .
+    rdfs:label "F3 study duration factor"@en ;
+    rdfs:label "F3 研究期限系数"@zh .
 
 slpra-risk:adjustmentFactor_F4 a owl:DatatypeProperty ;
     rdfs:domain slpra-risk:PDECalculation ;
     rdfs:range xsd:decimal ;
-    rdfs:label "F4 severity factor"@en .
+    rdfs:label "F4 severity factor"@en ;
+    rdfs:label "F4 严重毒性系数"@zh .
 
 slpra-risk:adjustmentFactor_F5 a owl:DatatypeProperty ;
     rdfs:domain slpra-risk:PDECalculation ;
     rdfs:range xsd:decimal ;
-    rdfs:label "F5 NOAEL/LOAEL factor"@en .
+    rdfs:label "F5 NOAEL/LOAEL factor"@en ;
+    rdfs:label "F5 NOAEL/LOAEL 系数"@zh .
 
 slpra-risk:modifyingFactor_MF a owl:DatatypeProperty ;
     rdfs:domain slpra-risk:PDECalculation ;
     rdfs:range xsd:decimal ;
-    rdfs:label "modifying factor MF"@en .
+    rdfs:label "modifying factor MF"@en ;
+    rdfs:label "修正因子 MF"@zh .
 
 slpra-risk:calculatedPDE_mg_per_day a owl:DatatypeProperty ;
     rdfs:domain slpra-risk:PDECalculation ;
     rdfs:range xsd:decimal ;
-    rdfs:label "calculated PDE (mg/day)"@en .
+    rdfs:label "calculated PDE (mg/day)"@en ;
+    rdfs:label "PDE 计算值 (mg/天)"@zh .
 
 slpra-risk:riskScoreValue a owl:DatatypeProperty ;
     rdfs:domain slpra-risk:RiskScore ;

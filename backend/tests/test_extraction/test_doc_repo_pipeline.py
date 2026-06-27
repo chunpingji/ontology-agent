@@ -98,8 +98,8 @@ def test_doc_repo_branch_reuses_alignment_grouping_degraded(db, fake_engine, mon
     # 药品归组键 = 活性成分|剂型|规格（_compute_group_key 复用）。
     assert all(c.group_key for c in cands)
     assert any("化合物 X" in c.group_key for c in cands)
-    # 测试默认无 LLM key → 降级，复用同一回退路径并在候选标记。
-    assert all(c.degraded_reason for c in cands)
+    # 008 门控翻转：air-gap 默认（云端关）为离线正常态，复用同一回退路径但**非降级**。
+    assert all(c.degraded_reason is None for c in cands)
     assert all(c.candidate_kind == "instance" for c in cands)
 
 

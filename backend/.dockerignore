@@ -14,6 +14,10 @@ __pycache__/
 # Local OWL store / runtime data (provided by a volume at runtime)
 data/
 
+# Local model weights (air-gap delivery via artifact repo, mounted at runtime
+# to /app/models — never baked into the image; would add multiple GB).
+models/
+
 # VCS / tooling
 .git/
 .gitignore

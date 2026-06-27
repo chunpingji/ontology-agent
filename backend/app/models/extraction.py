@@ -25,6 +25,9 @@ class ExtractionConfig(Base):
     target_class_iri: Mapped[str] = mapped_column(String(500), nullable=False)
     source_type: Mapped[str] = mapped_column(String(20), nullable=False)
     column_mapping: Mapped[dict | None] = mapped_column(JSON)
+    # 008 US3：声明为自由文本的列白名单，其原文经本地 NER 富化本行属性（仅补空缺、
+    # 结构化权威）。与 column_mapping 同为可空 JSON、互不重叠（data-model §3.2，FR-008）。
+    ner_columns: Mapped[list | None] = mapped_column(JSON)
     llm_prompt_template: Mapped[str | None] = mapped_column(Text)
     few_shot_examples: Mapped[dict | None] = mapped_column(JSON)
     property_constraints: Mapped[dict | None] = mapped_column(JSON)
@@ -40,6 +43,7 @@ class ExtractionJob(Base):
     source_type: Mapped[str] = mapped_column(String(20), nullable=False)
     source_filename: Mapped[str | None] = mapped_column(String(500))
     source_config: Mapped[dict | None] = mapped_column(JSON)
+    document_path: Mapped[str | None] = mapped_column(String(500))
     status: Mapped[str] = mapped_column(String(20), default="pending")
     total_candidates: Mapped[int] = mapped_column(Integer, default=0)
     approved_count: Mapped[int] = mapped_column(Integer, default=0)

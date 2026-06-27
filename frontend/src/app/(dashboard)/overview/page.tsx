@@ -41,13 +41,13 @@ export default function OverviewPage() {
         <h2 className="mb-3 text-sm font-semibold text-muted-foreground">知识图谱概览</h2>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           <Card className="rounded-lg p-4 text-center">
-            <p className="text-2xl font-bold text-primary">
+            <div className="text-2xl font-bold text-primary">
               {stats ? (
                 stats.total_entities
               ) : (
                 <Skeleton className="mx-auto h-8 w-12" />
               )}
-            </p>
+            </div>
             <p className="text-sm text-muted-foreground">总实体数</p>
           </Card>
           {stats &&
@@ -64,9 +64,9 @@ export default function OverviewPage() {
               href="/approvals"
               className="rounded-lg border border-warning/40 bg-warning/10 p-4 text-center transition hover:shadow-sm"
             >
-              <p className="text-2xl font-bold text-warning">
+              <div className="text-2xl font-bold text-warning">
                 {pendingCount ?? <Skeleton className="mx-auto h-8 w-12" />}
-              </p>
+              </div>
               <p className="text-sm text-warning">待签结论 →</p>
             </Link>
           )}

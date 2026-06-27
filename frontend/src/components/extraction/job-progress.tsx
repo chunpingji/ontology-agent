@@ -1,11 +1,19 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { subscribeJobProgress, type JobProgressEvent } from "@/lib/api";
+import {
+  subscribeJobProgress,
+  pauseAnnotation,
+  resumeAnnotation,
+  rerunAnnotation,
+  type JobProgressEvent,
+} from "@/lib/api";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 
 const STAGE_LABELS: Record<string, string> = {
   parsing: "解析",
+  annotating: "标注",
   extracting: "抽取",
   aligning: "对齐",
   reviewing: "待审核",
@@ -13,12 +21,21 @@ const STAGE_LABELS: Record<string, string> = {
   failed: "失败",
 };
 
-const STAGE_ORDER = ["parsing", "extracting", "aligning", "reviewing"];
+const STAGE_ORDER = ["parsing", "annotating", "extracting", "aligning", "reviewing"];
 
-/**
- * 作业进度（T019, US1）：`EventSource` 订阅 `/jobs/{id}/progress`，
- * 渲染进度条与阶段；命中降级（LLM 不可用）时显示降级标记（FR-002/007）。
- */
+const ANNOTATION_STAGES = ["gliner", "typing", "triples"] as const;
+const ANNOTATION_LABELS: Record<string, string> = {
+  gliner: "GLiNER 定界",
+  typing: "嵌入归类",
+  triples: "属性三元组",
+};
+
+function annotationStageIndex(stage?: string): number {
+  if (!stage) return -1;
+  if (stage === "done") return ANNOTATION_STAGES.length;
+  return ANNOTATION_STAGES.indexOf(stage as (typeof ANNOTATION_STAGES)[number]);
+}
+
 export function JobProgress({
   jobId,
   onDone,
@@ -28,8 +45,6 @@ export function JobProgress({
 }) {
   const [event, setEvent] = useState<JobProgressEvent | null>(null);
 
-  // jobId 改变时由父级以 key 重挂载（event 经 useState 初值复位为 null）；
-  // effect 只负责订阅，避免在 effect 体内同步 setState。
   useEffect(() => {
     const unsub = subscribeJobProgress(jobId, (e) => {
       setEvent(e);
@@ -43,42 +58,127 @@ export function JobProgress({
 
   const pct = event?.pct ?? 0;
   const failed = event?.stage === "failed";
+  const isAnnotating = event?.stage === "annotating";
+  const isPaused = event?.annotation_stage === "paused";
+  const annoIdx = annotationStageIndex(event?.annotation_stage);
 
   return (
     <div className="space-y-3">
+      {/* Main pipeline stages */}
       <div className="flex items-center gap-2 text-sm">
         {STAGE_ORDER.map((s, i) => {
-          const reached = event ? STAGE_ORDER.indexOf(event.stage) >= i || event.pct >= 100 : false;
+          const stageIdx = event ? STAGE_ORDER.indexOf(event.stage) : -1;
+          const reached = stageIdx >= i || (event?.pct ?? 0) >= 100;
           return (
             <span key={s} className="flex items-center gap-2">
               <Badge variant={reached ? "default" : "secondary"}>
                 {STAGE_LABELS[s]}
               </Badge>
-              {i < STAGE_ORDER.length - 1 && <span className="text-muted-foreground">→</span>}
+              {i < STAGE_ORDER.length - 1 && (
+                <span className="text-muted-foreground">→</span>
+              )}
             </span>
           );
         })}
       </div>
 
+      {/* Annotation sub-stages (expanded when annotating) */}
+      {(isAnnotating || isPaused) && (
+        <div className="ml-4 rounded border border-border bg-muted/30 px-3 py-2">
+          <div className="flex items-center gap-3 text-xs">
+            {ANNOTATION_STAGES.map((sub, i) => {
+              const done = annoIdx > i;
+              const active = annoIdx === i && !isPaused;
+              return (
+                <span key={sub} className="flex items-center gap-1.5">
+                  <span
+                    className={`inline-block h-2 w-2 rounded-full ${
+                      done
+                        ? "bg-primary"
+                        : active
+                          ? "bg-primary animate-pulse"
+                          : "border border-muted-foreground bg-transparent"
+                    }`}
+                  />
+                  <span
+                    className={
+                      done || active
+                        ? "text-foreground font-medium"
+                        : "text-muted-foreground"
+                    }
+                  >
+                    {ANNOTATION_LABELS[sub]}
+                  </span>
+                  {i < ANNOTATION_STAGES.length - 1 && (
+                    <span className="text-muted-foreground mx-1">→</span>
+                  )}
+                </span>
+              );
+            })}
+          </div>
+
+          {/* Control buttons */}
+          <div className="flex gap-2 mt-2">
+            {!isPaused && (
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-7 text-xs"
+                onClick={() => pauseAnnotation(jobId)}
+              >
+                暂停标注
+              </Button>
+            )}
+            {isPaused && (
+              <>
+                <Button
+                  size="sm"
+                  className="h-7 text-xs"
+                  onClick={() => resumeAnnotation(jobId)}
+                >
+                  恢复标注
+                </Button>
+                <Button
+                  size="sm"
+                  variant="destructive"
+                  className="h-7 text-xs"
+                  onClick={() => rerunAnnotation(jobId)}
+                >
+                  重新运行
+                </Button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Progress bar */}
       <div className="h-2 w-full overflow-hidden rounded bg-muted">
         <div
-          className={`h-full transition-all ${failed ? "bg-destructive" : "bg-primary"}`}
+          className={`h-full transition-all ${
+            failed
+              ? "bg-destructive"
+              : isPaused
+                ? "bg-yellow-500"
+                : "bg-primary"
+          }`}
           style={{ width: `${pct}%` }}
         />
       </div>
 
+      {/* Status text */}
       <div className="flex items-center gap-3 text-sm">
         <span className="text-muted-foreground">
-          {event ? `${STAGE_LABELS[event.stage] ?? event.stage}（${pct}%）` : "等待事件…"}
+          {isPaused
+            ? "标注已暂停"
+            : event
+              ? `${STAGE_LABELS[event.stage] ?? event.stage}（${pct}%）`
+              : "等待事件…"}
         </span>
         {event?.degraded && (
-          <Badge variant="warning">
-            ⚠ 降级：LLM 不可用，已回退结构化抽取
-          </Badge>
+          <Badge variant="warning">⚠ 降级：LLM 不可用，已回退结构化抽取</Badge>
         )}
-        {failed && (
-          <Badge variant="destructive">作业失败</Badge>
-        )}
+        {failed && <Badge variant="destructive">作业失败</Badge>}
       </div>
     </div>
   );

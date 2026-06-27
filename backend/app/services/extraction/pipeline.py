@@ -6,6 +6,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
 from pathlib import Path
 
@@ -15,6 +16,7 @@ from app.config import settings
 from app.models.extraction import ExtractionCandidate, ExtractionConfig, ExtractionJob
 from app.services.extraction.aligner import align_entity
 from app.services.extraction.db_reader import reflect_database
+from app.services.extraction.gliner_extractor import get_gliner_extractor
 from app.services.extraction.llm_extractor import extract_with_fallback
 from app.services.extraction.parser import parse_excel, parse_word
 from app.services.extraction.progress import progress_bus
@@ -64,10 +66,15 @@ async def run_extraction_pipeline(
 
         # Stage 1: Parse
         if config.source_type == "excel":
-            raw_rows = parse_excel(file_path, column_mapping=config.column_mapping or {})
+            raw_rows = parse_excel(file_path, column_mapping=config.column_mapping or {},
+                                   ner_columns=config.ner_columns)
+            # Excel 自由文本列经本地 NER 富化本行属性（仅补空缺、结构化权威，US3）；
+            # 清除 __freetext__ 暂存后再进入抽取/对齐主路径，不另生候选（FR-008/018）。
+            await _enrich_excel_freetext(raw_rows, config, engine)
             word_sections = None
         elif config.source_type == "word":
-            word_sections = parse_word(file_path)
+            # Word 表格表头经 column_mapping 走确定性 IRI 映射（替代云端，FR-004）。
+            word_sections = parse_word(file_path, config.column_mapping)
             raw_rows = [s["content"] for s in word_sections if s.get("type") == "table_row"]
         else:
             raise ValueError(f"Unsupported source type: {config.source_type}")
@@ -95,7 +102,17 @@ async def run_extraction_pipeline(
         total = 0
         instance_candidates: list[ExtractionCandidate] = []
 
+        # 相关性门控：仅自动/未映射路径（无 column_mapping）需要——结构化透传会把每行
+        # 落到当前目标类，自动模式逐类各跑一遍时即「行×类」笛卡尔积放大。已配置
+        # column_mapping 表示分析师已声明此源映射到此类，旁路门控、零回归。
+        gate_tokens = (
+            None if config.column_mapping
+            else _class_label_tokens(engine, config.target_class_iri)
+        )
+
         for entity_data in instances:
+            if gate_tokens is not None and not _row_mentions_class(entity_data, gate_tokens):
+                continue                       # 行未提及本类 → 不落候选
             props = tag_controlled_vocab(dict(entity_data))
             alignment = align_entity(
                 candidate=props,
@@ -125,28 +142,15 @@ async def run_extraction_pipeline(
             instance_candidates.append(cand)
             total += 1
 
-        # 跨源归组：每个 group_key 选一个规范实例（is_canonical），歧义不自动合并。
-        _mark_canonical(instance_candidates)
-
-        # Word 正文「若…则…必须…」→ Action 候选（FR-005）。
+        # Word 正文段落：Action 条件式（既有）+ 本地 NER prose 实体（US2）并存。
         if word_sections:
-            for sec in word_sections:
-                if sec.get("type") != "paragraph":
-                    continue
-                action = parse_action_from_text(sec.get("content", ""))
-                if action:
-                    db.add(ExtractionCandidate(
-                        job_id=job.id,
-                        target_class_iri=config.target_class_iri,
-                        extracted_properties={"action": action["action"]},
-                        candidate_kind="action",
-                        action_conditions=action,
-                        source_ref=source_ref,
-                        degraded_reason=degraded_reason,
-                        alignment_result="new",
-                        review_status="pending",
-                    ))
-                    total += 1
+            total += await _process_word_paragraphs(
+                job, config, word_sections, source_ref, degraded_reason,
+                engine, db, id_prop, label_prop, embedder, instance_candidates,
+            )
+
+        # 跨源归组：结构化 + prose 实例统一选规范实例（is_canonical），歧义不自动合并。
+        _mark_canonical(instance_candidates)
 
         job.total_candidates = total
         job.status = "reviewing"
@@ -161,6 +165,101 @@ async def run_extraction_pipeline(
         _emit(job, "failed", 100, "failed")
 
     return job
+
+
+async def _process_word_paragraphs(
+    job: ExtractionJob,
+    config: ExtractionConfig,
+    word_sections: list[dict],
+    source_ref: str,
+    degraded_reason: str | None,
+    engine: OntologyEngine,
+    db: Session,
+    id_prop: str | None,
+    label_prop: str | None,
+    embedder,
+    instance_candidates: list[ExtractionCandidate],
+) -> int:
+    """Word 正文段落 → Action 候选（既有）+ 本地 NER prose instance 候选（US2）。
+
+    每段同时尝试两条独立通道，互不替代（data-model §3.3）：
+    1. ``parse_action_from_text``「若…则…必须…」→ ``candidate_kind="action"``。
+    2. 本地零样本 NER 召回业务实体 → ``candidate_kind="instance"``，``source_ref`` 带
+       ``#para`` 溯源、``review_status="pending"`` 入复核队列（FR-005/010）。
+
+    NER 经 ``get_gliner_extractor()`` 守卫——缺包/缺权重/功能关/类无标签时静默跳过 prose
+    分支、Action 与结构化主路径零回归（优雅降级，FR-012）。GLiNER 推理为 CPU 同步阻塞，
+    经 ``asyncio.to_thread`` 调用以不阻塞事件循环（FR-015）。返回新增候选数。
+    """
+    # NER schema 与提取器一次性就绪（避免逐段重复派生/加载）。
+    ner_schema = _schema_from_class(engine, config.target_class_iri)
+    extractor = get_gliner_extractor()
+    ner_ready = bool(extractor and ner_schema["labels"] and extractor.is_available())
+
+    added = 0
+    for sec in word_sections:
+        if sec.get("type") != "paragraph":
+            continue
+        text = sec.get("content", "")
+
+        # 通道 1：条件式 → Action 候选（FR-005，既有行为不变）。
+        action = parse_action_from_text(text)
+        if action:
+            db.add(ExtractionCandidate(
+                job_id=job.id,
+                target_class_iri=config.target_class_iri,
+                extracted_properties={"action": action["action"]},
+                candidate_kind="action",
+                action_conditions=action,
+                source_ref=source_ref,
+                degraded_reason=degraded_reason,
+                alignment_result="new",
+                review_status="pending",
+            ))
+            added += 1
+
+        # 通道 2：本地 NER prose 实体 → instance 候选（守卫降级）。
+        if not ner_ready:
+            continue
+        ner_result = await asyncio.to_thread(
+            extractor.extract_text, text, ner_schema["labels"], settings.gliner_threshold,
+        )
+        # label → 属性 IRI 键回填（label_to_iri）；空召回静默跳过。
+        props = {ner_schema["label_to_iri"][label]: value
+                 for label, value in ner_result.items()
+                 if label in ner_schema["label_to_iri"]}
+        if not props:
+            continue
+
+        props = tag_controlled_vocab(props)
+        alignment = align_entity(
+            candidate=props,
+            target_class_iri=config.target_class_iri,
+            engine=engine,
+            id_property=id_prop,
+            label_property=label_prop,
+            threshold=settings.lexical_match_threshold,
+            embedder=embedder,
+            semantic_threshold=settings.semantic_match_threshold,
+        )
+        cand = ExtractionCandidate(
+            job_id=job.id,
+            target_class_iri=config.target_class_iri,
+            extracted_properties=props,
+            candidate_kind="instance",
+            group_key=_compute_group_key(props, config.target_class_iri, id_prop),
+            source_ref=f"{source_ref}#para",       # 溯源回链（FR-005）
+            degraded_reason=degraded_reason,
+            alignment_result=alignment.action,
+            aligned_iri=alignment.match_iri,
+            match_score=alignment.match_score,
+            review_status="pending",               # 入复核队列，不自动断言（FR-010）
+        )
+        db.add(cand)
+        instance_candidates.append(cand)
+        added += 1
+
+    return added
 
 
 async def _run_database_branch(
@@ -297,6 +396,94 @@ async def _run_doc_repo_branch(
     return job
 
 
+async def _enrich_excel_freetext(
+    raw_rows: list[dict],
+    config: ExtractionConfig,
+    engine: OntologyEngine,
+) -> None:
+    """Excel 自由文本列经本地零样本 NER 富化本行属性（008 US3，FR-008/018，contract P8–P12）。
+
+    每行 ``__freetext__`` 暂存（``parse_excel`` 产出）逐段跑 GLiNER → 经 ``label_to_iri``
+    得属性 → ``_merge_ner`` 仅补空缺（结构化权威、**不另生候选**）。NER 经
+    ``get_gliner_extractor()`` 守卫——缺包/缺权重/功能关/类无标签时静默跳过富化，但**仍
+    清除 __freetext__ 暂存**，使候选不含临时键（优雅降级零回归，contract P12/SC-005）。
+    GLiNER 推理为 CPU 同步阻塞，经 ``asyncio.to_thread`` 调用以不阻塞事件循环（FR-015）。
+    就地修改 ``raw_rows``。
+    """
+    if not any("__freetext__" in r for r in raw_rows):
+        return
+
+    # schema 与提取器一次性就绪（避免逐行重复派生/加载）。
+    ner_schema = _schema_from_class(engine, config.target_class_iri)
+    extractor = get_gliner_extractor()
+    ner_ready = bool(extractor and ner_schema["labels"] and extractor.is_available())
+
+    for row in raw_rows:
+        freetext = row.get("__freetext__")
+        if not freetext:
+            row.pop("__freetext__", None)
+            continue
+        ner_props: dict[str, object] = {}
+        if ner_ready:
+            for text in freetext.values():
+                result = await asyncio.to_thread(
+                    extractor.extract_text, str(text),
+                    ner_schema["labels"], settings.gliner_threshold,
+                )
+                for label, value in result.items():
+                    iri = ner_schema["label_to_iri"].get(label)
+                    if iri and iri not in ner_props:   # 同 IRI 多命中：确定性保留首个
+                        ner_props[iri] = value
+        _merge_ner(row, ner_props)             # 守卫关时 ner_props 空：仅清除暂存
+
+
+def _merge_ner(row: dict, ner_props: dict) -> dict:
+    """把本地 NER 抽取属性回填本行：仅补空缺、结构化权威；收尾清除 __freetext__ 暂存。
+
+    对 ``ner_props`` 每个 ``(iri, value)``：仅当 ``row[iri]`` 缺省或为空（``None`` / 空白
+    串）才写入，已有非空结构化值一律保留（结构化权威，contract P8/P9，FR-008）。无论是否
+    命中，合并末尾都移除临时 ``__freetext__`` 键（contract P11，候选不含暂存）。就地修改并
+    返回 ``row``。
+    """
+    for iri, value in ner_props.items():
+        existing = row.get(iri)
+        if existing is None or (isinstance(existing, str) and not existing.strip()):
+            row[iri] = value
+    row.pop("__freetext__", None)
+    return row
+
+
+def _schema_from_class(engine: OntologyEngine, target_class_iri: str) -> dict:
+    """从目标本体类只读派生 NER 标签集（008 US2/US3，FR-009/013，contract S1–S6）。
+
+    返回 ``{"labels": list[str], "label_to_iri": dict[str, str]}``：``labels`` 供
+    GLiNER 作零样本抽取标签（每个 data_property 的 label，缺省回退 name）；
+    ``label_to_iri`` 把抽取结果回填到属性 IRI 键。**只读** ``get_class_detail``，
+    绝不触 World 写路径（宪章 II）。类无属性 / 不存在 → 空 schema（NER 跳过）。
+    """
+    detail = engine.get_class_detail(target_class_iri)
+    if detail is None:
+        return {"labels": [], "label_to_iri": {}}
+
+    labels: list[str] = []
+    label_to_iri: dict[str, str] = {}
+    for p in getattr(detail, "data_properties", None) or []:
+        label = (p.get("label") or p.get("name") or "").strip()
+        iri = p.get("iri")
+        if not label or not iri:
+            continue
+        if label in label_to_iri:
+            # 同 label 多属性：确定性保留首个并告警（不随机，S6）。
+            logger.warning(
+                "NER schema 派生：标签 '%s' 对应多属性，保留首个 %s（忽略 %s）",
+                label, label_to_iri[label], iri,
+            )
+            continue
+        label_to_iri[label] = iri
+        labels.append(label)
+    return {"labels": labels, "label_to_iri": label_to_iri}
+
+
 def _compute_group_key(props: dict, target_class_iri: str, id_prop: str | None) -> str | None:
     """跨源归组键：设备=唯一编号；药品=活性成分+剂型+规格（FR-009）。"""
     cls = target_class_iri.lower()
@@ -321,6 +508,37 @@ def _lookup(props: dict, key: str):
         if key.lower() in k.lower():
             return v
     return None
+
+
+def _class_label_tokens(engine: OntologyEngine, target_class_iri: str) -> set[str]:
+    """目标类的可匹配文本标记：label_zh / label_en / name（去空、长度≥2）。
+
+    自动/未映射抽取下唯一可用的「源行↔目标类」相关性信号——本体类多为无
+    data_properties 的角色/类型类，无属性可比，故以类标签/名称作判定。只读
+    ``get_class_detail``，绝不触 World 写路径（宪章 II）。
+    """
+    detail = engine.get_class_detail(target_class_iri)
+    if detail is None:
+        return set()
+    raw = (
+        getattr(detail, "label_zh", None),
+        getattr(detail, "label_en", None),
+        getattr(detail, "name", None),
+    )
+    return {str(t).strip() for t in raw if t and len(str(t).strip()) >= 2}
+
+
+def _row_mentions_class(row: dict, tokens: set[str]) -> bool:
+    """行（键+值）文本是否提及目标类任一标记。``tokens`` 为空 → 放行（无从判定）。
+
+    相关性门控（FR 复核质量）：自动抽取曾把每张表的每一行交叉落到全部类、致候选
+    被「行×类」放大约 200 倍。此判定使一行仅在其文本确实提及某类时才作为该类候选，
+    把笛卡尔积收敛为真实相关对。仅在未显式配置 ``column_mapping`` 时启用（见调用点）。
+    """
+    if not tokens:
+        return True
+    blob = " ".join([*map(str, row.keys()), *map(str, row.values())])
+    return any(tok in blob for tok in tokens)
 
 
 def _mark_canonical(candidates: list[ExtractionCandidate]) -> None:

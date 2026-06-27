@@ -111,8 +111,17 @@ if [[ $BUILD -eq 1 && $PULL_BASE -eq 1 ]]; then
 fi
 
 # --- build + up（迁移在容器内 lifespan 自动应用）-----------------------------
+# 匿名卷防腐：docker-compose.override.yml 用匿名卷挂载 /app/node_modules，旧容器的
+# 匿名卷会遮盖镜像内新装的包。rebuild 前先 rm 目标容器释放旧匿名卷，再 --build -V
+# 确保用镜像内最新的 node_modules。具名卷（pgdata / backend_data）不受影响。
 UP_ARGS=(up -d)
-[[ $BUILD -eq 1 ]] && UP_ARGS+=(--build)
+if [[ $BUILD -eq 1 ]]; then
+  UP_ARGS+=(--build -V)
+  if [[ ${#SERVICES[@]} -gt 0 ]]; then
+    echo "▶ 清理旧容器（释放匿名卷）：${SERVICES[*]}"
+    "${COMPOSE[@]}" rm -f -s "${SERVICES[@]}" 2>/dev/null || true
+  fi
+fi
 echo "▶ ${COMPOSE[*]} ${UP_ARGS[*]} ${SERVICES[*]:-(整栈)}"
 "${COMPOSE[@]}" "${UP_ARGS[@]}" "${SERVICES[@]}"
 

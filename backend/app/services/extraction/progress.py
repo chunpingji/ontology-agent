@@ -11,6 +11,23 @@ from typing import AsyncIterator
 
 TERMINAL_STAGES = {"reviewing", "done", "failed"}
 
+# ---------------------------------------------------------------------------
+# Annotation task control: pause / resume / rerun
+# ---------------------------------------------------------------------------
+_annotation_control: dict[str, str] = {}
+
+
+def set_annotation_control(job_id: str, action: str) -> None:
+    _annotation_control[job_id] = action
+
+
+def get_annotation_control(job_id: str) -> str:
+    return _annotation_control.get(job_id, "run")
+
+
+def clear_annotation_control(job_id: str) -> None:
+    _annotation_control.pop(job_id, None)
+
 
 class ProgressBus:
     def __init__(self) -> None:
@@ -24,6 +41,8 @@ class ProgressBus:
 
     def is_terminal(self, job_id: str) -> bool:
         for ev in self._events.get(job_id, []):
+            if ev.get("annotation_stage"):
+                continue
             if ev.get("stage") in TERMINAL_STAGES or ev.get("status") in TERMINAL_STAGES:
                 return True
         return False

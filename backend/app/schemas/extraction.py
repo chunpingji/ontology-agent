@@ -12,6 +12,7 @@ class ExtractionConfigCreate(BaseModel):
     target_class_iri: str
     source_type: str
     column_mapping: dict[str, str] | None = None
+    ner_columns: list[str] | None = None      # 008 US3：自由文本列白名单（本地 NER 富化）
     llm_prompt_template: str | None = None
     few_shot_examples: list[dict] | None = None
     property_constraints: dict | None = None
@@ -25,6 +26,7 @@ class ExtractionConfigResponse(BaseModel):
     target_class_iri: str
     source_type: str
     column_mapping: dict | None = None
+    ner_columns: list[str] | None = None      # 008 US3：自由文本列白名单（本地 NER 富化）
     llm_prompt_template: str | None = None
     is_active: bool = True
 
@@ -35,6 +37,7 @@ class ExtractionJobResponse(BaseModel):
     id: UUID
     source_type: str
     source_filename: str | None = None
+    document_path: str | None = None
     status: str
     total_candidates: int = 0
     approved_count: int = 0
