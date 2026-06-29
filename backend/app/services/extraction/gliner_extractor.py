@@ -16,64 +16,60 @@ research R7）：
 
 from __future__ import annotations
 
-import json
 import logging
+import re
 from functools import lru_cache
-from pathlib import Path
 
 from app.config import settings
 
 logger = logging.getLogger(__name__)
 
-_MDEBERTA_V3_BASE_CONFIG = {
-    "model_type": "deberta-v2",
-    "hidden_size": 768,
-    "num_hidden_layers": 12,
-    "num_attention_heads": 12,
-    "intermediate_size": 3072,
-    "hidden_act": "gelu",
-    "hidden_dropout_prob": 0.1,
-    "attention_probs_dropout_prob": 0.1,
-    "max_position_embeddings": 512,
-    "type_vocab_size": 0,
-    "initializer_range": 0.02,
-    "layer_norm_eps": 1e-7,
-    "relative_attention": True,
-    "max_relative_positions": 256,
-    "position_biased_input": False,
-    "pos_att_type": ["c2p", "p2c"],
-    "share_att_key": True,
-    "norm_rel_ebd": "layer_norm",
-    "vocab_size": 250002,
-    "pad_token_id": 0,
-    "pooler_dropout": 0,
-    "pooler_hidden_act": "gelu",
-    "pooler_hidden_size": 768,
-}
 
+class _CJKAwareWordsSplitter:
+    """字符级中文友好分词器：每个汉字单独成词，ASCII 连写串整体成词。
 
-def _patch_encoder_config(model_path: str) -> None:
-    """Inject encoder_config into gliner_config.json if missing.
+    根因修复（research 长文本 span NER）：GLiNER 默认 ``WhitespaceTokenSplitter``
+    （正则 ``\\w+(?:[-_]\\w+)*|\\S``）把无空格的中文整句坍缩为单一 word-token，
+    而 GLiNER 仅在 word-token 边界枚举候选 span——导致整句被整体吞入一个 span、
+    召回崩塌（阈值无法补救，因为未被切出的边界根本不会被打分）。
 
-    Without this, GLiNER calls AutoConfig.from_pretrained("microsoft/mdeberta-v3-base")
-    which fails in offline/air-gap mode. The encoder_config only describes the backbone
-    architecture (shapes, layer count); actual weights come from the GLiNER checkpoint.
+    本分词器在每个汉字边界切词，使 GLiNER 能在字级粒度枚举 span；ASCII 连写串
+    （批准文号尾部 ``H13020999``、规格 ``0.25g``、标识符 ``ID_3``）保持整体，
+    避免被无意义地拆碎。非空白且非上述两类的单字符（标点、全角符号等）各自成词，
+    保证每个非空白字符都被产出——偏移精确、覆盖完整、下游 span 可精确回溯。
+
+    与 GLiNER ``TokenSplitterBase`` 同形：``__call__`` 产出 ``(token, start, end)``，
+    偏移为相对 ``text`` 的字符下标。
     """
-    config_path = Path(model_path) / "gliner_config.json"
-    if not config_path.exists():
-        return
+
+    _TOKEN_PATTERN = re.compile(
+        r"[一-鿿㐀-䶿]"  # 每个 CJK 表意文字单独成词
+        r"|[A-Za-z0-9]+(?:[._\-/%][A-Za-z0-9]+)*"  # ASCII 连写串（含 . _ - / % 连接符）
+        r"|[^\s]"  # 其余单个非空白字符（标点、全角符号等）
+    )
+
+    def __call__(self, text):
+        for m in self._TOKEN_PATTERN.finditer(text):
+            yield m.group(), m.start(), m.end()
+
+
+def _install_cjk_words_splitter(model) -> None:
+    """将字符级中文分词器注入 GLiNER 的 word splitter（根因修复）。
+
+    GLiNER 把 ``data_processor.words_splitter`` 建为 ``WordsSplitter`` 工厂，其内层
+    ``.splitter`` 才是实际分词实现（``model.predict_entities`` 经
+    ``words_splitter(text)`` 委派到 ``.splitter``）。替换内层即改变 span 候选枚举的
+    边界，无需改写 gliner_config、无新增运行期依赖。GLiNER 内部结构变更（API 漂移）
+    时静默跳过，沿用默认空白分词，保持优雅降级。
+    """
     try:
-        cfg = json.loads(config_path.read_text())
-    except Exception:
-        return
-    if cfg.get("encoder_config") is not None:
-        return
-    cfg["encoder_config"] = _MDEBERTA_V3_BASE_CONFIG
-    try:
-        config_path.write_text(json.dumps(cfg, indent=2, ensure_ascii=False))
-        logger.info("已向 %s 注入 encoder_config（离线模式所需）", config_path)
-    except OSError:
-        logger.debug("无法写入 %s，跳过 encoder_config 注入", config_path)
+        model.data_processor.words_splitter.splitter = _CJKAwareWordsSplitter()
+        logger.info("已注入字符级中文分词器（GLiNER 中文长文本 span 召回根因修复）")
+    except AttributeError:  # pragma: no cover - GLiNER 内部结构变更的防御路径
+        logger.warning(
+            "无法注入中文分词器（GLiNER 内部结构可能已变更）；沿用默认空白分词",
+            exc_info=True,
+        )
 
 
 class GlinerExtractor:
@@ -99,10 +95,10 @@ class GlinerExtractor:
             from gliner import GLiNER
 
             logger.info("加载 GLiNER 本地权重：%s", settings.gliner_model_path)
-            _patch_encoder_config(settings.gliner_model_path)
             self._model = GLiNER.from_pretrained(
                 settings.gliner_model_path, local_files_only=True
             )
+            _install_cjk_words_splitter(self._model)
         except Exception:  # pragma: no cover - 依赖缺失/缺权重/加载失败路径
             logger.warning(
                 "GLiNER 不可用（未安装、缺本地权重或加载失败）；自由文本 NER 召回回退"
@@ -212,22 +208,38 @@ class GlinerExtractor:
 
 
 def _entities_to_spans(entities: list[dict], allowed: set[str]) -> list[dict]:
-    """GLiNER predict_entities 输出 → 规整 span 列表（过滤越界 label、按 start 排序）。"""
-    spans = []
+    """GLiNER predict_entities 输出 → 规整 span 列表。
+
+    过滤越界 label 后，按分数贪心消除重叠/重复：字符级分词放开 span 枚举边界后，
+    同一文本区间可能在多个 seed label 上重复命中（GLiNER ``flat_ner`` 通常已在单次
+    推理内消重，此处为防御性兜底 + 跨调用去重）。保留扁平、无字符交集的 span 集，
+    契合下游 tiptap 高亮（不允许重叠高亮）；GLiNER label 仅为临时值，阶段二按本体
+    嵌入重归类，故重叠时保留高分者即可。返回按 ``start`` 升序。
+    """
+    cleaned: list[dict] = []
     for ent in entities:
         label = ent.get("label")
         value = ent.get("text")
         if label not in allowed or not value:
             continue
-        spans.append({
+        cleaned.append({
             "start": ent.get("start", 0),
             "end": ent.get("end", 0),
             "text": value,
             "label": label,
             "score": round(ent.get("score", 0.0), 4),
         })
-    spans.sort(key=lambda s: s["start"])
-    return spans
+
+    # 分数降序贪心：仅保留与已选 span 无字符交集者（相邻 end==start 不算交集）。
+    cleaned.sort(key=lambda s: (-s["score"], s["start"], s["end"]))
+    kept: list[dict] = []
+    for span in cleaned:
+        if any(span["start"] < k["end"] and span["end"] > k["start"] for k in kept):
+            continue
+        kept.append(span)
+
+    kept.sort(key=lambda s: s["start"])
+    return kept
 
 
 @lru_cache(maxsize=1)

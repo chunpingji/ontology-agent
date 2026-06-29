@@ -1,0 +1,1278 @@
+@prefix rdf:   <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl:   <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+@prefix skos:  <http://www.w3.org/2004/02/skos/core#> .
+@prefix obo:   <http://purl.obolibrary.org/obo/> .
+@prefix slpra-dev:   <https://ontology.pharma-gmp.cn/slpra/drug-development/> .
+@prefix slpra-doc:   <https://ontology.pharma-gmp.cn/slpra/document/> .
+@prefix slpra-drug:  <https://ontology.pharma-gmp.cn/slpra/drug/> .
+@prefix slpra-equip: <https://ontology.pharma-gmp.cn/slpra/equipment/> .
+@prefix slpra-clean: <https://ontology.pharma-gmp.cn/slpra/cleaning/> .
+@prefix slpra-risk:  <https://ontology.pharma-gmp.cn/slpra/risk/> .
+
+<https://ontology.pharma-gmp.cn/slpra/drug-development/>
+    a owl:Ontology ;
+    owl:versionIRI <https://ontology.pharma-gmp.cn/slpra/drug-development/0.1.0> ;
+    rdfs:label "SLPRA Drug Development Lifecycle Ontology"@en ;
+    rdfs:label "SLPRA 新药研制生命周期本体"@zh ;
+    rdfs:comment "Module 9: Comprehensive drug development lifecycle — stages, studies, regulatory activities, and document types for new chemical/biological drug products from discovery through post-market surveillance. Aligned with NMPA/ICH regulatory framework. Extends slpra-document DevelopmentPhase with granular sub-stages and links document types to the activities that produce them."@en ;
+    owl:imports <https://ontology.pharma-gmp.cn/slpra/document/> ;
+    owl:imports <http://purl.obolibrary.org/obo/bfo.owl> .
+
+# ============================================================
+# 1. Drug Development Sub-Stages (⊑ BFO:process)
+# ============================================================
+# Detailed sub-stages under each DevelopmentPhase; each is a BFO:process
+# (planned process occurrent). Ordering via skos:notation within parent phase.
+
+# --- 1.1 Drug Discovery & Lead Optimization (Phase_DrugDiscovery) ---
+
+slpra-dev:TargetIdentification a owl:Class ;
+    rdfs:subClassOf obo:BFO_0000015 ;
+    rdfs:label "Target Identification & Validation"@en ;
+    rdfs:label "靶点发现与验证"@zh ;
+    skos:notation "1.1" ;
+    rdfs:comment "Identification and validation of biological targets (receptors, enzymes, ion channels, etc.) for therapeutic intervention."@en .
+
+slpra-dev:HighThroughputScreening a owl:Class ;
+    rdfs:subClassOf obo:BFO_0000015 ;
+    rdfs:label "High Throughput Screening"@en ;
+    rdfs:label "高通量筛选"@zh ;
+    skos:notation "1.2" ;
+    rdfs:comment "Automated large-scale screening of compound/biological molecule libraries against validated targets to identify initial hits."@en .
+
+slpra-dev:LeadOptimization a owl:Class ;
+    rdfs:subClassOf obo:BFO_0000015 ;
+    rdfs:label "Lead Optimization"@en ;
+    rdfs:label "先导化合物优化"@zh ;
+    skos:notation "1.3" ;
+    rdfs:comment "Iterative medicinal chemistry and early ADME/toxicity profiling to improve hit compounds into viable lead candidates."@en .
+
+slpra-dev:CandidateSelection a owl:Class ;
+    rdfs:subClassOf obo:BFO_0000015 ;
+    rdfs:label "Candidate Selection (Pre-IND)"@en ;
+    rdfs:label "候选药物确定（Pre-IND）"@zh ;
+    skos:notation "1.4" ;
+    rdfs:comment "Final selection of the drug candidate to advance into formal preclinical development based on efficacy, safety, developability, and IP considerations."@en .
+
+# --- 1.2 Preclinical Studies (Phase_Preclinical) ---
+
+slpra-dev:PreclinicalStudy a owl:Class ;
+    rdfs:subClassOf obo:BFO_0000015 ;
+    rdfs:label "Preclinical Study"@en ;
+    rdfs:label "临床前研究"@zh ;
+    skos:notation "2.0" ;
+    rdfs:comment "Umbrella class for all nonclinical studies conducted prior to first-in-human dosing."@en .
+
+slpra-dev:PharmacologyStudy a owl:Class ;
+    rdfs:subClassOf slpra-dev:PreclinicalStudy ;
+    rdfs:label "Pharmacology Study"@en ;
+    rdfs:label "药理学研究"@zh ;
+    skos:notation "2.1" .
+
+slpra-dev:PrimaryPharmacodynamics a owl:Class ;
+    rdfs:subClassOf slpra-dev:PharmacologyStudy ;
+    rdfs:label "Primary Pharmacodynamics"@en ;
+    rdfs:label "主要药效学"@zh ;
+    skos:notation "2.1.1" ;
+    rdfs:comment "Studies of the desired therapeutic effect of the drug candidate on the target indication."@en .
+
+slpra-dev:SecondaryPharmacodynamics a owl:Class ;
+    rdfs:subClassOf slpra-dev:PharmacologyStudy ;
+    rdfs:label "Secondary Pharmacodynamics"@en ;
+    rdfs:label "次要药效学"@zh ;
+    skos:notation "2.1.2" ;
+    rdfs:comment "Studies of unintended pharmacological effects (mode of action not related to the desired therapeutic effect)."@en .
+
+slpra-dev:SafetyPharmacology a owl:Class ;
+    rdfs:subClassOf slpra-dev:PharmacologyStudy ;
+    rdfs:label "Safety Pharmacology"@en ;
+    rdfs:label "安全药理学"@zh ;
+    skos:notation "2.1.3" ;
+    rdfs:comment "Studies assessing potential undesirable effects on physiological functions (cardiovascular, CNS, respiratory — ICH S7A/S7B core battery)."@en .
+
+slpra-dev:PharmacokineticsStudy a owl:Class ;
+    rdfs:subClassOf slpra-dev:PreclinicalStudy ;
+    rdfs:label "Pharmacokinetics Study (ADME)"@en ;
+    rdfs:label "药代动力学研究（ADME）"@zh ;
+    skos:notation "2.2" ;
+    rdfs:comment "Nonclinical studies characterizing absorption, distribution, metabolism, and excretion of the drug candidate."@en .
+
+slpra-dev:AbsorptionStudy a owl:Class ;
+    rdfs:subClassOf slpra-dev:PharmacokineticsStudy ;
+    rdfs:label "Absorption Study"@en ;
+    rdfs:label "吸收研究"@zh ;
+    skos:notation "2.2.1" .
+
+slpra-dev:DistributionStudy a owl:Class ;
+    rdfs:subClassOf slpra-dev:PharmacokineticsStudy ;
+    rdfs:label "Distribution Study"@en ;
+    rdfs:label "分布研究"@zh ;
+    skos:notation "2.2.2" .
+
+slpra-dev:MetabolismStudy a owl:Class ;
+    rdfs:subClassOf slpra-dev:PharmacokineticsStudy ;
+    rdfs:label "Metabolism Study"@en ;
+    rdfs:label "代谢研究"@zh ;
+    skos:notation "2.2.3" .
+
+slpra-dev:ExcretionStudy a owl:Class ;
+    rdfs:subClassOf slpra-dev:PharmacokineticsStudy ;
+    rdfs:label "Excretion Study"@en ;
+    rdfs:label "排泄研究"@zh ;
+    skos:notation "2.2.4" .
+
+slpra-dev:ToxicologyStudy a owl:Class ;
+    rdfs:subClassOf slpra-dev:PreclinicalStudy ;
+    rdfs:label "Toxicology Study"@en ;
+    rdfs:label "毒理学研究"@zh ;
+    skos:notation "2.3" .
+
+slpra-dev:AcuteToxicityStudy a owl:Class ;
+    rdfs:subClassOf slpra-dev:ToxicologyStudy ;
+    rdfs:label "Acute Toxicity Study"@en ;
+    rdfs:label "急性毒性试验"@zh ;
+    skos:notation "2.3.1" ;
+    rdfs:comment "Single-dose toxicity studies to determine the short-term toxic effects and LD50/MTD."@en .
+
+slpra-dev:RepeatDoseToxicityStudy a owl:Class ;
+    rdfs:subClassOf slpra-dev:ToxicologyStudy ;
+    rdfs:label "Repeat-Dose Toxicity Study"@en ;
+    rdfs:label "长期毒性试验"@zh ;
+    skos:notation "2.3.2" ;
+    rdfs:comment "Repeated-dose toxicity studies of duration aligned with intended clinical exposure (ICH M3(R2))."@en .
+
+slpra-dev:GenotoxicityStudy a owl:Class ;
+    rdfs:subClassOf slpra-dev:ToxicologyStudy ;
+    rdfs:label "Genotoxicity Study"@en ;
+    rdfs:label "遗传毒性试验"@zh ;
+    skos:notation "2.3.3" ;
+    rdfs:comment "Standard battery (ICH S2(R1)): bacterial reverse mutation, in vitro mammalian chromosomal aberration or micronucleus, in vivo assay."@en .
+
+slpra-dev:ReproductiveToxicityStudy a owl:Class ;
+    rdfs:subClassOf slpra-dev:ToxicologyStudy ;
+    rdfs:label "Reproductive Toxicity Study"@en ;
+    rdfs:label "生殖毒性试验"@zh ;
+    skos:notation "2.3.4" ;
+    rdfs:comment "Fertility, embryo-fetal development, pre/postnatal development studies (ICH S5(R3))."@en .
+
+slpra-dev:CarcinogenicityStudy a owl:Class ;
+    rdfs:subClassOf slpra-dev:ToxicologyStudy ;
+    rdfs:label "Carcinogenicity Study"@en ;
+    rdfs:label "致癌性试验"@zh ;
+    skos:notation "2.3.5" ;
+    rdfs:comment "Long-term carcinogenicity studies (ICH S1A/S1B); typically required for drugs intended for chronic use (>6 months)."@en .
+
+slpra-dev:ImmunotoxicityStudy a owl:Class ;
+    rdfs:subClassOf slpra-dev:ToxicologyStudy ;
+    rdfs:label "Immunotoxicity Study"@en ;
+    rdfs:label "免疫毒性试验"@zh ;
+    skos:notation "2.3.6" ;
+    rdfs:comment "Assessment of potential adverse effects on the immune system (ICH S8)."@en .
+
+slpra-dev:CMCDevelopment a owl:Class ;
+    rdfs:subClassOf slpra-dev:PreclinicalStudy ;
+    rdfs:label "CMC Development"@en ;
+    rdfs:label "CMC 开发"@zh ;
+    skos:notation "2.4" ;
+    rdfs:comment "Chemistry, Manufacturing, and Controls development: drug substance/product process development, formulation, analytical method development, quality standards."@en .
+
+slpra-dev:DrugSubstanceProcessDev a owl:Class ;
+    rdfs:subClassOf slpra-dev:CMCDevelopment ;
+    rdfs:label "Drug Substance Process Development"@en ;
+    rdfs:label "原料药工艺开发"@zh ;
+    skos:notation "2.4.1" .
+
+slpra-dev:DrugProductFormulationDev a owl:Class ;
+    rdfs:subClassOf slpra-dev:CMCDevelopment ;
+    rdfs:label "Drug Product Formulation Development"@en ;
+    rdfs:label "制剂处方工艺开发"@zh ;
+    skos:notation "2.4.2" .
+
+slpra-dev:AnalyticalMethodDev a owl:Class ;
+    rdfs:subClassOf slpra-dev:CMCDevelopment ;
+    rdfs:label "Analytical Method Development"@en ;
+    rdfs:label "分析方法开发"@zh ;
+    skos:notation "2.4.3" .
+
+slpra-dev:QualityStandardEstablishment a owl:Class ;
+    rdfs:subClassOf slpra-dev:CMCDevelopment ;
+    rdfs:label "Quality Standard Establishment"@en ;
+    rdfs:label "质量标准建立"@zh ;
+    skos:notation "2.4.4" .
+
+# --- 1.3 Clinical Trials (Phase_ClinicalI, Phase_ClinicalII_III) ---
+
+slpra-dev:ClinicalTrial a owl:Class ;
+    rdfs:subClassOf obo:BFO_0000015 ;
+    rdfs:label "Clinical Trial"@en ;
+    rdfs:label "临床试验"@zh ;
+    skos:notation "3.0" ;
+    rdfs:comment "A planned process of systematic investigation in human subjects to evaluate the safety and efficacy of a drug candidate."@en .
+
+slpra-dev:PhaseIClinicalTrial a owl:Class ;
+    rdfs:subClassOf slpra-dev:ClinicalTrial ;
+    rdfs:label "Phase I Clinical Trial"@en ;
+    rdfs:label "Ⅰ期临床试验"@zh ;
+    skos:notation "3.1" ;
+    rdfs:comment "First-in-human study: safety, tolerability, PK/PD in healthy volunteers (or patients for oncology), typically 20-100 subjects. Determines maximum tolerated dose (MTD)."@en .
+
+slpra-dev:PhaseIIClinicalTrial a owl:Class ;
+    rdfs:subClassOf slpra-dev:ClinicalTrial ;
+    rdfs:label "Phase II Clinical Trial"@en ;
+    rdfs:label "Ⅱ期临床试验"@zh ;
+    skos:notation "3.2" ;
+    rdfs:comment "Exploratory therapeutic trial in target indication patients: preliminary efficacy, dose-finding, further safety. Typically tens to hundreds of subjects."@en .
+
+slpra-dev:PhaseIIaClinicalTrial a owl:Class ;
+    rdfs:subClassOf slpra-dev:PhaseIIClinicalTrial ;
+    rdfs:label "Phase IIa Clinical Trial (Proof of Concept)"@en ;
+    rdfs:label "Ⅱa期临床试验（概念验证）"@zh ;
+    skos:notation "3.2.1" ;
+    rdfs:comment "Proof-of-concept (PoC) study: initial signal of efficacy in target patients."@en .
+
+slpra-dev:PhaseIIbClinicalTrial a owl:Class ;
+    rdfs:subClassOf slpra-dev:PhaseIIClinicalTrial ;
+    rdfs:label "Phase IIb Clinical Trial (Dose-Ranging)"@en ;
+    rdfs:label "Ⅱb期临床试验（剂量探索）"@zh ;
+    skos:notation "3.2.2" ;
+    rdfs:comment "Dose-ranging study: identifies optimal dose(s) for confirmatory Phase III trials."@en .
+
+slpra-dev:PhaseIIIClinicalTrial a owl:Class ;
+    rdfs:subClassOf slpra-dev:ClinicalTrial ;
+    rdfs:label "Phase III Clinical Trial"@en ;
+    rdfs:label "Ⅲ期临床试验"@zh ;
+    skos:notation "3.3" ;
+    rdfs:comment "Confirmatory trial: multi-center, randomized, controlled study in target patients to establish efficacy and safety as the basis for marketing authorization. Typically hundreds to thousands of subjects."@en .
+
+slpra-dev:PhaseIVClinicalTrial a owl:Class ;
+    rdfs:subClassOf slpra-dev:ClinicalTrial ;
+    rdfs:label "Phase IV Clinical Trial"@en ;
+    rdfs:label "Ⅳ期临床试验"@zh ;
+    skos:notation "5.1" ;
+    rdfs:comment "Post-marketing study: further efficacy/safety evaluation, new indication exploration, conducted after marketing authorization."@en .
+
+# --- 1.4 Regulatory Submission & Review (Phase_NDA_BLA) ---
+
+slpra-dev:RegulatorySubmission a owl:Class ;
+    rdfs:subClassOf obo:BFO_0000015 ;
+    rdfs:label "Regulatory Submission"@en ;
+    rdfs:label "药品注册申报"@zh ;
+    skos:notation "4.0" ;
+    rdfs:comment "Planned process of compiling and submitting a regulatory dossier (CMC, nonclinical, clinical) to a health authority for marketing authorization."@en .
+
+slpra-dev:INDSubmission a owl:Class ;
+    rdfs:subClassOf slpra-dev:RegulatorySubmission ;
+    rdfs:label "IND Submission"@en ;
+    rdfs:label "IND 临床试验申请"@zh ;
+    skos:notation "4.1" ;
+    rdfs:comment "Investigational New Drug application submitted to health authority (NMPA/FDA/EMA) to permit first-in-human clinical trials."@en .
+
+slpra-dev:NDASubmission a owl:Class ;
+    rdfs:subClassOf slpra-dev:RegulatorySubmission ;
+    rdfs:label "NDA Submission"@en ;
+    rdfs:label "NDA 新药上市申请"@zh ;
+    skos:notation "4.2" ;
+    rdfs:comment "New Drug Application submission to NMPA for marketing authorization of a chemical drug."@en .
+
+slpra-dev:BLASubmission a owl:Class ;
+    rdfs:subClassOf slpra-dev:RegulatorySubmission ;
+    rdfs:label "BLA Submission"@en ;
+    rdfs:label "BLA 生物制品许可申请"@zh ;
+    skos:notation "4.3" ;
+    rdfs:comment "Biologics License Application submission to NMPA for marketing authorization of a biological product."@en .
+
+slpra-dev:RegulatoryReview a owl:Class ;
+    rdfs:subClassOf obo:BFO_0000015 ;
+    rdfs:label "Regulatory Review"@en ;
+    rdfs:label "审评审批"@zh ;
+    skos:notation "4.4" .
+
+slpra-dev:TechnicalReview a owl:Class ;
+    rdfs:subClassOf slpra-dev:RegulatoryReview ;
+    rdfs:label "CDE Technical Review"@en ;
+    rdfs:label "CDE 技术审评"@zh ;
+    skos:notation "4.4.1" ;
+    rdfs:comment "Technical review by the Center for Drug Evaluation (CDE) of NMPA."@en .
+
+slpra-dev:DrugInspection a owl:Class ;
+    rdfs:subClassOf slpra-dev:RegulatoryReview ;
+    rdfs:label "Drug Inspection"@en ;
+    rdfs:label "药品检验"@zh ;
+    skos:notation "4.4.2" ;
+    rdfs:comment "Sample testing and verification by the National Institutes for Food and Drug Control (中检院)."@en .
+
+slpra-dev:GCPSiteInspection a owl:Class ;
+    rdfs:subClassOf slpra-dev:RegulatoryReview ;
+    rdfs:label "GCP Site Inspection"@en ;
+    rdfs:label "核查中心现场核查"@zh ;
+    skos:notation "4.4.3" ;
+    rdfs:comment "On-site inspection by NMPA Center for Inspection to verify clinical trial data integrity and GCP compliance."@en .
+
+slpra-dev:MarketingAuthorization a owl:Class ;
+    rdfs:subClassOf obo:BFO_0000015 ;
+    rdfs:label "Marketing Authorization"@en ;
+    rdfs:label "上市批准"@zh ;
+    skos:notation "4.5" ;
+    rdfs:comment "Granting of the Drug Registration Certificate (《药品注册证书》), permitting commercial production and sale."@en .
+
+# --- 1.5 Post-Market (Phase_PostMarket) ---
+
+slpra-dev:PostMarketActivity a owl:Class ;
+    rdfs:subClassOf obo:BFO_0000015 ;
+    rdfs:label "Post-Market Activity"@en ;
+    rdfs:label "上市后活动"@zh ;
+    skos:notation "5.0" .
+
+slpra-dev:Pharmacovigilance a owl:Class ;
+    rdfs:subClassOf slpra-dev:PostMarketActivity ;
+    rdfs:label "Pharmacovigilance"@en ;
+    rdfs:label "药物警戒"@zh ;
+    skos:notation "5.2" ;
+    rdfs:comment "Ongoing science and activities relating to the detection, assessment, understanding and prevention of adverse effects or any other drug-related problem."@en .
+
+slpra-dev:SpontaneousReporting a owl:Class ;
+    rdfs:subClassOf slpra-dev:Pharmacovigilance ;
+    rdfs:label "Spontaneous Reporting"@en ;
+    rdfs:label "自发报告"@zh ;
+    skos:notation "5.2.1" .
+
+slpra-dev:IntensiveMonitoring a owl:Class ;
+    rdfs:subClassOf slpra-dev:Pharmacovigilance ;
+    rdfs:label "Intensive Monitoring"@en ;
+    rdfs:label "重点监测"@zh ;
+    skos:notation "5.2.2" .
+
+slpra-dev:RiskManagementPlan a owl:Class ;
+    rdfs:subClassOf slpra-dev:Pharmacovigilance ;
+    rdfs:label "Risk Management Plan (RMP)"@en ;
+    rdfs:label "风险管理计划（RMP）"@zh ;
+    skos:notation "5.2.3" ;
+    rdfs:comment "ICH E2E: a set of pharmacovigilance activities and interventions designed to identify, characterize, prevent, or minimize risks relating to a medicinal product."@en .
+
+slpra-dev:LifecycleManagement a owl:Class ;
+    rdfs:subClassOf slpra-dev:PostMarketActivity ;
+    rdfs:label "Lifecycle Management"@en ;
+    rdfs:label "全生命周期管理"@zh ;
+    skos:notation "5.3" .
+
+slpra-dev:ProcessChangeManagement a owl:Class ;
+    rdfs:subClassOf slpra-dev:LifecycleManagement ;
+    rdfs:label "Post-Approval Process Change"@en ;
+    rdfs:label "上市后工艺变更"@zh ;
+    skos:notation "5.3.1" .
+
+slpra-dev:ReRegistration a owl:Class ;
+    rdfs:subClassOf slpra-dev:LifecycleManagement ;
+    rdfs:label "Re-Registration"@en ;
+    rdfs:label "再注册"@zh ;
+    skos:notation "5.3.2" ;
+    rdfs:comment "Periodic renewal of the drug registration certificate (NMPA every 5 years)."@en .
+
+# ============================================================
+# 2. Regulatory Document Types (⊑ RegulatoryDocument)
+# ============================================================
+
+# --- 2.1 Discovery & Preclinical Documents ---
+
+slpra-dev:TargetValidationReport a owl:Class ;
+    rdfs:subClassOf slpra-doc:RegulatoryDocument ;
+    rdfs:label "Target Validation Report"@en ;
+    rdfs:label "靶点验证报告"@zh .
+
+slpra-dev:HTSReport a owl:Class ;
+    rdfs:subClassOf slpra-doc:RegulatoryDocument ;
+    rdfs:label "HTS Screening Report"@en ;
+    rdfs:label "高通量筛选报告"@zh .
+
+slpra-dev:LeadOptimizationReport a owl:Class ;
+    rdfs:subClassOf slpra-doc:RegulatoryDocument ;
+    rdfs:label "Lead Optimization Report"@en ;
+    rdfs:label "先导化合物优化报告"@zh .
+
+slpra-dev:CandidateSelectionReport a owl:Class ;
+    rdfs:subClassOf slpra-doc:RegulatoryDocument ;
+    rdfs:label "Candidate Selection Report"@en ;
+    rdfs:label "候选药物遴选报告"@zh .
+
+slpra-dev:PharmacologyStudyReport a owl:Class ;
+    rdfs:subClassOf slpra-doc:RegulatoryDocument ;
+    rdfs:label "Pharmacology Study Report"@en ;
+    rdfs:label "药理学研究报告"@zh .
+
+slpra-dev:PKStudyReport a owl:Class ;
+    rdfs:subClassOf slpra-doc:RegulatoryDocument ;
+    rdfs:label "Pharmacokinetics Study Report"@en ;
+    rdfs:label "药代动力学研究报告"@zh .
+
+slpra-dev:ToxicologyStudyReport a owl:Class ;
+    rdfs:subClassOf slpra-doc:RegulatoryDocument ;
+    rdfs:label "Toxicology Study Report"@en ;
+    rdfs:label "毒理学研究报告"@zh .
+
+slpra-dev:CMCReport a owl:Class ;
+    rdfs:subClassOf slpra-doc:RegulatoryDocument ;
+    rdfs:label "CMC Report"@en ;
+    rdfs:label "CMC 报告"@zh ;
+    rdfs:comment "Chemistry, Manufacturing, and Controls documentation: drug substance/product specification, manufacturing process, analytical methods."@en .
+
+# --- 2.2 Clinical Documents ---
+
+slpra-dev:InvestigatorBrochure a owl:Class ;
+    rdfs:subClassOf slpra-doc:RegulatoryDocument ;
+    rdfs:label "Investigator's Brochure (IB)"@en ;
+    rdfs:label "研究者手册（IB）"@zh ;
+    rdfs:comment "ICH E6(R2) required compilation of clinical and nonclinical data relevant to the investigational product."@en .
+
+slpra-dev:ClinicalTrialProtocol a owl:Class ;
+    rdfs:subClassOf slpra-doc:RegulatoryDocument ;
+    rdfs:label "Clinical Trial Protocol"@en ;
+    rdfs:label "临床试验方案"@zh .
+
+slpra-dev:InformedConsentForm a owl:Class ;
+    rdfs:subClassOf slpra-doc:RegulatoryDocument ;
+    rdfs:label "Informed Consent Form (ICF)"@en ;
+    rdfs:label "知情同意书（ICF）"@zh .
+
+slpra-dev:ClinicalStudyReport a owl:Class ;
+    rdfs:subClassOf slpra-doc:RegulatoryDocument ;
+    rdfs:label "Clinical Study Report (CSR)"@en ;
+    rdfs:label "临床试验报告（CSR）"@zh ;
+    rdfs:comment "ICH E3 formatted report of an individual clinical study."@en .
+
+slpra-dev:ClinicalOverview a owl:Class ;
+    rdfs:subClassOf slpra-doc:RegulatoryDocument ;
+    rdfs:label "Clinical Overview"@en ;
+    rdfs:label "临床概述"@zh ;
+    rdfs:comment "CTD Module 2.5: critical analysis of all clinical data."@en .
+
+slpra-dev:ClinicalSummary a owl:Class ;
+    rdfs:subClassOf slpra-doc:RegulatoryDocument ;
+    rdfs:label "Clinical Summary"@en ;
+    rdfs:label "临床总结"@zh ;
+    rdfs:comment "CTD Module 2.7: summary of clinical pharmacology, efficacy, and safety."@en .
+
+# --- 2.3 NDA/BLA Dossier Components (CTD Modules) ---
+
+slpra-dev:CTDModule1 a owl:Class ;
+    rdfs:subClassOf slpra-doc:RegulatoryDocument ;
+    rdfs:label "CTD Module 1 (Administrative)"@en ;
+    rdfs:label "CTD 模块1（行政信息）"@zh ;
+    rdfs:comment "Region-specific administrative information and prescribing information."@en .
+
+slpra-dev:CTDModule2 a owl:Class ;
+    rdfs:subClassOf slpra-doc:RegulatoryDocument ;
+    rdfs:label "CTD Module 2 (Summaries)"@en ;
+    rdfs:label "CTD 模块2（综述）"@zh ;
+    rdfs:comment "Quality Overall Summary (QOS), Nonclinical Overview/Summary, Clinical Overview/Summary."@en .
+
+slpra-dev:CTDModule3 a owl:Class ;
+    rdfs:subClassOf slpra-doc:RegulatoryDocument ;
+    rdfs:label "CTD Module 3 (Quality / CMC)"@en ;
+    rdfs:label "CTD 模块3（药学）"@zh ;
+    rdfs:comment "Drug substance and drug product quality data: manufacturing process, specifications, stability."@en .
+
+slpra-dev:CTDModule4 a owl:Class ;
+    rdfs:subClassOf slpra-doc:RegulatoryDocument ;
+    rdfs:label "CTD Module 4 (Nonclinical)"@en ;
+    rdfs:label "CTD 模块4（非临床）"@zh ;
+    rdfs:comment "Nonclinical study reports: pharmacology, pharmacokinetics, toxicology."@en .
+
+slpra-dev:CTDModule5 a owl:Class ;
+    rdfs:subClassOf slpra-doc:RegulatoryDocument ;
+    rdfs:label "CTD Module 5 (Clinical)"@en ;
+    rdfs:label "CTD 模块5（临床）"@zh ;
+    rdfs:comment "Clinical study reports and related information."@en .
+
+# --- 2.4 Post-Market Documents ---
+
+slpra-dev:PSUR a owl:Class ;
+    rdfs:subClassOf slpra-doc:RegulatoryDocument ;
+    rdfs:label "Periodic Safety Update Report (PSUR/PBRER)"@en ;
+    rdfs:label "定期安全性更新报告（PSUR/PBRER）"@zh ;
+    rdfs:comment "ICH E2C(R2): periodic benefit-risk evaluation report submitted to health authorities."@en .
+
+slpra-dev:ADRReport a owl:Class ;
+    rdfs:subClassOf slpra-doc:RegulatoryDocument ;
+    rdfs:label "Adverse Drug Reaction Report"@en ;
+    rdfs:label "药品不良反应报告"@zh .
+
+slpra-dev:RMPDocument a owl:Class ;
+    rdfs:subClassOf slpra-doc:RegulatoryDocument ;
+    rdfs:label "Risk Management Plan Document"@en ;
+    rdfs:label "风险管理计划文档"@zh .
+
+slpra-dev:PostApprovalChangeApplication a owl:Class ;
+    rdfs:subClassOf slpra-doc:RegulatoryDocument ;
+    rdfs:label "Post-Approval Change Application"@en ;
+    rdfs:label "上市后变更申请"@zh ;
+    rdfs:comment "Regulatory submission for post-approval changes in manufacturing process, specifications, or other CMC attributes."@en .
+
+# ============================================================
+# 3. Regulatory Milestone (⊑ BFO:GDC, generically dependent continuant)
+# ============================================================
+
+slpra-dev:RegulatoryMilestone a owl:Class ;
+    rdfs:subClassOf obo:BFO_0000031 ;
+    rdfs:label "Regulatory Milestone"@en ;
+    rdfs:label "法规里程碑"@zh ;
+    rdfs:comment "An information entity representing a key regulatory decision point in the drug development lifecycle."@en .
+
+slpra-dev:INDApproval a owl:Class ;
+    rdfs:subClassOf slpra-dev:RegulatoryMilestone ;
+    rdfs:label "IND Approval (Clinical Trial Authorization)"@en ;
+    rdfs:label "IND 批准（临床试验许可）"@zh .
+
+slpra-dev:EndOfPhaseIIMeeting a owl:Class ;
+    rdfs:subClassOf slpra-dev:RegulatoryMilestone ;
+    rdfs:label "End-of-Phase-II Meeting"@en ;
+    rdfs:label "Ⅱ期结束沟通会"@zh ;
+    rdfs:comment "Pre-Phase III communication meeting with health authority to agree on Phase III trial design."@en .
+
+slpra-dev:PreNDAMeeting a owl:Class ;
+    rdfs:subClassOf slpra-dev:RegulatoryMilestone ;
+    rdfs:label "Pre-NDA Meeting"@en ;
+    rdfs:label "NDA 前沟通会"@zh .
+
+slpra-dev:NDAAcceptance a owl:Class ;
+    rdfs:subClassOf slpra-dev:RegulatoryMilestone ;
+    rdfs:label "NDA/BLA Acceptance"@en ;
+    rdfs:label "NDA/BLA 受理"@zh .
+
+slpra-dev:DrugRegistrationCertificate a owl:Class ;
+    rdfs:subClassOf slpra-dev:RegulatoryMilestone ;
+    rdfs:label "Drug Registration Certificate"@en ;
+    rdfs:label "药品注册证书"@zh ;
+    rdfs:comment "《药品注册证书》issued by NMPA upon marketing authorization approval."@en .
+
+# ============================================================
+# 4. GxP Applicability (⊑ BFO:GDC)
+# ============================================================
+
+slpra-dev:GxPRequirement a owl:Class ;
+    rdfs:subClassOf obo:BFO_0000031 ;
+    rdfs:label "GxP Requirement"@en ;
+    rdfs:label "GxP 要求"@zh ;
+    rdfs:comment "Good practice requirement applicable to a specific development stage."@en .
+
+# GxP Requirement Individuals (ordered enumeration, same pattern as DevelopmentPhase)
+slpra-dev:GLP a slpra-dev:GxPRequirement ;
+    skos:notation "GLP" ;
+    rdfs:label "GLP"@en ;
+    rdfs:label "GLP 药物非临床研究质量管理规范"@zh ;
+    rdfs:comment "Good Laboratory Practice — applicable to nonclinical safety studies (toxicology, safety pharmacology)."@en .
+
+slpra-dev:GCP a slpra-dev:GxPRequirement ;
+    skos:notation "GCP" ;
+    rdfs:label "GCP"@en ;
+    rdfs:label "GCP 药物临床试验质量管理规范"@zh ;
+    rdfs:comment "Good Clinical Practice — applicable to all clinical trials (ICH E6(R2))."@en .
+
+slpra-dev:GMP a slpra-dev:GxPRequirement ;
+    skos:notation "GMP" ;
+    rdfs:label "GMP"@en ;
+    rdfs:label "GMP 药品生产质量管理规范"@zh ;
+    rdfs:comment "Good Manufacturing Practice — applicable to clinical trial material manufacturing and commercial production."@en .
+
+slpra-dev:GDP a slpra-dev:GxPRequirement ;
+    skos:notation "GDP" ;
+    rdfs:label "GDP"@en ;
+    rdfs:label "GDP 药品经营质量管理规范"@zh ;
+    rdfs:comment "Good Distribution Practice — applicable to storage and distribution of investigational and commercial drugs."@en .
+
+slpra-dev:GVP a slpra-dev:GxPRequirement ;
+    skos:notation "GVP" ;
+    rdfs:label "GVP"@en ;
+    rdfs:label "GVP 药物警戒质量管理规范"@zh ;
+    rdfs:comment "Good Pharmacovigilance Practice — applicable to post-market safety monitoring."@en .
+
+# ============================================================
+# 5. Object Properties
+# ============================================================
+
+slpra-dev:hasSubStage a owl:ObjectProperty, owl:TransitiveProperty ;
+    rdfs:label "has sub-stage"@en ;
+    rdfs:label "包含子阶段"@zh ;
+    rdfs:comment "Links a DevelopmentPhase to its constituent sub-stages."@en .
+
+slpra-dev:belongsToPhase a owl:ObjectProperty ;
+    rdfs:range slpra-doc:DevelopmentPhase ;
+    rdfs:label "belongs to phase"@en ;
+    rdfs:label "属于研发阶段"@zh ;
+    rdfs:comment "Links a sub-stage, study, or activity to its parent DevelopmentPhase individual."@en .
+
+slpra-dev:produces a owl:ObjectProperty ;
+    rdfs:range slpra-doc:RegulatoryDocument ;
+    rdfs:label "produces"@en ;
+    rdfs:label "产出"@zh ;
+    rdfs:comment "Links a study or activity to the regulatory document it produces."@en .
+
+slpra-dev:requiredFor a owl:ObjectProperty ;
+    rdfs:range slpra-dev:RegulatoryMilestone ;
+    rdfs:label "required for"@en ;
+    rdfs:label "作为…的依据"@zh ;
+    rdfs:comment "Links a document or study to the regulatory milestone for which it serves as a basis."@en .
+
+slpra-dev:precedes a owl:ObjectProperty, owl:TransitiveProperty ;
+    rdfs:label "precedes"@en ;
+    rdfs:label "先于"@zh ;
+    rdfs:comment "Temporal ordering between development stages or milestones."@en .
+
+slpra-dev:appliesGxP a owl:ObjectProperty ;
+    rdfs:range slpra-dev:GxPRequirement ;
+    rdfs:label "applies GxP requirement"@en ;
+    rdfs:label "适用GxP要求"@zh ;
+    rdfs:comment "Links a development stage or study to the applicable GxP requirements."@en .
+
+slpra-dev:evaluates a owl:ObjectProperty ;
+    rdfs:domain slpra-dev:ClinicalTrial ;
+    rdfs:range slpra-drug:DrugProduct ;
+    rdfs:label "evaluates"@en ;
+    rdfs:label "评价"@zh ;
+    rdfs:comment "Links a clinical trial to the drug product being evaluated."@en .
+
+slpra-dev:submittedTo a owl:ObjectProperty ;
+    rdfs:domain slpra-dev:RegulatorySubmission ;
+    rdfs:label "submitted to"@en ;
+    rdfs:label "提交至"@zh ;
+    rdfs:comment "Links a regulatory submission to the health authority (NMPA, FDA, EMA)."@en .
+
+# ============================================================
+# 6. Data Properties
+# ============================================================
+
+slpra-dev:sampleSize a owl:DatatypeProperty ;
+    rdfs:domain slpra-dev:ClinicalTrial ;
+    rdfs:range xsd:integer ;
+    rdfs:label "sample size"@en ;
+    rdfs:label "样本量"@zh .
+
+slpra-dev:trialDesign a owl:DatatypeProperty ;
+    rdfs:domain slpra-dev:ClinicalTrial ;
+    rdfs:range xsd:string ;
+    rdfs:label "trial design"@en ;
+    rdfs:label "试验设计"@zh ;
+    rdfs:comment "Study design descriptor, e.g. randomized, double-blind, placebo-controlled, multi-center."@en .
+
+slpra-dev:targetIndication a owl:DatatypeProperty ;
+    rdfs:domain slpra-dev:ClinicalTrial ;
+    rdfs:range xsd:string ;
+    rdfs:label "target indication"@en ;
+    rdfs:label "目标适应症"@zh .
+
+slpra-dev:subjectPopulation a owl:DatatypeProperty ;
+    rdfs:domain slpra-dev:ClinicalTrial ;
+    rdfs:range xsd:string ;
+    rdfs:label "subject population"@en ;
+    rdfs:label "受试者人群"@zh ;
+    rdfs:comment "Description of enrolled subjects, e.g. healthy volunteers, target indication patients."@en .
+
+slpra-dev:primaryEndpoint a owl:DatatypeProperty ;
+    rdfs:domain slpra-dev:ClinicalTrial ;
+    rdfs:range xsd:string ;
+    rdfs:label "primary endpoint"@en ;
+    rdfs:label "主要终点"@zh .
+
+slpra-dev:milestoneDate a owl:DatatypeProperty ;
+    rdfs:domain slpra-dev:RegulatoryMilestone ;
+    rdfs:range xsd:date ;
+    rdfs:label "milestone date"@en ;
+    rdfs:label "里程碑日期"@zh .
+
+slpra-dev:submissionDate a owl:DatatypeProperty ;
+    rdfs:domain slpra-dev:RegulatorySubmission ;
+    rdfs:range xsd:date ;
+    rdfs:label "submission date"@en ;
+    rdfs:label "申报日期"@zh .
+
+slpra-dev:healthAuthority a owl:DatatypeProperty ;
+    rdfs:domain slpra-dev:RegulatorySubmission ;
+    rdfs:range xsd:string ;
+    rdfs:label "health authority"@en ;
+    rdfs:label "药品监管机构"@zh ;
+    rdfs:comment "Name of the regulatory authority: NMPA, FDA, EMA, PMDA, etc."@en .
+
+slpra-dev:ctdModuleNumber a owl:DatatypeProperty ;
+    rdfs:domain slpra-doc:RegulatoryDocument ;
+    rdfs:range xsd:string ;
+    rdfs:label "CTD module number"@en ;
+    rdfs:label "CTD 模块编号"@zh ;
+    rdfs:comment "ICH Common Technical Document module reference, e.g. 2.5, 3.2.S, 5.3.5."@en .
+
+# ============================================================
+# 7. Stage → Phase Links (relating sub-stages to DevelopmentPhase individuals)
+# ============================================================
+
+slpra-dev:TargetIdentification    slpra-dev:belongsToPhase slpra-doc:Phase_DrugDiscovery .
+slpra-dev:HighThroughputScreening slpra-dev:belongsToPhase slpra-doc:Phase_DrugDiscovery .
+slpra-dev:LeadOptimization        slpra-dev:belongsToPhase slpra-doc:Phase_DrugDiscovery .
+slpra-dev:CandidateSelection      slpra-dev:belongsToPhase slpra-doc:Phase_DrugDiscovery .
+
+slpra-dev:PreclinicalStudy        slpra-dev:belongsToPhase slpra-doc:Phase_Preclinical .
+slpra-dev:PharmacologyStudy       slpra-dev:belongsToPhase slpra-doc:Phase_Preclinical .
+slpra-dev:PharmacokineticsStudy   slpra-dev:belongsToPhase slpra-doc:Phase_Preclinical .
+slpra-dev:ToxicologyStudy         slpra-dev:belongsToPhase slpra-doc:Phase_Preclinical .
+slpra-dev:CMCDevelopment          slpra-dev:belongsToPhase slpra-doc:Phase_Preclinical .
+
+slpra-dev:PhaseIClinicalTrial     slpra-dev:belongsToPhase slpra-doc:Phase_ClinicalI .
+slpra-dev:PhaseIIClinicalTrial    slpra-dev:belongsToPhase slpra-doc:Phase_ClinicalII_III .
+slpra-dev:PhaseIIIClinicalTrial   slpra-dev:belongsToPhase slpra-doc:Phase_ClinicalII_III .
+
+slpra-dev:RegulatorySubmission    slpra-dev:belongsToPhase slpra-doc:Phase_NDA_BLA .
+slpra-dev:RegulatoryReview        slpra-dev:belongsToPhase slpra-doc:Phase_NDA_BLA .
+slpra-dev:MarketingAuthorization  slpra-dev:belongsToPhase slpra-doc:Phase_NDA_BLA .
+
+slpra-dev:PhaseIVClinicalTrial    slpra-dev:belongsToPhase slpra-doc:Phase_PostMarket .
+slpra-dev:Pharmacovigilance       slpra-dev:belongsToPhase slpra-doc:Phase_PostMarket .
+slpra-dev:LifecycleManagement     slpra-dev:belongsToPhase slpra-doc:Phase_PostMarket .
+
+# ============================================================
+# 8. Stage Ordering (precedes)
+# ============================================================
+
+slpra-doc:Phase_DrugDiscovery   slpra-dev:precedes slpra-doc:Phase_Preclinical .
+slpra-doc:Phase_Preclinical     slpra-dev:precedes slpra-doc:Phase_ClinicalI .
+slpra-doc:Phase_ClinicalI       slpra-dev:precedes slpra-doc:Phase_ClinicalII_III .
+slpra-doc:Phase_ClinicalII_III  slpra-dev:precedes slpra-doc:Phase_NDA_BLA .
+slpra-doc:Phase_NDA_BLA         slpra-dev:precedes slpra-doc:Phase_PostMarket .
+
+slpra-dev:INDSubmission         slpra-dev:precedes slpra-dev:PhaseIClinicalTrial .
+slpra-dev:PhaseIClinicalTrial   slpra-dev:precedes slpra-dev:PhaseIIClinicalTrial .
+slpra-dev:PhaseIIClinicalTrial  slpra-dev:precedes slpra-dev:PhaseIIIClinicalTrial .
+slpra-dev:PhaseIIIClinicalTrial slpra-dev:precedes slpra-dev:NDASubmission .
+slpra-dev:NDASubmission         slpra-dev:precedes slpra-dev:MarketingAuthorization .
+
+# ============================================================
+# 9. GxP Applicability Links
+# ============================================================
+
+slpra-dev:ToxicologyStudy       slpra-dev:appliesGxP slpra-dev:GLP .
+slpra-dev:SafetyPharmacology    slpra-dev:appliesGxP slpra-dev:GLP .
+slpra-dev:PhaseIClinicalTrial   slpra-dev:appliesGxP slpra-dev:GCP .
+slpra-dev:PhaseIIClinicalTrial  slpra-dev:appliesGxP slpra-dev:GCP .
+slpra-dev:PhaseIIIClinicalTrial slpra-dev:appliesGxP slpra-dev:GCP .
+slpra-dev:PhaseIVClinicalTrial  slpra-dev:appliesGxP slpra-dev:GCP .
+slpra-dev:CMCDevelopment        slpra-dev:appliesGxP slpra-dev:GMP .
+slpra-dev:Pharmacovigilance     slpra-dev:appliesGxP slpra-dev:GVP .
+
+# ############################################################
+# 10. CMC Production Data Model
+# ############################################################
+# Classes and properties extracted from real-world CMC production
+# documents (e.g. 原料药临床备样生产信息). These model the structured
+# content OF a CMCReport, not the document metadata (which lives
+# in slpra-document). Cross-module links use prefixes from drug,
+# equipment, cleaning, and risk modules.
+
+# ============================================================
+# 10.1 Synthesis Route & Steps (⊑ BFO:process)
+# ============================================================
+
+slpra-dev:SynthesisRoute a owl:Class ;
+    rdfs:subClassOf obo:BFO_0000015 ;
+    rdfs:label "Synthesis Route"@en ;
+    rdfs:label "合成路线"@zh ;
+    rdfs:comment "The overall synthetic pathway from starting materials through intermediates to the drug substance (API). A route comprises an ordered chain of SynthesisSteps."@en .
+
+slpra-dev:SynthesisStep a owl:Class ;
+    rdfs:subClassOf obo:BFO_0000015 ;
+    rdfs:label "Synthesis Step"@en ;
+    rdfs:label "合成步骤"@zh ;
+    rdfs:comment "A single unit operation within a synthesis route (e.g. Suzuki coupling, deprotection, salt formation, purification)."@en .
+
+slpra-dev:Reaction a owl:Class ;
+    rdfs:subClassOf slpra-dev:SynthesisStep ;
+    rdfs:label "Reaction"@en ;
+    rdfs:label "反应"@zh .
+
+slpra-dev:Extraction a owl:Class ;
+    rdfs:subClassOf slpra-dev:SynthesisStep ;
+    rdfs:label "Extraction"@en ;
+    rdfs:label "萃取"@zh .
+
+slpra-dev:Filtration a owl:Class ;
+    rdfs:subClassOf slpra-dev:SynthesisStep ;
+    rdfs:label "Filtration"@en ;
+    rdfs:label "过滤/甩滤"@zh .
+
+slpra-dev:Concentration a owl:Class ;
+    rdfs:subClassOf slpra-dev:SynthesisStep ;
+    rdfs:label "Concentration"@en ;
+    rdfs:label "浓缩"@zh .
+
+slpra-dev:Crystallization a owl:Class ;
+    rdfs:subClassOf slpra-dev:SynthesisStep ;
+    rdfs:label "Crystallization"@en ;
+    rdfs:label "结晶/析晶"@zh .
+
+slpra-dev:Drying a owl:Class ;
+    rdfs:subClassOf slpra-dev:SynthesisStep ;
+    rdfs:label "Drying"@en ;
+    rdfs:label "干燥"@zh .
+
+slpra-dev:Purification a owl:Class ;
+    rdfs:subClassOf slpra-dev:SynthesisStep ;
+    rdfs:label "Purification"@en ;
+    rdfs:label "精制/纯化"@zh .
+
+slpra-dev:ColumnChromatography a owl:Class ;
+    rdfs:subClassOf slpra-dev:Purification ;
+    rdfs:label "Column Chromatography"@en ;
+    rdfs:label "柱层析"@zh .
+
+slpra-dev:SaltFormation a owl:Class ;
+    rdfs:subClassOf slpra-dev:SynthesisStep ;
+    rdfs:label "Salt Formation"@en ;
+    rdfs:label "成盐"@zh .
+
+slpra-dev:Deprotection a owl:Class ;
+    rdfs:subClassOf slpra-dev:SynthesisStep ;
+    rdfs:label "Deprotection"@en ;
+    rdfs:label "脱保护"@zh .
+
+# ============================================================
+# 10.2 Process Intermediate (⊑ BFO:material entity)
+# ============================================================
+
+slpra-dev:ProcessIntermediate a owl:Class ;
+    rdfs:subClassOf obo:BFO_0000040 ;
+    rdfs:label "Process Intermediate"@en ;
+    rdfs:label "工艺中间体"@zh ;
+    rdfs:comment "A chemical entity produced at an intermediate synthesis step, not the final API."@en .
+
+slpra-dev:CrudeProduct a owl:Class ;
+    rdfs:subClassOf slpra-dev:ProcessIntermediate ;
+    rdfs:label "Crude Product"@en ;
+    rdfs:label "粗品"@zh .
+
+# ============================================================
+# 10.3 Process Material (⊑ BFO:material entity)
+# ============================================================
+
+slpra-dev:ProcessMaterial a owl:Class ;
+    rdfs:subClassOf obo:BFO_0000040 ;
+    rdfs:label "Process Material"@en ;
+    rdfs:label "工艺物料"@zh ;
+    rdfs:comment "A material consumed in drug substance manufacturing: starting material, solvent, reagent, catalyst, or process aid."@en .
+
+slpra-dev:StartingMaterial a owl:Class ;
+    rdfs:subClassOf slpra-dev:ProcessMaterial ;
+    rdfs:label "Starting Material"@en ;
+    rdfs:label "起始物料"@zh .
+
+slpra-dev:Solvent a owl:Class ;
+    rdfs:subClassOf slpra-dev:ProcessMaterial ;
+    rdfs:label "Solvent"@en ;
+    rdfs:label "溶剂"@zh .
+
+slpra-dev:Reagent a owl:Class ;
+    rdfs:subClassOf slpra-dev:ProcessMaterial ;
+    rdfs:label "Reagent"@en ;
+    rdfs:label "试剂"@zh .
+
+slpra-dev:Catalyst a owl:Class ;
+    rdfs:subClassOf slpra-dev:ProcessMaterial ;
+    rdfs:label "Catalyst"@en ;
+    rdfs:label "催化剂"@zh .
+
+slpra-dev:ProcessAid a owl:Class ;
+    rdfs:subClassOf slpra-dev:ProcessMaterial ;
+    rdfs:label "Process Aid"@en ;
+    rdfs:label "工艺辅助物料"@zh ;
+    rdfs:comment "Protective gas (N2), process water, etc."@en .
+
+# ============================================================
+# 10.4 Storage Condition (⊑ BFO:GDC)
+# ============================================================
+
+slpra-dev:StorageCondition a owl:Class ;
+    rdfs:subClassOf obo:BFO_0000031 ;
+    rdfs:label "Storage Condition"@en ;
+    rdfs:label "存放条件"@zh ;
+    rdfs:comment "Specified storage requirements for an intermediate or drug substance: temperature, humidity, light protection, packaging, and shelf life / retest period."@en .
+
+# ============================================================
+# 10.5 Degradation Pathway (⊑ BFO:process)
+# ============================================================
+
+slpra-dev:DegradationPathway a owl:Class ;
+    rdfs:subClassOf obo:BFO_0000015 ;
+    rdfs:label "Degradation Pathway"@en ;
+    rdfs:label "降解途径"@zh ;
+    rdfs:comment "A characterized forced-degradation pathway of the drug substance used for cleaning validation and stability assessment."@en .
+
+slpra-dev:AcidDegradation a owl:Class ;
+    rdfs:subClassOf slpra-dev:DegradationPathway ;
+    rdfs:label "Acid Degradation"@en ;
+    rdfs:label "酸降解"@zh .
+
+slpra-dev:AlkalineDegradation a owl:Class ;
+    rdfs:subClassOf slpra-dev:DegradationPathway ;
+    rdfs:label "Alkaline Degradation"@en ;
+    rdfs:label "碱降解"@zh .
+
+slpra-dev:OxidativeDegradation a owl:Class ;
+    rdfs:subClassOf slpra-dev:DegradationPathway ;
+    rdfs:label "Oxidative Degradation"@en ;
+    rdfs:label "氧化降解"@zh .
+
+slpra-dev:PhotoDegradation a owl:Class ;
+    rdfs:subClassOf slpra-dev:DegradationPathway ;
+    rdfs:label "Photo Degradation"@en ;
+    rdfs:label "光降解"@zh .
+
+slpra-dev:ThermalDegradation a owl:Class ;
+    rdfs:subClassOf slpra-dev:DegradationPathway ;
+    rdfs:label "Thermal Degradation"@en ;
+    rdfs:label "热降解"@zh .
+
+slpra-dev:HumidityDegradation a owl:Class ;
+    rdfs:subClassOf slpra-dev:DegradationPathway ;
+    rdfs:label "Humidity Degradation"@en ;
+    rdfs:label "湿降解"@zh .
+
+# ============================================================
+# 10.6 Shared-Line Assessment Data (⊑ BFO:GDC)
+# ============================================================
+
+slpra-dev:SharedLineAssessmentData a owl:Class ;
+    rdfs:subClassOf obo:BFO_0000031 ;
+    rdfs:label "Shared-Line Assessment Data"@en ;
+    rdfs:label "共线评估数据"@zh ;
+    rdfs:comment "Aggregated toxicological and dosing data required for shared-line (SLPRA) production risk assessment: NOAEL, F-factor, PDE, daily dose, and degradation profiles."@en .
+
+# ============================================================
+# 10.7 Safety & Quality Risk Assessment (⊑ BFO:GDC)
+# ============================================================
+
+slpra-dev:SafetyRiskAssessment a owl:Class ;
+    rdfs:subClassOf obo:BFO_0000031 ;
+    rdfs:label "Safety Risk Assessment"@en ;
+    rdfs:label "安全风险评估"@zh ;
+    rdfs:comment "Assessment of occupational safety risks during manufacturing: flammability, toxicity exposure, oxygen depletion, thermal runaway."@en .
+
+slpra-dev:QualityRiskAssessment a owl:Class ;
+    rdfs:subClassOf obo:BFO_0000031 ;
+    rdfs:label "Quality Risk Assessment"@en ;
+    rdfs:label "质量风险评估"@zh ;
+    rdfs:comment "Assessment of quality risks during manufacturing: impurity carry-over, incomplete reaction, product degradation, contamination."@en .
+
+# ============================================================
+# 10.8 Object Properties — CMC cross-module links
+# ============================================================
+
+slpra-dev:describes a owl:ObjectProperty ;
+    rdfs:domain slpra-dev:CMCReport ;
+    rdfs:range slpra-drug:DrugProduct ;
+    rdfs:label "describes"@en ;
+    rdfs:label "描述"@zh ;
+    rdfs:comment "Links a CMC report to the drug product / drug substance it documents."@en .
+
+slpra-dev:hasSynthesisRoute a owl:ObjectProperty ;
+    rdfs:domain slpra-dev:CMCReport ;
+    rdfs:range slpra-dev:SynthesisRoute ;
+    rdfs:label "has synthesis route"@en ;
+    rdfs:label "含合成路线"@zh .
+
+slpra-dev:hasStep a owl:ObjectProperty ;
+    rdfs:domain slpra-dev:SynthesisRoute ;
+    rdfs:range slpra-dev:SynthesisStep ;
+    rdfs:label "has step"@en ;
+    rdfs:label "含步骤"@zh .
+
+slpra-dev:nextStep a owl:ObjectProperty ;
+    rdfs:domain slpra-dev:SynthesisStep ;
+    rdfs:range slpra-dev:SynthesisStep ;
+    rdfs:label "next step"@en ;
+    rdfs:label "下一步骤"@zh ;
+    rdfs:comment "Ordered chain linking synthesis steps within a route."@en .
+
+slpra-dev:usesEquipment a owl:ObjectProperty ;
+    rdfs:range slpra-equip:Equipment ;
+    rdfs:label "uses equipment"@en ;
+    rdfs:label "使用设备"@zh ;
+    rdfs:comment "Links a synthesis step or CMC report to the equipment required."@en .
+
+slpra-dev:usesMaterial a owl:ObjectProperty ;
+    rdfs:range slpra-dev:ProcessMaterial ;
+    rdfs:label "uses material"@en ;
+    rdfs:label "使用物料"@zh .
+
+slpra-dev:producesIntermediate a owl:ObjectProperty ;
+    rdfs:domain slpra-dev:SynthesisStep ;
+    rdfs:range slpra-dev:ProcessIntermediate ;
+    rdfs:label "produces intermediate"@en ;
+    rdfs:label "产出中间体"@zh .
+
+slpra-dev:hasStorageCondition a owl:ObjectProperty ;
+    rdfs:range slpra-dev:StorageCondition ;
+    rdfs:label "has storage condition"@en ;
+    rdfs:label "存放条件"@zh ;
+    rdfs:comment "Links a CMC report, synthesis step, or process intermediate to its storage conditions. Domain intentionally broad (CMCReport, SynthesisStep, ProcessIntermediate all apply)."@en .
+
+slpra-dev:hasCleaningMethod a owl:ObjectProperty ;
+    rdfs:domain slpra-dev:CMCReport ;
+    rdfs:range slpra-clean:CleaningProcess ;
+    rdfs:label "has cleaning method"@en ;
+    rdfs:label "含清洗方法"@zh ;
+    rdfs:comment "Links a CMC report to the equipment cleaning process described therein."@en .
+
+slpra-dev:hasCleaningResidue a owl:ObjectProperty ;
+    rdfs:domain slpra-dev:CMCReport ;
+    rdfs:range slpra-drug:Residue ;
+    rdfs:label "has cleaning residue"@en ;
+    rdfs:label "含清洗残留物"@zh ;
+    rdfs:comment "Links a CMC report to the residue information for cleaning validation."@en .
+
+slpra-dev:hasDegradationPathway a owl:ObjectProperty ;
+    rdfs:range slpra-dev:DegradationPathway ;
+    rdfs:label "has degradation pathway"@en ;
+    rdfs:label "含降解途径"@zh .
+
+slpra-dev:hasSafetyRiskAssessment a owl:ObjectProperty ;
+    rdfs:domain slpra-dev:CMCReport ;
+    rdfs:range slpra-dev:SafetyRiskAssessment ;
+    rdfs:label "has safety risk assessment"@en ;
+    rdfs:label "含安全风险评估"@zh .
+
+slpra-dev:hasQualityRiskAssessment a owl:ObjectProperty ;
+    rdfs:domain slpra-dev:CMCReport ;
+    rdfs:range slpra-dev:QualityRiskAssessment ;
+    rdfs:label "has quality risk assessment"@en ;
+    rdfs:label "含质量风险评估"@zh .
+
+slpra-dev:hasSharedLineData a owl:ObjectProperty ;
+    rdfs:domain slpra-dev:CMCReport ;
+    rdfs:range slpra-dev:SharedLineAssessmentData ;
+    rdfs:label "has shared-line assessment data"@en ;
+    rdfs:label "含共线评估数据"@zh .
+
+slpra-dev:linksToRiskAssessment a owl:ObjectProperty ;
+    rdfs:range slpra-risk:RiskAssessmentProcess ;
+    rdfs:label "links to risk assessment"@en ;
+    rdfs:label "关联风险评估"@zh ;
+    rdfs:comment "Links a safety/quality risk assessment in a CMC report to the formal SLPRA risk assessment process."@en .
+
+slpra-dev:basedOnToxicityProfile a owl:ObjectProperty ;
+    rdfs:domain slpra-dev:SharedLineAssessmentData ;
+    rdfs:range slpra-drug:ToxicityProfile ;
+    rdfs:label "based on toxicity profile"@en ;
+    rdfs:label "基于毒性特征"@zh ;
+    rdfs:comment "Cross-module link from shared-line assessment data to the drug module's toxicity profile. Distinct local name from slpra-drug:hasToxicityProfile (API → ToxicityProfile)."@en .
+
+# ============================================================
+# 10.9 Data Properties — CMC Report content fields
+# ============================================================
+
+# --- Synthesis Route / Step ---
+
+slpra-dev:processDescription a owl:DatatypeProperty ;
+    rdfs:domain slpra-dev:SynthesisRoute ;
+    rdfs:range xsd:string ;
+    rdfs:label "process description"@en ;
+    rdfs:label "工艺描述"@zh .
+
+slpra-dev:reactionType a owl:DatatypeProperty ;
+    rdfs:domain slpra-dev:Reaction ;
+    rdfs:range xsd:string ;
+    rdfs:label "reaction type"@en ;
+    rdfs:label "反应类型"@zh ;
+    rdfs:comment "E.g. Suzuki coupling, amide condensation, deprotection."@en .
+
+slpra-dev:stepOrder a owl:DatatypeProperty ;
+    rdfs:domain slpra-dev:SynthesisStep ;
+    rdfs:range xsd:integer ;
+    rdfs:label "step order"@en ;
+    rdfs:label "步骤序号"@zh .
+
+slpra-dev:yieldRangePercent a owl:DatatypeProperty ;
+    rdfs:domain slpra-dev:SynthesisStep ;
+    rdfs:range xsd:string ;
+    rdfs:label "yield range (%)"@en ;
+    rdfs:label "收率范围（%）"@zh .
+
+slpra-dev:outputMassRange_kg a owl:DatatypeProperty ;
+    rdfs:domain slpra-dev:SynthesisStep ;
+    rdfs:range xsd:string ;
+    rdfs:label "output mass range (kg)"@en ;
+    rdfs:label "得量范围（kg）"@zh .
+
+slpra-dev:reactionConditions a owl:DatatypeProperty ;
+    rdfs:domain slpra-dev:SynthesisStep ;
+    rdfs:range xsd:string ;
+    rdfs:label "reaction conditions"@en ;
+    rdfs:label "反应条件"@zh ;
+    rdfs:comment "Temperature, pressure, atmosphere, duration, catalyst loading, etc."@en .
+
+slpra-dev:inProcessControl a owl:DatatypeProperty ;
+    rdfs:domain slpra-dev:SynthesisStep ;
+    rdfs:range xsd:string ;
+    rdfs:label "in-process control"@en ;
+    rdfs:label "过程控制"@zh ;
+    rdfs:comment "IPC method and acceptance criteria, e.g. TLC endpoint, HPLC purity."@en .
+
+# --- Process Material ---
+
+slpra-dev:materialGrade a owl:DatatypeProperty ;
+    rdfs:domain slpra-dev:ProcessMaterial ;
+    rdfs:range xsd:string ;
+    rdfs:label "material grade"@en ;
+    rdfs:label "物料规格/级别"@zh ;
+    rdfs:comment "E.g. 原料药级, 分析纯, 工业级, CP级."@en .
+
+slpra-dev:materialPurpose a owl:DatatypeProperty ;
+    rdfs:domain slpra-dev:ProcessMaterial ;
+    rdfs:range xsd:string ;
+    rdfs:label "material purpose"@en ;
+    rdfs:label "物料用途"@zh ;
+    rdfs:comment "E.g. 起始物料, 反应溶剂, 萃取溶剂, 析晶溶剂, 保护气体."@en .
+
+# --- Storage Condition ---
+
+slpra-dev:storageTemperature a owl:DatatypeProperty ;
+    rdfs:domain slpra-dev:StorageCondition ;
+    rdfs:range xsd:string ;
+    rdfs:label "storage temperature"@en ;
+    rdfs:label "存放温度"@zh ;
+    rdfs:comment "E.g. 2-8℃, -20±5℃, 室温."@en .
+
+slpra-dev:storageHumidity a owl:DatatypeProperty ;
+    rdfs:domain slpra-dev:StorageCondition ;
+    rdfs:range xsd:string ;
+    rdfs:label "storage humidity"@en ;
+    rdfs:label "存放湿度"@zh .
+
+slpra-dev:lightProtection a owl:DatatypeProperty ;
+    rdfs:domain slpra-dev:StorageCondition ;
+    rdfs:range xsd:boolean ;
+    rdfs:label "light protection required"@en ;
+    rdfs:label "是否避光"@zh .
+
+slpra-dev:packagingType a owl:DatatypeProperty ;
+    rdfs:domain slpra-dev:StorageCondition ;
+    rdfs:range xsd:string ;
+    rdfs:label "packaging type"@en ;
+    rdfs:label "包装方式"@zh ;
+    rdfs:comment "E.g. 双层聚乙烯薄膜袋外加铝箔袋, 旋蒸瓶."@en .
+
+slpra-dev:shelfLife a owl:DatatypeProperty ;
+    rdfs:domain slpra-dev:StorageCondition ;
+    rdfs:range xsd:string ;
+    rdfs:label "shelf life / retest period"@en ;
+    rdfs:label "有效期/复测期"@zh ;
+    rdfs:comment "E.g. 15天, 1个月, 1年."@en .
+
+# --- Degradation Pathway ---
+
+slpra-dev:degradationCondition a owl:DatatypeProperty ;
+    rdfs:domain slpra-dev:DegradationPathway ;
+    rdfs:range xsd:string ;
+    rdfs:label "degradation condition"@en ;
+    rdfs:label "降解条件"@zh ;
+    rdfs:comment "E.g. 0.1mol/L HCl, 60℃/4h."@en .
+
+slpra-dev:degradationPercent a owl:DatatypeProperty ;
+    rdfs:domain slpra-dev:DegradationPathway ;
+    rdfs:range xsd:decimal ;
+    rdfs:label "degradation percent (%)"@en ;
+    rdfs:label "降解百分比（%）"@zh .
+
+slpra-dev:majorDegradant a owl:DatatypeProperty ;
+    rdfs:domain slpra-dev:DegradationPathway ;
+    rdfs:range xsd:string ;
+    rdfs:label "major degradant"@en ;
+    rdfs:label "主要降解杂质"@zh ;
+    rdfs:comment "E.g. Imp-A, Imp-B, Imp-C."@en .
+
+# --- Shared-Line Assessment Data ---
+
+slpra-dev:noael_mg_per_kg_per_day a owl:DatatypeProperty ;
+    rdfs:domain slpra-dev:SharedLineAssessmentData ;
+    rdfs:range xsd:decimal ;
+    rdfs:label "NOAEL (mg/kg/day)"@en ;
+    rdfs:label "NOAEL（mg/kg/天）"@zh ;
+    rdfs:comment "No Observed Adverse Effect Level from repeat-dose toxicity study."@en .
+
+slpra-dev:noaelSpecies a owl:DatatypeProperty ;
+    rdfs:domain slpra-dev:SharedLineAssessmentData ;
+    rdfs:range xsd:string ;
+    rdfs:label "NOAEL animal species"@en ;
+    rdfs:label "NOAEL 动物种属"@zh ;
+    rdfs:comment "E.g. SD大鼠, Beagle犬."@en .
+
+slpra-dev:noaelDuration a owl:DatatypeProperty ;
+    rdfs:domain slpra-dev:SharedLineAssessmentData ;
+    rdfs:range xsd:string ;
+    rdfs:label "NOAEL study duration"@en ;
+    rdfs:label "NOAEL 试验周期"@zh ;
+    rdfs:comment "E.g. 28天重复给药."@en .
+
+slpra-dev:safetyFactor a owl:DatatypeProperty ;
+    rdfs:domain slpra-dev:SharedLineAssessmentData ;
+    rdfs:range xsd:decimal ;
+    rdfs:label "safety factor (F)"@en ;
+    rdfs:label "安全系数（F值）"@zh ;
+    rdfs:comment "Composite safety factor per ICH S9 (oncology) or standard PDE derivation: product of F1-F5."@en .
+
+slpra-dev:humanEquivalentDose_mg_per_kg a owl:DatatypeProperty ;
+    rdfs:domain slpra-dev:SharedLineAssessmentData ;
+    rdfs:range xsd:decimal ;
+    rdfs:label "human equivalent dose (mg/kg)"@en ;
+    rdfs:label "人体等效剂量（mg/kg）"@zh .
+
+slpra-dev:proposedStartingDose_mg a owl:DatatypeProperty ;
+    rdfs:domain slpra-dev:SharedLineAssessmentData ;
+    rdfs:range xsd:decimal ;
+    rdfs:label "proposed clinical starting dose (mg)"@en ;
+    rdfs:label "拟定临床起始剂量（mg）"@zh .
+
+slpra-dev:proposedMaxDose_mg a owl:DatatypeProperty ;
+    rdfs:domain slpra-dev:SharedLineAssessmentData ;
+    rdfs:range xsd:decimal ;
+    rdfs:label "proposed maximum dose (mg)"@en ;
+    rdfs:label "拟定最高剂量（mg）"@zh .
+
+slpra-dev:dosingRegimen a owl:DatatypeProperty ;
+    rdfs:domain slpra-dev:SharedLineAssessmentData ;
+    rdfs:range xsd:string ;
+    rdfs:label "dosing regimen"@en ;
+    rdfs:label "给药方案"@zh ;
+    rdfs:comment "E.g. QD口服, 21天为一个治疗周期."@en .
+
+# --- Safety / Quality Risk Assessment ---
+
+slpra-dev:riskCategory a owl:DatatypeProperty ;
+    rdfs:range xsd:string ;
+    rdfs:label "risk category"@en ;
+    rdfs:label "风险环节"@zh ;
+    rdfs:comment "E.g. 投料操作, 反应过程, 离心/甩滤, 干燥操作, 废液处理."@en .
+
+slpra-dev:riskDescription a owl:DatatypeProperty ;
+    rdfs:range xsd:string ;
+    rdfs:label "risk description"@en ;
+    rdfs:label "风险描述"@zh .
+
+slpra-dev:controlMeasure a owl:DatatypeProperty ;
+    rdfs:range xsd:string ;
+    rdfs:label "control measure"@en ;
+    rdfs:label "控制措施"@zh .
+
+# --- Residue Solubility (cleaning validation input) ---
+
+slpra-dev:residueSolvent a owl:DatatypeProperty ;
+    rdfs:range xsd:string ;
+    rdfs:label "residue cleaning solvent"@en ;
+    rdfs:label "残留物清洗溶剂"@zh ;
+    rdfs:comment "Solvent used to dissolve the residue for cleaning, e.g. 丙酮, 乙醇+水, 丙酮+2N三氟乙酸水溶液."@en .
+
+slpra-dev:residueSolubility a owl:DatatypeProperty ;
+    rdfs:range xsd:string ;
+    rdfs:label "residue solubility"@en ;
+    rdfs:label "残留物溶解度"@zh ;
+    rdfs:comment "Qualitative solubility descriptor: 易溶, 溶解, 微溶, 几乎不溶."@en .
+
+slpra-dev:residueSolubilityTemperature a owl:DatatypeProperty ;
+    rdfs:range xsd:string ;
+    rdfs:label "solubility test temperature"@en ;
+    rdfs:label "溶解度测试温度"@zh .

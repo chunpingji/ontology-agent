@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import { Extension } from "@tiptap/core";
 import StarterKit from "@tiptap/starter-kit";
@@ -31,11 +32,79 @@ const TextAlign = Extension.create({
   },
 });
 
-interface WordViewerProps {
-  content: Record<string, unknown>;
+const HIGHLIGHT_CLS = "source-highlight";
+const HIGHLIGHT_BODY_CLS = "source-highlight-body";
+
+function parseSourceRef(ref: string): string[] {
+  const segments = ref.split(" / ");
+  return segments
+    .map((s) => s.replace(/^[§表]\s*/, "").trim())
+    .filter(Boolean)
+    .reverse();
 }
 
-export function WordViewer({ content }: WordViewerProps) {
+function headingLevel(el: Element): number {
+  const m = el.tagName.match(/^H(\d)$/i);
+  return m ? Number(m[1]) : 0;
+}
+
+function clearHighlights(container: HTMLElement) {
+  container.querySelectorAll(`.${HIGHLIGHT_CLS}`).forEach((el) => {
+    el.classList.remove(HIGHLIGHT_CLS);
+  });
+  container.querySelectorAll(`.${HIGHLIGHT_BODY_CLS}`).forEach((el) => {
+    el.classList.remove(HIGHLIGHT_BODY_CLS);
+  });
+}
+
+function applyHighlight(container: HTMLElement, keywords: string[]): Element | null {
+  let firstMatch: Element | null = null;
+
+  for (const kw of keywords) {
+    // Search headings
+    const headings = container.querySelectorAll("h1, h2, h3, h4, h5, h6");
+    for (const h of headings) {
+      if (h.textContent?.includes(kw)) {
+        h.classList.add(HIGHLIGHT_CLS);
+        if (!firstMatch) firstMatch = h;
+
+        const level = headingLevel(h);
+        let sibling = h.nextElementSibling;
+        while (sibling) {
+          const sibLevel = headingLevel(sibling);
+          if (sibLevel > 0 && sibLevel <= level) break;
+          sibling.classList.add(HIGHLIGHT_BODY_CLS);
+          sibling = sibling.nextElementSibling;
+        }
+        return firstMatch;
+      }
+    }
+
+    // Search table headers/cells
+    const cells = container.querySelectorAll("th, td");
+    for (const cell of cells) {
+      if (cell.textContent?.includes(kw)) {
+        const table = cell.closest("table");
+        if (table) {
+          table.classList.add(HIGHLIGHT_CLS);
+          if (!firstMatch) firstMatch = table;
+          return firstMatch;
+        }
+      }
+    }
+  }
+
+  return firstMatch;
+}
+
+interface WordViewerProps {
+  content: Record<string, unknown>;
+  highlightRef?: string | null;
+}
+
+export function WordViewer({ content, highlightRef }: WordViewerProps) {
+  const wrapperRef = useRef<HTMLDivElement>(null);
+
   const editor = useEditor({
     extensions: [
       StarterKit,
@@ -56,8 +125,30 @@ export function WordViewer({ content }: WordViewerProps) {
     immediatelyRender: true,
   });
 
+  useEffect(() => {
+    if (!wrapperRef.current) return;
+    const container = wrapperRef.current;
+
+    clearHighlights(container);
+
+    if (!highlightRef) return;
+
+    const keywords = parseSourceRef(highlightRef);
+    if (keywords.length === 0) return;
+
+    // Delay slightly to ensure DOM is ready after render
+    const timer = setTimeout(() => {
+      const firstMatch = applyHighlight(container, keywords);
+      if (firstMatch) {
+        firstMatch.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    }, 50);
+
+    return () => clearTimeout(timer);
+  }, [highlightRef]);
+
   return (
-    <div className="prose prose-sm max-w-none dark:prose-invert">
+    <div ref={wrapperRef} className="prose prose-sm max-w-none dark:prose-invert">
       <EditorContent editor={editor} />
       <style>{`
         .entity-annotation {
@@ -99,6 +190,19 @@ export function WordViewer({ content }: WordViewerProps) {
         .tiptap table th {
           background: hsl(0 0% 96%);
           font-weight: 600;
+        }
+        .${HIGHLIGHT_CLS} {
+          background: rgba(59, 130, 246, 0.08) !important;
+          border-left: 3px solid #3B82F6;
+          padding-left: 8px;
+          transition: background 0.3s;
+        }
+        .${HIGHLIGHT_BODY_CLS} {
+          background: rgba(59, 130, 246, 0.04);
+        }
+        table.${HIGHLIGHT_CLS} td,
+        table.${HIGHLIGHT_CLS} th {
+          background: rgba(59, 130, 246, 0.06) !important;
         }
       `}</style>
     </div>

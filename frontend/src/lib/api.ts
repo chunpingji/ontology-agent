@@ -83,6 +83,23 @@ export const getClassHierarchy = (module: string) =>
 export const getClassDetail = (iri: string) =>
   fetchAPI<ClassDetail>(`/api/ontology/classes/${encodeURIComponent(iri)}`);
 
+// Relation schema (T-Box multi-hop BFS)
+export interface RelationSchemaEdge {
+  hop: number;
+  predicate_iri: string;
+  predicate_label: string;
+  domain_class_iri: string;
+  domain_class_label: string;
+  range_class_iri: string;
+  range_class_label: string;
+  range_subclasses: { iri: string; label: string }[];
+  range_data_properties: { iri: string; label: string }[];
+}
+export const getRelationSchema = (classIri: string, maxHops = 4) =>
+  fetchAPI<RelationSchemaEdge[]>(
+    `/api/ontology/classes/${encodeURIComponent(classIri)}/relation-schema?max_hops=${maxHops}`,
+  );
+
 // Entities
 export const searchEntities = (params: Record<string, string>) => {
   const qs = new URLSearchParams(params).toString();
@@ -985,12 +1002,49 @@ export interface EntityTriple {
   properties: PropertyTriple[];
 }
 
+// 文档级分类 + 全量关系/属性抽取（仅 Word；规则式、离线）。
+export interface DocClassification {
+  doc_class_iri: string;
+  label: string;
+  score: number;
+  signals: string[];
+}
+
+// 关系边上对象端点回填的数据属性；``iri`` 为 null 表示未匹配到本体数据属性（原文兜底）。
+export interface RelationDataProperty {
+  iri: string | null;
+  label: string;
+  value: string;
+}
+
+// 子关系（如 合成路线→包含步骤→使用设备/产出中间体），``sub_relationships`` 递归。
+export interface SubRelationship {
+  predicate_iri: string;
+  predicate_label: string;
+  object_class_iri: string;
+  object_class_label: string;
+  object_text: string;
+  object_source: string;
+  object_data_properties: RelationDataProperty[];
+  sub_relationships: SubRelationship[];
+  source_ref: string | null;
+}
+
+// 顶层对象属性边（主语为文档分类类，如 CMCReport ─describes→ DrugProduct）。
+export interface Relationship extends SubRelationship {
+  subject_class_iri: string;
+  subject_class_label: string;
+  subject_text: string;
+}
+
 export interface AnnotatedDocument {
   source_type: string;
   filename: string | null;
   content: unknown;
   warnings?: string[];
   triples?: EntityTriple[];
+  doc_class?: DocClassification | null;
+  relationships?: Relationship[];
 }
 export const getAnnotatedDocument = (jobId: string) =>
   fetchAPI<AnnotatedDocument>(`/api/extraction/jobs/${jobId}/annotated-document`);

@@ -10,6 +10,7 @@
 @prefix slpra-risk:  <https://ontology.pharma-gmp.cn/slpra/risk/> .
 @prefix slpra-clean: <https://ontology.pharma-gmp.cn/slpra/cleaning/> .
 @prefix slpra-facil: <https://ontology.pharma-gmp.cn/slpra/facility/> .
+@prefix slpra-dev:   <https://ontology.pharma-gmp.cn/slpra/drug-development/> .
 @prefix dron:  <http://purl.obolibrary.org/obo/DRON_> .
 @prefix chebi: <http://purl.obolibrary.org/obo/CHEBI_> .
 @prefix chmo:  <http://purl.obolibrary.org/obo/CHMO_> .
@@ -34,7 +35,8 @@
     owl:imports <https://ontology.pharma-gmp.cn/slpra/contamination/> ;
     owl:imports <https://ontology.pharma-gmp.cn/slpra/risk/> ;
     owl:imports <https://ontology.pharma-gmp.cn/slpra/cleaning/> ;
-    owl:imports <https://ontology.pharma-gmp.cn/slpra/facility/> .
+    owl:imports <https://ontology.pharma-gmp.cn/slpra/facility/> ;
+    owl:imports <https://ontology.pharma-gmp.cn/slpra/drug-development/> .
 
 # ============================================================
 # External Ontology Alignment — DrOn

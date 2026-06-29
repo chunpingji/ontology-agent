@@ -46,6 +46,7 @@ from app.schemas.ontology import (
     MappingHealth,
     MappingUpdate,
     ModuleResponse,
+    RelationSchemaEdge,
     ReleaseDetail,
     ReleaseSummary,
     RestrictionCreate,
@@ -590,6 +591,22 @@ def list_audit(
     store: OntologyMetaStore = Depends(get_ontology_meta_store),
 ):
     return store.list_audit(entity_iri=entity_iri, release_id=release_id, actor=actor)
+
+
+@router.get(
+    "/classes/{class_iri:path}/relation-schema",
+    response_model=list[RelationSchemaEdge],
+)
+def get_relation_schema(
+    class_iri: str,
+    max_hops: int = 4,
+    engine: OntologyEngine = Depends(get_ontology_engine),
+):
+    """从指定类出发 BFS，返回多跳关系图谱 schema（对象属性 + range 类 + 数据属性）。"""
+    edges = engine.get_relation_schema(class_iri, max_hops=max_hops)
+    if not edges:
+        raise HTTPException(404, f"Class not found or has no relations: {class_iri}")
+    return edges
 
 
 # ===========================================================================

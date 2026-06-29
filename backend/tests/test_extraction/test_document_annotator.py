@@ -16,8 +16,11 @@ from __future__ import annotations
 import openpyxl
 
 from app.services.extraction import document_annotator, ontology_typer
+import pytest
+
 from app.services.extraction.document_annotator import (
     _extract_property_triples,
+    _is_short_span,
     _property_schema_for_class,
     _span_with_context,
     _type_and_filter_spans,
@@ -318,3 +321,70 @@ def test_extract_property_triples_multiple_classes(monkeypatch):
     assert set(t["entity_class_iri"] for t in triples) == {"iri#drug", "iri#sterile"}
     assert ["通用名"] in extract_calls
     assert ["批号"] in extract_calls
+
+
+# --- _is_short_span -----------------------------------------------------------
+
+@pytest.mark.parametrize("text,expected", [
+    ("设备", True),       # 2 CJK ≤ 3
+    ("离心机", True),      # 3 CJK ≤ 3
+    ("API", True),        # 3 ASCII ≤ 4
+    ("HPLC", True),       # 4 ASCII ≤ 4
+    ("反应釜设备", False),  # 5 CJK > 3
+    ("HRS-1234", False),  # 8 chars > 4
+    ("无菌粉针", False),   # 4 CJK > 3
+    ("pH", True),         # 2 ASCII ≤ 4
+])
+def test_is_short_span(text, expected):
+    assert _is_short_span(text) is expected
+
+
+# --- 双 pass 归类策略 ----------------------------------------------------------
+
+def test_dual_pass_short_span_raw_match(monkeypatch):
+    """短 span "设备" 直接走 Pass-1 raw text 匹配，不被上下文拉偏到 "清洗设备"。"""
+    equip = _Node("iri#equip", "Equipment", "设备")
+    cleaning_equip = _Node("iri#clean_equip", "CleaningEquipment", "清洗设备")
+    equip.children = [cleaning_equip]
+    eng = _FakeEngine([equip], dp_classes=[])
+
+    vectors = {
+        "设备": [1.0, 0.0],
+        "清洗设备": [0.6, 0.8],
+        # 上下文文本 "清洗设备残留" 会偏向清洗设备
+        "清洗设备残留": [0.5, 0.87],
+    }
+    ontology_typer._index_cache.clear()
+    ontology_typer._seed_cache.clear()
+    monkeypatch.setattr(ontology_typer, "get_embedder", lambda: _FakeEmbedder(vectors))
+
+    all_spans = [[{"start": 2, "end": 4, "text": "设备", "label": "seed", "score": 0.9}]]
+    segment_texts = ["清洗设备残留"]
+    out = _type_and_filter_spans(all_spans, segment_texts, eng)
+    assert len(out[0]) == 1
+    assert out[0][0]["label"] == "设备"  # raw match, not "清洗设备"
+
+
+def test_dual_pass_opaque_span_uses_context(monkeypatch):
+    """不透明 span "HRS-1234" Pass-1 无高置信命中 → Pass-2 用上下文匹配到正确类。"""
+    drug = _Node("iri#drug", "Drug", "药物制剂")
+    equip = _Node("iri#equip", "Equipment", "设备")
+    eng = _FakeEngine([drug, equip], dp_classes=[])
+
+    vectors = {
+        "药物制剂": [1.0, 0.0],
+        "设备": [0.0, 1.0],
+        # raw "HRS-1234" 无方向 → 两类余弦都不够 0.85
+        "HRS-1234": [0.4, 0.3],
+        # 上下文 "原料药HRS-1234的合成路线描述" 拉向药物制剂（_CONTEXT_WINDOW=15 覆盖全段）
+        "原料药HRS-1234的合成路线描述": [0.85, 0.1],
+    }
+    ontology_typer._index_cache.clear()
+    ontology_typer._seed_cache.clear()
+    monkeypatch.setattr(ontology_typer, "get_embedder", lambda: _FakeEmbedder(vectors))
+
+    all_spans = [[{"start": 3, "end": 11, "text": "HRS-1234", "label": "seed", "score": 0.9}]]
+    segment_texts = ["原料药HRS-1234的合成路线描述"]
+    out = _type_and_filter_spans(all_spans, segment_texts, eng)
+    assert len(out[0]) == 1
+    assert out[0][0]["label"] == "药物制剂"  # context-assisted match

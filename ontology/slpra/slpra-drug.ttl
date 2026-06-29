@@ -372,37 +372,44 @@ slpra-drug:routeOfAdministration a owl:DatatypeProperty ;
 slpra-drug:isCytotoxic a owl:DatatypeProperty ;
     rdfs:domain slpra-drug:DrugProduct ;
     rdfs:range xsd:boolean ;
-    rdfs:label "is cytotoxic"@en .
+    rdfs:label "is cytotoxic"@en ;
+    rdfs:label "是否细胞毒药物"@zh .
 
 slpra-drug:isHormonal a owl:DatatypeProperty ;
     rdfs:domain slpra-drug:DrugProduct ;
     rdfs:range xsd:boolean ;
-    rdfs:label "is hormonal"@en .
+    rdfs:label "is hormonal"@en ;
+    rdfs:label "是否激素类药物"@zh .
 
 slpra-drug:isPenicillinType a owl:DatatypeProperty ;
     rdfs:domain slpra-drug:DrugProduct ;
     rdfs:range xsd:boolean ;
-    rdfs:label "is penicillin type"@en .
+    rdfs:label "is penicillin type"@en ;
+    rdfs:label "是否青霉素类药物"@zh .
 
 slpra-drug:isBetaLactam a owl:DatatypeProperty ;
     rdfs:domain slpra-drug:DrugProduct ;
     rdfs:range xsd:boolean ;
-    rdfs:label "is beta-lactam"@en .
+    rdfs:label "is beta-lactam"@en ;
+    rdfs:label "是否β-内酰胺类药物"@zh .
 
 slpra-drug:isHighlySensitizing a owl:DatatypeProperty ;
     rdfs:domain slpra-drug:DrugProduct ;
     rdfs:range xsd:boolean ;
-    rdfs:label "is highly sensitizing"@en .
+    rdfs:label "is highly sensitizing"@en ;
+    rdfs:label "是否高致敏药物"@zh .
 
 slpra-drug:isHighlyActive a owl:DatatypeProperty ;
     rdfs:domain slpra-drug:DrugProduct ;
     rdfs:range xsd:boolean ;
-    rdfs:label "is highly active"@en .
+    rdfs:label "is highly active"@en ;
+    rdfs:label "是否高活性药物"@zh .
 
 slpra-drug:hasPrionRisk a owl:DatatypeProperty ;
     rdfs:domain slpra-drug:DrugProduct ;
     rdfs:range xsd:boolean ;
-    rdfs:label "has prion risk"@en .
+    rdfs:label "has prion risk"@en ;
+    rdfs:label "是否有朊病毒风险"@zh .
 
 slpra-drug:sensitizationLevel a owl:DatatypeProperty ;
     rdfs:domain slpra-drug:SensitizationPotential ;

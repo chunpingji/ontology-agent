@@ -25,6 +25,7 @@ MODULE_NAMES = {
     "facility": "https://ontology.pharma-gmp.cn/slpra/facility/",
     "personnel": "https://ontology.pharma-gmp.cn/slpra/personnel/",
     "document": "https://ontology.pharma-gmp.cn/slpra/document/",
+    "drug-development": "https://ontology.pharma-gmp.cn/slpra/drug-development/",
     "integration": "https://ontology.pharma-gmp.cn/slpra/integration/",
 }
 
@@ -39,11 +40,12 @@ MODULE_FILES = {
     "facility": "slpra-facility.ttl",
     "personnel": "slpra-personnel.ttl",
     "document": "slpra-document.ttl",
+    "drug-development": "slpra-drug-development.ttl",
     "integration": "slpra-integration.ttl",
 }
 
 # integration owl:imports 全部内部模块，故须最后加载（依赖先就位）。
-_LOAD_ORDER = ["drug", "equipment", "contamination", "risk", "cleaning", "facility", "personnel", "document", "integration"]
+_LOAD_ORDER = ["drug", "equipment", "contamination", "risk", "cleaning", "facility", "personnel", "document", "drug-development", "integration"]
 
 # 外部上层本体（BFO）：随包提供的离线本地副本。各模块的类挂在 BFO 顶层范畴下，必须先于
 # 模块加载，否则父范畴/父类 IRI 为空（owl:imports 在离线容器内无法联网解析）。
@@ -386,6 +388,149 @@ class OntologyEngine:
                         "label": self._get_label(prop) or prop.name,
                     })
             return props
+
+    def get_object_properties_by_domain(self, class_iri: str) -> list[dict]:
+        """返回 rdfs:domain 包含此类的对象属性 ``[{iri, name, label, range}]``。
+
+        规避 ``get_class_properties()`` 不返回 ``rdfs:domain`` 声明属性的 bug（对数据
+        属性与对象属性同样适用）；与 ``get_data_properties_by_domain`` 同机制，但遍历
+        ``object_properties()`` 并多返回 ``range`` 的类 IRI 列表（供关系抽取按 range 选端点）。
+        """
+        with self._lock:
+            cls = self._world.search_one(iri=class_iri)
+            if cls is None or not isinstance(cls, owlready2.ThingClass):
+                return []
+            props: list[dict] = []
+            seen: set[str] = set()
+            for prop in self._world.object_properties():
+                if cls in prop.domain and prop.iri not in seen:
+                    seen.add(prop.iri)
+                    props.append({
+                        "iri": prop.iri,
+                        "name": prop.name,
+                        "label": self._get_label(prop) or prop.name,
+                        "range": [getattr(r, "iri", str(r)) for r in prop.range],
+                    })
+            return props
+
+    def get_subclasses(self, class_iri: str, recursive: bool = True) -> list[dict]:
+        """返回某类的子类 ``[{iri, label}]``（默认递归全部后代，不含自身）。
+
+        供文档级分类枚举 ``RegulatoryDocument`` 的全部候选文档类型（关系抽取第一步）。
+        ``recursive=False`` 时仅返回直接子类。去重，按发现顺序保序。
+        """
+        with self._lock:
+            cls = self._world.search_one(iri=class_iri)
+            if cls is None or not isinstance(cls, owlready2.ThingClass):
+                return []
+            descendants = (
+                cls.descendants(include_self=False) if recursive else cls.subclasses()
+            )
+            out: list[dict] = []
+            seen: set[str] = set()
+            for c in descendants:
+                if not isinstance(c, owlready2.ThingClass) or c.iri in seen:
+                    continue
+                seen.add(c.iri)
+                out.append({"iri": c.iri, "label": self._get_label(c) or c.name})
+            return out
+
+    def get_relation_schema(
+        self, class_iri: str, max_hops: int = 4,
+    ) -> list[dict]:
+        """从指定类出发 BFS，返回多跳关系图谱 schema（纯 T-Box 结构查询）。
+
+        每条记录::
+
+            {hop, predicate_iri, predicate_label,
+             domain_class_iri, domain_class_label,
+             range_class_iri, range_class_label,
+             range_subclasses: [{iri, label}],
+             range_data_properties: [{iri, label}]}
+
+        用途：给定文档类（如 CMCReport），展示其完整的关系图谱模板——
+        实体类型 + 属性三元组均可从此结构推导，无需跑 NER。
+        """
+        with self._lock:
+            if not self._world:
+                return []
+            root = self._world.search_one(iri=class_iri)
+            if root is None or not isinstance(root, owlready2.ThingClass):
+                return []
+
+            all_obj_props = list(self._world.object_properties())
+            all_data_props = list(self._world.data_properties())
+
+            def _obj_props_for(cls):
+                props = []
+                seen = set()
+                for prop in all_obj_props:
+                    if cls in prop.domain and prop.iri not in seen:
+                        seen.add(prop.iri)
+                        props.append(prop)
+                return props
+
+            def _data_props_for(cls):
+                props = []
+                seen = set()
+                for prop in all_data_props:
+                    if cls in prop.domain and prop.iri not in seen:
+                        seen.add(prop.iri)
+                        props.append(prop)
+                return props
+
+            edges: list[dict] = []
+            visited_ranges: set[str] = set()
+            frontier_iris = {class_iri}
+
+            for hop in range(1, max_hops + 1):
+                next_frontier: set[str] = set()
+                for domain_iri in frontier_iris:
+                    domain_cls = self._world.search_one(iri=domain_iri)
+                    if domain_cls is None or not isinstance(domain_cls, owlready2.ThingClass):
+                        continue
+                    domain_label = self._get_label(domain_cls) or domain_cls.name
+                    for prop in _obj_props_for(domain_cls):
+                        pred_label = self._get_label(prop) or prop.name
+                        for rng in prop.range:
+                            rng_iri = getattr(rng, "iri", None)
+                            if not rng_iri or rng_iri in visited_ranges:
+                                continue
+                            visited_ranges.add(rng_iri)
+                            rng_label = self._get_label(rng) or getattr(rng, "name", rng_iri)
+                            subs = []
+                            for c in rng.descendants(include_self=False):
+                                if isinstance(c, owlready2.ThingClass):
+                                    subs.append({
+                                        "iri": c.iri,
+                                        "label": self._get_label(c) or c.name,
+                                    })
+                                    visited_ranges.add(c.iri)
+                            dps = []
+                            for dp in _data_props_for(rng):
+                                dps.append({
+                                    "iri": dp.iri,
+                                    "label": self._get_label(dp) or dp.name,
+                                })
+                            edges.append({
+                                "hop": hop,
+                                "predicate_iri": prop.iri,
+                                "predicate_label": pred_label,
+                                "domain_class_iri": domain_iri,
+                                "domain_class_label": domain_label,
+                                "range_class_iri": rng_iri,
+                                "range_class_label": rng_label,
+                                "range_subclasses": subs,
+                                "range_data_properties": dps,
+                            })
+                            next_frontier.add(rng_iri)
+                            for s in subs:
+                                next_frontier.add(s["iri"])
+                if not next_frontier:
+                    break
+                frontier_iris = next_frontier
+
+            return edges
 
     def data_property_labels(self) -> list[str]:
         """返回所有数据属性的标签（优先中文），供 NER 种子标签第三源使用。"""

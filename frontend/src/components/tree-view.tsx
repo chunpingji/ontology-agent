@@ -498,7 +498,10 @@ const TreeLeaf = React.forwardRef<
             <div
                 ref={setRefs}
                 className={cn(
-                    'ml-5 flex text-left items-center py-2 cursor-pointer before:right-1',
+                    'flex text-left items-center py-2 cursor-pointer before:right-1',
+                    // renderItem 分支自带 chevron 宽度占位符（h-4 w-4 mr-1），与父节点的 chevron 等宽对齐；
+                    // 仅默认图标模式（无占位符）才需 ml-5 顶替 chevron 宽度。两者并存会让叶子比同级父节点多缩进 20px。
+                    !renderItem && 'ml-5',
                     treeVariants(),
                     className,
                     isSelected && selectedTreeVariants(),

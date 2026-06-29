@@ -441,6 +441,28 @@ class ConflictPolicyUpdate(VersionedMixin):
     is_disabled: bool | None = None
 
 
+class RelationSchemaSubclass(BaseModel):
+    iri: str
+    label: str
+
+
+class RelationSchemaDataProp(BaseModel):
+    iri: str
+    label: str
+
+
+class RelationSchemaEdge(BaseModel):
+    hop: int
+    predicate_iri: str
+    predicate_label: str
+    domain_class_iri: str
+    domain_class_label: str
+    range_class_iri: str
+    range_class_label: str
+    range_subclasses: list[RelationSchemaSubclass] = []
+    range_data_properties: list[RelationSchemaDataProp] = []
+
+
 class ConflictPolicyDetail(BaseModel):
     id: str
     slpra_iri: str

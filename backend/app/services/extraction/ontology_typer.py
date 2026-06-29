@@ -13,6 +13,7 @@
 from __future__ import annotations
 
 import logging
+import re
 from dataclasses import dataclass
 
 from app.services.extraction.semantic import cosine_similarity, get_embedder
@@ -50,40 +51,100 @@ class ClassEntry:
 
 # 进程级轻缓存：本体单例加载一次，避免每作业重复走层级树。键为 id(engine)。
 _index_cache: dict[int, list[ClassEntry]] = {}
-_seed_cache: dict[int, list[str]] = {}
+# seed 缓存：键为 (id(engine), doc_class_iri or "")，支持按文档类型缩窄种子。
+_seed_cache: dict[tuple[int, str], list[str]] = {}
+# 相关类缓存：键为 (id(engine), doc_class_iri)。
+_relevant_cache: dict[tuple[int, str], set[str]] = {}
 
 
 _SEED_LABEL_CAP = 40
 
+# 否定名单：明显不是实体的 span 文本模式（度量值、纯数字等）。
+_NON_ENTITY_RE = re.compile(
+    r"^\d+(\.\d+)?\s*[a-zA-Zμ°℃%‰]+$"   # 数字+单位: 50L, 15℃, 99.5%
+    r"|^\d+(\.\d+)?$"                       # 纯数字: 123, 1.5
+    r"|^\d+\s*分钟$|^\d+\s*小时$|^\d+\s*天$"  # 中文时间: 15分钟
+    r"|^[±<>≤≥]\s*\d"                       # 比较: ±0.5, <3
+    r"|^\d+(\.\d+)?\s*[-–~]\s*\d"           # 范围: 3.2-5.8
+)
 
-def seed_labels(engine) -> list[str]:
-    """GLiNER 种子标签 = 数据属性 domain 类 + 模块根类（depth == 0），上限 40。
 
-    数据属性 domain 类提供精确召回（PDE计算/MACO计算/洁净区…）；模块根类补充高层
-    类别召回（药物产品/设备…——它们自身无数据属性但语义上是重要实体类别）。
-    标签总量上限 40：GLiNER 标签过多（>50）会导致注意力稀释和推理超时。
+def _is_non_entity_span(text: str) -> bool:
+    """检测明显不是实体的 span 文本（度量值、纯数字、范围表达式）。"""
+    t = text.strip()
+    return len(t) <= 1 or bool(_NON_ENTITY_RE.match(t))
 
-    注：数据属性标签（"NOAEL"、"制剂剂型"…）不应进入种子标签——它们是字段名而非实体
-    类型，会导致 GLiNER 把文档中的属性名误检为实体 span。属性标签仅用于阶段三（属性
-    三元组抽取）的 per-class GLiNER 标签集。
+
+_RELEVANT_HOPS = 4
+
+
+def relevant_classes_for_doc_type(
+    engine, doc_class_iri: str, max_hops: int = _RELEVANT_HOPS,
+) -> set[str]:
+    """从关系图谱 schema（T-Box 多跳 BFS）提取相关类 IRI 集合。
+
+    委托 ``engine.get_relation_schema()`` 做 BFS，从返回的边中收集所有
+    range 类 + 子类 IRI，作为实体归类的候选类子集。
+
+    CMCReport 4 跳约 114 个类（vs 全量 320）：
+    hop 1 → DrugProduct, CleaningProcess, SynthesisRoute …
+    hop 2 → SynthesisStep, ActivePharmaceuticalIngredient …
+    hop 3 → Equipment, Reactor, Centrifuge, AnalyticalMethod …
+    hop 4 → ProductionRoom, ConstructionMaterial, CleanabilityRating …
     """
-    key = id(engine)
-    cached = _seed_cache.get(key)
+    cache_key = (id(engine), doc_class_iri)
+    cached = _relevant_cache.get(cache_key)
     if cached is not None:
         return cached
+
+    edges = engine.get_relation_schema(doc_class_iri, max_hops=max_hops)
+    relevant: set[str] = set()
+    for edge in edges:
+        relevant.add(edge["range_class_iri"])
+        for sub in edge["range_subclasses"]:
+            relevant.add(sub["iri"])
+
+    logger.debug("文档类 %s 相关类子图 (%d 跳, %d 条边): %d 个类",
+                 doc_class_iri, max_hops, len(edges), len(relevant))
+    _relevant_cache[cache_key] = relevant
+    return relevant
+
+
+def seed_labels(engine, doc_class_iri: str | None = None) -> list[str]:
+    """GLiNER 种子标签，上限 40。
+
+    有 ``doc_class_iri`` 时，种子取自文档类的相关类子图标签（定向召回）；
+    无 ``doc_class_iri`` 时走通用策略：数据属性 domain 类 + 模块根类（depth == 0）。
+    """
+    cache_key = (id(engine), doc_class_iri or "")
+    cached = _seed_cache.get(cache_key)
+    if cached is not None:
+        return cached
+
     labels: list[str] = []
     seen: set[str] = set()
-    for _iri, label in engine.data_property_domain_classes():
-        if label and label not in seen:
-            seen.add(label)
-            labels.append(label)
-    for entry in build_class_index(engine):
-        if len(labels) >= _SEED_LABEL_CAP:
-            break
-        if entry.depth == 0 and entry.label and entry.label not in seen:
-            seen.add(entry.label)
-            labels.append(entry.label)
-    _seed_cache[key] = labels
+
+    if doc_class_iri:
+        rel_iris = relevant_classes_for_doc_type(engine, doc_class_iri)
+        for entry in build_class_index(engine):
+            if len(labels) >= _SEED_LABEL_CAP:
+                break
+            if entry.iri in rel_iris and entry.label and entry.label not in seen:
+                seen.add(entry.label)
+                labels.append(entry.label)
+    else:
+        for _iri, label in engine.data_property_domain_classes():
+            if label and label not in seen:
+                seen.add(label)
+                labels.append(label)
+        for entry in build_class_index(engine):
+            if len(labels) >= _SEED_LABEL_CAP:
+                break
+            if entry.depth == 0 and entry.label and entry.label not in seen:
+                seen.add(entry.label)
+                labels.append(entry.label)
+
+    _seed_cache[cache_key] = labels
     return labels
 
 
@@ -109,11 +170,109 @@ def _flatten(node, depth: int, module: str, out: list[ClassEntry]) -> None:
         _flatten(child, depth + 1, module, out)
 
 
+_SEGMENT_TOP_K = 15
+_SEGMENT_TEXT_CAP = 256
+
+
+def predict_segment_classes(
+    segment_texts: list[str],
+    engine,
+    class_iris: set[str] | None = None,
+    top_k: int = _SEGMENT_TOP_K,
+) -> list[set[str] | None]:
+    """段级类预测：把每段文本嵌入，与候选类标签做 cosine 排名，取 top-K 类 IRI。
+
+    对叙述型长段落（``is_narrative_segment``），先做句组语义分割，每组独立预测
+    top-K 类后取并集——覆盖跨主题段落中各子主题的本体类。短段、键值段、枚举段保持
+    原有逻辑不变。
+
+    返回与 ``segment_texts`` 等长的列表。``None`` 表示该段无法排名（空段、无嵌入器、
+    候选类已 ≤ top_k），调用方应回退到文档级 ``class_iris``。
+    """
+    from app.services.extraction.sentence_grouping import (
+        is_narrative_segment,
+        segment_sentences,
+        split_by_topic_shift,
+    )
+
+    embedder = get_embedder()
+    if embedder is None or not embedder.is_available():
+        return [None] * len(segment_texts)
+
+    full_index = build_class_index(engine)
+    if not full_index:
+        return [None] * len(segment_texts)
+    index = (
+        [e for e in full_index if e.iri in class_iris] if class_iris else full_index
+    )
+    if not index or len(index) <= top_k:
+        return [None] * len(segment_texts)
+
+    # 预热缓存：类标签 + 原始段文本 + 叙述段句组文本。
+    embedder.embed_many([e.label for e in index])
+    all_embed_texts = [t[:_SEGMENT_TEXT_CAP] for t in segment_texts if t.strip()]
+    for text in segment_texts:
+        if is_narrative_segment(text):
+            sents = segment_sentences(text)
+            groups = split_by_topic_shift(sents, embedder)
+            for group in groups:
+                gt = " ".join(group)[:_SEGMENT_TEXT_CAP]
+                if gt.strip():
+                    all_embed_texts.append(gt)
+    embedder.embed_many(all_embed_texts)
+
+    class_vecs: list[list[float]] = []
+    class_entries: list[ClassEntry] = []
+    for entry in index:
+        vec = embedder.embed(entry.label)
+        if vec:
+            class_vecs.append(vec)
+            class_entries.append(entry)
+    if not class_vecs:
+        return [None] * len(segment_texts)
+
+    matcher = _build_matcher(class_vecs)
+
+    def _top_k_iris(query_text: str) -> set[str] | None:
+        qvec = embedder.embed(query_text[:_SEGMENT_TEXT_CAP])
+        if not qvec:
+            return None
+        sims = matcher(qvec)
+        ranked = sorted(range(len(sims)), key=lambda k: sims[k], reverse=True)
+        return {class_entries[k].iri for k in ranked[:top_k]}
+
+    result: list[set[str] | None] = []
+    for text in segment_texts:
+        text_stripped = text.strip()
+        if not text_stripped:
+            result.append(None)
+            continue
+
+        if is_narrative_segment(text):
+            sents = segment_sentences(text)
+            groups = split_by_topic_shift(sents, embedder)
+            union_iris: set[str] = set()
+            for group in groups:
+                group_text = " ".join(group)
+                iris = _top_k_iris(group_text)
+                if iris:
+                    union_iris.update(iris)
+            result.append(union_iris if union_iris else None)
+        else:
+            result.append(_top_k_iris(text_stripped))
+
+    return result
+
+
 def type_spans(
-    texts: list[str], engine, threshold: float = DEFAULT_TYPE_THRESHOLD
+    texts: list[str],
+    engine,
+    threshold: float = DEFAULT_TYPE_THRESHOLD,
+    class_iris: set[str] | None = None,
 ) -> list[dict | None]:
     """把每个 span 表层文本归类到最具体的本体类。
 
+    ``class_iris`` 非空时仅在该子集内匹配（文档类型感知缩窄）。
     返回与 ``texts`` 等长的列表，第 i 项为 ``{iri, label, score}`` 或 ``None``
     （无 ≥threshold 命中 / 空文本 / 嵌入器不可用）。``score`` 为余弦相似度。
     """
@@ -122,7 +281,14 @@ def type_spans(
     if embedder is None or not embedder.is_available():
         return out
 
-    index = build_class_index(engine)
+    full_index = build_class_index(engine)
+    if not full_index:
+        return out
+    index = (
+        [e for e in full_index if e.iri in class_iris]
+        if class_iris
+        else full_index
+    )
     if not index:
         return out
 
@@ -147,6 +313,8 @@ def type_spans(
     for i, text in enumerate(texts):
         if not text:
             continue
+        if _is_non_entity_span(text):
+            continue
         qvec = embedder.embed(text)
         if not qvec:
             continue
@@ -155,7 +323,10 @@ def type_spans(
         best_score = sims[best_idx]
         if best_score < threshold:
             continue
-        if len(sims) > 10:
+        # 区分度门槛：仅在全量匹配（class_iris 未指定）时生效。
+        # 缩窄集的类已经过文档类型预筛选，语义距离更近导致 mean 偏高，
+        # 使用全量门槛会误杀大量正确匹配。
+        if class_iris is None and len(sims) > 10:
             mean_score = sum(sims) / len(sims)
             if best_score - mean_score < _DISCRIMINABILITY_MARGIN:
                 continue

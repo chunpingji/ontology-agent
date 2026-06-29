@@ -30,7 +30,7 @@ export default function EntitiesPage() {
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState<Individual | null>(null);
 
-  const MODULES = ["drug", "equipment", "facility", "contamination", "risk", "cleaning", "integration"];
+  const MODULES = ["drug", "drug-development", "document", "equipment", "facility", "contamination", "risk", "cleaning", "personnel", "integration"];
   // Radix Select 不允许空字符串 value；用哨兵表示"全部模块"，对外仍映射回 ""（保持 module 过滤语义不变）。
   const ALL_MODULES = "__all__";
 
@@ -114,7 +114,7 @@ export default function EntitiesPage() {
         {selected && (
           <Card className="w-96 shrink-0 p-4">
             <h2 className="mb-2 font-bold">{selected.name}</h2>
-            <p className="mb-1 text-xs text-muted-foreground">{selected.iri}</p>
+            <p className="mb-1 break-all text-xs text-muted-foreground">{selected.iri}</p>
             {selected.label_zh && <p className="text-sm">{selected.label_zh}</p>}
             <div className="mt-3">
               <h3 className="mb-1 text-sm font-semibold text-muted-foreground">类型</h3>
@@ -132,7 +132,7 @@ export default function EntitiesPage() {
                     <dt className="w-40 shrink-0 truncate font-mono text-muted-foreground">
                       {key.split("/").pop()}
                     </dt>
-                    <dd className="text-foreground">{JSON.stringify(val)}</dd>
+                    <dd className="min-w-0 break-all text-foreground">{JSON.stringify(val)}</dd>
                   </div>
                 ))}
               </dl>

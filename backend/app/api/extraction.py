@@ -228,7 +228,7 @@ def get_job(job_id: UUID, db: Session = Depends(get_db)):
     return job
 
 
-_ANNOTATOR_VERSION = 10
+_ANNOTATOR_VERSION = 14
 
 
 def _annotation_cache_path(job_id) -> Path:
@@ -243,13 +243,35 @@ def _compute_annotation(
     should_pause_fn=None,
     checkpoint=None,
 ) -> dict:
-    """三阶段标注 → drawer 响应负载。阻塞 CPU，须经线程。"""
+    """三阶段标注 → drawer 响应负载。阻塞 CPU，须经线程。
+
+    Word 文档走「分类前置」管线：先分类 → 缩窄候选类 → NER → 关系抽取，
+    Stage-2 嵌入归类仅在文档类型子图（~50 类 vs 320 全量）内匹配，精度显著提升。
+    """
     from app.services.extraction.document_annotator import annotate_excel, annotate_word
 
     file_path = Path(job.document_path)
+
+    # ── Word：分类前置，缩窄 NER 候选集 ──
+    doc_class_iri = None
+    doc_class_result = None
+    if job.source_type == "word":
+        try:
+            from app.services.extraction.docx_structure import parse_docx_structure
+            from app.services.extraction.document_classifier import classify
+
+            structure = parse_docx_structure(file_path)
+            doc_class_result = classify(structure, engine)
+            doc_class_iri = (
+                doc_class_result["doc_class_iri"] if doc_class_result else None
+            )
+        except Exception:
+            logger.warning("文档分类失败，使用全量候选集", exc_info=True)
+
     if job.source_type == "word":
         content, warnings, triples, ckpt = annotate_word(
             file_path, engine, progress_fn, should_pause_fn, checkpoint,
+            doc_class_iri=doc_class_iri,
         )
     elif job.source_type == "excel":
         content, warnings, triples, ckpt = annotate_excel(
@@ -265,7 +287,22 @@ def _compute_annotation(
         "content": content,
         "warnings": warnings,
         "triples": triples,
+        "doc_class": None,
+        "relationships": [],
     }
+    # 文档级分类 + 全量关系/属性抽取（纯规则、离线、无新增模型调用）。仅 Word；
+    # 仅在完整标注完成（无 checkpoint，未暂停）时计算，避免对部分结果连边。
+    if job.source_type == "word" and ckpt is None:
+        try:
+            from app.services.extraction.relation_extractor import extract_relationships
+
+            graph = extract_relationships(
+                engine, file_path, triples, doc_class=doc_class_result,
+            )
+            result["doc_class"] = graph["doc_class"]
+            result["relationships"] = graph["relationships"]
+        except Exception:
+            logger.warning("关系抽取失败，本次跳过（不影响标注主路径）", exc_info=True)
     if ckpt is not None:
         result["_checkpoint"] = ckpt
     return result
@@ -432,6 +469,15 @@ async def _precompute_annotation_bg(
         triples = payload.get("triples") or []
         if triples:
             await asyncio.to_thread(_persist_ner_triples, job_id, triples, db)
+
+        progress_bus.publish(job_id_str, {
+            "job_id": job_id_str,
+            "stage": "done",
+            "annotation_stage": "complete",
+            "pct": 100,
+            "status": "done",
+            "degraded": False,
+        })
     except Exception:
         logger.warning("标注预计算失败 job=%s", job_id, exc_info=True)
         progress_bus.publish(job_id_str, {
