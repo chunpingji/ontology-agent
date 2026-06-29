@@ -774,6 +774,17 @@ class OntologyMetaStore:
         )
         self.audit("classification_criterion.delete", criterion_key, actor)
 
+    def publish_classification_criterion(self, criterion_key: str, expected_version: int, actor: str) -> dict:
+        c = self._require_criterion(criterion_key)
+        if c.status == STATUS_PUBLISHED:
+            raise HTTPException(status_code=409, detail="判据已处于 published 状态")
+        c = self._cas_update(
+            OntologyClassificationCriterion, c.id, expected_version,
+            {"status": STATUS_PUBLISHED, "updated_by": self._user_id(actor)},
+        )
+        self.audit("classification_criterion.publish", criterion_key, actor)
+        return self.classification_criterion_detail(c)
+
     # --- E12 decision-rule (production rules R-ED / R-SC / R-CP) -----------
     def decision_rule_detail(self, r: OntologyDecisionRule) -> dict:
         return {
@@ -877,6 +888,17 @@ class OntologyMetaStore:
         )
         self.audit("decision_rule.delete", r.slpra_iri, actor)
 
+    def publish_decision_rule(self, rule_key: str, expected_version: int, actor: str) -> dict:
+        r = self._require_decision_rule(rule_key)
+        if r.status == STATUS_PUBLISHED:
+            raise HTTPException(status_code=409, detail="规则已处于 published 状态")
+        r = self._cas_update(
+            OntologyDecisionRule, r.id, expected_version,
+            {"status": STATUS_PUBLISHED, "updated_by": self._user_id(actor)},
+        )
+        self.audit("decision_rule.publish", r.slpra_iri, actor)
+        return self.decision_rule_detail(r)
+
     # --- E13 conflict-policy (fixed dimension set; GET / PUT only) ----------
     def conflict_policy_detail(self, p: OntologyConflictPolicy) -> dict:
         return {
@@ -929,6 +951,17 @@ class OntologyMetaStore:
                 changes[f] = v
         p = self._cas_update(OntologyConflictPolicy, p.id, payload.expected_version, changes)
         self.audit("conflict_policy.update", p.slpra_iri, actor)
+        return self.conflict_policy_detail(p)
+
+    def publish_conflict_policy(self, dimension: str, expected_version: int, actor: str) -> dict:
+        p = self._require_conflict_policy(dimension)
+        if p.status == STATUS_PUBLISHED:
+            raise HTTPException(status_code=409, detail="策略已处于 published 状态")
+        p = self._cas_update(
+            OntologyConflictPolicy, p.id, expected_version,
+            {"status": STATUS_PUBLISHED, "updated_by": self._user_id(actor)},
+        )
+        self.audit("conflict_policy.publish", p.slpra_iri, actor)
         return self.conflict_policy_detail(p)
 
     # --- active-state loaders (engine consumes these at assessment time) ----

@@ -6,6 +6,7 @@ import {
   deleteDecisionRule,
   DECISION_RULE_GROUPS,
   listDecisionRules,
+  publishDecisionRule,
   updateDecisionRule,
   type DecisionRuleGroup,
   type RulePattern,
@@ -114,6 +115,17 @@ export function DecisionRulesPanel() {
     try {
       await run(() => deleteDecisionRule(current.rule_key, current.version));
       setSelected(null);
+      load();
+    } catch (e) {
+      setError(String(e));
+    }
+  };
+
+  const publishCurrent = async () => {
+    if (!current) return;
+    setError(null);
+    try {
+      await run(() => publishDecisionRule(current.rule_key, current.version));
       load();
     } catch (e) {
       setError(String(e));
@@ -324,6 +336,16 @@ export function DecisionRulesPanel() {
               >
                 保存改动
               </Button>
+              {current.status === "draft" && !current.is_disabled && (
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={publishCurrent}
+                  className="h-auto px-3 py-1.5 text-sm"
+                >
+                  发布
+                </Button>
+              )}
               <Button
                 size="sm"
                 variant="outline"

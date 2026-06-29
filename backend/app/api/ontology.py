@@ -385,6 +385,19 @@ def delete_classification_criterion(
     return Response(status_code=204)
 
 
+@router.post(
+    "/classification-criteria/{criterion_key}/publish",
+    response_model=ClassificationCriterionDetail,
+)
+def publish_classification_criterion(
+    criterion_key: str,
+    expected_version: int = Body(..., embed=True),
+    identity: Identity = Depends(_writer),
+    store: OntologyMetaStore = Depends(get_ontology_meta_store),
+):
+    return store.publish_classification_criterion(criterion_key, expected_version, identity.username)
+
+
 # --- E12 决策规则（产生式 R-ED / R-SC / R-CP，T038）---
 @router.get("/decision-rules", response_model=list[DecisionRuleDetail])
 def list_decision_rules(
@@ -424,6 +437,16 @@ def delete_decision_rule(
     return Response(status_code=204)
 
 
+@router.post("/decision-rules/{rule_key}/publish", response_model=DecisionRuleDetail)
+def publish_decision_rule(
+    rule_key: str,
+    expected_version: int = Body(..., embed=True),
+    identity: Identity = Depends(_writer),
+    store: OntologyMetaStore = Depends(get_ontology_meta_store),
+):
+    return store.publish_decision_rule(rule_key, expected_version, identity.username)
+
+
 # --- E13 冲突消解策略（固定维度集，仅 GET/PUT，T039）---
 @router.get("/conflict-policies", response_model=list[ConflictPolicyDetail])
 def list_conflict_policies(store: OntologyMetaStore = Depends(get_ontology_meta_store)):
@@ -445,6 +468,16 @@ def update_conflict_policy(
     store: OntologyMetaStore = Depends(get_ontology_meta_store),
 ):
     return store.update_conflict_policy(dimension, payload, identity.username)
+
+
+@router.post("/conflict-policies/{dimension}/publish", response_model=ConflictPolicyDetail)
+def publish_conflict_policy(
+    dimension: str,
+    expected_version: int = Body(..., embed=True),
+    identity: Identity = Depends(_writer),
+    store: OntologyMetaStore = Depends(get_ontology_meta_store),
+):
+    return store.publish_conflict_policy(dimension, expected_version, identity.username)
 
 
 # ===========================================================================

@@ -5,6 +5,7 @@ import {
   createClassificationCriterion,
   deleteClassificationCriterion,
   listClassificationCriteria,
+  publishClassificationCriterion,
   updateClassificationCriterion,
   type RulePattern,
   type TBoxClassificationCriterion,
@@ -90,6 +91,17 @@ export function ClassificationCriteriaPanel() {
     try {
       await run(() => deleteClassificationCriterion(current.criterion_key, current.version));
       setSelected(null);
+      load();
+    } catch (e) {
+      setError(String(e));
+    }
+  };
+
+  const publishCurrent = async () => {
+    if (!current) return;
+    setError(null);
+    try {
+      await run(() => publishClassificationCriterion(current.criterion_key, current.version));
       load();
     } catch (e) {
       setError(String(e));
@@ -244,6 +256,16 @@ export function ClassificationCriteriaPanel() {
               >
                 保存改动
               </Button>
+              {current.status === "draft" && !current.is_disabled && (
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={publishCurrent}
+                  className="h-auto px-3 py-1.5 text-sm"
+                >
+                  发布
+                </Button>
+              )}
               <Button
                 size="sm"
                 variant="outline"
@@ -255,7 +277,7 @@ export function ClassificationCriteriaPanel() {
               </Button>
             </div>
             <p className="text-[11px] text-muted-foreground">
-              改动落草稿（draft 即真源），立即参与推断；进入下一发布批次并留审计。
+              改动落草稿（draft 即真源），立即参与推断；发布后进入正式状态并留审计。
             </p>
           </div>
         ) : (

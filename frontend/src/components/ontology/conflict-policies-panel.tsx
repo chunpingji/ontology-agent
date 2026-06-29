@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import {
   listConflictPolicies,
+  publishConflictPolicy,
   updateConflictPolicy,
   type TBoxConflictPolicy,
 } from "@/lib/api";
@@ -90,6 +91,17 @@ export function ConflictPoliciesPanel() {
     }
   };
 
+  const publishCurrent = async () => {
+    if (!current) return;
+    setError(null);
+    try {
+      await run(() => publishConflictPolicy(current.dimension, current.version));
+      load();
+    } catch (e) {
+      setError(String(e));
+    }
+  };
+
   return (
     <div className="flex gap-4">
       <ConflictDialog conflict={conflict} onReload={() => { clear(); load(); }} onDismiss={clear} />
@@ -172,11 +184,23 @@ export function ConflictPoliciesPanel() {
                 className="h-auto rounded px-2 py-1 text-sm"
               />
             </Field>
-            <Button size="sm" onClick={saveEdit} className="h-auto px-3 py-1.5 text-sm">
-              保存改动
-            </Button>
+            <div className="flex gap-2">
+              <Button size="sm" onClick={saveEdit} className="h-auto px-3 py-1.5 text-sm">
+                保存改动
+              </Button>
+              {current.status === "draft" && (
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={publishCurrent}
+                  className="h-auto px-3 py-1.5 text-sm"
+                >
+                  发布
+                </Button>
+              )}
+            </div>
             <p className="text-[11px] text-muted-foreground">
-              翻转覆盖方向或替换格点即改变冲突裁决——纯数据，进入发布批次并留审计。
+              翻转覆盖方向或替换格点即改变冲突裁决——纯数据，发布后进入正式状态并留审计。
             </p>
           </div>
         ) : (

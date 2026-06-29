@@ -917,6 +917,11 @@ export const deleteClassificationCriterion = (key: string, expectedVersion: numb
     `/api/ontology/classification-criteria/${encodeURIComponent(key)}?expected_version=${expectedVersion}`,
     { method: "DELETE" },
   );
+export const publishClassificationCriterion = (key: string, expectedVersion: number) =>
+  fetchAPI<TBoxClassificationCriterion>(
+    `/api/ontology/classification-criteria/${encodeURIComponent(key)}/publish`,
+    { method: "POST", ...jsonBody({ expected_version: expectedVersion }) },
+  );
 
 // --- E12 决策规则 (产生式 R-ED / R-SC / R-CP) -------------------------------
 export type DecisionRuleGroup =
@@ -957,6 +962,11 @@ export const deleteDecisionRule = (key: string, expectedVersion: number) =>
     `/api/ontology/decision-rules/${encodeURIComponent(key)}?expected_version=${expectedVersion}`,
     { method: "DELETE" },
   );
+export const publishDecisionRule = (key: string, expectedVersion: number) =>
+  fetchAPI<TBoxDecisionRule>(
+    `/api/ontology/decision-rules/${encodeURIComponent(key)}/publish`,
+    { method: "POST", ...jsonBody({ expected_version: expectedVersion }) },
+  );
 
 // --- E13 冲突消解策略 (固定维度集，仅 GET/PUT) ------------------------------
 export interface TBoxConflictPolicy {
@@ -981,6 +991,11 @@ export const updateConflictPolicy = (dimension: string, data: ConflictPolicyUpda
   fetchAPI<TBoxConflictPolicy>(`/api/ontology/conflict-policies/${encodeURIComponent(dimension)}`, {
     method: "PUT", ...jsonBody(data),
   });
+export const publishConflictPolicy = (dimension: string, expectedVersion: number) =>
+  fetchAPI<TBoxConflictPolicy>(
+    `/api/ontology/conflict-policies/${encodeURIComponent(dimension)}/publish`,
+    { method: "POST", ...jsonBody({ expected_version: expectedVersion }) },
+  );
 
 // ===========================================================================
 // 文档标注 + 自动抽取 + 系统配置 + 全类列表 (UI 改进)
