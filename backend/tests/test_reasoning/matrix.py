@@ -68,7 +68,7 @@ def build_cases() -> list[tuple[str, StubEngine, str, list[str]]]:
     def add(case_id, inds, drug_iri, eq_iris=()):
         cases.append((case_id, StubEngine(inds), drug_iri, list(eq_iris)))
 
-    # --- R-DC1: genotoxicity → CytotoxicDrug (+ R-SC2 cytotoxic shared) ------
+    # --- R-DC1: genotoxicity → CytotoxicDrug (+ R-SCe) ---------------------
     add(
         "dc1_genotoxic_cytotoxic",
         {
@@ -78,7 +78,7 @@ def build_cases() -> list[tuple[str, StubEngine, str, list[str]]]:
         "drug:1",
     )
 
-    # --- R-DC2: OEB4 → HighActivityDrug (+ R-SC6) ---------------------------
+    # --- R-DC2: OEB4 → HighActivityDrug (+ R-SCe) --------------------------
     add(
         "dc2_oeb4_highactivity",
         {
@@ -108,7 +108,7 @@ def build_cases() -> list[tuple[str, StubEngine, str, list[str]]]:
         "drug:4b",
     )
 
-    # --- R-ED1: asserted PenicillinDrug → unconditional dedication (+R-SC4) -
+    # --- R-ED1: asserted PenicillinDrug → unconditional dedication (+R-SCh) -
     add("penicillin_dedication", {"drug:5": _drug(classes=["PenicillinDrug"])}, "drug:5")
 
     # --- R-ED2: cytotoxic + NonInactivatable → dedicate --------------------
@@ -154,7 +154,7 @@ def build_cases() -> list[tuple[str, StubEngine, str, list[str]]]:
         "drug:9",
     )
 
-    # --- R-ED6: hormonal → independent HVAC (+ R-SC3) ----------------------
+    # --- R-ED6: hormonal → independent HVAC (+ R-SCe) ----------------------
     add("hormonal_hvac", {"drug:10": _drug(classes=["HormonalDrug"])}, "drug:10")
 
     # --- R-CP1: residue + low PDE + poor cleanability → HighRisk -----------

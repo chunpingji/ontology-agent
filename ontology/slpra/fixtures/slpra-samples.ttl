@@ -156,7 +156,7 @@ slpra-drug:API_CompoundX a slpra-drug:CytotoxicAPI ;
 slpra-risk:Assessment_DrugX_CT64201 a slpra-risk:RiskAssessmentProcess ;
     slpra-risk:assessesProduct slpra-drug:DrugX ;
     slpra-risk:assessesEquipment slpra-equip:CT64201 ;
-    slpra-risk:involvesScenario [ a slpra-risk:CytotoxicSharedLineScenario ] ;
+    slpra-risk:involvesScenario [ a slpra-risk:HormonalCytotoxicHighPotencyScenario ] ;
     slpra-risk:involvesScenario [ a slpra-risk:ClinicalWithCommercialScenario ] .
 
 # Contamination event: residue pathway for DrugX on CT64201

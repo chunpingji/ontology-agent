@@ -11,6 +11,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
+  generateRiskReport,
   getAnnotatedDocument,
   rerunAnnotation,
   subscribeJobProgress,
@@ -54,6 +55,7 @@ export function ExtractionDrawer({ jobId, open, onOpenChange }: ExtractionDrawer
   const [selectedSourceRef, setSelectedSourceRef] = useState<string | null>(null);
   const [progressEvent, setProgressEvent] = useState<JobProgressEvent | null>(null);
   const [rerunning, setRerunning] = useState(false);
+  const [reportGenerating, setReportGenerating] = useState(false);
 
   const fetchDoc = useCallback((id: string) => {
     setLoading(true);
@@ -104,7 +106,36 @@ export function ExtractionDrawer({ jobId, open, onOpenChange }: ExtractionDrawer
     }
   }
 
+  async function handleGenerateReport() {
+    if (!jobId) return;
+    setReportGenerating(true);
+    setError(null);
+    try {
+      const blob = await generateRiskReport(jobId);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      const srcName = (doc?.filename ?? "report").replace(/\.docx$/i, "");
+      a.href = url;
+      a.download = `风险评估表_${srcName}.docx`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      setError(String(e));
+    } finally {
+      setReportGenerating(false);
+    }
+  }
+
   const isAnnotating = rerunning || progressEvent?.stage === "annotating";
+
+  const canGenerateReport =
+    !!doc &&
+    !rerunning &&
+    !isAnnotating &&
+    doc.doc_class?.doc_class_iri?.includes("CMCReport") &&
+    (doc.relationships?.length ?? 0) > 0;
   const annoStage = progressEvent?.annotation_stage;
 
   return (
@@ -165,6 +196,17 @@ export function ExtractionDrawer({ jobId, open, onOpenChange }: ExtractionDrawer
                   onClick={handleRerun}
                 >
                   重新标注
+                </Button>
+              )}
+              {canGenerateReport && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-7 text-xs"
+                  disabled={reportGenerating}
+                  onClick={handleGenerateReport}
+                >
+                  {reportGenerating ? "生成中..." : "生成风险评估报告"}
                 </Button>
               )}
             </>

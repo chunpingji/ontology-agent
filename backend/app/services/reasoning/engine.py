@@ -156,7 +156,7 @@ def run_assessment(
     # --- Recommendations ---
     if result.requires_dedication:
         result.recommendations.append("设备必须专用化，不得共线生产")
-    if any("HormonalSharedLineScenario" in s.get("scenario_iri", "") for s in result.scenarios):
+    if any("HormonalCytotoxicHighPotencyScenario" in s.get("scenario_iri", "") for s in result.scenarios):
         result.recommendations.append("需配置独立空气净化系统 (HVAC)")
     if result.risk_level == "HighRisk":
         result.recommendations.append("残留污染风险为高，需强化清洁验证")
@@ -240,16 +240,16 @@ def _build_facts(
     # asserted filler → UNKNOWN under class_membership (parity with legacy
     # `any(... for c in [])` → not fired).
     relations["hasInactivationProfile"] = api_props.get("inactivation_classes", [])  # R-ED2/4
-    relations["coProduct"] = []  # single-product assessment carries no co-products (R-SC1)
-    scalars["isShared"] = True  # legacy `is_shared=True` default (R-SC2/3/5/6/7/8)
+    relations["coProduct"] = []  # single-product assessment carries no co-products (R-SCa)
+    scalars["isShared"] = True  # legacy `is_shared=True` default (R-SCb~h)
     scalars["hasPrionRisk"] = drug_props.get("hasPrionRisk", False)  # legacy default (R-ED3)
     if dosage_form is not None:
         scalars["dosageForm"] = dosage_form  # R-CP2/3
     if pde_value is not None:
         scalars["pde"] = pde_value  # R-CP1
-    # Dosage-form relation (R-SC8 / R-CP4) needs BOTH a source and a target form;
+    # Dosage-form relation (R-CP4) needs BOTH a source and a target form;
     # this single-product assessment has no target form, so `formRelation` stays
-    # absent → UNKNOWN → those two rules stay unfired (parity with the legacy
+    # absent → UNKNOWN → that rule stays unfired (parity with the legacy
     # `target_form=None` wiring).
 
     return interpreter.Facts(

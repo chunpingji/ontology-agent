@@ -925,9 +925,9 @@ export const publishClassificationCriterion = (key: string, expectedVersion: num
 
 // --- E12 决策规则 (产生式 R-ED / R-SC / R-CP) -------------------------------
 export type DecisionRuleGroup =
-  | "equipment_dedication" | "scenario_identification" | "contamination_risk";
+  | "equipment_dedication" | "scenario_identification" | "contamination_risk" | "risk_assessment";
 export const DECISION_RULE_GROUPS: DecisionRuleGroup[] = [
-  "equipment_dedication", "scenario_identification", "contamination_risk",
+  "equipment_dedication", "scenario_identification", "contamination_risk", "risk_assessment",
 ];
 export interface TBoxDecisionRule {
   id: string; slpra_iri: string; rule_key: string; rule_group: DecisionRuleGroup;
@@ -1063,6 +1063,14 @@ export interface AnnotatedDocument {
 }
 export const getAnnotatedDocument = (jobId: string) =>
   fetchAPI<AnnotatedDocument>(`/api/extraction/jobs/${jobId}/annotated-document`);
+
+export async function generateRiskReport(jobId: string): Promise<Blob> {
+  const res = await fetch(`${API_BASE}/api/extraction/jobs/${jobId}/risk-report`, {
+    method: "POST", headers: identityHeaders(),
+  });
+  if (!res.ok) throw new Error(`API ${res.status}: ${await res.text()}`);
+  return res.blob();
+}
 
 export async function createAutoExtractionJob(params: {
   file: File; source_type: string; target_class_iris?: string[];

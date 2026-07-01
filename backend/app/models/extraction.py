@@ -86,3 +86,22 @@ class ExtractionCandidate(Base):
     action_conditions: Mapped[dict | None] = mapped_column(JSON)
 
     job: Mapped[ExtractionJob] = relationship(back_populates="candidates")
+
+
+class GeneratedReport(Base):
+    __tablename__ = "generated_reports"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
+    job_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("extraction_jobs.id", ondelete="CASCADE"),
+        nullable=False, index=True,
+    )
+    report_type: Mapped[str] = mapped_column(String(50), nullable=False, default="risk_assessment")
+    file_path: Mapped[str] = mapped_column(String(500), nullable=False)
+    file_size: Mapped[int | None] = mapped_column(Integer)
+    rules_fired_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    rules_summary: Mapped[dict | None] = mapped_column(JSON)
+    actor: Mapped[str] = mapped_column(String(100), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+
+    job: Mapped[ExtractionJob] = relationship()

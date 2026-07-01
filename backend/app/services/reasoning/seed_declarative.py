@@ -161,7 +161,7 @@ def _seed_classification_criteria(db: Session) -> int:
 
 
 def _seed_decision_rules(db: Session) -> int:
-    """T031 — E12 R-ED1~6 / R-SC1~8 / R-CP1~4 production rules from defaults.
+    """T031 — E12 R-ED1~6 / R-SCa~h / R-CP1~4 production rules from defaults.
 
     Keyed by `rule_key`; antecedents reference class local-names as *strings*
     (not FKs), so seeding is independent of class-table readiness. Each row is

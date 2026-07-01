@@ -35,6 +35,7 @@ const GROUP_LABEL: Record<DecisionRuleGroup, string> = {
   equipment_dedication: "设备专用化 (R-ED)",
   scenario_identification: "场景识别 (R-SC)",
   contamination_risk: "污染风险 (R-CP)",
+  risk_assessment: "风险评估 (R-RA)",
 };
 
 const DEFAULT_ANTECEDENT: RulePattern = {

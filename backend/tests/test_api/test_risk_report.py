@@ -14,7 +14,7 @@ def _conclusion(db, **overrides):
             "requires_dedication": True,
             "category": "高活性",
             "contamination_scores": {"airborne": 0.8},
-            "cfdi_scenarios": ["HormonalSharedLineScenario"],
+            "cfdi_scenarios": ["HormonalCytotoxicHighPotencyScenario"],
             "pde": 10.0,
         },
         risk_level="HighRisk",
@@ -38,7 +38,7 @@ def test_report_json_has_all_sections(client, db):
     assert body["classification"]["risk_level"] == "HighRisk"
     assert body["dedication_decision"] == "required"
     assert body["contamination_scores"]["airborne"] == 0.8
-    assert "HormonalSharedLineScenario" in body["cfdi_scenarios"]
+    assert "HormonalCytotoxicHighPotencyScenario" in body["cfdi_scenarios"]
     assert body["maco"]["value"] == 1.23
     assert body["maco"]["method"] == "PDE"
     assert body["rule_chain"][0]["rule_id"] == "DED-003"
