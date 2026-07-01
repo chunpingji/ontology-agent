@@ -31,17 +31,29 @@ from app.dependencies import (
     require_role,
 )
 from app.models.entity_shadow import EntityShadow
-from app.models.extraction import ExtractionCandidate, ExtractionConfig, ExtractionJob, GeneratedReport
+from app.models.extraction import (
+    ExtractionCandidate,
+    ExtractionConfig,
+    ExtractionJob,
+    GeneratedReport,
+    SlotDismissal,
+)
 from app.schemas.extraction import (
+    ASTCoverageResponse,
     CandidateGroup,
     DocExtractionRequest,
     ExtractionCandidateResponse,
     ExtractionConfigCreate,
     ExtractionConfigResponse,
     ExtractionJobResponse,
+    GeneratedReportResponse,
+    GroupCoverageResponse,
     GroupedCandidatesResponse,
     MergeRequest,
     ReviewRequest,
+    SectionCoverageResponse,
+    SlotCoverageResponse,
+    SlotDismissRequest,
     SplitRequest,
 )
 from app.services import audit
@@ -859,9 +871,17 @@ def generate_risk_report(
     if not edges:
         raise HTTPException(422, "未检测到关系数据，无法生成风险评估报告")
 
+    dismissed_rows = (
+        db.query(SlotDismissal.slot_id)
+        .filter(SlotDismissal.job_id == job_id)
+        .all()
+    )
+    dismissed_ids = {r.slot_id for r in dismissed_rows} or None
+
     generator = RiskReportGenerator(db)
     report, manifest = generator.generate_with_coverage(
-        edges, source_filename=job.source_filename or ""
+        edges, source_filename=job.source_filename or "",
+        dismissed_slot_ids=dismissed_ids,
     )
     docx_bytes = render_risk_report(report, manifest)
 
@@ -946,3 +966,220 @@ def get_risk_report(
         media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
         filename=download_name,
     )
+
+
+# --------------------------------------------------------------------------- #
+# 011 AST Coverage
+# --------------------------------------------------------------------------- #
+
+
+def _build_ast_coverage_response(
+    job_id: UUID,
+    db: Session,
+) -> ASTCoverageResponse:
+    """Shared helper: run coverage validation and build the tree response."""
+    from app.models.ontology_meta import OntologyDecisionRule
+    from app.services.reasoning.fact_bridge import edges_to_facts
+    from app.services.reporting.ast_template import load_default_template
+    from app.services.reporting.coverage_validator import validate_coverage
+
+    cache_path = _annotation_cache_path(job_id)
+    if not cache_path.exists():
+        raise HTTPException(422, "文档未分类，无法生成覆盖预览")
+
+    result = json.loads(cache_path.read_text(encoding="utf-8"))
+    doc_class = result.get("doc_class")
+    if not doc_class:
+        raise HTTPException(422, "文档未分类，无法生成覆盖预览")
+    if "CMCReport" not in doc_class.get("doc_class_iri", ""):
+        raise HTTPException(422, "仅支持 CMCReport 类型文档")
+
+    edges = result.get("relationships", [])
+
+    dismissed_rows = (
+        db.query(SlotDismissal.slot_id)
+        .filter(SlotDismissal.job_id == job_id)
+        .all()
+    )
+    dismissed_ids = {r.slot_id for r in dismissed_rows}
+
+    template = load_default_template()
+    facts = edges_to_facts(list(edges))
+
+    rules = (
+        db.query(OntologyDecisionRule)
+        .filter(
+            OntologyDecisionRule.rule_group == "risk_assessment",
+            OntologyDecisionRule.is_disabled == False,  # noqa: E712
+        )
+        .order_by(OntologyDecisionRule.priority)
+        .all()
+    )
+
+    manifest = validate_coverage(
+        template, edges, rules, facts,
+        dismissed_slot_ids=dismissed_ids if dismissed_ids else None,
+    )
+
+    slot_map: dict[str, list] = {}
+    for sc in manifest.slots:
+        base_id = sc.slot_id.split("[")[0]
+        slot_map.setdefault(base_id, []).append(sc)
+
+    sections: list[SectionCoverageResponse] = []
+    for section in template.sections:
+        groups: list[GroupCoverageResponse] = []
+        for group in section.groups:
+            slots_out: list[SlotCoverageResponse] = []
+            for slot in group.slots:
+                matched = slot_map.get(slot.slot_id, [])
+                for sc in matched:
+                    slots_out.append(SlotCoverageResponse(
+                        slot_id=sc.slot_id,
+                        label=sc.label,
+                        status=sc.status,
+                        source_kind=sc.source_kind,
+                        value=sc.value,
+                        source_ref=sc.source_ref,
+                        rule_key=sc.rule_key,
+                        hazid=sc.hazid,
+                        note=sc.note,
+                    ))
+                if not matched:
+                    slots_out.append(SlotCoverageResponse(
+                        slot_id=slot.slot_id,
+                        label=slot.label,
+                        status="blank_optional",
+                        source_kind=slot.source.kind,
+                    ))
+            groups.append(GroupCoverageResponse(
+                group_id=group.group_id,
+                title=group.title,
+                kind=group.kind,
+                slots=slots_out,
+            ))
+        sections.append(SectionCoverageResponse(
+            section_id=section.section_id,
+            title=section.title,
+            groups=groups,
+        ))
+
+    return ASTCoverageResponse(
+        template_id=manifest.template_id,
+        total_slots=manifest.total_slots,
+        filled=manifest.filled,
+        inferred=manifest.inferred,
+        missing_required=manifest.missing_required,
+        blank_optional=manifest.blank_optional,
+        manual=manifest.manual,
+        dismissed=manifest.dismissed,
+        sections=sections,
+    )
+
+
+@router.get("/jobs/{job_id}/ast-coverage", response_model=ASTCoverageResponse)
+def get_ast_coverage(
+    job_id: UUID,
+    db: Session = Depends(get_db),
+    identity: Identity = Depends(get_current_user),
+):
+    """Run coverage validation and return the AST tree with slot status (011 FR-API-001)."""
+    job = db.get(ExtractionJob, job_id)
+    if not job:
+        raise HTTPException(404, "作业不存在")
+    return _build_ast_coverage_response(job_id, db)
+
+
+@router.get(
+    "/jobs/{job_id}/reports",
+    response_model=list[GeneratedReportResponse],
+)
+def list_reports(
+    job_id: UUID,
+    db: Session = Depends(get_db),
+    identity: Identity = Depends(get_current_user),
+):
+    """List all historical reports for a job (011 FR-API-002)."""
+    job = db.get(ExtractionJob, job_id)
+    if not job:
+        raise HTTPException(404, "作业不存在")
+    return (
+        db.query(GeneratedReport)
+        .filter(GeneratedReport.job_id == job_id)
+        .order_by(GeneratedReport.created_at.desc())
+        .all()
+    )
+
+
+@router.post("/jobs/{job_id}/ast-coverage/dismiss", response_model=ASTCoverageResponse)
+def dismiss_slot(
+    job_id: UUID,
+    body: SlotDismissRequest,
+    db: Session = Depends(get_db),
+    identity: Identity = Depends(get_current_user),
+):
+    """Mark a slot as not applicable (011 FR-API-004)."""
+    job = db.get(ExtractionJob, job_id)
+    if not job:
+        raise HTTPException(404, "作业不存在")
+
+    existing = (
+        db.query(SlotDismissal)
+        .filter(SlotDismissal.job_id == job_id, SlotDismissal.slot_id == body.slot_id)
+        .first()
+    )
+    if existing:
+        raise HTTPException(409, "该槽位已标记为不适用")
+
+    dismissal = SlotDismissal(
+        job_id=job_id,
+        slot_id=body.slot_id,
+        dismissed_by=identity.username,
+    )
+    db.add(dismissal)
+
+    audit.append(
+        db, "slot.dismiss", actor=identity.username,
+        entity_iri=str(job_id),
+        details={"slot_id": body.slot_id, "job_id": str(job_id)},
+        commit=False,
+    )
+    db.commit()
+
+    return _build_ast_coverage_response(job_id, db)
+
+
+@router.delete(
+    "/jobs/{job_id}/ast-coverage/dismiss/{slot_id}",
+    response_model=ASTCoverageResponse,
+)
+def undismiss_slot(
+    job_id: UUID,
+    slot_id: str,
+    db: Session = Depends(get_db),
+    identity: Identity = Depends(get_current_user),
+):
+    """Undo a slot dismissal (011 FR-API-005)."""
+    job = db.get(ExtractionJob, job_id)
+    if not job:
+        raise HTTPException(404, "作业不存在")
+
+    dismissal = (
+        db.query(SlotDismissal)
+        .filter(SlotDismissal.job_id == job_id, SlotDismissal.slot_id == slot_id)
+        .first()
+    )
+    if not dismissal:
+        raise HTTPException(404, "该槽位未被标记为不适用")
+
+    db.delete(dismissal)
+
+    audit.append(
+        db, "slot.undismiss", actor=identity.username,
+        entity_iri=str(job_id),
+        details={"slot_id": slot_id, "job_id": str(job_id)},
+        commit=False,
+    )
+    db.commit()
+
+    return _build_ast_coverage_response(job_id, db)

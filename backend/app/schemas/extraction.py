@@ -128,3 +128,59 @@ class GeneratedReportResponse(BaseModel):
     rules_summary: dict | None = None
     actor: str
     created_at: datetime
+
+
+# --------------------------------------------------------------------------- #
+# 011 AST Coverage
+# --------------------------------------------------------------------------- #
+
+
+class SlotCoverageResponse(BaseModel):
+    slot_id: str
+    label: str
+    status: str
+    source_kind: str
+    value: str | None = None
+    source_ref: str | None = None
+    rule_key: str | None = None
+    hazid: str | None = None
+    note: str | None = None
+
+
+class GroupCoverageResponse(BaseModel):
+    group_id: str
+    title: str
+    kind: str
+    slots: list[SlotCoverageResponse]
+
+
+class SectionCoverageResponse(BaseModel):
+    section_id: str
+    title: str
+    groups: list[GroupCoverageResponse]
+
+
+class ASTCoverageResponse(BaseModel):
+    template_id: str
+    total_slots: int
+    filled: int
+    inferred: int
+    missing_required: int
+    blank_optional: int
+    manual: int
+    dismissed: int
+    sections: list[SectionCoverageResponse]
+
+
+class SlotDismissRequest(BaseModel):
+    slot_id: str
+
+
+class SlotDismissalResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    job_id: UUID
+    slot_id: str
+    dismissed_by: str
+    dismissed_at: datetime

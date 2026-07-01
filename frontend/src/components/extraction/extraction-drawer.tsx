@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
 import {
   Sheet,
   SheetContent,
@@ -207,6 +208,18 @@ export function ExtractionDrawer({ jobId, open, onOpenChange }: ExtractionDrawer
                   onClick={handleGenerateReport}
                 >
                   {reportGenerating ? "生成中..." : "生成风险评估报告"}
+                </Button>
+              )}
+              {canGenerateReport && jobId && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-7 text-xs"
+                  asChild
+                >
+                  <Link href={`/entities/extraction/${jobId}/ast`}>
+                    查看 AST 覆盖率
+                  </Link>
                 </Button>
               )}
             </>

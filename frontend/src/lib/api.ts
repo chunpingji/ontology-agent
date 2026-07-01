@@ -1072,6 +1072,84 @@ export async function generateRiskReport(jobId: string): Promise<Blob> {
   return res.blob();
 }
 
+// 011 AST Coverage
+
+export interface SlotCoverageDTO {
+  slot_id: string;
+  label: string;
+  status: string;
+  source_kind: string;
+  value?: string | null;
+  source_ref?: string | null;
+  rule_key?: string | null;
+  hazid?: string | null;
+  note?: string | null;
+}
+
+export interface GroupCoverageDTO {
+  group_id: string;
+  title: string;
+  kind: string;
+  slots: SlotCoverageDTO[];
+}
+
+export interface SectionCoverageDTO {
+  section_id: string;
+  title: string;
+  groups: GroupCoverageDTO[];
+}
+
+export interface ASTCoverageDTO {
+  template_id: string;
+  total_slots: number;
+  filled: number;
+  inferred: number;
+  missing_required: number;
+  blank_optional: number;
+  manual: number;
+  dismissed: number;
+  sections: SectionCoverageDTO[];
+}
+
+export const getAstCoverage = (jobId: string) =>
+  fetchAPI<ASTCoverageDTO>(`/api/extraction/jobs/${jobId}/ast-coverage`);
+
+export interface GeneratedReportDTO {
+  id: string;
+  job_id: string;
+  report_type: string;
+  file_path: string;
+  file_size: number | null;
+  rules_fired_count: number;
+  rules_summary: Record<string, unknown> | null;
+  actor: string;
+  created_at: string;
+}
+
+export const listReports = (jobId: string) =>
+  fetchAPI<GeneratedReportDTO[]>(`/api/extraction/jobs/${jobId}/reports`);
+
+export async function dismissSlot(jobId: string, slotId: string): Promise<ASTCoverageDTO> {
+  return fetchAPI<ASTCoverageDTO>(`/api/extraction/jobs/${jobId}/ast-coverage/dismiss`, {
+    method: "POST", ...jsonBody({ slot_id: slotId }),
+  });
+}
+
+export async function undismissSlot(jobId: string, slotId: string): Promise<ASTCoverageDTO> {
+  return fetchAPI<ASTCoverageDTO>(
+    `/api/extraction/jobs/${jobId}/ast-coverage/dismiss/${encodeURIComponent(slotId)}`,
+    { method: "DELETE" },
+  );
+}
+
+export async function downloadReport(jobId: string, reportId: string): Promise<Blob> {
+  const res = await fetch(`${API_BASE}/api/extraction/jobs/${jobId}/risk-report`, {
+    headers: identityHeaders(),
+  });
+  if (!res.ok) throw new Error(`API ${res.status}: ${await res.text()}`);
+  return res.blob();
+}
+
 export async function createAutoExtractionJob(params: {
   file: File; source_type: string; target_class_iris?: string[];
 }): Promise<ExtractionJob> {

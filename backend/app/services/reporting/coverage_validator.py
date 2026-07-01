@@ -44,6 +44,7 @@ INFERRED = "inferred"
 MANUAL = "manual"
 BLANK_OPTIONAL = "blank_optional"
 MISSING_REQUIRED = "missing_required"
+DISMISSED = "dismissed"
 
 
 def _short(iri: str) -> str:
@@ -101,8 +102,16 @@ class CoverageManifest:
         return self._counts[MISSING_REQUIRED]
 
     @property
+    def dismissed(self) -> int:
+        return self._counts[DISMISSED]
+
+    @property
     def missing_required_slots(self) -> list[SlotCoverage]:
         return [s for s in self.slots if s.status == MISSING_REQUIRED]
+
+    @property
+    def dismissed_slots(self) -> list[SlotCoverage]:
+        return [s for s in self.slots if s.status == DISMISSED]
 
     @property
     def has_omissions(self) -> bool:
@@ -118,6 +127,7 @@ class CoverageManifest:
             "manual": self.manual,
             "blank_optional": self.blank_optional,
             "missing_required": self.missing_required,
+            "dismissed": self.dismissed,
             "missing_slot_ids": [s.slot_id for s in self.missing_required_slots],
         }
 
@@ -284,11 +294,15 @@ def validate_coverage(
     edges: Sequence[dict],
     rules: Sequence[Any],
     facts: Any | None = None,
+    dismissed_slot_ids: set[str] | None = None,
 ) -> CoverageManifest:
     """Produce a :class:`CoverageManifest` for ``edges`` + ``rules`` against ``template``.
 
     ``facts`` may be supplied to reuse an already-built Facts view; otherwise it is
     derived from ``edges``.
+
+    ``dismissed_slot_ids``, when provided, flips ``missing_required`` slots whose
+    base slot_id is in the set to ``dismissed`` status (011 FR-API-006).
     """
     if facts is None:
         from app.services.reasoning.fact_bridge import edges_to_facts
@@ -305,4 +319,12 @@ def validate_coverage(
             else:  # fields | manual
                 for slot in group.slots:
                     manifest.slots.append(_resolve_value_slot(slot, edges))
+
+    if dismissed_slot_ids:
+        for sc in manifest.slots:
+            if sc.status == MISSING_REQUIRED:
+                base_id = sc.slot_id.split("[")[0]
+                if base_id in dismissed_slot_ids or sc.slot_id in dismissed_slot_ids:
+                    sc.status = DISMISSED
+
     return manifest

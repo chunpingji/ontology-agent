@@ -86,7 +86,10 @@ class RiskReportGenerator:
         return report
 
     def generate_with_coverage(
-        self, edges: list[dict], source_filename: str = ""
+        self,
+        edges: list[dict],
+        source_filename: str = "",
+        dismissed_slot_ids: set[str] | None = None,
     ) -> tuple[RiskReport, CoverageManifest]:
         """Build the report AND the material-coverage manifest in one pass (AST-3).
 
@@ -114,7 +117,10 @@ class RiskReportGenerator:
             assessment_rows=post_rows,
         )
 
-        manifest = validate_coverage(self._template, edges, rules, facts)
+        manifest = validate_coverage(
+            self._template, edges, rules, facts,
+            dismissed_slot_ids=dismissed_slot_ids,
+        )
         self._last_manifest = manifest
         return report, manifest
 

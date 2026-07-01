@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { ExtractionDrawer } from "@/components/extraction/extraction-drawer";
 import { JobCreateForm } from "@/components/extraction/job-create-form";
 import { JobProgress } from "@/components/extraction/job-progress";
@@ -266,6 +267,14 @@ export default function ExtractionPage() {
                         >
                           重新标注
                         </Button>
+                      )}
+                      {(j.status === "done" || j.status === "reviewing") && j.document_path && (
+                        <Link
+                          href={`/entities/extraction/${j.id}/ast`}
+                          className="text-xs text-blue-600 hover:underline"
+                        >
+                          查看 AST
+                        </Link>
                       )}
                     </TableCell>
                   </TableRow>

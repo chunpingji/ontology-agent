@@ -251,3 +251,18 @@ Follow phases sequentially: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 → 9. E
 - All UI components use shadcn/ui — no external CDN/fonts (Constitution VI)
 - Dismiss/undismiss API returns updated `ASTCoverageResponse` — frontend refreshes from response, no second request needed
 - `SlotActionBar` uses props/slot pattern for extensibility — LLM seam is internal only (spec clarification)
+
+---
+
+## Phase 10: Convergence
+
+- [X] T030 [P] Write pytest tests for ast-coverage, dismiss, undismiss, and reports endpoints in `backend/tests/test_reporting/test_ast_coverage_api.py` — test dismissed slot status flip, audit log entries, 409 duplicate dismiss, 404 undismiss not-found, coverage count correctness, CMCReport type guard 422 per T010, Constitution IV (missing)
+- [X] T031 Extend `POST /jobs/{job_id}/risk-report` in `backend/app/api/extraction.py` to query `SlotDismissal` rows for the job and pass `dismissed_slot_ids` to `validate_coverage()` (via `RiskReportGenerator.generate_with_coverage`); extend `generate_with_coverage` in `backend/app/services/reporting/risk_report_generator.py` to accept and forward `dismissed_slot_ids` per FR-API-006, US6/Edge Case "dismissed rendering" (missing)
+- [X] T032 [P] Extend `_add_outstanding_materials` and assessment table cell rendering in `backend/app/services/reporting/docx_renderer.py` to render `dismissed` slots as "N/A（不适用）" instead of "⚠ 待评估（数据缺失）" — dismissed slots must not appear in the outstanding materials list per T025, spec Edge Case "dismissed 槽位报告渲染" (missing)
+- [X] T033 Add CMCReport type guard to "查看 AST" link in `frontend/src/app/(dashboard)/entities/extraction/page.tsx` — currently checks only `status === "done"`, must also verify doc type is CMCReport (via annotation cache or a lightweight API check) to satisfy US1/AC4 and SC-006 (partial)
+- [X] T034 List missing slot IDs and labels in the pre-check confirmation dialog in `frontend/src/app/(dashboard)/entities/extraction/[jobId]/ast/page.tsx` — currently shows only the count; US4/AC2 requires listing each missing slot's ID and label (partial)
+- [X] T035 [P] Wire React Query (`useQuery`/`useMutation`) for coverage and reports fetching in `frontend/src/app/(dashboard)/entities/extraction/[jobId]/ast/page.tsx` — replace plain useState/useEffect with React Query query keys `['ast-coverage', jobId]` and `['reports', jobId]`; dismiss/undismiss/generate mutations invalidate both keys for auto-refresh per T017, plan §React Query (partial)
+- [X] T036 [P] Handle 422 error from ast-coverage endpoint in `frontend/src/app/(dashboard)/entities/extraction/[jobId]/ast/page.tsx` — parse response body and show "该文档类型不支持风险评估" instead of generic error per T026, Edge Case "非CMCReport" (partial)
+- [X] T037 [P] Handle non-done job status in AST page `frontend/src/app/(dashboard)/entities/extraction/[jobId]/ast/page.tsx` — check job status on load, show "该作业尚未完成抽取" for running/pending or "该作业抽取失败" for failed per T027, Edge Case "抽取失败" (partial)
+- [X] T038 [US6] Add "重新标注" action button to `SlotActionBar` in `frontend/src/components/extraction/slot-action-bar.tsx` for `missing_required` slots with `source_kind === "extraction"` — invoke `rerunAnnotation(jobId)` and refresh coverage on completion per US6/AC5 (missing)
+- [X] T039 Run quickstart.md validation scenarios 1-7 and verify all pass per T029 (missing)

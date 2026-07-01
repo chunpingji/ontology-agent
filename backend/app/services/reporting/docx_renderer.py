@@ -94,11 +94,16 @@ def _add_coverage_banner(doc: Document, manifest: CoverageManifest | None) -> No
         return
     p = doc.add_paragraph()
     p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    summary = (
-        f"素材覆盖：共 {manifest.total_slots} 项 · "
-        f"已填充 {manifest.filled} · 推理 {manifest.inferred} · "
-        f"人工 {manifest.manual} · 待补充 {manifest.missing_required}"
-    )
+    parts = [
+        f"素材覆盖：共 {manifest.total_slots} 项",
+        f"已填充 {manifest.filled}",
+        f"推理 {manifest.inferred}",
+        f"人工 {manifest.manual}",
+        f"待补充 {manifest.missing_required}",
+    ]
+    if manifest.dismissed > 0:
+        parts.append(f"不适用 {manifest.dismissed}")
+    summary = " · ".join(parts)
     run = p.add_run(summary)
     run.font.size = Pt(9)
     run.font.name = "宋体"
@@ -227,23 +232,37 @@ def _add_outstanding_materials(
     This subsection makes the G1 omissions explicit and reviewable: each missing
     required material is named with its dimension/source so a human knows exactly
     what to supply — the report never silently drops a required input.
+    Dismissed slots are listed separately as "N/A（不适用）" (011 FR-API-006).
     """
-    if manifest is None or not manifest.has_omissions:
+    has_missing = manifest is not None and manifest.has_omissions
+    has_dismissed = manifest is not None and manifest.dismissed > 0
+    if not has_missing and not has_dismissed:
         return
     doc.add_heading("5. 待补充素材清单 Outstanding Materials", level=3)
-    intro = doc.add_paragraph()
-    run = intro.add_run(
-        f"{_WARN_GLYPH} 以下 {manifest.missing_required} 项必填素材未能从抽取数据中确定，"
-        "需人工补充后方可定论；在此之前相关结论标记为「待评估」。"
-    )
-    run.bold = True
-    run.font.color.rgb = _WARN_COLOR
-    for slot in manifest.missing_required_slots:
-        label = slot.label or slot.slot_id
-        text = f"{label}（{slot.slot_id}）"
-        if slot.note:
-            text += f" — {slot.note}"
-        doc.add_paragraph(text, style="List Bullet")
+    if has_missing:
+        intro = doc.add_paragraph()
+        run = intro.add_run(
+            f"{_WARN_GLYPH} 以下 {manifest.missing_required} 项必填素材未能从抽取数据中确定，"
+            "需人工补充后方可定论；在此之前相关结论标记为「待评估」。"
+        )
+        run.bold = True
+        run.font.color.rgb = _WARN_COLOR
+        for slot in manifest.missing_required_slots:
+            label = slot.label or slot.slot_id
+            text = f"{label}（{slot.slot_id}）"
+            if slot.note:
+                text += f" — {slot.note}"
+            doc.add_paragraph(text, style="List Bullet")
+    if has_dismissed:
+        intro_d = doc.add_paragraph()
+        run_d = intro_d.add_run(
+            f"以下 {manifest.dismissed} 项已确认为不适用（N/A），不计入缺失。"
+        )
+        run_d.font.size = Pt(9)
+        run_d.font.name = "宋体"
+        for slot in manifest.dismissed_slots:
+            label = slot.label or slot.slot_id
+            doc.add_paragraph(f"{label}（{slot.slot_id}）— N/A（不适用）", style="List Bullet")
 
 
 def _add_section_two(doc: Document, report: RiskReport) -> None:

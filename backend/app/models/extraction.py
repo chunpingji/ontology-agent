@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import JSON, Boolean, DateTime, ForeignKey, Integer, Numeric, String, Text
+from sqlalchemy import JSON, Boolean, DateTime, ForeignKey, Integer, Numeric, String, Text, UniqueConstraint
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -105,3 +105,19 @@ class GeneratedReport(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
 
     job: Mapped[ExtractionJob] = relationship()
+
+
+class SlotDismissal(Base):
+    __tablename__ = "slot_dismissals"
+    __table_args__ = (
+        UniqueConstraint("job_id", "slot_id", name="uq_slot_dismissal_job_slot"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
+    job_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("extraction_jobs.id", ondelete="CASCADE"),
+        nullable=False, index=True,
+    )
+    slot_id: Mapped[str] = mapped_column(String(200), nullable=False)
+    dismissed_by: Mapped[str] = mapped_column(String(100), nullable=False)
+    dismissed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
