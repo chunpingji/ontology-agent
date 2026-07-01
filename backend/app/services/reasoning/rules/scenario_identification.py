@@ -1,11 +1,11 @@
 """DEPRECATED compatibility shim — scenario-identification rule knowledge externalized
-(spec 006, T043; rule group ``scenario_identification``, R-SC1~8).
+(spec 006, T043; rule group ``scenario_identification``, R-SCa~h).
 
 The hard-coded ``ALL_RULES`` production functions that lived here are superseded by
 the declarative rule layer:
 
   • in-code single source ...... ``app/services/reasoning/defaults.py``
-                                  (``DEFAULT_DECISION_RULES`` → R-SC1~8)
+                                  (``DEFAULT_DECISION_RULES`` → R-SCa~h)
   • generic interpreter ........ ``app/services/reasoning/interpreter.py``
                                   (evaluates each rule's restricted antecedent AST)
   • DB seed .................... ``app/services/reasoning/seed_declarative.py``

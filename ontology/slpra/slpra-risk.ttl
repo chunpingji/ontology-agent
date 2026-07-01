@@ -95,55 +95,59 @@ slpra-risk:RiskAssessmentReport a owl:Class ;
     rdfs:label "风险评估报告"@zh .
 
 # ============================================================
-# Classes — 8 CFDI Shared-Line Assessment Scenarios
+# Classes — 8 CFDI Shared-Line Scenarios (a–h)
+# Source: 《药品共线生产质量风险管理指南》(CFDI 2023-03-06)
 # ============================================================
 
 slpra-risk:SharedLineAssessmentScenario a owl:Class ;
     rdfs:subClassOf obo:BFO_0000031 ;
     rdfs:label "Shared-Line Assessment Scenario"@en ;
     rdfs:label "共线评估情景"@zh ;
-    rdfs:comment "One of 8 special shared-line scenarios defined by CFDI Guideline (2023-03)."@en .
+    rdfs:comment "One of 8 shared-line scenarios (a–h) defined in 《药品共线生产质量风险管理指南》(CFDI 2023-03-06)."@en .
 
 slpra-risk:ClinicalWithCommercialScenario a owl:Class ;
     rdfs:subClassOf slpra-risk:SharedLineAssessmentScenario ;
-    rdfs:label "Clinical + Commercial Shared Line"@en ;
-    rdfs:label "情景1：临床+商业共线"@zh .
+    rdfs:label "Clinical Trial Drug + Commercial Drug Shared Line"@en ;
+    rdfs:label "情形(a)：临床试验用药品与商业化药品共线生产"@zh .
 
-slpra-risk:CytotoxicSharedLineScenario a owl:Class ;
+slpra-risk:TCMSharedLineScenario a owl:Class ;
     rdfs:subClassOf slpra-risk:SharedLineAssessmentScenario ;
-    rdfs:label "Cytotoxic Shared Line"@en ;
-    rdfs:label "情景2：细胞毒共线"@zh .
-
-slpra-risk:HormonalSharedLineScenario a owl:Class ;
-    rdfs:subClassOf slpra-risk:SharedLineAssessmentScenario ;
-    rdfs:label "Hormonal Shared Line"@en ;
-    rdfs:label "情景3：激素共线"@zh .
-
-slpra-risk:PenicillinSharedLineScenario a owl:Class ;
-    rdfs:subClassOf slpra-risk:SharedLineAssessmentScenario ;
-    rdfs:label "Penicillin Shared Line"@en ;
-    rdfs:label "情景4：青霉素共线"@zh ;
-    rdfs:comment "CFDI mandates fully dedicated and independent facilities for penicillin-type drugs."@en .
+    rdfs:label "Traditional Chinese Medicine Shared Line"@en ;
+    rdfs:label "情形(b)：中药产品共线生产"@zh .
 
 slpra-risk:BiologicSharedLineScenario a owl:Class ;
     rdfs:subClassOf slpra-risk:SharedLineAssessmentScenario ;
-    rdfs:label "Biologic Shared Line"@en ;
-    rdfs:label "情景5：生物制品共线"@zh .
+    rdfs:label "Biologic Product Shared Line"@en ;
+    rdfs:label "情形(c)：生物制品共线生产"@zh ;
+    rdfs:comment "Includes TSE risk assessment requirements."@en .
 
-slpra-risk:HighPotencySharedLineScenario a owl:Class ;
+slpra-risk:TerminalVsNonTerminalSterilizationScenario a owl:Class ;
     rdfs:subClassOf slpra-risk:SharedLineAssessmentScenario ;
-    rdfs:label "High Potency Shared Line"@en ;
-    rdfs:label "情景6：高活性共线"@zh .
+    rdfs:label "Terminal vs Non-Terminal Sterilization Shared Line"@en ;
+    rdfs:label "情形(d)：最终灭菌产品和非最终灭菌产品共线生产"@zh ;
+    rdfs:comment "Requires aseptic integrity assessment."@en .
 
-slpra-risk:SterileDrugSharedLineScenario a owl:Class ;
+slpra-risk:HormonalCytotoxicHighPotencyScenario a owl:Class ;
     rdfs:subClassOf slpra-risk:SharedLineAssessmentScenario ;
-    rdfs:label "Sterile Drug Shared Line"@en ;
-    rdfs:label "情景7：无菌药品共线"@zh .
+    rdfs:label "Hormonal / Cytotoxic / High-Potency Shared Line"@en ;
+    rdfs:label "情形(e)：某些激素类、细胞毒性类、高活性化学药品共线生产"@zh ;
+    rdfs:comment "Covers hormonal, cytotoxic, and high-potency chemical drugs; may require independent HVAC or equipment dedication based on OEB/inactivation properties."@en .
 
-slpra-risk:MultiDosageFormScenario a owl:Class ;
+slpra-risk:CellTherapySharedLineScenario a owl:Class ;
     rdfs:subClassOf slpra-risk:SharedLineAssessmentScenario ;
-    rdfs:label "Multi-Dosage Form Shared Line"@en ;
-    rdfs:label "情景8：多剂型共线"@zh .
+    rdfs:label "Cell Therapy Product Shared Line"@en ;
+    rdfs:label "情形(f)：细胞治疗产品共线生产"@zh .
+
+slpra-risk:NarcoticPsychotropicPrecursorScenario a owl:Class ;
+    rdfs:subClassOf slpra-risk:SharedLineAssessmentScenario ;
+    rdfs:label "Narcotic / Psychotropic / Precursor Chemical Shared Line"@en ;
+    rdfs:label "情形(g)：麻醉药品、精神药品和药品类易制毒化学品共线生产"@zh .
+
+slpra-risk:PenicillinBetaLactamScenario a owl:Class ;
+    rdfs:subClassOf slpra-risk:SharedLineAssessmentScenario ;
+    rdfs:label "Penicillin / β-Lactam Shared Line"@en ;
+    rdfs:label "情形(h)：青霉素类及β-内酰胺结构类等产品共线生产"@zh ;
+    rdfs:comment "CFDI mandates fully dedicated and independent facilities for penicillin-type and β-lactam drugs."@en .
 
 # ============================================================
 # Classes — Equipment-Product Compatibility (N-ary relation)

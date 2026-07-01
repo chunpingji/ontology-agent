@@ -25,12 +25,13 @@ from app.db import get_db
 from app.dependencies import (
     ROLE_SENIOR_ANALYST,
     Identity,
+    get_current_user,
     get_current_user_sse,
     get_ontology_engine,
     require_role,
 )
 from app.models.entity_shadow import EntityShadow
-from app.models.extraction import ExtractionCandidate, ExtractionConfig, ExtractionJob
+from app.models.extraction import ExtractionCandidate, ExtractionConfig, ExtractionJob, GeneratedReport
 from app.schemas.extraction import (
     CandidateGroup,
     DocExtractionRequest,
@@ -815,3 +816,133 @@ def split_candidate(
     for c in derived:
         db.refresh(c)
     return derived
+
+
+# --------------------------------------------------------------------------- #
+# 010 — Risk assessment report generation (FR-006/FR-013/FR-014)
+# --------------------------------------------------------------------------- #
+
+
+@router.post("/jobs/{job_id}/risk-report")
+def generate_risk_report(
+    job_id: UUID,
+    db: Session = Depends(get_db),
+    identity: Identity = Depends(get_current_user),
+):
+    """Generate and persist a risk assessment report for the extraction job."""
+    import json as _json
+    from datetime import datetime, timezone
+    from pathlib import Path as _Path
+    from uuid import uuid4
+
+    from fastapi.responses import FileResponse
+
+    from app.services.reporting.docx_renderer import render_risk_report
+    from app.services.reporting.risk_report_generator import RiskReportGenerator
+
+    job = db.get(ExtractionJob, job_id)
+    if not job:
+        raise HTTPException(404, "作业不存在")
+
+    cache_path = _annotation_cache_path(job_id)
+    if not cache_path.exists():
+        raise HTTPException(422, "文档未分类，无法生成风险评估报告")
+
+    result = _json.loads(cache_path.read_text(encoding="utf-8"))
+    doc_class = result.get("doc_class")
+    if not doc_class:
+        raise HTTPException(422, "文档未分类，无法生成风险评估报告")
+    if "CMCReport" not in doc_class.get("doc_class_iri", ""):
+        raise HTTPException(422, "仅支持 CMCReport 类型文档生成风险评估报告")
+
+    edges = result.get("relationships", [])
+    if not edges:
+        raise HTTPException(422, "未检测到关系数据，无法生成风险评估报告")
+
+    generator = RiskReportGenerator(db)
+    report, manifest = generator.generate_with_coverage(
+        edges, source_filename=job.source_filename or ""
+    )
+    docx_bytes = render_risk_report(report, manifest)
+
+    reports_dir = _Path("data/reports")
+    reports_dir.mkdir(parents=True, exist_ok=True)
+    ts = datetime.now(timezone.utc).strftime("%Y%m%d%H%M%S")
+    file_name = f"{job_id}_{ts}.docx"
+    file_path = reports_dir / file_name
+    file_path.write_bytes(docx_bytes)
+
+    report_id = uuid4()
+    gen_report = GeneratedReport(
+        id=report_id,
+        job_id=job_id,
+        report_type="risk_assessment",
+        file_path=str(file_path),
+        file_size=len(docx_bytes),
+        rules_fired_count=generator.rules_fired_count,
+        rules_summary={
+            "rows": [
+                {"hazid": r.hazid, "pre": r.pre_control_level, "post": r.post_control_level}
+                for r in report.assessment_rows
+            ],
+            "coverage": manifest.to_dict(),  # AST-6: full no-omission manifest
+        },
+        actor=identity.username,
+    )
+    db.add(gen_report)
+
+    audit.append(
+        db, "report.generate", actor=identity.username,
+        entity_iri=str(job_id),
+        details={
+            "report_id": str(report_id),
+            "rules_fired_count": generator.rules_fired_count,
+            "report_type": "risk_assessment",
+            "coverage": manifest.summary(),  # AST-6: omission evidence in audit trail
+        },
+        commit=False,
+    )
+    db.commit()
+
+    src_name = (job.source_filename or "report").replace(".docx", "")
+    download_name = f"风险评估表_{src_name}.docx"
+    return FileResponse(
+        path=str(file_path),
+        media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        filename=download_name,
+    )
+
+
+@router.get("/jobs/{job_id}/risk-report")
+def get_risk_report(
+    job_id: UUID,
+    db: Session = Depends(get_db),
+    identity: Identity = Depends(get_current_user),
+):
+    """Retrieve the most recently generated risk assessment report."""
+    from fastapi.responses import FileResponse
+
+    job = db.get(ExtractionJob, job_id)
+    if not job:
+        raise HTTPException(404, "作业不存在")
+
+    report = (
+        db.query(GeneratedReport)
+        .filter(GeneratedReport.job_id == job_id)
+        .order_by(GeneratedReport.created_at.desc())
+        .first()
+    )
+    if not report:
+        raise HTTPException(404, "该作业尚未生成风险评估报告")
+
+    file_path = Path(report.file_path)
+    if not file_path.exists():
+        raise HTTPException(404, "报告文件不存在")
+
+    src_name = (job.source_filename or "report").replace(".docx", "")
+    download_name = f"风险评估表_{src_name}.docx"
+    return FileResponse(
+        path=str(file_path),
+        media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        filename=download_name,
+    )

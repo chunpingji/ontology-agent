@@ -4,7 +4,7 @@
     "risk_level": "LowRisk",
     "rule_ids": [
       "R-ED3",
-      "R-SC5"
+      "R-SCc"
     ],
     "scenario_iris": [
       "BiologicSharedLineScenario"
@@ -33,10 +33,10 @@
     "rule_ids": [
       "R-DC1",
       "R-ED4",
-      "R-SC2"
+      "R-SCe"
     ],
     "scenario_iris": [
-      "CytotoxicSharedLineScenario"
+      "HormonalCytotoxicHighPotencyScenario"
     ]
   },
   "cytotoxic_noninactivatable_dedicate": {
@@ -45,10 +45,10 @@
     "rule_ids": [
       "R-DC1",
       "R-ED2",
-      "R-SC2"
+      "R-SCe"
     ],
     "scenario_iris": [
-      "CytotoxicSharedLineScenario"
+      "HormonalCytotoxicHighPotencyScenario"
     ]
   },
   "dc1_genotoxic_cytotoxic": {
@@ -56,10 +56,10 @@
     "risk_level": "LowRisk",
     "rule_ids": [
       "R-DC1",
-      "R-SC2"
+      "R-SCe"
     ],
     "scenario_iris": [
-      "CytotoxicSharedLineScenario"
+      "HormonalCytotoxicHighPotencyScenario"
     ]
   },
   "dc2_oeb4_highactivity": {
@@ -67,10 +67,10 @@
     "risk_level": "LowRisk",
     "rule_ids": [
       "R-DC2",
-      "R-SC6"
+      "R-SCe"
     ],
     "scenario_iris": [
-      "HighPotencySharedLineScenario"
+      "HormonalCytotoxicHighPotencyScenario"
     ]
   },
   "dc3_sensitization_absent": {
@@ -113,10 +113,10 @@
     "rule_ids": [
       "R-DC2",
       "R-ED5",
-      "R-SC6"
+      "R-SCe"
     ],
     "scenario_iris": [
-      "HighPotencySharedLineScenario"
+      "HormonalCytotoxicHighPotencyScenario"
     ]
   },
   "hormonal_hvac": {
@@ -124,10 +124,10 @@
     "risk_level": "LowRisk",
     "rule_ids": [
       "R-ED6",
-      "R-SC3"
+      "R-SCe"
     ],
     "scenario_iris": [
-      "HormonalSharedLineScenario"
+      "HormonalCytotoxicHighPotencyScenario"
     ]
   },
   "penicillin_dedication": {
@@ -135,10 +135,10 @@
     "risk_level": "LowRisk",
     "rule_ids": [
       "R-ED1",
-      "R-SC4"
+      "R-SCh"
     ],
     "scenario_iris": [
-      "PenicillinSharedLineScenario"
+      "PenicillinBetaLactamScenario"
     ]
   }
 }

@@ -44,7 +44,7 @@ ROLE_NAMES = ("senior_analyst", "operator", "qa")
 
 # --- declarative rule layer vocabularies (spec 006, data-model.md §A) --------
 LOGIC_ROLES = ("defined", "production")
-RULE_GROUPS = ("equipment_dedication", "scenario_identification", "contamination_risk")
+RULE_GROUPS = ("equipment_dedication", "scenario_identification", "contamination_risk", "risk_assessment")
 CONFLICT_DIMENSIONS = ("dedication", "risk_level")
 CONFLICT_STRATEGIES = ("safety_override", "max_severity")
 OVERRIDE_DIRECTIONS = ("restrictive_wins", "permissive_wins")

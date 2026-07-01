@@ -151,7 +151,7 @@ class DecisionRule:
                    dosageForm, areaType, formRelation
                    (`formRelation` ∈ {"same","different"} is asserted by the
                    engine only when *both* source/target dosage forms are known —
-                   absent ⇒ UNKNOWN ⇒ R-SC8/R-CP4 stay unfired, exactly as today.)
+                   absent ⇒ UNKNOWN ⇒ R-CP4 stays unfired, exactly as today.)
     """
 
     key: str  # rule_key, e.g. "R-ED1"
@@ -252,11 +252,11 @@ _EQUIPMENT_DEDICATION_RULES: list[DecisionRule] = [
 ]
 
 
-# --- R-SC1~8 — Scenario identification (CFDI §6) ----------------------------
+# --- R-SCa~h — Scenario identification (CFDI 《药品共线生产质量风险管理指南》) ----
 _SHARED = {"op": "literal_eq", "key": "isShared", "value": True}
 _SCENARIO_RULES: list[DecisionRule] = [
     DecisionRule(
-        key="R-SC1",
+        key="R-SCa",
         rule_group="scenario_identification",
         antecedent={
             "op": "and",
@@ -269,82 +269,105 @@ _SCENARIO_RULES: list[DecisionRule] = [
             "scenario": "ClinicalWithCommercialScenario",
             "requires_enhanced_documentation": True,
         },
-        regulation_ref="CFDI 2023-03 §6.1",
-        description="Clinical trial drug sharing with commercial drug → Scenario 1",
+        regulation_ref="CFDI 2023-03 情形(a)",
+        description="临床试验用药品与商业化药品共线生产 → 情形(a)",
     ),
     DecisionRule(
-        key="R-SC2",
+        key="R-SCb",
         rule_group="scenario_identification",
         antecedent={
             "op": "and",
-            "operands": [{"op": "class_present", "class": "CytotoxicDrug"}, _SHARED],
+            "operands": [{"op": "class_present", "class": "TraditionalChineseMedicine"}, _SHARED],
         },
-        consequent={"scenario": "CytotoxicSharedLineScenario"},
-        regulation_ref="CFDI 2023-03 §6.2",
-        description="Cytotoxic drug on shared line → Scenario 2",
+        consequent={"scenario": "TCMSharedLineScenario"},
+        regulation_ref="CFDI 2023-03 情形(b)",
+        description="中药产品共线生产 → 情形(b)",
     ),
     DecisionRule(
-        key="R-SC3",
-        rule_group="scenario_identification",
-        antecedent={
-            "op": "and",
-            "operands": [{"op": "class_present", "class": "HormonalDrug"}, _SHARED],
-        },
-        consequent={"scenario": "HormonalSharedLineScenario", "requires_independent_hvac": True},
-        regulation_ref="CFDI 2023-03 §6.3",
-        description="Hormonal drug on shared line → Scenario 3",
-    ),
-    DecisionRule(
-        key="R-SC4",
-        rule_group="scenario_identification",
-        antecedent={"op": "class_present", "class": "PenicillinDrug"},
-        consequent={"scenario": "PenicillinSharedLineScenario", "requires_dedication": True},
-        regulation_ref="CFDI 2023-03 §6.4",
-        description="Penicillin drug → Scenario 4 (mandatory dedication)",
-    ),
-    DecisionRule(
-        key="R-SC5",
+        key="R-SCc",
         rule_group="scenario_identification",
         antecedent={
             "op": "and",
             "operands": [{"op": "class_present", "class": "BiologicalProduct"}, _SHARED],
         },
         consequent={"scenario": "BiologicSharedLineScenario", "requires_tse_assessment": True},
-        regulation_ref="CFDI 2023-03 §6.5",
-        description="Biological product on shared line → Scenario 5",
+        regulation_ref="CFDI 2023-03 情形(c)",
+        description="生物制品共线生产 → 情形(c)",
     ),
     DecisionRule(
-        key="R-SC6",
-        rule_group="scenario_identification",
-        antecedent={
-            "op": "and",
-            "operands": [{"op": "class_present", "class": "HighActivityDrug"}, _SHARED],
-        },
-        consequent={"scenario": "HighPotencySharedLineScenario"},
-        regulation_ref="CFDI 2023-03 §6.6",
-        description="High potency drug on shared line → Scenario 6",
-    ),
-    DecisionRule(
-        key="R-SC7",
+        key="R-SCd",
         rule_group="scenario_identification",
         antecedent={
             "op": "and",
             "operands": [{"op": "class_present", "class": "SterileDrugProduct"}, _SHARED],
         },
-        consequent={"scenario": "SterileDrugSharedLineScenario", "requires_aseptic_integrity": True},
-        regulation_ref="CFDI 2023-03 §6.7",
-        description="Sterile drug on shared line → Scenario 7",
+        consequent={"scenario": "TerminalVsNonTerminalSterilizationScenario", "requires_aseptic_integrity": True},
+        regulation_ref="CFDI 2023-03 情形(d)",
+        description="最终灭菌产品和非最终灭菌产品共线生产 → 情形(d)",
     ),
     DecisionRule(
-        key="R-SC8",
+        key="R-SCe",
         rule_group="scenario_identification",
         antecedent={
             "op": "and",
-            "operands": [_SHARED, {"op": "literal_eq", "key": "formRelation", "value": "different"}],
+            "operands": [
+                {
+                    "op": "or",
+                    "operands": [
+                        {"op": "class_present", "class": "HormonalDrug"},
+                        {"op": "class_present", "class": "CytotoxicDrug"},
+                        {"op": "class_present", "class": "HighActivityDrug"},
+                    ],
+                },
+                _SHARED,
+            ],
         },
-        consequent={"scenario": "MultiDosageFormScenario"},
-        regulation_ref="CFDI 2023-03 §6.8",
-        description="Multiple dosage forms on shared line → Scenario 8",
+        consequent={
+            "scenario": "HormonalCytotoxicHighPotencyScenario",
+            "requires_independent_hvac": True,
+        },
+        regulation_ref="CFDI 2023-03 情形(e)",
+        description="某些激素类、细胞毒性类、高活性化学药品共线生产 → 情形(e)",
+    ),
+    DecisionRule(
+        key="R-SCf",
+        rule_group="scenario_identification",
+        antecedent={
+            "op": "and",
+            "operands": [{"op": "class_present", "class": "CellTherapyProduct"}, _SHARED],
+        },
+        consequent={"scenario": "CellTherapySharedLineScenario"},
+        regulation_ref="CFDI 2023-03 情形(f)",
+        description="细胞治疗产品共线生产 → 情形(f)",
+    ),
+    DecisionRule(
+        key="R-SCg",
+        rule_group="scenario_identification",
+        antecedent={
+            "op": "and",
+            "operands": [
+                {
+                    "op": "or",
+                    "operands": [
+                        {"op": "class_present", "class": "NarcoticDrug"},
+                        {"op": "class_present", "class": "PsychotropicDrug"},
+                        {"op": "class_present", "class": "PrecursorChemical"},
+                    ],
+                },
+                _SHARED,
+            ],
+        },
+        consequent={"scenario": "NarcoticPsychotropicPrecursorScenario"},
+        regulation_ref="CFDI 2023-03 情形(g)",
+        description="麻醉药品、精神药品和药品类易制毒化学品共线生产 → 情形(g)",
+    ),
+    DecisionRule(
+        key="R-SCh",
+        rule_group="scenario_identification",
+        antecedent={"op": "class_present", "class": "PenicillinDrug"},
+        consequent={"scenario": "PenicillinBetaLactamScenario", "requires_dedication": True},
+        regulation_ref="CFDI 2023-03 情形(h)",
+        description="青霉素类及β-内酰胺结构类等产品共线生产 → 情形(h) (mandatory dedication)",
     ),
 ]
 
@@ -417,9 +440,110 @@ DEFAULT_DECISION_RULES: list[DecisionRule] = (
 )
 
 
+# --- R-RA1~5 — Risk assessment (QS-A-020F05 HazID dimensions) ----------------
+_RISK_ASSESSMENT_RULES: list[DecisionRule] = [
+    DecisionRule(
+        key="R-RA1",
+        rule_group="risk_assessment",
+        antecedent={
+            "op": "some_values_from",
+            "property": "hasSharedLineData",
+            "filler_class": "SharedLineAssessmentData",
+        },
+        consequent={
+            "risk_level": "MediumRisk",
+            "category": "人员",
+            "description": "共线生产涉及多品种操作人员交叉，存在人为差错和交叉污染风险",
+            "control_measure": "1、岗位培训与考核合格后上岗；2、严格执行SOP和批记录；3、清场确认制度",
+            "traceability_docs": "1、培训记录；2、批生产记录；3、清场记录",
+            "postconditions": {"training_completed": True, "sop_verified": True},
+        },
+        regulation_ref="GMP 2010 附录1 §14",
+        description="共线生产人员风险评估",
+    ),
+    DecisionRule(
+        key="R-RA2",
+        rule_group="risk_assessment",
+        antecedent={
+            "op": "some_values_from",
+            "property": "hasSharedLineData",
+            "filler_class": "SharedLineAssessmentData",
+        },
+        consequent={
+            "risk_level": "HighRisk",
+            "category": "生产设备",
+            "description": "共线生产使用的设备需评估交叉污染和清洁验证有效性",
+            "control_measure": "1、设备按照验证规程进行确认；2、清洁验证覆盖最难清洁产品；3、共线评估确认设备适用性",
+            "traceability_docs": "1、设备确认报告；2、清洁验证报告；3、共线评估报告",
+            "postconditions": {"equipment_qualified": True, "cleaning_validated": True, "shared_line_assessed": True},
+        },
+        regulation_ref="GMP 2010 附录1 §32",
+        description="共线生产设备风险评估",
+    ),
+    DecisionRule(
+        key="R-RA3",
+        rule_group="risk_assessment",
+        antecedent={
+            "op": "some_values_from",
+            "property": "hasSharedLineData",
+            "filler_class": "SharedLineAssessmentData",
+        },
+        consequent={
+            "risk_level": "HighRisk",
+            "category": "物料管理",
+            "description": "共线生产涉及多品种物料管理，存在混淆和交叉污染风险",
+            "control_measure": "1、物料分区存放、标识管理；2、称量复核制度；3、物料平衡检查",
+            "traceability_docs": "1、物料台账；2、称量记录；3、物料平衡记录",
+            "postconditions": {"material_segregation": True, "weighing_verified": True},
+        },
+        regulation_ref="GMP 2010 §46-48",
+        description="共线生产物料管理风险评估",
+    ),
+    DecisionRule(
+        key="R-RA4",
+        rule_group="risk_assessment",
+        antecedent={
+            "op": "some_values_from",
+            "property": "hasSharedLineData",
+            "filler_class": "SharedLineAssessmentData",
+        },
+        consequent={
+            "risk_level": "MediumRisk",
+            "category": "文件",
+            "description": "共线生产需要完善的文件体系支持品种切换和清场管理",
+            "control_measure": "1、批记录完整记录生产过程；2、清场SOP和记录；3、偏差和变更控制",
+            "traceability_docs": "1、批生产记录；2、清场记录；3、偏差/变更记录",
+            "postconditions": {"documentation_complete": True},
+        },
+        regulation_ref="GMP 2010 §151-156",
+        description="共线生产文件管理风险评估",
+    ),
+    DecisionRule(
+        key="R-RA5",
+        rule_group="risk_assessment",
+        antecedent={
+            "op": "some_values_from",
+            "property": "describes",
+            "filler_class": "DrugProduct",
+        },
+        consequent={
+            "risk_level": "LowRisk",
+            "category": "三废处理",
+            "description": "原料药生产废弃物按照环保要求分类处理，非高活性/高毒性品种常规三废处理即可",
+            "control_measure": "1、废弃物分类收集处理；2、废水/废气排放监测；3、按环评要求执行",
+            "traceability_docs": "1、废弃物处理记录；2、环境监测报告",
+        },
+        regulation_ref="GMP 2010 §58",
+        description="三废处理风险评估",
+    ),
+]
+
+DEFAULT_RISK_ASSESSMENT_RULES: list[DecisionRule] = _RISK_ASSESSMENT_RULES
+
+
 def default_decision_rules() -> list[DecisionRule]:
-    """Active production rules: R-ED1~6 + R-SC1~8 + R-CP1~4 (engine fallback / seed)."""
-    return list(DEFAULT_DECISION_RULES)
+    """Active production rules: R-ED1~6 + R-SCa~h + R-CP1~4 + R-RA1~5 (engine fallback / seed)."""
+    return list(DEFAULT_DECISION_RULES) + list(DEFAULT_RISK_ASSESSMENT_RULES)
 
 
 # =========================================================================== #

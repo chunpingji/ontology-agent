@@ -114,3 +114,17 @@ class DocExtractionRequest(BaseModel):
     doc_ref: str       # 文档个体 IRI（facts#…，溯源锚点；版本指针经 content_ref 承载）
     content_ref: str   # 外部正文引用（按需取，不入库全文, Q2）
     config_id: UUID
+
+
+class GeneratedReportResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    job_id: UUID
+    report_type: str
+    file_path: str
+    file_size: int | None = None
+    rules_fired_count: int = 0
+    rules_summary: dict | None = None
+    actor: str
+    created_at: datetime

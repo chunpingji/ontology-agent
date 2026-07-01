@@ -1,0 +1,207 @@
+{
+  "template_id": "QS-A-020F05@v1",
+  "doc_no": "QS-A-020F05",
+  "revision": "00",
+  "sections": [
+    {
+      "section_id": "section-1",
+      "title": "SECTION I  风险评估",
+      "groups": [
+        {
+          "group_id": "subject",
+          "title": "1. 风险评估对象 Subject Description",
+          "kind": "fields",
+          "slots": [
+            {
+              "slot_id": "subject.name",
+              "label": "产品名称",
+              "source": {"kind": "extraction", "object_class_iri_contains": "DrugProduct", "text": true},
+              "required": true
+            },
+            {
+              "slot_id": "subject.pde",
+              "label": "PDE",
+              "source": {"kind": "extraction", "object_class_iri_contains": "DrugProduct", "label": "PDE"},
+              "required": true
+            },
+            {
+              "slot_id": "subject.class",
+              "label": "药品分类",
+              "source": {"kind": "extraction", "object_class_iri_contains": "DrugProduct", "label": "分类"},
+              "required": true
+            },
+            {
+              "slot_id": "subject.dosage",
+              "label": "剂型",
+              "source": {"kind": "extraction", "object_class_iri_contains": "DrugProduct", "label": "剂型"},
+              "required": false,
+              "on_missing": "leave_blank"
+            }
+          ]
+        },
+        {
+          "group_id": "prereq",
+          "title": "评估前提 Assessment Prerequisites",
+          "kind": "fields",
+          "slots": [
+            {
+              "slot_id": "prereq.shared_line",
+              "label": "共线评估数据",
+              "source": {"kind": "extraction", "object_class_iri_contains": "SharedLineAssessmentData", "relation": "hasSharedLineData"},
+              "required": true,
+              "missing_placeholder": "⚠ 未提取到共线评估数据，共线相关维度无法评估"
+            }
+          ]
+        },
+        {
+          "group_id": "team",
+          "title": "2. 评估小组 Assessment Team",
+          "kind": "manual",
+          "slots": [
+            {
+              "slot_id": "team.members",
+              "label": "评估小组成员",
+              "source": {"kind": "manual"},
+              "required": false,
+              "on_missing": "leave_blank"
+            }
+          ]
+        },
+        {
+          "group_id": "equipment",
+          "title": "3. 设备一览表 Equipment List",
+          "kind": "equipment_table",
+          "repeat": {"by": "workshop"},
+          "slots": [
+            {
+              "slot_id": "equipment.id",
+              "label": "设备编号",
+              "source": {"kind": "extraction", "object_class_iri_contains": "Equipment", "text": true},
+              "required": true
+            },
+            {
+              "slot_id": "equipment.name",
+              "label": "设备名称",
+              "source": {"kind": "extraction", "object_class_iri_contains": "Equipment", "label": "设备名称"},
+              "required": false,
+              "on_missing": "leave_blank"
+            },
+            {
+              "slot_id": "equipment.spec",
+              "label": "规格",
+              "source": {"kind": "extraction", "object_class_iri_contains": "Equipment", "label": "设备规格"},
+              "required": false,
+              "on_missing": "leave_blank"
+            },
+            {
+              "slot_id": "equipment.material",
+              "label": "材质",
+              "source": {"kind": "extraction", "object_class_iri_contains": "Equipment", "label": "材质"},
+              "required": false,
+              "on_missing": "leave_blank"
+            }
+          ]
+        },
+        {
+          "group_id": "assessment",
+          "title": "4. 风险评估 Risk Assessment",
+          "kind": "assessment_table",
+          "repeat": {"by": "rule", "rule_group": "risk_assessment"},
+          "slots": [
+            {
+              "slot_id": "assessment.hazid",
+              "label": "HazID 风险类型",
+              "source": {"kind": "rule", "field": "hazid"},
+              "required": true
+            },
+            {
+              "slot_id": "assessment.contributing_factors",
+              "label": "风险因素",
+              "source": {"kind": "rule", "field": "contributing_factors"},
+              "required": false,
+              "on_missing": "leave_blank"
+            },
+            {
+              "slot_id": "assessment.pre_control_level",
+              "label": "控制前风险等级",
+              "source": {"kind": "rule", "field": "pre_control_level"},
+              "required": true
+            },
+            {
+              "slot_id": "assessment.post_control_level",
+              "label": "控制后风险等级",
+              "source": {"kind": "rule", "field": "post_control_level"},
+              "required": true
+            },
+            {
+              "slot_id": "assessment.control_measures",
+              "label": "风险控制措施",
+              "source": {"kind": "rule", "field": "control_measures"},
+              "required": true
+            },
+            {
+              "slot_id": "assessment.traceability",
+              "label": "控制可追溯性",
+              "source": {"kind": "rule", "field": "traceability"},
+              "required": true
+            },
+            {
+              "slot_id": "assessment.status",
+              "label": "风险状态",
+              "source": {"kind": "rule", "field": "status"},
+              "required": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "section_id": "section-2",
+      "title": "SECTION II  风险回顾 Risk Review",
+      "groups": [
+        {
+          "group_id": "review",
+          "title": "风险回顾 Risk Review",
+          "kind": "manual",
+          "slots": [
+            {
+              "slot_id": "review.text",
+              "label": "风险回顾",
+              "source": {"kind": "manual"},
+              "required": false,
+              "on_missing": "leave_blank"
+            }
+          ]
+        },
+        {
+          "group_id": "conclusion",
+          "title": "结论 Conclusion",
+          "kind": "manual",
+          "slots": [
+            {
+              "slot_id": "conclusion.text",
+              "label": "结论",
+              "source": {"kind": "manual"},
+              "required": false,
+              "on_missing": "leave_blank"
+            }
+          ]
+        },
+        {
+          "group_id": "approvals",
+          "title": "审批 Approvals",
+          "kind": "manual",
+          "slots": [
+            {
+              "slot_id": "approvals.table",
+              "label": "审批表",
+              "source": {"kind": "manual"},
+              "required": false,
+              "on_missing": "leave_blank"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
