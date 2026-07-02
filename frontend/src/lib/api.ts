@@ -1064,11 +1064,17 @@ export interface AnnotatedDocument {
 export const getAnnotatedDocument = (jobId: string) =>
   fetchAPI<AnnotatedDocument>(`/api/extraction/jobs/${jobId}/annotated-document`);
 
-export async function generateRiskReport(jobId: string): Promise<Blob> {
+export async function generateRiskReport(
+  jobId: string,
+): Promise<Blob | { report_id: string; status: string }> {
   const res = await fetch(`${API_BASE}/api/extraction/jobs/${jobId}/risk-report`, {
     method: "POST", headers: identityHeaders(),
   });
   if (!res.ok) throw new Error(`API ${res.status}: ${await res.text()}`);
+  const ct = res.headers.get("content-type") || "";
+  if (ct.includes("application/json")) {
+    return res.json() as Promise<{ report_id: string; status: string }>;
+  }
   return res.blob();
 }
 
@@ -1200,6 +1206,9 @@ export const getAllClasses = () =>
 // 012 AST Template Management
 // ===========================================================================
 
+// tiptap/ProseMirror 文档 JSON（忠于原文结构的样例内容，供 WordViewer 渲染）。
+export type TiptapContent = Record<string, unknown>;
+
 export interface AstTemplateDTO {
   id: string;
   name: string;
@@ -1217,6 +1226,9 @@ export interface AstTemplateCreateInput {
   version?: string;
   doc_no?: string | null;
   schema_json: Record<string, unknown>;
+  sample_text?: string | null;
+  // 013: 忠于原文结构的 tiptap 样例——持久化后重新编辑时也能忠实预览。
+  sample_content_json?: TiptapContent | null;
 }
 
 export interface AstTemplateUpdateInput {
@@ -1250,7 +1262,13 @@ export interface DocTypeMappingCreateInput {
 export const fetchAstTemplates = () =>
   fetchAPI<AstTemplateDTO[]>("/api/ast-templates");
 export const getAstTemplate = (id: string) =>
-  fetchAPI<AstTemplateDTO & { schema_json: Record<string, unknown> }>(`/api/ast-templates/${id}`);
+  fetchAPI<
+    AstTemplateDTO & {
+      schema_json: Record<string, unknown>;
+      sample_text: string | null;
+      sample_content_json: TiptapContent | null;
+    }
+  >(`/api/ast-templates/${id}`);
 export const createAstTemplate = (data: AstTemplateCreateInput) =>
   fetchAPI<AstTemplateDTO>("/api/ast-templates", { method: "POST", ...jsonBody(data) });
 export const updateAstTemplate = (id: string, data: AstTemplateUpdateInput) =>
@@ -1262,9 +1280,115 @@ export const setDefaultTemplate = (id: string) =>
 export const matchTemplateForJob = (jobId: string) =>
   fetchAPI<TemplateMatchDTO>(`/api/ast-templates/match/${jobId}`);
 
+// 013: 后台把样例 DOCX 解析为忠于原文结构的 tiptap（不扁平化成文本），前端据此
+// 忠实预览并回传结构化内容做 AI 分析——避免「解析成文本→送前台→送回」丢结构。
+export interface ParseSampleResult {
+  content_json: TiptapContent;
+  plain_text: string;
+}
+
+export async function parseSample(file: File): Promise<ParseSampleResult> {
+  const form = new FormData();
+  form.append("file", file);
+  const res = await fetch(`${API_BASE}/api/ast-templates/parse-sample`, {
+    method: "POST",
+    headers: identityHeaders(),
+    body: form,
+  });
+  if (!res.ok) throw new Error(`API ${res.status}: ${await res.text()}`);
+  return (await res.json()) as ParseSampleResult;
+}
+
 export const fetchDocTypeMappings = () =>
   fetchAPI<DocTypeMappingDTO[]>("/api/document-type-mappings");
 export const createDocTypeMapping = (data: DocTypeMappingCreateInput) =>
   fetchAPI<DocTypeMappingDTO>("/api/document-type-mappings", { method: "POST", ...jsonBody(data) });
 export const deleteDocTypeMapping = (id: string) =>
   fetchAPI<void>(`/api/document-type-mappings/${id}`, { method: "DELETE" });
+
+// --------------------------------------------------------------------------- //
+// 013 LLM Template Design Assist + Report Enhancement
+// --------------------------------------------------------------------------- //
+
+export interface SuggestedSlot {
+  slot_id: string;
+  label: string;
+  section: string;
+  group: string;
+  source_kind: string;
+  source_hint: string | null;
+  confidence: number;
+  evidence_span: string;
+  // 013: 忠于原文预览的结构锚点（§ 标题 / 原文片段），供 WordViewer 定位高亮。
+  source_ref?: string | null;
+  // 旧的扁平文本字符偏移，已弃用（保留仅为兼容）。
+  evidence_offset?: number | null;
+  reason: string;
+}
+
+export interface SuggestedGroup {
+  title: string;
+  slots: SuggestedSlot[];
+}
+
+export interface SuggestedSection {
+  title: string;
+  groups: SuggestedGroup[];
+}
+
+export interface SuggestSlotsRequest {
+  job_id?: string | null;
+  document_text?: string | null;
+  // 013: 结构化样例（tiptap）——首选输入，服务端派生 LLM 文本与 source_ref 锚点。
+  sample_content_json?: TiptapContent | null;
+  existing_template?: Record<string, unknown> | null;
+  max_suggestions?: number;
+}
+
+export interface SuggestSlotsResponse {
+  sections: SuggestedSection[];
+  total_suggested: number;
+  skipped_duplicates: number;
+  document_summary: string;
+  truncated: boolean;
+}
+
+export const suggestSlots = (data: SuggestSlotsRequest) =>
+  fetchAPI<SuggestSlotsResponse>("/api/ast-templates/suggest-slots", {
+    method: "POST",
+    ...jsonBody(data),
+  });
+
+// 013: Async report generation (when LLM enhancement flags are on)
+
+export interface ReportJobStatus {
+  report_id: string;
+  status: string;
+  error_message?: string | null;
+}
+
+export const startReportGeneration = (
+  jobId: string,
+  opts?: { template_id?: string; dismissed_slot_ids?: string[] },
+) =>
+  fetchAPI<ReportJobStatus>(`/api/extraction/jobs/${jobId}/reports`, {
+    method: "POST",
+    ...jsonBody(opts ?? {}),
+  });
+
+export const pollReportStatus = (jobId: string, reportId: string) =>
+  fetchAPI<GeneratedReportDTO & { report_status?: string; report_error?: string }>(
+    `/api/extraction/jobs/${jobId}/reports/${reportId}`,
+  );
+
+export async function downloadReportById(
+  jobId: string,
+  reportId: string,
+): Promise<Blob> {
+  const res = await fetch(
+    `${API_BASE}/api/extraction/jobs/${jobId}/reports/${reportId}/download`,
+    { headers: identityHeaders() },
+  );
+  if (!res.ok) throw new Error(`API ${res.status}: ${await res.text()}`);
+  return res.blob();
+}

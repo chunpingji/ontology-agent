@@ -11,8 +11,10 @@ import {
   fetchDocTypeMappings,
   createDocTypeMapping,
   deleteDocTypeMapping,
+  parseSample,
   type AstTemplateDTO,
   type DocTypeMappingDTO,
+  type TiptapContent,
 } from "@/lib/api";
 import { TemplateSlotEditor } from "@/components/extraction/template-slot-editor";
 import { Button } from "@/components/ui/button";
@@ -54,16 +56,29 @@ export default function AstTemplatesPage() {
   const [uploadName, setUploadName] = useState("");
   const [uploadVersion, setUploadVersion] = useState("v1");
   const [uploadDocNo, setUploadDocNo] = useState("");
-  const [uploadJson, setUploadJson] = useState<Record<string, unknown> | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
-  const [uploading, setUploading] = useState(false);
+  const [extracting, setExtracting] = useState(false);
+  const [docxText, setDocxText] = useState<string | null>(null);
+  // 013: 后台解析出的忠于原文结构的 tiptap 样例（供融合编辑器忠实预览 + AI 分析回传）。
+  const [sampleContent, setSampleContent] = useState<TiptapContent | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Slot editor state
+  // Slot editor state（创建与编辑统一为同一融合视图）
   const [editorOpen, setEditorOpen] = useState(false);
+  const [editorMode, setEditorMode] = useState<"create" | "edit">("edit");
   const [editorTemplate, setEditorTemplate] = useState<AstTemplateDTO | null>(null);
   const [editorSchema, setEditorSchema] = useState<Record<string, unknown> | null>(null);
+  const [editorSampleText, setEditorSampleText] = useState<string | null>(null);
+  const [editorSampleContent, setEditorSampleContent] = useState<TiptapContent | null>(null);
   const [editorSaving, setEditorSaving] = useState(false);
+  // 创建模式下从上传对话框快照的元数据，保存时用于 createAstTemplate（与编辑模式解耦）。
+  const [createMeta, setCreateMeta] = useState<{
+    name: string;
+    version: string;
+    docNo: string;
+    sampleText: string | null;
+    sampleContent: TiptapContent | null;
+  } | null>(null);
 
   // Mapping form state
   const [mappingPattern, setMappingPattern] = useState("");
@@ -90,46 +105,44 @@ export default function AstTemplatesPage() {
 
   useEffect(() => { reload(); }, [reload]);
 
-  async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+  async function handleDocxFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     setUploadError(null);
-    setUploadJson(null);
+    setDocxText(null);
+    setSampleContent(null);
     const file = e.target.files?.[0];
     if (!file) return;
+    setExtracting(true);
     try {
-      const text = await file.text();
-      const json = JSON.parse(text);
-      setUploadJson(json);
-      if (!uploadName && json.template_id) {
-        setUploadName(json.template_id);
+      // 后台解析为忠于原文结构的 tiptap（不扁平化）；plain_text 仅用于字符数提示与 sample_text 持久化。
+      const { content_json, plain_text } = await parseSample(file);
+      setSampleContent(content_json);
+      setDocxText(plain_text);
+      if (!uploadName) {
+        const baseName = file.name.replace(/\.docx$/i, "");
+        setUploadName(baseName);
       }
-    } catch {
-      setUploadError("无法解析 JSON 文件");
+    } catch (err) {
+      setUploadError(err instanceof Error ? err.message : "文档解析失败");
+    } finally {
+      setExtracting(false);
     }
   }
 
-  async function handleUpload() {
-    if (!uploadJson || !uploadName.trim()) return;
-    setUploading(true);
-    setUploadError(null);
-    try {
-      await createAstTemplate({
-        name: uploadName.trim(),
-        version: uploadVersion || "v1",
-        doc_no: uploadDocNo || undefined,
-        schema_json: uploadJson,
-      });
-      setUploadOpen(false);
-      setUploadName("");
-      setUploadVersion("v1");
-      setUploadDocNo("");
-      setUploadJson(null);
-      if (fileInputRef.current) fileInputRef.current.value = "";
-      await reload();
-    } catch (e) {
-      setUploadError(e instanceof Error ? e.message : "上传失败");
-    } finally {
-      setUploading(false);
-    }
+  // 创建流程改为进入融合编辑器（mode=create）：以空骨架 schema 起步，左侧忠实预览，
+  // 右侧可 AI 分析→审核采纳/手动加插槽，保存时才 createAstTemplate。
+  function handleEnterCreateEditor() {
+    if (!sampleContent || !uploadName.trim()) return;
+    const name = uploadName.trim();
+    const version = uploadVersion || "v1";
+    const docNo = uploadDocNo || "QS-A-020F05";
+    setCreateMeta({ name, version, docNo, sampleText: docxText, sampleContent });
+    setEditorMode("create");
+    setEditorTemplate(null);
+    setEditorSchema({ template_id: name, doc_no: docNo, revision: version, sections: [] });
+    setEditorSampleText(docxText);
+    setEditorSampleContent(sampleContent);
+    setUploadOpen(false);
+    setEditorOpen(true);
   }
 
   async function handleDelete(id: string, name: string) {
@@ -154,25 +167,60 @@ export default function AstTemplatesPage() {
   async function handleOpenEditor(t: AstTemplateDTO) {
     try {
       const full = await getAstTemplate(t.id);
+      setEditorMode("edit");
       setEditorTemplate(t);
       setEditorSchema(full.schema_json);
+      setEditorSampleText(full.sample_text ?? null);
+      setEditorSampleContent(full.sample_content_json ?? null);
       setEditorOpen(true);
     } catch (e) {
       alert(e instanceof Error ? e.message : "加载模板详情失败");
     }
   }
 
+  // 关闭融合编辑器并复位所有相关状态（创建/编辑共用）。
+  function closeEditor() {
+    setEditorOpen(false);
+    setEditorTemplate(null);
+    setEditorSchema(null);
+    setEditorSampleText(null);
+    setEditorSampleContent(null);
+    setEditorMode("edit");
+    setCreateMeta(null);
+  }
+
   async function handleEditorSave(updated: Record<string, unknown>) {
-    if (!editorTemplate) return;
+    if (editorMode === "create" ? !createMeta : !editorTemplate) return;
     setEditorSaving(true);
     try {
-      await updateAstTemplate(editorTemplate.id, { schema_json: updated });
-      setEditorOpen(false);
-      setEditorTemplate(null);
-      setEditorSchema(null);
+      if (editorMode === "create" && createMeta) {
+        await createAstTemplate({
+          name: createMeta.name,
+          version: createMeta.version,
+          doc_no: createMeta.docNo || undefined,
+          schema_json: updated,
+          sample_text: createMeta.sampleText ?? undefined,
+          // 013: 持久化忠于原文结构的 tiptap 样例，重新编辑时也能忠实预览。
+          sample_content_json: createMeta.sampleContent ?? undefined,
+        });
+        // 复位上传对话框状态。
+        setUploadName("");
+        setUploadVersion("v1");
+        setUploadDocNo("");
+        setDocxText(null);
+        setSampleContent(null);
+        if (fileInputRef.current) fileInputRef.current.value = "";
+      } else if (editorTemplate) {
+        await updateAstTemplate(editorTemplate.id, { schema_json: updated });
+      }
+      closeEditor();
       await reload();
     } catch (e) {
-      alert(e instanceof Error ? e.message : "保存失败");
+      alert(
+        e instanceof Error
+          ? e.message
+          : editorMode === "create" ? "创建失败" : "保存失败",
+      );
     } finally {
       setEditorSaving(false);
     }
@@ -228,7 +276,7 @@ export default function AstTemplatesPage() {
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>AST 报告模板</CardTitle>
           <Button size="sm" onClick={() => setUploadOpen(true)}>
-            上传模板
+            从样例文档创建
           </Button>
         </CardHeader>
         <CardContent>
@@ -383,30 +431,42 @@ export default function AstTemplatesPage() {
 
       {/* ── Slot editor dialog ──────────────────────────────────── */}
       {editorOpen && editorSchema && (
-        <Dialog open={editorOpen} onOpenChange={(open) => { if (!open) { setEditorOpen(false); setEditorTemplate(null); setEditorSchema(null); }}}>
-          <DialogContent className="max-w-3xl max-h-[80vh] overflow-auto">
-            <DialogHeader>
+        <Dialog open={editorOpen} onOpenChange={(open) => { if (!open) closeEditor(); }}>
+          <DialogContent className="max-w-[95vw] w-[95vw] h-[90vh] p-0 gap-0 overflow-hidden flex flex-col">
+            <DialogHeader className="px-6 py-3 border-b shrink-0">
               <DialogTitle>
-                编辑模板：{editorTemplate?.name} ({editorTemplate?.version})
+                {editorMode === "create"
+                  ? `创建模板：${createMeta?.name ?? ""}`
+                  : `编辑模板：${editorTemplate?.name} (${editorTemplate?.version})`}
               </DialogTitle>
             </DialogHeader>
-            <TemplateSlotEditor
-              schema={editorSchema as any}
-              onSave={(updated) => handleEditorSave(updated as Record<string, unknown>)}
-              onCancel={() => { setEditorOpen(false); setEditorTemplate(null); setEditorSchema(null); }}
-              saving={editorSaving}
-            />
+            <div className="flex-1 min-h-0">
+              <TemplateSlotEditor
+                key={editorTemplate?.id ?? "create"}
+                schema={editorSchema as any}
+                mode={editorMode}
+                onSave={(updated) => handleEditorSave(updated as unknown as Record<string, unknown>)}
+                onCancel={closeEditor}
+                saving={editorSaving}
+                aiEnabled
+                sampleText={editorSampleText}
+                sampleContentJson={editorSampleContent}
+              />
+            </div>
           </DialogContent>
         </Dialog>
       )}
 
-      {/* ── Upload dialog ───────────────────────────────────────── */}
+      {/* ── Upload dialog (DOCX sample) ─────────────────────────── */}
       <Dialog open={uploadOpen} onOpenChange={setUploadOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>上传模板</DialogTitle>
+            <DialogTitle>从样例文档创建模板</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              上传一份样例 DOCX 文档，进入编辑器后可用 AI 分析建议插槽，或手动创建插槽结构。
+            </p>
             <div className="space-y-1">
               <Label>模板名称</Label>
               <Input
@@ -434,15 +494,22 @@ export default function AstTemplatesPage() {
               </div>
             </div>
             <div className="space-y-1">
-              <Label>模板 JSON 文件</Label>
+              <Label>样例 DOCX 文件</Label>
               <Input
                 ref={fileInputRef}
                 type="file"
-                accept=".json"
-                onChange={handleFileChange}
+                accept=".docx"
+                onChange={handleDocxFileChange}
               />
-              {uploadJson && (
-                <p className="text-sm text-green-600">JSON 已加载</p>
+              {extracting && (
+                <p className="text-sm text-muted-foreground animate-pulse">
+                  正在解析文档…
+                </p>
+              )}
+              {docxText && (
+                <p className="text-sm text-green-600">
+                  文档已解析（{docxText.length} 字符）
+                </p>
               )}
             </div>
             {uploadError && (
@@ -454,10 +521,10 @@ export default function AstTemplatesPage() {
               取消
             </Button>
             <Button
-              onClick={handleUpload}
-              disabled={!uploadJson || !uploadName.trim() || uploading}
+              onClick={handleEnterCreateEditor}
+              disabled={!sampleContent || !uploadName.trim() || extracting}
             >
-              {uploading ? "上传中…" : "上传"}
+              进入编辑器
             </Button>
           </DialogFooter>
         </DialogContent>

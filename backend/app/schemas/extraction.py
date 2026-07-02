@@ -140,6 +140,8 @@ class AstTemplateCreate(BaseModel):
     version: str = "v1"
     doc_no: str | None = None
     schema_json: dict
+    sample_text: str | None = None
+    sample_content_json: dict | None = None  # 013: tiptap 结构化样例（忠于原文预览）
 
 
 class AstTemplateUpdate(BaseModel):
@@ -245,3 +247,62 @@ class SlotDismissalResponse(BaseModel):
     slot_id: str
     dismissed_by: str
     dismissed_at: datetime
+
+
+# --------------------------------------------------------------------------- #
+# 013 LLM Template Design Assist — Suggest Slots
+# --------------------------------------------------------------------------- #
+
+
+class SuggestedSlot(BaseModel):
+    slot_id: str
+    label: str
+    section: str
+    group: str
+    source_kind: str  # extraction | llm_extraction | manual
+    source_hint: str | None = None
+    confidence: float
+    evidence_span: str
+    # 013: source_ref 为忠于原文预览的结构锚点（§ 标题 / 原文片段），供 WordViewer
+    # 定位高亮。evidence_offset 是旧的扁平文本字符偏移，已弃用（保留仅为兼容）。
+    source_ref: str | None = None
+    evidence_offset: int | None = None
+    reason: str
+
+
+class SuggestedGroup(BaseModel):
+    title: str
+    slots: list[SuggestedSlot]
+
+
+class SuggestedSection(BaseModel):
+    title: str
+    groups: list[SuggestedGroup]
+
+
+class SuggestSlotsRequest(BaseModel):
+    job_id: UUID | None = None
+    document_text: str | None = None
+    # 013: 结构化样例（tiptap）——首选输入，服务端派生 LLM 文本与 source_ref 锚点。
+    sample_content_json: dict | None = None
+    existing_template: dict | None = None
+    max_suggestions: int = 50
+
+    def model_post_init(self, __context: Any) -> None:
+        provided = sum(
+            x is not None
+            for x in (self.job_id, self.document_text, self.sample_content_json)
+        )
+        if provided != 1:
+            raise ValueError(
+                "Exactly one of job_id, document_text, or sample_content_json "
+                "must be provided"
+            )
+
+
+class SuggestSlotsResponse(BaseModel):
+    sections: list[SuggestedSection]
+    total_suggested: int
+    skipped_duplicates: int
+    document_summary: str
+    truncated: bool = False

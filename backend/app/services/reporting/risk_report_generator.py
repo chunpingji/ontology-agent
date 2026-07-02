@@ -70,6 +70,9 @@ class RiskReport:
     approvers: list[dict] = field(default_factory=list)
     risk_review: str = ""
     conclusion: str = ""
+    # 013: LLM-sourced content tracking for DOCX annotation
+    llm_supplements: dict[str, str] = field(default_factory=dict)
+    llm_generated_fields: set[str] = field(default_factory=set)
 
 
 class RiskReportGenerator:
@@ -90,12 +93,14 @@ class RiskReportGenerator:
         edges: list[dict],
         source_filename: str = "",
         dismissed_slot_ids: set[str] | None = None,
+        document_path: str | None = None,
     ) -> tuple[RiskReport, CoverageManifest]:
         """Build the report AND the material-coverage manifest in one pass (AST-3).
 
-        The report structure (doc metadata, dimensions) is governed by the AST
-        template; the manifest records, for every declared slot, whether it was
-        filled / inferred / manual or **explicitly missing** — the no-omission proof.
+        When ``document_path`` is given and ``llm_report_merge_values`` is on,
+        missing required slots are filled via LLM gap-extraction (013).  LLM
+        values go to ``report.llm_supplements`` for annotation only — they NEVER
+        alter deterministic evaluation (FR-009).
         """
         facts = edges_to_facts(edges)
         rules = self._load_rules()
@@ -122,7 +127,70 @@ class RiskReportGenerator:
             dismissed_slot_ids=dismissed_slot_ids,
         )
         self._last_manifest = manifest
+
+        self._try_llm_merge(report, manifest, document_path)
+        self._try_narrative_generation(report, edges)
+
         return report, manifest
+
+    def _try_llm_merge(
+        self,
+        report: RiskReport,
+        manifest: CoverageManifest,
+        document_path: str | None,
+    ) -> None:
+        """Fill missing display values via LLM if the feature flag is on (013)."""
+        from app.config import settings
+
+        if not settings.llm_report_merge_values:
+            return
+        if not manifest.missing_required_slots:
+            return
+
+        from app.services.extraction.llm_gap_filler import fill_coverage_gaps
+
+        synthetic_edges = fill_coverage_gaps(manifest, document_path, self._template)
+        for edge in synthetic_edges:
+            slot_id = edge.get("slot_id", "")
+            value = edge.get("value", "")
+            if slot_id and value:
+                report.llm_supplements[slot_id] = value
+                report.llm_generated_fields.add(slot_id)
+                for sc in manifest.slots:
+                    if sc.slot_id == slot_id:
+                        sc.is_llm_sourced = True
+                        break
+
+    def _try_narrative_generation(
+        self,
+        report: RiskReport,
+        edges: list[dict],
+    ) -> None:
+        """Generate narrative prose via LLM if the feature flag is on (013 US3)."""
+        from app.config import settings
+
+        if not settings.llm_report_narrative_enabled:
+            return
+
+        from app.services.llm.local_client import get_local_llm
+
+        client = get_local_llm()
+        if client is None:
+            return
+
+        from app.services.reporting.narrative_generator import generate_narratives
+
+        narratives = generate_narratives(edges, self._template, client)
+        for field_name, text in narratives.items():
+            if field_name == "subject_description" and text:
+                report.subject_description = text
+                report.llm_generated_fields.add("subject_description")
+            elif field_name == "conclusion" and text:
+                report.conclusion = text
+                report.llm_generated_fields.add("conclusion")
+            elif field_name.startswith("narrative.") and text:
+                report.llm_supplements[field_name] = text
+                report.llm_generated_fields.add(field_name)
 
     @property
     def rules_fired_count(self) -> int:

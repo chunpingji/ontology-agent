@@ -92,6 +92,17 @@ function applyHighlight(container: HTMLElement, keywords: string[]): Element | n
         }
       }
     }
+
+    // Search body paragraphs / list items — 013: evidence 片段多为正文，
+    // 当锚点回退为原始 evidence_span 时靠此层定位（标题/表格已先命中）。
+    const blocks = container.querySelectorAll("p, li");
+    for (const block of blocks) {
+      if (block.textContent?.includes(kw)) {
+        block.classList.add(HIGHLIGHT_CLS);
+        if (!firstMatch) firstMatch = block;
+        return firstMatch;
+      }
+    }
   }
 
   return firstMatch;

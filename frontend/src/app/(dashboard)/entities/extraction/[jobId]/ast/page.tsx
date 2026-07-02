@@ -126,13 +126,15 @@ export default function ASTPage() {
 
   const generateMutation = useMutation({
     mutationFn: () => generateRiskReport(jobId),
-    onSuccess: async (blob) => {
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `risk-report-${jobId.slice(0, 8)}.docx`;
-      a.click();
-      URL.revokeObjectURL(url);
+    onSuccess: async (result) => {
+      if (result instanceof Blob) {
+        const url = URL.createObjectURL(result);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `risk-report-${jobId.slice(0, 8)}.docx`;
+        a.click();
+        URL.revokeObjectURL(url);
+      }
       queryClient.invalidateQueries({ queryKey: ["reports", jobId] });
     },
   });

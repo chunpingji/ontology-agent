@@ -40,6 +40,14 @@ class Settings(BaseSettings):
     local_llm_max_tokens: int = 4096
     local_llm_temperature: float = 0.1
 
+    # 能力十三：LLM 模板设计辅助 + 报告生成增强（013-llm-template-report-enhance）。
+    # 三个独立开关默认关——离线为正常态（Constitution VI）。
+    llm_suggest_slots_enabled: bool = True
+    llm_report_merge_values: bool = False
+    llm_report_narrative_enabled: bool = False
+    suggest_slots_timeout_s: int = 30
+    suggest_slots_max: int = 50
+
     # 能力三：实时事实源轮询与报告输出（002-extraction-realtime-reasoning, R4/R12）
     aps_poll_interval_seconds: int = 2
     realtime_polling_enabled: bool = False  # 启动期 asyncio 轮询任务开关（测试默认关）

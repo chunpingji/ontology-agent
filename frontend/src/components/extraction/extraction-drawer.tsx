@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import {
   generateRiskReport,
   getAnnotatedDocument,
+  pollReportStatus,
   rerunAnnotation,
   subscribeJobProgress,
   type AnnotatedDocument,
@@ -112,21 +113,51 @@ export function ExtractionDrawer({ jobId, open, onOpenChange }: ExtractionDrawer
     setReportGenerating(true);
     setError(null);
     try {
-      const blob = await generateRiskReport(jobId);
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      const srcName = (doc?.filename ?? "report").replace(/\.docx$/i, "");
-      a.href = url;
-      a.download = `风险评估表_${srcName}.docx`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      const response = await generateRiskReport(jobId);
+      if (response instanceof Blob) {
+        _downloadBlob(response, doc?.filename);
+      } else if (typeof response === "object" && response !== null && "report_id" in response) {
+        const asyncResult = response as { report_id: string; status: string };
+        await _pollUntilDone(jobId, asyncResult.report_id);
+      }
     } catch (e) {
       setError(String(e));
     } finally {
       setReportGenerating(false);
     }
+  }
+
+  function _downloadBlob(blob: Blob, filename?: string | null) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    const srcName = (filename ?? "report").replace(/\.docx$/i, "");
+    a.href = url;
+    a.download = `风险评估表_${srcName}.docx`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  async function _pollUntilDone(jid: string, reportId: string) {
+    const maxAttempts = 60;
+    for (let i = 0; i < maxAttempts; i++) {
+      await new Promise((r) => setTimeout(r, 2000));
+      const status = await pollReportStatus(jid, reportId);
+      if (status.report_status === "completed") {
+        const res = await fetch(
+          `/api/extraction/jobs/${jid}/reports/${reportId}/download`,
+        );
+        if (!res.ok) throw new Error(`下载失败: ${res.status}`);
+        const blob = await res.blob();
+        _downloadBlob(blob, doc?.filename);
+        return;
+      }
+      if (status.report_status === "failed") {
+        throw new Error(status.report_error || "报告生成失败");
+      }
+    }
+    throw new Error("报告生成超时，请稍后重试");
   }
 
   const isAnnotating = rerunning || progressEvent?.stage === "annotating";

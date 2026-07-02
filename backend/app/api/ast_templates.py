@@ -7,11 +7,11 @@ import re
 from pathlib import Path
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from sqlalchemy.orm import Session
 
 from app.db import get_db
-from app.dependencies import ROLE_SENIOR_ANALYST, require_role
+from app.dependencies import ROLE_SENIOR_ANALYST, get_ontology_engine, require_role
 from app.models.extraction import AstTemplate, DocumentTypeMapping
 from app.schemas.extraction import (
     AstTemplateCreate,
@@ -19,6 +19,7 @@ from app.schemas.extraction import (
     AstTemplateUpdate,
     DocumentTypeMappingCreate,
     DocumentTypeMappingResponse,
+    SuggestSlotsRequest,
     TemplateMatchResponse,
 )
 from app.services import audit
@@ -66,7 +67,12 @@ def get_template(template_id: UUID, db: Session = Depends(get_db)):
     if not row:
         raise HTTPException(404, "模板不存在")
     resp = _template_response(row)
-    return {**resp.model_dump(), "schema_json": row.schema_json}
+    return {
+        **resp.model_dump(),
+        "schema_json": row.schema_json,
+        "sample_text": row.sample_text,
+        "sample_content_json": row.sample_content_json,
+    }
 
 
 @router.post("", response_model=AstTemplateResponse, status_code=201)
@@ -93,6 +99,8 @@ def create_template(
         version=req.version,
         doc_no=req.doc_no,
         schema_json=req.schema_json,
+        sample_text=req.sample_text,
+        sample_content_json=req.sample_content_json,
         created_by=getattr(identity, "username", "system"),
     )
     db.add(row)
@@ -207,6 +215,105 @@ def set_default_template(
     db.commit()
     db.refresh(row)
     return _template_response(row)
+
+
+# ── 013 DOCX structured parse for template creation ────────────────────
+# 后台把样例 DOCX 解析为忠于原文结构的 tiptap（不扁平化成文本），前端据此
+# 忠实预览并回传结构化内容做 AI 分析——避免「解析成文本→送前台→送回」丢结构。
+# 确定性离线解析，不受 llm_suggest_slots_enabled 门控（LLM 关时也能预览结构）。
+
+
+@router.post("/parse-sample")
+async def parse_sample(
+    file: UploadFile = File(...),
+    identity: object = Depends(_maintainer),
+):
+    if not file.filename or not file.filename.lower().endswith(".docx"):
+        raise HTTPException(422, "仅支持 .docx 文件")
+
+    import tempfile
+
+    content = await file.read()
+    tmp = tempfile.NamedTemporaryFile(suffix=".docx", delete=False)
+    try:
+        tmp.write(content)
+        tmp.close()
+        from app.services.extraction.document_annotator import parse_word_to_tiptap
+        from app.services.extraction.slot_suggester import tiptap_to_text
+
+        content_json = parse_word_to_tiptap(tmp.name)
+        plain_text = tiptap_to_text(content_json)
+    finally:
+        Path(tmp.name).unlink(missing_ok=True)
+
+    if not plain_text.strip():
+        raise HTTPException(422, "无法从文档中提取文本内容")
+
+    return {"content_json": content_json, "plain_text": plain_text}
+
+
+# ── 013 Suggest Slots (AI-assisted template design) ────────────────────
+
+
+@router.post("/suggest-slots")
+def suggest_slots_endpoint(
+    req: SuggestSlotsRequest,
+    db: Session = Depends(get_db),
+    identity: object = Depends(_maintainer),
+    engine: object = Depends(get_ontology_engine),
+):
+    from app.config import settings
+
+    if not settings.llm_suggest_slots_enabled:
+        raise HTTPException(503, "插槽建议功能未启用（llm_suggest_slots_enabled=False）")
+
+    from app.services.llm.local_client import get_local_llm
+
+    client = get_local_llm()
+    if client is None:
+        raise HTTPException(503, "本地 LLM 不可用，请检查 local_llm_enabled 和端点配置")
+
+    # Resolve document text + structured content (tiptap) for source_ref anchors.
+    content_json: dict | None = None
+    if req.sample_content_json is not None:
+        # 首选：前端回传的结构化样例——服务端派生 LLM 文本，绝不丢结构。
+        from app.services.extraction.slot_suggester import tiptap_to_text
+
+        content_json = req.sample_content_json
+        document_text = tiptap_to_text(content_json)
+    elif req.job_id is not None:
+        from app.models.extraction import ExtractionJob
+
+        job = db.get(ExtractionJob, req.job_id)
+        if not job:
+            raise HTTPException(404, "抽取作业不存在")
+        from app.services.extraction.slot_suggester import build_document_text
+
+        document_text = build_document_text(job.document_path)
+        # 复用抽取时预计算的标注缓存做忠实预览锚点（缺失则降级为无 source_ref）。
+        cache_path = _annotation_cache_path(req.job_id)
+        if cache_path.is_file():
+            try:
+                cached = json.loads(cache_path.read_text(encoding="utf-8"))
+                content_json = cached.get("content")
+            except Exception:
+                content_json = None
+    else:
+        document_text = req.document_text or ""
+
+    max_suggestions = min(req.max_suggestions, settings.suggest_slots_max)
+
+    from app.services.extraction.slot_suggester import suggest_slots
+
+    result = suggest_slots(
+        client,
+        document_text=document_text,
+        existing_template=req.existing_template,
+        max_suggestions=max_suggestions,
+        ontology_engine=engine,
+        content_json=content_json,
+    )
+    return result
 
 
 # ── Template match (T011) ───────────────────────────────────────────────

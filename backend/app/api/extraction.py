@@ -835,22 +835,115 @@ def split_candidate(
 # --------------------------------------------------------------------------- #
 
 
+def _llm_report_flags_active() -> bool:
+    """Check if any LLM report enhancement flag is on (013)."""
+    from app.config import settings
+    return (
+        settings.llm_report_merge_values
+        or settings.llm_report_narrative_enabled
+    )
+
+
+def _build_and_save_report(
+    job_id: UUID,
+    job_source_filename: str,
+    document_path: str | None,
+    dismissed_ids: set[str] | None,
+    actor: str,
+    report_id: UUID,
+) -> None:
+    """Shared report build logic used by both sync and async paths (013)."""
+    import json as _json
+    from datetime import datetime, timezone
+    from pathlib import Path as _Path
+
+    from app.db import SessionLocal
+    from app.services.reporting.docx_renderer import render_risk_report
+    from app.services.reporting.risk_report_generator import RiskReportGenerator
+
+    db = SessionLocal()
+    try:
+        gen_report = db.get(GeneratedReport, report_id)
+        if gen_report:
+            gen_report.report_status = "running"
+            db.commit()
+
+        cache_path = _annotation_cache_path(job_id)
+        result = _json.loads(cache_path.read_text(encoding="utf-8"))
+        edges = result.get("relationships", [])
+
+        generator = RiskReportGenerator(db)
+        report, manifest = generator.generate_with_coverage(
+            edges,
+            source_filename=job_source_filename,
+            dismissed_slot_ids=dismissed_ids,
+            document_path=document_path,
+        )
+        docx_bytes = render_risk_report(report, manifest)
+
+        reports_dir = _Path("data/reports")
+        reports_dir.mkdir(parents=True, exist_ok=True)
+        ts = datetime.now(timezone.utc).strftime("%Y%m%d%H%M%S")
+        file_name = f"{job_id}_{ts}.docx"
+        file_path = reports_dir / file_name
+        file_path.write_bytes(docx_bytes)
+
+        if gen_report:
+            gen_report.file_path = str(file_path)
+            gen_report.file_size = len(docx_bytes)
+            gen_report.rules_fired_count = generator.rules_fired_count
+            gen_report.rules_summary = {
+                "rows": [
+                    {"hazid": r.hazid, "pre": r.pre_control_level, "post": r.post_control_level}
+                    for r in report.assessment_rows
+                ],
+                "coverage": manifest.to_dict(),
+            }
+            gen_report.report_status = "completed"
+            gen_report.report_error = None
+            audit.append(
+                db, "report.generate", actor=actor,
+                entity_iri=str(job_id),
+                details={
+                    "report_id": str(report_id),
+                    "rules_fired_count": generator.rules_fired_count,
+                    "report_type": "risk_assessment",
+                    "coverage": manifest.summary(),
+                },
+                commit=False,
+            )
+            db.commit()
+    except Exception as exc:
+        db.rollback()
+        gen_report = db.get(GeneratedReport, report_id)
+        if gen_report:
+            gen_report.report_status = "failed"
+            gen_report.report_error = str(exc)[:500]
+            db.commit()
+        logging.getLogger(__name__).warning("报告生成失败: %s", exc, exc_info=True)
+    finally:
+        db.close()
+
+
 @router.post("/jobs/{job_id}/risk-report")
 def generate_risk_report(
     job_id: UUID,
+    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
     identity: Identity = Depends(get_current_user),
 ):
-    """Generate and persist a risk assessment report for the extraction job."""
+    """Generate and persist a risk assessment report for the extraction job.
+
+    When LLM enhancement flags are on (013), creates a pending report row and
+    runs generation in the background (async path).  Otherwise uses the original
+    synchronous path for backward compatibility (SC-005).
+    """
     import json as _json
     from datetime import datetime, timezone
     from pathlib import Path as _Path
     from uuid import uuid4
 
     from fastapi.responses import FileResponse
-
-    from app.services.reporting.docx_renderer import render_risk_report
-    from app.services.reporting.risk_report_generator import RiskReportGenerator
 
     job = db.get(ExtractionJob, job_id)
     if not job:
@@ -877,6 +970,33 @@ def generate_risk_report(
         .all()
     )
     dismissed_ids = {r.slot_id for r in dismissed_rows} or None
+    report_id = uuid4()
+
+    if _llm_report_flags_active():
+        gen_report = GeneratedReport(
+            id=report_id,
+            job_id=job_id,
+            report_type="risk_assessment",
+            file_path="",
+            actor=identity.username,
+            report_status="pending",
+        )
+        db.add(gen_report)
+        db.commit()
+
+        background_tasks.add_task(
+            _build_and_save_report,
+            job_id=job_id,
+            job_source_filename=job.source_filename or "",
+            document_path=job.document_path,
+            dismissed_ids=dismissed_ids,
+            actor=identity.username,
+            report_id=report_id,
+        )
+        return {"report_id": str(report_id), "status": "pending"}
+
+    from app.services.reporting.docx_renderer import render_risk_report
+    from app.services.reporting.risk_report_generator import RiskReportGenerator
 
     generator = RiskReportGenerator(db)
     report, manifest = generator.generate_with_coverage(
@@ -892,7 +1012,6 @@ def generate_risk_report(
     file_path = reports_dir / file_name
     file_path.write_bytes(docx_bytes)
 
-    report_id = uuid4()
     gen_report = GeneratedReport(
         id=report_id,
         job_id=job_id,
@@ -905,9 +1024,10 @@ def generate_risk_report(
                 {"hazid": r.hazid, "pre": r.pre_control_level, "post": r.post_control_level}
                 for r in report.assessment_rows
             ],
-            "coverage": manifest.to_dict(),  # AST-6: full no-omission manifest
+            "coverage": manifest.to_dict(),
         },
         actor=identity.username,
+        report_status="completed",
     )
     db.add(gen_report)
 
@@ -918,7 +1038,7 @@ def generate_risk_report(
             "report_id": str(report_id),
             "rules_fired_count": generator.rules_fired_count,
             "report_type": "risk_assessment",
-            "coverage": manifest.summary(),  # AST-6: omission evidence in audit trail
+            "coverage": manifest.summary(),
         },
         commit=False,
     )
@@ -960,6 +1080,64 @@ def get_risk_report(
         raise HTTPException(404, "报告文件不存在")
 
     src_name = (job.source_filename or "report").replace(".docx", "")
+    download_name = f"风险评估表_{src_name}.docx"
+    return FileResponse(
+        path=str(file_path),
+        media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        filename=download_name,
+    )
+
+
+# --------------------------------------------------------------------------- #
+# 013 — Async report status poll + download by report_id
+# --------------------------------------------------------------------------- #
+
+
+@router.get("/jobs/{job_id}/reports/{report_id}")
+def get_report_status(
+    job_id: UUID,
+    report_id: UUID,
+    db: Session = Depends(get_db),
+):
+    """Poll the status of an async-generated report (013)."""
+    report = db.get(GeneratedReport, report_id)
+    if not report or report.job_id != job_id:
+        raise HTTPException(404, "报告不存在")
+    return {
+        "id": str(report.id),
+        "job_id": str(report.job_id),
+        "report_type": report.report_type,
+        "file_path": report.file_path,
+        "file_size": report.file_size,
+        "rules_fired_count": report.rules_fired_count,
+        "actor": report.actor,
+        "created_at": report.created_at.isoformat() if report.created_at else None,
+        "report_status": report.report_status,
+        "report_error": report.report_error,
+    }
+
+
+@router.get("/jobs/{job_id}/reports/{report_id}/download")
+def download_report_by_id(
+    job_id: UUID,
+    report_id: UUID,
+    db: Session = Depends(get_db),
+):
+    """Download a completed report by its ID (013)."""
+    from fastapi.responses import FileResponse
+
+    report = db.get(GeneratedReport, report_id)
+    if not report or report.job_id != job_id:
+        raise HTTPException(404, "报告不存在")
+    if report.report_status != "completed":
+        raise HTTPException(409, f"报告尚未完成（status={report.report_status}）")
+
+    file_path = Path(report.file_path)
+    if not file_path.exists():
+        raise HTTPException(404, "报告文件不存在")
+
+    job = db.get(ExtractionJob, job_id)
+    src_name = (job.source_filename or "report").replace(".docx", "") if job else "report"
     download_name = f"风险评估表_{src_name}.docx"
     return FileResponse(
         path=str(file_path),

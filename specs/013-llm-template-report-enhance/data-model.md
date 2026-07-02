@@ -7,12 +7,13 @@ This feature is mostly stateless (suggest-slots is request/response) plus small 
 ### 1.1 `SuggestSlotsRequest`
 | Field | Type | Notes |
 |-------|------|-------|
-| `job_id` | `UUID \| None` | Reference an existing extraction job's parsed text (P3/US4). Mutually exclusive with `document_text`. |
-| `document_text` | `str \| None` | Raw plain text extracted from an uploaded document. |
+| `job_id` | `UUID \| None` | Reference an existing extraction job's parsed/annotated text (P3/US4). |
+| `document_text` | `str \| None` | **Legacy fallback** — flat plain text (oversized samples, `sample_text`-only templates). |
+| `sample_content_json` | `dict \| None` | **Structure-faithful** tiptap from `POST /parse-sample`; prompt text is derived server-side via `tiptap_to_text`. Preferred input for the DOCX create + re-edit flows (no flatten-to-text round-trip → slot↔preview linkage preserved). |
 | `existing_template` | `dict \| None` | Current template `schema_json` for LLM-driven round-2 dedup (FR-003). |
 | `max_suggestions` | `int` | Optional override; clamped to `suggest_slots_max` (default 50, FR-004). |
 
-Validation: exactly one of `job_id` / `document_text` must be provided. Empty/whitespace text → empty result with message (edge case).
+Validation (`model_post_init`): **exactly one** of `job_id` / `document_text` / `sample_content_json` must be provided → else `ValueError` (`422`). Empty/whitespace text → empty result with message (edge case).
 
 ### 1.2 `SuggestedSlot`
 | Field | Type | Notes |
@@ -25,7 +26,8 @@ Validation: exactly one of `job_id` / `document_text` must be provided. Empty/wh
 | `source_hint` | `str \| None` | Bound class/property IRI when `source_kind = extraction`. |
 | `confidence` | `float` | 0–1 model confidence. |
 | `evidence_span` | `str` | Verbatim source snippet supporting the slot. |
-| `evidence_offset` | `int \| None` | Char offset in document text for left-panel highlight (FR-012). |
+| `source_ref` | `str \| None` | Deterministic structural anchor (`§ <heading>` or raw span) derived server-side from `sample_content_json` via `derive_source_ref`; drives the `WordViewer` preview highlight (FR-012). Never LLM-emitted; present only when a `content_json` source was supplied. |
+| `evidence_offset` | `int \| None` | **Deprecated** — char offset into flattened text; superseded by `source_ref` (offsets can't map onto a faithfully-rendered document). Retained optional for backward compatibility. |
 | `reason` | `str` | Short rationale. |
 
 ### 1.3 `SuggestSlotsResponse`
@@ -74,3 +76,15 @@ No change to `file_path` / `file_size` semantics; they are populated when `statu
 | `suggest_slots_max` | `50` | Max suggestions per request (FR-004). |
 
 All default-off / bounded → Constitution VI compliant, SC-005 backward compatible.
+
+## 6. `AstTemplate.sample_content_json` (persisted) — `backend/app/models/extraction.py` (Alembic `0012`)
+
+Faithful-preview refinement (2026-07-02): the DOCX sample is parsed **backend-side** into structure-faithful tiptap and persisted, so re-opened templates preview faithfully in the AI drawer — not only at create time.
+
+| Column | Type | Notes |
+|--------|------|-------|
+| `sample_content_json` | `JSON` nullable | Structure-faithful tiptap of the source DOCX, stored on create beside the existing flat `sample_text`. NULL for legacy templates → frontend falls back to wrapping `sample_text` as plain paragraphs for preview. |
+
+Migration `0012_ast_template_sample_json` (`down_revision = "0011_ast_template_sample_text"`; the revision id is kept ≤32 chars because Alembic's `alembic_version.version_num` is `VARCHAR(32)` — a longer id fails the post-DDL version stamp and rolls the whole migration back). Applied at startup via `_run_migrations()`. `AstTemplateCreate` gains the matching `sample_content_json: dict | None = None`; `create_template` persists it and `get_template` returns it.
+
+**Endpoints touched**: new `POST /api/ast-templates/parse-sample` (multipart DOCX → `{content_json, plain_text}`; role-gated, **not** flag-gated — see [contracts/parse-sample-api.md](contracts/parse-sample-api.md)); `POST /suggest-slots` gains the `sample_content_json` input branch. New service functions in `slot_suggester.py`: `tiptap_to_text`, `derive_source_ref`; new `parse_word_to_tiptap` wrapper in `document_annotator.py` (`annotate_word(..., structure_only=True)`).

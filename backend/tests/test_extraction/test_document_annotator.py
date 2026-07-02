@@ -388,3 +388,53 @@ def test_dual_pass_opaque_span_uses_context(monkeypatch):
     out = _type_and_filter_spans(all_spans, segment_texts, eng)
     assert len(out[0]) == 1
     assert out[0][0]["label"] == "药物制剂"  # context-assisted match
+
+
+# --- 013: parse_word_to_tiptap — 结构化解析（跳过 NER，engine=None 安全）---------
+
+
+def _node_types(node, acc):
+    if isinstance(node, dict):
+        if node.get("type"):
+            acc.add(node["type"])
+        for c in node.get("content") or []:
+            _node_types(c, acc)
+    return acc
+
+
+def _mark_types(node, acc):
+    if isinstance(node, dict):
+        for m in node.get("marks") or []:
+            if isinstance(m, dict) and m.get("type"):
+                acc.add(m["type"])
+        for c in node.get("content") or []:
+            _mark_types(c, acc)
+    return acc
+
+
+def test_parse_word_to_tiptap_structure_without_ner(tmp_path):
+    """结构化解析产出忠于原文的 tiptap（标题 + 表格），零 entity-annotation 标注、
+    engine=None 安全（不触碰 GLiNER/嵌入权重）——即 013 后台结构化解析的契约。"""
+    import docx
+    from app.services.extraction.document_annotator import parse_word_to_tiptap
+
+    path = tmp_path / "sample.docx"
+    doc = docx.Document()
+    doc.add_heading("评估对象", level=1)
+    doc.add_paragraph("本品为XX注射液，剂型为注射剂。")
+    table = doc.add_table(rows=2, cols=2)
+    table.rows[0].cells[0].text = "设备编号"
+    table.rows[0].cells[1].text = "设备名称"
+    table.rows[1].cells[0].text = "CT64201"
+    table.rows[1].cells[1].text = "压片机A"
+    doc.save(str(path))
+
+    result = parse_word_to_tiptap(path)
+
+    # 忠于结构：doc 根 + 标题节点 + 表格节点都在。
+    assert result["type"] == "doc"
+    types = _node_types(result, set())
+    assert "heading" in types
+    assert "table" in types
+    # 结构化解析跳过 NER：绝无 entity-annotation mark（格式 mark 可合法存在）。
+    assert "entity-annotation" not in _mark_types(result, set())

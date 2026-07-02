@@ -29,6 +29,46 @@ from app.services.reporting.risk_report_generator import RiskReport
 _WARN_GLYPH = "⚠"
 _WARN_COLOR = RGBColor(0xC0, 0x00, 0x00)
 
+# 013: LLM-generated content visual annotation
+_LLM_INFO_GLYPH = "ⓘ"
+_LLM_COLOR = RGBColor(0x80, 0x80, 0x80)  # gray
+_LLM_DISCLAIMER_ZH = "以上内容由文档抽取结果自动生成，仅供参考，请核对后确认。"
+_LLM_END_DISCLAIMER_ZH = (
+    "本报告中标注 ⓘ 的内容由 LLM 自动生成或补充，仅供参考，不替代人工审核。"
+)
+
+
+def _add_llm_run(paragraph, text: str) -> None:
+    """Add a gray-italic run with ⓘ marker for LLM-sourced content."""
+    run = paragraph.add_run(f"{_LLM_INFO_GLYPH} {text}")
+    run.italic = True
+    run.font.color.rgb = _LLM_COLOR
+    run.font.size = Pt(10.5)
+    run.font.name = "宋体"
+
+
+def _add_llm_disclaimer_line(doc: Document) -> None:
+    """Add a per-section LLM disclaimer paragraph."""
+    p = doc.add_paragraph()
+    run = p.add_run(_LLM_DISCLAIMER_ZH)
+    run.italic = True
+    run.font.color.rgb = _LLM_COLOR
+    run.font.size = Pt(8)
+    run.font.name = "宋体"
+
+
+def _add_generated_disclaimer_section(doc: Document) -> None:
+    """Add end-of-report generated-content disclaimer (FR-006)."""
+    doc.add_paragraph()
+    p = doc.add_paragraph()
+    p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    run = p.add_run(_LLM_END_DISCLAIMER_ZH)
+    run.italic = True
+    run.bold = True
+    run.font.color.rgb = _LLM_COLOR
+    run.font.size = Pt(9)
+    run.font.name = "宋体"
+
 
 def render_risk_report(
     report: RiskReport, manifest: CoverageManifest | None = None
@@ -60,6 +100,9 @@ def render_risk_report(
     _add_assessment_table(doc, report)
     _add_outstanding_materials(doc, manifest)
     _add_section_two(doc, report)
+
+    if report.llm_supplements:
+        _add_generated_disclaimer_section(doc)
 
     buf = io.BytesIO()
     doc.save(buf)
@@ -128,7 +171,28 @@ def _add_section_one(doc: Document, report: RiskReport) -> None:
     doc.add_heading("SECTION I  风险评估", level=2)
 
     doc.add_heading("1. 风险评估对象 Subject Description", level=3)
-    doc.add_paragraph(report.subject_description or "（待补充）")
+    has_llm_in_section = False
+    if report.subject_description:
+        if "subject_description" in report.llm_generated_fields:
+            p = doc.add_paragraph()
+            _add_llm_run(p, report.subject_description)
+            _add_llm_disclaimer_line(doc)
+            has_llm_in_section = True
+        else:
+            doc.add_paragraph(report.subject_description)
+    elif report.llm_supplements:
+        p = doc.add_paragraph()
+        supplement_parts = [
+            f"{sid}: {val}" for sid, val in report.llm_supplements.items()
+            if "subject" in sid.lower()
+        ]
+        if supplement_parts:
+            _add_llm_run(p, "；".join(supplement_parts))
+            has_llm_in_section = True
+        else:
+            p.add_run("（待补充）")
+    else:
+        doc.add_paragraph("（待补充）")
 
     doc.add_heading("2. 评估小组 Assessment Team", level=3)
     if report.team_members:
@@ -169,6 +233,24 @@ def _add_section_one(doc: Document, report: RiskReport) -> None:
 
         for note in report.equipment_notes:
             doc.add_paragraph(f"注: {note}", style="List Bullet")
+
+    llm_vals = {
+        sid: val for sid, val in report.llm_supplements.items()
+        if "subject" not in sid.lower()
+        and "equipment" not in sid.lower()
+        and "assessment" not in sid.lower()
+    }
+    if llm_vals:
+        doc.add_heading("LLM 补充数据", level=3)
+        for sid, val in llm_vals.items():
+            p = doc.add_paragraph()
+            p.add_run(f"{sid}：")
+            _add_llm_run(p, val)
+        _add_llm_disclaimer_line(doc)
+        has_llm_in_section = True
+
+    if has_llm_in_section:
+        _add_llm_disclaimer_line(doc)
 
 
 def _add_assessment_table(doc: Document, report: RiskReport) -> None:
@@ -270,7 +352,12 @@ def _add_section_two(doc: Document, report: RiskReport) -> None:
     doc.add_paragraph(report.risk_review or "（定期回顾时补充）")
 
     doc.add_heading("结论 Conclusion", level=3)
-    doc.add_paragraph(report.conclusion or "（待补充）")
+    if "conclusion" in report.llm_generated_fields and report.conclusion:
+        p = doc.add_paragraph()
+        _add_llm_run(p, report.conclusion)
+        _add_llm_disclaimer_line(doc)
+    else:
+        doc.add_paragraph(report.conclusion or "（待补充）")
 
     doc.add_heading("审批 Approvals", level=3)
     if report.approvers:

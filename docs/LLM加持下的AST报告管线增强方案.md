@@ -7,6 +7,22 @@
 
 ---
 
+## 术语表
+
+| 缩写 | 全称 | 说明 |
+|------|------|------|
+| AST | Assessment Semantic Template（评估语义模板） | 将风险评估报告结构显式声明为可遍历、可校验的语义模板树 |
+| LLM | Large Language Model（大语言模型） | 本方案中指本地部署的 OpenAI 兼容格式模型 |
+| CMC | Chemistry, Manufacturing and Controls（化学、生产与控制） | 药品注册申报中的质量研究文档体系 |
+| PDE | Permitted Daily Exposure（每日允许暴露量） | 共线生产中残留物质的安全阈值，单位 mg/天 |
+| GMP | Good Manufacturing Practice（药品生产质量管理规范） | 药品生产和质量管理的法规标准 |
+| T-Box | Terminological Box（术语框） | 本体中定义类、属性和公理的概念层（区别于实例层 A-Box） |
+| RAG | Retrieval-Augmented Generation（检索增强生成） | 将检索到的文档片段作为上下文注入 LLM 提示的技术模式 |
+| KV | Key-Value（键值对） | 文档中「标签：值」格式的结构化数据行 |
+| IRI | Internationalized Resource Identifier（国际化资源标识符） | 本体中唯一标识类或属性的 URI |
+
+---
+
 ## 1. 背景
 
 AST 报告管线分两段，性质完全不同：

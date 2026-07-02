@@ -103,6 +103,9 @@ class GeneratedReport(Base):
     rules_summary: Mapped[dict | None] = mapped_column(JSON)
     actor: Mapped[str] = mapped_column(String(100), nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+    # 013: async report generation status tracking
+    report_status: Mapped[str | None] = mapped_column(String(20))
+    report_error: Mapped[str | None] = mapped_column(Text)
 
     job: Mapped[ExtractionJob] = relationship()
 
@@ -118,6 +121,9 @@ class AstTemplate(Base):
     version: Mapped[str] = mapped_column(String(20), nullable=False)
     doc_no: Mapped[str | None] = mapped_column(String(50))
     schema_json: Mapped[dict] = mapped_column(JSON, nullable=False)
+    sample_text: Mapped[str | None] = mapped_column(Text)
+    # 013: 忠于原文结构的 tiptap 样例（供 AI 插槽建议 drawer 忠实预览与结构锚点联动）。
+    sample_content_json: Mapped[dict | None] = mapped_column(JSON)
     is_default: Mapped[bool] = mapped_column(Boolean, default=False)
     created_by: Mapped[str | None] = mapped_column(String(100))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)

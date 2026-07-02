@@ -20,7 +20,7 @@ The deterministic core (rule evaluation, coverage validation, risk-level mapping
 
 **Primary Dependencies**: FastAPI + `APIRouter`/`Depends` + `BackgroundTasks`, SQLAlchemy 2.0 `Mapped`/`mapped_column`, Pydantic 2.x, Alembic, OpenAI-compatible client (local LLM), python-docx; React, shadcn/ui (Radix), TanStack React Query (frontend)
 
-**Storage**: PostgreSQL (existing). Reuses `generated_reports` + `extraction_jobs`; adds report-generation async status tracking (see data-model). No new table strictly required for suggest-slots (stateless request/response); report-job status persisted on `GeneratedReport` (or an equivalent status row) — decided in research R4.
+**Storage**: PostgreSQL (existing). Reuses `generated_reports` + `extraction_jobs`; adds report-generation async status tracking (see data-model). No new table strictly required for suggest-slots (stateless request/response); report-job status persisted on `GeneratedReport` (or an equivalent status row) — decided in research R4. Adds one nullable column `ast_templates.sample_content_json` (Alembic 0012) persisting the structure-faithful tiptap sample for faithful re-edit preview (see the Refinement section + data-model §6).
 
 **Testing**: pytest via `uv run pytest` (backend, mock LLM client); manual UI verification (frontend)
 
@@ -61,6 +61,7 @@ specs/013-llm-template-report-enhance/
 ├── quickstart.md        # Phase 1 output
 ├── contracts/           # Phase 1 output
 │   ├── suggest-slots-api.md
+│   ├── parse-sample-api.md
 │   └── report-enhancement.md
 ├── checklists/
 │   └── requirements.md  # (from /speckit-specify)
@@ -73,7 +74,7 @@ specs/013-llm-template-report-enhance/
 backend/
 ├── app/
 │   ├── api/
-│   │   ├── ast_templates.py         # Extend: POST /suggest-slots (role-gated, sync)
+│   │   ├── ast_templates.py         # Extend: POST /suggest-slots + POST /parse-sample (role-gated, sync)
 │   │   └── extraction.py            # Extend: async report-generation job (poll + download)
 │   ├── schemas/
 │   │   └── extraction.py            # Extend: SuggestSlotsRequest/Response, SuggestedSlot DTOs
@@ -124,3 +125,12 @@ frontend/
 | IV | ✅ PASS | No change — contracts + quickstart authored; all LLM paths unit-tested with mocks |
 | V | ⚠️ NOTED | No change — async + drawer justified above |
 | VI | ✅ PASS | No change — three flags default off; graceful skip on LLM unreachable; SC-005 backward-compat |
+
+## Refinement (2026-07-02): Faithful sample preview + structured backend parsing
+
+Post-implementation UX correction to US1. The original create/re-edit flow flattened the sample DOCX to plain text and round-tripped it (frontend → `/suggest-slots` → LLM), losing document structure and breaking slot↔preview linkage. Fix (scope: create flow **and** re-edit path):
+
+- **Structured round-trip, not flatten.** New `POST /api/ast-templates/parse-sample` parses the DOCX backend-side into structure-faithful tiptap (`parse_word_to_tiptap` = `annotate_word(engine=None, structure_only=True)`, zero `entity-annotation` marks). The frontend holds the tiptap, renders it in the existing `WordViewer`, and posts it back as `sample_content_json`. LLM prompt text is derived server-side (`tiptap_to_text`) from the same tiptap, so evidence spans stay substrings of what the user sees. `parse-sample` is role-gated but **not** flag-gated (deterministic offline parse — preview works with the LLM off).
+- **`source_ref` derived deterministically, never LLM-emitted** (`derive_source_ref`). The LLM keeps emitting `evidence_span`; the backend derives a `§ <heading>` / raw-span anchor guaranteed to exist in the rendered DOM. `evidence_offset` is deprecated. This prevents the char-offset-into-flattened-text linkage bug the user reported.
+- **Persistence** — new nullable `ast_templates.sample_content_json` column (Alembic 0012) so re-opened templates preview faithfully; legacy `sample_text`-only templates fall back to wrapped paragraphs.
+- **Contracts**: [contracts/parse-sample-api.md](contracts/parse-sample-api.md) (new), updated [contracts/suggest-slots-api.md](contracts/suggest-slots-api.md); data-model §1/§6. **Tasks**: Phase 9 (T036–T047). **Invariants preserved**: ontology read-only, LLM never touches deterministic evaluation (FR-009), all LLM gates default off.

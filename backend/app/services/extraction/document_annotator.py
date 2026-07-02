@@ -767,6 +767,7 @@ def annotate_word(
     should_pause_fn: Callable[[], bool] | None = None,
     checkpoint: dict | None = None,
     doc_class_iri: str | None = None,
+    structure_only: bool = False,
 ) -> tuple[dict, list[str], list[dict], dict | None]:
     """解析 Word 文档 → tiptap ProseMirror JSON，三阶段 NER 标注实体 + 属性三元组。
 
@@ -776,6 +777,10 @@ def annotate_word(
     表格采用行级上下文拼接：同行单元格以 ``hdr：val | …`` 格式拼接为一个 segment
     送入 NER，NER 后将 span 坐标校正回各 cell 内坐标，前端 tiptap 渲染不受影响。
     表头行仅作列名前缀材料，不参与 NER。
+
+    ``structure_only=True`` 时跳过三阶段 NER（不触碰 ``engine``，允许 ``engine=None``），
+    只产出忠于原文结构与样式的 tiptap（标题/表格/对齐/行内样式），零实体标注。
+    用于 013 模板设计的样例文档预览——离线、快速、无需 GLiNER/嵌入权重。
 
     返回 ``(doc_json, warnings, triples, checkpoint_or_None)``。
     checkpoint 非 None 表示标注被暂停（doc_json 仍为完整结构，但标注可能不完整）。
@@ -862,10 +867,14 @@ def annotate_word(
 
     # 端到端三阶段标注（一次 batch）——行级 segment 使 _span_with_context
     # 的 window=40 覆盖同行相邻列上下文（research R5）。
-    all_spans, triples, ckpt = _annotate_texts(
-        all_texts, engine, progress_fn, should_pause_fn, checkpoint,
-        doc_class_iri=doc_class_iri,
-    )
+    if structure_only:
+        # 只要结构，不触碰 engine：空 span → Pass 2 产出完整结构、零实体标注。
+        all_spans, triples, ckpt = [[] for _ in all_texts], [], None
+    else:
+        all_spans, triples, ckpt = _annotate_texts(
+            all_texts, engine, progress_fn, should_pause_fn, checkpoint,
+            doc_class_iri=doc_class_iri,
+        )
 
     # Pass 2：按记录顺序组装 tiptap 节点。
     content: list[dict] = []
@@ -946,7 +955,20 @@ def annotate_word(
             if rows_data:
                 content.append({"type": "table", "content": rows_data})
 
-    return {"type": "doc", "content": content}, _warnings(all_texts), triples, ckpt
+    # structure_only 未运行 NER，_warnings 关于 GLiNER 属性抽取的告警不适用。
+    warnings = [] if structure_only else _warnings(all_texts)
+    return {"type": "doc", "content": content}, warnings, triples, ckpt
+
+
+def parse_word_to_tiptap(file_path: str | Path) -> dict:
+    """解析 Word 文档 → 忠于原文结构与样式的 tiptap JSON（无 NER、无 engine）。
+
+    ``annotate_word`` 的 structure_only 薄封装，供 013 样例文档预览复用。
+    """
+    doc_json, _warnings_, _triples, _ckpt = annotate_word(
+        file_path, engine=None, structure_only=True,
+    )
+    return doc_json
 
 
 def annotate_excel(
