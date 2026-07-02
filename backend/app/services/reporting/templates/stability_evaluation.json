@@ -1,0 +1,161 @@
+{
+  "template_id": "STABILITY-EVAL@v1",
+  "doc_no": "QS-B-010F01",
+  "revision": "00",
+  "sections": [
+    {
+      "section_id": "section-1",
+      "title": "SECTION I  稳定性评估概述",
+      "groups": [
+        {
+          "group_id": "product_info",
+          "title": "1. 产品基本信息",
+          "kind": "fields",
+          "slots": [
+            {
+              "slot_id": "product.name",
+              "label": "产品名称",
+              "source": {"kind": "extraction", "object_class_iri_contains": "DrugProduct", "text": true},
+              "required": true
+            },
+            {
+              "slot_id": "product.batch_no",
+              "label": "批号",
+              "source": {"kind": "extraction", "object_class_iri_contains": "DrugProduct", "label": "批号"},
+              "required": true
+            },
+            {
+              "slot_id": "product.dosage_form",
+              "label": "剂型",
+              "source": {"kind": "extraction", "object_class_iri_contains": "DrugProduct", "label": "剂型"},
+              "required": false,
+              "on_missing": "leave_blank"
+            },
+            {
+              "slot_id": "product.specification",
+              "label": "规格",
+              "source": {"kind": "extraction", "object_class_iri_contains": "DrugProduct", "label": "规格"},
+              "required": true
+            }
+          ]
+        },
+        {
+          "group_id": "study_info",
+          "title": "2. 稳定性考察方案",
+          "kind": "fields",
+          "slots": [
+            {
+              "slot_id": "study.type",
+              "label": "考察类型",
+              "source": {"kind": "extraction", "object_class_iri_contains": "StabilityStudy", "text": true},
+              "required": true
+            },
+            {
+              "slot_id": "study.condition",
+              "label": "考察条件",
+              "source": {"kind": "extraction", "object_class_iri_contains": "StabilityStudy", "label": "条件"},
+              "required": true
+            },
+            {
+              "slot_id": "study.duration",
+              "label": "考察周期",
+              "source": {"kind": "extraction", "object_class_iri_contains": "StabilityStudy", "label": "周期"},
+              "required": true
+            },
+            {
+              "slot_id": "study.start_date",
+              "label": "起始日期",
+              "source": {"kind": "extraction", "object_class_iri_contains": "StabilityStudy", "label": "起始日期"},
+              "required": false,
+              "on_missing": "leave_blank"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "section_id": "section-2",
+      "title": "SECTION II  检测指标",
+      "groups": [
+        {
+          "group_id": "quality_indicators",
+          "title": "3. 质量指标",
+          "kind": "fields",
+          "slots": [
+            {
+              "slot_id": "quality.appearance",
+              "label": "外观",
+              "source": {"kind": "extraction", "object_class_iri_contains": "QualityAttribute", "label": "外观"},
+              "required": true
+            },
+            {
+              "slot_id": "quality.assay",
+              "label": "含量测定",
+              "source": {"kind": "extraction", "object_class_iri_contains": "QualityAttribute", "label": "含量"},
+              "required": true
+            },
+            {
+              "slot_id": "quality.impurity",
+              "label": "有关物质",
+              "source": {"kind": "extraction", "object_class_iri_contains": "QualityAttribute", "label": "有关物质"},
+              "required": true
+            },
+            {
+              "slot_id": "quality.dissolution",
+              "label": "溶出度",
+              "source": {"kind": "extraction", "object_class_iri_contains": "QualityAttribute", "label": "溶出度"},
+              "required": false,
+              "on_missing": "leave_blank"
+            },
+            {
+              "slot_id": "quality.moisture",
+              "label": "水分",
+              "source": {"kind": "extraction", "object_class_iri_contains": "QualityAttribute", "label": "水分"},
+              "required": false,
+              "on_missing": "leave_blank"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "section_id": "section-3",
+      "title": "SECTION III  评估结论",
+      "groups": [
+        {
+          "group_id": "conclusion",
+          "title": "4. 稳定性结论",
+          "kind": "fields",
+          "slots": [
+            {
+              "slot_id": "conclusion.shelf_life",
+              "label": "有效期",
+              "source": {"kind": "extraction", "object_class_iri_contains": "StabilityStudy", "label": "有效期"},
+              "required": true
+            },
+            {
+              "slot_id": "conclusion.storage_condition",
+              "label": "贮存条件",
+              "source": {"kind": "extraction", "object_class_iri_contains": "StabilityStudy", "label": "贮存条件"},
+              "required": true
+            },
+            {
+              "slot_id": "conclusion.evaluator",
+              "label": "评估人",
+              "source": {"kind": "manual"},
+              "required": false,
+              "on_missing": "leave_blank"
+            },
+            {
+              "slot_id": "conclusion.date",
+              "label": "评估日期",
+              "source": {"kind": "manual"},
+              "required": false,
+              "on_missing": "leave_blank"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

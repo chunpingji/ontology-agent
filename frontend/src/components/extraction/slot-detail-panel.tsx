@@ -33,6 +33,11 @@ export function SlotDetailPanel({ slot, onClickSourceRef, actionBar }: SlotDetai
         <Badge variant={STATUS_VARIANT[slot.status] ?? "outline"} className="text-xs">
           {STATUS_LABELS[slot.status] ?? slot.status}
         </Badge>
+        {slot.is_llm_sourced && (
+          <Badge variant="outline" className="text-xs border-purple-300 text-purple-700">
+            LLM 补抽
+          </Badge>
+        )}
       </div>
 
       <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-xs">
@@ -81,6 +86,15 @@ export function SlotDetailPanel({ slot, onClickSourceRef, actionBar }: SlotDetai
           <>
             <dt className="text-muted-foreground">备注</dt>
             <dd>{slot.note}</dd>
+          </>
+        )}
+
+        {slot.source_span && (
+          <>
+            <dt className="text-muted-foreground">原文片段</dt>
+            <dd className="rounded bg-muted px-2 py-1 font-mono text-[11px] leading-relaxed">
+              {slot.source_span}
+            </dd>
           </>
         )}
       </dl>

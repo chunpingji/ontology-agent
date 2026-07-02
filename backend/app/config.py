@@ -30,6 +30,16 @@ class Settings(BaseSettings):
     # 默认关——离线为正常态，绝不因「无 Key」误标 degraded（FR-002/003，research R2）。
     llm_cloud_enabled: bool = False
 
+    # 能力十二：本地 LLM 补抽（012-ast-template-llm-pipeline）。AST 覆盖缺口二次抽取，
+    # 使用 OpenAI 兼容端点连接本地 LLM（Ollama / vLLM）。默认关——启用需 `uv sync
+    # --extra llm` 并确保本地端点可达；未启用或不可达时优雅降级、跳过补抽（零回归）。
+    local_llm_enabled: bool = False
+    local_llm_base_url: str = "http://localhost:11434/v1"
+    local_llm_model: str = "qwen2.5:14b"
+    local_llm_api_key: str = "not-needed"
+    local_llm_max_tokens: int = 4096
+    local_llm_temperature: float = 0.1
+
     # 能力三：实时事实源轮询与报告输出（002-extraction-realtime-reasoning, R4/R12）
     aps_poll_interval_seconds: int = 2
     realtime_polling_enabled: bool = False  # 启动期 asyncio 轮询任务开关（测试默认关）

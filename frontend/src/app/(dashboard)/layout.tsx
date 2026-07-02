@@ -38,7 +38,13 @@ const NAV: NavNode[] = [
   },
   { href: "/integration", label: "事实源", icon: "🔌" },
   { href: "/approvals", label: "审批中心", icon: "✅", requiredRole: "qa" },
-  { href: "/settings", label: "系统设置", icon: "⚙️" },
+  {
+    title: "系统设置",
+    items: [
+      { href: "/settings", label: "抽取配置", icon: "⚙️" },
+      { href: "/settings/ast-templates", label: "报告模板", icon: "📋" },
+    ],
+  },
 ];
 
 const ROLES: { value: Role; label: string }[] = [

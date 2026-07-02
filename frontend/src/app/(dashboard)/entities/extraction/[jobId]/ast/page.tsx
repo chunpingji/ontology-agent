@@ -19,6 +19,14 @@ import { ReportHistoryList } from "@/components/extraction/report-history-list";
 import { WordViewer } from "@/components/extraction/word-viewer";
 
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
+import {
   getAstCoverage,
   listReports,
   dismissSlot,
@@ -28,9 +36,11 @@ import {
   getExtractionJob,
   getAnnotatedDocument,
   rerunAnnotation,
+  fetchAstTemplates,
   type ASTCoverageDTO,
   type SlotCoverageDTO,
   type GeneratedReportDTO,
+  type AstTemplateDTO,
 } from "@/lib/api";
 
 function getMissingSlots(coverage: ASTCoverageDTO): SlotCoverageDTO[] {
@@ -55,15 +65,23 @@ export default function ASTPage() {
   const [scrollToSlotId, setScrollToSlotId] = useState<string | null>(null);
   const [highlightRef, setHighlightRef] = useState<string | undefined>(undefined);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string | undefined>(undefined);
 
   const jobQuery = useQuery({
     queryKey: ["extraction-job", jobId],
     queryFn: () => getExtractionJob(jobId),
   });
 
+  const templatesQuery = useQuery({
+    queryKey: ["ast-templates"],
+    queryFn: fetchAstTemplates,
+    enabled: AST_READY_STATUS.has(jobQuery.data?.status ?? ""),
+  });
+  const templates = templatesQuery.data ?? [];
+
   const coverageQuery = useQuery({
-    queryKey: ["ast-coverage", jobId],
-    queryFn: () => getAstCoverage(jobId),
+    queryKey: ["ast-coverage", jobId, selectedTemplateId ?? "default"],
+    queryFn: () => getAstCoverage(jobId, selectedTemplateId),
     enabled: AST_READY_STATUS.has(jobQuery.data?.status ?? ""),
     retry: (count, err) => !is422(err) && count < 1,
   });
@@ -250,6 +268,33 @@ export default function ASTPage() {
           </Button>
           <h1 className="text-lg font-semibold">AST 覆盖率</h1>
           <span className="text-sm text-muted-foreground">Job {jobId.slice(0, 8)}</span>
+          {templates.length > 1 && (
+            <Select
+              value={selectedTemplateId ?? "__auto__"}
+              onValueChange={(v) => {
+                setSelectedTemplateId(v === "__auto__" ? undefined : v);
+                setSelectedSlot(null);
+              }}
+            >
+              <SelectTrigger className="h-8 w-48 text-xs">
+                <SelectValue placeholder="自动匹配模板" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__auto__">自动匹配</SelectItem>
+                {templates.map((t) => (
+                  <SelectItem key={t.id} value={t.id}>
+                    {t.name} ({t.version})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+          {coverage?.template_name && (
+            <span className="text-xs text-muted-foreground">
+              {coverage.template_name}
+              {coverage.template_version ? ` ${coverage.template_version}` : ""}
+            </span>
+          )}
         </div>
         <Button onClick={handleGenerateReport} disabled={generateMutation.isPending}>
           {generateMutation.isPending ? (

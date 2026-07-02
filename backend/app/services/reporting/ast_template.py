@@ -20,11 +20,15 @@ Source kinds
 from __future__ import annotations
 
 import json
+import logging
+import uuid
 from collections.abc import Iterator
 from pathlib import Path
 from typing import Annotated, Literal, Union
 
 from pydantic import BaseModel, Field, model_validator
+
+logger = logging.getLogger(__name__)
 
 # --------------------------------------------------------------------------- #
 # Slot sources (discriminated union on ``kind``)
@@ -81,8 +85,17 @@ class ConstantSource(BaseModel):
     value: str
 
 
+class LLMExtractionSource(BaseModel):
+    """Bind a slot to a value extracted by local LLM gap filling."""
+
+    kind: Literal["llm_extraction"] = "llm_extraction"
+    object_class_iri: str
+    data_property_iri: str
+    label: str
+
+
 SlotSource = Annotated[
-    Union[ExtractionSource, RuleSource, ManualSource, ConstantSource],
+    Union[ExtractionSource, RuleSource, ManualSource, ConstantSource, LLMExtractionSource],
     Field(discriminator="kind"),
 ]
 
@@ -190,3 +203,50 @@ def load_template(template_id: str = DEFAULT_TEMPLATE_ID) -> ReportTemplate:
 def load_default_template() -> ReportTemplate:
     """Load the default QS-A-020F05 risk assessment template."""
     return load_template(DEFAULT_TEMPLATE_ID)
+
+
+# --------------------------------------------------------------------------- #
+# DB-aware template resolution (012)
+# --------------------------------------------------------------------------- #
+
+
+def resolve_template(
+    doc_class_iri: str | None,
+    db: "Session",
+) -> tuple[ReportTemplate, str, uuid.UUID | None]:
+    """Three-tier fallback template resolution.
+
+    Returns ``(template, match_source, template_db_id)`` where *match_source*
+    is one of ``"mapping"``, ``"default"``, or ``"fallback"``.
+
+    1. **mapping** — ``DocumentTypeMapping`` whose ``doc_class_iri_pattern``
+       appears in *doc_class_iri*, ordered by descending priority.
+    2. **default** — the ``AstTemplate`` row with ``is_default=True``.
+    3. **fallback** — the filesystem JSON via ``load_default_template()``.
+    """
+    from app.models.extraction import AstTemplate, DocumentTypeMapping
+
+    # Tier 1: pattern match on DocumentTypeMapping
+    if doc_class_iri:
+        mappings = (
+            db.query(DocumentTypeMapping)
+            .join(AstTemplate)
+            .order_by(DocumentTypeMapping.priority.desc())
+            .all()
+        )
+        for m in mappings:
+            if m.doc_class_iri_pattern in doc_class_iri:
+                tpl = ReportTemplate.model_validate(m.template.schema_json)
+                logger.debug("resolve_template: mapping %s → %s", m.doc_class_iri_pattern, m.template.name)
+                return tpl, "mapping", m.template.id
+
+    # Tier 2: DB default template
+    default_row = db.query(AstTemplate).filter(AstTemplate.is_default.is_(True)).first()
+    if default_row is not None:
+        tpl = ReportTemplate.model_validate(default_row.schema_json)
+        logger.debug("resolve_template: default → %s", default_row.name)
+        return tpl, "default", default_row.id
+
+    # Tier 3: filesystem fallback
+    logger.debug("resolve_template: fallback → filesystem")
+    return load_default_template(), "fallback", None

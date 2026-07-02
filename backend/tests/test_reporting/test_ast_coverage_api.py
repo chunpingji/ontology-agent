@@ -98,12 +98,13 @@ class TestGetAstCoverage:
         r = client.get(f"/api/extraction/jobs/{job.id}/ast-coverage", headers=HEADERS)
         assert r.status_code == 422
 
-    def test_422_when_not_cmc_report(self, client, db):
+    def test_non_cmc_report_resolves_via_fallback(self, client, db):
+        """012: any doc type now resolves via template fallback instead of 422."""
         job = _create_job(db)
         _write_cache(job.id, doc_class_iri="https://example.org/OtherDoc")
         r = client.get(f"/api/extraction/jobs/{job.id}/ast-coverage", headers=HEADERS)
-        assert r.status_code == 422
-        assert "CMCReport" in r.text
+        assert r.status_code == 200
+        assert r.json()["total_slots"] > 0
         _remove_cache(job.id)
 
     def test_422_when_doc_class_null(self, client, db):
@@ -116,6 +117,43 @@ class TestGetAstCoverage:
     def test_404_when_job_missing(self, client, db):
         r = client.get(f"/api/extraction/jobs/{uuid.uuid4()}/ast-coverage", headers=HEADERS)
         assert r.status_code == 404
+
+    def test_template_id_query_param(self, client, db):
+        """012: explicit template_id overrides auto-resolution."""
+        from app.models.extraction import AstTemplate
+        from app.services.reporting.ast_template import load_default_template
+
+        tpl_json = load_default_template().model_dump()
+        row = AstTemplate(
+            name="Custom", version="v1", doc_no="CUSTOM",
+            schema_json=tpl_json, is_default=False, created_by="test",
+        )
+        db.add(row)
+        db.commit()
+        db.refresh(row)
+
+        job = _create_job(db)
+        _write_cache(job.id, edges=[_drug_edge()])
+        r = client.get(
+            f"/api/extraction/jobs/{job.id}/ast-coverage?template_id={row.id}",
+            headers=HEADERS,
+        )
+        assert r.status_code == 200
+        body = r.json()
+        assert body["template_name"] == "Custom"
+        assert body["template_version"] == "v1"
+        _remove_cache(job.id)
+
+    def test_template_id_not_found(self, client, db):
+        """012: non-existent template_id returns 404."""
+        job = _create_job(db)
+        _write_cache(job.id, edges=[_drug_edge()])
+        r = client.get(
+            f"/api/extraction/jobs/{job.id}/ast-coverage?template_id={uuid.uuid4()}",
+            headers=HEADERS,
+        )
+        assert r.status_code == 404
+        _remove_cache(job.id)
 
     def test_coverage_counts_consistent(self, client, db):
         job = _create_job(db)

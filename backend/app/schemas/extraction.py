@@ -131,7 +131,63 @@ class GeneratedReportResponse(BaseModel):
 
 
 # --------------------------------------------------------------------------- #
-# 011 AST Coverage
+# 012 AST Template Management
+# --------------------------------------------------------------------------- #
+
+
+class AstTemplateCreate(BaseModel):
+    name: str
+    version: str = "v1"
+    doc_no: str | None = None
+    schema_json: dict
+
+
+class AstTemplateUpdate(BaseModel):
+    schema_json: dict
+    version: str | None = None
+
+
+class AstTemplateResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    name: str
+    version: str
+    doc_no: str | None = None
+    slot_count: int = 0
+    is_default: bool = False
+    created_by: str | None = None
+    created_at: datetime
+    updated_at: datetime | None = None
+
+
+class TemplateMatchResponse(BaseModel):
+    template_id: UUID
+    template_name: str
+    template_version: str
+    match_source: str
+
+
+class DocumentTypeMappingCreate(BaseModel):
+    doc_class_iri_pattern: str
+    template_id: UUID
+    priority: int = 0
+
+
+class DocumentTypeMappingResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    doc_class_iri_pattern: str
+    template_id: UUID
+    template_name: str = ""
+    template_version: str = ""
+    priority: int = 0
+    created_at: datetime
+
+
+# --------------------------------------------------------------------------- #
+# 011 AST Coverage (extended for 012 template switching + LLM gap filling)
 # --------------------------------------------------------------------------- #
 
 
@@ -145,6 +201,8 @@ class SlotCoverageResponse(BaseModel):
     rule_key: str | None = None
     hazid: str | None = None
     note: str | None = None
+    source_span: str | None = None
+    is_llm_sourced: bool = False
 
 
 class GroupCoverageResponse(BaseModel):
@@ -152,6 +210,7 @@ class GroupCoverageResponse(BaseModel):
     title: str
     kind: str
     slots: list[SlotCoverageResponse]
+    is_dynamic: bool = False
 
 
 class SectionCoverageResponse(BaseModel):
@@ -162,6 +221,8 @@ class SectionCoverageResponse(BaseModel):
 
 class ASTCoverageResponse(BaseModel):
     template_id: str
+    template_name: str = ""
+    template_version: str = ""
     total_slots: int
     filled: int
     inferred: int

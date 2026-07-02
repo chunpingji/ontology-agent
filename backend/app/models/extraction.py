@@ -107,6 +107,37 @@ class GeneratedReport(Base):
     job: Mapped[ExtractionJob] = relationship()
 
 
+class AstTemplate(Base):
+    __tablename__ = "ast_templates"
+    __table_args__ = (
+        UniqueConstraint("name", "version", name="uq_template_name_version"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
+    name: Mapped[str] = mapped_column(String(200), nullable=False)
+    version: Mapped[str] = mapped_column(String(20), nullable=False)
+    doc_no: Mapped[str | None] = mapped_column(String(50))
+    schema_json: Mapped[dict] = mapped_column(JSON, nullable=False)
+    is_default: Mapped[bool] = mapped_column(Boolean, default=False)
+    created_by: Mapped[str | None] = mapped_column(String(100))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+    updated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), onupdate=_now)
+
+
+class DocumentTypeMapping(Base):
+    __tablename__ = "document_type_mappings"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
+    doc_class_iri_pattern: Mapped[str] = mapped_column(String(500), nullable=False)
+    template_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("ast_templates.id", ondelete="CASCADE"), nullable=False,
+    )
+    priority: Mapped[int] = mapped_column(Integer, default=0)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+
+    template: Mapped[AstTemplate] = relationship()
+
+
 class SlotDismissal(Base):
     __tablename__ = "slot_dismissals"
     __table_args__ = (

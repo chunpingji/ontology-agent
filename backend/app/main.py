@@ -7,6 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api import (
     actions,
+    ast_templates,
     compliance,
     entities,
     extraction,
@@ -149,6 +150,8 @@ app.include_router(actions.router, prefix="/api/actions", tags=["actions"])
 app.include_router(reports.router, prefix="/api/reports", tags=["reports"])
 app.include_router(compliance.router, prefix="/api/compliance", tags=["compliance"])
 app.include_router(system_config.router, prefix="/api/system-config", tags=["system-config"])
+app.include_router(ast_templates.router, prefix="/api/ast-templates", tags=["ast-templates"])
+app.include_router(ast_templates.mapping_router, prefix="/api/document-type-mappings", tags=["document-type-mappings"])
 
 
 @app.get("/api/health")

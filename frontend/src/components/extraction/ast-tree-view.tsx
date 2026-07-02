@@ -111,7 +111,7 @@ function GroupNode({
   ).length;
 
   return (
-    <div className="my-1">
+    <div className={`my-1 ${group.is_dynamic ? "bg-violet-50/50 rounded" : ""}`}>
       <button
         onClick={onToggle}
         className="flex w-full items-center gap-1 rounded px-2 py-1 text-left text-sm hover:bg-muted/60"
@@ -122,6 +122,11 @@ function GroupNode({
           <ChevronRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
         )}
         <span className="flex-1 font-medium">{group.title}</span>
+        {group.is_dynamic && (
+          <Badge variant="outline" className="h-5 shrink-0 text-[10px] font-normal border-violet-300 text-violet-600">
+            本体属性
+          </Badge>
+        )}
         <span className="text-xs text-muted-foreground tabular-nums">
           {filledCount}/{slotCount}
         </span>

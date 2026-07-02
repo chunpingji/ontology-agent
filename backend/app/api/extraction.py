@@ -976,11 +976,18 @@ def get_risk_report(
 def _build_ast_coverage_response(
     job_id: UUID,
     db: Session,
+    template_id: UUID | None = None,
 ) -> ASTCoverageResponse:
-    """Shared helper: run coverage validation and build the tree response."""
+    """Shared helper: run coverage validation and build the tree response.
+
+    012 extension: accepts optional *template_id* to override default template
+    resolution. When omitted, resolves via ``resolve_template()`` (three-tier
+    fallback: mapping → default → filesystem).
+    """
+    from app.models.extraction import AstTemplate
     from app.models.ontology_meta import OntologyDecisionRule
     from app.services.reasoning.fact_bridge import edges_to_facts
-    from app.services.reporting.ast_template import load_default_template
+    from app.services.reporting.ast_template import ReportTemplate, resolve_template
     from app.services.reporting.coverage_validator import validate_coverage
 
     cache_path = _annotation_cache_path(job_id)
@@ -991,8 +998,38 @@ def _build_ast_coverage_response(
     doc_class = result.get("doc_class")
     if not doc_class:
         raise HTTPException(422, "文档未分类，无法生成覆盖预览")
-    if "CMCReport" not in doc_class.get("doc_class_iri", ""):
-        raise HTTPException(422, "仅支持 CMCReport 类型文档")
+
+    doc_class_iri = doc_class.get("doc_class_iri", "")
+
+    # Template resolution (012): explicit ID → DB lookup; else three-tier fallback
+    tpl_name = ""
+    tpl_version = ""
+    if template_id is not None:
+        row = db.get(AstTemplate, template_id)
+        if not row:
+            raise HTTPException(404, "模板不存在")
+        template = ReportTemplate.model_validate(row.schema_json)
+        tpl_name = row.name
+        tpl_version = row.version
+    else:
+        template, _match_source, _db_id = resolve_template(doc_class_iri, db)
+        if _db_id is not None:
+            row = db.get(AstTemplate, _db_id)
+            if row:
+                tpl_name = row.name
+                tpl_version = row.version
+
+    # 012 T031: Ontology-driven dynamic slot expansion
+    try:
+        from app.config import settings as _settings
+        if _settings.local_llm_enabled and doc_class_iri:
+            from app.services.ontology_engine import ontology_engine
+            from app.services.reporting.template_expander import expand_template_with_ontology
+            if ontology_engine.is_loaded:
+                template = expand_template_with_ontology(template, doc_class_iri, ontology_engine)
+    except Exception:
+        import logging as _logging
+        _logging.getLogger(__name__).warning("本体扩展异常，跳过", exc_info=True)
 
     edges = result.get("relationships", [])
 
@@ -1003,7 +1040,6 @@ def _build_ast_coverage_response(
     )
     dismissed_ids = {r.slot_id for r in dismissed_rows}
 
-    template = load_default_template()
     facts = edges_to_facts(list(edges))
 
     rules = (
@@ -1020,6 +1056,34 @@ def _build_ast_coverage_response(
         template, edges, rules, facts,
         dismissed_slot_ids=dismissed_ids if dismissed_ids else None,
     )
+
+    # 012 LLM gap filling: attempt to fill missing_required slots via local LLM
+    if manifest.missing_required > 0:
+        try:
+            from app.config import settings
+
+            if settings.local_llm_enabled:
+                from app.services.extraction.llm_gap_filler import fill_coverage_gaps
+
+                job = db.get(ExtractionJob, job_id)
+                doc_path = job.document_path if job else None
+                llm_fills = fill_coverage_gaps(manifest, doc_path, template)
+                if llm_fills:
+                    fills_by_id = {f["slot_id"]: f for f in llm_fills}
+                    for sc in manifest.slots:
+                        base_id = sc.slot_id.split("[")[0]
+                        fill = fills_by_id.get(sc.slot_id) or fills_by_id.get(base_id)
+                        if fill and sc.status == "missing_required":
+                            sc.status = "filled"
+                            sc.value = fill["value"]
+                            sc.source_span = fill.get("source_span")
+                            sc.is_llm_sourced = True
+                            sc.source_kind = "llm_extraction"
+        except Exception:
+            import logging
+            logging.getLogger(__name__).warning(
+                "LLM 补抽集成异常，跳过", exc_info=True,
+            )
 
     slot_map: dict[str, list] = {}
     for sc in manifest.slots:
@@ -1044,6 +1108,8 @@ def _build_ast_coverage_response(
                         rule_key=sc.rule_key,
                         hazid=sc.hazid,
                         note=sc.note,
+                        source_span=sc.source_span,
+                        is_llm_sourced=sc.is_llm_sourced,
                     ))
                 if not matched:
                     slots_out.append(SlotCoverageResponse(
@@ -1057,6 +1123,7 @@ def _build_ast_coverage_response(
                 title=group.title,
                 kind=group.kind,
                 slots=slots_out,
+                is_dynamic=group.group_id.startswith("ontology_"),
             ))
         sections.append(SectionCoverageResponse(
             section_id=section.section_id,
@@ -1066,6 +1133,8 @@ def _build_ast_coverage_response(
 
     return ASTCoverageResponse(
         template_id=manifest.template_id,
+        template_name=tpl_name,
+        template_version=tpl_version,
         total_slots=manifest.total_slots,
         filled=manifest.filled,
         inferred=manifest.inferred,
@@ -1080,14 +1149,19 @@ def _build_ast_coverage_response(
 @router.get("/jobs/{job_id}/ast-coverage", response_model=ASTCoverageResponse)
 def get_ast_coverage(
     job_id: UUID,
+    template_id: UUID | None = None,
     db: Session = Depends(get_db),
     identity: Identity = Depends(get_current_user),
 ):
-    """Run coverage validation and return the AST tree with slot status (011 FR-API-001)."""
+    """Run coverage validation and return the AST tree with slot status (011 FR-API-001).
+
+    012 extension: optional *template_id* query param overrides default
+    template resolution.
+    """
     job = db.get(ExtractionJob, job_id)
     if not job:
         raise HTTPException(404, "作业不存在")
-    return _build_ast_coverage_response(job_id, db)
+    return _build_ast_coverage_response(job_id, db, template_id=template_id)
 
 
 @router.get(

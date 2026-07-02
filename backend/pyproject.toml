@@ -42,6 +42,14 @@ gliner = [
     "torch>=2.2",
 ]
 
+# 本地 LLM 补抽（AST 覆盖缺口二次抽取，012-ast-template-llm-pipeline）。
+# 使用 OpenAI 兼容客户端连接本地 LLM 端点（Ollama / vLLM）。
+# 启用时：uv sync --extra llm
+# 未安装时 llm_gap_filler 优雅降级、跳过补抽（结构化主路径零回归）。
+llm = [
+    "openai>=1.30",
+]
+
 # torch → PyTorch CPU 轮子索引（air-gap 目标机无 GPU）。`explicit = true` 意味着
 # 仅被 [tool.uv.sources] 显式指派的包才从此索引解析，其余包仍走默认 PyPI；
 # 故只有 torch 走 CPU 索引，绝不拉 nvidia-cuda-*。仅 `uv sync` 生效；Docker 内

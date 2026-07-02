@@ -16,12 +16,20 @@ services:
       dockerfile: Dockerfile
     ports:
       - "8000:8000"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     environment:
       DATABASE_URL: postgresql://slpra:slpra_dev@db:5432/slpra
       ONTOLOGY_DIR: /app/ontology/slpra
       OWL_STORE_PATH: /app/data/slpra.sqlite3
       # LLM extraction key — injected from host env / .env, never baked into the image.
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      # 012: 本地 LLM 补抽（gap filling）— 连接宿主机上的 Ollama / vLLM 端点。
+      # 默认关；启用后通过 host.docker.internal 访问宿主机 LLM 服务。
+      LOCAL_LLM_ENABLED: ${LOCAL_LLM_ENABLED:-false}
+      LOCAL_LLM_BASE_URL: ${LOCAL_LLM_BASE_URL:-http://host.docker.internal:8080/v1}
+      LOCAL_LLM_MODEL: ${LOCAL_LLM_MODEL:-Qwen3.6-27B}
+      LOCAL_LLM_API_KEY: ${LOCAL_LLM_API_KEY:-not-needed}
       # air-gap：强制 huggingface_hub / transformers 全程离线，杜绝任何远程 repo
       # 解析或权重外发（配套代码内 local_files_only=True，008 Principle VI）。
       HF_HUB_OFFLINE: "1"

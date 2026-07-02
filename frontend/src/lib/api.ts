@@ -1084,6 +1084,8 @@ export interface SlotCoverageDTO {
   rule_key?: string | null;
   hazid?: string | null;
   note?: string | null;
+  source_span?: string | null;
+  is_llm_sourced?: boolean;
 }
 
 export interface GroupCoverageDTO {
@@ -1091,6 +1093,7 @@ export interface GroupCoverageDTO {
   title: string;
   kind: string;
   slots: SlotCoverageDTO[];
+  is_dynamic?: boolean;
 }
 
 export interface SectionCoverageDTO {
@@ -1101,6 +1104,8 @@ export interface SectionCoverageDTO {
 
 export interface ASTCoverageDTO {
   template_id: string;
+  template_name?: string;
+  template_version?: string;
   total_slots: number;
   filled: number;
   inferred: number;
@@ -1111,8 +1116,10 @@ export interface ASTCoverageDTO {
   sections: SectionCoverageDTO[];
 }
 
-export const getAstCoverage = (jobId: string) =>
-  fetchAPI<ASTCoverageDTO>(`/api/extraction/jobs/${jobId}/ast-coverage`);
+export const getAstCoverage = (jobId: string, templateId?: string) =>
+  fetchAPI<ASTCoverageDTO>(
+    `/api/extraction/jobs/${jobId}/ast-coverage${templateId ? `?template_id=${templateId}` : ""}`,
+  );
 
 export interface GeneratedReportDTO {
   id: string;
@@ -1188,3 +1195,76 @@ export interface OntologyClassFlat {
 }
 export const getAllClasses = () =>
   fetchAPI<OntologyClassFlat[]>("/api/ontology/all-classes");
+
+// ===========================================================================
+// 012 AST Template Management
+// ===========================================================================
+
+export interface AstTemplateDTO {
+  id: string;
+  name: string;
+  version: string;
+  doc_no: string | null;
+  slot_count: number;
+  is_default: boolean;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string | null;
+}
+
+export interface AstTemplateCreateInput {
+  name: string;
+  version?: string;
+  doc_no?: string | null;
+  schema_json: Record<string, unknown>;
+}
+
+export interface AstTemplateUpdateInput {
+  schema_json: Record<string, unknown>;
+  version?: string | null;
+}
+
+export interface TemplateMatchDTO {
+  template_id: string;
+  template_name: string;
+  template_version: string;
+  match_source: "mapping" | "default" | "fallback";
+}
+
+export interface DocTypeMappingDTO {
+  id: string;
+  doc_class_iri_pattern: string;
+  template_id: string;
+  template_name: string;
+  template_version: string;
+  priority: number;
+  created_at: string;
+}
+
+export interface DocTypeMappingCreateInput {
+  doc_class_iri_pattern: string;
+  template_id: string;
+  priority?: number;
+}
+
+export const fetchAstTemplates = () =>
+  fetchAPI<AstTemplateDTO[]>("/api/ast-templates");
+export const getAstTemplate = (id: string) =>
+  fetchAPI<AstTemplateDTO & { schema_json: Record<string, unknown> }>(`/api/ast-templates/${id}`);
+export const createAstTemplate = (data: AstTemplateCreateInput) =>
+  fetchAPI<AstTemplateDTO>("/api/ast-templates", { method: "POST", ...jsonBody(data) });
+export const updateAstTemplate = (id: string, data: AstTemplateUpdateInput) =>
+  fetchAPI<AstTemplateDTO>(`/api/ast-templates/${id}`, { method: "PUT", ...jsonBody(data) });
+export const deleteAstTemplate = (id: string) =>
+  fetchAPI<void>(`/api/ast-templates/${id}`, { method: "DELETE" });
+export const setDefaultTemplate = (id: string) =>
+  fetchAPI<AstTemplateDTO>(`/api/ast-templates/${id}/set-default`, { method: "POST" });
+export const matchTemplateForJob = (jobId: string) =>
+  fetchAPI<TemplateMatchDTO>(`/api/ast-templates/match/${jobId}`);
+
+export const fetchDocTypeMappings = () =>
+  fetchAPI<DocTypeMappingDTO[]>("/api/document-type-mappings");
+export const createDocTypeMapping = (data: DocTypeMappingCreateInput) =>
+  fetchAPI<DocTypeMappingDTO>("/api/document-type-mappings", { method: "POST", ...jsonBody(data) });
+export const deleteDocTypeMapping = (id: string) =>
+  fetchAPI<void>(`/api/document-type-mappings/${id}`, { method: "DELETE" });

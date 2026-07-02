@@ -66,6 +66,8 @@ class SlotCoverage:
     rule_key: str | None = None
     hazid: str | None = None
     note: str | None = None
+    source_span: str | None = None
+    is_llm_sourced: bool = False
 
 
 @dataclass
