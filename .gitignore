@@ -16,6 +16,8 @@ venv/
 backend/data/
 # 本地模型权重（GLiNER / 嵌入器）不入 git，经制品库 + SHA256 校验交付（research R8）
 backend/models/
+data/reports
+data/uploads
 .env
 .env.*
 
