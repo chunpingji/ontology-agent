@@ -10,6 +10,7 @@ import {
 } from "@/lib/api";
 import { RiskAttributeWizard } from "@/components/ontology/risk-attribute-wizard";
 import { Field } from "@/components/ontology/field";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -21,7 +22,7 @@ import {
 } from "@/components/ui/select";
 
 const MANAGED_PREFIX = "https://ontology.pharma-gmp.cn/slpra/core/";
-const DATATYPES = ["string", "integer", "float", "boolean", "date", "dateTime"];
+const DATATYPES = ["string", "integer", "decimal", "boolean", "date", "dateTime", "anyURI"];
 
 type Mode = "list" | "create" | "edit" | "risk";
 type FormState = {
@@ -30,6 +31,8 @@ type FormState = {
   domain_iri: string;
   datatype: string;
   unit: string;
+  vocab_key: string;
+  vocab_values: string[];
 };
 
 const emptyForm = (domainIri: string | null): FormState => ({
@@ -38,6 +41,8 @@ const emptyForm = (domainIri: string | null): FormState => ({
   domain_iri: domainIri ?? "",
   datatype: "string",
   unit: "",
+  vocab_key: "",
+  vocab_values: [],
 });
 
 /**
@@ -58,6 +63,7 @@ export function DataPropertyPanel({
   const [form, setForm] = useState<FormState>(emptyForm(selectedClassIri));
   const [msg, setMsg] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [vocabInput, setVocabInput] = useState("");
 
   const load = useCallback(() => {
     listDataProperties(selectedClassIri ?? undefined, true)
@@ -97,12 +103,15 @@ export function DataPropertyPanel({
 
   const startEdit = (dp: TBoxDataProperty) => {
     setEditing(dp);
+    const cv = dp.controlled_vocab as Record<string, unknown> | null;
     setForm({
       slpra_iri: dp.slpra_iri,
       label: dp.label ?? "",
       domain_iri: dp.domain_iri ?? "",
       datatype: dp.datatype,
       unit: dp.unit ?? "",
+      vocab_key: (cv?.vocab as string) ?? "",
+      vocab_values: Array.isArray(cv?.values) ? (cv.values as string[]) : [],
     });
     setError(null);
     setMsg(null);
@@ -111,6 +120,10 @@ export function DataPropertyPanel({
 
   const submitForm = async () => {
     setError(null);
+    const controlled_vocab =
+      form.vocab_values.length > 0
+        ? { vocab: form.vocab_key || undefined, values: form.vocab_values }
+        : null;
     try {
       if (mode === "edit" && editing) {
         await updateDataProperty(editing.slpra_iri, {
@@ -118,6 +131,7 @@ export function DataPropertyPanel({
           domain_iri: form.domain_iri || null,
           datatype: form.datatype,
           unit: form.unit || null,
+          controlled_vocab,
           expected_version: editing.version,
         });
         afterWrite("已更新数据属性");
@@ -128,6 +142,7 @@ export function DataPropertyPanel({
           domain_iri: form.domain_iri || null,
           datatype: form.datatype,
           unit: form.unit || null,
+          controlled_vocab,
         });
         afterWrite("已创建数据属性");
       }
@@ -217,6 +232,11 @@ export function DataPropertyPanel({
                   <div className="mt-0.5 flex flex-wrap gap-1 text-[11px] text-muted-foreground">
                     <span className="rounded bg-muted px-1.5 py-0.5">{dp.datatype}</span>
                     {dp.unit && <span className="rounded bg-muted px-1.5 py-0.5">{dp.unit}</span>}
+                    {isRisk && (dp.controlled_vocab as Record<string, unknown>)?.vocab && (
+                      <span className="rounded bg-muted px-1.5 py-0.5">
+                        词表: {String((dp.controlled_vocab as Record<string, unknown>).vocab)}
+                      </span>
+                    )}
                   </div>
                 </div>
                 <div className="flex shrink-0 gap-1">
@@ -314,6 +334,72 @@ export function DataPropertyPanel({
               />
             </Field>
           </div>
+          <Field label="受控词表" hint="可选，定义属性的合法取值列表">
+            <Input
+              placeholder="词表标识（可选，如 OEB）"
+              value={form.vocab_key}
+              onChange={(e) => setForm({ ...form, vocab_key: e.target.value })}
+              className="mb-1 h-auto rounded px-2 py-1 text-xs"
+            />
+            <div className="flex gap-1">
+              <Input
+                placeholder="输入取值后按 Enter 添加"
+                value={vocabInput}
+                onChange={(e) => setVocabInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    const v = vocabInput.trim();
+                    if (v && !form.vocab_values.includes(v)) {
+                      setForm({ ...form, vocab_values: [...form.vocab_values, v] });
+                    }
+                    setVocabInput("");
+                  }
+                }}
+                className="h-auto rounded px-2 py-1 text-xs"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-auto shrink-0 rounded px-2 py-1 text-xs"
+                onClick={() => {
+                  const v = vocabInput.trim();
+                  if (v && !form.vocab_values.includes(v)) {
+                    setForm({ ...form, vocab_values: [...form.vocab_values, v] });
+                  }
+                  setVocabInput("");
+                }}
+              >
+                添加
+              </Button>
+            </div>
+            {form.vocab_values.length > 0 && (
+              <div className="mt-1 flex flex-wrap gap-1">
+                {form.vocab_values.map((val) => (
+                  <Badge
+                    key={val}
+                    variant="secondary"
+                    className="gap-1 rounded px-1.5 py-0.5 text-xs font-normal"
+                  >
+                    {val}
+                    <button
+                      type="button"
+                      className="ml-0.5 text-muted-foreground hover:text-foreground"
+                      onClick={() =>
+                        setForm({
+                          ...form,
+                          vocab_values: form.vocab_values.filter((v) => v !== val),
+                        })
+                      }
+                    >
+                      &times;
+                    </button>
+                  </Badge>
+                ))}
+              </div>
+            )}
+          </Field>
           <div className="flex gap-2">
             <Button
               onClick={submitForm}

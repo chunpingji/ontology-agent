@@ -300,6 +300,143 @@ export const docRepoMode = (c: Connector): DocRepoAccessMode => {
   return m === "upload" || m === "http" ? m : "inline";
 };
 
+// --- 通用 REST/JSON 源连接器 rest_api（014 US2）----------------------------
+// 声明驱动抽取的 api_endpoint 源经此连接器分页拉取；凭据**仅以环境变量名引用**入库
+// （FR-006），base_url 须为内网地址（FR-022，后端 422 兜底校验）。
+
+export type RestAuthScheme = "bearer" | "api_key";
+export type RestPaginationStyle = "cursor" | "offset" | "page";
+
+export interface RestApiConnectorInput {
+  name: string;
+  /** 内网 base_url（公网/云端将被后端拒绝，FR-022）。 */
+  baseUrl: string;
+  endpoint: string;
+  authScheme: RestAuthScheme;
+  /** 凭据**环境变量名**引用（bearer→token_env / api_key→api_key_env）——绝不传明文（FR-006）。 */
+  tokenEnv?: string;
+  apiKeyEnv?: string;
+  /** api_key 模式的自定义请求头名（默认 X-API-Key）。 */
+  apiKeyHeader?: string;
+  paginationStyle?: RestPaginationStyle;
+  cursorPath?: string;
+  pageSize?: number;
+  pollIntervalSeconds?: number;
+}
+
+/** 据输入构建 rest_api 的 connection_config（凭据**仅以变量名引用**，无明文入库）。 */
+export const buildRestApiConfig = (input: RestApiConnectorInput): Record<string, unknown> => {
+  const auth: Record<string, unknown> = { scheme: input.authScheme };
+  if (input.authScheme === "bearer" && input.tokenEnv) auth.token_env = input.tokenEnv;
+  if (input.authScheme === "api_key") {
+    if (input.apiKeyEnv) auth.api_key_env = input.apiKeyEnv;
+    if (input.apiKeyHeader) auth.header = input.apiKeyHeader;
+  }
+  const style = input.paginationStyle ?? "cursor";
+  const pagination: Record<string, unknown> = { style, page_size: input.pageSize ?? 200 };
+  if (style === "cursor") pagination.cursor_path = input.cursorPath || "$.next";
+  return {
+    base_url: input.baseUrl,
+    endpoint: input.endpoint,
+    auth,
+    pagination,
+  };
+};
+
+/** 创建 rest_api 连接器（复用既有 createConnector；system_type 固定 rest_api）。 */
+export const createRestApiConnector = (input: RestApiConnectorInput) =>
+  createConnector({
+    name: input.name || "内网 REST 源",
+    system_type: "rest_api",
+    ingest_mode: "poll",
+    poll_interval_seconds: input.pollIntervalSeconds ?? 2,
+    connection_config: buildRestApiConfig(input),
+  });
+
+/** 仅列出 rest_api 连接器（客户端过滤；复用 listConnectors）。 */
+export const listRestApiConnectors = () =>
+  listConnectors().then((cs) =>
+    cs.filter((c) => (c.system_type || "").toLowerCase() === "rest_api"),
+  );
+
+// --- 数据库源连接器 database ------------------------------------------------
+
+export interface DatabaseConnectorInput {
+  name: string;
+  /** 数据库 DSN 的**环境变量名**（如 SOURCE_DB_DSN）——绝不传明文连接串（FR-006）。 */
+  dsnEnv: string;
+  /** 可选：仅反射指定 schema。 */
+  schema?: string;
+  /** 可选：仅反射指定表。 */
+  includeTables?: string[];
+  pollIntervalSeconds?: number;
+}
+
+export const buildDatabaseConfig = (
+  input: DatabaseConnectorInput,
+): Record<string, unknown> => {
+  const cfg: Record<string, unknown> = { dsn_env: input.dsnEnv };
+  if (input.schema) cfg.schema = input.schema;
+  if (input.includeTables?.length) cfg.include_tables = input.includeTables;
+  return cfg;
+};
+
+/** 创建 database 连接器（复用既有 createConnector；system_type 固定 database）。 */
+export const createDatabaseConnector = (input: DatabaseConnectorInput) =>
+  createConnector({
+    name: input.name || "数据库源",
+    system_type: "database",
+    ingest_mode: "poll",
+    poll_interval_seconds: input.pollIntervalSeconds ?? 2,
+    connection_config: buildDatabaseConfig(input),
+  });
+
+/** 仅列出 database 连接器（客户端过滤；复用 listConnectors）。 */
+export const listDatabaseConnectors = () =>
+  listConnectors().then((cs) =>
+    cs.filter((c) => (c.system_type || "").toLowerCase() === "database"),
+  );
+
+// --- 文件源连接器 file （Excel / Word / PDF）-------------------------------
+
+export type FileFormat = "excel" | "word" | "pdf";
+
+export interface FileConnectorInput {
+  name: string;
+  /** 文件绝对路径或 glob 模式（如 /data/imports/*.xlsx）。 */
+  filePath: string;
+  /** 文件格式（留空则按扩展名自动推断）。 */
+  format?: FileFormat;
+  /** Excel 工作表名（可选，默认第一个）。 */
+  sheetName?: string;
+  pollIntervalSeconds?: number;
+}
+
+export const buildFileConfig = (
+  input: FileConnectorInput,
+): Record<string, unknown> => {
+  const cfg: Record<string, unknown> = { file_path: input.filePath };
+  if (input.format) cfg.format = input.format;
+  if (input.sheetName) cfg.sheet_name = input.sheetName;
+  return cfg;
+};
+
+/** 创建 file 连接器（复用既有 createConnector；system_type 固定 file）。 */
+export const createFileConnector = (input: FileConnectorInput) =>
+  createConnector({
+    name: input.name || "文件源",
+    system_type: "file",
+    ingest_mode: "poll",
+    poll_interval_seconds: input.pollIntervalSeconds ?? 2,
+    connection_config: buildFileConfig(input),
+  });
+
+/** 仅列出 file 连接器（客户端过滤；复用 listConnectors）。 */
+export const listFileConnectors = () =>
+  listConnectors().then((cs) =>
+    cs.filter((c) => (c.system_type || "").toLowerCase() === "file"),
+  );
+
 /**
  * 某连接器历史上物化过的文档个体 IRI 集合（facts#<entity_id>）。
  * EntityShadow 不存连接器归属——文档→连接器的唯一回链是各 run 的 applied changes，
@@ -689,10 +826,6 @@ export interface DataPropertyInput {
   domain_iri?: string | null; datatype?: string; unit?: string | null;
   controlled_vocab?: Record<string, unknown> | null; expected_version?: number;
 }
-export interface RiskDataPropertyInput {
-  slpra_iri: string; label: string; domain_iri?: string | null;
-  datatype?: string; vocab: string;
-}
 export interface RiskVocabulary { key: string; label: string; values: string[]; }
 
 // Shared query builder for domain-scoped property listings (relations + data props).
@@ -717,10 +850,6 @@ export const deleteDataProperty = (iri: string, expectedVersion: number) =>
   );
 export const getRiskVocabularies = () =>
   fetchAPI<RiskVocabulary[]>("/api/ontology/risk-vocabularies");
-export const createRiskDataProperty = (data: RiskDataPropertyInput) =>
-  fetchAPI<TBoxDataProperty>("/api/ontology/data-properties/risk", {
-    method: "POST", ...jsonBody(data),
-  });
 
 // --- E4 action -------------------------------------------------------------
 export interface TBoxAction {
@@ -792,6 +921,48 @@ export const deleteMapping = (id: string, expectedVersion: number) =>
   });
 export const getMappingHealth = () =>
   fetchAPI<MappingHealth>("/api/ontology/mappings/health");
+
+// --- E6b property bindings (014 declaration-driven mapping) -----------------
+/** Source-entity mapping types whose columns/fields drive extraction. */
+export const SOURCE_ENTITY_MAPPING_TYPES = ["db_table", "api_endpoint", "doc_pattern"];
+export interface PropertyBinding {
+  id: string; class_mapping_id: string; property_iri: string;
+  property_kind: string; source_path: string;
+  transform_type: string; transform_config: Record<string, unknown> | null;
+  is_identifier: boolean; is_label: boolean;
+  object_resolution: string | null; target_class_iri: string | null;
+  target_id_path: string | null; nested_binding_id: string | null;
+  version: number; status: string;
+}
+export interface PropertyBindingInput {
+  property_iri: string; property_kind?: string; source_path: string;
+  transform_type?: string; transform_config?: Record<string, unknown> | null;
+  is_identifier?: boolean; is_label?: boolean;
+  object_resolution?: string | null; target_class_iri?: string | null;
+  target_id_path?: string | null; nested_binding_id?: string | null;
+  expected_version?: number;
+}
+export interface BindingValidationReport {
+  health: string; errors: ValidationIssue[]; warnings: ValidationIssue[];
+}
+export const getPropertyBindings = (mappingId: string) =>
+  fetchAPI<PropertyBinding[]>(`/api/ontology/mappings/${mappingId}/property-bindings`);
+export const createPropertyBinding = (mappingId: string, data: PropertyBindingInput) =>
+  fetchAPI<PropertyBinding>(`/api/ontology/mappings/${mappingId}/property-bindings`, {
+    method: "POST", ...jsonBody(data),
+  });
+export const updatePropertyBinding = (id: string, data: PropertyBindingInput) =>
+  fetchAPI<PropertyBinding>(`/api/ontology/property-bindings/${id}`, {
+    method: "PUT", ...jsonBody(data),
+  });
+export const deletePropertyBinding = (id: string, expectedVersion: number) =>
+  fetchAPI<void>(`/api/ontology/property-bindings/${id}?expected_version=${expectedVersion}`, {
+    method: "DELETE",
+  });
+export const validateBinding = (mappingId: string) =>
+  fetchAPI<BindingValidationReport>(`/api/ontology/mappings/${mappingId}/validate`, {
+    method: "POST",
+  });
 
 // --- §8 validation ---------------------------------------------------------
 export interface ValidationIssue { code: string; message: string; entity_iri: string | null; }

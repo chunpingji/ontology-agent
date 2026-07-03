@@ -102,7 +102,12 @@ class RiskReportGenerator:
         values go to ``report.llm_supplements`` for annotation only — they NEVER
         alter deterministic evaluation (FR-009).
         """
-        facts = edges_to_facts(edges)
+        # Ontology-aware fact building (014 US3): pass the loaded engine so
+        # hierarchy membership / domain gating / alignments / vocab apply. Falls
+        # back to legacy string matching when the ontology is not loaded.
+        from app.services.ontology_engine import get_loaded_engine
+
+        facts = edges_to_facts(edges, get_loaded_engine())
         rules = self._load_rules()
         pre_rows = self._evaluate_rules(rules, facts)
         post_rows = self._evaluate_post_control(rules, facts, pre_rows)

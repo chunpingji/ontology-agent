@@ -103,6 +103,59 @@ class MappingHealth(BaseModel):
     orphan: list[str] = []
 
 
+# --- E6b property binding (014 dynamic mapping) ----------------------------
+class PropertyBindingCreate(BaseModel):
+    """Bind one ontology data/object property to a source field (contracts §2).
+
+    Object properties additionally carry a resolution mode: ``id_reference``
+    (``target_class_iri`` + ``target_id_path``) or ``nested_object``
+    (``nested_binding_id`` → a child class binding). Transforms and identifier/
+    label flags apply per-property.
+    """
+
+    property_iri: str
+    property_kind: str = "data"  # data | object
+    source_path: str
+    transform_type: str = "none"  # none | controlled_vocab | pattern | cast
+    transform_config: dict | None = None
+    is_identifier: bool = False
+    is_label: bool = False
+    object_resolution: str | None = None  # id_reference | nested_object
+    target_class_iri: str | None = None
+    target_id_path: str | None = None
+    nested_binding_id: str | None = None
+
+
+class PropertyBindingUpdate(PropertyBindingCreate, VersionedMixin):
+    """Full-replace update (mirrors MappingUpdate) + optimistic-concurrency."""
+
+
+class PropertyBinding(BaseModel):
+    id: str
+    class_mapping_id: str
+    property_iri: str
+    property_kind: str
+    source_path: str
+    transform_type: str = "none"
+    transform_config: dict | None = None
+    is_identifier: bool = False
+    is_label: bool = False
+    object_resolution: str | None = None
+    target_class_iri: str | None = None
+    target_id_path: str | None = None
+    nested_binding_id: str | None = None
+    version: int
+    status: str
+
+
+class BindingValidationReport(BaseModel):
+    """Result of validating a class binding + its property bindings (FR-005)."""
+
+    health: str = "ok"  # ok | drift | orphan | unmapped
+    errors: list[ValidationIssue] = []
+    warnings: list[ValidationIssue] = []
+
+
 # --- E1 class --------------------------------------------------------------
 class ClassCreate(BaseModel):
     slpra_iri: str
@@ -200,13 +253,6 @@ class DataPropertyUpdate(DataPropertyCreate, VersionedMixin):
     label: str | None = None  # type: ignore[assignment]
     datatype: str | None = None  # type: ignore[assignment]
 
-
-class RiskDataPropertyCreate(BaseModel):
-    slpra_iri: str
-    label: str
-    domain_iri: str | None = None
-    datatype: str = "string"
-    vocab: str  # OEB / PDE / sensitizer ... (key into /risk-vocabularies)
 
 
 class DataPropertyDetail(BaseModel):

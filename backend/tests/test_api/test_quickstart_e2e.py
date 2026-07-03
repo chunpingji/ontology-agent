@@ -73,15 +73,16 @@ def test_quickstart_us1_end_to_end(client, analyst_headers):
     # 步骤 4（前移）— 风险属性向导：受控词表预填；约束引用的属性须先存在。
     vocabs = client.get("/api/ontology/risk-vocabularies").json()
     assert any(v["key"] == "OEB" for v in vocabs)
+    oeb_vocab = next(v for v in vocabs if v["key"] == "OEB")
     rp = client.post(
-        "/api/ontology/data-properties/risk",
+        "/api/ontology/data-properties",
         headers=H,
         json={
             "slpra_iri": PROP_OEB,
             "label": "OEB 等级",
             "domain_iri": CLS,
             "datatype": "string",
-            "vocab": "OEB",
+            "controlled_vocab": {"vocab": "OEB", "values": oeb_vocab["values"]},
         },
     )
     assert rp.status_code == 201, rp.text

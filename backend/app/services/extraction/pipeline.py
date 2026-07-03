@@ -7,15 +7,17 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import logging
 from pathlib import Path
+from uuid import UUID
 
 from sqlalchemy.orm import Session
 
 from app.config import settings
 from app.models.extraction import ExtractionCandidate, ExtractionConfig, ExtractionJob
 from app.services.extraction.aligner import align_entity
-from app.services.extraction.db_reader import reflect_database
+from app.services.extraction.db_reader import read_source_rows, reflect_database
 from app.services.extraction.gliner_extractor import get_gliner_extractor
 from app.services.extraction.llm_extractor import extract_with_fallback
 from app.services.extraction.parser import parse_excel, parse_word
@@ -49,6 +51,12 @@ async def run_extraction_pipeline(
 ) -> ExtractionJob:
     """Run the full extraction pipeline for a job."""
     try:
+        # 声明驱动分支（014 US1/US2）：E6 类绑定 + 属性绑定驱动抽取。置于 config 分派
+        # **之前**，遗留 column_mapping / doc_repo / database-reflect 分支原样保留（FR-018）。
+        class_mapping_id = (job.source_config or {}).get("class_mapping_id")
+        if class_mapping_id:
+            return await _run_declarative_branch(job, class_mapping_id, engine, db)
+
         job.status = "parsing"
         db.commit()
         _emit(job, "parsing", 10, "parsing")
@@ -305,6 +313,147 @@ async def _run_database_branch(
     return job
 
 
+async def _run_declarative_branch(
+    job: ExtractionJob,
+    class_mapping_id: str,
+    engine: OntologyEngine,
+    db: Session,
+) -> ExtractionJob:
+    """声明驱动抽取分支（014 US1，R8/FR-007）：E6 类绑定 + E6b 属性绑定驱动。
+
+    1. 载入类绑定（``OntologyClassMapping``）+ 其属性绑定 + 目标类 IRI。
+    2. 按源实体类型分派读取器：``db_table`` → :func:`read_source_rows`（US2 追加
+       ``api_endpoint``）。凭据经 env 注入、绝不入库（FR-006）。
+    3. 优雅降级（R12/FR-019）：DSN 未注入/源不可达 → ``status="degraded"``、零候选、
+       不崩溃；漂移（R5/FR-020）→ 置 E6 ``health="drift"`` 后照常产出已对齐列的候选。
+    4. 标识符对齐（T017/FR-004）：``is_identifier`` 绑定 → 复用 ``align_entity`` 做
+       Step-1 精确 ID 匹配；``link`` 候选（未解析对象引用）入复核队列，不自动断言。
+    """
+    from app.models.ontology_meta import (
+        OntologyClass,
+        OntologyClassMapping,
+        OntologyPropertyBinding,
+    )
+
+    binding = db.get(OntologyClassMapping, UUID(class_mapping_id))
+    if binding is None:
+        job.status = "failed"
+        job.error_message = "声明抽取失败：类绑定不存在"
+        db.commit()
+        _emit(job, "failed", 100, "failed")
+        return job
+
+    cls = db.get(OntologyClass, binding.class_id)
+    target_class_iri = cls.slpra_iri if cls else None
+    prop_bindings = (
+        db.query(OntologyPropertyBinding)
+        .filter_by(class_mapping_id=binding.id)
+        .all()
+    )
+
+    job.status = "extracting"
+    db.commit()
+    _emit(job, "extracting", 40, "extracting")
+
+    if binding.mapping_type == "db_table":
+        result = read_source_rows(binding, prop_bindings, engine)
+    elif binding.mapping_type == "api_endpoint":
+        # US2：内网 REST/JSON 源端点读取器（与 DB 适配器同构输出，FR-008）。
+        from app.services.extraction.api_reader import read_api_items
+
+        result = await read_api_items(binding, prop_bindings, engine, db)
+    else:
+        # doc_pattern 等其它源实体类型暂不支持（读取器待接入）。
+        result = RowReadResultUnsupported(binding.mapping_type)
+
+    # R12/FR-019 — 优雅降级：零候选、作业完成、附 degraded_reason，绝不崩溃。
+    if result.degraded_reason:
+        job.status = "degraded"
+        job.error_message = result.degraded_reason
+        job.total_candidates = 0
+        db.commit()
+        _emit(job, "degraded", 100, "degraded", degraded=True)
+        return job
+
+    # R5/FR-020 — 漂移：置 E6 health='drift'（跳过缺列绑定后仍产出候选，部分成功）。
+    if result.drifted_paths:
+        binding.health = "drift"
+        db.commit()
+
+    job.status = "aligning"
+    db.commit()
+    _emit(job, "aligning", 70, "aligning")
+
+    # T017 — 标识符/标签绑定驱动对齐（Step-1 精确 ID → Step-2 字面/语义）。
+    id_binding = next((pb for pb in prop_bindings if pb.is_identifier), None)
+    label_binding = next((pb for pb in prop_bindings if pb.is_label), None)
+    id_property = id_binding.property_iri if id_binding else None
+    label_property = label_binding.property_iri if label_binding else None
+    embedder = get_embedder()
+
+    total = 0
+    instance_candidates: list[ExtractionCandidate] = []
+    for rc in result.candidates:
+        tgt = rc.target_class_iri or target_class_iri
+        source_ref = json.dumps(rc.source_ref, ensure_ascii=False)
+        notes = "; ".join(rc.notes) or None
+        if rc.candidate_kind == "instance":
+            alignment = align_entity(
+                candidate=rc.extracted_properties,
+                target_class_iri=tgt,
+                engine=engine,
+                id_property=id_property,
+                label_property=label_property,
+                threshold=settings.lexical_match_threshold,
+                embedder=embedder,
+                semantic_threshold=settings.semantic_match_threshold,
+            )
+            cand = ExtractionCandidate(
+                job_id=job.id,
+                target_class_iri=tgt,
+                extracted_properties=rc.extracted_properties,
+                candidate_kind="instance",
+                group_key=rc.identifier,          # 标识符归组（跨源去重锚点）
+                source_ref=source_ref,
+                degraded_reason=notes,            # 逐值 transform 问题（非致命）
+                alignment_result=alignment.action,
+                aligned_iri=alignment.match_iri,
+                match_score=alignment.match_score,
+                review_status="pending",
+            )
+            instance_candidates.append(cand)
+        else:                                     # link — 未解析对象引用，待人工解析
+            cand = ExtractionCandidate(
+                job_id=job.id,
+                target_class_iri=tgt,
+                extracted_properties=rc.extracted_properties,
+                candidate_kind="link",
+                source_ref=source_ref,
+                degraded_reason=notes,
+                alignment_result="new",
+                review_status="pending",
+            )
+        db.add(cand)
+        total += 1
+
+    _mark_canonical(instance_candidates)
+    job.total_candidates = total
+    job.status = "reviewing"
+    db.commit()
+    _emit(job, "reviewing", 100, "reviewing")
+    return job
+
+
+def RowReadResultUnsupported(mapping_type: str):
+    """A degraded :class:`RowReadResult` for a source-entity type without a reader
+    yet (e.g. ``api_endpoint`` before US2). Kept tiny to avoid a class-dispatch."""
+    from app.services.extraction.db_reader import RowReadResult
+
+    return RowReadResult(
+        degraded_reason=f"暂不支持的源实体类型：{mapping_type}（读取器待接入）"
+    )
+
+
 def fetch_document_content(
     content_ref: str | None, source_config: dict | None = None
 ) -> list[dict]:
@@ -542,11 +691,16 @@ def _row_mentions_class(row: dict, tokens: set[str]) -> bool:
 
 
 def _mark_canonical(candidates: list[ExtractionCandidate]) -> None:
-    """每个 group_key 选 match_score 最高者为规范实例；无 group_key 不标记。"""
-    groups: dict[str, list[ExtractionCandidate]] = {}
+    """按 ``(target_class_iri, group_key)`` 归组，每组选 match_score 最高者为规范实例。
+
+    键含 ``target_class_iri``：US2 ``nested_object`` 子候选（如 Manufacturer）沿用父候选
+    （DrugProduct）的 ``group_key`` 以相连，但二者属**不同类**，不应被判为同一实体的重复。
+    单类作业（US1）行为不变。无 ``group_key`` 不标记。
+    """
+    groups: dict[tuple, list[ExtractionCandidate]] = {}
     for c in candidates:
         if c.group_key:
-            groups.setdefault(c.group_key, []).append(c)
+            groups.setdefault((c.target_class_iri, c.group_key), []).append(c)
     for members in groups.values():
         best = max(members, key=lambda m: m.match_score or 0.0)
         best.is_canonical = True

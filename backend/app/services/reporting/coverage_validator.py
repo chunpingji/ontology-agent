@@ -307,9 +307,11 @@ def validate_coverage(
     base slot_id is in the set to ``dismissed`` status (011 FR-API-006).
     """
     if facts is None:
+        from app.services.ontology_engine import get_loaded_engine
         from app.services.reasoning.fact_bridge import edges_to_facts
 
-        facts = edges_to_facts(list(edges))
+        # Ontology-aware fact building (014 US3); None when unloaded → legacy path.
+        facts = edges_to_facts(list(edges), get_loaded_engine())
 
     manifest = CoverageManifest(template_id=template.template_id)
     for section in template.sections:

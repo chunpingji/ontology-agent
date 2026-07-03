@@ -29,6 +29,10 @@ MODULE_NAMES = {
     "integration": "https://ontology.pharma-gmp.cn/slpra/integration/",
 }
 
+# 受管命名空间前缀：以此打头的 IRI 为 SLPRA 内部（受管）类；其余视为外部标准对齐目标
+# （ChEBI/ATC/DrOn/IDMP/ISA-88 …）。用于 get_class_alignments 过滤外部对齐（R13/FR-014）。
+MANAGED_NAMESPACE_BASE = "https://ontology.pharma-gmp.cn/slpra/"
+
 # IRI → 本地 TTL 文件名。Owlready2 仅按 IRI 末段（如 "drug"）在 onto_path 中搜索文件，
 # 与实际文件名（slpra-drug.ttl）不符且不读 catalog，故按文件路径显式离线加载（VR：禁联网）。
 MODULE_FILES = {
@@ -435,6 +439,43 @@ class OntologyEngine:
                 out.append({"iri": c.iri, "label": self._get_label(c) or c.name})
             return out
 
+    def get_class_alignments(self, class_iri: str) -> list[str]:
+        """返回某类声明的**外部标准对齐** IRI 列表（R13/FR-014）。
+
+        读取已发布 World 中该类经 ``owl:equivalentClass`` 与 skos 映射谓词
+        （``skos:exactMatch``/``skos:closeMatch``）指向的**非受管（外部）命名** IRI
+        ——受管 SLPRA IRI 与匿名类表达式（BNode，如 E11 判据投影的等价类）均排除。
+
+        供 :func:`edges_to_facts` 填充 ``Facts.alignments``（US3）；与写入侧同谓词
+        （``ttl_merge``/``surgical_merge`` 逐字保留具名外部 ``equivalentClass``、外部对齐
+        走 skos 非受管谓词，见 [[external-alignment-must-use-nonmanaged-predicates]]），保证往返一致。
+        去重，按谓词/发现顺序保序。World 未加载或无对齐 → ``[]``。
+        """
+        from rdflib import URIRef
+        from rdflib.namespace import OWL, SKOS
+
+        with self._lock:
+            if not self._world:
+                return []
+            try:
+                graph = self._world.as_rdflib_graph()
+            except Exception:  # pragma: no cover - 防御：rdflib 视图不可用则视为无对齐
+                logger.warning("get_class_alignments: rdflib 视图不可用", exc_info=True)
+                return []
+            subject = URIRef(class_iri)
+            out: list[str] = []
+            seen: set[str] = set()
+            for pred in (OWL.equivalentClass, SKOS.exactMatch, SKOS.closeMatch):
+                for obj in graph.objects(subject, pred):
+                    if not isinstance(obj, URIRef):
+                        continue  # 匿名类表达式（BNode）——判据投影等价类，非外部对齐
+                    iri = str(obj)
+                    if iri.startswith(MANAGED_NAMESPACE_BASE) or iri in seen:
+                        continue  # 受管 IRI 或重复——排除
+                    seen.add(iri)
+                    out.append(iri)
+            return out
+
     def get_relation_schema(
         self, class_iri: str, max_hops: int = 4,
     ) -> list[dict]:
@@ -772,3 +813,14 @@ class OntologyEngine:
 
 
 ontology_engine = OntologyEngine()
+
+
+def get_loaded_engine() -> "OntologyEngine | None":
+    """Return the process-wide ontology engine iff it is loaded, else ``None``.
+
+    Bridge helper for ontology-aware consumers (e.g. ``edges_to_facts``, 014 US3):
+    passing ``None`` when the ontology is not loaded degrades them to legacy
+    behavior rather than erroring — the offline / air-gap posture (Principle VI)
+    and the test environment (no published World) both take the legacy path.
+    """
+    return ontology_engine if ontology_engine.is_loaded else None

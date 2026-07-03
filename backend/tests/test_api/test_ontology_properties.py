@@ -96,7 +96,7 @@ def test_data_property_bad_datatype_400(client, analyst_headers):
     assert resp.status_code == 400
 
 
-def test_risk_vocabularies_and_wizard(client, analyst_headers):
+def test_risk_vocabularies_and_controlled_vocab_crud(client, analyst_headers):
     vocabs = client.get("/api/ontology/risk-vocabularies", headers=analyst_headers)
     assert vocabs.status_code == 200
     keys = {v["key"] for v in vocabs.json()}
@@ -104,18 +104,21 @@ def test_risk_vocabularies_and_wizard(client, analyst_headers):
 
     dom = _class(client, analyst_headers, "Drug")
     resp = client.post(
-        DATAP + "/risk",
+        DATAP,
         json={
             "slpra_iri": BASE + "oebLevel",
             "label": "OEB等级",
             "domain_iri": dom,
             "datatype": "string",
-            "vocab": "OEB",
+            "controlled_vocab": {"vocab": "OEB", "values": ["OEB1", "OEB2", "OEB3", "OEB4", "OEB5"]},
         },
         headers=analyst_headers,
     )
     assert resp.status_code == 201
     assert resp.json()["controlled_vocab"]["vocab"] == "OEB"
+
+    vocabs2 = client.get("/api/ontology/risk-vocabularies", headers=analyst_headers).json()
+    assert any(v["key"] == "OEB" for v in vocabs2)
 
 
 # --- §7 action (definition only) -------------------------------------------

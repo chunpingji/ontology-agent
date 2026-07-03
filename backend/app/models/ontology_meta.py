@@ -37,8 +37,23 @@ EDITABLE_STATUSES = (STATUS_DRAFT, STATUS_IN_REVIEW, STATUS_PUBLISHED)
 DATATYPES = ("string", "integer", "decimal", "boolean", "date", "dateTime", "anyURI")
 RESTRICTION_KINDS = ("some", "only", "exactly", "min", "max", "disjoint", "equivalent")
 PROPERTY_KINDS = ("object", "data")
-MAPPING_TYPES = ("slpra_iri", "bfo", "source_field")
+# E6 class-binding mapping types. The first three are the legacy T-Box mapping
+# kinds; the source-entity trio (added for 014 dynamic mapping, R1/FR-001) binds
+# a class to a concrete source locator carried in `target` (table / endpoint /
+# doc pattern) with `source_system` holding the Source Connection ref.
+MAPPING_TYPES = (
+    "slpra_iri", "bfo", "source_field",  # legacy T-Box mappings
+    "db_table", "api_endpoint", "doc_pattern",  # source-entity bindings (014)
+)
+# Source-entity types drive extraction and carry the (class, source) uniqueness
+# constraint + property-binding layer (E6b); legacy types do not.
+SOURCE_ENTITY_MAPPING_TYPES = ("db_table", "api_endpoint", "doc_pattern")
 HEALTH_STATES = ("ok", "unmapped", "drift", "orphan")
+
+# E6b property-binding vocabularies (014, R2/R4/R6).
+BINDING_PROPERTY_KINDS = ("data", "object")
+TRANSFORM_TYPES = ("none", "controlled_vocab", "pattern", "cast")
+OBJECT_RESOLUTIONS = ("id_reference", "nested_object")
 CHANGE_KINDS = ("create", "update", "delete", "disable")
 ROLE_NAMES = ("senior_analyst", "operator", "qa")
 
@@ -202,6 +217,56 @@ class OntologyClassMapping(VersionMixin, TimestampMixin, Base):
     target: Mapped[str] = mapped_column(String(500), nullable=False)
     source_system: Mapped[str | None] = mapped_column(String(50))
     health: Mapped[str] = mapped_column(String(20), default="ok")
+
+    # E6b property bindings owned by this class binding (source-entity types).
+    property_bindings: Mapped[list["OntologyPropertyBinding"]] = relationship(
+        "OntologyPropertyBinding",
+        back_populates="class_mapping",
+        foreign_keys="OntologyPropertyBinding.class_mapping_id",
+        cascade="all, delete-orphan",
+    )
+
+
+# --- E6b ontology_property_binding (014, R2) --------------------------------
+class OntologyPropertyBinding(VersionMixin, TimestampMixin, Base):
+    """Maps one ontology data/object property to a concrete source field.
+
+    Owned by an E6 class binding (``class_mapping_id``, CASCADE). Carries the
+    per-property source path, value transform, alignment flags (identifier /
+    label), and — for object properties — the resolution mode (``id_reference``
+    against an existing individual, or ``nested_object`` recursing into a child
+    class binding). See data-model.md §2.
+    """
+
+    __tablename__ = "ontology_property_binding"
+
+    id: Mapped[uuid.UUID] = mapped_column(GUID(), primary_key=True, default=_uuid)
+    class_mapping_id: Mapped[uuid.UUID] = mapped_column(
+        GUID(),
+        ForeignKey("ontology_class_mapping.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    property_iri: Mapped[str] = mapped_column(String(500), nullable=False)
+    property_kind: Mapped[str] = mapped_column(String(10), nullable=False, default="data")
+    source_path: Mapped[str] = mapped_column(String(500), nullable=False)
+    transform_type: Mapped[str] = mapped_column(String(20), nullable=False, default="none")
+    transform_config: Mapped[dict | None] = mapped_column(JSON)
+    is_identifier: Mapped[bool] = mapped_column(Boolean, default=False)
+    is_label: Mapped[bool] = mapped_column(Boolean, default=False)
+    object_resolution: Mapped[str | None] = mapped_column(String(20))
+    target_class_iri: Mapped[str | None] = mapped_column(String(500))
+    target_id_path: Mapped[str | None] = mapped_column(String(500))
+    # object/nested_object: the child E6 class binding that types the sub-candidate.
+    nested_binding_id: Mapped[uuid.UUID | None] = mapped_column(
+        GUID(), ForeignKey("ontology_class_mapping.id")
+    )
+
+    class_mapping: Mapped[OntologyClassMapping] = relationship(
+        "OntologyClassMapping",
+        back_populates="property_bindings",
+        foreign_keys=[class_mapping_id],
+    )
 
 
 # --- E7 ontology_release ----------------------------------------------------

@@ -19,6 +19,7 @@ from app.models.ontology_meta import (
     OntologyDataProperty,
     OntologyDecisionRule,
     OntologyLinkType,
+    OntologyPropertyBinding,
     OntologyRelease,
     OntologyRestriction,
 )
@@ -39,6 +40,7 @@ __all__ = [
     "OntologyAction",
     "OntologyRestriction",
     "OntologyClassMapping",
+    "OntologyPropertyBinding",
     "OntologyRelease",
     "OntologyChangeLog",
     "OntologyClassificationCriterion",

@@ -12,6 +12,7 @@ single Git commit.
 from __future__ import annotations
 
 import logging
+import re
 import subprocess
 import uuid
 from datetime import datetime, timezone
@@ -24,11 +25,14 @@ from sqlalchemy.orm import Session
 
 from app.config import settings
 from app.models.ontology_meta import (
+    BINDING_PROPERTY_KINDS,
     DATATYPES,
     MAPPING_TYPES,
+    OBJECT_RESOLUTIONS,
     PROPERTY_KINDS,
     RESTRICTION_KINDS,
     RULE_GROUPS,
+    SOURCE_ENTITY_MAPPING_TYPES,
     STATUS_DRAFT,
     STATUS_IN_REVIEW,
     STATUS_PUBLISHED,
@@ -42,11 +46,13 @@ from app.models.ontology_meta import (
     OntologyDataProperty,
     OntologyDecisionRule,
     OntologyLinkType,
+    OntologyPropertyBinding,
     OntologyRelease,
     OntologyRestriction,
 )
 from app.models.reasoning import AuditLog
 from app.services import ttl_merge
+from app.services.extraction.transforms import validate_transform_config
 from app.services.reasoning import interpreter
 from app.services.reasoning.defaults import (
     VERIFIED_EXTERNAL_ALIGNMENTS,
@@ -63,8 +69,10 @@ logger = logging.getLogger(__name__)
 
 MANAGED_PREFIX = "https://ontology.pharma-gmp.cn/slpra/"
 
-# Controlled vocabularies for the risk-attribute wizard (§4b, FR-010).
-RISK_VOCABULARIES = {
+# Bootstrap seeds for the risk-attribute wizard (§4b, FR-010).  Once an analyst
+# creates a data property carrying one of these vocabs, the DB copy becomes the
+# source of truth and the seed is only used for keys not yet in the DB.
+_SEED_RISK_VOCABULARIES: dict[str, dict] = {
     "OEB": {
         "label": "职业暴露等级 (Occupational Exposure Band)",
         "values": ["OEB1", "OEB2", "OEB3", "OEB4", "OEB5"],
@@ -266,6 +274,25 @@ class OntologyMetaStore:
             "health": m.health,
             "version": m.version,
             "status": m.status,
+        }
+
+    def _prop_binding_dto(self, pb: OntologyPropertyBinding) -> dict:
+        return {
+            "id": str(pb.id),
+            "class_mapping_id": str(pb.class_mapping_id),
+            "property_iri": pb.property_iri,
+            "property_kind": pb.property_kind,
+            "source_path": pb.source_path,
+            "transform_type": pb.transform_type,
+            "transform_config": pb.transform_config,
+            "is_identifier": bool(pb.is_identifier),
+            "is_label": bool(pb.is_label),
+            "object_resolution": pb.object_resolution,
+            "target_class_iri": pb.target_class_iri,
+            "target_id_path": pb.target_id_path,
+            "nested_binding_id": str(pb.nested_binding_id) if pb.nested_binding_id else None,
+            "version": pb.version,
+            "status": pb.status,
         }
 
     def class_detail(self, c: OntologyClass) -> dict:
@@ -569,21 +596,6 @@ class OntologyMetaStore:
         self.audit("data_property.create", dp.slpra_iri, actor)
         return self.data_property_detail(dp)
 
-    def create_risk_data_property(self, payload, actor: str) -> dict:
-        vocab = RISK_VOCABULARIES.get(payload.vocab)
-        if not vocab:
-            raise HTTPException(status_code=400, detail=f"未知受控词表：{payload.vocab}")
-
-        class _P:  # adapt to create_data_property's expected attrs
-            slpra_iri = payload.slpra_iri
-            label = payload.label
-            comment = vocab["label"]
-            domain_iri = payload.domain_iri
-            datatype = payload.datatype
-            unit = None
-            controlled_vocab = {"vocab": payload.vocab, "values": vocab["values"]}
-
-        return self.create_data_property(_P(), actor)
 
     def update_data_property(self, iri: str, payload, actor: str) -> dict:
         dp = self.db.query(OntologyDataProperty).filter_by(slpra_iri=iri).first()
@@ -610,10 +622,29 @@ class OntologyMetaStore:
         self.audit("data_property.delete", iri, actor)
 
     def risk_vocabularies(self) -> list[dict]:
-        return [
-            {"key": k, "label": v["label"], "values": v["values"]}
-            for k, v in RISK_VOCABULARIES.items()
-        ]
+        """Dynamic vocab listing: DB entries take precedence, seeds fill gaps."""
+        seen: dict[str, dict] = {}
+        for dp in (
+            self.db.query(OntologyDataProperty)
+            .filter(
+                OntologyDataProperty.controlled_vocab.isnot(None),
+                OntologyDataProperty.is_disabled.is_(False),
+            )
+            .all()
+        ):
+            cv = dp.controlled_vocab or {}
+            key = cv.get("vocab")
+            if not key or key in seen:
+                continue
+            seen[key] = {
+                "key": key,
+                "label": cv.get("label") or dp.label or key,
+                "values": cv.get("values") or [],
+            }
+        for k, v in _SEED_RISK_VOCABULARIES.items():
+            if k not in seen:
+                seen[k] = {"key": k, "label": v["label"], "values": v["values"]}
+        return list(seen.values())
 
     # =================================================================== #
     # E4 Action CRUD (definition only, R10)
@@ -1113,6 +1144,54 @@ class OntologyMetaStore:
     # =================================================================== #
     # E6 Mapping CRUD + health
     # =================================================================== #
+    # A raw DSN/URL leaks a credential-bearing string into the DB; a class
+    # binding's ``source_system`` must instead be a reference: an env-var *name*
+    # or an IntegrationConnector id (FR-006/C3). Reject anything URL-shaped.
+    _SOURCE_REF_RE = re.compile(r"^[A-Za-z_][\w.\-]*$")
+
+    def _check_source_entity_binding(
+        self,
+        class_id: uuid.UUID,
+        payload,
+        exclude_id: uuid.UUID | None = None,
+    ) -> None:
+        """Enforce the source-entity class-binding rules C1–C3 (FR-024/FR-006).
+
+        Only applies to the source-entity mapping types (db_table/api_endpoint/
+        doc_pattern); legacy T-Box mappings are unaffected.
+        """
+        if payload.mapping_type not in SOURCE_ENTITY_MAPPING_TYPES:
+            return
+        # C2 — a source-entity binding must carry a non-empty locator in `target`.
+        if not (payload.target or "").strip():
+            raise HTTPException(
+                status_code=422,
+                detail=f"{payload.mapping_type} 绑定必须提供非空 target（表名/端点/文档模式）",
+            )
+        source = (payload.source_system or "").strip()
+        # C3 — `source_system` is a *reference*, never a DSN/credential string.
+        if not source or "://" in source or "@" in source or not self._SOURCE_REF_RE.match(source):
+            raise HTTPException(
+                status_code=422,
+                detail="source_system 必须是环境变量名或连接器 id，不能是 DSN/凭据串（FR-006）",
+            )
+        # C1 — at most one source-entity binding per (class, source_system).
+        dup = (
+            self.db.query(OntologyClassMapping)
+            .filter(
+                OntologyClassMapping.class_id == class_id,
+                OntologyClassMapping.source_system == source,
+                OntologyClassMapping.mapping_type.in_(SOURCE_ENTITY_MAPPING_TYPES),
+            )
+        )
+        if exclude_id is not None:
+            dup = dup.filter(OntologyClassMapping.id != exclude_id)
+        if dup.first() is not None:
+            raise HTTPException(
+                status_code=409,
+                detail=f"该类已存在指向 {source} 的源实体绑定（class, source 唯一, C1/FR-024）",
+            )
+
     def list_mappings(self, class_iri: str) -> list[dict]:
         c = self._require_class(class_iri)
         return [
@@ -1124,6 +1203,7 @@ class OntologyMetaStore:
         c = self._require_class(class_iri)
         if payload.mapping_type not in MAPPING_TYPES:
             raise HTTPException(status_code=400, detail=f"非法 mapping_type：{payload.mapping_type}")
+        self._check_source_entity_binding(c.id, payload)
         m = OntologyClassMapping(
             class_id=c.id,
             mapping_type=payload.mapping_type,
@@ -1145,6 +1225,7 @@ class OntologyMetaStore:
             raise HTTPException(status_code=404, detail="映射不存在")
         if payload.mapping_type not in MAPPING_TYPES:
             raise HTTPException(status_code=400, detail=f"非法 mapping_type：{payload.mapping_type}")
+        self._check_source_entity_binding(m.class_id, payload, exclude_id=m.id)
         changes = {
             "mapping_type": payload.mapping_type,
             "target": payload.target,
@@ -1192,6 +1273,237 @@ class OntologyMetaStore:
             else:
                 unmapped.append(c.slpra_iri)
         return {"ok": ok, "unmapped": unmapped, "drift": drift, "orphan": orphan}
+
+    # =================================================================== #
+    # E6b Property-binding CRUD + validation (014, FR-002/FR-005)
+    # =================================================================== #
+    def _require_class_binding(self, mid: str) -> OntologyClassMapping:
+        try:
+            m = self.db.get(OntologyClassMapping, uuid.UUID(mid))
+        except (ValueError, AttributeError):
+            m = None
+        if not m:
+            raise HTTPException(status_code=404, detail="类绑定不存在")
+        return m
+
+    def _require_property_binding(self, pid: str) -> OntologyPropertyBinding:
+        try:
+            pb = self.db.get(OntologyPropertyBinding, uuid.UUID(pid))
+        except (ValueError, AttributeError):
+            pb = None
+        if not pb:
+            raise HTTPException(status_code=404, detail="属性绑定不存在")
+        return pb
+
+    def _domain_property_iris(self, class_iri: str, kind: str) -> set[str]:
+        """IRIs of the properties whose *declared* domain is this class (FR-013).
+
+        Domain-literal (no ancestor walk): the gate binds a property only to the
+        class it is declared on, mirroring the engine's `*_by_domain` surface.
+        """
+        try:
+            if kind == "object":
+                props = self.engine.get_object_properties_by_domain(class_iri) or []
+            else:
+                props = self.engine.get_data_properties_by_domain(class_iri) or []
+        except Exception:  # noqa: BLE001 — engine read must never break validation
+            return set()
+        return {p.get("iri") for p in props if isinstance(p, dict) and p.get("iri")}
+
+    def _validate_property_binding(
+        self, class_iri: str | None, payload, exclude_id: uuid.UUID | None,
+        class_mapping_id: uuid.UUID,
+    ) -> tuple[list[dict], list[dict]]:
+        """FR-005 validation rules V1–V5. Returns (errors, warnings)."""
+        errors: list[dict] = []
+        warnings: list[dict] = []
+        piri = payload.property_iri
+        kind = payload.property_kind or "data"
+        if kind not in BINDING_PROPERTY_KINDS:
+            errors.append({"code": "binding_kind", "message": f"非法 property_kind：{kind}",
+                           "entity_iri": piri})
+
+        # V2 — property exists & enabled. Draft metadata (E2/E3) is the source of
+        # truth for the disabled flag; the published engine never carries disabled
+        # props, so a disabled row is caught here.
+        dp = self.db.query(OntologyDataProperty).filter_by(slpra_iri=piri).first()
+        lt = self.db.query(OntologyLinkType).filter_by(slpra_iri=piri).first()
+        meta = dp or lt
+        if meta is not None and getattr(meta, "is_disabled", False):
+            errors.append({"code": "binding_property_disabled",
+                           "message": f"属性已停用：{piri}", "entity_iri": piri})
+
+        # V1 — domain gate. A property not declared on this class (domain-literal)
+        # fails the gate; a truly-missing property is subsumed here (it is in no
+        # class's domain set).
+        if class_iri:
+            allowed = self._domain_property_iris(class_iri, kind)
+            if allowed and piri not in allowed:
+                errors.append({
+                    "code": "binding_domain",
+                    "message": f"属性 {piri} 的定义域不包含类 {class_iri}（FR-013）",
+                    "entity_iri": piri,
+                })
+
+        # V3 — object-property shape.
+        if kind == "object":
+            res = payload.object_resolution
+            if res not in OBJECT_RESOLUTIONS:
+                errors.append({"code": "binding_object_shape",
+                               "message": "对象属性必须声明 object_resolution（id_reference|nested_object）",
+                               "entity_iri": piri})
+            elif res == "id_reference" and not (payload.target_class_iri and payload.target_id_path):
+                errors.append({"code": "binding_object_shape",
+                               "message": "id_reference 需 target_class_iri + target_id_path",
+                               "entity_iri": piri})
+            elif res == "nested_object" and not payload.nested_binding_id:
+                errors.append({"code": "binding_object_shape",
+                               "message": "nested_object 需 nested_binding_id（子类绑定）",
+                               "entity_iri": piri})
+
+        # V4 — at most one identifier per class binding.
+        if payload.is_identifier:
+            q = self.db.query(OntologyPropertyBinding).filter(
+                OntologyPropertyBinding.class_mapping_id == class_mapping_id,
+                OntologyPropertyBinding.is_identifier.is_(True),
+            )
+            if exclude_id is not None:
+                q = q.filter(OntologyPropertyBinding.id != exclude_id)
+            if q.first() is not None:
+                errors.append({"code": "binding_identifier",
+                               "message": "同一类绑定只能有一个 is_identifier 属性",
+                               "entity_iri": piri})
+
+        # V5 — transform config well-formedness (reuses the transform seam, R6).
+        if payload.transform_type and payload.transform_type != "none":
+            msg = validate_transform_config(payload.transform_type, payload.transform_config)
+            if msg:
+                errors.append({"code": "binding_transform", "message": msg, "entity_iri": piri})
+
+        return errors, warnings
+
+    def list_property_bindings(self, mid: str) -> list[dict]:
+        m = self._require_class_binding(mid)
+        rows = (
+            self.db.query(OntologyPropertyBinding)
+            .filter_by(class_mapping_id=m.id)
+            .all()
+        )
+        return [self._prop_binding_dto(pb) for pb in rows]
+
+    def create_property_binding(self, mid: str, payload, actor: str) -> dict:
+        m = self._require_class_binding(mid)
+        class_iri = self._iri_of_class(m.class_id)
+        errors, warnings = self._validate_property_binding(
+            class_iri, payload, exclude_id=None, class_mapping_id=m.id
+        )
+        if errors:
+            raise HTTPException(status_code=422, detail={"errors": errors, "warnings": warnings})
+        pb = OntologyPropertyBinding(
+            class_mapping_id=m.id,
+            property_iri=payload.property_iri,
+            property_kind=payload.property_kind or "data",
+            source_path=payload.source_path,
+            transform_type=payload.transform_type or "none",
+            transform_config=payload.transform_config,
+            is_identifier=bool(payload.is_identifier),
+            is_label=bool(payload.is_label),
+            object_resolution=payload.object_resolution,
+            target_class_iri=payload.target_class_iri,
+            target_id_path=payload.target_id_path,
+            nested_binding_id=(
+                uuid.UUID(payload.nested_binding_id) if payload.nested_binding_id else None
+            ),
+            created_by=self._user_id(actor),
+            updated_by=self._user_id(actor),
+        )
+        self.db.add(pb)
+        self.db.commit()
+        self.db.refresh(pb)
+        self.audit("property_binding.create", class_iri, actor,
+                   details={"property_iri": payload.property_iri})
+        return self._prop_binding_dto(pb)
+
+    def update_property_binding(self, pid: str, payload, actor: str) -> dict:
+        pb = self._require_property_binding(pid)
+        class_iri = self._iri_of_class(
+            self.db.get(OntologyClassMapping, pb.class_mapping_id).class_id
+        )
+        errors, warnings = self._validate_property_binding(
+            class_iri, payload, exclude_id=pb.id, class_mapping_id=pb.class_mapping_id
+        )
+        if errors:
+            raise HTTPException(status_code=422, detail={"errors": errors, "warnings": warnings})
+        changes = {
+            "property_iri": payload.property_iri,
+            "property_kind": payload.property_kind or "data",
+            "source_path": payload.source_path,
+            "transform_type": payload.transform_type or "none",
+            "transform_config": payload.transform_config,
+            "is_identifier": bool(payload.is_identifier),
+            "is_label": bool(payload.is_label),
+            "object_resolution": payload.object_resolution,
+            "target_class_iri": payload.target_class_iri,
+            "target_id_path": payload.target_id_path,
+            "nested_binding_id": (
+                uuid.UUID(payload.nested_binding_id) if payload.nested_binding_id else None
+            ),
+            "updated_by": self._user_id(actor),
+        }
+        pb = self._cas_update(
+            OntologyPropertyBinding, pb.id, payload.expected_version, changes
+        )
+        self.audit("property_binding.update", class_iri, actor)
+        return self._prop_binding_dto(pb)
+
+    def delete_property_binding(self, pid: str, expected_version: int, actor: str) -> None:
+        pb = self._require_property_binding(pid)
+        class_iri = self._iri_of_class(
+            self.db.get(OntologyClassMapping, pb.class_mapping_id).class_id
+        )
+        stmt = (
+            update(OntologyPropertyBinding)
+            .where(
+                OntologyPropertyBinding.id == pb.id,
+                OntologyPropertyBinding.version == expected_version,
+            )
+            .values(version=OntologyPropertyBinding.version + 1)
+        )
+        if self.db.execute(stmt).rowcount == 0:
+            self.db.rollback()
+            raise HTTPException(status_code=409, detail="版本冲突")
+        self.db.delete(self.db.get(OntologyPropertyBinding, pb.id))
+        self.db.commit()
+        self.audit("property_binding.delete", class_iri, actor)
+
+    def validate_binding(self, mid: str) -> dict:
+        """Validate a class binding + all its property bindings (FR-005/FR-021).
+
+        Aggregates each property binding's V1–V5 outcome plus a class-level health
+        signal, without extracting. Drives the binding-editor validation panel.
+        """
+        m = self._require_class_binding(mid)
+        class_iri = self._iri_of_class(m.class_id)
+        errors: list[dict] = []
+        warnings: list[dict] = []
+        bindings = (
+            self.db.query(OntologyPropertyBinding).filter_by(class_mapping_id=m.id).all()
+        )
+        for pb in bindings:
+            e, w = self._validate_property_binding(
+                class_iri, pb, exclude_id=pb.id, class_mapping_id=m.id
+            )
+            errors.extend(e)
+            warnings.extend(w)
+        # A source-entity binding with no property bindings cannot extract → unmapped.
+        health = "ok"
+        if m.mapping_type in SOURCE_ENTITY_MAPPING_TYPES and not bindings:
+            health = "unmapped"
+            warnings.append({"code": "binding_no_properties",
+                             "message": "源实体绑定尚未声明任何属性绑定", "entity_iri": class_iri})
+        elif errors:
+            health = "drift"
+        return {"health": health, "errors": errors, "warnings": warnings}
 
     # =================================================================== #
     # Validation (R9, §8)

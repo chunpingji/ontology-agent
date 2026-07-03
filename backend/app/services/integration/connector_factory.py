@@ -65,6 +65,28 @@ def connector_for(connector: IntegrationConnector) -> ExternalSystemConnector:
             connector.connection_config, connector.field_mapping, timeout=timeout
         )
 
+    if system_type == "rest_api":
+        # 延迟导入：US2 通用 REST/JSON 源连接器；声明驱动抽取的 api_endpoint 读取器经此取实例。
+        from app.services.integration.rest_connector import RestConnector
+
+        return RestConnector(
+            connector.connection_config, connector.field_mapping, timeout=timeout
+        )
+
+    if system_type == "database":
+        from app.services.integration.db_connector import DatabaseConnector
+
+        return DatabaseConnector(
+            connector.connection_config, connector.field_mapping, timeout=timeout
+        )
+
+    if system_type == "file":
+        from app.services.integration.file_connector import FileConnector
+
+        return FileConnector(
+            connector.connection_config, connector.field_mapping, timeout=timeout
+        )
+
     # 'aps' 及任何未知/缺省/None → APSConnector（默认回退，零回归红线 C1.1/C1.3）。
     return APSConnector(
         connector.connection_config, connector.field_mapping, timeout=timeout

@@ -38,6 +38,7 @@ from app.schemas.ontology import (
     DecisionRuleUpdate,
     DiffResult,
     ImportResult,
+    BindingValidationReport,
     LinkTypeCreate,
     LinkTypeDetail,
     LinkTypeUpdate,
@@ -46,13 +47,15 @@ from app.schemas.ontology import (
     MappingHealth,
     MappingUpdate,
     ModuleResponse,
+    PropertyBinding,
+    PropertyBindingCreate,
+    PropertyBindingUpdate,
     RelationSchemaEdge,
     ReleaseDetail,
     ReleaseSummary,
     RestrictionCreate,
     RestrictionSummary,
     RestrictionUpdate,
-    RiskDataPropertyCreate,
     RiskVocabulary,
     TreeNodeResponse,
     ValidationReport,
@@ -261,14 +264,6 @@ def list_data_properties(
     include_inherited=true 时并入继承自祖先类的属性。"""
     return store.list_data_properties(domain_iri, include_inherited)
 
-
-@router.post("/data-properties/risk", response_model=DataPropertyDetail, status_code=201)
-def create_risk_data_property(
-    payload: RiskDataPropertyCreate,
-    identity: Identity = Depends(_writer),
-    store: OntologyMetaStore = Depends(get_ontology_meta_store),
-):
-    return store.create_risk_data_property(payload, identity.username)
 
 
 @router.post("/data-properties", response_model=DataPropertyDetail, status_code=201)
@@ -525,6 +520,57 @@ def delete_mapping(
     store: OntologyMetaStore = Depends(get_ontology_meta_store),
 ):
     store.delete_mapping(mid, expected_version, identity.username)
+    return Response(status_code=204)
+
+
+# ===========================================================================
+# E6b 属性绑定 CRUD + 绑定校验（014 dynamic mapping, contracts §2）
+# 静态前缀 /mappings、/property-bindings，均在贪婪 GET /classes/{iri:path} 之前。
+# ===========================================================================
+@router.get("/mappings/{mid}/property-bindings", response_model=list[PropertyBinding])
+def list_property_bindings(
+    mid: str, store: OntologyMetaStore = Depends(get_ontology_meta_store)
+):
+    return store.list_property_bindings(mid)
+
+
+@router.post(
+    "/mappings/{mid}/property-bindings", response_model=PropertyBinding, status_code=201
+)
+def create_property_binding(
+    mid: str,
+    payload: PropertyBindingCreate,
+    identity: Identity = Depends(_writer),
+    store: OntologyMetaStore = Depends(get_ontology_meta_store),
+):
+    return store.create_property_binding(mid, payload, identity.username)
+
+
+@router.post("/mappings/{mid}/validate", response_model=BindingValidationReport)
+def validate_binding(
+    mid: str, store: OntologyMetaStore = Depends(get_ontology_meta_store)
+):
+    return store.validate_binding(mid)
+
+
+@router.put("/property-bindings/{pid}", response_model=PropertyBinding)
+def update_property_binding(
+    pid: str,
+    payload: PropertyBindingUpdate,
+    identity: Identity = Depends(_writer),
+    store: OntologyMetaStore = Depends(get_ontology_meta_store),
+):
+    return store.update_property_binding(pid, payload, identity.username)
+
+
+@router.delete("/property-bindings/{pid}", status_code=204)
+def delete_property_binding(
+    pid: str,
+    expected_version: int,
+    identity: Identity = Depends(_writer),
+    store: OntologyMetaStore = Depends(get_ontology_meta_store),
+):
+    store.delete_property_binding(pid, expected_version, identity.username)
     return Response(status_code=204)
 
 

@@ -54,6 +54,8 @@ class OntologyClassMapping(VersionMixin, TimestampMixin, Base):
 
 ## 3. 已确认的 6 个 GAP
 
+> **交付状态（feature 014 · 声明驱动映射，2026-07）**：分层声明驱动映射管线已落地 —— E6 `mapping_type` 扩展 + 新增 E6b `OntologyPropertyMapping`（属性级绑定，迁移 `0013_property_binding`）成为运行时**唯一映射源**，DB / API / 文件三条路径统一产出 edges；`edges_to_facts` 已本体感知化；对齐器已层级感知。**GAP-1 / GAP-2 / GAP-5 / GAP-6 已解决**；**GAP-3（端点 finder 硬编码）与 GAP-4 的「运行时动态属性发现」维度延期（deferred）** —— 详见各条目「状态」标注与 §6 实施路线。
+
 ### GAP-1: E6 Mapping 是死数据 — 无运行时消费者
 
 **位置**: `ontology_meta.py:193-204`, `ontology_meta_store.py:259`
@@ -61,6 +63,8 @@ class OntologyClassMapping(VersionMixin, TimestampMixin, Base):
 **现象**: `OntologyClassMapping` 维护了 `slpra_iri`/`bfo`/`source_field` 三种映射类型，但这些映射仅在 `_mapping_dto` 中序列化供前端展示。`ExtractionConfig.column_mapping` 和模板 slot `source` 是完全独立的硬编码映射，未读取 E6。
 
 **影响**: 分析师在本体编辑器中维护的映射声明与实际抽取管线脱节 — 改映射不影响抽取行为。
+
+**状态（✅ 已解决 / 014）**: E6 `mapping_type` + E6b 属性级绑定成为运行时抽取映射源，`db_reader`/`api_reader` 直接消费；`property-binding-editor.tsx` 提供属性级绑定编辑。改绑定即改抽取。
 
 ### GAP-2: `edges_to_facts` 映射逻辑硬编码，不查询本体
 
@@ -74,6 +78,8 @@ class OntologyClassMapping(VersionMixin, TimestampMixin, Base):
 
 **影响**: 本体中新增/修改 data property 或 link type 后，`Facts` 构建不会自动适配；需要手动修改 Python 代码。
 
+**状态（✅ 已解决 / 014 US3）**: `edges_to_facts` 接入 `OntologyEngine`（`get_subclasses` 判成员、`get_data_properties_by_domain` 域门控、新增 `get_class_alignments` 填充对齐、`controlled_vocab` 归一化），消除 `"DrugProduct" in obj_class` 子串判定。
+
 ### GAP-3: 端点 finder 按 range IRI 硬编码注册
 
 **位置**: `relation_extractor.py:614` (`_ENDPOINT_FINDERS` 字典)
@@ -82,15 +88,19 @@ class OntologyClassMapping(VersionMixin, TimestampMixin, Base):
 
 **影响**: 本体扩展无法自动获得关系抽取能力，新类 = 新代码。
 
+**状态（⏸ 延期 deferred / 014 未纳入）**: 端点 finder 仍按 `range_iri` 在 `_ENDPOINT_FINDERS` 静态注册。从本体 schema 自动派生关系抽取逻辑属于运行时元编程，超出「声明驱动映射」范围，留待后续特性。
+
 ### GAP-4: AST 模板 slot `source` 静态声明 — 无动态属性发现
 
 **位置**: 模板 JSON 中 slot 的 `source` 字段
 
 **现象**: slot 的 `source` 配置（`extraction`/`rule`/`manual`/`constant`）在模板 JSON 中硬编码，包括 `object_class_iri_contains`、`data_property`、`relation` 等匹配条件。slot 与本体属性的绑定是人工维护的静态声明，非从本体 class→property 关系动态推导。
 
-013 的 `suggest-slots` 功能将通过 LLM 辅助建议绑定，但仍是一次性建议→人工采纳，非运行时动态。
+013 的 `suggest-slots` 功能已实现 LLM 辅助建议绑定（`slot_suggester.py`、API `/api/ast-templates/suggest-slots`、配置开关 `llm_suggest_slots_enabled`），但仍是一次性建议→人工采纳，非运行时动态。
 
 **影响**: 本体 schema 变更（新增/重命名属性）后，模板必须手动更新 slot 绑定。
+
+**状态（◐ 部分 / 运行时维度 ⏸ 延期 deferred）**: 014 通过 E6b 属性级绑定使 **DB/API 抽取**的属性映射声明化、运行时可改。但 **AST 模板 slot 的运行时动态属性发现**（schema 变更即时反映到 slot 绑定、无需人工采纳）未纳入，仍依赖 013 的一次性 `suggest-slots` 建议 → 人工采纳。运行时动态维度延期。
 
 ### GAP-5: `Facts.alignments` 字段未使用
 
@@ -100,6 +110,8 @@ class OntologyClassMapping(VersionMixin, TimestampMixin, Base):
 
 **影响**: 无法将外部标准体系（如 IDMP、ICH Q9）的类映射纳入推理判定。
 
+**状态（✅ 已解决 / 014 US3）**: `edges_to_facts` 经新增 `OntologyEngine.get_class_alignments`（读取 `owl:equivalentClass`/`skos:exactMatch|closeMatch` 到非受管外部 IRI）填充 `Facts.alignments`，解释器 `external_alignment` 算子消费。
+
 ### GAP-6: 实体对齐不感知本体层级
 
 **位置**: `aligner.py:25-104`
@@ -107,6 +119,8 @@ class OntologyClassMapping(VersionMixin, TimestampMixin, Base):
 **现象**: `align_entity` 只在同一 `target_class_iri` 的现有个体中匹配。不查询 `rdfs:subClassOf` 层级 — 如果候选实体实际上匹配一个子类或父类的已有个体，对齐会漏掉（返回 `action="new"` 而非 `merge`）。
 
 **影响**: 多层级类体系下，跨层级的重复实体无法自动识别。
+
+**状态（✅ 已解决 / 014 US4）**: `align_entity` 沿子类（`get_subclasses`）/父类（`parent_iris` 递归，深度有界）链搜索现有个体并去重，记录 `matched_level`（subclass/same/parent）+ `method`；precedence 子类→同类→父类；等秩歧义不自动合并，转人工复核（`action="review"` + `ambiguous_iris`）。
 
 ---
 
@@ -373,36 +387,41 @@ def edges_to_facts(edges: list[dict], engine: OntologyEngine | None = None) -> F
 - [x] 三类事实源需求对照
 - [x] 分层架构方案设计
 
-### Phase 1: E6 扩展 + E6b 新增（数据模型）
+### Phase 1: E6 扩展 + E6b 新增（数据模型） — feature 014 ✅ 已交付
 
-- [ ] 扩展 `MAPPING_TYPES` 枚举（`db_table`, `api_endpoint`, `doc_class`）
-- [ ] 新增 `OntologyPropertyMapping` (E6b) 表 + Alembic 迁移
-- [ ] 扩展 `ontology_meta_store.py` CRUD
-- [ ] 扩展 `ontology-mapping-panel.tsx` UI：属性级绑定编辑器
+- [x] 扩展 `MAPPING_TYPES` 枚举（`db_table`, `api_endpoint`, `doc_class`）
+- [x] 新增 `OntologyPropertyMapping` (E6b) 表 + Alembic 迁移（`0013_property_binding`）
+- [x] 扩展 `ontology_meta_store.py` CRUD
+- [x] 扩展 UI：属性级绑定编辑器（`property-binding-editor.tsx` + `ontology-mapping-panel.tsx`）
 
-### Phase 2: DB Adapter 驱动（消费 E6/E6b）
+### Phase 2: DB Adapter 驱动（消费 E6/E6b） — feature 014 ✅ 已交付（US1）
 
-- [ ] `db_reader.py` 从 E6b 读取列→属性映射（取代纯结构反射）
-- [ ] 产出统一 edges 格式（复用已有 pipeline 下游）
-- [ ] `_run_database_branch` 从 E6 读取表→类映射（取代 `config.target_class_iri` 手填）
+- [x] `db_reader.py` 从 E6b 读取列→属性映射（取代纯结构反射）
+- [x] 产出统一 edges 格式（复用已有 pipeline 下游）
+- [x] `_run_database_branch` 从 E6 读取表→类映射（取代 `config.target_class_iri` 手填）
 
-### Phase 3: API Adapter（新增）
+### Phase 3: API Adapter（新增） — feature 014 ✅ 已交付（US2）
 
-- [ ] 新增 `api_reader.py`：从 Connector 拉取 + E6b JSON path 绑定
-- [ ] `pipeline.py` 新增 `source_type="api"` 分支
-- [ ] Connector 框架扩展：认证管理、分页策略、限流
+- [x] 新增 `api_reader.py`：从 Connector 拉取 + E6b JSON path 绑定
+- [x] `pipeline.py` 新增 `source_type="api"` 分支
+- [x] Connector 框架：认证（仅 `*_env` 引用，凭据不落库）、内网端点校验（公网/云 → 422）、分页；限流留待后续（非本特性焦点）
 
-### Phase 4: `edges_to_facts` 本体感知化
+### Phase 4: `edges_to_facts` 本体感知化 — feature 014 ✅ 已交付（US3）
 
-- [ ] 接入 `OntologyEngine` 查询 domain/range
-- [ ] 消除硬编码 `DrugProduct` 判断
-- [ ] 填充 `alignments` 字段
-- [ ] 受控词表自动对齐
+- [x] 接入 `OntologyEngine` 查询 domain/subclass/alignment
+- [x] 消除硬编码 `DrugProduct` 判断
+- [x] 填充 `alignments` 字段
+- [x] 受控词表自动对齐
 
-### Phase 5: 对齐器层级感知
+### Phase 5: 对齐器层级感知 — feature 014 ✅ 已交付（US4）
 
-- [ ] `align_entity` 查询 `rdfs:subClassOf` 链，跨层级匹配
-- [ ] 回退策略：子类优先 → 同类 → 父类
+- [x] `align_entity` 沿子类/父类链搜索现有个体（`get_subclasses` + `parent_iris` 递归），跨层级匹配
+- [x] 回退策略：子类优先 → 同类 → 父类；等秩歧义转人工复核（`action="review"`）
+
+### Phase 6: 延期项（deferred — feature 014 未纳入）
+
+- [ ] **GAP-3**：端点 finder 从本体 schema 自动派生（`_ENDPOINT_FINDERS` 静态注册未改）—— 运行时元编程，超出声明驱动映射范围。
+- [ ] **GAP-4 运行时维度**：AST 模板 slot 的运行时动态属性发现（schema 变更即时反映到 slot 绑定）；当前仍为 013 `suggest-slots` 一次性建议 → 人工采纳。
 
 ---
 

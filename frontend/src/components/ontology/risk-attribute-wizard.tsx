@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import {
-  createRiskDataProperty,
+  createDataProperty,
   getRiskVocabularies,
   type RiskVocabulary,
 } from "@/lib/api";
@@ -22,6 +22,7 @@ const MANAGED_PREFIX = "https://ontology.pharma-gmp.cn/slpra/core/";
 /**
  * 风险属性向导（T037）：基于受控词表（OEB / PDE / 致敏）为类创建风险数据属性，
  * 词表取值由后端 `/risk-vocabularies` 提供（FR-010）。
+ * 通过通用 createDataProperty API 创建，controlled_vocab 由前端组装。
  */
 export function RiskAttributeWizard({
   selectedClassIri,
@@ -52,12 +53,18 @@ export function RiskAttributeWizard({
   const submit = async () => {
     setError(null);
     setMsg(null);
+    if (!current) return;
     try {
-      await createRiskDataProperty({
+      await createDataProperty({
         slpra_iri: form.slpra_iri,
         label: form.label,
         domain_iri: selectedClassIri || null,
-        vocab,
+        datatype: "string",
+        controlled_vocab: {
+          vocab: current.key,
+          label: current.label,
+          values: current.values,
+        },
       });
       setMsg(`已创建风险属性（${vocab}）`);
       onChanged();

@@ -6,9 +6,11 @@ import {
   deleteMapping,
   getMappingHealth,
   getMappings,
+  SOURCE_ENTITY_MAPPING_TYPES,
   type MappingHealth,
   type TBoxMapping,
 } from "@/lib/api";
+import { PropertyBindingEditor } from "@/components/ontology/property-binding-editor";
 import { Field } from "@/components/ontology/field";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,7 +24,10 @@ import {
 import { Badge } from "@/components/ui/badge";
 import type { useVersionConflict } from "./use-version-conflict";
 
-const MAPPING_TYPES = ["slpra_iri", "bfo", "field", "external"];
+const MAPPING_TYPES = [
+  "slpra_iri", "bfo", "field", "external",
+  ...SOURCE_ENTITY_MAPPING_TYPES, // 014: db_table / api_endpoint / doc_pattern
+];
 
 type Conflict = ReturnType<typeof useVersionConflict>;
 
@@ -43,6 +48,7 @@ export function OntologyMappingPanel({
   const [health, setHealth] = useState<MappingHealth | null>(null);
   const [form, setForm] = useState({ mapping_type: "bfo", target: "", source_system: "" });
   const [error, setError] = useState<string | null>(null);
+  const [expanded, setExpanded] = useState<string | null>(null);
 
   const loadHealth = () => getMappingHealth().then(setHealth).catch(() => {});
 
@@ -112,21 +118,51 @@ export function OntologyMappingPanel({
       ) : (
         <>
           <ul className="divide-y text-sm">
-            {maps.map((m) => (
-              <li key={m.id} className="flex items-center justify-between py-1.5">
-                <span className="text-xs">
-                  <Badge variant="secondary" className="font-normal">{m.mapping_type}</Badge>
-                  <span className="ml-2 font-mono text-muted-foreground">{m.target}</span>
-                </span>
-                <Button
-                  variant="link"
-                  onClick={() => remove(m)}
-                  className="h-auto p-0 text-xs text-destructive hover:underline"
-                >
-                  删除
-                </Button>
-              </li>
-            ))}
+            {maps.map((m) => {
+              const isSourceEntity = SOURCE_ENTITY_MAPPING_TYPES.includes(m.mapping_type);
+              return (
+                <li key={m.id} className="py-1.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs">
+                      <Badge variant="secondary" className="font-normal">{m.mapping_type}</Badge>
+                      <span className="ml-2 font-mono text-muted-foreground">{m.target}</span>
+                      {isSourceEntity && m.health && m.health !== "ok" && (
+                        <span
+                          className={`ml-2 rounded px-1.5 py-0.5 text-[10px] ${
+                            m.health === "drift"
+                              ? "bg-warning/10 text-warning"
+                              : "bg-destructive/10 text-destructive"
+                          }`}
+                        >
+                          {m.health}
+                        </span>
+                      )}
+                    </span>
+                    <span className="flex items-center gap-2">
+                      {isSourceEntity && (
+                        <Button
+                          variant="link"
+                          onClick={() => setExpanded(expanded === m.id ? null : m.id)}
+                          className="h-auto p-0 text-xs text-primary hover:underline"
+                        >
+                          {expanded === m.id ? "收起属性绑定" : "属性绑定"}
+                        </Button>
+                      )}
+                      <Button
+                        variant="link"
+                        onClick={() => remove(m)}
+                        className="h-auto p-0 text-xs text-destructive hover:underline"
+                      >
+                        删除
+                      </Button>
+                    </span>
+                  </div>
+                  {isSourceEntity && expanded === m.id && (
+                    <PropertyBindingEditor mapping={m} onChanged={refresh} />
+                  )}
+                </li>
+              );
+            })}
             {maps.length === 0 && <li className="py-2 text-xs text-muted-foreground">暂无映射</li>}
           </ul>
 

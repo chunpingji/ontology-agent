@@ -38,6 +38,10 @@ from app.models.extraction import (
     GeneratedReport,
     SlotDismissal,
 )
+from app.models.ontology_meta import (
+    SOURCE_ENTITY_MAPPING_TYPES,
+    OntologyClassMapping,
+)
 from app.schemas.extraction import (
     ASTCoverageResponse,
     CandidateGroup,
@@ -100,27 +104,95 @@ def list_jobs(db: Session = Depends(get_db)):
 
 
 async def _run_pipeline_bg(job_id, config_id, file_path, engine, db: Session):
-    """后台运行流水线。复用请求会话（FastAPI 在后台任务后才做依赖清理）。"""
+    """后台运行流水线。复用请求会话（FastAPI 在后台任务后才做依赖清理）。
+
+    声明驱动作业（``source_config.class_mapping_id``）无需 ``ExtractionConfig``——
+    E6 类绑定即配置源；此时 config 允许为空（FR-007）。
+    """
     job = db.get(ExtractionJob, job_id)
-    config = db.get(ExtractionConfig, config_id)
-    if job is None or config is None:
+    if job is None:
+        return
+    config = db.get(ExtractionConfig, config_id) if config_id else None
+    if config is None and not (job.source_config or {}).get("class_mapping_id"):
         return
     await run_extraction_pipeline(job, config, file_path, engine, db)
+
+
+async def _create_declarative_job(
+    background: BackgroundTasks,
+    source_type: str,
+    class_mapping_id: UUID,
+    config_id: UUID | None,
+    binding: OntologyClassMapping,
+    db: Session,
+    engine: OntologyEngine,
+    identity: Identity,
+) -> ExtractionJob:
+    """Create + trigger a declaration-driven job (014 US1/US2, FR-007).
+
+    The E6 class binding is the config source, so no ``ExtractionConfig`` is
+    required; ``source_config.class_mapping_id`` routes the pipeline to the
+    declarative branch. No credential is ever stored (only the binding's
+    env-var/connector reference).
+    """
+    source_cfg: dict = {"class_mapping_id": str(class_mapping_id)}
+    if config_id is not None:
+        source_cfg["config_id"] = str(config_id)
+
+    job = ExtractionJob(
+        source_type=source_type,
+        source_filename=binding.target or source_type,
+        source_config=source_cfg,
+        status="running",
+    )
+    db.add(job)
+    db.commit()
+    db.refresh(job)
+
+    audit.append(
+        db, "extraction.job.create", actor=identity.username,
+        entity_iri=str(job.id),
+        details={"source_type": source_type, "class_mapping_id": str(class_mapping_id)},
+    )
+
+    background.add_task(_run_pipeline_bg, job.id, config_id, None, engine, db)
+    return job
 
 
 @router.post("/jobs", response_model=ExtractionJobResponse, status_code=202)
 async def create_job(
     background: BackgroundTasks,
     source_type: str = Form(...),
-    config_id: UUID = Form(...),
+    config_id: UUID | None = Form(None),
+    class_mapping_id: UUID | None = Form(None),
     file: UploadFile | None = File(None),
     db_source: str | None = Form(None),
     db: Session = Depends(get_db),
     engine: OntologyEngine = Depends(get_ontology_engine),
     identity: Identity = Depends(_analyst),
 ):
-    """创建抽取作业并**真实触发**流水线（状态置 running，非 pending, FR-001/002）。"""
-    config = db.get(ExtractionConfig, config_id)
+    """创建抽取作业并**真实触发**流水线（状态置 running，非 pending, FR-001/002）。
+
+    两种模式：
+    - **声明驱动**（014 US1/US2, FR-007）：传 ``class_mapping_id``——E6 源实体绑定
+      驱动抽取，无需 ``ExtractionConfig``。未知绑定→404；非源实体绑定→422。
+    - **遗留 config 驱动**（Excel/Word/doc_repo/database-reflect）：传 ``config_id``，行为不变。
+    """
+    if class_mapping_id is not None:
+        binding = db.get(OntologyClassMapping, class_mapping_id)
+        if binding is None:
+            raise HTTPException(404, "class binding not found")
+        if binding.mapping_type not in SOURCE_ENTITY_MAPPING_TYPES:
+            raise HTTPException(
+                422,
+                "该映射不是源实体绑定（db_table/api_endpoint/doc_pattern），无法驱动抽取",
+            )
+        return await _create_declarative_job(
+            background, source_type, class_mapping_id, config_id, binding,
+            db, engine, identity,
+        )
+
+    config = db.get(ExtractionConfig, config_id) if config_id else None
     if not config:
         raise HTTPException(404, "extraction config not found")
 
@@ -1218,7 +1290,10 @@ def _build_ast_coverage_response(
     )
     dismissed_ids = {r.slot_id for r in dismissed_rows}
 
-    facts = edges_to_facts(list(edges))
+    # Ontology-aware fact building (014 US3); None when unloaded → legacy path.
+    from app.services.ontology_engine import get_loaded_engine
+
+    facts = edges_to_facts(list(edges), get_loaded_engine())
 
     rules = (
         db.query(OntologyDecisionRule)
