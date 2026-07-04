@@ -7,20 +7,22 @@ import re
 from pathlib import Path
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from sqlalchemy.orm import Session
 
 from app.db import get_db
 from app.dependencies import ROLE_SENIOR_ANALYST, get_ontology_engine, require_role
-from app.models.extraction import AstTemplate, DocumentTypeMapping
+from app.models.extraction import AstTemplate, AstTemplateTrainingPair
 from app.schemas.extraction import (
     AstTemplateCreate,
+    AstTemplateMetaUpdate,
     AstTemplateResponse,
     AstTemplateUpdate,
-    DocumentTypeMappingCreate,
-    DocumentTypeMappingResponse,
+    GenerateSectionPromptRequest,
+    GenerateSectionPromptResponse,
     SuggestSlotsRequest,
     TemplateMatchResponse,
+    TrainingPairResponse,
 )
 from app.services import audit
 from app.services.reporting.ast_template import ReportTemplate, resolve_template
@@ -28,6 +30,18 @@ from app.services.reporting.ast_template import ReportTemplate, resolve_template
 router = APIRouter()
 
 _maintainer = require_role(ROLE_SENIOR_ANALYST)
+
+# 015 基本信息上传落盘：复用抽取管线的 data/uploads 约定（extraction.py），仅存路径。
+_UPLOADS = Path("data/uploads")
+
+
+async def _save_upload(file: UploadFile, stem: str) -> str:
+    """把上传文件写入 data/uploads/<stem><suffix>，返回持久化路径字符串。"""
+    _UPLOADS.mkdir(parents=True, exist_ok=True)
+    suffix = Path(file.filename or "").suffix or ".bin"
+    dest = _UPLOADS / f"{stem}{suffix}"
+    dest.write_bytes(await file.read())
+    return str(dest)
 
 
 def _count_slots(schema_json: dict) -> int:
@@ -44,9 +58,13 @@ def _template_response(t: AstTemplate) -> AstTemplateResponse:
         name=t.name,
         version=t.version,
         doc_no=t.doc_no,
+        iri_pattern=t.iri_pattern,
+        status=t.status,
         slot_count=_count_slots(t.schema_json),
         is_default=t.is_default,
         created_by=t.created_by,
+        owner=t.owner,
+        default_source_filename=t.default_source_filename,
         created_at=t.created_at,
         updated_at=t.updated_at,
     )
@@ -57,8 +75,16 @@ def _template_response(t: AstTemplate) -> AstTemplateResponse:
 
 @router.get("", response_model=list[AstTemplateResponse])
 def list_templates(db: Session = Depends(get_db)):
+    """返回每个模板名称的最新版本（按 created_at 降序取首条）。"""
     rows = db.query(AstTemplate).order_by(AstTemplate.created_at.desc()).all()
-    return [_template_response(r) for r in rows]
+    seen_names: set[str] = set()
+    latest: list[AstTemplateResponse] = []
+    for r in rows:
+        if r.name in seen_names:
+            continue
+        seen_names.add(r.name)
+        latest.append(_template_response(r))
+    return latest
 
 
 @router.get("/{template_id}")
@@ -67,11 +93,27 @@ def get_template(template_id: UUID, db: Session = Depends(get_db)):
     if not row:
         raise HTTPException(404, "模板不存在")
     resp = _template_response(row)
+    pairs = sorted(row.training_pairs, key=lambda p: p.created_at)
+    # 同名模板的所有版本（供编辑器切换历史版本）。
+    siblings = (
+        db.query(AstTemplate)
+        .filter(AstTemplate.name == row.name)
+        .order_by(AstTemplate.created_at.desc())
+        .all()
+    )
+    versions = [
+        {"id": str(s.id), "version": s.version, "created_at": s.created_at.isoformat()}
+        for s in siblings
+    ]
     return {
         **resp.model_dump(),
         "schema_json": row.schema_json,
         "sample_text": row.sample_text,
         "sample_content_json": row.sample_content_json,
+        "training_pairs": [
+            TrainingPairResponse.model_validate(p).model_dump() for p in pairs
+        ],
+        "versions": versions,
     }
 
 
@@ -98,6 +140,7 @@ def create_template(
         name=req.name,
         version=req.version,
         doc_no=req.doc_no,
+        iri_pattern=req.iri_pattern,
         schema_json=req.schema_json,
         sample_text=req.sample_text,
         sample_content_json=req.sample_content_json,
@@ -146,7 +189,14 @@ def update_template(
         name=old.name,
         version=new_version,
         doc_no=old.doc_no,
+        iri_pattern=old.iri_pattern,
+        status=old.status,
         schema_json=req.schema_json,
+        sample_text=old.sample_text,
+        sample_content_json=old.sample_content_json,
+        owner=old.owner,
+        default_source_path=old.default_source_path,
+        default_source_filename=old.default_source_filename,
         is_default=old.is_default,
         created_by=getattr(identity, "username", "system"),
     )
@@ -168,6 +218,68 @@ def _auto_version(current: str) -> str:
     if m:
         return f"v{int(m.group(1)) + 1}"
     return f"{current}.1"
+
+
+_VALID_STATUSES = {"draft", "published", "archived"}
+
+
+@router.patch("/{template_id}", response_model=AstTemplateResponse)
+def update_template_meta(
+    template_id: UUID,
+    req: AstTemplateMetaUpdate,
+    db: Session = Depends(get_db),
+    identity: object = Depends(_maintainer),
+):
+    """015: in-place metadata edit (status / iri_pattern) — NO version bump.
+
+    Distinct from PUT (which copy-on-writes a new schema version). Used by the
+    list-page ⋮ actions (发布/归档) and IRI 模式 edits.
+    """
+    row = db.get(AstTemplate, template_id)
+    if not row:
+        raise HTTPException(404, "模板不存在")
+
+    changed: dict = {}
+    if req.name is not None and req.name != row.name:
+        new_name = req.name.strip()
+        if not new_name:
+            raise HTTPException(422, "模板名称不能为空")
+        # 改名须复检 (name, version) 唯一约束（与 update_template 一致）。
+        clash = (
+            db.query(AstTemplate)
+            .filter(AstTemplate.name == new_name, AstTemplate.version == row.version)
+            .first()
+        )
+        if clash and clash.id != row.id:
+            raise HTTPException(409, f"模板 'name={new_name}, version={row.version}' 已存在")
+        row.name = new_name
+        changed["name"] = new_name
+    if req.doc_no is not None:
+        row.doc_no = req.doc_no or None
+        changed["doc_no"] = row.doc_no
+    if req.owner is not None:
+        row.owner = req.owner or None
+        changed["owner"] = row.owner
+    if req.status is not None:
+        if req.status not in _VALID_STATUSES:
+            raise HTTPException(422, f"Invalid status '{req.status}' (draft|published|archived)")
+        row.status = req.status
+        changed["status"] = req.status
+    if req.iri_pattern is not None:
+        row.iri_pattern = req.iri_pattern or None
+        changed["iri_pattern"] = row.iri_pattern
+
+    if changed:
+        audit.append(
+            db, "template.meta_update",
+            actor=getattr(identity, "username", "system"),
+            entity_iri=str(row.id),
+            details={"name": row.name, "version": row.version, **changed},
+            commit=False,
+        )
+    db.commit()
+    db.refresh(row)
+    return _template_response(row)
 
 
 @router.delete("/{template_id}", status_code=204)
@@ -215,6 +327,170 @@ def set_default_template(
     db.commit()
     db.refresh(row)
     return _template_response(row)
+
+
+# ── 015 基本信息：默认示例文档替换 / 默认源文件 / 训练数据 ─────────────
+
+
+def _get_template_or_404(template_id: UUID, db: Session) -> AstTemplate:
+    row = db.get(AstTemplate, template_id)
+    if not row:
+        raise HTTPException(404, "模板不存在")
+    return row
+
+
+@router.post("/{template_id}/sample")
+async def replace_sample(
+    template_id: UUID,
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    identity: object = Depends(_maintainer),
+):
+    """替换既有模板的默认示例文档（固化输出 section / 格式）。解析为忠于原文结构的
+    tiptap 并同步 sample_text，供 AI 插槽建议与忠实预览。"""
+    row = _get_template_or_404(template_id, db)
+    if not file.filename or not file.filename.lower().endswith(".docx"):
+        raise HTTPException(422, "仅支持 .docx 文件")
+
+    import tempfile
+
+    content = await file.read()
+    tmp = tempfile.NamedTemporaryFile(suffix=".docx", delete=False)
+    try:
+        tmp.write(content)
+        tmp.close()
+        from app.services.extraction.document_annotator import parse_word_to_tiptap
+        from app.services.extraction.slot_suggester import tiptap_to_text
+
+        content_json = parse_word_to_tiptap(tmp.name)
+        plain_text = tiptap_to_text(content_json)
+    finally:
+        Path(tmp.name).unlink(missing_ok=True)
+
+    if not plain_text.strip():
+        raise HTTPException(422, "无法从文档中提取文本内容")
+
+    row.sample_content_json = content_json
+    row.sample_text = plain_text
+    audit.append(
+        db, "template.sample_replace",
+        actor=getattr(identity, "username", "system"),
+        entity_iri=str(row.id),
+        details={"name": row.name, "version": row.version, "filename": file.filename},
+        commit=False,
+    )
+    db.commit()
+    db.refresh(row)
+    return {"content_json": content_json, "plain_text": plain_text}
+
+
+@router.post("/{template_id}/default-source", response_model=AstTemplateResponse)
+async def upload_default_source(
+    template_id: UUID,
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    identity: object = Depends(_maintainer),
+):
+    """上传/替换默认源文件（固化输出格式的参照原件）。"""
+    row = _get_template_or_404(template_id, db)
+    # 替换时清理旧文件（best-effort）。
+    if row.default_source_path:
+        Path(row.default_source_path).unlink(missing_ok=True)
+    row.default_source_path = await _save_upload(file, f"tpl_{template_id}_source")
+    row.default_source_filename = file.filename
+    audit.append(
+        db, "template.default_source_upload",
+        actor=getattr(identity, "username", "system"),
+        entity_iri=str(row.id),
+        details={"name": row.name, "filename": file.filename},
+        commit=False,
+    )
+    db.commit()
+    db.refresh(row)
+    return _template_response(row)
+
+
+@router.delete("/{template_id}/default-source", response_model=AstTemplateResponse)
+def delete_default_source(
+    template_id: UUID,
+    db: Session = Depends(get_db),
+    identity: object = Depends(_maintainer),
+):
+    row = _get_template_or_404(template_id, db)
+    if row.default_source_path:
+        Path(row.default_source_path).unlink(missing_ok=True)
+    row.default_source_path = None
+    row.default_source_filename = None
+    db.commit()
+    db.refresh(row)
+    return _template_response(row)
+
+
+@router.get("/{template_id}/training-pairs", response_model=list[TrainingPairResponse])
+def list_training_pairs(template_id: UUID, db: Session = Depends(get_db)):
+    _get_template_or_404(template_id, db)
+    # 直查而非走 row.training_pairs 惰性集合：会话可能缓存已删条目（expire_on_commit=False）。
+    return (
+        db.query(AstTemplateTrainingPair)
+        .filter(AstTemplateTrainingPair.template_id == template_id)
+        .order_by(AstTemplateTrainingPair.created_at)
+        .all()
+    )
+
+
+@router.post(
+    "/{template_id}/training-pairs",
+    response_model=TrainingPairResponse,
+    status_code=201,
+)
+async def add_training_pair(
+    template_id: UUID,
+    source_file: UploadFile = File(...),
+    report_file: UploadFile | None = File(None),
+    db: Session = Depends(get_db),
+    identity: object = Depends(_maintainer),
+):
+    """新增一条训练样例（源文档必填，评估报告可缺省，后补）。"""
+    _get_template_or_404(template_id, db)
+    pair = AstTemplateTrainingPair(
+        template_id=template_id,
+        source_filename=source_file.filename or "source",
+        source_path="",  # 落盘后回填（需 pair.id 命名，避免碰撞）
+        created_by=getattr(identity, "username", "system"),
+    )
+    db.add(pair)
+    db.flush()  # 取 pair.id 作为文件名前缀
+    pair.source_path = await _save_upload(source_file, f"train_{pair.id}_src")
+    if report_file is not None and report_file.filename:
+        pair.report_filename = report_file.filename
+        pair.report_path = await _save_upload(report_file, f"train_{pair.id}_report")
+    audit.append(
+        db, "template.training_pair_add",
+        actor=getattr(identity, "username", "system"),
+        entity_iri=str(template_id),
+        details={"source": pair.source_filename, "report": pair.report_filename},
+        commit=False,
+    )
+    db.commit()
+    db.refresh(pair)
+    return pair
+
+
+@router.delete("/{template_id}/training-pairs/{pair_id}", status_code=204)
+def delete_training_pair(
+    template_id: UUID,
+    pair_id: UUID,
+    db: Session = Depends(get_db),
+    identity: object = Depends(_maintainer),
+):
+    pair = db.get(AstTemplateTrainingPair, pair_id)
+    if not pair or pair.template_id != template_id:
+        raise HTTPException(404, "训练样例不存在")
+    for p in (pair.source_path, pair.report_path):
+        if p:
+            Path(p).unlink(missing_ok=True)
+    db.delete(pair)
+    db.commit()
 
 
 # ── 013 DOCX structured parse for template creation ────────────────────
@@ -316,6 +592,44 @@ def suggest_slots_endpoint(
     return result
 
 
+# ── 015 Section 行文 Prompt design assist ──────────────────────────────
+
+
+@router.post("/generate-section-prompt", response_model=GenerateSectionPromptResponse)
+def generate_section_prompt_endpoint(
+    req: GenerateSectionPromptRequest,
+    identity: object = Depends(_maintainer),
+):
+    """Derive a 行文 Prompt for one section from the sample + its slot labels.
+
+    Design-time AI assist (mirrors suggest-slots gating). The returned prompt is
+    saved into the section's ``prompt`` field; at report time the generation
+    engine calls the LLM with it to fuse the section's slot values into prose.
+    """
+    from app.config import settings
+
+    if not settings.llm_suggest_slots_enabled:
+        raise HTTPException(503, "行文 Prompt 生成未启用（llm_suggest_slots_enabled=False）")
+
+    from app.services.llm.local_client import get_local_llm
+
+    client = get_local_llm()
+    if client is None:
+        raise HTTPException(503, "本地 LLM 不可用，请检查 local_llm_enabled 和端点配置")
+
+    from app.services.reporting.narrative_generator import generate_section_prompt
+
+    prompt = generate_section_prompt(
+        client,
+        section_title=req.section_title,
+        slot_labels=req.slot_labels,
+        sample_text=req.sample_text,
+    )
+    if not prompt:
+        raise HTTPException(502, "行文 Prompt 生成失败，请检查本地 LLM 日志")
+    return GenerateSectionPromptResponse(prompt=prompt)
+
+
 # ── Template match (T011) ───────────────────────────────────────────────
 
 
@@ -344,88 +658,3 @@ def match_template_for_job(
         template_version=getattr(tpl, "revision", ""),
         match_source=match_source,
     )
-
-
-# ── Document type mappings (T010) ───────────────────────────────────────
-
-
-mapping_router = APIRouter()
-
-
-@mapping_router.get("", response_model=list[DocumentTypeMappingResponse])
-def list_mappings(db: Session = Depends(get_db)):
-    rows = (
-        db.query(DocumentTypeMapping)
-        .join(AstTemplate)
-        .order_by(DocumentTypeMapping.priority.desc())
-        .all()
-    )
-    return [
-        DocumentTypeMappingResponse(
-            id=m.id,
-            doc_class_iri_pattern=m.doc_class_iri_pattern,
-            template_id=m.template_id,
-            template_name=m.template.name,
-            template_version=m.template.version,
-            priority=m.priority,
-            created_at=m.created_at,
-        )
-        for m in rows
-    ]
-
-
-@mapping_router.post("", response_model=DocumentTypeMappingResponse, status_code=201)
-def create_mapping(
-    req: DocumentTypeMappingCreate,
-    db: Session = Depends(get_db),
-    identity: object = Depends(_maintainer),
-):
-    tpl = db.get(AstTemplate, req.template_id)
-    if not tpl:
-        raise HTTPException(404, "模板不存在")
-
-    row = DocumentTypeMapping(
-        doc_class_iri_pattern=req.doc_class_iri_pattern,
-        template_id=req.template_id,
-        priority=req.priority,
-    )
-    db.add(row)
-    audit.append(
-        db, "mapping.create",
-        actor=getattr(identity, "username", "system"),
-        entity_iri=str(row.id),
-        details={"pattern": req.doc_class_iri_pattern, "template": tpl.name},
-        commit=False,
-    )
-    db.commit()
-    db.refresh(row)
-    return DocumentTypeMappingResponse(
-        id=row.id,
-        doc_class_iri_pattern=row.doc_class_iri_pattern,
-        template_id=row.template_id,
-        template_name=tpl.name,
-        template_version=tpl.version,
-        priority=row.priority,
-        created_at=row.created_at,
-    )
-
-
-@mapping_router.delete("/{mapping_id}", status_code=204)
-def delete_mapping(
-    mapping_id: UUID,
-    db: Session = Depends(get_db),
-    identity: object = Depends(_maintainer),
-):
-    row = db.get(DocumentTypeMapping, mapping_id)
-    if not row:
-        raise HTTPException(404, "映射不存在")
-
-    audit.append(
-        db, "mapping.delete",
-        actor=getattr(identity, "username", "system"),
-        entity_iri=str(row.id),
-        details={"pattern": row.doc_class_iri_pattern},
-        commit=False,
-    )
-    db.delete(row)
-    db.commit()

@@ -19,6 +19,7 @@ from app.services.extraction.document_annotator import (
     _inline_nodes,
     _is_vmerge_continue,
     annotate_word,
+    parse_word_to_tiptap,
 )
 
 
@@ -97,7 +98,7 @@ def test_annotate_word_preserves_structure(tmp_path, monkeypatch):
 def test_inline_nodes_merges_formatting_and_entity():
     """行内样式与 NER span 按字符边界合并：交叠段同时带 bold + entity mark。"""
     text = "无菌粉针剂A"
-    runs = [(0, 5, ["bold"]), (5, 6, [])]   # 前 5 字粗体，"A" 普通
+    runs = [(0, 5, [{"type": "bold"}]), (5, 6, [])]   # 前 5 字粗体，"A" 普通
     spans = [{
         "start": 0, "end": 4, "text": "无菌粉针",
         "label": "无菌粉针剂", "className": "无菌粉针剂", "score": 0.9,
@@ -501,3 +502,88 @@ def test_multi_paragraph_cell(tmp_path, monkeypatch):
             cell_text += tn.get("text", "")
     assert "第一段描述" in cell_text
     assert "第二段描述" in cell_text
+
+
+# ---------------------------------------------------------------------------
+# 015: 样例预览高保真（rich_style）——字体颜色/字号 + 表格列宽；抽取路径零回归
+# ---------------------------------------------------------------------------
+
+
+def _iter_nodes(node):
+    """深度遍历 tiptap 节点树（沿 content 递归），逐个 yield dict 节点。"""
+    yield node
+    for child in node.get("content", []) or []:
+        if isinstance(child, dict):
+            yield from _iter_nodes(child)
+
+
+def test_rich_style_captures_color_and_size(tmp_path):
+    """parse_word_to_tiptap（rich_style=True）：红色/定字号 run → textStyle mark。"""
+    from docx.shared import Pt, RGBColor
+
+    d = docx.Document()
+    para = d.add_paragraph()
+    run = para.add_run("高风险")
+    run.font.color.rgb = RGBColor(0xFF, 0x00, 0x00)
+    run.font.size = Pt(9)
+    path = tmp_path / "styled.docx"
+    d.save(path)
+
+    doc = parse_word_to_tiptap(path)
+    seg = doc["content"][0]["content"][0]
+    assert seg["text"] == "高风险"
+    style = next(m for m in seg["marks"] if m["type"] == "textStyle")
+    assert style["attrs"]["color"] == "#FF0000"
+    assert style["attrs"]["fontSize"] == "9pt"
+
+
+def test_rich_style_table_emits_colwidth(tmp_path):
+    """rich_style：顶层表格首行 cell 依 <w:tblGrid> 列宽发 colwidth（twips→px）。"""
+    from docx.shared import Inches
+
+    d = docx.Document()
+    t = d.add_table(rows=2, cols=3)
+    t.columns[0].width = Inches(1)   # 1440 twips → 96px
+    t.columns[1].width = Inches(2)   # 2880 twips → 192px
+    t.columns[2].width = Inches(3)   # 4320 twips → 288px
+    t.cell(0, 0).text = "名称"
+    t.cell(0, 1).text = "剂型"
+    t.cell(0, 2).text = "规格"
+    t.cell(1, 0).text = "阿莫西林"
+    t.cell(1, 1).text = "片剂"
+    t.cell(1, 2).text = "0.25g"
+    path = tmp_path / "grid.docx"
+    d.save(path)
+
+    doc = parse_word_to_tiptap(path)
+    first_row = doc["content"][0]["content"][0]
+    widths = [c.get("attrs", {}).get("colwidth") for c in first_row["content"]]
+    assert widths == [[96], [192], [288]]
+
+
+def test_rich_style_off_is_byte_regression_safe(tmp_path):
+    """抽取路径（rich_style=False）：既无 textStyle mark，也无 colwidth（零回归）。"""
+    from docx.shared import Inches, Pt, RGBColor
+
+    d = docx.Document()
+    para = d.add_paragraph()
+    run = para.add_run("高风险")
+    run.font.color.rgb = RGBColor(0xFF, 0x00, 0x00)
+    run.font.size = Pt(9)
+    t = d.add_table(rows=2, cols=2)
+    t.columns[0].width = Inches(1)
+    t.columns[1].width = Inches(2)
+    t.cell(0, 0).text = "名称"
+    t.cell(0, 1).text = "值"
+    t.cell(1, 0).text = "阿莫西林"
+    t.cell(1, 1).text = "0.25g"
+    path = tmp_path / "styled_table.docx"
+    d.save(path)
+
+    doc, _, _, _ = annotate_word(path, _FakeEngine(), structure_only=True)
+
+    for node in _iter_nodes(doc):
+        for mark in node.get("marks", []) or []:
+            assert mark.get("type") != "textStyle"
+        if node.get("type") == "tableCell":
+            assert "colwidth" not in (node.get("attrs") or {})

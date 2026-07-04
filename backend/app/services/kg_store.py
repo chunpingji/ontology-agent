@@ -17,7 +17,8 @@ class KGStore:
         self.onto = onto_engine
 
     def sync_individual_to_shadow(self, info: IndividualInfo) -> EntityShadow:
-        module = self._detect_module(info.class_iris)
+        # 显式 module 优先（调用方确知归属，如 doc_repo 文档记录）；否则按命名空间启发式。
+        module = info.module or self._detect_module(info.class_iris)
         shadow = self.db.query(EntityShadow).filter(EntityShadow.iri == info.iri).first()
         if shadow is None:
             shadow = EntityShadow(

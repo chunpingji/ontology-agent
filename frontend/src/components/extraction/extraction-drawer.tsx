@@ -259,7 +259,7 @@ export function ExtractionDrawer({ jobId, open, onOpenChange }: ExtractionDrawer
 
         <div className="flex min-h-0 flex-1">
           {/* Left: Document preview */}
-          <div className="flex-1 overflow-y-auto border-r px-6 py-4">
+          <div className="flex-1 overflow-y-auto border-r bg-muted/40 px-8 py-6">
             {loading && <p className="text-muted-foreground text-sm">加载标注文档中...</p>}
             {error && (
               <div className="rounded border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">

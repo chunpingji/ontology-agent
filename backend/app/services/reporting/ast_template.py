@@ -148,6 +148,10 @@ class Section(BaseModel):
     section_id: str
     title: str
     groups: list[Group]
+    # 015: per-section 行文 Prompt. When set, the generation engine calls the local
+    # LLM with this prompt (fusing the section's slot values) to produce the
+    # section's narrative prose. Persisted inside schema_json; additive/optional.
+    prompt: str | None = None
 
 
 class ReportTemplate(BaseModel):
@@ -217,28 +221,30 @@ def resolve_template(
     """Three-tier fallback template resolution.
 
     Returns ``(template, match_source, template_db_id)`` where *match_source*
-    is one of ``"mapping"``, ``"default"``, or ``"fallback"``.
+    is one of ``"iri_pattern"``, ``"default"``, or ``"fallback"``.
 
-    1. **mapping** — ``DocumentTypeMapping`` whose ``doc_class_iri_pattern``
-       appears in *doc_class_iri*, ordered by descending priority.
+    1. **iri_pattern** — a non-archived ``AstTemplate`` whose ``iri_pattern``
+       appears in *doc_class_iri*; the **longest** (most specific) match wins.
+       This is the functional resolution key (015; replaces DocumentTypeMapping).
     2. **default** — the ``AstTemplate`` row with ``is_default=True``.
     3. **fallback** — the filesystem JSON via ``load_default_template()``.
     """
-    from app.models.extraction import AstTemplate, DocumentTypeMapping
+    from app.models.extraction import AstTemplate
 
-    # Tier 1: pattern match on DocumentTypeMapping
+    # Tier 1: per-template iri_pattern substring match (longest pattern wins,
+    # archived templates excluded).
     if doc_class_iri:
-        mappings = (
-            db.query(DocumentTypeMapping)
-            .join(AstTemplate)
-            .order_by(DocumentTypeMapping.priority.desc())
+        candidates = (
+            db.query(AstTemplate)
+            .filter(AstTemplate.iri_pattern.isnot(None), AstTemplate.status != "archived")
             .all()
         )
-        for m in mappings:
-            if m.doc_class_iri_pattern in doc_class_iri:
-                tpl = ReportTemplate.model_validate(m.template.schema_json)
-                logger.debug("resolve_template: mapping %s → %s", m.doc_class_iri_pattern, m.template.name)
-                return tpl, "mapping", m.template.id
+        matches = [t for t in candidates if t.iri_pattern and t.iri_pattern in doc_class_iri]
+        if matches:
+            best = max(matches, key=lambda t: len(t.iri_pattern or ""))
+            tpl = ReportTemplate.model_validate(best.schema_json)
+            logger.debug("resolve_template: iri_pattern %s → %s", best.iri_pattern, best.name)
+            return tpl, "iri_pattern", best.id
 
     # Tier 2: DB default template
     default_row = db.query(AstTemplate).filter(AstTemplate.is_default.is_(True)).first()

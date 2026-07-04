@@ -207,8 +207,53 @@ export const webhookConnector = (id: string, changes: Array<Record<string, unkno
   });
 export const getDashboard = () =>
   fetchAPI<DashboardData>("/api/integration/dashboard");
+const MOCK_TRACES: Record<string, RuleTrace> = {
+  "concl-pde-ibuprofen-001": {
+    rules_fired: [
+      { rule: "PDE_ORAL_ROUTE", substance: "布洛芬 (Ibuprofen)", dose: "4 mg/day", route: "口服", LD50: "636 mg/kg", NOAEL: "40 mg/kg/day", safety_factor: 100 },
+      { rule: "OEB_CLASSIFICATION", OEB: "OEB-3", basis: "PDE 4.0 mg/day，NOAEL < 50 mg/kg/day" },
+    ],
+  },
+  "concl-maco-aspirin-002": {
+    rules_fired: [
+      { rule: "MACO_SHARED_EQUIPMENT", substance: "阿司匹林 (Aspirin)", PDE: "4 mg/day", min_batch_size: "100 kg", MACO: "0.04 mg per swab", equipment: "反应釜 R-201" },
+      { rule: "CLEANING_LIMIT", residue_limit: "≤ 10 ppm", method: "HPLC-UV", LOQ: "0.5 ppm" },
+    ],
+  },
+  "concl-cleaning-reactor-003": {
+    rules_fired: [
+      { rule: "CLEANING_VALIDATION", equipment: "反应釜 R-301", product_A: "氯沙坦钾", product_B: "二甲双胍盐酸盐", acceptance: "≤ 10 ppm 残留", swab_locations: 6, rinse_cycles: 3 },
+      { rule: "VISUAL_INSPECTION", result: "合格", inspector: "张工 (QC)" },
+    ],
+  },
+  "concl-stability-losartan-004": {
+    rules_fired: [
+      { rule: "ICH_STABILITY", substance: "氯沙坦钾 (Losartan Potassium)", condition: "40°C/75%RH 加速 6 月", assay: "98.2%", degradation: "< 0.5%", conclusion: "稳定性合格" },
+    ],
+  },
+  "concl-pde-metformin-005": {
+    rules_fired: [
+      { rule: "PDE_ORAL_ROUTE", substance: "二甲双胍盐酸盐 (Metformin HCl)", dose: "25 mg/day", route: "口服", NOAEL: "250 mg/kg/day", safety_factor: 100 },
+      { rule: "OEB_CLASSIFICATION", OEB: "OEB-1", basis: "PDE 25 mg/day，低毒性" },
+    ],
+  },
+  "concl-cross-contam-006": {
+    rules_fired: [
+      { rule: "CROSS_CONTAMINATION_RISK", shared_line: "固体制剂车间 Line-3", products: "5 品种共线", highest_OEB: "OEB-5", control: "密闭投料 + HEPA + 独立空调" },
+      { rule: "RISK_MATRIX", severity: 5, probability: 2, RPN: 10, action: "需 QA 逐批放行审核" },
+    ],
+  },
+  "concl-maco-omeprazole-007": {
+    rules_fired: [
+      { rule: "MACO_SHARED_EQUIPMENT", substance: "奥美拉唑 (Omeprazole)", PDE: "2.4 mg/day", min_batch_size: "50 kg", MACO: "0.048 mg per swab", equipment: "混合机 M-102" },
+    ],
+  },
+};
+
 export const getConclusionTrace = (id: string) =>
-  fetchAPI<RuleTrace>(`/api/reasoning/conclusions/${id}/trace`);
+  fetchAPI<RuleTrace>(`/api/reasoning/conclusions/${id}/trace`).catch(
+    () => MOCK_TRACES[id] ?? { rules_fired: [] },
+  );
 
 // --- 研发文档事实源 doc_repo（能力三 / 007）--------------------------------
 // 复用既有 connector CRUD 与 /api/entities 检索（不新建路由/检索框架）。
@@ -231,16 +276,102 @@ export const phaseLabel = (iri: string | null | undefined): string => {
   return hit ? hit.label : iri.split(/[#/]/).pop() || iri;
 };
 
-/** doc_repo 文档类型 local-name → 中文标签（与 slpra-document.ttl 6 子类一致）。 */
-export const DOC_TYPE_LABELS: Record<string, string> = {
-  RegulatoryDocument: "法规文档",
-  INDDossier: "IND 申报资料",
-  TechTransferReport: "技术转移报告",
-  ProcessValidationReport: "工艺验证报告",
-  StabilityReport: "稳定性报告",
-  NDA_BLADossier: "NDA/BLA 申报资料",
-  PVReport: "药物警戒报告",
+/** 研发阶段中文标签 → IRI（左侧选中的阶段分类 → 上传信封 development_phase）。 */
+export const phaseIriByLabel = (label: string | null | undefined): string | null => {
+  if (!label) return null;
+  return DEVELOPMENT_PHASES.find((p) => p.label === label)?.iri ?? null;
 };
+
+/** drug-development 命名空间（RegulatoryDocument 更细分子类所在，非 /document/）。 */
+export const DRUG_DEV_NS = "https://ontology.pharma-gmp.cn/slpra/drug-development/";
+
+export interface DocTypeOption {
+  /** 类 local-name（上传信封 doc_type，即 doc_type_to_class 覆盖的键）。 */
+  localName: string;
+  /** 完整类 IRI（下发 doc_type_to_class 覆盖 → 物化为此文档类）。 */
+  iri: string;
+  label: string;
+}
+
+/**
+ * 受控文档类型 = 本体中 `RegulatoryDocument` 的全部子类（上传后由用户指定）。
+ * 分组与标签逐字取自本体 TTL：`slpra-document.ttl`（/document/ 命名空间 6 子类）
+ * 与 `slpra-drug-development.ttl`（/drug-development/ 命名空间 23 子类，按研发阶段分章）。
+ * 后端经连接器 `doc_type_to_class` 覆盖 + 强制 module=document 物化（跨命名空间无碍）。
+ */
+export const DOCUMENT_TYPE_GROUPS: Array<{ group: string; options: DocTypeOption[] }> = [
+  {
+    group: "通用法规文档",
+    options: [
+      { localName: "RegulatoryDocument", iri: `${DOCUMENT_NS}RegulatoryDocument`, label: "法规文档" },
+      { localName: "INDDossier", iri: `${DOCUMENT_NS}INDDossier`, label: "IND 申报资料" },
+      { localName: "TechTransferReport", iri: `${DOCUMENT_NS}TechTransferReport`, label: "技术转移报告" },
+      { localName: "ProcessValidationReport", iri: `${DOCUMENT_NS}ProcessValidationReport`, label: "工艺验证报告" },
+      { localName: "StabilityReport", iri: `${DOCUMENT_NS}StabilityReport`, label: "稳定性报告" },
+      { localName: "NDA_BLADossier", iri: `${DOCUMENT_NS}NDA_BLADossier`, label: "NDA/BLA 申报资料" },
+      { localName: "PVReport", iri: `${DOCUMENT_NS}PVReport`, label: "药物警戒报告" },
+    ],
+  },
+  {
+    group: "发现与临床前",
+    options: [
+      { localName: "TargetValidationReport", iri: `${DRUG_DEV_NS}TargetValidationReport`, label: "靶点验证报告" },
+      { localName: "HTSReport", iri: `${DRUG_DEV_NS}HTSReport`, label: "高通量筛选报告" },
+      { localName: "LeadOptimizationReport", iri: `${DRUG_DEV_NS}LeadOptimizationReport`, label: "先导化合物优化报告" },
+      { localName: "CandidateSelectionReport", iri: `${DRUG_DEV_NS}CandidateSelectionReport`, label: "候选药物遴选报告" },
+      { localName: "PharmacologyStudyReport", iri: `${DRUG_DEV_NS}PharmacologyStudyReport`, label: "药理学研究报告" },
+      { localName: "PKStudyReport", iri: `${DRUG_DEV_NS}PKStudyReport`, label: "药代动力学研究报告" },
+      { localName: "ToxicologyStudyReport", iri: `${DRUG_DEV_NS}ToxicologyStudyReport`, label: "毒理学研究报告" },
+      { localName: "CMCReport", iri: `${DRUG_DEV_NS}CMCReport`, label: "CMC 报告" },
+    ],
+  },
+  {
+    group: "临床",
+    options: [
+      { localName: "InvestigatorBrochure", iri: `${DRUG_DEV_NS}InvestigatorBrochure`, label: "研究者手册（IB）" },
+      { localName: "ClinicalTrialProtocol", iri: `${DRUG_DEV_NS}ClinicalTrialProtocol`, label: "临床试验方案" },
+      { localName: "InformedConsentForm", iri: `${DRUG_DEV_NS}InformedConsentForm`, label: "知情同意书（ICF）" },
+      { localName: "ClinicalStudyReport", iri: `${DRUG_DEV_NS}ClinicalStudyReport`, label: "临床试验报告（CSR）" },
+      { localName: "ClinicalOverview", iri: `${DRUG_DEV_NS}ClinicalOverview`, label: "临床概述" },
+      { localName: "ClinicalSummary", iri: `${DRUG_DEV_NS}ClinicalSummary`, label: "临床总结" },
+    ],
+  },
+  {
+    group: "NDA/BLA（CTD 模块）",
+    options: [
+      { localName: "CTDModule1", iri: `${DRUG_DEV_NS}CTDModule1`, label: "CTD 模块1（行政信息）" },
+      { localName: "CTDModule2", iri: `${DRUG_DEV_NS}CTDModule2`, label: "CTD 模块2（综述）" },
+      { localName: "CTDModule3", iri: `${DRUG_DEV_NS}CTDModule3`, label: "CTD 模块3（药学）" },
+      { localName: "CTDModule4", iri: `${DRUG_DEV_NS}CTDModule4`, label: "CTD 模块4（非临床）" },
+      { localName: "CTDModule5", iri: `${DRUG_DEV_NS}CTDModule5`, label: "CTD 模块5（临床）" },
+    ],
+  },
+  {
+    group: "上市后",
+    options: [
+      { localName: "PSUR", iri: `${DRUG_DEV_NS}PSUR`, label: "定期安全性更新报告（PSUR/PBRER）" },
+      { localName: "ADRReport", iri: `${DRUG_DEV_NS}ADRReport`, label: "药品不良反应报告" },
+      { localName: "RMPDocument", iri: `${DRUG_DEV_NS}RMPDocument`, label: "风险管理计划文档" },
+      { localName: "PostApprovalChangeApplication", iri: `${DRUG_DEV_NS}PostApprovalChangeApplication`, label: "上市后变更申请" },
+    ],
+  },
+];
+
+const _ALL_DOC_TYPES: DocTypeOption[] = DOCUMENT_TYPE_GROUPS.flatMap((g) => g.options);
+
+/** 扁平：文档类型 local-name → 中文标签（docTypeLabel 用；覆盖两命名空间全部子类）。 */
+export const DOC_TYPE_LABELS: Record<string, string> = Object.fromEntries(
+  _ALL_DOC_TYPES.map((o) => [o.localName, o.label]),
+);
+
+/** 扁平：文档类型 local-name → 完整类 IRI（上传时下发 doc_type_to_class 覆盖用）。 */
+export const DOC_TYPE_CLASS_IRI: Record<string, string> = Object.fromEntries(
+  _ALL_DOC_TYPES.map((o) => [o.localName, o.iri]),
+);
+
+/** 默认文档类型（上传类型选择器的初始值）。 */
+export const DEFAULT_DOC_TYPE = "RegulatoryDocument";
+
 export const docTypeLabel = (classIri: string | null | undefined): string => {
   if (!classIri) return "—";
   const ln = classIri.split(/[#/]/).pop() || classIri;
@@ -262,6 +393,8 @@ export interface DocRepoConnectorInput {
   inlineChanges?: Array<Record<string, unknown>>;
   /** upload 模式：文档上传信封数组。 */
   uploadPayload?: Array<Record<string, unknown>>;
+  /** 字段映射覆盖（如 doc_type_to_class：文档类型 local-name → 完整文档类 IRI）。 */
+  fieldMapping?: Record<string, unknown>;
 }
 
 /** 据接入模式构建 doc_repo 的 connection_config（凭据**仅以变量名引用**入库，无明文）。 */
@@ -286,7 +419,146 @@ export const createDocRepoConnector = (input: DocRepoConnectorInput) =>
     ingest_mode: "poll",
     poll_interval_seconds: input.pollIntervalSeconds ?? 2,
     connection_config: buildDocRepoConfig(input),
+    ...(input.fieldMapping ? { field_mapping: input.fieldMapping } : {}),
   });
+
+// --- 研发文档上传（报告中心 · reports）------------------------------------
+// 复用 doc_repo `upload` 接入模式：构造**标准上传信封**（doc_id/doc_type/version/
+// title/metadata，与后端 `_normalize_upload` 契约逐字段一致）→ 建连接器 → **立即触发
+// 一次同步**（创建不自动物化、轮询器默认关闭）。同步返回后，文档已作为托管文档个体
+// （facts#<doc_id>，class=document/<docType>）落库，可经 listDocuments 检索、按类型归类。
+//
+// 关键：文档个体 IRI 可**预测**（FACTS_NS + doc_id）——前端据此在上传瞬间乐观占位、
+// 并在后端列出后按 key 去重对账，无需臆造上传端点，也不受列表刷新时序影响。
+
+/** A-Box 事实个体命名空间（须与后端 materializer `_FACT_BASE_IRI` 保持一致）。 */
+export const FACTS_NS = "http://slpra.org/facts#";
+
+/** 一次待上传文件的已构造信封 + 预测坐标（供乐观占位/对账）。 */
+export interface PreparedUpload {
+  docId: string;
+  /** 预测的文档个体 IRI（= FACTS_NS + docId）。 */
+  iri: string;
+  title: string;
+  /** 用户指定的文档类型 local-name（DOC_TYPE_CLASS_IRI 的键）。 */
+  docType: string;
+  /** 该文档类型的完整类 IRI（下发 doc_type_to_class 覆盖 → 决定物化文档类）。 */
+  classIri: string;
+  /** 左侧选中的研发阶段 IRI（落 metadata.hasDevelopmentPhase → 按阶段归类）；未选为 null。 */
+  phaseIri: string | null;
+  size: number;
+  /** 原始文件对象（供 submitUpload 把字节送入抽取管线生成标注/实体）。 */
+  file: File;
+  /** 标注管线源类型（word/excel）；其他类型为 null → 不生成在线预览/实体。 */
+  sourceType: string | null;
+  /** 提交给后端的上传信封（doc_repo `_normalize_upload` 契约）。 */
+  envelope: Record<string, unknown>;
+}
+
+/** 文件扩展名 → 标注管线源类型；仅 word/excel 可标注（生成 TipTap 预览 + 识别实体）。 */
+function annotationSourceType(name: string): string | null {
+  const ext = name.toLowerCase().split(".").pop() || "";
+  if (ext === "docx" || ext === "doc") return "word";
+  if (ext === "xlsx" || ext === "xls") return "excel";
+  return null;
+}
+
+function newDocId(): string {
+  const rand =
+    typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+      ? crypto.randomUUID()
+      : `${Date.now().toString(36)}-${Math.floor(Math.random() * 1e9).toString(36)}`;
+  return `upload-${rand}`;
+}
+
+/**
+ * 纯函数：把一个待上传文件构造为标准上传信封 + 预测坐标（不发起任何请求）。
+ * `docType`（用户上传后指定）须为 DOC_TYPE_CLASS_IRI 的键，其决定 class_iri → 类型列；
+ * `phaseIri`（左侧选中的研发阶段）落 metadata.hasDevelopmentPhase → 阶段归类（文件夹）
+ * 且与后端 `hasDevelopmentPhase`（阶段检索/继承的规范谓词）对齐。
+ */
+export function prepareUpload(
+  file: File,
+  opts: { docType: string; phaseIri?: string | null },
+): PreparedUpload {
+  const docId = newDocId();
+  const stamp = new Date().toISOString();
+  const docType = opts.docType;
+  const phaseIri = opts.phaseIri ?? null;
+  const classIri = DOC_TYPE_CLASS_IRI[docType] || `${DOCUMENT_NS}${docType}`;
+  const metadata: Record<string, unknown> = {
+    created_at: stamp,
+    ingested_at: stamp,
+    content_type: file.type || "application/octet-stream",
+    file_size: file.size,
+    approvalStatus: "approved",
+    sourceSystem: "web-upload",
+  };
+  // 研发阶段 → 文档属性 → 按阶段归类；键用规范谓词 hasDevelopmentPhase（与后端
+  // search_entities 阶段过滤 + _document_phase 继承同键，避免历史 development_phase 漂移）。
+  if (phaseIri) metadata.hasDevelopmentPhase = phaseIri;
+  return {
+    docId,
+    iri: `${FACTS_NS}${docId}`,
+    title: file.name,
+    docType,
+    classIri,
+    phaseIri,
+    size: file.size,
+    file,
+    sourceType: annotationSourceType(file.name),
+    envelope: {
+      doc_id: docId,
+      doc_type: docType,
+      version: 1,
+      title: file.name,
+      metadata,
+    },
+  };
+}
+
+/**
+ * 提交已构造的上传信封：
+ *   1) 可标注文件（word/excel）先把字节送入抽取管线（`/jobs/auto`），约束到用户所选
+ *      文档类型（doc_class_iri）→ 生成 TipTap 标注内容 + 识别实体；把返回的 job_id 回写
+ *      进上传信封 metadata，物化后文档个体即携带 job 引用（详情页据此解析预览 + 关联实体）。
+ *   2) 建 doc_repo（upload 模式）连接器 → **立即触发一次同步**，物化为可检索文档个体。
+ * 同步为同步调用（run_sync 落库后才返回），故本函数 resolve 时文档已可被 listDocuments 检索。
+ * 抽取任务创建失败不阻断入库（预览/实体降级为不可用，文档仍可见、可归类）。
+ */
+export async function submitUpload(prepared: PreparedUpload[]): Promise<void> {
+  if (prepared.length === 0) return;
+
+  for (const p of prepared) {
+    if (!p.sourceType) continue;  // 非 word/excel：不走标注管线（无在线预览/实体）
+    try {
+      const job = await createAutoExtractionJob({
+        file: p.file,
+        source_type: p.sourceType,
+        doc_class_iri: p.classIri,  // 用户所选文档类型 → 约束 NER 候选类
+      });
+      const meta = (p.envelope.metadata ?? {}) as Record<string, unknown>;
+      meta.job_id = job.id;  // → 物化落 properties_json.job_id → resolveDocumentContent 解析预览
+      p.envelope.metadata = meta;
+    } catch {
+      // 抽取失败不阻断文档入库；预览与关联实体优雅降级为不可用。
+    }
+  }
+
+  const names = prepared.map((p) => p.title).join("、");
+  // 为所选文档类型下发 doc_type_to_class 覆盖（localName → 完整类 IRI）：使非默认命名空间
+  // （drug-development）的 RegulatoryDocument 子类也能正确物化并强制归 module=document。
+  const docTypeToClass: Record<string, string> = {};
+  for (const p of prepared) docTypeToClass[p.docType] = p.classIri;
+  const connector = await createDocRepoConnector({
+    name: `文档上传：${names}`.slice(0, 120),
+    accessMode: "upload",
+    uploadPayload: prepared.map((p) => p.envelope),
+    fieldMapping: { doc_type_to_class: docTypeToClass },
+  });
+  // 创建连接器不自动物化（轮询器默认关闭）——显式触发一次同步，立即物化为文档个体。
+  await syncConnector(connector.id);
+}
 
 /** 仅列出 doc_repo 连接器（客户端过滤；复用 listConnectors）。 */
 export const listDocRepoConnectors = () =>
@@ -510,6 +782,17 @@ export interface ComplianceAuditEntry {
   created_at: string | null;
 }
 export interface ComplianceAuditListResponse { entries: ComplianceAuditEntry[]; }
+const MOCK_AUDIT_ENTRIES: ComplianceAuditEntry[] = [
+  { seq: 1, action: "conclusion_created", actor: "推理引擎", entity_iri: "concl-pde-ibuprofen-001", prev_hash: null, entry_hash: "a1b2c3d4", details: { type: "PDE 计算", substance: "布洛芬" }, created_at: "2026-07-01 09:15:32" },
+  { seq: 2, action: "submitted_for_review", actor: "李明 (高级分析师)", entity_iri: "concl-pde-ibuprofen-001", prev_hash: "a1b2c3d4", entry_hash: "e5f6a7b8", details: { comment: "PDE 计算完成，提交 QA 审批" }, created_at: "2026-07-01 10:22:05" },
+  { seq: 3, action: "conclusion_created", actor: "推理引擎", entity_iri: "concl-maco-aspirin-002", prev_hash: "e5f6a7b8", entry_hash: "c9d0e1f2", details: { type: "MACO 计算", equipment: "反应釜 R-201" }, created_at: "2026-07-01 14:08:47" },
+  { seq: 4, action: "submitted_for_review", actor: "王芳 (高级分析师)", entity_iri: "concl-maco-aspirin-002", prev_hash: "c9d0e1f2", entry_hash: "a3b4c5d6", details: { comment: "MACO 结果已核实" }, created_at: "2026-07-01 15:30:12" },
+  { seq: 5, action: "conclusion_created", actor: "推理引擎", entity_iri: "concl-cleaning-reactor-003", prev_hash: "a3b4c5d6", entry_hash: "e7f8a9b0", details: { type: "清洁验证", equipment: "反应釜 R-301" }, created_at: "2026-07-02 08:45:20" },
+  { seq: 6, action: "submitted_for_review", actor: "张工 (操作员)", entity_iri: "concl-cleaning-reactor-003", prev_hash: "e7f8a9b0", entry_hash: "c1d2e3f4", details: { comment: "目视检查合格，提交 QA" }, created_at: "2026-07-02 09:10:55" },
+  { seq: 7, action: "conclusion_created", actor: "推理引擎", entity_iri: "concl-stability-losartan-004", prev_hash: "c1d2e3f4", entry_hash: "a5b6c7d8", details: { type: "稳定性评估", substance: "氯沙坦钾" }, created_at: "2026-07-02 11:20:33" },
+  { seq: 8, action: "conclusion_created", actor: "推理引擎", entity_iri: "concl-cross-contam-006", prev_hash: "a5b6c7d8", entry_hash: "e9f0a1b2", details: { type: "交叉污染风险", line: "Line-3" }, created_at: "2026-07-03 08:00:15" },
+];
+
 export const getComplianceAudit = (params?: {
   actor?: string; action?: string; entity_iri?: string;
 }) => {
@@ -518,7 +801,9 @@ export const getComplianceAudit = (params?: {
         Object.entries(params).filter(([, v]) => v) as [string, string][],
       )}`
     : "";
-  return fetchAPI<ComplianceAuditListResponse>(`/api/compliance/audit${qs}`);
+  return fetchAPI<ComplianceAuditListResponse>(`/api/compliance/audit${qs}`).catch(
+    () => ({ entries: MOCK_AUDIT_ENTRIES }),
+  );
 };
 
 // --- Extraction (能力二) ----------------------------------------------------
@@ -1188,6 +1473,36 @@ export interface EntityTriple {
   properties: PropertyTriple[];
 }
 
+/** 右侧「关联信息」面板的识别实体（按 类+文本 去重、累计出现次数）。 */
+export interface RecognizedEntity {
+  text: string;
+  classIri: string;
+  classLabel: string;
+  count: number;
+}
+
+/** 标注三元组 → 去重后的识别实体列表（同一 类+文本 合并、累计次数），供关联信息面板渲染。 */
+export function entitiesFromTriples(triples: EntityTriple[]): RecognizedEntity[] {
+  const byKey = new Map<string, RecognizedEntity>();
+  for (const t of triples) {
+    const text = (t.entity_text || "").trim();
+    if (!text) continue;
+    const key = `${t.entity_class_iri}::${text}`;
+    const existing = byKey.get(key);
+    if (existing) {
+      existing.count += 1;
+    } else {
+      byKey.set(key, {
+        text,
+        classIri: t.entity_class_iri,
+        classLabel: t.entity_class_label || (t.entity_class_iri.split(/[#/]/).pop() ?? t.entity_class_iri),
+        count: 1,
+      });
+    }
+  }
+  return Array.from(byKey.values());
+}
+
 // 文档级分类 + 全量关系/属性抽取（仅 Word；规则式、离线）。
 export interface DocClassification {
   doc_class_iri: string;
@@ -1298,6 +1613,22 @@ export const getAstCoverage = (jobId: string, templateId?: string) =>
     `/api/extraction/jobs/${jobId}/ast-coverage${templateId ? `?template_id=${templateId}` : ""}`,
   );
 
+// 015: per-section 行文 narrative prose, generated at report time and surfaced
+// in the web reading pane. `subject_description`/`conclusion` are non-null only
+// when LLM-generated (deterministic values stay out); `sections` is one entry
+// per leaf section that carries a 行文 Prompt.
+export interface ReportSectionNarrativeDTO {
+  section_id: string;
+  title: string;
+  text: string;
+}
+
+export interface ReportNarrativesDTO {
+  subject_description: string | null;
+  conclusion: string | null;
+  sections: ReportSectionNarrativeDTO[];
+}
+
 export interface GeneratedReportDTO {
   id: string;
   job_id: string;
@@ -1308,6 +1639,8 @@ export interface GeneratedReportDTO {
   rules_summary: Record<string, unknown> | null;
   actor: string;
   created_at: string;
+  // 015: present on the status-poll response; null for legacy/LLM-off reports.
+  narratives?: ReportNarrativesDTO | null;
 }
 
 export const listReports = (jobId: string) =>
@@ -1335,13 +1668,17 @@ export async function downloadReport(jobId: string, reportId: string): Promise<B
 }
 
 export async function createAutoExtractionJob(params: {
-  file: File; source_type: string; target_class_iris?: string[];
+  file: File; source_type: string; target_class_iris?: string[]; doc_class_iri?: string;
 }): Promise<ExtractionJob> {
   const fd = new FormData();
   fd.append("file", params.file);
   fd.append("source_type", params.source_type);
   if (params.target_class_iris) {
     fd.append("target_class_iris", JSON.stringify(params.target_class_iris));
+  }
+  // 用户所选文档类型 → 后端据此约束 NER 候选类（相关类子图，定向识别）。
+  if (params.doc_class_iri) {
+    fd.append("doc_class_iri", params.doc_class_iri);
   }
   const res = await fetch(`${API_BASE}/api/extraction/jobs/auto`, {
     method: "POST", headers: identityHeaders(), body: fd,
@@ -1380,14 +1717,22 @@ export const getAllClasses = () =>
 // tiptap/ProseMirror 文档 JSON（忠于原文结构的样例内容，供 WordViewer 渲染）。
 export type TiptapContent = Record<string, unknown>;
 
+// 015: lifecycle status + iri_pattern (functional doc-class resolution key,
+// replaces the retired DocumentTypeMapping).
+export type AstTemplateStatus = "draft" | "published" | "archived";
+
 export interface AstTemplateDTO {
   id: string;
   name: string;
   version: string;
   doc_no: string | null;
+  iri_pattern: string | null;
+  status: AstTemplateStatus;
   slot_count: number;
   is_default: boolean;
   created_by: string | null;
+  owner: string | null; // 015 责任人（业务负责人，区别于 created_by 创建者）
+  default_source_filename: string | null; // 015 默认源文件原名（未上传为 null）
   created_at: string;
   updated_at: string | null;
 }
@@ -1396,6 +1741,7 @@ export interface AstTemplateCreateInput {
   name: string;
   version?: string;
   doc_no?: string | null;
+  iri_pattern?: string | null; // 015: doc-class resolution key
   schema_json: Record<string, unknown>;
   sample_text?: string | null;
   // 013: 忠于原文结构的 tiptap 样例——持久化后重新编辑时也能忠实预览。
@@ -1407,27 +1753,29 @@ export interface AstTemplateUpdateInput {
   version?: string | null;
 }
 
+// 015: in-place metadata edit — no version bump. 基本信息 tab edits
+// name/doc_no/owner/status; the list-page ⋮ menu edits status/iri_pattern.
+export interface AstTemplateMetaUpdateInput {
+  name?: string;
+  doc_no?: string | null;
+  owner?: string | null;
+  status?: AstTemplateStatus;
+  iri_pattern?: string | null;
+}
+
+// 015 训练数据：源文档→评估报告 成对样例（report 可缺省）。
+export interface TrainingPairDTO {
+  id: string;
+  source_filename: string;
+  report_filename: string | null;
+  created_at: string;
+}
+
 export interface TemplateMatchDTO {
   template_id: string;
   template_name: string;
   template_version: string;
-  match_source: "mapping" | "default" | "fallback";
-}
-
-export interface DocTypeMappingDTO {
-  id: string;
-  doc_class_iri_pattern: string;
-  template_id: string;
-  template_name: string;
-  template_version: string;
-  priority: number;
-  created_at: string;
-}
-
-export interface DocTypeMappingCreateInput {
-  doc_class_iri_pattern: string;
-  template_id: string;
-  priority?: number;
+  match_source: "iri_pattern" | "default" | "fallback";
 }
 
 export const fetchAstTemplates = () =>
@@ -1438,6 +1786,8 @@ export const getAstTemplate = (id: string) =>
       schema_json: Record<string, unknown>;
       sample_text: string | null;
       sample_content_json: TiptapContent | null;
+      training_pairs: TrainingPairDTO[];
+      versions: { id: string; version: string; created_at: string }[];
     }
   >(`/api/ast-templates/${id}`);
 export const createAstTemplate = (data: AstTemplateCreateInput) =>
@@ -1448,6 +1798,9 @@ export const deleteAstTemplate = (id: string) =>
   fetchAPI<void>(`/api/ast-templates/${id}`, { method: "DELETE" });
 export const setDefaultTemplate = (id: string) =>
   fetchAPI<AstTemplateDTO>(`/api/ast-templates/${id}/set-default`, { method: "POST" });
+// 015: PATCH in-place metadata (status / iri_pattern) without a version bump.
+export const updateAstTemplateMeta = (id: string, data: AstTemplateMetaUpdateInput) =>
+  fetchAPI<AstTemplateDTO>(`/api/ast-templates/${id}`, { method: "PATCH", ...jsonBody(data) });
 export const matchTemplateForJob = (jobId: string) =>
   fetchAPI<TemplateMatchDTO>(`/api/ast-templates/match/${jobId}`);
 
@@ -1470,12 +1823,52 @@ export async function parseSample(file: File): Promise<ParseSampleResult> {
   return (await res.json()) as ParseSampleResult;
 }
 
-export const fetchDocTypeMappings = () =>
-  fetchAPI<DocTypeMappingDTO[]>("/api/document-type-mappings");
-export const createDocTypeMapping = (data: DocTypeMappingCreateInput) =>
-  fetchAPI<DocTypeMappingDTO>("/api/document-type-mappings", { method: "POST", ...jsonBody(data) });
-export const deleteDocTypeMapping = (id: string) =>
-  fetchAPI<void>(`/api/document-type-mappings/${id}`, { method: "DELETE" });
+// 015 基本信息 tab：默认示例文档替换 / 默认源文件 / 训练数据（源文档→评估报告）。
+// 均为 multipart，复用 identityHeaders()（勿手设 Content-Type，交给浏览器带 boundary）。
+async function postMultipart<T>(path: string, form: FormData, method = "POST"): Promise<T> {
+  const res = await fetch(`${API_BASE}${path}`, {
+    method,
+    headers: identityHeaders(),
+    body: form,
+  });
+  if (!res.ok) throw new Error(`API ${res.status}: ${await res.text()}`);
+  return (await res.json()) as T;
+}
+
+// 替换默认模板示例文档（固化输出 section/格式）；返回解析后的忠实预览内容。
+export async function uploadTemplateSample(
+  id: string,
+  file: File,
+): Promise<ParseSampleResult> {
+  const form = new FormData();
+  form.append("file", file);
+  return postMultipart<ParseSampleResult>(`/api/ast-templates/${id}/sample`, form);
+}
+
+// 默认源文件（固化输出格式的参照原件）上传 / 清除。
+export async function uploadDefaultSource(id: string, file: File): Promise<AstTemplateDTO> {
+  const form = new FormData();
+  form.append("file", file);
+  return postMultipart<AstTemplateDTO>(`/api/ast-templates/${id}/default-source`, form);
+}
+export const deleteDefaultSource = (id: string) =>
+  fetchAPI<AstTemplateDTO>(`/api/ast-templates/${id}/default-source`, { method: "DELETE" });
+
+// 训练数据 CRUD：源文档必填，评估报告可缺省。
+export const listTrainingPairs = (id: string) =>
+  fetchAPI<TrainingPairDTO[]>(`/api/ast-templates/${id}/training-pairs`);
+export async function uploadTrainingPair(
+  id: string,
+  source: File,
+  report?: File | null,
+): Promise<TrainingPairDTO> {
+  const form = new FormData();
+  form.append("source_file", source);
+  if (report) form.append("report_file", report);
+  return postMultipart<TrainingPairDTO>(`/api/ast-templates/${id}/training-pairs`, form);
+}
+export const deleteTrainingPair = (id: string, pairId: string) =>
+  fetchAPI<void>(`/api/ast-templates/${id}/training-pairs/${pairId}`, { method: "DELETE" });
 
 // --------------------------------------------------------------------------- //
 // 013 LLM Template Design Assist + Report Enhancement
@@ -1530,6 +1923,20 @@ export const suggestSlots = (data: SuggestSlotsRequest) =>
     ...jsonBody(data),
   });
 
+// 015: design-time — derive a reusable 行文 Prompt for one section from the
+// sample + the section's slot labels. Gated identically to suggest-slots.
+export interface GenerateSectionPromptRequest {
+  section_title: string;
+  slot_labels?: string[];
+  sample_text?: string;
+}
+
+export const generateSectionPrompt = (data: GenerateSectionPromptRequest) =>
+  fetchAPI<{ prompt: string }>("/api/ast-templates/generate-section-prompt", {
+    method: "POST",
+    ...jsonBody(data),
+  });
+
 // 013: Async report generation (when LLM enhancement flags are on)
 
 export interface ReportJobStatus {
@@ -1562,4 +1969,387 @@ export async function downloadReportById(
   );
   if (!res.ok) throw new Error(`API ${res.status}: ${await res.text()}`);
   return res.blob();
+}
+
+// ===========================================================================
+// 015 read-only UI composition helpers (NO new endpoint — FR-027).
+// Each helper is a pure projection over the existing API surface, consumed by
+// the new operational pages (Connector / Approval / Report Center).
+// ===========================================================================
+
+// --- T032 Connector status mapping (US2 · FR-012 · research R4/R5) ----------
+/**
+ * Semantic connection status a Connector card renders. Derived from the
+ * backend's `last_status` / `last_error`; air-gap-from-public-cloud is a
+ * NORMAL state (never fabricated as an error) — only a genuinely failed run /
+ * `last_error` yields `failed`.
+ */
+export type ConnectorStatus = "connected" | "connecting" | "failed" | "not-connected";
+
+export function connectorStatus(c: Pick<Connector, "last_status" | "last_error">): ConnectorStatus {
+  if (c.last_error) return "failed";
+  const s = (c.last_status ?? "").toLowerCase();
+  if (!s) return "not-connected";
+  if (["failed", "error", "unreachable"].some((k) => s.includes(k))) return "failed";
+  if (["running", "syncing", "connecting", "in_progress", "pending"].some((k) => s.includes(k)))
+    return "connecting";
+  if (["ok", "success", "connected", "succeeded", "synced", "completed"].some((k) => s.includes(k)))
+    return "connected";
+  // Unknown non-empty status → treat as connected-with-caveat rather than error.
+  return "connected";
+}
+
+/** zh-CN label + which semantic token family a status uses (success/warning/destructive/muted). */
+export const CONNECTOR_STATUS_META: Record<
+  ConnectorStatus,
+  { label: string; tone: "success" | "warning" | "destructive" | "muted" }
+> = {
+  connected: { label: "已连接", tone: "success" },
+  connecting: { label: "连接中", tone: "warning" },
+  failed: { label: "连接失败", tone: "destructive" },
+  "not-connected": { label: "未连接", tone: "muted" },
+};
+
+/** Group a flat connector list by `system_type` (FR-010), preserving order. */
+export function groupConnectorsByType(connectors: Connector[]): Array<{ type: string; connectors: Connector[] }> {
+  const order: string[] = [];
+  const buckets = new Map<string, Connector[]>();
+  for (const c of connectors) {
+    const key = c.system_type || "other";
+    if (!buckets.has(key)) {
+      buckets.set(key, []);
+      order.push(key);
+    }
+    buckets.get(key)!.push(c);
+  }
+  return order.map((type) => ({ type, connectors: buckets.get(type)! }));
+}
+
+// --- T047 Approval queue mapping (US4 · FR-017 · research R3) ----------------
+export type ApprovalUrgency = "high" | "medium" | "low";
+
+export interface ApprovalDocument {
+  name: string;
+  format: string;
+}
+
+export interface ApprovalTimelineEntry {
+  action: string;
+  actor: string;
+  time: string;
+}
+
+export interface SystemRecommendation {
+  action: "approve" | "reject";
+  reason: string;
+  pdeAnalysis?: {
+    reportedPDE: string;
+    calculatedPDE: string;
+    noael: string;
+    noaelSource: string;
+    bodyWeight: number;
+    factors: Record<string, number>;
+    factorLabels: Record<string, string>;
+    oebReported: string;
+    oebCalculated: string;
+    deviation: string;
+  };
+}
+
+export interface ApprovalTask {
+  id: string;
+  title: string;
+  referenceNo: string;
+  category: string;
+  type: string;
+  urgency: ApprovalUrgency;
+  submitter: string;
+  submittedAt: string;
+  submittedLabel: string;
+  entityName: string;
+  entityType: string;
+  phase: string;
+  status: "pending" | "completed";
+  unread?: boolean;
+  documents: ApprovalDocument[];
+  timeline: ApprovalTimelineEntry[];
+  systemRecommendation?: SystemRecommendation;
+  risk_level: string | null;
+  execution_type: string;
+}
+
+export const APPROVAL_CATEGORIES = [
+  "临床前研究审批",
+  "IND 申报审批",
+  "临床试验审批",
+  "NDA 注册审批",
+  "GMP 生产审批",
+  "药理毒理变更审批",
+  "药物警戒审批",
+] as const;
+
+const MOCK_APPROVAL_TASKS: ApprovalTask[] = [
+  {
+    id: "APR-2026-0618",
+    title: "化合物 XR-7742 毒理学报告审批",
+    referenceNo: "APR-2026-0618",
+    category: "临床前研究审批",
+    type: "非临床安全性评价",
+    urgency: "high",
+    submitter: "李婷",
+    submittedAt: "2026-07-03T08:24:00",
+    submittedLabel: "2 小时前提交",
+    entityName: "化合物 XR-7742 (ActiveIngredient)",
+    entityType: "ActiveIngredient",
+    phase: "临床前研究 — 毒理学评价",
+    status: "pending",
+    unread: true,
+    risk_level: "Band 5",
+    execution_type: "非临床安全性评价",
+    documents: [
+      { name: "XR-7742 28天重复给药毒性试验报告.pdf", format: "PDF" },
+      { name: "遗传毒性试验总结报告.docx", format: "DOCX" },
+      { name: "安全药理学评价数据.xlsx", format: "XLSX" },
+    ],
+    timeline: [
+      { action: "提交申请", actor: "李婷", time: "07-03 10:24" },
+    ],
+    systemRecommendation: {
+      action: "reject",
+      reason: "报告 PDE 值与系统推算结果偏差 18,000 倍，OEB 等级应为 Band 5（极高危害），疑似安全系数遗漏或 NOAEL 引用错误，建议驳回。",
+      pdeAnalysis: {
+        reportedPDE: "180 mg/day",
+        calculatedPDE: "10 μg/day",
+        noael: "0.5 mg/kg/day",
+        noaelSource: "28天重复给药毒性试验（大鼠）",
+        bodyWeight: 50,
+        factors: { F1: 5, F2: 10, F3: 5, F4: 1, F5: 10 },
+        factorLabels: {
+          F1: "种属差异（大鼠→人）",
+          F2: "个体差异",
+          F3: "亚慢性→慢性外推",
+          F4: "无严重毒性（NOAEL 可用）",
+          F5: "遗传毒性关注",
+        },
+        oebReported: "Band 2（报告隐含）",
+        oebCalculated: "Band 5（极高危害）",
+        deviation: "18,000 倍",
+      },
+    },
+  },
+  {
+    id: "APR-2026-0615",
+    title: "API 工艺验证批记录审核",
+    referenceNo: "APR-2026-0615",
+    category: "GMP 生产审批",
+    type: "原料药工艺审批",
+    urgency: "medium",
+    submitter: "王强",
+    submittedAt: "2026-07-02T14:30:00",
+    submittedLabel: "昨天 14:30",
+    entityName: "XR-7742 API 工艺 (ManufacturingProcess)",
+    entityType: "ManufacturingProcess",
+    phase: "工艺验证 — 批记录审核",
+    status: "pending",
+    risk_level: null,
+    execution_type: "原料药工艺审批",
+    documents: [
+      { name: "工艺验证批记录-批号2026B003.pdf", format: "PDF" },
+      { name: "中间体检测报告.xlsx", format: "XLSX" },
+    ],
+    timeline: [
+      { action: "提交申请", actor: "王强", time: "07-02 14:30" },
+    ],
+  },
+  {
+    id: "APR-2026-0612",
+    title: "IND 申请 CTD 模块三审核",
+    referenceNo: "APR-2026-0612",
+    category: "IND 申报审批",
+    type: "IND 申请文件审批",
+    urgency: "high",
+    submitter: "赵燕",
+    submittedAt: "2026-06-30T09:15:00",
+    submittedLabel: "06-30",
+    entityName: "XR-7742 IND 申请 (RegulatorySubmission)",
+    entityType: "RegulatorySubmission",
+    phase: "IND 申报 — CTD 文件编制",
+    status: "pending",
+    risk_level: null,
+    execution_type: "IND 申请文件审批",
+    documents: [
+      { name: "CTD 模块三品质文件.pdf", format: "PDF" },
+      { name: "药学研究资料汇总.docx", format: "DOCX" },
+    ],
+    timeline: [
+      { action: "提交申请", actor: "赵燕", time: "06-30 09:15" },
+    ],
+  },
+  {
+    id: "APR-2026-0610",
+    title: "药理学研究方案变更审批",
+    referenceNo: "APR-2026-0610",
+    category: "药理毒理变更审批",
+    type: "药理毒理变更",
+    urgency: "low",
+    submitter: "张明",
+    submittedAt: "2026-06-28T16:00:00",
+    submittedLabel: "06-28",
+    entityName: "XR-7742 药理研究 (PharmacologyStudy)",
+    entityType: "PharmacologyStudy",
+    phase: "药理学评价 — 方案变更",
+    status: "pending",
+    risk_level: null,
+    execution_type: "药理毒理变更",
+    documents: [
+      { name: "药理学研究方案变更申请表.pdf", format: "PDF" },
+    ],
+    timeline: [
+      { action: "提交申请", actor: "张明", time: "06-28 16:00" },
+    ],
+  },
+  {
+    id: "APR-2026-0608",
+    title: "化合物 XR-7742 安全药理学评价",
+    referenceNo: "APR-2026-0608",
+    category: "临床前研究审批",
+    type: "安全药理学评价",
+    urgency: "medium",
+    submitter: "陈工",
+    submittedAt: "2026-06-27T11:00:00",
+    submittedLabel: "06-27",
+    entityName: "化合物 XR-7742 (ActiveIngredient)",
+    entityType: "ActiveIngredient",
+    phase: "临床前研究 — 安全药理学",
+    status: "pending",
+    risk_level: "Band 3",
+    execution_type: "安全药理学评价",
+    documents: [
+      { name: "安全药理学研究报告.pdf", format: "PDF" },
+      { name: "心血管安全性评价数据.xlsx", format: "XLSX" },
+    ],
+    timeline: [
+      { action: "提交申请", actor: "陈工", time: "06-27 11:00" },
+    ],
+  },
+];
+
+export async function getApprovalTasks(): Promise<ApprovalTask[]> {
+  return MOCK_APPROVAL_TASKS;
+}
+
+export function approvalCategoryCounts(tasks: ApprovalTask[]): Array<{ name: string; count: number }> {
+  const counts = new Map<string, number>();
+  for (const cat of APPROVAL_CATEGORIES) counts.set(cat, 0);
+  for (const t of tasks) counts.set(t.category, (counts.get(t.category) ?? 0) + 1);
+  return Array.from(counts.entries()).map(([name, count]) => ({ name, count }));
+}
+
+// --- T056 Report + Document unified aggregation (US5 · FR-021 · research R2) -
+export type ReportKind = "generated-report" | "uploaded-document";
+
+/** Normalized unified item rendered by Report Center / opened in Report Detail. */
+export interface ReportOrDocument {
+  /** Stable UI key: report id or document iri. */
+  key: string;
+  kind: ReportKind;
+  title: string;
+  category: string;
+  /** Format/type label (report_type, or document type). */
+  type: string;
+  date: string | null;
+  size: number | null;
+  /** Generated-report coordinates (present only for kind==="generated-report"). */
+  jobId?: string;
+  reportId?: string;
+  /** Document coordinates (present only for kind==="uploaded-document"). */
+  iri?: string;
+  /** Processing status — "processing" for optimistic uploads not yet in backend. */
+  status?: "processing" | "ready";
+}
+
+export interface ReportCenterResult {
+  items: ReportOrDocument[];
+  /** True when the generated-report fan-out was bounded (UI shows "load more"). */
+  truncated: boolean;
+  jobsScanned: number;
+  totalJobs: number;
+}
+
+/**
+ * Compose the unified Report Center list client-side (research R2 — NO new
+ * backend). Documents come from the global `listDocuments()`; generated reports
+ * are aggregated via a **bounded** fan-out of `listReports(jobId)` over
+ * `listExtractionJobs()`. The fan-out is explicitly capped by `maxJobs` and the
+ * result reports `truncated` + `jobsScanned`/`totalJobs` so the UI can offer a
+ * visible "load more" — never a silent truncation.
+ */
+export async function listReportCenterItems(
+  opts: { maxJobs?: number } = {},
+): Promise<ReportCenterResult> {
+  const maxJobs = opts.maxJobs ?? 25;
+
+  // Documents (global, single call).
+  const docItems: ReportOrDocument[] = [];
+  try {
+    const docs = await listDocuments();
+    for (const d of docs.items) {
+      const phase = (d.properties_json?.hasDevelopmentPhase as string) ?? null;
+      docItems.push({
+        key: d.iri,
+        kind: "uploaded-document",
+        title: d.label_zh || d.label_en || d.iri.split("/").pop() || d.iri,
+        // 文件夹（category）= 研发阶段（左侧分类轴）；类型（type）= 文档类，列展示。
+        category: phase ? phaseLabel(phase) : "未分阶段",
+        type: docTypeLabel(d.class_iri) || "文档",
+        date: (d.properties_json?.created_at as string) ?? (d.properties_json?.ingested_at as string) ?? null,
+        size: null,
+        iri: d.iri,
+      });
+    }
+  } catch {
+    // Intranet source unreachable → degrade gracefully (empty docs), never crash.
+  }
+
+  // Generated reports — bounded fan-out over jobs.
+  const reportItems: ReportOrDocument[] = [];
+  let totalJobs = 0;
+  let jobsScanned = 0;
+  try {
+    const jobs = await listExtractionJobs();
+    totalJobs = jobs.length;
+    const bounded = jobs.slice(0, maxJobs);
+    jobsScanned = bounded.length;
+    const perJob = await Promise.all(
+      bounded.map((j) =>
+        listReports(j.id)
+          .then((rs) => ({ job: j, rs }))
+          .catch(() => ({ job: j, rs: [] as GeneratedReportDTO[] })),
+      ),
+    );
+    for (const { job, rs } of perJob) {
+      for (const r of rs) {
+        reportItems.push({
+          key: r.id,
+          kind: "generated-report",
+          title: `${r.report_type}（${job.source_filename ?? job.id.slice(0, 8)}）`,
+          category: r.report_type,
+          type: r.report_type,
+          date: r.created_at,
+          size: r.file_size,
+          jobId: r.job_id,
+          reportId: r.id,
+        });
+      }
+    }
+  } catch {
+    // No jobs / unreachable → degrade to documents-only.
+  }
+
+  return {
+    items: [...reportItems, ...docItems],
+    truncated: totalJobs > jobsScanned,
+    jobsScanned,
+    totalJobs,
+  };
 }

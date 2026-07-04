@@ -106,6 +106,10 @@ class GeneratedReport(Base):
     # 013: async report generation status tracking
     report_status: Mapped[str | None] = mapped_column(String(20))
     report_error: Mapped[str | None] = mapped_column(Text)
+    # 015: persisted per-section 行文 narrative for web display (transient DOCX prose
+    # also surfaced in the report reading pane). Shape:
+    #   {subject_description?, conclusion?, sections: [{section_id, title, text}]}
+    narratives: Mapped[dict | None] = mapped_column(JSON)
 
     job: Mapped[ExtractionJob] = relationship()
 
@@ -125,23 +129,47 @@ class AstTemplate(Base):
     # 013: 忠于原文结构的 tiptap 样例（供 AI 插槽建议 drawer 忠实预览与结构锚点联动）。
     sample_content_json: Mapped[dict | None] = mapped_column(JSON)
     is_default: Mapped[bool] = mapped_column(Boolean, default=False)
+    # 015: lifecycle status (draft|published|archived) + per-template doc-class IRI
+    # pattern. iri_pattern is the functional template-resolution key (replaces the
+    # retired DocumentTypeMapping); archived templates are excluded from resolution.
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default="draft")
+    iri_pattern: Mapped[str | None] = mapped_column(String(500))
     created_by: Mapped[str | None] = mapped_column(String(100))
+    # 015 基本信息：责任人（业务负责人，区别于 created_by 创建者/审计执行者）与默认源文件
+    # （固化输出格式的参照原件，存 data/uploads，仅存路径/原名）。
+    owner: Mapped[str | None] = mapped_column(String(100))
+    default_source_path: Mapped[str | None] = mapped_column(String(500))
+    default_source_filename: Mapped[str | None] = mapped_column(String(500))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
     updated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), onupdate=_now)
 
+    training_pairs: Mapped[list["AstTemplateTrainingPair"]] = relationship(
+        back_populates="template", cascade="all, delete-orphan"
+    )
 
-class DocumentTypeMapping(Base):
-    __tablename__ = "document_type_mappings"
+
+class AstTemplateTrainingPair(Base):
+    """015 训练数据：源文档 → 评估报告 成对样例，用于学习深层次评估语义。
+
+    文件存 data/uploads（复用抽取管线的落盘约定），本表仅存路径与原始文件名。
+    评估报告可缺省（先入源文档、后补报告）。
+    """
+
+    __tablename__ = "ast_template_training_pairs"
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
-    doc_class_iri_pattern: Mapped[str] = mapped_column(String(500), nullable=False)
     template_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("ast_templates.id", ondelete="CASCADE"), nullable=False,
+        UUID(as_uuid=True), ForeignKey("ast_templates.id", ondelete="CASCADE"),
+        nullable=False, index=True,
     )
-    priority: Mapped[int] = mapped_column(Integer, default=0)
+    source_filename: Mapped[str] = mapped_column(String(500), nullable=False)
+    source_path: Mapped[str] = mapped_column(String(500), nullable=False)
+    report_filename: Mapped[str | None] = mapped_column(String(500))
+    report_path: Mapped[str | None] = mapped_column(String(500))
+    created_by: Mapped[str | None] = mapped_column(String(100))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
 
-    template: Mapped[AstTemplate] = relationship()
+    template: Mapped["AstTemplate"] = relationship(back_populates="training_pairs")
 
 
 class SlotDismissal(Base):

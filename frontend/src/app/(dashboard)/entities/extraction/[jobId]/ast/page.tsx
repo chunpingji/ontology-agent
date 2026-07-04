@@ -1,18 +1,27 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
-import { useCallback, useState } from "react";
+import { useCallback, useState, type ReactNode } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, FileDown, Loader2 } from "lucide-react";
+import {
+  ArrowLeft,
+  FileDown,
+  Loader2,
+  Check,
+  Download,
+  Info,
+  ListTree,
+} from "lucide-react";
 
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 import { ASTTreeView } from "@/components/extraction/ast-tree-view";
-import { CoverageSummaryCard } from "@/components/extraction/coverage-summary-card";
 import { SlotDetailPanel } from "@/components/extraction/slot-detail-panel";
 import { SlotActionBar } from "@/components/extraction/slot-action-bar";
 import { ReportHistoryList } from "@/components/extraction/report-history-list";
@@ -40,7 +49,6 @@ import {
   type ASTCoverageDTO,
   type SlotCoverageDTO,
   type GeneratedReportDTO,
-  type AstTemplateDTO,
 } from "@/lib/api";
 
 function getMissingSlots(coverage: ASTCoverageDTO): SlotCoverageDTO[] {
@@ -54,6 +62,107 @@ function is422(err: unknown): boolean {
 }
 
 const AST_READY_STATUS = new Set(["done", "reviewing"]);
+
+// ── 015 生成进度：派生但忠实的 5 步状态 ────────────────────────────────
+// 后端无逐步生成遥测；步骤状态一律从真实完成态派生：1-3 反映抽取/模板/覆盖率
+// 的已完成结果（真实计数），4-5 反映 generateRiskReport 生命周期（等待/生成中/
+// 已完成，以「已存在 DOCX 报告」为完成判据）。绝不虚构进度百分比。
+type StepState = "done" | "active" | "pending";
+
+interface GenStep {
+  title: string;
+  desc: string;
+  state: StepState;
+  detail?: ReactNode;
+}
+
+function StepRow({ step, last }: { step: GenStep; last: boolean }) {
+  return (
+    <div className="flex gap-4">
+      <div className="flex flex-col items-center gap-1">
+        <div
+          className={cn(
+            "flex size-7 shrink-0 items-center justify-center rounded-full",
+            step.state === "done" && "bg-success text-success-foreground",
+            step.state === "active" && "bg-primary text-primary-foreground",
+            step.state === "pending" && "border-2 border-border",
+          )}
+        >
+          {step.state === "done" && <Check className="size-4" />}
+          {step.state === "active" && <Loader2 className="size-4 animate-spin" />}
+        </div>
+        {!last && (
+          <div
+            className={cn(
+              "min-h-8 w-0.5 flex-1",
+              step.state === "done" ? "bg-success" : "bg-border",
+            )}
+          />
+        )}
+      </div>
+      <div className={cn("flex-1 space-y-1", last ? "pb-1" : "pb-3")}>
+        <p
+          className={cn(
+            "text-sm",
+            step.state === "pending"
+              ? "font-medium text-muted-foreground"
+              : step.state === "active"
+                ? "font-semibold text-primary"
+                : "font-semibold text-foreground",
+          )}
+        >
+          {step.title}
+        </p>
+        <p className="text-xs text-muted-foreground">{step.desc}</p>
+        {step.detail}
+      </div>
+    </div>
+  );
+}
+
+function CoverageBadge({
+  tone,
+  count,
+  onClick,
+}: {
+  tone: "success" | "destructive" | "muted";
+  count: number;
+  onClick?: () => void;
+}) {
+  const dot =
+    tone === "success"
+      ? "bg-success"
+      : tone === "destructive"
+        ? "bg-destructive"
+        : "bg-muted-foreground";
+  const bg =
+    tone === "success"
+      ? "bg-success/10"
+      : tone === "destructive"
+        ? "bg-destructive/10"
+        : "bg-muted";
+  const text =
+    tone === "success"
+      ? "text-success"
+      : tone === "destructive"
+        ? "text-destructive"
+        : "text-muted-foreground";
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={!onClick}
+      className={cn(
+        "flex items-center gap-1 rounded-full px-2 py-0.5",
+        bg,
+        onClick ? "cursor-pointer hover:opacity-80" : "cursor-default",
+      )}
+    >
+      <span className={cn("size-1.5 rounded-full", dot)} />
+      <span className={cn("text-[11px] font-semibold", text)}>{count}</span>
+    </button>
+  );
+}
 
 export default function ASTPage() {
   const params = useParams();
@@ -260,6 +369,83 @@ export default function ASTPage() {
 
   const missingSlots = coverage ? getMissingSlots(coverage) : [];
 
+  // 覆盖率派生量（completed = 已填充 + 已推断，与 CoverageSummaryCard 口径一致）。
+  const completed = coverage ? coverage.filled + coverage.inferred : 0;
+  const totalSlots = coverage?.total_slots ?? 0;
+  const missing = coverage?.missing_required ?? 0;
+  const dismissed = coverage?.dismissed ?? 0;
+  const hasReport = reports.length > 0 || generateMutation.isSuccess;
+  const generating = generateMutation.isPending;
+
+  const steps: GenStep[] = coverage
+    ? [
+        {
+          title: "数据抽取解析",
+          desc: `已完成 · 抽取 ${job?.total_candidates ?? 0} 个候选，${job?.approved_count ?? 0} 条已确认`,
+          state: "done",
+        },
+        {
+          title: "模板匹配",
+          desc: coverage.template_name
+            ? `已完成 · 命中模板「${coverage.template_name}${coverage.template_version ? ` ${coverage.template_version}` : ""}」`
+            : "已完成 · 使用默认模板",
+          state: "done",
+        },
+        {
+          title: "覆盖率分析",
+          desc: `已完成 · ${completed}/${totalSlots} 插槽已填充${missing > 0 ? `，${missing} 项必填缺失` : ""}`,
+          state: "done",
+          detail: (
+            <div className="mt-1 space-y-1.5 rounded-lg border bg-muted p-3">
+              <div className="flex justify-between text-xs">
+                <span className="text-muted-foreground">已填充插槽</span>
+                <span className="font-semibold text-foreground">
+                  {completed} / {totalSlots}
+                </span>
+              </div>
+              <div className="flex justify-between text-xs">
+                <span className="text-muted-foreground">缺失必填项</span>
+                <span
+                  className={cn(
+                    "font-semibold",
+                    missing > 0 ? "text-destructive" : "text-foreground",
+                  )}
+                >
+                  {missing}
+                </span>
+              </div>
+              <div className="flex justify-between text-xs">
+                <span className="text-muted-foreground">已忽略</span>
+                <span className="font-semibold text-foreground">{dismissed}</span>
+              </div>
+            </div>
+          ),
+        },
+        {
+          title: "AI 行文生成",
+          desc: hasReport
+            ? "已完成 · 依行文 Prompt 融合插槽值生成叙述"
+            : generating
+              ? "生成中 · 依行文 Prompt 融合插槽值生成叙述"
+              : "等待中 · 依行文 Prompt 融合插槽值生成叙述",
+          state: hasReport ? "done" : generating ? "active" : "pending",
+        },
+        {
+          title: "DOCX 报告渲染",
+          desc: hasReport
+            ? "已完成 · 已生成最终 Word 文档"
+            : generating
+              ? "生成中 · 生成最终 Word 文档"
+              : "等待中 · 生成最终 Word 文档",
+          state: hasReport ? "done" : generating ? "active" : "pending",
+        },
+      ]
+    : [];
+
+  const doneSteps = steps.filter((s) => s.state === "done").length;
+  const genPct = steps.length ? Math.round((doneSteps / steps.length) * 100) : 0;
+  const latestReport = reports[0];
+
   return (
     <div className="space-y-4">
       {/* Header */}
@@ -324,36 +510,63 @@ export default function ASTPage() {
           </TabsList>
 
           <TabsContent value="coverage" className="mt-4">
-            <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-              {/* Left: Summary + Tree */}
-              <div className="space-y-4 lg:col-span-1">
-                <CoverageSummaryCard
-                  coverage={coverage}
-                  onScrollToMissing={handleScrollToMissing}
-                />
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm">模板结构</CardTitle>
-                  </CardHeader>
-                  <CardContent className="max-h-[60vh] overflow-y-auto">
+            <div className="flex flex-col gap-4">
+              <div className="grid grid-cols-1 overflow-hidden rounded-lg border bg-card lg:grid-cols-[1fr_480px]">
+                {/* 左：生成进度 */}
+                <div className="flex flex-col gap-5 p-6 lg:border-r">
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[15px] font-semibold text-foreground">
+                        生成进度
+                      </span>
+                      <span className="text-sm font-semibold text-primary">
+                        {genPct}%
+                      </span>
+                    </div>
+                    <Progress value={genPct} className="h-2" />
+                  </div>
+                  <div className="flex flex-col">
+                    {steps.map((s, i) => (
+                      <StepRow
+                        key={s.title}
+                        step={s}
+                        last={i === steps.length - 1}
+                      />
+                    ))}
+                  </div>
+                </div>
+
+                {/* 右：报告结构 */}
+                <div className="flex min-h-0 flex-col">
+                  <div className="flex items-center justify-between border-b px-5 py-4">
+                    <div className="flex items-center gap-2">
+                      <ListTree className="size-4 text-foreground" />
+                      <span className="text-sm font-semibold text-foreground">
+                        报告结构
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <CoverageBadge tone="success" count={completed} />
+                      <CoverageBadge
+                        tone="destructive"
+                        count={missing}
+                        onClick={missing > 0 ? handleScrollToMissing : undefined}
+                      />
+                      <CoverageBadge tone="muted" count={dismissed} />
+                    </div>
+                  </div>
+
+                  <div className="max-h-[52vh] min-h-0 flex-1 overflow-y-auto px-4 py-3">
                     <ASTTreeView
                       coverage={coverage}
                       selectedSlotId={selectedSlot?.slot_id}
                       onSelectSlot={setSelectedSlot}
                       scrollToSlotId={scrollToSlotId}
                     />
-                  </CardContent>
-                </Card>
-              </div>
+                  </div>
 
-              {/* Right: Detail + Document */}
-              <div className="space-y-4 lg:col-span-2">
-                {selectedSlot ? (
-                  <Card>
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-sm">槽位详情</CardTitle>
-                    </CardHeader>
-                    <CardContent>
+                  {selectedSlot && (
+                    <div className="max-h-[40vh] overflow-y-auto border-t px-4 py-3">
                       <SlotDetailPanel
                         slot={selectedSlot}
                         onClickSourceRef={setHighlightRef}
@@ -362,36 +575,46 @@ export default function ASTPage() {
                             slot={selectedSlot}
                             onDismiss={(id) => dismissMutation.mutate(id)}
                             onUndismiss={(id) => undismissMutation.mutate(id)}
-                            dismissing={dismissMutation.isPending || undismissMutation.isPending}
+                            dismissing={
+                              dismissMutation.isPending || undismissMutation.isPending
+                            }
                             onRerun={handleRerun}
                             rerunning={rerunMutation.isPending}
                           />
                         }
                       />
-                    </CardContent>
-                  </Card>
-                ) : (
-                  <Card>
-                    <CardContent className="py-8 text-center text-sm text-muted-foreground">
-                      点击左侧槽位查看详情
-                    </CardContent>
-                  </Card>
-                )}
+                    </div>
+                  )}
 
-                {docContent && (
-                  <Card>
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-sm">源文档</CardTitle>
-                    </CardHeader>
-                    <CardContent className="max-h-[50vh] overflow-y-auto">
-                      <WordViewer
-                        content={docContent}
-                        highlightRef={highlightRef}
-                      />
-                    </CardContent>
-                  </Card>
-                )}
+                  <div className="flex items-center justify-between border-t px-5 py-3">
+                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                      <Info className="size-3.5" />
+                      <span>生成完成后可下载 DOCX 报告</span>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={!hasReport || !latestReport}
+                      onClick={() => latestReport && handleDownload(latestReport)}
+                    >
+                      <Download className="mr-1 size-3.5" />
+                      下载报告
+                    </Button>
+                  </div>
+                </div>
               </div>
+
+              {/* 源文档（全宽，可用时显示，供 evidence 高亮联动） */}
+              {docContent && (
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm">源文档</CardTitle>
+                  </CardHeader>
+                  <CardContent className="max-h-[50vh] overflow-y-auto">
+                    <WordViewer content={docContent} highlightRef={highlightRef} />
+                  </CardContent>
+                </Card>
+              )}
             </div>
           </TabsContent>
 
@@ -416,7 +639,7 @@ export default function ASTPage() {
           </DialogHeader>
           <p className="text-sm">
             当前仍有 <strong>{coverage?.missing_required ?? 0}</strong> 个必填槽位缺失。
-            生成的报告中对应部分将标注为"信息缺失"。
+            生成的报告中对应部分将标注为「信息缺失」。
           </p>
           {missingSlots.length > 0 && (
             <ul className="max-h-40 overflow-y-auto rounded border px-3 py-2 text-xs text-muted-foreground">

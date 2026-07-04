@@ -1,9 +1,9 @@
 """012 T035: End-to-end multi-template validation.
 
-Verifies that the full pipeline (upload template → create mapping →
+Verifies that the full pipeline (upload template → set iri_pattern →
 template resolution → coverage manifest) works for a second document type
 without code changes and with zero regression on the existing CMCReport
-pipeline.
+pipeline. (015: iri_pattern replaces the retired DocumentTypeMapping.)
 """
 
 from __future__ import annotations
@@ -64,8 +64,8 @@ class TestMultiTemplateResolution:
     """Verify resolve_template picks the right template per document type."""
 
     def _seed_db(self, db_session):
-        """Seed DB with both CMC and Stability templates + mappings."""
-        from app.models.extraction import AstTemplate, DocumentTypeMapping
+        """Seed DB with both CMC and Stability templates keyed by iri_pattern."""
+        from app.models.extraction import AstTemplate
         from app.services.reporting.ast_template import load_default_template
 
         cmc_tpl = load_default_template()
@@ -75,6 +75,8 @@ class TestMultiTemplateResolution:
             version="v1",
             schema_json=cmc_tpl.model_dump(),
             is_default=True,
+            iri_pattern="CMCReport",
+            status="published",
         )
         db_session.add(cmc_row)
 
@@ -85,21 +87,10 @@ class TestMultiTemplateResolution:
             version="v1",
             schema_json=stab_tpl.model_dump(),
             is_default=False,
+            iri_pattern="StabilityEvaluation",
+            status="published",
         )
         db_session.add(stab_row)
-
-        db_session.add(DocumentTypeMapping(
-            id=uuid.uuid4(),
-            doc_class_iri_pattern="CMCReport",
-            template_id=cmc_row.id,
-            priority=10,
-        ))
-        db_session.add(DocumentTypeMapping(
-            id=uuid.uuid4(),
-            doc_class_iri_pattern="StabilityEvaluation",
-            template_id=stab_row.id,
-            priority=10,
-        ))
 
         db_session.commit()
         return cmc_row, stab_row
@@ -121,7 +112,7 @@ class TestMultiTemplateResolution:
         template, source, db_id = resolve_template(
             "http://example.org/slpra#CMCReport", db_session,
         )
-        assert source == "mapping"
+        assert source == "iri_pattern"
         assert db_id == cmc_row.id
         assert template.template_id == "QS-A-020F05@v1"
 
@@ -130,7 +121,7 @@ class TestMultiTemplateResolution:
         template, source, db_id = resolve_template(
             "http://example.org/slpra#StabilityEvaluation", db_session,
         )
-        assert source == "mapping"
+        assert source == "iri_pattern"
         assert db_id == stab_row.id
         assert template.template_id == "STABILITY-EVAL@v1"
 
@@ -185,8 +176,13 @@ class TestTemplateDeletionEdgeCase:
         with Session(engine) as session:
             yield session
 
-    def test_mapping_cascade_deletes_with_template(self, db_session):
-        from app.models.extraction import AstTemplate, DocumentTypeMapping
+    def test_deleted_template_no_longer_resolves_by_iri_pattern(self, db_session):
+        """Deleting a template removes it from iri_pattern resolution (015).
+
+        The retired DocumentTypeMapping cascade is gone; iri_pattern lives on the
+        template row itself, so deletion inherently drops the resolution key.
+        """
+        from app.models.extraction import AstTemplate
 
         tpl = AstTemplate(
             id=uuid.uuid4(),
@@ -194,25 +190,27 @@ class TestTemplateDeletionEdgeCase:
             version="v1",
             schema_json=load_template_file(STABILITY_TEMPLATE_PATH).model_dump(),
             is_default=False,
+            iri_pattern="TestDoc",
+            status="published",
         )
         db_session.add(tpl)
-        db_session.flush()
-
-        mapping = DocumentTypeMapping(
-            id=uuid.uuid4(),
-            doc_class_iri_pattern="TestDoc",
-            template_id=tpl.id,
-            priority=5,
-        )
-        db_session.add(mapping)
         db_session.commit()
 
-        assert db_session.query(DocumentTypeMapping).count() == 1
+        _, source, db_id = resolve_template(
+            "http://example.org/slpra#TestDoc", db_session,
+        )
+        assert source == "iri_pattern"
+        assert db_id == tpl.id
 
         db_session.delete(tpl)
         db_session.commit()
 
-        assert db_session.query(DocumentTypeMapping).count() == 0
+        # No templates left → resolution falls through to filesystem fallback.
+        _, source, db_id = resolve_template(
+            "http://example.org/slpra#TestDoc", db_session,
+        )
+        assert source == "fallback"
+        assert db_id is None
 
     def test_generated_report_survives_template_deletion(self, db_session):
         """GeneratedReport has no FK to AstTemplate — snapshots are independent."""

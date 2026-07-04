@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { useEditor, EditorContent } from "@tiptap/react";
-import { Extension } from "@tiptap/core";
+import { Extension, Mark, mergeAttributes } from "@tiptap/core";
 import StarterKit from "@tiptap/starter-kit";
 import { Table } from "@tiptap/extension-table";
 import { TableRow } from "@tiptap/extension-table-row";
@@ -29,6 +29,47 @@ const TextAlign = Extension.create({
         },
       },
     ];
+  },
+});
+
+// 行内文本样式：还原后端从 Word run 采集的字体颜色/字号/字体族（015 样例预览）。
+// 自研以避免新增 @tiptap/extension-text-style 依赖（气隙友好）；复刻官方 textStyle
+// 语义——各属性各产出一段 style，由 mergeAttributes 合并进同一 <span>。
+const TextStyle = Mark.create({
+  name: "textStyle",
+  parseHTML() {
+    return [
+      {
+        tag: "span",
+        getAttrs: (el) =>
+          (el as HTMLElement).hasAttribute("style") ? {} : false,
+      },
+    ];
+  },
+  renderHTML({ HTMLAttributes }) {
+    return ["span", mergeAttributes(HTMLAttributes), 0];
+  },
+  addAttributes() {
+    return {
+      color: {
+        default: null,
+        parseHTML: (el) => (el as HTMLElement).style.color || null,
+        renderHTML: (attrs) =>
+          attrs.color ? { style: `color: ${attrs.color}` } : {},
+      },
+      fontSize: {
+        default: null,
+        parseHTML: (el) => (el as HTMLElement).style.fontSize || null,
+        renderHTML: (attrs) =>
+          attrs.fontSize ? { style: `font-size: ${attrs.fontSize}` } : {},
+      },
+      fontFamily: {
+        default: null,
+        parseHTML: (el) => (el as HTMLElement).style.fontFamily || null,
+        renderHTML: (attrs) =>
+          attrs.fontFamily ? { style: `font-family: ${attrs.fontFamily}` } : {},
+      },
+    };
   },
 });
 
@@ -111,15 +152,18 @@ function applyHighlight(container: HTMLElement, keywords: string[]): Element | n
 interface WordViewerProps {
   content: Record<string, unknown>;
   highlightRef?: string | null;
+  /** 令表格按 colgroup 列宽比例适配纸张宽度（样例预览用；默认表格保持自然宽度）。 */
+  fitTables?: boolean;
 }
 
-export function WordViewer({ content, highlightRef }: WordViewerProps) {
+export function WordViewer({ content, highlightRef, fitTables }: WordViewerProps) {
   const wrapperRef = useRef<HTMLDivElement>(null);
 
   const editor = useEditor({
     extensions: [
       StarterKit,
       TextAlign,
+      TextStyle,
       Underline,
       Table,
       TableRow,
@@ -158,10 +202,115 @@ export function WordViewer({ content, highlightRef }: WordViewerProps) {
     return () => clearTimeout(timer);
   }, [highlightRef]);
 
+  // Page-break pagination: insert spacer elements so blocks don't cross A4 boundaries
+  useEffect(() => {
+    if (!wrapperRef.current) return;
+    const wrapper = wrapperRef.current;
+    const tiptap = wrapper.querySelector(".tiptap") as HTMLElement | null;
+    if (!tiptap) return;
+
+    const run = () => {
+      tiptap
+        .querySelectorAll(".page-break-spacer")
+        .forEach((el) => el.remove());
+
+      const ruler = document.createElement("div");
+      ruler.style.cssText = "position:absolute;visibility:hidden;height:29.7cm";
+      wrapper.appendChild(ruler);
+      const pagePx = ruler.offsetHeight;
+      wrapper.removeChild(ruler);
+      if (pagePx <= 0) return;
+
+      const gapPx = 20;
+      const padTop = parseFloat(getComputedStyle(wrapper).paddingTop);
+
+      const blocks = Array.from(tiptap.children).filter(
+        (n) => !(n as HTMLElement).classList?.contains("page-break-spacer"),
+      ) as HTMLElement[];
+      if (blocks.length === 0) return;
+
+      const tiptapRect = tiptap.getBoundingClientRect();
+      const measures = blocks.map((b) => {
+        const r = b.getBoundingClientRect();
+        return { el: b, top: r.top - tiptapRect.top, height: r.height };
+      });
+
+      let shift = 0;
+      const inserts: { before: HTMLElement; h: number }[] = [];
+      let boundary = pagePx - padTop;
+
+      for (const m of measures) {
+        const adjTop = m.top + shift;
+        const adjBot = adjTop + m.height;
+
+        if (m.height > pagePx * 0.9) {
+          while (boundary <= adjBot) boundary += pagePx + gapPx;
+          continue;
+        }
+
+        if (adjTop < boundary && adjBot > boundary) {
+          const h = boundary - adjTop + gapPx;
+          inserts.push({ before: m.el, h });
+          shift += h;
+          boundary += pagePx + gapPx;
+        }
+
+        while (adjTop + shift >= boundary) boundary += pagePx + gapPx;
+      }
+
+      for (const ins of [...inserts].reverse()) {
+        const div = document.createElement("div");
+        div.className = "page-break-spacer";
+        div.style.height = `${ins.h}px`;
+        tiptap.insertBefore(div, ins.before);
+      }
+    };
+
+    const raf = requestAnimationFrame(run);
+    return () => {
+      cancelAnimationFrame(raf);
+      tiptap
+        .querySelectorAll(".page-break-spacer")
+        .forEach((el) => el.remove());
+    };
+  }, [content, editor]);
+
   return (
-    <div ref={wrapperRef} className="prose prose-sm max-w-none dark:prose-invert">
+    <div
+      ref={wrapperRef}
+      className={`paper-pages prose prose-sm mx-auto max-w-none dark:prose-invert${
+        fitTables ? " paper-fit-tables" : ""
+      }`}
+    >
       <EditorContent editor={editor} />
       <style>{`
+        .paper-pages {
+          padding: 3rem 4rem;
+          min-height: 29.7cm;
+          border-radius: 2px;
+          border: 1px solid hsl(0 0% 85%);
+          box-shadow: 0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06);
+          background: white;
+        }
+        :is(.dark) .paper-pages {
+          border-color: hsl(var(--border));
+          background: hsl(var(--card));
+          box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+        }
+        .page-break-spacer {
+          margin: 0 -4rem;
+          background: hsl(0 0% 94%);
+          border-top: 1px solid hsl(0 0% 82%);
+          border-bottom: 1px solid hsl(0 0% 82%);
+          box-shadow:
+            inset 0 2px 3px rgba(0,0,0,0.04),
+            inset 0 -2px 3px rgba(0,0,0,0.04);
+          pointer-events: none;
+        }
+        :is(.dark) .page-break-spacer {
+          background: hsl(var(--muted));
+          border-color: hsl(var(--border));
+        }
         .entity-annotation {
           position: relative;
           cursor: default;
@@ -201,6 +350,15 @@ export function WordViewer({ content, highlightRef }: WordViewerProps) {
         .tiptap table th {
           background: hsl(0 0% 96%);
           font-weight: 600;
+        }
+        .paper-fit-tables .tiptap table {
+          width: 100% !important;
+          min-width: 0 !important;
+          table-layout: fixed;
+        }
+        .paper-fit-tables .tiptap table td,
+        .paper-fit-tables .tiptap table th {
+          overflow-wrap: anywhere;
         }
         .${HIGHLIGHT_CLS} {
           background: rgba(59, 130, 246, 0.08) !important;

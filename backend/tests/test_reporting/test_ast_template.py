@@ -171,27 +171,23 @@ class TestLLMExtractionSource:
 
 
 class TestResolveTemplate:
-    """012: three-tier fallback template resolution."""
+    """015: three-tier fallback resolution keyed on per-template ``iri_pattern``.
 
-    def _seed_template(self, db, *, name="Test", version="v1", is_default=False):
+    (Replaces the retired DocumentTypeMapping tier; iri_pattern is the functional
+    resolution key.)
+    """
+
+    def _seed_template(
+        self, db, *, name="Test", version="v1", is_default=False,
+        iri_pattern=None, status="draft",
+    ):
         from app.models.extraction import AstTemplate
         tpl_json = load_default_template().model_dump()
         row = AstTemplate(
             name=name, version=version, doc_no="TEST",
             schema_json=tpl_json, is_default=is_default,
+            iri_pattern=iri_pattern, status=status,
             created_by="test",
-        )
-        db.add(row)
-        db.commit()
-        db.refresh(row)
-        return row
-
-    def _seed_mapping(self, db, template_id, pattern, priority=0):
-        from app.models.extraction import DocumentTypeMapping
-        row = DocumentTypeMapping(
-            doc_class_iri_pattern=pattern,
-            template_id=template_id,
-            priority=priority,
         )
         db.add(row)
         db.commit()
@@ -210,29 +206,44 @@ class TestResolveTemplate:
         assert source == "default"
         assert db_id == row.id
 
-    def test_tier1_mapping_match(self, db):
-        row = self._seed_template(db, name="CMC", is_default=False)
-        self._seed_mapping(db, row.id, "CMCReport")
+    def test_tier1_iri_pattern_match(self, db):
+        row = self._seed_template(db, name="CMC", iri_pattern="CMCReport")
         tpl, source, db_id = resolve_template(
             "http://slpra.org/ontology/CMCReport", db,
         )
-        assert source == "mapping"
+        assert source == "iri_pattern"
         assert db_id == row.id
 
-    def test_mapping_priority_ordering(self, db):
-        t1 = self._seed_template(db, name="Low", version="v1")
-        t2 = self._seed_template(db, name="High", version="v2")
-        self._seed_mapping(db, t1.id, "Report", priority=0)
-        self._seed_mapping(db, t2.id, "Report", priority=10)
-        _, source, db_id = resolve_template("SomeReport", db)
-        assert source == "mapping"
-        assert db_id == t2.id
+    def test_iri_pattern_longest_wins(self, db):
+        broad = self._seed_template(db, name="Broad", version="v1", iri_pattern="Report")
+        specific = self._seed_template(
+            db, name="Specific", version="v2", iri_pattern="CMCReport",
+        )
+        _, source, db_id = resolve_template(
+            "http://slpra.org/ontology/CMCReport", db,
+        )
+        assert source == "iri_pattern"
+        assert db_id == specific.id
 
-    def test_no_doc_class_iri_skips_mapping(self, db):
-        row = self._seed_template(db, is_default=True)
-        self._seed_mapping(db, row.id, "CMCReport")
+    def test_archived_template_excluded_from_iri_pattern(self, db):
+        self._seed_template(
+            db, name="Archived", iri_pattern="CMCReport", status="archived",
+        )
+        default_row = self._seed_template(db, name="Fallback", version="v2", is_default=True)
+        _, source, db_id = resolve_template(
+            "http://slpra.org/ontology/CMCReport", db,
+        )
+        # archived pattern is skipped → falls through to the default tier
+        assert source == "default"
+        assert db_id == default_row.id
+
+    def test_no_doc_class_iri_skips_iri_pattern(self, db):
+        row = self._seed_template(
+            db, name="CMC", iri_pattern="CMCReport", is_default=True,
+        )
         tpl, source, db_id = resolve_template(None, db)
         assert source == "default"
+        assert db_id == row.id
 
     def test_delete_default_rejected(self, client, db, analyst_headers):
         row = self._seed_template(db, name="Default", is_default=True)

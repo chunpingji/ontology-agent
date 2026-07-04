@@ -139,6 +139,7 @@ class AstTemplateCreate(BaseModel):
     name: str
     version: str = "v1"
     doc_no: str | None = None
+    iri_pattern: str | None = None  # 015: functional doc-class resolution key
     schema_json: dict
     sample_text: str | None = None
     sample_content_json: dict | None = None  # 013: tiptap 结构化样例（忠于原文预览）
@@ -149,6 +150,19 @@ class AstTemplateUpdate(BaseModel):
     version: str | None = None
 
 
+class AstTemplateMetaUpdate(BaseModel):
+    """015: in-place metadata edit — no version bump.
+
+    基本信息 tab 可编辑 name/doc_no/owner/status；列表页 ⋮ 操作走 status/iri_pattern。
+    """
+
+    name: str | None = None
+    doc_no: str | None = None
+    owner: str | None = None  # 责任人
+    status: str | None = None  # draft | published | archived
+    iri_pattern: str | None = None
+
+
 class AstTemplateResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -156,11 +170,26 @@ class AstTemplateResponse(BaseModel):
     name: str
     version: str
     doc_no: str | None = None
+    iri_pattern: str | None = None
+    status: str = "draft"
     slot_count: int = 0
     is_default: bool = False
     created_by: str | None = None
+    owner: str | None = None
+    default_source_filename: str | None = None
     created_at: datetime
     updated_at: datetime | None = None
+
+
+class TrainingPairResponse(BaseModel):
+    """015 训练数据：源文档→评估报告 成对样例（report 可缺省）。"""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    source_filename: str
+    report_filename: str | None = None
+    created_at: datetime
 
 
 class TemplateMatchResponse(BaseModel):
@@ -170,22 +199,16 @@ class TemplateMatchResponse(BaseModel):
     match_source: str
 
 
-class DocumentTypeMappingCreate(BaseModel):
-    doc_class_iri_pattern: str
-    template_id: UUID
-    priority: int = 0
+class GenerateSectionPromptRequest(BaseModel):
+    """015: derive a 行文 Prompt for a section from the sample + its slot labels."""
+
+    section_title: str
+    slot_labels: list[str] = []
+    sample_text: str = ""
 
 
-class DocumentTypeMappingResponse(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-
-    id: UUID
-    doc_class_iri_pattern: str
-    template_id: UUID
-    template_name: str = ""
-    template_version: str = ""
-    priority: int = 0
-    created_at: datetime
+class GenerateSectionPromptResponse(BaseModel):
+    prompt: str
 
 
 # --------------------------------------------------------------------------- #

@@ -117,6 +117,10 @@ class FactMaterializer:
         doc_type_to_class = doc_type_to_class or {}
         eid = str(change.get("entity_id"))
         etype = change.get("entity_type", "Fact")
+        # entity_type 命中文档类型映射（默认 7 类 ∪ 连接器 doc_type_to_class 覆盖）即为托管
+        # 文档记录——按构造确知归 document 模块，显式指定，绕过按命名空间的 `_detect_module`
+        # （文档子类可能落在 drug-development 命名空间，前缀启发式会误判为 integration）。
+        is_document = etype in doc_type_to_class
         class_iri = doc_type_to_class.get(etype, f"{_FACT_BASE_IRI}{etype}")
         info = IndividualInfo(
             iri=f"{_FACT_BASE_IRI}{eid}",
@@ -124,6 +128,7 @@ class FactMaterializer:
             class_iris=[class_iri],
             label_zh=change.get("label"),
             properties={**(change.get("fields") or {}), "_version": change.get("version")},
+            module="document" if is_document else None,
         )
         try:  # best-effort World 投影（fake engine 下为 no-op）
             self.engine.project_entities([info.properties])

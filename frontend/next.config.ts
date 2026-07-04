@@ -10,6 +10,10 @@ const nextConfig: NextConfig = {
       { source: "/reasoning", destination: "/analysis", permanent: true },
       { source: "/knowledge-graph", destination: "/analysis", permanent: true },
       { source: "/", destination: "/overview", permanent: true },
+      // 015 supersession (FR-005 / clarify Q3): legacy routes carry their
+      // functionality onto the new pages and 308-redirect there.
+      { source: "/integration", destination: "/connector", permanent: true },
+      { source: "/approvals", destination: "/approval", permanent: true },
     ];
   },
   async rewrites() {

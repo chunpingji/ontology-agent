@@ -70,6 +70,30 @@ def _add_generated_disclaimer_section(doc: Document) -> None:
     run.font.name = "宋体"
 
 
+def _add_section_narratives(doc: Document, report: RiskReport) -> None:
+    """Render per-section 行文 narrative prose under its own headings (015).
+
+    Each entry of ``report.section_narratives`` is ``{section_id, title, text}``
+    generated at report time from the section's 行文 ``prompt``. The prose is
+    LLM-sourced, so every block carries the gray-italic ⓘ marker and a per-block
+    disclaimer — additive narrative that never alters deterministic evaluation
+    (FR-009). No-op when there are no narratives (legacy / LLM-off reports).
+    """
+    if not report.section_narratives:
+        return
+    doc.add_heading("章节行文 Section Narratives", level=2)
+    for entry in report.section_narratives:
+        title = entry.get("title") or entry.get("section_id") or ""
+        text = entry.get("text") or ""
+        if not text.strip():
+            continue
+        if title:
+            doc.add_heading(title, level=3)
+        p = doc.add_paragraph()
+        _add_llm_run(p, text)
+        _add_llm_disclaimer_line(doc)
+
+
 def render_risk_report(
     report: RiskReport, manifest: CoverageManifest | None = None
 ) -> bytes:
@@ -100,8 +124,9 @@ def render_risk_report(
     _add_assessment_table(doc, report)
     _add_outstanding_materials(doc, manifest)
     _add_section_two(doc, report)
+    _add_section_narratives(doc, report)
 
-    if report.llm_supplements:
+    if report.llm_supplements or report.section_narratives:
         _add_generated_disclaimer_section(doc)
 
     buf = io.BytesIO()

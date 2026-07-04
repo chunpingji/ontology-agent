@@ -353,6 +353,21 @@ def _compute_annotation(
         except Exception:
             logger.warning("文档分类失败，使用全量候选集", exc_info=True)
 
+        # 报告中心上传时用户显式指定的文档类型优先约束 NER 候选子图（仅当其相关类子图非空
+        # 时生效，避免根类/无关系类型把候选集约束为空而漏识别）。关系抽取仍用自动分类结果
+        # （doc_class_result），二者互不影响。
+        override_iri = (job.source_config or {}).get("doc_class_iri")
+        if override_iri:
+            try:
+                from app.services.extraction.ontology_typer import (
+                    relevant_classes_for_doc_type,
+                )
+
+                if relevant_classes_for_doc_type(engine, override_iri):
+                    doc_class_iri = override_iri
+            except Exception:
+                logger.warning("文档类型约束计算失败，回退自动分类", exc_info=True)
+
     if job.source_type == "word":
         content, warnings, triples, ckpt = annotate_word(
             file_path, engine, progress_fn, should_pause_fn, checkpoint,
@@ -584,18 +599,26 @@ async def create_auto_job(
     file: UploadFile = File(...),
     source_type: str = Form(...),
     target_class_iris: str | None = Form(None),
+    doc_class_iri: str | None = Form(None),
     db: Session = Depends(get_db),
     engine: OntologyEngine = Depends(get_ontology_engine),
     identity: Identity = Depends(_analyst),
 ):
-    """自动抽取：上传文件 → 按文件名关键词或指定目标类列表 → 多类抽取汇入同一 Job。"""
+    """自动抽取：上传文件 → 按文件名关键词/指定目标类/文档类型子图 → 多类抽取汇入同一 Job。
+
+    ``doc_class_iri``（报告中心上传时用户指定的文档类型）非空时既约束候选抽取目标类
+    （相关类多跳子图），又随 ``source_config`` 传入标注管线约束 NER 候选类（定向识别）。
+    """
     suffix = Path(file.filename or "").suffix or ".bin"
     filename = file.filename or "unknown"
 
+    source_config: dict = {"mode": "auto"}
+    if doc_class_iri:
+        source_config["doc_class_iri"] = doc_class_iri
     job = ExtractionJob(
         source_type=source_type,
         source_filename=filename,
-        source_config={"mode": "auto"},
+        source_config=source_config,
         status="running",
     )
     db.add(job)
@@ -613,6 +636,11 @@ async def create_auto_job(
     iris: list[str] = []
     if target_class_iris:
         iris = json.loads(target_class_iris)
+    if not iris and doc_class_iri:
+        # 用户指定的文档类型 → 相关类多跳子图，约束候选抽取目标类（空则回退下方启发式）。
+        from app.services.extraction.ontology_typer import relevant_classes_for_doc_type
+
+        iris = sorted(relevant_classes_for_doc_type(engine, doc_class_iri))
 
     if not iris:
         is_clinical = any(kw in filename for kw in _AUTO_EXTRACT_KEYWORDS)
@@ -916,6 +944,33 @@ def _llm_report_flags_active() -> bool:
     )
 
 
+def _narratives_payload(report) -> dict | None:
+    """Build the persisted narratives blob for the web reading pane (015).
+
+    Only the LLM-generated prose is captured so the reading pane can render it
+    under an AI indicator; deterministic values stay out. Returns ``None`` when
+    there is no narrative content, keeping the column null for legacy reports.
+    """
+    subject = (
+        report.subject_description
+        if "subject_description" in report.llm_generated_fields
+        else None
+    )
+    conclusion = (
+        report.conclusion
+        if "conclusion" in report.llm_generated_fields
+        else None
+    )
+    sections = report.section_narratives or []
+    if not subject and not conclusion and not sections:
+        return None
+    return {
+        "subject_description": subject,
+        "conclusion": conclusion,
+        "sections": sections,
+    }
+
+
 def _build_and_save_report(
     job_id: UUID,
     job_source_filename: str,
@@ -971,6 +1026,7 @@ def _build_and_save_report(
                 ],
                 "coverage": manifest.to_dict(),
             }
+            gen_report.narratives = _narratives_payload(report)
             gen_report.report_status = "completed"
             gen_report.report_error = None
             audit.append(
@@ -1098,6 +1154,7 @@ def generate_risk_report(
             ],
             "coverage": manifest.to_dict(),
         },
+        narratives=_narratives_payload(report),
         actor=identity.username,
         report_status="completed",
     )
@@ -1186,6 +1243,7 @@ def get_report_status(
         "created_at": report.created_at.isoformat() if report.created_at else None,
         "report_status": report.report_status,
         "report_error": report.report_error,
+        "narratives": report.narratives,
     }
 
 

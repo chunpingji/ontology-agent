@@ -84,6 +84,10 @@ class IndividualInfo:
     label_zh: str | None = None
     label_en: str | None = None
     properties: dict[str, Any] = field(default_factory=dict)
+    # 显式模块覆盖：调用方确知归属模块时直接指定，绕过按命名空间前缀的启发式
+    # `_detect_module`。用于 doc_repo 文档记录——其文档类可能落在非 /slpra/document/
+    # 命名空间（如 drug-development 下的 RegulatoryDocument 子类），前缀启发式会误判。
+    module: str | None = None
 
 
 @dataclass

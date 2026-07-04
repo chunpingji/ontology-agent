@@ -391,35 +391,86 @@ def _style_font_attr(para, attr: str):
         return None
 
 
-def _para_runs_and_text(para) -> tuple[str, list[tuple[int, int, list[str]]]]:
+def _effective_font_color(r) -> str | None:
+    """run 有效字体颜色 → ``'#RRGGBB'``（仅真实 RGB；THEME/AUTO/缺失 → None）。"""
+    try:
+        col = r.font.color
+        if col is not None and col.rgb is not None:
+            return f"#{col.rgb}"  # RGBColor.__str__ → 'RRGGBB'
+    except (AttributeError, ValueError):
+        pass
+    return None
+
+
+def _pt_str(length) -> str | None:
+    """python-docx Length（EMU）→ CSS ``'{pt}pt'``；None/无 .pt → None。"""
+    if length is None:
+        return None
+    try:
+        return f"{length.pt:g}pt"
+    except (AttributeError, TypeError):
+        return None
+
+
+def _run_style_mark(r, style_size, style_name) -> dict | None:
+    """run 的颜色/字号/字体 → tiptap ``textStyle`` mark（仅忠实预览 rich 路径用）。
+
+    三者皆缺 → None（不产出冗余 mark）。颜色仅取 run 直排（红字等为直接格式）；
+    字号/字体回退段落样式字体，尽量还原 Word 有效视觉。
+    """
+    attrs: dict[str, str] = {}
+    color = _effective_font_color(r)
+    if color:
+        attrs["color"] = color
+    size = _pt_str(r.font.size or style_size)
+    if size:
+        attrs["fontSize"] = size
+    name = r.font.name or style_name
+    if name:
+        attrs["fontFamily"] = name
+    return {"type": "textStyle", "attrs": attrs} if attrs else None
+
+
+def _para_runs_and_text(
+    para, rich: bool = False,
+) -> tuple[str, list[tuple[int, int, list[dict]]]]:
     """由 run 自行拼接段落文本（而非 para.text），保证文本与 run 偏移严格对齐，
     使行内样式（粗体/斜体/下划线/删除线）能与 NER span 按字符边界无缝合并。
 
     run 属性为 None 时表示"继承段落样式"，需回退到 para.style.font 解析有效值。
+    每个 run 的样式以 tiptap mark dict 列表返回；``rich=True`` 时追加 ``textStyle``
+    mark（颜色/字号/字体），供 013/015 样例预览忠实还原 Word 视觉——抽取路径
+    （``rich=False``）产出与旧版字节一致（仅 bold/italic/underline/strike）。
     """
     style_bold = _style_font_attr(para, "bold")
     style_italic = _style_font_attr(para, "italic")
     style_underline = _style_font_attr(para, "underline")
+    style_size = _style_font_attr(para, "size") if rich else None
+    style_name = _style_font_attr(para, "name") if rich else None
 
     parts: list[str] = []
-    runs: list[tuple[int, int, list[str]]] = []
+    runs: list[tuple[int, int, list[dict]]] = []
     cursor = 0
     for r in para.runs:
         t = r.text or ""
         if not t:
             continue
-        marks: list[str] = []
+        marks: list[dict] = []
         bold = r.bold if r.bold is not None else style_bold
         if bold:
-            marks.append("bold")
+            marks.append({"type": "bold"})
         italic = r.italic if r.italic is not None else style_italic
         if italic:
-            marks.append("italic")
+            marks.append({"type": "italic"})
         underline = r.underline if r.underline is not None else style_underline
         if underline:
-            marks.append("underline")
+            marks.append({"type": "underline"})
         if getattr(r.font, "strike", None):
-            marks.append("strike")
+            marks.append({"type": "strike"})
+        if rich:
+            style_mark = _run_style_mark(r, style_size, style_name)
+            if style_mark:
+                marks.append(style_mark)
         parts.append(t)
         runs.append((cursor, cursor + len(t), marks))
         cursor += len(t)
@@ -429,7 +480,7 @@ def _para_runs_and_text(para) -> tuple[str, list[tuple[int, int, list[str]]]]:
 def _inline_nodes(
     text: str,
     spans: list[dict],
-    runs: list[tuple[int, int, list[str]]] | None = None,
+    runs: list[tuple[int, int, list[dict]]] | None = None,
 ) -> list[dict]:
     """文本 + 行内样式 run + NER span → tiptap text 节点序列。
 
@@ -453,7 +504,7 @@ def _inline_nodes(
         marks: list[dict] = []
         for rs, re_, rmarks in runs:
             if rs <= a < re_:
-                marks.extend({"type": m} for m in rmarks)
+                marks.extend(rmarks)
                 break
         for sp in spans:
             if sp["start"] <= a < sp["end"]:
@@ -559,6 +610,85 @@ def _tc_text(tc_elem) -> str:
         if p_text.strip():
             paras.append(p_text.strip())
     return " ".join(paras)
+
+
+def _tc_runs(tc_elem, table) -> tuple[str, list[tuple[int, int, list[dict]]]]:
+    """rich 表格 cell：跨段落收集文本 + 行内样式 run（含颜色/字号/字体）。
+
+    文本与 :func:`_tc_text` 语义一致（跳过空段、多段以单空格连接），run 偏移与该
+    文本严格对齐，供 :func:`_inline_nodes` 与 NER span 无缝合并。仅忠实预览路径调用。
+    """
+    from docx.table import _Cell
+
+    cell = _Cell(tc_elem, table)
+    parts: list[str] = []
+    runs: list[tuple[int, int, list[dict]]] = []
+    cursor = 0
+    for para in cell.paragraphs:
+        ptext, pruns = _para_runs_and_text(para, rich=True)
+        if not ptext.strip():
+            continue
+        if parts:  # 段落间单空格分隔，对齐 _tc_text 的 " ".join
+            parts.append(" ")
+            cursor += 1
+        for s, e, marks in pruns:
+            runs.append((cursor + s, cursor + e, marks))
+        parts.append(ptext)
+        cursor += len(ptext)
+    return "".join(parts), runs
+
+
+def _twips_to_px(twips: int) -> int:
+    """Word twip（1/1440 in）→ CSS px（96 dpi）：px = twips * 96 / 1440 = twips / 15。"""
+    return round(twips / 15)
+
+
+def _table_grid_px(table) -> list[int]:
+    """解析 ``<w:tblGrid>/<w:gridCol w:w>``（twips）→ 每网格列像素宽；缺失 → ``[]``。"""
+    from docx.oxml.ns import qn
+
+    grid = table._tbl.find(qn("w:tblGrid"))
+    if grid is None:
+        return []
+    out: list[int] = []
+    for gc in grid.findall(qn("w:gridCol")):
+        w = gc.get(qn("w:w"))
+        out.append(_twips_to_px(int(w)) if w and w.isdigit() else 0)
+    return out
+
+
+def _cell_gridspan(tc_elem) -> int:
+    """读 ``<w:tcPr>/<w:gridSpan w:val>``（水平合并跨列数）；缺失/异常 → 1。"""
+    from docx.oxml.ns import qn
+
+    tc_pr = tc_elem.find(qn("w:tcPr"))
+    if tc_pr is None:
+        return 1
+    gs = tc_pr.find(qn("w:gridSpan"))
+    if gs is None:
+        return 1
+    try:
+        return max(1, int(gs.get(qn("w:val"))))
+    except (TypeError, ValueError):
+        return 1
+
+
+def _apply_cell_grid(
+    cell: dict, tc_elem, ri: int, gcol: int, grid_px: list[int],
+) -> int:
+    """rich：为 cell 写 ``colspan``（>1）与首行 ``colwidth``；返回推进后的网格列游标。
+
+    ``colwidth`` 取 ``grid_px[gcol:gcol+span]``，长度 = span，契合 tiptap
+    ``createColGroup`` 按 ``colwidth[j]`` 逐网格列渲染 ``<colgroup>`` 的语义。
+    """
+    span = _cell_gridspan(tc_elem)
+    if span > 1:
+        cell.setdefault("attrs", {})["colspan"] = span
+    if ri == 0 and grid_px:
+        widths = grid_px[gcol:gcol + span]
+        if widths:
+            cell.setdefault("attrs", {})["colwidth"] = widths
+    return gcol + span
 
 
 def _build_row_segment(
@@ -768,6 +898,7 @@ def annotate_word(
     checkpoint: dict | None = None,
     doc_class_iri: str | None = None,
     structure_only: bool = False,
+    rich_style: bool = False,
 ) -> tuple[dict, list[str], list[dict], dict | None]:
     """解析 Word 文档 → tiptap ProseMirror JSON，三阶段 NER 标注实体 + 属性三元组。
 
@@ -781,6 +912,11 @@ def annotate_word(
     ``structure_only=True`` 时跳过三阶段 NER（不触碰 ``engine``，允许 ``engine=None``），
     只产出忠于原文结构与样式的 tiptap（标题/表格/对齐/行内样式），零实体标注。
     用于 013 模板设计的样例文档预览——离线、快速、无需 GLiNER/嵌入权重。
+
+    ``rich_style=True`` 时额外采集 Word 视觉样式（run 字体颜色/字号/字体族 → tiptap
+    ``textStyle`` mark；顶层表格 ``<w:tblGrid>`` 列宽 + 水平合并 → cell ``colwidth``/
+    ``colspan``），供 015 样例预览忠实还原 Word 外观。默认 ``False``——抽取路径输出
+    与旧版字节一致，零回归。
 
     返回 ``(doc_json, warnings, triples, checkpoint_or_None)``。
     checkpoint 非 None 表示标注被暂停（doc_json 仍为完整结构，但标注可能不完整）。
@@ -800,7 +936,7 @@ def annotate_word(
     for child in doc.element.body:
         if child in _paras:
             para = _paras[child]
-            text, runs = _para_runs_and_text(para)
+            text, runs = _para_runs_and_text(para, rich=rich_style)
             if text.strip():
                 level = _heading_level(para.style.name if para.style else None)
                 if not level:
@@ -903,19 +1039,27 @@ def annotate_word(
             row_seg_map = elem["row_seg_map"]
             seg_offs = elem["seg_cell_offsets"]
             nested_tables = elem.get("nested_tables", {})
+            grid_px = _table_grid_px(table_ref) if rich_style else []
 
             rows_data: list[dict] = []
             for ri, row in enumerate(table_ref.rows):
                 cells: list[dict] = []
                 tc_elems = list(row._tr.iterchildren(qn("w:tc")))
+                gcol = 0  # 网格列游标（rich：驱动首行 colwidth 切片与 colspan）
                 if ri < hdr_count:
                     for tc in tc_elems:
-                        ct = _tc_text(tc)
-                        cchildren = _text_to_tiptap_nodes(ct, [])
-                        cells.append({
+                        if rich_style:
+                            ct, cruns = _tc_runs(tc, table_ref)
+                            cchildren = _inline_nodes(ct, [], cruns)
+                        else:
+                            cchildren = _text_to_tiptap_nodes(_tc_text(tc), [])
+                        cell = {
                             "type": "tableCell",
                             "content": [{"type": "paragraph", "content": cchildren}],
-                        })
+                        }
+                        if rich_style:
+                            gcol = _apply_cell_grid(cell, tc, ri, gcol, grid_px)
+                        cells.append(cell)
                 elif ri in row_seg_map:
                     seg_offset = row_seg_map[ri]
                     abs_idx = seg_base + seg_offset
@@ -929,9 +1073,14 @@ def annotate_word(
                         cell_span_map.setdefault(col_idx, []).append(adj_span)
 
                     for ci, tc in enumerate(tc_elems):
-                        ct = "" if _is_vmerge_continue(tc) else _tc_text(tc)
+                        vmerge = _is_vmerge_continue(tc)
                         c_spans = cell_span_map.get(ci, [])
-                        cchildren = _text_to_tiptap_nodes(ct, c_spans)
+                        if rich_style:
+                            ct, cruns = ("", []) if vmerge else _tc_runs(tc, table_ref)
+                            cchildren = _inline_nodes(ct, c_spans, cruns)
+                        else:
+                            ct = "" if vmerge else _tc_text(tc)
+                            cchildren = _text_to_tiptap_nodes(ct, c_spans)
                         cell_content: list[dict] = [
                             {"type": "paragraph", "content": cchildren},
                         ]
@@ -939,10 +1088,18 @@ def annotate_word(
                             n_node = _render_nested_table(n_info, all_spans)
                             if n_node:
                                 cell_content.append(n_node)
-                        cells.append({
+                        cell = {"type": "tableCell", "content": cell_content}
+                        if rich_style:
+                            gcol = _apply_cell_grid(cell, tc, ri, gcol, grid_px)
+                        cells.append(cell)
+                elif rich_style:
+                    for tc in tc_elems:
+                        cell = {
                             "type": "tableCell",
-                            "content": cell_content,
-                        })
+                            "content": [{"type": "paragraph"}],
+                        }
+                        gcol = _apply_cell_grid(cell, tc, ri, gcol, grid_px)
+                        cells.append(cell)
                 else:
                     for cell in row.cells:
                         cells.append({
@@ -963,10 +1120,11 @@ def annotate_word(
 def parse_word_to_tiptap(file_path: str | Path) -> dict:
     """解析 Word 文档 → 忠于原文结构与样式的 tiptap JSON（无 NER、无 engine）。
 
-    ``annotate_word`` 的 structure_only 薄封装，供 013 样例文档预览复用。
+    ``annotate_word`` 的 structure_only 薄封装，供 013/015 样例文档预览复用。
+    ``rich_style=True`` 额外还原 Word 视觉（字体颜色/字号/字体族、表格列宽/合并）。
     """
     doc_json, _warnings_, _triples, _ckpt = annotate_word(
-        file_path, engine=None, structure_only=True,
+        file_path, engine=None, structure_only=True, rich_style=True,
     )
     return doc_json
 

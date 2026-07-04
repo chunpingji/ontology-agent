@@ -232,7 +232,7 @@ export function DataPropertyPanel({
                   <div className="mt-0.5 flex flex-wrap gap-1 text-[11px] text-muted-foreground">
                     <span className="rounded bg-muted px-1.5 py-0.5">{dp.datatype}</span>
                     {dp.unit && <span className="rounded bg-muted px-1.5 py-0.5">{dp.unit}</span>}
-                    {isRisk && (dp.controlled_vocab as Record<string, unknown>)?.vocab && (
+                    {isRisk && Boolean((dp.controlled_vocab as Record<string, unknown>)?.vocab) && (
                       <span className="rounded bg-muted px-1.5 py-0.5">
                         词表: {String((dp.controlled_vocab as Record<string, unknown>).vocab)}
                       </span>

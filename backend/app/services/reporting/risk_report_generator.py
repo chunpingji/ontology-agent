@@ -73,6 +73,10 @@ class RiskReport:
     # 013: LLM-sourced content tracking for DOCX annotation
     llm_supplements: dict[str, str] = field(default_factory=dict)
     llm_generated_fields: set[str] = field(default_factory=set)
+    # 015: per-section 行文 narrative prose (list of {section_id, title, text}).
+    # Kept structured (not in llm_supplements) so it renders under its own section
+    # headings and is persisted for the web report reading pane.
+    section_narratives: list[dict] = field(default_factory=list)
 
 
 class RiskReportGenerator:
@@ -183,7 +187,10 @@ class RiskReportGenerator:
         if client is None:
             return
 
-        from app.services.reporting.narrative_generator import generate_narratives
+        from app.services.reporting.narrative_generator import (
+            generate_narratives,
+            generate_section_narratives,
+        )
 
         narratives = generate_narratives(edges, self._template, client)
         for field_name, text in narratives.items():
@@ -196,6 +203,11 @@ class RiskReportGenerator:
             elif field_name.startswith("narrative.") and text:
                 report.llm_supplements[field_name] = text
                 report.llm_generated_fields.add(field_name)
+
+        # 015: per-section 行文 narrative — generated from each Section.prompt.
+        report.section_narratives = generate_section_narratives(
+            edges, self._template, client
+        )
 
     @property
     def rules_fired_count(self) -> int:
