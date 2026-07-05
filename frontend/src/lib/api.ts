@@ -1900,6 +1900,35 @@ export interface SuggestedSection {
   groups: SuggestedGroup[];
 }
 
+// 016: section-level ontology coverage (mirrors backend OntologyRelationBinding /
+// FactSourceBinding / CoverageDeclaration). All IRIs are class/predicate TYPES —
+// never a sample individual (FR-003 / SC-002).
+export interface OntologyRelationBinding {
+  kind: "ontology_relation";
+  doc_class_iri: string;
+  predicate_iri: string;
+  range_class_iri: string;
+  required: boolean; // default true (FR-005a)
+  required_properties?: string[];
+  label?: string;
+}
+export interface FactSourceBinding {
+  kind: "fact_source";
+  source: string;
+  selector?: string;
+  label?: string;
+}
+export type CoverageBinding = OntologyRelationBinding | FactSourceBinding;
+
+// 016: a data-sourced-looking position AI analysis could not bind; it awaits
+// explicit author disposition and is NEVER auto-classified as manual (FR-008a).
+export interface UnresolvedCandidate {
+  proposed_label: string;
+  evidence?: string | null;
+  reason_unbound?: string | null;
+  suggested_disposition?: "bind" | "constant" | "manual" | "discard" | null;
+}
+
 export interface SuggestSlotsRequest {
   job_id?: string | null;
   document_text?: string | null;
@@ -1907,6 +1936,8 @@ export interface SuggestSlotsRequest {
   sample_content_json?: TiptapContent | null;
   existing_template?: Record<string, unknown> | null;
   max_suggestions?: number;
+  // 016 (D10): document entity type grounds ontology coverage; augments a source.
+  doc_class_iri?: string | null;
 }
 
 export interface SuggestSlotsResponse {
@@ -1915,6 +1946,9 @@ export interface SuggestSlotsResponse {
   skipped_duplicates: number;
   document_summary: string;
   truncated: boolean;
+  // 016: ontology-grounded coverage + explicit unresolved candidates (US1).
+  coverage: CoverageBinding[];
+  unresolved_candidates: UnresolvedCandidate[];
 }
 
 export const suggestSlots = (data: SuggestSlotsRequest) =>

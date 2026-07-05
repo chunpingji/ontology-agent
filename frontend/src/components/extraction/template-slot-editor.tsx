@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect, useMemo, useRef, type ReactNode } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Sparkles, GripVertical, Pencil, Trash2, MoreVertical, FileText, LayoutTemplate, Eye, Info, Loader2, Upload, Save, FileDown, Download, Check, ListTree } from "lucide-react";
+import { Sparkles, GripVertical, Pencil, Trash2, MoreVertical, FileText, LayoutTemplate, Eye, Info, Loader2, Upload, Save, FileDown, Download, Check, ListTree, GitBranch, ArrowRight, X, Plus, Unlink, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -38,6 +38,7 @@ import {
   suggestSlots,
   generateSectionPrompt,
   getAnnotatedDocument,
+  getRelationSchema,
   listDocuments,
   updateAstTemplateMeta,
   uploadTemplateSample,
@@ -54,6 +55,10 @@ import {
   type Relationship,
   type TrainingPairDTO,
   type AstTemplateStatus,
+  type RelationSchemaEdge,
+  type CoverageBinding,
+  type OntologyRelationBinding,
+  type UnresolvedCandidate,
   DOCUMENT_TYPE_GROUPS,
   getAstCoverage,
   listReports,
@@ -95,6 +100,9 @@ interface SectionDef {
   // 015 行文 Prompt：报告生成时用于把本节插槽值融合成一段叙述文字的提示词。
   // 空/缺失 → 该节不产出叙述（generate_section_narratives 会跳过）。
   prompt?: string | null;
+  // 016 本体覆盖声明：section 级 doc-class→predicate→range 的必填(默认)覆盖边。
+  // 校验期从只读本体编译无遗漏清单；随 schema_json 原样往返（后端不新增列）。
+  coverage?: CoverageBinding[];
 }
 
 interface TemplateSchema {
@@ -150,14 +158,16 @@ interface TemplateMeta {
 
 // 旧模板仅存扁平 sample_text 时，按行包装成最小 tiptap 文档（段落），
 // 使 legacy 模板在左侧预览中也有段落级 evidence 高亮联动。
+// 保留连续空行为空段落、保留行内缩进/空白（WordViewer 以 pre-wrap 渲染）。
 function wrapTextAsTiptap(text: string): TiptapContent {
-  const paragraphs = text.split(/\n+/).filter((line) => line.trim());
+  const lines = text.split("\n");
   return {
     type: "doc",
-    content: paragraphs.map((line) => ({
-      type: "paragraph",
-      content: [{ type: "text", text: line }],
-    })),
+    content: lines.map((line) =>
+      line.trim()
+        ? { type: "paragraph", content: [{ type: "text", text: line }] }
+        : { type: "paragraph" },
+    ),
   };
 }
 
@@ -210,13 +220,19 @@ function tiptapToText(node: unknown): string {
   return n.type === "paragraph" || n.type === "heading" ? `${inner}\n` : inner;
 }
 
-// AI 建议 → 真实 Slot 的映射（与原创建流程一致：本体绑定走 extraction，否则 manual）。
+// AI 建议 → 真实 Slot 的映射。016：后端现将所有区块插槽标注为 llm_extraction
+// （本体锚定的抽取位），必须映射为 extraction —— 绝不把图谱来源/AI 位坍缩成
+// 人工插槽（F1，设计不变量）。规则/常量/手工来源原样保留，仅空值兜底为 manual。
 function suggestionToSlot(slot: SuggestedSlot): SlotDef {
+  const kind =
+    slot.source_kind === "llm_extraction" || slot.source_kind === "extraction"
+      ? "extraction"
+      : slot.source_kind || "manual";
   return {
     slot_id: slot.slot_id,
     label: slot.label,
     source: {
-      kind: slot.source_kind === "extraction" ? "extraction" : "manual",
+      kind,
       ...(slot.source_hint ? { object_class_iri_contains: slot.source_hint } : {}),
       text: true,
     },
@@ -320,6 +336,14 @@ export function TemplateSlotEditor({
   const [aiError, setAiError] = useState<string | null>(null);
   const [aiSummary, setAiSummary] = useState<string | null>(null);
   const [aiSkipped, setAiSkipped] = useState(0);
+  const [aiStage, setAiStage] = useState(0);
+  const aiTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // ── 016 本体覆盖声明 + 待解析候选（AI 分析产出）───────────────────────
+  // pendingCoverage：AI 建议的本体覆盖边（类型级），作者采纳进某分节的 coverage；
+  // unresolvedCandidates：AI 无法绑定到本体关系边的位点，仅供人工指派处置，
+  // 绝不自动降级为人工插槽（FR-008a）。两者随分节 coverage 经 schema_json 往返。
+  const [pendingCoverage, setPendingCoverage] = useState<OntologyRelationBinding[]>([]);
+  const [unresolvedCandidates, setUnresolvedCandidates] = useState<UnresolvedCandidate[]>([]);
 
   // 左侧忠实预览的高亮锚点：点击建议→其 source_ref/evidence_span；点击真实 Slot→其 label（尽力而为）。
   const [activeRef, setActiveRef] = useState<string | null>(null);
@@ -598,6 +622,23 @@ export function TemplateSlotEditor({
   const sourceRelationships =
     docContent.kind === "ready" ? docContent.relationships : [];
 
+  // 016 (F7/D10)：本体覆盖声明与 AI 分析共用的 doc_class_iri —— 优先取左侧已解析
+  // 文档类的完整 IRI，回退到模板 iri_pattern（仅当其本身是完整 IRI 时）。驱动
+  // getRelationSchema 拉取单跳(hop-1)关系菜单，作为覆盖声明的作者化单位。
+  // 只读本体访问（Principle II）；无 IRI / 离线 → 菜单为空、区块降级为提示（Principle VI）。
+  const docClassIri = useMemo(() => {
+    if (sourceDocClass?.doc_class_iri) return sourceDocClass.doc_class_iri;
+    if (iriPattern && /^https?:\/\//.test(iriPattern)) return iriPattern;
+    return null;
+  }, [sourceDocClass, iriPattern]);
+  const relationSchemaQuery = useQuery({
+    queryKey: ["relation-schema", docClassIri],
+    queryFn: () => getRelationSchema(docClassIri!),
+    enabled: !!docClassIri,
+    staleTime: 5 * 60 * 1000,
+  });
+  const relationSchema: RelationSchemaEdge[] = relationSchemaQuery.data ?? [];
+
   // ── 015 报告预览页签：AST 覆盖率分析（迁移自 /entities/extraction/[jobId]/ast）。
   // 从匹配文档解析 jobId，用当前模板计算覆盖率，支持生成/下载报告。
   const queryClient = useQueryClient();
@@ -763,6 +804,125 @@ export function TemplateSlotEditor({
     });
   }
 
+  // ── 016 本体覆盖声明 mutators（写入 section.coverage，随 schema_json 往返）──
+  const bindingKey = (b: OntologyRelationBinding) =>
+    `${b.predicate_iri}→${b.range_class_iri}`;
+
+  function addCoverage(sectionIdx: number, binding: CoverageBinding) {
+    setSections((prev) => {
+      const next = cloneSections(prev);
+      const cov = next[sectionIdx].coverage ?? [];
+      // 去重：同一分节内相同 predicate→range 只保留一条覆盖声明。
+      if (
+        binding.kind === "ontology_relation" &&
+        cov.some(
+          (c) =>
+            c.kind === "ontology_relation" &&
+            bindingKey(c) === bindingKey(binding),
+        )
+      ) {
+        return next;
+      }
+      next[sectionIdx].coverage = [...cov, binding];
+      return next;
+    });
+  }
+
+  function removeCoverage(sectionIdx: number, covIdx: number) {
+    setSections((prev) => {
+      const next = cloneSections(prev);
+      const cov = next[sectionIdx].coverage ?? [];
+      next[sectionIdx].coverage = cov.filter((_, j) => j !== covIdx);
+      return next;
+    });
+  }
+
+  // 必填 ⇄ 选填切换 = 重新校验信号（移除/改选填改变无遗漏清单，SC-005）。
+  function toggleCoverageRequired(sectionIdx: number, covIdx: number) {
+    setSections((prev) => {
+      const next = cloneSections(prev);
+      const cov = next[sectionIdx].coverage ?? [];
+      const target = cov[covIdx];
+      if (target && target.kind === "ontology_relation") {
+        target.required = !target.required;
+      }
+      return next;
+    });
+  }
+
+  function adoptPendingCoverage(
+    sectionIdx: number,
+    binding: OntologyRelationBinding,
+  ) {
+    addCoverage(sectionIdx, binding);
+    setPendingCoverage((prev) =>
+      prev.filter((b) => bindingKey(b) !== bindingKey(binding)),
+    );
+  }
+
+  function ignorePendingCoverage(binding: OntologyRelationBinding) {
+    setPendingCoverage((prev) =>
+      prev.filter((b) => bindingKey(b) !== bindingKey(binding)),
+    );
+  }
+
+  // ── 016 待解析候选处置（FR-008a）──────────────────────────────────────
+  // 候选绝不被预分类为人工；作者显式指派：绑定关系(extraction，图谱来源占位，由
+  // SlotInlineEditor 补 IRI) / 设为常量(constant) / 设为人工(manual，显式选择) / 丢弃。
+  // 生成的插槽落入首个分节的首个分组（无分组则新建「AI 待归类」组），作者可再编辑/移动。
+  function uniqueSlotId(base: string): string {
+    const existing = new Set<string>();
+    sections.forEach((s) =>
+      s.groups.forEach((g) => g.slots.forEach((sl) => existing.add(sl.slot_id))),
+    );
+    if (!existing.has(base)) return base;
+    let i = 2;
+    while (existing.has(`${base}.${i}`)) i += 1;
+    return `${base}.${i}`;
+  }
+
+  function candidateToSlot(
+    cand: UnresolvedCandidate,
+    kind: "extraction" | "constant" | "manual",
+  ): SlotDef {
+    const slug =
+      cand.proposed_label.trim().replace(/\s+/g, "_").slice(0, 40) || "candidate";
+    return {
+      slot_id: uniqueSlotId(`candidate.${slug}`),
+      label: cand.proposed_label,
+      source: { kind, text: true },
+      required: false,
+      on_missing: "annotate",
+      missing_placeholder: "⚠ 待评估（数据缺失）",
+    };
+  }
+
+  function disposeCandidate(
+    cand: UnresolvedCandidate,
+    disposition: "bind" | "constant" | "manual" | "discard",
+  ) {
+    if (disposition !== "discard") {
+      const kind = disposition === "bind" ? "extraction" : disposition;
+      const slot = candidateToSlot(cand, kind);
+      setSections((prev) => {
+        const next = cloneSections(prev);
+        if (next.length === 0) return next; // 无分节可落位——仅丢弃候选。
+        const sec = next[0];
+        if (sec.groups.length === 0) {
+          sec.groups.push({
+            group_id: `grp_ai_${sec.section_id}`,
+            title: "AI 待归类",
+            kind: "fields",
+            slots: [],
+          });
+        }
+        sec.groups[0].slots.push(slot);
+        return next;
+      });
+    }
+    setUnresolvedCandidates((prev) => prev.filter((c) => c !== cand));
+  }
+
   // 行文 Prompt 的可用变量 = 本节所有插槽标签（生成时以插槽值替换 {{label}}）。
   function sectionSlotLabels(section: SectionDef): string[] {
     return section.groups.flatMap((g) =>
@@ -880,6 +1040,9 @@ export function TemplateSlotEditor({
     if (!source) return null;
     return {
       ...source,
+      // 016 (D10/F7)：把文档实体类型送给服务端，用于把 AI 分析锚定到只读本体的
+      // 关系边（而非样本个体），产出 coverage + unresolved_candidates。
+      doc_class_iri: docClassIri,
       existing_template: {
         sections: sections.map((s) => ({
           title: s.title,
@@ -890,7 +1053,36 @@ export function TemplateSlotEditor({
         })),
       },
     };
-  }, [jobId, sampleContentJson, sampleText, sections]);
+  }, [jobId, sampleContentJson, sampleText, sections, docClassIri]);
+
+  const AI_STAGES = [
+    { label: "准备本体上下文…", pct: 10 },
+    { label: "分析文档结构（Round 1）…", pct: 35 },
+    { label: "生成插槽定义（Round 2）…", pct: 65 },
+    { label: "后处理与去重…", pct: 90 },
+  ];
+
+  function startAiProgress() {
+    setAiStage(0);
+    let stage = 0;
+    const delays = [2000, 12000, 12000];
+    function tick() {
+      stage += 1;
+      if (stage < AI_STAGES.length) {
+        setAiStage(stage);
+        aiTimerRef.current = setTimeout(tick, delays[stage] ?? 8000);
+      }
+    }
+    aiTimerRef.current = setTimeout(tick, delays[0]);
+  }
+
+  function stopAiProgress() {
+    if (aiTimerRef.current) {
+      clearTimeout(aiTimerRef.current);
+      aiTimerRef.current = null;
+    }
+    setAiStage(0);
+  }
 
   async function runAiAnalysis() {
     const req = buildAiRequest();
@@ -900,6 +1092,7 @@ export function TemplateSlotEditor({
     }
     setAiLoading(true);
     setAiError(null);
+    startAiProgress();
     try {
       const res = await suggestSlots(req);
       const existingIds = new Set<string>();
@@ -920,9 +1113,25 @@ export function TemplateSlotEditor({
       setPending(flat);
       setAiSummary(res.document_summary || null);
       setAiSkipped(res.skipped_duplicates || 0);
+      // 016：本体锚定的覆盖建议（仅关系边）与无法绑定的候选。已存在于任一分节
+      // coverage 的建议先行过滤，避免重复呈现。
+      const declaredKeys = new Set<string>();
+      sections.forEach((s) =>
+        (s.coverage ?? []).forEach((c) => {
+          if (c.kind === "ontology_relation") declaredKeys.add(bindingKey(c));
+        }),
+      );
+      setPendingCoverage(
+        (res.coverage ?? []).filter(
+          (c): c is OntologyRelationBinding =>
+            c.kind === "ontology_relation" && !declaredKeys.has(bindingKey(c)),
+        ),
+      );
+      setUnresolvedCandidates(res.unresolved_candidates ?? []);
     } catch (e) {
       setAiError(e instanceof Error ? e.message : String(e));
     } finally {
+      stopAiProgress();
       setAiLoading(false);
     }
   }
@@ -1813,7 +2022,12 @@ export function TemplateSlotEditor({
                     : undefined
               }
             >
-              {aiLoading ? "分析中…" : "AI 分析"}
+              {aiLoading ? (
+                <>
+                  <Loader2 className="size-3.5 animate-spin" />
+                  {AI_STAGES[aiStage]?.label ?? "分析中…"}
+                </>
+              ) : "AI 分析"}
             </Button>
             {pending.length > 0 && (
               <Button
@@ -1830,6 +2044,15 @@ export function TemplateSlotEditor({
               </span>
             )}
           </div>
+          {aiLoading && (
+            <div className="space-y-1.5">
+              <Progress value={AI_STAGES[aiStage]?.pct ?? 0} className="h-1.5" />
+              <div className="flex justify-between text-[11px] text-muted-foreground">
+                <span>阶段 {aiStage + 1}/{AI_STAGES.length}</span>
+                <span>{AI_STAGES[aiStage]?.pct ?? 0}%</span>
+              </div>
+            </div>
+          )}
           {aiError && (
             <div className="rounded border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
               {aiError}
@@ -1838,6 +2061,13 @@ export function TemplateSlotEditor({
         </div>
 
         <div className="flex-1 overflow-y-auto px-3 py-3 space-y-2">
+          {/* 016：AI 无法绑定到本体的位点——待人工指派，绝不自动降级为人工插槽 */}
+          {unresolvedCandidates.length > 0 && (
+            <UnresolvedCandidatesPanel
+              candidates={unresolvedCandidates}
+              onDispose={disposeCandidate}
+            />
+          )}
           {tree.length === 0 && (
             <div className="rounded border border-dashed p-6 text-center text-sm text-muted-foreground">
               {mode === "create"
@@ -2070,7 +2300,14 @@ export function TemplateSlotEditor({
                                 })}
 
                               {/* Pending AI 建议幽灵行 */}
-                              {rg.pending.map((sug) => (
+                              {rg.pending.map((sug) => {
+                                // 016 F2：本体锚定位(extraction)与 AI 抽取位
+                                // (llm_extraction)都是图谱来源 —— 标为「本体」/default，
+                                // 绝不渲染成「LLM」/outline（更不会坍缩为人工插槽）。
+                                const graphSourced =
+                                  sug.source_kind === "extraction" ||
+                                  sug.source_kind === "llm_extraction";
+                                return (
                                 <div
                                   key={`pending_${sug.slot_id}`}
                                   className={`flex items-start gap-2 ml-4 p-1.5 rounded border border-dashed border-amber-400/60 bg-amber-50/50 dark:bg-amber-900/10 text-sm cursor-pointer${
@@ -2090,17 +2327,17 @@ export function TemplateSlotEditor({
                                         {sug.evidence_span}
                                       </p>
                                     )}
-                                    {sug.source_kind === "extraction" && sug.source_hint && (
+                                    {graphSourced && sug.source_hint && (
                                       <p className="text-xs text-green-600 dark:text-green-400 truncate">
                                         IRI: {sug.source_hint}
                                       </p>
                                     )}
                                   </div>
                                   <Badge
-                                    variant={sug.source_kind === "extraction" ? "default" : "outline"}
+                                    variant={graphSourced ? "default" : "outline"}
                                     className="shrink-0 text-xs"
                                   >
-                                    {sug.source_kind === "extraction" ? "本体" : "LLM"}
+                                    {graphSourced ? "本体" : "LLM"}
                                   </Badge>
                                   <div
                                     className="flex gap-0.5 shrink-0"
@@ -2126,7 +2363,8 @@ export function TemplateSlotEditor({
                                     </Button>
                                   </div>
                                 </div>
-                              ))}
+                                );
+                              })}
 
                               {rg.group && (
                                 <Button
@@ -2143,6 +2381,23 @@ export function TemplateSlotEditor({
                         </div>
                       );
                     })}
+
+                    {/* ── 016 本体覆盖声明（每节 doc-class→predicate→range 覆盖边）── */}
+                    {rs.section && rs.sIdx !== null && (
+                      <SectionCoverageArea
+                        docClassLabel={sourceDocClass?.label ?? null}
+                        docClassIri={docClassIri}
+                        coverage={rs.section.coverage ?? []}
+                        relationSchema={relationSchema}
+                        schemaLoading={relationSchemaQuery.isLoading}
+                        pending={pendingCoverage}
+                        onAdd={(b) => addCoverage(rs.sIdx!, b)}
+                        onRemove={(idx) => removeCoverage(rs.sIdx!, idx)}
+                        onToggleRequired={(idx) => toggleCoverageRequired(rs.sIdx!, idx)}
+                        onAdoptPending={(b) => adoptPendingCoverage(rs.sIdx!, b)}
+                        onIgnorePending={ignorePendingCoverage}
+                      />
+                    )}
 
                     {/* ── 015 行文 Prompt（每节一段叙述提示词）───────────── */}
                     {rs.section && rs.sIdx !== null && (
@@ -2244,6 +2499,324 @@ function SectionPromptArea({
           — 插槽值将在生成时替换
         </p>
       )}
+    </div>
+  );
+}
+
+// ── 016 IRI 短名助手（覆盖声明行以 local-name / slpra:* 呈现类型，非样本个体）──
+function iriLocalName(iri: string): string {
+  if (!iri) return "";
+  const cut = Math.max(iri.lastIndexOf("#"), iri.lastIndexOf("/"));
+  return iri.slice(cut + 1) || iri;
+}
+function shortIri(iri: string): string {
+  const local = iriLocalName(iri);
+  return iri.includes("/slpra/") ? `slpra:${local}` : local;
+}
+
+// 016 本体覆盖声明区（modeled on SectionPromptArea）：把 section 级
+// doc-class→predicate→range 覆盖边渲染为可编辑声明行（谓词 local-name +
+// arrow + 目标类型 + 必填切换 + 删除），并从只读本体的单跳关系菜单
+// （getRelationSchema）新增。AI 建议的覆盖边以琥珀卡片呈现，作者采纳/忽略。
+// 所有 IRI 都是类/谓词「类型」，绝非样本个体（FR-003 / SC-002）。
+function SectionCoverageArea({
+  docClassLabel,
+  docClassIri,
+  coverage,
+  relationSchema,
+  schemaLoading,
+  pending,
+  onAdd,
+  onRemove,
+  onToggleRequired,
+  onAdoptPending,
+  onIgnorePending,
+}: {
+  docClassLabel: string | null;
+  docClassIri: string | null;
+  coverage: CoverageBinding[];
+  relationSchema: RelationSchemaEdge[];
+  schemaLoading: boolean;
+  pending: OntologyRelationBinding[];
+  onAdd: (b: CoverageBinding) => void;
+  onRemove: (idx: number) => void;
+  onToggleRequired: (idx: number) => void;
+  onAdoptPending: (b: OntologyRelationBinding) => void;
+  onIgnorePending: (b: OntologyRelationBinding) => void;
+}) {
+  const [adding, setAdding] = useState(false);
+  const relCount = coverage.filter((c) => c.kind === "ontology_relation").length;
+
+  const handlePick = (key: string) => {
+    const edge = relationSchema.find(
+      (e) => `${e.predicate_iri}→${e.range_class_iri}` === key,
+    );
+    if (!edge || !docClassIri) return;
+    onAdd({
+      kind: "ontology_relation",
+      doc_class_iri: docClassIri,
+      predicate_iri: edge.predicate_iri,
+      range_class_iri: edge.range_class_iri,
+      required: true,
+      label: `${edge.predicate_label} → ${edge.range_class_label}`,
+    });
+    setAdding(false);
+  };
+
+  return (
+    <div className="rounded-md border bg-muted/50 p-3 space-y-2.5">
+      <div className="flex items-center gap-2">
+        <GitBranch className="size-3.5 text-primary" />
+        <span className="text-sm font-medium">本体覆盖声明</span>
+        {docClassLabel && (
+          <Badge
+            variant="outline"
+            className="text-xs text-primary border-primary/40"
+          >
+            {docClassLabel}
+          </Badge>
+        )}
+        {relCount > 0 && (
+          <Badge variant="outline" className="text-xs">
+            {relCount} 覆盖
+          </Badge>
+        )}
+        <Button
+          variant="outline"
+          size="sm"
+          className="ml-auto h-7 text-xs"
+          onClick={() => setAdding((v) => !v)}
+          disabled={!docClassIri}
+          title={!docClassIri ? "需先解析文档实体类型" : undefined}
+        >
+          <Plus className="size-3.5 mr-1" />
+          添加关系
+        </Button>
+      </div>
+
+      {!docClassIri && (
+        <p className="text-xs text-muted-foreground">
+          未解析到文档实体类型 —— 在「源文档」页签选择匹配文档后可声明本体覆盖。
+        </p>
+      )}
+
+      {adding && docClassIri && (
+        <div className="rounded border bg-background p-2">
+          {schemaLoading ? (
+            <p className="text-xs text-muted-foreground">加载关系菜单…</p>
+          ) : relationSchema.length === 0 ? (
+            <p className="text-xs text-muted-foreground">
+              本体未返回可用关系边（离线，或该类型无出边）。
+            </p>
+          ) : (
+            <Select onValueChange={handlePick}>
+              <SelectTrigger className="h-8 text-xs">
+                <SelectValue placeholder="选择关系边（谓词 → 目标类型）" />
+              </SelectTrigger>
+              <SelectContent>
+                {relationSchema.map((e) => (
+                  <SelectItem
+                    key={`${e.predicate_iri}→${e.range_class_iri}`}
+                    value={`${e.predicate_iri}→${e.range_class_iri}`}
+                    className="text-xs"
+                  >
+                    {e.predicate_label} → {e.range_class_label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+        </div>
+      )}
+
+      {coverage.map((c, idx) =>
+        c.kind === "ontology_relation" ? (
+          <div
+            key={`cov_${idx}`}
+            className="rounded border bg-background p-2.5 space-y-1.5"
+          >
+            <div className="flex items-center gap-1.5 text-sm">
+              <span className="font-mono text-[13px] font-medium">
+                {iriLocalName(c.predicate_iri)}
+              </span>
+              <ArrowRight className="size-3.5 text-muted-foreground" />
+              <span className="font-medium">
+                {iriLocalName(c.range_class_iri)}
+              </span>
+              <span className="flex-1" />
+              <Button
+                variant={c.required ? "default" : "outline"}
+                size="sm"
+                className="h-6 text-xs"
+                onClick={() => onToggleRequired(idx)}
+                title="切换必填 / 选填（改变无遗漏清单，触发重新校验）"
+              >
+                {c.required ? "必填" : "选填"}
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-6 w-6 p-0 text-muted-foreground hover:text-destructive"
+                title="移除覆盖声明"
+                onClick={() => onRemove(idx)}
+              >
+                <X className="size-3.5" />
+              </Button>
+            </div>
+            <p className="font-mono text-[11px] text-green-600 dark:text-green-400">
+              {shortIri(c.range_class_iri)}
+            </p>
+          </div>
+        ) : (
+          <div key={`cov_${idx}`} className="rounded border bg-background p-2.5">
+            <div className="flex items-center gap-1.5 text-sm">
+              <span className="font-mono text-[13px]">{c.source}</span>
+              {c.selector && (
+                <span className="text-xs text-muted-foreground">
+                  · {c.selector}
+                </span>
+              )}
+              <span className="flex-1" />
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-6 w-6 p-0 text-muted-foreground hover:text-destructive"
+                title="移除覆盖声明"
+                onClick={() => onRemove(idx)}
+              >
+                <X className="size-3.5" />
+              </Button>
+            </div>
+          </div>
+        ),
+      )}
+
+      {pending.map((b) => (
+        <div
+          key={`pcov_${b.predicate_iri}→${b.range_class_iri}`}
+          className="rounded border border-amber-400/60 bg-amber-50/50 dark:bg-amber-900/10 p-2.5 space-y-1.5"
+        >
+          <div className="flex items-center gap-1.5 text-sm">
+            <Sparkles className="size-3.5 text-amber-600 dark:text-amber-400" />
+            <span className="font-mono text-[13px] font-medium">
+              {iriLocalName(b.predicate_iri)}
+            </span>
+            <ArrowRight className="size-3.5 text-muted-foreground" />
+            <span className="font-medium">{iriLocalName(b.range_class_iri)}</span>
+            <Badge
+              variant="outline"
+              className="ml-1 text-xs border-amber-400 text-amber-600 dark:text-amber-400"
+            >
+              AI 建议
+            </Badge>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-muted-foreground">
+              采纳后按本体展开属性 · 默认必填
+            </span>
+            <span className="flex-1" />
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-6 text-xs"
+              onClick={() => onIgnorePending(b)}
+            >
+              忽略
+            </Button>
+            <Button size="sm" className="h-6 text-xs" onClick={() => onAdoptPending(b)}>
+              采纳
+            </Button>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// 016 待解析候选面板：AI 无法绑定到本体关系边的位点。作者显式指派 4 种处置——
+// 绑定关系(extraction 图谱来源占位，由 SlotInlineEditor 补 IRI) / 设为常量 /
+// 设为人工(显式选择) / 丢弃。绝不自动降级为人工插槽（FR-008a / FE4）。
+function UnresolvedCandidatesPanel({
+  candidates,
+  onDispose,
+}: {
+  candidates: UnresolvedCandidate[];
+  onDispose: (
+    cand: UnresolvedCandidate,
+    disposition: "bind" | "constant" | "manual" | "discard",
+  ) => void;
+}) {
+  return (
+    <div className="rounded-md border border-amber-400/55 bg-amber-50/40 dark:bg-amber-900/10 p-3 space-y-2.5">
+      <div className="flex items-center gap-2">
+        <AlertTriangle className="size-3.5 text-amber-600 dark:text-amber-400" />
+        <span className="text-sm font-medium">待解析候选</span>
+        <Badge
+          variant="outline"
+          className="text-xs border-amber-400 text-amber-600 dark:text-amber-400"
+        >
+          {candidates.length}
+        </Badge>
+      </div>
+      <p className="text-xs text-muted-foreground">
+        AI 无法绑定到本体关系边；需人工指派处置，不会自动降级为人工插槽。
+      </p>
+      {candidates.map((cand, idx) => (
+        <div
+          key={`cand_${idx}_${cand.proposed_label}`}
+          className="rounded border bg-background p-2.5 space-y-1.5"
+        >
+          <div className="flex items-center gap-1.5">
+            <Unlink className="size-3.5 text-amber-600 dark:text-amber-400" />
+            <span className="text-sm font-medium truncate">
+              {cand.proposed_label}
+            </span>
+          </div>
+          {cand.evidence && (
+            <p className="text-xs text-muted-foreground truncate">
+              {cand.evidence}
+            </p>
+          )}
+          {cand.reason_unbound && (
+            <p className="text-xs text-amber-600 dark:text-amber-400">
+              {cand.reason_unbound}
+            </p>
+          )}
+          <div className="grid grid-cols-2 gap-1.5 pt-0.5">
+            <Button
+              size="sm"
+              className="h-7 text-xs"
+              onClick={() => onDispose(cand, "bind")}
+            >
+              绑定关系
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-7 text-xs"
+              onClick={() => onDispose(cand, "constant")}
+            >
+              设为常量
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-7 text-xs"
+              onClick={() => onDispose(cand, "manual")}
+            >
+              设为人工
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-7 text-xs text-destructive hover:text-destructive"
+              onClick={() => onDispose(cand, "discard")}
+            >
+              丢弃
+            </Button>
+          </div>
+        </div>
+      ))}
     </div>
   );
 }

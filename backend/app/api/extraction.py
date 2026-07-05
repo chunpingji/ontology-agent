@@ -998,8 +998,14 @@ def _build_and_save_report(
         cache_path = _annotation_cache_path(job_id)
         result = _json.loads(cache_path.read_text(encoding="utf-8"))
         edges = result.get("relationships", [])
+        doc_class_iri = (result.get("doc_class") or {}).get("doc_class_iri", "")
 
-        generator = RiskReportGenerator(db)
+        # 016 (D5): DB-authored coverage drives generation; filesystem default is
+        # the graceful fallback when no template matches the doc class.
+        from app.services.reporting.ast_template import resolve_template
+
+        template, _, _ = resolve_template(doc_class_iri, db)
+        generator = RiskReportGenerator(db, template=template)
         report, manifest = generator.generate_with_coverage(
             edges,
             source_filename=job_source_filename,
@@ -1085,7 +1091,8 @@ def generate_risk_report(
     doc_class = result.get("doc_class")
     if not doc_class:
         raise HTTPException(422, "文档未分类，无法生成风险评估报告")
-    if "CMCReport" not in doc_class.get("doc_class_iri", ""):
+    doc_class_iri = doc_class.get("doc_class_iri", "")
+    if "CMCReport" not in doc_class_iri:
         raise HTTPException(422, "仅支持 CMCReport 类型文档生成风险评估报告")
 
     edges = result.get("relationships", [])
@@ -1123,10 +1130,14 @@ def generate_risk_report(
         )
         return {"report_id": str(report_id), "status": "pending"}
 
+    from app.services.reporting.ast_template import resolve_template
     from app.services.reporting.docx_renderer import render_risk_report
     from app.services.reporting.risk_report_generator import RiskReportGenerator
 
-    generator = RiskReportGenerator(db)
+    # 016 (D5): resolve the DB-authored template for this doc class so section-level
+    # ontology coverage drives generation; falls back to the filesystem default.
+    template, _, _ = resolve_template(doc_class_iri, db)
+    generator = RiskReportGenerator(db, template=template)
     report, manifest = generator.generate_with_coverage(
         edges, source_filename=job.source_filename or "",
         dismissed_slot_ids=dismissed_ids,
@@ -1327,10 +1338,17 @@ def _build_ast_coverage_response(
                 tpl_name = row.name
                 tpl_version = row.version
 
-    # 012 T031: Ontology-driven dynamic slot expansion
+    # 016 (D13): authored section-level coverage is the ontology-grounded ghost
+    # view (surfaced below), superseding the AI-invented ``template_expander``
+    # expansion. When any section declares coverage, skip the expander so the two
+    # paths don't double-emit the same range properties.
+    _has_coverage = any(getattr(s, "coverage", None) for s in template.sections)
+
+    # 012 T031: Ontology-driven dynamic slot expansion (legacy fallback only —
+    # runs only for coverage-free templates, D13)
     try:
         from app.config import settings as _settings
-        if _settings.local_llm_enabled and doc_class_iri:
+        if _settings.local_llm_enabled and doc_class_iri and not _has_coverage:
             from app.services.ontology_engine import ontology_engine
             from app.services.reporting.template_expander import expand_template_with_ontology
             if ontology_engine.is_loaded:
@@ -1351,7 +1369,8 @@ def _build_ast_coverage_response(
     # Ontology-aware fact building (014 US3); None when unloaded → legacy path.
     from app.services.ontology_engine import get_loaded_engine
 
-    facts = edges_to_facts(list(edges), get_loaded_engine())
+    engine = get_loaded_engine()
+    facts = edges_to_facts(list(edges), engine)
 
     rules = (
         db.query(OntologyDecisionRule)
@@ -1366,6 +1385,7 @@ def _build_ast_coverage_response(
     manifest = validate_coverage(
         template, edges, rules, facts,
         dismissed_slot_ids=dismissed_ids if dismissed_ids else None,
+        engine=engine,  # 016 (D13): expand section.coverage into ontology positions
     )
 
     # 012 LLM gap filling: attempt to fill missing_required slots via local LLM
@@ -1401,9 +1421,74 @@ def _build_ast_coverage_response(
         base_id = sc.slot_id.split("[")[0]
         slot_map.setdefault(base_id, []).append(sc)
 
+    # 016 (T015 / D13): surface section.coverage positions as ghost/coverage rows.
+    # Coverage positions carry ``coverage.*`` slot_ids and appear in manifest.slots
+    # in section→binding order; a relationship shared by two sections yields two
+    # positions with the same slot_id (first counts, the rest are non-counting
+    # references, D3). An ordered cursor hands each section its own position.
+    from app.services.reporting.coverage_validator import _short as _cov_short
+
+    _cov_cursor: dict[str, int] = {}
+
+    def _take_coverage(slot_id: str):
+        bucket = slot_map.get(slot_id, [])
+        idx = _cov_cursor.get(slot_id, 0)
+        if idx < len(bucket):
+            _cov_cursor[slot_id] = idx + 1
+            return bucket[idx]
+        return None
+
+    def _sc_response(sc) -> SlotCoverageResponse:
+        return SlotCoverageResponse(
+            slot_id=sc.slot_id, label=sc.label, status=sc.status,
+            source_kind=sc.source_kind, value=sc.value, source_ref=sc.source_ref,
+            rule_key=sc.rule_key, hazid=sc.hazid, note=sc.note,
+            source_span=sc.source_span, is_llm_sourced=sc.is_llm_sourced,
+        )
+
+    def _coverage_group(section) -> GroupCoverageResponse | None:
+        bindings = getattr(section, "coverage", None) or []
+        if not bindings:
+            return None
+        rows: list[SlotCoverageResponse] = []
+        for binding in bindings:
+            if getattr(binding, "kind", None) == "fact_source":
+                sid = f"coverage.fact_source.{_cov_short(getattr(binding, 'source', '') or '')}"
+                sc = _take_coverage(sid)
+                if sc:
+                    rows.append(_sc_response(sc))
+                continue
+            # ontology_relation: relationship row, then its property rows (property
+            # positions exist only under the counting section — reference sections
+            # find the buckets already drained, D3).
+            rel_sid = (
+                f"coverage.{_cov_short(binding.predicate_iri)}"
+                f"__{_cov_short(binding.range_class_iri)}"
+            )
+            sc = _take_coverage(rel_sid)
+            if sc:
+                rows.append(_sc_response(sc))
+            prop_prefix = rel_sid + "__"
+            for pid in sorted(k for k in slot_map if k.startswith(prop_prefix)):
+                psc = _take_coverage(pid)
+                if psc:
+                    rows.append(_sc_response(psc))
+        if not rows:
+            return None
+        return GroupCoverageResponse(
+            group_id=f"coverage.{section.section_id}",
+            title="本体覆盖声明",
+            kind="coverage",
+            slots=rows,
+            is_dynamic=True,
+        )
+
     sections: list[SectionCoverageResponse] = []
     for section in template.sections:
         groups: list[GroupCoverageResponse] = []
+        cov_group = _coverage_group(section)
+        if cov_group is not None:
+            groups.append(cov_group)
         for group in section.groups:
             slots_out: list[SlotCoverageResponse] = []
             for slot in group.slots:

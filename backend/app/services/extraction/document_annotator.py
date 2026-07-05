@@ -517,10 +517,22 @@ def _inline_nodes(
                     },
                 })
                 break
-        node: dict = {"type": "text", "text": text[a:b]}
-        if marks:
-            node["marks"] = marks
-        nodes.append(node)
+        segment = text[a:b]
+        if "\n" in segment:
+            parts = segment.split("\n")
+            for idx, part in enumerate(parts):
+                if part:
+                    n: dict = {"type": "text", "text": part}
+                    if marks:
+                        n["marks"] = list(marks)
+                    nodes.append(n)
+                if idx < len(parts) - 1:
+                    nodes.append({"type": "hardBreak"})
+        else:
+            node: dict = {"type": "text", "text": segment}
+            if marks:
+                node["marks"] = marks
+            nodes.append(node)
     return nodes
 
 

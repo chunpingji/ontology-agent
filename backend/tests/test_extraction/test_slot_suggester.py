@@ -9,9 +9,16 @@ import pytest
 
 from app.services.extraction.slot_suggester import (
     suggest_slots,
-    _bind_ontology_iris,
     tiptap_to_text,
     derive_source_ref,
+)
+
+from tests.fixtures.ontology import (
+    DRUG_NS,
+    DRUG_PRODUCT,
+    MANUFACTURED_BY,
+    MANUFACTURER,
+    build_drug_ontology,
 )
 
 
@@ -138,35 +145,139 @@ class TestSuggestSlots:
         assert result["sections"] == []
 
 
-class TestOntologyIRIBinding:
-    def test_matching_label_sets_extraction(self):
-        engine = MagicMock()
-        engine.data_property_labels.return_value = ["药品名称", "剂型"]
-        engine.data_property_domain_classes.return_value = [
-            ("http://slpra/ontology#DrugProduct.name", "药品名称"),
-        ]
-        slots = [
-            {"label": "药品名称", "slot_id": "drug_name"},
-        ]
-        _bind_ontology_iris(slots, engine)
-        assert slots[0]["source_kind"] == "extraction"
-        assert slots[0]["source_hint"] == "http://slpra/ontology#DrugProduct.name"
+class TestOntologyCoverage:
+    """016 US1: ontology-grounded section coverage (replaces exact-string IRI binding).
 
-    def test_no_match_sets_llm_extraction(self):
-        engine = MagicMock()
-        engine.data_property_labels.return_value = ["药品名称"]
-        engine.data_property_domain_classes.return_value = []
-        slots = [{"label": "未知字段", "slot_id": "unknown"}]
-        _bind_ontology_iris(slots, engine)
-        assert slots[0]["source_kind"] == "llm_extraction"
-        assert slots[0]["source_hint"] is None
+    The deleted ``_bind_ontology_iris`` collapsed every unmatched label to ``manual``;
+    the suggester now has the LLM **select** relationship edges from
+    ``get_relation_schema(doc_class_iri)`` and emit ``CoverageDeclaration``s + explicit
+    ``unresolved_candidates``. No graph-sourced position ever defaults to ``manual`` (S1),
+    declarations reference **types** only (S2), and unbindable positions surface as
+    candidates rather than silent manual slots (S4). Per contracts/suggest-slots-api.md.
+    """
 
-    def test_engine_failure_defaults_to_llm_extraction(self):
-        engine = MagicMock()
-        engine.data_property_labels.side_effect = Exception("engine error")
-        slots = [{"label": "x", "slot_id": "x"}]
-        _bind_ontology_iris(slots, engine)
-        assert slots[0]["source_kind"] == "llm_extraction"
+    def _all_slots(self, result: dict) -> list[dict]:
+        return [
+            slot
+            for sec in result["sections"]
+            for grp in sec["groups"]
+            for slot in grp["slots"]
+        ]
+
+    def test_graph_sourced_section_emits_coverage_not_manual(self):
+        """S1: graph-sourced content becomes a coverage declaration — never manual."""
+        engine = build_drug_ontology()
+        r2 = {
+            "slots": [],
+            "skipped_duplicates": 0,
+            "coverage": [
+                {"predicate_iri": MANUFACTURED_BY, "range_class_iri": MANUFACTURER,
+                 "label": "生产者"},
+            ],
+            "unresolved_candidates": [],
+        }
+        client = _make_client(_R1_OK, r2)
+        result = suggest_slots(
+            client, "some doc", ontology_engine=engine, doc_class_iri=DRUG_PRODUCT,
+        )
+        cov = result["coverage"]
+        assert len(cov) == 1
+        assert cov[0]["kind"] == "ontology_relation"
+        assert cov[0]["doc_class_iri"] == DRUG_PRODUCT
+        assert cov[0]["predicate_iri"] == MANUFACTURED_BY
+        assert cov[0]["range_class_iri"] == MANUFACTURER
+        assert cov[0]["required"] is True
+        # SC-001: zero graph-sourced fields default to "human-filled" (manual)
+        assert all(s.get("source_kind") != "manual" for s in self._all_slots(result))
+
+    def test_declarations_reference_types_never_individuals(self):
+        """S2 / SC-002: a declaration referencing a sample individual is dropped."""
+        engine = build_drug_ontology()
+        r2 = {
+            "slots": [],
+            "skipped_duplicates": 0,
+            "coverage": [
+                {"predicate_iri": MANUFACTURED_BY, "range_class_iri": MANUFACTURER,
+                 "label": "生产者"},
+                # invented: range is a concrete individual, not a schema edge type
+                {"predicate_iri": MANUFACTURED_BY,
+                 "range_class_iri": DRUG_NS + "individual_acme_pharma_001",
+                 "label": "某具体厂商"},
+            ],
+            "unresolved_candidates": [],
+        }
+        client = _make_client(_R1_OK, r2)
+        result = suggest_slots(
+            client, "some doc", ontology_engine=engine, doc_class_iri=DRUG_PRODUCT,
+        )
+        cov = result["coverage"]
+        # only the type-referencing declaration survives the schema-membership filter
+        assert len(cov) == 1
+        assert cov[0]["range_class_iri"] == MANUFACTURER
+        valid = {
+            (e["predicate_iri"], e["range_class_iri"])
+            for e in engine.get_relation_schema(DRUG_PRODUCT)
+        }
+        assert all((d["predicate_iri"], d["range_class_iri"]) in valid for d in cov)
+
+    def test_unbindable_position_becomes_unresolved_candidate(self):
+        """S4 / FR-008a: an unbindable data-sourced position is a candidate, not manual."""
+        engine = build_drug_ontology()
+        r2 = {
+            "slots": [],
+            "skipped_duplicates": 0,
+            "coverage": [],
+            "unresolved_candidates": [
+                {"proposed_label": "设备编号 646", "evidence": "设备编号：646",
+                 "reason_unbound": "无匹配的本体关系"},
+            ],
+        }
+        client = _make_client(_R1_OK, r2)
+        result = suggest_slots(
+            client, "some doc", ontology_engine=engine, doc_class_iri=DRUG_PRODUCT,
+        )
+        uc = result["unresolved_candidates"]
+        assert len(uc) == 1
+        assert uc[0]["proposed_label"] == "设备编号 646"
+        # never silently converted into a manual slot
+        slots = self._all_slots(result)
+        assert all(s.get("source_kind") != "manual" for s in slots)
+        assert all("设备编号 646" not in (s.get("label") or "") for s in slots)
+
+    def test_declaration_required_true_by_default(self):
+        """S5 / FR-005a: a declaration without an explicit flag defaults to required."""
+        engine = build_drug_ontology()
+        r2 = {
+            "slots": [],
+            "skipped_duplicates": 0,
+            "coverage": [
+                {"predicate_iri": MANUFACTURED_BY, "range_class_iri": MANUFACTURER},
+            ],
+            "unresolved_candidates": [],
+        }
+        client = _make_client(_R1_OK, r2)
+        result = suggest_slots(
+            client, "some doc", ontology_engine=engine, doc_class_iri=DRUG_PRODUCT,
+        )
+        assert result["coverage"][0]["required"] is True
+
+    def test_doc_class_iri_optional_request_still_valid(self):
+        """S6 / D10: doc_class_iri is optional and OUTSIDE the exactly-one-of count."""
+        from app.schemas.extraction import SuggestSlotsRequest
+
+        req = SuggestSlotsRequest(document_text="doc")
+        assert req.doc_class_iri is None
+        req2 = SuggestSlotsRequest(document_text="doc", doc_class_iri=DRUG_PRODUCT)
+        assert req2.doc_class_iri == DRUG_PRODUCT
+
+        # FR-012: no doc_class_iri → the suggester still returns sections, no coverage,
+        # and raises nothing (graceful degradation).
+        engine = build_drug_ontology()
+        client = _make_client(_R1_OK, _R2_OK)
+        result = suggest_slots(client, "doc", ontology_engine=engine)
+        assert result["coverage"] == []
+        assert result["unresolved_candidates"] == []
+        assert isinstance(result["sections"], list)
 
 
 # ── 013: tiptap → LLM text (server-side, structure-faithful) ───────────────

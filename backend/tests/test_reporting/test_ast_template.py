@@ -10,10 +10,13 @@ from pydantic import ValidationError
 from app.services.reporting.ast_template import (
     DEFAULT_TEMPLATE_ID,
     ExtractionSource,
+    FactSourceBinding,
     Group,
     LLMExtractionSource,
+    OntologyRelationBinding,
     ReportTemplate,
     Repeat,
+    Section,
     Slot,
     load_default_template,
     load_template,
@@ -168,6 +171,91 @@ class TestLLMExtractionSource:
         )
         _, _, slot = next(tpl.iter_slots())
         assert slot.source.kind == "llm_extraction"
+
+
+class TestSectionCoverage:
+    """016 AST-1: section-level ontology coverage declarations (contract coverage-schema.md).
+
+    Coverage nests inside ``schema_json``; the invariant is that ``Section.coverage`` is a
+    DECLARED field (the codebase default is ``extra='ignore'``, which would silently drop an
+    un-declared key on ``model_validate``).
+    """
+
+    DOC = "https://ontology.pharma-gmp.cn/slpra/drug/DrugProduct"
+    PRED = "https://ontology.pharma-gmp.cn/slpra/drug/manufacturedBy"
+    RANGE = "https://ontology.pharma-gmp.cn/slpra/drug/Manufacturer"
+
+    def test_section_coverage_round_trips(self):
+        """C1/C2: coverage survives model_validate → model_dump (declared field, not extra)."""
+        template_json = {
+            "template_id": "t-cov",
+            "sections": [
+                {
+                    "section_id": "s1",
+                    "title": "概述",
+                    "groups": [],
+                    "coverage": [
+                        {
+                            "kind": "ontology_relation",
+                            "doc_class_iri": self.DOC,
+                            "predicate_iri": self.PRED,
+                            "range_class_iri": self.RANGE,
+                        },
+                        {"kind": "fact_source", "source": "org.responsible_person"},
+                    ],
+                }
+            ],
+        }
+        t = ReportTemplate.model_validate(template_json)
+        cov = t.sections[0].coverage
+        assert cov[0].kind == "ontology_relation"
+        assert cov[0].required is True  # C4 — required by default (FR-005a)
+        assert cov[0].doc_class_iri == self.DOC
+        assert cov[0].required_properties == []
+        assert cov[1].kind == "fact_source"
+
+        dumped = t.model_dump()
+        assert dumped["sections"][0]["coverage"][0]["required"] is True
+        assert dumped["sections"][0]["coverage"][0]["doc_class_iri"] == self.DOC
+        # discriminated union survives a full re-validate (kind discriminator intact)
+        reparsed = ReportTemplate.model_validate(dumped)
+        assert reparsed.sections[0].coverage[0].kind == "ontology_relation"
+        assert reparsed.sections[0].coverage[1].kind == "fact_source"
+
+    def test_legacy_template_without_coverage_unchanged(self):
+        """C1: a template with no ``coverage`` key validates and defaults to [] (not dropped)."""
+        tpl = load_default_template()
+        for section in tpl.sections:
+            assert section.coverage == []  # default, present as a declared field
+
+        dumped = tpl.model_dump()
+        assert all(s["coverage"] == [] for s in dumped["sections"])
+        # no shape drift: re-validating the dump is idempotent
+        assert ReportTemplate.model_validate(dumped).model_dump() == dumped
+
+    def test_required_defaults_true_and_properties_empty(self):
+        """C3/C4: direct construction — required-by-default, no individual-capable field."""
+        b = OntologyRelationBinding(
+            doc_class_iri=self.DOC, predicate_iri=self.PRED, range_class_iri=self.RANGE
+        )
+        assert b.required is True
+        assert b.required_properties == []
+        # C3: the model exposes only class/predicate TYPE IRIs — no individual field exists
+        assert set(b.model_dump().keys()) == {
+            "kind",
+            "doc_class_iri",
+            "predicate_iri",
+            "range_class_iri",
+            "required",
+            "required_properties",
+            "label",
+        }
+
+    def test_section_defaults_empty_coverage(self):
+        """A Section built without coverage still exposes the declared [] default."""
+        s = Section(section_id="s", title="t", groups=[])
+        assert s.coverage == []
+        assert FactSourceBinding(source="x").kind == "fact_source"
 
 
 class TestResolveTemplate:

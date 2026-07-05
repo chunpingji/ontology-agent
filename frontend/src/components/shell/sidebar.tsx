@@ -39,6 +39,12 @@ export function Sidebar() {
   const canSee = (item: NavItem) =>
     !item.requiredRole || item.requiredRole === role;
 
+  const allItems: NavItem[] = NAV.flatMap((n) => (isGroup(n) ? n.items : [n]));
+  const bestMatch = allItems
+    .filter((it) => canSee(it) && isActive(pathname, it.href))
+    .sort((a, b) => b.href.length - a.href.length)[0];
+  const activeHref = bestMatch?.href ?? null;
+
   const bottomItems = (NAV.filter((n) => !isGroup(n) && n.bottom && canSee(n)) as NavItem[]);
 
   return (
@@ -73,7 +79,7 @@ export function Sidebar() {
                     <NavLink
                       key={it.href}
                       item={it}
-                      active={isActive(pathname, it.href)}
+                      active={it.href === activeHref}
                     />
                   ))}
                 </div>
@@ -83,7 +89,7 @@ export function Sidebar() {
           if (!canSee(node) || node.bottom) return null;
           return (
             <div key={node.href} className="pt-1">
-              <NavLink item={node} active={isActive(pathname, node.href)} />
+              <NavLink item={node} active={node.href === activeHref} />
             </div>
           );
         })}
@@ -96,7 +102,7 @@ export function Sidebar() {
               <NavLink
                 key={it.href}
                 item={it}
-                active={isActive(pathname, it.href)}
+                active={it.href === activeHref}
               />
             ))}
           </div>

@@ -1,13 +1,31 @@
-"""Unit tests for the material coverage validator (010, AST-2)."""
+"""Unit tests for the material coverage validator (010, AST-2; 016 AST-2/AST-3)."""
 
 from __future__ import annotations
 
 from types import SimpleNamespace
 
-from app.services.reporting.ast_template import load_default_template
+from app.services.reporting.ast_template import (
+    FactSourceBinding,
+    OntologyRelationBinding,
+    ReportTemplate,
+    Section,
+    load_default_template,
+)
 from app.services.reporting.coverage_validator import (
+    BLANK_OPTIONAL,
+    FILLED,
+    MANUAL,
     MISSING_REQUIRED,
     validate_coverage,
+)
+
+from tests.fixtures.ontology import (
+    DRUG_NS,
+    DRUG_PRODUCT,
+    MANUFACTURED_BY,
+    MANUFACTURER,
+    MFR_NAME,
+    build_drug_ontology,
 )
 
 # --- edge fixtures (shapes mirror test_risk_report_generator.py) ------------ #
@@ -139,3 +157,177 @@ class TestCoverageValidator:
         full = m.to_dict()
         assert len(full["slots"]) == m.total_slots
         assert "prereq.shared_line" in summ["missing_slot_ids"]
+
+
+# --- 016 US2: section-level ontology coverage expansion --------------------- #
+
+_REL_ID = "coverage.manufacturedBy__Manufacturer"
+_PROP_ID = _REL_ID + "__manufacturerName"
+
+
+def _mfr_edge(name: str = "Acme 制药", *, blank: bool = False) -> dict:
+    """An edge whose object is a Manufacturer individual (the range type)."""
+    props = [] if blank else [{"iri": MFR_NAME, "label": "企业名称", "value": name}]
+    return {
+        "predicate_iri": MANUFACTURED_BY,
+        "object_class_iri": MANUFACTURER,
+        "object_text": None,
+        "object_data_properties": props,
+        "source_ref": "§ 生产信息",
+    }
+
+
+def _rel(required: bool = True, required_properties: list[str] | None = None) -> OntologyRelationBinding:
+    return OntologyRelationBinding(
+        doc_class_iri=DRUG_PRODUCT,
+        predicate_iri=MANUFACTURED_BY,
+        range_class_iri=MANUFACTURER,
+        required=required,
+        required_properties=required_properties or [],
+    )
+
+
+def _coverage_template(*section_bindings: list) -> ReportTemplate:
+    """One section per binding list; all groups empty (coverage-only)."""
+    sections = [
+        Section(section_id=f"s{i}", title=f"节 {i}", groups=[], coverage=list(bindings))
+        for i, bindings in enumerate(section_bindings)
+    ]
+    return ReportTemplate(template_id="t-cov", sections=sections)
+
+
+class _CountingEngine:
+    """Wrap the fake engine to count ``get_relation_schema`` invocations (V7)."""
+
+    def __init__(self, inner) -> None:
+        self._inner = inner
+        self.schema_calls = 0
+
+    def get_relation_schema(self, iri, max_hops: int = 4):
+        self.schema_calls += 1
+        return self._inner.get_relation_schema(iri, max_hops=max_hops)
+
+    def __getattr__(self, name):
+        return getattr(self._inner, name)
+
+
+class TestSectionCoverageExpansion:
+    """016 AST-2/AST-3: ``section.coverage`` → synthetic ``SlotCoverage`` positions.
+
+    Per [contracts/coverage-validation.md]. Uses the actual positional signature
+    ``validate_coverage(template, edges, rules, facts=None, engine=None)`` (the
+    contract's ``facts.node_types()`` pseudocode is aspirational — presence is
+    checked against the raw ``edges`` list's ``object_class_iri``).
+    """
+
+    def test_coverage_expands_relationship_and_properties(self):
+        """V2/V3: a present relationship expands into its target-type property checklist."""
+        engine = build_drug_ontology()
+        tpl = _coverage_template([_rel()])
+        m = validate_coverage(tpl, [_mfr_edge()], [], engine=engine)
+        by_id = {s.slot_id: s for s in m.slots}
+        assert by_id[_REL_ID].status == FILLED
+        assert by_id[_REL_ID].source_kind == "ontology_relation"
+        # the range type's data property (manufacturerName) expands as a position
+        assert by_id[_PROP_ID].status == FILLED
+        assert m.missing_required == 0
+
+    def test_required_relationship_absent_is_missing_required(self):
+        """V2: required relationship whose target type is absent ⇒ one MISSING_REQUIRED."""
+        engine = build_drug_ontology()
+        tpl = _coverage_template([_rel(required=True)])
+        m = validate_coverage(tpl, [], [], engine=engine)  # no manufacturer edge
+        by_id = {s.slot_id: s for s in m.slots}
+        assert by_id[_REL_ID].status == MISSING_REQUIRED
+        # absent relationship does NOT expand properties (nothing to expand)
+        assert _PROP_ID not in by_id
+        assert m.missing_required == 1
+
+    def test_present_relationship_blank_props_informational(self):
+        """V3: blank, un-promoted props under a present relationship ⇒ blank_optional, no omission."""
+        engine = build_drug_ontology()
+        tpl = _coverage_template([_rel()])
+        m = validate_coverage(tpl, [_mfr_edge(blank=True)], [], engine=engine)
+        by_id = {s.slot_id: s for s in m.slots}
+        assert by_id[_REL_ID].status == FILLED
+        assert by_id[_PROP_ID].status == BLANK_OPTIONAL
+        assert m.missing_required == 0
+
+    def test_promoted_property_blank_is_missing_required(self):
+        """V4: a blank property promoted via required_properties ⇒ MISSING_REQUIRED."""
+        engine = build_drug_ontology()
+        tpl = _coverage_template([_rel(required_properties=[MFR_NAME])])
+        m = validate_coverage(tpl, [_mfr_edge(blank=True)], [], engine=engine)
+        by_id = {s.slot_id: s for s in m.slots}
+        assert by_id[_REL_ID].status == FILLED  # relationship itself present
+        assert by_id[_PROP_ID].status == MISSING_REQUIRED
+        assert m.missing_required == 1
+
+    def test_promoted_property_matched_by_local_name(self):
+        """V4: promotion also matches by local-name, not only full IRI."""
+        engine = build_drug_ontology()
+        tpl = _coverage_template([_rel(required_properties=["manufacturerName"])])
+        m = validate_coverage(tpl, [_mfr_edge(blank=True)], [], engine=engine)
+        by_id = {s.slot_id: s for s in m.slots}
+        assert by_id[_PROP_ID].status == MISSING_REQUIRED
+
+    def test_duplicate_relationship_across_sections_counts_once(self):
+        """V5: same (doc,pred,range) across sections ⇒ omission counted once."""
+        engine = build_drug_ontology()
+        # two sections declare the identical required relationship; target absent
+        tpl = _coverage_template([_rel()], [_rel()])
+        m = validate_coverage(tpl, [], [], engine=engine)
+        rel_positions = [s for s in m.slots if s.slot_id == _REL_ID]
+        assert len(rel_positions) == 2  # both sections still surface the binding
+        assert m.missing_required == 1  # but the omission counts exactly once
+
+    def test_coverage_empty_is_noop_legacy_manifest(self):
+        """V1/SC-006: coverage == [] ⇒ manifest identical with or without an engine."""
+        engine = build_drug_ontology()
+        tpl = load_default_template()  # every section coverage == []
+        edges = [_drug_edge(), _equipment_edge()]
+        base = validate_coverage(tpl, edges, _full_rules())
+        witheng = validate_coverage(tpl, edges, _full_rules(), engine=engine)
+        assert witheng.missing_required == base.missing_required
+        assert witheng.total_slots == base.total_slots
+        assert not any(s.slot_id.startswith("coverage.") for s in witheng.slots)
+
+    def test_engine_none_degrades_gracefully(self):
+        """V6/V11: engine None ⇒ substring presence, no property expansion, no exception."""
+        tpl = _coverage_template([_rel()])
+        # present via substring (object_class_iri contains 'Manufacturer'); no engine
+        m_present = validate_coverage(tpl, [_mfr_edge()], [], engine=None)
+        by_id = {s.slot_id: s for s in m_present.slots}
+        assert by_id[_REL_ID].status == FILLED
+        assert _PROP_ID not in by_id  # no property expansion without an engine
+        # absent required relationship still flags an omission offline
+        m_absent = validate_coverage(tpl, [], [], engine=None)
+        absent_by_id = {s.slot_id: s for s in m_absent.slots}
+        assert absent_by_id[_REL_ID].status == MISSING_REQUIRED
+        assert m_absent.missing_required == 1
+
+    def test_fact_source_emits_noncounting_manual(self):
+        """V8: a fact_source binding ⇒ one non-counting MANUAL position."""
+        engine = build_drug_ontology()
+        tpl = _coverage_template(
+            [FactSourceBinding(source="org.responsible_person", label="责任人")]
+        )
+        m = validate_coverage(tpl, [], [], engine=engine)
+        manual = [s for s in m.slots if s.source_kind == "fact_source"]
+        assert len(manual) == 1
+        assert manual[0].status == MANUAL
+        assert m.missing_required == 0
+
+    def test_get_relation_schema_memoized_once_per_docclass(self):
+        """V7: get_relation_schema called at most once per doc_class_iri per run."""
+        engine = _CountingEngine(build_drug_ontology())
+        distributed_by = DRUG_NS + "distributedBy"
+        # two distinct present relationships sharing the same doc_class_iri
+        binding_b = OntologyRelationBinding(
+            doc_class_iri=DRUG_PRODUCT,
+            predicate_iri=distributed_by,
+            range_class_iri=MANUFACTURER,
+        )
+        tpl = _coverage_template([_rel()], [binding_b])
+        validate_coverage(tpl, [_mfr_edge()], [], engine=engine)
+        assert engine.schema_calls == 1

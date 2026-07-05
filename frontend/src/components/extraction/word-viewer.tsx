@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import { Extension, Mark, mergeAttributes } from "@tiptap/core";
 import StarterKit from "@tiptap/starter-kit";
@@ -149,6 +149,34 @@ function applyHighlight(container: HTMLElement, keywords: string[]): Element | n
   return firstMatch;
 }
 
+// ProseMirror normalizes \n in text nodes to spaces. Convert them to hardBreak
+// nodes so line breaks within a paragraph render correctly.
+function normalizeNewlines(node: Record<string, unknown>): Record<string, unknown> {
+  if (node.type === "text" && typeof node.text === "string" && (node.text as string).includes("\n")) {
+    const parts = (node.text as string).split("\n");
+    const { text: _, ...marks } = node;
+    const nodes: Record<string, unknown>[] = [];
+    parts.forEach((part, i) => {
+      if (part) nodes.push({ ...marks, type: "text", text: part });
+      if (i < parts.length - 1) nodes.push({ type: "hardBreak" });
+    });
+    return { __expanded: nodes } as unknown as Record<string, unknown>;
+  }
+  if (Array.isArray(node.content)) {
+    const newContent: Record<string, unknown>[] = [];
+    for (const child of node.content as Record<string, unknown>[]) {
+      const result = normalizeNewlines(child);
+      if ((result as { __expanded?: unknown }).__expanded) {
+        newContent.push(...((result as { __expanded: Record<string, unknown>[] }).__expanded));
+      } else {
+        newContent.push(result);
+      }
+    }
+    return { ...node, content: newContent };
+  }
+  return node;
+}
+
 interface WordViewerProps {
   content: Record<string, unknown>;
   highlightRef?: string | null;
@@ -158,6 +186,11 @@ interface WordViewerProps {
 
 export function WordViewer({ content, highlightRef, fitTables }: WordViewerProps) {
   const wrapperRef = useRef<HTMLDivElement>(null);
+
+  const normalizedContent = useMemo(
+    () => normalizeNewlines(content),
+    [content],
+  ) as Parameters<typeof useEditor>[0] extends { content?: infer C } ? C : never;
 
   const editor = useEditor({
     extensions: [
@@ -171,14 +204,16 @@ export function WordViewer({ content, highlightRef, fitTables }: WordViewerProps
       TableHeader,
       EntityAnnotation,
     ],
-    content: content as Parameters<typeof useEditor>[0] extends {
-      content?: infer C;
-    }
-      ? C
-      : never,
+    content: normalizedContent,
     editable: false,
     immediatelyRender: true,
   });
+
+  useEffect(() => {
+    if (editor && normalizedContent) {
+      editor.commands.setContent(normalizedContent);
+    }
+  }, [editor, normalizedContent]);
 
   useEffect(() => {
     if (!wrapperRef.current) return;

@@ -101,6 +101,58 @@ SlotSource = Annotated[
 
 
 # --------------------------------------------------------------------------- #
+# Coverage bindings — section-level ontology coverage (016, AST-1)
+# --------------------------------------------------------------------------- #
+#
+# Raises the authoring unit from *individual slots* to *section-level coverage
+# declarations* expressed in the ontology's own vocabulary. One
+# ``OntologyRelationBinding`` == one edge of ``get_relation_schema(doc_class_iri)``
+# (document entity type ─predicate→ target type). It is *physically incapable* of
+# naming a concrete individual — all three IRIs are class/predicate types (FR-003).
+# The validator expands each declared relationship into the target type's property
+# checklist at validate-time; nothing here compiles to a persisted ``ExtractionSource``
+# (D2). Coverage nests inside the existing ``schema_json`` JSON column — no migration.
+
+
+class OntologyRelationBinding(BaseModel):
+    """A section's declared coverage of one ontology relationship (FR-001).
+
+    The no-omission contract at *relationship granularity*: a ``required`` relationship
+    entirely absent from a source graph is a true omission (FR-005); blank properties
+    under a *present* relationship are informational unless promoted via
+    ``required_properties`` (FR-006/FR-007).
+    """
+
+    kind: Literal["ontology_relation"] = "ontology_relation"
+    doc_class_iri: str  # document entity TYPE (domain) — class IRI only (FR-003)
+    predicate_iri: str  # the relationship — a real edge of get_relation_schema
+    range_class_iri: str  # target entity TYPE (range) — class IRI only (FR-003)
+    required: bool = True  # FR-005a / clarification Q1 — required by default
+    required_properties: list[str] = Field(default_factory=list)  # FR-007 per-section promotion
+    label: str | None = None  # narrative display only
+
+
+class FactSourceBinding(BaseModel):
+    """Placeholder for a future non-graph fact-source binding (FR-014, D11).
+
+    Modeled now to prove the discriminated-union shape extends to a second ``kind``;
+    the fact-source data provider is out of scope (positions remain human-filled until
+    it lands — the validator emits a single non-counting ``MANUAL`` placeholder).
+    """
+
+    kind: Literal["fact_source"] = "fact_source"
+    source: str
+    selector: str | None = None
+    label: str | None = None
+
+
+CoverageBinding = Annotated[
+    Union[OntologyRelationBinding, FactSourceBinding],
+    Field(discriminator="kind"),
+]
+
+
+# --------------------------------------------------------------------------- #
 # Structure
 # --------------------------------------------------------------------------- #
 
@@ -152,6 +204,13 @@ class Section(BaseModel):
     # LLM with this prompt (fusing the section's slot values) to produce the
     # section's narrative prose. Persisted inside schema_json; additive/optional.
     prompt: str | None = None
+    # 016: per-section ontology coverage declarations (FR-001/FR-009). Mirrors the
+    # additive-optional ``prompt`` field above — a DECLARED field (the codebase default
+    # is ``extra='ignore'``, which would silently drop an un-declared key on
+    # model_validate). Defaults to ``[]`` so legacy templates round-trip identically
+    # (C1/C2). Global omission de-dup is a validate-time concern (D1/D3), so no
+    # cross-section uniqueness validator is added here (C7 / FR-011a).
+    coverage: list[CoverageBinding] = Field(default_factory=list)
 
 
 class ReportTemplate(BaseModel):

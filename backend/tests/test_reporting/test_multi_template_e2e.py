@@ -16,9 +16,19 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from app.services.reporting.ast_template import (
+    OntologyRelationBinding,
     ReportTemplate,
+    Section,
     load_template_file,
     resolve_template,
+)
+
+from tests.fixtures.ontology import (
+    DRUG_PRODUCT,
+    MANUFACTURED_BY,
+    MANUFACTURER,
+    MFR_NAME,
+    build_drug_ontology,
 )
 
 STABILITY_TEMPLATE_PATH = (
@@ -267,3 +277,120 @@ class TestCoverageWithStabilityTemplate:
         slot_ids = {s.slot_id for s in manifest.slots}
         assert "product.name" in slot_ids
         assert "study.type" in slot_ids
+
+
+# --------------------------------------------------------------------------- #
+# 016 US2 (T011): DB-authored section coverage drives generation E2E
+# --------------------------------------------------------------------------- #
+
+_REL_ID = "coverage.manufacturedBy__Manufacturer"
+
+
+def _mfr_edge(name: str = "Acme 制药") -> dict:
+    """An edge whose object is a Manufacturer individual (the declared range type)."""
+    return {
+        "predicate_iri": MANUFACTURED_BY,
+        "object_class_iri": MANUFACTURER,
+        "object_text": None,
+        "object_data_properties": [{"iri": MFR_NAME, "label": "企业名称", "value": name}],
+        "source_ref": "§ 生产信息",
+    }
+
+
+def _drug_coverage_template() -> ReportTemplate:
+    """A drug template whose two sections BOTH declare the same required
+    manufacturedBy → Manufacturer relationship (exercises cross-section dedup)."""
+    rel = OntologyRelationBinding(
+        doc_class_iri=DRUG_PRODUCT,
+        predicate_iri=MANUFACTURED_BY,
+        range_class_iri=MANUFACTURER,
+        required=True,
+    )
+    return ReportTemplate(
+        template_id="DRUG-COV@v1",
+        sections=[
+            Section(section_id="s1", title="概述", groups=[], coverage=[rel]),
+            Section(section_id="s2", title="生产信息", groups=[], coverage=[rel]),
+        ],
+    )
+
+
+class TestCoverageDrivesGeneration:
+    """016 US2 / SC-003 / D5: DB-authored coverage survives ``resolve_template``
+    and drives the omission signal; legacy templates do not regress (SC-006)."""
+
+    @pytest.fixture()
+    def db_session(self):
+        from sqlalchemy import create_engine
+        from sqlalchemy.orm import Session
+
+        from app.db import Base
+
+        engine = create_engine("sqlite:///:memory:")
+        Base.metadata.create_all(engine)
+        with Session(engine) as session:
+            yield session
+
+    def _seed_drug_template(self, db_session):
+        from app.models.extraction import AstTemplate
+
+        row = AstTemplate(
+            id=uuid.uuid4(),
+            name="Drug Coverage",
+            version="v1",
+            schema_json=_drug_coverage_template().model_dump(),
+            is_default=False,
+            iri_pattern="DrugProduct",
+            status="published",
+        )
+        db_session.add(row)
+        db_session.commit()
+        return row
+
+    def test_coverage_survives_db_round_trip(self, db_session):
+        """model_dump → schema_json → model_validate must preserve section coverage
+        (the declared-field invariant, C2 / T003)."""
+        self._seed_drug_template(db_session)
+        template, source, _ = resolve_template(DRUG_PRODUCT, db_session)
+        assert source == "iri_pattern"
+        # both sections carry the ontology_relation binding after the DB round-trip
+        covered = [s for s in template.sections if getattr(s, "coverage", [])]
+        assert len(covered) == 2
+        binding = covered[0].coverage[0]
+        assert binding.kind == "ontology_relation"
+        assert binding.predicate_iri == MANUFACTURED_BY
+        assert binding.range_class_iri == MANUFACTURER
+
+    def test_coverage_drives_generation(self, db_session):
+        """The resolved coverage produces a deduped omission when the required
+        relationship's target type is absent, and none when present."""
+        from app.services.reporting.coverage_validator import validate_coverage
+
+        self._seed_drug_template(db_session)
+        template, _, _ = resolve_template(DRUG_PRODUCT, db_session)
+        engine = build_drug_ontology()
+
+        # target type absent → exactly one omission though TWO sections declare it (D3)
+        m_absent = validate_coverage(template, [], [], engine=engine)
+        assert m_absent.missing_required == 1
+        rel_positions = [s for s in m_absent.slots if s.slot_id == _REL_ID]
+        assert len(rel_positions) == 2  # both sections surface the position
+
+        # target type present → coverage contributes zero omissions
+        m_present = validate_coverage(template, [_mfr_edge()], [], engine=engine)
+        assert m_present.missing_required == 0
+
+    def test_legacy_missing_required_unchanged_with_engine(self, db_session):
+        """SC-006 regression anchor: passing an engine must NOT perturb a
+        coverage-free template — the stability template stays at 11."""
+        from app.services.reporting.coverage_validator import validate_coverage
+
+        template = load_template_file(STABILITY_TEMPLATE_PATH)
+        engine = build_drug_ontology()
+        base = validate_coverage(template, [], [], None)
+        witheng = validate_coverage(template, [], [], engine=engine)
+        assert base.missing_required == 11
+        assert witheng.missing_required == 11
+        assert witheng.total_slots == base.total_slots
+        # a coverage-free template emits no synthetic coverage positions
+        assert not any(s.slot_id.startswith("coverage.") for s in witheng.slots)

@@ -322,6 +322,115 @@ class TestDismissUndismiss:
 
 
 # --------------------------------------------------------------------------- #
+# 016 T015: section.coverage surfaces as ghost/coverage rows (D13)
+# --------------------------------------------------------------------------- #
+
+
+def _mfr_edge(name: str = "Acme 制药") -> dict:
+    from tests.fixtures.ontology import MANUFACTURED_BY, MANUFACTURER, MFR_NAME
+
+    return {
+        "predicate_iri": MANUFACTURED_BY,
+        "object_class_iri": MANUFACTURER,
+        "object_text": None,
+        "object_data_properties": [{"iri": MFR_NAME, "label": "企业名称", "value": name}],
+        "source_ref": "§ 生产信息",
+    }
+
+
+def _seed_coverage_template(db):
+    """A DB template whose section declares a required manufacturedBy→Manufacturer
+    coverage binding, keyed by an iri_pattern matching the drug doc class."""
+    from app.models.extraction import AstTemplate
+    from app.services.reporting.ast_template import (
+        OntologyRelationBinding,
+        ReportTemplate,
+        Section,
+    )
+    from tests.fixtures.ontology import DRUG_PRODUCT, MANUFACTURED_BY, MANUFACTURER
+
+    rel = OntologyRelationBinding(
+        doc_class_iri=DRUG_PRODUCT,
+        predicate_iri=MANUFACTURED_BY,
+        range_class_iri=MANUFACTURER,
+        required=True,
+    )
+    tpl = ReportTemplate(
+        template_id="DRUG-COV@v1",
+        sections=[Section(section_id="s1", title="生产信息", groups=[], coverage=[rel])],
+    )
+    row = AstTemplate(
+        id=uuid.uuid4(),
+        name="Drug Coverage",
+        version="v1",
+        schema_json=tpl.model_dump(),
+        is_default=False,
+        iri_pattern="DrugProduct",
+        status="published",
+    )
+    db.add(row)
+    db.commit()
+    return row
+
+
+class TestCoverageEmission:
+    """016 US3/D13: section-level coverage declarations render as coverage rows in
+    the AST tree, degrading gracefully when the engine is unloaded (substring
+    presence fallback)."""
+
+    def test_missing_required_relationship_surfaces(self, client, db):
+        from tests.fixtures.ontology import DRUG_PRODUCT
+
+        _seed_coverage_template(db)
+        job = _create_job(db)
+        # a drug edge with NO Manufacturer target → required relationship absent
+        _write_cache(job.id, edges=[_drug_edge()], doc_class_iri=DRUG_PRODUCT)
+        r = client.get(f"/api/extraction/jobs/{job.id}/ast-coverage", headers=HEADERS)
+        assert r.status_code == 200
+        body = r.json()
+
+        cov_slots = [
+            slot
+            for sec in body["sections"]
+            for grp in sec["groups"]
+            for slot in grp["slots"]
+            if slot["slot_id"].startswith("coverage.")
+        ]
+        rel = [s for s in cov_slots if s["slot_id"] == "coverage.manufacturedBy__Manufacturer"]
+        assert len(rel) == 1  # exactly one — no double-emit via template_expander
+        assert rel[0]["status"] == "missing_required"
+        assert rel[0]["source_kind"] == "ontology_relation"
+        _remove_cache(job.id)
+
+    def test_present_relationship_is_filled(self, client, db):
+        from tests.fixtures.ontology import DRUG_PRODUCT
+
+        _seed_coverage_template(db)
+        job = _create_job(db)
+        _write_cache(
+            job.id, edges=[_drug_edge(), _mfr_edge()], doc_class_iri=DRUG_PRODUCT
+        )
+        r = client.get(f"/api/extraction/jobs/{job.id}/ast-coverage", headers=HEADERS)
+        body = r.json()
+        rel = [
+            slot
+            for sec in body["sections"]
+            for grp in sec["groups"]
+            for slot in grp["slots"]
+            if slot["slot_id"] == "coverage.manufacturedBy__Manufacturer"
+        ]
+        assert len(rel) == 1
+        assert rel[0]["status"] == "filled"
+        # counts stay internally consistent with the new coverage rows
+        computed = (
+            body["filled"] + body["inferred"] + body["missing_required"]
+            + body["blank_optional"] + body["manual"] + body["dismissed"]
+        )
+        assert body["total_slots"] == computed
+        _remove_cache(job.id)
+
+
+# --------------------------------------------------------------------------- #
 # GET /reports
 # --------------------------------------------------------------------------- #
 

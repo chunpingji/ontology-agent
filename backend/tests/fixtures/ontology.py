@@ -144,6 +144,52 @@ class FakeFeatureEngine:
     def get_object_properties_by_domain(self, class_iri: str) -> list[dict]:
         return [dict(p) for p in self._obj_props.get(class_iri, [])]
 
+    def get_relation_schema(self, class_iri: str, max_hops: int = 4) -> list[dict]:
+        """Read-only BFS over object properties → relationship edges (016, T004).
+
+        Mirrors ``OntologyEngine.get_relation_schema`` (``ontology_engine.py:483``):
+        one edge per discovered ``(predicate, range)`` carrying the range type's own
+        data-property checklist, with the real engine's **global first-discovery
+        dedup** — each range IRI is emitted **at most once** across the whole BFS
+        (``visited_ranges``). Edge shape is byte-compatible with the production engine:
+        ``hop, predicate_iri, predicate_label, domain_class_iri, domain_class_label,
+        range_class_iri, range_class_label, range_subclasses, range_data_properties``.
+
+        This MUST be a real method: ``__getattr__`` returns a ``None``-yielding no-op,
+        which would make relationship expansion silently vanish (memory
+        ``ontology-aware-paths-legacy-in-tests``).
+        """
+        edges: list[dict] = []
+        visited_ranges: set[str] = {class_iri}
+        frontier: list[tuple[str, int]] = [(class_iri, 0)]
+        while frontier:
+            domain, hop = frontier.pop(0)
+            if hop >= max_hops:
+                continue
+            for op in self._obj_props.get(domain, []):
+                for rng in op.get("range", []):
+                    if rng in visited_ranges:  # global first-discovery dedup (D8)
+                        continue
+                    visited_ranges.add(rng)
+                    edges.append(
+                        {
+                            "hop": hop + 1,
+                            "predicate_iri": op["iri"],
+                            "predicate_label": op.get("label", _local(op["iri"])),
+                            "domain_class_iri": domain,
+                            "domain_class_label": _LABELS.get(domain, _local(domain)),
+                            "range_class_iri": rng,
+                            "range_class_label": _LABELS.get(rng, _local(rng)),
+                            "range_subclasses": self.get_subclasses(rng, recursive=True),
+                            "range_data_properties": [
+                                {"iri": p["iri"], "label": p["label"]}
+                                for p in self._data_props.get(rng, [])
+                            ],
+                        }
+                    )
+                    frontier.append((rng, hop + 1))
+        return edges
+
     def get_individuals(self, class_iri: str) -> list[IndividualInfo]:
         return list(self._individuals.get(class_iri, []))
 

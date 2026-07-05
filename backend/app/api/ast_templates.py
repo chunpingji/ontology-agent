@@ -550,7 +550,10 @@ def suggest_slots_endpoint(
         raise HTTPException(503, "本地 LLM 不可用，请检查 local_llm_enabled 和端点配置")
 
     # Resolve document text + structured content (tiptap) for source_ref anchors.
+    # 016 US1: the document entity type grounds ontology coverage — take the explicit
+    # request field first, else recover it from the job annotation cache (D10).
     content_json: dict | None = None
+    doc_class_iri: str | None = req.doc_class_iri
     if req.sample_content_json is not None:
         # 首选：前端回传的结构化样例——服务端派生 LLM 文本，绝不丢结构。
         from app.services.extraction.slot_suggester import tiptap_to_text
@@ -572,6 +575,8 @@ def suggest_slots_endpoint(
             try:
                 cached = json.loads(cache_path.read_text(encoding="utf-8"))
                 content_json = cached.get("content")
+                if not doc_class_iri:
+                    doc_class_iri = (cached.get("doc_class") or {}).get("doc_class_iri")
             except Exception:
                 content_json = None
     else:
@@ -588,6 +593,7 @@ def suggest_slots_endpoint(
         max_suggestions=max_suggestions,
         ontology_engine=engine,
         content_json=content_json,
+        doc_class_iri=doc_class_iri,
     )
     return result
 

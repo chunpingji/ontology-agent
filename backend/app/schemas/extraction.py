@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Any
+from typing import Any, Literal
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ExtractionConfigCreate(BaseModel):
@@ -310,6 +310,10 @@ class SuggestSlotsRequest(BaseModel):
     sample_content_json: dict | None = None
     existing_template: dict | None = None
     max_suggestions: int = 50
+    # 016 (D10): the document entity type is an upstream classification input; it
+    # grounds ontology coverage. Optional and DELIBERATELY OUTSIDE the exactly-one-of
+    # source count below — it augments a source, it is not itself a document source.
+    doc_class_iri: str | None = None
 
     def model_post_init(self, __context: Any) -> None:
         provided = sum(
@@ -323,9 +327,41 @@ class SuggestSlotsRequest(BaseModel):
             )
 
 
+# --------------------------------------------------------------------------- #
+# 016: section-level ontology coverage (suggester output)
+# --------------------------------------------------------------------------- #
+
+
+class CoverageDeclaration(BaseModel):
+    """One ontology relationship a section covers (transport mirror of
+    ``OntologyRelationBinding``). All three IRIs are class/predicate TYPES —
+    physically incapable of naming a sample individual (FR-003)."""
+
+    kind: Literal["ontology_relation"] = "ontology_relation"
+    doc_class_iri: str
+    predicate_iri: str
+    range_class_iri: str
+    required: bool = True  # FR-005a — required by default
+    label: str | None = None
+
+
+class UnresolvedCandidate(BaseModel):
+    """A data-sourced-looking position AI analysis could not bind to any relationship;
+    it awaits explicit author disposition and is NEVER auto-classified as manual
+    (FR-008a)."""
+
+    proposed_label: str
+    evidence: str | None = None
+    reason_unbound: str | None = None
+    suggested_disposition: Literal["bind", "constant", "manual", "discard"] | None = None
+
+
 class SuggestSlotsResponse(BaseModel):
     sections: list[SuggestedSection]
     total_suggested: int
     skipped_duplicates: int
     document_summary: str
     truncated: bool = False
+    # 016: ontology-grounded coverage + explicit unresolved candidates (US1).
+    coverage: list[CoverageDeclaration] = Field(default_factory=list)
+    unresolved_candidates: list[UnresolvedCandidate] = Field(default_factory=list)

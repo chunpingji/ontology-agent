@@ -287,6 +287,210 @@ def _resolve_assessment(
 
 
 # --------------------------------------------------------------------------- #
+# 016: section-level ontology coverage expansion
+# --------------------------------------------------------------------------- #
+
+
+def _target_types(range_iri: str, engine: Any | None) -> set[str]:
+    """The range type plus every (recursive) subclass — the set that satisfies a
+    relationship's range (D7). Read-only; any engine error degrades to the bare
+    range type (V10/V11)."""
+    types = {range_iri}
+    if engine is not None:
+        try:
+            for sub in engine.get_subclasses(range_iri, recursive=True) or []:
+                iri = sub.get("iri") if isinstance(sub, dict) else getattr(sub, "iri", None)
+                if iri:
+                    types.add(iri)
+        except Exception:  # pragma: no cover - defensive (V11)
+            pass
+    return types
+
+
+def _relationship_present(
+    edges: Sequence[dict], range_iri: str, target_types: set[str], engine: Any | None
+) -> bool:
+    """Is the declared relationship's target type present among the extraction edges?
+
+    Engine present → exact match against the type set (range ∪ subclasses).
+    Engine None → offline local-name substring fallback (still flags omissions, D7/FR-012).
+    """
+    if engine is not None:
+        return any((e.get("object_class_iri") or "") in target_types for e in edges)
+    needle = _short(range_iri)
+    return any(needle in (e.get("object_class_iri") or "") for e in edges)
+
+
+def _range_data_properties(
+    binding: Any, engine: Any, schema_cache: dict[str, list[dict]]
+) -> list[dict]:
+    """The target type's own data-property checklist, read from the memoized
+    ``get_relation_schema(doc_class_iri)`` view (V7). A missing edge ⇒ no expansion.
+
+    D8 (accepted constraint, not a bug): the engine's ``get_relation_schema`` applies
+    a *global first-discovery* dedup (``visited_ranges``) — each range type is emitted
+    on its FIRST discovered predicate only. So if two distinct predicates both target
+    the same range type, only the first-discovered predicate's edge carries that type's
+    property list; a second predicate binding to the same range finds no edge here and
+    expands no properties. This is an authoring single-hop limitation we accept.
+    """
+    doc_iri = binding.doc_class_iri
+    if doc_iri not in schema_cache:
+        try:
+            schema_cache[doc_iri] = list(engine.get_relation_schema(doc_iri) or [])
+        except Exception:  # pragma: no cover - defensive (V11)
+            schema_cache[doc_iri] = []  # memo the failure so V7 (≤1 call) still holds
+    edge = next(
+        (
+            e
+            for e in schema_cache[doc_iri]
+            if e.get("predicate_iri") == binding.predicate_iri
+            and e.get("range_class_iri") == binding.range_class_iri
+        ),
+        None,
+    )
+    return list(edge.get("range_data_properties") or []) if edge else []
+
+
+def _is_promoted(prop: dict, required_properties: Sequence[str]) -> bool:
+    """Was this range data property promoted to required via ``required_properties``?
+    Matches by full IRI, local-name, ``name`` or ``label`` so authors can promote by
+    whichever handle they hold (FR-007)."""
+    if not required_properties:
+        return False
+    prop_iri = prop.get("iri")
+    candidates = {
+        c
+        for c in (
+            prop_iri,
+            _short(prop_iri) if prop_iri else None,
+            prop.get("name"),
+            prop.get("label"),
+        )
+        if c
+    }
+    return any(c in required_properties for c in candidates)
+
+
+def _prop_present(prop: dict, edges: Sequence[dict], target_types: set[str]) -> bool:
+    """Does some target-type edge carry a non-empty value for this data property?
+    Matches the schema property (iri/label) against the edge's ``object_data_properties``
+    by IRI equality, local-name, or label."""
+    prop_iri = prop.get("iri")
+    prop_local = _short(prop_iri) if prop_iri else None
+    prop_label = prop.get("label")
+    for e in edges:
+        if (e.get("object_class_iri") or "") not in target_types:
+            continue
+        for dp in e.get("object_data_properties") or []:
+            if dp.get("value") in (None, ""):
+                continue
+            dp_iri = dp.get("iri")
+            if (
+                (prop_iri and dp_iri and dp_iri == prop_iri)
+                or (prop_local and dp_iri and _short(dp_iri) == prop_local)
+                or (prop_label and dp.get("label") == prop_label)
+            ):
+                return True
+    return False
+
+
+def _resolve_coverage_binding(
+    binding: Any,
+    edges: Sequence[dict],
+    engine: Any | None,
+    seen_keys: set[tuple[str, str, str]],
+    schema_cache: dict[str, list[dict]],
+) -> list[SlotCoverage]:
+    """Expand one ``section.coverage`` binding into synthetic :class:`SlotCoverage`
+    positions, reusing the existing status vocabulary (D12). See
+    ``contracts/coverage-validation.md`` for the full guarantee matrix."""
+    kind = getattr(binding, "kind", None)
+
+    if kind == "fact_source":
+        # D11 / V8: an explicitly human-sourced fact — one non-counting MANUAL
+        # position (surfaces the binding, never an omission).
+        source = getattr(binding, "source", "") or ""
+        return [
+            SlotCoverage(
+                slot_id=f"coverage.fact_source.{_short(source)}",
+                label=getattr(binding, "label", None) or _short(source),
+                status=MANUAL,
+                source_kind="fact_source",
+                source_ref=source or None,
+            )
+        ]
+
+    # ontology_relation
+    pred_iri = binding.predicate_iri
+    range_iri = binding.range_class_iri
+    key = (binding.doc_class_iri, pred_iri, range_iri)
+    is_reference = key in seen_keys  # D3 / V5: the same relationship in a later section
+    seen_keys.add(key)
+
+    target_types = _target_types(range_iri, engine)
+    present = _relationship_present(edges, range_iri, target_types, engine)
+
+    rel_slot_id = f"coverage.{_short(pred_iri)}__{_short(range_iri)}"
+    label = getattr(binding, "label", None) or _short(pred_iri)
+    source_ref = f"{pred_iri} → {range_iri}"
+
+    if is_reference:
+        # Narrative-only reference: surfaces the binding (FR-011a) but is excluded
+        # from the omission Counter — FILLED/BLANK_OPTIONAL never increment
+        # missing_required, so the omission is counted once at its first section.
+        return [
+            SlotCoverage(
+                slot_id=rel_slot_id,
+                label=label,
+                status=FILLED if present else BLANK_OPTIONAL,
+                source_kind="ontology_relation",
+                source_ref=source_ref,
+                note="重复关系（其它章节已计入无遗漏），此处仅作叙述引用",
+            )
+        ]
+
+    rel_status = (
+        FILLED if present else (MISSING_REQUIRED if binding.required else BLANK_OPTIONAL)
+    )
+    positions = [
+        SlotCoverage(
+            slot_id=rel_slot_id,
+            label=label,
+            status=rel_status,
+            source_kind="ontology_relation",
+            source_ref=source_ref,
+        )
+    ]
+
+    # Property expansion only when the relationship is present AND an engine is
+    # available (offline degrades to the relationship signal alone, V6).
+    if present and engine is not None:
+        required_props = getattr(binding, "required_properties", None) or []
+        for prop in _range_data_properties(binding, engine, schema_cache):
+            prop_iri = prop.get("iri")
+            blank = not _prop_present(prop, edges, target_types)
+            if not blank:
+                pstatus = FILLED
+            elif _is_promoted(prop, required_props):
+                pstatus = MISSING_REQUIRED  # V4: promoted + blank ⇒ omission
+            else:
+                pstatus = BLANK_OPTIONAL  # V3: informational, not an omission
+            positions.append(
+                SlotCoverage(
+                    slot_id=(
+                        f"{rel_slot_id}__{_short(prop_iri)}" if prop_iri else f"{rel_slot_id}__prop"
+                    ),
+                    label=prop.get("label") or _short(prop_iri or ""),
+                    status=pstatus,
+                    source_kind="ontology_relation",
+                    source_ref=prop_iri,
+                )
+            )
+    return positions
+
+
+# --------------------------------------------------------------------------- #
 # Entry point
 # --------------------------------------------------------------------------- #
 
@@ -297,6 +501,7 @@ def validate_coverage(
     rules: Sequence[Any],
     facts: Any | None = None,
     dismissed_slot_ids: set[str] | None = None,
+    engine: Any | None = None,
 ) -> CoverageManifest:
     """Produce a :class:`CoverageManifest` for ``edges`` + ``rules`` against ``template``.
 
@@ -305,6 +510,11 @@ def validate_coverage(
 
     ``dismissed_slot_ids``, when provided, flips ``missing_required`` slots whose
     base slot_id is in the set to ``dismissed`` status (011 FR-API-006).
+
+    ``engine`` (016) is a read-only :class:`OntologyEngine`; when supplied it lets
+    each section's ``coverage`` declaration expand into relationship- and
+    property-level positions. ``None`` ⇒ legacy behaviour is a strict no-op and the
+    ontology path degrades gracefully offline (FR-012 / FR-013).
     """
     if facts is None:
         from app.services.ontology_engine import get_loaded_engine
@@ -314,7 +524,18 @@ def validate_coverage(
         facts = edges_to_facts(list(edges), get_loaded_engine())
 
     manifest = CoverageManifest(template_id=template.template_id)
+    # 016: cross-section state for the coverage seam — the omission of a given
+    # (doc, predicate, range) relationship counts once (D3); the per-doc-class
+    # relation schema is fetched at most once (V7 / D9).
+    seen_keys: set[tuple[str, str, str]] = set()
+    schema_cache: dict[str, list[dict]] = {}
     for section in template.sections:
+        # 016 seam: expand section-level ontology coverage BEFORE the group loop.
+        # getattr keeps this safe on any legacy Section object lacking the field.
+        for binding in getattr(section, "coverage", []) or []:
+            manifest.slots.extend(
+                _resolve_coverage_binding(binding, edges, engine, seen_keys, schema_cache)
+            )
         for group in section.groups:
             if group.kind == "equipment_table":
                 manifest.slots.extend(_resolve_equipment(group, edges))

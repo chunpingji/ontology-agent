@@ -4,8 +4,15 @@ Two-round LLM prompting:
   Round 1 — document structure analysis → sections/groups + candidate labels + evidence
   Round 2 — slot mapping given round-1 + existing template → concrete slots (dedup)
 
-Ontology IRI binding resolves each candidate against the published Owlready2 World
-to set ``source_kind`` and ``source_hint``.  Read-only (Principle II).
+016 US1 — ontology grounding: when a ``doc_class_iri`` is supplied, the read-only
+``get_relation_schema(doc_class_iri)`` (Principle II) is injected into both rounds
+as a **selection menu** of the relationship edges the doc entity type participates
+in. The LLM *selects* ``(predicate_iri, range_class_iri)`` pairs from that menu and
+emits ``CoverageDeclaration``s — it can never invent an IRI, so declarations reference
+ontology **types**, never sample individuals (FR-003). Positions that look
+data-sourced but bind to no edge surface as explicit ``unresolved_candidates`` for
+author disposition — they are NEVER silently collapsed to ``manual`` (FR-008a). The
+old exact-string ``_bind_ontology_iris`` (which did exactly that collapse) is gone.
 """
 
 from __future__ import annotations
@@ -90,6 +97,40 @@ _ROUND2_SCHEMA: dict[str, Any] = {
             },
         },
         "skipped_duplicates": {"type": "integer"},
+        # 016 US1: the LLM SELECTS relationship edges from the injected ontology
+        # menu (never invents IRIs). `required` is deliberately NOT exposed — an
+        # AI-proposed binding is required-by-default (FR-005a); the author demotes
+        # it later in the editor.
+        "coverage": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "predicate_iri": {"type": "string"},
+                    "range_class_iri": {"type": "string"},
+                    "label": {"type": "string"},
+                    "evidence_span": {"type": "string"},
+                    "reason": {"type": "string"},
+                },
+                "required": ["predicate_iri", "range_class_iri"],
+                "additionalProperties": False,
+            },
+        },
+        # 016 US1: data-sourced-looking positions that bind to no ontology edge —
+        # surfaced for explicit author disposition, never auto-classified manual.
+        "unresolved_candidates": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "proposed_label": {"type": "string"},
+                    "evidence": {"type": "string"},
+                    "reason_unbound": {"type": "string"},
+                },
+                "required": ["proposed_label"],
+                "additionalProperties": False,
+            },
+        },
     },
     "required": ["slots", "skipped_duplicates"],
     "additionalProperties": False,
@@ -103,16 +144,25 @@ def suggest_slots(
     max_suggestions: int = 50,
     ontology_engine=None,
     content_json: dict | None = None,
+    doc_class_iri: str | None = None,
 ) -> dict[str, Any]:
     """Run two-round LLM slot suggestion and return structured result.
 
     Returns a dict matching ``SuggestSlotsResponse`` shape:
-    ``{sections, total_suggested, skipped_duplicates, document_summary, truncated}``.
+    ``{sections, total_suggested, skipped_duplicates, document_summary, truncated,
+    coverage, unresolved_candidates}``.
 
     ``content_json`` (tiptap) — when provided, each slot gets a deterministic
     ``source_ref`` anchor (``§ 标题`` / 原文片段) derived from the structure so
     the frontend ``WordViewer`` can locate and highlight the evidence in the
     faithful preview (013 — replaces the char-offset ``evidence_offset`` link).
+
+    ``doc_class_iri`` (016 US1) — the document entity type. When it and
+    ``ontology_engine`` are both present, the engine's read-only relationship
+    schema is injected into both rounds and the LLM selects edges to cover; the
+    result carries ``coverage`` (``CoverageDeclaration``s, required-by-default) and
+    ``unresolved_candidates``. Absent either input, both lists come back empty and
+    the classic section/slot output is unchanged (FR-012).
     """
     text = document_text.strip()
     logger.info("suggest_slots called: document_text length=%d", len(text))
@@ -123,17 +173,29 @@ def suggest_slots(
             "skipped_duplicates": 0,
             "document_summary": "文档为空或仅含空白字符，无法进行分析。",
             "truncated": False,
+            "coverage": [],
+            "unresolved_candidates": [],
         }
 
     if len(text) > _MAX_DOC_CHARS:
         text = text[:_MAX_DOC_CHARS] + "\n…（文档已截断）"
+
+    # ── Ontology grounding menu (016 US1) — built once, injected into both rounds.
+    # `schema_edges` doubles as the schema-membership filter that guarantees the
+    # LLM's coverage output references TYPES, not sample individuals (FR-003).
+    schema_edges, ontology_context = _build_ontology_context(
+        ontology_engine, doc_class_iri,
+    )
 
     # ── Round 1: structure analysis ──────────────────────────────────────
     r1_system = (
         "你是 GMP 合规文档结构分析专家。分析给定文档，识别其章节（sections）、"
         "分组（groups）和候选数据字段（candidates）。对每个候选字段，标注原文证据片段。"
     )
-    r1_user = f"请分析以下文档的结构，提取所有可作为报告模板数据插槽的候选字段：\n\n{text}"
+    r1_user = (
+        f"请分析以下文档的结构，提取所有可作为报告模板数据插槽的候选字段：\n\n{text}"
+        f"{ontology_context}"
+    )
 
     r1 = chat_with_schema(
         client,
@@ -150,6 +212,8 @@ def suggest_slots(
             "skipped_duplicates": 0,
             "document_summary": "LLM 结构分析失败，请检查本地 LLM 日志。",
             "truncated": False,
+            "coverage": [],
+            "unresolved_candidates": [],
         }
 
     r1_candidates = sum(
@@ -179,6 +243,7 @@ def suggest_slots(
     r2_user = (
         f"文档结构分析结果：\n{json.dumps(r1, ensure_ascii=False, indent=1)}"
         f"{existing_context}"
+        f"{ontology_context}"
         f"\n\n请生成不超过 {max_suggestions} 个数据插槽定义。"
     )
 
@@ -197,19 +262,25 @@ def suggest_slots(
             "skipped_duplicates": 0,
             "document_summary": document_summary or "LLM 插槽映射失败，请检查本地 LLM 日志。",
             "truncated": False,
+            "coverage": [],
+            "unresolved_candidates": [],
         }
 
     raw_slots = r2.get("slots", [])
     skipped = r2.get("skipped_duplicates", 0)
     logger.info("Round-2 OK: %d slots, %d skipped", len(raw_slots), skipped)
 
-    # ── Ontology IRI binding ─────────────────────────────────────────────
-    if ontology_engine is not None:
-        _bind_ontology_iris(raw_slots, ontology_engine)
-    else:
-        for slot in raw_slots:
-            slot["source_kind"] = "llm_extraction"
-            slot["source_hint"] = None
+    # ── Ontology-grounded coverage (016 US1) ─────────────────────────────
+    # The LLM SELECTED edges from the injected schema menu; keep only those whose
+    # (predicate, range) is actually in the schema (drops invented individuals,
+    # FR-003), dedup our own output (S7), and pass through unresolved candidates.
+    # Remaining slots are typed llm_extraction — a graph-sourced position is NEVER
+    # defaulted to manual (S1/FR-008a); the editor lets the author reclassify.
+    coverage = _extract_coverage(r2, schema_edges, doc_class_iri)
+    unresolved = _extract_unresolved(r2)
+    for slot in raw_slots:
+        slot["source_kind"] = "llm_extraction"
+        slot["source_hint"] = None
 
     # ── Structural source_ref binding (deterministic, from tiptap) ───────
     # 从文档结构推导锚点，保证锚点文本真实存在于渲染 DOM 中——绝不让 LLM
@@ -233,43 +304,114 @@ def suggest_slots(
         "skipped_duplicates": skipped,
         "document_summary": document_summary,
         "truncated": truncated,
+        "coverage": coverage,
+        "unresolved_candidates": unresolved,
     }
 
 
-def _bind_ontology_iris(slots: list[dict], engine) -> None:
-    """Resolve each slot against the Owlready2 World for IRI binding (FR-002)."""
+def _build_ontology_context(
+    engine, doc_class_iri: str | None,
+) -> tuple[list[dict], str]:
+    """Read the doc type's relationship menu once (016 US1); return ``(edges, prompt)``.
+
+    ``edges`` is the raw ``get_relation_schema`` output (the schema-membership filter
+    the coverage extractor later applies). ``prompt`` is a compact **hop-1** view
+    injected verbatim into both LLM rounds — only direct relationships of the doc
+    type are offered for authoring (single-hop authoring unit; deeper reach via
+    range-type follow-on templates, see ``_range_data_properties`` in coverage_validator).
+
+    Read-only (Principle II). Any engine hiccup degrades to ``([], "")`` — the
+    suggester still produces sections/slots (FR-012).
+    """
+    if engine is None or not doc_class_iri:
+        return [], ""
     try:
-        dp_labels = set(engine.data_property_labels())
-        dp_domain_classes = {label: iri for iri, label in engine.data_property_domain_classes()}
+        schema_edges = engine.get_relation_schema(doc_class_iri) or []
     except Exception:
-        logger.warning("Ontology property lookup failed; defaulting to llm_extraction", exc_info=True)
-        for slot in slots:
-            slot["source_kind"] = "llm_extraction"
-            slot["source_hint"] = None
-        return
+        logger.warning("get_relation_schema failed; ontology grounding disabled", exc_info=True)
+        return [], ""
 
-    for slot in slots:
-        label = slot.get("label", "")
-        matched_iri = None
+    hop1 = [e for e in schema_edges if e.get("hop") == 1]
+    if not hop1:
+        return schema_edges, ""
 
-        if label in dp_labels:
-            matched_iri = dp_domain_classes.get(label)
-            if not matched_iri:
-                try:
-                    props = engine.get_data_properties_by_domain("")
-                    for p in props:
-                        if p.get("label") == label or p.get("name") == label:
-                            matched_iri = p.get("iri")
-                            break
-                except Exception:
-                    pass
+    lines = [
+        "\n\n【本体关系菜单】以下是本文档实体类型在本体中可覆盖的关系。"
+        "请从中**选择**（切勿虚构 IRI，切勿引用具体实例个体）需要在本报告中体现的关系，"
+        "在 coverage 中输出所选边的 predicate_iri 与 range_class_iri；"
+        "文中看似取数但无法匹配任何下列关系的字段，放入 unresolved_candidates：",
+    ]
+    for e in hop1:
+        props = e.get("range_data_properties") or []
+        prop_hint = (
+            "（目标属性：" + "、".join(p.get("label", "") for p in props) + "）"
+            if props else ""
+        )
+        lines.append(
+            f"- {e.get('predicate_label', '')} → {e.get('range_class_label', '')}"
+            f"{prop_hint} "
+            f"[predicate_iri={e.get('predicate_iri', '')}"
+            f"; range_class_iri={e.get('range_class_iri', '')}]"
+        )
+    return schema_edges, "\n".join(lines)
 
-        if matched_iri:
-            slot["source_kind"] = "extraction"
-            slot["source_hint"] = matched_iri
-        else:
-            slot["source_kind"] = "llm_extraction"
-            slot["source_hint"] = None
+
+def _extract_coverage(
+    r2: dict, schema_edges: list[dict], doc_class_iri: str | None,
+) -> list[dict]:
+    """Turn LLM-selected edges into ``CoverageDeclaration`` dicts (016 US1).
+
+    Keeps only entries whose ``(predicate_iri, range_class_iri)`` is a real schema
+    edge — an invented individual/type is silently dropped (FR-003 / S2). Dedups by
+    ``(doc_class_iri, predicate_iri, range_class_iri)`` (S7). Required-by-default
+    (FR-005a): the LLM cannot lower it (``required`` is not in the round-2 schema).
+    """
+    if not doc_class_iri:
+        return []
+    edge_by_key = {
+        (e.get("predicate_iri"), e.get("range_class_iri")): e for e in schema_edges
+    }
+    out: list[dict] = []
+    seen: set[tuple[str, str, str]] = set()
+    for entry in r2.get("coverage", []) or []:
+        pred = entry.get("predicate_iri")
+        rng = entry.get("range_class_iri")
+        edge = edge_by_key.get((pred, rng))
+        if edge is None:  # selection-not-invention: not a real schema edge → drop
+            continue
+        key = (doc_class_iri, pred, rng)
+        if key in seen:
+            continue
+        seen.add(key)
+        out.append(
+            {
+                "kind": "ontology_relation",
+                "doc_class_iri": doc_class_iri,
+                "predicate_iri": pred,
+                "range_class_iri": rng,
+                "required": True,  # FR-005a
+                "label": entry.get("label") or edge.get("predicate_label"),
+            }
+        )
+    return out
+
+
+def _extract_unresolved(r2: dict) -> list[dict]:
+    """Pass through the LLM's unbindable positions as candidates (016 US1 / FR-008a)."""
+    out: list[dict] = []
+    for entry in r2.get("unresolved_candidates", []) or []:
+        label = (entry.get("proposed_label") or "").strip()
+        if not label:
+            continue
+        out.append(
+            {
+                "proposed_label": label,
+                "evidence": entry.get("evidence"),
+                "reason_unbound": entry.get("reason_unbound"),
+                "suggested_disposition": None,
+            }
+        )
+    return out
 
 
 def _group_into_sections(slots: list[dict]) -> list[dict]:

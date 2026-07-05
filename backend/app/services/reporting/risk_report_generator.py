@@ -111,7 +111,8 @@ class RiskReportGenerator:
         # back to legacy string matching when the ontology is not loaded.
         from app.services.ontology_engine import get_loaded_engine
 
-        facts = edges_to_facts(edges, get_loaded_engine())
+        engine = get_loaded_engine()
+        facts = edges_to_facts(edges, engine)
         rules = self._load_rules()
         pre_rows = self._evaluate_rules(rules, facts)
         post_rows = self._evaluate_post_control(rules, facts, pre_rows)
@@ -134,6 +135,7 @@ class RiskReportGenerator:
         manifest = validate_coverage(
             self._template, edges, rules, facts,
             dismissed_slot_ids=dismissed_slot_ids,
+            engine=engine,  # 016: expand section.coverage into ontology positions
         )
         self._last_manifest = manifest
 
