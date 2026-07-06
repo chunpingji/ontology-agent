@@ -17,7 +17,9 @@ from app.services.reporting.ast_template import (
     ReportTemplate,
     Repeat,
     Section,
+    SemanticSource,
     Slot,
+    coverage_key,
     load_default_template,
     load_template,
     resolve_template,
@@ -347,3 +349,131 @@ class TestResolveTemplate:
         db.refresh(t2)
         assert t1.is_default is False
         assert t2.is_default is True
+
+
+# --------------------------------------------------------------------------- #
+# 016+: SemanticSource (语义化插槽) — a projection of Section.coverage + prompt
+# --------------------------------------------------------------------------- #
+
+_MFR = "https://ontology.pharma-gmp.cn/slpra/drug/Manufacturer"
+_MADE_BY = "https://ontology.pharma-gmp.cn/slpra/drug/manufacturedBy"
+_DRUG = "https://ontology.pharma-gmp.cn/slpra/drug/DrugProduct"
+
+
+class TestSemanticSource:
+    def test_defaults(self):
+        src = SemanticSource()
+        assert src.kind == "semantic"
+        assert src.prompt is None  # None ⇒ inherit Section.prompt at report time
+        assert src.coverage_refs == []  # [] ⇒ project the whole section's coverage
+
+    def test_round_trips_through_slot_schema_json(self):
+        """A semantic slot survives model → dict → model with no data loss (schema_json)."""
+        slot = Slot(
+            slot_id="analysis.overview",
+            label="综合分析",
+            source=SemanticSource(
+                prompt="综述本节关联本体与确定性风险结论",
+                coverage_refs=[coverage_key(
+                    OntologyRelationBinding(
+                        doc_class_iri=_DRUG, predicate_iri=_MADE_BY, range_class_iri=_MFR,
+                    )
+                )],
+            ),
+        )
+        dumped = slot.model_dump()
+        assert dumped["source"]["kind"] == "semantic"
+        reloaded = Slot.model_validate(dumped)
+        assert isinstance(reloaded.source, SemanticSource)
+        assert reloaded.source.prompt == slot.source.prompt
+        assert reloaded.source.coverage_refs == slot.source.coverage_refs
+
+    def test_discriminator_picks_semantic_from_raw_json(self):
+        """Raw JSON with ``kind:"semantic"`` resolves to SemanticSource via the union."""
+        slot = Slot.model_validate({
+            "slot_id": "s.sem",
+            "label": "语义",
+            "source": {"kind": "semantic", "prompt": "写作指令", "coverage_refs": []},
+        })
+        assert isinstance(slot.source, SemanticSource)
+        assert slot.source.prompt == "写作指令"
+
+    def test_semantic_slot_in_full_template_round_trips(self):
+        tpl = ReportTemplate(
+            template_id="t-sem",
+            sections=[
+                Section(
+                    section_id="s0",
+                    title="分析",
+                    prompt="本节行文 prompt",
+                    coverage=[OntologyRelationBinding(
+                        doc_class_iri=_DRUG, predicate_iri=_MADE_BY, range_class_iri=_MFR,
+                    )],
+                    groups=[Group(
+                        group_id="g0", title="综述", kind="fields",
+                        slots=[Slot(slot_id="s0.sem", label="综述", source=SemanticSource())],
+                    )],
+                )
+            ],
+        )
+        reloaded = ReportTemplate.model_validate(tpl.model_dump())
+        sem = reloaded.sections[0].groups[0].slots[0].source
+        assert isinstance(sem, SemanticSource)
+
+
+class TestLegacyTypedSlotsStillParse:
+    """Backward compatibility: the five pre-016 source kinds remain valid union members
+    so existing ``schema_json`` blobs (incl. the default template) still validate (C1/C2)."""
+
+    def test_default_template_still_validates(self):
+        tpl = load_default_template()  # every legacy slot kind round-trips
+        kinds = {slot.source.kind for _, _, slot in tpl.iter_slots()}
+        assert kinds  # non-empty; the load itself is the assertion
+        assert "semantic" not in kinds  # default template is untouched (golden-master)
+
+    def test_each_legacy_kind_round_trips(self):
+        for source in (
+            ExtractionSource(object_class_iri_contains="DrugProduct", text=True),
+            ExtractionSource(object_class_iri_contains="DrugProduct", label="PDE"),
+            LLMExtractionSource(object_class_iri=_DRUG, data_property_iri=_MADE_BY, label="x"),
+        ):
+            slot = Slot(slot_id="s", label="l", source=source)
+            reloaded = Slot.model_validate(slot.model_dump())
+            assert reloaded.source.kind == source.kind
+
+
+class TestCoverageKey:
+    """``coverage_key`` is the single source of truth for the synthetic slot-id a
+    section.coverage binding produces — it MUST stay byte-identical to the strings the
+    validator previously inlined, so a semantic slot's ``coverage_refs`` key on the exact
+    value the manifest carries."""
+
+    def test_ontology_relation_key_is_short_pred_and_range(self):
+        binding = OntologyRelationBinding(
+            doc_class_iri=_DRUG, predicate_iri=_MADE_BY, range_class_iri=_MFR,
+        )
+        assert coverage_key(binding) == "coverage.manufacturedBy__Manufacturer"
+
+    def test_fact_source_key_is_short_source(self):
+        # ``_short`` splits on ``#``/``/`` only — a dotted source has no separator, so it
+        # is carried whole (matching the string the validator previously inlined).
+        binding = FactSourceBinding(source="org.responsible_person", label="责任人")
+        assert coverage_key(binding) == "coverage.fact_source.org.responsible_person"
+
+    def test_fact_source_key_shortens_iri_style_source(self):
+        binding = FactSourceBinding(source="https://ex.org/facts/ResponsiblePerson")
+        assert coverage_key(binding) == "coverage.fact_source.ResponsiblePerson"
+
+    def test_key_is_stable_and_matches_validator_output(self):
+        """The key the validator emits into the manifest equals ``coverage_key`` verbatim."""
+        from app.services.reporting.coverage_validator import validate_coverage
+
+        binding = OntologyRelationBinding(
+            doc_class_iri=_DRUG, predicate_iri=_MADE_BY, range_class_iri=_MFR,
+        )
+        tpl = ReportTemplate(
+            template_id="t-cov",
+            sections=[Section(section_id="s0", title="节", groups=[], coverage=[binding])],
+        )
+        m = validate_coverage(tpl, [], [], engine=None)
+        assert any(s.slot_id == coverage_key(binding) for s in m.slots)

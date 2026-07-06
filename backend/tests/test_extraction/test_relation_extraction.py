@@ -23,6 +23,7 @@ from app.services.extraction.relation_extractor import (
     find_degradation,
     find_drug_product,
     find_equipment,
+    find_production_plan,
     find_quality_risk,
     find_residue,
     find_safety_risk,
@@ -52,6 +53,10 @@ def _mk_table(cells):
 def _make_structure() -> DocStructure:
     sections = [
         DocSection("原料药HRS-1234临床备样生产信息", 1, []),
+        DocSection("简介", 2, [
+            "原料药HRS-1234计划于2026年03月在642/646车间进行临床样品的生产，"
+            "本次计划生产1批，用于临床I期试验，预计批量0.42~9.22kg。",
+        ]),
         DocSection("产品的基本性质", 2, [
             "制剂剂型：口服速释片剂",
             "给药途径：口服",
@@ -141,6 +146,8 @@ _CMC_OBJ_PROPS = [
      "label": "有质量风险评估", "range": [_DEV + "QualityRiskAssessment"]},
     {"iri": _DEV + "hasSharedLineData", "name": "hasSharedLineData", "label": "有共线数据",
      "range": [_DEV + "SharedLineAssessmentData"]},
+    {"iri": _DEV + "hasProductionPlan", "name": "hasProductionPlan", "label": "含备样生产计划",
+     "range": [_DEV + "ClinicalSampleProductionPlan"]},
 ]
 
 
@@ -303,18 +310,50 @@ def test_find_degradation_classifies_and_parses():
     assert photo["class_iri"].endswith("PhotoDegradation")
 
 
+def test_find_production_plan_parses_and_splits_workshops():
+    eps = find_production_plan(_ctx())
+    assert len(eps) == 1
+    ep = eps[0]
+    assert ep["class_iri"] == rx.CLINICAL_SAMPLE_PLAN_IRI
+    assert ep["text"] == "临床备样生产计划"
+    dps = {d["label"]: d["value"] for d in ep["data_properties"]}
+    assert dps["计划生产时间"] == "2026年03月"
+    assert dps["计划生产批次数"] == "1"
+    assert dps["生产用途"] == "临床I期试验"
+    assert dps["预计批量下限（kg）"] == "0.42"
+    assert dps["预计批量上限（kg）"] == "9.22"
+    # 「642/646车间」→ 两条 producedInArea 子关系（经 mock 外部车间事实源解析）。
+    subs = ep["sub_relationships"]
+    assert [s["predicate_label"] for s in subs] == ["生产车间", "生产车间"]
+    assert {s["object_text"] for s in subs} == {"642车间", "646车间"}
+    assert all(s["object_source"] == "external" for s in subs)
+    assert all(s["object_class_iri"] == rx.PRODUCTION_AREA_IRI for s in subs)
+    # 车间携外部事实源数据属性（车间编号/洁净区设置/所属厂房/部门代码/…）。
+    area_labels = {d["label"] for d in subs[0]["object_data_properties"]}
+    assert {"车间编号", "洁净区设置", "所属厂房", "部门代码"} <= area_labels
+
+
+def test_find_production_plan_missing_sentence_returns_empty():
+    empty = DocStructure(
+        "报告", [DocSection("报告", 1, ["无计划信息"])], [],
+        ["报告", "无计划信息"], ["报告"],
+    )
+    assert find_production_plan(_ctx(empty)) == []
+
+
 # --- extract_relationships 总装 --------------------------------------------
 def test_extract_relationships_full_graph(monkeypatch):
     monkeypatch.setattr(rx, "parse_docx_structure", lambda _p: _make_structure())
     graph = extract_relationships(_FakeEngine(), "原料药 HRS-1234.docx", triples=[])
     assert graph["doc_class"]["doc_class_iri"] == CMC_REPORT_IRI
     preds = {e["predicate_iri"].rsplit("/", 1)[-1] for e in graph["relationships"]}
-    # domain 反查 7 条 + broad-domain 补挂 3 条（usesEquipment/storage/degradation）。
+    # domain 反查 8 条 + broad-domain 补挂 3 条（usesEquipment/storage/degradation）。
     assert "describes" in preds
     assert "usesEquipment" in preds
     assert "hasStorageCondition" in preds
     assert "hasDegradationPathway" in preds
     assert "hasSafetyRiskAssessment" in preds
+    assert "hasProductionPlan" in preds
     # equipment 边数 = 去重后设备数。
     equip_edges = [e for e in graph["relationships"]
                    if e["object_class_iri"] == EQUIPMENT_IRI]

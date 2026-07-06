@@ -211,6 +211,20 @@ class GenerateSectionPromptResponse(BaseModel):
     prompt: str
 
 
+class PreviewSectionNarrativeRequest(BaseModel):
+    """015+: preview the prose one section's 行文 Prompt produces, using a matched
+    document's REAL extracted facts (not sample text) — same path as the report."""
+
+    job_id: UUID          # 已关联真实文档的抽取作业（真实事实来源）
+    template_id: UUID     # 当前编辑的模板（取本节结构 + 确定性风险/覆盖）
+    section_id: str
+    prompt: str           # 当前（可能未保存）的行文 Prompt
+
+
+class PreviewSectionNarrativeResponse(BaseModel):
+    narrative: str
+
+
 # --------------------------------------------------------------------------- #
 # 011 AST Coverage (extended for 012 template switching + LLM gap filling)
 # --------------------------------------------------------------------------- #
@@ -277,32 +291,6 @@ class SlotDismissalResponse(BaseModel):
 # --------------------------------------------------------------------------- #
 
 
-class SuggestedSlot(BaseModel):
-    slot_id: str
-    label: str
-    section: str
-    group: str
-    source_kind: str  # extraction | llm_extraction | manual
-    source_hint: str | None = None
-    confidence: float
-    evidence_span: str
-    # 013: source_ref 为忠于原文预览的结构锚点（§ 标题 / 原文片段），供 WordViewer
-    # 定位高亮。evidence_offset 是旧的扁平文本字符偏移，已弃用（保留仅为兼容）。
-    source_ref: str | None = None
-    evidence_offset: int | None = None
-    reason: str
-
-
-class SuggestedGroup(BaseModel):
-    title: str
-    slots: list[SuggestedSlot]
-
-
-class SuggestedSection(BaseModel):
-    title: str
-    groups: list[SuggestedGroup]
-
-
 class SuggestSlotsRequest(BaseModel):
     job_id: UUID | None = None
     document_text: str | None = None
@@ -345,23 +333,32 @@ class CoverageDeclaration(BaseModel):
     label: str | None = None
 
 
-class UnresolvedCandidate(BaseModel):
-    """A data-sourced-looking position AI analysis could not bind to any relationship;
-    it awaits explicit author disposition and is NEVER auto-classified as manual
-    (FR-008a)."""
-
-    proposed_label: str
-    evidence: str | None = None
-    reason_unbound: str | None = None
-    suggested_disposition: Literal["bind", "constant", "manual", "discard"] | None = None
-
-
 class SuggestSlotsResponse(BaseModel):
-    sections: list[SuggestedSection]
-    total_suggested: int
-    skipped_duplicates: int
+    """AI 分析输出：文档结构骨架（``sections``）+ 本体覆盖边（``coverage``）。
+
+    Note: the ``/suggest-slots`` endpoint returns the raw ``suggest_slots()`` dict with
+    **no** ``response_model``; this model is documentary (the wire-shape authority for
+    ``sections`` is ``slot_suggester._ROUND1_SCHEMA``).
+    """
+
     document_summary: str
-    truncated: bool = False
-    # 016: ontology-grounded coverage + explicit unresolved candidates (US1).
+    # 016: ontology-grounded coverage only (US1). 无法绑定到菜单关系边的位点静默忽略，
+    # 不再抛出 unresolved_candidates（取代 FR-008a）。
     coverage: list[CoverageDeclaration] = Field(default_factory=list)
-    unresolved_candidates: list[UnresolvedCandidate] = Field(default_factory=list)
+    # Round-1 structural skeleton, returned verbatim: sections[].groups[].candidates[]
+    # {label, evidence_span?, evidence_offset?} (shape = _ROUND1_SCHEMA). 无本体 IRI 绑定
+    # —— 编辑器把每个 candidate 物化为可作者填写的 semantic 槽。已删的 llm_extraction
+    # 自动串匹配绑定流（defect 1 根因）不随此字段回归。
+    sections: list[dict] = Field(default_factory=list)
+
+
+class CoverageDocClassesRequest(BaseModel):
+    """016：作者化 UI 传入候选文档类型 IRI 清单，问询哪些「已建模」可覆盖关系。"""
+
+    doc_class_iris: list[str] = Field(default_factory=list)
+
+
+class CoverageDocClassesResponse(BaseModel):
+    """已建模（≥1 条 hop-1 覆盖边）的文档类型子集——UI 只启用这些（仅启用已建模类型）。"""
+
+    capable: list[str] = Field(default_factory=list)

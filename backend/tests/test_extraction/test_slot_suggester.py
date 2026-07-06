@@ -1,26 +1,29 @@
-"""Tests for 013 slot_suggester — two-round LLM flow, IRI binding, dedup, cap."""
+"""Tests for 013/016 slot_suggester.
+
+016 收敛：``suggest_slots`` 只产出 ``{document_summary, coverage}``。逐插槽建议流
+（slots / total_suggested / skipped_duplicates / truncated / 逐插槽 source_ref 绑定 /
+``derive_source_ref``）已随 016 移除；原文取数候选流（``unresolved_candidates``，取代
+FR-008a）亦一并移除——无法绑定到本体菜单的位点静默忽略。保留：两轮 LLM 流、本体覆盖
+选择（selection-not-invention）、tiptap→文本 序列化。
+"""
 
 from __future__ import annotations
 
 import json
-from unittest.mock import MagicMock, patch
-
-import pytest
+from unittest.mock import MagicMock
 
 from app.services.extraction.slot_suggester import (
     suggest_slots,
     tiptap_to_text,
-    derive_source_ref,
 )
-
 from tests.fixtures.ontology import (
+    BIOLOGIC,
     DRUG_NS,
     DRUG_PRODUCT,
     MANUFACTURED_BY,
     MANUFACTURER,
     build_drug_ontology,
 )
-
 
 # ── Helpers ──────────────────────────────────────────────────────────────
 
@@ -60,121 +63,105 @@ _R1_OK = {
     ],
 }
 
+# 016 round-2：LLM 从本体菜单**选择**覆盖边——不再有 slots / skipped_duplicates /
+# unresolved_candidates 字段。
 _R2_OK = {
-    "slots": [
-        {
-            "slot_id": "drug_name",
-            "label": "药品名称",
-            "section": "评估对象",
-            "group": "药品信息",
-            "confidence": 0.92,
-            "evidence_span": "XX注射液",
-            "evidence_offset": 10,
-            "reason": "文档首段",
-        },
-        {
-            "slot_id": "drug_form",
-            "label": "剂型",
-            "section": "评估对象",
-            "group": "药品信息",
-            "confidence": 0.85,
-            "evidence_span": "注射剂",
-            "evidence_offset": 25,
-            "reason": "首段后续",
-        },
+    "coverage": [
+        {"predicate_iri": MANUFACTURED_BY, "range_class_iri": MANUFACTURER, "label": "生产者"},
     ],
-    "skipped_duplicates": 1,
 }
 
 
 # ── Tests ────────────────────────────────────────────────────────────────
 
-class TestSuggestSlots:
-    def test_two_round_flow_produces_grouped_suggestions(self):
-        client = _make_client(_R1_OK, _R2_OK)
-        result = suggest_slots(client, "some doc text", max_suggestions=50)
+class TestBasic:
+    """016 (+Option A)：AI 分析产出 document_summary + coverage + sections（Round-1 结构骨架
+    逐字回传，无本体 IRI 绑定）。逐插槽取数流仍不回归。"""
 
-        assert result["total_suggested"] == 2
-        assert result["skipped_duplicates"] == 1
+    def test_two_round_flow_returns_pure_coverage_shape(self):
+        engine = build_drug_ontology()
+        client = _make_client(_R1_OK, _R2_OK)
+        result = suggest_slots(
+            client, "some doc text",
+            ontology_engine=engine, doc_class_iri=DRUG_PRODUCT,
+        )
+        assert set(result.keys()) == {"document_summary", "coverage", "sections"}
         assert result["document_summary"] == "GMP 风险评估报告"
-        assert len(result["sections"]) >= 1
-        sec = result["sections"][0]
-        assert sec["title"] == "评估对象"
-        assert len(sec["groups"]) >= 1
-        assert len(sec["groups"][0]["slots"]) >= 1
+        assert len(result["coverage"]) == 1
+        assert result["coverage"][0]["predicate_iri"] == MANUFACTURED_BY
+
+    def test_no_legacy_slot_stream_keys(self):
+        """016 收敛：逐插槽取数流字段仍彻底移除（Option A 只恢复结构骨架 sections）。"""
+        engine = build_drug_ontology()
+        client = _make_client(_R1_OK, _R2_OK)
+        result = suggest_slots(
+            client, "some doc text",
+            ontology_engine=engine, doc_class_iri=DRUG_PRODUCT,
+        )
+        for gone in ("slots", "total_suggested", "skipped_duplicates", "truncated"):
+            assert gone not in result
+        # Option A：结构骨架回归，且不是旧取数流的复活。
+        assert "sections" in result
+
+    def test_skeleton_returned_verbatim_from_round1(self):
+        """S11：sections 是 Round-1 骨架的逐字回传，零本体 IRI 绑定、零 manual 塌陷。"""
+        engine = build_drug_ontology()
+        client = _make_client(_R1_OK, _R2_OK)
+        result = suggest_slots(
+            client, "some doc text",
+            ontology_engine=engine, doc_class_iri=DRUG_PRODUCT,
+        )
+        assert result["sections"] == _R1_OK["sections"]
+        # 骨架惰性：candidate 只有 label/evidence，绝无 IRI 绑定或 source_kind 标注。
+        cand = result["sections"][0]["groups"][0]["candidates"][0]
+        assert "predicate_iri" not in cand
+        assert "source_kind" not in cand
+
+    def test_skeleton_empty_when_round1_fails(self):
+        """S11：Round-1 失败 → sections 为 []（骨架仅在 Round-1 成功后存在）。"""
+        client = MagicMock()
+        client.chat.completions.create.side_effect = Exception("LLM down")
+        result = suggest_slots(client, "doc text")
+        assert result["sections"] == []
+
+    def test_empty_document_returns_empty_skeleton(self):
+        """S11：空文档 → sections 为 []（连 Round-1 都不发起）。"""
+        client = MagicMock()
+        result = suggest_slots(client, "   ")
+        assert result["sections"] == []
 
     def test_empty_document_returns_empty(self):
         client = MagicMock()
-        result = suggest_slots(client, "   ", max_suggestions=50)
-        assert result["total_suggested"] == 0
-        assert result["sections"] == []
-
-    def test_max_suggestions_caps_and_truncates(self):
-        many_slots = [
-            {
-                "slot_id": f"slot_{i}",
-                "label": f"Label {i}",
-                "section": "S",
-                "group": "G",
-                "confidence": 0.8,
-                "evidence_span": "ev",
-                "reason": "r",
-            }
-            for i in range(10)
-        ]
-        r2 = {"slots": many_slots, "skipped_duplicates": 0}
-        client = _make_client(_R1_OK, r2)
-        result = suggest_slots(client, "doc text", max_suggestions=3)
-        assert result["total_suggested"] == 3
-        assert result["truncated"] is True
-
-    def test_skipped_duplicates_counted(self):
-        r2 = {"slots": [], "skipped_duplicates": 5}
-        client = _make_client(_R1_OK, r2)
-        result = suggest_slots(
-            client, "doc text",
-            existing_template={"sections": [{"title": "S", "groups": []}]},
-        )
-        assert result["skipped_duplicates"] == 5
+        result = suggest_slots(client, "   ")
+        assert result["coverage"] == []
+        assert result["document_summary"]  # non-empty explanation
 
     def test_round1_failure_returns_empty(self):
         client = MagicMock()
         client.chat.completions.create.side_effect = Exception("LLM down")
         result = suggest_slots(client, "doc text")
-        assert result["total_suggested"] == 0
-        assert result["sections"] == []
+        assert result["coverage"] == []
+        assert result["document_summary"]
 
 
 class TestOntologyCoverage:
-    """016 US1: ontology-grounded section coverage (replaces exact-string IRI binding).
+    """016 US1: ontology-grounded section coverage (selection-not-invention).
 
-    The deleted ``_bind_ontology_iris`` collapsed every unmatched label to ``manual``;
-    the suggester now has the LLM **select** relationship edges from
-    ``get_relation_schema(doc_class_iri)`` and emit ``CoverageDeclaration``s + explicit
-    ``unresolved_candidates``. No graph-sourced position ever defaults to ``manual`` (S1),
-    declarations reference **types** only (S2), and unbindable positions surface as
-    candidates rather than silent manual slots (S4). Per contracts/suggest-slots-api.md.
+    The suggester has the LLM **select** relationship edges from
+    ``get_relation_schema(doc_class_iri)`` and emit ``CoverageDeclaration``s.
+    Declarations reference **types** only (S2). Positions that bind to no menu edge
+    are silently ignored — no ``unresolved_candidates`` stream (supersedes FR-008a).
+    Per contracts/suggest-slots-api.md.
     """
 
-    def _all_slots(self, result: dict) -> list[dict]:
-        return [
-            slot
-            for sec in result["sections"]
-            for grp in sec["groups"]
-            for slot in grp["slots"]
-        ]
-
-    def test_graph_sourced_section_emits_coverage_not_manual(self):
-        """S1: graph-sourced content becomes a coverage declaration — never manual."""
+    def test_graph_sourced_section_emits_coverage(self):
+        """S1: graph-sourced content becomes a coverage declaration."""
         engine = build_drug_ontology()
         r2 = {
-            "slots": [],
-            "skipped_duplicates": 0,
             "coverage": [
                 {"predicate_iri": MANUFACTURED_BY, "range_class_iri": MANUFACTURER,
                  "label": "生产者"},
             ],
-            "unresolved_candidates": [],
         }
         client = _make_client(_R1_OK, r2)
         result = suggest_slots(
@@ -187,15 +174,11 @@ class TestOntologyCoverage:
         assert cov[0]["predicate_iri"] == MANUFACTURED_BY
         assert cov[0]["range_class_iri"] == MANUFACTURER
         assert cov[0]["required"] is True
-        # SC-001: zero graph-sourced fields default to "human-filled" (manual)
-        assert all(s.get("source_kind") != "manual" for s in self._all_slots(result))
 
     def test_declarations_reference_types_never_individuals(self):
         """S2 / SC-002: a declaration referencing a sample individual is dropped."""
         engine = build_drug_ontology()
         r2 = {
-            "slots": [],
-            "skipped_duplicates": 0,
             "coverage": [
                 {"predicate_iri": MANUFACTURED_BY, "range_class_iri": MANUFACTURER,
                  "label": "生产者"},
@@ -204,7 +187,6 @@ class TestOntologyCoverage:
                  "range_class_iri": DRUG_NS + "individual_acme_pharma_001",
                  "label": "某具体厂商"},
             ],
-            "unresolved_candidates": [],
         }
         client = _make_client(_R1_OK, r2)
         result = suggest_slots(
@@ -220,40 +202,34 @@ class TestOntologyCoverage:
         }
         assert all((d["predicate_iri"], d["range_class_iri"]) in valid for d in cov)
 
-    def test_unbindable_position_becomes_unresolved_candidate(self):
-        """S4 / FR-008a: an unbindable data-sourced position is a candidate, not manual."""
+    def test_unbindable_position_is_silently_ignored(self):
+        """S4 (016 收敛)：绑定不到菜单边的位点被静默忽略——不再产出取数候选。
+
+        LLM 违规多输出的 ``unresolved_candidates`` 亦被丢弃（不进入返回契约）。
+        """
         engine = build_drug_ontology()
         r2 = {
-            "slots": [],
-            "skipped_duplicates": 0,
             "coverage": [],
+            # LLM 违规多吐的字段——提取层不消费，不应泄漏进返回。
             "unresolved_candidates": [
-                {"proposed_label": "设备编号 646", "evidence": "设备编号：646",
-                 "reason_unbound": "无匹配的本体关系"},
+                {"proposed_label": "设备编号 646", "evidence": "设备编号：646"},
             ],
         }
         client = _make_client(_R1_OK, r2)
         result = suggest_slots(
             client, "some doc", ontology_engine=engine, doc_class_iri=DRUG_PRODUCT,
         )
-        uc = result["unresolved_candidates"]
-        assert len(uc) == 1
-        assert uc[0]["proposed_label"] == "设备编号 646"
-        # never silently converted into a manual slot
-        slots = self._all_slots(result)
-        assert all(s.get("source_kind") != "manual" for s in slots)
-        assert all("设备编号 646" not in (s.get("label") or "") for s in slots)
+        assert set(result.keys()) == {"document_summary", "coverage", "sections"}
+        assert result["coverage"] == []
+        assert "unresolved_candidates" not in result
 
     def test_declaration_required_true_by_default(self):
         """S5 / FR-005a: a declaration without an explicit flag defaults to required."""
         engine = build_drug_ontology()
         r2 = {
-            "slots": [],
-            "skipped_duplicates": 0,
             "coverage": [
                 {"predicate_iri": MANUFACTURED_BY, "range_class_iri": MANUFACTURER},
             ],
-            "unresolved_candidates": [],
         }
         client = _make_client(_R1_OK, r2)
         result = suggest_slots(
@@ -270,14 +246,147 @@ class TestOntologyCoverage:
         req2 = SuggestSlotsRequest(document_text="doc", doc_class_iri=DRUG_PRODUCT)
         assert req2.doc_class_iri == DRUG_PRODUCT
 
-        # FR-012: no doc_class_iri → the suggester still returns sections, no coverage,
-        # and raises nothing (graceful degradation).
+        # FR-012: no doc_class_iri → the suggester still returns a summary, empty
+        # coverage, and raises nothing (graceful degradation). Round-1 skeleton is
+        # grounding-independent, so `sections` is present even without a doc_class_iri (S11).
         engine = build_drug_ontology()
         client = _make_client(_R1_OK, _R2_OK)
         result = suggest_slots(client, "doc", ontology_engine=engine)
         assert result["coverage"] == []
-        assert result["unresolved_candidates"] == []
-        assert isinstance(result["sections"], list)
+        assert result["sections"] == _R1_OK["sections"]
+        assert isinstance(result["document_summary"], str)
+
+
+class TestSupplementalCmcEdges:
+    """Fix B / D8: broad-domain object props (no ``rdfs:domain``) are invisible to
+    ``get_relation_schema`` but the extraction pipeline supplements them for CMCReport.
+    The AI coverage menu MUST offer the same set (single source of truth,
+    ``relation_extractor.supplemental_relation_edges``) — else the menu is narrower
+    than extraction and those relationships can never be authored.
+    """
+
+    def test_cmc_supplemental_edges_in_menu(self):
+        from app.services.extraction.relation_extractor import (
+            CMC_REPORT_IRI,
+            DEGRADATION_PATHWAY_IRI,
+            EQUIPMENT_IRI,
+            HAS_DEGRADATION_PATHWAY_IRI,
+            HAS_STORAGE_CONDITION_IRI,
+            STORAGE_CONDITION_IRI,
+            USES_EQUIPMENT_IRI,
+        )
+        from app.services.extraction.slot_suggester import (
+            _build_ontology_context,
+            _extract_coverage,
+        )
+
+        # CMCReport 不在 drug 测试 T-Box 里 → get_relation_schema 返回 []；补挂边应把
+        # 3 条 broad-domain 关系并入菜单（fake engine 的 get_class_label 走 __getattr__
+        # noop → range 标签回退到 local-name，仍产出可绑定的边）。
+        engine = build_drug_ontology()
+        schema_edges, prompt = _build_ontology_context(engine, CMC_REPORT_IRI)
+
+        edge_keys = {(e["predicate_iri"], e["range_class_iri"]) for e in schema_edges}
+        assert (USES_EQUIPMENT_IRI, EQUIPMENT_IRI) in edge_keys
+        assert (HAS_STORAGE_CONDITION_IRI, STORAGE_CONDITION_IRI) in edge_keys
+        assert (HAS_DEGRADATION_PATHWAY_IRI, DEGRADATION_PATHWAY_IRI) in edge_keys
+
+        # 三条 predicate 标签都渲染进注入 LLM 的菜单文本。
+        for label in ("使用设备", "存放条件", "含降解途径"):
+            assert label in prompt
+
+        # 补挂边随 schema_edges 回传 → 立即可被 _extract_coverage 绑定（可作者化）。
+        r2 = {"coverage": [
+            {"predicate_iri": USES_EQUIPMENT_IRI, "range_class_iri": EQUIPMENT_IRI},
+        ]}
+        cov = _extract_coverage(r2, schema_edges, CMC_REPORT_IRI)
+        assert len(cov) == 1
+        assert cov[0]["predicate_iri"] == USES_EQUIPMENT_IRI
+        assert cov[0]["doc_class_iri"] == CMC_REPORT_IRI
+        assert cov[0]["required"] is True
+
+    def test_non_cmc_doc_class_gets_no_supplemental_edges(self):
+        """其它文档类型零补挂——补挂只针对 CMCReport（零行为变更）。"""
+        from app.services.extraction.relation_extractor import (
+            supplemental_relation_edges,
+        )
+
+        engine = build_drug_ontology()
+        assert supplemental_relation_edges(engine, DRUG_PRODUCT) == []
+        assert supplemental_relation_edges(None, DRUG_PRODUCT) == []
+
+
+class TestCoverageCapable:
+    """Bugfix「仅启用已建模类型」(S9/S10): a document type is *capable* iff the ontology
+    models ≥1 hop-1 coverage edge for it. ``coverage_capable`` (behind the
+    ``/coverage-doc-classes`` probe that gates the authoring dropdown) and
+    ``_build_ontology_context`` (the AI menu) MUST agree — both consume the one
+    ``_supplemented_schema_edges`` source of truth, so "UI enables it" ⇔ "AI can emit
+    coverage". Per contracts/suggest-slots-api.md.
+    """
+
+    def test_modeled_type_is_capable(self):
+        """DrugProduct has a hop-1 object property (manufacturedBy) → capable."""
+        from app.services.extraction.slot_suggester import coverage_capable
+
+        engine = build_drug_ontology()
+        assert coverage_capable(engine, DRUG_PRODUCT) is True
+
+    def test_cmc_capable_via_d8_supplements(self):
+        """CMCReport carries NO exact-domain edges but D8 re-attaches 3 hop-1 broad-
+        domain props — the production reason CMCReport is the sole capable type."""
+        from app.services.extraction.relation_extractor import CMC_REPORT_IRI
+        from app.services.extraction.slot_suggester import coverage_capable
+
+        engine = build_drug_ontology()
+        assert coverage_capable(engine, CMC_REPORT_IRI) is True
+
+    def test_unmodeled_type_not_capable(self):
+        """Leaf/document-classification types with no object property → NOT capable
+        (Manufacturer is a leaf; BiologicalDrugProduct is a subclass with no own
+        object props — domain-literal matching, mirroring real doc-class subclasses)."""
+        from app.services.extraction.slot_suggester import coverage_capable
+
+        engine = build_drug_ontology()
+        assert coverage_capable(engine, MANUFACTURER) is False
+        assert coverage_capable(engine, BIOLOGIC) is False
+
+    def test_missing_engine_or_iri_not_capable(self):
+        """FR-012 graceful degradation: no engine / no iri → not capable (no raise)."""
+        from app.services.extraction.slot_suggester import coverage_capable
+
+        engine = build_drug_ontology()
+        assert coverage_capable(None, DRUG_PRODUCT) is False
+        assert coverage_capable(engine, None) is False
+
+    def test_build_ontology_context_contract_unchanged(self):
+        """S9 regression: ``(edges, prompt)`` contract intact — modeled type yields a
+        non-empty menu prompt; no-hop1 / no-engine degrades to ``([], "")``."""
+        from app.services.extraction.slot_suggester import _build_ontology_context
+
+        engine = build_drug_ontology()
+        edges, prompt = _build_ontology_context(engine, DRUG_PRODUCT)
+        assert edges and prompt
+        assert "生产者" in prompt  # hop-1 predicate label rendered into the menu
+
+        # no hop-1 edge → prompt empty (dropdown/AI both see "unmodeled")
+        assert _build_ontology_context(engine, MANUFACTURER) == ([], "")
+        # engine/iri absent → fully degraded
+        assert _build_ontology_context(None, DRUG_PRODUCT) == ([], "")
+        assert _build_ontology_context(engine, None) == ([], "")
+
+    def test_capable_iff_menu_nonempty(self):
+        """S9 parity: capability ⇔ a non-empty AI menu, for every fixture type."""
+        from app.services.extraction.slot_suggester import (
+            _build_ontology_context,
+            coverage_capable,
+        )
+        from app.services.extraction.relation_extractor import CMC_REPORT_IRI
+
+        engine = build_drug_ontology()
+        for iri in (DRUG_PRODUCT, CMC_REPORT_IRI, MANUFACTURER, BIOLOGIC):
+            _, prompt = _build_ontology_context(engine, iri)
+            assert coverage_capable(engine, iri) is bool(prompt), iri
 
 
 # ── 013: tiptap → LLM text (server-side, structure-faithful) ───────────────
@@ -404,116 +513,3 @@ class TestTiptapToText:
         out = tiptap_to_text(doc)
         assert out.endswith("…（文档已截断）")
         assert len(out) <= _MAX_DOC_CHARS + len("\n…（文档已截断）")
-
-
-# ── 013: deterministic source_ref anchor derivation (never LLM-emitted) ────
-
-_ANCHOR_DOC = {
-    "type": "doc",
-    "content": [
-        {
-            "type": "heading",
-            "attrs": {"level": 1},
-            "content": [{"type": "text", "text": "评估对象"}],
-        },
-        {
-            "type": "paragraph",
-            "content": [{"type": "text", "text": "本品为XX注射液，剂型为注射剂。"}],
-        },
-    ],
-}
-
-
-class TestDeriveSourceRef:
-    def test_none_when_empty_span(self):
-        assert derive_source_ref("", _ANCHOR_DOC) is None
-        assert derive_source_ref(None, _ANCHOR_DOC) is None
-
-    def test_none_when_empty_content(self):
-        assert derive_source_ref("XX注射液", None) is None
-        assert derive_source_ref("XX注射液", {}) is None
-
-    def test_heading_hit_returns_section_anchor(self):
-        assert derive_source_ref("评估对象", _ANCHOR_DOC) == "§ 评估对象"
-
-    def test_paragraph_under_heading_returns_heading_anchor(self):
-        # 段落命中 → 锚定其最近标题，前端 WordViewer 高亮整节。
-        assert derive_source_ref("XX注射液", _ANCHOR_DOC) == "§ 评估对象"
-
-    def test_headingless_top_block_returns_raw_text(self):
-        doc = {
-            "type": "doc",
-            "content": [
-                {
-                    "type": "paragraph",
-                    "content": [{"type": "text", "text": "独立段落内容片段"}],
-                },
-            ],
-        }
-        assert derive_source_ref("段落内容", doc) == "独立段落内容片段"
-
-    def test_no_match_returns_none(self):
-        assert derive_source_ref("完全不存在的文本", _ANCHOR_DOC) is None
-
-    def test_reverse_containment_matches_longer_span(self):
-        # evidence_span 比单元格文本更长（如跨列拼接），走 Pass-2 反向包含。
-        doc = {
-            "type": "doc",
-            "content": [
-                {
-                    "type": "table",
-                    "content": [
-                        {
-                            "type": "tableRow",
-                            "content": [
-                                {
-                                    "type": "tableCell",
-                                    "content": [
-                                        {
-                                            "type": "paragraph",
-                                            "content": [
-                                                {"type": "text", "text": "高致敏药品专用设备"}
-                                            ],
-                                        }
-                                    ],
-                                },
-                            ],
-                        },
-                    ],
-                },
-            ],
-        }
-        span = "本设备属于高致敏药品专用设备范畴"
-        assert derive_source_ref(span, doc) == "高致敏药品专用设备"
-
-
-class TestContentJsonSourceRef:
-    """suggest_slots + content_json → each slot gets a structural source_ref."""
-
-    def _slots(self, result):
-        return [
-            slot
-            for sec in result["sections"]
-            for grp in sec["groups"]
-            for slot in grp["slots"]
-        ]
-
-    def test_binds_source_ref_from_content_json(self):
-        client = _make_client(_R1_OK, _R2_OK)
-        result = suggest_slots(
-            client,
-            "本品为XX注射液，剂型为注射剂。",
-            content_json=_ANCHOR_DOC,
-            max_suggestions=50,
-        )
-        slots = self._slots(result)
-        assert slots, "expected suggested slots"
-        # _R2_OK 的两个 evidence_span（XX注射液 / 注射剂）都落在「评估对象」章节内。
-        assert all(s["source_ref"] == "§ 评估对象" for s in slots)
-
-    def test_no_source_ref_key_without_content_json(self):
-        client = _make_client(_R1_OK, _R2_OK)
-        result = suggest_slots(client, "some doc text", max_suggestions=50)
-        slots = self._slots(result)
-        assert slots
-        assert all("source_ref" not in s for s in slots)

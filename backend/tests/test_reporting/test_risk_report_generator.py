@@ -208,6 +208,30 @@ class TestGenerateWithCoverage:
         assert isinstance(report, RiskReport)
         assert gen.coverage is not None  # manifest still computed
 
+    def test_assess_deterministic_matches_generate_with_coverage(self, db):
+        """The 行文预览 fast path (``assess_deterministic``) must reproduce the
+        deterministic head of ``generate_with_coverage`` exactly — same post-control
+        risk rows and same coverage verdict — so the preview quotes what the rendered
+        report renders, with no drift between the two code paths."""
+        _make_risk_rule(db, key="R-RA-EQ", category="生产设备", risk_level="HighRisk")
+        edges = [_drug_product_edge(), _shared_line_edge(), _equipment_edge("RE001")]
+
+        report, manifest_full = RiskReportGenerator(db).generate_with_coverage(
+            edges, source_filename="HRS-1234.docx"
+        )
+        rows, manifest = RiskReportGenerator(db).assess_deterministic(edges)
+
+        assert [
+            (r.hazid, r.pre_control_level, r.post_control_level, r.status) for r in rows
+        ] == [
+            (r.hazid, r.pre_control_level, r.post_control_level, r.status)
+            for r in report.assessment_rows
+        ]
+        assert manifest.has_omissions == manifest_full.has_omissions
+        assert {s.slot_id for s in manifest.missing_required_slots} == {
+            s.slot_id for s in manifest_full.missing_required_slots
+        }
+
 
 class TestDocxRenderer:
     def test_render_produces_valid_docx_bytes(self):

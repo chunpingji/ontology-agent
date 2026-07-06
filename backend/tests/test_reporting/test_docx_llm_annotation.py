@@ -19,6 +19,7 @@ from app.services.reporting.docx_renderer import (
     _add_generated_disclaimer_section,
     _add_llm_disclaimer_line,
     _add_llm_run,
+    _add_semantic_slots,
     render_risk_report,
 )
 from app.services.reporting.risk_report_generator import RiskReport
@@ -79,3 +80,54 @@ class TestRenderReportWithLLMSupplements:
             for run in p.runs:
                 all_runs_text += run.text
         assert _LLM_INFO_GLYPH in all_runs_text
+
+
+class TestRenderSemanticSlots:
+    """016+: 语义化插槽 正文 renders as an LLM-annotated block (heading + ⓘ prose +
+    disclaimer), mirroring 015 section narratives. No-op when the list is empty."""
+
+    _SLOT = {
+        "slot_id": "analysis.overview",
+        "section_id": "s1",
+        "label": "综合分析",
+        "text": "本节综述：由 Acme 制药生产，风险经确定性评估为可控。",
+    }
+
+    def test_semantic_slot_heading_and_annotated_text(self):
+        doc = Document()
+        _add_semantic_slots(doc, RiskReport(semantic_slots=[self._SLOT]))
+        texts = [p.text for p in doc.paragraphs if p.text.strip()]
+        # heading uses the slot label, and the synthesized text is ⓘ-annotated
+        assert any("综合分析" in t for t in texts)
+        runs = "".join(r.text for p in doc.paragraphs for r in p.runs)
+        assert _LLM_INFO_GLYPH in runs
+        assert self._SLOT["text"] in runs
+
+    def test_empty_semantic_slots_is_noop(self):
+        doc = Document()
+        before = len(doc.paragraphs)
+        _add_semantic_slots(doc, RiskReport())
+        assert len(doc.paragraphs) == before  # nothing added
+
+    def test_render_report_includes_disclaimer_with_only_semantic_slots(self):
+        """A report whose ONLY LLM content is a semantic slot still gets the
+        end-of-report disclaimer (parity with llm_supplements/section_narratives)."""
+        report = RiskReport(
+            semantic_slots=[self._SLOT],
+            llm_generated_fields={"analysis.overview"},
+        )
+        docx_bytes = render_risk_report(report)
+        doc = Document(io.BytesIO(docx_bytes))
+        all_text = "\n".join(p.text for p in doc.paragraphs)
+        assert _LLM_END_DISCLAIMER_ZH in all_text
+        assert "综合分析" in all_text
+
+    def test_blank_text_slot_skipped(self):
+        doc = Document()
+        _add_semantic_slots(
+            doc,
+            RiskReport(semantic_slots=[{**self._SLOT, "text": "   "}]),
+        )
+        # heading for the block is emitted, but no ⓘ prose run for a blank slot
+        runs = "".join(r.text for p in doc.paragraphs for r in p.runs)
+        assert _LLM_INFO_GLYPH not in runs

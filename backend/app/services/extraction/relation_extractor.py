@@ -28,12 +28,14 @@ from app.services.extraction.docx_structure import (
     DocStructure,
     parse_docx_structure,
 )
+from app.services.extraction.production_area_source import get_production_area_source
 
 # --- 本体 IRI（与 slpra-*.ttl 一致）----------------------------------------
 _DEV = "https://ontology.pharma-gmp.cn/slpra/drug-development/"
 _DRUG = "https://ontology.pharma-gmp.cn/slpra/drug/"
 _EQUIP = "https://ontology.pharma-gmp.cn/slpra/equipment/"
 _CLEAN = "https://ontology.pharma-gmp.cn/slpra/cleaning/"
+_FACIL = "https://ontology.pharma-gmp.cn/slpra/facility/"
 
 CMC_REPORT_IRI = _DEV + "CMCReport"
 DRUG_PRODUCT_IRI = _DRUG + "DrugProduct"
@@ -50,12 +52,15 @@ RESIDUE_IRI = _DRUG + "Residue"
 SHARED_LINE_IRI = _DEV + "SharedLineAssessmentData"
 STORAGE_CONDITION_IRI = _DEV + "StorageCondition"
 DEGRADATION_PATHWAY_IRI = _DEV + "DegradationPathway"
+CLINICAL_SAMPLE_PLAN_IRI = _DEV + "ClinicalSampleProductionPlan"
+PRODUCTION_AREA_IRI = _FACIL + "ProductionArea"
 
 # 对象属性 IRI（broad-domain 补挂用，本体未声明 rdfs:domain → 反查不到）。
 USES_EQUIPMENT_IRI = _DEV + "usesEquipment"
 HAS_STORAGE_CONDITION_IRI = _DEV + "hasStorageCondition"
 HAS_DEGRADATION_PATHWAY_IRI = _DEV + "hasDegradationPathway"
 PRODUCES_INTERMEDIATE_IRI = _DEV + "producesIntermediate"
+PRODUCED_IN_AREA_IRI = _DEV + "producedInArea"
 
 # 数据属性 IRI（多数内容类的 dprop 本体未声明 domain，无法经 by_domain 反查 → 直引常量）。
 DP = {
@@ -86,6 +91,11 @@ DP = {
     "proposedMaxDose_mg": _DEV + "proposedMaxDose_mg",
     "dosingRegimen": _DEV + "dosingRegimen",
     "pde_mg_per_day": _DRUG + "pde_mg_per_day",
+    "plannedProductionDate": _DEV + "plannedProductionDate",
+    "plannedBatchCount": _DEV + "plannedBatchCount",
+    "productionPurpose": _DEV + "productionPurpose",
+    "plannedBatchSizeMin_kg": _DEV + "plannedBatchSizeMin_kg",
+    "plannedBatchSizeMax_kg": _DEV + "plannedBatchSizeMax_kg",
 }
 
 # broad-domain 对象属性（本体未声明 domain）→ 对 CMCReport 显式补挂。
@@ -97,6 +107,37 @@ _SUPPLEMENTAL_CMC_PROPS = [
     {"iri": HAS_DEGRADATION_PATHWAY_IRI, "label": "含降解途径", "name": "hasDegradationPathway",
      "range": [DEGRADATION_PATHWAY_IRI]},
 ]
+
+
+def supplemental_relation_edges(engine, doc_class_iri: str | None) -> list[dict]:
+    """D8 补挂：为 broad-domain（本体未声明 ``rdfs:domain``）对象属性合成 hop-1 关系边。
+
+    ``OntologyEngine.get_relation_schema`` 按**精确** domain BFS，看不到这些属性；抽取
+    管线用 :data:`_SUPPLEMENTAL_CMC_PROPS` 补挂它们。本函数把**同一批**属性合成为与
+    ``get_relation_schema`` 同形状的边，供 AI 覆盖菜单（slot_suggester）复用——两条路径
+    共享单一事实源，关系集不再发散。
+
+    仅 ``CMCReport`` 有补挂项；其它文档类型（或 ``engine is None``）返回 ``[]``，
+    调用点零行为变更。只读（Principle II）。
+    """
+    if engine is None or doc_class_iri != CMC_REPORT_IRI:
+        return []
+    domain_label = engine.get_class_label(doc_class_iri) or ""
+    edges: list[dict] = []
+    for prop in _SUPPLEMENTAL_CMC_PROPS:
+        for rng in prop.get("range", []):
+            edges.append({
+                "hop": 1,
+                "predicate_iri": prop["iri"],
+                "predicate_label": prop["label"],
+                "domain_class_iri": doc_class_iri,
+                "domain_class_label": domain_label,
+                "range_class_iri": rng,
+                "range_class_label": engine.get_class_label(rng) or rng.rsplit("/", 1)[-1],
+                "range_subclasses": [],
+                "range_data_properties": [],
+            })
+    return edges
 
 # 设备规格关键词 → Equipment 本体子类。
 _EQUIP_CLASS_BY_SPEC = [
@@ -599,6 +640,84 @@ def find_degradation(ctx: _Ctx) -> list[dict]:
     return out
 
 
+# 备样生产计划句：含「计划」「批」「车间」三特征词（按句签名定位，稳健于章节标题差异）。
+_PLAN_DATE_RE = re.compile(r"计划于\s*(\d{4}年\d{1,2}月)")
+_PLAN_BATCH_RE = re.compile(r"计划生产\s*(\d+)\s*批")
+_PLAN_PURPOSE_RE = re.compile(r"用于\s*([^，。；]+)")
+_PLAN_SIZE_RE = re.compile(r"预计批量\s*([\d.]+)\s*[~～\-—至]\s*([\d.]+)\s*kg")
+_PLAN_AREA_SPAN_RE = re.compile(r"在\s*([^，。]*?车间)")
+
+
+def _find_plan_sentence(structure: DocStructure) -> str:
+    """按句签名定位备样生产计划句：整篇找含「计划」且「批」且「车间」的段落。"""
+    for p in structure.paragraphs:
+        if "计划" in p and "批" in p and "车间" in p:
+            return p
+    sec = structure.find_section("简介", "备样生产")
+    if sec:
+        for para in sec.paras:
+            if "计划" in para and "车间" in para:
+                return para
+    return ""
+
+
+def find_production_plan(ctx: _Ctx) -> list[dict]:
+    """hasProductionPlan→ClinicalSampleProductionPlan：简介节计划句聚为一个备样生产计划端点，
+    其下按车间号拆多条 producedInArea→ProductionArea 子关系。
+
+    该实体为抽象聚合（NER 不产出，仅经本 finder 端点进图，同 SynthesisRoute）。计划信息是
+    简介节一句话，按句签名定位。「642/646车间」含两个车间，逐个经 mock 外部车间主数据源
+    （:mod:`production_area_source`）解析为 ProductionArea——A-Box 尚未对接，故走外部事实源；
+    未命中则跳过该车间（优雅降级）。
+    """
+    sentence = _find_plan_sentence(ctx.structure)
+    if not sentence:
+        return []
+
+    def _grp(pattern: re.Pattern) -> str:
+        m = pattern.search(sentence)
+        return m.group(1) if m else ""
+
+    size = _PLAN_SIZE_RE.search(sentence)
+    props = [
+        _dp(DP["plannedProductionDate"], "计划生产时间", _grp(_PLAN_DATE_RE)),
+        _dp(DP["plannedBatchCount"], "计划生产批次数", _grp(_PLAN_BATCH_RE)),
+        _dp(DP["productionPurpose"], "生产用途", _grp(_PLAN_PURPOSE_RE)),
+        _dp(DP["plannedBatchSizeMin_kg"], "预计批量下限（kg）", size.group(1) if size else ""),
+        _dp(DP["plannedBatchSizeMax_kg"], "预计批量上限（kg）", size.group(2) if size else ""),
+    ]
+    props = [p for p in props if p]
+
+    # 车间：拆「642/646车间」为多个车间号，逐个经外部事实源解析为 ProductionArea 子关系。
+    area_subs: list[dict] = []
+    span = _PLAN_AREA_SPAN_RE.search(sentence)
+    if span:
+        source = get_production_area_source()
+        seen: set[str] = set()
+        for code in re.findall(r"\d{2,4}", span.group(1)):
+            if code in seen:
+                continue
+            seen.add(code)
+            fact = source.resolve(code)
+            if fact is None:
+                continue
+            area_subs.append(_sub(
+                PRODUCED_IN_AREA_IRI, "生产车间", ctx,
+                _endpoint(PRODUCTION_AREA_IRI, fact.label, source="external",
+                          data_properties=fact.data_properties,
+                          source_ref="外部事实源：生产车间主数据"),
+            ))
+
+    if not props and not area_subs:
+        return []
+    return [_endpoint(
+        CLINICAL_SAMPLE_PLAN_IRI, "临床备样生产计划",
+        data_properties=props,
+        sub_relationships=area_subs,
+        source_ref="§ 简介",
+    )]
+
+
 # range 类 IRI → 端点 finder。
 _ENDPOINT_FINDERS = {
     DRUG_PRODUCT_IRI: find_drug_product,
@@ -611,6 +730,7 @@ _ENDPOINT_FINDERS = {
     SHARED_LINE_IRI: find_shared_line,
     STORAGE_CONDITION_IRI: find_storage,
     DEGRADATION_PATHWAY_IRI: find_degradation,
+    CLINICAL_SAMPLE_PLAN_IRI: find_production_plan,
 }
 
 

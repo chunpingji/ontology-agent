@@ -989,10 +989,10 @@ def annotate_word(
                 all_texts.append(seg_text)
                 seg_cell_offsets.append(cell_offs)
 
+            # 嵌套 <w:tbl> 收集覆盖所有行（含表头行）：GMP 表单常把设备清单等
+            # 子表放在「见下表」这类表头/描述单元格内，跳过表头会整表丢失。
             nested_tables_info: dict[tuple[int, int], list[dict]] = {}
             for ri, row in enumerate(table.rows):
-                if ri < header_count:
-                    continue
                 for ci, tc_elem_n in enumerate(
                     row._tr.iterchildren(qn("w:tc"))
                 ):
@@ -1053,22 +1053,29 @@ def annotate_word(
             nested_tables = elem.get("nested_tables", {})
             grid_px = _table_grid_px(table_ref) if rich_style else []
 
+            # 把 (ri, ci) 单元格内收集到的嵌套表格渲染并追加到该单元格内容。
+            # 四个分支（表头/数据/rich 空/plain 空）都需调用，否则嵌套表被丢弃。
+            def _attach_nested(cell_content: list[dict], ri: int, ci: int) -> None:
+                for n_info in nested_tables.get((ri, ci), []):
+                    n_node = _render_nested_table(n_info, all_spans)
+                    if n_node:
+                        cell_content.append(n_node)
+
             rows_data: list[dict] = []
             for ri, row in enumerate(table_ref.rows):
                 cells: list[dict] = []
                 tc_elems = list(row._tr.iterchildren(qn("w:tc")))
                 gcol = 0  # 网格列游标（rich：驱动首行 colwidth 切片与 colspan）
                 if ri < hdr_count:
-                    for tc in tc_elems:
+                    for ci, tc in enumerate(tc_elems):
                         if rich_style:
                             ct, cruns = _tc_runs(tc, table_ref)
                             cchildren = _inline_nodes(ct, [], cruns)
                         else:
                             cchildren = _text_to_tiptap_nodes(_tc_text(tc), [])
-                        cell = {
-                            "type": "tableCell",
-                            "content": [{"type": "paragraph", "content": cchildren}],
-                        }
+                        cell_content = [{"type": "paragraph", "content": cchildren}]
+                        _attach_nested(cell_content, ri, ci)
+                        cell = {"type": "tableCell", "content": cell_content}
                         if rich_style:
                             gcol = _apply_cell_grid(cell, tc, ri, gcol, grid_px)
                         cells.append(cell)
@@ -1093,30 +1100,28 @@ def annotate_word(
                         else:
                             ct = "" if vmerge else _tc_text(tc)
                             cchildren = _text_to_tiptap_nodes(ct, c_spans)
-                        cell_content: list[dict] = [
+                        cell_content = [
                             {"type": "paragraph", "content": cchildren},
                         ]
-                        for n_info in nested_tables.get((ri, ci), []):
-                            n_node = _render_nested_table(n_info, all_spans)
-                            if n_node:
-                                cell_content.append(n_node)
+                        _attach_nested(cell_content, ri, ci)
                         cell = {"type": "tableCell", "content": cell_content}
                         if rich_style:
                             gcol = _apply_cell_grid(cell, tc, ri, gcol, grid_px)
                         cells.append(cell)
                 elif rich_style:
-                    for tc in tc_elems:
-                        cell = {
-                            "type": "tableCell",
-                            "content": [{"type": "paragraph"}],
-                        }
+                    for ci, tc in enumerate(tc_elems):
+                        cell_content = [{"type": "paragraph"}]
+                        _attach_nested(cell_content, ri, ci)
+                        cell = {"type": "tableCell", "content": cell_content}
                         gcol = _apply_cell_grid(cell, tc, ri, gcol, grid_px)
                         cells.append(cell)
                 else:
-                    for cell in row.cells:
+                    for ci, tc in enumerate(tc_elems):
+                        cell_content = [{"type": "paragraph"}]
+                        _attach_nested(cell_content, ri, ci)
                         cells.append({
                             "type": "tableCell",
-                            "content": [{"type": "paragraph"}],
+                            "content": cell_content,
                         })
 
                 rows_data.append({"type": "tableRow", "content": cells})

@@ -77,6 +77,10 @@ class RiskReport:
     # Kept structured (not in llm_supplements) so it renders under its own section
     # headings and is persisted for the web report reading pane.
     section_narratives: list[dict] = field(default_factory=list)
+    # 016+: per-semantic-slot LLM-synthesized text (list of {slot_id, section_id, text}).
+    # A semantic slot projects its Section's coverage + prompt; the LLM fuses prompt +
+    # associated ontology + fact sources + deterministic rule results (read-only, FR-009).
+    semantic_slots: list[dict] = field(default_factory=list)
 
 
 class RiskReportGenerator:
@@ -140,9 +144,40 @@ class RiskReportGenerator:
         self._last_manifest = manifest
 
         self._try_llm_merge(report, manifest, document_path)
-        self._try_narrative_generation(report, edges)
+        self._try_narrative_generation(report, edges, facts=facts, engine=engine)
 
         return report, manifest
+
+    def assess_deterministic(
+        self,
+        edges: list[dict],
+        *,
+        dismissed_slot_ids: set[str] | None = None,
+    ) -> tuple[list[RiskRow], CoverageManifest]:
+        """Deterministic-only core (NO LLM): extracted facts → post-control risk
+        rows + coverage manifest.
+
+        Mirrors the deterministic head of :meth:`generate_with_coverage` so a
+        design-time 行文 Prompt *preview* can reuse the exact risk levels and
+        coverage status the real report would quote (§5.4 read-only context)
+        WITHOUT firing the narrative / value-merge LLM passes (which would issue
+        one LLM call per section).
+        """
+        from app.services.ontology_engine import get_loaded_engine
+
+        engine = get_loaded_engine()
+        facts = edges_to_facts(edges, engine)
+        rules = self._load_rules()
+        pre_rows = self._evaluate_rules(rules, facts)
+        post_rows = self._evaluate_post_control(rules, facts, pre_rows)
+
+        manifest = validate_coverage(
+            self._template, edges, rules, facts,
+            dismissed_slot_ids=dismissed_slot_ids,
+            engine=engine,
+        )
+        self._last_manifest = manifest
+        return post_rows, manifest
 
     def _try_llm_merge(
         self,
@@ -176,8 +211,16 @@ class RiskReportGenerator:
         self,
         report: RiskReport,
         edges: list[dict],
+        *,
+        facts: Any | None = None,
+        engine: Any | None = None,
     ) -> None:
-        """Generate narrative prose via LLM if the feature flag is on (013 US3)."""
+        """Generate narrative prose via LLM if the feature flag is on (013 US3).
+
+        ``facts``/``engine`` (already computed by ``generate_with_coverage``) are
+        threaded through so semantic slots can scope the *associated ontology* facts
+        by range type. All LLM output here is additive; it never re-enters the
+        deterministic evaluation (FR-009)."""
         from app.config import settings
 
         if not settings.llm_report_narrative_enabled:
@@ -192,6 +235,7 @@ class RiskReportGenerator:
         from app.services.reporting.narrative_generator import (
             generate_narratives,
             generate_section_narratives,
+            generate_semantic_slots,
         )
 
         narratives = generate_narratives(edges, self._template, client)
@@ -207,9 +251,29 @@ class RiskReportGenerator:
                 report.llm_generated_fields.add(field_name)
 
         # 015: per-section 行文 narrative — generated from each Section.prompt.
+        # §5.4: inject the deterministic rule results + coverage manifest read-only.
         report.section_narratives = generate_section_narratives(
-            edges, self._template, client
+            edges,
+            self._template,
+            client,
+            assessment_rows=report.assessment_rows,
+            manifest=self._last_manifest,
         )
+
+        # 016+: per-semantic-slot LLM synthesis (projects Section.coverage + prompt).
+        report.semantic_slots = generate_semantic_slots(
+            edges,
+            self._template,
+            client,
+            facts=facts,
+            assessment_rows=report.assessment_rows,
+            manifest=self._last_manifest,
+            engine=engine,
+        )
+        for slot in report.semantic_slots:
+            slot_id = slot.get("slot_id")
+            if slot_id:
+                report.llm_generated_fields.add(slot_id)
 
     @property
     def rules_fired_count(self) -> int:

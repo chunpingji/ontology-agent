@@ -1874,32 +1874,6 @@ export const deleteTrainingPair = (id: string, pairId: string) =>
 // 013 LLM Template Design Assist + Report Enhancement
 // --------------------------------------------------------------------------- //
 
-export interface SuggestedSlot {
-  slot_id: string;
-  label: string;
-  section: string;
-  group: string;
-  source_kind: string;
-  source_hint: string | null;
-  confidence: number;
-  evidence_span: string;
-  // 013: 忠于原文预览的结构锚点（§ 标题 / 原文片段），供 WordViewer 定位高亮。
-  source_ref?: string | null;
-  // 旧的扁平文本字符偏移，已弃用（保留仅为兼容）。
-  evidence_offset?: number | null;
-  reason: string;
-}
-
-export interface SuggestedGroup {
-  title: string;
-  slots: SuggestedSlot[];
-}
-
-export interface SuggestedSection {
-  title: string;
-  groups: SuggestedGroup[];
-}
-
 // 016: section-level ontology coverage (mirrors backend OntologyRelationBinding /
 // FactSourceBinding / CoverageDeclaration). All IRIs are class/predicate TYPES —
 // never a sample individual (FR-003 / SC-002).
@@ -1920,13 +1894,28 @@ export interface FactSourceBinding {
 }
 export type CoverageBinding = OntologyRelationBinding | FactSourceBinding;
 
-// 016: a data-sourced-looking position AI analysis could not bind; it awaits
-// explicit author disposition and is NEVER auto-classified as manual (FR-008a).
-export interface UnresolvedCandidate {
-  proposed_label: string;
-  evidence?: string | null;
-  reason_unbound?: string | null;
-  suggested_disposition?: "bind" | "constant" | "manual" | "discard" | null;
+// 016+: 语义化插槽来源。报告生成时本地 LLM 融合 (1) prompt（作者设定，留空=继承
+// 本节 Section.prompt）与 (2) 关联本体（本节 coverage 关系图谱 + 事实源事实）合成
+// 插槽正文。本身不存绑定数据——是 Section.prompt + Section.coverage 的投影。镜像后端
+// SemanticSource（backend/app/services/reporting/ast_template.py）。
+export interface SemanticSource {
+  kind: "semantic";
+  prompt?: string | null; // null → 继承 Section.prompt
+  coverage_refs?: string[]; // coverageKey 过滤器；[] → 投影本节全部 coverage
+}
+
+// coverageKey：与后端 ast_template.coverage_key 逐字节一致。语义化插槽的
+// coverage_refs 以此键选择本节的 coverage 绑定；清单里合成位点的 slot_id 亦是此键。
+// _short = IRI 末段（最后一个 # 或 / 之后）；无分隔符时原样返回。
+export function coverageKey(binding: CoverageBinding): string {
+  const short = (iri: string): string => {
+    const parts = (iri || "").split(/[#/]/).filter(Boolean);
+    return parts.length ? parts[parts.length - 1] : iri;
+  };
+  if (binding.kind === "fact_source") {
+    return `coverage.fact_source.${short(binding.source)}`;
+  }
+  return `coverage.${short(binding.predicate_iri)}__${short(binding.range_class_iri)}`;
 }
 
 export interface SuggestSlotsRequest {
@@ -1940,15 +1929,31 @@ export interface SuggestSlotsRequest {
   doc_class_iri?: string | null;
 }
 
+// AI Round-1 结构骨架（后端逐字回传，形状 = slot_suggester._ROUND1_SCHEMA）。无本体
+// IRI 绑定——编辑器把每个 candidate 物化为可作者填写的 semantic 槽。
+export interface AiStructureCandidate {
+  label: string;
+  evidence_span?: string;
+  evidence_offset?: number;
+}
+export interface AiStructureGroup {
+  title: string;
+  candidates: AiStructureCandidate[];
+}
+export interface AiStructureSection {
+  title: string;
+  groups: AiStructureGroup[];
+}
+
+// AI 分析输出：文档结构骨架（sections）+ 本体覆盖边（coverage）。
 export interface SuggestSlotsResponse {
-  sections: SuggestedSection[];
-  total_suggested: number;
-  skipped_duplicates: number;
   document_summary: string;
-  truncated: boolean;
-  // 016: ontology-grounded coverage + explicit unresolved candidates (US1).
+  // 016: ontology-grounded coverage only (US1). 无法绑定到菜单关系边的位点静默忽略，
+  // 不再返回 unresolved_candidates（取代 FR-008a）。
   coverage: CoverageBinding[];
-  unresolved_candidates: UnresolvedCandidate[];
+  // Round-1 结构骨架；空模板首次分析时物化为分节 + 语义化槽（见 template-slot-editor
+  // 的 materializeSkeleton）。带 IRI 绑定的旧 llm_extraction 取数流不随此字段回归。
+  sections?: AiStructureSection[];
 }
 
 export const suggestSlots = (data: SuggestSlotsRequest) =>
@@ -1956,6 +1961,17 @@ export const suggestSlots = (data: SuggestSlotsRequest) =>
     method: "POST",
     ...jsonBody(data),
   });
+
+// 016：候选文档类型中「已建模可覆盖关系」（≥1 条 hop-1 边）的子集。作者化 UI 据此
+// 门控「关联文档类型」下拉——仅启用已建模类型（当前仅 CMC 报告，本体补充关系后自动扩大）。
+export interface CoverageDocClassesResponse {
+  capable: string[];
+}
+export const getCoverageDocClasses = (docClassIris: string[]) =>
+  fetchAPI<CoverageDocClassesResponse>(
+    "/api/ast-templates/coverage-doc-classes",
+    { method: "POST", ...jsonBody({ doc_class_iris: docClassIris }) },
+  );
 
 // 015: design-time — derive a reusable 行文 Prompt for one section from the
 // sample + the section's slot labels. Gated identically to suggest-slots.
@@ -1970,6 +1986,24 @@ export const generateSectionPrompt = (data: GenerateSectionPromptRequest) =>
     method: "POST",
     ...jsonBody(data),
   });
+
+// 015+: preview the prose one section's (possibly-unsaved) 行文 Prompt produces,
+// from a matched document's REAL extracted facts (same path as the report). Needs
+// a source job associated in the「源文档」tab; gated identically to suggest-slots.
+export interface PreviewSectionNarrativeRequest {
+  job_id: string;
+  template_id: string;
+  section_id: string;
+  prompt: string;
+}
+
+export const previewSectionNarrative = (
+  data: PreviewSectionNarrativeRequest,
+) =>
+  fetchAPI<{ narrative: string }>(
+    "/api/ast-templates/preview-section-narrative",
+    { method: "POST", ...jsonBody(data) },
+  );
 
 // 013: Async report generation (when LLM enhancement flags are on)
 

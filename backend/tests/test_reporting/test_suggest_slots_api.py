@@ -3,7 +3,8 @@
 - parse-sample: 确定性离线解析（角色门控 senior_analyst，但**不**受 llm 门控——
   LLM 关闭时也能预览结构）；
 - suggest-slots: 三选一输入校验、flag/client 503、角色 403，以及 sample_content_json
-  分支走服务端 tiptap→text + 结构锚点派生（mock 本地 LLM，零云端调用）。
+  分支走服务端 tiptap→text（mock 本地 LLM，零云端调用），返回 {document_summary,
+  coverage, sections} 三键契约（sections = Round-1 结构骨架逐字回传, Option A）。
 
 Mock 约定与 test_slot_suggester 一致：在 OpenAI 客户端层 mock
 ``client.chat.completions.create``，跑真实的 suggest_slots → chat_with_schema。
@@ -38,19 +39,10 @@ _R1_OK = {
     ],
 }
 
+# 016 收敛：round-2 只产出所选本体覆盖边。此端点走 sample_content_json（无
+# doc_class_iri、无本体接地）→ coverage 必空，故内容仅需符合 schema 形状。
 _R2_OK = {
-    "slots": [
-        {
-            "slot_id": "drug_name",
-            "label": "药品名称",
-            "section": "评估对象",
-            "group": "药品信息",
-            "confidence": 0.92,
-            "evidence_span": "XX注射液",
-            "reason": "文档首段",
-        },
-    ],
-    "skipped_duplicates": 0,
+    "coverage": [],
 }
 
 
@@ -73,7 +65,7 @@ def _make_llm_client(round1: dict, round2: dict):
     return client
 
 
-# 忠于结构的样例：标题 + 含证据片段的段落 → source_ref 应派生为 "§ 评估对象"。
+# 忠于结构的样例：标题 + 含证据片段的段落（tiptap→text 分支的最小输入）。
 _SAMPLE_DOC = {
     "type": "doc",
     "content": [
@@ -166,9 +158,12 @@ class TestParseSampleEndpoint:
 # ── POST /api/ast-templates/suggest-slots ────────────────────────────────────
 
 class TestSuggestSlotsEndpoint:
-    def test_sample_content_json_path_binds_source_ref(
+    def test_sample_content_json_path_returns_coverage_contract(
         self, client, analyst_headers, monkeypatch
     ):
+        # 端点走 sample_content_json→tiptap→text 分支，跑真实两轮 LLM，返回
+        # {document_summary, coverage, sections}。未传 doc_class_iri（也无本体接地）→
+        # coverage 必为空；sections 是 Round-1 骨架的端到端逐字透传（Option A）。
         _enable_llm(monkeypatch, _make_llm_client(_R1_OK, _R2_OK))
         resp = client.post(
             "/api/ast-templates/suggest-slots",
@@ -177,11 +172,11 @@ class TestSuggestSlotsEndpoint:
         )
         assert resp.status_code == 200
         body = resp.json()
-        assert body["total_suggested"] == 1
-        slots = [
-            s for sec in body["sections"] for g in sec["groups"] for s in g["slots"]
-        ]
-        assert slots[0]["source_ref"] == "§ 评估对象"
+        assert set(body.keys()) == {"document_summary", "coverage", "sections"}
+        assert body["document_summary"] == "GMP 风险评估报告"
+        assert body["coverage"] == []
+        # 骨架逐字透传（端点无 response_model，raw dict 直出）。
+        assert body["sections"] == _R1_OK["sections"]
 
     def test_flag_off_returns_503(self, client, analyst_headers, monkeypatch):
         from app.config import settings
@@ -224,3 +219,51 @@ class TestSuggestSlotsEndpoint:
             json={"document_text": "x", "sample_content_json": {"type": "doc"}},
         )
         assert resp.status_code == 422
+
+
+# ── POST /api/ast-templates/coverage-doc-classes (bugfix: 仅启用已建模类型) ────
+
+class TestCoverageDocClassesEndpoint:
+    """S10: the probe returns exactly the input IRIs the ontology models coverage for.
+
+    Under the conftest ``FakeOntologyEngine`` (get_relation_schema → noop → []),
+    ``coverage_capable`` is True only for CMCReport — via the D8
+    ``supplemental_relation_edges`` (which re-attach 3 hop-1 broad-domain props and
+    gate solely on the IRI). This mirrors production, where CMCReport is the sole
+    modeled document type. Per contracts/suggest-slots-api.md.
+    """
+
+    def test_returns_modeled_subset(self, client, analyst_headers):
+        from app.services.extraction.relation_extractor import CMC_REPORT_IRI
+
+        _DEV = "https://ontology.pharma-gmp.cn/slpra/drug-development/"
+        payload = [
+            _DEV + "StabilityReport",   # unmodeled — no object properties
+            CMC_REPORT_IRI,             # modeled — the only capable type
+            _DEV + "MethodValidationReport",
+        ]
+        resp = client.post(
+            "/api/ast-templates/coverage-doc-classes",
+            headers=analyst_headers,
+            json={"doc_class_iris": payload},
+        )
+        assert resp.status_code == 200
+        assert resp.json() == {"capable": [CMC_REPORT_IRI]}
+
+    def test_empty_list_returns_empty(self, client, analyst_headers):
+        resp = client.post(
+            "/api/ast-templates/coverage-doc-classes",
+            headers=analyst_headers,
+            json={"doc_class_iris": []},
+        )
+        assert resp.status_code == 200
+        assert resp.json() == {"capable": []}
+
+    def test_role_gated_403(self, client, operator_headers):
+        # 同 suggest-slots：senior_analyst 门控先于本体查询触发。
+        resp = client.post(
+            "/api/ast-templates/coverage-doc-classes",
+            headers=operator_headers,
+            json={"doc_class_iris": []},
+        )
+        assert resp.status_code == 403

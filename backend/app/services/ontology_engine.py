@@ -421,6 +421,20 @@ class OntologyEngine:
                     })
             return props
 
+    def get_class_label(self, class_iri: str) -> str | None:
+        """返回某类的显示标签（优先中文 ``rdfs:label``），未找到返回 ``None``（只读）。
+
+        供关系菜单为**合成边**（broad-domain 补挂，见 relation_extractor
+        ``supplemental_relation_edges``）解析 range 类标签，无需跑 BFS。
+        """
+        with self._lock:
+            if not self._world:
+                return None
+            cls = self._world.search_one(iri=class_iri)
+            if cls is None or not isinstance(cls, owlready2.ThingClass):
+                return None
+            return self._get_label(cls) or cls.name
+
     def get_subclasses(self, class_iri: str, recursive: bool = True) -> list[dict]:
         """返回某类的子类 ``[{iri, label}]``（默认递归全部后代，不含自身）。
 

@@ -9,6 +9,7 @@ import {
   deleteAstTemplate,
   setDefaultTemplate,
   parseSample,
+  DOCUMENT_TYPE_GROUPS,
   type AstTemplateDTO,
   type AstTemplateStatus,
   type TiptapContent,
@@ -43,6 +44,15 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 // 015: lifecycle status → 中文标签 + Badge 变体（与 design.pen 一致）。
 const STATUS_META: Record<
@@ -351,15 +361,32 @@ export default function AstTemplatesPage() {
               </div>
             </div>
             <div className="space-y-1">
-              <Label>IRI 模式（可选）</Label>
-              <Input
-                value={uploadIriPattern}
-                onChange={(e) => setUploadIriPattern(e.target.value)}
-                placeholder="例如 CMCReport"
-                className="font-mono"
-              />
+              <Label>
+                关联文档类型 <span className="text-destructive">*</span>
+              </Label>
+              <Select
+                value={uploadIriPattern || undefined}
+                onValueChange={setUploadIriPattern}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="选择文档类型…" />
+                </SelectTrigger>
+                <SelectContent>
+                  {DOCUMENT_TYPE_GROUPS.map((g) => (
+                    <SelectGroup key={g.group}>
+                      <SelectLabel>{g.group}</SelectLabel>
+                      {g.options.map((o) => (
+                        <SelectItem key={o.iri} value={o.iri}>
+                          {o.label}
+                        </SelectItem>
+                      ))}
+                    </SelectGroup>
+                  ))}
+                </SelectContent>
+              </Select>
               <p className="text-xs text-muted-foreground">
-                文档类型 IRI 的匹配片段；生成报告时据此选用本模板（留空则仅作默认/回退）。
+                必选。选中文档类型即绑定其本体图谱——驱动「AI分析」编译覆盖声明，
+                并作为生成报告时选用本模板的解析键。
               </p>
             </div>
             <div className="space-y-1">
@@ -391,7 +418,12 @@ export default function AstTemplatesPage() {
             </Button>
             <Button
               onClick={handleEnterCreateEditor}
-              disabled={!sampleContent || !uploadName.trim() || extracting}
+              disabled={
+                !sampleContent ||
+                !uploadName.trim() ||
+                !uploadIriPattern ||
+                extracting
+              }
             >
               进入编辑器
             </Button>

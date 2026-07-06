@@ -363,6 +363,13 @@ slpra-drug:dosageForm a owl:DatatypeProperty ;
     rdfs:label "dosage form"@en ;
     rdfs:label "制剂剂型"@zh .
 
+slpra-drug:drugSpecification a owl:DatatypeProperty ;
+    rdfs:domain slpra-drug:DrugProduct ;
+    rdfs:range xsd:string ;
+    rdfs:label "drug specification / strength"@en ;
+    rdfs:label "规格"@zh ;
+    rdfs:comment "Product specification or strength descriptor. For a bulk drug substance this may simply be 原料药; for a finished product e.g. 0.25g/片, 100mg/支."@en .
+
 slpra-drug:routeOfAdministration a owl:DatatypeProperty ;
     rdfs:domain slpra-drug:DrugProduct ;
     rdfs:range xsd:string ;

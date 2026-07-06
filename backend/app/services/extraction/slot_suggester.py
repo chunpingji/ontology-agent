@@ -1,18 +1,21 @@
-"""013: LLM-assisted slot suggestion for AST template design.
+"""013/016: LLM-assisted ontology-coverage suggestion for AST template design.
+
+016 收敛：本模块只产出**类型级本体覆盖**，不再产出任何逐插槽 ``llm_extraction`` 建议流。
+点击「AI分析」→ ``{document_summary, coverage}``。
 
 Two-round LLM prompting:
   Round 1 — document structure analysis → sections/groups + candidate labels + evidence
-  Round 2 — slot mapping given round-1 + existing template → concrete slots (dedup)
+  Round 2 — 从注入的【本体关系菜单】**选择**需覆盖的关系边 → ``coverage``
 
-016 US1 — ontology grounding: when a ``doc_class_iri`` is supplied, the read-only
-``get_relation_schema(doc_class_iri)`` (Principle II) is injected into both rounds
-as a **selection menu** of the relationship edges the doc entity type participates
-in. The LLM *selects* ``(predicate_iri, range_class_iri)`` pairs from that menu and
-emits ``CoverageDeclaration``s — it can never invent an IRI, so declarations reference
-ontology **types**, never sample individuals (FR-003). Positions that look
-data-sourced but bind to no edge surface as explicit ``unresolved_candidates`` for
-author disposition — they are NEVER silently collapsed to ``manual`` (FR-008a). The
-old exact-string ``_bind_ontology_iris`` (which did exactly that collapse) is gone.
+016 US1 — ontology grounding: a ``doc_class_iri`` is **required** (作者在模板必选
+「关联文档类型」→ 得到本体图谱). The read-only ``get_relation_schema(doc_class_iri)``
+(Principle II) is injected into both rounds as a **selection menu** of the relationship
+edges the doc entity type participates in. The LLM *selects* ``(predicate_iri,
+range_class_iri)`` pairs from that menu and emits ``CoverageDeclaration``s — it can
+never invent an IRI, so declarations reference ontology **types**, never sample
+individuals (FR-003). Positions that bind to no menu edge are **silently ignored** —
+AI 分析只呈现能绑定到本体的覆盖边，不再抛出「原文取数候选」（取代 FR-008a 的
+``unresolved_candidates`` 流）。
 """
 
 from __future__ import annotations
@@ -77,26 +80,6 @@ _ROUND1_SCHEMA: dict[str, Any] = {
 _ROUND2_SCHEMA: dict[str, Any] = {
     "type": "object",
     "properties": {
-        "slots": {
-            "type": "array",
-            "items": {
-                "type": "object",
-                "properties": {
-                    "slot_id": {"type": "string"},
-                    "label": {"type": "string"},
-                    "section": {"type": "string"},
-                    "group": {"type": "string"},
-                    "confidence": {"type": "number"},
-                    "evidence_span": {"type": "string"},
-                    "evidence_offset": {"type": "integer"},
-                    "reason": {"type": "string"},
-                },
-                "required": ["slot_id", "label", "section", "group", "confidence",
-                             "evidence_span", "reason"],
-                "additionalProperties": False,
-            },
-        },
-        "skipped_duplicates": {"type": "integer"},
         # 016 US1: the LLM SELECTS relationship edges from the injected ontology
         # menu (never invents IRIs). `required` is deliberately NOT exposed — an
         # AI-proposed binding is required-by-default (FR-005a); the author demotes
@@ -116,23 +99,8 @@ _ROUND2_SCHEMA: dict[str, Any] = {
                 "additionalProperties": False,
             },
         },
-        # 016 US1: data-sourced-looking positions that bind to no ontology edge —
-        # surfaced for explicit author disposition, never auto-classified manual.
-        "unresolved_candidates": {
-            "type": "array",
-            "items": {
-                "type": "object",
-                "properties": {
-                    "proposed_label": {"type": "string"},
-                    "evidence": {"type": "string"},
-                    "reason_unbound": {"type": "string"},
-                },
-                "required": ["proposed_label"],
-                "additionalProperties": False,
-            },
-        },
     },
-    "required": ["slots", "skipped_duplicates"],
+    "required": [],
     "additionalProperties": False,
 }
 
@@ -146,35 +114,33 @@ def suggest_slots(
     content_json: dict | None = None,
     doc_class_iri: str | None = None,
 ) -> dict[str, Any]:
-    """Run two-round LLM slot suggestion and return structured result.
+    """Run two-round LLM ontology-coverage suggestion and return structured result.
 
     Returns a dict matching ``SuggestSlotsResponse`` shape:
-    ``{sections, total_suggested, skipped_duplicates, document_summary, truncated,
-    coverage, unresolved_candidates}``.
+    ``{document_summary, coverage, sections}``. ``sections`` is the Round-1
+    **structural skeleton** (``sections[].groups[].candidates[]{label, …}``,
+    per ``_ROUND1_SCHEMA``) returned **verbatim** — the编辑器 materializes it into
+    author-fillable semantic slots. This骨架 carries **no** ontology IRI binding: the
+    old per-slot取数流 (``_bind_ontology_iris`` exact-match → force-collapse to
+    ``manual``, defect 1 root cause) stays removed; only inert structure is surfaced.
 
-    ``content_json`` (tiptap) — when provided, each slot gets a deterministic
-    ``source_ref`` anchor (``§ 标题`` / 原文片段) derived from the structure so
-    the frontend ``WordViewer`` can locate and highlight the evidence in the
-    faithful preview (013 — replaces the char-offset ``evidence_offset`` link).
+    ``doc_class_iri`` (016 US1) — the document entity type (作者在模板必选「关联文档
+    类型」). When it and ``ontology_engine`` are both present, the engine's read-only
+    relationship schema is injected into both rounds and the LLM selects edges to
+    cover; the result carries ``coverage`` (``CoverageDeclaration``s, required-by-
+    default). Absent either input, ``coverage`` comes back empty (graceful
+    degradation, FR-012) and only ``document_summary`` is populated.
 
-    ``doc_class_iri`` (016 US1) — the document entity type. When it and
-    ``ontology_engine`` are both present, the engine's read-only relationship
-    schema is injected into both rounds and the LLM selects edges to cover; the
-    result carries ``coverage`` (``CoverageDeclaration``s, required-by-default) and
-    ``unresolved_candidates``. Absent either input, both lists come back empty and
-    the classic section/slot output is unchanged (FR-012).
+    ``content_json`` / ``max_suggestions`` — accepted for caller/endpoint signature
+    stability; no longer used now that the逐插槽建议流 is removed.
     """
     text = document_text.strip()
     logger.info("suggest_slots called: document_text length=%d", len(text))
     if not text:
         return {
-            "sections": [],
-            "total_suggested": 0,
-            "skipped_duplicates": 0,
             "document_summary": "文档为空或仅含空白字符，无法进行分析。",
-            "truncated": False,
             "coverage": [],
-            "unresolved_candidates": [],
+            "sections": [],
         }
 
     if len(text) > _MAX_DOC_CHARS:
@@ -207,13 +173,9 @@ def suggest_slots(
     if r1 is None:
         logger.warning("Round-1 LLM call failed — check backend logs for chat_with_schema details")
         return {
-            "sections": [],
-            "total_suggested": 0,
-            "skipped_duplicates": 0,
             "document_summary": "LLM 结构分析失败，请检查本地 LLM 日志。",
-            "truncated": False,
             "coverage": [],
-            "unresolved_candidates": [],
+            "sections": [],
         }
 
     r1_candidates = sum(
@@ -227,16 +189,18 @@ def suggest_slots(
         len(r1.get("sections", [])), r1_candidates, document_summary,
     )
 
-    # ── Round 2: slot mapping + dedup ────────────────────────────────────
+    # ── Round 2: ontology-coverage selection (016) ───────────────────────
     r2_system = (
-        "你是 GMP 报告模板设计专家。根据文档结构分析结果，生成具体的数据插槽定义。"
-        "每个插槽需要 slot_id（snake_case）、label、所属 section/group、置信度、证据片段和理由。"
+        "你是 GMP 报告本体覆盖分析专家。根据文档结构分析结果与下方【本体关系菜单】，"
+        "从菜单中**选择**本报告需要体现的关系边，在 coverage 中输出所选边的 "
+        "predicate_iri 与 range_class_iri（切勿虚构 IRI、切勿引用具体实例个体）。"
+        "无法匹配任何菜单关系的字段一律忽略，不要输出。"
     )
     existing_context = ""
     if existing_template:
         existing_context = (
-            "\n\n以下是已有模板结构，请跳过语义上已被覆盖的插槽（不要输出重复项），"
-            "并在 skipped_duplicates 中计数跳过的数量：\n"
+            "\n\n以下是已有模板结构（含已声明的覆盖边），请跳过语义上已被覆盖的关系，"
+            "不要重复输出：\n"
             + json.dumps(existing_template, ensure_ascii=False, indent=1)
         )
 
@@ -244,7 +208,7 @@ def suggest_slots(
         f"文档结构分析结果：\n{json.dumps(r1, ensure_ascii=False, indent=1)}"
         f"{existing_context}"
         f"{ontology_context}"
-        f"\n\n请生成不超过 {max_suggestions} 个数据插槽定义。"
+        f"\n\n请只输出 coverage（所选本体关系边），不要输出任何其它内容。"
     )
 
     r2 = chat_with_schema(
@@ -257,56 +221,66 @@ def suggest_slots(
     if r2 is None:
         logger.warning("Round-2 LLM call failed — check backend logs for chat_with_schema details")
         return {
-            "sections": [],
-            "total_suggested": 0,
-            "skipped_duplicates": 0,
-            "document_summary": document_summary or "LLM 插槽映射失败，请检查本地 LLM 日志。",
-            "truncated": False,
+            "document_summary": document_summary or "LLM 覆盖分析失败，请检查本地 LLM 日志。",
             "coverage": [],
-            "unresolved_candidates": [],
+            # Round-1 succeeded → surface its skeleton even when coverage selection failed.
+            "sections": r1.get("sections", []),
         }
-
-    raw_slots = r2.get("slots", [])
-    skipped = r2.get("skipped_duplicates", 0)
-    logger.info("Round-2 OK: %d slots, %d skipped", len(raw_slots), skipped)
 
     # ── Ontology-grounded coverage (016 US1) ─────────────────────────────
     # The LLM SELECTED edges from the injected schema menu; keep only those whose
     # (predicate, range) is actually in the schema (drops invented individuals,
-    # FR-003), dedup our own output (S7), and pass through unresolved candidates.
-    # Remaining slots are typed llm_extraction — a graph-sourced position is NEVER
-    # defaulted to manual (S1/FR-008a); the editor lets the author reclassify.
+    # FR-003) and dedup our own output (S7). Positions that bind to no menu edge are
+    # silently ignored — AI 分析只呈现能绑定到本体的覆盖边（取代 FR-008a 的候选流）。
     coverage = _extract_coverage(r2, schema_edges, doc_class_iri)
-    unresolved = _extract_unresolved(r2)
-    for slot in raw_slots:
-        slot["source_kind"] = "llm_extraction"
-        slot["source_hint"] = None
-
-    # ── Structural source_ref binding (deterministic, from tiptap) ───────
-    # 从文档结构推导锚点，保证锚点文本真实存在于渲染 DOM 中——绝不让 LLM
-    # 自造锚点（会导致 WordViewer 的 textContent.includes 静默匹配失败）。
-    if content_json is not None:
-        for slot in raw_slots:
-            slot["source_ref"] = derive_source_ref(
-                slot.get("evidence_span", ""), content_json,
-            )
-
-    # ── Cap + group into section hierarchy ───────────────────────────────
-    truncated = len(raw_slots) > max_suggestions
-    if truncated:
-        raw_slots = raw_slots[:max_suggestions]
-
-    sections = _group_into_sections(raw_slots)
+    logger.info("Round-2 OK: %d coverage edges", len(coverage))
 
     return {
-        "sections": sections,
-        "total_suggested": len(raw_slots),
-        "skipped_duplicates": skipped,
         "document_summary": document_summary,
-        "truncated": truncated,
         "coverage": coverage,
-        "unresolved_candidates": unresolved,
+        # Round-1 structural skeleton, returned verbatim (no IRI binding). 编辑器
+        # 把每个 candidate 物化为可作者填写的 semantic 槽；本体覆盖仍走 coverage 叠加。
+        "sections": r1.get("sections", []),
     }
+
+
+def _supplemented_schema_edges(engine, doc_class_iri: str | None) -> list[dict]:
+    """本文档类型在只读本体中的关系边（``get_relation_schema`` + D8 broad-domain 补挂）。
+
+    **单一事实源**：AI 覆盖菜单（:func:`_build_ontology_context`）与「文档类型是否已建模」
+    能力探测（:func:`coverage_capable` → ``/coverage-doc-classes`` 端点）共用此函数，保证
+    作者化 UI 的**启用集**与 suggester 实际能产出的**覆盖集**逐字一致，不再发散。
+
+    D8：broad-domain 对象属性（本体未声明 ``rdfs:domain``）对精确-domain BFS 不可见——
+    补挂它们，让覆盖菜单与抽取管线（``relation_extractor`` 为单一事实源）的关系集一致；
+    补挂边一并回传，因而立即可被 ``_extract_coverage`` 绑定。只读（Principle II）。
+    引擎缺失 / ``doc_class_iri`` 为空 / 引擎异常 → ``[]``（优雅降级，FR-012）。
+    """
+    if engine is None or not doc_class_iri:
+        return []
+    try:
+        schema_edges = engine.get_relation_schema(doc_class_iri) or []
+    except Exception:
+        logger.warning("get_relation_schema failed; ontology grounding disabled", exc_info=True)
+        return []
+
+    from app.services.extraction.relation_extractor import supplemental_relation_edges
+
+    existing = {(e.get("predicate_iri"), e.get("range_class_iri")) for e in schema_edges}
+    return schema_edges + [
+        e for e in supplemental_relation_edges(engine, doc_class_iri)
+        if (e["predicate_iri"], e["range_class_iri"]) not in existing
+    ]
+
+
+def coverage_capable(engine, doc_class_iri: str | None) -> bool:
+    """该文档类型在本体中是否已建模**可覆盖关系**（≥1 条 hop-1 边）。
+
+    ``/coverage-doc-classes`` 端点据此判定作者化 UI 应启用哪些文档类型（feature 016 决策：
+    **仅启用已建模类型**）。与 :func:`_build_ontology_context` 走同一
+    :func:`_supplemented_schema_edges`——「能选」当且仅当 AI 分析确能产出覆盖边。
+    """
+    return any(e.get("hop") == 1 for e in _supplemented_schema_edges(engine, doc_class_iri))
 
 
 def _build_ontology_context(
@@ -321,16 +295,9 @@ def _build_ontology_context(
     range-type follow-on templates, see ``_range_data_properties`` in coverage_validator).
 
     Read-only (Principle II). Any engine hiccup degrades to ``([], "")`` — the
-    suggester still produces sections/slots (FR-012).
+    suggester still returns ``document_summary`` with empty coverage (FR-012).
     """
-    if engine is None or not doc_class_iri:
-        return [], ""
-    try:
-        schema_edges = engine.get_relation_schema(doc_class_iri) or []
-    except Exception:
-        logger.warning("get_relation_schema failed; ontology grounding disabled", exc_info=True)
-        return [], ""
-
+    schema_edges = _supplemented_schema_edges(engine, doc_class_iri)
     hop1 = [e for e in schema_edges if e.get("hop") == 1]
     if not hop1:
         return schema_edges, ""
@@ -338,8 +305,8 @@ def _build_ontology_context(
     lines = [
         "\n\n【本体关系菜单】以下是本文档实体类型在本体中可覆盖的关系。"
         "请从中**选择**（切勿虚构 IRI，切勿引用具体实例个体）需要在本报告中体现的关系，"
-        "在 coverage 中输出所选边的 predicate_iri 与 range_class_iri；"
-        "文中看似取数但无法匹配任何下列关系的字段，放入 unresolved_candidates：",
+        "在 coverage 中输出所选边的 predicate_iri 与 range_class_iri。"
+        "无法匹配下列任何关系的字段一律忽略，不要输出：",
     ]
     for e in hop1:
         props = e.get("range_data_properties") or []
@@ -396,41 +363,6 @@ def _extract_coverage(
     return out
 
 
-def _extract_unresolved(r2: dict) -> list[dict]:
-    """Pass through the LLM's unbindable positions as candidates (016 US1 / FR-008a)."""
-    out: list[dict] = []
-    for entry in r2.get("unresolved_candidates", []) or []:
-        label = (entry.get("proposed_label") or "").strip()
-        if not label:
-            continue
-        out.append(
-            {
-                "proposed_label": label,
-                "evidence": entry.get("evidence"),
-                "reason_unbound": entry.get("reason_unbound"),
-                "suggested_disposition": None,
-            }
-        )
-    return out
-
-
-def _group_into_sections(slots: list[dict]) -> list[dict]:
-    """Group flat slot list into section → group → slots hierarchy."""
-    section_map: dict[str, dict[str, list[dict]]] = {}
-    for slot in slots:
-        sec_title = slot.get("section", "未分组")
-        grp_title = slot.get("group", "默认")
-        section_map.setdefault(sec_title, {}).setdefault(grp_title, []).append(slot)
-
-    sections = []
-    for sec_title, groups in section_map.items():
-        sec_groups = []
-        for grp_title, grp_slots in groups.items():
-            sec_groups.append({"title": grp_title, "slots": grp_slots})
-        sections.append({"title": sec_title, "groups": sec_groups})
-    return sections
-
-
 def build_document_text(document_path: str | Path | None) -> str:
     """Extract plain-text from a DOCX for slot suggestion (reuses docx_structure)."""
     if not document_path:
@@ -460,7 +392,7 @@ def build_document_text(document_path: str | Path | None) -> str:
         return ""
 
 
-# ── tiptap (structured) → LLM text + structural anchors ─────────────────────
+# ── tiptap (structured) → LLM text ──────────────────────────────────────────
 # 013: 样例文档在后台解析为 tiptap（忠于原文结构），LLM 分析文本由 tiptap
 # 服务端派生——避免「解析成文本送前台再送回」丢失结构。产出的文本风格与
 # build_document_text 一致（## 标题、表格行以 " | " 拼接），保持 prompt 形态不变。
@@ -514,67 +446,3 @@ def tiptap_to_text(content_json: dict | None) -> str:
     if len(text) > _MAX_DOC_CHARS:
         text = text[:_MAX_DOC_CHARS] + "\n…（文档已截断）"
     return text
-
-
-def _collect_blocks(content_json: dict) -> list[tuple[str, str | None, bool]]:
-    """遍历 tiptap，返回 ``[(块文本, 最近标题, 是否标题)]``（保序）。
-
-    标题/段落/列表项/表格单元格各作一个可定位块；单元格不再下钻其内部段落，
-    避免与段落块重复。表格块的「最近标题」为其前置章节标题。
-    """
-    blocks: list[tuple[str, str | None, bool]] = []
-    current_heading: list[str | None] = [None]
-
-    def walk(node: dict) -> None:
-        t = node.get("type")
-        if t == "heading":
-            txt = _node_text(node).strip()
-            if txt:
-                current_heading[0] = txt
-                blocks.append((txt, txt, True))
-            return
-        if t in ("paragraph", "listItem"):
-            txt = _node_text(node).strip()
-            if txt:
-                blocks.append((txt, current_heading[0], False))
-            return
-        if t in ("tableCell", "tableHeader"):
-            txt = _node_text(node).strip()
-            if txt:
-                blocks.append((txt, current_heading[0], False))
-            return
-        for c in node.get("content") or []:
-            walk(c)
-
-    walk(content_json)
-    return blocks
-
-
-def derive_source_ref(evidence_span: str | None, content_json: dict | None) -> str | None:
-    """由证据片段 + tiptap 结构派生锚点，保证锚点真实存在于渲染 DOM。
-
-    命中标题块 → ``§ <标题>``（前端高亮整节）；命中章节内段落/单元格 →
-    ``§ <最近标题>``；无标题的顶层块 → 返回块原文（前端按关键词命中 p/li/单元格）。
-    命中失败返回 ``None``（前端回退到 evidence_span 本身）。
-    """
-    span = (evidence_span or "").strip()
-    if not span or not content_json:
-        return None
-    blocks = _collect_blocks(content_json)
-
-    def anchor(text: str, heading: str | None, is_heading: bool) -> str:
-        if is_heading:
-            return f"§ {text}"
-        if heading:
-            return f"§ {heading}"
-        return text
-
-    # 1) 正向包含：块文本含证据片段（段落/标题/单元格常见）。
-    for text, heading, is_heading in blocks:
-        if span in text:
-            return anchor(text, heading, is_heading)
-    # 2) 反向包含：证据片段较长（如跨列表格行经 " | " 拼接）时，块文本落在片段内。
-    for text, heading, is_heading in blocks:
-        if len(text) >= 6 and text in span:
-            return anchor(text, heading, is_heading)
-    return None

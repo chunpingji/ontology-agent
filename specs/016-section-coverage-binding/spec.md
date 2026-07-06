@@ -15,6 +15,8 @@
 - Q: When AI analysis proposes a new ontology relationship binding for a section, what is the default `required` flag? → A: Required by default — every AI-proposed relationship binding starts `required: true`; the author demotes genuinely-conditional relationships to optional. (Consistent with the accepted §4 decision that the relationship *is* the no-omission contract.)
 - Q: What happens to a section position that looks data-sourced but the AI cannot bind to any ontology relationship? → A: Surface it as an explicit **unresolved candidate** for author disposition (bind / convert to constant or human-filled / discard); it MUST NOT silently become a human-filled slot. Preserves controllability and prevents recreating the "everything → manual" defect.
 - Q: When the same relationship is declared in multiple sections and is missing from a source graph, how is the omission counted? → A: Allowed, deduped globally — a missing required relationship is **one** distinct omission keyed by (document-type + relationship + target-type), however many sections declare it; sections still show the binding for narrative context. Avoids inflating the no-omission signal.
+- Q: Does AI analysis still emit a per-field slot suggestion stream alongside the new coverage output? → A: No — the legacy per-field suggestion stream (per-slot `llm_extraction` proposals) is **fully removed**. Running AI analysis produces **only** `document_summary` + ontology `coverage` declarations + `unresolved_candidates`. It never invents slots. Already-persisted rule/constant/human-filled/extraction slots on a template are unaffected and continue to display and edit (zero regression) — only the *generation of new* AI slots is removed.
+- Q: How is the source document's entity type supplied to AI analysis — derived from the sample, or authored? → A: **Authored and required.** "关联文档类型" (associated document type) is a **required** AST-template attribute the author explicitly selects (e.g. CMCReport) from the ontology's `RegulatoryDocument` subclasses. Selecting it binds the template to that entity type's relationship graph, which grounds AI analysis. It replaces the earlier approach of deriving the type from a left-panel sample document.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -29,7 +31,7 @@ This feature raises the authoring unit from *individual fields* to *section-leve
 
 ### User Story 1 - AI analysis produces ontology-grounded section coverage, not manual-everything (Priority: P1)
 
-When a template author runs AI-assisted analysis on a sample source document, each section is mapped to the **actual relationships available from the source document's entity type** (as defined in the ontology), and graph-sourced coverage is expressed as relationship declarations — not a flat list of human-filled fields, and never anchored to a sample-specific individual.
+When a template author runs AI-assisted analysis, each section is mapped to the **actual relationships available from the template's associated document type** — a **required** attribute the author selects (§Assumptions) — as defined in the ontology, and graph-sourced coverage is expressed as relationship declarations. The analysis's **entire** output is a document summary plus ontology coverage declarations plus unresolved candidates: it does **not** emit a per-field slot suggestion stream, produces no flat list of human-filled fields, and never anchors to a sample-specific individual.
 
 **Why this priority**: This is the defect that makes the current workflow unusable. Without it the author must re-classify and re-anchor every field by hand, and the resulting template silently fails on the next document. It is the minimum viable slice: even alone, it turns AI analysis from "produces garbage" into "produces a correct, reusable coverage skeleton."
 
@@ -39,7 +41,7 @@ When a template author runs AI-assisted analysis on a sample source document, ea
 
 1. **Given** a sample document whose entity type has known relationships in the ontology, **When** the author runs AI analysis, **Then** each graph-sourced section is expressed as one or more ontology relationship declarations (entity type + relationship + target type), and none default to "human-filled."
 2. **Given** the sample document mentions a concrete individual (a specific instance), **When** the analysis proposes coverage, **Then** the declaration references the individual's **type**, never the individual itself.
-3. **Given** a section that corresponds to content not present in the entity graph, **When** analysis runs, **Then** the section is still produced (with narrative/human-filled positions) without error.
+3. **Given** content not present in the entity graph, **When** analysis runs, **Then** it yields **no** coverage declaration for that content and **no** invented human-filled slot; any data-sourced-looking position surfaces as an unresolved candidate (US3 scenario 4), and analysis completes without error.
 
 ---
 
@@ -94,7 +96,8 @@ The template editor presents **section-level coverage declarations** (entity-typ
 ### Functional Requirements
 
 - **FR-001**: The system MUST allow a template author to declare, at the **section** level, which source-document relationships a section covers, using entity types and relationships defined in the authoritative ontology (not free-text or AI-invented field names).
-- **FR-002**: When AI-assisted analysis runs on a sample source document, the system MUST map each section to the relationships actually available from the source document's entity type, and MUST express graph-sourced coverage as ontology relationship declarations rather than defaulting them to human-filled fields.
+- **FR-002**: When AI-assisted analysis runs, the system MUST map each section to the relationships actually available from the template's associated document type (FR-016), and MUST express graph-sourced coverage as ontology relationship declarations rather than defaulting them to human-filled fields.
+- **FR-002a**: AI-assisted analysis MUST produce **only** a document summary, ontology coverage declarations, and unresolved candidates. The legacy per-field slot suggestion stream (per-slot `llm_extraction`/`manual` proposals) MUST be removed: analysis MUST NOT generate, propose, or persist any new template slot. (Removing the *generation* of AI slots does not affect already-persisted slots — see FR-013.)
 - **FR-003**: The system MUST NOT permit a coverage declaration to reference a concrete instance/individual from the sample; declarations MUST reference entity **types** and relationships only.
 - **FR-004**: At validation / generation time, the system MUST expand each declared relationship into its target type's property checklist using the ontology, without the author enumerating properties by hand.
 - **FR-005**: The system MUST classify a **required** declared relationship that is entirely absent from a source document's graph as a **required omission** (the no-omission signal), distinguishable from "present but empty."
@@ -111,6 +114,7 @@ The template editor presents **section-level coverage declarations** (entity-typ
 - **FR-013**: Existing templates carrying legacy per-field extraction bindings MUST continue to resolve and generate reports without change (backward compatibility).
 - **FR-014**: The section coverage model MUST be extensible to a future non-graph **fact-source** binding (e.g., organization/department responsible persons) as a declared placeholder, without blocking the ontology-relationship capability. The fact-source data itself is out of scope for this feature (positions remain human-filled until that source is implemented).
 - **FR-015**: All ontology access for coverage compilation MUST be **read-only** (no writes to the authoritative model).
+- **FR-016**: An AST template MUST carry a **required** "associated document type" attribute — a single ontology entity type (a `RegulatoryDocument` subclass such as CMCReport) the author explicitly selects at authoring time. The system MUST prevent creating or saving a template without it, and MUST use it as the entity type that grounds AI analysis (FR-002) and drives coverage compilation. (No new persistence is required — the value reuses the template's existing document-class resolution key.)
 
 ### Key Entities *(include if feature involves data)*
 
@@ -135,7 +139,7 @@ The template editor presents **section-level coverage declarations** (entity-typ
 
 ## Assumptions
 
-- **Document entity type is an upstream input**: the source document's entity type (e.g., CMCReport) is already determined by document classification and is provided to this feature; classifying the document is out of scope.
+- **Document entity type is an authored, required attribute**: the associated document type (e.g., CMCReport) is **explicitly selected by the author** as a required AST-template attribute (FR-016), chosen from the ontology's `RegulatoryDocument` subclasses. This binds the template to that type's relationship graph and grounds AI analysis. Automatic document *classification* (inferring the type from raw document content) is out of scope — the author asserts it.
 - **Property→required promotion mechanism**: the default promotion path is a **per-section coverage override** (author-controlled), not an ontology annotation, because the ontology is read-only in this posture and per-section keeps authoring self-contained. (The design note leaves ontology-annotation-based promotion as a possible later addition.)
 - **Relationship depth**: authoring anchors to **direct (single-hop)** relationships of the document entity type; the ontology expands the target type's properties. Deeper multi-hop chains are out of scope for authoring in this iteration.
 - **Fact-source data source** (organization/department): out of scope here; only the binding placeholder is modeled. See the R&D document fact-source design for the eventual data model.

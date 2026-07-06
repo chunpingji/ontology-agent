@@ -12,11 +12,12 @@ Two structural defects motivate this (design note `docs/section-coverage-declara
 
 The fix is not a patch but removing the root cause: a section declares a small list of **coverage bindings** in the ontology's own vocabulary (`OntologyRelationBinding = doc entity type + relationship + target type + required`), which is exactly the shape of one edge of `OntologyEngine.get_relation_schema(doc_class_iri)`. At validation/generation time the validator expands each declared relationship into the target type's property checklist (`range_data_properties`) — the no-omission signal is defined at **relationship granularity** (a missing required relationship = a true omission), while blank individual properties under a present relationship are **informational** unless explicitly promoted. The authoring vocabulary is physically incapable of naming an individual, so defect (2) cannot recur; and "extraction" becomes an intrinsic property of a graph-sourced binding rather than something a fragile string match must *earn*, so defect (1) cannot recur.
 
-**Technical approach — additive, no rebuild.** All work reuses existing infrastructure:
+**Technical approach — additive on coverage/validation, subtractive on the legacy AI slot stream.** All work reuses existing infrastructure:
 - **AST-1 (schema)**: add `Section.coverage: list[CoverageBinding]` plus `OntologyRelationBinding`/`FactSourceBinding` pydantic models to `ast_template.py`, mirroring the additive-optional `Section.prompt` field shipped in 015. **No DB migration, no new column, no new table** — coverage nests inside the existing `AstTemplate.schema_json` JSON column.
 - **AST-2/AST-3 (validate + generate)**: teach `validate_coverage` to read `section.coverage`, expand each relationship via `get_relation_schema`, and emit `SlotCoverage` positions with **global dedup** keyed by `(doc_class_iri, predicate_iri, range_class_iri)` — reusing the existing `FILLED`/`BLANK_OPTIONAL`/`MISSING_REQUIRED` status vocabulary (no new status).
-- **AI authoring (slot suggester)**: thread `doc_class_iri` into `suggest_slots`, inject a compact `get_relation_schema` graph into the LLM rounds so it maps sections to **real relationship IRIs**, emit `coverage` declarations (required by default) and explicit `unresolved_candidates`; delete `_bind_ontology_iris`.
-- **Frontend**: render section-level coverage declarations (relationship/type selectors) and an unresolved-candidate disposition affordance; stop the two `→ manual` collapse sites; preserve rule/constant/manual and legacy extraction slots untouched. The authoring surface follows the approved visual design — `design.pen` frame **"Slot Tree Component — Full View"** (the reusable *Slot Tree* component) — which fixes the per-section coverage area, the unresolved-candidate disposition list, and the preserved non-ontology slot group (see [contracts/frontend-authoring.md](contracts/frontend-authoring.md) §Design reference).
+- **AI authoring (slot suggester) — legacy stream removed**: thread `doc_class_iri` into `suggest_slots` and inject a compact `get_relation_schema` graph into the LLM rounds so it **selects** real relationship IRIs. The suggester's output converges to **only** `{document_summary, coverage, unresolved_candidates}` — the entire per-field slot-suggestion stream (`_bind_ontology_iris`, `_group_into_sections`, `derive_source_ref`, `_collect_blocks`, `llm_extraction` tagging, and the `sections`/`total_suggested`/`skipped_duplicates`/`truncated` response fields) is deleted, not just neutralized.
+- **Required document type (FR-016)**: `关联文档类型` becomes a **required** AST-template attribute the author explicitly selects (a `RegulatoryDocument` subclass, from `DOCUMENT_TYPE_GROUPS`), reusing the existing `iri_pattern` resolution key to store the full class IRI (no migration; column stays nullable, required-ness enforced UI-only). It supplies `doc_class_iri` and grounds AI analysis, replacing the earlier derive-from-sample-doc approach.
+- **Frontend**: render section-level coverage declarations (relationship/type selectors) and an unresolved-candidate disposition affordance; **delete** the legacy slot-suggestion stream (`suggestionToSlot`, ghost-rows, `pending`/`aiSkipped` state, «全部采纳»/«已跳过»); preserve already-persisted rule/constant/manual and legacy extraction slots untouched (they render via the normal slot tree — zero regression). The authoring surface follows the approved visual design — `design.pen` frame **"Slot Tree Component — Full View"** (the reusable *Slot Tree* component) — which fixes the per-section coverage area, the unresolved-candidate disposition list, and the preserved non-ontology slot group (see [contracts/frontend-authoring.md](contracts/frontend-authoring.md) §Design reference).
 
 All ontology access is **read-only** against the published, offline, `only_local` derived World (Principle II/VI); an unavailable ontology degrades gracefully with no regression to existing report generation.
 
@@ -40,7 +41,7 @@ All ontology access is **read-only** against the published, offline, `only_local
 
 **Constraints**: Ontology access **read-only** (FR-015, Principle II) — no TTL write, no surgical merge, no A-Box mutation; coverage is application data in `schema_json`, never in the authoritative model. Declarations reference types + predicates by IRI and are **physically incapable of naming an individual** (FR-003). **Zero regression** on legacy templates (FR-013/SC-006): `Section.coverage` defaults to `[]`, `validate_coverage`'s new `engine` param defaults `None`, and the coverage section-loop is a strict no-op when coverage is empty. **Graceful degradation** (FR-012, Principle VI): engine-unavailable still fires required-relationship omissions via substring fallback, skips property expansion, raises no error, and never renders a false "degraded" state for a normally-offline system. Role gating (`senior_analyst` author) unchanged.
 
-**Scale/Scope**: Backend: 1 schema file (`ast_template.py`, +2 models +1 field), 1 validator (`coverage_validator.py`, +2 helpers +1 seam +`engine` param), 1 suggester (`slot_suggester.py`, inject graph / emit coverage+candidates / delete `_bind_ontology_iris`), response schemas (`schemas/extraction.py`), 2 wiring points (`api/extraction.py` report-gen + coverage-view, `risk_report_generator.py`). Frontend: 1 component (`template-slot-editor.tsx`) + `lib/api.ts` type additions (no new endpoint). ~6 new pytest classes.
+**Scale/Scope**: Backend: 1 schema file (`ast_template.py`, +2 models +1 field), 1 validator (`coverage_validator.py`, +2 helpers +1 seam +`engine` param), 1 suggester (`slot_suggester.py`, inject graph / emit coverage+candidates only / delete the whole slot stream), response schemas (`schemas/extraction.py`, converge `SuggestSlotsResponse` + drop `Suggested*` models), 2 wiring points (`api/extraction.py` report-gen + coverage-view, `risk_report_generator.py`). Frontend: 2 files — `template-slot-editor.tsx` (delete slot stream + required-attribute enforcement + `docClassIri` precedence) and `settings/ast-templates/page.tsx` (required `关联文档类型` select), plus `lib/api.ts` type convergence (no new endpoint). `test_slot_suggester.py` rewritten to the pure-coverage shape.
 
 ## Constitution Check
 
@@ -112,30 +113,38 @@ backend/
     │   └── risk_report_generator.py   # AST-3: pass engine=get_loaded_engine() into validate_coverage
     ├── services/extraction/
     │   └── slot_suggester.py          # AI: +doc_class_iri param; inject compact get_relation_schema graph into LLM rounds;
-    │                                  #     emit coverage[] + unresolved_candidates[] (required=True default); DELETE _bind_ontology_iris
+    │                                  #     output ONLY {document_summary, coverage[], unresolved_candidates[]} (required=True default);
+    │                                  #     DELETE whole slot stream (_bind_ontology_iris/_group_into_sections/derive_source_ref/
+    │                                  #     _collect_blocks/llm_extraction tagging); KEEP tiptap_to_text/build_document_text
     ├── api/
     │   ├── extraction.py              # report-gen: resolve DB template via resolve_template(doc_class_iri) (was load_default_template);
     │   │                              #     coverage-view: pass engine + emit section.coverage positions in response tree
     │   └── ast_templates.py           # suggest-slots endpoint: recover doc_class_iri (job cache / req field) → suggest_slots
     ├── schemas/
-    │   └── extraction.py              # +CoverageDeclaration, +UnresolvedCandidate; +coverage/+unresolved_candidates on
-    │                                  #     SuggestSlotsResponse; +doc_class_iri (optional) on SuggestSlotsRequest;
-    │                                  #     +coverage positions on SectionCoverageResponse
+    │   └── extraction.py              # +CoverageDeclaration, +UnresolvedCandidate; CONVERGE SuggestSlotsResponse to
+    │                                  #     {document_summary, coverage, unresolved_candidates} (drop sections/total_suggested/
+    │                                  #     skipped_duplicates/truncated + Suggested{Slot,Group,Section}); +doc_class_iri on request
     └── tests/
         ├── fixtures/ontology.py       # extend build_drug_ontology() fake with get_relation_schema (+ shape guard)
         ├── test_reporting/test_coverage_validator.py   # (a) expansion (b) global dedup (c) blank-optional (e) legacy (f) degradation
         ├── test_reporting/test_multi_template_e2e.py   # e2e: DB template coverage → deduped omissions; regression missing_required==11
-        └── test_extraction/test_slot_suggester.py      # (d) unresolved candidate; required-by-default; replace _bind_ontology_iris tests
+        └── test_extraction/test_slot_suggester.py      # REWRITTEN to pure-coverage shape: TestBasic (3-key shape, no legacy keys,
+                                                        #     degradation) + TestOntologyCoverage (S1/S2/S4/S5/S6) + TestTiptapToText;
+                                                        #     DELETE TestDeriveSourceRef / TestContentJsonSourceRef
 
 frontend/
 └── src/
+    ├── app/(dashboard)/settings/ast-templates/
+    │   └── page.tsx                   # create wizard: required 关联文档类型 select (DOCUMENT_TYPE_GROUPS → full IRI in iriPattern);
+    │                                  #     «进入编辑器» disabled until selected
     ├── components/extraction/
     │   └── template-slot-editor.tsx   # +CoverageBinding types +SectionDef.coverage; +SectionCoverageArea (modeled on
-    │                                  #     SectionPromptArea); unresolved-candidate disposition dropdown; STOP both
-    │                                  #     →manual collapses (suggestionToSlot + ghost-row badge); preserve slot editing
+    │                                  #     SectionPromptArea); unresolved-candidate disposition dropdown; DELETE slot stream
+    │                                  #     (suggestionToSlot + ghost-rows + pending/aiSkipped + 全部采纳/已跳过); required
+    │                                  #     关联文档类型 in basic-info + docClassIri prefers iriPattern; preserve slot editing
     │                                  #     LAYOUT per design.pen frame "Slot Tree Component — Full View" (vwW7Q / JKSZm)
-    └── lib/api.ts                     # +OntologyRelationBinding/UnresolvedCandidate types; +coverage/unresolved_candidates
-                                       #     on SuggestSlotsResponse; +doc_class_iri on SuggestSlotsRequest (NO new endpoint)
+    └── lib/api.ts                     # +OntologyRelationBinding/UnresolvedCandidate types; CONVERGE SuggestSlotsResponse to
+                                       #     {document_summary, coverage, unresolved_candidates} (drop Suggested* types); +doc_class_iri
 ```
 
 **Structure Decision**: **Option 2 (web application), backend-weighted.** The repository already has `backend/` (FastAPI) and `frontend/` (Next.js). This feature (a) evolves the declarative template schema in place with an additive-optional `Section.coverage` field (no fork, no migration — coverage nests in the existing `schema_json` JSON column); (b) extends the existing `coverage_validator` with a section-level seam and the existing `get_relation_schema` read-only query, reusing the `CoverageManifest`/`SlotCoverage` model and status vocabulary; (c) rewires the AI suggester and its response schema to emit ontology-grounded declarations instead of invented slots; and (d) adds a section-coverage authoring surface + unresolved-candidate disposition to the single existing editor component, reusing already-imported shadcn primitives and the existing `getRelationSchema` client. No new top-level project, no new dependency, no DB change.

@@ -94,6 +94,31 @@ def _add_section_narratives(doc: Document, report: RiskReport) -> None:
         _add_llm_disclaimer_line(doc)
 
 
+def _add_semantic_slots(doc: Document, report: RiskReport) -> None:
+    """Render per-slot 语义化插槽 synthesized text under its own heading (016+).
+
+    Each entry of ``report.semantic_slots`` is ``{slot_id, section_id, label, text}``
+    synthesized at report time from the slot's projection of its Section (行文
+    ``prompt`` + ``coverage`` associated ontology + read-only deterministic rule
+    results). The prose is LLM-sourced, so every block carries the gray-italic ⓘ
+    marker and a per-block disclaimer — additive content that never alters the
+    deterministic risk matrix (FR-009). No-op for legacy / LLM-off reports.
+    """
+    if not report.semantic_slots:
+        return
+    doc.add_heading("语义化插槽 Semantic Slots", level=2)
+    for entry in report.semantic_slots:
+        title = entry.get("label") or entry.get("slot_id") or ""
+        text = entry.get("text") or ""
+        if not text.strip():
+            continue
+        if title:
+            doc.add_heading(title, level=3)
+        p = doc.add_paragraph()
+        _add_llm_run(p, text)
+        _add_llm_disclaimer_line(doc)
+
+
 def render_risk_report(
     report: RiskReport, manifest: CoverageManifest | None = None
 ) -> bytes:
@@ -125,8 +150,9 @@ def render_risk_report(
     _add_outstanding_materials(doc, manifest)
     _add_section_two(doc, report)
     _add_section_narratives(doc, report)
+    _add_semantic_slots(doc, report)
 
-    if report.llm_supplements or report.section_narratives:
+    if report.llm_supplements or report.section_narratives or report.semantic_slots:
         _add_generated_disclaimer_section(doc)
 
     buf = io.BytesIO()

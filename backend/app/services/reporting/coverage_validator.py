@@ -36,6 +36,7 @@ from app.services.reporting.ast_template import (
     Group,
     ReportTemplate,
     Slot,
+    coverage_key,
 )
 
 # Status constants
@@ -210,6 +211,17 @@ def _resolve_value_slot(slot: Slot, edges: Sequence[dict]) -> SlotCoverage:
             slot_id=slot.slot_id, label=slot.label, status=FILLED,
             source_kind="constant", value=slot.source.value,  # type: ignore[attr-defined]
         )
+    if kind == "semantic":
+        # 016+: a semantic slot is an LLM-synthesized content PROJECTION of its
+        # section's coverage + prompt. Omission accounting already happened when the
+        # section's ``coverage`` bindings expanded at the top of the section loop, so
+        # this position is descriptive and NON-COUNTING (FILLED + is_llm_sourced —
+        # no new status enum, no counter change → golden-master parity preserved).
+        return SlotCoverage(
+            slot_id=slot.slot_id, label=slot.label, status=FILLED,
+            source_kind="semantic", is_llm_sourced=True,
+            note="语义化插槽：报告生成时由 LLM 依据本节关联本体+事实源合成",
+        )
     # manual
     return SlotCoverage(
         slot_id=slot.slot_id, label=slot.label, status=MANUAL, source_kind="manual",
@@ -305,6 +317,26 @@ def _target_types(range_iri: str, engine: Any | None) -> set[str]:
         except Exception:  # pragma: no cover - defensive (V11)
             pass
     return types
+
+
+def coverage_scoped_edges(
+    binding: Any, edges: Sequence[dict], engine: Any | None = None
+) -> list[dict]:
+    """The subset of ``edges`` whose object type satisfies an ``ontology_relation``
+    binding's range — the range type ∪ its subclasses when an engine is loaded, or a
+    local-name substring fallback offline (mirrors :func:`_relationship_present`).
+    Non-``ontology_relation`` bindings scope nothing.
+
+    Read-only. The semantic-slot generator uses this to gather the *associated
+    ontology* facts for one declared coverage relationship (016+)."""
+    if getattr(binding, "kind", None) != "ontology_relation":
+        return []
+    range_iri = binding.range_class_iri
+    if engine is not None:
+        target_types = _target_types(range_iri, engine)
+        return [e for e in edges if (e.get("object_class_iri") or "") in target_types]
+    needle = _short(range_iri)
+    return [e for e in edges if needle in (e.get("object_class_iri") or "")]
 
 
 def _relationship_present(
@@ -413,7 +445,7 @@ def _resolve_coverage_binding(
         source = getattr(binding, "source", "") or ""
         return [
             SlotCoverage(
-                slot_id=f"coverage.fact_source.{_short(source)}",
+                slot_id=coverage_key(binding),
                 label=getattr(binding, "label", None) or _short(source),
                 status=MANUAL,
                 source_kind="fact_source",
@@ -431,7 +463,7 @@ def _resolve_coverage_binding(
     target_types = _target_types(range_iri, engine)
     present = _relationship_present(edges, range_iri, target_types, engine)
 
-    rel_slot_id = f"coverage.{_short(pred_iri)}__{_short(range_iri)}"
+    rel_slot_id = coverage_key(binding)
     label = getattr(binding, "label", None) or _short(pred_iri)
     source_ref = f"{pred_iri} → {range_iri}"
 

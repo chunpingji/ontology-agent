@@ -962,12 +962,15 @@ def _narratives_payload(report) -> dict | None:
         else None
     )
     sections = report.section_narratives or []
-    if not subject and not conclusion and not sections:
+    # 016+: LLM-synthesized 语义化插槽 正文 (projection of Section.coverage + prompt).
+    semantic_slots = report.semantic_slots or []
+    if not subject and not conclusion and not sections and not semantic_slots:
         return None
     return {
         "subject_description": subject,
         "conclusion": conclusion,
         "sections": sections,
+        "semantic_slots": semantic_slots,
     }
 
 

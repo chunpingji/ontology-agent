@@ -489,12 +489,14 @@ E11 → E12 → E13 是串行依赖：E11 丰富 Facts 后 E12 才能正确引�
 
 ## 9. 与 016 覆盖声明的关系
 
-016（`section-coverage-declaration-design.md`）解决的是"模板如何声明覆盖哪些本体关系"——**内容完整性**维度。本设计解决的是"生成器如何正确消费声明式推理规则"——**推理正确性**维度。两者共存于 `generate_with_coverage` 的同一编排流中：
+016（[`section-coverage-declaration-design.md`](section-coverage-declaration-design.md)）解决的是"模板如何声明覆盖哪些本体关系"——**内容完整性**维度。本设计解决的是"生成器如何正确消费声明式推理规则"——**推理正确性**维度。两者共存于 `generate_with_coverage` 的同一编排流中：
 
 - 016 的 `Section.coverage` → `validate_coverage(engine=engine)` → 覆盖位置 → 进入 LLM 叙事上下文
 - 本设计的 E11→E12→E13 → `RiskRow[]` → 进入 LLM 叙事上下文
 
 两条路径**在叙事生成步骤汇合**：LLM 同时看到"哪些关系覆盖了/缺失了"和"风险评估结论是什么"，据此生成完整的章节叙述。
+
+**016+ 语义化插槽**（见 [`section-coverage-declaration-design.md` §10](section-coverage-declaration-design.md)）把这一汇合下沉到 **slot 级**：`SemanticSource` 是 `Section.coverage` + `Section.prompt` 的投影，生成期 `generate_semantic_slots` 与本设计 §5.4 的 section 级叙事**共用** `_format_rule_results` 等确定性注入辅助——本设计的 `RiskRow[]` 以"确定性结论，必须原样引用"的只读上下文注入每个语义化插槽。**FR-009 不变量在 slot 级同样成立**：LLM 只引用、不重算风险等级，输出不回流评估。
 
 ## 10. 设计时预览：在模板编辑器中预览完整报告
 

@@ -59,10 +59,10 @@ cd backend && uv run pytest tests/test_reporting/test_coverage_validator.py \
 
 ```bash
 cd backend && uv run pytest tests/test_extraction/test_slot_suggester.py \
-  -k "emits_coverage_not_manual or unresolved_candidate or references_types_never_individuals" -v
+  -k "emits_coverage or unresolved_candidate or references_types_never_individuals or pure_coverage_shape or no_legacy_slot_stream" -v
 ```
 
-**Expected**: graph-sourced sections yield `CoverageDeclaration`s (zero default-to-manual); every declaration references a **type** IRI, never a sample individual; an unbindable data-looking position surfaces as an `unresolved_candidate` (not a `manual` slot). The old `_bind_ontology_iris` exact-match test is gone. (Contract S1, S2, S4.)
+**Expected**: graph-sourced sections yield `CoverageDeclaration`s (zero default-to-manual); every declaration references a **type** IRI, never a sample individual; an unbindable data-looking position surfaces as an `unresolved_candidate` (not a `manual` slot). The suggester's output is **only** `{document_summary, coverage, unresolved_candidates}` — the whole legacy slot stream (`_bind_ontology_iris` exact-match, `sections`/`total_suggested`/`skipped_duplicates`/`truncated`) is gone. (Contract S1, S2, S4, S3.)
 
 ### (e) Backward compatibility — FR-013 / SC-006 (**primary regression gate**)
 
@@ -114,11 +114,12 @@ cd backend && uv run pytest tests/test_reporting/test_multi_template_e2e.py \
 
 ## Frontend walkthrough (manual — no JS test runner)
 
-Start the app, open a template in the editor (`ontology/[projectId]` → template editor), run AI analysis on a **CMC-type** sample document, then verify:
+Start the app. First confirm the **required document type** gate, then run AI analysis:
 
 | Step | Expected | Contract |
 |------|----------|----------|
-| 1. Run AI analysis | Section "风险评估对象基本描述" shows **coverage declarations** (e.g., `describes → DrugProduct`, `hasSynthesisRoute → SynthesisRoute`), NOT a list of "human-filled" fields. | FE1 / SC-001 |
+| 0. Create/edit a template | `关联文档类型` is a **required** select (`RegulatoryDocument` subclasses, e.g. CMCReport). The create wizard's «进入编辑器» and the editor's Basic-Info save are **disabled/blocked** until it is chosen; selecting it grounds `doc_class_iri`. | FE F9 / FR-016 |
+| 1. Run AI analysis | Section "风险评估对象基本描述" shows **coverage declarations** (e.g., `describes → DrugProduct`, `hasSynthesisRoute → SynthesisRoute`), NOT a list of "human-filled" fields. There is **no** ghost-slot stream, no «全部采纳»/«已跳过» controls — output is coverage + unresolved candidates + a summary only. | FE1 / FR-002a / SC-001 |
 | 2. Inspect a declaration | It names a **type** (`DrugProduct`); no concrete id (e.g., no `EQUIP_REF_646`). | FE2 / SC-002 |
 | 3. Unresolved candidate | A data-looking position the AI couldn't bind appears in a **pending disposition** list with bind / constant / manual / discard actions. | FE4 / FR-008a |
 | 4. Non-graph slots | `rule` / `constant` / `manual` slots in the same template render and edit **unchanged**. | FE3 / FR-008 |

@@ -16,9 +16,12 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from app.services.reporting.ast_template import (
+    Group,
     OntologyRelationBinding,
     ReportTemplate,
     Section,
+    SemanticSource,
+    Slot,
     load_template_file,
     resolve_template,
 )
@@ -394,3 +397,131 @@ class TestCoverageDrivesGeneration:
         assert witheng.total_slots == base.total_slots
         # a coverage-free template emits no synthetic coverage positions
         assert not any(s.slot_id.startswith("coverage.") for s in witheng.slots)
+
+
+# --------------------------------------------------------------------------- #
+# 016+ (T-sem): a semantic-slot template drives generation without perturbing the
+# deterministic risk matrix (FR-009).
+# --------------------------------------------------------------------------- #
+
+# One canned LLM response serving all three report-time calls — chat_with_schema
+# does not validate against the schema, so a superset dict satisfies
+# generate_narratives ({subject_description, conclusion, dimension_narratives}),
+# generate_section_narratives + generate_semantic_slots ({content}).
+_MERGED_LLM_RESPONSE = {
+    "subject_description": "评估对象为 HRS-1234。",
+    "conclusion": "各维度风险经确定性评估为可控。",
+    "dimension_narratives": [{"dimension": "人员", "narrative": "培训到位。"}],
+    "content": "本节综述：由 Acme 制药生产；风险等级引用确定性评估结论。",
+}
+
+
+def _canned_client(response: dict):
+    from unittest.mock import MagicMock
+
+    client = MagicMock()
+    resp = MagicMock()
+    choice = MagicMock()
+    choice.message.content = json.dumps(response, ensure_ascii=False)
+    resp.choices = [choice]
+    client.chat.completions.create.return_value = resp
+    return client
+
+
+def _shared_line_edge() -> dict:
+    return {
+        "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasSharedLineData",
+        "object_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/SharedLineAssessmentData",
+        "object_text": "共线评估",
+        "object_data_properties": [],
+        "source_ref": "§ 共线评估",
+    }
+
+
+class TestSemanticSlotGenerationE2E:
+    """The report generator populates ``report.semantic_slots`` from a semantic-slot
+    template, and the deterministic ``assessment_rows`` are byte-identical whether the
+    LLM narrative path runs or not (FR-009: LLM output never re-enters evaluation)."""
+
+    def _seed_rule(self, db):
+        from app.models.ontology_meta import OntologyDecisionRule
+
+        db.add(OntologyDecisionRule(
+            slpra_iri="https://ontology.pharma-gmp.cn/slpra/rules/SEM-E2E",
+            label="Rule SEM-E2E",
+            rule_key="SEM-E2E",
+            rule_group="risk_assessment",
+            antecedent={"op": "some_values_from", "property": "hasSharedLineData",
+                        "filler_class": "SharedLineAssessmentData"},
+            consequent={"risk_level": "HighRisk", "category": "人员",
+                        "description": "风险因素：人员", "control_measure": "培训",
+                        "traceability_docs": "SOP-001", "postconditions": {}},
+            priority=100,
+            status="published",
+        ))
+        db.commit()
+
+    def _semantic_template(self) -> ReportTemplate:
+        rel = OntologyRelationBinding(
+            doc_class_iri=DRUG_PRODUCT, predicate_iri=MANUFACTURED_BY,
+            range_class_iri=MANUFACTURER, required=True,
+        )
+        return ReportTemplate(
+            template_id="SEM-E2E@v1",
+            sections=[Section(
+                section_id="s1", title="综合分析", prompt="综述本节",
+                coverage=[rel],
+                groups=[Group(
+                    group_id="g1", title="综述", kind="fields",
+                    slots=[Slot(slot_id="analysis.overview", label="综合分析",
+                                source=SemanticSource())],
+                )],
+            )],
+        )
+
+    def _run(self, db, template, edges, *, narrative_on):
+        from app.config import settings
+        from app.services.reporting.risk_report_generator import RiskReportGenerator
+
+        gen = RiskReportGenerator(db, template=template)
+        client = _canned_client(_MERGED_LLM_RESPONSE)
+        # patch the function-local import target
+        with patch("app.services.llm.local_client.get_local_llm", lambda: client), \
+             patch.object(settings, "llm_report_narrative_enabled", narrative_on):
+            report, _ = gen.generate_with_coverage(edges)
+        return report
+
+    def test_semantic_slots_populated_and_rows_unchanged(self, db):
+        self._seed_rule(db)
+        edges = [_mfr_edge(), _shared_line_edge()]
+        tpl = self._semantic_template()
+
+        report_on = self._run(db, tpl, edges, narrative_on=True)
+        report_off = self._run(db, tpl, edges, narrative_on=False)
+
+        # narrative ON → the semantic slot is synthesized and flagged LLM-sourced
+        assert len(report_on.semantic_slots) == 1
+        slot = report_on.semantic_slots[0]
+        assert slot["slot_id"] == "analysis.overview"
+        assert slot["section_id"] == "s1"
+        assert slot["text"] == _MERGED_LLM_RESPONSE["content"]
+        assert "analysis.overview" in report_on.llm_generated_fields
+
+        # narrative OFF → no semantic-slot synthesis at all
+        assert report_off.semantic_slots == []
+
+        # FR-009: the deterministic risk matrix is identical regardless of the LLM path
+        assert report_on.assessment_rows == report_off.assessment_rows
+        assert report_on.assessment_rows  # a rule fired (shared line present)
+        assert report_on.assessment_rows[0].pre_control_level == "高"
+
+    def test_default_template_semantic_slots_empty(self, db):
+        """Golden-master: the default (legacy, coverage-free) template yields no
+        semantic slots even with the narrative path enabled."""
+        from app.services.reporting.ast_template import load_default_template
+
+        self._seed_rule(db)
+        report = self._run(
+            db, load_default_template(), [_mfr_edge(), _shared_line_edge()], narrative_on=True,
+        )
+        assert report.semantic_slots == []

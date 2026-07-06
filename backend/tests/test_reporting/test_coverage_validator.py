@@ -6,9 +6,12 @@ from types import SimpleNamespace
 
 from app.services.reporting.ast_template import (
     FactSourceBinding,
+    Group,
     OntologyRelationBinding,
     ReportTemplate,
     Section,
+    SemanticSource,
+    Slot,
     load_default_template,
 )
 from app.services.reporting.coverage_validator import (
@@ -16,6 +19,7 @@ from app.services.reporting.coverage_validator import (
     FILLED,
     MANUAL,
     MISSING_REQUIRED,
+    coverage_scoped_edges,
     validate_coverage,
 )
 
@@ -331,3 +335,97 @@ class TestSectionCoverageExpansion:
         tpl = _coverage_template([_rel()], [binding_b])
         validate_coverage(tpl, [_mfr_edge()], [], engine=engine)
         assert engine.schema_calls == 1
+
+
+# --- 016+: semantic-slot coverage position (non-counting projection) -------- #
+
+
+def _semantic_section(
+    *coverage: OntologyRelationBinding, slot_source: SemanticSource | None = None
+) -> Section:
+    """A section carrying ontology coverage AND a fields group with one semantic slot."""
+    return Section(
+        section_id="s-sem",
+        title="综合分析",
+        prompt="综述本节",
+        coverage=list(coverage),
+        groups=[Group(
+            group_id="g-sem", title="综述", kind="fields",
+            slots=[Slot(
+                slot_id="analysis.overview", label="综合分析",
+                source=slot_source or SemanticSource(),
+            )],
+        )],
+    )
+
+
+class TestSemanticSlotCoverage:
+    """016+: a semantic slot is a content PROJECTION — it must surface as one FILLED /
+    is_llm_sourced position that NEVER increments the omission counter (parity)."""
+
+    def test_semantic_slot_is_filled_and_llm_sourced_noncounting(self):
+        engine = build_drug_ontology()
+        tpl = ReportTemplate(template_id="t-sem", sections=[_semantic_section(_rel())])
+        m = validate_coverage(tpl, [_mfr_edge()], [], engine=engine)
+        by_id = {s.slot_id: s for s in m.slots}
+        sem = by_id["analysis.overview"]
+        assert sem.status == FILLED
+        assert sem.source_kind == "semantic"
+        assert sem.is_llm_sourced is True
+
+    def test_semantic_slot_does_not_change_missing_required(self):
+        """Parity: adding a semantic slot to a section leaves ``missing_required`` untouched —
+        the omission is still counted once at the section's coverage binding, absent target."""
+        engine = build_drug_ontology()
+        # required relationship whose target is ABSENT ⇒ exactly one omission…
+        with_slot = ReportTemplate(
+            template_id="t-a", sections=[_semantic_section(_rel(required=True))]
+        )
+        m_with = validate_coverage(with_slot, [], [], engine=engine)
+        # …and the count is identical to a coverage-only section (no semantic slot).
+        without_slot = ReportTemplate(
+            template_id="t-b",
+            sections=[Section(section_id="s-sem", title="综合分析", groups=[],
+                              coverage=[_rel(required=True)])],
+        )
+        m_without = validate_coverage(without_slot, [], [], engine=engine)
+        assert m_with.missing_required == m_without.missing_required == 1
+
+    def test_semantic_slot_alone_counts_nothing(self):
+        """A semantic slot with NO coverage on its section is purely descriptive."""
+        tpl = ReportTemplate(
+            template_id="t-sem",
+            sections=[Section(
+                section_id="s0", title="节", coverage=[],
+                groups=[Group(group_id="g0", title="t", kind="fields",
+                              slots=[Slot(slot_id="s0.sem", label="l", source=SemanticSource())])],
+            )],
+        )
+        m = validate_coverage(tpl, [], [], engine=None)
+        assert m.missing_required == 0
+        by_id = {s.slot_id: s for s in m.slots}
+        assert by_id["s0.sem"].status == FILLED
+        assert by_id["s0.sem"].is_llm_sourced is True
+
+
+class TestCoverageScopedEdges:
+    """``coverage_scoped_edges`` gathers the *associated ontology* facts for one
+    ``ontology_relation`` binding — the slice a semantic slot narrates."""
+
+    def test_engine_scopes_by_range_type(self):
+        engine = build_drug_ontology()
+        edges = [_mfr_edge(), _drug_edge()]
+        scoped = coverage_scoped_edges(_rel(), edges, engine)
+        classes = {e["object_class_iri"] for e in scoped}
+        assert MANUFACTURER in classes  # range type kept
+        assert all("DrugProduct" not in c for c in classes)  # non-range dropped
+
+    def test_engine_none_falls_back_to_local_name_substring(self):
+        edges = [_mfr_edge(), _drug_edge()]
+        scoped = coverage_scoped_edges(_rel(), edges, engine=None)
+        # offline: object_class_iri contains local-name 'Manufacturer'
+        assert scoped and all("Manufacturer" in e["object_class_iri"] for e in scoped)
+
+    def test_non_ontology_relation_binding_scopes_nothing(self):
+        binding = FactSourceBinding(source="org.x")
+        assert coverage_scoped_edges(binding, [_mfr_edge()], engine=None) == []

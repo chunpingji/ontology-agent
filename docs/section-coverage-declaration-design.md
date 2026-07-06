@@ -1,7 +1,10 @@
 # Section 覆盖声明：从"编写抽取 slot"到"本体编译 slot"
 
 > 设计说明 · 2026-07-05
-> 关联：`backend/app/services/reporting/ast_template.py`、`coverage_validator.py`、`slot_suggester.py`、`frontend/.../template-slot-editor.tsx`
+> 关联实现：`backend/app/services/reporting/ast_template.py`、`coverage_validator.py`、`narrative_generator.py`、`fact_sources.py`、`docx_renderer.py`、`slot_suggester.py`、`frontend/.../template-slot-editor.tsx`
+> 关联设计：[`declarative-rule-report-generator-binding-design.md`](declarative-rule-report-generator-binding-design.md)（确定性风险矩阵 + §5.4 叙事注入，FR-009）、[`rnd-document-fact-source-design.md`](rnd-document-fact-source-design.md)（事实源模型）
+
+> **状态修订（禁止原文取数候选，post-016）** — §1 描述的两个断裂点**已修复**（AI 分析全程本体接地：`slot_suggester` 两轮均注入 `get_relation_schema(doc_class_iri)` 关系菜单 + CMCReport 的 D8 补挂边，LLM 只能**选择**菜单边、不能发明 IRI）。此外，早期设计里"绑定不到→抛出**原文取数候选**（`unresolved_candidates`）交作者处置"的那条流已**整体移除**，**取代 FR-008a**：AI 分析现在**只**产出 `{document_summary, coverage}`，绑定不到本体菜单边的位点**静默忽略**，不再有 `待解析候选` 面板。接地前提亦收紧："关联文档类型"由「基本信息」下拉框**实时**驱动 `docClassIri`（未保存即生效），未选定则拦截「AI 分析」。下文凡涉 `unresolved_candidates` / 待解析候选 / 降级为人工插槽 的表述均按历史阅读。
 
 ## 1. 背景：两个断裂点
 
@@ -107,5 +110,69 @@ section 层新增 `coverage`，取代手写 extraction slots：
 
 ## 9. 待定
 
-- 事实源接口（组织/部门）尚未实现——`fact_source` 绑定先留占位，落地见 `rnd-document-fact-source-design.md` 的事实源模型。
+- 事实源 provider 已落地 `extraction` / `rule_results` 两类（见 §10.3）；A-Box（组织/人员/权限）与 `external.*` 仍留 stub，降级为非计数手工位，待 A-Box 个体读取 API 落定后接入。见 [`rnd-document-fact-source-design.md`](rnd-document-fact-source-design.md)。
 - 属性→必填的显式提升机制（本体标注 vs per-section 覆盖）二选一或并存，实现时定。
+
+## 10. 语义化插槽（Semantic Slot）：Section 的投影（016+ 变更）
+
+> 变更说明 · 2026-07-05
+> 关联实现：`ast_template.py`（`SemanticSource`/`coverage_key`）、`narrative_generator.py`（`generate_semantic_slots`）、`fact_sources.py`、`coverage_validator.py`、`docx_renderer.py`、`frontend/.../template-slot-editor.tsx`、`frontend/.../lib/api.ts`
+
+### 10.1 需求变更
+
+§3–§8 把"来自图谱"的 `extraction`/`llm_extraction` 坍缩进 section 级覆盖声明后，slot 的**定型来源**（在模板里硬编码取值路径）已不再是主要形态。进一步地：**Slot 重定义为语义化插槽**——报告生成时由本地 LLM 结合两样东西合成正文：
+
+1. **prompt**：模板作者设定，规定本语义化插槽的输出内容；
+2. **关联本体**：源文档的本体关系图谱事实 + 事实源中的事实本体。
+
+即 slot 不再是"rule / constant / manual"这类定型搬运；这些内容统一来自**本体模型、源文档固定文字、事实源**。
+
+### 10.2 核心决策：`SemanticSource` = 新的 `Slot.source` 类型，且是 Section 的投影
+
+- 语义化插槽**不是**新 group 类型，**也不只在 section 层**——`Slot` 仍是可寻址单元（覆盖清单、docx 渲染、前端插槽树都以 `slot_id` 为键；`equipment_table`/`assessment_table` 组仍需 slot）。
+- 语义化插槽**不存自己的绑定数据**，是 Section 的**投影**：
+  - `prompt: str | None`——留空（`None`）则继承 `Section.prompt`（§7 的行文 prompt）；
+  - `coverage_refs: list[str]`——是对 `Section.coverage` 的**过滤器**（用 `coverage_key(binding)` 作键；`[]` = 投影本节全部 coverage），不是拷贝。
+- 旧的 5 种 source 类型（`extraction`/`rule`/`manual`/`constant`/`llm_extraction`）**保留在判别联合里**（标注 deprecated），旧 `schema_json` 继续 `model_validate` 且生成结果字节级一致。additive 字段嵌在 `schema_json`，**无 DB 迁移**。
+
+```python
+# ast_template.py
+class SemanticSource(BaseModel):
+    kind: Literal["semantic"] = "semantic"
+    prompt: str | None = None                                # None → 继承 Section.prompt
+    coverage_refs: list[str] = Field(default_factory=list)   # coverage_key 过滤；[] → 全部
+
+SlotSource = Annotated[
+    Union[ExtractionSource, RuleSource, ManualSource,
+          ConstantSource, LLMExtractionSource, SemanticSource],  # ← 追加第 6 个成员
+    Field(discriminator="kind"),
+]
+```
+
+`coverage_key(binding)` 提取为 `ast_template.py` 的纯函数，是覆盖绑定合成 slot-id 的**唯一真源**（`coverage.{shortPred}__{shortRange}` / `coverage.fact_source.{shortSource}`）；`coverage_validator` 与语义化插槽的 `coverage_refs` 都引用它，保证键逐字节一致。前端 `api.ts` 的 `coverageKey` 与之镜像。
+
+### 10.3 事实源（Fact Source）
+
+事实源 = 源文档抽取事实 + 结构化映射 A-Box 事实（组织/人员/权限）+ 外部结构化数据源 + 声明式规则推理结果。`fact_sources.py` 以 `Protocol` + 注册表（按 `binding.source` 键）落地，`FactContext(edges, facts, assessment_rows, engine)` 复用既有 `edges_to_facts`/`RiskRow`，不新建抽取路径：
+
+- **`extraction`** provider——投影 `ctx.edges`/`ctx.facts`（已实现）。
+- **`rule_results`** provider——投影 `ctx.assessment_rows`（**确定性事实源**，只读，见 §10.4）（已实现）。
+- **`abox.*`**（组织/人员/权限）、**`external.*`**——注册 stub 降级为非计数手工位，延后接入；未知 source → `[]`，保持既有行为。
+
+### 10.4 FR-009：确定性风险矩阵不受 LLM 影响
+
+风险矩阵（`assessment_table`，E12 决策规则算出风险等级）**仍确定性**，不由 LLM 影响。生成期时序：`generate_semantic_slots` 在 `_evaluate_rules`/`_evaluate_post_control`/`validate_coverage` **之后**运行；`assessment_rows` 只以"确定性结论，必须原样引用，不可自行推断"的只读上下文注入 LLM prompt，**只传入不修改，输出不回流评估**。整条语义化插槽合成仍在 `settings.llm_report_narrative_enabled` flag 之后（关闭 = 字节级 no-op）。该不变量与 [`declarative-rule-report-generator-binding-design.md`](declarative-rule-report-generator-binding-design.md) §5.4（section 级叙事注入）同源——slot 级与 section 级共用 `_format_rule_results` 等确定性注入辅助。
+
+### 10.5 清单与渲染
+
+- **覆盖清单**：`coverage_validator._resolve_value_slot` 对 `kind=="semantic"` 返回 `FILLED + is_llm_sourced=True` 的**非计数**位点——遗漏计数已在 section 顶部由覆盖绑定完成，插槽是内容投影，不新增状态枚举、不动计数器 → golden-master 不变。
+- **docx**：`docx_renderer._add_semantic_slots` 把 `report.semantic_slots`（`{slot_id, section_id, label, text}`）渲染为带 ⓘ 灰斜体标注 + 免责声明的区块，与 §15 章节行文（`section_narratives`）同体例；LLM 内容 100% 可视标注。
+- **web 阅读窗**：`_narratives_payload` 附带 `semantic_slots`，与 `sections` 并列持久化供阅读窗渲染。
+
+### 10.6 前端
+
+`template-slot-editor.tsx` 插槽编辑器：新建插槽默认即语义化插槽，编辑面板为 (1) Prompt textarea（留空 = 继承本节行文 prompt），(2)「关联本体」多选——列出父 section 的 `coverage` 绑定（label / `predicate → range`），写入 `coverage_refs`（未选 = 投影全部）。旧定型插槽只读呈现并标「旧式定型插槽（已弃用）」。`equipment_table`/`assessment_table` 组渲染保持不动（确定性）。
+
+### 10.7 向后兼容
+
+共存，不强制迁移：旧定型插槽仍是合法联合成员，加载 + 生成字节级一致；`templates/qs_a_020f05.json` 保持原样（改它会破坏 golden-master parity）。语义化插槽只出现在新建/编辑的模板。无 DB 迁移。部署顺序：先上带 `SemanticSource` 的后端，再让作者创建语义化插槽（旧后端会在判别联合处拒绝 `kind:"semantic"`）。

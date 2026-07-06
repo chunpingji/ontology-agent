@@ -77,7 +77,7 @@ def main() -> int:
         "describes", "hasSynthesisRoute", "usesEquipment",
         "hasSafetyRiskAssessment", "hasQualityRiskAssessment",
         "hasCleaningMethod", "hasCleaningResidue", "hasStorageCondition",
-        "hasSharedLineData", "hasDegradationPathway",
+        "hasSharedLineData", "hasDegradationPathway", "hasProductionPlan",
     }
     missing = expected - preds
     print("\n" + "=" * 72)

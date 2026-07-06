@@ -94,8 +94,39 @@ class LLMExtractionSource(BaseModel):
     label: str
 
 
+class SemanticSource(BaseModel):
+    """SEMANTIC SLOT (语义化插槽, 016+).
+
+    At report time the local LLM *synthesizes* this slot's text by fusing
+    (1) a writing ``prompt`` and (2) the parent Section's *associated ontology* —
+    the source-document ontology relationship graph (``Section.coverage``, 016) plus
+    fact-source facts. It stores **no binding data of its own**: it is a PROJECTION of
+    ``Section.prompt`` (015) + ``Section.coverage`` (016), not a copy.
+
+    ``prompt`` ``None`` ⇒ inherit the parent ``Section.prompt``.
+    ``coverage_refs`` are :func:`coverage_key` values selecting *which* of the section's
+    ``coverage`` bindings feed this slot; ``[]`` ⇒ project the whole section's coverage.
+
+    FR-009 invariant: a semantic slot is a downstream, read-only consumer — it never
+    influences the deterministic risk evaluation. The legacy typed sources
+    (``extraction``/``rule``/``manual``/``constant``/``llm_extraction``) remain valid
+    union members for backward compatibility; new templates author semantic slots.
+    """
+
+    kind: Literal["semantic"] = "semantic"
+    prompt: str | None = None
+    coverage_refs: list[str] = Field(default_factory=list)
+
+
 SlotSource = Annotated[
-    Union[ExtractionSource, RuleSource, ManualSource, ConstantSource, LLMExtractionSource],
+    Union[
+        ExtractionSource,
+        RuleSource,
+        ManualSource,
+        ConstantSource,
+        LLMExtractionSource,
+        SemanticSource,
+    ],
     Field(discriminator="kind"),
 ]
 
@@ -150,6 +181,29 @@ CoverageBinding = Annotated[
     Union[OntologyRelationBinding, FactSourceBinding],
     Field(discriminator="kind"),
 ]
+
+
+def _short(iri: str) -> str:
+    """Local-name of an IRI (after the last ``#`` or ``/``). Matches the
+    identical helper in ``coverage_validator`` — kept here so ``coverage_key``
+    has no import cycle (the validator imports *from* this module)."""
+    for sep in ("#", "/"):
+        idx = iri.rfind(sep)
+        if idx >= 0:
+            return iri[idx + 1 :]
+    return iri
+
+
+def coverage_key(binding: "CoverageBinding") -> str:
+    """The synthetic slot-id the coverage validator emits for a ``section.coverage``
+    binding. The single source of truth for that string so a semantic slot's
+    ``coverage_refs`` (which project a section's coverage) key on the exact same
+    value the manifest carries. Byte-identical to the strings previously inlined in
+    ``coverage_validator._resolve_coverage_binding``."""
+    if getattr(binding, "kind", None) == "fact_source":
+        source = getattr(binding, "source", "") or ""
+        return f"coverage.fact_source.{_short(source)}"
+    return f"coverage.{_short(binding.predicate_iri)}__{_short(binding.range_class_iri)}"
 
 
 # --------------------------------------------------------------------------- #

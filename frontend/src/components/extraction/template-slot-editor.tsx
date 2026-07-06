@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect, useMemo, useRef, type ReactNode } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Sparkles, GripVertical, Pencil, Trash2, MoreVertical, FileText, LayoutTemplate, Eye, Info, Loader2, Upload, Save, FileDown, Download, Check, ListTree, GitBranch, ArrowRight, X, Plus, Unlink, AlertTriangle } from "lucide-react";
+import { Sparkles, GripVertical, Pencil, Trash2, MoreVertical, FileText, LayoutTemplate, Eye, Info, Loader2, Upload, Save, FileDown, Download, Check, ListTree, GitBranch, ArrowRight, X, Plus, RotateCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -37,8 +37,10 @@ import { ReportHistoryList } from "./report-history-list";
 import {
   suggestSlots,
   generateSectionPrompt,
+  previewSectionNarrative,
   getAnnotatedDocument,
   getRelationSchema,
+  getCoverageDocClasses,
   listDocuments,
   updateAstTemplateMeta,
   uploadTemplateSample,
@@ -48,7 +50,6 @@ import {
   uploadTrainingPair,
   deleteTrainingPair,
   type SuggestSlotsRequest,
-  type SuggestedSlot,
   type TiptapContent,
   type EntityShadow,
   type DocClassification,
@@ -58,7 +59,8 @@ import {
   type RelationSchemaEdge,
   type CoverageBinding,
   type OntologyRelationBinding,
-  type UnresolvedCandidate,
+  type AiStructureSection,
+  coverageKey,
   DOCUMENT_TYPE_GROUPS,
   getAstCoverage,
   listReports,
@@ -220,53 +222,35 @@ function tiptapToText(node: unknown): string {
   return n.type === "paragraph" || n.type === "heading" ? `${inner}\n` : inner;
 }
 
-// AI 建议 → 真实 Slot 的映射。016：后端现将所有区块插槽标注为 llm_extraction
-// （本体锚定的抽取位），必须映射为 extraction —— 绝不把图谱来源/AI 位坍缩成
-// 人工插槽（F1，设计不变量）。规则/常量/手工来源原样保留，仅空值兜底为 manual。
-function suggestionToSlot(slot: SuggestedSlot): SlotDef {
-  const kind =
-    slot.source_kind === "llm_extraction" || slot.source_kind === "extraction"
-      ? "extraction"
-      : slot.source_kind || "manual";
-  return {
-    slot_id: slot.slot_id,
-    label: slot.label,
-    source: {
-      kind,
-      ...(slot.source_hint ? { object_class_iri_contains: slot.source_hint } : {}),
-      text: true,
-    },
-    required: false,
-    on_missing: "annotate",
-    missing_placeholder: "⚠ 待评估（数据缺失）",
-  };
-}
+// 插槽来源类型的中文标签（语义化 + 旧式定型）。旧式来源仅在既有插槽上只读显示。
+const SOURCE_KIND_LABELS: Record<string, string> = {
+  semantic: "语义化",
+  extraction: "抽取",
+  rule: "规则",
+  manual: "手工",
+  constant: "常量",
+  llm_extraction: "LLM 抽取",
+};
+const sourceKindLabel = (kind: string): string => SOURCE_KIND_LABELS[kind] ?? kind;
+const isLegacySourceKind = (kind: string): boolean => kind !== "semantic";
 
-const SOURCE_KINDS = [
-  { value: "extraction", label: "抽取" },
-  { value: "rule", label: "规则" },
-  { value: "manual", label: "手工" },
-  { value: "constant", label: "常量" },
-];
-
-// ── 渲染模型：把真实 sections 与 pending AI 建议合并成一棵树，建议以幽灵行内嵌
-// 到对应 section→group 下（缺失时以虚拟容器占位），实现「在 Slot 树上审核采纳」。
+// ── 渲染模型：真实 sections → 一棵可折叠的 Slot 树。016 收敛后 AI 分析不再产出
+// 逐插槽建议，故不再有 pending 幽灵行 / 虚拟容器——树只承载已持久化的真实插槽。
 interface RenderGroup {
   title: string;
-  group: GroupDef | null; // null = 虚拟（仅承载 pending 建议）
-  sIdx: number | null;
-  gIdx: number | null;
-  pending: SuggestedSlot[];
+  group: GroupDef;
+  sIdx: number;
+  gIdx: number;
 }
 interface RenderSection {
   title: string;
-  section: SectionDef | null;
-  sIdx: number | null;
+  section: SectionDef;
+  sIdx: number;
   groups: RenderGroup[];
 }
 
-function buildTree(sections: SectionDef[], pending: SuggestedSlot[]): RenderSection[] {
-  const result: RenderSection[] = sections.map((sec, si) => ({
+function buildTree(sections: SectionDef[]): RenderSection[] {
+  return sections.map((sec, si) => ({
     title: sec.title,
     section: sec,
     sIdx: si,
@@ -275,23 +259,8 @@ function buildTree(sections: SectionDef[], pending: SuggestedSlot[]): RenderSect
       group: g,
       sIdx: si,
       gIdx: gi,
-      pending: [] as SuggestedSlot[],
     })),
   }));
-  for (const p of pending) {
-    let rs = result.find((r) => r.title === p.section);
-    if (!rs) {
-      rs = { title: p.section, section: null, sIdx: null, groups: [] };
-      result.push(rs);
-    }
-    let rg = rs.groups.find((g) => g.title === p.group);
-    if (!rg) {
-      rg = { title: p.group, group: null, sIdx: rs.sIdx, gIdx: null, pending: [] };
-      rs.groups.push(rg);
-    }
-    rg.pending.push(p);
-  }
-  return result;
 }
 
 export function TemplateSlotEditor({
@@ -324,26 +293,27 @@ export function TemplateSlotEditor({
     slotIdx: number;
     slot: SlotDef;
   } | null>(null);
-  const [newSlotIds, setNewSlotIds] = useState<Set<string>>(new Set());
 
   // ── 015 行文 Prompt（每节一段叙述提示词，可从样本生成）────────────────
   const [promptGenerating, setPromptGenerating] = useState<string | null>(null);
   const [promptError, setPromptError] = useState<string | null>(null);
+  // 015+ 行文预览：按 section_id 键；用已关联真实文档的抽取事实测试本节行文效果。
+  const [previewingSection, setPreviewingSection] = useState<string | null>(null);
+  const [sectionPreviews, setSectionPreviews] = useState<Record<string, string>>({});
+  const [sectionPreviewErrors, setSectionPreviewErrors] = useState<
+    Record<string, string>
+  >({});
 
   // ── AI 分析（内联，替代原独立 drawer）──────────────────────────────
-  const [pending, setPending] = useState<SuggestedSlot[]>([]);
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
   const [aiSummary, setAiSummary] = useState<string | null>(null);
-  const [aiSkipped, setAiSkipped] = useState(0);
   const [aiStage, setAiStage] = useState(0);
   const aiTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  // ── 016 本体覆盖声明 + 待解析候选（AI 分析产出）───────────────────────
-  // pendingCoverage：AI 建议的本体覆盖边（类型级），作者采纳进某分节的 coverage；
-  // unresolvedCandidates：AI 无法绑定到本体关系边的位点，仅供人工指派处置，
-  // 绝不自动降级为人工插槽（FR-008a）。两者随分节 coverage 经 schema_json 往返。
+  // ── 016 本体覆盖声明（AI 分析产出）─────────────────────────────────────
+  // pendingCoverage：AI 建议的本体覆盖边（类型级），作者采纳进某分节的 coverage。
+  // AI 分析只呈现能绑定到本体的覆盖边，无法绑定的位点静默忽略（取代 FR-008a 的取数候选流）。
   const [pendingCoverage, setPendingCoverage] = useState<OntologyRelationBinding[]>([]);
-  const [unresolvedCandidates, setUnresolvedCandidates] = useState<UnresolvedCandidate[]>([]);
 
   // 左侧忠实预览的高亮锚点：点击建议→其 source_ref/evidence_span；点击真实 Slot→其 label（尽力而为）。
   const [activeRef, setActiveRef] = useState<string | null>(null);
@@ -435,6 +405,10 @@ export function TemplateSlotEditor({
     if (!templateId) return;
     if (!metaForm.name.trim()) {
       setMetaError("模板名称不能为空");
+      return;
+    }
+    if (!metaForm.iriPattern) {
+      setMetaError("请选择关联文档类型（必选）——它绑定本体图谱并驱动 AI 分析");
       return;
     }
     setMetaSaving(true);
@@ -622,15 +596,19 @@ export function TemplateSlotEditor({
   const sourceRelationships =
     docContent.kind === "ready" ? docContent.relationships : [];
 
-  // 016 (F7/D10)：本体覆盖声明与 AI 分析共用的 doc_class_iri —— 优先取左侧已解析
-  // 文档类的完整 IRI，回退到模板 iri_pattern（仅当其本身是完整 IRI 时）。驱动
+  // 016 (F7/D10)：本体覆盖声明与 AI 分析共用的 doc_class_iri —— 优先取模板必选
+  // 「关联文档类型」写入的完整 IRI（iri_pattern），即使左侧未选样例文档也能驱动
+  // AI 分析；回退到左侧已解析文档类（存量模板 iri_pattern 为部分子串时）。驱动
   // getRelationSchema 拉取单跳(hop-1)关系菜单，作为覆盖声明的作者化单位。
   // 只读本体访问（Principle II）；无 IRI / 离线 → 菜单为空、区块降级为提示（Principle VI）。
   const docClassIri = useMemo(() => {
-    if (sourceDocClass?.doc_class_iri) return sourceDocClass.doc_class_iri;
+    // 优先「关联文档类型」下拉框的**实时**选择（未保存即生效）；下拉写入完整 IRI。
+    const live = metaForm.iriPattern;
+    if (live && /^https?:\/\//.test(live)) return live;
     if (iriPattern && /^https?:\/\//.test(iriPattern)) return iriPattern;
+    if (sourceDocClass?.doc_class_iri) return sourceDocClass.doc_class_iri;
     return null;
-  }, [sourceDocClass, iriPattern]);
+  }, [sourceDocClass, iriPattern, metaForm.iriPattern]);
   const relationSchemaQuery = useQuery({
     queryKey: ["relation-schema", docClassIri],
     queryFn: () => getRelationSchema(docClassIri!),
@@ -638,6 +616,39 @@ export function TemplateSlotEditor({
     staleTime: 5 * 60 * 1000,
   });
   const relationSchema: RelationSchemaEdge[] = relationSchemaQuery.data ?? [];
+
+  // 016（仅启用已建模类型）：一次性问询全部候选文档类型中「已建模可覆盖关系」（≥1 条
+  // hop-1 边）的子集，门控「关联文档类型」下拉与 AI 分析。查询失败/加载中 → capableSet=null
+  // → 视为全部可用（离线优雅降级，Principle VI：绝不因探测失败而阻断作者化）。
+  const allDocTypeIris = useMemo(
+    () => DOCUMENT_TYPE_GROUPS.flatMap((g) => g.options.map((o) => o.iri)),
+    [],
+  );
+  const coverageCapableQuery = useQuery({
+    queryKey: ["coverage-doc-classes"],
+    queryFn: () => getCoverageDocClasses(allDocTypeIris),
+    staleTime: 5 * 60 * 1000,
+  });
+  const capableSet = useMemo(
+    () =>
+      coverageCapableQuery.data
+        ? new Set(coverageCapableQuery.data.capable)
+        : null,
+    [coverageCapableQuery.data],
+  );
+  // 已选类型「未建模」= capableSet 已知且不含它 → 拦截 AI 覆盖分析、禁用 AI 按钮。
+  const docClassUnmodeled =
+    !!capableSet && !!docClassIri && !capableSet.has(docClassIri);
+  // 已建模类型的显示标签（供下拉提示行；capableSet 未知时为 null → 不显示具体清单）。
+  const capableLabels = useMemo(
+    () =>
+      capableSet
+        ? DOCUMENT_TYPE_GROUPS.flatMap((g) => g.options)
+            .filter((o) => capableSet.has(o.iri))
+            .map((o) => o.label)
+        : null,
+    [capableSet],
+  );
 
   // ── 015 报告预览页签：AST 覆盖率分析（迁移自 /entities/extraction/[jobId]/ast）。
   // 从匹配文档解析 jobId，用当前模板计算覆盖率，支持生成/下载报告。
@@ -697,6 +708,26 @@ export function TemplateSlotEditor({
   });
   const rerunMut = useMutation({
     mutationFn: () => rerunAnnotation(previewJobId!),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["ast-coverage", previewJobId] });
+    },
+  });
+
+  // 源文档页签「关系图谱」重新识别：复用全量重标注端点，再阻塞式 refetch 源文档内容。
+  // rerunAnnotation 删缓存后，getAnnotatedDocument 的 GET 因缓存缺失而同步全量重算并回填，
+  // 故一次 refetch 即「等待→拿到新关系」；缓存重写后再失效 ast-coverage 让报告预览页签同步。
+  const [rerunSourceError, setRerunSourceError] = useState<string | null>(null);
+  const rerunSourceMut = useMutation({
+    mutationFn: async () => {
+      await rerunAnnotation(previewJobId!);
+      await queryClient.refetchQueries({
+        queryKey: ["ast-source-doc-content", activeDocIri],
+        exact: true,
+      });
+    },
+    onMutate: () => setRerunSourceError(null),
+    onError: () =>
+      setRerunSourceError("重新识别失败，请重试或检查源文档是否仍可用"),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["ast-coverage", previewJobId] });
     },
@@ -770,7 +801,9 @@ export function TemplateSlotEditor({
       group.slots.push({
         slot_id: newId,
         label: "新插槽",
-        source: { kind: "extraction", object_class_iri_contains: "", text: true },
+        // 016+：新建插槽默认为语义化插槽（prompt + 关联本体投影）。旧定型来源
+        // （extraction/rule/constant/manual）仅对既有插槽只读呈现。
+        source: { kind: "semantic", prompt: null, coverage_refs: [] },
         required: false,
         on_missing: "annotate",
         missing_placeholder: "⚠ 待评估（数据缺失）",
@@ -794,6 +827,71 @@ export function TemplateSlotEditor({
     ]);
     setExpandedSections((prev) => new Set([...prev, secId]));
     setExpandedGroups((prev) => new Set([...prev, grpId]));
+  }
+
+  // 缺陷 B：AI 覆盖建议（pendingCoverage）只在分节的 SectionCoverageArea 内渲染；create
+  // 流程初始无分节时 AI 输出无处落地。仅当当前确无分节时播种一个默认分节承载建议
+  // （race-free：函数式更新读最新态；重复分析不叠加）。
+  function ensureSeedSection() {
+    const ts = Date.now();
+    const secId = `sec_${ts}`;
+    const grpId = `grp_${ts}`;
+    setSections((prev) =>
+      prev.length
+        ? prev
+        : [
+            {
+              section_id: secId,
+              title: "新分节",
+              groups: [
+                { group_id: grpId, title: "新分组", kind: "fields", slots: [] },
+              ],
+            },
+          ],
+    );
+    setExpandedSections((prev) => new Set([...prev, secId]));
+    setExpandedGroups((prev) => new Set([...prev, grpId]));
+  }
+
+  // AI 分析主修复：把 Round-1 文档结构骨架（sections→groups→candidates）物化成编辑器树，
+  // 每个候选叶子落为可作者填写的 **semantic** 槽（无本体 IRI 绑定——被删的自动串匹配取数流
+  // 不随之回归）。仅在模板当前 0 分节时物化（沿用 ensureSeedSection 门控，race-free：函数式
+  // 更新读最新态，绝不覆盖作者已有编辑，重跑不叠加）。id 用 ts + 下标后缀，规避同步批量
+  // Date.now() 碰撞。evidence_span/offset 无 SlotDef 落点、编辑器不读，故丢弃。
+  function materializeSkeleton(skeleton: AiStructureSection[]) {
+    const ts = Date.now();
+    const secIds: string[] = [];
+    const grpIds: string[] = [];
+    const built: SectionDef[] = skeleton.map((sec, i) => {
+      const secId = `sec_${ts}_${i}`;
+      secIds.push(secId);
+      const rawGroups =
+        sec.groups && sec.groups.length > 0
+          ? sec.groups
+          : [{ title: "新分组", candidates: [] }];
+      const groups: GroupDef[] = rawGroups.map((grp, j) => {
+        const grpId = `grp_${ts}_${i}_${j}`;
+        grpIds.push(grpId);
+        return {
+          group_id: grpId,
+          title: grp.title || "新分组",
+          kind: "fields",
+          slots: (grp.candidates ?? []).map((cand, k) => ({
+            slot_id: `${grpId}.ai_${k}`,
+            label: cand.label || "新插槽",
+            // 形状同 addSlot 默认：唯一「现代、可作者填写」的插槽。
+            source: { kind: "semantic", prompt: null, coverage_refs: [] },
+            required: false,
+            on_missing: "annotate",
+            missing_placeholder: "⚠ 待评估（数据缺失）",
+          })),
+        };
+      });
+      return { section_id: secId, title: sec.title || "新分节", groups };
+    });
+    setSections((prev) => (prev.length ? prev : built));
+    setExpandedSections((prev) => new Set([...prev, ...secIds]));
+    setExpandedGroups((prev) => new Set([...prev, ...grpIds]));
   }
 
   function updateSectionPrompt(sectionIdx: number, value: string) {
@@ -866,63 +964,6 @@ export function TemplateSlotEditor({
     );
   }
 
-  // ── 016 待解析候选处置（FR-008a）──────────────────────────────────────
-  // 候选绝不被预分类为人工；作者显式指派：绑定关系(extraction，图谱来源占位，由
-  // SlotInlineEditor 补 IRI) / 设为常量(constant) / 设为人工(manual，显式选择) / 丢弃。
-  // 生成的插槽落入首个分节的首个分组（无分组则新建「AI 待归类」组），作者可再编辑/移动。
-  function uniqueSlotId(base: string): string {
-    const existing = new Set<string>();
-    sections.forEach((s) =>
-      s.groups.forEach((g) => g.slots.forEach((sl) => existing.add(sl.slot_id))),
-    );
-    if (!existing.has(base)) return base;
-    let i = 2;
-    while (existing.has(`${base}.${i}`)) i += 1;
-    return `${base}.${i}`;
-  }
-
-  function candidateToSlot(
-    cand: UnresolvedCandidate,
-    kind: "extraction" | "constant" | "manual",
-  ): SlotDef {
-    const slug =
-      cand.proposed_label.trim().replace(/\s+/g, "_").slice(0, 40) || "candidate";
-    return {
-      slot_id: uniqueSlotId(`candidate.${slug}`),
-      label: cand.proposed_label,
-      source: { kind, text: true },
-      required: false,
-      on_missing: "annotate",
-      missing_placeholder: "⚠ 待评估（数据缺失）",
-    };
-  }
-
-  function disposeCandidate(
-    cand: UnresolvedCandidate,
-    disposition: "bind" | "constant" | "manual" | "discard",
-  ) {
-    if (disposition !== "discard") {
-      const kind = disposition === "bind" ? "extraction" : disposition;
-      const slot = candidateToSlot(cand, kind);
-      setSections((prev) => {
-        const next = cloneSections(prev);
-        if (next.length === 0) return next; // 无分节可落位——仅丢弃候选。
-        const sec = next[0];
-        if (sec.groups.length === 0) {
-          sec.groups.push({
-            group_id: `grp_ai_${sec.section_id}`,
-            title: "AI 待归类",
-            kind: "fields",
-            slots: [],
-          });
-        }
-        sec.groups[0].slots.push(slot);
-        return next;
-      });
-    }
-    setUnresolvedCandidates((prev) => prev.filter((c) => c !== cand));
-  }
-
   // 行文 Prompt 的可用变量 = 本节所有插槽标签（生成时以插槽值替换 {{label}}）。
   function sectionSlotLabels(section: SectionDef): string[] {
     return section.groups.flatMap((g) =>
@@ -948,6 +989,48 @@ export function TemplateSlotEditor({
     } finally {
       setPromptGenerating(null);
     }
+  }
+
+  // 预览：用当前（可能未保存）的行文 Prompt + 已关联真实文档的抽取事实，走与报告
+  // 同源的 preview-section-narrative 端点，就地展示本节正文。仅编辑态且已关联文档可用。
+  async function handlePreviewPrompt(sectionIdx: number) {
+    const section = sections[sectionIdx];
+    if (!previewJobId || !templateId) return;
+    setPreviewingSection(section.section_id);
+    setSectionPreviewErrors((prev) => {
+      const next = { ...prev };
+      delete next[section.section_id];
+      return next;
+    });
+    try {
+      const { narrative } = await previewSectionNarrative({
+        job_id: previewJobId,
+        template_id: templateId,
+        section_id: section.section_id,
+        prompt: section.prompt ?? "",
+      });
+      setSectionPreviews((prev) => ({ ...prev, [section.section_id]: narrative }));
+    } catch (e) {
+      setSectionPreviewErrors((prev) => ({
+        ...prev,
+        [section.section_id]: e instanceof Error ? e.message : "预览失败",
+      }));
+    } finally {
+      setPreviewingSection(null);
+    }
+  }
+
+  function closeSectionPreview(sectionId: string) {
+    setSectionPreviews((prev) => {
+      const next = { ...prev };
+      delete next[sectionId];
+      return next;
+    });
+    setSectionPreviewErrors((prev) => {
+      const next = { ...prev };
+      delete next[sectionId];
+      return next;
+    });
   }
 
   function moveSlot(
@@ -988,45 +1071,6 @@ export function TemplateSlotEditor({
     setEditingSlot(null);
   }
 
-  // 采纳建议入树：section/group 缺失则创建（沿用原创建流程的 create-if-missing 合并），
-  // 已存在同 slot_id 则跳过；采纳后从 pending 移除并高亮（绿环）。
-  function adoptSuggestions(sugs: SuggestedSlot[]) {
-    if (sugs.length === 0) return;
-    const next = cloneSections(sections);
-    const expandSec = new Set(expandedSections);
-    const expandGrp = new Set(expandedGroups);
-    const addedIds = new Set<string>();
-    const ts = Date.now();
-    let counter = 0;
-    for (const slot of sugs) {
-      let section = next.find((s) => s.title === slot.section);
-      if (!section) {
-        section = { section_id: `ai_sec_${ts}_${counter++}`, title: slot.section, groups: [] };
-        next.push(section);
-      }
-      let group = section.groups.find((g) => g.title === slot.group);
-      if (!group) {
-        group = { group_id: `ai_grp_${ts}_${counter++}`, title: slot.group, kind: "fields", slots: [] };
-        section.groups.push(group);
-      }
-      if (!group.slots.some((s) => s.slot_id === slot.slot_id)) {
-        group.slots.push(suggestionToSlot(slot));
-        addedIds.add(slot.slot_id);
-      }
-      expandSec.add(section.section_id);
-      expandGrp.add(group.group_id);
-    }
-    setSections(next);
-    setExpandedSections(expandSec);
-    setExpandedGroups(expandGrp);
-    setNewSlotIds((prev) => new Set([...prev, ...addedIds]));
-    setPending((prev) => prev.filter((p) => !sugs.includes(p)));
-  }
-
-  function rejectSuggestion(sug: SuggestedSlot) {
-    setPending((prev) => prev.filter((p) => p !== sug));
-  }
-
   // 三者互斥（后端 model_post_init 要求恰好其一）：job_id > 忠于结构的 tiptap 样例
   // > 旧的扁平 sample_text（legacy 模板）。existing_template 供后端 round-2 去重。
   const buildAiRequest = useCallback((): SuggestSlotsRequest | null => {
@@ -1041,7 +1085,7 @@ export function TemplateSlotEditor({
     return {
       ...source,
       // 016 (D10/F7)：把文档实体类型送给服务端，用于把 AI 分析锚定到只读本体的
-      // 关系边（而非样本个体），产出 coverage + unresolved_candidates。
+      // 关系边（而非样本个体），只产出 coverage（本体覆盖边）。
       doc_class_iri: docClassIri,
       existing_template: {
         sections: sections.map((s) => ({
@@ -1090,44 +1134,50 @@ export function TemplateSlotEditor({
       setAiError("无可分析的样例内容");
       return;
     }
+    if (!docClassIri) {
+      // 未接地则后端只能返回空覆盖（不再有取数候选兜底）——直接拦截并提示。
+      setAiError("请先在「基本信息」选择关联文档类型后再分析");
+      return;
+    }
+    if (docClassUnmodeled) {
+      // 016：该类型本体未建模关系边 → 后端覆盖恒空。拦截并给出明确指引，消除静默无结果。
+      setAiError(
+        "该文档类型尚未在本体中建模关系边，暂不支持 AI 覆盖分析。请选择已建模类型" +
+          (capableLabels && capableLabels.length > 0
+            ? `（当前：${capableLabels.join("、")}）`
+            : "") +
+          "。",
+      );
+      return;
+    }
     setAiLoading(true);
     setAiError(null);
     startAiProgress();
     try {
       const res = await suggestSlots(req);
-      const existingIds = new Set<string>();
-      sections.forEach((s) =>
-        s.groups.forEach((g) => g.slots.forEach((sl) => existingIds.add(sl.slot_id))),
-      );
-      const seen = new Set<string>();
-      const flat: SuggestedSlot[] = [];
-      for (const sec of res.sections) {
-        for (const grp of sec.groups) {
-          for (const sl of grp.slots) {
-            if (existingIds.has(sl.slot_id) || seen.has(sl.slot_id)) continue;
-            seen.add(sl.slot_id);
-            flat.push(sl);
-          }
-        }
-      }
-      setPending(flat);
       setAiSummary(res.document_summary || null);
-      setAiSkipped(res.skipped_duplicates || 0);
-      // 016：本体锚定的覆盖建议（仅关系边）与无法绑定的候选。已存在于任一分节
-      // coverage 的建议先行过滤，避免重复呈现。
+      // 016：AI 分析只产出本体锚定的覆盖建议（仅关系边）与无法绑定的候选。
+      // 已存在于任一分节 coverage 的建议先行过滤，避免重复呈现。
       const declaredKeys = new Set<string>();
       sections.forEach((s) =>
         (s.coverage ?? []).forEach((c) => {
           if (c.kind === "ontology_relation") declaredKeys.add(bindingKey(c));
         }),
       );
-      setPendingCoverage(
-        (res.coverage ?? []).filter(
-          (c): c is OntologyRelationBinding =>
-            c.kind === "ontology_relation" && !declaredKeys.has(bindingKey(c)),
-        ),
+      const nextPending = (res.coverage ?? []).filter(
+        (c): c is OntologyRelationBinding =>
+          c.kind === "ontology_relation" && !declaredKeys.has(bindingKey(c)),
       );
-      setUnresolvedCandidates(res.unresolved_candidates ?? []);
+      setPendingCoverage(nextPending);
+      // 主修复：空模板 + AI 回传结构骨架 → 物化真实样例骨架（分节 + 语义化槽）。
+      // 否则退化：有覆盖建议但无分节时至少播种一个空分节承载建议。骨架仅在 0 分节时
+      // 物化，绝不覆盖作者已有编辑（materializeSkeleton / ensureSeedSection 内均门控）。
+      const skeleton = res.sections ?? [];
+      if (sections.length === 0 && skeleton.length > 0) {
+        materializeSkeleton(skeleton);
+      } else if (nextPending.length > 0) {
+        ensureSeedSection();
+      }
     } catch (e) {
       setAiError(e instanceof Error ? e.message : String(e));
     } finally {
@@ -1140,11 +1190,6 @@ export function TemplateSlotEditor({
     setActiveSlotId(slot.slot_id);
     // 真实 Slot 无 evidence，用 label 尽力定位（WordViewer 按 textContent 命中）。
     setActiveRef(slot.label || null);
-  }
-
-  function handlePendingClick(sug: SuggestedSlot) {
-    setActiveSlotId(sug.slot_id);
-    setActiveRef(sug.source_ref ?? sug.evidence_span ?? null);
   }
 
   // 忠实预览内容：优先持久化/直传的 tiptap 样例；job_id 走拉取缓存；legacy 仅有
@@ -1167,7 +1212,7 @@ export function TemplateSlotEditor({
     onSave({ ...schema, sections });
   }
 
-  const tree = useMemo(() => buildTree(sections, pending), [sections, pending]);
+  const tree = useMemo(() => buildTree(sections), [sections]);
 
   const enabledCount = sections.reduce(
     (acc, s) =>
@@ -1187,9 +1232,9 @@ export function TemplateSlotEditor({
   const totalSlots = enabledCount + disabledCount;
 
   const isSecExpanded = (rs: RenderSection) =>
-    rs.section ? expandedSections.has(rs.section.section_id) : true;
+    expandedSections.has(rs.section.section_id);
   const isGrpExpanded = (rg: RenderGroup) =>
-    rg.group ? expandedGroups.has(rg.group.group_id) : true;
+    expandedGroups.has(rg.group.group_id);
 
   return (
     <div className="flex h-full min-h-0">
@@ -1364,30 +1409,52 @@ export function TemplateSlotEditor({
                       />
                     </div>
                     <div className="col-span-2 space-y-1.5">
-                      <Label className="text-xs text-muted-foreground">关联文档类型</Label>
+                      <Label className="text-xs text-muted-foreground">
+                        关联文档类型 <span className="text-destructive">*</span>
+                      </Label>
                       <Select
-                        value={metaForm.iriPattern || "__none__"}
+                        value={metaForm.iriPattern || undefined}
                         onValueChange={(v) =>
-                          setMetaForm((f) => ({ ...f, iriPattern: v === "__none__" ? "" : v }))
+                          setMetaForm((f) => ({ ...f, iriPattern: v }))
                         }
                       >
                         <SelectTrigger>
                           <SelectValue placeholder="选择文档类型…" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="__none__">未指定</SelectItem>
                           {DOCUMENT_TYPE_GROUPS.map((g) => (
                             <SelectGroup key={g.group}>
                               <SelectLabel>{g.group}</SelectLabel>
-                              {g.options.map((o) => (
-                                <SelectItem key={o.iri} value={o.iri}>
-                                  {o.label}
-                                </SelectItem>
-                              ))}
+                              {g.options.map((o) => {
+                                // 016：仅启用「已建模本体关系」的类型；capableSet 未知
+                                // （加载/失败）时不禁用（优雅降级）。
+                                const modeled = !capableSet || capableSet.has(o.iri);
+                                return (
+                                  <SelectItem
+                                    key={o.iri}
+                                    value={o.iri}
+                                    disabled={!modeled}
+                                  >
+                                    {o.label}
+                                    {!modeled && (
+                                      <span className="ml-1 text-xs text-muted-foreground">
+                                        （暂未建模）
+                                      </span>
+                                    )}
+                                  </SelectItem>
+                                );
+                              })}
                             </SelectGroup>
                           ))}
                         </SelectContent>
                       </Select>
+                      <p className="text-xs text-muted-foreground">
+                        仅「已建模本体关系」的类型可用于覆盖声明与 AI 分析
+                        {capableLabels && capableLabels.length > 0
+                          ? `（当前：${capableLabels.join("、")}）`
+                          : ""}
+                        ；其余类型待本体补充关系后自动启用。
+                      </p>
                     </div>
                     <div className="space-y-1.5">
                       <Label className="text-xs text-muted-foreground">IRI 匹配键</Label>
@@ -1967,20 +2034,58 @@ export function TemplateSlotEditor({
       {leftTab === "basic" || leftTab === "report-preview" ? null : leftTab === "source" ? (
         <div className="flex w-[26rem] shrink-0 flex-col min-h-0 border-l">
           <div className="shrink-0 border-b px-4 py-3">
-            <div className="text-sm font-semibold text-foreground">关系图谱</div>
+            <div className="flex items-center justify-between gap-2">
+              <div className="text-sm font-semibold text-foreground">关系图谱</div>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-7 gap-1.5 text-xs"
+                disabled={
+                  !previewJobId ||
+                  docContent.kind !== "ready" ||
+                  rerunSourceMut.isPending
+                }
+                title={
+                  !previewJobId
+                    ? "需已关联真实文档"
+                    : docContent.kind !== "ready"
+                      ? "暂无可重识别的标注"
+                      : "对当前文档重新完整标注（实体+关系），较慢"
+                }
+                onClick={() => rerunSourceMut.mutate()}
+              >
+                {rerunSourceMut.isPending ? (
+                  <Loader2 className="size-3.5 animate-spin" />
+                ) : (
+                  <RotateCw className="size-3.5" />
+                )}
+                {rerunSourceMut.isPending ? "识别中…" : "重新识别"}
+              </Button>
+            </div>
             <p className="text-xs text-muted-foreground">
               文档中识别的关系，点击端点可定位原文
             </p>
+            {rerunSourceError && (
+              <p className="mt-1 text-xs text-destructive">{rerunSourceError}</p>
+            )}
           </div>
           {/* 单一滚动区归 RelationPanel 内部（flex-1 overflow-y-auto）；外层仅定界高度，
               避免嵌套滚动条。 */}
-          <div className="min-h-0 flex-1">
+          <div className="relative min-h-0 flex-1">
             <RelationPanel
               docClass={sourceDocClass}
               relationships={sourceRelationships}
               selectedSourceRef={selectedSourceRef}
               onSelectSourceRef={setSelectedSourceRef}
             />
+            {rerunSourceMut.isPending && (
+              <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 bg-background/70 backdrop-blur-sm">
+                <Loader2 className="size-5 animate-spin text-muted-foreground" />
+                <span className="text-xs text-muted-foreground">
+                  正在重新识别关系图谱…
+                </span>
+              </div>
+            )}
           </div>
         </div>
       ) : (
@@ -1991,14 +2096,6 @@ export function TemplateSlotEditor({
               {totalSlots} 插槽 · {requiredCount} 必填
               {disabledCount > 0 && ` · ${disabledCount} 禁用`}
             </div>
-            {pending.length > 0 && (
-              <Badge
-                variant="outline"
-                className="border-amber-400 text-amber-600 dark:text-amber-400"
-              >
-                AI 建议 {pending.length}
-              </Badge>
-            )}
             <div className="ml-auto flex gap-2">
               <Button variant="outline" size="sm" onClick={onCancel}>
                 取消
@@ -2013,13 +2110,23 @@ export function TemplateSlotEditor({
               variant="outline"
               size="sm"
               onClick={runAiAnalysis}
-              disabled={!aiEnabled || aiLoading || !previewContent}
+              disabled={
+                !aiEnabled ||
+                aiLoading ||
+                !previewContent ||
+                !docClassIri ||
+                docClassUnmodeled
+              }
               title={
                 !aiEnabled
                   ? "需在设置中开启 LLM 插槽建议"
                   : !previewContent
                     ? "无样例内容可分析"
-                    : undefined
+                    : !docClassIri
+                      ? "请先在「基本信息」选择关联文档类型"
+                      : docClassUnmodeled
+                        ? "该文档类型尚未在本体中建模关系边，暂不支持 AI 覆盖分析"
+                        : undefined
               }
             >
               {aiLoading ? (
@@ -2029,20 +2136,6 @@ export function TemplateSlotEditor({
                 </>
               ) : "AI 分析"}
             </Button>
-            {pending.length > 0 && (
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() => adoptSuggestions([...pending])}
-              >
-                全部采纳（{pending.length}）
-              </Button>
-            )}
-            {aiSkipped > 0 && (
-              <span className="text-xs text-muted-foreground">
-                已跳过 {aiSkipped} 条重复
-              </span>
-            )}
           </div>
           {aiLoading && (
             <div className="space-y-1.5">
@@ -2061,51 +2154,29 @@ export function TemplateSlotEditor({
         </div>
 
         <div className="flex-1 overflow-y-auto px-3 py-3 space-y-2">
-          {/* 016：AI 无法绑定到本体的位点——待人工指派，绝不自动降级为人工插槽 */}
-          {unresolvedCandidates.length > 0 && (
-            <UnresolvedCandidatesPanel
-              candidates={unresolvedCandidates}
-              onDispose={disposeCandidate}
-            />
-          )}
           {tree.length === 0 && (
             <div className="rounded border border-dashed p-6 text-center text-sm text-muted-foreground">
               {mode === "create"
-                ? "点击「AI 分析」从样例文档生成插槽建议，或「添加分节」手动创建结构。"
-                : "该模板暂无插槽。点击「AI 分析」或「添加分节」开始。"}
+                ? "点击「添加分节」手动创建插槽结构；「AI 分析」按关联文档类型编译本体覆盖建议。"
+                : "该模板暂无插槽。点击「添加分节」开始，或用「AI 分析」查看本体覆盖建议。"}
             </div>
           )}
 
           {tree.map((rs) => {
-            const realCount = rs.section
-              ? rs.section.groups.reduce((a, g) => a + g.slots.length, 0)
-              : 0;
-            const secPending = rs.groups.reduce((a, g) => a + g.pending.length, 0);
-            const virtualSection = !rs.section;
+            const realCount = rs.section.groups.reduce(
+              (a, g) => a + g.slots.length,
+              0,
+            );
             return (
-              <div
-                key={rs.section?.section_id ?? `virt_${rs.title}`}
-                className={`border rounded-lg${virtualSection ? " border-dashed border-amber-400/60" : ""}`}
-              >
+              <div key={rs.section.section_id} className="border rounded-lg">
                 <button
                   className="w-full flex items-center gap-2 p-3 hover:bg-muted/50 text-left"
-                  onClick={() => rs.section && toggleSection(rs.section.section_id)}
-                  disabled={virtualSection}
+                  onClick={() => toggleSection(rs.section.section_id)}
                 >
-                  {!virtualSection && (
-                    <span className="text-xs">{isSecExpanded(rs) ? "▼" : "▶"}</span>
-                  )}
+                  <span className="text-xs">{isSecExpanded(rs) ? "▼" : "▶"}</span>
                   <span className="font-medium">{rs.title}</span>
-                  {virtualSection && (
-                    <Badge
-                      variant="outline"
-                      className="text-xs border-amber-400 text-amber-600 dark:text-amber-400"
-                    >
-                      AI
-                    </Badge>
-                  )}
                   <div className="ml-auto flex items-center gap-1">
-                    {rs.section?.prompt?.trim() && (
+                    {rs.section.prompt?.trim() && (
                       <Sparkles
                         className="size-3.5 text-primary"
                         aria-label="已配置行文 Prompt"
@@ -2116,69 +2187,47 @@ export function TemplateSlotEditor({
                         {realCount} 插槽
                       </Badge>
                     )}
-                    {secPending > 0 && (
-                      <Badge
-                        variant="outline"
-                        className="text-xs border-amber-400 text-amber-600 dark:text-amber-400"
-                      >
-                        +{secPending}
-                      </Badge>
-                    )}
                   </div>
                 </button>
 
                 {isSecExpanded(rs) && (
                   <div className="px-3 pb-3 space-y-2">
                     {rs.groups.map((rg) => {
-                      const virtualGroup = !rg.group;
                       return (
                         <div
-                          key={rg.group?.group_id ?? `virt_${rs.title}_${rg.title}`}
-                          className={`border rounded ml-4${virtualGroup ? " border-dashed border-amber-400/60" : ""}`}
+                          key={rg.group.group_id}
+                          className="border rounded ml-4"
                         >
                           <button
                             className="w-full flex items-center gap-2 p-2 hover:bg-muted/50 text-left text-sm"
-                            onClick={() => rg.group && toggleGroup(rg.group.group_id)}
-                            disabled={virtualGroup}
+                            onClick={() => toggleGroup(rg.group.group_id)}
                           >
-                            {!virtualGroup && (
-                              <span className="text-xs">{isGrpExpanded(rg) ? "▼" : "▶"}</span>
-                            )}
+                            <span className="text-xs">{isGrpExpanded(rg) ? "▼" : "▶"}</span>
                             <span>{rg.title}</span>
-                            {rg.group && (
-                              <Badge variant="outline" className="text-xs ml-1">
-                                {rg.group.kind}
-                              </Badge>
-                            )}
+                            <Badge variant="outline" className="text-xs ml-1">
+                              {rg.group.kind}
+                            </Badge>
                             <span className="ml-auto text-xs text-muted-foreground">
-                              {rg.group ? `${rg.group.slots.length} 插槽` : ""}
-                              {rg.pending.length > 0 && (
-                                <span className="text-amber-600 dark:text-amber-400">
-                                  {rg.group ? " · " : ""}+{rg.pending.length}
-                                </span>
-                              )}
+                              {rg.group.slots.length} 插槽
                             </span>
                           </button>
 
                           {isGrpExpanded(rg) && (
                             <div className="px-2 pb-2 space-y-1">
                               {/* 真实 Slot 行 + 内联编辑器（选中时在行下方原地展开）*/}
-                              {rg.group &&
-                                rg.group.slots.map((slot, slIdx) => {
+                              {rg.group.slots.map((slot, slIdx) => {
                                   const isEditing =
                                     editingSlot?.sectionIdx === rs.sIdx &&
                                     editingSlot?.groupIdx === rg.gIdx &&
                                     editingSlot?.slotIdx === slIdx;
                                   const kind = (slot.source as Record<string, unknown>)
                                     .kind as string;
-                                  const isLast = slIdx === rg.group!.slots.length - 1;
+                                  const isLast = slIdx === rg.group.slots.length - 1;
                                   return (
                                     <div key={slot.slot_id}>
                                       <div
                                         className={cn(
                                           "group ml-4 flex items-center gap-1.5 rounded px-2 py-1.5 text-sm cursor-pointer hover:bg-muted/40",
-                                          newSlotIds.has(slot.slot_id) &&
-                                            "ring-1 ring-green-400 bg-green-50 dark:bg-green-900/20",
                                           slot.disabled && "opacity-50",
                                           (activeSlotId === slot.slot_id || isEditing) &&
                                             "bg-yellow-50 dark:bg-yellow-900/20",
@@ -2199,8 +2248,20 @@ export function TemplateSlotEditor({
                                             必填
                                           </Badge>
                                         )}
-                                        <Badge variant="outline" className="text-xs">
-                                          {slot.disabled ? "已禁用" : kind}
+                                        <Badge
+                                          variant={
+                                            !slot.disabled && isLegacySourceKind(kind)
+                                              ? "secondary"
+                                              : "outline"
+                                          }
+                                          className="text-xs"
+                                          title={
+                                            isLegacySourceKind(kind)
+                                              ? "旧式定型插槽（已弃用）"
+                                              : undefined
+                                          }
+                                        >
+                                          {slot.disabled ? "已禁用" : sourceKindLabel(kind)}
                                         </Badge>
                                         <GripVertical
                                           className={cn(
@@ -2290,6 +2351,7 @@ export function TemplateSlotEditor({
                                       {isEditing && editingSlot && (
                                         <SlotInlineEditor
                                           editing={editingSlot}
+                                          sectionCoverage={rs.section?.coverage ?? []}
                                           onChange={setEditingSlot}
                                           onCancel={() => setEditingSlot(null)}
                                           onSave={saveSlotEdit}
@@ -2299,83 +2361,14 @@ export function TemplateSlotEditor({
                                   );
                                 })}
 
-                              {/* Pending AI 建议幽灵行 */}
-                              {rg.pending.map((sug) => {
-                                // 016 F2：本体锚定位(extraction)与 AI 抽取位
-                                // (llm_extraction)都是图谱来源 —— 标为「本体」/default，
-                                // 绝不渲染成「LLM」/outline（更不会坍缩为人工插槽）。
-                                const graphSourced =
-                                  sug.source_kind === "extraction" ||
-                                  sug.source_kind === "llm_extraction";
-                                return (
-                                <div
-                                  key={`pending_${sug.slot_id}`}
-                                  className={`flex items-start gap-2 ml-4 p-1.5 rounded border border-dashed border-amber-400/60 bg-amber-50/50 dark:bg-amber-900/10 text-sm cursor-pointer${
-                                    activeSlotId === sug.slot_id
-                                      ? " ring-1 ring-amber-400"
-                                      : ""
-                                  }`}
-                                  onClick={() => handlePendingClick(sug)}
-                                >
-                                  <div className="flex-1 min-w-0">
-                                    <div className="flex items-center gap-1">
-                                      <span className="truncate">{sug.label}</span>
-                                      <ConfidenceBadge value={sug.confidence} />
-                                    </div>
-                                    {sug.evidence_span && (
-                                      <p className="text-xs text-muted-foreground truncate">
-                                        {sug.evidence_span}
-                                      </p>
-                                    )}
-                                    {graphSourced && sug.source_hint && (
-                                      <p className="text-xs text-green-600 dark:text-green-400 truncate">
-                                        IRI: {sug.source_hint}
-                                      </p>
-                                    )}
-                                  </div>
-                                  <Badge
-                                    variant={graphSourced ? "default" : "outline"}
-                                    className="shrink-0 text-xs"
-                                  >
-                                    {graphSourced ? "本体" : "LLM"}
-                                  </Badge>
-                                  <div
-                                    className="flex gap-0.5 shrink-0"
-                                    onClick={(e) => e.stopPropagation()}
-                                  >
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      className="h-6 w-6 p-0 text-green-600"
-                                      title="采纳到插槽树"
-                                      onClick={() => adoptSuggestions([sug])}
-                                    >
-                                      ✓
-                                    </Button>
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      className="h-6 w-6 p-0 text-red-500"
-                                      title="忽略此建议"
-                                      onClick={() => rejectSuggestion(sug)}
-                                    >
-                                      ✗
-                                    </Button>
-                                  </div>
-                                </div>
-                                );
-                              })}
-
-                              {rg.group && (
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  className="ml-4 text-xs"
-                                  onClick={() => addSlot(rs.sIdx!, rg.gIdx!)}
-                                >
-                                  + 添加插槽
-                                </Button>
-                              )}
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="ml-4 text-xs"
+                                onClick={() => addSlot(rs.sIdx, rg.gIdx)}
+                              >
+                                + 添加插槽
+                              </Button>
                             </div>
                           )}
                         </div>
@@ -2383,7 +2376,7 @@ export function TemplateSlotEditor({
                     })}
 
                     {/* ── 016 本体覆盖声明（每节 doc-class→predicate→range 覆盖边）── */}
-                    {rs.section && rs.sIdx !== null && (
+                    {rs.section && (
                       <SectionCoverageArea
                         docClassLabel={sourceDocClass?.label ?? null}
                         docClassIri={docClassIri}
@@ -2400,7 +2393,7 @@ export function TemplateSlotEditor({
                     )}
 
                     {/* ── 015 行文 Prompt（每节一段叙述提示词）───────────── */}
-                    {rs.section && rs.sIdx !== null && (
+                    {rs.section && (
                       <SectionPromptArea
                         value={rs.section.prompt ?? ""}
                         variables={sectionSlotLabels(rs.section)}
@@ -2408,6 +2401,21 @@ export function TemplateSlotEditor({
                         canGenerate={aiEnabled && !!promptSampleText}
                         onChange={(v) => updateSectionPrompt(rs.sIdx!, v)}
                         onGenerate={() => handleGeneratePrompt(rs.sIdx!)}
+                        canPreview={
+                          aiEnabled &&
+                          !!previewJobId &&
+                          !!templateId &&
+                          !!(rs.section.prompt ?? "").trim()
+                        }
+                        previewing={previewingSection === rs.section.section_id}
+                        previewText={sectionPreviews[rs.section.section_id] ?? null}
+                        previewError={
+                          sectionPreviewErrors[rs.section.section_id] ?? null
+                        }
+                        onPreview={() => handlePreviewPrompt(rs.sIdx!)}
+                        onClosePreview={() =>
+                          closeSectionPreview(rs.section!.section_id)
+                        }
                       />
                     )}
                   </div>
@@ -2438,16 +2446,6 @@ export function TemplateSlotEditor({
   );
 }
 
-function ConfidenceBadge({ value }: { value: number }) {
-  const pct = Math.round(value * 100);
-  const variant = pct >= 80 ? "default" : pct >= 50 ? "secondary" : "outline";
-  return (
-    <Badge variant={variant} className="text-xs shrink-0">
-      {pct}%
-    </Badge>
-  );
-}
-
 // 015 行文 Prompt 区：sparkles 标题 + 「从样本生成」按钮 + monospace 文本域 + 可用变量提示。
 // 报告生成时后端按本节 prompt 把插槽值融合成一段叙述（generate_section_narratives）。
 function SectionPromptArea({
@@ -2457,6 +2455,12 @@ function SectionPromptArea({
   canGenerate,
   onChange,
   onGenerate,
+  canPreview,
+  previewing,
+  previewText,
+  previewError,
+  onPreview,
+  onClosePreview,
 }: {
   value: string;
   variables: string[];
@@ -2464,22 +2468,46 @@ function SectionPromptArea({
   canGenerate: boolean;
   onChange: (v: string) => void;
   onGenerate: () => void;
+  canPreview: boolean;
+  previewing: boolean;
+  previewText: string | null;
+  previewError: string | null;
+  onPreview: () => void;
+  onClosePreview: () => void;
 }) {
+  const showPreview = previewing || previewText != null || previewError != null;
   return (
     <div className="rounded-md border bg-muted/50 p-3 space-y-2.5">
       <div className="flex items-center gap-2">
         <Sparkles className="size-3.5 text-primary" />
         <span className="text-sm font-medium">行文 Prompt</span>
-        <Button
-          variant="outline"
-          size="sm"
-          className="ml-auto h-7 text-xs"
-          onClick={onGenerate}
-          disabled={!canGenerate || generating}
-          title={!canGenerate ? "需开启 LLM 且有样例内容" : undefined}
-        >
-          {generating ? "生成中…" : "从样本生成"}
-        </Button>
+        <div className="ml-auto flex items-center gap-1.5">
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-7 text-xs"
+            onClick={onGenerate}
+            disabled={!canGenerate || generating}
+            title={!canGenerate ? "需开启 LLM 且有样例内容" : undefined}
+          >
+            {generating ? "生成中…" : "从样本生成"}
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-7 gap-1 text-xs"
+            onClick={onPreview}
+            disabled={!canPreview || previewing}
+            title={
+              !canPreview
+                ? "需已在「源文档」页签关联真实文档，且行文 Prompt 非空"
+                : "用已关联文档的真实抽取事实测试本节行文效果"
+            }
+          >
+            <Eye className="size-3.5" />
+            {previewing ? "预览中…" : "预览"}
+          </Button>
+        </div>
       </div>
       <Textarea
         value={value}
@@ -2498,6 +2526,36 @@ function SectionPromptArea({
           ))}
           — 插槽值将在生成时替换
         </p>
+      )}
+      {showPreview && (
+        <div className="rounded border bg-background p-2.5 space-y-1.5">
+          <div className="flex items-center gap-2">
+            <Eye className="size-3.5 text-muted-foreground" />
+            <span className="text-xs font-medium text-muted-foreground">
+              行文预览 · 基于已关联文档的真实抽取事实
+            </span>
+            <button
+              type="button"
+              className="ml-auto text-muted-foreground hover:text-foreground"
+              onClick={onClosePreview}
+              title="关闭预览"
+            >
+              <X className="size-3.5" />
+            </button>
+          </div>
+          {previewing ? (
+            <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <Loader2 className="size-3.5 animate-spin" />
+              正在按当前行文 Prompt 生成本节正文…
+            </p>
+          ) : previewError ? (
+            <p className="text-xs text-destructive">预览失败：{previewError}</p>
+          ) : (
+            <p className="whitespace-pre-wrap text-xs leading-relaxed text-foreground/90">
+              {previewText}
+            </p>
+          )}
+        </div>
       )}
     </div>
   );
@@ -2733,94 +2791,6 @@ function SectionCoverageArea({
   );
 }
 
-// 016 待解析候选面板：AI 无法绑定到本体关系边的位点。作者显式指派 4 种处置——
-// 绑定关系(extraction 图谱来源占位，由 SlotInlineEditor 补 IRI) / 设为常量 /
-// 设为人工(显式选择) / 丢弃。绝不自动降级为人工插槽（FR-008a / FE4）。
-function UnresolvedCandidatesPanel({
-  candidates,
-  onDispose,
-}: {
-  candidates: UnresolvedCandidate[];
-  onDispose: (
-    cand: UnresolvedCandidate,
-    disposition: "bind" | "constant" | "manual" | "discard",
-  ) => void;
-}) {
-  return (
-    <div className="rounded-md border border-amber-400/55 bg-amber-50/40 dark:bg-amber-900/10 p-3 space-y-2.5">
-      <div className="flex items-center gap-2">
-        <AlertTriangle className="size-3.5 text-amber-600 dark:text-amber-400" />
-        <span className="text-sm font-medium">待解析候选</span>
-        <Badge
-          variant="outline"
-          className="text-xs border-amber-400 text-amber-600 dark:text-amber-400"
-        >
-          {candidates.length}
-        </Badge>
-      </div>
-      <p className="text-xs text-muted-foreground">
-        AI 无法绑定到本体关系边；需人工指派处置，不会自动降级为人工插槽。
-      </p>
-      {candidates.map((cand, idx) => (
-        <div
-          key={`cand_${idx}_${cand.proposed_label}`}
-          className="rounded border bg-background p-2.5 space-y-1.5"
-        >
-          <div className="flex items-center gap-1.5">
-            <Unlink className="size-3.5 text-amber-600 dark:text-amber-400" />
-            <span className="text-sm font-medium truncate">
-              {cand.proposed_label}
-            </span>
-          </div>
-          {cand.evidence && (
-            <p className="text-xs text-muted-foreground truncate">
-              {cand.evidence}
-            </p>
-          )}
-          {cand.reason_unbound && (
-            <p className="text-xs text-amber-600 dark:text-amber-400">
-              {cand.reason_unbound}
-            </p>
-          )}
-          <div className="grid grid-cols-2 gap-1.5 pt-0.5">
-            <Button
-              size="sm"
-              className="h-7 text-xs"
-              onClick={() => onDispose(cand, "bind")}
-            >
-              绑定关系
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-7 text-xs"
-              onClick={() => onDispose(cand, "constant")}
-            >
-              设为常量
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-7 text-xs"
-              onClick={() => onDispose(cand, "manual")}
-            >
-              设为人工
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-7 text-xs text-destructive hover:text-destructive"
-              onClick={() => onDispose(cand, "discard")}
-            >
-              丢弃
-            </Button>
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
 type EditingSlot = {
   sectionIdx: number;
   groupIdx: number;
@@ -2828,15 +2798,19 @@ type EditingSlot = {
   slot: SlotDef;
 };
 
-// 015 内联插槽编辑器：在选中行下方原地展开（替代原模态 Dialog），字段按 design
-// 的两列栅格排布 —— 插槽 ID | 标签 / 来源类型 | 本体类 IRI / 必填 | 缺失处理。
+// 015/016+ 内联插槽编辑器：在选中行下方原地展开（替代原模态 Dialog）。
+// 新建插槽为「语义化插槽」——prompt（留空=继承本节行文 Prompt）+ 关联本体（本节
+// coverage 声明的投影，未选=全部）。旧式定型来源（抽取/规则/常量/人工/LLM 抽取）
+// 只读保留以兼容既有 schema_json，标「旧式定型插槽（已弃用）」。
 function SlotInlineEditor({
   editing,
+  sectionCoverage,
   onChange,
   onCancel,
   onSave,
 }: {
   editing: EditingSlot;
+  sectionCoverage: CoverageBinding[];
   onChange: (next: EditingSlot) => void;
   onCancel: () => void;
   onSave: () => void;
@@ -2847,6 +2821,23 @@ function SlotInlineEditor({
   const setSource = (patch: Record<string, unknown>) =>
     onChange({ ...editing, slot: { ...slot, source: { ...slot.source, ...patch } } });
   const kind = (slot.source.kind as string) || "extraction";
+  const isSemantic = kind === "semantic";
+
+  // 语义化插槽的关联本体过滤：coverage_refs 是本节 coverage 键集，空=投影全部。
+  const coverageRefs = Array.isArray(slot.source.coverage_refs)
+    ? (slot.source.coverage_refs as string[])
+    : [];
+  const toggleRef = (key: string) =>
+    setSource({
+      coverage_refs: coverageRefs.includes(key)
+        ? coverageRefs.filter((k) => k !== key)
+        : [...coverageRefs, key],
+    });
+  const bindingLabel = (b: CoverageBinding): string =>
+    b.kind === "fact_source"
+      ? b.label || b.source
+      : b.label ||
+        `${iriLocalName(b.predicate_iri)} → ${iriLocalName(b.range_class_iri)}`;
 
   return (
     <div
@@ -2870,36 +2861,79 @@ function SlotInlineEditor({
         </Field>
       </div>
 
-      <div className="flex gap-2.5">
-        <Field label="来源类型">
-          <Select value={kind} onValueChange={(v) => setSource({ kind: v })}>
-            <SelectTrigger className="h-8">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {SOURCE_KINDS.map((sk) => (
-                <SelectItem key={sk.value} value={sk.value}>
-                  {sk.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </Field>
-        <Field label="本体类 IRI">
-          {kind === "extraction" ? (
-            <Input
-              className="h-8 font-mono text-xs"
-              placeholder="例如 DrugProduct"
-              value={(slot.source.object_class_iri_contains as string) ?? ""}
-              onChange={(e) => setSource({ object_class_iri_contains: e.target.value })}
+      {isSemantic ? (
+        <>
+          <Field label="插槽 Prompt（留空 = 继承本节「行文 Prompt」）">
+            <Textarea
+              value={(slot.source.prompt as string) ?? ""}
+              onChange={(e) => setSource({ prompt: e.target.value || null })}
+              placeholder="规定本语义化插槽的输出内容；留空则生成时继承本节「行文 Prompt」。"
+              className="min-h-[96px] resize-y bg-background text-xs leading-relaxed"
             />
-          ) : (
-            <div className="flex h-8 items-center rounded-md border border-dashed px-3 text-xs text-muted-foreground">
-              仅抽取来源适用
-            </div>
+          </Field>
+
+          <div className="space-y-1.5">
+            <Label className="text-xs font-medium">
+              关联本体（本节覆盖声明的投影 · 未选 = 投影全部）
+            </Label>
+            {sectionCoverage.length === 0 ? (
+              <p className="text-xs text-muted-foreground">
+                本节尚无「本体覆盖声明」。在下方覆盖区添加关系边后，可在此选择要纳入本插槽的关联本体。
+              </p>
+            ) : (
+              <div className="flex flex-wrap gap-1.5">
+                {sectionCoverage.map((b, i) => {
+                  const key = coverageKey(b);
+                  const explicit = coverageRefs.includes(key);
+                  const projectedAll = coverageRefs.length === 0;
+                  return (
+                    <button
+                      key={`${key}_${i}`}
+                      type="button"
+                      onClick={() => toggleRef(key)}
+                      title={key}
+                      className={cn(
+                        "rounded-full border px-2.5 py-1 text-xs transition-colors",
+                        explicit
+                          ? "border-primary bg-primary/10 text-primary"
+                          : projectedAll
+                            ? "border-dashed border-primary/40 text-muted-foreground hover:text-primary"
+                            : "border-border text-muted-foreground hover:border-primary/40",
+                      )}
+                    >
+                      {bindingLabel(b)}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+            <p className="text-xs text-muted-foreground">
+              {coverageRefs.length === 0
+                ? "未显式选择 → 生成时投影本节全部关联本体与事实源。"
+                : `已选 ${coverageRefs.length} 项 → 仅投影所选关联本体。`}
+            </p>
+          </div>
+        </>
+      ) : (
+        <div className="space-y-2 rounded-md border border-dashed bg-background/60 p-2.5">
+          <div className="flex items-center gap-2">
+            <Badge variant="secondary" className="text-xs">
+              旧式定型插槽（已弃用）
+            </Badge>
+            <span className="text-xs text-muted-foreground">
+              来源类型：{sourceKindLabel(kind)}
+            </span>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            旧式定型来源（抽取 / 规则 / 常量 / 人工 / LLM 抽取）只读保留以兼容既有模板；新插槽请改用语义化插槽（prompt + 关联本体）。
+          </p>
+          {kind === "extraction" && (slot.source.object_class_iri_contains as string) && (
+            <p className="font-mono text-[11px] text-muted-foreground">
+              本体类 IRI：{slot.source.object_class_iri_contains as string}
+            </p>
           )}
-        </Field>
-      </div>
+        </div>
+      )}
 
       <div className="flex gap-2.5">
         <Field label="必填">

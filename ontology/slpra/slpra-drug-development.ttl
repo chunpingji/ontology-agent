@@ -10,6 +10,7 @@
 @prefix slpra-equip: <https://ontology.pharma-gmp.cn/slpra/equipment/> .
 @prefix slpra-clean: <https://ontology.pharma-gmp.cn/slpra/cleaning/> .
 @prefix slpra-risk:  <https://ontology.pharma-gmp.cn/slpra/risk/> .
+@prefix slpra-facil: <https://ontology.pharma-gmp.cn/slpra/facility/> .
 
 <https://ontology.pharma-gmp.cn/slpra/drug-development/>
     a owl:Ontology ;
@@ -656,10 +657,11 @@ slpra-dev:trialDesign a owl:DatatypeProperty ;
     rdfs:comment "Study design descriptor, e.g. randomized, double-blind, placebo-controlled, multi-center."@en .
 
 slpra-dev:targetIndication a owl:DatatypeProperty ;
-    rdfs:domain slpra-dev:ClinicalTrial ;
+    rdfs:domain [ a owl:Class ; owl:unionOf ( slpra-dev:ClinicalTrial slpra-drug:DrugProduct ) ] ;
     rdfs:range xsd:string ;
     rdfs:label "target indication"@en ;
-    rdfs:label "目标适应症"@zh .
+    rdfs:label "目标适应症"@zh ;
+    rdfs:comment "Intended therapeutic indication. Applies both to a clinical trial and to the drug product / substance itself (e.g. 用于革兰氏阴性菌感染的治疗)."@en .
 
 slpra-dev:subjectPopulation a owl:DatatypeProperty ;
     rdfs:domain slpra-dev:ClinicalTrial ;
@@ -699,6 +701,29 @@ slpra-dev:ctdModuleNumber a owl:DatatypeProperty ;
     rdfs:label "CTD module number"@en ;
     rdfs:label "CTD 模块编号"@zh ;
     rdfs:comment "ICH Common Technical Document module reference, e.g. 2.5, 3.2.S, 5.3.5."@en .
+
+# --- Drug Registration & Development Status (domain: DrugProduct) ---
+
+slpra-dev:registrationCategory a owl:DatatypeProperty ;
+    rdfs:domain slpra-drug:DrugProduct ;
+    rdfs:range xsd:string ;
+    rdfs:label "registration category"@en ;
+    rdfs:label "注册分类"@zh ;
+    rdfs:comment "NMPA registration classification of the drug, e.g. 化学药品3类, 化学药品1类, 治疗用生物制品."@en .
+
+slpra-dev:regulatoryStatus a owl:DatatypeProperty ;
+    rdfs:domain slpra-drug:DrugProduct ;
+    rdfs:range xsd:string ;
+    rdfs:label "regulatory status"@en ;
+    rdfs:label "申报/注册状态"@zh ;
+    rdfs:comment "Current regulatory submission status, e.g. 已申报临床/IND已受理, 已获批临床, 已申报上市/NDA."@en .
+
+slpra-dev:currentDevelopmentStage a owl:ObjectProperty ;
+    rdfs:domain slpra-drug:DrugProduct ;
+    rdfs:range slpra-doc:DevelopmentPhase ;
+    rdfs:label "current development stage"@en ;
+    rdfs:label "当前开发阶段"@zh ;
+    rdfs:comment "Links a drug to the development phase it is currently in, e.g. slpra-doc:Phase_ClinicalI (I期临床阶段)."@en .
 
 # ============================================================
 # 7. Stage → Phase Links (relating sub-stages to DevelopmentPhase individuals)
@@ -959,7 +984,17 @@ slpra-dev:QualityRiskAssessment a owl:Class ;
     rdfs:comment "Assessment of quality risks during manufacturing: impurity carry-over, incomplete reaction, product degradation, contamination."@en .
 
 # ============================================================
-# 10.8 Object Properties — CMC cross-module links
+# 10.8 Clinical Sample Production Plan (⊑ BFO:GDC)
+# ============================================================
+
+slpra-dev:ClinicalSampleProductionPlan a owl:Class ;
+    rdfs:subClassOf obo:BFO_0000031 ;
+    rdfs:label "Clinical Sample Production Plan"@en ;
+    rdfs:label "临床备样生产计划"@zh ;
+    rdfs:comment "The planned production of clinical trial sample batches described in a CMC report: production date, workshop, batch count, purpose, and expected batch size."@en .
+
+# ============================================================
+# 10.9 Object Properties — CMC cross-module links
 # ============================================================
 
 slpra-dev:describes a owl:ObjectProperty ;
@@ -1061,8 +1096,22 @@ slpra-dev:basedOnToxicityProfile a owl:ObjectProperty ;
     rdfs:label "基于毒性特征"@zh ;
     rdfs:comment "Cross-module link from shared-line assessment data to the drug module's toxicity profile. Distinct local name from slpra-drug:hasToxicityProfile (API → ToxicityProfile)."@en .
 
+slpra-dev:hasProductionPlan a owl:ObjectProperty ;
+    rdfs:domain slpra-dev:CMCReport ;
+    rdfs:range slpra-dev:ClinicalSampleProductionPlan ;
+    rdfs:label "has production plan"@en ;
+    rdfs:label "含备样生产计划"@zh ;
+    rdfs:comment "Links a CMC report to the clinical sample production plan it describes."@en .
+
+slpra-dev:producedInArea a owl:ObjectProperty ;
+    rdfs:domain slpra-dev:ClinicalSampleProductionPlan ;
+    rdfs:range slpra-facil:ProductionArea ;
+    rdfs:label "produced in area"@en ;
+    rdfs:label "生产车间"@zh ;
+    rdfs:comment "Links a production plan to the workshop / production area where the batch is produced, e.g. 642/646车间."@en .
+
 # ============================================================
-# 10.9 Data Properties — CMC Report content fields
+# 10.10 Data Properties — CMC Report content fields
 # ============================================================
 
 # --- Synthesis Route / Step ---
@@ -1276,3 +1325,37 @@ slpra-dev:residueSolubilityTemperature a owl:DatatypeProperty ;
     rdfs:range xsd:string ;
     rdfs:label "solubility test temperature"@en ;
     rdfs:label "溶解度测试温度"@zh .
+
+# --- Clinical Sample Production Plan ---
+
+slpra-dev:plannedProductionDate a owl:DatatypeProperty ;
+    rdfs:domain slpra-dev:ClinicalSampleProductionPlan ;
+    rdfs:range xsd:gYearMonth ;
+    rdfs:label "planned production date"@en ;
+    rdfs:label "计划生产时间"@zh ;
+    rdfs:comment "Planned production month, e.g. 2026-02."@en .
+
+slpra-dev:plannedBatchCount a owl:DatatypeProperty ;
+    rdfs:domain slpra-dev:ClinicalSampleProductionPlan ;
+    rdfs:range xsd:integer ;
+    rdfs:label "planned batch count"@en ;
+    rdfs:label "计划生产批次数"@zh .
+
+slpra-dev:productionPurpose a owl:DatatypeProperty ;
+    rdfs:domain slpra-dev:ClinicalSampleProductionPlan ;
+    rdfs:range xsd:string ;
+    rdfs:label "production purpose"@en ;
+    rdfs:label "生产用途"@zh ;
+    rdfs:comment "Intended use of the produced batch, e.g. 临床I期试验."@en .
+
+slpra-dev:plannedBatchSizeMin_kg a owl:DatatypeProperty ;
+    rdfs:domain slpra-dev:ClinicalSampleProductionPlan ;
+    rdfs:range xsd:decimal ;
+    rdfs:label "planned minimum batch size (kg)"@en ;
+    rdfs:label "预计批量下限（kg）"@zh .
+
+slpra-dev:plannedBatchSizeMax_kg a owl:DatatypeProperty ;
+    rdfs:domain slpra-dev:ClinicalSampleProductionPlan ;
+    rdfs:range xsd:decimal ;
+    rdfs:label "planned maximum batch size (kg)"@en ;
+    rdfs:label "预计批量上限（kg）"@zh .

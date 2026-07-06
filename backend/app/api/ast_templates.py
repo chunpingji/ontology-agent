@@ -18,8 +18,12 @@ from app.schemas.extraction import (
     AstTemplateMetaUpdate,
     AstTemplateResponse,
     AstTemplateUpdate,
+    CoverageDocClassesRequest,
+    CoverageDocClassesResponse,
     GenerateSectionPromptRequest,
     GenerateSectionPromptResponse,
+    PreviewSectionNarrativeRequest,
+    PreviewSectionNarrativeResponse,
     SuggestSlotsRequest,
     TemplateMatchResponse,
     TrainingPairResponse,
@@ -549,7 +553,7 @@ def suggest_slots_endpoint(
     if client is None:
         raise HTTPException(503, "本地 LLM 不可用，请检查 local_llm_enabled 和端点配置")
 
-    # Resolve document text + structured content (tiptap) for source_ref anchors.
+    # Resolve document text + structured content (tiptap) as the LLM analysis input.
     # 016 US1: the document entity type grounds ontology coverage — take the explicit
     # request field first, else recover it from the job annotation cache (D10).
     content_json: dict | None = None
@@ -598,6 +602,26 @@ def suggest_slots_endpoint(
     return result
 
 
+@router.post("/coverage-doc-classes", response_model=CoverageDocClassesResponse)
+def coverage_doc_classes(
+    req: CoverageDocClassesRequest,
+    identity: object = Depends(_maintainer),
+    engine: object = Depends(get_ontology_engine),
+):
+    """返回候选文档类型中「已建模可覆盖关系」的子集（016：仅启用已建模类型）。
+
+    作者化 UI 用此结果门控「关联文档类型」下拉——只启用 AI 覆盖分析确能产出边的类型
+    （当前仅 CMCReport；本体补充关系后自动扩大）。判定与 suggester 走同一
+    ``_supplemented_schema_edges``（``coverage_capable``），保证「能选」⇔「能产出覆盖」。
+    只读（Principle II）。前端候选清单为唯一入参，避免前后端类型清单漂移。
+    """
+    from app.services.extraction.slot_suggester import coverage_capable
+
+    return CoverageDocClassesResponse(
+        capable=[iri for iri in req.doc_class_iris if coverage_capable(engine, iri)]
+    )
+
+
 # ── 015 Section 行文 Prompt design assist ──────────────────────────────
 
 
@@ -634,6 +658,70 @@ def generate_section_prompt_endpoint(
     if not prompt:
         raise HTTPException(502, "行文 Prompt 生成失败，请检查本地 LLM 日志")
     return GenerateSectionPromptResponse(prompt=prompt)
+
+
+@router.post(
+    "/preview-section-narrative", response_model=PreviewSectionNarrativeResponse
+)
+def preview_section_narrative_endpoint(
+    req: PreviewSectionNarrativeRequest,
+    identity: object = Depends(_maintainer),
+    db: Session = Depends(get_db),
+):
+    """Preview the prose a section's (possibly-unsaved) 行文 Prompt produces, from a
+    matched document's REAL extracted facts — the same report-time narrative path.
+
+    Design-time AI assist (mirrors suggest-slots / generate-section-prompt gating).
+    Facts come from the job's annotation cache; the deterministic risk levels + the
+    coverage status the real report would quote are recomputed (no LLM) and injected
+    read-only, so preview prose is faithful to the rendered report.
+    """
+    from app.config import settings
+
+    if not settings.llm_suggest_slots_enabled:
+        raise HTTPException(503, "行文预览未启用（llm_suggest_slots_enabled=False）")
+
+    if not req.prompt.strip():
+        raise HTTPException(400, "行文 Prompt 为空，无法预览")
+
+    from app.services.llm.local_client import get_local_llm
+
+    client = get_local_llm()
+    if client is None:
+        raise HTTPException(503, "本地 LLM 不可用，请检查 local_llm_enabled 和端点配置")
+
+    # 真实事实：复用抽取管线的 annotation 缓存（与报告同源）。
+    cache_path = _annotation_cache_path(req.job_id)
+    if not cache_path.exists():
+        raise HTTPException(422, "文档未标注，请先在「源文档」页签关联并标注该文档")
+    result = json.loads(cache_path.read_text(encoding="utf-8"))
+    edges = result.get("relationships", [])
+
+    # 当前编辑的模板 → 本节结构；注入未保存的行文 Prompt。
+    row = db.get(AstTemplate, req.template_id)
+    if row is None:
+        raise HTTPException(404, "模板不存在")
+    template = ReportTemplate.model_validate(row.schema_json)
+    section = next(
+        (s for s in template.sections if s.section_id == req.section_id), None
+    )
+    if section is None:
+        raise HTTPException(404, "分节不存在")
+    section = section.model_copy(update={"prompt": req.prompt})
+
+    # 确定性上下文（无 LLM）：真实报告会原样引用的风险等级 + 覆盖状态。
+    from app.services.reporting.risk_report_generator import RiskReportGenerator
+
+    rows, manifest = RiskReportGenerator(db, template).assess_deterministic(edges)
+
+    from app.services.reporting.narrative_generator import preview_section_narrative
+
+    narrative = preview_section_narrative(
+        edges, section, client, assessment_rows=rows, manifest=manifest
+    )
+    if not narrative:
+        raise HTTPException(502, "行文预览生成失败：本地 LLM 无输出，请检查日志")
+    return PreviewSectionNarrativeResponse(narrative=narrative)
 
 
 # ── Template match (T011) ───────────────────────────────────────────────
