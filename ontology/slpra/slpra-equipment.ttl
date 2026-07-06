@@ -99,6 +99,16 @@ slpra-equip:FillingMachine a owl:Class ;
     rdfs:label "Filling Machine"@en ;
     rdfs:label "灌装机"@zh .
 
+slpra-equip:ChromatographyColumnSystem a owl:Class ;
+    rdfs:subClassOf slpra-equip:ProcessEquipment ;
+    rdfs:label "Chromatography Column System"@en ;
+    rdfs:label "微压柱系统"@zh .
+
+slpra-equip:FilterPress a owl:Class ;
+    rdfs:subClassOf slpra-equip:ProcessEquipment ;
+    rdfs:label "Filter Press"@en ;
+    rdfs:label "压滤器"@zh .
+
 slpra-equip:UtilityEquipment a owl:Class ;
     rdfs:subClassOf slpra-equip:Equipment ;
     rdfs:label "Utility Equipment"@en ;

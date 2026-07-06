@@ -57,10 +57,17 @@ slpra-pers:APIRegistrant a owl:Class ;
     rdfs:label "原料药登记人"@zh ;
     rdfs:comment "CFDI 共线生产指南 §1.3：适用范围明确含原料药登记人。"@zh .
 
+slpra-pers:Department a owl:Class ;
+    rdfs:subClassOf slpra-pers:Organization ;
+    rdfs:label "Department"@en ;
+    rdfs:label "部门"@zh ;
+    rdfs:comment "药品生产企业内部职能部门/业务单元，承担特定 GxP 角色，如质量部、生产部、设备部等。"@zh .
+
 [] a owl:AllDisjointClasses ;
     owl:members ( slpra-pers:MarketingAuthorizationHolder
                   slpra-pers:ContractManufacturer
-                  slpra-pers:APIRegistrant ) .
+                  slpra-pers:APIRegistrant
+                  slpra-pers:Department ) .
 
 # ============================================================
 # Classes — GxP Roles (⊑ BFO role); mirrors slpra-equip:*EquipmentRole.
@@ -197,6 +204,20 @@ slpra-pers:PharmacovigilanceRole a owl:Class ;
     rdfs:label "药物警戒角色"@zh ;
     rdfs:comment "上市后不良反应监测、过敏反应跟踪、客户投诉归类与共线关联分析。依据 §4.1.8（青霉素/β-内酰胺）/ §5.3。"@zh .
 
+slpra-pers:WarehouseManagementRole a owl:Class ;
+    rdfs:subClassOf slpra-pers:FunctionalRole ;
+    skos:notation "wh" ;
+    rdfs:label "Warehouse Management Role"@en ;
+    rdfs:label "仓储管理角色"@zh ;
+    rdfs:comment "原辅料与成品仓储管理，物料收发与台账，防止物料交叉污染与混淆，仓储条件合规管理。共线生产场景下需对共线品种物料实施标识隔离、专区存放等控制措施。"@zh .
+
+slpra-pers:ProductionProcessAssessmentRole a owl:Class ;
+    rdfs:subClassOf slpra-pers:FunctionalRole ;
+    skos:notation "ppa" ;
+    rdfs:label "Production Process Assessment Role"@en ;
+    rdfs:label "生产工艺评估角色"@zh ;
+    rdfs:comment "评估共线生产工艺路线的可行性与交叉污染风险，包括工艺参数、操作步骤、中间体暴露环节、批次切换清场等环节的风险识别与控制措施制定。依据 §3 / §5.1。"@zh .
+
 [] a owl:AllDisjointClasses ;
     owl:members ( slpra-pers:ToxicologyExpertRole
                   slpra-pers:RnDRole
@@ -208,7 +229,9 @@ slpra-pers:PharmacovigilanceRole a owl:Class ;
                   slpra-pers:EquipmentEngineeringRole
                   slpra-pers:HVACEngineeringRole
                   slpra-pers:EHSRole
-                  slpra-pers:PharmacovigilanceRole ) .
+                  slpra-pers:PharmacovigilanceRole
+                  slpra-pers:WarehouseManagementRole
+                  slpra-pers:ProductionProcessAssessmentRole ) .
 
 # ============================================================
 # Object Properties
