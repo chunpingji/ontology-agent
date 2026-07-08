@@ -7,6 +7,7 @@
 @prefix slpra-drug:   <https://ontology.pharma-gmp.cn/slpra/drug/> .
 @prefix slpra-equip:  <https://ontology.pharma-gmp.cn/slpra/equipment/> .
 @prefix slpra-contam: <https://ontology.pharma-gmp.cn/slpra/contamination/> .
+@prefix slpra-pers:   <https://ontology.pharma-gmp.cn/slpra/personnel/> .
 
 <https://ontology.pharma-gmp.cn/slpra/risk/>
     a owl:Ontology ;
@@ -91,8 +92,50 @@ slpra-risk:LowRisk a slpra-risk:RiskLevel ;
 
 slpra-risk:RiskAssessmentReport a owl:Class ;
     rdfs:subClassOf obo:BFO_0000031 ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty slpra-risk:hasAssessmentTeam ;
+        owl:someValuesFrom slpra-risk:AssessmentTeam
+    ] ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty slpra-risk:hasApproverTeam ;
+        owl:someValuesFrom slpra-risk:ApproverTeam
+    ] ;
     rdfs:label "Risk Assessment Report"@en ;
     rdfs:label "风险评估报告"@zh .
+
+slpra-risk:AssessmentTeam a owl:Class ;
+    rdfs:subClassOf slpra-pers:Organization ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty slpra-risk:hasMember ;
+        owl:someValuesFrom slpra-pers:Person
+    ] ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty slpra-risk:includesRole ;
+        owl:someValuesFrom slpra-pers:GxPRole
+    ] ;
+    rdfs:label "Assessment Team"@en ;
+    rdfs:label "评估小组"@zh ;
+    rdfs:comment "风险评估报告的评估小组，由承担特定 GxP 角色的成员组成。"@zh .
+
+slpra-risk:ApproverTeam a owl:Class ;
+    rdfs:subClassOf slpra-pers:Organization ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty slpra-risk:hasMember ;
+        owl:someValuesFrom slpra-pers:Person
+    ] ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty slpra-risk:includesRole ;
+        owl:someValuesFrom slpra-pers:GxPRole
+    ] ;
+    rdfs:label "Approver Team"@en ;
+    rdfs:label "审批人小组"@zh ;
+    rdfs:comment "风险评估报告的审批人小组，由具备审批权限的角色成员组成。"@zh .
 
 # ============================================================
 # Classes — 8 CFDI Shared-Line Scenarios (a–h)
@@ -218,6 +261,30 @@ slpra-risk:assessesProductFor a owl:ObjectProperty ;
     rdfs:domain slpra-risk:CompatibilityAssessment ;
     rdfs:range slpra-drug:DrugProduct ;
     rdfs:label "assesses product for"@en .
+
+slpra-risk:hasAssessmentTeam a owl:ObjectProperty ;
+    rdfs:domain slpra-risk:RiskAssessmentReport ;
+    rdfs:range slpra-risk:AssessmentTeam ;
+    rdfs:label "has assessment team"@en ;
+    rdfs:label "含评估小组"@zh .
+
+slpra-risk:hasApproverTeam a owl:ObjectProperty ;
+    rdfs:domain slpra-risk:RiskAssessmentReport ;
+    rdfs:range slpra-risk:ApproverTeam ;
+    rdfs:label "has approver team"@en ;
+    rdfs:label "含审批人小组"@zh .
+
+slpra-risk:hasMember a owl:ObjectProperty ;
+    rdfs:range slpra-pers:Person ;
+    rdfs:label "has member"@en ;
+    rdfs:label "含成员"@zh ;
+    rdfs:comment "Links a team to its member persons."@en .
+
+slpra-risk:includesRole a owl:ObjectProperty ;
+    rdfs:range slpra-pers:GxPRole ;
+    rdfs:label "includes role"@en ;
+    rdfs:label "含角色"@zh ;
+    rdfs:comment "Links a team to the GxP roles represented by its members."@en .
 
 # ============================================================
 # Data Properties — MACO/PDE Calculation Parameters

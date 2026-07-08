@@ -23,6 +23,7 @@ from app.models.ontology_meta import (
     OntologyRelease,
     OntologyRestriction,
 )
+from app.models.pde_conflict import PdeConflictDecision
 from app.models.reasoning import (
     ActionExecution,
     AuditLog,
@@ -32,6 +33,7 @@ from app.models.reasoning import (
 
 __all__ = [
     "EntityShadow",
+    "PdeConflictDecision",
     "AppRole",
     "AppUser",
     "OntologyClass",

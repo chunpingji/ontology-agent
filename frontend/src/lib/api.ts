@@ -27,9 +27,76 @@ export function setIdentity(identity: Identity): void {
   }
 }
 
+// --- Auth token -------------------------------------------------------------
+// Real authentication: POST /api/auth/login issues a signed bearer token,
+// persisted to localStorage and attached as `Authorization: Bearer` on every
+// request. X-User/X-Role are still sent so a dev gateway (auth_required=false)
+// keeps working; under enforcement the backend resolves identity from the token.
+const TOKEN_KEY = "slpra.token";
+
+export function getToken(): string | null {
+  if (typeof window === "undefined") return null;
+  try {
+    return window.localStorage.getItem(TOKEN_KEY);
+  } catch {
+    return null;
+  }
+}
+
+export function setToken(token: string | null): void {
+  if (typeof window === "undefined") return;
+  if (token) window.localStorage.setItem(TOKEN_KEY, token);
+  else window.localStorage.removeItem(TOKEN_KEY);
+}
+
 function identityHeaders(): Record<string, string> {
   const id = getIdentity();
-  return { "X-User": id.username, "X-Role": id.role };
+  const headers: Record<string, string> = { "X-User": id.username, "X-Role": id.role };
+  const token = getToken();
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+  return headers;
+}
+
+export interface LoginResult {
+  token: string;
+  username: string;
+  role: string;
+  display_name?: string | null;
+}
+
+/** Authenticate; on success persist token + identity, then return the result. */
+export async function login(username: string, password: string): Promise<LoginResult> {
+  // 登录端点开放且仅读 body，不需身份头；显式只带 Content-Type。
+  const loginHeaders = { "Content-Type": "application/json" };
+  const res = await fetch(`${API_BASE}/api/auth/login`, {
+    method: "POST",
+    headers: loginHeaders,
+    body: JSON.stringify({ username, password }),
+  });
+  if (!res.ok) {
+    let detail = "用户名或密码错误";
+    try {
+      const parsed = JSON.parse(await res.text());
+      detail = parsed.detail ?? detail;
+    } catch {
+      /* keep default */
+    }
+    throw new Error(detail);
+  }
+  const result = (await res.json()) as LoginResult;
+  setToken(result.token);
+  setIdentity({ username: result.username, role: result.role });
+  return result;
+}
+
+/** Clear the local session (best-effort server notify; always clears locally). */
+export async function logout(): Promise<void> {
+  try {
+    await fetch(`${API_BASE}/api/auth/logout`, { method: "POST", headers: identityHeaders() });
+  } catch {
+    /* ignore network / expired-token errors — local clear is what matters */
+  }
+  setToken(null);
 }
 
 /** Raised when a write hits an optimistic-concurrency conflict (HTTP 409). */
@@ -54,6 +121,15 @@ async function fetchAPI<T>(path: string, options?: RequestInit): Promise<T> {
   });
   if (!res.ok) {
     const body = await res.text();
+    if (res.status === 401) {
+      // 令牌失效/缺失：清本地会话并跳登录（登录页自身不跳，防循环）。
+      setToken(null);
+      if (typeof window !== "undefined" && window.location.pathname !== "/login") {
+        const next = encodeURIComponent(window.location.pathname + window.location.search);
+        window.location.replace(`/login?next=${next}`);
+      }
+      throw new Error("未认证：请重新登录");
+    }
     if (res.status === 409) {
       let current: number | null = null;
       let message = body;
@@ -732,6 +808,30 @@ export const listDocuments = (developmentPhaseIri?: string, pageSize = 100) => {
   if (developmentPhaseIri) params.development_phase = developmentPhaseIri;
   return searchEntities(params);
 };
+export const deleteDocument = (iri: string) =>
+  fetchAPI<void>(`/api/entities/${encodeURIComponent(iri)}`, { method: "DELETE" });
+
+/** 上传文档 → 抽取任务 id 的候选键（`submitUpload` 落 `job_id`；兼容历史别名）。 */
+const DOCUMENT_JOB_KEYS = [
+  "job_id", "jobId", "source_job_id", "extraction_job_id", "hasJob", "sourceJob",
+] as const;
+
+/**
+ * 解析某研发文档个体关联的抽取任务 id（上传时 `submitUpload` 落入
+ * `properties_json.job_id`）。用于「文档 → 生成风险评估报告 / 在线预览」等按 jobId
+ * 取数的场景。取不到（文档未走标注管线，或字段缺失）时返回 null，调用方据此优雅降级。
+ */
+export async function resolveDocumentJobId(iri: string): Promise<string | null> {
+  if (!iri) return null;
+  const docs = await listDocuments();
+  const shadow = docs.items.find((d) => d.iri === iri);
+  const props = shadow?.properties_json ?? {};
+  for (const key of DOCUMENT_JOB_KEYS) {
+    const value = props[key];
+    if (typeof value === "string" && value) return value;
+  }
+  return null;
+}
 
 /** 列出"抽取自"某文档的派生实体（extractedFrom 回链；客户端过滤，复用 /api/entities）。 */
 export const listExtractedFrom = async (docIri: string, pageSize = 200): Promise<EntityShadow[]> => {
@@ -869,8 +969,11 @@ export function subscribeJobProgress(
   jobId: string, onEvent: (e: JobProgressEvent) => void,
 ): () => void {
   const id = getIdentity();
-  // EventSource cannot set headers; pass identity as query for the dev gateway.
-  const url = `${API_BASE}/api/extraction/jobs/${jobId}/progress?x_user=${id.username}&x_role=${id.role}`;
+  // EventSource cannot set headers; pass identity + token as query. 强制态下
+  // 后端 get_current_user_sse 认 ?token=；未强制时 x_user/x_role 走网关路径。
+  const token = getToken();
+  const tokenQs = token ? `&token=${encodeURIComponent(token)}` : "";
+  const url = `${API_BASE}/api/extraction/jobs/${jobId}/progress?x_user=${id.username}&x_role=${id.role}${tokenQs}`;
   const es = new EventSource(url);
   es.onmessage = (ev) => {
     try { onEvent(JSON.parse(ev.data) as JobProgressEvent); } catch { /* ignore */ }
@@ -1518,6 +1621,24 @@ export interface RelationDataProperty {
   value: string;
 }
 
+// CMCReport 共线评估端点上的「推导 PDE vs 原文 PDE」冲突（确定性推导管线产出，供人工裁决）。
+export interface PdeConflict {
+  conflict_key: string;
+  asserted: { pde_mg_day: number; pde_ug_day: number; band: number };
+  derived: {
+    band: number;
+    band_point: number | null;
+    pde_ug_day: number | null;
+    oel_ug_m3: number | null;
+    provisional: boolean;
+    input_source: string;
+    // 可复现审计记录（method/formula/inputs/factors/intermediate/bands/provisional）。
+    provenance: Record<string, unknown>;
+  };
+  delta_bands: number;
+  summary: string;
+}
+
 // 子关系（如 合成路线→包含步骤→使用设备/产出中间体），``sub_relationships`` 递归。
 export interface SubRelationship {
   predicate_iri: string;
@@ -1529,6 +1650,8 @@ export interface SubRelationship {
   object_data_properties: RelationDataProperty[];
   sub_relationships: SubRelationship[];
   source_ref: string | null;
+  // 仅 CMCReport 共线评估端点可能携带；命中「推导 vs 原文」PDE 冲突时下发（人工裁决）。
+  conflict?: PdeConflict | null;
 }
 
 // 顶层对象属性边（主语为文档分类类，如 CMCReport ─describes→ DrugProduct）。
@@ -1547,8 +1670,36 @@ export interface AnnotatedDocument {
   doc_class?: DocClassification | null;
   relationships?: Relationship[];
 }
-export const getAnnotatedDocument = (jobId: string) =>
-  fetchAPI<AnnotatedDocument>(`/api/extraction/jobs/${jobId}/annotated-document`);
+export const getAnnotatedDocument = (jobId: string, refresh = false) =>
+  fetchAPI<AnnotatedDocument>(
+    `/api/extraction/jobs/${jobId}/annotated-document${refresh ? "?refresh=1" : ""}`,
+  );
+
+// CMCReport PDE 冲突的人工决策：采纳推导 / 采纳原文 / 待复核。以 (job_id, conflict_key) 唯一，
+// version 乐观并发（写入用 expected_version，冲突 → 409 VersionConflictError）。
+export type PdeDecisionChoice = "derived" | "asserted" | "pending";
+
+export interface PdeConflictDecision {
+  job_id: string;
+  conflict_key: string;
+  chosen: PdeDecisionChoice;
+  note: string;
+  actor: string;
+  version: number;
+  decided_at: string | null;
+}
+
+export const getPdeConflictDecision = (jobId: string) =>
+  fetchAPI<PdeConflictDecision>(`/api/extraction/jobs/${jobId}/pde-conflict/decision`);
+
+export const decidePdeConflict = (
+  jobId: string,
+  body: { chosen: PdeDecisionChoice; note?: string; expected_version: number },
+) =>
+  fetchAPI<PdeConflictDecision>(`/api/extraction/jobs/${jobId}/pde-conflict/decision`, {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
 
 export async function generateRiskReport(
   jobId: string,
@@ -1645,6 +1796,8 @@ export interface GeneratedReportDTO {
 
 export const listReports = (jobId: string) =>
   fetchAPI<GeneratedReportDTO[]>(`/api/extraction/jobs/${jobId}/reports`);
+export const deleteReport = (jobId: string, reportId: string) =>
+  fetchAPI<void>(`/api/extraction/jobs/${jobId}/reports/${reportId}`, { method: "DELETE" });
 
 export async function dismissSlot(jobId: string, slotId: string): Promise<ASTCoverageDTO> {
   return fetchAPI<ASTCoverageDTO>(`/api/extraction/jobs/${jobId}/ast-coverage/dismiss`, {
@@ -1660,9 +1813,10 @@ export async function undismissSlot(jobId: string, slotId: string): Promise<ASTC
 }
 
 export async function downloadReport(jobId: string, reportId: string): Promise<Blob> {
-  const res = await fetch(`${API_BASE}/api/extraction/jobs/${jobId}/risk-report`, {
-    headers: identityHeaders(),
-  });
+  const res = await fetch(
+    `${API_BASE}/api/extraction/jobs/${jobId}/reports/${reportId}/download`,
+    { headers: identityHeaders() },
+  );
   if (!res.ok) throw new Error(`API ${res.status}: ${await res.text()}`);
   return res.blob();
 }
@@ -1732,7 +1886,8 @@ export interface AstTemplateDTO {
   is_default: boolean;
   created_by: string | null;
   owner: string | null; // 015 责任人（业务负责人，区别于 created_by 创建者）
-  default_source_filename: string | null; // 015 默认源文件原名（未上传为 null）
+  default_source_filename: string | null;
+  default_source_job_id: string | null;
   created_at: string;
   updated_at: string | null;
 }
@@ -2039,6 +2194,39 @@ export async function downloadReportById(
   return res.blob();
 }
 
+/**
+ * 通过（后端按文档类别解析的）模板生成风险评估报告，返回 .docx blob。
+ *
+ * 统一封装同步与异步两条后端路径，屏蔽差异供调用方只拿最终 blob：
+ *   · LLM 增强关闭：`POST /risk-report` 直接回 docx（Blob），原样返回；
+ *   · LLM 增强开启：先回 `{report_id}`，此处轮询 `pollReportStatus` 至 completed
+ *     后再 `downloadReportById` 取件。
+ * 生成失败 / 轮询超时抛错，交由调用方提示。两条路径最终都走 `render_risk_report`
+ * 的模板分节渲染（resolve_template → RiskReportGenerator(template=…)）。
+ */
+export async function generateRiskReportBlob(
+  jobId: string,
+  opts?: { pollIntervalMs?: number; maxAttempts?: number },
+): Promise<Blob> {
+  const response = await generateRiskReport(jobId);
+  if (response instanceof Blob) return response;
+
+  const reportId = response.report_id;
+  const interval = opts?.pollIntervalMs ?? 2000;
+  const maxAttempts = opts?.maxAttempts ?? 60;
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    await new Promise((resolve) => setTimeout(resolve, interval));
+    const status = await pollReportStatus(jobId, reportId);
+    if (status.report_status === "completed") {
+      return downloadReportById(jobId, reportId);
+    }
+    if (status.report_status === "failed") {
+      throw new Error(status.report_error || "报告生成失败");
+    }
+  }
+  throw new Error("报告生成超时，请稍后重试");
+}
+
 // ===========================================================================
 // 015 read-only UI composition helpers (NO new endpoint — FR-027).
 // Each helper is a pure projection over the existing API surface, consumed by
@@ -2159,15 +2347,15 @@ export const APPROVAL_CATEGORIES = [
 const MOCK_APPROVAL_TASKS: ApprovalTask[] = [
   {
     id: "APR-2026-0618",
-    title: "化合物 XR-7742 毒理学报告审批",
-    referenceNo: "APR-2026-0618",
+    title: "原料药 HRS-5678 临床备样生产信息-风险评估",
+    referenceNo: "QS-A-020F05-001",
     category: "临床前研究审批",
     type: "非临床安全性评价",
     urgency: "high",
     submitter: "李婷",
     submittedAt: "2026-07-03T08:24:00",
     submittedLabel: "2 小时前提交",
-    entityName: "化合物 XR-7742 (ActiveIngredient)",
+    entityName: "化合物 HRS-5678 (ActiveIngredient)",
     entityType: "ActiveIngredient",
     phase: "临床前研究 — 毒理学评价",
     status: "pending",
@@ -2175,7 +2363,7 @@ const MOCK_APPROVAL_TASKS: ApprovalTask[] = [
     risk_level: "Band 5",
     execution_type: "非临床安全性评价",
     documents: [
-      { name: "XR-7742 28天重复给药毒性试验报告.pdf", format: "PDF" },
+      { name: "原料药 HRS-5678 临床备样生产信息.docx", format: "DOCX" },
       { name: "遗传毒性试验总结报告.docx", format: "DOCX" },
       { name: "安全药理学评价数据.xlsx", format: "XLSX" },
     ],
@@ -2420,4 +2608,260 @@ export async function listReportCenterItems(
     jobsScanned,
     totalJobs,
   };
+}
+
+// ---------------------------------------------------------------------------
+// Mock 外部事实源数据
+// ---------------------------------------------------------------------------
+
+export interface MockDepartment {
+  id?: string;
+  code: string;
+  iri: string;
+  label: string;
+  description: string;
+  data_properties: Array<{ iri: string | null; label: string; value: string }>;
+}
+
+export interface MockRole {
+  id?: string;
+  code: string;
+  iri: string;
+  label: string;
+  role_class_iri: string;
+  description: string;
+  data_properties: Array<{ iri: string | null; label: string; value: string }>;
+}
+
+export interface MockEquipment {
+  id?: string;
+  equipment_id: string;
+  iri: string;
+  label: string;
+  equipment_class_iri: string;
+  workshop_code: string;
+  data_properties: Array<{ iri: string | null; label: string; value: string }>;
+}
+
+export interface MockProductionArea {
+  id?: string;
+  code: string;
+  iri: string;
+  label: string;
+  description: string;
+  data_properties: Array<{ iri: string | null; label: string; value: string }>;
+}
+
+export interface MockTeamMember {
+  id?: string;
+  team_type?: string;
+  name: string;
+  role_label: string;
+  department: string;
+  role_class_iri: string;
+  role_code: string;
+}
+
+export async function listMockDepartments(): Promise<MockDepartment[]> {
+  const r = await fetch(`${API_BASE}/api/mock-sources/departments`, { headers: identityHeaders() });
+  if (!r.ok) throw new Error(await r.text());
+  return r.json();
+}
+
+export async function createMockDepartment(dept: MockDepartment): Promise<{ id: string }> {
+  const r = await fetch(`${API_BASE}/api/mock-sources/departments`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...identityHeaders() },
+    body: JSON.stringify(dept),
+  });
+  if (!r.ok) throw new Error(await r.text());
+  return r.json();
+}
+
+export async function updateMockDepartment(id: string, dept: MockDepartment): Promise<{ id: string }> {
+  const r = await fetch(`${API_BASE}/api/mock-sources/departments/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json", ...identityHeaders() },
+    body: JSON.stringify(dept),
+  });
+  if (!r.ok) throw new Error(await r.text());
+  return r.json();
+}
+
+export async function deleteMockDepartment(id: string): Promise<void> {
+  const r = await fetch(`${API_BASE}/api/mock-sources/departments/${id}`, {
+    method: "DELETE",
+    headers: identityHeaders(),
+  });
+  if (!r.ok) throw new Error(await r.text());
+}
+
+export async function listMockRoles(): Promise<MockRole[]> {
+  const r = await fetch(`${API_BASE}/api/mock-sources/roles`, { headers: identityHeaders() });
+  if (!r.ok) throw new Error(await r.text());
+  return r.json();
+}
+
+export async function createMockRole(role: MockRole): Promise<{ id: string }> {
+  const r = await fetch(`${API_BASE}/api/mock-sources/roles`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...identityHeaders() },
+    body: JSON.stringify(role),
+  });
+  if (!r.ok) throw new Error(await r.text());
+  return r.json();
+}
+
+export async function updateMockRole(id: string, role: MockRole): Promise<{ id: string }> {
+  const r = await fetch(`${API_BASE}/api/mock-sources/roles/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json", ...identityHeaders() },
+    body: JSON.stringify(role),
+  });
+  if (!r.ok) throw new Error(await r.text());
+  return r.json();
+}
+
+export async function deleteMockRole(id: string): Promise<void> {
+  const r = await fetch(`${API_BASE}/api/mock-sources/roles/${id}`, {
+    method: "DELETE",
+    headers: identityHeaders(),
+  });
+  if (!r.ok) throw new Error(await r.text());
+}
+
+export async function listMockEquipment(): Promise<MockEquipment[]> {
+  const r = await fetch(`${API_BASE}/api/mock-sources/equipment`, { headers: identityHeaders() });
+  if (!r.ok) throw new Error(await r.text());
+  return r.json();
+}
+
+export async function createMockEquipment(equip: MockEquipment): Promise<{ id: string }> {
+  const r = await fetch(`${API_BASE}/api/mock-sources/equipment`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...identityHeaders() },
+    body: JSON.stringify(equip),
+  });
+  if (!r.ok) throw new Error(await r.text());
+  return r.json();
+}
+
+export async function updateMockEquipment(id: string, equip: MockEquipment): Promise<{ id: string }> {
+  const r = await fetch(`${API_BASE}/api/mock-sources/equipment/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json", ...identityHeaders() },
+    body: JSON.stringify(equip),
+  });
+  if (!r.ok) throw new Error(await r.text());
+  return r.json();
+}
+
+export async function deleteMockEquipment(id: string): Promise<void> {
+  const r = await fetch(`${API_BASE}/api/mock-sources/equipment/${id}`, {
+    method: "DELETE",
+    headers: identityHeaders(),
+  });
+  if (!r.ok) throw new Error(await r.text());
+}
+
+export async function listMockProductionAreas(): Promise<MockProductionArea[]> {
+  const r = await fetch(`${API_BASE}/api/mock-sources/production-areas`, { headers: identityHeaders() });
+  if (!r.ok) throw new Error(await r.text());
+  return r.json();
+}
+
+export async function createMockProductionArea(area: MockProductionArea): Promise<{ id: string }> {
+  const r = await fetch(`${API_BASE}/api/mock-sources/production-areas`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...identityHeaders() },
+    body: JSON.stringify(area),
+  });
+  if (!r.ok) throw new Error(await r.text());
+  return r.json();
+}
+
+export async function updateMockProductionArea(id: string, area: MockProductionArea): Promise<{ id: string }> {
+  const r = await fetch(`${API_BASE}/api/mock-sources/production-areas/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json", ...identityHeaders() },
+    body: JSON.stringify(area),
+  });
+  if (!r.ok) throw new Error(await r.text());
+  return r.json();
+}
+
+export async function deleteMockProductionArea(id: string): Promise<void> {
+  const r = await fetch(`${API_BASE}/api/mock-sources/production-areas/${id}`, {
+    method: "DELETE",
+    headers: identityHeaders(),
+  });
+  if (!r.ok) throw new Error(await r.text());
+}
+
+export async function listMockAssessmentTeam(): Promise<MockTeamMember[]> {
+  const r = await fetch(`${API_BASE}/api/mock-sources/assessment-team`, { headers: identityHeaders() });
+  if (!r.ok) throw new Error(await r.text());
+  return r.json();
+}
+
+export async function createMockAssessmentTeamMember(member: MockTeamMember): Promise<{ id: string }> {
+  const r = await fetch(`${API_BASE}/api/mock-sources/assessment-team`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...identityHeaders() },
+    body: JSON.stringify({ ...member, team_type: "assessment" }),
+  });
+  if (!r.ok) throw new Error(await r.text());
+  return r.json();
+}
+
+export async function updateMockAssessmentTeamMember(id: string, member: MockTeamMember): Promise<{ id: string }> {
+  const r = await fetch(`${API_BASE}/api/mock-sources/assessment-team/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json", ...identityHeaders() },
+    body: JSON.stringify({ ...member, team_type: "assessment" }),
+  });
+  if (!r.ok) throw new Error(await r.text());
+  return r.json();
+}
+
+export async function deleteMockAssessmentTeamMember(id: string): Promise<void> {
+  const r = await fetch(`${API_BASE}/api/mock-sources/assessment-team/${id}`, {
+    method: "DELETE",
+    headers: identityHeaders(),
+  });
+  if (!r.ok) throw new Error(await r.text());
+}
+
+export async function listMockApproverTeam(): Promise<MockTeamMember[]> {
+  const r = await fetch(`${API_BASE}/api/mock-sources/approver-team`, { headers: identityHeaders() });
+  if (!r.ok) throw new Error(await r.text());
+  return r.json();
+}
+
+export async function createMockApproverTeamMember(member: MockTeamMember): Promise<{ id: string }> {
+  const r = await fetch(`${API_BASE}/api/mock-sources/approver-team`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...identityHeaders() },
+    body: JSON.stringify({ ...member, team_type: "approver" }),
+  });
+  if (!r.ok) throw new Error(await r.text());
+  return r.json();
+}
+
+export async function updateMockApproverTeamMember(id: string, member: MockTeamMember): Promise<{ id: string }> {
+  const r = await fetch(`${API_BASE}/api/mock-sources/approver-team/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json", ...identityHeaders() },
+    body: JSON.stringify({ ...member, team_type: "approver" }),
+  });
+  if (!r.ok) throw new Error(await r.text());
+  return r.json();
+}
+
+export async function deleteMockApproverTeamMember(id: string): Promise<void> {
+  const r = await fetch(`${API_BASE}/api/mock-sources/approver-team/${id}`, {
+    method: "DELETE",
+    headers: identityHeaders(),
+  });
+  if (!r.ok) throw new Error(await r.text());
 }

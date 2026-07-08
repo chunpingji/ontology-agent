@@ -36,8 +36,8 @@ export default function EditTemplatePage() {
   async function handleSave(updated: Record<string, unknown>) {
     setSaving(true);
     try {
-      await updateAstTemplate(templateId, { schema_json: updated });
-      router.push("/settings/ast-templates");
+      const result = await updateAstTemplate(templateId, { schema_json: updated });
+      router.push(`/settings/ast-templates/${result.id}`);
     } catch (e) {
       alert(e instanceof Error ? e.message : "保存失败");
     } finally {
@@ -118,6 +118,7 @@ export default function EditTemplatePage() {
               owner: tpl.owner,
               updatedAt: tpl.updated_at,
               defaultSourceFilename: tpl.default_source_filename,
+              defaultSourceJobId: tpl.default_source_job_id,
               sampleConfigured: tpl.sample_content_json != null,
             }}
             versions={tpl.versions ?? []}

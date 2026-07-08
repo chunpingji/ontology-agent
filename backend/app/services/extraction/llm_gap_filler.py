@@ -155,6 +155,8 @@ def fill_coverage_gaps(
             "max_tokens": settings.local_llm_max_tokens,
             "temperature": settings.local_llm_temperature,
             "response_format": _build_response_format(),
+            # 关闭 Qwen3 thinking，避免正文前的长推理块拖慢补抽（见 chat_with_schema）。
+            "extra_body": {"chat_template_kwargs": {"enable_thinking": False}},
         }
         try:
             response = client.chat.completions.create(**kwargs)

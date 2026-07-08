@@ -12,7 +12,7 @@ import "./globals.css";
 import { Providers } from "./providers";
 
 export const metadata: Metadata = {
-  title: "SLPRA Platform — 临床药物智能辅助生产平台",
+  title: "SLPRA Platform — 临床药物智能文档评审平台",
   description: "Clinical Drug Intelligent Assisted Production Platform",
 };
 

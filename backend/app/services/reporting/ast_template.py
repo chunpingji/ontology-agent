@@ -327,6 +327,21 @@ def load_default_template() -> ReportTemplate:
 # --------------------------------------------------------------------------- #
 
 
+def _latest_version_key(row) -> tuple:
+    """Sort key selecting the LATEST authored version within a template family.
+
+    A template family shares one ``iri_pattern`` (e.g. 风险评估文档 v1…v4); report
+    generation must use the version the author is currently editing — the newest —
+    not an arbitrary row. ``version`` is a free string (e.g. ``"v4"``); we parse its
+    trailing integer (``"v10" > "v9"``, unlike a lexical compare), then break ties by
+    ``created_at`` so the result is deterministic even for equal/blank versions."""
+    import re
+
+    digits = re.findall(r"\d+", getattr(row, "version", "") or "")
+    num = int(digits[-1]) if digits else 0
+    return (num, row.created_at)
+
+
 def resolve_template(
     doc_class_iri: str | None,
     db: "Session",
@@ -337,26 +352,37 @@ def resolve_template(
     is one of ``"iri_pattern"``, ``"default"``, or ``"fallback"``.
 
     1. **iri_pattern** — a non-archived ``AstTemplate`` whose ``iri_pattern``
-       appears in *doc_class_iri*; the **longest** (most specific) match wins.
-       This is the functional resolution key (015; replaces DocumentTypeMapping).
+       appears in *doc_class_iri*; the **longest** (most specific) pattern wins, and
+       within that most-specific family the **latest authored version** wins (the
+       version the frontend is editing). This is the functional resolution key
+       (015; replaces DocumentTypeMapping).
     2. **default** — the ``AstTemplate`` row with ``is_default=True``.
     3. **fallback** — the filesystem JSON via ``load_default_template()``.
     """
     from app.models.extraction import AstTemplate
 
-    # Tier 1: per-template iri_pattern substring match (longest pattern wins,
-    # archived templates excluded).
+    # Tier 1: per-template iri_pattern substring match. Most-specific pattern
+    # (longest) first, then latest version within that family. ``order_by`` makes
+    # the candidate stream deterministic (defense in depth); the explicit version
+    # key is what actually decides ties — a bare ``max`` over equal-length patterns
+    # would otherwise return whichever row the engine happened to yield first.
     if doc_class_iri:
         candidates = (
             db.query(AstTemplate)
             .filter(AstTemplate.iri_pattern.isnot(None), AstTemplate.status != "archived")
+            .order_by(AstTemplate.created_at.desc())
             .all()
         )
         matches = [t for t in candidates if t.iri_pattern and t.iri_pattern in doc_class_iri]
         if matches:
-            best = max(matches, key=lambda t: len(t.iri_pattern or ""))
+            longest = max(len(t.iri_pattern or "") for t in matches)
+            specific = [t for t in matches if len(t.iri_pattern or "") == longest]
+            best = max(specific, key=_latest_version_key)
             tpl = ReportTemplate.model_validate(best.schema_json)
-            logger.debug("resolve_template: iri_pattern %s → %s", best.iri_pattern, best.name)
+            logger.debug(
+                "resolve_template: iri_pattern %s → %s (%s)",
+                best.iri_pattern, best.name, getattr(best, "version", "?"),
+            )
             return tpl, "iri_pattern", best.id
 
     # Tier 2: DB default template

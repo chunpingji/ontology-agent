@@ -177,6 +177,7 @@ class AstTemplateResponse(BaseModel):
     created_by: str | None = None
     owner: str | None = None
     default_source_filename: str | None = None
+    default_source_job_id: UUID | None = None
     created_at: datetime
     updated_at: datetime | None = None
 

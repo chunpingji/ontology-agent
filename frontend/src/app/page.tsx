@@ -13,7 +13,7 @@ const NAV_ITEMS = [
 export default function HomePage() {
   return (
     <main className="mx-auto max-w-5xl px-6 py-16">
-      <h1 className="mb-2 text-3xl font-bold">临床药物智能辅助生产平台</h1>
+      <h1 className="mb-2 text-3xl font-bold">临床药物智能文档评审平台</h1>
       <p className="mb-10 text-muted-foreground">
         SLPRA — Shared-Line Production Risk Assessment Platform
       </p>

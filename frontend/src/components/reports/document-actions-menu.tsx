@@ -1,7 +1,15 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ChevronDown, ClipboardCheck, ShieldCheck, Sparkles } from "lucide-react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  ChevronDown,
+  ClipboardCheck,
+  Loader2,
+  ShieldCheck,
+  Sparkles,
+  TriangleAlert,
+} from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -10,29 +18,31 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { saveBlob } from "@/components/reports/reading-pane";
+import {
+  generateRiskReportBlob,
+  resolveDocumentJobId,
+  type ReportOrDocument,
+} from "@/lib/api";
 import { cn } from "@/lib/utils";
 
 /**
  * 文档预览页「操作」弹出菜单（报告中心详情页 · 右上角，紧邻分享按钮）。
  *
  * 三项 AI / 合规操作，按设计稿还原：
- *   · AI 分析——智能提取文档关键信息（拟接 rerunAnnotation：重跑标注、再次处理文档）
- *   · 生成风险评估报告——基于本体评估潜在风险（拟接 generateRiskReport）
- *   · 审计——合规性审查与追踪（拟接合规审计链）
+ *   · AI 分析——智能提取文档关键信息（占位：拟接 rerunAnnotation）
+ *   · 生成风险评估报告——**已接线**「通过模板生成报告」：解析文档关联的抽取 jobId →
+ *     `generateRiskReportBlob`（后端按文档类别 resolve_template → 模板分节渲染，
+ *     屏蔽同步/异步两条路径）→ 下载 .docx。
+ *   · 审计——合规性审查与追踪（占位：拟接合规审计链）
  *
- * 本迭代三项均为**占位**：点击给出「即将上线」轻提示，后端接入留待后续。届时只需把各项
- * onSelect 换成对应调用（jobId 可由 resolveDocumentContent 一并回传），菜单结构不变。
+ * AI 分析 / 审计仍为占位：点击给出「即将上线」轻提示，后端接入留待后续。
  */
+const RISK_KEY = "risk";
+
 const ACTIONS = [
   {
-    key: "ai",
-    label: "AI 分析",
-    desc: "智能提取文档关键信息",
-    Icon: Sparkles,
-    tint: "bg-primary/10 text-primary",
-  },
-  {
-    key: "risk",
+    key: RISK_KEY,
     label: "生成风险评估报告",
     desc: "基于本体评估潜在风险",
     Icon: ShieldCheck,
@@ -47,60 +57,137 @@ const ACTIONS = [
   },
 ] as const;
 
-export function DocumentActionsMenu() {
-  // 占位反馈：点击某项后短暂展示「即将上线」提示（暂无全局 toast 系统，自管理瞬时通知）。
-  // 每次点击生成新对象 → effect 依赖变化 → 重置 2.5s 计时器（连点同一项也能续期）。
-  const [coming, setComing] = useState<{ label: string } | null>(null);
+type Notice = { tone: "info" | "success" | "error"; text: string };
+
+const TONE_STYLES: Record<Notice["tone"], { className: string; Icon: typeof Sparkles }> = {
+  info: { className: "text-popover-foreground", Icon: Sparkles },
+  success: { className: "text-emerald-600 dark:text-emerald-500", Icon: ShieldCheck },
+  error: { className: "text-destructive", Icon: TriangleAlert },
+};
+
+/** 把 `fetchAPI` 抛出的 `API 4xx: {"detail":"…"}` 提炼成可读的中文提示。 */
+function friendlyError(error: unknown): string {
+  const message = error instanceof Error ? error.message : String(error);
+  const match = message.match(/API \d+:\s*([\s\S]*)$/);
+  if (match) {
+    try {
+      const body = JSON.parse(match[1]);
+      if (body && typeof body.detail === "string") return body.detail;
+    } catch {
+      /* 非 JSON 响应体——回退到原始文本 */
+    }
+  }
+  return message;
+}
+
+export function DocumentActionsMenu({ item }: { item: ReportOrDocument }) {
+  const queryClient = useQueryClient();
+  // 瞬时提示（info/success/error）：自动消隐。生成过程的「生成中」态由 mutation 的
+  // pending 独立驱动（常驻至落定），二者互斥渲染。
+  const [notice, setNotice] = useState<Notice | null>(null);
 
   useEffect(() => {
-    if (!coming) return;
-    const timer = setTimeout(() => setComing(null), 2500);
+    if (!notice) return;
+    const timer = setTimeout(() => setNotice(null), notice.tone === "error" ? 4000 : 2500);
     return () => clearTimeout(timer);
-  }, [coming]);
+  }, [notice]);
+
+  const generate = useMutation({
+    mutationFn: async () => {
+      const iri = item.kind === "uploaded-document" ? item.iri : undefined;
+      if (!iri) throw new Error("仅支持对上传文档生成风险评估报告");
+      const jobId = await resolveDocumentJobId(iri);
+      if (!jobId) throw new Error("该文档未关联抽取任务，无法生成报告");
+      const blob = await generateRiskReportBlob(jobId);
+      const base = (item.title || "report").replace(/\.docx$/i, "");
+      saveBlob(blob, `风险评估表_${base}.docx`);
+    },
+    onSuccess: () => {
+      setNotice({ tone: "success", text: "风险评估报告已生成并下载" });
+      // 新报告随后出现在报告中心列表——失效缓存，返回列表时自动刷新出来。
+      queryClient.invalidateQueries({ queryKey: ["report-center"] });
+    },
+    onError: (error) => setNotice({ tone: "error", text: friendlyError(error) }),
+  });
+
+  const busy = generate.isPending;
+
+  const handleSelect = (key: string, label: string) => {
+    if (key === RISK_KEY) {
+      if (!busy) generate.mutate();
+      return;
+    }
+    setNotice({ tone: "info", text: `「${label}」功能即将上线` });
+  };
 
   return (
     <>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button>
-            <Sparkles />
+          <Button disabled={busy}>
+            {busy ? <Loader2 className="animate-spin" /> : <Sparkles />}
             操作
             <ChevronDown />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-64">
-          {ACTIONS.map(({ key, label, desc, Icon, tint }) => (
-            <DropdownMenuItem
-              key={key}
-              className="items-start gap-3 py-2.5"
-              onSelect={() => setComing({ label })}
-            >
-              <span
-                className={cn(
-                  "mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-md [&_svg]:size-4",
-                  tint,
-                )}
+          {ACTIONS.map(({ key, label, desc, Icon, tint }) => {
+            const isRisk = key === RISK_KEY;
+            const rowBusy = isRisk && busy;
+            return (
+              <DropdownMenuItem
+                key={key}
+                className="items-start gap-3 py-2.5"
+                disabled={rowBusy}
+                // 保持菜单在生成期间不因选中而关闭，让「生成中」态可见于按钮。
+                onSelect={(event) => {
+                  if (rowBusy) event.preventDefault();
+                  handleSelect(key, label);
+                }}
               >
-                <Icon />
-              </span>
-              <div className="min-w-0 space-y-0.5">
-                <p className="text-sm font-medium leading-none text-foreground">{label}</p>
-                <p className="text-xs leading-snug text-muted-foreground">{desc}</p>
-              </div>
-            </DropdownMenuItem>
-          ))}
+                <span
+                  className={cn(
+                    "mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-md [&_svg]:size-4",
+                    tint,
+                  )}
+                >
+                  {rowBusy ? <Loader2 className="animate-spin" /> : <Icon />}
+                </span>
+                <div className="min-w-0 space-y-0.5">
+                  <p className="text-sm font-medium leading-none text-foreground">{label}</p>
+                  <p className="text-xs leading-snug text-muted-foreground">
+                    {rowBusy ? "正在生成，请稍候…" : desc}
+                  </p>
+                </div>
+              </DropdownMenuItem>
+            );
+          })}
         </DropdownMenuContent>
       </DropdownMenu>
 
-      {coming && (
+      {busy ? (
         <div
           role="status"
           className="fixed bottom-6 right-6 z-50 flex items-center gap-2 rounded-md border border-border bg-popover px-4 py-2.5 text-sm text-popover-foreground shadow-lg"
         >
-          <Sparkles className="size-4 text-primary" />
-          <span>「{coming.label}」功能即将上线</span>
+          <Loader2 className="size-4 animate-spin text-primary" />
+          <span>正在通过模板生成风险评估报告…</span>
         </div>
-      )}
+      ) : notice ? (
+        <div
+          role="status"
+          className={cn(
+            "fixed bottom-6 right-6 z-50 flex max-w-sm items-center gap-2 rounded-md border border-border bg-popover px-4 py-2.5 text-sm shadow-lg",
+            TONE_STYLES[notice.tone].className,
+          )}
+        >
+          {(() => {
+            const Icon = TONE_STYLES[notice.tone].Icon;
+            return <Icon className="size-4 shrink-0" />;
+          })()}
+          <span>{notice.text}</span>
+        </div>
+      ) : null}
     </>
   );
 }

@@ -110,6 +110,7 @@ class GeneratedReport(Base):
     # also surfaced in the report reading pane). Shape:
     #   {subject_description?, conclusion?, sections: [{section_id, title, text}]}
     narratives: Mapped[dict | None] = mapped_column(JSON)
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
     job: Mapped[ExtractionJob] = relationship()
 
@@ -140,6 +141,9 @@ class AstTemplate(Base):
     owner: Mapped[str | None] = mapped_column(String(100))
     default_source_path: Mapped[str | None] = mapped_column(String(500))
     default_source_filename: Mapped[str | None] = mapped_column(String(500))
+    default_source_job_id: Mapped[uuid.UUID | None] = mapped_column(
+        GUID(), ForeignKey("extraction_jobs.id", ondelete="SET NULL"),
+    )
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
     updated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), onupdate=_now)
 

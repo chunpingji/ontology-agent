@@ -7,12 +7,12 @@ import re
 from pathlib import Path
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
+from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, HTTPException, UploadFile
 from sqlalchemy.orm import Session
 
 from app.db import get_db
 from app.dependencies import ROLE_SENIOR_ANALYST, get_ontology_engine, require_role
-from app.models.extraction import AstTemplate, AstTemplateTrainingPair
+from app.models.extraction import AstTemplate, AstTemplateTrainingPair, ExtractionJob
 from app.schemas.extraction import (
     AstTemplateCreate,
     AstTemplateMetaUpdate,
@@ -69,9 +69,31 @@ def _template_response(t: AstTemplate) -> AstTemplateResponse:
         created_by=t.created_by,
         owner=t.owner,
         default_source_filename=t.default_source_filename,
+        default_source_job_id=t.default_source_job_id,
         created_at=t.created_at,
         updated_at=t.updated_at,
     )
+
+
+def _ensure_default_source_job(row: AstTemplate, db: Session, engine, background: BackgroundTasks):
+    """Lazily create an ExtractionJob for a template whose default source was uploaded before job-creation code."""
+    from app.api.extraction import _precompute_annotation_bg
+
+    suffix = Path(row.default_source_path).suffix.lower()
+    source_type = "excel" if suffix in (".xlsx", ".xls") else "word"
+    job = ExtractionJob(
+        source_type=source_type,
+        source_filename=row.default_source_filename or Path(row.default_source_path).name,
+        document_path=row.default_source_path,
+        source_config={"mode": "template_default", "template_id": str(row.id)},
+        status="running",
+    )
+    db.add(job)
+    row.default_source_job_id = job.id
+    db.commit()
+    db.refresh(row)
+    if source_type in ("word", "excel"):
+        background.add_task(_precompute_annotation_bg, job.id, engine, db)
 
 
 # ── Template CRUD (T009) ────────────────────────────────────────────────
@@ -92,10 +114,23 @@ def list_templates(db: Session = Depends(get_db)):
 
 
 @router.get("/{template_id}")
-def get_template(template_id: UUID, db: Session = Depends(get_db)):
+def get_template(
+    template_id: UUID,
+    background: BackgroundTasks,
+    db: Session = Depends(get_db),
+    engine: object = Depends(get_ontology_engine),
+):
     row = db.get(AstTemplate, template_id)
     if not row:
         raise HTTPException(404, "模板不存在")
+
+    # Lazy job creation: templates uploaded before the job-creation code
+    # have default_source_path but no default_source_job_id.
+    if row.default_source_path and not row.default_source_job_id:
+        src_path = Path(row.default_source_path)
+        if src_path.is_file():
+            _ensure_default_source_job(row, db, engine, background)
+
     resp = _template_response(row)
     pairs = sorted(row.training_pairs, key=lambda p: p.created_at)
     # 同名模板的所有版本（供编辑器切换历史版本）。
@@ -201,6 +236,7 @@ def update_template(
         owner=old.owner,
         default_source_path=old.default_source_path,
         default_source_filename=old.default_source_filename,
+        default_source_job_id=old.default_source_job_id,
         is_default=old.is_default,
         created_by=getattr(identity, "username", "system"),
     )
@@ -392,16 +428,38 @@ async def replace_sample(
 async def upload_default_source(
     template_id: UUID,
     file: UploadFile = File(...),
+    background: BackgroundTasks = BackgroundTasks(),
     db: Session = Depends(get_db),
+    engine: object = Depends(get_ontology_engine),
     identity: object = Depends(_maintainer),
 ):
-    """上传/替换默认源文件（固化输出格式的参照原件）。"""
+    """上传/替换默认源文件，同时创建 ExtractionJob 以驱动标注管线。"""
+    from app.api.extraction import _precompute_annotation_bg
+
     row = _get_template_or_404(template_id, db)
-    # 替换时清理旧文件（best-effort）。
+    # 替换时清理旧文件和旧标注缓存（best-effort）。
     if row.default_source_path:
         Path(row.default_source_path).unlink(missing_ok=True)
-    row.default_source_path = await _save_upload(file, f"tpl_{template_id}_source")
+    if row.default_source_job_id:
+        old_cache = _UPLOADS / f"{row.default_source_job_id}.annotated.json"
+        old_cache.unlink(missing_ok=True)
+
+    saved_path = await _save_upload(file, f"tpl_{template_id}_source")
+    row.default_source_path = saved_path
     row.default_source_filename = file.filename
+
+    suffix = Path(file.filename or "").suffix.lower()
+    source_type = "excel" if suffix in (".xlsx", ".xls") else "word"
+    job = ExtractionJob(
+        source_type=source_type,
+        source_filename=file.filename,
+        document_path=saved_path,
+        source_config={"mode": "template_default", "template_id": str(template_id)},
+        status="running",
+    )
+    db.add(job)
+    row.default_source_job_id = job.id
+
     audit.append(
         db, "template.default_source_upload",
         actor=getattr(identity, "username", "system"),
@@ -411,6 +469,10 @@ async def upload_default_source(
     )
     db.commit()
     db.refresh(row)
+
+    if source_type in ("word", "excel"):
+        background.add_task(_precompute_annotation_bg, job.id, engine, db)
+
     return _template_response(row)
 
 
@@ -423,8 +485,12 @@ def delete_default_source(
     row = _get_template_or_404(template_id, db)
     if row.default_source_path:
         Path(row.default_source_path).unlink(missing_ok=True)
+    if row.default_source_job_id:
+        old_cache = _UPLOADS / f"{row.default_source_job_id}.annotated.json"
+        old_cache.unlink(missing_ok=True)
     row.default_source_path = None
     row.default_source_filename = None
+    row.default_source_job_id = None
     db.commit()
     db.refresh(row)
     return _template_response(row)
@@ -710,14 +776,25 @@ def preview_section_narrative_endpoint(
     section = section.model_copy(update={"prompt": req.prompt})
 
     # 确定性上下文（无 LLM）：真实报告会原样引用的风险等级 + 覆盖状态。
+    # assess_deterministic 回传 Gap-B 富集后的 edges（源文档关系 + 模板声明的产品报告
+    # 自身关系，如 hasAssessmentTeam/hasApproverTeam → 评估小组/审批人小组 mock 名册），
+    # 预览用同一份 edges 走叙述路径，保证与真实报告逐字节同源。
     from app.services.reporting.risk_report_generator import RiskReportGenerator
 
-    rows, manifest = RiskReportGenerator(db, template).assess_deterministic(edges)
+    rows, manifest, edges = RiskReportGenerator(db, template).assess_deterministic(edges)
 
+    from app.services.ontology_engine import get_loaded_engine
     from app.services.reporting.narrative_generator import preview_section_narrative
 
+    # 与 assess_deterministic 用同一个已加载引擎，保证预览的 coverage 范围限定与真实报告逐字节一致
+    # （引擎未加载时 preview_section_narrative 走 local-name 子串回退，评估/审批小组仍能正确分离）。
     narrative = preview_section_narrative(
-        edges, section, client, assessment_rows=rows, manifest=manifest
+        edges,
+        section,
+        client,
+        assessment_rows=rows,
+        manifest=manifest,
+        engine=get_loaded_engine(),
     )
     if not narrative:
         raise HTTPException(502, "行文预览生成失败：本地 LLM 无输出，请检查日志")

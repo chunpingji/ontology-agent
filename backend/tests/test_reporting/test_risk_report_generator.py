@@ -219,7 +219,7 @@ class TestGenerateWithCoverage:
         report, manifest_full = RiskReportGenerator(db).generate_with_coverage(
             edges, source_filename="HRS-1234.docx"
         )
-        rows, manifest = RiskReportGenerator(db).assess_deterministic(edges)
+        rows, manifest, _enriched = RiskReportGenerator(db).assess_deterministic(edges)
 
         assert [
             (r.hazid, r.pre_control_level, r.post_control_level, r.status) for r in rows

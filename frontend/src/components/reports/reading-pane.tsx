@@ -16,9 +16,11 @@ import {
   downloadReportById,
   entitiesFromTriples,
   getAnnotatedDocument,
-  listDocuments,
   pollReportStatus,
+  resolveDocumentJobId,
+  type DocClassification,
   type RecognizedEntity,
+  type Relationship,
   type ReportOrDocument,
 } from "@/lib/api";
 
@@ -31,11 +33,17 @@ export const REPORT_SECTIONS: Array<{ id: string; label: string }> = [
 ];
 
 /**
- * 文档在线内容解析结果：可预览的 tiptap 内容 + 识别实体（同一次标注请求产出，供预览与
- * 右侧关联信息面板复用），或标记为不可预览。
+ * 文档在线内容解析结果：可预览的 tiptap 内容 + 识别实体 + 文档分类 + 抽取关系（同一次
+ * 标注请求产出，供中栏预览与右侧「关系图谱」面板 `RelationPanel` 复用），或标记为不可预览。
  */
 export type DocumentContent =
-  | { content: Record<string, unknown>; entities: RecognizedEntity[] }
+  | {
+      jobId: string;
+      content: Record<string, unknown>;
+      entities: RecognizedEntity[];
+      docClass: DocClassification | null;
+      relationships: Relationship[];
+    }
   | { unavailable: true };
 
 /** React Query 键：Outline 与 ReadingPane 共用同一键以复用同一次请求。 */
@@ -45,8 +53,8 @@ export function documentContentKey(item: ReportOrDocument | null): Array<string 
 
 /**
  * 尽力而为地解析文档的可视内容。文档实体本身不一定携带抽取 jobId，
- * 而 `getAnnotatedDocument` 只按 jobId 取内容——因此先从文档 `properties_json`
- * 中探测可能的 job 引用，取不到则优雅降级为“不可预览”（绝不抛错）。
+ * 而 `getAnnotatedDocument` 只按 jobId 取内容——因此先经 `resolveDocumentJobId`
+ * 从文档 `properties_json` 探测 job 引用，取不到则优雅降级为“不可预览”（绝不抛错）。
  */
 export async function resolveDocumentContent(
   item: ReportOrDocument,
@@ -55,17 +63,7 @@ export async function resolveDocumentContent(
 
   let jobId: string | null = null;
   try {
-    const docs = await listDocuments();
-    const shadow = docs.items.find((d) => d.iri === item.iri);
-    const props = shadow?.properties_json ?? {};
-    const JOB_KEYS = ["job_id", "jobId", "source_job_id", "extraction_job_id", "hasJob", "sourceJob"];
-    for (const key of JOB_KEYS) {
-      const value = props[key];
-      if (typeof value === "string" && value) {
-        jobId = value;
-        break;
-      }
-    }
+    jobId = await resolveDocumentJobId(item.iri);
   } catch {
     return { unavailable: true };
   }
@@ -76,8 +74,11 @@ export async function resolveDocumentContent(
     const doc = await getAnnotatedDocument(jobId);
     if (doc.content && typeof doc.content === "object") {
       return {
+        jobId,
         content: doc.content as Record<string, unknown>,
         entities: entitiesFromTriples(doc.triples ?? []),
+        docClass: doc.doc_class ?? null,
+        relationships: doc.relationships ?? [],
       };
     }
   } catch {

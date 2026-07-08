@@ -37,14 +37,14 @@ class Settings(BaseSettings):
     local_llm_base_url: str = "http://localhost:11434/v1"
     local_llm_model: str = "qwen2.5:14b"
     local_llm_api_key: str = "not-needed"
-    local_llm_max_tokens: int = 4096
+    local_llm_max_tokens: int = 200000
     local_llm_temperature: float = 0.1
 
     # 能力十三：LLM 模板设计辅助 + 报告生成增强（013-llm-template-report-enhance）。
     # 三个独立开关默认关——离线为正常态（Constitution VI）。
     llm_suggest_slots_enabled: bool = True
-    llm_report_merge_values: bool = False
-    llm_report_narrative_enabled: bool = False
+    llm_report_merge_values: bool = True
+    llm_report_narrative_enabled: bool = True
     suggest_slots_timeout_s: int = 30
     suggest_slots_max: int = 50
 
@@ -57,6 +57,15 @@ class Settings(BaseSettings):
     # 能力六：QA 21 CFR Part 11 电子签名重认证密钥（经 env 注入，不入库, R7/R10）。
     # 身份层可插拔：企业 SSO 接入前以共享重认证密钥占位（SSO 不在本特性范围）。
     qa_reauth_secret: str = "qa-reauth"
+
+    # 认证层：登录 + API 访问控制。air-gap 环境仅用标准库自签令牌（app/auth.py），
+    # 不引 jwt/passlib。auth_secret 经 env 注入、不入库（同 qa_reauth_secret 范式）。
+    # auth_required 默认关：为 False 时 get_current_user 沿用信任 `X-User`/`X-Role` 头
+    # 的旧行为（200+ 头认证测试零回归）；运行时经 docker env 置 True 后，中间件对
+    # `/api/*`（除 /api/auth/login、/api/health）强制校验 Bearer 令牌。
+    auth_secret: str = "dev-slpra-auth-secret-change-me"
+    auth_required: bool = False
+    auth_token_ttl_seconds: int = 43200  # 令牌有效期，默认 12h
 
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}
 

@@ -15,6 +15,7 @@ from unittest.mock import MagicMock
 
 from app.services.reporting.ast_template import (
     Group,
+    ManualSource,
     OntologyRelationBinding,
     ReportTemplate,
     Section,
@@ -24,6 +25,7 @@ from app.services.reporting.ast_template import (
 )
 from app.services.reporting.narrative_generator import (
     generate_narratives,
+    generate_section_narratives,
     generate_semantic_slots,
     preview_section_narrative,
 )
@@ -115,7 +117,8 @@ class TestGenerateNarratives:
 # 016+: generate_semantic_slots — LLM synthesis projecting Section.coverage + prompt
 # --------------------------------------------------------------------------- #
 
-_SEMANTIC_RESPONSE = {"content": "本节综述：由 Acme 制药生产，风险经确定性评估为可控。"}
+_SEMANTIC_CONTENT = "本节综述：由 Acme 制药生产，风险经确定性评估为可控。"
+_SEMANTIC_RESPONSE = {"slots": [{"slot_id": "analysis.overview", "content": _SEMANTIC_CONTENT}]}
 
 
 def _mfr_edge(name: str = "Acme 制药") -> dict:
@@ -197,7 +200,7 @@ class TestGenerateSemanticSlots:
         assert len(out) == 1
         assert out[0]["slot_id"] == "analysis.overview"
         assert out[0]["section_id"] == "s-sem"
-        assert out[0]["text"] == _SEMANTIC_RESPONSE["content"]
+        assert out[0]["text"] == _SEMANTIC_CONTENT
 
     def test_prompt_inherits_section_when_slot_prompt_none(self):
         client = _make_client(_SEMANTIC_RESPONSE)
@@ -274,7 +277,7 @@ class TestGenerateSemanticSlots:
         assert out == []
 
     def test_empty_llm_output_skips_slot(self):
-        client = _make_client({"content": "   "})
+        client = _make_client({"slots": [{"slot_id": "analysis.overview", "content": "   "}]})
         out = generate_semantic_slots([_mfr_edge()], _semantic_template(), client,
                                       engine=build_drug_ontology())
         assert out == []
@@ -382,3 +385,109 @@ class TestPreviewSectionNarrative:
         user = _user_prompt(client)
         assert "本章节覆盖状态" in user
         assert "覆盖标记LBL" in user
+
+
+# --------------------------------------------------------------------------- #
+# 016+: generate_section_narratives — per-binding coverage scoping (bug ② regression)
+# --------------------------------------------------------------------------- #
+
+_RISK_NS = "https://ontology.pharma-gmp.cn/slpra/risk/"
+_ASSESS_TEAM_IRI = _RISK_NS + "AssessmentTeam"
+_APPROVER_TEAM_IRI = _RISK_NS + "ApproverTeam"
+_HAS_ASSESS_IRI = _RISK_NS + "hasAssessmentTeam"
+_HAS_APPROVER_IRI = _RISK_NS + "hasApproverTeam"
+_RISK_REPORT_IRI = _RISK_NS + "RiskAssessmentReport"
+
+
+def _assessment_team_edge() -> dict:
+    """A materialized 评估小组 roster edge (mirrors product_report_edges)."""
+    return {
+        "predicate_iri": _HAS_ASSESS_IRI,
+        "object_class_iri": _ASSESS_TEAM_IRI,
+        "object_text": "风险评估小组",
+        "subject_text": "本报告",
+        "object_data_properties": [
+            {"label": "QA", "value": "王玉（质量部）"},
+            {"label": "仓储管理", "value": "刘建国（仓储部）"},
+        ],
+    }
+
+
+def _approver_team_edge() -> dict:
+    """A materialized 审批人小组 roster edge (mirrors product_report_edges)."""
+    return {
+        "predicate_iri": _HAS_APPROVER_IRI,
+        "object_class_iri": _APPROVER_TEAM_IRI,
+        "object_text": "审批人小组",
+        "subject_text": "本报告",
+        "object_data_properties": [
+            {"label": "质量保证审核", "value": "周慧敏（质量部）"},
+            {"label": "上市许可持有人批准", "value": "孙立群（上市许可持有人）"},
+        ],
+    }
+
+
+def _team_binding(predicate: str, range_iri: str, label: str) -> OntologyRelationBinding:
+    return OntologyRelationBinding(
+        doc_class_iri=_RISK_REPORT_IRI,
+        predicate_iri=predicate,
+        range_class_iri=range_iri,
+        label=label,
+    )
+
+
+def _signoff_template(*, coverage: list) -> ReportTemplate:
+    """A 报告会签 section carrying a 行文 prompt + the given coverage bindings."""
+    return ReportTemplate(
+        template_id="t-signoff",
+        sections=[Section(
+            section_id="s-signoff",
+            title="报告会签",
+            prompt="根据评估小组与审批人小组名单，生成会签说明。",
+            coverage=coverage,
+            groups=[Group(
+                group_id="g", title="会签", kind="manual",
+                slots=[Slot(slot_id="signoff.note", label="会签说明", source=ManualSource())],
+            )],
+        )],
+    )
+
+
+class TestSectionNarrativeCoverageScoping:
+    """Bug ②: a section covering BOTH 评估小组 and 审批人小组 must feed each roster under
+    its OWN coverage heading — the assessment block must not bleed the approvers in."""
+
+    def test_two_team_section_scopes_each_roster_under_its_label(self):
+        client = _make_client({"content": "会签正文"})
+        tpl = _signoff_template(coverage=[
+            _team_binding(_HAS_ASSESS_IRI, _ASSESS_TEAM_IRI, "评估小组"),
+            _team_binding(_HAS_APPROVER_IRI, _APPROVER_TEAM_IRI, "审批人小组"),
+        ])
+        # engine=None → offline local-name substring scoping (AssessmentTeam vs ApproverTeam)
+        generate_section_narratives(
+            [_assessment_team_edge(), _approver_team_edge()], tpl, client, engine=None,
+        )
+        user = _user_prompt(client)
+        # each roster rendered under its own coverage label …
+        assert "### 评估小组" in user
+        assert "### 审批人小组" in user
+        # … and the assessment block (before the approver heading) carries ONLY assessors:
+        assess_block = user.split("### 审批人小组")[0]
+        assert "王玉" in assess_block
+        for approver in ("周慧敏", "孙立群"):
+            assert approver not in assess_block  # ← the leak this bug was about
+        # the approver names live under the approver heading
+        approver_block = user.split("### 审批人小组", 1)[1]
+        assert "周慧敏" in approver_block and "孙立群" in approver_block
+
+    def test_section_without_coverage_keeps_full_fact_dump(self):
+        """Zero blast radius: a section with NO coverage keeps the pre-016 full fact
+        dump — both rosters together, no per-binding headings — byte-identical to before."""
+        client = _make_client({"content": "综述正文"})
+        tpl = _signoff_template(coverage=[])
+        generate_section_narratives(
+            [_assessment_team_edge(), _approver_team_edge()], tpl, client,
+        )
+        user = _user_prompt(client)
+        assert "### 评估小组" not in user  # no per-binding scoping without coverage
+        assert "王玉" in user and "孙立群" in user  # both rosters dumped together (legacy)

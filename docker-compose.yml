@@ -14,6 +14,8 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
+    # 开发期间关闭 --reload，避免 WatchFiles 在长时间 LLM 后台任务期间 kill 进程
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
     ports:
       - "8000:8000"
     extra_hosts:
@@ -30,13 +32,18 @@ services:
       LOCAL_LLM_BASE_URL: ${LOCAL_LLM_BASE_URL:-http://host.docker.internal:8080/v1}
       LOCAL_LLM_MODEL: ${LOCAL_LLM_MODEL:-Qwen3.6-35B-A3B}
       LOCAL_LLM_API_KEY: ${LOCAL_LLM_API_KEY:-not-needed}
-      # 输出 token 上限（OpenAI max_tokens → llama.cpp n_predict）。默认 4096；
+      # 输出 token 上限（OpenAI max_tokens → llama.cpp n_predict）。默认 200K；
       # 与上下文窗口无关——n_ctx 由 llama-server 启动的 --ctx-size 决定，此处只管输出。
-      LOCAL_LLM_MAX_TOKENS: ${LOCAL_LLM_MAX_TOKENS:-40960}
+      LOCAL_LLM_MAX_TOKENS: ${LOCAL_LLM_MAX_TOKENS:-200000}
       # air-gap：强制 huggingface_hub / transformers 全程离线，杜绝任何远程 repo
       # 解析或权重外发（配套代码内 local_files_only=True，008 Principle VI）。
       HF_HUB_OFFLINE: "1"
       TRANSFORMERS_OFFLINE: "1"
+      # 认证层（API 访问控制）：默认开启，对 /api/* 强制校验登录令牌（放行 /api/health、
+      # /api/auth/login）。设 false 可退回信任 X-User/X-Role 头的旧行为。AUTH_SECRET
+      # 为令牌签名密钥，经宿主 env / .env 注入，绝不入库/入镜像；生产务必覆盖默认值。
+      AUTH_REQUIRED: ${AUTH_REQUIRED:-true}
+      AUTH_SECRET: ${AUTH_SECRET:-dev-slpra-auth-secret-change-me}
     volumes:
       - ./backend/app:/app/app
       - ./ontology:/app/ontology

@@ -39,7 +39,8 @@ def get_local_llm():
     return OpenAI(
         base_url=settings.local_llm_base_url,
         api_key=settings.local_llm_api_key,
-        timeout=300.0,
+        # 单次生成放宽到 15 分钟（大 max_tokens 下本地模型可能较慢）。
+        timeout=15 * 60,
     )
 
 
@@ -53,6 +54,7 @@ def chat_with_schema(
     model: str | None = None,
     temperature: float | None = None,
     max_tokens: int | None = None,
+    enable_thinking: bool = False,
 ) -> dict[str, Any] | None:
     """Send a chat completion with structured JSON output, falling back to prompt-based parsing.
 
@@ -62,6 +64,14 @@ def chat_with_schema(
     ``_build_response_format`` / ``_parse_llm_response`` pattern from
     ``llm_gap_filler``).
 
+    ``enable_thinking`` (default ``False``): Qwen3 是推理模型，thinking 模式默认会在
+    正文前吐一大段 ``reasoning_content``，速率恒定却不受 ``max_tokens`` 有效约束，是报告
+    生成 10 分钟超时的主因（单次调用 180s–600s+）。经实测本地 llama.cpp build 上唯一有效
+    的关闭手段是 ``chat_template_kwargs={"enable_thinking": False}``（``/no_think`` 文本
+    token 与 ``reasoning_effort`` 均无效）。关闭后同规模章节行文从 180s 降到 ~9s、
+    ``finish_reason=stop``。报告行文只需据既定事实/只读风险结论写散文，故默认关闭；确需
+    推理的调用可显式传 ``True``。
+
     Returns the parsed dict, or ``None`` on total failure.
     """
     from app.config import settings
@@ -69,6 +79,8 @@ def chat_with_schema(
     _model = model or settings.local_llm_model
     _temperature = temperature if temperature is not None else settings.local_llm_temperature
     _max_tokens = max_tokens or settings.local_llm_max_tokens
+    # llama.cpp / Qwen3 thinking 开关；经 extra_body 透传到端点的请求体。
+    extra_body = {"chat_template_kwargs": {"enable_thinking": enable_thinking}}
 
     response_format = {
         "type": "json_schema",
@@ -90,6 +102,7 @@ def chat_with_schema(
             response_format=response_format,
             temperature=_temperature,
             max_tokens=_max_tokens,
+            extra_body=extra_body,
         )
         text = resp.choices[0].message.content or ""
         parsed = json.loads(text)
@@ -119,6 +132,7 @@ def chat_with_schema(
             ],
             temperature=_temperature,
             max_tokens=fallback_max_tokens,
+            extra_body=extra_body,
         )
         raw = resp.choices[0].message.content or ""
         logger.info(

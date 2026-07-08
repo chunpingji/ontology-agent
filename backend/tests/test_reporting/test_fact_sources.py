@@ -94,6 +94,35 @@ class TestRuleResultsProvider:
         assert rows == []
 
 
+class TestAssessmentTeamProvider:
+    """016+: ``external.assessment_team`` projects the mock evaluation-team roster
+    (reusing the 5 GxP roles). Exact-key registration wins over the ``external.*`` stub."""
+
+    def test_projects_team_members_as_rows(self):
+        rows = resolve_fact_source(
+            FactSourceBinding(source="external.assessment_team", label="评估小组"),
+            FactContext(),
+        )
+        assert len(rows) == 5  # one member per GxP role
+        labels = {r["label"] for r in rows}
+        assert {"QA", "仓储管理", "EHS评估", "生产工艺评估", "设备评估"} == labels
+        # value is 姓名（部门）, and every row is attributed to the external fact source
+        assert all("（" in r["value"] and r["value"].endswith("）") for r in rows)
+        assert all(r["source_ref"] == "外部事实源：评估小组主数据" for r in rows)
+
+    def test_exact_key_wins_over_external_star_stub(self):
+        # the exact provider returns rows; a sibling external.* source stays empty
+        assert resolve_fact_source(
+            FactSourceBinding(source="external.assessment_team"), FactContext()
+        )
+        assert (
+            resolve_fact_source(
+                FactSourceBinding(source="external.something_else"), FactContext()
+            )
+            == []
+        )
+
+
 class TestRegistryResolution:
     def test_unknown_source_returns_empty(self):
         rows = resolve_fact_source(FactSourceBinding(source="does.not.exist"), FactContext())

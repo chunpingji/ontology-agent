@@ -1,10 +1,13 @@
-import { Sidebar } from "@/components/shell/sidebar";
-import { TopBar } from "@/components/shell/topbar";
+import { AuthGuard } from "@/components/shell/auth-guard";
+import { ShellFrame } from "@/components/shell/shell-frame";
 
 /**
  * Application shell (design.pen app frame) — Sidebar + TopBar around routed
  * content (app-shell contract, FR-001/FR-009). The single-source nav model,
- * role gating and identity switcher live in the shell components.
+ * role gating and identity switcher live in the shell components. The resizable
+ * sidebar/content splitter lives in the ShellFrame client component.
+ *
+ * AuthGuard 包裹整个 shell：未登录（无令牌）时连侧栏/顶栏都不渲染，直接跳登录页。
  */
 export default function DashboardLayout({
   children,
@@ -12,12 +15,8 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex min-h-screen bg-background">
-      <Sidebar />
-      <div className="flex min-w-0 flex-1 flex-col">
-        <TopBar />
-        <main className="flex-1 overflow-auto p-6">{children}</main>
-      </div>
-    </div>
+    <AuthGuard>
+      <ShellFrame>{children}</ShellFrame>
+    </AuthGuard>
   );
 }

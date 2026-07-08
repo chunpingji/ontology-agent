@@ -127,6 +127,47 @@ def _rule_result_facts(binding: Any, ctx: FactContext) -> list[dict]:
 # --------------------------------------------------------------------------- #
 
 
+@register_fact_source("external.assessment_team")
+def _assessment_team_facts(binding: Any, ctx: FactContext) -> list[dict]:
+    """评估小组主数据事实源（016+）——复用 GxP 角色合成的评估小组成员。
+
+    Each row is ``{label: 角色, value: 姓名（部门）, source_ref}`` so a semantic slot's
+    LLM synthesis can tabulate the member roster. Exact-key registration takes
+    precedence over the ``external.*`` stub. Source unavailable / empty → ``[]``
+    (graceful degradation)."""
+    from app.services.extraction.assessment_team_source import get_assessment_team_source
+
+    rows: list[dict] = []
+    for m in get_assessment_team_source().list_members():
+        dept = f"（{m.department}）" if m.department else ""
+        rows.append({
+            "label": m.role_label,
+            "value": f"{m.name}{dept}",
+            "source_ref": "外部事实源：评估小组主数据",
+        })
+    return rows
+
+
+@register_fact_source("external.approver_team")
+def _approver_team_facts(binding: Any, ctx: FactContext) -> list[dict]:
+    """审批人小组主数据事实源（016+）——具审批权限角色合成的审批人名册。
+
+    Symmetric to :func:`_assessment_team_facts`. Each row is
+    ``{label: 角色, value: 姓名（部门）, source_ref}``. Source unavailable / empty → ``[]``
+    (graceful degradation)."""
+    from app.services.extraction.approver_team_source import get_approver_team_source
+
+    rows: list[dict] = []
+    for m in get_approver_team_source().list_members():
+        dept = f"（{m.department}）" if m.department else ""
+        rows.append({
+            "label": m.role_label,
+            "value": f"{m.name}{dept}",
+            "source_ref": "外部事实源：审批人小组主数据",
+        })
+    return rows
+
+
 @register_fact_source("abox.*")
 def _abox_stub(binding: Any, ctx: FactContext) -> list[dict]:
     """结构化映射 A-Box 事实（组织/人员/权限）— deferred until the A-Box individual

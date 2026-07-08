@@ -313,7 +313,7 @@ def get_job(job_id: UUID, db: Session = Depends(get_db)):
     return job
 
 
-_ANNOTATOR_VERSION = 14
+_ANNOTATOR_VERSION = 16
 
 
 def _annotation_cache_path(job_id) -> Path:
@@ -417,6 +417,7 @@ def _write_annotation_cache(job_id, payload: dict) -> None:
 @router.get("/jobs/{job_id}/annotated-document")
 async def get_annotated_document(
     job_id: UUID,
+    refresh: bool = False,
     db: Session = Depends(get_db),
     engine: OntologyEngine = Depends(get_ontology_engine),
 ):
@@ -424,6 +425,7 @@ async def get_annotated_document(
 
     优先读抽取时预计算的缓存（即时返回，源文档已清理也能用）；缓存缺失则按需
     实时计算并回填缓存。响应含 ``triples``（实体属性三元组）和 ``warnings``。
+    ``?refresh=1`` 绕过缓存、强制重算并回写（关系图谱「刷新」用，如重算 PDE 冲突）。
     """
     import asyncio
 
@@ -432,7 +434,7 @@ async def get_annotated_document(
         raise HTTPException(404)
 
     cache_path = _annotation_cache_path(job_id)
-    if cache_path.is_file():
+    if not refresh and cache_path.is_file():
         try:
             cached = json.loads(cache_path.read_text(encoding="utf-8"))
             if cached.get("_version") == _ANNOTATOR_VERSION:
@@ -442,6 +444,12 @@ async def get_annotated_document(
             logger.warning("标注缓存损坏，回退实时计算：%s", cache_path, exc_info=True)
 
     if not job.document_path or not Path(job.document_path).is_file():
+        # 刷新但源文档已清理：优雅降级为已有缓存（即便版本旧），而非 404。
+        if cache_path.is_file():
+            try:
+                return json.loads(cache_path.read_text(encoding="utf-8"))
+            except Exception:
+                logger.warning("标注缓存损坏：%s", cache_path, exc_info=True)
         raise HTTPException(404, "源文档不可用（已清理或未持久化）")
     if job.source_type not in ("word", "excel"):
         raise HTTPException(400, f"不支持的源类型标注：{job.source_type}")
@@ -1015,7 +1023,7 @@ def _build_and_save_report(
             dismissed_slot_ids=dismissed_ids,
             document_path=document_path,
         )
-        docx_bytes = render_risk_report(report, manifest)
+        docx_bytes = render_risk_report(report, manifest, template=template)
 
         reports_dir = _Path("data/reports")
         reports_dir.mkdir(parents=True, exist_ok=True)
@@ -1145,7 +1153,7 @@ def generate_risk_report(
         edges, source_filename=job.source_filename or "",
         dismissed_slot_ids=dismissed_ids,
     )
-    docx_bytes = render_risk_report(report, manifest)
+    docx_bytes = render_risk_report(report, manifest, template=template)
 
     reports_dir = _Path("data/reports")
     reports_dir.mkdir(parents=True, exist_ok=True)
@@ -1211,7 +1219,11 @@ def get_risk_report(
 
     report = (
         db.query(GeneratedReport)
-        .filter(GeneratedReport.job_id == job_id)
+        .filter(
+            GeneratedReport.job_id == job_id,
+            GeneratedReport.deleted_at.is_(None),
+            GeneratedReport.report_status == "completed",
+        )
         .order_by(GeneratedReport.created_at.desc())
         .first()
     )
@@ -1219,7 +1231,7 @@ def get_risk_report(
         raise HTTPException(404, "该作业尚未生成风险评估报告")
 
     file_path = Path(report.file_path)
-    if not file_path.exists():
+    if not file_path.is_file():
         raise HTTPException(404, "报告文件不存在")
 
     src_name = (job.source_filename or "report").replace(".docx", "")
@@ -1244,7 +1256,7 @@ def get_report_status(
 ):
     """Poll the status of an async-generated report (013)."""
     report = db.get(GeneratedReport, report_id)
-    if not report or report.job_id != job_id:
+    if not report or report.job_id != job_id or report.deleted_at is not None:
         raise HTTPException(404, "报告不存在")
     return {
         "id": str(report.id),
@@ -1271,7 +1283,7 @@ def download_report_by_id(
     from fastapi.responses import FileResponse
 
     report = db.get(GeneratedReport, report_id)
-    if not report or report.job_id != job_id:
+    if not report or report.job_id != job_id or report.deleted_at is not None:
         raise HTTPException(404, "报告不存在")
     if report.report_status != "completed":
         raise HTTPException(409, f"报告尚未完成（status={report.report_status}）")
@@ -1373,6 +1385,18 @@ def _build_ast_coverage_response(
     from app.services.ontology_engine import get_loaded_engine
 
     engine = get_loaded_engine()
+    # 016+ Gap B: materialize the PRODUCT report's OWN declared relations (评估小组 /
+    # 审批人小组 …) as edges so this coverage tree matches what report generation actually
+    # produces. Mirrors RiskReportGenerator._enriched_edges — WITHOUT this, a section's
+    # 本体覆盖声明 shows 评估小组/审批人小组 缺失 even though the generated report fills them.
+    # No-op unless the template declares the predicate as ontology_relation coverage.
+    from app.services.reporting.product_report_edges import (
+        product_report_edges_for_template,
+    )
+
+    product_edges = product_report_edges_for_template(engine, template)
+    if product_edges:
+        edges = list(edges) + product_edges
     facts = edges_to_facts(list(edges), engine)
 
     rules = (
@@ -1391,34 +1415,12 @@ def _build_ast_coverage_response(
         engine=engine,  # 016 (D13): expand section.coverage into ontology positions
     )
 
-    # 012 LLM gap filling: attempt to fill missing_required slots via local LLM
-    if manifest.missing_required > 0:
-        try:
-            from app.config import settings
-
-            if settings.local_llm_enabled:
-                from app.services.extraction.llm_gap_filler import fill_coverage_gaps
-
-                job = db.get(ExtractionJob, job_id)
-                doc_path = job.document_path if job else None
-                llm_fills = fill_coverage_gaps(manifest, doc_path, template)
-                if llm_fills:
-                    fills_by_id = {f["slot_id"]: f for f in llm_fills}
-                    for sc in manifest.slots:
-                        base_id = sc.slot_id.split("[")[0]
-                        fill = fills_by_id.get(sc.slot_id) or fills_by_id.get(base_id)
-                        if fill and sc.status == "missing_required":
-                            sc.status = "filled"
-                            sc.value = fill["value"]
-                            sc.source_span = fill.get("source_span")
-                            sc.is_llm_sourced = True
-                            sc.source_kind = "llm_extraction"
-        except Exception:
-            import logging
-            logging.getLogger(__name__).warning(
-                "LLM 补抽集成异常，跳过", exc_info=True,
-            )
-
+    # NOTE: the former per-request ``fill_coverage_gaps`` LLM pass was removed here.
+    # It fired synchronously on every coverage refresh (the editor mounts this query
+    # eagerly), injecting the whole source document into a schema-free local-LLM call
+    # that could free-run for minutes — the cause of the 3-minute template-editor open.
+    # Consistent with the report-generation redesign (逐节生成后组装): missing required
+    # values surface honestly as 缺失 / 「⚠ 待评估」 rather than being LLM-guessed here.
     slot_map: dict[str, list] = {}
     for sc in manifest.slots:
         base_id = sc.slot_id.split("[")[0]
@@ -1578,10 +1580,40 @@ def list_reports(
         raise HTTPException(404, "作业不存在")
     return (
         db.query(GeneratedReport)
-        .filter(GeneratedReport.job_id == job_id)
+        .filter(
+            GeneratedReport.job_id == job_id,
+            GeneratedReport.deleted_at.is_(None),
+            GeneratedReport.report_status == "completed",
+        )
         .order_by(GeneratedReport.created_at.desc())
         .all()
     )
+
+
+@router.delete("/jobs/{job_id}/reports/{report_id}", status_code=204)
+def delete_report(
+    job_id: UUID,
+    report_id: UUID,
+    db: Session = Depends(get_db),
+    identity: Identity = Depends(require_role(ROLE_SENIOR_ANALYST)),
+):
+    """Soft-delete a generated report."""
+    from datetime import datetime, timezone
+
+    report = db.get(GeneratedReport, report_id)
+    if not report or report.job_id != job_id:
+        raise HTTPException(404, "报告不存在")
+    if report.deleted_at is not None:
+        raise HTTPException(404, "报告不存在")
+
+    report.deleted_at = datetime.now(timezone.utc)
+    audit.append(
+        db, "report.delete", actor=identity.username,
+        entity_iri=str(report_id),
+        details={"job_id": str(job_id)},
+        commit=False,
+    )
+    db.commit()
 
 
 @router.post("/jobs/{job_id}/ast-coverage/dismiss", response_model=ASTCoverageResponse)

@@ -177,7 +177,7 @@ export default function AstTemplatesPage() {
     <div className="space-y-6">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">AST 报告模板</h1>
+          <h1 className="text-2xl font-bold text-foreground">AST(Assessment Semantic template)报告模板</h1>
           <p className="mt-1 text-sm text-muted-foreground">
             管理分析结构模板（AST）：每个模板将文档抽取结果映射为报告插槽，并按
             IRI 模式匹配文档类型。

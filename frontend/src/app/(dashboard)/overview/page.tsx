@@ -48,7 +48,7 @@ export default function OverviewPage() {
     <div>
       <h1 className="mb-1 text-2xl font-bold">总览</h1>
       <p className="mb-6 text-sm text-muted-foreground">
-        临床药物智能辅助生产平台（SLPRA）——本体 → 实体 → 应用 → 治理
+        临床药物智能文档评审平台（SLPRA）——本体 → 实体 → 应用 → 治理
       </p>
 
       <section className="mb-8">

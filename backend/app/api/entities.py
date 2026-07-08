@@ -98,8 +98,8 @@ def delete_entity(
 ):
     try:
         engine.delete_individual(iri)
-    except ValueError as e:
-        raise HTTPException(404, str(e))
+    except ValueError:
+        pass
     kg.delete_shadow(iri)
 
 

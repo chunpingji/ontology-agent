@@ -13,12 +13,18 @@ persisted (FR-007).  MUST NOT influence deterministic evaluation (FR-009).
 from __future__ import annotations
 
 import logging
+import re
 from typing import Any
 
 from app.services.llm.local_client import chat_with_schema
 from app.services.reporting.ast_template import coverage_key
 
 logger = logging.getLogger(__name__)
+
+# A section's 行文 Prompt references its data fields as ``{{占位符}}`` whose text is the
+# slot label (see :func:`generate_section_prompt`). This matches one such token so the
+# section narrator can substitute the real slot value in place of the raw placeholder.
+_PLACEHOLDER_RE = re.compile(r"\{\{\s*([^{}]+?)\s*\}\}")
 
 _NARRATIVE_SCHEMA: dict[str, Any] = {
     "type": "object",
@@ -166,6 +172,48 @@ def generate_section_prompt(
     return result.get("prompt", "") or ""
 
 
+def _field_value_from_edges(label: str, edges: list[dict]) -> str | None:
+    """Resolve a slot's value from the extraction edges by data-property label —
+    the fallback when the deterministic manifest carries no value for it (e.g. a
+    semantic slot, or a label the coverage scoping didn't surface). ``None`` if absent."""
+    for e in edges:
+        for dp in e.get("object_data_properties") or []:
+            if dp.get("label") == label and dp.get("value") not in (None, ""):
+                return str(dp["value"])
+    return None
+
+
+def _format_field_values(field_values: list[tuple[str, str | None]]) -> str:
+    """The section's ``{{占位符}} → 取值`` substitution table for the LLM. Fields with no
+    resolvable value are shown as 「待补充」 so the model states them honestly rather than
+    echoing the raw placeholder."""
+    lines = [
+        f"- {{{{{label}}}}} → {value if value not in (None, '') else '（待补充）'}"
+        for label, value in field_values
+    ]
+    return "\n".join(lines) if lines else "（本章节无显式字段取值）"
+
+
+def _substitute_placeholders(
+    text: str, field_values: list[tuple[str, str | None]]
+) -> str:
+    """Deterministic safety net: replace any ``{{label}}`` still present in the LLM
+    output with the resolved slot value (or 「待补充」). Guarantees no raw ``{{...}}``
+    leaks into the rendered report even when the model ignores the substitution
+    instruction — the exact defect users hit ("大量占位符没有替换")."""
+    if not text or "{{" not in text:
+        return text
+    by_label = {
+        str(label).strip(): (str(value).strip() if value not in (None, "") else "")
+        for label, value in field_values
+    }
+
+    def _repl(m: re.Match) -> str:
+        return by_label.get(m.group(1).strip()) or "（待补充）"
+
+    return _PLACEHOLDER_RE.sub(_repl, text)
+
+
 def generate_section_narratives(
     edges: list[dict],
     template,
@@ -173,6 +221,8 @@ def generate_section_narratives(
     *,
     assessment_rows: list | None = None,
     manifest: Any | None = None,
+    engine: Any | None = None,
+    skip_semantic_sections: bool = False,
 ) -> list[dict]:
     """Report-time: generate prose for each section that carries a 行文 ``prompt``.
 
@@ -186,12 +236,32 @@ def generate_section_narratives(
     already-decided risk levels and coverage status verbatim instead of guessing
     (docs/declarative-rule-report-generator-binding-design.md §5.4). Both ``None`` ⇒
     the user prompt is byte-identical to the pre-§5.4 behaviour.
+
+    ``skip_semantic_sections`` (report path): a section's 行文 narrative and its
+    semantic slots are two renderings of the SAME ``Section.prompt`` (016+ semantic
+    slots project the section's prompt + coverage). When both exist, the docx would
+    render both — duplicate prose AND a duplicate LLM call. With this flag on, a
+    section that has ≥1 ``semantic`` slot is skipped here (its content comes from
+    :func:`generate_semantic_slots`). Off by default so the design-time single-section
+    preview (:func:`preview_section_narrative`) still renders a semantic section's
+    prompt verbatim.
     """
     if not hasattr(template, "sections"):
         return []
 
-    facts_text = _format_facts(edges)
+    from app.services.reporting.fact_sources import FactContext
+
+    all_facts_text = _format_facts(edges)
     rules_text = _format_rule_results(assessment_rows) if assessment_rows else ""
+    fact_ctx = FactContext(
+        edges=edges,
+        facts=None,
+        assessment_rows=assessment_rows or [],
+        engine=engine,
+    )
+    # Deterministic slot values, keyed by slot_id, from the coverage manifest — the
+    # source for filling a section's ``{{占位符}}`` (fix: placeholders leaking into prose).
+    manifest_by_slot = {s.slot_id: s for s in getattr(manifest, "slots", None) or []}
     results: list[dict] = []
     system = (
         "你是 GMP 合规报告撰写专家。根据给定的「行文 Prompt」与「抽取事实」，"
@@ -202,20 +272,72 @@ def generate_section_narratives(
         prompt = getattr(sec, "prompt", None)
         if not prompt or not str(prompt).strip():
             continue
+        # De-dup with semantic slots (016+): skip a section whose content is already
+        # produced per-slot by generate_semantic_slots (report path only).
+        if skip_semantic_sections and any(
+            getattr(slot.source, "kind", None) == "semantic"
+            for grp in sec.groups
+            for slot in grp.slots
+        ):
+            continue
+        # 016+: when the section declares ontology coverage, scope the facts to those
+        # relationships — per binding, under its own label — exactly like semantic slots
+        # (:func:`generate_semantic_slots`). A section covering several relations (e.g.
+        # 报告会签 = 评估小组 + 审批人小组) then feeds each roster under its own heading, so
+        # the LLM never bleeds one roster into another. Sections without coverage keep the
+        # full fact dump (byte-identical to pre-016 behaviour).
+        coverage = getattr(sec, "coverage", None) or []
+        if coverage:
+            ont_parts: list[str] = []
+            for b in coverage:
+                label = getattr(b, "label", None) or coverage_key(b)
+                if getattr(b, "kind", None) == "fact_source":
+                    facts_str = _format_fact_source(b, fact_ctx)
+                else:
+                    facts_str = _format_coverage_facts(b, edges, engine)
+                if facts_str:
+                    ont_parts.append(f"### {label}\n{facts_str}")
+            facts_text = "\n\n".join(ont_parts) if ont_parts else all_facts_text
+        else:
+            facts_text = all_facts_text
         slot_labels = [
             slot.label
             for grp in sec.groups
             for slot in grp.slots
         ]
         labels_text = "、".join(l for l in slot_labels if l) or "（无显式数据字段）"
+        # The 行文 Prompt references data fields as {{占位符}} (== slot labels). Resolve
+        # each field's value (manifest → edge-label fallback) and hand the LLM an explicit
+        # {{占位符}}→取值 table so it substitutes real values; a deterministic post-pass
+        # then guarantees no raw {{...}} survives. Built only when the prompt carries
+        # placeholders → byte-identical prompt for placeholder-free sections (golden-master
+        # parity: the value table and reminder never appear otherwise).
+        has_placeholders = "{{" in str(prompt)
+        field_values: list[tuple[str, str | None]] = []
+        if has_placeholders:
+            for grp in sec.groups:
+                for slot in grp.slots:
+                    if not slot.label:
+                        continue
+                    sc = manifest_by_slot.get(slot.slot_id)
+                    value = sc.value if sc and sc.value else None
+                    if value is None:
+                        value = _field_value_from_edges(slot.label, edges)
+                    field_values.append((slot.label, value))
         coverage_text = (
             _format_coverage_status(manifest, sec.section_id) if manifest else ""
         )
         user_parts = [
             f"## 行文 Prompt\n{prompt}",
             f"## 本章节数据字段\n{labels_text}",
-            f"## 抽取事实\n{facts_text}",
         ]
+        if has_placeholders:
+            user_parts.append(
+                "## 字段取值（请将行文 Prompt 中的 {{占位符}} 替换为下列对应取值；"
+                "无取值的字段据实说明为「待补充」，正文中不得保留任何 {{...}} 占位符）\n"
+                + _format_field_values(field_values)
+            )
+        user_parts.append(f"## 抽取事实\n{facts_text}")
         if rules_text:
             user_parts.append(
                 f"## 风险评估结果（确定性结论，必须原样引用，不可自行推断）\n{rules_text}"
@@ -224,13 +346,12 @@ def generate_section_narratives(
             user_parts.append(f"## 本章节覆盖状态\n{coverage_text}")
         # Keep the closing instruction byte-identical when no deterministic context is
         # injected, so golden-master section-narrative output is unchanged.
+        closing = "请按行文 Prompt 生成本章节正文。"
         if rules_text:
-            user_parts.append(
-                "请按行文 Prompt 生成本章节正文。"
-                "引用风险评估结果时必须与上述确定性结果严格一致。"
-            )
-        else:
-            user_parts.append("请按行文 Prompt 生成本章节正文。")
+            closing += "引用风险评估结果时必须与上述确定性结果严格一致。"
+        if has_placeholders:
+            closing += "务必用「字段取值」中的实际取值替换所有 {{占位符}}，正文中不得出现任何 {{...}}。"
+        user_parts.append(closing)
         user = "\n\n".join(user_parts)
         result = chat_with_schema(
             client,
@@ -240,6 +361,8 @@ def generate_section_narratives(
             schema_name="section_narrative",
         )
         text = (result or {}).get("content", "") if result else ""
+        if has_placeholders:
+            text = _substitute_placeholders(text, field_values)
         if text and text.strip():
             results.append({
                 "section_id": sec.section_id,
@@ -256,6 +379,7 @@ def preview_section_narrative(
     *,
     assessment_rows: list | None = None,
     manifest: Any | None = None,
+    engine: Any | None = None,
 ) -> str:
     """Design-time preview: run ONE section's 行文 Prompt through the report-time
     narrative path against real extracted ``edges`` (not sample text), returning
@@ -276,6 +400,7 @@ def preview_section_narrative(
         client,
         assessment_rows=assessment_rows,
         manifest=manifest,
+        engine=engine,
     )
     return results[0]["text"] if results else ""
 
@@ -285,6 +410,26 @@ def preview_section_narrative(
 # --------------------------------------------------------------------------- #
 
 _SEMANTIC_SLOT_SCHEMA = _SECTION_NARRATIVE_SCHEMA  # {content: str}
+
+_SEMANTIC_SLOTS_BATCH_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "properties": {
+        "slots": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "slot_id": {"type": "string"},
+                    "content": {"type": "string"},
+                },
+                "required": ["slot_id", "content"],
+                "additionalProperties": False,
+            },
+        },
+    },
+    "required": ["slots"],
+    "additionalProperties": False,
+}
 
 
 def _format_rule_results(rows: list | None) -> str:
@@ -374,6 +519,9 @@ def generate_semantic_slots(
     Returns ``[{slot_id, section_id, text}]`` in document order. Slots with neither a
     prompt nor any selected coverage are skipped; empty LLM output is skipped. Never
     influences deterministic evaluation.
+
+    **Batched**: slots within the same section are sent in a single LLM call
+    (one call per section instead of one per slot) to reduce total LLM round-trips.
     """
     if not hasattr(template, "sections"):
         return []
@@ -391,13 +539,17 @@ def generate_semantic_slots(
     results: list[dict] = []
     system = (
         "你是 GMP 合规报告撰写专家。根据「行文 Prompt」「关联本体（源文档关系图谱事实）」"
-        "与「确定性风险评估结论」，合成该语义化插槽的正文内容（自然语言叙述，可含 "
+        "与「确定性风险评估结论」，合成各语义化插槽的正文内容（自然语言叙述，可含 "
         "Markdown 表格）。仅基于提供的信息，不要编造数据；引用风险评估结论时必须与给定的"
         "确定性结果严格一致，不得自行推断风险等级。"
     )
+
     for sec in template.sections:
         coverage = getattr(sec, "coverage", []) or []
         cov_by_key = {coverage_key(b): b for b in coverage}
+
+        # ── Pass 1: collect eligible semantic slots with their context ──
+        slot_entries: list[dict] = []
         for grp in sec.groups:
             for slot in grp.slots:
                 src = slot.source
@@ -411,7 +563,7 @@ def generate_semantic_slots(
                     else list(coverage)
                 )
                 if (not prompt or not str(prompt).strip()) and not selected:
-                    continue  # nothing to synthesize from
+                    continue
 
                 ont_parts: list[str] = []
                 for b in selected:
@@ -424,33 +576,58 @@ def generate_semantic_slots(
                         ont_parts.append(f"### {label}\n{facts_str}")
                 ontology_text = "\n\n".join(ont_parts) if ont_parts else facts_text_all
 
-                user_parts = [
-                    "## 行文 Prompt\n"
-                    + (prompt or "（无显式行文指令，请依据关联本体与事实源客观叙述）"),
-                    f"## 关联本体（源文档关系图谱事实）\n{ontology_text}",
-                ]
-                if rules_text:
-                    user_parts.append(
-                        f"## 风险评估结果（确定性结论，必须原样引用，不可自行推断）\n{rules_text}"
-                    )
-                user_parts.append("请据此合成本语义化插槽的正文。")
-                user = "\n\n".join(user_parts)
+                slot_entries.append({
+                    "slot_id": slot.slot_id,
+                    "label": slot.label,
+                    "prompt": prompt or "（无显式行文指令，请依据关联本体与事实源客观叙述）",
+                    "ontology_text": ontology_text,
+                })
 
-                result = chat_with_schema(
-                    client,
-                    system=system,
-                    user=user,
-                    schema=_SEMANTIC_SLOT_SCHEMA,
-                    schema_name="semantic_slot",
-                )
-                text = (result or {}).get("content", "") if result else ""
-                if text and text.strip():
-                    results.append({
-                        "slot_id": slot.slot_id,
-                        "section_id": sec.section_id,
-                        "label": slot.label,
-                        "text": text,
-                    })
+        if not slot_entries:
+            continue
+
+        # ── Pass 2: batch LLM call for all slots in this section ──
+        slot_blocks: list[str] = []
+        for entry in slot_entries:
+            block = (
+                f"### 插槽 `{entry['slot_id']}` — {entry['label']}\n"
+                f"**行文 Prompt:** {entry['prompt']}\n\n"
+                f"**关联本体:**\n{entry['ontology_text']}"
+            )
+            slot_blocks.append(block)
+
+        user_parts = [
+            f"请为以下 {len(slot_entries)} 个语义化插槽分别生成正文。"
+            f"返回的 slots 数组中每个元素的 slot_id 必须与下方给出的 slot_id 严格一致。\n",
+            "\n\n---\n\n".join(slot_blocks),
+        ]
+        if rules_text:
+            user_parts.append(
+                f"## 风险评估结果（确定性结论，必须原样引用，不可自行推断）\n{rules_text}"
+            )
+        user = "\n\n".join(user_parts)
+
+        result = chat_with_schema(
+            client,
+            system=system,
+            user=user,
+            schema=_SEMANTIC_SLOTS_BATCH_SCHEMA,
+            schema_name="semantic_slots_batch",
+        )
+
+        if not result or not result.get("slots"):
+            continue
+
+        returned = {s["slot_id"]: s["content"] for s in result["slots"] if s.get("content", "").strip()}
+        for entry in slot_entries:
+            text = returned.get(entry["slot_id"], "")
+            if text and text.strip():
+                results.append({
+                    "slot_id": entry["slot_id"],
+                    "section_id": sec.section_id,
+                    "label": entry["label"],
+                    "text": text,
+                })
     return results
 
 

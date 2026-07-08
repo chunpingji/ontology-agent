@@ -32,7 +32,7 @@ function NavLink({ item, active }: { item: NavItem; active: boolean }) {
   );
 }
 
-export function Sidebar() {
+export function Sidebar({ width }: { width?: number }) {
   const pathname = usePathname();
   const { role } = useIdentity();
 
@@ -48,7 +48,10 @@ export function Sidebar() {
   const bottomItems = (NAV.filter((n) => !isGroup(n) && n.bottom && canSee(n)) as NavItem[]);
 
   return (
-    <aside className="flex w-60 shrink-0 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground">
+    <aside
+      style={{ width: width ?? 240 }}
+      className="flex shrink-0 flex-col bg-sidebar text-sidebar-foreground"
+    >
       <div className="flex items-center gap-2 px-5 py-5">
         <div className="flex size-8 items-center justify-center rounded-md bg-sidebar-primary text-sm font-bold text-sidebar-primary-foreground">
           S
@@ -60,7 +63,7 @@ export function Sidebar() {
           >
             SLPRA
           </Link>
-          <p className="text-xs text-muted-foreground">智能辅助生产平台</p>
+          <p className="text-xs text-muted-foreground">临床药物智能文档评审平台</p>
         </div>
       </div>
 

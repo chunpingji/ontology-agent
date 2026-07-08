@@ -1,23 +1,21 @@
 "use client";
 
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { LogOut } from "lucide-react";
 
 import { navTitle } from "@/components/shell/nav";
-import { useIdentity, type Role } from "@/lib/use-identity";
+import { useIdentity } from "@/lib/use-identity";
+import { logout } from "@/lib/api";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 
-const ROLES: { value: Role; label: string }[] = [
-  { value: "senior_analyst", label: "高级分析师" },
-  { value: "operator", label: "操作员" },
-  { value: "qa", label: "QA（质量）" },
-];
+// 真实认证后角色由登录令牌决定、只读展示（旧「开发态」角色下拉已移除，避免任意越权切换）。
+const ROLE_LABELS: Record<string, string> = {
+  senior_analyst: "高级分析师",
+  operator: "操作员",
+  qa: "QA（质量）",
+};
 
 function initials(name: string): string {
   const trimmed = name.trim();
@@ -27,8 +25,14 @@ function initials(name: string): string {
 
 export function TopBar() {
   const pathname = usePathname();
-  const { identity, role, setIdentity } = useIdentity();
+  const router = useRouter();
+  const { identity, role } = useIdentity();
   const title = navTitle(pathname);
+
+  async function onLogout() {
+    await logout();
+    router.replace("/login");
+  }
 
   return (
     <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center justify-between border-b border-border bg-background/95 px-6 backdrop-blur supports-[backdrop-filter]:bg-background/80">
@@ -36,36 +40,27 @@ export function TopBar() {
 
       <div className="flex items-center gap-3">
         <div className="flex items-center gap-2">
-          <label className="hidden text-xs text-muted-foreground sm:block">
-            当前身份（开发态）
-          </label>
-          <Select
-            value={role}
-            onValueChange={(value) =>
-              setIdentity({ username: identity.username, role: value })
-            }
-          >
-            <SelectTrigger className="h-8 w-[140px]" aria-label="切换身份">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {ROLES.map((r) => (
-                <SelectItem key={r.value} value={r.value}>
-                  {r.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="flex items-center gap-2">
           <Avatar className="size-8">
             <AvatarFallback>{initials(identity.username)}</AvatarFallback>
           </Avatar>
           <span className="hidden text-sm text-foreground md:block">
             {identity.username}
           </span>
+          <Badge variant="secondary" className="hidden sm:inline-flex">
+            {ROLE_LABELS[role] ?? role}
+          </Badge>
         </div>
+
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onLogout}
+          className="gap-1.5 text-muted-foreground hover:text-foreground"
+          aria-label="退出登录"
+        >
+          <LogOut className="h-4 w-4" />
+          <span className="hidden sm:inline">退出登录</span>
+        </Button>
       </div>
     </header>
   );

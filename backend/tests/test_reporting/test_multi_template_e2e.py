@@ -413,6 +413,7 @@ _MERGED_LLM_RESPONSE = {
     "conclusion": "各维度风险经确定性评估为可控。",
     "dimension_narratives": [{"dimension": "人员", "narrative": "培训到位。"}],
     "content": "本节综述：由 Acme 制药生产；风险等级引用确定性评估结论。",
+    "slots": [{"slot_id": "analysis.overview", "content": "本节综述：由 Acme 制药生产；风险等级引用确定性评估结论。"}],
 }
 
 
@@ -439,8 +440,10 @@ def _shared_line_edge() -> dict:
 
 
 class TestSemanticSlotGenerationE2E:
-    """The report generator populates ``report.semantic_slots`` from a semantic-slot
-    template, and the deterministic ``assessment_rows`` are byte-identical whether the
+    """Section-level model (逐节生成后组装): a template whose section carries a 行文
+    ``prompt`` produces its prose via ``report.section_narratives`` (one {content}
+    call per prompted section); semantic slots are absorbed, so ``semantic_slots``
+    stays empty. The deterministic ``assessment_rows`` are byte-identical whether the
     LLM narrative path runs or not (FR-009: LLM output never re-enters evaluation)."""
 
     def _seed_rule(self, db):
@@ -491,7 +494,7 @@ class TestSemanticSlotGenerationE2E:
             report, _ = gen.generate_with_coverage(edges)
         return report
 
-    def test_semantic_slots_populated_and_rows_unchanged(self, db):
+    def test_section_narrative_populated_and_rows_unchanged(self, db):
         self._seed_rule(db)
         edges = [_mfr_edge(), _shared_line_edge()]
         tpl = self._semantic_template()
@@ -499,15 +502,17 @@ class TestSemanticSlotGenerationE2E:
         report_on = self._run(db, tpl, edges, narrative_on=True)
         report_off = self._run(db, tpl, edges, narrative_on=False)
 
-        # narrative ON → the semantic slot is synthesized and flagged LLM-sourced
-        assert len(report_on.semantic_slots) == 1
-        slot = report_on.semantic_slots[0]
-        assert slot["slot_id"] == "analysis.overview"
-        assert slot["section_id"] == "s1"
-        assert slot["text"] == _MERGED_LLM_RESPONSE["content"]
-        assert "analysis.overview" in report_on.llm_generated_fields
+        # narrative ON → the section (which carries a 行文 prompt) yields one narrative;
+        # semantic slots are absorbed into it (semantic_slots stays empty).
+        assert len(report_on.section_narratives) == 1
+        narr = report_on.section_narratives[0]
+        assert narr["section_id"] == "s1"
+        assert narr["title"] == "综合分析"
+        assert narr["text"] == _MERGED_LLM_RESPONSE["content"]
+        assert report_on.semantic_slots == []
 
-        # narrative OFF → no semantic-slot synthesis at all
+        # narrative OFF → no narrative synthesis at all
+        assert report_off.section_narratives == []
         assert report_off.semantic_slots == []
 
         # FR-009: the deterministic risk matrix is identical regardless of the LLM path

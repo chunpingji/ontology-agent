@@ -18,6 +18,8 @@ import { ItemList } from "@/components/reports/item-list";
 import { Upload } from "@/components/reports/upload";
 import { useIdentity } from "@/lib/use-identity";
 import {
+  deleteDocument,
+  deleteReport,
   docTypeLabel,
   listReportCenterItems,
   phaseIriByLabel,
@@ -110,15 +112,25 @@ export default function ReportCenterPage() {
   );
 
   const handleDelete = useCallback(
-    (item: ReportOrDocument) => {
-      if (typeof window !== "undefined" && !window.confirm(`确认从列表移除"${item.title}"？`)) {
+    async (item: ReportOrDocument) => {
+      if (typeof window !== "undefined" && !window.confirm(`确认删除"${item.title}"？`)) {
         return;
       }
-      // 占位条目：从占位集移除。后端条目：纯展示层视图级移除（FR-027，刷新后重现）。
+      // Optimistic UI removal.
       setOptimistic((prev) => prev.filter((entry) => entry.key !== item.key));
       queryClient.setQueryData<ReportCenterResult>(queryKey, (prev) =>
         prev ? { ...prev, items: prev.items.filter((entry) => entry.key !== item.key) } : prev,
       );
+      // Persist deletion to backend.
+      try {
+        if (item.kind === "generated-report" && item.jobId && item.reportId) {
+          await deleteReport(item.jobId, item.reportId);
+        } else if (item.kind === "uploaded-document" && item.iri) {
+          await deleteDocument(item.iri);
+        }
+      } catch {
+        queryClient.invalidateQueries({ queryKey });
+      }
     },
     [queryClient, queryKey],
   );

@@ -29004,7 +29004,7 @@
               "type": "frame",
               "id": "GxunQ",
               "name": "Main Content",
-              "width": "fill_container",
+              "width": 1233,
               "height": "fill_container",
               "fill": "$--background",
               "layout": "vertical",
@@ -29555,7 +29555,7 @@
                               "id": "m8dIG6",
                               "name": "Slot Stats",
                               "fill": "$--muted-foreground",
-                              "content": "12 插槽 · 3 必填 · 1 禁用",
+                              "content": "6 覆盖声明 · 4 必填 · 2 待解析",
                               "fontFamily": "Inter",
                               "fontSize": 13,
                               "fontWeight": "normal"
@@ -29674,7 +29674,7 @@
                               "id": "QazPr",
                               "name": "Skip Count",
                               "fill": "$--muted-foreground",
-                              "content": "已跳过 2 条重复",
+                              "content": "已合并 2 条重复关系",
                               "fontFamily": "Inter",
                               "fontSize": 12,
                               "fontWeight": "normal"
@@ -29685,6 +29685,7 @@
                           "type": "frame",
                           "id": "JKSZm",
                           "name": "Slot Tree",
+                          "reusable": true,
                           "clip": true,
                           "width": "fill_container",
                           "height": "fill_container",
@@ -29746,7 +29747,7 @@
                                       "name": "Count Badge",
                                       "descendants": {
                                         "zHpCv": {
-                                          "content": "5 插槽"
+                                          "content": "3 覆盖"
                                         }
                                       }
                                     },
@@ -29769,7 +29770,7 @@
                                       "strokeWidth": 1,
                                       "descendants": {
                                         "zHpCv": {
-                                          "content": "+2",
+                                          "content": "+1",
                                           "fill": "#D97706"
                                         }
                                       }
@@ -29790,6 +29791,994 @@
                                     12
                                   ],
                                   "children": [
+                                    {
+                                      "type": "frame",
+                                      "id": "DcRjT",
+                                      "name": "Section Coverage Area",
+                                      "width": "fill_container",
+                                      "fill": "$--muted",
+                                      "cornerRadius": 6,
+                                      "stroke": "$--border",
+                                      "strokeWidth": 1,
+                                      "strokeAlignment": "inner",
+                                      "layout": "vertical",
+                                      "gap": 10,
+                                      "padding": 12,
+                                      "children": [
+                                        {
+                                          "type": "frame",
+                                          "id": "IZLGz",
+                                          "name": "Coverage Header",
+                                          "width": "fill_container",
+                                          "gap": 8,
+                                          "alignItems": "center",
+                                          "children": [
+                                            {
+                                              "type": "icon",
+                                              "id": "TNWY5",
+                                              "name": "Coverage Icon",
+                                              "width": 14,
+                                              "height": 14,
+                                              "icon": "git-branch",
+                                              "library": "lucide",
+                                              "fill": "$--primary"
+                                            },
+                                            {
+                                              "type": "text",
+                                              "id": "rCelc",
+                                              "name": "Coverage Label",
+                                              "fill": "$--foreground",
+                                              "content": "本体覆盖声明",
+                                              "fontFamily": "Inter",
+                                              "fontSize": 13,
+                                              "fontWeight": "600"
+                                            },
+                                            {
+                                              "id": "NmEFz",
+                                              "type": "ref",
+                                              "ref": "3IiAS",
+                                              "name": "Object Chip",
+                                              "stroke": "$--primary",
+                                              "strokeWidth": 1,
+                                              "descendants": {
+                                                "zHpCv": {
+                                                  "content": "药品产品",
+                                                  "fontSize": 11,
+                                                  "fill": "$--primary"
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "type": "frame",
+                                              "id": "GWYgw",
+                                              "name": "Spacer",
+                                              "width": "fill_container",
+                                              "height": 1
+                                            },
+                                            {
+                                              "id": "DmVsh",
+                                              "type": "ref",
+                                              "ref": "C10zH",
+                                              "name": "Add Relation Btn",
+                                              "descendants": {
+                                                "l8v2I": {
+                                                  "enabled": false
+                                                },
+                                                "poRwU": {
+                                                  "content": "+ 添加关系",
+                                                  "fontSize": 12
+                                                }
+                                              }
+                                            }
+                                          ]
+                                        },
+                                        {
+                                          "type": "text",
+                                          "id": "y7e9f",
+                                          "name": "Coverage Hint",
+                                          "fill": "$--muted-foreground",
+                                          "textGrowth": "fixed-width",
+                                          "width": "fill_container",
+                                          "content": "从对象类型「药品产品」的本体关系边展开；缺失的必填关系将计为漏项。",
+                                          "lineHeight": 1.5,
+                                          "fontFamily": "Inter",
+                                          "fontSize": 11,
+                                          "fontWeight": "normal"
+                                        },
+                                        {
+                                          "type": "frame",
+                                          "id": "WrePQ",
+                                          "name": "Coverage Decl 1",
+                                          "width": "fill_container",
+                                          "fill": "$--background",
+                                          "cornerRadius": 6,
+                                          "stroke": "$--border",
+                                          "strokeWidth": 1,
+                                          "strokeAlignment": "inner",
+                                          "layout": "vertical",
+                                          "gap": 8,
+                                          "padding": 10,
+                                          "children": [
+                                            {
+                                              "type": "frame",
+                                              "id": "wxuZd",
+                                              "name": "Decl Row",
+                                              "width": "fill_container",
+                                              "gap": 6,
+                                              "alignItems": "center",
+                                              "children": [
+                                                {
+                                                  "type": "icon",
+                                                  "id": "a63Ipg",
+                                                  "name": "Rel Icon",
+                                                  "width": 14,
+                                                  "height": 14,
+                                                  "icon": "spline",
+                                                  "library": "lucide",
+                                                  "fill": "$--primary"
+                                                },
+                                                {
+                                                  "type": "text",
+                                                  "id": "E8tIUG",
+                                                  "name": "Predicate",
+                                                  "fill": "$--foreground",
+                                                  "content": "describes",
+                                                  "fontFamily": "JetBrains Mono",
+                                                  "fontSize": 13,
+                                                  "fontWeight": "500"
+                                                },
+                                                {
+                                                  "type": "icon",
+                                                  "id": "sjGbf",
+                                                  "name": "Arrow",
+                                                  "width": 13,
+                                                  "height": 13,
+                                                  "icon": "arrow-right",
+                                                  "library": "lucide",
+                                                  "fill": "$--muted-foreground"
+                                                },
+                                                {
+                                                  "type": "text",
+                                                  "id": "Fo2Jp",
+                                                  "name": "Target Type",
+                                                  "fill": "$--foreground",
+                                                  "content": "药品产品",
+                                                  "fontFamily": "Inter",
+                                                  "fontSize": 13,
+                                                  "fontWeight": "600"
+                                                },
+                                                {
+                                                  "type": "frame",
+                                                  "id": "yagqD",
+                                                  "name": "Spacer",
+                                                  "width": "fill_container",
+                                                  "height": 1
+                                                },
+                                                {
+                                                  "type": "frame",
+                                                  "id": "E1GLkD",
+                                                  "name": "Required Toggle",
+                                                  "gap": 6,
+                                                  "alignItems": "center",
+                                                  "children": [
+                                                    {
+                                                      "type": "text",
+                                                      "id": "y9iymM",
+                                                      "name": "Req Label",
+                                                      "fill": "$--muted-foreground",
+                                                      "content": "必填",
+                                                      "fontFamily": "Inter",
+                                                      "fontSize": 11,
+                                                      "fontWeight": "normal"
+                                                    },
+                                                    {
+                                                      "id": "pSaEt",
+                                                      "type": "ref",
+                                                      "ref": "c8fiq",
+                                                      "name": "Req Switch",
+                                                      "descendants": {
+                                                        "HsFun": {
+                                                          "enabled": false
+                                                        }
+                                                      }
+                                                    }
+                                                  ]
+                                                },
+                                                {
+                                                  "type": "icon",
+                                                  "id": "Pt4lw",
+                                                  "name": "More",
+                                                  "opacity": 0.6,
+                                                  "width": 14,
+                                                  "height": 14,
+                                                  "icon": "ellipsis-vertical",
+                                                  "library": "lucide",
+                                                  "fill": "$--muted-foreground"
+                                                }
+                                              ]
+                                            },
+                                            {
+                                              "type": "frame",
+                                              "id": "HaKFx",
+                                              "name": "IRI Row",
+                                              "width": "fill_container",
+                                              "gap": 6,
+                                              "alignItems": "center",
+                                              "children": [
+                                                {
+                                                  "type": "text",
+                                                  "id": "j9O8i5",
+                                                  "name": "IRI",
+                                                  "fill": "#16A34A",
+                                                  "content": "slpra:DrugProduct",
+                                                  "fontFamily": "JetBrains Mono",
+                                                  "fontSize": 11,
+                                                  "fontWeight": "normal"
+                                                },
+                                                {
+                                                  "type": "frame",
+                                                  "id": "Ni59F",
+                                                  "name": "Spacer",
+                                                  "width": "fill_container",
+                                                  "height": 1
+                                                },
+                                                {
+                                                  "type": "frame",
+                                                  "id": "O90a0",
+                                                  "name": "Status Pill",
+                                                  "fill": "#16A34A14",
+                                                  "cornerRadius": 4,
+                                                  "gap": 4,
+                                                  "padding": [
+                                                    2,
+                                                    7
+                                                  ],
+                                                  "alignItems": "center",
+                                                  "children": [
+                                                    {
+                                                      "type": "icon",
+                                                      "id": "EAQlz",
+                                                      "name": "PillIcon",
+                                                      "width": 11,
+                                                      "height": 11,
+                                                      "icon": "circle-check",
+                                                      "library": "lucide",
+                                                      "fill": "#16A34A"
+                                                    },
+                                                    {
+                                                      "type": "text",
+                                                      "id": "m60HbD",
+                                                      "name": "PillText",
+                                                      "fill": "#16A34A",
+                                                      "content": "关系已命中",
+                                                      "fontFamily": "Inter",
+                                                      "fontSize": 10,
+                                                      "fontWeight": "normal"
+                                                    }
+                                                  ]
+                                                }
+                                              ]
+                                            },
+                                            {
+                                              "type": "rectangle",
+                                              "id": "rIAp7",
+                                              "name": "Divider",
+                                              "fill": "$--border",
+                                              "width": "fill_container",
+                                              "height": 1
+                                            },
+                                            {
+                                              "type": "frame",
+                                              "id": "LrfhC",
+                                              "name": "Prop Checklist",
+                                              "width": "fill_container",
+                                              "layout": "vertical",
+                                              "gap": 6,
+                                              "children": [
+                                                {
+                                                  "type": "text",
+                                                  "id": "hQIT5",
+                                                  "name": "Prop Label",
+                                                  "fill": "$--muted-foreground",
+                                                  "content": "属性覆盖 · 4 项（1 必填缺失）",
+                                                  "fontFamily": "Inter",
+                                                  "fontSize": 11,
+                                                  "fontWeight": "500"
+                                                },
+                                                {
+                                                  "type": "frame",
+                                                  "id": "J2R7i2",
+                                                  "name": "Prop Row A",
+                                                  "width": "fill_container",
+                                                  "gap": 6,
+                                                  "children": [
+                                                    {
+                                                      "type": "frame",
+                                                      "id": "Sh9VM",
+                                                      "name": "Prop 通用名",
+                                                      "width": "fill_container",
+                                                      "fill": "#16A34A14",
+                                                      "cornerRadius": 4,
+                                                      "stroke": "#16A34A40",
+                                                      "strokeWidth": 1,
+                                                      "strokeAlignment": "inner",
+                                                      "gap": 5,
+                                                      "padding": [
+                                                        4,
+                                                        8
+                                                      ],
+                                                      "alignItems": "center",
+                                                      "children": [
+                                                        {
+                                                          "type": "icon",
+                                                          "id": "E2qJmb",
+                                                          "name": "St",
+                                                          "width": 12,
+                                                          "height": 12,
+                                                          "icon": "circle-check",
+                                                          "library": "lucide",
+                                                          "fill": "#16A34A"
+                                                        },
+                                                        {
+                                                          "type": "text",
+                                                          "id": "qRkDL",
+                                                          "name": "Lbl",
+                                                          "fill": "$--foreground",
+                                                          "content": "通用名",
+                                                          "fontFamily": "Inter",
+                                                          "fontSize": 12,
+                                                          "fontWeight": "normal"
+                                                        }
+                                                      ]
+                                                    },
+                                                    {
+                                                      "type": "frame",
+                                                      "id": "ltk8P",
+                                                      "name": "Prop 规格",
+                                                      "width": "fill_container",
+                                                      "fill": "#16A34A14",
+                                                      "cornerRadius": 4,
+                                                      "stroke": "#16A34A40",
+                                                      "strokeWidth": 1,
+                                                      "strokeAlignment": "inner",
+                                                      "gap": 5,
+                                                      "padding": [
+                                                        4,
+                                                        8
+                                                      ],
+                                                      "alignItems": "center",
+                                                      "children": [
+                                                        {
+                                                          "type": "icon",
+                                                          "id": "JUgjw",
+                                                          "name": "St",
+                                                          "width": 12,
+                                                          "height": 12,
+                                                          "icon": "circle-check",
+                                                          "library": "lucide",
+                                                          "fill": "#16A34A"
+                                                        },
+                                                        {
+                                                          "type": "text",
+                                                          "id": "FK55Z",
+                                                          "name": "Lbl",
+                                                          "fill": "$--foreground",
+                                                          "content": "规格",
+                                                          "fontFamily": "Inter",
+                                                          "fontSize": 12,
+                                                          "fontWeight": "normal"
+                                                        }
+                                                      ]
+                                                    }
+                                                  ]
+                                                },
+                                                {
+                                                  "type": "frame",
+                                                  "id": "j9RAx",
+                                                  "name": "Prop Row B",
+                                                  "width": "fill_container",
+                                                  "gap": 6,
+                                                  "children": [
+                                                    {
+                                                      "type": "frame",
+                                                      "id": "S3hdjm",
+                                                      "name": "Prop 批号",
+                                                      "width": "fill_container",
+                                                      "fill": "#00000000",
+                                                      "cornerRadius": 4,
+                                                      "stroke": "$--border",
+                                                      "strokeWidth": 1,
+                                                      "strokeAlignment": "inner",
+                                                      "gap": 5,
+                                                      "padding": [
+                                                        4,
+                                                        8
+                                                      ],
+                                                      "alignItems": "center",
+                                                      "children": [
+                                                        {
+                                                          "type": "icon",
+                                                          "id": "BnrJn",
+                                                          "name": "St",
+                                                          "width": 12,
+                                                          "height": 12,
+                                                          "icon": "circle-dashed",
+                                                          "library": "lucide",
+                                                          "fill": "$--muted-foreground"
+                                                        },
+                                                        {
+                                                          "type": "text",
+                                                          "id": "duZM0",
+                                                          "name": "Lbl",
+                                                          "fill": "$--foreground",
+                                                          "content": "批号",
+                                                          "fontFamily": "Inter",
+                                                          "fontSize": 12,
+                                                          "fontWeight": "normal"
+                                                        },
+                                                        {
+                                                          "type": "frame",
+                                                          "id": "T2bBQi",
+                                                          "name": "Sp",
+                                                          "width": "fill_container",
+                                                          "height": 1
+                                                        },
+                                                        {
+                                                          "type": "text",
+                                                          "id": "G4Ngq",
+                                                          "name": "Note",
+                                                          "fill": "$--muted-foreground",
+                                                          "content": "选填",
+                                                          "fontFamily": "Inter",
+                                                          "fontSize": 10,
+                                                          "fontWeight": "normal"
+                                                        }
+                                                      ]
+                                                    },
+                                                    {
+                                                      "type": "frame",
+                                                      "id": "un0BB",
+                                                      "name": "Prop 生产企业",
+                                                      "width": "fill_container",
+                                                      "fill": "#FBBF241F",
+                                                      "cornerRadius": 4,
+                                                      "stroke": "#FBBF2466",
+                                                      "strokeWidth": 1,
+                                                      "strokeAlignment": "inner",
+                                                      "gap": 5,
+                                                      "padding": [
+                                                        4,
+                                                        8
+                                                      ],
+                                                      "alignItems": "center",
+                                                      "children": [
+                                                        {
+                                                          "type": "icon",
+                                                          "id": "SegxN",
+                                                          "name": "St",
+                                                          "width": 12,
+                                                          "height": 12,
+                                                          "icon": "triangle-alert",
+                                                          "library": "lucide",
+                                                          "fill": "#D97706"
+                                                        },
+                                                        {
+                                                          "type": "text",
+                                                          "id": "QoDUx",
+                                                          "name": "Lbl",
+                                                          "fill": "$--foreground",
+                                                          "content": "生产企业",
+                                                          "fontFamily": "Inter",
+                                                          "fontSize": 12,
+                                                          "fontWeight": "normal"
+                                                        },
+                                                        {
+                                                          "type": "frame",
+                                                          "id": "v3FsQs",
+                                                          "name": "Sp",
+                                                          "width": "fill_container",
+                                                          "height": 1
+                                                        },
+                                                        {
+                                                          "type": "text",
+                                                          "id": "bIZEP",
+                                                          "name": "Note",
+                                                          "fill": "#D97706",
+                                                          "content": "必填缺失",
+                                                          "fontFamily": "Inter",
+                                                          "fontSize": 10,
+                                                          "fontWeight": "normal"
+                                                        }
+                                                      ]
+                                                    }
+                                                  ]
+                                                }
+                                              ]
+                                            }
+                                          ]
+                                        },
+                                        {
+                                          "type": "frame",
+                                          "id": "hjgm6",
+                                          "name": "Coverage Decl 2",
+                                          "width": "fill_container",
+                                          "fill": "$--background",
+                                          "cornerRadius": 6,
+                                          "stroke": "$--border",
+                                          "strokeWidth": 1,
+                                          "strokeAlignment": "inner",
+                                          "layout": "vertical",
+                                          "gap": 8,
+                                          "padding": 10,
+                                          "children": [
+                                            {
+                                              "type": "frame",
+                                              "id": "SKvdf",
+                                              "name": "Decl Row",
+                                              "width": "fill_container",
+                                              "gap": 6,
+                                              "alignItems": "center",
+                                              "children": [
+                                                {
+                                                  "type": "icon",
+                                                  "id": "fmvkV",
+                                                  "name": "Rel Icon",
+                                                  "width": 14,
+                                                  "height": 14,
+                                                  "icon": "spline",
+                                                  "library": "lucide",
+                                                  "fill": "$--primary"
+                                                },
+                                                {
+                                                  "type": "text",
+                                                  "id": "iWPOt",
+                                                  "name": "Predicate",
+                                                  "fill": "$--foreground",
+                                                  "content": "hasSpecification",
+                                                  "fontFamily": "JetBrains Mono",
+                                                  "fontSize": 13,
+                                                  "fontWeight": "500"
+                                                },
+                                                {
+                                                  "type": "icon",
+                                                  "id": "t8CEcC",
+                                                  "name": "Arrow",
+                                                  "width": 13,
+                                                  "height": 13,
+                                                  "icon": "arrow-right",
+                                                  "library": "lucide",
+                                                  "fill": "$--muted-foreground"
+                                                },
+                                                {
+                                                  "type": "text",
+                                                  "id": "Hpb9B",
+                                                  "name": "Target Type",
+                                                  "fill": "$--foreground",
+                                                  "content": "质量标准",
+                                                  "fontFamily": "Inter",
+                                                  "fontSize": 13,
+                                                  "fontWeight": "600"
+                                                },
+                                                {
+                                                  "type": "frame",
+                                                  "id": "zfjHM",
+                                                  "name": "Spacer",
+                                                  "width": "fill_container",
+                                                  "height": 1
+                                                },
+                                                {
+                                                  "type": "frame",
+                                                  "id": "kewX5",
+                                                  "name": "Required Toggle",
+                                                  "gap": 6,
+                                                  "alignItems": "center",
+                                                  "children": [
+                                                    {
+                                                      "type": "text",
+                                                      "id": "xC0s8",
+                                                      "name": "Req Label",
+                                                      "fill": "$--muted-foreground",
+                                                      "content": "必填",
+                                                      "fontFamily": "Inter",
+                                                      "fontSize": 11,
+                                                      "fontWeight": "normal"
+                                                    },
+                                                    {
+                                                      "id": "z0qgP",
+                                                      "type": "ref",
+                                                      "ref": "c8fiq",
+                                                      "name": "Req Switch",
+                                                      "descendants": {
+                                                        "HsFun": {
+                                                          "enabled": false
+                                                        }
+                                                      }
+                                                    }
+                                                  ]
+                                                },
+                                                {
+                                                  "type": "icon",
+                                                  "id": "P49A1",
+                                                  "name": "More",
+                                                  "opacity": 0.6,
+                                                  "width": 14,
+                                                  "height": 14,
+                                                  "icon": "ellipsis-vertical",
+                                                  "library": "lucide",
+                                                  "fill": "$--muted-foreground"
+                                                }
+                                              ]
+                                            },
+                                            {
+                                              "type": "frame",
+                                              "id": "MviGt",
+                                              "name": "IRI Row",
+                                              "width": "fill_container",
+                                              "gap": 6,
+                                              "alignItems": "center",
+                                              "children": [
+                                                {
+                                                  "type": "text",
+                                                  "id": "sNYaJ",
+                                                  "name": "IRI",
+                                                  "fill": "#16A34A",
+                                                  "content": "slpra:QualitySpecification",
+                                                  "fontFamily": "JetBrains Mono",
+                                                  "fontSize": 11,
+                                                  "fontWeight": "normal"
+                                                },
+                                                {
+                                                  "type": "frame",
+                                                  "id": "foGNd",
+                                                  "name": "Spacer",
+                                                  "width": "fill_container",
+                                                  "height": 1
+                                                },
+                                                {
+                                                  "type": "frame",
+                                                  "id": "kl2F7",
+                                                  "name": "Status Pill",
+                                                  "fill": "#16A34A14",
+                                                  "cornerRadius": 4,
+                                                  "gap": 4,
+                                                  "padding": [
+                                                    2,
+                                                    7
+                                                  ],
+                                                  "alignItems": "center",
+                                                  "children": [
+                                                    {
+                                                      "type": "icon",
+                                                      "id": "n2TL5V",
+                                                      "name": "PillIcon",
+                                                      "width": 11,
+                                                      "height": 11,
+                                                      "icon": "circle-check",
+                                                      "library": "lucide",
+                                                      "fill": "#16A34A"
+                                                    },
+                                                    {
+                                                      "type": "text",
+                                                      "id": "CXjnF",
+                                                      "name": "PillText",
+                                                      "fill": "#16A34A",
+                                                      "content": "关系已命中",
+                                                      "fontFamily": "Inter",
+                                                      "fontSize": 10,
+                                                      "fontWeight": "normal"
+                                                    }
+                                                  ]
+                                                }
+                                              ]
+                                            },
+                                            {
+                                              "type": "rectangle",
+                                              "id": "qR1xg",
+                                              "name": "Divider",
+                                              "fill": "$--border",
+                                              "width": "fill_container",
+                                              "height": 1
+                                            },
+                                            {
+                                              "type": "frame",
+                                              "id": "ghs0b",
+                                              "name": "Prop Checklist",
+                                              "width": "fill_container",
+                                              "layout": "vertical",
+                                              "gap": 6,
+                                              "children": [
+                                                {
+                                                  "type": "text",
+                                                  "id": "lL2t2",
+                                                  "name": "Prop Label",
+                                                  "fill": "$--muted-foreground",
+                                                  "content": "属性覆盖 · 2 项（全部命中）",
+                                                  "fontFamily": "Inter",
+                                                  "fontSize": 11,
+                                                  "fontWeight": "500"
+                                                },
+                                                {
+                                                  "type": "frame",
+                                                  "id": "jDYN7",
+                                                  "name": "Prop Row",
+                                                  "width": "fill_container",
+                                                  "gap": 6,
+                                                  "children": [
+                                                    {
+                                                      "type": "frame",
+                                                      "id": "JonKq",
+                                                      "name": "Prop 标准编号",
+                                                      "width": "fill_container",
+                                                      "fill": "#16A34A14",
+                                                      "cornerRadius": 4,
+                                                      "stroke": "#16A34A40",
+                                                      "strokeWidth": 1,
+                                                      "strokeAlignment": "inner",
+                                                      "gap": 5,
+                                                      "padding": [
+                                                        4,
+                                                        8
+                                                      ],
+                                                      "alignItems": "center",
+                                                      "children": [
+                                                        {
+                                                          "type": "icon",
+                                                          "id": "UF2wF",
+                                                          "name": "St",
+                                                          "width": 12,
+                                                          "height": 12,
+                                                          "icon": "circle-check",
+                                                          "library": "lucide",
+                                                          "fill": "#16A34A"
+                                                        },
+                                                        {
+                                                          "type": "text",
+                                                          "id": "hj1A2",
+                                                          "name": "Lbl",
+                                                          "fill": "$--foreground",
+                                                          "content": "标准编号",
+                                                          "fontFamily": "Inter",
+                                                          "fontSize": 12,
+                                                          "fontWeight": "normal"
+                                                        }
+                                                      ]
+                                                    },
+                                                    {
+                                                      "type": "frame",
+                                                      "id": "BeoMh",
+                                                      "name": "Prop 版本号",
+                                                      "width": "fill_container",
+                                                      "fill": "#16A34A14",
+                                                      "cornerRadius": 4,
+                                                      "stroke": "#16A34A40",
+                                                      "strokeWidth": 1,
+                                                      "strokeAlignment": "inner",
+                                                      "gap": 5,
+                                                      "padding": [
+                                                        4,
+                                                        8
+                                                      ],
+                                                      "alignItems": "center",
+                                                      "children": [
+                                                        {
+                                                          "type": "icon",
+                                                          "id": "dtm1u",
+                                                          "name": "St",
+                                                          "width": 12,
+                                                          "height": 12,
+                                                          "icon": "circle-check",
+                                                          "library": "lucide",
+                                                          "fill": "#16A34A"
+                                                        },
+                                                        {
+                                                          "type": "text",
+                                                          "id": "s3Ptd",
+                                                          "name": "Lbl",
+                                                          "fill": "$--foreground",
+                                                          "content": "版本号",
+                                                          "fontFamily": "Inter",
+                                                          "fontSize": 12,
+                                                          "fontWeight": "normal"
+                                                        }
+                                                      ]
+                                                    }
+                                                  ]
+                                                }
+                                              ]
+                                            }
+                                          ]
+                                        },
+                                        {
+                                          "type": "frame",
+                                          "id": "ikcOK",
+                                          "name": "Coverage Decl AI",
+                                          "width": "fill_container",
+                                          "fill": "#FEF3C720",
+                                          "cornerRadius": 6,
+                                          "stroke": "#FBBF2460",
+                                          "strokeWidth": 1,
+                                          "strokeAlignment": "inner",
+                                          "layout": "vertical",
+                                          "gap": 8,
+                                          "padding": 10,
+                                          "children": [
+                                            {
+                                              "type": "frame",
+                                              "id": "Mb1js",
+                                              "name": "Decl Row",
+                                              "width": "fill_container",
+                                              "gap": 6,
+                                              "alignItems": "center",
+                                              "children": [
+                                                {
+                                                  "type": "icon",
+                                                  "id": "mpigp",
+                                                  "name": "AI Icon",
+                                                  "width": 14,
+                                                  "height": 14,
+                                                  "icon": "sparkles",
+                                                  "library": "lucide",
+                                                  "fill": "#D97706"
+                                                },
+                                                {
+                                                  "type": "text",
+                                                  "id": "HLWGt",
+                                                  "name": "Predicate",
+                                                  "fill": "$--foreground",
+                                                  "content": "hasSynthesisRoute",
+                                                  "fontFamily": "JetBrains Mono",
+                                                  "fontSize": 13,
+                                                  "fontWeight": "500"
+                                                },
+                                                {
+                                                  "type": "icon",
+                                                  "id": "zFHY1",
+                                                  "name": "Arrow",
+                                                  "width": 13,
+                                                  "height": 13,
+                                                  "icon": "arrow-right",
+                                                  "library": "lucide",
+                                                  "fill": "$--muted-foreground"
+                                                },
+                                                {
+                                                  "type": "text",
+                                                  "id": "hY8Iz",
+                                                  "name": "Target Type",
+                                                  "fill": "$--foreground",
+                                                  "content": "合成路线",
+                                                  "fontFamily": "Inter",
+                                                  "fontSize": 13,
+                                                  "fontWeight": "600"
+                                                },
+                                                {
+                                                  "type": "frame",
+                                                  "id": "Fozwy",
+                                                  "name": "Spacer",
+                                                  "width": "fill_container",
+                                                  "height": 1
+                                                },
+                                                {
+                                                  "id": "MZjSP",
+                                                  "type": "ref",
+                                                  "ref": "3IiAS",
+                                                  "name": "AI Badge",
+                                                  "stroke": "#FBBF24",
+                                                  "strokeWidth": 1,
+                                                  "descendants": {
+                                                    "zHpCv": {
+                                                      "content": "AI 建议",
+                                                      "fontSize": 11,
+                                                      "fill": "#D97706"
+                                                    }
+                                                  }
+                                                }
+                                              ]
+                                            },
+                                            {
+                                              "type": "text",
+                                              "id": "NPc64",
+                                              "name": "Evidence",
+                                              "fill": "$--muted-foreground",
+                                              "textGrowth": "fixed-width",
+                                              "width": "fill_container",
+                                              "content": "证据：\"…原料药采用一步缩合工艺，反应路线见附录 A…\"",
+                                              "lineHeight": 1.5,
+                                              "fontFamily": "Inter",
+                                              "fontSize": 11,
+                                              "fontWeight": "normal"
+                                            },
+                                            {
+                                              "type": "frame",
+                                              "id": "c4I4d",
+                                              "name": "Action Row",
+                                              "width": "fill_container",
+                                              "gap": 8,
+                                              "alignItems": "center",
+                                              "children": [
+                                                {
+                                                  "type": "text",
+                                                  "id": "q76fiQ",
+                                                  "name": "Default Hint",
+                                                  "fill": "$--muted-foreground",
+                                                  "content": "采纳后按本体展开属性 · 默认必填",
+                                                  "fontFamily": "Inter",
+                                                  "fontSize": 11,
+                                                  "fontWeight": "normal"
+                                                },
+                                                {
+                                                  "type": "frame",
+                                                  "id": "KbEVS",
+                                                  "name": "Spacer",
+                                                  "width": "fill_container",
+                                                  "height": 1
+                                                },
+                                                {
+                                                  "id": "UZIbR",
+                                                  "type": "ref",
+                                                  "ref": "C10zH",
+                                                  "name": "Ignore Btn",
+                                                  "descendants": {
+                                                    "l8v2I": {
+                                                      "enabled": false
+                                                    },
+                                                    "poRwU": {
+                                                      "content": "忽略",
+                                                      "fontSize": 12
+                                                    }
+                                                  }
+                                                },
+                                                {
+                                                  "id": "aASSK",
+                                                  "type": "ref",
+                                                  "ref": "VSnC2",
+                                                  "name": "Adopt Btn",
+                                                  "descendants": {
+                                                    "8jVfJ": {
+                                                      "enabled": false
+                                                    },
+                                                    "8tnXG": {
+                                                      "content": "采纳",
+                                                      "fontSize": 12
+                                                    }
+                                                  }
+                                                }
+                                              ]
+                                            }
+                                          ]
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "type": "frame",
+                                      "id": "iUqjt",
+                                      "name": "Non-Ontology Caption",
+                                      "width": "fill_container",
+                                      "gap": 6,
+                                      "padding": 2,
+                                      "alignItems": "center",
+                                      "children": [
+                                        {
+                                          "type": "icon",
+                                          "id": "N8aoQX",
+                                          "name": "Cap Icon",
+                                          "width": 12,
+                                          "height": 12,
+                                          "icon": "square-pen",
+                                          "library": "lucide",
+                                          "fill": "$--muted-foreground"
+                                        },
+                                        {
+                                          "type": "text",
+                                          "id": "nOeyM",
+                                          "name": "Cap Text",
+                                          "fill": "$--muted-foreground",
+                                          "content": "其他插槽 · 规则 / 常量 / 人工（不参与本体覆盖）",
+                                          "fontFamily": "Inter",
+                                          "fontSize": 11,
+                                          "fontWeight": "500"
+                                        }
+                                      ]
+                                    },
                                     {
                                       "type": "frame",
                                       "id": "rXC8T",
@@ -29828,7 +30817,7 @@
                                               "id": "tBmL7",
                                               "name": "Group Title",
                                               "fill": "$--foreground",
-                                              "content": "基本信息",
+                                              "content": "报告元信息",
                                               "fontFamily": "Inter",
                                               "fontSize": 13,
                                               "fontWeight": "normal"
@@ -29840,7 +30829,7 @@
                                               "name": "Kind Badge",
                                               "descendants": {
                                                 "zHpCv": {
-                                                  "content": "fields",
+                                                  "content": "固定字段",
                                                   "fontSize": 11
                                                 }
                                               }
@@ -29857,7 +30846,7 @@
                                               "id": "Diswe",
                                               "name": "Slot Count",
                                               "fill": "$--muted-foreground",
-                                              "content": "3 插槽 · +1",
+                                              "content": "3 插槽",
                                               "fontFamily": "Inter",
                                               "fontSize": 12,
                                               "fontWeight": "normal"
@@ -29894,7 +30883,7 @@
                                                   "id": "FJIZL",
                                                   "name": "Slot Label",
                                                   "fill": "$--foreground",
-                                                  "content": "产品名称",
+                                                  "content": "报告编号",
                                                   "fontFamily": "Inter",
                                                   "fontSize": 13,
                                                   "fontWeight": "normal"
@@ -29925,7 +30914,7 @@
                                                   "name": "Kind Badge",
                                                   "descendants": {
                                                     "zHpCv": {
-                                                      "content": "抽取",
+                                                      "content": "常量",
                                                       "fontSize": 11
                                                     }
                                                   }
@@ -29979,7 +30968,7 @@
                                                   "id": "n1ir3",
                                                   "name": "Slot Label",
                                                   "fill": "$--foreground",
-                                                  "content": "规格",
+                                                  "content": "签发人",
                                                   "fontFamily": "Inter",
                                                   "fontSize": 13,
                                                   "fontWeight": "normal"
@@ -29998,7 +30987,7 @@
                                                   "name": "Required Badge",
                                                   "descendants": {
                                                     "zHpCv": {
-                                                      "content": "必填",
+                                                      "content": "可选",
                                                       "fontSize": 11
                                                     }
                                                   }
@@ -30010,7 +30999,7 @@
                                                   "name": "Kind Badge",
                                                   "descendants": {
                                                     "zHpCv": {
-                                                      "content": "抽取",
+                                                      "content": "人工",
                                                       "fontSize": 11
                                                     }
                                                   }
@@ -30065,7 +31054,7 @@
                                                   "id": "OF8Mg",
                                                   "name": "Slot Label",
                                                   "fill": "$--foreground",
-                                                  "content": "批号",
+                                                  "content": "复核意见",
                                                   "fontFamily": "Inter",
                                                   "fontSize": 13,
                                                   "fontWeight": "normal"
@@ -30117,123 +31106,6 @@
                                                       "icon": "ellipsis-vertical",
                                                       "library": "lucide",
                                                       "fill": "$--muted-foreground"
-                                                    }
-                                                  ]
-                                                }
-                                              ]
-                                            },
-                                            {
-                                              "type": "frame",
-                                              "id": "ePtxv",
-                                              "name": "AI Suggestion 1",
-                                              "width": "fill_container",
-                                              "fill": "#FEF3C720",
-                                              "cornerRadius": 4,
-                                              "stroke": "#FBBF2460",
-                                              "strokeWidth": 1,
-                                              "strokeAlignment": "inner",
-                                              "gap": 8,
-                                              "padding": 8,
-                                              "children": [
-                                                {
-                                                  "type": "frame",
-                                                  "id": "cjPV4",
-                                                  "name": "Suggestion Info",
-                                                  "width": "fill_container",
-                                                  "layout": "vertical",
-                                                  "gap": 2,
-                                                  "children": [
-                                                    {
-                                                      "type": "frame",
-                                                      "id": "YBYvp",
-                                                      "name": "Label Row",
-                                                      "gap": 6,
-                                                      "alignItems": "center",
-                                                      "children": [
-                                                        {
-                                                          "type": "text",
-                                                          "id": "AQOP4",
-                                                          "name": "Sug Label",
-                                                          "fill": "$--foreground",
-                                                          "content": "生产企业",
-                                                          "fontFamily": "Inter",
-                                                          "fontSize": 13,
-                                                          "fontWeight": "normal"
-                                                        },
-                                                        {
-                                                          "id": "tFyOy",
-                                                          "type": "ref",
-                                                          "ref": "UjXug",
-                                                          "name": "Confidence",
-                                                          "descendants": {
-                                                            "zHpCv": {
-                                                              "content": "85%",
-                                                              "fontSize": 10
-                                                            }
-                                                          }
-                                                        }
-                                                      ]
-                                                    },
-                                                    {
-                                                      "type": "text",
-                                                      "id": "KKIjZ",
-                                                      "name": "Evidence",
-                                                      "fill": "$--muted-foreground",
-                                                      "content": "\"本品由 XX 制药有限公司生产\"",
-                                                      "fontFamily": "Inter",
-                                                      "fontSize": 11,
-                                                      "fontWeight": "normal"
-                                                    },
-                                                    {
-                                                      "type": "text",
-                                                      "id": "KapWs",
-                                                      "name": "IRI Hint",
-                                                      "fill": "#16A34A",
-                                                      "content": "IRI: ManufacturerOrg",
-                                                      "fontFamily": "Inter",
-                                                      "fontSize": 11,
-                                                      "fontWeight": "normal"
-                                                    }
-                                                  ]
-                                                },
-                                                {
-                                                  "id": "PgeKZ",
-                                                  "type": "ref",
-                                                  "ref": "UjXug",
-                                                  "name": "Source Badge",
-                                                  "descendants": {
-                                                    "zHpCv": {
-                                                      "content": "本体",
-                                                      "fontSize": 11
-                                                    }
-                                                  }
-                                                },
-                                                {
-                                                  "type": "frame",
-                                                  "id": "NRvLx",
-                                                  "name": "Sug Actions",
-                                                  "gap": 2,
-                                                  "alignItems": "center",
-                                                  "children": [
-                                                    {
-                                                      "type": "icon",
-                                                      "id": "onyyu",
-                                                      "name": "Accept",
-                                                      "width": 16,
-                                                      "height": 16,
-                                                      "icon": "check",
-                                                      "library": "lucide",
-                                                      "fill": "#16A34A"
-                                                    },
-                                                    {
-                                                      "type": "icon",
-                                                      "id": "Bf9wb",
-                                                      "name": "Reject",
-                                                      "width": 16,
-                                                      "height": 16,
-                                                      "icon": "x",
-                                                      "library": "lucide",
-                                                      "fill": "$--destructive"
                                                     }
                                                   ]
                                                 }
@@ -30368,6 +31240,443 @@
                                           "fontWeight": "normal"
                                         }
                                       ]
+                                    },
+                                    {
+                                      "type": "frame",
+                                      "id": "pV1Mc",
+                                      "name": "Unresolved Candidates",
+                                      "width": "fill_container",
+                                      "fill": "#FBBF2412",
+                                      "cornerRadius": 6,
+                                      "stroke": "#FBBF2455",
+                                      "strokeWidth": 1,
+                                      "strokeAlignment": "inner",
+                                      "layout": "vertical",
+                                      "gap": 10,
+                                      "padding": 12,
+                                      "children": [
+                                        {
+                                          "type": "frame",
+                                          "id": "j8yO7T",
+                                          "name": "UC Header",
+                                          "width": "fill_container",
+                                          "gap": 8,
+                                          "alignItems": "center",
+                                          "children": [
+                                            {
+                                              "type": "icon",
+                                              "id": "Ok7Q7",
+                                              "name": "UC Icon",
+                                              "width": 14,
+                                              "height": 14,
+                                              "icon": "triangle-alert",
+                                              "library": "lucide",
+                                              "fill": "#D97706"
+                                            },
+                                            {
+                                              "type": "text",
+                                              "id": "JdOca",
+                                              "name": "UC Label",
+                                              "fill": "$--foreground",
+                                              "content": "待解析候选",
+                                              "fontFamily": "Inter",
+                                              "fontSize": 13,
+                                              "fontWeight": "600"
+                                            },
+                                            {
+                                              "id": "qqXWF",
+                                              "type": "ref",
+                                              "ref": "3IiAS",
+                                              "name": "UC Count",
+                                              "stroke": "#FBBF24",
+                                              "strokeWidth": 1,
+                                              "descendants": {
+                                                "zHpCv": {
+                                                  "content": "2",
+                                                  "fontSize": 11,
+                                                  "fill": "#D97706"
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "type": "frame",
+                                              "id": "cgbIy",
+                                              "name": "Sp",
+                                              "width": "fill_container",
+                                              "height": 1
+                                            }
+                                          ]
+                                        },
+                                        {
+                                          "type": "text",
+                                          "id": "qH0VX",
+                                          "name": "UC Hint",
+                                          "fill": "$--muted-foreground",
+                                          "textGrowth": "fixed-width",
+                                          "width": "fill_container",
+                                          "content": "AI 无法绑定到本体关系边；需人工指派处置，不会自动降级为人工插槽。",
+                                          "lineHeight": 1.5,
+                                          "fontFamily": "Inter",
+                                          "fontSize": 11,
+                                          "fontWeight": "normal"
+                                        },
+                                        {
+                                          "type": "frame",
+                                          "id": "OpHeT",
+                                          "name": "Candidate 设备编号 646",
+                                          "width": "fill_container",
+                                          "fill": "$--background",
+                                          "cornerRadius": 6,
+                                          "stroke": "$--border",
+                                          "strokeWidth": 1,
+                                          "strokeAlignment": "inner",
+                                          "layout": "vertical",
+                                          "gap": 8,
+                                          "padding": 10,
+                                          "children": [
+                                            {
+                                              "type": "frame",
+                                              "id": "fvkSv",
+                                              "name": "Cand Head",
+                                              "width": "fill_container",
+                                              "gap": 6,
+                                              "alignItems": "center",
+                                              "children": [
+                                                {
+                                                  "type": "icon",
+                                                  "id": "F8c03l",
+                                                  "name": "QIcon",
+                                                  "width": 14,
+                                                  "height": 14,
+                                                  "icon": "unlink",
+                                                  "library": "lucide",
+                                                  "fill": "#D97706"
+                                                },
+                                                {
+                                                  "type": "text",
+                                                  "id": "j2qS8",
+                                                  "name": "Title",
+                                                  "fill": "$--foreground",
+                                                  "content": "设备编号 646",
+                                                  "fontFamily": "Inter",
+                                                  "fontSize": 13,
+                                                  "fontWeight": "600"
+                                                },
+                                                {
+                                                  "type": "frame",
+                                                  "id": "OUrUa",
+                                                  "name": "Sp",
+                                                  "width": "fill_container",
+                                                  "height": 1
+                                                },
+                                                {
+                                                  "id": "xR2b8",
+                                                  "type": "ref",
+                                                  "ref": "3IiAS",
+                                                  "name": "Kind",
+                                                  "descendants": {
+                                                    "zHpCv": {
+                                                      "content": "数据型",
+                                                      "fontSize": 10
+                                                    }
+                                                  }
+                                                }
+                                              ]
+                                            },
+                                            {
+                                              "type": "text",
+                                              "id": "LLlNg",
+                                              "name": "Evidence",
+                                              "fill": "$--muted-foreground",
+                                              "textGrowth": "fixed-width",
+                                              "width": "fill_container",
+                                              "content": "证据：\"…检测使用设备 EQUIP_REF_646，于 25℃ 恒温…\"",
+                                              "lineHeight": 1.5,
+                                              "fontFamily": "Inter",
+                                              "fontSize": 11,
+                                              "fontWeight": "normal"
+                                            },
+                                            {
+                                              "type": "text",
+                                              "id": "yUbic",
+                                              "name": "Reason",
+                                              "fill": "#D97706",
+                                              "textGrowth": "fixed-width",
+                                              "width": "fill_container",
+                                              "content": "原因：匹配到样本个体而非本体类型，无对应关系边",
+                                              "lineHeight": 1.5,
+                                              "fontFamily": "Inter",
+                                              "fontSize": 11,
+                                              "fontWeight": "normal"
+                                            },
+                                            {
+                                              "type": "rectangle",
+                                              "id": "MnrVz",
+                                              "name": "Div",
+                                              "fill": "$--border",
+                                              "width": "fill_container",
+                                              "height": 1
+                                            },
+                                            {
+                                              "type": "frame",
+                                              "id": "UrRfa",
+                                              "name": "Dispo Row 1",
+                                              "width": "fill_container",
+                                              "gap": 6,
+                                              "children": [
+                                                {
+                                                  "id": "wkt0X",
+                                                  "type": "ref",
+                                                  "ref": "VSnC2",
+                                                  "width": "fill_container",
+                                                  "descendants": {
+                                                    "8jVfJ": {
+                                                      "enabled": false
+                                                    },
+                                                    "8tnXG": {
+                                                      "content": "绑定关系",
+                                                      "fontSize": 12
+                                                    }
+                                                  }
+                                                },
+                                                {
+                                                  "id": "mCUxz",
+                                                  "type": "ref",
+                                                  "ref": "C10zH",
+                                                  "width": "fill_container",
+                                                  "descendants": {
+                                                    "l8v2I": {
+                                                      "enabled": false
+                                                    },
+                                                    "poRwU": {
+                                                      "content": "设为常量",
+                                                      "fontSize": 12
+                                                    }
+                                                  }
+                                                }
+                                              ]
+                                            },
+                                            {
+                                              "type": "frame",
+                                              "id": "whSnq",
+                                              "name": "Dispo Row 2",
+                                              "width": "fill_container",
+                                              "gap": 6,
+                                              "children": [
+                                                {
+                                                  "id": "J916A",
+                                                  "type": "ref",
+                                                  "ref": "C10zH",
+                                                  "width": "fill_container",
+                                                  "descendants": {
+                                                    "l8v2I": {
+                                                      "enabled": false
+                                                    },
+                                                    "poRwU": {
+                                                      "content": "设为人工",
+                                                      "fontSize": 12
+                                                    }
+                                                  }
+                                                },
+                                                {
+                                                  "id": "Abp9z",
+                                                  "type": "ref",
+                                                  "ref": "C10zH",
+                                                  "width": "fill_container",
+                                                  "descendants": {
+                                                    "l8v2I": {
+                                                      "enabled": false
+                                                    },
+                                                    "poRwU": {
+                                                      "content": "丢弃",
+                                                      "fontSize": 12,
+                                                      "fill": "$--destructive"
+                                                    }
+                                                  }
+                                                }
+                                              ]
+                                            }
+                                          ]
+                                        },
+                                        {
+                                          "type": "frame",
+                                          "id": "RT3aU",
+                                          "name": "Candidate 检验依据 SOP-QC-114",
+                                          "width": "fill_container",
+                                          "fill": "$--background",
+                                          "cornerRadius": 6,
+                                          "stroke": "$--border",
+                                          "strokeWidth": 1,
+                                          "strokeAlignment": "inner",
+                                          "layout": "vertical",
+                                          "gap": 8,
+                                          "padding": 10,
+                                          "children": [
+                                            {
+                                              "type": "frame",
+                                              "id": "uYd0O",
+                                              "name": "Cand Head",
+                                              "width": "fill_container",
+                                              "gap": 6,
+                                              "alignItems": "center",
+                                              "children": [
+                                                {
+                                                  "type": "icon",
+                                                  "id": "M6SlRt",
+                                                  "name": "QIcon",
+                                                  "width": 14,
+                                                  "height": 14,
+                                                  "icon": "unlink",
+                                                  "library": "lucide",
+                                                  "fill": "#D97706"
+                                                },
+                                                {
+                                                  "type": "text",
+                                                  "id": "s6ucR",
+                                                  "name": "Title",
+                                                  "fill": "$--foreground",
+                                                  "content": "检验依据 SOP-QC-114",
+                                                  "fontFamily": "Inter",
+                                                  "fontSize": 13,
+                                                  "fontWeight": "600"
+                                                },
+                                                {
+                                                  "type": "frame",
+                                                  "id": "PxXhZ",
+                                                  "name": "Sp",
+                                                  "width": "fill_container",
+                                                  "height": 1
+                                                },
+                                                {
+                                                  "id": "sbW3n",
+                                                  "type": "ref",
+                                                  "ref": "3IiAS",
+                                                  "name": "Kind",
+                                                  "descendants": {
+                                                    "zHpCv": {
+                                                      "content": "数据型",
+                                                      "fontSize": 10
+                                                    }
+                                                  }
+                                                }
+                                              ]
+                                            },
+                                            {
+                                              "type": "text",
+                                              "id": "Uw1bs",
+                                              "name": "Evidence",
+                                              "fill": "$--muted-foreground",
+                                              "textGrowth": "fixed-width",
+                                              "width": "fill_container",
+                                              "content": "证据：\"…依据检验标准操作规程 SOP-QC-114 执行…\"",
+                                              "lineHeight": 1.5,
+                                              "fontFamily": "Inter",
+                                              "fontSize": 11,
+                                              "fontWeight": "normal"
+                                            },
+                                            {
+                                              "type": "text",
+                                              "id": "r5tWw",
+                                              "name": "Reason",
+                                              "fill": "#D97706",
+                                              "textGrowth": "fixed-width",
+                                              "width": "fill_container",
+                                              "content": "原因：疑似固定常量，非本体关系",
+                                              "lineHeight": 1.5,
+                                              "fontFamily": "Inter",
+                                              "fontSize": 11,
+                                              "fontWeight": "normal"
+                                            },
+                                            {
+                                              "type": "rectangle",
+                                              "id": "Icx9J",
+                                              "name": "Div",
+                                              "fill": "$--border",
+                                              "width": "fill_container",
+                                              "height": 1
+                                            },
+                                            {
+                                              "type": "frame",
+                                              "id": "O5j5nn",
+                                              "name": "Dispo Row 1",
+                                              "width": "fill_container",
+                                              "gap": 6,
+                                              "children": [
+                                                {
+                                                  "id": "heLKj",
+                                                  "type": "ref",
+                                                  "ref": "C10zH",
+                                                  "width": "fill_container",
+                                                  "descendants": {
+                                                    "l8v2I": {
+                                                      "enabled": false
+                                                    },
+                                                    "poRwU": {
+                                                      "content": "绑定关系",
+                                                      "fontSize": 12
+                                                    }
+                                                  }
+                                                },
+                                                {
+                                                  "id": "DHJlV",
+                                                  "type": "ref",
+                                                  "ref": "VSnC2",
+                                                  "width": "fill_container",
+                                                  "descendants": {
+                                                    "8jVfJ": {
+                                                      "enabled": false
+                                                    },
+                                                    "8tnXG": {
+                                                      "content": "设为常量",
+                                                      "fontSize": 12
+                                                    }
+                                                  }
+                                                }
+                                              ]
+                                            },
+                                            {
+                                              "type": "frame",
+                                              "id": "O1lcp",
+                                              "name": "Dispo Row 2",
+                                              "width": "fill_container",
+                                              "gap": 6,
+                                              "children": [
+                                                {
+                                                  "id": "gPkdb",
+                                                  "type": "ref",
+                                                  "ref": "C10zH",
+                                                  "width": "fill_container",
+                                                  "descendants": {
+                                                    "l8v2I": {
+                                                      "enabled": false
+                                                    },
+                                                    "poRwU": {
+                                                      "content": "设为人工",
+                                                      "fontSize": 12
+                                                    }
+                                                  }
+                                                },
+                                                {
+                                                  "id": "e1FwN",
+                                                  "type": "ref",
+                                                  "ref": "C10zH",
+                                                  "width": "fill_container",
+                                                  "descendants": {
+                                                    "l8v2I": {
+                                                      "enabled": false
+                                                    },
+                                                    "poRwU": {
+                                                      "content": "丢弃",
+                                                      "fontSize": 12,
+                                                      "fill": "$--destructive"
+                                                    }
+                                                  }
+                                                }
+                                              ]
+                                            }
+                                          ]
+                                        }
+                                      ]
                                     }
                                   ]
                                 }
@@ -30427,7 +31736,7 @@
                                       "name": "Count Badge",
                                       "descendants": {
                                         "zHpCv": {
-                                          "content": "7 插槽"
+                                          "content": "2 覆盖"
                                         }
                                       }
                                     },
@@ -30457,6 +31766,628 @@
                                     12
                                   ],
                                   "children": [
+                                    {
+                                      "type": "frame",
+                                      "id": "zt2iu",
+                                      "name": "Coverage Area 2",
+                                      "width": "fill_container",
+                                      "fill": "$--muted",
+                                      "cornerRadius": 6,
+                                      "stroke": "$--border",
+                                      "strokeWidth": 1,
+                                      "strokeAlignment": "inner",
+                                      "layout": "vertical",
+                                      "gap": 10,
+                                      "padding": 12,
+                                      "children": [
+                                        {
+                                          "type": "frame",
+                                          "id": "mxHOs",
+                                          "name": "CA Head",
+                                          "width": "fill_container",
+                                          "gap": 8,
+                                          "alignItems": "center",
+                                          "children": [
+                                            {
+                                              "type": "icon",
+                                              "id": "kl7Ih",
+                                              "name": "CA Icon",
+                                              "width": 15,
+                                              "height": 15,
+                                              "icon": "git-branch",
+                                              "library": "lucide",
+                                              "fill": "$--primary"
+                                            },
+                                            {
+                                              "type": "text",
+                                              "id": "Sa6Pb",
+                                              "name": "CA Title",
+                                              "fill": "$--foreground",
+                                              "content": "本体覆盖声明",
+                                              "fontFamily": "Inter",
+                                              "fontSize": 13,
+                                              "fontWeight": "600"
+                                            },
+                                            {
+                                              "type": "frame",
+                                              "id": "N0A5A",
+                                              "name": "Obj Chip",
+                                              "fill": "#2463EB14",
+                                              "cornerRadius": 10,
+                                              "stroke": "#2463EB40",
+                                              "strokeWidth": 1,
+                                              "strokeAlignment": "inner",
+                                              "gap": 4,
+                                              "padding": [
+                                                2,
+                                                8
+                                              ],
+                                              "alignItems": "center",
+                                              "children": [
+                                                {
+                                                  "type": "icon",
+                                                  "id": "e3IYw",
+                                                  "name": "OI",
+                                                  "width": 11,
+                                                  "height": 11,
+                                                  "icon": "box",
+                                                  "library": "lucide",
+                                                  "fill": "$--primary"
+                                                },
+                                                {
+                                                  "type": "text",
+                                                  "id": "ElVJX",
+                                                  "name": "OT",
+                                                  "fill": "$--primary",
+                                                  "content": "质量标准",
+                                                  "fontFamily": "Inter",
+                                                  "fontSize": 11,
+                                                  "fontWeight": "500"
+                                                }
+                                              ]
+                                            },
+                                            {
+                                              "type": "frame",
+                                              "id": "NP3Ns",
+                                              "name": "Sp",
+                                              "width": "fill_container",
+                                              "height": 1
+                                            },
+                                            {
+                                              "id": "gUTs6",
+                                              "type": "ref",
+                                              "ref": "C10zH",
+                                              "name": "Add Rel",
+                                              "descendants": {
+                                                "l8v2I": {
+                                                  "enabled": false
+                                                },
+                                                "poRwU": {
+                                                  "content": "+ 添加关系",
+                                                  "fontSize": 12
+                                                }
+                                              }
+                                            }
+                                          ]
+                                        },
+                                        {
+                                          "type": "text",
+                                          "id": "hKwHz",
+                                          "name": "CA Hint",
+                                          "fill": "$--muted-foreground",
+                                          "textGrowth": "fixed-width",
+                                          "width": "fill_container",
+                                          "content": "本节按关系声明覆盖；抽取字段已归入对应关系的属性清单。",
+                                          "lineHeight": 1.5,
+                                          "fontFamily": "Inter",
+                                          "fontSize": 11,
+                                          "fontWeight": "normal"
+                                        },
+                                        {
+                                          "type": "frame",
+                                          "id": "DFavp",
+                                          "name": "Decl hasTestItem",
+                                          "width": "fill_container",
+                                          "fill": "$--background",
+                                          "cornerRadius": 6,
+                                          "stroke": "$--border",
+                                          "strokeWidth": 1,
+                                          "strokeAlignment": "inner",
+                                          "layout": "vertical",
+                                          "gap": 8,
+                                          "padding": 10,
+                                          "children": [
+                                            {
+                                              "type": "frame",
+                                              "id": "NL5wi",
+                                              "name": "Rel Row",
+                                              "width": "fill_container",
+                                              "gap": 6,
+                                              "alignItems": "center",
+                                              "children": [
+                                                {
+                                                  "type": "text",
+                                                  "id": "Q3gAdp",
+                                                  "name": "Pred",
+                                                  "fill": "$--primary",
+                                                  "content": "hasTestItem",
+                                                  "fontFamily": "JetBrains Mono",
+                                                  "fontSize": 12,
+                                                  "fontWeight": "500"
+                                                },
+                                                {
+                                                  "type": "text",
+                                                  "id": "t4nmRG",
+                                                  "name": "Arrow",
+                                                  "fill": "$--muted-foreground",
+                                                  "content": "→",
+                                                  "fontFamily": "Inter",
+                                                  "fontSize": 13,
+                                                  "fontWeight": "normal"
+                                                },
+                                                {
+                                                  "type": "text",
+                                                  "id": "WnqA6",
+                                                  "name": "Range",
+                                                  "fill": "$--foreground",
+                                                  "content": "检测项目",
+                                                  "fontFamily": "Inter",
+                                                  "fontSize": 13,
+                                                  "fontWeight": "500"
+                                                },
+                                                {
+                                                  "type": "frame",
+                                                  "id": "nsIfk",
+                                                  "name": "Sp",
+                                                  "width": "fill_container",
+                                                  "height": 1
+                                                },
+                                                {
+                                                  "type": "text",
+                                                  "id": "htQkZ",
+                                                  "name": "ReqLbl",
+                                                  "fill": "$--muted-foreground",
+                                                  "content": "必填",
+                                                  "fontFamily": "Inter",
+                                                  "fontSize": 11,
+                                                  "fontWeight": "normal"
+                                                },
+                                                {
+                                                  "id": "qkoDx",
+                                                  "type": "ref",
+                                                  "ref": "c8fiq",
+                                                  "name": "Req Switch",
+                                                  "descendants": {
+                                                    "HsFun": {
+                                                      "enabled": false
+                                                    }
+                                                  }
+                                                }
+                                              ]
+                                            },
+                                            {
+                                              "type": "frame",
+                                              "id": "QFRyd",
+                                              "name": "IRI Row",
+                                              "width": "fill_container",
+                                              "gap": 6,
+                                              "alignItems": "center",
+                                              "children": [
+                                                {
+                                                  "type": "text",
+                                                  "id": "QvcL6",
+                                                  "name": "IRI",
+                                                  "fill": "#16A34A",
+                                                  "content": "slpra:TestItem",
+                                                  "fontFamily": "JetBrains Mono",
+                                                  "fontSize": 11,
+                                                  "fontWeight": "normal"
+                                                },
+                                                {
+                                                  "type": "frame",
+                                                  "id": "nQoyK",
+                                                  "name": "Sp",
+                                                  "width": "fill_container",
+                                                  "height": 1
+                                                },
+                                                {
+                                                  "type": "frame",
+                                                  "id": "oAF9y",
+                                                  "name": "Hit Pill",
+                                                  "fill": "#16A34A14",
+                                                  "cornerRadius": 10,
+                                                  "stroke": "#16A34A40",
+                                                  "strokeWidth": 1,
+                                                  "strokeAlignment": "inner",
+                                                  "gap": 4,
+                                                  "padding": [
+                                                    2,
+                                                    7
+                                                  ],
+                                                  "alignItems": "center",
+                                                  "children": [
+                                                    {
+                                                      "type": "icon",
+                                                      "id": "SEZ2N",
+                                                      "name": "PI",
+                                                      "width": 11,
+                                                      "height": 11,
+                                                      "icon": "circle-check",
+                                                      "library": "lucide",
+                                                      "fill": "#16A34A"
+                                                    },
+                                                    {
+                                                      "type": "text",
+                                                      "id": "um5SG",
+                                                      "name": "PT",
+                                                      "fill": "#16A34A",
+                                                      "content": "关系已命中",
+                                                      "fontFamily": "Inter",
+                                                      "fontSize": 10,
+                                                      "fontWeight": "500"
+                                                    }
+                                                  ]
+                                                }
+                                              ]
+                                            },
+                                            {
+                                              "type": "frame",
+                                              "id": "SbBzd",
+                                              "name": "Checklist",
+                                              "width": "fill_container",
+                                              "layout": "vertical",
+                                              "gap": 4,
+                                              "children": [
+                                                {
+                                                  "type": "frame",
+                                                  "id": "p3WMO",
+                                                  "name": "Prop 含量测定",
+                                                  "width": "fill_container",
+                                                  "fill": "#16A34A14",
+                                                  "cornerRadius": 4,
+                                                  "stroke": "#16A34A40",
+                                                  "strokeWidth": 1,
+                                                  "strokeAlignment": "inner",
+                                                  "gap": 5,
+                                                  "padding": [
+                                                    4,
+                                                    8
+                                                  ],
+                                                  "alignItems": "center",
+                                                  "children": [
+                                                    {
+                                                      "type": "icon",
+                                                      "id": "cZd31",
+                                                      "name": "PI",
+                                                      "width": 12,
+                                                      "height": 12,
+                                                      "icon": "circle-check",
+                                                      "library": "lucide",
+                                                      "fill": "#16A34A"
+                                                    },
+                                                    {
+                                                      "type": "text",
+                                                      "id": "wezPW",
+                                                      "name": "PL",
+                                                      "fill": "$--foreground",
+                                                      "content": "含量测定",
+                                                      "fontFamily": "Inter",
+                                                      "fontSize": 12,
+                                                      "fontWeight": "normal"
+                                                    },
+                                                    {
+                                                      "type": "frame",
+                                                      "id": "fMKrg",
+                                                      "name": "PS",
+                                                      "width": "fill_container",
+                                                      "height": 1
+                                                    }
+                                                  ]
+                                                },
+                                                {
+                                                  "type": "frame",
+                                                  "id": "QSxML",
+                                                  "name": "Prop 有关物质",
+                                                  "width": "fill_container",
+                                                  "fill": "#16A34A14",
+                                                  "cornerRadius": 4,
+                                                  "stroke": "#16A34A40",
+                                                  "strokeWidth": 1,
+                                                  "strokeAlignment": "inner",
+                                                  "gap": 5,
+                                                  "padding": [
+                                                    4,
+                                                    8
+                                                  ],
+                                                  "alignItems": "center",
+                                                  "children": [
+                                                    {
+                                                      "type": "icon",
+                                                      "id": "RQVoR",
+                                                      "name": "PI",
+                                                      "width": 12,
+                                                      "height": 12,
+                                                      "icon": "circle-check",
+                                                      "library": "lucide",
+                                                      "fill": "#16A34A"
+                                                    },
+                                                    {
+                                                      "type": "text",
+                                                      "id": "KOgi6",
+                                                      "name": "PL",
+                                                      "fill": "$--foreground",
+                                                      "content": "有关物质",
+                                                      "fontFamily": "Inter",
+                                                      "fontSize": 12,
+                                                      "fontWeight": "normal"
+                                                    },
+                                                    {
+                                                      "type": "frame",
+                                                      "id": "mXjHa",
+                                                      "name": "PS",
+                                                      "width": "fill_container",
+                                                      "height": 1
+                                                    }
+                                                  ]
+                                                },
+                                                {
+                                                  "type": "frame",
+                                                  "id": "wmPCU",
+                                                  "name": "Prop 溶出度",
+                                                  "width": "fill_container",
+                                                  "fill": "#FBBF241F",
+                                                  "cornerRadius": 4,
+                                                  "stroke": "#FBBF2466",
+                                                  "strokeWidth": 1,
+                                                  "strokeAlignment": "inner",
+                                                  "gap": 5,
+                                                  "padding": [
+                                                    4,
+                                                    8
+                                                  ],
+                                                  "alignItems": "center",
+                                                  "children": [
+                                                    {
+                                                      "type": "icon",
+                                                      "id": "GdMbq",
+                                                      "name": "PI",
+                                                      "width": 12,
+                                                      "height": 12,
+                                                      "icon": "triangle-alert",
+                                                      "library": "lucide",
+                                                      "fill": "#D97706"
+                                                    },
+                                                    {
+                                                      "type": "text",
+                                                      "id": "QJmSG",
+                                                      "name": "PL",
+                                                      "fill": "$--foreground",
+                                                      "content": "溶出度",
+                                                      "fontFamily": "Inter",
+                                                      "fontSize": 12,
+                                                      "fontWeight": "normal"
+                                                    },
+                                                    {
+                                                      "type": "frame",
+                                                      "id": "K57oKm",
+                                                      "name": "PS",
+                                                      "width": "fill_container",
+                                                      "height": 1
+                                                    },
+                                                    {
+                                                      "type": "text",
+                                                      "id": "GGFlm",
+                                                      "name": "PN",
+                                                      "fill": "#D97706",
+                                                      "content": "必填缺失",
+                                                      "fontFamily": "Inter",
+                                                      "fontSize": 10,
+                                                      "fontWeight": "normal"
+                                                    }
+                                                  ]
+                                                }
+                                              ]
+                                            }
+                                          ]
+                                        },
+                                        {
+                                          "type": "frame",
+                                          "id": "w5vGd",
+                                          "name": "Decl hasStabilityStudy",
+                                          "width": "fill_container",
+                                          "fill": "$--background",
+                                          "cornerRadius": 6,
+                                          "stroke": "$--border",
+                                          "strokeWidth": 1,
+                                          "strokeAlignment": "inner",
+                                          "layout": "vertical",
+                                          "gap": 8,
+                                          "padding": 10,
+                                          "children": [
+                                            {
+                                              "type": "frame",
+                                              "id": "N7JhU",
+                                              "name": "Rel Row",
+                                              "width": "fill_container",
+                                              "gap": 6,
+                                              "alignItems": "center",
+                                              "children": [
+                                                {
+                                                  "type": "text",
+                                                  "id": "iKBJf",
+                                                  "name": "Pred",
+                                                  "fill": "$--primary",
+                                                  "content": "hasStabilityStudy",
+                                                  "fontFamily": "JetBrains Mono",
+                                                  "fontSize": 12,
+                                                  "fontWeight": "500"
+                                                },
+                                                {
+                                                  "type": "text",
+                                                  "id": "EX8b6",
+                                                  "name": "Arrow",
+                                                  "fill": "$--muted-foreground",
+                                                  "content": "→",
+                                                  "fontFamily": "Inter",
+                                                  "fontSize": 13,
+                                                  "fontWeight": "normal"
+                                                },
+                                                {
+                                                  "type": "text",
+                                                  "id": "tK75j",
+                                                  "name": "Range",
+                                                  "fill": "$--foreground",
+                                                  "content": "稳定性研究",
+                                                  "fontFamily": "Inter",
+                                                  "fontSize": 13,
+                                                  "fontWeight": "500"
+                                                },
+                                                {
+                                                  "type": "frame",
+                                                  "id": "AkvoS",
+                                                  "name": "Sp",
+                                                  "width": "fill_container",
+                                                  "height": 1
+                                                },
+                                                {
+                                                  "type": "text",
+                                                  "id": "hc2z7",
+                                                  "name": "OptLbl",
+                                                  "fill": "$--muted-foreground",
+                                                  "content": "选填",
+                                                  "fontFamily": "Inter",
+                                                  "fontSize": 11,
+                                                  "fontWeight": "normal"
+                                                },
+                                                {
+                                                  "id": "vrXJb",
+                                                  "type": "ref",
+                                                  "ref": "fcMl6",
+                                                  "name": "Opt Switch",
+                                                  "descendants": {
+                                                    "HsFun": {
+                                                      "enabled": false
+                                                    }
+                                                  }
+                                                }
+                                              ]
+                                            },
+                                            {
+                                              "type": "frame",
+                                              "id": "xzEf2",
+                                              "name": "IRI Row",
+                                              "width": "fill_container",
+                                              "gap": 6,
+                                              "alignItems": "center",
+                                              "children": [
+                                                {
+                                                  "type": "text",
+                                                  "id": "BhFsZ",
+                                                  "name": "IRI",
+                                                  "fill": "$--muted-foreground",
+                                                  "content": "slpra:StabilityStudy",
+                                                  "fontFamily": "JetBrains Mono",
+                                                  "fontSize": 11,
+                                                  "fontWeight": "normal"
+                                                },
+                                                {
+                                                  "type": "frame",
+                                                  "id": "jrriO",
+                                                  "name": "Sp",
+                                                  "width": "fill_container",
+                                                  "height": 1
+                                                },
+                                                {
+                                                  "type": "frame",
+                                                  "id": "pi2Np",
+                                                  "name": "Miss Pill",
+                                                  "fill": "#00000000",
+                                                  "cornerRadius": 10,
+                                                  "stroke": "$--border",
+                                                  "strokeWidth": 1,
+                                                  "strokeAlignment": "inner",
+                                                  "gap": 4,
+                                                  "padding": [
+                                                    2,
+                                                    7
+                                                  ],
+                                                  "alignItems": "center",
+                                                  "children": [
+                                                    {
+                                                      "type": "icon",
+                                                      "id": "qgV3E",
+                                                      "name": "PI",
+                                                      "width": 11,
+                                                      "height": 11,
+                                                      "icon": "circle-dashed",
+                                                      "library": "lucide",
+                                                      "fill": "$--muted-foreground"
+                                                    },
+                                                    {
+                                                      "type": "text",
+                                                      "id": "DUc1a",
+                                                      "name": "PT",
+                                                      "fill": "$--muted-foreground",
+                                                      "content": "未命中 · 选填",
+                                                      "fontFamily": "Inter",
+                                                      "fontSize": 10,
+                                                      "fontWeight": "normal"
+                                                    }
+                                                  ]
+                                                }
+                                              ]
+                                            },
+                                            {
+                                              "type": "text",
+                                              "id": "IRgUN",
+                                              "name": "D2 Hint",
+                                              "fill": "$--muted-foreground",
+                                              "textGrowth": "fixed-width",
+                                              "width": "fill_container",
+                                              "content": "本节未声明为必填，缺失不计入遗漏。",
+                                              "lineHeight": 1.5,
+                                              "fontFamily": "Inter",
+                                              "fontSize": 11,
+                                              "fontWeight": "normal"
+                                            }
+                                          ]
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "type": "frame",
+                                      "id": "wopEz",
+                                      "name": "NonOnto Cap 2",
+                                      "width": "fill_container",
+                                      "gap": 6,
+                                      "padding": [
+                                        0,
+                                        2
+                                      ],
+                                      "alignItems": "center",
+                                      "children": [
+                                        {
+                                          "type": "icon",
+                                          "id": "cCVi7",
+                                          "name": "CI",
+                                          "width": 12,
+                                          "height": 12,
+                                          "icon": "wrench",
+                                          "library": "lucide",
+                                          "fill": "$--muted-foreground"
+                                        },
+                                        {
+                                          "type": "text",
+                                          "id": "ydi7F",
+                                          "name": "CT",
+                                          "fill": "$--muted-foreground",
+                                          "content": "其他插槽 · 规则 / 常量 / 人工（不参与本体覆盖）",
+                                          "fontFamily": "Inter",
+                                          "fontSize": 11,
+                                          "fontWeight": "normal"
+                                        }
+                                      ]
+                                    },
                                     {
                                       "type": "frame",
                                       "id": "lusM4",
@@ -30495,7 +32426,7 @@
                                               "id": "RZkTm",
                                               "name": "Group Title",
                                               "fill": "$--foreground",
-                                              "content": "数据汇总",
+                                              "content": "备注与结论",
                                               "fontFamily": "Inter",
                                               "fontSize": 13,
                                               "fontWeight": "normal"
@@ -30507,7 +32438,7 @@
                                               "name": "Kind Badge",
                                               "descendants": {
                                                 "zHpCv": {
-                                                  "content": "fields",
+                                                  "content": "规则 / 常量 / 人工",
                                                   "fontSize": 11
                                                 }
                                               }
@@ -30561,7 +32492,7 @@
                                                   "id": "ZWlnX",
                                                   "name": "Slot Label",
                                                   "fill": "$--foreground",
-                                                  "content": "含量测定",
+                                                  "content": "检测方法",
                                                   "fontFamily": "Inter",
                                                   "fontSize": 13,
                                                   "fontWeight": "normal"
@@ -30592,7 +32523,7 @@
                                                   "name": "Kind Badge",
                                                   "descendants": {
                                                     "zHpCv": {
-                                                      "content": "抽取",
+                                                      "content": "常量",
                                                       "fontSize": 11
                                                     }
                                                   }
@@ -30646,7 +32577,7 @@
                                                   "id": "wGv86",
                                                   "name": "Slot Label",
                                                   "fill": "$--foreground",
-                                                  "content": "有关物质",
+                                                  "content": "检验结论",
                                                   "fontFamily": "Inter",
                                                   "fontSize": 13,
                                                   "fontWeight": "normal"
@@ -30665,7 +32596,7 @@
                                                   "name": "Kind Badge",
                                                   "descendants": {
                                                     "zHpCv": {
-                                                      "content": "抽取",
+                                                      "content": "规则",
                                                       "fontSize": 11
                                                     }
                                                   }
@@ -30719,7 +32650,7 @@
                                                   "id": "q0mZS",
                                                   "name": "Slot Label",
                                                   "fill": "$--foreground",
-                                                  "content": "溶出度",
+                                                  "content": "备注",
                                                   "fontFamily": "Inter",
                                                   "fontSize": 13,
                                                   "fontWeight": "normal"
@@ -30738,7 +32669,7 @@
                                                   "name": "Kind Badge",
                                                   "descendants": {
                                                     "zHpCv": {
-                                                      "content": "抽取",
+                                                      "content": "常量",
                                                       "fontSize": 11
                                                     }
                                                   }
@@ -30854,7 +32785,7 @@
                                                               "id": "c5ZAh",
                                                               "name": "Value",
                                                               "fill": "$--foreground",
-                                                              "content": "result.dissolution",
+                                                              "content": "note.remark",
                                                               "fontFamily": "JetBrains Mono",
                                                               "fontSize": 13,
                                                               "fontWeight": "normal"
@@ -30902,7 +32833,7 @@
                                                               "id": "RNBDi",
                                                               "name": "Value",
                                                               "fill": "$--foreground",
-                                                              "content": "溶出度",
+                                                              "content": "备注",
                                                               "fontFamily": "Inter",
                                                               "fontSize": 13,
                                                               "fontWeight": "normal"
@@ -30960,7 +32891,7 @@
                                                               "id": "wp0qW",
                                                               "name": "Value",
                                                               "fill": "$--primary",
-                                                              "content": "抽取",
+                                                              "content": "常量",
                                                               "fontFamily": "Inter",
                                                               "fontSize": 13,
                                                               "fontWeight": "500"
@@ -30992,7 +32923,7 @@
                                                           "id": "FaU1n",
                                                           "name": "Label",
                                                           "fill": "$--foreground",
-                                                          "content": "本体类 IRI",
+                                                          "content": "常量值",
                                                           "fontFamily": "Inter",
                                                           "fontSize": 12,
                                                           "fontWeight": "500"
@@ -31018,7 +32949,7 @@
                                                               "id": "fc7XP",
                                                               "name": "Value",
                                                               "fill": "$--foreground",
-                                                              "content": "DissolutionTest",
+                                                              "content": "见附录 A.3",
                                                               "fontFamily": "JetBrains Mono",
                                                               "fontSize": 13,
                                                               "fontWeight": "normal"
@@ -31084,65 +33015,6 @@
                                                             {
                                                               "type": "icon",
                                                               "id": "jeXVA",
-                                                              "name": "Chevron",
-                                                              "width": 14,
-                                                              "height": 14,
-                                                              "icon": "chevron-down",
-                                                              "library": "lucide",
-                                                              "fill": "$--muted-foreground"
-                                                            }
-                                                          ]
-                                                        }
-                                                      ]
-                                                    },
-                                                    {
-                                                      "type": "frame",
-                                                      "id": "ZzAOg",
-                                                      "name": "Field Missing",
-                                                      "width": "fill_container",
-                                                      "layout": "vertical",
-                                                      "gap": 4,
-                                                      "children": [
-                                                        {
-                                                          "type": "text",
-                                                          "id": "MiaPw",
-                                                          "name": "Label",
-                                                          "fill": "$--foreground",
-                                                          "content": "缺失处理",
-                                                          "fontFamily": "Inter",
-                                                          "fontSize": 12,
-                                                          "fontWeight": "500"
-                                                        },
-                                                        {
-                                                          "type": "frame",
-                                                          "id": "UU96A",
-                                                          "name": "Select",
-                                                          "width": "fill_container",
-                                                          "fill": "$--background",
-                                                          "cornerRadius": 5,
-                                                          "stroke": "$--input",
-                                                          "strokeWidth": 1,
-                                                          "strokeAlignment": "inner",
-                                                          "padding": [
-                                                            7,
-                                                            10
-                                                          ],
-                                                          "justifyContent": "space_between",
-                                                          "alignItems": "center",
-                                                          "children": [
-                                                            {
-                                                              "type": "text",
-                                                              "id": "YblOO",
-                                                              "name": "Value",
-                                                              "fill": "$--foreground",
-                                                              "content": "标注",
-                                                              "fontFamily": "Inter",
-                                                              "fontSize": 13,
-                                                              "fontWeight": "normal"
-                                                            },
-                                                            {
-                                                              "type": "icon",
-                                                              "id": "BzQsH",
                                                               "name": "Chevron",
                                                               "width": 14,
                                                               "height": 14,
@@ -41350,6 +43222,337 @@
                       ]
                     }
                   ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "vwW7Q",
+      "x": 6856,
+      "y": 4243,
+      "name": "Slot Tree Component — Full View",
+      "width": 464,
+      "fill": "$--muted",
+      "cornerRadius": 12,
+      "layout": "vertical",
+      "gap": 16,
+      "padding": 24,
+      "children": [
+        {
+          "type": "text",
+          "id": "wotzH",
+          "name": "FV Title",
+          "fill": "$--foreground",
+          "textGrowth": "fixed-width",
+          "width": "fill_container",
+          "content": "Slot Tree 组件 · 完整展开",
+          "fontFamily": "Inter",
+          "fontSize": 15,
+          "fontWeight": "600"
+        },
+        {
+          "type": "text",
+          "id": "dKjKp",
+          "name": "FV Subtitle",
+          "fill": "$--muted-foreground",
+          "textGrowth": "fixed-width",
+          "width": "fill_container",
+          "content": "复用组件实例（ref → Slot Tree）· 高度充足，全部分节完整可见，无需滚动",
+          "lineHeight": 1.45,
+          "fontFamily": "Inter",
+          "fontSize": 12,
+          "fontWeight": "normal"
+        },
+        {
+          "type": "frame",
+          "id": "yNXi4",
+          "name": "FV Panel",
+          "width": "fill_container",
+          "fill": "$--background",
+          "cornerRadius": 8,
+          "stroke": "$--border",
+          "strokeWidth": 1,
+          "strokeAlignment": "inner",
+          "layout": "vertical",
+          "children": [
+            {
+              "id": "RJjsD",
+              "type": "ref",
+              "ref": "JKSZm",
+              "name": "Slot Tree Instance",
+              "width": "fill_container",
+              "height": "fit_content"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "M8lm7",
+      "x": 285,
+      "y": 4911,
+      "name": "Login",
+      "clip": true,
+      "width": 1211,
+      "height": 930,
+      "fill": "#FFFFFF",
+      "layout": "none"
+    },
+    {
+      "type": "frame",
+      "id": "nwaKr",
+      "x": 7400,
+      "y": 0,
+      "name": "登录",
+      "clip": true,
+      "width": 1440,
+      "height": 1024,
+      "fill": "$--muted",
+      "layout": "vertical",
+      "justifyContent": "center",
+      "alignItems": "center",
+      "children": [
+        {
+          "type": "frame",
+          "id": "Hc7lN",
+          "name": "Login Container",
+          "width": 400,
+          "layout": "vertical",
+          "gap": 24,
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "frame",
+              "id": "udo9i",
+              "name": "Brand",
+              "gap": 10,
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "XiC1s",
+                  "name": "Logo",
+                  "width": 40,
+                  "height": 40,
+                  "fill": "$--primary",
+                  "cornerRadius": 10,
+                  "layout": "vertical",
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "T7Wbiv",
+                      "name": "Logo Icon",
+                      "width": 22,
+                      "height": 22,
+                      "icon": "hexagon",
+                      "library": "lucide",
+                      "fill": "$--primary-foreground"
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "BmxuP",
+                  "name": "Wordmark",
+                  "fill": "$--foreground",
+                  "content": "恒瑞智能文档分析系统",
+                  "fontFamily": "Inter",
+                  "fontSize": 22,
+                  "fontWeight": "700"
+                }
+              ]
+            },
+            {
+              "id": "wpC0H",
+              "type": "ref",
+              "ref": "pcGlv",
+              "name": "Login Card",
+              "width": 400,
+              "descendants": {
+                "CgJv7": {
+                  "height": "fit_content",
+                  "gap": 6,
+                  "justifyContent": "start",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "YOZKY",
+                      "name": "Title",
+                      "fill": "$--foreground",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "欢迎回来",
+                      "fontFamily": "Inter",
+                      "fontSize": 24,
+                      "fontWeight": "600"
+                    },
+                    {
+                      "type": "text",
+                      "id": "VPRCl",
+                      "name": "Subtitle",
+                      "fill": "$--muted-foreground",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "登录以继续使用恒瑞智能文档分析系统",
+                      "fontFamily": "Inter",
+                      "fontSize": 14,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                "frWPV": {
+                  "height": "fit_content",
+                  "gap": 16,
+                  "padding": 24,
+                  "children": [
+                    {
+                      "id": "M1gDX",
+                      "type": "ref",
+                      "ref": "1415a",
+                      "name": "Username Field",
+                      "width": "fill_container",
+                      "descendants": {
+                        "BX0XX": {
+                          "content": "用户名"
+                        },
+                        "SDRKn": {
+                          "content": "admin",
+                          "fill": "$--foreground"
+                        }
+                      }
+                    },
+                    {
+                      "id": "JgjOm",
+                      "type": "ref",
+                      "ref": "1415a",
+                      "name": "Password Field",
+                      "width": "fill_container",
+                      "descendants": {
+                        "BX0XX": {
+                          "content": "密码"
+                        },
+                        "SDRKn": {
+                          "content": "••••••••••",
+                          "fill": "$--foreground"
+                        }
+                      }
+                    },
+                    {
+                      "type": "frame",
+                      "id": "XU1rV",
+                      "name": "Options Row",
+                      "width": "fill_container",
+                      "justifyContent": "space_between",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "OUwN1",
+                          "name": "Remember",
+                          "gap": 8,
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "fhTTL",
+                              "name": "Checkbox",
+                              "width": 16,
+                              "height": 16,
+                              "fill": "$--background",
+                              "cornerRadius": 4,
+                              "stroke": "$--input",
+                              "strokeWidth": 1,
+                              "strokeAlignment": "inner"
+                            },
+                            {
+                              "type": "text",
+                              "id": "i8WVSP",
+                              "name": "Remember Label",
+                              "fill": "$--muted-foreground",
+                              "content": "记住我",
+                              "fontFamily": "Inter",
+                              "fontSize": 14,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "text",
+                          "id": "yhcfs",
+                          "name": "Forgot Link",
+                          "fill": "$--primary",
+                          "content": "忘记密码？",
+                          "fontFamily": "Inter",
+                          "fontSize": 14,
+                          "fontWeight": "500"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                "bvhSM": {
+                  "height": "fit_content",
+                  "layout": "vertical",
+                  "padding": [
+                    4,
+                    24,
+                    24,
+                    24
+                  ],
+                  "children": [
+                    {
+                      "id": "v5Vx8X",
+                      "type": "ref",
+                      "ref": "C3KOZ",
+                      "name": "Login Button",
+                      "width": "fill_container",
+                      "descendants": {
+                        "RO4Ll": {
+                          "enabled": false
+                        },
+                        "NEMHS": {
+                          "content": "登录"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "type": "frame",
+              "id": "RlRC6",
+              "name": "Footer",
+              "gap": 4,
+              "justifyContent": "center",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "NRQ2o",
+                  "name": "Footer Text",
+                  "fill": "$--muted-foreground",
+                  "content": "还没有账户？",
+                  "fontFamily": "Inter",
+                  "fontSize": 14,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "text",
+                  "id": "G3P0C",
+                  "name": "Footer Link",
+                  "fill": "$--primary",
+                  "content": "联系管理员",
+                  "fontFamily": "Inter",
+                  "fontSize": 14,
+                  "fontWeight": "500"
                 }
               ]
             }

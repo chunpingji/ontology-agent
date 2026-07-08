@@ -10,6 +10,13 @@ import {
   ClipboardCheck,
   Settings,
   FileText,
+  Database,
+  Building2,
+  UserCog,
+  Wrench,
+  Factory,
+  Users,
+  ShieldCheck,
 } from "lucide-react";
 import type { Role } from "@/lib/use-identity";
 
@@ -64,6 +71,17 @@ export const NAV: NavNode[] = [
       { href: "/reports", label: "报告中心", icon: FileStack },
       // 审批 /approval supersedes 审批中心 /approvals (redirect in next.config.ts); QA-gated as before.
       { href: "/approval", label: "审批管理", icon: ClipboardCheck },
+    ],
+  },
+  {
+    title: "Mock 数据",
+    items: [
+      { href: "/mock/departments", label: "部门", icon: Building2 },
+      { href: "/mock/roles", label: "角色", icon: UserCog },
+      { href: "/mock/equipment", label: "设备", icon: Wrench },
+      { href: "/mock/production-areas", label: "生产区域", icon: Factory },
+      { href: "/mock/assessment-team", label: "评估小组", icon: Users },
+      { href: "/mock/approver-team", label: "审批小组", icon: ShieldCheck },
     ],
   },
   { href: "/settings", label: "抽取配置", icon: Settings, bottom: true },

@@ -83,6 +83,20 @@ class RiskReport:
     semantic_slots: list[dict] = field(default_factory=list)
 
 
+def _template_has_section_prompt(template: Any) -> bool:
+    """True if any section carries a non-empty 行文 ``prompt`` (015).
+
+    Such templates drive report prose the section-level way: one ``{content}`` LLM
+    call per prompted section (:func:`generate_section_narratives`). Templates
+    without any section prompt fall back to the legacy 013 whole-report narrative
+    pass (:func:`generate_narratives`) — see ``_try_narrative_generation``."""
+    for sec in getattr(template, "sections", None) or []:
+        prompt = getattr(sec, "prompt", None)
+        if prompt and str(prompt).strip():
+            return True
+    return False
+
+
 class RiskReportGenerator:
     """Generate a RiskReport from extraction edges and declarative rules."""
 
@@ -105,10 +119,12 @@ class RiskReportGenerator:
     ) -> tuple[RiskReport, CoverageManifest]:
         """Build the report AND the material-coverage manifest in one pass (AST-3).
 
-        When ``document_path`` is given and ``llm_report_merge_values`` is on,
-        missing required slots are filled via LLM gap-extraction (013).  LLM
-        values go to ``report.llm_supplements`` for annotation only — they NEVER
-        alter deterministic evaluation (FR-009).
+        Report prose is produced the section-level way (逐节生成后组装): each section
+        with a 行文 ``prompt`` yields its narrative via ONE ``{content}`` LLM call
+        (:func:`generate_section_narratives`); deterministic slots (tables / values /
+        rosters) fill without the LLM. ``document_path`` is accepted for call-site
+        compatibility but no longer used (the source-document gap-fill pass was
+        removed). LLM prose never alters deterministic evaluation (FR-009).
         """
         # Ontology-aware fact building (014 US3): pass the loaded engine so
         # hierarchy membership / domain gating / alignments / vocab apply. Falls
@@ -116,6 +132,11 @@ class RiskReportGenerator:
         from app.services.ontology_engine import get_loaded_engine
 
         engine = get_loaded_engine()
+        # Gap B (016+): materialize the PRODUCT report's own declared relations
+        # (评估小组 / 审批人小组 …) as edges from master data, so they flow through the
+        # single fact spine exactly like source-doc edges. No-op unless the template
+        # declares the predicate as ontology_relation coverage (zero blast radius).
+        edges = self._enriched_edges(edges, engine)
         facts = edges_to_facts(edges, engine)
         rules = self._load_rules()
         pre_rows = self._evaluate_rules(rules, facts)
@@ -143,7 +164,6 @@ class RiskReportGenerator:
         )
         self._last_manifest = manifest
 
-        self._try_llm_merge(report, manifest, document_path)
         self._try_narrative_generation(report, edges, facts=facts, engine=engine)
 
         return report, manifest
@@ -153,19 +173,24 @@ class RiskReportGenerator:
         edges: list[dict],
         *,
         dismissed_slot_ids: set[str] | None = None,
-    ) -> tuple[list[RiskRow], CoverageManifest]:
+    ) -> tuple[list[RiskRow], CoverageManifest, list[dict]]:
         """Deterministic-only core (NO LLM): extracted facts → post-control risk
-        rows + coverage manifest.
+        rows + coverage manifest + the enriched edge list.
 
         Mirrors the deterministic head of :meth:`generate_with_coverage` so a
         design-time 行文 Prompt *preview* can reuse the exact risk levels and
         coverage status the real report would quote (§5.4 read-only context)
         WITHOUT firing the narrative / value-merge LLM passes (which would issue
         one LLM call per section).
+
+        Returns the Gap-B-enriched ``edges`` (source-doc + declared product-report
+        relations) as the third element so the preview endpoint can feed the SAME
+        list to :func:`preview_section_narrative` — no re-enrichment, no double edge.
         """
         from app.services.ontology_engine import get_loaded_engine
 
         engine = get_loaded_engine()
+        edges = self._enriched_edges(edges, engine)
         facts = edges_to_facts(edges, engine)
         rules = self._load_rules()
         pre_rows = self._evaluate_rules(rules, facts)
@@ -177,35 +202,20 @@ class RiskReportGenerator:
             engine=engine,
         )
         self._last_manifest = manifest
-        return post_rows, manifest
+        return post_rows, manifest, edges
 
-    def _try_llm_merge(
-        self,
-        report: RiskReport,
-        manifest: CoverageManifest,
-        document_path: str | None,
-    ) -> None:
-        """Fill missing display values via LLM if the feature flag is on (013)."""
-        from app.config import settings
+    def _enriched_edges(self, edges: list[dict], engine: Any) -> list[dict]:
+        """Source-doc edges + the product report's own declared relations (Gap B).
 
-        if not settings.llm_report_merge_values:
-            return
-        if not manifest.missing_required_slots:
-            return
+        A new list is returned (inputs untouched). Empty add — hence byte-identical
+        output — unless ``self._template`` declares a product-report predicate with a
+        registered finder (:func:`product_report_edges_for_template`)."""
+        from app.services.reporting.product_report_edges import (
+            product_report_edges_for_template,
+        )
 
-        from app.services.extraction.llm_gap_filler import fill_coverage_gaps
-
-        synthetic_edges = fill_coverage_gaps(manifest, document_path, self._template)
-        for edge in synthetic_edges:
-            slot_id = edge.get("slot_id", "")
-            value = edge.get("value", "")
-            if slot_id and value:
-                report.llm_supplements[slot_id] = value
-                report.llm_generated_fields.add(slot_id)
-                for sc in manifest.slots:
-                    if sc.slot_id == slot_id:
-                        sc.is_llm_sourced = True
-                        break
+        product_edges = product_report_edges_for_template(engine, self._template)
+        return edges + product_edges if product_edges else edges
 
     def _try_narrative_generation(
         self,
@@ -217,10 +227,17 @@ class RiskReportGenerator:
     ) -> None:
         """Generate narrative prose via LLM if the feature flag is on (013 US3).
 
+        Section-level model (逐节生成后组装): a template that carries section 行文
+        prompts produces its prose one ``{content}`` LLM call per prompted section
+        (:func:`generate_section_narratives`); semantic-slot text is absorbed into
+        that section narrative (``report.semantic_slots`` stays empty). Templates
+        authored without any section prompt fall back to the legacy whole-report
+        pass (:func:`generate_narratives`).
+
         ``facts``/``engine`` (already computed by ``generate_with_coverage``) are
-        threaded through so semantic slots can scope the *associated ontology* facts
-        by range type. All LLM output here is additive; it never re-enters the
-        deterministic evaluation (FR-009)."""
+        threaded through so section coverage can scope the *associated ontology*
+        facts by range type. All LLM output here is additive; it never re-enters
+        the deterministic evaluation (FR-009)."""
         from app.config import settings
 
         if not settings.llm_report_narrative_enabled:
@@ -232,11 +249,31 @@ class RiskReportGenerator:
         if client is None:
             return
 
-        from app.services.reporting.narrative_generator import (
-            generate_narratives,
-            generate_section_narratives,
-            generate_semantic_slots,
-        )
+        if _template_has_section_prompt(self._template):
+            # 015/016: per-section 行文 narrative — one {content} call per prompted
+            # section. §5.4: inject the deterministic rule results + coverage manifest
+            # read-only. A section covering several relations feeds each roster under
+            # its own ### label heading (see generate_section_narratives). Semantic
+            # slots are absorbed here, so no separate per-slot synthesis pass runs.
+            from app.services.reporting.narrative_generator import (
+                generate_section_narratives,
+            )
+
+            report.section_narratives = generate_section_narratives(
+                edges,
+                self._template,
+                client,
+                assessment_rows=report.assessment_rows,
+                manifest=self._last_manifest,
+                engine=engine,
+                skip_semantic_sections=False,
+            )
+            report.semantic_slots = []  # absorbed into the section narratives
+            return
+
+        # Legacy fallback: templates authored without any section prompt keep the
+        # 013 whole-report narrative (subject_description / conclusion / dimensions).
+        from app.services.reporting.narrative_generator import generate_narratives
 
         narratives = generate_narratives(edges, self._template, client)
         for field_name, text in narratives.items():
@@ -249,31 +286,6 @@ class RiskReportGenerator:
             elif field_name.startswith("narrative.") and text:
                 report.llm_supplements[field_name] = text
                 report.llm_generated_fields.add(field_name)
-
-        # 015: per-section 行文 narrative — generated from each Section.prompt.
-        # §5.4: inject the deterministic rule results + coverage manifest read-only.
-        report.section_narratives = generate_section_narratives(
-            edges,
-            self._template,
-            client,
-            assessment_rows=report.assessment_rows,
-            manifest=self._last_manifest,
-        )
-
-        # 016+: per-semantic-slot LLM synthesis (projects Section.coverage + prompt).
-        report.semantic_slots = generate_semantic_slots(
-            edges,
-            self._template,
-            client,
-            facts=facts,
-            assessment_rows=report.assessment_rows,
-            manifest=self._last_manifest,
-            engine=engine,
-        )
-        for slot in report.semantic_slots:
-            slot_id = slot.get("slot_id")
-            if slot_id:
-                report.llm_generated_fields.add(slot_id)
 
     @property
     def rules_fired_count(self) -> int:

@@ -125,6 +125,9 @@ class AppUser(Base):
     display_name: Mapped[str | None] = mapped_column(String(255))
     role_id: Mapped[uuid.UUID | None] = mapped_column(GUID(), ForeignKey("app_role.id"))
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    # 认证：PBKDF2 口令摘要（app/auth.py.hash_password）。可空——历史行/网关用户可无口令，
+    # 仅有摘要的账号才能经 /api/auth/login 登录。明文绝不入库。
+    password_hash: Mapped[str | None] = mapped_column(String(255))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
 
     role: Mapped[AppRole | None] = relationship("AppRole", lazy="joined")

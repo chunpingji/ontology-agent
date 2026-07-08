@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect, useMemo, useRef, type ReactNode } from "react";
+import { useState, useCallback, useEffect, useMemo, useRef, type ReactNode, type MouseEvent as ReactMouseEvent } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Sparkles, GripVertical, Pencil, Trash2, MoreVertical, FileText, LayoutTemplate, Eye, Info, Loader2, Upload, Save, FileDown, Download, Check, ListTree, GitBranch, ArrowRight, X, Plus, RotateCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -68,6 +68,7 @@ import {
   undismissSlot,
   generateRiskReport,
   downloadReport,
+  pollReportStatus,
   rerunAnnotation,
   type ASTCoverageDTO,
   type SlotCoverageDTO,
@@ -155,7 +156,8 @@ interface TemplateMeta {
   owner: string | null;
   updatedAt: string | null;
   defaultSourceFilename: string | null;
-  sampleConfigured: boolean; // 是否已配置默认示例文档（sample_content_json 非空）
+  defaultSourceJobId: string | null;
+  sampleConfigured: boolean;
 }
 
 // 旧模板仅存扁平 sample_text 时，按行包装成最小 tiptap 文档（段落），
@@ -234,6 +236,11 @@ const SOURCE_KIND_LABELS: Record<string, string> = {
 const sourceKindLabel = (kind: string): string => SOURCE_KIND_LABELS[kind] ?? kind;
 const isLegacySourceKind = (kind: string): boolean => kind !== "semantic";
 
+const DEFAULT_SOURCE_IRI = "__default_source__";
+
+// 右栏（Section / 关系图谱）默认宽度（px），与原固定的 w-[26rem] 一致；可拖动调整。
+const DEFAULT_RIGHT_WIDTH = 416;
+
 // ── 渲染模型：真实 sections → 一棵可折叠的 Slot 树。016 收敛后 AI 分析不再产出
 // 逐插槽建议，故不再有 pending 幽灵行 / 虚拟容器——树只承载已持久化的真实插槽。
 interface RenderGroup {
@@ -297,6 +304,8 @@ export function TemplateSlotEditor({
   // ── 015 行文 Prompt（每节一段叙述提示词，可从样本生成）────────────────
   const [promptGenerating, setPromptGenerating] = useState<string | null>(null);
   const [promptError, setPromptError] = useState<string | null>(null);
+  // 异步报告生成轮询中（POST 已返回 report_id，后台 LLM 仍在运行）
+  const [asyncGenerating, setAsyncGenerating] = useState(false);
   // 015+ 行文预览：按 section_id 键；用已关联真实文档的抽取事实测试本节行文效果。
   const [previewingSection, setPreviewingSection] = useState<string | null>(null);
   const [sectionPreviews, setSectionPreviews] = useState<Record<string, string>>({});
@@ -354,6 +363,9 @@ export function TemplateSlotEditor({
   const [sourceFilename, setSourceFilename] = useState<string | null>(
     meta?.defaultSourceFilename ?? null,
   );
+  const [sourceJobId, setSourceJobId] = useState<string | null>(
+    meta?.defaultSourceJobId ?? null,
+  );
   const [docBusy, setDocBusy] = useState<"sample" | "source" | null>(null);
   const [docError, setDocError] = useState<string | null>(null);
   const [pairs, setPairs] = useState<TrainingPairDTO[]>([]);
@@ -387,6 +399,7 @@ export function TemplateSlotEditor({
     });
     setSampleConfigured(!!meta.sampleConfigured);
     setSourceFilename(meta.defaultSourceFilename ?? null);
+    setSourceJobId(meta.defaultSourceJobId ?? null);
   }, [meta]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // 载入训练对（仅编辑模式）。气隙常态：失败静默为空列表。
@@ -460,6 +473,7 @@ export function TemplateSlotEditor({
       try {
         const res = await uploadDefaultSource(templateId, file);
         setSourceFilename(res.default_source_filename);
+        setSourceJobId(res.default_source_job_id);
         onMetaSaved?.();
       } catch {
         setDocError("源文件上传失败");
@@ -477,6 +491,7 @@ export function TemplateSlotEditor({
     try {
       await deleteDefaultSource(templateId);
       setSourceFilename(null);
+      setSourceJobId(null);
       onMetaSaved?.();
     } catch {
       setDocError("源文件移除失败");
@@ -543,9 +558,11 @@ export function TemplateSlotEditor({
   // 有效选中项：用户点选若仍在匹配集内则沿用，否则默认首个（render 派生，免 effect 同步）。
   const activeDocIri = useMemo(
     () =>
-      selectedDocIri && matchedDocs.some((d) => d.iri === selectedDocIri)
-        ? selectedDocIri
-        : matchedDocs[0]?.iri ?? null,
+      selectedDocIri === DEFAULT_SOURCE_IRI
+        ? DEFAULT_SOURCE_IRI
+        : selectedDocIri && matchedDocs.some((d) => d.iri === selectedDocIri)
+          ? selectedDocIri
+          : matchedDocs[0]?.iri ?? null,
     [selectedDocIri, matchedDocs],
   );
   const activeShadow = useMemo(
@@ -554,11 +571,15 @@ export function TemplateSlotEditor({
   );
 
   // 选中真实文档 → 按 job 引用取回正文（尽力而为，降级为「不可预览」；绝不抛错）。
+  // queryKey 包含 sourceJobId：DEFAULT_SOURCE_IRI 的预览依赖它；变化时自动重取。
   const docContentQuery = useQuery({
-    queryKey: ["ast-source-doc-content", activeDocIri],
+    queryKey: ["ast-source-doc-content", activeDocIri, activeDocIri === DEFAULT_SOURCE_IRI ? sourceJobId : null],
     enabled: Boolean(activeDocIri),
     queryFn: async (): Promise<DocPreviewState> => {
-      const jobRef = docJobRef(activeShadow ?? undefined);
+      const jobRef =
+        activeDocIri === DEFAULT_SOURCE_IRI
+          ? sourceJobId
+          : docJobRef(activeShadow ?? undefined);
       if (!jobRef) return { kind: "unavailable" };
       try {
         const doc = await getAnnotatedDocument(jobRef);
@@ -653,7 +674,13 @@ export function TemplateSlotEditor({
   // ── 015 报告预览页签：AST 覆盖率分析（迁移自 /entities/extraction/[jobId]/ast）。
   // 从匹配文档解析 jobId，用当前模板计算覆盖率，支持生成/下载报告。
   const queryClient = useQueryClient();
-  const previewJobId = useMemo(() => docJobRef(activeShadow ?? undefined), [activeShadow]);
+  const previewJobId = useMemo(
+    () =>
+      activeDocIri === DEFAULT_SOURCE_IRI
+        ? sourceJobId
+        : docJobRef(activeShadow ?? undefined),
+    [activeDocIri, activeShadow, sourceJobId],
+  );
   const [previewSlot, setPreviewSlot] = useState<SlotCoverageDTO | null>(null);
   const [previewScrollSlot, setPreviewScrollSlot] = useState<string | null>(null);
   const [previewHighlightRef, setPreviewHighlightRef] = useState<string | undefined>(undefined);
@@ -702,12 +729,36 @@ export function TemplateSlotEditor({
         a.download = `risk-report-${(previewJobId ?? "").slice(0, 8)}.docx`;
         a.click();
         URL.revokeObjectURL(url);
+        queryClient.invalidateQueries({ queryKey: ["reports", previewJobId] });
+        return;
       }
-      queryClient.invalidateQueries({ queryKey: ["reports", previewJobId] });
+      // 异步路径：轮询直到 completed / failed
+      const { report_id } = result as { report_id: string; status: string };
+      setAsyncGenerating(true);
+      const poll = async () => {
+        try {
+          for (;;) {
+            await new Promise((r) => setTimeout(r, 3000));
+            const s = await pollReportStatus(previewJobId!, report_id);
+            if (s.report_status === "completed" || s.report_status === "failed") {
+              queryClient.invalidateQueries({ queryKey: ["reports", previewJobId] });
+              return;
+            }
+          }
+        } catch {
+          // 轮询出错时静默结束
+        } finally {
+          setAsyncGenerating(false);
+        }
+      };
+      poll();
     },
   });
   const rerunMut = useMutation({
-    mutationFn: () => rerunAnnotation(previewJobId!),
+    mutationFn: async () => {
+      await rerunAnnotation(previewJobId!);
+      await getAnnotatedDocument(previewJobId!);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["ast-coverage", previewJobId] });
     },
@@ -722,7 +773,6 @@ export function TemplateSlotEditor({
       await rerunAnnotation(previewJobId!);
       await queryClient.refetchQueries({
         queryKey: ["ast-source-doc-content", activeDocIri],
-        exact: true,
       });
     },
     onMutate: () => setRerunSourceError(null),
@@ -1236,10 +1286,46 @@ export function TemplateSlotEditor({
   const isGrpExpanded = (rg: RenderGroup) =>
     expandedGroups.has(rg.group.group_id);
 
+  // ── 左右两栏可调宽：在「预览」与右侧「Section / 关系图谱」区之间拖动把手调宽度。
+  // 右栏宽度受控（px），由「容器右边界 − 鼠标 X」求得，左栏至少保留 ~360px；右栏
+  // 下限 320px。基本信息 / 报告预览两页签无右栏，不渲染把手。
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [rightWidth, setRightWidth] = useState(DEFAULT_RIGHT_WIDTH);
+  const [resizing, setResizing] = useState(false);
+  const hasRightPanel = leftTab !== "basic" && leftTab !== "report-preview";
+
+  const startResize = useCallback((e: ReactMouseEvent) => {
+    e.preventDefault();
+    const container = containerRef.current;
+    if (!container) return;
+    const rect = container.getBoundingClientRect();
+    setResizing(true);
+    const onMove = (ev: MouseEvent) => {
+      const raw = rect.right - ev.clientX;
+      const max = Math.max(320, rect.width - 360);
+      setRightWidth(Math.min(max, Math.max(320, raw)));
+    };
+    const onUp = () => {
+      setResizing(false);
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup", onUp);
+      document.body.style.cursor = "";
+      document.body.style.userSelect = "";
+    };
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
+    document.body.style.cursor = "col-resize";
+    document.body.style.userSelect = "none";
+  }, []);
+  const resetRightWidth = useCallback(
+    () => setRightWidth(DEFAULT_RIGHT_WIDTH),
+    [],
+  );
+
   return (
-    <div className="flex h-full min-h-0">
+    <div ref={containerRef} className="flex h-full min-h-0">
       {/* ── Left: 多页签预览面板 ──────────────────────────────────── */}
-      <div className="flex-1 min-w-0 flex flex-col border-r">
+      <div className="flex-1 min-w-0 flex flex-col">
         <Tabs value={leftTab} onValueChange={setLeftTab} className="flex flex-col h-full">
           <div className="shrink-0 border-b px-4 pt-2">
             <TabsList className="h-8">
@@ -1618,7 +1704,7 @@ export function TemplateSlotEditor({
                         </div>
                         <div className="space-y-1">
                           <Label className="text-xs text-muted-foreground">
-                            评估报告（可选）
+                            评估报告（必选）
                           </Label>
                           <Button
                             variant="outline"
@@ -1738,6 +1824,39 @@ export function TemplateSlotEditor({
             <div className="flex h-full min-h-0">
               {/* ── 左列：IRI 匹配文档列表 ─────────────────────────── */}
               <div className="flex w-80 shrink-0 flex-col gap-3 overflow-y-auto border-r px-4 py-4">
+                {/* 默认源文件（固化输出格式的参照原件） */}
+                {templateId && sourceFilename && (
+                  <div className="flex flex-col gap-1">
+                    <span className="text-sm font-semibold text-foreground">
+                      默认源文件
+                    </span>
+                    <div className="overflow-hidden rounded-lg border">
+                      <button
+                        type="button"
+                        onClick={() => setSelectedDocIri(DEFAULT_SOURCE_IRI)}
+                        className={cn(
+                          "flex w-full items-center gap-2.5 px-3 py-2.5 text-left transition-colors",
+                          activeDocIri === DEFAULT_SOURCE_IRI
+                            ? "border-l-[3px] border-primary bg-accent"
+                            : "border-l-[3px] border-transparent hover:bg-muted/50",
+                        )}
+                      >
+                        <FileText className="size-4 shrink-0 text-primary" />
+                        <div className="min-w-0 flex-1">
+                          <div
+                            className={cn(
+                              "truncate text-[13px] text-foreground",
+                              activeDocIri === DEFAULT_SOURCE_IRI ? "font-semibold" : "font-normal",
+                            )}
+                          >
+                            {sourceFilename}
+                          </div>
+                        </div>
+                      </button>
+                    </div>
+                  </div>
+                )}
+
                 {/* IRI 匹配文档 —— 标题 + 当前解析键 */}
                 <div className="flex flex-col gap-1">
                   <span className="text-sm font-semibold text-foreground">
@@ -1803,7 +1922,7 @@ export function TemplateSlotEditor({
                   <span className="text-sm font-semibold text-foreground">
                     文档内容预览
                   </span>
-                  {activeDocIri && (
+                  {activeDocIri && activeDocIri !== DEFAULT_SOURCE_IRI && (
                     <span className="max-w-[60%] truncate font-mono text-xs text-muted-foreground">
                       {docLocalName(activeDocIri)}
                     </span>
@@ -1891,11 +2010,31 @@ export function TemplateSlotEditor({
                 <Loader2 className="size-5 animate-spin text-muted-foreground" />
               </div>
             ) : !previewCoverage ? (
-              <div className="flex flex-col items-center justify-center gap-2 px-6 py-16 text-center">
+              <div className="flex flex-col items-center justify-center gap-3 px-6 py-16 text-center">
                 <Info className="size-5 text-muted-foreground/60" />
                 <p className="text-sm text-muted-foreground">
-                  {coverageQuery.error ? "该文档类型不支持覆盖率分析" : "暂无覆盖率数据"}
+                  {coverageQuery.error
+                    ? String(coverageQuery.error).includes("422")
+                      ? "文档尚未完成抽取分析，需先执行数据抽取"
+                      : "覆盖率分析失败"
+                    : "暂无覆盖率数据"}
                 </p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => rerunMut.mutate()}
+                  disabled={rerunMut.isPending}
+                >
+                  {rerunMut.isPending
+                    ? <Loader2 className="mr-1 size-3.5 animate-spin" />
+                    : <RotateCw className="mr-1 size-3.5" />}
+                  {rerunMut.isPending ? "分析中…" : "执行数据抽取与覆盖分析"}
+                </Button>
+                {rerunMut.error && (
+                  <p className="text-xs text-destructive">
+                    {String(rerunMut.error)}
+                  </p>
+                )}
               </div>
             ) : (
               <div className="flex flex-col gap-4 px-6 py-4">
@@ -1904,10 +2043,23 @@ export function TemplateSlotEditor({
                   <span className="text-sm font-semibold text-foreground">
                     AST 覆盖率
                   </span>
-                  <Button size="sm" onClick={handlePreviewGenerate} disabled={generateMut.isPending}>
-                    {generateMut.isPending ? <Loader2 className="mr-1 size-3.5 animate-spin" /> : <FileDown className="mr-1 size-3.5" />}
-                    {generateMut.isPending ? "生成中..." : "生成报告"}
-                  </Button>
+                  <div className="flex items-center gap-1.5">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => rerunMut.mutate()}
+                      disabled={rerunMut.isPending}
+                    >
+                      {rerunMut.isPending
+                        ? <Loader2 className="mr-1 size-3.5 animate-spin" />
+                        : <RotateCw className="mr-1 size-3.5" />}
+                      刷新覆盖率
+                    </Button>
+                    <Button size="sm" onClick={handlePreviewGenerate} disabled={generateMut.isPending || asyncGenerating}>
+                      {generateMut.isPending || asyncGenerating ? <Loader2 className="mr-1 size-3.5 animate-spin" /> : <FileDown className="mr-1 size-3.5" />}
+                      {generateMut.isPending || asyncGenerating ? "生成中..." : "生成报告"}
+                    </Button>
+                  </div>
                 </div>
 
                 {(dismissMut.error || undismissMut.error || generateMut.error) && (
@@ -1922,7 +2074,8 @@ export function TemplateSlotEditor({
                   <ReportProgressPanel
                     coverage={previewCoverage}
                     reports={previewReports}
-                    generating={generateMut.isPending}
+                    generating={generateMut.isPending || asyncGenerating}
+                    refreshing={rerunMut.isPending}
                   />
 
                   {/* 右：报告结构树 */}
@@ -2030,9 +2183,36 @@ export function TemplateSlotEditor({
         </Tabs>
       </div>
 
+      {/* ── Splitter: 拖动把手调整左右两栏宽度（无右栏的页签不渲染）───────────── */}
+      {hasRightPanel && (
+        <div
+          role="separator"
+          aria-orientation="vertical"
+          onMouseDown={startResize}
+          onDoubleClick={resetRightWidth}
+          title="拖动调整宽度 · 双击复位"
+          className={cn(
+            "group relative w-px shrink-0 cursor-col-resize bg-border transition-colors",
+            resizing ? "bg-primary" : "hover:bg-primary/50",
+          )}
+        >
+          {/* 加宽命中区（1px 线太难抓）*/}
+          <div className="absolute inset-y-0 -left-1.5 -right-1.5 z-10" />
+          {/* 抓手指示（hover / 拖动时可见）*/}
+          <div
+            className={cn(
+              "absolute left-1/2 top-1/2 z-20 flex h-8 w-3 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border bg-background shadow-sm transition-opacity",
+              resizing ? "opacity-100" : "opacity-0 group-hover:opacity-100",
+            )}
+          >
+            <GripVertical className="size-3 text-muted-foreground" />
+          </div>
+        </div>
+      )}
+
       {/* ── Right: 基本信息/报告预览 → 无（左侧全宽）；源文档 → 关系图谱；其余 → Slot 树 + 内联 AI ── */}
-      {leftTab === "basic" || leftTab === "report-preview" ? null : leftTab === "source" ? (
-        <div className="flex w-[26rem] shrink-0 flex-col min-h-0 border-l">
+      {leftTab === "source" ? (
+        <div style={{ width: rightWidth }} className="flex shrink-0 flex-col min-h-0">
           <div className="shrink-0 border-b px-4 py-3">
             <div className="flex items-center justify-between gap-2">
               <div className="text-sm font-semibold text-foreground">关系图谱</div>
@@ -2088,8 +2268,8 @@ export function TemplateSlotEditor({
             )}
           </div>
         </div>
-      ) : (
-      <div className="flex w-[26rem] shrink-0 flex-col min-h-0">
+      ) : hasRightPanel ? (
+      <div style={{ width: rightWidth }} className="flex shrink-0 flex-col min-h-0">
         <div className="shrink-0 border-b px-4 py-3 space-y-2">
           <div className="flex items-center gap-2">
             <div className="text-sm text-muted-foreground">
@@ -2440,7 +2620,7 @@ export function TemplateSlotEditor({
           </Button>
         </div>
       </div>
-      )}
+      ) : null}
 
     </div>
   );
@@ -3032,10 +3212,13 @@ function ReportProgressPanel({
   coverage,
   reports,
   generating,
+  refreshing = false,
 }: {
   coverage: ASTCoverageDTO;
   reports: GeneratedReportDTO[];
   generating: boolean;
+  // 刷新覆盖率进行中：重跑数据抽取解析 / 模板匹配 / 覆盖率分析三步，进度面板同步呈现「重新分析中」。
+  refreshing?: boolean;
 }) {
   const completed = coverage.filled + coverage.inferred;
   const totalSlots = coverage.total_slots;
@@ -3043,20 +3226,30 @@ function ReportProgressPanel({
   const dismissed = coverage.dismissed;
   const hasReport = reports.length > 0;
 
+  // 刷新时前三步回到 active 并显示「重新分析中…」；完成后重新落定为已完成的新结果。
+  const analysisState: StepState = refreshing ? "active" : "done";
   const steps: GenStep[] = [
-    { title: "数据抽取解析", desc: "已完成", state: "done" },
+    {
+      title: "数据抽取解析",
+      desc: refreshing ? "重新分析中…" : "已完成",
+      state: analysisState,
+    },
     {
       title: "模板匹配",
-      desc: coverage.template_name
-        ? `已完成 · 命中模板「${coverage.template_name}${coverage.template_version ? ` ${coverage.template_version}` : ""}」`
-        : "已完成 · 使用默认模板",
-      state: "done",
+      desc: refreshing
+        ? "重新分析中…"
+        : coverage.template_name
+          ? `已完成 · 命中模板「${coverage.template_name}${coverage.template_version ? ` ${coverage.template_version}` : ""}」`
+          : "已完成 · 使用默认模板",
+      state: analysisState,
     },
     {
       title: "覆盖率分析",
-      desc: `已完成 · ${completed}/${totalSlots} 插槽已填充${missing > 0 ? `，${missing} 项必填缺失` : ""}`,
-      state: "done",
-      detail: (
+      desc: refreshing
+        ? "重新分析中…"
+        : `已完成 · ${completed}/${totalSlots} 插槽已填充${missing > 0 ? `，${missing} 项必填缺失` : ""}`,
+      state: analysisState,
+      detail: refreshing ? undefined : (
         <div className="mt-1 space-y-1.5 rounded-lg border bg-muted p-3">
           <div className="flex justify-between text-xs">
             <span className="text-muted-foreground">已填充插槽</span>

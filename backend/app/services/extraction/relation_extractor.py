@@ -19,6 +19,7 @@
 
 from __future__ import annotations
 
+import logging
 import re
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -29,6 +30,9 @@ from app.services.extraction.docx_structure import (
     parse_docx_structure,
 )
 from app.services.extraction.production_area_source import get_production_area_source
+from app.services.reasoning.pde_conflict import detect_pde_conflict
+
+logger = logging.getLogger(__name__)
 
 # --- 本体 IRI（与 slpra-*.ttl 一致）----------------------------------------
 _DEV = "https://ontology.pharma-gmp.cn/slpra/drug-development/"
@@ -50,6 +54,7 @@ QUALITY_RISK_IRI = _DEV + "QualityRiskAssessment"
 CLEANING_PROCESS_IRI = _CLEAN + "CleaningProcess"
 RESIDUE_IRI = _DRUG + "Residue"
 SHARED_LINE_IRI = _DEV + "SharedLineAssessmentData"
+HAS_SHARED_LINE_DATA_IRI = _DEV + "hasSharedLineData"  # 谓词（演示兜底合成边用）
 STORAGE_CONDITION_IRI = _DEV + "StorageCondition"
 DEGRADATION_PATHWAY_IRI = _DEV + "DegradationPathway"
 CLINICAL_SAMPLE_PLAN_IRI = _DEV + "ClinicalSampleProductionPlan"
@@ -752,6 +757,48 @@ def _make_edge(ctx: _Ctx, doc_class: str, subject_label: str, subject_text: str,
     }
 
 
+def _mock_shared_line_edge(ctx: _Ctx, doc_class: str, subject_label: str) -> dict:
+    """演示兜底：CMCReport 未产出共线评估端点时，合成一个最小 mock「共线评估数据」边，
+    携带 mock 原文 PDE 1.8 mg/日，使「推导 vs 原文」冲突场景始终有落点（source 明确标注 mock）。"""
+    ep = _endpoint(
+        SHARED_LINE_IRI,
+        "共线评估数据（mock 演示）",
+        source="mock-derivation-demo",
+        data_properties=[_dp(DP["pde_mg_per_day"], "PDE", "1.8mg（mock 原文值）")],
+        source_ref="§ 共线评估（mock 演示）",
+    )
+    prop = {"iri": HAS_SHARED_LINE_DATA_IRI, "label": "共线评估数据", "name": "hasSharedLineData"}
+    return _make_edge(ctx, doc_class, subject_label, ctx.drug_code or "",
+                      prop, SHARED_LINE_IRI, ep)
+
+
+def _attach_pde_conflict(ctx: _Ctx, doc_class: str, subject_label: str,
+                         edges: list[dict]) -> None:
+    """CMCReport：在「共线评估数据」端点上检测并挂载「推导 vs 原文」PDE 冲突（供人工裁决）。
+
+    原文 PDE 取自真实抽取的共线评估端点；推导侧经 mock 毒理研究源 → derive_facts → band 5。
+    缺该端点或端点无原文 PDE 时，合成/补齐 mock 原文 PDE（1.8 mg/日）以复现演示场景。命中冲突
+    → 就地写入 ``edge["conflict"]``（就地修改 ``edges``）；异常由调用点 try/except 兜住。
+    """
+    if doc_class != CMC_REPORT_IRI:
+        return
+    shared = next((e for e in edges if e.get("object_class_iri") == SHARED_LINE_IRI), None)
+    if shared is None:
+        shared = _mock_shared_line_edge(ctx, doc_class, subject_label)
+        edges.append(shared)
+
+    dps = list(shared.get("object_data_properties") or [])
+    if not any(str(dp.get("iri") or "").endswith("pde_mg_per_day") for dp in dps):
+        mock_pde = _dp(DP["pde_mg_per_day"], "PDE", "1.8mg（mock 原文值）")
+        if mock_pde:
+            dps.append(mock_pde)
+            shared["object_data_properties"] = dps
+
+    conflict = detect_pde_conflict(dps)
+    if conflict:
+        shared["conflict"] = conflict
+
+
 def extract_relationships(
     engine,
     file_path: str | Path,
@@ -796,5 +843,11 @@ def extract_relationships(
             for ep in finder(ctx):
                 edges.append(_make_edge(ctx, doc_class, subject_label,
                                         drug_code, prop, range_iri, ep))
+
+    # CMCReport：在共线评估端点上挂载「推导 vs 原文」PDE 冲突（人工裁决用）；绝不打断主路径。
+    try:
+        _attach_pde_conflict(ctx, doc_class, subject_label, edges)
+    except Exception:  # pragma: no cover - 冲突检测异常降级
+        logger.debug("PDE 冲突检测跳过", exc_info=True)
 
     return {"doc_class": classification, "relationships": edges}
