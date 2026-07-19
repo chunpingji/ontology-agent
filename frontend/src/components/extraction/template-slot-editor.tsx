@@ -457,7 +457,7 @@ export function TemplateSlotEditor({
         setSampleConfigured(true);
         onMetaSaved?.();
       } catch {
-        setDocError("示例文档替换失败（需 .docx）");
+        setDocError("示例文档替换失败（需 .doc / .docx）");
       } finally {
         setDocBusy(null);
       }
@@ -631,8 +631,15 @@ export function TemplateSlotEditor({
     return null;
   }, [sourceDocClass, iriPattern, metaForm.iriPattern]);
   const relationSchemaQuery = useQuery({
-    queryKey: ["relation-schema", docClassIri],
-    queryFn: () => getRelationSchema(docClassIri!),
+    // key 末位 1 = maxHops，须与下方 queryFn 的入参一致（TanStack 缓存原则：凡影响
+    // queryFn 结果的参数都进 key），未来若新增按不同 maxHops 的调用点即不会串用缓存。
+    queryKey: ["relation-schema", docClassIri, 1],
+    // maxHops=1：菜单只呈现文档类型的**直接出边**（hop-1 作者化单位，见上）。多跳边
+    // 经目标类型的后续模板覆盖；且此下拉按 (predicate,range) 建 React key/去重，而 BFS
+    // 多跳里同一 (predicate,range) 可经不同 domain 重复出现（如 hasStorageCondition
+    // ×3、usesEquipment ×2、自引用 hasDegradationPathway ×2）——在源头只取 hop-1 即
+    // 消除重复项与 dup-key 告警。切勿改回默认 4 跳。
+    queryFn: () => getRelationSchema(docClassIri!, 1),
     enabled: !!docClassIri,
     staleTime: 5 * 60 * 1000,
   });
@@ -1360,7 +1367,7 @@ export function TemplateSlotEditor({
                 <input
                   ref={sampleInputRef}
                   type="file"
-                  accept=".docx"
+                  accept=".doc,.docx"
                   className="hidden"
                   onChange={(e) => {
                     void handleSampleFile(e.target.files?.[0]);
@@ -1370,6 +1377,7 @@ export function TemplateSlotEditor({
                 <input
                   ref={sourceInputRef}
                   type="file"
+                  accept=".doc,.docx,.xlsx,.xls"
                   className="hidden"
                   onChange={(e) => {
                     void handleSourceFile(e.target.files?.[0]);
@@ -1561,46 +1569,14 @@ export function TemplateSlotEditor({
                       {docError}
                     </div>
                   )}
-                  {/* 默认模板示例文档 */}
-                  <div className="flex flex-col gap-3 rounded-lg border bg-card p-4">
-                    <div className="flex flex-col gap-0.5">
-                      <div className="text-sm font-semibold text-foreground">
-                        默认模板示例文档
-                      </div>
-                      <p className="text-xs text-muted-foreground">
-                        用于固化输出 section 结构与排版格式
-                      </p>
-                    </div>
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="flex items-center gap-2 rounded-md bg-muted px-2.5 py-2">
-                        <LayoutTemplate className="size-4 text-primary" />
-                        <span className="text-xs font-medium text-foreground">
-                          {sampleConfigured ? "已配置示例文档" : "未配置"}
-                        </span>
-                      </div>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => sampleInputRef.current?.click()}
-                        disabled={docBusy === "sample"}
-                      >
-                        {docBusy === "sample" ? (
-                          <Loader2 className="size-3.5 animate-spin" />
-                        ) : (
-                          <Upload className="size-3.5" />
-                        )}
-                        {sampleConfigured ? "替换" : "上传"}
-                      </Button>
-                    </div>
-                  </div>
                   {/* 默认源文件 */}
                   <div className="flex flex-col gap-3 rounded-lg border bg-card p-4">
                     <div className="flex flex-col gap-0.5">
                       <div className="text-sm font-semibold text-foreground">
-                        默认源文件
+                        关联文档类型的源文件
                       </div>
                       <p className="text-xs text-muted-foreground">
-                        固化输出格式的参照原件
+                        关联文档类型的参照原件
                       </p>
                     </div>
                     <div className="flex items-center justify-between gap-3">
@@ -1637,6 +1613,38 @@ export function TemplateSlotEditor({
                           {sourceFilename ? "替换" : "上传"}
                         </Button>
                       </div>
+                    </div>
+                  </div>
+                  {/* 默认模板示例文档 */}
+                  <div className="flex flex-col gap-3 rounded-lg border bg-card p-4">
+                    <div className="flex flex-col gap-0.5">
+                      <div className="text-sm font-semibold text-foreground">
+                        默认输出模板示例文档
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        用于固化输出 section 结构与排版格式
+                      </p>
+                    </div>
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-2 rounded-md bg-muted px-2.5 py-2">
+                        <LayoutTemplate className="size-4 text-primary" />
+                        <span className="text-xs font-medium text-foreground">
+                          {sampleConfigured ? "已配置示例文档" : "未配置"}
+                        </span>
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => sampleInputRef.current?.click()}
+                        disabled={docBusy === "sample"}
+                      >
+                        {docBusy === "sample" ? (
+                          <Loader2 className="size-3.5 animate-spin" />
+                        ) : (
+                          <Upload className="size-3.5" />
+                        )}
+                        {sampleConfigured ? "替换" : "上传"}
+                      </Button>
                     </div>
                   </div>
                 </section>

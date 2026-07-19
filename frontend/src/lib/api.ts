@@ -1886,6 +1886,7 @@ export interface AstTemplateDTO {
   is_default: boolean;
   created_by: string | null;
   owner: string | null; // 015 责任人（业务负责人，区别于 created_by 创建者）
+  sample_docx_filename: string | null;
   default_source_filename: string | null;
   default_source_job_id: string | null;
   created_at: string;

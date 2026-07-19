@@ -26,16 +26,21 @@ from app.services.reporting.risk_report_generator import RiskReport
 
 
 class TestLLMRunStyling:
-    def test_add_llm_run_gray_italic(self):
+    def test_add_llm_run_black_upright_inherits_style(self):
+        """LLM 正文运行须为「黑色、非斜体」正文（作者要求，溯源靠 ⓘ 标记+免责声明），
+        且不硬编码字号/字体——继承文档 Normal 样式，才能在套用输出模板时随模板正文字体走。"""
         doc = Document()
         p = doc.add_paragraph()
         _add_llm_run(p, "测试文本")
 
         run = p.runs[-1]
-        assert run.italic is True
         assert _LLM_INFO_GLYPH in run.text
         assert "测试文本" in run.text
-        assert run.font.color.rgb is not None
+        # 黑色、非斜体正文（非 gray-italic）——provenance 由 ⓘ + 免责声明承载
+        assert not run.italic
+        # FIX C：不硬编码 size/name，运行继承 Normal（None = 取样式值），有模板时随模板字体
+        assert run.font.size is None
+        assert run.font.name is None
 
     def test_disclaimer_line_added(self):
         doc = Document()

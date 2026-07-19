@@ -313,7 +313,7 @@ def get_job(job_id: UUID, db: Session = Depends(get_db)):
     return job
 
 
-_ANNOTATOR_VERSION = 16
+_ANNOTATOR_VERSION = 18
 
 
 def _annotation_cache_path(job_id) -> Path:
@@ -982,6 +982,24 @@ def _narratives_payload(report) -> dict | None:
     }
 
 
+def _resolve_sample_docx_path(tpl_db_id, db) -> str | None:
+    """Resolve the sample .docx path from the AstTemplate row for template-based output."""
+    if tpl_db_id is None:
+        return None
+    from app.models.extraction import AstTemplate
+    row = db.get(AstTemplate, tpl_db_id)
+    if row and row.sample_docx_path:
+        if Path(row.sample_docx_path).is_file():
+            return row.sample_docx_path
+        # DB 指向的模板文件已不在磁盘（历史删除/迁移遗留等）：显式告警，让「静默回退到硬编码
+        # 默认格式」可观测，而非无声吞掉——否则文件生命周期问题会被掩盖成「输出没套模板」。
+        logger.warning(
+            "模板 %s 的 sample_docx_path 指向缺失文件 %s，报告将回退默认格式",
+            tpl_db_id, row.sample_docx_path,
+        )
+    return None
+
+
 def _build_and_save_report(
     job_id: UUID,
     job_source_filename: str,
@@ -1015,7 +1033,8 @@ def _build_and_save_report(
         # the graceful fallback when no template matches the doc class.
         from app.services.reporting.ast_template import resolve_template
 
-        template, _, _ = resolve_template(doc_class_iri, db)
+        template, _, tpl_db_id = resolve_template(doc_class_iri, db)
+        sample_docx = _resolve_sample_docx_path(tpl_db_id, db)
         generator = RiskReportGenerator(db, template=template)
         report, manifest = generator.generate_with_coverage(
             edges,
@@ -1023,7 +1042,9 @@ def _build_and_save_report(
             dismissed_slot_ids=dismissed_ids,
             document_path=document_path,
         )
-        docx_bytes = render_risk_report(report, manifest, template=template)
+        docx_bytes = render_risk_report(
+            report, manifest, template=template, sample_docx_path=sample_docx,
+        )
 
         reports_dir = _Path("data/reports")
         reports_dir.mkdir(parents=True, exist_ok=True)
@@ -1147,13 +1168,16 @@ def generate_risk_report(
 
     # 016 (D5): resolve the DB-authored template for this doc class so section-level
     # ontology coverage drives generation; falls back to the filesystem default.
-    template, _, _ = resolve_template(doc_class_iri, db)
+    template, _, tpl_db_id = resolve_template(doc_class_iri, db)
+    sample_docx = _resolve_sample_docx_path(tpl_db_id, db)
     generator = RiskReportGenerator(db, template=template)
     report, manifest = generator.generate_with_coverage(
         edges, source_filename=job.source_filename or "",
         dismissed_slot_ids=dismissed_ids,
     )
-    docx_bytes = render_risk_report(report, manifest, template=template)
+    docx_bytes = render_risk_report(
+        report, manifest, template=template, sample_docx_path=sample_docx,
+    )
 
     reports_dir = _Path("data/reports")
     reports_dir.mkdir(parents=True, exist_ok=True)

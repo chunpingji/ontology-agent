@@ -10,6 +10,8 @@
 
 from __future__ import annotations
 
+from collections import defaultdict
+
 import app.services.extraction.relation_extractor as rx
 from app.services.extraction.docx_structure import DocSection, DocStructure, DocTable
 from app.services.extraction import document_classifier
@@ -18,6 +20,9 @@ from app.services.extraction.relation_extractor import (
     DRUG_PRODUCT_IRI,
     EQUIPMENT_IRI,
     _Ctx,
+    _build_class_hierarchy,
+    _classify_by_synonyms,
+    _resolve_strategy,
     extract_relationships,
     find_cleaning,
     find_degradation,
@@ -151,8 +156,75 @@ _CMC_OBJ_PROPS = [
 ]
 
 
+_RANGE_METHOD_MAP = {
+    DRUG_PRODUCT_IRI: "section_kv",
+    _DEV + "SafetyRiskAssessment": "table_scan",
+    _DEV + "QualityRiskAssessment": "table_scan",
+    "https://ontology.pharma-gmp.cn/slpra/cleaning/CleaningProcess": "section_kv",
+    "https://ontology.pharma-gmp.cn/slpra/drug/Residue": "table_scan",
+    _DEV + "SharedLineAssessmentData": "composite",
+    _DEV + "SynthesisRoute": "composite",
+    _DEV + "ClinicalSampleProductionPlan": "sentence_regex",
+    EQUIPMENT_IRI: "table_scan",
+    _DEV + "StorageCondition": "table_scan",
+    _DEV + "DegradationPathway": "section_paragraph",
+}
+
+
+def _schema_edge(pred_iri, pred_label, range_iri, *, domain=CMC_REPORT_IRI, hop=1):
+    """Build a minimal schema edge dict for _FakeEngine.get_relation_schema."""
+    method = _RANGE_METHOD_MAP.get(range_iri)
+    return {
+        "hop": hop,
+        "predicate_iri": pred_iri,
+        "predicate_label": pred_label,
+        "domain_class_iri": domain,
+        "domain_class_label": "CMC报告",
+        "range_class_iri": range_iri,
+        "range_class_label": range_iri.rsplit("/", 1)[-1],
+        "range_subclasses": [],
+        "range_data_properties": [],
+        "range_extraction_hints": {"method": method, "anchors": []},
+    }
+
+
+_EQUIP_NS = "https://ontology.pharma-gmp.cn/slpra/equipment/"
+
+_FAKE_EQUIP_SYNONYMS = {
+    "反应釜": _EQUIP_NS + "Reactor",
+    "反应器": _EQUIP_NS + "Reactor",
+    "离心机": _EQUIP_NS + "Centrifuge",
+    "鼓风干燥": _EQUIP_NS + "HotAirBlastDryer",
+    "旋蒸": _EQUIP_NS + "RotaryEvaporator",
+}
+
+_FAKE_DEGRADATION_SYNONYMS = {
+    "酸降解": _DEV + "AcidDegradation",
+    "酸": _DEV + "AcidDegradation",
+    "碱降解": _DEV + "AlkalineDegradation",
+    "碱": _DEV + "AlkalineDegradation",
+    "氧化降解": _DEV + "OxidativeDegradation",
+    "氧化": _DEV + "OxidativeDegradation",
+    "光降解": _DEV + "PhotoDegradation",
+    "光": _DEV + "PhotoDegradation",
+    "热降解": _DEV + "ThermalDegradation",
+    "温降解": _DEV + "ThermalDegradation",
+    "热": _DEV + "ThermalDegradation",
+    "温": _DEV + "ThermalDegradation",
+    "湿降解": _DEV + "HumidityDegradation",
+    "湿": _DEV + "HumidityDegradation",
+}
+
+
 class _FakeEngine:
-    """桩引擎：注入分类候选 + CMCReport 对象属性反查 + DrugProduct 数据属性。"""
+    """桩引擎：注入分类候选 + CMCReport schema 反查 + DrugProduct 数据属性。"""
+
+    def get_subclass_synonyms(self, class_iri):
+        if class_iri == EQUIPMENT_IRI:
+            return dict(_FAKE_EQUIP_SYNONYMS)
+        if class_iri == _DEV + "DegradationPathway":
+            return dict(_FAKE_DEGRADATION_SYNONYMS)
+        return {}
 
     def get_subclasses(self, class_iri):
         if class_iri != _REGDOC_IRI:
@@ -164,6 +236,23 @@ class _FakeEngine:
 
     def get_object_properties_by_domain(self, class_iri):
         return list(_CMC_OBJ_PROPS) if class_iri == CMC_REPORT_IRI else []
+
+    def get_relation_schema(self, class_iri, max_hops=4):
+        if class_iri != CMC_REPORT_IRI:
+            return []
+        edges = []
+        for prop in _CMC_OBJ_PROPS:
+            for rng in prop.get("range", []):
+                edges.append(_schema_edge(prop["iri"], prop["label"], rng))
+        edges.append(_schema_edge(
+            _DEV + "usesEquipment", "使用设备", EQUIPMENT_IRI))
+        edges.append(_schema_edge(
+            _DEV + "hasStorageCondition", "存放条件",
+            _DEV + "StorageCondition"))
+        edges.append(_schema_edge(
+            _DEV + "hasDegradationPathway", "含降解途径",
+            _DEV + "DegradationPathway"))
+        return edges
 
     def get_data_properties_by_domain(self, class_iri):
         if class_iri == DRUG_PRODUCT_IRI:
@@ -177,8 +266,34 @@ class _FakeEngine:
             ]
         return []
 
+    def get_data_property_patterns(self, class_iri):
+        # 模拟 TTL extractionPattern 注解经 rdflib 解析后的字段正则（单捕获组 group(1)=值）。
+        # 反斜杠与真实 TTL round-trip 后一致（\\s → \s）；raw-string 等价书写。
+        if class_iri == _DEV + "ClinicalSampleProductionPlan":
+            return [
+                {"iri": _DEV + "plannedProductionDate", "label": "计划生产时间",
+                 "pattern": r"计划于\s*(\d{4}年\d{1,2}月)"},
+                {"iri": _DEV + "plannedBatchCount", "label": "计划生产批次数",
+                 "pattern": r"计划生产\s*(\d+)\s*批"},
+                {"iri": _DEV + "productionPurpose", "label": "生产用途",
+                 "pattern": r"用于\s*([^，。；]+)"},
+                {"iri": _DEV + "plannedBatchSizeMin_kg", "label": "预计批量下限（kg）",
+                 "pattern": r"预计批量\s*([\d.]+)\s*[~～—至-]"},
+                {"iri": _DEV + "plannedBatchSizeMax_kg", "label": "预计批量上限（kg）",
+                 "pattern": r"[~～—至-]\s*([\d.]+)\s*kg"},
+            ]
+        return []
+
+    def get_extraction_hints(self, class_iri):
+        if class_iri == _DEV + "ClinicalSampleProductionPlan":
+            return {"method": "sentence_regex", "anchors": ["计划", "批", "车间"]}
+        return {"method": None, "anchors": []}
+
     def get_class_detail(self, iri):
         return {"label": iri.rsplit("/", 1)[-1]}
+
+    def get_class_label(self, iri):
+        return iri.rsplit("/", 1)[-1] if iri else ""
 
 
 def _ctx(structure=None):
@@ -341,13 +456,48 @@ def test_find_production_plan_missing_sentence_returns_empty():
     assert find_production_plan(_ctx(empty)) == []
 
 
+def test_find_production_plan_fields_are_annotation_driven():
+    """字段正则纯由 engine.get_data_property_patterns 提供：注解为空 → 无字段属性，
+    但车间子关系仍走外部事实源产出（证明字段抽取零硬编码、由 TTL 驱动）。"""
+    class _NoPatterns(_FakeEngine):
+        def get_data_property_patterns(self, class_iri):
+            return []
+
+    ctx = _Ctx(structure=_make_structure(), drug_code="HRS-1234",
+               engine=_NoPatterns(), triples=[])
+    eps = find_production_plan(ctx)
+    assert len(eps) == 1
+    assert eps[0]["data_properties"] == []          # 无注解 → 零字段
+    assert len(eps[0]["sub_relationships"]) == 2     # 车间子关系不受影响
+
+
+def test_find_production_plan_custom_pattern_drives_extraction():
+    """替换注解正则即改变抽取结果——无需改 Python（Schema-Driven 核心保证）。"""
+    class _CustomPattern(_FakeEngine):
+        def get_data_property_patterns(self, class_iri):
+            return [{"iri": _DEV + "productionPurpose", "label": "生产用途",
+                     "pattern": r"用于(临床[^，。；]*)"}]
+
+    ctx = _Ctx(structure=_make_structure(), drug_code="HRS-1234",
+               engine=_CustomPattern(), triples=[])
+    dps = {d["label"]: d["value"] for d in find_production_plan(ctx)[0]["data_properties"]}
+    assert dps == {"生产用途": "临床I期试验"}
+
+
+def test_no_hardcoded_plan_field_regexes():
+    """字段级 _PLAN_*_RE 常量已删除（仅保留车间跨度正则 _PLAN_AREA_SPAN_RE）。"""
+    for dead in ("_PLAN_DATE_RE", "_PLAN_BATCH_RE", "_PLAN_PURPOSE_RE", "_PLAN_SIZE_RE"):
+        assert not hasattr(rx, dead), f"{dead} 应已迁至 TTL extractionPattern 注解"
+    assert hasattr(rx, "_PLAN_AREA_SPAN_RE")
+
+
 # --- extract_relationships 总装 --------------------------------------------
 def test_extract_relationships_full_graph(monkeypatch):
     monkeypatch.setattr(rx, "parse_docx_structure", lambda _p: _make_structure())
     graph = extract_relationships(_FakeEngine(), "原料药 HRS-1234.docx", triples=[])
     assert graph["doc_class"]["doc_class_iri"] == CMC_REPORT_IRI
     preds = {e["predicate_iri"].rsplit("/", 1)[-1] for e in graph["relationships"]}
-    # domain 反查 8 条 + broad-domain 补挂 3 条（usesEquipment/storage/degradation）。
+    # schema-driven: 8 domain 边 + 3 曾 broad-domain 边（现有 domain 声明，BFS 自然覆盖）。
     assert "describes" in preds
     assert "usesEquipment" in preds
     assert "hasStorageCondition" in preds
@@ -367,3 +517,177 @@ def test_extract_relationships_gated_by_classification(monkeypatch):
     graph = extract_relationships(_FakeEngine(), "通知.docx", triples=[])
     assert graph["doc_class"] is None
     assert graph["relationships"] == []
+
+
+# --- Phase F: annotation dispatch, generic strategies, hierarchy tests --------
+
+def test_resolve_strategy_range_override():
+    """_RANGE_OVERRIDES entries take priority over method strategies."""
+    edge = _schema_edge(_DEV + "hasSynthesisRoute", "合成路线",
+                        _DEV + "SynthesisRoute")
+    strategy = _resolve_strategy(edge)
+    assert strategy is not None
+
+
+def test_resolve_strategy_method_dispatch():
+    """extractionMethod annotation drives _METHOD_STRATEGIES dispatch."""
+    edge = _schema_edge(_DEV + "usesEquipment", "使用设备", EQUIPMENT_IRI)
+    strategy = _resolve_strategy(edge)
+    assert strategy is not None
+    edge_none = {
+        "range_class_iri": "https://example.org/Unknown",
+        "range_extraction_hints": {"method": None, "anchors": []},
+    }
+    assert _resolve_strategy(edge_none) is None
+
+
+def test_resolve_strategy_unknown_method_returns_none():
+    edge = {
+        "range_class_iri": "https://example.org/Unknown",
+        "range_extraction_hints": {"method": "nonexistent_method", "anchors": []},
+    }
+    assert _resolve_strategy(edge) is None
+
+
+def test_classify_by_synonyms_exact_match():
+    syns = {"反应釜": "iri:Reactor", "离心机": "iri:Centrifuge"}
+    assert _classify_by_synonyms("反应釜", syns, "iri:Fallback") == "iri:Reactor"
+
+
+def test_classify_by_synonyms_substring_match():
+    syns = {"酸": "iri:Acid", "碱": "iri:Alkaline"}
+    assert _classify_by_synonyms("酸性降解", syns, "iri:Fallback") == "iri:Acid"
+
+
+def test_classify_by_synonyms_reverse_substring():
+    syns = {"鼓风干燥": "iri:Dryer"}
+    assert _classify_by_synonyms("鼓风", syns, "iri:Fallback") == "iri:Dryer"
+
+
+def test_classify_by_synonyms_fallback():
+    syns = {"反应釜": "iri:Reactor"}
+    assert _classify_by_synonyms("未知设备", syns, "iri:Fallback") == "iri:Fallback"
+
+
+def test_classify_by_synonyms_none_text():
+    syns = {"反应釜": "iri:Reactor"}
+    assert _classify_by_synonyms(None, syns, "iri:Fallback") == "iri:Fallback"
+
+
+def test_build_class_hierarchy_from_schema_edges():
+    edges = [
+        {
+            "range_class_iri": EQUIPMENT_IRI,
+            "range_subclasses": [
+                {"iri": _EQUIP_NS + "Reactor", "label": "反应器"},
+                {"iri": _EQUIP_NS + "Centrifuge", "label": "离心机"},
+            ],
+        },
+        {
+            "range_class_iri": _DEV + "DegradationPathway",
+            "range_subclasses": [
+                {"iri": _DEV + "AcidDegradation", "label": "酸降解"},
+            ],
+        },
+    ]
+    hierarchy = _build_class_hierarchy(edges)
+    assert EQUIPMENT_IRI in hierarchy.get(_EQUIP_NS + "Reactor", set())
+    assert EQUIPMENT_IRI in hierarchy.get(_EQUIP_NS + "Centrifuge", set())
+    assert _DEV + "DegradationPathway" in hierarchy.get(_DEV + "AcidDegradation", set())
+    assert hierarchy.get("nonexistent", set()) == set()
+
+
+def test_build_class_hierarchy_empty():
+    assert _build_class_hierarchy([]) == {}
+    edges = [{"range_class_iri": EQUIPMENT_IRI, "range_subclasses": []}]
+    assert _build_class_hierarchy(edges) == {}
+
+
+def _degradation_self_loop_schema():
+    """Schema with a self-referential DegradationPathway edge + populated subclasses.
+
+    Reproduces the production shape that the real ontology emits once
+    ``hasDegradationPathway`` declares ``rdfs:domain owl:unionOf(CMCReport,
+    DegradationPathway)``: a hop-1 edge CMCReport→DegradationPathway *and* a
+    self-loop DegradationPathway→DegradationPathway, both carrying the subclass
+    list.  The stock ``_schema_edge`` helper can't express this (it hardcodes
+    ``range_subclasses=[]`` and never a self-loop), which is exactly why the
+    blowup slipped past the existing suite.
+    """
+    deg = _DEV + "DegradationPathway"
+    has_deg = _DEV + "hasDegradationPathway"
+    subclasses = [
+        {"iri": _DEV + "AcidDegradation", "label": "酸降解"},
+        {"iri": _DEV + "PhotoDegradation", "label": "光降解"},
+    ]
+    top_edge = _schema_edge(has_deg, "含降解途径", deg)
+    top_edge["range_subclasses"] = subclasses
+    self_edge = _schema_edge(has_deg, "含降解途径", deg, domain=deg)
+    self_edge["range_subclasses"] = subclasses
+
+    edges_by_domain = defaultdict(list)
+    edges_by_domain[CMC_REPORT_IRI].append(top_edge)
+    edges_by_domain[deg].append(self_edge)
+    class_hierarchy = _build_class_hierarchy([top_edge, self_edge])
+
+    structure = DocStructure(
+        "原料药HRS-1234",
+        [DocSection("降解途径", 3, [
+            "酸性降解：0.1M HCl 60℃ 24h，降解约5.2%，主要杂质为Imp-A",
+            "光降解：ICH 光照条件，稳定，无明显降解",
+        ])],
+        [], [], [],
+    )
+    ctx = _Ctx(structure=structure, drug_code="HRS-1234",
+               engine=_FakeEngine(), triples=[])
+    return top_edge, edges_by_domain, class_hierarchy, ctx
+
+
+def test_degradation_self_loop_recursion_is_guarded():
+    """Regression: self-referential domain + whole-doc finder must NOT recurse.
+
+    ``find_degradation`` returns every pathway in the document regardless of
+    parent, so the ``DegradationPathway ─hasDegradationPathway→
+    DegradationPathway`` self-loop would otherwise re-attach every sibling
+    pathway under each endpoint, combinatorially up to ``max_depth`` (measured:
+    28 spurious nested entries for a 2-pathway doc).  The cycle-guard seeds the
+    top call with the producing edge, so on the real (seeded) path the self-loop
+    is skipped and endpoints carry zero sub_relationships.
+    """
+    top_edge, edges_by_domain, class_hierarchy, ctx = _degradation_self_loop_schema()
+
+    # Mirror extract_relationships: dispatch the hop-1 edge, then recurse seeded.
+    strategy = _resolve_strategy(top_edge)
+    endpoints = strategy.find_endpoints(ctx, top_edge)
+    assert len(endpoints) == 2  # 酸性降解, 光降解 — the two real pathways
+
+    seed = frozenset({(top_edge["predicate_iri"], top_edge["range_class_iri"])})
+    for ep in endpoints:
+        subs = rx._extract_sub_relationships(
+            ctx, ep["class_iri"], edges_by_domain, class_hierarchy,
+            path_edges=seed,
+        )
+        assert subs == []  # self-loop on ancestor path → no re-attachment
+
+
+def test_cycle_guard_engages_on_repeat_not_blanket():
+    """The guard breaks the cycle on *repeat*, it does not blanket-block recursion.
+
+    Called WITHOUT the top-level seed, the first self-loop hop is allowed (the
+    edge is not yet on the path), producing the sibling pathways one level deep;
+    the guard then fires at depth 2 via the propagated ``child_path``, so nothing
+    nests deeper.  This distinguishes the cycle-guard from a coarse
+    "never recurse into DegradationPathway" rule and proves ``child_path``
+    propagation works.
+    """
+    top_edge, edges_by_domain, class_hierarchy, ctx = _degradation_self_loop_schema()
+    strategy = _resolve_strategy(top_edge)
+    endpoints = strategy.find_endpoints(ctx, top_edge)
+
+    for ep in endpoints:
+        subs = rx._extract_sub_relationships(
+            ctx, ep["class_iri"], edges_by_domain, class_hierarchy,
+        )
+        assert len(subs) == 2  # one hop of siblings allowed before the repeat
+        for s in subs:
+            assert s["sub_relationships"] == []  # depth-2 repeat is guarded

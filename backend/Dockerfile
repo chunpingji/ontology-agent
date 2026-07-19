@@ -4,8 +4,12 @@
 #   子也从缓存复用，不再按 ~150KB/s 重下。
 FROM python:3.12-slim
 
+# libreoffice-writer：离线把上传的遗留 .doc（Word 97-2003 二进制）转为 .docx
+# （soffice --headless --convert-to docx）。仅装 Writer 组件（其依赖 libreoffice-core），
+# 不装 draw/impress，控制镜像增量。.doc→.docx 为「重存」而非渲染，无需额外 CJK 字体。
 RUN apt-get update && apt-get install -y --no-install-recommends \
     default-jre-headless \
+    libreoffice-writer \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app

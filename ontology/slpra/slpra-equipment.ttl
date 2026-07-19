@@ -3,6 +3,7 @@
 @prefix owl:   <http://www.w3.org/2002/07/owl#> .
 @prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
 @prefix obo:   <http://purl.obolibrary.org/obo/> .
+@prefix skos:  <http://www.w3.org/2004/02/skos/core#> .
 @prefix slpra-equip: <https://ontology.pharma-gmp.cn/slpra/equipment/> .
 @prefix slpra-drug:  <https://ontology.pharma-gmp.cn/slpra/drug/> .
 @prefix slpra-facil: <https://ontology.pharma-gmp.cn/slpra/facility/> .
@@ -32,7 +33,8 @@ slpra-equip:ProcessEquipment a owl:Class ;
 slpra-equip:Reactor a owl:Class ;
     rdfs:subClassOf slpra-equip:ProcessEquipment ;
     rdfs:label "Reactor"@en ;
-    rdfs:label "反应器"@zh .
+    rdfs:label "反应器"@zh ;
+    skos:altLabel "反应釜"@zh .
 
 slpra-equip:Centrifuge a owl:Class ;
     rdfs:subClassOf slpra-equip:ProcessEquipment ;
@@ -57,7 +59,8 @@ slpra-equip:VacuumDryer a owl:Class ;
 slpra-equip:HotAirBlastDryer a owl:Class ;
     rdfs:subClassOf slpra-equip:Dryer ;
     rdfs:label "Hot Air Blast Dryer"@en ;
-    rdfs:label "电热鼓风干燥箱"@zh .
+    rdfs:label "电热鼓风干燥箱"@zh ;
+    skos:altLabel "鼓风干燥"@zh .
 
 slpra-equip:ElectricVacuumDryer a owl:Class ;
     rdfs:subClassOf slpra-equip:VacuumDryer ;

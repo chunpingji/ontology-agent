@@ -375,6 +375,16 @@ class OntologyEngine:
                     individuals.append(self._individual_to_info(ind))
             return individuals
 
+    @staticmethod
+    def _cls_in_domain(cls, domain_list) -> bool:
+        """Check if ``cls`` is in a property's domain list, handling ``owl:unionOf``."""
+        for d in domain_list:
+            if d is cls:
+                return True
+            if hasattr(d, "Classes") and cls in d.Classes:
+                return True
+        return False
+
     def get_data_properties_by_domain(self, class_iri: str) -> list[dict]:
         """返回 rdfs:domain 包含此类的数据属性 ``[{iri, name, label}]``。
 
@@ -388,7 +398,7 @@ class OntologyEngine:
             props: list[dict] = []
             seen: set[str] = set()
             for prop in self._world.data_properties():
-                if cls in prop.domain and prop.iri not in seen:
+                if self._cls_in_domain(cls, prop.domain) and prop.iri not in seen:
                     seen.add(prop.iri)
                     props.append({
                         "iri": prop.iri,
@@ -411,7 +421,7 @@ class OntologyEngine:
             props: list[dict] = []
             seen: set[str] = set()
             for prop in self._world.object_properties():
-                if cls in prop.domain and prop.iri not in seen:
+                if self._cls_in_domain(cls, prop.domain) and prop.iri not in seen:
                     seen.add(prop.iri)
                     props.append({
                         "iri": prop.iri,
@@ -424,8 +434,7 @@ class OntologyEngine:
     def get_class_label(self, class_iri: str) -> str | None:
         """返回某类的显示标签（优先中文 ``rdfs:label``），未找到返回 ``None``（只读）。
 
-        供关系菜单为**合成边**（broad-domain 补挂，见 relation_extractor
-        ``supplemental_relation_edges``）解析 range 类标签，无需跑 BFS。
+        供关系菜单解析 range 类标签，无需跑 BFS。
         """
         with self._lock:
             if not self._world:
@@ -494,6 +503,119 @@ class OntologyEngine:
                     out.append(iri)
             return out
 
+    @staticmethod
+    def _get_extraction_hints_from_graph(graph, class_iri: str) -> dict:
+        """Core logic for extraction hints — no lock, caller must hold it."""
+        from rdflib import URIRef
+
+        EXTRACTION_METHOD = URIRef(
+            "https://ontology.pharma-gmp.cn/slpra/integration/extractionMethod"
+        )
+        EXTRACTION_ANCHOR = URIRef(
+            "https://ontology.pharma-gmp.cn/slpra/integration/extractionAnchor"
+        )
+        subject = URIRef(class_iri)
+        method = None
+        for obj in graph.objects(subject, EXTRACTION_METHOD):
+            method = str(obj)
+            break
+        anchors: list[str] = []
+        for obj in graph.objects(subject, EXTRACTION_ANCHOR):
+            anchors.append(str(obj))
+        return {"method": method, "anchors": anchors}
+
+    def get_extraction_hints(self, class_iri: str) -> dict:
+        """Read extraction annotation properties for a range class.
+
+        Returns ``{"method": str | None, "anchors": [str]}``.
+        When no annotation is declared, ``method`` is ``None`` (caller falls
+        back to a generic strategy).
+        """
+        with self._lock:
+            if not self._world:
+                return {"method": None, "anchors": []}
+            try:
+                graph = self._world.as_rdflib_graph()
+            except Exception:
+                logger.warning("get_extraction_hints: rdflib view unavailable", exc_info=True)
+                return {"method": None, "anchors": []}
+            return self._get_extraction_hints_from_graph(graph, class_iri)
+
+    @staticmethod
+    def _get_extraction_pattern_from_graph(graph, prop_iri: str) -> str | None:
+        """Read a DatatypeProperty's ``slpra-integ:extractionPattern`` annotation."""
+        from rdflib import URIRef
+
+        EXTRACTION_PATTERN = URIRef(
+            "https://ontology.pharma-gmp.cn/slpra/integration/extractionPattern"
+        )
+        for obj in graph.objects(URIRef(prop_iri), EXTRACTION_PATTERN):
+            return str(obj)
+        return None
+
+    def get_data_property_patterns(self, class_iri: str) -> list[dict]:
+        """返回该类 domain 下、声明了 ``extractionPattern`` 注解的数据属性
+        ``[{iri, label, pattern}]``（沿用 ``get_data_properties_by_domain`` 的 domain
+        顺序与 union-domain/标签处理）。``pattern`` 的 group(1) 即抽取值。
+
+        供 ``sentence_regex`` 方法的 range 类（如 ClinicalSampleProductionPlan）从注解
+        读取字段正则，取代 relation_extractor 中硬编码的 ``_PLAN_*_RE``。未声明注解的
+        属性不返回；World 未加载或 rdflib 视图不可用 → ``[]``。
+        """
+        # get_data_properties_by_domain 自持锁，须在获取本方法锁之前调用（Lock 不可重入）。
+        props = self.get_data_properties_by_domain(class_iri)
+        if not props:
+            return []
+        with self._lock:
+            if not self._world:
+                return []
+            try:
+                graph = self._world.as_rdflib_graph()
+            except Exception:
+                logger.warning(
+                    "get_data_property_patterns: rdflib view unavailable", exc_info=True
+                )
+                return []
+            out: list[dict] = []
+            for p in props:
+                pattern = self._get_extraction_pattern_from_graph(graph, p["iri"])
+                if pattern:
+                    out.append({"iri": p["iri"], "label": p["label"], "pattern": pattern})
+            return out
+
+    def get_subclass_synonyms(self, class_iri: str) -> dict[str, str]:
+        """Return ``{synonym → subclass_iri}`` for all descendants of a class.
+
+        Collects from ``rdfs:label`` (all languages) and ``skos:altLabel``.
+        Replaces hardcoded keyword→subclass maps like ``_EQUIP_CLASS_BY_SPEC``
+        and ``_DEGRADATION_CLASS`` in ``relation_extractor``.
+        """
+        from rdflib import URIRef
+        from rdflib.namespace import RDFS, SKOS
+
+        with self._lock:
+            if not self._world:
+                return {}
+            cls = self._world.search_one(iri=class_iri)
+            if cls is None or not isinstance(cls, owlready2.ThingClass):
+                return {}
+            try:
+                graph = self._world.as_rdflib_graph()
+            except Exception:
+                logger.warning("get_subclass_synonyms: rdflib view unavailable", exc_info=True)
+                return {}
+            result: dict[str, str] = {}
+            for sub in cls.descendants(include_self=False):
+                if not isinstance(sub, owlready2.ThingClass):
+                    continue
+                sub_ref = URIRef(sub.iri)
+                for pred in (RDFS.label, SKOS.altLabel):
+                    for obj in graph.objects(sub_ref, pred):
+                        text = str(obj)
+                        if text and text not in result:
+                            result[text] = sub.iri
+            return result
+
     def get_relation_schema(
         self, class_iri: str, max_hops: int = 4,
     ) -> list[dict]:
@@ -505,7 +627,8 @@ class OntologyEngine:
              domain_class_iri, domain_class_label,
              range_class_iri, range_class_label,
              range_subclasses: [{iri, label}],
-             range_data_properties: [{iri, label}]}
+             range_data_properties: [{iri, label}],
+             range_extraction_hints: {method: str|None, anchors: [str]}}
 
         用途：给定文档类（如 CMCReport），展示其完整的关系图谱模板——
         实体类型 + 属性三元组均可从此结构推导，无需跑 NER。
@@ -519,12 +642,16 @@ class OntologyEngine:
 
             all_obj_props = list(self._world.object_properties())
             all_data_props = list(self._world.data_properties())
+            try:
+                rdf_graph = self._world.as_rdflib_graph()
+            except Exception:
+                rdf_graph = None
 
             def _obj_props_for(cls):
                 props = []
                 seen = set()
                 for prop in all_obj_props:
-                    if cls in prop.domain and prop.iri not in seen:
+                    if OntologyEngine._cls_in_domain(cls, prop.domain) and prop.iri not in seen:
                         seen.add(prop.iri)
                         props.append(prop)
                 return props
@@ -533,13 +660,14 @@ class OntologyEngine:
                 props = []
                 seen = set()
                 for prop in all_data_props:
-                    if cls in prop.domain and prop.iri not in seen:
+                    if OntologyEngine._cls_in_domain(cls, prop.domain) and prop.iri not in seen:
                         seen.add(prop.iri)
                         props.append(prop)
                 return props
 
             edges: list[dict] = []
-            visited_ranges: set[str] = set()
+            visited_edges: set[tuple[str, str, str]] = set()
+            frontier_seen: set[str] = {class_iri}
             frontier_iris = {class_iri}
 
             for hop in range(1, max_hops + 1):
@@ -553,9 +681,12 @@ class OntologyEngine:
                         pred_label = self._get_label(prop) or prop.name
                         for rng in prop.range:
                             rng_iri = getattr(rng, "iri", None)
-                            if not rng_iri or rng_iri in visited_ranges:
+                            if not rng_iri:
                                 continue
-                            visited_ranges.add(rng_iri)
+                            edge_key = (domain_iri, prop.iri, rng_iri)
+                            if edge_key in visited_edges:
+                                continue
+                            visited_edges.add(edge_key)
                             rng_label = self._get_label(rng) or getattr(rng, "name", rng_iri)
                             subs = []
                             for c in rng.descendants(include_self=False):
@@ -564,13 +695,22 @@ class OntologyEngine:
                                         "iri": c.iri,
                                         "label": self._get_label(c) or c.name,
                                     })
-                                    visited_ranges.add(c.iri)
+                                    # 注意：不要在此把子类标记进 frontier_seen——这会让下方
+                                    # 725-728 的入队循环恒判「已见」而永不入队，导致 range 子类
+                                    # （如 SynthesisRoute 下的 SynthesisStep）从不作为 domain 被
+                                    # 访问，其出边（producesIntermediate/nextStep）被静默漏掉。
+                                    # 是否入队/去重统一交给下方入队循环负责（Codex R1）。
                             dps = []
                             for dp in _data_props_for(rng):
                                 dps.append({
                                     "iri": dp.iri,
                                     "label": self._get_label(dp) or dp.name,
                                 })
+                            hints = (
+                                self._get_extraction_hints_from_graph(rdf_graph, rng_iri)
+                                if rdf_graph is not None
+                                else {"method": None, "anchors": []}
+                            )
                             edges.append({
                                 "hop": hop,
                                 "predicate_iri": prop.iri,
@@ -581,10 +721,15 @@ class OntologyEngine:
                                 "range_class_label": rng_label,
                                 "range_subclasses": subs,
                                 "range_data_properties": dps,
+                                "range_extraction_hints": hints,
                             })
-                            next_frontier.add(rng_iri)
+                            if rng_iri not in frontier_seen:
+                                frontier_seen.add(rng_iri)
+                                next_frontier.add(rng_iri)
                             for s in subs:
-                                next_frontier.add(s["iri"])
+                                if s["iri"] not in frontier_seen:
+                                    next_frontier.add(s["iri"])
+                                    frontier_seen.add(s["iri"])
                 if not next_frontier:
                     break
                 frontier_iris = next_frontier

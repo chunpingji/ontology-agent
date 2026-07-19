@@ -3,9 +3,12 @@
 from __future__ import annotations
 
 import json
+import logging
 import re
+import shutil
+import tempfile
 from pathlib import Path
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, HTTPException, UploadFile
 from sqlalchemy.orm import Session
@@ -33,6 +36,8 @@ from app.services.reporting.ast_template import ReportTemplate, resolve_template
 
 router = APIRouter()
 
+_log = logging.getLogger(__name__)
+
 _maintainer = require_role(ROLE_SENIOR_ANALYST)
 
 # 015 基本信息上传落盘：复用抽取管线的 data/uploads 约定（extraction.py），仅存路径。
@@ -46,6 +51,17 @@ async def _save_upload(file: UploadFile, stem: str) -> str:
     dest = _UPLOADS / f"{stem}{suffix}"
     dest.write_bytes(await file.read())
     return str(dest)
+
+
+def _best_effort_unlink(path: str | None) -> None:
+    """删除文件并吞掉/记录任何异常。用于「主操作已成功或已失败、清理绝不能再抛」的场景：
+    清理失败（权限/IO/文件系统）不得掩盖原始异常，也不得把已提交成功的操作变成 500。"""
+    if not path:
+        return
+    try:
+        Path(path).unlink(missing_ok=True)
+    except Exception:  # pragma: no cover - 防御性：清理失败仅记录，不影响主流程
+        _log.warning("清理文件失败（已忽略）：%s", path, exc_info=True)
 
 
 def _count_slots(schema_json: dict) -> int:
@@ -68,6 +84,7 @@ def _template_response(t: AstTemplate) -> AstTemplateResponse:
         is_default=t.is_default,
         created_by=t.created_by,
         owner=t.owner,
+        sample_docx_filename=Path(t.sample_docx_path).name if t.sample_docx_path else None,
         default_source_filename=t.default_source_filename,
         default_source_job_id=t.default_source_job_id,
         created_at=t.created_at,
@@ -233,6 +250,7 @@ def update_template(
         schema_json=req.schema_json,
         sample_text=old.sample_text,
         sample_content_json=old.sample_content_json,
+        sample_docx_path=old.sample_docx_path,
         owner=old.owner,
         default_source_path=old.default_source_path,
         default_source_filename=old.default_source_filename,
@@ -334,6 +352,17 @@ def delete_template(
     if row.is_default:
         raise HTTPException(400, "Cannot delete the default template")
 
+    # 提交前先算引用计数（此刻 row 仍在库），提交成功后再 best-effort 删文件：先删后提交会在
+    # 提交失败/回滚时留下断引用（DB 仍指向已删文件）。
+    orphan_sample = None
+    if row.sample_docx_path:
+        siblings = db.query(AstTemplate).filter(
+            AstTemplate.sample_docx_path == row.sample_docx_path,
+            AstTemplate.id != row.id,
+        ).count()
+        if siblings == 0:
+            orphan_sample = row.sample_docx_path
+
     audit.append(
         db, "template.delete",
         actor=getattr(identity, "username", "system"),
@@ -343,6 +372,8 @@ def delete_template(
     )
     db.delete(row)
     db.commit()
+    # best-effort：删除已提交成功，孤儿文件清理失败（权限/IO）不应把成功的删除变成 500。
+    _best_effort_unlink(orphan_sample)
 
 
 @router.post("/{template_id}/set-default", response_model=AstTemplateResponse)
@@ -386,41 +417,80 @@ async def replace_sample(
     db: Session = Depends(get_db),
     identity: object = Depends(_maintainer),
 ):
-    """替换既有模板的默认示例文档（固化输出 section / 格式）。解析为忠于原文结构的
-    tiptap 并同步 sample_text，供 AI 插槽建议与忠实预览。"""
+    """替换既有模板的默认示例文档（固化输出 section / 格式）。支持 .doc（后端转 .docx）
+    / .docx，解析为忠于原文结构的 tiptap 并同步 sample_text，供 AI 插槽建议与忠实预览。"""
     row = _get_template_or_404(template_id, db)
-    if not file.filename or not file.filename.lower().endswith(".docx"):
-        raise HTTPException(422, "仅支持 .docx 文件")
+    ext = Path(file.filename or "").suffix.lower()
+    if ext not in (".doc", ".docx"):
+        raise HTTPException(422, "仅支持 .doc / .docx 文件")
 
-    import tempfile
+    from app.services.extraction.doc_converter import DocConversionError, ensure_docx_async
+    from app.services.extraction.document_annotator import parse_word_to_tiptap
+    from app.services.extraction.slot_suggester import tiptap_to_text
 
-    content = await file.read()
-    tmp = tempfile.NamedTemporaryFile(suffix=".docx", delete=False)
-    try:
-        tmp.write(content)
-        tmp.close()
-        from app.services.extraction.document_annotator import parse_word_to_tiptap
-        from app.services.extraction.slot_suggester import tiptap_to_text
+    old_path = row.sample_docx_path
+    raw = await file.read()
 
-        content_json = parse_word_to_tiptap(tmp.name)
+    # 先在临时目录内完成 转换→解析→非空校验，全部通过后才把 .docx 落到唯一持久路径——转换/解析
+    # 失败时无任何持久落盘（无需回删）。唯一文件名（完整 128-bit uuid4）绝不原地覆盖：同模板重传或
+    # 版本 copy-on-write 共享同一 sample_docx_path 时新旧路径不可能相撞（2^-128），既不会在校验前
+    # 截断旧（好）文件，也不会串改被其他版本行引用的样例。旧文件仅在提交成功后按引用计数清理。
+    _UPLOADS.mkdir(parents=True, exist_ok=True)
+    with tempfile.TemporaryDirectory() as td:
+        src = Path(td) / f"upload{ext}"
+        src.write_bytes(raw)
+        try:
+            docx_tmp = await ensure_docx_async(str(src))
+        except DocConversionError as exc:
+            raise HTTPException(422, f"文档转换失败：{exc}") from exc
+        content_json = parse_word_to_tiptap(docx_tmp)
         plain_text = tiptap_to_text(content_json)
-    finally:
-        Path(tmp.name).unlink(missing_ok=True)
+        if not plain_text.strip():
+            raise HTTPException(422, "无法从文档中提取文本内容")
+        saved_path = str(_UPLOADS / f"tpl_{template_id}_sample_{uuid4().hex}.docx")
+        shutil.copyfile(docx_tmp, saved_path)
 
-    if not plain_text.strip():
-        raise HTTPException(422, "无法从文档中提取文本内容")
-
+    row.sample_docx_path = saved_path
     row.sample_content_json = content_json
     row.sample_text = plain_text
-    audit.append(
-        db, "template.sample_replace",
-        actor=getattr(identity, "username", "system"),
-        entity_iri=str(row.id),
-        details={"name": row.name, "version": row.version, "filename": file.filename},
-        commit=False,
-    )
-    db.commit()
+    try:
+        audit.append(
+            db, "template.sample_replace",
+            actor=getattr(identity, "username", "system"),
+            entity_iri=str(row.id),
+            details={"name": row.name, "version": row.version, "filename": file.filename},
+            commit=False,
+        )
+        db.commit()
+    except Exception:
+        # 提交失败：刚落盘的新文件此刻无任何 DB 引用（事务已回滚），必须删掉，否则形成孤儿。
+        # rollback 与 unlink 各自吞异常：rollback 失败（如 DB 断连——commit/rollback 连环失败的
+        # 典型场景）不得跳过文件清理而残留孤儿；unlink 失败不得掩盖原始 commit 异常。最后重抛原异常。
+        try:
+            db.rollback()
+        except Exception:  # pragma: no cover - 防御性：rollback 失败仅记录
+            _log.warning("提交失败后 rollback 亦失败（已忽略）", exc_info=True)
+        _best_effort_unlink(saved_path)
+        raise
     db.refresh(row)
+    # 提交成功后再清理旧文件（best-effort）：先删后提交会在提交回滚时留下断引用（DB 仍指向
+    # 已删文件，渲染时静默回退空白文档）。删旧文件仅当无同名模板的其他版本行共享它——版本
+    # copy-on-write 会令多版本共用一份 sample_docx_path（见 update_template），故引用计数。
+    # 整段清理裹 try/except：替换已提交成功，清理失败（DB 连接/权限/IO）绝不能把成功操作变 500。
+    if old_path and old_path != saved_path:
+        try:
+            shared = (
+                db.query(AstTemplate)
+                .filter(
+                    AstTemplate.sample_docx_path == old_path,
+                    AstTemplate.id != row.id,
+                )
+                .count()
+            )
+            if shared == 0:
+                Path(old_path).unlink(missing_ok=True)
+        except Exception:
+            _log.warning("替换示例后清理旧文件失败（已忽略）：%s", old_path, exc_info=True)
     return {"content_json": content_json, "plain_text": plain_text}
 
 
@@ -437,18 +507,40 @@ async def upload_default_source(
     from app.api.extraction import _precompute_annotation_bg
 
     row = _get_template_or_404(template_id, db)
-    # 替换时清理旧文件和旧标注缓存（best-effort）。
-    if row.default_source_path:
-        Path(row.default_source_path).unlink(missing_ok=True)
-    if row.default_source_job_id:
-        old_cache = _UPLOADS / f"{row.default_source_job_id}.annotated.json"
-        old_cache.unlink(missing_ok=True)
+    suffix = Path(file.filename or "").suffix.lower()
+    if suffix not in (".doc", ".docx", ".xlsx", ".xls"):
+        raise HTTPException(422, "仅支持 Word(.doc/.docx) 或 Excel(.xlsx/.xls) 文件")
 
-    saved_path = await _save_upload(file, f"tpl_{template_id}_source")
+    # Copy-on-write：新上传落到唯一路径（不原地覆盖旧源），转换/落盘全部成功、DB commit 之后
+    # 才清理旧文件与旧缓存。先删后写（原实现）会在转换失败时永久丢失旧默认源——回归缺陷，已修。
+    old_source_path = row.default_source_path
+    old_job_id = row.default_source_job_id
+
+    _UPLOADS.mkdir(parents=True, exist_ok=True)
+    raw = await file.read()
+    # 落盘后缀：遗留 .doc 归一化为 .docx（下游标注链只认 .docx），其余原样保留。
+    stored_suffix = ".docx" if suffix == ".doc" else suffix
+    saved_path = str(_UPLOADS / f"tpl_{template_id}_source_{uuid4().hex}{stored_suffix}")
+
+    # 遗留 .doc：在临时目录内转换+校验，仅把通过校验的 .docx 拷到持久唯一路径——转换失败/超时
+    # 产生的空/损坏中间产物随 TemporaryDirectory 一并清理，绝不会在 data/uploads 里留下孤儿。
+    if suffix == ".doc":
+        from app.services.extraction.doc_converter import DocConversionError, ensure_docx_async
+
+        with tempfile.TemporaryDirectory() as td:
+            src = Path(td) / f"upload{suffix}"
+            src.write_bytes(raw)
+            try:
+                docx_tmp = await ensure_docx_async(str(src))
+            except DocConversionError as exc:
+                raise HTTPException(422, f"文档转换失败：{exc}") from exc
+            shutil.copyfile(docx_tmp, saved_path)
+    else:
+        Path(saved_path).write_bytes(raw)
+
     row.default_source_path = saved_path
     row.default_source_filename = file.filename
 
-    suffix = Path(file.filename or "").suffix.lower()
     source_type = "excel" if suffix in (".xlsx", ".xls") else "word"
     job = ExtractionJob(
         source_type=source_type,
@@ -460,15 +552,30 @@ async def upload_default_source(
     db.add(job)
     row.default_source_job_id = job.id
 
-    audit.append(
-        db, "template.default_source_upload",
-        actor=getattr(identity, "username", "system"),
-        entity_iri=str(row.id),
-        details={"name": row.name, "filename": file.filename},
-        commit=False,
-    )
-    db.commit()
+    try:
+        audit.append(
+            db, "template.default_source_upload",
+            actor=getattr(identity, "username", "system"),
+            entity_iri=str(row.id),
+            details={"name": row.name, "filename": file.filename},
+            commit=False,
+        )
+        db.commit()
+    except Exception:
+        # 提交失败：刚落盘的新文件此刻无任何 DB 引用（事务已回滚），删掉以免留孤儿；旧源保持不变。
+        try:
+            db.rollback()
+        except Exception:  # pragma: no cover - 防御性：rollback 失败仅记录
+            _log.warning("默认源提交失败后 rollback 亦失败（已忽略）", exc_info=True)
+        _best_effort_unlink(saved_path)
+        raise
     db.refresh(row)
+
+    # 提交成功后再清理旧资源（best-effort）：旧源文件（若与新路径不同）与旧标注缓存。
+    if old_source_path and old_source_path != saved_path:
+        _best_effort_unlink(old_source_path)
+    if old_job_id:
+        _best_effort_unlink(str(_UPLOADS / f"{old_job_id}.annotated.json"))
 
     if source_type in ("word", "excel"):
         background.add_task(_precompute_annotation_bg, job.id, engine, db)
@@ -574,23 +681,25 @@ async def parse_sample(
     file: UploadFile = File(...),
     identity: object = Depends(_maintainer),
 ):
-    if not file.filename or not file.filename.lower().endswith(".docx"):
-        raise HTTPException(422, "仅支持 .docx 文件")
+    ext = Path(file.filename or "").suffix.lower()
+    if ext not in (".doc", ".docx"):
+        raise HTTPException(422, "仅支持 .doc / .docx 文件")
 
-    import tempfile
+    from app.services.extraction.doc_converter import DocConversionError, ensure_docx_async
+    from app.services.extraction.document_annotator import parse_word_to_tiptap
+    from app.services.extraction.slot_suggester import tiptap_to_text
 
     content = await file.read()
-    tmp = tempfile.NamedTemporaryFile(suffix=".docx", delete=False)
-    try:
-        tmp.write(content)
-        tmp.close()
-        from app.services.extraction.document_annotator import parse_word_to_tiptap
-        from app.services.extraction.slot_suggester import tiptap_to_text
-
-        content_json = parse_word_to_tiptap(tmp.name)
+    # 临时目录内完成 .doc→.docx 转换与解析，产物与 profile 随目录一并清理（无持久落盘）。
+    with tempfile.TemporaryDirectory() as td:
+        src = Path(td) / f"upload{ext}"
+        src.write_bytes(content)
+        try:
+            docx_path = await ensure_docx_async(str(src))
+        except DocConversionError as exc:
+            raise HTTPException(422, f"文档转换失败：{exc}") from exc
+        content_json = parse_word_to_tiptap(docx_path)
         plain_text = tiptap_to_text(content_json)
-    finally:
-        Path(tmp.name).unlink(missing_ok=True)
 
     if not plain_text.strip():
         raise HTTPException(422, "无法从文档中提取文本内容")

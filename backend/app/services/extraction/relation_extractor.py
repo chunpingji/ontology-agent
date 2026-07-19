@@ -6,12 +6,13 @@
 之上的**纯后处理器**，离线、确定性、表格/章节感知，分三步补出这张图：
 
 1. **文档级分类**（``document_classifier``）：标题/章节/TOC 打分 → 文档类型（如 CMCReport）。
-2. **本体驱动分发**：``engine.get_object_properties_by_domain(doc_class)`` 反查该类对象属性
-   （绕过 owlready2 ``get_class_properties`` bug）+ 显式补挂 broad-domain 属性（本体未声明
-   domain 的 ``usesEquipment`` / ``hasStorageCondition`` / ``hasDegradationPathway``）。
-3. **端点 finder**：按对象属性的 ``range`` 查 finder，每个 finder 返回**一到多个**端点；
-   每端点可带**嵌套数据属性**（``object_data_properties``）与**子关系**（``sub_relationships``，
-   如合成步骤→设备/中间体），并附**溯源**（``source_ref``）。
+2. **两层注解驱动分派**（016）：``engine.get_relation_schema(doc_class, max_hops=4)``
+   一次 BFS 取得完整关系图谱，按 ``_RANGE_OVERRIDES``（composite/多源策略）→
+   ``_METHOD_STRATEGIES``（按 TTL ``extractionMethod`` 注解分派，含泛化 fallback）。
+   新增本体类只需 TTL 注解，无需修改 Python。
+3. **端点 finder**：按策略抽端点，每端点可带**嵌套数据属性**（``object_data_properties``）
+   与**子关系**（``sub_relationships``，由 schema 边递归驱动或 composite 策略内部产出），
+   并附**溯源**（``source_ref``）。子类→父类边查找通过 ``_build_class_hierarchy`` 实现。
 
 数据属性回填复用 ``engine.get_data_properties_by_domain``（与三阶段阶段三同口径）；表格按
 **表头签名**定位（题注在该文档不可靠）。全程无新增模型调用，开销可忽略。
@@ -21,6 +22,8 @@ from __future__ import annotations
 
 import logging
 import re
+from abc import ABC, abstractmethod
+from collections import defaultdict
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -96,73 +99,8 @@ DP = {
     "proposedMaxDose_mg": _DEV + "proposedMaxDose_mg",
     "dosingRegimen": _DEV + "dosingRegimen",
     "pde_mg_per_day": _DRUG + "pde_mg_per_day",
-    "plannedProductionDate": _DEV + "plannedProductionDate",
-    "plannedBatchCount": _DEV + "plannedBatchCount",
-    "productionPurpose": _DEV + "productionPurpose",
-    "plannedBatchSizeMin_kg": _DEV + "plannedBatchSizeMin_kg",
-    "plannedBatchSizeMax_kg": _DEV + "plannedBatchSizeMax_kg",
 }
 
-# broad-domain 对象属性（本体未声明 domain）→ 对 CMCReport 显式补挂。
-_SUPPLEMENTAL_CMC_PROPS = [
-    {"iri": USES_EQUIPMENT_IRI, "label": "使用设备", "name": "usesEquipment",
-     "range": [EQUIPMENT_IRI]},
-    {"iri": HAS_STORAGE_CONDITION_IRI, "label": "存放条件", "name": "hasStorageCondition",
-     "range": [STORAGE_CONDITION_IRI]},
-    {"iri": HAS_DEGRADATION_PATHWAY_IRI, "label": "含降解途径", "name": "hasDegradationPathway",
-     "range": [DEGRADATION_PATHWAY_IRI]},
-]
-
-
-def supplemental_relation_edges(engine, doc_class_iri: str | None) -> list[dict]:
-    """D8 补挂：为 broad-domain（本体未声明 ``rdfs:domain``）对象属性合成 hop-1 关系边。
-
-    ``OntologyEngine.get_relation_schema`` 按**精确** domain BFS，看不到这些属性；抽取
-    管线用 :data:`_SUPPLEMENTAL_CMC_PROPS` 补挂它们。本函数把**同一批**属性合成为与
-    ``get_relation_schema`` 同形状的边，供 AI 覆盖菜单（slot_suggester）复用——两条路径
-    共享单一事实源，关系集不再发散。
-
-    仅 ``CMCReport`` 有补挂项；其它文档类型（或 ``engine is None``）返回 ``[]``，
-    调用点零行为变更。只读（Principle II）。
-    """
-    if engine is None or doc_class_iri != CMC_REPORT_IRI:
-        return []
-    domain_label = engine.get_class_label(doc_class_iri) or ""
-    edges: list[dict] = []
-    for prop in _SUPPLEMENTAL_CMC_PROPS:
-        for rng in prop.get("range", []):
-            edges.append({
-                "hop": 1,
-                "predicate_iri": prop["iri"],
-                "predicate_label": prop["label"],
-                "domain_class_iri": doc_class_iri,
-                "domain_class_label": domain_label,
-                "range_class_iri": rng,
-                "range_class_label": engine.get_class_label(rng) or rng.rsplit("/", 1)[-1],
-                "range_subclasses": [],
-                "range_data_properties": [],
-            })
-    return edges
-
-# 设备规格关键词 → Equipment 本体子类。
-_EQUIP_CLASS_BY_SPEC = [
-    ("反应釜", _EQUIP + "Reactor"),
-    ("反应器", _EQUIP + "Reactor"),
-    ("离心机", _EQUIP + "Centrifuge"),
-    ("鼓风干燥", _EQUIP + "HotAirBlastDryer"),
-    ("旋蒸", _EQUIP + "RotaryEvaporator"),
-]
-
-# 降解途径前缀关键词 → DegradationPathway 本体子类。
-_DEGRADATION_CLASS = [
-    ("酸", _DEV + "AcidDegradation"),
-    ("碱", _DEV + "AlkalineDegradation"),
-    ("氧化", _DEV + "OxidativeDegradation"),
-    ("光", _DEV + "PhotoDegradation"),
-    ("热", _DEV + "ThermalDegradation"),
-    ("温", _DEV + "ThermalDegradation"),
-    ("湿", _DEV + "HumidityDegradation"),
-]
 
 # 药物程序代号：HRS-1234 / ABC-12345 一类「字母前缀-数字」编号。
 _DRUG_CODE_RE = re.compile(r"[A-Z]{2,4}-\d{3,5}")
@@ -180,6 +118,39 @@ class _Ctx:
     triples: list[dict]
     label_cache: dict = field(default_factory=dict)
     _dp_maps: dict = field(default_factory=dict)
+    _synonym_cache: dict = field(default_factory=dict)
+    _pattern_cache: dict = field(default_factory=dict)
+    _hints_cache: dict = field(default_factory=dict)
+
+    def extraction_hints(self, class_iri: str) -> dict:
+        """``{method, anchors}`` via ``engine.get_extraction_hints``; cached."""
+        if class_iri not in self._hints_cache:
+            try:
+                self._hints_cache[class_iri] = self.engine.get_extraction_hints(class_iri)
+            except Exception:
+                self._hints_cache[class_iri] = {"method": None, "anchors": []}
+        return self._hints_cache[class_iri]
+
+    def dp_patterns(self, class_iri: str) -> list[dict]:
+        """``[{iri,label,pattern}]`` via ``engine.get_data_property_patterns``; cached。
+
+        供 sentence_regex 类端点从 TTL 注解读字段正则（group(1)=值）。
+        """
+        if class_iri not in self._pattern_cache:
+            try:
+                self._pattern_cache[class_iri] = self.engine.get_data_property_patterns(class_iri)
+            except Exception:
+                self._pattern_cache[class_iri] = []
+        return self._pattern_cache[class_iri]
+
+    def subclass_synonyms(self, class_iri: str) -> dict[str, str]:
+        """``{synonym → subclass_iri}`` via ``engine.get_subclass_synonyms``; cached."""
+        if class_iri not in self._synonym_cache:
+            try:
+                self._synonym_cache[class_iri] = self.engine.get_subclass_synonyms(class_iri)
+            except Exception:
+                self._synonym_cache[class_iri] = {}
+        return self._synonym_cache[class_iri]
 
     def class_label(self, iri: str) -> str:
         if iri in self.label_cache:
@@ -316,14 +287,17 @@ def _equipment_rows(ctx: _Ctx) -> list[dict]:
     return tbl.rows if tbl else []
 
 
-def _equip_class(spec: str) -> str:
-    for kw, iri in _EQUIP_CLASS_BY_SPEC:
-        if kw in (spec or ""):
+def _classify_by_synonyms(text: str | None, synonyms: dict[str, str], fallback: str) -> str:
+    """Match ``text`` against synonym keys (substring in either direction)."""
+    if not text:
+        return fallback
+    for kw, iri in synonyms.items():
+        if kw in text or text in kw:
             return iri
-    return PROCESS_EQUIPMENT_IRI
+    return fallback
 
 
-def _equipment_endpoint_from_row(row: dict) -> dict | None:
+def _equipment_endpoint_from_row(ctx: _Ctx, row: dict) -> dict | None:
     """设备需求表一行 → Equipment 端点；``匹配设备`` 取首选编号（斜杠分隔为备选）。"""
     match = _row_get(row, "匹配设备")
     if not match:
@@ -332,13 +306,15 @@ def _equipment_endpoint_from_row(row: dict) -> dict | None:
     if not code:
         return None
     spec = _row_get(row, "设备规格")
+    synonyms = ctx.subclass_synonyms(EQUIPMENT_IRI)
+    cls_iri = _classify_by_synonyms(spec, synonyms, PROCESS_EQUIPMENT_IRI)
     props = [
         _dp(None, "设备规格", spec),
         _dp(None, "材质", _row_get(row, "材质")),
         _dp(None, "规格型号", _row_get(row, "规格型号")),
         _dp(None, "主残留物", _row_get(row, "主残留物")),
     ]
-    return _endpoint(_equip_class(spec), code, data_properties=props,
+    return _endpoint(cls_iri, code, data_properties=props,
                      source_ref="表 设备需求")
 
 
@@ -347,7 +323,7 @@ def find_equipment(ctx: _Ctx) -> list[dict]:
     out: list[dict] = []
     seen: set[str] = set()
     for row in _equipment_rows(ctx):
-        ep = _equipment_endpoint_from_row(row)
+        ep = _equipment_endpoint_from_row(ctx, row)
         if ep and ep["text"] not in seen:
             seen.add(ep["text"])
             out.append(ep)
@@ -363,7 +339,7 @@ def _step_equipment(ctx: _Ctx, step_name: str) -> list[dict]:
         step_cell = re.sub(r"\s+", "", _row_get(row, "步骤"))
         if not step_cell.startswith(norm):
             continue
-        ep = _equipment_endpoint_from_row(row)
+        ep = _equipment_endpoint_from_row(ctx, row)
         if ep and ep["text"] not in seen:
             seen.add(ep["text"])
             subs.append(_sub(USES_EQUIPMENT_IRI, "使用设备", ctx, ep))
@@ -613,17 +589,11 @@ def find_shared_line(ctx: _Ctx) -> list[dict]:
                       data_properties=props, source_ref="§ 共线评估 / 表 毒性参数")]
 
 
-def _degradation_class(prefix: str) -> str:
-    for kw, iri in _DEGRADATION_CLASS:
-        if kw in (prefix or ""):
-            return iri
-    return DEGRADATION_PATHWAY_IRI
-
-
 def find_degradation(ctx: _Ctx) -> list[dict]:
     """hasDegradationPathway→DegradationPathway：降解途径段，含条件/降解率/主要杂质。"""
     sec = ctx.structure.find_section("降解途径", "强制降解")
     out: list[dict] = []
+    synonyms = ctx.subclass_synonyms(DEGRADATION_PATHWAY_IRI)
     if sec:
         for para in sec.paras:
             kv = _split_kv(para)
@@ -633,8 +603,9 @@ def find_degradation(ctx: _Ctx) -> list[dict]:
                     continue
             else:
                 prefix, desc = para[:4], para
+            cls = _classify_by_synonyms(prefix, synonyms, DEGRADATION_PATHWAY_IRI)
             out.append(_endpoint(
-                _degradation_class(prefix), prefix,
+                cls, prefix,
                 data_properties=[
                     _dp(DP["degradationCondition"], "降解条件", desc),
                     _dp(DP["degradationPercent"], "降解百分比（%）", _pct(desc)),
@@ -645,55 +616,57 @@ def find_degradation(ctx: _Ctx) -> list[dict]:
     return out
 
 
-# 备样生产计划句：含「计划」「批」「车间」三特征词（按句签名定位，稳健于章节标题差异）。
-_PLAN_DATE_RE = re.compile(r"计划于\s*(\d{4}年\d{1,2}月)")
-_PLAN_BATCH_RE = re.compile(r"计划生产\s*(\d+)\s*批")
-_PLAN_PURPOSE_RE = re.compile(r"用于\s*([^，。；]+)")
-_PLAN_SIZE_RE = re.compile(r"预计批量\s*([\d.]+)\s*[~～\-—至]\s*([\d.]+)\s*kg")
+# 车间跨度正则——车间号拆分 + 外部事实源聚合逻辑，非字段抽取，不可泛化。
 _PLAN_AREA_SPAN_RE = re.compile(r"在\s*([^，。]*?车间)")
 
 
-def _find_plan_sentence(structure: DocStructure) -> str:
-    """按句签名定位备样生产计划句：整篇找含「计划」且「批」且「车间」的段落。"""
+def _find_anchor_sentence(structure: DocStructure, anchors: list[str]) -> str:
+    """按 TTL extractionAnchor 关键词定位目标句：先全文扫描含全部锚点的段落，
+    再退化为松弛搜索（丢弃末位锚点，逐节扫描）。"""
+    if not anchors:
+        return ""
     for p in structure.paragraphs:
-        if "计划" in p and "批" in p and "车间" in p:
+        if all(a in p for a in anchors):
             return p
-    sec = structure.find_section("简介", "备样生产")
-    if sec:
-        for para in sec.paras:
-            if "计划" in para and "车间" in para:
-                return para
+    if len(anchors) > 1:
+        relaxed = anchors[:-1]
+        for sec in structure.sections:
+            for para in sec.paras:
+                if all(a in para for a in relaxed):
+                    return para
     return ""
 
 
+def _extract_sentence_fields(ctx: _Ctx, class_iri: str, sentence: str) -> list[dict]:
+    """Apply TTL ``extractionPattern`` regexes to a sentence, return data properties."""
+    props: list[dict] = []
+    for spec in ctx.dp_patterns(class_iri):
+        try:
+            m = re.search(spec["pattern"], sentence)
+        except re.error:
+            continue
+        if m and m.groups():
+            dp = _dp(spec["iri"], spec["label"], m.group(1))
+            if dp:
+                props.append(dp)
+    return props
+
+
 def find_production_plan(ctx: _Ctx) -> list[dict]:
-    """hasProductionPlan→ClinicalSampleProductionPlan：简介节计划句聚为一个备样生产计划端点，
+    """hasProductionPlan→ClinicalSampleProductionPlan：计划句聚为一个备样生产计划端点，
     其下按车间号拆多条 producedInArea→ProductionArea 子关系。
 
-    该实体为抽象聚合（NER 不产出，仅经本 finder 端点进图，同 SynthesisRoute）。计划信息是
-    简介节一句话，按句签名定位。「642/646车间」含两个车间，逐个经 mock 外部车间主数据源
-    （:mod:`production_area_source`）解析为 ProductionArea——A-Box 尚未对接，故走外部事实源；
-    未命中则跳过该车间（优雅降级）。
+    锚点关键词由 TTL ``extractionAnchor`` 注解驱动（不再硬编码）。字段正则由
+    ``extractionPattern`` 注解驱动。「642/646车间」含两个车间，逐个经 mock 外部车间
+    主数据源解析为 ProductionArea。
     """
-    sentence = _find_plan_sentence(ctx.structure)
+    anchors = ctx.extraction_hints(CLINICAL_SAMPLE_PLAN_IRI).get("anchors", [])
+    sentence = _find_anchor_sentence(ctx.structure, anchors)
     if not sentence:
         return []
 
-    def _grp(pattern: re.Pattern) -> str:
-        m = pattern.search(sentence)
-        return m.group(1) if m else ""
+    props = _extract_sentence_fields(ctx, CLINICAL_SAMPLE_PLAN_IRI, sentence)
 
-    size = _PLAN_SIZE_RE.search(sentence)
-    props = [
-        _dp(DP["plannedProductionDate"], "计划生产时间", _grp(_PLAN_DATE_RE)),
-        _dp(DP["plannedBatchCount"], "计划生产批次数", _grp(_PLAN_BATCH_RE)),
-        _dp(DP["productionPurpose"], "生产用途", _grp(_PLAN_PURPOSE_RE)),
-        _dp(DP["plannedBatchSizeMin_kg"], "预计批量下限（kg）", size.group(1) if size else ""),
-        _dp(DP["plannedBatchSizeMax_kg"], "预计批量上限（kg）", size.group(2) if size else ""),
-    ]
-    props = [p for p in props if p]
-
-    # 车间：拆「642/646车间」为多个车间号，逐个经外部事实源解析为 ProductionArea 子关系。
     area_subs: list[dict] = []
     span = _PLAN_AREA_SPAN_RE.search(sentence)
     if span:
@@ -723,30 +696,179 @@ def find_production_plan(ctx: _Ctx) -> list[dict]:
     )]
 
 
-# range 类 IRI → 端点 finder。
-_ENDPOINT_FINDERS = {
-    DRUG_PRODUCT_IRI: find_drug_product,
-    SYNTHESIS_ROUTE_IRI: find_synthesis_route,
-    EQUIPMENT_IRI: find_equipment,
-    SAFETY_RISK_IRI: find_safety_risk,
-    QUALITY_RISK_IRI: find_quality_risk,
-    CLEANING_PROCESS_IRI: find_cleaning,
-    RESIDUE_IRI: find_residue,
-    SHARED_LINE_IRI: find_shared_line,
-    STORAGE_CONDITION_IRI: find_storage,
-    DEGRADATION_PATHWAY_IRI: find_degradation,
-    CLINICAL_SAMPLE_PLAN_IRI: find_production_plan,
+# ---------------------------------------------------------------------------
+# Strategy pattern: annotation-driven extraction dispatch
+# ---------------------------------------------------------------------------
+
+class ExtractionStrategy(ABC):
+    @abstractmethod
+    def find_endpoints(self, ctx: _Ctx, edge: dict) -> list[dict]:
+        """Find endpoints for a schema edge.
+
+        ``edge`` is one element from ``engine.get_relation_schema()``
+        (keys: range_class_iri, range_extraction_hints, range_data_properties, …).
+        """
+        ...
+
+
+class _LegacyFinder(ExtractionStrategy):
+    """Wraps an existing ``(ctx) -> list[dict]`` finder as a strategy."""
+    def __init__(self, fn):
+        self._fn = fn
+
+    def find_endpoints(self, ctx, edge):
+        return self._fn(ctx)
+
+
+# ---------------------------------------------------------------------------
+# Generic strategies — handle NEW range classes via TTL annotations only
+# ---------------------------------------------------------------------------
+
+def _generic_table_scan(ctx: _Ctx, edge: dict) -> list[dict]:
+    """Anchor-driven table scan for range classes with no specialised finder."""
+    anchors = (edge.get("range_extraction_hints") or {}).get("anchors", [])
+    if not anchors:
+        return []
+    tbl = ctx.structure.find_table(*anchors)
+    if not tbl:
+        return []
+    range_iri = edge["range_class_iri"]
+    dp_map = ctx.dp_label_map(range_iri)
+    endpoints: list[dict] = []
+    for row in tbl.rows:
+        props: list[dict] = []
+        text_parts: list[str] = []
+        for col, val in row.items():
+            if not val:
+                continue
+            iri = dp_map.get(col) or dp_map.get(_strip_unit(col))
+            dp = _dp(iri, col, val)
+            if dp:
+                props.append(dp)
+            if not iri:
+                text_parts.append(val)
+        if props:
+            endpoints.append(_endpoint(
+                range_iri, " / ".join(text_parts) or anchors[0],
+                data_properties=props,
+                source_ref=f"表 {anchors[0]}",
+            ))
+    return endpoints
+
+
+def _generic_section_kv(ctx: _Ctx, edge: dict) -> list[dict]:
+    """Anchor-driven section KV scan for range classes with no specialised finder."""
+    anchors = (edge.get("range_extraction_hints") or {}).get("anchors", [])
+    if not anchors:
+        return []
+    sec = ctx.structure.find_section(*anchors)
+    if not sec:
+        return []
+    range_iri = edge["range_class_iri"]
+    dp_map = ctx.dp_label_map(range_iri)
+    props: list[dict] = []
+    for para in sec.paras:
+        kv = _split_kv(para)
+        if not kv:
+            continue
+        key, val = kv
+        if not val:
+            continue
+        iri = dp_map.get(key) or dp_map.get(_strip_unit(key))
+        dp = _dp(iri, key, val)
+        if dp:
+            props.append(dp)
+    if not props:
+        return []
+    return [_endpoint(range_iri, anchors[0],
+                      data_properties=props, source_ref=f"§ {anchors[0]}")]
+
+
+def _generic_section_paragraph(ctx: _Ctx, edge: dict) -> list[dict]:
+    """Anchor-driven section paragraph scan for range classes with no specialised finder."""
+    anchors = (edge.get("range_extraction_hints") or {}).get("anchors", [])
+    if not anchors:
+        return []
+    sec = ctx.structure.find_section(*anchors)
+    if not sec:
+        return []
+    range_iri = edge["range_class_iri"]
+    endpoints: list[dict] = []
+    for para in sec.paras:
+        text = para.strip()
+        if not text:
+            continue
+        endpoints.append(_endpoint(range_iri, text,
+                                   source_ref=f"§ {anchors[0]}"))
+    return endpoints
+
+
+# ---------------------------------------------------------------------------
+# Method strategy: dispatches by range class (specialised) or generic fallback
+# ---------------------------------------------------------------------------
+
+class _MethodStrategy(ExtractionStrategy):
+    """Per-method dispatcher: known ranges → specialised finder, unknown → generic."""
+    def __init__(self, finders: dict[str, object],
+                 generic: object | None = None):
+        self._finders = finders
+        self._generic = generic
+
+    def find_endpoints(self, ctx: _Ctx, edge: dict) -> list[dict]:
+        fn = self._finders.get(edge["range_class_iri"])
+        if fn:
+            return fn(ctx)
+        if self._generic:
+            return self._generic(ctx, edge)
+        return []
+
+
+# Range-override strategies (composite/multi-source, logic not generalisable).
+_RANGE_OVERRIDES: dict[str, ExtractionStrategy] = {
+    SYNTHESIS_ROUTE_IRI: _LegacyFinder(find_synthesis_route),
+    SHARED_LINE_IRI: _LegacyFinder(find_shared_line),
+    CLINICAL_SAMPLE_PLAN_IRI: _LegacyFinder(find_production_plan),
+}
+
+# Method-based strategies (extractionMethod annotation → strategy).
+_METHOD_STRATEGIES: dict[str, ExtractionStrategy] = {
+    "table_scan": _MethodStrategy({
+        EQUIPMENT_IRI: find_equipment,
+        RESIDUE_IRI: find_residue,
+        STORAGE_CONDITION_IRI: find_storage,
+        SAFETY_RISK_IRI: find_safety_risk,
+        QUALITY_RISK_IRI: find_quality_risk,
+    }, generic=_generic_table_scan),
+    "section_kv": _MethodStrategy({
+        DRUG_PRODUCT_IRI: find_drug_product,
+        CLEANING_PROCESS_IRI: find_cleaning,
+    }, generic=_generic_section_kv),
+    "section_paragraph": _MethodStrategy({
+        DEGRADATION_PATHWAY_IRI: find_degradation,
+    }, generic=_generic_section_paragraph),
 }
 
 
+def _resolve_strategy(edge: dict) -> ExtractionStrategy | None:
+    override = _RANGE_OVERRIDES.get(edge["range_class_iri"])
+    if override:
+        return override
+    hints = edge.get("range_extraction_hints") or {}
+    method = hints.get("method")
+    if method:
+        return _METHOD_STRATEGIES.get(method)
+    return None
+
+
 def _make_edge(ctx: _Ctx, doc_class: str, subject_label: str, subject_text: str,
-               prop: dict, range_iri: str, ep: dict) -> dict:
+               schema_edge: dict, ep: dict) -> dict:
+    range_iri = schema_edge.get("range_class_iri") or ep["class_iri"]
     return {
         "subject_class_iri": doc_class,
         "subject_class_label": subject_label,
         "subject_text": subject_text,
-        "predicate_iri": prop["iri"],
-        "predicate_label": prop.get("label") or prop.get("name"),
+        "predicate_iri": schema_edge["predicate_iri"],
+        "predicate_label": schema_edge["predicate_label"],
         "object_class_iri": range_iri,
         "object_class_label": ctx.class_label(range_iri),
         "object_text": ep["text"],
@@ -767,9 +889,12 @@ def _mock_shared_line_edge(ctx: _Ctx, doc_class: str, subject_label: str) -> dic
         data_properties=[_dp(DP["pde_mg_per_day"], "PDE", "1.8mg（mock 原文值）")],
         source_ref="§ 共线评估（mock 演示）",
     )
-    prop = {"iri": HAS_SHARED_LINE_DATA_IRI, "label": "共线评估数据", "name": "hasSharedLineData"}
+    fake_edge = {
+        "predicate_iri": HAS_SHARED_LINE_DATA_IRI,
+        "predicate_label": "共线评估数据",
+    }
     return _make_edge(ctx, doc_class, subject_label, ctx.drug_code or "",
-                      prop, SHARED_LINE_IRI, ep)
+                      fake_edge, ep)
 
 
 def _attach_pde_conflict(ctx: _Ctx, doc_class: str, subject_label: str,
@@ -799,13 +924,85 @@ def _attach_pde_conflict(ctx: _Ctx, doc_class: str, subject_label: str,
         shared["conflict"] = conflict
 
 
+def _extract_sub_relationships(
+    ctx: _Ctx,
+    parent_class_iri: str,
+    edges_by_domain: dict[str, list[dict]],
+    class_hierarchy: dict[str, set[str]],
+    depth: int = 0,
+    max_depth: int = 3,
+    path_edges: frozenset[tuple[str, str]] = frozenset(),
+) -> list[dict]:
+    """Schema-driven recursive sub_relationship discovery.
+
+    For each schema edge where ``domain == parent_class_iri`` (or an ancestor
+    of parent_class_iri per the class hierarchy), dispatch the matching strategy
+    and recursively discover children.  Composite strategies (SynthesisRoute,
+    ProductionPlan) produce their own sub_relationships and are not recursed
+    into further.
+
+    ``path_edges`` is the set of ``(predicate_iri, range_class_iri)`` edges
+    already traversed on the path from the document root down to
+    ``parent_class_iri``.  A schema edge is skipped when its key is already on
+    that path — this breaks self-referential domains (e.g.
+    ``DegradationPathway ─hasDegradationPathway→ DegradationPathway``) whose
+    range finder scans the whole document independent of the parent, which
+    would otherwise re-attach every sibling endpoint under each endpoint
+    combinatorially up to ``max_depth``.  Legitimate multi-hop chains are
+    unaffected: ``path_edges`` is a per-branch copy constraining only the
+    current ancestor chain, so a predicate reached via a different path is
+    still explored.
+    """
+    if depth >= max_depth:
+        return []
+    candidate_domains = {parent_class_iri}
+    candidate_domains.update(class_hierarchy.get(parent_class_iri, set()))
+    seen_edges: set[tuple[str, str]] = set()
+    subs: list[dict] = []
+    for domain in candidate_domains:
+        for edge in edges_by_domain.get(domain, []):
+            # 去重键刻意用 (predicate, range) 而非 (domain, predicate, range)：
+            # _resolve_strategy 仅按 (range, extractionMethod) 分派，且现有 finder 一律
+            # 全文档扫描、与 domain 无关——故同一 (predicate, range) 经不同 domain 到达时
+            # 命中同一 finder、产出完全相同的端点。把 domain 计入键会放宽去重、重新引入
+            # 重复端点。（仅当未来 finder 改为按父端点作用域取数时，才需将 domain 纳入。）
+            edge_key = (edge["predicate_iri"], edge["range_class_iri"])
+            if edge_key in seen_edges or edge_key in path_edges:
+                continue
+            seen_edges.add(edge_key)
+            strategy = _resolve_strategy(edge)
+            if not strategy:
+                continue
+            child_path = path_edges | {edge_key}
+            for ep in strategy.find_endpoints(ctx, edge):
+                if ep["class_iri"] not in _RANGE_OVERRIDES:
+                    ep["sub_relationships"] = _extract_sub_relationships(
+                        ctx, ep["class_iri"], edges_by_domain, class_hierarchy,
+                        depth + 1, max_depth, child_path,
+                    )
+                subs.append(_sub(
+                    edge["predicate_iri"], edge["predicate_label"], ctx, ep,
+                ))
+    return subs
+
+
+def _build_class_hierarchy(schema_edges: list[dict]) -> dict[str, set[str]]:
+    """Build {subclass_iri → {ancestor range class IRIs}} from schema edges."""
+    child_to_parents: dict[str, set[str]] = {}
+    for e in schema_edges:
+        parent_iri = e["range_class_iri"]
+        for sub in e.get("range_subclasses") or []:
+            child_to_parents.setdefault(sub["iri"], set()).add(parent_iri)
+    return child_to_parents
+
+
 def extract_relationships(
     engine,
     file_path: str | Path,
     triples: list[dict],
     doc_class: dict | None = None,
 ) -> dict:
-    """文档级分类 + 全量关系/属性抽取（仅 Word）。
+    """Schema-driven document classification + relation/property extraction.
 
     ``doc_class`` 若已提供（``_compute_annotation`` 分类前置），跳过重复分类。
     返回 ``{"doc_class": {...} | None, "relationships": [edge, ...]}``。``doc_class`` 为
@@ -815,8 +1012,8 @@ def extract_relationships(
          predicate_iri, predicate_label, object_class_iri, object_class_label,
          object_text, object_source, object_data_properties, sub_relationships, source_ref}
 
-    自解析文档结构（``parse_docx_structure``）→ 分类 → 反查对象属性（+ 对 CMCReport 补挂
-    broad-domain 属性）→ 按 range 调端点 finder → 连边。无识别文档类型 → ``doc_class=None``、
+    自解析文档结构（``parse_docx_structure``）→ 分类 → 调 ``get_relation_schema`` 取
+    完整关系图谱 → 按 range 调策略抽端点 → 连边。无识别文档类型 → ``doc_class=None``、
     ``relationships=[]``（优雅降级）。
     """
     structure = parse_docx_structure(file_path)
@@ -824,30 +1021,38 @@ def extract_relationships(
     if not classification:
         return {"doc_class": None, "relationships": []}
 
-    doc_class = classification["doc_class_iri"]
+    doc_class_iri = classification["doc_class_iri"]
     drug_code = _find_drug_code(structure)
     ctx = _Ctx(structure=structure, drug_code=drug_code, engine=engine, triples=triples)
 
-    props = list(engine.get_object_properties_by_domain(doc_class))
-    if doc_class == CMC_REPORT_IRI:
-        present = {p["iri"] for p in props}
-        props += [p for p in _SUPPLEMENTAL_CMC_PROPS if p["iri"] not in present]
+    schema_edges = engine.get_relation_schema(doc_class_iri, max_hops=4)
 
-    subject_label = classification.get("label") or ctx.class_label(doc_class)
+    edges_by_domain: dict[str, list[dict]] = defaultdict(list)
+    for se in schema_edges:
+        edges_by_domain[se["domain_class_iri"]].append(se)
+    class_hierarchy = _build_class_hierarchy(schema_edges)
+
+    subject_label = classification.get("label") or ctx.class_label(doc_class_iri)
     edges: list[dict] = []
-    for prop in props:
-        for range_iri in prop.get("range", []):
-            finder = _ENDPOINT_FINDERS.get(range_iri)
-            if not finder:
-                continue
-            for ep in finder(ctx):
-                edges.append(_make_edge(ctx, doc_class, subject_label,
-                                        drug_code, prop, range_iri, ep))
+    for schema_edge in edges_by_domain.get(doc_class_iri, []):
+        strategy = _resolve_strategy(schema_edge)
+        if not strategy:
+            continue
+        seed_path = frozenset({
+            (schema_edge["predicate_iri"], schema_edge["range_class_iri"]),
+        })
+        for ep in strategy.find_endpoints(ctx, schema_edge):
+            if ep["class_iri"] not in _RANGE_OVERRIDES:
+                ep["sub_relationships"] = _extract_sub_relationships(
+                    ctx, ep["class_iri"], edges_by_domain, class_hierarchy,
+                    path_edges=seed_path,
+                )
+            edges.append(_make_edge(ctx, doc_class_iri, subject_label,
+                                    drug_code, schema_edge, ep))
 
-    # CMCReport：在共线评估端点上挂载「推导 vs 原文」PDE 冲突（人工裁决用）；绝不打断主路径。
     try:
-        _attach_pde_conflict(ctx, doc_class, subject_label, edges)
-    except Exception:  # pragma: no cover - 冲突检测异常降级
+        _attach_pde_conflict(ctx, doc_class_iri, subject_label, edges)
+    except Exception:
         logger.debug("PDE 冲突检测跳过", exc_info=True)
 
     return {"doc_class": classification, "relationships": edges}

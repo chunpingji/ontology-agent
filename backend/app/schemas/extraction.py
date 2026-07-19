@@ -176,6 +176,7 @@ class AstTemplateResponse(BaseModel):
     is_default: bool = False
     created_by: str | None = None
     owner: str | None = None
+    sample_docx_filename: str | None = None
     default_source_filename: str | None = None
     default_source_job_id: UUID | None = None
     created_at: datetime

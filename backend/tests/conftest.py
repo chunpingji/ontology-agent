@@ -46,11 +46,31 @@ class FakeOntologyEngine:
 
     is_loaded = True
 
+    _DEV = "https://ontology.pharma-gmp.cn/slpra/drug-development/"
+    _EQUIP = "https://ontology.pharma-gmp.cn/slpra/equipment/"
+    _CMC = _DEV + "CMCReport"
+
     def __init__(self) -> None:
         self.projected: list = []
 
     def project_entities(self, entities):  # best-effort World projection
         self.projected.append(entities)
+
+    def get_relation_schema(self, class_iri, max_hops=4):
+        if class_iri != self._CMC:
+            return []
+        _e = lambda pred, lbl, rng: {
+            "hop": 1, "predicate_iri": pred, "predicate_label": lbl,
+            "domain_class_iri": self._CMC, "domain_class_label": "CMC报告",
+            "range_class_iri": rng, "range_class_label": rng.rsplit("/", 1)[-1],
+            "range_subclasses": [], "range_data_properties": [],
+            "range_extraction_hints": {"method": None, "anchors": []},
+        }
+        return [
+            _e(self._DEV + "usesEquipment", "使用设备", self._EQUIP + "Equipment"),
+            _e(self._DEV + "hasStorageCondition", "存放条件", self._DEV + "StorageCondition"),
+            _e(self._DEV + "hasDegradationPathway", "含降解途径", self._DEV + "DegradationPathway"),
+        ]
 
     # tolerate any other engine call the endpoints might make
     def __getattr__(self, name):

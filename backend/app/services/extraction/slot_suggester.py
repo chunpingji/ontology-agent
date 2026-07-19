@@ -245,32 +245,21 @@ def suggest_slots(
 
 
 def _supplemented_schema_edges(engine, doc_class_iri: str | None) -> list[dict]:
-    """本文档类型在只读本体中的关系边（``get_relation_schema`` + D8 broad-domain 补挂）。
+    """本文档类型在只读本体中的关系边（``get_relation_schema``）。
 
     **单一事实源**：AI 覆盖菜单（:func:`_build_ontology_context`）与「文档类型是否已建模」
     能力探测（:func:`coverage_capable` → ``/coverage-doc-classes`` 端点）共用此函数，保证
     作者化 UI 的**启用集**与 suggester 实际能产出的**覆盖集**逐字一致，不再发散。
 
-    D8：broad-domain 对象属性（本体未声明 ``rdfs:domain``）对精确-domain BFS 不可见——
-    补挂它们，让覆盖菜单与抽取管线（``relation_extractor`` 为单一事实源）的关系集一致；
-    补挂边一并回传，因而立即可被 ``_extract_coverage`` 绑定。只读（Principle II）。
     引擎缺失 / ``doc_class_iri`` 为空 / 引擎异常 → ``[]``（优雅降级，FR-012）。
     """
     if engine is None or not doc_class_iri:
         return []
     try:
-        schema_edges = engine.get_relation_schema(doc_class_iri) or []
+        return engine.get_relation_schema(doc_class_iri) or []
     except Exception:
         logger.warning("get_relation_schema failed; ontology grounding disabled", exc_info=True)
         return []
-
-    from app.services.extraction.relation_extractor import supplemental_relation_edges
-
-    existing = {(e.get("predicate_iri"), e.get("range_class_iri")) for e in schema_edges}
-    return schema_edges + [
-        e for e in supplemental_relation_edges(engine, doc_class_iri)
-        if (e["predicate_iri"], e["range_class_iri"]) not in existing
-    ]
 
 
 def coverage_capable(engine, doc_class_iri: str | None) -> bool:

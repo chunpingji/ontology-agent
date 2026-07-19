@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef } from "react";
 import { useEditor, EditorContent } from "@tiptap/react";
-import { Extension, Mark, mergeAttributes } from "@tiptap/core";
+import { Extension, Mark, Node, mergeAttributes } from "@tiptap/core";
 import StarterKit from "@tiptap/starter-kit";
 import { Table } from "@tiptap/extension-table";
 import { TableRow } from "@tiptap/extension-table-row";
@@ -70,6 +70,32 @@ const TextStyle = Mark.create({
           attrs.fontFamily ? { style: `font-family: ${attrs.fontFamily}` } : {},
       },
     };
+  },
+});
+
+const PageBreak = Node.create({
+  name: "pageBreak",
+  group: "block",
+  atom: true,
+  selectable: false,
+  addAttributes() {
+    return {
+      mode: { default: "force" },
+      source: { default: "manual" },
+    };
+  },
+  parseHTML() {
+    return [{ tag: "div[data-page-break]" }];
+  },
+  renderHTML({ HTMLAttributes }) {
+    return [
+      "div",
+      {
+        "data-page-break": "true",
+        "data-mode": HTMLAttributes.mode || "force",
+        class: "doc-page-break",
+      },
+    ];
   },
 });
 
@@ -203,6 +229,7 @@ export function WordViewer({ content, highlightRef, fitTables }: WordViewerProps
       TableCell,
       TableHeader,
       EntityAnnotation,
+      PageBreak,
     ],
     content: normalizedContent,
     editable: false,
@@ -237,27 +264,33 @@ export function WordViewer({ content, highlightRef, fitTables }: WordViewerProps
     return () => clearTimeout(timer);
   }, [highlightRef]);
 
-  // Page-break pagination: insert spacer elements so blocks don't cross A4 boundaries
+  // Page-break pagination: insert spacer elements so blocks don't cross page boundaries
   useEffect(() => {
     if (!wrapperRef.current) return;
     const wrapper = wrapperRef.current;
     const tiptap = wrapper.querySelector(".tiptap") as HTMLElement | null;
     if (!tiptap) return;
 
-    const run = () => {
+    const run = (retry = false) => {
       tiptap
         .querySelectorAll(".page-break-spacer")
         .forEach((el) => el.remove());
 
-      const ruler = document.createElement("div");
-      ruler.style.cssText = "position:absolute;visibility:hidden;height:29.7cm";
-      wrapper.appendChild(ruler);
-      const pagePx = ruler.offsetHeight;
-      wrapper.removeChild(ruler);
+      // 页面尺寸：优先用后端提取的 Word 页面比例，否则 A4
+      const cAttrs = (content as { attrs?: { pageWidth?: number; pageHeight?: number } }).attrs;
+      const ratio =
+        cAttrs?.pageWidth && cAttrs?.pageHeight
+          ? cAttrs.pageHeight / cAttrs.pageWidth
+          : 297 / 210;
+      const pagePx = Math.round(wrapper.offsetWidth * ratio);
       if (pagePx <= 0) return;
+      wrapper.style.setProperty("--page-height", `${pagePx}px`);
 
       const gapPx = 20;
-      const padTop = parseFloat(getComputedStyle(wrapper).paddingTop);
+      const style = getComputedStyle(wrapper);
+      const padTop = parseFloat(style.paddingTop);
+      const padBottom = parseFloat(style.paddingBottom);
+      const contentHeight = pagePx - padTop - padBottom;
 
       const blocks = Array.from(tiptap.children).filter(
         (n) => !(n as HTMLElement).classList?.contains("page-break-spacer"),
@@ -272,38 +305,116 @@ export function WordViewer({ content, highlightRef, fitTables }: WordViewerProps
 
       let shift = 0;
       const inserts: { before: HTMLElement; h: number }[] = [];
-      let boundary = pagePx - padTop;
+      // 第一页内容区底部（tiptap 坐标原点已在 padTop 之后）
+      let boundary = contentHeight;
+      const stride = pagePx + gapPx;
 
       for (const m of measures) {
         const adjTop = m.top + shift;
         const adjBot = adjTop + m.height;
 
-        if (m.height > pagePx * 0.9) {
-          while (boundary <= adjBot) boundary += pagePx + gapPx;
+        // ── 显式分页标记 ──
+        if (m.el.classList.contains("doc-page-break")) {
+          const mode = m.el.getAttribute("data-mode") || "force";
+
+          if (mode === "ensureStart") {
+            // 已在页首 → 不分页（避免空白首页）
+            const EPS = 2;
+            while (adjTop > boundary) boundary += stride;
+            const distFromPageStart = adjTop - (boundary - contentHeight);
+            if (distFromPageStart > EPS) {
+              const h = boundary - adjTop + padBottom + gapPx + padTop;
+              inserts.push({ before: m.el, h });
+              shift += h;
+              boundary += stride;
+            }
+          } else {
+            // force: 无条件分页
+            while (adjTop > boundary) boundary += stride;
+            const remaining = boundary - adjTop;
+            const h = remaining + padBottom + gapPx + padTop;
+            inserts.push({ before: m.el, h });
+            shift += h;
+            boundary += stride;
+          }
           continue;
         }
 
-        if (adjTop < boundary && adjBot > boundary) {
-          const h = boundary - adjTop + gapPx;
-          inserts.push({ before: m.el, h });
-          shift += h;
-          boundary += pagePx + gapPx;
+        // ── 大块内容 ──
+        if (m.height > contentHeight * 0.9) {
+          // 高度在 (0.9,1.0] 页高的块能放进单页：跨页时推到下页页首，避免被切成两半。
+          // 但**超过整页高度**的块无论如何都放不下单页，推到下页既挡不住跨页、又会在其
+          // 前（尤其它已在页首时）留下整张空白页 → 这类块不推，只推进边界让其自然跨页（Codex R2）。
+          const fitsOnePage = m.height <= contentHeight;
+          if (fitsOnePage && adjTop < boundary && adjBot > boundary) {
+            const h = boundary - adjTop + padBottom + gapPx + padTop;
+            inserts.push({ before: m.el, h });
+            shift += h;
+          }
+          const shiftedBot = m.top + shift + m.height;
+          while (boundary <= shiftedBot) boundary += stride;
+          continue;
         }
 
-        while (adjTop + shift >= boundary) boundary += pagePx + gapPx;
+        // ── 普通块跨页 → 推到下页 ──
+        if (adjTop < boundary && adjBot > boundary) {
+          const h = boundary - adjTop + padBottom + gapPx + padTop;
+          inserts.push({ before: m.el, h });
+          shift += h;
+          boundary += stride;
+        }
+
+        while (m.top + shift > boundary) boundary += stride;
       }
 
+      // 反向插入 spacer（避免影响未处理元素的 DOM 位置）
       for (const ins of [...inserts].reverse()) {
         const div = document.createElement("div");
         div.className = "page-break-spacer";
+        div.setAttribute("contenteditable", "false");
+        div.dataset.prosemirrorIgnore = "true";
         div.style.height = `${ins.h}px`;
+        const gap = document.createElement("div");
+        gap.className = "page-break-gap";
+        gap.style.height = `${gapPx}px`;
+        div.appendChild(gap);
         tiptap.insertBefore(div, ins.before);
+      }
+
+      // 二次验证：首次插入后 margin collapsing 可能偏移，重新计算一次
+      if (!retry && inserts.length > 0) {
+        requestAnimationFrame(() => run(true));
       }
     };
 
-    const raf = requestAnimationFrame(run);
+    const raf = requestAnimationFrame(() => run());
+
+    // 监听宽度和高度变化
+    let prevWidth = wrapper.offsetWidth;
+    let prevHeight = wrapper.offsetHeight;
+    const ro = new ResizeObserver(() => {
+      const w = wrapper.offsetWidth;
+      const h = wrapper.offsetHeight;
+      if (w !== prevWidth || h !== prevHeight) {
+        prevWidth = w;
+        prevHeight = h;
+        run();
+      }
+    });
+    ro.observe(wrapper);
+
+    // 字体加载后重新分页
+    let fontCleanup: (() => void) | undefined;
+    if (document.fonts) {
+      let mounted = true;
+      document.fonts.ready.then(() => { if (mounted) run(); });
+      fontCleanup = () => { mounted = false; };
+    }
+
     return () => {
       cancelAnimationFrame(raf);
+      ro.disconnect();
+      fontCleanup?.();
       tiptap
         .querySelectorAll(".page-break-spacer")
         .forEach((el) => el.remove());
@@ -321,7 +432,7 @@ export function WordViewer({ content, highlightRef, fitTables }: WordViewerProps
       <style>{`
         .paper-pages {
           padding: 3rem 4rem;
-          min-height: 29.7cm;
+          min-height: var(--page-height, 29.7cm);
           border-radius: 2px;
           border: 1px solid hsl(0 0% 85%);
           box-shadow: 0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06);
@@ -334,17 +445,32 @@ export function WordViewer({ content, highlightRef, fitTables }: WordViewerProps
         }
         .page-break-spacer {
           margin: 0 -4rem;
+          background: white;
+          pointer-events: none;
+          display: flex;
+          flex-direction: column;
+          justify-content: flex-end;
+        }
+        :is(.dark) .page-break-spacer {
+          background: hsl(var(--card));
+        }
+        .page-break-gap {
           background: hsl(0 0% 94%);
           border-top: 1px solid hsl(0 0% 82%);
           border-bottom: 1px solid hsl(0 0% 82%);
           box-shadow:
             inset 0 2px 3px rgba(0,0,0,0.04),
             inset 0 -2px 3px rgba(0,0,0,0.04);
-          pointer-events: none;
         }
-        :is(.dark) .page-break-spacer {
+        :is(.dark) .page-break-gap {
           background: hsl(var(--muted));
           border-color: hsl(var(--border));
+        }
+        .doc-page-break {
+          height: 0;
+          overflow: hidden;
+          margin: 0;
+          padding: 0;
         }
         .entity-annotation {
           position: relative;

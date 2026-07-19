@@ -930,32 +930,38 @@ slpra-dev:DegradationPathway a owl:Class ;
 slpra-dev:AcidDegradation a owl:Class ;
     rdfs:subClassOf slpra-dev:DegradationPathway ;
     rdfs:label "Acid Degradation"@en ;
-    rdfs:label "酸降解"@zh .
+    rdfs:label "酸降解"@zh ;
+    skos:altLabel "酸"@zh .
 
 slpra-dev:AlkalineDegradation a owl:Class ;
     rdfs:subClassOf slpra-dev:DegradationPathway ;
     rdfs:label "Alkaline Degradation"@en ;
-    rdfs:label "碱降解"@zh .
+    rdfs:label "碱降解"@zh ;
+    skos:altLabel "碱"@zh .
 
 slpra-dev:OxidativeDegradation a owl:Class ;
     rdfs:subClassOf slpra-dev:DegradationPathway ;
     rdfs:label "Oxidative Degradation"@en ;
-    rdfs:label "氧化降解"@zh .
+    rdfs:label "氧化降解"@zh ;
+    skos:altLabel "氧化"@zh .
 
 slpra-dev:PhotoDegradation a owl:Class ;
     rdfs:subClassOf slpra-dev:DegradationPathway ;
     rdfs:label "Photo Degradation"@en ;
-    rdfs:label "光降解"@zh .
+    rdfs:label "光降解"@zh ;
+    skos:altLabel "光"@zh .
 
 slpra-dev:ThermalDegradation a owl:Class ;
     rdfs:subClassOf slpra-dev:DegradationPathway ;
     rdfs:label "Thermal Degradation"@en ;
-    rdfs:label "热降解"@zh .
+    rdfs:label "热降解"@zh ;
+    skos:altLabel "温降解"@zh , "热"@zh , "温"@zh .
 
 slpra-dev:HumidityDegradation a owl:Class ;
     rdfs:subClassOf slpra-dev:DegradationPathway ;
     rdfs:label "Humidity Degradation"@en ;
-    rdfs:label "湿降解"@zh .
+    rdfs:label "湿降解"@zh ;
+    skos:altLabel "湿"@zh .
 
 # ============================================================
 # 10.6 Shared-Line Assessment Data (⊑ BFO:GDC)
@@ -1024,6 +1030,7 @@ slpra-dev:nextStep a owl:ObjectProperty ;
     rdfs:comment "Ordered chain linking synthesis steps within a route."@en .
 
 slpra-dev:usesEquipment a owl:ObjectProperty ;
+    rdfs:domain [ owl:unionOf ( slpra-dev:CMCReport slpra-dev:SynthesisStep ) ] ;
     rdfs:range slpra-equip:Equipment ;
     rdfs:label "uses equipment"@en ;
     rdfs:label "使用设备"@zh ;
@@ -1041,10 +1048,11 @@ slpra-dev:producesIntermediate a owl:ObjectProperty ;
     rdfs:label "产出中间体"@zh .
 
 slpra-dev:hasStorageCondition a owl:ObjectProperty ;
+    rdfs:domain [ owl:unionOf ( slpra-dev:CMCReport slpra-dev:SynthesisStep slpra-dev:ProcessIntermediate ) ] ;
     rdfs:range slpra-dev:StorageCondition ;
     rdfs:label "has storage condition"@en ;
     rdfs:label "存放条件"@zh ;
-    rdfs:comment "Links a CMC report, synthesis step, or process intermediate to its storage conditions. Domain intentionally broad (CMCReport, SynthesisStep, ProcessIntermediate all apply)."@en .
+    rdfs:comment "Links a CMC report, synthesis step, or process intermediate to its storage conditions."@en .
 
 slpra-dev:hasCleaningMethod a owl:ObjectProperty ;
     rdfs:domain slpra-dev:CMCReport ;
@@ -1061,9 +1069,11 @@ slpra-dev:hasCleaningResidue a owl:ObjectProperty ;
     rdfs:comment "Links a CMC report to the residue information for cleaning validation."@en .
 
 slpra-dev:hasDegradationPathway a owl:ObjectProperty ;
+    rdfs:domain [ owl:unionOf ( slpra-dev:CMCReport slpra-dev:DegradationPathway ) ] ;
     rdfs:range slpra-dev:DegradationPathway ;
     rdfs:label "has degradation pathway"@en ;
-    rdfs:label "含降解途径"@zh .
+    rdfs:label "含降解途径"@zh ;
+    rdfs:comment "Links a CMC report or parent degradation pathway to its sub-pathways."@en .
 
 slpra-dev:hasSafetyRiskAssessment a owl:ObjectProperty ;
     rdfs:domain slpra-dev:CMCReport ;

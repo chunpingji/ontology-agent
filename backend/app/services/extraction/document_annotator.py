@@ -383,6 +383,105 @@ def _para_align(para) -> str | None:
         return None
 
 
+_REVISION_TAGS: frozenset | None = None
+
+
+def _get_revision_tags():
+    global _REVISION_TAGS
+    if _REVISION_TAGS is None:
+        from docx.oxml.ns import qn
+        _REVISION_TAGS = frozenset([qn("w:del"), qn("w:moveFrom")])
+    return _REVISION_TAGS
+
+
+def _is_in_revision(elem) -> bool:
+    tags = _get_revision_tags()
+    p = elem.getparent()
+    while p is not None:
+        if p.tag in tags:
+            return True
+        p = p.getparent()
+    return False
+
+
+def _effective_page_break_before(para) -> bool:
+    pbb = para.paragraph_format.page_break_before
+    if pbb is not None:
+        return bool(pbb)
+    style = para.style
+    while style is not None:
+        pf = getattr(style, "paragraph_format", None)
+        if pf is not None:
+            val = pf.page_break_before
+            if val is not None:
+                return bool(val)
+        style = getattr(style, "base_style", None)
+    return False
+
+
+def _scan_para_breaks(para) -> tuple[bool, list[dict], str | None]:
+    """段落中所有分页事件：段前分页(含样式继承)、行内 w:br、分节符。
+
+    Returns:
+        (has_before, inline_breaks, section_type)
+    """
+    from docx.oxml.ns import qn
+
+    has_before = _effective_page_break_before(para)
+
+    inline_breaks: list[dict] = []
+    cursor = 0
+    for r_elem in para._element.iter(qn("w:r")):
+        if _is_in_revision(r_elem):
+            continue
+        for child in r_elem:
+            tag = child.tag
+            if tag == qn("w:t"):
+                cursor += len(child.text or "")
+            elif tag == qn("w:br"):
+                if child.get(qn("w:type")) == "page":
+                    inline_breaks.append({"offset": cursor, "source": "manual"})
+            elif tag == qn("w:lastRenderedPageBreak"):
+                inline_breaks.append({"offset": cursor, "source": "lastRendered"})
+            elif tag == qn("w:tab") or tag == qn("w:cr"):
+                cursor += 1
+
+    section_type: str | None = None
+    pPr = para._element.find(qn("w:pPr"))
+    if pPr is not None:
+        sect = pPr.find(qn("w:sectPr"))
+        if sect is not None:
+            type_elem = sect.find(qn("w:type"))
+            section_type = (
+                type_elem.get(qn("w:val")) if type_elem is not None else "nextPage"
+            )
+
+    return has_before, inline_breaks, section_type
+
+
+def _split_para_at_breaks(
+    text: str,
+    runs: list[tuple[int, int, list[dict]]],
+    break_offsets: list[int],
+) -> list[tuple[str, list[tuple[int, int, list[dict]]]]]:
+    """按分页偏移切分段落文本和 run 列表，每个片段 run 偏移归零。"""
+    offsets = sorted(set(break_offsets))
+    boundaries = [0] + offsets + [len(text)]
+    fragments: list[tuple[str, list[tuple[int, int, list[dict]]]]] = []
+    for i in range(len(boundaries) - 1):
+        seg_start = boundaries[i]
+        seg_end = boundaries[i + 1]
+        frag_text = text[seg_start:seg_end]
+        frag_runs: list[tuple[int, int, list[dict]]] = []
+        for rs, re_, marks in runs:
+            s = max(rs, seg_start)
+            e = min(re_, seg_end)
+            if s < e:
+                frag_runs.append((s - seg_start, e - seg_start, marks))
+        fragments.append((frag_text, frag_runs))
+    return fragments
+
+
 def _style_font_attr(para, attr: str):
     """段落样式字体属性（bold/italic/underline）；style 缺失或无属性 → None。"""
     try:
@@ -948,23 +1047,85 @@ def annotate_word(
     for child in doc.element.body:
         if child in _paras:
             para = _paras[child]
+            has_before, inline_breaks, sect_type = _scan_para_breaks(para)
             text, runs = _para_runs_and_text(para, rich=rich_style)
+
+            if has_before:
+                elements.append({
+                    "kind": "pageBreak",
+                    "attrs": {"mode": "ensureStart", "source": "pageBreakBefore"},
+                })
+
             if text.strip():
                 level = _heading_level(para.style.name if para.style else None)
                 if not level:
                     level = _font_size_heading_level(_para_font_size(para))
-                elements.append({
-                    "kind": "para",
-                    "level": level,
-                    "align": _para_align(para),
-                    "runs": runs,
-                    "text_idx": len(all_texts),
-                })
-                all_texts.append(text)
-            else:
+                align = _para_align(para)
+
+                if inline_breaks:
+                    offsets = [b["offset"] for b in inline_breaks]
+                    sources = [b["source"] for b in inline_breaks]
+                    fragments = _split_para_at_breaks(text, runs, offsets)
+                    sorted_offsets = sorted(set(offsets))
+                    src_map = {o: s for o, s in zip(offsets, sources)}
+                    for fi, (frag_text, frag_runs) in enumerate(fragments):
+                        if fi > 0:
+                            src = src_map.get(sorted_offsets[fi - 1], "manual")
+                            elements.append({
+                                "kind": "pageBreak",
+                                "attrs": {"mode": "force", "source": src},
+                            })
+                        if frag_text.strip():
+                            elements.append({
+                                "kind": "para",
+                                "level": level,
+                                "align": align,
+                                "runs": frag_runs,
+                                "text_idx": len(all_texts),
+                            })
+                            all_texts.append(frag_text)
+                else:
+                    elements.append({
+                        "kind": "para",
+                        "level": level,
+                        "align": align,
+                        "runs": runs,
+                        "text_idx": len(all_texts),
+                    })
+                    all_texts.append(text)
+            elif inline_breaks:
+                for b in inline_breaks:
+                    elements.append({
+                        "kind": "pageBreak",
+                        "attrs": {"mode": "force", "source": b["source"]},
+                    })
+            elif not has_before:
                 elements.append({"kind": "empty"})
+
+            if sect_type and sect_type in ("nextPage", "evenPage", "oddPage"):
+                elements.append({
+                    "kind": "pageBreak",
+                    "attrs": {"mode": "force", "source": "section"},
+                })
         elif child in _tables:
             table = _tables[child]
+            # 检查表格首行单元格是否含分页符
+            if len(table.rows) > 0:
+                for tc_elem in table.rows[0]._tr.iterchildren(qn("w:tc")):
+                    for p_elem in tc_elem.iterchildren(qn("w:p")):
+                        for br in p_elem.iter(qn("w:br")):
+                            if not _is_in_revision(br) and br.get(qn("w:type")) == "page":
+                                elements.append({
+                                    "kind": "pageBreak",
+                                    "attrs": {"mode": "force", "source": "manual"},
+                                })
+                                break
+                        else:
+                            continue
+                        break
+                    else:
+                        continue
+                    break
             header_count = _detect_header_rows(table)
             caption = _find_table_caption(doc.element.body, table._element)
 
@@ -1027,6 +1188,13 @@ def annotate_word(
     # Pass 2：按记录顺序组装 tiptap 节点。
     content: list[dict] = []
     for elem in elements:
+        if elem["kind"] == "pageBreak":
+            node = {"type": "pageBreak"}
+            attrs = elem.get("attrs")
+            if attrs:
+                node["attrs"] = attrs
+            content.append(node)
+            continue
         if elem["kind"] == "empty":
             content.append({"type": "paragraph"})
             continue
@@ -1129,9 +1297,26 @@ def annotate_word(
             if rows_data:
                 content.append({"type": "table", "content": rows_data})
 
+    # 提取 Word 页面尺寸（twips → mm），供前端计算页面比例
+    page_w_mm, page_h_mm = 210, 297  # A4 默认
+    body_sect = doc.element.body.find(qn("w:sectPr"))
+    if body_sect is not None:
+        pgSz = body_sect.find(qn("w:pgSz"))
+        if pgSz is not None:
+            w_val = pgSz.get(qn("w:w"))
+            h_val = pgSz.get(qn("w:h"))
+            if w_val:
+                page_w_mm = round(int(w_val) / 56.693)
+            if h_val:
+                page_h_mm = round(int(h_val) / 56.693)
+
+    doc_json: dict = {"type": "doc", "content": content}
+    if page_w_mm != 210 or page_h_mm != 297:
+        doc_json["attrs"] = {"pageWidth": page_w_mm, "pageHeight": page_h_mm}
+
     # structure_only 未运行 NER，_warnings 关于 GLiNER 属性抽取的告警不适用。
     warnings = [] if structure_only else _warnings(all_texts)
-    return {"type": "doc", "content": content}, warnings, triples, ckpt
+    return doc_json, warnings, triples, ckpt
 
 
 def parse_word_to_tiptap(file_path: str | Path) -> dict:

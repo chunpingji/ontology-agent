@@ -393,6 +393,105 @@ slpra-risk:identifiesHazard rdfs:range slpra-contam:ContaminationEvent .
 slpra-contam:hasContaminationSeverity rdfs:range slpra-risk:RiskLevel .
 
 # ============================================================
+# Extraction Annotation Properties
+# ============================================================
+# Declares how instances of a range class should be extracted from
+# documents. Read by OntologyEngine.get_extraction_hints(); consumed
+# by the schema-driven relation_extractor dispatch layer.
+
+slpra-integ:extractionMethod a owl:AnnotationProperty ;
+    rdfs:label "extraction method"@en ;
+    rdfs:label "抽取方法"@zh ;
+    rdfs:comment "Extraction strategy for locating instances of this class in documents. Values: table_scan | section_kv | section_paragraph | ner_entity | sentence_regex | external_source | composite"@en .
+
+slpra-integ:extractionAnchor a owl:AnnotationProperty ;
+    rdfs:label "extraction anchor"@en ;
+    rdfs:label "抽取锚点"@zh ;
+    rdfs:comment "Keyword used to locate this class's instances in document structure (table header signature or section heading match). Multi-valued."@en .
+
+slpra-integ:extractionPattern a owl:AnnotationProperty ;
+    rdfs:label "extraction pattern"@en ;
+    rdfs:label "抽取正则"@zh ;
+    rdfs:comment "Regex (Python syntax) attached to a DatatypeProperty; capture group 1 is the extracted value. Applied to the located sentence/paragraph by sentence_regex-method range classes. Backslashes must be doubled per Turtle string escaping."@en .
+
+# --- Extraction hints per range class ---
+
+slpra-drug:DrugProduct
+    slpra-integ:extractionMethod "section_kv" ;
+    slpra-integ:extractionAnchor "产品的基本性质" ;
+    slpra-integ:extractionAnchor "基本性质" .
+
+slpra-drug:Residue
+    slpra-integ:extractionMethod "table_scan" ;
+    slpra-integ:extractionAnchor "物料酸碱性" ;
+    slpra-integ:extractionAnchor "溶解度" .
+
+slpra-equip:Equipment
+    slpra-integ:extractionMethod "table_scan" ;
+    slpra-integ:extractionAnchor "设备规格" ;
+    slpra-integ:extractionAnchor "匹配设备" .
+
+slpra-clean:CleaningProcess
+    slpra-integ:extractionMethod "section_kv" ;
+    slpra-integ:extractionAnchor "设备清洗方法" ;
+    slpra-integ:extractionAnchor "清洗方法" .
+
+slpra-dev:SynthesisRoute
+    slpra-integ:extractionMethod "composite" ;
+    slpra-integ:extractionAnchor "参考得量范围" .
+
+slpra-dev:StorageCondition
+    slpra-integ:extractionMethod "table_scan" ;
+    slpra-integ:extractionAnchor "存放条件" ;
+    slpra-integ:extractionAnchor "有效期" .
+
+slpra-dev:DegradationPathway
+    slpra-integ:extractionMethod "section_paragraph" ;
+    slpra-integ:extractionAnchor "降解途径" ;
+    slpra-integ:extractionAnchor "强制降解" .
+
+slpra-dev:SharedLineAssessmentData
+    slpra-integ:extractionMethod "composite" ;
+    slpra-integ:extractionAnchor "参数" ;
+    slpra-integ:extractionAnchor "数值" .
+
+slpra-dev:SafetyRiskAssessment
+    slpra-integ:extractionMethod "table_scan" ;
+    slpra-integ:extractionAnchor "风险环节" ;
+    slpra-integ:extractionAnchor "风险描述" ;
+    slpra-integ:extractionAnchor "安全评估" .
+
+slpra-dev:QualityRiskAssessment
+    slpra-integ:extractionMethod "table_scan" ;
+    slpra-integ:extractionAnchor "风险环节" ;
+    slpra-integ:extractionAnchor "质量风险" .
+
+slpra-dev:ClinicalSampleProductionPlan
+    slpra-integ:extractionMethod "sentence_regex" ;
+    slpra-integ:extractionAnchor "计划" ;
+    slpra-integ:extractionAnchor "批" ;
+    slpra-integ:extractionAnchor "车间" .
+
+# --- sentence_regex 字段正则：ClinicalSampleProductionPlan 数据属性 → 计划句内单捕获组 ---
+# 每条 extractionPattern 的 group(1) 即该属性值；由 find_production_plan 读取，取代硬编码
+# _PLAN_*_RE。Turtle 反斜杠双写（\\s → \s、\\d → \d）。
+
+slpra-dev:plannedProductionDate
+    slpra-integ:extractionPattern "计划于\\s*(\\d{4}年\\d{1,2}月)" .
+
+slpra-dev:plannedBatchCount
+    slpra-integ:extractionPattern "计划生产\\s*(\\d+)\\s*批" .
+
+slpra-dev:productionPurpose
+    slpra-integ:extractionPattern "用于\\s*([^，。；]+)" .
+
+slpra-dev:plannedBatchSizeMin_kg
+    slpra-integ:extractionPattern "预计批量\\s*([\\d.]+)\\s*[~～—至-]" .
+
+slpra-dev:plannedBatchSizeMax_kg
+    slpra-integ:extractionPattern "[~～—至-]\\s*([\\d.]+)\\s*kg" .
+
+# ============================================================
 # Cross-Module Bridging Axioms
 # ============================================================
 

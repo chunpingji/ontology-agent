@@ -129,6 +129,7 @@ class AstTemplate(Base):
     sample_text: Mapped[str | None] = mapped_column(Text)
     # 013: 忠于原文结构的 tiptap 样例（供 AI 插槽建议 drawer 忠实预览与结构锚点联动）。
     sample_content_json: Mapped[dict | None] = mapped_column(JSON)
+    sample_docx_path: Mapped[str | None] = mapped_column(String(500))
     is_default: Mapped[bool] = mapped_column(Boolean, default=False)
     # 015: lifecycle status (draft|published|archived) + per-template doc-class IRI
     # pattern. iri_pattern is the functional template-resolution key (replaces the

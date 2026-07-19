@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
-import { createAstTemplate } from "@/lib/api";
+import { createAstTemplate, uploadTemplateSample } from "@/lib/api";
 import { useCreateTemplateStore } from "@/lib/ast-template-create-store";
 import { TemplateSlotEditor } from "@/components/extraction/template-slot-editor";
 import {
@@ -31,7 +31,7 @@ export default function CreateTemplatePage() {
     if (!payload) return;
     setSaving(true);
     try {
-      await createAstTemplate({
+      const created = await createAstTemplate({
         name: payload.name,
         version: payload.version,
         doc_no: payload.docNo || undefined,
@@ -40,6 +40,17 @@ export default function CreateTemplatePage() {
         sample_text: payload.sampleText ?? undefined,
         sample_content_json: payload.sampleContent ?? undefined,
       });
+      // 创建成功后，把原始示例 .docx 附加为「输出格式模板」（复用已加固的 /sample 端点：
+      // 唯一文件名落盘、校验后再提交、提交后清理）。缺此步则新建模板生成报告不会套用模板
+      // 格式——创建流程原本只存解析文本/JSON，原始 docx 已随 parse-sample 临时文件删除。
+      if (payload.sampleFile) {
+        try {
+          await uploadTemplateSample(created.id, payload.sampleFile);
+        } catch {
+          // 模板已创建成功，仅格式附加失败：提示用户可在编辑页「替换」重试，不阻断创建。
+          alert("模板已创建，但输出格式模板附加失败，可在模板编辑页重新上传示例文档。");
+        }
+      }
       clearPayload();
       router.push("/settings/ast-templates");
     } catch (e) {

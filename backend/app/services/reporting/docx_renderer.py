@@ -13,6 +13,7 @@ silently absent from the rendered report.
 
 from __future__ import annotations
 
+import copy
 import io
 import re
 
@@ -20,7 +21,7 @@ from docx import Document
 from docx.enum.table import WD_TABLE_ALIGNMENT
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.oxml.ns import qn
-from docx.shared import Cm, Pt, RGBColor
+from docx.shared import Cm, Emu, Pt, RGBColor
 
 from app.services.reporting.ast_template import Group, ReportTemplate, Slot
 from app.services.reporting.coverage_validator import MISSING_REQUIRED, CoverageManifest
@@ -40,15 +41,88 @@ _LLM_END_DISCLAIMER_ZH = (
 )
 
 
+def _clear_body(doc: Document) -> None:
+    """Remove body content while preserving ALL section properties (page size/orientation/
+    margins, header/footer references) — not just the final one.
+
+    DOCX 的末节属性在 body 尾部的 <w:sectPr>；而中间各节（如「纵向封面 + 横向正文」或每节
+    不同页眉页脚）的属性存放在各自**分节段落**的 <w:pPr>/<w:sectPr> 中，会随段落一起被删。
+    只保留末节会把前面各节的页面布局与页眉页脚全部丢失（Codex #2，已复现：两节→一节）。
+    故：段落若在 pPr 内携带 sectPr，则保留该段落但清空其可见内容（runs 等），保住分节骨架；
+    其余段落/表格删除；body 尾部 sectPr 原样保留。单节模板不含分节段落 → 行为与旧实现逐字一致。"""
+    body = doc.element.body
+    for child in list(body):
+        if child.tag == qn("w:sectPr"):
+            continue  # 末节属性
+        if child.tag == qn("w:p"):
+            pPr = child.find(qn("w:pPr"))
+            if pPr is not None and pPr.find(qn("w:sectPr")) is not None:
+                # 分节段落：保留 pPr（含 sectPr）承载该节页面/页眉页脚，仅清空其余内容
+                for sub in list(child):
+                    if sub.tag != qn("w:pPr"):
+                        child.remove(sub)
+                continue
+        body.remove(child)
+
+
+# Built-in styles the body renderer relies on (add_heading levels 1-3, tables,
+# bullet lists). python-docx's own default template always ships them, but a
+# user-supplied sample .docx authored elsewhere (LibreOffice / Google Docs /
+# hand-minimised Word) may omit them — assigning a missing style then raises
+# KeyError and aborts the whole render. We backfill any missing one from a fresh
+# blank document so the template path is as robust as the blank path.
+_REQUIRED_STYLES = ("Heading 1", "Heading 2", "Heading 3", "Table Grid", "List Bullet")
+
+
+def _ensure_builtin_styles(doc: Document) -> None:
+    """Backfill required built-in styles the sample template may lack (idempotent).
+
+    按 style NAME 判定缺失（add_heading / t.style=... 等下游调用都按 name 解析样式）。补齐时
+    须同时避免 styleId 冲突：模板可能已含目标 styleId 却把 name 改成本地化/自定义名（如中文
+    Word 的「标题 1」，或作者手改）——此时若原样 append，会出现两个相同 styleId 的 style，Word
+    视为损坏样式表。但若因 styleId 冲突而**跳过**补齐，则规范 name 仍不存在，随后 add_heading(
+    "Heading 1") 会抛 KeyError 使整篇渲染崩溃（Codex #3，已复现）。故当 styleId 冲突时，改用一
+    个全新的唯一 styleId 插入携带规范 name 的内建样式：既不产生重复 styleId，又让按 name 的查找
+    可解析。
+    注：List Bullet 依赖 numbering、Table Grid 依赖 TableNormal、Heading 依赖其 Char 链接
+    样式；此处不深拷这些依赖——极简模板下项目符号可能不显示（降级为普通段落缩进），但不会
+    崩溃或损坏文档。真正精简到无 numbering/TableNormal 的模板属已知限制。"""
+    have_names = {s.name for s in doc.styles}
+    have_ids = {s.style_id for s in doc.styles}
+    missing = [n for n in _REQUIRED_STYLES if n not in have_names]
+    if not missing:
+        return
+    blank = Document()
+    dest = doc.styles.element
+    for name in missing:
+        try:
+            src = blank.styles[name]
+        except KeyError:
+            continue
+        el = copy.deepcopy(src.element)
+        if src.style_id in have_ids:  # styleId 冲突：换唯一 styleId 再插入（规范 name 仍可解析）
+            n = 1
+            new_id = f"{src.style_id}X{n}"
+            while new_id in have_ids:
+                n += 1
+                new_id = f"{src.style_id}X{n}"
+            el.set(qn("w:styleId"), new_id)
+            have_ids.add(new_id)
+        else:
+            have_ids.add(src.style_id)
+        dest.append(el)
+        have_names.add(name)
+
+
 def _add_llm_run(paragraph, text: str) -> None:
     """Add an ⓘ-marked run for LLM-sourced content: black, upright body text.
 
     Provenance is carried by the leading ⓘ marker plus the trailing disclaimer line
     (:func:`_add_llm_disclaimer_line`), NOT by de-emphasising the prose — the body
     must read as ordinary black, non-italic report text (per author request)."""
-    run = paragraph.add_run(f"{_LLM_INFO_GLYPH} {text}")
-    run.font.size = Pt(10.5)
-    run.font.name = "宋体"
+    # 不硬编码字号/字体：继承文档 Normal 样式，正文才能套用输出模板的字体与字号。空白
+    # 文档路径下 Normal 即宋体 10.5，输出与此前一致；有模板时随模板正文字体走。
+    paragraph.add_run(f"{_LLM_INFO_GLYPH} {text}")
 
 
 def _add_llm_disclaimer_line(doc: Document) -> None:
@@ -57,8 +131,7 @@ def _add_llm_disclaimer_line(doc: Document) -> None:
     run = p.add_run(_LLM_DISCLAIMER_ZH)
     run.italic = True
     run.font.color.rgb = _LLM_COLOR
-    run.font.size = Pt(8)
-    run.font.name = "宋体"
+    run.font.size = Pt(8)  # 免责声明保持小号灰斜体；不设 font.name，随模板正文字体（Codex #1）
 
 
 def _add_generated_disclaimer_section(doc: Document) -> None:
@@ -70,8 +143,7 @@ def _add_generated_disclaimer_section(doc: Document) -> None:
     run.italic = True
     run.bold = True
     run.font.color.rgb = _LLM_COLOR
-    run.font.size = Pt(9)
-    run.font.name = "宋体"
+    run.font.size = Pt(9)  # 结尾免责声明保持醒目样式；不设 font.name，随模板正文字体（Codex #1）
 
 
 def _add_section_narratives(doc: Document, report: RiskReport) -> None:
@@ -127,6 +199,7 @@ def render_risk_report(
     report: RiskReport,
     manifest: CoverageManifest | None = None,
     template: ReportTemplate | None = None,
+    sample_docx_path: str | None = None,
 ) -> bytes:
     """Render ``RiskReport`` dataclass to .docx bytes.
 
@@ -139,23 +212,57 @@ def render_risk_report(
     place — semantic → LLM text, deterministic → manifest value, table groups →
     the equipment / risk-matrix tables). When ``template`` is ``None`` the legacy
     fixed QS-A-020F05 skeleton is rendered (backward-compatible safety fallback).
+
+    ``sample_docx_path`` — when provided, the sample .docx is opened as the base
+    ``Document``, preserving its styles, page layout, headers, and footers. The
+    body content is cleared and regenerated. Falls back to a blank document on
+    error.
     """
-    doc = Document()
+    import logging
 
-    style = doc.styles["Normal"]
-    style.font.name = "宋体"
-    style.font.size = Pt(10.5)
-    style.font.element.rPr.rFonts.set(qn("w:eastAsia"), "宋体")
+    _log = logging.getLogger(__name__)
 
-    section = doc.sections[0]
-    section.page_width = Cm(29.7)
-    section.page_height = Cm(21.0)
-    section.left_margin = Cm(2.0)
-    section.right_margin = Cm(2.0)
-    section.top_margin = Cm(2.0)
-    section.bottom_margin = Cm(1.5)
+    if sample_docx_path:
+        try:
+            doc = Document(sample_docx_path)
+        except Exception:
+            # 容错：仅「打开/解析模板文件」失败才回退空白文档——这是真正的用户输入问题
+            # （模板损坏、路径失效等）。_clear_body / _ensure_builtin_styles 的异常刻意不在
+            # 此吞掉：它们是编程缺陷，应显式抛出暴露，而非被伪装成「模板损坏」静默产出格式
+            # 迥异却状态成功的空白文档（此前宽 except 会掩盖此类内部错误）。
+            _log.warning("无法打开示例模板 %s，回退到空白文档", sample_docx_path, exc_info=True)
+            sample_docx_path = None
+        else:
+            _clear_body(doc)
+            _ensure_builtin_styles(doc)
+            # 完整沿用模板 Normal 样式（字体/字号/eastAsia），不作任何覆盖——正文据此继承
+            # 模板的字体与字号（需求核心）。此前强设 eastAsia=宋体既会在 Normal 无 rPr 时
+            # 崩溃（AttributeError），也会篡改模板自有的中文字体，二者皆已移除。
+            if not doc.sections:
+                # 模板整篇省略 <w:sectPr>（合法，Word 用默认版式）：doc.sections 为空，既无页面
+                # 几何可沿用，python-docx 的 add_table 亦依赖末节 (_block_width→sections[-1]) 而
+                # 直接 IndexError。此类模板无法承载「固化排版」，回退到已充分测试的空白横向 A4
+                # 默认路径，报告仍成功生成（Codex R3）。
+                _log.warning("示例模板 %s 无分节属性(<w:sectPr>)，回退到空白文档", sample_docx_path)
+                sample_docx_path = None
 
-    _add_page_header(doc, report, manifest)
+    if not sample_docx_path:
+        doc = Document()
+        style = doc.styles["Normal"]
+        style.font.name = "宋体"
+        style.font.size = Pt(10.5)
+        style.font.element.rPr.rFonts.set(qn("w:eastAsia"), "宋体")
+
+        section = doc.sections[0]
+        section.page_width = Cm(29.7)
+        section.page_height = Cm(21.0)
+        section.left_margin = Cm(2.0)
+        section.right_margin = Cm(2.0)
+        section.top_margin = Cm(2.0)
+        section.bottom_margin = Cm(1.5)
+
+        _add_page_header(doc, report, manifest)
+
     _add_header(doc, report)
     _add_coverage_banner(doc, manifest)
 
@@ -444,6 +551,11 @@ def _add_markdown_table(doc: Document, block: list[str]) -> None:
     t = doc.add_table(rows=1, cols=ncols)
     t.style = "Table Grid"
     t.alignment = WD_TABLE_ALIGNMENT.CENTER
+    # 不再强设 run.font.name="宋体"：该属性只作用于**西文**字形（ascii/hAnsi），会把模板正文
+    # 西文字体覆盖成宋体、形成混排；中文字形本就取自 Normal 的 eastAsia，故套用模板时中文已随
+    # 模板走。去掉硬编码字体名后西文亦随模板；仅保留紧凑 9pt 以维持密集表格版式（表格字号为
+    # 刻意的版式取舍，非「保留模板字号」范畴，见需求说明）。空白文档路径 Normal 西文即宋体，
+    # 输出视觉不变（Codex #1）。
     hdr = t.rows[0].cells
     for k in range(ncols):
         hdr[k].text = (header[k] if k < len(header) else "").replace("**", "")
@@ -452,7 +564,6 @@ def _add_markdown_table(doc: Document, block: list[str]) -> None:
             for run in p.runs:
                 run.bold = True
                 run.font.size = Pt(9)
-                run.font.name = "宋体"
     for raw in block[2:]:
         cells = _split_cells(raw)
         row = t.add_row().cells
@@ -461,7 +572,6 @@ def _add_markdown_table(doc: Document, block: list[str]) -> None:
             for p in row[k].paragraphs:
                 for run in p.runs:
                     run.font.size = Pt(9)
-                    run.font.name = "宋体"
 
 
 _BOLD_SPLIT_RE = re.compile(r"(\*\*[^*]+\*\*)")
@@ -469,11 +579,15 @@ _BOLD_SPLIT_RE = re.compile(r"(\*\*[^*]+\*\*)")
 
 def _add_inline_runs(paragraph, text: str, *, prefix: str = "", bold_all: bool = False) -> None:
     """Emit ``text`` as black, upright runs, honoring ``**bold**`` inline emphasis and
-    stripping stray Markdown ``*`` markers so nothing renders as literal syntax."""
+    stripping stray Markdown ``*`` markers so nothing renders as literal syntax.
+
+    正文运行不硬编码字号/字体：继承文档 Normal 样式。空白文档路径 Normal 即宋体 10.5，
+    输出与旧版逐字一致；套用输出模板时，正文随模板 Normal 的字体/字号走——这是「完整保留
+    模板字体、字号」需求在正文**主路径**上的落点。此前仅 _add_llm_run（次要路径）生效，而
+    模板驱动的章节 narrative / semantic slot 主体走 _add_markdown_body→_add_inline_runs，
+    仍被强制宋体 10.5pt，等于需求核心在主路径未达成（Codex #6 复核确证）。"""
     if prefix:
-        r = paragraph.add_run(prefix)
-        r.font.size = Pt(10.5)
-        r.font.name = "宋体"
+        paragraph.add_run(prefix)
     for part in _BOLD_SPLIT_RE.split(text):
         if not part:
             continue
@@ -487,8 +601,6 @@ def _add_inline_runs(paragraph, text: str, *, prefix: str = "", bold_all: bool =
             continue
         run = paragraph.add_run(content)
         run.bold = bold
-        run.font.size = Pt(10.5)
-        run.font.name = "宋体"
 
 
 def _add_markdown_line(doc: Document, text: str, *, prefix: str = "") -> None:
@@ -584,8 +696,7 @@ def _add_coverage_banner(doc: Document, manifest: CoverageManifest | None) -> No
         parts.append(f"不适用 {manifest.dismissed}")
     summary = " · ".join(parts)
     run = p.add_run(summary)
-    run.font.size = Pt(9)
-    run.font.name = "宋体"
+    run.font.size = Pt(9)  # 覆盖提示行；不设 font.name，随模板正文字体（Codex #1）
     if manifest.has_omissions:
         run.bold = True
         run.font.color.rgb = _WARN_COLOR
@@ -688,6 +799,30 @@ def _render_assessment_matrix(doc: Document, report: RiskReport) -> None:
     ]
 
     col_widths = [Cm(2.5), Cm(5.5), Cm(2.5), Cm(2.5), Cm(6.0), Cm(4.0), Cm(2.5)]
+    # 固定列宽合计 25.5cm 是为默认横向 A4（可用宽 ~25.7cm）设计的；套用纵向/大边距的输出
+    # 模板时会超过页面可用宽度而溢出，破坏「保留模板页面布局」。按当前 section 的可用宽度
+    # 等比缩放，使表格始终落在保留下来的页面内（Codex #7）。横向默认路径下 25.5<25.7 不触发
+    # 缩放，逐字不变；只在窄页模板下收缩。
+    # 精简模板可能省略 <w:pgSz>/<w:pgMar>（依赖 Word 默认值），此时 python-docx 返回 None——
+    # 直接相减会 None-None TypeError 使整篇渲染崩溃。仅当页宽与左右边距齐备时才计算可用宽并
+    # 缩放；缺任一值则保留设计列宽（Codex #8）。装订线 gutter 占用正文，也从可用宽扣除。
+    # 表格追加在 body 末尾 → 归属**末节**（sections[-1]），故按末节而非 sections[0] 取几何：
+    # 多节模板（如纵向封面 + 横向正文）下正文落在末节，用首节（封面）宽度缩放会错缩/错溢（Codex R2）。
+    # 精简模板可能整篇省略 <w:sectPr>（依赖 Word 默认）：此时 doc.sections 为空，不仅本处读几何，
+    # 连 python-docx 的 add_table（_block_width→sections[-1]）也会 IndexError。公共入口
+    # render_risk_report 已对此类模板回退到空白文档，但本 helper 若被独立调用仍须自保——补一个默认
+    # <w:sectPr>（无 pgSz/pgMar，几何仍返回 None → 下方跳过缩放），令 add_table 有末节可测量（Codex R3）。
+    if not doc.sections:
+        doc.element.body.get_or_add_sectPr()
+    sec = doc.sections[-1]
+    pw, lm, rm = sec.page_width, sec.left_margin, sec.right_margin
+    gutter = getattr(sec, "gutter", None) or 0
+    if pw is not None and lm is not None and rm is not None:
+        avail = pw - lm - rm - gutter
+        total = sum(col_widths)
+        if avail > 0 and total > avail:
+            scale = avail / total
+            col_widths = [Emu(int(w * scale)) for w in col_widths]
     t = doc.add_table(rows=1, cols=len(headers))
     t.style = "Table Grid"
     t.alignment = WD_TABLE_ALIGNMENT.CENTER
@@ -702,8 +837,7 @@ def _render_assessment_matrix(doc: Document, report: RiskReport) -> None:
             p.alignment = WD_ALIGN_PARAGRAPH.CENTER
             for run in p.runs:
                 run.bold = True
-                run.font.size = Pt(9)
-                run.font.name = "宋体"
+                run.font.size = Pt(9)  # 紧凑表格版式；不设 font.name，西文/中文均随模板（Codex #1）
 
     for row_data in report.assessment_rows:
         row = t.add_row().cells
@@ -717,8 +851,7 @@ def _render_assessment_matrix(doc: Document, report: RiskReport) -> None:
             pending = bool(val) and val.startswith(_WARN_GLYPH)
             for p in row[i].paragraphs:
                 for run in p.runs:
-                    run.font.size = Pt(9)
-                    run.font.name = "宋体"
+                    run.font.size = Pt(9)  # 紧凑版式；不设 font.name，随模板正文字体（Codex #1）
                     if pending:  # AST-5: 待评估 cells flagged red+bold
                         run.bold = True
                         run.font.color.rgb = _WARN_COLOR
@@ -761,8 +894,7 @@ def _add_outstanding_materials(
         run_d = intro_d.add_run(
             f"以下 {manifest.dismissed} 项已确认为不适用（N/A），不计入缺失。"
         )
-        run_d.font.size = Pt(9)
-        run_d.font.name = "宋体"
+        run_d.font.size = Pt(9)  # 不设 font.name，随模板正文字体（Codex #1）
         for slot in manifest.dismissed_slots:
             label = slot.label or slot.slot_id
             doc.add_paragraph(f"{label}（{slot.slot_id}）— N/A（不适用）", style="List Bullet")

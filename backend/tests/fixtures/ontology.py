@@ -27,11 +27,19 @@ from app.services.ontology_engine import ClassInfo, IndividualInfo
 
 SLPRA = "https://ontology.pharma-gmp.cn/slpra/"
 DRUG_NS = SLPRA + "drug/"
+DEV_NS = SLPRA + "drug-development/"
+EQUIP_NS = SLPRA + "equipment/"
 
 # --- classes ---------------------------------------------------------------
 DRUG_PRODUCT = DRUG_NS + "DrugProduct"
 BIOLOGIC = DRUG_NS + "BiologicalDrugProduct"  # subclass of DrugProduct
 MANUFACTURER = DRUG_NS + "Manufacturer"
+CMC_REPORT = DEV_NS + "CMCReport"
+
+# --- range classes for CMCReport -------------------------------------------
+EQUIPMENT = EQUIP_NS + "Equipment"
+STORAGE_CONDITION = DEV_NS + "StorageCondition"
+DEGRADATION_PATHWAY = DEV_NS + "DegradationPathway"
 
 # --- data properties (domain: DrugProduct) ---------------------------------
 APPROVAL_NUMBER = DRUG_NS + "approvalNumber"
@@ -44,10 +52,19 @@ MFR_NAME = DRUG_NS + "manufacturerName"
 # --- object properties (domain: DrugProduct → Manufacturer) ----------------
 MANUFACTURED_BY = DRUG_NS + "manufacturedBy"
 
+# --- object properties (domain: CMCReport) ----------------------------------
+USES_EQUIPMENT = DEV_NS + "usesEquipment"
+HAS_STORAGE_CONDITION = DEV_NS + "hasStorageCondition"
+HAS_DEGRADATION_PATHWAY = DEV_NS + "hasDegradationPathway"
+
 _LABELS = {
     DRUG_PRODUCT: "药品",
     BIOLOGIC: "生物制品",
     MANUFACTURER: "生产企业",
+    CMC_REPORT: "CMC报告",
+    EQUIPMENT: "设备",
+    STORAGE_CONDITION: "存放条件",
+    DEGRADATION_PATHWAY: "降解途径",
 }
 
 
@@ -93,6 +110,14 @@ class FakeFeatureEngine:
                     "label": "生产者",
                     "range": [MANUFACTURER],
                 },
+            ],
+            CMC_REPORT: [
+                {"iri": USES_EQUIPMENT, "name": "usesEquipment",
+                 "label": "使用设备", "range": [EQUIPMENT]},
+                {"iri": HAS_STORAGE_CONDITION, "name": "hasStorageCondition",
+                 "label": "存放条件", "range": [STORAGE_CONDITION]},
+                {"iri": HAS_DEGRADATION_PATHWAY, "name": "hasDegradationPathway",
+                 "label": "含降解途径", "range": [DEGRADATION_PATHWAY]},
             ],
         }
         # class IRI -> [IndividualInfo]
@@ -185,6 +210,7 @@ class FakeFeatureEngine:
                                 {"iri": p["iri"], "label": p["label"]}
                                 for p in self._data_props.get(rng, [])
                             ],
+                            "range_extraction_hints": {"method": None, "anchors": []},
                         }
                     )
                     frontier.append((rng, hop + 1))

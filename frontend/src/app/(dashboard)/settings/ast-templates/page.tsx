@@ -80,6 +80,8 @@ export default function AstTemplatesPage() {
   const [extracting, setExtracting] = useState(false);
   const [docxText, setDocxText] = useState<string | null>(null);
   const [sampleContent, setSampleContent] = useState<TiptapContent | null>(null);
+  // 原始示例 .docx：随向导带到创建页，创建成功后附加为输出格式模板（见 create/page.tsx）。
+  const [sampleFile, setSampleFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const reload = useCallback(async () => {
@@ -100,6 +102,7 @@ export default function AstTemplatesPage() {
     setUploadError(null);
     setDocxText(null);
     setSampleContent(null);
+    setSampleFile(null);
     const file = e.target.files?.[0];
     if (!file) return;
     setExtracting(true);
@@ -108,8 +111,9 @@ export default function AstTemplatesPage() {
       const { content_json, plain_text } = await parseSample(file);
       setSampleContent(content_json);
       setDocxText(plain_text);
+      setSampleFile(file);  // 保留原始 docx，创建成功后附加为输出格式模板
       if (!uploadName) {
-        const baseName = file.name.replace(/\.docx$/i, "");
+        const baseName = file.name.replace(/\.docx?$/i, "");
         setUploadName(baseName);
       }
     } catch (err) {
@@ -128,6 +132,7 @@ export default function AstTemplatesPage() {
       iriPattern: uploadIriPattern.trim(),
       sampleText: docxText,
       sampleContent,
+      sampleFile,
     });
     setUploadOpen(false);
     router.push("/settings/ast-templates/create");
@@ -140,6 +145,7 @@ export default function AstTemplatesPage() {
     setUploadIriPattern("");
     setDocxText(null);
     setSampleContent(null);
+    setSampleFile(null);
     setUploadError(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
   }
@@ -214,7 +220,7 @@ export default function AstTemplatesPage() {
               className="m-4"
               icon={<FileText />}
               title="暂无模板"
-              description="上传一份样例 DOCX 文档，创建首个 AST 报告模板。"
+              description="上传一份样例 Word 文档（.doc / .docx），创建首个 AST 报告模板。"
               action={
                 <Button
                   size="sm"
@@ -233,6 +239,7 @@ export default function AstTemplatesPage() {
                   <TableHead>IRI 模式</TableHead>
                   <TableHead className="w-20">版本</TableHead>
                   <TableHead>模板编号</TableHead>
+                  <TableHead>输出模板文档</TableHead>
                   <TableHead className="w-20 text-center">插槽数</TableHead>
                   <TableHead className="w-24 text-center">状态</TableHead>
                   <TableHead className="w-16 text-right">操作</TableHead>
@@ -259,6 +266,9 @@ export default function AstTemplatesPage() {
                       <TableCell>{t.version}</TableCell>
                       <TableCell className="text-muted-foreground">
                         {t.doc_no ?? "—"}
+                      </TableCell>
+                      <TableCell className="text-xs text-muted-foreground max-w-[180px] truncate" title={t.sample_docx_filename ?? undefined}>
+                        {t.sample_docx_filename ?? <span className="italic">未上传</span>}
                       </TableCell>
                       <TableCell className="text-center">{t.slot_count}</TableCell>
                       <TableCell className="text-center">
@@ -332,7 +342,7 @@ export default function AstTemplatesPage() {
           </DialogHeader>
           <div className="space-y-4">
             <p className="text-sm text-muted-foreground">
-              上传一份样例 DOCX 文档，进入编辑器后可用 AI 分析建议插槽，或手动创建插槽结构。
+              上传一份样例 Word 文档（.doc / .docx，遗留 .doc 由后端自动转为 .docx），进入编辑器后可用 AI 分析建议插槽，或手动创建插槽结构。
             </p>
             <div className="space-y-1">
               <Label>模板名称</Label>
@@ -390,11 +400,11 @@ export default function AstTemplatesPage() {
               </p>
             </div>
             <div className="space-y-1">
-              <Label>样例 DOCX 文件</Label>
+              <Label>样例 Word 文件（.doc / .docx）</Label>
               <Input
                 ref={fileInputRef}
                 type="file"
-                accept=".docx"
+                accept=".doc,.docx"
                 onChange={handleDocxFileChange}
               />
               {extracting && (

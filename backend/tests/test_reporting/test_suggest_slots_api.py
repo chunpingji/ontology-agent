@@ -226,11 +226,10 @@ class TestSuggestSlotsEndpoint:
 class TestCoverageDocClassesEndpoint:
     """S10: the probe returns exactly the input IRIs the ontology models coverage for.
 
-    Under the conftest ``FakeOntologyEngine`` (get_relation_schema → noop → []),
-    ``coverage_capable`` is True only for CMCReport — via the D8
-    ``supplemental_relation_edges`` (which re-attach 3 hop-1 broad-domain props and
-    gate solely on the IRI). This mirrors production, where CMCReport is the sole
-    modeled document type. Per contracts/suggest-slots-api.md.
+    Under the conftest ``FakeOntologyEngine``, ``coverage_capable`` is True only
+    for CMCReport — its ``get_relation_schema`` returns 3 hop-1 edges (equipment,
+    storage condition, degradation pathway). This mirrors production, where
+    CMCReport is the sole modeled document type. Per contracts/suggest-slots-api.md.
     """
 
     def test_returns_modeled_subset(self, client, analyst_headers):

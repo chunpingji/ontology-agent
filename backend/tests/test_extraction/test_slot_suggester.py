@@ -258,14 +258,13 @@ class TestOntologyCoverage:
 
 
 class TestSupplementalCmcEdges:
-    """Fix B / D8: broad-domain object props (no ``rdfs:domain``) are invisible to
-    ``get_relation_schema`` but the extraction pipeline supplements them for CMCReport.
-    The AI coverage menu MUST offer the same set (single source of truth,
-    ``relation_extractor.supplemental_relation_edges``) — else the menu is narrower
-    than extraction and those relationships can never be authored.
+    """016 schema-driven: broad-domain object props now have ``rdfs:domain`` declared
+    in TTL, so ``get_relation_schema`` BFS discovers them directly. The AI coverage
+    menu and extraction pipeline share the same ``get_relation_schema`` single source
+    of truth.
     """
 
-    def test_cmc_supplemental_edges_in_menu(self):
+    def test_cmc_schema_edges_in_menu(self):
         from app.services.extraction.relation_extractor import (
             CMC_REPORT_IRI,
             DEGRADATION_PATHWAY_IRI,
@@ -280,9 +279,7 @@ class TestSupplementalCmcEdges:
             _extract_coverage,
         )
 
-        # CMCReport 不在 drug 测试 T-Box 里 → get_relation_schema 返回 []；补挂边应把
-        # 3 条 broad-domain 关系并入菜单（fake engine 的 get_class_label 走 __getattr__
-        # noop → range 标签回退到 local-name，仍产出可绑定的边）。
+        # CMCReport 现有 domain 声明 → get_relation_schema BFS 自然覆盖 3 条边。
         engine = build_drug_ontology()
         schema_edges, prompt = _build_ontology_context(engine, CMC_REPORT_IRI)
 
@@ -291,11 +288,9 @@ class TestSupplementalCmcEdges:
         assert (HAS_STORAGE_CONDITION_IRI, STORAGE_CONDITION_IRI) in edge_keys
         assert (HAS_DEGRADATION_PATHWAY_IRI, DEGRADATION_PATHWAY_IRI) in edge_keys
 
-        # 三条 predicate 标签都渲染进注入 LLM 的菜单文本。
         for label in ("使用设备", "存放条件", "含降解途径"):
             assert label in prompt
 
-        # 补挂边随 schema_edges 回传 → 立即可被 _extract_coverage 绑定（可作者化）。
         r2 = {"coverage": [
             {"predicate_iri": USES_EQUIPMENT_IRI, "range_class_iri": EQUIPMENT_IRI},
         ]}
@@ -305,15 +300,14 @@ class TestSupplementalCmcEdges:
         assert cov[0]["doc_class_iri"] == CMC_REPORT_IRI
         assert cov[0]["required"] is True
 
-    def test_non_cmc_doc_class_gets_no_supplemental_edges(self):
-        """其它文档类型零补挂——补挂只针对 CMCReport（零行为变更）。"""
-        from app.services.extraction.relation_extractor import (
-            supplemental_relation_edges,
-        )
+    def test_non_cmc_doc_class_gets_own_schema_edges(self):
+        """Other doc types get their own schema edges (no cross-type leakage)."""
+        from app.services.extraction.slot_suggester import _supplemented_schema_edges
 
         engine = build_drug_ontology()
-        assert supplemental_relation_edges(engine, DRUG_PRODUCT) == []
-        assert supplemental_relation_edges(None, DRUG_PRODUCT) == []
+        dp_edges = _supplemented_schema_edges(engine, DRUG_PRODUCT)
+        assert len(dp_edges) >= 1
+        assert all(e["domain_class_iri"] == DRUG_PRODUCT for e in dp_edges if e["hop"] == 1)
 
 
 class TestCoverageCapable:
@@ -332,9 +326,9 @@ class TestCoverageCapable:
         engine = build_drug_ontology()
         assert coverage_capable(engine, DRUG_PRODUCT) is True
 
-    def test_cmc_capable_via_d8_supplements(self):
-        """CMCReport carries NO exact-domain edges but D8 re-attaches 3 hop-1 broad-
-        domain props — the production reason CMCReport is the sole capable type."""
+    def test_cmc_capable_via_domain_declarations(self):
+        """CMCReport has 3 object properties with domain declarations → BFS finds
+        them at hop-1, so CMCReport is capable."""
         from app.services.extraction.relation_extractor import CMC_REPORT_IRI
         from app.services.extraction.slot_suggester import coverage_capable
 

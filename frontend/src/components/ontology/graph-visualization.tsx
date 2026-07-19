@@ -33,7 +33,7 @@ interface GLink extends d3.SimulationLinkDatum<GNode> {
   ltIri?: string; // 仅 link type 边：其 slpra_iri，用于与关系面板双向高亮
 }
 
-const short = (iri: string) => iri.split(/[/#]/).pop() ?? iri;
+const short = (iri: string | null | undefined) => (iri ? iri.split(/[/#]/).pop() ?? iri : "");
 const SELECTED = "#f59e0b"; // 选中节点的高亮描边（amber-500）
 const LT_COLOR = "#7c3aed"; // 关系（link type）边的紫色（violet-600）
 const LT_HOT = "#5b21b6"; // 被聚焦的关系边的加深紫（violet-800）
@@ -101,24 +101,40 @@ export function GraphVisualization({
     };
     const links: GLink[] = [];
 
-    for (const c of classes) {
-      addNode(c.slpra_iri, "class");
-      if (c.parent_iri) {
-        addNode(c.parent_iri, "class");
-        links.push({ source: c.slpra_iri, target: c.parent_iri, label: "是一种" });
+    // GET /api/ontology/classes/{iri} 按「该类是否有元数据草稿」返回两种形状：
+    //   · 有草稿 → TBoxClass：标识在 slpra_iri、单父 parent_iri、约束含 filler_iri；
+    //   · 无草稿（纯 TTL 类）→ 引擎只读视图：标识在 iri、多父 parent_iris，无 slpra_iri/filler_iri。
+    // 左树（getClassHierarchy）已列出纯 TTL 类，图必须一并呈现——故对两形状归一取标识/父类，
+    // 绝不因缺 slpra_iri 丢节点（丢节点会让图与左树不一致，且正是 short(undefined) 崩溃的根因）。
+    // Partial<>：运行时是「TBoxClass ∪ 只读视图」的并集，任一字段都可能缺席，故不可断言其必存。
+    type RawClass = Partial<TBoxClass> & { iri?: string; parent_iris?: string[] };
+    // 用 || 而非 ??：slpra_iri 若为空串也要回退到 iri（?? 只挡 null/undefined，放不过空串）。
+    const classIri = (c: RawClass) => c.slpra_iri || c.iri;
+    const classParents = (c: RawClass) =>
+      (c.parent_iri ? [c.parent_iri] : c.parent_iris ?? []).filter(Boolean);
+
+    for (const c of classes as RawClass[]) {
+      const iri = classIri(c);
+      if (!iri) continue; // 两形状均无标识（理论不至于）——跳过，绝不让 short(undefined) 崩溃
+      addNode(iri, "class");
+      for (const p of classParents(c)) {
+        addNode(p, "class");
+        links.push({ source: iri, target: p, label: "是一种" });
       }
-      for (const r of c.restrictions) {
-        if (!r.filler_iri) continue;
+      for (const r of c.restrictions ?? []) {
+        if (!r.filler_iri) continue; // 仅草稿形状有具体约束端点；只读视图约束形状不同，跳过
         addNode(r.filler_iri, "filler");
         const card = r.cardinality != null ? ` (${r.cardinality})` : "";
         const prop = r.property_iri ? short(r.property_iri) : r.kind;
-        links.push({ source: c.slpra_iri, target: r.filler_iri, label: `${prop} ${r.kind}${card}` });
+        links.push({ source: iri, target: r.filler_iri, label: `${prop} ${r.kind}${card}` });
       }
     }
 
     // 关系（link type）叠加：只画「模块内」的——domain 与 range 都已作为类加载进来。
     // 跨模块的边会指向图中不存在的节点，故跳过；继承得到的关系（inherited_from_iri）也跳过。
-    const classIris = new Set(classes.map((c) => c.slpra_iri));
+    const classIris = new Set(
+      (classes as RawClass[]).map(classIri).filter((x): x is string => !!x),
+    );
     for (const lt of linkTypes) {
       if (lt.inherited_from_iri) continue;
       if (!lt.domain_iri || !lt.range_iri) continue;
