@@ -8,7 +8,7 @@
 2. 每个候选的信号词来自两处：① 该类 rdfs:label 的分词（通用、零配置随本体演进）；
    ② 少量人工策动的强信号（``_CURATED_SIGNALS``，按 local-name 键入，提高已知关键类
    的判准）。
-3. 对「标题 + 各级标题 + TOC + 前若干段」组成的 haystack 子串计分，取最高分且过阈值者。
+3. 对「标题 + 各级标题 + TOC + 全部段落」组成的 haystack 子串计分，取最高分且过阈值者。
 
 全程离线、无模型调用、无外发。无命中 → ``None``（调用方据此不产关系，保持优雅降级）。
 """
@@ -61,9 +61,34 @@ def _label_tokens(label: str) -> list[str]:
 
 
 def _build_haystack(structure: DocStructure) -> str:
-    """打分语料：标题 + 全部标题 + 前 12 段（含 TOC，目录条目富含章节名是强信号）。"""
-    parts = [structure.title, *structure.headings, *structure.paragraphs[:12]]
+    """打分语料：标题 + 全部标题 + 全文段落（含 TOC）。"""
+    parts = [structure.title, *structure.headings, *structure.paragraphs]
     return "\n".join(p for p in parts if p)
+
+
+def classification_for_iri(doc_class_iri: str, engine) -> dict:
+    """Build an authoritative classification for an explicitly selected type."""
+    label = _local_name(doc_class_iri)
+    try:
+        detail = engine.get_class_detail(doc_class_iri)
+        if isinstance(detail, dict):
+            label = detail.get("label") or detail.get("label_zh") or label
+        elif detail is not None:
+            label = getattr(detail, "label_zh", None) or getattr(
+                detail, "label_en", None
+            ) or label
+    except Exception:
+        try:
+            label = engine.get_class_label(doc_class_iri) or label
+        except Exception:
+            pass
+    return {
+        "doc_class_iri": doc_class_iri,
+        "label": label,
+        "score": 0,
+        "signals": ["显式文档类型"],
+        "source": "explicit",
+    }
 
 
 def classify(structure: DocStructure, engine) -> dict | None:
@@ -97,7 +122,13 @@ def classify(structure: DocStructure, engine) -> dict | None:
                 signals.append(tok)
 
         if score and (best is None or score > best["score"]):
-            best = {"doc_class_iri": iri, "label": label, "score": score, "signals": signals}
+            best = {
+                "doc_class_iri": iri,
+                "label": label,
+                "score": score,
+                "signals": signals,
+                "source": "automatic",
+            }
 
     if best is None or best["score"] < _MIN_SCORE:
         return None

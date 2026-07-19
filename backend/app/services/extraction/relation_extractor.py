@@ -28,6 +28,11 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from app.services.extraction import document_classifier
+from app.services.extraction.document_profile import (
+    compile_ontology_bindings,
+    parse_profile,
+    read_document_profile,
+)
 from app.services.extraction.docx_structure import (
     DocStructure,
     parse_docx_structure,
@@ -720,6 +725,68 @@ class _LegacyFinder(ExtractionStrategy):
         return self._fn(ctx)
 
 
+class _ProfileStrategy(ExtractionStrategy):
+    """Interpret the range class's constrained extraction Profile."""
+
+    def find_endpoints(self, ctx: _Ctx, edge: dict) -> list[dict]:
+        range_iri = edge["range_class_iri"]
+        hints = edge.get("range_extraction_hints") or {}
+        profile_raw = hints.get("profile")
+        if hints.get("profile_error"):
+            logger.warning(
+                "invalid extraction Profile JSON for %s: %s",
+                range_iri,
+                hints["profile_error"],
+            )
+            return []
+        if not profile_raw:
+            return []
+        try:
+            profile = parse_profile(profile_raw)
+            bindings = compile_ontology_bindings(ctx.engine, range_iri, profile)
+        except Exception:
+            logger.warning("invalid extraction Profile for %s", range_iri, exc_info=True)
+            return []
+
+        result = read_document_profile(
+            ctx.structure, range_iri, profile, bindings
+        )
+        if result.degraded_reason:
+            logger.warning(
+                "extraction Profile degraded for %s: %s",
+                range_iri,
+                result.degraded_reason,
+            )
+            return []
+
+        synonyms = ctx.subclass_synonyms(range_iri)
+        endpoints: list[dict] = []
+        for candidate in result.candidates:
+            class_iri = _classify_by_synonyms(
+                candidate.subclass_value, synonyms, range_iri
+            )
+            properties = []
+            for value in candidate.values:
+                item = {
+                    "iri": value.property_iri,
+                    "label": value.label,
+                    "value": value.value,
+                    "raw_value": value.raw_value,
+                    "source_ref": value.source_ref,
+                }
+                if value.note:
+                    item["note"] = value.note
+                properties.append(item)
+            endpoints.append(_endpoint(
+                class_iri,
+                candidate.identifier or profile.label or ctx.class_label(class_iri),
+                source="ontology-profile",
+                data_properties=properties,
+                source_ref=candidate.source_ref,
+            ))
+        return endpoints
+
+
 # ---------------------------------------------------------------------------
 # Generic strategies — handle NEW range classes via TTL annotations only
 # ---------------------------------------------------------------------------
@@ -826,21 +893,17 @@ class _MethodStrategy(ExtractionStrategy):
 # Range-override strategies (composite/multi-source, logic not generalisable).
 _RANGE_OVERRIDES: dict[str, ExtractionStrategy] = {
     SYNTHESIS_ROUTE_IRI: _LegacyFinder(find_synthesis_route),
-    SHARED_LINE_IRI: _LegacyFinder(find_shared_line),
     CLINICAL_SAMPLE_PLAN_IRI: _LegacyFinder(find_production_plan),
 }
 
 # Method-based strategies (extractionMethod annotation → strategy).
 _METHOD_STRATEGIES: dict[str, ExtractionStrategy] = {
     "table_scan": _MethodStrategy({
-        EQUIPMENT_IRI: find_equipment,
-        RESIDUE_IRI: find_residue,
         STORAGE_CONDITION_IRI: find_storage,
         SAFETY_RISK_IRI: find_safety_risk,
         QUALITY_RISK_IRI: find_quality_risk,
     }, generic=_generic_table_scan),
     "section_kv": _MethodStrategy({
-        DRUG_PRODUCT_IRI: find_drug_product,
         CLEANING_PROCESS_IRI: find_cleaning,
     }, generic=_generic_section_kv),
     "section_paragraph": _MethodStrategy({
@@ -850,10 +913,12 @@ _METHOD_STRATEGIES: dict[str, ExtractionStrategy] = {
 
 
 def _resolve_strategy(edge: dict) -> ExtractionStrategy | None:
+    hints = edge.get("range_extraction_hints") or {}
+    if hints.get("profile") or hints.get("profile_error"):
+        return _ProfileStrategy()
     override = _RANGE_OVERRIDES.get(edge["range_class_iri"])
     if override:
         return override
-    hints = edge.get("range_extraction_hints") or {}
     method = hints.get("method")
     if method:
         return _METHOD_STRATEGIES.get(method)
@@ -862,7 +927,7 @@ def _resolve_strategy(edge: dict) -> ExtractionStrategy | None:
 
 def _make_edge(ctx: _Ctx, doc_class: str, subject_label: str, subject_text: str,
                schema_edge: dict, ep: dict) -> dict:
-    range_iri = schema_edge.get("range_class_iri") or ep["class_iri"]
+    range_iri = ep["class_iri"]
     return {
         "subject_class_iri": doc_class,
         "subject_class_label": subject_label,
@@ -1001,6 +1066,7 @@ def extract_relationships(
     file_path: str | Path,
     triples: list[dict],
     doc_class: dict | None = None,
+    source_filename: str | None = None,
 ) -> dict:
     """Schema-driven document classification + relation/property extraction.
 
@@ -1016,8 +1082,16 @@ def extract_relationships(
     完整关系图谱 → 按 range 调策略抽端点 → 连边。无识别文档类型 → ``doc_class=None``、
     ``relationships=[]``（优雅降级）。
     """
-    structure = parse_docx_structure(file_path)
-    classification = doc_class if doc_class is not None else document_classifier.classify(structure, engine)
+    structure = (
+        parse_docx_structure(file_path, source_filename=source_filename)
+        if source_filename
+        else parse_docx_structure(file_path)
+    )
+    classification = (
+        doc_class
+        if doc_class is not None
+        else document_classifier.classify(structure, engine)
+    )
     if not classification:
         return {"doc_class": None, "relationships": []}
 

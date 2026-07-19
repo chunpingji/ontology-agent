@@ -22,11 +22,14 @@ Excel → 结构化行数据，每个单元格附 entity annotations
 from __future__ import annotations
 
 import logging
-import re
 from pathlib import Path
 from typing import Any, Callable
 
 from app.config import settings
+from app.services.extraction.docx_structure import (
+    heading_level_from_style,
+    infer_heading_level,
+)
 from app.services.extraction.ontology_typer import (
     GET_CLASS_PROPERTIES_DOMAIN_BUG,
     _is_non_entity_span,
@@ -321,19 +324,8 @@ def _annotate_texts(
 
 # Word 段落样式名 → tiptap heading 层级（保留文档大纲）；中英文内置样式名都识别。
 def _heading_level(style_name: str | None) -> int:
-    if not style_name:
-        return 0
-    s = style_name.strip()
-    low = s.lower()
-    if low == "title" or s == "标题":
-        return 1
-    if low == "subtitle" or s == "副标题":
-        return 2
-    if "heading" in low or s.startswith("标题"):
-        m = re.search(r"\d+", s)
-        if m:
-            return max(1, min(6, int(m.group())))
-    return 0
+    """Backward-compatible wrapper around the shared Word IR style mapping."""
+    return heading_level_from_style(style_name)
 
 
 _PT = 12700  # 1 point = 12700 EMU
@@ -1057,9 +1049,7 @@ def annotate_word(
                 })
 
             if text.strip():
-                level = _heading_level(para.style.name if para.style else None)
-                if not level:
-                    level = _font_size_heading_level(_para_font_size(para))
+                level = infer_heading_level(para)
                 align = _para_align(para)
 
                 if inline_breaks:

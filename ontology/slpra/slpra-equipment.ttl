@@ -318,17 +318,20 @@ slpra-equip:usedInProductionOf a owl:ObjectProperty ;
 slpra-equip:equipmentID a owl:DatatypeProperty ;
     rdfs:domain slpra-equip:Equipment ;
     rdfs:range xsd:string ;
-    rdfs:label "equipment ID"@en .
+    rdfs:label "equipment ID"@en ;
+    rdfs:label "设备编号"@zh .
 
 slpra-equip:equipmentName a owl:DatatypeProperty ;
     rdfs:domain slpra-equip:Equipment ;
     rdfs:range xsd:string ;
-    rdfs:label "equipment name"@en .
+    rdfs:label "equipment name"@en ;
+    rdfs:label "设备名称"@zh .
 
 slpra-equip:modelSpecification a owl:DatatypeProperty ;
     rdfs:domain slpra-equip:Equipment ;
     rdfs:range xsd:string ;
-    rdfs:label "model specification"@en .
+    rdfs:label "model specification"@en ;
+    rdfs:label "规格型号"@zh .
 
 slpra-equip:surfaceArea_cm2 a owl:DatatypeProperty ;
     rdfs:domain slpra-equip:EquipmentSurface ;

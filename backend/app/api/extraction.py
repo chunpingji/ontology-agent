@@ -127,6 +127,7 @@ async def _create_declarative_job(
     db: Session,
     engine: OntologyEngine,
     identity: Identity,
+    file: UploadFile | None = None,
 ) -> ExtractionJob:
     """Create + trigger a declaration-driven job (014 US1/US2, FR-007).
 
@@ -141,7 +142,7 @@ async def _create_declarative_job(
 
     job = ExtractionJob(
         source_type=source_type,
-        source_filename=binding.target or source_type,
+        source_filename=file.filename if file else binding.target or source_type,
         source_config=source_cfg,
         status="running",
     )
@@ -149,13 +150,29 @@ async def _create_declarative_job(
     db.commit()
     db.refresh(job)
 
+    file_path: Path | None = None
+    if file is not None:
+        suffix = Path(file.filename or "").suffix.lower()
+        tmp = tempfile.NamedTemporaryFile(delete=False, suffix=suffix)
+        tmp.write(await file.read())
+        tmp.close()
+        uploads_dir = Path("data/uploads")
+        uploads_dir.mkdir(parents=True, exist_ok=True)
+        file_path = uploads_dir / f"{job.id}{suffix}"
+        shutil.move(tmp.name, file_path)
+        job.document_path = str(file_path)
+        db.commit()
+        db.refresh(job)
+
     audit.append(
         db, "extraction.job.create", actor=identity.username,
         entity_iri=str(job.id),
         details={"source_type": source_type, "class_mapping_id": str(class_mapping_id)},
     )
 
-    background.add_task(_run_pipeline_bg, job.id, config_id, None, engine, db)
+    background.add_task(
+        _run_pipeline_bg, job.id, config_id, file_path, engine, db
+    )
     return job
 
 
@@ -187,9 +204,15 @@ async def create_job(
                 422,
                 "该映射不是源实体绑定（db_table/api_endpoint/doc_pattern），无法驱动抽取",
             )
+        if binding.mapping_type == "doc_pattern":
+            if file is None:
+                raise HTTPException(422, "doc_pattern requires a DOCX file")
+            if Path(file.filename or "").suffix.lower() != ".docx":
+                raise HTTPException(422, "doc_pattern only accepts .docx files")
         return await _create_declarative_job(
             background, source_type, class_mapping_id, config_id, binding,
             db, engine, identity,
+            file=file if binding.mapping_type == "doc_pattern" else None,
         )
 
     config = db.get(ExtractionConfig, config_id) if config_id else None
@@ -313,7 +336,7 @@ def get_job(job_id: UUID, db: Session = Depends(get_db)):
     return job
 
 
-_ANNOTATOR_VERSION = 18
+_ANNOTATOR_VERSION = 19
 
 
 def _annotation_cache_path(job_id) -> Path:
@@ -342,10 +365,15 @@ def _compute_annotation(
     doc_class_result = None
     if job.source_type == "word":
         try:
+            from app.services.extraction.document_classifier import (
+                classification_for_iri,
+                classify,
+            )
             from app.services.extraction.docx_structure import parse_docx_structure
-            from app.services.extraction.document_classifier import classify
 
-            structure = parse_docx_structure(file_path)
+            structure = parse_docx_structure(
+                file_path, source_filename=job.source_filename
+            )
             doc_class_result = classify(structure, engine)
             doc_class_iri = (
                 doc_class_result["doc_class_iri"] if doc_class_result else None
@@ -353,11 +381,11 @@ def _compute_annotation(
         except Exception:
             logger.warning("文档分类失败，使用全量候选集", exc_info=True)
 
-        # 报告中心上传时用户显式指定的文档类型优先约束 NER 候选子图（仅当其相关类子图非空
-        # 时生效，避免根类/无关系类型把候选集约束为空而漏识别）。关系抽取仍用自动分类结果
-        # （doc_class_result），二者互不影响。
+        # 报告中心显式指定的类型是关系抽取的权威分类；NER 候选子图仅在该类型确有相关类
+        # 时才收窄，避免根类/无关系类型把候选集约束为空。
         override_iri = (job.source_config or {}).get("doc_class_iri")
         if override_iri:
+            doc_class_result = classification_for_iri(override_iri, engine)
             try:
                 from app.services.extraction.ontology_typer import (
                     relevant_classes_for_doc_type,
@@ -397,7 +425,11 @@ def _compute_annotation(
             from app.services.extraction.relation_extractor import extract_relationships
 
             graph = extract_relationships(
-                engine, file_path, triples, doc_class=doc_class_result,
+                engine,
+                file_path,
+                triples,
+                doc_class=doc_class_result,
+                source_filename=job.source_filename,
             )
             result["doc_class"] = graph["doc_class"]
             result["relationships"] = graph["relationships"]

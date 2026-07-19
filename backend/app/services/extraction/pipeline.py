@@ -55,7 +55,9 @@ async def run_extraction_pipeline(
         # **之前**，遗留 column_mapping / doc_repo / database-reflect 分支原样保留（FR-018）。
         class_mapping_id = (job.source_config or {}).get("class_mapping_id")
         if class_mapping_id:
-            return await _run_declarative_branch(job, class_mapping_id, engine, db)
+            return await _run_declarative_branch(
+                job, class_mapping_id, file_path, engine, db
+            )
 
         job.status = "parsing"
         db.commit()
@@ -316,6 +318,7 @@ async def _run_database_branch(
 async def _run_declarative_branch(
     job: ExtractionJob,
     class_mapping_id: str,
+    file_path: Path | None,
     engine: OntologyEngine,
     db: Session,
 ) -> ExtractionJob:
@@ -362,8 +365,17 @@ async def _run_declarative_branch(
         from app.services.extraction.api_reader import read_api_items
 
         result = await read_api_items(binding, prop_bindings, engine, db)
+    elif binding.mapping_type == "doc_pattern":
+        from app.services.extraction.document_profile import read_doc_pattern
+
+        result = read_doc_pattern(
+            binding,
+            prop_bindings,
+            target_class_iri,
+            file_path or job.document_path,
+            source_filename=job.source_filename,
+        )
     else:
-        # doc_pattern 等其它源实体类型暂不支持（读取器待接入）。
         result = RowReadResultUnsupported(binding.mapping_type)
 
     # R12/FR-019 — 优雅降级：零候选、作业完成、附 degraded_reason，绝不崩溃。

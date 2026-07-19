@@ -1320,21 +1320,84 @@ slpra-dev:controlMeasure a owl:DatatypeProperty ;
 # --- Residue Solubility (cleaning validation input) ---
 
 slpra-dev:residueSolvent a owl:DatatypeProperty ;
+    rdfs:domain slpra-drug:Residue ;
     rdfs:range xsd:string ;
     rdfs:label "residue cleaning solvent"@en ;
     rdfs:label "残留物清洗溶剂"@zh ;
     rdfs:comment "Solvent used to dissolve the residue for cleaning, e.g. 丙酮, 乙醇+水, 丙酮+2N三氟乙酸水溶液."@en .
 
 slpra-dev:residueSolubility a owl:DatatypeProperty ;
+    rdfs:domain slpra-drug:Residue ;
     rdfs:range xsd:string ;
     rdfs:label "residue solubility"@en ;
     rdfs:label "残留物溶解度"@zh ;
     rdfs:comment "Qualitative solubility descriptor: 易溶, 溶解, 微溶, 几乎不溶."@en .
 
 slpra-dev:residueSolubilityTemperature a owl:DatatypeProperty ;
+    rdfs:domain slpra-drug:Residue ;
     rdfs:range xsd:string ;
     rdfs:label "solubility test temperature"@en ;
     rdfs:label "溶解度测试温度"@zh .
+
+slpra-dev:activeIngredient a owl:DatatypeProperty ;
+    rdfs:domain slpra-dev:SharedLineAssessmentData ;
+    rdfs:range xsd:string ;
+    rdfs:label "active ingredient"@en ;
+    rdfs:label "活性成分（API）"@zh .
+
+slpra-dev:studyType a owl:DatatypeProperty ;
+    rdfs:domain slpra-dev:SharedLineAssessmentData ;
+    rdfs:range xsd:string ;
+    rdfs:label "toxicology study type"@en ;
+    rdfs:label "试验项目"@zh .
+
+slpra-dev:f1 a owl:DatatypeProperty ;
+    rdfs:domain slpra-dev:SharedLineAssessmentData ;
+    rdfs:range xsd:decimal ;
+    rdfs:label "PDE adjustment factor F1"@en ;
+    rdfs:label "F1"@zh .
+
+slpra-dev:f2 a owl:DatatypeProperty ;
+    rdfs:domain slpra-dev:SharedLineAssessmentData ;
+    rdfs:range xsd:decimal ;
+    rdfs:label "PDE adjustment factor F2"@en ;
+    rdfs:label "F2"@zh .
+
+slpra-dev:f3 a owl:DatatypeProperty ;
+    rdfs:domain slpra-dev:SharedLineAssessmentData ;
+    rdfs:range xsd:decimal ;
+    rdfs:label "PDE adjustment factor F3"@en ;
+    rdfs:label "F3"@zh .
+
+slpra-dev:f4 a owl:DatatypeProperty ;
+    rdfs:domain slpra-dev:SharedLineAssessmentData ;
+    rdfs:range xsd:decimal ;
+    rdfs:label "PDE adjustment factor F4"@en ;
+    rdfs:label "F4"@zh .
+
+slpra-dev:f5 a owl:DatatypeProperty ;
+    rdfs:domain slpra-dev:SharedLineAssessmentData ;
+    rdfs:range xsd:decimal ;
+    rdfs:label "PDE adjustment factor F5"@en ;
+    rdfs:label "F5"@zh .
+
+slpra-dev:pde_mg_per_day a owl:DatatypeProperty ;
+    rdfs:domain slpra-dev:SharedLineAssessmentData ;
+    rdfs:range xsd:decimal ;
+    rdfs:label "PDE (mg/day)"@en ;
+    rdfs:label "PDE（mg/天）"@zh .
+
+slpra-dev:sourceReference a owl:DatatypeProperty ;
+    rdfs:domain slpra-dev:SharedLineAssessmentData ;
+    rdfs:range xsd:string ;
+    rdfs:label "source reference"@en ;
+    rdfs:label "来源"@zh .
+
+slpra-dev:oebBand a owl:DatatypeProperty ;
+    rdfs:domain slpra-dev:SharedLineAssessmentData ;
+    rdfs:range xsd:string ;
+    rdfs:label "OEB band"@en ;
+    rdfs:label "OEB"@zh .
 
 # --- Clinical Sample Production Plan ---
 

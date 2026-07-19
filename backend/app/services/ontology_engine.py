@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import io
+import json
 import logging
 import threading
 from dataclasses import dataclass, field
@@ -49,7 +50,10 @@ MODULE_FILES = {
 }
 
 # integration owl:imports 全部内部模块，故须最后加载（依赖先就位）。
-_LOAD_ORDER = ["drug", "equipment", "contamination", "risk", "cleaning", "facility", "personnel", "document", "drug-development", "integration"]
+_LOAD_ORDER = [
+    "drug", "equipment", "contamination", "risk", "cleaning", "facility",
+    "personnel", "document", "drug-development", "integration",
+]
 
 # 外部上层本体（BFO）：随包提供的离线本地副本。各模块的类挂在 BFO 顶层范畴下，必须先于
 # 模块加载，否则父范畴/父类 IRI 为空（owl:imports 在离线容器内无法联网解析）。
@@ -400,10 +404,35 @@ class OntologyEngine:
             for prop in self._world.data_properties():
                 if self._cls_in_domain(cls, prop.domain) and prop.iri not in seen:
                     seen.add(prop.iri)
+                    ranges = [
+                        getattr(item, "iri", None)
+                        or {
+                            str: "http://www.w3.org/2001/XMLSchema#string",
+                            int: "http://www.w3.org/2001/XMLSchema#integer",
+                            float: "http://www.w3.org/2001/XMLSchema#decimal",
+                            bool: "http://www.w3.org/2001/XMLSchema#boolean",
+                        }.get(item)
+                        or str(item)
+                        for item in prop.range
+                    ]
+                    aliases = []
+                    for item in getattr(prop, "label", []) or []:
+                        text = str(item)
+                        if text and text not in aliases:
+                            aliases.append(text)
+                    label = self._get_label(prop) or prop.name
+                    if label and label not in aliases:
+                        aliases.insert(0, label)
                     props.append({
                         "iri": prop.iri,
                         "name": prop.name,
-                        "label": self._get_label(prop) or prop.name,
+                        "label": label,
+                        "aliases": aliases,
+                        "range": ranges,
+                        "datatype": (
+                            ranges[0].rsplit("#", 1)[-1].rsplit("/", 1)[-1]
+                            if ranges else None
+                        ),
                     })
             return props
 
@@ -475,7 +504,8 @@ class OntologyEngine:
 
         供 :func:`edges_to_facts` 填充 ``Facts.alignments``（US3）；与写入侧同谓词
         （``ttl_merge``/``surgical_merge`` 逐字保留具名外部 ``equivalentClass``、外部对齐
-        走 skos 非受管谓词，见 [[external-alignment-must-use-nonmanaged-predicates]]），保证往返一致。
+        走 skos 非受管谓词，见
+        [[external-alignment-must-use-nonmanaged-predicates]]），保证往返一致。
         去重，按谓词/发现顺序保序。World 未加载或无对齐 → ``[]``。
         """
         from rdflib import URIRef
@@ -514,6 +544,9 @@ class OntologyEngine:
         EXTRACTION_ANCHOR = URIRef(
             "https://ontology.pharma-gmp.cn/slpra/integration/extractionAnchor"
         )
+        EXTRACTION_PROFILE = URIRef(
+            "https://ontology.pharma-gmp.cn/slpra/integration/extractionProfile"
+        )
         subject = URIRef(class_iri)
         method = None
         for obj in graph.objects(subject, EXTRACTION_METHOD):
@@ -522,7 +555,20 @@ class OntologyEngine:
         anchors: list[str] = []
         for obj in graph.objects(subject, EXTRACTION_ANCHOR):
             anchors.append(str(obj))
-        return {"method": method, "anchors": anchors}
+        profile = None
+        profile_error = None
+        for obj in graph.objects(subject, EXTRACTION_PROFILE):
+            try:
+                profile = json.loads(str(obj))
+            except json.JSONDecodeError as exc:
+                profile_error = str(exc)
+            break
+        return {
+            "method": method,
+            "anchors": anchors,
+            "profile": profile,
+            "profile_error": profile_error,
+        }
 
     def get_extraction_hints(self, class_iri: str) -> dict:
         """Read extraction annotation properties for a range class.
@@ -533,12 +579,22 @@ class OntologyEngine:
         """
         with self._lock:
             if not self._world:
-                return {"method": None, "anchors": []}
+                return {
+                    "method": None,
+                    "anchors": [],
+                    "profile": None,
+                    "profile_error": None,
+                }
             try:
                 graph = self._world.as_rdflib_graph()
             except Exception:
                 logger.warning("get_extraction_hints: rdflib view unavailable", exc_info=True)
-                return {"method": None, "anchors": []}
+                return {
+                    "method": None,
+                    "anchors": [],
+                    "profile": None,
+                    "profile_error": None,
+                }
             return self._get_extraction_hints_from_graph(graph, class_iri)
 
     @staticmethod

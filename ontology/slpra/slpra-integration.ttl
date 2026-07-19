@@ -414,6 +414,11 @@ slpra-integ:extractionPattern a owl:AnnotationProperty ;
     rdfs:label "抽取正则"@zh ;
     rdfs:comment "Regex (Python syntax) attached to a DatatypeProperty; capture group 1 is the extracted value. Applied to the located sentence/paragraph by sentence_regex-method range classes. Backslashes must be doubled per Turtle string escaping."@en .
 
+slpra-integ:extractionProfile a owl:AnnotationProperty ;
+    rdfs:label "document extraction profile"@en ;
+    rdfs:label "文档抽取配置"@zh ;
+    rdfs:comment "Versioned constrained JSON Profile for ontology-guided section, table, alias, identity, transform, and provenance extraction."@en .
+
 # --- Extraction hints per range class ---
 
 slpra-drug:DrugProduct
@@ -471,6 +476,178 @@ slpra-dev:ClinicalSampleProductionPlan
     slpra-integ:extractionAnchor "计划" ;
     slpra-integ:extractionAnchor "批" ;
     slpra-integ:extractionAnchor "车间" .
+
+# --- Unified ontology-guided document Profiles ---
+
+slpra-drug:DrugProduct
+    slpra-integ:extractionProfile """
+{
+  "version": 1,
+  "sources": [
+    {
+      "locator": "section_kv",
+      "anchors": {"any_of": ["产品的基本性质", "产品基本性质", "基本性质"]},
+      "endpoint_mode": "singleton",
+      "source_label": "产品基本性质"
+    }
+  ],
+  "identity": {
+    "pattern": "[A-Z]{2,4}-[0-9]{3,5}",
+    "fallback": "药物产品"
+  },
+  "property_aliases": {
+    "dosageForm": ["制剂剂型", "剂型"],
+    "drugSpecification": ["规格", "制剂规格"],
+    "routeOfAdministration": ["给药途径", "给药方式"],
+    "appearance": ["性状", "外观"],
+    "solubility": ["溶解性", "溶解度"],
+    "isOncologyDrug": ["是否肿瘤药物", "是否抗肿瘤药物", "是否用于肿瘤治疗"],
+    "inactivationMethod": ["灭活方法", "灭活方式"],
+    "isCytotoxic": ["是否细胞毒药物", "是否是细胞毒药物"],
+    "isHormonal": ["是否激素类药物", "是否是激素类药物"],
+    "isPenicillinType": ["是否青霉素类药物", "是否是青霉素类药物"],
+    "isBetaLactam": ["是否β-内酰胺类药物", "是否是β-内酰胺类药物"],
+    "isHighlySensitizing": ["是否高致敏药物", "是否是高致敏药物"],
+    "isHighlyActive": ["是否高活性药物", "是否是高活性药物", "是否是高毒高活药物"],
+    "hasPrionRisk": ["是否有朊病毒风险", "是否是朊病毒风险药物"]
+  }
+}
+""" .
+
+slpra-equip:Equipment
+    slpra-integ:extractionProfile """
+{
+  "version": 1,
+  "sources": [
+    {
+      "locator": "table_rows",
+      "headers": {
+        "all_of": [
+          {"any_of": ["设备规格", "设备名称"]},
+          {"any_of": ["匹配设备", "设备编号"]}
+        ]
+      },
+      "endpoint_mode": "row",
+      "source_label": "设备需求"
+    }
+  ],
+  "identity": {
+    "aliases": ["设备编号", "匹配设备"],
+    "split": "/",
+    "fallback": "设备"
+  },
+  "property_aliases": {
+    "equipmentID": ["设备编号", "匹配设备"],
+    "equipmentName": ["设备名称", "设备规格"],
+    "modelSpecification": ["规格型号", "型号规格"]
+  },
+  "subclass_by": "equipmentName"
+}
+""" .
+
+slpra-drug:Residue
+    slpra-integ:extractionProfile """
+{
+  "version": 1,
+  "sources": [
+    {
+      "locator": "table_rows",
+      "headers": {
+        "all_of": [
+          {"any_of": ["名称", "中间体及成品", "中间体/成品"]},
+          {"any_of": ["溶解度", "溶解性"]}
+        ]
+      },
+      "endpoint_mode": "row",
+      "source_label": "残留物溶解性"
+    }
+  ],
+  "identity": {
+    "aliases": ["名称", "中间体及成品", "中间体/成品"],
+    "fallback": "残留物"
+  },
+  "property_aliases": {
+    "residueSolvent": ["溶剂", "清洗溶剂"],
+    "residueSolubility": ["溶解度", "溶解性"],
+    "residueSolubilityTemperature": ["温度", "测试温度", "溶解度测试温度"]
+  }
+}
+""" .
+
+slpra-dev:SharedLineAssessmentData
+    slpra-integ:extractionProfile """
+{
+  "version": 1,
+  "sources": [
+    {
+      "locator": "table_rows",
+      "headers": {
+        "all_of": [
+          {"any_of": ["活性成分(API)", "活性成分（API）", "活性成分", "API"]},
+          {"any_of": ["试验项目", "试验类型", "毒理研究"]}
+        ]
+      },
+      "endpoint_mode": "row",
+      "source_label": "宽表毒理",
+      "identity": {"fields": ["activeIngredient", "studyType"]}
+    },
+    {
+      "locator": "table_singleton",
+      "headers": {
+        "all_of": [
+          {"any_of": ["参数"]},
+          {"any_of": ["数值", "值"]}
+        ]
+      },
+      "orientation": "kv",
+      "key_aliases": ["参数"],
+      "value_aliases": ["数值", "值"],
+      "source_label": "共线评估参数",
+      "identity": {"fallback": "共线评估数据"}
+    }
+  ],
+  "identity": {"fallback": "共线评估数据"},
+  "property_aliases": {
+    "activeIngredient": ["活性成分(API)", "活性成分（API）", "活性成分", "API"],
+    "studyType": ["试验项目", "试验类型", "毒理研究"],
+    "noael_mg_per_kg_per_day": ["NOAEL", "NOAEL（大鼠）", "NOAEL（犬）"],
+    "noaelSpecies": ["动物种属", "种属", "NOAEL动物种属"],
+    "noaelDuration": ["试验周期", "给药周期", "NOAEL试验周期"],
+    "safetyFactor": ["F值", "安全系数", "总安全系数"],
+    "humanEquivalentDose_mg_per_kg": ["人体等效剂量", "HED"],
+    "proposedStartingDose_mg": ["拟定临床起始剂量", "临床起始剂量"],
+    "proposedMaxDose_mg": ["拟定最高剂量", "最高剂量"],
+    "dosingRegimen": ["给药方案", "给药频次"],
+    "f1": ["F1"],
+    "f2": ["F2"],
+    "f3": ["F3"],
+    "f4": ["F4"],
+    "f5": ["F5"],
+    "pde_mg_per_day": ["PDE (mg/天)", "PDE（mg/天）", "PDE"],
+    "sourceReference": ["来源", "数据来源", "参考文献"],
+    "oebBand": ["OEB", "OEB分级", "OEB等级"]
+  },
+  "transforms": {
+    "noael_mg_per_kg_per_day": {
+      "type": "cast",
+      "config": {
+        "to": "decimal",
+        "number_pattern": "[-+]?[0-9]+(?:[.][0-9]+)?"
+      }
+    },
+    "pde_mg_per_day": {
+      "type": "cast",
+      "config": {
+        "to": "decimal",
+        "number_pattern": "[-+]?[0-9]+(?:[.][0-9]+)?",
+        "accepted_units": ["mg/天", "mg/day", "mg/日"],
+        "reject_invalid": true
+      },
+      "reject_invalid": true
+    }
+  }
+}
+""" .
 
 # --- sentence_regex 字段正则：ClinicalSampleProductionPlan 数据属性 → 计划句内单捕获组 ---
 # 每条 extractionPattern 的 group(1) 即该属性值；由 find_production_plan 读取，取代硬编码

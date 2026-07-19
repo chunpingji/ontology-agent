@@ -13,6 +13,9 @@ from __future__ import annotations
 
 import json
 import uuid
+from io import BytesIO
+
+from docx import Document
 
 from tests.fixtures.feature014 import (
     ANALYST,
@@ -58,6 +61,38 @@ def _run_job(client, mid, source_type="database"):
 def _all_candidates(client, job_id) -> list[dict]:
     body = client.get(f"{JOBS}/{job_id}/candidates").json()
     return body["ungrouped"] + [c for g in body["groups"] for c in g["candidates"]]
+
+
+def _declare_doc_pattern(client):
+    profile = {
+        "version": 1,
+        "sources": [{
+            "locator": "section_kv",
+            "anchors": {"any_of": ["产品的基本性质"]},
+        }],
+        "identity": {"pattern": "[A-Z]{2,4}-[0-9]{3,5}"},
+    }
+    response = client.post(
+        f"{CLASSES}/{DRUG_PRODUCT}/mappings",
+        json={
+            "mapping_type": "doc_pattern",
+            "target": json.dumps(profile, ensure_ascii=False),
+            "source_system": "cmc-word",
+        },
+        headers=ANALYST,
+    )
+    assert response.status_code == 201, response.text
+    return response.json()["id"]
+
+
+def _docx_bytes() -> bytes:
+    document = Document()
+    document.add_heading("HRS-1597 CMC 报告", level=1)
+    document.add_heading("产品的基本性质", level=2)
+    document.add_paragraph("批准文号：HRS-1597")
+    stream = BytesIO()
+    document.save(stream)
+    return stream.getvalue()
 
 
 def test_declarative_db_job_happy_path(drug_client, source_table):
@@ -131,3 +166,69 @@ def test_drift_declared_column_absent_partial(drug_client, source_table):
     mappings = drug_client.get(f"{CLASSES}/{DRUG_PRODUCT}/mappings").json()
     db_map = next(m for m in mappings if m["id"] == mid)
     assert db_map["health"] == "drift"
+
+
+def test_doc_pattern_requires_docx_upload(drug_client):
+    mid = _declare_doc_pattern(drug_client)
+
+    missing = _run_job(drug_client, mid, source_type="word")
+    assert missing.status_code == 422, missing.text
+
+    unsupported = drug_client.post(
+        JOBS,
+        data={"source_type": "word", "class_mapping_id": mid},
+        files={"file": ("report.txt", b"not a docx", "text/plain")},
+        headers=ANALYST,
+    )
+    assert unsupported.status_code == 422, unsupported.text
+
+
+def test_doc_pattern_upload_is_persisted_and_extracted(drug_client):
+    mid = _declare_doc_pattern(drug_client)
+    response = add_property_binding(
+        drug_client,
+        mid,
+        property_iri=APPROVAL_NUMBER,
+        source_path="批准文号",
+        is_identifier=True,
+    )
+    assert response.status_code == 201, response.text
+
+    created = drug_client.post(
+        JOBS,
+        data={"source_type": "word", "class_mapping_id": mid},
+        files={"file": (
+            "HRS-1597 CMC报告.docx",
+            _docx_bytes(),
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        )},
+        headers=ANALYST,
+    )
+    assert created.status_code == 202, created.text
+    job = created.json()
+    assert job["source_filename"] == "HRS-1597 CMC报告.docx"
+    assert job["document_path"].endswith(".docx")
+
+    current = drug_client.get(f"{JOBS}/{job['id']}").json()
+    assert current["status"] in ("reviewing", "done")
+    candidates = _all_candidates(drug_client, job["id"])
+    assert len(candidates) == 1
+    assert candidates[0]["extracted_properties"][APPROVAL_NUMBER] == "HRS-1597"
+
+
+def test_doc_pattern_corrupt_docx_degrades_without_unhandled_error(drug_client):
+    mid = _declare_doc_pattern(drug_client)
+    created = drug_client.post(
+        JOBS,
+        data={"source_type": "word", "class_mapping_id": mid},
+        files={"file": (
+            "corrupt.docx",
+            b"not a zip package",
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        )},
+        headers=ANALYST,
+    )
+    assert created.status_code == 202, created.text
+    job = drug_client.get(f"{JOBS}/{created.json()['id']}").json()
+    assert job["status"] == "degraded"
+    assert "DOCX parse failed" in job["error_message"]

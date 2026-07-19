@@ -13,15 +13,15 @@ from __future__ import annotations
 from collections import defaultdict
 
 import app.services.extraction.relation_extractor as rx
-from app.services.extraction.docx_structure import DocSection, DocStructure, DocTable
 from app.services.extraction import document_classifier
+from app.services.extraction.docx_structure import DocSection, DocStructure, DocTable
 from app.services.extraction.relation_extractor import (
     CMC_REPORT_IRI,
     DRUG_PRODUCT_IRI,
     EQUIPMENT_IRI,
-    _Ctx,
     _build_class_hierarchy,
     _classify_by_synonyms,
+    _Ctx,
     _resolve_strategy,
     extract_relationships,
     find_cleaning,
@@ -171,6 +171,77 @@ _RANGE_METHOD_MAP = {
 }
 
 
+_RANGE_PROFILE_MAP = {
+    DRUG_PRODUCT_IRI: {
+        "version": 1,
+        "sources": [{
+            "locator": "section_kv",
+            "anchors": {"any_of": ["产品的基本性质", "基本性质"]},
+        }],
+        "identity": {
+            "pattern": "[A-Z]{2,4}-[0-9]{3,5}",
+            "fallback": "药物产品",
+        },
+        "property_aliases": {
+            "appearance": ["性状"],
+            "isCytotoxic": ["是否细胞毒药物"],
+        },
+    },
+    EQUIPMENT_IRI: {
+        "version": 1,
+        "sources": [{
+            "locator": "table_rows",
+            "headers": {"all_of": [
+                {"any_of": ["设备规格", "设备名称"]},
+                {"any_of": ["匹配设备", "设备编号"]},
+            ]},
+        }],
+        "identity": {"aliases": ["设备编号", "匹配设备"], "split": "/"},
+        "property_aliases": {
+            "equipmentID": ["设备编号", "匹配设备"],
+            "equipmentName": ["设备名称", "设备规格"],
+            "modelSpecification": ["规格型号"],
+        },
+        "subclass_by": "equipmentName",
+    },
+    rx.RESIDUE_IRI: {
+        "version": 1,
+        "sources": [{
+            "locator": "table_rows",
+            "headers": {"all_of": [
+                {"any_of": ["名称", "中间体及成品", "中间体/成品"]},
+                {"any_of": ["溶解度"]},
+            ]},
+        }],
+        "identity": {"aliases": ["名称", "中间体及成品", "中间体/成品"]},
+        "property_aliases": {
+            "residueSolvent": ["溶剂"],
+            "residueSolubility": ["溶解度"],
+            "residueSolubilityTemperature": ["温度"],
+        },
+    },
+    rx.SHARED_LINE_IRI: {
+        "version": 1,
+        "sources": [{
+            "locator": "table_singleton",
+            "headers": {"all_of": [
+                {"any_of": ["参数"]},
+                {"any_of": ["数值"]},
+            ]},
+            "orientation": "kv",
+            "key_aliases": ["参数"],
+            "value_aliases": ["数值"],
+        }],
+        "identity": {"fallback": "共线评估数据"},
+        "property_aliases": {
+            "noael_mg_per_kg_per_day": ["NOAEL"],
+            "safetyFactor": ["F值", "安全系数"],
+            "humanEquivalentDose_mg_per_kg": ["人体等效剂量", "HED"],
+        },
+    },
+}
+
+
 def _schema_edge(pred_iri, pred_label, range_iri, *, domain=CMC_REPORT_IRI, hop=1):
     """Build a minimal schema edge dict for _FakeEngine.get_relation_schema."""
     method = _RANGE_METHOD_MAP.get(range_iri)
@@ -184,7 +255,11 @@ def _schema_edge(pred_iri, pred_label, range_iri, *, domain=CMC_REPORT_IRI, hop=
         "range_class_label": range_iri.rsplit("/", 1)[-1],
         "range_subclasses": [],
         "range_data_properties": [],
-        "range_extraction_hints": {"method": method, "anchors": []},
+        "range_extraction_hints": {
+            "method": method,
+            "anchors": [],
+            "profile": _RANGE_PROFILE_MAP.get(range_iri),
+        },
     }
 
 
@@ -262,7 +337,41 @@ class _FakeEngine:
                 {"iri": _DEV.replace("drug-development", "drug") + "routeOfAdministration",
                  "name": "routeOfAdministration", "label": "给药途径"},
                 {"iri": _DEV.replace("drug-development", "drug") + "isCytotoxic",
-                 "name": "isCytotoxic", "label": "是否细胞毒药物"},
+                 "name": "isCytotoxic", "label": "是否细胞毒药物",
+                 "datatype": "boolean"},
+                {"iri": _DEV.replace("drug-development", "drug") + "appearance",
+                 "name": "appearance", "label": "性状", "datatype": "string"},
+            ]
+        if class_iri == EQUIPMENT_IRI:
+            return [
+                {"iri": _EQUIP_NS + "equipmentID", "name": "equipmentID",
+                 "label": "设备编号", "datatype": "string"},
+                {"iri": _EQUIP_NS + "equipmentName", "name": "equipmentName",
+                 "label": "设备名称", "datatype": "string"},
+                {"iri": _EQUIP_NS + "modelSpecification",
+                 "name": "modelSpecification", "label": "规格型号",
+                 "datatype": "string"},
+            ]
+        if class_iri == rx.RESIDUE_IRI:
+            return [
+                {"iri": _DEV + "residueSolvent", "name": "residueSolvent",
+                 "label": "残留物清洗溶剂", "datatype": "string"},
+                {"iri": _DEV + "residueSolubility", "name": "residueSolubility",
+                 "label": "残留物溶解度", "datatype": "string"},
+                {"iri": _DEV + "residueSolubilityTemperature",
+                 "name": "residueSolubilityTemperature",
+                 "label": "溶解度测试温度", "datatype": "string"},
+            ]
+        if class_iri == rx.SHARED_LINE_IRI:
+            return [
+                {"iri": _DEV + "noael_mg_per_kg_per_day",
+                 "name": "noael_mg_per_kg_per_day",
+                 "label": "NOAEL（mg/kg/天）", "datatype": "decimal"},
+                {"iri": _DEV + "safetyFactor", "name": "safetyFactor",
+                 "label": "安全系数（F值）", "datatype": "decimal"},
+                {"iri": _DEV + "humanEquivalentDose_mg_per_kg",
+                 "name": "humanEquivalentDose_mg_per_kg",
+                 "label": "人体等效剂量（mg/kg）", "datatype": "decimal"},
             ]
         return []
 
@@ -323,6 +432,44 @@ def test_classify_returns_none_without_candidates():
     assert document_classifier.classify(_make_structure(), _NoSub()) is None
 
 
+def test_classify_scans_cmc_signals_after_first_twelve_paragraphs():
+    paragraphs = [f"普通前言段落 {idx}" for idx in range(12)]
+    paragraphs.extend([
+        "原料药信息",
+        "工艺描述",
+        "合成路线",
+        "设备需求",
+        "设备清洗",
+        "共线评估",
+        "参考得量",
+        "参考收率",
+        "降解途径",
+        "临床备样生产",
+        "CMC",
+    ])
+    structure = DocStructure(
+        "内部报告",
+        [],
+        [],
+        paragraphs,
+        [],
+    )
+    result = document_classifier.classify(structure, _FakeEngine())
+    assert result is not None
+    assert result["doc_class_iri"] == CMC_REPORT_IRI
+    assert len(result["signals"]) >= 11
+
+
+def test_explicit_document_type_builds_authoritative_classification():
+    result = document_classifier.classification_for_iri(
+        CMC_REPORT_IRI, _FakeEngine()
+    )
+    assert result is not None
+    assert result["doc_class_iri"] == CMC_REPORT_IRI
+    assert result["source"] == "explicit"
+    assert result["signals"] == ["显式文档类型"]
+
+
 # --- 各端点 finder ----------------------------------------------------------
 def test_find_drug_product_maps_kv_to_dprops():
     eps = find_drug_product(_ctx())
@@ -332,7 +479,7 @@ def test_find_drug_product_maps_kv_to_dprops():
     labels = {d["label"]: d for d in ep["data_properties"]}
     assert labels["制剂剂型"]["value"] == "口服速释片剂"
     assert labels["制剂剂型"]["iri"]  # 经本体数据属性匹配，带 iri
-    assert labels["性状"]["iri"] is None  # 无对应数据属性 → raw
+    assert labels["性状"]["iri"].endswith("appearance")
     assert labels["PDE"]["iri"]  # PDE 手动映射到 pde_mg_per_day
 
 
@@ -505,9 +652,33 @@ def test_extract_relationships_full_graph(monkeypatch):
     assert "hasSafetyRiskAssessment" in preds
     assert "hasProductionPlan" in preds
     # equipment 边数 = 去重后设备数。
-    equip_edges = [e for e in graph["relationships"]
-                   if e["object_class_iri"] == EQUIPMENT_IRI]
+    equip_edges = [
+        e for e in graph["relationships"]
+        if e["predicate_iri"].endswith("usesEquipment")
+    ]
     assert len(equip_edges) == 2
+    assert {e["object_class_iri"].rsplit("/", 1)[-1] for e in equip_edges} == {
+        "Reactor", "Centrifuge",
+    }
+
+
+def test_profile_strategy_precedes_and_replaces_drug_class_dispatch(monkeypatch):
+    monkeypatch.setattr(rx, "parse_docx_structure", lambda _p: _make_structure())
+    graph = extract_relationships(_FakeEngine(), "HRS-1234.docx", triples=[])
+    product = next(
+        edge for edge in graph["relationships"]
+        if edge["predicate_iri"] == _DESCRIBES_IRI
+    )
+    props = {
+        item["iri"].rsplit("/", 1)[-1]: item["value"]
+        for item in product["object_data_properties"]
+    }
+    assert product["object_source"] == "ontology-profile"
+    assert product["object_text"] == "HRS-1234"
+    assert props["dosageForm"] == "口服速释片剂"
+    assert props["appearance"] == "本品应为白色至黄色粉末"
+    assert props["isCytotoxic"] is False
+    assert DRUG_PRODUCT_IRI not in rx._METHOD_STRATEGIES["section_kv"]._finders
 
 
 def test_extract_relationships_gated_by_classification(monkeypatch):
@@ -547,6 +718,18 @@ def test_resolve_strategy_unknown_method_returns_none():
         "range_extraction_hints": {"method": "nonexistent_method", "anchors": []},
     }
     assert _resolve_strategy(edge) is None
+
+
+def test_invalid_profile_does_not_fall_back_to_class_specific_dispatch():
+    edge = _schema_edge(_DESCRIBES_IRI, "描述", DRUG_PRODUCT_IRI)
+    edge["range_extraction_hints"] = {
+        "method": "section_kv",
+        "profile": None,
+        "profile_error": "invalid JSON",
+    }
+    strategy = _resolve_strategy(edge)
+    assert strategy is not None
+    assert strategy.find_endpoints(_ctx(), edge) == []
 
 
 def test_classify_by_synonyms_exact_match():

@@ -363,6 +363,30 @@ slpra-drug:dosageForm a owl:DatatypeProperty ;
     rdfs:label "dosage form"@en ;
     rdfs:label "制剂剂型"@zh .
 
+slpra-drug:appearance a owl:DatatypeProperty ;
+    rdfs:domain slpra-drug:DrugProduct ;
+    rdfs:range xsd:string ;
+    rdfs:label "appearance"@en ;
+    rdfs:label "性状"@zh .
+
+slpra-drug:solubility a owl:DatatypeProperty ;
+    rdfs:domain slpra-drug:DrugProduct ;
+    rdfs:range xsd:string ;
+    rdfs:label "solubility"@en ;
+    rdfs:label "溶解性"@zh .
+
+slpra-drug:isOncologyDrug a owl:DatatypeProperty ;
+    rdfs:domain slpra-drug:DrugProduct ;
+    rdfs:range xsd:boolean ;
+    rdfs:label "is oncology drug"@en ;
+    rdfs:label "是否肿瘤药物"@zh .
+
+slpra-drug:inactivationMethod a owl:DatatypeProperty ;
+    rdfs:domain slpra-drug:DrugProduct ;
+    rdfs:range xsd:string ;
+    rdfs:label "inactivation method"@en ;
+    rdfs:label "灭活方法"@zh .
+
 slpra-drug:drugSpecification a owl:DatatypeProperty ;
     rdfs:domain slpra-drug:DrugProduct ;
     rdfs:range xsd:string ;
