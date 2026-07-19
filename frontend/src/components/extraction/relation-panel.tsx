@@ -12,6 +12,10 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { ENTITY_PALETTE, entityColorIndex } from "./entity-mark";
+import {
+  formatRelationSourceRef,
+  relationSourceRefKey,
+} from "@/lib/relation-source-ref";
 import type {
   DocClassification,
   PdeConflict,
@@ -50,6 +54,20 @@ function groupByPredicate(items: SubRelationship[]): PredicateGroup[] {
     predicate,
     items: groupItems,
   }));
+}
+
+function formatPropertyValue(value: unknown): string {
+  if (value === null || value === undefined) return "—";
+  if (typeof value === "boolean") return value ? "是" : "否";
+  if (typeof value === "string") return value;
+  if (typeof value === "number" || typeof value === "bigint") {
+    return String(value);
+  }
+  try {
+    return JSON.stringify(value);
+  } catch {
+    return String(value);
+  }
 }
 
 const DECISION_LABELS: Record<PdeDecisionChoice, string> = {
@@ -276,12 +294,14 @@ function EndpointRow({
   // 顶层（depth 0）默认展开，露出数据属性；更深层折叠以免信息过载。
   const [open, setOpen] = useState(depth === 0);
   const color = ENTITY_PALETTE[entityColorIndex(node.object_class_label)];
-  const isSelected = !!(node.source_ref && node.source_ref === selectedSourceRef);
+  const sourceRefKey = relationSourceRefKey(node.source_ref);
+  const sourceRefLabel = formatRelationSourceRef(node.source_ref);
+  const isSelected = !!(sourceRefKey && sourceRefKey === selectedSourceRef);
 
   function handleClick() {
     if (hasDetail) setOpen((v) => !v);
-    if (node.source_ref && onSelectSourceRef) {
-      onSelectSourceRef(isSelected ? null : node.source_ref);
+    if (sourceRefKey && onSelectSourceRef) {
+      onSelectSourceRef(isSelected ? null : sourceRefKey);
     }
   }
 
@@ -311,9 +331,9 @@ function EndpointRow({
               {node.object_class_label}
             </span>
           </span>
-          {node.source_ref && (
+          {sourceRefLabel && (
             <span className="mt-0.5 block truncate text-[10px] text-muted-foreground/80">
-              {node.source_ref}
+              {sourceRefLabel}
             </span>
           )}
         </span>
@@ -351,7 +371,7 @@ function EndpointRow({
                     {dp.label}
                     {!dp.iri && <span className="text-muted-foreground/50">*</span>}:
                   </span>
-                  <span className="break-all">{dp.value}</span>
+                  <span className="break-all">{formatPropertyValue(dp.value)}</span>
                 </div>
               ))}
             </div>
@@ -399,6 +419,10 @@ export function RelationPanel({
 }: RelationPanelProps) {
   const rels = relationships ?? [];
   const groups = useMemo(() => groupByPredicate(relationships ?? []), [relationships]);
+  const classificationBadge =
+    docClass?.source === "explicit" && docClass.score === 0
+      ? "显式指定"
+      : `匹配分 ${docClass?.score ?? 0}`;
 
   return (
     <div className="flex h-full flex-col">
@@ -410,8 +434,14 @@ export function RelationPanel({
               <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
               <span className="text-sm font-semibold">{docClass.label}</span>
               <Badge variant="secondary" className="h-5 text-[10px] tabular-nums">
-                置信 {docClass.score}
+                {classificationBadge}
               </Badge>
+            </div>
+            <div
+              className="break-all font-mono text-[10px] text-muted-foreground/80"
+              title={docClass.doc_class_iri}
+            >
+              {docClass.doc_class_iri}
             </div>
             {docClass.signals.length > 0 && (
               <div className="flex flex-wrap gap-1">

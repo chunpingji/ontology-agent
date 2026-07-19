@@ -79,6 +79,40 @@ def test_title_falls_back_to_visual_heading_then_original_filename(tmp_path):
     assert fallback.title == "HRS-1597报告"
 
 
+def test_outline_hierarchy_and_bold_key_values_preserve_product_section(tmp_path):
+    doc = Document()
+    toc = doc.styles.add_style("toc 2", WD_STYLE_TYPE.PARAGRAPH)
+
+    parent = doc.add_paragraph("产品的基本性质", style=toc)
+    _add_outline_level(parent, 1)
+    child = doc.add_paragraph("产品的结构", style=toc)
+    _add_outline_level(child, 2)
+
+    appearance = doc.add_paragraph()
+    run = appearance.add_run("性状：类白色到白色粉末")
+    run.bold = True
+    sensitizing = doc.add_paragraph()
+    run = sensitizing.add_run("是否是高致敏药物：否")
+    run.bold = True
+
+    sibling = doc.add_paragraph("工艺", style=toc)
+    _add_outline_level(sibling, 1)
+    path = tmp_path / "product-properties.docx"
+    doc.save(path)
+
+    structure = parse_docx_structure(path)
+
+    assert structure.find_section("产品的基本性质").level == 1
+    product = structure.find_section("产品的结构")
+    assert product is not None
+    assert product.level == 2
+    assert product.paras == [
+        "性状：类白色到白色粉末",
+        "是否是高致敏药物：否",
+    ]
+    assert not any(heading.startswith("性状：") for heading in structure.headings)
+
+
 def test_multirow_table_header_is_canonical_and_rows_keep_raw_indices(tmp_path):
     doc = Document()
     table = doc.add_table(rows=3, cols=4)

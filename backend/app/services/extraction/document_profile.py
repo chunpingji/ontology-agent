@@ -384,7 +384,7 @@ def normalize_source_key(value: str) -> str:
 def _matches(source: str, alias: str) -> bool:
     source_norm = normalize_source_key(source)
     alias_norm = normalize_source_key(alias)
-    return bool(alias_norm and (
+    return bool(source_norm and alias_norm and (
         source_norm == alias_norm
         or alias_norm in source_norm
         or source_norm in alias_norm
@@ -559,44 +559,50 @@ def _read_section(
     candidates: list[DocumentCandidate] = []
     identity = source.identity or profile.identity
     fallback = profile.label or source.source_label or _local_name(target_class_iri)
-    for section in structure.sections:
+    for section_pos, section in enumerate(structure.sections):
         if not _section_match(section, source.anchor_any):
             continue
         values: list[DocumentValue] = []
         notes: list[str] = []
         raw: dict[str, str] = {}
-        for offset, paragraph in enumerate(section.paras):
-            match = _KV_RE.match(paragraph)
-            if not match:
-                continue
-            key = match.group(1).strip()
-            raw_value = match.group(2).strip()
-            if not raw_value:
-                continue
-            raw[key] = raw_value
-            binding = _binding_for_key(key, bindings)
-            if binding is None:
-                continue
-            paragraph_index = (
-                section.para_indices[offset]
-                if offset < len(section.para_indices)
-                else None
-            )
-            source_ref = {
-                "kind": "paragraph",
-                "section": section.heading,
-                "heading_index": section.heading_index,
-                "paragraph_index": paragraph_index,
-                "key": key,
-            }
-            value, note = _transform_value(
-                binding, raw_value, key, source_ref
-            )
-            matched.add(binding.property_iri)
-            if value is not None:
-                values.append(value)
-            if note:
-                notes.append(note)
+        scoped_sections = [section]
+        for descendant in structure.sections[section_pos + 1:]:
+            if descendant.heading and descendant.level <= section.level:
+                break
+            scoped_sections.append(descendant)
+        for scoped_section in scoped_sections:
+            for offset, paragraph in enumerate(scoped_section.paras):
+                match = _KV_RE.match(paragraph)
+                if not match:
+                    continue
+                key = match.group(1).strip()
+                raw_value = match.group(2).strip()
+                if not raw_value:
+                    continue
+                raw[key] = raw_value
+                binding = _binding_for_key(key, bindings)
+                if binding is None:
+                    continue
+                paragraph_index = (
+                    scoped_section.para_indices[offset]
+                    if offset < len(scoped_section.para_indices)
+                    else None
+                )
+                source_ref = {
+                    "kind": "paragraph",
+                    "section": scoped_section.heading,
+                    "heading_index": scoped_section.heading_index,
+                    "paragraph_index": paragraph_index,
+                    "key": key,
+                }
+                value, note = _transform_value(
+                    binding, raw_value, key, source_ref
+                )
+                matched.add(binding.property_iri)
+                if value is not None:
+                    values.append(value)
+                if note:
+                    notes.append(note)
         if values or notes:
             identifier = _candidate_identity(
                 structure, raw, values, identity, bindings, fallback

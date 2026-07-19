@@ -442,6 +442,48 @@ slpra-drug:hasPrionRisk a owl:DatatypeProperty ;
     rdfs:label "has prion risk"@en ;
     rdfs:label "是否有朊病毒风险"@zh .
 
+slpra-drug:molecularFormula a owl:DatatypeProperty ;
+    rdfs:domain slpra-drug:DrugProduct ;
+    rdfs:range xsd:string ;
+    rdfs:label "molecular formula"@en ;
+    rdfs:label "分子式"@zh .
+
+slpra-drug:molecularWeight a owl:DatatypeProperty ;
+    rdfs:domain slpra-drug:DrugProduct ;
+    rdfs:range xsd:decimal ;
+    rdfs:label "molecular weight"@en ;
+    rdfs:label "分子量"@zh .
+
+slpra-drug:projectName a owl:DatatypeProperty ;
+    rdfs:domain slpra-drug:DrugProduct ;
+    rdfs:range xsd:string ;
+    rdfs:label "project name"@en ;
+    rdfs:label "项目名称"@zh .
+
+slpra-drug:projectCode a owl:DatatypeProperty ;
+    rdfs:domain slpra-drug:DrugProduct ;
+    rdfs:range xsd:string ;
+    rdfs:label "project code"@en ;
+    rdfs:label "项目代码"@zh .
+
+slpra-drug:chemicalNameEn a owl:DatatypeProperty ;
+    rdfs:domain slpra-drug:DrugProduct ;
+    rdfs:range xsd:string ;
+    rdfs:label "chemical name (English)"@en ;
+    rdfs:label "化学名英文"@zh .
+
+slpra-drug:chemicalNameZh a owl:DatatypeProperty ;
+    rdfs:domain slpra-drug:DrugProduct ;
+    rdfs:range xsd:string ;
+    rdfs:label "chemical name (Chinese)"@en ;
+    rdfs:label "化学名中文"@zh .
+
+slpra-drug:casNumber a owl:DatatypeProperty ;
+    rdfs:domain slpra-drug:DrugProduct ;
+    rdfs:range xsd:string ;
+    rdfs:label "CAS number"@en ;
+    rdfs:label "CAS号"@zh .
+
 slpra-drug:sensitizationLevel a owl:DatatypeProperty ;
     rdfs:domain slpra-drug:SensitizationPotential ;
     rdfs:range xsd:integer ;

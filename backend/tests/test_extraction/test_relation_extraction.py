@@ -470,6 +470,17 @@ def test_explicit_document_type_builds_authoritative_classification():
     assert result["signals"] == ["显式文档类型"]
 
 
+def test_explicit_document_type_preserves_document_evidence_score():
+    result = document_classifier.classification_for_iri(
+        CMC_REPORT_IRI, _FakeEngine(), structure=_make_structure()
+    )
+    assert result["doc_class_iri"] == CMC_REPORT_IRI
+    assert result["source"] == "explicit+automatic"
+    assert result["score"] >= 3
+    assert "原料药" in result["signals"]
+    assert "显式文档类型" in result["signals"]
+
+
 # --- 各端点 finder ----------------------------------------------------------
 def test_find_drug_product_maps_kv_to_dprops():
     eps = find_drug_product(_ctx())
@@ -660,6 +671,25 @@ def test_extract_relationships_full_graph(monkeypatch):
     assert {e["object_class_iri"].rsplit("/", 1)[-1] for e in equip_edges} == {
         "Reactor", "Centrifuge",
     }
+
+
+def test_explicit_cmc_iri_drives_root_schema_with_document_evidence(monkeypatch):
+    structure = _make_structure()
+    monkeypatch.setattr(rx, "parse_docx_structure", lambda _p: structure)
+    classification = document_classifier.classification_for_iri(
+        CMC_REPORT_IRI, _FakeEngine(), structure=structure
+    )
+
+    graph = extract_relationships(
+        _FakeEngine(), "HRS-1234.docx", triples=[], doc_class=classification
+    )
+
+    assert graph["doc_class"]["score"] > 0
+    assert graph["relationships"]
+    assert all(
+        edge["subject_class_iri"] == CMC_REPORT_IRI
+        for edge in graph["relationships"]
+    )
 
 
 def test_profile_strategy_precedes_and_replaces_drug_class_dispatch(monkeypatch):

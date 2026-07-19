@@ -1612,14 +1612,39 @@ export interface DocClassification {
   label: string;
   score: number;
   signals: string[];
+  source?: string;
 }
 
 // 关系边上对象端点回填的数据属性；``iri`` 为 null 表示未匹配到本体数据属性（原文兜底）。
 export interface RelationDataProperty {
   iri: string | null;
   label: string;
-  value: string;
+  value: unknown;
 }
+
+/**
+ * Document Profile locators preserve structural coordinates so the frontend can
+ * navigate to the exact section, paragraph, table row, or table cell.
+ */
+export interface StructuredRelationSourceRef {
+  kind?: string;
+  section?: string;
+  heading_index?: number | null;
+  paragraph_index?: number | null;
+  table?: number;
+  row?: number;
+  column?: number | null;
+  header?: string;
+  key?: string;
+  parameter?: string;
+  system?: string;
+  entity?: string;
+  record?: unknown;
+  location?: unknown;
+  [key: string]: unknown;
+}
+
+export type RelationSourceRef = string | StructuredRelationSourceRef;
 
 // CMCReport 共线评估端点上的「推导 PDE vs 原文 PDE」冲突（确定性推导管线产出，供人工裁决）。
 export interface PdeConflict {
@@ -1649,7 +1674,7 @@ export interface SubRelationship {
   object_source: string;
   object_data_properties: RelationDataProperty[];
   sub_relationships: SubRelationship[];
-  source_ref: string | null;
+  source_ref: RelationSourceRef | null;
   // 仅 CMCReport 共线评估端点可能携带；命中「推导 vs 原文」PDE 冲突时下发（人工裁决）。
   conflict?: PdeConflict | null;
 }

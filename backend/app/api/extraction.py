@@ -336,7 +336,7 @@ def get_job(job_id: UUID, db: Session = Depends(get_db)):
     return job
 
 
-_ANNOTATOR_VERSION = 19
+_ANNOTATOR_VERSION = 21
 
 
 def _annotation_cache_path(job_id) -> Path:
@@ -363,6 +363,7 @@ def _compute_annotation(
     # ── Word：分类前置，缩窄 NER 候选集 ──
     doc_class_iri = None
     doc_class_result = None
+    structure = None
     if job.source_type == "word":
         try:
             from app.services.extraction.document_classifier import (
@@ -385,7 +386,9 @@ def _compute_annotation(
         # 时才收窄，避免根类/无关系类型把候选集约束为空。
         override_iri = (job.source_config or {}).get("doc_class_iri")
         if override_iri:
-            doc_class_result = classification_for_iri(override_iri, engine)
+            doc_class_result = classification_for_iri(
+                override_iri, engine, structure=structure
+            )
             try:
                 from app.services.extraction.ontology_typer import (
                     relevant_classes_for_doc_type,

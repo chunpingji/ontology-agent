@@ -9,6 +9,8 @@ import { TableRow } from "@tiptap/extension-table-row";
 import { TableCell } from "@tiptap/extension-table-cell";
 import { TableHeader } from "@tiptap/extension-table-header";
 import Underline from "@tiptap/extension-underline";
+import type { StructuredRelationSourceRef } from "@/lib/api";
+import { parseRelationSourceRefKey } from "@/lib/relation-source-ref";
 import { EntityAnnotation } from "./entity-mark";
 
 // 段落/标题对齐：只读预览无需编辑命令，仅注册 textAlign 全局属性即可渲染
@@ -108,6 +110,31 @@ function parseSourceRef(ref: string): string[] {
     .map((s) => s.replace(/^[§表]\s*/, "").trim())
     .filter(Boolean)
     .reverse();
+}
+
+function structuredSourceKeywords(ref: StructuredRelationSourceRef): string[] {
+  return [ref.parameter, ref.key, ref.header, ref.section]
+    .filter((value): value is string => typeof value === "string")
+    .map((value) => value.trim())
+    .filter(Boolean);
+}
+
+function applyStructuredTableHighlight(
+  container: HTMLElement,
+  ref: StructuredRelationSourceRef,
+): Element | null {
+  if (typeof ref.table !== "number" || !Number.isInteger(ref.table)) return null;
+  const table = container.querySelectorAll("table").item(ref.table);
+  if (!table) return null;
+
+  table.classList.add(HIGHLIGHT_CLS);
+  if (typeof ref.row !== "number" || !Number.isInteger(ref.row)) return table;
+
+  const row = table.querySelectorAll("tr").item(ref.row);
+  if (!row) return table;
+  if (typeof ref.column !== "number" || !Number.isInteger(ref.column)) return row;
+
+  return row.querySelectorAll("th, td").item(ref.column) || row;
 }
 
 function headingLevel(el: Element): number {
@@ -250,12 +277,17 @@ export function WordViewer({ content, highlightRef, fitTables }: WordViewerProps
 
     if (!highlightRef) return;
 
-    const keywords = parseSourceRef(highlightRef);
-    if (keywords.length === 0) return;
+    const structuredRef = parseRelationSourceRefKey(highlightRef);
+    const keywords = structuredRef
+      ? structuredSourceKeywords(structuredRef)
+      : parseSourceRef(highlightRef);
+    if (!structuredRef && keywords.length === 0) return;
 
     // Delay slightly to ensure DOM is ready after render
     const timer = setTimeout(() => {
-      const firstMatch = applyHighlight(container, keywords);
+      const firstMatch =
+        (structuredRef && applyStructuredTableHighlight(container, structuredRef)) ||
+        applyHighlight(container, keywords);
       if (firstMatch) {
         firstMatch.scrollIntoView({ behavior: "smooth", block: "start" });
       }

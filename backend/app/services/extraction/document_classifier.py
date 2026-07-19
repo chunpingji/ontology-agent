@@ -66,8 +66,32 @@ def _build_haystack(structure: DocStructure) -> str:
     return "\n".join(p for p in parts if p)
 
 
-def classification_for_iri(doc_class_iri: str, engine) -> dict:
-    """Build an authoritative classification for an explicitly selected type."""
+def _score_candidate(haystack: str, local_name: str, label: str) -> tuple[int, list[str]]:
+    """Return the deterministic evidence score/signals for one document class."""
+    signals: list[str] = []
+    score = 0
+    for keyword in _CURATED_SIGNALS.get(local_name, ()):
+        if keyword and keyword in haystack:
+            score += _CURATED_WEIGHT
+            signals.append(keyword)
+    for token in _label_tokens(label):
+        if token in haystack and token not in signals:
+            score += _LABEL_WEIGHT
+            signals.append(token)
+    return score, signals
+
+
+def classification_for_iri(
+    doc_class_iri: str,
+    engine,
+    structure: DocStructure | None = None,
+) -> dict:
+    """Build an authoritative classification for an explicitly selected type.
+
+    An explicit type decides the root relation schema, while ``score`` remains an
+    evidence score derived from the document.  This avoids erasing automatic CMC
+    signals merely because the user selected the same class before uploading.
+    """
     label = _local_name(doc_class_iri)
     try:
         detail = engine.get_class_detail(doc_class_iri)
@@ -82,12 +106,19 @@ def classification_for_iri(doc_class_iri: str, engine) -> dict:
             label = engine.get_class_label(doc_class_iri) or label
         except Exception:
             pass
+    score = 0
+    signals: list[str] = []
+    if structure is not None:
+        score, signals = _score_candidate(
+            _build_haystack(structure), _local_name(doc_class_iri), label
+        )
+    signals.append("显式文档类型")
     return {
         "doc_class_iri": doc_class_iri,
         "label": label,
-        "score": 0,
-        "signals": ["显式文档类型"],
-        "source": "explicit",
+        "score": score,
+        "signals": signals,
+        "source": "explicit+automatic" if score else "explicit",
     }
 
 
@@ -110,16 +141,7 @@ def classify(structure: DocStructure, engine) -> dict | None:
         label = cand.get("label") or _local_name(iri)
         local = _local_name(iri)
 
-        signals: list[str] = []
-        score = 0
-        for kw in _CURATED_SIGNALS.get(local, ()):  # 强信号
-            if kw and kw in haystack:
-                score += _CURATED_WEIGHT
-                signals.append(kw)
-        for tok in _label_tokens(label):  # label 分词通用信号
-            if tok in haystack and tok not in signals:
-                score += _LABEL_WEIGHT
-                signals.append(tok)
+        score, signals = _score_candidate(haystack, local, label)
 
         if score and (best is None or score > best["score"]):
             best = {

@@ -105,6 +105,50 @@ def test_section_profile_normalizes_property_alias_and_program_identity():
     assert props[_DRUG + "isHighlySensitizing"].source_ref["paragraph_index"] == 7
 
 
+def test_section_profile_reads_descendants_until_next_sibling_section():
+    profile = parse_profile({
+        "version": 1,
+        "sources": [{
+            "locator": "section_kv",
+            "anchors": {"any_of": ["产品的基本性质"]},
+        }],
+        "identity": {"pattern": "[A-Z]{2,4}-[0-9]{3,5}"},
+    })
+    bindings = compile_ontology_bindings(
+        _Engine(), _DRUG + "DrugProduct", profile
+    )
+    structure = _structure(
+        sections=[
+            DocSection("产品的基本性质", 1, [], heading_index=5),
+            DocSection(
+                "产品的结构",
+                2,
+                ["制剂剂型：口服片剂", "是否是高致敏药物：否"],
+                heading_index=6,
+                para_indices=[7, 8],
+            ),
+            DocSection(
+                "工艺",
+                1,
+                ["制剂剂型：不应跨越同级章节"],
+                heading_index=9,
+                para_indices=[10],
+            ),
+        ],
+        paragraphs=["HRS-1597"],
+    )
+
+    result = read_document_profile(
+        structure, _DRUG + "DrugProduct", profile, bindings
+    )
+
+    assert len(result.candidates) == 1
+    props = {value.property_iri: value for value in result.candidates[0].values}
+    assert props[_DRUG + "dosageForm"].value == "口服片剂"
+    assert props[_DRUG + "isHighlySensitizing"].value is False
+    assert props[_DRUG + "dosageForm"].source_ref["section"] == "产品的结构"
+
+
 def test_equipment_header_alias_groups_are_or_within_and():
     profile = parse_profile({
         "version": 1,
@@ -270,3 +314,68 @@ def test_table_singleton_kv_supports_legacy_toxicology_shape():
     )
     assert result.candidates[0].identifier == "共线评估数据"
     assert result.candidates[0].values[0].raw_value == "30mg/kg/天"
+
+
+def test_numeric_questionnaire_headers_do_not_match_domain_table_profiles():
+    """Numbered questionnaire columns must not behave as wildcard headers."""
+    safety_questionnaire = _table(
+        [
+            "1",
+            "反应是否为异常放热，反应速率异常的应在表格下方文字说明。",
+            "是 / 否",
+            "否",
+        ],
+        [["2", "反应是否产生大量气体？", "是 / 否", "否"]],
+        table_index=8,
+    )
+    profiles = [
+        parse_profile({
+            "version": 1,
+            "sources": [{
+                "locator": "table_rows",
+                "headers": {"all_of": [
+                    {"any_of": ["设备规格", "设备名称"]},
+                    {"any_of": ["匹配设备", "设备编号"]},
+                ]},
+            }],
+        }),
+        parse_profile({
+            "version": 1,
+            "sources": [{
+                "locator": "table_rows",
+                "headers": {"all_of": [
+                    {"any_of": ["名称", "中间体及成品", "中间体/成品"]},
+                    {"any_of": ["溶解度", "溶解性"]},
+                ]},
+            }],
+        }),
+        parse_profile({
+            "version": 1,
+            "sources": [
+                {
+                    "locator": "table_rows",
+                    "headers": {"all_of": [
+                        {"any_of": ["活性成分(API)", "活性成分", "API"]},
+                        {"any_of": ["试验项目", "试验类型", "毒理研究"]},
+                    ]},
+                },
+                {
+                    "locator": "table_singleton",
+                    "headers": {"all_of": [
+                        {"any_of": ["参数"]},
+                        {"any_of": ["数值", "值"]},
+                    ]},
+                    "orientation": "kv",
+                    "key_aliases": ["参数"],
+                    "value_aliases": ["数值", "值"],
+                },
+            ],
+        }),
+    ]
+
+    structure = _structure(tables=[safety_questionnaire])
+    for profile in profiles:
+        result = read_document_profile(
+            structure, _DEV + "UnrelatedDomainClass", profile, []
+        )
+        assert result.candidates == []

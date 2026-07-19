@@ -21,6 +21,7 @@ _ZH_NUMBERED_HEADING_RE = re.compile(
     r"^\s*(?:[（(]?[一二三四五六七八九十百]+[）)、.．]|"
     r"第[一二三四五六七八九十百0-9]+[章节部分])"
 )
+_KEY_VALUE_RE = re.compile(r"^\s*[^：:\n]{1,80}[：:]\s*\S+")
 
 
 @dataclass
@@ -175,14 +176,22 @@ def infer_heading_level(paragraph) -> int:
     text = (paragraph.text or "").strip()
     if not text:
         return 0
+    # Direct paragraph outline metadata is more specific than its named style.
+    # Enterprise templates commonly reuse ``toc 2`` while assigning different
+    # outline levels to a parent section and its child headings.
+    outline_level = _outline_heading_level(paragraph)
+    if outline_level:
+        return outline_level
     style_level = heading_level_from_style(
         paragraph.style.name if paragraph.style else None
     )
     if style_level:
         return style_level
-    outline_level = _outline_heading_level(paragraph)
-    if outline_level:
-        return outline_level
+    # A populated ``key: value`` paragraph is document data, even when the key is
+    # bold.  Without this guard, product properties such as ``性状：白色粉末``
+    # become empty child headings and disappear from section_kv extraction.
+    if _KEY_VALUE_RE.match(text):
+        return 0
     size_level = _font_size_heading_level(_paragraph_font_size(paragraph))
     if size_level:
         return size_level
