@@ -7,6 +7,7 @@ Orchestrates:  edges → Facts bridging → DecisionRule evaluation (pre/post co
 from __future__ import annotations
 
 import logging
+import re
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -34,7 +35,6 @@ RISK_LEVEL_MAP = {
 # default ``missing_placeholder`` so coverage and rendering stay consistent.
 PENDING_LEVEL = "⚠ 待评估（数据缺失）"
 PENDING_STATUS = "待评估"
-
 
 @dataclass
 class EquipmentEntry:
@@ -104,6 +104,8 @@ class RiskReportGenerator:
         self._db = db
         self._template = template or load_default_template()
         self._last_manifest: CoverageManifest | None = None
+        # 设备富化「文档 vs 档案」冲突说明（_enriched_edges 填充，设备表注记消费）。
+        self._equipment_conflicts: list[str] = []
 
     def generate(self, edges: list[dict], source_filename: str = "") -> RiskReport:
         """Build a RiskReport (backward-compatible; manifest available via ``coverage``)."""
@@ -147,6 +149,8 @@ class RiskReportGenerator:
         equipment_notes: list[str] = []
         if "未分组" in equipment_tables:
             equipment_notes.append("以下设备未能自动识别所属车间，请人工确认归属。")
+        # 冲突说明由富化阶段（_enriched_edges → enrich_equipment_facts）统一产出。
+        equipment_notes.extend(self._equipment_conflicts)
 
         report = RiskReport(
             doc_no=self._template.doc_no,
@@ -210,12 +214,22 @@ class RiskReportGenerator:
         A new list is returned (inputs untouched). Empty add — hence byte-identical
         output — unless ``self._template`` declares a product-report predicate with a
         registered finder (:func:`product_report_edges_for_template`)."""
+        from app.services.extraction.equipment_source import enrich_equipment_facts
         from app.services.reporting.product_report_edges import (
             product_report_edges_for_template,
         )
 
         product_edges = product_report_edges_for_template(engine, self._template)
-        return edges + product_edges if product_edges else edges
+        combined = edges + product_edges if product_edges else list(edges)
+        # 报告期设备富化（幂等）：标注即便是旧代码所存、缺外部设备属性，报告仍就地补齐
+        # 设备名称/规格/材质（写入文档规范标签，模板槽位/覆盖/设备表零改动即可取到），
+        # 并收集「文档 vs 档案」冲突用于设备表注记。抽取期已富化过的 edge 会被幂等跳过。
+        try:
+            self._equipment_conflicts = enrich_equipment_facts(combined)
+        except Exception:
+            logger.debug("报告期设备档案富化整体跳过", exc_info=True)
+            self._equipment_conflicts = []
+        return combined
 
     def _try_narrative_generation(
         self,
@@ -390,39 +404,72 @@ class RiskReportGenerator:
     def _build_equipment_tables(
         self, edges: list[dict]
     ) -> dict[str, list[EquipmentEntry]]:
+        """递归收集全部设备（顶层 + ``sub_relationships``），**按设备编号聚合去重**，按车间
+        分组，产出 5 列一览表（序号/编号/名称/规格/材质）。
+
+        设备经两条路径进图谱：``extractionProfile`` 顶层 ``usesEquipment`` 边、合成路线→步骤
+        下的嵌套「使用设备」子关系；同一编号可能两处各带一部分属性，故须**跨全部出现处聚合
+        属性**（非空先到先得），仅按首条 edge 归组——若只取首条会吞掉后续属性。识别与遍历
+        复用 :func:`iter_equipment_edges`（谓词权威判定，见 equipment_source）。列值按「档案
+        规范标签优先、文档标签兜底」读取；富化阶段已把档案值写入文档规范标签，故文档缺失的
+        规格/材质在此自然取到外部值。冲突说明由富化阶段统一产出，不在此重复检测。"""
+        from app.services.extraction.equipment_source import iter_equipment_edges
+
+        # code → {"props": {label: value}, "edge": 首条 edge（用于归组）}
+        agg: dict[str, dict] = {}
+        order: list[str] = []
+        for edge in iter_equipment_edges(edges):
+            equipment_id = (edge.get("object_text") or "").strip()
+            if not equipment_id:
+                continue
+            rec = agg.get(equipment_id)
+            if rec is None:
+                rec = {"props": {}, "edge": edge}
+                agg[equipment_id] = rec
+                order.append(equipment_id)
+            merged = rec["props"]
+            for dp in edge.get("object_data_properties") or []:
+                label = dp.get("label", "")
+                value = dp.get("value", "")
+                if label and value and not merged.get(label):
+                    merged[label] = value  # 非空先到先得：合并顶层×嵌套两处属性
+
+        def _prop(props: dict, *labels: str) -> str:
+            for label in labels:
+                val = props.get(label)
+                if val:
+                    return val
+            return ""
+
         tables: dict[str, list[EquipmentEntry]] = {}
         seq_counter: dict[str, int] = {}
-
-        for edge in edges:
-            obj_class = edge.get("object_class_iri", "")
-            if "Equipment" not in obj_class:
-                continue
-
-            equipment_id = edge.get("object_text", "")
-            props = {
-                dp.get("label", ""): dp.get("value", "")
-                for dp in (edge.get("object_data_properties") or [])
-            }
-
-            workshop = self._detect_workshop(edge, props)
+        for equipment_id in order:
+            rec = agg[equipment_id]
+            props = rec["props"]
+            workshop = self._detect_workshop(rec["edge"], props)
             seq_counter.setdefault(workshop, 0)
             seq_counter[workshop] += 1
-
-            entry = EquipmentEntry(
+            tables.setdefault(workshop, []).append(EquipmentEntry(
                 seq=seq_counter[workshop],
                 equipment_id=equipment_id,
-                name=props.get("设备名称", equipment_id),
-                spec=props.get("设备规格", props.get("规格型号", "")),
-                material=props.get("材质", ""),
-            )
-            tables.setdefault(workshop, []).append(entry)
+                name=_prop(props, "设备名称", "equipmentName") or equipment_id,
+                spec=_prop(props, "规格型号", "modelSpecification", "设备规格"),
+                material=_prop(props, "主体材质", "constructedOf", "材质"),
+            ))
         return tables
 
     def _detect_workshop(self, edge: dict, props: dict) -> str:
-        source_ref = edge.get("source_ref", "")
+        # 富化后的 edge 的 source_ref 含「workshop=<车间>车间」，档案车间号为权威依据。
+        source_ref = edge.get("source_ref", "") or ""
         for ws in ("642", "646", "644"):
             if ws in source_ref:
                 return f"{ws}车间"
+        # 从设备编号推断：1–3 字母 + 车间号(642/646/644) + ≥2 位序号，整串锚定避免误分
+        # （如 AB6429… 因尾部仅 1 位数字不匹配 → 归「未分组」而非误判 642）。
+        equipment_id = edge.get("object_text", "") or ""
+        m = re.fullmatch(r"[A-Za-z]{1,3}(642|646|644)\d{2,}", equipment_id)
+        if m:
+            return f"{m.group(1)}车间"
         for ws in ("642", "646", "644"):
             if ws in props.get("设备规格", ""):
                 return f"{ws}车间"

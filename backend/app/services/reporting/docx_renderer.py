@@ -262,9 +262,8 @@ def render_risk_report(
         section.bottom_margin = Cm(1.5)
 
         _add_page_header(doc, report, manifest)
-
-    _add_header(doc, report)
-    _add_coverage_banner(doc, manifest)
+        _add_header(doc, report)
+        _add_coverage_banner(doc, manifest)
 
     if template is not None and getattr(template, "sections", None):
         _render_template_sections(doc, report, manifest, template)

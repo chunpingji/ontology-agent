@@ -387,9 +387,9 @@ class _FakeEngine:
                 {"iri": _DEV + "productionPurpose", "label": "生产用途",
                  "pattern": r"用于\s*([^，。；]+)"},
                 {"iri": _DEV + "plannedBatchSizeMin_kg", "label": "预计批量下限（kg）",
-                 "pattern": r"预计批量\s*([\d.]+)\s*[~～—至-]"},
+                 "pattern": r"(?:预计)?(?:生产)?批量(?:范围)?\s*([\d.]+)\s*[~～—至\-]"},
                 {"iri": _DEV + "plannedBatchSizeMax_kg", "label": "预计批量上限（kg）",
-                 "pattern": r"[~～—至-]\s*([\d.]+)\s*kg"},
+                 "pattern": r"[~～—至\-]\s*([\d.]+)\s*(?:kg|公斤)"},
             ]
         return []
 

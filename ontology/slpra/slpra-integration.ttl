@@ -471,8 +471,16 @@ slpra-dev:QualityRiskAssessment
     slpra-integ:extractionAnchor "风险环节" ;
     slpra-integ:extractionAnchor "质量风险" .
 
+slpra-dev:ProductionRiskAssessment
+    slpra-integ:extractionMethod "table_scan" ;
+    slpra-integ:extractionAnchor "风险因素" ;
+    slpra-integ:extractionAnchor "控制前" ;
+    slpra-integ:extractionAnchor "控制措施" ;
+    slpra-integ:extractionAnchor "风险状态" .
+
 slpra-dev:ClinicalSampleProductionPlan
     slpra-integ:extractionMethod "sentence_regex" ;
+    slpra-integ:extractionAnchor "批量" ;
     slpra-integ:extractionAnchor "计划" ;
     slpra-integ:extractionAnchor "批" ;
     slpra-integ:extractionAnchor "车间" .
@@ -663,10 +671,10 @@ slpra-dev:productionPurpose
     slpra-integ:extractionPattern "用于\\s*([^，。；]+)" .
 
 slpra-dev:plannedBatchSizeMin_kg
-    slpra-integ:extractionPattern "预计批量\\s*([\\d.]+)\\s*[~～—至-]" .
+    slpra-integ:extractionPattern "(?:预计)?(?:生产)?批量(?:范围)?\\s*([\\d.]+)\\s*[~～—至\\-]" .
 
 slpra-dev:plannedBatchSizeMax_kg
-    slpra-integ:extractionPattern "[~～—至-]\\s*([\\d.]+)\\s*kg" .
+    slpra-integ:extractionPattern "[~～—至\\-]\\s*([\\d.]+)\\s*(?:kg|公斤)" .
 
 # ============================================================
 # Cross-Module Bridging Axioms

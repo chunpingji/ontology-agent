@@ -252,7 +252,7 @@ def generate_section_narratives(
     from app.services.reporting.fact_sources import FactContext
 
     all_facts_text = _format_facts(edges)
-    rules_text = _format_rule_results(assessment_rows) if assessment_rows else ""
+    rules_text = _format_rule_results(assessment_rows, edges=edges) if assessment_rows else ""
     fact_ctx = FactContext(
         edges=edges,
         facts=None,
@@ -298,6 +298,8 @@ def generate_section_narratives(
                 if facts_str:
                     ont_parts.append(f"### {label}\n{facts_str}")
             facts_text = "\n\n".join(ont_parts) if ont_parts else all_facts_text
+        elif assessment_rows:
+            facts_text = _auto_group_facts(edges)
         else:
             facts_text = all_facts_text
         slot_labels = [
@@ -432,12 +434,56 @@ _SEMANTIC_SLOTS_BATCH_SCHEMA: dict[str, Any] = {
 }
 
 
-def _format_rule_results(rows: list | None) -> str:
+def _extract_entity_context(edges: list[dict]) -> str:
+    """Extract key entity references (drug, workshop, equipment) for risk-row context."""
+    from app.services.extraction.equipment_source import iter_equipment_edges
+
+    drug_name = ""
+    for e in edges:
+        if "DrugProduct" in (e.get("object_class_iri") or ""):
+            drug_name = e.get("object_text") or e.get("subject_text") or ""
+            break
+
+    _WS_RE = re.compile(r"\b(642|644|646)\b")
+    _EQ_WS_RE = re.compile(r"[A-Za-z]{1,3}(642|644|646)\d{2,}")
+    eq_codes: list[str] = []
+    workshops: set[str] = set()
+    for eq in iter_equipment_edges(edges):
+        code = (eq.get("object_text") or "").strip()
+        if code and code not in eq_codes:
+            eq_codes.append(code)
+        ref = eq.get("source_ref") or ""
+        m = _WS_RE.search(ref)
+        if m:
+            workshops.add(f"{m.group(1)}车间")
+        elif code:
+            m = _EQ_WS_RE.fullmatch(code)
+            if m:
+                workshops.add(f"{m.group(1)}车间")
+
+    parts: list[str] = []
+    if drug_name:
+        parts.append(f"- 评估药物：{drug_name}")
+    if workshops:
+        parts.append(f"- 生产车间：{'、'.join(sorted(workshops))}")
+    if eq_codes:
+        summary = "、".join(eq_codes[:6])
+        if len(eq_codes) > 6:
+            summary += f"等共{len(eq_codes)}台"
+        parts.append(f"- 使用设备：{summary}")
+    return "\n".join(parts)
+
+
+def _format_rule_results(rows: list | None, edges: list[dict] | None = None) -> str:
     """Format deterministic risk rows as read-only LLM context (FR-009). Capped so a
     long matrix can't blow the local model's context window."""
     if not rows:
         return "（无风险评估结果）"
     parts: list[str] = []
+    if edges:
+        entity_ctx = _extract_entity_context(edges)
+        if entity_ctx:
+            parts.append(f"### 评估对象上下文\n{entity_ctx}\n")
     for row in rows:
         hazid = getattr(row, "hazid", "") or ""
         factors = getattr(row, "contributing_factors", "") or ""
@@ -450,6 +496,58 @@ def _format_rule_results(rows: list | None) -> str:
             line += f"\n  控制措施：{measures}"
         parts.append(line)
     return "\n".join(parts[:30])
+
+
+_RISK_ENTITY_GROUPS: list[tuple[str, list[str]]] = [
+    ("评估对象（药物产品）", ["DrugProduct"]),
+    ("使用设备", ["Equipment", "ProcessEquipment"]),
+    ("生产区域", ["ProductionArea"]),
+    ("共线评估数据", ["SharedLineAssessmentData"]),
+    ("生产风险评估（源文件）", ["ProductionRiskAssessment"]),
+    ("安全风险", ["SafetyRiskAssessment"]),
+    ("质量风险", ["QualityRiskAssessment"]),
+    ("合成路线与工艺", ["SynthesisRoute", "SynthesisStep",
+                        "ProcessIntermediate", "CrudeProduct"]),
+    ("清洗与残留", ["CleaningProcess", "Residue"]),
+    ("存放条件", ["StorageCondition"]),
+]
+
+
+def _auto_group_facts(edges: list[dict]) -> str:
+    """Group edges by entity type under labeled headings for risk sections."""
+    grouped: dict[str, list[dict]] = {}
+    ungrouped: list[dict] = []
+    for edge in edges[:100]:
+        obj_iri = edge.get("object_class_iri", "")
+        local_name = obj_iri.rsplit("/", 1)[-1] if "/" in obj_iri else obj_iri
+        matched = False
+        for label, needles in _RISK_ENTITY_GROUPS:
+            if any(n in local_name for n in needles):
+                grouped.setdefault(label, []).append(edge)
+                matched = True
+                break
+        if not matched:
+            ungrouped.append(edge)
+    parts: list[str] = []
+    budget = {"remaining": _MAX_TOTAL_SUBFACT_LINES, "truncated": False}
+    for label, needles in _RISK_ENTITY_GROUPS:
+        grp_edges = grouped.get(label)
+        if not grp_edges:
+            continue
+        lines: list[str] = []
+        for e in grp_edges:
+            lines.append(_format_fact_line(e, 0))
+            _append_sub_facts(e, lines, depth=1, budget=budget)
+        parts.append(f"### {label}\n" + "\n".join(lines))
+    if ungrouped:
+        lines = []
+        for e in ungrouped:
+            lines.append(_format_fact_line(e, 0))
+            _append_sub_facts(e, lines, depth=1, budget=budget)
+        parts.append("### 其他信息\n" + "\n".join(lines))
+    if budget["truncated"]:
+        parts.append(f"…（嵌套子关系总数超过 {_MAX_TOTAL_SUBFACT_LINES} 行上限，其余已省略）")
+    return "\n\n".join(parts) if parts else "（无提取到的事实数据）"
 
 
 def _format_coverage_status(manifest: Any | None, section_id: str) -> str:
@@ -529,7 +627,7 @@ def generate_semantic_slots(
     from app.services.reporting.fact_sources import FactContext
 
     facts_text_all = _format_facts(edges)
-    rules_text = _format_rule_results(assessment_rows) if assessment_rows else ""
+    rules_text = _format_rule_results(assessment_rows, edges=edges) if assessment_rows else ""
     fact_ctx = FactContext(
         edges=edges,
         facts=facts,
@@ -574,7 +672,12 @@ def generate_semantic_slots(
                         facts_str = _format_coverage_facts(b, edges, engine)
                     if facts_str:
                         ont_parts.append(f"### {label}\n{facts_str}")
-                ontology_text = "\n\n".join(ont_parts) if ont_parts else facts_text_all
+                if ont_parts:
+                    ontology_text = "\n\n".join(ont_parts)
+                elif assessment_rows:
+                    ontology_text = _auto_group_facts(edges)
+                else:
+                    ontology_text = facts_text_all
 
                 slot_entries.append({
                     "slot_id": slot.slot_id,
@@ -631,21 +734,108 @@ def generate_semantic_slots(
     return results
 
 
-def _format_facts(edges: list[dict]) -> str:
-    """Format extraction edges into a readable fact list."""
-    parts: list[str] = []
-    for edge in edges:
-        obj_class = edge.get("object_class_iri", "")
-        obj_text = edge.get("object_text", "")
+# Deepest nesting we descend into ``sub_relationships`` when formatting facts. The
+# extractor caps relationship nesting at a few hops; this also guards against cyclic data.
+_MAX_FACT_DEPTH = 4
+# Per-parent cap on nested sub-relationship lines, so one large subtree (e.g. a long
+# synthesis route) can't crowd sibling top-level edges out of the LLM context.
+_MAX_SUBFACTS_PER_PARENT = 20
+# Global cap on *nested* sub-fact lines across the whole fact list. Top-level edges are
+# always emitted (they are the primary signal); only ``sub_relationships`` expansion draws
+# this budget down. Restores a hard global bound the per-parent cap alone can't give —
+# depth×breadth nesting can add detail but can never blow past the LLM context window.
+_MAX_TOTAL_SUBFACT_LINES = 300
+
+
+def _format_fact_line(edge: dict, depth: int) -> str:
+    """Render one edge as a bullet line.
+
+    ``depth == 0`` reproduces the original single-level format byte-for-byte. ``depth > 0``
+    is a nested sub-relationship: indented, carrying its connecting predicate label and, for
+    external master data, its provenance — so the LLM keeps the parent→child context (e.g.
+    临床备样生产计划 → 生产车间 → 642车间).
+    """
+    obj_class = edge.get("object_class_iri", "")
+    obj_text = edge.get("object_text", "")
+    if depth == 0:
         subj_text = edge.get("subject_text", "")
         line = f"- {obj_class}: {subj_text} → {obj_text}"
-        for dp in edge.get("object_data_properties") or []:
-            label = dp.get("label", "")
-            value = dp.get("value", "")
-            if label and value:
-                line += f" ({label}: {value})"
-        parts.append(line)
-    return "\n".join(parts[:100])
+    else:
+        indent = "  " * depth
+        pred = edge.get("predicate_label", "") or edge.get("predicate_iri", "")
+        line = f"{indent}- 关系「{pred}」: {obj_class} → {obj_text}"
+    for dp in edge.get("object_data_properties") or []:
+        label = dp.get("label", "")
+        value = dp.get("value", "")
+        if label and value:
+            line += f" ({label}: {value})"
+    if depth > 0 and edge.get("object_source") == "external":
+        src = edge.get("source_ref", "")
+        if src:
+            line += f" 〔{src}〕"
+    return line
+
+
+def _append_sub_facts(parent: dict, parts: list[str], depth: int, budget: dict) -> None:
+    """Recursively append a parent edge's ``sub_relationships`` as indented fact lines.
+
+    ``budget`` is a mutable ``{"remaining": int, "truncated": bool}`` cell shared across the
+    whole recursion: it caps *total* nested lines so a deep/wide relation tree can neither
+    overflow the LLM context nor starve later top-level facts of it. Non-dict items are
+    filtered out before counting, so the per-parent "omitted" tally reflects only the valid
+    sub-relationships that were actually dropped.
+    """
+    if depth > _MAX_FACT_DEPTH:
+        return
+    subs = parent.get("sub_relationships")
+    if not isinstance(subs, list):
+        return
+    valid = [sub for sub in subs if isinstance(sub, dict)]
+    if not valid:
+        return
+    if budget["remaining"] <= 0:
+        # Real sub-facts exist but the global budget is spent — flag so the caller emits
+        # the truncation marker (rather than dropping them silently at the parent boundary).
+        budget["truncated"] = True
+        return
+    emitted = 0
+    for sub in valid:
+        if budget["remaining"] <= 0:
+            budget["truncated"] = True
+            return
+        if emitted >= _MAX_SUBFACTS_PER_PARENT:
+            parts.append("  " * depth + f"- …（另有 {len(valid) - emitted} 项子关系已省略）")
+            break
+        parts.append(_format_fact_line(sub, depth))
+        emitted += 1
+        budget["remaining"] -= 1
+        _append_sub_facts(sub, parts, depth + 1, budget)
+
+
+def _format_facts(edges: list[dict]) -> str:
+    """Format extraction edges into a readable fact list for the LLM context.
+
+    Descends into each edge's ``sub_relationships`` (nested master-data facts — e.g. a
+    production plan's 生产车间 rows sourced from external master data) so they reach the
+    model, indented under their parent with the connecting predicate + provenance. Edges
+    that carry no ``sub_relationships`` render identically to the pre-nesting formatter.
+
+    The historical "first 100 top-level edges" budget is preserved, and every top-level edge
+    is emitted before any of its nested detail. Nested *fact* lines draw down a separate
+    global budget (:data:`_MAX_TOTAL_SUBFACT_LINES`); once exhausted, remaining sub-facts are
+    dropped and a single global truncation marker is appended. Truncation-hint lines (the
+    per-parent "另有 N 项" notes and the global marker) are not charged to the budget, so the
+    total stays a small constant — at most 100 top-level + _MAX_TOTAL_SUBFACT_LINES nested +
+    a bounded handful of hint lines — regardless of relation-tree depth or breadth.
+    """
+    parts: list[str] = []
+    budget = {"remaining": _MAX_TOTAL_SUBFACT_LINES, "truncated": False}
+    for edge in edges[:100]:
+        parts.append(_format_fact_line(edge, 0))
+        _append_sub_facts(edge, parts, depth=1, budget=budget)
+    if budget["truncated"]:
+        parts.append(f"- …（嵌套子关系总数超过 {_MAX_TOTAL_SUBFACT_LINES} 行上限，其余已省略）")
+    return "\n".join(parts)
 
 
 def _build_style_context(template) -> str:

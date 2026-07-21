@@ -989,6 +989,12 @@ slpra-dev:QualityRiskAssessment a owl:Class ;
     rdfs:label "质量风险评估"@zh ;
     rdfs:comment "Assessment of quality risks during manufacturing: impurity carry-over, incomplete reaction, product degradation, contamination."@en .
 
+slpra-dev:ProductionRiskAssessment a owl:Class ;
+    rdfs:subClassOf obo:BFO_0000031 ;
+    rdfs:label "Production Risk Assessment"@en ;
+    rdfs:label "生产风险评估"@zh ;
+    rdfs:comment "Broader HazID-dimension production risk assessment covering personnel, equipment, materials, documents, and waste management — the full 7-column risk evaluation table."@en .
+
 # ============================================================
 # 10.8 Clinical Sample Production Plan (⊑ BFO:GDC)
 # ============================================================
@@ -1086,6 +1092,12 @@ slpra-dev:hasQualityRiskAssessment a owl:ObjectProperty ;
     rdfs:range slpra-dev:QualityRiskAssessment ;
     rdfs:label "has quality risk assessment"@en ;
     rdfs:label "含质量风险评估"@zh .
+
+slpra-dev:hasProductionRiskAssessment a owl:ObjectProperty ;
+    rdfs:domain slpra-dev:CMCReport ;
+    rdfs:range slpra-dev:ProductionRiskAssessment ;
+    rdfs:label "has production risk assessment"@en ;
+    rdfs:label "含生产风险评估"@zh .
 
 slpra-dev:hasSharedLineData a owl:ObjectProperty ;
     rdfs:domain slpra-dev:CMCReport ;

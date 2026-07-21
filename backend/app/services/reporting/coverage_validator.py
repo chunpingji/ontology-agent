@@ -148,6 +148,36 @@ def _matching_edges(edges: Sequence[dict], class_contains: str) -> list[dict]:
     return [e for e in edges if class_contains in e.get("object_class_iri", "")]
 
 
+# 设备列的标签别名：外部档案用「规格型号/主体材质/equipmentName」，文档用「设备规格/材质/
+# 设备名称」——覆盖判定须同时认这些，否则设备表已有值而覆盖清单仍报缺失。富化阶段已把档案
+# 值写入文档规范标签，别名在此作为双保险（同口径识别 FILLED）。
+_EQUIPMENT_LABEL_ALIASES: dict[str, tuple[str, ...]] = {
+    "设备名称": ("设备名称", "equipmentName"),
+    "设备规格": ("设备规格", "规格型号", "modelSpecification"),
+    "规格型号": ("规格型号", "设备规格", "modelSpecification"),
+    "材质": ("材质", "主体材质", "constructedOf"),
+    "主体材质": ("主体材质", "材质", "constructedOf"),
+}
+
+
+def _collect_equipment_edges(edges: Sequence[dict]) -> list[dict]:
+    """递归收集设备 edge（顶层 + ``sub_relationships``，含 Reactor/Centrifuge 等子类），按设备
+    编号去重。识别/遍历复用 :func:`iter_equipment_edges`（谓词权威判定，绝不按命名空间前缀
+    泛判），与设备表/富化**同口径**，避免「表有值、覆盖报缺失」，也不误纳 ConstructionMaterial
+    等非设备类。"""
+    from app.services.extraction.equipment_source import iter_equipment_edges
+
+    seen: set[str] = set()
+    out: list[dict] = []
+    for edge in iter_equipment_edges(edges):
+        code = (edge.get("object_text") or "").strip()
+        key = code or f"__anon__{id(edge)}"
+        if key not in seen:
+            seen.add(key)
+            out.append(edge)
+    return out
+
+
 def _resolve_extraction(slot: Slot, edges: Sequence[dict]) -> SlotCoverage:
     src: ExtractionSource = slot.source  # type: ignore[assignment]
     value: str | None = None
@@ -232,7 +262,8 @@ def _resolve_equipment(group: Group, edges: Sequence[dict]) -> list[SlotCoverage
     records: list[SlotCoverage] = []
     for slot in group.slots:
         src: ExtractionSource = slot.source  # type: ignore[assignment]
-        matching = _matching_edges(edges, src.object_class_iri_contains)
+        # 递归 + 命名空间口径收集设备（含子类与嵌套），与设备表一致
+        matching = _collect_equipment_edges(edges)
         if src.text:  # the id column → "does any equipment exist?"
             count = sum(1 for e in matching if e.get("object_text"))
             if count:
@@ -243,8 +274,9 @@ def _resolve_equipment(group: Group, edges: Sequence[dict]) -> list[SlotCoverage
                     None,
                 )
         else:  # an optional column → filled if any row populates it
+            wanted = _EQUIPMENT_LABEL_ALIASES.get(src.label, (src.label,))
             has = any(
-                dp.get("label") == src.label and dp.get("value") not in (None, "")
+                dp.get("label") in wanted and dp.get("value") not in (None, "")
                 for e in matching
                 for dp in (e.get("object_data_properties") or [])
             )
