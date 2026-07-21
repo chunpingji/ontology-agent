@@ -20,11 +20,32 @@ sheet，每条设备以唯一的「设备编号」标识；无编号的行被忽
 
 from __future__ import annotations
 
+import logging
+import re
 from dataclasses import dataclass, field
-from typing import Protocol
+from typing import Iterator, Protocol, Sequence
+
+logger = logging.getLogger(__name__)
 
 _FACTS_NS = "http://slpra.org/facts#"
 _EQUIP_NS = "https://ontology.pharma-gmp.cn/slpra/equipment/"
+
+# 设备端点识别所需的谓词/类 IRI（供抽取期与报告期共用，避免各处重复漂移）。
+EQUIPMENT_NS = _EQUIP_NS
+EQUIPMENT_IRI = f"{_EQUIP_NS}Equipment"
+PROCESS_EQUIPMENT_IRI = f"{_EQUIP_NS}ProcessEquipment"
+USES_EQUIPMENT_IRI = "https://ontology.pharma-gmp.cn/slpra/drug-development/usesEquipment"
+
+# 档案标签 → 文档规范标签：外部档案用「规格型号/主体材质」，而模板槽位、覆盖校验与设备表
+# 读取的是文档标签「设备规格/材质」（``设备名称`` 两侧同名）。富化时把档案值写入文档规范
+# 标签（仅当文档侧为空），既有消费方遂零改动即可取到外部值——这是 材质=待补充 的根因修复。
+_ARCHIVE_TO_DOC_LABEL: dict[str, str] = {
+    "设备名称": "设备名称",
+    "规格型号": "设备规格",
+    "主体材质": "材质",
+}
+# 5 列设备一览表用不到、且会污染事实行的档案列，不并入 edge。
+_SKIP_ARCHIVE_LABELS = ("安装位置", "是否洁净区", "设备编号")
 
 # ---------------------------------------------------------------------------
 # 设备名称 → 本体设备类 IRI（基于 slpra-equipment.ttl 定义）
@@ -378,3 +399,135 @@ def get_equipment_source() -> EquipmentSource:
     RestConnector 支撑的实现即可，调用方 finder 无需改动。
     """
     return MockEquipmentSource()
+
+
+# ---------------------------------------------------------------------------
+# 设备 edge 识别 / 遍历 / 富化 —— 抽取期与报告期共用的唯一实现（消除三处口径漂移）。
+# ---------------------------------------------------------------------------
+def equipment_class_iris() -> set[str]:
+    """已知设备类 IRI 闭包：基类 ``Equipment``/``ProcessEquipment`` + 档案映射的具体子类。
+
+    刻意**不**按命名空间前缀泛判——equipment 命名空间同样容纳 ``ConstructionMaterial``、
+    ``EquipmentSurface`` 等非设备类，前缀判定会把它们误纳入设备表/覆盖计数。"""
+    return {EQUIPMENT_IRI, PROCESS_EQUIPMENT_IRI, *(_EQUIP_CLASS.values())}
+
+
+def is_equipment_edge(edge: dict) -> bool:
+    """该 edge 的对象是否为设备端点。
+
+    以谓词 ``usesEquipment`` 为**权威信号**——设备经两条路径进图谱（``extractionProfile``
+    顶层边、合成步骤下 ``_step_equipment`` 嵌套子关系），两者谓词皆为 ``usesEquipment``，
+    故谓词判定完备且不会误伤 ``constructedOf`` 的材料对象。辅以已知设备类闭包，兜底极少数
+    缺谓词的历史 edge。"""
+    if not isinstance(edge, dict):
+        return False
+    if (edge.get("predicate_iri") or "") == USES_EQUIPMENT_IRI:
+        return True
+    return (edge.get("object_class_iri") or "") in equipment_class_iris()
+
+
+def iter_equipment_edges(edges: Sequence[dict]) -> Iterator[dict]:
+    """递归产出全部设备 edge（顶层 + ``sub_relationships``），**不去重**（聚合交由调用方）。"""
+    def _walk(edge: dict) -> Iterator[dict]:
+        if is_equipment_edge(edge):
+            yield edge
+        for sub in edge.get("sub_relationships") or []:
+            if isinstance(sub, dict):
+                yield from _walk(sub)
+
+    for e in edges:
+        if isinstance(e, dict):
+            yield from _walk(e)
+
+
+def _norm(value: str | None) -> str:
+    """归一化文本比较：去内部空白，避免「316L」vs「316 L」这类假冲突。"""
+    return re.sub(r"\s+", "", value or "")
+
+
+def _merge_fact_into_edge(edge: dict, fact: EquipmentFact) -> list[str]:
+    """把外部设备档案事实并入单个设备 edge；返回该设备的「文档 vs 档案」冲突说明。
+
+    档案值写入**文档规范标签**（``设备名称/设备规格/材质``，见 ``_ARCHIVE_TO_DOC_LABEL``）：
+    文档侧为空则填入；文档侧已有非空值则**保留**（不静默覆盖），仅当与档案不一致时记冲突
+    —— GMP 忠实性：报告作者声明值优先，档案分歧交人工确认。类仅在泛化时升级为具体子类且
+    同步 ``object_class_label``；``object_source``→``external``，``source_ref`` 追溯档案与车间。
+    """
+    props: list[dict] = edge.get("object_data_properties") or []
+    conflicts: list[str] = []
+
+    def _current(label: str) -> str:
+        for p in props:
+            if p.get("label") == label and p.get("value") not in (None, ""):
+                return str(p.get("value"))
+        return ""
+
+    for dp in fact.data_properties:
+        arc_label = dp.get("label", "")
+        arc_value = dp.get("value", "")
+        if arc_label in _SKIP_ARCHIVE_LABELS or not arc_value:
+            continue
+        doc_label = _ARCHIVE_TO_DOC_LABEL.get(arc_label, arc_label)
+        current = _current(doc_label)
+        if not current:
+            props.append({
+                "iri": dp.get("iri"),
+                "label": doc_label,
+                "value": arc_value,
+                "source": "external",
+            })
+        elif _norm(current) != _norm(arc_value):
+            field = doc_label
+            conflicts.append(
+                f"{fact.equipment_id} {field}：文档「{current}」/ 档案「{arc_value}」，请人工确认。"
+            )
+
+    edge["object_data_properties"] = props
+
+    cur_cls = edge.get("object_class_iri") or ""
+    if cur_cls in ("", EQUIPMENT_IRI, PROCESS_EQUIPMENT_IRI) and fact.equipment_class_iri:
+        edge["object_class_iri"] = fact.equipment_class_iri
+        edge["object_class_label"] = fact.equipment_class_iri.rsplit("/", 1)[-1]
+
+    edge["object_source"] = "external"
+    edge["object_iri"] = fact.iri
+    base = edge.get("source_ref") or ""
+    tag = f"外部设备档案（record={fact.equipment_id}；workshop={fact.workshop_code}车间）"
+    edge["source_ref"] = f"{base} + {tag}" if base else tag
+    return conflicts
+
+
+def enrich_equipment_facts(edges: Sequence[dict]) -> list[str]:
+    """按设备编号从外部设备档案富化全部设备 edge（**幂等**；抽取期与报告期均可调用）。
+
+    统一覆盖 ``extractionProfile`` 顶层设备边与 ``_step_equipment`` 嵌套子关系（两者
+    ``object_text`` 均为设备编号）。就地改写 edge（追加档案属性、升级类、标注溯源），返回
+    「文档 vs 档案」冲突说明列表（供报告侧并入设备表注记）。未命中（未知编号 / 源不可用）
+    → 原文保留（优雅降级，Principle VI）。同一编号查询结果缓存复用。
+
+    幂等保证：已富化过（``object_source==external`` 且 ``source_ref`` 含档案标签）的 edge 跳过，
+    故在抽取期与报告期重复调用不会二次追加溯源标签或重复填值。
+    """
+    source = get_equipment_source()
+    cache: dict[str, EquipmentFact | None] = {}
+    conflicts: list[str] = []
+
+    def _lookup(code: str) -> EquipmentFact | None:
+        if code not in cache:
+            try:
+                cache[code] = source.resolve(code)
+            except Exception:  # 外部源异常 → 优雅降级
+                logger.debug("设备档案富化跳过 code=%s", code, exc_info=True)
+                cache[code] = None
+        return cache[code]
+
+    for edge in iter_equipment_edges(edges):
+        if edge.get("object_source") == "external" and "外部设备档案" in (edge.get("source_ref") or ""):
+            continue  # 幂等：跳过已富化 edge
+        code = (edge.get("object_text") or "").strip()
+        if not code:
+            continue
+        fact = _lookup(code)
+        if fact is not None:
+            conflicts.extend(_merge_fact_into_edge(edge, fact))
+    return conflicts

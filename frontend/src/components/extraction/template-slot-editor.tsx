@@ -2092,6 +2092,18 @@ export function TemplateSlotEditor({
                       <div className="flex items-center gap-2">
                         <ListTree className="size-4 text-foreground" />
                         <span className="text-sm font-semibold text-foreground">报告结构</span>
+                        {(() => {
+                          const completed = previewCoverage.filled + previewCoverage.inferred;
+                          const pct = previewCoverage.total_slots > 0
+                            ? Math.round((completed / previewCoverage.total_slots) * 100)
+                            : 0;
+                          const color = pct >= 80 ? "text-success" : pct >= 50 ? "text-amber-500" : "text-destructive";
+                          return (
+                            <span className={cn("text-sm font-semibold tabular-nums", color)}>
+                              {pct}%
+                            </span>
+                          );
+                        })()}
                       </div>
                       <div className="flex items-center gap-1.5">
                         <CoverageBadge tone="success" count={previewCoverage.filled + previewCoverage.inferred} />

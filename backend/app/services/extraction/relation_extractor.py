@@ -37,6 +37,7 @@ from app.services.extraction.docx_structure import (
     DocStructure,
     parse_docx_structure,
 )
+from app.services.extraction.equipment_source import enrich_equipment_facts
 from app.services.extraction.production_area_source import get_production_area_source
 from app.services.reasoning.pde_conflict import detect_pde_conflict
 
@@ -64,6 +65,7 @@ RESIDUE_IRI = _DRUG + "Residue"
 SHARED_LINE_IRI = _DEV + "SharedLineAssessmentData"
 HAS_SHARED_LINE_DATA_IRI = _DEV + "hasSharedLineData"  # 谓词（演示兜底合成边用）
 STORAGE_CONDITION_IRI = _DEV + "StorageCondition"
+PRODUCTION_RISK_IRI = _DEV + "ProductionRiskAssessment"
 DEGRADATION_PATHWAY_IRI = _DEV + "DegradationPathway"
 CLINICAL_SAMPLE_PLAN_IRI = _DEV + "ClinicalSampleProductionPlan"
 PRODUCTION_AREA_IRI = _FACIL + "ProductionArea"
@@ -84,6 +86,11 @@ DP = {
     "riskCategory": _DEV + "riskCategory",
     "riskDescription": _DEV + "riskDescription",
     "controlMeasure": _DEV + "controlMeasure",
+    "riskFactor": _DEV + "riskFactor",
+    "preControlRiskLevel": _DEV + "preControlRiskLevel",
+    "postControlRiskLevel": _DEV + "postControlRiskLevel",
+    "riskTraceability": _DEV + "riskTraceability",
+    "riskStatus": _DEV + "riskStatus",
     "residueSolvent": _DEV + "residueSolvent",
     "residueSolubility": _DEV + "residueSolubility",
     "residueSolubilityTemperature": _DEV + "residueSolubilityTemperature",
@@ -464,6 +471,44 @@ def find_quality_risk(ctx: _Ctx) -> list[dict]:
     )
 
 
+def find_production_risk(ctx: _Ctx) -> list[dict]:
+    """Extract broader HazID production risk table (7 columns)."""
+    tbl = ctx.structure.find_table("风险因素", "控制前")
+    if not tbl:
+        tbl = ctx.structure.find_table("风险因素", "控制措施", "风险状态")
+    if not tbl:
+        tbl = ctx.structure.find_table("HazID", "风险因素")
+    if not tbl:
+        tbl = ctx.structure.find_table("危害因素", "控制")
+    if not tbl:
+        return []
+    out: list[dict] = []
+    for row in tbl.rows:
+        hazid = _row_get(row, "风险类型", "HazID", "危害识别")
+        factor = _row_get(row, "风险因素", "危害因素")
+        if not (hazid or factor):
+            continue
+        out.append(_endpoint(
+            PRODUCTION_RISK_IRI, hazid or factor,
+            data_properties=[
+                _dp(DP["riskCategory"], "风险类型", hazid),
+                _dp(DP["riskFactor"], "风险因素", factor),
+                _dp(DP["preControlRiskLevel"], "控制前风险水平",
+                    _row_get(row, "控制前", "风险控制前", "控制前风险水平")),
+                _dp(DP["postControlRiskLevel"], "控制后风险水平",
+                    _row_get(row, "控制后", "风险控制后", "控制后风险水平")),
+                _dp(DP["controlMeasure"], "控制措施",
+                    _row_get(row, "控制措施", "风险控制措施")),
+                _dp(DP["riskTraceability"], "可追溯性",
+                    _row_get(row, "可追溯性", "追溯", "风险控制措施可追溯性")),
+                _dp(DP["riskStatus"], "风险状态",
+                    _row_get(row, "风险状态", "状态")),
+            ],
+            source_ref="表 生产风险评估",
+        ))
+    return out
+
+
 def find_cleaning(ctx: _Ctx) -> list[dict]:
     """hasCleaningMethod→CleaningProcess：设备清洗方法各步。
 
@@ -626,19 +671,25 @@ _PLAN_AREA_SPAN_RE = re.compile(r"在\s*([^，。]*?车间)")
 
 
 def _find_anchor_sentence(structure: DocStructure, anchors: list[str]) -> str:
-    """按 TTL extractionAnchor 关键词定位目标句：先全文扫描含全部锚点的段落，
-    再退化为松弛搜索（丢弃末位锚点，逐节扫描）。"""
+    """按 TTL extractionAnchor 关键词定位目标句。
+
+    优先全文扫描含**全部**锚点的段落；未命中则**渐进松弛**——从 N-1 个锚点递减到 1 个，
+    逐节扫描含该子集的段落。同一轮（相同子集大小）遍历所有组合，保证 RDF 多值注解
+    遍历顺序不影响结果。最少需命中 1 个锚点。
+    """
+    from itertools import combinations
+
     if not anchors:
         return ""
     for p in structure.paragraphs:
         if all(a in p for a in anchors):
             return p
-    if len(anchors) > 1:
-        relaxed = anchors[:-1]
-        for sec in structure.sections:
-            for para in sec.paras:
-                if all(a in para for a in relaxed):
-                    return para
+    for keep in range(len(anchors) - 1, 0, -1):
+        for subset in combinations(anchors, keep):
+            for sec in structure.sections:
+                for para in sec.paras:
+                    if all(a in para for a in subset):
+                        return para
     return ""
 
 
@@ -902,6 +953,7 @@ _METHOD_STRATEGIES: dict[str, ExtractionStrategy] = {
         STORAGE_CONDITION_IRI: find_storage,
         SAFETY_RISK_IRI: find_safety_risk,
         QUALITY_RISK_IRI: find_quality_risk,
+        PRODUCTION_RISK_IRI: find_production_risk,
     }, generic=_generic_table_scan),
     "section_kv": _MethodStrategy({
         CLEANING_PROCESS_IRI: find_cleaning,
@@ -1128,5 +1180,10 @@ def extract_relationships(
         _attach_pde_conflict(ctx, doc_class_iri, subject_label, edges)
     except Exception:
         logger.debug("PDE 冲突检测跳过", exc_info=True)
+
+    try:
+        enrich_equipment_facts(edges)  # 抽取期富化（写入标注）；报告期会幂等再跑一次
+    except Exception:
+        logger.debug("设备档案富化整体跳过", exc_info=True)
 
     return {"doc_class": classification, "relationships": edges}

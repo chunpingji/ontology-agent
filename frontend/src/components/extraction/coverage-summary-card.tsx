@@ -30,14 +30,22 @@ export function CoverageSummaryCard({ coverage, onScrollToMissing }: CoverageSum
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
-        <div className="flex items-center gap-2">
-          <div className="h-2 flex-1 rounded-full bg-muted overflow-hidden">
-            <div
-              className="h-full rounded-full bg-green-500 transition-all"
-              style={{ width: `${pct}%` }}
-            />
+        <div className="flex items-center gap-3">
+          <span className="text-2xl font-bold tabular-nums leading-none">
+            {pct}
+            <span className="text-base font-semibold text-muted-foreground">%</span>
+          </span>
+          <div className="flex flex-1 flex-col gap-1">
+            <span className="text-xs text-muted-foreground">
+              {completedCount} / {total_slots} 槽位已覆盖
+            </span>
+            <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
+              <div
+                className="h-full rounded-full bg-green-500 transition-all"
+                style={{ width: `${pct}%` }}
+              />
+            </div>
           </div>
-          <span className="text-sm font-medium tabular-nums">{pct}%</span>
         </div>
 
         <div className="grid grid-cols-3 gap-2 text-center text-xs">
@@ -47,10 +55,6 @@ export function CoverageSummaryCard({ coverage, onScrollToMissing }: CoverageSum
           <StatusCount label="手工" count={manual} color="bg-yellow-500" />
           <StatusCount label="可选空" count={blank_optional} color="bg-gray-400" />
           <StatusCount label="不适用" count={dismissed} color="bg-gray-300" />
-        </div>
-
-        <div className="text-xs text-muted-foreground">
-          共 {total_slots} 个槽位
         </div>
 
         {hasMissing && onScrollToMissing && (
