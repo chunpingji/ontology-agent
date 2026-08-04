@@ -50,7 +50,10 @@ export function formatRelationSourceRef(
   if (row) parts.push(row);
   if (column) parts.push(column);
 
-  const detail = ref.parameter ?? ref.key ?? ref.header;
+  // Truthy `||` (not nullish `??`): an empty-string `parameter` yields to a
+  // meaningful `key`/`header` rather than rendering blank. Mirrors the backend
+  // `format_source_ref` (source_ref.py) so web and DOCX show the same label.
+  const detail = ref.parameter || ref.key || ref.header;
   if (typeof detail === "string" && detail.trim()) {
     parts.push(detail.trim());
   }

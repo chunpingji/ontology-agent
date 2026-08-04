@@ -25,6 +25,8 @@ import re
 from dataclasses import dataclass, field
 from typing import Iterator, Protocol, Sequence
 
+from app.services.reporting.source_ref import format_source_ref as _source_ref_text
+
 logger = logging.getLogger(__name__)
 
 _FACTS_NS = "http://slpra.org/facts#"
@@ -491,10 +493,81 @@ def _merge_fact_into_edge(edge: dict, fact: EquipmentFact) -> list[str]:
 
     edge["object_source"] = "external"
     edge["object_iri"] = fact.iri
-    base = edge.get("source_ref") or ""
+    # source_ref 双形：legacy str 直接串接溯源标签；017-profile 结构化 dict 必须**保留**
+    # （前端据此锚定原文位置），故把档案标签写入 dict 的 ``enrichment`` 键而非覆盖整个 dict。
     tag = f"外部设备档案（record={fact.equipment_id}；workshop={fact.workshop_code}车间）"
-    edge["source_ref"] = f"{base} + {tag}" if base else tag
+    base = edge.get("source_ref")
+    if isinstance(base, dict):
+        base["enrichment"] = tag
+    else:
+        base_str = base or ""
+        edge["source_ref"] = f"{base_str} + {tag}" if base_str else tag
     return conflicts
+
+
+# 已知车间集合——写入端 ``_merge_fact_into_edge`` 的 ``fact.workshop_code`` 只会产出这几个码；
+# 解析端全部按此闭集约束，故任何越界数字（``workshop=999车间``、坐标数字）都不会伪造出车间分组。
+_KNOWN_WORKSHOP_CODES = ("642", "646", "644")
+_WORKSHOP_CODE_ALT = "|".join(_KNOWN_WORKSHOP_CODES)
+
+# 报告期设备归组的两级车间信号，均为**共享解析器**（两个报告消费点复用，杜绝口径分叉）：
+#   1) **权威**：``_merge_fact_into_edge`` 写入的 ``外部设备档案（…；workshop=<码>车间）`` 富化标签
+#      （配对读/写，改一处须同步另一处）。正则**锚定完整标签前缀** ``外部设备档案（`` 且车间号限已知
+#      闭集——否则文档正文里偶发的裸 ``workshop=642车间``（如恰好如此命名的表头）会被误当权威标签，
+#      抢在真实档案/设备编号（如 646）之前命中（Codex #1：需标签边界；Codex round-3 #3：限已知集，
+#      拒绝 ``workshop=999车间`` 之类越界值）。``[^）]*`` 贪婪回溯确保取末尾真实 workshop，而非
+#      record 值里可能注入的前置 ``workshop=``。
+#   2) **兜底**：文本里出现已知车间号即归组。用**数字边界** ``(?<!\d)…(?!\d)`` 而非 ``\b``——Python
+#      Unicode 下数字与汉字「车」同属 word char，``\b`` 在「642车间」处不成立会漏判；纯子串 ``in``
+#      又会误配「1642」「6420」。数字边界两头兼顾（Codex #2：统一两个报告消费点的 legacy 扫描语义）。
+_WORKSHOP_TAG_RE = re.compile(rf"外部设备档案（[^）]*workshop=({_WORKSHOP_CODE_ALT})车间")
+_KNOWN_WORKSHOP_RE = re.compile(rf"(?<!\d)({_WORKSHOP_CODE_ALT})(?!\d)")
+
+# 结构化 source_ref 里**可承载业务车间文本**的键（section/标题/参数/富化标签、及外部系统定位）。
+# 兜底扫描**只**看这些文本键，**绝不**看 ``table``/``row``/``column``/``*_index`` 等**位置坐标**——
+# 后者是 0→1based 的渲染产物（``table=641`` → ``表 642``），扫描它会把结构坐标数字误当车间号
+# （Codex round-3 #1：未富化 017-dict 因坐标 ``表 642`` 被误归 642车间并吞掉「人工确认」提示）。
+_LOOSE_SCAN_TEXT_KEYS = ("section", "parameter", "key", "header", "enrichment", "system", "entity", "record")
+
+
+def workshop_from_enrichment(source_ref_text: str | None) -> str | None:
+    """从富化溯源展示串解析**权威**车间号：``…外部设备档案（…；workshop=642车间）…`` → ``"642车间"``。
+
+    入参是 ``format_source_ref`` 归一后的展示串（dict 的 enrichment 键或 legacy 串接标签，两者都含
+    完整 ``外部设备档案（…；workshop=<码>车间）`` 标签）。**仅**识别带该档案标签前缀、且车间号属已知
+    闭集的车间——裸 ``workshop=…车间`` 或越界码不算权威标签，返回 ``None``（交由设备编号/兜底处理）。
+    """
+    m = _WORKSHOP_TAG_RE.search(source_ref_text or "")
+    return f"{m.group(1)}车间" if m else None
+
+
+def _loose_scan_text(source_ref: Any) -> str:
+    """把 source_ref 归一为**仅含业务文本**的可扫描串：legacy str 原样；dict 只取文本键，**丢弃位置坐标**。
+
+    这是兜底扫描不误判结构坐标的关键——绝不能把 ``table``/``row``/``column`` 的 1-based 渲染
+    （``表 642``）喂给数字扫描。dict 无文本键（纯坐标定位）→ 空串 → 兜底不命中 → 正确归「未分组」。
+    """
+    if isinstance(source_ref, str):
+        return source_ref
+    if isinstance(source_ref, dict):
+        return " ".join(
+            source_ref[k].strip()
+            for k in _LOOSE_SCAN_TEXT_KEYS
+            if isinstance(source_ref.get(k), str) and source_ref[k].strip()
+        )
+    return ""
+
+
+def workshop_from_loose_scan(source_ref: Any) -> str | None:
+    """legacy 兜底：source_ref 的**业务文本**里出现已知车间号(642/646/644)即归组；无 → ``None``。
+
+    入参是**原始** source_ref（str | 017-profile dict | None），而非 ``format_source_ref`` 展示串——
+    因为展示串已把结构坐标渲染进文本，会让数字扫描误命中坐标（见 ``_loose_scan_text``）。**仅**当无
+    权威富化标签、也无法从设备编号锚定时才使用（最低优先级）。数字边界匹配，「642车间」命中而
+    「1642」「6420」不误配。两个报告消费点共用本函数，确保 legacy 兜底口径完全一致。
+    """
+    m = _KNOWN_WORKSHOP_RE.search(_loose_scan_text(source_ref))
+    return f"{m.group(1)}车间" if m else None
 
 
 def enrich_equipment_facts(edges: Sequence[dict]) -> list[str]:
@@ -522,9 +595,13 @@ def enrich_equipment_facts(edges: Sequence[dict]) -> list[str]:
         return cache[code]
 
     for edge in iter_equipment_edges(edges):
-        if edge.get("object_source") == "external" and "外部设备档案" in (edge.get("source_ref") or ""):
+        # 幂等：已富化 edge 的溯源含档案标签。source_ref 双形——dict 把标签写在
+        # ``enrichment`` 键，str 直接串接，故用 format_source_ref 归一后统一判定。
+        if edge.get("object_source") == "external" and "外部设备档案" in _source_ref_text(
+            edge.get("source_ref")
+        ):
             continue  # 幂等：跳过已富化 edge
-        code = (edge.get("object_text") or "").strip()
+        code = str(edge.get("object_text") or "").strip()
         if not code:
             continue
         fact = _lookup(code)

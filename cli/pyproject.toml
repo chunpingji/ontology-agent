@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ontology-agent-cli"
+version = "0.1.0"
+description = "Agent-native CLI (CLI-Anything) for the ontology-agent risk-assessment report flow"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "Proprietary" }
+dependencies = [
+    "click>=8.1",
+    "requests>=2.31",
+]
+
+[project.optional-dependencies]
+test = ["pytest>=8.0"]
+
+[project.scripts]
+oa = "cli_anything.ontology_agent.oa_cli:main"
+ontology-agent = "cli_anything.ontology_agent.oa_cli:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["cli_anything*"]
+
+[tool.pytest.ini_options]
+testpaths = ["cli_anything/ontology_agent/tests"]

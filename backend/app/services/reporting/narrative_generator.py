@@ -14,17 +14,20 @@ from __future__ import annotations
 
 import logging
 import re
-from typing import Any
+from typing import Any, Callable
 
 from app.services.llm.local_client import chat_with_schema
 from app.services.reporting.ast_template import coverage_key
+from app.services.reporting.placeholder_util import PLACEHOLDER_RE, substitute
+from app.services.reporting.source_ref import format_source_ref
 
 logger = logging.getLogger(__name__)
 
 # A section's 行文 Prompt references its data fields as ``{{占位符}}`` whose text is the
-# slot label (see :func:`generate_section_prompt`). This matches one such token so the
-# section narrator can substitute the real slot value in place of the raw placeholder.
-_PLACEHOLDER_RE = re.compile(r"\{\{\s*([^{}]+?)\s*\}\}")
+# slot label (see :func:`generate_section_prompt`). The regex + single-pass substitution
+# live in :mod:`placeholder_util` (shared with the deterministic risk matrix); this alias
+# preserves the historical private name for local references.
+_PLACEHOLDER_RE = PLACEHOLDER_RE
 
 _NARRATIVE_SCHEMA: dict[str, Any] = {
     "type": "object",
@@ -201,17 +204,11 @@ def _substitute_placeholders(
     output with the resolved slot value (or 「待补充」). Guarantees no raw ``{{...}}``
     leaks into the rendered report even when the model ignores the substitution
     instruction — the exact defect users hit ("大量占位符没有替换")."""
-    if not text or "{{" not in text:
-        return text
     by_label = {
         str(label).strip(): (str(value).strip() if value not in (None, "") else "")
         for label, value in field_values
     }
-
-    def _repl(m: re.Match) -> str:
-        return by_label.get(m.group(1).strip()) or "（待补充）"
-
-    return _PLACEHOLDER_RE.sub(_repl, text)
+    return substitute(text, by_label, missing=lambda _label: "（待补充）")
 
 
 def generate_section_narratives(
@@ -223,6 +220,7 @@ def generate_section_narratives(
     manifest: Any | None = None,
     engine: Any | None = None,
     skip_semantic_sections: bool = False,
+    progress_fn: Callable[[dict, int, int], None] | None = None,
 ) -> list[dict]:
     """Report-time: generate prose for each section that carries a 行文 ``prompt``.
 
@@ -268,18 +266,21 @@ def generate_section_narratives(
         "生成该章节的正文内容（自然语言叙述，可含 Markdown 表格）。"
         "仅基于提供的事实，不要编造数据；缺失的数据据实说明。"
     )
-    for sec in template.sections:
+    narrative_sections = [
+        sec for sec in template.sections
+        if getattr(sec, "prompt", None) and str(sec.prompt).strip()
+        and not (
+            skip_semantic_sections
+            and any(
+                getattr(slot.source, "kind", None) == "semantic"
+                for grp in sec.groups
+                for slot in grp.slots
+            )
+        )
+    ]
+    total_sections = len(narrative_sections)
+    for sec in narrative_sections:
         prompt = getattr(sec, "prompt", None)
-        if not prompt or not str(prompt).strip():
-            continue
-        # De-dup with semantic slots (016+): skip a section whose content is already
-        # produced per-slot by generate_semantic_slots (report path only).
-        if skip_semantic_sections and any(
-            getattr(slot.source, "kind", None) == "semantic"
-            for grp in sec.groups
-            for slot in grp.slots
-        ):
-            continue
         # 016+: when the section declares ontology coverage, scope the facts to those
         # relationships — per binding, under its own label — exactly like semantic slots
         # (:func:`generate_semantic_slots`). A section covering several relations (e.g.
@@ -366,11 +367,14 @@ def generate_section_narratives(
         if has_placeholders:
             text = _substitute_placeholders(text, field_values)
         if text and text.strip():
-            results.append({
+            entry = {
                 "section_id": sec.section_id,
                 "title": sec.title,
                 "text": text,
-            })
+            }
+            results.append(entry)
+            if progress_fn:
+                progress_fn(dict(entry), len(results), total_sections)
     return results
 
 
@@ -436,30 +440,39 @@ _SEMANTIC_SLOTS_BATCH_SCHEMA: dict[str, Any] = {
 
 def _extract_entity_context(edges: list[dict]) -> str:
     """Extract key entity references (drug, workshop, equipment) for risk-row context."""
-    from app.services.extraction.equipment_source import iter_equipment_edges
+    from app.services.extraction.equipment_source import (
+        iter_equipment_edges,
+        workshop_from_enrichment,
+        workshop_from_loose_scan,
+    )
 
     drug_name = ""
     for e in edges:
         if "DrugProduct" in (e.get("object_class_iri") or ""):
-            drug_name = e.get("object_text") or e.get("subject_text") or ""
+            drug_name = str(e.get("object_text") or e.get("subject_text") or "")
             break
 
-    _WS_RE = re.compile(r"\b(642|644|646)\b")
     _EQ_WS_RE = re.compile(r"[A-Za-z]{1,3}(642|644|646)\d{2,}")
     eq_codes: list[str] = []
     workshops: set[str] = set()
     for eq in iter_equipment_edges(edges):
-        code = (eq.get("object_text") or "").strip()
+        code = str(eq.get("object_text") or "").strip()
         if code and code not in eq_codes:
             eq_codes.append(code)
-        ref = eq.get("source_ref") or ""
-        m = _WS_RE.search(ref)
-        if m:
-            workshops.add(f"{m.group(1)}车间")
-        elif code:
+        raw_ref = eq.get("source_ref")
+        # 车间归组优先级（与 risk_report_generator._detect_workshop **完全一致**，共享解析器）：
+        # 档案富化权威标签 → 设备编号锚定 → 业务文本兜底扫描。权威解析读 format_source_ref 展示串
+        # （其中含标签文本，且不会把 raw dict 交给 re.search——那正是「got 'dict'」崩溃的原因）；
+        # 兜底扫描传**原始** source_ref，只扫业务文本键、不扫结构坐标（Codex round-3 #1）。
+        ws = workshop_from_enrichment(format_source_ref(raw_ref))
+        if not ws and code:
             m = _EQ_WS_RE.fullmatch(code)
             if m:
-                workshops.add(f"{m.group(1)}车间")
+                ws = f"{m.group(1)}车间"
+        if not ws:
+            ws = workshop_from_loose_scan(raw_ref)
+        if ws:
+            workshops.add(ws)
 
     parts: list[str] = []
     if drug_name:
@@ -770,7 +783,7 @@ def _format_fact_line(edge: dict, depth: int) -> str:
         if label and value:
             line += f" ({label}: {value})"
     if depth > 0 and edge.get("object_source") == "external":
-        src = edge.get("source_ref", "")
+        src = format_source_ref(edge.get("source_ref"))
         if src:
             line += f" 〔{src}〕"
     return line

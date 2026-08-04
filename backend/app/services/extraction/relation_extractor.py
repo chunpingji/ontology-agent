@@ -63,7 +63,6 @@ QUALITY_RISK_IRI = _DEV + "QualityRiskAssessment"
 CLEANING_PROCESS_IRI = _CLEAN + "CleaningProcess"
 RESIDUE_IRI = _DRUG + "Residue"
 SHARED_LINE_IRI = _DEV + "SharedLineAssessmentData"
-HAS_SHARED_LINE_DATA_IRI = _DEV + "hasSharedLineData"  # 谓词（演示兜底合成边用）
 STORAGE_CONDITION_IRI = _DEV + "StorageCondition"
 PRODUCTION_RISK_IRI = _DEV + "ProductionRiskAssessment"
 DEGRADATION_PATHWAY_IRI = _DEV + "DegradationPathway"
@@ -309,25 +308,46 @@ def _classify_by_synonyms(text: str | None, synonyms: dict[str, str], fallback: 
     return fallback
 
 
-def _equipment_endpoint_from_row(ctx: _Ctx, row: dict) -> dict | None:
-    """设备需求表一行 → Equipment 端点；``匹配设备`` 取首选编号（斜杠分隔为备选）。"""
+_EQUIPMENT_CANDIDATE_SEPARATOR_RE = re.compile(r"\s*(?:/|或|、)\s*")
+
+
+def _equipment_endpoints_from_row(ctx: _Ctx, row: dict) -> list[dict]:
+    """设备需求表一行 → 一个或多个候选 Equipment 端点。"""
     match = _row_get(row, "匹配设备")
     if not match:
-        return None
-    code = match.split("/")[0].strip()
-    if not code:
-        return None
+        return []
+    codes = list(dict.fromkeys(
+        code.strip()
+        for code in _EQUIPMENT_CANDIDATE_SEPARATOR_RE.split(match)
+        if code.strip()
+    ))
+    if not codes:
+        return []
     spec = _row_get(row, "设备规格")
     synonyms = ctx.subclass_synonyms(EQUIPMENT_IRI)
     cls_iri = _classify_by_synonyms(spec, synonyms, PROCESS_EQUIPMENT_IRI)
-    props = [
-        _dp(None, "设备规格", spec),
-        _dp(None, "材质", _row_get(row, "材质")),
-        _dp(None, "规格型号", _row_get(row, "规格型号")),
-        _dp(None, "主残留物", _row_get(row, "主残留物")),
-    ]
-    return _endpoint(cls_iri, code, data_properties=props,
-                     source_ref="表 设备需求")
+    candidate_group = "|".join(codes)
+    endpoints: list[dict] = []
+    for code in codes:
+        props = [
+            _dp(None, "设备规格", spec),
+            _dp(None, "材质", _row_get(row, "材质")),
+            _dp(None, "规格型号", _row_get(row, "规格型号")),
+            _dp(None, "主残留物", _row_get(row, "主残留物")),
+        ]
+        if len(codes) > 1:
+            props.extend([
+                _dp(None, "候选设备组", candidate_group),
+                _dp(None, "候选设备原文", match),
+                _dp(None, "设备候选状态", "待 APS 排期确认"),
+            ])
+        endpoints.append(_endpoint(
+            cls_iri,
+            code,
+            data_properties=props,
+            source_ref="表 设备需求",
+        ))
+    return endpoints
 
 
 def find_equipment(ctx: _Ctx) -> list[dict]:
@@ -335,10 +355,10 @@ def find_equipment(ctx: _Ctx) -> list[dict]:
     out: list[dict] = []
     seen: set[str] = set()
     for row in _equipment_rows(ctx):
-        ep = _equipment_endpoint_from_row(ctx, row)
-        if ep and ep["text"] not in seen:
-            seen.add(ep["text"])
-            out.append(ep)
+        for ep in _equipment_endpoints_from_row(ctx, row):
+            if ep["text"] not in seen:
+                seen.add(ep["text"])
+                out.append(ep)
     return out
 
 
@@ -351,10 +371,10 @@ def _step_equipment(ctx: _Ctx, step_name: str) -> list[dict]:
         step_cell = re.sub(r"\s+", "", _row_get(row, "步骤"))
         if not step_cell.startswith(norm):
             continue
-        ep = _equipment_endpoint_from_row(ctx, row)
-        if ep and ep["text"] not in seen:
-            seen.add(ep["text"])
-            subs.append(_sub(USES_EQUIPMENT_IRI, "使用设备", ctx, ep))
+        for ep in _equipment_endpoints_from_row(ctx, row):
+            if ep["text"] not in seen:
+                seen.add(ep["text"])
+                subs.append(_sub(USES_EQUIPMENT_IRI, "使用设备", ctx, ep))
     return subs
 
 
@@ -828,6 +848,12 @@ class _ProfileStrategy(ExtractionStrategy):
                 if value.note:
                     item["note"] = value.note
                 properties.append(item)
+            if candidate.candidate_group:
+                properties.extend([
+                    _dp(None, "候选设备组", candidate.candidate_group),
+                    _dp(None, "候选设备原文", candidate.candidate_expression),
+                    _dp(None, "设备候选状态", "待 APS 排期确认"),
+                ])
             endpoints.append(_endpoint(
                 class_iri,
                 candidate.identifier or profile.label or ctx.class_label(class_iri),
@@ -996,49 +1022,20 @@ def _make_edge(ctx: _Ctx, doc_class: str, subject_label: str, subject_text: str,
     }
 
 
-def _mock_shared_line_edge(ctx: _Ctx, doc_class: str, subject_label: str) -> dict:
-    """演示兜底：CMCReport 未产出共线评估端点时，合成一个最小 mock「共线评估数据」边，
-    携带 mock 原文 PDE 1.8 mg/日，使「推导 vs 原文」冲突场景始终有落点（source 明确标注 mock）。"""
-    ep = _endpoint(
-        SHARED_LINE_IRI,
-        "共线评估数据（mock 演示）",
-        source="mock-derivation-demo",
-        data_properties=[_dp(DP["pde_mg_per_day"], "PDE", "1.8mg（mock 原文值）")],
-        source_ref="§ 共线评估（mock 演示）",
-    )
-    fake_edge = {
-        "predicate_iri": HAS_SHARED_LINE_DATA_IRI,
-        "predicate_label": "共线评估数据",
-    }
-    return _make_edge(ctx, doc_class, subject_label, ctx.drug_code or "",
-                      fake_edge, ep)
+def _attach_pde_conflict(doc_class: str, edges: list[dict]) -> None:
+    """CMCReport：在**每个**「共线评估数据」端点上检测并挂载「推导 vs 原文」PDE 冲突（供人工裁决）。
 
-
-def _attach_pde_conflict(ctx: _Ctx, doc_class: str, subject_label: str,
-                         edges: list[dict]) -> None:
-    """CMCReport：在「共线评估数据」端点上检测并挂载「推导 vs 原文」PDE 冲突（供人工裁决）。
-
-    原文 PDE 取自真实抽取的共线评估端点；推导侧经 mock 毒理研究源 → derive_facts → band 5。
-    缺该端点或端点无原文 PDE 时，合成/补齐 mock 原文 PDE（1.8 mg/日）以复现演示场景。命中冲突
+    原文 PDE 与推导毒理参数均取自**真实抽取**的共线评估端点，种属可从端点标题（object_text）回退；
+    无真实端点或参数不足 → 不产出冲突（不再合成 mock 端点/mock PDE，推导侧亦不回退 mock）。命中冲突
     → 就地写入 ``edge["conflict"]``（就地修改 ``edges``）；异常由调用点 try/except 兜住。
     """
     if doc_class != CMC_REPORT_IRI:
         return
-    shared = next((e for e in edges if e.get("object_class_iri") == SHARED_LINE_IRI), None)
-    if shared is None:
-        shared = _mock_shared_line_edge(ctx, doc_class, subject_label)
-        edges.append(shared)
-
-    dps = list(shared.get("object_data_properties") or [])
-    if not any(str(dp.get("iri") or "").endswith("pde_mg_per_day") for dp in dps):
-        mock_pde = _dp(DP["pde_mg_per_day"], "PDE", "1.8mg（mock 原文值）")
-        if mock_pde:
-            dps.append(mock_pde)
-            shared["object_data_properties"] = dps
-
-    conflict = detect_pde_conflict(dps)
-    if conflict:
-        shared["conflict"] = conflict
+    for shared in [e for e in edges if e.get("object_class_iri") == SHARED_LINE_IRI]:
+        dps = shared.get("object_data_properties") or []
+        conflict = detect_pde_conflict(dps, title=str(shared.get("object_text") or ""))
+        if conflict:
+            shared["conflict"] = conflict
 
 
 def _extract_sub_relationships(
@@ -1177,7 +1174,7 @@ def extract_relationships(
                                     drug_code, schema_edge, ep))
 
     try:
-        _attach_pde_conflict(ctx, doc_class_iri, subject_label, edges)
+        _attach_pde_conflict(doc_class_iri, edges)
     except Exception:
         logger.debug("PDE 冲突检测跳过", exc_info=True)
 

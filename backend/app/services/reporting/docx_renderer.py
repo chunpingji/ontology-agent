@@ -40,6 +40,145 @@ _LLM_END_DISCLAIMER_ZH = (
     "本报告中标注 ⓘ 的内容由 LLM 自动生成或补充，仅供参考，不替代人工审核。"
 )
 
+# 规则文案（风险评估矩阵三列）经前端富文本编辑常以 HTML <br> 承载换行；直接写入 DOCX 单元格
+# 会原样显示字面「<br>」而非换行。python-docx 的 run.text setter 会把 \n 转成 Word 软换行
+# (<w:br/>)，故渲染前把 <br>/<br/>/<br /> (含大小写与内部空白) 归一为 \n。对纯 \n 文案幂等。
+_BR_RE = re.compile(r"<\s*br\s*/?\s*>", re.IGNORECASE)
+
+
+def _cell_text(text: str | None) -> str:
+    """把单元格文案里的 HTML 换行标记 ``<br>`` 归一为 ``\\n``（Word 软换行）；``None`` → ``""``。"""
+    return _BR_RE.sub("\n", text) if text else ""
+
+
+def _display_value(value: object) -> str:
+    """Render an audit value without leaking Python's ``None`` into the report."""
+    return "—" if value is None or value == "" else str(value)
+
+
+def _pde_value_text(side: dict) -> str:
+    """Compact, unit-explicit PDE/OEB text for one side of a conflict."""
+    mg = side.get("pde_mg_day")
+    ug = side.get("pde_ug_day")
+    if mg is None and ug is not None:
+        try:
+            mg = round(float(ug) / 1000.0, 6)
+        except (TypeError, ValueError):
+            pass
+    return (
+        f"PDE {_display_value(mg)} mg/日"
+        f"（{_display_value(ug)} µg/日）；"
+        f"OEB band {_display_value(side.get('band'))}"
+    )
+
+
+def _provenance_text(derived: dict) -> str:
+    """Render the deterministic derivation basis as a compact audit trail."""
+    provenance = derived.get("provenance") or {}
+    parts: list[str] = []
+    method = provenance.get("method") or {}
+    if method.get("id") or method.get("version"):
+        parts.append(
+            f"方法：{_display_value(method.get('id'))} "
+            f"v{_display_value(method.get('version'))}"
+        )
+    if provenance.get("formula"):
+        parts.append(f"公式：{provenance['formula']}")
+    inputs = provenance.get("inputs") or {}
+    if inputs:
+        input_labels = {
+            "noael_mg_kg_day": "NOAEL(mg/kg/日)",
+            "species": "种属",
+            "study_duration_days": "研究周期(日)",
+            "noael_is_loael": "是否 LOAEL",
+            "genotoxic": "遗传毒性",
+            "carcinogenic": "致癌性",
+            "reproductive_toxicant": "生殖毒性",
+        }
+        rendered = [
+            f"{input_labels[key]}={_display_value(inputs.get(key))}"
+            for key in input_labels
+            if key in inputs
+        ]
+        if rendered:
+            parts.append("输入：" + "；".join(rendered))
+    factors = provenance.get("factors") or {}
+    if factors:
+        parts.append(
+            "因子：" + "；".join(
+                f"{key}={_display_value(value)}" for key, value in factors.items()
+            )
+        )
+    method_ref = method.get("regulation_ref")
+    if method_ref:
+        parts.append(f"依据：{method_ref}")
+    return "\n".join(parts) or "—"
+
+
+def _render_pde_conflicts(doc: Document, report: RiskReport) -> None:
+    """Render asserted/derived PDE values and the immutable decision snapshot."""
+    if not report.pde_conflicts:
+        return
+
+    doc.add_heading("PDE/OEB 潜能等级冲突及裁决", level=2)
+    for index, conflict in enumerate(report.pde_conflicts, start=1):
+        if len(report.pde_conflicts) > 1:
+            doc.add_heading(f"冲突 {index}", level=3)
+
+        asserted = conflict.get("asserted") or {}
+        derived = conflict.get("derived") or {}
+        decision = conflict.get("decision") or {}
+        effective = conflict.get("effective")
+        pending = not effective
+
+        notice = doc.add_paragraph()
+        if pending:
+            run = notice.add_run(
+                f"{_WARN_GLYPH} 待人工裁决：本项结论为待评估，不得视为全部风险可以接受。"
+            )
+            run.bold = True
+            run.font.color.rgb = _WARN_COLOR
+        else:
+            notice.add_run(
+                f"已完成人工裁决：本次报告采用{effective.get('source_label') or '已选'}数据，"
+                "同时保留原文与推导数据。"
+            )
+
+        rows: list[tuple[str, str]] = [
+            ("冲突摘要", _display_value(conflict.get("summary"))),
+            ("原文断言", _pde_value_text(asserted)),
+            ("确定性推导", _pde_value_text(derived)),
+            (
+                "差异程度",
+                f"潜能等级相差 {_display_value(conflict.get('delta_bands'))} 档；"
+                f"PDE 比值 {_display_value(conflict.get('pde_ratio'))}",
+            ),
+            (
+                "裁决状态",
+                "待裁决" if pending else f"已裁决（采纳{effective.get('source_label') or '已选'}值）",
+            ),
+            ("本报告有效值", "—（待裁决）" if pending else _pde_value_text(effective)),
+            ("裁决人", _display_value(decision.get("actor"))),
+            ("裁决时间", _display_value(decision.get("decided_at"))),
+            ("裁决备注", _display_value(decision.get("note"))),
+            ("推导依据与溯源", _provenance_text(derived)),
+        ]
+        table = doc.add_table(rows=0, cols=2)
+        table.style = "Table Grid"
+        table.alignment = WD_TABLE_ALIGNMENT.CENTER
+        for label, value in rows:
+            cells = table.add_row().cells
+            cells[0].text = label
+            cells[1].text = value
+            for run in cells[0].paragraphs[0].runs:
+                run.bold = True
+            if pending and label == "裁决状态":
+                for paragraph in cells[1].paragraphs:
+                    for run in paragraph.runs:
+                        run.bold = True
+                        run.font.color.rgb = _WARN_COLOR
+        doc.add_paragraph()
+
 
 def _clear_body(doc: Document) -> None:
     """Remove body content while preserving ALL section properties (page size/orientation/
@@ -264,6 +403,10 @@ def render_risk_report(
         _add_page_header(doc, report, manifest)
         _add_header(doc, report)
         _add_coverage_banner(doc, manifest)
+
+    # Report-level deterministic audit block: intentionally outside the AST walk so
+    # template-driven, sample-DOCX, and legacy fallback output all retain the conflict.
+    _render_pde_conflicts(doc, report)
 
     if template is not None and getattr(template, "sections", None):
         _render_template_sections(doc, report, manifest, template)
@@ -494,7 +637,6 @@ def _render_equipment_tables(doc: Document, report: RiskReport) -> None:
     ``equipment_table`` group and the legacy skeleton)."""
     if not report.equipment_tables:
         doc.add_paragraph("（待补充）")
-        return
     for workshop, entries in report.equipment_tables.items():
         doc.add_paragraph(f"● {workshop}", style="List Bullet")
         t = doc.add_table(rows=1, cols=5)
@@ -514,7 +656,13 @@ def _render_equipment_tables(doc: Document, report: RiskReport) -> None:
             row[3].text = e.spec
             row[4].text = e.material
     for note in report.equipment_notes:
-        doc.add_paragraph(f"注: {note}", style="List Bullet")
+        if note.startswith("APS排期冲突"):
+            paragraph = doc.add_paragraph(style="List Bullet")
+            run = paragraph.add_run(f"{_WARN_GLYPH} {note}")
+            run.bold = True
+            run.font.color.rgb = _WARN_COLOR
+        else:
+            doc.add_paragraph(f"注: {note}", style="List Bullet")
 
 
 # --------------------------------------------------------------------------- #
@@ -846,7 +994,7 @@ def _render_assessment_matrix(doc: Document, report: RiskReport) -> None:
             row_data.control_measures, row_data.traceability, row_data.status,
         ]
         for i, val in enumerate(vals):
-            row[i].text = val
+            row[i].text = _cell_text(val)  # <br> → Word 软换行
             pending = bool(val) and val.startswith(_WARN_GLYPH)
             for p in row[i].paragraphs:
                 for run in p.runs:

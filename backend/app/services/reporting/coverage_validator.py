@@ -38,6 +38,7 @@ from app.services.reporting.ast_template import (
     Slot,
     coverage_key,
 )
+from app.services.reporting.source_ref import format_source_ref
 
 # Status constants
 FILLED = "filled"
@@ -170,7 +171,7 @@ def _collect_equipment_edges(edges: Sequence[dict]) -> list[dict]:
     seen: set[str] = set()
     out: list[dict] = []
     for edge in iter_equipment_edges(edges):
-        code = (edge.get("object_text") or "").strip()
+        code = str(edge.get("object_text") or "").strip()
         key = code or f"__anon__{id(edge)}"
         if key not in seen:
             seen.add(key)
@@ -190,7 +191,7 @@ def _resolve_extraction(slot: Slot, edges: Sequence[dict]) -> SlotCoverage:
                 and src.object_class_iri_contains in e.get("object_class_iri", "")
             ):
                 value = "存在"
-                source_ref = e.get("source_ref")
+                source_ref = format_source_ref(e.get("source_ref")) or None
                 break
     else:
         matching = _matching_edges(edges, src.object_class_iri_contains)
@@ -198,7 +199,8 @@ def _resolve_extraction(slot: Slot, edges: Sequence[dict]) -> SlotCoverage:
             for e in matching:
                 t = e.get("object_text")
                 if t:
-                    value, source_ref = str(t), e.get("source_ref")
+                    value = str(t)
+                    source_ref = format_source_ref(e.get("source_ref")) or None
                     break
         else:  # data_property or label
             for e in matching:
@@ -212,7 +214,8 @@ def _resolve_extraction(slot: Slot, edges: Sequence[dict]) -> SlotCoverage:
                         and _short(dp["iri"]) == src.data_property
                     ) or (src.label and dp.get("label") == src.label)
                     if hit:
-                        value, source_ref = str(val), e.get("source_ref")
+                        value = str(val)
+                        source_ref = format_source_ref(e.get("source_ref")) or None
                         break
                 if value is not None:
                     break

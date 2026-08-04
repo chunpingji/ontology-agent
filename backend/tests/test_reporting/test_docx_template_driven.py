@@ -22,7 +22,7 @@ from app.services.reporting.coverage_validator import (
     CoverageManifest,
     SlotCoverage,
 )
-from app.services.reporting.docx_renderer import render_risk_report
+from app.services.reporting.docx_renderer import _render_equipment_tables, render_risk_report
 from app.services.reporting.risk_report_generator import (
     EquipmentEntry,
     RiskReport,
@@ -30,6 +30,25 @@ from app.services.reporting.risk_report_generator import (
 )
 
 _TEAM_SLOT_ID = "grp_team.members"
+
+
+def test_aps_equipment_warning_uses_icon_and_red_text_without_equipment_rows():
+    doc = Document()
+    report = RiskReport(
+        equipment_notes=["APS排期冲突：候选设备 PF64216、PF64616 均无可用排期。"]
+    )
+
+    _render_equipment_tables(doc, report)
+
+    warning_run = next(
+        run
+        for paragraph in doc.paragraphs
+        for run in paragraph.runs
+        if "APS排期冲突" in run.text
+    )
+    assert warning_run.text.startswith("⚠ APS排期冲突")
+    assert warning_run.bold is True
+    assert str(warning_run.font.color.rgb) == "C00000"
 
 _TEMPLATE_DICT = {
     "template_id": "tpl-test",

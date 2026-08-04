@@ -22,8 +22,10 @@ logger = logging.getLogger(__name__)
 DRUG_PRODUCT_IRI = "https://ontology.pharma-gmp.cn/slpra/drug/DrugProduct"
 
 
-def _short_name(iri: str) -> str:
+def _short_name(iri: str | None) -> str:
     """Strip namespace prefix, keeping the local name (after last ``/`` or ``#``)."""
+    if not iri:
+        return ""
     for sep in ("#", "/"):
         idx = iri.rfind(sep)
         if idx >= 0:
@@ -128,15 +130,16 @@ def edges_to_facts(edges: list[dict], engine: Any = None) -> Facts:
         return align_cache[obj_class]
 
     for edge in edges:
-        pred_short = _short_name(edge["predicate_iri"])
-        obj_class = edge.get("object_class_iri", "")
+        pred_short = _short_name(edge.get("predicate_iri"))
+        obj_class = edge.get("object_class_iri") or ""
 
-        relations.setdefault(pred_short, [])
-        if obj_class and obj_class not in relations[pred_short]:
-            relations[pred_short].append(obj_class)
+        if pred_short:
+            relations.setdefault(pred_short, [])
+            if obj_class and obj_class not in relations[pred_short]:
+                relations[pred_short].append(obj_class)
 
         # External-standard alignments (FR-014) → Facts.alignments[predicate].
-        for align_iri in _class_alignments(obj_class):
+        for align_iri in _class_alignments(obj_class) if pred_short else []:
             bucket = alignments.setdefault(pred_short, [])
             if align_iri not in bucket:
                 bucket.append(align_iri)

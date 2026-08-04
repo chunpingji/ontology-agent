@@ -26,6 +26,9 @@ _NUMBERING_RE = re.compile(
 )
 _TRAILING_UNIT_RE = re.compile(r"\s*[（(][^）)]*[）)]\s*$")
 _KV_RE = re.compile(r"^\s*([^：:]{1,80})[：:]\s*(.*)$")
+_EQUIPMENT_ID_ALIASES = {"设备编号", "匹配设备"}
+_EQUIPMENT_CANDIDATE_SEPARATOR_RE = re.compile(r"\s*(?:/|或|、)\s*")
+_EQUIPMENT_CODE_RE = re.compile(r"^PF\d+$", re.IGNORECASE)
 
 
 @dataclass(frozen=True)
@@ -93,6 +96,8 @@ class DocumentCandidate:
     source_ref: dict
     notes: list[str] = field(default_factory=list)
     subclass_value: str | None = None
+    candidate_group: str | None = None
+    candidate_expression: str | None = None
 
     @property
     def extracted_properties(self) -> dict[str, Any]:
@@ -391,6 +396,91 @@ def _matches(source: str, alias: str) -> bool:
     ))
 
 
+def _match_quality(
+    header_norm: str, alias_norm: str
+) -> tuple[int, int] | None:
+    """Score a header↔alias match: (tier, specificity). Higher = better.
+
+    Tier 3 = exact, 2 = forward (alias ⊂ header), 1 = reverse (header ⊂ alias).
+    Specificity = normalized string length (longer = more specific).
+    Returns None on no match.
+    """
+    if not header_norm or not alias_norm:
+        return None
+    if header_norm == alias_norm:
+        return (3, len(alias_norm))
+    if alias_norm in header_norm:
+        return (2, len(alias_norm))
+    if header_norm in alias_norm:
+        return (1, len(header_norm))
+    return None
+
+
+def _assign_columns(
+    headers: list[str],
+    bindings: list[DocumentPropertyBinding],
+) -> dict[int, str]:
+    """Compute a mutually-exclusive binding→column assignment for a table.
+
+    Each column is assigned to at most one binding and vice-versa.  Candidates
+    are ranked by ``_match_quality`` and assigned greedily by tier (exact first,
+    then forward, then reverse).  Ties within the same tier are broken by
+    specificity (longer normalized string wins); truly tied candidates are
+    skipped (abstain — prefer missing data over fabricated data).
+    """
+    header_norms = [normalize_source_key(h) for h in headers]
+    candidates: list[tuple[tuple[int, int], int, str]] = []
+    for b_idx, binding in enumerate(bindings):
+        best_per_col: dict[int, tuple[tuple[int, int], str]] = {}
+        for alias in binding.aliases:
+            alias_norm = normalize_source_key(alias)
+            for c_idx, h_norm in enumerate(header_norms):
+                q = _match_quality(h_norm, alias_norm)
+                if q is None:
+                    continue
+                prev = best_per_col.get(c_idx)
+                if prev is None or q > prev[0]:
+                    best_per_col[c_idx] = (q, headers[c_idx])
+        for c_idx, (score, header) in best_per_col.items():
+            candidates.append((score, b_idx, header))
+
+    candidates.sort(key=lambda c: c[0], reverse=True)
+
+    binding_best: dict[int, tuple[int, int]] = {}
+    for score, b_idx, _header in candidates:
+        if b_idx not in binding_best or score > binding_best[b_idx]:
+            binding_best[b_idx] = score
+
+    used_cols: set[str] = set()
+    used_bindings: set[int] = set()
+    abstained: set[int] = set()
+    assignment: dict[int, str] = {}
+    for score, b_idx, header in candidates:
+        if b_idx in used_bindings or b_idx in abstained or header in used_cols:
+            continue
+        if score < binding_best[b_idx]:
+            abstained.add(b_idx)
+            continue
+        avail_cols = [
+            c for c in candidates
+            if c[1] == b_idx and c[0] == score and c[2] not in used_cols
+        ]
+        if len(avail_cols) > 1:
+            abstained.add(b_idx)
+            continue
+        rival_bindings = [
+            c for c in candidates
+            if c[2] == header and c[0] == score
+            and c[1] not in used_bindings and c[1] not in abstained
+        ]
+        if len(rival_bindings) > 1:
+            continue
+        assignment[b_idx] = header
+        used_bindings.add(b_idx)
+        used_cols.add(header)
+    return assignment
+
+
 def _matching_key(mapping: dict[str, str], aliases: tuple[str, ...]) -> str | None:
     for alias in aliases:
         for key, value in mapping.items():
@@ -403,10 +493,24 @@ def _binding_for_key(
     key: str,
     bindings: list[DocumentPropertyBinding],
 ) -> DocumentPropertyBinding | None:
+    """Return the single most-specific binding for *key*; abstain on ties."""
+    key_norm = normalize_source_key(key)
+    best_binding: DocumentPropertyBinding | None = None
+    best_score: tuple[int, int] | None = None
+    tied = False
     for binding in bindings:
-        if any(_matches(key, alias) for alias in binding.aliases):
-            return binding
-    return None
+        for alias in binding.aliases:
+            alias_norm = normalize_source_key(alias)
+            q = _match_quality(key_norm, alias_norm)
+            if q is None:
+                continue
+            if best_score is None or q > best_score:
+                best_score = q
+                best_binding = binding
+                tied = False
+            elif q == best_score and binding is not best_binding:
+                tied = True
+    return None if tied else best_binding
 
 
 def _headers_match(table: DocTable, groups: tuple[tuple[str, ...], ...]) -> bool:
@@ -533,6 +637,47 @@ def _candidate_identity(
     )
 
 
+def _equipment_candidate_variants(
+    raw: dict[str, str],
+    values: list[DocumentValue],
+    identity: IdentityProfile,
+    bindings: list[DocumentPropertyBinding],
+) -> list[tuple[str, list[DocumentValue], str, str]]:
+    """Expand a device choice expression into independently resolvable candidates."""
+    if not _EQUIPMENT_ID_ALIASES.intersection(identity.aliases):
+        return []
+    key = _matching_key(raw, identity.aliases)
+    if not key:
+        return []
+    expression = str(raw[key]).strip()
+    codes = list(dict.fromkeys(
+        part.strip().upper()
+        for part in _EQUIPMENT_CANDIDATE_SEPARATOR_RE.split(expression)
+        if part.strip()
+    ))
+    if len(codes) < 2 or not all(_EQUIPMENT_CODE_RE.fullmatch(code) for code in codes):
+        return []
+    group = "|".join(codes)
+    identifier_iris = {
+        binding.property_iri for binding in bindings if binding.is_identifier
+    }
+    variants = []
+    for code in codes:
+        candidate_values = [
+            DocumentValue(
+                property_iri=value.property_iri,
+                label=value.label,
+                value=code if value.property_iri in identifier_iris else value.value,
+                raw_value=value.raw_value,
+                source_ref=value.source_ref,
+                note=value.note,
+            )
+            for value in values
+        ]
+        variants.append((code, candidate_values, group, expression))
+    return variants
+
+
 def _subclass_value(
     profile: DocumentExtractionProfile,
     values: list[DocumentValue],
@@ -656,14 +801,15 @@ def _read_table_rows(
     for table in structure.tables:
         if not _headers_match(table, source.header_groups):
             continue
+        col_assignment = _assign_columns(table.headers, bindings)
         for row_pos, row in enumerate(table.rows):
             if not any(value not in (None, "") for value in row.values()):
                 continue
             values: list[DocumentValue] = []
             notes: list[str] = []
-            for binding in bindings:
-                key = _matching_key(row, binding.aliases)
-                if key is None:
+            for b_idx, binding in enumerate(bindings):
+                key = col_assignment.get(b_idx)
+                if key is None or row.get(key) in (None, ""):
                     continue
                 source_ref = _table_cell_ref(table, row_pos, key)
                 value, note = _transform_value(
@@ -674,15 +820,19 @@ def _read_table_rows(
                     values.append(value)
                 if note:
                     notes.append(note)
-            identifier = _candidate_identity(
-                structure, row, values, identity, bindings, fallback
-            )
-            candidates.append(DocumentCandidate(
-                target_class_iri=target_class_iri,
-                values=values,
-                identifier=identifier,
-                group_key=identifier,
-                source_ref={
+            variants = _equipment_candidate_variants(row, values, identity, bindings)
+            if not variants:
+                identifier = _candidate_identity(
+                    structure, row, values, identity, bindings, fallback
+                )
+                variants = [(identifier, values, None, None)]
+            for identifier, candidate_values, candidate_group, expression in variants:
+                candidates.append(DocumentCandidate(
+                    target_class_iri=target_class_iri,
+                    values=candidate_values,
+                    identifier=identifier,
+                    group_key=identifier,
+                    source_ref={
                     "kind": "table_row",
                     "table": table.table_index,
                     "row": (
@@ -690,10 +840,12 @@ def _read_table_rows(
                         if row_pos < len(table.row_indices)
                         else table.header_row_count + row_pos
                     ),
-                },
-                notes=notes,
-                subclass_value=_subclass_value(profile, values),
-            ))
+                    },
+                    notes=notes,
+                    subclass_value=_subclass_value(profile, candidate_values),
+                    candidate_group=candidate_group,
+                    candidate_expression=expression,
+                ))
     return candidates
 
 

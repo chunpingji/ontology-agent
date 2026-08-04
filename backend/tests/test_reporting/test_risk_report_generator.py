@@ -176,8 +176,66 @@ class TestRiskReportGenerator:
         assert "未分组" not in report.equipment_tables
         assert report.equipment_notes == []
 
+    def test_detect_workshop_tag_beats_spurious_coordinate(self, db):
+        # Codex round-2 #3: cover the _detect_workshop path directly (the narrative path
+        # already had this regression test). A 017-profile dict whose 1-based coordinate
+        # renders "表 642" (table=641) AND carries the authoritative archive tag
+        # (workshop=646车间) must group by the tag, never the spurious coordinate digit.
+        gen = RiskReportGenerator(db)
+        edge = {
+            "object_text": "MX-01",  # code carries no workshop digits
+            "source_ref": {
+                "kind": "table_cell", "table": 641, "header": "设备编号",
+                "enrichment": "外部设备档案（record=MX-01；workshop=646车间）",
+            },
+        }
+        assert gen._detect_workshop(edge, {}) == "646车间"
+
+    def test_detect_workshop_unenriched_coordinate_is_ungrouped(self, db):
+        # Codex round-3 #1: an unenriched 017-dict whose structural coordinate renders as
+        # "表 642" (table=641) with NO archive tag and NO workshop code must go to 未分组.
+        # Before the structure-aware loose scan, the formatted "表 642 · …" would be
+        # scanned and silently fabricate a 642车间 grouping, suppressing the 人工确认 note.
+        gen = RiskReportGenerator(db)
+        edge = {
+            "object_text": "MX-01",
+            "source_ref": {
+                "kind": "table_cell", "table": 641, "row": 0, "column": 1, "header": "设备编号",
+            },
+        }
+        assert gen._detect_workshop(edge, {}) == "未分组"
+
 
 class TestGenerateWithCoverage:
+    def test_assessment_progress_uses_pipeline_substeps(self, db):
+        _make_risk_rule(
+            db,
+            key="R-RA-EQ",
+            category="生产设备",
+            risk_level="HighRisk",
+            postconditions={"equipment_qualified": True},
+        )
+        snapshots: list[list[dict[str, str | None]]] = []
+
+        RiskReportGenerator(db).generate_with_coverage(
+            [_shared_line_edge(), _equipment_edge("RE001")],
+            assessment_progress_fn=snapshots.append,
+        )
+
+        assert [(step["key"], step["label"]) for step in snapshots[0]] == [
+            ("facts", "构建评估事实"),
+            ("rules", "执行风险规则"),
+            ("coverage", "校验信息完整性"),
+            ("narratives", "生成章节行文"),
+        ]
+        assert all(step["status"] == "pending" for step in snapshots[0])
+        assert any(snapshot[0]["status"] == "running" for snapshot in snapshots)
+        assert all(step["status"] == "completed" for step in snapshots[-1])
+        assert snapshots[-1][0]["result"].endswith(" 条关系事实")
+        assert snapshots[-1][1]["result"] == "1 项 · 结果可接受"
+        assert " 项 · " in snapshots[-1][2]["result"]
+        assert snapshots[-1][3]["result"] == "无待生成章节"
+
     def test_returns_report_and_manifest(self, db):
         _make_risk_rule(db, key="R-RA-EQ", category="生产设备", risk_level="HighRisk")
         edges = [_drug_product_edge(), _shared_line_edge(), _equipment_edge("RE001")]

@@ -11,9 +11,9 @@
 """
 
 import uuid
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 
-from sqlalchemy import JSON, DateTime, String, Text, UniqueConstraint
+from sqlalchemy import JSON, Date, DateTime, String, Text, UniqueConstraint
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -67,6 +67,28 @@ class MockEquipment(Base):
     data_properties: Mapped[list] = mapped_column(JSON, default=list)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now, onupdate=_now)
+
+
+class MockEquipmentScheduleOverride(Base):
+    """设备某一天的产品占用人工覆盖。"""
+
+    __tablename__ = "mock_equipment_schedule_overrides"
+    __table_args__ = (
+        UniqueConstraint(
+            "equipment_id",
+            "schedule_date",
+            name="uq_mock_schedule_equipment_date",
+        ),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
+    equipment_id: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
+    schedule_date: Mapped[date] = mapped_column(Date, nullable=False)
+    product_code: Mapped[str] = mapped_column(String(50), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_now, onupdate=_now
+    )
 
 
 class MockProductionArea(Base):

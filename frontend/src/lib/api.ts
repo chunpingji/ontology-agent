@@ -1054,10 +1054,11 @@ export async function resumeAnnotation(jobId: string): Promise<void> {
 }
 
 export async function rerunAnnotation(jobId: string): Promise<void> {
-  await fetch(`${API_BASE}/api/extraction/jobs/${jobId}/annotation/rerun`, {
+  const response = await fetch(`${API_BASE}/api/extraction/jobs/${jobId}/annotation/rerun`, {
     method: "POST",
     headers: identityHeaders(),
   });
+  if (!response.ok) throw new Error(`API ${response.status}: ${await response.text()}`);
 }
 
 // Types
@@ -2669,6 +2670,32 @@ export interface MockEquipment {
   data_properties: Array<{ iri: string | null; label: string; value: string }>;
 }
 
+export interface MockEquipmentSchedule {
+  id: string;
+  task_id: string;
+  task_name: string;
+  activity_type: "production" | "cleaning" | "setup" | "maintenance";
+  status: "scheduled" | "running" | "completed" | "paused" | "cancelled";
+  priority: "low" | "normal" | "high" | "urgent";
+  product_id: string | null;
+  product_code: string | null;
+  product_name: string | null;
+  batch_no: string | null;
+  planned_quantity: number | null;
+  quantity_unit: string | null;
+  equipment_id: string;
+  equipment_name: string;
+  workshop_code: string;
+  start_at: string;
+  end_at: string;
+  actual_start_at: string | null;
+  actual_end_at: string | null;
+  process_step: string | null;
+  operator_team: string | null;
+  progress: number;
+  remark: string | null;
+}
+
 export interface MockProductionArea {
   id?: string;
   code: string;
@@ -2758,6 +2785,37 @@ export async function deleteMockRole(id: string): Promise<void> {
 
 export async function listMockEquipment(): Promise<MockEquipment[]> {
   const r = await fetch(`${API_BASE}/api/mock-sources/equipment`, { headers: identityHeaders() });
+  if (!r.ok) throw new Error(await r.text());
+  return r.json();
+}
+
+export async function listMockEquipmentSchedules(
+  equipmentId: string,
+  startDate: string,
+  endDate: string,
+): Promise<MockEquipmentSchedule[]> {
+  const params = new URLSearchParams({
+    equipment_id: equipmentId,
+    start_date: startDate,
+    end_date: endDate,
+  });
+  const r = await fetch(`${API_BASE}/api/mock-sources/equipment-schedules?${params}`, {
+    headers: identityHeaders(),
+  });
+  if (!r.ok) throw new Error(await r.text());
+  return r.json();
+}
+
+export async function updateMockEquipmentScheduleOccupancy(input: {
+  equipment_id: string;
+  schedule_date: string;
+  product_code: "HRS-5678" | "HRS-1597";
+}): Promise<{ id: string; equipment_id: string; schedule_date: string; product_code: string }> {
+  const r = await fetch(`${API_BASE}/api/mock-sources/equipment-schedules/occupancy`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json", ...identityHeaders() },
+    body: JSON.stringify(input),
+  });
   if (!r.ok) throw new Error(await r.text());
   return r.json();
 }

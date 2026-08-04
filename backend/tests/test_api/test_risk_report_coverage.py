@@ -10,6 +10,9 @@ missing required material can never silently disappear from a generated report.
 from __future__ import annotations
 
 import json
+from io import BytesIO
+
+from docx import Document
 
 from app.models.extraction import ExtractionJob, GeneratedReport
 from app.models.ontology_meta import OntologyDecisionRule
@@ -39,6 +42,25 @@ def _shared_line_edge() -> dict:
         "object_text": "共线评估",
         "object_data_properties": [],
         "source_ref": "§ 共线评估",
+    }
+
+
+def _pde_conflict() -> dict:
+    return {
+        "conflict_key": "shared_line_pde",
+        "asserted": {"pde_mg_day": 1.8, "pde_ug_day": 1800.0, "band": 2},
+        "derived": {
+            "band": 5,
+            "pde_ug_day": 50.0,
+            "input_source": "extracted",
+            "provenance": {
+                "method": {"id": "ADE-OEB/test", "version": "1.0"},
+                "formula": "PDE = NOAEL·BW / (F1·F2·F3·F4·F5)",
+            },
+        },
+        "delta_bands": 3,
+        "pde_ratio": 36.0,
+        "summary": "推导 OEB band 5 与原文 band 2 不一致。",
     }
 
 
@@ -160,3 +182,63 @@ def test_audit_chain_stays_valid_after_report(client, db, analyst_headers, monke
     r = client.post(f"/api/extraction/jobs/{job.id}/risk-report", headers=analyst_headers)
     assert r.status_code == 200, r.text
     assert audit.verify(db)["ok"] is True
+
+
+def test_report_persists_and_renders_pde_conflict_decision(
+    client, db, analyst_headers, monkeypatch, tmp_path,
+):
+    """The generated artifact pins the human decision while retaining both values."""
+    monkeypatch.chdir(tmp_path)
+    shared_line = _shared_line_edge()
+    shared_line["conflict"] = _pde_conflict()
+    job = _seed_job(db, [_drug_edge(), shared_line, _equipment_edge()], tmp_path)
+
+    decided = client.post(
+        f"/api/extraction/jobs/{job.id}/pde-conflict/decision",
+        headers=analyst_headers,
+        json={
+            "chosen": "derived",
+            "note": "已核对毒理试验原始记录",
+            "expected_version": 0,
+        },
+    )
+    assert decided.status_code == 200, decided.text
+
+    response = client.post(
+        f"/api/extraction/jobs/{job.id}/risk-report", headers=analyst_headers,
+    )
+    assert response.status_code == 200, response.text
+
+    generated = db.query(GeneratedReport).filter(GeneratedReport.job_id == job.id).one()
+    progress = generated.rules_summary["_progress"]
+    assert progress["stage"] == "completed"
+    assert progress["percent"] == 100
+    assert [(step["key"], step["status"]) for step in progress["substeps"]] == [
+        ("facts", "completed"),
+        ("rules", "completed"),
+        ("coverage", "completed"),
+        ("narratives", "completed"),
+    ]
+    conflicts = generated.rules_summary["pde_conflicts"]
+    assert len(conflicts) == 1
+    assert conflicts[0]["asserted"]["pde_mg_day"] == 1.8
+    assert conflicts[0]["derived"]["pde_ug_day"] == 50.0
+    assert conflicts[0]["effective"]["source"] == "derived"
+    assert conflicts[0]["decision"]["actor"] == "analyst"
+    assert conflicts[0]["decision"]["note"] == "已核对毒理试验原始记录"
+
+    doc = Document(BytesIO(response.content))
+    text = "\n".join(
+        [paragraph.text for paragraph in doc.paragraphs]
+        + [
+            cell.text
+            for table in doc.tables
+            for row in table.rows
+            for cell in row.cells
+        ]
+    )
+    assert "PDE/OEB 潜能等级冲突及裁决" in text
+    assert "已裁决（采纳推导值）" in text
+    assert "原文断言" in text and "确定性推导" in text
+    assert "analyst" in text
+    assert "已核对毒理试验原始记录" in text

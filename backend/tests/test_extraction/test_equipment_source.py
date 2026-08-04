@@ -9,10 +9,26 @@ from __future__ import annotations
 from app.services.extraction.equipment_source import (
     EquipmentFact,
     MockEquipmentSource,
+    enrich_equipment_facts,
     get_equipment_source,
+    workshop_from_enrichment,
+    workshop_from_loose_scan,
 )
 
 _EQUIP_NS = "https://ontology.pharma-gmp.cn/slpra/equipment/"
+
+_USES_EQUIP = _EQUIP_NS + "usesEquipment"
+_EQUIP_CLASS = _EQUIP_NS + "Equipment"
+
+
+def _equip_edge(code: str, source_ref):
+    return {
+        "predicate_iri": _USES_EQUIP,
+        "object_class_iri": _EQUIP_CLASS,
+        "object_text": code,
+        "object_data_properties": [],
+        "source_ref": source_ref,
+    }
 
 
 # --- resolve by equipment ID ------------------------------------------------
@@ -196,6 +212,131 @@ def test_all_iris_unique():
     all_items = source.list_by_workshop("642") + source.list_by_workshop("646")
     iris = [f.iri for f in all_items]
     assert len(iris) == len(set(iris))
+
+
+# --- enrich_equipment_facts: dual-shaped source_ref -------------------------
+
+def test_enrich_preserves_structured_dict_source_ref():
+    # 017-profile edges carry a STRUCTURED dict source_ref (frontend anchors on it).
+    # Enrichment must NOT flatten it to a string — the archive/workshop tag goes into
+    # the dict's ``enrichment`` key, leaving the positional locator intact.
+    edge = _equip_edge("CT64201", {
+        "kind": "table_cell", "table": 2, "row": 0, "column": 1, "header": "设备编号",
+    })
+    enrich_equipment_facts([edge])
+    sr = edge["source_ref"]
+    assert isinstance(sr, dict)  # NOT overwritten by a string
+    assert sr["kind"] == "table_cell" and sr["header"] == "设备编号"
+    assert "外部设备档案" in sr["enrichment"] and "642车间" in sr["enrichment"]
+    assert edge["object_source"] == "external"
+
+
+def test_enrich_legacy_string_source_ref_appends_tag():
+    edge = _equip_edge("CT64201", "表 设备需求")
+    enrich_equipment_facts([edge])
+    assert isinstance(edge["source_ref"], str)
+    assert edge["source_ref"].startswith("表 设备需求 + ")
+    assert "外部设备档案" in edge["source_ref"]
+
+
+def test_enrich_is_idempotent_for_both_shapes():
+    # Report-time re-enrichment (over an already-enriched cache) must not re-append
+    # the tag or re-fill properties — the idempotency guard reads the tag through
+    # either shape.
+    for source_ref in (
+        {"kind": "table_cell", "table": 2, "row": 0, "column": 1, "header": "设备编号"},
+        "表 设备需求",
+    ):
+        edge = _equip_edge("CT64201", source_ref)
+        enrich_equipment_facts([edge])
+        after_first = {
+            "props": len(edge["object_data_properties"]),
+            "source_ref": dict(edge["source_ref"]) if isinstance(edge["source_ref"], dict)
+            else edge["source_ref"],
+        }
+        enrich_equipment_facts([edge])
+        assert len(edge["object_data_properties"]) == after_first["props"]
+        current = (
+            dict(edge["source_ref"]) if isinstance(edge["source_ref"], dict)
+            else edge["source_ref"]
+        )
+        assert current == after_first["source_ref"]
+
+
+# --- workshop_from_enrichment: authoritative archive tag parse --------------
+
+def test_workshop_from_enrichment_parses_tag_from_either_shape():
+    # The report-time formatter renders the archive tag differently per shape, but the
+    # ``workshop=<码>车间`` literal survives both — dict → after " · ", legacy → after " + ".
+    assert workshop_from_enrichment(
+        "表 4 · 外部设备档案（record=CT64201；workshop=642车间）"
+    ) == "642车间"
+    assert workshop_from_enrichment(
+        "表 设备需求 + 外部设备档案（record=RE64202；workshop=646车间）"
+    ) == "646车间"
+
+
+def test_workshop_from_enrichment_ignores_non_tag_digits():
+    # A structural coordinate digit ("表 642") is NOT an archive tag — the ``workshop=``
+    # prefix is required, so a spurious coordinate can never fabricate a grouping.
+    assert workshop_from_enrichment("表 642 · 设备编号") is None
+    assert workshop_from_enrichment("") is None
+    assert workshop_from_enrichment(None) is None
+
+
+def test_workshop_from_enrichment_requires_archive_label_prefix():
+    # Codex round-2 #1: the parser is AUTHORITATIVE, so it must key off the full archive
+    # tag ``外部设备档案（…；workshop=…车间）`` — not a bare ``workshop=NNN车间`` literal that
+    # could surface in ordinary document content (e.g. a header that renders to that text).
+    # Otherwise a spurious 642 in the display string would beat a real 646 equipment code.
+    assert workshop_from_enrichment("列 2 · workshop=642车间") is None  # bare, no 档案 prefix
+    assert workshop_from_enrichment("外部设备档案（record=X；workshop=646车间）") == "646车间"
+
+
+def test_workshop_from_enrichment_rejects_unknown_workshop_code():
+    # Codex round-3 #3: the write side (``_merge_fact_into_edge``) only ever emits the known
+    # workshop set (642/646/644), so the authoritative parser is constrained to it. A garbage
+    # ``workshop=999车间`` in document text is NOT a valid archive tag → None (never a 999车间
+    # phantom group beating a real equipment code).
+    assert workshop_from_enrichment("外部设备档案（record=X；workshop=999车间）") is None
+    assert workshop_from_enrichment("外部设备档案（record=X；workshop=644车间）") == "644车间"
+
+
+def test_workshop_from_loose_scan_digit_boundary():
+    # Codex round-2 #2: the SHARED legacy fallback both report consumers now call. Digit
+    # boundaries match a CJK-adjacent code ("642车间", 车 is not a digit) yet reject
+    # digit-adjacent noise ("1642"/"6420") — fixing the old \b-vs-substring divergence
+    # (\b never matched "642车间" under Python Unicode; substring wrongly matched "1642").
+    assert workshop_from_loose_scan("§ 642车间 设备需求") == "642车间"
+    assert workshop_from_loose_scan("646 号线设备") == "646车间"
+    assert workshop_from_loose_scan("批号 1642 / 6420 无车间") is None
+    assert workshop_from_loose_scan("") is None
+    assert workshop_from_loose_scan(None) is None
+
+
+def test_workshop_from_loose_scan_ignores_structural_coordinates():
+    # Codex round-3 #1 (the real bug): loose scan now takes the RAW source_ref and must scan
+    # ONLY business-text fields — never positional coordinates. A 017-dict whose 1-based
+    # coordinate render would be "表 642" (table=641) carries NO business workshop text, so
+    # loose scan returns None → the edge correctly stays 未分组 instead of a phantom 642车间.
+    assert workshop_from_loose_scan(
+        {"kind": "table_cell", "table": 641, "row": 0, "column": 1, "header": "设备编号"}
+    ) is None
+    # …but a workshop mentioned in a genuine TEXT field (header/section) is still found.
+    assert workshop_from_loose_scan(
+        {"kind": "table_cell", "table": 0, "header": "642车间设备清单"}
+    ) == "642车间"
+    assert workshop_from_loose_scan(
+        {"kind": "section", "section": "646车间共线评估"}
+    ) == "646车间"
+
+
+def test_workshop_from_loose_scan_reads_enrichment_text_field():
+    # The archive tag lands in the dict's ``enrichment`` key; loose scan (as last resort)
+    # can still recover the code from that text field via the raw dict.
+    assert workshop_from_loose_scan(
+        {"kind": "table_cell", "table": 5, "enrichment": "外部设备档案（record=X；workshop=644车间）"}
+    ) == "644车间"
 
 
 # --- factory ----------------------------------------------------------------

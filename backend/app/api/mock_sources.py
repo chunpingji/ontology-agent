@@ -5,7 +5,8 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
+from typing import Literal
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -15,10 +16,16 @@ from sqlalchemy.orm import Session
 from app.db import get_db
 from app.models.mock_data import (
     MockDepartment,
-    MockRole,
     MockEquipment,
+    MockEquipmentScheduleOverride,
     MockProductionArea,
+    MockRole,
     MockTeamMember,
+)
+from app.services.extraction.equipment_schedule_source import (
+    EDITABLE_PRODUCTS,
+    apply_daily_product_overrides,
+    generate_equipment_schedules,
 )
 
 router = APIRouter()
@@ -60,6 +67,42 @@ class EquipmentSchema(BaseModel):
     equipment_class_iri: str
     workshop_code: str
     data_properties: list[DataProperty] = []
+
+
+class EquipmentScheduleSchema(BaseModel):
+    id: str
+    task_id: str
+    task_name: str
+    activity_type: str
+    status: str
+    priority: str
+    product_id: str | None = None
+    product_code: str | None = None
+    product_name: str | None = None
+    batch_no: str | None = None
+    planned_quantity: float | None = None
+    quantity_unit: str | None = None
+    equipment_id: str
+    equipment_name: str
+    workshop_code: str
+    start_at: datetime
+    end_at: datetime
+    actual_start_at: datetime | None = None
+    actual_end_at: datetime | None = None
+    process_step: str | None = None
+    operator_team: str | None = None
+    progress: int
+    remark: str | None = None
+
+
+class EquipmentScheduleOccupancyUpdate(BaseModel):
+    equipment_id: str
+    schedule_date: date
+    product_code: Literal["HRS-5678", "HRS-1597"]
+
+
+class EquipmentScheduleOccupancyResponse(EquipmentScheduleOccupancyUpdate):
+    id: UUID
 
 
 class ProductionAreaSchema(BaseModel):
@@ -288,6 +331,87 @@ def delete_equipment(equip_id: UUID, db: Session = Depends(get_db)):
     return {"deleted": str(equip_id)}
 
 
+@router.get("/equipment-schedules", response_model=list[EquipmentScheduleSchema])
+def list_equipment_schedules(
+    equipment_id: str,
+    start_date: date,
+    end_date: date,
+    db: Session = Depends(get_db),
+):
+    """返回指定设备在日期范围内的确定性 Mock 排期。"""
+
+    equipment = db.query(MockEquipment).filter_by(equipment_id=equipment_id).first()
+    if not equipment:
+        raise HTTPException(404, "Equipment not found")
+    try:
+        schedules = generate_equipment_schedules(
+            equipment_id=equipment.equipment_id,
+            equipment_name=equipment.label,
+            workshop_code=equipment.workshop_code,
+            start_date=start_date,
+            end_date=end_date,
+        )
+        overrides = (
+            db.query(MockEquipmentScheduleOverride)
+            .filter(
+                MockEquipmentScheduleOverride.equipment_id == equipment_id,
+                MockEquipmentScheduleOverride.schedule_date >= start_date,
+                MockEquipmentScheduleOverride.schedule_date <= end_date,
+            )
+            .all()
+        )
+        schedules = apply_daily_product_overrides(
+            schedules,
+            overrides=[(item.schedule_date, item.product_code) for item in overrides],
+            equipment_id=equipment.equipment_id,
+            equipment_name=equipment.label,
+            workshop_code=equipment.workshop_code,
+            now=datetime.now(timezone.utc),
+        )
+        return [
+            item
+            for item in schedules
+            if item["start_at"].date() <= end_date and item["end_at"].date() > start_date
+        ]
+    except ValueError as exc:
+        raise HTTPException(422, str(exc)) from exc
+
+
+@router.put(
+    "/equipment-schedules/occupancy",
+    response_model=EquipmentScheduleOccupancyResponse,
+)
+def update_equipment_schedule_occupancy(
+    update: EquipmentScheduleOccupancyUpdate,
+    db: Session = Depends(get_db),
+):
+    """新增或替换设备某一天的 Mock 产品占用。"""
+
+    if update.product_code not in EDITABLE_PRODUCTS:
+        raise HTTPException(422, "Unsupported product code")
+    equipment = db.query(MockEquipment).filter_by(equipment_id=update.equipment_id).first()
+    if not equipment:
+        raise HTTPException(404, "Equipment not found")
+    override = (
+        db.query(MockEquipmentScheduleOverride)
+        .filter_by(equipment_id=update.equipment_id, schedule_date=update.schedule_date)
+        .first()
+    )
+    if override is None:
+        override = MockEquipmentScheduleOverride(
+            equipment_id=update.equipment_id,
+            schedule_date=update.schedule_date,
+            product_code=update.product_code,
+        )
+        db.add(override)
+    else:
+        override.product_code = update.product_code
+        override.updated_at = datetime.now(timezone.utc)
+    db.commit()
+    db.refresh(override)
+    return override
+
+
 # --- Production Areas CRUD ----------------------------------------------------
 
 
@@ -493,4 +617,3 @@ def delete_approver_team_member(member_id: UUID, db: Session = Depends(get_db)):
     db.delete(existing)
     db.commit()
     return {"deleted": str(member_id)}
-

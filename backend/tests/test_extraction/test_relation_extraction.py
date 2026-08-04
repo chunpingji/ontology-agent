@@ -502,14 +502,26 @@ def test_find_drug_product_prefers_typed_endpoint():
     assert ep["text"] == "HRS-1234 片"
 
 
-def test_find_equipment_dedups_by_primary_code():
+def test_find_equipment_expands_candidate_codes():
     eps = find_equipment(_ctx())
     codes = [e["text"] for e in eps]
-    assert codes == ["RE64202", "CT64611"]  # 斜杠取首选编号，按编号去重
+    assert codes == ["RE64202", "RE64602", "CT64611"]
     reactor = next(e for e in eps if e["text"] == "RE64202")
     assert reactor["class_iri"].endswith("Reactor")
+    labels = {item["label"]: item["value"] for item in reactor["data_properties"]}
+    assert labels["候选设备组"] == "RE64202|RE64602"
     centrifuge = next(e for e in eps if e["text"] == "CT64611")
     assert centrifuge["class_iri"].endswith("Centrifuge")
+
+
+def test_equipment_candidate_parser_supports_slash_or_and_list_separator():
+    ctx = _ctx()
+    for expression in ("PF64216/PF64616", "PF64216或PF64616", "PF64216、PF64616"):
+        endpoints = rx._equipment_endpoints_from_row(ctx, {
+            "匹配设备": expression,
+            "设备规格": "钛棒过滤器",
+        })
+        assert [item["text"] for item in endpoints] == ["PF64216", "PF64616"]
 
 
 def test_find_synthesis_route_builds_steps_with_subrelations():
@@ -527,7 +539,7 @@ def test_find_synthesis_route_builds_steps_with_subrelations():
     preds = {s["predicate_label"] for s in nested}
     assert "使用设备" in preds and "产出中间体" in preds
     equip = {s["object_text"] for s in nested if s["predicate_label"] == "使用设备"}
-    assert equip == {"RE64202", "CT64611"}
+    assert equip == {"RE64202", "RE64602", "CT64611"}
     inter = next(s for s in nested if s["predicate_label"] == "产出中间体")
     assert inter["object_text"] == "1234-3"
 

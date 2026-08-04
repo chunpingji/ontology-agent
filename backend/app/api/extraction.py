@@ -7,6 +7,7 @@ import logging
 import shutil
 import tempfile
 from pathlib import Path
+from typing import Any
 from uuid import UUID
 
 from fastapi import (
@@ -1017,6 +1018,43 @@ def _narratives_payload(report) -> dict | None:
     }
 
 
+def _pde_conflict_decision_payload(db: Session, job_id: UUID) -> dict:
+    """Snapshot the human PDE-conflict decision for report generation.
+
+    No row means the conflict is still pending.  The returned object is JSON-safe
+    so the async background task and the persisted report share the exact decision
+    that was effective when generation started.
+    """
+    from app.models.pde_conflict import PdeConflictDecision
+    from app.services.reasoning.pde_conflict import CONFLICT_KEY
+
+    row = (
+        db.query(PdeConflictDecision)
+        .filter(
+            PdeConflictDecision.job_id == job_id,
+            PdeConflictDecision.conflict_key == CONFLICT_KEY,
+        )
+        .one_or_none()
+    )
+    if row is None:
+        return {
+            "conflict_key": CONFLICT_KEY,
+            "chosen": "pending",
+            "note": "",
+            "actor": "",
+            "version": 0,
+            "decided_at": None,
+        }
+    return {
+        "conflict_key": row.conflict_key,
+        "chosen": row.chosen,
+        "note": row.note,
+        "actor": row.actor,
+        "version": row.version,
+        "decided_at": row.decided_at.isoformat() if row.decided_at else None,
+    }
+
+
 def _resolve_sample_docx_path(tpl_db_id, db) -> str | None:
     """Resolve the sample .docx path from the AstTemplate row for template-based output."""
     if tpl_db_id is None:
@@ -1042,6 +1080,7 @@ def _build_and_save_report(
     dismissed_ids: set[str] | None,
     actor: str,
     report_id: UUID,
+    pde_conflict_decision: dict,
 ) -> None:
     """Shared report build logic used by both sync and async paths (013)."""
     import json as _json
@@ -1055,9 +1094,27 @@ def _build_and_save_report(
     db = SessionLocal()
     try:
         gen_report = db.get(GeneratedReport, report_id)
+        assessment_substeps: list[dict[str, Any]] = []
+
+        def set_progress(
+            stage: str,
+            percent: int,
+            detail: str,
+            substeps: list[dict[str, Any]] | None = None,
+        ) -> None:
+            """Persist lightweight, poll-friendly progress without a new table."""
+            if not gen_report:
+                return
+            progress = {"stage": stage, "percent": percent, "detail": detail}
+            retained_substeps = substeps if substeps is not None else assessment_substeps
+            if retained_substeps:
+                progress["substeps"] = [dict(step) for step in retained_substeps]
+            gen_report.rules_summary = {"_progress": progress}
+            db.commit()
+
         if gen_report:
             gen_report.report_status = "running"
-            db.commit()
+            set_progress("prepare", 10, "正在读取文档抽取结果与关系数据")
 
         cache_path = _annotation_cache_path(job_id)
         result = _json.loads(cache_path.read_text(encoding="utf-8"))
@@ -1068,15 +1125,64 @@ def _build_and_save_report(
         # the graceful fallback when no template matches the doc class.
         from app.services.reporting.ast_template import resolve_template
 
+        set_progress("template", 25, "正在匹配 CMC 风险评估模板与章节结构")
         template, _, tpl_db_id = resolve_template(doc_class_iri, db)
         sample_docx = _resolve_sample_docx_path(tpl_db_id, db)
         generator = RiskReportGenerator(db, template=template)
+        set_progress("assess", 45, "正在执行风险规则并生成各章节评估内容")
+
+        def on_assessment_progress(substeps: list[dict[str, Any]]) -> None:
+            assessment_substeps[:] = [dict(step) for step in substeps]
+            completed = sum(step.get("status") == "completed" for step in substeps)
+            total = len(substeps)
+            percent = 45 + round((completed / total) * 30) if total else 75
+            set_progress(
+                "assess", percent, f"正在评估风险维度（{completed}/{total}）", substeps,
+            )
+
+        def on_narrative_progress(entry: dict, completed: int, total: int) -> None:
+            """每章完整生成后立即落库，供前端轮询后做伪流式展示。"""
+            if not gen_report:
+                return
+            sections = list((gen_report.narratives or {}).get("sections") or [])
+            sections.append(entry)
+            gen_report.narratives = {
+                "subject_description": None,
+                "conclusion": None,
+                "sections": sections,
+            }
+            narrative_step = next(
+                (step for step in assessment_substeps if step.get("key") == "narratives"),
+                None,
+            )
+            if narrative_step is not None:
+                narrative_step["result"] = f"{completed}/{total} 个章节"
+                narrative_step["items"] = [
+                    {
+                        "label": str(section.get("title") or "章节行文"),
+                        "detail": str(section.get("text") or ""),
+                    }
+                    for section in sections
+                ]
+            progress = {
+                "stage": "assess",
+                "percent": 68 + round((completed / total) * 7) if total else 75,
+                "detail": f"正在生成章节行文（{completed}/{total}）",
+                "substeps": [dict(step) for step in assessment_substeps],
+            }
+            gen_report.rules_summary = {"_progress": progress}
+            db.commit()
+
         report, manifest = generator.generate_with_coverage(
             edges,
             source_filename=job_source_filename,
             dismissed_slot_ids=dismissed_ids,
             document_path=document_path,
+            assessment_progress_fn=on_assessment_progress,
+            narrative_progress_fn=on_narrative_progress,
+            pde_conflict_decision=pde_conflict_decision,
         )
+        set_progress("render", 80, "正在排版风险评估报告并生成 Word 文件")
         docx_bytes = render_risk_report(
             report, manifest, template=template, sample_docx_path=sample_docx,
         )
@@ -1087,17 +1193,25 @@ def _build_and_save_report(
         file_name = f"{job_id}_{ts}.docx"
         file_path = reports_dir / file_name
         file_path.write_bytes(docx_bytes)
+        set_progress("finalize", 95, "正在保存报告并整理生成结果")
 
         if gen_report:
             gen_report.file_path = str(file_path)
             gen_report.file_size = len(docx_bytes)
             gen_report.rules_fired_count = generator.rules_fired_count
             gen_report.rules_summary = {
+                "_progress": {
+                    "stage": "completed",
+                    "percent": 100,
+                    "detail": "报告已完成，可预览或下载",
+                    "substeps": [dict(step) for step in assessment_substeps],
+                },
                 "rows": [
                     {"hazid": r.hazid, "pre": r.pre_control_level, "post": r.post_control_level}
                     for r in report.assessment_rows
                 ],
                 "coverage": manifest.to_dict(),
+                "pde_conflicts": report.pde_conflicts,
             }
             gen_report.narratives = _narratives_payload(report)
             gen_report.report_status = "completed"
@@ -1172,6 +1286,7 @@ def generate_risk_report(
         .all()
     )
     dismissed_ids = {r.slot_id for r in dismissed_rows} or None
+    pde_conflict_decision = _pde_conflict_decision_payload(db, job_id)
     report_id = uuid4()
 
     if _llm_report_flags_active():
@@ -1194,6 +1309,7 @@ def generate_risk_report(
             dismissed_ids=dismissed_ids,
             actor=identity.username,
             report_id=report_id,
+            pde_conflict_decision=pde_conflict_decision,
         )
         return {"report_id": str(report_id), "status": "pending"}
 
@@ -1206,9 +1322,16 @@ def generate_risk_report(
     template, _, tpl_db_id = resolve_template(doc_class_iri, db)
     sample_docx = _resolve_sample_docx_path(tpl_db_id, db)
     generator = RiskReportGenerator(db, template=template)
+    assessment_substeps: list[dict[str, Any]] = []
+
+    def on_assessment_progress(substeps: list[dict[str, Any]]) -> None:
+        assessment_substeps[:] = [dict(step) for step in substeps]
+
     report, manifest = generator.generate_with_coverage(
         edges, source_filename=job.source_filename or "",
         dismissed_slot_ids=dismissed_ids,
+        assessment_progress_fn=on_assessment_progress,
+        pde_conflict_decision=pde_conflict_decision,
     )
     docx_bytes = render_risk_report(
         report, manifest, template=template, sample_docx_path=sample_docx,
@@ -1229,11 +1352,18 @@ def generate_risk_report(
         file_size=len(docx_bytes),
         rules_fired_count=generator.rules_fired_count,
         rules_summary={
+            "_progress": {
+                "stage": "completed",
+                "percent": 100,
+                "detail": "报告已完成，可预览或下载",
+                "substeps": [dict(step) for step in assessment_substeps],
+            },
             "rows": [
                 {"hazid": r.hazid, "pre": r.pre_control_level, "post": r.post_control_level}
                 for r in report.assessment_rows
             ],
             "coverage": manifest.to_dict(),
+            "pde_conflicts": report.pde_conflicts,
         },
         narratives=_narratives_payload(report),
         actor=identity.username,
@@ -1324,6 +1454,7 @@ def get_report_status(
         "file_path": report.file_path,
         "file_size": report.file_size,
         "rules_fired_count": report.rules_fired_count,
+        "rules_summary": report.rules_summary,
         "actor": report.actor,
         "created_at": report.created_at.isoformat() if report.created_at else None,
         "report_status": report.report_status,

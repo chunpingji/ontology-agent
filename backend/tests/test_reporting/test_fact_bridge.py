@@ -51,6 +51,16 @@ def _shared_line_edge() -> dict:
 
 
 class TestEdgesToFacts:
+    def test_edge_with_missing_iris_does_not_break_fact_building(self):
+        facts = edges_to_facts([{
+            "predicate_iri": None,
+            "object_class_iri": None,
+            "object_data_properties": [{"iri": None, "label": "告警", "value": "待确认"}],
+        }])
+
+        assert facts.relations == {}
+        assert facts.scalars["告警"] == "待确认"
+
     def test_equipment_edge_maps_to_relations(self):
         facts = edges_to_facts([_equipment_edge()])
         assert "usesEquipment" in facts.relations

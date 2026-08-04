@@ -4,7 +4,11 @@ from __future__ import annotations
 
 from app.services.extraction.document_profile import (
     DocumentPropertyBinding,
+    _assign_columns,
+    _binding_for_key,
+    _match_quality,
     compile_ontology_bindings,
+    normalize_source_key,
     parse_profile,
     read_document_profile,
 )
@@ -59,6 +63,42 @@ def _table(headers, rows, table_index=0):
         table_index=table_index,
         header_row_count=1,
         row_indices=list(range(1, len(rows) + 1)),
+    )
+
+
+def test_equipment_choice_expression_expands_to_independent_candidates():
+    profile = parse_profile({
+        "version": 1,
+        "sources": [{
+            "locator": "table_rows",
+            "headers": {"all_of": [["设备编号", "匹配设备"]]},
+        }],
+        "identity": {"aliases": ["设备编号", "匹配设备"], "split": "/"},
+    })
+    identifier_iri = _EQUIP + "equipmentCode"
+    bindings = [DocumentPropertyBinding(
+        property_iri=identifier_iri,
+        label="设备编号",
+        aliases=("设备编号", "匹配设备"),
+        is_identifier=True,
+    )]
+    structure = _structure(tables=[
+        _table(["匹配设备"], [["PF64216或PF64616"]])
+    ])
+
+    result = read_document_profile(
+        structure, _EQUIP + "Equipment", profile, bindings
+    )
+
+    assert [candidate.identifier for candidate in result.candidates] == [
+        "PF64216", "PF64616",
+    ]
+    assert {candidate.candidate_group for candidate in result.candidates} == {
+        "PF64216|PF64616"
+    }
+    assert all(
+        candidate.values[0].value == candidate.identifier
+        for candidate in result.candidates
     )
 
 
@@ -379,3 +419,108 @@ def test_numeric_questionnaire_headers_do_not_match_domain_table_profiles():
             structure, _DEV + "UnrelatedDomainClass", profile, []
         )
         assert result.candidates == []
+
+
+def test_composite_alias_does_not_steal_single_column():
+    """Regression: composite alias 'NOAEL动物种属' must NOT grab a bare 'NOAEL' column.
+
+    When the table has only one NOAEL column, the exact-match binding (noael)
+    must win; species/duration bindings whose aliases merely contain 'NOAEL' as
+    a reverse substring must be excluded by the mutual-exclusion column assigner.
+    """
+    profile = parse_profile({
+        "version": 1,
+        "sources": [{
+            "locator": "table_rows",
+            "headers": {"all_of": [
+                {"any_of": ["NOAEL"]},
+                {"any_of": ["PDE", "PDE (mg/天)"]},
+            ]},
+        }],
+    })
+    bindings = [
+        DocumentPropertyBinding(
+            _DEV + "noael_mg_per_kg_per_day", "NOAEL", ("NOAEL", "NOAEL（大鼠）", "NOAEL（犬）"),
+            transform_type="cast", transform_config={"to": "decimal",
+                "number_pattern": r"[-+]?\d*\.?\d+"},
+        ),
+        DocumentPropertyBinding(
+            _DEV + "noaelSpecies", "种属", ("动物种属", "种属", "NOAEL动物种属"),
+        ),
+        DocumentPropertyBinding(
+            _DEV + "noaelDuration", "试验周期", ("试验周期", "给药周期", "NOAEL试验周期"),
+        ),
+        DocumentPropertyBinding(
+            _DEV + "pde_mg_per_day", "PDE", ("PDE (mg/天)", "PDE"),
+            transform_type="cast", transform_config={"to": "decimal",
+                "number_pattern": r"[-+]?\d*\.?\d+"},
+        ),
+    ]
+    table = _table(
+        ["NOAEL", "PDE (mg/天)"],
+        [["1000", "100"]],
+    )
+    result = read_document_profile(
+        _structure(tables=[table]), _DEV + "SharedLineAssessmentData",
+        profile, bindings,
+    )
+    assert len(result.candidates) == 1
+    props = {v.property_iri: v for v in result.candidates[0].values}
+    assert _DEV + "noael_mg_per_kg_per_day" in props
+    assert props[_DEV + "noael_mg_per_kg_per_day"].value == 1000.0
+    assert _DEV + "pde_mg_per_day" in props
+    assert _DEV + "noaelSpecies" not in props
+    assert _DEV + "noaelDuration" not in props
+
+
+def test_match_quality_tiers():
+    """Unit: _match_quality returns correct tier and specificity."""
+    n = normalize_source_key
+    assert _match_quality(n("NOAEL"), n("NOAEL")) == (3, len(n("NOAEL")))
+    q_rev = _match_quality(n("NOAEL"), n("NOAEL动物种属"))
+    assert q_rev == (1, len(n("NOAEL")))
+    assert _match_quality(n("NOAEL 动物种属"), n("NOAEL")) == (2, len(n("NOAEL")))
+    assert _match_quality(n("溶解度"), n("溶解度")) == (3, len(n("溶解度")))
+    assert _match_quality(n("无关"), n("NOAEL")) is None
+
+
+def test_binding_for_key_specificity():
+    """Singleton-kv: parameter 'NOAEL动物种属' must bind to species (exact), not noael (forward)."""
+    noael_binding = DocumentPropertyBinding(
+        _DEV + "noael_mg_per_kg_per_day", "NOAEL", ("NOAEL",),
+    )
+    species_binding = DocumentPropertyBinding(
+        _DEV + "noaelSpecies", "种属", ("动物种属", "NOAEL动物种属"),
+    )
+    result = _binding_for_key("NOAEL动物种属", [noael_binding, species_binding])
+    assert result is species_binding
+
+    result2 = _binding_for_key("NOAEL", [noael_binding, species_binding])
+    assert result2 is noael_binding
+
+
+def test_assign_columns_column_side_tie_abstains():
+    """Two bindings with identical aliases competing for the same column → neither wins."""
+    b1 = DocumentPropertyBinding(_DEV + "prop1", "P1", ("A",))
+    b2 = DocumentPropertyBinding(_DEV + "prop2", "P2", ("A",))
+    assignment = _assign_columns(["A"], [b1, b2])
+    assert assignment == {}
+
+
+def test_assign_columns_no_degradation_after_ambiguity():
+    """Binding whose best-tier candidates are tied must NOT fall back to a lower tier."""
+    b = DocumentPropertyBinding(_DEV + "prop", "P", ("A", "XY"))
+    assignment = _assign_columns(["AB", "AC", "X"], [b])
+    assert assignment == {}
+
+
+def test_assign_columns_order_invariant():
+    """Column assignment must not depend on binding list order."""
+    noael = DocumentPropertyBinding(_DEV + "noael", "NOAEL", ("NOAEL",))
+    species = DocumentPropertyBinding(_DEV + "species", "种属", ("NOAEL动物种属",))
+    a1 = _assign_columns(["NOAEL"], [noael, species])
+    a2 = _assign_columns(["NOAEL"], [species, noael])
+    assert a1[0] == "NOAEL"
+    assert 1 not in a1
+    assert a2[1] == "NOAEL"
+    assert 0 not in a2
