@@ -57,6 +57,35 @@ def test_toc_outline_and_bold_numbered_paragraphs_share_heading_inference(tmp_pa
     assert len(toxicity.para_indices) == 1
 
 
+def test_tables_keep_nearest_heading_and_word_section_path(tmp_path):
+    doc = Document()
+    doc.add_heading("工艺描述", level=2)
+    doc.add_heading("3.1.2 工艺描述", level=3)
+    doc.add_heading("HRS-1597结晶纯化", level=4)
+    detail = doc.add_table(rows=2, cols=2)
+    detail.cell(0, 0).text = "投料"
+    detail.cell(0, 1).text = "加入原料和溶剂，升温搅拌至完全溶清。"
+    detail.cell(1, 0).text = "干燥"
+    detail.cell(1, 1).text = "滤饼转入真空干燥箱并按规定温度干燥。"
+    doc.add_heading("得量收率范围", level=3)
+    summary = doc.add_table(rows=2, cols=3)
+    for index, value in enumerate(("名称", "参考得量范围", "参考收率范围")):
+        summary.cell(0, index).text = value
+    for index, value in enumerate(("HRS-1597", "3.0~6.0kg", "50%~85%")):
+        summary.cell(1, index).text = value
+    path = tmp_path / "process-tables.docx"
+    doc.save(path)
+
+    structure = parse_docx_structure(path)
+
+    assert structure.tables[0].section_heading == "HRS-1597结晶纯化"
+    assert structure.tables[0].heading_index == 2
+    assert structure.tables[0].section_path == [
+        "工艺描述", "3.1.2 工艺描述", "HRS-1597结晶纯化",
+    ]
+    assert structure.tables[1].section_heading == "得量收率范围"
+
+
 def test_title_falls_back_to_visual_heading_then_original_filename(tmp_path):
     doc = Document()
     p = doc.add_paragraph()

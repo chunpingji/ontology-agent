@@ -10,8 +10,6 @@
 
 from __future__ import annotations
 
-from pathlib import Path
-
 import pytest
 
 from app.services.ontology_engine import OntologyEngine
@@ -92,7 +90,9 @@ def engine(tmp_path):
     orig_files = oe.MODULE_FILES.copy()
 
     oe._LOAD_ORDER = ["mini"]
+    oe.MODULE_NAMES.clear()
     oe.MODULE_NAMES["mini"] = "http://test.example.com/mini"
+    oe.MODULE_FILES.clear()
     oe.MODULE_FILES["mini"] = "slpra/mini.ttl"
     try:
         eng.load()

@@ -1138,6 +1138,22 @@ slpra-dev:producedInArea a owl:ObjectProperty ;
 
 # --- Synthesis Route / Step ---
 
+slpra-dev:processName a owl:DatatypeProperty ;
+    rdfs:domain slpra-dev:SynthesisRoute ;
+    rdfs:range xsd:string ;
+    rdfs:label "process name"@en ;
+    rdfs:label "工艺名称"@zh ;
+    rdfs:comment "The business-facing name of the overall manufacturing process represented by the route, e.g. crystallization purification."@en ;
+    rdfs:comment "该路线所表示的整体生产工艺名称，例如结晶纯化。"@zh .
+
+slpra-dev:processBasis a owl:DatatypeProperty ;
+    rdfs:domain slpra-dev:SynthesisRoute ;
+    rdfs:range xsd:string ;
+    rdfs:label "process basis"@en ;
+    rdfs:label "工艺依据"@zh ;
+    rdfs:comment "The source-document section or controlled reference on which the process route is based."@en ;
+    rdfs:comment "工艺路线所依据的源文章节或受控文件引用，例如3.1.1合成路线图。"@zh .
+
 slpra-dev:processDescription a owl:DatatypeProperty ;
     rdfs:domain slpra-dev:SynthesisRoute ;
     rdfs:range xsd:string ;

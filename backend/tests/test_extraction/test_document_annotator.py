@@ -436,5 +436,7 @@ def test_parse_word_to_tiptap_structure_without_ner(tmp_path):
     types = _node_types(result, set())
     assert "heading" in types
     assert "table" in types
+    blocks = [node for node in result["content"] if node["type"] in {"heading", "paragraph"}]
+    assert [node["attrs"]["sourceParagraphIndex"] for node in blocks[:2]] == [0, 1]
     # 结构化解析跳过 NER：绝无 entity-annotation mark（格式 mark 可合法存在）。
     assert "entity-annotation" not in _mark_types(result, set())

@@ -890,7 +890,19 @@ def preview_section_narrative_endpoint(
     # 预览用同一份 edges 走叙述路径，保证与真实报告逐字节同源。
     from app.services.reporting.risk_report_generator import RiskReportGenerator
 
-    rows, manifest, edges = RiskReportGenerator(db, template).assess_deterministic(edges)
+    job = db.get(ExtractionJob, req.job_id)
+    if job is not None:
+        from app.api.extraction import _risk_report_source_document
+
+        source_filename, source_document_ref = _risk_report_source_document(job, db)
+    else:
+        source_filename = result.get("filename") or ""
+        source_document_ref = f"urn:slpra:extraction-job:{req.job_id}"
+    rows, manifest, edges = RiskReportGenerator(db, template).assess_deterministic(
+        edges,
+        source_filename=source_filename,
+        source_document_ref=source_document_ref,
+    )
 
     from app.services.ontology_engine import get_loaded_engine
     from app.services.reporting.narrative_generator import preview_section_narrative

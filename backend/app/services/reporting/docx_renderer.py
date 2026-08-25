@@ -180,6 +180,23 @@ def _render_pde_conflicts(doc: Document, report: RiskReport) -> None:
         doc.add_paragraph()
 
 
+def _add_source_document_reference(doc: Document, report: RiskReport) -> None:
+    """Render deterministic provenance resolved from ``basedOnSourceDocument``."""
+    if not report.source_document_name:
+        return
+
+    document_type = report.source_document_type or "法规文档"
+    p = doc.add_paragraph()
+    label = p.add_run("分析文档：")
+    label.bold = True
+    p.add_run(f"{document_type}《{report.source_document_name}》")
+
+    basis = doc.add_paragraph()
+    basis_label = basis.add_run("数据依据：")
+    basis_label.bold = True
+    basis.add_run("该文档经读取与校验后形成的关系图谱数据")
+
+
 def _clear_body(doc: Document) -> None:
     """Remove body content while preserving ALL section properties (page size/orientation/
     margins, header/footer references) — not just the final one.
@@ -402,6 +419,12 @@ def render_risk_report(
 
         _add_page_header(doc, report, manifest)
         _add_header(doc, report)
+
+    # Report-level deterministic provenance: intentionally outside the AST walk so
+    # sample-DOCX, template-driven, and legacy fallback output all cite the same edge.
+    _add_source_document_reference(doc, report)
+
+    if not sample_docx_path:
         _add_coverage_banner(doc, manifest)
 
     # Report-level deterministic audit block: intentionally outside the AST walk so

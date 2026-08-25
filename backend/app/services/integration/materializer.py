@@ -122,12 +122,17 @@ class FactMaterializer:
         # （文档子类可能落在 drug-development 命名空间，前缀启发式会误判为 integration）。
         is_document = etype in doc_type_to_class
         class_iri = doc_type_to_class.get(etype, f"{_FACT_BASE_IRI}{etype}")
+        properties = {**(change.get("fields") or {}), "_version": change.get("version")}
+        if is_document and change.get("label"):
+            # slpra-doc:documentName 的 A-Box 投影：连接器归一化后的 label 是受管文档
+            # 标题/文件名。显式字段优先，避免覆盖源系统已提供的规范名称。
+            properties.setdefault("documentName", str(change["label"]))
         info = IndividualInfo(
             iri=f"{_FACT_BASE_IRI}{eid}",
             name=eid,
             class_iris=[class_iri],
             label_zh=change.get("label"),
-            properties={**(change.get("fields") or {}), "_version": change.get("version")},
+            properties=properties,
             module="document" if is_document else None,
         )
         try:  # best-effort World 投影（fake engine 下为 no-op）

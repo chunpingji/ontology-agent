@@ -51,8 +51,8 @@ MODULE_FILES = {
 
 # integration owl:imports 全部内部模块，故须最后加载（依赖先就位）。
 _LOAD_ORDER = [
-    "drug", "equipment", "contamination", "risk", "cleaning", "facility",
-    "personnel", "document", "drug-development", "integration",
+    "drug", "equipment", "contamination", "cleaning", "facility",
+    "personnel", "document", "risk", "drug-development", "integration",
 ]
 
 # 外部上层本体（BFO）：随包提供的离线本地副本。各模块的类挂在 BFO 顶层范畴下，必须先于
@@ -61,6 +61,10 @@ _LOAD_ORDER = [
 _EXTERNAL_ONTOLOGIES = {
     "http://purl.obolibrary.org/obo/bfo.owl": "lib/bfo.ttl",
 }
+
+
+class OntologyIntegrityError(RuntimeError):
+    """Raised when the registered T-Box modules cannot be loaded completely."""
 
 
 @dataclass
@@ -129,6 +133,7 @@ class OntologyEngine:
         with self._lock:
             if self.is_loaded:
                 return
+            self._validate_module_registry()
             self._store_path.parent.mkdir(parents=True, exist_ok=True)
             # 物化库为权威 TTL 的派生缓存（TTL 为唯一权威源，永不回写）。每次启动重建，
             # 既保证与权威 TTL 一致，又避免跨重启的三元组累积与历史失败遗留的空库。
@@ -151,7 +156,9 @@ class OntologyEngine:
                     )
                     onto.loaded = True
 
-            # 按文件路径离线加载各模块（integration 末位以解析内部导入）。
+            # 按文件路径离线加载各模块（依赖模块在前，integration 末位）。先收集全部
+            # 失败，随后统一执行完整性校验；绝不把部分加载的 T-Box 暴露给 API。
+            load_failures: dict[str, Exception] = {}
             for key in _LOAD_ORDER:
                 iri = MODULE_NAMES[key]
                 path = self._ontology_dir / MODULE_FILES[key]
@@ -159,12 +166,63 @@ class OntologyEngine:
                     onto = self._world.get_ontology(iri)
                     self._load_turtle(onto, path)
                     self._ontologies[key] = onto
-                except Exception:
+                except Exception as exc:
+                    load_failures[key] = exc
                     logger.warning("Could not load module %s from %s", key, path, exc_info=True)
+
+            missing = [key for key in MODULE_NAMES if key not in self._ontologies]
+            if missing:
+                details = []
+                for key in missing:
+                    exc = load_failures.get(key)
+                    if exc is None:
+                        details.append(f"{key}: not loaded")
+                    else:
+                        details.append(f"{key}: {type(exc).__name__}: {exc}")
+                message = (
+                    "Ontology module integrity check failed; application startup aborted. "
+                    "Failed or missing modules: " + "; ".join(details)
+                )
+                self._discard_partial_world()
+                raise OntologyIntegrityError(message)
 
             self.is_loaded = True
             total = sum(len(list(o.classes())) for o in self._ontologies.values())
             logger.info("Loaded %d modules with %d classes total", len(self._ontologies), total)
+
+    @staticmethod
+    def _validate_module_registry() -> None:
+        """Ensure module IRIs, TTL files, and dependency order describe one set."""
+        name_keys = set(MODULE_NAMES)
+        file_keys = set(MODULE_FILES)
+        order_keys = set(_LOAD_ORDER)
+        duplicate_order = sorted(
+            key for key in order_keys if _LOAD_ORDER.count(key) > 1
+        )
+        problems: list[str] = []
+        if duplicate_order:
+            problems.append("duplicate keys in _LOAD_ORDER: " + ", ".join(duplicate_order))
+        if missing := sorted(name_keys - order_keys):
+            problems.append("modules missing from _LOAD_ORDER: " + ", ".join(missing))
+        if unknown := sorted(order_keys - name_keys):
+            problems.append("unknown modules in _LOAD_ORDER: " + ", ".join(unknown))
+        if missing := sorted(name_keys - file_keys):
+            problems.append("modules missing from MODULE_FILES: " + ", ".join(missing))
+        if unknown := sorted(file_keys - name_keys):
+            problems.append("unregistered modules in MODULE_FILES: " + ", ".join(unknown))
+        if problems:
+            raise OntologyIntegrityError(
+                "Ontology module registry integrity check failed: " + "; ".join(problems)
+            )
+
+    def _discard_partial_world(self) -> None:
+        """Reset state after a failed load while the caller already holds ``_lock``."""
+        world = self._world
+        self._world = None
+        self._ontologies.clear()
+        self.is_loaded = False
+        if world is not None:
+            world.close()
 
     @staticmethod
     def _load_turtle(onto: owlready2.Ontology, path: Path) -> None:

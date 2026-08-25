@@ -4146,8 +4146,8 @@
     {
       "type": "frame",
       "id": "lvhqW",
-      "x": 4613,
-      "y": 2652.9999999999995,
+      "x": 59,
+      "y": 4339,
       "name": "APS 排程总览",
       "clip": true,
       "width": 1920,
@@ -4632,7 +4632,8 @@
                   "content": "搜索订单/产品/批次/设备",
                   "textAlignVertical": "middle",
                   "fontFamily": "Inter",
-                  "fontSize": 13
+                  "fontSize": 13,
+                  "fontWeight": "normal"
                 }
               ]
             },

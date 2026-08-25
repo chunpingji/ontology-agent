@@ -34,7 +34,9 @@ from app.services.extraction.document_profile import (
     read_document_profile,
 )
 from app.services.extraction.docx_structure import (
+    DocSection,
     DocStructure,
+    DocTable,
     parse_docx_structure,
 )
 from app.services.extraction.equipment_source import enrich_equipment_facts
@@ -54,6 +56,7 @@ CMC_REPORT_IRI = _DEV + "CMCReport"
 DRUG_PRODUCT_IRI = _DRUG + "DrugProduct"
 SYNTHESIS_ROUTE_IRI = _DEV + "SynthesisRoute"
 SYNTHESIS_STEP_IRI = _DEV + "SynthesisStep"
+PURIFICATION_IRI = _DEV + "Purification"
 PROCESS_INTERMEDIATE_IRI = _DEV + "ProcessIntermediate"
 CRUDE_PRODUCT_IRI = _DEV + "CrudeProduct"
 EQUIPMENT_IRI = _EQUIP + "Equipment"
@@ -78,10 +81,14 @@ PRODUCED_IN_AREA_IRI = _DEV + "producedInArea"
 
 # 数据属性 IRI（多数内容类的 dprop 本体未声明 domain，无法经 by_domain 反查 → 直引常量）。
 DP = {
+    "processName": _DEV + "processName",
+    "processBasis": _DEV + "processBasis",
     "processDescription": _DEV + "processDescription",
     "stepOrder": _DEV + "stepOrder",
     "yieldRangePercent": _DEV + "yieldRangePercent",
     "outputMassRange_kg": _DEV + "outputMassRange_kg",
+    "reactionConditions": _DEV + "reactionConditions",
+    "inProcessControl": _DEV + "inProcessControl",
     "riskCategory": _DEV + "riskCategory",
     "riskDescription": _DEV + "riskDescription",
     "controlMeasure": _DEV + "controlMeasure",
@@ -241,7 +248,7 @@ def _endpoint(
     source: str = "rule",
     data_properties: list | None = None,
     sub_relationships: list | None = None,
-    source_ref: str | None = None,
+    source_ref: object | None = None,
 ) -> dict:
     return {
         "class_iri": class_iri,
@@ -393,52 +400,339 @@ def _sub(predicate_iri: str, predicate_label: str, ctx: _Ctx, ep: dict) -> dict:
     }
 
 
-def _find_narrative(structure: DocStructure) -> str:
-    """工艺描述叙述段：含「起始物料/中间体」且较长者。"""
-    for p in structure.paragraphs:
-        if len(p) > 60 and ("起始物料" in p or "中间体" in p) and ("得到" in p or "反应" in p):
-            return p
-    sec = structure.find_section("工艺描述")
-    if sec and sec.paras:
-        return max(sec.paras, key=len)
-    return ""
+@dataclass(frozen=True)
+class _NarrativeMatch:
+    """工艺叙述正文及其在原始 Word 中的精确结构坐标。"""
+
+    text: str
+    section: DocSection | None
+    paragraph_index: int | None
+
+
+def _is_process_narrative(text: str) -> bool:
+    return (
+        len(text) > 60
+        and ("起始物料" in text or "中间体" in text)
+        and ("得到" in text or "反应" in text)
+    )
+
+
+def _find_narrative(structure: DocStructure) -> _NarrativeMatch:
+    """定位工艺文字描述，避开同级或前置的合成路线图。
+
+    优先选择最深层、标题为「工艺描述」且真正包含叙述正文的章节；最后才
+    使用无法提供坐标的全文兼容回退。
+    """
+    candidates: list[tuple[tuple[int, int, int], DocSection, int | None, str]] = []
+    for sec in structure.sections:
+        for offset, text in enumerate(sec.paras):
+            if not _is_process_narrative(text):
+                continue
+            paragraph_index = (
+                sec.para_indices[offset] if offset < len(sec.para_indices) else None
+            )
+            score = (sec.level, int("工艺描述" in sec.heading), len(text))
+            candidates.append((score, sec, paragraph_index, text))
+
+    if candidates:
+        _, section, paragraph_index, text = max(candidates, key=lambda item: item[0])
+        return _NarrativeMatch(text, section, paragraph_index)
+
+    process_sections = [
+        sec for sec in structure.sections if "工艺描述" in sec.heading and sec.paras
+    ]
+    if process_sections:
+        section = max(
+            process_sections,
+            key=lambda sec: (sec.level, max(map(len, sec.paras))),
+        )
+        offset = max(range(len(section.paras)), key=lambda idx: len(section.paras[idx]))
+        paragraph_index = (
+            section.para_indices[offset]
+            if offset < len(section.para_indices)
+            else None
+        )
+        return _NarrativeMatch(section.paras[offset], section, paragraph_index)
+
+    for text in structure.paragraphs:
+        if _is_process_narrative(text):
+            return _NarrativeMatch(text, None, None)
+    return _NarrativeMatch("", None, None)
+
+
+_PROCESS_STEP_HEADING_MARKERS = ("制备", "合成", "反应", "结晶", "纯化", "精制")
+_PROCESS_CONTROL_MARKERS = ("HPLC", "检测", "检验", "中控", "质量控制")
+_PROCESS_TABLE_HEADER_MARKERS = {"工序", "步骤", "操作", "操作步骤", "工艺步骤"}
+_EXPLICIT_STEP_RE = re.compile(
+    r"^\s*步骤\s*[0-9一二三四五六七八九十]+\s*[：:]\s*(?P<name>.+?)\s*$"
+)
+
+
+def _process_detail_rows(table: DocTable) -> list[tuple[int, str, str]]:
+    """Return detailed operation rows from a table under a concrete process heading.
+
+    Raw ``cells`` are intentional: many GMP process-detail tables have no header, and
+    the generic table parser therefore treats their first operation (e.g. 投料) as a
+    header.  Yield summaries are excluded both by heading and by their short values.
+    """
+    heading = table.section_heading or ""
+    if not heading or not any(marker in heading for marker in _PROCESS_STEP_HEADING_MARKERS):
+        return []
+    if "得量" in heading or "收率" in heading or "路线图" in heading:
+        return []
+
+    rows: list[tuple[int, str, str]] = []
+    for row_index, cells in enumerate(table.cells):
+        if len(cells) < 2:
+            continue
+        operation = cells[0].strip()
+        detail = " ".join(cell.strip() for cell in cells[1:] if cell.strip())
+        if not operation or not detail:
+            continue
+        if row_index == 0 and operation in _PROCESS_TABLE_HEADER_MARKERS:
+            continue
+        if len(operation) <= 40 and len(detail) >= 20:
+            rows.append((row_index, operation, detail))
+    return rows if len(rows) >= 2 else []
+
+
+def _yield_values_for_step(
+    yield_table: DocTable | None,
+    step_name: str,
+    drug_code: str,
+) -> tuple[str, str, str]:
+    """Match the yield-summary row to a real process step; never create a step from it."""
+    if yield_table is None:
+        return "", "", ""
+    normalized_step = re.sub(r"\s+", "", step_name)
+    normalized_drug = re.sub(r"\s+", "", drug_code)
+    for row in yield_table.rows:
+        output_name = _row_get(row, "名称")
+        normalized_output = re.sub(r"\s+", "", output_name)
+        if not normalized_output:
+            continue
+        if (
+            normalized_output in normalized_step
+            or normalized_step in normalized_output
+            or normalized_output == normalized_drug
+        ):
+            return (
+                output_name,
+                _row_get(row, "得量"),
+                _row_get(row, "收率"),
+            )
+    return "", "", ""
+
+
+def _explicit_process_steps(
+    structure: DocStructure,
+) -> list[tuple[str, DocSection, int | None]]:
+    """Explicit ``步骤1：…`` paragraphs under a process-description section."""
+    matches: list[tuple[str, DocSection, int | None]] = []
+    for section in structure.sections:
+        if "工艺描述" not in section.heading:
+            continue
+        for offset, paragraph in enumerate(section.paras):
+            match = _EXPLICIT_STEP_RE.match(paragraph)
+            if not match:
+                continue
+            paragraph_index = (
+                section.para_indices[offset]
+                if offset < len(section.para_indices)
+                else None
+            )
+            matches.append((match.group("name"), section, paragraph_index))
+    return matches
+
+
+def _normalize_process_name(heading: str, drug_code: str) -> str:
+    """``HRS-1597结晶纯化`` → report/business name ``结晶纯化``."""
+    name = heading.strip()
+    if drug_code:
+        name = re.sub(
+            rf"^\s*{re.escape(drug_code)}\s*[-—_:：]*\s*",
+            "",
+            name,
+            flags=re.IGNORECASE,
+        )
+    return name.strip() or heading.strip()
+
+
+def _find_process_basis(structure: DocStructure) -> str:
+    """Exact source heading used as the process basis (e.g. 3.1.1合成路线图)."""
+    heading_candidates = [
+        section.heading.strip()
+        for section in structure.sections
+        if "合成路线图" in section.heading
+    ]
+    if heading_candidates:
+        return heading_candidates[0]
+    # Some enterprise DOCX files render numbered subheadings with Normal style.
+    # The shared IR then retains the locator as a short section paragraph rather
+    # than a heading; accept only short lines so narrative mentions cannot become
+    # the authoritative process basis.
+    paragraph_candidates = [
+        paragraph.strip()
+        for section in structure.sections
+        for paragraph in section.paras
+        if "合成路线图" in paragraph and len(paragraph.strip()) <= 80
+    ]
+    return paragraph_candidates[0] if paragraph_candidates else ""
+
+
+def _detailed_process_description(
+    detailed_tables: list[tuple[DocTable, list[tuple[int, str, str]]]],
+    drug_code: str,
+) -> str:
+    """Faithful, deterministic route description assembled from detailed process rows."""
+    descriptions: list[str] = []
+    for table, rows in detailed_tables:
+        process_name = _normalize_process_name(table.section_heading or "", drug_code)
+        details = "；".join(f"{operation}：{detail}" for _, operation, detail in rows)
+        if details:
+            descriptions.append(f"{process_name}：{details}" if process_name else details)
+    return "\n".join(descriptions)
 
 
 def find_synthesis_route(ctx: _Ctx) -> list[dict]:
-    """hasSynthesisRoute→SynthesisRoute：1 条路线；步骤取自得量收率表，关联设备/中间体。"""
+    """hasSynthesisRoute→SynthesisRoute；详细工艺表定义步骤，收率表只补属性。"""
     narrative = _find_narrative(ctx.structure)
-    route_props = [_dp(DP["processDescription"], "工艺描述", narrative)]
-
     yield_tbl = ctx.structure.find_table("参考得量范围", "参考收率范围")
     steps: list[dict] = []
-    if yield_tbl:
-        for i, row in enumerate(yield_tbl.rows, start=1):
-            name = _row_get(row, "名称")
-            if not name:
-                continue
-            inter_cls = CRUDE_PRODUCT_IRI if "粗品" in name else PROCESS_INTERMEDIATE_IRI
-            step_subs = _step_equipment(ctx, name)
-            step_subs.append(_sub(
-                PRODUCES_INTERMEDIATE_IRI, "产出中间体", ctx,
-                _endpoint(inter_cls, name),
-            ))
+    detailed_tables = [
+        (table, rows)
+        for table in ctx.structure.tables
+        if (rows := _process_detail_rows(table))
+    ]
+    process_names = list(dict.fromkeys(
+        _normalize_process_name(table.section_heading or "", ctx.drug_code)
+        for table, _ in detailed_tables
+        if table.section_heading
+    ))
+    process_name = "、".join(name for name in process_names if name)
+    process_basis = _find_process_basis(ctx.structure)
+    process_description = (
+        _detailed_process_description(detailed_tables, ctx.drug_code)
+        or narrative.text
+    )
+    route_props = [
+        _dp(DP["processName"], "工艺名称", process_name),
+        _dp(DP["processBasis"], "工艺依据", process_basis),
+        _dp(DP["processDescription"], "工艺描述", process_description),
+    ]
+    if detailed_tables:
+        for i, (table, operation_rows) in enumerate(detailed_tables, start=1):
+            step_name = table.section_heading or f"工艺步骤{i}"
+            output_name, output_mass, yield_range = _yield_values_for_step(
+                yield_tbl, step_name, ctx.drug_code
+            )
+            conditions: list[str] = []
+            controls: list[str] = []
+            for _, operation, detail in operation_rows:
+                line = f"{operation}：{detail}"
+                target = (
+                    controls
+                    if any(marker in operation.upper() for marker in _PROCESS_CONTROL_MARKERS)
+                    else conditions
+                )
+                target.append(line)
+
+            step_subs = _step_equipment(ctx, step_name)
+            if output_name:
+                inter_cls = (
+                    CRUDE_PRODUCT_IRI if "粗品" in output_name else PROCESS_INTERMEDIATE_IRI
+                )
+                step_subs.append(_sub(
+                    PRODUCES_INTERMEDIATE_IRI,
+                    "产出中间体",
+                    ctx,
+                    _endpoint(inter_cls, output_name),
+                ))
+            source_ref = {
+                "kind": "table",
+                "section": step_name,
+                "heading_index": table.heading_index,
+                "table": table.table_index,
+            }
+            step_class = PURIFICATION_IRI if any(
+                marker in step_name for marker in ("纯化", "精制")
+            ) else SYNTHESIS_STEP_IRI
             steps.append(_endpoint(
-                SYNTHESIS_STEP_IRI, f"步骤{i}：{name}",
+                step_class,
+                step_name,
                 data_properties=[
                     _dp(DP["stepOrder"], "步骤序号", str(i)),
-                    _dp(DP["outputMassRange_kg"], "得量范围（kg）", _row_get(row, "得量")),
-                    _dp(DP["yieldRangePercent"], "收率范围（%）", _row_get(row, "收率")),
+                    _dp(DP["reactionConditions"], "反应条件/详细步骤", "\n".join(conditions)),
+                    _dp(DP["inProcessControl"], "过程控制", "\n".join(controls)),
+                    _dp(DP["outputMassRange_kg"], "得量范围（kg）", output_mass),
+                    _dp(DP["yieldRangePercent"], "收率范围（%）", yield_range),
                 ],
                 sub_relationships=step_subs,
-                source_ref="表 得量收率范围",
+                source_ref=source_ref,
+            ))
+    else:
+        for i, (step_name, section, paragraph_index) in enumerate(
+            _explicit_process_steps(ctx.structure), start=1
+        ):
+            output_name, output_mass, yield_range = _yield_values_for_step(
+                yield_tbl, step_name, ctx.drug_code
+            )
+            step_subs = _step_equipment(ctx, output_name or step_name)
+            if output_name:
+                inter_cls = (
+                    CRUDE_PRODUCT_IRI if "粗品" in output_name else PROCESS_INTERMEDIATE_IRI
+                )
+                step_subs.append(_sub(
+                    PRODUCES_INTERMEDIATE_IRI,
+                    "产出中间体",
+                    ctx,
+                    _endpoint(inter_cls, output_name),
+                ))
+            steps.append(_endpoint(
+                SYNTHESIS_STEP_IRI,
+                step_name,
+                data_properties=[
+                    _dp(DP["stepOrder"], "步骤序号", str(i)),
+                    _dp(DP["outputMassRange_kg"], "得量范围（kg）", output_mass),
+                    _dp(DP["yieldRangePercent"], "收率范围（%）", yield_range),
+                ],
+                sub_relationships=step_subs,
+                source_ref={
+                    "kind": "paragraph",
+                    "section": section.heading,
+                    "heading_index": section.heading_index,
+                    "paragraph_index": paragraph_index,
+                },
             ))
 
     step_subs_all = [_sub(_DEV + "hasStep", "包含步骤", ctx, s) for s in steps]
+    source_ref: dict[str, object]
+    if detailed_tables:
+        source_table = detailed_tables[0][0]
+        source_ref = {
+            "kind": "table",
+            "section": source_table.section_heading,
+            "heading_index": source_table.heading_index,
+            "table": source_table.table_index,
+        }
+    else:
+        source_ref = {"kind": "section"}
+    if not detailed_tables and narrative.section is not None:
+        source_ref["section"] = narrative.section.heading
+        source_ref["heading_index"] = narrative.section.heading_index
+    if not detailed_tables and narrative.paragraph_index is not None:
+        source_ref["paragraph_index"] = narrative.paragraph_index
+
+    route_label = (
+        f"{ctx.drug_code} {process_name}工艺路线"
+        if process_name
+        else f"{ctx.drug_code} 合成路线"
+    )
     return [_endpoint(
-        SYNTHESIS_ROUTE_IRI, f"{ctx.drug_code} 合成路线",
+        SYNTHESIS_ROUTE_IRI, route_label,
         data_properties=route_props,
         sub_relationships=step_subs_all,
-        source_ref="§ 工艺 / 工艺描述",
+        source_ref=source_ref,
     )]
 
 

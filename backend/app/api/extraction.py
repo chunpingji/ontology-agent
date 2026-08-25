@@ -337,7 +337,7 @@ def get_job(job_id: UUID, db: Session = Depends(get_db)):
     return job
 
 
-_ANNOTATOR_VERSION = 21
+_ANNOTATOR_VERSION = 24
 
 
 def _annotation_cache_path(job_id) -> Path:
@@ -1018,6 +1018,30 @@ def _narratives_payload(report) -> dict | None:
     }
 
 
+def _risk_report_source_document(job: ExtractionJob, db: Session) -> tuple[str, str]:
+    """Resolve the source document's typed name and stable provenance reference."""
+    source_config = job.source_config or {}
+    document_ref = str(source_config.get("doc_ref") or "").strip()
+    if document_ref:
+        shadow = (
+            db.query(EntityShadow)
+            .filter(EntityShadow.iri == document_ref)
+            .one_or_none()
+        )
+        if shadow is not None:
+            document_name = str(
+                (shadow.properties_json or {}).get("documentName")
+                or shadow.label_zh
+                or ""
+            ).strip()
+            if document_name:
+                return document_name, document_ref
+    return (
+        str(job.source_filename or "").strip(),
+        document_ref or f"urn:slpra:extraction-job:{job.id}",
+    )
+
+
 def _pde_conflict_decision_payload(db: Session, job_id: UUID) -> dict:
     """Snapshot the human PDE-conflict decision for report generation.
 
@@ -1081,6 +1105,7 @@ def _build_and_save_report(
     actor: str,
     report_id: UUID,
     pde_conflict_decision: dict,
+    source_document_ref: str,
 ) -> None:
     """Shared report build logic used by both sync and async paths (013)."""
     import json as _json
@@ -1181,6 +1206,7 @@ def _build_and_save_report(
             assessment_progress_fn=on_assessment_progress,
             narrative_progress_fn=on_narrative_progress,
             pde_conflict_decision=pde_conflict_decision,
+            source_document_ref=source_document_ref,
         )
         set_progress("render", 80, "正在排版风险评估报告并生成 Word 文件")
         docx_bytes = render_risk_report(
@@ -1212,6 +1238,7 @@ def _build_and_save_report(
                 ],
                 "coverage": manifest.to_dict(),
                 "pde_conflicts": report.pde_conflicts,
+                "source_document_edge": report.source_document_edge,
             }
             gen_report.narratives = _narratives_payload(report)
             gen_report.report_status = "completed"
@@ -1224,6 +1251,7 @@ def _build_and_save_report(
                     "rules_fired_count": generator.rules_fired_count,
                     "report_type": "risk_assessment",
                     "coverage": manifest.summary(),
+                    "source_document_name": report.source_document_name,
                 },
                 commit=False,
             )
@@ -1288,6 +1316,7 @@ def generate_risk_report(
     dismissed_ids = {r.slot_id for r in dismissed_rows} or None
     pde_conflict_decision = _pde_conflict_decision_payload(db, job_id)
     report_id = uuid4()
+    source_document_name, source_document_ref = _risk_report_source_document(job, db)
 
     if _llm_report_flags_active():
         gen_report = GeneratedReport(
@@ -1304,12 +1333,13 @@ def generate_risk_report(
         background_tasks.add_task(
             _build_and_save_report,
             job_id=job_id,
-            job_source_filename=job.source_filename or "",
+            job_source_filename=source_document_name,
             document_path=job.document_path,
             dismissed_ids=dismissed_ids,
             actor=identity.username,
             report_id=report_id,
             pde_conflict_decision=pde_conflict_decision,
+            source_document_ref=source_document_ref,
         )
         return {"report_id": str(report_id), "status": "pending"}
 
@@ -1328,10 +1358,11 @@ def generate_risk_report(
         assessment_substeps[:] = [dict(step) for step in substeps]
 
     report, manifest = generator.generate_with_coverage(
-        edges, source_filename=job.source_filename or "",
+        edges, source_filename=source_document_name,
         dismissed_slot_ids=dismissed_ids,
         assessment_progress_fn=on_assessment_progress,
         pde_conflict_decision=pde_conflict_decision,
+        source_document_ref=source_document_ref,
     )
     docx_bytes = render_risk_report(
         report, manifest, template=template, sample_docx_path=sample_docx,
@@ -1364,6 +1395,7 @@ def generate_risk_report(
             ],
             "coverage": manifest.to_dict(),
             "pde_conflicts": report.pde_conflicts,
+            "source_document_edge": report.source_document_edge,
         },
         narratives=_narratives_payload(report),
         actor=identity.username,
@@ -1379,6 +1411,7 @@ def generate_risk_report(
             "rules_fired_count": generator.rules_fired_count,
             "report_type": "risk_assessment",
             "coverage": manifest.summary(),
+            "source_document_name": report.source_document_name,
         },
         commit=False,
     )
@@ -1575,18 +1608,31 @@ def _build_ast_coverage_response(
     from app.services.ontology_engine import get_loaded_engine
 
     engine = get_loaded_engine()
-    # 016+ Gap B: materialize the PRODUCT report's OWN declared relations (评估小组 /
-    # 审批人小组 …) as edges so this coverage tree matches what report generation actually
-    # produces. Mirrors RiskReportGenerator._enriched_edges — WITHOUT this, a section's
-    # 本体覆盖声明 shows 评估小组/审批人小组 缺失 even though the generated report fills them.
-    # No-op unless the template declares the predicate as ontology_relation coverage.
+    # Mirror RiskReportGenerator._enriched_edges: provenance is always a report fact;
+    # assessment/approver team relations remain template-coverage-driven.
     from app.services.reporting.product_report_edges import (
         product_report_edges_for_template,
+        source_document_edge,
     )
 
+    edges = list(edges)
+    job = db.get(ExtractionJob, job_id)
+    source_document_name, source_document_ref = (
+        _risk_report_source_document(job, db)
+        if job is not None
+        else (result.get("filename") or "", f"urn:slpra:extraction-job:{job_id}")
+    )
+    provenance_edge = source_document_edge(
+        engine,
+        result.get("filename") or source_document_name,
+        source_class_iri=doc_class_iri,
+        source_ref=source_document_ref,
+    )
+    if provenance_edge:
+        edges.append(provenance_edge)
     product_edges = product_report_edges_for_template(engine, template)
     if product_edges:
-        edges = list(edges) + product_edges
+        edges.extend(product_edges)
     facts = edges_to_facts(list(edges), engine)
 
     rules = (

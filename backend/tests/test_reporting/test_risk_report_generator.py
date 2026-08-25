@@ -135,6 +135,22 @@ class TestRiskReportGenerator:
         report = gen.generate(edges, source_filename="HRS-1234.docx")
         assert "HRS-1234" in report.subject_description
 
+    def test_source_document_name_is_resolved_from_provenance_edge(self, db):
+        from app.services.reporting.product_report_edges import (
+            BASED_ON_SOURCE_DOCUMENT_IRI,
+            DOCUMENT_NAME_IRI,
+        )
+
+        report = RiskReportGenerator(db).generate(
+            [_drug_product_edge()], source_filename="HRS-1597 CMCReport.docx",
+        )
+
+        assert report.source_document_name == "HRS-1597 CMCReport.docx"
+        assert report.source_document_type == "CMCReport"
+        assert report.source_document_edge is not None
+        assert report.source_document_edge["predicate_iri"] == BASED_ON_SOURCE_DOCUMENT_IRI
+        assert report.source_document_edge["object_data_properties"][0]["iri"] == DOCUMENT_NAME_IRI
+
     def test_unknown_evaluation_flags_pending_not_low(self, db):
         """G1 (AST-4): missing data must surface as 待评估, not silent 低."""
         from app.services.reporting.risk_report_generator import (

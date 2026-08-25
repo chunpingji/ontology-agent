@@ -41,6 +41,12 @@ class DocTable:
     table_index: int = 0
     header_row_count: int = 1
     row_indices: list[int] = field(default_factory=list)
+    # Nearest enclosing Word heading at the table's block position.  Keeping this
+    # provenance prevents a semantically unrelated table elsewhere in the document
+    # (for example a yield summary) from being mistaken for a process-detail table.
+    section_heading: str | None = None
+    heading_index: int | None = None
+    section_path: list[str] = field(default_factory=list)
 
     @property
     def ncols(self) -> int:
@@ -251,7 +257,14 @@ def _canonical_headers(cells: list[list[str]], header_count: int) -> list[str]:
     return headers
 
 
-def _table_to_struct(table, table_index: int = 0) -> DocTable:
+def _table_to_struct(
+    table,
+    table_index: int = 0,
+    *,
+    section_heading: str | None = None,
+    heading_index: int | None = None,
+    section_path: list[str] | None = None,
+) -> DocTable:
     cells = [[_cell_text(cell) for cell in row.cells] for row in table.rows]
     header_count = _detect_header_rows(table)
     headers = _canonical_headers(cells, header_count)
@@ -272,6 +285,9 @@ def _table_to_struct(table, table_index: int = 0) -> DocTable:
         table_index=table_index,
         header_row_count=header_count,
         row_indices=row_indices,
+        section_heading=section_heading,
+        heading_index=heading_index,
+        section_path=section_path or [],
     )
 
 
@@ -336,7 +352,45 @@ def parse_docx_structure(
     if current.heading or current.paras:
         sections.append(current)
 
-    tables = [_table_to_struct(table, idx) for idx, table in enumerate(doc.tables)]
+    # Associate every top-level table with the heading active at its exact Word body
+    # position.  ``doc.tables`` alone loses this interleaving information.
+    paragraph_by_element = {paragraph._element: paragraph for paragraph in doc.paragraphs}
+    paragraph_index_by_element = {
+        paragraph._element: index for index, paragraph in enumerate(doc.paragraphs)
+    }
+    table_location: dict[object, tuple[str | None, int | None, list[str]]] = {}
+    heading_stack: list[tuple[int, str, int]] = []
+    for child in doc.element.body:
+        paragraph = paragraph_by_element.get(child)
+        if paragraph is not None:
+            text = (paragraph.text or "").strip()
+            level = infer_heading_level(paragraph) if text else 0
+            if level:
+                heading_stack = [item for item in heading_stack if item[0] < level]
+                heading_stack.append((level, text, paragraph_index_by_element[child]))
+        elif child in {table._element for table in doc.tables}:
+            if heading_stack:
+                _, heading, heading_index = heading_stack[-1]
+                table_location[child] = (
+                    heading,
+                    heading_index,
+                    [item[1] for item in heading_stack],
+                )
+            else:
+                table_location[child] = (None, None, [])
+
+    tables = []
+    for idx, table in enumerate(doc.tables):
+        section_heading, heading_index, section_path = table_location.get(
+            table._element, (None, None, [])
+        )
+        tables.append(_table_to_struct(
+            table,
+            idx,
+            section_heading=section_heading,
+            heading_index=heading_index,
+            section_path=section_path,
+        ))
     title = first_level_one or first_visual_heading or fallback_title
     return DocStructure(
         title=title,

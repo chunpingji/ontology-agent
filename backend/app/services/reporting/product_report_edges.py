@@ -12,7 +12,10 @@ relation into one edge in the **same** ``edges`` list the source-doc extractor p
 so it flows uniformly through the single fact spine — ``edges_to_facts`` → decision rules,
 ``validate_coverage`` / ``coverage_scoped_edges`` (presence + property expansion), and
 ``narrative_generator._format_facts`` (LLM synthesis) — with **no special-casing** in any
-of them. The emitted edge dict mirrors ``relation_extractor._make_edge`` key-for-key.
+of them. Report provenance is materialized by :func:`source_document_edge` independently
+of template coverage: every generated report must retain its source-document edge even
+when an authored template does not display that relation as a coverage slot. The emitted
+edge dict mirrors ``relation_extractor._make_edge`` key-for-key.
 
 Design (deliberately NOT a render-time fact_source stopgap):
 
@@ -37,12 +40,18 @@ logger = logging.getLogger(__name__)
 
 # ── Risk / personnel IRIs (byte-verified against ontology/slpra/slpra-risk.ttl) ──
 _RISK = "https://ontology.pharma-gmp.cn/slpra/risk/"
+_DOCUMENT = "https://ontology.pharma-gmp.cn/slpra/document/"
+_DRUG_DEVELOPMENT = "https://ontology.pharma-gmp.cn/slpra/drug-development/"
 
 RISK_ASSESSMENT_REPORT_IRI = _RISK + "RiskAssessmentReport"
+BASED_ON_SOURCE_DOCUMENT_IRI = _RISK + "basedOnSourceDocument"
 HAS_ASSESSMENT_TEAM_IRI = _RISK + "hasAssessmentTeam"
 ASSESSMENT_TEAM_IRI = _RISK + "AssessmentTeam"
 HAS_APPROVER_TEAM_IRI = _RISK + "hasApproverTeam"
 APPROVER_TEAM_IRI = _RISK + "ApproverTeam"
+REGULATORY_DOCUMENT_IRI = _DOCUMENT + "RegulatoryDocument"
+DOCUMENT_NAME_IRI = _DOCUMENT + "documentName"
+CMC_REPORT_IRI = _DRUG_DEVELOPMENT + "CMCReport"
 
 
 def _class_label(engine: Any, iri: str, fallback: str) -> str:
@@ -56,6 +65,50 @@ def _class_label(engine: Any, iri: str, fallback: str) -> str:
     except Exception:  # pragma: no cover - defensive; label lookup must never crash a report
         logger.debug("class label lookup failed for %s", iri, exc_info=True)
     return fallback
+
+
+def source_document_edge(
+    engine: Any,
+    source_filename: str,
+    *,
+    source_class_iri: str = CMC_REPORT_IRI,
+    source_ref: str | None = None,
+) -> dict | None:
+    """Materialize ``RiskAssessmentReport --basedOnSourceDocument--> document``.
+
+    The uploaded filename is a deterministic job fact. It is carried both as the edge's
+    ``object_text`` and as the typed ``documentName`` data property, allowing renderers,
+    coverage validation, and audit snapshots to retrieve the analyzed CMCReport name
+    from the same edge without asking an LLM. Blank names yield no edge rather than a
+    fabricated placeholder.
+    """
+    document_name = str(source_filename or "").replace("\\", "/").rsplit("/", 1)[-1].strip()
+    if not document_name:
+        return None
+
+    fallback_class_label = source_class_iri.rstrip("/#").rsplit("/", 1)[-1].rsplit("#", 1)[-1]
+    return {
+        "subject_class_iri": RISK_ASSESSMENT_REPORT_IRI,
+        "subject_class_label": _class_label(
+            engine, RISK_ASSESSMENT_REPORT_IRI, "风险评估报告",
+        ),
+        "subject_text": "本风险评估报告",
+        "predicate_iri": BASED_ON_SOURCE_DOCUMENT_IRI,
+        "predicate_label": "依据源文档",
+        "object_class_iri": source_class_iri,
+        "object_class_label": _class_label(
+            engine, source_class_iri, fallback_class_label or "法规文档",
+        ),
+        "object_text": document_name,
+        "object_source": "report-source-document",
+        "object_data_properties": [{
+            "iri": DOCUMENT_NAME_IRI,
+            "label": "文档名称",
+            "value": document_name,
+        }],
+        "sub_relationships": [],
+        "source_ref": source_ref or document_name,
+    }
 
 
 def _assessment_team_edge(engine: Any) -> dict | None:

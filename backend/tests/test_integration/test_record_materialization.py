@@ -55,6 +55,7 @@ def test_document_record_iri_class_module_phase(db, fake_engine):
     )  # C1.3 携阶段
     assert s.properties_json["approvalStatus"] == "approved"
     assert s.properties_json["contentHash"] == "sha256:beefbeef01"
+    assert s.properties_json["documentName"] == "YY 化合物稳定性报告"
     assert s.properties_json["_version"] == 1
 
 

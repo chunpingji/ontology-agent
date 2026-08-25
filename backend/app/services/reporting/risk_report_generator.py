@@ -67,6 +67,12 @@ class RiskReport:
     revision: str = "00"
     effective_date: str = ""
     subject_description: str = ""
+    # Deterministic provenance projected from
+    # RiskAssessmentReport --basedOnSourceDocument--> CMCReport.  The edge is the
+    # source of truth; the two display fields are derived from it for renderers.
+    source_document_edge: dict[str, Any] | None = None
+    source_document_name: str = ""
+    source_document_type: str = ""
     equipment_tables: dict[str, list[EquipmentEntry]] = field(default_factory=dict)
     equipment_notes: list[str] = field(default_factory=list)
     team_members: list[dict] = field(default_factory=list)
@@ -129,6 +135,7 @@ class RiskReportGenerator:
         assessment_progress_fn: Callable[[list[dict[str, Any]]], None] | None = None,
         narrative_progress_fn: Callable[[dict, int, int], None] | None = None,
         pde_conflict_decision: dict[str, Any] | None = None,
+        source_document_ref: str | None = None,
     ) -> tuple[RiskReport, CoverageManifest]:
         """Build the report AND the material-coverage manifest in one pass (AST-3).
 
@@ -170,11 +177,16 @@ class RiskReportGenerator:
             assessment_progress_fn([dict(item) for item in assessment_steps])
         emit_assessment_step("facts", "running")
         engine = get_loaded_engine()
-        # Gap B (016+): materialize the PRODUCT report's own declared relations
-        # (评估小组 / 审批人小组 …) as edges from master data, so they flow through the
-        # single fact spine exactly like source-doc edges. No-op unless the template
-        # declares the predicate as ontology_relation coverage (zero blast radius).
-        edges = self._enriched_edges(edges, engine, document_path=document_path)
+        # Materialize deterministic report-side relations into the same fact spine:
+        # provenance is always present when a source filename exists; optional product
+        # relations (评估小组 / 审批人小组 …) remain template-coverage-driven.
+        edges = self._enriched_edges(
+            edges,
+            engine,
+            document_path=document_path,
+            source_filename=source_filename,
+            source_document_ref=source_document_ref,
+        )
         facts = edges_to_facts(edges, engine)
         fact_items = [
             {
@@ -222,6 +234,9 @@ class RiskReportGenerator:
         emit_assessment_step("rules", "completed", rules_result, rule_items)
 
         subject = self._build_subject_description(edges, source_filename)
+        source_edge, source_name, source_type = self._source_document_metadata(
+            edges, source_filename,
+        )
         equipment_tables = self._build_equipment_tables(edges)
         equipment_notes: list[str] = []
         if "未分组" in equipment_tables:
@@ -239,6 +254,9 @@ class RiskReportGenerator:
             doc_no=self._template.doc_no,
             revision=self._template.revision,
             subject_description=subject,
+            source_document_edge=source_edge,
+            source_document_name=source_name,
+            source_document_type=source_type,
             equipment_tables=equipment_tables,
             equipment_notes=equipment_notes,
             assessment_rows=post_rows,
@@ -439,6 +457,8 @@ class RiskReportGenerator:
         edges: list[dict],
         *,
         dismissed_slot_ids: set[str] | None = None,
+        source_filename: str = "",
+        source_document_ref: str | None = None,
     ) -> tuple[list[RiskRow], CoverageManifest, list[dict]]:
         """Deterministic-only core (NO LLM): extracted facts → post-control risk
         rows + coverage manifest + the enriched edge list.
@@ -456,7 +476,12 @@ class RiskReportGenerator:
         from app.services.ontology_engine import get_loaded_engine
 
         engine = get_loaded_engine()
-        edges = self._enriched_edges(edges, engine)
+        edges = self._enriched_edges(
+            edges,
+            engine,
+            source_filename=source_filename,
+            source_document_ref=source_document_ref,
+        )
         facts = edges_to_facts(edges, engine)
         rules = self._load_rules()
         context = self._build_template_context(edges)
@@ -472,23 +497,54 @@ class RiskReportGenerator:
         return post_rows, manifest, edges
 
     def _enriched_edges(
-        self, edges: list[dict], engine: Any, document_path: str | None = None
+        self,
+        edges: list[dict],
+        engine: Any,
+        document_path: str | None = None,
+        source_filename: str = "",
+        source_document_ref: str | None = None,
     ) -> list[dict]:
-        """Source-doc edges + the product report's own declared relations (Gap B).
+        """Source facts + deterministic provenance + declared product relations.
 
-        A new list is returned (inputs untouched). Empty add — hence byte-identical
-        output — unless ``self._template`` declares a product-report predicate with a
-        registered finder (:func:`product_report_edges_for_template`)."""
+        A new list is returned (inputs untouched). Source provenance is added whenever
+        ``source_filename`` is available; other product-report relations remain gated by
+        registered template coverage (:func:`product_report_edges_for_template`).
+        """
         from app.services.extraction.equipment_source import enrich_equipment_facts
         from app.services.reporting.aps_equipment_resolver import (
             resolve_aps_equipment_candidates,
         )
         from app.services.reporting.product_report_edges import (
+            BASED_ON_SOURCE_DOCUMENT_IRI,
+            CMC_REPORT_IRI,
+            RISK_ASSESSMENT_REPORT_IRI,
             product_report_edges_for_template,
+            source_document_edge,
         )
 
+        combined = list(edges)
+        if source_filename and not any(
+            edge.get("predicate_iri") == BASED_ON_SOURCE_DOCUMENT_IRI
+            for edge in combined
+        ):
+            source_class_iri = next((
+                str(edge.get("subject_class_iri"))
+                for edge in combined
+                if edge.get("subject_class_iri")
+                and edge.get("subject_class_iri") != RISK_ASSESSMENT_REPORT_IRI
+            ), CMC_REPORT_IRI)
+            provenance_edge = source_document_edge(
+                engine,
+                source_filename,
+                source_class_iri=source_class_iri,
+                source_ref=source_document_ref,
+            )
+            if provenance_edge:
+                combined.append(provenance_edge)
+
         product_edges = product_report_edges_for_template(engine, self._template)
-        combined = edges + product_edges if product_edges else list(edges)
+        if product_edges:
+            combined.extend(product_edges)
         # 设备需求中的 A/B、A或B 是候选集合；风险事实只能消费 APS 在计划月份确认的实际设备。
         # 返回报告专用投影，不改写原始抽取图谱。
         combined = resolve_aps_equipment_candidates(
@@ -503,6 +559,43 @@ class RiskReportGenerator:
             logger.debug("报告期设备档案富化整体跳过", exc_info=True)
             self._equipment_conflicts = []
         return combined
+
+    @staticmethod
+    def _source_document_metadata(
+        edges: list[dict], fallback_filename: str = "",
+    ) -> tuple[dict[str, Any] | None, str, str]:
+        """Read the analyzed document identity from the provenance edge.
+
+        ``fallback_filename`` is retained only for legacy callers that supply a name
+        but bypass enrichment. Normal report generation always reaches this method with
+        a materialized ``basedOnSourceDocument`` edge.
+        """
+        from app.services.reporting.product_report_edges import (
+            BASED_ON_SOURCE_DOCUMENT_IRI,
+            CMC_REPORT_IRI,
+            DOCUMENT_NAME_IRI,
+        )
+
+        edge = next((
+            item for item in edges
+            if item.get("predicate_iri") == BASED_ON_SOURCE_DOCUMENT_IRI
+        ), None)
+        if edge is None:
+            return None, fallback_filename, "CMCReport" if fallback_filename else ""
+
+        data_properties = edge.get("object_data_properties") or []
+        document_name = next((
+            str(prop.get("value"))
+            for prop in data_properties
+            if prop.get("iri") == DOCUMENT_NAME_IRI and prop.get("value")
+        ), str(edge.get("object_text") or fallback_filename))
+        class_iri = str(edge.get("object_class_iri") or "")
+        document_type = (
+            "CMCReport"
+            if class_iri == CMC_REPORT_IRI or class_iri.endswith("/CMCReport")
+            else str(edge.get("object_class_label") or class_iri.rsplit("/", 1)[-1])
+        )
+        return edge, document_name, document_type
 
     def _try_narrative_generation(
         self,

@@ -123,6 +123,13 @@ slpra-doc:extractedFrom a owl:ObjectProperty ;
 # Datatype Properties — Document lifecycle metadata (domain RegulatoryDocument)
 # ============================================================
 
+slpra-doc:documentName a owl:DatatypeProperty ;
+    rdfs:domain slpra-doc:RegulatoryDocument ;
+    rdfs:range xsd:string ;
+    rdfs:label "document name"@en ;
+    rdfs:label "文档名称"@zh ;
+    rdfs:comment "The stable display name of a regulatory document record, including its filename extension when available."@en .
+
 slpra-doc:documentVersion a owl:DatatypeProperty ;
     rdfs:domain slpra-doc:RegulatoryDocument ;
     rdfs:range xsd:string ;

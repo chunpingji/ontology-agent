@@ -49,7 +49,6 @@ import {
   getAnnotatedDocument,
   listReports,
   pollReportStatus,
-  rerunAnnotation,
   resolveDocumentJobId,
   type GeneratedReportDTO,
   type ReportOrDocument,
@@ -88,6 +87,12 @@ const ACTIONS = [
 ] as const;
 
 type Notice = { tone: "info" | "success" | "error"; text: string };
+
+type DataPreparation = {
+  status: "existing" | "refreshing" | "refreshed" | "error";
+  relationshipCount?: number;
+  error?: string;
+};
 
 type AssessmentSubstep = {
   key: string;
@@ -190,7 +195,8 @@ export function DocumentActionsMenu({ item }: { item: ReportOrDocument }) {
   const [previewBlob, setPreviewBlob] = useState<Blob | null>(null);
   const [previewLoading, setPreviewLoading] = useState(false);
   const [previewError, setPreviewError] = useState<string | null>(null);
-  const [generationStage, setGenerationStage] = useState<"recognizing" | "generating" | null>(null);
+  const [generationPlanActive, setGenerationPlanActive] = useState(false);
+  const [dataPreparation, setDataPreparation] = useState<DataPreparation>({ status: "existing" });
   const previewContainerRef = useRef<HTMLDivElement>(null);
   // 从 DropdownMenu 进入 Drawer 时，等待菜单的 FocusScope 完成关闭后再打开。
   // 避免两个 Radix 浮层短暂重叠，导致 body pointer-events 锁的恢复顺序错乱。
@@ -245,11 +251,6 @@ export function DocumentActionsMenu({ item }: { item: ReportOrDocument }) {
       const resolvedJobId = jobId ?? await resolveDocumentJobId(iri);
       if (!resolvedJobId) throw new Error("该文档未关联抽取任务，无法生成报告");
       setJobId(resolvedJobId);
-      setGenerationStage("recognizing");
-      await rerunAnnotation(resolvedJobId);
-      // rerun 会删除旧缓存；该 GET 在缓存缺失时阻塞式重算并写回，确保后续报告只读新关系。
-      await getAnnotatedDocument(resolvedJobId);
-      setGenerationStage("generating");
       const response = await generateRiskReport(resolvedJobId);
       if (response instanceof Blob) {
         setSyncBlob(response);
@@ -289,7 +290,34 @@ export function DocumentActionsMenu({ item }: { item: ReportOrDocument }) {
       queryClient.invalidateQueries({ queryKey: ["report-center"] });
     },
     onError: (error) => setNotice({ tone: "error", text: friendlyError(error) }),
-    onSettled: () => setGenerationStage(null),
+  });
+
+  const refreshData = useMutation({
+    mutationFn: async () => {
+      const iri = item.kind === "uploaded-document" ? item.iri : undefined;
+      if (!iri) throw new Error("仅支持对上传文档重新读取与校验数据");
+      const resolvedJobId = jobId ?? await resolveDocumentJobId(iri);
+      if (!resolvedJobId) throw new Error("该文档未关联抽取任务，无法重新读取数据");
+      setJobId(resolvedJobId);
+
+      const annotated = await getAnnotatedDocument(resolvedJobId, true);
+      const docClassIri = annotated.doc_class?.doc_class_iri ?? "";
+      if (!docClassIri.includes("CMCReport")) {
+        throw new Error("重新读取的数据未识别为 CMCReport，请先检查文档分类");
+      }
+      const relationshipCount = annotated.relationships?.length ?? 0;
+      if (relationshipCount === 0) {
+        throw new Error("重新读取完成，但未识别到关系图谱数据，请检查文档内容或抽取配置");
+      }
+      return relationshipCount;
+    },
+    onMutate: () => setDataPreparation({ status: "refreshing" }),
+    onSuccess: (relationshipCount) => {
+      setDataPreparation({ status: "refreshed", relationshipCount });
+    },
+    onError: (error) => {
+      setDataPreparation({ status: "error", error: friendlyError(error) });
+    },
   });
 
   const busy = generate.isPending;
@@ -297,7 +325,7 @@ export function DocumentActionsMenu({ item }: { item: ReportOrDocument }) {
   const openRiskDrawer = async () => {
     setDrawerOpen(true);
     // 本组件内已有生成结果或任务在跑时直接恢复现场；页面刷新后的首次进入才查历史。
-    if (busy || report || syncBlob || historyLoading) return;
+    if (busy || report || syncBlob || historyLoading || generationPlanActive) return;
 
     const iri = item.kind === "uploaded-document" ? item.iri : undefined;
     if (!iri) return;
@@ -308,7 +336,10 @@ export function DocumentActionsMenu({ item }: { item: ReportOrDocument }) {
       setJobId(resolvedJobId);
       const reports = await listReports(resolvedJobId);
       const latest = reports.find((entry) => entry.report_type === "risk_assessment");
-      if (!latest) return;
+      if (!latest) {
+        setGenerationPlanActive(true);
+        return;
+      }
       // 列表响应不含在线预览 narratives，继续读取详情以恢复完整的上次结果。
       const detail = await pollReportStatus(resolvedJobId, latest.id);
       setReportId(latest.id);
@@ -330,7 +361,23 @@ export function DocumentActionsMenu({ item }: { item: ReportOrDocument }) {
     setNotice({ tone: "info", text: `「${label}」功能即将上线` });
   };
 
+  const enterGenerationPlan = () => {
+    setGenerationPlanActive(true);
+    setReport(null);
+    setReportId(null);
+    setSyncBlob(null);
+    setNotice(null);
+    setAssessmentExpanded(false);
+    setPreviewOpen(false);
+    setPreviewBlob(null);
+    setPreviewError(null);
+    generate.reset();
+    refreshData.reset();
+    setDataPreparation({ status: "existing" });
+  };
+
   const startGeneration = () => {
+    setGenerationPlanActive(false);
     setReport(null);
     setReportId(null);
     setSyncBlob(null);
@@ -520,6 +567,7 @@ export function DocumentActionsMenu({ item }: { item: ReportOrDocument }) {
               {stages.map(([key, label], index) => {
                 const done = completed || index < currentIndex;
                 const active = !completed && index === currentIndex && busy;
+                const isDataPreparation = key === "prepare";
                 const isAssessment = key === "assess";
                 const hasAssessmentTrace = isAssessment
                   && (assessmentSubsteps.length > 0 || pdeConflicts.length > 0);
@@ -558,6 +606,44 @@ export function DocumentActionsMenu({ item }: { item: ReportOrDocument }) {
                       ) : null}
                     </div>
                     {active && <p className="mt-1 text-xs text-muted-foreground">{progress?.detail}</p>}
+                    {planning && isDataPreparation ? (
+                      <div className="mt-2 flex items-start justify-between gap-3 rounded-md border bg-muted/30 px-3 py-2.5">
+                        <p className={cn(
+                          "min-w-0 pt-1 text-xs leading-5 text-muted-foreground",
+                          dataPreparation.status === "error" && "text-destructive",
+                          dataPreparation.status === "refreshed" && "text-emerald-600 dark:text-emerald-500",
+                        )}>
+                          {dataPreparation.status === "refreshing"
+                            ? "正在重新读取源文档并校验关系图谱…"
+                            : dataPreparation.status === "refreshed"
+                              ? `已重新读取并校验 · ${dataPreparation.relationshipCount ?? 0} 条关系`
+                              : dataPreparation.status === "error"
+                                ? `重新读取与校验失败：${dataPreparation.error ?? "未知错误"}`
+                                : "默认复用现有关系图谱数据；如源文档或抽取配置已变化，可在生成前重新读取。"}
+                        </p>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="shrink-0"
+                          disabled={refreshData.isPending}
+                          onClick={() => refreshData.mutate()}
+                        >
+                          {refreshData.isPending ? (
+                            <Loader2 className="animate-spin" />
+                          ) : (
+                            <RotateCcw />
+                          )}
+                          {refreshData.isPending
+                            ? "读取与校验中"
+                            : dataPreparation.status === "error"
+                              ? "重试读取与校验"
+                              : dataPreparation.status === "refreshed"
+                                ? "再次读取与校验"
+                                : "重新读取与校验"}
+                        </Button>
+                      </div>
+                    ) : null}
                     {showAssessmentTrace ? (
                       <div className="mt-3 space-y-1 border-l border-border pl-3">
                         <Accordion type="multiple" defaultValue={["narratives"]} className="w-full">
@@ -698,15 +784,15 @@ export function DocumentActionsMenu({ item }: { item: ReportOrDocument }) {
 
           </div>
           <div className="flex justify-end gap-3 border-t px-6 py-4">
-            {planning && <Button onClick={startGeneration}><Sparkles />开始生成</Button>}
-            {generate.isError && <Button onClick={startGeneration}><RotateCcw />重新生成</Button>}
+            {planning && <Button disabled={refreshData.isPending || dataPreparation.status === "error"} onClick={startGeneration}><Sparkles />开始生成</Button>}
+            {generate.isError && <Button onClick={enterGenerationPlan}><RotateCcw />重新生成</Button>}
             {completed && <>
-              <Button variant="outline" onClick={startGeneration}><RotateCcw />重新生成</Button>
+              <Button variant="outline" onClick={enterGenerationPlan}><RotateCcw />重新生成</Button>
               <Button variant="outline" onClick={preview}><Eye />预览</Button>
               <Button onClick={download}><Download />下载报告</Button>
             </>}
             {historyLoading && <Button disabled><Loader2 className="animate-spin" />加载中</Button>}
-            {busy && <Button disabled><Loader2 className="animate-spin" />{generationStage === "recognizing" ? "重新识别中" : "生成中"}</Button>}
+            {busy && <Button disabled><Loader2 className="animate-spin" />生成中</Button>}
           </div>
       </SheetContent>
 
@@ -756,7 +842,7 @@ export function DocumentActionsMenu({ item }: { item: ReportOrDocument }) {
               aria-label="打开风险评估报告生成进度"
             >
               <Loader2 className="size-4 animate-spin text-primary" />
-              <span>{generationStage === "recognizing" ? "正在重新识别关系图谱…" : "正在通过模板生成风险评估报告…"}</span>
+              <span>正在通过模板生成风险评估报告…</span>
               <span className="text-xs text-primary">查看进度</span>
             </button>
           </SheetTrigger>

@@ -72,6 +72,8 @@ def _make_structure() -> DocStructure:
         DocSection("工艺描述", 3, [
             "本品以起始物料 1234-4 经偶联反应得到中间体 1234-3，"
             "再经脱保护、成盐、酰胺缩合、脱苄基及精制，最终得到成品 HRS-1234。",
+            "步骤1：1234-3的制备",
+            "步骤2：HRS-1234粗品的制备",
         ]),
         DocSection("设备清洗方法", 3, [
             "预清洗：用纯化水冲洗设备内壁",
@@ -532,7 +534,7 @@ def test_find_synthesis_route_builds_steps_with_subrelations():
     assert len(steps) == 2
     step1 = steps[0]
     assert step1["predicate_label"] == "包含步骤"
-    assert step1["object_text"].startswith("步骤1")
+    assert step1["object_text"] == "1234-3的制备"
     assert any(d["label"] == "收率范围（%）" for d in step1["object_data_properties"])
     # 第一步（1234-3）递归携带 usesEquipment + producesIntermediate 子关系。
     nested = step1["sub_relationships"]
@@ -542,6 +544,128 @@ def test_find_synthesis_route_builds_steps_with_subrelations():
     assert equip == {"RE64202", "RE64602", "CT64611"}
     inter = next(s for s in nested if s["predicate_label"] == "产出中间体")
     assert inter["object_text"] == "1234-3"
+
+
+def test_find_synthesis_route_anchors_nested_process_prose_not_route_diagram():
+    """同名父子章节之间夹路线图时，工艺描述必须锚定最深层正文段落。"""
+    ctx = _ctx()
+    prose = (
+        "以 5678-4 为起始物料，经缩合反应得到中间体 5678-3；"
+        "中间体 5678-3 进一步反应得到中间体 5678-2，最后精制得到成品。"
+    )
+    ctx.structure.sections = [
+        DocSection("工艺描述", 3, [], heading_index=76),
+        DocSection("合成路线图", 4, [], heading_index=77),
+        DocSection(
+            "工艺描述",
+            4,
+            [prose, "步骤1：5678-3的制备"],
+            heading_index=83,
+            para_indices=[84, 86],
+        ),
+    ]
+    ctx.structure.paragraphs = [
+        "工艺描述", "合成路线图", "工艺描述", prose, "步骤1：5678-3的制备",
+    ]
+
+    route = find_synthesis_route(ctx)[0]
+
+    process = next(d for d in route["data_properties"] if d["label"] == "工艺描述")
+    assert process["value"] == prose
+    assert route["source_ref"] == {
+        "kind": "section",
+        "section": "工艺描述",
+        "heading_index": 83,
+        "paragraph_index": 84,
+    }
+
+
+def test_detailed_process_table_defines_step_and_yield_table_only_enriches_it():
+    ctx = _ctx()
+    ctx.drug_code = "HRS-1597"
+    ctx.structure.sections.insert(
+        0, DocSection("3.1.1合成路线图", 4, [], heading_index=53)
+    )
+    detailed_cells = [
+        ["投料", "步骤一：加入HRS-1597粗品及溶剂，升温溶清并加入活性炭。"],
+        ["甩滤", "析晶结束后使用离心机甩滤，滤饼密封冷藏保存。"],
+        ["HPLC", "取样送检HPLC；单个杂质、总杂及重金属均应符合标准。"],
+        ["干燥", "滤饼转入真空干燥箱，控制温度干燥后包装保存。"],
+    ]
+    detailed = DocTable(
+        headers=detailed_cells[0],
+        rows=[],
+        cells=detailed_cells,
+        table_index=4,
+        section_heading="HRS-1597结晶纯化",
+        heading_index=67,
+        section_path=["工艺描述", "3.1.2 工艺描述", "HRS-1597结晶纯化"],
+    )
+    yield_table = _mk_table([
+        ["名称", "参考得量范围", "参考收率范围"],
+        ["HRS-1597", "3.0~6.0kg", "50.0%~85.0%"],
+    ])
+    yield_table.table_index = 5
+    yield_table.section_heading = "得量收率范围"
+    ctx.structure.tables = [detailed, yield_table]
+
+    route = find_synthesis_route(ctx)[0]
+    steps = route["sub_relationships"]
+
+    route_props = {
+        item["label"]: item["value"] for item in route["data_properties"]
+    }
+    assert route["text"] == "HRS-1597 结晶纯化工艺路线"
+    assert route_props["工艺名称"] == "结晶纯化"
+    assert route_props["工艺依据"] == "3.1.1合成路线图"
+    assert route_props["工艺描述"].startswith("结晶纯化：投料：步骤一")
+    assert "HPLC：取样送检HPLC" in route_props["工艺描述"]
+
+    assert len(steps) == 1
+    step = steps[0]
+    assert step["object_text"] == "HRS-1597结晶纯化"
+    assert step["object_class_iri"] == rx.PURIFICATION_IRI
+    props = {item["label"]: item["value"] for item in step["object_data_properties"]}
+    assert "投料：步骤一" in props["反应条件/详细步骤"]
+    assert "HPLC" in props["过程控制"]
+    assert props["得量范围（kg）"] == "3.0~6.0kg"
+    assert props["收率范围（%）"] == "50.0%~85.0%"
+    assert step["source_ref"] == {
+        "kind": "table",
+        "section": "HRS-1597结晶纯化",
+        "heading_index": 67,
+        "table": 4,
+    }
+
+
+def test_process_basis_supports_normal_style_numbered_locator_paragraph():
+    ctx = _ctx()
+    ctx.drug_code = "HRS-1597"
+    ctx.structure.sections = [
+        DocSection(
+            "工艺描述",
+            2,
+            ["3.1.1合成路线图", "3.1.2 工艺描述"],
+            heading_index=52,
+            para_indices=[53, 66],
+        )
+    ]
+    detailed_cells = [
+        ["投料", "加入HRS-1597粗品和溶剂，升温并搅拌至物料完全溶清。"],
+        ["干燥", "过滤所得滤饼转入真空干燥箱，控制温度并按时翻料。"],
+    ]
+    ctx.structure.tables = [DocTable(
+        headers=detailed_cells[0],
+        rows=[],
+        cells=detailed_cells,
+        section_heading="HRS-1597结晶纯化",
+        heading_index=67,
+    )]
+
+    route = find_synthesis_route(ctx)[0]
+    props = {item["label"]: item["value"] for item in route["data_properties"]}
+
+    assert props["工艺依据"] == "3.1.1合成路线图"
 
 
 def test_find_safety_and_quality_risk():

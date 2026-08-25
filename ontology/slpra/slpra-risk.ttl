@@ -8,6 +8,7 @@
 @prefix slpra-equip:  <https://ontology.pharma-gmp.cn/slpra/equipment/> .
 @prefix slpra-contam: <https://ontology.pharma-gmp.cn/slpra/contamination/> .
 @prefix slpra-pers:   <https://ontology.pharma-gmp.cn/slpra/personnel/> .
+@prefix slpra-doc:    <https://ontology.pharma-gmp.cn/slpra/document/> .
 
 <https://ontology.pharma-gmp.cn/slpra/risk/>
     a owl:Ontology ;
@@ -15,6 +16,7 @@
     rdfs:label "SLPRA Risk Assessment Rules Ontology"@en ;
     rdfs:label "SLPRA 风险评估规则本体"@zh ;
     rdfs:comment "Module 4: Risk assessment processes, MACO/PDE calculation model, 8 CFDI shared-line scenarios, and equipment-product compatibility matrix."@en ;
+    owl:imports <https://ontology.pharma-gmp.cn/slpra/document/> ;
     owl:imports <http://purl.obolibrary.org/obo/bfo.owl> .
 
 # ============================================================
@@ -236,6 +238,13 @@ slpra-risk:producesReport a owl:ObjectProperty ;
     rdfs:domain slpra-risk:RiskAssessmentProcess ;
     rdfs:range slpra-risk:RiskAssessmentReport ;
     rdfs:label "produces report"@en .
+
+slpra-risk:basedOnSourceDocument a owl:ObjectProperty ;
+    rdfs:domain slpra-risk:RiskAssessmentReport ;
+    rdfs:range slpra-doc:RegulatoryDocument ;
+    rdfs:label "based on source document"@en ;
+    rdfs:label "依据源文档"@zh ;
+    rdfs:comment "Links a generated risk assessment report to the regulatory document whose validated relationship graph supplied the assessment facts."@en .
 
 slpra-risk:hasRiskScore a owl:ObjectProperty ;
     rdfs:domain slpra-risk:RiskAssessmentReport ;

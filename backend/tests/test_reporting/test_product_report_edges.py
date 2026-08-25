@@ -14,10 +14,14 @@ from app.services.reporting.ast_template import OntologyRelationBinding, ReportT
 from app.services.reporting.product_report_edges import (
     APPROVER_TEAM_IRI,
     ASSESSMENT_TEAM_IRI,
+    BASED_ON_SOURCE_DOCUMENT_IRI,
+    CMC_REPORT_IRI,
+    DOCUMENT_NAME_IRI,
     HAS_APPROVER_TEAM_IRI,
     HAS_ASSESSMENT_TEAM_IRI,
     RISK_ASSESSMENT_REPORT_IRI,
     product_report_edges_for_template,
+    source_document_edge,
 )
 
 _DOC = RISK_ASSESSMENT_REPORT_IRI
@@ -86,3 +90,21 @@ def test_edge_shape_mirrors_extractor_keys():
         "object_class_iri", "object_text", "object_data_properties", "source_ref",
     ):
         assert key in edge
+
+
+def test_source_document_edge_carries_typed_cmc_report_name():
+    edge = source_document_edge(None, r"C:\uploads\HRS-1597 CMCReport.docx")
+
+    assert edge is not None
+    assert edge["predicate_iri"] == BASED_ON_SOURCE_DOCUMENT_IRI
+    assert edge["object_class_iri"] == CMC_REPORT_IRI
+    assert edge["object_text"] == "HRS-1597 CMCReport.docx"
+    assert edge["object_data_properties"] == [{
+        "iri": DOCUMENT_NAME_IRI,
+        "label": "文档名称",
+        "value": "HRS-1597 CMCReport.docx",
+    }]
+
+
+def test_source_document_edge_skips_blank_name():
+    assert source_document_edge(None, "  ") is None

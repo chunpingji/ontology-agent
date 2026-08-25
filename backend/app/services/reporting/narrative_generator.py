@@ -186,6 +186,26 @@ def _field_value_from_edges(label: str, edges: list[dict]) -> str | None:
     return None
 
 
+def _process_route_fields(edges: list[dict]) -> dict[str, str]:
+    """Project route-level process fields for deterministic LLM writing constraints."""
+    for edge in edges:
+        class_iri = str(edge.get("object_class_iri") or "")
+        if class_iri.rsplit("/", 1)[-1].rsplit("#", 1)[-1] != "SynthesisRoute":
+            continue
+        fields: dict[str, str] = {}
+        for dp in edge.get("object_data_properties") or []:
+            value = dp.get("value")
+            if value in (None, ""):
+                continue
+            iri = str(dp.get("iri") or "")
+            local_name = iri.rsplit("/", 1)[-1].rsplit("#", 1)[-1]
+            if local_name in {"processName", "processBasis", "processDescription"}:
+                fields[local_name] = str(value).strip()
+        if fields:
+            return fields
+    return {}
+
+
 def _format_field_values(field_values: list[tuple[str, str | None]]) -> str:
     """The section's ``{{占位符}} → 取值`` substitution table for the LLM. Fields with no
     resolvable value are shown as 「待补充」 so the model states them honestly rather than
@@ -250,6 +270,7 @@ def generate_section_narratives(
     from app.services.reporting.fact_sources import FactContext
 
     all_facts_text = _format_facts(edges)
+    process_route_fields = _process_route_fields(edges)
     rules_text = _format_rule_results(assessment_rows, edges=edges) if assessment_rows else ""
     fact_ctx = FactContext(
         edges=edges,
@@ -339,6 +360,25 @@ def generate_section_narratives(
                 "## 字段取值（请将行文 Prompt 中的 {{占位符}} 替换为下列对应取值；"
                 "无取值的字段据实说明为「待补充」，正文中不得保留任何 {{...}} 占位符）\n"
                 + _format_field_values(field_values)
+            )
+        if (
+            process_route_fields.get("processName")
+            and any(label in {"工艺名称", "工艺依据", "工艺描述"} for label in slot_labels)
+        ):
+            process_name = process_route_fields["processName"]
+            process_basis = process_route_fields.get("processBasis")
+            exact_sentence = (
+                f"生产工艺依据 **{process_basis}** 执行{process_name}。"
+                if process_basis
+                else f"生产工艺执行{process_name}。"
+            )
+            user_parts.append(
+                "## 工艺行文约束（必须执行）\n"
+                f"- 工艺名称：{process_name}\n"
+                f"- 工艺依据：{process_basis or '（未提供）'}\n"
+                f"- 首先逐字输出：{exact_sentence}\n"
+                "- 随后以“工艺摘要：”开头，依据工艺描述和抽取事实概括详细过程。\n"
+                "- 工艺依据仅表示执行依据，不得将其误写为工艺名称。"
             )
         user_parts.append(f"## 抽取事实\n{facts_text}")
         if rules_text:

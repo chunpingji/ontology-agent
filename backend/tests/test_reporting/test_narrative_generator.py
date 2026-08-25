@@ -113,6 +113,59 @@ class TestGenerateNarratives:
         assert "评估对象" in user_msg or "参考模板" in user_msg
 
 
+class TestProcessRouteNarrativeConstraint:
+    def test_process_name_basis_and_description_drive_required_wording(self):
+        client = _make_client({"content": "生产工艺正文"})
+        template = ReportTemplate(
+            template_id="t-process",
+            sections=[Section(
+                section_id="s-process",
+                title="工艺",
+                prompt="简述{{工艺描述}}。",
+                groups=[Group(
+                    group_id="g-process",
+                    title="工艺信息",
+                    kind="fields",
+                    slots=[Slot(
+                        slot_id="process.description",
+                        label="工艺描述",
+                        source=SemanticSource(),
+                    )],
+                )],
+            )],
+        )
+        route = {
+            "object_class_iri": (
+                "https://ontology.pharma-gmp.cn/slpra/drug-development/SynthesisRoute"
+            ),
+            "object_text": "HRS-1597 结晶纯化工艺路线",
+            "subject_text": "HRS-1597",
+            "object_data_properties": [
+                {"iri": "x/processName", "label": "工艺名称", "value": "结晶纯化"},
+                {
+                    "iri": "x/processBasis",
+                    "label": "工艺依据",
+                    "value": "3.1.1合成路线图",
+                },
+                {
+                    "iri": "x/processDescription",
+                    "label": "工艺描述",
+                    "value": "投料、过滤、结晶、甩滤及干燥。",
+                },
+            ],
+        }
+
+        generate_section_narratives([route], template, client)
+        user = _user_prompt(client)
+
+        assert "工艺名称：结晶纯化" in user
+        assert "工艺依据：3.1.1合成路线图" in user
+        assert (
+            "生产工艺依据 **3.1.1合成路线图** 执行结晶纯化。" in user
+        )
+        assert "随后以“工艺摘要：”开头" in user
+
+
 # --------------------------------------------------------------------------- #
 # 016+: generate_semantic_slots — LLM synthesis projecting Section.coverage + prompt
 # --------------------------------------------------------------------------- #

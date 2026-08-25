@@ -77,6 +77,8 @@ def _two_section_template(tmp_path) -> str:
 def _report() -> RiskReport:
     return RiskReport(
         subject_description="测试对象",
+        source_document_name="HRS-1597 CMCReport.docx",
+        source_document_type="CMCReport",
         conclusion="测试结论",
         team_members=[{"name": "张三", "title": "工程师"}],
     )
@@ -111,6 +113,15 @@ class TestSampleTemplateRendering:
         # 正文与表格被正常渲染（FIX B：内建样式已补齐，未因 KeyError 整篇失败）
         assert len(doc.paragraphs) > 5
         assert len(doc.tables) >= 1
+
+    def test_source_cmc_report_reference_survives_sample_template(self, tmp_path):
+        path = _adversarial_template(tmp_path)
+        out = render_risk_report(_report(), sample_docx_path=path)
+        doc = Document(io.BytesIO(out))
+        text = "\n".join(paragraph.text for paragraph in doc.paragraphs)
+
+        assert text.count("分析文档：CMCReport《HRS-1597 CMCReport.docx》") == 1
+        assert text.count("数据依据：该文档经读取与校验后形成的关系图谱数据") == 1
 
     def test_preserves_template_page_and_header(self, tmp_path):
         path = _adversarial_template(tmp_path)

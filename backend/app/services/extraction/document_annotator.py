@@ -1036,8 +1036,10 @@ def annotate_word(
     elements: list[dict] = []
     all_texts: list[str] = []
 
+    paragraph_index = -1
     for child in doc.element.body:
         if child in _paras:
+            paragraph_index += 1
             para = _paras[child]
             has_before, inline_breaks, sect_type = _scan_para_breaks(para)
             text, runs = _para_runs_and_text(para, rich=rich_style)
@@ -1072,6 +1074,7 @@ def annotate_word(
                                 "align": align,
                                 "runs": frag_runs,
                                 "text_idx": len(all_texts),
+                                "paragraph_index": paragraph_index,
                             })
                             all_texts.append(frag_text)
                 else:
@@ -1081,6 +1084,7 @@ def annotate_word(
                         "align": align,
                         "runs": runs,
                         "text_idx": len(all_texts),
+                        "paragraph_index": paragraph_index,
                     })
                     all_texts.append(text)
             elif inline_breaks:
@@ -1090,7 +1094,7 @@ def annotate_word(
                         "attrs": {"mode": "force", "source": b["source"]},
                     })
             elif not has_before:
-                elements.append({"kind": "empty"})
+                elements.append({"kind": "empty", "paragraph_index": paragraph_index})
 
             if sect_type and sect_type in ("nextPage", "evenPage", "oddPage"):
                 elements.append({
@@ -1186,7 +1190,10 @@ def annotate_word(
             content.append(node)
             continue
         if elem["kind"] == "empty":
-            content.append({"type": "paragraph"})
+            content.append({
+                "type": "paragraph",
+                "attrs": {"sourceParagraphIndex": elem["paragraph_index"]},
+            })
             continue
         if elem["kind"] == "para":
             idx = elem["text_idx"]
@@ -1199,6 +1206,7 @@ def annotate_word(
             )
             if elem["align"]:
                 node.setdefault("attrs", {})["textAlign"] = elem["align"]
+            node.setdefault("attrs", {})["sourceParagraphIndex"] = elem["paragraph_index"]
             node["content"] = children
             content.append(node)
         elif elem["kind"] == "table":

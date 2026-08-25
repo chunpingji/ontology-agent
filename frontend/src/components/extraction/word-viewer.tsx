@@ -22,6 +22,17 @@ const TextAlign = Extension.create({
       {
         types: ["paragraph", "heading"],
         attributes: {
+          sourceParagraphIndex: {
+            default: null,
+            parseHTML: (el) => {
+              const raw = (el as HTMLElement).dataset.sourceParagraphIndex;
+              return raw == null ? null : Number(raw);
+            },
+            renderHTML: (attrs) =>
+              typeof attrs.sourceParagraphIndex === "number"
+                ? { "data-source-paragraph-index": attrs.sourceParagraphIndex }
+                : {},
+          },
           textAlign: {
             default: null,
             parseHTML: (el) => (el as HTMLElement).style.textAlign || null,
@@ -135,6 +146,22 @@ function applyStructuredTableHighlight(
   if (typeof ref.column !== "number" || !Number.isInteger(ref.column)) return row;
 
   return row.querySelectorAll("th, td").item(ref.column) || row;
+}
+
+function applyStructuredParagraphHighlight(
+  container: HTMLElement,
+  ref: StructuredRelationSourceRef,
+): Element | null {
+  if (
+    typeof ref.paragraph_index !== "number" ||
+    !Number.isInteger(ref.paragraph_index)
+  ) return null;
+  const paragraph = container.querySelector(
+    `[data-source-paragraph-index="${ref.paragraph_index}"]`,
+  );
+  if (!paragraph) return null;
+  paragraph.classList.add(HIGHLIGHT_CLS);
+  return paragraph;
 }
 
 function headingLevel(el: Element): number {
@@ -287,6 +314,7 @@ export function WordViewer({ content, highlightRef, fitTables }: WordViewerProps
     const timer = setTimeout(() => {
       const firstMatch =
         (structuredRef && applyStructuredTableHighlight(container, structuredRef)) ||
+        (structuredRef && applyStructuredParagraphHighlight(container, structuredRef)) ||
         applyHighlight(container, keywords);
       if (firstMatch) {
         firstMatch.scrollIntoView({ behavior: "smooth", block: "start" });
