@@ -55,6 +55,7 @@ def chat_with_schema(
     temperature: float | None = None,
     max_tokens: int | None = None,
     enable_thinking: bool = False,
+    timeout_s: float | None = None,
 ) -> dict[str, Any] | None:
     """Send a chat completion with structured JSON output, falling back to prompt-based parsing.
 
@@ -103,13 +104,17 @@ def chat_with_schema(
             temperature=_temperature,
             max_tokens=_max_tokens,
             extra_body=extra_body,
+            timeout=timeout_s,
         )
         text = resp.choices[0].message.content or ""
         parsed = json.loads(text)
         if isinstance(parsed, dict):
             return parsed
     except Exception:
-        logger.debug("json_schema attempt failed, falling back to prompt-based parsing", exc_info=True)
+        logger.debug(
+            "json_schema attempt failed, falling back to prompt-based parsing",
+            exc_info=True,
+        )
 
     # Attempt 2: prompt-based fallback
     # Disable Qwen 3 thinking mode (/no_think) — thinking blocks consume
@@ -133,6 +138,7 @@ def chat_with_schema(
             temperature=_temperature,
             max_tokens=fallback_max_tokens,
             extra_body=extra_body,
+            timeout=timeout_s,
         )
         raw = resp.choices[0].message.content or ""
         logger.info(

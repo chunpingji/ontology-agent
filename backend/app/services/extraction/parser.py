@@ -92,27 +92,47 @@ def parse_word(
             未命中→原表头键保留（容忍未映射列）；``None`` 时全部沿用原表头键
             （向后兼容）。Word 表头→IRI 走纯本地确定性映射，不再依赖云端 LLM。
     """
-    import docx
+    from app.services.extraction.docx_structure import (
+        ParagraphBlock,
+        parse_docx_structure,
+    )
 
-    doc = docx.Document(file_path)
-    sections = []
+    structure = parse_docx_structure(file_path)
+    sections: list[dict[str, Any]] = []
 
-    for table in doc.tables:
-        headers = [cell.text.strip() for cell in table.rows[0].cells]
-        for row in table.rows[1:]:
-            row_data = {}
-            for idx, cell in enumerate(row.cells):
-                if idx < len(headers) and headers[idx]:
-                    header = headers[idx]
-                    key = (column_mapping[header]
-                           if column_mapping and header in column_mapping else header)
-                    row_data[key] = cell.text.strip()
+    # Preserve the legacy contract: all table rows first, then all paragraphs.
+    for table in structure.tables:
+        for row in table.rows:
+            row_data: dict[str, str] = {}
+            for header in table.headers:
+                if not header:
+                    continue
+                key = (
+                    column_mapping[header]
+                    if column_mapping and header in column_mapping
+                    else header
+                )
+                row_data[key] = row.get(header, "")
             if row_data:
                 sections.append({"type": "table_row", "content": row_data})
 
-    for para in doc.paragraphs:
-        text = para.text.strip()
-        if text:
-            sections.append({"type": "paragraph", "content": text, "style": para.style.name})
+    # A paragraph may be split into multiple canonical fragments by inline page
+    # breaks. Rejoin fragments by their original paragraph index for old callers.
+    paragraph_fragments: dict[int, list[ParagraphBlock]] = {}
+    for block in structure.blocks:
+        if isinstance(block, ParagraphBlock):
+            paragraph_fragments.setdefault(block.paragraph_index, []).append(block)
+    for paragraph_index in sorted(paragraph_fragments):
+        fragments = sorted(
+            paragraph_fragments[paragraph_index], key=lambda block: block.fragment_index
+        )
+        text = "".join(block.text for block in fragments).strip()
+        if not text:
+            continue
+        sections.append({
+            "type": "paragraph",
+            "content": text,
+            "style": fragments[0].style_name,
+        })
 
     return sections

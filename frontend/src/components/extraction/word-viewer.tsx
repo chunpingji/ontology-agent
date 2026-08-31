@@ -22,6 +22,34 @@ const TextAlign = Extension.create({
       {
         types: ["paragraph", "heading"],
         attributes: {
+          textAlign: {
+            default: null,
+            parseHTML: (el) => (el as HTMLElement).style.textAlign || null,
+            renderHTML: (attrs) =>
+              attrs.textAlign ? { style: `text-align: ${attrs.textAlign}` } : {},
+          },
+        },
+      },
+    ];
+  },
+});
+
+const SourceCoordinates = Extension.create({
+  name: "sourceCoordinates",
+  addGlobalAttributes() {
+    return [
+      {
+        types: ["paragraph", "heading", "table"],
+        attributes: {
+          sourceBlockId: {
+            default: null,
+            parseHTML: (el) =>
+              (el as HTMLElement).dataset.sourceBlockId || null,
+            renderHTML: (attrs) =>
+              typeof attrs.sourceBlockId === "string"
+                ? { "data-source-block-id": attrs.sourceBlockId }
+                : {},
+          },
           sourceParagraphIndex: {
             default: null,
             parseHTML: (el) => {
@@ -33,11 +61,36 @@ const TextAlign = Extension.create({
                 ? { "data-source-paragraph-index": attrs.sourceParagraphIndex }
                 : {},
           },
-          textAlign: {
+          sourceTableIndex: {
             default: null,
-            parseHTML: (el) => (el as HTMLElement).style.textAlign || null,
+            parseHTML: (el) => {
+              const raw = (el as HTMLElement).dataset.sourceTableIndex;
+              return raw == null ? null : Number(raw);
+            },
             renderHTML: (attrs) =>
-              attrs.textAlign ? { style: `text-align: ${attrs.textAlign}` } : {},
+              typeof attrs.sourceTableIndex === "number"
+                ? { "data-source-table-index": attrs.sourceTableIndex }
+                : {},
+          },
+          sectionNodeId: {
+            default: null,
+            parseHTML: (el) =>
+              (el as HTMLElement).dataset.sectionNodeId || null,
+            renderHTML: (attrs) =>
+              typeof attrs.sectionNodeId === "string"
+                ? { "data-section-node-id": attrs.sectionNodeId }
+                : {},
+          },
+          physicalPageNumber: {
+            default: null,
+            parseHTML: (el) => {
+              const raw = (el as HTMLElement).dataset.physicalPageNumber;
+              return raw == null ? null : Number(raw);
+            },
+            renderHTML: (attrs) =>
+              typeof attrs.physicalPageNumber === "number"
+                ? { "data-physical-page-number": attrs.physicalPageNumber }
+                : {},
           },
         },
       },
@@ -114,6 +167,8 @@ const PageBreak = Node.create({
 
 const HIGHLIGHT_CLS = "source-highlight";
 const HIGHLIGHT_BODY_CLS = "source-highlight-body";
+const LOCATION_CLS = "document-location-highlight";
+const LOCATION_ANCHOR_CLS = "document-location-anchor";
 
 function parseSourceRef(ref: string): string[] {
   const segments = ref.split(" / ");
@@ -178,6 +233,15 @@ function clearHighlights(container: HTMLElement) {
   });
 }
 
+function clearLocationHighlights(container: HTMLElement) {
+  container.querySelectorAll(`.${LOCATION_CLS}`).forEach((el) => {
+    el.classList.remove(LOCATION_CLS);
+  });
+  container.querySelectorAll(`.${LOCATION_ANCHOR_CLS}`).forEach((el) => {
+    el.classList.remove(LOCATION_ANCHOR_CLS);
+  });
+}
+
 function applyHighlight(container: HTMLElement, keywords: string[]): Element | null {
   let firstMatch: Element | null = null;
 
@@ -234,7 +298,9 @@ function applyHighlight(container: HTMLElement, keywords: string[]): Element | n
 function normalizeNewlines(node: Record<string, unknown>): Record<string, unknown> {
   if (node.type === "text" && typeof node.text === "string" && (node.text as string).includes("\n")) {
     const parts = (node.text as string).split("\n");
-    const { text: _, ...marks } = node;
+    const marks = Object.fromEntries(
+      Object.entries(node).filter(([key]) => key !== "text"),
+    );
     const nodes: Record<string, unknown>[] = [];
     parts.forEach((part, i) => {
       if (part) nodes.push({ ...marks, type: "text", text: part });
@@ -257,14 +323,29 @@ function normalizeNewlines(node: Record<string, unknown>): Record<string, unknow
   return node;
 }
 
+export interface DocumentLocation {
+  kind: "document" | "section" | "page";
+  nodeId: string;
+  anchorBlockId?: string | null;
+  startBlockId?: string | null;
+  endBlockId?: string | null;
+  blockIds?: string[];
+}
+
 interface WordViewerProps {
   content: Record<string, unknown>;
   highlightRef?: string | null;
+  activeLocation?: DocumentLocation | null;
   /** 令表格按 colgroup 列宽比例适配纸张宽度（样例预览用；默认表格保持自然宽度）。 */
   fitTables?: boolean;
 }
 
-export function WordViewer({ content, highlightRef, fitTables }: WordViewerProps) {
+export function WordViewer({
+  content,
+  highlightRef,
+  activeLocation,
+  fitTables,
+}: WordViewerProps) {
   const wrapperRef = useRef<HTMLDivElement>(null);
 
   const normalizedContent = useMemo(
@@ -276,6 +357,7 @@ export function WordViewer({ content, highlightRef, fitTables }: WordViewerProps
     extensions: [
       StarterKit,
       TextAlign,
+      SourceCoordinates,
       TextStyle,
       Underline,
       Table,
@@ -323,6 +405,53 @@ export function WordViewer({ content, highlightRef, fitTables }: WordViewerProps
 
     return () => clearTimeout(timer);
   }, [highlightRef]);
+
+  useEffect(() => {
+    if (!wrapperRef.current) return;
+    const container = wrapperRef.current;
+    clearLocationHighlights(container);
+
+    if (!activeLocation) return;
+    if (activeLocation.kind === "document") {
+      container.parentElement?.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      const ordered = Array.from(
+        container.querySelectorAll<HTMLElement>("[data-source-block-id]"),
+      );
+      const byId = new Map(
+        ordered.map((element) => [element.dataset.sourceBlockId || "", element]),
+      );
+      let selected: HTMLElement[] = [];
+      if (activeLocation.blockIds?.length) {
+        selected = activeLocation.blockIds
+          .map((blockId) => byId.get(blockId))
+          .filter((element): element is HTMLElement => Boolean(element));
+      } else {
+        const start = ordered.findIndex(
+          (element) =>
+            element.dataset.sourceBlockId === activeLocation.startBlockId,
+        );
+        const end = ordered.findIndex(
+          (element) => element.dataset.sourceBlockId === activeLocation.endBlockId,
+        );
+        if (start >= 0 && end >= start) selected = ordered.slice(start, end + 1);
+      }
+      selected.forEach((element) => element.classList.add(LOCATION_CLS));
+      const anchor = activeLocation.anchorBlockId
+        ? byId.get(activeLocation.anchorBlockId)
+        : undefined;
+      anchor?.classList.add(LOCATION_ANCHOR_CLS);
+      (anchor || selected[0])?.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+    }, 50);
+
+    return () => clearTimeout(timer);
+  }, [activeLocation, editor]);
 
   // Page-break pagination: insert spacer elements so blocks don't cross page boundaries
   useEffect(() => {
@@ -589,6 +718,23 @@ export function WordViewer({ content, highlightRef, fitTables }: WordViewerProps
         }
         .${HIGHLIGHT_BODY_CLS} {
           background: rgba(59, 130, 246, 0.04);
+        }
+        .${LOCATION_CLS} {
+          background: rgba(16, 185, 129, 0.08) !important;
+          transition: background 0.2s;
+        }
+        .${LOCATION_ANCHOR_CLS} {
+          border-left: 3px solid #10b981;
+          padding-left: 8px;
+          background: rgba(16, 185, 129, 0.14) !important;
+        }
+        table.${LOCATION_CLS} td,
+        table.${LOCATION_CLS} th {
+          background: rgba(16, 185, 129, 0.08) !important;
+        }
+        table.${LOCATION_ANCHOR_CLS} td,
+        table.${LOCATION_ANCHOR_CLS} th {
+          background: rgba(16, 185, 129, 0.14) !important;
         }
         table.${HIGHLIGHT_CLS} td,
         table.${HIGHLIGHT_CLS} th {

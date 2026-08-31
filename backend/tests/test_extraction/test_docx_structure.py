@@ -142,6 +142,46 @@ def test_outline_hierarchy_and_bold_key_values_preserve_product_section(tmp_path
     assert not any(heading.startswith("性状：") for heading in structure.headings)
 
 
+def test_bold_empty_field_labels_do_not_create_leaf_sections(tmp_path):
+    doc = Document()
+    doc.add_heading("产品的基本性质", level=1)
+
+    structure_label = doc.add_paragraph()
+    structure_label.add_run("产品结构：").bold = True
+    doc.add_paragraph("结构式见下图。")
+
+    formula_label = doc.add_paragraph()
+    formula_label.add_run("分子式:").bold = True
+    doc.add_paragraph("C20H25N3O")
+
+    numbered_heading = doc.add_paragraph()
+    numbered_heading.add_run("2. 工艺信息：").bold = True
+    doc.add_paragraph("工艺正文。")
+
+    path = tmp_path / "empty-field-labels.docx"
+    doc.save(path)
+    structure = parse_docx_structure(path)
+
+    product = structure.find_section("产品的基本性质")
+    assert product is not None
+    assert product.paras == [
+        "产品结构：",
+        "结构式见下图。",
+        "分子式:",
+        "C20H25N3O",
+    ]
+    assert not any(
+        heading in {"产品结构：", "分子式:"} for heading in structure.headings
+    )
+    assert structure.find_section("2. 工艺信息：").level == 1
+
+
+def test_explicit_word_heading_can_end_with_colon():
+    doc = Document()
+    heading = doc.add_heading("备注：", level=2)
+    assert infer_heading_level(heading) == 2
+
+
 def test_multirow_table_header_is_canonical_and_rows_keep_raw_indices(tmp_path):
     doc = Document()
     table = doc.add_table(rows=3, cols=4)

@@ -40,6 +40,16 @@ class Settings(BaseSettings):
     local_llm_max_tokens: int = 200000
     local_llm_temperature: float = 0.1
 
+    # Word 章节树分层摘要（018）。仅当本开关与 local_llm_enabled 同时开启才调用
+    # 本地端点；关闭是 air-gap 正常态，树和分页仍完整返回。
+    llm_word_tree_summary_enabled: bool = True
+    word_tree_summary_timeout_s: int = 120
+    word_tree_summary_max_input_chars_per_node: int = 6000
+    word_tree_summary_max_batch_chars: int = 24000
+    word_tree_summary_max_nodes_per_batch: int = 20
+    word_tree_summary_max_output_chars: int = 300
+    word_tree_summary_prompt_version: str = "word-tree-summary-v1"
+
     # 能力十三：LLM 模板设计辅助 + 报告生成增强（013-llm-template-report-enhance）。
     # 三个独立开关默认关——离线为正常态（Constitution VI）。
     llm_suggest_slots_enabled: bool = True

@@ -337,12 +337,29 @@ def get_job(job_id: UUID, db: Session = Depends(get_db)):
     return job
 
 
-_ANNOTATOR_VERSION = 24
+_ANNOTATOR_VERSION = 25
 
 
 def _annotation_cache_path(job_id) -> Path:
     """标注预计算缓存路径：``data/uploads/{job_id}.annotated.json``。"""
     return Path("data/uploads") / f"{job_id}.annotated.json"
+
+
+def _annotation_cache_is_current(payload: dict) -> bool:
+    """Validate every version that changes the annotated Word response."""
+    if payload.get("_version") != _ANNOTATOR_VERSION:
+        return False
+    if payload.get("source_type") != "word":
+        return True
+
+    from app.config import settings
+    from app.services.extraction.docx_structure import PARSER_VERSION
+
+    return (
+        payload.get("_parser_version") == PARSER_VERSION
+        and payload.get("_summary_prompt_version")
+        == settings.word_tree_summary_prompt_version
+    )
 
 
 def _compute_annotation(
@@ -404,6 +421,7 @@ def _compute_annotation(
         content, warnings, triples, ckpt = annotate_word(
             file_path, engine, progress_fn, should_pause_fn, checkpoint,
             doc_class_iri=doc_class_iri,
+            structure=structure,
         )
     elif job.source_type == "excel":
         content, warnings, triples, ckpt = annotate_excel(
@@ -422,6 +440,8 @@ def _compute_annotation(
         "doc_class": None,
         "relationships": [],
     }
+    if structure is not None:
+        result["warnings"] = [*structure.warnings, *result["warnings"]]
     # 文档级分类 + 全量关系/属性抽取（纯规则、离线、无新增模型调用）。仅 Word；
     # 仅在完整标注完成（无 checkpoint，未暂停）时计算，避免对部分结果连边。
     if job.source_type == "word" and ckpt is None:
@@ -434,11 +454,48 @@ def _compute_annotation(
                 triples,
                 doc_class=doc_class_result,
                 source_filename=job.source_filename,
+                structure=structure,
             )
             result["doc_class"] = graph["doc_class"]
             result["relationships"] = graph["relationships"]
         except Exception:
             logger.warning("关系抽取失败，本次跳过（不影响标注主路径）", exc_info=True)
+        if structure is not None and structure.section_tree is not None:
+            from dataclasses import asdict
+
+            from app.config import settings
+
+            result["_parser_version"] = structure.parser_version
+            result["_summary_prompt_version"] = (
+                settings.word_tree_summary_prompt_version
+            )
+            try:
+                from app.services.extraction.word_tree_summarizer import (
+                    summarize_word_tree,
+                )
+                from app.services.llm.local_client import get_local_llm
+
+                summarize_word_tree(
+                    structure,
+                    get_local_llm(),
+                    progress_fn=progress_fn,
+                )
+                result["section_tree"] = structure.section_tree.to_dict()
+                result["pagination"] = asdict(structure.pagination)
+            except Exception:
+                # Summary metadata is optional. Preserve and expose the already
+                # deterministic tree even if an unexpected summarizer bug occurs.
+                logger.warning("Word 章节摘要失败，回退确定性摘录", exc_info=True)
+                try:
+                    from app.services.extraction.word_tree_summarizer import (
+                        fallback_word_tree_summaries,
+                    )
+
+                    fallback_word_tree_summaries(structure)
+                except Exception:
+                    logger.warning("Word 章节确定性摘录也失败", exc_info=True)
+                result["section_tree"] = structure.section_tree.to_dict()
+                result["pagination"] = asdict(structure.pagination)
     if ckpt is not None:
         result["_checkpoint"] = ckpt
     return result
@@ -473,7 +530,7 @@ async def get_annotated_document(
     if not refresh and cache_path.is_file():
         try:
             cached = json.loads(cache_path.read_text(encoding="utf-8"))
-            if cached.get("_version") == _ANNOTATOR_VERSION:
+            if _annotation_cache_is_current(cached):
                 return cached
             logger.info("标注缓存版本过期，重新计算：%s", cache_path)
         except Exception:
@@ -545,7 +602,13 @@ def _clear_annotation_checkpoint(job_id) -> None:
     _annotation_checkpoint_path(job_id).unlink(missing_ok=True)
 
 
-_ANNOTATION_STAGE_PCT = {"gliner": 10, "typing": 30, "triples": 50, "done": 60}
+_ANNOTATION_STAGE_PCT = {
+    "gliner": 10,
+    "typing": 30,
+    "triples": 50,
+    "done": 60,
+    "summarizing": 80,
+}
 
 
 async def _precompute_annotation_bg(

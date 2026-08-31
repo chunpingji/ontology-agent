@@ -1,20 +1,16 @@
-"use client";
-
+import { Suspense } from "react";
 import Link from "next/link";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import {
-  AssessmentPanel,
-  MACOCalculator,
-  PDECalculator,
-} from "@/components/analysis/reasoning-panels";
-import { GraphQueryPanel } from "@/components/analysis/graph-query-panel";
+import { AnalysisTabs } from "@/components/analysis/analysis-tabs";
+import { Skeleton } from "@/components/ui/skeleton";
 
-type Tab = "reasoning" | "graph";
-
-const TABS: { key: Tab; label: string }[] = [
-  { key: "reasoning", label: "推理" },
-  { key: "graph", label: "图谱查询" },
-];
+function AnalysisTabsFallback() {
+  return (
+    <div className="space-y-5">
+      <Skeleton className="h-9 w-72" />
+      <Skeleton className="h-64 w-full" />
+    </div>
+  );
+}
 
 export default function AnalysisPage() {
   return (
@@ -26,32 +22,12 @@ export default function AnalysisPage() {
         </Link>
       </div>
       <p className="mb-5 text-sm text-muted-foreground">
-        知识图谱的应用 —— 风险推理（PDE/MACO/评估）与图谱查询/统计。
+        风险推理、图谱查询，以及独立于抽取作业和知识图谱的 Word 即时结构分析。
       </p>
 
-      <Tabs defaultValue="reasoning">
-        <TabsList className="mb-5">
-          {TABS.map((t) => (
-            <TabsTrigger key={t.key} value={t.key}>
-              {t.label}
-            </TabsTrigger>
-          ))}
-        </TabsList>
-
-        <TabsContent value="reasoning">
-          <div className="space-y-6">
-            <AssessmentPanel />
-            <div className="grid gap-4 lg:grid-cols-2">
-              <PDECalculator />
-              <MACOCalculator />
-            </div>
-          </div>
-        </TabsContent>
-
-        <TabsContent value="graph">
-          <GraphQueryPanel />
-        </TabsContent>
-      </Tabs>
+      <Suspense fallback={<AnalysisTabsFallback />}>
+        <AnalysisTabs />
+      </Suspense>
     </div>
   );
 }

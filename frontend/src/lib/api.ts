@@ -111,9 +111,11 @@ export class VersionConflictError extends Error {
 }
 
 async function fetchAPI<T>(path: string, options?: RequestInit): Promise<T> {
+  const isMultipart =
+    typeof FormData !== "undefined" && options?.body instanceof FormData;
   const res = await fetch(`${API_BASE}${path}`, {
     headers: {
-      "Content-Type": "application/json",
+      ...(isMultipart ? {} : { "Content-Type": "application/json" }),
       ...identityHeaders(),
       ...options?.headers,
     },
@@ -1687,6 +1689,88 @@ export interface Relationship extends SubRelationship {
   subject_text: string;
 }
 
+export type SummaryStatus =
+  | "pending"
+  | "completed"
+  | "partial"
+  | "disabled"
+  | "failed";
+export type SummarySource = "llm" | "extractive_fallback" | "empty" | "none";
+
+export interface WordSourceRange {
+  anchor_block_id: string | null;
+  start_block_id: string | null;
+  end_block_id: string | null;
+  heading_index: number | null;
+}
+
+export interface WordLayerMetadata {
+  content_summary: string | null;
+  summary_scope: "subtree";
+  summary_status: SummaryStatus;
+  summary_source: SummarySource;
+  summary_model: string | null;
+  prompt_version: string;
+  content_hash: string;
+  generated_at: string | null;
+  direct_paragraph_count: number;
+  direct_table_count: number;
+  descendant_section_count: number;
+  leaf_count: number;
+  page_count: number;
+}
+
+export interface WordPageMetadata {
+  content_summary: string | null;
+  summary_scope: "page_segment";
+  summary_status: Exclude<SummaryStatus, "partial">;
+  summary_source: SummarySource;
+  summary_model: string | null;
+  prompt_version: string;
+  content_hash: string;
+  generated_at: string | null;
+  paragraph_count: number;
+  table_count: number;
+  character_count: number;
+}
+
+export interface WordPageNode {
+  node_id: string;
+  node_type: "page";
+  ordinal_in_leaf: number;
+  physical_page_number: number | null;
+  break_source: string | null;
+  block_ids: string[];
+  paragraph_indices: number[];
+  table_indices: number[];
+  source_range: WordSourceRange;
+  page_metadata: WordPageMetadata;
+}
+
+export interface WordChapterNode {
+  node_id: string;
+  node_type: "document" | "section";
+  heading: string;
+  level: number;
+  path: string[];
+  heading_index: number | null;
+  is_leaf: boolean;
+  direct_block_ids: string[];
+  paragraph_indices: number[];
+  table_indices: number[];
+  source_range: WordSourceRange;
+  layer_metadata: WordLayerMetadata;
+  pages: WordPageNode[];
+  children: WordChapterNode[];
+}
+
+export interface WordPaginationMetadata {
+  mode: "rendered_markers" | "explicit_markers" | "single_page_fallback";
+  physical_page_numbers_available: boolean;
+  is_estimated: boolean;
+  warning: string | null;
+}
+
 export interface AnnotatedDocument {
   source_type: string;
   filename: string | null;
@@ -1695,11 +1779,32 @@ export interface AnnotatedDocument {
   triples?: EntityTriple[];
   doc_class?: DocClassification | null;
   relationships?: Relationship[];
+  section_tree?: WordChapterNode;
+  pagination?: WordPaginationMetadata;
 }
 export const getAnnotatedDocument = (jobId: string, refresh = false) =>
   fetchAPI<AnnotatedDocument>(
     `/api/extraction/jobs/${jobId}/annotated-document${refresh ? "?refresh=1" : ""}`,
   );
+
+export interface WordDocumentAnalysis {
+  filename: string;
+  content: Record<string, unknown>;
+  warnings: string[];
+  section_tree: WordChapterNode;
+  pagination: WordPaginationMetadata;
+  parser_version: number;
+  summary_prompt_version: string;
+}
+
+export const analyzeWordDocument = (file: File) => {
+  const form = new FormData();
+  form.append("file", file);
+  return fetchAPI<WordDocumentAnalysis>("/api/document-analysis/word", {
+    method: "POST",
+    body: form,
+  });
+};
 
 // CMCReport PDE 冲突的人工决策：采纳推导 / 采纳原文 / 待复核。以 (job_id, conflict_key) 唯一，
 // version 乐观并发（写入用 expected_version，冲突 → 409 VersionConflictError）。
