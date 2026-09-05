@@ -6,7 +6,7 @@ services:
       POSTGRES_USER: slpra
       POSTGRES_PASSWORD: slpra_dev
     ports:
-      - "5432:5432"
+      - "${DB_HOST_PORT:-55432}:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
 
@@ -70,7 +70,7 @@ services:
   web:
     image: nginx:1.27-alpine
     ports:
-      - "80:80"
+      - "${WEB_HOST_PORT:-8081}:80"
     volumes:
       - ./nginx/conf.d:/etc/nginx/conf.d:ro
     depends_on:

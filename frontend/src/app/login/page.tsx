@@ -51,14 +51,14 @@ export default function LoginPage() {
           <div className="flex h-10 w-10 items-center justify-center rounded-[10px] bg-primary">
             <Hexagon className="h-[22px] w-[22px] text-primary-foreground" />
           </div>
-          <span className="text-[22px] font-bold text-foreground">恒瑞智能文档分析系统</span>
+          <span className="text-[22px] font-bold text-foreground">XX智能文档分析系统</span>
         </div>
 
         {/* 登录卡片 */}
         <Card>
           <CardHeader className="gap-1.5">
             <CardTitle className="text-2xl">欢迎回来</CardTitle>
-            <CardDescription>登录以继续使用恒瑞智能文档分析系统</CardDescription>
+            <CardDescription>登录以继续使用XX智能文档分析系统</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={onSubmit} className="flex flex-col gap-4">

@@ -12,7 +12,7 @@
 # 用法：
 #   scripts/redeploy.sh [--prod] [--pull] [--no-build] [--no-pull-base] [SERVICE ...]
 #
-#   --prod          只用 docker-compose.yml（忽略本机 override，规范端口 80/5432）。
+#   --prod          只用 docker-compose.yml（忽略本机 override，端口 8081/55432）。
 #   --pull          先 `docker compose pull` 基础镜像（db=postgres、web=nginx）。
 #   --no-build      只 `up -d`（重建容器、不 rebuild 镜像）；改了 requirements/package 时勿用。
 #   --no-pull-base  跳过 build 前对 Dockerfile FROM 基础镜像的"带重试预拉取"（见下）。
@@ -58,7 +58,7 @@ done
 COMPOSE=(docker compose)
 if [[ $PROD -eq 1 ]]; then
   COMPOSE+=(-f docker-compose.yml)   # 忽略 override → 规范端口
-  echo "▶ 模式：生产（仅 docker-compose.yml，端口 80/5432）"
+  echo "▶ 模式：生产（仅 docker-compose.yml，端口 8081/55432）"
 else
   echo "▶ 模式：开发（自动合并 docker-compose.override.yml，端口 8081/55432）"
 fi
@@ -165,7 +165,7 @@ echo "▶ 当前数据库迁移版本（alembic current）："
 
 echo "✓ 重部署完成。"
 if [[ $PROD -eq 1 ]]; then
-  echo "  前端 http://localhost/  ·  API http://localhost:8000/api/health"
+  echo "  前端 http://localhost:8081/  ·  API http://localhost:8000/api/health  ·  PG localhost:55432"
 else
   echo "  前端 http://localhost:8081/  ·  API http://localhost:8000/api/health  ·  PG localhost:55432"
 fi

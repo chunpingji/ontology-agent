@@ -26,12 +26,12 @@
 | | 开发模式（默认,合并 override） | 生产模式（`-f docker-compose.yml` 忽略 override） |
 |---|---|---|
 | 前端 | `next dev` 热更新,源码 bind-mount | standalone 生产镜像（`runner`） |
-| 访问地址 | http://localhost:8081 | http://localhost:80 |
-| 数据库主机端口 | 55432 | 5432 |
+| 访问地址 | http://localhost:8081 | http://localhost:8081（可用 `WEB_HOST_PORT` 覆盖） |
+| 数据库主机端口 | 55432 | 55432（可用 `DB_HOST_PORT` 覆盖） |
 | 用途 | 日常开发,实时看修改 | 部署 / 验证生产构建 |
 
-> override 重映射端口是因为本机 :80 / :5432 已被占用。部署主机请显式用
-> `-f docker-compose.yml` 走 canonical 端口。
+> 本机 :80 / :5432 已被占用，因此生产入口和数据库分别默认发布到 `8081`、`55432`；
+> 容器内仍使用 `80`、`5432`。可用 `WEB_HOST_PORT`、`DB_HOST_PORT` 覆盖。
 
 ---
 
@@ -134,7 +134,7 @@ docker compose -f docker-compose.yml up -d --build
 docker compose -f docker-compose.yml up -d --build frontend
 ```
 
-访问 **http://localhost:80**。
+访问 **http://localhost:8081**。
 
 ---
 
@@ -160,7 +160,7 @@ docker compose down -v                    # ⚠️ 连同数据卷一并删除
 - **改了代码但页面不更新**:确认走的是开发模式(http://localhost:8081,
   非 :80);看 `docker compose logs -f frontend` 是否在重新编译。
   override 已设 `WATCHPACK_POLLING=true` 以保证 bind-mount 下的文件监听。
-- **端口冲突**:本机 :80 / :5432 被占时用开发模式的 :8081 / :55432;
-  部署主机用 `-f docker-compose.yml` 走 :80 / :5432。
-- **数据库直连**:开发模式 `localhost:55432`,生产模式 `localhost:5432`,
+- **端口冲突**:本机 :80 / :5432 已被占用；开发模式使用 :8081 / :55432，
+  生产模式默认使用 :8081 / :55432，可用 `WEB_HOST_PORT` / `DB_HOST_PORT` 覆盖。
+- **数据库直连**:开发和生产模式默认均为 `localhost:55432`,
   账号见 `docker-compose.yml`（`slpra` / `slpra_dev`,默认仅开发用）。

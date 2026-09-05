@@ -54,7 +54,7 @@ export default function MockDepartmentsPage() {
             当前系统使用的 canned 部门数据。真实内网 OA/HR API 接入后将替换为实时数据。
           </p>
         </div>
-        <EditDialog
+        <EditDialog<MockDepartment>
           trigger={
             <Button>
               <Plus className="mr-2 size-4" />

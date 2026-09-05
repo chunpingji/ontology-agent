@@ -55,7 +55,7 @@ export default function MockRolesPage() {
             当前系统使用的 canned GxP 评审角色数据。真实内网 OA/HR API 接入后将替换为实时数据。
           </p>
         </div>
-        <EditDialog
+        <EditDialog<MockRole>
           trigger={
             <Button>
               <Plus className="mr-2 size-4" />

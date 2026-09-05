@@ -31,7 +31,7 @@ interface EditDialogProps<T> {
     required?: boolean;
     readonly?: boolean;
   }>;
-  onSave: (item: T) => Promise<void>;
+  onSave: (item: T) => Promise<unknown>;
   onClose?: () => void;
 }
 

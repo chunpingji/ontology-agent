@@ -14,7 +14,7 @@ scripts/redeploy.sh [--prod] [--pull] [--no-build] [--no-pull-base] [SERVICE ...
 
 | 选项 | 含义 |
 |---|---|
-| `--prod` | 只用 `docker-compose.yml`，**忽略本机 `docker-compose.override.yml`**，使用规范端口（web 80、db 5432）。 |
+| `--prod` | 只用 `docker-compose.yml`，**忽略本机 `docker-compose.override.yml`**，默认端口为 web 8081、db 55432（可用 `WEB_HOST_PORT` / `DB_HOST_PORT` 覆盖）。 |
 | `--pull` | 先 `docker compose pull` 拉取基础镜像（`db=postgres:16-alpine`、`web=nginx:1.27-alpine`）。 |
 | `--no-build` | 只 `up -d`（重建容器，不 rebuild 镜像）。**改了 `requirements`/`package.json` 时勿用**。 |
 | `--no-pull-base` | 跳过 build 前对 Dockerfile `FROM` 基础镜像的"带重试预拉取"（见下"镜像加速器防抖"）。 |
