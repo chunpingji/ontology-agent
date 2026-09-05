@@ -27,6 +27,9 @@ from typing import Any, Callable
 
 from app.config import settings
 from app.services.extraction.docx_structure import (
+    DocStructure,
+    ParagraphBlock,
+    TableBlock,
     heading_level_from_style,
     infer_heading_level,
 )
@@ -433,6 +436,8 @@ def _scan_para_breaks(para) -> tuple[bool, list[dict], str | None]:
             elif tag == qn("w:br"):
                 if child.get(qn("w:type")) == "page":
                     inline_breaks.append({"offset": cursor, "source": "manual"})
+                else:
+                    cursor += 1
             elif tag == qn("w:lastRenderedPageBreak"):
                 inline_breaks.append({"offset": cursor, "source": "lastRendered"})
             elif tag == qn("w:tab") or tag == qn("w:cr"):
@@ -457,7 +462,9 @@ def _split_para_at_breaks(
     break_offsets: list[int],
 ) -> list[tuple[str, list[tuple[int, int, list[dict]]]]]:
     """按分页偏移切分段落文本和 run 列表，每个片段 run 偏移归零。"""
-    offsets = sorted(set(break_offsets))
+    # Duplicate offsets represent consecutive page events; retaining them keeps
+    # preview fragment ordinals identical to the canonical structure.
+    offsets = sorted(break_offsets)
     boundaries = [0] + offsets + [len(text)]
     fragments: list[tuple[str, list[tuple[int, int, list[dict]]]]] = []
     for i in range(len(boundaries) - 1):
@@ -1002,6 +1009,7 @@ def annotate_word(
     doc_class_iri: str | None = None,
     structure_only: bool = False,
     rich_style: bool = False,
+    structure: DocStructure | None = None,
 ) -> tuple[dict, list[str], list[dict], dict | None]:
     """解析 Word 文档 → tiptap ProseMirror JSON，三阶段 NER 标注实体 + 属性三元组。
 
@@ -1031,6 +1039,17 @@ def annotate_word(
 
     _paras = {p._element: p for p in doc.paragraphs}
     _tables = {t._element: t for t in doc.tables}
+    _table_indices = {t._element: index for index, t in enumerate(doc.tables)}
+    paragraph_blocks = {
+        (block.paragraph_index, block.fragment_index): block
+        for block in (structure.blocks if structure else [])
+        if isinstance(block, ParagraphBlock)
+    }
+    table_blocks = {
+        block.table_index: block
+        for block in (structure.blocks if structure else [])
+        if isinstance(block, TableBlock)
+    }
 
     # Pass 1：按文档 body 顺序收集段落文本与表格行级 segment。
     elements: list[dict] = []
@@ -1051,18 +1070,21 @@ def annotate_word(
                 })
 
             if text.strip():
-                level = infer_heading_level(para)
+                canonical_block = paragraph_blocks.get((paragraph_index, 0))
+                level = (
+                    canonical_block.heading_level
+                    if canonical_block is not None
+                    else infer_heading_level(para)
+                )
                 align = _para_align(para)
 
                 if inline_breaks:
-                    offsets = [b["offset"] for b in inline_breaks]
-                    sources = [b["source"] for b in inline_breaks]
+                    sorted_breaks = sorted(inline_breaks, key=lambda b: b["offset"])
+                    offsets = [b["offset"] for b in sorted_breaks]
                     fragments = _split_para_at_breaks(text, runs, offsets)
-                    sorted_offsets = sorted(set(offsets))
-                    src_map = {o: s for o, s in zip(offsets, sources)}
                     for fi, (frag_text, frag_runs) in enumerate(fragments):
                         if fi > 0:
-                            src = src_map.get(sorted_offsets[fi - 1], "manual")
+                            src = sorted_breaks[fi - 1]["source"]
                             elements.append({
                                 "kind": "pageBreak",
                                 "attrs": {"mode": "force", "source": src},
@@ -1075,6 +1097,7 @@ def annotate_word(
                                 "runs": frag_runs,
                                 "text_idx": len(all_texts),
                                 "paragraph_index": paragraph_index,
+                                "fragment_index": fi,
                             })
                             all_texts.append(frag_text)
                 else:
@@ -1085,6 +1108,7 @@ def annotate_word(
                         "runs": runs,
                         "text_idx": len(all_texts),
                         "paragraph_index": paragraph_index,
+                        "fragment_index": 0,
                     })
                     all_texts.append(text)
             elif inline_breaks:
@@ -1159,6 +1183,7 @@ def annotate_word(
 
             elements.append({
                 "kind": "table",
+                "table_index": _table_indices[child],
                 "table_ref": table,
                 "seg_base": seg_base,
                 "header_count": header_count,
@@ -1190,9 +1215,17 @@ def annotate_word(
             content.append(node)
             continue
         if elem["kind"] == "empty":
+            source_block = paragraph_blocks.get((elem["paragraph_index"], 0))
+            attrs: dict = {"sourceParagraphIndex": elem["paragraph_index"]}
+            if source_block:
+                attrs.update({
+                    "sourceBlockId": source_block.block_id,
+                    "sectionNodeId": source_block.section_node_id,
+                    "physicalPageNumber": source_block.physical_page_number,
+                })
             content.append({
                 "type": "paragraph",
-                "attrs": {"sourceParagraphIndex": elem["paragraph_index"]},
+                "attrs": attrs,
             })
             continue
         if elem["kind"] == "para":
@@ -1207,9 +1240,19 @@ def annotate_word(
             if elem["align"]:
                 node.setdefault("attrs", {})["textAlign"] = elem["align"]
             node.setdefault("attrs", {})["sourceParagraphIndex"] = elem["paragraph_index"]
+            source_block = paragraph_blocks.get((
+                elem["paragraph_index"], elem.get("fragment_index", 0)
+            ))
+            if source_block:
+                node["attrs"].update({
+                    "sourceBlockId": source_block.block_id,
+                    "sectionNodeId": source_block.section_node_id,
+                    "physicalPageNumber": source_block.physical_page_number,
+                })
             node["content"] = children
             content.append(node)
         elif elem["kind"] == "table":
+            table_index = elem["table_index"]
             table_ref = elem["table_ref"]
             seg_base = elem["seg_base"]
             hdr_count = elem["header_count"]
@@ -1293,7 +1336,19 @@ def annotate_word(
                 rows_data.append({"type": "tableRow", "content": cells})
 
             if rows_data:
-                content.append({"type": "table", "content": rows_data})
+                table_node: dict = {
+                    "type": "table",
+                    "attrs": {"sourceTableIndex": table_index},
+                    "content": rows_data,
+                }
+                source_block = table_blocks.get(table_index)
+                if source_block:
+                    table_node["attrs"].update({
+                        "sourceBlockId": source_block.block_id,
+                        "sectionNodeId": source_block.section_node_id,
+                        "physicalPageNumber": source_block.physical_page_number,
+                    })
+                content.append(table_node)
 
     # 提取 Word 页面尺寸（twips → mm），供前端计算页面比例
     page_w_mm, page_h_mm = 210, 297  # A4 默认

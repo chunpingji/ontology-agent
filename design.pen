@@ -43362,7 +43362,7 @@
                   "id": "BmxuP",
                   "name": "Wordmark",
                   "fill": "$--foreground",
-                  "content": "恒瑞智能文档分析系统",
+                  "content": "XX智能文档分析系统",
                   "fontFamily": "Inter",
                   "fontSize": 22,
                   "fontWeight": "700"
@@ -43400,7 +43400,7 @@
                       "fill": "$--muted-foreground",
                       "textGrowth": "fixed-width",
                       "width": "fill_container",
-                      "content": "登录以继续使用恒瑞智能文档分析系统",
+                      "content": "登录以继续使用XX智能文档分析系统",
                       "fontFamily": "Inter",
                       "fontSize": 14,
                       "fontWeight": "normal"

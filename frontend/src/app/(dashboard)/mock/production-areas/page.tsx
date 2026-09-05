@@ -54,7 +54,7 @@ export default function MockProductionAreasPage() {
             当前系统使用的 canned 生产车间/区域数据。真实内网设施主数据 API 接入后将替换为实时数据。
           </p>
         </div>
-        <EditDialog
+        <EditDialog<MockProductionArea>
           trigger={
             <Button>
               <Plus className="mr-2 size-4" />

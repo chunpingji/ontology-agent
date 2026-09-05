@@ -54,7 +54,7 @@ export default function MockApproverTeamPage() {
             当前系统使用的 canned 审批小组成员数据（QA 审核、管理层批准、MAH 批准）。真实内网 OA/HR API 接入后将替换为实时数据。
           </p>
         </div>
-        <EditDialog
+        <EditDialog<MockTeamMember>
           trigger={
             <Button>
               <Plus className="mr-2 size-4" />

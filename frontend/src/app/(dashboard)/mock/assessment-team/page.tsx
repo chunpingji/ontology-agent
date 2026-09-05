@@ -54,7 +54,7 @@ export default function MockAssessmentTeamPage() {
             当前系统使用的 canned 评估小组成员数据（复用 GxP 角色）。真实内网 OA/HR API 接入后将替换为实时数据。
           </p>
         </div>
-        <EditDialog
+        <EditDialog<MockTeamMember>
           trigger={
             <Button>
               <Plus className="mr-2 size-4" />

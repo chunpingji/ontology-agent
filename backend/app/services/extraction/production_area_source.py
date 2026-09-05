@@ -101,10 +101,9 @@ _CANNED: dict[str, ProductionAreaFact] = {
         qualification_year="2020",
         utilities=_UTILS,
         applicable_products=_PRODUCTS,
-        address="江苏恒瑞医药股份有限公司原料药分公司（连云港经济技术开发区大浦工业区金桥路）",
+        address="XXXX医药股份有限公司原料药分公司）",
         description=(
-            "642 车间位于江苏恒瑞医药股份有限公司原料药分公司"
-            "（连云港经济技术开发区大浦工业区金桥路）。"
+            "642 车间位于XXXX医药股份有限公司原料药分公司。"
             "642 车间部门代码为 222，为非细胞毒临床产品备样专用车间，"
             "用于生产非无菌原料药，已于 2020 年完成厂房设施确认。"
             "642 车间设有一般区和 D 级洁净区，"

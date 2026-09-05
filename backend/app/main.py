@@ -11,6 +11,7 @@ from app.api import (
     ast_templates,
     auth,
     compliance,
+    document_analysis,
     entities,
     extraction,
     integration,
@@ -31,8 +32,9 @@ logger = logging.getLogger(__name__)
 
 def _run_migrations() -> None:
     """Apply Alembic migrations to head at startup (R6, T008)."""
-    from alembic import command
     from alembic.config import Config
+
+    from alembic import command
 
     backend_root = Path(__file__).resolve().parent.parent
     cfg = Config(str(backend_root / "alembic.ini"))
@@ -227,6 +229,11 @@ app.include_router(auth.router, prefix="/api/auth", tags=["auth"])
 app.include_router(ontology.router, prefix="/api/ontology", tags=["ontology"])
 app.include_router(entities.router, prefix="/api/entities", tags=["entities"])
 app.include_router(reasoning.router, prefix="/api/reasoning", tags=["reasoning"])
+app.include_router(
+    document_analysis.router,
+    prefix="/api/document-analysis",
+    tags=["document-analysis"],
+)
 app.include_router(extraction.router, prefix="/api/extraction", tags=["extraction"])
 app.include_router(pde_conflict.router, prefix="/api/extraction", tags=["pde-conflict"])
 app.include_router(kg.router, prefix="/api/kg", tags=["knowledge-graph"])

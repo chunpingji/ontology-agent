@@ -20,7 +20,7 @@ const dragOverVariants = cva(
     'before:opacity-100 before:bg-primary/20 text-primary-foreground'
 )
 
-interface TreeDataItem {
+export interface TreeDataItem {
     id: string
     name: string
     icon?: React.ComponentType<{ className?: string }>
@@ -35,7 +35,7 @@ interface TreeDataItem {
     className?: string
 }
 
-type TreeRenderItemParams = {
+export type TreeRenderItemParams = {
     item: TreeDataItem
     level: number
     isLeaf: boolean
@@ -44,7 +44,7 @@ type TreeRenderItemParams = {
     hasChildren: boolean
 }
 
-type TreeProps = React.HTMLAttributes<HTMLDivElement> & {
+export type TreeProps = React.HTMLAttributes<HTMLDivElement> & {
     data: TreeDataItem[] | TreeDataItem
     initialSelectedItemId?: string
     onSelectChange?: (item: TreeDataItem | undefined) => void
@@ -226,6 +226,11 @@ const TreeItem = React.forwardRef<HTMLDivElement, TreeItemProps>(
         },
         ref
     ) => {
+        // Consume TreeView-only props so they are not forwarded to the DOM below.
+        void onSelectChange
+        void expandAll
+        void initialSelectedItemId
+        void onDocumentDrag
         if (!(Array.isArray(data))) {
             data = [data]
         }
@@ -635,8 +640,6 @@ const TreeActions = ({
 
 export { 
     TreeView, 
-    type TreeDataItem, 
-    type TreeRenderItemParams,
     AccordionTrigger,
     AccordionContent,
     TreeLeaf,

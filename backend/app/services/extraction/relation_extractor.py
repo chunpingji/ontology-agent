@@ -1410,6 +1410,7 @@ def extract_relationships(
     triples: list[dict],
     doc_class: dict | None = None,
     source_filename: str | None = None,
+    structure: DocStructure | None = None,
 ) -> dict:
     """Schema-driven document classification + relation/property extraction.
 
@@ -1425,7 +1426,7 @@ def extract_relationships(
     完整关系图谱 → 按 range 调策略抽端点 → 连边。无识别文档类型 → ``doc_class=None``、
     ``relationships=[]``（优雅降级）。
     """
-    structure = (
+    structure = structure or (
         parse_docx_structure(file_path, source_filename=source_filename)
         if source_filename
         else parse_docx_structure(file_path)
