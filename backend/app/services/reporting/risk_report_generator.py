@@ -95,6 +95,11 @@ class RiskReport:
     # PDE/OEB「原文 vs 推导」冲突及生成时的人工裁决快照。报告必须同时保留双方值，
     # 不覆盖抽取事实；``effective`` 仅表示本次报告采用哪一侧。
     pde_conflicts: list[dict] = field(default_factory=list)
+    evidence_snapshot_id: str | None = None
+    coverage_manifest_id: str | None = None
+    template_version: str | None = None
+    source_discovery_hash: str | None = None
+    selector_version: str | None = None
 
 
 def _template_has_section_prompt(template: Any) -> bool:

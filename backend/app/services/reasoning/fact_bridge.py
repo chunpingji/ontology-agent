@@ -191,3 +191,62 @@ def apply_postconditions(facts: Facts, postconditions: dict[str, Any]) -> Facts:
             if val not in new_facts.relations[key]:
                 new_facts.relations[key].append(val)
     return new_facts
+
+
+def snapshot_to_facts(selector, subject_iri, assertion_ids):
+    """Read exact selected instances, retaining UNKNOWN for ambiguous scalar owners.
+
+    This adapter does not run vocabulary transforms, infer classes from labels,
+    call external sources, or inject planned controls as observed facts.
+    """
+    from collections import defaultdict
+
+    allowed = set(assertion_ids)
+    selected = [r for r in selector.records if r["assertion_id"] in allowed
+                and selector._positive(r) and r["assertion_id"] not in selector.conflicts()]
+    reachable = {subject_iri}
+    for _ in range(16):
+        added = {r["object_iri"] for r in selected
+                 if r["candidate"]["kind"] == "relationship" and r["subject_iri"] in reachable}
+        if added <= reachable:
+            break
+        reachable |= added
+    facts = Facts(strict_evidence=True)
+    aliases = defaultdict(set)
+    for iri in selector.schema:
+        aliases[_short_name(iri)].add(iri)
+    facts.class_aliases = {key: next(iter(iris)) for key, iris in aliases.items() if len(iris) == 1}
+    scalar_values = defaultdict(set)
+    predicates = defaultdict(set)
+    for record in selected:
+        if record["subject_iri"] not in reachable:
+            continue
+        candidate = selector.candidates[record["assertion_id"]]
+        predicate = candidate.predicate_iri
+        if candidate.kind == "entity":
+            facts.drug_classes.extend([candidate.class_iri, *selector.schema.get(candidate.class_iri, {}).get("parents", [])])
+        elif candidate.kind == "relationship":
+            target = selector.entities.get(record["object_iri"])
+            if target:
+                cls = target["candidate"]["class_iri"]
+                facts.relations.setdefault(predicate, []).extend([cls, *selector.schema.get(cls, {}).get("parents", [])])
+                predicates[_short_name(predicate)].add(predicate)
+        elif candidate.kind == "property" and candidate.literal.kind not in {"range", "comparison"}:
+            # Include owner in uniqueness: an A/B value is not a document-wide scalar.
+            scalar_values[predicate].add((record["subject_iri"], candidate.literal.normalized_value))
+            predicates[_short_name(predicate)].add(predicate)
+    for predicate, values in scalar_values.items():
+        if len(values) == 1:
+            value = next(iter(values))[1]
+            facts.data_values[predicate] = value
+            facts.scalars[predicate] = value
+    for short, values in predicates.items():
+        if len(values) != 1:
+            continue
+        predicate = next(iter(values))
+        if predicate in facts.data_values:
+            facts.data_values[short] = facts.data_values[predicate]
+            facts.scalars[short] = facts.data_values[predicate]
+        if predicate in facts.relations:
+            facts.relations[short] = facts.relations[predicate]
+    return facts

@@ -34,6 +34,7 @@ interface RelationPanelProps {
   decision?: PdeConflictDecision | null;
   onDecide?: (chosen: PdeDecisionChoice) => void;
   decisionPending?: boolean;
+  emptyMessage?: string;
 }
 
 interface PredicateGroup {
@@ -416,6 +417,7 @@ export function RelationPanel({
   decision,
   onDecide,
   decisionPending,
+  emptyMessage,
 }: RelationPanelProps) {
   const rels = relationships ?? [];
   const groups = useMemo(() => groupByPredicate(relationships ?? []), [relationships]);
@@ -468,7 +470,7 @@ export function RelationPanel({
       {rels.length === 0 ? (
         <div className="flex flex-1 items-center justify-center px-4">
           <p className="text-sm text-muted-foreground">
-            {docClass ? "未抽取到关系" : "仅 Word 文档支持关系抽取"}
+            {emptyMessage ?? (docClass ? "未抽取到关系" : "仅 Word 文档支持关系抽取")}
           </p>
         </div>
       ) : (

@@ -481,14 +481,6 @@ def _split_para_at_breaks(
     return fragments
 
 
-def _style_font_attr(para, attr: str):
-    """段落样式字体属性（bold/italic/underline）；style 缺失或无属性 → None。"""
-    try:
-        return getattr(para.style.font, attr, None) if para.style else None
-    except AttributeError:
-        return None
-
-
 def _effective_font_color(r) -> str | None:
     """run 有效字体颜色 → ``'#RRGGBB'``（仅真实 RGB；THEME/AUTO/缺失 → None）。"""
     try:
@@ -540,11 +532,18 @@ def _para_runs_and_text(
     mark（颜色/字号/字体），供 013/015 样例预览忠实还原 Word 视觉——抽取路径
     （``rich=False``）产出与旧版字节一致（仅 bold/italic/underline/strike）。
     """
-    style_bold = _style_font_attr(para, "bold")
-    style_italic = _style_font_attr(para, "italic")
-    style_underline = _style_font_attr(para, "underline")
-    style_size = _style_font_attr(para, "size") if rich else None
-    style_name = _style_font_attr(para, "name") if rich else None
+    # Resolving a default paragraph style scans the document's style definitions.
+    # Resolve once per paragraph, not twice per attribute (10 scans in rich mode).
+    try:
+        style = para.style
+        font = style.font if style is not None else None
+    except AttributeError:
+        font = None
+    style_bold = getattr(font, "bold", None)
+    style_italic = getattr(font, "italic", None)
+    style_underline = getattr(font, "underline", None)
+    style_size = getattr(font, "size", None) if rich else None
+    style_name = getattr(font, "name", None) if rich else None
 
     parts: list[str] = []
     runs: list[tuple[int, int, list[dict]]] = []
@@ -1010,6 +1009,7 @@ def annotate_word(
     structure_only: bool = False,
     rich_style: bool = False,
     structure: DocStructure | None = None,
+    ir=None,
 ) -> tuple[dict, list[str], list[dict], dict | None]:
     """解析 Word 文档 → tiptap ProseMirror JSON，三阶段 NER 标注实体 + 属性三元组。
 
@@ -1036,6 +1036,11 @@ def annotate_word(
     from docx.oxml.ns import qn
 
     doc = Document(str(file_path))
+
+    if ir is None and structure is not None:
+        from app.services.extraction.document_ir import build_document_ir
+
+        ir = build_document_ir(file_path, structure)
 
     _paras = {p._element: p for p in doc.paragraphs}
     _tables = {t._element: t for t in doc.tables}
@@ -1367,19 +1372,28 @@ def annotate_word(
     if page_w_mm != 210 or page_h_mm != 297:
         doc_json["attrs"] = {"pageWidth": page_w_mm, "pageHeight": page_h_mm}
 
+    if ir is not None:
+        from app.services.extraction.word_analysis import attach_evidence_preview
+
+        doc_json = attach_evidence_preview(doc_json, ir, doc)
+
     # structure_only 未运行 NER，_warnings 关于 GLiNER 属性抽取的告警不适用。
     warnings = [] if structure_only else _warnings(all_texts)
     return doc_json, warnings, triples, ckpt
 
 
-def parse_word_to_tiptap(file_path: str | Path) -> dict:
+def parse_word_to_tiptap(file_path: str | Path, *, original_path=None) -> dict:
     """解析 Word 文档 → 忠于原文结构与样式的 tiptap JSON（无 NER、无 engine）。
 
     ``annotate_word`` 的 structure_only 薄封装，供 013/015 样例文档预览复用。
     ``rich_style=True`` 额外还原 Word 视觉（字体颜色/字号/字体族、表格列宽/合并）。
     """
+    from app.services.extraction.word_analysis import analyze_word_core
+
+    analysis = analyze_word_core(file_path, role="template_sample", original_path=original_path)
     doc_json, _warnings_, _triples, _ckpt = annotate_word(
         file_path, engine=None, structure_only=True, rich_style=True,
+        structure=analysis.structure, ir=analysis.ir,
     )
     return doc_json
 

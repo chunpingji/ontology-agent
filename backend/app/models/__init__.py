@@ -5,6 +5,7 @@ module being imported here.
 """
 
 from app.models.entity_shadow import EntityShadow
+from app.models.evidence import *  # noqa: F401,F403
 from app.models.extraction import *  # noqa: F401,F403
 from app.models.integration import *  # noqa: F401,F403
 from app.models.ontology_meta import (

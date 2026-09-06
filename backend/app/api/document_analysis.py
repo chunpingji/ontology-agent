@@ -21,7 +21,7 @@ from app.services.extraction.doc_converter import (
     ensure_docx_async,
 )
 from app.services.extraction.document_annotator import annotate_word
-from app.services.extraction.docx_structure import parse_docx_structure
+from app.services.extraction.word_analysis import analyze_word_core
 from app.services.extraction.word_tree_summarizer import (
     fallback_word_tree_summaries,
     summarize_word_tree,
@@ -48,13 +48,15 @@ async def _save_temporary_upload(upload: UploadFile, destination: Path) -> None:
 
 def _analyze_docx(docx_path: str, filename: str) -> dict:
     """Run the deterministic parser, structure-only preview, and summaries."""
-    structure = parse_docx_structure(docx_path, source_filename=filename)
+    analysis = analyze_word_core(docx_path, source_filename=filename)
+    structure = analysis.structure
     content, preview_warnings, _triples, checkpoint = annotate_word(
         docx_path,
         engine=None,
         structure_only=True,
         rich_style=True,
         structure=structure,
+        ir=analysis.ir,
     )
     if checkpoint is not None:  # Defensive: structure-only mode never checkpoints.
         logger.warning("Stateless Word analysis unexpectedly returned a checkpoint")
@@ -75,6 +77,7 @@ def _analyze_docx(docx_path: str, filename: str) -> dict:
     return {
         "filename": filename,
         "content": content,
+        "analysis": analysis.ir.model_dump(mode="json"),
         "warnings": list(dict.fromkeys([*structure.warnings, *preview_warnings])),
         "section_tree": section_tree.to_dict(),
         "pagination": asdict(structure.pagination),

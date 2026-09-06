@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 import re
@@ -99,13 +100,17 @@ def _ensure_default_source_job(row: AstTemplate, db: Session, engine, background
     suffix = Path(row.default_source_path).suffix.lower()
     source_type = "excel" if suffix in (".xlsx", ".xls") else "word"
     job = ExtractionJob(
+        id=uuid4(),
         source_type=source_type,
         source_filename=row.default_source_filename or Path(row.default_source_path).name,
         document_path=row.default_source_path,
-        source_config={"mode": "template_default", "template_id": str(row.id)},
+        source_config={"mode": "template_default", "template_id": str(row.id),
+                       "doc_class_iri": row.iri_pattern},
         status="running",
     )
     db.add(job)
+    # Insert the referenced job before updating the FK; both stay in this transaction.
+    db.flush()
     row.default_source_job_id = job.id
     db.commit()
     db.refresh(row)
@@ -166,6 +171,7 @@ def get_template(
         "schema_json": row.schema_json,
         "sample_text": row.sample_text,
         "sample_content_json": row.sample_content_json,
+        "sample_analysis": row.sample_analysis,
         "training_pairs": [
             TrainingPairResponse.model_validate(p).model_dump() for p in pairs
         ],
@@ -200,6 +206,7 @@ def create_template(
         schema_json=req.schema_json,
         sample_text=req.sample_text,
         sample_content_json=req.sample_content_json,
+        sample_analysis=req.sample_analysis or (req.sample_content_json or {}).get("analysis"),
         created_by=getattr(identity, "username", "system"),
     )
     db.add(row)
@@ -250,6 +257,7 @@ def update_template(
         schema_json=req.schema_json,
         sample_text=old.sample_text,
         sample_content_json=old.sample_content_json,
+        sample_analysis=old.sample_analysis,
         sample_docx_path=old.sample_docx_path,
         owner=old.owner,
         default_source_path=old.default_source_path,
@@ -443,7 +451,7 @@ async def replace_sample(
             docx_tmp = await ensure_docx_async(str(src))
         except DocConversionError as exc:
             raise HTTPException(422, f"文档转换失败：{exc}") from exc
-        content_json = parse_word_to_tiptap(docx_tmp)
+        content_json = await asyncio.to_thread(parse_word_to_tiptap, docx_tmp, original_path=src)
         plain_text = tiptap_to_text(content_json)
         if not plain_text.strip():
             raise HTTPException(422, "无法从文档中提取文本内容")
@@ -452,6 +460,7 @@ async def replace_sample(
 
     row.sample_docx_path = saved_path
     row.sample_content_json = content_json
+    row.sample_analysis = content_json.get("analysis")
     row.sample_text = plain_text
     try:
         audit.append(
@@ -491,7 +500,8 @@ async def replace_sample(
                 Path(old_path).unlink(missing_ok=True)
         except Exception:
             _log.warning("替换示例后清理旧文件失败（已忽略）：%s", old_path, exc_info=True)
-    return {"content_json": content_json, "plain_text": plain_text}
+    return {"content_json": content_json, "plain_text": plain_text,
+            "analysis": content_json.get("analysis")}
 
 
 @router.post("/{template_id}/default-source", response_model=AstTemplateResponse)
@@ -546,10 +556,12 @@ async def upload_default_source(
         source_type=source_type,
         source_filename=file.filename,
         document_path=saved_path,
-        source_config={"mode": "template_default", "template_id": str(template_id)},
+        source_config={"mode": "template_default", "template_id": str(template_id),
+                       "doc_class_iri": row.iri_pattern},
         status="running",
     )
     db.add(job)
+    db.flush()
     row.default_source_job_id = job.id
 
     try:
@@ -698,13 +710,14 @@ async def parse_sample(
             docx_path = await ensure_docx_async(str(src))
         except DocConversionError as exc:
             raise HTTPException(422, f"文档转换失败：{exc}") from exc
-        content_json = parse_word_to_tiptap(docx_path)
+        content_json = await asyncio.to_thread(parse_word_to_tiptap, docx_path, original_path=src)
         plain_text = tiptap_to_text(content_json)
 
     if not plain_text.strip():
         raise HTTPException(422, "无法从文档中提取文本内容")
 
-    return {"content_json": content_json, "plain_text": plain_text}
+    return {"content_json": content_json, "plain_text": plain_text,
+            "analysis": content_json.get("analysis")}
 
 
 # ── 013 Suggest Slots (AI-assisted template design) ────────────────────
@@ -719,14 +732,9 @@ def suggest_slots_endpoint(
 ):
     from app.config import settings
 
-    if not settings.llm_suggest_slots_enabled:
-        raise HTTPException(503, "插槽建议功能未启用（llm_suggest_slots_enabled=False）")
-
     from app.services.llm.local_client import get_local_llm
 
-    client = get_local_llm()
-    if client is None:
-        raise HTTPException(503, "本地 LLM 不可用，请检查 local_llm_enabled 和端点配置")
+    client = get_local_llm() if settings.llm_suggest_slots_enabled else None
 
     # Resolve document text + structured content (tiptap) as the LLM analysis input.
     # 016 US1: the document entity type grounds ontology coverage — take the explicit
@@ -773,6 +781,7 @@ def suggest_slots_endpoint(
         ontology_engine=engine,
         content_json=content_json,
         doc_class_iri=doc_class_iri,
+        analysis=req.analysis,
     )
     return result
 

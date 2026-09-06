@@ -32,6 +32,13 @@ from app.services.ontology_meta_store import OntologyMetaStore  # noqa: E402
 
 
 # --- engine / session -------------------------------------------------------
+@pytest.fixture
+def real_world():
+    from tests.test_extraction.test_fact_commit import real_world as source_fixture
+
+    yield from source_fixture.__wrapped__()
+
+
 test_engine = create_engine(
     "sqlite://",
     connect_args={"check_same_thread": False},

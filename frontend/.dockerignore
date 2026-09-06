@@ -3,7 +3,10 @@ node_modules
 npm-debug.log*
 .git
 .gitignore
-.env*.local
+.env*
+dist/
+build/
+coverage/
 Dockerfile
 .dockerignore
 README.md

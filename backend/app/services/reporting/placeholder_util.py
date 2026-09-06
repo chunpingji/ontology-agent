@@ -1,7 +1,7 @@
 """Deterministic ``{{占位符}}`` substitution — shared, LLM-free.
 
 The risk-assessment matrix (QS-A-020F05) and the LLM narrative generator both fill
-``{{label}}`` tokens with resolved fact values. This module owns the ONE regex plus
+``{{label}}`` tokens with resolved fact values. This module owns one character scanner plus
 a single-pass substitution so neither module reaches into the other's private
 helper and both stay byte-identical. No LLM, no network — safe for the
 deterministic, auditable matrix (FR-009 forbids the LLM from altering it).
@@ -9,12 +9,34 @@ deterministic, auditable matrix (FR-009 forbids the LLM from altering it).
 
 from __future__ import annotations
 
-import re
 from collections.abc import Callable, Mapping
 
 # A ``{{ 药物名称/代号 }}`` token; the inner group is the trimmed label. Imported by
-# ``narrative_generator`` so the two report consumers share one regex / one behavior.
-PLACEHOLDER_RE = re.compile(r"\{\{\s*([^{}]+?)\s*\}\}")
+# ``narrative_generator`` so the two report consumers share one scanner / one behavior.
+def placeholder_spans(text):
+    position = 0
+    while position < len(text):
+        start = text.find("{{", position)
+        if start < 0:
+            break
+        end = text.find("}}", start + 2)
+        if end < 0:
+            break
+        label = text[start + 2:end]
+        if label and "{" not in label and "}" not in label:
+            yield start, end + 2, label.strip()
+            position = end + 2
+        else:
+            position = start + 1
+
+
+class PlaceholderScanner:
+    def findall(self, text):
+        return [label for _, _, label in placeholder_spans(text)]
+
+
+# Historical import name only; there is no regex execution behind this adapter.
+PLACEHOLDER_RE = PlaceholderScanner()
 
 
 def substitute(
@@ -35,11 +57,11 @@ def substitute(
     if not text or "{{" not in text:
         return text
 
-    def _repl(m: re.Match) -> str:
-        label = m.group(1).strip()
+    result, position = [], 0
+    for start, end, label in placeholder_spans(text):
+        result.append(text[position:start])
         value = mapping.get(label)
-        if value is None or value == "":
-            return missing(label)
-        return str(value)
-
-    return PLACEHOLDER_RE.sub(_repl, text)
+        result.append(missing(label) if value is None or value == "" else str(value))
+        position = end
+    result.append(text[position:])
+    return "".join(result)

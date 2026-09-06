@@ -25,13 +25,13 @@ def test_word_analysis_is_stateless_and_returns_linked_tree(
     client, db, tmp_path, monkeypatch
 ):
     analyzed_paths: list[Path] = []
-    real_parse = document_analysis.parse_docx_structure
+    real_parse = document_analysis.analyze_word_core
 
     def capture_parse(path, *args, **kwargs):
         analyzed_paths.append(Path(path))
         return real_parse(path, *args, **kwargs)
 
-    monkeypatch.setattr(document_analysis, "parse_docx_structure", capture_parse)
+    monkeypatch.setattr(document_analysis, "analyze_word_core", capture_parse)
     monkeypatch.setattr(document_analysis, "get_local_llm", lambda: None)
 
     response = client.post(

@@ -36,8 +36,25 @@ class ProgressBus:
     def publish(self, job_id: str, event: dict) -> None:
         self._events.setdefault(job_id, []).append(event)
 
+    def reset(self, job_id: str) -> None:
+        """Start a fresh observable run without replaying an earlier terminal event."""
+        self._events.pop(job_id, None)
+
     def history(self, job_id: str) -> list[dict]:
         return list(self._events.get(job_id, []))
+
+    def annotation_is_running(self, job_id: str) -> bool:
+        """Return whether this process owns a live annotation run for ``job_id``.
+
+        Database state alone cannot answer this after a process restart: a job can
+        remain ``annotating`` even though its in-memory background task disappeared.
+        The latest annotation event is therefore the process-local lease.  Terminal
+        annotation events release it, while an empty history permits recovery.
+        """
+        for event in reversed(self._events.get(job_id, [])):
+            if event.get("annotation_stage"):
+                return event.get("status") == "running"
+        return False
 
     def is_terminal(self, job_id: str) -> bool:
         for ev in self._events.get(job_id, []):
@@ -47,9 +64,10 @@ class ProgressBus:
                 return True
         return False
 
-    async def stream(self, job_id: str, *, timeout: float = 30.0) -> AsyncIterator[dict]:
+    async def stream(self, job_id: str, *, timeout: float = 30.0,
+                     latest_only: bool = False) -> AsyncIterator[dict]:
         """异步生成器：回放并增量推送事件，作业终态后结束（带安全超时）。"""
-        sent = 0
+        sent = max(0, len(self._events.get(job_id, [])) - 1) if latest_only else 0
         waited = 0.0
         interval = 0.05
         while True:

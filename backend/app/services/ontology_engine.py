@@ -462,17 +462,11 @@ class OntologyEngine:
             for prop in self._world.data_properties():
                 if self._cls_in_domain(cls, prop.domain) and prop.iri not in seen:
                     seen.add(prop.iri)
-                    ranges = [
-                        getattr(item, "iri", None)
-                        or {
-                            str: "http://www.w3.org/2001/XMLSchema#string",
-                            int: "http://www.w3.org/2001/XMLSchema#integer",
-                            float: "http://www.w3.org/2001/XMLSchema#decimal",
-                            bool: "http://www.w3.org/2001/XMLSchema#boolean",
-                        }.get(item)
-                        or str(item)
-                        for item in prop.range
-                    ]
+                    # RDF preserves xsd:date and decimal exactly; Python range
+                    # adapters can return None or collapse decimal into float.
+                    ranges = [str(item) for item in self._world.as_rdflib_graph().objects(
+                        rdflib.URIRef(prop.iri), rdflib.RDFS.range,
+                    ) if isinstance(item, rdflib.URIRef)]
                     aliases = []
                     for item in getattr(prop, "label", []) or []:
                         text = str(item)
@@ -486,6 +480,7 @@ class OntologyEngine:
                         "name": prop.name,
                         "label": label,
                         "aliases": aliases,
+                        "max_count": 1 if owlready2.FunctionalProperty in prop.is_a else None,
                         "range": ranges,
                         "datatype": (
                             ranges[0].rsplit("#", 1)[-1].rsplit("/", 1)[-1]
@@ -514,9 +509,18 @@ class OntologyEngine:
                         "iri": prop.iri,
                         "name": prop.name,
                         "label": self._get_label(prop) or prop.name,
-                        "range": [getattr(r, "iri", str(r)) for r in prop.range],
+                        "range": sorted({iri for r in prop.range for iri in self._range_class_iris(r)}),
+                        "max_count": 1 if owlready2.FunctionalProperty in prop.is_a else None,
                     })
             return props
+
+    @staticmethod
+    def _range_class_iris(expression):
+        if isinstance(expression, owlready2.Or):
+            return [iri for child in expression.Classes for iri in OntologyEngine._range_class_iris(child)]
+        # Intersections/restrictions are not unions; unsupported expressions
+        # stay unresolved rather than becoming fabricated class IRIs.
+        return [expression.iri] if isinstance(expression, owlready2.ThingClass) else []
 
     def get_class_label(self, class_iri: str) -> str | None:
         """返回某类的显示标签（优先中文 ``rdfs:label``），未找到返回 ``None``（只读）。

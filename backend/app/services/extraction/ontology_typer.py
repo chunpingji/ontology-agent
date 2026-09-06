@@ -13,7 +13,6 @@
 from __future__ import annotations
 
 import logging
-import re
 from dataclasses import dataclass
 
 from app.services.extraction.semantic import cosine_similarity, get_embedder
@@ -59,20 +58,9 @@ _relevant_cache: dict[tuple[int, str], set[str]] = {}
 
 _SEED_LABEL_CAP = 40
 
-# 否定名单：明显不是实体的 span 文本模式（度量值、纯数字等）。
-_NON_ENTITY_RE = re.compile(
-    r"^\d+(\.\d+)?\s*[a-zA-Zμ°℃%‰]+$"   # 数字+单位: 50L, 15℃, 99.5%
-    r"|^\d+(\.\d+)?$"                       # 纯数字: 123, 1.5
-    r"|^\d+\s*分钟$|^\d+\s*小时$|^\d+\s*天$"  # 中文时间: 15分钟
-    r"|^[±<>≤≥]\s*\d"                       # 比较: ±0.5, <3
-    r"|^\d+(\.\d+)?\s*[-–~]\s*\d"           # 范围: 3.2-5.8
-)
-
-
 def _is_non_entity_span(text: str) -> bool:
-    """检测明显不是实体的 span 文本（度量值、纯数字、范围表达式）。"""
-    t = text.strip()
-    return len(t) <= 1 or bool(_NON_ENTITY_RE.match(t))
+    """Only empty input is structurally invalid; numbers can be entity identifiers."""
+    return not text.strip()
 
 
 _RELEVANT_HOPS = 4

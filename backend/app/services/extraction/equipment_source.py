@@ -393,6 +393,24 @@ class MockEquipmentSource:
     def list_by_workshop(self, workshop_code: str) -> list[EquipmentFact]:
         return list(_BY_WORKSHOP.get((workshop_code or "").strip(), []))
 
+    def evidence_record(self, equipment_id: str):
+        """Versioned raw record for candidate creation, never report-time enrichment."""
+        from app.services.extraction.external_records import ResolvedRecord, record_version
+
+        raw = next((row for row in _RAW if row[1] == equipment_id), None)
+        if raw is None:
+            return None
+        fields = dict(zip(("workshop", "equipment_id", "name", "specification", "material",
+                           "location", "area_type"), raw, strict=True))
+        return ResolvedRecord(
+            system="mock_equipment", dataset="equipment_archive", key=equipment_id,
+            version=record_version(fields), class_iri=PROCESS_EQUIPMENT_IRI,
+            label_field="equipment_id", fields=fields,
+            field_predicates={"equipment_id": f"{_EQUIP_NS}equipmentID",
+                              "name": f"{_EQUIP_NS}equipmentName",
+                              "specification": f"{_EQUIP_NS}modelSpecification"},
+        )
+
 
 def get_equipment_source() -> EquipmentSource:
     """返回当前生效的设备档案事实源。

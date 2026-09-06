@@ -12,8 +12,10 @@ from __future__ import annotations
 
 import json
 import logging
-import re
+from time import monotonic
 from typing import Any
+
+from app.services.extraction.text_scanner import strip_tag_blocks
 
 logger = logging.getLogger(__name__)
 
@@ -41,6 +43,7 @@ def get_local_llm():
         api_key=settings.local_llm_api_key,
         # 单次生成放宽到 15 分钟（大 max_tokens 下本地模型可能较慢）。
         timeout=15 * 60,
+        max_retries=0,  # extraction owns retries and the total task budget
     )
 
 
@@ -56,6 +59,7 @@ def chat_with_schema(
     max_tokens: int | None = None,
     enable_thinking: bool = False,
     timeout_s: float | None = None,
+    max_attempts: int = 2,
 ) -> dict[str, Any] | None:
     """Send a chat completion with structured JSON output, falling back to prompt-based parsing.
 
@@ -77,6 +81,9 @@ def chat_with_schema(
     """
     from app.config import settings
 
+    if client is None or max_attempts < 1:
+        return None
+    started = monotonic()
     _model = model or settings.local_llm_model
     _temperature = temperature if temperature is not None else settings.local_llm_temperature
     _max_tokens = max_tokens or settings.local_llm_max_tokens
@@ -117,6 +124,11 @@ def chat_with_schema(
         )
 
     # Attempt 2: prompt-based fallback
+    if max_attempts == 1:
+        return None
+    remaining_timeout = None if timeout_s is None else timeout_s - (monotonic() - started)
+    if remaining_timeout is not None and remaining_timeout <= 0:
+        return None
     # Disable Qwen 3 thinking mode (/no_think) — thinking blocks consume
     # most of max_tokens and leave the actual JSON truncated.
     schema_instruction = (
@@ -125,9 +137,7 @@ def chat_with_schema(
         "(no markdown, no explanation, no thinking):\n"
         + json.dumps(schema, ensure_ascii=False, indent=2)
     )
-    # Double the token budget for fallback — if thinking mode can't be
-    # suppressed, the extra headroom lets the JSON complete after the block.
-    fallback_max_tokens = _max_tokens * 2
+    fallback_max_tokens = _max_tokens
     try:
         resp = client.chat.completions.create(
             model=_model,
@@ -138,13 +148,10 @@ def chat_with_schema(
             temperature=_temperature,
             max_tokens=fallback_max_tokens,
             extra_body=extra_body,
-            timeout=timeout_s,
+            timeout=remaining_timeout,
         )
         raw = resp.choices[0].message.content or ""
-        logger.info(
-            "chat_with_schema fallback response length=%d, prefix=%.200s",
-            len(raw), raw[:200],
-        )
+        logger.debug("chat_with_schema fallback response length=%d", len(raw))
         return _extract_json_object(raw)
     except Exception:
         logger.warning("chat_with_schema: both attempts failed", exc_info=True)
@@ -152,50 +159,13 @@ def chat_with_schema(
 
 
 def _extract_json_object(raw: str) -> dict[str, Any] | None:
-    """Extract the first JSON object from potentially wrapped LLM output."""
-    text = raw.strip()
-
-    # Strip <think>...</think> blocks (Qwen thinking mode)
-    text = re.sub(r"<think>.*?</think>", "", text, flags=re.DOTALL).strip()
-    # Handle unclosed <think> tag (output truncated at max_tokens)
-    if "<think>" in text:
-        text = re.sub(r"<think>.*", "", text, flags=re.DOTALL).strip()
-
-    # Strip markdown code fences
-    if "```" in text:
-        lines = text.split("\n")
-        inside = False
-        cleaned: list[str] = []
-        for line in lines:
-            if line.strip().startswith("```"):
-                inside = not inside
-                continue
-            if inside:
-                cleaned.append(line)
-        if cleaned:
-            text = "\n".join(cleaned).strip()
-
-    # Try direct parse
-    try:
-        parsed = json.loads(text)
-        if isinstance(parsed, dict):
-            return parsed
-    except (json.JSONDecodeError, ValueError):
-        pass
-
-    # Locate first { ... } in free-form text
+    """Decode one object without treating braces in JSON strings as structure."""
+    text = strip_tag_blocks(raw, "think").strip()
     start = text.find("{")
     if start < 0:
         return None
-    depth = 0
-    for i in range(start, len(text)):
-        if text[i] == "{":
-            depth += 1
-        elif text[i] == "}":
-            depth -= 1
-            if depth == 0:
-                try:
-                    return json.loads(text[start : i + 1])
-                except json.JSONDecodeError:
-                    return None
-    return None
+    try:
+        parsed, _end = json.JSONDecoder().raw_decode(text, start)
+    except (json.JSONDecodeError, ValueError):
+        return None
+    return parsed if isinstance(parsed, dict) else None

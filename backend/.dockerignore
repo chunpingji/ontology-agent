@@ -2,6 +2,11 @@
 .venv/
 venv/
 *.egg-info/
+dist/
+build/
+.env*
+*.log*
+coverage/
 
 # Python caches
 __pycache__/

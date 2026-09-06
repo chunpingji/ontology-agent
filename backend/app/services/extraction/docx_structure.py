@@ -8,24 +8,23 @@ cannot be a heading in the preview while remaining invisible to extraction.
 
 from __future__ import annotations
 
-import re
 from dataclasses import asdict, dataclass, field
 from hashlib import sha256
 from pathlib import Path
 from typing import Literal, TypeAlias
 
+from app.services.extraction.text_scanner import (
+    chinese_heading_prefix,
+    compact_space,
+    first_ascii_number,
+    key_value_spans,
+    normalize_space,
+    numbered_heading_depth,
+)
+
 _PT = 12700  # one point in EMU
 _PROSE_ENDINGS = "。；;，,！？!?"
-_NUMBERED_HEADING_RE = re.compile(
-    r"^\s*(?P<num>[0-9]+(?:[.．][0-9]+){0,5})[.．、\s]*"
-)
-_ZH_NUMBERED_HEADING_RE = re.compile(
-    r"^\s*(?:[（(]?[一二三四五六七八九十百]+[）)、.．]|"
-    r"第[一二三四五六七八九十百0-9]+[章节部分])"
-)
-_KEY_VALUE_RE = re.compile(r"^\s*[^：:\n]{1,80}[：:]\s*\S+")
-_EMPTY_FIELD_LABEL_RE = re.compile(r"^\s*[^：:\n]{1,80}[：:]\s*$")
-PARSER_VERSION = 3
+PARSER_VERSION = 4
 
 
 @dataclass
@@ -201,6 +200,11 @@ class DocTable:
     section_heading: str | None = None
     heading_index: int | None = None
     section_path: list[str] = field(default_factory=list)
+    table_path: list[str] = field(default_factory=list)
+    # Physical XML cells, not the expanded row.cells visual grid. Continuations
+    # point to the original source cell and do not duplicate its text.
+    source_cells: list[dict] = field(default_factory=list)
+    grid: list[list[str | None]] = field(default_factory=list)
 
     @property
     def ncols(self) -> int:
@@ -247,18 +251,20 @@ def heading_level_from_style(style_name: str | None) -> int:
     if not style_name:
         return 0
     text = style_name.strip()
-    low = re.sub(r"\s+", " ", text.lower())
+    low = normalize_space(text.lower())
     if low == "title" or text == "标题":
         return 1
     if low == "subtitle" or text == "副标题":
         return 2
     if "heading" in low or text.startswith("标题"):
-        match = re.search(r"[0-9]+", text)
-        if match:
-            return max(1, min(6, int(match.group())))
-    toc = re.fullmatch(r"(?:toc|目录)\s*([1-6])", low)
-    if toc:
-        return int(toc.group(1))
+        number = first_ascii_number(text)
+        if number:
+            return max(1, min(6, int(number)))
+    for prefix in ("toc", "目录"):
+        if low.startswith(prefix):
+            suffix = low[len(prefix):].strip()
+            if suffix in ("1", "2", "3", "4", "5", "6"):
+                return int(suffix)
     return 0
 
 
@@ -320,16 +326,15 @@ def _predominantly_bold(paragraph) -> bool:
 
 
 def _semantic_bold_heading_level(paragraph, text: str) -> int:
-    compact = re.sub(r"\s+", "", text)
+    compact = compact_space(text)
     if not compact or len(compact) > 60 or compact.endswith(tuple(_PROSE_ENDINGS)):
         return 0
     if not _predominantly_bold(paragraph):
         return 0
-    numbered = _NUMBERED_HEADING_RE.match(compact)
+    numbered = numbered_heading_depth(compact)
     if numbered:
-        number = numbered.group("num").replace("．", ".")
-        return max(1, min(6, len(number.split("."))))
-    if _ZH_NUMBERED_HEADING_RE.match(compact):
+        return numbered
+    if chinese_heading_prefix(compact):
         return 2
     # Enterprise reports often use Normal + bold for unnumbered semantic titles.
     return 2
@@ -356,13 +361,12 @@ def infer_heading_level(paragraph) -> int:
     # empty ``label:`` must not become a visual heading either.  Keep numbered
     # headings such as ``2. 产品信息：`` eligible for the semantic-heading fallback;
     # explicit Word outline/style headings have already returned above.
-    empty_field_label = (
-        bool(_EMPTY_FIELD_LABEL_RE.match(text))
-        and not _NUMBERED_HEADING_RE.match(text)
-        and not _ZH_NUMBERED_HEADING_RE.match(text)
-    )
-    if _KEY_VALUE_RE.match(text) or empty_field_label:
-        return 0
+    kv = key_value_spans(text)
+    if kv:
+        has_value = kv[1][1] > kv[1][0]
+        numbered = numbered_heading_depth(text) or chinese_heading_prefix(text)
+        if has_value or not numbered:
+            return 0
     size_level = _font_size_heading_level(_paragraph_font_size(paragraph))
     if size_level:
         return size_level
@@ -429,7 +433,10 @@ def _table_to_struct(
     section_heading: str | None = None,
     heading_index: int | None = None,
     section_path: list[str] | None = None,
+    table_path: list[str] | None = None,
 ) -> DocTable:
+    table_path = table_path or [f"table:{table_index}"]
+    source_cells, grid = _source_table_cells(table, table_path)
     cells = [[_cell_text(cell) for cell in row.cells] for row in table.rows]
     header_count = _detect_header_rows(table)
     headers = _canonical_headers(cells, header_count)
@@ -453,7 +460,66 @@ def _table_to_struct(
         section_heading=section_heading,
         heading_index=heading_index,
         section_path=section_path or [],
+        table_path=table_path,
+        source_cells=source_cells,
+        grid=grid,
     )
+
+
+def _source_table_cells(table, table_path: list[str]) -> tuple[list[dict], list[list]]:
+    """Read each physical source once, keeping nested block order and merge origins."""
+    from docx.oxml.ns import qn
+    from docx.table import Table, _Cell
+    from docx.text.paragraph import Paragraph
+
+    cells: list[dict] = []
+    grid: list[list] = []
+    active: dict[int, dict] = {}
+    for row_index, tr in enumerate(table._tbl.tr_lst):
+        before = tr.find("w:trPr/w:gridBefore", tr.nsmap)
+        column = int(before.get(qn("w:val"), "0")) if before is not None else 0
+        row: list = [None] * column
+        next_active: dict[int, dict] = {}
+        for tc in tr.tc_lst:
+            span = tc.grid_span
+            continuation = tc.vMerge == "continue"
+            origin = active.get(column) if continuation else None
+            if continuation and origin is None:
+                raise ValueError("vertical merge continuation has no source cell")
+            if origin is not None:
+                if origin["column_span"] != span:
+                    raise ValueError("vertical merge continuation changes its column span")
+                origin["row_span"] += 1
+            else:
+                cell_id = "/".join([*table_path, f"cell:{row_index}:{column}"])
+                origin = {
+                    "cell_id": cell_id, "row_index": row_index, "column_index": column,
+                    "row_span": 1, "column_span": span, "blocks": [],
+                }
+                cell = _Cell(tc, table)
+                paragraph_index, nested_index = 0, 0
+                for child in tc:
+                    if child.tag == qn("w:p"):
+                        origin["blocks"].append({
+                            "kind": "paragraph", "paragraph_index": paragraph_index,
+                            "text": Paragraph(child, cell).text,
+                        })
+                        paragraph_index += 1
+                    elif child.tag == qn("w:tbl"):
+                        nested_path = [*table_path, f"cell:{row_index}:{column}",
+                                       f"table:{nested_index}"]
+                        nested = _table_to_struct(Table(child, cell), table_path=nested_path)
+                        origin["blocks"].append({"kind": "table", "table": asdict(nested)})
+                        nested_index += 1
+                cells.append(origin)
+            row.extend([origin["cell_id"]] * span)
+            if tc.vMerge is not None:
+                for col in range(column, column + span):
+                    next_active[col] = origin
+            column += span
+        grid.append(row)
+        active = next_active
+    return cells, grid
 
 
 def _filename_stem(source_filename: str | None, fallback: Path) -> str:

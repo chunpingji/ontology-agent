@@ -13,6 +13,7 @@ from app.api import (
     compliance,
     document_analysis,
     entities,
+    evidence,
     extraction,
     integration,
     kg,
@@ -167,6 +168,16 @@ async def lifespan(app: FastAPI):
     # 功能关闭/缺包/缺权重均零开销或静默降级，不阻断启动。
     _warmup_local_models()
 
+    # Replay durable queued/expired evidence commits without blocking the event
+    # loop. Fresh leases remain owned by another worker; failures stay visible.
+    import asyncio
+
+    from app.services.fact_commit import recover_evidence_commits
+
+    recovery_task = asyncio.create_task(
+        asyncio.to_thread(recover_evidence_commits, ontology_engine)
+    )
+
     # 能力三：启动期 asyncio 轮询后台任务挂载点（R4, T037）。默认关闭，避免测试期起任务。
     poller_task = None
     if settings.realtime_polling_enabled:  # pragma: no cover - 仅生产/手动开启
@@ -178,6 +189,7 @@ async def lifespan(app: FastAPI):
 
     yield
 
+    await recovery_task
     if poller_task is not None:  # pragma: no cover
         poller_task.cancel()
     ontology_engine.close()
@@ -235,6 +247,7 @@ app.include_router(
     tags=["document-analysis"],
 )
 app.include_router(extraction.router, prefix="/api/extraction", tags=["extraction"])
+app.include_router(evidence.router, prefix="/api/extraction", tags=["evidence"])
 app.include_router(pde_conflict.router, prefix="/api/extraction", tags=["pde-conflict"])
 app.include_router(kg.router, prefix="/api/kg", tags=["knowledge-graph"])
 app.include_router(integration.router, prefix="/api/integration", tags=["integration"])

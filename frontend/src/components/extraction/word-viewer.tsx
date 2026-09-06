@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import { Extension, Mark, Node, mergeAttributes } from "@tiptap/core";
 import StarterKit from "@tiptap/starter-kit";
@@ -9,7 +9,8 @@ import { TableRow } from "@tiptap/extension-table-row";
 import { TableCell } from "@tiptap/extension-table-cell";
 import { TableHeader } from "@tiptap/extension-table-header";
 import Underline from "@tiptap/extension-underline";
-import type { StructuredRelationSourceRef } from "@/lib/api";
+import type { EvidenceAnchor, StructuredRelationSourceRef } from "@/lib/api";
+import { resolveEvidenceSource } from "@/lib/evidence-source";
 import { parseRelationSourceRefKey } from "@/lib/relation-source-ref";
 import { EntityAnnotation } from "./entity-mark";
 
@@ -41,6 +42,14 @@ const SourceCoordinates = Extension.create({
       {
         types: ["paragraph", "heading", "table"],
         attributes: {
+          evidenceId: {
+            default: null,
+            parseHTML: (el) => (el as HTMLElement).dataset.evidenceId || null,
+            renderHTML: (attrs) => attrs.evidenceId ? { "data-evidence-id": attrs.evidenceId } : {},
+          },
+          sourceTablePath: { default: null },
+          sourceRowIndex: { default: null },
+          sourceColumnIndex: { default: null },
           sourceBlockId: {
             default: null,
             parseHTML: (el) =>
@@ -336,6 +345,8 @@ interface WordViewerProps {
   content: Record<string, unknown>;
   highlightRef?: string | null;
   activeLocation?: DocumentLocation | null;
+  activeAnchor?: EvidenceAnchor | null;
+  sourceUnavailable?: boolean;
   /** 令表格按 colgroup 列宽比例适配纸张宽度（样例预览用；默认表格保持自然宽度）。 */
   fitTables?: boolean;
 }
@@ -344,9 +355,12 @@ export function WordViewer({
   content,
   highlightRef,
   activeLocation,
+  activeAnchor,
+  sourceUnavailable,
   fitTables,
 }: WordViewerProps) {
   const wrapperRef = useRef<HTMLDivElement>(null);
+  const [sourceError, setSourceError] = useState<string | null>(null);
 
   const normalizedContent = useMemo(
     () => normalizeNewlines(content),
@@ -377,6 +391,38 @@ export function WordViewer({
       editor.commands.setContent(normalizedContent);
     }
   }, [editor, normalizedContent]);
+
+  useEffect(() => {
+    if (!editor) return;
+    const timer = setTimeout(() => {
+      setSourceError(null);
+      if (!activeAnchor) return;
+      try {
+        const { unit, from, to } = resolveEvidenceSource(content, activeAnchor);
+        let selected = false;
+        editor.state.doc.descendants((node, position) => {
+          if (node.attrs.evidenceId !== unit.evidence_id) return;
+          if (node.textBetween(0, node.content.size, "", "\n") !== unit.text) {
+            throw new Error("来源已失效：预览与原文不一致");
+          }
+          editor.commands.setTextSelection({ from: position + 1 + from, to: position + 1 + to });
+          selected = true;
+          return false;
+        });
+        if (!selected) throw new Error("原文证据未出现在此预览中");
+        const nodes = wrapperRef.current?.querySelectorAll<HTMLElement>("[data-evidence-id]");
+        nodes?.forEach((node) => {
+          if (node.dataset.evidenceId === unit.evidence_id) {
+            node.scrollIntoView({ behavior: "smooth", block: "center" });
+          }
+        });
+      } catch (error) {
+        editor.commands.setTextSelection(0);
+        setSourceError(error instanceof Error ? error.message : "来源定位失败");
+      }
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [activeAnchor, content, editor]);
 
   useEffect(() => {
     if (!wrapperRef.current) return;
@@ -617,6 +663,11 @@ export function WordViewer({
         fitTables ? " paper-fit-tables" : ""
       }`}
     >
+      {(sourceError || sourceUnavailable) && (
+        <p role="status" className="text-sm text-amber-700">
+          {sourceError || "此字段没有可回放来源，请重新分析样例或人工确认。"}
+        </p>
+      )}
       <EditorContent editor={editor} />
       <style>{`
         .paper-pages {
