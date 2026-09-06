@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import json
 import logging
-import re
 from collections.abc import Callable, Iterable
 from datetime import UTC, datetime
 from typing import Any
@@ -124,7 +123,7 @@ def _chapter_material(structure: DocStructure, node: ChapterNode) -> str:
 
 
 def _extractive_summary(material: str, maximum: int) -> str:
-    text = re.sub(r"\s+", " ", material).strip()
+    text = " ".join(material.split())
     if not text:
         return "本节点未包含可提取的正文内容。"
     if len(text) <= maximum:
@@ -225,7 +224,7 @@ def _apply_batch(client, targets: list[dict[str, Any]]) -> None:
                 or not isinstance(summary, str)
             ):
                 continue
-            cleaned = re.sub(r"\s+", " ", summary).strip()
+            cleaned = " ".join(summary.split())
             if cleaned:
                 accepted[node_id] = cleaned[
                     : settings.word_tree_summary_max_output_chars

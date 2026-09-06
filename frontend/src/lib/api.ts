@@ -1021,6 +1021,7 @@ export interface ExtractionCandidate {
   match_score: number | null;
   review_status: string;
   committed_iri: string | null;
+  verification_status?: "legacy_unverified";
 }
 export interface CandidateGroup {
   group_key: string;
@@ -1039,28 +1040,42 @@ export interface JobProgressEvent {
   pct: number;
   status: string;
   degraded: boolean;
+  started_at?: number;
+  updated_at?: number;
+  tasks_processed?: number;
+  tasks_completed?: number;
+  tasks_failed?: number;
+  model_calls?: number;
+  has_checkpoint?: boolean;
+  can_resume?: boolean;
 }
 
 export async function pauseAnnotation(jobId: string): Promise<void> {
-  await fetch(`${API_BASE}/api/extraction/jobs/${jobId}/annotation/pause`, {
-    method: "POST",
-    headers: identityHeaders(),
-  });
+  await annotationControl(jobId, "pause");
 }
 
 export async function resumeAnnotation(jobId: string): Promise<void> {
-  await fetch(`${API_BASE}/api/extraction/jobs/${jobId}/annotation/resume`, {
-    method: "POST",
-    headers: identityHeaders(),
-  });
+  await annotationControl(jobId, "resume");
 }
 
 export async function rerunAnnotation(jobId: string): Promise<void> {
-  const response = await fetch(`${API_BASE}/api/extraction/jobs/${jobId}/annotation/rerun`, {
+  await annotationControl(jobId, "rerun");
+}
+
+async function annotationControl(jobId: string, action: "pause" | "resume" | "rerun"): Promise<void> {
+  const response = await fetch(`${API_BASE}/api/extraction/jobs/${jobId}/annotation/${action}`, {
     method: "POST",
     headers: identityHeaders(),
   });
-  if (!response.ok) throw new Error(`API ${response.status}: ${await response.text()}`);
+  if (!response.ok) {
+    const label = { pause: "暂停识别", resume: "继续识别", rerun: "重新识别" }[action];
+    let message = `${label}请求失败（${response.status}）`;
+    try {
+      const body = await response.json();
+      if (typeof body.detail === "string") message = body.detail;
+    } catch { /* A proxy error may have a non-JSON body. */ }
+    throw new Error(message);
+  }
 }
 
 // Types
@@ -1781,10 +1796,18 @@ export interface AnnotatedDocument {
   relationships?: Relationship[];
   section_tree?: WordChapterNode;
   pagination?: WordPaginationMetadata;
+  preview_only?: boolean;
+  completion?: "complete" | "incomplete";
+  evidence_run?: {
+    completion: "complete" | "incomplete";
+    degraded: boolean;
+    diagnostics: string[];
+  };
 }
-export const getAnnotatedDocument = (jobId: string, refresh = false) =>
+export const getAnnotatedDocument = (jobId: string, refresh = false, signal?: AbortSignal) =>
   fetchAPI<AnnotatedDocument>(
     `/api/extraction/jobs/${jobId}/annotated-document${refresh ? "?refresh=1" : ""}`,
+    { signal },
   );
 
 export interface WordDocumentAnalysis {
@@ -1834,8 +1857,9 @@ export const decidePdeConflict = (
 
 export async function generateRiskReport(
   jobId: string,
+  templateId?: string,
 ): Promise<Blob | { report_id: string; status: string }> {
-  const res = await fetch(`${API_BASE}/api/extraction/jobs/${jobId}/risk-report`, {
+  const res = await fetch(`${API_BASE}/api/extraction/jobs/${jobId}/risk-report${templateId ? `?template_id=${encodeURIComponent(templateId)}` : ""}`, {
     method: "POST", headers: identityHeaders(),
   });
   if (!res.ok) throw new Error(`API ${res.status}: ${await res.text()}`);
@@ -1888,11 +1912,15 @@ export interface ASTCoverageDTO {
   manual: number;
   dismissed: number;
   sections: SectionCoverageDTO[];
+  snapshot_id?: string | null;
+  manifest_id?: string | null;
+  instance_manifest?: InstanceCoverageManifest | null;
 }
 
-export const getAstCoverage = (jobId: string, templateId?: string) =>
+export const getAstCoverage = (jobId: string, templateId?: string, signal?: AbortSignal) =>
   fetchAPI<ASTCoverageDTO>(
     `/api/extraction/jobs/${jobId}/ast-coverage${templateId ? `?template_id=${templateId}` : ""}`,
+    { signal },
   );
 
 // 015: per-section 行文 narrative prose, generated at report time and surfaced
@@ -2002,6 +2030,169 @@ export const getAllClasses = () =>
 // tiptap/ProseMirror 文档 JSON（忠于原文结构的样例内容，供 WordViewer 渲染）。
 export type TiptapContent = Record<string, unknown>;
 
+export interface EvidenceAnchor {
+  document_hash: string;
+  parser_version: string;
+  structure_hash: string;
+  evidence_id: string;
+  section_node_id: string;
+  block_id: string;
+  paragraph_index?: number | null;
+  fragment_index?: number | null;
+  table_path?: string[] | null;
+  row_index?: number | null;
+  column_index?: number | null;
+  span_start?: number | null;
+  span_end?: number | null;
+  physical_page_number?: number | null;
+}
+
+export interface EvidenceCandidateRef {
+  candidate_id: string;
+  revision: number;
+  class_iri?: string | null;
+}
+
+export interface EvidenceCandidate {
+  candidate_id: string;
+  revision: number;
+  kind: "entity" | "property" | "relationship";
+  text: string;
+  class_iri?: string | null;
+  predicate_iri?: string | null;
+  subject?: EvidenceCandidateRef | null;
+  object?: EvidenceCandidateRef | null;
+  literal?: { raw_value: string; normalized_value: string | boolean | null; kind: string;
+    datatype_iri: string; lower?: string | null; upper?: string | null; canonical_unit?: string | null } | null;
+  assertion_status: "affirmed" | "negated" | "conditional" | "hypothetical" | "uncertain";
+  condition_anchors: EvidenceAnchor[];
+  condition_provenance_indexes: number[];
+  provenance: Array<{ kind: "document" | "external_record" | "manual" | "derived";
+    anchors?: EvidenceAnchor[]; excerpts?: string[]; [key: string]: unknown }>;
+  bindings: Array<{ method: string; anchors: EvidenceAnchor[]; [key: string]: unknown }>;
+  validation_status: "pending" | "passed" | "rejected" | "conflict";
+  validation_issues: Array<{ code: string; message: string }>;
+  review_status: "pending" | "confirmed" | "rejected";
+  commit_status: "not_requested" | "queued" | "applying" | "succeeded" | "failed";
+  positive_eligible: boolean;
+}
+
+export interface EvidenceCommit {
+  commit_id: string;
+  status: "queued" | "applying" | "succeeded" | "failed";
+  snapshot_id: string | null;
+  attempts: number;
+  error: string | null;
+  items: EvidenceCandidateRef[];
+}
+
+export interface EvidenceJob {
+  candidates: EvidenceCandidate[];
+  run: { completion: "complete" | "incomplete"; diagnostics: string[] } | null;
+  analysis_id: string | null;
+  snapshot_id: string | null;
+  commits: EvidenceCommit[];
+}
+
+export const getJobEvidence = (jobId: string, signal?: AbortSignal) =>
+  fetchAPI<EvidenceJob>(`/api/extraction/jobs/${jobId}/evidence`, { signal });
+
+export interface InstanceCoverageTask {
+  coverage_task_id?: string;
+  target_id: string;
+  section_id: string;
+  label: string;
+  status: "filled" | "missing" | "confirmed_absent" | "not_applicable" | "pending_review" | "conflict" | "incomplete";
+  reason: string;
+  subject_instance_iri: string | null;
+  subject_root_class_iri?: string | null;
+  subject_path?: Array<{ predicate_iri: string; direction: "forward" | "inverse" }>;
+  subject_candidate_ref?: EvidenceCandidateRef;
+  predicate_path?: Array<{ predicate_iri: string; direction: "forward" | "inverse" }>;
+  object_universe_status?: "complete" | "open" | "unresolved";
+  objects?: Array<{ instance_iri: string; text: string; missing_properties: string[] }>;
+  assertion_ids: string[];
+  negative_assertion_ids?: string[];
+}
+
+export interface InstanceCoverageManifest {
+  manifest_id: string;
+  template_id: string;
+  template_version: string;
+  snapshot_id: string | null;
+  discovery_revision: string;
+  selector_version: string;
+  tasks: InstanceCoverageTask[];
+  required_gaps: number;
+  completion: "complete" | "incomplete";
+  diagnostics: string[];
+  gap_history?: Array<{ round: number; reason: string }>;
+}
+
+export const getEvidenceCoverage = (jobId: string, templateId?: string, signal?: AbortSignal) =>
+  fetchAPI<InstanceCoverageManifest>(`/api/extraction/jobs/${jobId}/evidence/coverage${templateId ? `?template_id=${encodeURIComponent(templateId)}` : ""}`, { signal });
+export const extractJobEvidence = (jobId: string, input?: {
+  retry_failed?: boolean; reason?: string; pause_after?: number;
+}) => fetchAPI<EvidenceJob>(`/api/extraction/jobs/${jobId}/evidence/extract`, {
+  method: "POST", body: input ? JSON.stringify(input) : undefined,
+});
+export interface CoverageAction {
+  manifest_id: string; template_id?: string; reason: string; coverage_task_ids?: string[];
+}
+export const fillEvidenceGaps = (jobId: string, input: CoverageAction) =>
+  fetchAPI<{ reason: string; created: number; round?: number }>(`/api/extraction/jobs/${jobId}/evidence/fill-gaps`, {
+    method: "POST", body: JSON.stringify(input),
+  });
+export const confirmEvidenceDiscovery = (jobId: string, input: CoverageAction) =>
+  fetchAPI<InstanceCoverageManifest>(`/api/extraction/jobs/${jobId}/evidence/discovery`, {
+    method: "POST", body: JSON.stringify(input),
+  });
+export const reviewEvidenceCandidate = (id: string, input: {
+  expected_revision: number; decision: "confirmed" | "rejected"; reason: string;
+  edited_payload?: Record<string, unknown>;
+}) => fetchAPI<EvidenceCandidate>(`/api/extraction/evidence/candidates/${id}/review`, {
+  method: "PUT", body: JSON.stringify(input),
+});
+export const commitEvidence = (jobId: string, idempotencyKey: string, items: EvidenceCandidateRef[]) =>
+  fetchAPI<EvidenceCommit>(`/api/extraction/jobs/${jobId}/evidence/commits`, {
+    method: "POST", body: JSON.stringify({ idempotency_key: idempotencyKey, items }),
+  });
+export const retryEvidenceCommit = (id: string) =>
+  fetchAPI<EvidenceCommit>(`/api/extraction/evidence/commits/${id}/retry`, { method: "POST" });
+export const resolveEvidenceCandidate = (id: string, input: {
+  expected_revision: number; target: EvidenceCandidateRef; reason: string;
+}) => fetchAPI<EvidenceCandidate>(`/api/extraction/evidence/candidates/${id}/resolve`, {
+  method: "POST", body: JSON.stringify(input),
+});
+export const createEvidenceCandidate = (jobId: string, input: {
+  request_key: string; reason: string; candidate: Record<string, unknown>;
+}) => fetchAPI<EvidenceCandidate>(`/api/extraction/jobs/${jobId}/evidence/candidates`, {
+  method: "POST", body: JSON.stringify(input),
+});
+
+export interface DocumentEvidenceIR {
+  document_hash: string;
+  original_document_hash: string;
+  parser_version: string;
+  structure_hash: string;
+  analysis_id: string;
+  document_role: string;
+  evidence_units: Array<{
+    evidence_id: string; text: string; block_id: string; section_node_id: string;
+    paragraph_index: number; fragment_index: number; table_path: string[] | null;
+    row_index: number | null; column_index: number | null; physical_page_number: number | null;
+  }>;
+}
+
+export interface TemplateOrigin {
+  document_hash: string;
+  parser_version: string;
+  structure_hash: string;
+  evidence_id: string;
+  label_anchor: EvidenceAnchor;
+  value_anchor: EvidenceAnchor | null;
+}
+
 // 015: lifecycle status + iri_pattern (functional doc-class resolution key,
 // replaces the retired DocumentTypeMapping).
 export type AstTemplateStatus = "draft" | "published" | "archived";
@@ -2033,6 +2224,7 @@ export interface AstTemplateCreateInput {
   sample_text?: string | null;
   // 013: 忠于原文结构的 tiptap 样例——持久化后重新编辑时也能忠实预览。
   sample_content_json?: TiptapContent | null;
+  sample_analysis?: DocumentEvidenceIR | null;
 }
 
 export interface AstTemplateUpdateInput {
@@ -2096,6 +2288,7 @@ export const matchTemplateForJob = (jobId: string) =>
 export interface ParseSampleResult {
   content_json: TiptapContent;
   plain_text: string;
+  analysis?: DocumentEvidenceIR;
 }
 
 export async function parseSample(file: File): Promise<ParseSampleResult> {
@@ -2172,6 +2365,15 @@ export interface OntologyRelationBinding {
   required: boolean; // default true (FR-005a)
   required_properties?: string[];
   label?: string;
+  predicate_path?: Array<{ predicate_iri: string; direction: "forward" | "inverse" }>;
+  quantifier?: "exists" | "all";
+  min_count?: number;
+  max_count?: number | null;
+  subject_instance_iris?: string[];
+  subject_root_class_iri?: string | null;
+  subject_path?: Array<{ predicate_iri: string; direction: "forward" | "inverse" }>;
+  object_instance_iris?: string[] | null;
+  applicable_at?: string | null;
 }
 export interface FactSourceBinding {
   kind: "fact_source";
@@ -2210,6 +2412,7 @@ export interface SuggestSlotsRequest {
   document_text?: string | null;
   // 013: 结构化样例（tiptap）——首选输入，服务端派生 LLM 文本与 source_ref 锚点。
   sample_content_json?: TiptapContent | null;
+  analysis?: DocumentEvidenceIR | null;
   existing_template?: Record<string, unknown> | null;
   max_suggestions?: number;
   // 016 (D10): document entity type grounds ontology coverage; augments a source.
@@ -2219,21 +2422,30 @@ export interface SuggestSlotsRequest {
 // AI Round-1 结构骨架（后端逐字回传，形状 = slot_suggester._ROUND1_SCHEMA）。无本体
 // IRI 绑定——编辑器把每个 candidate 物化为可作者填写的 semantic 槽。
 export interface AiStructureCandidate {
+  id: string;
+  origin: TemplateOrigin;
   label: string;
   evidence_span?: string;
   evidence_offset?: number;
 }
 export interface AiStructureGroup {
+  id: string;
+  origin: TemplateOrigin | null;
   title: string;
   candidates: AiStructureCandidate[];
 }
 export interface AiStructureSection {
+  id: string;
+  origin: TemplateOrigin | null;
   title: string;
   groups: AiStructureGroup[];
 }
 
 // AI 分析输出：文档结构骨架（sections）+ 本体覆盖边（coverage）。
 export interface SuggestSlotsResponse {
+  completion: "complete" | "incomplete";
+  degraded: boolean;
+  diagnostics: string[];
   document_summary: string;
   // 016: ontology-grounded coverage only (US1). 无法绑定到菜单关系边的位点静默忽略，
   // 不再返回 unresolved_candidates（取代 FR-008a）。

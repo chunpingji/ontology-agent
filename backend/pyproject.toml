@@ -48,6 +48,7 @@ gliner = [
 # 未安装时 llm_gap_filler 优雅降级、跳过补抽（结构化主路径零回归）。
 llm = [
     "openai>=1.30",
+    "tokenizers>=0.20",
 ]
 
 # torch → PyTorch CPU 轮子索引（air-gap 目标机无 GPU）。`explicit = true` 意味着

@@ -1412,70 +1412,18 @@ def extract_relationships(
     source_filename: str | None = None,
     structure: DocStructure | None = None,
 ) -> dict:
-    """Schema-driven document classification + relation/property extraction.
+    """Compatibility entrypoint backed exclusively by the generic evidence runner."""
+    from app.services.extraction.document_ir import build_document_ir
+    from app.services.extraction.evidence_preview import preview_relationships
+    from app.services.extraction.local_semantic_model import configured_generic_runner
+    from app.services.extraction.word_analysis import analyze_word_core
 
-    ``doc_class`` 若已提供（``_compute_annotation`` 分类前置），跳过重复分类。
-    返回 ``{"doc_class": {...} | None, "relationships": [edge, ...]}``。``doc_class`` 为
-    分类结果（``{doc_class_iri, label, score, signals}``，可解释）；每条 edge 形如::
-
-        {subject_class_iri, subject_class_label, subject_text,
-         predicate_iri, predicate_label, object_class_iri, object_class_label,
-         object_text, object_source, object_data_properties, sub_relationships, source_ref}
-
-    自解析文档结构（``parse_docx_structure``）→ 分类 → 调 ``get_relation_schema`` 取
-    完整关系图谱 → 按 range 调策略抽端点 → 连边。无识别文档类型 → ``doc_class=None``、
-    ``relationships=[]``（优雅降级）。
-    """
-    structure = structure or (
-        parse_docx_structure(file_path, source_filename=source_filename)
-        if source_filename
-        else parse_docx_structure(file_path)
-    )
-    classification = (
-        doc_class
-        if doc_class is not None
-        else document_classifier.classify(structure, engine)
-    )
-    if not classification:
-        return {"doc_class": None, "relationships": []}
-
-    doc_class_iri = classification["doc_class_iri"]
-    drug_code = _find_drug_code(structure)
-    ctx = _Ctx(structure=structure, drug_code=drug_code, engine=engine, triples=triples)
-
-    schema_edges = engine.get_relation_schema(doc_class_iri, max_hops=4)
-
-    edges_by_domain: dict[str, list[dict]] = defaultdict(list)
-    for se in schema_edges:
-        edges_by_domain[se["domain_class_iri"]].append(se)
-    class_hierarchy = _build_class_hierarchy(schema_edges)
-
-    subject_label = classification.get("label") or ctx.class_label(doc_class_iri)
-    edges: list[dict] = []
-    for schema_edge in edges_by_domain.get(doc_class_iri, []):
-        strategy = _resolve_strategy(schema_edge)
-        if not strategy:
-            continue
-        seed_path = frozenset({
-            (schema_edge["predicate_iri"], schema_edge["range_class_iri"]),
-        })
-        for ep in strategy.find_endpoints(ctx, schema_edge):
-            if ep["class_iri"] not in _RANGE_OVERRIDES:
-                ep["sub_relationships"] = _extract_sub_relationships(
-                    ctx, ep["class_iri"], edges_by_domain, class_hierarchy,
-                    path_edges=seed_path,
-                )
-            edges.append(_make_edge(ctx, doc_class_iri, subject_label,
-                                    drug_code, schema_edge, ep))
-
-    try:
-        _attach_pde_conflict(doc_class_iri, edges)
-    except Exception:
-        logger.debug("PDE 冲突检测跳过", exc_info=True)
-
-    try:
-        enrich_equipment_facts(edges)  # 抽取期富化（写入标注）；报告期会幂等再跑一次
-    except Exception:
-        logger.debug("设备档案富化整体跳过", exc_info=True)
-
-    return {"doc_class": classification, "relationships": edges}
+    ir = (build_document_ir(file_path, structure) if structure is not None else
+          analyze_word_core(file_path, source_filename=source_filename).ir)
+    runner = configured_generic_runner(engine)
+    run = runner.run(ir, effective_class=(doc_class or {}).get("doc_class_iri", ""))
+    return {
+        "doc_class": doc_class, "relationships": preview_relationships(run.candidates, runner.schema),
+        "evidence_run": run.model_dump(mode="json"), "completion": run.completion,
+        "diagnostics": run.diagnostics, "degraded": run.degraded,
+    }

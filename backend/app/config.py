@@ -36,6 +36,17 @@ class Settings(BaseSettings):
     local_llm_enabled: bool = False
     local_llm_base_url: str = "http://localhost:11434/v1"
     local_llm_model: str = "qwen2.5:14b"
+    local_llm_model_revision: str = ""  # immutable local model artifact identity
+    local_llm_tokenizer_path: str = ""  # local tokenizer.json from the same model artifact
+    local_llm_tokenizer_backend: str = "file"  # file | llama_server (explicit local deployment)
+    local_llm_server_model_path: str = ""  # must match /props; revision pins the delivered GGUF
+    evidence_max_input_tokens: int = 16384
+    evidence_max_output_tokens: int = 2048
+    evidence_max_tasks: int = 256
+    evidence_max_regions_per_task: int = 32
+    evidence_max_objects_per_task: int = 8
+    evidence_timeout_s: float = 60.0
+    evidence_world_dir: Path = Path(__file__).resolve().parent.parent / "data" / "evidence-worlds"
     local_llm_api_key: str = "not-needed"
     local_llm_max_tokens: int = 200000
     local_llm_temperature: float = 0.1

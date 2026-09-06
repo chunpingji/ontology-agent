@@ -1,0 +1,515 @@
+{
+  "template_id": "dea037a2-f4b5-478a-8e0e-d5471fc45cbc",
+  "from_version": "v18",
+  "to_version": "v19",
+  "expected_schema_hash": "78721d33afb40f12e77d2e048b5d613945c3442fafe759256561fbb4bce6b8d1",
+  "input_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport",
+  "output_class_iri": "https://ontology.pharma-gmp.cn/slpra/risk/RiskAssessmentReport",
+  "default_unmapped_source": {
+    "kind": "manual"
+  },
+  "coverage_by_section": {
+    "sec_1783352185921_0": [
+      {
+        "kind": "ontology_relation",
+        "label": "药品基本信息",
+        "doc_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport",
+        "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/describes",
+        "range_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/DrugProduct",
+        "predicate_path": [
+          {
+            "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/describes",
+            "direction": "forward"
+          }
+        ],
+        "quantifier": "all",
+        "min_count": 1,
+        "required": true,
+        "required_properties": [
+          "https://ontology.pharma-gmp.cn/slpra/drug/projectCode",
+          "https://ontology.pharma-gmp.cn/slpra/drug/dosageForm",
+          "https://ontology.pharma-gmp.cn/slpra/drug/routeOfAdministration",
+          "https://ontology.pharma-gmp.cn/slpra/drug/isHighlyActive",
+          "https://ontology.pharma-gmp.cn/slpra/drug/isCytotoxic",
+          "https://ontology.pharma-gmp.cn/slpra/drug/isPenicillinType",
+          "https://ontology.pharma-gmp.cn/slpra/drug/isHormonal"
+        ]
+      },
+      {
+        "kind": "ontology_relation",
+        "label": "生产计划",
+        "doc_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport",
+        "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasProductionPlan",
+        "range_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/ClinicalSampleProductionPlan",
+        "predicate_path": [
+          {
+            "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasProductionPlan",
+            "direction": "forward"
+          }
+        ],
+        "quantifier": "all",
+        "min_count": 1,
+        "required": true,
+        "required_properties": [
+          "https://ontology.pharma-gmp.cn/slpra/drug-development/plannedBatchSizeMin_kg",
+          "https://ontology.pharma-gmp.cn/slpra/drug-development/plannedBatchSizeMax_kg",
+          "https://ontology.pharma-gmp.cn/slpra/drug-development/productionPurpose"
+        ]
+      },
+      {
+        "kind": "ontology_relation",
+        "label": "生产区域",
+        "doc_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport",
+        "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasProductionPlan",
+        "range_class_iri": "https://ontology.pharma-gmp.cn/slpra/facility/ProductionArea",
+        "predicate_path": [
+          {
+            "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasProductionPlan",
+            "direction": "forward"
+          },
+          {
+            "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/producedInArea",
+            "direction": "forward"
+          }
+        ],
+        "quantifier": "all",
+        "min_count": 1,
+        "required": true,
+        "required_properties": []
+      },
+      {
+        "kind": "ontology_relation",
+        "label": "合成工艺",
+        "doc_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport",
+        "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasSynthesisRoute",
+        "range_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/SynthesisRoute",
+        "predicate_path": [
+          {
+            "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasSynthesisRoute",
+            "direction": "forward"
+          }
+        ],
+        "quantifier": "all",
+        "min_count": 1,
+        "required": true,
+        "required_properties": [
+          "https://ontology.pharma-gmp.cn/slpra/drug-development/processDescription"
+        ]
+      },
+      {
+        "kind": "ontology_relation",
+        "label": "共线评估数据",
+        "doc_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport",
+        "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasSharedLineData",
+        "range_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/SharedLineAssessmentData",
+        "predicate_path": [
+          {
+            "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasSharedLineData",
+            "direction": "forward"
+          }
+        ],
+        "quantifier": "all",
+        "min_count": 1,
+        "required": true,
+        "required_properties": [
+          "https://ontology.pharma-gmp.cn/slpra/drug-development/pde_mg_per_day",
+          "https://ontology.pharma-gmp.cn/slpra/drug-development/oebBand"
+        ]
+      },
+      {
+        "kind": "ontology_relation",
+        "label": "使用设备（逐台）",
+        "doc_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport",
+        "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/usesEquipment",
+        "range_class_iri": "https://ontology.pharma-gmp.cn/slpra/equipment/Equipment",
+        "predicate_path": [
+          {
+            "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/usesEquipment",
+            "direction": "forward"
+          }
+        ],
+        "quantifier": "all",
+        "min_count": 1,
+        "required": true,
+        "required_properties": [
+          "https://ontology.pharma-gmp.cn/slpra/equipment/equipmentID",
+          "https://ontology.pharma-gmp.cn/slpra/equipment/equipmentName",
+          "https://ontology.pharma-gmp.cn/slpra/equipment/modelSpecification"
+        ]
+      },
+      {
+        "kind": "ontology_relation",
+        "label": "设备材质（逐台路径）",
+        "doc_class_iri": "https://ontology.pharma-gmp.cn/slpra/equipment/Equipment",
+        "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/equipment/constructedOf",
+        "range_class_iri": "https://ontology.pharma-gmp.cn/slpra/equipment/ConstructionMaterial",
+        "predicate_path": [
+          {
+            "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/equipment/constructedOf",
+            "direction": "forward"
+          }
+        ],
+        "quantifier": "all",
+        "min_count": 1,
+        "required": true,
+        "required_properties": [],
+        "subject_root_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport",
+        "subject_path": [
+          {
+            "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/usesEquipment",
+            "direction": "forward"
+          }
+        ]
+      },
+      {
+        "kind": "ontology_relation",
+        "label": "设备所在房间（逐台路径）",
+        "doc_class_iri": "https://ontology.pharma-gmp.cn/slpra/equipment/Equipment",
+        "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/equipment/locatedIn",
+        "range_class_iri": "https://ontology.pharma-gmp.cn/slpra/facility/ProductionRoom",
+        "predicate_path": [
+          {
+            "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/equipment/locatedIn",
+            "direction": "forward"
+          }
+        ],
+        "quantifier": "all",
+        "min_count": 1,
+        "required": true,
+        "required_properties": [
+          "https://ontology.pharma-gmp.cn/slpra/facility/roomName"
+        ],
+        "subject_root_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport",
+        "subject_path": [
+          {
+            "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/usesEquipment",
+            "direction": "forward"
+          }
+        ]
+      },
+      {
+        "kind": "ontology_relation",
+        "label": "清洁工艺",
+        "doc_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport",
+        "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasCleaningMethod",
+        "range_class_iri": "https://ontology.pharma-gmp.cn/slpra/cleaning/CleaningProcess",
+        "predicate_path": [
+          {
+            "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasCleaningMethod",
+            "direction": "forward"
+          }
+        ],
+        "quantifier": "all",
+        "min_count": 1,
+        "required": true,
+        "required_properties": []
+      },
+      {
+        "kind": "ontology_relation",
+        "label": "Quality风险评估依据",
+        "doc_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport",
+        "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasQualityRiskAssessment",
+        "range_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/QualityRiskAssessment",
+        "predicate_path": [
+          {
+            "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasQualityRiskAssessment",
+            "direction": "forward"
+          }
+        ],
+        "quantifier": "all",
+        "min_count": 1,
+        "required": true,
+        "required_properties": []
+      },
+      {
+        "kind": "ontology_relation",
+        "label": "Production风险评估依据",
+        "doc_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport",
+        "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasProductionRiskAssessment",
+        "range_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/ProductionRiskAssessment",
+        "predicate_path": [
+          {
+            "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasProductionRiskAssessment",
+            "direction": "forward"
+          }
+        ],
+        "quantifier": "all",
+        "min_count": 1,
+        "required": true,
+        "required_properties": []
+      },
+      {
+        "kind": "ontology_relation",
+        "label": "Safety风险评估依据",
+        "doc_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport",
+        "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasSafetyRiskAssessment",
+        "range_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/SafetyRiskAssessment",
+        "predicate_path": [
+          {
+            "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasSafetyRiskAssessment",
+            "direction": "forward"
+          }
+        ],
+        "quantifier": "all",
+        "min_count": 1,
+        "required": true,
+        "required_properties": []
+      }
+    ]
+  },
+  "slot_sources": {
+    "grp_1783352185921_0_0.ai_0": {
+      "kind": "snapshot",
+      "root_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport",
+      "predicate_path": [
+        {
+          "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/describes",
+          "direction": "forward"
+        }
+      ],
+      "range_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/DrugProduct",
+      "data_property_iris": [
+        "https://ontology.pharma-gmp.cn/slpra/drug/projectName",
+        "https://ontology.pharma-gmp.cn/slpra/drug/projectCode"
+      ],
+      "text": false
+    },
+    "grp_1783352185921_0_0.ai_1": {
+      "kind": "snapshot",
+      "root_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport",
+      "predicate_path": [
+        {
+          "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasProductionPlan",
+          "direction": "forward"
+        }
+      ],
+      "range_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/ClinicalSampleProductionPlan",
+      "data_property_iris": [
+        "https://ontology.pharma-gmp.cn/slpra/drug-development/plannedBatchSizeMin_kg"
+      ],
+      "text": false
+    },
+    "grp_1783352185921_0_0.ai_2": {
+      "kind": "snapshot",
+      "root_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport",
+      "predicate_path": [
+        {
+          "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasProductionPlan",
+          "direction": "forward"
+        }
+      ],
+      "range_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/ClinicalSampleProductionPlan",
+      "data_property_iris": [
+        "https://ontology.pharma-gmp.cn/slpra/drug-development/plannedBatchSizeMax_kg"
+      ],
+      "text": false
+    },
+    "grp_1783352185921_0_0.ai_3": {
+      "kind": "snapshot",
+      "root_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport",
+      "predicate_path": [
+        {
+          "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasProductionPlan",
+          "direction": "forward"
+        }
+      ],
+      "range_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/ClinicalSampleProductionPlan",
+      "data_property_iris": [
+        "https://ontology.pharma-gmp.cn/slpra/drug-development/productionPurpose"
+      ],
+      "text": false
+    },
+    "grp_1783352185921_0_0.ai_4": {
+      "kind": "snapshot",
+      "root_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport",
+      "predicate_path": [
+        {
+          "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/describes",
+          "direction": "forward"
+        }
+      ],
+      "range_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/DrugProduct",
+      "data_property_iris": [
+        "https://ontology.pharma-gmp.cn/slpra/drug/dosageForm"
+      ],
+      "text": false
+    },
+    "grp_1783352185921_0_0.ai_5": {
+      "kind": "snapshot",
+      "root_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport",
+      "predicate_path": [
+        {
+          "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/describes",
+          "direction": "forward"
+        }
+      ],
+      "range_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/DrugProduct",
+      "data_property_iris": [
+        "https://ontology.pharma-gmp.cn/slpra/drug/routeOfAdministration"
+      ],
+      "text": false
+    },
+    "grp_1783352185921_0_0.ai_6": {
+      "kind": "snapshot",
+      "root_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport",
+      "predicate_path": [
+        {
+          "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/describes",
+          "direction": "forward"
+        }
+      ],
+      "range_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/DrugProduct",
+      "data_property_iris": [
+        "https://ontology.pharma-gmp.cn/slpra/drug/isHighlyActive"
+      ],
+      "text": false
+    },
+    "grp_1783352185921_0_0.ai_7": {
+      "kind": "snapshot",
+      "root_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport",
+      "predicate_path": [
+        {
+          "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/describes",
+          "direction": "forward"
+        }
+      ],
+      "range_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/DrugProduct",
+      "data_property_iris": [
+        "https://ontology.pharma-gmp.cn/slpra/drug/isCytotoxic"
+      ],
+      "text": false
+    },
+    "grp_1783352185921_0_0.ai_8": {
+      "kind": "snapshot",
+      "root_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport",
+      "predicate_path": [
+        {
+          "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/describes",
+          "direction": "forward"
+        }
+      ],
+      "range_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/DrugProduct",
+      "data_property_iris": [
+        "https://ontology.pharma-gmp.cn/slpra/drug/isPenicillinType"
+      ],
+      "text": false
+    },
+    "grp_1783352185921_0_0.ai_9": {
+      "kind": "snapshot",
+      "root_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport",
+      "predicate_path": [
+        {
+          "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/describes",
+          "direction": "forward"
+        }
+      ],
+      "range_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/DrugProduct",
+      "data_property_iris": [
+        "https://ontology.pharma-gmp.cn/slpra/drug/isHormonal"
+      ],
+      "text": false
+    },
+    "grp_1783352185921_0_0.ai_10": {
+      "kind": "snapshot",
+      "root_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport",
+      "predicate_path": [
+        {
+          "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasSynthesisRoute",
+          "direction": "forward"
+        }
+      ],
+      "range_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/SynthesisRoute",
+      "data_property_iris": [
+        "https://ontology.pharma-gmp.cn/slpra/drug-development/processDescription"
+      ],
+      "text": false
+    },
+    "grp_1783352185921_0_0.ai_11": {
+      "kind": "snapshot",
+      "root_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport",
+      "predicate_path": [
+        {
+          "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasProductionPlan",
+          "direction": "forward"
+        },
+        {
+          "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/producedInArea",
+          "direction": "forward"
+        }
+      ],
+      "range_class_iri": "https://ontology.pharma-gmp.cn/slpra/facility/ProductionArea",
+      "data_property_iris": [],
+      "text": true
+    },
+    "grp_1783352185921_0_0.ai_12": {
+      "kind": "snapshot",
+      "root_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport",
+      "predicate_path": [
+        {
+          "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasSharedLineData",
+          "direction": "forward"
+        }
+      ],
+      "range_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/SharedLineAssessmentData",
+      "data_property_iris": [
+        "https://ontology.pharma-gmp.cn/slpra/drug-development/sourceReference",
+        "https://ontology.pharma-gmp.cn/slpra/drug-development/pde_mg_per_day",
+        "https://ontology.pharma-gmp.cn/slpra/drug-development/oebBand"
+      ],
+      "text": true
+    },
+    "grp_1783352185921_0_0.new_1783380221877": {
+      "kind": "snapshot",
+      "root_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport",
+      "predicate_path": [
+        {
+          "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/usesEquipment",
+          "direction": "forward"
+        }
+      ],
+      "range_class_iri": "https://ontology.pharma-gmp.cn/slpra/equipment/Equipment",
+      "data_property_iris": [
+        "https://ontology.pharma-gmp.cn/slpra/equipment/equipmentID",
+        "https://ontology.pharma-gmp.cn/slpra/equipment/equipmentName",
+        "https://ontology.pharma-gmp.cn/slpra/equipment/modelSpecification"
+      ],
+      "text": true
+    },
+    "grp_1783352185921_0_0.new_1785941569398": {
+      "kind": "report_metadata",
+      "field": "source_filename"
+    },
+    "grp_1783352185921_0_2.ai_0": {
+      "kind": "rule",
+      "field": "hazid"
+    },
+    "grp_1783352185921_0_2.ai_1": {
+      "kind": "rule",
+      "field": "contributing_factors"
+    },
+    "grp_1783352185921_0_2.ai_2": {
+      "kind": "rule",
+      "field": "pre_control_level"
+    },
+    "grp_1783352185921_0_2.ai_3": {
+      "kind": "rule",
+      "field": "post_control_level"
+    },
+    "grp_1783352185921_0_2.ai_4": {
+      "kind": "rule",
+      "field": "control_measures"
+    },
+    "grp_1783352185921_0_2.ai_5": {
+      "kind": "rule",
+      "field": "traceability"
+    },
+    "grp_1783352185921_0_2.ai_6": {
+      "kind": "rule",
+      "field": "status"
+    }
+  },
+  "diagnostics": [
+    "洁净级别关系 hasCleanlinessClass 未声明 range；当前仅可展示生产区域证据，洁净级别须补全本体定义后另行校验。",
+    "风险报告会签属于输出报告的独立证据，不能从 CMCReport 或模板示例推定人员已经签署。"
+  ]
+}

@@ -15,7 +15,6 @@ from __future__ import annotations
 
 import copy
 import io
-import re
 
 from docx import Document
 from docx.enum.table import WD_TABLE_ALIGNMENT
@@ -43,12 +42,23 @@ _LLM_END_DISCLAIMER_ZH = (
 # 规则文案（风险评估矩阵三列）经前端富文本编辑常以 HTML <br> 承载换行；直接写入 DOCX 单元格
 # 会原样显示字面「<br>」而非换行。python-docx 的 run.text setter 会把 \n 转成 Word 软换行
 # (<w:br/>)，故渲染前把 <br>/<br/>/<br /> (含大小写与内部空白) 归一为 \n。对纯 \n 文案幂等。
-_BR_RE = re.compile(r"<\s*br\s*/?\s*>", re.IGNORECASE)
 
 
 def _cell_text(text: str | None) -> str:
     """把单元格文案里的 HTML 换行标记 ``<br>`` 归一为 ``\\n``（Word 软换行）；``None`` → ``""``。"""
-    return _BR_RE.sub("\n", text) if text else ""
+    if not text:
+        return ""
+    result, position = [], 0
+    while position < len(text):
+        if text[position] == "<":
+            end = text.find(">", position + 1)
+            if end >= 0 and "".join(text[position + 1:end].split()).lower() in {"br", "br/"}:
+                result.append("\n")
+                position = end + 1
+                continue
+        result.append(text[position])
+        position += 1
+    return "".join(result)
 
 
 def _display_value(value: object) -> str:
@@ -389,6 +399,17 @@ def render_risk_report(
             _log.warning("无法打开示例模板 %s，回退到空白文档", sample_docx_path, exc_info=True)
             sample_docx_path = None
         else:
+            if report.evidence_snapshot_id:
+                # Sample headers/footers can contain example approvals or names.
+                # Remove every variant before retaining only styles and geometry.
+                # In-memory edits affect the output package, never the sample file.
+                for section in doc.sections:
+                    for part in (
+                        section.header, section.footer,
+                        section.first_page_header, section.first_page_footer,
+                        section.even_page_header, section.even_page_footer,
+                    ):
+                        part.is_linked_to_previous = True
             _clear_body(doc)
             _ensure_builtin_styles(doc)
             # 完整沿用模板 Normal 样式（字体/字号/eastAsia），不作任何覆盖——正文据此继承
@@ -423,6 +444,13 @@ def render_risk_report(
     # Report-level deterministic provenance: intentionally outside the AST walk so
     # sample-DOCX, template-driven, and legacy fallback output all cite the same edge.
     _add_source_document_reference(doc, report)
+    if report.evidence_snapshot_id:
+        doc.add_paragraph(f"事实快照：{report.evidence_snapshot_id}\n"
+                          f"覆盖清单：{report.coverage_manifest_id}\n"
+                          f"模板版本：{report.template_version}；选择器：{report.selector_version}\n"
+                          f"对象发现/冲突版本：{report.source_discovery_hash}")
+        if sample_docx_path:
+            _add_coverage_banner(doc, manifest)
 
     if not sample_docx_path:
         _add_coverage_banner(doc, manifest)
@@ -744,7 +772,21 @@ def _add_markdown_table(doc: Document, block: list[str]) -> None:
                     run.font.size = Pt(9)
 
 
-_BOLD_SPLIT_RE = re.compile(r"(\*\*[^*]+\*\*)")
+def _bold_parts(text):
+    position, emitted = 0, 0
+    while position < len(text):
+        start = text.find("**", position)
+        if start < 0:
+            break
+        end = text.find("**", start + 2)
+        if end > start + 2 and "*" not in text[start + 2:end]:
+            yield text[emitted:start]
+            yield text[start:end + 2]
+            emitted = end + 2
+            position = emitted
+        else:
+            position = start + 1
+    yield text[emitted:]
 
 
 def _add_inline_runs(paragraph, text: str, *, prefix: str = "", bold_all: bool = False) -> None:
@@ -758,7 +800,7 @@ def _add_inline_runs(paragraph, text: str, *, prefix: str = "", bold_all: bool =
     仍被强制宋体 10.5pt，等于需求核心在主路径未达成（Codex #6 复核确证）。"""
     if prefix:
         paragraph.add_run(prefix)
-    for part in _BOLD_SPLIT_RE.split(text):
+    for part in _bold_parts(text):
         if not part:
             continue
         bold = bold_all
@@ -778,17 +820,19 @@ def _add_markdown_line(doc: Document, text: str, *, prefix: str = "") -> None:
     or ``1.`` list items → bulleted line; everything else → normal paragraph. Inline
     ``**bold**`` is honored. All black and upright (no gray/italic)."""
     p = doc.add_paragraph()
-    m = re.match(r"^(#{1,6})\s+(.*)$", text)
-    if m:  # heading → bold paragraph (avoids clobbering the doc heading hierarchy)
-        _add_inline_runs(p, m.group(2).strip(), prefix=prefix, bold_all=True)
+    hashes = len(text) - len(text.lstrip("#"))
+    if 1 <= hashes <= 6 and text[hashes:hashes + 1].isspace():
+        _add_inline_runs(p, text[hashes:].strip(), prefix=prefix, bold_all=True)
         return
-    m = re.match(r"^\s*[-*+]\s+(.*)$", text)
-    if m:  # unordered list item
-        _add_inline_runs(p, m.group(1).strip(), prefix=f"{prefix}• ")
+    stripped = text.lstrip()
+    if stripped[:1] in {"-", "*", "+"} and stripped[1:2].isspace():
+        _add_inline_runs(p, stripped[1:].strip(), prefix=f"{prefix}• ")
         return
-    m = re.match(r"^\s*(\d+\.)\s+(.*)$", text)
-    if m:  # ordered list item — keep its number
-        _add_inline_runs(p, m.group(2).strip(), prefix=f"{prefix}{m.group(1)} ")
+    number = 0
+    while number < len(stripped) and stripped[number].isdecimal():
+        number += 1
+    if number and stripped[number:number + 1] == "." and stripped[number + 1:number + 2].isspace():
+        _add_inline_runs(p, stripped[number + 2:].strip(), prefix=f"{prefix}{stripped[:number + 1]} ")
         return
     _add_inline_runs(p, text, prefix=prefix)
 

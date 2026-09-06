@@ -234,8 +234,8 @@ def test_type_spans_empty_text_is_none(monkeypatch):
     "",     # 空串
     "A",    # 单字符
 ])
-def test_non_entity_span_filtered(text):
-    assert _is_non_entity_span(text) is True
+def test_numeric_and_single_character_spans_are_not_globally_filtered(text):
+    assert _is_non_entity_span(text) is (not text.strip())
 
 
 @pytest.mark.parametrize("text", [
@@ -358,12 +358,18 @@ def test_type_spans_with_class_iris_narrows_matching(monkeypatch):
 
 
 def test_type_spans_non_entity_filtered(monkeypatch):
-    """否定名单过滤的 span（如度量值）返回 None。"""
+    """没有语义向量支持的 span 返回 None，而非按数值语法过滤。"""
     monkeypatch.setattr(ontology_typer, "get_embedder", lambda: _FakeEmbedder(_VECTORS))
     out = type_spans(["50L", "15分钟", "无菌粉针"], _engine_with_hierarchy())
     assert out[0] is None  # 50L → 度量值
     assert out[1] is None  # 15分钟 → 时间
     assert out[2] is not None  # 正常实体
+
+
+def test_numeric_identifier_can_receive_a_supported_entity_type(monkeypatch):
+    vectors = {**_VECTORS, "123": _VECTORS["无菌粉针"]}
+    monkeypatch.setattr(ontology_typer, "get_embedder", lambda: _FakeEmbedder(vectors))
+    assert type_spans(["123"], _engine_with_hierarchy())[0] is not None
 
 
 # --- predict_segment_classes --------------------------------------------------

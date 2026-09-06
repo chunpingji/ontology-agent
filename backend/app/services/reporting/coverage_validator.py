@@ -76,6 +76,11 @@ class SlotCoverage:
 class CoverageManifest:
     template_id: str
     slots: list[SlotCoverage] = field(default_factory=list)
+    snapshot_id: str | None = None
+    manifest_id: str | None = None
+    discovery_revision: str | None = None
+    selector_version: str | None = None
+    instance_manifest: dict | None = None
 
     @property
     def total_slots(self) -> int:
@@ -137,7 +142,12 @@ class CoverageManifest:
 
     def to_dict(self) -> dict[str, Any]:
         """Full manifest for persistence in ``GeneratedReport.rules_summary``."""
-        return {**self.summary(), "slots": [asdict(s) for s in self.slots]}
+        result = {**self.summary(), "slots": [asdict(s) for s in self.slots]}
+        if self.snapshot_id:
+            result.update(snapshot_id=self.snapshot_id, manifest_id=self.manifest_id,
+                          discovery_revision=self.discovery_revision,
+                          selector_version=self.selector_version, instance_manifest=self.instance_manifest)
+        return result
 
 
 # --------------------------------------------------------------------------- #

@@ -64,6 +64,7 @@ class ExtractionCandidateResponse(BaseModel):
     match_score: float | None = None
     review_status: str = "pending"
     committed_iri: str | None = None
+    verification_status: str = "legacy_unverified"
 
 
 class CandidateGroup(BaseModel):
@@ -128,6 +129,10 @@ class GeneratedReportResponse(BaseModel):
     rules_summary: dict | None = None
     actor: str
     created_at: datetime
+    evidence_snapshot_id: str | None = None
+    coverage_manifest_id: str | None = None
+    selector_version: str | None = None
+    source_discovery_hash: str | None = None
 
 
 # --------------------------------------------------------------------------- #
@@ -143,6 +148,7 @@ class AstTemplateCreate(BaseModel):
     schema_json: dict
     sample_text: str | None = None
     sample_content_json: dict | None = None  # 013: tiptap 结构化样例（忠于原文预览）
+    sample_analysis: dict | None = None
 
 
 class AstTemplateUpdate(BaseModel):
@@ -272,6 +278,9 @@ class ASTCoverageResponse(BaseModel):
     manual: int
     dismissed: int
     sections: list[SectionCoverageResponse]
+    snapshot_id: str | None = None
+    manifest_id: str | None = None
+    instance_manifest: dict | None = None
 
 
 class SlotDismissRequest(BaseModel):
@@ -298,6 +307,7 @@ class SuggestSlotsRequest(BaseModel):
     document_text: str | None = None
     # 013: 结构化样例（tiptap）——首选输入，服务端派生 LLM 文本与 source_ref 锚点。
     sample_content_json: dict | None = None
+    analysis: dict | None = None
     existing_template: dict | None = None
     max_suggestions: int = 50
     # 016 (D10): the document entity type is an upstream classification input; it

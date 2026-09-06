@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import enum
 from dataclasses import dataclass, field
+from decimal import Decimal, InvalidOperation
 from typing import Any
 
 # --------------------------------------------------------------------------- #
@@ -80,6 +81,8 @@ class Facts:
     alignments: dict[str, list[str]] = field(default_factory=dict)
     # generic scalar facts for production literal_eq / literal_cmp (R-CP/R-SC)
     scalars: dict[str, Any] = field(default_factory=dict)
+    strict_evidence: bool = False
+    class_aliases: dict[str, str] = field(default_factory=dict)
 
 
 # --------------------------------------------------------------------------- #
@@ -134,8 +137,10 @@ def validate_pattern(node: Any, *, _path: str = "$") -> None:
 # --------------------------------------------------------------------------- #
 # Evaluation (T007 core + T015/T024 op handlers)
 # --------------------------------------------------------------------------- #
-def _name_match(value: Any, name: str) -> bool:
+def _name_match(value: Any, name: str, facts: Facts) -> bool:
     """Mirror the legacy `name in str(value)` membership test."""
+    if facts.strict_evidence:
+        return str(value) == facts.class_aliases.get(name, name)
     return name in str(value)
 
 
@@ -143,6 +148,18 @@ def _to_float(value: Any) -> float | None:
     try:
         return float(value)
     except (TypeError, ValueError):
+        return None
+
+
+def _number(value, facts):
+    if not facts.strict_evidence:
+        return _to_float(value)
+    if isinstance(value, bool):
+        return None
+    try:
+        number = Decimal(str(value))
+        return number if number.is_finite() else None
+    except (InvalidOperation, ValueError):
         return None
 
 
@@ -172,7 +189,7 @@ def evaluate(node: dict, facts: Facts) -> Ternary:
         if prop not in facts.relations:
             return UNKNOWN  # relation not asserted → cannot prove existence (OWA)
         values = facts.relations[prop]
-        if any(_name_match(v, node["filler_class"]) for v in values):
+        if any(_name_match(v, node["filler_class"], facts) for v in values):
             return TRUE
         return UNKNOWN  # no asserted match, but open world cannot deny it
 
@@ -182,7 +199,7 @@ def evaluate(node: dict, facts: Facts) -> Ternary:
             return UNKNOWN
         values = facts.relations[prop]
         names = node["classes"]
-        if any(_name_match(v, n) for v in values for n in names):
+        if any(_name_match(v, n, facts) for v in values for n in names):
             return TRUE
         return UNKNOWN
 
@@ -192,7 +209,7 @@ def evaluate(node: dict, facts: Facts) -> Ternary:
         raw = facts.data_values[node["property"]]
         if raw is None:
             return UNKNOWN
-        left, right = _to_float(raw), _to_float(node["value"])
+        left, right = _number(raw, facts), _number(node["value"], facts)
         if left is None or right is None:
             return UNKNOWN
         return TRUE if _cmp(left, node["cmp"], right) else FALSE
@@ -203,6 +220,8 @@ def evaluate(node: dict, facts: Facts) -> Ternary:
         raw = facts.data_values[node["property"]]
         if raw is None:
             return UNKNOWN
+        if facts.strict_evidence and (not isinstance(raw, bool) or not isinstance(node["value"], bool)):
+            return UNKNOWN
         return TRUE if bool(raw) == bool(node["value"]) else FALSE
 
     if op == "external_alignment":
@@ -210,14 +229,16 @@ def evaluate(node: dict, facts: Facts) -> Ternary:
         prop = node["property"]
         if prop not in facts.alignments:
             return UNKNOWN
-        if any(_name_match(a, node["alignment"]) for a in facts.alignments[prop]):
+        if any(_name_match(a, node["alignment"], facts) for a in facts.alignments[prop]):
             return TRUE
         return UNKNOWN
 
     if op == "class_present":
         if not facts.drug_classes:
             return UNKNOWN
-        return TRUE if any(_name_match(c, node["class"]) for c in facts.drug_classes) else FALSE
+        if any(_name_match(c, node["class"], facts) for c in facts.drug_classes):
+            return TRUE
+        return UNKNOWN if facts.strict_evidence else FALSE
 
     if op == "literal_eq":
         if node["key"] not in facts.scalars:
@@ -233,7 +254,7 @@ def evaluate(node: dict, facts: Facts) -> Ternary:
         raw = facts.scalars[node["key"]]
         if raw is None:
             return UNKNOWN
-        left, right = _to_float(raw), _to_float(node["value"])
+        left, right = _number(raw, facts), _number(node["value"], facts)
         if left is not None and right is not None:
             return TRUE if _cmp(left, node["cmp"], right) else FALSE
         # non-numeric eq/ne fallback (e.g. dosage-form string comparison)

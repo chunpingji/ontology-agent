@@ -2,6 +2,7 @@
 
 import {
   useCallback,
+  useEffect,
   useMemo,
   useRef,
   useState,
@@ -53,8 +54,10 @@ import {
   listReportCenterItems,
   rerunAnnotation,
   resolveDocumentJobId,
+  subscribeJobProgress,
   VersionConflictError,
   type PdeDecisionChoice,
+  type JobProgressEvent,
   type ReportOrDocument,
 } from "@/lib/api";
 import { cn } from "@/lib/utils";
@@ -88,6 +91,21 @@ function itemFromParams(routeKey: string, sp: ReadonlyParams): ReportOrDocument 
   const iri = sp.get("iri");
   if (!iri) return null;
   return { ...base, kind, iri };
+}
+
+const RECOGNITION_DIAGNOSTICS: Record<string, string> = {
+  model_unavailable: "本地模型不可用",
+  tokenizer_unavailable: "分词器不可用",
+  task_budget_or_pause: "任务已暂停或本批预算已用完",
+  unsupported_document_class: "文档类型不在当前本体菜单中",
+  ontology_menu_empty: "本体抽取菜单为空",
+};
+
+function recognitionReason(diagnostics: string[]): string {
+  if (!diagnostics.length) return "没有可用的完整识别结果";
+  return diagnostics.slice(0, 2).map((item) =>
+    RECOGNITION_DIAGNOSTICS[item] ?? (item.length > 100 ? `${item.slice(0, 100)}…` : item)
+  ).join("；");
 }
 
 function DetailBreadcrumb({ title }: { title: string }) {
@@ -143,11 +161,13 @@ export default function ReportDetailPage() {
   const [graphWidth, setGraphWidth] = useState(DEFAULT_GRAPH_WIDTH);
   const [resizing, setResizing] = useState(false);
   const [rerunError, setRerunError] = useState<string | null>(null);
+  const [rerunJobId, setRerunJobId] = useState<string | null>(null);
+  const [rerunProgress, setRerunProgress] = useState<JobProgressEvent | null>(null);
   const [decisionError, setDecisionError] = useState<string | null>(null);
 
   const contentQuery = useQuery({
     queryKey: documentContentKey(item),
-    queryFn: () => resolveDocumentContent(item as ReportOrDocument),
+    queryFn: ({ signal }) => resolveDocumentContent(item as ReportOrDocument, signal),
     enabled: Boolean(item) && isDoc,
   });
   const documentContent =
@@ -163,6 +183,10 @@ export default function ReportDetailPage() {
         : [],
     [contentQuery.data],
   );
+  const recognition =
+    contentQuery.data && "recognition" in contentQuery.data
+      ? contentQuery.data.recognition
+      : null;
   // 决策端点以 jobId 定位（与关系图谱同源）；仅当关系载荷携带 PDE 冲突时才拉取/展示决策。
   const jobId =
     contentQuery.data && "jobId" in contentQuery.data ? contentQuery.data.jobId : null;
@@ -205,9 +229,7 @@ export default function ReportDetailPage() {
     },
   });
 
-  // 重新识别：丢弃后端标注缓存并全量重跑三阶段标注，再阻塞式 refetch 同源文档内容。
-  // rerunAnnotation 删缓存后，getAnnotatedDocument 的 GET 因缓存缺失同步重算并回填，故一次
-  // refetch 即「等待→拿到新结果」；documentContentKey 同键同源，中栏预览与右栏关系图谱一并刷新。
+  // 重新识别是后台任务。启动后订阅本次重置后的进度，终态才刷新同源正文/图谱。
   const rerun = useMutation({
     mutationFn: async () => {
       if (!item || item.kind !== "uploaded-document" || !item.iri) {
@@ -216,11 +238,47 @@ export default function ReportDetailPage() {
       const jobId = await resolveDocumentJobId(item.iri);
       if (!jobId) throw new Error("该文档未关联抽取任务，无法重新识别");
       await rerunAnnotation(jobId);
-      await queryClient.refetchQueries({ queryKey: documentContentKey(item) });
+      return jobId;
     },
-    onMutate: () => setRerunError(null),
-    onError: () => setRerunError("重新识别失败，请重试或检查源文档是否仍可用"),
+    onMutate: () => { setRerunError(null); setRerunProgress(null); },
+    onSuccess: (startedJobId) => setRerunJobId(startedJobId),
+    onError: (error) => setRerunError(
+      error instanceof Error ? error.message : "重新识别失败，请重试或检查源文档是否仍可用",
+    ),
   });
+
+  useEffect(() => {
+    if (!rerunJobId) return;
+    return subscribeJobProgress(rerunJobId, (event) => {
+      setRerunProgress(event);
+      const terminal = event.annotation_stage;
+      if (terminal === "complete") {
+        void queryClient.refetchQueries({ queryKey: documentContentKey(item) })
+          .finally(() => setRerunJobId(null));
+      } else if (terminal === "failed" || terminal === "paused" || terminal === "interrupted") {
+        setRerunError(
+          terminal === "interrupted"
+            ? "关系识别已中断，可在抽取任务中从断点继续"
+            : terminal === "failed"
+            ? "关系识别失败；未发布任何事实，请检查模型服务和任务日志"
+            : "关系识别已暂停；已通过校验的部分结果已保存，可在抽取任务中继续",
+        );
+        void queryClient.refetchQueries({ queryKey: documentContentKey(item) })
+          .finally(() => setRerunJobId(null));
+      }
+    });
+  }, [item, queryClient, rerunJobId]);
+
+  const recognitionRunning = rerun.isPending || rerunJobId !== null;
+  const emptyGraphMessage = recognitionRunning
+    ? "正在识别实体、属性和关系…"
+    : recognition?.previewOnly
+      ? "正文已加载，尚无完成的关系识别结果"
+      : recognition?.completion === "incomplete"
+        ? `关系识别未完成：${recognitionReason(recognition.diagnostics)}`
+        : recognition?.completion === "complete"
+          ? "识别完成，未找到通过证据校验的关系"
+          : "尚无关系识别结果";
 
   const handleNavigate = useCallback(
     (target: string) => {
@@ -417,7 +475,7 @@ export default function ReportDetailPage() {
                   variant="outline"
                   size="sm"
                   className="h-7 gap-1.5 text-xs"
-                  disabled={!documentContent || rerun.isPending}
+                  disabled={!documentContent || recognitionRunning}
                   title={
                     !documentContent
                       ? "暂无可重识别的标注"
@@ -425,16 +483,28 @@ export default function ReportDetailPage() {
                   }
                   onClick={() => rerun.mutate()}
                 >
-                  {rerun.isPending ? (
+                  {recognitionRunning ? (
                     <Loader2 className="size-3.5 animate-spin" />
                   ) : (
                     <RotateCw className="size-3.5" />
                   )}
-                  {rerun.isPending ? "识别中…" : "重新识别"}
+                  {recognitionRunning ? "识别中…" : "重新识别"}
                 </Button>
               )}
             </div>
             {rerunError && <p className="mt-1 text-xs text-destructive">{rerunError}</p>}
+            {recognitionRunning && (
+              <p className="mt-1 text-xs text-muted-foreground">
+                {rerunProgress?.annotation_stage === "typing"
+                  ? "正在抽取和校验实体、属性及关系…"
+                  : "关系识别已进入后台，完成后将自动刷新图谱…"}
+              </p>
+            )}
+            {!recognitionRunning && relationships.length > 0 && recognition?.completion === "incomplete" && (
+              <p className="mt-1 text-xs text-amber-700">
+                当前展示已通过校验的部分关系；识别尚未完成：{recognitionReason(recognition.diagnostics)}
+              </p>
+            )}
             {decisionError && <p className="mt-1 text-xs text-destructive">{decisionError}</p>}
           </CardHeader>
           <CardContent className="p-0 pb-2 lg:min-h-0 lg:flex-1 lg:overflow-hidden">
@@ -464,13 +534,14 @@ export default function ReportDetailPage() {
                 <RelationPanel
                   docClass={docClass}
                   relationships={relationships}
+                  emptyMessage={emptyGraphMessage}
                   selectedSourceRef={highlightRef}
                   onSelectSourceRef={setHighlightRef}
                   decision={decision}
                   onDecide={(chosen) => decide.mutate(chosen)}
                   decisionPending={decide.isPending}
                 />
-                {rerun.isPending && (
+                {recognitionRunning && (
                   <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 bg-background/70 backdrop-blur-sm">
                     <Loader2 className="size-5 animate-spin text-muted-foreground" />
                     <span className="text-xs text-muted-foreground">正在重新识别关系图谱…</span>

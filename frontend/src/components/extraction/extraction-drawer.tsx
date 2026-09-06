@@ -19,10 +19,12 @@ import {
   subscribeJobProgress,
   type AnnotatedDocument,
   type JobProgressEvent,
+  type EvidenceAnchor,
 } from "@/lib/api";
 import { WordViewer } from "./word-viewer";
 import { ExcelViewer } from "./excel-viewer";
 import { RelationPanel } from "./relation-panel";
+import { EvidenceReviewPanel } from "./evidence-review-panel";
 
 const ANNOTATION_LABELS: Record<string, string> = {
   gliner: "GLiNER 定界",
@@ -50,28 +52,44 @@ interface ExtractionDrawerProps {
   onOpenChange: (open: boolean) => void;
 }
 
-export function ExtractionDrawer({ jobId, open, onOpenChange }: ExtractionDrawerProps) {
+export function ExtractionDrawer(props: ExtractionDrawerProps) {
+  return <ExtractionDrawerContent key={`${props.jobId}:${props.open}`} {...props} />;
+}
+
+function ExtractionDrawerContent({ jobId, open, onOpenChange }: ExtractionDrawerProps) {
   const [doc, setDoc] = useState<AnnotatedDocument | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(open && !!jobId);
   const [error, setError] = useState<string | null>(null);
   const [selectedSourceRef, setSelectedSourceRef] = useState<string | null>(null);
   const [progressEvent, setProgressEvent] = useState<JobProgressEvent | null>(null);
   const [rerunning, setRerunning] = useState(false);
   const [reportGenerating, setReportGenerating] = useState(false);
+  const [activeAnchor, setActiveAnchor] = useState<EvidenceAnchor | null>(null);
+  const [evidenceSnapshot, setEvidenceSnapshot] = useState<string | null>(null);
 
   const fetchDoc = useCallback((id: string) => {
     setLoading(true);
     setError(null);
     getAnnotatedDocument(id)
-      .then((result) => setDoc(result))
+      .then((result) => {
+        setDoc(result);
+        setSelectedSourceRef(null);
+        setActiveAnchor(null);
+      })
       .catch((e) => setError(String(e)))
       .finally(() => setLoading(false));
   }, []);
 
   useEffect(() => {
     if (!open || !jobId) return;
-    fetchDoc(jobId);
-  }, [open, jobId, fetchDoc]);
+    let ignore = false;
+    const controller = new AbortController();
+    getAnnotatedDocument(jobId, false, controller.signal)
+      .then((result) => { if (!ignore) setDoc(result); })
+      .catch((e) => { if (!ignore) setError(String(e)); })
+      .finally(() => { if (!ignore) setLoading(false); });
+    return () => { ignore = true; controller.abort(); };
+  }, [open, jobId]);
 
   useEffect(() => {
     if (!open || !jobId) return;
@@ -84,18 +102,6 @@ export function ExtractionDrawer({ jobId, open, onOpenChange }: ExtractionDrawer
     });
     return unsub;
   }, [open, jobId, rerunning, fetchDoc]);
-
-  useEffect(() => {
-    if (!open) {
-      setSelectedSourceRef(null);
-      setProgressEvent(null);
-      setRerunning(false);
-    }
-  }, [open]);
-
-  useEffect(() => {
-    setSelectedSourceRef(null);
-  }, [doc]);
 
   async function handleRerun() {
     if (!jobId) return;
@@ -130,7 +136,8 @@ export function ExtractionDrawer({ jobId, open, onOpenChange }: ExtractionDrawer
   function _downloadBlob(blob: Blob, filename?: string | null) {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
-    const srcName = (filename ?? "report").replace(/\.docx$/i, "");
+    const name = filename ?? "report";
+    const srcName = name.toLowerCase().endsWith(".docx") ? name.slice(0, -5) : name;
     a.href = url;
     a.download = `风险评估表_${srcName}.docx`;
     document.body.appendChild(a);
@@ -166,8 +173,7 @@ export function ExtractionDrawer({ jobId, open, onOpenChange }: ExtractionDrawer
     !!doc &&
     !rerunning &&
     !isAnnotating &&
-    doc.doc_class?.doc_class_iri?.includes("CMCReport") &&
-    (doc.relationships?.length ?? 0) > 0;
+    !!evidenceSnapshot;
   const annoStage = progressEvent?.annotation_stage;
 
   return (
@@ -217,7 +223,7 @@ export function ExtractionDrawer({ jobId, open, onOpenChange }: ExtractionDrawer
                 {progressEvent
                   ? STATUS_LABELS[progressEvent.stage] ?? progressEvent.stage
                   : doc
-                    ? "标注完成"
+                    ? doc.preview_only ? "正文已加载" : doc.completion === "incomplete" ? "抽取未完成" : "标注完成"
                     : "—"}
               </Badge>
               {doc && !rerunning && (
@@ -270,6 +276,7 @@ export function ExtractionDrawer({ jobId, open, onOpenChange }: ExtractionDrawer
               <WordViewer
                 content={doc.content as Record<string, unknown>}
                 highlightRef={selectedSourceRef}
+                activeAnchor={activeAnchor}
               />
             )}
             {doc && !loading && doc.source_type === "excel" && (
@@ -287,6 +294,9 @@ export function ExtractionDrawer({ jobId, open, onOpenChange }: ExtractionDrawer
           {/* Right: Relation panel (Word only) */}
           {doc && !loading && doc.source_type === "word" && (
             <div className="flex w-96 shrink-0 flex-col overflow-y-auto">
+              {jobId && <EvidenceReviewPanel key={jobId} jobId={jobId}
+                onSource={setActiveAnchor} onSnapshot={setEvidenceSnapshot} />}
+              <p className="border-t p-3 text-xs text-muted-foreground">以下为抽取预览，不代表已审核和提交的事实。</p>
               <RelationPanel
                 docClass={doc.doc_class}
                 relationships={doc.relationships}

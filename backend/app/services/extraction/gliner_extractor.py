@@ -17,10 +17,10 @@ research R7）：
 from __future__ import annotations
 
 import logging
-import re
 from functools import lru_cache
 
 from app.config import settings
+from app.services.extraction.text_scanner import unicode_words
 
 logger = logging.getLogger(__name__)
 
@@ -42,15 +42,8 @@ class _CJKAwareWordsSplitter:
     偏移为相对 ``text`` 的字符下标。
     """
 
-    _TOKEN_PATTERN = re.compile(
-        r"[一-鿿㐀-䶿]"  # 每个 CJK 表意文字单独成词
-        r"|[A-Za-z0-9]+(?:[._\-/%][A-Za-z0-9]+)*"  # ASCII 连写串（含 . _ - / % 连接符）
-        r"|[^\s]"  # 其余单个非空白字符（标点、全角符号等）
-    )
-
     def __call__(self, text):
-        for m in self._TOKEN_PATTERN.finditer(text):
-            yield m.group(), m.start(), m.end()
+        yield from unicode_words(text)
 
 
 def _install_cjk_words_splitter(model) -> None:

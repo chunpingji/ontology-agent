@@ -1996,6 +1996,7 @@ gliner = [
 ]
 llm = [
     { name = "openai" },
+    { name = "tokenizers" },
 ]
 semantic = [
     { name = "sentence-transformers" },
@@ -2029,6 +2030,7 @@ requires-dist = [
     { name = "reportlab", specifier = ">=4.1" },
     { name = "sentence-transformers", marker = "extra == 'semantic'", specifier = ">=3.0" },
     { name = "sqlalchemy", specifier = ">=2.0" },
+    { name = "tokenizers", marker = "extra == 'llm'", specifier = ">=0.20" },
     { name = "torch", marker = "extra == 'gliner'", specifier = ">=2.2", index = "https://download.pytorch.org/whl/cpu" },
     { name = "torch", marker = "extra == 'semantic'", specifier = ">=2.2", index = "https://download.pytorch.org/whl/cpu" },
     { name = "uvicorn", extras = ["standard"], specifier = ">=0.30" },

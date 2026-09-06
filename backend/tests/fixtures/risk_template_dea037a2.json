@@ -1,0 +1,472 @@
+{
+  "template_id": "风险评估文档",
+  "doc_no": "QS-A-020F05",
+  "revision": "v1",
+  "sections": [
+    {
+      "section_id": "sec_1783352185921_0",
+      "title": "SECTION Ⅰ 部分1",
+      "groups": [
+        {
+          "group_id": "grp_1783352185921_0_0",
+          "title": "风险评估对象基本描述",
+          "kind": "fields",
+          "slots": [
+            {
+              "slot_id": "grp_1783352185921_0_0.ai_0",
+              "label": "药物名称/代号",
+              "source": {
+                "kind": "semantic",
+                "prompt": null,
+                "coverage_refs": []
+              },
+              "required": false,
+              "on_missing": "annotate",
+              "missing_placeholder": "⚠ 待评估（数据缺失）"
+            },
+            {
+              "slot_id": "grp_1783352185921_0_0.ai_1",
+              "label": "预计批量下限（kg）",
+              "source": {
+                "kind": "semantic",
+                "prompt": null,
+                "coverage_refs": []
+              },
+              "required": false,
+              "on_missing": "annotate",
+              "missing_placeholder": "⚠ 待评估（数据缺失）"
+            },
+            {
+              "slot_id": "grp_1783352185921_0_0.ai_2",
+              "label": "预计批量上限（kg）",
+              "source": {
+                "kind": "semantic",
+                "prompt": null,
+                "coverage_refs": []
+              },
+              "required": false,
+              "on_missing": "annotate",
+              "missing_placeholder": "⚠ 待评估（数据缺失）"
+            },
+            {
+              "slot_id": "grp_1783352185921_0_0.ai_3",
+              "label": "生产用途",
+              "source": {
+                "kind": "semantic",
+                "prompt": null,
+                "coverage_refs": []
+              },
+              "required": false,
+              "on_missing": "annotate",
+              "missing_placeholder": "⚠ 待评估（数据缺失）"
+            },
+            {
+              "slot_id": "grp_1783352185921_0_0.ai_4",
+              "label": "制剂剂型",
+              "source": {
+                "kind": "semantic",
+                "prompt": null,
+                "coverage_refs": []
+              },
+              "required": false,
+              "on_missing": "annotate",
+              "missing_placeholder": "⚠ 待评估（数据缺失）"
+            },
+            {
+              "slot_id": "grp_1783352185921_0_0.ai_5",
+              "label": "给药途径",
+              "source": {
+                "kind": "semantic",
+                "prompt": null,
+                "coverage_refs": []
+              },
+              "required": false,
+              "on_missing": "annotate",
+              "missing_placeholder": "⚠ 待评估（数据缺失）"
+            },
+            {
+              "slot_id": "grp_1783352185921_0_0.ai_6",
+              "label": "是否高活性药物",
+              "source": {
+                "kind": "semantic",
+                "prompt": null,
+                "coverage_refs": []
+              },
+              "required": false,
+              "on_missing": "annotate",
+              "missing_placeholder": "⚠ 待评估（数据缺失）"
+            },
+            {
+              "slot_id": "grp_1783352185921_0_0.ai_7",
+              "label": "是否细胞毒药物",
+              "source": {
+                "kind": "semantic",
+                "prompt": null,
+                "coverage_refs": []
+              },
+              "required": false,
+              "on_missing": "annotate",
+              "missing_placeholder": "⚠ 待评估（数据缺失）"
+            },
+            {
+              "slot_id": "grp_1783352185921_0_0.ai_8",
+              "label": "是否青霉素类药物",
+              "source": {
+                "kind": "semantic",
+                "prompt": null,
+                "coverage_refs": []
+              },
+              "required": false,
+              "on_missing": "annotate",
+              "missing_placeholder": "⚠ 待评估（数据缺失）"
+            },
+            {
+              "slot_id": "grp_1783352185921_0_0.ai_9",
+              "label": "是否激素类药物",
+              "source": {
+                "kind": "semantic",
+                "prompt": null,
+                "coverage_refs": []
+              },
+              "required": false,
+              "on_missing": "annotate",
+              "missing_placeholder": "⚠ 待评估（数据缺失）"
+            },
+            {
+              "slot_id": "grp_1783352185921_0_0.ai_10",
+              "label": "工艺描述",
+              "source": {
+                "kind": "semantic",
+                "prompt": null,
+                "coverage_refs": []
+              },
+              "required": false,
+              "on_missing": "annotate",
+              "missing_placeholder": "⚠ 待评估（数据缺失）"
+            },
+            {
+              "slot_id": "grp_1783352185921_0_0.ai_11",
+              "label": "生产区域/洁净级别",
+              "source": {
+                "kind": "semantic",
+                "prompt": null,
+                "coverage_refs": []
+              },
+              "required": false,
+              "on_missing": "annotate",
+              "missing_placeholder": "⚠ 待评估（数据缺失）"
+            },
+            {
+              "slot_id": "grp_1783352185921_0_0.ai_12",
+              "label": "共线生产情况",
+              "source": {
+                "kind": "semantic",
+                "prompt": null,
+                "coverage_refs": []
+              },
+              "required": false,
+              "on_missing": "annotate",
+              "missing_placeholder": "⚠ 待评估（数据缺失）"
+            },
+            {
+              "slot_id": "grp_1783352185921_0_0.new_1783380221877",
+              "label": "使用设备",
+              "source": {
+                "kind": "semantic",
+                "prompt": "设备列表，字段包括序号，设备编号，设备名称，规格，材质",
+                "coverage_refs": []
+              },
+              "required": false,
+              "on_missing": "annotate",
+              "missing_placeholder": "⚠ 待评估（数据缺失）"
+            },
+            {
+              "slot_id": "grp_1783352185921_0_0.new_1785941569398",
+              "label": "依据源文档",
+              "source": {
+                "kind": "semantic",
+                "prompt": null,
+                "coverage_refs": []
+              },
+              "required": false,
+              "on_missing": "annotate",
+              "missing_placeholder": "⚠ 待评估（数据缺失）"
+            }
+          ]
+        },
+        {
+          "group_id": "grp_1783352185921_0_1",
+          "title": "评估小组成员",
+          "kind": "fields",
+          "slots": [
+            {
+              "slot_id": "grp_1783352185921_0_1.ai_0",
+              "label": "评估小组",
+              "source": {
+                "kind": "semantic",
+                "prompt": null,
+                "coverage_refs": []
+              },
+              "required": false,
+              "on_missing": "annotate",
+              "missing_placeholder": "⚠ 待评估（数据缺失）"
+            }
+          ]
+        },
+        {
+          "group_id": "grp_1783352185921_0_2",
+          "title": "评估过程（风险矩阵）",
+          "kind": "fields",
+          "slots": [
+            {
+              "slot_id": "grp_1783352185921_0_2.ai_0",
+              "label": "风险类型(HazID)",
+              "source": {
+                "kind": "semantic",
+                "prompt": null,
+                "coverage_refs": []
+              },
+              "required": false,
+              "on_missing": "annotate",
+              "missing_placeholder": "⚠ 待评估（数据缺失）"
+            },
+            {
+              "slot_id": "grp_1783352185921_0_2.ai_1",
+              "label": "风险因素",
+              "source": {
+                "kind": "semantic",
+                "prompt": null,
+                "coverage_refs": []
+              },
+              "required": false,
+              "on_missing": "annotate",
+              "missing_placeholder": "⚠ 待评估（数据缺失）"
+            },
+            {
+              "slot_id": "grp_1783352185921_0_2.ai_2",
+              "label": "风险控制前风险水平",
+              "source": {
+                "kind": "semantic",
+                "prompt": null,
+                "coverage_refs": []
+              },
+              "required": false,
+              "on_missing": "annotate",
+              "missing_placeholder": "⚠ 待评估（数据缺失）"
+            },
+            {
+              "slot_id": "grp_1783352185921_0_2.ai_3",
+              "label": "风险控制后风险水平",
+              "source": {
+                "kind": "semantic",
+                "prompt": null,
+                "coverage_refs": []
+              },
+              "required": false,
+              "on_missing": "annotate",
+              "missing_placeholder": "⚠ 待评估（数据缺失）"
+            },
+            {
+              "slot_id": "grp_1783352185921_0_2.ai_4",
+              "label": "风险控制措施",
+              "source": {
+                "kind": "semantic",
+                "prompt": null,
+                "coverage_refs": []
+              },
+              "required": false,
+              "on_missing": "annotate",
+              "missing_placeholder": "⚠ 待评估（数据缺失）"
+            },
+            {
+              "slot_id": "grp_1783352185921_0_2.ai_5",
+              "label": "风险控制措施可追溯性",
+              "source": {
+                "kind": "semantic",
+                "prompt": null,
+                "coverage_refs": []
+              },
+              "required": false,
+              "on_missing": "annotate",
+              "missing_placeholder": "⚠ 待评估（数据缺失）"
+            },
+            {
+              "slot_id": "grp_1783352185921_0_2.ai_6",
+              "label": "风险状态",
+              "source": {
+                "kind": "semantic",
+                "prompt": null,
+                "coverage_refs": []
+              },
+              "required": false,
+              "on_missing": "annotate",
+              "missing_placeholder": "⚠ 待评估（数据缺失）"
+            }
+          ]
+        },
+        {
+          "group_id": "grp_1783352185921_0_3",
+          "title": "审批与附件",
+          "kind": "fields",
+          "slots": [
+            {
+              "slot_id": "grp_1783352185921_0_3.ai_0",
+              "label": "附件情况",
+              "source": {
+                "kind": "semantic",
+                "prompt": null,
+                "coverage_refs": []
+              },
+              "required": false,
+              "on_missing": "annotate",
+              "missing_placeholder": "⚠ 待评估（数据缺失）"
+            },
+            {
+              "slot_id": "grp_1783352185921_0_3.ai_1",
+              "label": "风险回顾日期",
+              "source": {
+                "kind": "semantic",
+                "prompt": null,
+                "coverage_refs": []
+              },
+              "required": false,
+              "on_missing": "annotate",
+              "missing_placeholder": "⚠ 待评估（数据缺失）"
+            },
+            {
+              "slot_id": "grp_1783352185921_0_3.ai_2",
+              "label": "QA意见",
+              "source": {
+                "kind": "semantic",
+                "prompt": null,
+                "coverage_refs": []
+              },
+              "required": false,
+              "on_missing": "annotate",
+              "missing_placeholder": "⚠ 待评估（数据缺失）"
+            },
+            {
+              "slot_id": "grp_1783352185921_0_3.ai_3",
+              "label": "批准人信息",
+              "source": {
+                "kind": "semantic",
+                "prompt": null,
+                "coverage_refs": []
+              },
+              "required": false,
+              "on_missing": "annotate",
+              "missing_placeholder": "⚠ 待评估（数据缺失）"
+            }
+          ]
+        }
+      ],
+      "prompt": "请严格按照以下规范撰写「SECTION Ⅰ 部分1」章节内容。行文需符合GMP合规报告标准，保持客观、严谨、可追溯的书面语态，采用中英双语标题，结构清晰，逻辑闭环。所有动态数据必须使用 {{字段名}} 占位符精准替换，禁止虚构、模糊表述或添加示例正文。\n\n【一、 整体行文要求】\n- 口吻与风格：采用客观陈述语气，避免主观评价。语言精炼、专业，符合ICH Q9及药品生产质量管理规范（GMP）风险评估指南要求。关键术语需中英对照。\n- 结构划分：严格遵循“对象描述 → 评估小组 → 评估过程 → 审批与附件”四段式结构。\n- 数据引用：所有字段必须通过 {{字段名}} 形式嵌入对应位置，确保数据源与正文严格对应。\n\n【二、 各模块写作指令】\n1. 风险评估对象基本描述（自然语言段落）\n   - 首句明确评估背景与依据，依次串联：《{{依据源文档}}》、{{药物名称/代号}}、{{预计批量下限（kg）}}至{{预计批量上限（kg）}}、{{生产用途}}、{{制剂剂型}}、{{给药途径}}。\n   - 接着说明API特性：根据{{是否高活性药物}}、{{是否细胞毒药物}}、{{是否青霉素类药物}}、{{是否激素类药物}}判定其危害等级，并明确是否需隔离、灭活或特殊储存管理要求。\n   - 简述{{工艺描述}}的核心步骤与关键反应，随后说明{{生产区域/洁净级别}}，按车间分述生产区域布局、确认状态及公用系统支持情况。\n   - 生产车间与洁净设施：依据「抽取事实」中『临床备样生产计划 → 生产车间（生产区域）』的嵌套主数据，\n     逐一分述参与本品备样生产的各车间（如 642 车间、646 车间），说明其车间编号、所属厂房、洁净区设置（洁净级别）、车间用途、配套公用系统及适用品种，并简述各车间洁净级别与本品工艺及GMP 要求的适配性。多个车间须分行分别描述、明确归属，不得混淆或遗漏；此处数据来自外部车间主数据，不使用 {{}} 占位符。\n\n   - 明确{{共线生产情况}}及{{设备}}信息，阐述共线防交叉污染评估结论或新插槽的适用性声明, 其中设备数据，以表格展示，列依次为 序号 | 设备编号 | 设备名称 | 规格 | 材质。\n   - 段落末尾需自然过渡至后续表格，保持叙述连贯，不插入冗余描述。\n\n2. 评估小组成员（表格）\n   - 生成标准四列表格，表头为：Name 姓名 | Depart 部门 | Sign 签字 | Date 日期。\n   - 数据源为 {{评估小组}}，按部门或职能排序，签字与日期列留空待签。\n\n3. 风险评估过程（表格）\n- 生成七列表格，表头严格对应：风险类型(HazID) | 风险因素 | 风险控制前风险水平 | 风险控制后风险水平 | 风险控制措施 | 风险控制措施可追溯性 | 风险状态。\n   - 逐行录入风险数据，确保“风险因素”与“控制措施”逻辑一一对应，“可追溯性”需指向具体文件/记录名称或编号, 风险因素列、风险控制措施列、风险控制措施的可追溯性列，内容应明确与{{药物名称/代号}},{{生产区域/洁净级别}}，{{使用设备}}的关系。\n   - 风险状态列仅允许填写“可接受”或“不可接受”，且必须与风险控制后风险水平匹配。\n\n4. 审批与附件信息（结构化表单）\n   - 依次列出：附件情况（是/否勾选框格式）、风险回顾日期、QA意见。\n   - 生成批准人信息表格，表头为：Name 姓名 | Depart 部门 | Sign 签字 | Date 日期，数据源为 {{批准人信息}}。\n   - 底部可附注合规说明（如控制措施可追溯性文件类型、风险状态判定标准），保持格式统一。\n\n【三、 表格与排版规范】\n- 所有表格使用标准Markdown格式，表头加粗，列宽自适应，必要时添加“备注”行说明设备确认/校验状态或共线评估结论。\n- 表格内数据需与正文描述严格一致，禁止出现“详见下文”等模糊指引。\n- 关键合规声明（如“设备均在确认/校验有效期内”“共线风险已评估可接受”）需以独立短句或表格备注形式明确呈现。\n\n【四、 合规性自检要求】\n- 生成前校验：所有 {{}} 占位符是否已正确映射？风险矩阵逻辑是否闭环（因素→控制→追溯→状态）？API特性判定是否与GMP分类标准一致？\n- 输出仅包含本章节正文指令执行结果，不附加任何解释性文字、示例或额外说明。",
+      "coverage": []
+    },
+    {
+      "section_id": "sec_1783352185921_1",
+      "title": "SECTION Ⅱ 部分2",
+      "groups": [
+        {
+          "group_id": "grp_1783352185921_1_0",
+          "title": "风险回顾与结论",
+          "kind": "fields",
+          "slots": [
+            {
+              "slot_id": "grp_1783352185921_1_0.ai_0",
+              "label": "风险回顾情况",
+              "source": {
+                "kind": "semantic",
+                "prompt": null,
+                "coverage_refs": []
+              },
+              "required": false,
+              "on_missing": "annotate",
+              "missing_placeholder": "⚠ 待评估（数据缺失）"
+            },
+            {
+              "slot_id": "grp_1783352185921_1_0.ai_1",
+              "label": "结论",
+              "source": {
+                "kind": "semantic",
+                "prompt": null,
+                "coverage_refs": []
+              },
+              "required": false,
+              "on_missing": "annotate",
+              "missing_placeholder": "⚠ 待评估（数据缺失）"
+            },
+            {
+              "slot_id": "grp_1783352185921_1_0.ai_2",
+              "label": "评估人/日期",
+              "source": {
+                "kind": "semantic",
+                "prompt": null,
+                "coverage_refs": []
+              },
+              "required": false,
+              "on_missing": "annotate",
+              "missing_placeholder": "⚠ 待评估（数据缺失）"
+            }
+          ]
+        }
+      ],
+      "prompt": "请按照GMP合规报告标准撰写「SECTION Ⅱ 部分2」章节。行文需保持客观、严谨、可追溯，语言简洁明确，避免主观臆断与冗余描述。整体结构及内容组织规范如下：\n1. 风险回顾情况：采用自然语言段落叙述，简要概述本次风险回顾的覆盖范围、核心发现、已落实风险控制措施的有效性验证结果，以及整体风险受控状态。需体现与前期评估逻辑的闭环衔接，并明确说明是否符合既定SOP及GMP法规要求。\n2. 结论：基于回顾情况给出明确、无歧义的最终判定结论，直接回应评估目标，使用标准化合规表述。\n3. 评估人/日期：采用标准化签署表格呈现，表头固定为“姓名 | 部门 | 签字 | 日期”，确保责任主体清晰、签署信息完整可查。\n写作时请严格使用以下占位符嵌入对应数据：{{风险回顾情况}}、{{结论}}、{{评估人/日期}}。除上述指定内容外，不得添加额外解释、背景说明或示例正文。若需分项说明，请使用编号列表保持版面整洁。最终输出仅包含该章节的规范行文框架。"
+    },
+    {
+      "section_id": "sec_report_teams",
+      "title": "报告会签 Report Sign-off",
+      "coverage": [
+        {
+          "kind": "ontology_relation",
+          "doc_class_iri": "https://ontology.pharma-gmp.cn/slpra/risk/RiskAssessmentReport",
+          "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/risk/hasAssessmentTeam",
+          "range_class_iri": "https://ontology.pharma-gmp.cn/slpra/risk/AssessmentTeam",
+          "label": "评估小组"
+        },
+        {
+          "kind": "ontology_relation",
+          "doc_class_iri": "https://ontology.pharma-gmp.cn/slpra/risk/RiskAssessmentReport",
+          "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/risk/hasApproverTeam",
+          "range_class_iri": "https://ontology.pharma-gmp.cn/slpra/risk/ApproverTeam",
+          "label": "审批人小组"
+        }
+      ],
+      "groups": [
+        {
+          "group_id": "grp_report_teams",
+          "title": "评估小组与审批人小组 Assessment & Approver Teams",
+          "kind": "fields",
+          "slots": [
+            {
+              "slot_id": "grp_report_teams.assessment",
+              "label": "评估小组会签表",
+              "source": {
+                "kind": "semantic",
+                "prompt": "列出本报告的评估小组会签表。严格依据「关联本体（评估小组主数据事实源）」给出的每一位评估小组成员，逐一列为一行，输出为 Markdown 表格，列依次为：姓名、角色、部门、签名（签名列留空）。事实源中形如「姓名（部门）」的取值请拆分到姓名列与部门列。不要编造未提供的成员，不要输出表格以外的多余说明文字。",
+                "coverage_refs": [
+                  "coverage.hasAssessmentTeam__AssessmentTeam"
+                ]
+              },
+              "required": false,
+              "on_missing": "leave_blank"
+            },
+            {
+              "slot_id": "grp_report_teams.approver",
+              "label": "审批人小组会签表",
+              "source": {
+                "kind": "semantic",
+                "prompt": "列出本报告的审批人小组会签表。严格依据「关联本体（审批人小组主数据事实源）」给出的每一位审批人，逐一列为一行，输出为 Markdown 表格，列依次为：姓名、角色、部门、签名（签名列留空）。事实源中形如「姓名（部门）」的取值请拆分到姓名列与部门列。不要编造未提供的成员，不要输出表格以外的多余说明文字。",
+                "coverage_refs": [
+                  "coverage.hasApproverTeam__ApproverTeam"
+                ]
+              },
+              "required": false,
+              "on_missing": "leave_blank"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

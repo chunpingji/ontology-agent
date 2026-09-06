@@ -30,6 +30,7 @@ import { Progress } from "@/components/ui/progress";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { WordViewer } from "./word-viewer";
 import { RelationPanel } from "./relation-panel";
+import { EvidenceReviewPanel } from "./evidence-review-panel";
 import { ASTTreeView } from "./ast-tree-view";
 import { SlotDetailPanel } from "./slot-detail-panel";
 import { SlotActionBar } from "./slot-action-bar";
@@ -60,6 +61,8 @@ import {
   type CoverageBinding,
   type OntologyRelationBinding,
   type AiStructureSection,
+  type TemplateOrigin,
+  type EvidenceAnchor,
   coverageKey,
   DOCUMENT_TYPE_GROUPS,
   getAstCoverage,
@@ -70,6 +73,10 @@ import {
   downloadReport,
   pollReportStatus,
   rerunAnnotation,
+  pauseAnnotation,
+  resumeAnnotation,
+  subscribeJobProgress,
+  type JobProgressEvent,
   type ASTCoverageDTO,
   type SlotCoverageDTO,
   type GeneratedReportDTO,
@@ -77,6 +84,7 @@ import {
 
 interface SlotDef {
   slot_id: string;
+  origin?: TemplateOrigin | null;
   label: string;
   source: Record<string, unknown>;
   required: boolean;
@@ -90,6 +98,7 @@ interface SlotDef {
 
 interface GroupDef {
   group_id: string;
+  origin?: TemplateOrigin | null;
   title: string;
   kind: string;
   repeat?: Record<string, unknown> | null;
@@ -98,6 +107,7 @@ interface GroupDef {
 
 interface SectionDef {
   section_id: string;
+  origin?: TemplateOrigin | null;
   title: string;
   groups: GroupDef[];
   // 015 行文 Prompt：报告生成时用于把本节插槽值融合成一段叙述文字的提示词。
@@ -209,6 +219,7 @@ type DocPreviewState =
       content: TiptapContent;
       docClass: DocClassification | null;
       relationships: Relationship[];
+      previewOnly?: boolean;
     }
   | { kind: "unavailable" };
 
@@ -326,16 +337,23 @@ export function TemplateSlotEditor({
 
   // 左侧忠实预览的高亮锚点：点击建议→其 source_ref/evidence_span；点击真实 Slot→其 label（尽力而为）。
   const [activeRef, setActiveRef] = useState<string | null>(null);
+  const [activeAnchor, setActiveAnchor] = useState<EvidenceAnchor | null>(null);
+  const [sourceAnchor, setSourceAnchor] = useState<EvidenceAnchor | null>(null);
+  const [sourceUnavailable, setSourceUnavailable] = useState(false);
   const [activeSlotId, setActiveSlotId] = useState<string | null>(null);
 
   // job_id 分支的忠实预览（模板流程通常不传 jobId；保留以不回退能力）。
   const [jobContent, setJobContent] = useState<TiptapContent | null>(null);
   useEffect(() => {
+    const controller = new AbortController();
     if (jobId && !sampleContentJson) {
-      getAnnotatedDocument(jobId)
-        .then((doc) => setJobContent((doc.content as TiptapContent) ?? null))
-        .catch(() => setJobContent(null));
+      getAnnotatedDocument(jobId, false, controller.signal)
+        .then((doc) => {
+          if (!controller.signal.aborted) setJobContent((doc.content as TiptapContent) ?? null);
+        })
+        .catch(() => { if (!controller.signal.aborted) setJobContent(null); });
     }
+    return () => controller.abort();
   }, [jobId, sampleContentJson]);
 
   // ── 015 源文档页签：IRI 匹配文档列表 + 选中文档正文预览 ─────────────────
@@ -575,23 +593,25 @@ export function TemplateSlotEditor({
   const docContentQuery = useQuery({
     queryKey: ["ast-source-doc-content", activeDocIri, activeDocIri === DEFAULT_SOURCE_IRI ? sourceJobId : null],
     enabled: Boolean(activeDocIri),
-    queryFn: async (): Promise<DocPreviewState> => {
+    queryFn: async ({ signal }): Promise<DocPreviewState> => {
       const jobRef =
         activeDocIri === DEFAULT_SOURCE_IRI
           ? sourceJobId
           : docJobRef(activeShadow ?? undefined);
       if (!jobRef) return { kind: "unavailable" };
       try {
-        const doc = await getAnnotatedDocument(jobRef);
+        const doc = await getAnnotatedDocument(jobRef, false, signal);
         if (doc.content && typeof doc.content === "object") {
           return {
             kind: "ready",
             content: doc.content as TiptapContent,
             docClass: doc.doc_class ?? null,
             relationships: doc.relationships ?? [],
+            previewOnly: doc.preview_only,
           };
         }
-      } catch {
+      } catch (error) {
+        if (signal.aborted) throw error;
         return { kind: "unavailable" };
       }
       return { kind: "unavailable" };
@@ -695,7 +715,7 @@ export function TemplateSlotEditor({
 
   const coverageQuery = useQuery({
     queryKey: ["ast-coverage", previewJobId, templateId ?? "default"],
-    queryFn: () => getAstCoverage(previewJobId!, templateId),
+    queryFn: ({ signal }) => getAstCoverage(previewJobId!, templateId, signal),
     enabled: !!previewJobId,
   });
   const previewReportsQuery = useQuery({
@@ -704,6 +724,9 @@ export function TemplateSlotEditor({
     enabled: !!previewJobId,
   });
   const previewCoverage = coverageQuery.data ?? null;
+  const refreshEvidenceCoverage = useCallback(() => {
+    void queryClient.invalidateQueries({ queryKey: ["ast-coverage", previewJobId] });
+  }, [queryClient, previewJobId]);
   const previewReports = previewReportsQuery.data ?? [];
 
   const dismissMut = useMutation({
@@ -727,7 +750,7 @@ export function TemplateSlotEditor({
     },
   });
   const generateMut = useMutation({
-    mutationFn: () => generateRiskReport(previewJobId!),
+    mutationFn: () => generateRiskReport(previewJobId!, templateId),
     onSuccess: async (result) => {
       if (result instanceof Blob) {
         const url = URL.createObjectURL(result);
@@ -761,34 +784,91 @@ export function TemplateSlotEditor({
       poll();
     },
   });
+  // POST 仅表示入队。源文档与报告预览共用运行状态，直到后台终态才刷新结果。
+  const [sourceProgress, setSourceProgress] = useState<JobProgressEvent | null>(null);
+  const [sourceRunError, setSourceRunError] = useState<{ jobId: string; message: string } | null>(null);
+  const [evidenceRefresh, setEvidenceRefresh] = useState(0);
+  const [pauseRequestedJob, setPauseRequestedJob] = useState<string | null>(null);
+  const [runClock, setRunClock] = useState(0);
   const rerunMut = useMutation({
-    mutationFn: async () => {
-      await rerunAnnotation(previewJobId!);
-      await getAnnotatedDocument(previewJobId!);
+    mutationFn: async ({ jobId, resume = false }: { jobId: string; resume?: boolean }) => {
+      if (resume) await resumeAnnotation(jobId);
+      else await rerunAnnotation(jobId);
+      return jobId;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["ast-coverage", previewJobId] });
-    },
+    onMutate: () => { setSourceRunError(null); setPauseRequestedJob(null); },
+    onSuccess: (jobId) => setSourceProgress({
+      job_id: jobId, stage: "annotating", annotation_stage: "queued",
+      pct: 0, status: "running", degraded: false,
+    }),
+    onError: (error, { jobId }) => setSourceRunError({
+      jobId,
+      message: error instanceof Error ? error.message : "重新识别请求失败，请重试",
+    }),
+  });
+  const pauseMut = useMutation({
+    mutationFn: (jobId: string) => pauseAnnotation(jobId),
+    onSuccess: (_data, jobId) => setPauseRequestedJob(jobId),
+    onError: (error, jobId) => setSourceRunError({ jobId,
+      message: error instanceof Error ? error.message : "暂停识别请求失败，请重试" }),
   });
 
-  // 源文档页签「关系图谱」重新识别：复用全量重标注端点，再阻塞式 refetch 源文档内容。
-  // rerunAnnotation 删缓存后，getAnnotatedDocument 的 GET 因缓存缺失而同步全量重算并回填，
-  // 故一次 refetch 即「等待→拿到新关系」；缓存重写后再失效 ast-coverage 让报告预览页签同步。
-  const [rerunSourceError, setRerunSourceError] = useState<string | null>(null);
-  const rerunSourceMut = useMutation({
-    mutationFn: async () => {
-      await rerunAnnotation(previewJobId!);
-      await queryClient.refetchQueries({
-        queryKey: ["ast-source-doc-content", activeDocIri],
+  useEffect(() => {
+    // 打开/切换文档也订阅历史进度，可接续刷新页面前或其他页面发起的任务。
+    // 发起 POST 期间关闭旧流，避免回放上一次终态误将新任务判为完成。
+    if (!previewJobId || rerunMut.isPending) return;
+    let ignore = false;
+    const unsubscribe = subscribeJobProgress(previewJobId, (event) => {
+      if (ignore || event.job_id !== previewJobId || !event.annotation_stage) return;
+      setSourceProgress(event);
+      if (event.status === "running") setSourceRunError(null);
+      const terminal = event.annotation_stage;
+      if (!["complete", "failed", "paused", "interrupted"].includes(terminal)) return;
+      ignore = true;
+      unsubscribe();
+      setPauseRequestedJob(null);
+      if (terminal !== "complete") {
+        setSourceRunError({
+          jobId: previewJobId,
+          message: event.has_checkpoint && event.can_resume === false
+            ? "本轮已达到处理上限，已保存部分结果；请检查未通过的任务和抽取配置"
+            : terminal === "interrupted"
+            ? event.has_checkpoint ? "识别已中断，已保存断点，可继续识别" : "识别已中断，请重新识别"
+            : terminal === "failed"
+            ? "关系识别失败，请检查模型服务和任务日志"
+            : "关系识别已暂停，已保存部分结果，可继续未处理任务",
+        });
+      }
+      void queryClient.refetchQueries({
+        queryKey: ["ast-source-doc-content", activeDocIri,
+          activeDocIri === DEFAULT_SOURCE_IRI ? sourceJobId : null],
+        exact: true,
       });
-    },
-    onMutate: () => setRerunSourceError(null),
-    onError: () =>
-      setRerunSourceError("重新识别失败，请重试或检查源文档是否仍可用"),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["ast-coverage", previewJobId] });
-    },
-  });
+      void queryClient.invalidateQueries({ queryKey: ["ast-coverage", previewJobId] });
+      setEvidenceRefresh((value) => value + 1);
+    });
+    return () => { ignore = true; unsubscribe(); };
+  }, [activeDocIri, previewJobId, queryClient, rerunMut.isPending, sourceJobId]);
+
+  const recognitionRunning = rerunMut.isPending ||
+    (sourceProgress?.job_id === previewJobId && sourceProgress.status === "running");
+  const rerunSourceError = sourceRunError?.jobId === previewJobId ? sourceRunError.message : null;
+  const currentSourceProgress = sourceProgress?.job_id === previewJobId ? sourceProgress : null;
+  const canResumeSource = !recognitionRunning && currentSourceProgress?.has_checkpoint &&
+    currentSourceProgress.can_resume !== false;
+  useEffect(() => {
+    if (!recognitionRunning) return;
+    const timer = window.setInterval(() => setRunClock(Date.now() / 1000), 1000);
+    return () => window.clearInterval(timer);
+  }, [recognitionRunning]);
+  const sourceRunSeconds = currentSourceProgress?.started_at
+    ? Math.max(0, Math.floor(runClock - currentSourceProgress.started_at)) : null;
+  const sourceProgressText = currentSourceProgress?.tasks_processed !== undefined
+    ? `已处理 ${currentSourceProgress.tasks_processed} 项：成功 ${currentSourceProgress.tasks_completed ?? 0} 项，未通过 ${currentSourceProgress.tasks_failed ?? 0} 项；模型调用 ${currentSourceProgress.model_calls ?? 0} 次`
+    : "正在解析文档并准备识别任务…";
+  const rerunCurrentSource = () => {
+    if (previewJobId && !recognitionRunning) rerunMut.mutate({ jobId: previewJobId });
+  };
 
   const handlePreviewGenerate = () => {
     if (!previewCoverage) return;
@@ -910,31 +990,28 @@ export function TemplateSlotEditor({
     setExpandedGroups((prev) => new Set([...prev, grpId]));
   }
 
-  // AI 分析主修复：把 Round-1 文档结构骨架（sections→groups→candidates）物化成编辑器树，
-  // 每个候选叶子落为可作者填写的 **semantic** 槽（无本体 IRI 绑定——被删的自动串匹配取数流
-  // 不随之回归）。仅在模板当前 0 分节时物化（沿用 ensureSeedSection 门控，race-free：函数式
-  // 更新读最新态，绝不覆盖作者已有编辑，重跑不叠加）。id 用 ts + 下标后缀，规避同步批量
-  // Date.now() 碰撞。evidence_span/offset 无 SlotDef 落点、编辑器不读，故丢弃。
+  // 骨架 ID 与来源由服务端 IR 决定；保留 label/value anchor，不用文本猜测来源。
   function materializeSkeleton(skeleton: AiStructureSection[]) {
-    const ts = Date.now();
     const secIds: string[] = [];
     const grpIds: string[] = [];
-    const built: SectionDef[] = skeleton.map((sec, i) => {
-      const secId = `sec_${ts}_${i}`;
+    const built: SectionDef[] = skeleton.map((sec) => {
+      const secId = sec.id;
       secIds.push(secId);
       const rawGroups =
         sec.groups && sec.groups.length > 0
           ? sec.groups
-          : [{ title: "新分组", candidates: [] }];
-      const groups: GroupDef[] = rawGroups.map((grp, j) => {
-        const grpId = `grp_${ts}_${i}_${j}`;
+          : [{ id: `${secId}.fields`, title: "新分组", candidates: [], origin: null }];
+      const groups: GroupDef[] = rawGroups.map((grp) => {
+        const grpId = grp.id;
         grpIds.push(grpId);
         return {
           group_id: grpId,
+          origin: grp.origin,
           title: grp.title || "新分组",
           kind: "fields",
-          slots: (grp.candidates ?? []).map((cand, k) => ({
-            slot_id: `${grpId}.ai_${k}`,
+          slots: (grp.candidates ?? []).map((cand) => ({
+            slot_id: cand.id,
+            origin: cand.origin,
             label: cand.label || "新插槽",
             // 形状同 addSlot 默认：唯一「现代、可作者填写」的插槽。
             source: { kind: "semantic", prompt: null, coverage_refs: [] },
@@ -944,7 +1021,7 @@ export function TemplateSlotEditor({
           })),
         };
       });
-      return { section_id: secId, title: sec.title || "新分节", groups };
+      return { section_id: secId, title: sec.title || "新分节", origin: sec.origin, groups };
     });
     setSections((prev) => (prev.length ? prev : built));
     setExpandedSections((prev) => new Set([...prev, ...secIds]));
@@ -1191,28 +1268,13 @@ export function TemplateSlotEditor({
       setAiError("无可分析的样例内容");
       return;
     }
-    if (!docClassIri) {
-      // 未接地则后端只能返回空覆盖（不再有取数候选兜底）——直接拦截并提示。
-      setAiError("请先在「基本信息」选择关联文档类型后再分析");
-      return;
-    }
-    if (docClassUnmodeled) {
-      // 016：该类型本体未建模关系边 → 后端覆盖恒空。拦截并给出明确指引，消除静默无结果。
-      setAiError(
-        "该文档类型尚未在本体中建模关系边，暂不支持 AI 覆盖分析。请选择已建模类型" +
-          (capableLabels && capableLabels.length > 0
-            ? `（当前：${capableLabels.join("、")}）`
-            : "") +
-          "。",
-      );
-      return;
-    }
     setAiLoading(true);
     setAiError(null);
     startAiProgress();
     try {
       const res = await suggestSlots(req);
       setAiSummary(res.document_summary || null);
+      if (res.diagnostics?.length) setAiSummary(res.document_summary || res.diagnostics.join("；"));
       // 016：AI 分析只产出本体锚定的覆盖建议（仅关系边）与无法绑定的候选。
       // 已存在于任一分节 coverage 的建议先行过滤，避免重复呈现。
       const declaredKeys = new Set<string>();
@@ -1245,8 +1307,14 @@ export function TemplateSlotEditor({
 
   function handleSlotClick(slot: SlotDef) {
     setActiveSlotId(slot.slot_id);
-    // 真实 Slot 无 evidence，用 label 尽力定位（WordViewer 按 textContent 命中）。
-    setActiveRef(slot.label || null);
+    setActiveRef(null);
+    setSourceUnavailable(!slot.origin);
+    setActiveAnchor(slot.origin ? {
+      ...slot.origin.label_anchor,
+      document_hash: slot.origin.document_hash,
+      parser_version: slot.origin.parser_version,
+      structure_hash: slot.origin.structure_hash,
+    } : null);
   }
 
   // 忠实预览内容：优先持久化/直传的 tiptap 样例；job_id 走拉取缓存；legacy 仅有
@@ -1937,12 +2005,18 @@ export function TemplateSlotEditor({
                   )}
                 </div>
 
+                {docContent.kind === "ready" && docContent.previewOnly && (
+                  <p className="text-xs text-muted-foreground" role="status">
+                    正文已加载。语义抽取独立执行；请在逐值证据面板继续抽取或刷新状态。
+                  </p>
+                )}
                 <div className="rounded border bg-card p-6 shadow-sm">
                   {docContent.kind === "ready" ? (
                     <WordViewer
                       key={activeDocIri}
                       content={docContent.content}
                       highlightRef={selectedSourceRef}
+                      activeAnchor={sourceAnchor}
                     />
                   ) : docContent.kind === "loading" ? (
                     <div className="flex items-center justify-center gap-2 py-16 text-sm text-muted-foreground">
@@ -1991,6 +2065,8 @@ export function TemplateSlotEditor({
                     key={jobId ?? "sample"}
                     content={previewContent}
                     highlightRef={activeRef}
+                    activeAnchor={activeAnchor}
+                    sourceUnavailable={sourceUnavailable}
                     fitTables
                   />
                 ) : (
@@ -2030,17 +2106,17 @@ export function TemplateSlotEditor({
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => rerunMut.mutate()}
-                  disabled={rerunMut.isPending}
+                  onClick={rerunCurrentSource}
+                  disabled={recognitionRunning}
                 >
-                  {rerunMut.isPending
+                  {recognitionRunning
                     ? <Loader2 className="mr-1 size-3.5 animate-spin" />
                     : <RotateCw className="mr-1 size-3.5" />}
-                  {rerunMut.isPending ? "分析中…" : "执行数据抽取与覆盖分析"}
+                  {recognitionRunning ? "分析中…" : "执行数据抽取与覆盖分析"}
                 </Button>
-                {rerunMut.error && (
+                {rerunSourceError && (
                   <p className="text-xs text-destructive">
-                    {String(rerunMut.error)}
+                    {rerunSourceError}
                   </p>
                 )}
               </div>
@@ -2055,10 +2131,10 @@ export function TemplateSlotEditor({
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => rerunMut.mutate()}
-                      disabled={rerunMut.isPending}
+                      onClick={rerunCurrentSource}
+                      disabled={recognitionRunning}
                     >
-                      {rerunMut.isPending
+                      {recognitionRunning
                         ? <Loader2 className="mr-1 size-3.5 animate-spin" />
                         : <RotateCw className="mr-1 size-3.5" />}
                       刷新覆盖率
@@ -2083,7 +2159,7 @@ export function TemplateSlotEditor({
                     coverage={previewCoverage}
                     reports={previewReports}
                     generating={generateMut.isPending || asyncGenerating}
-                    refreshing={rerunMut.isPending}
+                    refreshing={recognitionRunning}
                   />
 
                   {/* 右：报告结构树 */}
@@ -2134,8 +2210,8 @@ export function TemplateSlotEditor({
                               onDismiss={(id) => dismissMut.mutate(id)}
                               onUndismiss={(id) => undismissMut.mutate(id)}
                               dismissing={dismissMut.isPending || undismissMut.isPending}
-                              onRerun={() => rerunMut.mutate()}
-                              rerunning={rerunMut.isPending}
+                              onRerun={rerunCurrentSource}
+                              rerunning={recognitionRunning}
                             />
                           }
                         />
@@ -2243,7 +2319,7 @@ export function TemplateSlotEditor({
                 disabled={
                   !previewJobId ||
                   docContent.kind !== "ready" ||
-                  rerunSourceMut.isPending
+                  recognitionRunning
                 }
                 title={
                   !previewJobId
@@ -2252,38 +2328,63 @@ export function TemplateSlotEditor({
                       ? "暂无可重识别的标注"
                       : "对当前文档重新完整标注（实体+关系），较慢"
                 }
-                onClick={() => rerunSourceMut.mutate()}
+                onClick={rerunCurrentSource}
               >
-                {rerunSourceMut.isPending ? (
+                {recognitionRunning ? (
                   <Loader2 className="size-3.5 animate-spin" />
                 ) : (
                   <RotateCw className="size-3.5" />
                 )}
-                {rerunSourceMut.isPending ? "识别中…" : "重新识别"}
+                {recognitionRunning ? "识别中…" : "重新识别"}
               </Button>
             </div>
             <p className="text-xs text-muted-foreground">
               文档中识别的关系，点击端点可定位原文
             </p>
+            {currentSourceProgress?.tasks_processed !== undefined && (
+              <p className="mt-1 text-xs text-muted-foreground" role="status">{sourceProgressText}</p>
+            )}
+            {canResumeSource && previewJobId && (
+              <Button variant="outline" size="sm" className="mt-2"
+                onClick={() => rerunMut.mutate({ jobId: previewJobId, resume: true })}>
+                从断点继续识别
+              </Button>
+            )}
             {rerunSourceError && (
               <p className="mt-1 text-xs text-destructive">{rerunSourceError}</p>
             )}
           </div>
           {/* 单一滚动区归 RelationPanel 内部（flex-1 overflow-y-auto）；外层仅定界高度，
               避免嵌套滚动条。 */}
-          <div className="relative min-h-0 flex-1">
+          <div className="relative min-h-0 flex-1 overflow-y-auto">
+            {previewJobId && <EvidenceReviewPanel key={`${previewJobId}:${templateId}`} jobId={previewJobId}
+              templateId={templateId} refreshKey={evidenceRefresh}
+              onSource={setSourceAnchor} onSnapshot={refreshEvidenceCoverage} />}
+            <p className="border-t p-3 text-xs text-muted-foreground">以下为抽取预览，不代表已提交事实。</p>
             <RelationPanel
               docClass={sourceDocClass}
               relationships={sourceRelationships}
               selectedSourceRef={selectedSourceRef}
               onSelectSourceRef={setSelectedSourceRef}
+              emptyMessage={recognitionRunning ? "正在识别实体、属性和关系…"
+                : docContent.kind === "ready" && docContent.previewOnly
+                  ? "正文已加载，尚无完成的关系识别结果" : undefined}
             />
-            {rerunSourceMut.isPending && (
+            {recognitionRunning && (
               <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 bg-background/70 backdrop-blur-sm">
                 <Loader2 className="size-5 animate-spin text-muted-foreground" />
                 <span className="text-xs text-muted-foreground">
-                  正在重新识别关系图谱…
+                  {pauseRequestedJob === previewJobId ? "正在保存断点，当前处理结束后暂停…" : "正在识别关系图谱…"}
                 </span>
+                <span className="px-4 text-center text-xs text-muted-foreground">{sourceProgressText}</span>
+                {sourceRunSeconds !== null && <span className="text-xs text-muted-foreground">
+                  本次运行 {Math.floor(sourceRunSeconds / 60)} 分 {sourceRunSeconds % 60} 秒
+                </span>}
+                <Button variant="outline" size="sm"
+                  disabled={!previewJobId || rerunMut.isPending || pauseMut.isPending || pauseRequestedJob === previewJobId}
+                  onClick={() => previewJobId && pauseMut.mutate(previewJobId)}>
+                  {pauseRequestedJob === previewJobId ? "正在暂停…" : "暂停并保存结果"}
+                </Button>
               </div>
             )}
           </div>
@@ -2311,15 +2412,12 @@ export function TemplateSlotEditor({
               size="sm"
               onClick={runAiAnalysis}
               disabled={
-                !aiEnabled ||
                 aiLoading ||
-                !previewContent ||
-                !docClassIri ||
-                docClassUnmodeled
+                !previewContent
               }
               title={
                 !aiEnabled
-                  ? "需在设置中开启 LLM 插槽建议"
+                  ? "模型已关闭：仍可生成带原文来源的结构骨架"
                   : !previewContent
                     ? "无样例内容可分析"
                     : !docClassIri

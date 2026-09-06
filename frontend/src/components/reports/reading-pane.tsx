@@ -43,6 +43,11 @@ export type DocumentContent =
       entities: RecognizedEntity[];
       docClass: DocClassification | null;
       relationships: Relationship[];
+      recognition: {
+        completion: "complete" | "incomplete" | null;
+        diagnostics: string[];
+        previewOnly: boolean;
+      };
     }
   | { unavailable: true };
 
@@ -58,6 +63,7 @@ export function documentContentKey(item: ReportOrDocument | null): Array<string 
  */
 export async function resolveDocumentContent(
   item: ReportOrDocument,
+  signal?: AbortSignal,
 ): Promise<DocumentContent> {
   if (item.kind !== "uploaded-document" || !item.iri) return { unavailable: true };
 
@@ -71,7 +77,7 @@ export async function resolveDocumentContent(
   if (!jobId) return { unavailable: true };
 
   try {
-    const doc = await getAnnotatedDocument(jobId);
+    const doc = await getAnnotatedDocument(jobId, false, signal);
     if (doc.content && typeof doc.content === "object") {
       return {
         jobId,
@@ -79,9 +85,15 @@ export async function resolveDocumentContent(
         entities: entitiesFromTriples(doc.triples ?? []),
         docClass: doc.doc_class ?? null,
         relationships: doc.relationships ?? [],
+        recognition: {
+          completion: doc.evidence_run?.completion ?? doc.completion ?? null,
+          diagnostics: doc.evidence_run?.diagnostics ?? [],
+          previewOnly: doc.preview_only === true,
+        },
       };
     }
-  } catch {
+  } catch (error) {
+    if (signal?.aborted) throw error;
     return { unavailable: true };
   }
   return { unavailable: true };
@@ -154,7 +166,7 @@ function DocumentPane({
 }) {
   const query = useQuery({
     queryKey: documentContentKey(item),
-    queryFn: () => resolveDocumentContent(item),
+    queryFn: ({ signal }) => resolveDocumentContent(item, signal),
   });
 
   if (query.isLoading) return <PaneSkeleton />;

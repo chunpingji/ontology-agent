@@ -28,6 +28,9 @@ from typing import Annotated, Literal, Union
 
 from pydantic import BaseModel, Field, model_validator
 
+from app.services.extraction.template_structure_builder import TemplateOrigin
+from app.services.fact_selector import PredicateStep
+
 logger = logging.getLogger(__name__)
 
 # --------------------------------------------------------------------------- #
@@ -118,6 +121,28 @@ class SemanticSource(BaseModel):
     coverage_refs: list[str] = Field(default_factory=list)
 
 
+class ReportMetadataSource(BaseModel):
+    kind: Literal["report_metadata"] = "report_metadata"
+    field: Literal["source_filename", "input_class_iri", "snapshot_id", "template_version"]
+
+
+class SnapshotSource(BaseModel):
+    """Exact per-instance projection; labels/prompts never select facts."""
+
+    kind: Literal["snapshot"] = "snapshot"
+    root_class_iri: str
+    predicate_path: list[PredicateStep] = Field(min_length=1, max_length=16)
+    range_class_iri: str
+    data_property_iris: list[str] = Field(default_factory=list)
+    text: bool = False
+
+    @model_validator(mode="after")
+    def has_projection(self):
+        if not self.text and not self.data_property_iris:
+            raise ValueError("snapshot source requires text or explicit property IRIs")
+        return self
+
+
 SlotSource = Annotated[
     Union[
         ExtractionSource,
@@ -126,6 +151,8 @@ SlotSource = Annotated[
         ConstantSource,
         LLMExtractionSource,
         SemanticSource,
+        SnapshotSource,
+        ReportMetadataSource,
     ],
     Field(discriminator="kind"),
 ]
@@ -161,6 +188,25 @@ class OntologyRelationBinding(BaseModel):
     required: bool = True  # FR-005a / clarification Q1 — required by default
     required_properties: list[str] = Field(default_factory=list)  # FR-007 per-section promotion
     label: str | None = None  # narrative display only
+    predicate_path: list[PredicateStep] = Field(default_factory=list)
+    quantifier: Literal["exists", "all"] = "exists"
+    min_count: int = Field(default=1, ge=0)
+    max_count: int | None = Field(default=None, ge=0)
+    subject_instance_iris: list[str] = Field(default_factory=list)
+    subject_root_class_iri: str | None = None
+    subject_path: list[PredicateStep] = Field(default_factory=list, max_length=16)
+    object_instance_iris: list[str] | None = None
+    applicable_at: str | None = None
+
+    @model_validator(mode="after")
+    def valid_cardinality(self):
+        if bool(self.subject_root_class_iri) != bool(self.subject_path):
+            raise ValueError("subject root class and path must be declared together")
+        if self.max_count is not None and self.max_count < self.min_count:
+            raise ValueError("max_count cannot be less than min_count")
+        if len(self.predicate_path) > 16:
+            raise ValueError("predicate path exceeds traversal budget")
+        return self
 
 
 class FactSourceBinding(BaseModel):
@@ -213,6 +259,7 @@ def coverage_key(binding: "CoverageBinding") -> str:
 
 class Slot(BaseModel):
     slot_id: str
+    origin: TemplateOrigin | None = None
     label: str
     source: SlotSource
     required: bool = False
@@ -238,6 +285,7 @@ GroupKind = Literal["fields", "equipment_table", "assessment_table", "manual"]
 
 class Group(BaseModel):
     group_id: str
+    origin: TemplateOrigin | None = None
     title: str
     kind: GroupKind
     repeat: Repeat | None = None
@@ -252,6 +300,7 @@ class Group(BaseModel):
 
 class Section(BaseModel):
     section_id: str
+    origin: TemplateOrigin | None = None
     title: str
     groups: list[Group]
     # 015: per-section 行文 Prompt. When set, the generation engine calls the local
@@ -272,6 +321,7 @@ class ReportTemplate(BaseModel):
     doc_no: str = "QS-A-020F05"
     revision: str = "00"
     sections: list[Section]
+    diagnostics: list[str] = Field(default_factory=list)
 
     def iter_slots(self) -> Iterator[tuple[Section, Group, Slot]]:
         """Yield every declared slot in document order with its parent context."""
@@ -335,9 +385,15 @@ def _latest_version_key(row) -> tuple:
     not an arbitrary row. ``version`` is a free string (e.g. ``"v4"``); we parse its
     trailing integer (``"v10" > "v9"``, unlike a lexical compare), then break ties by
     ``created_at`` so the result is deterministic even for equal/blank versions."""
-    import re
-
-    digits = re.findall(r"\d+", getattr(row, "version", "") or "")
+    digits, current = [], ""
+    for char in getattr(row, "version", "") or "":
+        if char.isdecimal():
+            current += char
+        elif current:
+            digits.append(current)
+            current = ""
+    if current:
+        digits.append(current)
     num = int(digits[-1]) if digits else 0
     return (num, row.created_at)
 
