@@ -30,6 +30,8 @@ import { Progress } from "@/components/ui/progress";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { WordViewer } from "./word-viewer";
 import { RelationPanel } from "./relation-panel";
+import { RecognitionTimer } from "./recognition-timer";
+import { ModelRequestProgress } from "./model-request-progress";
 import { EvidenceReviewPanel } from "./evidence-review-panel";
 import { ASTTreeView } from "./ast-tree-view";
 import { SlotDetailPanel } from "./slot-detail-panel";
@@ -75,6 +77,8 @@ import {
   rerunAnnotation,
   pauseAnnotation,
   resumeAnnotation,
+  extractJobEvidence,
+  type EvidenceExtractOptions,
   subscribeJobProgress,
   type JobProgressEvent,
   type ASTCoverageDTO,
@@ -148,16 +152,28 @@ interface TemplateSlotEditorProps {
   versions?: TemplateVersionEntry[];
   onVersionSwitch?: (id: string) => void;
   onMetaSaved?: () => void;
+  // V2 keeps the existing workspace, metadata and source review; only definition
+  // authoring and report execution are supplied by the output template editor.
+  outputEditor?: {
+    sidebar: ReactNode;
+    basicInfo: ReactNode;
+    documentClassIri?: string;
+    documentNo?: string;
+    onDocumentNoChange?: (value: string) => void;
+    onDocumentClassChange?: (iri: string) => void;
+    reportPreview: (sourceJobId: string | null) => ReactNode;
+    sampleAnchor?: EvidenceAnchor | null;
+  };
 }
 
-interface TemplateVersionEntry {
+export interface TemplateVersionEntry {
   id: string;
   version: string;
   created_at: string;
 }
 
 // 015 基本信息表单模型（由 page 从模板详情构造）。
-interface TemplateMeta {
+export interface TemplateMeta {
   name: string;
   docNo: string | null;
   version: string;
@@ -192,7 +208,7 @@ function cloneSections(sections: SectionDef[]): SectionDef[] {
 // IRI/类 IRI 的本地名（末段），用于源文档列表的次要标注。
 function docLocalName(iri: string | null | undefined): string {
   if (!iri) return "";
-  const parts = iri.split(/[#/]/).filter(Boolean);
+  const parts = iri.split("#").flatMap((part) => part.split("/")).filter(Boolean);
   return parts.length ? parts[parts.length - 1] : iri;
 }
 
@@ -297,6 +313,7 @@ export function TemplateSlotEditor({
   versions,
   onVersionSwitch,
   onMetaSaved,
+  outputEditor,
 }: TemplateSlotEditorProps) {
   const [sections, setSections] = useState<SectionDef[]>(
     () => cloneSections(schema.sections),
@@ -365,6 +382,7 @@ export function TemplateSlotEditor({
   // 与「Slot 树」（AST模板定义 / 报告预览页签）间切换，避免删除唯一的编辑入口。
   // 编辑模式（templateId 存在）默认落在「基本信息」；创建模式仍从「源文档」起步。
   const [leftTab, setLeftTab] = useState(templateId ? "basic" : "source");
+  const [reportOpened, setReportOpened] = useState(false);
 
   // ── 015 基本信息页签：元数据编辑 + 文档配置 + 训练数据 ─────────────────
   const [metaForm, setMetaForm] = useState(() => ({
@@ -448,10 +466,12 @@ export function TemplateSlotEditor({
     try {
       await updateAstTemplateMeta(templateId, {
         name: metaForm.name.trim(),
-        doc_no: metaForm.docNo.trim() || null,
+        ...(!outputEditor ? {
+          doc_no: metaForm.docNo.trim() || null,
+          iri_pattern: metaForm.iriPattern || null,
+        } : {}),
         owner: metaForm.owner.trim() || null,
-        status: metaForm.status,
-        iri_pattern: metaForm.iriPattern || null,
+        ...(!outputEditor ? { status: metaForm.status } : {}),
       });
       setMetaJustSaved(true);
       onMetaSaved?.();
@@ -463,7 +483,7 @@ export function TemplateSlotEditor({
     } finally {
       setMetaSaving(false);
     }
-  }, [templateId, metaForm, onMetaSaved]);
+  }, [templateId, metaForm, onMetaSaved, outputEditor, meta?.status]);
 
   const handleSampleFile = useCallback(
     async (file: File | null | undefined) => {
@@ -644,12 +664,12 @@ export function TemplateSlotEditor({
   // 只读本体访问（Principle II）；无 IRI / 离线 → 菜单为空、区块降级为提示（Principle VI）。
   const docClassIri = useMemo(() => {
     // 优先「关联文档类型」下拉框的**实时**选择（未保存即生效）；下拉写入完整 IRI。
-    const live = metaForm.iriPattern;
-    if (live && /^https?:\/\//.test(live)) return live;
-    if (iriPattern && /^https?:\/\//.test(iriPattern)) return iriPattern;
+    const live = outputEditor?.documentClassIri ?? metaForm.iriPattern;
+    if (live && (live.startsWith("http://") || live.startsWith("https://"))) return live;
+    if (iriPattern && (iriPattern.startsWith("http://") || iriPattern.startsWith("https://"))) return iriPattern;
     if (sourceDocClass?.doc_class_iri) return sourceDocClass.doc_class_iri;
     return null;
-  }, [sourceDocClass, iriPattern, metaForm.iriPattern]);
+  }, [sourceDocClass, iriPattern, metaForm.iriPattern, outputEditor?.documentClassIri]);
   const relationSchemaQuery = useQuery({
     // key 末位 1 = maxHops，须与下方 queryFn 的入参一致（TanStack 缓存原则：凡影响
     // queryFn 结果的参数都进 key），未来若新增按不同 maxHops 的调用点即不会串用缓存。
@@ -660,7 +680,7 @@ export function TemplateSlotEditor({
     // ×3、usesEquipment ×2、自引用 hasDegradationPathway ×2）——在源头只取 hop-1 即
     // 消除重复项与 dup-key 告警。切勿改回默认 4 跳。
     queryFn: () => getRelationSchema(docClassIri!, 1),
-    enabled: !!docClassIri,
+    enabled: !!docClassIri && !outputEditor,
     staleTime: 5 * 60 * 1000,
   });
   const relationSchema: RelationSchemaEdge[] = relationSchemaQuery.data ?? [];
@@ -716,12 +736,12 @@ export function TemplateSlotEditor({
   const coverageQuery = useQuery({
     queryKey: ["ast-coverage", previewJobId, templateId ?? "default"],
     queryFn: ({ signal }) => getAstCoverage(previewJobId!, templateId, signal),
-    enabled: !!previewJobId,
+    enabled: !!previewJobId && !outputEditor,
   });
   const previewReportsQuery = useQuery({
     queryKey: ["reports", previewJobId],
     queryFn: () => listReports(previewJobId!),
-    enabled: !!previewJobId,
+    enabled: !!previewJobId && !outputEditor,
   });
   const previewCoverage = coverageQuery.data ?? null;
   const refreshEvidenceCoverage = useCallback(() => {
@@ -784,21 +804,22 @@ export function TemplateSlotEditor({
       poll();
     },
   });
-  // POST 仅表示入队。源文档与报告预览共用运行状态，直到后台终态才刷新结果。
+  // POST 仅表示入队；持久化版本推进时刷新图谱，终态刷新覆盖检查。
   const [sourceProgress, setSourceProgress] = useState<JobProgressEvent | null>(null);
   const [sourceRunError, setSourceRunError] = useState<{ jobId: string; message: string } | null>(null);
   const [evidenceRefresh, setEvidenceRefresh] = useState(0);
   const [pauseRequestedJob, setPauseRequestedJob] = useState<string | null>(null);
-  const [runClock, setRunClock] = useState(0);
   const rerunMut = useMutation({
-    mutationFn: async ({ jobId, resume = false }: { jobId: string; resume?: boolean }) => {
-      if (resume) await resumeAnnotation(jobId);
-      else await rerunAnnotation(jobId);
-      return jobId;
+    mutationFn: async ({ jobId, resume = false, continueOptions }: {
+      jobId: string; resume?: boolean; continueOptions?: EvidenceExtractOptions;
+    }) => {
+      if (continueOptions) return extractJobEvidence(jobId, continueOptions);
+      if (resume) return resumeAnnotation(jobId);
+      return rerunAnnotation(jobId, templateId);
     },
     onMutate: () => { setSourceRunError(null); setPauseRequestedJob(null); },
-    onSuccess: (jobId) => setSourceProgress({
-      job_id: jobId, stage: "annotating", annotation_stage: "queued",
+    onSuccess: (run) => setSourceProgress({
+      job_id: run.job_id, run_id: run.run_id, stage: "annotating", annotation_stage: "queued",
       pct: 0, status: "running", degraded: false,
     }),
     onError: (error, { jobId }) => setSourceRunError({
@@ -818,13 +839,25 @@ export function TemplateSlotEditor({
     // 发起 POST 期间关闭旧流，避免回放上一次终态误将新任务判为完成。
     if (!previewJobId || rerunMut.isPending) return;
     let ignore = false;
+    let lastRevision: number | undefined;
+    let refreshTimer: ReturnType<typeof setTimeout> | undefined;
     const unsubscribe = subscribeJobProgress(previewJobId, (event) => {
       if (ignore || event.job_id !== previewJobId || !event.annotation_stage) return;
       setSourceProgress(event);
-      if (event.status === "running") setSourceRunError(null);
+      if (event.status === "running") {
+        setSourceRunError(null);
+        if (event.data_revision !== undefined && event.data_revision !== lastRevision) {
+          lastRevision = event.data_revision;
+          if (!refreshTimer) refreshTimer = setTimeout(() => {
+            refreshTimer = undefined;
+            if (!ignore) setEvidenceRefresh((value) => value + 1);
+          }, 1500);
+        }
+      }
       const terminal = event.annotation_stage;
       if (!["complete", "failed", "paused", "interrupted"].includes(terminal)) return;
       ignore = true;
+      clearTimeout(refreshTimer);
       unsubscribe();
       setPauseRequestedJob(null);
       if (terminal !== "complete") {
@@ -847,7 +880,7 @@ export function TemplateSlotEditor({
       void queryClient.invalidateQueries({ queryKey: ["ast-coverage", previewJobId] });
       setEvidenceRefresh((value) => value + 1);
     });
-    return () => { ignore = true; unsubscribe(); };
+    return () => { ignore = true; clearTimeout(refreshTimer); unsubscribe(); };
   }, [activeDocIri, previewJobId, queryClient, rerunMut.isPending, sourceJobId]);
 
   const recognitionRunning = rerunMut.isPending ||
@@ -856,13 +889,6 @@ export function TemplateSlotEditor({
   const currentSourceProgress = sourceProgress?.job_id === previewJobId ? sourceProgress : null;
   const canResumeSource = !recognitionRunning && currentSourceProgress?.has_checkpoint &&
     currentSourceProgress.can_resume !== false;
-  useEffect(() => {
-    if (!recognitionRunning) return;
-    const timer = window.setInterval(() => setRunClock(Date.now() / 1000), 1000);
-    return () => window.clearInterval(timer);
-  }, [recognitionRunning]);
-  const sourceRunSeconds = currentSourceProgress?.started_at
-    ? Math.max(0, Math.floor(runClock - currentSourceProgress.started_at)) : null;
   const sourceProgressText = currentSourceProgress?.tasks_processed !== undefined
     ? `已处理 ${currentSourceProgress.tasks_processed} 项：成功 ${currentSourceProgress.tasks_completed ?? 0} 项，未通过 ${currentSourceProgress.tasks_failed ?? 0} 项；模型调用 ${currentSourceProgress.model_calls ?? 0} 次`
     : "正在解析文档并准备识别任务…";
@@ -1401,9 +1427,12 @@ export function TemplateSlotEditor({
     <div ref={containerRef} className="flex h-full min-h-0">
       {/* ── Left: 多页签预览面板 ──────────────────────────────────── */}
       <div className="flex-1 min-w-0 flex flex-col">
-        <Tabs value={leftTab} onValueChange={setLeftTab} className="flex flex-col h-full">
+        <Tabs value={leftTab} onValueChange={(value) => {
+          setLeftTab(value);
+          if (value === "report-preview") setReportOpened(true);
+        }} className="flex flex-col h-full">
           <div className="shrink-0 border-b px-4 pt-2">
-            <TabsList className="h-8">
+            <TabsList aria-label="模板工作区" className="h-8">
               {templateId && (
                 <TabsTrigger value="basic" className="gap-1.5 text-xs">
                   <Info className="size-3.5" />
@@ -1496,6 +1525,7 @@ export function TemplateSlotEditor({
                       <Label className="text-xs text-muted-foreground">模板名称</Label>
                       <Input
                         value={metaForm.name}
+                        aria-label="模板名称"
                         onChange={(e) =>
                           setMetaForm((f) => ({ ...f, name: e.target.value }))
                         }
@@ -1504,10 +1534,12 @@ export function TemplateSlotEditor({
                     <div className="space-y-1.5">
                       <Label className="text-xs text-muted-foreground">模板编号</Label>
                       <Input
-                        value={metaForm.docNo}
-                        onChange={(e) =>
-                          setMetaForm((f) => ({ ...f, docNo: e.target.value }))
-                        }
+                        value={outputEditor?.documentNo ?? metaForm.docNo}
+                        aria-label="模板编号"
+                        onChange={(e) => {
+                          if (outputEditor?.onDocumentNoChange) outputEditor.onDocumentNoChange(e.target.value);
+                          else setMetaForm((f) => ({ ...f, docNo: e.target.value }));
+                        }}
                       />
                     </div>
                     <div className="space-y-1.5">
@@ -1519,7 +1551,7 @@ export function TemplateSlotEditor({
                             if (id !== templateId) onVersionSwitch(id);
                           }}
                         >
-                          <SelectTrigger>
+                          <SelectTrigger aria-label="版本">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
@@ -1539,6 +1571,7 @@ export function TemplateSlotEditor({
                       <Label className="text-xs text-muted-foreground">责任人</Label>
                       <Input
                         value={metaForm.owner}
+                        aria-label="责任人"
                         onChange={(e) =>
                           setMetaForm((f) => ({ ...f, owner: e.target.value }))
                         }
@@ -1548,6 +1581,7 @@ export function TemplateSlotEditor({
                       <Label className="text-xs text-muted-foreground">状态</Label>
                       <Select
                         value={metaForm.status}
+                        disabled={!!outputEditor}
                         onValueChange={(v) =>
                           setMetaForm((f) => ({ ...f, status: v as AstTemplateStatus }))
                         }
@@ -1561,6 +1595,9 @@ export function TemplateSlotEditor({
                           <SelectItem value="archived">已归档</SelectItem>
                         </SelectContent>
                       </Select>
+                      {outputEditor && <p className="text-xs text-muted-foreground">
+                        在「AST模板定义」校验语义后发布新修订。
+                      </p>}
                     </div>
                     <div className="space-y-1.5">
                       <Label className="text-xs text-muted-foreground">最近更新</Label>
@@ -1575,10 +1612,11 @@ export function TemplateSlotEditor({
                         关联文档类型 <span className="text-destructive">*</span>
                       </Label>
                       <Select
-                        value={metaForm.iriPattern || undefined}
-                        onValueChange={(v) =>
-                          setMetaForm((f) => ({ ...f, iriPattern: v }))
-                        }
+                        value={(outputEditor?.documentClassIri ?? metaForm.iriPattern) || undefined}
+                        onValueChange={(v) => {
+                          if (outputEditor?.onDocumentClassChange) outputEditor.onDocumentClassChange(v);
+                          else setMetaForm((f) => ({ ...f, iriPattern: v }));
+                        }}
                       >
                         <SelectTrigger>
                           <SelectValue placeholder="选择文档类型…" />
@@ -1611,7 +1649,7 @@ export function TemplateSlotEditor({
                         </SelectContent>
                       </Select>
                       <p className="text-xs text-muted-foreground">
-                        仅「已建模本体关系」的类型可用于覆盖声明与 AI 分析
+                        仅「已建模本体关系」的类型可用于{outputEditor ? "语义绑定与来源匹配" : "覆盖声明与 AI 分析"}
                         {capableLabels && capableLabels.length > 0
                           ? `（当前：${capableLabels.join("、")}）`
                           : ""}
@@ -1621,7 +1659,7 @@ export function TemplateSlotEditor({
                     <div className="space-y-1.5">
                       <Label className="text-xs text-muted-foreground">IRI 匹配键</Label>
                       <Input
-                        value={metaForm.iriPattern ? docLocalName(metaForm.iriPattern) : "—"}
+                        value={(outputEditor?.documentClassIri ?? metaForm.iriPattern) ? docLocalName(outputEditor?.documentClassIri ?? metaForm.iriPattern) : "—"}
                         disabled
                         readOnly
                         className="text-muted-foreground"
@@ -1629,6 +1667,8 @@ export function TemplateSlotEditor({
                     </div>
                   </div>
                 </section>
+
+                {outputEditor?.basicInfo}
 
                 {/* ── 文档配置 ─────────────────────────────────────────── */}
                 <section className="grid grid-cols-2 gap-4">
@@ -2065,8 +2105,8 @@ export function TemplateSlotEditor({
                     key={jobId ?? "sample"}
                     content={previewContent}
                     highlightRef={activeRef}
-                    activeAnchor={activeAnchor}
-                    sourceUnavailable={sourceUnavailable}
+                    activeAnchor={outputEditor ? outputEditor.sampleAnchor : activeAnchor}
+                    sourceUnavailable={outputEditor ? false : sourceUnavailable}
                     fitTables
                   />
                 ) : (
@@ -2078,7 +2118,12 @@ export function TemplateSlotEditor({
             </div>
           </TabsContent>
 
-          <TabsContent
+          {outputEditor ? (
+            <TabsContent value="report-preview" forceMount={reportOpened ? true : undefined}
+              className="mt-0 flex-1 min-h-0 overflow-y-auto data-[state=inactive]:hidden">
+              {reportOpened && outputEditor.reportPreview(previewJobId ?? sourceJobId)}
+            </TabsContent>
+          ) : <TabsContent
             value="report-preview"
             className="mt-0 flex-1 min-h-0 overflow-y-auto"
           >
@@ -2275,7 +2320,7 @@ export function TemplateSlotEditor({
                 </div>
               </DialogContent>
             </Dialog>
-          </TabsContent>
+          </TabsContent>}
         </Tabs>
       </div>
 
@@ -2304,6 +2349,13 @@ export function TemplateSlotEditor({
             <GripVertical className="size-3 text-muted-foreground" />
           </div>
         </div>
+      )}
+
+      {outputEditor && (
+        <aside aria-label="输出模板定义" style={{ width: rightWidth }}
+          className={cn("shrink-0 flex-col min-h-0", leftTab === "template" ? "flex" : "hidden")}>
+          {outputEditor.sidebar}
+        </aside>
       )}
 
       {/* ── Right: 基本信息/报告预览 → 无（左侧全宽）；源文档 → 关系图谱；其余 → Slot 树 + 内联 AI ── */}
@@ -2339,10 +2391,27 @@ export function TemplateSlotEditor({
               </Button>
             </div>
             <p className="text-xs text-muted-foreground">
-              文档中识别的关系，点击端点可定位原文
+              按源文档类型的属性和关系展开，查看关联实体与原文依据
             </p>
             {currentSourceProgress?.tasks_processed !== undefined && (
               <p className="mt-1 text-xs text-muted-foreground" role="status">{sourceProgressText}</p>
+            )}
+            {recognitionRunning && (
+              <div className="mt-2 flex flex-wrap items-center gap-2 rounded border bg-muted/30 p-2">
+                <Loader2 className="size-5 animate-spin text-muted-foreground" />
+                <span className="text-xs text-muted-foreground">
+                  {pauseRequestedJob === previewJobId ? "正在取消请求并保存断点…" : "正在识别关系图谱…"}
+                </span>
+                <span className="px-4 text-center text-xs text-muted-foreground">{sourceProgressText}</span>
+                <RecognitionTimer startedAt={currentSourceProgress?.started_at} />
+                <ModelRequestProgress request={currentSourceProgress?.model_request}
+                  attempts={currentSourceProgress?.http_attempts} />
+                <Button variant="outline" size="sm"
+                  disabled={!previewJobId || rerunMut.isPending || pauseMut.isPending || pauseRequestedJob === previewJobId}
+                  onClick={() => previewJobId && pauseMut.mutate(previewJobId)}>
+                  {pauseRequestedJob === previewJobId ? "正在暂停…" : "暂停并保存结果"}
+                </Button>
+              </div>
             )}
             {canResumeSource && previewJobId && (
               <Button variant="outline" size="sm" className="mt-2"
@@ -2354,14 +2423,12 @@ export function TemplateSlotEditor({
               <p className="mt-1 text-xs text-destructive">{rerunSourceError}</p>
             )}
           </div>
-          {/* 单一滚动区归 RelationPanel 内部（flex-1 overflow-y-auto）；外层仅定界高度，
-              避免嵌套滚动条。 */}
+          {/* 识别结果与异议操作共用一棵关系树，保持单一滚动区。 */}
           <div className="relative min-h-0 flex-1 overflow-y-auto">
-            {previewJobId && <EvidenceReviewPanel key={`${previewJobId}:${templateId}`} jobId={previewJobId}
-              templateId={templateId} refreshKey={evidenceRefresh}
-              onSource={setSourceAnchor} onSnapshot={refreshEvidenceCoverage} />}
-            <p className="border-t p-3 text-xs text-muted-foreground">以下为抽取预览，不代表已提交事实。</p>
-            <RelationPanel
+            {previewJobId ? <EvidenceReviewPanel key={`${previewJobId}:${templateId}`} jobId={previewJobId}
+              templateId={templateId} refreshKey={evidenceRefresh} running={recognitionRunning}
+              onContinue={(continueOptions) => rerunMut.mutate({ jobId: previewJobId, continueOptions })}
+              onSource={setSourceAnchor} onSnapshot={refreshEvidenceCoverage} /> : <RelationPanel
               docClass={sourceDocClass}
               relationships={sourceRelationships}
               selectedSourceRef={selectedSourceRef}
@@ -2369,27 +2436,11 @@ export function TemplateSlotEditor({
               emptyMessage={recognitionRunning ? "正在识别实体、属性和关系…"
                 : docContent.kind === "ready" && docContent.previewOnly
                   ? "正文已加载，尚无完成的关系识别结果" : undefined}
-            />
-            {recognitionRunning && (
-              <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 bg-background/70 backdrop-blur-sm">
-                <Loader2 className="size-5 animate-spin text-muted-foreground" />
-                <span className="text-xs text-muted-foreground">
-                  {pauseRequestedJob === previewJobId ? "正在保存断点，当前处理结束后暂停…" : "正在识别关系图谱…"}
-                </span>
-                <span className="px-4 text-center text-xs text-muted-foreground">{sourceProgressText}</span>
-                {sourceRunSeconds !== null && <span className="text-xs text-muted-foreground">
-                  本次运行 {Math.floor(sourceRunSeconds / 60)} 分 {sourceRunSeconds % 60} 秒
-                </span>}
-                <Button variant="outline" size="sm"
-                  disabled={!previewJobId || rerunMut.isPending || pauseMut.isPending || pauseRequestedJob === previewJobId}
-                  onClick={() => previewJobId && pauseMut.mutate(previewJobId)}>
-                  {pauseRequestedJob === previewJobId ? "正在暂停…" : "暂停并保存结果"}
-                </Button>
-              </div>
-            )}
+            />}
+
           </div>
         </div>
-      ) : hasRightPanel ? (
+      ) : hasRightPanel && !outputEditor ? (
       <div style={{ width: rightWidth }} className="flex shrink-0 flex-col min-h-0">
         <div className="shrink-0 border-b px-4 py-3 space-y-2">
           <div className="flex items-center gap-2">

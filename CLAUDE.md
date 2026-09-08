@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan
-at specs/019-evidence-semantic-extraction/plan.md
+at specs/020-report-output-semantics/plan.md
 <!-- SPECKIT END -->
 
 

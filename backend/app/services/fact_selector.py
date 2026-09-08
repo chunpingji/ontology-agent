@@ -167,8 +167,8 @@ class FactSelector:
         applicable_at=None,
     ):
         steps = predicate_steps(path)
-        if not steps:
-            raise ValueError("selection requires a complete predicate path")
+        if not steps and (subject_iri not in self.entities or not range_class_iri):
+            raise ValueError("direct selection requires an exact subject and class")
         if len(steps) > 16:
             raise ValueError("selection path exceeds traversal budget")
         conflicts = self.conflicts(applicable_at)

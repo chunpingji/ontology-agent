@@ -8,6 +8,7 @@ from app.models.entity_shadow import EntityShadow
 from app.models.evidence import *  # noqa: F401,F403
 from app.models.extraction import *  # noqa: F401,F403
 from app.models.integration import *  # noqa: F401,F403
+from app.models.model_request import *  # noqa: F401,F403
 from app.models.ontology_meta import (
     AppRole,
     AppUser,
@@ -31,6 +32,7 @@ from app.models.reasoning import (
     ElectronicSignature,
     ReasoningExecution,
 )
+from app.models.reporting import *  # noqa: F401,F403
 
 __all__ = [
     "EntityShadow",

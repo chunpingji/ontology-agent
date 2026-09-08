@@ -5,6 +5,8 @@ from pathlib import Path
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from pydantic import ValidationError
+from sqlalchemy.exc import IntegrityError
 
 from app.api import (
     actions,
@@ -21,12 +23,14 @@ from app.api import (
     ontology,
     pde_conflict,
     reasoning,
+    report_runs,
     reports,
     system_config,
 )
 from app.config import settings
 from app.dependencies import identity_from_authorization, identity_from_token
 from app.services.ontology_engine import ontology_engine
+from app.services.reporting.template_v2 import ReportingError
 
 logger = logging.getLogger(__name__)
 
@@ -202,6 +206,33 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+
+@app.exception_handler(ReportingError)
+async def reporting_error(request: Request, exc: ReportingError):
+    return JSONResponse(status_code=exc.status, content={"detail": exc.detail})
+
+
+@app.exception_handler(ValidationError)
+async def contract_validation_error(request: Request, exc: ValidationError):
+    return JSONResponse(
+        status_code=422,
+        content={
+            "detail": {
+                "code": "CONTRACT_SCHEMA_INVALID",
+                "diagnostics": [
+                    {"schema_path": ".".join(map(str, e["loc"])), "message": e["msg"]}
+                    for e in exc.errors()
+                ],
+            }
+        },
+    )
+
+
+@app.exception_handler(IntegrityError)
+async def revision_conflict(request: Request, exc: IntegrityError):
+    return JSONResponse(status_code=409, content={"detail": {"code": "RESOURCE_REVISION_CONFLICT"}})
+
+
 # API 访问控制（FR-033）：`auth_required=True` 时对 `/api/*` 强制校验 Bearer 令牌，
 # 放行预检 OPTIONS、健康检查与登录端点。默认关——为 False 时完全放行（沿用信任头旧行为，
 # 200+ 头认证测试零回归）。此中间件先注册 → 内层；CORS 随后注册 → 最外层，保证 401
@@ -214,11 +245,7 @@ async def enforce_auth(request: Request, call_next):
     if not settings.auth_required:
         return await call_next(request)
     path = request.url.path
-    if (
-        request.method == "OPTIONS"
-        or not path.startswith("/api/")
-        or path in _AUTH_ALLOWLIST_EXACT
-    ):
+    if request.method == "OPTIONS" or not path.startswith("/api/") or path in _AUTH_ALLOWLIST_EXACT:
         return await call_next(request)
     identity = identity_from_authorization(
         request.headers.get("authorization")
@@ -253,6 +280,7 @@ app.include_router(kg.router, prefix="/api/kg", tags=["knowledge-graph"])
 app.include_router(integration.router, prefix="/api/integration", tags=["integration"])
 app.include_router(actions.router, prefix="/api/actions", tags=["actions"])
 app.include_router(reports.router, prefix="/api/reports", tags=["reports"])
+app.include_router(report_runs.router, prefix="/api", tags=["reporting-v2"])
 app.include_router(compliance.router, prefix="/api/compliance", tags=["compliance"])
 app.include_router(system_config.router, prefix="/api/system-config", tags=["system-config"])
 app.include_router(ast_templates.router, prefix="/api/ast-templates", tags=["ast-templates"])

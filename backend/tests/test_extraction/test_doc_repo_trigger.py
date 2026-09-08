@@ -1,10 +1,4 @@
-"""US2 抽取触发编排（T021；FR-007/Q1 手动发起）。
-
-[content-extraction C1](../../../specs/007-rnd-document-fact-source/contracts/content-extraction-orchestration.md)：
-文档 approved/新版本事件 → 编排**入待抽取队列**（`ExtractionJob(source_type='doc_repo',
-status='pending', source_config={doc_ref,content_ref})`）；入队**不自动发起**抽取管线；
-由授权角色经手动发起端点启动 `run_extraction_pipeline`；新旧版本溯源可区分。
-"""
+"""文档入队不自动抽取；授权启动使用显式字段映射。"""
 
 from __future__ import annotations
 
@@ -18,11 +12,17 @@ DOC_IRI = f"{FACTS}doc-TTR-001"  # 稳定文档个体 IRI（溯源锚点，§4�
 
 def _doc_config(client) -> str:
     """创建一个 doc_repo 抽取配置，返回 config_id。"""
-    r = client.post("/api/extraction/configs", json={
-        "name": "技术转移报告内部实体",
-        "target_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/DrugProduct",
-        "source_type": "doc_repo",
-    })
+    r = client.post(
+        "/api/extraction/configs",
+        json={
+            "name": "技术转移报告内部实体",
+            "target_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/DrugProduct",
+            "source_type": "doc_repo",
+            "column_mapping": {
+                "成分": "https://ontology.pharma-gmp.cn/slpra/drug/activeIngredient"
+            },
+        },
+    )
     assert r.status_code == 201, r.text
     return r.json()["id"]
 
@@ -36,7 +36,7 @@ def _enqueue(client, headers, cfg_id, *, doc_ref=DOC_IRI, content_ref="edms://do
 
 
 def test_approved_event_enqueues_pending_doc_repo_job(client, analyst_headers, db):
-    """C1.1：approved 事件入队 → 创建 pending 的 doc_repo 作业，source_config 携 doc_ref/content_ref。"""
+    """入队创建 pending 作业，保留文档及内容引用。"""
     cfg_id = _doc_config(client)
     r = _enqueue(client, analyst_headers, cfg_id)
     assert r.status_code == 202, r.text
@@ -58,8 +58,9 @@ def test_enqueue_does_not_auto_start_pipeline(client, analyst_headers, db):
     final = client.get(f"/api/extraction/jobs/{job['id']}").json()
     assert final["status"] == "pending"  # 未被自动推进
     assert final["total_candidates"] == 0
-    cands = db.query(ExtractionCandidate).filter(
-        ExtractionCandidate.job_id == UUID(job["id"])).all()
+    cands = (
+        db.query(ExtractionCandidate).filter(ExtractionCandidate.job_id == UUID(job["id"])).all()
+    )
     assert cands == []  # 无任何候选 → 管线确未运行
 
 

@@ -5,17 +5,21 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
-import re
 import shutil
 import tempfile
 from pathlib import Path
 from uuid import UUID, uuid4
 
-from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, HTTPException, UploadFile
+from fastapi import APIRouter, BackgroundTasks, Depends, File, HTTPException, UploadFile
 from sqlalchemy.orm import Session
 
 from app.db import get_db
-from app.dependencies import ROLE_SENIOR_ANALYST, get_ontology_engine, require_role
+from app.dependencies import (
+    ROLE_SENIOR_ANALYST,
+    get_current_user,
+    get_ontology_engine,
+    require_role,
+)
 from app.models.extraction import AstTemplate, AstTemplateTrainingPair, ExtractionJob
 from app.schemas.extraction import (
     AstTemplateCreate,
@@ -33,7 +37,9 @@ from app.schemas.extraction import (
     TrainingPairResponse,
 )
 from app.services import audit
-from app.services.reporting.ast_template import ReportTemplate, resolve_template
+from app.services.reporting.ast_template import ReportTemplate
+from app.services.reporting.report_run_service import schema_hash
+from app.services.reporting.template_v2 import ReportingError, TemplateV2
 
 router = APIRouter()
 
@@ -66,6 +72,15 @@ def _best_effort_unlink(path: str | None) -> None:
 
 
 def _count_slots(schema_json: dict) -> int:
+    if schema_json.get("schema_version") == 2:
+        from app.services.reporting.template_compiler import walk_groups
+
+        template = TemplateV2.model_validate(schema_json)
+        return sum(
+            len(group.units)
+            for section in template.sections
+            for group, _ in walk_groups(section.groups)
+        )
     count = 0
     for sec in schema_json.get("sections", []):
         for grp in sec.get("groups", []):
@@ -90,35 +105,11 @@ def _template_response(t: AstTemplate) -> AstTemplateResponse:
         default_source_job_id=t.default_source_job_id,
         created_at=t.created_at,
         updated_at=t.updated_at,
+        schema_version=t.schema_json.get("schema_version", 1),
+        template_family_id=t.template_family_id or str(t.id),
+        revision_no=t.revision_no or 1,
+        schema_hash=schema_hash(t.schema_json),
     )
-
-
-def _ensure_default_source_job(row: AstTemplate, db: Session, engine, background: BackgroundTasks):
-    """Lazily create an ExtractionJob for a template whose default source was uploaded before job-creation code."""
-    from app.api.extraction import _precompute_annotation_bg
-
-    suffix = Path(row.default_source_path).suffix.lower()
-    source_type = "excel" if suffix in (".xlsx", ".xls") else "word"
-    job = ExtractionJob(
-        id=uuid4(),
-        source_type=source_type,
-        source_filename=row.default_source_filename or Path(row.default_source_path).name,
-        document_path=row.default_source_path,
-        source_config={"mode": "template_default", "template_id": str(row.id),
-                       "doc_class_iri": row.iri_pattern},
-        status="running",
-    )
-    db.add(job)
-    # Insert the referenced job before updating the FK; both stay in this transaction.
-    db.flush()
-    row.default_source_job_id = job.id
-    db.commit()
-    db.refresh(row)
-    if source_type in ("word", "excel"):
-        background.add_task(_precompute_annotation_bg, job.id, engine, db)
-
-
-# ── Template CRUD (T009) ────────────────────────────────────────────────
 
 
 @router.get("", response_model=list[AstTemplateResponse])
@@ -146,13 +137,6 @@ def get_template(
     if not row:
         raise HTTPException(404, "模板不存在")
 
-    # Lazy job creation: templates uploaded before the job-creation code
-    # have default_source_path but no default_source_job_id.
-    if row.default_source_path and not row.default_source_job_id:
-        src_path = Path(row.default_source_path)
-        if src_path.is_file():
-            _ensure_default_source_job(row, db, engine, background)
-
     resp = _template_response(row)
     pairs = sorted(row.training_pairs, key=lambda p: p.created_at)
     # 同名模板的所有版本（供编辑器切换历史版本）。
@@ -172,9 +156,7 @@ def get_template(
         "sample_text": row.sample_text,
         "sample_content_json": row.sample_content_json,
         "sample_analysis": row.sample_analysis,
-        "training_pairs": [
-            TrainingPairResponse.model_validate(p).model_dump() for p in pairs
-        ],
+        "training_pairs": [TrainingPairResponse.model_validate(p).model_dump() for p in pairs],
         "versions": versions,
     }
 
@@ -184,9 +166,12 @@ def create_template(
     req: AstTemplateCreate,
     db: Session = Depends(get_db),
     identity: object = Depends(_maintainer),
+    engine: object = Depends(get_ontology_engine),
 ):
     try:
-        ReportTemplate.model_validate(req.schema_json)
+        (
+            TemplateV2 if req.schema_json.get("schema_version") == 2 else ReportTemplate
+        ).model_validate(req.schema_json)
     except Exception as exc:
         raise HTTPException(422, f"Template validation failed: {exc}") from exc
 
@@ -196,14 +181,43 @@ def create_template(
         .first()
     )
     if existing:
-        raise HTTPException(409, f"Template 'name={req.name}, version={req.version}' already exists")
+        raise HTTPException(
+            409, f"Template 'name={req.name}, version={req.version}' already exists"
+        )
 
+    identity_id = uuid4()
+    schema = req.schema_json
+    if schema.get("schema_version") == 2:
+        schema = (
+            TemplateV2.model_validate(schema)
+            .model_copy(
+                update={
+                    "template_revision_id": str(identity_id),
+                    "template_family_id": str(identity_id),
+                    "revision_no": 1,
+                }
+            )
+            .model_dump(mode="json")
+        )
+    if schema.get("schema_version") == 2:
+        from app.services.extraction.extraction_tasks import semantic_schema_from_engine
+        from app.services.reporting.template_preparation import prepare_template
+
+        schema = prepare_template(
+            db, schema, document_class=req.iri_pattern,
+            classes=lambda: semantic_schema_from_engine(engine),
+        ).model_dump(mode="json")
     row = AstTemplate(
+        id=identity_id,
         name=req.name,
         version=req.version,
         doc_no=req.doc_no,
         iri_pattern=req.iri_pattern,
-        schema_json=req.schema_json,
+        schema_json=schema,
+        schema_version=schema.get("schema_version", 1),
+        template_family_id=str(identity_id),
+        revision_no=1,
+        schema_hash=schema_hash(schema),
         sample_text=req.sample_text,
         sample_content_json=req.sample_content_json,
         sample_analysis=req.sample_analysis or (req.sample_content_json or {}).get("analysis"),
@@ -211,7 +225,8 @@ def create_template(
     )
     db.add(row)
     audit.append(
-        db, "template.create",
+        db,
+        "template.create",
         actor=getattr(identity, "username", "system"),
         entity_iri=str(row.id),
         details={"name": req.name, "version": req.version},
@@ -232,6 +247,8 @@ def update_template(
     old = db.get(AstTemplate, template_id)
     if not old:
         raise HTTPException(404, "模板不存在")
+    if old.schema_json.get("schema_version") == 2 or req.schema_json.get("schema_version") == 2:
+        raise ReportingError("VERSIONED_REVISION_ENDPOINT_REQUIRED", status=409)
 
     try:
         ReportTemplate.model_validate(req.schema_json)
@@ -246,14 +263,16 @@ def update_template(
         .first()
     )
     if existing and existing.id != old.id:
-        raise HTTPException(409, f"Version '{new_version}' already exists for template '{old.name}'")
+        raise HTTPException(
+            409, f"Version '{new_version}' already exists for template '{old.name}'"
+        )
 
     row = AstTemplate(
         name=old.name,
         version=new_version,
         doc_no=old.doc_no,
         iri_pattern=old.iri_pattern,
-        status=old.status,
+        status="draft",
         schema_json=req.schema_json,
         sample_text=old.sample_text,
         sample_content_json=old.sample_content_json,
@@ -268,7 +287,8 @@ def update_template(
     )
     db.add(row)
     audit.append(
-        db, "template.update",
+        db,
+        "template.update",
         actor=getattr(identity, "username", "system"),
         entity_iri=str(row.id),
         details={"name": old.name, "from_version": old.version, "to_version": new_version},
@@ -280,9 +300,8 @@ def update_template(
 
 
 def _auto_version(current: str) -> str:
-    m = re.match(r"^v(\d+)$", current)
-    if m:
-        return f"v{int(m.group(1)) + 1}"
+    if current.startswith("v") and current[1:].isascii() and current[1:].isdigit():
+        return f"v{int(current[1:]) + 1}"
     return f"{current}.1"
 
 
@@ -304,6 +323,18 @@ def update_template_meta(
     row = db.get(AstTemplate, template_id)
     if not row:
         raise HTTPException(404, "模板不存在")
+
+    if row.schema_json.get("schema_version") == 2 and (
+        req.status == "published"
+        or row.status == "published"
+        and any(getattr(req, key) is not None for key in ("doc_no", "iri_pattern", "status"))
+    ):
+        raise ReportingError("COMPILED_PUBLICATION_REQUIRED", status=409)
+
+    if (row.schema_json.get("schema_version") == 2 and req.iri_pattern is not None
+            and req.iri_pattern != row.iri_pattern):
+        raise ReportingError("VERSIONED_REVISION_ENDPOINT_REQUIRED",
+                             "关联文档类型应随模板数据来源保存为新修订", status=409)
 
     changed: dict = {}
     if req.name is not None and req.name != row.name:
@@ -337,7 +368,8 @@ def update_template_meta(
 
     if changed:
         audit.append(
-            db, "template.meta_update",
+            db,
+            "template.meta_update",
             actor=getattr(identity, "username", "system"),
             entity_iri=str(row.id),
             details={"name": row.name, "version": row.version, **changed},
@@ -359,20 +391,36 @@ def delete_template(
         raise HTTPException(404, "模板不存在")
     if row.is_default:
         raise HTTPException(400, "Cannot delete the default template")
+    from app.models.reporting import TemplateCompilation
+
+    if (
+        row.status in {"published", "archived"}
+        or db.query(TemplateCompilation)
+        .filter_by(
+            template_id=row.id,
+        )
+        .first()
+    ):
+        raise ReportingError("TEMPLATE_HISTORY_IMMUTABLE", status=409)
 
     # 提交前先算引用计数（此刻 row 仍在库），提交成功后再 best-effort 删文件：先删后提交会在
     # 提交失败/回滚时留下断引用（DB 仍指向已删文件）。
     orphan_sample = None
     if row.sample_docx_path:
-        siblings = db.query(AstTemplate).filter(
-            AstTemplate.sample_docx_path == row.sample_docx_path,
-            AstTemplate.id != row.id,
-        ).count()
+        siblings = (
+            db.query(AstTemplate)
+            .filter(
+                AstTemplate.sample_docx_path == row.sample_docx_path,
+                AstTemplate.id != row.id,
+            )
+            .count()
+        )
         if siblings == 0:
             orphan_sample = row.sample_docx_path
 
     audit.append(
-        db, "template.delete",
+        db,
+        "template.delete",
         actor=getattr(identity, "username", "system"),
         entity_iri=str(row.id),
         details={"name": row.name, "version": row.version},
@@ -397,7 +445,8 @@ def set_default_template(
     db.query(AstTemplate).filter(AstTemplate.is_default.is_(True)).update({"is_default": False})
     row.is_default = True
     audit.append(
-        db, "template.set_default",
+        db,
+        "template.set_default",
         actor=getattr(identity, "username", "system"),
         entity_iri=str(row.id),
         details={"name": row.name, "version": row.version},
@@ -428,6 +477,8 @@ async def replace_sample(
     """替换既有模板的默认示例文档（固化输出 section / 格式）。支持 .doc（后端转 .docx）
     / .docx，解析为忠于原文结构的 tiptap 并同步 sample_text，供 AI 插槽建议与忠实预览。"""
     row = _get_template_or_404(template_id, db)
+    if row.status in {"published", "archived"}:
+        raise ReportingError("TEMPLATE_REVISION_REQUIRED", status=409)
     ext = Path(file.filename or "").suffix.lower()
     if ext not in (".doc", ".docx"):
         raise HTTPException(422, "仅支持 .doc / .docx 文件")
@@ -464,7 +515,8 @@ async def replace_sample(
     row.sample_text = plain_text
     try:
         audit.append(
-            db, "template.sample_replace",
+            db,
+            "template.sample_replace",
             actor=getattr(identity, "username", "system"),
             entity_iri=str(row.id),
             details={"name": row.name, "version": row.version, "filename": file.filename},
@@ -474,7 +526,7 @@ async def replace_sample(
     except Exception:
         # 提交失败：刚落盘的新文件此刻无任何 DB 引用（事务已回滚），必须删掉，否则形成孤儿。
         # rollback 与 unlink 各自吞异常：rollback 失败（如 DB 断连——commit/rollback 连环失败的
-        # 典型场景）不得跳过文件清理而残留孤儿；unlink 失败不得掩盖原始 commit 异常。最后重抛原异常。
+        # 典型场景）也不得跳过文件清理；unlink 失败不得掩盖原始 commit 异常。
         try:
             db.rollback()
         except Exception:  # pragma: no cover - 防御性：rollback 失败仅记录
@@ -500,8 +552,11 @@ async def replace_sample(
                 Path(old_path).unlink(missing_ok=True)
         except Exception:
             _log.warning("替换示例后清理旧文件失败（已忽略）：%s", old_path, exc_info=True)
-    return {"content_json": content_json, "plain_text": plain_text,
-            "analysis": content_json.get("analysis")}
+    return {
+        "content_json": content_json,
+        "plain_text": plain_text,
+        "analysis": content_json.get("analysis"),
+    }
 
 
 @router.post("/{template_id}/default-source", response_model=AstTemplateResponse)
@@ -514,7 +569,7 @@ async def upload_default_source(
     identity: object = Depends(_maintainer),
 ):
     """上传/替换默认源文件，同时创建 ExtractionJob 以驱动标注管线。"""
-    from app.api.extraction import _precompute_annotation_bg
+    from app.api.extraction import _enqueue_annotation
 
     row = _get_template_or_404(template_id, db)
     suffix = Path(file.filename or "").suffix.lower()
@@ -523,8 +578,6 @@ async def upload_default_source(
 
     # Copy-on-write：新上传落到唯一路径（不原地覆盖旧源），转换/落盘全部成功、DB commit 之后
     # 才清理旧文件与旧缓存。先删后写（原实现）会在转换失败时永久丢失旧默认源——回归缺陷，已修。
-    old_source_path = row.default_source_path
-    old_job_id = row.default_source_job_id
 
     _UPLOADS.mkdir(parents=True, exist_ok=True)
     raw = await file.read()
@@ -556,8 +609,11 @@ async def upload_default_source(
         source_type=source_type,
         source_filename=file.filename,
         document_path=saved_path,
-        source_config={"mode": "template_default", "template_id": str(template_id),
-                       "doc_class_iri": row.iri_pattern},
+        source_config={
+            "mode": "template_default",
+            "template_id": str(template_id),
+            "doc_class_iri": row.iri_pattern,
+        },
         status="running",
     )
     db.add(job)
@@ -566,7 +622,8 @@ async def upload_default_source(
 
     try:
         audit.append(
-            db, "template.default_source_upload",
+            db,
+            "template.default_source_upload",
             actor=getattr(identity, "username", "system"),
             entity_iri=str(row.id),
             details={"name": row.name, "filename": file.filename},
@@ -584,13 +641,10 @@ async def upload_default_source(
     db.refresh(row)
 
     # 提交成功后再清理旧资源（best-effort）：旧源文件（若与新路径不同）与旧标注缓存。
-    if old_source_path and old_source_path != saved_path:
-        _best_effort_unlink(old_source_path)
-    if old_job_id:
-        _best_effort_unlink(str(_UPLOADS / f"{old_job_id}.annotated.json"))
 
     if source_type in ("word", "excel"):
-        background.add_task(_precompute_annotation_bg, job.id, engine, db)
+        _enqueue_annotation(job.id, background, engine, db, mode="start",
+                            actor=getattr(identity, "username", "system"))
 
     return _template_response(row)
 
@@ -602,11 +656,6 @@ def delete_default_source(
     identity: object = Depends(_maintainer),
 ):
     row = _get_template_or_404(template_id, db)
-    if row.default_source_path:
-        Path(row.default_source_path).unlink(missing_ok=True)
-    if row.default_source_job_id:
-        old_cache = _UPLOADS / f"{row.default_source_job_id}.annotated.json"
-        old_cache.unlink(missing_ok=True)
     row.default_source_path = None
     row.default_source_filename = None
     row.default_source_job_id = None
@@ -654,7 +703,8 @@ async def add_training_pair(
         pair.report_filename = report_file.filename
         pair.report_path = await _save_upload(report_file, f"train_{pair.id}_report")
     audit.append(
-        db, "template.training_pair_add",
+        db,
+        "template.training_pair_add",
         actor=getattr(identity, "username", "system"),
         entity_iri=str(template_id),
         details={"source": pair.source_filename, "report": pair.report_filename},
@@ -716,8 +766,11 @@ async def parse_sample(
     if not plain_text.strip():
         raise HTTPException(422, "无法从文档中提取文本内容")
 
-    return {"content_json": content_json, "plain_text": plain_text,
-            "analysis": content_json.get("analysis")}
+    return {
+        "content_json": content_json,
+        "plain_text": plain_text,
+        "analysis": content_json.get("analysis"),
+    }
 
 
 # ── 013 Suggest Slots (AI-assisted template design) ────────────────────
@@ -731,7 +784,6 @@ def suggest_slots_endpoint(
     engine: object = Depends(get_ontology_engine),
 ):
     from app.config import settings
-
     from app.services.llm.local_client import get_local_llm
 
     client = get_local_llm() if settings.llm_suggest_slots_enabled else None
@@ -814,121 +866,24 @@ def generate_section_prompt_endpoint(
     req: GenerateSectionPromptRequest,
     identity: object = Depends(_maintainer),
 ):
-    """Derive a 行文 Prompt for one section from the sample + its slot labels.
-
-    Design-time AI assist (mirrors suggest-slots gating). The returned prompt is
-    saved into the section's ``prompt`` field; at report time the generation
-    engine calls the LLM with it to fuse the section's slot values into prose.
-    """
-    from app.config import settings
-
-    if not settings.llm_suggest_slots_enabled:
-        raise HTTPException(503, "行文 Prompt 生成未启用（llm_suggest_slots_enabled=False）")
-
-    from app.services.llm.local_client import get_local_llm
-
-    client = get_local_llm()
-    if client is None:
-        raise HTTPException(503, "本地 LLM 不可用，请检查 local_llm_enabled 和端点配置")
-
-    from app.services.reporting.narrative_generator import generate_section_prompt
-
-    prompt = generate_section_prompt(
-        client,
-        section_title=req.section_title,
-        slot_labels=req.slot_labels,
-        sample_text=req.sample_text,
+    raise ReportingError(
+        "STRUCTURED_OUTPUT_PROMPT_REQUIRED",
+        status=409,
+        message="Configure authorized InputRefs and a versioned prompt policy.",
     )
-    if not prompt:
-        raise HTTPException(502, "行文 Prompt 生成失败，请检查本地 LLM 日志")
-    return GenerateSectionPromptResponse(prompt=prompt)
 
 
-@router.post(
-    "/preview-section-narrative", response_model=PreviewSectionNarrativeResponse
-)
+@router.post("/preview-section-narrative", response_model=PreviewSectionNarrativeResponse)
 def preview_section_narrative_endpoint(
     req: PreviewSectionNarrativeRequest,
     identity: object = Depends(_maintainer),
     db: Session = Depends(get_db),
 ):
-    """Preview the prose a section's (possibly-unsaved) 行文 Prompt produces, from a
-    matched document's REAL extracted facts — the same report-time narrative path.
-
-    Design-time AI assist (mirrors suggest-slots / generate-section-prompt gating).
-    Facts come from the job's annotation cache; the deterministic risk levels + the
-    coverage status the real report would quote are recomputed (no LLM) and injected
-    read-only, so preview prose is faithful to the rendered report.
-    """
-    from app.config import settings
-
-    if not settings.llm_suggest_slots_enabled:
-        raise HTTPException(503, "行文预览未启用（llm_suggest_slots_enabled=False）")
-
-    if not req.prompt.strip():
-        raise HTTPException(400, "行文 Prompt 为空，无法预览")
-
-    from app.services.llm.local_client import get_local_llm
-
-    client = get_local_llm()
-    if client is None:
-        raise HTTPException(503, "本地 LLM 不可用，请检查 local_llm_enabled 和端点配置")
-
-    # 真实事实：复用抽取管线的 annotation 缓存（与报告同源）。
-    cache_path = _annotation_cache_path(req.job_id)
-    if not cache_path.exists():
-        raise HTTPException(422, "文档未标注，请先在「源文档」页签关联并标注该文档")
-    result = json.loads(cache_path.read_text(encoding="utf-8"))
-    edges = result.get("relationships", [])
-
-    # 当前编辑的模板 → 本节结构；注入未保存的行文 Prompt。
-    row = db.get(AstTemplate, req.template_id)
-    if row is None:
-        raise HTTPException(404, "模板不存在")
-    template = ReportTemplate.model_validate(row.schema_json)
-    section = next(
-        (s for s in template.sections if s.section_id == req.section_id), None
+    raise ReportingError(
+        "STRUCTURED_OUTPUT_PREVIEW_REQUIRED",
+        status=409,
+        message="Use /api/report-previews with a V2 template revision.",
     )
-    if section is None:
-        raise HTTPException(404, "分节不存在")
-    section = section.model_copy(update={"prompt": req.prompt})
-
-    # 确定性上下文（无 LLM）：真实报告会原样引用的风险等级 + 覆盖状态。
-    # assess_deterministic 回传 Gap-B 富集后的 edges（源文档关系 + 模板声明的产品报告
-    # 自身关系，如 hasAssessmentTeam/hasApproverTeam → 评估小组/审批人小组 mock 名册），
-    # 预览用同一份 edges 走叙述路径，保证与真实报告逐字节同源。
-    from app.services.reporting.risk_report_generator import RiskReportGenerator
-
-    job = db.get(ExtractionJob, req.job_id)
-    if job is not None:
-        from app.api.extraction import _risk_report_source_document
-
-        source_filename, source_document_ref = _risk_report_source_document(job, db)
-    else:
-        source_filename = result.get("filename") or ""
-        source_document_ref = f"urn:slpra:extraction-job:{req.job_id}"
-    rows, manifest, edges = RiskReportGenerator(db, template).assess_deterministic(
-        edges,
-        source_filename=source_filename,
-        source_document_ref=source_document_ref,
-    )
-
-    from app.services.ontology_engine import get_loaded_engine
-    from app.services.reporting.narrative_generator import preview_section_narrative
-
-    # 与 assess_deterministic 用同一个已加载引擎，保证预览的 coverage 范围限定与真实报告逐字节一致
-    # （引擎未加载时 preview_section_narrative 走 local-name 子串回退，评估/审批小组仍能正确分离）。
-    narrative = preview_section_narrative(
-        edges,
-        section,
-        client,
-        assessment_rows=rows,
-        manifest=manifest,
-        engine=get_loaded_engine(),
-    )
-    if not narrative:
-        raise HTTPException(502, "行文预览生成失败：本地 LLM 无输出，请检查日志")
-    return PreviewSectionNarrativeResponse(narrative=narrative)
 
 
 # ── Template match (T011) ───────────────────────────────────────────────
@@ -942,20 +897,14 @@ def _annotation_cache_path(job_id) -> Path:
 def match_template_for_job(
     job_id: UUID,
     db: Session = Depends(get_db),
+    identity: object = Depends(get_current_user),
 ):
-    cache_path = _annotation_cache_path(job_id)
-    if not cache_path.exists():
-        raise HTTPException(422, "文档未分类，无法匹配模板")
+    from app.services.reporting.legacy_facade import selected_template
 
-    result = json.loads(cache_path.read_text(encoding="utf-8"))
-    doc_class = result.get("doc_class")
-    doc_class_iri = doc_class.get("doc_class_iri") if doc_class else None
-
-    tpl, match_source, db_id = resolve_template(doc_class_iri, db)
-
+    job, template = selected_template(db, job_id)
     return TemplateMatchResponse(
-        template_id=db_id or UUID(int=0),
-        template_name=getattr(tpl, "template_id", ""),
-        template_version=getattr(tpl, "revision", ""),
-        match_source=match_source,
+        template_id=template.id,
+        template_name=template.name,
+        template_version=template.version,
+        match_source="selected" if (job.source_config or {}).get("template_id") else "default",
     )

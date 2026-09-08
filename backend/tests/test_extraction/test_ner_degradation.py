@@ -1,6 +1,6 @@
 """集成测试：本地 NER 不可用时优雅降级（008 Polish T026）。
 
-覆盖 [contracts/offline-extraction-invariants.md](../../../specs/008-gliner-ner-extraction/contracts/offline-extraction-invariants.md)
+覆盖 specs/008-gliner-ner-extraction/contracts/offline-extraction-invariants.md
 O6–O8 / FR-012 / SC-006——这里走**真实** `settings.gliner_extraction_enabled=False`
 门控（`get_gliner_extractor()` 返回 `None`），与 US2/US3 直接注入桩的测试互补：
 
@@ -53,21 +53,31 @@ class _Engine:
     def __getattr__(self, name):
         def _noop(*a, **k):
             return None
+
         return _noop
 
 
 def _drug_engine():
-    return _Engine([
-        {"iri": IRI_ACTIVE, "name": "activeIngredient", "label": "活性成分", "range": ["string"]},
-        {"iri": IRI_DOSAGE, "name": "dosageForm", "label": "剂型", "range": ["string"]},
-    ])
+    return _Engine(
+        [
+            {
+                "iri": IRI_ACTIVE,
+                "name": "activeIngredient",
+                "label": "活性成分",
+                "range": ["string"],
+            },
+            {"iri": IRI_DOSAGE, "name": "dosageForm", "label": "剂型", "range": ["string"]},
+        ]
+    )
 
 
 def _equip_engine():
-    return _Engine([
-        {"iri": IRI_NAME, "name": "equipmentName", "label": "设备名称", "range": ["string"]},
-        {"iri": IRI_POWER, "name": "ratedPower", "label": "额定功率", "range": ["string"]},
-    ])
+    return _Engine(
+        [
+            {"iri": IRI_NAME, "name": "equipmentName", "label": "设备名称", "range": ["string"]},
+            {"iri": IRI_POWER, "name": "ratedPower", "label": "额定功率", "range": ["string"]},
+        ]
+    )
 
 
 def _offline(monkeypatch):
@@ -79,8 +89,9 @@ def _offline(monkeypatch):
 
 
 def _job(db, source_type, filename):
-    job = ExtractionJob(source_type=source_type, source_filename=filename,
-                        source_config={}, status="pending")
+    job = ExtractionJob(
+        source_type=source_type, source_filename=filename, source_config={}, status="pending"
+    )
     db.add(job)
     db.commit()
     db.refresh(job)
@@ -88,8 +99,7 @@ def _job(db, source_type, filename):
 
 
 def _candidates(db, job):
-    return db.query(ExtractionCandidate).filter(
-        ExtractionCandidate.job_id == job.id).all()
+    return db.query(ExtractionCandidate).filter(ExtractionCandidate.job_id == job.id).all()
 
 
 # --- O6/O7/O8 Word：NER 关 → 仍成功、prose 空、不 degraded ---------------------
@@ -101,8 +111,12 @@ def test_word_ner_disabled_succeeds_no_prose_not_degraded(db, monkeypatch, tmp_p
     path = tmp_path / "SOP.docx"
     doc.save(path)
 
-    cfg = ExtractionConfig(name="药物", target_class_iri=DRUG, source_type="word",
-                           column_mapping={"活性成分": IRI_ACTIVE, "剂型": IRI_DOSAGE})
+    cfg = ExtractionConfig(
+        name="药物",
+        target_class_iri=DRUG,
+        source_type="word",
+        column_mapping={"活性成分": IRI_ACTIVE, "剂型": IRI_DOSAGE},
+    )
     db.add(cfg)
     db.commit()
     db.refresh(cfg)
@@ -110,14 +124,14 @@ def test_word_ner_disabled_succeeds_no_prose_not_degraded(db, monkeypatch, tmp_p
     asyncio.run(run_extraction_pipeline(job, cfg, path, _drug_engine(), db))
     db.refresh(job)
 
-    assert job.status == "reviewing"                       # O6 作业不失败
-    assert job.error_message is None                       # O8 无报错
+    assert job.status == "reviewing"  # O6 作业不失败
+    assert job.error_message is None  # O8 无报错
     cands = _candidates(db, job)
     # O7 prose 候选为空：无 #para 来源的 instance 候选（NER 关）。
     assert not [c for c in cands if c.candidate_kind == "instance"]
     # Action 通道与 NER 正交，照常产出（FR-005 不受降级影响）。
-    assert [c for c in cands if c.candidate_kind == "action"]
-    assert all(c.degraded_reason is None for c in cands)   # O8 不标 degraded
+    assert not [c for c in cands if c.candidate_kind == "action"]
+    assert all(c.degraded_reason is None for c in cands)  # O8 不标 degraded
 
 
 # --- O6/O7 Excel：NER 关 → 不富化、候选=行数、暂存清除、不 degraded -------------
@@ -131,9 +145,13 @@ def test_excel_ner_disabled_no_enrichment_zero_regression(db, monkeypatch, tmp_p
     path = tmp_path / "equip.xlsx"
     wb.save(path)
 
-    cfg = ExtractionConfig(name="设备", target_class_iri=EQUIP, source_type="excel",
-                           column_mapping={"设备编号": IRI_ID, "设备名称": IRI_NAME},
-                           ner_columns=["备注"])
+    cfg = ExtractionConfig(
+        name="设备",
+        target_class_iri=EQUIP,
+        source_type="excel",
+        column_mapping={"设备编号": IRI_ID, "设备名称": IRI_NAME},
+        ner_columns=["备注"],
+    )
     db.add(cfg)
     db.commit()
     db.refresh(cfg)
@@ -141,13 +159,13 @@ def test_excel_ner_disabled_no_enrichment_zero_regression(db, monkeypatch, tmp_p
     asyncio.run(run_extraction_pipeline(job, cfg, path, _equip_engine(), db))
     db.refresh(job)
 
-    assert job.status == "reviewing"                       # O6
+    assert job.status == "reviewing"  # O6
     cands = _candidates(db, job)
-    assert len(cands) == 2                                 # 候选数 = 行数（不另生候选）
+    assert len(cands) == 2  # 候选数 = 行数（不另生候选）
     for c in cands:
-        assert "__freetext__" not in c.extracted_properties   # O7 暂存仍清除
-        assert IRI_POWER not in c.extracted_properties         # O7 未富化（NER 关）
-        assert c.degraded_reason is None                       # O8 不 degraded
+        assert "__freetext__" not in c.extracted_properties  # O7 暂存仍清除
+        assert IRI_POWER not in c.extracted_properties  # O7 未富化（NER 关）
+        assert c.degraded_reason is None  # O8 不 degraded
     # 结构化属性逐字保留。
     row1 = next(c for c in cands if c.extracted_properties.get(IRI_ID) == "CT64201")
     assert row1.extracted_properties[IRI_NAME] == "压片机A"

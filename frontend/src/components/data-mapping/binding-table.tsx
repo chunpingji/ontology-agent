@@ -38,7 +38,7 @@ export const propertyBindingsKey = (mappingId: string) =>
 
 const CONFLICT_MESSAGE = "版本冲突，请刷新后重试";
 
-const localName = (iri: string): string => iri.split(/[/#]/).pop() || iri;
+const localName = (iri: string): string => iri.split("/").flatMap((part) => part.split("#")).pop() || iri;
 
 type StatusTone = "success" | "warning" | "destructive" | "secondary";
 

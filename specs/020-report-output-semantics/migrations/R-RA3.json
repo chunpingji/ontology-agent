@@ -1,0 +1,283 @@
+{
+  "migration_plan_id": "d563376842d0788dd4f90070b033657f5a4148a8f128652e9a87c3bfde66f822",
+  "original": {
+    "rule_key": "R-RA3",
+    "rule_group": "risk_assessment",
+    "version": 1,
+    "status": "published",
+    "is_reviewed": false,
+    "is_disabled": false,
+    "antecedent": {
+      "op": "some_values_from",
+      "property": "hasSharedLineData",
+      "filler_class": "SharedLineAssessmentData"
+    },
+    "consequent": {
+      "risk_level": "HighRisk",
+      "category": "物料管理",
+      "description": "原料药分公司无法提供符合{{药物名称/代号}}生产要求的原辅料及包装材料。",
+      "control_measure": "1、{{药物名称/代号}}专用物料由连云港研究院仓库提供。\n2、{{药物名称/代号}}公用物料由原料药分公司仓库提供。",
+      "traceability_docs": "1、连云港研究院仓库出库记录；\n2、原料药分公司仓库出库记录；\n3、物料检验原始记录。",
+      "postconditions": {
+        "material_segregation": true,
+        "weighing_verified": true
+      }
+    },
+    "priority": 100,
+    "id": "447ec5b7-8179-444a-a046-6da5d2d4e8a0"
+  },
+  "original_hash": "d563376842d0788dd4f90070b033657f5a4148a8f128652e9a87c3bfde66f822",
+  "claims": [
+    {
+      "claim_draft_id": "18d143299ec9f840a8eda061b80dd805220cc0b3e7f65d9d5684403e788eaf44",
+      "legacy_field": "risk_level",
+      "original_statement": "HighRisk",
+      "legacy_path": [
+        "risk_level"
+      ],
+      "start_offset": 0,
+      "end_offset": 8,
+      "proposed_category": "risk_decision",
+      "target_claim_ref": null,
+      "precondition": null,
+      "subject_scope": null,
+      "applicable_at": null,
+      "universe_proof": null,
+      "review_ref": null,
+      "status": "unresolved",
+      "issues": [
+        "CLAIM_PRECONDITION_UNPROVEN",
+        "EXACT_PARAMETER_MAPPING_REQUIRED",
+        "FALSE_UNKNOWN_MUST_NOT_IMPLY_LOW"
+      ]
+    },
+    {
+      "claim_draft_id": "7f7fd1dc352074ff99e09a0681691a2e6c63cd2ce28ccce1092402fb4904d0bf",
+      "legacy_field": "category",
+      "original_statement": "物料管理",
+      "legacy_path": [
+        "category"
+      ],
+      "start_offset": 0,
+      "end_offset": 4,
+      "proposed_category": "unresolved",
+      "target_claim_ref": null,
+      "precondition": null,
+      "subject_scope": null,
+      "applicable_at": null,
+      "universe_proof": null,
+      "review_ref": null,
+      "status": "unresolved",
+      "issues": [
+        "CLAIM_PRECONDITION_UNPROVEN",
+        "EXACT_PARAMETER_MAPPING_REQUIRED",
+        "FALSE_UNKNOWN_MUST_NOT_IMPLY_LOW"
+      ]
+    },
+    {
+      "claim_draft_id": "073c647e5f300442c3013a709b4aa60e3d6e585a9298eed9d5268ffcb5f18dc3",
+      "legacy_field": "description",
+      "original_statement": "原料药分公司无法提供符合{{药物名称/代号}}生产要求的原辅料及包装材料。",
+      "legacy_path": [
+        "description"
+      ],
+      "start_offset": 0,
+      "end_offset": 37,
+      "proposed_category": "unresolved",
+      "target_claim_ref": null,
+      "precondition": null,
+      "subject_scope": null,
+      "applicable_at": null,
+      "universe_proof": null,
+      "review_ref": null,
+      "status": "unresolved",
+      "issues": [
+        "CLAIM_PRECONDITION_UNPROVEN",
+        "EXACT_PARAMETER_MAPPING_REQUIRED",
+        "FALSE_UNKNOWN_MUST_NOT_IMPLY_LOW"
+      ]
+    },
+    {
+      "claim_draft_id": "13aa3b0576ed5b11a3dc9216761670acbcc11bf91d4c0b96534a7cf01950859e",
+      "legacy_field": "control_measure",
+      "original_statement": "1、{{药物名称/代号}}专用物料由连云港研究院仓库提供。",
+      "legacy_path": [
+        "control_measure"
+      ],
+      "start_offset": 0,
+      "end_offset": 29,
+      "proposed_category": "unresolved",
+      "target_claim_ref": null,
+      "precondition": null,
+      "subject_scope": null,
+      "applicable_at": null,
+      "universe_proof": null,
+      "review_ref": null,
+      "status": "unresolved",
+      "issues": [
+        "CLAIM_PRECONDITION_UNPROVEN",
+        "EXACT_PARAMETER_MAPPING_REQUIRED",
+        "FALSE_UNKNOWN_MUST_NOT_IMPLY_LOW"
+      ]
+    },
+    {
+      "claim_draft_id": "1c51449583765cd0363de02e3a545a7761eacbec159e3cdba7b505c8228c02b6",
+      "legacy_field": "control_measure",
+      "original_statement": "2、{{药物名称/代号}}公用物料由原料药分公司仓库提供。",
+      "legacy_path": [
+        "control_measure"
+      ],
+      "start_offset": 30,
+      "end_offset": 59,
+      "proposed_category": "unresolved",
+      "target_claim_ref": null,
+      "precondition": null,
+      "subject_scope": null,
+      "applicable_at": null,
+      "universe_proof": null,
+      "review_ref": null,
+      "status": "unresolved",
+      "issues": [
+        "CLAIM_PRECONDITION_UNPROVEN",
+        "EXACT_PARAMETER_MAPPING_REQUIRED",
+        "FALSE_UNKNOWN_MUST_NOT_IMPLY_LOW"
+      ]
+    },
+    {
+      "claim_draft_id": "edec916e0af617d43ffe7a79449b060c0600dce4ad88af46f768e25300cd71e2",
+      "legacy_field": "traceability_docs",
+      "original_statement": "1、连云港研究院仓库出库记录；",
+      "legacy_path": [
+        "traceability_docs"
+      ],
+      "start_offset": 0,
+      "end_offset": 15,
+      "proposed_category": "planned_control",
+      "target_claim_ref": null,
+      "precondition": null,
+      "subject_scope": null,
+      "applicable_at": null,
+      "universe_proof": null,
+      "review_ref": null,
+      "status": "unresolved",
+      "issues": [
+        "CLAIM_PRECONDITION_UNPROVEN",
+        "EXACT_PARAMETER_MAPPING_REQUIRED",
+        "FALSE_UNKNOWN_MUST_NOT_IMPLY_LOW"
+      ]
+    },
+    {
+      "claim_draft_id": "3039f940587754c1110610b356de31dfc3fd823c3cf8d867067b3fa2ec27bde7",
+      "legacy_field": "traceability_docs",
+      "original_statement": "2、原料药分公司仓库出库记录；",
+      "legacy_path": [
+        "traceability_docs"
+      ],
+      "start_offset": 16,
+      "end_offset": 31,
+      "proposed_category": "planned_control",
+      "target_claim_ref": null,
+      "precondition": null,
+      "subject_scope": null,
+      "applicable_at": null,
+      "universe_proof": null,
+      "review_ref": null,
+      "status": "unresolved",
+      "issues": [
+        "CLAIM_PRECONDITION_UNPROVEN",
+        "EXACT_PARAMETER_MAPPING_REQUIRED",
+        "FALSE_UNKNOWN_MUST_NOT_IMPLY_LOW"
+      ]
+    },
+    {
+      "claim_draft_id": "795b394bccad0cae879f0c8b59936879a00da26d60b8aa0f4c2971f4d5c03623",
+      "legacy_field": "traceability_docs",
+      "original_statement": "3、物料检验原始记录。",
+      "legacy_path": [
+        "traceability_docs"
+      ],
+      "start_offset": 32,
+      "end_offset": 43,
+      "proposed_category": "planned_control",
+      "target_claim_ref": null,
+      "precondition": null,
+      "subject_scope": null,
+      "applicable_at": null,
+      "universe_proof": null,
+      "review_ref": null,
+      "status": "unresolved",
+      "issues": [
+        "CLAIM_PRECONDITION_UNPROVEN",
+        "EXACT_PARAMETER_MAPPING_REQUIRED",
+        "FALSE_UNKNOWN_MUST_NOT_IMPLY_LOW"
+      ]
+    },
+    {
+      "claim_draft_id": "d96da09ade0eeae33a8cff5c504f9e91e51ea26d2de79e3d9cb2185d037d3d8b",
+      "legacy_field": "postconditions",
+      "original_statement": true,
+      "legacy_path": [
+        "postconditions",
+        "material_segregation"
+      ],
+      "start_offset": null,
+      "end_offset": null,
+      "proposed_category": "risk_decision",
+      "target_claim_ref": null,
+      "precondition": null,
+      "subject_scope": null,
+      "applicable_at": null,
+      "universe_proof": null,
+      "review_ref": null,
+      "status": "unresolved",
+      "issues": [
+        "CLAIM_PRECONDITION_UNPROVEN",
+        "EXACT_PARAMETER_MAPPING_REQUIRED",
+        "FALSE_UNKNOWN_MUST_NOT_IMPLY_LOW"
+      ]
+    },
+    {
+      "claim_draft_id": "fee585e45bd906cf07d15e2058524f67de5d46e0cc596fd748a0f303dd4d19ae",
+      "legacy_field": "postconditions",
+      "original_statement": true,
+      "legacy_path": [
+        "postconditions",
+        "weighing_verified"
+      ],
+      "start_offset": null,
+      "end_offset": null,
+      "proposed_category": "risk_decision",
+      "target_claim_ref": null,
+      "precondition": null,
+      "subject_scope": null,
+      "applicable_at": null,
+      "universe_proof": null,
+      "review_ref": null,
+      "status": "unresolved",
+      "issues": [
+        "CLAIM_PRECONDITION_UNPROVEN",
+        "EXACT_PARAMETER_MAPPING_REQUIRED",
+        "FALSE_UNKNOWN_MUST_NOT_IMPLY_LOW"
+      ]
+    }
+  ],
+  "target_rule_ref": null,
+  "status": "draft",
+  "business_reviewed": false,
+  "consumer_entrypoints": [
+    "legacy_report",
+    "legacy_preview",
+    "template_migration"
+  ],
+  "required_tests": [
+    "missing_evidence",
+    "false",
+    "unknown",
+    "planned_only",
+    "subject_mismatch",
+    "time_mismatch",
+    "incomplete_universe"
+  ],
+  "baseline_definition_hash": "8bca8fcf3475a0bb3ff072fae8974b9f43d25dc9b73cc3cf04eeccb6ffdb7a0b",
+  "observation_ref": "../baseline.json"
+}

@@ -27,7 +27,9 @@ def assertion_record(candidate: Candidate, entities: dict[str, Candidate]) -> di
         "assertion_iri": f"urn:evidence:assertion:{identity}",
         "subject_iri": instance_iri(subject),
         "object_iri": instance_iri(target) if target else None,
-        "candidate": candidate.model_dump(mode="json"),
+        # Review presentation metadata lives in the candidate/audit history.
+        # Adding it must not change an already published assertion's content.
+        "candidate": candidate.model_dump(mode="json", exclude={"review_source", "review_reason"}),
         "positive_eligible": candidate.positive_eligible,
     }
 
@@ -57,7 +59,9 @@ class EvidenceInstanceWriter:
                 if head is not None:
                     members = list(graph.items(head))
                     return bool(members) and combine(
-                        EvidenceInstanceWriter._class_matches(graph, class_iri, child, seen | {expected})
+                        EvidenceInstanceWriter._class_matches(
+                            graph, class_iri, child, seen | {expected}
+                        )
                         for child in members
                     )
             return False

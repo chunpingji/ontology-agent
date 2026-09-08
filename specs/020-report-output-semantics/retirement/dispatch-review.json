@@ -1,0 +1,54 @@
+{
+  "status": "reviewed_for_local_implementation",
+  "scope": "Owned semantic-dispatch review accompanying syntax/import audit; not independent human model-quality or deployment acceptance.",
+  "entries": [
+    {
+      "path": "backend/app/services/reporting",
+      "assessment": "All runtime output dispatch is by Binding/Projection/Render capability and TypeSpec. Legacy templates are read-only migration inputs. No label, product, equipment code or filename is used to select report facts."
+    },
+    {
+      "path": "backend/app/services/extraction/equipment_source.py",
+      "assessment": "Exact source-record IDs and field predicates; business records are data resources. Names/codes do not derive class, material or workshop."
+    },
+    {
+      "path": "backend/app/services/extraction/equipment_schedule_source.py",
+      "assessment": "Retained synthetic schedule generator called only by /api/mock-sources. Its deliberate fixture schedules are source data, not report evidence; report use requires explicit candidate validation, review and commit."
+    },
+    {
+      "path": "backend/app/services/extraction/pipeline.py",
+      "assessment": "Structured adapters use explicit field maps. doc_repo does not call a model to invent missing mapped values. Legacy unverified candidates cannot enter published snapshots."
+    },
+    {
+      "path": "backend/app/services/extraction/slot_suggester.py",
+      "assessment": "Canonical IR sections and stable IDs are preserved. Model suggestions have no authority to publish inputs, claims or facts; missing IR produces diagnostics."
+    },
+    {
+      "path": "backend/app/services/reporting/template_upgrade.py",
+      "assessment": "Retained read-only V1 migration utility, with exact schema paths. It does not generate report facts or publish templates."
+    },
+    {
+      "path": "backend/app/services/reporting/template_expander.py",
+      "assessment": "Retained V1 authoring utility without production callers; creates draft source declarations only. V1 runtime and publication are gated by migration."
+    },
+    {
+      "path": "backend/app/services/reasoning/defaults.py",
+      "assessment": "Non-risk rule seeds remain explicit pre-existing domain definitions. R-RA1–5 are retired from seed/execution and preserved in migration ledgers; published legacy rows cannot be updated/deleted."
+    },
+    {
+      "path": "backend/app/services/integration",
+      "assessment": "Existing adapter entity types and change-event keys are explicit upstream record contracts; list filtering is presentation only. Report rendering does not call these adapters, search their labels, or accept their raw records as published assertions."
+    },
+    {
+      "path": "frontend/src/components/reporting",
+      "assessment": "Authoring uses stable references and exact ontology menus. OutputPreview consumes saved OutputAST; signature envelopes have independent identities. No report fact reconstruction occurs in the browser."
+    }
+  ],
+  "dynamic_evidence": [
+    "test_report_runs_v2.py",
+    "test_report_facts_v2.py",
+    "test_retired_execution.py",
+    "test_output_semantic_guards.py",
+    "browser-validation.json",
+    "package-audit.json"
+  ]
+}

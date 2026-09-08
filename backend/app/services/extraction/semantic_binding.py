@@ -1,10 +1,13 @@
 """Evidence/location validation is independent of semantic binding and projection."""
 
-from app.schemas.evidence import Candidate, DocumentProvenance, ValidationIssue
+from app.schemas.evidence import Candidate, DocumentProvenance, EvidenceAnchor, ValidationIssue
 from app.services.extraction.document_ir import DocumentIR
 from app.services.extraction.evidence_scope import document_anchors, scope_contains
+from app.services.extraction.performance import timed
+from app.services.extraction.table_records import table_records
 
 
+@timed("candidate_validation")
 def validate_document_candidate(
     candidate: Candidate,
     ir: DocumentIR,
@@ -118,13 +121,13 @@ def validate_document_candidate(
             if not section_id or any(a.section_node_id != section_id for a in binding.anchors):
                 issue("record_mapping_mismatch")
         if binding.method == "table_record":
-            table_path = binding.record_mapping.get("table_path")
-            row = binding.record_mapping.get("row_index")
-            if (
-                not table_path
-                or row is None
-                or any(a.table_path != table_path or a.row_index != row for a in binding.anchors)
-            ):
+            try:
+                valid = table_records(ir).valid_mapping(
+                    binding.record_mapping, binding.anchors, document_anchors(candidate),
+                )
+            except ValueError:
+                valid = False
+            if not valid:
                 issue("record_mapping_mismatch")
     for anchor in candidate.condition_anchors:
         try:
@@ -133,6 +136,15 @@ def validate_document_candidate(
                 issue("condition_region_violation")
         except ValueError:
             issue("invalid_condition_anchor")
+    if candidate.literal:
+        for raw_anchor in candidate.literal.conversion_record.get("evidence", []):
+            try:
+                anchor = EvidenceAnchor.model_validate(raw_anchor)
+                ir.resolve(anchor)
+                if not binding_allowed(anchor):
+                    issue("literal_evidence_region_violation")
+            except ValueError:
+                issue("invalid_literal_evidence")
     if candidate.assertion_status == "conditional" and not (
         candidate.condition_anchors or candidate.condition_provenance_indexes
     ):

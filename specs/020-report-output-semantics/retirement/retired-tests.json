@@ -1,0 +1,953 @@
+[
+  {
+    "path": "backend/tests/test_reporting/test_snapshot_report.py",
+    "sha256": "3bab5a73b121c15a38489c78554588efa07c233692338c8871a29087716d89c1",
+    "tests": [
+      "test_report_inputs_freeze_template_discovery_and_actual_snapshot",
+      "test_snapshot_report_never_calls_legacy_enrichment",
+      "test_explicit_snapshot_slot_uses_exact_path_not_display_label",
+      "test_sample_header_footer_signatures_never_leak_into_snapshot_report",
+      "test_snapshot_rules_do_not_use_substring_classes_or_round_decimals"
+    ],
+    "reason": "Executable V1 finder, implicit enrichment, or old report DTO behavior retired by OS-12; historical source stays in Git. New frozen semantic behavior is tested separately.",
+    "replaced_by": [
+      "backend/tests/test_reporting/test_output_resolution.py",
+      "backend/tests/test_reporting/test_output_rendering.py",
+      "backend/tests/test_reporting/test_output_rules.py",
+      "backend/tests/test_api/test_report_runs_v2.py",
+      "backend/tests/test_reporting/test_retired_execution.py"
+    ],
+    "historical_source": "git:ce41f8b75c727d5db4c0343732c0ec1a92f44028:backend/tests/test_reporting/test_snapshot_report.py"
+  },
+  {
+    "path": "backend/tests/test_reporting/test_pde_conflict_report.py",
+    "sha256": "c3599450276e92243e9549a7375076b7de69e2d0f92a6a559ffeab933f3157d1",
+    "tests": [
+      "test_pending_conflict_adds_pending_row_and_blocks_acceptable_conclusion",
+      "test_decision_selects_effective_value_without_overwriting_either_side",
+      "test_duplicate_edges_do_not_duplicate_document_conflict",
+      "test_pending_conflict_is_included_in_rule_progress_result",
+      "test_pending_conflict_is_rendered_in_every_output_path",
+      "test_decided_conflict_renders_effective_value_and_audit_fields"
+    ],
+    "reason": "Executable V1 finder, implicit enrichment, or old report DTO behavior retired by OS-12; historical source stays in Git. New frozen semantic behavior is tested separately.",
+    "replaced_by": [
+      "backend/tests/test_reporting/test_output_resolution.py",
+      "backend/tests/test_reporting/test_output_rendering.py",
+      "backend/tests/test_reporting/test_output_rules.py",
+      "backend/tests/test_api/test_report_runs_v2.py",
+      "backend/tests/test_reporting/test_retired_execution.py"
+    ],
+    "historical_source": "git:ce41f8b75c727d5db4c0343732c0ec1a92f44028:backend/tests/test_reporting/test_pde_conflict_report.py"
+  },
+  {
+    "path": "backend/tests/test_reporting/test_docx_llm_annotation.py",
+    "sha256": "a684162dea35a9cc3f7fd669996c4f211c5a772229e243134152a0d53aa86c16",
+    "tests": [
+      "test_add_llm_run_black_upright_inherits_style",
+      "test_disclaimer_line_added",
+      "test_generated_disclaimer_section",
+      "test_disclaimer_present_when_supplements",
+      "test_no_disclaimer_when_no_supplements",
+      "test_info_glyph_present_for_supplemented_content",
+      "test_semantic_slot_heading_and_annotated_text",
+      "test_empty_semantic_slots_is_noop",
+      "test_render_report_includes_disclaimer_with_only_semantic_slots",
+      "test_blank_text_slot_skipped"
+    ],
+    "reason": "Executable V1 finder, implicit enrichment, or old report DTO behavior retired by OS-12; historical source stays in Git. New frozen semantic behavior is tested separately.",
+    "replaced_by": [
+      "backend/tests/test_reporting/test_output_resolution.py",
+      "backend/tests/test_reporting/test_output_rendering.py",
+      "backend/tests/test_reporting/test_output_rules.py",
+      "backend/tests/test_api/test_report_runs_v2.py",
+      "backend/tests/test_reporting/test_retired_execution.py"
+    ],
+    "historical_source": "git:ce41f8b75c727d5db4c0343732c0ec1a92f44028:backend/tests/test_reporting/test_docx_llm_annotation.py"
+  },
+  {
+    "path": "backend/tests/test_reporting/test_placeholder_util.py",
+    "sha256": "d59dd6846f7d0a77359c9b7a0a3046a25bbe861dba815e96582c3b5408518261",
+    "tests": [
+      "test_replaces_single_placeholder",
+      "test_same_placeholder_repeated",
+      "test_multiple_distinct_placeholders",
+      "test_key_whitespace_and_cjk_slash_trimmed",
+      "test_missing_key_uses_sentinel",
+      "test_none_value_uses_sentinel",
+      "test_empty_value_uses_sentinel",
+      "test_substituted_value_is_not_re_expanded",
+      "test_text_without_placeholders_is_unchanged",
+      "test_empty_text_returns_empty",
+      "test_mixed_resolved_and_missing",
+      "test_matches_trimmed_label"
+    ],
+    "reason": "Executable V1 finder, implicit enrichment, or old report DTO behavior retired by OS-12; historical source stays in Git. New frozen semantic behavior is tested separately.",
+    "replaced_by": [
+      "backend/tests/test_reporting/test_output_resolution.py",
+      "backend/tests/test_reporting/test_output_rendering.py",
+      "backend/tests/test_reporting/test_output_rules.py",
+      "backend/tests/test_api/test_report_runs_v2.py",
+      "backend/tests/test_reporting/test_retired_execution.py"
+    ],
+    "historical_source": "git:ce41f8b75c727d5db4c0343732c0ec1a92f44028:backend/tests/test_reporting/test_placeholder_util.py"
+  },
+  {
+    "path": "backend/tests/test_reporting/test_narrative_generator.py",
+    "sha256": "6ae8c0b2287e395cbc8540647315b4ed1cffd3895c47d97da73a6474cf6fb04e",
+    "tests": [
+      "test_successful_generation",
+      "test_llm_failure_returns_empty",
+      "test_empty_edges_returns_empty",
+      "test_stateless_no_persistence",
+      "test_template_style_passed_to_prompt",
+      "test_process_name_basis_and_description_drive_required_wording",
+      "test_synthesizes_slot_text",
+      "test_prompt_inherits_section_when_slot_prompt_none",
+      "test_slot_prompt_overrides_section_prompt",
+      "test_associated_ontology_scoped_to_range_type",
+      "test_coverage_refs_filters_selected_bindings",
+      "test_assessment_rows_quoted_verbatim_for_fr009",
+      "test_engine_none_uses_local_name_substring_fallback",
+      "test_llm_failure_skips_slot",
+      "test_empty_llm_output_skips_slot",
+      "test_slot_with_no_prompt_and_no_coverage_is_skipped",
+      "test_non_semantic_slots_ignored",
+      "test_returns_section_prose",
+      "test_empty_prompt_returns_empty_and_skips_llm",
+      "test_none_prompt_returns_empty",
+      "test_empty_llm_output_returns_empty",
+      "test_assessment_rows_quoted_verbatim_fr009",
+      "test_manifest_coverage_injected",
+      "test_two_team_section_scopes_each_roster_under_its_label",
+      "test_section_without_coverage_keeps_full_fact_dump"
+    ],
+    "reason": "Executable V1 finder, implicit enrichment, or old report DTO behavior retired by OS-12; historical source stays in Git. New frozen semantic behavior is tested separately.",
+    "replaced_by": [
+      "backend/tests/test_reporting/test_output_resolution.py",
+      "backend/tests/test_reporting/test_output_rendering.py",
+      "backend/tests/test_reporting/test_output_rules.py",
+      "backend/tests/test_api/test_report_runs_v2.py",
+      "backend/tests/test_reporting/test_retired_execution.py"
+    ],
+    "historical_source": "git:ce41f8b75c727d5db4c0343732c0ec1a92f44028:backend/tests/test_reporting/test_narrative_generator.py"
+  },
+  {
+    "path": "backend/tests/test_reporting/test_risk_template_context.py",
+    "sha256": "f774f3025ef01d0c293a6855cfd7995ee2d2b0d4812c81914ee7679e14046556",
+    "tests": [
+      "test_drug_code_from_object_text",
+      "test_drug_name_property_preferred_over_code",
+      "test_drug_missing_is_none",
+      "test_workshops_joined_sorted",
+      "test_numeric_data_property_value_does_not_crash",
+      "test_numeric_name_property_rejected_falls_back_to_code",
+      "test_context_keys_are_only_the_two_whitelisted_placeholders",
+      "test_edge_order_does_not_change_result",
+      "test_placeholders_filled_in_report_rows",
+      "test_missing_value_renders_sentinel",
+      "test_full_report_survives_numeric_object_text",
+      "test_assess_deterministic_matches_generate_text"
+    ],
+    "reason": "Executable V1 finder, implicit enrichment, or old report DTO behavior retired by OS-12; historical source stays in Git. New frozen semantic behavior is tested separately.",
+    "replaced_by": [
+      "backend/tests/test_reporting/test_output_resolution.py",
+      "backend/tests/test_reporting/test_output_rendering.py",
+      "backend/tests/test_reporting/test_output_rules.py",
+      "backend/tests/test_api/test_report_runs_v2.py",
+      "backend/tests/test_reporting/test_retired_execution.py"
+    ],
+    "historical_source": "git:ce41f8b75c727d5db4c0343732c0ec1a92f44028:backend/tests/test_reporting/test_risk_template_context.py"
+  },
+  {
+    "path": "backend/tests/test_reporting/test_llm_gap_filler.py",
+    "sha256": "7206d8dd24f7947c387733b1a5e88dbef5a8b63cee9d08f041d38f6db21d2386",
+    "tests": [
+      "test_valid_json_array",
+      "test_json_in_markdown_code_fence",
+      "test_thinking_tags_stripped",
+      "test_invalid_json_returns_empty",
+      "test_null_value_skipped",
+      "test_unknown_slot_id_skipped",
+      "test_empty_array",
+      "test_multiple_slots",
+      "test_json_schema_wrapper",
+      "test_json_schema_wrapper_empty_slots",
+      "test_schema_structure",
+      "test_disabled_returns_empty",
+      "test_no_missing_returns_empty",
+      "test_llm_client_none_returns_empty",
+      "test_successful_extraction",
+      "test_llm_exception_returns_empty",
+      "test_llm_invalid_json_returns_empty",
+      "test_json_schema_fallback_on_unsupported",
+      "test_response_format_passed_to_client"
+    ],
+    "reason": "Executable V1 finder, implicit enrichment, or old report DTO behavior retired by OS-12; historical source stays in Git. New frozen semantic behavior is tested separately.",
+    "replaced_by": [
+      "backend/tests/test_reporting/test_output_resolution.py",
+      "backend/tests/test_reporting/test_output_rendering.py",
+      "backend/tests/test_reporting/test_output_rules.py",
+      "backend/tests/test_api/test_report_runs_v2.py",
+      "backend/tests/test_reporting/test_retired_execution.py"
+    ],
+    "historical_source": "git:ce41f8b75c727d5db4c0343732c0ec1a92f44028:backend/tests/test_reporting/test_llm_gap_filler.py"
+  },
+  {
+    "path": "backend/tests/test_reporting/test_fact_sources.py",
+    "sha256": "9c7bc9af2fa3c5bd6ee909303a554462ffe7b89196daec63a08f6cb3365480ee",
+    "tests": [
+      "test_projects_edges_as_rows",
+      "test_selector_narrows_by_object_class",
+      "test_empty_edges_yield_no_rows",
+      "test_projects_assessment_rows_readonly",
+      "test_no_rows_when_no_assessment",
+      "test_projects_team_members_as_rows",
+      "test_exact_key_wins_over_external_star_stub",
+      "test_unknown_source_returns_empty",
+      "test_abox_and_external_stubs_registered_and_empty",
+      "test_namespace_wildcard_falls_back_to_star_key",
+      "test_provider_error_degrades_to_empty",
+      "test_registered_providers_snapshot"
+    ],
+    "reason": "Executable V1 finder, implicit enrichment, or old report DTO behavior retired by OS-12; historical source stays in Git. New frozen semantic behavior is tested separately.",
+    "replaced_by": [
+      "backend/tests/test_reporting/test_output_resolution.py",
+      "backend/tests/test_reporting/test_output_rendering.py",
+      "backend/tests/test_reporting/test_output_rules.py",
+      "backend/tests/test_api/test_report_runs_v2.py",
+      "backend/tests/test_reporting/test_retired_execution.py"
+    ],
+    "historical_source": "git:ce41f8b75c727d5db4c0343732c0ec1a92f44028:backend/tests/test_reporting/test_fact_sources.py"
+  },
+  {
+    "path": "backend/tests/test_reporting/test_multi_template_e2e.py",
+    "sha256": "1d5f620a06393cbaa3fed848a2623cfab5ba38362880156dfb1600dbd07f73cd",
+    "tests": [
+      "test_loads_and_validates",
+      "test_slot_count",
+      "test_required_slots",
+      "test_no_duplicate_slot_ids",
+      "test_manual_slots_exist",
+      "test_cmc_report_resolves_to_cmc_template",
+      "test_stability_resolves_to_stability_template",
+      "test_unknown_doc_type_falls_back_to_default",
+      "test_zero_regression_cmc_slot_structure",
+      "test_stability_template_slot_structure",
+      "test_deleted_template_no_longer_resolves_by_iri_pattern",
+      "test_generated_report_survives_template_deletion",
+      "test_coverage_manifest_uses_stability_slots",
+      "test_coverage_survives_db_round_trip",
+      "test_coverage_drives_generation",
+      "test_legacy_missing_required_unchanged_with_engine",
+      "test_section_narrative_populated_and_rows_unchanged",
+      "test_default_template_semantic_slots_empty"
+    ],
+    "reason": "Executable V1 finder, implicit enrichment, or old report DTO behavior retired by OS-12; historical source stays in Git. New frozen semantic behavior is tested separately.",
+    "replaced_by": [
+      "backend/tests/test_reporting/test_output_resolution.py",
+      "backend/tests/test_reporting/test_output_rendering.py",
+      "backend/tests/test_reporting/test_output_rules.py",
+      "backend/tests/test_api/test_report_runs_v2.py",
+      "backend/tests/test_reporting/test_retired_execution.py"
+    ],
+    "historical_source": "git:ce41f8b75c727d5db4c0343732c0ec1a92f44028:backend/tests/test_reporting/test_multi_template_e2e.py"
+  },
+  {
+    "path": "backend/tests/test_reporting/test_docx_matrix_breaks.py",
+    "sha256": "40dae7d702afc04e746348b0cced394048c5983e6d1a912d87e8aa1842ab2a8c",
+    "tests": [
+      "test_br_variants_become_word_breaks",
+      "test_plain_newlines_unaffected"
+    ],
+    "reason": "Executable V1 finder, implicit enrichment, or old report DTO behavior retired by OS-12; historical source stays in Git. New frozen semantic behavior is tested separately.",
+    "replaced_by": [
+      "backend/tests/test_reporting/test_output_resolution.py",
+      "backend/tests/test_reporting/test_output_rendering.py",
+      "backend/tests/test_reporting/test_output_rules.py",
+      "backend/tests/test_api/test_report_runs_v2.py",
+      "backend/tests/test_reporting/test_retired_execution.py"
+    ],
+    "historical_source": "git:ce41f8b75c727d5db4c0343732c0ec1a92f44028:backend/tests/test_reporting/test_docx_matrix_breaks.py"
+  },
+  {
+    "path": "backend/tests/test_reporting/test_product_report_edges.py",
+    "sha256": "e33b9c403eb15994c9a1c9a9479571bef61be83867fae87471353af3d755194a",
+    "tests": [
+      "test_undeclared_template_yields_no_edges",
+      "test_assessment_team_declared_materializes_edge",
+      "test_approver_team_declared_materializes_edge",
+      "test_both_declared_materializes_both",
+      "test_edge_shape_mirrors_extractor_keys",
+      "test_source_document_edge_carries_typed_cmc_report_name",
+      "test_source_document_edge_skips_blank_name"
+    ],
+    "reason": "Executable V1 finder, implicit enrichment, or old report DTO behavior retired by OS-12; historical source stays in Git. New frozen semantic behavior is tested separately.",
+    "replaced_by": [
+      "backend/tests/test_reporting/test_output_resolution.py",
+      "backend/tests/test_reporting/test_output_rendering.py",
+      "backend/tests/test_reporting/test_output_rules.py",
+      "backend/tests/test_api/test_report_runs_v2.py",
+      "backend/tests/test_reporting/test_retired_execution.py"
+    ],
+    "historical_source": "git:ce41f8b75c727d5db4c0343732c0ec1a92f44028:backend/tests/test_reporting/test_product_report_edges.py"
+  },
+  {
+    "path": "backend/tests/test_reporting/test_coverage_validator.py",
+    "sha256": "8804312c42407425e5bce085f5c8ad0c22f91a33950fd1eb9a67b50e7bdae7ed",
+    "tests": [
+      "test_full_coverage_has_no_omissions",
+      "test_missing_shared_line_flags_prereq_and_dimensions",
+      "test_missing_equipment_flags_required_id",
+      "test_no_rules_flags_all_dimensions",
+      "test_manual_slots_not_counted_missing",
+      "test_optional_missing_is_blank_not_required",
+      "test_summary_and_to_dict_shapes",
+      "test_coverage_expands_relationship_and_properties",
+      "test_required_relationship_absent_is_missing_required",
+      "test_present_relationship_blank_props_informational",
+      "test_promoted_property_blank_is_missing_required",
+      "test_promoted_property_matched_by_local_name",
+      "test_duplicate_relationship_across_sections_counts_once",
+      "test_coverage_empty_is_noop_legacy_manifest",
+      "test_engine_none_degrades_gracefully",
+      "test_fact_source_emits_noncounting_manual",
+      "test_get_relation_schema_memoized_once_per_docclass",
+      "test_semantic_slot_is_filled_and_llm_sourced_noncounting",
+      "test_semantic_slot_does_not_change_missing_required",
+      "test_semantic_slot_alone_counts_nothing",
+      "test_engine_scopes_by_range_type",
+      "test_engine_none_falls_back_to_local_name_substring",
+      "test_non_ontology_relation_binding_scopes_nothing"
+    ],
+    "reason": "Executable V1 finder, implicit enrichment, or old report DTO behavior retired by OS-12; historical source stays in Git. New frozen semantic behavior is tested separately.",
+    "replaced_by": [
+      "backend/tests/test_reporting/test_output_resolution.py",
+      "backend/tests/test_reporting/test_output_rendering.py",
+      "backend/tests/test_reporting/test_output_rules.py",
+      "backend/tests/test_api/test_report_runs_v2.py",
+      "backend/tests/test_reporting/test_retired_execution.py"
+    ],
+    "historical_source": "git:ce41f8b75c727d5db4c0343732c0ec1a92f44028:backend/tests/test_reporting/test_coverage_validator.py"
+  },
+  {
+    "path": "backend/tests/test_reporting/test_aps_equipment_resolver.py",
+    "sha256": "fbeea2a22ddc35449b961003cb60416770d00ae211892a717eb8455396241c30",
+    "tests": [
+      "test_hrs_5678_uses_only_pf64216_and_prunes_646_workshop",
+      "test_hrs_1597_override_selects_pf64616_and_prunes_642_workshop",
+      "test_no_matching_aps_schedule_emits_explicit_warning",
+      "test_report_context_reads_planned_month_from_document_prose"
+    ],
+    "reason": "Executable V1 finder, implicit enrichment, or old report DTO behavior retired by OS-12; historical source stays in Git. New frozen semantic behavior is tested separately.",
+    "replaced_by": [
+      "backend/tests/test_reporting/test_output_resolution.py",
+      "backend/tests/test_reporting/test_output_rendering.py",
+      "backend/tests/test_reporting/test_output_rules.py",
+      "backend/tests/test_api/test_report_runs_v2.py",
+      "backend/tests/test_reporting/test_retired_execution.py"
+    ],
+    "historical_source": "git:ce41f8b75c727d5db4c0343732c0ec1a92f44028:backend/tests/test_reporting/test_aps_equipment_resolver.py"
+  },
+  {
+    "path": "backend/tests/test_reporting/test_docx_sample_template.py",
+    "sha256": "937b716264b3fbe4257a9ce33e5dc4d0e221e0977c230d46a8db22748b8c20b4",
+    "tests": [
+      "test_vanilla_normal_has_no_rpr",
+      "test_renders_without_falling_back",
+      "test_source_cmc_report_reference_survives_sample_template",
+      "test_preserves_template_page_and_header",
+      "test_does_not_clobber_template_cjk_font",
+      "test_multi_section_layout_preserved",
+      "test_corrupt_template_falls_back_to_blank",
+      "test_blank_path_locks_landscape_a4_songti_header",
+      "test_inline_runs_do_not_pin_font",
+      "test_markdown_body_inherits_template_normal",
+      "test_matrix_runs_keep_size_but_not_latin_font",
+      "test_matrix_scales_to_portrait_page",
+      "test_matrix_landscape_not_upscaled",
+      "test_matrix_scales_to_last_section_not_first",
+      "test_matrix_none_geometry_does_not_crash",
+      "test_sectionless_template_falls_back_without_crashing",
+      "test_matrix_sectionless_standalone_does_not_crash",
+      "test_no_duplicate_styleid_on_name_collision",
+      "test_add_heading_works_after_name_collision"
+    ],
+    "reason": "Executable V1 finder, implicit enrichment, or old report DTO behavior retired by OS-12; historical source stays in Git. New frozen semantic behavior is tested separately.",
+    "replaced_by": [
+      "backend/tests/test_reporting/test_output_resolution.py",
+      "backend/tests/test_reporting/test_output_rendering.py",
+      "backend/tests/test_reporting/test_output_rules.py",
+      "backend/tests/test_api/test_report_runs_v2.py",
+      "backend/tests/test_reporting/test_retired_execution.py"
+    ],
+    "historical_source": "git:ce41f8b75c727d5db4c0343732c0ec1a92f44028:backend/tests/test_reporting/test_docx_sample_template.py"
+  },
+  {
+    "path": "backend/tests/test_reporting/test_docx_template_driven.py",
+    "sha256": "10b67448e09c186374be44b76859b082ed0086b8c4157ad1a6dbede1ff6f4ed1",
+    "tests": [
+      "test_aps_equipment_warning_uses_icon_and_red_text_without_equipment_rows",
+      "test_section_and_group_headings_in_template_order",
+      "test_no_fixed_skeleton_headings",
+      "test_markdown_table_becomes_word_table",
+      "test_semantic_prose_is_llm_annotated",
+      "test_value_slot_renders_label_and_value",
+      "test_missing_required_slot_flagged",
+      "test_equipment_and_assessment_tables_present",
+      "test_no_template_uses_legacy_skeleton"
+    ],
+    "reason": "Executable V1 finder, implicit enrichment, or old report DTO behavior retired by OS-12; historical source stays in Git. New frozen semantic behavior is tested separately.",
+    "replaced_by": [
+      "backend/tests/test_reporting/test_output_resolution.py",
+      "backend/tests/test_reporting/test_output_rendering.py",
+      "backend/tests/test_reporting/test_output_rules.py",
+      "backend/tests/test_api/test_report_runs_v2.py",
+      "backend/tests/test_reporting/test_retired_execution.py"
+    ],
+    "historical_source": "git:ce41f8b75c727d5db4c0343732c0ec1a92f44028:backend/tests/test_reporting/test_docx_template_driven.py"
+  },
+  {
+    "path": "backend/tests/test_reporting/test_risk_report_generator.py",
+    "sha256": "d2f597d5325da6e594f1ea2ad0f3c2918db10caa83da048d95050b3b95f393af",
+    "tests": [
+      "test_pre_control_level_high_when_rule_fires",
+      "test_post_control_level_drops_with_postconditions",
+      "test_equipment_grouping_by_workshop",
+      "test_subject_description_from_drug_product",
+      "test_source_document_name_is_resolved_from_provenance_edge",
+      "test_unknown_evaluation_flags_pending_not_low",
+      "test_empty_rules_produce_empty_assessment",
+      "test_ungrouped_equipment_gets_note",
+      "test_grouped_equipment_no_note",
+      "test_detect_workshop_tag_beats_spurious_coordinate",
+      "test_detect_workshop_unenriched_coordinate_is_ungrouped",
+      "test_assessment_progress_uses_pipeline_substeps",
+      "test_returns_report_and_manifest",
+      "test_missing_shared_line_surfaces_in_manifest",
+      "test_generate_backward_compatible",
+      "test_assess_deterministic_matches_generate_with_coverage",
+      "test_render_produces_valid_docx_bytes",
+      "test_render_with_manifest_embeds_coverage"
+    ],
+    "reason": "Executable V1 finder, implicit enrichment, or old report DTO behavior retired by OS-12; historical source stays in Git. New frozen semantic behavior is tested separately.",
+    "replaced_by": [
+      "backend/tests/test_reporting/test_output_resolution.py",
+      "backend/tests/test_reporting/test_output_rendering.py",
+      "backend/tests/test_reporting/test_output_rules.py",
+      "backend/tests/test_api/test_report_runs_v2.py",
+      "backend/tests/test_reporting/test_retired_execution.py"
+    ],
+    "historical_source": "git:ce41f8b75c727d5db4c0343732c0ec1a92f44028:backend/tests/test_reporting/test_risk_report_generator.py"
+  },
+  {
+    "path": "backend/tests/test_extraction/test_department_source.py",
+    "sha256": "b012a0d53f4fd30177a1b1617086f6c5a9ee336cc4c9cf16889baf3a79d987bb",
+    "tests": [
+      "test_resolve_qa",
+      "test_resolve_wh",
+      "test_resolve_ehs",
+      "test_resolve_eng",
+      "test_resolve_ws",
+      "test_resolve_pd1",
+      "test_resolve_pd2",
+      "test_resolve_data_properties_structure",
+      "test_resolve_case_insensitive",
+      "test_resolve_strips_whitespace",
+      "test_resolve_unknown_returns_none",
+      "test_resolve_empty_returns_none",
+      "test_list_all_count",
+      "test_list_all_contains_all_departments",
+      "test_all_iris_unique",
+      "test_all_codes_unique",
+      "test_factory_returns_mock"
+    ],
+    "reason": "Executable V1 finder, implicit enrichment, or old report DTO behavior retired by OS-12; historical source stays in Git. New frozen semantic behavior is tested separately.",
+    "replaced_by": [
+      "backend/tests/test_reporting/test_output_resolution.py",
+      "backend/tests/test_reporting/test_output_rendering.py",
+      "backend/tests/test_reporting/test_output_rules.py",
+      "backend/tests/test_api/test_report_runs_v2.py",
+      "backend/tests/test_reporting/test_retired_execution.py"
+    ],
+    "historical_source": "git:ce41f8b75c727d5db4c0343732c0ec1a92f44028:backend/tests/test_extraction/test_department_source.py"
+  },
+  {
+    "path": "backend/tests/test_extraction/test_assessment_team_source.py",
+    "sha256": "1618813742f4ca0809fea73bcf1b5447ecb723b2dd7250e8e3fa10bac9e0d250",
+    "tests": [
+      "test_factory_returns_mock",
+      "test_list_members_one_per_gxp_role",
+      "test_members_reuse_gxp_roles",
+      "test_member_carries_role_class_and_department",
+      "test_member_names_are_deterministic_and_unique",
+      "test_role_source_unavailable_degrades_to_empty",
+      "test_db_row_overrides_canned_name",
+      "test_db_read_filters_by_team_type",
+      "test_empty_db_falls_back_to_canned"
+    ],
+    "reason": "Executable V1 finder, implicit enrichment, or old report DTO behavior retired by OS-12; historical source stays in Git. New frozen semantic behavior is tested separately.",
+    "replaced_by": [
+      "backend/tests/test_reporting/test_output_resolution.py",
+      "backend/tests/test_reporting/test_output_rendering.py",
+      "backend/tests/test_reporting/test_output_rules.py",
+      "backend/tests/test_api/test_report_runs_v2.py",
+      "backend/tests/test_reporting/test_retired_execution.py"
+    ],
+    "historical_source": "git:ce41f8b75c727d5db4c0343732c0ec1a92f44028:backend/tests/test_extraction/test_assessment_team_source.py"
+  },
+  {
+    "path": "backend/tests/test_extraction/test_document_profile.py",
+    "sha256": "4317f2be994489ddb10cd00578a2ce50a29fe066fb1354f48cbe01bd7bb4851a",
+    "tests": [
+      "test_equipment_choice_expression_expands_to_independent_candidates",
+      "test_section_profile_normalizes_property_alias_and_program_identity",
+      "test_section_profile_reads_descendants_until_next_sibling_section",
+      "test_equipment_header_alias_groups_are_or_within_and",
+      "test_residue_identity_accepts_three_column_aliases",
+      "test_wide_toxicology_rows_preserve_pairing_and_strict_pde",
+      "test_table_singleton_kv_supports_legacy_toxicology_shape",
+      "test_numeric_questionnaire_headers_do_not_match_domain_table_profiles",
+      "test_composite_alias_does_not_steal_single_column",
+      "test_match_quality_tiers",
+      "test_binding_for_key_specificity",
+      "test_assign_columns_column_side_tie_abstains",
+      "test_assign_columns_no_degradation_after_ambiguity",
+      "test_assign_columns_order_invariant"
+    ],
+    "reason": "Executable V1 finder, implicit enrichment, or old report DTO behavior retired by OS-12; historical source stays in Git. New frozen semantic behavior is tested separately.",
+    "replaced_by": [
+      "backend/tests/test_reporting/test_output_resolution.py",
+      "backend/tests/test_reporting/test_output_rendering.py",
+      "backend/tests/test_reporting/test_output_rules.py",
+      "backend/tests/test_api/test_report_runs_v2.py",
+      "backend/tests/test_reporting/test_retired_execution.py"
+    ],
+    "historical_source": "git:ce41f8b75c727d5db4c0343732c0ec1a92f44028:backend/tests/test_extraction/test_document_profile.py"
+  },
+  {
+    "path": "backend/tests/test_extraction/test_approver_team_source.py",
+    "sha256": "a8f0f60dcf87a47b1b07df9ec4add0ea76004569104f16c4b788681682231bb5",
+    "tests": [
+      "test_factory_returns_mock",
+      "test_list_members_nonempty_and_typed",
+      "test_members_cover_approval_roles",
+      "test_member_carries_personnel_role_class_iri",
+      "test_member_names_are_deterministic_and_unique",
+      "test_db_rows_override_canned",
+      "test_db_read_filters_by_team_type",
+      "test_empty_db_falls_back_to_canned"
+    ],
+    "reason": "Executable V1 finder, implicit enrichment, or old report DTO behavior retired by OS-12; historical source stays in Git. New frozen semantic behavior is tested separately.",
+    "replaced_by": [
+      "backend/tests/test_reporting/test_output_resolution.py",
+      "backend/tests/test_reporting/test_output_rendering.py",
+      "backend/tests/test_reporting/test_output_rules.py",
+      "backend/tests/test_api/test_report_runs_v2.py",
+      "backend/tests/test_reporting/test_retired_execution.py"
+    ],
+    "historical_source": "git:ce41f8b75c727d5db4c0343732c0ec1a92f44028:backend/tests/test_extraction/test_approver_team_source.py"
+  },
+  {
+    "path": "backend/tests/test_extraction/test_production_area_source.py",
+    "sha256": "1199cab19beec176b4a60cbd0c43b6d279d7c6ec8f7061f16bb1a580a9186318",
+    "tests": [
+      "test_resolve_known_workshop_returns_fact",
+      "test_resolve_642_has_description",
+      "test_resolve_646_has_description",
+      "test_resolve_646_no_d_class",
+      "test_resolve_both_split_workshops",
+      "test_resolve_unknown_workshop_returns_none",
+      "test_resolve_strips_whitespace",
+      "test_resolve_empty_code_returns_none",
+      "test_resolve_644_has_no_description",
+      "test_factory_returns_mock_implementation"
+    ],
+    "reason": "Executable V1 finder, implicit enrichment, or old report DTO behavior retired by OS-12; historical source stays in Git. New frozen semantic behavior is tested separately.",
+    "replaced_by": [
+      "backend/tests/test_reporting/test_output_resolution.py",
+      "backend/tests/test_reporting/test_output_rendering.py",
+      "backend/tests/test_reporting/test_output_rules.py",
+      "backend/tests/test_api/test_report_runs_v2.py",
+      "backend/tests/test_reporting/test_retired_execution.py"
+    ],
+    "historical_source": "git:ce41f8b75c727d5db4c0343732c0ec1a92f44028:backend/tests/test_extraction/test_production_area_source.py"
+  },
+  {
+    "path": "backend/tests/test_extraction/test_role_source.py",
+    "sha256": "66035216d97afe3fa0b54a163108d25d4250452d491142453b0519eadc2347d1",
+    "tests": [
+      "test_resolve_qa",
+      "test_resolve_wh",
+      "test_resolve_ehs",
+      "test_resolve_ppa",
+      "test_resolve_eng",
+      "test_resolve_data_properties",
+      "test_resolve_case_insensitive",
+      "test_resolve_strips_whitespace",
+      "test_resolve_unknown_returns_none",
+      "test_resolve_empty_returns_none",
+      "test_list_all_count",
+      "test_list_all_contains_all_roles",
+      "test_all_iris_unique",
+      "test_all_role_class_iris_unique",
+      "test_factory_returns_mock"
+    ],
+    "reason": "Executable V1 finder, implicit enrichment, or old report DTO behavior retired by OS-12; historical source stays in Git. New frozen semantic behavior is tested separately.",
+    "replaced_by": [
+      "backend/tests/test_reporting/test_output_resolution.py",
+      "backend/tests/test_reporting/test_output_rendering.py",
+      "backend/tests/test_reporting/test_output_rules.py",
+      "backend/tests/test_api/test_report_runs_v2.py",
+      "backend/tests/test_reporting/test_retired_execution.py"
+    ],
+    "historical_source": "git:ce41f8b75c727d5db4c0343732c0ec1a92f44028:backend/tests/test_extraction/test_role_source.py"
+  },
+  {
+    "path": "backend/tests/test_extraction/test_equipment_source.py",
+    "sha256": "00544dcb8fb359631bdbe3c49ce95e8a6555bc73716e44a3647561ef2e976392",
+    "tests": [
+      "test_resolve_known_equipment_returns_fact",
+      "test_resolve_646_equipment",
+      "test_resolve_data_properties_structure",
+      "test_resolve_clean_area_equipment",
+      "test_resolve_data_property_iris",
+      "test_resolve_material_with_known_iri",
+      "test_resolve_material_without_iri",
+      "test_resolve_unknown_returns_none",
+      "test_resolve_strips_whitespace",
+      "test_resolve_empty_returns_none",
+      "test_class_iri_centrifuge",
+      "test_class_iri_reactor_glass_lined",
+      "test_class_iri_reactor_glass",
+      "test_class_iri_reactor_hastelloy",
+      "test_class_iri_reactor_cryogenic",
+      "test_class_iri_rotary_evaporator",
+      "test_class_iri_rotary_evaporator_alt_name",
+      "test_class_iri_hot_air_dryer",
+      "test_class_iri_vacuum_dryer",
+      "test_class_iri_electric_vacuum_dryer",
+      "test_class_iri_hot_air_blast_dryer",
+      "test_class_iri_granulator",
+      "test_class_iri_filter_press",
+      "test_class_iri_filter_press_fixed",
+      "test_class_iri_chromatography_column_system",
+      "test_class_iri_process_equipment_storage_tank",
+      "test_list_by_workshop_642_count",
+      "test_list_by_workshop_646_count",
+      "test_list_by_workshop_unknown_returns_empty",
+      "test_list_by_workshop_returns_copies",
+      "test_all_equipment_ids_unique",
+      "test_all_iris_unique",
+      "test_enrich_preserves_structured_dict_source_ref",
+      "test_enrich_legacy_string_source_ref_appends_tag",
+      "test_enrich_is_idempotent_for_both_shapes",
+      "test_workshop_from_enrichment_parses_tag_from_either_shape",
+      "test_workshop_from_enrichment_ignores_non_tag_digits",
+      "test_workshop_from_enrichment_requires_archive_label_prefix",
+      "test_workshop_from_enrichment_rejects_unknown_workshop_code",
+      "test_workshop_from_loose_scan_digit_boundary",
+      "test_workshop_from_loose_scan_ignores_structural_coordinates",
+      "test_workshop_from_loose_scan_reads_enrichment_text_field",
+      "test_factory_returns_mock"
+    ],
+    "reason": "Executable V1 finder, implicit enrichment, or old report DTO behavior retired by OS-12; historical source stays in Git. New frozen semantic behavior is tested separately.",
+    "replaced_by": [
+      "backend/tests/test_reporting/test_output_resolution.py",
+      "backend/tests/test_reporting/test_output_rendering.py",
+      "backend/tests/test_reporting/test_output_rules.py",
+      "backend/tests/test_api/test_report_runs_v2.py",
+      "backend/tests/test_reporting/test_retired_execution.py"
+    ],
+    "historical_source": "git:ce41f8b75c727d5db4c0343732c0ec1a92f44028:backend/tests/test_extraction/test_equipment_source.py"
+  },
+  {
+    "path": "backend/tests/test_extraction/test_relation_extraction.py",
+    "sha256": "2f588675b5b92e1d44072f8838ab255de69166a86735ba299d0254e2d9ca856a",
+    "tests": [
+      "test_classify_picks_cmc_report",
+      "test_classify_rejects_unrelated",
+      "test_classify_returns_none_without_candidates",
+      "test_classify_scans_cmc_signals_after_first_twelve_paragraphs",
+      "test_explicit_document_type_builds_authoritative_classification",
+      "test_explicit_document_type_preserves_document_evidence_score",
+      "test_find_drug_product_maps_kv_to_dprops",
+      "test_find_drug_product_prefers_typed_endpoint",
+      "test_find_equipment_expands_candidate_codes",
+      "test_equipment_candidate_parser_supports_slash_or_and_list_separator",
+      "test_find_synthesis_route_builds_steps_with_subrelations",
+      "test_find_synthesis_route_anchors_nested_process_prose_not_route_diagram",
+      "test_detailed_process_table_defines_step_and_yield_table_only_enriches_it",
+      "test_process_basis_supports_normal_style_numbered_locator_paragraph",
+      "test_find_safety_and_quality_risk",
+      "test_find_cleaning_steps",
+      "test_find_residue_dedups_by_name",
+      "test_find_storage_light_protection",
+      "test_find_shared_line_aggregates",
+      "test_find_degradation_classifies_and_parses",
+      "test_find_production_plan_parses_and_splits_workshops",
+      "test_find_production_plan_missing_sentence_returns_empty",
+      "test_find_production_plan_fields_are_annotation_driven",
+      "test_find_production_plan_custom_pattern_drives_extraction",
+      "test_no_hardcoded_plan_field_regexes",
+      "test_extract_relationships_full_graph",
+      "test_explicit_cmc_iri_drives_root_schema_with_document_evidence",
+      "test_profile_strategy_precedes_and_replaces_drug_class_dispatch",
+      "test_extract_relationships_gated_by_classification",
+      "test_resolve_strategy_range_override",
+      "test_resolve_strategy_method_dispatch",
+      "test_resolve_strategy_unknown_method_returns_none",
+      "test_invalid_profile_does_not_fall_back_to_class_specific_dispatch",
+      "test_classify_by_synonyms_exact_match",
+      "test_classify_by_synonyms_substring_match",
+      "test_classify_by_synonyms_reverse_substring",
+      "test_classify_by_synonyms_fallback",
+      "test_classify_by_synonyms_none_text",
+      "test_build_class_hierarchy_from_schema_edges",
+      "test_build_class_hierarchy_empty",
+      "test_degradation_self_loop_recursion_is_guarded",
+      "test_cycle_guard_engages_on_repeat_not_blanket"
+    ],
+    "reason": "Executable V1 finder, implicit enrichment, or old report DTO behavior retired by OS-12; historical source stays in Git. New frozen semantic behavior is tested separately.",
+    "replaced_by": [
+      "backend/tests/test_reporting/test_output_resolution.py",
+      "backend/tests/test_reporting/test_output_rendering.py",
+      "backend/tests/test_reporting/test_output_rules.py",
+      "backend/tests/test_api/test_report_runs_v2.py",
+      "backend/tests/test_reporting/test_retired_execution.py"
+    ],
+    "historical_source": "git:ce41f8b75c727d5db4c0343732c0ec1a92f44028:backend/tests/test_extraction/test_relation_extraction.py"
+  },
+  {
+    "path": "backend/tests/test_reasoning/test_pde_conflict.py",
+    "sha256": "c7b8ce977f49609bbd4aec644a05b30de9f4f38d5fc4f1fd7f1255f60495609d",
+    "tests": [
+      "test_skip_when_no_tox_params_no_mock",
+      "test_conflict_derived_band5_vs_asserted_band2",
+      "test_unit_parsing_mg_and_ug_equivalent",
+      "test_extracted_tox_params_used",
+      "test_dose_mg_requires_mass_unit_adjacent_to_number",
+      "test_dose_mg_bare_number_unit_from_label",
+      "test_placeholder_noael_skips_not_fabricated_band3",
+      "test_species_from_title_fallback_and_bare_noael",
+      "test_title_human_overmatch_does_not_fabricate_conflict",
+      "test_chinese_species_mapping",
+      "test_f4_equals_1_clears_provisional",
+      "test_f4_not_1_stays_provisional",
+      "test_same_band_pde_ratio_conflict",
+      "test_no_conflict_when_bands_and_pde_close",
+      "test_none_when_no_asserted_pde"
+    ],
+    "reason": "Executable V1 finder, implicit enrichment, or old report DTO behavior retired by OS-12; historical source stays in Git. New frozen semantic behavior is tested separately.",
+    "replaced_by": [
+      "backend/tests/test_reporting/test_output_resolution.py",
+      "backend/tests/test_reporting/test_output_rendering.py",
+      "backend/tests/test_reporting/test_output_rules.py",
+      "backend/tests/test_api/test_report_runs_v2.py",
+      "backend/tests/test_reporting/test_retired_execution.py"
+    ],
+    "historical_source": "git:ce41f8b75c727d5db4c0343732c0ec1a92f44028:backend/tests/test_reasoning/test_pde_conflict.py"
+  },
+  {
+    "path": "backend/tests/test_api/test_snapshot_workflow.py",
+    "sha256": "dd0b63da112e8e831bf81f0c0fa505e6833d0a141516287c132b735a48cb22e4",
+    "tests": [
+      "test_report_api_freezes_before_background_work_and_preserves_download",
+      "test_discovery_requires_explicit_current_manifest_and_separate_permission",
+      "test_gap_api_records_model_failure_and_deduplicates_same_input"
+    ],
+    "reason": "Executable V1 finder, implicit enrichment, or old report DTO behavior retired by OS-12; historical source stays in Git. New frozen semantic behavior is tested separately.",
+    "replaced_by": [
+      "backend/tests/test_reporting/test_output_resolution.py",
+      "backend/tests/test_reporting/test_output_rendering.py",
+      "backend/tests/test_reporting/test_output_rules.py",
+      "backend/tests/test_api/test_report_runs_v2.py",
+      "backend/tests/test_reporting/test_retired_execution.py"
+    ],
+    "historical_source": "git:ce41f8b75c727d5db4c0343732c0ec1a92f44028:backend/tests/test_api/test_snapshot_workflow.py"
+  },
+  {
+    "path": "backend/tests/test_reporting/test_source_ref.py",
+    "removed_symbols": [
+      "test_extract_entity_context_survives_dict_source_ref",
+      "test_workshop_tag_beats_spurious_coordinate",
+      "test_unenriched_equipment_code_beats_loose_scan",
+      "test_unenriched_coordinate_does_not_fabricate_workshop"
+    ],
+    "sha256_before": "0c7aa0d4641a5443ce68867d46512a6bce34c9c7434f3b0dce745f1ad9fb88a4",
+    "reason": "Obsolete finder-based output only; unrelated schema and provenance checks retained",
+    "historical_source": "git:ce41f8b75c727d5db4c0343732c0ec1a92f44028:backend/tests/test_reporting/test_source_ref.py"
+  },
+  {
+    "path": "backend/tests/test_reporting/test_report_source_ontology.py",
+    "removed_symbols": [
+      "test_managed_cmc_document_name_resolves_from_typed_abox_property",
+      "test_report_source_resolves_name_from_materialized_cmc_document"
+    ],
+    "sha256_before": "8b7dd9a48f83f9927b2d3c58a0fec1cfb50fb378cbfb7e1dcc1e93ada6dc1f1b",
+    "reason": "Obsolete finder-based output only; unrelated schema and provenance checks retained",
+    "historical_source": "git:ce41f8b75c727d5db4c0343732c0ec1a92f44028:backend/tests/test_reporting/test_report_source_ontology.py"
+  },
+  {
+    "path": "backend/tests/test_reporting/test_template_meta_and_section_prompt.py",
+    "removed_symbols": [
+      "TestGenerateSectionPromptEndpoint",
+      "TestGenerateSectionNarratives",
+      "TestNarrativesPayload"
+    ],
+    "sha256_before": "4c151a73c35fa57bcb88d04d38499589eef07589881e34b95fcaef6a5bfed280",
+    "reason": "Obsolete finder-based output only; unrelated schema and provenance checks retained",
+    "historical_source": "git:ce41f8b75c727d5db4c0343732c0ec1a92f44028:backend/tests/test_reporting/test_template_meta_and_section_prompt.py"
+  },
+  {
+    "path": "backend/tests/test_extraction/test_relevance_gate.py",
+    "sha256": "64ce540b094b293a2bf8a6a9481a9f313898fe13eac493b357e085d8a87e6d02",
+    "historical_source": "git:ce41f8b75c727d5db4c0343732c0ec1a92f44028:backend/tests/test_extraction/test_relevance_gate.py",
+    "reason": "Label-to-class gating and in-place risk seed upgrade retired; replacement refusal and immutable seed tests in test_retired_execution.py",
+    "tests": [
+      "test_class_label_tokens_collects_and_filters",
+      "test_row_mentions_class_keep_drop_and_passthrough",
+      "test_gate_active_drops_unrelated_rows",
+      "test_gate_bypassed_when_column_mapping_present"
+    ]
+  },
+  {
+    "path": "backend/tests/test_reasoning/test_risk_template_upgrade.py",
+    "sha256": "1543f6879cb1efad1f8a823cefde3808e79527ef418b8f91bbae537ba3fc5b3e",
+    "historical_source": "git:ce41f8b75c727d5db4c0343732c0ec1a92f44028:backend/tests/test_reasoning/test_risk_template_upgrade.py",
+    "reason": "Label-to-class gating and in-place risk seed upgrade retired; replacement refusal and immutable seed tests in test_retired_execution.py",
+    "tests": [
+      "test_new_default_carries_placeholders",
+      "test_pristine_legacy_row_is_upgraded",
+      "test_all_five_legacy_rows_upgraded",
+      "test_manually_edited_row_is_not_overwritten",
+      "test_new_default_row_is_noop",
+      "test_upgrade_is_idempotent",
+      "test_missing_row_is_skipped"
+    ]
+  },
+  {
+    "path": "backend/tests/test_reporting/test_ast_template.py",
+    "sha256": "54a84e45d25b6b69aba0449c59a1663e32d2287fa6c9e706ba33240daf6b1a0f",
+    "tests": [
+      "TestResolveTemplate"
+    ],
+    "reason": "Obsolete implicit V1 execution expectations replaced with explicit refusal or frozen V2 contracts; unrelated tests retained.",
+    "replaced_by": [
+      "backend/tests/test_api/test_report_runs_v2.py",
+      "backend/tests/test_reporting/test_retired_execution.py"
+    ],
+    "historical_source": "git:ce41f8b75c727d5db4c0343732c0ec1a92f44028:backend/tests/test_reporting/test_ast_template.py"
+  },
+  {
+    "path": "backend/tests/test_reporting/test_ast_template.py",
+    "sha256": "54a84e45d25b6b69aba0449c59a1663e32d2287fa6c9e706ba33240daf6b1a0f",
+    "tests": [
+      "test_key_is_stable_and_matches_validator_output"
+    ],
+    "reason": "Obsolete implicit V1 execution expectations replaced with explicit refusal or frozen V2 contracts; unrelated tests retained.",
+    "replaced_by": [
+      "backend/tests/test_api/test_report_runs_v2.py",
+      "backend/tests/test_reporting/test_retired_execution.py"
+    ],
+    "historical_source": "git:ce41f8b75c727d5db4c0343732c0ec1a92f44028:backend/tests/test_reporting/test_ast_template.py"
+  },
+  {
+    "path": "backend/tests/test_reporting/test_ast_template_disabled.py",
+    "sha256": "15a2b61139ce18b0d5ce359824d9ff9ca429ab89d7f47314822465edc4a22ef0",
+    "tests": [
+      "test_resolve_template_drops_disabled"
+    ],
+    "reason": "Obsolete implicit V1 execution expectations replaced with explicit refusal or frozen V2 contracts; unrelated tests retained.",
+    "replaced_by": [
+      "backend/tests/test_api/test_report_runs_v2.py",
+      "backend/tests/test_reporting/test_retired_execution.py"
+    ],
+    "historical_source": "git:ce41f8b75c727d5db4c0343732c0ec1a92f44028:backend/tests/test_reporting/test_ast_template_disabled.py"
+  },
+  {
+    "path": "backend/tests/test_reporting/test_ast_coverage_api.py",
+    "sha256": "e97505671f62a820861c145ba207378e5bd12a4abad98bde4aea0ff2fa3aa8b8",
+    "tests": [
+      "TestGetAstCoverage",
+      "TestDismissUndismiss",
+      "TestCoverageEmission"
+    ],
+    "reason": "Mutable V1 coverage/dismiss behavior retired; V2 inputs and coverage equality tested in report_runs_v2.",
+    "replaced_by": [
+      "backend/tests/test_api/test_report_runs_v2.py",
+      "backend/tests/test_reporting/test_retired_execution.py"
+    ],
+    "historical_source": "git:ce41f8b75c727d5db4c0343732c0ec1a92f44028:backend/tests/test_reporting/test_ast_coverage_api.py"
+  },
+  {
+    "path": "backend/tests/test_reporting/test_risk_report_api.py",
+    "sha256": "e05d03cec438a552fc409a285802ace735eb34571f55079a3999beaa97c5c76a",
+    "tests": [
+      "test_422_when_cache_missing",
+      "test_422_when_doc_class_missing",
+      "test_422_when_not_cmc_report",
+      "test_422_when_zero_relationships",
+      "test_404_when_job_not_found",
+      "test_get_404_when_no_report_generated",
+      "test_audit_entry_present_and_chain_valid",
+      "test_generated_docx_and_snapshot_reference_source_cmc_report"
+    ],
+    "reason": "Old cache-derived narrative/risk coverage execution retired. Authenticated V2 fixed snapshot, missing facts, citations and artifact tests replace it.",
+    "replaced_by": [
+      "backend/tests/test_api/test_report_runs_v2.py",
+      "backend/tests/test_reporting/test_retired_execution.py"
+    ],
+    "historical_source": "git:ce41f8b75c727d5db4c0343732c0ec1a92f44028:backend/tests/test_reporting/test_risk_report_api.py"
+  },
+  {
+    "path": "backend/tests/test_api/test_risk_report_coverage.py",
+    "sha256": "b03c8e32b55a78c7ff248a57e1260f953076d860f02cbfd52f4eec6bc554edc3",
+    "tests": [
+      "test_report_persists_full_coverage_and_audit",
+      "test_report_records_omissions_when_shared_line_missing",
+      "test_audit_chain_stays_valid_after_report",
+      "test_report_persists_and_renders_pde_conflict_decision"
+    ],
+    "reason": "Old cache-derived narrative/risk coverage execution retired. Authenticated V2 fixed snapshot, missing facts, citations and artifact tests replace it.",
+    "replaced_by": [
+      "backend/tests/test_api/test_report_runs_v2.py",
+      "backend/tests/test_reporting/test_retired_execution.py"
+    ],
+    "historical_source": "git:ce41f8b75c727d5db4c0343732c0ec1a92f44028:backend/tests/test_api/test_risk_report_coverage.py"
+  },
+  {
+    "path": "backend/tests/test_reporting/test_preview_section_narrative_api.py",
+    "sha256": "826f177e944e66e128d2cb19c1b7c1b133c13d5d83da0a8ca8de08c7a1533e34",
+    "tests": [
+      "test_happy_path_returns_narrative",
+      "test_flag_off_returns_503",
+      "test_no_local_client_returns_503",
+      "test_empty_prompt_returns_400",
+      "test_missing_annotation_cache_returns_422",
+      "test_unknown_template_returns_404",
+      "test_unknown_section_returns_404",
+      "test_role_gated_403",
+      "test_empty_llm_output_returns_502"
+    ],
+    "reason": "Old cache-derived narrative/risk coverage execution retired. Authenticated V2 fixed snapshot, missing facts, citations and artifact tests replace it.",
+    "replaced_by": [
+      "backend/tests/test_api/test_report_runs_v2.py",
+      "backend/tests/test_reporting/test_retired_execution.py"
+    ],
+    "historical_source": "git:ce41f8b75c727d5db4c0343732c0ec1a92f44028:backend/tests/test_reporting/test_preview_section_narrative_api.py"
+  },
+  {
+    "path": "backend/tests/unit/test_transforms.py",
+    "sha256": "d6bd40e42fb0e7690a2c0bc678bf3f64c3a633ff2bc0572d2d504e6e66b9c11a",
+    "tests": [
+      "TestPattern"
+    ],
+    "reason": "Obsolete implicit V1 execution expectations replaced with explicit refusal or frozen V2 contracts; unrelated tests retained.",
+    "replaced_by": [
+      "backend/tests/test_api/test_report_runs_v2.py",
+      "backend/tests/test_reporting/test_retired_execution.py"
+    ],
+    "historical_source": "git:ce41f8b75c727d5db4c0343732c0ec1a92f44028:backend/tests/unit/test_transforms.py"
+  }
+]

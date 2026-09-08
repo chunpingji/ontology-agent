@@ -3,10 +3,11 @@
 from __future__ import annotations
 
 import io
-import json
 import logging
 import threading
+from copy import deepcopy
 from dataclasses import dataclass, field
+from functools import wraps
 from pathlib import Path
 from typing import Any
 
@@ -51,8 +52,16 @@ MODULE_FILES = {
 
 # integration owl:imports 全部内部模块，故须最后加载（依赖先就位）。
 _LOAD_ORDER = [
-    "drug", "equipment", "contamination", "cleaning", "facility",
-    "personnel", "document", "risk", "drug-development", "integration",
+    "drug",
+    "equipment",
+    "contamination",
+    "cleaning",
+    "facility",
+    "personnel",
+    "document",
+    "risk",
+    "drug-development",
+    "integration",
 ]
 
 # 外部上层本体（BFO）：随包提供的离线本地副本。各模块的类挂在 BFO 顶层范畴下，必须先于
@@ -116,11 +125,21 @@ class TreeNode:
     individual_count: int = 0
 
 
+def _schema_mutation(function):
+    @wraps(function)
+    def call(self, *args, **kwargs):
+        with self._lock:
+            self._semantic_schema = None
+            return function(self, *args, **kwargs)
+    return call
+
+
 class OntologyEngine:
     def __init__(self, ontology_dir: Path | None = None, store_path: Path | None = None):
         self._ontology_dir = ontology_dir or settings.ontology_dir
         self._store_path = store_path or settings.owl_store_path
-        self._lock = threading.Lock()
+        self._lock = threading.RLock()
+        self._semantic_schema = None
         self._world: owlready2.World | None = None
         self._ontologies: dict[str, owlready2.Ontology] = {}
         self.is_loaded = False
@@ -133,6 +152,7 @@ class OntologyEngine:
         with self._lock:
             if self.is_loaded:
                 return
+            self._semantic_schema = None
             self._validate_module_registry()
             self._store_path.parent.mkdir(parents=True, exist_ok=True)
             # 物化库为权威 TTL 的派生缓存（TTL 为唯一权威源，永不回写）。每次启动重建，
@@ -152,7 +172,9 @@ class OntologyEngine:
                 except Exception:
                     logger.warning(
                         "Upper ontology %s not loaded from %s; parent categories may be empty",
-                        ext_iri, ext_path, exc_info=True,
+                        ext_iri,
+                        ext_path,
+                        exc_info=True,
                     )
                     onto.loaded = True
 
@@ -196,9 +218,7 @@ class OntologyEngine:
         name_keys = set(MODULE_NAMES)
         file_keys = set(MODULE_FILES)
         order_keys = set(_LOAD_ORDER)
-        duplicate_order = sorted(
-            key for key in order_keys if _LOAD_ORDER.count(key) > 1
-        )
+        duplicate_order = sorted(key for key in order_keys if _LOAD_ORDER.count(key) > 1)
         problems: list[str] = []
         if duplicate_order:
             problems.append("duplicate keys in _LOAD_ORDER: " + ", ".join(duplicate_order))
@@ -217,6 +237,7 @@ class OntologyEngine:
 
     def _discard_partial_world(self) -> None:
         """Reset state after a failed load while the caller already holds ``_lock``."""
+        self._semantic_schema = None
         world = self._world
         self._world = None
         self._ontologies.clear()
@@ -231,16 +252,29 @@ class OntologyEngine:
         owlready2（纯内存转换，only_local 禁联网，不回写权威 TTL）。"""
         graph = rdflib.Graph()
         graph.parse(str(path), format="turtle")
+        from app.services.extraction.retired_config import reject_execution_annotations
+
+        reject_execution_annotations(graph)
         rdfxml = graph.serialize(format="xml", encoding="utf-8")
         onto.load(fileobj=io.BytesIO(rdfxml), only_local=True, format="rdfxml")
 
     def close(self) -> None:
         with self._lock:
+            self._semantic_schema = None
             if self._world:
                 self._world.close()
                 self._world = None
             self._ontologies.clear()
             self.is_loaded = False
+
+    def semantic_schema_snapshot(self):
+        """A caller-owned projection, rebuilt after every T-Box mutation/load."""
+        from app.services.extraction.extraction_tasks import _build_semantic_schema
+
+        with self._lock:
+            if self._semantic_schema is None:
+                self._semantic_schema = _build_semantic_schema(self)
+            return deepcopy(self._semantic_schema)
 
     def get_modules(self) -> list[ModuleInfo]:
         with self._lock:
@@ -259,10 +293,15 @@ class OntologyEngine:
                         break
                 if not label:
                     label = str(labels[0]) if labels else key
-                result.append(ModuleInfo(
-                    key=key, iri=iri, label=label,
-                    class_count=len(classes), individual_count=len(individuals),
-                ))
+                result.append(
+                    ModuleInfo(
+                        key=key,
+                        iri=iri,
+                        label=label,
+                        class_count=len(classes),
+                        individual_count=len(individuals),
+                    )
+                )
             return result
 
     def get_class_hierarchy(self, module_key: str) -> list[TreeNode]:
@@ -274,18 +313,14 @@ class OntologyEngine:
             roots = []
             for cls in classes:
                 parents_in_module = [
-                    p for p in cls.is_a
-                    if isinstance(p, owlready2.ThingClass) and p in classes
+                    p for p in cls.is_a if isinstance(p, owlready2.ThingClass) and p in classes
                 ]
                 if not parents_in_module:
                     roots.append(cls)
             return [self._build_tree(cls, classes) for cls in roots]
 
     def _build_tree(self, cls: owlready2.ThingClass, module_classes: list) -> TreeNode:
-        children_in_module = [
-            c for c in cls.subclasses()
-            if c in module_classes
-        ]
+        children_in_module = [c for c in cls.subclasses() if c in module_classes]
         label = self._get_label(cls)
         individuals = list(cls.instances())
         return TreeNode(
@@ -306,9 +341,7 @@ class OntologyEngine:
             comment = str(cls.comment[0]) if cls.comment else None
             module = self._find_module_for_class(cls)
 
-            parent_iris = [
-                p.iri for p in cls.is_a if isinstance(p, owlready2.ThingClass)
-            ]
+            parent_iris = [p.iri for p in cls.is_a if isinstance(p, owlready2.ThingClass)]
             children_iris = [c.iri for c in cls.subclasses()]
             bfo_category = self._bfo_category(cls)
 
@@ -464,9 +497,14 @@ class OntologyEngine:
                     seen.add(prop.iri)
                     # RDF preserves xsd:date and decimal exactly; Python range
                     # adapters can return None or collapse decimal into float.
-                    ranges = [str(item) for item in self._world.as_rdflib_graph().objects(
-                        rdflib.URIRef(prop.iri), rdflib.RDFS.range,
-                    ) if isinstance(item, rdflib.URIRef)]
+                    ranges = [
+                        str(item)
+                        for item in self._world.as_rdflib_graph().objects(
+                            rdflib.URIRef(prop.iri),
+                            rdflib.RDFS.range,
+                        )
+                        if isinstance(item, rdflib.URIRef)
+                    ]
                     aliases = []
                     for item in getattr(prop, "label", []) or []:
                         text = str(item)
@@ -475,18 +513,39 @@ class OntologyEngine:
                     label = self._get_label(prop) or prop.name
                     if label and label not in aliases:
                         aliases.insert(0, label)
-                    props.append({
-                        "iri": prop.iri,
-                        "name": prop.name,
-                        "label": label,
-                        "aliases": aliases,
-                        "max_count": 1 if owlready2.FunctionalProperty in prop.is_a else None,
-                        "range": ranges,
-                        "datatype": (
-                            ranges[0].rsplit("#", 1)[-1].rsplit("/", 1)[-1]
-                            if ranges else None
-                        ),
-                    })
+                    annotations = {}
+                    for name, field_name in (
+                        ("canonicalUnit", "canonical_unit"), ("identityKey", "identity_key"),
+                    ):
+                        values = set(self._world.as_rdflib_graph().objects(
+                            rdflib.URIRef(prop.iri),
+                            rdflib.URIRef(MANAGED_NAMESPACE_BASE + "integration/" + name),
+                        ))
+                        if len(values) > 1 or any(
+                            not isinstance(v, rdflib.Literal) for v in values
+                        ):
+                            raise OntologyIntegrityError(f"Invalid {name} annotation on {prop.iri}")
+                        if values:
+                            value = next(iter(values))
+                            annotations[field_name] = value.toPython() if name == "identityKey" \
+                                else str(value)
+                    props.append(
+                        {
+                            "iri": prop.iri,
+                            "name": prop.name,
+                            "label": label,
+                            "aliases": aliases,
+                            "description": "\n".join(
+                                str(c) for c in getattr(prop, "comment", []) or []
+                            ),
+                            "max_count": 1 if owlready2.FunctionalProperty in prop.is_a else None,
+                            "range": ranges,
+                            "datatype": (
+                                ranges[0].rsplit("#", 1)[-1].rsplit("/", 1)[-1] if ranges else None
+                            ),
+                            **annotations,
+                        }
+                    )
             return props
 
     def get_object_properties_by_domain(self, class_iri: str) -> list[dict]:
@@ -505,19 +564,30 @@ class OntologyEngine:
             for prop in self._world.object_properties():
                 if self._cls_in_domain(cls, prop.domain) and prop.iri not in seen:
                     seen.add(prop.iri)
-                    props.append({
-                        "iri": prop.iri,
-                        "name": prop.name,
-                        "label": self._get_label(prop) or prop.name,
-                        "range": sorted({iri for r in prop.range for iri in self._range_class_iris(r)}),
-                        "max_count": 1 if owlready2.FunctionalProperty in prop.is_a else None,
-                    })
+                    props.append(
+                        {
+                            "iri": prop.iri,
+                            "name": prop.name,
+                            "label": self._get_label(prop) or prop.name,
+                            "description": "\n".join(
+                                str(c) for c in getattr(prop, "comment", []) or []
+                            ),
+                            "range": sorted(
+                                {iri for r in prop.range for iri in self._range_class_iris(r)}
+                            ),
+                            "max_count": 1 if owlready2.FunctionalProperty in prop.is_a else None,
+                        }
+                    )
             return props
 
     @staticmethod
     def _range_class_iris(expression):
         if isinstance(expression, owlready2.Or):
-            return [iri for child in expression.Classes for iri in OntologyEngine._range_class_iris(child)]
+            return [
+                iri
+                for child in expression.Classes
+                for iri in OntologyEngine._range_class_iris(child)
+            ]
         # Intersections/restrictions are not unions; unsupported expressions
         # stay unresolved rather than becoming fabricated class IRIs.
         return [expression.iri] if isinstance(expression, owlready2.ThingClass) else []
@@ -545,9 +615,7 @@ class OntologyEngine:
             cls = self._world.search_one(iri=class_iri)
             if cls is None or not isinstance(cls, owlready2.ThingClass):
                 return []
-            descendants = (
-                cls.descendants(include_self=False) if recursive else cls.subclasses()
-            )
+            descendants = cls.descendants(include_self=False) if recursive else cls.subclasses()
             out: list[dict] = []
             seen: set[str] = set()
             for c in descendants:
@@ -595,112 +663,6 @@ class OntologyEngine:
                     out.append(iri)
             return out
 
-    @staticmethod
-    def _get_extraction_hints_from_graph(graph, class_iri: str) -> dict:
-        """Core logic for extraction hints — no lock, caller must hold it."""
-        from rdflib import URIRef
-
-        EXTRACTION_METHOD = URIRef(
-            "https://ontology.pharma-gmp.cn/slpra/integration/extractionMethod"
-        )
-        EXTRACTION_ANCHOR = URIRef(
-            "https://ontology.pharma-gmp.cn/slpra/integration/extractionAnchor"
-        )
-        EXTRACTION_PROFILE = URIRef(
-            "https://ontology.pharma-gmp.cn/slpra/integration/extractionProfile"
-        )
-        subject = URIRef(class_iri)
-        method = None
-        for obj in graph.objects(subject, EXTRACTION_METHOD):
-            method = str(obj)
-            break
-        anchors: list[str] = []
-        for obj in graph.objects(subject, EXTRACTION_ANCHOR):
-            anchors.append(str(obj))
-        profile = None
-        profile_error = None
-        for obj in graph.objects(subject, EXTRACTION_PROFILE):
-            try:
-                profile = json.loads(str(obj))
-            except json.JSONDecodeError as exc:
-                profile_error = str(exc)
-            break
-        return {
-            "method": method,
-            "anchors": anchors,
-            "profile": profile,
-            "profile_error": profile_error,
-        }
-
-    def get_extraction_hints(self, class_iri: str) -> dict:
-        """Read extraction annotation properties for a range class.
-
-        Returns ``{"method": str | None, "anchors": [str]}``.
-        When no annotation is declared, ``method`` is ``None`` (caller falls
-        back to a generic strategy).
-        """
-        with self._lock:
-            if not self._world:
-                return {
-                    "method": None,
-                    "anchors": [],
-                    "profile": None,
-                    "profile_error": None,
-                }
-            try:
-                graph = self._world.as_rdflib_graph()
-            except Exception:
-                logger.warning("get_extraction_hints: rdflib view unavailable", exc_info=True)
-                return {
-                    "method": None,
-                    "anchors": [],
-                    "profile": None,
-                    "profile_error": None,
-                }
-            return self._get_extraction_hints_from_graph(graph, class_iri)
-
-    @staticmethod
-    def _get_extraction_pattern_from_graph(graph, prop_iri: str) -> str | None:
-        """Read a DatatypeProperty's ``slpra-integ:extractionPattern`` annotation."""
-        from rdflib import URIRef
-
-        EXTRACTION_PATTERN = URIRef(
-            "https://ontology.pharma-gmp.cn/slpra/integration/extractionPattern"
-        )
-        for obj in graph.objects(URIRef(prop_iri), EXTRACTION_PATTERN):
-            return str(obj)
-        return None
-
-    def get_data_property_patterns(self, class_iri: str) -> list[dict]:
-        """返回该类 domain 下、声明了 ``extractionPattern`` 注解的数据属性
-        ``[{iri, label, pattern}]``（沿用 ``get_data_properties_by_domain`` 的 domain
-        顺序与 union-domain/标签处理）。``pattern`` 的 group(1) 即抽取值。
-
-        供 ``sentence_regex`` 方法的 range 类（如 ClinicalSampleProductionPlan）从注解
-        读取字段正则，取代 relation_extractor 中硬编码的 ``_PLAN_*_RE``。未声明注解的
-        属性不返回；World 未加载或 rdflib 视图不可用 → ``[]``。
-        """
-        # get_data_properties_by_domain 自持锁，须在获取本方法锁之前调用（Lock 不可重入）。
-        props = self.get_data_properties_by_domain(class_iri)
-        if not props:
-            return []
-        with self._lock:
-            if not self._world:
-                return []
-            try:
-                graph = self._world.as_rdflib_graph()
-            except Exception:
-                logger.warning(
-                    "get_data_property_patterns: rdflib view unavailable", exc_info=True
-                )
-                return []
-            out: list[dict] = []
-            for p in props:
-                pattern = self._get_extraction_pattern_from_graph(graph, p["iri"])
-                if pattern:
-                    out.append({"iri": p["iri"], "label": p["label"], "pattern": pattern})
-            return out
-
     def get_subclass_synonyms(self, class_iri: str) -> dict[str, str]:
         """Return ``{synonym → subclass_iri}`` for all descendants of a class.
 
@@ -735,7 +697,9 @@ class OntologyEngine:
             return result
 
     def get_relation_schema(
-        self, class_iri: str, max_hops: int = 4,
+        self,
+        class_iri: str,
+        max_hops: int = 4,
     ) -> list[dict]:
         """从指定类出发 BFS，返回多跳关系图谱 schema（纯 T-Box 结构查询）。
 
@@ -746,7 +710,7 @@ class OntologyEngine:
              range_class_iri, range_class_label,
              range_subclasses: [{iri, label}],
              range_data_properties: [{iri, label}],
-             range_extraction_hints: {method: str|None, anchors: [str]}}
+             range_data_properties: exact declared properties}
 
         用途：给定文档类（如 CMCReport），展示其完整的关系图谱模板——
         实体类型 + 属性三元组均可从此结构推导，无需跑 NER。
@@ -760,10 +724,6 @@ class OntologyEngine:
 
             all_obj_props = list(self._world.object_properties())
             all_data_props = list(self._world.data_properties())
-            try:
-                rdf_graph = self._world.as_rdflib_graph()
-            except Exception:
-                rdf_graph = None
 
             def _obj_props_for(cls):
                 props = []
@@ -809,10 +769,12 @@ class OntologyEngine:
                             subs = []
                             for c in rng.descendants(include_self=False):
                                 if isinstance(c, owlready2.ThingClass):
-                                    subs.append({
-                                        "iri": c.iri,
-                                        "label": self._get_label(c) or c.name,
-                                    })
+                                    subs.append(
+                                        {
+                                            "iri": c.iri,
+                                            "label": self._get_label(c) or c.name,
+                                        }
+                                    )
                                     # 注意：不要在此把子类标记进 frontier_seen——这会让下方
                                     # 725-728 的入队循环恒判「已见」而永不入队，导致 range 子类
                                     # （如 SynthesisRoute 下的 SynthesisStep）从不作为 domain 被
@@ -820,27 +782,25 @@ class OntologyEngine:
                                     # 是否入队/去重统一交给下方入队循环负责（Codex R1）。
                             dps = []
                             for dp in _data_props_for(rng):
-                                dps.append({
-                                    "iri": dp.iri,
-                                    "label": self._get_label(dp) or dp.name,
-                                })
-                            hints = (
-                                self._get_extraction_hints_from_graph(rdf_graph, rng_iri)
-                                if rdf_graph is not None
-                                else {"method": None, "anchors": []}
+                                dps.append(
+                                    {
+                                        "iri": dp.iri,
+                                        "label": self._get_label(dp) or dp.name,
+                                    }
+                                )
+                            edges.append(
+                                {
+                                    "hop": hop,
+                                    "predicate_iri": prop.iri,
+                                    "predicate_label": pred_label,
+                                    "domain_class_iri": domain_iri,
+                                    "domain_class_label": domain_label,
+                                    "range_class_iri": rng_iri,
+                                    "range_class_label": rng_label,
+                                    "range_subclasses": subs,
+                                    "range_data_properties": dps,
+                                }
                             )
-                            edges.append({
-                                "hop": hop,
-                                "predicate_iri": prop.iri,
-                                "predicate_label": pred_label,
-                                "domain_class_iri": domain_iri,
-                                "domain_class_label": domain_label,
-                                "range_class_iri": rng_iri,
-                                "range_class_label": rng_label,
-                                "range_subclasses": subs,
-                                "range_data_properties": dps,
-                                "range_extraction_hints": hints,
-                            })
                             if rng_iri not in frontier_seen:
                                 frontier_seen.add(rng_iri)
                                 next_frontier.add(rng_iri)
@@ -897,6 +857,7 @@ class OntologyEngine:
             return self._ontologies[module]
         return next(iter(self._ontologies.values()))
 
+    @_schema_mutation
     def upsert_class(
         self,
         iri: str,
@@ -918,6 +879,7 @@ class OntologyEngine:
                 cls.is_a.append(parent)
             self._apply_labels(cls, label, comment)
 
+    @_schema_mutation
     def upsert_link_type(
         self,
         iri: str,
@@ -943,6 +905,7 @@ class OntologyEngine:
                 prop.range = [rng]
             self._apply_labels(prop, label, comment)
 
+    @_schema_mutation
     def upsert_data_property(
         self,
         iri: str,
@@ -964,6 +927,7 @@ class OntologyEngine:
                 prop.domain = [dom]
             self._apply_labels(prop, label, comment)
 
+    @_schema_mutation
     def delete_entity(self, iri: str) -> None:
         ent = self._world.search_one(iri=iri)
         if ent is not None:
@@ -993,9 +957,7 @@ class OntologyEngine:
                     elif kind == "link_type":
                         self.upsert_link_type(**{k: v for k, v in ent.items() if k != "kind"})
                     elif kind == "data_property":
-                        self.upsert_data_property(
-                            **{k: v for k, v in ent.items() if k != "kind"}
-                        )
+                        self.upsert_data_property(**{k: v for k, v in ent.items() if k != "kind"})
                     # actions/restrictions are projected via TTL, not the World
                 except Exception as exc:  # pragma: no cover - best effort
                     logger.warning("Projection failed for %s: %s", ent.get("iri"), exc)
@@ -1016,9 +978,11 @@ class OntologyEngine:
             props[prop.iri] = serialized[0] if len(serialized) == 1 else serialized
 
         return IndividualInfo(
-            iri=ind.iri, name=ind.name,
+            iri=ind.iri,
+            name=ind.name,
             class_iris=class_iris,
-            label_zh=label_zh, label_en=label_en,
+            label_zh=label_zh,
+            label_en=label_en,
             properties=props,
         )
 
@@ -1074,9 +1038,7 @@ class OntologyEngine:
                 iri = getattr(parent, "iri", "") or ""
                 if parent.name.startswith("BFO_") or "/obo/BFO_" in iri:
                     return self._get_label(parent) or parent.name
-                nxt.extend(
-                    p for p in parent.is_a if isinstance(p, owlready2.ThingClass)
-                )
+                nxt.extend(p for p in parent.is_a if isinstance(p, owlready2.ThingClass))
             level = nxt
         return None
 

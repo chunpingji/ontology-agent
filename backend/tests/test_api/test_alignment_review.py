@@ -22,21 +22,33 @@ def _xlsx_dupe_equipment() -> bytes:
 
 
 def _make_config(client, source_type="excel"):
-    r = client.post("/api/extraction/configs", json={
-        "name": "设备台账",
-        "target_class_iri": "http://slpra.org/equipment#Equipment",
-        "source_type": source_type,
-        "column_mapping": {"设备编号": "equipmentID", "设备名称": "equipmentName",
-                           "材质": "material"},
-    })
+    r = client.post(
+        "/api/extraction/configs",
+        json={
+            "name": "设备台账",
+            "target_class_iri": "http://slpra.org/equipment#Equipment",
+            "source_type": source_type,
+            "column_mapping": {
+                "设备编号": "equipmentID",
+                "设备名称": "equipmentName",
+                "材质": "material",
+            },
+        },
+    )
     assert r.status_code == 201, r.text
     return r.json()["id"]
 
 
 def _create_job(client, headers, cfg_id, content, source_type="excel", db_source=None):
-    data = {"source_type": source_type, "config_id": cfg_id}
+    data = {
+        "source_type": source_type,
+        "config_id": cfg_id,
+        "identity_property_iri": "equipmentID",
+        "label_property_iri": "equipmentName",
+    }
     if db_source:
         import json as _json
+
         data["db_source"] = _json.dumps(db_source)
     files = {"file": ("src.xlsx", content, "application/octet-stream")} if content else None
     r = client.post("/api/extraction/jobs", data=data, files=files, headers=headers)
@@ -62,20 +74,25 @@ def test_candidates_grouped_with_canonical(client, analyst_headers):
     assert grp["canonical_candidate_id"] == canon[0]["id"]
 
 
-def test_review_confirm_commits_only_confirmed(client, analyst_headers):
+def test_unverified_confirm_is_rejected_and_rejection_does_not_commit(client, analyst_headers):
     cfg_id = _make_config(client)
     job = _create_job(client, analyst_headers, cfg_id, _xlsx_dupe_equipment())
     cands = _all_candidates(client.get(f"/api/extraction/jobs/{job['id']}/candidates").json())
     c0, c1 = cands[0], cands[1]
 
-    r = client.put(f"/api/extraction/candidates/{c0['id']}/review",
-                   json={"status": "confirmed"}, headers=analyst_headers)
-    assert r.status_code == 200, r.text
-    assert r.json()["review_status"] == "committed"
-    assert r.json()["committed_iri"]
+    r = client.put(
+        f"/api/extraction/candidates/{c0['id']}/review",
+        json={"status": "confirmed"},
+        headers=analyst_headers,
+    )
+    assert r.status_code == 409, r.text
+    assert "legacy_unverified" in r.text
 
-    r = client.put(f"/api/extraction/candidates/{c1['id']}/review",
-                   json={"status": "rejected"}, headers=analyst_headers)
+    r = client.put(
+        f"/api/extraction/candidates/{c1['id']}/review",
+        json={"status": "rejected"},
+        headers=analyst_headers,
+    )
     assert r.status_code == 200, r.text
     assert r.json()["review_status"] == "rejected"
     assert not r.json()["committed_iri"]
@@ -86,9 +103,11 @@ def test_merge_endpoint(client, analyst_headers):
     job = _create_job(client, analyst_headers, cfg_id, _xlsx_dupe_equipment())
     cands = _all_candidates(client.get(f"/api/extraction/jobs/{job['id']}/candidates").json())
     target, src = cands[0], cands[1]
-    r = client.post("/api/extraction/candidates/merge",
-                    json={"target_id": target["id"], "source_ids": [src["id"]]},
-                    headers=analyst_headers)
+    r = client.post(
+        "/api/extraction/candidates/merge",
+        json={"target_id": target["id"], "source_ids": [src["id"]]},
+        headers=analyst_headers,
+    )
     assert r.status_code == 200, r.text
     merged = {c["id"]: c for c in r.json()}
     assert merged[src["id"]]["merged_into_id"] == target["id"]
@@ -100,9 +119,11 @@ def test_split_endpoint(client, analyst_headers):
     job = _create_job(client, analyst_headers, cfg_id, _xlsx_dupe_equipment())
     cands = _all_candidates(client.get(f"/api/extraction/jobs/{job['id']}/candidates").json())
     c0 = cands[0]
-    r = client.post(f"/api/extraction/candidates/{c0['id']}/split",
-                    json={"splits": [{"equipmentID": "CT64201A"}, {"equipmentID": "CT64201B"}]},
-                    headers=analyst_headers)
+    r = client.post(
+        f"/api/extraction/candidates/{c0['id']}/split",
+        json={"splits": [{"equipmentID": "CT64201A"}, {"equipmentID": "CT64201B"}]},
+        headers=analyst_headers,
+    )
     assert r.status_code == 200, r.text
     assert len(r.json()) == 2
     assert all(d["review_status"] == "pending" for d in r.json())
@@ -115,23 +136,28 @@ def test_database_source_produces_class_and_link_candidates(client, analyst_head
     eng = create_engine(src_dsn)
     with eng.begin() as conn:
         conn.execute(text("CREATE TABLE room (id INTEGER PRIMARY KEY, grade TEXT)"))
-        conn.execute(text(
-            "CREATE TABLE equipment (id INTEGER PRIMARY KEY, name TEXT, "
-            "room_id INTEGER REFERENCES room(id))"
-        ))
+        conn.execute(
+            text(
+                "CREATE TABLE equipment (id INTEGER PRIMARY KEY, name TEXT, "
+                "room_id INTEGER REFERENCES room(id))"
+            )
+        )
     eng.dispose()
 
     os.environ["SLPRA_TEST_SOURCE_DSN"] = src_dsn
     try:
         cfg_id = _make_config(client, source_type="database")
         job = _create_job(
-            client, analyst_headers, cfg_id, content=None, source_type="database",
+            client,
+            analyst_headers,
+            cfg_id,
+            content=None,
+            source_type="database",
             db_source={"dsn_ref": "SLPRA_TEST_SOURCE_DSN", "include_tables": ["room", "equipment"]},
         )
         final = client.get(f"/api/extraction/jobs/{job['id']}").json()
         assert final["status"] == "reviewing", final
-        cands = _all_candidates(
-            client.get(f"/api/extraction/jobs/{job['id']}/candidates").json())
+        cands = _all_candidates(client.get(f"/api/extraction/jobs/{job['id']}/candidates").json())
         kinds = {c["candidate_kind"] for c in cands}
         assert "class" in kinds, f"expected class candidates, kinds={kinds}"
         assert "link" in kinds, f"expected link (FK) candidates, kinds={kinds}"

@@ -38,6 +38,47 @@
     owl:imports <https://ontology.pharma-gmp.cn/slpra/facility/> ;
     owl:imports <https://ontology.pharma-gmp.cn/slpra/drug-development/> .
 
+# Declarative literal contracts. These annotations describe stored scalars;
+# source units must still be quoted and independently bound before conversion.
+slpra-integ:canonicalUnit a owl:AnnotationProperty ;
+    rdfs:label "标准单位"@zh ; rdfs:range xsd:string .
+slpra-integ:identityKey a owl:AnnotationProperty ;
+    rdfs:label "实体身份证据属性"@zh ; rdfs:range xsd:boolean .
+
+slpra-equip:equipmentID slpra-integ:identityKey true .
+slpra-drug:productIdentifier a owl:DatatypeProperty ;
+    rdfs:domain [ a owl:Class ; owl:unionOf (
+        slpra-drug:DrugProduct slpra-drug:ActivePharmaceuticalIngredient
+    ) ] ;
+    rdfs:range xsd:string ;
+    rdfs:label "产品或原料药唯一标识"@zh ;
+    rdfs:comment "原文明示的产品/API标识；不以名称、共同项目、设备型号或试验用药名称替代具体实例身份。存在批次、规格等区分时须能唯一指向该实例，否则不可据此归并。"@zh ;
+    slpra-integ:identityKey true .
+
+slpra-drug:ld50_mg_per_kg slpra-integ:canonicalUnit "mg/kg" .
+slpra-drug:oel_ug_per_m3 slpra-integ:canonicalUnit "ug/m3" .
+slpra-drug:pde_mg_per_day slpra-integ:canonicalUnit "mg/day" .
+slpra-drug:minimumTherapeuticDose_mg slpra-integ:canonicalUnit "mg" .
+slpra-drug:maximumDailyDose_mg slpra-integ:canonicalUnit "mg" .
+slpra-contam:estimatedExposure_ug slpra-integ:canonicalUnit "ug" .
+slpra-risk:maco_mg slpra-integ:canonicalUnit "mg" .
+slpra-risk:pod_mg_per_kg_per_day slpra-integ:canonicalUnit "mg/kg/day" .
+slpra-risk:bodyWeightCorrection_kg slpra-integ:canonicalUnit "kg" .
+slpra-risk:calculatedPDE_mg_per_day slpra-integ:canonicalUnit "mg/day" .
+slpra-clean:residueLimit_ug_per_cm2 slpra-integ:canonicalUnit "ug/cm2" .
+slpra-clean:detectionLimit_ug slpra-integ:canonicalUnit "ug" .
+slpra-clean:quantitationLimit_ug slpra-integ:canonicalUnit "ug" .
+slpra-clean:recoveryFactor_percent slpra-integ:canonicalUnit "%" .
+slpra-facil:temperature_C slpra-integ:canonicalUnit "°C" .
+slpra-facil:relativeHumidity_percent slpra-integ:canonicalUnit "%" .
+slpra-dev:noael_mg_per_kg_per_day slpra-integ:canonicalUnit "mg/kg/day" .
+slpra-dev:humanEquivalentDose_mg_per_kg slpra-integ:canonicalUnit "mg/kg" .
+slpra-dev:proposedStartingDose_mg slpra-integ:canonicalUnit "mg" .
+slpra-dev:proposedMaxDose_mg slpra-integ:canonicalUnit "mg" .
+slpra-dev:pde_mg_per_day slpra-integ:canonicalUnit "mg/day" .
+slpra-dev:plannedBatchSizeMin_kg slpra-integ:canonicalUnit "kg" .
+slpra-dev:plannedBatchSizeMax_kg slpra-integ:canonicalUnit "kg" .
+
 # ============================================================
 # External Ontology Alignment — DrOn
 # ============================================================
@@ -391,290 +432,6 @@ slpra-risk:identifiesHazard rdfs:range slpra-contam:ContaminationEvent .
 
 # Contamination → Risk Level
 slpra-contam:hasContaminationSeverity rdfs:range slpra-risk:RiskLevel .
-
-# ============================================================
-# Extraction Annotation Properties
-# ============================================================
-# Declares how instances of a range class should be extracted from
-# documents. Read by OntologyEngine.get_extraction_hints(); consumed
-# by the schema-driven relation_extractor dispatch layer.
-
-slpra-integ:extractionMethod a owl:AnnotationProperty ;
-    rdfs:label "extraction method"@en ;
-    rdfs:label "抽取方法"@zh ;
-    rdfs:comment "Extraction strategy for locating instances of this class in documents. Values: table_scan | section_kv | section_paragraph | ner_entity | sentence_regex | external_source | composite"@en .
-
-slpra-integ:extractionAnchor a owl:AnnotationProperty ;
-    rdfs:label "extraction anchor"@en ;
-    rdfs:label "抽取锚点"@zh ;
-    rdfs:comment "Keyword used to locate this class's instances in document structure (table header signature or section heading match). Multi-valued."@en .
-
-slpra-integ:extractionPattern a owl:AnnotationProperty ;
-    rdfs:label "extraction pattern"@en ;
-    rdfs:label "抽取正则"@zh ;
-    rdfs:comment "Regex (Python syntax) attached to a DatatypeProperty; capture group 1 is the extracted value. Applied to the located sentence/paragraph by sentence_regex-method range classes. Backslashes must be doubled per Turtle string escaping."@en .
-
-slpra-integ:extractionProfile a owl:AnnotationProperty ;
-    rdfs:label "document extraction profile"@en ;
-    rdfs:label "文档抽取配置"@zh ;
-    rdfs:comment "Versioned constrained JSON Profile for ontology-guided section, table, alias, identity, transform, and provenance extraction."@en .
-
-# --- Extraction hints per range class ---
-
-slpra-drug:DrugProduct
-    slpra-integ:extractionMethod "section_kv" ;
-    slpra-integ:extractionAnchor "产品的基本性质" ;
-    slpra-integ:extractionAnchor "基本性质" .
-
-slpra-drug:Residue
-    slpra-integ:extractionMethod "table_scan" ;
-    slpra-integ:extractionAnchor "物料酸碱性" ;
-    slpra-integ:extractionAnchor "溶解度" .
-
-slpra-equip:Equipment
-    slpra-integ:extractionMethod "table_scan" ;
-    slpra-integ:extractionAnchor "设备规格" ;
-    slpra-integ:extractionAnchor "匹配设备" .
-
-slpra-clean:CleaningProcess
-    slpra-integ:extractionMethod "section_kv" ;
-    slpra-integ:extractionAnchor "设备清洗方法" ;
-    slpra-integ:extractionAnchor "清洗方法" .
-
-slpra-dev:SynthesisRoute
-    slpra-integ:extractionMethod "composite" ;
-    slpra-integ:extractionAnchor "参考得量范围" .
-
-slpra-dev:StorageCondition
-    slpra-integ:extractionMethod "table_scan" ;
-    slpra-integ:extractionAnchor "存放条件" ;
-    slpra-integ:extractionAnchor "有效期" .
-
-slpra-dev:DegradationPathway
-    slpra-integ:extractionMethod "section_paragraph" ;
-    slpra-integ:extractionAnchor "降解途径" ;
-    slpra-integ:extractionAnchor "强制降解" .
-
-slpra-dev:SharedLineAssessmentData
-    slpra-integ:extractionMethod "composite" ;
-    slpra-integ:extractionAnchor "参数" ;
-    slpra-integ:extractionAnchor "数值" .
-
-slpra-dev:SafetyRiskAssessment
-    slpra-integ:extractionMethod "table_scan" ;
-    slpra-integ:extractionAnchor "风险环节" ;
-    slpra-integ:extractionAnchor "风险描述" ;
-    slpra-integ:extractionAnchor "安全评估" .
-
-slpra-dev:QualityRiskAssessment
-    slpra-integ:extractionMethod "table_scan" ;
-    slpra-integ:extractionAnchor "风险环节" ;
-    slpra-integ:extractionAnchor "质量风险" .
-
-slpra-dev:ProductionRiskAssessment
-    slpra-integ:extractionMethod "table_scan" ;
-    slpra-integ:extractionAnchor "风险因素" ;
-    slpra-integ:extractionAnchor "控制前" ;
-    slpra-integ:extractionAnchor "控制措施" ;
-    slpra-integ:extractionAnchor "风险状态" .
-
-slpra-dev:ClinicalSampleProductionPlan
-    slpra-integ:extractionMethod "sentence_regex" ;
-    slpra-integ:extractionAnchor "批量" ;
-    slpra-integ:extractionAnchor "计划" ;
-    slpra-integ:extractionAnchor "批" ;
-    slpra-integ:extractionAnchor "车间" .
-
-# --- Unified ontology-guided document Profiles ---
-
-slpra-drug:DrugProduct
-    slpra-integ:extractionProfile """
-{
-  "version": 1,
-  "sources": [
-    {
-      "locator": "section_kv",
-      "anchors": {"any_of": ["产品的基本性质", "产品基本性质", "基本性质"]},
-      "endpoint_mode": "singleton",
-      "source_label": "产品基本性质"
-    }
-  ],
-  "identity": {
-    "pattern": "[A-Z]{2,4}-[0-9]{3,5}",
-    "fallback": "药物产品"
-  },
-  "property_aliases": {
-    "dosageForm": ["制剂剂型", "剂型"],
-    "drugSpecification": ["规格", "制剂规格"],
-    "routeOfAdministration": ["给药途径", "给药方式"],
-    "appearance": ["性状", "外观"],
-    "solubility": ["溶解性", "溶解度"],
-    "isOncologyDrug": ["是否肿瘤药物", "是否抗肿瘤药物", "是否用于肿瘤治疗"],
-    "inactivationMethod": ["灭活方法", "灭活方式"],
-    "isCytotoxic": ["是否细胞毒药物", "是否是细胞毒药物"],
-    "isHormonal": ["是否激素类药物", "是否是激素类药物"],
-    "isPenicillinType": ["是否青霉素类药物", "是否是青霉素类药物"],
-    "isBetaLactam": ["是否β-内酰胺类药物", "是否是β-内酰胺类药物"],
-    "isHighlySensitizing": ["是否高致敏药物", "是否是高致敏药物"],
-    "isHighlyActive": ["是否高活性药物", "是否是高活性药物", "是否是高毒高活药物"],
-    "hasPrionRisk": ["是否有朊病毒风险", "是否是朊病毒风险药物"]
-  }
-}
-""" .
-
-slpra-equip:Equipment
-    slpra-integ:extractionProfile """
-{
-  "version": 1,
-  "sources": [
-    {
-      "locator": "table_rows",
-      "headers": {
-        "all_of": [
-          {"any_of": ["设备规格", "设备名称"]},
-          {"any_of": ["匹配设备", "设备编号"]}
-        ]
-      },
-      "endpoint_mode": "row",
-      "source_label": "设备需求"
-    }
-  ],
-  "identity": {
-    "aliases": ["设备编号", "匹配设备"],
-    "split": "/",
-    "fallback": "设备"
-  },
-  "property_aliases": {
-    "equipmentID": ["设备编号", "匹配设备"],
-    "equipmentName": ["设备名称", "设备规格"],
-    "modelSpecification": ["规格型号", "型号规格"]
-  },
-  "subclass_by": "equipmentName"
-}
-""" .
-
-slpra-drug:Residue
-    slpra-integ:extractionProfile """
-{
-  "version": 1,
-  "sources": [
-    {
-      "locator": "table_rows",
-      "headers": {
-        "all_of": [
-          {"any_of": ["名称", "中间体及成品", "中间体/成品"]},
-          {"any_of": ["溶解度", "溶解性"]}
-        ]
-      },
-      "endpoint_mode": "row",
-      "source_label": "残留物溶解性"
-    }
-  ],
-  "identity": {
-    "aliases": ["名称", "中间体及成品", "中间体/成品"],
-    "fallback": "残留物"
-  },
-  "property_aliases": {
-    "residueSolvent": ["溶剂", "清洗溶剂"],
-    "residueSolubility": ["溶解度", "溶解性"],
-    "residueSolubilityTemperature": ["温度", "测试温度", "溶解度测试温度"]
-  }
-}
-""" .
-
-slpra-dev:SharedLineAssessmentData
-    slpra-integ:extractionProfile """
-{
-  "version": 1,
-  "sources": [
-    {
-      "locator": "table_rows",
-      "headers": {
-        "all_of": [
-          {"any_of": ["活性成分(API)", "活性成分（API）", "活性成分", "API"]},
-          {"any_of": ["试验项目", "试验类型", "毒理研究"]}
-        ]
-      },
-      "endpoint_mode": "row",
-      "source_label": "宽表毒理",
-      "identity": {"fields": ["activeIngredient", "studyType"]}
-    },
-    {
-      "locator": "table_singleton",
-      "headers": {
-        "all_of": [
-          {"any_of": ["参数"]},
-          {"any_of": ["数值", "值"]}
-        ]
-      },
-      "orientation": "kv",
-      "key_aliases": ["参数"],
-      "value_aliases": ["数值", "值"],
-      "source_label": "共线评估参数",
-      "identity": {"fallback": "共线评估数据"}
-    }
-  ],
-  "identity": {"fallback": "共线评估数据"},
-  "property_aliases": {
-    "activeIngredient": ["活性成分(API)", "活性成分（API）", "活性成分", "API"],
-    "studyType": ["试验项目", "试验类型", "毒理研究"],
-    "noael_mg_per_kg_per_day": ["NOAEL", "NOAEL（大鼠）", "NOAEL（犬）"],
-    "noaelSpecies": ["动物种属", "种属", "NOAEL动物种属"],
-    "noaelDuration": ["试验周期", "给药周期", "NOAEL试验周期"],
-    "safetyFactor": ["F值", "安全系数", "总安全系数"],
-    "humanEquivalentDose_mg_per_kg": ["人体等效剂量", "HED"],
-    "proposedStartingDose_mg": ["拟定临床起始剂量", "临床起始剂量"],
-    "proposedMaxDose_mg": ["拟定最高剂量", "最高剂量"],
-    "dosingRegimen": ["给药方案", "给药频次"],
-    "f1": ["F1"],
-    "f2": ["F2"],
-    "f3": ["F3"],
-    "f4": ["F4"],
-    "f5": ["F5"],
-    "pde_mg_per_day": ["PDE (mg/天)", "PDE（mg/天）", "PDE"],
-    "sourceReference": ["来源", "数据来源", "参考文献"],
-    "oebBand": ["OEB", "OEB分级", "OEB等级"]
-  },
-  "transforms": {
-    "noael_mg_per_kg_per_day": {
-      "type": "cast",
-      "config": {
-        "to": "decimal",
-        "number_pattern": "[-+]?[0-9]+(?:[.][0-9]+)?"
-      }
-    },
-    "pde_mg_per_day": {
-      "type": "cast",
-      "config": {
-        "to": "decimal",
-        "number_pattern": "[-+]?[0-9]+(?:[.][0-9]+)?",
-        "accepted_units": ["mg/天", "mg/day", "mg/日"],
-        "reject_invalid": true
-      },
-      "reject_invalid": true
-    }
-  }
-}
-""" .
-
-# --- sentence_regex 字段正则：ClinicalSampleProductionPlan 数据属性 → 计划句内单捕获组 ---
-# 每条 extractionPattern 的 group(1) 即该属性值；由 find_production_plan 读取，取代硬编码
-# _PLAN_*_RE。Turtle 反斜杠双写（\\s → \s、\\d → \d）。
-
-slpra-dev:plannedProductionDate
-    slpra-integ:extractionPattern "计划于\\s*(\\d{4}年\\d{1,2}月)" .
-
-slpra-dev:plannedBatchCount
-    slpra-integ:extractionPattern "计划生产\\s*(\\d+)\\s*批" .
-
-slpra-dev:productionPurpose
-    slpra-integ:extractionPattern "用于\\s*([^，。；]+)" .
-
-slpra-dev:plannedBatchSizeMin_kg
-    slpra-integ:extractionPattern "(?:预计)?(?:生产)?批量(?:范围)?\\s*([\\d.]+)\\s*[~～—至\\-]" .
-
-slpra-dev:plannedBatchSizeMax_kg
-    slpra-integ:extractionPattern "[~～—至\\-]\\s*([\\d.]+)\\s*(?:kg|公斤)" .
 
 # ============================================================
 # Cross-Module Bridging Axioms

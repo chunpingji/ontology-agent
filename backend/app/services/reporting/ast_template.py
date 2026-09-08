@@ -21,7 +21,6 @@ from __future__ import annotations
 
 import json
 import logging
-import uuid
 from collections.abc import Iterator
 from pathlib import Path
 from typing import Annotated, Literal, Union
@@ -373,81 +372,10 @@ def load_default_template() -> ReportTemplate:
 
 
 # --------------------------------------------------------------------------- #
-# DB-aware template resolution (012)
-# --------------------------------------------------------------------------- #
+# Legacy schemas are read-only migration inputs. Selection belongs to legacy_facade.
 
 
-def _latest_version_key(row) -> tuple:
-    """Sort key selecting the LATEST authored version within a template family.
+def resolve_template(doc_class_iri, db):
+    from app.services.reporting.template_v2 import ReportingError
 
-    A template family shares one ``iri_pattern`` (e.g. 风险评估文档 v1…v4); report
-    generation must use the version the author is currently editing — the newest —
-    not an arbitrary row. ``version`` is a free string (e.g. ``"v4"``); we parse its
-    trailing integer (``"v10" > "v9"``, unlike a lexical compare), then break ties by
-    ``created_at`` so the result is deterministic even for equal/blank versions."""
-    digits, current = [], ""
-    for char in getattr(row, "version", "") or "":
-        if char.isdecimal():
-            current += char
-        elif current:
-            digits.append(current)
-            current = ""
-    if current:
-        digits.append(current)
-    num = int(digits[-1]) if digits else 0
-    return (num, row.created_at)
-
-
-def resolve_template(
-    doc_class_iri: str | None,
-    db: "Session",
-) -> tuple[ReportTemplate, str, uuid.UUID | None]:
-    """Three-tier fallback template resolution.
-
-    Returns ``(template, match_source, template_db_id)`` where *match_source*
-    is one of ``"iri_pattern"``, ``"default"``, or ``"fallback"``.
-
-    1. **iri_pattern** — a non-archived ``AstTemplate`` whose ``iri_pattern``
-       appears in *doc_class_iri*; the **longest** (most specific) pattern wins, and
-       within that most-specific family the **latest authored version** wins (the
-       version the frontend is editing). This is the functional resolution key
-       (015; replaces DocumentTypeMapping).
-    2. **default** — the ``AstTemplate`` row with ``is_default=True``.
-    3. **fallback** — the filesystem JSON via ``load_default_template()``.
-    """
-    from app.models.extraction import AstTemplate
-
-    # Tier 1: per-template iri_pattern substring match. Most-specific pattern
-    # (longest) first, then latest version within that family. ``order_by`` makes
-    # the candidate stream deterministic (defense in depth); the explicit version
-    # key is what actually decides ties — a bare ``max`` over equal-length patterns
-    # would otherwise return whichever row the engine happened to yield first.
-    if doc_class_iri:
-        candidates = (
-            db.query(AstTemplate)
-            .filter(AstTemplate.iri_pattern.isnot(None), AstTemplate.status != "archived")
-            .order_by(AstTemplate.created_at.desc())
-            .all()
-        )
-        matches = [t for t in candidates if t.iri_pattern and t.iri_pattern in doc_class_iri]
-        if matches:
-            longest = max(len(t.iri_pattern or "") for t in matches)
-            specific = [t for t in matches if len(t.iri_pattern or "") == longest]
-            best = max(specific, key=_latest_version_key)
-            tpl = ReportTemplate.model_validate(best.schema_json)
-            logger.debug(
-                "resolve_template: iri_pattern %s → %s (%s)",
-                best.iri_pattern, best.name, getattr(best, "version", "?"),
-            )
-            return tpl, "iri_pattern", best.id
-
-    # Tier 2: DB default template
-    default_row = db.query(AstTemplate).filter(AstTemplate.is_default.is_(True)).first()
-    if default_row is not None:
-        tpl = ReportTemplate.model_validate(default_row.schema_json)
-        logger.debug("resolve_template: default → %s", default_row.name)
-        return tpl, "default", default_row.id
-
-    # Tier 3: filesystem fallback
-    logger.debug("resolve_template: fallback → filesystem")
-    return load_default_template(), "fallback", None
+    raise ReportingError("EXPLICIT_TEMPLATE_SELECTION_REQUIRED", status=409)

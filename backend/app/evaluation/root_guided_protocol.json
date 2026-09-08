@@ -1,0 +1,28 @@
+{
+  "protocol_version": "cmc-root-guided-pilot-v1",
+  "document_ref": "upload-23c872fb-3ab1-41de-a705-dd4b162dfa09",
+  "parent_prepared": "/app/data/evaluations/cmc-23c872fb-20260907-02",
+  "prepared_directory": "/app/data/evaluations/cmc-root-guided-20260908-03",
+  "image_id": "sha256:cda2fd0551b14071dccba56c19888315e96b7ce7e04dd9610434eb57ba7f6c15",
+  "reference_sha256": "8374e3b5a592729f40df05a940f99111bcffdd623576902d4fa1df5728989ee9",
+  "annotation_level": "assistant_silver",
+  "run_order": ["baseline", "root_guided_summary", "structure_summary"],
+  "task_attempt_limit_per_run": 24,
+  "soft_deadline_seconds_per_run": 600,
+  "request_timeout_seconds": 600,
+  "timeout_retries": 0,
+  "max_sections_per_predicate": 3,
+  "summary_policy": "reuse byte-identical frozen02 summaries; record 951.256618 seconds separately, no new summary generation",
+  "measurement_policy": {
+    "runtime": "all three modes use the same new frozen runtime",
+    "source": "byte-identical docx, IR and schema from frozen02; no reference-driven routing",
+    "run_style": "independent single segments, serial, no checkpoint resume",
+    "soft_deadline": "checked at task boundary; in-flight task validation may overrun",
+    "accuracy": "reference-scoped extracted_only entity/property/relationship precision recall F1; supplied root excluded",
+    "first_correct_path": "offline scoring of timestamped candidate snapshots; every endpoint and edge must match frozen reference",
+    "full_document_speedup": "not established by partial budgets or smaller menus alone",
+    "load": "shared local model; no competing jobs stopped, no weight/prompt cache reset",
+    "ner": "not added in this experiment; isolate root-guided scheduling",
+    "evidence": "production source replay, type and binding validation unchanged"
+  }
+}

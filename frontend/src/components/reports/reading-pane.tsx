@@ -5,6 +5,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { Download, FileWarning, Info, Loader2, Sparkles } from "lucide-react";
 
 import { WordViewer } from "@/components/extraction/word-viewer";
+import { ReportRunPanel } from "@/components/reporting/report-run-panel";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -223,8 +224,10 @@ function ReportPane({ item }: { item: ReportOrDocument }) {
     narratives &&
       (narratives.subject_description ||
         narratives.conclusion ||
-        narratives.sections.length > 0),
+        (narratives.sections?.length ?? 0) > 0),
   );
+
+  if (dto?.report_run_id) return <ReportRunPanel runId={dto.report_run_id} />;
 
   return (
     <div className="space-y-6">

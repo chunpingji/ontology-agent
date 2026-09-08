@@ -1,0 +1,57 @@
+
+> slpra-frontend@0.1.0 build
+> next build
+
+⚠ Warning: Next.js inferred your workspace root, but it may not be correct.
+ We detected multiple lockfiles and selected the directory of /opt/dev/chen/ontology-agent/package-lock.json as the root directory.
+ To silence this warning, set `turbopack.root` in your Next.js config, or consider removing one of the lockfiles if it's not needed.
+   See https://nextjs.org/docs/app/api-reference/config/next-config-js/turbopack#root-directory for more information.
+ Detected additional lockfiles: 
+   * /opt/dev/chen/ontology-agent/frontend/package-lock.json
+
+▲ Next.js 16.2.9 (Turbopack)
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 9.1s
+  Running TypeScript ...
+  Finished TypeScript in 15.4s ...
+  Collecting page data using 28 workers ...
+  Generating static pages using 28 workers (0/24) ...
+  Generating static pages using 28 workers (6/24) 
+  Generating static pages using 28 workers (12/24) 
+  Generating static pages using 28 workers (18/24) 
+✓ Generating static pages using 28 workers (24/24) in 1109ms
+  Finalizing page optimization ...
+
+Route (app)
+┌ ○ /
+├ ○ /_not-found
+├ ○ /analysis
+├ ○ /approval
+├ ○ /connector
+├ ○ /data-mapping
+├ ○ /entities
+├ ○ /entities/extraction
+├ ƒ /entities/extraction/[jobId]/ast
+├ ○ /login
+├ ○ /mock/approver-team
+├ ○ /mock/assessment-team
+├ ○ /mock/departments
+├ ○ /mock/equipment
+├ ○ /mock/production-areas
+├ ○ /mock/roles
+├ ○ /ontology
+├ ○ /ontology/rules
+├ ○ /overview
+├ ○ /reports
+├ ƒ /reports/[reportId]
+├ ○ /settings
+├ ○ /settings/ast-templates
+├ ƒ /settings/ast-templates/[templateId]
+├ ○ /settings/ast-templates/create
+└ ○ /settings/report-contracts
+
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+

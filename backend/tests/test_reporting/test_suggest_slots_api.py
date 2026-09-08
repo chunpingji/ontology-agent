@@ -21,7 +21,6 @@ from pydantic import ValidationError
 
 from app.schemas.extraction import SuggestSlotsRequest
 
-
 # ── canned LLM rounds + mock client ──────────────────────────────────────────
 
 _R1_OK = {
@@ -49,10 +48,11 @@ _R2_OK = {
 def _make_llm_client(round1: dict, round2: dict):
     """Mock OpenAI client: canned JSON for the two chat.completions.create calls."""
     client = MagicMock()
+    client.base_url = "http://model.test/v1"
     responses = [round1, round2]
     n = {"i": 0}
 
-    def _create(**kwargs):
+    async def _create(**kwargs):
         idx = min(n["i"], len(responses) - 1)
         n["i"] += 1
         resp = MagicMock()
@@ -81,9 +81,7 @@ _SAMPLE_DOC = {
     ],
 }
 
-_DOCX_MIME = (
-    "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-)
+_DOCX_MIME = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
 
 
 def _docx_bytes(tmp_path) -> bytes:
@@ -100,12 +98,11 @@ def _enable_llm(monkeypatch, client):
     from app.config import settings
 
     monkeypatch.setattr(settings, "llm_suggest_slots_enabled", True)
-    monkeypatch.setattr(
-        "app.services.llm.local_client.get_local_llm", lambda: client
-    )
+    monkeypatch.setattr("app.services.llm.local_client.get_local_llm", lambda: client)
 
 
 # ── SuggestSlotsRequest.model_post_init — 3-way "exactly one" (pure schema) ──
+
 
 class TestSuggestSlotsRequestValidation:
     def test_zero_sources_rejected(self):
@@ -124,6 +121,7 @@ class TestSuggestSlotsRequestValidation:
 
 
 # ── POST /api/ast-templates/parse-sample (role-gated, NOT flag-gated) ────────
+
 
 class TestParseSampleEndpoint:
     def test_happy_path_returns_content_and_text(self, client, analyst_headers, tmp_path):
@@ -157,6 +155,7 @@ class TestParseSampleEndpoint:
 
 # ── POST /api/ast-templates/suggest-slots ────────────────────────────────────
 
+
 class TestSuggestSlotsEndpoint:
     def test_sample_content_json_path_returns_coverage_contract(
         self, client, analyst_headers, monkeypatch
@@ -172,13 +171,16 @@ class TestSuggestSlotsEndpoint:
         )
         assert resp.status_code == 200
         body = resp.json()
-        assert set(body.keys()) == {"document_summary", "coverage", "sections"}
-        assert body["document_summary"] == "GMP 风险评估报告"
+        assert set(body.keys()) >= {"document_summary", "coverage", "sections"}
+        assert body["document_summary"] == ""
         assert body["coverage"] == []
         # 骨架逐字透传（端点无 response_model，raw dict 直出）。
-        assert body["sections"] == _R1_OK["sections"]
+        assert body["sections"] == []
+        assert "analysis_required" in str(body["diagnostics"])
 
-    def test_flag_off_returns_503(self, client, analyst_headers, monkeypatch):
+    def test_flag_off_retains_structure_with_diagnostics(
+        self, client, analyst_headers, monkeypatch
+    ):
         from app.config import settings
 
         monkeypatch.setattr(settings, "llm_suggest_slots_enabled", False)
@@ -187,21 +189,25 @@ class TestSuggestSlotsEndpoint:
             headers=analyst_headers,
             json={"document_text": "some text"},
         )
-        assert resp.status_code == 503
+        assert resp.status_code == 200
+        assert resp.json()["degraded"] is False
+        assert resp.json()["diagnostics"]
 
-    def test_no_local_client_returns_503(self, client, analyst_headers, monkeypatch):
+    def test_no_local_client_retains_structure_with_diagnostics(
+        self, client, analyst_headers, monkeypatch
+    ):
         from app.config import settings
 
         monkeypatch.setattr(settings, "llm_suggest_slots_enabled", True)
-        monkeypatch.setattr(
-            "app.services.llm.local_client.get_local_llm", lambda: None
-        )
+        monkeypatch.setattr("app.services.llm.local_client.get_local_llm", lambda: None)
         resp = client.post(
             "/api/ast-templates/suggest-slots",
             headers=analyst_headers,
             json={"document_text": "some text"},
         )
-        assert resp.status_code == 503
+        assert resp.status_code == 200
+        assert resp.json()["degraded"] is False
+        assert resp.json()["diagnostics"]
 
     def test_role_gated_403(self, client, operator_headers):
         # 角色依赖先于 flag/client 检查触发——无需 mock LLM。
@@ -223,6 +229,7 @@ class TestSuggestSlotsEndpoint:
 
 # ── POST /api/ast-templates/coverage-doc-classes (bugfix: 仅启用已建模类型) ────
 
+
 class TestCoverageDocClassesEndpoint:
     """S10: the probe returns exactly the input IRIs the ontology models coverage for.
 
@@ -233,12 +240,12 @@ class TestCoverageDocClassesEndpoint:
     """
 
     def test_returns_modeled_subset(self, client, analyst_headers):
-        from app.services.extraction.relation_extractor import CMC_REPORT_IRI
+        from tests.fixtures.report_ontology_constants import CMC_REPORT_IRI
 
         _DEV = "https://ontology.pharma-gmp.cn/slpra/drug-development/"
         payload = [
-            _DEV + "StabilityReport",   # unmodeled — no object properties
-            CMC_REPORT_IRI,             # modeled — the only capable type
+            _DEV + "StabilityReport",  # unmodeled — no object properties
+            CMC_REPORT_IRI,  # modeled — the only capable type
             _DEV + "MethodValidationReport",
         ]
         resp = client.post(

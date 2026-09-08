@@ -10,19 +10,42 @@ from sqlalchemy.orm import Session
 
 from app.models.evidence import (
     DocumentAnalysisRecord,
+    EvidenceAssertion,
     EvidenceCandidateRecord,
     EvidenceCandidateRevision,
     EvidenceJobState,
     EvidenceReview,
+    EvidenceSnapshot,
 )
 from app.schemas.evidence import Candidate
 from app.services import audit
 from app.services.extraction.document_ir import DocumentIR
 from app.services.extraction.evidence_identity import evidence_hash, stable_id
+from app.services.extraction.performance import timed
 
 
 class CandidateConflict(ValueError):
     pass
+
+
+AUTOMATIC_REVIEW_REASON = "文档识别结果通过系统校验，按默认审核规则自动通过；用户可提出异议。"
+
+
+def automatically_review(candidate: Candidate) -> Candidate:
+    """Only server-validated document extraction receives the default decision."""
+    if (
+        candidate.review_status == "pending"
+        and candidate.validation_status == "passed"
+        and all(source.kind == "document" for source in candidate.provenance)
+    ):
+        return candidate.model_copy(
+            update={
+                "review_status": "confirmed",
+                "review_source": "automatic",
+                "review_reason": AUTOMATIC_REVIEW_REASON,
+            }
+        )
+    return candidate
 
 
 def _rewrite_refs(value, identities):
@@ -62,7 +85,7 @@ class CandidateStore:
         ).all()
         return [Candidate.model_validate(row.payload) for row in records]
 
-    def save_analysis(self, job_id, ir: DocumentIR, run: dict | None = None):
+    def save_analysis(self, job_id, ir: DocumentIR, run: dict | None = None, *, commit=True):
         record = self.db.get(DocumentAnalysisRecord, ir.analysis_id)
         if record is None:
             self.db.add(
@@ -90,22 +113,37 @@ class CandidateStore:
         result = self.db.execute(
             update(EvidenceJobState)
             .where(EvidenceJobState.job_id == job_id, EvidenceJobState.revision == state.revision)
-            .values(analysis_id=ir.analysis_id, extraction_run=next_run, revision=state.revision + 1)
-            .execution_options(synchronize_session=False)
+            .values(
+                analysis_id=ir.analysis_id, extraction_run=next_run, revision=state.revision + 1
+            )
+            .execution_options(synchronize_session="fetch")
         )
         if result.rowcount != 1:
             self.db.rollback()
             raise CandidateConflict("source state changed during analysis publication")
-        self.db.expire_all()
-        self.db.commit()
+        if commit:
+            self.db.commit()
 
+    def _records(self, identities):
+        """Keep strong ORM references and bound IN parameters for large batches."""
+        ids = sorted(set(identities))
+        result = {}
+        for start in range(0, len(ids), 500):
+            rows = self.db.scalars(select(EvidenceCandidateRecord).where(
+                EvidenceCandidateRecord.id.in_(ids[start:start + 500])
+            ).execution_options(populate_existing=True))
+            result.update((row.id, row) for row in rows)
+        return result
+
+    @timed("candidate_persistence")
     def persist_validated(
-        self, job_id, candidates: list[Candidate], *, actor: str
+        self, job_id, candidates: list[Candidate], *, actor: str, commit=True
     ) -> list[Candidate]:
         """Internal only: callers validate on the server, never pass request state here."""
         identities = {}
+        records = self._records(c.candidate_id for c in candidates)
         for candidate in candidates:
-            existing = self.db.get(EvidenceCandidateRecord, candidate.candidate_id)
+            existing = records.get(candidate.candidate_id)
             if existing is not None:
                 if str(existing.job_id) != str(job_id):
                     raise CandidateConflict("cross-job candidate reference")
@@ -124,31 +162,50 @@ class CandidateStore:
         normalized = []
         for candidate in candidates:
             payload = _rewrite_refs(candidate.model_dump(mode="json"), identities)
-            payload.update(revision=1, review_status="pending", commit_status="not_requested")
+            payload.update(
+                revision=1,
+                review_status="pending",
+                review_source=None,
+                review_reason="",
+                commit_status="not_requested",
+            )
             if payload.get("scope"):
                 payload["scope"]["scope_id"] = stable_id("job-scope", payload["scope"])
             normalized.append(Candidate.model_validate(payload))
+        wanted = {c.candidate_id for c in normalized}
+        wanted.update(
+            ref.candidate_id for c in normalized
+            for ref in [c.subject, c.object, *c.dependency_refs] if ref is not None
+        )
+        records.update(self._records(wanted - records.keys()))
+        existing_values = {
+            key: Candidate.model_validate(row.payload) for key, row in records.items()
+        }
         try:
             new_values = []
             normalized_by_id = {c.candidate_id: c for c in normalized}
             for source, candidate in zip(candidates, normalized, strict=True):
-                existing = self.db.get(EvidenceCandidateRecord, candidate.candidate_id)
+                existing = records.get(candidate.candidate_id)
                 if existing is not None:
+                    if str(existing.job_id) != str(job_id):
+                        raise CandidateConflict("cross-job candidate reference")
                     continue  # reruns cannot overwrite reviews or human edits
                 for ref in [candidate.subject, candidate.object, *candidate.dependency_refs]:
                     if ref is None:
                         continue
-                    target = self.db.get(EvidenceCandidateRecord, ref.candidate_id)
+                    target = records.get(ref.candidate_id)
                     if target is not None and str(target.job_id) != str(job_id):
                         raise CandidateConflict("missing or cross-job endpoint")
                     target_candidate = (
-                        self.get(target.id) if target else normalized_by_id.get(ref.candidate_id)
+                        existing_values[target.id] if target
+                        else normalized_by_id.get(ref.candidate_id)
                     )
                     if target_candidate is None:
                         raise CandidateConflict("missing or cross-job endpoint")
                     if (
                         target_candidate.revision != ref.revision
                         or not target_candidate.positive_eligible
+                        or target_candidate.review_status == "rejected"
                     ):
                         payload = candidate.model_dump(mode="json")
                         payload.update(
@@ -157,6 +214,8 @@ class CandidateStore:
                         )
                         candidate = Candidate.model_validate(payload)
                         normalized_by_id[candidate.candidate_id] = candidate
+                candidate = automatically_review(candidate)
+                normalized_by_id[candidate.candidate_id] = candidate
                 self.db.add(
                     EvidenceCandidateRecord(
                         id=candidate.candidate_id,
@@ -171,7 +230,7 @@ class CandidateStore:
                         ),
                         revision=1,
                         kind=candidate.kind,
-                        review_status="pending",
+                        review_status=candidate.review_status,
                         payload=candidate.model_dump(mode="json"),
                     )
                 )
@@ -179,6 +238,17 @@ class CandidateStore:
             self.db.flush()
             for candidate in new_values:
                 self._revision(candidate)
+                if candidate.review_source == "automatic":
+                    self.db.add(
+                        EvidenceReview(
+                            id=uuid.uuid4().hex,
+                            candidate_id=candidate.candidate_id,
+                            expected_revision=candidate.revision,
+                            decision="confirmed",
+                            actor="system:automatic-review",
+                            reason=candidate.review_reason,
+                        )
+                    )
             if self.db.get(EvidenceJobState, job_id) is None:
                 self.db.add(EvidenceJobState(job_id=job_id, revision=0))
             if new_values:
@@ -190,17 +260,34 @@ class CandidateStore:
                     details={"candidate_ids": [c.candidate_id for c in new_values]},
                     commit=False,
                 )
-            self.db.commit()
+            # Build responses before commit: deployed sessions expire ORM records.
+            response = [existing_values.get(c.candidate_id, normalized_by_id[c.candidate_id])
+                        for c in normalized]
+            self.db.flush()
+            if new_values:
+                from app.services.reasoning.rule_service import refresh_job_rules
+
+                refresh_job_rules(self.db, job_id, new_values)
+            if commit:
+                self.db.commit()
         except IntegrityError:
             self.db.rollback()
+            if not commit:
+                # The caller owns the analysis/candidate/job transaction. Never
+                # silently roll it back and then report a successful publication.
+                raise CandidateConflict("concurrent candidate creation; retry batch") from None
             # Database uniqueness arbitrates concurrent reruns. If the entire
             # batch was inserted by the other writer, reuse it; never overwrite.
-            if not all(self.db.get(EvidenceCandidateRecord, c.candidate_id) for c in normalized):
+            records = self._records(c.candidate_id for c in normalized)
+            if any(c.candidate_id not in records for c in normalized):
                 raise CandidateConflict("concurrent candidate creation; retry batch") from None
+            response = [
+                Candidate.model_validate(records[c.candidate_id].payload) for c in normalized
+            ]
         except Exception:
             self.db.rollback()
             raise
-        return [self.get(c.candidate_id) for c in normalized]
+        return response
 
     def _revision(self, candidate):
         self.db.add(
@@ -222,6 +309,7 @@ class CandidateStore:
         *,
         edited_payload: dict | None = None,
         validator=None,
+        expected_review_status: str | None = None,
     ) -> Candidate:
         if decision not in {"confirmed", "rejected"} or not actor or not reason.strip():
             raise ValueError("review requires a decision, actor and reason")
@@ -231,6 +319,8 @@ class CandidateStore:
         current = self.get(identity)
         if current.revision != expected_revision:
             raise CandidateConflict("stale candidate revision")
+        if expected_review_status is not None and current.review_status != expected_review_status:
+            raise CandidateConflict("candidate review status changed; refresh before reviewing")
         payload = current.model_dump(mode="json")
         if edited_payload is not None:
             if validator is None:
@@ -242,6 +332,8 @@ class CandidateStore:
                 validation_status="pending",
                 validation_issues=[],
                 review_status="pending",
+                review_source=None,
+                review_reason="",
                 commit_status="not_requested",
                 bindings=[],
                 dependency_refs=[],
@@ -256,16 +348,36 @@ class CandidateStore:
             )
             action = "edited"
         else:
-            if current.review_status != "pending":
+            explicit_rejection = current.review_status == "confirmed" and decision == "rejected"
+            if current.review_status != "pending" and not explicit_rejection:
                 raise CandidateConflict(
                     "candidate already reviewed; create an edited revision first"
                 )
             if decision == "confirmed" and current.validation_status != "passed":
                 raise ValueError("only validated assertions can be confirmed")
             payload["review_status"] = decision
+            payload["review_source"] = "manual"
+            payload["review_reason"] = reason.strip()
+            if decision == "rejected":
+                payload["commit_status"] = "not_requested"
             candidate = Candidate.model_validate(payload)
             action = decision
         try:
+            # Publication takes this lock before candidate locks too. A rejection
+            # and its removal from the latest snapshot are one transaction.
+            state = self.db.get(EvidenceJobState, record.job_id, populate_existing=True)
+            if decision == "rejected" and edited_payload is None and state:
+                locked = self.db.execute(
+                    update(EvidenceJobState)
+                    .where(
+                        EvidenceJobState.job_id == record.job_id,
+                        EvidenceJobState.revision == state.revision,
+                    )
+                    .values(revision=state.revision + 1)
+                    .execution_options(synchronize_session=False)
+                )
+                if locked.rowcount != 1:
+                    raise CandidateConflict("publication changed; retry the rejection")
             changed = self.db.execute(
                 update(EvidenceCandidateRecord)
                 .where(
@@ -285,6 +397,9 @@ class CandidateStore:
             if edited_payload is not None:
                 self._revision(candidate)
                 self._invalidate_dependents(record.job_id, identity, candidate.revision)
+            elif decision == "rejected":
+                self._invalidate_dependents(record.job_id, identity, candidate.revision)
+                self._retract_rejected_facts(record.job_id, actor, reason)
             self.db.add(
                 EvidenceReview(
                     id=uuid.uuid4().hex,
@@ -307,6 +422,10 @@ class CandidateStore:
                 },
                 commit=False,
             )
+            self.db.flush()
+            from app.services.reasoning.rule_service import refresh_job_rules
+
+            refresh_job_rules(self.db, record.job_id, [candidate])
             self.db.commit()
             self.db.expire_all()
             return self.get(identity)
@@ -367,6 +486,8 @@ class CandidateStore:
                 validation_status="conflict",
                 validation_issues=[{"code": "resolved_alias"}],
                 review_status="rejected",
+                review_source="manual",
+                review_reason=reason.strip(),
                 commit_status="not_requested",
                 identity={**source.identity, "canonical_candidate_id": target_id},
             )
@@ -455,6 +576,10 @@ class CandidateStore:
                 },
                 commit=False,
             )
+            self.db.flush()
+            from app.services.reasoning.rule_service import refresh_job_rules
+
+            refresh_job_rules(self.db, source_row.job_id, [source, target])
             self.db.commit()
             self.db.expire_all()
             return self.get(identity)
@@ -483,12 +608,16 @@ class CandidateStore:
                     affected.append(dependent)
                     changed = True
         for dependent in affected:
+            if dependent.review_status == "rejected":
+                continue  # retain an explicit human rejection and its reason
             payload = dependent.model_dump(mode="json")
             payload.update(
                 revision=dependent.revision + 1,
                 validation_status="pending",
                 validation_issues=[{"code": "stale_dependency"}],
                 review_status="pending",
+                review_source=None,
+                review_reason="",
                 commit_status="not_requested",
             )
             # Keep the old reference until a deliberate rebind/revalidation.
@@ -506,3 +635,54 @@ class CandidateStore:
             if result.rowcount != 1:
                 raise CandidateConflict("concurrent dependent revision")
             self._revision(updated)
+
+    def _retract_rejected_facts(self, job_id, actor, reason):
+        """Advance the publication head; previously generated reports keep history."""
+        state = self.db.get(EvidenceJobState, job_id, populate_existing=True)
+        previous = (
+            self.db.get(EvidenceSnapshot, state.snapshot_id)
+            if state and state.snapshot_id
+            else None
+        )
+        if previous is None:
+            return
+        active = []
+        for identity in previous.assertion_ids:
+            assertion = self.db.get(EvidenceAssertion, identity)
+            current = self.get(assertion.candidate_id)
+            if (
+                current.revision == assertion.candidate_revision
+                and current.validation_status == "passed"
+                and current.review_status == "confirmed"
+            ):
+                active.append(identity)
+        if set(active) == set(previous.assertion_ids):
+            return
+        active.sort()
+        snapshot_id = stable_id("snapshot", [str(job_id), previous.id, active])
+        if self.db.get(EvidenceSnapshot, snapshot_id) is None:
+            self.db.add(
+                EvidenceSnapshot(
+                    id=snapshot_id, job_id=job_id, parent_id=previous.id, assertion_ids=active
+                )
+            )
+            self.db.flush()
+        self.db.execute(
+            update(EvidenceJobState)
+            .where(EvidenceJobState.job_id == job_id)
+            .values(snapshot_id=snapshot_id)
+            .execution_options(synchronize_session=False)
+        )
+        audit.append(
+            self.db,
+            "evidence.snapshot_retract",
+            actor=actor,
+            entity_iri=str(job_id),
+            details={
+                "snapshot_id": snapshot_id,
+                "parent_id": previous.id,
+                "reason": reason,
+                "removed": sorted(set(previous.assertion_ids) - set(active)),
+            },
+            commit=False,
+        )

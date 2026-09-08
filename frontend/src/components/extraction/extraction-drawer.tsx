@@ -1,5 +1,7 @@
 "use client";
 
+import { ModelRequestProgress } from "./model-request-progress";
+
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import {
@@ -13,13 +15,16 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   generateRiskReport,
+  extractJobEvidence,
   getAnnotatedDocument,
+  pauseAnnotation,
   pollReportStatus,
   rerunAnnotation,
   subscribeJobProgress,
   type AnnotatedDocument,
   type JobProgressEvent,
   type EvidenceAnchor,
+  type EvidenceExtractOptions,
 } from "@/lib/api";
 import { WordViewer } from "./word-viewer";
 import { ExcelViewer } from "./excel-viewer";
@@ -32,6 +37,9 @@ const ANNOTATION_LABELS: Record<string, string> = {
   triples: "属性三元组",
   done: "完成",
   paused: "已暂停",
+  queued: "等待识别",
+  extracting: "关系识别",
+  summarizing: "生成章节摘要",
 };
 
 const STATUS_LABELS: Record<string, string> = {
@@ -63,6 +71,8 @@ function ExtractionDrawerContent({ jobId, open, onOpenChange }: ExtractionDrawer
   const [selectedSourceRef, setSelectedSourceRef] = useState<string | null>(null);
   const [progressEvent, setProgressEvent] = useState<JobProgressEvent | null>(null);
   const [rerunning, setRerunning] = useState(false);
+  const [pauseRequested, setPauseRequested] = useState(false);
+  const [evidenceRefresh, setEvidenceRefresh] = useState(0);
   const [reportGenerating, setReportGenerating] = useState(false);
   const [activeAnchor, setActiveAnchor] = useState<EvidenceAnchor | null>(null);
   const [evidenceSnapshot, setEvidenceSnapshot] = useState<string | null>(null);
@@ -92,25 +102,58 @@ function ExtractionDrawerContent({ jobId, open, onOpenChange }: ExtractionDrawer
   }, [open, jobId]);
 
   useEffect(() => {
-    if (!open || !jobId) return;
+    if (!open || !jobId || rerunning) return;
+    let ignore = false;
+    let lastRevision: number | undefined;
+    let refreshTimer: ReturnType<typeof setTimeout> | undefined;
     const unsub = subscribeJobProgress(jobId, (e) => {
+      if (ignore || e.job_id !== jobId || !e.annotation_stage) return;
       setProgressEvent(e);
-      if (rerunning && (e.stage === "reviewing" || e.stage === "done")) {
-        setRerunning(false);
+      setPauseRequested(!!e.pause_requested);
+      if (["complete", "paused", "failed", "interrupted"].includes(e.annotation_stage)) {
+        ignore = true;
+        clearTimeout(refreshTimer);
+        unsub();
+        setPauseRequested(false);
+        setEvidenceRefresh((value) => value + 1);
         fetchDoc(jobId);
+      } else if (e.data_revision !== undefined && e.data_revision !== lastRevision) {
+        lastRevision = e.data_revision;
+        if (!refreshTimer) refreshTimer = setTimeout(() => {
+          refreshTimer = undefined;
+          if (!ignore) setEvidenceRefresh((value) => value + 1);
+        }, 1500);
       }
     });
-    return unsub;
+    return () => { ignore = true; clearTimeout(refreshTimer); unsub(); };
   }, [open, jobId, rerunning, fetchDoc]);
 
-  async function handleRerun() {
-    if (!jobId) return;
+  async function handleRecognition(options?: EvidenceExtractOptions) {
+    if (!jobId || rerunning || progressEvent?.status === "running") return;
     setRerunning(true);
+    setError(null);
+    setPauseRequested(false);
     try {
-      await rerunAnnotation(jobId);
+      const run = options ? await extractJobEvidence(jobId, options) : await rerunAnnotation(jobId);
+      setProgressEvent({
+        job_id: run.job_id, run_id: run.run_id, stage: "annotating", annotation_stage: "queued",
+        pct: 0, status: "running", degraded: false,
+      });
     } catch (e) {
       setError(String(e));
+    } finally {
       setRerunning(false);
+    }
+  }
+
+  async function handlePause() {
+    if (!jobId) return;
+    setPauseRequested(true);
+    try {
+      await pauseAnnotation(jobId);
+    } catch (e) {
+      setError(String(e));
+      setPauseRequested(false);
     }
   }
 
@@ -167,7 +210,7 @@ function ExtractionDrawerContent({ jobId, open, onOpenChange }: ExtractionDrawer
     throw new Error("报告生成超时，请稍后重试");
   }
 
-  const isAnnotating = rerunning || progressEvent?.stage === "annotating";
+  const isAnnotating = rerunning || progressEvent?.status === "running";
 
   const canGenerateReport =
     !!doc &&
@@ -208,6 +251,12 @@ function ExtractionDrawerContent({ jobId, open, onOpenChange }: ExtractionDrawer
                   （{progressEvent.pct}%）
                 </span>
               )}
+              <ModelRequestProgress request={progressEvent?.model_request}
+                attempts={progressEvent?.http_attempts} />
+              <Button size="sm" variant="outline" className="h-7 text-xs"
+                disabled={rerunning || pauseRequested} onClick={handlePause}>
+                {pauseRequested ? "正在保存断点…" : "暂停识别"}
+              </Button>
             </>
           ) : (
             <>
@@ -221,7 +270,8 @@ function ExtractionDrawerContent({ jobId, open, onOpenChange }: ExtractionDrawer
                 }
               >
                 {progressEvent
-                  ? STATUS_LABELS[progressEvent.stage] ?? progressEvent.stage
+                  ? ANNOTATION_LABELS[progressEvent.annotation_stage ?? ""] ??
+                    STATUS_LABELS[progressEvent.status] ?? progressEvent.status
                   : doc
                     ? doc.preview_only ? "正文已加载" : doc.completion === "incomplete" ? "抽取未完成" : "标注完成"
                     : "—"}
@@ -231,7 +281,7 @@ function ExtractionDrawerContent({ jobId, open, onOpenChange }: ExtractionDrawer
                   size="sm"
                   variant="outline"
                   className="h-7 text-xs"
-                  onClick={handleRerun}
+                  onClick={() => handleRecognition()}
                 >
                   重新标注
                 </Button>
@@ -294,15 +344,14 @@ function ExtractionDrawerContent({ jobId, open, onOpenChange }: ExtractionDrawer
           {/* Right: Relation panel (Word only) */}
           {doc && !loading && doc.source_type === "word" && (
             <div className="flex w-96 shrink-0 flex-col overflow-y-auto">
-              {jobId && <EvidenceReviewPanel key={jobId} jobId={jobId}
-                onSource={setActiveAnchor} onSnapshot={setEvidenceSnapshot} />}
-              <p className="border-t p-3 text-xs text-muted-foreground">以下为抽取预览，不代表已审核和提交的事实。</p>
-              <RelationPanel
+              {jobId ? <EvidenceReviewPanel key={jobId} jobId={jobId}
+                running={isAnnotating} refreshKey={evidenceRefresh} onContinue={handleRecognition}
+                onSource={setActiveAnchor} onSnapshot={setEvidenceSnapshot} /> : <RelationPanel
                 docClass={doc.doc_class}
                 relationships={doc.relationships}
                 selectedSourceRef={selectedSourceRef}
                 onSelectSourceRef={setSelectedSourceRef}
-              />
+              />}
             </div>
           )}
         </div>

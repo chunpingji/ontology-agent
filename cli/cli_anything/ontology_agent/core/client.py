@@ -14,7 +14,6 @@ retry could silently produce duplicates.
 
 from __future__ import annotations
 
-import re
 import sys
 import urllib.parse
 from dataclasses import dataclass
@@ -64,7 +63,9 @@ class HttpClient:
     def get(self, path: str, *, params: dict | None = None) -> Any:
         return self._request("GET", path, params=params)
 
-    def post(self, path: str, *, json_body: Any = None, params: dict | None = None) -> Any:
+    def post(
+        self, path: str, *, json_body: Any = None, params: dict | None = None
+    ) -> Any:
         return self._request("POST", path, json_body=json_body, params=params)
 
     def delete(self, path: str, *, params: dict | None = None) -> Any:
@@ -80,7 +81,9 @@ class HttpClient:
         ``octet-stream`` / the docx MIME type) is treated as a file. A body
         that merely fails to JSON-parse is never mistaken for a document.
         """
-        resp = self._send(method, path, json_body=json_body, read_timeout=_FILE_READ_TIMEOUT)
+        resp = self._send(
+            method, path, json_body=json_body, read_timeout=_FILE_READ_TIMEOUT
+        )
         if resp.status_code >= 400:
             self._raise_for_status(resp, method, path)
         ctype = (resp.headers.get("content-type") or "").lower()
@@ -93,18 +96,29 @@ class HttpClient:
             content_type=ctype,
         )
 
-    def get_file(self, path: str, *, params: dict | None = None) -> tuple[bytes, str | None]:
+    def get_file(
+        self, path: str, *, params: dict | None = None
+    ) -> tuple[bytes, str | None]:
         """Download a binary file; return ``(content, filename)``."""
         resp = self._send("GET", path, params=params, read_timeout=_FILE_READ_TIMEOUT)
         if resp.status_code >= 400:
             self._raise_for_status(resp, "GET", path)
-        return resp.content, parse_content_disposition(resp.headers.get("content-disposition"))
+        return resp.content, parse_content_disposition(
+            resp.headers.get("content-disposition")
+        )
 
     # ------------------------------------------------------------------ #
     # Internals
     # ------------------------------------------------------------------ #
 
-    def _request(self, method: str, path: str, *, json_body: Any = None, params: dict | None = None) -> Any:
+    def _request(
+        self,
+        method: str,
+        path: str,
+        *,
+        json_body: Any = None,
+        params: dict | None = None,
+    ) -> Any:
         resp = self._send(method, path, json_body=json_body, params=params)
         return self._handle_json(resp, method, path)
 
@@ -119,7 +133,10 @@ class HttpClient:
     ) -> requests.Response:
         url = f"{self._config.api_url.rstrip('/')}/{path.lstrip('/')}"
         headers = {"Accept": "application/json", **self._config.auth_headers()}
-        timeout = (self._config.timeout_connect, read_timeout or self._config.timeout_read)
+        timeout = (
+            self._config.timeout_connect,
+            read_timeout or self._config.timeout_read,
+        )
         if self._verbose:
             print(f"→ {method} {url}", file=sys.stderr)
         try:
@@ -191,18 +208,32 @@ def parse_content_disposition(value: str | None) -> str | None:
     """
     if not value:
         return None
-    m = re.search(r"filename\*\s*=\s*([^']+)'([^']*)'([^;]+)", value, re.IGNORECASE)
-    if m:
-        charset = m.group(1).strip() or "utf-8"
-        encoded = m.group(3).strip()
-        try:
-            return urllib.parse.unquote(encoded, encoding=charset)
-        except Exception:
-            pass
-    m = re.search(r'filename\s*=\s*"([^"]+)"', value, re.IGNORECASE)
-    if m:
-        return m.group(1)
-    m = re.search(r"filename\s*=\s*([^;]+)", value, re.IGNORECASE)
-    if m:
-        return m.group(1).strip().strip('"')
-    return None
+    parts, current, quoted, escaped = [], [], False, False
+    for char in value:
+        if escaped:
+            current.append(char)
+            escaped = False
+        elif char == chr(92) and quoted:
+            escaped = True
+        elif char == '"':
+            quoted = not quoted
+        elif char == ";" and not quoted:
+            parts.append("".join(current).strip())
+            current = []
+        else:
+            current.append(char)
+    parts.append("".join(current).strip())
+    parameters = {}
+    for part in parts[1:]:
+        key, separator, content = part.partition("=")
+        if separator:
+            parameters[key.strip().lower()] = content.strip()
+    extended = parameters.get("filename*")
+    if extended:
+        fields = extended.split("'", 2)
+        if len(fields) == 3:
+            try:
+                return urllib.parse.unquote(fields[2], encoding=fields[0] or "utf-8")
+            except (LookupError, UnicodeError):
+                pass
+    return parameters.get("filename") or None

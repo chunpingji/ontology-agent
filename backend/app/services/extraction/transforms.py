@@ -8,8 +8,7 @@ Four declared transform types, applied uniformly by both source adapters
   vocab source: an explicit ``{"map": {raw: term}}`` (contract shape), a
   ``{"vocab": "oeb"}`` key into the shared :data:`CONTROLLED_VOCAB`, or an E3
   ``OntologyDataProperty.controlled_vocab`` dict passed straight through.
-- ``pattern``          — regex *validation* (config ``{"pattern": "..."}``): the
-  value is kept either way; a non-match only attaches an issue note.
+- Historical executable patterns are rejected with a migration diagnostic.
 - ``cast``             — coerce to a declared datatype (config ``{"to": "integer"}``;
   aligns with ``OntologyDataProperty.datatype``).
 
@@ -24,7 +23,6 @@ existing :func:`normalize_vocab`/:data:`CONTROLLED_VOCAB` seam.
 
 from __future__ import annotations
 
-import re
 from dataclasses import dataclass
 from datetime import date, datetime
 from typing import Any
@@ -88,28 +86,6 @@ def _apply_controlled_vocab(value: Any, config: dict | None) -> TransformOutcome
     return TransformOutcome(value, note=f"controlled_vocab: 无匹配取值 '{value}'")
 
 
-def _pattern_of(config: dict | None) -> str | None:
-    if isinstance(config, dict):
-        pat = config.get("pattern")
-        return pat if isinstance(pat, str) else None
-    if isinstance(config, str):
-        return config
-    return None
-
-
-def _apply_pattern(value: Any, config: dict | None) -> TransformOutcome:
-    pattern = _pattern_of(config)
-    if not pattern:
-        return TransformOutcome(value, note="pattern: 缺少 pattern 配置")
-    try:
-        matched = re.search(pattern, str(value)) is not None
-    except re.error as exc:
-        return TransformOutcome(value, note=f"pattern: 非法正则 {exc}")
-    if matched:
-        return TransformOutcome(value)
-    return TransformOutcome(value, note=f"pattern: 值 '{value}' 不匹配 /{pattern}/")
-
-
 def _cast_target(config: dict | None) -> str | None:
     if isinstance(config, dict):
         for key in ("to", "type", "target", "datatype"):
@@ -149,13 +125,20 @@ def _apply_cast(value: Any, config: dict | None) -> TransformOutcome:
         return TransformOutcome(value, note=f"cast→{target}: {exc}")
 
 
-def apply_transform(transform_type: str | None, config: dict | None, value: Any) -> TransformOutcome:
+def apply_transform(
+    transform_type: str | None, config: dict | None, value: Any
+) -> TransformOutcome:
     """Apply one declared transform to a single source value (R6).
 
     Returns a :class:`TransformOutcome`; a failure never raises — the original
     value is returned with a ``note`` so the caller can keep the row and surface
     the issue for review. ``None`` values pass through untouched.
     """
+    if transform_type == "pattern" or (
+        isinstance(config, dict)
+        and {"pattern", "number_pattern", "script", "callback"} & set(config)
+    ):
+        raise ValueError("EXECUTABLE_PATTERN_RETIRED: migrate to a typed value contract")
     if value is None:
         return TransformOutcome(None)
     ttype = transform_type or "none"
@@ -163,8 +146,6 @@ def apply_transform(transform_type: str | None, config: dict | None, value: Any)
         return TransformOutcome(value)
     if ttype == "controlled_vocab":
         return _apply_controlled_vocab(value, config)
-    if ttype == "pattern":
-        return _apply_pattern(value, config)
     if ttype == "cast":
         return _apply_cast(value, config)
     return TransformOutcome(value, note=f"未知 transform_type '{transform_type}'")
@@ -177,6 +158,10 @@ def validate_transform_config(transform_type: str | None, config: dict | None) -
     transform, else ``None``. Used by binding validation *before* any extraction.
     """
     ttype = transform_type or "none"
+    if isinstance(config, dict) and {"pattern", "number_pattern", "script", "callback"} & set(
+        config
+    ):
+        return "EXECUTABLE_PATTERN_RETIRED: migrate to a typed value contract"
     if ttype == "none":
         return None
     if ttype == "controlled_vocab":
@@ -188,14 +173,7 @@ def validate_transform_config(transform_type: str | None, config: dict | None) -
             return "controlled_vocab 配置缺少有效的 map 或已知 vocab"
         return None
     if ttype == "pattern":
-        pattern = _pattern_of(config)
-        if not pattern:
-            return "pattern 需要 pattern 配置"
-        try:
-            re.compile(pattern)
-        except re.error as exc:
-            return f"pattern 非法正则：{exc}"
-        return None
+        return "EXECUTABLE_PATTERN_RETIRED: migrate to a typed value contract"
     if ttype == "cast":
         target = _cast_target(config)
         if not target:

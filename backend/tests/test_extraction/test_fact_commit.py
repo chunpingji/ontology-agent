@@ -124,7 +124,14 @@ def test_review_is_cas_and_never_implicitly_commits(db, evidence_job):
     assert reviewed.review_status == "confirmed"
     assert reviewed.commit_status == "not_requested"
     with pytest.raises(CandidateConflict):
-        store.review(candidate.candidate_id, 1, "rejected", "过期并发请求", "another")
+        store.review(
+            candidate.candidate_id,
+            1,
+            "rejected",
+            "过期并发请求",
+            "another",
+            expected_review_status="pending",
+        )
 
 
 def test_api_commit_requires_real_writer_and_replays_retained_provenance(

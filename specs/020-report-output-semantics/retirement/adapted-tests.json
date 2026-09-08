@@ -1,0 +1,161 @@
+{
+  "reason": "Preserve independent capabilities while replacing retired execution assumptions: exact identity mapping, no keyword action inference, independent evidence review/commit, immutable published rules, and historical artifacts remaining readable. Pure retired suites are separately listed in retired-tests.json.",
+  "files": [
+    {
+      "path": "backend/tests/contract/test_extraction_job_declarative.py",
+      "historical_source": "git:ce41f8b75c727d5db4c0343732c0ec1a92f44028:backend/tests/contract/test_extraction_job_declarative.py",
+      "original_sha256": "9dce3e0666626f98fe6136afb8cbb3ef27068c384c3f24137a60b65d2c8be2f7",
+      "current_sha256": "a25d8c970d0a9521d700809201f7e76f1e84991de291458ef561961a7bd38f30"
+    },
+    {
+      "path": "backend/tests/integration/test_declarative_doc_extraction.py",
+      "historical_source": "git:ce41f8b75c727d5db4c0343732c0ec1a92f44028:backend/tests/integration/test_declarative_doc_extraction.py",
+      "original_sha256": "5dfcd01208f4b83adbc42df51c930eb82f6e02aa93cab0825494bee536b97dec",
+      "current_sha256": "303ed3a0d29730c319d6ee543fd6dc261e4c7cd642e4d61050d2fdf8e33766a6"
+    },
+    {
+      "path": "backend/tests/integration/test_hierarchy_alignment.py",
+      "historical_source": "git:ce41f8b75c727d5db4c0343732c0ec1a92f44028:backend/tests/integration/test_hierarchy_alignment.py",
+      "original_sha256": "649197f4fa6c96e305b1861a739da2648126fdafbf529e79a1384281608cfda3",
+      "current_sha256": "b8997237e3a11126ab6d3e964e85793adb82a899bc882e431ff2166725d6764c"
+    },
+    {
+      "path": "backend/tests/test_api/test_aligner_semantic.py",
+      "historical_source": "git:ce41f8b75c727d5db4c0343732c0ec1a92f44028:backend/tests/test_api/test_aligner_semantic.py",
+      "original_sha256": "d605ff647026d053cd2fdc423082e49c2f8ef675ea4f988975b24ebdfbdcdb95",
+      "current_sha256": "d62f948c2d0403014ce3a1c8413c9dedbc898476d396025108729463c6f6bc2c"
+    },
+    {
+      "path": "backend/tests/test_api/test_alignment_review.py",
+      "historical_source": "git:ce41f8b75c727d5db4c0343732c0ec1a92f44028:backend/tests/test_api/test_alignment_review.py",
+      "original_sha256": "d2064db2ba91ad0dc9ae17dfb676b32ff1f0f97d03347553ac8e5fde86bbf802",
+      "current_sha256": "74ca8a5110c43f9f110930ab217df4014040fe2a562d32c4df5055ecc2966060"
+    },
+    {
+      "path": "backend/tests/test_api/test_evidence_api.py",
+      "historical_source": "git:ce41f8b75c727d5db4c0343732c0ec1a92f44028:backend/tests/test_api/test_evidence_api.py",
+      "original_sha256": "89a030110e042a3007ee0c5aa3e96b97984ea2035d389e7d1e277369625873b1",
+      "current_sha256": "81a2c075602bb435685b72bf9748873c44b123fbce50b70e2175b547bed49356"
+    },
+    {
+      "path": "backend/tests/test_api/test_extraction_pipeline.py",
+      "historical_source": "git:ce41f8b75c727d5db4c0343732c0ec1a92f44028:backend/tests/test_api/test_extraction_pipeline.py",
+      "original_sha256": "770ae0e2e1904e3bbc409b0a82a8303e902f4c2af4ce97c16a05bdc7683786c7",
+      "current_sha256": "48a37ad1fafd51581a3ab6aeb2f269939c3fb552db83e8a10414820f62c2ae1a"
+    },
+    {
+      "path": "backend/tests/test_api/test_rule_audit_trail.py",
+      "historical_source": "git:ce41f8b75c727d5db4c0343732c0ec1a92f44028:backend/tests/test_api/test_rule_audit_trail.py",
+      "original_sha256": "f3223282c155c58e48412917f5702e24da47d2ab12af7c5229dbb7cb61c953eb",
+      "current_sha256": "0d1986a23cecd66a3fcaecf8b376bd1e998649bdeab1dcc0b97b834857220135"
+    },
+    {
+      "path": "backend/tests/test_api/test_word_tree_annotation.py",
+      "historical_source": "git:ce41f8b75c727d5db4c0343732c0ec1a92f44028:backend/tests/test_api/test_word_tree_annotation.py",
+      "original_sha256": "a8869cab0a2473402085c1889dd0384cbe1282f7cddb6aed6cc65c0a746ea3a5",
+      "current_sha256": "3629b7cfc26a0311b791bd534d08f53b8b16aac08309cc5ae44efdb01831dec7"
+    },
+    {
+      "path": "backend/tests/test_extraction/test_ast_template_default_source_job.py",
+      "historical_source": "git:ce41f8b75c727d5db4c0343732c0ec1a92f44028:backend/tests/test_extraction/test_ast_template_default_source_job.py",
+      "original_sha256": "0db1d9fe572b0da39b8d9ba4d4de8b261e1db148ba9cb9555eb643bb8ddf04ea",
+      "current_sha256": "a28b109a7b1ae3972657e8cd86282ab23649e5b05918288dc27ff3b469ece2c4"
+    },
+    {
+      "path": "backend/tests/test_extraction/test_doc_repo_pipeline.py",
+      "historical_source": "git:ce41f8b75c727d5db4c0343732c0ec1a92f44028:backend/tests/test_extraction/test_doc_repo_pipeline.py",
+      "original_sha256": "7edacf1a72ad96078a79112b8164b9ef0ce53e6249d4048580e467c269a569f7",
+      "current_sha256": "e0bc87206351daefd185fa0af4e6ae41efdc570bd6c29fc273dc348464093ddb"
+    },
+    {
+      "path": "backend/tests/test_extraction/test_doc_repo_review_gate.py",
+      "historical_source": "git:ce41f8b75c727d5db4c0343732c0ec1a92f44028:backend/tests/test_extraction/test_doc_repo_review_gate.py",
+      "original_sha256": "ae1f5ef9df149a297a7f297a20b5792953760ea978ee0a9dad3e0548be080603",
+      "current_sha256": "c031b5463b02fba69243937bac42255418c6e1f09a9a8fd0393cf7fabe75a11b"
+    },
+    {
+      "path": "backend/tests/test_extraction/test_doc_repo_trigger.py",
+      "historical_source": "git:ce41f8b75c727d5db4c0343732c0ec1a92f44028:backend/tests/test_extraction/test_doc_repo_trigger.py",
+      "original_sha256": "a6c9ee05c5dc38ea6ea0f146af7ca0777a3979cbf22c21e8d64d563cbcb59234",
+      "current_sha256": "99ecc3ad1ebcab1737bbc76b3e1ff27ff0466c87112cc4f7ad73d0e45da1a010"
+    },
+    {
+      "path": "backend/tests/test_extraction/test_extracted_from.py",
+      "historical_source": "git:ce41f8b75c727d5db4c0343732c0ec1a92f44028:backend/tests/test_extraction/test_extracted_from.py",
+      "original_sha256": "9897a1d1b311ae82f45f1d54a3c82a8d44687bf01e42e9a47a6daab24654b9e9",
+      "current_sha256": "72da81cfda15bf180bcfa61ddcf8e70b5fb065e381ffe287e8d636a3c0d86efb"
+    },
+    {
+      "path": "backend/tests/test_extraction/test_ner_degradation.py",
+      "historical_source": "git:ce41f8b75c727d5db4c0343732c0ec1a92f44028:backend/tests/test_extraction/test_ner_degradation.py",
+      "original_sha256": "df87d7087412f530bfe611178cd025e5837cc59318d20d2ebd3295e1dc01bc8f",
+      "current_sha256": "fe71c4936e26dc1fc8a7a6c4778e93651cf3ec431148c7ab393a6d95b672e88d"
+    },
+    {
+      "path": "backend/tests/test_extraction/test_provenance_resolve.py",
+      "historical_source": "git:ce41f8b75c727d5db4c0343732c0ec1a92f44028:backend/tests/test_extraction/test_provenance_resolve.py",
+      "original_sha256": "af98ddd3ce213b0cb98fc68a2b5b8d1c115bab707a0520a1e7a7c913d9c49b97",
+      "current_sha256": "21e9ed51c77ef4f020b8020acd465dbb9a461bc77f175928cf42c76e0dba4f65"
+    },
+    {
+      "path": "backend/tests/test_extraction/test_slot_suggester.py",
+      "historical_source": "git:ce41f8b75c727d5db4c0343732c0ec1a92f44028:backend/tests/test_extraction/test_slot_suggester.py",
+      "original_sha256": "ff695e2104f6aa372d569892b9bfcb290e5b90cc4ae00f83684f06600a2c19c5",
+      "current_sha256": "1ed7c1cabf5a59b7d7357873d35d06c7b535e738466b66b1d5fd5a0df8886f55"
+    },
+    {
+      "path": "backend/tests/test_extraction/test_word_prose.py",
+      "historical_source": "git:ce41f8b75c727d5db4c0343732c0ec1a92f44028:backend/tests/test_extraction/test_word_prose.py",
+      "original_sha256": "5e0c7f9f334d8386577fe885a6e2db9d2fc0c16a8400bf1cb01ea8399ca7e9eb",
+      "current_sha256": "fc6051c62895fc75c3d143a37cc063b582aae0415f36396799ab827d11108fde"
+    },
+    {
+      "path": "backend/tests/test_reporting/test_ast_coverage_api.py",
+      "historical_source": "git:ce41f8b75c727d5db4c0343732c0ec1a92f44028:backend/tests/test_reporting/test_ast_coverage_api.py",
+      "original_sha256": "e97505671f62a820861c145ba207378e5bd12a4abad98bde4aea0ff2fa3aa8b8",
+      "current_sha256": "b7a2e6a6a77cfa6a3f8fb1c14deb92397eb58529a1ebb225c6873f88d6502546"
+    },
+    {
+      "path": "backend/tests/test_reporting/test_ast_template.py",
+      "historical_source": "git:ce41f8b75c727d5db4c0343732c0ec1a92f44028:backend/tests/test_reporting/test_ast_template.py",
+      "original_sha256": "54a84e45d25b6b69aba0449c59a1663e32d2287fa6c9e706ba33240daf6b1a0f",
+      "current_sha256": "9aae32b63399ca9b325c6cfdc2b4ecd31841276fab05ce00ee35a40f7cec6a2c"
+    },
+    {
+      "path": "backend/tests/test_reporting/test_ast_template_disabled.py",
+      "historical_source": "git:ce41f8b75c727d5db4c0343732c0ec1a92f44028:backend/tests/test_reporting/test_ast_template_disabled.py",
+      "original_sha256": "15a2b61139ce18b0d5ce359824d9ff9ca429ab89d7f47314822465edc4a22ef0",
+      "current_sha256": "8597aeca84fdaa3ac265ed9ba73252420b617548ae36b8e6f1ebdb563ebce78a"
+    },
+    {
+      "path": "backend/tests/test_reporting/test_report_source_ontology.py",
+      "historical_source": "git:ce41f8b75c727d5db4c0343732c0ec1a92f44028:backend/tests/test_reporting/test_report_source_ontology.py",
+      "original_sha256": "8b7dd9a48f83f9927b2d3c58a0fec1cfb50fb378cbfb7e1dcc1e93ada6dc1f1b",
+      "current_sha256": "2952f9ec0b4f3986c79a8eedfa731cdbe8f260bb5018178b8fa8745fb04d4485"
+    },
+    {
+      "path": "backend/tests/test_reporting/test_source_ref.py",
+      "historical_source": "git:ce41f8b75c727d5db4c0343732c0ec1a92f44028:backend/tests/test_reporting/test_source_ref.py",
+      "original_sha256": "0c7aa0d4641a5443ce68867d46512a6bce34c9c7434f3b0dce745f1ad9fb88a4",
+      "current_sha256": "dc4a8e63458ce9806bcac326d8a55cb7453c5f4962becb4c56ef25241b338364"
+    },
+    {
+      "path": "backend/tests/test_reporting/test_suggest_slots_api.py",
+      "historical_source": "git:ce41f8b75c727d5db4c0343732c0ec1a92f44028:backend/tests/test_reporting/test_suggest_slots_api.py",
+      "original_sha256": "2234d6ae3a30026650ca03adb87c8fc432e080df4101de178464125c6ac90733",
+      "current_sha256": "05e35c35a232b55efda301099b6977b3442228c63a95acbc01149f6e1959dada"
+    },
+    {
+      "path": "backend/tests/test_reporting/test_template_meta_and_section_prompt.py",
+      "historical_source": "git:ce41f8b75c727d5db4c0343732c0ec1a92f44028:backend/tests/test_reporting/test_template_meta_and_section_prompt.py",
+      "original_sha256": "4c151a73c35fa57bcb88d04d38499589eef07589881e34b95fcaef6a5bfed280",
+      "current_sha256": "5fcd734c67ea8017f738efcae9788db1e2b81585848d56d6fda793b7489e5e78"
+    },
+    {
+      "path": "backend/tests/unit/test_transforms.py",
+      "historical_source": "git:ce41f8b75c727d5db4c0343732c0ec1a92f44028:backend/tests/unit/test_transforms.py",
+      "original_sha256": "d6bd40e42fb0e7690a2c0bc678bf3f64c3a633ff2bc0572d2d504e6e66b9c11a",
+      "current_sha256": "184168c12b7d794005eb7ace521fb3af1d9830f144dae62e87cf31cc17faf837"
+    }
+  ]
+}

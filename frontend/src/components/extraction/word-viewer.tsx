@@ -182,7 +182,7 @@ const LOCATION_ANCHOR_CLS = "document-location-anchor";
 function parseSourceRef(ref: string): string[] {
   const segments = ref.split(" / ");
   return segments
-    .map((s) => s.replace(/^[§表]\s*/, "").trim())
+    .map((s) => (s.startsWith("§") || s.startsWith("表") ? s.slice(1) : s).trim())
     .filter(Boolean)
     .reverse();
 }
@@ -229,8 +229,8 @@ function applyStructuredParagraphHighlight(
 }
 
 function headingLevel(el: Element): number {
-  const m = el.tagName.match(/^H(\d)$/i);
-  return m ? Number(m[1]) : 0;
+  const tag = el.tagName.toUpperCase();
+  return tag.length === 2 && tag[0] === "H" && "123456".includes(tag[1]) ? Number(tag[1]) : 0;
 }
 
 function clearHighlights(container: HTMLElement) {

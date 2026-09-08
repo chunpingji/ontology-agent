@@ -294,6 +294,7 @@ def summarize_word_tree(
     client,
     *,
     progress_fn: Callable[[str], None] | None = None,
+    should_stop_fn: Callable[[], bool] | None = None,
 ) -> ChapterNode | None:
     """Attach display-only page/chapter summaries without changing structure."""
     root = structure.section_tree
@@ -329,6 +330,8 @@ def summarize_word_tree(
         for page in all_pages
     ]
     for batch in _batches(page_targets):
+        if should_stop_fn and should_stop_fn():
+            return root
         _apply_batch(client, batch)
 
     depths = _depths(root)
@@ -354,6 +357,8 @@ def summarize_word_tree(
                 "has_degraded_child": degraded,
             })
         for batch in _batches(targets):
+            if should_stop_fn and should_stop_fn():
+                return root
             _apply_batch(client, batch)
 
     root_degraded = any(
@@ -361,6 +366,8 @@ def summarize_word_tree(
         or child.layer_metadata.summary_status in {"failed", "partial"}
         for child in root.children
     )
+    if should_stop_fn and should_stop_fn():
+        return root
     _apply_batch(client, [{
         "node_id": root.node_id,
         "material": _chapter_material(structure, root),

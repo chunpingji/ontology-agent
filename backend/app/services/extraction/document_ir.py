@@ -7,7 +7,7 @@ from hashlib import sha256
 from pathlib import Path
 from typing import Any, Literal
 
-from pydantic import Field, model_validator
+from pydantic import Field, PrivateAttr, model_validator
 
 from app.schemas.evidence import EvidenceAnchor, EvidenceModel
 from app.services.extraction.docx_structure import DocStructure, ParagraphBlock, TableBlock
@@ -34,6 +34,8 @@ class EvidenceUnit(EvidenceModel):
 
 
 class DocumentIR(EvidenceModel):
+    _unit_index: dict = PrivateAttr(default_factory=dict)
+    _unit_index_source: tuple[int, int] | None = PrivateAttr(default=None)
     ir_version: str = IR_VERSION
     structure_policy_version: str = STRUCTURE_POLICY_VERSION
     parser_version: str
@@ -72,9 +74,22 @@ class DocumentIR(EvidenceModel):
         return self
 
     def unit(self, evidence_id: str) -> EvidenceUnit:
-        for unit in self.evidence_units:
-            if unit.evidence_id == evidence_id:
-                return unit
+        units = self.evidence_units
+        source = (id(units), len(units))
+        entry = self._unit_index.get(evidence_id)
+        # Also detect in-place replacements/reordering and changed IDs. Cached
+        # entries hold the live unit, so text/coordinate edits cannot return a copy.
+        if (
+            self._unit_index_source != source
+            or entry is None
+            or units[entry[0]] is not entry[1]
+            or entry[1].evidence_id != evidence_id
+        ):
+            self._unit_index = {unit.evidence_id: (i, unit) for i, unit in enumerate(units)}
+            self._unit_index_source = source
+            entry = self._unit_index.get(evidence_id)
+        if entry is not None:
+            return entry[1]
         raise ValueError(f"unknown evidence identity: {evidence_id}")
 
     def anchor(self, evidence_id: str, start: int | None = None,

@@ -12,14 +12,13 @@ single Git commit.
 from __future__ import annotations
 
 import logging
-import re
 import subprocess
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 
 from fastapi import HTTPException
-from rdflib import RDF, RDFS, OWL, URIRef
+from rdflib import OWL, RDF, RDFS, URIRef
 from sqlalchemy import update
 from sqlalchemy.orm import Session
 
@@ -56,12 +55,17 @@ from app.services.extraction.transforms import validate_transform_config
 from app.services.reasoning import interpreter
 from app.services.reasoning.defaults import (
     VERIFIED_EXTERNAL_ALIGNMENTS,
+)
+from app.services.reasoning.defaults import (
     ClassificationCriterion as CriterionSpec,
+)
+from app.services.reasoning.defaults import (
     ConflictPolicy as ConflictPolicySpec,
+)
+from app.services.reasoning.defaults import (
     DecisionRule as DecisionRuleSpec,
 )
 from app.services.reasoning.seed_declarative import (
-    CONFLICT_POLICY_PREFIX,
     DECISION_RULE_PREFIX,
 )
 
@@ -221,9 +225,7 @@ class OntologyMetaStore:
 
     def _validate_iri(self, iri: str) -> None:
         if not iri or not iri.startswith(MANAGED_PREFIX):
-            raise HTTPException(
-                status_code=400, detail=f"IRI 不属于受管命名空间 {MANAGED_PREFIX}"
-            )
+            raise HTTPException(status_code=400, detail=f"IRI 不属于受管命名空间 {MANAGED_PREFIX}")
 
     # =================================================================== #
     # Lookups / DTO builders
@@ -296,9 +298,7 @@ class OntologyMetaStore:
         }
 
     def class_detail(self, c: OntologyClass) -> dict:
-        restrictions = (
-            self.db.query(OntologyRestriction).filter_by(owner_class_id=c.id).all()
-        )
+        restrictions = self.db.query(OntologyRestriction).filter_by(owner_class_id=c.id).all()
         mappings = self.db.query(OntologyClassMapping).filter_by(class_id=c.id).all()
         return {
             "id": str(c.id),
@@ -494,8 +494,13 @@ class OntologyMetaStore:
         self._check_cardinality(payload.min_cardinality, payload.max_cardinality)
         changes: dict = {"updated_by": self._user_id(actor)}
         for f in (
-            "label", "comment", "min_cardinality", "max_cardinality",
-            "is_functional", "is_symmetric", "is_transitive",
+            "label",
+            "comment",
+            "min_cardinality",
+            "max_cardinality",
+            "is_functional",
+            "is_symmetric",
+            "is_transitive",
         ):
             v = getattr(payload, f, None)
             if v is not None:
@@ -547,7 +552,9 @@ class OntologyMetaStore:
         chain = self._ancestor_chain(cls)
         rows = q.filter(OntologyDataProperty.domain_class_id.in_(list(chain))).all()
         return [
-            self._annotate_inherited(self.data_property_detail(dp), dp.domain_class_id, cls.id, chain)
+            self._annotate_inherited(
+                self.data_property_detail(dp), dp.domain_class_id, cls.id, chain
+            )
             for dp in rows
         ]
 
@@ -595,7 +602,6 @@ class OntologyMetaStore:
         self.db.refresh(dp)
         self.audit("data_property.create", dp.slpra_iri, actor)
         return self.data_property_detail(dp)
-
 
     def update_data_property(self, iri: str, payload, actor: str) -> dict:
         dp = self.db.query(OntologyDataProperty).filter_by(slpra_iri=iri).first()
@@ -805,12 +811,16 @@ class OntologyMetaStore:
         )
         self.audit("classification_criterion.delete", criterion_key, actor)
 
-    def publish_classification_criterion(self, criterion_key: str, expected_version: int, actor: str) -> dict:
+    def publish_classification_criterion(
+        self, criterion_key: str, expected_version: int, actor: str
+    ) -> dict:
         c = self._require_criterion(criterion_key)
         if c.status == STATUS_PUBLISHED:
             raise HTTPException(status_code=409, detail="判据已处于 published 状态")
         c = self._cas_update(
-            OntologyClassificationCriterion, c.id, expected_version,
+            OntologyClassificationCriterion,
+            c.id,
+            expected_version,
             {"status": STATUS_PUBLISHED, "updated_by": self._user_id(actor)},
         )
         self.audit("classification_criterion.publish", criterion_key, actor)
@@ -886,6 +896,8 @@ class OntologyMetaStore:
 
     def update_decision_rule(self, rule_key: str, payload, actor: str) -> dict:
         r = self._require_decision_rule(rule_key)
+        if r.status == STATUS_PUBLISHED:
+            raise HTTPException(409, "RULE_REVISION_REQUIRED: published rules are immutable")
         if payload.rule_group is not None and payload.rule_group not in RULE_GROUPS:
             raise HTTPException(
                 status_code=400,
@@ -911,6 +923,8 @@ class OntologyMetaStore:
 
     def delete_decision_rule(self, rule_key: str, expected_version: int, actor: str) -> None:
         r = self._require_decision_rule(rule_key)
+        if r.status == STATUS_PUBLISHED:
+            raise HTTPException(409, "RULE_REVISION_REQUIRED: preserve published rule history")
         self._cas_update(
             OntologyDecisionRule,
             r.id,
@@ -921,10 +935,16 @@ class OntologyMetaStore:
 
     def publish_decision_rule(self, rule_key: str, expected_version: int, actor: str) -> dict:
         r = self._require_decision_rule(rule_key)
+        if r.rule_group == "risk_assessment":
+            raise HTTPException(
+                409, "RULE_MIGRATION_REQUIRED: register and review a typed rule revision"
+            )
         if r.status == STATUS_PUBLISHED:
             raise HTTPException(status_code=409, detail="规则已处于 published 状态")
         r = self._cas_update(
-            OntologyDecisionRule, r.id, expected_version,
+            OntologyDecisionRule,
+            r.id,
+            expected_version,
             {"status": STATUS_PUBLISHED, "updated_by": self._user_id(actor)},
         )
         self.audit("decision_rule.publish", r.slpra_iri, actor)
@@ -989,7 +1009,9 @@ class OntologyMetaStore:
         if p.status == STATUS_PUBLISHED:
             raise HTTPException(status_code=409, detail="策略已处于 published 状态")
         p = self._cas_update(
-            OntologyConflictPolicy, p.id, expected_version,
+            OntologyConflictPolicy,
+            p.id,
+            expected_version,
             {"status": STATUS_PUBLISHED, "updated_by": self._user_id(actor)},
         )
         self.audit("conflict_policy.publish", p.slpra_iri, actor)
@@ -1036,6 +1058,7 @@ class OntologyMetaStore:
                 priority=r.priority,
             )
             for r in self.db.query(OntologyDecisionRule).filter_by(is_disabled=False).all()
+            if r.rule_group != "risk_assessment"
         ]
 
     def active_conflict_policies(self) -> list[ConflictPolicySpec]:
@@ -1134,9 +1157,7 @@ class OntologyMetaStore:
         kind = p.kind
         if kind in ("some", "only") and not (p.property_iri and p.filler_iri):
             raise HTTPException(status_code=400, detail=f"{kind} 需 property_iri + filler_iri")
-        if kind in ("exactly", "min", "max") and not (
-            p.property_iri and p.cardinality is not None
-        ):
+        if kind in ("exactly", "min", "max") and not (p.property_iri and p.cardinality is not None):
             raise HTTPException(status_code=400, detail=f"{kind} 需 property_iri + cardinality")
         if kind in ("disjoint", "equivalent") and not p.filler_iri:
             raise HTTPException(status_code=400, detail=f"{kind} 需目标类 filler_iri")
@@ -1147,7 +1168,13 @@ class OntologyMetaStore:
     # A raw DSN/URL leaks a credential-bearing string into the DB; a class
     # binding's ``source_system`` must instead be a reference: an env-var *name*
     # or an IntegrationConnector id (FR-006/C3). Reject anything URL-shaped.
-    _SOURCE_REF_RE = re.compile(r"^[A-Za-z_][\w.\-]*$")
+    @staticmethod
+    def _valid_source_ref(value):
+        return (
+            bool(value)
+            and (value[0].isascii() and value[0].isalpha() or value[0] == "_")
+            and all(char.isalnum() or char in "_.-" for char in value)
+        )
 
     def _check_source_entity_binding(
         self,
@@ -1162,6 +1189,14 @@ class OntologyMetaStore:
         """
         if payload.mapping_type not in SOURCE_ENTITY_MAPPING_TYPES:
             return
+        if payload.mapping_type == "doc_pattern":
+            raise HTTPException(
+                422,
+                detail={
+                    "code": "EXECUTABLE_EXTRACTION_CONFIG_RETIRED",
+                    "message": "请使用语义证据任务或已登记的结构化字段映射",
+                },
+            )
         # C2 — a source-entity binding must carry a non-empty locator in `target`.
         if not (payload.target or "").strip():
             raise HTTPException(
@@ -1170,19 +1205,16 @@ class OntologyMetaStore:
             )
         source = (payload.source_system or "").strip()
         # C3 — `source_system` is a *reference*, never a DSN/credential string.
-        if not source or "://" in source or "@" in source or not self._SOURCE_REF_RE.match(source):
+        if not source or "://" in source or "@" in source or not self._valid_source_ref(source):
             raise HTTPException(
                 status_code=422,
                 detail="source_system 必须是环境变量名或连接器 id，不能是 DSN/凭据串（FR-006）",
             )
         # C1 — at most one source-entity binding per (class, source_system).
-        dup = (
-            self.db.query(OntologyClassMapping)
-            .filter(
-                OntologyClassMapping.class_id == class_id,
-                OntologyClassMapping.source_system == source,
-                OntologyClassMapping.mapping_type.in_(SOURCE_ENTITY_MAPPING_TYPES),
-            )
+        dup = self.db.query(OntologyClassMapping).filter(
+            OntologyClassMapping.class_id == class_id,
+            OntologyClassMapping.source_system == source,
+            OntologyClassMapping.mapping_type.in_(SOURCE_ENTITY_MAPPING_TYPES),
         )
         if exclude_id is not None:
             dup = dup.filter(OntologyClassMapping.id != exclude_id)
@@ -1202,7 +1234,9 @@ class OntologyMetaStore:
     def create_mapping(self, class_iri: str, payload, actor: str) -> dict:
         c = self._require_class(class_iri)
         if payload.mapping_type not in MAPPING_TYPES:
-            raise HTTPException(status_code=400, detail=f"非法 mapping_type：{payload.mapping_type}")
+            raise HTTPException(
+                status_code=400, detail=f"非法 mapping_type：{payload.mapping_type}"
+            )
         self._check_source_entity_binding(c.id, payload)
         m = OntologyClassMapping(
             class_id=c.id,
@@ -1224,7 +1258,9 @@ class OntologyMetaStore:
         if not m:
             raise HTTPException(status_code=404, detail="映射不存在")
         if payload.mapping_type not in MAPPING_TYPES:
-            raise HTTPException(status_code=400, detail=f"非法 mapping_type：{payload.mapping_type}")
+            raise HTTPException(
+                status_code=400, detail=f"非法 mapping_type：{payload.mapping_type}"
+            )
         self._check_source_entity_binding(m.class_id, payload, exclude_id=m.id)
         changes = {
             "mapping_type": payload.mapping_type,
@@ -1311,7 +1347,10 @@ class OntologyMetaStore:
         return {p.get("iri") for p in props if isinstance(p, dict) and p.get("iri")}
 
     def _validate_property_binding(
-        self, class_iri: str | None, payload, exclude_id: uuid.UUID | None,
+        self,
+        class_iri: str | None,
+        payload,
+        exclude_id: uuid.UUID | None,
         class_mapping_id: uuid.UUID,
     ) -> tuple[list[dict], list[dict]]:
         """FR-005 validation rules V1–V5. Returns (errors, warnings)."""
@@ -1320,8 +1359,13 @@ class OntologyMetaStore:
         piri = payload.property_iri
         kind = payload.property_kind or "data"
         if kind not in BINDING_PROPERTY_KINDS:
-            errors.append({"code": "binding_kind", "message": f"非法 property_kind：{kind}",
-                           "entity_iri": piri})
+            errors.append(
+                {
+                    "code": "binding_kind",
+                    "message": f"非法 property_kind：{kind}",
+                    "entity_iri": piri,
+                }
+            )
 
         # V2 — property exists & enabled. Draft metadata (E2/E3) is the source of
         # truth for the disabled flag; the published engine never carries disabled
@@ -1330,8 +1374,13 @@ class OntologyMetaStore:
         lt = self.db.query(OntologyLinkType).filter_by(slpra_iri=piri).first()
         meta = dp or lt
         if meta is not None and getattr(meta, "is_disabled", False):
-            errors.append({"code": "binding_property_disabled",
-                           "message": f"属性已停用：{piri}", "entity_iri": piri})
+            errors.append(
+                {
+                    "code": "binding_property_disabled",
+                    "message": f"属性已停用：{piri}",
+                    "entity_iri": piri,
+                }
+            )
 
         # V1 — domain gate. A property not declared on this class (domain-literal)
         # fails the gate; a truly-missing property is subsumed here (it is in no
@@ -1339,27 +1388,45 @@ class OntologyMetaStore:
         if class_iri:
             allowed = self._domain_property_iris(class_iri, kind)
             if allowed and piri not in allowed:
-                errors.append({
-                    "code": "binding_domain",
-                    "message": f"属性 {piri} 的定义域不包含类 {class_iri}（FR-013）",
-                    "entity_iri": piri,
-                })
+                errors.append(
+                    {
+                        "code": "binding_domain",
+                        "message": f"属性 {piri} 的定义域不包含类 {class_iri}（FR-013）",
+                        "entity_iri": piri,
+                    }
+                )
 
         # V3 — object-property shape.
         if kind == "object":
             res = payload.object_resolution
             if res not in OBJECT_RESOLUTIONS:
-                errors.append({"code": "binding_object_shape",
-                               "message": "对象属性必须声明 object_resolution（id_reference|nested_object）",
-                               "entity_iri": piri})
-            elif res == "id_reference" and not (payload.target_class_iri and payload.target_id_path):
-                errors.append({"code": "binding_object_shape",
-                               "message": "id_reference 需 target_class_iri + target_id_path",
-                               "entity_iri": piri})
+                errors.append(
+                    {
+                        "code": "binding_object_shape",
+                        "message": (
+                            "对象属性必须声明 object_resolution（id_reference|nested_object）"
+                        ),
+                        "entity_iri": piri,
+                    }
+                )
+            elif res == "id_reference" and not (
+                payload.target_class_iri and payload.target_id_path
+            ):
+                errors.append(
+                    {
+                        "code": "binding_object_shape",
+                        "message": "id_reference 需 target_class_iri + target_id_path",
+                        "entity_iri": piri,
+                    }
+                )
             elif res == "nested_object" and not payload.nested_binding_id:
-                errors.append({"code": "binding_object_shape",
-                               "message": "nested_object 需 nested_binding_id（子类绑定）",
-                               "entity_iri": piri})
+                errors.append(
+                    {
+                        "code": "binding_object_shape",
+                        "message": "nested_object 需 nested_binding_id（子类绑定）",
+                        "entity_iri": piri,
+                    }
+                )
 
         # V4 — at most one identifier per class binding.
         if payload.is_identifier:
@@ -1370,9 +1437,13 @@ class OntologyMetaStore:
             if exclude_id is not None:
                 q = q.filter(OntologyPropertyBinding.id != exclude_id)
             if q.first() is not None:
-                errors.append({"code": "binding_identifier",
-                               "message": "同一类绑定只能有一个 is_identifier 属性",
-                               "entity_iri": piri})
+                errors.append(
+                    {
+                        "code": "binding_identifier",
+                        "message": "同一类绑定只能有一个 is_identifier 属性",
+                        "entity_iri": piri,
+                    }
+                )
 
         # V5 — transform config well-formedness (reuses the transform seam, R6).
         if payload.transform_type and payload.transform_type != "none":
@@ -1384,11 +1455,7 @@ class OntologyMetaStore:
 
     def list_property_bindings(self, mid: str) -> list[dict]:
         m = self._require_class_binding(mid)
-        rows = (
-            self.db.query(OntologyPropertyBinding)
-            .filter_by(class_mapping_id=m.id)
-            .all()
-        )
+        rows = self.db.query(OntologyPropertyBinding).filter_by(class_mapping_id=m.id).all()
         return [self._prop_binding_dto(pb) for pb in rows]
 
     def create_property_binding(self, mid: str, payload, actor: str) -> dict:
@@ -1420,8 +1487,12 @@ class OntologyMetaStore:
         self.db.add(pb)
         self.db.commit()
         self.db.refresh(pb)
-        self.audit("property_binding.create", class_iri, actor,
-                   details={"property_iri": payload.property_iri})
+        self.audit(
+            "property_binding.create",
+            class_iri,
+            actor,
+            details={"property_iri": payload.property_iri},
+        )
         return self._prop_binding_dto(pb)
 
     def update_property_binding(self, pid: str, payload, actor: str) -> dict:
@@ -1450,9 +1521,7 @@ class OntologyMetaStore:
             ),
             "updated_by": self._user_id(actor),
         }
-        pb = self._cas_update(
-            OntologyPropertyBinding, pb.id, payload.expected_version, changes
-        )
+        pb = self._cas_update(OntologyPropertyBinding, pb.id, payload.expected_version, changes)
         self.audit("property_binding.update", class_iri, actor)
         return self._prop_binding_dto(pb)
 
@@ -1486,9 +1555,7 @@ class OntologyMetaStore:
         class_iri = self._iri_of_class(m.class_id)
         errors: list[dict] = []
         warnings: list[dict] = []
-        bindings = (
-            self.db.query(OntologyPropertyBinding).filter_by(class_mapping_id=m.id).all()
-        )
+        bindings = self.db.query(OntologyPropertyBinding).filter_by(class_mapping_id=m.id).all()
         for pb in bindings:
             e, w = self._validate_property_binding(
                 class_iri, pb, exclude_id=pb.id, class_mapping_id=m.id
@@ -1499,8 +1566,13 @@ class OntologyMetaStore:
         health = "ok"
         if m.mapping_type in SOURCE_ENTITY_MAPPING_TYPES and not bindings:
             health = "unmapped"
-            warnings.append({"code": "binding_no_properties",
-                             "message": "源实体绑定尚未声明任何属性绑定", "entity_iri": class_iri})
+            warnings.append(
+                {
+                    "code": "binding_no_properties",
+                    "message": "源实体绑定尚未声明任何属性绑定",
+                    "entity_iri": class_iri,
+                }
+            )
         elif errors:
             health = "drift"
         return {"health": health, "errors": errors, "warnings": warnings}
@@ -1532,7 +1604,11 @@ class OntologyMetaStore:
             )
             if not c.parent_class_id and not has_child:
                 warnings.append(
-                    {"code": "orphan_class", "message": f"孤立类：{c.label}", "entity_iri": c.slpra_iri}
+                    {
+                        "code": "orphan_class",
+                        "message": f"孤立类：{c.label}",
+                        "entity_iri": c.slpra_iri,
+                    }
                 )
 
         # disabled class still referenced as parent/domain/range → blocking
@@ -1589,9 +1665,7 @@ class OntologyMetaStore:
         # criterion projects an owl:equivalentClass axiom — block the release if
         # its target/pattern/referenced property/filler cannot be resolved, so an
         # unresolvable axiom never reaches the authoritative TTL.
-        class_names = {
-            c.slpra_iri.rsplit("/", 1)[-1] for c in classes
-        }
+        class_names = {c.slpra_iri.rsplit("/", 1)[-1] for c in classes}
         prop_names = {
             lt.slpra_iri.rsplit("/", 1)[-1]
             for lt in self.db.query(OntologyLinkType).filter_by(is_disabled=False).all()
@@ -1606,33 +1680,41 @@ class OntologyMetaStore:
             entity = f"criterion:{ckey}"
             target = self.db.get(OntologyClass, crit.target_class_id)
             if target is None or target.is_disabled:
-                blocking.append({
-                    "code": "criterion_target_unresolved",
-                    "message": f"判据目标类不可解析/已停用：{ckey}",
-                    "entity_iri": entity,
-                })
+                blocking.append(
+                    {
+                        "code": "criterion_target_unresolved",
+                        "message": f"判据目标类不可解析/已停用：{ckey}",
+                        "entity_iri": entity,
+                    }
+                )
             try:
                 interpreter.validate_pattern(crit.pattern)
             except interpreter.PatternError as exc:
-                blocking.append({
-                    "code": "criterion_pattern_invalid",
-                    "message": f"判据模式非法：{ckey}：{exc}",
-                    "entity_iri": entity,
-                })
+                blocking.append(
+                    {
+                        "code": "criterion_pattern_invalid",
+                        "message": f"判据模式非法：{ckey}：{exc}",
+                        "entity_iri": entity,
+                    }
+                )
                 continue  # refs are unreliable on a malformed pattern
             ref_props, ref_classes = _classification_pattern_refs(crit.pattern)
             for p in sorted(ref_props - prop_names):
-                blocking.append({
-                    "code": "criterion_property_unresolved",
-                    "message": f"判据引用属性不可解析：{ckey} → {p}",
-                    "entity_iri": entity,
-                })
+                blocking.append(
+                    {
+                        "code": "criterion_property_unresolved",
+                        "message": f"判据引用属性不可解析：{ckey} → {p}",
+                        "entity_iri": entity,
+                    }
+                )
             for c in sorted(ref_classes - class_names):
-                blocking.append({
-                    "code": "criterion_filler_unresolved",
-                    "message": f"判据引用类不可解析：{ckey} → {c}",
-                    "entity_iri": entity,
-                })
+                blocking.append(
+                    {
+                        "code": "criterion_filler_unresolved",
+                        "message": f"判据引用类不可解析：{ckey} → {c}",
+                        "entity_iri": entity,
+                    }
+                )
             # US2 (T026 / FR-014, 宪章 II NON-NEGOTIABLE): an external_alignment
             # criterion projects an existential onto a managed class with an
             # external IRI filler — block release unless that IRI was byte-verified
@@ -1640,13 +1722,19 @@ class OntologyMetaStore:
             for align in sorted(
                 _classification_alignment_refs(crit.pattern) - VERIFIED_EXTERNAL_ALIGNMENTS
             ):
-                blocking.append({
-                    "code": "criterion_alignment_unverified",
-                    "message": f"判据外部对齐未经字节级核实：{ckey} → {align}",
-                    "entity_iri": entity,
-                })
+                blocking.append(
+                    {
+                        "code": "criterion_alignment_unverified",
+                        "message": f"判据外部对齐未经字节级核实：{ckey} → {align}",
+                        "entity_iri": entity,
+                    }
+                )
 
-        reasoner = {"ran": False, "consistent": None, "note": "无 JVM/HermiT，规则式校验已执行（优雅降级）"}
+        reasoner = {
+            "ran": False,
+            "consistent": None,
+            "note": "无 JVM/HermiT，规则式校验已执行（优雅降级）",
+        }
         return {"blocking": blocking, "warnings": warnings, "reasoner": reasoner}
 
     # =================================================================== #
@@ -1786,9 +1874,7 @@ class OntologyMetaStore:
         # E11 criteria are not IRI-bearing (class expressions hung off a target
         # class); key the change log by `criterion_key` + target IRI instead.
         for c in (
-            self.db.query(OntologyClassificationCriterion)
-            .filter_by(status=STATUS_DRAFT)
-            .all()
+            self.db.query(OntologyClassificationCriterion).filter_by(status=STATUS_DRAFT).all()
         ):
             kind = "disable" if c.is_disabled else ("create" if c.version == 1 else "update")
             self.db.add(
@@ -1835,8 +1921,10 @@ class OntologyMetaStore:
             raise HTTPException(status_code=409, detail="存在阻断校验项，无法发布")
 
         # 1) project to Owlready2 World (best effort)
+        projection_succeeded = False
         try:
             self.engine.project_entities(self._projection_payloads())
+            projection_succeeded = True
         except Exception as exc:  # pragma: no cover
             logger.warning("World projection failed: %s", exc)
 
@@ -1853,6 +1941,13 @@ class OntologyMetaStore:
         r.published_at = _now()
         r.published_by = self._user_id(actor)
         r.status = STATUS_PUBLISHED
+        from app.services.extraction.extraction_tasks import semantic_schema_from_engine
+        from app.services.ontology_model_context import capture_schema
+
+        if projection_succeeded:
+            r.semantic_snapshot_ref = capture_schema(
+                self.db, semantic_schema_from_engine(self.engine), actor
+            )
         for table, model in (
             ("ontology_class", OntologyClass),
             ("ontology_link_type", OntologyLinkType),
@@ -1976,7 +2071,11 @@ class OntologyMetaStore:
         logger.info(
             "project_from_ttl seeded %d rows (%d classes, %d relations, %d data props), "
             "linked %d parents",
-            total, classes, links, data, parents,
+            total,
+            classes,
+            links,
+            data,
+            parents,
         )
         return total
 
@@ -2021,11 +2120,7 @@ class OntologyMetaStore:
         anonymous owl:Restriction nodes and external (BFO) parents are skipped.
         Idempotent: only fills rows whose parent is still unset."""
         linked = 0
-        unset = (
-            self.db.query(OntologyClass)
-            .filter(OntologyClass.parent_class_id.is_(None))
-            .all()
-        )
+        unset = self.db.query(OntologyClass).filter(OntologyClass.parent_class_id.is_(None)).all()
         for c in unset:
             for sup in base.objects(URIRef(c.slpra_iri), RDFS.subClassOf):
                 if not isinstance(sup, URIRef):
@@ -2126,12 +2221,21 @@ class OntologyMetaStore:
             return "string"
         local = str(rng).rsplit("#", 1)[-1].rsplit("/", 1)[-1]
         mapping = {
-            "string": "string", "normalizedString": "string", "token": "string",
-            "integer": "integer", "int": "integer", "long": "integer",
-            "short": "integer", "nonNegativeInteger": "integer",
+            "string": "string",
+            "normalizedString": "string",
+            "token": "string",
+            "integer": "integer",
+            "int": "integer",
+            "long": "integer",
+            "short": "integer",
+            "nonNegativeInteger": "integer",
             "positiveInteger": "integer",
-            "decimal": "decimal", "float": "decimal", "double": "decimal",
-            "boolean": "boolean", "date": "date", "dateTime": "dateTime",
+            "decimal": "decimal",
+            "float": "decimal",
+            "double": "decimal",
+            "boolean": "boolean",
+            "date": "date",
+            "dateTime": "dateTime",
             "anyURI": "anyURI",
         }
         return mapping.get(local, "string")
@@ -2143,9 +2247,7 @@ class _Merged:
 
     def __init__(self, r: OntologyRestriction, payload, store: "OntologyMetaStore"):
         self.kind = payload.kind if payload.kind is not None else r.kind
-        self.cardinality = (
-            payload.cardinality if payload.cardinality is not None else r.cardinality
-        )
+        self.cardinality = payload.cardinality if payload.cardinality is not None else r.cardinality
         self.property_iri = (
             payload.property_iri
             if payload.property_iri is not None

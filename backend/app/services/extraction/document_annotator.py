@@ -1405,6 +1405,7 @@ def annotate_excel(
     progress_fn: Callable[[str], None] | None = None,
     should_pause_fn: Callable[[], bool] | None = None,
     checkpoint: dict | None = None,
+    structure_only: bool = False,
 ) -> tuple[dict[str, Any], list[str], list[dict], dict | None]:
     """解析 Excel → 结构化行数据 + 三阶段 NER 标注 + 属性三元组。
 
@@ -1447,7 +1448,7 @@ def annotate_excel(
     wb.close()
 
     # 端到端三阶段标注所有需标注单元格。
-    ner_spans, triples, ckpt = _annotate_texts(
+    ner_spans, triples, ckpt = ([], [], None) if structure_only else _annotate_texts(
         ner_texts, engine, progress_fn, should_pause_fn, checkpoint,
     )
     spans_by_slot: dict[tuple[int, str], list[dict]] = {

@@ -1,7 +1,17 @@
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import JSON, Boolean, DateTime, ForeignKey, Integer, Numeric, String, Text, UniqueConstraint
+from sqlalchemy import (
+    JSON,
+    Boolean,
+    DateTime,
+    ForeignKey,
+    Integer,
+    Numeric,
+    String,
+    Text,
+    UniqueConstraint,
+)
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -33,7 +43,9 @@ class ExtractionConfig(Base):
     property_constraints: Mapped[dict | None] = mapped_column(JSON)
     is_active: Mapped[bool] = mapped_column(default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
-    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now, onupdate=_now)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_now, onupdate=_now
+    )
 
 
 class ExtractionJob(Base):
@@ -55,6 +67,24 @@ class ExtractionJob(Base):
     candidates: Mapped[list["ExtractionCandidate"]] = relationship(
         back_populates="job", cascade="all, delete-orphan"
     )
+
+
+class AnnotationExecution(Base):
+    """Durable, fenced execution head shared by every document-recognition entry."""
+
+    __tablename__ = "annotation_executions"
+
+    job_id: Mapped[uuid.UUID] = mapped_column(
+        GUID(), ForeignKey("extraction_jobs.id", ondelete="CASCADE"), primary_key=True
+    )
+    run_id: Mapped[str] = mapped_column(String(32), nullable=False, default="")
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default="idle")
+    actor: Mapped[str] = mapped_column(String(100), nullable=False, default="evidence-extractor")
+    options: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
+    progress: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
+    pause_requested: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    lease_expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
 
 
 class ExtractionCandidate(Base):
@@ -93,8 +123,10 @@ class GeneratedReport(Base):
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
     job_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("extraction_jobs.id", ondelete="CASCADE"),
-        nullable=False, index=True,
+        UUID(as_uuid=True),
+        ForeignKey("extraction_jobs.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
     )
     report_type: Mapped[str] = mapped_column(String(50), nullable=False, default="risk_assessment")
     file_path: Mapped[str] = mapped_column(String(500), nullable=False)
@@ -115,6 +147,8 @@ class GeneratedReport(Base):
     coverage_manifest_id: Mapped[str | None] = mapped_column(String(64))
     selector_version: Mapped[str | None] = mapped_column(String(50))
     source_discovery_hash: Mapped[str | None] = mapped_column(String(64))
+    report_run_id: Mapped[str | None] = mapped_column(String(64))
+    report_artifact_id: Mapped[str | None] = mapped_column(String(64))
 
     job: Mapped[ExtractionJob] = relationship()
 
@@ -123,6 +157,7 @@ class AstTemplate(Base):
     __tablename__ = "ast_templates"
     __table_args__ = (
         UniqueConstraint("name", "version", name="uq_template_name_version"),
+        UniqueConstraint("template_family_id", "revision_no", name="uq_template_family_revision"),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
@@ -130,6 +165,10 @@ class AstTemplate(Base):
     version: Mapped[str] = mapped_column(String(20), nullable=False)
     doc_no: Mapped[str | None] = mapped_column(String(50))
     schema_json: Mapped[dict] = mapped_column(JSON, nullable=False)
+    schema_version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    template_family_id: Mapped[str | None] = mapped_column(String(100))
+    revision_no: Mapped[int | None] = mapped_column(Integer)
+    schema_hash: Mapped[str | None] = mapped_column(String(64))
     sample_text: Mapped[str | None] = mapped_column(Text)
     # 013: 忠于原文结构的 tiptap 样例（供 AI 插槽建议 drawer 忠实预览与结构锚点联动）。
     sample_content_json: Mapped[dict | None] = mapped_column(JSON)
@@ -148,7 +187,8 @@ class AstTemplate(Base):
     default_source_path: Mapped[str | None] = mapped_column(String(500))
     default_source_filename: Mapped[str | None] = mapped_column(String(500))
     default_source_job_id: Mapped[uuid.UUID | None] = mapped_column(
-        GUID(), ForeignKey("extraction_jobs.id", ondelete="SET NULL"),
+        GUID(),
+        ForeignKey("extraction_jobs.id", ondelete="SET NULL"),
     )
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
     updated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), onupdate=_now)
@@ -169,8 +209,10 @@ class AstTemplateTrainingPair(Base):
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
     template_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("ast_templates.id", ondelete="CASCADE"),
-        nullable=False, index=True,
+        UUID(as_uuid=True),
+        ForeignKey("ast_templates.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
     )
     source_filename: Mapped[str] = mapped_column(String(500), nullable=False)
     source_path: Mapped[str] = mapped_column(String(500), nullable=False)
@@ -184,14 +226,14 @@ class AstTemplateTrainingPair(Base):
 
 class SlotDismissal(Base):
     __tablename__ = "slot_dismissals"
-    __table_args__ = (
-        UniqueConstraint("job_id", "slot_id", name="uq_slot_dismissal_job_slot"),
-    )
+    __table_args__ = (UniqueConstraint("job_id", "slot_id", name="uq_slot_dismissal_job_slot"),)
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
     job_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("extraction_jobs.id", ondelete="CASCADE"),
-        nullable=False, index=True,
+        UUID(as_uuid=True),
+        ForeignKey("extraction_jobs.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
     )
     slot_id: Mapped[str] = mapped_column(String(200), nullable=False)
     dismissed_by: Mapped[str] = mapped_column(String(100), nullable=False)

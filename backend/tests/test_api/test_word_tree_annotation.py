@@ -10,9 +10,9 @@ from app.api import extraction
 from app.config import settings
 from app.services.extraction import (
     document_annotator,
-    document_classifier,
     docx_structure,
     relation_extractor,
+    word_analysis,
     word_tree_summarizer,
 )
 
@@ -38,7 +38,7 @@ def test_compute_annotation_reuses_structure_and_returns_tree(tmp_path, monkeypa
         parse_calls.append((args, kwargs))
         return real_parse(*args, **kwargs)
 
-    def fake_annotate(_path, _engine, *args, **kwargs):
+    def fake_annotate(_path, *args, **kwargs):
         captured["annotator"] = kwargs["structure"]
         return {"type": "doc", "content": []}, [], [], None
 
@@ -46,8 +46,7 @@ def test_compute_annotation_reuses_structure_and_returns_tree(tmp_path, monkeypa
         captured["relations"] = kwargs["structure"]
         return {"doc_class": None, "relationships": []}
 
-    monkeypatch.setattr(docx_structure, "parse_docx_structure", counting_parse)
-    monkeypatch.setattr(document_classifier, "classify", lambda *_args: None)
+    monkeypatch.setattr(word_analysis, "parse_docx_structure", counting_parse)
     monkeypatch.setattr(document_annotator, "annotate_word", fake_annotate)
     monkeypatch.setattr(relation_extractor, "extract_relationships", fake_relationships)
 
@@ -56,17 +55,16 @@ def test_compute_annotation_reuses_structure_and_returns_tree(tmp_path, monkeypa
 
     monkeypatch.setattr(word_tree_summarizer, "summarize_word_tree", broken_summary)
 
-    result = extraction._compute_annotation(job, engine=object())
+    result = extraction._compute_annotation(job, engine=object(), preview_only=True)
 
     assert len(parse_calls) == 1
-    assert captured["annotator"] is captured["relations"]
-    assert result["_version"] == 25
+    assert captured["annotator"] is not None
+    assert "relations" not in captured
+    assert result["_version"] == extraction._ANNOTATOR_VERSION
     assert result["section_tree"]["children"][0]["heading"] == "章节"
-    assert result["section_tree"]["layer_metadata"]["summary_status"] == "failed"
-    assert (
-        result["section_tree"]["layer_metadata"]["summary_source"]
-        == "extractive_fallback"
-    )
+    assert result["preview_only"] is True
+    assert result["completion"] == "incomplete"
+    assert result["analysis"]["evidence_units"]
     assert result["pagination"]["mode"] == "single_page_fallback"
     assert result["relationships"] == []
 

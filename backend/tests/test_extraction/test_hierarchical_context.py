@@ -138,3 +138,31 @@ def test_projection_token_accounting_and_static_prefix(subject_document):
     after = json.loads(model_request(payload, "recall"))["context"]
     assert before.split(',"fragments":')[0] == after.split(',"fragments":')[0]
     assert before.index('"task":') < before.index('"fragments":')
+
+
+def test_table_headers_and_row_roles_are_binding_context_but_not_fact_targets(tmp_path):
+    from docx import Document
+
+    from app.services.extraction.word_analysis import analyze_word_core
+
+    doc = Document()
+    table = doc.add_table(rows=3, cols=3)
+    for row, values in zip(table.rows, [
+        ["原料药", "数量", "供应商"], ["产品A", "300kg", "甲公司"], ["产品B", "10kg", "乙公司"],
+    ], strict=True):
+        for cell, text in zip(row.cells, values, strict=True):
+            cell.text = text
+    path = tmp_path / "roles.docx"
+    doc.save(path)
+    ir = analyze_word_core(path).ir
+    target = next(u for u in ir.evidence_units if u.text == "300kg")
+    task = ExtractionTask(task_id="table-type", task_kind="entity",
+                          target_evidence_ids=[target.evidence_id],
+                          target_class_iris=["urn:Product"],
+                          budget=TaskBudget(max_input_tokens=20000))
+    context = build_context(task, ir, {}, TestTokenizer(), model="fixture")
+    assert [ir.resolve(a) for a in context.allowed_fact_regions] == ["300kg"]
+    metadata = [f for f in context.fragments if f["purpose"] == "table_record_metadata"]
+    assert {f["text"] for f in metadata} == {"数量", "产品A", "甲公司"}
+    assert all(f["fact_eligible"] is False for f in metadata)
+    assert not any(ir.resolve(a) == "产品B" for a in context.allowed_binding_regions)

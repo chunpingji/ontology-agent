@@ -49,7 +49,7 @@ export function setToken(token: string | null): void {
   else window.localStorage.removeItem(TOKEN_KEY);
 }
 
-function identityHeaders(): Record<string, string> {
+export function identityHeaders(): Record<string, string> {
   const id = getIdentity();
   const headers: Record<string, string> = { "X-User": id.username, "X-Role": id.role };
   const token = getToken();
@@ -110,16 +110,16 @@ export class VersionConflictError extends Error {
   }
 }
 
-async function fetchAPI<T>(path: string, options?: RequestInit): Promise<T> {
+export async function fetchAPI<T>(path: string, options?: RequestInit): Promise<T> {
   const isMultipart =
     typeof FormData !== "undefined" && options?.body instanceof FormData;
   const res = await fetch(`${API_BASE}${path}`, {
+    ...options,
     headers: {
       ...(isMultipart ? {} : { "Content-Type": "application/json" }),
       ...identityHeaders(),
-      ...options?.headers,
+      ...Object.fromEntries(new Headers(options?.headers).entries()),
     },
-    ...options,
   });
   if (!res.ok) {
     const body = await res.text();
@@ -351,7 +351,7 @@ export const DEVELOPMENT_PHASES: Array<{ iri: string; label: string; notation: s
 export const phaseLabel = (iri: string | null | undefined): string => {
   if (!iri) return "—";
   const hit = DEVELOPMENT_PHASES.find((p) => p.iri === iri);
-  return hit ? hit.label : iri.split(/[#/]/).pop() || iri;
+  return hit ? hit.label : iri.split("#").flatMap((part) => part.split("/")).pop() || iri;
 };
 
 /** 研发阶段中文标签 → IRI（左侧选中的阶段分类 → 上传信封 development_phase）。 */
@@ -452,7 +452,7 @@ export const DEFAULT_DOC_TYPE = "RegulatoryDocument";
 
 export const docTypeLabel = (classIri: string | null | undefined): string => {
   if (!classIri) return "—";
-  const ln = classIri.split(/[#/]/).pop() || classIri;
+  const ln = classIri.split("#").flatMap((part) => part.split("/")).pop() || classIri;
   return DOC_TYPE_LABELS[ln] || ln;
 };
 
@@ -1035,6 +1035,7 @@ export interface GroupedCandidates {
 }
 export interface JobProgressEvent {
   job_id: string;
+  run_id?: string;
   stage: string;
   annotation_stage?: string;
   pct: number;
@@ -1046,24 +1047,58 @@ export interface JobProgressEvent {
   tasks_completed?: number;
   tasks_failed?: number;
   model_calls?: number;
+  http_attempts?: number;
+  model_request?: ModelRequestProgress;
+  data_revision?: number;
+  candidate_count?: number;
+  first_relationship_seconds?: number;
+  stage_statistics?: Record<string, Record<string, number>>;
   has_checkpoint?: boolean;
   can_resume?: boolean;
+  pause_requested?: boolean;
+}
+
+export interface ModelRequestProgress {
+  request_id: string;
+  logical_call_id: string;
+  attempt: number;
+  status: string;
+  stage: string;
+  created_at: number;
+  started_at?: number | null;
+  deadline_at: number;
+  queue_seconds?: number;
+  request_seconds?: number;
+  elapsed_seconds?: number;
+  prompt_tokens?: number;
+  cache_tokens?: number;
+  error_code?: string;
+}
+
+export interface AnnotationRunReceipt {
+  job_id: string;
+  run_id: string;
+  status: "queued" | "resumed" | "restarted";
+  has_checkpoint: boolean;
 }
 
 export async function pauseAnnotation(jobId: string): Promise<void> {
   await annotationControl(jobId, "pause");
 }
 
-export async function resumeAnnotation(jobId: string): Promise<void> {
-  await annotationControl(jobId, "resume");
+export async function resumeAnnotation(jobId: string): Promise<AnnotationRunReceipt> {
+  return annotationControl(jobId, "resume");
 }
 
-export async function rerunAnnotation(jobId: string): Promise<void> {
-  await annotationControl(jobId, "rerun");
+export async function rerunAnnotation(jobId: string, templateId?: string): Promise<AnnotationRunReceipt> {
+  return annotationControl(jobId, "rerun", templateId);
 }
 
-async function annotationControl(jobId: string, action: "pause" | "resume" | "rerun"): Promise<void> {
-  const response = await fetch(`${API_BASE}/api/extraction/jobs/${jobId}/annotation/${action}`, {
+function annotationControl(jobId: string, action: "pause"): Promise<{ status: "pause_requested" }>;
+function annotationControl(jobId: string, action: "resume" | "rerun", templateId?: string): Promise<AnnotationRunReceipt>;
+async function annotationControl(jobId: string, action: "pause" | "resume" | "rerun", templateId?: string) {
+  const query = templateId ? `?template_id=${encodeURIComponent(templateId)}` : "";
+  const response = await fetch(`${API_BASE}/api/extraction/jobs/${jobId}/annotation/${action}${query}`, {
     method: "POST",
     headers: identityHeaders(),
   });
@@ -1076,6 +1111,7 @@ async function annotationControl(jobId: string, action: "pause" | "resume" | "re
     } catch { /* A proxy error may have a non-JSON body. */ }
     throw new Error(message);
   }
+  return response.json();
 }
 
 // Types
@@ -1330,7 +1366,7 @@ export const getMappingHealth = () =>
 
 // --- E6b property bindings (014 declaration-driven mapping) -----------------
 /** Source-entity mapping types whose columns/fields drive extraction. */
-export const SOURCE_ENTITY_MAPPING_TYPES = ["db_table", "api_endpoint", "doc_pattern"];
+export const SOURCE_ENTITY_MAPPING_TYPES = ["db_table", "api_endpoint"];
 export interface PropertyBinding {
   id: string; class_mapping_id: string; property_iri: string;
   property_kind: string; source_path: string;
@@ -1616,7 +1652,7 @@ export function entitiesFromTriples(triples: EntityTriple[]): RecognizedEntity[]
       byKey.set(key, {
         text,
         classIri: t.entity_class_iri,
-        classLabel: t.entity_class_label || (t.entity_class_iri.split(/[#/]/).pop() ?? t.entity_class_iri),
+        classLabel: t.entity_class_label || (t.entity_class_iri.split("#").flatMap((part) => part.split("/")).pop() ?? t.entity_class_iri),
         count: 1,
       });
     }
@@ -1948,6 +1984,8 @@ export interface GeneratedReportDTO {
   rules_fired_count: number;
   rules_summary: Record<string, unknown> | null;
   actor: string;
+  report_run_id?: string | null;
+  report_artifact_id?: string | null;
   created_at: string;
   // 015: present on the status-poll response; null for legacy/LLM-off reports.
   narratives?: ReportNarrativesDTO | null;
@@ -2059,11 +2097,16 @@ export interface EvidenceCandidate {
   kind: "entity" | "property" | "relationship";
   text: string;
   class_iri?: string | null;
+  class_label?: string | null;
+  predicate_label?: string | null;
+  identity?: Record<string, string>;
+  path_root?: EvidenceCandidateRef | null;
+  dependency_refs?: EvidenceCandidateRef[];
   predicate_iri?: string | null;
   subject?: EvidenceCandidateRef | null;
   object?: EvidenceCandidateRef | null;
   literal?: { raw_value: string; normalized_value: string | boolean | null; kind: string;
-    datatype_iri: string; lower?: string | null; upper?: string | null; canonical_unit?: string | null } | null;
+    datatype_iri: string; lower?: string | null; upper?: string | null; raw_unit?: string | null; canonical_unit?: string | null } | null;
   assertion_status: "affirmed" | "negated" | "conditional" | "hypothetical" | "uncertain";
   condition_anchors: EvidenceAnchor[];
   condition_provenance_indexes: number[];
@@ -2073,6 +2116,8 @@ export interface EvidenceCandidate {
   validation_status: "pending" | "passed" | "rejected" | "conflict";
   validation_issues: Array<{ code: string; message: string }>;
   review_status: "pending" | "confirmed" | "rejected";
+  review_source?: "automatic" | "manual" | null;
+  review_reason?: string;
   commit_status: "not_requested" | "queued" | "applying" | "succeeded" | "failed";
   positive_eligible: boolean;
 }
@@ -2086,42 +2131,81 @@ export interface EvidenceCommit {
   items: EvidenceCandidateRef[];
 }
 
+export interface EvidenceClassSchema {
+  label?: string | null;
+  parents: string[];
+  properties: Array<{ iri: string; label?: string | null }>;
+  relationships: Array<{ iri: string; label?: string | null; range: string[] }>;
+}
+
+export interface EvidenceGraphSchema {
+  document_class_iri: string | null;
+  document_label?: string | null;
+  classes: Record<string, EvidenceClassSchema>;
+}
+
 export interface EvidenceJob {
   candidates: EvidenceCandidate[];
+  graph_schema?: EvidenceGraphSchema;
+  calculations?: PDECalculation[];
+  calculation_required?: boolean;
   run: { completion: "complete" | "incomplete"; diagnostics: string[] } | null;
   analysis_id: string | null;
   snapshot_id: string | null;
   commits: EvidenceCommit[];
+  extraction_version?: { current: string; stored: string[]; outdated: boolean };
 }
+
+export interface PDECalculation {
+  calculation_id: string; subject_candidate_id: string; subject_label: string;
+  status: "passed" | "conflict" | "incomplete"; review_status: string;
+  linked_to_source: boolean; blocks_conclusion: boolean; stale_decision: boolean;
+  contract_ref: string; method_version: string; method_hash: string; formula: string; limitations: string;
+  asserted_pde_mg_day: string | null; derived_pde_mg_day: string | null; effective_pde_mg_day: string | null;
+  asserted_band: number | null; derived_band: number | null; ratio: string | null; ratio_threshold: string;
+  inputs: Record<string, string>; factors: Record<string, { value: string; source: string }>;
+  issues: { parameter: string; message: string }[];
+  differences?: string[];
+  input_evidence: Record<string, Array<{ candidate_id: string; revision: number;
+    literal: { raw_value: string }; provenance: Array<{ anchors?: EvidenceAnchor[] }> }>>;
+  decision_revision: number;
+  decision: { choice: string; reason: string; actor: string; revision: number; decided_at: string } | null;
+}
+
+export const decideCalculation = (jobId: string, body: {
+  subject_candidate_id: string; calculation_id: string; expected_revision: number;
+  choice: "derived" | "asserted" | "rejected" | "pending"; reason: string;
+}) => fetchAPI(`/api/extraction/jobs/${jobId}/calculations/decision`, { method: "POST", body: JSON.stringify(body) });
 
 export const getJobEvidence = (jobId: string, signal?: AbortSignal) =>
   fetchAPI<EvidenceJob>(`/api/extraction/jobs/${jobId}/evidence`, { signal });
 
 export interface InstanceCoverageTask {
   coverage_task_id?: string;
-  target_id: string;
-  section_id: string;
+  target_id?: string;
+  section_id?: string;
   label: string;
-  status: "filled" | "missing" | "confirmed_absent" | "not_applicable" | "pending_review" | "conflict" | "incomplete";
+  status: "filled" | "missing" | "confirmed_absent" | "not_applicable" | "pending_review" | "conflict" | "incomplete" | "invalid" | "unavailable";
   reason: string;
   subject_instance_iri: string | null;
   subject_root_class_iri?: string | null;
   subject_path?: Array<{ predicate_iri: string; direction: "forward" | "inverse" }>;
   subject_candidate_ref?: EvidenceCandidateRef;
   predicate_path?: Array<{ predicate_iri: string; direction: "forward" | "inverse" }>;
-  object_universe_status?: "complete" | "open" | "unresolved";
+  object_universe_status?: "complete" | "open" | "unresolved" | "unknown";
   objects?: Array<{ instance_iri: string; text: string; missing_properties: string[] }>;
-  assertion_ids: string[];
+  assertion_ids?: string[];
   negative_assertion_ids?: string[];
 }
 
 export interface InstanceCoverageManifest {
+  availability: "available";
   manifest_id: string;
   template_id: string;
   template_version: string;
   snapshot_id: string | null;
   discovery_revision: string;
-  selector_version: string;
+  material_status: "ready" | "invalid" | "conflict" | "incomplete";
   tasks: InstanceCoverageTask[];
   required_gaps: number;
   completion: "complete" | "incomplete";
@@ -2129,11 +2213,24 @@ export interface InstanceCoverageManifest {
   gap_history?: Array<{ round: number; reason: string }>;
 }
 
+export interface EvidenceCoverageUnavailable {
+  availability: "unavailable";
+  template_id: string | null;
+  template_version: string | null;
+  manifest_id: null;
+  required_gaps: null;
+  error: { code: string; message: string; actual?: unknown };
+}
+
+export type EvidenceCoverage = InstanceCoverageManifest | EvidenceCoverageUnavailable;
+
 export const getEvidenceCoverage = (jobId: string, templateId?: string, signal?: AbortSignal) =>
-  fetchAPI<InstanceCoverageManifest>(`/api/extraction/jobs/${jobId}/evidence/coverage${templateId ? `?template_id=${encodeURIComponent(templateId)}` : ""}`, { signal });
-export const extractJobEvidence = (jobId: string, input?: {
+  fetchAPI<EvidenceCoverage>(`/api/extraction/jobs/${jobId}/evidence/coverage${templateId ? `?template_id=${encodeURIComponent(templateId)}` : ""}`, { signal });
+export interface EvidenceExtractOptions {
   retry_failed?: boolean; reason?: string; pause_after?: number;
-}) => fetchAPI<EvidenceJob>(`/api/extraction/jobs/${jobId}/evidence/extract`, {
+}
+export const extractJobEvidence = (jobId: string, input?: EvidenceExtractOptions) =>
+  fetchAPI<AnnotationRunReceipt>(`/api/extraction/jobs/${jobId}/evidence/extract`, {
   method: "POST", body: input ? JSON.stringify(input) : undefined,
 });
 export interface CoverageAction {
@@ -2149,6 +2246,7 @@ export const confirmEvidenceDiscovery = (jobId: string, input: CoverageAction) =
   });
 export const reviewEvidenceCandidate = (id: string, input: {
   expected_revision: number; decision: "confirmed" | "rejected"; reason: string;
+  expected_review_status?: "pending" | "confirmed" | "rejected";
   edited_payload?: Record<string, unknown>;
 }) => fetchAPI<EvidenceCandidate>(`/api/extraction/evidence/candidates/${id}/review`, {
   method: "PUT", body: JSON.stringify(input),
@@ -2205,6 +2303,10 @@ export interface AstTemplateDTO {
   iri_pattern: string | null;
   status: AstTemplateStatus;
   slot_count: number;
+  schema_version?: number;
+  template_family_id?: string;
+  revision_no?: number;
+  schema_hash?: string;
   is_default: boolean;
   created_by: string | null;
   owner: string | null; // 015 责任人（业务负责人，区别于 created_by 创建者）
@@ -2254,7 +2356,7 @@ export interface TemplateMatchDTO {
   template_id: string;
   template_name: string;
   template_version: string;
-  match_source: "iri_pattern" | "default" | "fallback";
+  match_source: "selected" | "default";
 }
 
 export const fetchAstTemplates = () =>
@@ -2398,7 +2500,7 @@ export interface SemanticSource {
 // _short = IRI 末段（最后一个 # 或 / 之后）；无分隔符时原样返回。
 export function coverageKey(binding: CoverageBinding): string {
   const short = (iri: string): string => {
-    const parts = (iri || "").split(/[#/]/).filter(Boolean);
+    const parts = (iri || "").split("#").flatMap((part) => part.split("/")).filter(Boolean);
     return parts.length ? parts[parts.length - 1] : iri;
   };
   if (binding.kind === "fact_source") {

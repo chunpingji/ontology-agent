@@ -1,0 +1,1 @@
+{"status":"pass","synthetic_api":true,"checks":["exact ontology menus","shared input editing","stable IDs and origin after reorder/save","unsaved draft preview","frozen fact citations","formal envelope disabled for incomplete material","view provider controls","authenticated requests"],"api_requests":11}

@@ -13,9 +13,6 @@ from __future__ import annotations
 
 import json
 import uuid
-from io import BytesIO
-
-from docx import Document
 
 from tests.fixtures.feature014 import (
     ANALYST,
@@ -35,25 +32,37 @@ JOBS = "/api/extraction/jobs"
 def _declare_full_binding(client, source="DRUG_DB_DSN", target="drug_product"):
     mid = declare_db_binding(client, source=source, target=target)
     add_property_binding(
-        client, mid, property_iri=APPROVAL_NUMBER, source_path="approval_no",
+        client,
+        mid,
+        property_iri=APPROVAL_NUMBER,
+        source_path="approval_no",
         is_identifier=True,
     )
     add_property_binding(
-        client, mid, property_iri=RISK_LEVEL, source_path="risk",
+        client,
+        mid,
+        property_iri=RISK_LEVEL,
+        source_path="risk",
         transform_type="controlled_vocab",
         transform_config={"map": {"高": "HighRisk", "中": "MediumRisk", "低": "LowRisk"}},
     )
     add_property_binding(
-        client, mid, property_iri=MANUFACTURED_BY, property_kind="object",
-        source_path="mfr_code", object_resolution="id_reference",
-        target_class_iri=MANUFACTURER, target_id_path="mfr_code",
+        client,
+        mid,
+        property_iri=MANUFACTURED_BY,
+        property_kind="object",
+        source_path="mfr_code",
+        object_resolution="id_reference",
+        target_class_iri=MANUFACTURER,
+        target_id_path="mfr_code",
     )
     return mid
 
 
 def _run_job(client, mid, source_type="database"):
     return client.post(
-        JOBS, data={"source_type": source_type, "class_mapping_id": mid},
+        JOBS,
+        data={"source_type": source_type, "class_mapping_id": mid},
         headers=ANALYST,
     )
 
@@ -61,38 +70,6 @@ def _run_job(client, mid, source_type="database"):
 def _all_candidates(client, job_id) -> list[dict]:
     body = client.get(f"{JOBS}/{job_id}/candidates").json()
     return body["ungrouped"] + [c for g in body["groups"] for c in g["candidates"]]
-
-
-def _declare_doc_pattern(client):
-    profile = {
-        "version": 1,
-        "sources": [{
-            "locator": "section_kv",
-            "anchors": {"any_of": ["产品的基本性质"]},
-        }],
-        "identity": {"pattern": "[A-Z]{2,4}-[0-9]{3,5}"},
-    }
-    response = client.post(
-        f"{CLASSES}/{DRUG_PRODUCT}/mappings",
-        json={
-            "mapping_type": "doc_pattern",
-            "target": json.dumps(profile, ensure_ascii=False),
-            "source_system": "cmc-word",
-        },
-        headers=ANALYST,
-    )
-    assert response.status_code == 201, response.text
-    return response.json()["id"]
-
-
-def _docx_bytes() -> bytes:
-    document = Document()
-    document.add_heading("HRS-1597 CMC 报告", level=1)
-    document.add_heading("产品的基本性质", level=2)
-    document.add_paragraph("批准文号：HRS-1597")
-    stream = BytesIO()
-    document.save(stream)
-    return stream.getvalue()
 
 
 def test_declarative_db_job_happy_path(drug_client, source_table):
@@ -107,15 +84,19 @@ def test_declarative_db_job_happy_path(drug_client, source_table):
     assert job["status"] in ("reviewing", "done")
     assert job["total_candidates"] >= 3
 
-    instances = [c for c in _all_candidates(drug_client, job_id)
-                 if c["candidate_kind"] == "instance"]
+    instances = [
+        c for c in _all_candidates(drug_client, job_id) if c["candidate_kind"] == "instance"
+    ]
     assert len(instances) == 3
     approvals = {c["extracted_properties"].get(APPROVAL_NUMBER) for c in instances}
     assert "国药准字H20003007" in approvals
 
     # controlled vocab: the 高 row becomes HighRisk (normalized ontology term).
-    high = next(c for c in instances
-                if c["extracted_properties"].get(APPROVAL_NUMBER) == "国药准字H20003007")
+    high = next(
+        c
+        for c in instances
+        if c["extracted_properties"].get(APPROVAL_NUMBER) == "国药准字H20003007"
+    )
     assert high["extracted_properties"].get(RISK_LEVEL) == "HighRisk"
 
     # provenance: every candidate carries a resolvable source_ref (SC-003).
@@ -147,12 +128,18 @@ def test_drift_declared_column_absent_partial(drug_client, source_table):
     source_table()
     mid = declare_db_binding(drug_client)
     add_property_binding(
-        drug_client, mid, property_iri=APPROVAL_NUMBER, source_path="approval_no",
+        drug_client,
+        mid,
+        property_iri=APPROVAL_NUMBER,
+        source_path="approval_no",
         is_identifier=True,
     )
     # a declared column absent from the table → drift (skip binding, partial job).
     add_property_binding(
-        drug_client, mid, property_iri=RISK_LEVEL, source_path="does_not_exist",
+        drug_client,
+        mid,
+        property_iri=RISK_LEVEL,
+        source_path="does_not_exist",
     )
 
     r = _run_job(drug_client, mid)
@@ -168,67 +155,11 @@ def test_drift_declared_column_absent_partial(drug_client, source_table):
     assert db_map["health"] == "drift"
 
 
-def test_doc_pattern_requires_docx_upload(drug_client):
-    mid = _declare_doc_pattern(drug_client)
-
-    missing = _run_job(drug_client, mid, source_type="word")
-    assert missing.status_code == 422, missing.text
-
-    unsupported = drug_client.post(
-        JOBS,
-        data={"source_type": "word", "class_mapping_id": mid},
-        files={"file": ("report.txt", b"not a docx", "text/plain")},
+def test_doc_pattern_configuration_is_explicitly_retired(drug_client):
+    response = drug_client.post(
+        f"{CLASSES}/{DRUG_PRODUCT}/mappings",
+        json={"mapping_type": "doc_pattern", "target": "{}", "source_system": "cmc-word"},
         headers=ANALYST,
     )
-    assert unsupported.status_code == 422, unsupported.text
-
-
-def test_doc_pattern_upload_is_persisted_and_extracted(drug_client):
-    mid = _declare_doc_pattern(drug_client)
-    response = add_property_binding(
-        drug_client,
-        mid,
-        property_iri=APPROVAL_NUMBER,
-        source_path="批准文号",
-        is_identifier=True,
-    )
-    assert response.status_code == 201, response.text
-
-    created = drug_client.post(
-        JOBS,
-        data={"source_type": "word", "class_mapping_id": mid},
-        files={"file": (
-            "HRS-1597 CMC报告.docx",
-            _docx_bytes(),
-            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-        )},
-        headers=ANALYST,
-    )
-    assert created.status_code == 202, created.text
-    job = created.json()
-    assert job["source_filename"] == "HRS-1597 CMC报告.docx"
-    assert job["document_path"].endswith(".docx")
-
-    current = drug_client.get(f"{JOBS}/{job['id']}").json()
-    assert current["status"] in ("reviewing", "done")
-    candidates = _all_candidates(drug_client, job["id"])
-    assert len(candidates) == 1
-    assert candidates[0]["extracted_properties"][APPROVAL_NUMBER] == "HRS-1597"
-
-
-def test_doc_pattern_corrupt_docx_degrades_without_unhandled_error(drug_client):
-    mid = _declare_doc_pattern(drug_client)
-    created = drug_client.post(
-        JOBS,
-        data={"source_type": "word", "class_mapping_id": mid},
-        files={"file": (
-            "corrupt.docx",
-            b"not a zip package",
-            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-        )},
-        headers=ANALYST,
-    )
-    assert created.status_code == 202, created.text
-    job = drug_client.get(f"{JOBS}/{created.json()['id']}").json()
-    assert job["status"] == "degraded"
-    assert "DOCX parse failed" in job["error_message"]
+    assert response.status_code == 422, response.text
+    assert "EXECUTABLE_EXTRACTION_CONFIG_RETIRED" in response.text

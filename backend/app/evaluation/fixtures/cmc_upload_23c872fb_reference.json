@@ -1,0 +1,1988 @@
+{
+  "schema_version": 1,
+  "annotation_level": "assistant_silver",
+  "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+  "source_document_id": "upload-23c872fb-3ab1-41de-a705-dd4b162dfa09",
+  "annotation_notes": [
+    "由独立助手在阅读全部原始447个IR证据单元（5398字符）及本体定义后标注；标注期间未查看任何抽取预测、候选图谱或模型运行结果。",
+    "这是assistant_silver参考集，不是人工金标准；未由领域专家复核，不代表全篇穷尽标注。仅在scopes声明的类别/谓词/证据范围报告有限范围precision，范围外预测不能自动判错。",
+    "58条肯定参考项：14实体、31属性、13关系。另有15条禁止断言检查。原文否定可以形成被肯定记录的boolean=false；assertion_status=affirmed指该负值断言本身有依据。",
+    "日期为计划日期；usesEquipment指报告明确列出的设备需求，并非设备实际已投入生产。表内PF64216或PF64616为可选设备，未强制展开为两条实际使用关系。",
+    "同一产品分子量在产品结构节为500.60、设备表主残留物列为500.18；仅对前者局部证据标注，不通过推断纠正原文冲突。",
+    "NOAEL原表未标明单位，不能按本体谓词补猜单位；两项原始数值仅记录于unscored_observations，不进入主准确性分子、分母或穷尽范围。PDE单位由表头(mg/天)提供，保留主评测。",
+    "药物本体DrugProduct定义偏制剂，但CMC describes的注释明确同时用于drug substance；本参考按项目CMC数据模型将HRS-1597产品层记录为DrugProduct，不强制创建第二个API实体。",
+    "毒性表×为无相应毒性；—为研究数据不充分，不是false。相关研究不足项、条件性重结晶、无CAS号均未补造事实。",
+    "3个source_record（计划、大鼠数据、犬数据）用类别加唯一记录身份提示的原文证据对齐，允许不同合成显示名；其他实体使用严格别名加类别和证据对齐。文档根是外部指定的CMCReport元数据，应单独计数而非作为模型识别成功。",
+    "evidence偏移是原IR单元内Unicode字符[start,end)，多项evidence为可接受证据位置的OR集合；quote用于复核，不应用作模型输入或提示。",
+    "版本2修订在任何预测或模型运行之前完成：移除两项单位缺失的NOAEL期望属性，避免正确弃答被计为漏检；没有基于预测结果调整参考。",
+    "版本3在模型运行前对齐生产LiteralValue契约：数字kind为number，精确小数使用normalized_value字符串并声明xsd:decimal；boolean/date/text分别声明对应XSD类型。所有39个计分或禁止属性literal经生产schema验证；canonical_unit与本体canonicalUnit注释核对一致。只纠正序列化表示，不改变参考事实。"
+  ],
+  "entities": [
+    {
+      "id": "report",
+      "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport",
+      "aliases": [
+        "研发项目临床备样生产信息",
+        "HRXS-P-2419(HRS-1597)"
+      ],
+      "evidence": [
+        {
+          "evidence_id": "51055e7028983bb43b3f2760b03b1fd83b0987a5f5ccf7ee62d2e0fb627909ef",
+          "start": 0,
+          "end": 21,
+          "quote": "HRXS-P-2419(HRS-1597)",
+          "source_unit_index": 4
+        },
+        {
+          "evidence_id": "b9712e841f7e723f055ff4a45c6e651eba05aaf46423955cf0fe91b5236c9abf",
+          "start": 0,
+          "end": 12,
+          "quote": "研发项目临床备样生产信息",
+          "source_unit_index": 5
+        }
+      ],
+      "assertion_status": "affirmed",
+      "is_document_root": true
+    },
+    {
+      "id": "product",
+      "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/DrugProduct",
+      "aliases": [
+        "HRS-1597",
+        "HRXS-P-2419"
+      ],
+      "evidence": [
+        {
+          "evidence_id": "e7ea5dada6b23ad6052384f5a6c6b75296797baf482c2fe0842911a1646a1e87",
+          "start": 0,
+          "end": 8,
+          "quote": "HRS-1597",
+          "source_unit_index": 26
+        },
+        {
+          "evidence_id": "7e40b958711ea6960b4883abb79b631567b8cc3a7354ad43fd8b0dcdc818037d",
+          "start": 5,
+          "end": 13,
+          "quote": "HRS-1597",
+          "source_unit_index": 33
+        },
+        {
+          "evidence_id": "821f027ccb442d08ce32099d291f5bb43374507534211ac44292457a862833b7",
+          "start": 5,
+          "end": 16,
+          "quote": "HRXS-P-2419",
+          "source_unit_index": 34
+        },
+        {
+          "evidence_id": "ba25443080d0d5aca62332897db7cb2fc2a7272c7a617e268d663b55befbb53b",
+          "start": 0,
+          "end": 8,
+          "quote": "HRS-1597",
+          "source_unit_index": 90
+        },
+        {
+          "evidence_id": "534eeb813a390b1ac090fe059d2a80fcf1c7ae80a1fc7a8b71eb802a86720206",
+          "start": 0,
+          "end": 8,
+          "quote": "HRS-1597",
+          "source_unit_index": 99
+        },
+        {
+          "evidence_id": "8dc4996566337e1f4152bc14f32dadd8cb09fab3ed0200466342d9299787437e",
+          "start": 0,
+          "end": 8,
+          "quote": "HRS-1597",
+          "source_unit_index": 109
+        },
+        {
+          "evidence_id": "e61295ef1a852c08d084d59edded55d1a92f905b14a797245cf0df154e6d36f0",
+          "start": 0,
+          "end": 8,
+          "quote": "HRS-1597",
+          "source_unit_index": 122
+        },
+        {
+          "evidence_id": "2ec5433c97df365f29c65c63357a84038a339efeaaf1fa84507a52e8eaeaf198",
+          "start": 0,
+          "end": 8,
+          "quote": "HRS-1597",
+          "source_unit_index": 187
+        },
+        {
+          "evidence_id": "24354067e73ceeff64d01a289b5866da67bc7f04b691f6c467ad6e1f803f3090",
+          "start": 0,
+          "end": 8,
+          "quote": "HRS-1597",
+          "source_unit_index": 394
+        },
+        {
+          "evidence_id": "77fd655d1783a0c2eb855743ab41b8ab776b8879a4016e2a76ff1ab55caf0aa5",
+          "start": 0,
+          "end": 8,
+          "quote": "HRS-1597",
+          "source_unit_index": 434
+        }
+      ],
+      "assertion_status": "affirmed"
+    },
+    {
+      "id": "plan",
+      "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/ClinicalSampleProductionPlan",
+      "aliases": [
+        "本次备样",
+        "本次临床样品生产及检测"
+      ],
+      "evidence": [
+        {
+          "evidence_id": "e7ea5dada6b23ad6052384f5a6c6b75296797baf482c2fe0842911a1646a1e87",
+          "start": 131,
+          "end": 135,
+          "quote": "本次备样",
+          "source_unit_index": 26
+        },
+        {
+          "evidence_id": "e7ea5dada6b23ad6052384f5a6c6b75296797baf482c2fe0842911a1646a1e87",
+          "start": 165,
+          "end": 176,
+          "quote": "本次临床样品生产及检测",
+          "source_unit_index": 26
+        }
+      ],
+      "assertion_status": "affirmed",
+      "identity_mode": "source_record",
+      "temporal_status": "planned"
+    },
+    {
+      "id": "area_642",
+      "class_iri": "https://ontology.pharma-gmp.cn/slpra/facility/ProductionArea",
+      "aliases": [
+        "642"
+      ],
+      "evidence": [
+        {
+          "evidence_id": "e7ea5dada6b23ad6052384f5a6c6b75296797baf482c2fe0842911a1646a1e87",
+          "start": 153,
+          "end": 156,
+          "quote": "642",
+          "source_unit_index": 26
+        }
+      ],
+      "assertion_status": "affirmed",
+      "annotation_note": "省略共享后缀的并列车间名；未把 642和646车间 合并为一个场所。"
+    },
+    {
+      "id": "area_646",
+      "class_iri": "https://ontology.pharma-gmp.cn/slpra/facility/ProductionArea",
+      "aliases": [
+        "646车间",
+        "646"
+      ],
+      "evidence": [
+        {
+          "evidence_id": "e7ea5dada6b23ad6052384f5a6c6b75296797baf482c2fe0842911a1646a1e87",
+          "start": 157,
+          "end": 162,
+          "quote": "646车间",
+          "source_unit_index": 26
+        }
+      ],
+      "assertion_status": "affirmed"
+    },
+    {
+      "id": "reactor_200",
+      "class_iri": "https://ontology.pharma-gmp.cn/slpra/equipment/Reactor",
+      "aliases": [
+        "RE64611",
+        "200L反应釜",
+        "200L反应釜（RE64611）"
+      ],
+      "evidence": [
+        {
+          "evidence_id": "332f40090c06eff4f9c04e9d2de846cf6dc7e535341ae6a246ccaec1fb376310",
+          "start": 4,
+          "end": 20,
+          "quote": "200L反应釜（RE64611）",
+          "source_unit_index": 67
+        },
+        {
+          "evidence_id": "28ccd56c9312c0cb682eab0fd3e8b8a7a884437dc161ef10d51815567b1a9607",
+          "start": 0,
+          "end": 7,
+          "quote": "200L反应釜",
+          "source_unit_index": 134
+        },
+        {
+          "evidence_id": "c1e8f7303138ba417ae9c7fe0bd6ba13ae69417a9c6e46a98e26eb26320ef35c",
+          "start": 1,
+          "end": 8,
+          "quote": "RE64611",
+          "source_unit_index": 135
+        },
+        {
+          "evidence_id": "a19a42e1371bfb33bc3b3d29fab8aed3fc81e1688b8adf5487d5df8d4cc7acf3",
+          "start": 0,
+          "end": 7,
+          "quote": "200L反应釜",
+          "source_unit_index": 181
+        },
+        {
+          "evidence_id": "16438631527487298ec0944d6b00559c2dbb71c7e9387096dd808d8c26ccaeda",
+          "start": 0,
+          "end": 7,
+          "quote": "RE64611",
+          "source_unit_index": 182
+        }
+      ],
+      "assertion_status": "affirmed"
+    },
+    {
+      "id": "reactor_500",
+      "class_iri": "https://ontology.pharma-gmp.cn/slpra/equipment/Reactor",
+      "aliases": [
+        "RE64613",
+        "500L反应釜",
+        "500L结晶釜",
+        "500L结晶釜（RE64613）"
+      ],
+      "evidence": [
+        {
+          "evidence_id": "0fb079a418cb8b4765ca7e6be3221465bb4e9867d7316b5838b64700ed951104",
+          "start": 43,
+          "end": 59,
+          "quote": "500L结晶釜（RE64613）",
+          "source_unit_index": 69
+        },
+        {
+          "evidence_id": "4d6956bb4359459e74d9a5640d304b62886acd6aa59f10ee6989ae417970a9bf",
+          "start": 0,
+          "end": 7,
+          "quote": "500L反应釜",
+          "source_unit_index": 141
+        },
+        {
+          "evidence_id": "c7718ac45e08780a7ace6633bdf5fc2d7e99d9548475dfd9c613e85435213018",
+          "start": 1,
+          "end": 8,
+          "quote": "RE64613",
+          "source_unit_index": 142
+        },
+        {
+          "evidence_id": "b115b4988e34981a923ce45c249091716242894362dacf4979e0a1dfdc536564",
+          "start": 0,
+          "end": 7,
+          "quote": "500L反应釜",
+          "source_unit_index": 207
+        },
+        {
+          "evidence_id": "b467ff57f54677a5d98aa46ba5474722a223ff606fa8862a4a52ee49a18bf057",
+          "start": 0,
+          "end": 7,
+          "quote": "RE64613",
+          "source_unit_index": 208
+        }
+      ],
+      "assertion_status": "affirmed"
+    },
+    {
+      "id": "centrifuge",
+      "class_iri": "https://ontology.pharma-gmp.cn/slpra/equipment/Centrifuge",
+      "aliases": [
+        "CT64610",
+        "离心机",
+        "离心机（CT64610）"
+      ],
+      "evidence": [
+        {
+          "evidence_id": "14d1a5d61cf43a7a7a52109969bbf57ded0d846b59c4d25cba07484b3c7b019f",
+          "start": 8,
+          "end": 20,
+          "quote": "离心机（CT64610）",
+          "source_unit_index": 77
+        },
+        {
+          "evidence_id": "5e945eed0eeac97ef6fbdcefc42fd63a1358f49b6f7a7de527849b55d0358e1f",
+          "start": 0,
+          "end": 3,
+          "quote": "离心机",
+          "source_unit_index": 148
+        },
+        {
+          "evidence_id": "c29de58830ae27ec4afbff5413ab79a0531c4b432d7356ff295f84cb115a8405",
+          "start": 1,
+          "end": 8,
+          "quote": "CT64610",
+          "source_unit_index": 149
+        },
+        {
+          "evidence_id": "f0527dba0a16bd9612d16f9409f168a7ac95bb487679886f614bb774ccf6f96e",
+          "start": 0,
+          "end": 3,
+          "quote": "离心机",
+          "source_unit_index": 222
+        },
+        {
+          "evidence_id": "df9b4d09713883ed06ca247dd4cb6e375c766c25fc4b01fccff3e83c1bd3e8e1",
+          "start": 0,
+          "end": 7,
+          "quote": "CT64610",
+          "source_unit_index": 223
+        }
+      ],
+      "assertion_status": "affirmed"
+    },
+    {
+      "id": "vacuum_dryer",
+      "class_iri": "https://ontology.pharma-gmp.cn/slpra/equipment/VacuumDryer",
+      "aliases": [
+        "DE64603",
+        "真空干燥箱",
+        "真空干燥箱（DE64603）"
+      ],
+      "evidence": [
+        {
+          "evidence_id": "ecd195abdb4cc333d0740acdb6847c4ac5e29f90727ab310285afd6e60ef8d53",
+          "start": 19,
+          "end": 33,
+          "quote": "真空干燥箱（DE64603）",
+          "source_unit_index": 83
+        },
+        {
+          "evidence_id": "fa490058ef652cbb79c799fcde2df046615af5475d81fd7c3252e0aebad65ac4",
+          "start": 0,
+          "end": 5,
+          "quote": "真空干燥箱",
+          "source_unit_index": 155
+        },
+        {
+          "evidence_id": "a1b2a79046bb9579eac66d1ae217436b58c12547de8ad0266d2f5f7af3de40bf",
+          "start": 1,
+          "end": 8,
+          "quote": "DE64603",
+          "source_unit_index": 156
+        },
+        {
+          "evidence_id": "16dfa2cd4ab3794bcb0b42f4f25d82c5213034035b80aab78f53610c2adfde92",
+          "start": 0,
+          "end": 5,
+          "quote": "真空干燥箱",
+          "source_unit_index": 235
+        },
+        {
+          "evidence_id": "c847ce52e1d637718b869613a834c00cd8bfb22403e45f6eea35bf3806ca27c9",
+          "start": 0,
+          "end": 7,
+          "quote": "DE64603",
+          "source_unit_index": 236
+        }
+      ],
+      "assertion_status": "affirmed"
+    },
+    {
+      "id": "rat_data",
+      "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/SharedLineAssessmentData",
+      "aliases": [
+        "大鼠14天亚急毒试验（试验1）",
+        "19191-25030-NG"
+      ],
+      "evidence": [
+        {
+          "evidence_id": "859d82d093815d0491941be31f8a1fb58c2db749cf474d160cec2cc612a2a630",
+          "start": 0,
+          "end": 15,
+          "quote": "大鼠14天亚急毒试验（试验1）",
+          "source_unit_index": 395
+        },
+        {
+          "evidence_id": "c397bd6234effb8334de65557943c320be55b79f2aeceee1f2b917933d342c9e",
+          "start": 0,
+          "end": 14,
+          "quote": "19191-25030-NG",
+          "source_unit_index": 403
+        }
+      ],
+      "assertion_status": "affirmed",
+      "identity_mode": "source_record",
+      "annotation_note": "共线评估中的大鼠研究记录；不是与犬数据合并的 API 根节点。"
+    },
+    {
+      "id": "dog_data",
+      "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/SharedLineAssessmentData",
+      "aliases": [
+        "犬14天亚急毒",
+        "19191-25031-NG"
+      ],
+      "evidence": [
+        {
+          "evidence_id": "c839f95d57f323df72969ecbebe9824f566c7f6d0c9c6b1b2c4f50e573b74234",
+          "start": 0,
+          "end": 7,
+          "quote": "犬14天亚急毒",
+          "source_unit_index": 405
+        },
+        {
+          "evidence_id": "9ad002bba89181c782c007a89280036d5397f26b6451fd3f19d283bff700d9d7",
+          "start": 0,
+          "end": 14,
+          "quote": "19191-25031-NG",
+          "source_unit_index": 413
+        }
+      ],
+      "assertion_status": "affirmed",
+      "identity_mode": "source_record",
+      "annotation_note": "共线评估中的犬研究记录，与大鼠记录分开。"
+    },
+    {
+      "id": "oxidative",
+      "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/OxidativeDegradation",
+      "aliases": [
+        "氧化"
+      ],
+      "evidence": [
+        {
+          "evidence_id": "bf8fbe6b7f8142761b8750b115410e8787c786afae27efd701ab94e3a84cbd88",
+          "start": 15,
+          "end": 17,
+          "quote": "氧化",
+          "source_unit_index": 375
+        }
+      ],
+      "assertion_status": "affirmed"
+    },
+    {
+      "id": "photo",
+      "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/PhotoDegradation",
+      "aliases": [
+        "光照"
+      ],
+      "evidence": [
+        {
+          "evidence_id": "bf8fbe6b7f8142761b8750b115410e8787c786afae27efd701ab94e3a84cbd88",
+          "start": 18,
+          "end": 20,
+          "quote": "光照",
+          "source_unit_index": 375
+        }
+      ],
+      "assertion_status": "affirmed"
+    },
+    {
+      "id": "thermal",
+      "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/ThermalDegradation",
+      "aliases": [
+        "高温"
+      ],
+      "evidence": [
+        {
+          "evidence_id": "bf8fbe6b7f8142761b8750b115410e8787c786afae27efd701ab94e3a84cbd88",
+          "start": 21,
+          "end": 23,
+          "quote": "高温",
+          "source_unit_index": 375
+        }
+      ],
+      "assertion_status": "affirmed"
+    }
+  ],
+  "properties": [
+    {
+      "id": "p_plan_month",
+      "subject": "plan",
+      "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/plannedProductionDate",
+      "literal": {
+        "raw_value": "2026年6月",
+        "normalized_value": "2026-06",
+        "kind": "date",
+        "canonical_unit": null,
+        "datatype_iri": "http://www.w3.org/2001/XMLSchema#gYearMonth"
+      },
+      "evidence": [
+        {
+          "evidence_id": "e7ea5dada6b23ad6052384f5a6c6b75296797baf482c2fe0842911a1646a1e87",
+          "start": 145,
+          "end": 152,
+          "quote": "2026年6月",
+          "source_unit_index": 26
+        }
+      ],
+      "assertion_status": "affirmed",
+      "temporal_status": "planned"
+    },
+    {
+      "id": "p_plan_purpose",
+      "subject": "plan",
+      "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/productionPurpose",
+      "literal": {
+        "raw_value": "Ⅰ期临床",
+        "normalized_value": "Ⅰ期临床",
+        "kind": "text",
+        "canonical_unit": null,
+        "datatype_iri": "http://www.w3.org/2001/XMLSchema#string"
+      },
+      "evidence": [
+        {
+          "evidence_id": "e7ea5dada6b23ad6052384f5a6c6b75296797baf482c2fe0842911a1646a1e87",
+          "start": 137,
+          "end": 141,
+          "quote": "Ⅰ期临床",
+          "source_unit_index": 26
+        }
+      ],
+      "assertion_status": "affirmed",
+      "temporal_status": "planned"
+    },
+    {
+      "id": "p_plan_min",
+      "subject": "plan",
+      "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/plannedBatchSizeMin_kg",
+      "literal": {
+        "raw_value": "3.8",
+        "normalized_value": "3.8",
+        "kind": "number",
+        "canonical_unit": "kg",
+        "datatype_iri": "http://www.w3.org/2001/XMLSchema#decimal"
+      },
+      "evidence": [
+        {
+          "evidence_id": "e7ea5dada6b23ad6052384f5a6c6b75296797baf482c2fe0842911a1646a1e87",
+          "start": 179,
+          "end": 189,
+          "quote": "3.8- 6.6kg",
+          "source_unit_index": 26
+        }
+      ],
+      "assertion_status": "affirmed",
+      "temporal_status": "planned"
+    },
+    {
+      "id": "p_plan_max",
+      "subject": "plan",
+      "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/plannedBatchSizeMax_kg",
+      "literal": {
+        "raw_value": "6.6",
+        "normalized_value": "6.6",
+        "kind": "number",
+        "canonical_unit": "kg",
+        "datatype_iri": "http://www.w3.org/2001/XMLSchema#decimal"
+      },
+      "evidence": [
+        {
+          "evidence_id": "e7ea5dada6b23ad6052384f5a6c6b75296797baf482c2fe0842911a1646a1e87",
+          "start": 179,
+          "end": 189,
+          "quote": "3.8- 6.6kg",
+          "source_unit_index": 26
+        }
+      ],
+      "assertion_status": "affirmed",
+      "temporal_status": "planned"
+    },
+    {
+      "id": "p_formula",
+      "subject": "product",
+      "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug/molecularFormula",
+      "literal": {
+        "raw_value": "C23H28N6O5S",
+        "normalized_value": "C23H28N6O5S",
+        "kind": "text",
+        "canonical_unit": null,
+        "datatype_iri": "http://www.w3.org/2001/XMLSchema#string"
+      },
+      "evidence": [
+        {
+          "evidence_id": "d014a3ac53add0735a0ded2644df9d153b0389c7a70464d334ccd94fb724706d",
+          "start": 4,
+          "end": 15,
+          "quote": "C23H28N6O5S",
+          "source_unit_index": 31
+        }
+      ],
+      "assertion_status": "affirmed"
+    },
+    {
+      "id": "p_weight",
+      "subject": "product",
+      "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug/molecularWeight",
+      "literal": {
+        "raw_value": "500.60",
+        "normalized_value": "500.60",
+        "kind": "number",
+        "canonical_unit": null,
+        "datatype_iri": "http://www.w3.org/2001/XMLSchema#decimal"
+      },
+      "evidence": [
+        {
+          "evidence_id": "86913001e764d9a74973c9712095e24e40edd7f8c6c6b09c6902c7c63b19edc1",
+          "start": 4,
+          "end": 10,
+          "quote": "500.60",
+          "source_unit_index": 32
+        }
+      ],
+      "assertion_status": "affirmed",
+      "annotation_note": "仅评价产品结构节的该断言；设备表主残留物列出现500.18，未将两者静默合并或裁定哪个科学上正确。"
+    },
+    {
+      "id": "p_project_name",
+      "subject": "product",
+      "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug/projectName",
+      "literal": {
+        "raw_value": "HRS-1597",
+        "normalized_value": "HRS-1597",
+        "kind": "text",
+        "canonical_unit": null,
+        "datatype_iri": "http://www.w3.org/2001/XMLSchema#string"
+      },
+      "evidence": [
+        {
+          "evidence_id": "7e40b958711ea6960b4883abb79b631567b8cc3a7354ad43fd8b0dcdc818037d",
+          "start": 5,
+          "end": 13,
+          "quote": "HRS-1597",
+          "source_unit_index": 33
+        }
+      ],
+      "assertion_status": "affirmed"
+    },
+    {
+      "id": "p_project_code",
+      "subject": "product",
+      "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug/projectCode",
+      "literal": {
+        "raw_value": "HRXS-P-2419",
+        "normalized_value": "HRXS-P-2419",
+        "kind": "text",
+        "canonical_unit": null,
+        "datatype_iri": "http://www.w3.org/2001/XMLSchema#string"
+      },
+      "evidence": [
+        {
+          "evidence_id": "821f027ccb442d08ce32099d291f5bb43374507534211ac44292457a862833b7",
+          "start": 5,
+          "end": 16,
+          "quote": "HRXS-P-2419",
+          "source_unit_index": 34
+        }
+      ],
+      "assertion_status": "affirmed"
+    },
+    {
+      "id": "p_dosage_form",
+      "subject": "product",
+      "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug/dosageForm",
+      "literal": {
+        "raw_value": "口服片剂",
+        "normalized_value": "口服片剂",
+        "kind": "text",
+        "canonical_unit": null,
+        "datatype_iri": "http://www.w3.org/2001/XMLSchema#string"
+      },
+      "evidence": [
+        {
+          "evidence_id": "43f9fdc379f20eff81318db18d2aa7ae509b407f3a6bb03fde019ea4ec5f5e57",
+          "start": 5,
+          "end": 9,
+          "quote": "口服片剂",
+          "source_unit_index": 42
+        }
+      ],
+      "assertion_status": "affirmed"
+    },
+    {
+      "id": "p_appearance",
+      "subject": "product",
+      "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug/appearance",
+      "literal": {
+        "raw_value": "类白色到白色粉末",
+        "normalized_value": "类白色到白色粉末",
+        "kind": "text",
+        "canonical_unit": null,
+        "datatype_iri": "http://www.w3.org/2001/XMLSchema#string"
+      },
+      "evidence": [
+        {
+          "evidence_id": "c56a1c0abab309a9f15c8db4f6f0fa054d05e7024e9068cfef4bd11a50ce090a",
+          "start": 3,
+          "end": 11,
+          "quote": "类白色到白色粉末",
+          "source_unit_index": 38
+        }
+      ],
+      "assertion_status": "affirmed"
+    },
+    {
+      "id": "p_indication",
+      "subject": "product",
+      "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/targetIndication",
+      "literal": {
+        "raw_value": "减肥增肌",
+        "normalized_value": "减肥增肌",
+        "kind": "text",
+        "canonical_unit": null,
+        "datatype_iri": "http://www.w3.org/2001/XMLSchema#string"
+      },
+      "evidence": [
+        {
+          "evidence_id": "e7ea5dada6b23ad6052384f5a6c6b75296797baf482c2fe0842911a1646a1e87",
+          "start": 47,
+          "end": 51,
+          "quote": "减肥增肌",
+          "source_unit_index": 26
+        }
+      ],
+      "assertion_status": "affirmed"
+    },
+    {
+      "id": "p_oncology",
+      "subject": "product",
+      "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug/isOncologyDrug",
+      "literal": {
+        "raw_value": "否",
+        "normalized_value": false,
+        "kind": "boolean",
+        "canonical_unit": null,
+        "datatype_iri": "http://www.w3.org/2001/XMLSchema#boolean"
+      },
+      "evidence": [
+        {
+          "evidence_id": "f6d5c3353e371f53884516a227d0dc11fc5f2b947f8e2ec9608cd32894549d47",
+          "start": 1,
+          "end": 2,
+          "quote": "否",
+          "source_unit_index": 43
+        }
+      ],
+      "assertion_status": "affirmed"
+    },
+    {
+      "id": "p_cytotoxic",
+      "subject": "product",
+      "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug/isCytotoxic",
+      "literal": {
+        "raw_value": "否",
+        "normalized_value": false,
+        "kind": "boolean",
+        "canonical_unit": null,
+        "datatype_iri": "http://www.w3.org/2001/XMLSchema#boolean"
+      },
+      "evidence": [
+        {
+          "evidence_id": "9d8516f9fbaa216fa3475cedc170ac1cb95489220b6ea84bfe8d8acad22a0bdf",
+          "start": 1,
+          "end": 2,
+          "quote": "否",
+          "source_unit_index": 44
+        }
+      ],
+      "assertion_status": "affirmed"
+    },
+    {
+      "id": "p_sensitizing",
+      "subject": "product",
+      "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug/isHighlySensitizing",
+      "literal": {
+        "raw_value": "否",
+        "normalized_value": false,
+        "kind": "boolean",
+        "canonical_unit": null,
+        "datatype_iri": "http://www.w3.org/2001/XMLSchema#boolean"
+      },
+      "evidence": [
+        {
+          "evidence_id": "abd54e48f080a5f74f4fae1e4b0fe00f9edbd3c6bc9c9bb641789bcbadd7bc1f",
+          "start": 1,
+          "end": 2,
+          "quote": "否",
+          "source_unit_index": 45
+        }
+      ],
+      "assertion_status": "affirmed"
+    },
+    {
+      "id": "p_hormonal",
+      "subject": "product",
+      "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug/isHormonal",
+      "literal": {
+        "raw_value": "否",
+        "normalized_value": false,
+        "kind": "boolean",
+        "canonical_unit": null,
+        "datatype_iri": "http://www.w3.org/2001/XMLSchema#boolean"
+      },
+      "evidence": [
+        {
+          "evidence_id": "5cbb5d2a4bd1c1cb40ddc05693593d334e1cbce06f7a4ae84df26ec72090f249",
+          "start": 1,
+          "end": 2,
+          "quote": "否",
+          "source_unit_index": 46
+        }
+      ],
+      "assertion_status": "affirmed"
+    },
+    {
+      "id": "p_penicillin",
+      "subject": "product",
+      "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug/isPenicillinType",
+      "literal": {
+        "raw_value": "否",
+        "normalized_value": false,
+        "kind": "boolean",
+        "canonical_unit": null,
+        "datatype_iri": "http://www.w3.org/2001/XMLSchema#boolean"
+      },
+      "evidence": [
+        {
+          "evidence_id": "d43198f9a3774026d616dcbba9f695964cbf06e5dd04b2d1ddd2d65813fef9e4",
+          "start": 1,
+          "end": 2,
+          "quote": "否",
+          "source_unit_index": 47
+        }
+      ],
+      "assertion_status": "affirmed"
+    },
+    {
+      "id": "p_high_activity",
+      "subject": "product",
+      "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug/isHighlyActive",
+      "literal": {
+        "raw_value": "否",
+        "normalized_value": false,
+        "kind": "boolean",
+        "canonical_unit": null,
+        "datatype_iri": "http://www.w3.org/2001/XMLSchema#boolean"
+      },
+      "evidence": [
+        {
+          "evidence_id": "40dc85961f970885f6c4d3b232dee07871bb9e9c15a6a708e61a3f543986c2f1",
+          "start": 1,
+          "end": 2,
+          "quote": "否",
+          "source_unit_index": 48
+        }
+      ],
+      "assertion_status": "affirmed"
+    },
+    {
+      "id": "p_reactor_200_id",
+      "subject": "reactor_200",
+      "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/equipment/equipmentID",
+      "literal": {
+        "raw_value": "RE64611",
+        "normalized_value": "RE64611",
+        "kind": "text",
+        "canonical_unit": null,
+        "datatype_iri": "http://www.w3.org/2001/XMLSchema#string"
+      },
+      "evidence": [
+        {
+          "evidence_id": "16438631527487298ec0944d6b00559c2dbb71c7e9387096dd808d8c26ccaeda",
+          "start": 0,
+          "end": 7,
+          "quote": "RE64611",
+          "source_unit_index": 182
+        }
+      ],
+      "assertion_status": "affirmed"
+    },
+    {
+      "id": "p_reactor_200_model",
+      "subject": "reactor_200",
+      "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/equipment/modelSpecification",
+      "literal": {
+        "raw_value": "200L",
+        "normalized_value": "200L",
+        "kind": "text",
+        "canonical_unit": null,
+        "datatype_iri": "http://www.w3.org/2001/XMLSchema#string"
+      },
+      "evidence": [
+        {
+          "evidence_id": "ecb41123f3fbbdd3370fa83d7f296bd13e8ca0f3012aec14f1086ec29e6aee49",
+          "start": 0,
+          "end": 4,
+          "quote": "200L",
+          "source_unit_index": 183
+        }
+      ],
+      "assertion_status": "affirmed"
+    },
+    {
+      "id": "p_reactor_500_id",
+      "subject": "reactor_500",
+      "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/equipment/equipmentID",
+      "literal": {
+        "raw_value": "RE64613",
+        "normalized_value": "RE64613",
+        "kind": "text",
+        "canonical_unit": null,
+        "datatype_iri": "http://www.w3.org/2001/XMLSchema#string"
+      },
+      "evidence": [
+        {
+          "evidence_id": "b467ff57f54677a5d98aa46ba5474722a223ff606fa8862a4a52ee49a18bf057",
+          "start": 0,
+          "end": 7,
+          "quote": "RE64613",
+          "source_unit_index": 208
+        }
+      ],
+      "assertion_status": "affirmed"
+    },
+    {
+      "id": "p_reactor_500_model",
+      "subject": "reactor_500",
+      "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/equipment/modelSpecification",
+      "literal": {
+        "raw_value": "500L",
+        "normalized_value": "500L",
+        "kind": "text",
+        "canonical_unit": null,
+        "datatype_iri": "http://www.w3.org/2001/XMLSchema#string"
+      },
+      "evidence": [
+        {
+          "evidence_id": "01918fda883461c6d76805e4f49e0c3025c0206ef9aa267020537d72a9da86d0",
+          "start": 0,
+          "end": 4,
+          "quote": "500L",
+          "source_unit_index": 209
+        }
+      ],
+      "assertion_status": "affirmed"
+    },
+    {
+      "id": "p_centrifuge_id",
+      "subject": "centrifuge",
+      "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/equipment/equipmentID",
+      "literal": {
+        "raw_value": "CT64610",
+        "normalized_value": "CT64610",
+        "kind": "text",
+        "canonical_unit": null,
+        "datatype_iri": "http://www.w3.org/2001/XMLSchema#string"
+      },
+      "evidence": [
+        {
+          "evidence_id": "df9b4d09713883ed06ca247dd4cb6e375c766c25fc4b01fccff3e83c1bd3e8e1",
+          "start": 0,
+          "end": 7,
+          "quote": "CT64610",
+          "source_unit_index": 223
+        }
+      ],
+      "assertion_status": "affirmed"
+    },
+    {
+      "id": "p_centrifuge_model",
+      "subject": "centrifuge",
+      "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/equipment/modelSpecification",
+      "literal": {
+        "raw_value": "600",
+        "normalized_value": "600",
+        "kind": "text",
+        "canonical_unit": null,
+        "datatype_iri": "http://www.w3.org/2001/XMLSchema#string"
+      },
+      "evidence": [
+        {
+          "evidence_id": "f56484d1d7843da0a3b21bef71ebf983ab29d52cf8562c980e22ddbcd372e019",
+          "start": 0,
+          "end": 3,
+          "quote": "600",
+          "source_unit_index": 224
+        }
+      ],
+      "assertion_status": "affirmed"
+    },
+    {
+      "id": "p_vacuum_dryer_id",
+      "subject": "vacuum_dryer",
+      "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/equipment/equipmentID",
+      "literal": {
+        "raw_value": "DE64603",
+        "normalized_value": "DE64603",
+        "kind": "text",
+        "canonical_unit": null,
+        "datatype_iri": "http://www.w3.org/2001/XMLSchema#string"
+      },
+      "evidence": [
+        {
+          "evidence_id": "c847ce52e1d637718b869613a834c00cd8bfb22403e45f6eea35bf3806ca27c9",
+          "start": 0,
+          "end": 7,
+          "quote": "DE64603",
+          "source_unit_index": 236
+        }
+      ],
+      "assertion_status": "affirmed"
+    },
+    {
+      "id": "p_vacuum_dryer_model",
+      "subject": "vacuum_dryer",
+      "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/equipment/modelSpecification",
+      "literal": {
+        "raw_value": "24盘",
+        "normalized_value": "24盘",
+        "kind": "text",
+        "canonical_unit": null,
+        "datatype_iri": "http://www.w3.org/2001/XMLSchema#string"
+      },
+      "evidence": [
+        {
+          "evidence_id": "28b2b7549141bccfd95fe014d8f95171a469537e5df68e18941579fd21645541",
+          "start": 0,
+          "end": 3,
+          "quote": "24盘",
+          "source_unit_index": 237
+        }
+      ],
+      "assertion_status": "affirmed"
+    },
+    {
+      "id": "p_rat_data_study",
+      "subject": "rat_data",
+      "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/studyType",
+      "literal": {
+        "raw_value": "大鼠14天亚急毒试验（试验1）",
+        "normalized_value": "大鼠14天亚急毒试验（试验1）",
+        "kind": "text",
+        "canonical_unit": null,
+        "datatype_iri": "http://www.w3.org/2001/XMLSchema#string"
+      },
+      "evidence": [
+        {
+          "evidence_id": "859d82d093815d0491941be31f8a1fb58c2db749cf474d160cec2cc612a2a630",
+          "start": 0,
+          "end": 15,
+          "quote": "大鼠14天亚急毒试验（试验1）",
+          "source_unit_index": 395
+        }
+      ],
+      "assertion_status": "affirmed"
+    },
+    {
+      "id": "p_rat_data_pde",
+      "subject": "rat_data",
+      "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/pde_mg_per_day",
+      "literal": {
+        "raw_value": "100",
+        "normalized_value": "100",
+        "kind": "number",
+        "canonical_unit": "mg/day",
+        "datatype_iri": "http://www.w3.org/2001/XMLSchema#decimal"
+      },
+      "evidence": [
+        {
+          "evidence_id": "2535b270085bd646ca40fdce53ddb61080cfd3756c0a4fbaba1ab22e21546d28",
+          "start": 0,
+          "end": 3,
+          "quote": "100",
+          "source_unit_index": 402
+        }
+      ],
+      "assertion_status": "affirmed"
+    },
+    {
+      "id": "p_rat_data_source",
+      "subject": "rat_data",
+      "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/sourceReference",
+      "literal": {
+        "raw_value": "19191-25030-NG",
+        "normalized_value": "19191-25030-NG",
+        "kind": "text",
+        "canonical_unit": null,
+        "datatype_iri": "http://www.w3.org/2001/XMLSchema#string"
+      },
+      "evidence": [
+        {
+          "evidence_id": "c397bd6234effb8334de65557943c320be55b79f2aeceee1f2b917933d342c9e",
+          "start": 0,
+          "end": 14,
+          "quote": "19191-25030-NG",
+          "source_unit_index": 403
+        }
+      ],
+      "assertion_status": "affirmed"
+    },
+    {
+      "id": "p_dog_data_study",
+      "subject": "dog_data",
+      "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/studyType",
+      "literal": {
+        "raw_value": "犬14天亚急毒",
+        "normalized_value": "犬14天亚急毒",
+        "kind": "text",
+        "canonical_unit": null,
+        "datatype_iri": "http://www.w3.org/2001/XMLSchema#string"
+      },
+      "evidence": [
+        {
+          "evidence_id": "c839f95d57f323df72969ecbebe9824f566c7f6d0c9c6b1b2c4f50e573b74234",
+          "start": 0,
+          "end": 7,
+          "quote": "犬14天亚急毒",
+          "source_unit_index": 405
+        }
+      ],
+      "assertion_status": "affirmed"
+    },
+    {
+      "id": "p_dog_data_pde",
+      "subject": "dog_data",
+      "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/pde_mg_per_day",
+      "literal": {
+        "raw_value": "7.5",
+        "normalized_value": "7.5",
+        "kind": "number",
+        "canonical_unit": "mg/day",
+        "datatype_iri": "http://www.w3.org/2001/XMLSchema#decimal"
+      },
+      "evidence": [
+        {
+          "evidence_id": "5e801619b129f3615d71e87fa67328b265be34e1ac4e15f20168190d40da0e86",
+          "start": 0,
+          "end": 3,
+          "quote": "7.5",
+          "source_unit_index": 412
+        }
+      ],
+      "assertion_status": "affirmed"
+    },
+    {
+      "id": "p_dog_data_source",
+      "subject": "dog_data",
+      "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/sourceReference",
+      "literal": {
+        "raw_value": "19191-25031-NG",
+        "normalized_value": "19191-25031-NG",
+        "kind": "text",
+        "canonical_unit": null,
+        "datatype_iri": "http://www.w3.org/2001/XMLSchema#string"
+      },
+      "evidence": [
+        {
+          "evidence_id": "9ad002bba89181c782c007a89280036d5397f26b6451fd3f19d283bff700d9d7",
+          "start": 0,
+          "end": 14,
+          "quote": "19191-25031-NG",
+          "source_unit_index": 413
+        }
+      ],
+      "assertion_status": "affirmed"
+    }
+  ],
+  "relationships": [
+    {
+      "id": "r_describes",
+      "subject": "report",
+      "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/describes",
+      "object": "product",
+      "evidence": [
+        {
+          "evidence_id": "e7ea5dada6b23ad6052384f5a6c6b75296797baf482c2fe0842911a1646a1e87",
+          "start": 0,
+          "end": 8,
+          "quote": "HRS-1597",
+          "source_unit_index": 26
+        },
+        {
+          "evidence_id": "7e40b958711ea6960b4883abb79b631567b8cc3a7354ad43fd8b0dcdc818037d",
+          "start": 0,
+          "end": 13,
+          "quote": "项目名称：HRS-1597",
+          "source_unit_index": 33
+        }
+      ],
+      "assertion_status": "affirmed"
+    },
+    {
+      "id": "r_plan",
+      "subject": "report",
+      "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasProductionPlan",
+      "object": "plan",
+      "evidence": [
+        {
+          "evidence_id": "e7ea5dada6b23ad6052384f5a6c6b75296797baf482c2fe0842911a1646a1e87",
+          "start": 0,
+          "end": 191,
+          "quote": "HRS-1597为上海闵行于2024年07月转移至连云港一所的APLNR激动剂新分子，适应症为减肥增肌。其开发形式经过多次变化且亚急毒和毒理样品需求量不断增长。于2025年08月供样亚急毒样品，供样形式为原料药。2025年09月供样毒理批样品，供样形式为原料药。本次备样用于Ⅰ期临床，计划在2026年6月于642和646车间，完成本次临床样品生产及检测，批量3.8- 6.6kg。 ",
+          "source_unit_index": 26
+        }
+      ],
+      "assertion_status": "affirmed",
+      "temporal_status": "planned"
+    },
+    {
+      "id": "r_area_642",
+      "subject": "plan",
+      "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/producedInArea",
+      "object": "area_642",
+      "evidence": [
+        {
+          "evidence_id": "e7ea5dada6b23ad6052384f5a6c6b75296797baf482c2fe0842911a1646a1e87",
+          "start": 142,
+          "end": 162,
+          "quote": "计划在2026年6月于642和646车间",
+          "source_unit_index": 26
+        }
+      ],
+      "assertion_status": "affirmed",
+      "temporal_status": "planned"
+    },
+    {
+      "id": "r_area_646",
+      "subject": "plan",
+      "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/producedInArea",
+      "object": "area_646",
+      "evidence": [
+        {
+          "evidence_id": "e7ea5dada6b23ad6052384f5a6c6b75296797baf482c2fe0842911a1646a1e87",
+          "start": 142,
+          "end": 162,
+          "quote": "计划在2026年6月于642和646车间",
+          "source_unit_index": 26
+        }
+      ],
+      "assertion_status": "affirmed",
+      "temporal_status": "planned"
+    },
+    {
+      "id": "r_reactor_200",
+      "subject": "report",
+      "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/usesEquipment",
+      "object": "reactor_200",
+      "evidence": [
+        {
+          "evidence_id": "332f40090c06eff4f9c04e9d2de846cf6dc7e535341ae6a246ccaec1fb376310",
+          "start": 4,
+          "end": 20,
+          "quote": "200L反应釜（RE64611）",
+          "source_unit_index": 67
+        },
+        {
+          "evidence_id": "a19a42e1371bfb33bc3b3d29fab8aed3fc81e1688b8adf5487d5df8d4cc7acf3",
+          "start": 0,
+          "end": 7,
+          "quote": "200L反应釜",
+          "source_unit_index": 181
+        },
+        {
+          "evidence_id": "16438631527487298ec0944d6b00559c2dbb71c7e9387096dd808d8c26ccaeda",
+          "start": 0,
+          "end": 7,
+          "quote": "RE64611",
+          "source_unit_index": 182
+        }
+      ],
+      "assertion_status": "affirmed",
+      "temporal_status": "specified_requirement"
+    },
+    {
+      "id": "r_reactor_500",
+      "subject": "report",
+      "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/usesEquipment",
+      "object": "reactor_500",
+      "evidence": [
+        {
+          "evidence_id": "0fb079a418cb8b4765ca7e6be3221465bb4e9867d7316b5838b64700ed951104",
+          "start": 43,
+          "end": 59,
+          "quote": "500L结晶釜（RE64613）",
+          "source_unit_index": 69
+        },
+        {
+          "evidence_id": "b115b4988e34981a923ce45c249091716242894362dacf4979e0a1dfdc536564",
+          "start": 0,
+          "end": 7,
+          "quote": "500L反应釜",
+          "source_unit_index": 207
+        },
+        {
+          "evidence_id": "b467ff57f54677a5d98aa46ba5474722a223ff606fa8862a4a52ee49a18bf057",
+          "start": 0,
+          "end": 7,
+          "quote": "RE64613",
+          "source_unit_index": 208
+        }
+      ],
+      "assertion_status": "affirmed",
+      "temporal_status": "specified_requirement"
+    },
+    {
+      "id": "r_centrifuge",
+      "subject": "report",
+      "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/usesEquipment",
+      "object": "centrifuge",
+      "evidence": [
+        {
+          "evidence_id": "14d1a5d61cf43a7a7a52109969bbf57ded0d846b59c4d25cba07484b3c7b019f",
+          "start": 8,
+          "end": 20,
+          "quote": "离心机（CT64610）",
+          "source_unit_index": 77
+        },
+        {
+          "evidence_id": "f0527dba0a16bd9612d16f9409f168a7ac95bb487679886f614bb774ccf6f96e",
+          "start": 0,
+          "end": 3,
+          "quote": "离心机",
+          "source_unit_index": 222
+        },
+        {
+          "evidence_id": "df9b4d09713883ed06ca247dd4cb6e375c766c25fc4b01fccff3e83c1bd3e8e1",
+          "start": 0,
+          "end": 7,
+          "quote": "CT64610",
+          "source_unit_index": 223
+        }
+      ],
+      "assertion_status": "affirmed",
+      "temporal_status": "specified_requirement"
+    },
+    {
+      "id": "r_vacuum_dryer",
+      "subject": "report",
+      "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/usesEquipment",
+      "object": "vacuum_dryer",
+      "evidence": [
+        {
+          "evidence_id": "ecd195abdb4cc333d0740acdb6847c4ac5e29f90727ab310285afd6e60ef8d53",
+          "start": 19,
+          "end": 33,
+          "quote": "真空干燥箱（DE64603）",
+          "source_unit_index": 83
+        },
+        {
+          "evidence_id": "16dfa2cd4ab3794bcb0b42f4f25d82c5213034035b80aab78f53610c2adfde92",
+          "start": 0,
+          "end": 5,
+          "quote": "真空干燥箱",
+          "source_unit_index": 235
+        },
+        {
+          "evidence_id": "c847ce52e1d637718b869613a834c00cd8bfb22403e45f6eea35bf3806ca27c9",
+          "start": 0,
+          "end": 7,
+          "quote": "DE64603",
+          "source_unit_index": 236
+        }
+      ],
+      "assertion_status": "affirmed",
+      "temporal_status": "specified_requirement"
+    },
+    {
+      "id": "r_rat_data",
+      "subject": "report",
+      "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasSharedLineData",
+      "object": "rat_data",
+      "evidence": [
+        {
+          "evidence_id": "859d82d093815d0491941be31f8a1fb58c2db749cf474d160cec2cc612a2a630",
+          "start": 0,
+          "end": 15,
+          "quote": "大鼠14天亚急毒试验（试验1）",
+          "source_unit_index": 395
+        },
+        {
+          "evidence_id": "c397bd6234effb8334de65557943c320be55b79f2aeceee1f2b917933d342c9e",
+          "start": 0,
+          "end": 14,
+          "quote": "19191-25030-NG",
+          "source_unit_index": 403
+        }
+      ],
+      "assertion_status": "affirmed"
+    },
+    {
+      "id": "r_dog_data",
+      "subject": "report",
+      "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasSharedLineData",
+      "object": "dog_data",
+      "evidence": [
+        {
+          "evidence_id": "c839f95d57f323df72969ecbebe9824f566c7f6d0c9c6b1b2c4f50e573b74234",
+          "start": 0,
+          "end": 7,
+          "quote": "犬14天亚急毒",
+          "source_unit_index": 405
+        },
+        {
+          "evidence_id": "9ad002bba89181c782c007a89280036d5397f26b6451fd3f19d283bff700d9d7",
+          "start": 0,
+          "end": 14,
+          "quote": "19191-25031-NG",
+          "source_unit_index": 413
+        }
+      ],
+      "assertion_status": "affirmed"
+    },
+    {
+      "id": "r_oxidative",
+      "subject": "report",
+      "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasDegradationPathway",
+      "object": "oxidative",
+      "evidence": [
+        {
+          "evidence_id": "bf8fbe6b7f8142761b8750b115410e8787c786afae27efd701ab94e3a84cbd88",
+          "start": 0,
+          "end": 55,
+          "quote": "本品在酸、碱条件下比较稳定，在氧化、光照、高温均有降解，说明本品在生产和贮运过程中应避免氧化、光照、高温环境。",
+          "source_unit_index": 375
+        }
+      ],
+      "assertion_status": "affirmed"
+    },
+    {
+      "id": "r_photo",
+      "subject": "report",
+      "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasDegradationPathway",
+      "object": "photo",
+      "evidence": [
+        {
+          "evidence_id": "bf8fbe6b7f8142761b8750b115410e8787c786afae27efd701ab94e3a84cbd88",
+          "start": 0,
+          "end": 55,
+          "quote": "本品在酸、碱条件下比较稳定，在氧化、光照、高温均有降解，说明本品在生产和贮运过程中应避免氧化、光照、高温环境。",
+          "source_unit_index": 375
+        }
+      ],
+      "assertion_status": "affirmed"
+    },
+    {
+      "id": "r_thermal",
+      "subject": "report",
+      "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasDegradationPathway",
+      "object": "thermal",
+      "evidence": [
+        {
+          "evidence_id": "bf8fbe6b7f8142761b8750b115410e8787c786afae27efd701ab94e3a84cbd88",
+          "start": 0,
+          "end": 55,
+          "quote": "本品在酸、碱条件下比较稳定，在氧化、光照、高温均有降解，说明本品在生产和贮运过程中应避免氧化、光照、高温环境。",
+          "source_unit_index": 375
+        }
+      ],
+      "assertion_status": "affirmed"
+    }
+  ],
+  "forbidden": [
+    {
+      "id": "forbidden_p_oncology",
+      "subject": "product",
+      "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug/isOncologyDrug",
+      "literal": {
+        "raw_value": "是",
+        "normalized_value": true,
+        "kind": "boolean",
+        "canonical_unit": null,
+        "datatype_iri": "http://www.w3.org/2001/XMLSchema#boolean"
+      },
+      "evidence": [
+        {
+          "evidence_id": "f6d5c3353e371f53884516a227d0dc11fc5f2b947f8e2ec9608cd32894549d47",
+          "start": 1,
+          "end": 2,
+          "quote": "否",
+          "source_unit_index": 43
+        }
+      ],
+      "assertion_status": "affirmed",
+      "kind": "property",
+      "annotation_note": "原文明确为否；禁止翻转为肯定。"
+    },
+    {
+      "id": "forbidden_p_cytotoxic",
+      "subject": "product",
+      "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug/isCytotoxic",
+      "literal": {
+        "raw_value": "是",
+        "normalized_value": true,
+        "kind": "boolean",
+        "canonical_unit": null,
+        "datatype_iri": "http://www.w3.org/2001/XMLSchema#boolean"
+      },
+      "evidence": [
+        {
+          "evidence_id": "9d8516f9fbaa216fa3475cedc170ac1cb95489220b6ea84bfe8d8acad22a0bdf",
+          "start": 1,
+          "end": 2,
+          "quote": "否",
+          "source_unit_index": 44
+        }
+      ],
+      "assertion_status": "affirmed",
+      "kind": "property",
+      "annotation_note": "原文明确为否；禁止翻转为肯定。"
+    },
+    {
+      "id": "forbidden_p_sensitizing",
+      "subject": "product",
+      "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug/isHighlySensitizing",
+      "literal": {
+        "raw_value": "是",
+        "normalized_value": true,
+        "kind": "boolean",
+        "canonical_unit": null,
+        "datatype_iri": "http://www.w3.org/2001/XMLSchema#boolean"
+      },
+      "evidence": [
+        {
+          "evidence_id": "abd54e48f080a5f74f4fae1e4b0fe00f9edbd3c6bc9c9bb641789bcbadd7bc1f",
+          "start": 1,
+          "end": 2,
+          "quote": "否",
+          "source_unit_index": 45
+        }
+      ],
+      "assertion_status": "affirmed",
+      "kind": "property",
+      "annotation_note": "原文明确为否；禁止翻转为肯定。"
+    },
+    {
+      "id": "forbidden_p_hormonal",
+      "subject": "product",
+      "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug/isHormonal",
+      "literal": {
+        "raw_value": "是",
+        "normalized_value": true,
+        "kind": "boolean",
+        "canonical_unit": null,
+        "datatype_iri": "http://www.w3.org/2001/XMLSchema#boolean"
+      },
+      "evidence": [
+        {
+          "evidence_id": "5cbb5d2a4bd1c1cb40ddc05693593d334e1cbce06f7a4ae84df26ec72090f249",
+          "start": 1,
+          "end": 2,
+          "quote": "否",
+          "source_unit_index": 46
+        }
+      ],
+      "assertion_status": "affirmed",
+      "kind": "property",
+      "annotation_note": "原文明确为否；禁止翻转为肯定。"
+    },
+    {
+      "id": "forbidden_p_penicillin",
+      "subject": "product",
+      "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug/isPenicillinType",
+      "literal": {
+        "raw_value": "是",
+        "normalized_value": true,
+        "kind": "boolean",
+        "canonical_unit": null,
+        "datatype_iri": "http://www.w3.org/2001/XMLSchema#boolean"
+      },
+      "evidence": [
+        {
+          "evidence_id": "d43198f9a3774026d616dcbba9f695964cbf06e5dd04b2d1ddd2d65813fef9e4",
+          "start": 1,
+          "end": 2,
+          "quote": "否",
+          "source_unit_index": 47
+        }
+      ],
+      "assertion_status": "affirmed",
+      "kind": "property",
+      "annotation_note": "原文明确为否；禁止翻转为肯定。"
+    },
+    {
+      "id": "forbidden_p_high_activity",
+      "subject": "product",
+      "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug/isHighlyActive",
+      "literal": {
+        "raw_value": "是",
+        "normalized_value": true,
+        "kind": "boolean",
+        "canonical_unit": null,
+        "datatype_iri": "http://www.w3.org/2001/XMLSchema#boolean"
+      },
+      "evidence": [
+        {
+          "evidence_id": "40dc85961f970885f6c4d3b232dee07871bb9e9c15a6a708e61a3f543986c2f1",
+          "start": 1,
+          "end": 2,
+          "quote": "否",
+          "source_unit_index": 48
+        }
+      ],
+      "assertion_status": "affirmed",
+      "kind": "property",
+      "annotation_note": "原文明确为否；禁止翻转为肯定。"
+    },
+    {
+      "id": "forbidden_rat_data_pde_swap",
+      "subject": "rat_data",
+      "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/pde_mg_per_day",
+      "literal": {
+        "raw_value": "7.5",
+        "normalized_value": "7.5",
+        "kind": "number",
+        "canonical_unit": "mg/day",
+        "datatype_iri": "http://www.w3.org/2001/XMLSchema#decimal"
+      },
+      "evidence": [
+        {
+          "evidence_id": "2535b270085bd646ca40fdce53ddb61080cfd3756c0a4fbaba1ab22e21546d28",
+          "start": 0,
+          "end": 3,
+          "quote": "100",
+          "source_unit_index": 402
+        }
+      ],
+      "assertion_status": "affirmed",
+      "kind": "property",
+      "annotation_note": "禁止将另一研究记录的PDE值绑定到本记录。"
+    },
+    {
+      "id": "forbidden_dog_data_pde_swap",
+      "subject": "dog_data",
+      "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/pde_mg_per_day",
+      "literal": {
+        "raw_value": "100",
+        "normalized_value": "100",
+        "kind": "number",
+        "canonical_unit": "mg/day",
+        "datatype_iri": "http://www.w3.org/2001/XMLSchema#decimal"
+      },
+      "evidence": [
+        {
+          "evidence_id": "5e801619b129f3615d71e87fa67328b265be34e1ac4e15f20168190d40da0e86",
+          "start": 0,
+          "end": 3,
+          "quote": "7.5",
+          "source_unit_index": 412
+        }
+      ],
+      "assertion_status": "affirmed",
+      "kind": "property",
+      "annotation_note": "禁止将另一研究记录的PDE值绑定到本记录。"
+    },
+    {
+      "id": "forbidden_acid_affirmed",
+      "kind": "entity",
+      "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/AcidDegradation",
+      "aliases": [
+        "酸"
+      ],
+      "evidence": [
+        {
+          "evidence_id": "bf8fbe6b7f8142761b8750b115410e8787c786afae27efd701ab94e3a84cbd88",
+          "start": 0,
+          "end": 55,
+          "quote": "本品在酸、碱条件下比较稳定，在氧化、光照、高温均有降解，说明本品在生产和贮运过程中应避免氧化、光照、高温环境。",
+          "source_unit_index": 375
+        }
+      ],
+      "assertion_status": "affirmed",
+      "annotation_note": "仅禁止把本句“在酸、碱条件下比较稳定”识别为本句已证实发生酸/碱降解；不声称在所有条件下绝无降解。"
+    },
+    {
+      "id": "forbidden_alkaline_affirmed",
+      "kind": "entity",
+      "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/AlkalineDegradation",
+      "aliases": [
+        "碱"
+      ],
+      "evidence": [
+        {
+          "evidence_id": "bf8fbe6b7f8142761b8750b115410e8787c786afae27efd701ab94e3a84cbd88",
+          "start": 0,
+          "end": 55,
+          "quote": "本品在酸、碱条件下比较稳定，在氧化、光照、高温均有降解，说明本品在生产和贮运过程中应避免氧化、光照、高温环境。",
+          "source_unit_index": 375
+        }
+      ],
+      "assertion_status": "affirmed",
+      "annotation_note": "仅禁止把本句“在酸、碱条件下比较稳定”识别为本句已证实发生酸/碱降解；不声称在所有条件下绝无降解。"
+    },
+    {
+      "id": "forbidden_class_cytotoxic",
+      "kind": "entity",
+      "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/CytotoxicDrug",
+      "aliases": [
+        "HRS-1597"
+      ],
+      "evidence": [
+        {
+          "evidence_id": "9d8516f9fbaa216fa3475cedc170ac1cb95489220b6ea84bfe8d8acad22a0bdf",
+          "start": 0,
+          "end": 9,
+          "quote": "是否细胞毒药物：否",
+          "source_unit_index": 44
+        }
+      ],
+      "assertion_status": "affirmed"
+    },
+    {
+      "id": "forbidden_class_hormonal",
+      "kind": "entity",
+      "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/HormonalDrug",
+      "aliases": [
+        "HRS-1597"
+      ],
+      "evidence": [
+        {
+          "evidence_id": "5cbb5d2a4bd1c1cb40ddc05693593d334e1cbce06f7a4ae84df26ec72090f249",
+          "start": 0,
+          "end": 10,
+          "quote": "是否是激素类药物：否",
+          "source_unit_index": 46
+        }
+      ],
+      "assertion_status": "affirmed"
+    },
+    {
+      "id": "forbidden_class_penicillin",
+      "kind": "entity",
+      "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/PenicillinDrug",
+      "aliases": [
+        "HRS-1597"
+      ],
+      "evidence": [
+        {
+          "evidence_id": "d43198f9a3774026d616dcbba9f695964cbf06e5dd04b2d1ddd2d65813fef9e4",
+          "start": 0,
+          "end": 11,
+          "quote": "是否是青霉素类药物：否",
+          "source_unit_index": 47
+        }
+      ],
+      "assertion_status": "affirmed"
+    },
+    {
+      "id": "forbidden_class_sensitizing",
+      "kind": "entity",
+      "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/HighSensitizingDrug",
+      "aliases": [
+        "HRS-1597"
+      ],
+      "evidence": [
+        {
+          "evidence_id": "abd54e48f080a5f74f4fae1e4b0fe00f9edbd3c6bc9c9bb641789bcbadd7bc1f",
+          "start": 0,
+          "end": 10,
+          "quote": "是否是高致敏药物：否",
+          "source_unit_index": 45
+        }
+      ],
+      "assertion_status": "affirmed"
+    },
+    {
+      "id": "forbidden_class_high_activity",
+      "kind": "entity",
+      "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/HighActivityDrug",
+      "aliases": [
+        "HRS-1597"
+      ],
+      "evidence": [
+        {
+          "evidence_id": "40dc85961f970885f6c4d3b232dee07871bb9e9c15a6a708e61a3f543986c2f1",
+          "start": 0,
+          "end": 11,
+          "quote": "是否是高毒高活药物：否",
+          "source_unit_index": 48
+        }
+      ],
+      "assertion_status": "affirmed"
+    }
+  ],
+  "scopes": [
+    {
+      "id": "intro_plan_and_indication",
+      "evidence_ids": [
+        "e7ea5dada6b23ad6052384f5a6c6b75296797baf482c2fe0842911a1646a1e87"
+      ],
+      "exhaustive": {
+        "entity_classes": [
+          "https://ontology.pharma-gmp.cn/slpra/drug-development/ClinicalSampleProductionPlan",
+          "https://ontology.pharma-gmp.cn/slpra/facility/ProductionArea"
+        ],
+        "property_predicates": [
+          "https://ontology.pharma-gmp.cn/slpra/drug-development/plannedProductionDate",
+          "https://ontology.pharma-gmp.cn/slpra/drug-development/productionPurpose",
+          "https://ontology.pharma-gmp.cn/slpra/drug-development/plannedBatchSizeMin_kg",
+          "https://ontology.pharma-gmp.cn/slpra/drug-development/plannedBatchSizeMax_kg",
+          "https://ontology.pharma-gmp.cn/slpra/drug-development/targetIndication"
+        ],
+        "relationship_predicates": [
+          "https://ontology.pharma-gmp.cn/slpra/drug-development/hasProductionPlan",
+          "https://ontology.pharma-gmp.cn/slpra/drug-development/producedInArea",
+          "https://ontology.pharma-gmp.cn/slpra/drug-development/describes"
+        ]
+      }
+    },
+    {
+      "id": "product_selected_fields",
+      "evidence_ids": [
+        "d014a3ac53add0735a0ded2644df9d153b0389c7a70464d334ccd94fb724706d",
+        "86913001e764d9a74973c9712095e24e40edd7f8c6c6b09c6902c7c63b19edc1",
+        "7e40b958711ea6960b4883abb79b631567b8cc3a7354ad43fd8b0dcdc818037d",
+        "821f027ccb442d08ce32099d291f5bb43374507534211ac44292457a862833b7",
+        "c56a1c0abab309a9f15c8db4f6f0fa054d05e7024e9068cfef4bd11a50ce090a",
+        "43f9fdc379f20eff81318db18d2aa7ae509b407f3a6bb03fde019ea4ec5f5e57",
+        "f6d5c3353e371f53884516a227d0dc11fc5f2b947f8e2ec9608cd32894549d47",
+        "9d8516f9fbaa216fa3475cedc170ac1cb95489220b6ea84bfe8d8acad22a0bdf",
+        "abd54e48f080a5f74f4fae1e4b0fe00f9edbd3c6bc9c9bb641789bcbadd7bc1f",
+        "5cbb5d2a4bd1c1cb40ddc05693593d334e1cbce06f7a4ae84df26ec72090f249",
+        "d43198f9a3774026d616dcbba9f695964cbf06e5dd04b2d1ddd2d65813fef9e4",
+        "40dc85961f970885f6c4d3b232dee07871bb9e9c15a6a708e61a3f543986c2f1"
+      ],
+      "exhaustive": {
+        "entity_classes": [
+          "https://ontology.pharma-gmp.cn/slpra/drug/DrugProduct"
+        ],
+        "property_predicates": [
+          "https://ontology.pharma-gmp.cn/slpra/drug/molecularFormula",
+          "https://ontology.pharma-gmp.cn/slpra/drug/molecularWeight",
+          "https://ontology.pharma-gmp.cn/slpra/drug/projectName",
+          "https://ontology.pharma-gmp.cn/slpra/drug/projectCode",
+          "https://ontology.pharma-gmp.cn/slpra/drug/dosageForm",
+          "https://ontology.pharma-gmp.cn/slpra/drug/appearance",
+          "https://ontology.pharma-gmp.cn/slpra/drug/isOncologyDrug",
+          "https://ontology.pharma-gmp.cn/slpra/drug/isCytotoxic",
+          "https://ontology.pharma-gmp.cn/slpra/drug/isHighlySensitizing",
+          "https://ontology.pharma-gmp.cn/slpra/drug/isHormonal",
+          "https://ontology.pharma-gmp.cn/slpra/drug/isPenicillinType",
+          "https://ontology.pharma-gmp.cn/slpra/drug/isHighlyActive"
+        ],
+        "relationship_predicates": []
+      }
+    },
+    {
+      "id": "equipment_selected_rows",
+      "evidence_ids": [
+        "a19a42e1371bfb33bc3b3d29fab8aed3fc81e1688b8adf5487d5df8d4cc7acf3",
+        "16438631527487298ec0944d6b00559c2dbb71c7e9387096dd808d8c26ccaeda",
+        "ecb41123f3fbbdd3370fa83d7f296bd13e8ca0f3012aec14f1086ec29e6aee49",
+        "b115b4988e34981a923ce45c249091716242894362dacf4979e0a1dfdc536564",
+        "b467ff57f54677a5d98aa46ba5474722a223ff606fa8862a4a52ee49a18bf057",
+        "01918fda883461c6d76805e4f49e0c3025c0206ef9aa267020537d72a9da86d0",
+        "f0527dba0a16bd9612d16f9409f168a7ac95bb487679886f614bb774ccf6f96e",
+        "df9b4d09713883ed06ca247dd4cb6e375c766c25fc4b01fccff3e83c1bd3e8e1",
+        "f56484d1d7843da0a3b21bef71ebf983ab29d52cf8562c980e22ddbcd372e019",
+        "16dfa2cd4ab3794bcb0b42f4f25d82c5213034035b80aab78f53610c2adfde92",
+        "c847ce52e1d637718b869613a834c00cd8bfb22403e45f6eea35bf3806ca27c9",
+        "28b2b7549141bccfd95fe014d8f95171a469537e5df68e18941579fd21645541"
+      ],
+      "exhaustive": {
+        "entity_classes": [
+          "https://ontology.pharma-gmp.cn/slpra/equipment/Reactor",
+          "https://ontology.pharma-gmp.cn/slpra/equipment/Centrifuge",
+          "https://ontology.pharma-gmp.cn/slpra/equipment/VacuumDryer"
+        ],
+        "property_predicates": [
+          "https://ontology.pharma-gmp.cn/slpra/equipment/equipmentID",
+          "https://ontology.pharma-gmp.cn/slpra/equipment/modelSpecification"
+        ],
+        "relationship_predicates": [
+          "https://ontology.pharma-gmp.cn/slpra/drug-development/usesEquipment"
+        ]
+      }
+    },
+    {
+      "id": "toxicology_record_identity",
+      "evidence_ids": [
+        "859d82d093815d0491941be31f8a1fb58c2db749cf474d160cec2cc612a2a630",
+        "c397bd6234effb8334de65557943c320be55b79f2aeceee1f2b917933d342c9e",
+        "c839f95d57f323df72969ecbebe9824f566c7f6d0c9c6b1b2c4f50e573b74234",
+        "9ad002bba89181c782c007a89280036d5397f26b6451fd3f19d283bff700d9d7"
+      ],
+      "exhaustive": {
+        "entity_classes": [
+          "https://ontology.pharma-gmp.cn/slpra/drug-development/SharedLineAssessmentData"
+        ],
+        "property_predicates": [
+          "https://ontology.pharma-gmp.cn/slpra/drug-development/studyType",
+          "https://ontology.pharma-gmp.cn/slpra/drug-development/sourceReference"
+        ],
+        "relationship_predicates": [
+          "https://ontology.pharma-gmp.cn/slpra/drug-development/hasSharedLineData"
+        ]
+      }
+    },
+    {
+      "id": "toxicology_pde",
+      "evidence_ids": [
+        "2535b270085bd646ca40fdce53ddb61080cfd3756c0a4fbaba1ab22e21546d28",
+        "5e801619b129f3615d71e87fa67328b265be34e1ac4e15f20168190d40da0e86"
+      ],
+      "exhaustive": {
+        "entity_classes": [],
+        "property_predicates": [
+          "https://ontology.pharma-gmp.cn/slpra/drug-development/pde_mg_per_day"
+        ],
+        "relationship_predicates": []
+      }
+    },
+    {
+      "id": "degradation_assertions",
+      "evidence_ids": [
+        "bf8fbe6b7f8142761b8750b115410e8787c786afae27efd701ab94e3a84cbd88"
+      ],
+      "exhaustive": {
+        "entity_classes": [
+          "https://ontology.pharma-gmp.cn/slpra/drug-development/OxidativeDegradation",
+          "https://ontology.pharma-gmp.cn/slpra/drug-development/PhotoDegradation",
+          "https://ontology.pharma-gmp.cn/slpra/drug-development/ThermalDegradation",
+          "https://ontology.pharma-gmp.cn/slpra/drug-development/AcidDegradation",
+          "https://ontology.pharma-gmp.cn/slpra/drug-development/AlkalineDegradation"
+        ],
+        "property_predicates": [],
+        "relationship_predicates": [
+          "https://ontology.pharma-gmp.cn/slpra/drug-development/hasDegradationPathway"
+        ]
+      }
+    }
+  ],
+  "annotation_revision": 3,
+  "unscored_observations": [
+    {
+      "id": "unscored_rat_data_noael",
+      "subject": "rat_data",
+      "source_field": "NOAEL",
+      "source_value": {
+        "raw_value": "200",
+        "normalized_value": "200",
+        "kind": "number",
+        "canonical_unit": null,
+        "unit_status": "not_stated"
+      },
+      "evidence": [
+        {
+          "evidence_id": "4aa76f38c27b0726d4b2b924ad366816fc13f1b5296fded77336d1d173703934",
+          "start": 0,
+          "end": 3,
+          "quote": "200",
+          "source_unit_index": 396
+        }
+      ],
+      "scoring": "excluded_from_primary_accuracy",
+      "reason": "原表只有NOAEL数值，没有明确单位；本体中的mg/kg/day不能替代源文证据，不要求抽取器输出带单位谓词，也不惩罚正确弃答。"
+    },
+    {
+      "id": "unscored_dog_data_noael",
+      "subject": "dog_data",
+      "source_field": "NOAEL",
+      "source_value": {
+        "raw_value": "30",
+        "normalized_value": "30",
+        "kind": "number",
+        "canonical_unit": null,
+        "unit_status": "not_stated"
+      },
+      "evidence": [
+        {
+          "evidence_id": "2399d98788e1fafbee6593d32b565ffe95c57662bac4d2c5dcb12e5bf29455e5",
+          "start": 0,
+          "end": 2,
+          "quote": "30",
+          "source_unit_index": 406
+        }
+      ],
+      "scoring": "excluded_from_primary_accuracy",
+      "reason": "原表只有NOAEL数值，没有明确单位；本体中的mg/kg/day不能替代源文证据，不要求抽取器输出带单位谓词，也不惩罚正确弃答。"
+    }
+  ]
+}

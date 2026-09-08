@@ -133,10 +133,11 @@ const TONE_STYLES: Record<Notice["tone"], { className: string; Icon: typeof Spar
 /** 把 `fetchAPI` 抛出的 `API 4xx: {"detail":"…"}` 提炼成可读的中文提示。 */
 function friendlyError(error: unknown): string {
   const message = error instanceof Error ? error.message : String(error);
-  const match = message.match(/API \d+:\s*([\s\S]*)$/);
-  if (match) {
+  const apiBody = message.startsWith("API ") && message.includes(":")
+    ? message.slice(message.indexOf(":") + 1).trim() : null;
+  if (apiBody) {
     try {
-      const body = JSON.parse(match[1]);
+      const body = JSON.parse(apiBody);
       if (body && typeof body.detail === "string") return body.detail;
     } catch {
       /* 非 JSON 响应体——回退到原始文本 */
@@ -411,7 +412,7 @@ export function DocumentActionsMenu({ item }: { item: ReportOrDocument }) {
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `风险评估表_${(item.title || "report").replace(/\.docx$/i, "")}.docx`;
+      a.download = `风险评估表_${(item.title?.toLowerCase().endsWith(".docx") ? item.title.slice(0, -5) : item.title || "report")}.docx`;
       a.click();
       URL.revokeObjectURL(url);
     } catch (error) {

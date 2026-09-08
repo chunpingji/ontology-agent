@@ -1,5 +1,6 @@
-"""Legacy template detail reads must create source jobs with foreign keys enforced."""
+"""Template detail is read-only, including legacy sources and disabled autoflush."""
 
+from pathlib import Path
 from unittest.mock import Mock
 
 import pytest
@@ -62,48 +63,31 @@ def _legacy_template(db, tmp_path, *, suffix=".docx", filename="source.docx"):
     ("suffix", "filename", "source_type"),
     [(".docx", "source.docx", "word"), (".xlsx", None, "excel")],
 )
-def test_legacy_detail_creates_job_before_setting_foreign_key(
-    db, tmp_path, fake_engine, suffix, filename, source_type,
+def test_legacy_detail_preserves_unprepared_source_without_writes(
+    db,
+    tmp_path,
+    fake_engine,
+    suffix,
+    filename,
+    source_type,
 ):
-    from app.api.extraction import _precompute_annotation_bg
-
     row = _legacy_template(db, tmp_path, suffix=suffix, filename=filename)
-    unchanged = {
-        key: getattr(row, key)
-        for key in (
-            "name", "version", "status", "schema_json", "iri_pattern",
-            "sample_text", "sample_content_json", "sample_analysis",
-        )
-    }
+    original = row.schema_json
     background = BackgroundTasks()
-
     result = get_template(row.id, background, db, fake_engine)
-
-    db.expire_all()
-    job = db.get(ExtractionJob, result["default_source_job_id"])
-    assert job is not None
-    assert row.default_source_job_id == job.id
-    assert db.query(ExtractionJob).count() == 1
-    assert job.source_type == source_type
-    assert job.source_filename == (filename or f"legacy-source{suffix}")
-    assert job.document_path == row.default_source_path
-    assert job.status == "running"
-    assert job.source_config == {
-        "mode": "template_default",
-        "template_id": str(row.id),
-        "doc_class_iri": row.iri_pattern,
-    }
-    for key, value in unchanged.items():
-        assert result[key] == value
-        assert getattr(row, key) == value
-    assert result["training_pairs"] == []
-    assert len(background.tasks) == 1
-    assert background.tasks[0].func is _precompute_annotation_bg
-    assert background.tasks[0].args == (job.id, fake_engine, db)
+    assert result["default_source_job_id"] is None
+    assert db.query(ExtractionJob).count() == 0
+    assert row.schema_json == original
+    assert Path(row.default_source_path).is_file()
+    assert background.tasks == []
 
 
 def test_detail_api_reuses_job_on_second_read(
-    client, db, tmp_path, analyst_headers, monkeypatch,
+    client,
+    db,
+    tmp_path,
+    analyst_headers,
+    monkeypatch,
 ):
     row = _legacy_template(db, tmp_path)
     background = Mock()
@@ -115,15 +99,17 @@ def test_detail_api_reuses_job_on_second_read(
 
     assert first.status_code == second.status_code == 200
     job_id = first.json()["default_source_job_id"]
-    assert job_id is not None
+    assert job_id is None
     assert second.json()["default_source_job_id"] == job_id
-    assert db.query(ExtractionJob).count() == 1
-    background.assert_called_once()
-    assert str(background.call_args.args[0]) == job_id
+    assert db.query(ExtractionJob).count() == 0
+    background.assert_not_called()
 
 
-def test_failed_commit_rolls_back_job_and_template_reference(
-    db, tmp_path, fake_engine, monkeypatch,
+def test_detail_never_calls_commit(
+    db,
+    tmp_path,
+    fake_engine,
+    monkeypatch,
 ):
     row = _legacy_template(db, tmp_path)
     template_id = row.id
@@ -134,8 +120,7 @@ def test_failed_commit_rolls_back_job_and_template_reference(
         raise RuntimeError("simulated commit failure")
 
     monkeypatch.setattr(db, "commit", fail_after_flush)
-    with pytest.raises(RuntimeError, match="simulated commit failure"):
-        get_template(template_id, background, db, fake_engine)
+    get_template(template_id, background, db, fake_engine)
     db.rollback()
 
     assert db.get(AstTemplate, template_id).default_source_job_id is None

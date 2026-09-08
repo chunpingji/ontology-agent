@@ -1,0 +1,70 @@
+{
+  "date": "2026-09-06",
+  "local_implementation_validated": true,
+  "business_release_ready": false,
+  "checks": [
+    {
+      "check": "backend_full",
+      "status": "pass",
+      "result": "1034 passed, 5 skipped",
+      "log": "validation-logs/backend_full.txt",
+      "sha256": "6dc56fb6b29bd6a6bb9c9da42d5c0a9122f4767182ef65b02a618690b2eacc86"
+    },
+    {
+      "check": "postgresql",
+      "status": "pass",
+      "result": "5 passed",
+      "log": "validation-logs/postgresql.txt",
+      "sha256": "67e0cb7642308667e9e8af72f0e4b168cdcc42535804c1285f8d73e656c87d2a"
+    },
+    {
+      "check": "frontend_node",
+      "status": "pass",
+      "result": "15 passed",
+      "log": "validation-logs/frontend_node.txt",
+      "sha256": "a7cc3ac8ddda71e665b567f204d5f16267f5bf4dd6c036bf012d77d739fdcebd"
+    },
+    {
+      "check": "typescript",
+      "status": "pass",
+      "result": "no diagnostics",
+      "log": "validation-logs/typescript.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "check": "targeted_eslint",
+      "status": "pass",
+      "result": "20 changed source files",
+      "log": "validation-logs/targeted_eslint.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "check": "frontend_build",
+      "status": "pass",
+      "result": "Next.js 16.2.9 production build",
+      "log": "validation-logs/frontend_build.txt",
+      "sha256": "fcf6c45157d2a1e03de8d93a796ca884e9a983ea7a1791a33e9af59e5f75dafa"
+    },
+    {
+      "check": "browser",
+      "status": "pass",
+      "result": "8 synthetic API interaction checks",
+      "log": "validation-logs/browser.txt",
+      "sha256": "6a60e7b59e90614d7c2e9e40c03e6e9e452144af24defdf0728df54e0f321b60"
+    },
+    {
+      "check": "python_ruff",
+      "status": "pass",
+      "result": "84 changed Python files",
+      "log": "validation-logs/python_ruff.txt",
+      "sha256": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18"
+    },
+    {
+      "check": "frontend_full_lint",
+      "status": "baseline_errors",
+      "result": "3 errors, 6 warnings",
+      "log": "validation-logs/frontend_full_lint.txt",
+      "sha256": "8bb738b69933270fd815f67e0c578aec217b9c64c52d69b5d14bfa4f2ece556c"
+    }
+  ]
+}

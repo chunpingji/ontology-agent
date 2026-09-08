@@ -11,7 +11,7 @@ import hashlib
 import json
 from typing import Any
 
-from sqlalchemy import select
+from sqlalchemy import select, text
 from sqlalchemy.orm import Session
 
 from app.models.reasoning import AuditLog
@@ -19,8 +19,9 @@ from app.models.reasoning import AuditLog
 GENESIS_HASH = "0" * 64
 
 
-def _canonical(seq: int, action: str, actor: str | None, entity_iri: str | None,
-               details: dict | None) -> str:
+def _canonical(
+    seq: int, action: str, actor: str | None, entity_iri: str | None, details: dict | None
+) -> str:
     """稳定、可重算的记录规范化串（字段顺序与序列化固定）。"""
     payload = {
         "seq": seq,
@@ -32,16 +33,26 @@ def _canonical(seq: int, action: str, actor: str | None, entity_iri: str | None,
     return json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
 
 
-def compute_entry_hash(prev_hash: str, seq: int, action: str, actor: str | None,
-                       entity_iri: str | None, details: dict | None) -> str:
+def compute_entry_hash(
+    prev_hash: str,
+    seq: int,
+    action: str,
+    actor: str | None,
+    entity_iri: str | None,
+    details: dict | None,
+) -> str:
     record = _canonical(seq, action, actor, entity_iri, details)
     return hashlib.sha256((prev_hash + record).encode("utf-8")).hexdigest()
 
 
 def _head(db: Session) -> AuditLog | None:
-    return db.execute(
-        select(AuditLog).where(AuditLog.seq.is_not(None)).order_by(AuditLog.seq.desc()).limit(1)
-    ).scalars().first()
+    return (
+        db.execute(
+            select(AuditLog).where(AuditLog.seq.is_not(None)).order_by(AuditLog.seq.desc()).limit(1)
+        )
+        .scalars()
+        .first()
+    )
 
 
 def append(
@@ -54,6 +65,9 @@ def append(
     commit: bool = True,
 ) -> AuditLog:
     """追加一条哈希链审计记录并返回它。``commit=False`` 时由调用方统一提交。"""
+    if db.get_bind().dialect.name == "postgresql":
+        # Transaction-scoped serialization also covers an initially empty audit chain.
+        db.execute(text("SELECT pg_advisory_xact_lock(20260906, 20)"))
     head = _head(db)
     prev_hash = head.entry_hash if head and head.entry_hash else GENESIS_HASH
     seq = (head.seq + 1) if head and head.seq is not None else 1
@@ -77,9 +91,11 @@ def append(
 
 def verify(db: Session) -> dict[str, Any]:
     """按 ``seq`` 顺序重算整链，定位首个断裂记录（FR-029, SC-008）。"""
-    rows = db.execute(
-        select(AuditLog).where(AuditLog.seq.is_not(None)).order_by(AuditLog.seq.asc())
-    ).scalars().all()
+    rows = (
+        db.execute(select(AuditLog).where(AuditLog.seq.is_not(None)).order_by(AuditLog.seq.asc()))
+        .scalars()
+        .all()
+    )
 
     prev_hash = GENESIS_HASH
     expected_seq = 1

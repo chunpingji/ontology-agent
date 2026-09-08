@@ -32,6 +32,8 @@ def validate_entered_candidate(
         validation_status="pending",
         validation_issues=[],
         review_status="pending",
+        review_source=None,
+        review_reason="",
         commit_status="not_requested",
         ontology_release=evidence_hash(schema),
         model_identity="structured-or-manual-v1",

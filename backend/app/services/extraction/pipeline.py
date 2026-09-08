@@ -25,7 +25,6 @@ from app.services.extraction.progress import progress_bus
 from app.services.extraction.semantic import get_embedder
 from app.services.extraction.vocabulary import (
     CONTROLLED_VOCAB,
-    parse_action_from_text,
     tag_controlled_vocab,
 )
 from app.services.ontology_engine import OntologyEngine
@@ -33,12 +32,10 @@ from app.services.ontology_engine import OntologyEngine
 logger = logging.getLogger(__name__)
 
 
-def _emit(job: ExtractionJob, stage: str, pct: int, status: str,
-          degraded: bool = False) -> None:
+def _emit(job: ExtractionJob, stage: str, pct: int, status: str, degraded: bool = False) -> None:
     progress_bus.publish(
         str(job.id),
-        {"job_id": str(job.id), "stage": stage, "pct": pct,
-         "status": status, "degraded": degraded},
+        {"job_id": str(job.id), "stage": stage, "pct": pct, "status": status, "degraded": degraded},
     )
 
 
@@ -55,9 +52,7 @@ async def run_extraction_pipeline(
         # **之前**，遗留 column_mapping / doc_repo / database-reflect 分支原样保留（FR-018）。
         class_mapping_id = (job.source_config or {}).get("class_mapping_id")
         if class_mapping_id:
-            return await _run_declarative_branch(
-                job, class_mapping_id, file_path, engine, db
-            )
+            return await _run_declarative_branch(job, class_mapping_id, file_path, engine, db)
 
         job.status = "parsing"
         db.commit()
@@ -76,8 +71,11 @@ async def run_extraction_pipeline(
 
         # Stage 1: Parse
         if config.source_type == "excel":
-            raw_rows = parse_excel(file_path, column_mapping=config.column_mapping or {},
-                                   ner_columns=config.ner_columns)
+            raw_rows = parse_excel(
+                file_path,
+                column_mapping=config.column_mapping or {},
+                ner_columns=config.ner_columns,
+            )
             # Excel 自由文本列经本地 NER 富化本行属性（仅补空缺、结构化权威，US3）；
             # 清除 __freetext__ 暂存后再进入抽取/对齐主路径，不另生候选（FR-008/018）。
             await _enrich_excel_freetext(raw_rows, config, engine)
@@ -96,7 +94,9 @@ async def run_extraction_pipeline(
         # Stage 2: Extract — LLM 抽取并在不可用时回退（degraded）。
         # 受控词表注入抽取提示，在生成阶段约束取值（FR-006 / US1-AC3）。
         instances, degraded_reason = await extract_with_fallback(
-            raw_rows, config.target_class_iri, property_schema=[],
+            raw_rows,
+            config.target_class_iri,
+            property_schema=[],
             controlled_vocab=CONTROLLED_VOCAB,
         )
         degraded = degraded_reason is not None
@@ -106,23 +106,18 @@ async def run_extraction_pipeline(
         _emit(job, "aligning", 70, "aligning", degraded=degraded)
 
         # Stage 3: Align + persist instance candidates.
-        id_prop = _find_id_property(config.column_mapping)
-        label_prop = _find_label_property(config.column_mapping)
+        id_prop = (job.source_config or {}).get("identity_property_iri")
+        label_prop = (job.source_config or {}).get("label_property_iri")
         embedder = get_embedder()  # 进程级单例，含跨候选标签向量缓存（语义对齐）。
         total = 0
         instance_candidates: list[ExtractionCandidate] = []
 
-        # 相关性门控：仅自动/未映射路径（无 column_mapping）需要——结构化透传会把每行
-        # 落到当前目标类，自动模式逐类各跑一遍时即「行×类」笛卡尔积放大。已配置
-        # column_mapping 表示分析师已声明此源映射到此类，旁路门控、零回归。
-        gate_tokens = (
-            None if config.column_mapping
-            else _class_label_tokens(engine, config.target_class_iri)
-        )
-
+        if raw_rows and not config.column_mapping:
+            raise ValueError(
+                "SEMANTIC_MAPPING_REQUIRED: use reviewed evidence tasks "
+                "or an explicit field mapping"
+            )
         for entity_data in instances:
-            if gate_tokens is not None and not _row_mentions_class(entity_data, gate_tokens):
-                continue                       # 行未提及本类 → 不落候选
             props = tag_controlled_vocab(dict(entity_data))
             alignment = align_entity(
                 candidate=props,
@@ -155,8 +150,17 @@ async def run_extraction_pipeline(
         # Word 正文段落：Action 条件式（既有）+ 本地 NER prose 实体（US2）并存。
         if word_sections:
             total += await _process_word_paragraphs(
-                job, config, word_sections, source_ref, degraded_reason,
-                engine, db, id_prop, label_prop, embedder, instance_candidates,
+                job,
+                config,
+                word_sections,
+                source_ref,
+                degraded_reason,
+                engine,
+                db,
+                id_prop,
+                label_prop,
+                embedder,
+                instance_candidates,
             )
 
         # 跨源归组：结构化 + prose 实例统一选规范实例（is_canonical），歧义不自动合并。
@@ -212,32 +216,21 @@ async def _process_word_paragraphs(
             continue
         text = sec.get("content", "")
 
-        # 通道 1：条件式 → Action 候选（FR-005，既有行为不变）。
-        action = parse_action_from_text(text)
-        if action:
-            db.add(ExtractionCandidate(
-                job_id=job.id,
-                target_class_iri=config.target_class_iri,
-                extracted_properties={"action": action["action"]},
-                candidate_kind="action",
-                action_conditions=action,
-                source_ref=source_ref,
-                degraded_reason=degraded_reason,
-                alignment_result="new",
-                review_status="pending",
-            ))
-            added += 1
-
         # 通道 2：本地 NER prose 实体 → instance 候选（守卫降级）。
         if not ner_ready:
             continue
         ner_result = await asyncio.to_thread(
-            extractor.extract_text, text, ner_schema["labels"], settings.gliner_threshold,
+            extractor.extract_text,
+            text,
+            ner_schema["labels"],
+            settings.gliner_threshold,
         )
         # label → 属性 IRI 键回填（label_to_iri）；空召回静默跳过。
-        props = {ner_schema["label_to_iri"][label]: value
-                 for label, value in ner_result.items()
-                 if label in ner_schema["label_to_iri"]}
+        props = {
+            ner_schema["label_to_iri"][label]: value
+            for label, value in ner_result.items()
+            if label in ner_schema["label_to_iri"]
+        }
         if not props:
             continue
 
@@ -258,12 +251,12 @@ async def _process_word_paragraphs(
             extracted_properties=props,
             candidate_kind="instance",
             group_key=_compute_group_key(props, config.target_class_iri, id_prop),
-            source_ref=f"{source_ref}#para",       # 溯源回链（FR-005）
+            source_ref=f"{source_ref}#para",  # 溯源回链（FR-005）
             degraded_reason=degraded_reason,
             alignment_result=alignment.action,
             aligned_iri=alignment.match_iri,
             match_score=alignment.match_score,
-            review_status="pending",               # 入复核队列，不自动断言（FR-010）
+            review_status="pending",  # 入复核队列，不自动断言（FR-010）
         )
         db.add(cand)
         instance_candidates.append(cand)
@@ -296,16 +289,18 @@ async def _run_database_branch(
 
     total = 0
     for s in structures:
-        db.add(ExtractionCandidate(
-            job_id=job.id,
-            target_class_iri=config.target_class_iri,
-            extracted_properties=s.properties,
-            candidate_kind=s.candidate_kind,  # "class" | "link"
-            group_key=s.name,
-            source_ref=f"db:{source_ref}",
-            alignment_result="new",
-            review_status="pending",
-        ))
+        db.add(
+            ExtractionCandidate(
+                job_id=job.id,
+                target_class_iri=config.target_class_iri,
+                extracted_properties=s.properties,
+                candidate_kind=s.candidate_kind,  # "class" | "link"
+                group_key=s.name,
+                source_ref=f"db:{source_ref}",
+                alignment_result="new",
+                review_status="pending",
+            )
+        )
         total += 1
 
     job.total_candidates = total
@@ -348,11 +343,7 @@ async def _run_declarative_branch(
 
     cls = db.get(OntologyClass, binding.class_id)
     target_class_iri = cls.slpra_iri if cls else None
-    prop_bindings = (
-        db.query(OntologyPropertyBinding)
-        .filter_by(class_mapping_id=binding.id)
-        .all()
-    )
+    prop_bindings = db.query(OntologyPropertyBinding).filter_by(class_mapping_id=binding.id).all()
 
     job.status = "extracting"
     db.commit()
@@ -366,15 +357,7 @@ async def _run_declarative_branch(
 
         result = await read_api_items(binding, prop_bindings, engine, db)
     elif binding.mapping_type == "doc_pattern":
-        from app.services.extraction.document_profile import read_doc_pattern
-
-        result = read_doc_pattern(
-            binding,
-            prop_bindings,
-            target_class_iri,
-            file_path or job.document_path,
-            source_filename=job.source_filename,
-        )
+        result = RowReadResultUnsupported("doc_pattern: migrate to semantic evidence tasks")
     else:
         result = RowReadResultUnsupported(binding.mapping_type)
 
@@ -425,16 +408,16 @@ async def _run_declarative_branch(
                 target_class_iri=tgt,
                 extracted_properties=rc.extracted_properties,
                 candidate_kind="instance",
-                group_key=rc.identifier,          # 标识符归组（跨源去重锚点）
+                group_key=rc.identifier,  # 标识符归组（跨源去重锚点）
                 source_ref=source_ref,
-                degraded_reason=notes,            # 逐值 transform 问题（非致命）
+                degraded_reason=notes,  # 逐值 transform 问题（非致命）
                 alignment_result=alignment.action,
                 aligned_iri=alignment.match_iri,
                 match_score=alignment.match_score,
                 review_status="pending",
             )
             instance_candidates.append(cand)
-        else:                                     # link — 未解析对象引用，待人工解析
+        else:  # link — 未解析对象引用，待人工解析
             cand = ExtractionCandidate(
                 job_id=job.id,
                 target_class_iri=tgt,
@@ -461,9 +444,7 @@ def RowReadResultUnsupported(mapping_type: str):
     yet (e.g. ``api_endpoint`` before US2). Kept tiny to avoid a class-dispatch."""
     from app.services.extraction.db_reader import RowReadResult
 
-    return RowReadResult(
-        degraded_reason=f"暂不支持的源实体类型：{mapping_type}（读取器待接入）"
-    )
+    return RowReadResult(degraded_reason=f"暂不支持的源实体类型：{mapping_type}（读取器待接入）")
 
 
 def fetch_document_content(
@@ -487,12 +468,10 @@ async def _run_doc_repo_branch(
     """研发文档源分支（007 US2，content-extraction C2）。
 
     `source_ref = job.source_config['doc_ref']`（文档个体 IRI，非 `source_filename`）——每个候选
-    据此携溯源来源，确认入库时 `_commit_candidate` 注入 `extractedFrom` 回链（C4）。复用既有
-    `align_entity`/`_compute_group_key`/`extract_with_fallback`（降级）——doc_repo 不另起
-    对齐栈（宪章 V）。
+    来源只保留为待验证候选的 provenance。使用显式字段映射；不生成业务回链或实施事实。
     """
     source_cfg = job.source_config or {}
-    source_ref = source_cfg["doc_ref"]          # 文档个体 IRI（溯源锚点）
+    source_ref = source_cfg["doc_ref"]  # 文档个体 IRI（溯源锚点）
     content_ref = source_cfg.get("content_ref")
 
     job.status = "extracting"
@@ -502,18 +481,25 @@ async def _run_doc_repo_branch(
     # 按需取正文（Q2：不持久化全文）。
     raw_rows = fetch_document_content(content_ref, source_cfg)
 
-    instances, degraded_reason = await extract_with_fallback(
-        raw_rows, config.target_class_iri, property_schema=[],
-        controlled_vocab=CONTROLLED_VOCAB,
-    )
+    if not config.column_mapping:
+        raise ValueError("EXPLICIT_COLUMN_MAPPING_REQUIRED")
+    instances = [
+        {
+            predicate: row[column]
+            for column, predicate in config.column_mapping.items()
+            if column in row
+        }
+        for row in raw_rows
+    ]
+    degraded_reason = None
     degraded = degraded_reason is not None
 
     job.status = "aligning"
     db.commit()
     _emit(job, "aligning", 70, "aligning", degraded=degraded)
 
-    id_prop = _find_id_property(config.column_mapping)
-    label_prop = _find_label_property(config.column_mapping)
+    id_prop = (job.source_config or {}).get("identity_property_iri")
+    label_prop = (job.source_config or {}).get("label_property_iri")
     embedder = get_embedder()
     total = 0
     instance_candidates: list[ExtractionCandidate] = []
@@ -537,12 +523,12 @@ async def _run_doc_repo_branch(
             extracted_properties=props,
             candidate_kind="instance",
             group_key=group_key,
-            source_ref=source_ref,            # = 文档个体 IRI（C2.1）
+            source_ref=source_ref,  # = 文档个体 IRI（C2.1）
             degraded_reason=degraded_reason,
             alignment_result=alignment.action,
             aligned_iri=alignment.match_iri,
             match_score=alignment.match_score,
-            review_status="pending",          # C2.2：不自动断言，一律入复核队列
+            review_status="pending",  # C2.2：不自动断言，一律入复核队列
         )
         db.add(cand)
         instance_candidates.append(cand)
@@ -588,14 +574,16 @@ async def _enrich_excel_freetext(
         if ner_ready:
             for text in freetext.values():
                 result = await asyncio.to_thread(
-                    extractor.extract_text, str(text),
-                    ner_schema["labels"], settings.gliner_threshold,
+                    extractor.extract_text,
+                    str(text),
+                    ner_schema["labels"],
+                    settings.gliner_threshold,
                 )
                 for label, value in result.items():
                     iri = ner_schema["label_to_iri"].get(label)
-                    if iri and iri not in ner_props:   # 同 IRI 多命中：确定性保留首个
+                    if iri and iri not in ner_props:  # 同 IRI 多命中：确定性保留首个
                         ner_props[iri] = value
-        _merge_ner(row, ner_props)             # 守卫关时 ner_props 空：仅清除暂存
+        _merge_ner(row, ner_props)  # 守卫关时 ner_props 空：仅清除暂存
 
 
 def _merge_ner(row: dict, ner_props: dict) -> dict:
@@ -637,7 +625,9 @@ def _schema_from_class(engine: OntologyEngine, target_class_iri: str) -> dict:
             # 同 label 多属性：确定性保留首个并告警（不随机，S6）。
             logger.warning(
                 "NER schema 派生：标签 '%s' 对应多属性，保留首个 %s（忽略 %s）",
-                label, label_to_iri[label], iri,
+                label,
+                label_to_iri[label],
+                iri,
             )
             continue
         label_to_iri[label] = iri
@@ -646,60 +636,9 @@ def _schema_from_class(engine: OntologyEngine, target_class_iri: str) -> dict:
 
 
 def _compute_group_key(props: dict, target_class_iri: str, id_prop: str | None) -> str | None:
-    """跨源归组键：设备=唯一编号；药品=活性成分+剂型+规格（FR-009）。"""
-    cls = target_class_iri.lower()
-    if "drug" in cls or "product" in cls or "药" in target_class_iri:
-        parts = [
-            _lookup(props, "activeingredient") or _lookup(props, "活性成分"),
-            _lookup(props, "dosageform") or _lookup(props, "剂型"),
-            _lookup(props, "specification") or _lookup(props, "规格"),
-        ]
-        parts = [str(p) for p in parts if p]
-        return "|".join(parts) if parts else None
-    # 默认（设备等）：唯一编号。
-    if id_prop:
-        val = _lookup(props, id_prop)
-        if val:
-            return str(val)
-    return None
-
-
-def _lookup(props: dict, key: str):
-    for k, v in props.items():
-        if key.lower() in k.lower():
-            return v
-    return None
-
-
-def _class_label_tokens(engine: OntologyEngine, target_class_iri: str) -> set[str]:
-    """目标类的可匹配文本标记：label_zh / label_en / name（去空、长度≥2）。
-
-    自动/未映射抽取下唯一可用的「源行↔目标类」相关性信号——本体类多为无
-    data_properties 的角色/类型类，无属性可比，故以类标签/名称作判定。只读
-    ``get_class_detail``，绝不触 World 写路径（宪章 II）。
-    """
-    detail = engine.get_class_detail(target_class_iri)
-    if detail is None:
-        return set()
-    raw = (
-        getattr(detail, "label_zh", None),
-        getattr(detail, "label_en", None),
-        getattr(detail, "name", None),
-    )
-    return {str(t).strip() for t in raw if t and len(str(t).strip()) >= 2}
-
-
-def _row_mentions_class(row: dict, tokens: set[str]) -> bool:
-    """行（键+值）文本是否提及目标类任一标记。``tokens`` 为空 → 放行（无从判定）。
-
-    相关性门控（FR 复核质量）：自动抽取曾把每张表的每一行交叉落到全部类、致候选
-    被「行×类」放大约 200 倍。此判定使一行仅在其文本确实提及某类时才作为该类候选，
-    把笛卡尔积收敛为真实相关对。仅在未显式配置 ``column_mapping`` 时启用（见调用点）。
-    """
-    if not tokens:
-        return True
-    blob = " ".join([*map(str, row.keys()), *map(str, row.values())])
-    return any(tok in blob for tok in tokens)
+    """Only an explicitly configured identity property establishes a grouping key."""
+    value = props.get(id_prop) if id_prop else None
+    return str(value) if value is not None and value != "" else None
 
 
 def _mark_canonical(candidates: list[ExtractionCandidate]) -> None:
@@ -716,21 +655,3 @@ def _mark_canonical(candidates: list[ExtractionCandidate]) -> None:
     for members in groups.values():
         best = max(members, key=lambda m: m.match_score or 0.0)
         best.is_canonical = True
-
-
-def _find_id_property(column_mapping: dict | None) -> str | None:
-    if not column_mapping:
-        return None
-    for col, prop in column_mapping.items():
-        if "id" in col.lower() or "id" in prop.lower() or "编号" in col:
-            return prop
-    return None
-
-
-def _find_label_property(column_mapping: dict | None) -> str | None:
-    if not column_mapping:
-        return None
-    for col, prop in column_mapping.items():
-        if "name" in col.lower() or "name" in prop.lower() or "名称" in col:
-            return prop
-    return None

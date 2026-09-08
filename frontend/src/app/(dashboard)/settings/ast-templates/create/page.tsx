@@ -6,7 +6,8 @@ import { useRouter } from "next/navigation";
 
 import { createAstTemplate, uploadTemplateSample } from "@/lib/api";
 import { useCreateTemplateStore } from "@/lib/ast-template-create-store";
-import { TemplateSlotEditor } from "@/components/extraction/template-slot-editor";
+import { OutputTemplateEditor } from "@/components/reporting/output-template-editor";
+import { emptyTemplate } from "@/lib/reporting-v2";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -20,6 +21,7 @@ export default function CreateTemplatePage() {
   const router = useRouter();
   const { payload, clearPayload } = useCreateTemplateStore();
   const [saving, setSaving] = useState(false);
+  const [initialTemplate] = useState(emptyTemplate);
 
   useEffect(() => {
     if (!payload) router.replace("/settings/ast-templates");
@@ -86,24 +88,22 @@ export default function CreateTemplatePage() {
       </div>
 
       <div className="flex-1 min-h-0 border-t -mx-6 -mb-6">
-        <TemplateSlotEditor
+        <OutputTemplateEditor
           key="create"
           schema={{
-            template_id: payload.name,
-            doc_no: payload.docNo || "QS-A-020F05",
-            revision: payload.version,
-            sections: [],
-          } as never}
-          mode="create"
+            ...initialTemplate,
+            doc_no: payload.docNo || "",
+            source_slots: payload.iriPattern ? [{
+              source_slot_id: "source", kind: "document", class_iri: payload.iriPattern,
+            }] : [],
+          }}
           onSave={(updated) =>
             handleSave(updated as unknown as Record<string, unknown>)
           }
           onCancel={handleCancel}
           saving={saving}
-          aiEnabled
-          iriPattern={payload.iriPattern}
-          sampleText={payload.sampleText}
           sampleContentJson={payload.sampleContent}
+          sampleText={payload.sampleText}
         />
       </div>
     </div>

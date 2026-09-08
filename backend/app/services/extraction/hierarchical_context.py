@@ -1,5 +1,6 @@
 """Subject-conditioned context with separate fact/binding regions and cache identity."""
 
+import json
 from typing import Any, Protocol
 
 from pydantic import Field
@@ -7,10 +8,12 @@ from pydantic import Field
 from app.schemas.evidence import Candidate, EvidenceAnchor, EvidenceModel, ExtractionTask
 from app.services.extraction.document_ir import DocumentIR
 from app.services.extraction.evidence_identity import canonical_json, evidence_hash, stable_id
-from app.services.extraction.evidence_scope import document_anchors, scope_contains
-from app.services.extraction.model_protocol import PROTOCOL_VERSION, ModelProtocol
+from app.services.extraction.evidence_scope import document_anchors, scope_contains, scope_intervals
+from app.services.extraction.model_protocol import PROTOCOL_VERSION, ModelProtocol, planning_schema
+from app.services.extraction.performance import timed
+from app.services.extraction.table_records import table_records
 
-MODEL_CONTEXT_VERSION = "model-context-v2"
+MODEL_CONTEXT_VERSION = "model-context-v6-verified-identity"
 
 
 def model_anchor(anchor: dict) -> dict:
@@ -22,9 +25,13 @@ def model_anchor(anchor: dict) -> dict:
     }
 
 
-def model_candidate(candidate: dict | None) -> dict | None:
+def model_candidate(candidate: dict | None, *, proposed_identity: bool = False) -> dict | None:
     if candidate is None:
         return None
+    if "proposed_entities" in candidate:
+        return {"proposed_entities": [
+            model_candidate(c, proposed_identity=True) for c in candidate["proposed_entities"]
+        ]}
     if "shared_candidates" in candidate:
         return {
             "shared_candidates": [model_candidate(c) for c in candidate["shared_candidates"]],
@@ -36,9 +43,20 @@ def model_candidate(candidate: dict | None) -> dict | None:
             "candidate_id", "revision", "kind", "class_iri", "text", "identity",
             "subject", "object", "predicate_iri", "literal", "assertion_status",
             "applicable_at", "path_root", "relationship_path", "dependency_refs",
-            "condition_provenance_indexes",
+            "condition_provenance_indexes", "type_verification",
         }
     }
+    if candidate.get("kind") == "entity" and not proposed_identity:
+        verification = candidate.get("type_verification") or {}
+        if verification.get("identity_supported") is not True:
+            # Retain the original proposal in the audit candidate, but do not
+            # present an unverified project/report number as an entity key in
+            # downstream binding/reference requests. Initial type verification
+            # still receives that proposal through proposed_entities above.
+            result["identity"] = {
+                key: value for key, value in candidate.get("identity", {}).items()
+                if key not in {"key_predicate", "key_value"}
+            }
     result["condition_anchors"] = [model_anchor(a) for a in candidate.get("condition_anchors", [])]
     result["provenance"] = [
         {**p, "anchors": [model_anchor(a) for a in p["anchors"]]}
@@ -76,7 +94,9 @@ def model_task(task: dict) -> dict:
     return result
 
 
-def model_request(payload: dict, stage: str, candidate: dict | None = None) -> str:
+def model_request(
+    payload: dict, stage: str, candidate: dict | None = None, *, planning=False,
+) -> str:
     """A compact model projection; the full envelope remains the audit identity.
 
     Only target fragments can propose facts. Scope validation and full anchor
@@ -97,10 +117,37 @@ def model_request(payload: dict, stage: str, candidate: dict | None = None) -> s
     serialized = "{" + ",".join(
         canonical_json(key) + ":" + canonical_json(value) for key, value in context.items()
     ) + "}"
-    return canonical_json({
+    if not planning:
+        task = context["task"]
+        # Ontology definitions precede dynamic subject IDs, record scopes and evidence.
+        context["task"] = {
+            key: task[key] for key in (
+                "task_kind", "predicate_definition", "predicate_iri", "target_class_iris",
+                *sorted(set(task) - {"task_kind", "predicate_definition", "predicate_iri",
+                                    "target_class_iris"}),
+            ) if key in task
+        }
+        serialized = json.dumps(context, ensure_ascii=False, separators=(",", ":"))
+    request = {
         "stage": stage, "context": serialized,
         "candidate": model_candidate(candidate),
-    })
+    }
+    task = context["task"]
+    if task.get("predicate_iri"):
+        # Keep the precise target salient after the long source/subject context.
+        # This is ontology data, not predicate-name dispatch or value inference.
+        request["focus"] = {
+            "predicate": task.get("predicate_definition") or {"iri": task["predicate_iri"]},
+            "instruction": (
+                "独立核对候选值/对象是否满足本次谓词的精确含义和主体归属；"
+                "引用完整支持断言。候选本身不是事实，不满足则 supported=false。"
+                if stage == "verify_binding" else
+                "仅回答此谓词，按其精确含义从 target 原文逐字选取值/断言；"
+                "区分上限与下限、计划与实际、不同主体，无法支持则返回空 assertions。"
+            ),
+        }
+    return (canonical_json(request) if planning else
+            json.dumps(request, ensure_ascii=False, separators=(",", ":")))
 
 
 class TokenCounter(Protocol):
@@ -128,11 +175,16 @@ class ContextEnvelope(EvidenceModel):
     input_tokens: int = 0
 
 
+@timed("split_windows")
 def split_windows(
     text: str, tokenizer: TokenCounter, max_tokens: int, overlap: int = 32
 ) -> list[tuple[int, int]]:
     if max_tokens < 1:
         raise ValueError("window budget must be positive")
+    if not text:
+        return []
+    if tokenizer.count(text) <= max_tokens:
+        return [(0, len(text))]
     windows, start = [], 0
     while start < len(text):
         left, right, end = start + 1, len(text), start
@@ -151,6 +203,7 @@ def split_windows(
     return windows
 
 
+@timed("context")
 def build_context(
     task: ExtractionTask,
     ir: DocumentIR,
@@ -208,7 +261,10 @@ def build_context(
             raise ValueError("task scope belongs to a different subject")
         if task.scope.subject.revision != task.subject.revision:
             raise ValueError("task scope uses a stale subject revision")
-        if any(not scope_contains(task.scope, anchor, ir) for anchor in facts):
+        intervals = scope_intervals(task.scope, ir)
+        if any(
+            not scope_contains(task.scope, anchor, ir, intervals=intervals) for anchor in facts
+        ):
             raise ValueError("task target outside accepted scope")
     bindings = list(facts)
     fragments = [
@@ -220,6 +276,29 @@ def build_context(
         }
         for a in facts
     ]
+    # Row and header evidence explain what each cell denotes, even when a source
+    # window splits the record. They aid typing/binding but cannot propose facts
+    # outside the task's target ranges.
+    record_units = [ir.unit(a.evidence_id) for a in facts if a.table_path]
+    target_ids = {a.evidence_id for a in facts}
+    records = table_records(ir)
+    for unit in records.metadata(record_units):
+        if unit.evidence_id in target_ids or not unit.text or not unit.table_path:
+            continue
+        anchor = ir.anchor(unit.evidence_id)
+        bindings.append(anchor)
+        fragments.append({
+            "anchor": anchor.model_dump(mode="json"), "text": unit.text,
+            "purpose": "table_record_metadata", "fact_eligible": False,
+        })
+    for unit in records.notes(record_units):
+        if unit.evidence_id not in target_ids:
+            anchor = ir.anchor(unit.evidence_id)
+            bindings.append(anchor)
+            fragments.append({
+                "anchor": anchor.model_dump(mode="json"), "text": unit.text,
+                "purpose": "table_note_metadata", "fact_eligible": False,
+            })
     for identity, candidate in selected.items():
         for anchor in document_anchors(candidate):
             bindings.append(anchor)
@@ -232,6 +311,14 @@ def build_context(
                     "fact_eligible": False,
                 }
             )
+    if task.scope:
+        for anchor in task.scope.construction_evidence:
+            if anchor not in bindings:
+                bindings.append(anchor)
+                fragments.append({
+                    "anchor": anchor.model_dump(mode="json"), "text": ir.resolve(anchor),
+                    "purpose": "scope_construction_evidence", "fact_eligible": False,
+                })
     payload = {
         "task": task.model_dump(mode="json"),
         "subjects": {
@@ -241,6 +328,10 @@ def build_context(
                 "class_iri": value.class_iri,
                 "text": value.text,
                 "identity": value.identity,
+                "type_verification": (
+                    value.type_verification.model_dump(mode="json")
+                    if value.type_verification else None
+                ),
                 "kind": value.kind,
                 "predicate_iri": value.predicate_iri,
                 "subject": value.subject.model_dump() if value.subject else None,
@@ -256,11 +347,13 @@ def build_context(
     # Includes instructions/schema in token accounting; no subject is sacrificed
     # for a long optional ancestor. Provider chat framing is reserved explicitly.
     def count():
-        user = model_request(payload, "recall")
+        user = model_request(payload, "recall", planning=True)
         if compact_identifiers:
-            wire = ModelProtocol(system_prompt, user, response_schema or {})
+            wire = ModelProtocol(system_prompt, user, response_schema or {}, planning=True)
             return tokenizer.count(wire.user + wire.system) + 128
-        return tokenizer.count(user + system_prompt + canonical_json(response_schema or {})) + 128
+        return tokenizer.count(
+            user + system_prompt + canonical_json(planning_schema(response_schema or {}))
+        ) + 128
 
     base_tokens = count()
     if base_tokens > task.budget.max_input_tokens:

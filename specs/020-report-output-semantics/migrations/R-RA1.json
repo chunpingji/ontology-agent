@@ -1,0 +1,260 @@
+{
+  "migration_plan_id": "4b0d6a14d1f578a1ab386b3b959c53831c66eceb66d87d830a0b213e1415f104",
+  "original": {
+    "rule_key": "R-RA1",
+    "rule_group": "risk_assessment",
+    "version": 1,
+    "status": "published",
+    "is_reviewed": false,
+    "is_disabled": false,
+    "antecedent": {
+      "op": "some_values_from",
+      "property": "hasSharedLineData",
+      "filler_class": "SharedLineAssessmentData"
+    },
+    "consequent": {
+      "risk_level": "MediumRisk",
+      "category": "人员",
+      "description": "研究院人员对设备操作、车间管理等了解不足，无法进行{{药物名称/代号}}临床批生产操作；车间岗位人员对{{药物名称/代号}}临床批工艺了解不足，无法进行{{药物名称/代号}}临床批生产操作。",
+      "control_measure": "1、{{药物名称/代号}}由研究院人员和车间岗位人员共同进行临床批生产操作，生产前车间对研究院人员进行车间管理、设备操作等培训；研究院对车间岗位人员进行{{药物名称/代号}}临床批工艺培训，培训合格后，车间岗位人员和研究院人员再进行{{药物名称/代号}}的临床批生产操作。",
+      "traceability_docs": "1、研究院及车间岗位人员培训及考核记录。",
+      "postconditions": {
+        "training_completed": true,
+        "sop_verified": true
+      }
+    },
+    "priority": 100,
+    "id": "29f3cee8-781a-4506-9616-62d6df70881e"
+  },
+  "original_hash": "4b0d6a14d1f578a1ab386b3b959c53831c66eceb66d87d830a0b213e1415f104",
+  "claims": [
+    {
+      "claim_draft_id": "799f41f4fed9fc58a67af5e1d3f056da68f1cba7fa3753af469d917c7c017bfb",
+      "legacy_field": "risk_level",
+      "original_statement": "MediumRisk",
+      "legacy_path": [
+        "risk_level"
+      ],
+      "start_offset": 0,
+      "end_offset": 10,
+      "proposed_category": "risk_decision",
+      "target_claim_ref": null,
+      "precondition": null,
+      "subject_scope": null,
+      "applicable_at": null,
+      "universe_proof": null,
+      "review_ref": null,
+      "status": "unresolved",
+      "issues": [
+        "CLAIM_PRECONDITION_UNPROVEN",
+        "EXACT_PARAMETER_MAPPING_REQUIRED",
+        "FALSE_UNKNOWN_MUST_NOT_IMPLY_LOW"
+      ]
+    },
+    {
+      "claim_draft_id": "a661a34ccec1e7c50adfd07d3c6108126ca32139f9808578da59243830482ab1",
+      "legacy_field": "category",
+      "original_statement": "人员",
+      "legacy_path": [
+        "category"
+      ],
+      "start_offset": 0,
+      "end_offset": 2,
+      "proposed_category": "unresolved",
+      "target_claim_ref": null,
+      "precondition": null,
+      "subject_scope": null,
+      "applicable_at": null,
+      "universe_proof": null,
+      "review_ref": null,
+      "status": "unresolved",
+      "issues": [
+        "CLAIM_PRECONDITION_UNPROVEN",
+        "EXACT_PARAMETER_MAPPING_REQUIRED",
+        "FALSE_UNKNOWN_MUST_NOT_IMPLY_LOW"
+      ]
+    },
+    {
+      "claim_draft_id": "8c02276c4c1f9abce6e69b2b8515fea5355f58ef413fe08fff279f3648839bef",
+      "legacy_field": "description",
+      "original_statement": "研究院人员对设备操作、车间管理等了解不足，无法进行{{药物名称/代号}}临床批生产操作；",
+      "legacy_path": [
+        "description"
+      ],
+      "start_offset": 0,
+      "end_offset": 44,
+      "proposed_category": "unresolved",
+      "target_claim_ref": null,
+      "precondition": null,
+      "subject_scope": null,
+      "applicable_at": null,
+      "universe_proof": null,
+      "review_ref": null,
+      "status": "unresolved",
+      "issues": [
+        "CLAIM_PRECONDITION_UNPROVEN",
+        "EXACT_PARAMETER_MAPPING_REQUIRED",
+        "FALSE_UNKNOWN_MUST_NOT_IMPLY_LOW"
+      ]
+    },
+    {
+      "claim_draft_id": "7d3a9bdec5a21859194143a00f3433a2fd2a5f63acc57c5439067b03429c0922",
+      "legacy_field": "description",
+      "original_statement": "车间岗位人员对{{药物名称/代号}}临床批工艺了解不足，无法进行{{药物名称/代号}}临床批生产操作。",
+      "legacy_path": [
+        "description"
+      ],
+      "start_offset": 44,
+      "end_offset": 95,
+      "proposed_category": "unresolved",
+      "target_claim_ref": null,
+      "precondition": null,
+      "subject_scope": null,
+      "applicable_at": null,
+      "universe_proof": null,
+      "review_ref": null,
+      "status": "unresolved",
+      "issues": [
+        "CLAIM_PRECONDITION_UNPROVEN",
+        "EXACT_PARAMETER_MAPPING_REQUIRED",
+        "FALSE_UNKNOWN_MUST_NOT_IMPLY_LOW"
+      ]
+    },
+    {
+      "claim_draft_id": "885fd6857c492a624459c0961cd6cf58da8a87da8456d6bdea05c26c54c1a1f5",
+      "legacy_field": "control_measure",
+      "original_statement": "1、{{药物名称/代号}}由研究院人员和车间岗位人员共同进行临床批生产操作，生产前车间对研究院人员进行车间管理、设备操作等培训；",
+      "legacy_path": [
+        "control_measure"
+      ],
+      "start_offset": 0,
+      "end_offset": 64,
+      "proposed_category": "unresolved",
+      "target_claim_ref": null,
+      "precondition": null,
+      "subject_scope": null,
+      "applicable_at": null,
+      "universe_proof": null,
+      "review_ref": null,
+      "status": "unresolved",
+      "issues": [
+        "CLAIM_PRECONDITION_UNPROVEN",
+        "EXACT_PARAMETER_MAPPING_REQUIRED",
+        "FALSE_UNKNOWN_MUST_NOT_IMPLY_LOW"
+      ]
+    },
+    {
+      "claim_draft_id": "830539e5c765b0d9a573b57d85dab434e4c0fd427a90695861b8017fc9c8433a",
+      "legacy_field": "control_measure",
+      "original_statement": "研究院对车间岗位人员进行{{药物名称/代号}}临床批工艺培训，培训合格后，车间岗位人员和研究院人员再进行{{药物名称/代号}}的临床批生产操作。",
+      "legacy_path": [
+        "control_measure"
+      ],
+      "start_offset": 64,
+      "end_offset": 136,
+      "proposed_category": "unresolved",
+      "target_claim_ref": null,
+      "precondition": null,
+      "subject_scope": null,
+      "applicable_at": null,
+      "universe_proof": null,
+      "review_ref": null,
+      "status": "unresolved",
+      "issues": [
+        "CLAIM_PRECONDITION_UNPROVEN",
+        "EXACT_PARAMETER_MAPPING_REQUIRED",
+        "FALSE_UNKNOWN_MUST_NOT_IMPLY_LOW"
+      ]
+    },
+    {
+      "claim_draft_id": "d024c2c5a193960a37a8695ad0fdd70c8577488f7c9c80945883afc3f091e5bc",
+      "legacy_field": "traceability_docs",
+      "original_statement": "1、研究院及车间岗位人员培训及考核记录。",
+      "legacy_path": [
+        "traceability_docs"
+      ],
+      "start_offset": 0,
+      "end_offset": 20,
+      "proposed_category": "planned_control",
+      "target_claim_ref": null,
+      "precondition": null,
+      "subject_scope": null,
+      "applicable_at": null,
+      "universe_proof": null,
+      "review_ref": null,
+      "status": "unresolved",
+      "issues": [
+        "CLAIM_PRECONDITION_UNPROVEN",
+        "EXACT_PARAMETER_MAPPING_REQUIRED",
+        "FALSE_UNKNOWN_MUST_NOT_IMPLY_LOW"
+      ]
+    },
+    {
+      "claim_draft_id": "e0828c9bbd3b767c4bc6fe9ec121e94a42331624d70443894325780f65054e97",
+      "legacy_field": "postconditions",
+      "original_statement": true,
+      "legacy_path": [
+        "postconditions",
+        "training_completed"
+      ],
+      "start_offset": null,
+      "end_offset": null,
+      "proposed_category": "risk_decision",
+      "target_claim_ref": null,
+      "precondition": null,
+      "subject_scope": null,
+      "applicable_at": null,
+      "universe_proof": null,
+      "review_ref": null,
+      "status": "unresolved",
+      "issues": [
+        "CLAIM_PRECONDITION_UNPROVEN",
+        "EXACT_PARAMETER_MAPPING_REQUIRED",
+        "FALSE_UNKNOWN_MUST_NOT_IMPLY_LOW"
+      ]
+    },
+    {
+      "claim_draft_id": "a206de18783405c027c763b39edb6aea5a96237a05ada7ef604ecb23ce716ada",
+      "legacy_field": "postconditions",
+      "original_statement": true,
+      "legacy_path": [
+        "postconditions",
+        "sop_verified"
+      ],
+      "start_offset": null,
+      "end_offset": null,
+      "proposed_category": "risk_decision",
+      "target_claim_ref": null,
+      "precondition": null,
+      "subject_scope": null,
+      "applicable_at": null,
+      "universe_proof": null,
+      "review_ref": null,
+      "status": "unresolved",
+      "issues": [
+        "CLAIM_PRECONDITION_UNPROVEN",
+        "EXACT_PARAMETER_MAPPING_REQUIRED",
+        "FALSE_UNKNOWN_MUST_NOT_IMPLY_LOW"
+      ]
+    }
+  ],
+  "target_rule_ref": null,
+  "status": "draft",
+  "business_reviewed": false,
+  "consumer_entrypoints": [
+    "legacy_report",
+    "legacy_preview",
+    "template_migration"
+  ],
+  "required_tests": [
+    "missing_evidence",
+    "false",
+    "unknown",
+    "planned_only",
+    "subject_mismatch",
+    "time_mismatch",
+    "incomplete_universe"
+  ],
+  "baseline_definition_hash": "23390a2e3ba7d89af3c90acc0d1549c321fe8835f8fe066371d6d634b591206f",
+  "observation_ref": "../baseline.json"
+}

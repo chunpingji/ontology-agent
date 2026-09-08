@@ -1,7 +1,11 @@
 """Offline-only tokenization and a budgeted adapter to the configured local model."""
 
+import logging
+from collections import OrderedDict
+from functools import lru_cache
 from hashlib import sha256
 from pathlib import Path
+from threading import Lock
 
 import httpx
 
@@ -13,7 +17,17 @@ from app.services.extraction.extraction_tasks import (
     semantic_schema_from_engine,
 )
 from app.services.extraction.hierarchical_context import TokenizationUnavailable
+from app.services.extraction.performance import measure, timed
 from app.services.llm.local_client import chat_with_schema, get_local_llm
+from app.services.llm.model_runtime import model_scope
+
+logger = logging.getLogger(__name__)
+_counts_lock = Lock()
+
+
+@lru_cache(maxsize=8)
+def _shared_counts(identity, endpoint):
+    return OrderedDict()
 
 
 class LocalTokenizer:
@@ -42,13 +56,24 @@ class ServerTokenizer:
     def __init__(self, base_url, revision, model_path, *, client=None):
         if not revision or not model_path:
             raise ValueError("a pinned local model revision and model path are required")
+        self._owns_client = client is None
         self.client = client or httpx.Client(
             base_url=base_url.rstrip("/").removesuffix("/v1"), timeout=10, trust_env=False
         )
         self.model_path = model_path
-        self.verify()
+        try:
+            self.verify()
+        except Exception:
+            self.close()
+            raise
         self.identity = stable_id("server-tokenizer", [revision, model_path, "llama-tokenize-v1"])
-        self._counts = {}
+        self._counts = OrderedDict() if client is not None else _shared_counts(
+            self.identity, base_url.rstrip("/"),
+        )
+
+    def close(self):
+        if self._owns_client:
+            self.client.close()
 
     def verify(self):
         response = self._request("GET", "/props")
@@ -57,6 +82,7 @@ class ServerTokenizer:
                 "local tokenizer model differs from configured model artifact"
             )
 
+    @timed("tokenizer_http")
     def _request(self, method, path, **kwargs):
         try:
             response = self.client.request(method, path, **kwargs)
@@ -68,19 +94,23 @@ class ServerTokenizer:
 
     def count(self, text):
         key = sha256(text.encode()).hexdigest()
-        if key not in self._counts:
-            response = self._request(
-                "POST",
-                "/tokenize",
-                json={"content": text, "add_special": True, "parse_special": False},
-            )
-            tokens = response.json().get("tokens")
-            if not isinstance(tokens, list) or not all(isinstance(t, int) for t in tokens):
-                raise TokenizationUnavailable("local tokenizer returned invalid tokens")
+        with _counts_lock:
+            if key in self._counts:
+                self._counts.move_to_end(key)
+                return self._counts[key]
+        response = self._request(
+            "POST",
+            "/tokenize",
+            json={"content": text, "add_special": True, "parse_special": False},
+        )
+        tokens = response.json().get("tokens")
+        if not isinstance(tokens, list) or not all(isinstance(t, int) for t in tokens):
+            raise TokenizationUnavailable("local tokenizer returned invalid tokens")
+        with _counts_lock:
             if len(self._counts) >= 4096:
-                self._counts.clear()
+                self._counts.popitem(last=False)
             self._counts[key] = len(tokens)
-        return self._counts[key]
+        return len(tokens)
 
 
 def configured_generic_runner(engine) -> GenericExtractionRunner:
@@ -114,18 +144,17 @@ def configured_generic_runner(engine) -> GenericExtractionRunner:
             def model_call(system, user, response_schema, budget):
                 if isinstance(tokenizer, ServerTokenizer):
                     tokenizer.verify()
-                return chat_with_schema(
-                    client,
-                    system=system,
-                    user=user,
-                    schema=response_schema,
-                    schema_name="evidence_assertion",
-                    max_tokens=budget.max_output_tokens,
-                    timeout_s=budget.timeout_s,
-                    max_attempts=1,
-                )
+                with model_scope(should_stop=runner.assert_owner_fn), measure("model"):
+                    return chat_with_schema(
+                        client, system=system, user=user, schema=response_schema,
+                        schema_name="evidence_assertion", max_tokens=budget.max_output_tokens,
+                        raise_on_error=True, timeout_s=budget.timeout_s, max_attempts=1,
+                        timeout_retries=budget.timeout_retries,
+                        total_timeout_s=settings.evidence_total_timeout_s,
+                    )
+            model_call.measures_model = True
 
-    return GenericExtractionRunner(
+    runner = GenericExtractionRunner(
         schema,
         tokenizer,
         model_call,
@@ -138,5 +167,7 @@ def configured_generic_runner(engine) -> GenericExtractionRunner:
             max_regions_per_task=settings.evidence_max_regions_per_task,
             max_objects_per_task=settings.evidence_max_objects_per_task,
             timeout_s=settings.evidence_timeout_s,
+            timeout_retries=settings.evidence_timeout_retries,
         ),
     )
+    return runner

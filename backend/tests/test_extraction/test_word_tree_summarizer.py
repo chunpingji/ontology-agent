@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 
+import pytest
 from docx import Document
 
 from app.config import settings
@@ -114,3 +115,30 @@ def test_enabled_but_unavailable_client_uses_deterministic_fallback(tmp_path, mo
     assert root is not None
     assert root.layer_metadata.summary_source == "extractive_fallback"
     assert root.layer_metadata.content_summary
+
+
+@pytest.mark.parametrize("lost", [False, True])
+def test_pause_or_lease_loss_stops_remaining_summary_calls(tmp_path, monkeypatch, lost):
+    from app.services.extraction.annotation_execution import ExecutionLost
+
+    structure = _structure(tmp_path)
+    _enable(monkeypatch)
+    calls = []
+
+    def model(*args, **kwargs):
+        calls.append(1)
+        return {"summaries": []}
+
+    def should_stop():
+        if calls and lost:
+            raise ExecutionLost()
+        return bool(calls)
+
+    monkeypatch.setattr(word_tree_summarizer, "chat_with_schema", model)
+    if lost:
+        with pytest.raises(ExecutionLost):
+            word_tree_summarizer.summarize_word_tree(structure, object(),
+                                                   should_stop_fn=should_stop)
+    else:
+        word_tree_summarizer.summarize_word_tree(structure, object(), should_stop_fn=should_stop)
+    assert calls == [1]

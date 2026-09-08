@@ -23,12 +23,11 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 
-const TRANSFORM_TYPES = ["none", "controlled_vocab", "pattern", "cast"];
+const TRANSFORM_TYPES = ["none", "controlled_vocab", "cast"];
 const OBJECT_RESOLUTIONS = ["id_reference", "nested_object"];
 
 const TRANSFORM_HINT: Record<string, string> = {
   controlled_vocab: '受控词表映射，如 {"map": {"高": "HighRisk"}} 或 {"vocab": "oeb"}',
-  pattern: '正则校验，如 {"pattern": "^国药准字[HZSBTFJ]\\\\d{8}$"}',
   cast: '类型转换，如 {"to": "integer"}（string|integer|decimal|boolean|date|dateTime|anyURI）',
 };
 
@@ -150,7 +149,7 @@ export function PropertyBindingEditor({
               <Badge variant="secondary" className="font-normal">{b.property_kind}</Badge>
               <span className="ml-2 font-mono text-muted-foreground">{b.source_path}</span>
               <span className="mx-1 text-muted-foreground">→</span>
-              <span className="font-mono">{b.property_iri.split(/[/#]/).pop()}</span>
+              <span className="font-mono">{b.property_iri.split("/").flatMap((part) => part.split("#")).pop()}</span>
               {b.is_identifier && <Badge className="ml-1" variant="outline">id</Badge>}
               {b.is_label && <Badge className="ml-1" variant="outline">label</Badge>}
               {b.transform_type !== "none" && (

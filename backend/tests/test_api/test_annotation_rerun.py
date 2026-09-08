@@ -10,7 +10,7 @@ from app.api import extraction
 from app.dependencies import Identity
 from app.models.entity_shadow import EntityShadow
 from app.models.evidence import EvidenceJobState
-from app.models.extraction import ExtractionJob
+from app.models.extraction import AnnotationExecution, ExtractionJob
 from app.services.extraction.extraction_tasks import ExtractionRun
 from app.services.extraction.progress import progress_bus
 from app.services.extraction.word_analysis import analyze_word_core
@@ -50,13 +50,15 @@ async def test_rerun_resets_progress_and_marks_job_before_background(
         job.id, background, db, fake_engine, Identity("analyst", "senior_analyst"),
     )
 
-    assert result == {"status": "restarted"}
+    assert result["status"] == "restarted" and result["run_id"]
+    assert result["job_id"] == str(job.id)
     db.refresh(job)
     assert job.status == "annotating"
     assert not cache.exists() and not checkpoint.exists()
     assert progress_bus.history(str(job.id)) == [{
         "job_id": str(job.id), "stage": "annotating", "annotation_stage": "queued",
         "pct": 0, "status": "running", "degraded": False,
+        "run_id": result["run_id"], "has_checkpoint": False, "can_resume": False,
     }]
     assert len(background.tasks) == 1
     with pytest.raises(HTTPException) as error:
@@ -82,7 +84,7 @@ async def test_rerun_recovers_stale_annotating_state_after_process_restart(
         job.id, background, db, fake_engine, Identity("analyst", "senior_analyst"),
     )
 
-    assert result == {"status": "restarted"}
+    assert result["status"] == "restarted" and result["run_id"]
     assert len(background.tasks) == 1
 
 
@@ -124,7 +126,8 @@ async def test_resume_rejects_live_run_but_recovers_stale_annotating_state(
         job.id, background, db, fake_engine, Identity("analyst", "senior_analyst"),
     )
 
-    assert result == {"status": "resumed", "has_checkpoint": True}
+    assert result["status"] == "resumed" and result["has_checkpoint"] is True
+    assert result["run_id"]
     assert len(background.tasks) == 1
     with pytest.raises(HTTPException) as error:
         await extraction.resume_annotation(
@@ -173,6 +176,84 @@ async def test_paused_run_publishes_valid_candidates_and_cache(
     assert json.loads(cache.read_text())["evidence_run"]["completion"] == "incomplete"
     assert json.loads(checkpoint_path.read_text())["candidate_ids"] == ["drug-a"]
     assert progress_bus.history(str(job.id))[-1]["annotation_stage"] == "paused"
+
+
+@pytest.mark.asyncio
+async def test_incremental_transaction_is_visible_before_summary_and_uses_worker_session(
+    db, rerun_job, fake_engine, monkeypatch,
+):
+    from sqlalchemy import event
+    from sqlalchemy.orm import Session
+
+    from app.schemas.evidence import Candidate, DocumentProvenance
+    from app.services.extraction.candidate_store import CandidateStore
+
+    job, cache, _ = rerun_job
+    ir = analyze_word_core(job.document_path).ir
+    candidate = Candidate(
+        candidate_id="incremental", kind="entity", class_iri="urn:Drug", text="药品 A",
+        validation_status="passed", provenance=[DocumentProvenance(
+            anchors=[ir.anchor(ir.evidence_units[0].evidence_id)], excerpts=["药品 A"]
+        )],
+    )
+    run = ExtractionRun(input_id="incremental-run", candidates=[candidate])
+    partial = {"source_type": "word", "analysis": ir.model_dump(mode="json"),
+               "evidence_run": run.model_dump(mode="json")}
+    sessions = []
+    original = extraction._persist_evidence_payload
+
+    def persist(*args, **kwargs):
+        worker_db = args[2]
+        assert worker_db is not db
+        sessions.append(worker_db)
+        commits = []
+        def callback(session):
+            commits.append(1)
+        event.listen(worker_db, "after_commit", callback)
+        try:
+            result = original(*args, **kwargs)
+        finally:
+            event.remove(worker_db, "after_commit", callback)
+        assert commits == []  # the ownership fence commits candidates + progress together
+        return result
+
+    def compute(*args, snapshot_fn, defer_summary_fn, **kwargs):
+        kwargs["checkpoint_fn"]({"input_id": "incremental-run", "attempt_count": 1})
+        snapshot_fn(partial)
+        with Session(db.bind) as reader:
+            assert reader.get(ExtractionJob, job.id).status == "annotating"
+            assert len(CandidateStore(reader).list(job.id)) == 1
+            head = reader.get(AnnotationExecution, job.id)
+            assert head.progress["candidate_count"] == 1
+            assert head.progress["data_revision"] > 0
+        latest = progress_bus.history(str(job.id))[-1]
+        assert latest["status"] == "running" and latest["candidate_count"] == 1
+        assert latest["data_revision"] > 0
+
+        def summarize():
+            assert progress_bus.history(str(job.id))[-1]["annotation_stage"] == "summarizing"
+            assert json.loads(cache.read_text())["evidence_run"]["completion"] == "complete"
+            assert extraction._load_annotation_checkpoint(job.id)["attempt_count"] == 1
+            return {"summary": "deferred chapter"}
+
+        defer_summary_fn(summarize)
+        return {**partial, "evidence_run": {**partial["evidence_run"], "completion": "complete"}}
+
+    monkeypatch.setattr(extraction, "_compute_annotation", compute)
+    monkeypatch.setattr(extraction, "_persist_evidence_payload", persist)
+    await extraction._precompute_annotation_bg(job.id, fake_engine, db)
+    assert len(sessions) == 2 and sessions[0] is sessions[1]
+    assert json.loads(cache.read_text())["section_tree"]["summary"] == "deferred chapter"
+    assert extraction._load_annotation_checkpoint(job.id) is None
+
+
+def test_late_summary_cannot_overwrite_a_new_run(rerun_job):
+    job, cache, _ = rerun_job
+    extraction._write_annotation_cache(job.id, {"annotation_run_id": "new", "section_tree": {}})
+    extraction._write_annotation_cache(
+        job.id, {"annotation_run_id": "old", "section_tree": {"stale": True}}, expected_run="old"
+    )
+    assert json.loads(cache.read_text()) == {"annotation_run_id": "new", "section_tree": {}}
 
 
 def test_paused_compute_uses_fallback_summary_without_another_model_call(
@@ -238,6 +319,7 @@ async def test_checkpoint_and_counts_survive_worker_failure(
     await extraction._precompute_annotation_bg(job.id, fake_engine, db)
     assert json.loads(checkpoint_path.read_text()) == checkpoint
     assert progress_bus.history(str(job.id))[-1]["has_checkpoint"] is True
+    db.expire_all()  # background work owns a separate Session
     assert db.get(ExtractionJob, job.id).status == "failed"
 
 
@@ -291,3 +373,49 @@ async def test_resume_does_not_queue_an_exhausted_run(db, rerun_job, fake_engine
     assert error.value.status_code == 422
     assert not background.tasks
     assert json.loads(checkpoint_path.read_text())["attempt_count"] == 8
+
+
+@pytest.mark.asyncio
+async def test_selected_template_priorities_are_frozen_until_rerun(
+    db, rerun_job, fake_engine,
+):
+    from app.models.extraction import AstTemplate
+
+    job, _cache, checkpoint_path = rerun_job
+    template = AstTemplate(name="priority-fixture", version="1", iri_pattern="urn:Drug",
+                           schema_json={"sections": [{"coverage": [{
+                               "kind": "ontology_relation", "doc_class_iri": "urn:Drug",
+                               "predicate_iri": "urn:hasPlan", "required_properties": ["urn:upper"],
+                           }]}]})
+    db.add(template)
+    db.commit()
+    await extraction.rerun_annotation(job.id, BackgroundTasks(), db, fake_engine,
+                                     Identity("analyst", "senior_analyst"), template.id)
+    db.refresh(job)
+    frozen = dict(job.source_config)
+    assert frozen["recognition_template_id"] == str(template.id)
+    assert frozen["extraction_priority_paths"] == [["urn:hasPlan", "urn:upper"], ["urn:hasPlan"]]
+    template.schema_json = {"sections": []}
+    job.status = "paused"
+    db.get(AnnotationExecution, job.id).status = "paused"
+    db.commit()
+    progress_bus.reset(str(job.id))
+    checkpoint_path.write_text(json.dumps({"attempt_count": 1, "completed": {}}))
+    await extraction.resume_annotation(job.id, BackgroundTasks(), db, fake_engine,
+                                      Identity("analyst", "senior_analyst"))
+    db.refresh(job)
+    assert job.source_config == frozen
+
+
+@pytest.mark.asyncio
+async def test_missing_explicit_template_keeps_previous_cache_and_checkpoint(
+    db, rerun_job, fake_engine,
+):
+    import uuid
+
+    job, cache, checkpoint = rerun_job
+    with pytest.raises(HTTPException) as error:
+        await extraction.rerun_annotation(job.id, BackgroundTasks(), db, fake_engine,
+                                         Identity("analyst", "senior_analyst"), uuid.uuid4())
+    assert error.value.status_code == 404
+    assert cache.read_text() == checkpoint.read_text() == "old"

@@ -43,7 +43,7 @@ def test_short_references_are_closed_and_source_text_is_never_rewritten():
     definitions = wire.schema["$defs"]
     assert set(definitions["EntityProposal"]["properties"]["class_iri"]["enum"]) == set(classes)
     assert definitions["SpanProposal"]["properties"]["evidence_id"]["enum"] == [evidence_id]
-    assert canonical_json(wire.schema) in wire.system
+    assert json.loads(wire.user)["output_contract"] == wire.schema
     result = wire.decode({"entities": [{
         "class_iri": drug, "mention": {"evidence_id": evidence_id, "text": "药品 A"},
     }]})
@@ -75,6 +75,10 @@ def test_candidate_reference_aliases_preserve_roles_revision_and_polarity():
     user["context"] = canonical_json(context)
     user["candidate"] = {"subject": subject, "object": obj, "assertion_status": "negated"}
     wire = ModelProtocol(SYSTEM, canonical_json(user), BindingDecision.model_json_schema())
+    assert "table_record" not in wire.schema["properties"]["method"]["enum"]
+    assert wire.schema["properties"]["record_mapping"] == {
+        "type": "object", "properties": {}, "additionalProperties": False,
+    }
     encoded = json.loads(wire.user)
     context = json.loads(encoded["context"])
     s = context["task"]["subject"]["candidate_id"]
@@ -84,10 +88,10 @@ def test_candidate_reference_aliases_preserve_roles_revision_and_polarity():
     assert context["task"]["competing_subjects"][0]["candidate_id"] == o
     result = wire.decode({"subject_candidate_id": s, "object_candidate_id": o,
                           "assertion_status": "negated", "supported": True,
-                          "method": "explicit_assertion"})
+                          "method": "explicit_assertion", "assertion_spans": []})
     assert result == {"subject_candidate_id": "subject-a", "object_candidate_id": "object-b",
                       "assertion_status": "negated", "supported": True,
-                      "method": "explicit_assertion"}
+                      "method": "explicit_assertion", "assertion_spans": []}
 
 
 @pytest.mark.parametrize("kind", ["property", "relationship"])
@@ -169,7 +173,7 @@ def test_closed_transport_runner_replays_full_anchors_and_negative_bindings(tmp_
     def model(system, user, response_schema, budget):
         request = json.loads(user)
         context = json.loads(request["context"])
-        if context["task"]["task_kind"] != "entity":
+        if context["task"]["task_kind"] != "entity" or request["stage"] == "verify_entity_types":
             return scripted_model(system, user, response_schema, budget)
         classes = context["task"]["predicate_definition"]["classes"]
         target = next(f for f in context["fragments"] if f["purpose"] == "target")
@@ -195,3 +199,8 @@ def test_closed_transport_runner_replays_full_anchors_and_negative_bindings(tmp_
     count = len(traces)
     assert runner.run(ir, checkpoint=result.checkpoint).candidates == result.candidates
     assert len(traces) == count
+    for trace in traces:
+        proposal = trace["schema"].get("$defs", {}).get("SpanProposal")
+        if proposal:
+            assert proposal["properties"]["start"] == {"type": "null"}
+            assert proposal["properties"]["end"] == {"type": "null"}

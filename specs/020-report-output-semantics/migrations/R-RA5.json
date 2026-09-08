@@ -1,0 +1,208 @@
+{
+  "migration_plan_id": "04aef31c631a4d4819943c58f6d1b0f94ba56428c097a4ec9babe0ead8d03155",
+  "original": {
+    "rule_key": "R-RA5",
+    "rule_group": "risk_assessment",
+    "version": 1,
+    "status": "published",
+    "is_reviewed": false,
+    "is_disabled": false,
+    "antecedent": {
+      "op": "some_values_from",
+      "property": "describes",
+      "filler_class": "DrugProduct"
+    },
+    "consequent": {
+      "risk_level": "LowRisk",
+      "category": "三废处理",
+      "description": "无法有效进行{{药物名称/代号}}产生的三废处理。",
+      "control_measure": "1、车间生产过程中产生的废气经过车间废气处理装置达到合格排放标准后排放。\n2、废液集中收集后转至环保站处理。\n3、固废收集在塑料袋中扎好口，集中收集后送至环保站统一处理。",
+      "traceability_docs": "1、危险废物产生接收处理记录。"
+    },
+    "priority": 100,
+    "id": "9152e245-dd10-45f6-9096-0945cf84f579"
+  },
+  "original_hash": "04aef31c631a4d4819943c58f6d1b0f94ba56428c097a4ec9babe0ead8d03155",
+  "claims": [
+    {
+      "claim_draft_id": "1ab1a6b7dee3e36712ef45b5160e993aeccf416518fe3313dcb6807934eaf4f6",
+      "legacy_field": "risk_level",
+      "original_statement": "LowRisk",
+      "legacy_path": [
+        "risk_level"
+      ],
+      "start_offset": 0,
+      "end_offset": 7,
+      "proposed_category": "risk_decision",
+      "target_claim_ref": null,
+      "precondition": null,
+      "subject_scope": null,
+      "applicable_at": null,
+      "universe_proof": null,
+      "review_ref": null,
+      "status": "unresolved",
+      "issues": [
+        "CLAIM_PRECONDITION_UNPROVEN",
+        "EXACT_PARAMETER_MAPPING_REQUIRED",
+        "FALSE_UNKNOWN_MUST_NOT_IMPLY_LOW"
+      ]
+    },
+    {
+      "claim_draft_id": "5ec531ab6e774675310be5bc0e454af445d8ff98e026c31df4a1793b1b29b6a9",
+      "legacy_field": "category",
+      "original_statement": "三废处理",
+      "legacy_path": [
+        "category"
+      ],
+      "start_offset": 0,
+      "end_offset": 4,
+      "proposed_category": "unresolved",
+      "target_claim_ref": null,
+      "precondition": null,
+      "subject_scope": null,
+      "applicable_at": null,
+      "universe_proof": null,
+      "review_ref": null,
+      "status": "unresolved",
+      "issues": [
+        "CLAIM_PRECONDITION_UNPROVEN",
+        "EXACT_PARAMETER_MAPPING_REQUIRED",
+        "FALSE_UNKNOWN_MUST_NOT_IMPLY_LOW"
+      ]
+    },
+    {
+      "claim_draft_id": "5cbae500bf934c305c9d1442f0a232163223e4f4fa1839db3e0835ec75fd462b",
+      "legacy_field": "description",
+      "original_statement": "无法有效进行{{药物名称/代号}}产生的三废处理。",
+      "legacy_path": [
+        "description"
+      ],
+      "start_offset": 0,
+      "end_offset": 25,
+      "proposed_category": "unresolved",
+      "target_claim_ref": null,
+      "precondition": null,
+      "subject_scope": null,
+      "applicable_at": null,
+      "universe_proof": null,
+      "review_ref": null,
+      "status": "unresolved",
+      "issues": [
+        "CLAIM_PRECONDITION_UNPROVEN",
+        "EXACT_PARAMETER_MAPPING_REQUIRED",
+        "FALSE_UNKNOWN_MUST_NOT_IMPLY_LOW"
+      ]
+    },
+    {
+      "claim_draft_id": "b9df3ff082a5fc8ca1290f50cb49dd36970472f5325e690b2162b6d31a7d3ff4",
+      "legacy_field": "control_measure",
+      "original_statement": "1、车间生产过程中产生的废气经过车间废气处理装置达到合格排放标准后排放。",
+      "legacy_path": [
+        "control_measure"
+      ],
+      "start_offset": 0,
+      "end_offset": 36,
+      "proposed_category": "unresolved",
+      "target_claim_ref": null,
+      "precondition": null,
+      "subject_scope": null,
+      "applicable_at": null,
+      "universe_proof": null,
+      "review_ref": null,
+      "status": "unresolved",
+      "issues": [
+        "CLAIM_PRECONDITION_UNPROVEN",
+        "EXACT_PARAMETER_MAPPING_REQUIRED",
+        "FALSE_UNKNOWN_MUST_NOT_IMPLY_LOW"
+      ]
+    },
+    {
+      "claim_draft_id": "1c5bbb02cb3e57097142191c6eb138ab5cd3609e316dd67507d7bed494c55645",
+      "legacy_field": "control_measure",
+      "original_statement": "2、废液集中收集后转至环保站处理。",
+      "legacy_path": [
+        "control_measure"
+      ],
+      "start_offset": 37,
+      "end_offset": 54,
+      "proposed_category": "unresolved",
+      "target_claim_ref": null,
+      "precondition": null,
+      "subject_scope": null,
+      "applicable_at": null,
+      "universe_proof": null,
+      "review_ref": null,
+      "status": "unresolved",
+      "issues": [
+        "CLAIM_PRECONDITION_UNPROVEN",
+        "EXACT_PARAMETER_MAPPING_REQUIRED",
+        "FALSE_UNKNOWN_MUST_NOT_IMPLY_LOW"
+      ]
+    },
+    {
+      "claim_draft_id": "3b7dd4312139231d27ad5896c791d6a391a5af22bc0ed15a266853088076ce17",
+      "legacy_field": "control_measure",
+      "original_statement": "3、固废收集在塑料袋中扎好口，集中收集后送至环保站统一处理。",
+      "legacy_path": [
+        "control_measure"
+      ],
+      "start_offset": 55,
+      "end_offset": 85,
+      "proposed_category": "unresolved",
+      "target_claim_ref": null,
+      "precondition": null,
+      "subject_scope": null,
+      "applicable_at": null,
+      "universe_proof": null,
+      "review_ref": null,
+      "status": "unresolved",
+      "issues": [
+        "CLAIM_PRECONDITION_UNPROVEN",
+        "EXACT_PARAMETER_MAPPING_REQUIRED",
+        "FALSE_UNKNOWN_MUST_NOT_IMPLY_LOW"
+      ]
+    },
+    {
+      "claim_draft_id": "0471a22f2cf32f1909d05c73b949df4720b2522dcfa70d12ecc9f83e33e9608a",
+      "legacy_field": "traceability_docs",
+      "original_statement": "1、危险废物产生接收处理记录。",
+      "legacy_path": [
+        "traceability_docs"
+      ],
+      "start_offset": 0,
+      "end_offset": 15,
+      "proposed_category": "planned_control",
+      "target_claim_ref": null,
+      "precondition": null,
+      "subject_scope": null,
+      "applicable_at": null,
+      "universe_proof": null,
+      "review_ref": null,
+      "status": "unresolved",
+      "issues": [
+        "CLAIM_PRECONDITION_UNPROVEN",
+        "EXACT_PARAMETER_MAPPING_REQUIRED",
+        "FALSE_UNKNOWN_MUST_NOT_IMPLY_LOW"
+      ]
+    }
+  ],
+  "target_rule_ref": null,
+  "status": "draft",
+  "business_reviewed": false,
+  "consumer_entrypoints": [
+    "legacy_report",
+    "legacy_preview",
+    "template_migration"
+  ],
+  "required_tests": [
+    "missing_evidence",
+    "false",
+    "unknown",
+    "planned_only",
+    "subject_mismatch",
+    "time_mismatch",
+    "incomplete_universe"
+  ],
+  "baseline_definition_hash": "4fbb402f8c3b3309491370fb51ac6f7ae73d646c0ea932d45dd3299913c23c7f",
+  "observation_ref": "../baseline.json"
+}

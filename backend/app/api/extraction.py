@@ -7,6 +7,7 @@ import logging
 import shutil
 import tempfile
 from pathlib import Path
+from threading import RLock
 from time import time
 from uuid import UUID
 
@@ -20,6 +21,7 @@ from fastapi import (
     UploadFile,
 )
 from fastapi.responses import StreamingResponse
+from sqlalchemy import and_, or_
 from sqlalchemy.orm import Session
 
 from app.db import get_db
@@ -37,7 +39,6 @@ from app.models.extraction import (
     ExtractionConfig,
     ExtractionJob,
     GeneratedReport,
-    SlotDismissal,
 )
 from app.models.ontology_meta import (
     SOURCE_ENTITY_MAPPING_TYPES,
@@ -59,12 +60,14 @@ from app.schemas.extraction import (
     SplitRequest,
 )
 from app.services import audit
+from app.services.extraction.performance import measure, timed, tracking
 from app.services.extraction.pipeline import run_extraction_pipeline
 from app.services.extraction.progress import progress_bus
 from app.services.ontology_engine import OntologyEngine
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
+_annotation_cache_lock = RLock()
 
 _analyst = require_role(ROLE_SENIOR_ANALYST)
 
@@ -175,7 +178,10 @@ async def _create_declarative_job(
         details={"source_type": source_type, "class_mapping_id": str(class_mapping_id)},
     )
 
-    background.add_task(_run_pipeline_bg, job.id, config_id, file_path, engine, db)
+    if source_type == "word":
+        _enqueue_annotation(job.id, background, engine, db, mode="start", actor=identity.username)
+    else:
+        background.add_task(_run_pipeline_bg, job.id, config_id, file_path, engine, db)
     return job
 
 
@@ -190,6 +196,8 @@ async def create_job(
     db: Session = Depends(get_db),
     engine: OntologyEngine = Depends(get_ontology_engine),
     identity: Identity = Depends(_analyst),
+    identity_property_iri: str | None = Form(None),
+    label_property_iri: str | None = Form(None),
 ):
     """创建抽取作业并**真实触发**流水线（状态置 running，非 pending, FR-001/002）。
 
@@ -202,16 +210,13 @@ async def create_job(
         binding = db.get(OntologyClassMapping, class_mapping_id)
         if binding is None:
             raise HTTPException(404, "class binding not found")
+        if binding.mapping_type == "doc_pattern":
+            raise HTTPException(422, "EXECUTABLE_PATTERN_RETIRED: use semantic evidence tasks")
         if binding.mapping_type not in SOURCE_ENTITY_MAPPING_TYPES:
             raise HTTPException(
                 422,
-                "该映射不是源实体绑定（db_table/api_endpoint/doc_pattern），无法驱动抽取",
+                "该映射不是结构化源实体绑定（db_table/api_endpoint），无法驱动抽取",
             )
-        if binding.mapping_type == "doc_pattern":
-            if file is None:
-                raise HTTPException(422, "doc_pattern requires a DOCX file")
-            if Path(file.filename or "").suffix.lower() != ".docx":
-                raise HTTPException(422, "doc_pattern only accepts .docx files")
         return await _create_declarative_job(
             background,
             source_type,
@@ -221,7 +226,6 @@ async def create_job(
             db,
             engine,
             identity,
-            file=file if binding.mapping_type == "doc_pattern" else None,
         )
 
     config = db.get(ExtractionConfig, config_id) if config_id else None
@@ -237,6 +241,16 @@ async def create_job(
         file_path = Path(tmp.name)
 
     source_cfg: dict = {"config_id": str(config_id)}
+    for key, value in (
+        ("identity_property_iri", identity_property_iri),
+        ("label_property_iri", label_property_iri),
+    ):
+        if isinstance(value, str):
+            if value not in (config.column_mapping or {}).values():
+                raise HTTPException(
+                    422, "IDENTITY_MAPPING_REQUIRED: property must be explicitly mapped"
+                )
+            source_cfg[key] = value
     if db_source:
         source_cfg["db_source"] = json.loads(db_source)
 
@@ -267,9 +281,15 @@ async def create_job(
         details={"source_type": source_type, "config_id": str(config_id)},
     )
 
-    background.add_task(_run_pipeline_bg, job.id, config_id, file_path, engine, db)
-    if job.document_path and source_type == "excel":
-        background.add_task(_precompute_annotation_bg, job.id, engine, db)
+    if source_type == "word":
+        _enqueue_annotation(job.id, background, engine, db, mode="start", actor=identity.username)
+    else:
+        background.add_task(_run_pipeline_bg, job.id, config_id, file_path, engine, db)
+        if job.document_path and source_type == "excel":
+            # The structured pipeline runs first. Claim the optional annotation
+            # only when it starts, so a long import cannot exhaust a queued lease.
+            background.add_task(_precompute_annotation_bg, job.id, engine, db.get_bind(),
+                                mode="auxiliary", actor=identity.username)
     return job
 
 
@@ -356,7 +376,7 @@ def get_job(job_id: UUID, db: Session = Depends(get_db)):
     return job
 
 
-_ANNOTATOR_VERSION = 27
+_ANNOTATOR_VERSION = 29
 
 
 def _annotation_cache_path(job_id) -> Path:
@@ -380,6 +400,13 @@ def _annotation_cache_is_current(payload: dict) -> bool:
     )
 
 
+def _capture_model(db, schema):
+    from app.services.ontology_model_context import capture_schema
+
+    capture_schema(db, schema)
+    db.commit()
+
+
 def _compute_annotation(
     job: ExtractionJob,
     engine: OntologyEngine,
@@ -390,6 +417,10 @@ def _compute_annotation(
     pause_after=None,
     preview_only=False,
     checkpoint_fn=None,
+    snapshot_fn=None,
+    defer_summary_fn=None,
+    schema_snapshot_fn=None,
+    assert_owner_fn=None,
 ) -> dict:
     """Shared IR preview and generic evidence extraction; called in a worker thread."""
     from dataclasses import asdict
@@ -405,6 +436,7 @@ def _compute_annotation(
             progress_fn=progress_fn,
             should_pause_fn=should_pause_fn,
             checkpoint=checkpoint,
+            structure_only=preview_only,
         )
         result = {
             "_version": _ANNOTATOR_VERSION,
@@ -415,6 +447,7 @@ def _compute_annotation(
             "triples": triples,
             "doc_class": None,
             "relationships": [],
+            "preview_only": preview_only,
         }
         if ckpt is not None:
             result["_checkpoint"] = ckpt
@@ -436,7 +469,8 @@ def _compute_annotation(
         if (job.source_config or {}).get("mode") == "template_default"
         else "analysis_source"
     )
-    analysis = analyze_word_core(file_path, source_filename=job.source_filename, role=role)
+    with measure("document_parse"):
+        analysis = analyze_word_core(file_path, source_filename=job.source_filename, role=role)
     structure = analysis.structure
     content, warnings, _legacy_triples, _ckpt = annotate_word(
         file_path,
@@ -461,9 +495,13 @@ def _compute_annotation(
             "triples": [],
             "relationships": [],
             "doc_class": {
-                "doc_class_iri": effective_class, "label": effective_class,
-                "score": 1.0, "signals": ["user_override"],
-            } if effective_class else None,
+                "doc_class_iri": effective_class,
+                "label": effective_class,
+                "score": 1.0,
+                "signals": ["user_override"],
+            }
+            if effective_class
+            else None,
             "section_tree": structure.section_tree.to_dict(),
             "pagination": asdict(structure.pagination),
             "preview_only": True,
@@ -473,16 +511,36 @@ def _compute_annotation(
     if progress_fn:
         progress_fn("typing")
     runner = configured_generic_runner(engine)
+    runner.assert_owner_fn = assert_owner_fn
+    if schema_snapshot_fn:
+        schema_snapshot_fn(runner.schema)
+    runner.priority_paths = [
+        tuple(path) for path in (job.source_config or {}).get("extraction_priority_paths", [])
+    ]
     effective_class = (job.source_config or {}).get("doc_class_iri") or ""
-    run = runner.run(
-        analysis.ir,
-        effective_class=effective_class,
-        checkpoint=checkpoint,
-        should_pause=should_pause_fn,
-        retry_failed=retry_failed,
-        pause_after=pause_after,
-        checkpoint_fn=checkpoint_fn,
-    )
+
+    def on_snapshot(partial):
+        if snapshot_fn:
+            snapshot_fn({"source_type": "word", "analysis": analysis.ir.model_dump(mode="json"),
+                         "evidence_run": partial.model_dump(
+                             mode="json", exclude={"tasks", "checkpoint"})})
+
+    try:
+        run = runner.run(
+            analysis.ir,
+            effective_class=effective_class,
+            checkpoint=checkpoint,
+            should_pause=should_pause_fn,
+            retry_failed=retry_failed,
+            pause_after=pause_after,
+            checkpoint_fn=checkpoint_fn,
+            snapshot_fn=on_snapshot if snapshot_fn else None,
+        )
+    finally:
+        from app.services.extraction.local_semantic_model import ServerTokenizer
+
+        if isinstance(getattr(runner, "tokenizer", None), ServerTokenizer):
+            runner.tokenizer.close()
     classification = (
         {
             "doc_class_iri": effective_class,
@@ -496,6 +554,15 @@ def _compute_annotation(
     try:
         if run.completion != "complete" or (should_pause_fn and should_pause_fn()):
             fallback_word_tree_summaries(structure)
+        elif defer_summary_fn:
+            fallback_word_tree_summaries(structure)
+
+            def finish_summary():
+                summarize_word_tree(structure, get_local_llm(),
+                                    should_stop_fn=should_pause_fn or assert_owner_fn)
+                return structure.section_tree.to_dict()
+
+            defer_summary_fn(finish_summary)
         else:
             summarize_word_tree(structure, get_local_llm(), progress_fn=progress_fn)
     except Exception:
@@ -524,10 +591,17 @@ def _compute_annotation(
     return result
 
 
-def _write_annotation_cache(job_id, payload: dict) -> None:
-    cache_path = _annotation_cache_path(job_id)
-    cache_path.parent.mkdir(parents=True, exist_ok=True)
-    cache_path.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
+def _write_annotation_cache(job_id, payload: dict, *, expected_run=None) -> None:
+    from app.services.extraction.checkpoint_journal import write_snapshot
+
+    with _annotation_cache_lock:
+        cache_path = _annotation_cache_path(job_id)
+        if expected_run is not None:
+            latest = (json.loads(cache_path.read_text(encoding="utf-8"))
+                      if cache_path.is_file() else {})
+            if latest.get("annotation_run_id") != expected_run:
+                return
+        write_snapshot(cache_path, payload)
 
 
 @router.get("/jobs/{job_id}/annotated-document")
@@ -568,16 +642,11 @@ def get_annotated_document(
     if job.source_type not in ("word", "excel"):
         raise HTTPException(400, f"不支持的源类型标注：{job.source_type}")
 
-    if job.source_type == "word":
-        return _compute_annotation(job, engine, preview_only=True)
-
-    # Preserve the existing Excel path; the model-free preview change is Word-specific.
-    payload = _compute_annotation(job, engine)
-    _write_annotation_cache(job_id, payload)
-    return payload
+    # Both formats use the fenced background worker for recognition. A GET only previews.
+    return _compute_annotation(job, engine, preview_only=True)
 
 
-def _persist_ner_triples(job_id, triples: list[dict], db: Session) -> int:
+def _persist_ner_triples(job_id, triples: list[dict], db: Session, *, commit=True) -> int:
     """NER 三元组 → ExtractionCandidate（入复核队列，candidate_kind='ner_triple'）。"""
     added = 0
     for triple in triples:
@@ -599,19 +668,25 @@ def _persist_ner_triples(job_id, triples: list[dict], db: Session) -> int:
             )
         )
         added += 1
-    if added:
+    if added and commit:
         db.commit()
     return added
 
 
+@timed("graph_transaction")
 def _persist_evidence_payload(
     job_id,
     payload: dict,
     db: Session,
     *,
     actor="evidence-extractor",
-) -> None:
+    incremental=False,
+    commit=True,
+) -> dict:
     """Persist only server-produced evidence, not legacy flattened triples or client state."""
+    from sqlalchemy import func, select
+
+    from app.models.evidence import EvidenceCandidateRecord, EvidenceJobState
     from app.schemas.evidence import Candidate
     from app.services.extraction.candidate_store import CandidateStore
     from app.services.extraction.document_ir import DocumentIR
@@ -626,20 +701,25 @@ def _persist_evidence_payload(
     ir = DocumentIR.model_validate(payload["analysis"])
     run = payload["evidence_run"]
     candidates = [Candidate.model_validate(c) for c in run["candidates"]]
-    store.save_analysis(job_id, ir)
-    stored = store.persist_validated(job_id, candidates, actor=actor)
+    stored = store.persist_validated(job_id, candidates, actor=actor, commit=False)
     # Checkpoints retain source-local IDs for deterministic task restoration;
     # public candidates use job-isolated IDs from the candidate store.
     store.save_analysis(
         job_id,
         ir,
         {**run, "candidates": [c.model_dump(mode="json") for c in stored]},
+        commit=False,
     )
     job = db.get(ExtractionJob, job_id)
-    job.total_candidates = len(store.list(job_id))
-    job.status = "reviewing" if stored else "completed"
+    job.total_candidates = db.scalar(select(func.count()).select_from(EvidenceCandidateRecord)
+                                    .where(EvidenceCandidateRecord.job_id == job_id))
+    job.status = "annotating" if incremental else ("reviewing" if stored else "completed")
     job.error_message = None
-    db.commit()
+    revision = db.get(EvidenceJobState, job_id).revision
+    counts = {"candidate_count": job.total_candidates, "data_revision": revision}
+    if commit:
+        db.commit()
+    return counts
 
 
 def _annotation_checkpoint_path(job_id) -> Path:
@@ -647,36 +727,26 @@ def _annotation_checkpoint_path(job_id) -> Path:
 
 
 def _write_annotation_checkpoint(job_id, ckpt: dict) -> None:
-    import os
-    import tempfile
+    from app.services.extraction.checkpoint_journal import write_snapshot
 
-    path = _annotation_checkpoint_path(job_id)
-    path.parent.mkdir(parents=True, exist_ok=True)
-    # A restart or concurrent reader must see a complete old or new checkpoint.
-    with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", dir=path.parent,
-                                     prefix=f".{path.name}.", delete=False) as tmp:
-        temporary = Path(tmp.name)
-        try:
-            json.dump(ckpt, tmp, ensure_ascii=False)
-            tmp.flush()
-            os.fsync(tmp.fileno())
-            os.replace(temporary, path)
-        finally:
-            temporary.unlink(missing_ok=True)
+    write_snapshot(_annotation_checkpoint_path(job_id), ckpt)
 
 
 def _load_annotation_checkpoint(job_id) -> dict | None:
-    path = _annotation_checkpoint_path(job_id)
-    if path.is_file():
-        try:
-            return json.loads(path.read_text(encoding="utf-8"))
-        except Exception:
-            return None
-    return None
+    from app.services.extraction.checkpoint_journal import read_checkpoint
+
+    try:
+        return read_checkpoint(_annotation_checkpoint_path(job_id))
+    except (OSError, ValueError, KeyError):
+        logger.warning("标注断点读取失败 job=%s", job_id, exc_info=True)
+        return None
 
 
 def _clear_annotation_checkpoint(job_id) -> None:
+    from app.services.extraction.checkpoint_journal import journal_path
+
     _annotation_checkpoint_path(job_id).unlink(missing_ok=True)
+    journal_path(_annotation_checkpoint_path(job_id)).unlink(missing_ok=True)
 
 
 _ANNOTATION_STAGE_PCT = {
@@ -688,43 +758,156 @@ _ANNOTATION_STAGE_PCT = {
 }
 
 
-async def _precompute_annotation_bg(
-    job_id,
-    engine: OntologyEngine,
-    db: Session,
-    checkpoint=None,
-):
-    """后台预计算文档标注，支持子阶段进度推送和暂停/恢复。
+def _checkpoint_counts(value):
+    from app.config import settings
 
-    CPU 阻塞经 ``asyncio.to_thread`` 卸到线程；告警落日志。
-    三元组中有属性的实体自动创建 ``ner_triple`` 候选入复核队列。
-    失败仅记录、不影响抽取主流程。
-    """
+    return {
+        "tasks_processed": value.get("attempt_count", 0),
+        "tasks_completed": len(value.get("completed", {})),
+        "tasks_failed": sum(not f.get("interrupted") for f in value.get("failures", {}).values()),
+        "model_calls": value.get("model_calls", 0),
+        "stage_statistics": value.get("stage_statistics", {}),
+        "has_checkpoint": True,
+        "can_resume": value.get("attempt_count", 0) < settings.evidence_max_tasks,
+    }
+
+
+def _claim_annotation(job_id, db, *, mode="continue", actor="evidence-extractor",
+                      retry_failed=False, pause_after=None, template_id=None, reason=""):
+    """All starts share one SQL owner and one authoritative checkpoint journal."""
+    from app.models.evidence import EvidenceJobState
+    from app.models.extraction import AnnotationExecution
+    from app.services.extraction.annotation_execution import ExecutionBusy, claim
+
+    if retry_failed and not reason.strip():
+        raise HTTPException(422, "an explicit retry reason is required")
+    job = db.get(ExtractionJob, job_id)
+    if job is None:
+        raise HTTPException(404, "作业不存在")
+    if job.source_type not in ("word", "excel"):
+        raise HTTPException(422, "仅 Word/Excel 作业支持关系识别")
+    if not job.document_path or not Path(job.document_path).is_file():
+        raise HTTPException(422, "源文档不可用，无法重新识别")
+    managed = db.get(AnnotationExecution, job_id) is not None
+    options = {"mode": mode, "retry_failed": retry_failed, "pause_after": pause_after}
+    try:
+        run_id = claim(db, job_id, actor=actor, options=options)
+        checkpoint = None
+        if mode in {"resume", "continue"}:
+            checkpoint = _load_annotation_checkpoint(job_id)
+            if checkpoint is None and _annotation_checkpoint_path(job_id).exists():
+                raise HTTPException(409, "识别断点损坏，请检查后重新识别")
+            if checkpoint is None and not managed:
+                # One-time adoption of the old synchronous endpoint's SQL checkpoint.
+                # Once managed, a stale SQL run must never replace the journal.
+                state = db.get(EvidenceJobState, job_id)
+                checkpoint = (state.extraction_run or {}).get("checkpoint") if state else None
+            if mode == "resume" and checkpoint is None:
+                raise HTTPException(409, "没有可恢复的标注断点")
+            from app.config import settings
+
+            if checkpoint and checkpoint.get("attempt_count", 0) >= settings.evidence_max_tasks:
+                raise HTTPException(422, "本轮已达到处理上限，请检查未通过的任务和抽取配置")
+        if mode in {"rerun", "start", "auxiliary"}:
+            _backfill_job_document_context(job, db)
+            _set_annotation_template(job, template_id, db)
+        else:
+            _backfill_job_document_context(job, db)
+            if "extraction_priority_paths" not in (job.source_config or {}):
+                _set_annotation_template(job, None, db)
+        # Validate before touching files; the claim still holds the row write lock.
+        if mode in {"rerun", "start", "auxiliary"}:
+            _clear_annotation_checkpoint(job_id)
+            with _annotation_cache_lock:
+                _annotation_cache_path(job_id).unlink(missing_ok=True)
+        elif checkpoint is not None and not _annotation_checkpoint_path(job_id).is_file():
+            _write_annotation_checkpoint(job_id, checkpoint)
+        head = db.get(AnnotationExecution, job_id, populate_existing=True)
+        head.progress = {
+            "job_id": str(job_id), "run_id": run_id, "stage": "annotating",
+            "annotation_stage": "queued", "pct": 0, "status": "running", "degraded": False,
+            "has_checkpoint": checkpoint is not None, "can_resume": checkpoint is not None,
+            **(_checkpoint_counts(checkpoint) if checkpoint else {}),
+        }
+        if retry_failed:
+            audit.append(db, "evidence.extract_retry", actor=actor, entity_iri=str(job_id),
+                         details={"reason": reason, "run_id": run_id,
+                                  "input_id": (checkpoint or {}).get("input_id")}, commit=False)
+        if mode != "auxiliary":
+            job.status, job.error_message = "annotating", None
+        db.commit()
+    except ExecutionBusy as exc:
+        db.rollback()
+        raise HTTPException(409, str(exc)) from exc
+    except BaseException:
+        db.rollback()
+        raise
+    if mode != "auxiliary":
+        progress_bus.reset(str(job_id))
+    progress_bus.publish(str(job_id), dict(head.progress))
+    return {"job_id": str(job_id), "run_id": run_id, "status": "queued",
+            "has_checkpoint": checkpoint is not None}
+
+
+def _enqueue_annotation(job_id, background, engine, db, **options):
+    receipt = _claim_annotation(job_id, db, **options)
+    # Pass only immutable identifiers and the connection factory, never a request session.
+    background.add_task(_precompute_annotation_bg, job_id, engine, db.get_bind(),
+                        run_id=receipt["run_id"])
+    return receipt
+
+
+async def _precompute_annotation_bg(job_id, engine: OntologyEngine, bind, *, run_id=None,
+                                    mode="start", actor="evidence-extractor"):
+    """The worker owns its SQL session and renews its cross-process lease."""
     import asyncio
 
-    from app.services.extraction.progress import (
-        clear_annotation_control,
-        get_annotation_control,
-        progress_bus,
-    )
+    from app.services.extraction.annotation_execution import WorkerLease, begin_worker
+    from app.services.llm.model_runtime import model_scope
+
+    if isinstance(bind, Session):  # internal legacy callers; never passed by HTTP enqueue
+        bind = bind.get_bind()
+
+    def worker():
+        with Session(bind=bind, expire_on_commit=False) as worker_db, tracking() as performance:
+            token = run_id
+            if token is None:
+                token = _claim_annotation(job_id, worker_db, mode=mode, actor=actor)["run_id"]
+            if not begin_worker(worker_db, job_id, token):
+                return
+            with WorkerLease(bind, job_id, token) as lease:
+                with model_scope(bind=bind, job_id=job_id, run_id=token, should_stop=lease.check):
+                    _annotation_worker(job_id, engine, worker_db, performance, lease)
+
+    await asyncio.to_thread(worker)
+
+
+def _annotation_worker(job_id, engine, db, performance, lease):
+    from app.models.extraction import AnnotationExecution
+    from app.services.extraction.annotation_execution import ExecutionLost, fence
 
     job = db.get(ExtractionJob, job_id)
-    if job is None or job.source_type not in ("word", "excel"):
-        return
-    if not job.document_path or not Path(job.document_path).is_file():
-        return
-
     job_id_str = str(job_id)
     from app.config import settings
 
     started_at = time()
     counts = {}
+    from app.services.extraction.checkpoint_journal import CheckpointJournal
 
-    def on_progress(sub_stage: str):
-        progress_bus.publish(
-            job_id_str,
-            {
+    journal = CheckpointJournal(_annotation_checkpoint_path(job_id))
+    summaries = []
+    run_token = lease.run_id
+    head = db.get(AnnotationExecution, job_id)
+    options, actor = dict(head.options), head.actor
+    controls_job_status = options.get("mode") != "auxiliary"
+    counts.update({key: head.progress[key] for key in _checkpoint_counts({})
+                   if key in head.progress})
+    db.commit()
+
+    def event(sub_stage, **extra):
+        return {
                 "job_id": job_id_str,
+                "run_id": run_token,
                 "stage": "annotating",
                 "annotation_stage": sub_stage,
                 "pct": _ANNOTATION_STAGE_PCT.get(sub_stage, 0),
@@ -733,115 +916,175 @@ async def _precompute_annotation_bg(
                 "started_at": started_at,
                 "updated_at": time(),
                 **counts,
-            },
-        )
+                **extra,
+        }
+
+    def on_progress(sub_stage: str):
+        value = event(sub_stage)
+        with fence(db, job_id, run_token) as head:
+            head.progress = value
+        progress_bus.publish(job_id_str, value)
 
     def on_checkpoint(value: dict):
-        _write_annotation_checkpoint(job_id, value)
-        counts.update(
-            tasks_processed=value.get("attempt_count", 0),
-            tasks_completed=len(value.get("completed", {})),
-            tasks_failed=len(value.get("failures", {})),
-            model_calls=value.get("model_calls", 0),
-        )
-        on_progress("extracting")
+        counts.update(_checkpoint_counts(value))
+        progress = event("extracting")
+        with fence(db, job_id, run_token) as head:
+            journal.save(value)
+            head.progress = progress
+        progress_bus.publish(job_id_str, progress)
+
+    def on_snapshot(partial):
+        with fence(db, job_id, run_token) as head:
+            counts.update(_persist_evidence_payload(job_id, partial, db, incremental=True,
+                                                   actor=actor, commit=False))
+            has_relationship = any(
+                c["kind"] == "relationship" for c in partial["evidence_run"]["candidates"]
+            )
+            if "first_relationship_seconds" not in counts and has_relationship:
+                counts["first_relationship_seconds"] = round(time() - started_at, 3)
+            head.progress = event("extracting")
+            value = dict(head.progress)
+        progress_bus.publish(job_id_str, value)
 
     def should_pause() -> bool:
-        return get_annotation_control(job_id_str) == "pause"
+        return lease.check()
+
+    def on_model_progress(request):
+        # The model loop owns this short session; never share the worker's Session
+        # with a cancellation monitor or hold a graph transaction during HTTP wait.
+        with Session(db.get_bind()) as progress_db:
+            with fence(progress_db, job_id, run_token) as progress_head:
+                value = dict(progress_head.progress)
+                value.update(model_request=request, http_attempts=request["http_attempts"],
+                             updated_at=time())
+                if request.get("model_calls") is not None:
+                    value["model_calls"] = request["model_calls"]
+                progress_head.progress = value
+        counts["http_attempts"] = request["http_attempts"]
+        counts["model_request"] = request
+        if request.get("model_calls") is not None:
+            counts["model_calls"] = request["model_calls"]
+        progress_bus.publish(job_id_str, value)
 
     try:
-        payload = await asyncio.to_thread(
-            _compute_annotation,
-            job,
-            engine,
-            on_progress,
-            should_pause,
-            checkpoint,
-            checkpoint_fn=on_checkpoint,
-        )
+        if job is None or not job.document_path or not Path(job.document_path).is_file():
+            raise ValueError("persisted source unavailable")
+        lease.check()
+        checkpoint = _load_annotation_checkpoint(job_id)
+        from app.services.llm.model_runtime import ModelCancelled, model_scope
 
+        with model_scope(progress=on_model_progress):
+            payload = _compute_annotation(
+                job,
+                engine,
+                on_progress,
+                should_pause,
+                checkpoint,
+                retry_failed=options.get("retry_failed", False),
+                pause_after=options.get("pause_after"),
+                checkpoint_fn=on_checkpoint,
+                snapshot_fn=on_snapshot,
+                defer_summary_fn=summaries.append,
+                schema_snapshot_fn=lambda schema: _capture_model(db, schema),
+                assert_owner_fn=lease.check,
+            )
+
+        payload["annotation_run_id"] = run_token
         ckpt = payload.pop("_checkpoint", None)
         if ckpt is not None:
-            # A bounded/pause result can contain fully validated candidates. Publish
-            # them for review and graph preview while retaining the resume checkpoint.
-            if job.source_type == "word":
-                await asyncio.to_thread(_persist_evidence_payload, job_id, payload, db)
-            await asyncio.to_thread(_write_annotation_cache, job_id, payload)
-            await asyncio.to_thread(_write_annotation_checkpoint, job_id, ckpt)
-            job = db.get(ExtractionJob, job_id)
-            if job:
-                job.status = "paused"
-                db.commit()
-            progress_bus.publish(
-                job_id_str,
-                {
-                    "job_id": job_id_str,
-                    "stage": "annotating",
-                    "annotation_stage": "paused",
-                    "pct": _ANNOTATION_STAGE_PCT.get(ckpt.get("completed_stage", ""), 0),
-                    "status": "paused",
-                    "degraded": False,
-                    "has_checkpoint": True,
-                    "can_resume": ckpt.get("attempt_count", 0) < settings.evidence_max_tasks,
-                    "started_at": started_at,
-                    "updated_at": time(),
-                    **counts,
-                },
-            )
+            with fence(db, job_id, run_token) as head:
+                if job.source_type == "word":
+                    counts.update(_persist_evidence_payload(job_id, payload, db,
+                                                           actor=actor, commit=False))
+                _write_annotation_cache(job_id, payload)
+                journal.save(ckpt, force=True)
+                if controls_job_status:
+                    job.status = "paused"
+                head.status = "paused"
+                head.progress = event(
+                    "paused", status="paused", has_checkpoint=True,
+                    can_resume=ckpt.get("attempt_count", 0) < settings.evidence_max_tasks,
+                )
+                value = dict(head.progress)
+            progress_bus.publish(job_id_str, value)
             return
-
-        clear_annotation_control(job_id_str)
-        _clear_annotation_checkpoint(job_id)
 
         for warn in payload.get("warnings") or []:
             logger.warning("标注告警 job=%s: %s", job_id, warn)
-        if job.source_type == "word":
-            await asyncio.to_thread(_persist_evidence_payload, job_id, payload, db)
-        await asyncio.to_thread(_write_annotation_cache, job_id, payload)
-        triples = payload.get("triples") or []
-        if triples:
-            await asyncio.to_thread(_persist_ner_triples, job_id, triples, db)
-
-        progress_bus.publish(
-            job_id_str,
-            {
-                "job_id": job_id_str,
-                "stage": "done",
-                "annotation_stage": "complete",
-                "pct": 100,
-                "status": "done",
-                "degraded": False,
-                "started_at": started_at,
-                "updated_at": time(),
-                **counts,
-            },
-        )
+        with fence(db, job_id, run_token) as head:
+            if job.source_type == "word":
+                counts.update(_persist_evidence_payload(job_id, payload, db,
+                                                       actor=actor, commit=False))
+            else:
+                triples = payload.get("triples") or []
+                _persist_ner_triples(job_id, triples, db, commit=False)
+                if controls_job_status:
+                    job.status = "reviewing" if triples else "completed"
+            if payload.get("evidence_run"):
+                payload["evidence_run"]["performance"] = performance.snapshot()
+            _write_annotation_cache(job_id, payload)
+            head.progress = event("summarizing" if summaries else "extracting")
+            value = dict(head.progress)
+        progress_bus.publish(job_id_str, value)
+        # Graph candidates are already visible; summaries retain the same owner.
+        for summarize in summaries:
+            try:
+                if lease.check():
+                    break
+                with model_scope(progress=on_model_progress, stage="chapter_summary"):
+                    tree = summarize()
+                with fence(db, job_id, run_token):
+                    cache = _annotation_cache_path(job_id)
+                    latest = (json.loads(cache.read_text(encoding="utf-8"))
+                              if cache.is_file() else {})
+                    if latest.get("annotation_run_id") == run_token:
+                        latest["section_tree"] = tree
+                        _write_annotation_cache(job_id, latest, expected_run=run_token)
+            except ExecutionLost:
+                raise
+            except ModelCancelled:
+                break
+            except Exception:
+                logger.warning("Word 章节摘要失败，保留已保存的图谱 job=%s", job_id, exc_info=True)
+        if lease.check():
+            with fence(db, job_id, run_token) as head:
+                if controls_job_status:
+                    job.status = "paused"
+                head.status = "paused"
+                head.progress = event("paused", status="paused", has_checkpoint=True,
+                                      can_resume=True)
+                value = dict(head.progress)
+            progress_bus.publish(job_id_str, value)
+            return
+        with fence(db, job_id, run_token) as head:
+            _clear_annotation_checkpoint(job_id)
+            counts.update(has_checkpoint=False, can_resume=False)
+            value = event("complete", stage="done", status="done", pct=100)
+            head.status, head.progress = "complete", value
+        progress_bus.publish(job_id_str, value)
+    except ExecutionLost:
+        db.rollback()
+        logger.info("Stopped stale annotation worker job=%s run=%s", job_id, run_token)
     except Exception:
         db.rollback()
-        job = db.get(ExtractionJob, job_id)
-        if job and job.source_type == "word":
-            job.status = "failed"
-            job.error_message = "evidence extraction or persistence failed; no facts published"
-            db.commit()
         logger.warning("标注预计算失败 job=%s", job_id, exc_info=True)
-        progress_bus.publish(
-            job_id_str,
-            {
-                "job_id": job_id_str,
-                "stage": "annotating",
-                "annotation_stage": "failed",
-                "pct": 0,
-                "status": "failed",
-                "degraded": False,
-                "has_checkpoint": _annotation_checkpoint_path(job_id).is_file(),
-                "started_at": started_at,
-                "updated_at": time(),
-                **counts,
-            },
-        )
-
-
-_AUTO_EXTRACT_KEYWORDS = ["临床备样", "生产信息", "备样生产"]
+        try:
+            with fence(db, job_id, run_token) as head:
+                if journal.previous is not None:
+                    journal.save(journal.previous, force=True)
+                job = db.get(ExtractionJob, job_id)
+                if job and controls_job_status:
+                    job.status = "failed"
+                    job.error_message = (
+                        "evidence extraction or persistence failed; no facts published"
+                    )
+                head.status = "failed"
+                head.progress = event("failed", status="failed",
+                    has_checkpoint=_annotation_checkpoint_path(job_id).is_file())
+                value = dict(head.progress)
+            progress_bus.publish(job_id_str, value)
+        except ExecutionLost:
+            pass
 
 
 @router.post("/jobs/auto", response_model=ExtractionJobResponse, status_code=202)
@@ -850,16 +1093,34 @@ async def create_auto_job(
     file: UploadFile = File(...),
     source_type: str = Form(...),
     target_class_iris: str | None = Form(None),
+    config_id: UUID | None = Form(None),
     doc_class_iri: str | None = Form(None),
     db: Session = Depends(get_db),
     engine: OntologyEngine = Depends(get_ontology_engine),
     identity: Identity = Depends(_analyst),
 ):
-    """自动抽取：上传文件 → 按文件名关键词/指定目标类/文档类型子图 → 多类抽取汇入同一 Job。
-
-    ``doc_class_iri``（报告中心上传时用户指定的文档类型）非空时既约束候选抽取目标类
-    （相关类多跳子图），又随 ``source_config`` 传入标注管线约束 NER 候选类（定向识别）。
-    """
+    """Word uses reviewed evidence tasks; structured sources require an explicit mapping."""
+    if source_type != "word":
+        if config_id is None:
+            raise HTTPException(
+                422, "SEMANTIC_MAPPING_REQUIRED: select an extraction configuration"
+            )
+        config = db.get(ExtractionConfig, config_id)
+        if config is None or config.source_type != source_type or not config.column_mapping:
+            raise HTTPException(
+                422, "SEMANTIC_MAPPING_REQUIRED: configuration must map source fields"
+            )
+        return await create_job(
+            background,
+            source_type,
+            config_id,
+            None,
+            file,
+            None,
+            db,
+            engine,
+            identity,
+        )
     suffix = Path(file.filename or "").suffix or ".bin"
     filename = file.filename or "unknown"
 
@@ -893,83 +1154,8 @@ async def create_auto_job(
             entity_iri=str(job.id),
             details={"source_type": source_type, "mode": "generic_evidence"},
         )
-        background.add_task(_precompute_annotation_bg, job.id, engine, db)
+        _enqueue_annotation(job.id, background, engine, db, mode="start", actor=identity.username)
         return job
-
-    iris: list[str] = []
-    if target_class_iris:
-        iris = json.loads(target_class_iris)
-    if not iris and doc_class_iri:
-        # 用户指定的文档类型 → 相关类多跳子图，约束候选抽取目标类（空则回退下方启发式）。
-        from app.services.extraction.ontology_typer import relevant_classes_for_doc_type
-
-        iris = sorted(relevant_classes_for_doc_type(engine, doc_class_iri))
-
-    if not iris:
-        is_clinical = any(kw in filename for kw in _AUTO_EXTRACT_KEYWORDS)
-        if is_clinical:
-            from app.models.system_config import SystemConfig
-
-            cfg_row = db.get(SystemConfig, "default_extraction_targets")
-            if cfg_row and isinstance(cfg_row.value, list):
-                iris = cfg_row.value
-        if not iris:
-            for mod in engine.get_modules():
-                for node in engine.get_class_hierarchy(mod.key):
-                    _collect_iris_from_tree(node, iris)
-
-    audit.append(
-        db,
-        "extraction.job.create",
-        actor=identity.username,
-        entity_iri=str(job.id),
-        details={"source_type": source_type, "mode": "auto", "target_count": len(iris)},
-    )
-
-    background.add_task(_run_auto_pipeline_bg, job.id, iris, persistent_path, engine, db)
-    if source_type in ("word", "excel"):
-        background.add_task(_precompute_annotation_bg, job.id, engine, db)
-    return job
-
-
-def _collect_iris_from_tree(node, out: list[str]) -> None:
-    out.append(node.iri)
-    for child in node.children:
-        _collect_iris_from_tree(child, out)
-
-
-async def _run_auto_pipeline_bg(
-    job_id, target_iris: list[str], file_path: Path, engine, db: Session
-):
-    """多类自动抽取：为每个目标类构造临时 config 调用现有 pipeline，候选汇入同一 Job。"""
-    job = db.get(ExtractionJob, job_id)
-    if job is None:
-        return
-    if job.source_type == "word":
-        await _precompute_annotation_bg(job_id, engine, db)
-        return
-    try:
-        for iri in target_iris:
-            config = ExtractionConfig(
-                name=f"auto-{iri.rsplit('#', 1)[-1].rsplit('/', 1)[-1]}",
-                target_class_iri=iri,
-                source_type=job.source_type,
-            )
-            db.add(config)
-            db.flush()
-            await run_extraction_pipeline(job, config, file_path, engine, db)
-            db.delete(config)
-            db.flush()
-        # 多类汇入同一 Job：run_extraction_pipeline 内按单类覆盖 total_candidates，
-        # 这里用真实落库候选数回填，使界面计数与库内一致（修正逐类覆盖的显示 bug）。
-        job.total_candidates = (
-            db.query(ExtractionCandidate).filter(ExtractionCandidate.job_id == job.id).count()
-        )
-        job.status = "reviewing"
-    except Exception as exc:
-        job.status = "failed"
-        job.error_message = str(exc)[:500]
-    db.commit()
 
 
 @router.get("/jobs/{job_id}/progress")
@@ -982,6 +1168,44 @@ async def job_progress(
     job = db.get(ExtractionJob, job_id)
     if job is None:
         raise HTTPException(404, "作业不存在")
+    from app.services.extraction.annotation_execution import public_progress
+
+    if public_progress(db, job_id) is not None:
+        import asyncio
+
+        from app.models.extraction import AnnotationExecution
+
+        head = db.get(AnnotationExecution, job_id)
+        # Preserve the structured import's stage history. Optional Excel
+        # annotation has its own durable status and cannot replace import results.
+        pipeline_events = [e for e in progress_bus.history(str(job_id))
+                           if not e.get("annotation_stage")] if (
+            head.options.get("mode") == "auxiliary"
+        ) else []
+        bind = db.get_bind()
+        db.rollback()  # SSE must not hold a request transaction for its lifetime.
+
+        def latest():
+            with Session(bind) as reader:
+                return public_progress(reader, job_id)
+
+        async def durable_events():
+            for value in pipeline_events:
+                yield f"data: {json.dumps(value, ensure_ascii=False)}\n\n"
+            previous = None
+            deadline = time() + 30
+            while time() < deadline:
+                value = await asyncio.to_thread(latest)
+                if value is None:
+                    return
+                if value != previous:
+                    yield f"data: {json.dumps(value, ensure_ascii=False)}\n\n"
+                    previous = value
+                if value.get("status") != "running":
+                    return
+                await asyncio.sleep(0.5)
+
+        return StreamingResponse(durable_events(), media_type="text/event-stream")
     # Process-local events disappear on restart, while the SQL status may still
     # say annotating. Report an interruption instead of streaming nothing forever.
     fallback = None
@@ -990,15 +1214,21 @@ async def job_progress(
 
         checkpoint = _load_annotation_checkpoint(job_id)
         terminal = {
-            "annotating": "interrupted", "paused": "paused", "failed": "failed",
-            "reviewing": "complete", "completed": "complete",
+            "annotating": "interrupted",
+            "paused": "paused",
+            "failed": "failed",
+            "reviewing": "complete",
+            "completed": "complete",
         }.get(job.status)
         if terminal:
             fallback = {
-                "job_id": str(job_id), "stage": "annotating", "annotation_stage": terminal,
+                "job_id": str(job_id),
+                "stage": "annotating",
+                "annotation_stage": terminal,
                 "pct": 100 if terminal == "complete" else 0,
                 "status": "done" if terminal == "complete" else terminal,
-                "degraded": False, "has_checkpoint": checkpoint is not None,
+                "degraded": False,
+                "has_checkpoint": checkpoint is not None,
                 "can_resume": checkpoint is not None
                 and checkpoint.get("attempt_count", 0) < settings.evidence_max_tasks,
                 "tasks_processed": (checkpoint or {}).get("attempt_count", 0),
@@ -1029,15 +1259,19 @@ async def job_progress(
 def pause_annotation(
     job_id: UUID,
     identity: Identity = Depends(_analyst),
+    db: Session = Depends(get_db),
 ):
     """请求暂停正在运行的标注任务（下一阶段间生效）。"""
-    from app.services.extraction.progress import set_annotation_control
+    from app.services.extraction.annotation_execution import request_pause
 
-    set_annotation_control(str(job_id), "pause")
+    if db.get(ExtractionJob, job_id) is None:
+        raise HTTPException(404, "作业不存在")
+    if not request_pause(db, job_id):
+        raise HTTPException(409, "该作业没有正在运行的识别任务")
     return {"status": "pause_requested"}
 
 
-@router.post("/jobs/{job_id}/annotation/resume")
+@router.post("/jobs/{job_id}/annotation/resume", status_code=202)
 async def resume_annotation(
     job_id: UUID,
     background: BackgroundTasks,
@@ -1045,75 +1279,58 @@ async def resume_annotation(
     engine: OntologyEngine = Depends(get_ontology_engine),
     identity: Identity = Depends(_analyst),
 ):
-    """从上次暂停的检查点恢复标注。"""
-    from app.services.extraction.progress import clear_annotation_control, progress_bus
-
-    job = db.get(ExtractionJob, job_id)
-    if job is None:
-        raise HTTPException(404, "作业不存在")
-    if job.status == "annotating" and progress_bus.annotation_is_running(str(job_id)):
-        raise HTTPException(409, "该作业正在识别，请等待当前任务完成")
-    checkpoint = _load_annotation_checkpoint(job_id)
-    if checkpoint is None:
-        raise HTTPException(409, "没有可恢复的标注断点")
-    from app.config import settings
-
-    if (
-        job.source_type == "word"
-        and checkpoint.get("attempt_count", 0) >= settings.evidence_max_tasks
-    ):
-        raise HTTPException(422, "本轮已达到处理上限，请检查未通过的任务和抽取配置")
-    clear_annotation_control(str(job_id))
-    progress_bus.reset(str(job_id))
-    progress_bus.publish(str(job_id), {
-        "job_id": str(job_id), "stage": "annotating", "annotation_stage": "queued",
-        "pct": 0, "status": "running", "degraded": False,
-    })
-    job.status = "annotating"
-    job.error_message = None
-    db.commit()
-    background.add_task(_precompute_annotation_bg, job_id, engine, db, checkpoint)
-    return {"status": "resumed", "has_checkpoint": checkpoint is not None}
+    """Resume through the same fenced worker as continue/retry and fresh runs."""
+    receipt = _enqueue_annotation(job_id, background, engine, db, mode="resume",
+                                  actor=identity.username)
+    return {**receipt, "status": "resumed"}
 
 
-@router.post("/jobs/{job_id}/annotation/rerun")
+@router.post("/jobs/{job_id}/annotation/rerun", status_code=202)
 async def rerun_annotation(
     job_id: UUID,
     background: BackgroundTasks,
     db: Session = Depends(get_db),
     engine: OntologyEngine = Depends(get_ontology_engine),
     identity: Identity = Depends(_analyst),
+    template_id: UUID | None = None,
 ):
-    """丢弃缓存和检查点，重新运行三阶段标注。"""
-    from app.services.extraction.progress import clear_annotation_control, progress_bus
+    """Start a new generation only after claiming exclusive ownership."""
+    receipt = _enqueue_annotation(job_id, background, engine, db, mode="rerun",
+                                  actor=identity.username, template_id=template_id)
+    return {**receipt, "status": "restarted"}
 
-    job = db.get(ExtractionJob, job_id)
-    if job is None:
-        raise HTTPException(404, "作业不存在")
-    if job.source_type not in ("word", "excel"):
-        raise HTTPException(422, "仅 Word/Excel 作业支持重新识别")
-    if not job.document_path or not Path(job.document_path).is_file():
-        raise HTTPException(422, "源文档不可用，无法重新识别")
-    if job.status == "annotating" and progress_bus.annotation_is_running(str(job_id)):
-        raise HTTPException(409, "该作业正在识别，请等待当前任务完成")
-    _backfill_job_document_context(job, db)
-    _clear_annotation_checkpoint(job_id)
-    _annotation_cache_path(job_id).unlink(missing_ok=True)
-    clear_annotation_control(str(job_id))
-    progress_bus.reset(str(job_id))
-    progress_bus.publish(str(job_id), {
-        "job_id": str(job_id), "stage": "annotating", "annotation_stage": "queued",
-        "pct": 0, "status": "running", "degraded": False,
-    })
-    job.status = "annotating"
-    job.error_message = None
-    db.commit()
-    background.add_task(_precompute_annotation_bg, job_id, engine, db)
-    return {"status": "restarted"}
+
+def _set_annotation_template(job, template_id, db):
+    """Freeze the selected template's declarative priorities for this run/resume."""
+    from app.models.extraction import AstTemplate
+    from app.services.extraction.evidence_identity import evidence_hash
+    from app.services.extraction.template_priorities import template_priority_paths
+
+    config = dict(job.source_config or {})
+    selected = template_id or config.get("recognition_template_id") or config.get("template_id")
+    if not selected:
+        return
+    row = db.get(AstTemplate, UUID(str(selected)))
+    if row is None:
+        if template_id:
+            raise HTTPException(404, "模板不存在")
+        return
+    root_class = config.get("doc_class_iri") or row.iri_pattern or ""
+    config.update(
+        recognition_template_id=str(row.id),
+        extraction_priority_template_hash=evidence_hash(row.schema_json),
+        extraction_priority_paths=template_priority_paths(row.schema_json, root_class),
+    )
+    job.source_config = config
 
 
 _DOCUMENT_JOB_KEYS = (
-    "job_id", "jobId", "source_job_id", "extraction_job_id", "hasJob", "sourceJob",
+    "job_id",
+    "jobId",
+    "source_job_id",
+    "extraction_job_id",
+    "hasJob",
+    "sourceJob",
 )
 
 
@@ -1138,6 +1355,13 @@ def _backfill_job_document_context(job: ExtractionJob, db: Session) -> None:
         config.setdefault("doc_ref", shadow.iri)
         job.source_config = config
         return
+    # Old template sources can predate the persisted document type on the job.
+    if config.get("template_id") and not config.get("doc_class_iri"):
+        from app.models.extraction import AstTemplate
+
+        template = db.get(AstTemplate, UUID(str(config["template_id"])))
+        if template and template.iri_pattern:
+            job.source_config = {**config, "doc_class_iri": template.iri_pattern}
 
 
 @router.get("/jobs/{job_id}/candidates", response_model=GroupedCandidatesResponse)
@@ -1300,178 +1524,19 @@ def _llm_report_flags_active() -> bool:
     return settings.llm_report_merge_values or settings.llm_report_narrative_enabled
 
 
-def _narratives_payload(report) -> dict | None:
-    """Build the persisted narratives blob for the web reading pane (015).
-
-    Only the LLM-generated prose is captured so the reading pane can render it
-    under an AI indicator; deterministic values stay out. Returns ``None`` when
-    there is no narrative content, keeping the column null for legacy reports.
-    """
-    subject = (
-        report.subject_description if "subject_description" in report.llm_generated_fields else None
-    )
-    conclusion = report.conclusion if "conclusion" in report.llm_generated_fields else None
-    sections = report.section_narratives or []
-    # 016+: LLM-synthesized 语义化插槽 正文 (projection of Section.coverage + prompt).
-    semantic_slots = report.semantic_slots or []
-    if not subject and not conclusion and not sections and not semantic_slots:
-        return None
-    return {
-        "subject_description": subject,
-        "conclusion": conclusion,
-        "sections": sections,
-        "semantic_slots": semantic_slots,
-    }
-
-
-def _risk_report_source_document(job: ExtractionJob, db: Session) -> tuple[str, str]:
-    """Resolve the source document's typed name and stable provenance reference."""
-    source_config = job.source_config or {}
-    document_ref = str(source_config.get("doc_ref") or "").strip()
-    if document_ref:
-        shadow = db.query(EntityShadow).filter(EntityShadow.iri == document_ref).one_or_none()
-        if shadow is not None:
-            document_name = str(
-                (shadow.properties_json or {}).get("documentName") or shadow.label_zh or ""
-            ).strip()
-            if document_name:
-                return document_name, document_ref
-    return (
-        str(job.source_filename or "").strip(),
-        document_ref or f"urn:slpra:extraction-job:{job.id}",
-    )
-
-
-def _pde_conflict_decision_payload(db: Session, job_id: UUID) -> dict:
-    """Snapshot the human PDE-conflict decision for report generation.
-
-    No row means the conflict is still pending.  The returned object is JSON-safe
-    so the async background task and the persisted report share the exact decision
-    that was effective when generation started.
-    """
-    from app.models.pde_conflict import PdeConflictDecision
-    from app.services.reasoning.pde_conflict import CONFLICT_KEY
-
-    row = (
-        db.query(PdeConflictDecision)
-        .filter(
-            PdeConflictDecision.job_id == job_id,
-            PdeConflictDecision.conflict_key == CONFLICT_KEY,
-        )
-        .one_or_none()
-    )
-    if row is None:
-        return {
-            "conflict_key": CONFLICT_KEY,
-            "chosen": "pending",
-            "note": "",
-            "actor": "",
-            "version": 0,
-            "decided_at": None,
-        }
-    return {
-        "conflict_key": row.conflict_key,
-        "chosen": row.chosen,
-        "note": row.note,
-        "actor": row.actor,
-        "version": row.version,
-        "decided_at": row.decided_at.isoformat() if row.decided_at else None,
-    }
-
-
-def _resolve_sample_docx_path(tpl_db_id, db) -> str | None:
-    """Resolve the sample .docx path from the AstTemplate row for template-based output."""
-    if tpl_db_id is None:
-        return None
-    from app.models.extraction import AstTemplate
-
-    row = db.get(AstTemplate, tpl_db_id)
-    if row and row.sample_docx_path:
-        if Path(row.sample_docx_path).is_file():
-            return row.sample_docx_path
-        # DB 指向的模板文件已不在磁盘（历史删除/迁移遗留等）：显式告警，让「静默回退到硬编码
-        # 默认格式」可观测，而非无声吞掉——否则文件生命周期问题会被掩盖成「输出没套模板」。
-        logger.warning(
-            "模板 %s 的 sample_docx_path 指向缺失文件 %s，报告将回退默认格式",
-            tpl_db_id,
-            row.sample_docx_path,
-        )
-    return None
-
-
 def _build_and_save_report(
     job_id: UUID,
     report_id: UUID,
     **_legacy_arguments,
 ) -> None:
-    """Render the already frozen manifest in an independent worker session."""
-    from app.config import settings
     from app.db import SessionLocal
-    from app.models.evidence import EvidenceCoverage
-    from app.services.reporting.snapshot_report import render_snapshot_report
+    from app.services.reporting.report_run_service import ReportRunService
 
-    db = SessionLocal()
-    try:
+    with SessionLocal() as db:
         record = db.get(GeneratedReport, report_id)
-        if record is None or record.job_id != job_id:
-            raise ValueError("report/job mismatch")
-        frozen = db.get(EvidenceCoverage, record.coverage_manifest_id)
-        if frozen is None or frozen.job_id != job_id:
-            raise ValueError("frozen published report inputs are required")
-        record.report_status = "running"
-        record.rules_summary = {
-            "_progress": {
-                "stage": "render",
-                "percent": 45,
-                "detail": "正在读取已冻结事实快照并排版",
-            }
-        }
-        db.commit()
-        report, manifest, data = render_snapshot_report(frozen.payload)
-        output = Path(settings.report_output_dir)
-        output.mkdir(parents=True, exist_ok=True)
-        file_path = output / f"{report_id}.docx"
-        file_path.write_bytes(data)
-        record.file_path = str(file_path)
-        record.file_size = len(data)
-        record.report_status = "completed"
-        record.report_error = None
-        record.rules_summary = {
-            "_progress": {
-                "stage": "completed",
-                "percent": 100,
-                "detail": "快照报告已生成，缺口已明确标注",
-            },
-            "coverage": manifest.to_dict(),
-            "template_id": frozen.payload["template_id"],
-            "template_version": frozen.payload["template_version"],
-            "fact_snapshot_id": record.evidence_snapshot_id,
-        }
-        record.narratives = _narratives_payload(report)
-        audit.append(
-            db,
-            "report.generate",
-            actor=record.actor,
-            entity_iri=str(job_id),
-            details={
-                "report_id": str(report_id),
-                "snapshot_id": record.evidence_snapshot_id,
-                "manifest_id": frozen.id,
-                "template_version": frozen.payload["template_version"],
-            },
-            commit=False,
-        )
-        db.commit()
-    except Exception as exc:
-        db.rollback()
-        record = db.get(GeneratedReport, report_id)
-        if record:
-            record.report_status = "failed"
-            record.report_error = str(exc)[:500]
-            db.commit()
-        logging.getLogger(__name__).warning("快照报告生成失败: %s", exc, exc_info=True)
-    finally:
-        db.close()
+        if record is None or record.job_id != job_id or not record.report_run_id:
+            raise ValueError("TEMPLATE_MIGRATION_REQUIRED")
+        ReportRunService(db).execute(record.report_run_id)
 
 
 @router.post("/jobs/{job_id}/risk-report", status_code=202)
@@ -1484,63 +1549,9 @@ def generate_risk_report(
     engine: OntologyEngine = Depends(get_ontology_engine),
     identity: Identity = Depends(_analyst),
 ):
-    """Freeze inputs now; the worker never reads a mutable annotation preview."""
-    from uuid import uuid4
+    from app.services.reporting.legacy_facade import generate
 
-    from app.services.extraction.extraction_tasks import semantic_schema_from_engine
-    from app.services.reporting.snapshot_report import build_report_inputs, freeze_report_inputs
-
-    job = db.get(ExtractionJob, job_id)
-    if job is None:
-        raise HTTPException(404, "作业不存在")
-    try:
-        inputs = build_report_inputs(
-            db,
-            job,
-            schema=semantic_schema_from_engine(engine),
-            template_id=template_id,
-            snapshot_id=snapshot_id,
-        )
-        frozen = freeze_report_inputs(db, job_id, inputs)
-    except LookupError as exc:
-        raise HTTPException(404, str(exc)) from exc
-    except ValueError as exc:
-        raise HTTPException(422, str(exc)) from exc
-    record = GeneratedReport(
-        id=uuid4(),
-        job_id=job_id,
-        file_path="",
-        actor=identity.username,
-        report_type="risk_assessment",
-        report_status="pending",
-        evidence_snapshot_id=inputs["snapshot_id"],
-        coverage_manifest_id=frozen.id,
-        selector_version=inputs["selector_version"],
-        source_discovery_hash=inputs["discovery_revision"],
-    )
-    db.add(record)
-    audit.append(
-        db,
-        "report.freeze",
-        actor=identity.username,
-        entity_iri=str(job_id),
-        details={
-            "report_id": str(record.id),
-            "manifest_id": frozen.id,
-            "snapshot_id": inputs["snapshot_id"],
-        },
-        commit=False,
-    )
-    db.commit()
-    background_tasks.add_task(_build_and_save_report, job_id=job_id, report_id=record.id)
-    return {
-        "report_id": str(record.id),
-        "status": "pending",
-        "snapshot_id": inputs["snapshot_id"],
-        "manifest_id": frozen.id,
-        "template_id": inputs["template_id"],
-        "template_version": inputs["template_version"],
-    }
+    return generate(db, job_id, identity.username, template_id=template_id, snapshot_id=snapshot_id)
 
 
 @router.get("/jobs/{job_id}/risk-report")
@@ -1561,7 +1572,10 @@ def get_risk_report(
         .filter(
             GeneratedReport.job_id == job_id,
             GeneratedReport.deleted_at.is_(None),
-            GeneratedReport.report_status == "completed",
+            or_(
+                GeneratedReport.report_status == "completed",
+                and_(GeneratedReport.report_status.is_(None), GeneratedReport.file_size > 0),
+            ),
         )
         .order_by(GeneratedReport.created_at.desc())
         .first()
@@ -1569,7 +1583,13 @@ def get_risk_report(
     if not report:
         raise HTTPException(404, "该作业尚未生成风险评估报告")
 
-    file_path = Path(report.file_path)
+    if report.report_run_id:
+        from app.services.reporting.report_run_service import ReportRunService
+
+        artifact = ReportRunService(db).download(report.report_run_id, report.report_artifact_id)
+        file_path = Path(artifact.file_path)
+    else:
+        file_path = Path(report.file_path)
     if not file_path.is_file():
         raise HTTPException(404, "报告文件不存在")
 
@@ -1592,6 +1612,7 @@ def get_report_status(
     job_id: UUID,
     report_id: UUID,
     db: Session = Depends(get_db),
+    identity: Identity = Depends(get_current_user),
 ):
     """Poll the status of an async-generated report (013)."""
     report = db.get(GeneratedReport, report_id)
@@ -1610,6 +1631,8 @@ def get_report_status(
         "report_status": report.report_status,
         "report_error": report.report_error,
         "narratives": report.narratives,
+        "report_run_id": report.report_run_id,
+        "report_artifact_id": report.report_artifact_id,
     }
 
 
@@ -1618,6 +1641,7 @@ def download_report_by_id(
     job_id: UUID,
     report_id: UUID,
     db: Session = Depends(get_db),
+    identity: Identity = Depends(get_current_user),
 ):
     """Download a completed report by its ID (013)."""
     from fastapi.responses import FileResponse
@@ -1625,10 +1649,16 @@ def download_report_by_id(
     report = db.get(GeneratedReport, report_id)
     if not report or report.job_id != job_id or report.deleted_at is not None:
         raise HTTPException(404, "报告不存在")
-    if report.report_status != "completed":
+    if report.report_status not in {None, "completed"}:
         raise HTTPException(409, f"报告尚未完成（status={report.report_status}）")
 
-    file_path = Path(report.file_path)
+    if report.report_run_id:
+        from app.services.reporting.report_run_service import ReportRunService
+
+        artifact = ReportRunService(db).download(report.report_run_id, report.report_artifact_id)
+        file_path = Path(artifact.file_path)
+    else:
+        file_path = Path(report.file_path)
     if not file_path.exists():
         raise HTTPException(404, "报告文件不存在")
 
@@ -1647,79 +1677,15 @@ def download_report_by_id(
 # --------------------------------------------------------------------------- #
 
 
-def _build_ast_coverage_response(
-    job_id: UUID,
-    db: Session,
-    template_id: UUID | None = None,
-    engine=None,
-) -> ASTCoverageResponse:
-    """The legacy UI now presents the same instance manifest used by reports."""
-    from app.services.extraction.extraction_tasks import semantic_schema_from_engine
-    from app.services.reporting.snapshot_report import build_report_inputs, presentation_manifest
+def _build_ast_coverage_response(job_id, db, template_id=None, engine=None, *, actor):
+    from app.services.reporting.coverage_v2 import build_report_inputs
 
-    job = db.get(ExtractionJob, job_id)
-    if job is None:
-        raise HTTPException(404, "作业不存在")
-    try:
-        if engine is None:
-            from app.services.ontology_engine import get_loaded_engine
-
-            engine = get_loaded_engine()
-        inputs = build_report_inputs(
-            db,
-            job,
-            schema=semantic_schema_from_engine(engine) if engine else {},
-            template_id=template_id,
-        )
-    except LookupError as exc:
-        raise HTTPException(404, str(exc)) from exc
-    except ValueError as exc:
-        raise HTTPException(422, str(exc)) from exc
-    manifest = presentation_manifest(inputs)
-    sections = []
-    for section in inputs["template_schema"]["sections"]:
-        section_tasks = [t for t in inputs["tasks"] if t["section_id"] == section["section_id"]]
-        slots = [
-            {
-                "slot_id": task.get("coverage_task_id", task["target_id"]),
-                "label": task["label"],
-                "status": task["status"],
-                "source_kind": "published_snapshot",
-                "value": "; ".join(obj["text"] for obj in task.get("objects", [])) or None,
-                "source_ref": ", ".join(
-                    task.get("assertion_ids", []) + task.get("negative_assertion_ids", [])
-                )
-                or None,
-                "note": task["reason"] + " · " + (task.get("subject_instance_iri") or "主体未发布"),
-            }
-            for task in section_tasks
-        ]
-        sections.append(
-            {
-                "section_id": section["section_id"],
-                "title": section["title"],
-                "groups": [
-                    {
-                        "group_id": section["section_id"] + ".instances",
-                        "title": "实例覆盖（已发布快照）",
-                        "kind": "fields",
-                        "slots": slots,
-                    }
-                ],
-            }
-        )
-    return ASTCoverageResponse(
-        **{k: v for k, v in manifest.summary().items() if k != "missing_slot_ids"},
-        template_name=inputs["template_name"],
-        template_version=inputs["template_version"],
-        sections=sections,
-        snapshot_id=inputs["snapshot_id"],
-        manifest_id=inputs["manifest_id"],
-        instance_manifest=manifest.instance_manifest,
+    return build_report_inputs(
+        db, db.get(ExtractionJob, job_id), schema={}, actor=actor, template_id=template_id
     )
 
 
-@router.get("/jobs/{job_id}/ast-coverage", response_model=ASTCoverageResponse)
+@router.get("/jobs/{job_id}/ast-coverage")
 def get_ast_coverage(
     job_id: UUID,
     template_id: UUID | None = None,
@@ -1735,7 +1701,9 @@ def get_ast_coverage(
     job = db.get(ExtractionJob, job_id)
     if not job:
         raise HTTPException(404, "作业不存在")
-    return _build_ast_coverage_response(job_id, db, template_id=template_id, engine=engine)
+    return _build_ast_coverage_response(
+        job_id, db, template_id=template_id, engine=engine, actor=identity.username
+    )
 
 
 @router.get(
@@ -1756,7 +1724,10 @@ def list_reports(
         .filter(
             GeneratedReport.job_id == job_id,
             GeneratedReport.deleted_at.is_(None),
-            GeneratedReport.report_status == "completed",
+            or_(
+                GeneratedReport.report_status == "completed",
+                and_(GeneratedReport.report_status.is_(None), GeneratedReport.file_size > 0),
+            ),
         )
         .order_by(GeneratedReport.created_at.desc())
         .all()
@@ -1798,37 +1769,9 @@ def dismiss_slot(
     db: Session = Depends(get_db),
     identity: Identity = Depends(get_current_user),
 ):
-    """Mark a slot as not applicable (011 FR-API-004)."""
-    job = db.get(ExtractionJob, job_id)
-    if not job:
-        raise HTTPException(404, "作业不存在")
+    from app.services.reporting.template_v2 import ReportingError
 
-    existing = (
-        db.query(SlotDismissal)
-        .filter(SlotDismissal.job_id == job_id, SlotDismissal.slot_id == body.slot_id)
-        .first()
-    )
-    if existing:
-        raise HTTPException(409, "该槽位已标记为不适用")
-
-    dismissal = SlotDismissal(
-        job_id=job_id,
-        slot_id=body.slot_id,
-        dismissed_by=identity.username,
-    )
-    db.add(dismissal)
-
-    audit.append(
-        db,
-        "slot.dismiss",
-        actor=identity.username,
-        entity_iri=str(job_id),
-        details={"slot_id": body.slot_id, "job_id": str(job_id)},
-        commit=False,
-    )
-    db.commit()
-
-    return _build_ast_coverage_response(job_id, db)
+    raise ReportingError("VERSIONED_REQUIREMENT_EDIT_REQUIRED", status=409)
 
 
 @router.delete(
@@ -1841,29 +1784,6 @@ def undismiss_slot(
     db: Session = Depends(get_db),
     identity: Identity = Depends(get_current_user),
 ):
-    """Undo a slot dismissal (011 FR-API-005)."""
-    job = db.get(ExtractionJob, job_id)
-    if not job:
-        raise HTTPException(404, "作业不存在")
+    from app.services.reporting.template_v2 import ReportingError
 
-    dismissal = (
-        db.query(SlotDismissal)
-        .filter(SlotDismissal.job_id == job_id, SlotDismissal.slot_id == slot_id)
-        .first()
-    )
-    if not dismissal:
-        raise HTTPException(404, "该槽位未被标记为不适用")
-
-    db.delete(dismissal)
-
-    audit.append(
-        db,
-        "slot.undismiss",
-        actor=identity.username,
-        entity_iri=str(job_id),
-        details={"slot_id": slot_id, "job_id": str(job_id)},
-        commit=False,
-    )
-    db.commit()
-
-    return _build_ast_coverage_response(job_id, db)
+    raise ReportingError("VERSIONED_REQUIREMENT_EDIT_REQUIRED", status=409)

@@ -21,6 +21,8 @@ data/uploads
 .env
 .env.*
 
+evaluations/
+
 # Host-specific local compose overrides (ports etc.)
 docker-compose.override.yml
 

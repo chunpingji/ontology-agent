@@ -30,8 +30,8 @@ from tests.fixtures.ontology import (
     DRUG_PRODUCT,
 )
 
-_ID = "approvalNumber"
-_LABEL = "drugName"
+_ID = APPROVAL_NUMBER
+_LABEL = DRUG_NAME
 
 
 def _candidate(approval: str | None = None, name: str | None = None) -> dict:
@@ -49,14 +49,17 @@ def _candidate(approval: str | None = None, name: str | None = None) -> dict:
 class TestSubclassMerge:
     def test_candidate_at_parent_merges_to_existing_subclass_individual(self, drug_engine):
         existing = drug_engine.add_individual(
-            BIOLOGIC, "bio_trastuzumab",
+            BIOLOGIC,
+            "bio_trastuzumab",
             properties={APPROVAL_NUMBER: "国药准字S20240001"},
             label_zh="曲妥珠单抗",
         )
         result = align_entity(
             _candidate(approval="国药准字S20240001", name="曲妥珠单抗"),
-            DRUG_PRODUCT, drug_engine,
-            id_property=_ID, label_property=_LABEL,
+            DRUG_PRODUCT,
+            drug_engine,
+            id_property=_ID,
+            label_property=_LABEL,
         )
         assert result.action == "merge"
         assert result.match_iri == existing.iri
@@ -65,12 +68,16 @@ class TestSubclassMerge:
 
     def test_subclass_merge_by_label_records_lexical_method(self, drug_engine):
         existing = drug_engine.add_individual(
-            BIOLOGIC, "bio_by_label", label_zh="注射用曲妥珠单抗",
+            BIOLOGIC,
+            "bio_by_label",
+            label_zh="注射用曲妥珠单抗",
         )
         result = align_entity(
             _candidate(name="注射用曲妥珠单抗"),
-            DRUG_PRODUCT, drug_engine,
-            id_property=_ID, label_property=_LABEL,
+            DRUG_PRODUCT,
+            drug_engine,
+            id_property=_ID,
+            label_property=_LABEL,
         )
         assert result.action == "merge"
         assert result.match_iri == existing.iri
@@ -84,30 +91,42 @@ class TestSubclassMerge:
 class TestPrecedence:
     def test_subclass_wins_over_same_level(self, drug_engine):
         sub = drug_engine.add_individual(
-            BIOLOGIC, "bio_dup",
-            properties={APPROVAL_NUMBER: "国药准字H20250009"}, label_zh="双胞胎-子类",
+            BIOLOGIC,
+            "bio_dup",
+            properties={APPROVAL_NUMBER: "国药准字H20250009"},
+            label_zh="双胞胎-子类",
         )
         drug_engine.add_individual(
-            DRUG_PRODUCT, "dp_dup",
-            properties={APPROVAL_NUMBER: "国药准字H20250009"}, label_zh="双胞胎-本类",
+            DRUG_PRODUCT,
+            "dp_dup",
+            properties={APPROVAL_NUMBER: "国药准字H20250009"},
+            label_zh="双胞胎-本类",
         )
         result = align_entity(
             _candidate(approval="国药准字H20250009"),
-            DRUG_PRODUCT, drug_engine, id_property=_ID, label_property=_LABEL,
+            DRUG_PRODUCT,
+            drug_engine,
+            id_property=_ID,
+            label_property=_LABEL,
         )
         assert result.action == "merge"
-        assert result.match_iri == sub.iri          # subclass precedes same class
+        assert result.match_iri == sub.iri  # subclass precedes same class
         assert result.matched_level == "subclass"
         assert result.method == "id"
 
     def test_same_level_match_records_same(self, drug_engine):
         same = drug_engine.add_individual(
-            DRUG_PRODUCT, "dp_same",
-            properties={APPROVAL_NUMBER: "国药准字H20250010"}, label_zh="本类药",
+            DRUG_PRODUCT,
+            "dp_same",
+            properties={APPROVAL_NUMBER: "国药准字H20250010"},
+            label_zh="本类药",
         )
         result = align_entity(
             _candidate(approval="国药准字H20250010"),
-            DRUG_PRODUCT, drug_engine, id_property=_ID, label_property=_LABEL,
+            DRUG_PRODUCT,
+            drug_engine,
+            id_property=_ID,
+            label_property=_LABEL,
         )
         assert result.action == "merge"
         assert result.match_iri == same.iri
@@ -117,12 +136,17 @@ class TestPrecedence:
     def test_parent_level_match_records_parent(self, drug_engine):
         # Target is the subclass; the only existing match lives at the parent.
         parent_ind = drug_engine.add_individual(
-            DRUG_PRODUCT, "dp_parent",
-            properties={APPROVAL_NUMBER: "国药准字H20250011"}, label_zh="父类药",
+            DRUG_PRODUCT,
+            "dp_parent",
+            properties={APPROVAL_NUMBER: "国药准字H20250011"},
+            label_zh="父类药",
         )
         result = align_entity(
             _candidate(approval="国药准字H20250011"),
-            BIOLOGIC, drug_engine, id_property=_ID, label_property=_LABEL,
+            BIOLOGIC,
+            drug_engine,
+            id_property=_ID,
+            label_property=_LABEL,
         )
         assert result.action == "merge"
         assert result.match_iri == parent_ind.iri
@@ -136,18 +160,25 @@ class TestPrecedence:
 class TestAmbiguityReview:
     def test_equal_rank_duplicates_are_not_auto_merged(self, drug_engine):
         a = drug_engine.add_individual(
-            BIOLOGIC, "bio_amb_a",
-            properties={APPROVAL_NUMBER: "国药准字S20250099"}, label_zh="歧义A",
+            BIOLOGIC,
+            "bio_amb_a",
+            properties={APPROVAL_NUMBER: "国药准字S20250099"},
+            label_zh="歧义A",
         )
         b = drug_engine.add_individual(
-            BIOLOGIC, "bio_amb_b",
-            properties={APPROVAL_NUMBER: "国药准字S20250099"}, label_zh="歧义B",
+            BIOLOGIC,
+            "bio_amb_b",
+            properties={APPROVAL_NUMBER: "国药准字S20250099"},
+            label_zh="歧义B",
         )
         result = align_entity(
             _candidate(approval="国药准字S20250099"),
-            DRUG_PRODUCT, drug_engine, id_property=_ID, label_property=_LABEL,
+            DRUG_PRODUCT,
+            drug_engine,
+            id_property=_ID,
+            label_property=_LABEL,
         )
-        assert result.action == "review"          # NOT auto-merged
+        assert result.action == "review"  # NOT auto-merged
         assert result.match_iri is None
         assert result.matched_level == "subclass"  # the rank where the tie occurred
         assert set(result.ambiguous_iris) == {a.iri, b.iri}
@@ -159,12 +190,16 @@ class TestAmbiguityReview:
 class TestNoMatch:
     def test_unmatched_candidate_is_new(self, drug_engine):
         drug_engine.add_individual(
-            DRUG_PRODUCT, "dp_other",
+            DRUG_PRODUCT,
+            "dp_other",
             properties={APPROVAL_NUMBER: "国药准字H20259999"},
         )
         result = align_entity(
             _candidate(approval="国药准字H20250000", name="全新药品"),
-            DRUG_PRODUCT, drug_engine, id_property=_ID, label_property=_LABEL,
+            DRUG_PRODUCT,
+            drug_engine,
+            id_property=_ID,
+            label_property=_LABEL,
         )
         assert result.action == "new"
         assert result.match_iri is None

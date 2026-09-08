@@ -21,7 +21,7 @@ for (const [name, request] of requests) {
     const controller = new AbortController();
     const api = {};
     const context = vm.createContext({
-      exports: api, process: { env: {} },
+      exports: api, process: { env: {} }, Headers,
       fetch: (_url, options) => {
         assert.equal(options.signal, controller.signal);
         return new Promise((_resolve, reject) => {

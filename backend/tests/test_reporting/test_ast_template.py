@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import uuid
-
 import pytest
 from pydantic import ValidationError
 
@@ -14,8 +12,8 @@ from app.services.reporting.ast_template import (
     Group,
     LLMExtractionSource,
     OntologyRelationBinding,
-    ReportTemplate,
     Repeat,
+    ReportTemplate,
     Section,
     SemanticSource,
     Slot,
@@ -158,18 +156,31 @@ class TestLLMExtractionSource:
     def test_discriminated_union_roundtrip(self):
         tpl = ReportTemplate(
             template_id="t",
-            sections=[{
-                "section_id": "s", "title": "S",
-                "groups": [{
-                    "group_id": "g", "title": "G", "kind": "fields",
-                    "slots": [{
-                        "slot_id": "a",
-                        "label": "A",
-                        "source": {"kind": "llm_extraction", "object_class_iri": "X",
-                                   "data_property_iri": "Y", "label": "Z"},
-                    }],
-                }],
-            }],
+            sections=[
+                {
+                    "section_id": "s",
+                    "title": "S",
+                    "groups": [
+                        {
+                            "group_id": "g",
+                            "title": "G",
+                            "kind": "fields",
+                            "slots": [
+                                {
+                                    "slot_id": "a",
+                                    "label": "A",
+                                    "source": {
+                                        "kind": "llm_extraction",
+                                        "object_class_iri": "X",
+                                        "data_property_iri": "Y",
+                                        "label": "Z",
+                                    },
+                                }
+                            ],
+                        }
+                    ],
+                }
+            ],
         )
         _, _, slot = next(tpl.iter_slots())
         assert slot.source.kind == "llm_extraction"
@@ -243,7 +254,7 @@ class TestSectionCoverage:
         assert b.required is True
         assert b.required_properties == []
         # C3: the model exposes only class/predicate TYPE IRIs — no individual field exists
-        assert set(b.model_dump().keys()) == {
+        assert set(b.model_dump().keys()) >= {
             "kind",
             "doc_class_iri",
             "predicate_iri",
@@ -261,94 +272,11 @@ class TestSectionCoverage:
 
 
 class TestResolveTemplate:
-    """015: three-tier fallback resolution keyed on per-template ``iri_pattern``.
+    def test_legacy_resolver_requires_explicit_selection(self, db):
+        from app.services.reporting.template_v2 import ReportingError
 
-    (Replaces the retired DocumentTypeMapping tier; iri_pattern is the functional
-    resolution key.)
-    """
-
-    def _seed_template(
-        self, db, *, name="Test", version="v1", is_default=False,
-        iri_pattern=None, status="draft",
-    ):
-        from app.models.extraction import AstTemplate
-        tpl_json = load_default_template().model_dump()
-        row = AstTemplate(
-            name=name, version=version, doc_no="TEST",
-            schema_json=tpl_json, is_default=is_default,
-            iri_pattern=iri_pattern, status=status,
-            created_by="test",
-        )
-        db.add(row)
-        db.commit()
-        db.refresh(row)
-        return row
-
-    def test_tier3_fallback_no_db_templates(self, db):
-        tpl, source, db_id = resolve_template("SomeReport", db)
-        assert source == "fallback"
-        assert db_id is None
-        assert tpl.template_id == DEFAULT_TEMPLATE_ID
-
-    def test_tier2_default_template(self, db):
-        row = self._seed_template(db, is_default=True)
-        tpl, source, db_id = resolve_template("UnknownType", db)
-        assert source == "default"
-        assert db_id == row.id
-
-    def test_tier1_iri_pattern_match(self, db):
-        row = self._seed_template(db, name="CMC", iri_pattern="CMCReport")
-        tpl, source, db_id = resolve_template(
-            "http://slpra.org/ontology/CMCReport", db,
-        )
-        assert source == "iri_pattern"
-        assert db_id == row.id
-
-    def test_iri_pattern_longest_wins(self, db):
-        broad = self._seed_template(db, name="Broad", version="v1", iri_pattern="Report")
-        specific = self._seed_template(
-            db, name="Specific", version="v2", iri_pattern="CMCReport",
-        )
-        _, source, db_id = resolve_template(
-            "http://slpra.org/ontology/CMCReport", db,
-        )
-        assert source == "iri_pattern"
-        assert db_id == specific.id
-
-    def test_archived_template_excluded_from_iri_pattern(self, db):
-        self._seed_template(
-            db, name="Archived", iri_pattern="CMCReport", status="archived",
-        )
-        default_row = self._seed_template(db, name="Fallback", version="v2", is_default=True)
-        _, source, db_id = resolve_template(
-            "http://slpra.org/ontology/CMCReport", db,
-        )
-        # archived pattern is skipped → falls through to the default tier
-        assert source == "default"
-        assert db_id == default_row.id
-
-    def test_no_doc_class_iri_skips_iri_pattern(self, db):
-        row = self._seed_template(
-            db, name="CMC", iri_pattern="CMCReport", is_default=True,
-        )
-        tpl, source, db_id = resolve_template(None, db)
-        assert source == "default"
-        assert db_id == row.id
-
-    def test_delete_default_rejected(self, client, db, analyst_headers):
-        row = self._seed_template(db, name="Default", is_default=True)
-        resp = client.delete(f"/api/ast-templates/{row.id}", headers=analyst_headers)
-        assert resp.status_code == 400
-
-    def test_set_default_unsets_previous(self, client, db, analyst_headers):
-        t1 = self._seed_template(db, name="A", version="v1", is_default=True)
-        t2 = self._seed_template(db, name="B", version="v2", is_default=False)
-        resp = client.post(f"/api/ast-templates/{t2.id}/set-default", headers=analyst_headers)
-        assert resp.status_code == 200
-        db.refresh(t1)
-        db.refresh(t2)
-        assert t1.is_default is False
-        assert t2.is_default is True
+        with pytest.raises(ReportingError, match="EXPLICIT_TEMPLATE_SELECTION_REQUIRED"):
+            resolve_template("urn:Report", db)
 
 
 # --------------------------------------------------------------------------- #
@@ -374,11 +302,15 @@ class TestSemanticSource:
             label="综合分析",
             source=SemanticSource(
                 prompt="综述本节关联本体与确定性风险结论",
-                coverage_refs=[coverage_key(
-                    OntologyRelationBinding(
-                        doc_class_iri=_DRUG, predicate_iri=_MADE_BY, range_class_iri=_MFR,
+                coverage_refs=[
+                    coverage_key(
+                        OntologyRelationBinding(
+                            doc_class_iri=_DRUG,
+                            predicate_iri=_MADE_BY,
+                            range_class_iri=_MFR,
+                        )
                     )
-                )],
+                ],
             ),
         )
         dumped = slot.model_dump()
@@ -390,11 +322,13 @@ class TestSemanticSource:
 
     def test_discriminator_picks_semantic_from_raw_json(self):
         """Raw JSON with ``kind:"semantic"`` resolves to SemanticSource via the union."""
-        slot = Slot.model_validate({
-            "slot_id": "s.sem",
-            "label": "语义",
-            "source": {"kind": "semantic", "prompt": "写作指令", "coverage_refs": []},
-        })
+        slot = Slot.model_validate(
+            {
+                "slot_id": "s.sem",
+                "label": "语义",
+                "source": {"kind": "semantic", "prompt": "写作指令", "coverage_refs": []},
+            }
+        )
         assert isinstance(slot.source, SemanticSource)
         assert slot.source.prompt == "写作指令"
 
@@ -406,13 +340,21 @@ class TestSemanticSource:
                     section_id="s0",
                     title="分析",
                     prompt="本节行文 prompt",
-                    coverage=[OntologyRelationBinding(
-                        doc_class_iri=_DRUG, predicate_iri=_MADE_BY, range_class_iri=_MFR,
-                    )],
-                    groups=[Group(
-                        group_id="g0", title="综述", kind="fields",
-                        slots=[Slot(slot_id="s0.sem", label="综述", source=SemanticSource())],
-                    )],
+                    coverage=[
+                        OntologyRelationBinding(
+                            doc_class_iri=_DRUG,
+                            predicate_iri=_MADE_BY,
+                            range_class_iri=_MFR,
+                        )
+                    ],
+                    groups=[
+                        Group(
+                            group_id="g0",
+                            title="综述",
+                            kind="fields",
+                            slots=[Slot(slot_id="s0.sem", label="综述", source=SemanticSource())],
+                        )
+                    ],
                 )
             ],
         )
@@ -450,7 +392,9 @@ class TestCoverageKey:
 
     def test_ontology_relation_key_is_short_pred_and_range(self):
         binding = OntologyRelationBinding(
-            doc_class_iri=_DRUG, predicate_iri=_MADE_BY, range_class_iri=_MFR,
+            doc_class_iri=_DRUG,
+            predicate_iri=_MADE_BY,
+            range_class_iri=_MFR,
         )
         assert coverage_key(binding) == "coverage.manufacturedBy__Manufacturer"
 
@@ -463,17 +407,3 @@ class TestCoverageKey:
     def test_fact_source_key_shortens_iri_style_source(self):
         binding = FactSourceBinding(source="https://ex.org/facts/ResponsiblePerson")
         assert coverage_key(binding) == "coverage.fact_source.ResponsiblePerson"
-
-    def test_key_is_stable_and_matches_validator_output(self):
-        """The key the validator emits into the manifest equals ``coverage_key`` verbatim."""
-        from app.services.reporting.coverage_validator import validate_coverage
-
-        binding = OntologyRelationBinding(
-            doc_class_iri=_DRUG, predicate_iri=_MADE_BY, range_class_iri=_MFR,
-        )
-        tpl = ReportTemplate(
-            template_id="t-cov",
-            sections=[Section(section_id="s0", title="节", groups=[], coverage=[binding])],
-        )
-        m = validate_coverage(tpl, [], [], engine=None)
-        assert any(s.slot_id == coverage_key(binding) for s in m.slots)

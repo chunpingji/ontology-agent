@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import json
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from docx import Document
@@ -32,8 +32,10 @@ def sample_content(tmp_path):
 
 def _make_client(response):
     client = MagicMock()
+    client.base_url = "http://model.test/v1"
+    client.chat.completions.create = AsyncMock()
 
-    def create(**kwargs):
+    async def create(**kwargs):
         request = json.loads(kwargs["messages"][1]["content"])
         value = {"section_id": request["section"]["id"], "document_summary": "评估摘要", **response}
         reply = MagicMock()
@@ -48,6 +50,8 @@ class TestBasic:
     def test_offline_structure_does_not_depend_on_semantic_success(self, sample_content):
         offline = suggest_slots(None, "", content_json=sample_content)
         client = MagicMock()
+        client.base_url = "http://model.test/v1"
+        client.chat.completions.create = AsyncMock()
         client.chat.completions.create.side_effect = RuntimeError("model unavailable")
         failed = suggest_slots(client, "", content_json=sample_content)
         assert offline["sections"] == failed["sections"]
@@ -100,13 +104,23 @@ class TestBasic:
 class TestOntologyCoverage:
     def test_graph_sourced_section_emits_required_type_coverage(self, sample_content):
         engine = build_drug_ontology()
-        client = _make_client({"coverage": [
-            {"predicate_iri": MANUFACTURED_BY, "range_class_iri": MANUFACTURER},
-            {"predicate_iri": MANUFACTURED_BY, "range_class_iri": MANUFACTURER},
-            {"predicate_iri": MANUFACTURED_BY, "range_class_iri": DRUG_NS + "individual_001"},
-        ]})
+        client = _make_client(
+            {
+                "coverage": [
+                    {"predicate_iri": MANUFACTURED_BY, "range_class_iri": MANUFACTURER},
+                    {"predicate_iri": MANUFACTURED_BY, "range_class_iri": MANUFACTURER},
+                    {
+                        "predicate_iri": MANUFACTURED_BY,
+                        "range_class_iri": DRUG_NS + "individual_001",
+                    },
+                ]
+            }
+        )
         result = suggest_slots(
-            client, "", ontology_engine=engine, doc_class_iri=DRUG_PRODUCT,
+            client,
+            "",
+            ontology_engine=engine,
+            doc_class_iri=DRUG_PRODUCT,
             content_json=sample_content,
         )
         assert len(result["coverage"]) == 1
@@ -144,7 +158,11 @@ class TestSupplementalCmcEdges:
     """
 
     def test_cmc_schema_edges_in_menu(self):
-        from app.services.extraction.relation_extractor import (
+        from app.services.extraction.slot_suggester import (
+            _build_ontology_context,
+            _extract_coverage,
+        )
+        from tests.fixtures.report_ontology_constants import (
             CMC_REPORT_IRI,
             DEGRADATION_PATHWAY_IRI,
             EQUIPMENT_IRI,
@@ -152,10 +170,6 @@ class TestSupplementalCmcEdges:
             HAS_STORAGE_CONDITION_IRI,
             STORAGE_CONDITION_IRI,
             USES_EQUIPMENT_IRI,
-        )
-        from app.services.extraction.slot_suggester import (
-            _build_ontology_context,
-            _extract_coverage,
         )
 
         # CMCReport 现有 domain 声明 → get_relation_schema BFS 自然覆盖 3 条边。
@@ -170,9 +184,11 @@ class TestSupplementalCmcEdges:
         for label in ("使用设备", "存放条件", "含降解途径"):
             assert label in prompt
 
-        r2 = {"coverage": [
-            {"predicate_iri": USES_EQUIPMENT_IRI, "range_class_iri": EQUIPMENT_IRI},
-        ]}
+        r2 = {
+            "coverage": [
+                {"predicate_iri": USES_EQUIPMENT_IRI, "range_class_iri": EQUIPMENT_IRI},
+            ]
+        }
         cov = _extract_coverage(r2, schema_edges, CMC_REPORT_IRI)
         assert len(cov) == 1
         assert cov[0]["predicate_iri"] == USES_EQUIPMENT_IRI
@@ -208,8 +224,8 @@ class TestCoverageCapable:
     def test_cmc_capable_via_domain_declarations(self):
         """CMCReport has 3 object properties with domain declarations → BFS finds
         them at hop-1, so CMCReport is capable."""
-        from app.services.extraction.relation_extractor import CMC_REPORT_IRI
         from app.services.extraction.slot_suggester import coverage_capable
+        from tests.fixtures.report_ontology_constants import CMC_REPORT_IRI
 
         engine = build_drug_ontology()
         assert coverage_capable(engine, CMC_REPORT_IRI) is True
@@ -250,11 +266,11 @@ class TestCoverageCapable:
 
     def test_capable_iff_menu_nonempty(self):
         """S9 parity: capability ⇔ a non-empty AI menu, for every fixture type."""
-        from app.services.extraction.relation_extractor import CMC_REPORT_IRI
         from app.services.extraction.slot_suggester import (
             _build_ontology_context,
             coverage_capable,
         )
+        from tests.fixtures.report_ontology_constants import CMC_REPORT_IRI
 
         engine = build_drug_ontology()
         for iri in (DRUG_PRODUCT, CMC_REPORT_IRI, MANUFACTURER, BIOLOGIC):
@@ -263,6 +279,7 @@ class TestCoverageCapable:
 
 
 # ── 013: tiptap → LLM text (server-side, structure-faithful) ───────────────
+
 
 class TestTiptapToText:
     def test_empty_returns_empty_string(self):

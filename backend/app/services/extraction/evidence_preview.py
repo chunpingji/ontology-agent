@@ -1,6 +1,7 @@
 """Read-only compatibility views. Never use these flattened views to commit facts."""
 
 from app.schemas.evidence import Candidate
+from app.services.ontology_instance_writer import instance_iri
 
 
 def _predicate_label(schema: dict, class_iri: str, predicate_iri: str) -> str:
@@ -17,10 +18,18 @@ def _predicate_label(schema: dict, class_iri: str, predicate_iri: str) -> str:
 
 def preview_relationships(candidates: list[Candidate], schema: dict) -> list[dict]:
     entities = {c.candidate_id: c for c in candidates if c.kind == "entity"}
+    canonical = {}
+    for entity in entities.values():
+        if entity.positive_eligible and entity.review_status != "rejected":
+            canonical.setdefault(instance_iri(entity), entity)
     values: dict[str, list] = {}
     for candidate in candidates:
-        if candidate.kind == "property" and candidate.positive_eligible:
-            values.setdefault(candidate.subject.candidate_id, []).append(
+        if (candidate.kind == "property" and candidate.positive_eligible
+                and candidate.review_status != "rejected"
+                and candidate.subject.candidate_id in entities
+                and entities[candidate.subject.candidate_id].positive_eligible
+                and entities[candidate.subject.candidate_id].review_status != "rejected"):
+            values.setdefault(instance_iri(entities[candidate.subject.candidate_id]), []).append(
                 {
                     "iri": candidate.predicate_iri,
                     "label": _predicate_label(
@@ -33,12 +42,15 @@ def preview_relationships(candidates: list[Candidate], schema: dict) -> list[dic
             )
     result = []
     for candidate in candidates:
-        if candidate.kind != "relationship" or not candidate.positive_eligible:
+        if (candidate.kind != "relationship" or not candidate.positive_eligible
+                or candidate.review_status == "rejected"):
             continue
         subject = entities.get(candidate.subject.candidate_id)
         target = entities.get(candidate.object.candidate_id)
         if subject is None or target is None:
             continue
+        subject = canonical.get(instance_iri(subject), subject)
+        target = canonical.get(instance_iri(target), target)
         result.append(
             {
                 "candidate_id": candidate.candidate_id,
@@ -62,7 +74,7 @@ def preview_relationships(candidates: list[Candidate], schema: dict) -> list[dic
                     "label", target.class_iri
                 ),
                 "object_source": "evidence_candidate",
-                "object_data_properties": values.get(target.candidate_id, []),
+                "object_data_properties": values.get(instance_iri(target), []),
                 "sub_relationships": [],
                 "source_ref": "",
                 "preview_only": True,

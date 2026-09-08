@@ -42,14 +42,19 @@ class Settings(BaseSettings):
     local_llm_server_model_path: str = ""  # must match /props; revision pins the delivered GGUF
     evidence_max_input_tokens: int = 16384
     evidence_max_output_tokens: int = 2048
-    evidence_max_tasks: int = 256
+    evidence_max_tasks: int = 2048
     evidence_max_regions_per_task: int = 32
     evidence_max_objects_per_task: int = 8
-    evidence_timeout_s: float = 60.0
+    evidence_timeout_s: float = 600.0
+    evidence_timeout_retries: int = 3
     evidence_world_dir: Path = Path(__file__).resolve().parent.parent / "data" / "evidence-worlds"
     local_llm_api_key: str = "not-needed"
     local_llm_max_tokens: int = 200000
     local_llm_temperature: float = 0.1
+    # Operational limits intentionally excluded from semantic TaskBudget/input_id.
+    local_llm_max_concurrency: int = 2
+    local_llm_total_timeout_s: float = 600.0
+    evidence_total_timeout_s: float = 600.0
 
     # Word 章节树分层摘要（018）。仅当本开关与 local_llm_enabled 同时开启才调用
     # 本地端点；关闭是 air-gap 正常态，树和分页仍完整返回。

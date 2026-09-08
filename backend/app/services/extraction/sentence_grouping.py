@@ -8,21 +8,23 @@
 
 from __future__ import annotations
 
-import re
-
 # ── CJK 分句 ─────────────────────────────────────────────────────────
 
-_SENT_SPLIT_RE = re.compile(
-    r"(?<=[。！？；\n])"
-    r"|(?<=[.!?;])\s+"
-)
 
 _MIN_SENT_CHARS = 8
 
 
 def segment_sentences(text: str) -> list[str]:
     """CJK 友好分句：按句末标点切分，过短片段合并到前一句。"""
-    raw = _SENT_SPLIT_RE.split(text.strip())
+    raw, start = [], 0
+    text = text.strip()
+    for index, char in enumerate(text):
+        if char in "。！？；\n" or (
+            char in ".!?;" and index + 1 < len(text) and text[index + 1].isspace()
+        ):
+            raw.append(text[start : index + 1])
+            start = index + 1
+    raw.append(text[start:])
     sents: list[str] = []
     buf = ""
     for frag in raw:
@@ -43,8 +45,26 @@ def segment_sentences(text: str) -> list[str]:
 
 # ── 段落类型判定 ──────────────────────────────────────────────────────
 
-_KV_RE = re.compile(r"^\s*[^：:]{1,40}[：:]\s*")
-_ENUM_RE = re.compile(r"^\s*(?:\d+[.、）)]\s*|[a-zA-Z][.、）)]\s*|[①②③④⑤⑥⑦⑧⑨⑩])")
+
+def _is_key_value(text):
+    stripped = text.lstrip()
+    position = next((i for i, char in enumerate(stripped) if char in "：:"), -1)
+    return 1 <= position <= 40
+
+
+def _is_enumerated(text):
+    stripped = text.lstrip()
+    if not stripped:
+        return False
+    if stripped[0] in "①②③④⑤⑥⑦⑧⑨⑩":
+        return True
+    index = 0
+    while index < len(stripped) and stripped[index].isdecimal():
+        index += 1
+    if not index and stripped[0].isascii() and stripped[0].isalpha():
+        index = 1
+    return bool(index) and index < len(stripped) and stripped[index] in ".、）)"
+
 
 _MIN_NARRATIVE_CHARS = 120
 _MIN_NARRATIVE_SENTS = 4
@@ -63,10 +83,10 @@ def is_narrative_segment(text: str) -> bool:
     sents = segment_sentences(text)
     if len(sents) < _MIN_NARRATIVE_SENTS:
         return False
-    kv_count = sum(1 for s in sents if _KV_RE.match(s))
+    kv_count = sum(1 for s in sents if _is_key_value(s))
     if kv_count / len(sents) >= _KV_RATIO_THRESHOLD:
         return False
-    enum_count = sum(1 for s in sents if _ENUM_RE.match(s))
+    enum_count = sum(1 for s in sents if _is_enumerated(s))
     if enum_count / len(sents) >= _ENUM_RATIO_THRESHOLD:
         return False
     return True

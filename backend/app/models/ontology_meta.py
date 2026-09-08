@@ -12,6 +12,7 @@ import uuid
 from datetime import datetime, timezone
 
 from sqlalchemy import (
+    JSON,
     Boolean,
     DateTime,
     Float,
@@ -21,7 +22,6 @@ from sqlalchemy import (
     Text,
     UniqueConstraint,
 )
-from sqlalchemy import JSON
 from sqlalchemy.orm import Mapped, declared_attr, mapped_column, relationship
 
 from app.db import Base
@@ -59,7 +59,9 @@ ROLE_NAMES = ("senior_analyst", "operator", "qa")
 
 # --- declarative rule layer vocabularies (spec 006, data-model.md §A) --------
 LOGIC_ROLES = ("defined", "production")
-RULE_GROUPS = ("equipment_dedication", "scenario_identification", "contamination_risk", "risk_assessment")
+RULE_GROUPS = (
+    "equipment_dedication", "scenario_identification", "contamination_risk", "risk_assessment",
+)
 CONFLICT_DIMENSIONS = ("dedication", "risk_level")
 CONFLICT_STRATEGIES = ("safety_override", "max_severity")
 OVERRIDE_DIRECTIONS = ("restrictive_wins", "permissive_wins")
@@ -281,6 +283,9 @@ class OntologyRelease(Base):
     title: Mapped[str] = mapped_column(String(255), nullable=False)
     status: Mapped[str] = mapped_column(String(20), nullable=False, default=STATUS_DRAFT)
     ttl_commit_sha: Mapped[str | None] = mapped_column(String(64))
+    semantic_snapshot_ref: Mapped[str | None] = mapped_column(
+        String(64), ForeignKey("ontology_schema_snapshots.id")
+    )
     ttl_diff: Mapped[str | None] = mapped_column(Text)
     validation_report: Mapped[dict | None] = mapped_column(JSON)
     published_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))

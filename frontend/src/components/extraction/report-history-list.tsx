@@ -16,9 +16,11 @@ import type { GeneratedReportDTO } from "@/lib/api";
 interface ReportHistoryListProps {
   reports: GeneratedReportDTO[];
   onDownload?: (report: GeneratedReportDTO) => void;
+  onView?: (report: GeneratedReportDTO) => void;
+  canDownload?: (report: GeneratedReportDTO) => boolean;
 }
 
-export function ReportHistoryList({ reports, onDownload }: ReportHistoryListProps) {
+export function ReportHistoryList({ reports, onDownload, onView, canDownload }: ReportHistoryListProps) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
   if (reports.length === 0) {
@@ -81,10 +83,13 @@ export function ReportHistoryList({ reports, onDownload }: ReportHistoryListProp
                 )}
               </TableCell>
               <TableCell className="text-right">
+                {onView && r.report_run_id && <Button variant="link" size="sm" className="mr-3 h-auto p-0 text-xs"
+                  onClick={() => onView(r)}>查看</Button>}
                 <Button
                   variant="link"
                   size="sm"
                   className="h-auto p-0 text-xs"
+                  disabled={canDownload ? !canDownload(r) : false}
                   onClick={() => onDownload?.(r)}
                 >
                   下载

@@ -33,7 +33,7 @@ interface GLink extends d3.SimulationLinkDatum<GNode> {
   ltIri?: string; // 仅 link type 边：其 slpra_iri，用于与关系面板双向高亮
 }
 
-const short = (iri: string | null | undefined) => (iri ? iri.split(/[/#]/).pop() ?? iri : "");
+const short = (iri: string | null | undefined) => (iri ? iri.split("/").flatMap((part) => part.split("#")).pop() ?? iri : "");
 const SELECTED = "#f59e0b"; // 选中节点的高亮描边（amber-500）
 const LT_COLOR = "#7c3aed"; // 关系（link type）边的紫色（violet-600）
 const LT_HOT = "#5b21b6"; // 被聚焦的关系边的加深紫（violet-800）

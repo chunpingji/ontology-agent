@@ -134,9 +134,7 @@ def _build_chain(engine: Any, target_class_iri: str) -> tuple[set[str], set[str]
     if callable(get_subclasses):
         try:
             subclass_iris = {
-                c["iri"]
-                for c in (get_subclasses(target_class_iri) or [])
-                if c.get("iri")
+                c["iri"] for c in (get_subclasses(target_class_iri) or []) if c.get("iri")
             }
         except Exception:  # pragma: no cover - defensive: degrade to same-class
             logger.warning("align_entity: get_subclasses 失败，退化为同类对齐", exc_info=True)
@@ -246,25 +244,13 @@ def _ind_label(ind: IndividualInfo) -> str:
 
 
 def _get_candidate_value(candidate: dict, prop_key: str) -> Any:
-    for key, val in candidate.items():
-        if prop_key in key:
-            return val
-    return None
+    return candidate.get(prop_key)
 
 
 def _get_candidate_label(candidate: dict, label_prop: str | None) -> str | None:
-    if label_prop:
-        val = _get_candidate_value(candidate, label_prop)
-        if val:
-            return str(val)
-    for key, val in candidate.items():
-        if "name" in key.lower() or "label" in key.lower():
-            return str(val) if val else None
-    return None
+    value = candidate.get(label_prop) if label_prop else None
+    return str(value) if value is not None and value != "" else None
 
 
 def _get_individual_value(ind: IndividualInfo, prop_key: str) -> Any:
-    for key, val in ind.properties.items():
-        if prop_key in key:
-            return val
-    return None
+    return ind.properties.get(prop_key)

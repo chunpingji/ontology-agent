@@ -19,6 +19,14 @@ SCHEMA = {
 }
 
 
+def accept_fixture_types(request):
+    """Explicit type verdicts for known fixture entities; not a model quality oracle."""
+    return {"decisions": [
+        {"candidate_id": c["candidate_id"], "supported": True, "reason": "fixture type evidence"}
+        for c in request["candidate"]["proposed_entities"]
+    ]}
+
+
 def test_class_menus_use_token_budget_and_cover_all_regions(tmp_path):
     doc = Document()
     for index in range(3):
@@ -223,6 +231,9 @@ def test_valid_entity_sibling_survives_bad_quote_without_hiding_task_failure(tmp
 
     def model(system, user, schema, budget):
         calls.append(user)
+        request = json.loads(user)
+        if request["stage"] == "verify_entity_types":
+            return accept_fixture_types(request)
         fragment = json.loads(json.loads(user)["context"])["fragments"][0]
         return {
             "entities": [
@@ -250,7 +261,7 @@ def test_valid_entity_sibling_survives_bad_quote_without_hiding_task_failure(tmp
     assert first.candidates[0].validation_status == "passed"
     assert first.candidates[0].review_status == "pending"
     second = runner.run(ir, checkpoint=first.checkpoint)
-    assert second.candidates == first.candidates and len(calls) == 1
+    assert second.candidates == first.candidates and len(calls) == 2
     assert second.completion == "incomplete"
 
 
@@ -360,6 +371,8 @@ def span(fragment, text):
 def scripted_model(system, user, schema, budget):
     """A contract fixture, not a quality oracle or a production model substitute."""
     request = json.loads(user)
+    if request["stage"] == "verify_entity_types":
+        return accept_fixture_types(request)
     context = json.loads(request["context"])
     task = context["task"]
     target = next(f for f in context["fragments"] if f["purpose"] == "target")
@@ -541,6 +554,8 @@ def test_positive_paths_use_real_parent_edges_and_stop_cycles(tmp_path):
 
     def model(system, user, response_schema, budget):
         request = json.loads(user)
+        if request["stage"] == "verify_entity_types":
+            return accept_fixture_types(request)
         context = json.loads(request["context"])
         target = next(f for f in context["fragments"] if f["purpose"] == "target")
         task = context["task"]
@@ -621,6 +636,9 @@ def test_root_windows_do_not_starve_other_subjects_or_relationships(tmp_path):
     calls = []
 
     def model(system, user, response_schema, budget):
+        request = json.loads(user)
+        if request["stage"] == "verify_entity_types":
+            return accept_fixture_types(request)
         context = json.loads(json.loads(user)["context"])
         task = context["task"]
         target = next(f for f in context["fragments"] if f["purpose"] == "target")
@@ -648,12 +666,14 @@ def test_root_windows_do_not_starve_other_subjects_or_relationships(tmp_path):
         model_identity="fair",
         budget=TaskBudget(max_input_tokens=60000, max_tasks=len(ir.evidence_units) + 9),
     )
-    first = runner.run(ir, effective_class="urn:Report", pause_after=len(ir.evidence_units) + 3)
+    first = runner.run(ir, effective_class="urn:Report", pause_after=len(ir.evidence_units) + 6)
     assert {name for name, _, _ in calls} == {"报告", "设备 A", "设备 B"}
     second = runner.run(ir, effective_class="urn:Report", checkpoint=first.checkpoint)
     assert len(calls) == 9 and second.completion == "incomplete"
     root_calls = [call for call in calls if call[0] == "报告"]
-    assert [call[1] for call in root_calls] == ["urn:uses", "urn:report0", "urn:report1"]
+    assert root_calls[0][1] == "urn:uses"
+    assert {"urn:report0", "urn:report1"} <= {call[1] for call in root_calls}
+    assert len(root_calls) == 6  # Document work receives two turns per background turn.
     assert second.checkpoint["attempt_count"] == len(ir.evidence_units) + 9
 
 
@@ -670,6 +690,9 @@ def test_relationship_object_batches_cover_all_pairs_and_resume(tmp_path):
     batches = []
 
     def model(system, user, response_schema, budget):
+        request = json.loads(user)
+        if request["stage"] == "verify_entity_types":
+            return accept_fixture_types(request)
         context = json.loads(json.loads(user)["context"])
         task = context["task"]
         target = next(f for f in context["fragments"] if f["purpose"] == "target")

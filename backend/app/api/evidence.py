@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Any, Literal
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from pydantic import Field
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -33,9 +33,11 @@ from app.services.extraction.candidate_validation import validate_entered_candid
 from app.services.extraction.document_ir import DocumentIR
 from app.services.extraction.evidence_identity import evidence_hash, stable_id
 from app.services.extraction.external_records import configured_external_records
-from app.services.extraction.extraction_tasks import semantic_schema_from_engine
+from app.services.extraction.extraction_tasks import SEMANTIC_VERSION, semantic_schema_from_engine
+from app.services.extraction.performance import profiled
 from app.services.fact_commit import FactCommitService
 from app.services.ontology_instance_writer import EvidenceInstanceWriter
+from app.services.reporting.template_v2 import ReportingError
 
 router = APIRouter(dependencies=[Depends(get_current_user)])
 _analyst = require_role(ROLE_SENIOR_ANALYST)
@@ -47,6 +49,26 @@ class CandidateCreate(EvidenceModel):
     candidate: dict[str, Any]
 
 
+class CalculationReview(EvidenceModel):
+    subject_candidate_id: str = Field(min_length=1)
+    calculation_id: str = Field(min_length=64, max_length=64)
+    expected_revision: int = Field(ge=0)
+    choice: Literal["derived", "asserted", "rejected", "pending"]
+    reason: str = Field(min_length=1, max_length=4000)
+
+
+@router.post("/jobs/{job_id}/calculations/decision")
+def review_calculation(job_id: UUID, body: CalculationReview, db: Session = Depends(get_db),
+                       identity: Identity = Depends(_analyst)):
+    from app.services.reasoning.calculation_review import decide
+
+    _job(db, job_id)
+    if not body.reason.strip():
+        raise HTTPException(422, "请填写处理理由")
+    with _errors():
+        return decide(db, job_id, body, identity.username)
+
+
 class ExtractOptions(EvidenceModel):
     retry_failed: bool = False
     reason: str = Field(default="", max_length=4000)
@@ -55,6 +77,7 @@ class ExtractOptions(EvidenceModel):
 
 class CandidateReview(EvidenceModel):
     expected_revision: int = Field(ge=1)
+    expected_review_status: Literal["pending", "confirmed", "rejected"] | None = None
     decision: Literal["confirmed", "rejected"]
     reason: str = Field(min_length=1, max_length=4000)
     edited_payload: dict[str, Any] | None = None
@@ -91,6 +114,8 @@ def _errors():
         raise HTTPException(409, str(exc)) from exc
     except LookupError as exc:
         raise HTTPException(404, str(exc)) from exc
+    except ReportingError as exc:
+        raise HTTPException(exc.status, exc.detail) from exc
     except ValueError as exc:
         raise HTTPException(422, str(exc)) from exc
 
@@ -109,7 +134,10 @@ def _analysis(db, job_id):
 
 
 def _validator(db, job_id, engine, actor, reason):
+    from app.services.ontology_model_context import capture_schema
+
     schema = semantic_schema_from_engine(engine)
+    capture_schema(db, schema)
     ir = _analysis(db, job_id)
 
     def validate(candidate):
@@ -127,8 +155,13 @@ def _validator(db, job_id, engine, actor, reason):
     return validate
 
 
-def _candidate_json(candidate):
-    return {**candidate.model_dump(mode="json"), "positive_eligible": candidate.positive_eligible}
+def _candidate_json(candidate, labels=None):
+    return {
+        **candidate.model_dump(mode="json"),
+        "positive_eligible": candidate.positive_eligible,
+        "class_label": (labels or {}).get(candidate.class_iri),
+        "predicate_label": (labels or {}).get(candidate.predicate_iri),
+    }
 
 
 def _commit_json(commit):
@@ -148,9 +181,57 @@ def _service(db, engine):
     return FactCommitService(db, EvidenceInstanceWriter(engine, settings.evidence_world_dir))
 
 
+def _graph_schema(job, candidates, schema):
+    """Expose the source's ontology shape independently of recognized assertions."""
+    document_classes = {
+        candidate.class_iri
+        for candidate in candidates
+        if candidate.kind == "entity" and candidate.identity.get("document_root")
+    } - {None}
+    document_class = (job.source_config or {}).get("doc_class_iri") or (
+        next(iter(document_classes)) if len(document_classes) == 1 else None
+    )
+    used_classes = {candidate.class_iri for candidate in candidates if candidate.kind == "entity"}
+    used_classes.add(document_class)
+    # Include range labels even when no object instance has been recognized yet.
+    range_classes = {
+        iri
+        for class_iri in used_classes
+        for relation in schema.get(class_iri, {}).get("relationships", [])
+        for iri in relation.get("range", [])
+    }
+    classes = {}
+    for iri in sorted((used_classes | range_classes) - {None}):
+        if iri not in schema:
+            continue
+        definition = schema[iri]
+        classes[iri] = {
+            "label": definition.get("label"),
+            "parents": definition.get("parents", []),
+            "properties": [
+                {"iri": prop["iri"], "label": prop.get("label")}
+                for prop in definition.get("properties", [])
+            ],
+            "relationships": [
+                {"iri": prop["iri"], "label": prop.get("label"), "range": prop.get("range", [])}
+                for prop in definition.get("relationships", [])
+            ],
+        }
+    return {
+        "document_class_iri": document_class,
+        "document_label": job.source_filename,
+        "classes": classes,
+    }
+
+
 @router.get("/jobs/{job_id}/evidence")
-def list_evidence(job_id: UUID, db: Session = Depends(get_db)):
-    _job(db, job_id)
+@profiled("evidence_read")
+def list_evidence(job_id: UUID, db: Session = Depends(get_db), engine=Depends(get_ontology_engine),
+                  debug: bool = False):
+    from app.services.reasoning.calculation_review import job_calculations
+    from app.services.reasoning.rule_service import required_checks
+
+    job = _job(db, job_id)
     state = db.get(EvidenceJobState, job_id, populate_existing=True)
     commits = db.scalars(
         select(EvidenceCommit)
@@ -158,62 +239,69 @@ def list_evidence(job_id: UUID, db: Session = Depends(get_db)):
         .order_by(EvidenceCommit.created_at.desc())
         .limit(100)
     )
+    run = state.extraction_run if state else None
+    versions = sorted(
+        {
+            candidate.get("extractor_version", "")
+            for candidate in (run or {}).get("candidates", [])
+            if candidate.get("extractor_version", "").startswith("generic-semantic-")
+        }
+    )
+    if (run or {}).get("extractor_version"):
+        versions = [run["extractor_version"]]
+    schema = semantic_schema_from_engine(engine)
+    candidates = CandidateStore(db).list(job_id)
+    labels = {}
+    for iri, definition in schema.items():
+        labels[iri] = definition.get("label")
+        for predicate in [*definition.get("properties", []), *definition.get("relationships", [])]:
+            labels[predicate["iri"]] = predicate.get("label")
+    graph_schema = _graph_schema(job, candidates, schema)
     return {
         "schema_version": 1,
-        "candidates": [_candidate_json(c) for c in CandidateStore(db).list(job_id)],
-        "run": state.extraction_run if state else None,
+        "candidates": [_candidate_json(c, labels) for c in candidates],
+        "graph_schema": graph_schema,
+        "calculation_required": bool(required_checks([
+            {"source_slot_id": "document", "class_iri": graph_schema["document_class_iri"]}
+        ])),
+        "calculations": job_calculations(db, job_id, candidates=candidates),
+        "run": run if debug or run is None else {
+            key: value for key, value in run.items()
+            if key not in {"candidates", "tasks", "checkpoint"}
+        },
+        "revision": state.revision if state else 0,
+        "extraction_version": {
+            "current": SEMANTIC_VERSION,
+            "stored": versions,
+            "outdated": bool(versions) and versions != [SEMANTIC_VERSION],
+        },
         "analysis_id": state.analysis_id if state else None,
         "snapshot_id": state.snapshot_id if state else None,
         "commits": [_commit_json(c) for c in commits],
     }
 
 
-@router.post("/jobs/{job_id}/evidence/extract")
+@router.post("/jobs/{job_id}/evidence/extract", status_code=202)
 def extract_evidence(
     job_id: UUID,
+    background: BackgroundTasks,
     req: ExtractOptions | None = None,
     db: Session = Depends(get_db),
     engine=Depends(get_ontology_engine),
     identity: Identity = Depends(_analyst),
 ):
-    from app.api.extraction import (
-        _compute_annotation,
-        _persist_evidence_payload,
-        _write_annotation_cache,
-    )
+    from app.api.extraction import _enqueue_annotation
 
     if req and req.retry_failed and not req.reason.strip():
         raise HTTPException(422, "an explicit retry reason is required")
     job = _job(db, job_id)
-    if (job.source_config or {}).get("template_id") and not (job.source_config or {}).get(
-        "doc_class_iri"
-    ):
-        from app.models.extraction import AstTemplate
-
-        template = db.get(AstTemplate, UUID(job.source_config["template_id"]))
-        if template and template.iri_pattern:
-            job.source_config = {**job.source_config, "doc_class_iri": template.iri_pattern}
     if job.source_type != "word" or not job.document_path or not Path(job.document_path).is_file():
         raise HTTPException(422, "a persisted Word source is required")
-    with _errors():
-        # This synchronous route is run in FastAPI's worker thread, including
-        # tokenizer/model and SQL work. No caller-provided checkpoint is trusted.
-        state = db.get(EvidenceJobState, job_id)
-        checkpoint = (state.extraction_run or {}).get("checkpoint") if state else None
-        if req and req.retry_failed:
-            from app.services import audit
-
-            audit.append(
-                db, "evidence.extract_retry", actor=identity.username, entity_iri=str(job_id),
-                details={"reason": req.reason, "input_id": (checkpoint or {}).get("input_id")},
-            )
-        payload = _compute_annotation(
-            job, engine, checkpoint=checkpoint, retry_failed=bool(req and req.retry_failed),
-            pause_after=req.pause_after if req else None,
-        )
-        _persist_evidence_payload(job_id, payload, db, actor=identity.username)
-        _write_annotation_cache(job_id, payload)
-        return list_evidence(job_id, db)
+    return _enqueue_annotation(
+        job_id, background, engine, db, mode="continue", actor=identity.username,
+        retry_failed=bool(req and req.retry_failed), pause_after=req.pause_after if req else None,
+        reason=req.reason if req else "",
+    )
 
 
 @router.get("/jobs/{job_id}/evidence/coverage")
@@ -223,14 +311,16 @@ def evidence_coverage(
     snapshot_id: str | None = None,
     db: Session = Depends(get_db),
     engine=Depends(get_ontology_engine),
+    identity: Identity = Depends(get_current_user),
 ):
-    from app.services.reporting.snapshot_report import build_report_inputs
+    from app.services.reporting.coverage_v2 import build_evidence_coverage
 
     with _errors():
-        inputs = build_report_inputs(
+        inputs = build_evidence_coverage(
             db,
             _job(db, job_id),
             schema=semantic_schema_from_engine(engine),
+            actor=identity.username,
             template_id=template_id,
             snapshot_id=snapshot_id,
         )
@@ -251,7 +341,7 @@ def confirm_discovery(
 ):
     from app.services import audit
     from app.services.extraction.gap_workflow import update_run
-    from app.services.reporting.snapshot_report import build_report_inputs
+    from app.services.reporting.coverage_v2 import build_report_inputs
 
     with _errors():
         state = db.get(EvidenceJobState, job_id, populate_existing=True)
@@ -260,6 +350,7 @@ def confirm_discovery(
             db,
             _job(db, job_id),
             schema=semantic_schema_from_engine(engine),
+            actor=identity.username,
             template_id=req.template_id,
         )
         if inputs["manifest_id"] != req.manifest_id:
@@ -277,7 +368,11 @@ def confirm_discovery(
             raise ValueError("explicit coverage task IDs are required")
         for key in req.coverage_task_ids:
             task = tasks.get(key)
-            if not task or task["status"] in {"pending_review", "conflict"}:
+            if (
+                not task
+                or task.get("cross_source")
+                or task["status"] in {"pending_review", "conflict", "invalid", "unavailable"}
+            ):
                 raise ValueError("cannot close unresolved or conflicting discovery")
             decisions[key] = {
                 "actor": identity.username,
@@ -285,6 +380,7 @@ def confirm_discovery(
                 "snapshot_id": state.snapshot_id,
                 "discovery_revision": inputs["discovery_revision"],
                 "object_iris": [o["instance_iri"] for o in task.get("objects", [])],
+                "report_selector_key": task.get("report_selector_key"),
             }
         update_run(db, job_id, revision, {**state.extraction_run, "discovery_decisions": decisions})
         audit.append(
@@ -300,7 +396,7 @@ def confirm_discovery(
             commit=False,
         )
         db.commit()
-        return evidence_coverage(job_id, req.template_id, None, db, engine)
+        return evidence_coverage(job_id, req.template_id, None, db, engine, identity)
 
 
 @router.post("/jobs/{job_id}/evidence/fill-gaps")
@@ -316,14 +412,16 @@ def fill_evidence_gaps(
     from app.services.extraction.gap_workflow import finish_round, reserve_round
     from app.services.extraction.local_semantic_model import configured_generic_runner
     from app.services.fact_selector import FactSelector
-    from app.services.reporting.snapshot_report import build_report_inputs
+    from app.services.reporting.coverage_v2 import build_report_inputs
 
     with _errors():
         job = _job(db, job_id)
         state = db.get(EvidenceJobState, job_id, populate_existing=True)
         revision = state.revision if state else None
         runner = configured_generic_runner(engine)
-        inputs = build_report_inputs(db, job, schema=runner.schema, template_id=req.template_id)
+        inputs = build_report_inputs(
+            db, job, schema=runner.schema, actor=identity.username, template_id=req.template_id
+        )
         if inputs["manifest_id"] != req.manifest_id:
             raise CandidateConflict("coverage changed; reload before filling gaps")
         state = db.get(EvidenceJobState, job_id)
@@ -360,6 +458,9 @@ def fill_evidence_gaps(
             db.rollback()
             finish_round(db, job_id, key, "execution_failed", 0, [])
             raise
+        from app.services.ontology_model_context import capture_schema
+
+        capture_schema(db, runner.schema)
         stored = (
             CandidateStore(db).persist_validated(job_id, values, actor=identity.username)
             if values
@@ -397,6 +498,10 @@ def create_candidate(
             "validation_status",
             "validation_issues",
             "review_status",
+            "review_source",
+            "review_reason",
+            "class_label",
+            "predicate_label",
             "commit_status",
             "ontology_release",
             "model_identity",
@@ -506,6 +611,7 @@ def review_candidate(
                 identity.username,
                 edited_payload=edits,
                 validator=_validator(db, row.job_id, engine, identity.username, req.reason),
+                expected_review_status=req.expected_review_status,
             )
         )
 

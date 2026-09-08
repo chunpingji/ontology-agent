@@ -164,6 +164,7 @@ class EvidenceScope(EvidenceModel):
     record_ids: list[str] = Field(default_factory=list)
     parent_scope_id: str | None = None
     construction_evidence: list[EvidenceAnchor] = Field(default_factory=list)
+    reference_ranges: list[EvidenceRange] = Field(default_factory=list)
     expansion_history: list[ScopeExpansion] = Field(default_factory=list)
     policy_version: str = "evidence-scope-v1"
 
@@ -181,7 +182,7 @@ class LiteralValue(EvidenceModel):
     raw_unit: str | None = None
     canonical_unit: str | None = None
     dimension: str | None = None
-    normalizer_version: str = "literal-v1"
+    normalizer_version: str = "literal-v2"
     conversion_record: dict[str, Any] = Field(default_factory=dict)
 
     @model_validator(mode="after")
@@ -212,6 +213,13 @@ class ValidationIssue(EvidenceModel):
     stage: str = "validation"
 
 
+class TypeVerification(EvidenceModel):
+    supported: bool
+    reason: NonEmpty
+    identity_supported: bool = False
+    verifier_version: str = "entity-types-v1"
+
+
 class Candidate(EvidenceModel):
     schema_version: Literal[1] = 1
     candidate_id: NonEmpty
@@ -220,6 +228,7 @@ class Candidate(EvidenceModel):
     class_iri: str | None = None
     text: str = ""
     identity: dict[str, str] = Field(default_factory=dict)
+    type_verification: TypeVerification | None = None
     subject: CandidateRef | None = None
     object: CandidateRef | None = None
     predicate_iri: str | None = None
@@ -235,6 +244,8 @@ class Candidate(EvidenceModel):
     validation_status: Literal["pending", "passed", "rejected", "conflict"] = "pending"
     validation_issues: list[ValidationIssue] = Field(default_factory=list)
     review_status: Literal["pending", "confirmed", "rejected"] = "pending"
+    review_source: Literal["automatic", "manual"] | None = None
+    review_reason: str = ""
     commit_status: Literal[
         "not_requested", "queued", "applying", "succeeded", "failed",
     ] = "not_requested"
@@ -298,13 +309,14 @@ class Candidate(EvidenceModel):
 class TaskBudget(EvidenceModel):
     max_input_tokens: int = Field(default=4096, ge=1)
     max_output_tokens: int = Field(default=2048, ge=1)
-    max_tasks: int = Field(default=256, ge=1)
+    max_tasks: int = Field(default=2048, ge=1)
     max_hops: int = Field(default=4, ge=1, le=16)
     max_gap_rounds: int = Field(default=2, ge=0, le=2)
     max_scope_expansions: int = Field(default=1, ge=0, le=1)
     max_regions_per_task: int = Field(default=1, ge=1, le=32)
     max_objects_per_task: int = Field(default=8, ge=1, le=128)
-    timeout_s: float = Field(default=60.0, gt=0)
+    timeout_s: float = Field(default=600.0, gt=0)
+    timeout_retries: int = Field(default=3, ge=0)
 
 
 class ExtractionTask(EvidenceModel):

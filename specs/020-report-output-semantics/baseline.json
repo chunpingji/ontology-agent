@@ -1,0 +1,99 @@
+{
+  "observed_at": "2026-09-06T11:28:24.292191+00:00",
+  "method": "PostgreSQL REPEATABLE READ READ ONLY; deployment inspected read-only; no business records approved or published",
+  "source_commit": "ce41f8b75c727d5db4c0343732c0ec1a92f44028",
+  "working_branch": "020-report-output-semantics",
+  "deployment": {
+    "container": "ontology-agent-backend-1",
+    "image_id": "sha256:50ca57254496673b065c22aabb7e2364c5576c3efd723400589541890aa2cebc",
+    "started_at": "2026-09-06T08:59:01.928217644Z",
+    "cwd": "/app",
+    "api_port": 8000,
+    "database_revision": "0026_evidence_facts",
+    "versions": {
+      "Python": "3.12.13",
+      "FastAPI": "0.141.1",
+      "Pydantic": "2.13.5",
+      "SQLAlchemy": "2.0.52",
+      "Alembic": "1.19.2"
+    }
+  },
+  "template": {
+    "id": "dea037a2-f4b5-478a-8e0e-d5471fc45cbc",
+    "version": "v18",
+    "status": "published",
+    "schema_revision": "v1",
+    "sections": 3,
+    "groups": 6,
+    "slots": 32,
+    "schema_hash": "78721d33afb40f12e77d2e048b5d613945c3442fafe759256561fbb4bce6b8d1",
+    "fixture": "backend/tests/fixtures/risk_template_dea037a2.json",
+    "sample_sha256": "f898de8e40e9b188dbbbd48be291c71813626f04d56df3d7924a6e940aed99a7"
+  },
+  "default_source": {
+    "job_id": "19e291e5-f344-42eb-b5e0-ff40ae3e760b",
+    "status": "reviewing",
+    "file_name": "原料药 HRS-5678 临床备样生产信息.docx",
+    "sha256": "8c01cff45383d8b0c76b3e744c2deb374b19a154f5b801557fb44cd6445709a5",
+    "pending_entity_candidates": 67,
+    "approved": 0,
+    "rejected": 0,
+    "evidence_revision": 2,
+    "snapshot_id": null,
+    "commits": 0,
+    "snapshots": 0
+  },
+  "database_counts": {
+    "evidence_snapshots": 0,
+    "ontology_release": 0
+  },
+  "rules": [
+    {
+      "id": "29f3cee8-781a-4506-9616-62d6df70881e",
+      "key": "R-RA1",
+      "version": 1,
+      "status": "published",
+      "is_reviewed": false,
+      "is_disabled": false,
+      "definition_hash": "23390a2e3ba7d89af3c90acc0d1549c321fe8835f8fe066371d6d634b591206f"
+    },
+    {
+      "id": "145799f3-c982-49dc-81a6-9a2cdc9e3533",
+      "key": "R-RA2",
+      "version": 1,
+      "status": "published",
+      "is_reviewed": false,
+      "is_disabled": false,
+      "definition_hash": "1a2e1b96165dc448f6197fb59eefbf12cda2f37eb596a9b680264785afaa33a6"
+    },
+    {
+      "id": "447ec5b7-8179-444a-a046-6da5d2d4e8a0",
+      "key": "R-RA3",
+      "version": 1,
+      "status": "published",
+      "is_reviewed": false,
+      "is_disabled": false,
+      "definition_hash": "8bca8fcf3475a0bb3ff072fae8974b9f43d25dc9b73cc3cf04eeccb6ffdb7a0b"
+    },
+    {
+      "id": "e8fac019-6fe5-4cc8-ba4c-dc1f56a1264f",
+      "key": "R-RA4",
+      "version": 1,
+      "status": "published",
+      "is_reviewed": false,
+      "is_disabled": false,
+      "definition_hash": "4d06408da7e6a03aa90cdb30b27f7f1538e39965f892f080695ab74a8f43564e"
+    },
+    {
+      "id": "9152e245-dd10-45f6-9096-0945cf84f579",
+      "key": "R-RA5",
+      "version": 1,
+      "status": "published",
+      "is_reviewed": false,
+      "is_disabled": false,
+      "definition_hash": "4fbb402f8c3b3309491370fb51ac6f7ae73d646c0ea932d45dd3299913c23c7f"
+    }
+  ],
+  "hash_definition": "SHA256 canonical UTF-8 JSON (ensure_ascii=false, sorted keys, compact separators); rule fields: rule_key/rule_group/version/antecedent/consequent/priority",
+  "acceptance": "Real source has no published facts and rules have not been semantically reviewed. Code fixtures do not establish business readiness."
+}

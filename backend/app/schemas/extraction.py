@@ -12,7 +12,7 @@ class ExtractionConfigCreate(BaseModel):
     target_class_iri: str
     source_type: str
     column_mapping: dict[str, str] | None = None
-    ner_columns: list[str] | None = None      # 008 US3：自由文本列白名单（本地 NER 富化）
+    ner_columns: list[str] | None = None  # 008 US3：自由文本列白名单（本地 NER 富化）
     llm_prompt_template: str | None = None
     few_shot_examples: list[dict] | None = None
     property_constraints: dict | None = None
@@ -26,7 +26,7 @@ class ExtractionConfigResponse(BaseModel):
     target_class_iri: str
     source_type: str
     column_mapping: dict | None = None
-    ner_columns: list[str] | None = None      # 008 US3：自由文本列白名单（本地 NER 富化）
+    ner_columns: list[str] | None = None  # 008 US3：自由文本列白名单（本地 NER 富化）
     llm_prompt_template: str | None = None
     is_active: bool = True
 
@@ -112,8 +112,8 @@ class DBSourceSpec(BaseModel):
 class DocExtractionRequest(BaseModel):
     """文档批准/新版本事件 → 入待抽取队列（007 US2，FR-007/Q1 手动发起）。"""
 
-    doc_ref: str       # 文档个体 IRI（facts#…，溯源锚点；版本指针经 content_ref 承载）
-    content_ref: str   # 外部正文引用（按需取，不入库全文, Q2）
+    doc_ref: str  # 文档个体 IRI（facts#…，溯源锚点；版本指针经 content_ref 承载）
+    content_ref: str  # 外部正文引用（按需取，不入库全文, Q2）
     config_id: UUID
 
 
@@ -133,6 +133,8 @@ class GeneratedReportResponse(BaseModel):
     coverage_manifest_id: str | None = None
     selector_version: str | None = None
     source_discovery_hash: str | None = None
+    report_run_id: str | None = None
+    report_artifact_id: str | None = None
 
 
 # --------------------------------------------------------------------------- #
@@ -179,6 +181,10 @@ class AstTemplateResponse(BaseModel):
     iri_pattern: str | None = None
     status: str = "draft"
     slot_count: int = 0
+    schema_version: int = 1
+    template_family_id: str | None = None
+    revision_no: int = 1
+    schema_hash: str | None = None
     is_default: bool = False
     created_by: str | None = None
     owner: str | None = None
@@ -223,10 +229,10 @@ class PreviewSectionNarrativeRequest(BaseModel):
     """015+: preview the prose one section's 行文 Prompt produces, using a matched
     document's REAL extracted facts (not sample text) — same path as the report."""
 
-    job_id: UUID          # 已关联真实文档的抽取作业（真实事实来源）
-    template_id: UUID     # 当前编辑的模板（取本节结构 + 确定性风险/覆盖）
+    job_id: UUID  # 已关联真实文档的抽取作业（真实事实来源）
+    template_id: UUID  # 当前编辑的模板（取本节结构 + 确定性风险/覆盖）
     section_id: str
-    prompt: str           # 当前（可能未保存）的行文 Prompt
+    prompt: str  # 当前（可能未保存）的行文 Prompt
 
 
 class PreviewSectionNarrativeResponse(BaseModel):
@@ -317,13 +323,11 @@ class SuggestSlotsRequest(BaseModel):
 
     def model_post_init(self, __context: Any) -> None:
         provided = sum(
-            x is not None
-            for x in (self.job_id, self.document_text, self.sample_content_json)
+            x is not None for x in (self.job_id, self.document_text, self.sample_content_json)
         )
         if provided != 1:
             raise ValueError(
-                "Exactly one of job_id, document_text, or sample_content_json "
-                "must be provided"
+                "Exactly one of job_id, document_text, or sample_content_json must be provided"
             )
 
 

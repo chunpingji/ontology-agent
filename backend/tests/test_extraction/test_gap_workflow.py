@@ -88,6 +88,11 @@ def test_partial_entity_gap_keeps_valid_candidates_but_not_a_complete_task(tmp_p
             return left == right
 
     def model(system, user, schema, budget):
+        from tests.test_extraction.test_extraction_tasks import accept_fixture_types
+
+        request = json.loads(user)
+        if request["stage"] == "verify_entity_types":
+            return accept_fixture_types(request)
         context = json.loads(json.loads(user)["context"])
         evidence_id = context["fragments"][0]["anchor"]["evidence_id"]
         return {"entities": [

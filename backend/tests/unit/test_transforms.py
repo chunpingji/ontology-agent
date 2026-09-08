@@ -10,6 +10,8 @@ succeed and the row is never discarded. Also pins the four transform types
 
 from __future__ import annotations
 
+import pytest
+
 from app.services.extraction.transforms import (
     apply_transform,
     validate_transform_config,
@@ -42,7 +44,7 @@ class TestCast:
     def test_cast_failure_returns_value_with_note(self):
         # "abc" cannot become an integer → value kept, issue note attached.
         out = apply_transform("cast", {"to": "integer"}, "abc")
-        assert out.value == "abc"      # unchanged — non-fatal
+        assert out.value == "abc"  # unchanged — non-fatal
         assert not out.ok
         assert out.note and "cast→integer" in out.note
 
@@ -80,7 +82,7 @@ class TestControlledVocab:
 
     def test_no_match_returns_value_with_note(self):
         out = apply_transform("controlled_vocab", {"vocab": "oeb"}, "OEB9")
-        assert out.value == "OEB9"     # unchanged — non-fatal
+        assert out.value == "OEB9"  # unchanged — non-fatal
         assert not out.ok
         assert out.note and "无匹配取值" in out.note
 
@@ -94,29 +96,10 @@ class TestControlledVocab:
 # pattern — validation only; value is kept either way
 # --------------------------------------------------------------------------- #
 class TestPattern:
-    def test_pattern_match_keeps_value(self):
-        out = apply_transform(
-            "pattern", {"pattern": r"国药准字[HZSBTFJ]\d{8}"}, "国药准字H20250001"
-        )
-        assert out.value == "国药准字H20250001"
-        assert out.ok
-
-    def test_pattern_mismatch_keeps_value_with_note(self):
-        out = apply_transform("pattern", {"pattern": r"^\d+$"}, "abc")
-        assert out.value == "abc"      # value kept even on mismatch
-        assert not out.ok
-        assert out.note and "不匹配" in out.note
-
-    def test_pattern_missing_config_noted(self):
-        out = apply_transform("pattern", {}, "x")
-        assert out.value == "x"
-        assert not out.ok
-
-    def test_pattern_invalid_regex_noted(self):
-        out = apply_transform("pattern", {"pattern": "["}, "x")
-        assert out.value == "x"
-        assert not out.ok
-        assert "非法正则" in out.note
+    @pytest.mark.parametrize("value", [None, "abc", "123"])
+    def test_pattern_is_refused_for_every_value(self, value):
+        with pytest.raises(ValueError, match="EXECUTABLE_PATTERN_RETIRED"):
+            apply_transform("pattern", {"pattern": "[0-9]+"}, value)
 
 
 # --------------------------------------------------------------------------- #
@@ -172,7 +155,7 @@ class TestValidateConfig:
         assert validate_transform_config("controlled_vocab", {"map": {"高": "OEB5"}}) is None
 
     def test_pattern_config_validation(self):
-        assert validate_transform_config("pattern", {"pattern": r"^\d+$"}) is None
+        assert validate_transform_config("pattern", {"pattern": r"^\d+$"}) is not None
         assert validate_transform_config("pattern", {}) is not None
         assert validate_transform_config("pattern", {"pattern": "["}) is not None
 

@@ -27,7 +27,7 @@ import app.models  # noqa: E402,F401  (register all tables on Base.metadata)
 from app.db import Base, get_db  # noqa: E402
 from app.dependencies import get_ontology_engine, get_ontology_meta_store  # noqa: E402
 from app.main import app  # noqa: E402
-from app.models.ontology_meta import AppRole, AppUser, ROLE_NAMES  # noqa: E402
+from app.models.ontology_meta import ROLE_NAMES, AppRole, AppUser  # noqa: E402
 from app.services.ontology_meta_store import OntologyMetaStore  # noqa: E402
 
 
@@ -157,6 +157,28 @@ def analyst_headers():
 @pytest.fixture()
 def operator_headers():
     return {"X-User": "op", "X-Role": "operator"}
+
+
+@pytest.fixture(autouse=True)
+def isolated_model_scheduler(tmp_path, monkeypatch):
+    """Real short transactions, lazily created; model tests never touch app data."""
+    from app.models.model_request import LocalModelPool, LocalModelRequest
+    from app.services.llm import model_scheduler
+
+    engines = []
+
+    def bind():
+        if not engines:
+            engine = create_engine(f"sqlite:///{tmp_path / 'model-requests.sqlite'}")
+            LocalModelPool.__table__.create(engine)
+            LocalModelRequest.__table__.create(engine)
+            engines.append(engine)
+        return engines[0]
+
+    monkeypatch.setattr(model_scheduler, "default_bind", bind)
+    yield bind
+    for engine in engines:
+        engine.dispose()
 
 
 @pytest.fixture()

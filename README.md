@@ -13,7 +13,7 @@
 | 服务 | 镜像 / 构建 | 容器端口 | 说明 |
 |------|-------------|----------|------|
 | `db` | postgres:16-alpine | 5432 | 数据库,数据存于 `pgdata` 卷 |
-| `backend` | `./backend/Dockerfile` | 8000 | FastAPI（`uvicorn --reload`） |
+| `backend` | `./backend/Dockerfile` | 8000 | FastAPI（`uvicorn`，当前关闭自动重载） |
 | `frontend` | `./frontend/Dockerfile` | 3000 | Next.js,仅 `expose`,不直接对外 |
 | `web` | nginx:1.27-alpine | 80 | 单入口反代,前端 + `/api` 路由到后端 |
 
@@ -93,10 +93,11 @@ echo 'TRANSFORMERS_OFFLINE=1' >> .env         # transformers 全程离线
 
 ---
 
-## 开发模式（实时看到修改效果）
+## 开发模式（前端热更新）
 
-默认合并 override，前端 `next dev`、后端 `uvicorn --reload`,源码均 bind-mount,
-改动自动热更新。
+默认合并 override，前端使用 `next dev`，前后端源码均 bind-mount。
+前端改动自动热更新；后端当前关闭 `--reload`，避免重载中断长时间抽取任务，
+修改 Python 代码后需手动重启后端。
 
 ```bash
 cd /opt/dev/chen/ontology-agent
@@ -104,12 +105,13 @@ cd /opt/dev/chen/ontology-agent
 # 首次启动 / 改过依赖后:重建并刷新匿名卷
 docker compose up -d --build -V
 
-# 之后日常启动（依赖没变时,代码改动热更新,无需重建）
+# 之后日常启动（应用配置变更；未变更的运行中容器不会重启）
 docker compose up -d
 ```
 
 - 访问 **http://localhost:8081**
-- 改 `frontend/src/**` 或 `backend/app/**` → 自动热重载,无需重建
+- 改 `frontend/src/**` → 自动热更新，无需重建
+- 改 `backend/app/**` → 执行 `docker compose restart backend`，无需重建镜像
 - `-V`（`--renew-anon-volumes`）很重要:前端 `node_modules` 走匿名卷,
   **只改过 `package.json` / `package-lock.json` 时**必须带 `-V`,否则旧卷复用、新依赖看不到
 
@@ -138,17 +140,131 @@ docker compose -f docker-compose.yml up -d --build frontend
 
 ---
 
-## 常用命令
+## 手动重启与更新
+
+以下命令在项目根目录执行，默认使用本机开发配置：
+
+```bash
+cd /opt/dev/chen/ontology-agent
+```
+
+按需要选择操作：
+
+| 场景 | 命令 |
+|---|---|
+| 只重启后端，加载已挂载的 Python 代码改动 | `docker compose restart backend` |
+| 只重启前端 | `docker compose restart frontend` |
+| 重启整套服务，包括数据库 | `docker compose restart` |
+| 应用 `.env` 中传入容器的环境变量或 Compose 配置变更 | `docker compose up -d` |
+| 后端依赖或 Dockerfile 变更，重建并更新后端 | `docker compose up -d --build backend` |
+| 开发模式下前端依赖变更，重建并刷新依赖匿名卷 | `docker compose up -d --build -V frontend` |
+
+`restart` 重启已有容器，不应用新的环境变量、Compose 配置或镜像。
+`up -d` 会按配置和镜像变化决定是否重建容器；没有变化时不会重启运行中的服务。
+重启后端会中断其进程内正在执行的任务，应在相关任务完成或暂停后操作。
+
+检查状态和日志：
+
+```bash
+docker compose ps
+docker compose logs --tail=100 backend
+curl -fsS http://localhost:8081/api/health
+```
+
+生产模式保持使用 `docker compose -f docker-compose.yml`，例如：
+
+```bash
+docker compose -f docker-compose.yml up -d --build backend
+```
+
+---
+
+## 数据库表结构升级（Alembic）
+
+后端在 `backend/app/main.py` 的启动流程中自动尝试执行 `alembic upgrade head`，
+应用当前数据库版本之后尚未执行的迁移。**迁移异常目前会被捕获并记录为
+`Alembic migration skipped`，后端仍可能继续启动**，因此容器显示 `Up` 或
+`/api/health` 返回 `200` 都不能单独证明迁移成功，应核对数据库版本：
+
+```bash
+docker compose exec -T backend alembic current  # 数据库已应用的版本
+docker compose exec -T backend alembic heads    # 容器内迁移文件的最新版本
+```
+
+两者的 revision ID 应一致，`current` 应显示 `(head)`。升级到 head 后再次执行
+`upgrade head` 不会重复执行已完成的迁移。
+
+### 手动执行升级
+
+下面步骤适用于当前默认开发配置。开发模式挂载了 `backend/alembic/`，新增迁移文件
+无需重建镜像；如果还修改了后端依赖，应先执行 `docker compose build backend`。
+**生产模式不挂载迁移目录**，新增或修改迁移文件后先执行
+`docker compose -f docker-compose.yml build backend`，并在下列所有 Compose 命令中
+保持使用 `-f docker-compose.yml`。
+
+逐步执行；备份或迁移报错时先处理错误，不要继续恢复后端服务。
+
+1. 确保数据库运行，在相关后台任务完成或暂停后停止后端写入：
+
+   ```bash
+   docker compose up -d db
+   docker compose stop backend
+   ```
+
+2. 备份 PostgreSQL。文件保存在宿主机的 `backups/` 目录，请保留备份，不要提交到仓库：
+
+   ```bash
+   mkdir -p backups
+   docker compose exec -T db pg_dump -U slpra -d slpra -Fc \
+     > "backups/slpra-$(date +%Y%m%d-%H%M%S).dump"
+   ```
+
+3. 使用临时容器应用迁移。`run` 可在后端停止时运行；`--no-deps` 避免启动依赖服务，
+   数据库必须已在运行：
+
+   ```bash
+   docker compose run --rm --no-deps backend alembic upgrade head
+   ```
+
+4. 核对数据库已应用的版本与迁移文件的最新版本一致：
+
+   ```bash
+   docker compose run --rm --no-deps backend alembic current
+   docker compose run --rm --no-deps backend alembic heads
+   ```
+
+5. 确认升级成功后恢复后端，并检查日志：
+
+   ```bash
+   docker compose up -d backend
+   docker compose logs --tail=100 backend
+   ```
+
+如果迁移失败，保留错误输出并检查对应的 `backend/alembic/versions/` 文件。
+不要用 `alembic stamp head` 跳过错误：它只修改版本记录，不会执行表结构变更。
+
+上述步骤用于应用的表结构迁移。PostgreSQL 跨大版本升级（例如 16 → 17）需要另行
+规划 `pg_upgrade` 或备份恢复，不能直接修改镜像标签后复用原数据目录。
+
+参考：[Compose restart](https://docs.docker.com/reference/cli/docker/compose/restart/) ·
+[Compose up](https://docs.docker.com/reference/cli/docker/compose/up/) ·
+[Alembic 迁移](https://alembic.sqlalchemy.org/en/latest/tutorial.html) ·
+[PostgreSQL 备份](https://www.postgresql.org/docs/16/backup-dump.html)。
+
+---
+
+## 其他常用命令
 
 ```bash
 docker compose ps                         # 查看各服务状态
 docker compose logs -f <service>          # 跟踪日志（frontend/backend/web/db）
-docker compose restart <service>          # 重启单个服务
 docker compose build --no-cache frontend  # 依赖/缓存诡异时彻底重建
 docker compose stop                       # 停止（保留容器与卷）
 docker compose down                       # 移除容器（保留数据卷 pgdata/backend_data）
-docker compose down -v                    # ⚠️ 连同数据卷一并删除
 ```
+
+`restart` 和 `up -d --build` 会保留具名数据卷。不要将 `docker compose down -v`
+用于日常重启：它会删除 `pgdata`、`backend_data` 等数据卷。
 
 ---
 
@@ -159,7 +275,11 @@ docker compose down -v                    # ⚠️ 连同数据卷一并删除
   `npm install --legacy-peer-deps`。
 - **改了代码但页面不更新**:确认走的是开发模式(http://localhost:8081,
   非 :80);看 `docker compose logs -f frontend` 是否在重新编译。
-  override 已设 `WATCHPACK_POLLING=true` 以保证 bind-mount 下的文件监听。
+  当前使用本机文件事件监听，未启用 `WATCHPACK_POLLING`；后端 Python 改动需执行
+  `docker compose restart backend`。
+- **升级后接口报缺表 / 缺列**:按上面的数据库升级步骤核对 `alembic current` 与
+  `alembic heads`，并检查后端日志中的 `Alembic migration skipped`。
+  生产模式还需确认已重建后端镜像，使新迁移文件进入容器。
 - **端口冲突**:本机 :80 / :5432 已被占用；开发模式使用 :8081 / :55432，
   生产模式默认使用 :8081 / :55432，可用 `WEB_HOST_PORT` / `DB_HOST_PORT` 覆盖。
 - **数据库直连**:开发和生产模式默认均为 `localhost:55432`,

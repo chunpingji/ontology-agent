@@ -22,13 +22,19 @@ def _xlsx_bytes() -> bytes:
 
 
 def _make_config(client, headers, source_type="excel"):
-    r = client.post("/api/extraction/configs", json={
-        "name": "设备台账",
-        "target_class_iri": "http://slpra.org/equipment#Equipment",
-        "source_type": source_type,
-        "column_mapping": {"设备编号": "equipmentID", "设备名称": "equipmentName",
-                           "材质": "material"},
-    })
+    r = client.post(
+        "/api/extraction/configs",
+        json={
+            "name": "设备台账",
+            "target_class_iri": "http://slpra.org/equipment#Equipment",
+            "source_type": source_type,
+            "column_mapping": {
+                "设备编号": "equipmentID",
+                "设备名称": "equipmentName",
+                "材质": "material",
+            },
+        },
+    )
     assert r.status_code == 201, r.text
     return r.json()["id"]
 
@@ -53,8 +59,13 @@ def test_create_job_triggers_pipeline_running(client, analyst_headers):
     r = client.post(
         "/api/extraction/jobs",
         data={"source_type": "excel", "config_id": cfg_id},
-        files={"file": ("设备台账.xlsx", _xlsx_bytes(),
-                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")},
+        files={
+            "file": (
+                "设备台账.xlsx",
+                _xlsx_bytes(),
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            )
+        },
         headers=analyst_headers,
     )
     assert r.status_code == 202, r.text
@@ -105,7 +116,7 @@ def test_excel_instance_candidates_offline_not_degraded(client, analyst_headers)
     assert any("_controlled_vocab" in m["extracted_properties"] for m in members)
 
 
-def test_word_body_produces_action_candidate(client, analyst_headers):
+def test_word_body_does_not_invent_keyword_actions(client, analyst_headers):
     docx = __import__("docx")
     doc = docx.Document()
     table = doc.add_table(rows=2, cols=2)
@@ -127,6 +138,4 @@ def test_word_body_produces_action_candidate(client, analyst_headers):
     cands = client.get(f"/api/extraction/jobs/{job['id']}/candidates").json()
     members = cands["ungrouped"] + [c for g in cands["groups"] for c in g["candidates"]]
     actions = [m for m in members if m["candidate_kind"] == "action"]
-    assert len(actions) >= 1
-    assert actions[0]["action_conditions"]["precondition"]
-    assert "必须" in actions[0]["action_conditions"]["obligation"]
+    assert actions == []

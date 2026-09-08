@@ -1,222 +1,231 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
-  commitEvidence, createEvidenceCandidate, getIdentity, getJobEvidence, getEvidenceCoverage,
-  fillEvidenceGaps, confirmEvidenceDiscovery, extractJobEvidence,
-  resolveEvidenceCandidate, retryEvidenceCommit, reviewEvidenceCandidate,
-  type EvidenceAnchor, type EvidenceCandidate, type EvidenceJob, type InstanceCoverageManifest,
+  commitEvidence, getIdentity, getJobEvidence, getEvidenceCoverage,
+  fillEvidenceGaps, confirmEvidenceDiscovery,
+  retryEvidenceCommit, reviewEvidenceCandidate,
+  decideCalculation,
+  type EvidenceAnchor, type EvidenceCandidate, type EvidenceJob, type EvidenceCoverage,
+  type EvidenceExtractOptions,
 } from "@/lib/api";
+import { evidenceLabel, evidenceValue, publishableEvidence } from "@/lib/evidence-graph";
+import { EvidenceGraphTree } from "./evidence-graph-tree";
+import type { CalculationAction } from "./pde-calculation-card";
 
-const polarity = { affirmed: "肯定", negated: "否定", conditional: "条件",
-  hypothetical: "假设", uncertain: "不确定" };
-
-export function EvidenceReviewPanel({ jobId, templateId, refreshKey = 0, onSource, onSnapshot }: {
+type EvidenceReviewProps = {
   jobId: string; onSource: (anchor: EvidenceAnchor) => void;
-  templateId?: string;
-  refreshKey?: number;
-  onSnapshot: (id: string | null) => void;
-}) {
+  templateId?: string; refreshKey?: number; running?: boolean; onSnapshot: (id: string | null) => void;
+  onContinue: (options: EvidenceExtractOptions) => void;
+};
+
+export const EvidenceReviewPanel = memo(function EvidenceReviewPanel(props: EvidenceReviewProps) {
+  return <EvidenceReviewSession key={`${props.jobId}:${props.templateId ?? ""}`} {...props} />;
+});
+
+function EvidenceReviewSession({ jobId, templateId, refreshKey = 0, running = false, onSource, onSnapshot, onContinue }: EvidenceReviewProps) {
   const [data, setData] = useState<EvidenceJob | null>(null);
-  const [coverage, setCoverage] = useState<InstanceCoverageManifest | null>(null);
+  const [coverageResult, setCoverage] = useState<EvidenceCoverage | null>(null);
+  const [coverageError, setCoverageError] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [actionResult, setActionResult] = useState("");
-  const [reason, setReason] = useState("");
-  const [selected, setSelected] = useState<string[]>([]);
-  const [newJson, setNewJson] = useState("");
-  const [editId, setEditId] = useState<string | null>(null);
-  const [editJson, setEditJson] = useState("");
-  const [mergeId, setMergeId] = useState("");
-  // A lost HTTP response must not mint a second key on retry.
+  const [rejectId, setRejectId] = useState<string | null>(null);
+  const [rejectReason, setRejectReason] = useState("");
+  const [taskReason, setTaskReason] = useState("");
   const pendingCommit = useRef<{ key: string; items: string } | null>(null);
+  const mounted = useRef(false);
+  const readRequest = useRef<AbortController | null>(null);
   const mayEdit = getIdentity().role === "senior_analyst";
+  const coverage = !running && coverageResult?.availability === "available" ? coverageResult : null;
+  const candidates = data?.candidates ?? [];
+  const rejecting = candidates.find((candidate) => candidate.candidate_id === rejectId);
+  const publishable = publishableEvidence(candidates).slice(0, 1000);
+
+  const refresh = useCallback(async () => {
+    readRequest.current?.abort();
+    const controller = new AbortController();
+    readRequest.current = controller;
+    const current = () => mounted.current && !controller.signal.aborted;
+    await Promise.all([
+      getJobEvidence(jobId, controller.signal).then((result) => {
+        if (current()) { setData(result); setError(""); if (!running) onSnapshot(result.snapshot_id); }
+      }).catch((e) => { if (current()) setError(`识别结果读取失败：${String(e)}`); }),
+      !running && getEvidenceCoverage(jobId, templateId, controller.signal).then((result) => {
+        if (current()) { setCoverage(result); setCoverageError(""); }
+      }).catch((e) => {
+        if (current()) { setCoverage(null); setCoverageError(String(e)); }
+      }),
+    ]);
+  }, [jobId, templateId, onSnapshot, running]);
 
   useEffect(() => {
-    let ignore = false;
-    const controller = new AbortController();
-    getJobEvidence(jobId, controller.signal).then((result) => {
-      if (!ignore) { setData(result); onSnapshot(result.snapshot_id); }
-    }).catch((e) => { if (!ignore) setError(String(e)); });
-    getEvidenceCoverage(jobId, templateId, controller.signal).then((result) => {
-      if (!ignore) setCoverage(result);
-    }).catch((e) => { if (!ignore) setError(String(e)); });
-    return () => { ignore = true; controller.abort(); };
-  }, [jobId, templateId, refreshKey, onSnapshot]);
+    mounted.current = true;
+    void refresh();
+    return () => { mounted.current = false; readRequest.current?.abort(); };
+  }, [refresh, refreshKey]);
 
-  async function act(action: () => Promise<unknown>) {
-    setBusy(true); setError("");
+  async function act<T>(action?: () => Promise<T>, message?: string | ((result: T) => string),
+    afterSuccess?: (result: T) => void) {
+    readRequest.current?.abort();
+    setBusy(true); setError(""); setActionResult(""); setCoverageError("");
     try {
-      await action();
-      const result = await getJobEvidence(jobId);
-      setData(result); onSnapshot(result.snapshot_id);
-      setCoverage(await getEvidenceCoverage(jobId, templateId));
+      if (action) {
+        const result = await action();
+        if (!mounted.current) return;
+        afterSuccess?.(result);
+        setActionResult(typeof message === "function" ? message(result) : message ?? "操作已完成。");
+      }
+      if (!mounted.current) return;
+      setCoverage(null);
+      await refresh();
     } catch (e) {
-      setError(String(e));
-    } finally { setBusy(false); }
+      if (mounted.current) setError(String(e));
+    } finally { if (mounted.current) setBusy(false); }
   }
 
-  function review(candidate: EvidenceCandidate, decision: "confirmed" | "rejected") {
-    return act(() => reviewEvidenceCandidate(candidate.candidate_id, {
-      expected_revision: candidate.revision, decision, reason,
-    }));
-  }
-
-  function commit() {
-    const items = (data?.candidates ?? []).filter((c) => selected.includes(c.candidate_id))
-      .map((c) => ({ candidate_id: c.candidate_id, revision: c.revision }))
+  function publish() {
+    const items = publishable.map((candidate) => ({ candidate_id: candidate.candidate_id, revision: candidate.revision }))
       .sort((a, b) => a.candidate_id.localeCompare(b.candidate_id));
     const serialized = JSON.stringify(items);
-    if (pendingCommit.current?.items !== serialized) {
-      pendingCommit.current = { key: crypto.randomUUID(), items: serialized };
-    }
-    const key = pendingCommit.current.key;
-    return act(async () => {
-      const result = await commitEvidence(jobId, key, items);
-      if (result.status === "succeeded") { pendingCommit.current = null; setSelected([]); }
-    });
+    if (pendingCommit.current?.items !== serialized) pendingCommit.current = { key: crypto.randomUUID(), items: serialized };
+    return act(() => commitEvidence(jobId, pendingCommit.current!.key, items),
+      (result) => result.status === "succeeded" ? "已发布通过项，可用于报告。"
+        : result.status === "failed" ? "发布失败，请查看错误后重试。" : "正在发布通过项。",
+      (result) => { if (result.status === "succeeded") pendingCommit.current = null; });
   }
 
-  const labels = new Map(data?.candidates.filter((c) => c.kind === "entity").map((c) => [c.candidate_id, c.text]));
-  return <section className="space-y-3 p-4 text-sm" aria-label="逐值证据审核">
-    <h3 className="font-medium">逐值证据审核与提交</h3>
-    <p className="text-xs text-muted-foreground">确认仅保存审核结论。否定、条件断言可提交，但不会生成无条件正向事实。</p>
-    <p className="break-all text-xs">快照：{data?.snapshot_id ?? "尚未发布"}</p>
-    {coverage && <details className="rounded border p-3" open={coverage.required_gaps > 0}>
-      <summary className="cursor-pointer font-medium">实例覆盖：{coverage.required_gaps} 项必需缺口</summary>
-      <p className="my-2 break-all text-xs">模板 {coverage.template_version} · 清单 {coverage.manifest_id}</p>
-      {!coverage.snapshot_id && <p className="text-amber-700">尚未发布事实；候选不能满足正式覆盖。</p>}
-      {coverage.diagnostics.map((reason) => <p key={reason} className="text-amber-700">{reason}</p>)}
-      <ul className="space-y-2">
-        {coverage.tasks.map((task, index) => <li key={task.coverage_task_id ?? `${task.target_id}-${index}`} className="rounded bg-muted p-2">
-          <p>{task.label} · {{ filled: "已满足", missing: "缺失", confirmed_absent: "有证据确认不存在",
-            not_applicable: "不适用", pending_review: "待审核", conflict: "冲突", incomplete: "未完成" }[task.status]}</p>
-          <p className="break-all text-xs">主体：{task.subject_instance_iri ?? task.subject_candidate_ref?.candidate_id ?? "尚未确认"}</p>
-          {!!task.subject_path?.length && <p className="break-all text-xs">主体范围：{task.subject_root_class_iri} {task.subject_path.map((step) => `→ ${step.predicate_iri}`).join(" ")}</p>}
-          <p className="break-all text-xs">{task.predicate_path?.map((step) => `${step.direction === "inverse" ? "←" : "→"} ${step.predicate_iri}`).join(" ")}</p>
-          <p className="text-xs">{task.reason} · 对象集合：{task.object_universe_status ?? "未解析"}</p>
-          {task.objects?.filter((obj) => obj.missing_properties.length).map((obj) => <p key={obj.instance_iri} className="break-all text-xs text-amber-700">{obj.text} 缺失：{obj.missing_properties.join("、")}</p>)}
-          {task.negative_assertion_ids?.length ? <p className="break-all text-xs">否定断言：{task.negative_assertion_ids.join("、")}</p> : null}
-          {mayEdit && task.coverage_task_id && task.reason === "object_universe_open" && <Button size="sm" variant="outline"
-            disabled={busy || !reason.trim() || data?.run?.completion !== "complete" || !coverage.snapshot_id}
-            onClick={() => act(async () => {
-              await confirmEvidenceDiscovery(jobId, { manifest_id: coverage.manifest_id, template_id: templateId,
-                coverage_task_ids: [task.coverage_task_id!], reason });
-              setActionResult("已记录本项对象集合的审核确认；发现新证据后需重新确认。");
-            })}>确认本项对象已全部列出</Button>}
-        </li>)}
-      </ul>
-      {coverage.gap_history?.map((entry, index) => <p key={index} className="text-xs">补抽第 {entry.round} 轮：{entry.reason}</p>)}
-      {mayEdit && <Button className="mt-2" size="sm" variant="outline" disabled={busy || !reason.trim() || !coverage.snapshot_id}
-        onClick={() => act(async () => {
-          const result = await fillEvidenceGaps(jobId, { manifest_id: coverage.manifest_id, template_id: templateId, reason });
-          setActionResult(`补抽停止：${result.reason}；新增 ${result.created} 条待审核候选。`);
-        })}>按实例缺口补抽（最多两轮）</Button>}
-    </details>}
-    {data?.run?.completion === "incomplete" && <p role="status" className="text-amber-700">
-      抽取未完成：{data.run.diagnostics.join("；") || "请检查任务状态"}
+  function reject() {
+    if (!rejecting || !rejectReason.trim()) return;
+    return act(() => reviewEvidenceCandidate(rejecting.candidate_id, {
+      expected_revision: rejecting.revision, expected_review_status: rejecting.review_status,
+      decision: "rejected", reason: rejectReason.trim(),
+    }), "已拒绝此项并记录理由，相关依赖项已停止用于后续报告。",
+    () => { setRejectId(null); setRejectReason(""); });
+  }
+
+  const handleCalculation: CalculationAction = useCallback(async (result, choice, reason) => {
+    readRequest.current?.abort();
+    setBusy(true);
+    try {
+      await decideCalculation(jobId, { subject_candidate_id: result.subject_candidate_id,
+        calculation_id: result.calculation_id, expected_revision: result.decision_revision, choice, reason });
+      if (mounted.current) { setActionResult("PDE 处理结果已记录，将用于后续报告。"); await refresh(); }
+    } finally { if (mounted.current) setBusy(false); }
+  }, [jobId, refresh]);
+
+  const handleReject = useCallback((candidate: EvidenceCandidate) => {
+    setRejectId(candidate.candidate_id); setRejectReason(""); setError("");
+  }, []);
+
+  const diagnostics = new Map<string, number>();
+  for (const code of data?.run?.diagnostics ?? []) diagnostics.set(code, (diagnostics.get(code) ?? 0) + 1);
+  const diagnosticLabels: Record<string, string> = {
+    ambiguous_source_quote: "原文引用存在歧义", source_quote_outside_scope: "原文引用超出允许范围",
+    model_unavailable: "模型调用不可用",
+    model_timeout: "模型响应超时", model_total_timeout: "模型排队与响应已达到总等待时限",
+    model_cancelled: "请求已取消，可从断点继续", model_partial_refusal: "部分提案缺少支持",
+    source_excerpt_mismatch: "引用与原文不一致", unsupported_type: "实体类型缺少原文支持",
+  };
+  const counts = {
+    entity: candidates.filter((candidate) => candidate.kind === "entity").length,
+    property: candidates.filter((candidate) => candidate.kind === "property").length,
+    relationship: candidates.filter((candidate) => candidate.kind === "relationship").length,
+    rejected: candidates.filter((candidate) => candidate.review_status === "rejected").length,
+  };
+  return <section className="space-y-3 p-3 text-sm" aria-label="关系图谱识别结果">
+    <p className="text-xs leading-relaxed text-muted-foreground">通过系统校验的识别结果默认通过审核。发现问题时，展开对应节点，提出异议并填写拒绝理由。</p>
+    {data && <p className="text-xs text-muted-foreground">{counts.entity} 个实体 · {counts.property} 个属性 · {counts.relationship} 条关系
+      {counts.rejected > 0 && <span className="ml-2 text-destructive">{counts.rejected} 项已拒绝</span>}</p>}
+    <div className="flex flex-wrap items-center gap-2">
+      {mayEdit && <Button size="sm" disabled={busy || !publishable.length}
+        title={!publishable.length ? "暂无尚未发布且通过审核的识别结果" : "将通过项发布为报告可用的数据"}
+        onClick={publish}>发布通过项（{publishable.length}）</Button>}
+      <Button variant="outline" size="sm" disabled={busy} onClick={() => act()}>刷新状态</Button>
+      <span className="text-xs text-muted-foreground">{data?.snapshot_id ? "已发布" : "尚未发布"}</span>
+    </div>
+    {data?.run?.completion === "incomplete" && <p role="status" className="text-xs text-amber-700">识别尚未完成，当前展示已识别的结果。</p>}
+    {data?.extraction_version?.outdated && <p role="status" className="text-xs text-amber-700">当前包含旧版本识别结果，可通过“重新识别”更新。</p>}
+    {error && !rejecting && <p role="alert" className="break-words text-destructive">{error}</p>}
+    {actionResult && <p role="status" className="break-words text-xs text-emerald-700">{actionResult}</p>}
+    {!data && !error && <p role="status">加载识别结果中…</p>}
+    {data?.calculation_required && !data.calculations?.length && <p role="status" className="text-xs text-amber-700">
+      PDE 尚未校验：等待识别共线评估实体及其毒理参数。识别审核通过不代表 PDE 计算通过。
     </p>}
-    {error && <p role="alert" className="break-words text-destructive">{error}</p>}
-    {actionResult && <p role="status" className="break-words text-amber-700">{actionResult}</p>}
-    <Button variant="outline" size="sm" disabled={busy} onClick={() => act(async () => {})}>刷新状态</Button>
-    {mayEdit && <>
-      <label className="block">审核／修改理由
-        <textarea aria-label="审核理由" className="mt-1 w-full rounded border p-2" value={reason}
-          onChange={(e) => setReason(e.target.value)} maxLength={4000} />
-      </label>
-      <div className="flex flex-wrap gap-2">
-        <Button size="sm" variant="outline" disabled={busy} onClick={() => act(async () => {
-          await extractJobEvidence(jobId, { pause_after: 8 });
-          setActionResult("已推进本批未处理任务；失败记录保留，请查看最新完成状态。");
-        })}>继续未处理任务（每批最多 8 项）</Button>
-        <Button size="sm" variant="outline" disabled={busy || !reason.trim()}
-          onClick={() => act(async () => {
-            await extractJobEvidence(jobId, { retry_failed: true, reason, pause_after: 8 });
-            setActionResult("已显式重试本批失败任务；总预算不重置，新增候选仍需审核。");
-          })}>重试失败任务</Button>
-      </div>
-      <Button size="sm" disabled={busy || !selected.length} onClick={commit}>提交已选的已确认断言（{selected.length}）</Button>
-    </>}
-    {!data && <p role="status">加载证据中…</p>}
-    {data && !data.candidates.length && <p>暂无证据候选；旧关系预览不是已提交事实。</p>}
-    {data?.candidates.map((candidate) => <article key={candidate.candidate_id} className="space-y-2 rounded border p-3">
-      <div className="flex items-start gap-2">
-        {mayEdit && <input type="checkbox" aria-label={`选择 ${candidate.text || candidate.predicate_iri}`}
-          disabled={busy || candidate.review_status !== "confirmed" || candidate.validation_status !== "passed"}
-          checked={selected.includes(candidate.candidate_id)} onChange={(e) => setSelected((ids) => e.target.checked
-            ? [...ids, candidate.candidate_id] : ids.filter((id) => id !== candidate.candidate_id))} />}
-        <div className="min-w-0 break-words">
-          <span>{candidate.kind === "entity" ? candidate.text : labels.get(candidate.subject?.candidate_id ?? "")}</span>
-          {candidate.predicate_iri && <span className="block text-xs text-muted-foreground">{candidate.predicate_iri}</span>}
-          <span className="block">{candidate.literal?.raw_value ?? labels.get(candidate.object?.candidate_id ?? "")}</span>
-          <span>{polarity[candidate.assertion_status]} · v{candidate.revision}</span>
-        </div>
-      </div>
-      <p className="text-xs">验证 {candidate.validation_status} / 审核 {candidate.review_status} / 提交 {candidate.commit_status}</p>
-      {candidate.validation_issues.length > 0 && <p className="text-xs text-destructive">{candidate.validation_issues.map((i) => i.code).join("；")}</p>}
-      <details><summary className="cursor-pointer">值来源与独立绑定证据</summary>
-        {candidate.provenance.map((source, index) => <div key={index} className="my-2">
-          <p>来源：{source.kind}</p>
-          {source.anchors?.map((anchor, anchorIndex) => <Button key={anchorIndex} variant="link" size="sm"
-            onClick={() => onSource(anchor)}>定位原文 {anchorIndex + 1}</Button>)}
-          <pre className="max-h-56 overflow-auto whitespace-pre-wrap break-all text-xs">{JSON.stringify(source, null, 2)}</pre>
-        </div>)}
-        {candidate.bindings.map((binding, index) => <div key={index}>
-          <p>绑定方法：{binding.method}</p>
-          {binding.anchors.map((anchor, anchorIndex) => <Button key={anchorIndex} variant="link" size="sm"
-            onClick={() => onSource(anchor)}>定位绑定依据 {anchorIndex + 1}</Button>)}
-          <pre className="overflow-auto whitespace-pre-wrap break-all text-xs">{JSON.stringify(binding, null, 2)}</pre>
-        </div>)}
-      </details>
-      {mayEdit && <div className="flex flex-wrap gap-2">
-        <Button size="sm" disabled={busy || !reason.trim() || candidate.validation_status !== "passed" || candidate.review_status !== "pending"}
-          onClick={() => review(candidate, "confirmed")}>确认</Button>
-        <Button size="sm" variant="outline" disabled={busy || !reason.trim() || candidate.review_status !== "pending"}
-          onClick={() => review(candidate, "rejected")}>拒绝</Button>
-        <Button size="sm" variant="outline" disabled={busy} onClick={() => {
-          setEditId(candidate.candidate_id); setEditJson(JSON.stringify(candidate.kind === "entity" ? { text: candidate.text }
-            : candidate.kind === "property" ? { literal: candidate.literal } : { object: candidate.object }, null, 2));
-        }}>修改／归并</Button>
-      </div>}
-      {editId === candidate.candidate_id && <div className="space-y-2">
-        <p className="text-xs">编辑产生新版本并重新验证；文档值的人工更正须显式提供 manual 来源。</p>
-        <textarea aria-label="候选修改 JSON" className="w-full rounded border p-2 font-mono text-xs" value={editJson}
-          onChange={(e) => setEditJson(e.target.value)} rows={6} />
-        <Button size="sm" disabled={busy || !reason.trim()} onClick={() => act(async () => {
-          await reviewEvidenceCandidate(candidate.candidate_id, { expected_revision: candidate.revision,
-            decision: "confirmed", reason, edited_payload: JSON.parse(editJson) });
-          setEditId(null);
-        })}>保存新版本（不自动确认）</Button>
-        {candidate.kind === "entity" && <>
-          <select aria-label="归并目标" className="w-full rounded border p-2" value={mergeId} onChange={(e) => setMergeId(e.target.value)}>
-            <option value="">选择已确认的同类型规范实体</option>
-            {data.candidates.filter((c) => c.kind === "entity" && c.class_iri === candidate.class_iri && c.review_status === "confirmed"
-              && c.candidate_id !== candidate.candidate_id).map((c) => <option key={c.candidate_id} value={c.candidate_id}>{c.text} v{c.revision}</option>)}
-          </select>
-          <Button size="sm" variant="outline" disabled={busy || !reason.trim() || !mergeId} onClick={() => act(async () => {
-            const target = data.candidates.find((c) => c.candidate_id === mergeId)!;
-            await resolveEvidenceCandidate(candidate.candidate_id, { expected_revision: candidate.revision,
-              target: { candidate_id: target.candidate_id, revision: target.revision }, reason });
-            setEditId(null);
-          })}>归并并失效依赖审核</Button>
-        </>}
-      </div>}
-    </article>)}
-    {data?.commits.map((commit) => <div key={commit.commit_id} className="rounded border p-2 text-xs">
-      <p className="break-all">提交 {commit.commit_id}：{commit.status}（{commit.attempts} 次）</p>
-      {commit.error && <p role="alert" className="break-words text-destructive">{commit.error}</p>}
-      {mayEdit && commit.status === "failed" && <Button size="sm" variant="outline" disabled={busy}
-        onClick={() => act(() => retryEvidenceCommit(commit.commit_id))}>按原清单重试</Button>}
-    </div>)}
-    {mayEdit && <details><summary>录入人工／结构化外部候选</summary>
-      <p className="my-2 text-xs">输入单个候选 JSON；外部来源须是服务端已注册的真实记录版本。每个属性值单独录入。</p>
-      <textarea aria-label="新候选 JSON" className="w-full rounded border p-2 font-mono text-xs" rows={7}
-        value={newJson} onChange={(e) => setNewJson(e.target.value)} />
-      <Button size="sm" disabled={busy || !reason.trim() || !newJson.trim()} onClick={() => act(async () => {
-        await createEvidenceCandidate(jobId, { request_key: crypto.randomUUID(), reason, candidate: JSON.parse(newJson) });
-        setNewJson("");
-      })}>创建待审核候选</Button>
+    {data && !candidates.length && <p className="text-muted-foreground">暂无识别结果。完成文档识别后，实体及属性将在此处显示。</p>}
+    <EvidenceGraphTree candidates={candidates} schema={data?.graph_schema} busy={busy} onSource={onSource}
+      calculations={data?.calculations} onCalculation={mayEdit ? handleCalculation : undefined}
+      onReject={mayEdit ? handleReject : undefined} />
+
+    <Dialog open={!!rejecting} onOpenChange={(open) => { if (!open && !busy) { setRejectId(null); setError(""); } }}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>拒绝识别结果</DialogTitle>
+          <DialogDescription>填写异议原因。拒绝后，此项及依赖它的属性、关系将不再用于后续报告。</DialogDescription>
+        </DialogHeader>
+        {rejecting && <p className="break-words font-medium">{evidenceLabel(rejecting)}{rejecting.literal ? `：${evidenceValue(rejecting)}` : ""}</p>}
+        <label className="space-y-1 text-sm">拒绝理由<span className="ml-1 text-destructive">（必填）</span>
+          <textarea aria-label="拒绝理由" className="mt-1 w-full rounded border p-2" rows={3} maxLength={4000}
+            placeholder="例如：原文描述的是生产计划，并非已完成的生产记录。" value={rejectReason}
+            onChange={(event) => setRejectReason(event.target.value)} disabled={busy} />
+        </label>
+        {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
+        <DialogFooter>
+          <Button variant="outline" disabled={busy} onClick={() => setRejectId(null)}>取消</Button>
+          <Button variant="destructive" disabled={busy || !rejectReason.trim()}
+            title={!rejectReason.trim() ? "请先填写拒绝理由" : undefined} onClick={reject}>{busy ? "正在保存…" : "确认拒绝"}</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+
+    {coverageResult?.availability === "unavailable" && <div role="status" className="space-y-1 rounded border p-2 text-xs text-amber-700">
+      <p>报告数据检查暂不可用：{coverageResult.error.message}</p>
+      <Link className="underline" href={coverageResult.template_id
+        ? `/settings/ast-templates/${encodeURIComponent(coverageResult.template_id)}` : "/settings/ast-templates"}>打开模板设置</Link>
+    </div>}
+    {coverageError && <div role="status" className="rounded border p-2 text-xs text-amber-700">
+      <p>报告数据检查加载失败，可刷新重试。识别结果和操作已单独保存。</p>
+      <details><summary>查看错误详情</summary><p className="break-words">{coverageError}</p></details>
+    </div>}
+    {coverage && <details className="rounded border p-2 text-xs">
+      <summary className="cursor-pointer">报告所需数据：{coverage.required_gaps} 项缺口 · {{ ready: "已满足", invalid: "数据无效", conflict: "存在冲突", incomplete: "未完成" }[coverage.material_status]}</summary>
+      <ul className="mt-2 space-y-2">{coverage.tasks.map((task, index) => <li key={task.coverage_task_id ?? `${task.target_id}-${index}`}>
+        <p>{task.label} · {{ filled: "已满足", missing: "缺失", confirmed_absent: "有证据确认不存在", not_applicable: "不适用",
+          pending_review: "待审核", conflict: "冲突", incomplete: "未完成", invalid: "无效", unavailable: "来源不可用" }[task.status]}</p>
+        {mayEdit && task.coverage_task_id && task.reason === "object_universe_open" && <Button size="sm" variant="outline"
+          disabled={busy || !taskReason.trim() || data?.run?.completion !== "complete" || !coverage.snapshot_id}
+          title={!taskReason.trim() ? "请在识别工具中填写操作理由" : undefined}
+          onClick={() => act(() => confirmEvidenceDiscovery(jobId, { manifest_id: coverage.manifest_id, template_id: templateId,
+            coverage_task_ids: [task.coverage_task_id!], reason: taskReason }), "已确认本项对象全部列出。")}>确认对象已全部列出</Button>}
+      </li>)}</ul>
     </details>}
+    <details className="border-t pt-2 text-xs">
+      <summary className="cursor-pointer text-muted-foreground">识别进度与工具</summary>
+      {!!diagnostics.size && <p className="my-2 text-amber-700">{[...diagnostics].map(([code, count]) => `${diagnosticLabels[code] ?? code}${count > 1 ? `（${count} 次）` : ""}`).join("；")}</p>}
+      {mayEdit && <div className="mt-2 space-y-2">
+        <Button size="sm" variant="outline" disabled={busy || running}
+          onClick={() => onContinue({ pause_after: 8 })}>继续未处理任务（每批最多 8 项）</Button>
+        <label className="block">重试／补充识别理由
+          <textarea aria-label="识别操作理由" className="mt-1 w-full rounded border p-2" value={taskReason} maxLength={4000}
+            onChange={(event) => setTaskReason(event.target.value)} />
+        </label>
+        <div className="flex flex-wrap gap-2">
+          <Button size="sm" variant="outline" disabled={busy || running || !taskReason.trim()} title={!taskReason.trim() ? "请填写识别操作理由" : undefined}
+            onClick={() => onContinue({ retry_failed: true, reason: taskReason, pause_after: 8 })}>重试失败任务</Button>
+          {coverage && <Button size="sm" variant="outline" disabled={busy || !taskReason.trim() || !coverage.snapshot_id}
+            title={!coverage.snapshot_id ? "请先发布通过项" : !taskReason.trim() ? "请填写识别操作理由" : undefined}
+            onClick={() => act(() => fillEvidenceGaps(jobId, { manifest_id: coverage.manifest_id, template_id: templateId, reason: taskReason }),
+              (result) => `已补充识别 ${result.created} 项。`)}>补充识别缺失数据</Button>}
+        </div>
+      </div>}
+    </details>
+    {data?.commits.filter((commit) => commit.status === "failed").map((commit) => <div key={commit.commit_id} className="rounded border p-2 text-xs">
+      <p className="text-destructive">发布失败：{commit.error}</p>
+      {mayEdit && <Button size="sm" variant="outline" disabled={busy}
+        onClick={() => act(() => retryEvidenceCommit(commit.commit_id), (result) => result.status === "succeeded" ? "已重新发布通过项。" : "发布仍未成功，请查看错误详情。")}>重试发布</Button>}
+    </div>)}
   </section>;
 }

@@ -55,11 +55,18 @@ class _ProseEngine:
     """假本体引擎：`get_class_detail` 派生药品标签集；`get_individuals` 返空（对齐→new）。"""
 
     def get_class_detail(self, iri):
-        return SimpleNamespace(data_properties=[
-            {"iri": IRI_ACTIVE, "name": "activeIngredient", "label": "活性成分", "range": ["string"]},
-            {"iri": IRI_DOSAGE, "name": "dosageForm", "label": "剂型", "range": ["string"]},
-            {"iri": IRI_SPEC, "name": "specification", "label": "规格", "range": ["string"]},
-        ])
+        return SimpleNamespace(
+            data_properties=[
+                {
+                    "iri": IRI_ACTIVE,
+                    "name": "activeIngredient",
+                    "label": "活性成分",
+                    "range": ["string"],
+                },
+                {"iri": IRI_DOSAGE, "name": "dosageForm", "label": "剂型", "range": ["string"]},
+                {"iri": IRI_SPEC, "name": "specification", "label": "规格", "range": ["string"]},
+            ]
+        )
 
     def get_individuals(self, iri):
         return []
@@ -67,6 +74,7 @@ class _ProseEngine:
     def __getattr__(self, name):  # 容忍其余引擎调用（align_entity 仅用上面两个）
         def _noop(*a, **k):
             return None
+
         return _noop
 
 
@@ -81,9 +89,14 @@ def _docx(path):
 
 def _config(db):
     cfg = ExtractionConfig(
-        name="内部药物实体", target_class_iri=DRUG, source_type="word",
-        column_mapping={"活性成分": "activeIngredient", "剂型": "dosageForm",
-                        "规格": "specification"},
+        name="内部药物实体",
+        target_class_iri=DRUG,
+        source_type="word",
+        column_mapping={
+            "活性成分": "activeIngredient",
+            "剂型": "dosageForm",
+            "规格": "specification",
+        },
     )
     db.add(cfg)
     db.commit()
@@ -92,8 +105,9 @@ def _config(db):
 
 
 def _job(db):
-    job = ExtractionJob(source_type="word", source_filename="SOP.docx",
-                        source_config={}, status="pending")
+    job = ExtractionJob(
+        source_type="word", source_filename="SOP.docx", source_config={}, status="pending"
+    )
     db.add(job)
     db.commit()
     db.refresh(job)
@@ -105,8 +119,7 @@ def _run(db, monkeypatch, tmp_path):
     monkeypatch.setattr(settings, "anthropic_api_key", "")
     monkeypatch.setattr(pipeline_module, "get_gliner_extractor", lambda: _FakeExtractor())
     cfg, job = _config(db), _job(db)
-    asyncio.run(run_extraction_pipeline(job, cfg, _docx(tmp_path / "SOP.docx"),
-                                        _ProseEngine(), db))
+    asyncio.run(run_extraction_pipeline(job, cfg, _docx(tmp_path / "SOP.docx"), _ProseEngine(), db))
     db.refresh(job)
     return job
 
@@ -125,23 +138,20 @@ def test_prose_entities_become_pending_instance_candidates(db, monkeypatch, tmp_
     assert len(instances) == 2  # 两个业务实体段（PARA_ENTITY / PARA_MULTI）
 
     for c in instances:
-        assert c.source_ref.endswith("#para")          # 溯源回链（FR-005）
-        assert c.review_status == "pending"            # 不自动断言（FR-010）
-        assert c.alignment_result == "new"             # align_entity 已跑（空个体→new）
+        assert c.source_ref.endswith("#para")  # 溯源回链（FR-005）
+        assert c.review_status == "pending"  # 不自动断言（FR-010）
+        assert c.alignment_result == "new"  # align_entity 已跑（空个体→new）
         assert c.match_score is not None
-        assert c.group_key                             # _compute_group_key 复用
+        assert c.group_key is None  # 无显式身份契约时不能拼业务键
 
 
-def test_prose_coexists_with_action_candidate(db, monkeypatch, tmp_path):
-    """同源 Word：prose instance 候选与 parse_action_from_text 的 Action 候选并存。"""
+def test_prose_does_not_invent_keyword_based_actions(db, monkeypatch, tmp_path):
+    """同源 Word：正文候选保留，关键词不能生成行为断言。"""
     job = _run(db, monkeypatch, tmp_path)
     cands = _candidates(db, job)
 
     actions = [c for c in cands if c.candidate_kind == "action"]
-    assert len(actions) == 1
-    assert actions[0].action_conditions["precondition"]
-    assert "必须" in actions[0].action_conditions["obligation"]
-    # 并存：Action 段不抑制 prose，prose 段不抑制 Action。
+    assert actions == []
     assert any(c.candidate_kind == "instance" for c in cands)
 
 
@@ -157,6 +167,5 @@ def test_prose_backfills_iri_keys_and_aggregates_multivalue(db, monkeypatch, tmp
     assert single.extracted_properties[IRI_SPEC] == "10mg"
 
     # 多值段：同一活性成分标签多命中 → list。
-    multi = next(c for c in instances
-                 if isinstance(c.extracted_properties.get(IRI_ACTIVE), list))
+    multi = next(c for c in instances if isinstance(c.extracted_properties.get(IRI_ACTIVE), list))
     assert multi.extracted_properties[IRI_ACTIVE] == ["化合物X", "化合物Y"]

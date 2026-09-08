@@ -18,7 +18,7 @@ def discovery_revision(candidates, extraction_run=None):
             "run": {
                 k: v
                 for k, v in (extraction_run or {}).items()
-                if k not in {"discovery_decisions", "gap_history", "checkpoint"}
+                if k not in {"discovery_decisions", "gap_history", "checkpoint", "performance"}
             },
         }
     )

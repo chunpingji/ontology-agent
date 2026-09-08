@@ -1,0 +1,190 @@
+{
+  "template": {
+    "schema_version": 2,
+    "template_family_id": "family",
+    "template_revision_id": "revision",
+    "revision_no": 1,
+    "ontology_release_ref": "ontology-1",
+    "style_profile_ref": "style-1",
+    "publication_policy_ref": "policy-1",
+    "source_slots": [
+      {
+        "source_slot_id": "doc",
+        "kind": "document",
+        "class_iri": "urn:Report"
+      }
+    ],
+    "definitions": {
+      "bindings": {
+        "equipment": {
+          "binding_id": "equipment",
+          "kind": "facts",
+          "contract_ref": {
+            "kind": "ontology",
+            "release_ref": "ontology-1",
+            "root_class_iri": "urn:Report",
+            "result_class_iri": "urn:Equipment"
+          },
+          "scope": {
+            "source_slot": "doc",
+            "predicate_path": [
+              {
+                "predicate_iri": "urn:uses"
+              }
+            ]
+          }
+        }
+      },
+      "inputs": {
+        "rows": {
+          "input_id": "rows",
+          "name": "equipment_rows",
+          "label": "设备",
+          "binding_ref": "equipment",
+          "required": true,
+          "projection": {
+            "kind": "records",
+            "fields": {
+              "code": {
+                "value": {
+                  "kind": "property",
+                  "property_iri": "urn:code"
+                },
+                "required": true
+              },
+              "spec": {
+                "value": {
+                  "kind": "property",
+                  "property_iri": "urn:spec"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "sections": [
+      {
+        "section_id": "sec",
+        "groups": [
+          {
+            "group_id": "group",
+            "units": [
+              {
+                "output_id": "table",
+                "title": "设备表",
+                "bindings": [
+                  {
+                    "binding_ref": "equipment"
+                  }
+                ],
+                "inputs": [
+                  {
+                    "input_ref": "rows",
+                    "alias": "equipment"
+                  }
+                ],
+                "render": {
+                  "kind": "table",
+                  "rows": {
+                    "kind": "input_ref",
+                    "input_id": "rows"
+                  },
+                  "columns": [
+                    {
+                      "column_id": "col",
+                      "title": "编号",
+                      "field_ref": "code"
+                    }
+                  ]
+                },
+                "origin": {
+                  "evidence_id": "original-cell"
+                }
+              },
+              {
+                "output_id": "two",
+                "title": "共享说明",
+                "bindings": [
+                  {
+                    "binding_ref": "equipment"
+                  }
+                ],
+                "inputs": [
+                  {
+                    "input_ref": "rows",
+                    "alias": "equipment"
+                  }
+                ],
+                "render": {
+                  "kind": "table",
+                  "rows": {
+                    "kind": "input_ref",
+                    "input_id": "rows"
+                  },
+                  "columns": [
+                    {
+                      "column_id": "col",
+                      "title": "编号",
+                      "field_ref": "code"
+                    }
+                  ]
+                },
+                "origin": {
+                  "evidence_id": "original-cell"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "classes": {
+    "urn:Report": {
+      "parents": [],
+      "properties": [],
+      "relationships": [
+        {
+          "iri": "urn:uses",
+          "range": [
+            "urn:Equipment"
+          ]
+        }
+      ]
+    },
+    "urn:Equipment": {
+      "parents": [],
+      "relationships": [
+        {
+          "iri": "urn:material",
+          "range": [
+            "urn:Material"
+          ]
+        }
+      ],
+      "properties": [
+        {
+          "iri": "urn:code",
+          "datatype": "http://www.w3.org/2001/XMLSchema#string",
+          "max_count": 1
+        },
+        {
+          "iri": "urn:spec",
+          "datatype": "http://www.w3.org/2001/XMLSchema#string",
+          "max_count": 1
+        }
+      ]
+    },
+    "urn:Material": {
+      "parents": [],
+      "relationships": [],
+      "properties": [
+        {
+          "iri": "urn:label",
+          "datatype": "http://www.w3.org/2001/XMLSchema#string"
+        }
+      ]
+    }
+  }
+}

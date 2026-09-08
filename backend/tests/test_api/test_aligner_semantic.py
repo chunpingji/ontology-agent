@@ -51,8 +51,12 @@ def test_semantic_match_when_lexical_low():
     cand = {"drugName": "扑热息痛"}
     vectors = {"扑热息痛": [1.0, 0.0], "对乙酰氨基酚": [0.96, 0.28]}  # cos≈0.96
     res = align_entity(
-        cand, CLS, _FakeEngine(existing), label_property="drugName",
-        embedder=_FakeEmbedder(vectors), semantic_threshold=0.82,
+        cand,
+        CLS,
+        _FakeEngine(existing),
+        label_property="drugName",
+        embedder=_FakeEmbedder(vectors),
+        semantic_threshold=0.82,
     )
     assert res.action == "merge"
     assert res.match_iri == "d#1"
@@ -66,8 +70,12 @@ def test_class_equality_gate_blocks_other_class():
     cand = {"drugName": "扑热息痛"}
     vectors = {"扑热息痛": [1.0, 0.0]}
     res = align_entity(
-        cand, CLS, _FakeEngine(existing), label_property="drugName",
-        embedder=_FakeEmbedder(vectors), semantic_threshold=0.82,
+        cand,
+        CLS,
+        _FakeEngine(existing),
+        label_property="drugName",
+        embedder=_FakeEmbedder(vectors),
+        semantic_threshold=0.82,
     )
     assert res.action == "new"
     assert res.method == "none"
@@ -78,7 +86,10 @@ def test_lexical_match_without_embedder():
     existing = [_ind("d#1", "压片机A")]
     cand = {"equipmentName": "压片机A"}
     res = align_entity(
-        cand, CLS, _FakeEngine(existing), label_property="equipmentName",
+        cand,
+        CLS,
+        _FakeEngine(existing),
+        label_property="equipmentName",
         embedder=None,
     )
     assert res.action == "merge"
@@ -92,8 +103,12 @@ def test_semantic_below_threshold_is_new():
     cand = {"drugName": "扑热息痛"}
     vectors = {"扑热息痛": [1.0, 0.0], "阿司匹林": [0.2, 0.98]}  # cos≈0.2
     res = align_entity(
-        cand, CLS, _FakeEngine(existing), label_property="drugName",
-        embedder=_FakeEmbedder(vectors), semantic_threshold=0.82,
+        cand,
+        CLS,
+        _FakeEngine(existing),
+        label_property="drugName",
+        embedder=_FakeEmbedder(vectors),
+        semantic_threshold=0.82,
     )
     assert res.action == "new"
 
@@ -102,9 +117,13 @@ def test_exact_id_short_circuits_before_fuzzy():
     """精确 ID 命中优先于字面/语义模糊匹配。"""
     ind = _ind("d#1", "随便起的名")
     ind.properties = {"http://slpra.org/drug#drugID": "D-001"}
-    cand = {"drugID": "D-001", "drugName": "完全不同的名字"}
+    cand = {"http://slpra.org/drug#drugID": "D-001", "drugName": "完全不同的名字"}
     res = align_entity(
-        cand, CLS, _FakeEngine([ind]), id_property="drugID", label_property="drugName",
+        cand,
+        CLS,
+        _FakeEngine([ind]),
+        id_property="http://slpra.org/drug#drugID",
+        label_property="drugName",
     )
     assert res.action == "merge"
     assert res.method == "id"

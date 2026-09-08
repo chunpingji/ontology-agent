@@ -30,13 +30,37 @@ def _seed(db) -> OntologyMetaStore:
     return store
 
 
+def _draft_rule(client, headers):
+    response = client.post(
+        "/api/ontology/decision-rules",
+        headers=headers,
+        json={
+            "rule_key": "fixture-audit",
+            "rule_group": "equipment_dedication",
+            "label": "Synthetic audit rule",
+            "antecedent": {},
+            "consequent": {},
+            "priority": 10,
+        },
+    )
+    assert response.status_code == 201, response.text
+    return response.json()
+
+
 def test_rule_change_is_traceable_to_actor_batch_and_time(client, db, analyst_headers):
     _seed(db)
 
     # 取一条已发布的决策规则，做一次纯数据改动（调整 priority）。
     rules = client.get("/api/ontology/decision-rules").json()
     assert rules, "种子应包含 R-ED/R-SC/R-CP 决策规则"
-    rule = rules[0]
+    published = rules[0]
+    rejected = client.put(
+        f"/api/ontology/decision-rules/{published['rule_key']}",
+        headers=analyst_headers,
+        json={"expected_version": published["version"], "priority": 99},
+    )
+    assert rejected.status_code == 409
+    rule = _draft_rule(client, analyst_headers)
     rk, iri, ver = rule["rule_key"], rule["slpra_iri"], rule["version"]
 
     upd = client.put(
@@ -78,7 +102,7 @@ def test_rule_change_is_traceable_to_actor_batch_and_time(client, db, analyst_he
 
 def test_audit_is_filterable_by_actor(client, db, analyst_headers):
     _seed(db)
-    rule = client.get("/api/ontology/decision-rules").json()[0]
+    rule = _draft_rule(client, analyst_headers)
     client.put(
         f"/api/ontology/decision-rules/{rule['rule_key']}",
         headers=analyst_headers,

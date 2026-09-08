@@ -9,22 +9,30 @@ from app.services.extraction.evidence_scope import (
     expand_scope,
     scope_intervals,
 )
+from app.services.extraction.extraction_diagnostics import MODEL_FAILURES, diagnostic
 from app.services.extraction.extraction_tasks import PartialTaskFailure
 from app.services.extraction.hierarchical_context import split_windows
 from app.services.ontology_instance_writer import instance_iri
 
 
-def expanded_gap_scope(ir, subject, candidates, max_expansions):
-    scope = build_scope(ir, subject, candidates)
+def expanded_gap_scope(ir, subject, candidates, max_expansions, *, bound_relationships=None):
+    scope = build_scope(ir, subject, candidates, bound_relationships=bound_relationships)
     if not max_expansions:
         return scope
     included = {r.evidence_id for r in scope.ranges}
     nodes = {n["node_id"]: n for n in ir.nodes}
-    subject_sections = {a.section_node_id for a in document_anchors(subject)}
+    subject_sections = {a.section_node_id for a in scope.construction_evidence}
     parent_sections = {
         nodes[section].get("parent_id") for section in subject_sections if section in nodes
     }
-    for section in [*sorted(subject_sections), *sorted(s for s in parent_sections if s)]:
+    relation_sections = {
+        a.section_node_id for a in scope.construction_evidence
+        if a not in document_anchors(subject)
+    }
+    for section in dict.fromkeys([
+        *sorted(relation_sections), *sorted(subject_sections),
+        *sorted(s for s in parent_sections if s),
+    ]):
         heading = next(
             (u for u in ir.evidence_units if u.kind == "heading" and u.section_node_id == section),
             None,
@@ -35,7 +43,7 @@ def expanded_gap_scope(ir, subject, candidates, max_expansions):
             if u.section_node_id == section and u.text and u.evidence_id not in included
         ]
         if heading and additions:
-            return expand_scope(
+            updated = expand_scope(
                 scope,
                 ScopeExpansion(
                     reason="coverage_gap_enclosing_section",
@@ -45,7 +53,56 @@ def expanded_gap_scope(ir, subject, candidates, max_expansions):
                 ir,
                 max_expansions,
             )
+            # Section expansion only authorizes retrieval. Its attribution is
+            # independently checked using the subject/verified relation seeds.
+            payload = updated.model_dump(mode="json", exclude={"scope_id"})
+            payload["reference_ranges"] = [
+                *payload["reference_ranges"], *[r.model_dump() for r in additions],
+            ]
+            return type(scope)(scope_id=stable_id("scope", payload), **payload)
     return scope
+
+
+def gap_subject_dependencies(root, subject, path, candidates):
+    """Replay the requested forward path using exact validated candidate revisions."""
+    mapping = {c.candidate_id: c for c in candidates}
+    frontier = [(root, [], [candidate_ref(root)])]
+    for step in path:
+        if step["direction"] != "forward":
+            break
+        next_frontier = []
+        for parent, prefix, refs in frontier:
+            if candidate_ref(parent) == candidate_ref(subject):
+                return prefix, refs
+            for relation in candidates:
+                if (
+                    relation.kind != "relationship"
+                    or not relation.positive_eligible
+                    or relation.review_status == "rejected"
+                    or relation.predicate_iri != step["predicate_iri"]
+                    or relation.subject.candidate_id != parent.candidate_id
+                    or relation.subject.revision != parent.revision
+                ):
+                    continue
+                child = mapping.get(relation.object.candidate_id)
+                if (
+                    child is None
+                    or child.revision != relation.object.revision
+                    or not child.positive_eligible
+                ):
+                    continue
+                next_frontier.append(
+                    (
+                        child,
+                        [*prefix, relation.predicate_iri],
+                        [*refs, candidate_ref(parent), candidate_ref(relation)],
+                    )
+                )
+        frontier = next_frontier
+    for endpoint, prefix, refs in frontier:
+        if candidate_ref(endpoint) == candidate_ref(subject):
+            return prefix, list({(r.candidate_id, r.revision): r for r in refs}.values())
+    return [], []
 
 
 def run_gap_round(ir, inputs, candidates, selector, runner):
@@ -115,7 +172,19 @@ def run_gap_round(ir, inputs, candidates, selector, runner):
             ]
             # Missing endpoints are recalled with the same generic entity task.
             task_kind = "entity" if kind == "relationship" and not objects else kind
-            scope = expanded_gap_scope(ir, subject, candidates, runner.budget.max_scope_expansions)
+            prefix, dependencies = gap_subject_dependencies(
+                root,
+                subject,
+                target["predicate_path"],
+                candidates,
+            )
+            scope = expanded_gap_scope(
+                ir,
+                subject,
+                candidates,
+                runner.budget.max_scope_expansions,
+                bound_relationships=[mapping[ref.candidate_id] for ref in dependencies],
+            )
             regions = (
                 EvidenceRange(evidence_id=identity, start=left + start, end=left + end)
                 for identity, intervals in scope_intervals(scope, ir).items()
@@ -156,6 +225,11 @@ def run_gap_round(ir, inputs, candidates, selector, runner):
                         scope=scope,
                         predicate_iri=predicate,
                         predicate_definition=spec,
+                        path_root=candidate_ref(root) if dependencies else candidate_ref(subject),
+                        relationship_path=(
+                            [*prefix, predicate] if kind == "relationship" else prefix
+                        ),
+                        dependency_refs=dependencies,
                         object_candidates=[candidate_ref(c) for c in objects]
                         if kind == "relationship"
                         else [],
@@ -180,20 +254,23 @@ def run_gap_round(ir, inputs, candidates, selector, runner):
                     values = runner.execute_task(task, ir, mapping, inputs["input_class_iri"])
                 except (ValueError, RuntimeError, TimeoutError) as exc:
                     history.append(
-                        {"task_id": identity, "status": "incomplete", "reason": str(exc)}
+                        {"task_id": identity, "status": "incomplete", "reason": str(exc),
+                         "outcomes": [*runner._task_events,
+                                      diagnostic(runner._stage, str(exc))]}
                     )
                     if isinstance(exc, PartialTaskFailure):
                         new = [c for c in exc.candidates if c.candidate_id not in mapping]
                         if new:
                             return new, "pending_review", history
-                    if str(exc) == "model_unavailable":
-                        return results, "model_unavailable", history
+                    if str(exc) in MODEL_FAILURES:
+                        return results, str(exc), history
                     continue
                 history.append(
                     {
                         "task_id": identity,
                         "status": "complete",
                         "scope": scope.model_dump(mode="json"),
+                        "outcomes": list(runner._task_events),
                     }
                 )
                 new = [c for c in values if c.candidate_id not in mapping]

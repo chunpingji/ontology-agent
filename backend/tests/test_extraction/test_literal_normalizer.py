@@ -41,3 +41,27 @@ def test_text_boolean_and_date_are_distinct_and_unknown_unit_cannot_be_assumed()
     assert normalize_literal("2026-09-05", datatype="date").normalized_value == "2026-09-05"
     with pytest.raises(LiteralNormalizationError, match="unit"):
         normalize_literal("5", datatype="decimal", target_unit="mg")
+
+
+@pytest.mark.parametrize(
+    "raw,expected", [("2026年6月", "2026-06"), ("2026年02月", "2026-02"), ("2026-09", "2026-09")]
+)
+def test_year_month_preserves_precision_and_original_evidence(raw, expected):
+    value = normalize_literal(raw, datatype="http://www.w3.org/2001/XMLSchema#gYearMonth")
+    assert value.raw_value == raw and value.normalized_value == expected
+    assert value.datatype_iri.endswith("#gYearMonth")
+
+
+@pytest.mark.parametrize(
+    "raw", ["2026年13月", "0000-01", "2026-00", "2026-09-01", "2026年", "明年6月"]
+)
+def test_invalid_or_incomplete_year_month_is_not_guessed(raw):
+    with pytest.raises(LiteralNormalizationError, match="year-month"):
+        normalize_literal(raw, datatype="gYearMonth")
+
+
+@pytest.mark.parametrize("raw,expected", [("是", True), ("否", False)])
+def test_explicit_chinese_booleans(raw, expected):
+    assert normalize_literal(raw, datatype="boolean").normalized_value is expected
+    with pytest.raises(LiteralNormalizationError, match="boolean"):
+        normalize_literal("可能" + raw, datatype="boolean")

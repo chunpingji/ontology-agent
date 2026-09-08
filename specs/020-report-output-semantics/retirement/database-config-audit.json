@@ -1,0 +1,26 @@
+{
+  "observed_at": "2026-09-06T13:54:22.673984+00:00",
+  "method": "REPEATABLE READ READ ONLY",
+  "database_revision": "0026_evidence_facts",
+  "tables": {
+    "class_mappings": {
+      "row_count": 0,
+      "rows_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "retired_config_rows": []
+    },
+    "property_bindings": {
+      "row_count": 0,
+      "rows_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "retired_config_rows": []
+    },
+    "extraction_configs": {
+      "row_count": 1,
+      "rows_sha256": "4be1c6f0a2abe2bacbb1224451ada8b063993e0e61f060076e9d29d760d636ae",
+      "retired_config_rows": []
+    }
+  },
+  "status": "pass",
+  "limitations": [
+    "Only named execution-configuration tables were inspected; runtime ontology releases and deployment verification remain separate gates."
+  ]
+}

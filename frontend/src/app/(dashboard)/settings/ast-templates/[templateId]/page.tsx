@@ -10,7 +10,9 @@ import {
   getAstTemplate,
   updateAstTemplate,
 } from "@/lib/api";
-import { TemplateSlotEditor } from "@/components/extraction/template-slot-editor";
+import { WordViewer } from "@/components/extraction/word-viewer";
+import { OutputTemplateEditor } from "@/components/reporting/output-template-editor";
+import { isTemplateV2, reportPost, type FrozenRecord, type TemplateV2 } from "@/lib/reporting-v2";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
   Breadcrumb,
@@ -27,6 +29,16 @@ export default function EditTemplatePage() {
   const { templateId } = useParams<{ templateId: string }>();
   const router = useRouter();
   const [saving, setSaving] = useState(false);
+  async function migrate() {
+    if (!query.data) return;
+    setSaving(true);
+    try {
+      const plan = await reportPost<FrozenRecord<{ target_schema: TemplateV2 }>>(
+        "ast-templates/" + templateId + "/migration-plan", { expected_hash: query.data.schema_hash });
+      await handleSave(plan.payload.target_schema);
+    } catch (e) { alert(e instanceof Error ? e.message : "迁移失败"); }
+    finally { setSaving(false); }
+  }
 
   const query = useQuery({
     queryKey: ["ast-template", templateId],
@@ -36,7 +48,12 @@ export default function EditTemplatePage() {
   async function handleSave(updated: Record<string, unknown>) {
     setSaving(true);
     try {
-      const result = await updateAstTemplate(templateId, { schema_json: updated });
+      const result = isTemplateV2(updated)
+        ? await reportPost<{ id: string }>("ast-templates/" + templateId + "/revisions", {
+            schema: updated, expected_hash: query.data?.schema_hash,
+            expected_revision: query.data?.revision_no,
+          })
+        : await updateAstTemplate(templateId, { schema_json: updated });
       router.push(`/settings/ast-templates/${result.id}`);
     } catch (e) {
       alert(e instanceof Error ? e.message : "保存失败");
@@ -71,6 +88,10 @@ export default function EditTemplatePage() {
       </div>
 
       <div className="flex-1 min-h-0 border-t -mx-6 -mb-6">
+        {tpl && !isTemplateV2(tpl.schema_json) && <div className="border-b bg-amber-50 p-3 text-sm flex items-center gap-4">
+          <p className="flex-1">这是历史 Slot 模板。迁移将创建新的 V2 草稿，并保留原版本与待确认事项。</p>
+          <Button disabled={saving} onClick={migrate}>创建 V2 迁移草稿</Button>
+        </div>}
         {query.isLoading ? (
           <div className="p-8 space-y-4">
             <Skeleton className="h-8 w-64" />
@@ -94,21 +115,12 @@ export default function EditTemplatePage() {
               返回列表
             </Button>
           </div>
-        ) : tpl ? (
-          <TemplateSlotEditor
-            key={tpl.id}
-            schema={tpl.schema_json as never}
-            mode="edit"
-            onSave={(updated) =>
-              handleSave(updated as unknown as Record<string, unknown>)
-            }
+        ) : tpl ? isTemplateV2(tpl.schema_json) ? (
+          <OutputTemplateEditor key={tpl.id} schema={tpl.schema_json} templateId={tpl.id}
+            schemaHash={tpl.schema_hash} saving={saving} onSave={handleSave}
             onCancel={() => router.push("/settings/ast-templates")}
-            saving={saving}
-            aiEnabled
-            iriPattern={tpl.iri_pattern}
-            sampleText={tpl.sample_text ?? null}
-            sampleContentJson={tpl.sample_content_json ?? null}
-            templateId={templateId}
+            defaultSourceJobId={tpl.default_source_job_id} versions={tpl.versions} sampleContentJson={tpl.sample_content_json}
+            sampleText={tpl.sample_text}
             meta={{
               name: tpl.name,
               docNo: tpl.doc_no,
@@ -121,10 +133,18 @@ export default function EditTemplatePage() {
               defaultSourceJobId: tpl.default_source_job_id,
               sampleConfigured: tpl.sample_content_json != null,
             }}
-            versions={tpl.versions ?? []}
-            onVersionSwitch={(id) => router.push(`/settings/ast-templates/${id}`)}
             onMetaSaved={() => query.refetch()}
-          />
+            onVersionSwitch={(id) => router.push("/settings/ast-templates/" + id)} />
+        ) : (
+          <div className="h-full overflow-auto p-6 space-y-4">
+            <p>历史模板只读。编辑内容请先创建 V2 迁移草稿。</p>
+            <select aria-label="历史模板版本" className="border rounded p-2" value={tpl.id}
+              onChange={(e) => router.push("/settings/ast-templates/" + e.target.value)}>
+              {tpl.versions?.map((v) => <option key={v.id} value={v.id}>{v.version}</option>)}
+            </select>
+            {tpl.sample_content_json && <WordViewer content={tpl.sample_content_json} fitTables />}
+            <details><summary>原模板定义与来源</summary><pre className="text-xs overflow-auto">{JSON.stringify(tpl.schema_json, null, 2)}</pre></details>
+          </div>
         ) : null}
       </div>
     </div>

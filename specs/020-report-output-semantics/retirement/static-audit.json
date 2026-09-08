@@ -1,0 +1,1440 @@
+{
+  "status": "pass",
+  "findings": [],
+  "dynamic_imports": [],
+  "owned_source_manifest": [
+    {
+      "path": "backend/app/__init__.py",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "backend/app/api/__init__.py",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "backend/app/api/actions.py",
+      "sha256": "eed56b29e5f14c1913fdc188907cdf6978ce8f19a77cea77fa3bd00a92aa112f"
+    },
+    {
+      "path": "backend/app/api/ast_templates.py",
+      "sha256": "af102395607558a28e8cd6012511e5b72a8a755b025d596b8e799225b24b5867"
+    },
+    {
+      "path": "backend/app/api/auth.py",
+      "sha256": "fdc94cc97d141b652572475de69c6ae340203630203a4131dfde9b5fb63571e1"
+    },
+    {
+      "path": "backend/app/api/compliance.py",
+      "sha256": "14be5389a38d71151d487dd574d7f294c6f5745926e4caffdccba3dd43c6b8ec"
+    },
+    {
+      "path": "backend/app/api/document_analysis.py",
+      "sha256": "acc62cc9f40debde76d839a85beb89c2aff4553e91abc8de1f3562d7e625f73b"
+    },
+    {
+      "path": "backend/app/api/entities.py",
+      "sha256": "4d84aa33574b17edde17a7146132c7478b7f7b87c572eba5a03ce6cf0e4e33ab"
+    },
+    {
+      "path": "backend/app/api/evidence.py",
+      "sha256": "287e919bd42381bb20bc1357e5b21f4d60a34fa5cb9bae769187d248448abe26"
+    },
+    {
+      "path": "backend/app/api/extraction.py",
+      "sha256": "2ad2f67b4b7bd3e368f4f77318a9619cf69c17362cfd61816aba1fda16ba11bc"
+    },
+    {
+      "path": "backend/app/api/integration.py",
+      "sha256": "73c1c2753c69ccedb4e2b856524b2edc2572353eab5346845e78175d6ce68c41"
+    },
+    {
+      "path": "backend/app/api/kg.py",
+      "sha256": "5b2f6862a382bf1aecccce94e7eb93703f2363f9efceeba2d518d2a8ddd91ebd"
+    },
+    {
+      "path": "backend/app/api/mock_sources.py",
+      "sha256": "f64f93e1a9ee221d8db1f6dcf8a98c1581bdcc976d9f14196af0b07b6275657a"
+    },
+    {
+      "path": "backend/app/api/ontology.py",
+      "sha256": "8f9c39cff389bdd445ab36791acdf525e62ca03330f38fe71835f6d47ac02bd6"
+    },
+    {
+      "path": "backend/app/api/pde_conflict.py",
+      "sha256": "50e1fc18a41421eb313d80f66aa86c4cc539019f78765f199dfbcef9e394eb1f"
+    },
+    {
+      "path": "backend/app/api/reasoning.py",
+      "sha256": "d89e6bc6b2169bad8169704ca0358da31ef0568241fb69eccba98a7ace11b0a3"
+    },
+    {
+      "path": "backend/app/api/report_runs.py",
+      "sha256": "da5afd98adf0afdc4796f7e4118453c0c68c80b5438862d88e52446219bfebdb"
+    },
+    {
+      "path": "backend/app/api/reports.py",
+      "sha256": "f55a7f52ca07f9c114d9c81c7245f3dd4862330d5c716ba900a43d9f1f76111c"
+    },
+    {
+      "path": "backend/app/api/system_config.py",
+      "sha256": "2e941d1bd0909f227627391da37c67bd06db80d24d3c48c0c0ca7c1ea808407a"
+    },
+    {
+      "path": "backend/app/auth.py",
+      "sha256": "ce0712fcbb6479643b14e606be774fba2a9a6bf35175671ae52f3a92dbd81b62"
+    },
+    {
+      "path": "backend/app/config.py",
+      "sha256": "32a39a84f0797693c7ee511e28f506db9d4b9c5f7bb4b4d9ece5d119dea40fbb"
+    },
+    {
+      "path": "backend/app/db.py",
+      "sha256": "1995fecd5fa58d6a6fa537d1034b6ccbbe5cb7c9dd01b3fe2867f6031a1a9d9c"
+    },
+    {
+      "path": "backend/app/dependencies.py",
+      "sha256": "0102a6cdb13f00c68d382a019f13303adbe0feac72a26513c37413fd3c026799"
+    },
+    {
+      "path": "backend/app/main.py",
+      "sha256": "83564b1c7ecb64c3c9fe8d9cd1cdb5b766257bfbc3626637634519bbeaad697f"
+    },
+    {
+      "path": "backend/app/models/__init__.py",
+      "sha256": "6d721f4997f3ec42360e721bed4a8c45c0c31455d72bcc4fc370f02924746423"
+    },
+    {
+      "path": "backend/app/models/entity_shadow.py",
+      "sha256": "c1c9b7fe8251b61129c225a2a003309ae51df09df652d76c1508756dee6bd189"
+    },
+    {
+      "path": "backend/app/models/evidence.py",
+      "sha256": "a94a649eb4e4e74b473b440dc91bd374436ee1c112964283b8cbcb15e298d070"
+    },
+    {
+      "path": "backend/app/models/extraction.py",
+      "sha256": "c20fc394624c5c75afd9faac274597ad6bb28caaa374388084c1730340644fc3"
+    },
+    {
+      "path": "backend/app/models/integration.py",
+      "sha256": "11b0a880e0ef9f5761e1b060323d248dcdfba06551609fdc56908ce1f092789b"
+    },
+    {
+      "path": "backend/app/models/mock_data.py",
+      "sha256": "f608a4182da4012fc6f4a0958f5bc0e9bac2bf30edaa7c2abdc57c921a122438"
+    },
+    {
+      "path": "backend/app/models/ontology_meta.py",
+      "sha256": "99f8382c841a234e9d140998690316ee56520b63e6e015a5e95c382fc88728df"
+    },
+    {
+      "path": "backend/app/models/pde_conflict.py",
+      "sha256": "ac67a0cf625f43cf66d09effe70d7cf4ad6b86fe5fd06dd7ad7198839d05ce35"
+    },
+    {
+      "path": "backend/app/models/reasoning.py",
+      "sha256": "e9a1483d7db8af36526681da7990ea0e0d353e84db935e29262f351c3693b835"
+    },
+    {
+      "path": "backend/app/models/reporting.py",
+      "sha256": "9e12626d84fa75d4b88f978cb1f6b86d137d947d48e66776b24a8eee9c43254d"
+    },
+    {
+      "path": "backend/app/models/system_config.py",
+      "sha256": "6ec4747eeef4c12a9b3d94557fe148ad9ee9887be54dbc25a6673d0893d0a7d2"
+    },
+    {
+      "path": "backend/app/models/types.py",
+      "sha256": "3a96fa63aface9d559e3a621ef609b9b329b190429fe95ea415cf44ca9bc134d"
+    },
+    {
+      "path": "backend/app/schemas/__init__.py",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "backend/app/schemas/entity.py",
+      "sha256": "423819166648d9833fcd4869f135fcbc0c29ac862bc21f5895b503a14d752e70"
+    },
+    {
+      "path": "backend/app/schemas/evidence.py",
+      "sha256": "9d0e86c3674cdd8cb4abc7dad09fbd562095728fb7c04878edfe301b084978d0"
+    },
+    {
+      "path": "backend/app/schemas/extraction.py",
+      "sha256": "5a1d99f3f911a74a897ab9edd082579743804b64cb44f0509cab0b18e7c6bd45"
+    },
+    {
+      "path": "backend/app/schemas/integration.py",
+      "sha256": "33fc2d2f4ca6d9be7216c9f736c947dbaa91ff94c9c7cb92fadd88a7248c0d83"
+    },
+    {
+      "path": "backend/app/schemas/ontology.py",
+      "sha256": "013fce305e3971991309310c7d7ad031e8c7e7255122791097df49e0029ddc3d"
+    },
+    {
+      "path": "backend/app/schemas/reasoning.py",
+      "sha256": "23f0e9b9057c582b4b98b181b49998c7f4ab20b678ac9d839d447cc8896c4c3c"
+    },
+    {
+      "path": "backend/app/schemas/reporting.py",
+      "sha256": "f16d4398cd60c016264fa61cf0ce2e27c3bed3f45254f038ae5c3f6d9383732d"
+    },
+    {
+      "path": "backend/app/services/__init__.py",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "backend/app/services/audit.py",
+      "sha256": "697283be602443f06c09d3019826b7504cb2f4cb8af307f895f9eee2bd550ba4"
+    },
+    {
+      "path": "backend/app/services/extraction/__init__.py",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "backend/app/services/extraction/aligner.py",
+      "sha256": "5d728a24f6b9fa1231c3c54730801c44faf7096f96c5adf909167cd62c052034"
+    },
+    {
+      "path": "backend/app/services/extraction/api_reader.py",
+      "sha256": "d4984b0a187a4cb3676b7ce808c5114424e578a795597f310abf6ad0fbc974ca"
+    },
+    {
+      "path": "backend/app/services/extraction/candidate_store.py",
+      "sha256": "3431555dc8aef26c66d7144e4a3f8541f0857af4446975f68d30bf78620c5710"
+    },
+    {
+      "path": "backend/app/services/extraction/candidate_validation.py",
+      "sha256": "22e98911fdd764fc343f075a8dc84d4fd2df19a1b5f4467d58f62ec2f54af29c"
+    },
+    {
+      "path": "backend/app/services/extraction/db_reader.py",
+      "sha256": "fd18f59c51b17767ddbe34004e5c7c8f833dad45f336f077b941f4ea1465c013"
+    },
+    {
+      "path": "backend/app/services/extraction/doc_converter.py",
+      "sha256": "887747e884a7e34ee4f0ff3c6d86a5b61b1096bbfad03fea1cf65af25ba71fa9"
+    },
+    {
+      "path": "backend/app/services/extraction/document_annotator.py",
+      "sha256": "5d345ae0aac363952bcf2c245df87b01e8a23a399400d5c55233173c18ce8e04"
+    },
+    {
+      "path": "backend/app/services/extraction/document_ir.py",
+      "sha256": "3c332efe2cb42b8cb2744497d210f27b2e2b7a6560086a7b4e0855c63cad65a2"
+    },
+    {
+      "path": "backend/app/services/extraction/docx_structure.py",
+      "sha256": "477380d42293b76b8aa60387293aeacd39f77c9b04df663f53aca044f53712a5"
+    },
+    {
+      "path": "backend/app/services/extraction/equipment_schedule_source.py",
+      "sha256": "f525cb03409164a5361e0df436e5ae894936945b82448f766fe06d31a144d392"
+    },
+    {
+      "path": "backend/app/services/extraction/equipment_source.py",
+      "sha256": "5ca2c13d8129f1d04ede23dba2a6f1e99dcb75bf3033973b3b9d8d94d6611173"
+    },
+    {
+      "path": "backend/app/services/extraction/evidence_identity.py",
+      "sha256": "e8ebd0a653bf260eca15d79ccc9847b8db4daeb6cebfee5e78136665b6231faa"
+    },
+    {
+      "path": "backend/app/services/extraction/evidence_preview.py",
+      "sha256": "d4d62ee2c1953e68b9ee068d877abbe13492e744c4bf77f87e01c17c4feec8ce"
+    },
+    {
+      "path": "backend/app/services/extraction/evidence_scope.py",
+      "sha256": "66e8ed448d98c8ecd35133ddb5ddb9e0a30ef56d3ffc78cb87fede79af1d0020"
+    },
+    {
+      "path": "backend/app/services/extraction/external_records.py",
+      "sha256": "652940b8774452b0e5acea334471687c56ae47e41b942a7ccbbf6a5b63d95ece"
+    },
+    {
+      "path": "backend/app/services/extraction/extraction_tasks.py",
+      "sha256": "240492690ed38de337b0ad580aa686f4dbfedaea45c3c4eab07317c3ae83914b"
+    },
+    {
+      "path": "backend/app/services/extraction/gap_extraction.py",
+      "sha256": "ab7af8bf36226c8c368611e9d04acf66701e6c02109df1791c714768800e6dd1"
+    },
+    {
+      "path": "backend/app/services/extraction/gap_workflow.py",
+      "sha256": "a182d43ca4faffc40a90460e70f508191d467902816b09325146e2f6e2924c02"
+    },
+    {
+      "path": "backend/app/services/extraction/gliner_extractor.py",
+      "sha256": "956d6d4bd605121c0953b8555d30e91d88552584a77cd8c3001d64787b13dee9"
+    },
+    {
+      "path": "backend/app/services/extraction/hierarchical_context.py",
+      "sha256": "a1b27c5843e05fb6ce6369fc46be26998215b76c0f0cbba7725912c8e6d15ccf"
+    },
+    {
+      "path": "backend/app/services/extraction/literal_normalizer.py",
+      "sha256": "a7f6e4f4c10c9ce4d3c024c5963600675107f32c86d993a183a6134a575f98ae"
+    },
+    {
+      "path": "backend/app/services/extraction/llm_extractor.py",
+      "sha256": "d675106daa2565530af531825069c69547cebbfa1819aa4595bfefe96a589893"
+    },
+    {
+      "path": "backend/app/services/extraction/local_semantic_model.py",
+      "sha256": "1fb0de59b81a7d1bf3b5ed6c8e79b10fb701ed95ead8bff24f12f8c3b8b1b64f"
+    },
+    {
+      "path": "backend/app/services/extraction/model_protocol.py",
+      "sha256": "f67bc748ba14f329c2519501be8dc246e1dfe9bc7cd7066997b90b4ebba2b584"
+    },
+    {
+      "path": "backend/app/services/extraction/ontology_typer.py",
+      "sha256": "c558299befce30a6a75987a799ffaa162a0d84f238483232f8be01c2e7e1bed5"
+    },
+    {
+      "path": "backend/app/services/extraction/parser.py",
+      "sha256": "b460e5ca4bdfdf7c693d40bb69b2d106cf5b613540e8f04f388a0d3f6a5c8b7a"
+    },
+    {
+      "path": "backend/app/services/extraction/pipeline.py",
+      "sha256": "53fe2f7c944426196ece70115154c84b32c80e4f004b1124cb8b4b39dac19de6"
+    },
+    {
+      "path": "backend/app/services/extraction/progress.py",
+      "sha256": "ad738c58586cc42aca6e85ed8efa4110f032551b9a2e45be0f88407174c63975"
+    },
+    {
+      "path": "backend/app/services/extraction/relation_extractor.py",
+      "sha256": "113477979c0da918184edb40d71aff984b84f94c90d29e73908bf5bf4dbcee90"
+    },
+    {
+      "path": "backend/app/services/extraction/retired_config.py",
+      "sha256": "4bca99d3c3e8d5663a4f891b6bf5db56c677bf596bd174afc711940c786b2c40"
+    },
+    {
+      "path": "backend/app/services/extraction/semantic.py",
+      "sha256": "085fffa0e5c4a460e9ccf49a531f2ad71289b7ec93a2207b5bfc6940b832947a"
+    },
+    {
+      "path": "backend/app/services/extraction/semantic_binding.py",
+      "sha256": "cda8af3c99818411314618b2cf9e89353cc2d7ce81380835734a4ede052675d2"
+    },
+    {
+      "path": "backend/app/services/extraction/sentence_grouping.py",
+      "sha256": "f28e61a3046fd2892a00a6e0d3af32af488ed06d2a153517089860e3c90e0888"
+    },
+    {
+      "path": "backend/app/services/extraction/slot_suggester.py",
+      "sha256": "f1f7b662f3645a6dec30bc7715801f1fae535aa09866b232f073153ade1a2469"
+    },
+    {
+      "path": "backend/app/services/extraction/template_extraction_plan.py",
+      "sha256": "ce7e37c96f63b23f0521a0f16fc9cde665f7ae56e345c07a43f06e00f75f912c"
+    },
+    {
+      "path": "backend/app/services/extraction/template_structure_builder.py",
+      "sha256": "f600049b00e7440e17df3fa28ecdd4a34b52e46e5f7177b8c739fa0d329f2bc5"
+    },
+    {
+      "path": "backend/app/services/extraction/text_scanner.py",
+      "sha256": "12841d9c510439beed20351f24da1615048da033a59be5a648b8f9a38aa741f1"
+    },
+    {
+      "path": "backend/app/services/extraction/transforms.py",
+      "sha256": "2816505150fbf5b8c9e10b9982031202fba49195c9aad21a9d8fe9e5f285f0e9"
+    },
+    {
+      "path": "backend/app/services/extraction/vocabulary.py",
+      "sha256": "5baabce996f8ba0189d7f4b8b50350ed58823cb2567b62bd1064a8198d52dcae"
+    },
+    {
+      "path": "backend/app/services/extraction/word_analysis.py",
+      "sha256": "0a63940ca37154b18cb5ece2a37fd61ae9b0011bbf54907148bee28132490728"
+    },
+    {
+      "path": "backend/app/services/extraction/word_tree_summarizer.py",
+      "sha256": "10f0ea44e6ad65ec9b759dd1399fd145aeb8c907168d2a9ceda9da78a6b3829d"
+    },
+    {
+      "path": "backend/app/services/fact_commit.py",
+      "sha256": "f81181aade7f7bbd2aac07a83a59279083cf877e8ef253a6a0c153172ad9ebc0"
+    },
+    {
+      "path": "backend/app/services/fact_selector.py",
+      "sha256": "187393bb7e8919b2f37a44929a5bae82cd6d7cc8b2b79009de1ebc4e86fbdd76"
+    },
+    {
+      "path": "backend/app/services/integration/__init__.py",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "backend/app/services/integration/aps_connector.py",
+      "sha256": "a458524dc39c824bedf2481ac370983cfa22bb9eaf3476ac8a867ccf34541577"
+    },
+    {
+      "path": "backend/app/services/integration/base.py",
+      "sha256": "37a27b5d5811befc8a845b0633bfefd90e864dafc97d8681945b4ad6144de016"
+    },
+    {
+      "path": "backend/app/services/integration/connector_factory.py",
+      "sha256": "d78c044a6b305dcb9155e78798d0dfaffb6b202d93847148b6c61dd5220c267f"
+    },
+    {
+      "path": "backend/app/services/integration/db_connector.py",
+      "sha256": "552d23ab3e591665c54ef6fc45251089be5b8b3d03c15c313a3b636d4cf1cce0"
+    },
+    {
+      "path": "backend/app/services/integration/doc_repo_connector.py",
+      "sha256": "57e9bda1c28a4d75da3f0f27810131420f3dc06ad1253579b0b7236fed4472d1"
+    },
+    {
+      "path": "backend/app/services/integration/events.py",
+      "sha256": "736d762fde326f19e49161ae6a8faa719346e25089bb894a0b1b440c4c0b6ad6"
+    },
+    {
+      "path": "backend/app/services/integration/file_connector.py",
+      "sha256": "47354280c29a89b17928399608723eb5bea8e60c4dfffa9905bdf66ef93b1e00"
+    },
+    {
+      "path": "backend/app/services/integration/materializer.py",
+      "sha256": "9fa16eb0ec0603a56692fdeca9940bdf21d458d1a2ee531e535614a723b18551"
+    },
+    {
+      "path": "backend/app/services/integration/poller.py",
+      "sha256": "790cc9f042a6085b09687587e6f13ab9e331c7a5660498fc16cffb518641a0e3"
+    },
+    {
+      "path": "backend/app/services/integration/rest_connector.py",
+      "sha256": "c2813003d3601a8e5a06076f066204914c1fd857a6faf561b7402f6fab77ea96"
+    },
+    {
+      "path": "backend/app/services/kg_store.py",
+      "sha256": "1dba509bc0f4772a0187a299e8f2c25fbfd19e91290b0593086f1d0663489bbb"
+    },
+    {
+      "path": "backend/app/services/llm/__init__.py",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "backend/app/services/llm/local_client.py",
+      "sha256": "f4f361090175896f4098ec165c281552424426677cae71618b293469cc494a84"
+    },
+    {
+      "path": "backend/app/services/ontology_engine.py",
+      "sha256": "a95ced767b9c31d89c97f49d5e137c4fbc9ab1a89429b6f4e785d55b392aea84"
+    },
+    {
+      "path": "backend/app/services/ontology_instance_writer.py",
+      "sha256": "1a07f88f1ca102999de84603459223b9ec119ce1cd061c075aba3ee1bece8172"
+    },
+    {
+      "path": "backend/app/services/ontology_meta_store.py",
+      "sha256": "b7c2a992fc486bee43294acfd5d6836ff5852c439453ed4952f01cac1cda8ede"
+    },
+    {
+      "path": "backend/app/services/reasoning/__init__.py",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "backend/app/services/reasoning/action_engine.py",
+      "sha256": "42c585a85d7db34304697d3a226c36ff88d781e65f8ba0630c0f0f45f39c8b40"
+    },
+    {
+      "path": "backend/app/services/reasoning/calculators.py",
+      "sha256": "dd09e6f7b45097a946d56edde1c76d05e75800c57f30e147c981ee4f5b704df5"
+    },
+    {
+      "path": "backend/app/services/reasoning/conflict_resolver.py",
+      "sha256": "3b22a64b63aba2db7e80f781da5a7727772cb551c2c3fb56750db3d18c1f6166"
+    },
+    {
+      "path": "backend/app/services/reasoning/defaults.py",
+      "sha256": "c315b043b6a0a62ea4af631a2da6a998a6d4ff3215cc7fb5605491ca89e8239a"
+    },
+    {
+      "path": "backend/app/services/reasoning/derivation.py",
+      "sha256": "fa7f1616690056a0f7fd030de956e80e48dafa04de4b007063f46b885f525a02"
+    },
+    {
+      "path": "backend/app/services/reasoning/engine.py",
+      "sha256": "809da3615e05fc38e3204eb5c13890258e538a57523d0d19525733a7597f44e3"
+    },
+    {
+      "path": "backend/app/services/reasoning/fact_bridge.py",
+      "sha256": "29f90c70fa42e8efd4ab2c5dde4ad4ed72ac3270ed904ecfe3f1644dc13df312"
+    },
+    {
+      "path": "backend/app/services/reasoning/incremental.py",
+      "sha256": "6230beb108cef7ee0f6db02db38d59d23ce04b8fc0dc055f0b59151b0d39aed9"
+    },
+    {
+      "path": "backend/app/services/reasoning/interpreter.py",
+      "sha256": "c2f1d6394e7a97c3b7741d46ff9cb2222a610cd40f81ae1bbc4ea780e9c8d991"
+    },
+    {
+      "path": "backend/app/services/reasoning/lifecycle.py",
+      "sha256": "51a12bf9837fe7d78791d830d1bdfb9860567b2b54a6996a0ac3d321ec687b34"
+    },
+    {
+      "path": "backend/app/services/reasoning/pde_conflict.py",
+      "sha256": "75a00fd0b8ac1bf12016552aca9c364be9ce4c1e24101605b6abb58f8408ea2e"
+    },
+    {
+      "path": "backend/app/services/reasoning/phase_context.py",
+      "sha256": "9a22ff80548025ebca41096ea4a9ad2de58e6bcec32d4a79d18190aa91022e35"
+    },
+    {
+      "path": "backend/app/services/reasoning/policy.py",
+      "sha256": "16dfcab10ca468be07d01482f6e8bb3cca933e0343356e9418296aa4fe79fc87"
+    },
+    {
+      "path": "backend/app/services/reasoning/recompute_subscriber.py",
+      "sha256": "3de6ab3fa2f1aaf0587937ad7af8f7c2cddddd458bca0054a3d08b842bd53b89"
+    },
+    {
+      "path": "backend/app/services/reasoning/risk.py",
+      "sha256": "d1a6699014e6ad2c4f63780b6091c935ea846f5618803e2eb303013dc9648c2e"
+    },
+    {
+      "path": "backend/app/services/reasoning/rule_migration.py",
+      "sha256": "ed5ed649a20e19c60aeda48966913998b2ee0db1cc7cb84947ad4b2dc18a9671"
+    },
+    {
+      "path": "backend/app/services/reasoning/rules/__init__.py",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "backend/app/services/reasoning/rules/contamination_risk.py",
+      "sha256": "c2042ed55fcdbadd771941a410289e96a4d32c3ad701d181a1a92a29342c5fe4"
+    },
+    {
+      "path": "backend/app/services/reasoning/rules/drug_classification.py",
+      "sha256": "c41f97b84ef71f19d06462bf919eb85172a366e36f20642101f6a65b5b6bacf1"
+    },
+    {
+      "path": "backend/app/services/reasoning/rules/equipment_dedication.py",
+      "sha256": "c31439c5d5184ad22ca7b91399cc505f852cbd23844de19a5954914c6af01c39"
+    },
+    {
+      "path": "backend/app/services/reasoning/rules/scenario_identification.py",
+      "sha256": "929d7e0355ab9fc62aff46b4db453cdef59b0cf52fbb55eade7829602fb2cf8a"
+    },
+    {
+      "path": "backend/app/services/reasoning/seed_declarative.py",
+      "sha256": "325300e429ef535fd5f2a067a0d86ebbc3a05ccc67c1b2c5145a785c1ece880b"
+    },
+    {
+      "path": "backend/app/services/reporting/__init__.py",
+      "sha256": "ba7361a2fb76ff7998f2a31ff2a6af1871e857c4d237c562296b32afdc2d74d1"
+    },
+    {
+      "path": "backend/app/services/reporting/ast_template.py",
+      "sha256": "871dd71776a9d83b7be64c5b03fd03d88b811888d52c85a1439b284e83b524e1"
+    },
+    {
+      "path": "backend/app/services/reporting/binding_resolver.py",
+      "sha256": "d95fe7572ba17462f9b9d6e4a36358c73ae9101436e82edbb559474e771250ee"
+    },
+    {
+      "path": "backend/app/services/reporting/claim_catalog.py",
+      "sha256": "9c7364c8287d0e5edfe50e9706c16c24889c63826ccbbdc7b8584f7aabf6737e"
+    },
+    {
+      "path": "backend/app/services/reporting/condition_resolver.py",
+      "sha256": "0331c6c8c3175d96e4229d4fd0aef77fec750128bc0550063a6a5dc7429bff74"
+    },
+    {
+      "path": "backend/app/services/reporting/contract_registry.py",
+      "sha256": "47ac7bbd60637bd856f707b0d033dffe31fe2bf7f99ac96770cc693b129a754c"
+    },
+    {
+      "path": "backend/app/services/reporting/coverage_v2.py",
+      "sha256": "6de7ad16db00726cf3fc17afdc82828e8babddec140edf27b826797b415f810c"
+    },
+    {
+      "path": "backend/app/services/reporting/input_resolver.py",
+      "sha256": "e0d9ff0189c588f8aa4a0cf12dbed630e8f1e909093a9fa7e32d0a7cf27ba627"
+    },
+    {
+      "path": "backend/app/services/reporting/legacy_facade.py",
+      "sha256": "1e4d3b76f44cd14dbd7e5007d4297d3d6f88071e1966d6921444361ea8d7fff7"
+    },
+    {
+      "path": "backend/app/services/reporting/narrative_renderer.py",
+      "sha256": "b3b8e788866b0ff8d06e82d58e5ce72f192958923e3de03b365ca27df3a9acf4"
+    },
+    {
+      "path": "backend/app/services/reporting/output_ast.py",
+      "sha256": "f026b45b1cbcbd6babc7889544a882fb161d62b6f637b0d9a310b6c719be49ea"
+    },
+    {
+      "path": "backend/app/services/reporting/output_renderer.py",
+      "sha256": "a53b0cf42146d58596228213ca2b6f68db0bc62540680ff3bb1345275afb037c"
+    },
+    {
+      "path": "backend/app/services/reporting/report_run_service.py",
+      "sha256": "71336f48d006cbafe5822b10734592bca31374511b498073ce8283469a0237e6"
+    },
+    {
+      "path": "backend/app/services/reporting/report_signing.py",
+      "sha256": "5b91f8b23b29842bb1de370b26bfee8ae6e2837751e5ab9dfe405a36f5c359b0"
+    },
+    {
+      "path": "backend/app/services/reporting/report_snapshot.py",
+      "sha256": "031f4dbfb1014c234d971c239160eca644251987c36fcdc61029e611066e657e"
+    },
+    {
+      "path": "backend/app/services/reporting/resolution_budget.py",
+      "sha256": "08f1a6067d45da12aa88c8f983bbbd6c4f4f19976152c0f8408b1d3e68535d53"
+    },
+    {
+      "path": "backend/app/services/reporting/risk_report.py",
+      "sha256": "1098f8a75d4b2d3530cc7ce5a1c6db05825773fc7781276f183ef34a1262ab69"
+    },
+    {
+      "path": "backend/app/services/reporting/source_ref.py",
+      "sha256": "a6a36baee22c5969551eec40c05e11b45fefe50a15d8c6e9a72e80f93e4d80f9"
+    },
+    {
+      "path": "backend/app/services/reporting/template_compiler.py",
+      "sha256": "4eaeb65b3448ede76d516da0d1817ab34fafa5c848510268652bc738b97baed2"
+    },
+    {
+      "path": "backend/app/services/reporting/template_expander.py",
+      "sha256": "3103888643ed668def7085d055d140fc10fddd5ac524700c34337ef136278f9d"
+    },
+    {
+      "path": "backend/app/services/reporting/template_migration.py",
+      "sha256": "d0df629b6106ff10fc86b54522cd72f83968b775023c9e40da2fe359326777e1"
+    },
+    {
+      "path": "backend/app/services/reporting/template_upgrade.py",
+      "sha256": "2f21241a21366de2e37af4c845abedd9956e8d33884636b5f68fd9c4f1925445"
+    },
+    {
+      "path": "backend/app/services/reporting/template_v2.py",
+      "sha256": "9bb4b4b46f689c066a387af151bb06f865ee663bfa7370c2886037c840fe54e9"
+    },
+    {
+      "path": "backend/app/services/ttl_merge.py",
+      "sha256": "4b2505b472db0a8183156e035de45024c1ec88cde3b2152577400d6ace4b1dbb"
+    },
+    {
+      "path": "cli/cli_anything/__init__.py",
+      "sha256": "378f46e54c7d3777be3c234ae670a77d6a7b2aa0b5aeb69c2f56f9e0c98e86f9"
+    },
+    {
+      "path": "cli/cli_anything/ontology_agent/__init__.py",
+      "sha256": "0f5239112f6c778048c19646c58c36e9f3e6b6a64e1210afe3cc6f32cd4a034c"
+    },
+    {
+      "path": "cli/cli_anything/ontology_agent/__main__.py",
+      "sha256": "397bc644228e2f7971a319c4adc8a721ab395c754c85e537f4fa473100d54e93"
+    },
+    {
+      "path": "cli/cli_anything/ontology_agent/commands/__init__.py",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "cli/cli_anything/ontology_agent/commands/_ctx.py",
+      "sha256": "11cd27f368076df4afb47027c6aec6a8270260fd7b493c552948735b372c9a65"
+    },
+    {
+      "path": "cli/cli_anything/ontology_agent/commands/auth.py",
+      "sha256": "98de88f06496ae69229f427ac08fcd19edd44f55a82edaad46d5bfc60c2f692f"
+    },
+    {
+      "path": "cli/cli_anything/ontology_agent/commands/config.py",
+      "sha256": "2e1fdd7c20951476b9c3e1befdbf42329ca5e4b495c27f87e6db590a8d39d106"
+    },
+    {
+      "path": "cli/cli_anything/ontology_agent/commands/docs.py",
+      "sha256": "3fc93c56b0cd21d161838d67d20cf5d0a69863bf6acd2cd3565c744b9d0b23f1"
+    },
+    {
+      "path": "cli/cli_anything/ontology_agent/commands/report.py",
+      "sha256": "b10f5af4d10f4914dd771192f18e05b0fcbabdcf01a9677612639ea8ddcd1111"
+    },
+    {
+      "path": "cli/cli_anything/ontology_agent/core/__init__.py",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "cli/cli_anything/ontology_agent/core/auth.py",
+      "sha256": "19b9da8f47207358963829d759f43eaa6aeffcdf51114eb4b4399bf1d3075857"
+    },
+    {
+      "path": "cli/cli_anything/ontology_agent/core/client.py",
+      "sha256": "0a31106b6a4faba8852061af6fbe4fafbd3d6ea9e508d42f8e0b3dc6bfe65616"
+    },
+    {
+      "path": "cli/cli_anything/ontology_agent/core/config.py",
+      "sha256": "562dda2da0aef9a0e3f4543460e2b654fb96e0c8f5bb72bfc6c4b5838bf6e4a2"
+    },
+    {
+      "path": "cli/cli_anything/ontology_agent/core/documents.py",
+      "sha256": "bd327d830476e8833d16b5f45507a01008f48455fd8585f0ef03b83162fb0a51"
+    },
+    {
+      "path": "cli/cli_anything/ontology_agent/core/errors.py",
+      "sha256": "5a265168fca030f9e90ee0f4ac3fea6a25da2b2793338c995af35fc50ca41fc8"
+    },
+    {
+      "path": "cli/cli_anything/ontology_agent/core/files.py",
+      "sha256": "b8578a9f840f739c23045450bc7ddaa608442a3ce8b52b0a38a90e59cbeee94d"
+    },
+    {
+      "path": "cli/cli_anything/ontology_agent/core/output.py",
+      "sha256": "84454cfa3f4f12ea6a1609c61fd9381fabdea8640c7d321472cebad0a079f42e"
+    },
+    {
+      "path": "cli/cli_anything/ontology_agent/core/reports.py",
+      "sha256": "866fe7504a15b831f59f7c152c9b6fb535949567d3b62cbdf3e116034d5a989b"
+    },
+    {
+      "path": "cli/cli_anything/ontology_agent/core/session.py",
+      "sha256": "0eb4d5c024eae31c1b3ce40bb9b9c5bec98e22089af373f69e39dfa61777a9f0"
+    },
+    {
+      "path": "cli/cli_anything/ontology_agent/oa_cli.py",
+      "sha256": "04c1c36b1e2cadfd5887bacae5b7c954a61f78d7f1a9e4dcea1b3106213cf83b"
+    },
+    {
+      "path": "cli/cli_anything/ontology_agent/utils/__init__.py",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "cli/cli_anything/ontology_agent/utils/repl.py",
+      "sha256": "ae3f2a30be6d2133c9d06256c987e0cb265ac560d1d4f1660706325e16b86b20"
+    },
+    {
+      "path": "frontend/src/app/(dashboard)/analysis/page.tsx",
+      "sha256": "a14bb973e9bf838518514fe85cf751d27e3c1c1d298f1cc8459a17e3109a8f34"
+    },
+    {
+      "path": "frontend/src/app/(dashboard)/approval/page.tsx",
+      "sha256": "b31d224a537a178f22ec5434d83c41c48c71db89d0aae8d8e8778b22785a8754"
+    },
+    {
+      "path": "frontend/src/app/(dashboard)/connector/page.tsx",
+      "sha256": "147c03ee74acdf64048bbf93a7be7f9a4f5ef8b0cef6a066adaf7f010baa458f"
+    },
+    {
+      "path": "frontend/src/app/(dashboard)/data-mapping/page.tsx",
+      "sha256": "b03923f754f50a367ef9bda3d5aac3ec303461164b19674190ce5e77633c485d"
+    },
+    {
+      "path": "frontend/src/app/(dashboard)/entities/extraction/[jobId]/ast/page.tsx",
+      "sha256": "66f45023add2d407497c0b7a71bb5e53a1ec75b5318d3553d49272075999b7b4"
+    },
+    {
+      "path": "frontend/src/app/(dashboard)/entities/extraction/page.tsx",
+      "sha256": "44f494e293dcf4b61bba29e248a492c32b262f2f8aa8c419e6379b7e72a719c8"
+    },
+    {
+      "path": "frontend/src/app/(dashboard)/entities/layout.tsx",
+      "sha256": "247e90b2b672dce3e56adffe8449187c1afadefcd268b41c708d7620e1a622d2"
+    },
+    {
+      "path": "frontend/src/app/(dashboard)/entities/page.tsx",
+      "sha256": "f34dee92911883a6c3f7ebbbedc6ae85939b1dd26a37e4da4036dd73cde28414"
+    },
+    {
+      "path": "frontend/src/app/(dashboard)/layout.tsx",
+      "sha256": "700763da25373962702ca5b9484f17f36bf4d2bce928f1cdeab1a8e36083db33"
+    },
+    {
+      "path": "frontend/src/app/(dashboard)/mock/approver-team/page.tsx",
+      "sha256": "8ab4f2ed2bbb15f62bd82a6b762a5b906c201dc9a4e491370b2454097cd13643"
+    },
+    {
+      "path": "frontend/src/app/(dashboard)/mock/assessment-team/page.tsx",
+      "sha256": "2f62cb96c400cb6778fa500deb4685485186f79afc2dd8a4e02df81d59318c4f"
+    },
+    {
+      "path": "frontend/src/app/(dashboard)/mock/departments/page.tsx",
+      "sha256": "436f6f5a15095021e86460cb9b8aa9f92c9fe943e10bc7d02d66a7f294a70051"
+    },
+    {
+      "path": "frontend/src/app/(dashboard)/mock/equipment/page.tsx",
+      "sha256": "61cd052924a71d7cfaf0d475c259f619041e3d845e3d114eaa4cc739f50f6305"
+    },
+    {
+      "path": "frontend/src/app/(dashboard)/mock/production-areas/page.tsx",
+      "sha256": "95bf30d7adfb2b0c23ceba917ad14e3814c193de4847f3758d79b4bee9ea6332"
+    },
+    {
+      "path": "frontend/src/app/(dashboard)/mock/roles/page.tsx",
+      "sha256": "8b894fd95f916a584a571895318b0b5a78fa7691e8ae0924589b6d005061156f"
+    },
+    {
+      "path": "frontend/src/app/(dashboard)/ontology/page.tsx",
+      "sha256": "80040834c332d0efb14850cf362b6125f21c511adbb1479c40c3e4f8c53a5a84"
+    },
+    {
+      "path": "frontend/src/app/(dashboard)/ontology/rules/page.tsx",
+      "sha256": "f9fad7b6809e2ee895b721e87ee313ee6d421efb189feac9ada8ae1f2b600c71"
+    },
+    {
+      "path": "frontend/src/app/(dashboard)/overview/page.tsx",
+      "sha256": "7d0ecc85f802561e907f6966288c79fcc61b48108981253ded138ec029007e5a"
+    },
+    {
+      "path": "frontend/src/app/(dashboard)/reports/[reportId]/page.tsx",
+      "sha256": "cb1d8f4261c624e668359cfdf68e224ccdc8b20b3f7eb34a7ea5aa69c4b3491f"
+    },
+    {
+      "path": "frontend/src/app/(dashboard)/reports/page.tsx",
+      "sha256": "9f3cba2804629f6dc5ab096c56cc03e4381ac5fc893cf66ee6b73e2cd999b635"
+    },
+    {
+      "path": "frontend/src/app/(dashboard)/settings/ast-templates/[templateId]/page.tsx",
+      "sha256": "cb44d03c128d20517dfc799d2273659b900066c938c487c74bf7d6587a0f8cbb"
+    },
+    {
+      "path": "frontend/src/app/(dashboard)/settings/ast-templates/create/page.tsx",
+      "sha256": "bf8b939e47b448cf9a0bea1d99986024082fa0fb5a5c51b680cfdccd42cee74c"
+    },
+    {
+      "path": "frontend/src/app/(dashboard)/settings/ast-templates/page.tsx",
+      "sha256": "e257d56fe1e625b8e8922bc16d0d9966ed921d66fb50a92592b0218d92055a04"
+    },
+    {
+      "path": "frontend/src/app/(dashboard)/settings/page.tsx",
+      "sha256": "d1cdb6a1b117556a9c32cd26c4742ddf38cd8d5db7c2057b2afe231201c67acf"
+    },
+    {
+      "path": "frontend/src/app/(dashboard)/settings/report-contracts/page.tsx",
+      "sha256": "dceaabe85dd6d3608bed0ec9087a934cbbc6cdc2a3e0148bbb19e1bd4a8ed241"
+    },
+    {
+      "path": "frontend/src/app/layout.tsx",
+      "sha256": "b901953e787c2b8e974919c5d089b2268ee47aa38a817a5f6981447c29671542"
+    },
+    {
+      "path": "frontend/src/app/login/page.tsx",
+      "sha256": "58cb4b266adb565af2ed70983a164d3f1cfa0ef6079cd29e97fd88d3186bca90"
+    },
+    {
+      "path": "frontend/src/app/page.tsx",
+      "sha256": "9e7e7b9e7bed0204cccafbd51518d709168feb837c2495fd2c3139aac7e2ed1b"
+    },
+    {
+      "path": "frontend/src/app/providers.tsx",
+      "sha256": "d782b5c23dcf777b3ce846482cc137378880d59bb93540f9d93afa17ca051418"
+    },
+    {
+      "path": "frontend/src/components/analysis/analysis-tabs.tsx",
+      "sha256": "c9901113d5067da6da3bc09a10f932c45fa9f0b423089c18a7531a069d54d509"
+    },
+    {
+      "path": "frontend/src/components/analysis/document-analysis-panel.tsx",
+      "sha256": "5c268da8316f1927fa825bdae021df7358f246aa27d9c8b5f52a0c98b18abce8"
+    },
+    {
+      "path": "frontend/src/components/analysis/graph-query-panel.tsx",
+      "sha256": "2cf4e8d391472d43aa270e7ea5a22a711b861fe710fd6125096027c427499171"
+    },
+    {
+      "path": "frontend/src/components/analysis/reasoning-panels.tsx",
+      "sha256": "b7aeede87e4e097e02df329859ec7ef00b9222852e78cff377b441719229dd69"
+    },
+    {
+      "path": "frontend/src/components/approval/approval-detail.tsx",
+      "sha256": "39150b26e541e24e354bdfe617abbee76ef522a532ed853b2c4f23bdafd624ab"
+    },
+    {
+      "path": "frontend/src/components/approval/decision-actions.tsx",
+      "sha256": "78e106b2526f2eaa7c08428672403790240fa018bcd6330e0a0ff494e818913f"
+    },
+    {
+      "path": "frontend/src/components/approval/detail.tsx",
+      "sha256": "5b8cc2397c663c86d15f400296a8d50b114745724cf236a295e7c4f5787fbdf9"
+    },
+    {
+      "path": "frontend/src/components/approval/queue.tsx",
+      "sha256": "f349efb9bcfd4d9f83775b374a27fc41fbbd444b199ea21e85eff1162cea4d1d"
+    },
+    {
+      "path": "frontend/src/components/approval/task-card.tsx",
+      "sha256": "1a710696180940e4ba79fda51486fc56aaf215cf07ffe71503f47986d50cc36e"
+    },
+    {
+      "path": "frontend/src/components/approval/timeline.tsx",
+      "sha256": "07974ff94cc6ba9ee3e3177d4186a53c93d0057d807168d020d29ae4a66383f7"
+    },
+    {
+      "path": "frontend/src/components/approvals/qa-signature-dialog.tsx",
+      "sha256": "722857cb8c8d5e5585fc1875e0b175ee96e64274a301d757068e4cbe46b38056"
+    },
+    {
+      "path": "frontend/src/components/approvals/reject-dialog.tsx",
+      "sha256": "465d79a6d01ca36bb5081facd1ee4b13700e750ca2a176ab3f5e982120ee91b9"
+    },
+    {
+      "path": "frontend/src/components/connector/connector-form.tsx",
+      "sha256": "a8b664d6577112a7a779c84aae0eb2384ebcaa19954ba0181d2a345547ecffb7"
+    },
+    {
+      "path": "frontend/src/components/connector/connector-list.tsx",
+      "sha256": "5b4c8f8a5e1396a95799796fd00d9f14d3e29c0097510e5fc163f3221ca9900e"
+    },
+    {
+      "path": "frontend/src/components/connector/connector-test.tsx",
+      "sha256": "458e933801321f7020711adb0926e038730e447fe6bb7293691e9899f784f77a"
+    },
+    {
+      "path": "frontend/src/components/connector/status-indicator.tsx",
+      "sha256": "5099342107ec4225c911ec4e64d347630e5da9bfdba864be426bed935a7d0c75"
+    },
+    {
+      "path": "frontend/src/components/data-mapping/binding-editor.tsx",
+      "sha256": "6cde3a9997f8786298cce50cd15847238ba3ffac840f50f9a83ae974efd07bdf"
+    },
+    {
+      "path": "frontend/src/components/data-mapping/binding-table.tsx",
+      "sha256": "46e846d9b243a04f51c6f0ef340192823be14dd60f4507afdad66a4ce585dde0"
+    },
+    {
+      "path": "frontend/src/components/data-mapping/class-tree.tsx",
+      "sha256": "4f17534ff553789be607101962b00e9088df86b29aa93ee4a3e35e23964db7c7"
+    },
+    {
+      "path": "frontend/src/components/data-mapping/coverage.tsx",
+      "sha256": "7aaf98c0108965bea0a4d71dde312832d51f7f4aba292c06f65abe121db78dad"
+    },
+    {
+      "path": "frontend/src/components/extraction/alignment-review.tsx",
+      "sha256": "8e08c44687546d46661ac30c2df81aaf02304d36cdcf0577cd10b58b9471b7e3"
+    },
+    {
+      "path": "frontend/src/components/extraction/ast-tree-view.tsx",
+      "sha256": "1144811828693293bfe144670baae8aff1f96f02b5a73db1750eca8958540bf1"
+    },
+    {
+      "path": "frontend/src/components/extraction/coverage-summary-card.tsx",
+      "sha256": "46078e5b3f14a2d2609c72ffb4f0c6336273623b0128bd9d3656cfbf622189ff"
+    },
+    {
+      "path": "frontend/src/components/extraction/entity-mark.ts",
+      "sha256": "6ece45db8281554ee177a8b508667072b857cd06f15aaa7327b6dd6ad199aeb7"
+    },
+    {
+      "path": "frontend/src/components/extraction/entity-panel.tsx",
+      "sha256": "678390bea819f9f9788a95a376c6707021675a72cc7fd633b4bc66728be847eb"
+    },
+    {
+      "path": "frontend/src/components/extraction/entity-stats.ts",
+      "sha256": "2769a129486fb2a20a0c1c9497c15ac88b97aa2434857277ae1369282632f141"
+    },
+    {
+      "path": "frontend/src/components/extraction/evidence-review-panel.tsx",
+      "sha256": "df4b72c65d317faad26a48f472262987eca9600283da08623205532738e53daf"
+    },
+    {
+      "path": "frontend/src/components/extraction/excel-viewer.tsx",
+      "sha256": "09b78977f4f72954bf0bec5ff4684facdfd8cc8cb7b1cf58b4ced88f247cb560"
+    },
+    {
+      "path": "frontend/src/components/extraction/extraction-drawer.tsx",
+      "sha256": "82dfcaaac03065da239bb1b2ce8bdbc9c53b3ae061ea78a3d887e0b18f458ab0"
+    },
+    {
+      "path": "frontend/src/components/extraction/job-create-form.tsx",
+      "sha256": "086ac8bfabd1984245251d01bd74a16e1c90e82965aebe48228c1b9c9947925c"
+    },
+    {
+      "path": "frontend/src/components/extraction/job-progress.tsx",
+      "sha256": "d73ae4e28ab58e3c76bc96082c1ebf629e658d1439a9cf32420b200b52b1ecb6"
+    },
+    {
+      "path": "frontend/src/components/extraction/relation-panel.tsx",
+      "sha256": "4268874c60b503d0ce2b1d8f33f1a10984110eade9c345e61f4c8692a89c95b5"
+    },
+    {
+      "path": "frontend/src/components/extraction/report-history-list.tsx",
+      "sha256": "503dc1e34f4ae976e1cac4fd0a39357fc1396c780b687dd314f9a8aa5e5d5081"
+    },
+    {
+      "path": "frontend/src/components/extraction/slot-action-bar.tsx",
+      "sha256": "95e682ac1a2a2acd4e38acf875109b5b33d7f25ffbcbd5702c4a1b51aaf876e7"
+    },
+    {
+      "path": "frontend/src/components/extraction/slot-detail-panel.tsx",
+      "sha256": "fdc61a7b8fad6cd529273b83937e08cbcd81b10c20c497b4406e0f379f4d530a"
+    },
+    {
+      "path": "frontend/src/components/extraction/template-slot-editor.tsx",
+      "sha256": "4944b3fa5a7222503b3acdf02c1d2c77665e340d26951ba458b8f3c7ec5e997a"
+    },
+    {
+      "path": "frontend/src/components/extraction/triple-panel.tsx",
+      "sha256": "a1e82a47f8712f1b7ba8ae5683cd76fb0eace8961531c4da22728ee8f3c4b0eb"
+    },
+    {
+      "path": "frontend/src/components/extraction/word-viewer.tsx",
+      "sha256": "1b8d4e149649d42c1cceaa9df73c9223c82ca3c81a7ff9a3e40cc75908fde8e0"
+    },
+    {
+      "path": "frontend/src/components/integration/realtime-inference-panel.tsx",
+      "sha256": "1104b3df0a48a4abddc81b2713857e4492e46a91a613380f81142b55cbba07e7"
+    },
+    {
+      "path": "frontend/src/components/mock/data-properties-table.tsx",
+      "sha256": "a332a9bed2e167cf67cf3cfb26fad7e4a240be366199f23d94c16a94861ceedd"
+    },
+    {
+      "path": "frontend/src/components/mock/edit-dialog.tsx",
+      "sha256": "6bfd4a890a62f69e3175a5b0a5db4aac01a65ec795832734bea78170b1658ba6"
+    },
+    {
+      "path": "frontend/src/components/mock/equipment-week-schedule.tsx",
+      "sha256": "2472b319fe502003c9b15ce280de101eab034e932511d465dcab5d8be7943314"
+    },
+    {
+      "path": "frontend/src/components/ontology/action-panel.tsx",
+      "sha256": "75835b13410bf2afcaeac5452035cda1ae105a1f438ab0649174775d941aa332"
+    },
+    {
+      "path": "frontend/src/components/ontology/class-panel.tsx",
+      "sha256": "8f751a4c16e395146b6a3eb34573e92ff91eebfe7d663582aa708d76ea8f1e15"
+    },
+    {
+      "path": "frontend/src/components/ontology/classification-criteria-panel.tsx",
+      "sha256": "a7d69c9e1d13d6563b9dfc37b8a5abd42ee04614070b2e9dacfd4b2d1b2353d7"
+    },
+    {
+      "path": "frontend/src/components/ontology/conflict-dialog.tsx",
+      "sha256": "dd51b7729bd86f17aaec8591a9040e0f546e8044ee6523df9263c54fbc155895"
+    },
+    {
+      "path": "frontend/src/components/ontology/conflict-policies-panel.tsx",
+      "sha256": "0834480c2b1f6d65c6078ef5ecba2f228ed884de162e9d1ded6779d01ce5b984"
+    },
+    {
+      "path": "frontend/src/components/ontology/data-property-panel.tsx",
+      "sha256": "0903d04402e9d16504e6b1aed956d401e7e0877d83fc2cffa1c869c0014d037f"
+    },
+    {
+      "path": "frontend/src/components/ontology/decision-rules-panel.tsx",
+      "sha256": "ca4bd60b6b215dce757aeccf4358814e8cbf9bd575a37452a502e0912dc0e4ce"
+    },
+    {
+      "path": "frontend/src/components/ontology/field.tsx",
+      "sha256": "bd80084fe8f897fb7ca9911ee17e3d2a07337dbcb82ec0ed1bfa7cceb62021bd"
+    },
+    {
+      "path": "frontend/src/components/ontology/graph-visualization.tsx",
+      "sha256": "a0c08b3cd779d4eee2be14e9f64cabb8537f7a7313744cd6f49e6982683cd05b"
+    },
+    {
+      "path": "frontend/src/components/ontology/link-type-panel.tsx",
+      "sha256": "9e47e8488ffc6837a586a3740b7ac5e2e2db0b050f99d98cfedc8ca43540c295"
+    },
+    {
+      "path": "frontend/src/components/ontology/ontology-mapping-panel.tsx",
+      "sha256": "bd9b137a38b7b10c089337980e593849efffe4a31b3d6eb89fb9c93bda476b06"
+    },
+    {
+      "path": "frontend/src/components/ontology/property-binding-editor.tsx",
+      "sha256": "1cbce881ea31161abf12cf4452a7e1058ff092fd7cd895b11a57af014477f8a4"
+    },
+    {
+      "path": "frontend/src/components/ontology/restriction-editor.tsx",
+      "sha256": "dcd88977cf1dacec8f40f4915ce1e5ca76fb4fec50bddebbab9baf0b44bda291"
+    },
+    {
+      "path": "frontend/src/components/ontology/risk-attribute-wizard.tsx",
+      "sha256": "c20434b53e1e487549df4cf0bca009eaba986ae649a4a962c75f36d5e59ec889"
+    },
+    {
+      "path": "frontend/src/components/ontology/rule-pattern-editor.tsx",
+      "sha256": "64f892285f58ef5ee26e1a563d3f8f1650de813f4442ed55833c411afdb527aa"
+    },
+    {
+      "path": "frontend/src/components/ontology/ttl-toolbar.tsx",
+      "sha256": "3c141ab4e318fd7c591030d33209656cf39ff6464d62151bed4b8a022427dbb3"
+    },
+    {
+      "path": "frontend/src/components/ontology/use-version-conflict.ts",
+      "sha256": "fa7d1adfd919860c377f64542a6b463fa32d878e70ff80e63e9081ce64f910f0"
+    },
+    {
+      "path": "frontend/src/components/reporting/contract-registry-panel.tsx",
+      "sha256": "d84834196ab15de7def4f55b98f98fefc09a0e9e7f597997be473fc21e621b01"
+    },
+    {
+      "path": "frontend/src/components/reporting/output-preview.tsx",
+      "sha256": "64deca0bd0a9363fe99baeedea6ff7e9c6bd80b5c513e3c59c617abb6a8a1ac7"
+    },
+    {
+      "path": "frontend/src/components/reporting/output-template-editor.tsx",
+      "sha256": "e0b8a4c5911e1ad86c5f9196d3b05d373ea3732d9b9a09a73a4c05283eb3e3a7"
+    },
+    {
+      "path": "frontend/src/components/reporting/report-run-panel.tsx",
+      "sha256": "37efd8cd519a7788c5bb3cef21cd81c9470cd7ebc1893b94f20f1dcdec63178f"
+    },
+    {
+      "path": "frontend/src/components/reporting/report-signing-panel.tsx",
+      "sha256": "f771b25e20af5ef0d6763942ca66339e36b95682f87b15a081ae6adc84c6467b"
+    },
+    {
+      "path": "frontend/src/components/reporting/semantic-binding-fields.tsx",
+      "sha256": "684c5654702ff426569ee9b069d00099abc00a5fcd37c6fc347cd36b79b42e64"
+    },
+    {
+      "path": "frontend/src/components/reports/category-tree.tsx",
+      "sha256": "0934f3e3a1901540a392726985e9bac752fd9163ba96aa5748c4eb18b206d58b"
+    },
+    {
+      "path": "frontend/src/components/reports/document-actions-menu.tsx",
+      "sha256": "e8aa22e15f80dc4f1aa5cb4ceeb9e3860265d139f60cdb4689064f4eb735845d"
+    },
+    {
+      "path": "frontend/src/components/reports/item-list.tsx",
+      "sha256": "8a2591235c8558375f5f66d0969cbb32e14b8ba554ceafe9ee0f798b93a9dffe"
+    },
+    {
+      "path": "frontend/src/components/reports/outline.tsx",
+      "sha256": "c80c9f5eccc196722fac7276681b8d767822ac889e49c405115643aac85d161b"
+    },
+    {
+      "path": "frontend/src/components/reports/reading-pane.tsx",
+      "sha256": "22b6f18cf764e3f8098b151b0d72798415f73562cf409af0112d98f5f2801b08"
+    },
+    {
+      "path": "frontend/src/components/reports/upload.tsx",
+      "sha256": "e193674c9512813aeac39091962a28c9e2dc9da97687356c0dc0428202fadb0c"
+    },
+    {
+      "path": "frontend/src/components/shell/auth-guard.tsx",
+      "sha256": "9d9291e98e4b2773372919b3e97ac4a1e2a4e94921debace8c1e18c1f082ff5c"
+    },
+    {
+      "path": "frontend/src/components/shell/nav.ts",
+      "sha256": "ff7c8a34d971b1d5fce6cb1c4d57f16aa6b728ad6aa667a7e8ab426bb1c7aa02"
+    },
+    {
+      "path": "frontend/src/components/shell/shell-frame.tsx",
+      "sha256": "2310bbc6e11ad7d0dba08c8eda6086097620925a1e38b45493b4c9ac6c494f1b"
+    },
+    {
+      "path": "frontend/src/components/shell/sidebar.tsx",
+      "sha256": "5add43bc99688514f34eb4fe59ded40c1b1154f70fce7a3517df37617033f4f3"
+    },
+    {
+      "path": "frontend/src/components/shell/topbar.tsx",
+      "sha256": "12e3296fcdca4e5b151c85bab0498f4530a6a0555b85ab147a44de1bb2d2e4e9"
+    },
+    {
+      "path": "frontend/src/components/tree-view.tsx",
+      "sha256": "2d68612b7f292a436eb6c3ea193a06142a3665c7c73cacbc25dcecb9da66d775"
+    },
+    {
+      "path": "frontend/src/components/ui/accordion.tsx",
+      "sha256": "cd349f9fc367e77ccc6582c7586626fc429fa141d244d6d81f2d036a71ee656e"
+    },
+    {
+      "path": "frontend/src/components/ui/alert.tsx",
+      "sha256": "6e0a514d4c3bae8d656e019b701d97b832fdca44f3f1b18f31b7e50651c50d84"
+    },
+    {
+      "path": "frontend/src/components/ui/avatar.tsx",
+      "sha256": "37d267ca519ecbc308d13b701ce93cd93b9ef281e25a4057502133929f908ada"
+    },
+    {
+      "path": "frontend/src/components/ui/badge.tsx",
+      "sha256": "6758741450d01a9f5cd911417c1308491120781bca49f2e4e41a3408717c05b0"
+    },
+    {
+      "path": "frontend/src/components/ui/breadcrumb.tsx",
+      "sha256": "40defed14111410c93b4975999337cd3b263a8425b4e7cbf8ca4f8d5624fae9f"
+    },
+    {
+      "path": "frontend/src/components/ui/button.tsx",
+      "sha256": "c20715221849d7413d66bb93bd0f665a5b821c16db6cc9a71d15abd47fddb1cf"
+    },
+    {
+      "path": "frontend/src/components/ui/card.tsx",
+      "sha256": "3f6475e77093e1d01f4e6bfc131eaeac9880259cd76ac431f42d9f51da15dffc"
+    },
+    {
+      "path": "frontend/src/components/ui/checkbox.tsx",
+      "sha256": "972e2e5a0187a2fb667171a382f6e5842505952111467ff21294c72dc3c49a07"
+    },
+    {
+      "path": "frontend/src/components/ui/data-table.tsx",
+      "sha256": "a2ce0d4d3134247c8b465c932d53a346c7e8e324efc9e5808f7cd022106856be"
+    },
+    {
+      "path": "frontend/src/components/ui/dialog.tsx",
+      "sha256": "2763a50b9bf92b11ba9e653b1e185f5927ad1c3eb7e6b173475bc73221bffa68"
+    },
+    {
+      "path": "frontend/src/components/ui/dropdown-menu.tsx",
+      "sha256": "91dbf04c2c0edfe226eaf1a1d062199c8b3aaaf4ed506778ee62f3baaa32a196"
+    },
+    {
+      "path": "frontend/src/components/ui/empty-state.tsx",
+      "sha256": "89817df6c28ddc53c9e9e949be13ae9913e3092772ba37d3aaf3337d1ba16307"
+    },
+    {
+      "path": "frontend/src/components/ui/input.tsx",
+      "sha256": "a37882c6948a7ed088c1ee85a61d730f5bd105e93a7a1bd2971d5314a017b966"
+    },
+    {
+      "path": "frontend/src/components/ui/label.tsx",
+      "sha256": "6622e79a1d1ba2fb0d0ab2e68cc0beb1d36c331806b0a5f452e6490ca2d41cf8"
+    },
+    {
+      "path": "frontend/src/components/ui/pagination.tsx",
+      "sha256": "372747b18de8afc792ff4875955a2650dfa89e20fe29209c0eee1ae3e6a29ce2"
+    },
+    {
+      "path": "frontend/src/components/ui/progress.tsx",
+      "sha256": "5ff12f775dd83718fb53f9e558a1017c0def4c563b666eb4622c74f7101d4f0b"
+    },
+    {
+      "path": "frontend/src/components/ui/select.tsx",
+      "sha256": "952dadac17a452669ffab43b0aa5e3d97dc9aab759be5ea88dd7ecbca03a719d"
+    },
+    {
+      "path": "frontend/src/components/ui/separator.tsx",
+      "sha256": "e0b790c84bb7601d25378782b4d110b832260c9426df8ed9f59dec6e29e29125"
+    },
+    {
+      "path": "frontend/src/components/ui/sheet.tsx",
+      "sha256": "1dc0eada7ffab0f8f08ff0d56817446ecddc112031df87133ed4e1e3810116be"
+    },
+    {
+      "path": "frontend/src/components/ui/skeleton.tsx",
+      "sha256": "f836c709c9ccbb1ac57bbfe3a138f137ead0ec2d713b28c21be26c7d96b58ab4"
+    },
+    {
+      "path": "frontend/src/components/ui/switch.tsx",
+      "sha256": "6b494564a043252ef623f870e71a502bd0aa5f54da3993ba3953eae46bb8c40e"
+    },
+    {
+      "path": "frontend/src/components/ui/table.tsx",
+      "sha256": "488f3a2b9f6bcb644e6e95b1e226c5eea346abbea099c56b737a66bfb3549f3b"
+    },
+    {
+      "path": "frontend/src/components/ui/tabs.tsx",
+      "sha256": "1601a4f84eb5fd73bdc428e93ec243767b03f5797279487ca7d59f02e4f73fa2"
+    },
+    {
+      "path": "frontend/src/components/ui/textarea.tsx",
+      "sha256": "f1396943740c78a39ee24774e2e3a27b29d1a558d1c9869f8314b0eeaba9995c"
+    },
+    {
+      "path": "frontend/src/components/ui/tooltip.tsx",
+      "sha256": "3f638df5694db8e3e7af31f7cb404db86f8fb416be0fca583a6b4e56d6dff02d"
+    },
+    {
+      "path": "frontend/src/lib/api.ts",
+      "sha256": "b3d5a0b4c98496d8e48609fd9ba2018192a9fdbcd9fd95860c028f56aee07b07"
+    },
+    {
+      "path": "frontend/src/lib/ast-template-create-store.ts",
+      "sha256": "e5aea33a8a5ea9181a3b2f068689d53f58733a29167b1e5c1f197cc8876ac100"
+    },
+    {
+      "path": "frontend/src/lib/evidence-source.ts",
+      "sha256": "7c3a2a20b2d351ba53f0f6620f226e651b03b1726e2e6c4c67e170fce4be643b"
+    },
+    {
+      "path": "frontend/src/lib/relation-source-ref.ts",
+      "sha256": "f2d89ad74bc221c68ddf7e114e9a9c9172f96db45d2220a36637913a1b256a7a"
+    },
+    {
+      "path": "frontend/src/lib/reporting-v2.ts",
+      "sha256": "f9e86c9589a777a19f263f52cff1a230de2c7bba5f90ce30d57e16380cfb42b5"
+    },
+    {
+      "path": "frontend/src/lib/use-identity.ts",
+      "sha256": "7698a00a14c19a3c77ea69c9421524305d8f52b461528f7fcc0c5477860ff573"
+    },
+    {
+      "path": "frontend/src/lib/utils.ts",
+      "sha256": "d1f1e0d62cb8d8d1e04c26e14de842d8a151f75812d81b046c65b5d1fe8e4b27"
+    }
+  ],
+  "ontology": [
+    {
+      "path": "ontology/slpra/slpra-cleaning.ttl",
+      "triples": 139,
+      "sha256": "f0f7ff3e1f173e5e464260f8849f5f05d2323b58075ab7cb26f1f9c51bffd7ef"
+    },
+    {
+      "path": "ontology/slpra/slpra-contamination.ttl",
+      "triples": 99,
+      "sha256": "f9d7c866546cfdf60ed6efb9a96ca6be33973e7910099957ac7afd6aab63a19e"
+    },
+    {
+      "path": "ontology/slpra/slpra-document.ttl",
+      "triples": 105,
+      "sha256": "7e2d7bc2851c686190016bd9af3e580be9c4054b3a84aa2738945fda09f396ce"
+    },
+    {
+      "path": "ontology/slpra/slpra-drug-development.ttl",
+      "triples": 1137,
+      "sha256": "94084ee011dc192687ce08bc873c55af67cd71526e9113a8b04909738dda1c5f"
+    },
+    {
+      "path": "ontology/slpra/slpra-drug.ttl",
+      "triples": 380,
+      "sha256": "f4acbc4277938be189380b99eb572a171fc9c340b17e821ac8c232a67b31ef53"
+    },
+    {
+      "path": "ontology/slpra/slpra-equipment.ttl",
+      "triples": 281,
+      "sha256": "f3d8682598f19c8448fa0eeefe66e060a0eff7bfc0d1dd9da71e3087ac95d998"
+    },
+    {
+      "path": "ontology/slpra/slpra-facility.ttl",
+      "triples": 129,
+      "sha256": "a8b25041ca48fc91d76f42316759879adc325bda7d4cdb63b8e937c649b1299d"
+    },
+    {
+      "path": "ontology/slpra/slpra-integration.ttl",
+      "triples": 211,
+      "sha256": "d1f7d72772eb1c21c6382b080cc6dacd4908d06f5db05eddb571f0f05ecdfcea"
+    },
+    {
+      "path": "ontology/slpra/slpra-personnel.ttl",
+      "triples": 225,
+      "sha256": "372e04810a5a5a4f072eb7c186e3185c6c2b27b55a2b51fcf8a1625311690d89"
+    },
+    {
+      "path": "ontology/slpra/slpra-risk.ttl",
+      "triples": 305,
+      "sha256": "4e48152d685b757fc1a9e61e6124e5ce70de52da843bcc17ee015c5e936ea3ab"
+    }
+  ],
+  "retired_modules": [
+    {
+      "path": "backend/app/services/reporting/risk_report_generator.py",
+      "sha256": "7658bb96886d2989dbc84603360e718caab68cc64d5878bc6d8dc45386213ec5",
+      "status": "removed_from_production",
+      "historical_source": "git:ce41f8b75c727d5db4c0343732c0ec1a92f44028:backend/app/services/reporting/risk_report_generator.py"
+    },
+    {
+      "path": "backend/app/services/reporting/narrative_generator.py",
+      "sha256": "0335366fce833fd4ddffa5aef6e78936112137b0c2b4d6c89c1baf6e87458f12",
+      "status": "removed_from_production",
+      "historical_source": "git:ce41f8b75c727d5db4c0343732c0ec1a92f44028:backend/app/services/reporting/narrative_generator.py"
+    },
+    {
+      "path": "backend/app/services/reporting/snapshot_report.py",
+      "sha256": "c5218b436de419b4e159ce166ad020ec972c668ec509bbc7b180a277e7a967f4",
+      "status": "removed_from_production",
+      "historical_source": "git:ce41f8b75c727d5db4c0343732c0ec1a92f44028:backend/app/services/reporting/snapshot_report.py"
+    },
+    {
+      "path": "backend/app/services/reporting/docx_renderer.py",
+      "sha256": "d0330e8fe9fb6d6966c0afa134e2a2382856114d3a7eb6ff23f5cd65f9b6e4b8",
+      "status": "removed_from_production",
+      "historical_source": "git:ce41f8b75c727d5db4c0343732c0ec1a92f44028:backend/app/services/reporting/docx_renderer.py"
+    },
+    {
+      "path": "backend/app/services/reporting/aps_equipment_resolver.py",
+      "sha256": "9d9ae881de66a931bf16e6905d85d3673dd51fa418b1ad1318dfe6aed8d50b4c",
+      "status": "removed_from_production",
+      "historical_source": "git:ce41f8b75c727d5db4c0343732c0ec1a92f44028:backend/app/services/reporting/aps_equipment_resolver.py"
+    },
+    {
+      "path": "backend/app/services/reporting/product_report_edges.py",
+      "sha256": "23c7e98e19f35aed5c055ec1cfc786c5296b3e5788da9453f183b3921c7e800a",
+      "status": "removed_from_production",
+      "historical_source": "git:ce41f8b75c727d5db4c0343732c0ec1a92f44028:backend/app/services/reporting/product_report_edges.py"
+    },
+    {
+      "path": "backend/app/services/reporting/coverage_validator.py",
+      "sha256": "31a34aa45046e89e882f8de30877f737da47a945ebd21137786558f1dca9dafb",
+      "status": "removed_from_production",
+      "historical_source": "git:ce41f8b75c727d5db4c0343732c0ec1a92f44028:backend/app/services/reporting/coverage_validator.py"
+    },
+    {
+      "path": "backend/app/services/extraction/llm_gap_filler.py",
+      "sha256": "9e8945ed7a55995c8f15098daa04f7cfcd4fd9e5e7cd011c572e712af2284885",
+      "status": "removed_from_production",
+      "historical_source": "git:ce41f8b75c727d5db4c0343732c0ec1a92f44028:backend/app/services/extraction/llm_gap_filler.py"
+    },
+    {
+      "path": "backend/app/services/extraction/document_classifier.py",
+      "sha256": "c970d0da59378971c379461934d63a61617bf33742e6eb24425955887d25861f",
+      "status": "removed_from_production",
+      "historical_source": "git:ce41f8b75c727d5db4c0343732c0ec1a92f44028:backend/app/services/extraction/document_classifier.py"
+    },
+    {
+      "path": "backend/app/services/extraction/document_profile.py",
+      "sha256": "82e6311b9061cfc3884abdfd51acfe0cc250b054c452c90555b3c3c5f950b723",
+      "status": "removed_from_production",
+      "historical_source": "git:ce41f8b75c727d5db4c0343732c0ec1a92f44028:backend/app/services/extraction/document_profile.py"
+    },
+    {
+      "path": "backend/app/services/reporting/fact_sources.py",
+      "sha256": "cdacb771ba6ae8c00ad182a411918294985417bec9b134241ec94087b89deaf4",
+      "status": "removed_from_production",
+      "historical_source": "git:ce41f8b75c727d5db4c0343732c0ec1a92f44028:backend/app/services/reporting/fact_sources.py"
+    },
+    {
+      "path": "backend/app/services/reporting/placeholder_util.py",
+      "sha256": "1593eaae4b48d76fc65e81ab688603a35e60c3790ba5db7d4038035d5fba6519",
+      "status": "removed_from_production",
+      "historical_source": "git:ce41f8b75c727d5db4c0343732c0ec1a92f44028:backend/app/services/reporting/placeholder_util.py"
+    },
+    {
+      "path": "backend/app/services/extraction/assessment_team_source.py",
+      "sha256": "77d619511d2310a03ccf64847dca6eb30827da45b308913e8aaa956f4ff3679d",
+      "status": "removed_from_production",
+      "historical_source": "git:ce41f8b75c727d5db4c0343732c0ec1a92f44028:backend/app/services/extraction/assessment_team_source.py"
+    },
+    {
+      "path": "backend/app/services/extraction/approver_team_source.py",
+      "sha256": "458d6355661132b0355139687587a1ff46e0c18c9c9874adfa243cc12e924f84",
+      "status": "removed_from_production",
+      "historical_source": "git:ce41f8b75c727d5db4c0343732c0ec1a92f44028:backend/app/services/extraction/approver_team_source.py"
+    },
+    {
+      "path": "backend/app/services/extraction/role_source.py",
+      "sha256": "acba685673cd88f83116d9ae157313f70ca1611c205c6da09f99b1fff93e3378",
+      "status": "removed_from_production",
+      "historical_source": "git:ce41f8b75c727d5db4c0343732c0ec1a92f44028:backend/app/services/extraction/role_source.py"
+    },
+    {
+      "path": "backend/app/services/extraction/department_source.py",
+      "sha256": "eb874c4d059e7623c9e025e4daa9662247df3589b73c2baaad2dbdf41ada9cb9",
+      "status": "removed_from_production",
+      "historical_source": "git:ce41f8b75c727d5db4c0343732c0ec1a92f44028:backend/app/services/extraction/department_source.py"
+    },
+    {
+      "path": "backend/app/services/extraction/production_area_source.py",
+      "sha256": "8d48c9f245a3ebca9ea0c93b84164c972739c7dbb19f2113a040a24174e33ea5",
+      "status": "removed_from_production",
+      "historical_source": "git:ce41f8b75c727d5db4c0343732c0ec1a92f44028:backend/app/services/extraction/production_area_source.py"
+    },
+    {
+      "path": "backend/app/services/extraction/tox_study_source.py",
+      "sha256": "15b2531111ee5686862e49aa3b0b0201e9ef61cafab6509b1cee23031cce07b2",
+      "status": "removed_from_production",
+      "historical_source": "git:ce41f8b75c727d5db4c0343732c0ec1a92f44028:backend/app/services/extraction/tox_study_source.py"
+    }
+  ],
+  "third_party": {
+    "versions": {
+      "fastapi": "0.138.0",
+      "pydantic": "2.13.4",
+      "sqlalchemy": "2.0.51",
+      "rdflib": "7.6.0",
+      "python-docx": "1.2.0",
+      "owlready2": "0.51"
+    },
+    "scope": "Internals excluded from owned-code zero-regex gate"
+  },
+  "limitations": [
+    "Database config rows and built deployment image require separate runtime audit",
+    "Business dispatch review accompanies this syntax audit; AST absence alone is not semantic proof"
+  ]
+}

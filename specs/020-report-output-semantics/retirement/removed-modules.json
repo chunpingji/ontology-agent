@@ -1,0 +1,110 @@
+[
+  {
+    "path": "backend/app/services/reporting/risk_report_generator.py",
+    "sha256": "7658bb96886d2989dbc84603360e718caab68cc64d5878bc6d8dc45386213ec5",
+    "status": "removed_from_production",
+    "historical_source": "git:ce41f8b75c727d5db4c0343732c0ec1a92f44028:backend/app/services/reporting/risk_report_generator.py"
+  },
+  {
+    "path": "backend/app/services/reporting/narrative_generator.py",
+    "sha256": "0335366fce833fd4ddffa5aef6e78936112137b0c2b4d6c89c1baf6e87458f12",
+    "status": "removed_from_production",
+    "historical_source": "git:ce41f8b75c727d5db4c0343732c0ec1a92f44028:backend/app/services/reporting/narrative_generator.py"
+  },
+  {
+    "path": "backend/app/services/reporting/snapshot_report.py",
+    "sha256": "c5218b436de419b4e159ce166ad020ec972c668ec509bbc7b180a277e7a967f4",
+    "status": "removed_from_production",
+    "historical_source": "git:ce41f8b75c727d5db4c0343732c0ec1a92f44028:backend/app/services/reporting/snapshot_report.py"
+  },
+  {
+    "path": "backend/app/services/reporting/docx_renderer.py",
+    "sha256": "d0330e8fe9fb6d6966c0afa134e2a2382856114d3a7eb6ff23f5cd65f9b6e4b8",
+    "status": "removed_from_production",
+    "historical_source": "git:ce41f8b75c727d5db4c0343732c0ec1a92f44028:backend/app/services/reporting/docx_renderer.py"
+  },
+  {
+    "path": "backend/app/services/reporting/aps_equipment_resolver.py",
+    "sha256": "9d9ae881de66a931bf16e6905d85d3673dd51fa418b1ad1318dfe6aed8d50b4c",
+    "status": "removed_from_production",
+    "historical_source": "git:ce41f8b75c727d5db4c0343732c0ec1a92f44028:backend/app/services/reporting/aps_equipment_resolver.py"
+  },
+  {
+    "path": "backend/app/services/reporting/product_report_edges.py",
+    "sha256": "23c7e98e19f35aed5c055ec1cfc786c5296b3e5788da9453f183b3921c7e800a",
+    "status": "removed_from_production",
+    "historical_source": "git:ce41f8b75c727d5db4c0343732c0ec1a92f44028:backend/app/services/reporting/product_report_edges.py"
+  },
+  {
+    "path": "backend/app/services/reporting/coverage_validator.py",
+    "sha256": "31a34aa45046e89e882f8de30877f737da47a945ebd21137786558f1dca9dafb",
+    "status": "removed_from_production",
+    "historical_source": "git:ce41f8b75c727d5db4c0343732c0ec1a92f44028:backend/app/services/reporting/coverage_validator.py"
+  },
+  {
+    "path": "backend/app/services/extraction/llm_gap_filler.py",
+    "sha256": "9e8945ed7a55995c8f15098daa04f7cfcd4fd9e5e7cd011c572e712af2284885",
+    "status": "removed_from_production",
+    "historical_source": "git:ce41f8b75c727d5db4c0343732c0ec1a92f44028:backend/app/services/extraction/llm_gap_filler.py"
+  },
+  {
+    "path": "backend/app/services/extraction/document_classifier.py",
+    "sha256": "c970d0da59378971c379461934d63a61617bf33742e6eb24425955887d25861f",
+    "status": "removed_from_production",
+    "historical_source": "git:ce41f8b75c727d5db4c0343732c0ec1a92f44028:backend/app/services/extraction/document_classifier.py"
+  },
+  {
+    "path": "backend/app/services/extraction/document_profile.py",
+    "sha256": "82e6311b9061cfc3884abdfd51acfe0cc250b054c452c90555b3c3c5f950b723",
+    "status": "removed_from_production",
+    "historical_source": "git:ce41f8b75c727d5db4c0343732c0ec1a92f44028:backend/app/services/extraction/document_profile.py"
+  },
+  {
+    "path": "backend/app/services/reporting/fact_sources.py",
+    "sha256": "cdacb771ba6ae8c00ad182a411918294985417bec9b134241ec94087b89deaf4",
+    "status": "removed_from_production",
+    "historical_source": "git:ce41f8b75c727d5db4c0343732c0ec1a92f44028:backend/app/services/reporting/fact_sources.py"
+  },
+  {
+    "path": "backend/app/services/reporting/placeholder_util.py",
+    "sha256": "1593eaae4b48d76fc65e81ab688603a35e60c3790ba5db7d4038035d5fba6519",
+    "status": "removed_from_production",
+    "historical_source": "git:ce41f8b75c727d5db4c0343732c0ec1a92f44028:backend/app/services/reporting/placeholder_util.py"
+  },
+  {
+    "path": "backend/app/services/extraction/assessment_team_source.py",
+    "sha256": "77d619511d2310a03ccf64847dca6eb30827da45b308913e8aaa956f4ff3679d",
+    "status": "removed_from_production",
+    "historical_source": "git:ce41f8b75c727d5db4c0343732c0ec1a92f44028:backend/app/services/extraction/assessment_team_source.py"
+  },
+  {
+    "path": "backend/app/services/extraction/approver_team_source.py",
+    "sha256": "458d6355661132b0355139687587a1ff46e0c18c9c9874adfa243cc12e924f84",
+    "status": "removed_from_production",
+    "historical_source": "git:ce41f8b75c727d5db4c0343732c0ec1a92f44028:backend/app/services/extraction/approver_team_source.py"
+  },
+  {
+    "path": "backend/app/services/extraction/role_source.py",
+    "sha256": "acba685673cd88f83116d9ae157313f70ca1611c205c6da09f99b1fff93e3378",
+    "status": "removed_from_production",
+    "historical_source": "git:ce41f8b75c727d5db4c0343732c0ec1a92f44028:backend/app/services/extraction/role_source.py"
+  },
+  {
+    "path": "backend/app/services/extraction/department_source.py",
+    "sha256": "eb874c4d059e7623c9e025e4daa9662247df3589b73c2baaad2dbdf41ada9cb9",
+    "status": "removed_from_production",
+    "historical_source": "git:ce41f8b75c727d5db4c0343732c0ec1a92f44028:backend/app/services/extraction/department_source.py"
+  },
+  {
+    "path": "backend/app/services/extraction/production_area_source.py",
+    "sha256": "8d48c9f245a3ebca9ea0c93b84164c972739c7dbb19f2113a040a24174e33ea5",
+    "status": "removed_from_production",
+    "historical_source": "git:ce41f8b75c727d5db4c0343732c0ec1a92f44028:backend/app/services/extraction/production_area_source.py"
+  },
+  {
+    "path": "backend/app/services/extraction/tox_study_source.py",
+    "sha256": "15b2531111ee5686862e49aa3b0b0201e9ef61cafab6509b1cee23031cce07b2",
+    "status": "removed_from_production",
+    "historical_source": "git:ce41f8b75c727d5db4c0343732c0ec1a92f44028:backend/app/services/extraction/tox_study_source.py"
+  }
+]

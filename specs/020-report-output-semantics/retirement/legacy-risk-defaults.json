@@ -1,0 +1,118 @@
+[
+  {
+    "rule_key": "R-RA1",
+    "rule_group": "risk_assessment",
+    "version": 1,
+    "antecedent": {
+      "op": "some_values_from",
+      "property": "hasSharedLineData",
+      "filler_class": "SharedLineAssessmentData"
+    },
+    "consequent": {
+      "risk_level": "MediumRisk",
+      "category": "人员",
+      "description": "研究院人员对设备操作、车间管理等了解不足，无法进行{{药物名称/代号}}临床批生产操作；车间岗位人员对{{药物名称/代号}}临床批工艺了解不足，无法进行{{药物名称/代号}}临床批生产操作。",
+      "control_measure": "1、{{药物名称/代号}}由研究院人员和车间岗位人员共同进行临床批生产操作，生产前车间对研究院人员进行车间管理、设备操作等培训；研究院对车间岗位人员进行{{药物名称/代号}}临床批工艺培训，培训合格后，车间岗位人员和研究院人员再进行{{药物名称/代号}}的临床批生产操作。",
+      "traceability_docs": "1、研究院及车间岗位人员培训及考核记录。",
+      "postconditions": {
+        "training_completed": true,
+        "sop_verified": true
+      }
+    },
+    "priority": 100,
+    "id": "29f3cee8-781a-4506-9616-62d6df70881e",
+    "definition_hash": "23390a2e3ba7d89af3c90acc0d1549c321fe8835f8fe066371d6d634b591206f"
+  },
+  {
+    "rule_key": "R-RA2",
+    "rule_group": "risk_assessment",
+    "version": 1,
+    "antecedent": {
+      "op": "some_values_from",
+      "property": "hasSharedLineData",
+      "filler_class": "SharedLineAssessmentData"
+    },
+    "consequent": {
+      "risk_level": "HighRisk",
+      "category": "生产设备",
+      "description": "1、{{车间}}生产使用的设备、仪器仪表无法满足{{药物名称/代号}}工艺需求。\n2、{{药物名称/代号}}与{{车间}}其他产品共线生产，共用生产设备，所用设备若清洁不彻底，容易产生污染、交叉污染。",
+      "control_measure": "1、生产使用的设备均按照生产工艺进行了选型、安装及确认，设备、仪器、仪表使用前均在确认有效期内，能够满足{{药物名称/代号}}工艺需求。\n2、{{药物名称/代号}}生产前，进行共线风险评估。\n3、{{药物名称/代号}}备样生产结束后进行清洁确认。",
+      "traceability_docs": "1、批记录中记录设备及仪表状态检查。\n2、{{车间}}共线产品防止交叉污染风险评估报告。\n3、{{药物名称/代号}}原料药使用设备清洁确认报告。",
+      "postconditions": {
+        "equipment_qualified": true,
+        "cleaning_validated": true,
+        "shared_line_assessed": true
+      }
+    },
+    "priority": 100,
+    "id": "145799f3-c982-49dc-81a6-9a2cdc9e3533",
+    "definition_hash": "1a2e1b96165dc448f6197fb59eefbf12cda2f37eb596a9b680264785afaa33a6"
+  },
+  {
+    "rule_key": "R-RA3",
+    "rule_group": "risk_assessment",
+    "version": 1,
+    "antecedent": {
+      "op": "some_values_from",
+      "property": "hasSharedLineData",
+      "filler_class": "SharedLineAssessmentData"
+    },
+    "consequent": {
+      "risk_level": "HighRisk",
+      "category": "物料管理",
+      "description": "原料药分公司无法提供符合{{药物名称/代号}}生产要求的原辅料及包装材料。",
+      "control_measure": "1、{{药物名称/代号}}专用物料由连云港研究院仓库提供。\n2、{{药物名称/代号}}公用物料由原料药分公司仓库提供。",
+      "traceability_docs": "1、连云港研究院仓库出库记录；\n2、原料药分公司仓库出库记录；\n3、物料检验原始记录。",
+      "postconditions": {
+        "material_segregation": true,
+        "weighing_verified": true
+      }
+    },
+    "priority": 100,
+    "id": "447ec5b7-8179-444a-a046-6da5d2d4e8a0",
+    "definition_hash": "8bca8fcf3475a0bb3ff072fae8974b9f43d25dc9b73cc3cf04eeccb6ffdb7a0b"
+  },
+  {
+    "rule_key": "R-RA4",
+    "rule_group": "risk_assessment",
+    "version": 1,
+    "antecedent": {
+      "op": "some_values_from",
+      "property": "hasSharedLineData",
+      "filler_class": "SharedLineAssessmentData"
+    },
+    "consequent": {
+      "risk_level": "MediumRisk",
+      "category": "文件",
+      "description": "现有文件无法指导{{药物名称/代号}}的生产。",
+      "control_measure": "1、{{车间}}已建立文件体系，相关设备均有操作SOP。\n2、生产过程由研究院提供{{药物名称/代号}}生产批记录，能够保证生产顺利进行。",
+      "traceability_docs": "1、车间设备使用SOP。\n2、{{药物名称/代号}}批生产记录。",
+      "postconditions": {
+        "documentation_complete": true
+      }
+    },
+    "priority": 100,
+    "id": "e8fac019-6fe5-4cc8-ba4c-dc1f56a1264f",
+    "definition_hash": "4d06408da7e6a03aa90cdb30b27f7f1538e39965f892f080695ab74a8f43564e"
+  },
+  {
+    "rule_key": "R-RA5",
+    "rule_group": "risk_assessment",
+    "version": 1,
+    "antecedent": {
+      "op": "some_values_from",
+      "property": "describes",
+      "filler_class": "DrugProduct"
+    },
+    "consequent": {
+      "risk_level": "LowRisk",
+      "category": "三废处理",
+      "description": "无法有效进行{{药物名称/代号}}产生的三废处理。",
+      "control_measure": "1、车间生产过程中产生的废气经过车间废气处理装置达到合格排放标准后排放。\n2、废液集中收集后转至环保站处理。\n3、固废收集在塑料袋中扎好口，集中收集后送至环保站统一处理。",
+      "traceability_docs": "1、危险废物产生接收处理记录。"
+    },
+    "priority": 100,
+    "id": "9152e245-dd10-45f6-9096-0945cf84f579",
+    "definition_hash": "4fbb402f8c3b3309491370fb51ac6f7ae73d646c0ea932d45dd3299913c23c7f"
+  }
+]

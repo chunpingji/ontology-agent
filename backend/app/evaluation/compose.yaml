@@ -1,0 +1,7 @@
+# Merge after the repository's docker-compose.yml. An existing immutable local
+# image is mandatory; the benchmark must not rebuild or pull a replacement.
+services:
+  backend:
+    image: ${CMC_EVAL_IMAGE:?Set CMC_EVAL_IMAGE to the immutable local backend image ID}
+    build: !reset null
+    pull_policy: never

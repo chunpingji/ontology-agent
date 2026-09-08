@@ -12,7 +12,7 @@
 
 from __future__ import annotations
 
-from app.services.reporting.ast_template import ReportTemplate, resolve_template
+from app.services.reporting.ast_template import ReportTemplate
 
 HEADERS = {"X-User": "analyst", "X-Role": "senior_analyst"}
 
@@ -103,26 +103,11 @@ class TestDisabledSlotRoundTrip:
     def test_report_validation_drops_disabled(self, client, db):
         """报告侧 ReportTemplate.model_validate（resolve_template 内部同一调用）丢弃 `disabled`。"""
         tpl_id = _create(client, "禁用往返-validate")
-        schema_json = client.get(
-            f"/api/ast-templates/{tpl_id}", headers=HEADERS
-        ).json()["schema_json"]
+        schema_json = client.get(f"/api/ast-templates/{tpl_id}", headers=HEADERS).json()[
+            "schema_json"
+        ]
 
         tpl = ReportTemplate.model_validate(schema_json)
         _, _, slot = list(tpl.iter_slots())[1]
         assert slot.slot_id == "slot_disabled"
         assert "disabled" not in slot.model_dump()  # 报告管线永不见到该键
-
-    def test_resolve_template_drops_disabled(self, client, db):
-        """端到端：设为默认后 resolve_template 取回，其 slot 无 `disabled`。"""
-        tpl_id = _create(client, "禁用往返-resolve")
-        # 设为默认，让 resolve_template 经 Tier-2（DB 默认模板）命中它。
-        assert (
-            client.post(f"/api/ast-templates/{tpl_id}/set-default", headers=HEADERS).status_code
-            == 200
-        )
-
-        tpl, source, _ = resolve_template(None, db)
-        assert source == "default"
-        disabled = [s for _, _, s in tpl.iter_slots() if s.slot_id == "slot_disabled"]
-        assert disabled, "默认模板应包含 slot_disabled"
-        assert "disabled" not in disabled[0].model_dump()

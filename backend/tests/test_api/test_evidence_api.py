@@ -60,6 +60,48 @@ def manual_request(name="A", **changes):
     }
 
 
+def test_evidence_exposes_source_schema_before_any_assertion_exists(
+    client, analyst_headers, db, evidence_api_job
+):
+    evidence_api_job.source_config = {"doc_class_iri": "urn:test:Drug"}
+    evidence_api_job.source_filename = "source.docx"
+    db.commit()
+    response = client.get(
+        f"/api/extraction/jobs/{evidence_api_job.id}/evidence", headers=analyst_headers
+    )
+    assert response.status_code == 200, response.text
+    result = response.json()
+    assert result["candidates"] == []
+    graph = result["graph_schema"]
+    assert graph["document_class_iri"] == "urn:test:Drug"
+    assert graph["document_label"] == "source.docx"
+    definition = graph["classes"]["urn:test:Drug"]
+    assert definition["label"] == "药物"
+    assert definition["properties"] == [{"iri": "urn:test:strength", "label": None}]
+    assert definition["relationships"][0]["range"] == ["urn:test:Equipment"]
+    assert "urn:test:Equipment" in graph["classes"]
+    assert result["commits"] == [] and result["snapshot_id"] is None
+
+
+def test_graph_schema_uses_source_type_and_only_unambiguous_document_root_fallback():
+    from types import SimpleNamespace
+
+    from app.api.evidence import _graph_schema
+
+    def root(iri):
+        return SimpleNamespace(kind="entity", class_iri=iri, identity={"document_root": "hash"})
+
+    job = SimpleNamespace(
+        source_config={"doc_class_iri": "urn:CMCReport"}, source_filename="source"
+    )
+    assert _graph_schema(job, [root("urn:Plan")], {})["document_class_iri"] == "urn:CMCReport"
+    job.source_config = {}
+    repeated = _graph_schema(job, [root("urn:CMCReport"), root("urn:CMCReport")], {})
+    assert repeated["document_class_iri"] == "urn:CMCReport"
+    ambiguous = _graph_schema(job, [root("urn:CMCReport"), root("urn:Plan")], {})
+    assert ambiguous["document_class_iri"] is None
+
+
 def test_creation_stamps_identity_and_requires_separate_review(
     client, analyst_headers, operator_headers, evidence_api_job
 ):
@@ -222,6 +264,9 @@ def test_word_extraction_persists_shared_ir_and_never_calls_legacy_pipeline(
     monkeypatch.setattr(
         extraction, "_annotation_cache_path", lambda job: tmp_path / "annotation.json"
     )
+    monkeypatch.setattr(
+        extraction, "_annotation_checkpoint_path", lambda job: tmp_path / "checkpoint.json"
+    )
 
     async def forbidden(*args, **kwargs):
         raise AssertionError("legacy pipeline must not run")
@@ -230,12 +275,17 @@ def test_word_extraction_persists_shared_ir_and_never_calls_legacy_pipeline(
     response = client.post(
         f"/api/extraction/jobs/{evidence_api_job.id}/evidence/extract", headers=analyst_headers
     )
-    assert response.status_code == 200, response.text
-    assert response.json()["run"]["completion"] == "incomplete"
+    assert response.status_code == 202, response.text
+    assert response.json()["run_id"] and response.json()["status"] == "queued"
+    db.expire_all()
+    evidence = client.get(
+        f"/api/extraction/jobs/{evidence_api_job.id}/evidence", headers=analyst_headers
+    ).json()
+    assert evidence["run"]["completion"] == "incomplete"
     state = db.get(EvidenceJobState, evidence_api_job.id)
     ir = db.get(DocumentAnalysisRecord, state.analysis_id)
     assert ir.structure_hash == analyze_word_core(path).ir.structure_hash
-    assert response.json()["snapshot_id"] is None
+    assert evidence["snapshot_id"] is None
     # Coverage now exposes unresolved tasks; reports still require published facts.
     report = client.post(
         f"/api/extraction/jobs/{evidence_api_job.id}/risk-report", headers=analyst_headers
@@ -243,19 +293,34 @@ def test_word_extraction_persists_shared_ir_and_never_calls_legacy_pipeline(
     coverage = client.get(
         f"/api/extraction/jobs/{evidence_api_job.id}/ast-coverage", headers=analyst_headers
     )
-    assert report.status_code == 422
-    assert "published fact snapshot" in report.text
-    assert coverage.status_code == 200, coverage.text
-    assert coverage.json()["snapshot_id"] is None
-    assert coverage.json()["filled"] == 0
+    assert report.status_code == coverage.status_code == 404
+    assert "TEMPLATE_NOT_FOUND" in report.text
+    assert "TEMPLATE_NOT_FOUND" in coverage.text
 
     endpoint = f"/api/extraction/jobs/{evidence_api_job.id}/evidence/extract"
-    assert client.post(endpoint, headers=analyst_headers, json={
-        "retry_failed": True, "reason": " ",
-    }).status_code == 422
-    assert client.post(endpoint, headers=analyst_headers, json={
-        "retry_failed": True, "reason": "重试", "checkpoint": {},
-    }).status_code == 422
+    assert (
+        client.post(
+            endpoint,
+            headers=analyst_headers,
+            json={
+                "retry_failed": True,
+                "reason": " ",
+            },
+        ).status_code
+        == 422
+    )
+    assert (
+        client.post(
+            endpoint,
+            headers=analyst_headers,
+            json={
+                "retry_failed": True,
+                "reason": "重试",
+                "checkpoint": {},
+            },
+        ).status_code
+        == 422
+    )
     called = []
     original = extraction._compute_annotation
 
@@ -264,10 +329,16 @@ def test_word_extraction_persists_shared_ir_and_never_calls_legacy_pipeline(
         return original(*args, **kwargs)
 
     monkeypatch.setattr(extraction, "_compute_annotation", inspect)
-    response = client.post(endpoint, headers=analyst_headers, json={
-        "retry_failed": True, "reason": "已恢复本地模型，显式重试失败任务", "pause_after": 8,
-    })
-    assert response.status_code == 200, response.text
+    response = client.post(
+        endpoint,
+        headers=analyst_headers,
+        json={
+            "retry_failed": True,
+            "reason": "已恢复本地模型，显式重试失败任务",
+            "pause_after": 8,
+        },
+    )
+    assert response.status_code == 202, response.text
     assert called[0]["retry_failed"] is True
     assert called[0]["pause_after"] == 8
     from app.models.reasoning import AuditLog

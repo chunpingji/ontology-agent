@@ -1,0 +1,1883 @@
+[
+  {
+    "workshop": "642",
+    "equipment_id": "CT64201",
+    "name": "离心机",
+    "specification": "800",
+    "material": "304不锈钢衬HALAR",
+    "location": "一般区南平台下",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "642",
+    "equipment_id": "CT64202",
+    "name": "离心机",
+    "specification": "600",
+    "material": "316L不锈钢",
+    "location": "一般区南平台下",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "642",
+    "equipment_id": "CT64203",
+    "name": "离心机",
+    "specification": "600",
+    "material": "304不锈钢衬HALAR",
+    "location": "一般区南平台下",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "642",
+    "equipment_id": "CT64204",
+    "name": "离心机",
+    "specification": "600",
+    "material": "316L不锈钢",
+    "location": "洁净区精制间",
+    "area_type": "洁净区"
+  },
+  {
+    "workshop": "642",
+    "equipment_id": "CT64205",
+    "name": "离心机",
+    "specification": "800",
+    "material": "304不锈钢衬HALAR",
+    "location": "一般区北平台下",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "642",
+    "equipment_id": "CT64206",
+    "name": "离心机",
+    "specification": "800",
+    "material": "316L不锈钢",
+    "location": "一般区北平台下",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "642",
+    "equipment_id": "CT64209",
+    "name": "离心机",
+    "specification": "450",
+    "material": "304不锈钢衬HALAR",
+    "location": "洁净区精制间",
+    "area_type": "洁净区"
+  },
+  {
+    "workshop": "642",
+    "equipment_id": "CT64210",
+    "name": "离心机",
+    "specification": "600",
+    "material": "316L不锈钢",
+    "location": "一般区南平台下",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "642",
+    "equipment_id": "CT64211",
+    "name": "离心机",
+    "specification": "600",
+    "material": "316L不锈钢",
+    "location": "一般区南平台下",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "642",
+    "equipment_id": "CT64212",
+    "name": "离心机",
+    "specification": "600",
+    "material": "304不锈钢衬HALAR",
+    "location": "一般区南平台下",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "642",
+    "equipment_id": "CT64213",
+    "name": "离心机",
+    "specification": "800",
+    "material": "316L不锈钢",
+    "location": "一般区南平台下",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "642",
+    "equipment_id": "CT64214",
+    "name": "离心机",
+    "specification": "800",
+    "material": "304不锈钢衬HALAR",
+    "location": "一般区北平台下",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "642",
+    "equipment_id": "DE64201",
+    "name": "热风循环干燥箱",
+    "specification": "48盘",
+    "material": "316L不锈钢",
+    "location": "一般区干燥间",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "642",
+    "equipment_id": "DE64202",
+    "name": "真空干燥箱",
+    "specification": "24盘",
+    "material": "304不锈钢",
+    "location": "一般区干燥间",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "642",
+    "equipment_id": "DE64203",
+    "name": "真空干燥箱",
+    "specification": "24盘",
+    "material": "304不锈钢衬HALAR",
+    "location": "洁净区干燥间",
+    "area_type": "洁净区"
+  },
+  {
+    "workshop": "642",
+    "equipment_id": "DE64204",
+    "name": "电热鼓风干燥箱",
+    "specification": "12盘",
+    "material": "316L不锈钢HALAR",
+    "location": "洁净区干燥间",
+    "area_type": "洁净区"
+  },
+  {
+    "workshop": "642",
+    "equipment_id": "DE64205",
+    "name": "电热真空干燥箱",
+    "specification": "8盘",
+    "material": "不锈钢衬HALAR",
+    "location": "一般区干燥间",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "642",
+    "equipment_id": "DE64206",
+    "name": "电热真空干燥箱",
+    "specification": "6053",
+    "material": "316L不锈钢",
+    "location": "一般区干燥间",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "642",
+    "equipment_id": "DE64207",
+    "name": "电热鼓风干燥箱",
+    "specification": "BGX-198",
+    "material": "316L不锈钢",
+    "location": "一般区干燥间",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "642",
+    "equipment_id": "EE64201",
+    "name": "旋蒸",
+    "specification": "20L",
+    "material": "玻璃",
+    "location": "五楼一般区南",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "642",
+    "equipment_id": "EE64202",
+    "name": "旋蒸",
+    "specification": "20L",
+    "material": "玻璃",
+    "location": "五楼一般区南",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "642",
+    "equipment_id": "EE64203",
+    "name": "旋蒸",
+    "specification": "10L",
+    "material": "玻璃",
+    "location": "五楼一般区南",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "642",
+    "equipment_id": "EE64204",
+    "name": "旋蒸",
+    "specification": "20L",
+    "material": "玻璃",
+    "location": "洁净区精制间",
+    "area_type": "洁净区"
+  },
+  {
+    "workshop": "642",
+    "equipment_id": "EE64205",
+    "name": "旋蒸",
+    "specification": "2L",
+    "material": "玻璃",
+    "location": "五楼实验隔断",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "642",
+    "equipment_id": "EE64206",
+    "name": "旋蒸",
+    "specification": "5L",
+    "material": "玻璃",
+    "location": "五楼实验隔断",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "642",
+    "equipment_id": "EE64211",
+    "name": "旋蒸",
+    "specification": "50L",
+    "material": "玻璃",
+    "location": "五楼实验隔断",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "642",
+    "equipment_id": "EE64212",
+    "name": "旋蒸",
+    "specification": "50L",
+    "material": "玻璃",
+    "location": "五楼实验隔断",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "642",
+    "equipment_id": "EE64216",
+    "name": "旋转蒸发器",
+    "specification": "20L",
+    "material": "玻璃",
+    "location": "一般区",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "642",
+    "equipment_id": "EE64217",
+    "name": "旋转蒸发器",
+    "specification": "20L",
+    "material": "玻璃",
+    "location": "一般区",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "642",
+    "equipment_id": "EE64218",
+    "name": "旋蒸",
+    "specification": "50L",
+    "material": "玻璃",
+    "location": "",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "642",
+    "equipment_id": "EE64219",
+    "name": "旋蒸",
+    "specification": "50L",
+    "material": "玻璃",
+    "location": "",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "642",
+    "equipment_id": "PF64201",
+    "name": "微压柱系统",
+    "specification": "300*2000mm",
+    "material": "不锈钢",
+    "location": "五楼制备间",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "642",
+    "equipment_id": "PF64202",
+    "name": "微压柱系统",
+    "specification": "400*1600mm",
+    "material": "不锈钢",
+    "location": "五楼制备间",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "642",
+    "equipment_id": "PF64203",
+    "name": "微压柱系统",
+    "specification": "500*2000mm",
+    "material": "不锈钢",
+    "location": "五楼制备间",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "642",
+    "equipment_id": "PF64204",
+    "name": "高压制备液相系统",
+    "specification": "DAC200",
+    "material": "不锈钢",
+    "location": "五楼制备间",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "642",
+    "equipment_id": "PF64205",
+    "name": "高压制备液相系统",
+    "specification": "DAC200",
+    "material": "不锈钢",
+    "location": "五楼一般区",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "642",
+    "equipment_id": "PF64211",
+    "name": "可移动式压滤器",
+    "specification": "30L",
+    "material": "不锈钢衬HALAR",
+    "location": "三楼一般区",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "642",
+    "equipment_id": "PF64212",
+    "name": "可移动式压滤器",
+    "specification": "30L",
+    "material": "不锈钢",
+    "location": "三楼一般区",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "642",
+    "equipment_id": "PF64213",
+    "name": "可移动式压滤器",
+    "specification": "50L",
+    "material": "不锈钢衬HALAR",
+    "location": "三楼一般区",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "642",
+    "equipment_id": "PF64214",
+    "name": "压滤器",
+    "specification": "50L",
+    "material": "",
+    "location": "",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "642",
+    "equipment_id": "RE64201",
+    "name": "搪玻璃反应釜",
+    "specification": "500L",
+    "material": "搪玻璃",
+    "location": "一般区南平台",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "642",
+    "equipment_id": "RE64202",
+    "name": "搪玻璃反应釜",
+    "specification": "500L",
+    "material": "搪玻璃",
+    "location": "一般区南平台",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "642",
+    "equipment_id": "RE64203",
+    "name": "搪玻璃反应釜",
+    "specification": "300L",
+    "material": "搪玻璃",
+    "location": "一般区南平台",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "642",
+    "equipment_id": "RE64204",
+    "name": "搪玻璃反应釜",
+    "specification": "300L",
+    "material": "搪玻璃",
+    "location": "一般区南平台",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "642",
+    "equipment_id": "RE64205",
+    "name": "搪玻璃反应釜",
+    "specification": "200L",
+    "material": "搪玻璃",
+    "location": "一般区南平台",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "642",
+    "equipment_id": "RE64206",
+    "name": "搪玻璃反应釜",
+    "specification": "200L",
+    "material": "搪玻璃",
+    "location": "一般区南平台",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "642",
+    "equipment_id": "RE64207",
+    "name": "搪玻璃反应釜",
+    "specification": "100L",
+    "material": "搪玻璃",
+    "location": "一般区南平台",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "642",
+    "equipment_id": "RE64208",
+    "name": "搪玻璃反应釜",
+    "specification": "100L",
+    "material": "搪玻璃",
+    "location": "一般区南平台",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "642",
+    "equipment_id": "RE64209",
+    "name": "搪玻璃反应釜",
+    "specification": "50L",
+    "material": "搪玻璃",
+    "location": "一般区南平台",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "642",
+    "equipment_id": "RE64210",
+    "name": "搪玻璃反应釜",
+    "specification": "500L",
+    "material": "搪玻璃",
+    "location": "一般区南平台",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "642",
+    "equipment_id": "RE64211",
+    "name": "搪玻璃反应釜",
+    "specification": "200L",
+    "material": "搪玻璃",
+    "location": "一般区南平台",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "642",
+    "equipment_id": "RE64212",
+    "name": "搪玻璃反应釜",
+    "specification": "200L",
+    "material": "搪玻璃",
+    "location": "洁净区精制间钢平台",
+    "area_type": "洁净区"
+  },
+  {
+    "workshop": "642",
+    "equipment_id": "RE64213",
+    "name": "搪玻璃反应釜",
+    "specification": "500L",
+    "material": "搪玻璃",
+    "location": "洁净区精制间钢平台",
+    "area_type": "洁净区"
+  },
+  {
+    "workshop": "642",
+    "equipment_id": "RE64214",
+    "name": "搪玻璃反应釜",
+    "specification": "500L",
+    "material": "搪玻璃",
+    "location": "一般区北平台",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "642",
+    "equipment_id": "RE64215",
+    "name": "搪玻璃反应釜",
+    "specification": "1000L",
+    "material": "搪玻璃",
+    "location": "一般区北平台",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "642",
+    "equipment_id": "RE64216",
+    "name": "搪玻璃反应釜",
+    "specification": "1000L",
+    "material": "搪玻璃",
+    "location": "一般区北平台",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "642",
+    "equipment_id": "RE64217",
+    "name": "搪玻璃反应釜",
+    "specification": "1000L",
+    "material": "搪玻璃",
+    "location": "一般区北平台",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "642",
+    "equipment_id": "RE64218",
+    "name": "搪玻璃反应釜",
+    "specification": "2000L",
+    "material": "搪玻璃",
+    "location": "一般区北平台",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "642",
+    "equipment_id": "RE64219",
+    "name": "搪玻璃反应釜",
+    "specification": "2000L",
+    "material": "搪玻璃",
+    "location": "一般区北平台",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "642",
+    "equipment_id": "RE64220",
+    "name": "玻璃釜",
+    "specification": "100L",
+    "material": "玻璃",
+    "location": "五楼一般区南",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "642",
+    "equipment_id": "RE64221",
+    "name": "玻璃釜",
+    "specification": "100L",
+    "material": "玻璃",
+    "location": "五楼一般区南",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "642",
+    "equipment_id": "RE64222",
+    "name": "玻璃釜",
+    "specification": "50L",
+    "material": "玻璃",
+    "location": "五楼一般区南",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "642",
+    "equipment_id": "RE64223",
+    "name": "玻璃釜",
+    "specification": "50L",
+    "material": "玻璃",
+    "location": "五楼一般区南",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "642",
+    "equipment_id": "RE64224",
+    "name": "超低温反应釜",
+    "specification": "50L",
+    "material": "哈氏合金",
+    "location": "五楼一般区南",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "642",
+    "equipment_id": "RE64225",
+    "name": "玻璃釜",
+    "specification": "20L",
+    "material": "玻璃",
+    "location": "五楼一般区南",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "642",
+    "equipment_id": "RE64226",
+    "name": "玻璃釜",
+    "specification": "10L",
+    "material": "玻璃",
+    "location": "五楼一般区南",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "642",
+    "equipment_id": "RE64227",
+    "name": "玻璃釜",
+    "specification": "50L",
+    "material": "玻璃",
+    "location": "洁净区精制间",
+    "area_type": "洁净区"
+  },
+  {
+    "workshop": "642",
+    "equipment_id": "RE64228",
+    "name": "玻璃釜",
+    "specification": "10L",
+    "material": "玻璃",
+    "location": "洁净区精制间",
+    "area_type": "洁净区"
+  },
+  {
+    "workshop": "642",
+    "equipment_id": "RE64229",
+    "name": "玻璃釜",
+    "specification": "10L",
+    "material": "玻璃",
+    "location": "五楼一般区南",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "642",
+    "equipment_id": "RE64230",
+    "name": "玻璃釜",
+    "specification": "100L",
+    "material": "玻璃",
+    "location": "洁净区精制间",
+    "area_type": "洁净区"
+  },
+  {
+    "workshop": "642",
+    "equipment_id": "RE64231",
+    "name": "哈氏合金釜",
+    "specification": "200L",
+    "material": "哈氏合金",
+    "location": "一般区",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "642",
+    "equipment_id": "RE64232",
+    "name": "玻璃釜",
+    "specification": "50L",
+    "material": "玻璃",
+    "location": "一般区",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "642",
+    "equipment_id": "RE64233",
+    "name": "玻璃釜",
+    "specification": "100L",
+    "material": "玻璃",
+    "location": "一般区",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "642",
+    "equipment_id": "RE64234",
+    "name": "玻璃釜",
+    "specification": "100L",
+    "material": "玻璃",
+    "location": "一般区",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "642",
+    "equipment_id": "RE64235",
+    "name": "玻璃釜",
+    "specification": "10L",
+    "material": "玻璃",
+    "location": "一般区",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "642",
+    "equipment_id": "RE64236",
+    "name": "玻璃釜",
+    "specification": "20L",
+    "material": "玻璃",
+    "location": "一般区",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "642",
+    "equipment_id": "RE64237",
+    "name": "超低温反应釜",
+    "specification": "50L",
+    "material": "哈氏合金",
+    "location": "一般区",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "642",
+    "equipment_id": "RE64238",
+    "name": "玻璃釜",
+    "specification": "10L",
+    "material": "玻璃",
+    "location": "一般区",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "642",
+    "equipment_id": "RE64241",
+    "name": "玻璃釜",
+    "specification": "20L",
+    "material": "玻璃",
+    "location": "一般区",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "642",
+    "equipment_id": "RE64242",
+    "name": "玻璃釜",
+    "specification": "100L",
+    "material": "玻璃",
+    "location": "一般区",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "642",
+    "equipment_id": "ST64231",
+    "name": "移动储罐",
+    "specification": "50L",
+    "material": "316L不锈钢",
+    "location": "一般区",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "642",
+    "equipment_id": "ST64232",
+    "name": "移动储罐",
+    "specification": "50L",
+    "material": "316L不锈钢",
+    "location": "一般区",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "642",
+    "equipment_id": "ST64233",
+    "name": "移动储罐",
+    "specification": "50L",
+    "material": "316L",
+    "location": "一般区",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "642",
+    "equipment_id": "ST64234",
+    "name": "移动储罐",
+    "specification": "50L",
+    "material": "304不锈钢HALAR",
+    "location": "一般区",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "642",
+    "equipment_id": "ST64235",
+    "name": "移动储罐",
+    "specification": "50L",
+    "material": "304不锈钢HALAR",
+    "location": "一般区",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "642",
+    "equipment_id": "ST64236",
+    "name": "移动储罐",
+    "specification": "50L",
+    "material": "304不锈钢HALAR",
+    "location": "一般区",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "642",
+    "equipment_id": "ST64237",
+    "name": "移动储罐",
+    "specification": "100L",
+    "material": "316L",
+    "location": "一般区",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "642",
+    "equipment_id": "ST64238",
+    "name": "移动储罐",
+    "specification": "100L",
+    "material": "316L",
+    "location": "一般区",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "642",
+    "equipment_id": "ST64239",
+    "name": "移动储罐",
+    "specification": "100L",
+    "material": "304不锈钢HALAR",
+    "location": "一般区",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "642",
+    "equipment_id": "ST64240",
+    "name": "移动储罐",
+    "specification": "100L",
+    "material": "304不锈钢HALAR",
+    "location": "一般区",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "642",
+    "equipment_id": "ST64241",
+    "name": "移动储罐",
+    "specification": "200L",
+    "material": "316L",
+    "location": "一般区",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "642",
+    "equipment_id": "ST64242",
+    "name": "移动储罐",
+    "specification": "200L",
+    "material": "316L",
+    "location": "一般区",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "642",
+    "equipment_id": "ST64243",
+    "name": "移动储罐",
+    "specification": "200L",
+    "material": "304不锈钢HALAR",
+    "location": "一般区",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "642",
+    "equipment_id": "ST64244",
+    "name": "移动储罐",
+    "specification": "200L",
+    "material": "304不锈钢HALAR",
+    "location": "一般区",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "642",
+    "equipment_id": "ST64245",
+    "name": "移动储罐",
+    "specification": "300L",
+    "material": "304不锈钢HALAR",
+    "location": "一般区",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "642",
+    "equipment_id": "SG64201",
+    "name": "整粒机",
+    "specification": "U5",
+    "material": "不锈钢",
+    "location": "洁净区整粒间",
+    "area_type": "洁净区"
+  },
+  {
+    "workshop": "642",
+    "equipment_id": "DE64208",
+    "name": "真空干燥箱",
+    "specification": "PFZG-8型",
+    "material": "不锈钢衬HALAR",
+    "location": "五楼干燥间",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "642",
+    "equipment_id": "RE64257",
+    "name": "超低温反应釜",
+    "specification": "500L",
+    "material": "哈氏合金",
+    "location": "五楼干燥间",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "642",
+    "equipment_id": "EE64220",
+    "name": "旋转蒸发器",
+    "specification": "2L",
+    "material": "玻璃",
+    "location": "五楼一般区",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "642",
+    "equipment_id": "ST64212",
+    "name": "滴加罐",
+    "specification": "300L",
+    "material": "304不锈钢",
+    "location": "五楼一般区北",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "642",
+    "equipment_id": "EE64213",
+    "name": "旋转蒸发器",
+    "specification": "5L",
+    "material": "玻璃",
+    "location": "五楼一般区",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "642",
+    "equipment_id": "PF64216",
+    "name": "钛棒过滤器",
+    "specification": "10英寸3芯",
+    "material": "316L不锈钢",
+    "location": "一般区",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "642",
+    "equipment_id": "CT64218",
+    "name": "离心机",
+    "specification": "600",
+    "material": "不锈钢衬HALAR",
+    "location": "642车间洁净区",
+    "area_type": "洁净区"
+  },
+  {
+    "workshop": "642",
+    "equipment_id": "RE64259",
+    "name": "哈氏合金釜",
+    "specification": "100L",
+    "material": "玻璃+哈氏合金",
+    "location": "642车间洁净区精制间",
+    "area_type": "洁净区"
+  },
+  {
+    "workshop": "642",
+    "equipment_id": "VD64203",
+    "name": "真空干燥箱",
+    "specification": "48盘",
+    "material": "304不锈钢",
+    "location": "一般区干燥间",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "646",
+    "equipment_id": "CT64601",
+    "name": "离心机",
+    "specification": "800",
+    "material": "304不锈钢衬HALAR",
+    "location": "一般区南平台下",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "646",
+    "equipment_id": "CT64602",
+    "name": "离心机",
+    "specification": "600",
+    "material": "316L不锈钢",
+    "location": "一般区南平台下",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "646",
+    "equipment_id": "CT64603",
+    "name": "离心机",
+    "specification": "600",
+    "material": "304不锈钢衬HALAR",
+    "location": "一般区南平台下",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "646",
+    "equipment_id": "CT64604",
+    "name": "离心机",
+    "specification": "600",
+    "material": "316L不锈钢",
+    "location": "洁净区精制间",
+    "area_type": "洁净区"
+  },
+  {
+    "workshop": "646",
+    "equipment_id": "CT64605",
+    "name": "离心机",
+    "specification": "800",
+    "material": "304不锈钢衬HALAR",
+    "location": "一般区北平台下",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "646",
+    "equipment_id": "CT64606",
+    "name": "离心机",
+    "specification": "800",
+    "material": "316L不锈钢",
+    "location": "一般区北平台下",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "646",
+    "equipment_id": "CT64609",
+    "name": "离心机",
+    "specification": "450",
+    "material": "304不锈钢衬HALAR",
+    "location": "洁净区精制间",
+    "area_type": "洁净区"
+  },
+  {
+    "workshop": "646",
+    "equipment_id": "CT64610",
+    "name": "离心机",
+    "specification": "600",
+    "material": "316L不锈钢",
+    "location": "一般区南平台下",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "646",
+    "equipment_id": "CT64611",
+    "name": "离心机",
+    "specification": "800",
+    "material": "304不锈钢衬HALAR",
+    "location": "一般区北平台下",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "646",
+    "equipment_id": "CT64612",
+    "name": "离心机",
+    "specification": "600",
+    "material": "304不锈钢衬HALAR",
+    "location": "一般区南平台下",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "646",
+    "equipment_id": "CT64613",
+    "name": "离心机",
+    "specification": "800",
+    "material": "316L不锈钢",
+    "location": "一般区南平台下",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "646",
+    "equipment_id": "CT64614",
+    "name": "离心机",
+    "specification": "800",
+    "material": "304不锈钢衬HALAR",
+    "location": "一般区北平台下",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "646",
+    "equipment_id": "DE64601",
+    "name": "热风循环干燥箱",
+    "specification": "48盘",
+    "material": "316L不锈钢",
+    "location": "一般区干燥间",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "646",
+    "equipment_id": "DE64602",
+    "name": "真空干燥箱",
+    "specification": "24盘",
+    "material": "304不锈钢",
+    "location": "一般区干燥间",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "646",
+    "equipment_id": "VD64603",
+    "name": "真空干燥箱",
+    "specification": "48盘",
+    "material": "304不锈钢",
+    "location": "一般区干燥间",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "646",
+    "equipment_id": "DE64604",
+    "name": "电热鼓风干燥箱",
+    "specification": "12盘",
+    "material": "316L不锈钢衬HALAR",
+    "location": "洁净区干燥间",
+    "area_type": "洁净区"
+  },
+  {
+    "workshop": "646",
+    "equipment_id": "DE64605",
+    "name": "电热真空干燥箱",
+    "specification": "8盘",
+    "material": "不锈钢衬HALAR",
+    "location": "一般区干燥间",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "646",
+    "equipment_id": "DE64606",
+    "name": "电热真空干燥箱",
+    "specification": "6053",
+    "material": "316L不锈钢",
+    "location": "一般区干燥间",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "646",
+    "equipment_id": "DE64607",
+    "name": "电热鼓风干燥箱",
+    "specification": "BGX-198",
+    "material": "316L不锈钢",
+    "location": "一般区干燥间",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "646",
+    "equipment_id": "EE64601",
+    "name": "旋蒸",
+    "specification": "20L",
+    "material": "玻璃",
+    "location": "五楼一般区南",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "646",
+    "equipment_id": "EE64602",
+    "name": "旋蒸",
+    "specification": "20L",
+    "material": "玻璃",
+    "location": "五楼一般区南",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "646",
+    "equipment_id": "EE64603",
+    "name": "旋蒸",
+    "specification": "10L",
+    "material": "玻璃",
+    "location": "五楼一般区南",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "646",
+    "equipment_id": "EE64604",
+    "name": "旋蒸",
+    "specification": "20L",
+    "material": "玻璃",
+    "location": "洁净区精制间",
+    "area_type": "洁净区"
+  },
+  {
+    "workshop": "646",
+    "equipment_id": "EE64605",
+    "name": "旋蒸",
+    "specification": "2L",
+    "material": "玻璃",
+    "location": "五楼实验隔断",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "646",
+    "equipment_id": "EE64606",
+    "name": "旋蒸",
+    "specification": "5L",
+    "material": "玻璃",
+    "location": "五楼实验隔断",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "646",
+    "equipment_id": "EE64611",
+    "name": "旋蒸",
+    "specification": "50L",
+    "material": "玻璃",
+    "location": "五楼实验隔断",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "646",
+    "equipment_id": "EE64612",
+    "name": "旋蒸",
+    "specification": "50L",
+    "material": "玻璃",
+    "location": "五楼实验隔断",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "646",
+    "equipment_id": "EE64616",
+    "name": "旋转蒸发器",
+    "specification": "20L",
+    "material": "玻璃",
+    "location": "一般区",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "646",
+    "equipment_id": "EE64617",
+    "name": "旋转蒸发器",
+    "specification": "20L",
+    "material": "玻璃",
+    "location": "一般区",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "646",
+    "equipment_id": "EE64618",
+    "name": "旋蒸",
+    "specification": "50L",
+    "material": "玻璃",
+    "location": "",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "646",
+    "equipment_id": "EE64619",
+    "name": "旋蒸",
+    "specification": "50L",
+    "material": "玻璃",
+    "location": "",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "646",
+    "equipment_id": "PF64601",
+    "name": "微压柱系统",
+    "specification": "300*2000mm",
+    "material": "不锈钢",
+    "location": "五楼制备间",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "646",
+    "equipment_id": "PF64602",
+    "name": "微压柱系统",
+    "specification": "400*1600mm",
+    "material": "不锈钢",
+    "location": "五楼制备间",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "646",
+    "equipment_id": "PF64603",
+    "name": "微压柱系统",
+    "specification": "500*2000mm",
+    "material": "不锈钢",
+    "location": "五楼制备间",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "646",
+    "equipment_id": "PF64604",
+    "name": "高压制备液相系统",
+    "specification": "DAC200",
+    "material": "不锈钢",
+    "location": "五楼制备间",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "646",
+    "equipment_id": "PF64605",
+    "name": "高压制备液相系统",
+    "specification": "DAC200",
+    "material": "不锈钢",
+    "location": "一般区",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "646",
+    "equipment_id": "PF64611",
+    "name": "可移动式压滤器",
+    "specification": "30L",
+    "material": "不锈钢衬HALAR",
+    "location": "三楼一般区",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "646",
+    "equipment_id": "PF64612",
+    "name": "可移动式压滤器",
+    "specification": "30L",
+    "material": "不锈钢",
+    "location": "三楼一般区",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "646",
+    "equipment_id": "PF64613",
+    "name": "可移动式压滤器",
+    "specification": "50L",
+    "material": "不锈钢衬HALAR",
+    "location": "三楼一般区",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "646",
+    "equipment_id": "PF64614",
+    "name": "压滤器",
+    "specification": "50L",
+    "material": "",
+    "location": "",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "646",
+    "equipment_id": "RE64601",
+    "name": "搪玻璃反应釜",
+    "specification": "500L",
+    "material": "搪玻璃",
+    "location": "一般区南平台",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "646",
+    "equipment_id": "RE64602",
+    "name": "搪玻璃反应釜",
+    "specification": "500L",
+    "material": "搪玻璃",
+    "location": "一般区南平台",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "646",
+    "equipment_id": "RE64603",
+    "name": "搪玻璃反应釜",
+    "specification": "300L",
+    "material": "搪玻璃",
+    "location": "一般区南平台",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "646",
+    "equipment_id": "RE64604",
+    "name": "搪玻璃反应釜",
+    "specification": "300L",
+    "material": "搪玻璃",
+    "location": "一般区南平台",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "646",
+    "equipment_id": "RE64605",
+    "name": "搪玻璃反应釜",
+    "specification": "200L",
+    "material": "搪玻璃",
+    "location": "一般区南平台",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "646",
+    "equipment_id": "RE64606",
+    "name": "搪玻璃反应釜",
+    "specification": "200L",
+    "material": "搪玻璃",
+    "location": "一般区南平台",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "646",
+    "equipment_id": "RE64607",
+    "name": "搪玻璃反应釜",
+    "specification": "100L",
+    "material": "搪玻璃",
+    "location": "一般区南平台",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "646",
+    "equipment_id": "RE64608",
+    "name": "搪玻璃反应釜",
+    "specification": "100L",
+    "material": "搪玻璃",
+    "location": "一般区南平台",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "646",
+    "equipment_id": "RE64609",
+    "name": "搪玻璃反应釜",
+    "specification": "50L",
+    "material": "搪玻璃",
+    "location": "一般区南平台",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "646",
+    "equipment_id": "RE64610",
+    "name": "搪玻璃反应釜",
+    "specification": "500L",
+    "material": "搪玻璃",
+    "location": "一般区南平台",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "646",
+    "equipment_id": "RE64611",
+    "name": "搪玻璃反应釜",
+    "specification": "200L",
+    "material": "搪玻璃",
+    "location": "一般区南平台",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "646",
+    "equipment_id": "RE64612",
+    "name": "搪玻璃反应釜",
+    "specification": "200L",
+    "material": "搪玻璃",
+    "location": "洁净区精制间钢平台",
+    "area_type": "洁净区"
+  },
+  {
+    "workshop": "646",
+    "equipment_id": "RE64613",
+    "name": "搪玻璃反应釜",
+    "specification": "500L",
+    "material": "搪玻璃",
+    "location": "洁净区精制间钢平台",
+    "area_type": "洁净区"
+  },
+  {
+    "workshop": "646",
+    "equipment_id": "RE64614",
+    "name": "搪玻璃反应釜",
+    "specification": "500L",
+    "material": "搪玻璃",
+    "location": "一般区北平台",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "646",
+    "equipment_id": "RE64615",
+    "name": "搪玻璃反应釜",
+    "specification": "1000L",
+    "material": "搪玻璃",
+    "location": "一般区北平台",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "646",
+    "equipment_id": "RE64616",
+    "name": "搪玻璃反应釜",
+    "specification": "1000L",
+    "material": "搪玻璃",
+    "location": "一般区北平台",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "646",
+    "equipment_id": "RE64617",
+    "name": "搪玻璃反应釜",
+    "specification": "1000L",
+    "material": "搪玻璃",
+    "location": "一般区北平台",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "646",
+    "equipment_id": "RE64618",
+    "name": "搪玻璃反应釜",
+    "specification": "2000L",
+    "material": "搪玻璃",
+    "location": "一般区北平台",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "646",
+    "equipment_id": "RE64619",
+    "name": "搪玻璃反应釜",
+    "specification": "2000L",
+    "material": "搪玻璃",
+    "location": "一般区北平台",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "646",
+    "equipment_id": "RE64620",
+    "name": "玻璃釜",
+    "specification": "100L",
+    "material": "玻璃",
+    "location": "五楼一般区南",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "646",
+    "equipment_id": "RE64621",
+    "name": "玻璃釜",
+    "specification": "100L",
+    "material": "玻璃",
+    "location": "五楼一般区南",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "646",
+    "equipment_id": "RE64622",
+    "name": "玻璃釜",
+    "specification": "50L",
+    "material": "玻璃",
+    "location": "五楼一般区南",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "646",
+    "equipment_id": "RE64623",
+    "name": "玻璃釜",
+    "specification": "50L",
+    "material": "玻璃",
+    "location": "五楼一般区南",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "646",
+    "equipment_id": "RE64624",
+    "name": "超低温反应釜",
+    "specification": "50L",
+    "material": "哈氏合金",
+    "location": "五楼一般区南",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "646",
+    "equipment_id": "RE64625",
+    "name": "玻璃釜",
+    "specification": "20L",
+    "material": "玻璃",
+    "location": "五楼一般区南",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "646",
+    "equipment_id": "RE64626",
+    "name": "玻璃釜",
+    "specification": "10L",
+    "material": "玻璃",
+    "location": "五楼一般区南",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "646",
+    "equipment_id": "RE64627",
+    "name": "玻璃釜",
+    "specification": "50L",
+    "material": "玻璃",
+    "location": "洁净区精制间",
+    "area_type": "洁净区"
+  },
+  {
+    "workshop": "646",
+    "equipment_id": "RE64628",
+    "name": "玻璃釜",
+    "specification": "10L",
+    "material": "玻璃",
+    "location": "洁净区精制间",
+    "area_type": "洁净区"
+  },
+  {
+    "workshop": "646",
+    "equipment_id": "RE64629",
+    "name": "玻璃釜",
+    "specification": "10L",
+    "material": "玻璃",
+    "location": "五楼一般区南",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "646",
+    "equipment_id": "RE64630",
+    "name": "玻璃釜",
+    "specification": "100L",
+    "material": "玻璃",
+    "location": "洁净区精制间",
+    "area_type": "洁净区"
+  },
+  {
+    "workshop": "646",
+    "equipment_id": "RE64631",
+    "name": "哈氏合金釜",
+    "specification": "200L",
+    "material": "哈氏合金",
+    "location": "",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "646",
+    "equipment_id": "RE64632",
+    "name": "玻璃釜",
+    "specification": "50L",
+    "material": "玻璃",
+    "location": "一般区",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "646",
+    "equipment_id": "RE64633",
+    "name": "玻璃釜",
+    "specification": "100L",
+    "material": "玻璃",
+    "location": "一般区",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "646",
+    "equipment_id": "RE64634",
+    "name": "玻璃釜",
+    "specification": "100L",
+    "material": "玻璃",
+    "location": "一般区",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "646",
+    "equipment_id": "RE64635",
+    "name": "玻璃釜",
+    "specification": "10L",
+    "material": "玻璃",
+    "location": "一般区",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "646",
+    "equipment_id": "RE64636",
+    "name": "玻璃釜",
+    "specification": "20L",
+    "material": "玻璃",
+    "location": "一般区",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "646",
+    "equipment_id": "RE64637",
+    "name": "超低温反应釜",
+    "specification": "50L",
+    "material": "哈氏合金",
+    "location": "一般区",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "646",
+    "equipment_id": "RE64638",
+    "name": "玻璃釜",
+    "specification": "10L",
+    "material": "玻璃",
+    "location": "一般区",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "646",
+    "equipment_id": "RE64641",
+    "name": "玻璃釜",
+    "specification": "20L",
+    "material": "玻璃",
+    "location": "一般区",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "646",
+    "equipment_id": "RE64642",
+    "name": "玻璃釜",
+    "specification": "100L",
+    "material": "玻璃",
+    "location": "一般区",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "646",
+    "equipment_id": "ST64631",
+    "name": "移动储罐",
+    "specification": "50L",
+    "material": "316L不锈钢",
+    "location": "一般区",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "646",
+    "equipment_id": "ST64632",
+    "name": "移动储罐",
+    "specification": "50L",
+    "material": "316L不锈钢",
+    "location": "一般区",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "646",
+    "equipment_id": "ST64633",
+    "name": "移动储罐",
+    "specification": "50L",
+    "material": "316L",
+    "location": "一般区",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "646",
+    "equipment_id": "ST64634",
+    "name": "移动储罐",
+    "specification": "50L",
+    "material": "304不锈钢衬HALAR",
+    "location": "一般区",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "646",
+    "equipment_id": "ST64635",
+    "name": "移动储罐",
+    "specification": "50L",
+    "material": "304不锈钢衬HALAR",
+    "location": "一般区",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "646",
+    "equipment_id": "ST64636",
+    "name": "移动储罐",
+    "specification": "50L",
+    "material": "304不锈钢衬HALAR",
+    "location": "一般区",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "646",
+    "equipment_id": "ST64637",
+    "name": "移动储罐",
+    "specification": "100L",
+    "material": "316L",
+    "location": "一般区",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "646",
+    "equipment_id": "ST64638",
+    "name": "移动储罐",
+    "specification": "100L",
+    "material": "316L",
+    "location": "一般区",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "646",
+    "equipment_id": "ST64639",
+    "name": "移动储罐",
+    "specification": "100L",
+    "material": "304不锈钢衬HALAR",
+    "location": "一般区",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "646",
+    "equipment_id": "ST64640",
+    "name": "移动储罐",
+    "specification": "100L",
+    "material": "304不锈钢衬HALAR",
+    "location": "一般区",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "646",
+    "equipment_id": "ST64641",
+    "name": "移动储罐",
+    "specification": "200L",
+    "material": "316L",
+    "location": "一般区",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "646",
+    "equipment_id": "ST64642",
+    "name": "移动储罐",
+    "specification": "200L",
+    "material": "316L",
+    "location": "一般区",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "646",
+    "equipment_id": "ST64643",
+    "name": "移动储罐",
+    "specification": "200L",
+    "material": "304不锈钢衬HALAR",
+    "location": "一般区",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "646",
+    "equipment_id": "ST64644",
+    "name": "移动储罐",
+    "specification": "200L",
+    "material": "304不锈钢衬HALAR",
+    "location": "一般区",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "646",
+    "equipment_id": "ST64645",
+    "name": "移动储罐",
+    "specification": "300L",
+    "material": "304不锈钢衬HALAR",
+    "location": "一般区",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "646",
+    "equipment_id": "SG64601",
+    "name": "整粒机",
+    "specification": "U5",
+    "material": "不锈钢",
+    "location": "洁净区整粒间",
+    "area_type": "洁净区"
+  },
+  {
+    "workshop": "646",
+    "equipment_id": "DE64608",
+    "name": "真空干燥箱",
+    "specification": "PFZG-8型",
+    "material": "不锈钢衬HALAR",
+    "location": "五楼干燥间",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "646",
+    "equipment_id": "RE64657",
+    "name": "超低温反应釜",
+    "specification": "500L",
+    "material": "哈氏合金",
+    "location": "五楼干燥间",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "646",
+    "equipment_id": "EE64620",
+    "name": "旋转蒸发器",
+    "specification": "2L",
+    "material": "玻璃",
+    "location": "五楼一般区",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "646",
+    "equipment_id": "ST64612",
+    "name": "滴加罐",
+    "specification": "300L",
+    "material": "304不锈钢",
+    "location": "五楼一般区北",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "646",
+    "equipment_id": "EE64613",
+    "name": "旋转蒸发器",
+    "specification": "5L",
+    "material": "玻璃",
+    "location": "五楼一般区",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "646",
+    "equipment_id": "PF64616",
+    "name": "钛棒过滤器",
+    "specification": "10英寸3芯",
+    "material": "316L不锈钢",
+    "location": "一般区",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "646",
+    "equipment_id": "CT64618",
+    "name": "离心机",
+    "specification": "600",
+    "material": "不锈钢衬HALAR",
+    "location": "646车间洁净区",
+    "area_type": "洁净区"
+  },
+  {
+    "workshop": "646",
+    "equipment_id": "RE64659",
+    "name": "哈氏合金釜",
+    "specification": "100L",
+    "material": "玻璃+哈氏合金",
+    "location": "646车间洁净区精制间",
+    "area_type": "洁净区"
+  }
+]

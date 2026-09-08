@@ -18,7 +18,6 @@ from unittest.mock import MagicMock
 
 from app.services.reporting.ast_template import load_default_template
 
-
 # ── helpers ──────────────────────────────────────────────────────────────────
 
 
@@ -26,9 +25,13 @@ def _seed_template(db, *, name="Meta", version="v1", iri_pattern=None, status="d
     from app.models.extraction import AstTemplate
 
     row = AstTemplate(
-        name=name, version=version, doc_no="TEST",
+        name=name,
+        version=version,
+        doc_no="TEST",
         schema_json=load_default_template().model_dump(),
-        iri_pattern=iri_pattern, status=status, created_by="test",
+        iri_pattern=iri_pattern,
+        status=status,
+        created_by="test",
     )
     db.add(row)
     db.commit()
@@ -39,8 +42,9 @@ def _seed_template(db, *, name="Meta", version="v1", iri_pattern=None, status="d
 def _one_shot_client(payload: dict):
     """Mock OpenAI client returning a single canned JSON object for every call."""
     client = MagicMock()
+    client.base_url = "http://model.test/v1"
 
-    def _create(**kwargs):
+    async def _create(**kwargs):
         resp = MagicMock()
         choice = MagicMock()
         choice.message.content = json.dumps(payload, ensure_ascii=False)
@@ -168,150 +172,7 @@ class TestSectionPromptRoundTrip:
 # ── POST /api/ast-templates/generate-section-prompt ──────────────────────────
 
 
-class TestGenerateSectionPromptEndpoint:
-    def _enable(self, monkeypatch, client_obj):
-        from app.config import settings
-
-        monkeypatch.setattr(settings, "llm_suggest_slots_enabled", True)
-        monkeypatch.setattr(
-            "app.services.llm.local_client.get_local_llm", lambda: client_obj
-        )
-
-    def test_happy_path_returns_prompt(self, client, analyst_headers, monkeypatch):
-        self._enable(monkeypatch, _one_shot_client({"prompt": "描述 {{药品名称}}。"}))
-        resp = client.post(
-            "/api/ast-templates/generate-section-prompt",
-            headers=analyst_headers,
-            json={"section_title": "评估对象", "slot_labels": ["药品名称"], "sample_text": "本品为XX注射液"},
-        )
-        assert resp.status_code == 200
-        assert resp.json()["prompt"] == "描述 {{药品名称}}。"
-
-    def test_flag_off_returns_503(self, client, analyst_headers, monkeypatch):
-        from app.config import settings
-
-        monkeypatch.setattr(settings, "llm_suggest_slots_enabled", False)
-        resp = client.post(
-            "/api/ast-templates/generate-section-prompt",
-            headers=analyst_headers,
-            json={"section_title": "评估对象"},
-        )
-        assert resp.status_code == 503
-
-    def test_no_local_client_returns_503(self, client, analyst_headers, monkeypatch):
-        from app.config import settings
-
-        monkeypatch.setattr(settings, "llm_suggest_slots_enabled", True)
-        monkeypatch.setattr(
-            "app.services.llm.local_client.get_local_llm", lambda: None
-        )
-        resp = client.post(
-            "/api/ast-templates/generate-section-prompt",
-            headers=analyst_headers,
-            json={"section_title": "评估对象"},
-        )
-        assert resp.status_code == 503
-
-    def test_empty_prompt_returns_502(self, client, analyst_headers, monkeypatch):
-        # LLM reachable but returns an empty prompt → treated as generation failure.
-        self._enable(monkeypatch, _one_shot_client({"prompt": ""}))
-        resp = client.post(
-            "/api/ast-templates/generate-section-prompt",
-            headers=analyst_headers,
-            json={"section_title": "评估对象"},
-        )
-        assert resp.status_code == 502
-
-    def test_role_gated_403(self, client, operator_headers):
-        resp = client.post(
-            "/api/ast-templates/generate-section-prompt",
-            headers=operator_headers,
-            json={"section_title": "评估对象"},
-        )
-        assert resp.status_code == 403
-
-
 # ── narrative_generator.generate_section_narratives (report-time) ────────────
 
 
-class TestGenerateSectionNarratives:
-    def test_only_sections_with_prompt_produce_prose(self):
-        from app.services.reporting.ast_template import ReportTemplate
-        from app.services.reporting.narrative_generator import (
-            generate_section_narratives,
-        )
-
-        template = ReportTemplate.model_validate(_schema_with_section_prompt(
-            "描述 {{药品名称}}。"
-        ))
-        # second section, no prompt → skipped
-        template.sections.append(template.sections[0].model_copy(
-            update={"section_id": "s2", "title": "无行文", "prompt": None}
-        ))
-
-        edges = [{
-            "object_class_iri": "http://slpra.org/DrugProduct",
-            "object_text": "XX注射液",
-            "subject_text": "",
-            "object_data_properties": [{"label": "药品名称", "value": "XX注射液"}],
-        }]
-        client_obj = _one_shot_client({"content": "本品为 XX 注射液，属注射剂。"})
-
-        out = generate_section_narratives(edges, template, client_obj)
-        assert len(out) == 1
-        assert out[0]["section_id"] == "s"
-        assert out[0]["title"] == "评估对象"
-        assert "XX 注射液" in out[0]["text"]
-
-    def test_no_prompt_anywhere_returns_empty(self):
-        from app.services.reporting.narrative_generator import (
-            generate_section_narratives,
-        )
-
-        template = load_default_template()  # ships without per-section prompts
-        edges = [{"object_class_iri": "X", "object_text": "y", "subject_text": ""}]
-        client_obj = _one_shot_client({"content": "should not be used"})
-        assert generate_section_narratives(edges, template, client_obj) == []
-
-
 # ── extraction._narratives_payload (persisted reading-pane blob) ─────────────
-
-
-class TestNarrativesPayload:
-    def test_none_when_no_llm_content(self):
-        from app.api.extraction import _narratives_payload
-        from app.services.reporting.risk_report_generator import RiskReport
-
-        # deterministic subject only (not in llm_generated_fields) → null column
-        report = RiskReport(subject_description="确定性描述")
-        assert _narratives_payload(report) is None
-
-    def test_captures_llm_subject_conclusion_and_sections(self):
-        from app.api.extraction import _narratives_payload
-        from app.services.reporting.risk_report_generator import RiskReport
-
-        report = RiskReport(
-            subject_description="AI 描述",
-            conclusion="AI 结论",
-            llm_generated_fields={"subject_description", "conclusion"},
-            section_narratives=[{"section_id": "s", "title": "评估对象", "text": "正文"}],
-        )
-        payload = _narratives_payload(report)
-        assert payload is not None
-        assert payload["subject_description"] == "AI 描述"
-        assert payload["conclusion"] == "AI 结论"
-        assert payload["sections"][0]["title"] == "评估对象"
-
-    def test_deterministic_subject_excluded_but_sections_kept(self):
-        from app.api.extraction import _narratives_payload
-        from app.services.reporting.risk_report_generator import RiskReport
-
-        report = RiskReport(
-            subject_description="确定性描述",  # NOT llm-generated
-            section_narratives=[{"section_id": "s", "title": "T", "text": "正文"}],
-        )
-        payload = _narratives_payload(report)
-        assert payload is not None
-        assert payload["subject_description"] is None
-        assert payload["conclusion"] is None
-        assert len(payload["sections"]) == 1

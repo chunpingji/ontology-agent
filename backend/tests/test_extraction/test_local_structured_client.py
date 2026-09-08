@@ -1,5 +1,5 @@
 import json
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock, MagicMock
 
 from app.services.llm.local_client import _extract_json_object, chat_with_schema
 
@@ -13,6 +13,8 @@ def test_json_decoder_handles_braces_inside_strings_and_hidden_reasoning():
 
 def test_single_attempt_never_falls_back_or_exceeds_declared_tokens():
     client = MagicMock()
+    client.base_url = "http://model.test/v1"
+    client.chat.completions.create = AsyncMock()
     client.chat.completions.create.side_effect = RuntimeError("offline")
     result = chat_with_schema(
         client,
@@ -30,6 +32,8 @@ def test_single_attempt_never_falls_back_or_exceeds_declared_tokens():
 
 def test_fallback_does_not_double_the_output_budget():
     client = MagicMock()
+    client.base_url = "http://model.test/v1"
+    client.chat.completions.create = AsyncMock()
     reply = MagicMock()
     reply.choices[0].message.content = '{"ok":true}'
     client.chat.completions.create.side_effect = [RuntimeError("schema unsupported"), reply]

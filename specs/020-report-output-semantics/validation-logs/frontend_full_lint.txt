@@ -1,0 +1,71 @@
+
+> slpra-frontend@0.1.0 lint
+> eslint
+
+
+/opt/dev/chen/ontology-agent/frontend/src/app/(dashboard)/approval/page.tsx
+  10:3  warning  'APPROVAL_CATEGORIES' is defined but never used  @typescript-eslint/no-unused-vars
+  11:8  warning  'ApprovalTask' is defined but never used         @typescript-eslint/no-unused-vars
+
+/opt/dev/chen/ontology-agent/frontend/src/components/approval/approval-detail.tsx
+  9:3  warning  'PenLine' is defined but never used  @typescript-eslint/no-unused-vars
+
+/opt/dev/chen/ontology-agent/frontend/src/components/extraction/ast-tree-view.tsx
+  43:13  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+/opt/dev/chen/ontology-agent/frontend/src/components/extraction/ast-tree-view.tsx:43:13
+  41 |         for (const slot of group.slots) {
+  42 |           if (slot.slot_id === scrollToSlotId) {
+> 43 |             setExpandedGroups((prev) => new Set([...prev, group.group_id]));
+     |             ^^^^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  44 |             requestAnimationFrame(() => {
+  45 |               const el = slotRefs.current.get(scrollToSlotId);
+  46 |               el?.scrollIntoView({ behavior: "smooth", block: "center" });  react-hooks/set-state-in-effect
+
+/opt/dev/chen/ontology-agent/frontend/src/components/mock/edit-dialog.tsx
+  16:11  warning  'DataProperty' is defined but never used  @typescript-eslint/no-unused-vars
+  38:53  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/opt/dev/chen/ontology-agent/frontend/src/components/shell/auth-guard.tsx
+  19:7  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+/opt/dev/chen/ontology-agent/frontend/src/components/shell/auth-guard.tsx:19:7
+  17 |   useEffect(() => {
+  18 |     if (getToken()) {
+> 19 |       setAuthed(true);
+     |       ^^^^^^^^^ Avoid calling setState() directly within an effect
+  20 |       return;
+  21 |     }
+  22 |     setAuthed(false);  react-hooks/set-state-in-effect
+
+/opt/dev/chen/ontology-agent/frontend/src/components/shell/nav.ts
+  13:3  warning  'Database' is defined but never used  @typescript-eslint/no-unused-vars
+
+/opt/dev/chen/ontology-agent/frontend/src/components/ui/data-table.tsx
+  66:17  warning  Compilation Skipped: Use of incompatible library
+
+This API returns functions which cannot be memoized without leading to stale UI. To prevent this, by default React Compiler will skip memoizing this component/hook. However, you may see issues if values from this API are passed to other components/hooks that are memoized.
+
+/opt/dev/chen/ontology-agent/frontend/src/components/ui/data-table.tsx:66:17
+  64 |   const [sorting, setSorting] = React.useState<SortingState>([]);
+  65 |
+> 66 |   const table = useReactTable({
+     |                 ^^^^^^^^^^^^^ TanStack Table's `useReactTable()` API returns functions that cannot be memoized safely
+  67 |     data,
+  68 |     columns,
+  69 |     state: { sorting },  react-hooks/incompatible-library
+
+✖ 9 problems (3 errors, 6 warnings)
+

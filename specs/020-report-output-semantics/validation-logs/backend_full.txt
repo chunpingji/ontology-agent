@@ -1,0 +1,34 @@
+........................................................................ [  6%]
+........................................................................ [ 13%]
+........................................................................ [ 20%]
+........................................................................ [ 27%]
+........................................................................ [ 34%]
+........................................................................ [ 41%]
+........................................................................ [ 48%]
+........................................................................ [ 55%]
+........................................................................ [ 62%]
+........................................................................ [ 69%]
+........................................................................ [ 76%]
+........................................................................ [ 83%]
+.................................................sssss.................. [ 90%]
+........................................................................ [ 97%]
+...............................                                          [100%]
+=============================== warnings summary ===============================
+backend/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /opt/dev/chen/ontology-agent/backend/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+backend/app/schemas/extraction.py:145
+  /opt/dev/chen/ontology-agent/backend/app/schemas/extraction.py:145: UserWarning: Field name "schema_json" in "AstTemplateCreate" shadows an attribute in parent "BaseModel"
+    class AstTemplateCreate(BaseModel):
+
+backend/app/schemas/extraction.py:156
+  /opt/dev/chen/ontology-agent/backend/app/schemas/extraction.py:156: UserWarning: Field name "schema_json" in "AstTemplateUpdate" shadows an attribute in parent "BaseModel"
+    class AstTemplateUpdate(BaseModel):
+
+backend/app/schemas/entity.py:27
+  /opt/dev/chen/ontology-agent/backend/app/schemas/entity.py:27: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.13/migration/
+    class EntityShadowResponse(BaseModel):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+1034 passed, 5 skipped, 4 warnings in 87.30s (0:01:27)

@@ -96,7 +96,13 @@ export default function AstTemplatesPage() {
     }
   }, []);
 
-  useEffect(() => { reload(); }, [reload]);
+  useEffect(() => {
+    let active = true;
+    fetchAstTemplates().then((result) => { if (active) setTemplates(result); })
+      .catch((e) => { if (active) setError(e instanceof Error ? e.message : "加载失败"); })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, []);
 
   async function handleDocxFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     setUploadError(null);
@@ -113,7 +119,7 @@ export default function AstTemplatesPage() {
       setDocxText(plain_text);
       setSampleFile(file);  // 保留原始 docx，创建成功后附加为输出格式模板
       if (!uploadName) {
-        const baseName = file.name.replace(/\.docx?$/i, "");
+        const baseName = file.name.slice(0, file.name.lastIndexOf(".")) || file.name;
         setUploadName(baseName);
       }
     } catch (err) {
@@ -172,6 +178,10 @@ export default function AstTemplatesPage() {
   // 015: 就地切换生命周期状态（发布/归档），不产生新版本。
   async function handleSetStatus(id: string, status: AstTemplateStatus) {
     try {
+      if (status === "published") {
+        router.push("/settings/ast-templates/" + id);
+        return;
+      }
       await updateAstTemplateMeta(id, { status });
       await reload();
     } catch (e) {

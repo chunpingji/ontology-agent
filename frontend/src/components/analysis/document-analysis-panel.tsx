@@ -87,7 +87,8 @@ const BREAK_SOURCE_LABELS: Record<string, string> = {
 
 function errorMessage(error: unknown): string {
   if (!(error instanceof Error)) return "请求失败，请稍后重试。";
-  const apiBody = error.message.match(/^API \d+:\s*(\{[\s\S]*\})$/)?.[1];
+  const apiBody = error.message.startsWith("API ") && error.message.includes(":")
+    ? error.message.slice(error.message.indexOf(":") + 1).trim() : null;
   if (apiBody) {
     try {
       const detail = (JSON.parse(apiBody) as { detail?: unknown }).detail;
@@ -430,7 +431,7 @@ export function DocumentAnalysisPanel() {
   const [analysisError, setAnalysisError] = useState<string | null>(null);
 
   const runAnalysis = useCallback(async (file: File) => {
-    const suffix = file.name.toLowerCase().match(/\.[^.]+$/)?.[0];
+    const suffix = file.name.slice(file.name.lastIndexOf(".")).toLowerCase();
     if (suffix !== ".doc" && suffix !== ".docx") {
       setAnalysisError("仅支持 .doc 或 .docx 文件。");
       return;
