@@ -124,6 +124,9 @@ def _job(db, job_id):
     job = db.get(ExtractionJob, job_id)
     if job is None:
         raise HTTPException(404, "extraction job not found")
+    from app.api.extraction import _require_result_capability
+
+    _require_result_capability(job)
     return job
 
 
@@ -568,6 +571,9 @@ def review_candidate(
         store = CandidateStore(db)
         current = store.get(candidate_id)
         row = db.get(EvidenceCandidateRecord, candidate_id)
+        if row is None:
+            raise LookupError("candidate not found")
+        _job(db, row.job_id)
         edits = req.edited_payload
         if edits is not None:
             allowed = {
@@ -628,6 +634,9 @@ def resolve_candidate(
         store = CandidateStore(db)
         store.get(candidate_id)
         row = db.get(EvidenceCandidateRecord, candidate_id)
+        if row is None:
+            raise LookupError("candidate not found")
+        _job(db, row.job_id)
         return _candidate_json(
             store.resolve(
                 candidate_id,
@@ -663,6 +672,7 @@ def get_commit(commit_id: str, db: Session = Depends(get_db)):
     commit = db.get(EvidenceCommit, commit_id, populate_existing=True)
     if commit is None:
         raise HTTPException(404, "commit not found")
+    _job(db, commit.job_id)
     return _commit_json(commit)
 
 
@@ -698,6 +708,7 @@ def get_provenance(assertion_id: str, db: Session = Depends(get_db)):
     commit = db.get(EvidenceCommit, assertion.commit_id) if assertion else None
     if assertion is None or commit is None or commit.status != "succeeded":
         raise HTTPException(404, "published assertion not found")
+    _job(db, commit.job_id)
     candidate = Candidate.model_validate(assertion.payload["candidate"])
     replays = []
     for source in candidate.provenance:

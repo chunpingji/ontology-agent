@@ -11,11 +11,24 @@
 #
 # 用法：
 #   scripts/redeploy.sh [--prod] [--pull] [--no-build] [--no-pull-base] [SERVICE ...]
+#   scripts/redeploy.sh --prod --document-analysis-cutover-preflight \
+#     --retirement-manifest PATH --expected-manifest-sha256 SHA256 \
+#     --maintenance-window WINDOW_ID
 #
 #   --prod          只用 docker-compose.yml（忽略本机 override，端口 8081/55432）。
 #   --pull          先 `docker compose pull` 基础镜像（db=postgres、web=nginx）。
 #   --no-build      只 `up -d`（重建容器、不 rebuild 镜像）；改了 requirements/package 时勿用。
 #   --no-pull-base  跳过 build 前对 Dockerfile FROM 基础镜像的"带重试预拉取"（见下）。
+#   --document-analysis-cutover-preflight
+#                   只执行 021 单次切换的只读门禁，成功后退出；不清理、不 build、不部署。
+#                   还必须通过环境变量 DOCUMENT_ANALYSIS_CUTOVER_DATABASE_URL 显式提供
+#                   验收/目标数据库 URL，本脚本不会打印该值。
+#   --retirement-manifest PATH
+#                   已冻结且带治理审批 envelope 的旧 Word 域 manifest。
+#   --expected-manifest-sha256 SHA256
+#                   经审批的 manifest 内容哈希，必须与文件及实时重审一致。
+#   --maintenance-window WINDOW_ID
+#                   manifest 中当前有效的维护窗口 ID。
 #   SERVICE ...     指定要 build/up 的服务（缺省=整栈：db backend frontend web）。
 #
 # 防抖：本机无法直连 Docker Hub、只有单个镜像加速器，加速器换 token 偶发
@@ -41,6 +54,10 @@ PROD=0
 PULL=0
 BUILD=1
 PULL_BASE=1
+CUTOVER_PREFLIGHT=0
+CUTOVER_MANIFEST=""
+CUTOVER_HASH=""
+CUTOVER_WINDOW=""
 SERVICES=()
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -48,6 +65,16 @@ while [[ $# -gt 0 ]]; do
     --pull)     PULL=1 ;;
     --no-build) BUILD=0 ;;
     --no-pull-base) PULL_BASE=0 ;;
+    --document-analysis-cutover-preflight) CUTOVER_PREFLIGHT=1 ;;
+    --retirement-manifest)
+      [[ $# -ge 2 ]] || { echo "--retirement-manifest 缺少 PATH" >&2; exit 2; }
+      CUTOVER_MANIFEST="$2"; shift ;;
+    --expected-manifest-sha256)
+      [[ $# -ge 2 ]] || { echo "--expected-manifest-sha256 缺少 SHA256" >&2; exit 2; }
+      CUTOVER_HASH="$2"; shift ;;
+    --maintenance-window)
+      [[ $# -ge 2 ]] || { echo "--maintenance-window 缺少 WINDOW_ID" >&2; exit 2; }
+      CUTOVER_WINDOW="$2"; shift ;;
     -h|--help)  grep '^#' "$0" | grep -v '^#!' | sed 's/^# \{0,1\}//; s/^#$//'; exit 0 ;;
     --*)        echo "未知选项：$1" >&2; exit 2 ;;
     *)          SERVICES+=("$1") ;;
@@ -61,6 +88,71 @@ if [[ $PROD -eq 1 ]]; then
   echo "▶ 模式：生产（仅 docker-compose.yml，端口 8081/55432）"
 else
   echo "▶ 模式：开发（自动合并 docker-compose.override.yml，端口 8081/55432）"
+fi
+
+# --- 021 单次切换只读预检 ---------------------------------------------------
+# 此模式刻意在 pull/build/rm/up 之前退出。它复核静态唯一入口、迁移文件、运行契约、
+# manifest/hash/维护窗口/旧 writer fencing/G-C03 与实时数据库清单，但绝不调用
+# cleanup --execute。真实清理、部署及切后残留/健康核验仍须在批准的维护流程中单独记录。
+if [[ $CUTOVER_PREFLIGHT -eq 1 ]]; then
+  [[ $PROD -eq 1 ]] || {
+    echo "✗ 021 切换预检必须显式使用 --prod。" >&2
+    exit 2
+  }
+  [[ ${#SERVICES[@]} -eq 0 ]] || {
+    echo "✗ 021 单次切换不得只预检部分服务。" >&2
+    exit 2
+  }
+  [[ -n "$CUTOVER_MANIFEST" && -f "$CUTOVER_MANIFEST" ]] || {
+    echo "✗ 缺少可读的 --retirement-manifest。" >&2
+    exit 2
+  }
+  [[ "$CUTOVER_HASH" =~ ^[0-9a-f]{64}$ ]] || {
+    echo "✗ --expected-manifest-sha256 必须是 64 位小写 SHA-256。" >&2
+    exit 2
+  }
+  [[ -n "$CUTOVER_WINDOW" ]] || {
+    echo "✗ 缺少 --maintenance-window。" >&2
+    exit 2
+  }
+  [[ -n "${DOCUMENT_ANALYSIS_CUTOVER_DATABASE_URL:-}" ]] || {
+    echo "✗ 缺少 DOCUMENT_ANALYSIS_CUTOVER_DATABASE_URL；拒绝猜测目标数据库。" >&2
+    exit 2
+  }
+  [[ -x backend/.venv/bin/python ]] || {
+    echo "✗ backend/.venv/bin/python 不可用，无法执行受控预检。" >&2
+    exit 1
+  }
+
+  echo "▶ 静态核验唯一新协议及受审旧共享调用边…"
+  backend/.venv/bin/python scripts/audit_word_recognition_retirement.py --static-only
+
+  echo "▶ 核验 0033 migration 与本地 OpenAPI 唯一入口…"
+  [[ -f backend/alembic/versions/0033_document_analysis_runs.py ]] || {
+    echo "✗ 缺少 0033_document_analysis_runs migration。" >&2
+    exit 1
+  }
+  (
+    cd backend
+    .venv/bin/python - <<'PY'
+from app.main import app
+
+paths = app.openapi()["paths"]
+assert "/api/document-analysis/runs" in paths
+assert "/api/document-analysis/word" not in paths
+PY
+  )
+
+  echo "▶ 只读复核 manifest/hash/维护窗口/writer fencing/G-C03/实时清单…"
+  DATABASE_URL="$DOCUMENT_ANALYSIS_CUTOVER_DATABASE_URL" \
+    backend/.venv/bin/python scripts/cleanup_word_recognition.py \
+      --manifest "$CUTOVER_MANIFEST" \
+      --cutover-preflight \
+      --expected-manifest-sha256 "$CUTOVER_HASH" \
+      --maintenance-window "$CUTOVER_WINDOW"
+
+  echo "✓ 021 切换部署前门禁通过；未清理数据、未构建镜像、未部署。"
+  exit 0
 fi
 
 # --- 可选：拉取基础镜像 -------------------------------------------------------

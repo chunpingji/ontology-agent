@@ -24,7 +24,8 @@ def rerun_job(db, tmp_path, monkeypatch):
     document.save(source)
     job = ExtractionJob(
         source_type="word", source_filename=source.name, document_path=str(source),
-        source_config={"doc_class_iri": "urn:Drug"}, status="reviewing",
+        source_config={"mode": "template_default", "doc_class_iri": "urn:Drug"},
+        status="reviewing",
     )
     db.add(job)
     db.commit()
@@ -89,7 +90,7 @@ async def test_rerun_recovers_stale_annotating_state_after_process_restart(
 
 
 @pytest.mark.asyncio
-async def test_rerun_backfills_historical_job_type_from_uploaded_document(
+async def test_rerun_does_not_backfill_or_revive_historical_word_job(
     db, rerun_job, fake_engine,
 ):
     job, _cache, _checkpoint = rerun_job
@@ -102,13 +103,15 @@ async def test_rerun_backfills_historical_job_type_from_uploaded_document(
     ))
     db.commit()
 
-    await extraction.rerun_annotation(
-        job.id, BackgroundTasks(), db, fake_engine,
-        Identity("analyst", "senior_analyst"),
-    )
+    with pytest.raises(HTTPException) as error:
+        await extraction.rerun_annotation(
+            job.id, BackgroundTasks(), db, fake_engine,
+            Identity("analyst", "senior_analyst"),
+        )
 
     db.refresh(job)
-    assert job.source_config == {"doc_class_iri": class_iri, "doc_ref": document_iri}
+    assert error.value.status_code == 410
+    assert job.source_config is None
 
 
 @pytest.mark.asyncio

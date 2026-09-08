@@ -120,7 +120,11 @@ def test_published_facts_coverage_and_report_keep_original_snapshot_after_confli
     )
     db.add(row)
     db.commit()
-    job.source_config = {"template_id": str(row.id)}
+    job.source_config = {
+        **(job.source_config or {}),
+        "mode": "template_default",
+        "template_id": str(row.id),
+    }
     db.commit()
     endpoint = f"/api/extraction/jobs/{job.id}"
     coverage = client.get(endpoint + "/evidence/coverage", headers=analyst_headers)

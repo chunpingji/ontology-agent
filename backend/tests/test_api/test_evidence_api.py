@@ -28,7 +28,12 @@ def evidence_api_job(db, monkeypatch):
             },
         },
     )
-    job = ExtractionJob(id=uuid.uuid4(), source_type="word", status="completed")
+    job = ExtractionJob(
+        id=uuid.uuid4(),
+        source_type="word",
+        source_config={"mode": "template_default"},
+        status="completed",
+    )
     db.add(job)
     db.commit()
     return job
@@ -63,7 +68,10 @@ def manual_request(name="A", **changes):
 def test_evidence_exposes_source_schema_before_any_assertion_exists(
     client, analyst_headers, db, evidence_api_job
 ):
-    evidence_api_job.source_config = {"doc_class_iri": "urn:test:Drug"}
+    evidence_api_job.source_config = {
+        **(evidence_api_job.source_config or {}),
+        "doc_class_iri": "urn:test:Drug",
+    }
     evidence_api_job.source_filename = "source.docx"
     db.commit()
     response = client.get(

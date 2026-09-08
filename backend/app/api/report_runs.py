@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session
 
 from app.db import get_db
 from app.dependencies import get_current_user, get_ontology_engine, require_role
-from app.models.extraction import AstTemplate
+from app.models.extraction import AstTemplate, ExtractionJob
 from app.models.reporting import (
     ContractRevision,
     ReportArtifact,
@@ -185,6 +185,17 @@ def template_row(db, template_id):
     if row is None:
         raise ReportingError("TEMPLATE_NOT_FOUND", status=404)
     return row
+
+
+def require_source_bindings(db: Session, bindings: dict[str, SourceBinding]) -> None:
+    """Reject retired Word products before a report run can snapshot or render them."""
+    from app.api.extraction import _require_result_capability
+
+    for selected in bindings.values():
+        job = db.get(ExtractionJob, selected.job_id)
+        if job is None:
+            raise ReportingError("SOURCE_NOT_FOUND", status=404)
+        _require_result_capability(job)
 
 
 @router.get("/report-contracts")
@@ -420,6 +431,7 @@ def rule_migration_plan(rule_id: UUID, db: Session = Depends(get_db), identity=D
 @router.post("/report-runs", status_code=201)
 def create_run(req: RunRequest, db: Session = Depends(get_db), identity=Depends(get_current_user),
                engine=Depends(get_ontology_engine)):
+    require_source_bindings(db, req.source_bindings)
     service = model_service(db, engine)
     run, created = service.start(req, identity.username)
     db.commit()
@@ -479,6 +491,7 @@ def preview(req: PreviewRequest, db: Session = Depends(get_db), identity=Depends
             "material_status": "incomplete",
             "business_values": False,
         }
+    require_source_bindings(db, req.source_bindings)
     run, created = service.start(req, identity.username, preview=True)
     db.commit()
     if created or run.execution_status == "pending":

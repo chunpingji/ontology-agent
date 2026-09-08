@@ -1,5 +1,5 @@
 {
-  "version": "2.14",
+  "version": "2.17",
   "children": [
     {
       "type": "frame",
@@ -34,6 +34,7 @@
             "right": 1
           },
           "strokeAlignment": "inner",
+          "strokeLinejoin": "round",
           "layout": "vertical",
           "gap": 16,
           "padding": 8,
@@ -841,6 +842,7 @@
             "bottom": 1
           },
           "strokeAlignment": "inner",
+          "strokeLinejoin": "round",
           "layout": "vertical",
           "children": [
             {
@@ -3874,6 +3876,7 @@
             "bottom": 1
           },
           "strokeAlignment": "inner",
+          "strokeLinejoin": "round",
           "alignItems": "center"
         },
         {
@@ -4092,6 +4095,7 @@
             "bottom": 1
           },
           "strokeAlignment": "inner",
+          "strokeLinejoin": "round",
           "padding": [
             0,
             20
@@ -4289,6 +4293,7 @@
                 "right": 1
               },
               "strokeAlignment": "inner",
+              "strokeLinejoin": "round",
               "layout": "vertical",
               "padding": [
                 12,
@@ -5188,6 +5193,7 @@
                             "bottom": 1
                           },
                           "strokeAlignment": "inner",
+                          "strokeLinejoin": "round",
                           "padding": [
                             16,
                             20
@@ -5716,6 +5722,7 @@
                                 "bottom": 1
                               },
                               "strokeAlignment": "inner",
+                              "strokeLinejoin": "round",
                               "padding": [
                                 16,
                                 20
@@ -6131,6 +6138,7 @@
                                 "bottom": 1
                               },
                               "strokeAlignment": "inner",
+                              "strokeLinejoin": "round",
                               "padding": [
                                 16,
                                 20
@@ -6360,6 +6368,7 @@
             "bottom": 1
           },
           "strokeAlignment": "inner",
+          "strokeLinejoin": "round",
           "padding": [
             0,
             20
@@ -6557,6 +6566,7 @@
                 "right": 1
               },
               "strokeAlignment": "inner",
+              "strokeLinejoin": "round",
               "layout": "vertical",
               "padding": [
                 12,
@@ -7135,6 +7145,7 @@
                         "right": 1
                       },
                       "strokeAlignment": "inner",
+                      "strokeLinejoin": "round",
                       "layout": "vertical",
                       "gap": 4,
                       "padding": [
@@ -8261,6 +8272,7 @@
             "bottom": 1
           },
           "strokeAlignment": "inner",
+          "strokeLinejoin": "round",
           "padding": [
             0,
             20
@@ -8458,6 +8470,7 @@
                 "right": 1
               },
               "strokeAlignment": "inner",
+              "strokeLinejoin": "round",
               "layout": "vertical",
               "padding": [
                 12,
@@ -9045,6 +9058,7 @@
                         "right": 1
                       },
                       "strokeAlignment": "inner",
+                      "strokeLinejoin": "round",
                       "layout": "vertical",
                       "children": [
                         {
@@ -9057,6 +9071,7 @@
                             "bottom": 1
                           },
                           "strokeAlignment": "inner",
+                          "strokeLinejoin": "round",
                           "padding": [
                             12,
                             16
@@ -9709,6 +9724,7 @@
                             "bottom": 1
                           },
                           "strokeAlignment": "inner",
+                          "strokeLinejoin": "round",
                           "padding": [
                             12,
                             20
@@ -9845,6 +9861,7 @@
                                 "bottom": 1
                               },
                               "strokeAlignment": "inner",
+                              "strokeLinejoin": "round",
                               "padding": [
                                 10,
                                 20
@@ -9930,6 +9947,7 @@
                                     "bottom": 1
                                   },
                                   "strokeAlignment": "inner",
+                                  "strokeLinejoin": "round",
                                   "padding": [
                                     10,
                                     20
@@ -10064,6 +10082,7 @@
                                     "bottom": 1
                                   },
                                   "strokeAlignment": "inner",
+                                  "strokeLinejoin": "round",
                                   "padding": [
                                     10,
                                     20
@@ -10198,6 +10217,7 @@
                                     "bottom": 1
                                   },
                                   "strokeAlignment": "inner",
+                                  "strokeLinejoin": "round",
                                   "padding": [
                                     10,
                                     20
@@ -10332,6 +10352,7 @@
                                     "bottom": 1
                                   },
                                   "strokeAlignment": "inner",
+                                  "strokeLinejoin": "round",
                                   "padding": [
                                     10,
                                     20
@@ -10466,6 +10487,7 @@
                                     "bottom": 1
                                   },
                                   "strokeAlignment": "inner",
+                                  "strokeLinejoin": "round",
                                   "padding": [
                                     10,
                                     20
@@ -10592,6 +10614,7 @@
                                     "bottom": 1
                                   },
                                   "strokeAlignment": "inner",
+                                  "strokeLinejoin": "round",
                                   "padding": [
                                     10,
                                     20
@@ -10746,6 +10769,7 @@
             "bottom": 1
           },
           "strokeAlignment": "inner",
+          "strokeLinejoin": "round",
           "padding": [
             0,
             20
@@ -10943,6 +10967,7 @@
                 "right": 1
               },
               "strokeAlignment": "inner",
+              "strokeLinejoin": "round",
               "layout": "vertical",
               "padding": [
                 12,
@@ -11423,6 +11448,7 @@
                         "right": 1
                       },
                       "strokeAlignment": "inner",
+                      "strokeLinejoin": "round",
                       "layout": "vertical",
                       "children": [
                         {
@@ -11435,6 +11461,7 @@
                             "bottom": 1
                           },
                           "strokeAlignment": "inner",
+                          "strokeLinejoin": "round",
                           "padding": [
                             12,
                             16
@@ -12087,6 +12114,7 @@
                             "bottom": 1
                           },
                           "strokeAlignment": "inner",
+                          "strokeLinejoin": "round",
                           "padding": [
                             12,
                             20
@@ -12213,6 +12241,7 @@
                             "bottom": 1
                           },
                           "strokeAlignment": "inner",
+                          "strokeLinejoin": "round",
                           "layout": "vertical",
                           "gap": 10,
                           "padding": [
@@ -12292,6 +12321,7 @@
                                 "bottom": 1
                               },
                               "strokeAlignment": "inner",
+                              "strokeLinejoin": "round",
                               "gap": 12,
                               "padding": [
                                 12,
@@ -12785,6 +12815,7 @@
                                 "bottom": 1
                               },
                               "strokeAlignment": "inner",
+                              "strokeLinejoin": "round",
                               "gap": 12,
                               "padding": [
                                 12,
@@ -12987,6 +13018,7 @@
                                 "bottom": 1
                               },
                               "strokeAlignment": "inner",
+                              "strokeLinejoin": "round",
                               "gap": 12,
                               "padding": [
                                 12,
@@ -13189,6 +13221,7 @@
                                 "bottom": 1
                               },
                               "strokeAlignment": "inner",
+                              "strokeLinejoin": "round",
                               "gap": 12,
                               "padding": [
                                 12,
@@ -13417,6 +13450,7 @@
             "bottom": 1
           },
           "strokeAlignment": "inner",
+          "strokeLinejoin": "round",
           "padding": [
             0,
             20
@@ -13614,6 +13648,7 @@
                 "right": 1
               },
               "strokeAlignment": "inner",
+              "strokeLinejoin": "round",
               "layout": "vertical",
               "padding": [
                 12,
@@ -14361,6 +14396,7 @@
                             "bottom": 1
                           },
                           "strokeAlignment": "inner",
+                          "strokeLinejoin": "round",
                           "padding": [
                             8,
                             16
@@ -14572,6 +14608,7 @@
                                 "bottom": 1
                               },
                               "strokeAlignment": "inner",
+                              "strokeLinejoin": "round",
                               "padding": [
                                 10,
                                 16
@@ -14651,6 +14688,7 @@
                                     "bottom": 1
                                   },
                                   "strokeAlignment": "inner",
+                                  "strokeLinejoin": "round",
                                   "gap": 10,
                                   "padding": [
                                     8,
@@ -14742,6 +14780,7 @@
                                     "bottom": 1
                                   },
                                   "strokeAlignment": "inner",
+                                  "strokeLinejoin": "round",
                                   "gap": 10,
                                   "padding": [
                                     8,
@@ -14833,6 +14872,7 @@
                                     "bottom": 1
                                   },
                                   "strokeAlignment": "inner",
+                                  "strokeLinejoin": "round",
                                   "gap": 10,
                                   "padding": [
                                     8,
@@ -14924,6 +14964,7 @@
                                     "bottom": 1
                                   },
                                   "strokeAlignment": "inner",
+                                  "strokeLinejoin": "round",
                                   "gap": 10,
                                   "padding": [
                                     8,
@@ -15015,6 +15056,7 @@
                                     "bottom": 1
                                   },
                                   "strokeAlignment": "inner",
+                                  "strokeLinejoin": "round",
                                   "gap": 10,
                                   "padding": [
                                     8,
@@ -15106,6 +15148,7 @@
                                     "bottom": 1
                                   },
                                   "strokeAlignment": "inner",
+                                  "strokeLinejoin": "round",
                                   "gap": 10,
                                   "padding": [
                                     8,
@@ -15197,6 +15240,7 @@
                                     "bottom": 1
                                   },
                                   "strokeAlignment": "inner",
+                                  "strokeLinejoin": "round",
                                   "gap": 10,
                                   "padding": [
                                     8,
@@ -15288,6 +15332,7 @@
                                     "bottom": 1
                                   },
                                   "strokeAlignment": "inner",
+                                  "strokeLinejoin": "round",
                                   "gap": 10,
                                   "padding": [
                                     8,
@@ -15400,6 +15445,7 @@
                                 "bottom": 1
                               },
                               "strokeAlignment": "inner",
+                              "strokeLinejoin": "round",
                               "padding": [
                                 10,
                                 16
@@ -15478,6 +15524,7 @@
                                     "bottom": 1
                                   },
                                   "strokeAlignment": "inner",
+                                  "strokeLinejoin": "round",
                                   "gap": 10,
                                   "padding": [
                                     10,
@@ -15584,6 +15631,7 @@
                                     "bottom": 1
                                   },
                                   "strokeAlignment": "inner",
+                                  "strokeLinejoin": "round",
                                   "gap": 10,
                                   "padding": [
                                     10,
@@ -15690,6 +15738,7 @@
                                     "bottom": 1
                                   },
                                   "strokeAlignment": "inner",
+                                  "strokeLinejoin": "round",
                                   "gap": 10,
                                   "padding": [
                                     10,
@@ -15824,6 +15873,7 @@
             "bottom": 1
           },
           "strokeAlignment": "inner",
+          "strokeLinejoin": "round",
           "padding": [
             0,
             20
@@ -16021,6 +16071,7 @@
                 "right": 1
               },
               "strokeAlignment": "inner",
+              "strokeLinejoin": "round",
               "layout": "vertical",
               "padding": [
                 12,
@@ -16455,6 +16506,7 @@
                     "right": 1
                   },
                   "strokeAlignment": "inner",
+                  "strokeLinejoin": "round",
                   "layout": "vertical",
                   "children": [
                     {
@@ -16467,6 +16519,7 @@
                         "bottom": 1
                       },
                       "strokeAlignment": "inner",
+                      "strokeLinejoin": "round",
                       "layout": "vertical",
                       "gap": 12,
                       "padding": [
@@ -17046,6 +17099,7 @@
                     "right": 1
                   },
                   "strokeAlignment": "inner",
+                  "strokeLinejoin": "round",
                   "layout": "vertical",
                   "children": [
                     {
@@ -17058,6 +17112,7 @@
                         "bottom": 1
                       },
                       "strokeAlignment": "inner",
+                      "strokeLinejoin": "round",
                       "padding": [
                         12,
                         16
@@ -17129,6 +17184,7 @@
                         "bottom": 1
                       },
                       "strokeAlignment": "inner",
+                      "strokeLinejoin": "round",
                       "padding": [
                         8,
                         12
@@ -17192,6 +17248,7 @@
                             "bottom": 1
                           },
                           "strokeAlignment": "inner",
+                          "strokeLinejoin": "round",
                           "gap": 10,
                           "padding": [
                             12,
@@ -17364,6 +17421,7 @@
                             "bottom": 1
                           },
                           "strokeAlignment": "inner",
+                          "strokeLinejoin": "round",
                           "gap": 10,
                           "padding": [
                             12,
@@ -17513,6 +17571,7 @@
                             "bottom": 1
                           },
                           "strokeAlignment": "inner",
+                          "strokeLinejoin": "round",
                           "gap": 10,
                           "padding": [
                             12,
@@ -17662,6 +17721,7 @@
                             "bottom": 1
                           },
                           "strokeAlignment": "inner",
+                          "strokeLinejoin": "round",
                           "gap": 10,
                           "padding": [
                             12,
@@ -17825,6 +17885,7 @@
                         "bottom": 1
                       },
                       "strokeAlignment": "inner",
+                      "strokeLinejoin": "round",
                       "padding": [
                         12,
                         20
@@ -18046,6 +18107,7 @@
                                     "bottom": 1
                                   },
                                   "strokeAlignment": "inner",
+                                  "strokeLinejoin": "round",
                                   "padding": [
                                     8,
                                     12
@@ -18086,6 +18148,7 @@
                                     "bottom": 1
                                   },
                                   "strokeAlignment": "inner",
+                                  "strokeLinejoin": "round",
                                   "padding": [
                                     8,
                                     12
@@ -18126,6 +18189,7 @@
                                     "bottom": 1
                                   },
                                   "strokeAlignment": "inner",
+                                  "strokeLinejoin": "round",
                                   "padding": [
                                     8,
                                     12
@@ -18909,6 +18973,7 @@
             "bottom": 1
           },
           "strokeAlignment": "inner",
+          "strokeLinejoin": "round",
           "padding": [
             0,
             20
@@ -19115,6 +19180,7 @@
                 "right": 1
               },
               "strokeAlignment": "inner",
+              "strokeLinejoin": "round",
               "layout": "vertical",
               "padding": [
                 12,
@@ -19996,6 +20062,7 @@
                             "bottom": 1
                           },
                           "strokeAlignment": "inner",
+                          "strokeLinejoin": "round",
                           "padding": [
                             16,
                             20
@@ -20524,6 +20591,7 @@
                                 "bottom": 1
                               },
                               "strokeAlignment": "inner",
+                              "strokeLinejoin": "round",
                               "padding": [
                                 16,
                                 20
@@ -20939,6 +21007,7 @@
                                 "bottom": 1
                               },
                               "strokeAlignment": "inner",
+                              "strokeLinejoin": "round",
                               "padding": [
                                 16,
                                 20
@@ -21168,6 +21237,7 @@
             "bottom": 1
           },
           "strokeAlignment": "inner",
+          "strokeLinejoin": "round",
           "padding": [
             0,
             20
@@ -21365,6 +21435,7 @@
                 "right": 1
               },
               "strokeAlignment": "inner",
+              "strokeLinejoin": "round",
               "layout": "vertical",
               "padding": [
                 12,
@@ -22217,6 +22288,7 @@
                             "bottom": 1
                           },
                           "strokeAlignment": "inner",
+                          "strokeLinejoin": "round",
                           "padding": [
                             12,
                             14
@@ -23152,6 +23224,7 @@
                             "bottom": 1
                           },
                           "strokeAlignment": "inner",
+                          "strokeLinejoin": "round",
                           "children": [
                             {
                               "type": "frame",
@@ -23168,6 +23241,7 @@
                                 "left": 1
                               },
                               "strokeAlignment": "inner",
+                              "strokeLinejoin": "round",
                               "padding": [
                                 10,
                                 16
@@ -23737,6 +23811,7 @@
                             "top": 1
                           },
                           "strokeAlignment": "inner",
+                          "strokeLinejoin": "round",
                           "padding": [
                             8,
                             16
@@ -23942,6 +24017,7 @@
                             "bottom": 1
                           },
                           "strokeAlignment": "inner",
+                          "strokeLinejoin": "round",
                           "padding": [
                             10,
                             14
@@ -24946,6 +25022,7 @@
                 "bottom": 1
               },
               "strokeAlignment": "inner",
+              "strokeLinejoin": "round",
               "padding": [
                 16,
                 24
@@ -25002,6 +25079,7 @@
                     "bottom": 1
                   },
                   "strokeAlignment": "inner",
+                  "strokeLinejoin": "round",
                   "children": [
                     {
                       "type": "frame",
@@ -25155,6 +25233,7 @@
                     "bottom": 1
                   },
                   "strokeAlignment": "inner",
+                  "strokeLinejoin": "round",
                   "children": [
                     {
                       "type": "frame",
@@ -25330,6 +25409,7 @@
                     "bottom": 1
                   },
                   "strokeAlignment": "inner",
+                  "strokeLinejoin": "round",
                   "children": [
                     {
                       "type": "frame",
@@ -25505,6 +25585,7 @@
                     "bottom": 1
                   },
                   "strokeAlignment": "inner",
+                  "strokeLinejoin": "round",
                   "children": [
                     {
                       "type": "frame",
@@ -25700,6 +25781,7 @@
             "bottom": 1
           },
           "strokeAlignment": "inner",
+          "strokeLinejoin": "round",
           "padding": [
             0,
             20
@@ -25895,6 +25977,7 @@
                 "right": 1
               },
               "strokeAlignment": "inner",
+              "strokeLinejoin": "round",
               "layout": "vertical",
               "padding": [
                 12,
@@ -26404,6 +26487,7 @@
                         "right": 1
                       },
                       "strokeAlignment": "inner",
+                      "strokeLinejoin": "round",
                       "layout": "vertical",
                       "gap": 16,
                       "padding": [
@@ -26769,6 +26853,7 @@
                             "bottom": 1
                           },
                           "strokeAlignment": "inner",
+                          "strokeLinejoin": "round",
                           "gap": 8,
                           "padding": [
                             8,
@@ -28372,6 +28457,7 @@
             "bottom": 1
           },
           "strokeAlignment": "inner",
+          "strokeLinejoin": "round",
           "padding": [
             0,
             20
@@ -28569,6 +28655,7 @@
                 "right": 1
               },
               "strokeAlignment": "inner",
+              "strokeLinejoin": "round",
               "layout": "vertical",
               "padding": [
                 12,
@@ -29081,6 +29168,7 @@
                         "right": 1
                       },
                       "strokeAlignment": "inner",
+                      "strokeLinejoin": "round",
                       "layout": "vertical",
                       "children": [
                         {
@@ -29093,6 +29181,7 @@
                             "bottom": 1
                           },
                           "strokeAlignment": "inner",
+                          "strokeLinejoin": "round",
                           "padding": [
                             8,
                             16
@@ -29632,6 +29721,7 @@
                             "bottom": 1
                           },
                           "strokeAlignment": "inner",
+                          "strokeLinejoin": "round",
                           "gap": 8,
                           "padding": [
                             8,
@@ -33218,6 +33308,7 @@
             "bottom": 1
           },
           "strokeAlignment": "inner",
+          "strokeLinejoin": "round",
           "padding": [
             0,
             20
@@ -33410,6 +33501,7 @@
                 "right": 1
               },
               "strokeAlignment": "inner",
+              "strokeLinejoin": "round",
               "layout": "vertical",
               "padding": [
                 12,
@@ -33919,6 +34011,7 @@
                         "right": 1
                       },
                       "strokeAlignment": "inner",
+                      "strokeLinejoin": "round",
                       "layout": "vertical",
                       "children": [
                         {
@@ -33931,6 +34024,7 @@
                             "bottom": 1
                           },
                           "strokeAlignment": "inner",
+                          "strokeLinejoin": "round",
                           "padding": [
                             8,
                             16
@@ -34173,6 +34267,7 @@
                                         "left": 3
                                       },
                                       "strokeAlignment": "inner",
+                                      "strokeLinejoin": "round",
                                       "gap": 10,
                                       "padding": [
                                         10,
@@ -34663,6 +34758,7 @@
                             "bottom": 1
                           },
                           "strokeAlignment": "inner",
+                          "strokeLinejoin": "round",
                           "padding": [
                             10,
                             14
@@ -34729,6 +34825,7 @@
             "bottom": 1
           },
           "strokeAlignment": "inner",
+          "strokeLinejoin": "round",
           "padding": [
             0,
             20
@@ -34921,6 +35018,7 @@
                 "right": 1
               },
               "strokeAlignment": "inner",
+              "strokeLinejoin": "round",
               "layout": "vertical",
               "padding": [
                 12,
@@ -35430,6 +35528,7 @@
                         "right": 1
                       },
                       "strokeAlignment": "inner",
+                      "strokeLinejoin": "round",
                       "layout": "vertical",
                       "children": [
                         {
@@ -35442,6 +35541,7 @@
                             "bottom": 1
                           },
                           "strokeAlignment": "inner",
+                          "strokeLinejoin": "round",
                           "padding": [
                             8,
                             16
@@ -35905,6 +36005,7 @@
                                         "top": 1
                                       },
                                       "strokeAlignment": "inner",
+                                      "strokeLinejoin": "round",
                                       "children": [
                                         {
                                           "type": "frame",
@@ -35985,6 +36086,7 @@
                                         "top": 1
                                       },
                                       "strokeAlignment": "inner",
+                                      "strokeLinejoin": "round",
                                       "children": [
                                         {
                                           "type": "frame",
@@ -36065,6 +36167,7 @@
                                         "top": 1
                                       },
                                       "strokeAlignment": "inner",
+                                      "strokeLinejoin": "round",
                                       "children": [
                                         {
                                           "type": "frame",
@@ -36145,6 +36248,7 @@
                                         "top": 1
                                       },
                                       "strokeAlignment": "inner",
+                                      "strokeLinejoin": "round",
                                       "children": [
                                         {
                                           "type": "frame",
@@ -36391,6 +36495,7 @@
                                         "top": 1
                                       },
                                       "strokeAlignment": "inner",
+                                      "strokeLinejoin": "round",
                                       "children": [
                                         {
                                           "type": "frame",
@@ -36471,6 +36576,7 @@
                                         "top": 1
                                       },
                                       "strokeAlignment": "inner",
+                                      "strokeLinejoin": "round",
                                       "children": [
                                         {
                                           "type": "frame",
@@ -36551,6 +36657,7 @@
                                         "top": 1
                                       },
                                       "strokeAlignment": "inner",
+                                      "strokeLinejoin": "round",
                                       "children": [
                                         {
                                           "type": "frame",
@@ -36631,6 +36738,7 @@
                                         "top": 1
                                       },
                                       "strokeAlignment": "inner",
+                                      "strokeLinejoin": "round",
                                       "children": [
                                         {
                                           "type": "frame",
@@ -36711,6 +36819,7 @@
                                         "top": 1
                                       },
                                       "strokeAlignment": "inner",
+                                      "strokeLinejoin": "round",
                                       "children": [
                                         {
                                           "type": "frame",
@@ -36913,6 +37022,7 @@
                             "bottom": 1
                           },
                           "strokeAlignment": "inner",
+                          "strokeLinejoin": "round",
                           "gap": 8,
                           "padding": [
                             8,
@@ -38627,6 +38737,7 @@
             "bottom": 1
           },
           "strokeAlignment": "inner",
+          "strokeLinejoin": "round",
           "padding": [
             0,
             20
@@ -38819,6 +38930,7 @@
                 "right": 1
               },
               "strokeAlignment": "inner",
+              "strokeLinejoin": "round",
               "layout": "vertical",
               "padding": [
                 12,
@@ -39969,6 +40081,7 @@
                             "bottom": 1
                           },
                           "strokeAlignment": "inner",
+                          "strokeLinejoin": "round",
                           "padding": [
                             16,
                             20
@@ -41260,6 +41373,7 @@
             "bottom": 1
           },
           "strokeAlignment": "inner",
+          "strokeLinejoin": "round",
           "padding": [
             0,
             20
@@ -41452,6 +41566,7 @@
                 "right": 1
               },
               "strokeAlignment": "inner",
+              "strokeLinejoin": "round",
               "layout": "vertical",
               "padding": [
                 12,
@@ -41961,6 +42076,7 @@
                         "right": 1
                       },
                       "strokeAlignment": "inner",
+                      "strokeLinejoin": "round",
                       "layout": "vertical",
                       "children": [
                         {
@@ -41973,6 +42089,7 @@
                             "bottom": 1
                           },
                           "strokeAlignment": "inner",
+                          "strokeLinejoin": "round",
                           "padding": [
                             8,
                             16
@@ -42819,6 +42936,7 @@
                                             "bottom": 1
                                           },
                                           "strokeAlignment": "inner",
+                                          "strokeLinejoin": "round",
                                           "gap": 12,
                                           "padding": [
                                             10,
@@ -42954,6 +43072,7 @@
                                             "bottom": 1
                                           },
                                           "strokeAlignment": "inner",
+                                          "strokeLinejoin": "round",
                                           "gap": 12,
                                           "padding": [
                                             10,
@@ -43559,6 +43678,30 @@
           ]
         }
       ]
+    },
+    {
+      "type": "frame",
+      "id": "p0hyOk",
+      "x": 638,
+      "y": 6427,
+      "name": "Mock-GxP-工艺",
+      "clip": true,
+      "width": 1093,
+      "height": 678,
+      "fill": "#FFFFFF",
+      "layout": "none"
+    },
+    {
+      "type": "frame",
+      "id": "K7KuWx",
+      "x": 660,
+      "y": 7326,
+      "name": "Mock-GxP-检测",
+      "clip": true,
+      "width": 1114,
+      "height": 855,
+      "fill": "#FFFFFF",
+      "layout": "none"
     }
   ],
   "themes": {

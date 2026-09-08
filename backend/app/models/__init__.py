@@ -4,6 +4,21 @@ Alembic autogenerate and `Base.metadata.create_all` both rely on every model
 module being imported here.
 """
 
+from app.models.document_analysis import (
+    DocumentAnalysisArtifact,
+    DocumentAnalysisControlOperation,
+    DocumentAnalysisExecution,
+    DocumentAnalysisRun,
+    DocumentAnalysisTombstone,
+    DocumentRecognitionEvent,
+    DocumentRecognitionEventBatch,
+    DocumentRunArtifact,
+    DocumentRunArtifactHead,
+    DocumentRunCandidate,
+    DocumentRunCandidateHead,
+    DocumentVerificationProof,
+    DocumentVerificationProofHead,
+)
 from app.models.entity_shadow import EntityShadow
 from app.models.evidence import *  # noqa: F401,F403
 from app.models.extraction import *  # noqa: F401,F403
@@ -36,6 +51,19 @@ from app.models.reporting import *  # noqa: F401,F403
 
 __all__ = [
     "EntityShadow",
+    "DocumentAnalysisArtifact",
+    "DocumentAnalysisControlOperation",
+    "DocumentAnalysisExecution",
+    "DocumentAnalysisRun",
+    "DocumentAnalysisTombstone",
+    "DocumentRecognitionEvent",
+    "DocumentRecognitionEventBatch",
+    "DocumentRunArtifact",
+    "DocumentRunArtifactHead",
+    "DocumentRunCandidate",
+    "DocumentRunCandidateHead",
+    "DocumentVerificationProof",
+    "DocumentVerificationProofHead",
     "PdeConflictDecision",
     "AppRole",
     "AppUser",

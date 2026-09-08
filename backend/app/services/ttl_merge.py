@@ -461,10 +461,42 @@ def surgical_merge(base: Graph, managed: Graph, managed_subjects: set[URIRef]) -
             if isinstance(o, BNode):
                 reclaimed |= _bnode_closure(base, o)
 
+    # The metadata model currently stores one named domain/range class and cannot
+    # represent an anonymous owl:unionOf expression. Preserve such authoritative
+    # constraints when the managed projection has no replacement. If a named (or
+    # future anonymous) replacement is present, reclaim the old list expression so
+    # it cannot survive as an orphan or combine with the replacement as an OWL
+    # intersection. Domain and range are considered independently.
+    constraint_predicates = (RDFS.domain, RDFS.range)
+    replacements = {
+        (s, predicate): any(managed.objects(s, predicate))
+        for s in managed_subjects
+        for predicate in constraint_predicates
+    }
+    preserved_constraint_closure: set = set()
+    replaced_constraint_closure: set = set()
+    for s in managed_subjects:
+        for predicate in constraint_predicates:
+            for o in base.objects(s, predicate):
+                if not isinstance(o, BNode):
+                    continue
+                closure = _bnode_closure(base, o)
+                if replacements[(s, predicate)]:
+                    replaced_constraint_closure |= closure
+                else:
+                    preserved_constraint_closure |= closure
+    reclaimed |= replaced_constraint_closure
+    reclaimed -= preserved_constraint_closure
+
     for triple in base:
         s, p, o = triple
         if s in managed_subjects:
-            if p in MANAGED_PREDICATES:
+            preserve_anonymous_constraint = (
+                p in constraint_predicates
+                and isinstance(o, BNode)
+                and not replacements[(s, p)]
+            )
+            if p in MANAGED_PREDICATES and not preserve_anonymous_constraint:
                 continue  # (1) predicate-level — re-emitted from metadata
             if p == OWL.equivalentClass and isinstance(o, BNode):
                 continue  # (2) object-shape-aware — drop only BNode class exprs

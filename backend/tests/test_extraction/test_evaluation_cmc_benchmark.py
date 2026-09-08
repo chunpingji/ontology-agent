@@ -19,7 +19,7 @@ def test_focus_path_cli_preserves_order_and_requires_quality_mode():
     ])
     assert args.focus_path == ["urn:describes", "urn:hasAPI"]
     args.mode = "baseline"
-    with pytest.raises(ValueError, match="focus_path_requires_quality_guided_summary"):
+    with pytest.raises(ValueError, match="focus_path_requires_quality_guided_mode"):
         cmc_benchmark.run(args)  # Must reject before reading/creating any artifacts.
 
 

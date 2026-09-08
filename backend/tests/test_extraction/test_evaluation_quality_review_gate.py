@@ -6,7 +6,9 @@ Only model responses are fixtures; execution and atomic citation replay are real
 import json
 from copy import deepcopy
 
-from app.evaluation.quality_guided_variant import build_quality_guided_variant
+from app.evaluation.legacy_quality_guided_variant import (
+    build_legacy_quality_guided_variant as build_quality_guided_variant,
+)
 from app.schemas.evidence import TaskBudget
 from app.services.extraction.extraction_tasks import GenericExtractionRunner
 from tests.test_extraction import test_evaluation_cmc_product_api_path as path_fixture

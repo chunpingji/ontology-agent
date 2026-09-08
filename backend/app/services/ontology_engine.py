@@ -757,9 +757,14 @@ class OntologyEngine:
                     domain_label = self._get_label(domain_cls) or domain_cls.name
                     for prop in _obj_props_for(domain_cls):
                         pred_label = self._get_label(prop) or prop.name
-                        for rng in prop.range:
-                            rng_iri = getattr(rng, "iri", None)
-                            if not rng_iri:
+                        range_iris = {
+                            iri
+                            for expression in prop.range
+                            for iri in self._range_class_iris(expression)
+                        }
+                        for rng_iri in sorted(range_iris):
+                            rng = self._world.search_one(iri=rng_iri)
+                            if rng is None or not isinstance(rng, owlready2.ThingClass):
                                 continue
                             edge_key = (domain_iri, prop.iri, rng_iri)
                             if edge_key in visited_edges:

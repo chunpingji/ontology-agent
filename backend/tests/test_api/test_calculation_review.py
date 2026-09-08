@@ -15,7 +15,12 @@ from tests.test_reporting.test_calculation_pipeline import source_case
 
 
 def seed(db, **kwargs):
-    job = ExtractionJob(id=uuid4(), source_type="word", status="completed", source_config={})
+    job = ExtractionJob(
+        id=uuid4(),
+        source_type="word",
+        status="completed",
+        source_config={"mode": "template_default"},
+    )
     db.add(job)
     db.flush()
     db.add(EvidenceJobState(job_id=job.id, revision=0, extraction_run={"completion": "complete"}))
@@ -108,7 +113,10 @@ def test_decision_refreshes_coverage_and_frozen_prior_report_stays_unchanged(
     )
     db.add(template)
     db.flush()
-    job.source_config = {"template_id": str(template.id)}
+    job.source_config = {
+        **(job.source_config or {}),
+        "template_id": str(template.id),
+    }
     db.commit()
     monkeypatch.setattr("app.services.reporting.report_run_service.ARTIFACT_ROOT", tmp_path)
     monkeypatch.setattr(

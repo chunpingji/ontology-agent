@@ -1,67 +1,58 @@
 # CMCReport 文档图谱实测环境
 
-## 质量优先实验（新增）
+## 活动 ontology-guided 质量评测
 
-`quality_guided_summary` 使用当前主体的直接本体菜单逐批审阅逻辑记录；每条记录完成对象发现和关系验证后，再展开已验证对象。范围外记录必须通过生产独立绑定和 `verify_reference`，不能由摘要或同名自动授权。表格引用逐单元原子回放；可靠身份归并后重写版本化端点和依赖，晚到竞争主体会触发保守撤销。
+`quality_guided`（CLI 默认）和 `quality_guided_summary` 现在都是
+[quality_guided_variant.py](quality_guided_variant.py) 的薄适配器，直接调用线上同一个
+`OntologyGuidedExecutor`、类型化契约、两阶段检索、证明门与投影。评测模块只增加运行身份、调用耗时和制品封装，不实现第二套识别算法，也不读取评分参考。`quality_guided` 使用冻结结构，`quality_guided_summary` 额外使用同一 preparation 内已冻结的摘要；标题和摘要仍只影响检索排序，不能成为事实证明。
 
-该模式不以性能收益验收。新建输入/代码快照后，使用以下方式运行；省略 `--deadline-seconds` 和 `--pause-after`，仍保留单请求安全超时和总任务上限。不要把旧 600 秒预算实验与此模式的全程运行作速度比。
+活动模式必须通过当前 `prepare` 新建输入快照。manifest v2 额外保存
+`ontology_snapshot.json`、语义哈希和文件哈希；旧 preparation 或 `fork_experiment` 没有该制品时会失败关闭，不能静默从实时本体重建。以下示例省略软截止，让完整覆盖由共享核心和任务上限决定：
 
 ```bash
-export CMC_EVAL_IMAGE=sha256:cda2fd0551b14071dccba56c19888315e96b7ce7e04dd9610434eb57ba7f6c15
-CMC_QUALITY_DIR=/app/data/evaluations/cmc-quality-example
+CMC_QUALITY_DIR=/app/data/evaluations/cmc-ontology-guided-example
 
-docker compose -f docker-compose.yml -f backend/app/evaluation/compose.yaml \
-  run --rm --no-deps --entrypoint python -T backend \
-  -m app.evaluation.fork_experiment \
-  --source /app/data/evaluations/cmc-root-guided-20260908-03 \
+python -m app.evaluation.cmc_benchmark prepare \
+  --document-ref upload-23c872fb-3ab1-41de-a705-dd4b162dfa09 \
   --output "$CMC_QUALITY_DIR"
 
-docker compose -f docker-compose.yml -f backend/app/evaluation/compose.yaml \
-  run --rm --no-deps --entrypoint python -T \
-  -w "$CMC_QUALITY_DIR" -e "PYTHONPATH=$CMC_QUALITY_DIR/runtime" backend \
-  -m app.evaluation.cmc_benchmark run \
-  --prepared "$CMC_QUALITY_DIR" --output "$CMC_QUALITY_DIR/quality-01" \
+python -m app.evaluation.cmc_benchmark summarize \
+  --prepared "$CMC_QUALITY_DIR" --timeout 600
+
+python -m app.evaluation.cmc_benchmark run --prepared "$CMC_QUALITY_DIR" \
+  --output "$CMC_QUALITY_DIR/quality-01" \
   --mode quality_guided_summary --timeout 600 --timeout-retries 0
 ```
 
-本模式的暂停在逻辑记录边界进行，一条记录的发现与绑定不会被软截止拆开。检查 `plan.json` 的 `coverage/routes/instance_merges/invalidations`，以及 checkpoint 中的未完成队列；`route_negative_not_extracted` 表示路由筛除、并未穷尽事实抽取，不等于原文没有事实。即便已选中记录都处理完，也不能据此宣称全文图谱完整。
+每个活动结果保存 `run.json`（版本化公共图、metadata、本体快照、coverage 和事件）、
+`result.json`（`ontology-guided-evaluation-manifest-v1`）、`events.json`、
+`retrieval-plans.json` 与 `calls.jsonl`。manifest 明示 `legacy_runner_used=false`，冻结输入/输出哈希、模型身份、scope、执行限制和完成度；参考答案始终为 `reference_is_recognition_input=false`。活动模式当前不接受旧 process-local checkpoint 恢复；软暂停结果必须保留并以新的 run ID/目录重跑，不能冒充完整覆盖。
 
-评分继续使用下文的 `score` 命令与同一冻结参考，不给模型提供参考答案。已知 CMCReport 根排除在主抽取评分外；引用可回放、生产语义验证通过、独立参考匹配须分别报告。
+`--focus-path` 只允许活动 quality 模式或显式 legacy 模式。公共 executor 按 hop 只调度路径中的正式关系，同时保留已到达主体的直接属性；任一步不在冻结 local menu 时失败关闭。未调度关系属于 scope 外，不能据焦点评测声称全文完整。
 
-当前工作区质量实现为 runner v5.2 / atomic-citations v4：模型引用仅允许 `evidence_id` 与可选精确 `text`，模型坐标与自由 `context` 被 schema 和解码器共同拒绝；程序负责唯一定位。路由表格按物理单元格、多段原文、实际列头和合并行列配对。标题/摘要及检索排序均不授予事实权限。
-
-v5.1 另修复恢复 checkpoint 时的审核门禁：上游边即使 validation=passed，只要 review=rejected，也不能继续驱动下游调用；同时检查路径方向、根、当前端点和依赖版本。冻结 08 实际执行 v5，不包含此后续修复；该实验是新运行、候选审核状态保持 pending，两者的验证结论不得混写。
-
-08 已在确认身份验证状态丢失后安全软暂停：第一跳通过，识别到独立 API，但 API 归属与产品属性未通过 reference，完整链路尚未验证。工作区模型上下文现为 `model-context-v6-verified-identity`，把类型/身份验证状态保留到模型投影，未支持的身份键只留原始审计和初次实体类型验证，不作为下游可靠身份。runner v5.2 同时修复记录路由的独立提示出口，并将身份验证状态纳入路由缓存键。冻结 08 不含这些修复，不能用工作区代码直接恢复或声称修复已在该真实实验中生效。全部原始输出、剩余队列和独立评分见质量报告第 6 节。
-
-新增 `--focus-path` 用于验证正式本体内的一条递归关系路径。例如在上述 run 命令中追加：
-
-```text
---focus-path https://ontology.pharma-gmp.cn/slpra/drug-development/describes https://ontology.pharma-gmp.cn/slpra/drug/hasActiveIngredient
-```
-
-该路径已经由现有本体支持，不需要新增 CMCReport→API 直连或扩大 DrugProduct 定义。焦点关系使用 `staged_retrieval`，第一阶段按局部 range 类型及其字段线索召回最多三个高相关章节，第二阶段保留所有其余非标题记录；各阶段按章节轮转，首个类型/关系拒绝不会终止后续召回。相邻同章节完整段落字段块只加入 binding 上下文，不能冒充新事实目标。关系候选与产品属性任务各处理一个后轮转，通过的关系立即展开对象。
-
-焦点实验只调度所给关系路径及已到达主体的直接属性，不覆盖其他 CMCReport 根关系。输入身份包含焦点路径，不能以不同路径恢复 checkpoint。阶段计划是检索清单，实际进度以 coverage/checkpoint 为准；出现一条完整路径也不代表全文无遗漏。API 不在既有银标中时须单独审阅原文归属，不能将 unscored 当作正确。
-
-完成或正常软暂停后，可只读导出该次运行的图谱；下面命令输出 JSON，不读取参考答案，也不会合并其他运行的候选：
+正式评分使用独立 [ontology_guided_scorer.py](ontology_guided_scorer.py) 和
+`ontology-guided-reference-v1`。参考必须带 `expert_review.status=approved`、复核人、时间和受控标注包 hash，且文档、本体、根类、scope/focus path 必须与 run 完全一致；draft、assistant silver 或哈希不一致都会拒绝正式评分。评分结果另记录实际 reference 文件 hash。只有参考同时声明带来源的 precision/recall/F1、禁止断言和完整覆盖阈值时才会给出 pass/fail，否则 `formal_quality_gate=not_configured`：
 
 ```bash
-cd backend
-.venv/bin/python -m app.evaluation.quality_graph_export /absolute/path/quality-01/run.json
+python -m app.evaluation.cmc_benchmark score --prepared "$CMC_QUALITY_DIR" \
+  --run "$CMC_QUALITY_DIR/quality-01" \
+  --reference /controlled/gold/ontology_guided_reference_v1.json
 ```
 
-输出含 `full_validated_candidate_graph` 与 `root_reachable_positive_graph`。前者完整保留 passed 候选（包括否定/条件），后者排除非肯定、条件、审核拒绝、陈旧引用和不可达依赖。导出并不等于专家确认。独立审计入口为 `app.evaluation.quality_analysis --prepared DIR --run DIR --reference FILE`，活动运行存在 marker 时拒绝正式评分。
+未提供参考时只生成 `pending_expert_reference`，不会把模型自评或工程 fixture 计为质量分数。当前仓库实现只完成确定性工程测试，**尚未执行三个独立真实模型新运行，也没有经业务专家批准的新金标**；因此 result manifest 的 release gate 固定为 blocked，不能声称 AC-T30 质量侧或生产发布完成。
 
-新增只读拒绝审计入口 `python -m app.evaluation.rejection_analysis --run DIR`，在正常结束或安全软暂停后输出 JSON，不读取银标、不修改原始产物。它区分类型/绑定/归属拒绝、空召回、模型拒答和身份未获支持，预算/协议错误另计；拒绝理由缺失时如实标记。通过 trace 及真实任务顺序判断是否继续了不同记录，队列存在仅表示 pending，不算已经执行。未进入最终候选图的被拒绝关系/属性仍从 trace 审计；c0/e0 等别名只能在各自请求作用域内解释。该工具不判断拒绝语义正误或计算准确率，仍需独立原文审阅。09 已冻结后才新增此离线工具，它不参与09抽取。
+### 历史 runner 兼容边界
 
-本轮诊断与本体 API/制剂口径问题见[质量优先实测报告](../../../docs/CMCReport质量优先图谱识别实测报告.md)。不应为提高得分自行扩大 `DrugProduct` 定义或修改冻结参考。
+旧 runner v5.2 已移到 [legacy_quality_guided_variant.py](legacy_quality_guided_variant.py)，只由显式 `--mode legacy_quality_guided_summary` 调用，用于仓库回归或历史协议兼容。冻结 08/09 归档仍运行各自 runtime，不修改、不转换，也不能作为新核心的质量证明。旧 `quality_graph_export`、`quality_analysis`、`rejection_analysis` 和旧 checkpoint 格式仅适用于这些 legacy candidate artifacts，不适用于新的 `ontology-guided-evaluation-run-v1`。
+
+历史 runner 的 atomic-citations v4 已机械迁到公共
+[citations.py](../services/extraction/ontology_guided/citations.py)，evaluation 原路径只保留兼容导出；精确 quote 回放位于纯 [source_citations.py](../services/extraction/ontology_guided/source_citations.py)，公共核心不再依赖 `GenericExtractionRunner`。历史实测结论见[质量优先实测报告](../../../docs/CMCReport质量优先图谱识别实测报告.md)，不得为提高得分修改冻结参考或扩大本体口径。
 
 此工具对 `upload-23c872fb-3ab1-41de-a705-dd4b162dfa09` 执行隔离对照实验。入口是 `python -m app.evaluation.cmc_benchmark`，使用 Docker Compose 的独立一次性容器，继承 `backend` 服务已配置的本地模型、精确 tokenizer、可选 GLiNER 权重及持久数据卷。
 
 本次四组预算内试验已结束，结果见[实测报告](../../../docs/CMCReport结构摘要图谱识别实测报告.md)和[可离线复算归档](../../../docs/evaluations/cmc-23c872fb-20260907-02/README.md)。本次额外使用 `--deadline-seconds 600`，实际只尝试了 1/4/3/5 个任务，没有达到 24 次上限；所有组仍为全文未完成。以下命令是通用复现步骤，不应把只设任务上限的运行与本轮软时间预算直接混比。
 
-`prepare` 在数据库只读事务中按文档引用定位最新抽取作业，核对其显式类型为 `CMCReport`，然后复制原文、本体和运行代码，生成独立证据 IR、语义 schema 及清单。准备阶段的 OWL 存储位于实验临时目录；`run` 使用冻结的 schema，不打开生产 OWL 存储。所有实验输出写入指定评测目录，不更新生产抽取作业、不提交候选、不写事实图谱。
+`prepare` 在数据库只读事务中按文档引用定位最新抽取作业，核对其显式类型为 `CMCReport`，然后复制原文、本体和运行代码，生成独立证据 IR、legacy 语义 schema、公共核心 `ontology_snapshot.json` 及清单。准备阶段的 OWL 存储位于实验临时目录；活动 run 使用冻结本体快照，legacy 模式才读取旧 schema，二者都不打开生产 OWL 存储。所有实验输出写入指定评测目录，不更新生产抽取作业、不提交候选、不写中央事实图谱。
 
 这不等于整个实验没有数据库写入。摘要和抽取复用现有共享模型调度器，可能产生 `LocalModelPool`、`LocalModelRequest` 等调度与用量记录；这些属于模型运行记录。只读保证针对 `prepare` 的源作业查询，生产抽取作业、候选和事实数据不由本评测提交或更新。
 

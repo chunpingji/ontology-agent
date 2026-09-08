@@ -72,6 +72,61 @@ _annotation_cache_lock = RLock()
 _analyst = require_role(ROLE_SENIOR_ANALYST)
 
 
+_WORD_TEMPLATE_MODE = "template_default"
+_WORD_REPOSITORY_PREVIEW_MODE = "doc_repo_preview"
+_RETIRED_WORD_RECOGNITION = (
+    "WORD_RECOGNITION_RETIRED: use POST /api/document-analysis/runs"
+)
+
+
+def _is_word_source(source_type: object) -> bool:
+    return isinstance(source_type, str) and source_type.strip().casefold() == "word"
+
+
+def _word_job_mode(job: ExtractionJob) -> str | None:
+    mode = (job.source_config or {}).get("mode")
+    return mode if isinstance(mode, str) else None
+
+
+def _word_job_allows_annotation(job: ExtractionJob) -> bool:
+    """Only the template-default workflow may use the shared legacy annotator.
+
+    Ordinary Word graph recognition moved to ``/document-analysis/runs``. Excel
+    annotation remains shared, while document-repository uploads may retain a
+    source-only preview without acquiring an annotation execution lease.
+    """
+
+    return not _is_word_source(job.source_type) or _word_job_mode(job) == _WORD_TEMPLATE_MODE
+
+
+def _word_job_allows_preview(job: ExtractionJob) -> bool:
+    return not _is_word_source(job.source_type) or _word_job_mode(job) in {
+        _WORD_TEMPLATE_MODE,
+        _WORD_REPOSITORY_PREVIEW_MODE,
+    }
+
+
+def _reject_retired_word_recognition() -> None:
+    raise HTTPException(410, _RETIRED_WORD_RECOGNITION)
+
+
+def _require_annotation_capability(job: ExtractionJob) -> None:
+    if not _word_job_allows_annotation(job):
+        _reject_retired_word_recognition()
+
+
+def _require_preview_capability(job: ExtractionJob) -> None:
+    if not _word_job_allows_preview(job):
+        _reject_retired_word_recognition()
+
+
+def _require_result_capability(job: ExtractionJob) -> None:
+    """Hide mutable legacy recognition products outside template workflows."""
+
+    if _is_word_source(job.source_type) and _word_job_mode(job) != _WORD_TEMPLATE_MODE:
+        _reject_retired_word_recognition()
+
+
 # --- Extraction Configs ---
 
 
@@ -115,7 +170,10 @@ async def _run_pipeline_bg(job_id, config_id, file_path, engine, db: Session):
     job = db.get(ExtractionJob, job_id)
     if job is None:
         return
-    if job.source_type == "word":
+    if _is_word_source(job.source_type):
+        if not _word_job_allows_annotation(job):
+            logger.warning("Refused retired Word pipeline delivery job=%s", job_id)
+            return
         await _precompute_annotation_bg(job_id, engine, db)
         return
     config = db.get(ExtractionConfig, config_id) if config_id else None
@@ -142,6 +200,9 @@ async def _create_declarative_job(
     declarative branch. No credential is ever stored (only the binding's
     env-var/connector reference).
     """
+    if _is_word_source(source_type):
+        _reject_retired_word_recognition()
+
     source_cfg: dict = {"class_mapping_id": str(class_mapping_id)}
     if config_id is not None:
         source_cfg["config_id"] = str(config_id)
@@ -178,10 +239,7 @@ async def _create_declarative_job(
         details={"source_type": source_type, "class_mapping_id": str(class_mapping_id)},
     )
 
-    if source_type == "word":
-        _enqueue_annotation(job.id, background, engine, db, mode="start", actor=identity.username)
-    else:
-        background.add_task(_run_pipeline_bg, job.id, config_id, file_path, engine, db)
+    background.add_task(_run_pipeline_bg, job.id, config_id, file_path, engine, db)
     return job
 
 
@@ -217,6 +275,8 @@ async def create_job(
                 422,
                 "该映射不是结构化源实体绑定（db_table/api_endpoint），无法驱动抽取",
             )
+        if _is_word_source(source_type):
+            _reject_retired_word_recognition()
         return await _create_declarative_job(
             background,
             source_type,
@@ -228,9 +288,16 @@ async def create_job(
             identity,
         )
 
+    if _is_word_source(source_type):
+        _reject_retired_word_recognition()
+
     config = db.get(ExtractionConfig, config_id) if config_id else None
     if not config:
         raise HTTPException(404, "extraction config not found")
+    # The request field is not a security boundary: a caller must not disguise a
+    # retired Word config as Excel/database and reach ``pipeline.parse_word``.
+    if _is_word_source(config.source_type):
+        _reject_retired_word_recognition()
 
     file_path: Path | None = None
     if file is not None:
@@ -281,15 +348,12 @@ async def create_job(
         details={"source_type": source_type, "config_id": str(config_id)},
     )
 
-    if source_type == "word":
-        _enqueue_annotation(job.id, background, engine, db, mode="start", actor=identity.username)
-    else:
-        background.add_task(_run_pipeline_bg, job.id, config_id, file_path, engine, db)
-        if job.document_path and source_type == "excel":
-            # The structured pipeline runs first. Claim the optional annotation
-            # only when it starts, so a long import cannot exhaust a queued lease.
-            background.add_task(_precompute_annotation_bg, job.id, engine, db.get_bind(),
-                                mode="auxiliary", actor=identity.username)
+    background.add_task(_run_pipeline_bg, job.id, config_id, file_path, engine, db)
+    if job.document_path and source_type == "excel":
+        # The structured pipeline runs first. Claim the optional annotation
+        # only when it starts, so a long import cannot exhaust a queued lease.
+        background.add_task(_precompute_annotation_bg, job.id, engine, db.get_bind(),
+                            mode="auxiliary", actor=identity.username)
     return job
 
 
@@ -344,6 +408,8 @@ async def start_extraction_job(
     job = db.get(ExtractionJob, job_id)
     if not job:
         raise HTTPException(404)
+    if _is_word_source(job.source_type):
+        _reject_retired_word_recognition()
     if job.status != "pending":
         raise HTTPException(409, "job already started")
 
@@ -620,9 +686,14 @@ def get_annotated_document(
     job = db.get(ExtractionJob, job_id)
     if not job:
         raise HTTPException(404)
+    _require_preview_capability(job)
 
     cache_path = _annotation_cache_path(job_id)
-    if not refresh and cache_path.is_file():
+    source_only_preview = (
+        _is_word_source(job.source_type)
+        and _word_job_mode(job) == _WORD_REPOSITORY_PREVIEW_MODE
+    )
+    if not source_only_preview and not refresh and cache_path.is_file():
         try:
             cached = json.loads(cache_path.read_text(encoding="utf-8"))
             if _annotation_cache_is_current(cached):
@@ -633,7 +704,7 @@ def get_annotated_document(
 
     if not job.document_path or not Path(job.document_path).is_file():
         # 刷新但源文档已清理：优雅降级为已有缓存（即便版本旧），而非 404。
-        if cache_path.is_file():
+        if not source_only_preview and cache_path.is_file():
             try:
                 return json.loads(cache_path.read_text(encoding="utf-8"))
             except Exception:
@@ -784,6 +855,7 @@ def _claim_annotation(job_id, db, *, mode="continue", actor="evidence-extractor"
     job = db.get(ExtractionJob, job_id)
     if job is None:
         raise HTTPException(404, "作业不存在")
+    _require_annotation_capability(job)
     if job.source_type not in ("word", "excel"):
         raise HTTPException(422, "仅 Word/Excel 作业支持关系识别")
     if not job.document_path or not Path(job.document_path).is_file():
@@ -870,6 +942,10 @@ async def _precompute_annotation_bg(job_id, engine: OntologyEngine, bind, *, run
 
     def worker():
         with Session(bind=bind, expire_on_commit=False) as worker_db, tracking() as performance:
+            job = worker_db.get(ExtractionJob, job_id)
+            if job is None or not _word_job_allows_annotation(job):
+                logger.warning("Refused retired Word worker delivery job=%s", job_id)
+                return
             token = run_id
             if token is None:
                 token = _claim_annotation(job_id, worker_db, mode=mode, actor=actor)["run_id"]
@@ -887,6 +963,9 @@ def _annotation_worker(job_id, engine, db, performance, lease):
     from app.services.extraction.annotation_execution import ExecutionLost, fence
 
     job = db.get(ExtractionJob, job_id)
+    if job is None or not _word_job_allows_annotation(job):
+        logger.warning("Stopped retired Word worker job=%s", job_id)
+        return
     job_id_str = str(job_id)
     from app.config import settings
 
@@ -1095,12 +1174,21 @@ async def create_auto_job(
     target_class_iris: str | None = Form(None),
     config_id: UUID | None = Form(None),
     doc_class_iri: str | None = Form(None),
+    purpose: str | None = Form(None),
     db: Session = Depends(get_db),
     engine: OntologyEngine = Depends(get_ontology_engine),
     identity: Identity = Depends(_analyst),
 ):
-    """Word uses reviewed evidence tasks; structured sources require an explicit mapping."""
-    if source_type != "word":
+    """Create structured extraction jobs or a source-only doc-repository preview.
+
+    Ordinary Word recognition is retired here. ``doc_repo_preview`` persists a
+    Word source so the document repository can render its structure, but never
+    claims a legacy annotation lease or creates graph candidates.
+    """
+    is_word = _is_word_source(source_type)
+    if is_word and purpose != _WORD_REPOSITORY_PREVIEW_MODE:
+        _reject_retired_word_recognition()
+    if not is_word:
         if config_id is None:
             raise HTTPException(
                 422, "SEMANTIC_MAPPING_REQUIRED: select an extraction configuration"
@@ -1124,14 +1212,14 @@ async def create_auto_job(
     suffix = Path(file.filename or "").suffix or ".bin"
     filename = file.filename or "unknown"
 
-    source_config: dict = {"mode": "auto"}
+    source_config: dict = {"mode": _WORD_REPOSITORY_PREVIEW_MODE}
     if doc_class_iri:
         source_config["doc_class_iri"] = doc_class_iri
     job = ExtractionJob(
-        source_type=source_type,
+        source_type="word",
         source_filename=filename,
         source_config=source_config,
-        status="running",
+        status="completed",
     )
     db.add(job)
     db.commit()
@@ -1145,17 +1233,14 @@ async def create_auto_job(
     job.document_path = str(persistent_path)
     db.commit()
 
-    if source_type == "word":
-        # The ontology is a semantic menu, not a filename-driven finder registry.
-        audit.append(
-            db,
-            "extraction.job.create",
-            actor=identity.username,
-            entity_iri=str(job.id),
-            details={"source_type": source_type, "mode": "generic_evidence"},
-        )
-        _enqueue_annotation(job.id, background, engine, db, mode="start", actor=identity.username)
-        return job
+    audit.append(
+        db,
+        "extraction.job.create_preview",
+        actor=identity.username,
+        entity_iri=str(job.id),
+        details={"source_type": "word", "mode": _WORD_REPOSITORY_PREVIEW_MODE},
+    )
+    return job
 
 
 @router.get("/jobs/{job_id}/progress")
@@ -1168,6 +1253,7 @@ async def job_progress(
     job = db.get(ExtractionJob, job_id)
     if job is None:
         raise HTTPException(404, "作业不存在")
+    _require_preview_capability(job)
     from app.services.extraction.annotation_execution import public_progress
 
     if public_progress(db, job_id) is not None:
@@ -1264,8 +1350,10 @@ def pause_annotation(
     """请求暂停正在运行的标注任务（下一阶段间生效）。"""
     from app.services.extraction.annotation_execution import request_pause
 
-    if db.get(ExtractionJob, job_id) is None:
+    job = db.get(ExtractionJob, job_id)
+    if job is None:
         raise HTTPException(404, "作业不存在")
+    _require_annotation_capability(job)
     if not request_pause(db, job_id):
         raise HTTPException(409, "该作业没有正在运行的识别任务")
     return {"status": "pause_requested"}
@@ -1367,6 +1455,10 @@ def _backfill_job_document_context(job: ExtractionJob, db: Session) -> None:
 @router.get("/jobs/{job_id}/candidates", response_model=GroupedCandidatesResponse)
 def list_candidates(job_id: UUID, db: Session = Depends(get_db)):
     """按 group_key 归组返回候选；未归组的单列（FR-009/SC-003）。"""
+    job = db.get(ExtractionJob, job_id)
+    if job is None:
+        raise HTTPException(404, "作业不存在")
+    _require_result_capability(job)
     rows = db.query(ExtractionCandidate).filter(ExtractionCandidate.job_id == job_id).all()
     groups: dict[str, list[ExtractionCandidate]] = {}
     ungrouped: list[ExtractionCandidate] = []
@@ -1421,6 +1513,7 @@ def review_candidate(
     candidate = db.get(ExtractionCandidate, candidate_id)
     if not candidate:
         raise HTTPException(404)
+    _require_result_capability(candidate.job)
     if req.edited_properties:
         candidate.extracted_properties = req.edited_properties
 
@@ -1453,11 +1546,13 @@ def merge_candidates(
     target = db.get(ExtractionCandidate, req.target_id)
     if not target:
         raise HTTPException(404, "target candidate not found")
+    _require_result_capability(target.job)
     affected = [target]
     for sid in req.source_ids:
         src = db.get(ExtractionCandidate, sid)
         if not src:
             continue
+        _require_result_capability(src.job)
         src.merged_into_id = target.id
         src.review_status = "merged"
         affected.append(src)
@@ -1485,6 +1580,7 @@ def split_candidate(
     candidate = db.get(ExtractionCandidate, candidate_id)
     if not candidate:
         raise HTTPException(404)
+    _require_result_capability(candidate.job)
     candidate.review_status = "split"
     derived = []
     for props in req.splits:
@@ -1551,6 +1647,10 @@ def generate_risk_report(
 ):
     from app.services.reporting.legacy_facade import generate
 
+    job = db.get(ExtractionJob, job_id)
+    if not job:
+        raise HTTPException(404, "作业不存在")
+    _require_result_capability(job)
     return generate(db, job_id, identity.username, template_id=template_id, snapshot_id=snapshot_id)
 
 
@@ -1701,6 +1801,7 @@ def get_ast_coverage(
     job = db.get(ExtractionJob, job_id)
     if not job:
         raise HTTPException(404, "作业不存在")
+    _require_result_capability(job)
     return _build_ast_coverage_response(
         job_id, db, template_id=template_id, engine=engine, actor=identity.username
     )

@@ -67,6 +67,20 @@ def verify_frozen(row):
     return deepcopy(row.payload)
 
 
+def _require_report_source(job: ExtractionJob) -> None:
+    """Prevent new report snapshots from consuming retired ordinary Word products."""
+    if (
+        isinstance(job.source_type, str)
+        and job.source_type.strip().casefold() == "word"
+        and (job.source_config or {}).get("mode") != "template_default"
+    ):
+        raise ReportingError(
+            "WORD_RECOGNITION_RETIRED",
+            status=410,
+            message="Use POST /api/document-analysis/runs",
+        )
+
+
 def _contract_refs(value):
     if isinstance(value, dict):
         for key, child in value.items():
@@ -349,6 +363,7 @@ class ReportRunService:
             job = self.db.get(ExtractionJob, UUID(selected["job_id"]))
             if job is None:
                 raise ReportingError("SOURCE_NOT_FOUND", status=404)
+            _require_report_source(job)
             if (job.source_config or {}).get("document_role") in {
                 "template_sample",
                 "training_source",

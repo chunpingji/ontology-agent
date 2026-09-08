@@ -805,12 +805,22 @@ def suggest_slots_endpoint(
         job = db.get(ExtractionJob, req.job_id)
         if not job:
             raise HTTPException(404, "抽取作业不存在")
+        from app.api.extraction import (
+            _WORD_REPOSITORY_PREVIEW_MODE,
+            _require_preview_capability,
+            _word_job_mode,
+        )
+
+        _require_preview_capability(job)
         from app.services.extraction.slot_suggester import build_document_text
 
         document_text = build_document_text(job.document_path)
         # 复用抽取时预计算的标注缓存做忠实预览锚点（缺失则降级为无 source_ref）。
         cache_path = _annotation_cache_path(req.job_id)
-        if cache_path.is_file():
+        if (
+            _word_job_mode(job) != _WORD_REPOSITORY_PREVIEW_MODE
+            and cache_path.is_file()
+        ):
             try:
                 cached = json.loads(cache_path.read_text(encoding="utf-8"))
                 content_json = cached.get("content")

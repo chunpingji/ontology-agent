@@ -6,7 +6,9 @@ from copy import deepcopy
 import pytest
 from docx import Document
 
-from app.evaluation.quality_guided_variant import build_quality_guided_variant
+from app.evaluation.legacy_quality_guided_variant import (
+    build_legacy_quality_guided_variant as build_quality_guided_variant,
+)
 from app.schemas.evidence import (
     BindingEvidence,
     Candidate,

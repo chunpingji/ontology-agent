@@ -1,0 +1,179 @@
+{
+  "schema_version": "ontology-guided-engineering-baseline-v1",
+  "observed_at": "2026-09-08T15:10:31Z",
+  "source_commit": "89766a7721ea85725bc2ef1d61305516a1d3d38a",
+  "working_branch": "021-ontology-guided-doc-graph",
+  "working_tree": {
+    "clean": false,
+    "status": "dirty_feature_worktree",
+    "statement": "source_commit identifies the base commit only; the 021 implementation and evidence files are uncommitted working-tree changes. No commit or push was performed."
+  },
+  "method": "Local deterministic engineering verification in the repository workspace. No production database was opened, no real recognition model was invoked, no expert reference was approved, and no deployment, cutover, or physical legacy cleanup was performed.",
+  "runtime": {
+    "python": "3.12.7",
+    "node": "20.18.0",
+    "npm": "11.3.0",
+    "fastapi": "0.138.0",
+    "pydantic": "2.13.4",
+    "sqlalchemy": "2.0.51",
+    "alembic": "1.18.4",
+    "sqlite": "3.45.3",
+    "psql_client": "14.24",
+    "postgresql_server": null,
+    "postgresql_server_status": "not_connected",
+    "next": "16.2.9",
+    "react": "19.2.7",
+    "typescript": "5.9.3",
+    "eslint": "9.39.4"
+  },
+  "configured_model_identity": {
+    "inspection_context": "Non-sensitive settings loaded with PYTHONPATH=backend from the repository root; this identity was recorded but not exercised by the test run.",
+    "local_llm_enabled": false,
+    "model_label": "qwen2.5:14b",
+    "model_revision": "0b21525e972670ed59e1812e170b27c26355381f0656ecc4e25617ece7dac58b",
+    "tokenizer_backend": "llama_server",
+    "tokenizer_path_configured": false,
+    "server_model_path_configured": true,
+    "real_model_runs_in_this_validation": 0
+  },
+  "source_identity": {
+    "hash_definition": "File values are SHA-256 of exact bytes. Tree values are SHA-256 of sorted sha256sum output lines for all matching regular files.",
+    "ontology_tree": {
+      "path": "ontology/slpra",
+      "sha256": "4819bd287e5c99bc947c6a9e0c36f3babe65277d48892e508e7be545441e73e3"
+    },
+    "cmc_ontology": {
+      "path": "ontology/slpra/slpra-drug-development.ttl",
+      "sha256": "ea90db5a324036c71a6e6b559b48aa14d202de75d2e491989791859abe2f8e25"
+    },
+    "docx_parser": {
+      "path": "backend/app/services/extraction/docx_structure.py",
+      "parser_version": 4,
+      "sha256": "477380d42293b76b8aa60387293aeacd39f77c9b04df663f53aca044f53712a5"
+    },
+    "document_ir": {
+      "path": "backend/app/services/extraction/document_ir.py",
+      "ir_version": "document-ir-v1",
+      "structure_policy_version": "word-structure-v1",
+      "sha256": "902d953342f2b7d51172554d3de23d6d523984bfbc0368144b4ee16ec0758696"
+    },
+    "summarizer": {
+      "path": "backend/app/services/extraction/word_tree_summarizer.py",
+      "prompt_version": "word-tree-summary-v1",
+      "sha256": "5d07a69dbce85a6ebc0d89116e1993c0387de644d936de1ffa199e29cc8d7943"
+    },
+    "citation_protocol": {
+      "path": "backend/app/services/extraction/ontology_guided/citations.py",
+      "protocol_version": "evaluation-atomic-citations-v4",
+      "sha256": "747adc8605fa59a53bd292f9d132a00df0dcef62b7a211a4657fce6e883d9c23"
+    },
+    "ontology_guided_core_tree": {
+      "path": "backend/app/services/extraction/ontology_guided/*.py",
+      "sha256": "d4dbfdb2780796d10715b973033543a3a19ff361dbb6fdcfde5cf61d01b4f396"
+    },
+    "document_analysis_service_tree": {
+      "path": "backend/app/services/document_analysis/*.py",
+      "sha256": "37474a3ad0fe4eca6458e2300880625079f83dceec481fce2b8125e3375a7c50"
+    },
+    "migration_0033": {
+      "path": "backend/alembic/versions/0033_document_analysis_runs.py",
+      "sha256": "80936c6fda4411f25edb92d3104777d7b9a517633a2a18aede2f2b6102384875"
+    },
+    "source_design": {
+      "path": "docs/基于本体指引的文档结构和摘要元数据的关系图谱识别方案.md",
+      "sha256": "318bff3574401a2a90034a34feb0a5ed1037928e33bcc8364f82fd290c2861ca"
+    }
+  },
+  "policy_versions": {
+    "public_contract": "document-analysis-runs-v1",
+    "ontology_snapshot": "ontology-guided-snapshot-v1",
+    "metadata": "ontology-guided-metadata-v1",
+    "retrieval": "ontology-guided-two-phase-v1",
+    "proof": "ontology-guided-proof-v1",
+    "projection": "ontology-guided-graph-v2",
+    "predicate": "predicate-policy-v1",
+    "eligibility": "ontology-guided-eligibility-v1",
+    "executor": "ontology-guided-executor-v2",
+    "checkpoint": "document-recognition-checkpoint-v1",
+    "model_adapter": "ontology-guided-model-adapter-v1"
+  },
+  "test_collection": {
+    "command": "cd backend && .venv/bin/python -m pytest -p no:cacheprovider --collect-only -q",
+    "collected": 1707
+  },
+  "verification_snapshot": {
+    "feature_backend": {
+      "result": "209 passed, 1 skipped, 4 warnings",
+      "status": "pass_with_postgresql_pending"
+    },
+    "backend_full": {
+      "command": "cd backend && .venv/bin/python -m pytest -p no:cacheprovider -q -rs",
+      "result": "1678 passed, 29 skipped, 4 warnings, 16 subtests passed",
+      "status": "pass_with_required_external_database_suites_skipped"
+    },
+    "frontend_node": {
+      "command": "cd frontend && node --test tests/*.test.mjs",
+      "result": "42 passed, 0 failed, 0 skipped"
+    },
+    "frontend_typescript": "pass",
+    "frontend_targeted_eslint": "pass",
+    "frontend_build": "pass",
+    "frontend_full_eslint": {
+      "result": "3 errors, 7 warnings",
+      "status": "baseline_failure_in_unchanged_files"
+    },
+    "python_targeted_ruff_and_format": {
+      "result": "pass",
+      "files": 47
+    },
+    "python_full_ruff": {
+      "command": "cd backend && .venv/bin/ruff check app tests --statistics",
+      "working_tree": {
+        "total": 98,
+        "E501": 65,
+        "F401": 19,
+        "I001": 11,
+        "F841": 2,
+        "E731": 1
+      },
+      "source_commit_same_command": {
+        "total": 100,
+        "E501": 67,
+        "F401": 19,
+        "I001": 11,
+        "F841": 2,
+        "E731": 1
+      },
+      "status": "full_repository_baseline_failure_but_no_new_counted_debt"
+    }
+  },
+  "skips": {
+    "total": 29,
+    "reason": "Every skipped test requires an explicitly provisioned isolated PostgreSQL database.",
+    "document_analysis_postgresql": 1,
+    "other_existing_postgresql_suites": 28,
+    "release_interpretation": "Skipped PostgreSQL coverage is pending, not passed."
+  },
+  "warnings": [
+    "Starlette TestClient/httpx deprecation warning",
+    "AstTemplateCreate.schema_json shadows BaseModel attribute",
+    "AstTemplateUpdate.schema_json shadows BaseModel attribute",
+    "EntityShadowResponse uses deprecated class-based Pydantic config"
+  ],
+  "release_gate": {
+    "ready": false,
+    "status": "NOT_READY",
+    "pending": [
+      "isolated PostgreSQL concurrency and fencing",
+      "browser/Playwright workflow",
+      "expert-approved reference and preregistered quality SLO",
+      "three independent real-model runs",
+      "structure/summary/optional-GLiNER ablation",
+      "deployment-representative performance and cost measurements",
+      "AC-T30 end-to-end positive and negative evidence",
+      "retirement manifest and Constitution G-C03 approval",
+      "maintenance-window cleanup",
+      "deployment and formal cutover"
+    ]
+  }
+}

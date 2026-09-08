@@ -66,6 +66,19 @@ class Settings(BaseSettings):
     word_tree_summary_max_output_chars: int = 300
     word_tree_summary_prompt_version: str = "word-tree-summary-v1"
 
+    # Ontology-guided document analysis (021).  Source files and derived
+    # artifacts are owned by a DocumentAnalysisRun, never by ExtractionJob.
+    document_analysis_storage_dir: Path = (
+        Path(__file__).resolve().parent.parent / "data" / "document-analysis-runs"
+    )
+    document_analysis_max_upload_bytes: int = 50 * 1024 * 1024
+    document_analysis_retention_days: int = 7
+    document_analysis_lease_seconds: int = 120
+    document_analysis_dispatch_poll_seconds: float = 1.0
+    document_analysis_dispatch_concurrency: int = 2
+    document_analysis_sse_window_seconds: int = 30
+    document_analysis_worker_id: str = "document-analysis-worker"
+
     # 能力十三：LLM 模板设计辅助 + 报告生成增强（013-llm-template-report-enhance）。
     # 三个独立开关默认关——离线为正常态（Constitution VI）。
     llm_suggest_slots_enabled: bool = True

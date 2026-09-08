@@ -9,7 +9,6 @@ import {
   createAutoExtractionJob,
   getExtractionJob,
   listExtractionJobs,
-  rerunAnnotation,
   type ExtractionJob,
 } from "@/lib/api";
 import { Badge } from "@/components/ui/badge";
@@ -39,8 +38,6 @@ const STATUS_LABELS: Record<string, string> = {
 
 const ACTIVE_JOB_KEY = "slpra.extraction.activeJobId";
 const TERMINAL_STATUS = new Set(["done", "failed"]);
-const CLINICAL_KEYWORDS = ["临床备样", "生产信息", "备样生产"];
-
 export default function ExtractionPage() {
   const [jobs, setJobs] = useState<ExtractionJob[]>([]);
   const [activeJobId, setActiveJobIdState] = useState<string | null>(null);
@@ -51,7 +48,6 @@ export default function ExtractionPage() {
   const [file, setFile] = useState<File | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [clinicalHint, setClinicalHint] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const setActiveJobId = (id: string | null) => {
@@ -63,14 +59,16 @@ export default function ExtractionPage() {
 
   async function refresh() {
     try {
-      setJobs(await listExtractionJobs());
+      setJobs((await listExtractionJobs()).filter((job) => job.source_type !== "word"));
     } catch {
       /* ignore */
     }
   }
 
   useEffect(() => {
-    listExtractionJobs().then(setJobs).catch(() => {});
+    listExtractionJobs()
+      .then((rows) => setJobs(rows.filter((job) => job.source_type !== "word")))
+      .catch(() => {});
     const saved =
       typeof window !== "undefined"
         ? window.sessionStorage.getItem(ACTIVE_JOB_KEY)
@@ -90,11 +88,6 @@ export default function ExtractionPage() {
 
   function handleFileChange(f: File | null) {
     setFile(f);
-    if (f) {
-      setClinicalHint(CLINICAL_KEYWORDS.some((kw) => f.name.includes(kw)));
-    } else {
-      setClinicalHint(false);
-    }
   }
 
   async function handleAutoExtract() {
@@ -102,12 +95,9 @@ export default function ExtractionPage() {
     setError(null);
     setSubmitting(true);
     try {
-      const ext = file.name.toLowerCase();
-      const sourceType = ext.endsWith(".docx") ? "word" : "excel";
-      const job = await createAutoExtractionJob({ file, source_type: sourceType });
+      const job = await createAutoExtractionJob({ file, source_type: "excel" });
       setActiveJobId(job.id);
       setFile(null);
-      setClinicalHint(false);
       if (fileRef.current) fileRef.current.value = "";
       await refresh();
     } catch (err) {
@@ -155,16 +145,11 @@ export default function ExtractionPage() {
               <Input
                 ref={fileRef}
                 type="file"
-                accept=".xlsx,.docx"
+                accept=".xlsx,.xls"
                 onChange={(e) => handleFileChange(e.target.files?.[0] ?? null)}
                 className="text-muted-foreground file:mr-3 file:rounded file:border-0 file:bg-primary file:px-3 file:py-2 file:text-sm file:text-primary-foreground hover:file:bg-primary/90"
               />
             </div>
-            {clinicalHint && (
-              <p className="text-sm text-blue-600">
-                检测到临床备样/生产信息文件 — 将抽取所有本体模块的目标类
-              </p>
-            )}
             <Button onClick={handleAutoExtract} disabled={!file || submitting}>
               {submitting ? "提交中..." : "实体抽取"}
             </Button>
@@ -253,19 +238,6 @@ export default function ExtractionPage() {
                           className="h-auto p-0 text-xs"
                         >
                           查看标注
-                        </Button>
-                      )}
-                      {TERMINAL_STATUS.has(j.status) && (
-                        <Button
-                          variant="link"
-                          size="sm"
-                          onClick={async () => {
-                            await rerunAnnotation(j.id);
-                            setActiveJobId(j.id);
-                          }}
-                          className="h-auto p-0 text-xs"
-                        >
-                          重新标注
                         </Button>
                       )}
                       {(j.status === "done" || j.status === "reviewing") && j.document_path && (

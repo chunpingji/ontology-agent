@@ -116,7 +116,7 @@ def test_excel_instance_candidates_offline_not_degraded(client, analyst_headers)
     assert any("_controlled_vocab" in m["extracted_properties"] for m in members)
 
 
-def test_word_body_does_not_invent_keyword_actions(client, analyst_headers):
+def test_word_config_job_is_retired_before_candidate_creation(client, analyst_headers):
     docx = __import__("docx")
     doc = docx.Document()
     table = doc.add_table(rows=2, cols=2)
@@ -129,13 +129,11 @@ def test_word_body_does_not_invent_keyword_actions(client, analyst_headers):
     doc.save(buf)
 
     cfg_id = _make_config(client, analyst_headers, source_type="word")
-    job = client.post(
+    response = client.post(
         "/api/extraction/jobs",
         data={"source_type": "word", "config_id": cfg_id},
         files={"file": ("SOP.docx", buf.getvalue(), "application/octet-stream")},
         headers=analyst_headers,
-    ).json()
-    cands = client.get(f"/api/extraction/jobs/{job['id']}/candidates").json()
-    members = cands["ungrouped"] + [c for g in cands["groups"] for c in g["candidates"]]
-    actions = [m for m in members if m["candidate_kind"] == "action"]
-    assert actions == []
+    )
+    assert response.status_code == 410, response.text
+    assert "WORD_RECOGNITION_RETIRED" in response.text

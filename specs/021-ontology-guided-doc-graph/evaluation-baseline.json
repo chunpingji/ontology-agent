@@ -1,0 +1,49 @@
+{
+  "schema_version": "ontology-guided-evaluation-baseline-v1",
+  "observed_at": "2026-09-08T08:56:18Z",
+  "source_commit": "89766a7721ea85725bc2ef1d61305516a1d3d38a",
+  "working_branch": "021-ontology-guided-doc-graph",
+  "method": "Read-only SHA-256 inventory of repository evaluation evidence; no model run, prediction rewrite, database write, or business publication was performed.",
+  "frozen_run_09": {
+    "path": "docs/evaluations/cmc-product-api-staged-20260908-09",
+    "tree_sha256": "a50d7577a5b16d69ad5aad40164db205228b863c94deb03e8e779e0cd4573c07",
+    "tree_hash_definition": "SHA-256 of sorted lines '<file_sha256><two spaces><relative_path>\\n' for every regular file below path",
+    "manifest_sha256": "f1af96922363ea4d33044aca2f185fce2f40d00a8798226b34a49b3385339777",
+    "status": "frozen_offline_historical_evidence",
+    "allowed_usage": [
+      "historical comparison",
+      "regression investigation",
+      "offline audit"
+    ],
+    "forbidden_usage": [
+      "seed a new online candidate or checkpoint",
+      "supply a prediction or scorer result to a recognition model",
+      "claim independent held-out quality"
+    ]
+  },
+  "development_document": {
+    "path": "docs/evaluations/cmc-product-api-staged-20260908-09/source.docx",
+    "sha256": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+    "role": "development_regression_input_only",
+    "held_out": false,
+    "near_duplicates_allowed_in_holdout": false
+  },
+  "assistant_silver": {
+    "archive_path": "docs/evaluations/cmc-product-api-staged-20260908-09/reference.json",
+    "fixture_path": "backend/app/evaluation/fixtures/cmc_upload_23c872fb_reference.json",
+    "sha256": "8374e3b5a592729f40df05a940f99111bcffdd623576902d4fa1df5728989ee9",
+    "copies_match": true,
+    "review_status": "not_expert_approved",
+    "role": "scoring_only_development_silver",
+    "recognition_input_allowed": false,
+    "release_gate_satisfied": false
+  },
+  "independent_reference": {
+    "path": null,
+    "sha256": null,
+    "expert_approved": false,
+    "registered_before_prediction": false,
+    "status": "pending"
+  },
+  "acceptance": "The hashes freeze existing evidence identity only. They do not establish semantic accuracy, expert approval, a held-out set, an approved SLO, or production readiness."
+}

@@ -9,6 +9,9 @@ def test_analysis_and_template_entrypoints_share_identity_and_offline_skeleton(
     client, analyst_headers, tmp_path, monkeypatch,
 ):
     monkeypatch.setattr(settings, "llm_suggest_slots_enabled", False)
+    monkeypatch.setattr(
+        settings, "document_analysis_storage_dir", tmp_path / "document-analysis"
+    )
     doc = Document()
     doc.add_heading("产品 A", 1)
     doc.add_paragraph("规格：250 mg𠀀")
@@ -17,10 +20,26 @@ def test_analysis_and_template_entrypoints_share_identity_and_offline_skeleton(
     path = tmp_path / "evidence.docx"
     doc.save(path)
     files = {"file": (path.name, path.read_bytes())}
-    analysis = client.post("/api/document-analysis/word", files=files)
+    created = client.post(
+        "/api/document-analysis/runs",
+        files=files,
+        data={
+            "root_class_iri": (
+                "https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport"
+            ),
+            "request_key": "word-evidence-shared-ir",
+            "metadata_mode": "structure_only",
+        },
+        headers=analyst_headers,
+    )
+    assert created.status_code == 202, created.text
+    analysis = client.get(
+        f"/api/document-analysis/runs/{created.json()['recognition_run_id']}/metadata",
+        headers=analyst_headers,
+    )
     sample = client.post("/api/ast-templates/parse-sample", files=files, headers=analyst_headers)
     assert analysis.status_code == sample.status_code == 200
-    left, right = analysis.json()["analysis"], sample.json()["analysis"]
+    left, right = analysis.json()["content"]["analysis"], sample.json()["analysis"]
     assert left["structure_hash"] == right["structure_hash"]
     assert left["structure_hash"] == analyze_word_core(path).ir.structure_hash
     assert right["document_role"] == "template_sample"

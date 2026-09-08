@@ -2,7 +2,6 @@
 
 import {
   useCallback,
-  useEffect,
   useMemo,
   useRef,
   useState,
@@ -20,7 +19,6 @@ import {
   GripVertical,
   Link2,
   Loader2,
-  RotateCw,
   Share2,
 } from "lucide-react";
 
@@ -52,12 +50,8 @@ import {
   downloadReportById,
   getPdeConflictDecision,
   listReportCenterItems,
-  rerunAnnotation,
-  resolveDocumentJobId,
-  subscribeJobProgress,
   VersionConflictError,
   type PdeDecisionChoice,
-  type JobProgressEvent,
   type ReportOrDocument,
 } from "@/lib/api";
 import { cn } from "@/lib/utils";
@@ -160,9 +154,6 @@ export default function ReportDetailPage() {
   const layoutRef = useRef<HTMLDivElement>(null);
   const [graphWidth, setGraphWidth] = useState(DEFAULT_GRAPH_WIDTH);
   const [resizing, setResizing] = useState(false);
-  const [rerunError, setRerunError] = useState<string | null>(null);
-  const [rerunJobId, setRerunJobId] = useState<string | null>(null);
-  const [rerunProgress, setRerunProgress] = useState<JobProgressEvent | null>(null);
   const [decisionError, setDecisionError] = useState<string | null>(null);
 
   const contentQuery = useQuery({
@@ -229,50 +220,7 @@ export default function ReportDetailPage() {
     },
   });
 
-  // 重新识别是后台任务。启动后订阅本次重置后的进度，终态才刷新同源正文/图谱。
-  const rerun = useMutation({
-    mutationFn: async () => {
-      if (!item || item.kind !== "uploaded-document" || !item.iri) {
-        throw new Error("仅支持对上传文档重新识别");
-      }
-      const jobId = await resolveDocumentJobId(item.iri);
-      if (!jobId) throw new Error("该文档未关联抽取任务，无法重新识别");
-      await rerunAnnotation(jobId);
-      return jobId;
-    },
-    onMutate: () => { setRerunError(null); setRerunProgress(null); },
-    onSuccess: (startedJobId) => setRerunJobId(startedJobId),
-    onError: (error) => setRerunError(
-      error instanceof Error ? error.message : "重新识别失败，请重试或检查源文档是否仍可用",
-    ),
-  });
-
-  useEffect(() => {
-    if (!rerunJobId) return;
-    return subscribeJobProgress(rerunJobId, (event) => {
-      setRerunProgress(event);
-      const terminal = event.annotation_stage;
-      if (terminal === "complete") {
-        void queryClient.refetchQueries({ queryKey: documentContentKey(item) })
-          .finally(() => setRerunJobId(null));
-      } else if (terminal === "failed" || terminal === "paused" || terminal === "interrupted") {
-        setRerunError(
-          terminal === "interrupted"
-            ? "关系识别已中断，可在抽取任务中从断点继续"
-            : terminal === "failed"
-            ? "关系识别失败；未发布任何事实，请检查模型服务和任务日志"
-            : "关系识别已暂停；已通过校验的部分结果已保存，可在抽取任务中继续",
-        );
-        void queryClient.refetchQueries({ queryKey: documentContentKey(item) })
-          .finally(() => setRerunJobId(null));
-      }
-    });
-  }, [item, queryClient, rerunJobId]);
-
-  const recognitionRunning = rerun.isPending || rerunJobId !== null;
-  const emptyGraphMessage = recognitionRunning
-    ? "正在识别实体、属性和关系…"
-    : recognition?.previewOnly
+  const emptyGraphMessage = recognition?.previewOnly
       ? "正文已加载，尚无完成的关系识别结果"
       : recognition?.completion === "incomplete"
         ? `关系识别未完成：${recognitionReason(recognition.diagnostics)}`
@@ -469,38 +417,19 @@ export default function ReportDetailPage() {
           <CardHeader className="p-4 pb-2">
             <div className="flex items-center justify-between gap-2">
               <CardTitle className="text-sm">关系图谱</CardTitle>
-              {/* 重新识别：对当前文档全量重跑标注，刷新中栏预览与本图谱（同源同键）。 */}
               {isDoc && (
                 <Button
+                  asChild
                   variant="outline"
                   size="sm"
                   className="h-7 gap-1.5 text-xs"
-                  disabled={!documentContent || recognitionRunning}
-                  title={
-                    !documentContent
-                      ? "暂无可重识别的标注"
-                      : "对当前文档重新完整标注（实体+关系），较慢"
-                  }
-                  onClick={() => rerun.mutate()}
+                  title="前往文档分析，显式选择本体类型并创建新运行"
                 >
-                  {recognitionRunning ? (
-                    <Loader2 className="size-3.5 animate-spin" />
-                  ) : (
-                    <RotateCw className="size-3.5" />
-                  )}
-                  {recognitionRunning ? "识别中…" : "重新识别"}
+                  <Link href="/analysis?tab=document">开始文档分析</Link>
                 </Button>
               )}
             </div>
-            {rerunError && <p className="mt-1 text-xs text-destructive">{rerunError}</p>}
-            {recognitionRunning && (
-              <p className="mt-1 text-xs text-muted-foreground">
-                {rerunProgress?.annotation_stage === "typing"
-                  ? "正在抽取和校验实体、属性及关系…"
-                  : "关系识别已进入后台，完成后将自动刷新图谱…"}
-              </p>
-            )}
-            {!recognitionRunning && relationships.length > 0 && recognition?.completion === "incomplete" && (
+            {relationships.length > 0 && recognition?.completion === "incomplete" && (
               <p className="mt-1 text-xs text-amber-700">
                 当前展示已通过校验的部分关系；识别尚未完成：{recognitionReason(recognition.diagnostics)}
               </p>
@@ -541,12 +470,6 @@ export default function ReportDetailPage() {
                   onDecide={(chosen) => decide.mutate(chosen)}
                   decisionPending={decide.isPending}
                 />
-                {recognitionRunning && (
-                  <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 bg-background/70 backdrop-blur-sm">
-                    <Loader2 className="size-5 animate-spin text-muted-foreground" />
-                    <span className="text-xs text-muted-foreground">正在重新识别关系图谱…</span>
-                  </div>
-                )}
               </div>
             )}
           </CardContent>

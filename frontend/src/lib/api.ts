@@ -137,8 +137,8 @@ export async function fetchAPI<T>(path: string, options?: RequestInit): Promise<
       let message = body;
       try {
         const parsed = JSON.parse(body);
-        const detail = parsed.detail ?? parsed;
-        current = detail?.current_version ?? null;
+        const detail = parsed.detail ?? parsed.error ?? parsed;
+        current = detail?.current_revision ?? detail?.current_version ?? null;
         message = detail?.message ?? body;
       } catch {
         /* keep raw body */
@@ -525,15 +525,15 @@ export interface PreparedUpload {
   /** 左侧选中的研发阶段 IRI（落 metadata.hasDevelopmentPhase → 按阶段归类）；未选为 null。 */
   phaseIri: string | null;
   size: number;
-  /** 原始文件对象（供 submitUpload 把字节送入抽取管线生成标注/实体）。 */
+  /** 原始文件对象（供 submitUpload 保存可预览原件或进入结构化抽取）。 */
   file: File;
-  /** 标注管线源类型（word/excel）；其他类型为 null → 不生成在线预览/实体。 */
+  /** 可预览/抽取源类型（word/excel）；其他类型为 null。 */
   sourceType: string | null;
   /** 提交给后端的上传信封（doc_repo `_normalize_upload` 契约）。 */
   envelope: Record<string, unknown>;
 }
 
-/** 文件扩展名 → 标注管线源类型；仅 word/excel 可标注（生成 TipTap 预览 + 识别实体）。 */
+/** 文件扩展名 → 可保存预览或执行结构化抽取的源类型。 */
 function annotationSourceType(name: string): string | null {
   const ext = name.toLowerCase().split(".").pop() || "";
   if (ext === "docx" || ext === "doc") return "word";
@@ -597,9 +597,8 @@ export function prepareUpload(
 
 /**
  * 提交已构造的上传信封：
- *   1) 可标注文件（word/excel）先把字节送入抽取管线（`/jobs/auto`），约束到用户所选
- *      文档类型（doc_class_iri）→ 生成 TipTap 标注内容 + 识别实体；把返回的 job_id 回写
- *      进上传信封 metadata，物化后文档个体即携带 job 引用（详情页据此解析预览 + 关联实体）。
+ *   1) Word 只保存为 doc_repo 的结构预览源，绝不从上传动作启动旧关系识别；Excel 仍走
+ *      显式映射的结构化抽取。返回的 job_id 回写上传信封，供详情页读取原文预览。
  *   2) 建 doc_repo（upload 模式）连接器 → **立即触发一次同步**，物化为可检索文档个体。
  * 同步为同步调用（run_sync 落库后才返回），故本函数 resolve 时文档已可被 listDocuments 检索。
  * 抽取任务创建失败不阻断入库（预览/实体降级为不可用，文档仍可见、可归类）。
@@ -608,12 +607,13 @@ export async function submitUpload(prepared: PreparedUpload[]): Promise<void> {
   if (prepared.length === 0) return;
 
   for (const p of prepared) {
-    if (!p.sourceType) continue;  // 非 word/excel：不走标注管线（无在线预览/实体）
+    if (!p.sourceType) continue;
     try {
       const job = await createAutoExtractionJob({
         file: p.file,
         source_type: p.sourceType,
-        doc_class_iri: p.classIri,  // 用户所选文档类型 → 约束 NER 候选类
+        doc_class_iri: p.classIri,
+        purpose: p.sourceType === "word" ? "doc_repo_preview" : undefined,
       });
       const meta = (p.envelope.metadata ?? {}) as Record<string, unknown>;
       meta.job_id = job.id;  // → 物化落 properties_json.job_id → resolveDocumentContent 解析预览
@@ -1846,22 +1846,613 @@ export const getAnnotatedDocument = (jobId: string, refresh = false, signal?: Ab
     { signal },
   );
 
-export interface WordDocumentAnalysis {
+// Persistent ontology-guided document recognition. This is the only browser
+// contract for Word analysis; GETs below are read-only snapshot retrievals.
+export const DOCUMENT_ANALYSIS_CONTRACT_VERSION = "document-analysis-runs-v1" as const;
+
+export type DocumentAnalysisMetadataMode =
+  | "cached_summary"
+  | "generate_summary"
+  | "structure_only";
+export type DocumentAnalysisAvailability = "pending" | "ready" | "partial" | "failed";
+export type DocumentAnalysisStatus =
+  | "queued"
+  | "running"
+  | "paused"
+  | "finished"
+  | "retryable_failure"
+  | "blocked_dependency"
+  | "cancelled"
+  | "deleting"
+  | "deleted"
+  | "expired";
+export type DocumentAnalysisAvailableAction = "pause" | "resume" | "cancel" | "delete";
+
+export type DocumentAnalysisStage =
+  | "accepted"
+  | "storing_source"
+  | "converting"
+  | "parsing"
+  | "preparing_metadata"
+  | "freezing_inputs"
+  | "planning"
+  | "extracting"
+  | "projecting"
+  | "finalizing"
+  | "complete";
+
+export interface DocumentAnalysisCreateInput {
   filename: string;
-  content: Record<string, unknown>;
-  warnings: string[];
-  section_tree: WordChapterNode;
-  pagination: WordPaginationMetadata;
-  parser_version: number;
-  summary_prompt_version: string;
+  root_class_iri: string;
+  root_class_label: string;
+  metadata_mode: DocumentAnalysisMetadataMode;
 }
 
-export const analyzeWordDocument = (file: File) => {
+export interface DocumentAnalysisRunInput extends DocumentAnalysisCreateInput {
+  scope_mode: "document_graph" | "focus_path";
+}
+
+export interface DocumentAnalysisRunLinks {
+  self: string;
+  metadata: string;
+  graph: string;
+  source: string;
+  events: string;
+}
+
+export interface DocumentAnalysisCreateResponse {
+  contract_version: typeof DOCUMENT_ANALYSIS_CONTRACT_VERSION;
+  recognition_run_id: string;
+  run_revision: number;
+  event_head: number;
+  artifact_revision: number;
+  status: DocumentAnalysisStatus;
+  stage: DocumentAnalysisStage;
+  idempotent_replay: boolean;
+  input: DocumentAnalysisCreateInput;
+  created_at: string;
+  expires_at: string | null;
+  links: DocumentAnalysisRunLinks;
+}
+
+export interface DocumentAnalysisDecisionCounts {
+  supported: number;
+  unsupported: number;
+  undetermined: number;
+  not_checked: number;
+}
+
+export interface DocumentAnalysisProgress {
+  tasks_attempted: number;
+  model_calls: number;
+  records_planned: number;
+  records_examined: number;
+  records_incomplete: number;
+  records_unattempted: number;
+  phase_counts: { phase1: number; phase2: number };
+  decisions: DocumentAnalysisDecisionCounts;
+  pending_frontiers: number;
+  stop_reason: string | null;
+  contract_version: typeof DOCUMENT_ANALYSIS_CONTRACT_VERSION;
+  event_head: number;
+  artifact_revision: number;
+}
+
+export interface DocumentAnalysisRunIdentities {
+  analysis_id: string | null;
+  ontology_snapshot_id: string | null;
+  metadata_snapshot_id: string | null;
+  graph_snapshot_id: string | null;
+  fingerprint_status: "provisional" | "frozen";
+}
+
+export interface DocumentAnalysisRun {
+  contract_version: typeof DOCUMENT_ANALYSIS_CONTRACT_VERSION;
+  recognition_run_id: string;
+  run_revision: number;
+  event_head: number;
+  artifact_revision: number;
+  status: DocumentAnalysisStatus;
+  stage: DocumentAnalysisStage;
+  input: DocumentAnalysisRunInput;
+  identities: DocumentAnalysisRunIdentities;
+  artifacts: {
+    source: DocumentAnalysisAvailability;
+    structure: DocumentAnalysisAvailability;
+    metadata: DocumentAnalysisAvailability;
+    graph: DocumentAnalysisAvailability;
+  };
+  progress: DocumentAnalysisProgress;
+  error: DocumentAnalysisRunFailure | null;
+  available_actions: DocumentAnalysisAvailableAction[];
+  created_at: string;
+  started_at: string | null;
+  paused_at: string | null;
+  finished_at: string | null;
+  expires_at: string | null;
+}
+
+export interface DocumentAnalysisRunFailure {
+  code: string;
+  stage: DocumentAnalysisStage;
+  retryable: boolean;
+  safe_detail: string;
+  occurred_at: string;
+}
+
+export interface DocumentAnalysisMetadataArtifact {
+  contract_version: typeof DOCUMENT_ANALYSIS_CONTRACT_VERSION;
+  recognition_run_id: string;
+  run_revision: number;
+  event_head: number;
+  artifact_revision: number;
+  availability: DocumentAnalysisAvailability;
+  stage: DocumentAnalysisStage;
+  retry_after_ms?: number | null;
+  analysis: {
+    analysis_id: string;
+    document_hash: string;
+    structure_hash: string;
+    parser_version: string;
+    structure_policy_version: string;
+  } | null;
+  metadata_snapshot: {
+    snapshot_id: string;
+    generation_source: "model_summary" | "extractive_fallback" | "structure_only" | "mixed";
+    summary_version: string | null;
+    summary_model_identity: string | null;
+    dependency_hash: string;
+    frozen: boolean;
+  } | null;
+  metadata: null;
+  filename: string | null;
+  content: Record<string, unknown> | null;
+  section_tree: WordChapterNode | null;
+  pagination: WordPaginationMetadata | null;
+  warnings: string[];
+  error: DocumentAnalysisRunFailure | null;
+}
+
+export interface DocumentAnalysisEntityRef {
+  entity_id: string;
+  revision: number;
+}
+
+export interface DocumentAnalysisObjectRef {
+  id: string;
+  revision: number;
+}
+
+export type DocumentAnalysisSemanticVerdict =
+  | "supported"
+  | "unsupported"
+  | "undetermined"
+  | "not_checked";
+export type DocumentAnalysisAssertionPolarity =
+  | "affirmed"
+  | "negated"
+  | "conditional"
+  | "uncertain";
+
+export type DocumentGraphProjection =
+  | "effective_affirmed"
+  | "all_candidates"
+  | "unassociated"
+  | "negated"
+  | "conditional"
+  | "undetermined"
+  | "rejected";
+
+export interface DocumentGraphSnapshotIdentity {
+  snapshot_id: string;
+  analysis_id: string;
+  metadata_snapshot_id: string;
+  ontology_snapshot_id: string;
+  root_ref: DocumentAnalysisEntityRef;
+  projection_policy: string;
+  generated_at: string;
+}
+
+export interface DocumentGraphEntity {
+  entity_id: string;
+  revision: number;
+  class_iri: string;
+  class_label: string;
+  label: string;
+  seed_origin: "user_selected" | "recognized";
+  identity_state: "document_local" | "verified_key" | "verified_external" | "undetermined";
+  independent_review: "unreviewed" | "accepted" | "rejected";
+  source_selection_refs: string[];
+}
+
+export interface DocumentGraphAssertionBase {
+  candidate_id: string;
+  revision: number;
+  subject_ref: DocumentAnalysisEntityRef;
+  predicate_iri: string;
+  predicate_label: string;
+  polarity: DocumentAnalysisAssertionPolarity;
+  conditions: Array<Record<string, unknown>>;
+  applicability: Record<string, unknown>;
+  structural_valid: boolean;
+  model_supported: boolean;
+  policy_eligible: boolean;
+  independent_review: "unreviewed" | "accepted" | "rejected";
+  proof_ref: DocumentAnalysisObjectRef | null;
+  decision_refs: DocumentAnalysisObjectRef[];
+  dependency_refs: DocumentAnalysisObjectRef[];
+  source_selection_refs: {
+    subject: string[];
+    object: string[];
+    value: string[];
+    predicate_bridge: string[];
+    condition: string[];
+    counterevidence: string[];
+  };
+  reason_code: string | null;
+  reason: string | null;
+  invalidated: boolean;
+}
+
+export interface DocumentGraphProperty extends DocumentGraphAssertionBase {
+  direction: "subject_to_value";
+  raw_value: string;
+  normalized_value: unknown;
+  datatype_iri: string | null;
+  unit: string | null;
+}
+
+export interface DocumentGraphRelationship extends DocumentGraphAssertionBase {
+  object_ref: DocumentAnalysisEntityRef;
+  direction: "subject_to_object" | "object_to_subject";
+}
+
+export interface DocumentGraphCoverageSubject {
+  subject_ref: DocumentAnalysisEntityRef;
+  predicate_iri: string;
+  predicate_label: string;
+  records_planned: number;
+  records_examined: number;
+  records_incomplete: number;
+  records_unattempted: number;
+  phase_counts: { phase1: number; phase2: number };
+  pending_frontiers: number;
+  stop_reason: string | null;
+}
+
+export interface DocumentGraphCoverage {
+  subjects: DocumentGraphCoverageSubject[];
+  records_planned: number;
+  records_examined: number;
+  records_incomplete: number;
+  records_unattempted: number;
+  phase2_started: boolean;
+  pending_frontiers: number;
+  stop_reason: string | null;
+}
+
+export interface DocumentAnalysisGraphArtifact {
+  contract_version: typeof DOCUMENT_ANALYSIS_CONTRACT_VERSION;
+  recognition_run_id: string;
+  run_revision: number;
+  event_head: number;
+  artifact_revision: number;
+  availability: DocumentAnalysisAvailability;
+  projection: DocumentGraphProjection;
+  graph_snapshot: DocumentGraphSnapshotIdentity | null;
+  entities: DocumentGraphEntity[];
+  properties: DocumentGraphProperty[];
+  relationships: DocumentGraphRelationship[];
+  invalidated_refs: DocumentAnalysisObjectRef[];
+  coverage: DocumentGraphCoverage;
+  unresolved: {
+    unsupported: number;
+    undetermined: number;
+    not_checked: number;
+    unassociated_entities: number;
+  };
+  error: DocumentAnalysisRunFailure | null;
+}
+
+export interface DocumentSourceSelection {
+  selection_ref: string;
+  section_node_id: string;
+  source_record_ref: string | null;
+  record_view_ref: string | null;
+  source_cell_id: string | null;
+  span_refs: string[];
+  selection_role: "entity" | "subject" | "object" | "value" | "predicate_bridge" | "condition" | "counterevidence";
+}
+
+export interface DocumentAnalysisSourceArtifact {
+  contract_version: typeof DOCUMENT_ANALYSIS_CONTRACT_VERSION;
+  recognition_run_id: string;
+  analysis_id: string;
+  document_hash: string;
+  structure_hash: string;
+  filename: string;
+  content: Record<string, unknown>;
+  selection: DocumentSourceSelection | null;
+  anchors: EvidenceAnchor[];
+}
+
+export interface DocumentAnalysisRunControl {
+  contract_version: typeof DOCUMENT_ANALYSIS_CONTRACT_VERSION;
+  recognition_run_id: string;
+  run_revision: number;
+  event_head: number;
+  artifact_revision: number;
+  status: DocumentAnalysisStatus;
+  stage: DocumentAnalysisStage;
+  operation: "pause" | "resume" | "cancel" | "delete";
+  operation_status: string;
+  available_actions: DocumentAnalysisAvailableAction[];
+}
+
+export type DocumentAnalysisControlAction = "pause" | "resume" | "cancel";
+
+const DOCUMENT_ANALYSIS_EVENT_STREAM_POLICY: Readonly<Record<DocumentAnalysisStatus, boolean>> = {
+  queued: true,
+  running: true,
+  deleting: true,
+  paused: false,
+  retryable_failure: false,
+  blocked_dependency: false,
+  finished: false,
+  cancelled: false,
+  deleted: false,
+  expired: false,
+};
+
+function isDocumentAnalysisStatus(value: unknown): value is DocumentAnalysisStatus {
+  return typeof value === "string"
+    && Object.prototype.hasOwnProperty.call(DOCUMENT_ANALYSIS_EVENT_STREAM_POLICY, value);
+}
+
+/**
+ * Only execution states that can still produce autonomous progress keep an
+ * SSE subscription open. Paused/retryable runs are deliberately quiescent
+ * until an explicit resume transitions the same run back to queued.
+ */
+export function shouldSubscribeDocumentAnalysisEvents(
+  status: DocumentAnalysisStatus | null | undefined,
+): boolean {
+  return status != null && DOCUMENT_ANALYSIS_EVENT_STREAM_POLICY[status];
+}
+
+/** Apply the authoritative overlap in a control receipt to a loaded snapshot. */
+export function mergeDocumentAnalysisControlReceipt(
+  current: DocumentAnalysisRun | null,
+  receipt: DocumentAnalysisRunControl,
+): DocumentAnalysisRun | null {
+  if (
+    current == null
+    || current.recognition_run_id !== receipt.recognition_run_id
+    || receipt.run_revision < current.run_revision
+    || receipt.event_head < current.event_head
+    || receipt.artifact_revision < current.artifact_revision
+  ) return current;
+  return {
+    ...current,
+    run_revision: receipt.run_revision,
+    event_head: receipt.event_head,
+    artifact_revision: receipt.artifact_revision,
+    status: receipt.status,
+    stage: receipt.stage,
+    available_actions: receipt.available_actions,
+  };
+}
+
+export type DocumentAnalysisEventType =
+  | "run_state"
+  | "progress"
+  | "artifact"
+  | "warning"
+  | "error"
+  | "heartbeat"
+  | "tombstone";
+
+export interface DocumentAnalysisRunEvent {
+  contract_version: typeof DOCUMENT_ANALYSIS_CONTRACT_VERSION;
+  event_id: string;
+  recognition_run_id: string;
+  run_revision: number;
+  event_head: number;
+  artifact_revision: number;
+  status: DocumentAnalysisStatus;
+  stage: DocumentAnalysisStage;
+  artifact_kind: "source" | "structure" | "metadata" | "graph" | null;
+  availability: DocumentAnalysisAvailability | null;
+}
+
+export interface DocumentAnalysisControlRequest {
+  expected_revision: number;
+  request_key: string;
+  reason: string;
+}
+
+const documentRunPath = (recognitionRunId: string) =>
+  `/api/document-analysis/runs/${encodeURIComponent(recognitionRunId)}`;
+
+export const createDocumentAnalysisRun = (
+  file: File,
+  rootClassIri: string,
+  requestKey: string,
+  metadataMode: DocumentAnalysisMetadataMode = "generate_summary",
+  signal?: AbortSignal,
+) => {
   const form = new FormData();
   form.append("file", file);
-  return fetchAPI<WordDocumentAnalysis>("/api/document-analysis/word", {
+  form.append("root_class_iri", rootClassIri);
+  form.append("request_key", requestKey);
+  form.append("metadata_mode", metadataMode);
+  return fetchAPI<DocumentAnalysisCreateResponse>("/api/document-analysis/runs", {
     method: "POST",
     body: form,
+    signal,
+  });
+};
+
+export const getDocumentAnalysisRun = (recognitionRunId: string, signal?: AbortSignal) =>
+  fetchAPI<DocumentAnalysisRun>(documentRunPath(recognitionRunId), { signal });
+
+export const getDocumentAnalysisMetadata = (recognitionRunId: string, signal?: AbortSignal) =>
+  fetchAPI<DocumentAnalysisMetadataArtifact>(`${documentRunPath(recognitionRunId)}/metadata`, { signal });
+
+export const getDocumentAnalysisGraph = (
+  recognitionRunId: string,
+  projection: DocumentGraphProjection = "effective_affirmed",
+  signal?: AbortSignal,
+) => fetchAPI<DocumentAnalysisGraphArtifact>(
+  `${documentRunPath(recognitionRunId)}/graph?projection=${encodeURIComponent(projection)}`,
+  { signal },
+);
+
+export const getDocumentAnalysisSource = (
+  recognitionRunId: string,
+  selectionRef?: string,
+  signal?: AbortSignal,
+) => {
+  const query = selectionRef ? `?selection_ref=${encodeURIComponent(selectionRef)}` : "";
+  return fetchAPI<DocumentAnalysisSourceArtifact>(`${documentRunPath(recognitionRunId)}/source${query}`, { signal });
+};
+
+/**
+ * Subscribe to durable run events. Native EventSource reconnects with the last
+ * numeric SSE id; each event is still checked against the requested run before
+ * it can trigger a snapshot refresh.
+ */
+export function subscribeDocumentAnalysisEvents(
+  recognitionRunId: string,
+  onEvent: (event: DocumentAnalysisRunEvent, eventType: DocumentAnalysisEventType) => void,
+): () => void {
+  const identity = getIdentity();
+  const query = new URLSearchParams({
+    x_user: identity.username,
+    x_role: identity.role,
+  });
+  const token = getToken();
+  if (token) query.set("token", token);
+  const source = new EventSource(
+    `${API_BASE}${documentRunPath(recognitionRunId)}/events?${query.toString()}`,
+  );
+  const eventTypes: DocumentAnalysisEventType[] = [
+    "run_state",
+    "progress",
+    "artifact",
+    "warning",
+    "error",
+    "heartbeat",
+    "tombstone",
+  ];
+  const listeners = new Map<DocumentAnalysisEventType, EventListener>();
+  let closed = false;
+  const close = () => {
+    if (closed) return;
+    closed = true;
+    for (const [eventType, listener] of listeners) {
+      source.removeEventListener(eventType, listener);
+    }
+    source.close();
+  };
+  for (const eventType of eventTypes) {
+    const listener: EventListener = (rawEvent) => {
+      const data = (rawEvent as MessageEvent<string>).data;
+      let event: DocumentAnalysisRunEvent;
+      try {
+        event = JSON.parse(data) as DocumentAnalysisRunEvent;
+      } catch {
+        // A malformed frame has no authority to mutate local run state. The
+        // read-only snapshot poll remains the recovery path.
+        return;
+      }
+      if (
+        event.contract_version === DOCUMENT_ANALYSIS_CONTRACT_VERSION
+        && event.recognition_run_id === recognitionRunId
+        && isDocumentAnalysisStatus(event.status)
+      ) {
+        try {
+          onEvent(event, eventType);
+        } finally {
+          if (!shouldSubscribeDocumentAnalysisEvents(event.status)) close();
+        }
+      }
+    };
+    listeners.set(eventType, listener);
+    source.addEventListener(eventType, listener);
+  }
+  return close;
+}
+
+export const controlDocumentAnalysisRun = (
+  recognitionRunId: string,
+  action: DocumentAnalysisControlAction,
+  expectedRevision: number,
+  requestKey: string,
+  reason: string,
+  signal?: AbortSignal,
+) => fetchAPI<DocumentAnalysisRunControl>(`${documentRunPath(recognitionRunId)}/${action}`, {
+  method: "POST",
+  body: JSON.stringify({
+    expected_revision: expectedRevision,
+    request_key: requestKey,
+    reason,
+  }),
+  signal,
+});
+
+export const pauseDocumentAnalysisRun = (
+  recognitionRunId: string,
+  request: DocumentAnalysisControlRequest,
+  signal?: AbortSignal,
+) => controlDocumentAnalysisRun(
+  recognitionRunId,
+  "pause",
+  request.expected_revision,
+  request.request_key,
+  request.reason,
+  signal,
+);
+
+export const resumeDocumentAnalysisRun = (
+  recognitionRunId: string,
+  request: DocumentAnalysisControlRequest,
+  signal?: AbortSignal,
+) => controlDocumentAnalysisRun(
+  recognitionRunId,
+  "resume",
+  request.expected_revision,
+  request.request_key,
+  request.reason,
+  signal,
+);
+
+export const cancelDocumentAnalysisRun = (
+  recognitionRunId: string,
+  request: DocumentAnalysisControlRequest,
+  signal?: AbortSignal,
+) => controlDocumentAnalysisRun(
+  recognitionRunId,
+  "cancel",
+  request.expected_revision,
+  request.request_key,
+  request.reason,
+  signal,
+);
+
+export const deleteDocumentAnalysisRun = (
+  recognitionRunId: string,
+  expectedRevision: number,
+  requestKey: string,
+  signal?: AbortSignal,
+) => {
+  const query = new URLSearchParams({
+    expected_revision: String(expectedRevision),
+    request_key: requestKey,
+  });
+  return fetchAPI<DocumentAnalysisRunControl>(`${documentRunPath(recognitionRunId)}?${query}`, {
+    method: "DELETE",
+    signal,
   });
 };
 
@@ -2019,7 +2610,11 @@ export async function downloadReport(jobId: string, reportId: string): Promise<B
 }
 
 export async function createAutoExtractionJob(params: {
-  file: File; source_type: string; target_class_iris?: string[]; doc_class_iri?: string;
+  file: File;
+  source_type: string;
+  target_class_iris?: string[];
+  doc_class_iri?: string;
+  purpose?: "doc_repo_preview";
 }): Promise<ExtractionJob> {
   const fd = new FormData();
   fd.append("file", params.file);
@@ -2027,9 +2622,11 @@ export async function createAutoExtractionJob(params: {
   if (params.target_class_iris) {
     fd.append("target_class_iris", JSON.stringify(params.target_class_iris));
   }
-  // 用户所选文档类型 → 后端据此约束 NER 候选类（相关类子图，定向识别）。
   if (params.doc_class_iri) {
     fd.append("doc_class_iri", params.doc_class_iri);
+  }
+  if (params.purpose) {
+    fd.append("purpose", params.purpose);
   }
   const res = await fetch(`${API_BASE}/api/extraction/jobs/auto`, {
     method: "POST", headers: identityHeaders(), body: fd,
@@ -2060,6 +2657,8 @@ export interface OntologyClassFlat {
 }
 export const getAllClasses = () =>
   fetchAPI<OntologyClassFlat[]>("/api/ontology/all-classes");
+export const getAllClassesWithSignal = (signal: AbortSignal) =>
+  fetchAPI<OntologyClassFlat[]>("/api/ontology/all-classes", { signal });
 
 // ===========================================================================
 // 012 AST Template Management
