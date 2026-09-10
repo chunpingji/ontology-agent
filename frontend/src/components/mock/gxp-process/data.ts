@@ -1,3 +1,5 @@
+import { createSamplingPlan, validateSamplingPlan, type SamplingPlan } from "./sampling";
+
 export type ParameterKind = "数值 · 小数" | "数值 · 整数" | "枚举" | "时长" | "布尔" | "文本";
 
 export interface Parameter {
@@ -48,6 +50,9 @@ export interface Operation {
   allowNotApplicable: boolean;
   continuation: string;
   changeNote: string;
+  sampling?: SamplingPlan;
+  configurationLayout?: "tabs";
+  batchSourceOperationId?: string;
 }
 
 export interface ProcessStep { id: string; name: string; custom?: boolean }
@@ -96,7 +101,7 @@ export function emptyOperation(id: string, stepId: string, name: string, custom 
 }
 
 export const PARAMETER_KINDS: ParameterKind[] = ["数值 · 小数", "数值 · 整数", "枚举", "时长", "布尔", "文本"];
-export const RECORDING_OPTIONS = ["每 30 分钟记录", "每 15 分钟记录", "连续采集", "操作开始时确认", "由起止事件计算", "开始及状态变化时", "异常事件触发", "人工记录"];
+export const RECORDING_OPTIONS = ["每 30 分钟记录", "每 15 分钟记录", "每 1 小时记录", "每 3 小时记录", "连续采集", "操作开始时确认", "由起止事件计算", "开始及状态变化时", "异常事件触发", "人工记录"];
 
 export function emptyParameter(id: string): Parameter {
   return { id, name: "", target: "", kind: "数值 · 小数", unit: "℃", comparison: "区间", value: "", upper: "", recording: "人工记录", required: true, enabled: true };
@@ -108,8 +113,9 @@ export function createInitialOperations(): Operation[] {
     return names.map((name, operationIndex) => emptyOperation(`${stepId}.${String(operationIndex + 1).padStart(2, "0")}`, stepId, name, false));
   });
   const holding = operations.find((operation) => operation.id === "OP11.02")!;
+  holding.configurationLayout = "tabs";
   holding.parameters = [
-    { id: "temperature", name: "物料温度", target: "反应物料 · 釜内测点", kind: "数值 · 小数", unit: "℃", comparison: "区间", value: "20.0", upper: "25.0", recording: "每 30 分钟记录", required: true, enabled: true },
+    { id: "temperature", name: "物料温度", target: "反应物料 · 釜内测点", kind: "数值 · 小数", unit: "℃", comparison: "区间", value: "20.0", upper: "25.0", recording: "每 3 小时记录", required: true, enabled: true },
     { id: "speed", name: "搅拌转速", target: "搅拌系统", kind: "数值 · 整数", unit: "r/min", comparison: "区间", value: "100", upper: "150", recording: "每 30 分钟记录", required: true, enabled: true },
     { id: "gas", name: "保护气体", target: "设备气相空间", kind: "枚举", unit: "—", comparison: "允许值", value: "氮气（N₂）", upper: "", recording: "操作开始时确认", required: true, enabled: true },
     { id: "duration", name: "保温时长", target: "本操作 · 起止事件", kind: "时长", unit: "小时", comparison: "不少于", value: "12", upper: "", recording: "由起止事件计算", required: true, enabled: true },
@@ -135,6 +141,33 @@ export function createInitialOperations(): Operation[] {
     { id: "missing", name: "必记信息缺失 / 终点检验待结果", details: ["保持未决，补充证据", "操作 / 检验负责人", "记录完整，所需检验结果已确认"], required: true, enabled: true },
     { id: "invalid", name: "取样程序不符合 / 分析无效", details: ["评估样品或检验有效性", "QC / 质量负责人", "有效证据形成并完成复核"], required: true, enabled: true },
   ];
+  const sampling = operations.find((operation) => operation.id === "OP11.03")!;
+  sampling.sampling = createSamplingPlan();
+  sampling.reviewer = "授权复核员";
+  sampling.qualityReviewer = "QA";
+  sampling.continuation = "样品身份与完整性确认 + 所需检验有效并完成复核；终点项目符合适用准则后按授权继续，监测调整限于质量部门预批准范围。";
+  sampling.events = [
+    { id: "sampling-start", name: "取样开始", details: ["取样时点到达且前置检查完成", "计划 / 实际时间 + 取样人", "当前取样点 / 反应批次", "每次必记"], required: true, enabled: true },
+    { id: "sampling-end", name: "取样完成", details: ["样品收集完成", "完成时间 + 样品号 + 实际量", "当前取样点", "每次必记"], required: true, enabled: true },
+    { id: "sample-treatment", name: "样品处理完成", details: ["按方案执行淬灭、稀释或固定", "处理时间 + 方法 / 试剂批号", "当前样品", "适用时必记"], required: true, enabled: true },
+    { id: "sample-receipt", name: "样品交接与接收", details: ["送检样品交付", "交接 / 接收时间 + 双方人员 + 接收状态", "当前样品 / 检验部门", "每次必记"], required: true, enabled: true },
+    { id: "sample-review", name: "结果复核完成", details: ["检验完成并形成原始记录", "检验时间 + 复核时间 + 复核人", "样品 / 方法版本 / 原始数据", "每次必记"], required: true, enabled: true },
+  ];
+  sampling.startEvent = "sampling-start";
+  sampling.endEvent = "sampling-end";
+  sampling.checks = [
+    { id: "sampling-plan", name: "方案与人员资格", details: ["方案版本适用并获批准；人员培训 / 授权有效", "规程和授权记录核对", "取样前"], required: true, enabled: true },
+    { id: "sampling-point", name: "时点与代表性", details: ["核对批次、相别、点位、份数及数量；记录实际时点", "取样计划与执行记录核对", "每次取样"], required: true, enabled: true },
+    { id: "sampling-integrity", name: "防污染与样品完整性", details: ["按方案准备工具、保护、即时处理、保存和运输", "过程记录与接收状态确认", "取样至检验"], required: true, enabled: true },
+    { id: "sampling-restoration", name: "设备状态恢复", details: ["关闭取样口、恢复密封和工艺所需保护", "操作状态确认", "取样后"], required: true, enabled: true },
+    { id: "sampling-analysis", name: "检验与原始记录复核", details: ["方法版本、仪器及适用的系统适用性有效；核对原始数据", "独立复核并关联样品身份", "结果使用前"], required: true, enabled: true },
+  ];
+  sampling.contingencies = [
+    { id: "sampling-missing", name: "漏取 / 超时 / 样品身份或完整性异常", details: ["记录偏差，评估样品适用性及批次影响；保留未决", "生产 / QC / QA", "评估及后续取样按批准程序执行"], required: true, enabled: true },
+    { id: "sampling-invalid", name: "分析无效 / 技术失败", details: ["保留原始数据，调查分析有效性；不形成符合结论", "QC / 质量负责人", "按程序形成有效检验并完成复核"], required: true, enabled: true },
+    { id: "sampling-monitor", name: "监测 / 调整项目超出控制范围", details: ["按预批准范围调整并记录；超出授权范围走偏差评估", "授权生产人员 / 质量部门", "仅监测调整用途适用 Q7 §8.36；按适用程序决定调查"], required: true, enabled: true },
+    { id: "sampling-oos", name: "终点 / 规格用途结果超出接受准则", details: ["按适用偏差 / OOS 程序调查，保持步骤处置未决", "QC / QA", "调查和处置获批准；重取样 / 复测关联原记录"], required: true, enabled: true },
+  ];
   return operations;
 }
 
@@ -152,6 +185,7 @@ export function ruleDetails(row: RuleRow, operation: Operation): string[] {
 export function validateOperation(operation: Operation): string[] {
   const issues: string[] = [];
   if (!operation.name.trim()) issues.push("请填写操作名称。");
+  if (operation.sampling) issues.push(...validateSamplingPlan(operation.sampling));
   for (const parameter of operation.parameters.filter((item) => item.enabled)) {
     if (!parameter.name.trim() || !parameter.target.trim()) issues.push("参数名称和测量对象不能为空。");
     if (!parameter.value.trim()) issues.push(`${parameter.name}：请填写规程要求。`);

@@ -29,6 +29,9 @@ class TemplateDocumentRuns:
         job = self.db.get(ExtractionJob, job_id)
         if template is None or job is None:
             raise DocumentAnalysisError("SOURCE_NOT_FOUND", "模板或源文档不存在", status_code=404)
+        if (template.schema_json or {}).get("demo_profile"):
+            raise DocumentAnalysisError(
+                "RUN_STATE_CONFLICT", "演示模板使用共享静态图谱，无需抽取", status_code=409)
         config = job.source_config or {}
         root = config.get("doc_class_iri")
         if not root or (template.iri_pattern and template.iri_pattern not in root):

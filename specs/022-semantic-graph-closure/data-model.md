@@ -15,3 +15,20 @@
 - `CheckpointEnvelope`：frontier、recall_ledger、task_outcomes、dependency_index、graph_state、diagnostics、ranking_state 等。每条 outcome 保存当时临时排除的排序槽位；ranking_state 还由运行独立制品保存 service、committed_at 和 discarded_epochs，评分前成本写入不依赖原文批次已产生。
 
 所有运行制品沿用现有 owner/fence、event head 与 revision CAS，不新增表、不写中央业务事实。
+
+## 性能增量（2026-09-10）
+
+- 源制品冻结 `performance_policy`：存储/前沿版本、单个识别任务在途和模板公平开关。
+  无该字段的旧运行按原策略恢复；新开关只影响后续创建。
+- `ranking_state`、`graph`、`recognition_checkpoint` 的大载荷保存为存储版本2引用树；
+  逻辑对象及其校验不变。每块由运行身份和内容hash确定，引用包含
+  `artifact_id/content_hash/schema_version`；`DocumentRunArtifact`索引负责保留和清理，
+  无共享全局缓存或额外表。旧inline格式独立读取，不在GET升级。
+- `public_graph`、`ranking_summary`、`source_header`、`source_selections` 是原提交边界
+  同时产生的读取制品；不包含向量或完整检索计划。运行公开身份增加
+  `structure_snapshot_id/ranking_summary_id`，图版本、状态与预算分别驱动展示。
+- 前沿版本2保存完整冻结计划、记录顺序、游标和稀疏任务状态；选择任务时才实例化。
+  未展开机会仍计覆盖；模板交错策略单独冻结，旧前沿和默认公平次序保留。
+- 排序v2为每个权限/槽位/记录/意图保留基础调用和有限技术重试；v1历史额度不升级。
+
+接口、恢复及失败契约见 [performance.md](contracts/performance.md)。

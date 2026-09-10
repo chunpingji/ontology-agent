@@ -1,4 +1,4 @@
-import { fetchAPI, identityHeaders } from "./api";
+import { fetchAPI, identityHeaders, type StaticDemoProfile } from "./api";
 
 export interface InputRef {
   kind?: "input_ref";
@@ -71,6 +71,7 @@ export interface OutputGroup {
 }
 export interface TemplateV2 {
   schema_version: 2;
+  demo_profile?: StaticDemoProfile | null;
   template_family_id: string;
   template_revision_id: string;
   revision_no: number;

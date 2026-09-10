@@ -35,7 +35,7 @@ The endpoint is an immediate tool operation. It has no ExtractionJob, database s
     "warning": "Word 未保存可靠分页标记；章节页为逻辑片段，不代表物理页码。"
   },
   "parser_version": 2,
-  "summary_prompt_version": "word-tree-summary-v1"
+  "summary_prompt_version": "word-tree-summary-v2"
 }
 ```
 

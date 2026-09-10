@@ -1,11 +1,17 @@
 "use client";
 
+import { useMemo } from "react";
+import type { TreeInstance } from "@headless-tree/core";
 import { ExternalLink, Loader2, Pause, Play, RefreshCw } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Tree, TreeItem, TreeItemLabel } from "@/components/ui/tree";
+import { useDocumentTree, type DocumentTreeNode } from "@/components/ui/use-document-tree";
 import {
+  getIdentity,
   type DocumentAnalysisGraphArtifact, type DocumentGraphAssertionBase,
   type DocumentGraphCoverageSubject, type DocumentGraphEntity,
+  type DocumentGraphProperty, type DocumentGraphRelationship,
 } from "@/lib/api";
 import { DOCUMENT_ANALYSIS_STATUS_LABELS, formatDocumentAnalysisReason } from "@/lib/document-analysis";
 import { useTemplateDocumentRun } from "./use-template-document-run";
@@ -23,7 +29,7 @@ export function branchProgress(branch?: DocumentGraphCoverageSubject): string {
 function SourceButton({ refs, label, select }: { refs: string[]; label: string; select: Model["select"] }) {
   if (!refs.length) return null;
   return <span className="inline-flex flex-wrap gap-1">
-    {refs.map((ref, index) => <button key={ref} type="button"
+    {refs.map((ref, index) => <button key={ref} type="button" data-tree-action="source"
       className="inline-flex items-center gap-1 text-xs text-primary underline-offset-2 hover:underline"
       aria-label={`${label}${refs.length > 1 ? ` ${index + 1}` : ""}原文`}
       onClick={() => select(ref)}><ExternalLink className="size-3" />
@@ -48,82 +54,219 @@ function AssertionProof({ item, select }: { item: DocumentGraphAssertionBase; se
   </div>;
 }
 
-function EntityBranch({ entity, graph, select, ancestors = [] }: {
-  entity: DocumentGraphEntity; graph: DocumentAnalysisGraphArtifact;
-  select: Model["select"]; ancestors?: string[];
-}) {
-  const menu = entity.predicate_menu;
-  const coverage = graph.coverage.subjects.filter((item) => item.subject_ref.entity_id === entity.entity_id);
-  const edges = graph.relationships.filter((item) => item.subject_ref.entity_id === entity.entity_id);
-  const properties = graph.properties.filter((item) => item.subject_ref.entity_id === entity.entity_id);
-  const relationships = menu?.filter((item) => item.kind === "relationship")
-    ?? [...new Map(edges.map((item) => [item.predicate_iri, item])).values()];
-  const fields = menu?.filter((item) => item.kind === "property")
-    ?? [...new Map(properties.map((item) => [item.predicate_iri, item])).values()];
-  const renderField = (field: typeof fields[number]) => {
-            const values = properties.filter((item) => item.predicate_iri === field.predicate_iri);
-            return <div key={field.predicate_iri} className="border-l-2 pl-2" data-predicate={field.predicate_iri}>
-              <p className="text-xs font-medium">{field.predicate_label}</p>
-              <p className="text-xs text-muted-foreground">{branchProgress(coverage.find((item) => item.predicate_iri === field.predicate_iri))}</p>
-              {values.map((item) => <div key={item.candidate_id} className="mt-1 space-y-1">
-                <p className="break-words text-sm">{item.raw_value}</p>
-                <SourceButton refs={item.source_selection_refs.value} label="属性值" select={select} />
-                <AssertionProof item={item} select={select} />
-              </div>)}
-              {!values.length && <p className="text-xs text-muted-foreground">尚无有效属性值</p>}
-            </div>;
+type Predicate = { predicate_iri: string; predicate_label: string };
+
+/** One index and a spanning forest bound rendering to entities + edges, including disconnected cycles. */
+export function buildTemplateGraphIndex(graph: DocumentAnalysisGraphArtifact) {
+  const entities = new Map(graph.entities.map((entity) => [entity.entity_id, entity]));
+  const outgoing = new Map<string, DocumentGraphRelationship[]>();
+  const edges = new Map<string, Map<string, DocumentGraphRelationship[]>>();
+  const properties = new Map<string, Map<string, DocumentGraphProperty[]>>();
+  const coverage = new Map<string, Map<string, DocumentGraphCoverageSubject>>();
+  const add = <T,>(index: Map<string, Map<string, T[]>>, subject: string, predicate: string, item: T) => {
+    let slots = index.get(subject);
+    if (!slots) { slots = new Map(); index.set(subject, slots); }
+    let values = slots.get(predicate);
+    if (!values) { values = []; slots.set(predicate, values); }
+    values.push(item);
   };
-  const cycle = ancestors.includes(entity.entity_id);
-  return <details open={ancestors.length <= 1} className="min-w-0 rounded border bg-background p-2"
-    data-entity-id={entity.entity_id}>
-    <summary className="cursor-pointer break-words text-sm font-medium">
-      {entity.label} <span className="font-normal text-muted-foreground">{entity.class_label}</span>
-    </summary>
-    <div className="mt-2 space-y-3">
-      <SourceButton refs={entity.source_selection_refs} label="实体名称" select={select} />
-      {cycle ? <p className="text-xs text-muted-foreground">该实体已在上级路径展示。</p> : <>
-        <div className="space-y-2">
-          <p className="text-xs font-medium">属性{menu ? `（${fields.length}）` : ""}</p>
-          {menu && !fields.length && <p className="text-xs text-muted-foreground">不适用：本体未声明数据属性</p>}
-          {fields.filter((field) => properties.some((item) => item.predicate_iri === field.predicate_iri)).map(renderField)}
-          {fields.some((field) => !properties.some((item) => item.predicate_iri === field.predicate_iri)) && (
-            <details>
-              <summary className="cursor-pointer text-xs text-muted-foreground">待检查及暂无结果的属性</summary>
-              <div className="mt-2 space-y-2">
-                {fields.filter((field) => !properties.some((item) => item.predicate_iri === field.predicate_iri)).map(renderField)}
-              </div>
-            </details>
-          )}
-        </div>
-        {relationships.map((relation) => {
-          const matches = edges.filter((item) => item.predicate_iri === relation.predicate_iri);
-          return <details key={relation.predicate_iri} open={matches.length > 0}
-            className="border-l-2 pl-2" data-predicate={relation.predicate_iri}>
-            <summary className="cursor-pointer text-sm">{relation.predicate_label}
-              <span className="ml-2 text-xs text-muted-foreground">{matches.length ? `${matches.length} 项` : "尚无有效关系"}</span>
-              <span className="block text-xs text-muted-foreground">{branchProgress(coverage.find((item) => item.predicate_iri === relation.predicate_iri))}</span>
-            </summary>
-            {matches.map((edge) => {
-              const target = graph.entities.find((item) => item.entity_id === edge.object_ref.entity_id);
-              return <div key={edge.candidate_id} className="mt-2 space-y-2">
-                <AssertionProof item={edge} select={select} />
-                {target && <EntityBranch entity={target} graph={graph} select={select}
-                  ancestors={[...ancestors, entity.entity_id]} />}
-              </div>;
-            })}
-          </details>;
-        })}
-      </>}
-    </div>
-  </details>;
+  for (const edge of graph.relationships) {
+    add(edges, edge.subject_ref.entity_id, edge.predicate_iri, edge);
+    const rows = outgoing.get(edge.subject_ref.entity_id) ?? [];
+    rows.push(edge);
+    outgoing.set(edge.subject_ref.entity_id, rows);
+  }
+  for (const item of graph.properties) add(properties, item.subject_ref.entity_id, item.predicate_iri, item);
+  for (const item of graph.coverage.subjects) {
+    let slots = coverage.get(item.subject_ref.entity_id);
+    if (!slots) { slots = new Map(); coverage.set(item.subject_ref.entity_id, slots); }
+    slots.set(item.predicate_iri, item);
+  }
+  const parent = new Map<string, { subjectId: string; predicate: string; candidateId: string }>();
+  const depth = new Map<string, number>();
+  const roots: DocumentGraphEntity[] = [];
+  const rootId = graph.graph_snapshot?.root_ref.entity_id;
+  const orderedIds = rootId && entities.has(rootId) ? [rootId, ...entities.keys()] : [...entities.keys()];
+  for (const seed of orderedIds) {
+    if (depth.has(seed)) continue;
+    roots.push(entities.get(seed)!);
+    depth.set(seed, 0);
+    const queue = [seed];
+    for (let cursor = 0; cursor < queue.length; cursor++) {
+      const subjectId = queue[cursor];
+      for (const edge of outgoing.get(subjectId) ?? []) {
+        const targetId = edge.object_ref.entity_id;
+        if (!entities.has(targetId) || depth.has(targetId)) continue;
+        depth.set(targetId, depth.get(subjectId)! + 1);
+        parent.set(targetId, { subjectId, predicate: edge.predicate_iri, candidateId: edge.candidate_id });
+        queue.push(targetId);
+      }
+    }
+  }
+  return { entities, edges, properties, coverage, roots, parent, depth, rootId };
+}
+
+type GraphIndex = ReturnType<typeof buildTemplateGraphIndex>;
+const entityKey = (id: string) => JSON.stringify(["entity", id]);
+const relationKey = (id: string, predicate: string) => JSON.stringify(["relation", id, predicate]);
+
+export function templateGraphJumpPath(index: GraphIndex, entityId: string): string[] {
+  const path = [entityKey(entityId)];
+  let current = entityId;
+  while (index.parent.has(current)) {
+    const parent = index.parent.get(current)!;
+    path.push(entityKey(parent.subjectId), relationKey(parent.subjectId, parent.predicate));
+    current = parent.subjectId;
+  }
+  if (current !== index.rootId) path.push("unassociated");
+  return path;
+}
+
+type GraphTreeNode = DocumentTreeNode & (
+  | { kind: "group"; note?: string }
+  | { kind: "entity"; entity: DocumentGraphEntity; incoming?: DocumentGraphRelationship }
+  | { kind: "field"; field: Predicate; coverage?: DocumentGraphCoverageSubject }
+  | { kind: "value"; value: DocumentGraphProperty }
+  | { kind: "relation"; relation: Predicate; coverage?: DocumentGraphCoverageSubject }
+  | { kind: "reference"; target?: DocumentGraphEntity; edge: DocumentGraphRelationship }
+);
+
+/** Project the canonical forest into stable tree occurrences; proofs stay attached
+ * to their own assertion, including edges rendered as references. */
+export function buildTemplateTreeData(index: GraphIndex) {
+  const nodes = new Map<string, GraphTreeNode>();
+  const rootId = "graph-root";
+  const root = index.rootId ? index.entities.get(index.rootId) : undefined;
+  const unassociated = index.roots.filter((entity) => entity !== root);
+  nodes.set(rootId, { kind: "group", name: "关系图谱", children: [
+    ...(root ? [entityKey(root.entity_id)] : []), ...(unassociated.length ? ["unassociated"] : []),
+  ] });
+  if (unassociated.length) nodes.set("unassociated", { kind: "group",
+    name: `未关联实体（${unassociated.length} 组）`, children: unassociated.map((entity) => entityKey(entity.entity_id)) });
+  const incoming = new Map<string, DocumentGraphRelationship>();
+  for (const entity of index.entities.values()) {
+    const id = entity.entity_id;
+    const menu = entity.predicate_menu;
+    const properties = index.properties.get(id);
+    const edges = index.edges.get(id);
+    const coverage = index.coverage.get(id);
+    const fields: Predicate[] = menu?.filter((item) => item.kind === "property")
+      ?? [...(properties?.values() ?? [])].map((values) => values[0]);
+    const relations: Predicate[] = menu?.filter((item) => item.kind === "relationship")
+      ?? [...(edges?.values() ?? [])].map((values) => values[0]);
+    const propertyGroup = JSON.stringify(["properties", id]);
+    const emptyGroup = JSON.stringify(["fields", id]);
+    const populated: string[] = [], empty: string[] = [];
+    for (const field of fields) {
+      const fieldId = JSON.stringify(["field", id, field.predicate_iri]);
+      const values = properties?.get(field.predicate_iri) ?? [];
+      (values.length ? populated : empty).push(fieldId);
+      const children = values.map((value) => {
+        const key = JSON.stringify(["value", id, field.predicate_iri, value.candidate_id]);
+        nodes.set(key, { kind: "value", name: value.raw_value, value, children: [] });
+        return key;
+      });
+      nodes.set(fieldId, { kind: "field", field, name: field.predicate_label, children,
+        defaultExpanded: values.length > 0, coverage: coverage?.get(field.predicate_iri) });
+    }
+    if (empty.length) nodes.set(emptyGroup, { kind: "group", name: "待检查及暂无结果的属性", children: empty });
+    nodes.set(propertyGroup, { kind: "group", name: menu ? `属性（${fields.length}）` : "属性",
+      children: [...populated, ...(empty.length ? [emptyGroup] : [])], defaultExpanded: true,
+      note: menu && !fields.length ? "不适用：本体未声明数据属性" : undefined });
+    const children = [propertyGroup];
+    for (const relation of relations) {
+      const key = relationKey(id, relation.predicate_iri);
+      children.push(key);
+      const matches = edges?.get(relation.predicate_iri) ?? [];
+      const targets = matches.map((edge) => {
+        const target = index.entities.get(edge.object_ref.entity_id);
+        if (target && index.parent.get(target.entity_id)?.candidateId === edge.candidate_id) {
+          incoming.set(target.entity_id, edge);
+          return entityKey(target.entity_id);
+        }
+        const ref = JSON.stringify(["reference", id, relation.predicate_iri, edge.candidate_id]);
+        nodes.set(ref, { kind: "reference", edge, target, children: [],
+          name: target ? `引用：${target.label} · 跳转到实体` : "目标实体不可用" });
+        return ref;
+      });
+      nodes.set(key, { kind: "relation", relation, name: relation.predicate_label, children: targets,
+        defaultExpanded: matches.length > 0, coverage: coverage?.get(relation.predicate_iri) });
+    }
+    nodes.set(entityKey(id), { kind: "entity", entity, name: entity.label, children,
+      defaultExpanded: (index.depth.get(id) ?? 0) <= 1 });
+  }
+  for (const [id, edge] of incoming) {
+    const node = nodes.get(entityKey(id));
+    if (node?.kind === "entity") node.incoming = edge;
+  }
+  return { rootId, nodes };
+}
+
+export function TemplateGraphTree({ graph, select }: { graph: DocumentAnalysisGraphArtifact; select: Model["select"] }) {
+  const index = useMemo(() => buildTemplateGraphIndex(graph), [graph]);
+  const data = useMemo(() => buildTemplateTreeData(index), [index]);
+  const jump = (tree: TreeInstance<GraphTreeNode>, id: string) => {
+    // Expand the complete canonical path before moving focus. Headless Tree waits
+    // for newly visible rows to mount; DOM identity uses entity ID, never a label.
+    for (const key of templateGraphJumpPath(index, id)) {
+      if (data.nodes.has(key)) {
+        const item = tree.getItemInstance(key);
+        if (!item.isExpanded()) item.expand();
+      }
+    }
+    const target = tree.getItemInstance(entityKey(id));
+    tree.setSelectedItems([target.getId()]);
+    target.setFocused();
+    tree.updateDomFocus();
+  };
+  const tree = useDocumentTree(data, (node, instance) => {
+    if (node.kind === "reference" && node.target) jump(instance, node.target.entity_id);
+  });
+  return <Tree tree={tree} aria-label="关系图谱树" indent={12}>
+    {tree.getItems().map((item) => {
+      const node = item.getItemData();
+      return <TreeItem key={item.getId()} item={item}
+        data-entity-id={node.kind === "entity" ? node.entity.entity_id : undefined}
+        data-predicate={node.kind === "field" ? node.field.predicate_iri
+          : node.kind === "relation" ? node.relation.predicate_iri : undefined}>
+        <TreeItemLabel item={item}>
+          {node.kind === "entity" ? <div className="space-y-1">
+            <p className="font-medium">{node.name} <span className="font-normal text-muted-foreground">{node.entity.class_label}</span></p>
+            <SourceButton refs={node.entity.source_selection_refs} label="实体名称" select={select} />
+            {node.incoming && <AssertionProof item={node.incoming} select={select} />}
+          </div> : node.kind === "value" ? <div className="space-y-1">
+            <p>{node.value.raw_value}</p>
+            <SourceButton refs={node.value.source_selection_refs.value} label="属性值" select={select} />
+            <AssertionProof item={node.value} select={select} />
+          </div> : node.kind === "reference" ? <div className="space-y-1">
+            {node.target ? <button type="button" data-tree-action="reference"
+              className="text-left text-primary underline-offset-2 hover:underline"
+              data-entity-reference={node.target.entity_id} onClick={() => jump(tree, node.target!.entity_id)}>
+              {node.name}
+            </button> : <p>{node.name}</p>}
+            <AssertionProof item={node.edge} select={select} />
+          </div> : <div className="space-y-1">
+            <p className="font-medium">{node.name}
+              {node.kind === "relation" && <span className="ml-2 text-xs font-normal text-muted-foreground">
+                {node.children.length ? `${node.children.length} 项` : "尚无有效关系"}</span>}
+            </p>
+            {(node.kind === "field" || node.kind === "relation") &&
+              <p className="text-xs text-muted-foreground">{branchProgress(node.coverage)}</p>}
+            {node.kind === "field" && !node.children.length &&
+              <p className="text-xs text-muted-foreground">尚无有效属性值</p>}
+            {node.kind === "group" && node.note && <p className="text-xs text-muted-foreground">{node.note}</p>}
+          </div>}
+        </TreeItemLabel>
+      </TreeItem>;
+    })}
+  </Tree>;
 }
 
 export function TemplateDocumentGraphPanel({ model }: { model: Model }) {
   const { run, graph } = model;
+  const { username, role } = getIdentity();
   const root = graph?.entities.find((item) => item.entity_id === graph.graph_snapshot?.root_ref.entity_id);
-  const linked = new Set(graph?.relationships.map((item) => item.object_ref.entity_id));
-  const unassociated = graph?.entities.filter((item) => item !== root && !linked.has(item.entity_id)) ?? [];
-  const rankingCalls = graph?.ranking?.cost.model_calls ?? 0;
+  const rankingCalls = model.ranking?.cost.model_calls ?? graph?.ranking?.cost.model_calls ?? 0;
   return <section className="flex min-h-0 flex-1 flex-col" aria-label="关系图谱">
     <div className="space-y-2 border-b px-4 py-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -177,12 +320,9 @@ export function TemplateDocumentGraphPanel({ model }: { model: Model }) {
       {model.sourceError && <p role="alert" className="text-xs text-destructive">原文定位失败：{model.sourceError.message}</p>}
     </div>
     <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-3">
-      {root && graph && <EntityBranch entity={root} graph={graph} select={model.select} />}
+      {graph && <TemplateGraphTree key={JSON.stringify([username, role, run?.recognition_run_id, model.projection])} graph={graph} select={model.select} />}
       {!root && <p className="text-sm text-muted-foreground">{model.loading ? "正在读取运行…"
         : run ? "尚未生成关系图谱，已完成的结果会逐步显示。" : "尚未开始识别。"}</p>}
-      {unassociated.length > 0 && graph && <details><summary className="text-xs">未关联实体（{unassociated.length}）</summary>
-        {unassociated.map((entity) => <EntityBranch key={entity.entity_id} entity={entity} graph={graph} select={model.select} />)}
-      </details>}
       {graph && <p className="text-xs text-muted-foreground">未决 {graph.unresolved.undetermined} 项 ·
         未完成核验 {graph.unresolved.not_checked} 项。系统验证结果尚未经人工确认。</p>}
     </div>

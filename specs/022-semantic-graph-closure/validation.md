@@ -2,6 +2,9 @@
 
 日期：2026-09-08 至 2026-09-09（UTC）。分支：`022-semantic-graph-closure`，实施前 HEAD：`f64220d03d8c62a011db441c40b54e7ec5440ac2`。
 
+2026-09-10 性能增量的工程回归、专用PostgreSQL、历史状态回放和真实batch实验另记
+[performance-validation.md](performance-validation.md)；下文保留原日期的历史证据。
+
 ## 交付状态与证据边界
 
 已实施 P0–P4 的主体菜单、排序、证明门、多跳图、反证失效/重验、持久恢复、只读展示和评分工具。本轮复核发现初轮“独立证明”仍来自同一次模型回答，不能证明独立验证调用已落实；现已拆成 discovery / verification 两次请求并补充反例。T017 的真实质量/成本门未验收；工程夹具不能证明 precision、recall 或调用成本已经改善。P5 补充精排及 E0/E1、F0/F1 实验仍为明确后续范围。

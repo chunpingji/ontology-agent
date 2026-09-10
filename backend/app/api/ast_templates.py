@@ -10,7 +10,16 @@ import tempfile
 from pathlib import Path
 from uuid import UUID, uuid4
 
-from fastapi import APIRouter, BackgroundTasks, Depends, File, HTTPException, Response, UploadFile
+from fastapi import (
+    APIRouter,
+    BackgroundTasks,
+    Depends,
+    File,
+    HTTPException,
+    Request,
+    Response,
+    UploadFile,
+)
 from sqlalchemy.orm import Session
 
 from app.db import get_db
@@ -41,7 +50,22 @@ from app.services.reporting.ast_template import ReportTemplate
 from app.services.reporting.report_run_service import schema_hash
 from app.services.reporting.template_v2 import ReportingError, TemplateV2
 
-router = APIRouter()
+
+def _protect_demo_template(request: Request, db: Session = Depends(get_db)):
+    template_id = request.path_params.get("template_id")
+    if not template_id:
+        return
+    try:
+        row = db.get(AstTemplate, UUID(str(template_id)))
+    except ValueError:
+        return  # The endpoint reports its normal validation error.
+    if row and (row.schema_json or {}).get("demo_profile"):
+        if request.method == "GET" and request.url.path.rstrip("/").endswith(str(template_id)):
+            return
+        raise HTTPException(409, "演示模板使用共享静态数据，请在专用页面查看和生成批记录")
+
+
+router = APIRouter(dependencies=[Depends(_protect_demo_template)])
 
 _log = logging.getLogger(__name__)
 
@@ -72,6 +96,10 @@ def _best_effort_unlink(path: str | None) -> None:
 
 
 def _count_slots(schema_json: dict) -> int:
+    if schema_json.get("demo_profile"):
+        from app.services.reporting.batch_demo import definitions
+
+        return len(definitions()[1]["sections"])
     if schema_json.get("schema_version") == 2:
         from app.services.reporting.template_compiler import walk_groups
 
@@ -109,6 +137,7 @@ def _template_response(t: AstTemplate) -> AstTemplateResponse:
         template_family_id=t.template_family_id or str(t.id),
         revision_no=t.revision_no or 1,
         schema_hash=schema_hash(t.schema_json),
+        demo_profile=t.schema_json.get("demo_profile"),
     )
 
 
@@ -168,6 +197,8 @@ def create_template(
     identity: object = Depends(_maintainer),
     engine: object = Depends(get_ontology_engine),
 ):
+    if req.schema_json.get("demo_profile"):
+        raise HTTPException(409, "演示模板仅通过专用特化工具配置")
     try:
         (
             TemplateV2 if req.schema_json.get("schema_version") == 2 else ReportTemplate

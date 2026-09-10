@@ -1,0 +1,733 @@
+{
+  "schema_version": "heuristic-report-metrics-v1",
+  "run_id": "heuristic-0498b99c6aeb4f978ee7fe708ddef13d",
+  "source_sha256": "2c1174bf616f30dd28c655fef4261c167762de807c8ad79e148fb8ef18e16436",
+  "ontology_hash": "25a0576f6f6d0efb002c44c5449dfba4329144da3868f9b6234a4038d3d68b6c",
+  "frozen_files_sha256": "1fdfcbbe08d6cde4c07d9a362582e9070bd92af15a3703e76d433c716c2218c0",
+  "run_fingerprint": "ba38dc30c7880b67d96ed7eebef95fe78a5d7457c344ca41c441a5517ed82d07",
+  "reference_is_recognition_input": false,
+  "raw_artifact_directory": "/tmp/ontology-heuristic-hrs5592-20260910-r1",
+  "experiment_status": "finished",
+  "recognition_seconds": 1244.0127171450295,
+  "total_including_setup_seconds": 1270.1564084190177,
+  "setup_until_recognition_seconds": 21.609823174076155,
+  "requested_stop_reason": null,
+  "progress": {
+    "completion": "incomplete",
+    "contract_version": "document-analysis-runs-v1",
+    "invalidated_count": 0,
+    "model_calls": 73,
+    "model_calls_reserved": 73,
+    "model_calls_unresolved": 0,
+    "pending_frontiers": 293,
+    "phase_counts": {
+      "phase1": 42,
+      "phase2": 3
+    },
+    "records_examined": 45,
+    "records_incomplete": 0,
+    "records_planned": 36736,
+    "records_unattempted": 36691,
+    "stop_reason": "task_budget_exhausted",
+    "supported": 3,
+    "tasks_attempted": 45,
+    "undetermined": 14,
+    "unresolved_claims": 14,
+    "unsupported": 7
+  },
+  "task_batches": 48,
+  "reserved_main_requests": 73,
+  "initial_root_opportunities": 3444,
+  "initial_root_slots": 12,
+  "final_slots": 128,
+  "effective_relationships": 7,
+  "effective_properties": 0,
+  "system_node_milestones": {
+    "cleaning_relation": {
+      "business_correctness": "not_scored",
+      "candidate_id": null,
+      "currently_effective": false,
+      "first_effective_seconds": null,
+      "reason": "not_reached_within_this_run"
+    },
+    "equipment_first_item": {
+      "business_correctness": "not_scored",
+      "candidate_id": null,
+      "currently_effective": false,
+      "first_effective_seconds": null,
+      "reason": "not_reached_within_this_run"
+    },
+    "first_property": {
+      "business_correctness": "not_scored",
+      "candidate_id": null,
+      "currently_effective": false,
+      "first_effective_seconds": null,
+      "reason": "not_reached_within_this_run"
+    },
+    "first_relationship": {
+      "business_correctness": "pending_independent_source_review",
+      "candidate_id": "bffe0ea8230ad535251f47c42feb69f7a785cf40f26ca7b19ea68ce7e66b6d10",
+      "currently_effective": true,
+      "first_effective_seconds": 69.81674742710311,
+      "reason": "shared_proof_gate_passed"
+    },
+    "list_completeness": {
+      "effective_edges": 7,
+      "reason": "requires_independent_complete_list_review",
+      "seconds": null
+    },
+    "material_first_item": {
+      "business_correctness": "not_scored",
+      "candidate_id": null,
+      "currently_effective": false,
+      "first_effective_seconds": null,
+      "reason": "not_reached_within_this_run"
+    },
+    "product_molecular_formula": {
+      "business_correctness": "not_scored",
+      "candidate_id": null,
+      "currently_effective": false,
+      "first_effective_seconds": null,
+      "reason": "not_reached_within_this_run"
+    },
+    "product_molecular_weight": {
+      "business_correctness": "not_scored",
+      "candidate_id": null,
+      "currently_effective": false,
+      "first_effective_seconds": null,
+      "reason": "not_reached_within_this_run"
+    },
+    "product_project_name": {
+      "business_correctness": "not_scored",
+      "candidate_id": null,
+      "currently_effective": false,
+      "first_effective_seconds": null,
+      "reason": "not_reached_within_this_run"
+    },
+    "product_relation": {
+      "business_correctness": "pending_independent_source_review",
+      "candidate_id": "bffe0ea8230ad535251f47c42feb69f7a785cf40f26ca7b19ea68ce7e66b6d10",
+      "currently_effective": true,
+      "first_effective_seconds": 69.81674742710311,
+      "reason": "shared_proof_gate_passed"
+    },
+    "synthesis_route": {
+      "business_correctness": "pending_independent_source_review",
+      "candidate_id": "811c4de8f3b0914817ed7a353ead600abe3cd26b4f1d68392b09843abb4948cd",
+      "currently_effective": true,
+      "first_effective_seconds": 481.5477790760342,
+      "reason": "shared_proof_gate_passed"
+    },
+    "synthesis_step_path": {
+      "business_correctness": "not_scored",
+      "candidate_id": null,
+      "currently_effective": false,
+      "first_effective_seconds": null,
+      "reason": "not_reached_within_this_run"
+    }
+  },
+  "milestone_authority": "system_gate_only; see independent review in heuristic-validation.md",
+  "search": {
+    "H0": {
+      "admission_batches": 53,
+      "admitted_slot_records": 258,
+      "first_admission_seconds": 0.275081409025006,
+      "tasks_started": 45,
+      "first_task_started_seconds": 0.5878477330552414
+    },
+    "H1": {
+      "admission_batches": 3,
+      "admitted_slot_records": 48,
+      "first_admission_seconds": 692.2309607330244,
+      "tasks_started": 0,
+      "first_task_started_seconds": null
+    },
+    "H2": {
+      "admission_batches": 4,
+      "admitted_slot_records": 32,
+      "first_admission_seconds": 339.1423179550329,
+      "tasks_started": 3,
+      "first_task_started_seconds": 609.0530618160265
+    },
+    "H3": {
+      "admission_batches": 0,
+      "admitted_slot_records": 0,
+      "first_admission_seconds": null,
+      "tasks_started": 0,
+      "first_task_started_seconds": null
+    }
+  },
+  "timings": {
+    "context_assembly": {
+      "count": 48,
+      "max_seconds": 0.008686447981745005,
+      "min_seconds": 0.0005521450657397509,
+      "total_seconds": 0.1561259909067303
+    },
+    "heuristic_admission": {
+      "count": 60,
+      "max_seconds": 0.0004099580692127347,
+      "min_seconds": 8.952606003731489e-05,
+      "total_seconds": 0.00981836358550936
+    },
+    "heuristic_complete": {
+      "count": 1,
+      "max_seconds": 1243.411656447919,
+      "min_seconds": 1243.411656447919,
+      "total_seconds": 1243.411656447919
+    },
+    "heuristic_index_ready": {
+      "count": 1,
+      "max_seconds": 0.24316219391766936,
+      "min_seconds": 0.24316219391766936,
+      "total_seconds": 0.24316219391766936
+    },
+    "heuristic_slot_prepared": {
+      "count": 128,
+      "max_seconds": 0.01009682402946055,
+      "min_seconds": 0.0014365259557962418,
+      "total_seconds": 0.29984893463552
+    },
+    "model_and_ranking_configuration": {
+      "count": 1,
+      "max_seconds": 17.799912657006644,
+      "min_seconds": 17.799912657006644,
+      "total_seconds": 17.799912657006644
+    },
+    "ontology_guided_discovery": {
+      "count": 48,
+      "max_seconds": 23.507768362993374,
+      "min_seconds": 6.166831683018245,
+      "total_seconds": 563.5700432419544
+    },
+    "ontology_guided_verification": {
+      "count": 25,
+      "max_seconds": 45.64891989494208,
+      "min_seconds": 17.755833188071847,
+      "total_seconds": 595.5440443293191
+    },
+    "ontology_load_and_snapshot": {
+      "count": 1,
+      "max_seconds": 1.1765505999792367,
+      "min_seconds": 1.1765505999792367,
+      "total_seconds": 1.1765505999792367
+    },
+    "outcome_application": {
+      "count": 48,
+      "max_seconds": 2.0764071230078116,
+      "min_seconds": 0.013788606971502304,
+      "total_seconds": 3.8038150906795636
+    },
+    "parse_docx_and_ir": {
+      "count": 1,
+      "max_seconds": 1.118267917074263,
+      "min_seconds": 1.118267917074263,
+      "total_seconds": 1.118267917074263
+    },
+    "recognition_input_tokenization": {
+      "count": 73,
+      "max_seconds": 0.18086820398457348,
+      "min_seconds": 0.01429454900790006,
+      "total_seconds": 2.5361491423100233
+    },
+    "root_menu_and_record_index": {
+      "count": 1,
+      "max_seconds": 0.1681382959941402,
+      "min_seconds": 0.1681382959941402,
+      "total_seconds": 0.1681382959941402
+    },
+    "structure_metadata": {
+      "count": 1,
+      "max_seconds": 0.25396992499008775,
+      "min_seconds": 0.25396992499008775,
+      "total_seconds": 0.25396992499008775
+    },
+    "task_inspection": {
+      "count": 48,
+      "max_seconds": 67.92266237200238,
+      "min_seconds": 6.168939071940258,
+      "total_seconds": 1159.4258915897226
+    }
+  },
+  "request_stages": {
+    "ontology_guided_discovery": {
+      "requests": 48,
+      "statuses": {
+        "complete": 48
+      },
+      "first_created_seconds": 0.79076,
+      "first_started_seconds": 0.913583,
+      "request_seconds": 559.212,
+      "scheduler_queue_seconds": 0.81,
+      "tokens_and_server_metrics": {
+        "prompt_tokens": {
+          "known_sum": 113216,
+          "unknown_requests": 0
+        },
+        "completion_tokens": {
+          "known_sum": 5708,
+          "unknown_requests": 0
+        },
+        "cache_tokens": {
+          "known_sum": 15463,
+          "unknown_requests": 0
+        },
+        "prompt_ms": {
+          "known_sum": 386472.179,
+          "unknown_requests": 0
+        },
+        "predicted_ms": {
+          "known_sum": 110188.75,
+          "unknown_requests": 0
+        }
+      }
+    },
+    "ontology_guided_verification": {
+      "requests": 25,
+      "statuses": {
+        "complete": 25
+      },
+      "first_created_seconds": 22.368945,
+      "first_started_seconds": 22.377842,
+      "request_seconds": 594.112,
+      "scheduler_queue_seconds": 0.231,
+      "tokens_and_server_metrics": {
+        "prompt_tokens": {
+          "known_sum": 105711,
+          "unknown_requests": 0
+        },
+        "completion_tokens": {
+          "known_sum": 12327,
+          "unknown_requests": 0
+        },
+        "cache_tokens": {
+          "known_sum": 18120,
+          "unknown_requests": 0
+        },
+        "prompt_ms": {
+          "known_sum": 348270.301,
+          "unknown_requests": 0
+        },
+        "predicted_ms": {
+          "known_sum": 200695.66,
+          "unknown_requests": 0
+        }
+      }
+    },
+    "ranking_count_tokens_batch": {
+      "requests": 76,
+      "statuses": {
+        "completed": 76
+      },
+      "first_created_seconds": 231.201787,
+      "first_started_seconds": 231.209844,
+      "request_seconds": 40.948,
+      "scheduler_queue_seconds": 0.58,
+      "tokens_and_server_metrics": {
+        "input_tokens": {
+          "known_sum": 0,
+          "unknown_requests": 0
+        }
+      }
+    },
+    "ranking_embed": {
+      "requests": 76,
+      "statuses": {
+        "completed": 76
+      },
+      "first_created_seconds": 272.914933,
+      "first_started_seconds": 272.922998,
+      "request_seconds": 25.676,
+      "scheduler_queue_seconds": 0.764,
+      "tokens_and_server_metrics": {
+        "input_tokens": {
+          "known_sum": 69281,
+          "unknown_requests": 0
+        }
+      }
+    },
+    "ranking_score_pairs": {
+      "requests": 16,
+      "statuses": {
+        "completed": 16
+      },
+      "first_created_seconds": 315.470469,
+      "first_started_seconds": 315.4809,
+      "request_seconds": 15.661,
+      "scheduler_queue_seconds": 0.169,
+      "tokens_and_server_metrics": {
+        "input_tokens": {
+          "known_sum": 33662,
+          "unknown_requests": 0
+        }
+      }
+    }
+  },
+  "predicate_tasks": {
+    "https://ontology.pharma-gmp.cn/slpra/drug-development/describes": {
+      "tasks": 2,
+      "unique_slot_records": 2,
+      "outcomes": {
+        "record_supported": 1,
+        "record_unsupported": 1
+      },
+      "first_started_seconds": 0.5878477330552414,
+      "first_committed_seconds": 69.81112386705354
+    },
+    "https://ontology.pharma-gmp.cn/slpra/drug-development/hasProcessIntermediate": {
+      "tasks": 6,
+      "unique_slot_records": 6,
+      "outcomes": {
+        "record_unsupported": 1,
+        "no_candidate_observed": 5
+      },
+      "first_started_seconds": 69.87843828799669,
+      "first_committed_seconds": 104.12379078601953
+    },
+    "https://ontology.pharma-gmp.cn/slpra/drug-development/hasCleaningResidue": {
+      "tasks": 2,
+      "unique_slot_records": 2,
+      "outcomes": {
+        "no_candidate_observed": 2
+      },
+      "first_started_seconds": 104.1907536140643,
+      "first_committed_seconds": 114.15130090503953
+    },
+    "https://ontology.pharma-gmp.cn/slpra/drug-development/hasDegradationPathway": {
+      "tasks": 3,
+      "unique_slot_records": 2,
+      "outcomes": {
+        "record_undetermined": 1,
+        "discovery_citation_invalid": 1,
+        "record_unsupported": 1
+      },
+      "first_started_seconds": 136.0834779390134,
+      "first_committed_seconds": 174.18618861504365
+    },
+    "https://ontology.pharma-gmp.cn/slpra/drug-development/registrationCategory": {
+      "tasks": 3,
+      "unique_slot_records": 3,
+      "outcomes": {
+        "record_undetermined": 3
+      },
+      "first_started_seconds": 174.2582248080289,
+      "first_committed_seconds": 202.21916110708844
+    },
+    "https://ontology.pharma-gmp.cn/slpra/drug-development/hasSafetyRiskAssessment": {
+      "tasks": 2,
+      "unique_slot_records": 2,
+      "outcomes": {
+        "record_unsupported": 1,
+        "record_undetermined": 1
+      },
+      "first_started_seconds": 231.01599327207077,
+      "first_committed_seconds": 260.32202510000207
+    },
+    "https://ontology.pharma-gmp.cn/slpra/drug/producesResidue": {
+      "tasks": 6,
+      "unique_slot_records": 6,
+      "outcomes": {
+        "no_candidate_observed": 6
+      },
+      "first_started_seconds": 290.6424265090609,
+      "first_committed_seconds": 302.1797171890503
+    },
+    "https://ontology.pharma-gmp.cn/slpra/drug-development/hasSharedLineData": {
+      "tasks": 2,
+      "unique_slot_records": 2,
+      "outcomes": {
+        "no_candidate_observed": 2
+      },
+      "first_started_seconds": 302.4068823000416,
+      "first_committed_seconds": 314.49722913699225
+    },
+    "https://ontology.pharma-gmp.cn/slpra/drug-development/hasStorageCondition": {
+      "tasks": 2,
+      "unique_slot_records": 2,
+      "outcomes": {
+        "record_unsupported": 1,
+        "record_supported": 1
+      },
+      "first_started_seconds": 339.14758152805734,
+      "first_committed_seconds": 370.51916902302764
+    },
+    "https://ontology.pharma-gmp.cn/slpra/drug/appearance": {
+      "tasks": 7,
+      "unique_slot_records": 6,
+      "outcomes": {
+        "record_undetermined": 4,
+        "record_unsupported": 2,
+        "verification_candidate_target_mismatch": 1
+      },
+      "first_started_seconds": 370.5994544629939,
+      "first_committed_seconds": 407.1421148070367
+    },
+    "https://ontology.pharma-gmp.cn/slpra/drug-development/hasSynthesisRoute": {
+      "tasks": 1,
+      "unique_slot_records": 1,
+      "outcomes": {
+        "record_supported": 1
+      },
+      "first_started_seconds": 441.46925317903515,
+      "first_committed_seconds": 481.5417615890037
+    },
+    "https://ontology.pharma-gmp.cn/slpra/drug-development/hasStep": {
+      "tasks": 2,
+      "unique_slot_records": 2,
+      "outcomes": {
+        "no_candidate_observed": 1,
+        "record_undetermined": 1
+      },
+      "first_started_seconds": 517.4648849400692,
+      "first_committed_seconds": 532.7318271100521
+    },
+    "https://ontology.pharma-gmp.cn/slpra/drug-development/usesEquipment": {
+      "tasks": 1,
+      "unique_slot_records": 1,
+      "outcomes": {
+        "record_undetermined": 1
+      },
+      "first_started_seconds": 532.8096427120036,
+      "first_committed_seconds": 588.5399933760054
+    },
+    "https://ontology.pharma-gmp.cn/slpra/drug-development/hasCleaningMethod": {
+      "tasks": 1,
+      "unique_slot_records": 1,
+      "outcomes": {
+        "no_candidate_observed": 1
+      },
+      "first_started_seconds": 609.0530618160265,
+      "first_committed_seconds": 619.5817114940146
+    },
+    "https://ontology.pharma-gmp.cn/slpra/drug-development/processDescription": {
+      "tasks": 2,
+      "unique_slot_records": 2,
+      "outcomes": {
+        "no_candidate_observed": 2
+      },
+      "first_started_seconds": 629.9910864320118,
+      "first_committed_seconds": 637.842219247017
+    },
+    "https://ontology.pharma-gmp.cn/slpra/drug-development/hasProductionPlan": {
+      "tasks": 2,
+      "unique_slot_records": 1,
+      "outcomes": {
+        "model_refusal": 1,
+        "no_candidate_observed": 1
+      },
+      "first_started_seconds": 637.9629007540643,
+      "first_committed_seconds": 647.6452478140127
+    },
+    "https://ontology.pharma-gmp.cn/slpra/drug/dosageForm": {
+      "tasks": 3,
+      "unique_slot_records": 3,
+      "outcomes": {
+        "record_undetermined": 3
+      },
+      "first_started_seconds": 655.886495390092,
+      "first_committed_seconds": 692.1674158980604
+    },
+    "https://ontology.pharma-gmp.cn/slpra/drug-development/producesFinalProduct": {
+      "tasks": 1,
+      "unique_slot_records": 1,
+      "outcomes": {
+        "no_candidate_observed": 1
+      },
+      "first_started_seconds": 802.7524986490607,
+      "first_committed_seconds": 820.3014912920771
+    }
+  },
+  "ranking_epochs": [
+    {
+      "epoch_id": "0e62ebcca1f92be3dd78675cc5b59e3edf589ea13a67bc6feda377c22ed0cc30",
+      "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasCleaningMethod",
+      "pool_records": 8,
+      "status": "committed",
+      "elapsed_seconds": 97.84234153502621,
+      "costs": {
+        "cache_hits": 0,
+        "elapsed_ms": 97842.34153502621,
+        "embedding_inputs": 289,
+        "input_pairs": 16,
+        "model_calls": 77,
+        "technical_retries": 0,
+        "token_cache_hits": 323,
+        "tokens": 79263
+      }
+    },
+    {
+      "epoch_id": "e8f526d2680e145b9aa90eaa8c1bdc90094ee3d27042889ae83e7c78c533b81a",
+      "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasProductionPlan",
+      "pool_records": 8,
+      "status": "committed",
+      "elapsed_seconds": 2.7586876039858907,
+      "costs": {
+        "cache_hits": 287,
+        "elapsed_ms": 2758.6876039858907,
+        "embedding_inputs": 2,
+        "input_pairs": 16,
+        "model_calls": 5,
+        "technical_retries": 0,
+        "token_cache_hits": 34,
+        "tokens": 7792
+      }
+    },
+    {
+      "epoch_id": "170c4304c5f6e68456767e72f201de3cf3a93b7ba87b7b112f470731e9cec029",
+      "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasProductionRiskAssessment",
+      "pool_records": 8,
+      "status": "committed",
+      "elapsed_seconds": 3.063789593987167,
+      "costs": {
+        "cache_hits": 287,
+        "elapsed_ms": 3063.789593987167,
+        "embedding_inputs": 2,
+        "input_pairs": 16,
+        "model_calls": 5,
+        "technical_retries": 0,
+        "token_cache_hits": 34,
+        "tokens": 8218
+      }
+    },
+    {
+      "epoch_id": "7db7104850e175587b46e4bb5fb0c7e78053762dc8eea012599cee0b4a1f52b3",
+      "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasQualityRiskAssessment",
+      "pool_records": 8,
+      "status": "committed",
+      "elapsed_seconds": 2.9434822220355272,
+      "costs": {
+        "cache_hits": 287,
+        "elapsed_ms": 2943.4822220355272,
+        "embedding_inputs": 2,
+        "input_pairs": 16,
+        "model_calls": 5,
+        "technical_retries": 0,
+        "token_cache_hits": 34,
+        "tokens": 7670
+      }
+    }
+  ],
+  "isolated_scheduler_sql": {
+    "finalization": {
+      "count": 1,
+      "seconds": 0.00022583792451769114,
+      "statements": {
+        "SELECT": 1
+      }
+    },
+    "recognition": {
+      "count": 3433,
+      "seconds": 0.9605577562469989,
+      "statements": {
+        "INSERT": 723,
+        "SELECT": 723,
+        "UPDATE": 1987
+      }
+    },
+    "setup": {
+      "count": 4,
+      "seconds": 0.0050023841904476285,
+      "statements": {
+        "CREATE": 4
+      }
+    }
+  },
+  "observer_json_persistence": {
+    "batch_graph": {
+      "bytes": 7429185,
+      "count": 48,
+      "seconds": 0.1846849825233221
+    },
+    "checkpoint": {
+      "bytes": 1485698009,
+      "count": 48,
+      "seconds": 33.44316497177351
+    },
+    "effective_graph": {
+      "bytes": 3301563,
+      "count": 49,
+      "seconds": 0.10604853229597211
+    },
+    "jsonl": {
+      "bytes": 6489597,
+      "count": 783,
+      "seconds": 0.6178980154218152
+    },
+    "model_reservation": {
+      "bytes": 764106,
+      "count": 73,
+      "seconds": 0.08129144960548729
+    },
+    "ranking_state": {
+      "bytes": 362813412,
+      "count": 96,
+      "seconds": 17.470377152902074
+    },
+    "snapshot": {
+      "bytes": 72381777,
+      "count": 11,
+      "seconds": 1.4416071969317272
+    }
+  },
+  "shared_service_observation": {
+    "before": {
+      "at": "2026-09-10T04:05:22.313710+00:00",
+      "slots": [
+        {
+          "id": 0,
+          "is_processing": false,
+          "n_ctx": 102400,
+          "n_prompt_tokens": 3656
+        },
+        {
+          "id": 1,
+          "is_processing": false,
+          "n_ctx": 102400,
+          "n_prompt_tokens": 1819
+        }
+      ]
+    },
+    "after": {
+      "at": "2026-09-10T04:26:10.740868+00:00",
+      "slots": [
+        {
+          "id": 0,
+          "is_processing": false,
+          "n_ctx": 102400,
+          "n_prompt_tokens": 2203
+        },
+        {
+          "id": 1,
+          "is_processing": false,
+          "n_ctx": 102400,
+          "n_prompt_tokens": 6788
+        }
+      ]
+    },
+    "legacy_probe_failed_samples": 39,
+    "legacy_probe_failure_types": {
+      "AttributeError": 33,
+      "TimeoutError": 6
+    },
+    "corrected_samples": 20,
+    "corrected_unavailable": 0,
+    "corrected_both_slots_busy": 0,
+    "first_corrected_sample_at": "2026-09-10T04:16:16.655796+00:00",
+    "scope": "snapshots cannot exclude transient external work or server-side queuing"
+  },
+  "input_artifact_hashes": {
+    "manifest.json": "47e4d27064ea0578c2077d9e64ba9c34d01aac160934c383efe79cb6e1b79215",
+    "summary.json": "b86f75a467b11a885316c2948bb8261bf79fc6129e31cc9e33c58c98b8e6f71e",
+    "model-requests.json": "b79d45f869c944ab4d903d0f13f136e68e40f4d3d533088b3595b1c8be1ea063",
+    "tasks.jsonl": "2b5fe16e2a17ed6244efcd60001fda57e61773813d4c74625a02aa9317e8bf36",
+    "graph/effective.json": "4cafa6cc92819deec2aa236e616500bf033d568b76daa8897b8429556eb59d25"
+  },
+  "limitations": [
+    "single bounded run; no full-document quality estimate",
+    "SQLite scheduler and JSON observer, not production PostgreSQL",
+    "time spans overlap; heuristic_complete is the whole executor lifetime",
+    "H2 requests and admissions are separate",
+    "literal attributes do not require object entity classes",
+    "partial load sampling before observer correction"
+  ]
+}

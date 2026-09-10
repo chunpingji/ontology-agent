@@ -62,6 +62,14 @@ Browser upload DOCX / DOC
 
 关键顺序由统一 Word body 遍历产生。段内分页把展示块拆成 fragment，但旧 `paragraphs` 和 `DocSection.paras` 保持整段文本。章节树只消费既定标题层级；摘要服务只附加元数据，不能改动树、正文或抽取事实。
 
+### 2026-09-10 摘要性能修正
+
+使用 `word-tree-summary-v2` 区分新生成结果与旧缓存。成功且未截短的页摘要覆盖已有直接正文时，父层仅发送页摘要和剩余直接正文；失败/部分页仍保留原文材料。只有节点与唯一页的块集合完全一致时才复用摘要生成字段，结构、scope 和内容哈希保持各自身份。
+
+同层批次使用有界工作线程，实际并发为 `min(word_tree_summary_max_concurrency, local_llm_max_concurrency)`，默认最多 2；父层在子层全部完成后执行。运行身份传入模型调度，所有权检查和回调留在协调线程；取消先收束请求，再退出阶段。输出截断采用摘要专用的增预算重试，仍受原总超时和最多两次尝试约束。
+
+验证采用隔离工程测试与新身份的本地模型实测，见 [摘要性能验证](summary-performance-validation.md)。不增加模型、数据库表或外网依赖。
+
 ## Project Structure
 
 ### Documentation (this feature)

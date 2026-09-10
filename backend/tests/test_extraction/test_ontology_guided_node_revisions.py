@@ -118,6 +118,7 @@ def _persisted_run(client, db, analyst_headers, tmp_path, monkeypatch, analysis,
     """Exercise real run-store candidates, proofs, graph and checkpoint writes."""
     from app.models.document_analysis import DocumentAnalysisArtifact
     from app.services.document_analysis import execution as execution_service
+    from app.services.document_analysis.state_artifacts import decode_state
     from app.services.extraction.ontology_guided.executor import OntologyGuidedExecutor
     from app.services.extraction.ontology_guided.metadata import prepare_metadata
     from app.services.extraction.ontology_guided.records import RecordIndex
@@ -157,7 +158,9 @@ def _persisted_run(client, db, analyst_headers, tmp_path, monkeypatch, analysis,
 
     result = executor.run(**arguments, batch_hook=persist)
     head = store.get_artifact_head(run_id, "analyst", "recognition_checkpoint")
-    checkpoint = db.get(DocumentAnalysisArtifact, head.artifact_id).payload
+    checkpoint = decode_state(
+        store, run, db.get(DocumentAnalysisArtifact, head.artifact_id).payload,
+    )
     # Reconstruct from the durable ledger without another model invocation.
     class NoMoreCalls:
         model_identity = adapter.model_identity

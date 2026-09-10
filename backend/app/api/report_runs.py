@@ -184,6 +184,8 @@ def template_row(db, template_id):
     row = db.get(AstTemplate, template_id)
     if row is None:
         raise ReportingError("TEMPLATE_NOT_FOUND", status=404)
+    if (row.schema_json or {}).get("demo_profile"):
+        raise ReportingError("STATIC_DEMO_TEMPLATE", "请在演示模板页面生成批记录", status=409)
     return row
 
 
@@ -443,6 +445,10 @@ def create_run(req: RunRequest, db: Session = Depends(get_db), identity=Depends(
 @router.post("/report-previews")
 def preview(req: PreviewRequest, db: Session = Depends(get_db), identity=Depends(get_current_user),
             engine=Depends(get_ontology_engine)):
+    if req.template_id:
+        template_row(db, req.template_id)
+    if req.draft_schema and req.draft_schema.demo_profile:
+        raise ReportingError("STATIC_DEMO_TEMPLATE", "请在演示模板页面生成批记录", status=409)
     service = model_service(db, engine)
     if req.mode == "layout":
         from app.services.reporting.output_ast import OutputNode

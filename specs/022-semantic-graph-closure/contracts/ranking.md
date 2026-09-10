@@ -1,5 +1,8 @@
 # Semantic ranking and public graph contract
 
+2026-09-10 新增排序v2双意图重试、精确批量分词、独立摘要/定位读取及存储兼容契约，
+见 [performance.md](performance.md)。既有v1运行的冻结身份和恢复语义保留。
+
 ## Internal ports
 
 排序模型仅返回逐 query-view 原始分值或向量及不可变身份/技术成本；不返回事实、跨池 rank 或修改租约。服务协议由领域模型 Protocol 定义，适配层在 `services/llm/semantic_ranking.py`；在线与评测传同一实例接口。

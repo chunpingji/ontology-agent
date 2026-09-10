@@ -40,8 +40,28 @@ class RecordIndex:
         }
         self.records = self._build_records()
         self.by_id = {record.record_id: record for record in self.records}
+        self.record_positions = {
+            record.record_id: position for position, record in enumerate(self.records)
+        }
+        self.source_positions = {
+            record.record_id: min(self.positions[unit.evidence_id] for unit in record.source_units)
+            for record in self.records
+        }
+        self.first_record_by_section = {}
+        for record in self.records:
+            self.first_record_by_section.setdefault(record.section_node_id, record)
+        self.nodes_by_id = {node["node_id"]: node for node in self.ir.nodes}
+        self.headings_by_parent = defaultdict(list)
+        for unit in self.ir.evidence_units:
+            if unit.kind == "heading" and not unit.table_path:
+                parent = self.nodes_by_id[unit.section_node_id].get("parent_id")
+                self.headings_by_parent[parent].append(unit)
         self.record_views = [self._view(record) for record in self.records]
         self.field_groups = self._field_groups()
+        self.field_groups_by_record = defaultdict(list)
+        for group in self.field_groups:
+            for record_id in group.record_ids:
+                self.field_groups_by_record[record_id].append(group)
 
     def _ordered(self, units) -> tuple[EvidenceUnit, ...]:
         unique = {unit.evidence_id: unit for unit in units if unit.text}
@@ -210,7 +230,7 @@ class RecordIndex:
 
         previous_position: int | None = None
         for record in self.records:
-            position = min(self.positions[unit.evidence_id] for unit in record.source_units)
+            position = self.source_positions[record.record_id]
             continues = (
                 pending
                 and record.kind == "paragraph"

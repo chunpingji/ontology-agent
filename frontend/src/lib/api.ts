@@ -1957,6 +1957,8 @@ export interface DocumentAnalysisProgress {
 
 export interface DocumentAnalysisRunIdentities {
   analysis_id: string | null;
+  structure_snapshot_id?: string | null;
+  ranking_summary_id?: string | null;
   ontology_snapshot_id: string | null;
   metadata_snapshot_id: string | null;
   graph_snapshot_id: string | null;
@@ -2243,6 +2245,10 @@ export interface DocumentAnalysisSourceArtifact {
   anchors: EvidenceAnchor[];
 }
 
+export type DocumentAnalysisSourceSelectionArtifact = Omit<
+  DocumentAnalysisSourceArtifact, "filename" | "content"
+>;
+
 export interface DocumentAnalysisRunControl {
   contract_version: typeof DOCUMENT_ANALYSIS_CONTRACT_VERSION;
   recognition_run_id: string;
@@ -2355,6 +2361,38 @@ export const createTemplateDocumentRun = (
   method: "POST", body: JSON.stringify({ request_key: requestKey }), signal,
 });
 
+export interface ReportDocumentSource {
+  document_iri: string;
+  source_job_id: string;
+  document_version: string;
+  root_class_iri: string;
+  filename: string;
+  document_hash: string;
+  analysis_id: string;
+  structure_hash: string;
+  content: Record<string, unknown>;
+  section_tree: WordChapterNode;
+  pagination: WordPaginationMetadata;
+  warnings: string[];
+}
+
+const reportDocumentPath = (resource: "source" | "runs", documentIri: string) =>
+  `/api/document-analysis/documents/${resource}?${new URLSearchParams({ document_iri: documentIri })}`;
+
+export const getReportDocumentSource = (documentIri: string, signal?: AbortSignal) =>
+  fetchAPI<ReportDocumentSource>(reportDocumentPath("source", documentIri), { signal, cache: "no-store" });
+
+export const getReportDocumentRun = (documentIri: string, signal?: AbortSignal) =>
+  fetchAPI<{ run: DocumentAnalysisRun | null }>(reportDocumentPath("runs", documentIri), {
+    signal, cache: "no-store",
+  });
+
+export const createReportDocumentRun = (
+  documentIri: string, requestKey: string, signal?: AbortSignal,
+) => fetchAPI<DocumentAnalysisCreateResponse>(reportDocumentPath("runs", documentIri), {
+  method: "POST", body: JSON.stringify({ request_key: requestKey }), signal,
+});
+
 export const createDocumentAnalysisRun = (
   file: File,
   rootClassIri: string,
@@ -2409,6 +2447,24 @@ export const getDocumentAnalysisSource = (
   return fetchAPI<DocumentAnalysisSourceArtifact>(`${documentRunPath(recognitionRunId)}/source${query}`, { signal });
 };
 
+export const getDocumentAnalysisSourceSelection = (
+  recognitionRunId: string, selectionRef: string, signal?: AbortSignal,
+) => fetchAPI<DocumentAnalysisSourceSelectionArtifact>(
+  `${documentRunPath(recognitionRunId)}/source-selection?selection_ref=${encodeURIComponent(selectionRef)}`,
+  { signal },
+);
+
+export const getDocumentAnalysisRankingSummary = (
+  recognitionRunId: string, signal?: AbortSignal,
+  expected?: { summaryId: string; budgetEnabled: boolean },
+) => {
+  const query = expected ? `?${new URLSearchParams({
+    expected_summary_id: expected.summaryId,
+    expected_budget_enabled: String(expected.budgetEnabled),
+  })}` : "";
+  return fetchAPI<DocumentGraphRanking>(`${documentRunPath(recognitionRunId)}/ranking-summary${query}`, { signal });
+};
+
 /**
  * Subscribe to durable run events. Native EventSource reconnects with the last
  * numeric SSE id; each event is still checked against the requested run before
@@ -2417,6 +2473,7 @@ export const getDocumentAnalysisSource = (
 export function subscribeDocumentAnalysisEvents(
   recognitionRunId: string,
   onEvent: (event: DocumentAnalysisRunEvent, eventType: DocumentAnalysisEventType) => void,
+  onConnectionChange?: (connected: boolean) => void,
 ): () => void {
   const identity = getIdentity();
   const query = new URLSearchParams({
@@ -2438,6 +2495,13 @@ export function subscribeDocumentAnalysisEvents(
     "tombstone",
   ];
   const listeners = new Map<DocumentAnalysisEventType, EventListener>();
+  const opened: EventListener = () => onConnectionChange?.(true);
+  const disconnected: EventListener = (event) => {
+    // The server also emits named "error" frames; those are still live SSE.
+    if (!("data" in event)) onConnectionChange?.(false);
+  };
+  source.addEventListener("open", opened);
+  source.addEventListener("error", disconnected);
   let closed = false;
   const close = () => {
     if (closed) return;
@@ -2445,6 +2509,8 @@ export function subscribeDocumentAnalysisEvents(
     for (const [eventType, listener] of listeners) {
       source.removeEventListener(eventType, listener);
     }
+    source.removeEventListener("open", opened);
+    source.removeEventListener("error", disconnected);
     source.close();
   };
   for (const eventType of eventTypes) {
@@ -3009,6 +3075,12 @@ export interface TemplateOrigin {
 // replaces the retired DocumentTypeMapping).
 export type AstTemplateStatus = "draft" | "published" | "archived";
 
+export interface StaticDemoProfile {
+  fixture_id: "hrs5592-cmc-demo-v1";
+  contract_id: "cmc-batch-demo-v1";
+  document_iri: string;
+}
+
 export interface AstTemplateDTO {
   id: string;
   name: string;
@@ -3017,6 +3089,7 @@ export interface AstTemplateDTO {
   iri_pattern: string | null;
   status: AstTemplateStatus;
   slot_count: number;
+  demo_profile?: StaticDemoProfile | null;
   schema_version?: number;
   template_family_id?: string;
   revision_no?: number;
@@ -3787,9 +3860,9 @@ export async function listReportCenterItems(
         reportItems.push({
           key: r.id,
           kind: "generated-report",
-          title: `${r.report_type}（${job.source_filename ?? job.id.slice(0, 8)}）`,
+          title: `${r.report_type === "batch_record_demo" ? "批记录报告（演示）" : r.report_type}（${job.source_filename ?? job.id.slice(0, 8)}）`,
           category: r.report_type,
-          type: r.report_type,
+          type: r.report_type === "batch_record_demo" ? "批记录报告（演示）" : r.report_type,
           date: r.created_at,
           size: r.file_size,
           jobId: r.job_id,
@@ -4121,3 +4194,102 @@ export async function deleteMockApproverTeamMember(id: string): Promise<void> {
   });
   if (!r.ok) throw new Error(await r.text());
 }
+
+// Versioned CMC demo graph. Discovery and preview are read-only; generation is explicit.
+export interface BatchDemoLayout {
+  kind: "template_layout";
+  role?: string;
+  width_pt?: number;
+  height_pt?: number;
+  top_pt?: number;
+  bottom_pt?: number;
+  left_pt?: number;
+  right_pt?: number;
+  widths?: number[];
+  span?: number;
+  row_span?: number;
+  vmerge?: "restart" | "continue";
+  vertical_align?: "top" | "center" | "bottom" | null;
+  border_top?: string;
+  border_right?: string;
+  border_bottom?: string;
+  border_left?: string;
+  font_size_pt?: number;
+  line_height_pt?: number;
+  underline?: boolean;
+  space_before_pt?: number;
+  space_after_pt?: number;
+  font_family?: string;
+  latin_font_family?: string;
+  italic?: boolean;
+  script?: string | null;
+  align?: "left" | "center" | "right" | "justify";
+  bold?: boolean;
+  renderer_version?: string;
+  paragraphs?: Array<{
+    style: Partial<BatchDemoLayout>;
+    space_before_pt: number;
+    space_after_pt: number;
+    runs: Array<{ text: string; style: Partial<BatchDemoLayout> }>;
+  }>;
+}
+export interface BatchDemoOutputNode {
+  node_id: string;
+  kind: string;
+  text: string;
+  children: BatchDemoOutputNode[];
+  provenance_refs?: Array<BatchDemoLayout | { kind: string }>;
+  header?: boolean;
+}
+export interface BatchDemoReport {
+  id: string;
+  job_id: string;
+  report_type: "batch_record_demo";
+  report_status: string;
+  created_at: string | null;
+  file_size: number;
+  graph_hash: string;
+  template_hash: string;
+  stages: Array<{ key: string; label: string; status: string; detail: string }>;
+  body_ast: BatchDemoOutputNode;
+}
+export interface BatchDemoAvailable {
+  available: true;
+  document_iri: string;
+  source_job_id: string;
+  graph_hash: string;
+  template_hash: string;
+  graph: {
+    fixture_id: string;
+    source_filename: string;
+    source_sha256: string;
+    doc_class: DocClassification;
+    relationships: Relationship[];
+    warnings: string[];
+  };
+  template: {
+    template_id: string;
+    name: string;
+    version: string;
+    manual_fields: string[];
+    layout?: { reference_template_id: string; reference_name: string; sample_sha256: string };
+    sections: Array<{ id: string; title: string; path: string[]; mode: string }>;
+  };
+  validation: {
+    passed: boolean;
+    checks: Array<{ id: string; label: string; path: string[]; count: number; passed: boolean; errors: string[] }>;
+  };
+  latest_report: BatchDemoReport | null;
+  preview_ast: BatchDemoOutputNode;
+}
+export type BatchDemoContext = BatchDemoAvailable | { available: false };
+export const getBatchDemo = (documentIri: string, signal?: AbortSignal) =>
+  fetchAPI<BatchDemoContext>(`/api/reports/batch-demo?document_iri=${encodeURIComponent(documentIri)}`, { signal });
+export const getBatchDemoTemplate = (templateId: string, signal?: AbortSignal) =>
+  fetchAPI<BatchDemoAvailable>(`/api/reports/batch-demo/templates/${encodeURIComponent(templateId)}`, { signal });
+export const generateBatchDemo = (
+  documentIri: string,
+  body: { graph_hash: string; template_hash: string; request_key: string },
+) => fetchAPI<BatchDemoReport>(`/api/reports/batch-demo?document_iri=${encodeURIComponent(documentIri)}`, {
+  method: "POST", body: JSON.stringify(body),
+});

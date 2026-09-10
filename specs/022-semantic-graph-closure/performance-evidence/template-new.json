@@ -1,0 +1,253 @@
+{
+  "run_id": "ebbfeb74-97e2-4ccb-abb6-0cbd8f54e416",
+  "manifest_hash": "c4e002a76f0495d520744a0ab0e7a65f7881d9988c69ff9ee7abcafcacb9eea5",
+  "status": "failed",
+  "error": {
+    "code": "ANALYSIS_INCOMPLETE",
+    "message": "部分记录未完成，已保留可回放的部分图谱",
+    "retryable": true
+  },
+  "stop_reason": "task_budget_exhausted",
+  "progress": {
+    "tasks_attempted": 7,
+    "model_calls": 11,
+    "model_calls_reserved": 11,
+    "model_calls_unresolved": 0,
+    "records_planned": 3444,
+    "records_examined": 7,
+    "records_incomplete": 0,
+    "records_unattempted": 3437,
+    "phase_counts": {
+      "phase1": 5,
+      "phase2": 2
+    },
+    "supported": 1,
+    "unsupported": 1,
+    "undetermined": 1,
+    "pending_frontiers": 0,
+    "unresolved_claims": 1,
+    "invalidated_count": 0,
+    "stop_reason": "task_budget_exhausted",
+    "completion": "incomplete",
+    "contract_version": "document-analysis-runs-v1"
+  },
+  "run_fingerprint": "7dc5bf74840619ac30bdc9963ad0b56d0caf152b81e17d66847c39a1af38132c",
+  "total_seconds": 1610.7876791710733,
+  "first_effective_relation_seconds": null,
+  "template_path_completion_seconds": null,
+  "template_path_status": "not_completed_in_bounded_diagnostic",
+  "source_counts": {
+    "records": 287,
+    "evidence_units": 1193,
+    "root_opportunities": 3444
+  },
+  "main_model_request_upper_bound": 48,
+  "requests_by_stage_status": {
+    "ranking_count_tokens_batch:completed": 74,
+    "ranking_embed:completed": 74,
+    "ranking_score_pairs:completed": 64,
+    "ontology_guided_discovery:complete": 8,
+    "ontology_guided_verification:complete": 3,
+    "ranking_score_pairs:failed": 1
+  },
+  "persistence": {
+    "_publish_artifact": {
+      "count": 2,
+      "total_seconds": 0.4940083990804851,
+      "median_seconds": 0.24700419954024255,
+      "p95_seconds": 0.25216249597724527
+    },
+    "_persist_ranking_state": {
+      "count": 141,
+      "total_seconds": 1001.6811405749759,
+      "median_seconds": 8.642125487909652,
+      "p95_seconds": 10.195225047995336
+    },
+    "_persist_model_call_state": {
+      "count": 11,
+      "total_seconds": 0.6035461639985442,
+      "median_seconds": 0.05202676204498857,
+      "p95_seconds": 0.09308317594695836
+    },
+    "_persist_recognition_batch": {
+      "count": 8,
+      "total_seconds": 181.4675337182125,
+      "median_seconds": 22.588052513019647,
+      "p95_seconds": 23.7958351430716
+    }
+  },
+  "sql": {
+    "SELECT": {
+      "count": 725315,
+      "total_seconds": 736.9114365249407,
+      "median_seconds": 0.0005328418919816613,
+      "p95_seconds": 0.0008449190063402057
+    },
+    "SAVEPOINT": {
+      "count": 3821,
+      "total_seconds": 1.6458580715116113,
+      "median_seconds": 0.0003875080728903413,
+      "p95_seconds": 0.0007424310315400362
+    },
+    "UPDATE": {
+      "count": 5965,
+      "total_seconds": 5.309876393293962,
+      "median_seconds": 0.0008316360181197524,
+      "p95_seconds": 0.0013561210362240672
+    },
+    "RELEASE": {
+      "count": 3821,
+      "total_seconds": 1.3008924196474254,
+      "median_seconds": 0.0002763689262792468,
+      "p95_seconds": 0.00061552703846246
+    },
+    "INSERT": {
+      "count": 15394,
+      "total_seconds": 10.433187550166622,
+      "median_seconds": 0.0005472444463521242,
+      "p95_seconds": 0.0011413410538807511
+    }
+  },
+  "controls": [
+    {
+      "action": "pause",
+      "seconds": 0.031259824987500906,
+      "elapsed_seconds": 889.8661836660467,
+      "status": "pausing",
+      "replay": false
+    },
+    {
+      "action": "resume",
+      "seconds": 0.023815440945327282,
+      "elapsed_seconds": 925.053520867019,
+      "status": "queued",
+      "replay": false
+    }
+  ],
+  "failure_type": null,
+  "full_template_acceptance": "incomplete",
+  "limitations": [
+    "bounded tasks; full opportunity denominator is retained",
+    "shared model server and host; no relative speedup claim",
+    "pause/resume includes model worker startup and polling costs",
+    "ontology acquisition uses exact exported frozen snapshot",
+    "one failed ranking inference has unmeasured input tokens; known subtotals are not complete actual consumption",
+    "frozen model execution predates final write-lock fix; later engineering regressions and read-only restore validate current code",
+    "15 relationship candidates include 11 questionable negated descriptions and 4 ineligible affirmed candidates; no effective affirmed relationship"
+  ],
+  "held_out_checks": {
+    "source_hash": true,
+    "anchors_replayed": true,
+    "DrugProduct": false,
+    "projectName": false,
+    "registrationCategory": false,
+    "molecularFormula": false,
+    "molecularWeight": false,
+    "no_wrong_product_weight": false,
+    "SynthesisRoute": false,
+    "processBasis": false,
+    "no_title_as_description": false,
+    "CleaningProcess": false,
+    "cleaning_properties_not_applicable": false,
+    "no_placeholder_values": true
+  },
+  "known_model_metrics_subtotals": {
+    "cache_n": 2400,
+    "cache_tokens": 2400,
+    "completion_tokens": 14567,
+    "elapsed_seconds": 631.631,
+    "input_count": 840,
+    "input_tokens": 279647,
+    "predicted_ms": 237003.818,
+    "predicted_n": 14567,
+    "prompt_ms": 209445.247,
+    "prompt_n": 51925,
+    "prompt_tokens": 54325,
+    "queue_seconds": 4.998,
+    "request_seconds": 626.641
+  },
+  "request_accounting": {
+    "tokenizer": {
+      "requests": 74,
+      "statuses": {
+        "completed": 74
+      },
+      "token_metric": null,
+      "known_input_tokens_subtotal": null,
+      "unmeasured_input_request_ids": [],
+      "input_measurement_complete": null
+    },
+    "ranking_inference": {
+      "requests": 139,
+      "statuses": {
+        "completed": 138,
+        "failed": 1
+      },
+      "token_metric": "input_tokens",
+      "known_input_tokens_subtotal": 279647,
+      "unmeasured_input_request_ids": [
+        "be086330f6814082a20ab032c7780d25"
+      ],
+      "input_measurement_complete": false
+    },
+    "main_inference": {
+      "requests": 11,
+      "statuses": {
+        "complete": 11
+      },
+      "token_metric": "prompt_tokens",
+      "known_input_tokens_subtotal": 54325,
+      "unmeasured_input_request_ids": [],
+      "input_measurement_complete": true
+    }
+  },
+  "new_scheme_only": true,
+  "template_acceptance": {
+    "passed": false,
+    "checks": {
+      "source_hash": true,
+      "anchors_replayed": true,
+      "DrugProduct": false,
+      "projectName": false,
+      "registrationCategory": false,
+      "molecularFormula": false,
+      "molecularWeight": false,
+      "no_wrong_product_weight": false,
+      "SynthesisRoute": false,
+      "processBasis": false,
+      "no_title_as_description": false,
+      "CleaningProcess": false,
+      "cleaning_properties_not_applicable": false,
+      "no_placeholder_values": true
+    },
+    "replayed_anchor_count": 226,
+    "replay_error_count": 0
+  },
+  "frozen_identities": {
+    "document_hash": "2c1174bf616f30dd28c655fef4261c167762de807c8ad79e148fb8ef18e16436",
+    "template_version": "v2.2",
+    "template_revision": 2,
+    "template_hash": "639fc7bdf721010a75209efd717d12bdb3e01ce4b5e2e7251aad386a9f04a9d8",
+    "ontology_snapshot_id": "24862a42ba8770c1e3a5786e2d16fd0d831e31dd159e63d739603a854d9a73db",
+    "ontology_hash": "25a0576f6f6d0efb002c44c5449dfba4329144da3868f9b6234a4038d3d68b6c",
+    "input_hash": "321dcd358f40778d3c3fea487b3c8f9ba217a4755f95c2a424cc9558d3c06b4d"
+  },
+  "runtime_manifest_sha256": "4cddee588a00d0b5af876927b2fcd42e780a5efafc360a675d9f87045d15397a",
+  "runtime_python_file_count": 239,
+  "priority_path_count": 17,
+  "priority_paths_order_verified": true,
+  "limits": {
+    "evidence_max_tasks": 8,
+    "document_analysis_max_model_calls_per_record": 6,
+    "document_analysis_performance_enabled": true,
+    "document_analysis_template_interleaving": false,
+    "semantic_ranking_retry_limit": 1,
+    "semantic_ranking_batch_size": 4,
+    "semantic_ranking_pool_size": 64,
+    "semantic_ranking_max_tokens_per_slot": 524288,
+    "semantic_ranking_max_tokens_per_run": 4194304,
+    "evidence_max_input_tokens": 32768,
+    "evidence_max_output_tokens": 20480,
+    "evidence_timeout_s": 600.0
+  }
+}

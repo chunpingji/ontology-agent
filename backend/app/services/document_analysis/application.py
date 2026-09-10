@@ -37,6 +37,7 @@ from app.services.document_analysis.run_store import (
     RunNotFound,
     content_hash,
 )
+from app.services.document_analysis.state_artifacts import decode_state
 from app.services.extraction.evidence_identity import evidence_hash
 from app.services.extraction.ontology_guided.contracts import (
     CONTRACT_VERSION,
@@ -340,6 +341,12 @@ class DocumentAnalysisApplication:
                 source_payload={
                     "filename": staged.filename,
                     "document_hash": staged.document_hash,
+                    "performance_policy": {
+                        "state_storage_version": 2,
+                        "frontier_version": 2,
+                        "recognition_inflight": 1,
+                        "template_interleaving": settings.document_analysis_template_interleaving,
+                    } if settings.document_analysis_performance_enabled else {},
                     **({"origin": origin} if origin is not None else {}),
                 },
                 ontology_artifact_id=ontology.snapshot_id,
@@ -448,6 +455,9 @@ class DocumentAnalysisApplication:
                 "ontology_snapshot_id": ontology_entry.get("artifact_id"),
                 "metadata_snapshot_id": run.metadata_snapshot_id,
                 "graph_snapshot_id": run.graph_snapshot_id,
+                "structure_snapshot_id": (manifest.get("source_header") or {}).get("artifact_id")
+                or (manifest.get("structure") or {}).get("artifact_id"),
+                "ranking_summary_id": (manifest.get("ranking_summary") or {}).get("artifact_id"),
                 "fingerprint_status": "frozen" if run.run_fingerprint else "provisional",
             },
             "artifacts": {
@@ -467,6 +477,7 @@ class DocumentAnalysisApplication:
     def _artifact_payload(
         self, run: DocumentAnalysisRun, kind: str
     ) -> tuple[dict[str, Any], str] | None:
+        self.assert_artifacts_readable(run)
         ref = self.store.get_artifact(run.recognition_run_id, run.owner_id, kind)
         if ref is None:
             return None
@@ -481,7 +492,14 @@ class DocumentAnalysisApplication:
                 retryable=True,
                 current_revision=run.revision,
             )
-        return dict(artifact.payload), _availability(ref.status)
+        return decode_state(self.store, run, dict(artifact.payload)), _availability(ref.status)
+
+    @staticmethod
+    def assert_artifacts_readable(run: DocumentAnalysisRun) -> None:
+        if run.expires_at is not None and _aware(run.expires_at) <= datetime.now(UTC):
+            raise DocumentAnalysisError("RUN_EXPIRED", "运行已过期", status_code=410)
+        if run.deletion_state != "none":
+            raise DocumentAnalysisError("RUN_DELETED", "运行正在删除或已删除", status_code=410)
 
     def metadata_response(self, run: DocumentAnalysisRun) -> dict[str, Any]:
         committed = self._artifact_payload(run, "metadata")
@@ -553,8 +571,10 @@ class DocumentAnalysisApplication:
     def graph_response(self, run: DocumentAnalysisRun, *, projection: str) -> dict[str, Any]:
         if projection not in PUBLIC_TO_INTERNAL_PROJECTION:
             raise DocumentAnalysisError("INVALID_REQUEST", "未知 graph projection", status_code=400)
-        committed = self._artifact_payload(run, "graph")
-        ranking_artifact = self._artifact_payload(run, "ranking_state")
+        compact = self._artifact_payload(run, "public_graph")
+        committed = compact or self._artifact_payload(run, "graph")
+        summary = self._artifact_payload(run, "ranking_summary")
+        ranking_artifact = None if summary else self._artifact_payload(run, "ranking_state")
         ranking_state = ranking_artifact[0] if ranking_artifact else {}
         if committed is None:
             return {
@@ -571,7 +591,7 @@ class DocumentAnalysisApplication:
                 "relationships": [],
                 "invalidated_refs": [],
                 "ranking": {
-                    **public_ranking_payload(ranking_state),
+                    **(summary[0] if summary else public_ranking_payload(ranking_state)),
                     "budget_enabled": run.ranking_budget_enabled,
                 },
                 "coverage": {
@@ -605,6 +625,8 @@ class DocumentAnalysisApplication:
             stored_payload=payload,
         )
         response["ranking"]["budget_enabled"] = run.ranking_budget_enabled
+        if summary:
+            response["ranking"] = {**summary[0], "budget_enabled": run.ranking_budget_enabled}
         # A checkpoint graph is immutable replay evidence. Its last batch can
         # predate a pause or resume; overlay only the current execution cause,
         # leaving its coverage counts and per-slot results intact.
@@ -616,6 +638,12 @@ class DocumentAnalysisApplication:
                 else run.stop_reason
             )
         response["error"] = None
+        if compact:
+            menus = payload.get("predicate_menus") or {}
+            for entity in response["entities"]:
+                if entity["entity_id"] in menus:
+                    entity["predicate_menu"] = menus[entity["entity_id"]]
+            return response
         frozen_ontology = self._artifact_payload(run, "ontology_snapshot")
         if frozen_ontology:
             ontology = OntologySnapshot.model_validate(frozen_ontology[0])
@@ -635,6 +663,36 @@ class DocumentAnalysisApplication:
                 ]
         return response
 
+    def ranking_summary_response(self, run: DocumentAnalysisRun) -> dict[str, Any]:
+        summary = self._artifact_payload(run, "ranking_summary")
+        if summary:
+            result = summary[0]
+        else:
+            legacy = self._artifact_payload(run, "ranking_state")
+            result = public_ranking_payload(legacy[0] if legacy else {})
+        return {**result, "budget_enabled": run.ranking_budget_enabled}
+
+    def source_selection_response(
+        self, run: DocumentAnalysisRun, *, selection_ref: str
+    ) -> dict[str, Any]:
+        compact = self._artifact_payload(run, "source_selections")
+        if not compact:
+            legacy = self.source_response(run, selection_ref=selection_ref)
+            return {
+                key: value for key, value in legacy.items() if key not in {"filename", "content"}
+            }
+        payload = compact[0]
+        registered = payload["selection_registry"].get(selection_ref)
+        if registered is None:
+            raise DocumentAnalysisError("RUN_NOT_FOUND", "来源定位不存在", status_code=404)
+        return {
+            "contract_version": CONTRACT_VERSION,
+            "recognition_run_id": run.recognition_run_id,
+            **{key: payload[key] for key in ("analysis_id", "document_hash", "structure_hash")},
+            "selection": {key: value for key, value in registered.items() if key != "anchors"},
+            "anchors": list(registered.get("anchors") or []),
+        }
+
     def source_response(
         self, run: DocumentAnalysisRun, *, selection_ref: str | None
     ) -> dict[str, Any]:
@@ -650,7 +708,9 @@ class DocumentAnalysisApplication:
         selection = None
         anchors: list[dict[str, Any]] = []
         if selection_ref is not None:
-            graph = self._artifact_payload(run, "graph")
+            graph = self._artifact_payload(run, "source_selections") or self._artifact_payload(
+                run, "graph"
+            )
             registry = (graph[0].get("selection_registry") if graph else None) or {}
             registered = registry.get(selection_ref)
             if registered is None:
@@ -991,3 +1051,14 @@ def weak_etag(run: DocumentAnalysisRun) -> str:
     return (
         f'W/"run:{run.recognition_run_id}:revision:{run.revision}:artifact:{run.artifact_revision}"'
     )
+
+
+def graph_etag(run: DocumentAnalysisRun, projection: str) -> str:
+    manifest = run.artifact_manifest or {}
+    digest = content_hash({
+        "projection": projection, "graph": run.graph_snapshot_id,
+        "summary": manifest.get("ranking_summary"), "status": _status(run),
+        "stop_reason": run.stop_reason, "budget_enabled": run.ranking_budget_enabled,
+        "revision": run.revision, "artifact_revision": run.artifact_revision,
+    })
+    return f'W/"graph:{run.recognition_run_id}:{digest}"'

@@ -54,6 +54,8 @@ import {
   type ReportOrDocument,
 } from "@/lib/api";
 import { cn } from "@/lib/utils";
+import { BatchRecordDrawer } from "./batch-record-drawer";
+import { useBatchDemo } from "./use-batch-demo";
 
 /**
  * 文档预览页「操作」弹出菜单（报告中心详情页 · 右上角，紧邻分享按钮）。
@@ -181,6 +183,9 @@ function AnimatedNarrativeText({ text }: { text: string }) {
 
 export function DocumentActionsMenu({ item }: { item: ReportOrDocument }) {
   const queryClient = useQueryClient();
+  const demo = useBatchDemo(item.kind === "uploaded-document" && /\.docx$/i.test(item.title) ? item.iri : undefined);
+  const [batchOpen, setBatchOpen] = useState(false);
+  const pendingBatchRef = useRef(false);
   // 瞬时提示（info/success/error）：自动消隐。生成过程的「生成中」态由 mutation 的
   // pending 独立驱动（常驻至落定），二者互斥渲染。
   const [notice, setNotice] = useState<Notice | null>(null);
@@ -498,7 +503,7 @@ export function DocumentActionsMenu({ item }: { item: ReportOrDocument }) {
   const currentIndex = completed ? stages.length : Math.max(0, stages.findIndex(([key]) => key === progress?.stage));
 
   return (
-    <Sheet open={drawerOpen} onOpenChange={setDrawerOpen}>
+    <><Sheet open={drawerOpen} onOpenChange={setDrawerOpen}>
       {busy ? (
         <SheetTrigger asChild>
           <Button type="button">
@@ -519,12 +524,25 @@ export function DocumentActionsMenu({ item }: { item: ReportOrDocument }) {
             align="end"
             className="w-64"
             onCloseAutoFocus={(event) => {
+              if (pendingBatchRef.current) {
+                event.preventDefault();
+                pendingBatchRef.current = false;
+                setBatchOpen(true);
+                return;
+              }
               if (!pendingRiskDrawerRef.current) return;
               event.preventDefault();
               pendingRiskDrawerRef.current = false;
               void openRiskDrawer();
             }}
           >
+            {demo.data?.available && <DropdownMenuItem className="items-start gap-3 py-2.5" onSelect={() => {
+              pendingBatchRef.current = true;
+              setMenuOpen(false);
+            }}>
+              <span className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary"><ClipboardCheck className="size-4" /></span>
+              <div className="space-y-0.5"><p className="text-sm font-medium">生成批记录报告</p><p className="text-xs text-muted-foreground">从静态图谱生成批记录演示草稿</p></div>
+            </DropdownMenuItem>}
             {ACTIONS.map(({ key, label, desc, Icon, tint }) => (
               <DropdownMenuItem
                 key={key}
@@ -864,5 +882,7 @@ export function DocumentActionsMenu({ item }: { item: ReportOrDocument }) {
         </div>
       ) : null}
     </Sheet>
+      {demo.data?.available && <BatchRecordDrawer key={item.iri} data={demo.data} open={batchOpen} onOpenChange={setBatchOpen} />}
+    </>
   );
 }

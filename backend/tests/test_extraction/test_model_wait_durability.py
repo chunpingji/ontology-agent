@@ -1,7 +1,6 @@
 """Ranking write barriers can advance during HTTP waits without moving the Session."""
 
 import asyncio
-from concurrent.futures import ThreadPoolExecutor
 from threading import Event, get_ident
 
 import httpx
@@ -53,6 +52,8 @@ def test_multiple_ranking_batches_finish_while_recognition_waits_on_owner_thread
     ontology, arguments = fixture(tmp_path)
     owner = get_ident()
     persistence_threads = []
+    reservation_threads = []
+    reservations = []
     completed = Event()
 
     class Ranking(ControlledRanking):
@@ -69,8 +70,8 @@ def test_multiple_ranking_batches_finish_while_recognition_waits_on_owner_thread
     ranking = Ranking()
 
     async def transport(_request):
-        # Without the wait barrier, the ranking worker remains blocked until
-        # this request ends, and this test times out instead of returning JSON.
+        # Only the coordinator can drain ranking barriers while the separate
+        # recognition worker waits for HTTP. Completion must not depend on it.
         while not completed.is_set():
             await asyncio.sleep(0.01)
         return httpx.Response(200, json=reply())
@@ -82,26 +83,37 @@ def test_multiple_ranking_batches_finish_while_recognition_waits_on_owner_thread
         probed = False
 
         def inspect(self, task, context, predicate, menu):
+            assert get_ident() != owner
+            assert runtime.get().get("on_model_wait") is None
+            context.before_model_call("recognition_wait_fixture", 1)
+            assert any(item["task_id"] == task.task_id
+                       for state in reservations for item in state["reservations"])
             if predicate.iri == FIRST and ranking.second_preparing.is_set() and not self.probed:
                 self.probed = True
-                callback = runtime.get()["on_model_wait"]
-                before = list(persistence_threads)
-                with ThreadPoolExecutor(max_workers=1) as pool:
-                    pool.submit(callback).result()
-                assert persistence_threads == before, "foreign thread used the owner's Session"
                 assert invoke(client, timeout_s=3, total_timeout_s=3) == {"ok": True}
                 assert completed.is_set()
             return TaskOutcome(semantic_outcome="not_checked", reason_code="no_candidate_observed",
                                reason="没有提出候选，不代表全文否定。", model_calls=1)
 
     adapter = Adapter()
+
+    def reserve(state):
+        reservation_threads.append(get_ident())
+        reservations.append(state)
+
     with model_scope(bind=bind):
         result = OntologyGuidedExecutor(
             ontology=ontology, engine=object(), adapter=adapter,
             ranking_service=RankingService(RankingPolicy(
                 mode="semantic", batch_size=2, ranking_timeout=5), ranking),
-        ).run(**arguments, ranking_hook=lambda _state: persistence_threads.append(get_ident()))
+        ).run(**arguments, ranking_hook=lambda _state: persistence_threads.append(get_ident()),
+              model_call_hook=reserve)
     assert adapter.probed
     assert result.graph.progress.records_examined > 0
     assert set(persistence_threads) == {owner}
+    assert set(reservation_threads) == {owner}
+    assert len(reservations[-1]["reservations"]) == 24
+    assert sum(reservations[-1]["lineage_calls"].values()) == 24
+    assert result.graph.progress.completion == "in_scope_complete"
+    assert result.ranking_state["service"]["costs"]["model_calls"] == len(ranking.calls)
     assert rows(bind)[0].status == "complete"

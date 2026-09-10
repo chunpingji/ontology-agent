@@ -141,6 +141,8 @@ test("status, metadata, graph and source functions are read-only GETs", async ()
   await api.getDocumentAnalysisMetadata("run / one", signal);
   await api.getDocumentAnalysisGraph("run / one", "all_candidates", signal);
   await api.getDocumentAnalysisSource("run / one", "selection:row/1", signal);
+  await api.getDocumentAnalysisSourceSelection("run / one", "selection:row/1", signal);
+  await api.getDocumentAnalysisRankingSummary("run / one", signal);
 
   assert.deepEqual(
     requests.map(({ url }) => url),
@@ -149,12 +151,71 @@ test("status, metadata, graph and source functions are read-only GETs", async ()
       "/api/document-analysis/runs/run%20%2F%20one/metadata",
       "/api/document-analysis/runs/run%20%2F%20one/graph?projection=all_candidates",
       "/api/document-analysis/runs/run%20%2F%20one/source?selection_ref=selection%3Arow%2F1",
+      "/api/document-analysis/runs/run%20%2F%20one/source-selection?selection_ref=selection%3Arow%2F1",
+      "/api/document-analysis/runs/run%20%2F%20one/ranking-summary",
     ],
   );
   for (const { options } of requests) {
     assert.equal(options.method, undefined);
     assert.equal(options.signal, signal);
   }
+});
+
+test("SSE connection changes distinguish transport failures from named server error frames", () => {
+  class TestEventSource {
+    static instance;
+    listeners = new Map();
+    constructor() { TestEventSource.instance = this; }
+    addEventListener(type, listener) {
+      const listeners = this.listeners.get(type) ?? new Set();
+      listeners.add(listener);
+      this.listeners.set(type, listeners);
+    }
+    removeEventListener(type, listener) { this.listeners.get(type)?.delete(listener); }
+    emit(type, event) { this.listeners.get(type)?.forEach((listener) => listener(event)); }
+    close() {}
+  }
+  const connected = [], events = [];
+  const api = loadApi(async () => response({}), { EventSource: TestEventSource });
+  const unsubscribe = api.subscribeDocumentAnalysisEvents("run", (event) => events.push(event),
+    (value) => connected.push(value));
+  const source = TestEventSource.instance;
+  source.emit("open", {});
+  source.emit("error", { data: JSON.stringify({ contract_version: "document-analysis-runs-v1",
+    recognition_run_id: "run", status: "running", event_head: 2 }) });
+  assert.deepEqual(connected, [true]);
+  assert.equal(events.length, 1);
+  source.emit("error", {});
+  source.emit("open", {});
+  assert.deepEqual(connected, [true, false, true]);
+  unsubscribe();
+  source.emit("open", {});
+  source.emit("error", {});
+  assert.deepEqual(connected, [true, false, true]);
+});
+
+test("summary reads pin their cache identity and preserve an explicitly absent summary", async () => {
+  const requests = [];
+  const api = loadApi(async (url, options) => {
+    requests.push({ url, options });
+    return response({});
+  });
+  const signal = new AbortController().signal;
+  await api.getDocumentAnalysisRankingSummary("run / one", signal,
+    { summaryId: "summary:a/1", budgetEnabled: false });
+  await api.getDocumentAnalysisRankingSummary("run / one", signal,
+    { summaryId: "", budgetEnabled: true });
+  assert.deepEqual(requests.map(({ url }) => url), [
+    "/api/document-analysis/runs/run%20%2F%20one/ranking-summary?expected_summary_id=summary%3Aa%2F1&expected_budget_enabled=false",
+    "/api/document-analysis/runs/run%20%2F%20one/ranking-summary?expected_summary_id=&expected_budget_enabled=true",
+  ]);
+  for (const { options } of requests) assert.equal(options.signal, signal);
+  const stale = loadApi(async () => ({ ok: false, status: 409, text: async () => JSON.stringify({
+    error: { code: "RUN_REVISION_CONFLICT", message: "摘要版本已变化", current_revision: 9 },
+  }) }));
+  await assert.rejects(stale.getDocumentAnalysisRankingSummary("run", signal,
+    { summaryId: "old", budgetEnabled: false }),
+  (error) => error instanceof stale.VersionConflictError && error.currentVersion === 9);
 });
 
 test("durable run events use EventSource reconnect ids and reject cross-run frames", () => {

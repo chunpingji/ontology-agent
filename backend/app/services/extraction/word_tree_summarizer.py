@@ -5,7 +5,11 @@ from __future__ import annotations
 import json
 import logging
 from collections.abc import Callable, Iterable
+from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, wait
+from contextvars import copy_context
 from datetime import UTC, datetime
+from queue import Empty, SimpleQueue
+from threading import Event
 from typing import Any
 
 from app.config import settings
@@ -19,6 +23,7 @@ from app.services.extraction.docx_structure import (
     _block_material,
 )
 from app.services.llm.local_client import chat_with_schema
+from app.services.llm.model_runtime import check_cancelled, model_scope, runtime
 
 logger = logging.getLogger(__name__)
 
@@ -44,7 +49,7 @@ _SUMMARY_SCHEMA = {
 
 _SYSTEM_PROMPT = """你是制药研发 Word 文档的分层摘要器。
 只概括提供的原文和子节点摘要，不补充外部知识，不推断未给出的结论、数值、主体或因果。
-保留药品、设备、工艺、风险名称和编号。父章节概括主题，不逐项机械重复。
+保留药品、设备、工艺、风险名称和编号，以及关键数值、否定与适用条件。父章节概括主题，不逐项机械重复。
 使用简洁中文。只返回符合 JSON Schema 的对象。"""
 
 
@@ -101,8 +106,13 @@ def _page_material(structure: DocStructure, page: PageNode) -> str:
 
 def _chapter_material(structure: DocStructure, node: ChapterNode) -> str:
     parts = [f"章节路径：{' / '.join(node.path) if node.path else node.heading}"]
+    covered = {
+        block_id for page in node.pages if _usable_page_summary(page)
+        for block_id in page.block_ids
+    } if not node.children else set()
     direct = _material_for_blocks(
-        structure, node.direct_block_ids, include_headings=False
+        structure, (bid for bid in node.direct_block_ids if bid not in covered),
+        include_headings=False,
     )
     if direct:
         parts.append(f"当前章节直接内容：\n{direct}")
@@ -120,6 +130,26 @@ def _chapter_material(structure: DocStructure, node: ChapterNode) -> str:
         ]
         parts.append("页摘要：\n" + "\n".join(page_lines))
     return "\n\n".join(parts)
+
+
+def _usable_page_summary(page: PageNode) -> bool:
+    metadata = page.page_metadata
+    return bool(metadata.content_summary and metadata.summary_status == "completed"
+                and metadata.summary_source == "llm")
+
+
+def _reuse_single_page(node: ChapterNode) -> bool:
+    if node.children or len(node.pages) != 1 or node.layer_metadata.summary_source == "empty":
+        return False
+    page = node.pages[0]
+    if not _usable_page_summary(page) or set(page.block_ids) != set(node.direct_block_ids):
+        return False
+    # The source scope is identical. Retain the node's own scope, content hash,
+    # deterministic counts and structural identity; reuse only generation fields.
+    for name in ("content_summary", "summary_status", "summary_source", "summary_model",
+                 "prompt_version", "generated_at"):
+        setattr(node.layer_metadata, name, getattr(page.page_metadata, name))
+    return True
 
 
 def _extractive_summary(material: str, maximum: int) -> str:
@@ -198,13 +228,17 @@ def _apply_batch(client, targets: list[dict[str, Any]]) -> None:
     ]
     parsed = None
     if client is not None:
+        maximum = settings.word_tree_summary_max_output_chars
+        output_tokens = max(512, len(active) * (maximum + 64))
         parsed = chat_with_schema(
             client,
-            system=_SYSTEM_PROMPT,
+            system=_SYSTEM_PROMPT + f"\n每个 content_summary 不超过 {maximum} 个字符。"
+            "为每个输入节点返回一条摘要，不重复节点，不添加解释性文字。",
             user=json.dumps({"nodes": model_nodes}, ensure_ascii=False),
             schema=_SUMMARY_SCHEMA,
             schema_name="word_tree_summaries",
-            max_tokens=max(512, len(active) * 256),
+            max_tokens=output_tokens,
+            truncation_max_tokens=output_tokens * 2,
             enable_thinking=False,
             timeout_s=settings.word_tree_summary_timeout_s,
         )
@@ -226,18 +260,20 @@ def _apply_batch(client, targets: list[dict[str, Any]]) -> None:
                 continue
             cleaned = " ".join(summary.split())
             if cleaned:
-                accepted[node_id] = cleaned[
-                    : settings.word_tree_summary_max_output_chars
-                ]
+                accepted[node_id] = cleaned
 
     generated_at = datetime.now(UTC).isoformat()
     for target in active:
         metadata = target["metadata"]
         summary = accepted.get(target["node_id"])
         if summary:
-            metadata.content_summary = summary
+            metadata.content_summary = summary[:settings.word_tree_summary_max_output_chars]
             metadata.summary_status = (
-                "partial" if target.get("has_degraded_child") else "completed"
+                "partial" if (
+                    target.get("has_degraded_child")
+                    or len(target["material"]) > max_input
+                    or len(summary) > settings.word_tree_summary_max_output_chars
+                ) else "completed"
             )
             metadata.summary_source = "llm"
             metadata.summary_model = settings.local_llm_model
@@ -250,6 +286,60 @@ def _apply_batch(client, targets: list[dict[str, Any]]) -> None:
             metadata.summary_source = "extractive_fallback"
             metadata.summary_model = None
             metadata.generated_at = generated_at
+
+
+def _apply_batches(client, targets, should_stop_fn) -> bool:
+    """Run one dependency layer; keep owner callbacks off the model threads."""
+    batches = _batches(targets)
+    if not batches:
+        return True
+    limit = max(1, min(settings.word_tree_summary_max_concurrency,
+                       settings.local_llm_max_concurrency, len(batches)))
+    stopped = Event()
+    progress = SimpleQueue()
+    owner_progress = runtime.get().get("progress")
+    owner_wait = runtime.get().get("on_model_wait")
+
+    def flush_progress():
+        while owner_progress is not None:
+            try:
+                event = progress.get_nowait()
+            except Empty:
+                break
+            owner_progress(event)
+
+    def apply(batch):
+        with model_scope(stage="word_tree_summary", should_stop=stopped.is_set,
+                         on_model_wait=None, progress=progress.put if owner_progress else None):
+            check_cancelled()
+            _apply_batch(client, batch)
+
+    pool = ThreadPoolExecutor(max_workers=limit, thread_name_prefix="word-summary")
+    pending = {}
+    cursor = 0
+    try:
+        while pending or cursor < len(batches):
+            check_cancelled()
+            if should_stop_fn and should_stop_fn():
+                return False
+            flush_progress()
+            if owner_wait is not None:
+                owner_wait()
+            while len(pending) < limit and cursor < len(batches):
+                future = pool.submit(copy_context().run, apply, batches[cursor])
+                pending[future] = cursor
+                cursor += 1
+            done, _ = wait(pending, timeout=0.05, return_when=FIRST_COMPLETED)
+            for future in sorted(done, key=pending.get):
+                del pending[future]
+                future.result()
+        flush_progress()
+        return True
+    finally:
+        stopped.set()
+        for future in pending:
+            future.cancel()
+        pool.shutdown(wait=True, cancel_futures=True)
 
 
 def fallback_word_tree_summaries(structure: DocStructure) -> ChapterNode | None:
@@ -329,10 +419,8 @@ def summarize_word_tree(
         }
         for page in all_pages
     ]
-    for batch in _batches(page_targets):
-        if should_stop_fn and should_stop_fn():
-            return root
-        _apply_batch(client, batch)
+    if not _apply_batches(client, page_targets, should_stop_fn):
+        return root
 
     depths = _depths(root)
     section_nodes = [node for node in all_nodes if node.node_type == "section"]
@@ -341,13 +429,15 @@ def summarize_word_tree(
         for node in section_nodes:
             if depths[node.node_id] != depth:
                 continue
+            if _reuse_single_page(node):
+                continue
             degraded = any(
                 child.layer_metadata.summary_source == "extractive_fallback"
                 or child.layer_metadata.summary_status in {"failed", "partial"}
                 for child in node.children
             ) or any(
                 page.page_metadata.summary_source == "extractive_fallback"
-                or page.page_metadata.summary_status == "failed"
+                or page.page_metadata.summary_status in {"failed", "partial"}
                 for page in node.pages
             )
             targets.append({
@@ -356,24 +446,24 @@ def summarize_word_tree(
                 "metadata": node.layer_metadata,
                 "has_degraded_child": degraded,
             })
-        for batch in _batches(targets):
-            if should_stop_fn and should_stop_fn():
-                return root
-            _apply_batch(client, batch)
+        if not _apply_batches(client, targets, should_stop_fn):
+            return root
 
     root_degraded = any(
         child.layer_metadata.summary_source == "extractive_fallback"
         or child.layer_metadata.summary_status in {"failed", "partial"}
         for child in root.children
-    )
+    ) or any(page.page_metadata.summary_status in {"failed", "partial"} for page in root.pages)
     if should_stop_fn and should_stop_fn():
         return root
-    _apply_batch(client, [{
-        "node_id": root.node_id,
-        "material": _chapter_material(structure, root),
-        "metadata": root.layer_metadata,
-        "has_degraded_child": root_degraded,
-    }])
+    if not _reuse_single_page(root):
+        if not _apply_batches(client, [{
+            "node_id": root.node_id,
+            "material": _chapter_material(structure, root),
+            "metadata": root.layer_metadata,
+            "has_degraded_child": root_degraded,
+        }], should_stop_fn):
+            return root
     logger.info(
         "Word tree summaries complete: nodes=%d pages=%d model=%s",
         len(all_nodes), len(all_pages), settings.local_llm_model,

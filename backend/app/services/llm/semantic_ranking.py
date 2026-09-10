@@ -325,6 +325,16 @@ def _worker_operation(operation, inputs, config, models, tokenizers):
             len(tokenizer(inputs, truncation=False, add_special_tokens=True)["input_ids"])
             for tokenizer in tokenizers.values()
         ), 0
+    if operation == "count_tokens_batch":
+        counts = [
+            [len(ids) for ids in tokenizer(
+                inputs, padding=False, truncation=False, add_special_tokens=True,
+            )["input_ids"]]
+            for tokenizer in tokenizers.values()
+        ]
+        if any(len(lengths) != len(inputs) for lengths in counts):
+            raise RankingModelUnavailable("ranking_model_returned_incomplete_batch")
+        return [max(lengths) for lengths in zip(*counts, strict=True)], 0
     kind = "embedding" if operation == "embed" else "reranker"
     if kind not in tokenizers:
         raise ValueError("reranker not enabled")
@@ -568,6 +578,21 @@ class LocalSemanticRanking:
             raise RankingModelUnavailable("ranking_invalid_token_count")
         return result
 
+    def count_tokens_batch(self, texts: list[str]) -> list[int]:
+        # One scheduler admission/IPC per bounded batch of unique full inputs.
+        unique = list(dict.fromkeys(texts))
+        counts = {}
+        for offset in range(0, len(unique), self.config["batch_size"]):
+            batch = unique[offset:offset + self.config["batch_size"]]
+            values = self._batch("count_tokens_batch", batch)
+            if len(values) != len(batch) or any(
+                not isinstance(value, int) or isinstance(value, bool) or value < 0
+                for value in values
+            ):
+                raise RankingModelUnavailable("ranking_invalid_token_count")
+            counts.update(zip(batch, values, strict=True))
+        return [counts[text] for text in texts]
+
     def _batch(self, operation, inputs):
         if len(inputs) > self.config["batch_size"]:
             raise RankingModelUnavailable("ranking_batch_limit")
@@ -643,6 +668,7 @@ def configured_ranking_service(settings, *, config_overrides=None, policy_overri
         model = None
         unavailable = str(exc)
     policy_config = dict(
+        policy_version="semantic-ranking-v2",
         mode=(
             "semantic" if config["enabled"] and config["mode"] != "deterministic"
             else "deterministic"

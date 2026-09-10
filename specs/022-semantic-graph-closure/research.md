@@ -2,6 +2,13 @@
 
 核对日期：2026-09-08。本文记录 022 的实现选择、已检查的接口及外部验收条件；具体工程命令和结果以 [validation.md](validation.md) 为准，不将文件存在或受控模型测试解释为真实质量通过。
 
+2026-09-10 性能增量采用运行内不可变块、写边界生成展示制品、单协调器确认和惰性前沿；
+设计与代价见 [plan.md](plan.md)，新实测见 [performance-validation.md](performance-validation.md)。
+保留每任务原子提交、完整浮点精度和逻辑覆盖，不引入向量库或跨运行缓存。用户后续仅要求测试新方案，停止相对原实现的性能提升对照，
+本次报告记录绝对指标和稳定性，体感由用户评价。
+Context7另核对TanStack Query v5的enabled/取消与独立refetchInterval、SQLAlchemy 2.0
+Session线程独占，以及Transformers批量tokenizer；真实逐条/批量计数另做离线复算。
+
 | 决策 | 依据/代价 |
 |---|---|
 | 增量 022，继承 021 | 021 已有在线运行/事件/证明投影；不重建旧域或覆盖历史验收 |
@@ -24,6 +31,8 @@
 [integration.json](../../.specify/integration.json) 记录 Spec Kit 0.11.3；
 [feature.json](../../.specify/feature.json) 指向 `specs/022-semantic-graph-closure`。
 本特性按 `specify → clarify → plan → tasks → implement` 留存规范及契约，继承 021 的运行域和治理要求。
+2026-09-10经Context7核对[官方Spec Kit工作流](https://github.com/github/spec-kit/blob/main/docs/quickstart.md)，
+在已有022中同步澄清、依赖任务、契约及实际勾选状态；本次不升级仓库的Spec Kit版本。
 
 模型适配前通过 Context7 查询 `/huggingface/sentence-transformers` 和 `/websites/sbert_net`，
 核对本地构造、`local_files_only=True`、`trust_remote_code=False`、CPU、归一化编码，及

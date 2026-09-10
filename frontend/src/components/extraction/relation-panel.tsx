@@ -26,6 +26,7 @@ import type {
 } from "@/lib/api";
 
 interface RelationPanelProps {
+  collapseProperties?: boolean;
   docClass?: DocClassification | null;
   relationships?: Relationship[];
   selectedSourceRef?: string | null;
@@ -280,6 +281,7 @@ function EndpointRow({
   decision,
   onDecide,
   decisionPending,
+  collapseProperties,
 }: {
   node: SubRelationship;
   depth: number;
@@ -289,6 +291,7 @@ function EndpointRow({
   decision?: PdeConflictDecision | null;
   onDecide?: (chosen: PdeDecisionChoice) => void;
   decisionPending?: boolean;
+  collapseProperties?: boolean;
 }) {
   const hasDetail =
     node.object_data_properties.length > 0 || node.sub_relationships.length > 0;
@@ -359,7 +362,7 @@ function EndpointRow({
         <div className="ml-5 mb-1 space-y-1 border-l-2 border-muted pl-3">
           {/* 数据属性 */}
           {node.object_data_properties.length > 0 && (
-            <div className="space-y-0.5 py-0.5">
+            <PropertyDisclosure collapsed={collapseProperties} count={node.object_data_properties.length}>
               {node.object_data_properties.map((dp, i) => (
                 <div
                   key={`${dp.label}:${i}`}
@@ -375,7 +378,7 @@ function EndpointRow({
                   <span className="break-all">{formatPropertyValue(dp.value)}</span>
                 </div>
               ))}
-            </div>
+            </PropertyDisclosure>
           )}
 
           {/* 递归子关系（按谓词分组） */}
@@ -399,6 +402,7 @@ function EndpointRow({
                     decision={decision}
                     onDecide={onDecide}
                     decisionPending={decisionPending}
+                    collapseProperties={collapseProperties}
                   />
                 ))}
               </div>
@@ -418,11 +422,14 @@ export function RelationPanel({
   onDecide,
   decisionPending,
   emptyMessage,
+  collapseProperties,
 }: RelationPanelProps) {
   const rels = relationships ?? [];
   const groups = useMemo(() => groupByPredicate(relationships ?? []), [relationships]);
   const classificationBadge =
-    docClass?.source === "explicit" && docClass.score === 0
+    docClass?.source === "static_demo"
+      ? "静态演示"
+      : docClass?.source === "explicit" && docClass.score === 0
       ? "显式指定"
       : `匹配分 ${docClass?.score ?? 0}`;
 
@@ -507,6 +514,7 @@ export function RelationPanel({
                       decision={decision}
                       onDecide={onDecide}
                       decisionPending={decisionPending}
+                      collapseProperties={collapseProperties}
                     />
                   ))}
                 </div>
@@ -517,4 +525,13 @@ export function RelationPanel({
       )}
     </div>
   );
+}
+
+function PropertyDisclosure({ collapsed, count, children }: {
+  collapsed?: boolean; count: number; children: ReactNode;
+}) {
+  return collapsed ? <details className="space-y-1 py-1">
+    <summary className="cursor-pointer text-xs text-muted-foreground">实体属性 · {count} 项</summary>
+    {children}
+  </details> : <div className="space-y-0.5 py-0.5">{children}</div>;
 }

@@ -6,7 +6,7 @@ CONTEXT_RECORDS_VERSION = "ontology-context-records-v1"
 
 
 def field_group_context(index, record_id, subject_label):
-    groups = [group for group in index.field_groups if record_id in group.record_ids]
+    groups = index.field_groups_by_record.get(record_id, ())
     units, owners = {}, []
     for group in groups:
         for identity in group.record_ids:
@@ -41,16 +41,17 @@ def named_object_context(index, record_id, predicate, ontology):
                   for prop in definition.declared_properties)
     terms = {word for label in labels for word in re.findall(r"[\u4e00-\u9fff]{2,}", label)}
     terms.update(term[i:i + 2] for term in list(terms) for i in range(len(term) - 1))
-    nodes = {node["node_id"]: node for node in index.ir.nodes}
+    nodes = index.nodes_by_id
     parents = {nodes[unit.section_node_id].get("parent_id") for unit in captions}
     parents.difference_update({None, "document"})
-    headings = [unit for unit in index.ir.evidence_units if unit.kind == "heading"
-                and not unit.table_path and nodes[unit.section_node_id].get("parent_id") in parents
-                and any(term in unit.text for term in terms)]
+    headings = sorted(
+        (unit for parent in parents for unit in index.headings_by_parent.get(parent, ())
+         if any(term in unit.text for term in terms)),
+        key=lambda unit: index.positions[unit.evidence_id],
+    )
     units = {unit.evidence_id: unit for unit in headings}
     for heading in headings:
-        first = next((item for item in index.records
-                      if item.section_node_id == heading.section_node_id), None)
+        first = index.first_record_by_section.get(heading.section_node_id)
         if first:
             units.update((unit.evidence_id, unit) for unit in (
                 *first.header_units, *first.source_units, *first.note_units, *first.parent_units))

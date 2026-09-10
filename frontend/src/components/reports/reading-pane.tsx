@@ -13,6 +13,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import { BatchReportPreview } from "./batch-report-preview";
 import {
   downloadReportById,
   entitiesFromTriples,
@@ -20,6 +21,7 @@ import {
   pollReportStatus,
   resolveDocumentJobId,
   type DocClassification,
+  type BatchDemoOutputNode,
   type RecognizedEntity,
   type Relationship,
   type ReportOrDocument,
@@ -211,7 +213,9 @@ function ReportPane({ item }: { item: ReportOrDocument }) {
   const download = useMutation({
     mutationFn: async () => {
       const blob = await downloadReportById(item.jobId as string, item.reportId as string);
-      saveBlob(blob, item.title || item.key);
+      saveBlob(blob, item.category === "batch_record_demo"
+        ? `批记录报告_演示草稿_HRS-5592_${item.reportId?.slice(0, 8)}.docx`
+        : item.title || item.key);
     },
   });
 
@@ -228,6 +232,19 @@ function ReportPane({ item }: { item: ReportOrDocument }) {
   );
 
   if (dto?.report_run_id) return <ReportRunPanel runId={dto.report_run_id} />;
+  if (dto?.report_type === "batch_record_demo" && summary?.body_ast) {
+    return <div className="space-y-6">
+      <section id="report-overview" className="scroll-mt-24 space-y-2">
+        <h2 className="text-base font-semibold">批记录报告 <Badge variant="secondary">演示草稿</Badge></h2>
+        <p className="text-sm text-muted-foreground">生成人：{dto.actor} · 已保存 · 实际操作与审核签署待填写</p>
+      </section>
+      <section id="report-narratives" className="scroll-mt-24"><BatchReportPreview node={summary.body_ast as BatchDemoOutputNode} /></section>
+      <section id="report-download" className="scroll-mt-24 space-y-2">
+        <Button disabled={download.isPending} onClick={() => download.mutate()}>{download.isPending ? <Loader2 className="animate-spin" /> : <Download />}下载批记录报告</Button>
+        {download.isError && <p className="text-sm text-destructive">下载失败，请重试。</p>}
+      </section>
+    </div>;
+  }
 
   return (
     <div className="space-y-6">

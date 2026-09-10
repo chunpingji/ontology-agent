@@ -13,6 +13,8 @@ from app.services.extraction.evidence_identity import evidence_hash
 from app.services.extraction.ontology_guided.contracts import MetadataSnapshot
 from app.services.extraction.ontology_guided.records import RecordIndex
 
+VIEW_POLICY_VERSION = "complete-record-view-v1"
+
 
 class RetrievalView(EvidenceModel):
     record_id: str
@@ -28,7 +30,7 @@ class RetrievalView(EvidenceModel):
     logical_row_id: str | None = None
     token_count: int = Field(ge=0)
     status: Literal["complete", "not_rerankable"] = "complete"
-    view_policy_version: str = "complete-record-view-v1"
+    view_policy_version: str = VIEW_POLICY_VERSION
     authority: Literal["retrieval_only"] = "retrieval_only"
 
 
@@ -38,22 +40,29 @@ def build_retrieval_views(
     *,
     count_tokens: Callable[[str], int],
     max_record_tokens: int,
+    count_tokens_batch: Callable[[list[str]], list[int]] | None = None,
 ) -> dict[str, RetrievalView]:
     if metadata.analysis_id != index.ir.analysis_id or max_record_tokens < 1:
         raise ValueError("retrieval view scope or budget mismatch")
     summaries = {item.node_id: item for item in metadata.node_summaries}
     record_views = {item.record_id: item for item in index.record_views}
+    groups_by_record = getattr(index, "field_groups_by_record", None)
+    if groups_by_record is None:
+        groups_by_record = {}
+        for group in index.field_groups:
+            for record_id in group.record_ids:
+                groups_by_record.setdefault(record_id, []).append(group)
     result = {}
+    prepared = []
     for record in index.records:
         source = record_views[record.record_id]
         node = summaries.get(record.section_node_id)
         bindings = [*source.header_refs, *source.parent_context_refs, *source.note_refs]
         field_refs = []
-        for group in index.field_groups:
-            if record.record_id in group.record_ids:
-                for rid in group.record_ids:
-                    if rid != record.record_id:
-                        field_refs.extend(record_views[rid].source_refs)
+        for group in groups_by_record.get(record.record_id, ()):
+            for rid in group.record_ids:
+                if rid != record.record_id:
+                    field_refs.extend(record_views[rid].source_refs)
         bindings.extend(anchor for anchor in field_refs if anchor not in bindings)
         payload = {
             "heading_path": node.path if node else [],
@@ -64,7 +73,17 @@ def build_retrieval_views(
             "field_group_context": [index.ir.resolve(item) for item in field_refs],
         }
         text = json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
-        token_count = count_tokens(text)
+        prepared.append((record, source, node, bindings, payload, text))
+    texts = [item[-1] for item in prepared]
+    counts = (
+        count_tokens_batch(texts) if count_tokens_batch is not None
+        else [count_tokens(text) for text in texts]
+    )
+    if len(counts) != len(prepared):
+        raise ValueError("ranking_model_returned_incomplete_batch")
+    for (record, source, node, bindings, payload, text), token_count in zip(
+        prepared, counts, strict=True
+    ):
         result[record.record_id] = RetrievalView(
             record_id=record.record_id,
             retrieval_view_hash=evidence_hash([payload, source.model_dump(mode="json")]),

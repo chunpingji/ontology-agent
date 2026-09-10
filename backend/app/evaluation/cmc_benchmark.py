@@ -22,6 +22,7 @@ from collections import Counter
 from copy import deepcopy
 from datetime import UTC, datetime
 from pathlib import Path
+from threading import Lock
 from uuid import uuid4
 
 CMC_CLASS = "https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport"
@@ -35,6 +36,7 @@ FROZEN_SETTINGS_KEYS = (
     "evidence_timeout_retries", "gliner_threshold", "word_tree_summary_prompt_version",
     "word_tree_summary_max_output_chars", "word_tree_summary_max_input_chars_per_node",
     "word_tree_summary_max_batch_chars", "word_tree_summary_max_nodes_per_batch",
+    "word_tree_summary_max_concurrency",
     "semantic_ranking_enabled", "semantic_ranking_mode", "semantic_ranking_failure_policy",
     "semantic_ranking_embedding_path", "semantic_ranking_embedding_manifest_path",
     "semantic_ranking_reranker_path", "semantic_ranking_reranker_manifest_path",
@@ -382,6 +384,7 @@ def summarize(args):
     started = time.perf_counter()
     client = get_local_llm()
     batches = []
+    batch_lock = Lock()
     original_batch = word_tree_summarizer._apply_batch
 
     def record_partial():
@@ -401,15 +404,16 @@ def summarize(args):
         try:
             return original_batch(batch_client, targets)
         finally:
-            event = {
-                "batch": len(batches) + 1,
-                "nodes": len(targets),
-                "wall_seconds": time.perf_counter() - tick,
-                "node_ids": [target["node_id"] for target in targets],
-            }
-            batches.append(event)
-            record_partial()
-            emit("summary_batch_finished", **event)
+            with batch_lock:
+                event = {
+                    "batch": len(batches) + 1,
+                    "nodes": len(targets),
+                    "wall_seconds": time.perf_counter() - tick,
+                    "node_ids": [target["node_id"] for target in targets],
+                }
+                batches.append(event)
+                record_partial()
+                emit("summary_batch_finished", **event)
 
     # Process-local observation only; production server and model policy are untouched.
     word_tree_summarizer._apply_batch = measured_batch

@@ -73,3 +73,17 @@ Verify:
 ## 5. Offline/degradation validation
 
 Run the backend without an LLM endpoint and with summary disabled. Word parsing, annotated-document, and stateless upload requests must succeed with `summary_status=disabled`. Then enable summary while keeping the endpoint unavailable; the request must still succeed and use `extractive_fallback` only for summary metadata.
+
+## 6. Summary performance and cancellation regression
+
+```bash
+cd backend
+.venv/bin/python -m pytest -p no:cacheprovider -q \
+  tests/test_extraction/test_word_tree_summarizer.py \
+  tests/test_extraction/test_model_scheduler.py \
+  tests/test_extraction/test_document_summary_execution.py
+```
+
+验收：范围一致的单页章节复用摘要但不修改原文；父层只去除成功页已覆盖的直接材料，失败/部分页保留原文；同层最大并发遵循配置并保持父子依赖；取消关闭在途请求，摘要中断不发布回退元数据；截断最多重试一次、提高 token 预算且保留 JSON Schema，仍受同一总超时控制。
+
+新摘要版本默认为 `word-tree-summary-v2`。`WORD_TREE_SUMMARY_MAX_CONCURRENCY` 默认 2，设为 1 可串行执行；共享模型调度上限仍有效。已启动且不支持自动 reload 的后端需在安排好的重启后载入新代码。真实模型验证须使用新的验证身份和输出目录，不覆盖已有运行或冻结评测。

@@ -197,11 +197,14 @@ def chat_with_schema(
     raise_on_error: bool = False,
     timeout_retries: int = 0,
     total_timeout_s: float | None = None,
+    truncation_max_tokens: int | None = None,
 ) -> dict[str, Any] | None:
     """Shared admission, hard total deadline and cancellable, observable retries.
 
     Queueing, HTTP attempts and optional schema fallback share ONE total budget.
     SDK retries are disabled. Ownership and pause signals are never swallowed.
+    Opt-in truncation recovery raises the output limit once within this deadline
+    and max_attempts, retaining structured output. Other callers keep their policy.
     This synchronous facade is used by existing worker/thread entry points.
     """
     from app.config import settings
@@ -262,9 +265,16 @@ def chat_with_schema(
                     ticket.publish("retrying")
                     logger.warning("Evidence model timeout; retry %s/%s", retries, timeout_retries)
                     continue
+                if str(failure) == "model_output_truncated" and truncation_max_tokens is not None:
+                    if attempt < max_attempts and kwargs["max_tokens"] < truncation_max_tokens:
+                        kwargs["max_tokens"] = truncation_max_tokens
+                        ticket.publish("retrying")
+                        continue
+                    raise failure
                 if (
                     not fallback
                     and max_attempts > 1
+                    and (truncation_max_tokens is None or attempt < max_attempts)
                     and str(failure) not in {"model_timeout", "model_total_timeout"}
                 ):
                     fallback = True

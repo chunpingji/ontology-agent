@@ -670,6 +670,12 @@ class TemplateStyle(Model):
     assets: list[str] = Field(default_factory=list)
 
 
+class StaticDemoProfile(Model):
+    fixture_id: Literal["hrs5592-cmc-demo-v1"]
+    contract_id: Literal["cmc-batch-demo-v1"]
+    document_iri: Id
+
+
 class TemplateV2(Model):
     schema_version: Literal[2]
     template_family_id: Id
@@ -688,12 +694,15 @@ class TemplateV2(Model):
     budget: Budget = Field(default_factory=Budget)
     legacy: LegacyOrigin | None = None
     migration_issues: list[MigrationIssue] = Field(default_factory=list)
+    demo_profile: StaticDemoProfile | None = None
 
     @model_serializer(mode="wrap")
     def preserve_legacy_identity(self, handler):
         data = handler(self)
         if self.style is None:
             data.pop("style", None)
+        if self.demo_profile is None:
+            data.pop("demo_profile", None)
         return data
 
 

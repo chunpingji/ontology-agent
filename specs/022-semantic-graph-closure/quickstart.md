@@ -2,12 +2,72 @@
 
 本特性复用已有后端和前端环境。下面先执行隔离工程检查；真实评测步骤仅在本地制品、服务和独立参考就绪后执行。工程检查不启动应用、不迁移共享数据库、不调用真实模型。
 
-本次实际工程命令及结果见 [validation.md](validation.md)；对外契约见 [contracts/ranking.md](contracts/ranking.md)。
+既有工程记录见 [validation.md](validation.md)；2026-09-10 性能增量的实际命令、指标与边界见
+[performance-validation.md](performance-validation.md)，新增接口/恢复契约见
+[contracts/performance.md](contracts/performance.md)。
 模板面板迁移的定向测试合集、当前暂停状态及后续金标准脚本见
-[工程收尾验证](kernel-panel-migration.md#工程收尾验证)。按用户最新指令，该增量先以
-TDD/回归通过收尾，暂不执行下方真实模型评测步骤。
+[工程收尾验证](kernel-panel-migration.md#工程收尾验证)。该模板迁移阶段于2026-09-09先以
+TDD/回归收尾；后续性能实测与完整模板/专家质量分开登记。
 
 ## 1. 隔离工程检查
+
+性能增量在 `backend/` 的最小定向入口：
+
+```bash
+.venv/bin/python -m pytest -p no:cacheprovider -q \
+  tests/test_api/test_document_analysis_performance.py \
+  tests/test_extraction/test_document_state_artifacts.py \
+  tests/test_extraction/test_recognition_coordinator.py \
+  tests/test_extraction/test_ranking_performance.py \
+  tests/test_extraction/test_scheduler_performance.py \
+  tests/test_extraction/test_document_analysis_execution_recovery.py \
+  tests/test_extraction/test_ontology_guided_boundaries.py
+```
+
+在 `frontend/` 执行 `node --test tests/document-analysis-runs.test.mjs
+tests/template-document-performance.test.mjs`；真实组件的模拟API浏览器入口为
+`node tests/template-document-performance-browser.mjs`，另需可用的esbuild与Playwright/Chrome。
+可用`ESBUILD_MODULE/PLAYWRIGHT_MODULE`指定已有安装；该脚本不代表真实后端集成。
+
+无模型状态回放使用新输出目录：
+
+```bash
+.venv/bin/python scripts/benchmark_document_state.py \
+  --input /controlled/exported-artifacts.jsonl.gz \
+  --output-dir /controlled/new-performance-replay --samples 30
+```
+
+输入gzip JSONL须含`artifact_kind/revision/event_head/payload`，保留原状态各版本以及
+最终ontology/metadata；工具只访问该文件和新SQLite目录。报告区分逻辑体积、服务计时与
+线上性能，不把原文、向量或SQLite输出加入Git。专用PostgreSQL故障命令和清表限制见
+[本次验证](performance-validation.md)。
+
+新运行默认`DOCUMENT_ANALYSIS_PERFORMANCE_ENABLED=true`，冻结存储/前沿版本2、
+识别在途1；`DOCUMENT_ANALYSIS_TEMPLATE_INTERLEAVING=false`，仅显式新实验开启。
+总开关false只影响新建运行的冻结策略；已写版本2的运行仍需本版本兼容reader/writer。
+默认batch保持4。按用户后续要求，只测试新方案，不执行新旧性能对照；
+绝对指标与正确性结果不能直接代替模板首结果或双任务并行验收。
+
+新方案真实模板的隔离入口为
+[benchmark_template_document_run.py](../../backend/scripts/benchmark_template_document_run.py)。
+先准备新的空PostgreSQL专库，名称必须以`_template_performance_test`结尾且位于loopback；
+输入JSON包含真实模板/源作业元数据、完整优先路径、冻结本体和允许的非敏感模型配置，
+不含留出金标。仅准备时创建独立运行但不调用模型；`--execute`才执行真实模型：
+
+```bash
+# 工作目录backend；使用专用新库和新输出目录，勿指向线上库。
+.venv-cuda12/bin/python scripts/benchmark_template_document_run.py \
+  --database-url postgresql+psycopg2://postgres@127.0.0.1:55440/new_template_performance_test \
+  --input /controlled/frozen-template-input.json \
+  --document /controlled/source.docx --output /controlled/new-template-diagnostic \
+  --tasks 8 --pause-after-tasks 2
+# 核对输出manifest后，用完全相同参数加 --execute 执行本次已准备运行。
+```
+
+该入口复用正式`TemplateDocumentRuns.create/dispatch_run`，保留真实解析与发现/独立验证，
+仅以导出的精确本体替换创建时的本体获取边界。总任务预算8不因暂停/恢复重置，
+每lineage6次，因此主请求上限48；排序费用另计。报告包含完整分母、暂停恢复、费用、
+绝对耗时及原文回放结果；核心关系或路径未完成时明确保持未验收，不用进程退出码代表质量。
 
 在 `backend/` 执行当前存在的定向测试：
 

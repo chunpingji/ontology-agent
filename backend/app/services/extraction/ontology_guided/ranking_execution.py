@@ -23,12 +23,7 @@ class RankingPreparation:
         self._updates: Queue = Queue()
         self._stopped = Event()
         self._pool = ThreadPoolExecutor(max_workers=1, thread_name_prefix="document-ranking")
-        self.service = RankingService(
-            service.policy,
-            service.model,
-            state=service.snapshot(),
-            before_model_hook=self._before_model,
-        )
+        self.service = service.fork(before_model_hook=self._before_model)
         parent_stop = runtime.get().get("should_stop")
 
         def prepare():

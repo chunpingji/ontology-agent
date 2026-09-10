@@ -185,6 +185,7 @@ class AstTemplateResponse(BaseModel):
     iri_pattern: str | None = None
     status: str = "draft"
     slot_count: int = 0
+    demo_profile: dict | None = None
     schema_version: int = 1
     template_family_id: str | None = None
     revision_no: int = 1

@@ -65,8 +65,9 @@ class Settings(BaseSettings):
     word_tree_summary_max_input_chars_per_node: int = 6000
     word_tree_summary_max_batch_chars: int = 24000
     word_tree_summary_max_nodes_per_batch: int = 20
+    word_tree_summary_max_concurrency: int = Field(default=2, ge=1, le=8)
     word_tree_summary_max_output_chars: int = 300
-    word_tree_summary_prompt_version: str = "word-tree-summary-v1"
+    word_tree_summary_prompt_version: str = "word-tree-summary-v2"
 
     # Ontology-guided document analysis (021).  Source files and derived
     # artifacts are owned by a DocumentAnalysisRun, never by ExtractionJob.
@@ -81,6 +82,8 @@ class Settings(BaseSettings):
     document_analysis_sse_window_seconds: int = 30
     document_analysis_worker_id: str = "document-analysis-worker"
     document_analysis_max_model_calls_per_record: int = Field(default=6, ge=1, le=32)
+    document_analysis_performance_enabled: bool = True
+    document_analysis_template_interleaving: bool = False
 
     # 022: optional offline ranking; independent from entity alignment and
     # the required recognition model. CUDA 12.6/FP16 is the deployment default;

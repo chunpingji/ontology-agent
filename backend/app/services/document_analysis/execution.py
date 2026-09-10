@@ -41,6 +41,7 @@ from app.services.document_analysis.artifact_store import (
     SourceArtifactError,
 )
 from app.services.document_analysis.public_projection import build_selection_registry
+from app.services.document_analysis.read_artifacts import publish_read_artifacts
 from app.services.document_analysis.run_store import (
     DocumentAnalysisRunStore,
     FenceViolation,
@@ -49,6 +50,11 @@ from app.services.document_analysis.run_store import (
     RunDeleted,
     RunNotFound,
     content_hash,
+)
+from app.services.document_analysis.state_artifacts import (
+    decode_state,
+    encode_run_state,
+    performance_policy,
 )
 from app.services.extraction.doc_converter import DocConversionError, ensure_docx
 from app.services.extraction.document_annotator import annotate_word
@@ -85,7 +91,7 @@ from app.services.extraction.ontology_guided.model_adapter import (
 )
 from app.services.extraction.ontology_guided.projection import project_graph
 from app.services.extraction.ontology_guided.records import RecordIndex
-from app.services.extraction.ontology_guided.semantic_reranker import RankingService
+from app.services.extraction.ontology_guided.semantic_reranker import RankingPolicy, RankingService
 from app.services.extraction.ontology_guided.task_citations import TASK_CITATION_VERSION
 from app.services.extraction.ontology_guided.verification import (
     EligibilityPolicy,
@@ -167,7 +173,9 @@ class _LeaseKeeper:
                     lease_seconds=self._lease_seconds,
                 )
                 db.commit()
-                if execution.pause_requested or execution.cancel_requested:
+                # Pause is a safe-boundary request. Cancelling an already paid
+                # model call here would lose its result and force a replay.
+                if execution.cancel_requested:
                     self._control_requested.set()
             except (FenceViolation, RunDeleted, RunNotFound):
                 db.rollback()
@@ -268,6 +276,9 @@ def _publish_artifact(
     metadata_snapshot_id: str | None = None,
     graph_snapshot_id: str | None = None,
 ) -> DocumentAnalysisRun:
+    logical_payload = payload
+    if kind == "graph":
+        payload = encode_run_state(store, run, token, payload)
     artifact_hash = content_hash(payload)
     head = store.get_artifact_head(run.recognition_run_id, run.owner_id, kind)
     expected_artifact_revision = head.revision if head is not None else 0
@@ -310,6 +321,10 @@ def _publish_artifact(
         analysis_id=analysis_id,
         metadata_snapshot_id=metadata_snapshot_id,
         graph_snapshot_id=graph_snapshot_id,
+    )
+    publish_read_artifacts(
+        store, run, token, kind=kind, payload=logical_payload, status=status,
+        event_head=event.sequence,
     )
     db.commit()
     return store.get_owned(run.recognition_run_id, run.owner_id)
@@ -452,7 +467,10 @@ def _finish(
         run.owner_id,
         token,
         expected_revision=run.revision,
-        stage={"complete": "finalize", "extracting": "recognition"}.get(public_stage, public_stage),
+        stage={
+            "accepted": "ingest", "parsing": "parse", "preparing_metadata": "metadata",
+            "extracting": "recognition", "complete": "finalize",
+        }.get(public_stage, public_stage),
         execution_status=status,
         progress=effective_progress.model_dump(mode="json"),
         stop_reason=stop_reason,
@@ -495,7 +513,7 @@ def _restore_ranking_state(
         or ref.event_head > run.event_head
     ):
         raise CheckpointMismatch("ranking artifact head is invalid")
-    state = dict(artifact.payload)
+    state = decode_state(store, run, artifact.payload)
     if (
         state.get("recognition_run_id") != str(run.recognition_run_id)
         or state.get("run_fingerprint") != final_fingerprint
@@ -515,7 +533,8 @@ def _persist_ranking_state(
 ) -> None:
     """Commit the complete ranking boundary before its first recognition call."""
     try:
-        store.assert_fence(run.recognition_run_id, run.owner_id, token)
+        # Validate monotonic accounting under the same lock as block/head writes.
+        store.assert_fence(run.recognition_run_id, run.owner_id, token, for_update=True)
         current = store.get_owned(run.recognition_run_id, run.owner_id)
         if (
             current.run_fingerprint != final_fingerprint
@@ -523,7 +542,21 @@ def _persist_ranking_state(
             or state.get("recognition_run_id") != str(current.recognition_run_id)
         ):
             raise FingerprintMismatch("ranking response has stale run dependencies")
-        previous = _restore_ranking_state(db, store, current, final_fingerprint=final_fingerprint)
+        head = store.get_artifact_head(
+            current.recognition_run_id, current.owner_id, "ranking_state",
+        )
+        if head is not None:
+            db.refresh(head)
+        cached = getattr(store, "_committed_ranking_state", None)
+        cache_key = (
+            str(current.recognition_run_id), head.artifact_id, head.content_hash
+        ) if head else None
+        # The sole writer already validated its last committed boundary. Reuse
+        # that immutable content while this exact durable head is still current;
+        # a new session/head or recovery always validates and loads references.
+        previous = cached[1] if cached and cached[0] == cache_key else _restore_ranking_state(
+            db, store, current, final_fingerprint=final_fingerprint
+        )
         prior_service = previous.get("service") or {}
         service = state.get("service") or {}
         prior_epochs = prior_service.get("epochs") or []
@@ -540,7 +573,10 @@ def _persist_ranking_state(
             )
             or any(
                 service.get(ledger, {}).get(key, 0) < value
-                for ledger in ("request_attempts", "record_call_counts", "slot_costs")
+                for ledger in (
+                    "request_attempts", "record_call_counts",
+                    "record_intent_call_counts", "slot_costs",
+                )
                 for key, value in prior_service.get(ledger, {}).items()
             )
         ):
@@ -556,9 +592,11 @@ def _persist_ranking_state(
             by_id.get(epoch["epoch_id"]) != epoch for epoch in prior_epochs
         ):
             raise CheckpointMismatch("committed ranking epochs cannot be replaced or removed")
-        digest = content_hash(state)
-        if previous and content_hash(previous) == digest:
+        if previous and content_hash(previous) == content_hash(state):
+            db.commit()  # Release the writer lock on idempotent acknowledgement.
             return
+        persisted_state = encode_run_state(store, current, token, state)
+        digest = content_hash(persisted_state)
         head = store.get_artifact_head(
             current.recognition_run_id, current.owner_id, "ranking_state"
         )
@@ -580,7 +618,7 @@ def _persist_ranking_state(
                 "ranking_epochs": len(epochs),
             },
         )
-        store.update_artifact(
+        committed_ref = store.update_artifact(
             current.recognition_run_id,
             current.owner_id,
             token,
@@ -590,10 +628,19 @@ def _persist_ranking_state(
             status="ready",
             artifact_id=stable_id("ranking-state", [str(current.recognition_run_id), digest]),
             media_type="application/json",
-            payload=state,
+            payload=persisted_state,
+            event_head=event.sequence,
+        )
+        publish_read_artifacts(
+            store, current, token, kind="ranking_state", payload=state, status="ready",
             event_head=event.sequence,
         )
         db.commit()
+        store._committed_ranking_state = (
+            (str(current.recognition_run_id), committed_ref.artifact_id,
+             committed_ref.content_hash),
+            deepcopy(state),
+        )
     except BaseException:
         db.rollback()
         raise
@@ -771,6 +818,7 @@ def _recognition_fingerprint(
     adapter: object | None,
     ranking_identity: dict | None = None,
     origin: dict | None = None,
+    performance: dict | None = None,
 ) -> str:
     """Freeze every semantic/configuration dependency needed for safe resume."""
 
@@ -791,6 +839,7 @@ def _recognition_fingerprint(
             "model_identity": getattr(adapter, "model_identity", None),
             "ranking": ranking_identity,
             "origin": origin,
+            **({"performance": performance} if performance else {}),
             "tokenizer": {
                 "backend": settings.local_llm_tokenizer_backend,
                 "path": settings.local_llm_tokenizer_path,
@@ -1031,24 +1080,29 @@ def _persist_recognition_batch(
             "ranking_state": batch.ranking_state,
         }
         graph_head = store.get_artifact_head(current.recognition_run_id, current.owner_id, "graph")
+        stored_graph = encode_run_state(store, current, token, graph_payload)
         store.update_artifact(
             current.recognition_run_id,
             current.owner_id,
             token,
             artifact_kind="graph",
             expected_revision=graph_head.revision if graph_head else 0,
-            artifact_hash=content_hash(graph_payload),
+            artifact_hash=content_hash(stored_graph),
             status=graph.artifact_status,
             artifact_id=stable_id(
                 "graph-artifact",
                 [str(current.recognition_run_id), graph_snapshot_id],
             ),
             media_type="application/json",
-            payload=graph_payload,
+            payload=stored_graph,
             event_head=event.sequence,
             analysis_id=ir.analysis_id,
             metadata_snapshot_id=metadata.snapshot_id,
             graph_snapshot_id=graph_snapshot_id,
+        )
+        publish_read_artifacts(
+            store, current, token, kind="graph", payload=graph_payload,
+            status=graph.artifact_status, event_head=event.sequence,
         )
         execution = store.assert_fence(current.recognition_run_id, current.owner_id, token)
         candidate_refs = _head_refs(
@@ -1080,7 +1134,9 @@ def _persist_recognition_batch(
             model_call_state=batch.model_call_state,
             progress=graph.progress,
         )
-        checkpoint_payload = checkpoint.model_dump(mode="json")
+        checkpoint_payload = encode_run_state(
+            store, current, token, checkpoint.model_dump(mode="json")
+        )
         checkpoint_head = store.get_artifact_head(
             current.recognition_run_id,
             current.owner_id,
@@ -1140,11 +1196,15 @@ def _restore_recognition_checkpoint(
     if ref is None:
         return None
     artifact = db.get(DocumentAnalysisArtifact, ref.artifact_id)
-    if artifact is None or artifact.payload is None or artifact.content_hash != ref.content_hash:
+    if (
+        artifact is None or artifact.payload is None
+        or artifact.content_hash != ref.content_hash
+        or content_hash(artifact.payload) != ref.content_hash
+    ):
         raise CheckpointMismatch("checkpoint artifact head is invalid")
     try:
         checkpoint = restore_checkpoint(
-            artifact.payload,
+            decode_state(store, run, artifact.payload),
             recognition_run_id=str(run.recognition_run_id),
             run_fingerprint=final_fingerprint,
         )
@@ -1200,13 +1260,18 @@ def _restore_recognition_checkpoint(
         "graph-snapshot",
         [str(run.recognition_run_id), graph.generated_from_hash, checkpoint.event_seq],
     )
+    graph_payload = (
+        decode_state(store, run, graph_artifact.payload)
+        if graph_artifact is not None and graph_artifact.payload is not None else {}
+    )
     if (
         graph_ref is None
         or graph_artifact is None
         or graph_artifact.content_hash != graph_ref.content_hash
         or graph_artifact.payload is None
-        or graph_artifact.payload.get("snapshot_id") != expected_graph_snapshot_id
-        or graph_artifact.payload.get("graph") != checkpoint.graph_state
+        or content_hash(graph_artifact.payload) != graph_ref.content_hash
+        or graph_payload.get("snapshot_id") != expected_graph_snapshot_id
+        or graph_payload.get("graph") != checkpoint.graph_state
     ):
         raise CheckpointMismatch("checkpoint graph artifact is invalid")
     return checkpoint
@@ -1289,6 +1354,7 @@ def _execute_claimed(
     storage = RunArtifactStorage(settings.document_analysis_storage_dir)
     source_artifact = _artifact(db, store, run.recognition_run_id, run.owner_id, "source")
     origin = (source_artifact.payload or {}).get("origin")
+    performance = performance_policy(store, run)
     priority_paths = [tuple(path) for path in (origin or {}).get("priority_paths", [])]
     ontology_artifact = _artifact(
         db, store, run.recognition_run_id, run.owner_id, "ontology_snapshot"
@@ -1396,16 +1462,21 @@ def _execute_claimed(
         if run.metadata_mode == "generate_summary":
             try:
                 client = get_local_llm()
-                summarize_word_tree(
-                    analysis.structure,
-                    client,
-                    should_stop_fn=should_stop,
-                )
+                with model_scope(
+                    run_id=str(run.recognition_run_id), bind=db.get_bind(), should_stop=should_stop,
+                ):
+                    summarize_word_tree(
+                        analysis.structure,
+                        client,
+                        should_stop_fn=should_stop,
+                    )
                 if client is not None:
                     summary_model_identity = stable_id(
                         "summary-model",
                         [settings.local_llm_model, settings.local_llm_model_revision],
                     )
+            except ModelCancelled:
+                raise
             except Exception:
                 logger.warning(
                     "document summary failed; applying extractive fallback",
@@ -1462,6 +1533,14 @@ def _execute_claimed(
     ):
         adapter = configured_model_adapter()
         ranking_service, ranking_identity = _configured_ranking()
+        if not performance and ranking_service.policy.policy_version != "semantic-ranking-v1":
+            # A rollout must not silently upgrade the strategy of an older run.
+            legacy_policy = RankingPolicy.model_validate({
+                **ranking_service.policy.model_dump(mode="json"),
+                "policy_version": "semantic-ranking-v1", "max_model_calls_per_record": 2,
+            })
+            ranking_service = RankingService(legacy_policy, ranking_service.model)
+            ranking_identity = {**ranking_identity, "policy": legacy_policy.model_dump(mode="json")}
         # Budget enforcement/accounting is an audited run control, separate
         # from the frozen semantic dependencies. A pause/resume picks up its
         # current value without changing existing policy or epoch identities.
@@ -1471,7 +1550,7 @@ def _execute_claimed(
         )
     check_interrupted()
     final_fingerprint = _recognition_fingerprint(
-        run, analysis_ir, metadata, ontology, adapter, ranking_identity, origin
+        run, analysis_ir, metadata, ontology, adapter, ranking_identity, origin, performance
     )
     if run.run_fingerprint is not None and run.run_fingerprint != final_fingerprint:
         if ranking_service.model is None and ranking_identity.get("unavailable_reason") in {
@@ -1487,7 +1566,8 @@ def _execute_claimed(
                 **ranking_identity, "model_identity": prior_model, "unavailable_reason": None,
             }
             known_dependencies_match = bool(prior_model) and _recognition_fingerprint(
-                run, analysis_ir, metadata, ontology, adapter, rechecked_identity, origin,
+                run, analysis_ir, metadata, ontology, adapter, rechecked_identity,
+                origin, performance,
             ) == run.run_fingerprint
             # A failed probe supplies no new numeric identity. Preserve the last
             # successful checkpoint until it can be checked; other known input
@@ -1591,6 +1671,8 @@ def _execute_claimed(
                 progress_hook=progress_hook,
                 ranking_service=ranking_service,
                 priority_paths=priority_paths,
+                lazy_frontier=performance.get("frontier_version") == 2,
+                template_interleaving=performance.get("template_interleaving", False),
             ).run(
                 recognition_run_id=str(run.recognition_run_id),
                 run_fingerprint=final_fingerprint,

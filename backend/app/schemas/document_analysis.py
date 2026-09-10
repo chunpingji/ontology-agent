@@ -157,6 +157,8 @@ class RunIdentities(ApiModel):
     ontology_snapshot_id: str | None = None
     metadata_snapshot_id: str | None = None
     graph_snapshot_id: str | None = None
+    structure_snapshot_id: str | None = None
+    ranking_summary_id: str | None = None
     fingerprint_status: Literal["provisional", "frozen"]
 
 
@@ -268,6 +270,21 @@ class Pagination(ApiModel):
     physical_page_numbers_available: bool
     is_estimated: bool
     warning: str | None = None
+
+
+class ReportDocumentSourceResponse(ApiModel):
+    document_iri: FullIri
+    source_job_id: UUID
+    document_version: NonEmpty
+    root_class_iri: FullIri
+    filename: NonEmpty
+    document_hash: Digest
+    analysis_id: NonEmpty
+    structure_hash: Digest
+    content: DocumentContent
+    section_tree: dict[str, Any]
+    pagination: Pagination
+    warnings: list[str] = Field(default_factory=list)
 
 
 class MetadataArtifactResponse(RunWatermark):
@@ -581,14 +598,12 @@ class SourceSelection(ApiModel):
         return self
 
 
-class SourceArtifactResponse(ApiModel):
+class SourceSelectionResponse(ApiModel):
     contract_version: ContractVersion = CONTRACT_VERSION
     recognition_run_id: UUID
     analysis_id: NonEmpty
     document_hash: Digest
     structure_hash: Digest
-    filename: NonEmpty
-    content: DocumentContent
     selection: SourceSelection | None = None
     anchors: list[EvidenceAnchor] = Field(default_factory=list)
 
@@ -600,6 +615,11 @@ class SourceArtifactResponse(ApiModel):
             if anchor.structure_hash != self.structure_hash:
                 raise ValueError("source anchor belongs to another structure revision")
         return self
+
+
+class SourceArtifactResponse(SourceSelectionResponse):
+    filename: NonEmpty
+    content: DocumentContent
 
 
 class RunControlRequest(ApiModel):
@@ -679,6 +699,8 @@ ErrorCode = Literal[
     "RUN_EXPIRED",
     "SOURCE_TOO_LARGE",
     "UNSUPPORTED_SOURCE_TYPE",
+    "SOURCE_NOT_FOUND",
+    "SOURCE_TYPE_MISMATCH",
     "EMPTY_SOURCE",
     "INVALID_WORD",
     "INVALID_ROOT_CLASS",

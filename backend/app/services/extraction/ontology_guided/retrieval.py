@@ -55,10 +55,7 @@ def plan_slot(
     terms = _terms(slot_spec)
     node_metadata = {node.node_id: node for node in metadata.node_summaries}
     grouped: dict[str, list[dict]] = defaultdict(list)
-    positions = {
-        record.record_id: min(index.positions[unit.evidence_id] for unit in record.source_units)
-        for record in index.records
-    }
+    positions = index.source_positions
     for record in index.records:
         node = node_metadata.get(record.section_node_id)
         source_score = _match_score(

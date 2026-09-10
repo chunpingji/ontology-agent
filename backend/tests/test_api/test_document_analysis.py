@@ -326,6 +326,14 @@ def test_configured_model_persists_effective_proof_and_replays_role_sources(
         assert replayed["selection"]["selection_role"] == role
         assert replayed["anchors"]
         assert replayed["anchors"][0]["document_hash"] == replayed["document_hash"]
+        located = client.get(
+            f"/api/document-analysis/runs/{run_id}/source-selection",
+            headers=analyst_headers, params={"selection_ref": selection_ref},
+        )
+        assert located.status_code == 200, located.text
+        assert located.json() == {
+            key: value for key, value in replayed.items() if key not in {"content", "filename"}
+        }
 
 
 def test_create_is_owner_scoped_idempotent_and_rejects_changed_input(

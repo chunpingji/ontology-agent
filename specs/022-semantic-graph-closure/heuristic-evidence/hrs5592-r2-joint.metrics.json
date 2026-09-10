@@ -1,0 +1,3019 @@
+{
+  "version": "joint-evidence-metrics-v1",
+  "run_directory": "/tmp/ontology-joint-evidence-hrs5592-20260910-r2",
+  "summary": {
+    "failure": null,
+    "formal_quality_gate": "pending_expert_reference",
+    "full_document_completion": "not_measured",
+    "model_reservations": 32,
+    "ontology_hash": "25a0576f6f6d0efb002c44c5449dfba4329144da3868f9b6234a4038d3d68b6c",
+    "production_deployed": false,
+    "recognition_seconds": 829.2714515369153,
+    "run_id": "joint-5081e1e747494f538e73528d3870a1cf",
+    "scheduler_requests": 32,
+    "stop_reason": "registered_tasks_finished",
+    "tasks": 16,
+    "total_seconds": 832.3904098150088
+  },
+  "source_sha256": "2c1174bf616f30dd28c655fef4261c167762de807c8ad79e148fb8ef18e16436",
+  "frozen_files_sha256": "5145adf5f1db6b1dfeefc2d84518cb0a393d3ea68e0ea63caaa4a9ca815934f8",
+  "frozen_file_count": 265,
+  "frozen_files_verified": true,
+  "stages": {
+    "ontology_guided_discovery": {
+      "requests": 16,
+      "statuses": {
+        "complete": 16
+      },
+      "request_seconds": 300.039,
+      "queue_seconds": 0.21500000000000008,
+      "prompt_tokens": 48894,
+      "completion_tokens": 5441,
+      "cache_tokens": 5264,
+      "prompt_ms": 172028.77800000005,
+      "predicted_ms": 100794.81699999998
+    },
+    "ontology_guided_verification": {
+      "requests": 16,
+      "statuses": {
+        "complete": 16
+      },
+      "request_seconds": 525.975,
+      "queue_seconds": 0.139,
+      "prompt_tokens": 88517,
+      "completion_tokens": 10798,
+      "cache_tokens": 12080,
+      "prompt_ms": 309548.92899999995,
+      "predicted_ms": 177804.49099999998
+    }
+  },
+  "children_blocked": [
+    {
+      "at": "2026-09-10T05:09:09.688147+00:00",
+      "event": "children_blocked",
+      "elapsed_seconds": 204.50264564307872,
+      "case": "product_name",
+      "arm": "current",
+      "reason": "parent_not_effective"
+    },
+    {
+      "at": "2026-09-10T05:12:18.281728+00:00",
+      "event": "children_blocked",
+      "elapsed_seconds": 393.096229052986,
+      "case": "cytotoxic_confusion",
+      "arm": "joint",
+      "reason": "parent_not_effective"
+    },
+    {
+      "at": "2026-09-10T05:13:18.181063+00:00",
+      "event": "children_blocked",
+      "elapsed_seconds": 452.99556171207223,
+      "case": "production_plan",
+      "arm": "current",
+      "reason": "parent_not_effective"
+    },
+    {
+      "at": "2026-09-10T05:13:18.181191+00:00",
+      "event": "children_blocked",
+      "elapsed_seconds": 452.9956882840488,
+      "case": "production_plan",
+      "arm": "joint",
+      "reason": "parent_not_effective"
+    },
+    {
+      "at": "2026-09-10T05:19:37.575558+00:00",
+      "event": "children_blocked",
+      "elapsed_seconds": 832.3900674059987,
+      "case": "route",
+      "arm": "current",
+      "reason": "parent_not_effective"
+    },
+    {
+      "at": "2026-09-10T05:19:37.575759+00:00",
+      "event": "children_blocked",
+      "elapsed_seconds": 832.3902639710577,
+      "case": "route",
+      "arm": "joint",
+      "reason": "parent_not_effective"
+    }
+  ],
+  "skipped": [],
+  "setup_events": [
+    {
+      "at": "2026-09-10T05:05:46.622853+00:00",
+      "event": "source_prepared",
+      "elapsed_seconds": 1.437360157025978,
+      "seconds": 1.2989673310657963
+    },
+    {
+      "at": "2026-09-10T05:05:47.822351+00:00",
+      "event": "ontology_prepared",
+      "elapsed_seconds": 2.63685794104822,
+      "seconds": 1.1993223810568452
+    }
+  ],
+  "formal_quality_gate": "pending_expert_reference",
+  "scope": "manually_selected_source_intervention_not_full_executor",
+  "conflict_revalidation_measured": false,
+  "model_identity": {
+    "local_llm_base_url": "http://127.0.0.1:8080/v1",
+    "local_llm_model": "Qwen3.6-35B-A3B",
+    "local_llm_model_revision": "0b21525e972670ed59e1812e170b27c26355381f0656ecc4e25617ece7dac58b",
+    "local_llm_temperature": 0.1
+  },
+  "pairs": {
+    "cytotoxic_confusion": {
+      "current_status": "supported",
+      "joint_status": "unsupported",
+      "current_seconds": 49.5956101201009,
+      "joint_seconds": 62.30019972193986,
+      "same_subject": true,
+      "same_fact_eligible_sources": true,
+      "same_lineage": true,
+      "added_source_count": 17,
+      "removed_source_count": 0
+    },
+    "equipment": {
+      "current_status": "supported",
+      "joint_status": "supported",
+      "current_seconds": 52.316693851025775,
+      "joint_seconds": 68.9870602299925,
+      "same_subject": true,
+      "same_fact_eligible_sources": true,
+      "same_lineage": true,
+      "added_source_count": 6,
+      "removed_source_count": 0
+    },
+    "equipment-child-1-value": {
+      "current_status": "undetermined",
+      "joint_status": "undetermined",
+      "current_seconds": 40.42635755194351,
+      "joint_seconds": 42.916978013003245,
+      "same_subject": true,
+      "same_fact_eligible_sources": true,
+      "same_lineage": true,
+      "added_source_count": 6,
+      "removed_source_count": 0
+    },
+    "equipment-child-2-value": {
+      "current_status": "unsupported",
+      "joint_status": "undetermined",
+      "current_seconds": 35.43317160801962,
+      "joint_seconds": 56.99795918702148,
+      "same_subject": true,
+      "same_fact_eligible_sources": true,
+      "same_lineage": true,
+      "added_source_count": 6,
+      "removed_source_count": 0
+    },
+    "product_name": {
+      "current_status": "undetermined",
+      "joint_status": "supported",
+      "current_seconds": 44.74472110404167,
+      "joint_seconds": 156.6318953690352,
+      "same_subject": true,
+      "same_fact_eligible_sources": true,
+      "same_lineage": true,
+      "added_source_count": 3,
+      "removed_source_count": 0
+    },
+    "production_plan": {
+      "current_status": "unsupported",
+      "joint_status": "undetermined",
+      "current_seconds": 29.212205443065614,
+      "joint_seconds": 30.681786992005073,
+      "same_subject": true,
+      "same_fact_eligible_sources": true,
+      "same_lineage": true,
+      "added_source_count": 2,
+      "removed_source_count": 0
+    },
+    "route": {
+      "current_status": "unsupported",
+      "joint_status": "undetermined",
+      "current_seconds": 38.34420708194375,
+      "joint_seconds": 43.936975019052625,
+      "same_subject": true,
+      "same_fact_eligible_sources": true,
+      "same_lineage": true,
+      "added_source_count": 5,
+      "removed_source_count": 0
+    }
+  },
+  "tasks": [
+    {
+      "arm": "current",
+      "assembly_seconds": 0.24218255106825382,
+      "case": "product_name",
+      "complete": true,
+      "context_hash": "57e59b5ee31949c56cae35c220e721975ad74fbed0c7c5f07666bb2cdbce5654",
+      "context_tokens": 7077,
+      "effective_edges": 0,
+      "ended_seconds": 44.745840620948,
+      "fragments": 19,
+      "input_file": "tasks/01-product_name-current/input.json",
+      "lineage": "25fa28ccf04019ae2a6c228fc45a6b8c2827935022053ec830f47fa962ea727a",
+      "model_calls": 2,
+      "predicate": "https://ontology.pharma-gmp.cn/slpra/drug-development/describes",
+      "projection_seconds": 0.00042646401561796665,
+      "reason_code": "record_undetermined",
+      "record_id": "82e25ca8f3dc2ba5ee96e734df549ebb1cee8afb5c7f7d11eb51850f701c3113",
+      "seconds": 44.74472110404167,
+      "started_seconds": 0.0011165469186380506,
+      "status": "undetermined",
+      "subject_class": "https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport",
+      "subject_id": "0a86ead7b4765a7a20ef90361a2af6f76b9c5fe71b2d1d3d52467b0d17c441da",
+      "target_id": "19621ddcc0c9463c1ffd7b992af5eeb424c0ea586b69c14e3dc8f24cf8ac1a1e",
+      "task_id": "6571b1ff7e381798e15c480fa2b38117f160bbbab6186e97106ae0e93281b5a7",
+      "model_seconds": {
+        "ontology_guided_discovery": 18.161618735059164,
+        "ontology_guided_verification": 26.236702356953174
+      },
+      "owner_field_ids": [
+        "e6906dd03a0e41e3571d0cfc4801a275b88891a572f74c23306cd537369713a4"
+      ],
+      "judgments": {
+        "type": [
+          {
+            "verdict": "undetermined",
+            "support_count": 0
+          }
+        ],
+        "bridge_entailment": [
+          {
+            "verdict": "undetermined",
+            "support_count": 0
+          }
+        ],
+        "field_role": [
+          {
+            "verdict": "undetermined",
+            "support_count": 0
+          }
+        ],
+        "predicate_entailment": [
+          {
+            "verdict": "undetermined",
+            "support_count": 0
+          }
+        ],
+        "applicability": [
+          {
+            "verdict": "undetermined",
+            "support_count": 0
+          }
+        ]
+      },
+      "candidates": [
+        {
+          "kind": "relationship",
+          "candidate_id": "85618cb6edf2aafd56401412afe35754ddfd7ae89dedd647c99de5c859190698",
+          "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/DrugProduct",
+          "label": "项目名称：HRS-5592",
+          "status": "undetermined",
+          "polarity": "affirmed",
+          "policy_eligible": false,
+          "subject": "0a86ead7b4765a7a20ef90361a2af6f76b9c5fe71b2d1d3d52467b0d17c441da",
+          "object": "3e5e1583210949f77a7072e35464e872326e4413d91f07b96459dcc26faba221",
+          "predicate_support_ids": []
+        }
+      ]
+    },
+    {
+      "arm": "joint",
+      "assembly_seconds": 0.07367116399109364,
+      "case": "product_name",
+      "complete": true,
+      "context_hash": "e69c70e7b7d04de350110e38f0997ed1cf208734b6be2fbe6496cf531524f814",
+      "context_tokens": 8946,
+      "effective_edges": 2,
+      "ended_seconds": 201.38054332195316,
+      "fragments": 22,
+      "input_file": "tasks/02-product_name-joint/input.json",
+      "lineage": "25fa28ccf04019ae2a6c228fc45a6b8c2827935022053ec830f47fa962ea727a",
+      "model_calls": 2,
+      "predicate": "https://ontology.pharma-gmp.cn/slpra/drug-development/describes",
+      "projection_seconds": 0.0007510819705203176,
+      "reason_code": "record_supported",
+      "record_id": "82e25ca8f3dc2ba5ee96e734df549ebb1cee8afb5c7f7d11eb51850f701c3113",
+      "seconds": 156.6318953690352,
+      "started_seconds": 44.74864612193778,
+      "status": "supported",
+      "subject_class": "https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport",
+      "subject_id": "0a86ead7b4765a7a20ef90361a2af6f76b9c5fe71b2d1d3d52467b0d17c441da",
+      "target_id": "6c14860a091b95736031b2c77225ba5c7d109fbc54678103a2b74c8bbcfbef4a",
+      "task_id": "170d43fe787925da5bba2cb01f057dfe028d1b5d10c5ee6c12ae6046ff840167",
+      "model_seconds": {
+        "ontology_guided_discovery": 43.35562814597506,
+        "ontology_guided_verification": 113.03053096099757
+      },
+      "owner_field_ids": [
+        "e6906dd03a0e41e3571d0cfc4801a275b88891a572f74c23306cd537369713a4"
+      ],
+      "judgments": {
+        "type": [
+          {
+            "verdict": "supported",
+            "support_count": 1
+          },
+          {
+            "verdict": "supported",
+            "support_count": 1
+          },
+          {
+            "verdict": "unsupported",
+            "support_count": 0
+          },
+          {
+            "verdict": "supported",
+            "support_count": 1
+          },
+          {
+            "verdict": "supported",
+            "support_count": 1
+          },
+          {
+            "verdict": "supported",
+            "support_count": 1
+          },
+          {
+            "verdict": "supported",
+            "support_count": 1
+          },
+          {
+            "verdict": "supported",
+            "support_count": 1
+          },
+          {
+            "verdict": "supported",
+            "support_count": 1
+          }
+        ],
+        "bridge_entailment": [
+          {
+            "verdict": "supported",
+            "support_count": 1
+          },
+          {
+            "verdict": "supported",
+            "support_count": 1
+          },
+          {
+            "verdict": "unsupported",
+            "support_count": 0
+          },
+          {
+            "verdict": "supported",
+            "support_count": 1
+          },
+          {
+            "verdict": "supported",
+            "support_count": 1
+          },
+          {
+            "verdict": "supported",
+            "support_count": 1
+          },
+          {
+            "verdict": "supported",
+            "support_count": 1
+          },
+          {
+            "verdict": "supported",
+            "support_count": 1
+          },
+          {
+            "verdict": "supported",
+            "support_count": 1
+          }
+        ],
+        "field_role": [
+          {
+            "verdict": "supported",
+            "support_count": 1
+          },
+          {
+            "verdict": "supported",
+            "support_count": 1
+          },
+          {
+            "verdict": "unsupported",
+            "support_count": 0
+          },
+          {
+            "verdict": "supported",
+            "support_count": 1
+          },
+          {
+            "verdict": "supported",
+            "support_count": 1
+          },
+          {
+            "verdict": "supported",
+            "support_count": 1
+          },
+          {
+            "verdict": "supported",
+            "support_count": 1
+          },
+          {
+            "verdict": "supported",
+            "support_count": 1
+          },
+          {
+            "verdict": "supported",
+            "support_count": 1
+          }
+        ],
+        "predicate_entailment": [
+          {
+            "verdict": "supported",
+            "support_count": 2
+          },
+          {
+            "verdict": "supported",
+            "support_count": 2
+          },
+          {
+            "verdict": "unsupported",
+            "support_count": 0
+          },
+          {
+            "verdict": "supported",
+            "support_count": 2
+          },
+          {
+            "verdict": "supported",
+            "support_count": 2
+          },
+          {
+            "verdict": "supported",
+            "support_count": 2
+          },
+          {
+            "verdict": "supported",
+            "support_count": 2
+          },
+          {
+            "verdict": "supported",
+            "support_count": 2
+          },
+          {
+            "verdict": "supported",
+            "support_count": 2
+          }
+        ],
+        "applicability": [
+          {
+            "verdict": "supported",
+            "support_count": 2
+          },
+          {
+            "verdict": "supported",
+            "support_count": 2
+          },
+          {
+            "verdict": "supported",
+            "support_count": 2
+          },
+          {
+            "verdict": "supported",
+            "support_count": 2
+          },
+          {
+            "verdict": "supported",
+            "support_count": 2
+          },
+          {
+            "verdict": "supported",
+            "support_count": 2
+          },
+          {
+            "verdict": "supported",
+            "support_count": 2
+          },
+          {
+            "verdict": "supported",
+            "support_count": 2
+          },
+          {
+            "verdict": "supported",
+            "support_count": 2
+          }
+        ]
+      },
+      "candidates": [
+        {
+          "kind": "relationship",
+          "candidate_id": "85618cb6edf2aafd56401412afe35754ddfd7ae89dedd647c99de5c859190698",
+          "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/DrugProduct",
+          "label": "项目名称：HRS-5592",
+          "status": "supported",
+          "polarity": "affirmed",
+          "policy_eligible": true,
+          "subject": "0a86ead7b4765a7a20ef90361a2af6f76b9c5fe71b2d1d3d52467b0d17c441da",
+          "object": "3e5e1583210949f77a7072e35464e872326e4413d91f07b96459dcc26faba221",
+          "predicate_support_ids": [
+            "073e49a7528e7cf070a1c1a19e69608632dab82f203d99636af47472ef9dfce2"
+          ]
+        },
+        {
+          "kind": "relationship",
+          "candidate_id": "697c5bbc6d4b830e1c69263a2cb9dedc0cecb5628370a1ecbc3f7315b2fabce2",
+          "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/ClinicalTrialDrug",
+          "label": "项目名称：HRS-5592",
+          "status": "supported",
+          "polarity": "affirmed",
+          "policy_eligible": true,
+          "subject": "0a86ead7b4765a7a20ef90361a2af6f76b9c5fe71b2d1d3d52467b0d17c441da",
+          "object": "1c7d354950dbdfe12e02fea07b6cce364402af72a6f22370daf8e1612d091ee4",
+          "predicate_support_ids": [
+            "073e49a7528e7cf070a1c1a19e69608632dab82f203d99636af47472ef9dfce2"
+          ]
+        },
+        {
+          "kind": "relationship",
+          "candidate_id": "a1493b413036fe47b005f551ab72856f1d0c36e0ee2eed3713e7141253a909eb",
+          "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/CommercialDrug",
+          "label": "项目名称：HRS-5592",
+          "status": "unsupported",
+          "polarity": "affirmed",
+          "policy_eligible": false,
+          "subject": "0a86ead7b4765a7a20ef90361a2af6f76b9c5fe71b2d1d3d52467b0d17c441da",
+          "object": "3b7cbd1510b87d1a8dcae058329dcf48427716a6b3979fd351807655376d502e",
+          "predicate_support_ids": []
+        },
+        {
+          "kind": "relationship",
+          "candidate_id": "da0e7ab650556c4e8e8cd84e23c5b6a6213f6bc617ba96f32a9182586762d6df",
+          "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/CytotoxicDrug",
+          "label": "项目名称：HRS-5592",
+          "status": "supported",
+          "polarity": "negated",
+          "policy_eligible": true,
+          "subject": "0a86ead7b4765a7a20ef90361a2af6f76b9c5fe71b2d1d3d52467b0d17c441da",
+          "object": "22fbb465db7c730c94828ecdaddab6349cc48291a011c205fa38013999114834",
+          "predicate_support_ids": [
+            "453da29a3769da785bf18095f78ff6dd9b695893e2b7852f462c510bbc60b613"
+          ]
+        },
+        {
+          "kind": "relationship",
+          "candidate_id": "7bb18758a1d72261b3b808aae678dd059654c9747c79cd3ce65cb9de55de3aaa",
+          "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/HighActivityDrug",
+          "label": "项目名称：HRS-5592",
+          "status": "supported",
+          "polarity": "negated",
+          "policy_eligible": true,
+          "subject": "0a86ead7b4765a7a20ef90361a2af6f76b9c5fe71b2d1d3d52467b0d17c441da",
+          "object": "4be2faae4917e2d0b2f33bae4a2fd102fa0afc447e986303ad0266f573ae3a1c",
+          "predicate_support_ids": [
+            "08e78bde08b24a7910290dff6c825756f5ef8a70c57bb8cb8c5e29ee901ce5f7"
+          ]
+        },
+        {
+          "kind": "relationship",
+          "candidate_id": "5f27ad19fdba3366c95c7ddc5226fbcdb921ca7d07c24247f2844899d944becf",
+          "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/HighSensitizingDrug",
+          "label": "项目名称：HRS-5592",
+          "status": "supported",
+          "polarity": "negated",
+          "policy_eligible": true,
+          "subject": "0a86ead7b4765a7a20ef90361a2af6f76b9c5fe71b2d1d3d52467b0d17c441da",
+          "object": "1f980f1348b1ea93b27e0104283042dc02f6b181fae28b5a0ab070b1052d3847",
+          "predicate_support_ids": [
+            "04045c99e195d4b3ba0933e3f5fae32ca765af8e7e727490dd10f750309ae478"
+          ]
+        },
+        {
+          "kind": "relationship",
+          "candidate_id": "acc1c29980544077803cb2a46b163cc9c814805e2c8ca217bc7766badfb4ff0e",
+          "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/HormonalDrug",
+          "label": "项目名称：HRS-5592",
+          "status": "supported",
+          "polarity": "negated",
+          "policy_eligible": true,
+          "subject": "0a86ead7b4765a7a20ef90361a2af6f76b9c5fe71b2d1d3d52467b0d17c441da",
+          "object": "1297feb3e17a77a5e33336dcd5b828fdde57dea559a09bf16e94904a460e1aaf",
+          "predicate_support_ids": [
+            "c3e8d52edfbb2bab0284043ca9f2b1bf76f834368a5d40ff08efa24391ed4b28"
+          ]
+        },
+        {
+          "kind": "relationship",
+          "candidate_id": "2c76afe6798bd5cc525bf23c38bd18220d68b326ae93b9d21e4c37ae9f36cc52",
+          "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/PenicillinDrug",
+          "label": "项目名称：HRS-5592",
+          "status": "supported",
+          "polarity": "negated",
+          "policy_eligible": true,
+          "subject": "0a86ead7b4765a7a20ef90361a2af6f76b9c5fe71b2d1d3d52467b0d17c441da",
+          "object": "d218458e060d37dd2eca0970037881f07611fde3c792d637f9224c9e48d8b6d9",
+          "predicate_support_ids": [
+            "c0dd925fa9f4bc41a99c4aa6af3a0f659eca0caad81049c3bd3559dd28f2312b"
+          ]
+        },
+        {
+          "kind": "relationship",
+          "candidate_id": "cb2d93d9271476b641a4058d69ecb5e1473c1e9650cc293684319cde9036faad",
+          "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/BetaLactamDrug",
+          "label": "项目名称：HRS-5592",
+          "status": "supported",
+          "polarity": "negated",
+          "policy_eligible": true,
+          "subject": "0a86ead7b4765a7a20ef90361a2af6f76b9c5fe71b2d1d3d52467b0d17c441da",
+          "object": "998f27643651593b5e2bdb0fd1cf36268714eac2fb353e8497ec57fd01a5f3d7",
+          "predicate_support_ids": [
+            "c0dd925fa9f4bc41a99c4aa6af3a0f659eca0caad81049c3bd3559dd28f2312b"
+          ]
+        }
+      ]
+    },
+    {
+      "arm": "joint",
+      "assembly_seconds": 0.03799579699989408,
+      "case": "product_name-child-1-value",
+      "complete": true,
+      "context_hash": "77afe22cd8208832b95aa85d8c583c552d2cde1b6277fa337d387eeacd99291a",
+      "context_tokens": 9829,
+      "effective_properties_cumulative": 0,
+      "ended_seconds": 239.81735846889205,
+      "fragments": 22,
+      "input_file": "tasks/03-product_name-child-1-value-joint/input.json",
+      "lineage": "ae48064953e5969d7061daf2ec88a1990030bf5441186d7cd4329341b4927f6f",
+      "model_calls": 2,
+      "predicate": "https://ontology.pharma-gmp.cn/slpra/drug/projectName",
+      "reason_code": "record_undetermined",
+      "record_id": "82e25ca8f3dc2ba5ee96e734df549ebb1cee8afb5c7f7d11eb51850f701c3113",
+      "seconds": 38.433059483068064,
+      "started_seconds": 201.38429814588744,
+      "status": "undetermined",
+      "subject_class": "https://ontology.pharma-gmp.cn/slpra/drug/ClinicalTrialDrug",
+      "subject_id": "1c7d354950dbdfe12e02fea07b6cce364402af72a6f22370daf8e1612d091ee4",
+      "target_id": "370bc84e6ad840a184ed874045ef3d7d5e0635ad3b368b9ab9ace87b446c846f",
+      "task_id": "55688b9c56055f7e24bf5f0a1053b189afdfb67bbd99b77830839a9db84ba057",
+      "model_seconds": {
+        "ontology_guided_discovery": 13.54659487796016,
+        "ontology_guided_verification": 24.769692279049195
+      },
+      "owner_field_ids": [
+        "e6906dd03a0e41e3571d0cfc4801a275b88891a572f74c23306cd537369713a4"
+      ],
+      "judgments": {
+        "bridge_entailment": [
+          {
+            "verdict": "supported",
+            "support_count": 1
+          }
+        ],
+        "field_role": [
+          {
+            "verdict": "undetermined",
+            "support_count": 0
+          }
+        ],
+        "predicate_entailment": [
+          {
+            "verdict": "supported",
+            "support_count": 2
+          }
+        ],
+        "applicability": [
+          {
+            "verdict": "supported",
+            "support_count": 2
+          }
+        ],
+        "local_coreference": [
+          {
+            "verdict": "supported",
+            "support_count": 1
+          }
+        ]
+      },
+      "candidates": [
+        {
+          "kind": "property",
+          "candidate_id": "f5ffeb70f502433e70ab15abc1c681bb7a13fcee64f51ec6b65d5d5999beafe8",
+          "raw_value": "HRS-5592",
+          "status": "undetermined",
+          "polarity": "affirmed",
+          "policy_eligible": false,
+          "subject": "1c7d354950dbdfe12e02fea07b6cce364402af72a6f22370daf8e1612d091ee4",
+          "predicate_support_ids": [
+            "e6906dd03a0e41e3571d0cfc4801a275b88891a572f74c23306cd537369713a4"
+          ],
+          "subject_support_ids": [
+            "e6906dd03a0e41e3571d0cfc4801a275b88891a572f74c23306cd537369713a4"
+          ]
+        }
+      ]
+    },
+    {
+      "arm": "joint",
+      "assembly_seconds": 0.04513980390038341,
+      "case": "product_name-child-2-value",
+      "complete": true,
+      "context_hash": "b82292e282773dde7b75b36215d4923fc85335bd67cd91a8835f46f9775c5862",
+      "context_tokens": 9826,
+      "effective_properties_cumulative": 0,
+      "ended_seconds": 278.07147813693155,
+      "fragments": 22,
+      "input_file": "tasks/04-product_name-child-2-value-joint/input.json",
+      "lineage": "68537b5beb6316b407ee57aeb9a10bb846cb325b3f5f6647508f531aa03d14bb",
+      "model_calls": 2,
+      "predicate": "https://ontology.pharma-gmp.cn/slpra/drug/appearance",
+      "reason_code": "record_undetermined",
+      "record_id": "ba681a2703f7b04648db6edd02f9cd660cf13eb1028a6547b967cba3f4c0af9b",
+      "seconds": 38.250742477946915,
+      "started_seconds": 239.82073433999904,
+      "status": "undetermined",
+      "subject_class": "https://ontology.pharma-gmp.cn/slpra/drug/ClinicalTrialDrug",
+      "subject_id": "1c7d354950dbdfe12e02fea07b6cce364402af72a6f22370daf8e1612d091ee4",
+      "target_id": "b83565bb702f47954645c8a827088c0f481d0d91ef8941f114186ab431411073",
+      "task_id": "1b52c914d419548497eade2b41591f5912673e1de7ebd896ce2887d4925ec2ad",
+      "model_seconds": {
+        "ontology_guided_discovery": 14.970215409062803,
+        "ontology_guided_verification": 23.135411125957035
+      },
+      "owner_field_ids": [
+        "e6906dd03a0e41e3571d0cfc4801a275b88891a572f74c23306cd537369713a4"
+      ],
+      "judgments": {
+        "bridge_entailment": [
+          {
+            "verdict": "supported",
+            "support_count": 1
+          }
+        ],
+        "field_role": [
+          {
+            "verdict": "undetermined",
+            "support_count": 0
+          }
+        ],
+        "predicate_entailment": [
+          {
+            "verdict": "supported",
+            "support_count": 2
+          }
+        ],
+        "applicability": [
+          {
+            "verdict": "supported",
+            "support_count": 2
+          }
+        ],
+        "local_coreference": [
+          {
+            "verdict": "supported",
+            "support_count": 1
+          }
+        ]
+      },
+      "candidates": [
+        {
+          "kind": "property",
+          "candidate_id": "a3ea0c94c21c59dc51c0c2912dacff4fe809fbf5f25e4edbdfc8105338ec11f5",
+          "raw_value": "类白色固体",
+          "status": "undetermined",
+          "polarity": "affirmed",
+          "policy_eligible": false,
+          "subject": "1c7d354950dbdfe12e02fea07b6cce364402af72a6f22370daf8e1612d091ee4",
+          "predicate_support_ids": [
+            "32212f37a16915699f119934f4f8ef14cf246be447252ef3338b2690b14cc1cc"
+          ],
+          "subject_support_ids": [
+            "e6906dd03a0e41e3571d0cfc4801a275b88891a572f74c23306cd537369713a4"
+          ]
+        }
+      ]
+    },
+    {
+      "arm": "joint",
+      "assembly_seconds": 0.04185760801192373,
+      "case": "cytotoxic_confusion",
+      "complete": true,
+      "context_hash": "df8eee2b0beb5d1a569963312201bdfca02956df900413905e7743ba0b4dc75d",
+      "context_tokens": 11171,
+      "effective_edges": 0,
+      "ended_seconds": 340.3762258399511,
+      "fragments": 18,
+      "input_file": "tasks/05-cytotoxic_confusion-joint/input.json",
+      "lineage": "9cb129a96c2d85512603d2288a7d4921fdf3358c6f7234fc22d2a25710d117ff",
+      "model_calls": 2,
+      "predicate": "https://ontology.pharma-gmp.cn/slpra/drug-development/describes",
+      "projection_seconds": 0.00021985196508467197,
+      "reason_code": "record_unsupported",
+      "record_id": "32687bde467339408a0f0320c00de3690e1f5f5dfdea48a3f9e07377a5d7be12",
+      "seconds": 62.30019972193986,
+      "started_seconds": 278.07602530997247,
+      "status": "unsupported",
+      "subject_class": "https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport",
+      "subject_id": "0a86ead7b4765a7a20ef90361a2af6f76b9c5fe71b2d1d3d52467b0d17c441da",
+      "target_id": "068f1b07752675d421408fa14833fc050b8cfebb39aa48f6c4a296e1b7ac207e",
+      "task_id": "bd1b7b6b7f8995bc22cac2cf23786758c0c13d2cbc7658b1ba0c63cb876f936b",
+      "model_seconds": {
+        "ontology_guided_discovery": 24.24970903794747,
+        "ontology_guided_verification": 37.77598565106746
+      },
+      "owner_field_ids": [],
+      "judgments": {
+        "type": [
+          {
+            "verdict": "undetermined",
+            "support_count": 0
+          },
+          {
+            "verdict": "undetermined",
+            "support_count": 0
+          }
+        ],
+        "bridge_entailment": [
+          {
+            "verdict": "unsupported",
+            "support_count": 0
+          },
+          {
+            "verdict": "unsupported",
+            "support_count": 0
+          }
+        ],
+        "field_role": [
+          {
+            "verdict": "undetermined",
+            "support_count": 0
+          },
+          {
+            "verdict": "undetermined",
+            "support_count": 0
+          }
+        ],
+        "predicate_entailment": [
+          {
+            "verdict": "undetermined",
+            "support_count": 0
+          },
+          {
+            "verdict": "undetermined",
+            "support_count": 0
+          }
+        ],
+        "applicability": [
+          {
+            "verdict": "supported",
+            "support_count": 1
+          },
+          {
+            "verdict": "supported",
+            "support_count": 1
+          }
+        ]
+      },
+      "candidates": [
+        {
+          "kind": "relationship",
+          "candidate_id": "f45a9c4d9e6a7670db295e331285917309cef699398c13ed737df00d8c820fc8",
+          "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/CytotoxicDrug",
+          "label": "属于肿瘤药产品",
+          "status": "unsupported",
+          "polarity": "affirmed",
+          "policy_eligible": false,
+          "subject": "0a86ead7b4765a7a20ef90361a2af6f76b9c5fe71b2d1d3d52467b0d17c441da",
+          "object": "4004388f05af333700887957a05a74e6b7aad1f039e3fa4ab16a68043642fe68",
+          "predicate_support_ids": []
+        },
+        {
+          "kind": "relationship",
+          "candidate_id": "4b43a7e8f2f743428dfc58f4acc4ea0d134107f508eb07e7efa61cbc4ae8d369",
+          "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/DrugProduct",
+          "label": "HRS-5592项目",
+          "status": "unsupported",
+          "polarity": "affirmed",
+          "policy_eligible": false,
+          "subject": "0a86ead7b4765a7a20ef90361a2af6f76b9c5fe71b2d1d3d52467b0d17c441da",
+          "object": "217495b79572034998de31f8db5a3be7cc1f1de96bdd54f98a90e13edf3272d1",
+          "predicate_support_ids": []
+        }
+      ]
+    },
+    {
+      "arm": "current",
+      "assembly_seconds": 0.026019678101874888,
+      "case": "cytotoxic_confusion",
+      "complete": true,
+      "context_hash": "15f5bcc96cda05fafbbb381b4001231ce7c95c301ae87ad1c3d5a7a1c7af5e92",
+      "context_tokens": 1274,
+      "effective_edges": 2,
+      "ended_seconds": 389.97390412690584,
+      "fragments": 1,
+      "input_file": "tasks/06-cytotoxic_confusion-current/input.json",
+      "lineage": "9cb129a96c2d85512603d2288a7d4921fdf3358c6f7234fc22d2a25710d117ff",
+      "model_calls": 2,
+      "predicate": "https://ontology.pharma-gmp.cn/slpra/drug-development/describes",
+      "projection_seconds": 0.0007416160078719258,
+      "reason_code": "record_supported",
+      "record_id": "32687bde467339408a0f0320c00de3690e1f5f5dfdea48a3f9e07377a5d7be12",
+      "seconds": 49.5956101201009,
+      "started_seconds": 340.3782932088943,
+      "status": "supported",
+      "subject_class": "https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport",
+      "subject_id": "0a86ead7b4765a7a20ef90361a2af6f76b9c5fe71b2d1d3d52467b0d17c441da",
+      "target_id": "66f4b56a3ec3b9a3bc92e4fce969914ca6427c82d6e2d19e19c73a7607b7ceec",
+      "task_id": "445cce32c0d9973df6f6233edaf56e91fec35bcd6e566104fb45f3c0fc8fdb46",
+      "model_seconds": {
+        "ontology_guided_discovery": 16.345939030055888,
+        "ontology_guided_verification": 33.125485790893435
+      },
+      "owner_field_ids": [],
+      "judgments": {
+        "type": [
+          {
+            "verdict": "supported",
+            "support_count": 1
+          },
+          {
+            "verdict": "supported",
+            "support_count": 1
+          }
+        ],
+        "bridge_entailment": [
+          {
+            "verdict": "supported",
+            "support_count": 1
+          },
+          {
+            "verdict": "supported",
+            "support_count": 1
+          }
+        ],
+        "field_role": [
+          {
+            "verdict": "supported",
+            "support_count": 1
+          },
+          {
+            "verdict": "supported",
+            "support_count": 1
+          }
+        ],
+        "predicate_entailment": [
+          {
+            "verdict": "supported",
+            "support_count": 2
+          },
+          {
+            "verdict": "supported",
+            "support_count": 2
+          }
+        ],
+        "applicability": [
+          {
+            "verdict": "supported",
+            "support_count": 2
+          },
+          {
+            "verdict": "supported",
+            "support_count": 2
+          }
+        ]
+      },
+      "candidates": [
+        {
+          "kind": "relationship",
+          "candidate_id": "54bd98e60d3049ffd4a03ead5736e8f82b6dec1640eb68c2970a23119ea3db7d",
+          "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/DrugProduct",
+          "label": "属于肿瘤药产品",
+          "status": "supported",
+          "polarity": "affirmed",
+          "policy_eligible": true,
+          "subject": "0a86ead7b4765a7a20ef90361a2af6f76b9c5fe71b2d1d3d52467b0d17c441da",
+          "object": "dda9fc12d229663d0b6f8b57b3887b3648e246f7f3baef70bbe15fd511c2ccdb",
+          "predicate_support_ids": [
+            "073e49a7528e7cf070a1c1a19e69608632dab82f203d99636af47472ef9dfce2"
+          ]
+        },
+        {
+          "kind": "relationship",
+          "candidate_id": "088d20bb6c80c033d022a336fa4ceca37c24e8fc71fe48b68c863a8951d3204c",
+          "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/ClinicalTrialDrug",
+          "label": "目前项目处于I期临床阶段",
+          "status": "supported",
+          "polarity": "affirmed",
+          "policy_eligible": true,
+          "subject": "0a86ead7b4765a7a20ef90361a2af6f76b9c5fe71b2d1d3d52467b0d17c441da",
+          "object": "bfccd57c4f9325165c6735abfb3e226272b6d0be4b84f7cbd8f2d518fb4b4fca",
+          "predicate_support_ids": [
+            "073e49a7528e7cf070a1c1a19e69608632dab82f203d99636af47472ef9dfce2"
+          ]
+        }
+      ]
+    },
+    {
+      "arm": "current",
+      "assembly_seconds": 0.018835704075172544,
+      "case": "production_plan",
+      "complete": true,
+      "context_hash": "5994be236eabc712de84060c4ddc29c4bf1ce056216f87fddd9c412dac43dd7b",
+      "context_tokens": 1266,
+      "effective_edges": 0,
+      "ended_seconds": 419.1902119149454,
+      "fragments": 1,
+      "input_file": "tasks/07-production_plan-current/input.json",
+      "lineage": "92a17004f6fca8cfcab628d7af7c8efdb081226e679af6573729504022841b1e",
+      "model_calls": 2,
+      "predicate": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasProductionPlan",
+      "projection_seconds": 0.00022276595700532198,
+      "reason_code": "record_unsupported",
+      "record_id": "121b8bef752918c1783a22385c2a52219a1ca8506f34027748ab7c2883a3eb6b",
+      "seconds": 29.212205443065614,
+      "started_seconds": 389.97800573089626,
+      "status": "unsupported",
+      "subject_class": "https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport",
+      "subject_id": "0a86ead7b4765a7a20ef90361a2af6f76b9c5fe71b2d1d3d52467b0d17c441da",
+      "target_id": "bf6c5a1c462cf0b7750574fcbcc344ef9cc2a54e8051c5a9ec846afb9279182c",
+      "task_id": "a2c73825e81e06e66c6cb4292bea7d4926fe77b22dc5e04061aa6b4075b6cbcf",
+      "model_seconds": {
+        "ontology_guided_discovery": 10.944071677979082,
+        "ontology_guided_verification": 18.183107792050578
+      },
+      "owner_field_ids": [],
+      "judgments": {
+        "type": [
+          {
+            "verdict": "undetermined",
+            "support_count": 0
+          }
+        ],
+        "bridge_entailment": [
+          {
+            "verdict": "unsupported",
+            "support_count": 0
+          }
+        ],
+        "field_role": [
+          {
+            "verdict": "undetermined",
+            "support_count": 0
+          }
+        ],
+        "predicate_entailment": [
+          {
+            "verdict": "undetermined",
+            "support_count": 0
+          }
+        ],
+        "applicability": [
+          {
+            "verdict": "supported",
+            "support_count": 1
+          }
+        ]
+      },
+      "candidates": [
+        {
+          "kind": "relationship",
+          "candidate_id": "1dc5c403f5a467a8bbb7757735f6643477c7f2e01ca08caeeb3fdaaf0bdc46d0",
+          "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/ClinicalSampleProductionPlan",
+          "label": "原料药HRS-5592计划在2026年08月于611/642/646车间完成本次临床样品的生产，本次计划生产1批，用于临床I期试验，预计批量5.0-7.0 kg。",
+          "status": "unsupported",
+          "polarity": "affirmed",
+          "policy_eligible": false,
+          "subject": "0a86ead7b4765a7a20ef90361a2af6f76b9c5fe71b2d1d3d52467b0d17c441da",
+          "object": "fa6452f9dd533df59c1f261c2dbe5490c33f10b57ec8f787659a9d0ba4fa17d4",
+          "predicate_support_ids": []
+        }
+      ]
+    },
+    {
+      "arm": "joint",
+      "assembly_seconds": 0.018121337052434683,
+      "case": "production_plan",
+      "complete": true,
+      "context_hash": "c5a9327fb6964c438479f61a26e9a99adcf24a06e72afdf291b0996fb894d039",
+      "context_tokens": 2507,
+      "effective_edges": 0,
+      "ended_seconds": 449.8742470019497,
+      "fragments": 3,
+      "input_file": "tasks/08-production_plan-joint/input.json",
+      "lineage": "92a17004f6fca8cfcab628d7af7c8efdb081226e679af6573729504022841b1e",
+      "model_calls": 2,
+      "predicate": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasProductionPlan",
+      "projection_seconds": 0.00018967699725180864,
+      "reason_code": "record_undetermined",
+      "record_id": "121b8bef752918c1783a22385c2a52219a1ca8506f34027748ab7c2883a3eb6b",
+      "seconds": 30.681786992005073,
+      "started_seconds": 419.19245946092997,
+      "status": "undetermined",
+      "subject_class": "https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport",
+      "subject_id": "0a86ead7b4765a7a20ef90361a2af6f76b9c5fe71b2d1d3d52467b0d17c441da",
+      "target_id": "3096653e5a0b91b5e37b05db4c22ea8b516114fd5ede4a4c7af134f626215dc2",
+      "task_id": "7c411fc5d34db3dd442b20e99f5cc0081731dc363480ff65db43637ebfb4b5c3",
+      "model_seconds": {
+        "ontology_guided_discovery": 11.423990132985637,
+        "ontology_guided_verification": 19.14773220999632
+      },
+      "owner_field_ids": [],
+      "judgments": {
+        "type": [
+          {
+            "verdict": "supported",
+            "support_count": 1
+          }
+        ],
+        "bridge_entailment": [
+          {
+            "verdict": "supported",
+            "support_count": 1
+          }
+        ],
+        "field_role": [
+          {
+            "verdict": "supported",
+            "support_count": 1
+          }
+        ],
+        "predicate_entailment": [
+          {
+            "verdict": "supported",
+            "support_count": 1
+          }
+        ],
+        "applicability": [
+          {
+            "verdict": "supported",
+            "support_count": 1
+          }
+        ]
+      },
+      "candidates": [
+        {
+          "kind": "relationship",
+          "candidate_id": "1dc5c403f5a467a8bbb7757735f6643477c7f2e01ca08caeeb3fdaaf0bdc46d0",
+          "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/ClinicalSampleProductionPlan",
+          "label": "原料药HRS-5592计划在2026年08月于611/642/646车间完成本次临床样品的生产，本次计划生产1批，用于临床I期试验，预计批量5.0-7.0 kg。",
+          "status": "undetermined",
+          "polarity": "affirmed",
+          "policy_eligible": false,
+          "subject": "0a86ead7b4765a7a20ef90361a2af6f76b9c5fe71b2d1d3d52467b0d17c441da",
+          "object": "fa6452f9dd533df59c1f261c2dbe5490c33f10b57ec8f787659a9d0ba4fa17d4",
+          "predicate_support_ids": [
+            "35b4f5d593ad2e86b491943dc9494dd6d03bba9671f779c9982282cd50b8ee3d"
+          ]
+        }
+      ]
+    },
+    {
+      "arm": "joint",
+      "assembly_seconds": 0.04379604698624462,
+      "case": "equipment",
+      "complete": true,
+      "context_hash": "56f0838fbf4aa327c02451e2a2ef85e515aa1caabdd54eb7cdf832a4e08ccba5",
+      "context_tokens": 12067,
+      "effective_edges": 1,
+      "ended_seconds": 518.8643051179824,
+      "fragments": 32,
+      "input_file": "tasks/09-equipment-joint/input.json",
+      "lineage": "6b50141cc3b5c1a280e847e0477b71c0624a873c607c8403b949b6b1a2976d01",
+      "model_calls": 2,
+      "predicate": "https://ontology.pharma-gmp.cn/slpra/drug-development/usesEquipment",
+      "projection_seconds": 0.0005609469953924417,
+      "reason_code": "record_supported",
+      "record_id": "8b4fe536f7a5b613ceaa984e137795c5e615aee461fea2f2bc0ca4285d162c03",
+      "seconds": 68.9870602299925,
+      "started_seconds": 449.8772440649336,
+      "status": "supported",
+      "subject_class": "https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport",
+      "subject_id": "0a86ead7b4765a7a20ef90361a2af6f76b9c5fe71b2d1d3d52467b0d17c441da",
+      "target_id": "a83c4681ab90748c2ff461fb31987732308d7fa0196fe7004122df60eb3e3a66",
+      "task_id": "bd72f298b631675e757fb320fc5aedf5a81b7a2c1f968ec983a5f10ae420fb37",
+      "model_seconds": {
+        "ontology_guided_discovery": 25.775106338085607,
+        "ontology_guided_verification": 43.037538059055805
+      },
+      "owner_field_ids": [],
+      "judgments": {
+        "type": [
+          {
+            "verdict": "supported",
+            "support_count": 1
+          },
+          {
+            "verdict": "unsupported",
+            "support_count": 0
+          }
+        ],
+        "bridge_entailment": [
+          {
+            "verdict": "supported",
+            "support_count": 1
+          },
+          {
+            "verdict": "unsupported",
+            "support_count": 0
+          }
+        ],
+        "field_role": [
+          {
+            "verdict": "supported",
+            "support_count": 1
+          },
+          {
+            "verdict": "unsupported",
+            "support_count": 0
+          }
+        ],
+        "predicate_entailment": [
+          {
+            "verdict": "supported",
+            "support_count": 2
+          },
+          {
+            "verdict": "unsupported",
+            "support_count": 0
+          }
+        ],
+        "applicability": [
+          {
+            "verdict": "supported",
+            "support_count": 2
+          },
+          {
+            "verdict": "supported",
+            "support_count": 1
+          }
+        ]
+      },
+      "candidates": [
+        {
+          "kind": "relationship",
+          "candidate_id": "769e213417484fd4067bc9e9e583596d6ee3d2590a207e914405504d33236d37",
+          "class_iri": "https://ontology.pharma-gmp.cn/slpra/equipment/Reactor",
+          "label": "1000L反应釜",
+          "status": "supported",
+          "polarity": "affirmed",
+          "policy_eligible": true,
+          "subject": "0a86ead7b4765a7a20ef90361a2af6f76b9c5fe71b2d1d3d52467b0d17c441da",
+          "object": "6aec138efeaebfa6d4dc638a128b8743b0b5dec3474d65975d00e24150585e8c",
+          "predicate_support_ids": [
+            "460b5549e9884fbaaaa63c873a0acecd90a26f60ee0311cfffd2ecde9df2ae7b"
+          ]
+        },
+        {
+          "kind": "relationship",
+          "candidate_id": "9c1ec14c10ce1e64bcc2875d155914cfa5034ae95d83006dacb68235dc168f67",
+          "class_iri": "https://ontology.pharma-gmp.cn/slpra/equipment/Reactor",
+          "label": "反应釜需要密闭性好，用于金属催化反应。",
+          "status": "unsupported",
+          "polarity": "affirmed",
+          "policy_eligible": false,
+          "subject": "0a86ead7b4765a7a20ef90361a2af6f76b9c5fe71b2d1d3d52467b0d17c441da",
+          "object": "49739ac343e9a5fe620ba5f269c6da70ae9571c4714060653c4cb43703be1171",
+          "predicate_support_ids": []
+        }
+      ]
+    },
+    {
+      "arm": "current",
+      "assembly_seconds": 0.034397208015434444,
+      "case": "equipment",
+      "complete": true,
+      "context_hash": "83506fd577fd9e874096b81d8bc3b6547d54bd6a29f2ee14661fff9feea1e973",
+      "context_tokens": 8858,
+      "effective_edges": 1,
+      "ended_seconds": 571.1837665089406,
+      "fragments": 26,
+      "input_file": "tasks/10-equipment-current/input.json",
+      "lineage": "6b50141cc3b5c1a280e847e0477b71c0624a873c607c8403b949b6b1a2976d01",
+      "model_calls": 2,
+      "predicate": "https://ontology.pharma-gmp.cn/slpra/drug-development/usesEquipment",
+      "projection_seconds": 0.000954899936914444,
+      "reason_code": "record_supported",
+      "record_id": "8b4fe536f7a5b613ceaa984e137795c5e615aee461fea2f2bc0ca4285d162c03",
+      "seconds": 52.316693851025775,
+      "started_seconds": 518.8670713809552,
+      "status": "supported",
+      "subject_class": "https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport",
+      "subject_id": "0a86ead7b4765a7a20ef90361a2af6f76b9c5fe71b2d1d3d52467b0d17c441da",
+      "target_id": "1fdeb61a1495d4664e220500bd35741d5cf7b2a2af0639277fa4cf562dab5278",
+      "task_id": "68d41d76e7f4b90adefcf9e360b9872aaf1cac694e092982fc5dd2a0201c9f38",
+      "model_seconds": {
+        "ontology_guided_discovery": 21.597144076018594,
+        "ontology_guided_verification": 30.575745822978206
+      },
+      "owner_field_ids": [],
+      "judgments": {
+        "type": [
+          {
+            "verdict": "supported",
+            "support_count": 1
+          }
+        ],
+        "bridge_entailment": [
+          {
+            "verdict": "supported",
+            "support_count": 1
+          }
+        ],
+        "field_role": [
+          {
+            "verdict": "supported",
+            "support_count": 1
+          }
+        ],
+        "predicate_entailment": [
+          {
+            "verdict": "supported",
+            "support_count": 2
+          }
+        ],
+        "applicability": [
+          {
+            "verdict": "supported",
+            "support_count": 2
+          }
+        ]
+      },
+      "candidates": [
+        {
+          "kind": "relationship",
+          "candidate_id": "769e213417484fd4067bc9e9e583596d6ee3d2590a207e914405504d33236d37",
+          "class_iri": "https://ontology.pharma-gmp.cn/slpra/equipment/Reactor",
+          "label": "1000L反应釜",
+          "status": "supported",
+          "polarity": "affirmed",
+          "policy_eligible": true,
+          "subject": "0a86ead7b4765a7a20ef90361a2af6f76b9c5fe71b2d1d3d52467b0d17c441da",
+          "object": "6aec138efeaebfa6d4dc638a128b8743b0b5dec3474d65975d00e24150585e8c",
+          "predicate_support_ids": [
+            "f8d8ae35e04eb1e54389a18dd993877d5754611979126be2a2c613fb15c7d8fc"
+          ]
+        }
+      ]
+    },
+    {
+      "arm": "joint",
+      "assembly_seconds": 0.06472977995872498,
+      "case": "equipment-child-1-value",
+      "complete": true,
+      "context_hash": "24ba1fa3b2e72bc34abc44333a526f63d4ae4342614124151ed7ad178afc776a",
+      "context_tokens": 12931,
+      "effective_properties_cumulative": 0,
+      "ended_seconds": 614.1052931098966,
+      "fragments": 32,
+      "input_file": "tasks/11-equipment-child-1-value-joint/input.json",
+      "lineage": "c444ba1c0cd61cec5b9549cad1f05c03912bd1cd4f0085ac6cff3a9ccd830221",
+      "model_calls": 2,
+      "predicate": "https://ontology.pharma-gmp.cn/slpra/equipment/equipmentID",
+      "reason_code": "record_undetermined",
+      "record_id": "8b4fe536f7a5b613ceaa984e137795c5e615aee461fea2f2bc0ca4285d162c03",
+      "seconds": 42.916978013003245,
+      "started_seconds": 571.1883142819861,
+      "status": "undetermined",
+      "subject_class": "https://ontology.pharma-gmp.cn/slpra/equipment/Reactor",
+      "subject_id": "6aec138efeaebfa6d4dc638a128b8743b0b5dec3474d65975d00e24150585e8c",
+      "target_id": "ca3efaec902d2955a88511fca24aed0c14662968a8baca7559318e4631adb7bf",
+      "task_id": "89195d6ad9209b33f2aff373390b60766f46346ea9c1c87de3634b984e4d3f8f",
+      "model_seconds": {
+        "ontology_guided_discovery": 16.34151253302116,
+        "ontology_guided_verification": 26.43125621904619
+      },
+      "owner_field_ids": [],
+      "judgments": {
+        "bridge_entailment": [
+          {
+            "verdict": "supported",
+            "support_count": 1
+          }
+        ],
+        "field_role": [
+          {
+            "verdict": "undetermined",
+            "support_count": 0
+          }
+        ],
+        "predicate_entailment": [
+          {
+            "verdict": "supported",
+            "support_count": 2
+          }
+        ],
+        "applicability": [
+          {
+            "verdict": "supported",
+            "support_count": 2
+          }
+        ],
+        "local_coreference": [
+          {
+            "verdict": "supported",
+            "support_count": 1
+          }
+        ]
+      },
+      "candidates": [
+        {
+          "kind": "property",
+          "candidate_id": "ddc31648c45a0d9d7653a3b51e0082c405926eee6a0f5e06117716bc62645911",
+          "raw_value": "RE64615/RE64215",
+          "status": "undetermined",
+          "polarity": "affirmed",
+          "policy_eligible": false,
+          "subject": "6aec138efeaebfa6d4dc638a128b8743b0b5dec3474d65975d00e24150585e8c",
+          "predicate_support_ids": [
+            "f3247cd6ac63054220750adc804c9b572b5fb00776542fe37bd6c5766b1829b7"
+          ],
+          "subject_support_ids": [
+            "40d45fd3da78f29c90e2a5120db85089df223bd2e42c2df7967758ec58e8e6e8"
+          ]
+        }
+      ]
+    },
+    {
+      "arm": "joint",
+      "assembly_seconds": 0.057685847976244986,
+      "case": "equipment-child-2-value",
+      "complete": true,
+      "context_hash": "fcd4b4d744a842089da2ec0a2bf591dba16ce2703493c525bfa2c483ee4b122b",
+      "context_tokens": 12935,
+      "effective_properties_cumulative": 0,
+      "ended_seconds": 671.1074927129084,
+      "fragments": 32,
+      "input_file": "tasks/12-equipment-child-2-value-joint/input.json",
+      "lineage": "65d79420de019546dab12bc57ecf229b8c6a73e4fb65f241da9d40fb6233b464",
+      "model_calls": 2,
+      "predicate": "https://ontology.pharma-gmp.cn/slpra/equipment/modelSpecification",
+      "reason_code": "record_undetermined",
+      "record_id": "8b4fe536f7a5b613ceaa984e137795c5e615aee461fea2f2bc0ca4285d162c03",
+      "seconds": 56.99795918702148,
+      "started_seconds": 614.1095322949113,
+      "status": "undetermined",
+      "subject_class": "https://ontology.pharma-gmp.cn/slpra/equipment/Reactor",
+      "subject_id": "6aec138efeaebfa6d4dc638a128b8743b0b5dec3474d65975d00e24150585e8c",
+      "target_id": "c11debf205b4b7a84eaa29c7e1eb5468db41080559357b8bb9964fdd3aa1a2fe",
+      "task_id": "651ff7aa7339359443f19b0ce13c29c082514c58087d45e764a42e52db66e1dc",
+      "model_seconds": {
+        "ontology_guided_discovery": 21.482555685099214,
+        "ontology_guided_verification": 35.3452065680176
+      },
+      "owner_field_ids": [],
+      "judgments": {
+        "bridge_entailment": [
+          {
+            "verdict": "supported",
+            "support_count": 2
+          },
+          {
+            "verdict": "supported",
+            "support_count": 2
+          }
+        ],
+        "field_role": [
+          {
+            "verdict": "undetermined",
+            "support_count": 0
+          },
+          {
+            "verdict": "undetermined",
+            "support_count": 0
+          }
+        ],
+        "predicate_entailment": [
+          {
+            "verdict": "supported",
+            "support_count": 2
+          },
+          {
+            "verdict": "supported",
+            "support_count": 2
+          }
+        ],
+        "applicability": [
+          {
+            "verdict": "supported",
+            "support_count": 3
+          },
+          {
+            "verdict": "supported",
+            "support_count": 3
+          }
+        ],
+        "local_coreference": [
+          {
+            "verdict": "supported",
+            "support_count": 1
+          },
+          {
+            "verdict": "supported",
+            "support_count": 1
+          }
+        ]
+      },
+      "candidates": [
+        {
+          "kind": "property",
+          "candidate_id": "9a494945f6c7f10632bf9568aadaf858460eed3357fe450d96db5356bb8d1916",
+          "raw_value": "1000L",
+          "status": "undetermined",
+          "polarity": "conditional",
+          "policy_eligible": false,
+          "subject": "6aec138efeaebfa6d4dc638a128b8743b0b5dec3474d65975d00e24150585e8c",
+          "predicate_support_ids": [
+            "217cfa9fc518787f53a0e426cc5513df37539f98672537cdf98f7f64145e7d7a",
+            "fdff35ebc959e924a105d7235de8b63254bab2e4ee33e6c333b77033226cec6c"
+          ],
+          "subject_support_ids": [
+            "40d45fd3da78f29c90e2a5120db85089df223bd2e42c2df7967758ec58e8e6e8"
+          ]
+        },
+        {
+          "kind": "property",
+          "candidate_id": "25b6bad342a436b947aefce667d0055cdd105866943997cba30d7ff0a85a4e27",
+          "raw_value": "RE64615/RE64215",
+          "status": "undetermined",
+          "polarity": "conditional",
+          "policy_eligible": false,
+          "subject": "6aec138efeaebfa6d4dc638a128b8743b0b5dec3474d65975d00e24150585e8c",
+          "predicate_support_ids": [
+            "217cfa9fc518787f53a0e426cc5513df37539f98672537cdf98f7f64145e7d7a",
+            "c69960d02626b2fd6eec053522914100548db2bf96130f24d51be2a1be44dc5d"
+          ],
+          "subject_support_ids": [
+            "40d45fd3da78f29c90e2a5120db85089df223bd2e42c2df7967758ec58e8e6e8"
+          ]
+        }
+      ]
+    },
+    {
+      "arm": "current",
+      "assembly_seconds": 0.05927289091050625,
+      "case": "equipment-child-1-value",
+      "complete": true,
+      "context_hash": "c02d53d0f0f5aafec0f2b3e7e5b4b0343d4c87670c219baf4bb7f1284f06c647",
+      "context_tokens": 9730,
+      "effective_properties_cumulative": 0,
+      "ended_seconds": 711.5382065379526,
+      "fragments": 26,
+      "input_file": "tasks/13-equipment-child-1-value-current/input.json",
+      "lineage": "c444ba1c0cd61cec5b9549cad1f05c03912bd1cd4f0085ac6cff3a9ccd830221",
+      "model_calls": 2,
+      "predicate": "https://ontology.pharma-gmp.cn/slpra/equipment/equipmentID",
+      "reason_code": "record_undetermined",
+      "record_id": "8b4fe536f7a5b613ceaa984e137795c5e615aee461fea2f2bc0ca4285d162c03",
+      "seconds": 40.42635755194351,
+      "started_seconds": 671.1118479860015,
+      "status": "undetermined",
+      "subject_class": "https://ontology.pharma-gmp.cn/slpra/equipment/Reactor",
+      "subject_id": "6aec138efeaebfa6d4dc638a128b8743b0b5dec3474d65975d00e24150585e8c",
+      "target_id": "1e8ea2edfdbe42356940598074a3f8cbf0317b395e89056ae357761e82175f1a",
+      "task_id": "7b25ab4463e3e46496cc6399e34d3b2ec950ba0a7e5c199c400c6ee83f54c201",
+      "model_seconds": {
+        "ontology_guided_discovery": 15.589584965957329,
+        "ontology_guided_verification": 24.68361065001227
+      },
+      "owner_field_ids": [],
+      "judgments": {
+        "bridge_entailment": [
+          {
+            "verdict": "supported",
+            "support_count": 1
+          }
+        ],
+        "field_role": [
+          {
+            "verdict": "supported",
+            "support_count": 1
+          }
+        ],
+        "predicate_entailment": [
+          {
+            "verdict": "supported",
+            "support_count": 2
+          }
+        ],
+        "applicability": [
+          {
+            "verdict": "supported",
+            "support_count": 2
+          }
+        ],
+        "local_coreference": [
+          {
+            "verdict": "supported",
+            "support_count": 1
+          }
+        ]
+      },
+      "candidates": [
+        {
+          "kind": "property",
+          "candidate_id": "ddc31648c45a0d9d7653a3b51e0082c405926eee6a0f5e06117716bc62645911",
+          "raw_value": "RE64615/RE64215",
+          "status": "undetermined",
+          "polarity": "affirmed",
+          "policy_eligible": false,
+          "subject": "6aec138efeaebfa6d4dc638a128b8743b0b5dec3474d65975d00e24150585e8c",
+          "predicate_support_ids": [
+            "f3247cd6ac63054220750adc804c9b572b5fb00776542fe37bd6c5766b1829b7"
+          ],
+          "subject_support_ids": [
+            "40d45fd3da78f29c90e2a5120db85089df223bd2e42c2df7967758ec58e8e6e8"
+          ]
+        }
+      ]
+    },
+    {
+      "arm": "current",
+      "assembly_seconds": 0.03809662605635822,
+      "case": "equipment-child-2-value",
+      "complete": true,
+      "context_hash": "3b04dd71cb5bfaa6f16e999c3e2febbe15a63059b8db9da57d1f8a6863bf8f2e",
+      "context_tokens": 9731,
+      "effective_properties_cumulative": 0,
+      "ended_seconds": 746.9755822028965,
+      "fragments": 26,
+      "input_file": "tasks/14-equipment-child-2-value-current/input.json",
+      "lineage": "65d79420de019546dab12bc57ecf229b8c6a73e4fb65f241da9d40fb6233b464",
+      "model_calls": 2,
+      "predicate": "https://ontology.pharma-gmp.cn/slpra/equipment/modelSpecification",
+      "reason_code": "record_unsupported",
+      "record_id": "8b4fe536f7a5b613ceaa984e137795c5e615aee461fea2f2bc0ca4285d162c03",
+      "seconds": 35.43317160801962,
+      "started_seconds": 711.5424097708892,
+      "status": "unsupported",
+      "subject_class": "https://ontology.pharma-gmp.cn/slpra/equipment/Reactor",
+      "subject_id": "6aec138efeaebfa6d4dc638a128b8743b0b5dec3474d65975d00e24150585e8c",
+      "target_id": "85ec635349deb3c85cc34a3f9ceffc10a817bd3aa72625663f2496d5ee2c80c7",
+      "task_id": "d02331fa983c84674f6c86697eac8a3597230bf1f5fbff5bd6c7b46f62de95cd",
+      "model_seconds": {
+        "ontology_guided_discovery": 14.070332705974579,
+        "ontology_guided_verification": 21.25276418006979
+      },
+      "owner_field_ids": [],
+      "judgments": {
+        "bridge_entailment": [
+          {
+            "verdict": "unsupported",
+            "support_count": 0
+          }
+        ],
+        "field_role": [
+          {
+            "verdict": "undetermined",
+            "support_count": 0
+          }
+        ],
+        "predicate_entailment": [
+          {
+            "verdict": "undetermined",
+            "support_count": 0
+          }
+        ],
+        "applicability": [
+          {
+            "verdict": "supported",
+            "support_count": 1
+          }
+        ],
+        "local_coreference": [
+          {
+            "verdict": "undetermined",
+            "support_count": 0
+          }
+        ]
+      },
+      "candidates": [
+        {
+          "kind": "property",
+          "candidate_id": "9a494945f6c7f10632bf9568aadaf858460eed3357fe450d96db5356bb8d1916",
+          "raw_value": "1000L",
+          "status": "unsupported",
+          "polarity": "affirmed",
+          "policy_eligible": false,
+          "subject": "6aec138efeaebfa6d4dc638a128b8743b0b5dec3474d65975d00e24150585e8c",
+          "predicate_support_ids": [],
+          "subject_support_ids": []
+        }
+      ]
+    },
+    {
+      "arm": "current",
+      "assembly_seconds": 0.03447909001260996,
+      "case": "route",
+      "complete": true,
+      "context_hash": "5f133191c5ea0d48c75fd0741bf01f5df9ecbeff771202295e2be4dbe011b431",
+      "context_tokens": 8699,
+      "effective_edges": 0,
+      "ended_seconds": 785.3241711088922,
+      "fragments": 24,
+      "input_file": "tasks/15-route-current/input.json",
+      "lineage": "0778fd73210495a8e946d66bc65b08f61f09fcc864c57017d1bb2ee18c6e2d9b",
+      "model_calls": 2,
+      "predicate": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasSynthesisRoute",
+      "projection_seconds": 0.0004160889657214284,
+      "reason_code": "record_unsupported",
+      "record_id": "4b35cee3bb1745c3f45ea17c092abcd2a92c19cd999d015d51f5c5ee88cd1369",
+      "seconds": 38.34420708194375,
+      "started_seconds": 746.9799627369503,
+      "status": "unsupported",
+      "subject_class": "https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport",
+      "subject_id": "0a86ead7b4765a7a20ef90361a2af6f76b9c5fe71b2d1d3d52467b0d17c441da",
+      "target_id": "30ab96cf9a9f20551913a1e55cf1b37b026b003ba50474cdd5b0e574576bfde9",
+      "task_id": "aaa46713fefd6fbb8f989dc35e508fcfe6fb29ea8631ca6b77d0b476d63b662f",
+      "model_seconds": {
+        "ontology_guided_discovery": 15.173448833986185,
+        "ontology_guided_verification": 23.0540131960297
+      },
+      "owner_field_ids": [],
+      "judgments": {
+        "type": [
+          {
+            "verdict": "undetermined",
+            "support_count": 0
+          }
+        ],
+        "bridge_entailment": [
+          {
+            "verdict": "unsupported",
+            "support_count": 0
+          }
+        ],
+        "field_role": [
+          {
+            "verdict": "undetermined",
+            "support_count": 0
+          }
+        ],
+        "predicate_entailment": [
+          {
+            "verdict": "undetermined",
+            "support_count": 0
+          }
+        ],
+        "applicability": [
+          {
+            "verdict": "supported",
+            "support_count": 1
+          }
+        ]
+      },
+      "candidates": [
+        {
+          "kind": "relationship",
+          "candidate_id": "8877f24f14ed427d7b6dd4950e8278c40c5684f5ac13d4eb8523522781ec6084",
+          "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/SynthesisRoute",
+          "label": "3.1.1合成路线图",
+          "status": "unsupported",
+          "polarity": "affirmed",
+          "policy_eligible": false,
+          "subject": "0a86ead7b4765a7a20ef90361a2af6f76b9c5fe71b2d1d3d52467b0d17c441da",
+          "object": "31ee57b0f5a83d7e700595c2f27aebd032a9f9dbff78e7a142341f70a6831b89",
+          "predicate_support_ids": []
+        }
+      ]
+    },
+    {
+      "arm": "joint",
+      "assembly_seconds": 0.06053315999452025,
+      "case": "route",
+      "complete": true,
+      "context_hash": "cc72f2a3bb845b8bec186efabdfd2f68bc1bdf7af6390a6c2c140e77b8186b05",
+      "context_tokens": 13190,
+      "effective_edges": 0,
+      "ended_seconds": 829.2648057929473,
+      "fragments": 29,
+      "input_file": "tasks/16-route-joint/input.json",
+      "lineage": "0778fd73210495a8e946d66bc65b08f61f09fcc864c57017d1bb2ee18c6e2d9b",
+      "model_calls": 2,
+      "predicate": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasSynthesisRoute",
+      "projection_seconds": 0.00038602505810558796,
+      "reason_code": "record_undetermined",
+      "record_id": "4b35cee3bb1745c3f45ea17c092abcd2a92c19cd999d015d51f5c5ee88cd1369",
+      "seconds": 43.936975019052625,
+      "started_seconds": 785.327829496935,
+      "status": "undetermined",
+      "subject_class": "https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport",
+      "subject_id": "0a86ead7b4765a7a20ef90361a2af6f76b9c5fe71b2d1d3d52467b0d17c441da",
+      "target_id": "14a253d45cbda5a5f87a67b8e287ecc0af6e2ccdc3b5009e32c3a6b29af04a43",
+      "task_id": "594b12a610256a54ba90ef023ba9efa8041f4d9b55e2004c4e8efb2b8964fec7",
+      "model_seconds": {
+        "ontology_guided_discovery": 17.325740808038972,
+        "ontology_guided_verification": 26.438528154045343
+      },
+      "owner_field_ids": [],
+      "judgments": {
+        "type": [
+          {
+            "verdict": "supported",
+            "support_count": 1
+          }
+        ],
+        "bridge_entailment": [
+          {
+            "verdict": "supported",
+            "support_count": 1
+          }
+        ],
+        "field_role": [
+          {
+            "verdict": "supported",
+            "support_count": 1
+          }
+        ],
+        "predicate_entailment": [
+          {
+            "verdict": "supported",
+            "support_count": 2
+          }
+        ],
+        "applicability": [
+          {
+            "verdict": "supported",
+            "support_count": 2
+          }
+        ]
+      },
+      "candidates": [
+        {
+          "kind": "relationship",
+          "candidate_id": "8877f24f14ed427d7b6dd4950e8278c40c5684f5ac13d4eb8523522781ec6084",
+          "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/SynthesisRoute",
+          "label": "3.1.1合成路线图",
+          "status": "undetermined",
+          "polarity": "affirmed",
+          "policy_eligible": false,
+          "subject": "0a86ead7b4765a7a20ef90361a2af6f76b9c5fe71b2d1d3d52467b0d17c441da",
+          "object": "31ee57b0f5a83d7e700595c2f27aebd032a9f9dbff78e7a142341f70a6831b89",
+          "predicate_support_ids": [
+            "7f168cd71d10d88868f820eba82a718723915772bb1b05db4d796b2838f281f3"
+          ]
+        }
+      ]
+    }
+  ],
+  "gate_diagnostics_file": "gate-diagnostics.json",
+  "gate_diagnostics_sha256": "eff26ea82132fc468b071e37eebf066e50562d70245011ab1d088d80564eb3a7",
+  "gate_replay_all_tasks": true,
+  "gate_replay_tasks": 16,
+  "gate_replay_responses": 32,
+  "gate_replay_summary": {
+    "completed_tasks_replayed": 16,
+    "tasks_without_completed_outcome": 0,
+    "all_replayed_outcomes_exact_match": true,
+    "replayed_transport_calls": 32,
+    "validation_issue_counts": {
+      "missing_predicate_support": 8,
+      "predicate_proof_not_supported": 8,
+      "predicate_entailment_not_supported": 8,
+      "applicability_not_supported": 1,
+      "bridge_kind_forbidden_for_predicate": 10,
+      "retrieval_hint_is_not_predicate_proof": 5
+    }
+  },
+  "gate_diagnostics": [
+    {
+      "task": "01-product_name-current",
+      "outcome_exact_match": true,
+      "bundles": [
+        {
+          "target_id": "2a731a20c6c641054b434953aaf533803b677828694b270bd8a0baa381c17b9c",
+          "bridge_kind": "document_subject_description",
+          "policy_id": "predicate-policy-v1:document-description",
+          "allowed_bridges": [
+            "document_subject_description",
+            "explicit_assertion"
+          ],
+          "structural_valid": false,
+          "model_supported": false,
+          "policy_eligible": false,
+          "validation_issues": [
+            "missing_predicate_support",
+            "predicate_proof_not_supported",
+            "predicate_entailment_not_supported",
+            "applicability_not_supported"
+          ],
+          "decisions": [
+            {
+              "check_kind": "type",
+              "verdict": "undetermined"
+            },
+            {
+              "check_kind": "bridge_entailment",
+              "verdict": "undetermined"
+            },
+            {
+              "check_kind": "field_role",
+              "verdict": "undetermined"
+            },
+            {
+              "check_kind": "predicate_entailment",
+              "verdict": "undetermined"
+            },
+            {
+              "check_kind": "applicability",
+              "verdict": "undetermined"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "task": "02-product_name-joint",
+      "outcome_exact_match": true,
+      "bundles": [
+        {
+          "target_id": "5149baa3a08bd8e63428ded750b67ff54dc5de7af98bb08cb008deb1c4d98d82",
+          "bridge_kind": "document_subject_description",
+          "policy_id": "predicate-policy-v1:document-description",
+          "allowed_bridges": [
+            "document_subject_description",
+            "explicit_assertion"
+          ],
+          "structural_valid": true,
+          "model_supported": true,
+          "policy_eligible": true,
+          "validation_issues": [],
+          "decisions": [
+            {
+              "check_kind": "type",
+              "verdict": "supported"
+            },
+            {
+              "check_kind": "bridge_entailment",
+              "verdict": "supported"
+            },
+            {
+              "check_kind": "field_role",
+              "verdict": "supported"
+            },
+            {
+              "check_kind": "predicate_entailment",
+              "verdict": "supported"
+            },
+            {
+              "check_kind": "applicability",
+              "verdict": "supported"
+            }
+          ]
+        },
+        {
+          "target_id": "c9cb23ec6f00556a417a33d933b2e3818670d7f301c182750be1052a8877870d",
+          "bridge_kind": "document_subject_description",
+          "policy_id": "predicate-policy-v1:document-description",
+          "allowed_bridges": [
+            "document_subject_description",
+            "explicit_assertion"
+          ],
+          "structural_valid": true,
+          "model_supported": true,
+          "policy_eligible": true,
+          "validation_issues": [],
+          "decisions": [
+            {
+              "check_kind": "type",
+              "verdict": "supported"
+            },
+            {
+              "check_kind": "bridge_entailment",
+              "verdict": "supported"
+            },
+            {
+              "check_kind": "field_role",
+              "verdict": "supported"
+            },
+            {
+              "check_kind": "predicate_entailment",
+              "verdict": "supported"
+            },
+            {
+              "check_kind": "applicability",
+              "verdict": "supported"
+            }
+          ]
+        },
+        {
+          "target_id": "59afec07e8a4cb479adb57b3cb410a0a5941fd5ce2bcd13847e479eae0618424",
+          "bridge_kind": "document_subject_description",
+          "policy_id": "predicate-policy-v1:document-description",
+          "allowed_bridges": [
+            "document_subject_description",
+            "explicit_assertion"
+          ],
+          "structural_valid": false,
+          "model_supported": false,
+          "policy_eligible": false,
+          "validation_issues": [
+            "missing_predicate_support",
+            "predicate_proof_not_supported",
+            "predicate_entailment_not_supported"
+          ],
+          "decisions": [
+            {
+              "check_kind": "type",
+              "verdict": "unsupported"
+            },
+            {
+              "check_kind": "bridge_entailment",
+              "verdict": "unsupported"
+            },
+            {
+              "check_kind": "field_role",
+              "verdict": "unsupported"
+            },
+            {
+              "check_kind": "predicate_entailment",
+              "verdict": "unsupported"
+            },
+            {
+              "check_kind": "applicability",
+              "verdict": "supported"
+            }
+          ]
+        },
+        {
+          "target_id": "fe61b8556f0df51fb5d7078afb0bb79513339721750e06b971798396d844b649",
+          "bridge_kind": "document_subject_description",
+          "policy_id": "predicate-policy-v1:document-description",
+          "allowed_bridges": [
+            "document_subject_description",
+            "explicit_assertion"
+          ],
+          "structural_valid": true,
+          "model_supported": true,
+          "policy_eligible": true,
+          "validation_issues": [],
+          "decisions": [
+            {
+              "check_kind": "type",
+              "verdict": "supported"
+            },
+            {
+              "check_kind": "bridge_entailment",
+              "verdict": "supported"
+            },
+            {
+              "check_kind": "field_role",
+              "verdict": "supported"
+            },
+            {
+              "check_kind": "predicate_entailment",
+              "verdict": "supported"
+            },
+            {
+              "check_kind": "applicability",
+              "verdict": "supported"
+            }
+          ]
+        },
+        {
+          "target_id": "0ecfd70c24ec494801b67a1fa099348e4bccf29c68fb09079a295a7c4560f92a",
+          "bridge_kind": "document_subject_description",
+          "policy_id": "predicate-policy-v1:document-description",
+          "allowed_bridges": [
+            "document_subject_description",
+            "explicit_assertion"
+          ],
+          "structural_valid": true,
+          "model_supported": true,
+          "policy_eligible": true,
+          "validation_issues": [],
+          "decisions": [
+            {
+              "check_kind": "type",
+              "verdict": "supported"
+            },
+            {
+              "check_kind": "bridge_entailment",
+              "verdict": "supported"
+            },
+            {
+              "check_kind": "field_role",
+              "verdict": "supported"
+            },
+            {
+              "check_kind": "predicate_entailment",
+              "verdict": "supported"
+            },
+            {
+              "check_kind": "applicability",
+              "verdict": "supported"
+            }
+          ]
+        },
+        {
+          "target_id": "f4600cf8a3526d9d98686cbaf7e3a8ef950ab7c7dd668c2a2a52b6084bccee98",
+          "bridge_kind": "document_subject_description",
+          "policy_id": "predicate-policy-v1:document-description",
+          "allowed_bridges": [
+            "document_subject_description",
+            "explicit_assertion"
+          ],
+          "structural_valid": true,
+          "model_supported": true,
+          "policy_eligible": true,
+          "validation_issues": [],
+          "decisions": [
+            {
+              "check_kind": "type",
+              "verdict": "supported"
+            },
+            {
+              "check_kind": "bridge_entailment",
+              "verdict": "supported"
+            },
+            {
+              "check_kind": "field_role",
+              "verdict": "supported"
+            },
+            {
+              "check_kind": "predicate_entailment",
+              "verdict": "supported"
+            },
+            {
+              "check_kind": "applicability",
+              "verdict": "supported"
+            }
+          ]
+        },
+        {
+          "target_id": "bbc351f3202495139c4e6e1754049bc436a76670ccc64a93389eedd64fabb3ba",
+          "bridge_kind": "document_subject_description",
+          "policy_id": "predicate-policy-v1:document-description",
+          "allowed_bridges": [
+            "document_subject_description",
+            "explicit_assertion"
+          ],
+          "structural_valid": true,
+          "model_supported": true,
+          "policy_eligible": true,
+          "validation_issues": [],
+          "decisions": [
+            {
+              "check_kind": "type",
+              "verdict": "supported"
+            },
+            {
+              "check_kind": "bridge_entailment",
+              "verdict": "supported"
+            },
+            {
+              "check_kind": "field_role",
+              "verdict": "supported"
+            },
+            {
+              "check_kind": "predicate_entailment",
+              "verdict": "supported"
+            },
+            {
+              "check_kind": "applicability",
+              "verdict": "supported"
+            }
+          ]
+        },
+        {
+          "target_id": "8c8235dfcabdfe9478ed5a781ae949c51c94c17b4976b071e81bee2263050fa4",
+          "bridge_kind": "document_subject_description",
+          "policy_id": "predicate-policy-v1:document-description",
+          "allowed_bridges": [
+            "document_subject_description",
+            "explicit_assertion"
+          ],
+          "structural_valid": true,
+          "model_supported": true,
+          "policy_eligible": true,
+          "validation_issues": [],
+          "decisions": [
+            {
+              "check_kind": "type",
+              "verdict": "supported"
+            },
+            {
+              "check_kind": "bridge_entailment",
+              "verdict": "supported"
+            },
+            {
+              "check_kind": "field_role",
+              "verdict": "supported"
+            },
+            {
+              "check_kind": "predicate_entailment",
+              "verdict": "supported"
+            },
+            {
+              "check_kind": "applicability",
+              "verdict": "supported"
+            }
+          ]
+        },
+        {
+          "target_id": "8745acabec5556b1d67649ac0601ce16c41fd314d91cb277219ed7d16206c6fd",
+          "bridge_kind": "document_subject_description",
+          "policy_id": "predicate-policy-v1:document-description",
+          "allowed_bridges": [
+            "document_subject_description",
+            "explicit_assertion"
+          ],
+          "structural_valid": true,
+          "model_supported": true,
+          "policy_eligible": true,
+          "validation_issues": [],
+          "decisions": [
+            {
+              "check_kind": "type",
+              "verdict": "supported"
+            },
+            {
+              "check_kind": "bridge_entailment",
+              "verdict": "supported"
+            },
+            {
+              "check_kind": "field_role",
+              "verdict": "supported"
+            },
+            {
+              "check_kind": "predicate_entailment",
+              "verdict": "supported"
+            },
+            {
+              "check_kind": "applicability",
+              "verdict": "supported"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "task": "03-product_name-child-1-value-joint",
+      "outcome_exact_match": true,
+      "bundles": [
+        {
+          "target_id": "273460e231b52d9a7bbe1f572e4db55a18d39e3177a2685c0ff8126e56e6c874",
+          "bridge_kind": "explicit_assertion",
+          "policy_id": "predicate-policy-v1:data-property",
+          "allowed_bridges": [
+            "explicit_assertion",
+            "owned_field_group",
+            "role_mapped_table"
+          ],
+          "structural_valid": true,
+          "model_supported": false,
+          "policy_eligible": false,
+          "validation_issues": [],
+          "decisions": [
+            {
+              "check_kind": "bridge_entailment",
+              "verdict": "supported"
+            },
+            {
+              "check_kind": "field_role",
+              "verdict": "undetermined"
+            },
+            {
+              "check_kind": "predicate_entailment",
+              "verdict": "supported"
+            },
+            {
+              "check_kind": "applicability",
+              "verdict": "supported"
+            },
+            {
+              "check_kind": "local_coreference",
+              "verdict": "supported"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "task": "04-product_name-child-2-value-joint",
+      "outcome_exact_match": true,
+      "bundles": [
+        {
+          "target_id": "0b16746bf36603e53f2f619fff4951ed482e2f109b29c2e4569c6a9f0fe6c3be",
+          "bridge_kind": "explicit_assertion",
+          "policy_id": "predicate-policy-v1:data-property",
+          "allowed_bridges": [
+            "explicit_assertion",
+            "owned_field_group",
+            "role_mapped_table"
+          ],
+          "structural_valid": true,
+          "model_supported": false,
+          "policy_eligible": false,
+          "validation_issues": [],
+          "decisions": [
+            {
+              "check_kind": "bridge_entailment",
+              "verdict": "supported"
+            },
+            {
+              "check_kind": "field_role",
+              "verdict": "undetermined"
+            },
+            {
+              "check_kind": "predicate_entailment",
+              "verdict": "supported"
+            },
+            {
+              "check_kind": "applicability",
+              "verdict": "supported"
+            },
+            {
+              "check_kind": "local_coreference",
+              "verdict": "supported"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "task": "05-cytotoxic_confusion-joint",
+      "outcome_exact_match": true,
+      "bundles": [
+        {
+          "target_id": "06f9ba407245e1092b821b89bc0096f2ecb2dae12b7fa873f6842b0286f58e2f",
+          "bridge_kind": "role_mapped_table",
+          "policy_id": "predicate-policy-v1:document-description",
+          "allowed_bridges": [
+            "document_subject_description",
+            "explicit_assertion"
+          ],
+          "structural_valid": false,
+          "model_supported": false,
+          "policy_eligible": false,
+          "validation_issues": [
+            "bridge_kind_forbidden_for_predicate",
+            "missing_predicate_support",
+            "predicate_proof_not_supported",
+            "predicate_entailment_not_supported"
+          ],
+          "decisions": [
+            {
+              "check_kind": "type",
+              "verdict": "undetermined"
+            },
+            {
+              "check_kind": "bridge_entailment",
+              "verdict": "unsupported"
+            },
+            {
+              "check_kind": "field_role",
+              "verdict": "undetermined"
+            },
+            {
+              "check_kind": "predicate_entailment",
+              "verdict": "undetermined"
+            },
+            {
+              "check_kind": "applicability",
+              "verdict": "supported"
+            }
+          ]
+        },
+        {
+          "target_id": "6e97dfcd8fe2b21c49be2e46103583f37f554722edfbefcfdae38994785a5452",
+          "bridge_kind": "document_subject_description",
+          "policy_id": "predicate-policy-v1:document-description",
+          "allowed_bridges": [
+            "document_subject_description",
+            "explicit_assertion"
+          ],
+          "structural_valid": false,
+          "model_supported": false,
+          "policy_eligible": false,
+          "validation_issues": [
+            "missing_predicate_support",
+            "predicate_proof_not_supported",
+            "predicate_entailment_not_supported"
+          ],
+          "decisions": [
+            {
+              "check_kind": "type",
+              "verdict": "undetermined"
+            },
+            {
+              "check_kind": "bridge_entailment",
+              "verdict": "unsupported"
+            },
+            {
+              "check_kind": "field_role",
+              "verdict": "undetermined"
+            },
+            {
+              "check_kind": "predicate_entailment",
+              "verdict": "undetermined"
+            },
+            {
+              "check_kind": "applicability",
+              "verdict": "supported"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "task": "06-cytotoxic_confusion-current",
+      "outcome_exact_match": true,
+      "bundles": [
+        {
+          "target_id": "9ee33f734d2023a0021fdab186001e4682a4356d50cb0e130460d8a7c1d81148",
+          "bridge_kind": "explicit_assertion",
+          "policy_id": "predicate-policy-v1:document-description",
+          "allowed_bridges": [
+            "document_subject_description",
+            "explicit_assertion"
+          ],
+          "structural_valid": true,
+          "model_supported": true,
+          "policy_eligible": true,
+          "validation_issues": [],
+          "decisions": [
+            {
+              "check_kind": "type",
+              "verdict": "supported"
+            },
+            {
+              "check_kind": "bridge_entailment",
+              "verdict": "supported"
+            },
+            {
+              "check_kind": "field_role",
+              "verdict": "supported"
+            },
+            {
+              "check_kind": "predicate_entailment",
+              "verdict": "supported"
+            },
+            {
+              "check_kind": "applicability",
+              "verdict": "supported"
+            }
+          ]
+        },
+        {
+          "target_id": "7ba3e0cae1c0d20763ee1eb3bbf383e20953d4f25cab222dfe1b833a3b538725",
+          "bridge_kind": "explicit_assertion",
+          "policy_id": "predicate-policy-v1:document-description",
+          "allowed_bridges": [
+            "document_subject_description",
+            "explicit_assertion"
+          ],
+          "structural_valid": true,
+          "model_supported": true,
+          "policy_eligible": true,
+          "validation_issues": [],
+          "decisions": [
+            {
+              "check_kind": "type",
+              "verdict": "supported"
+            },
+            {
+              "check_kind": "bridge_entailment",
+              "verdict": "supported"
+            },
+            {
+              "check_kind": "field_role",
+              "verdict": "supported"
+            },
+            {
+              "check_kind": "predicate_entailment",
+              "verdict": "supported"
+            },
+            {
+              "check_kind": "applicability",
+              "verdict": "supported"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "task": "07-production_plan-current",
+      "outcome_exact_match": true,
+      "bundles": [
+        {
+          "target_id": "0c8ee5dfa17311e902ea71e93fb5bcd8aecdd93f42cf251e43eabbc65b398087",
+          "bridge_kind": "document_subject_description",
+          "policy_id": "predicate-policy-v1:generic-relation",
+          "allowed_bridges": [
+            "explicit_assertion",
+            "resolved_reference_chain",
+            "role_mapped_table"
+          ],
+          "structural_valid": false,
+          "model_supported": false,
+          "policy_eligible": false,
+          "validation_issues": [
+            "bridge_kind_forbidden_for_predicate",
+            "missing_predicate_support",
+            "predicate_proof_not_supported",
+            "predicate_entailment_not_supported"
+          ],
+          "decisions": [
+            {
+              "check_kind": "type",
+              "verdict": "undetermined"
+            },
+            {
+              "check_kind": "bridge_entailment",
+              "verdict": "unsupported"
+            },
+            {
+              "check_kind": "field_role",
+              "verdict": "undetermined"
+            },
+            {
+              "check_kind": "predicate_entailment",
+              "verdict": "undetermined"
+            },
+            {
+              "check_kind": "applicability",
+              "verdict": "supported"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "task": "08-production_plan-joint",
+      "outcome_exact_match": true,
+      "bundles": [
+        {
+          "target_id": "16a18ceb86d21c108f219d15d0171d44a4a04184e7d1fe939c9d1c20aae20325",
+          "bridge_kind": "document_subject_description",
+          "policy_id": "predicate-policy-v1:generic-relation",
+          "allowed_bridges": [
+            "explicit_assertion",
+            "resolved_reference_chain",
+            "role_mapped_table"
+          ],
+          "structural_valid": false,
+          "model_supported": true,
+          "policy_eligible": false,
+          "validation_issues": [
+            "bridge_kind_forbidden_for_predicate"
+          ],
+          "decisions": [
+            {
+              "check_kind": "type",
+              "verdict": "supported"
+            },
+            {
+              "check_kind": "bridge_entailment",
+              "verdict": "supported"
+            },
+            {
+              "check_kind": "field_role",
+              "verdict": "supported"
+            },
+            {
+              "check_kind": "predicate_entailment",
+              "verdict": "supported"
+            },
+            {
+              "check_kind": "applicability",
+              "verdict": "supported"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "task": "09-equipment-joint",
+      "outcome_exact_match": true,
+      "bundles": [
+        {
+          "target_id": "e3bfdbf98b8d7ef89949f7af3a0361c559b597b2215e0cca249b0c36b10899cb",
+          "bridge_kind": "explicit_assertion",
+          "policy_id": "predicate-policy-v1:generic-relation",
+          "allowed_bridges": [
+            "explicit_assertion",
+            "resolved_reference_chain",
+            "role_mapped_table"
+          ],
+          "structural_valid": true,
+          "model_supported": true,
+          "policy_eligible": true,
+          "validation_issues": [],
+          "decisions": [
+            {
+              "check_kind": "type",
+              "verdict": "supported"
+            },
+            {
+              "check_kind": "bridge_entailment",
+              "verdict": "supported"
+            },
+            {
+              "check_kind": "field_role",
+              "verdict": "supported"
+            },
+            {
+              "check_kind": "predicate_entailment",
+              "verdict": "supported"
+            },
+            {
+              "check_kind": "applicability",
+              "verdict": "supported"
+            }
+          ]
+        },
+        {
+          "target_id": "3b47c4f901c85bd1a70ad8f34c9c0764f619bcaacc4509c6b7302754aa7ed1fc",
+          "bridge_kind": "explicit_assertion",
+          "policy_id": "predicate-policy-v1:generic-relation",
+          "allowed_bridges": [
+            "explicit_assertion",
+            "resolved_reference_chain",
+            "role_mapped_table"
+          ],
+          "structural_valid": false,
+          "model_supported": false,
+          "policy_eligible": false,
+          "validation_issues": [
+            "missing_predicate_support",
+            "predicate_proof_not_supported",
+            "predicate_entailment_not_supported"
+          ],
+          "decisions": [
+            {
+              "check_kind": "type",
+              "verdict": "unsupported"
+            },
+            {
+              "check_kind": "bridge_entailment",
+              "verdict": "unsupported"
+            },
+            {
+              "check_kind": "field_role",
+              "verdict": "unsupported"
+            },
+            {
+              "check_kind": "predicate_entailment",
+              "verdict": "unsupported"
+            },
+            {
+              "check_kind": "applicability",
+              "verdict": "supported"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "task": "10-equipment-current",
+      "outcome_exact_match": true,
+      "bundles": [
+        {
+          "target_id": "b46bccdd9bba58028b31b042ba9381f925fbc79cb9e71841c93f6147aeca22d1",
+          "bridge_kind": "explicit_assertion",
+          "policy_id": "predicate-policy-v1:generic-relation",
+          "allowed_bridges": [
+            "explicit_assertion",
+            "resolved_reference_chain",
+            "role_mapped_table"
+          ],
+          "structural_valid": true,
+          "model_supported": true,
+          "policy_eligible": true,
+          "validation_issues": [],
+          "decisions": [
+            {
+              "check_kind": "type",
+              "verdict": "supported"
+            },
+            {
+              "check_kind": "bridge_entailment",
+              "verdict": "supported"
+            },
+            {
+              "check_kind": "field_role",
+              "verdict": "supported"
+            },
+            {
+              "check_kind": "predicate_entailment",
+              "verdict": "supported"
+            },
+            {
+              "check_kind": "applicability",
+              "verdict": "supported"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "task": "11-equipment-child-1-value-joint",
+      "outcome_exact_match": true,
+      "bundles": [
+        {
+          "target_id": "a7e4bca76259b27bc169f162d049810ce08bbef463999daeea4d090851b38738",
+          "bridge_kind": "adjacent_only",
+          "policy_id": "predicate-policy-v1:data-property",
+          "allowed_bridges": [
+            "explicit_assertion",
+            "owned_field_group",
+            "role_mapped_table"
+          ],
+          "structural_valid": false,
+          "model_supported": false,
+          "policy_eligible": false,
+          "validation_issues": [
+            "retrieval_hint_is_not_predicate_proof",
+            "bridge_kind_forbidden_for_predicate"
+          ],
+          "decisions": [
+            {
+              "check_kind": "bridge_entailment",
+              "verdict": "supported"
+            },
+            {
+              "check_kind": "field_role",
+              "verdict": "undetermined"
+            },
+            {
+              "check_kind": "predicate_entailment",
+              "verdict": "supported"
+            },
+            {
+              "check_kind": "applicability",
+              "verdict": "supported"
+            },
+            {
+              "check_kind": "local_coreference",
+              "verdict": "supported"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "task": "12-equipment-child-2-value-joint",
+      "outcome_exact_match": true,
+      "bundles": [
+        {
+          "target_id": "ca2a1126ff028be4b6860ac49a2b7e8cc3e8e75b756dfd7e84644ddb5f39620f",
+          "bridge_kind": "same_document",
+          "policy_id": "predicate-policy-v1:data-property",
+          "allowed_bridges": [
+            "explicit_assertion",
+            "owned_field_group",
+            "role_mapped_table"
+          ],
+          "structural_valid": false,
+          "model_supported": false,
+          "policy_eligible": false,
+          "validation_issues": [
+            "retrieval_hint_is_not_predicate_proof",
+            "bridge_kind_forbidden_for_predicate"
+          ],
+          "decisions": [
+            {
+              "check_kind": "bridge_entailment",
+              "verdict": "supported"
+            },
+            {
+              "check_kind": "field_role",
+              "verdict": "undetermined"
+            },
+            {
+              "check_kind": "predicate_entailment",
+              "verdict": "supported"
+            },
+            {
+              "check_kind": "applicability",
+              "verdict": "supported"
+            },
+            {
+              "check_kind": "local_coreference",
+              "verdict": "supported"
+            }
+          ]
+        },
+        {
+          "target_id": "80893b3fd37e74803aed0ca81ad40fbb028fd3c7b5e621ee3ecddcdf141280de",
+          "bridge_kind": "same_document",
+          "policy_id": "predicate-policy-v1:data-property",
+          "allowed_bridges": [
+            "explicit_assertion",
+            "owned_field_group",
+            "role_mapped_table"
+          ],
+          "structural_valid": false,
+          "model_supported": false,
+          "policy_eligible": false,
+          "validation_issues": [
+            "retrieval_hint_is_not_predicate_proof",
+            "bridge_kind_forbidden_for_predicate"
+          ],
+          "decisions": [
+            {
+              "check_kind": "bridge_entailment",
+              "verdict": "supported"
+            },
+            {
+              "check_kind": "field_role",
+              "verdict": "undetermined"
+            },
+            {
+              "check_kind": "predicate_entailment",
+              "verdict": "supported"
+            },
+            {
+              "check_kind": "applicability",
+              "verdict": "supported"
+            },
+            {
+              "check_kind": "local_coreference",
+              "verdict": "supported"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "task": "13-equipment-child-1-value-current",
+      "outcome_exact_match": true,
+      "bundles": [
+        {
+          "target_id": "b903d0a67f4ea1c3b90080ac89d0507b34cdfcf8c1502f848ec225e7fa02e87f",
+          "bridge_kind": "adjacent_only",
+          "policy_id": "predicate-policy-v1:data-property",
+          "allowed_bridges": [
+            "explicit_assertion",
+            "owned_field_group",
+            "role_mapped_table"
+          ],
+          "structural_valid": false,
+          "model_supported": true,
+          "policy_eligible": false,
+          "validation_issues": [
+            "retrieval_hint_is_not_predicate_proof",
+            "bridge_kind_forbidden_for_predicate"
+          ],
+          "decisions": [
+            {
+              "check_kind": "bridge_entailment",
+              "verdict": "supported"
+            },
+            {
+              "check_kind": "field_role",
+              "verdict": "supported"
+            },
+            {
+              "check_kind": "predicate_entailment",
+              "verdict": "supported"
+            },
+            {
+              "check_kind": "applicability",
+              "verdict": "supported"
+            },
+            {
+              "check_kind": "local_coreference",
+              "verdict": "supported"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "task": "14-equipment-child-2-value-current",
+      "outcome_exact_match": true,
+      "bundles": [
+        {
+          "target_id": "50e8a55bda14e904cd888fc6b2f5dec340946ad928efba45322973ae29d7164d",
+          "bridge_kind": "same_document",
+          "policy_id": "predicate-policy-v1:data-property",
+          "allowed_bridges": [
+            "explicit_assertion",
+            "owned_field_group",
+            "role_mapped_table"
+          ],
+          "structural_valid": false,
+          "model_supported": false,
+          "policy_eligible": false,
+          "validation_issues": [
+            "retrieval_hint_is_not_predicate_proof",
+            "bridge_kind_forbidden_for_predicate",
+            "missing_predicate_support",
+            "predicate_proof_not_supported",
+            "predicate_entailment_not_supported"
+          ],
+          "decisions": [
+            {
+              "check_kind": "bridge_entailment",
+              "verdict": "unsupported"
+            },
+            {
+              "check_kind": "field_role",
+              "verdict": "undetermined"
+            },
+            {
+              "check_kind": "predicate_entailment",
+              "verdict": "undetermined"
+            },
+            {
+              "check_kind": "applicability",
+              "verdict": "supported"
+            },
+            {
+              "check_kind": "local_coreference",
+              "verdict": "undetermined"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "task": "15-route-current",
+      "outcome_exact_match": true,
+      "bundles": [
+        {
+          "target_id": "45c08bec535658d31c7c8d331d47f27d667d2c91486c0ad73a3fc2906bee68c9",
+          "bridge_kind": "document_subject_description",
+          "policy_id": "predicate-policy-v1:generic-relation",
+          "allowed_bridges": [
+            "explicit_assertion",
+            "resolved_reference_chain",
+            "role_mapped_table"
+          ],
+          "structural_valid": false,
+          "model_supported": false,
+          "policy_eligible": false,
+          "validation_issues": [
+            "bridge_kind_forbidden_for_predicate",
+            "missing_predicate_support",
+            "predicate_proof_not_supported",
+            "predicate_entailment_not_supported"
+          ],
+          "decisions": [
+            {
+              "check_kind": "type",
+              "verdict": "undetermined"
+            },
+            {
+              "check_kind": "bridge_entailment",
+              "verdict": "unsupported"
+            },
+            {
+              "check_kind": "field_role",
+              "verdict": "undetermined"
+            },
+            {
+              "check_kind": "predicate_entailment",
+              "verdict": "undetermined"
+            },
+            {
+              "check_kind": "applicability",
+              "verdict": "supported"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "task": "16-route-joint",
+      "outcome_exact_match": true,
+      "bundles": [
+        {
+          "target_id": "bba37fe4d122c357e32462769906b4e62e6a6233433a2acb1349d24da3cc35a2",
+          "bridge_kind": "document_subject_description",
+          "policy_id": "predicate-policy-v1:generic-relation",
+          "allowed_bridges": [
+            "explicit_assertion",
+            "resolved_reference_chain",
+            "role_mapped_table"
+          ],
+          "structural_valid": false,
+          "model_supported": true,
+          "policy_eligible": false,
+          "validation_issues": [
+            "bridge_kind_forbidden_for_predicate"
+          ],
+          "decisions": [
+            {
+              "check_kind": "type",
+              "verdict": "supported"
+            },
+            {
+              "check_kind": "bridge_entailment",
+              "verdict": "supported"
+            },
+            {
+              "check_kind": "field_role",
+              "verdict": "supported"
+            },
+            {
+              "check_kind": "predicate_entailment",
+              "verdict": "supported"
+            },
+            {
+              "check_kind": "applicability",
+              "verdict": "supported"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

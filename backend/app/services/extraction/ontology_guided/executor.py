@@ -8,8 +8,10 @@ predicate checks performed here.
 from __future__ import annotations
 
 import sys
+import time
 from collections.abc import Callable
 from copy import deepcopy
+from dataclasses import asdict
 from threading import get_ident
 from typing import Literal, Protocol
 
@@ -42,12 +44,18 @@ from app.services.extraction.ontology_guided.contracts import (
     VersionedRef,
 )
 from app.services.extraction.ontology_guided.dependencies import DependencyIndex
+from app.services.extraction.ontology_guided.heuristic_search import (
+    HeuristicSearchIndex,
+    HeuristicSearchPolicy,
+    HeuristicSlotSearch,
+)
 from app.services.extraction.ontology_guided.ontology_plan import compile_local_menu
 from app.services.extraction.ontology_guided.projection import (
     effective_proof_gate,
     project_graph,
 )
 from app.services.extraction.ontology_guided.ranking_execution import RankingPreparation
+from app.services.extraction.ontology_guided.recognition_execution import RecognitionCall
 from app.services.extraction.ontology_guided.records import RecordIndex
 from app.services.extraction.ontology_guided.retrieval import (
     mark_record,
@@ -62,7 +70,7 @@ from app.services.extraction.ontology_guided.semantic_reranker import (
     RankingService,
     apply_epoch,
 )
-from app.services.llm.model_runtime import ModelCancelled, ModelWaitFailure, model_scope
+from app.services.llm.model_runtime import ModelCancelled, ModelWaitFailure
 
 
 class ModelCallPersistenceFailure(RuntimeError):
@@ -143,6 +151,10 @@ class OntologyGuidedExecutor:
         phase_interleaving: bool | None = None,
         max_model_calls_per_record: int = 6,
         priority_paths: list[tuple[str, ...]] | None = None,
+        lazy_frontier: bool = True,
+        template_interleaving: bool = False,
+        heuristic_policy: HeuristicSearchPolicy | None = None,
+        search_hook: Callable[[str, dict], None] | None = None,
     ):
         self.ontology = ontology
         self.engine = engine
@@ -158,6 +170,12 @@ class OntologyGuidedExecutor:
             raise ValueError("per-record model budget must be positive")
         self.max_model_calls_per_record = max_model_calls_per_record
         self.priority_paths = list(dict.fromkeys(tuple(path) for path in priority_paths or []))
+        self.lazy_frontier = lazy_frontier
+        self.template_interleaving = template_interleaving
+        self.heuristic_policy = heuristic_policy
+        self.search_hook = search_hook
+        if heuristic_policy is not None:
+            self.version = type(self).version + "+heuristic-first-experiment-v1"
 
     @staticmethod
     def root_node(
@@ -202,7 +220,20 @@ class OntologyGuidedExecutor:
         model_call_state: dict | None = None,
         model_call_hook: Callable[[dict], None] | None = None,
     ) -> ExecutionResult:
+        if self.heuristic_policy is not None and (
+            resume_state is not None or ranking_state is not None or model_call_state is not None
+        ):
+            raise ValueError("heuristic experiment requires a fresh run; resume is not implemented")
+        search_started = time.perf_counter()
         index = RecordIndex(ir)
+        search_index = (
+            HeuristicSearchIndex(index, metadata) if self.heuristic_policy is not None else None
+        )
+        if search_index is not None and self.search_hook is not None:
+            self.search_hook("heuristic_index_ready", {
+                "elapsed_seconds": time.perf_counter() - search_started,
+                "records": len(index.records),
+            })
         restored_calls = deepcopy(
             model_call_state or (resume_state or {}).get("model_call_state") or {}
         )
@@ -271,30 +302,39 @@ class OntologyGuidedExecutor:
             is_document_root=True,
         )
         root_menu = compile_local_menu(self.ontology, root_subject, engine=self.engine)
+        frozen_frontier = (resume_state or {}).get("frontier") or {}
+        frontier_version = frozen_frontier.get("schema_version", 1)
+        if frontier_version not in (1, 2):
+            raise ValueError("unsupported scheduler snapshot version")
+        lazy_frontier = (
+            self.lazy_frontier if resume_state is None else frontier_version == 2
+        )
+        template_interleaving = (
+            self.template_interleaving if resume_state is None
+            else frozen_frontier.get("template_interleaving", False)
+        )
         scheduler = FrontierScheduler(
             max_hops=self.max_hops,
             max_tasks=self.max_tasks,
             phase_interleaving=(
+                False if self.heuristic_policy is not None else
                 ranking.policy.phase_interleaving
                 if self.phase_interleaving is None
                 else self.phase_interleaving
             ),
+            template_interleaving=template_interleaving,
         )
         task_budget_stopped_slots: set[tuple[str, int, str]] = set()
 
         def budget_blocked_slots() -> set[tuple[str, int, str]]:
             blocked = set(task_budget_stopped_slots)
             if scheduler.dispatched >= scheduler.max_tasks:
-                frontier = scheduler.snapshot()
-                blocked.update(
-                    (
-                        task["subject"]["entity_id"],
-                        task["subject"]["revision"],
-                        task["predicate_iri"],
+                blocked.update(scheduler.pending_slots)
+                if search_index is not None:
+                    blocked.update(
+                        key for key, plan in plans.items()
+                        if any(item.coverage_state != "examined" for item in plan.ledger.values())
                     )
-                    for queue in ("root", "child", "retries")
-                    for task in frontier[queue]
-                )
             return blocked
 
         dependency_index = DependencyIndex()
@@ -309,6 +349,41 @@ class OntologyGuidedExecutor:
         ]
         proof_generations: dict[str, int] = {}
         ranking_contexts: dict[str, dict] = {}
+        searches: dict[tuple, HeuristicSlotSearch] = {}
+        search_tasks: dict[tuple, dict] = {}
+        semantic_wait_key: tuple | None = None
+        semantic_wait_started_at = 0
+
+        def search_event(kind: str, payload: dict) -> None:
+            events.append((kind, payload))
+            if self.search_hook is not None:
+                self.search_hook(kind, payload)
+
+        def admit_search_page(key: tuple) -> bool:
+            started = time.perf_counter()
+            page = searches[key].next_admission()
+            if page is None:
+                return False
+            plan = plans[key]
+            by_id = {record.record_id: record for record in plan.records}
+            search_event("heuristic_admission", {
+                "plan_id": plan.plan_id, "subject_id": key[0], "predicate_iri": key[2],
+                "stage": page.stage, "source": page.source, "reason": page.reason,
+                "record_ids": list(page.record_ids),
+                "context_record_ids": page.context_record_ids,
+                "elapsed_seconds": time.perf_counter() - started,
+            })
+            for position, record_id in enumerate(page.record_ids, 1):
+                record = by_id[record_id]
+                task = RecognitionTask.create(
+                    subject=plan.subject, predicate_iri=key[2],
+                    predicate_kind=predicates[key].kind, record_id=record_id,
+                    phase=record.phase, section_node_id=record.section_node_id,
+                    source_position=index.record_positions[record_id], **search_tasks[key],
+                )
+                task.pool_rank = position
+                scheduler.enqueue(task, root_branch=plan.subject.is_document_root)
+            return True
 
         def add_subject(
             subject: SubjectRef,
@@ -354,6 +429,8 @@ class OntologyGuidedExecutor:
                     continue
                 key = (subject.entity_id, subject.revision, predicate.iri)
                 if key in plans:
+                    if template_interleaving and predicate.iri in preferred:
+                        scheduler.prioritize_slot(subject, predicate.iri)
                     continue
                 plan = plan_slot(
                     subject,
@@ -400,6 +477,35 @@ class OntologyGuidedExecutor:
                 }
                 predicates[key] = predicate
                 events.append(("retrieval_plan_created", plan.model_dump(mode="json")))
+                dependency_hash = evidence_hash([
+                    subject.model_dump(mode="json"), predicate.model_dump(mode="json"),
+                    ir.analysis_id, menu.menu_id, generation,
+                ])
+                if search_index is not None:
+                    started = time.perf_counter()
+                    searches[key] = HeuristicSlotSearch(
+                        plan=plan, predicate=predicate, search_index=search_index,
+                        policy=self.heuristic_policy,
+                        run_fingerprint=run_fingerprint,
+                        subject_mentions=[
+                            item.text for item in ranking_contexts[plan.plan_id]["mentions"]
+                        ],
+                    )
+                    search_event("heuristic_slot_prepared", {
+                        "plan_id": plan.plan_id, "predicate_iri": predicate.iri,
+                        "elapsed_seconds": time.perf_counter() - started,
+                    })
+                    search_tasks[key] = {"hop": hop, "dependency_hash": dependency_hash}
+                    admit_search_page(key)
+                    continue
+                if lazy_frontier:
+                    scheduler.enqueue_plan(
+                        plan, hop=hop, dependency_hash=dependency_hash,
+                        source_positions=index.record_positions,
+                        root_branch=subject.is_document_root,
+                        template_priority=predicate.iri in preferred,
+                    )
+                    continue
                 for record in plan.records:
                     scheduler.enqueue(
                         RecognitionTask.create(
@@ -409,17 +515,9 @@ class OntologyGuidedExecutor:
                             record_id=record.record_id,
                             phase=record.phase,
                             hop=hop,
-                            dependency_hash=evidence_hash(
-                                [
-                                    subject.model_dump(mode="json"),
-                                    predicate.model_dump(mode="json"),
-                                    ir.analysis_id,
-                                    menu.menu_id,
-                                    generation,
-                                ]
-                            ),
+                            dependency_hash=dependency_hash,
                             section_node_id=record.section_node_id,
-                            source_position=plan.frozen_record_ids.index(record.record_id),
+                            source_position=index.record_positions[record.record_id],
                         ),
                         root_branch=subject.is_document_root,
                     )
@@ -521,6 +619,9 @@ class OntologyGuidedExecutor:
                 diagnostics.append(f"ranking_degraded:{epoch.reason}")
 
         def blocked_ranking_slots() -> set[tuple[str, int, str]]:
+            if search_index is not None:
+                # Heuristic admissions never depend on an unstarted semantic epoch.
+                return set()
             if pending_ranking is None:
                 return set()
             blocked = set()
@@ -550,6 +651,8 @@ class OntologyGuidedExecutor:
                 root_ref=VersionedRef(id=root.entity_id, revision=root.revision),
                 root_class_iri=root_class_iri,
                 permission_scope=recognition_run_id,
+                **({"candidate_record_ids": searches[key].deferred_record_ids}
+                   if search_index is not None else {}),
                 **ranking_contexts[plan.plan_id],
             )
 
@@ -582,10 +685,17 @@ class OntologyGuidedExecutor:
                 ranking_hook(current_ranking_state())
             apply_ranking_epoch(committed)
             events.append(("ranking_epoch_committed", committed.model_dump(mode="json")))
+            if search_index is not None:
+                key = next(key for key, plan in plans.items() if plan.plan_id == epoch.plan_id)
+                searches[key].accept_semantic(
+                    committed.ordered_record_ids, epoch_id=committed.epoch_id, committed=True,
+                )
+                admit_search_page(key)
 
         def prepare_ranking() -> None:
             nonlocal pending_ranking, pending_ranking_key, pending_service_state, ranking
             nonlocal recovering_ranking_pause
+            nonlocal semantic_wait_key, semantic_wait_started_at
             for epoch in ranking.epochs:
                 if committed_at.get(epoch.epoch_id) == len(task_outcomes):
                     apply_ranking_epoch(epoch)
@@ -622,6 +732,35 @@ class OntologyGuidedExecutor:
             if resume_cursor < len(resume_outcomes) and restored_ranking:
                 return
             key = None
+            if search_index is not None:
+                if scheduler.dispatched >= scheduler.max_tasks:
+                    return
+                for search_key in list(searches):
+                    if subject_is_active(plans[search_key].subject):
+                        admit_search_page(search_key)
+                for search_key, search in searches.items():
+                    if search.needs_semantic and subject_is_active(plans[search_key].subject):
+                        key = search_key
+                        break
+                if key is None:
+                    semantic_wait_key = None
+                    return
+                if semantic_wait_key != key:
+                    semantic_wait_key = key
+                    semantic_wait_started_at = len(task_outcomes)
+                # Keep cheap work first, with a finite turn bound for slots that
+                # need broader recall. One large lexical list must not starve H2.
+                if (
+                    scheduler.peek_task() is not None
+                    and len(task_outcomes) - semantic_wait_started_at
+                    < self.heuristic_policy.max_cheap_tasks_before_semantic
+                ):
+                    return
+                semantic_wait_key = None
+                if ranking.policy.mode != "semantic":
+                    searches[key].skip_semantic("ranking_policy_deterministic")
+                    admit_search_page(key)
+                    return
             while restored_paused_epochs:
                 paused = restored_paused_epochs.pop(0)
                 key = next(
@@ -717,7 +856,9 @@ class OntologyGuidedExecutor:
             )
             unattempted = sum(entry.coverage_state == "unattempted" for entry in ledger_entries)
             semantic = [value for entry in ledger_entries for value in entry.semantic_outcomes]
-            pending_frontiers = len(scheduler.unexplored_frontier)
+            pending_frontiers = sum(
+                item.get("logical_records", 1) for item in scheduler.unexplored_frontier
+            )
             budget_stopped_slots = budget_blocked_slots()
             paused_plan_ids = {
                 epoch["plan_id"]
@@ -774,6 +915,8 @@ class OntologyGuidedExecutor:
                     if budget_stopped_slots
                     else "attempted_incomplete"
                     if incomplete
+                    else "adaptive_search_saturated"
+                    if search_index is not None
                     else "unattempted"
                 ),
                 completion="in_scope_complete" if complete else "incomplete",
@@ -802,9 +945,10 @@ class OntologyGuidedExecutor:
                             for phase in (1, 2)
                         },
                         pending_frontiers=sum(
-                            item.get("task_id")
-                            in {task_id for entry in entries for task_id in entry.task_ids}
+                            item.get("logical_records", 1)
                             for item in scheduler.unexplored_frontier
+                            if item.get("slot") == list(key) or item.get("task_id")
+                            in {task_id for entry in entries for task_id in entry.task_ids}
                         ),
                         stop_reason=(
                             None
@@ -1317,8 +1461,8 @@ class OntologyGuidedExecutor:
                             break
                         pending_ranking.wait()
                         continue
-                    # next_task moves budget-blocked queues to the compact frontier,
-                    # which retains task IDs but no longer their slot identities.
+                    # Record stopped slots before compacting the queues. Legacy
+                    # summaries retain task IDs; v2 retains slot identities/counts.
                     task_budget_stopped_slots.update(budget_blocked_slots())
                     task = scheduler.next_task(excluded_slots=excluded_slots)
                     if task is None:
@@ -1402,6 +1546,7 @@ class OntologyGuidedExecutor:
                         )
                         required = [anchor for edge in incoming for anchor in edge.evidence_refs]
                         counters = required_by_lineage.get(task.claim_lineage_id, [])
+                        context_started = time.perf_counter()
                         context = assemble_context(
                             target,
                             task.record_id,
@@ -1414,6 +1559,11 @@ class OntologyGuidedExecutor:
                             predicate=predicate,
                             ontology=self.ontology,
                         )
+                        if search_index is not None:
+                            search_event("context_assembly", {
+                                "task_id": task.task_id,
+                                "elapsed_seconds": time.perf_counter() - context_started,
+                            })
                         context.remaining_model_calls = remaining_calls(task)
                         context.bind_model_call_hook(
                             lambda stage, ordinal, bound_task=task: reserve_model_call(
@@ -1437,13 +1587,29 @@ class OntologyGuidedExecutor:
                                     reason="该原文语义任务的模型调用预算耗尽，重验仍未完成。",
                                 )
                             else:
-                                with model_scope(on_model_wait=drain_ranking_during_model):
-                                    outcome = self.adapter.inspect(
-                                        task,
-                                        context,
-                                        predicate,
-                                        menus[task.subject.entity_id],
-                                    )
+                                call = RecognitionCall(
+                                    self.adapter, task, context, predicate,
+                                    menus[task.subject.entity_id],
+                                )
+                                try:
+                                    checked_at = time.monotonic()
+                                    while not call.future.done():
+                                        call.drain(lambda stage, ordinal: reserve_model_call(
+                                            task, stage, ordinal
+                                        ))
+                                        drain_ranking_during_model()
+                                        if time.monotonic() - checked_at >= 0.5:
+                                            # Pause is soft: the next before_model
+                                            # or completed result is its boundary.
+                                            if self.progress_hook is not None:
+                                                self.progress_hook("model_wait")
+                                            checked_at = time.monotonic()
+                                        call.cancelled.wait(0.01)
+                                    outcome = call.future.result()
+                                finally:
+                                    call.close()
+                                if not subject_is_active(task.subject):
+                                    raise ExecutionLost("recognition dependency changed")
                         except (
                             ModelCallPersistenceFailure, ModelCancelled, ExecutionLost,
                             ModelWaitFailure,
@@ -1473,7 +1639,39 @@ class OntologyGuidedExecutor:
                             # A completed verification is a durable safe boundary.
                             # Pausing must not discard it and repeat paid requests.
                             stop_after_batch = True
+                    outcome_started = time.perf_counter()
                     apply_outcome(task, outcome, excluded_slots)
+                    if search_index is not None:
+                        search_event("outcome_application", {
+                            "task_id": task.task_id,
+                            "elapsed_seconds": time.perf_counter() - outcome_started,
+                        })
+                        search_key = (
+                            task.subject.entity_id, task.subject.revision, task.predicate_iri,
+                        )
+                        supported_count = sum(
+                            candidate.decision_status == "supported"
+                            and candidate.polarity == "affirmed"
+                            and not candidate.conditions and not candidate.applicability
+                            and effective_proof_gate(candidate)
+                            and dependency_index.is_valid(
+                                versioned_key(candidate.candidate_id, candidate.revision)
+                            )
+                            for candidate in [*outcome.edges, *outcome.properties]
+                        )
+                        searches[search_key].observe(
+                            task.record_id, semantic_outcome=outcome.semantic_outcome,
+                            complete=outcome.complete, reason_code=outcome.reason_code,
+                            supported_count=supported_count,
+                            attempt_id=task.task_id,
+                        )
+                        search_event("heuristic_feedback", {
+                            "task_id": task.task_id, "record_id": task.record_id,
+                            "predicate_iri": task.predicate_iri,
+                            "semantic_outcome": outcome.semantic_outcome,
+                            "reason_code": outcome.reason_code,
+                            "state": searches[search_key].snapshot(),
+                        })
                     if not replaying and batch_hook is not None:
                         graph = snapshot_graph()
                         batch_hook(
@@ -1515,6 +1713,13 @@ class OntologyGuidedExecutor:
 
         validate_resume_boundary()
         graph = snapshot_graph(terminal=True)
+        if search_index is not None:
+            search_event("heuristic_complete", {
+                "policy": asdict(self.heuristic_policy),
+                "slots": [search.snapshot() for search in searches.values()],
+                "elapsed_seconds": time.perf_counter() - search_started,
+                "resume_supported": False,
+            })
         events.append(("graph_projected", graph.model_dump(mode="json")))
         return ExecutionResult(
             ontology_snapshot=self.ontology,

@@ -328,6 +328,7 @@ export default function AstTemplatesPage() {
                       <TableCell className="font-medium">
                         <span className="flex items-center gap-2">
                           {t.name}
+                          {t.demo_profile && <Badge variant="secondary">演示专用</Badge>}
                           {t.is_default && (
                             <Badge variant="outline" className="text-xs">
                               默认
@@ -363,30 +364,30 @@ export default function AstTemplatesPage() {
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
                             <DropdownMenuItem onSelect={() => router.push(`/settings/ast-templates/${t.id}`)}>
-                              编辑
+                              {t.demo_profile ? "查看演示" : "编辑"}
                             </DropdownMenuItem>
-                            {t.status !== "published" && (
+                            {!t.demo_profile && t.status !== "published" && (
                               <DropdownMenuItem
                                 onSelect={() => handleSetStatus(t.id, "published")}
                               >
                                 发布
                               </DropdownMenuItem>
                             )}
-                            {t.status !== "archived" && (
+                            {!t.demo_profile && t.status !== "archived" && (
                               <DropdownMenuItem
                                 onSelect={() => handleSetStatus(t.id, "archived")}
                               >
                                 归档
                               </DropdownMenuItem>
                             )}
-                            {!t.is_default && (
+                            {!t.demo_profile && !t.is_default && (
                               <DropdownMenuItem
                                 onSelect={() => handleSetDefault(t.id)}
                               >
                                 设为默认
                               </DropdownMenuItem>
                             )}
-                            {!t.is_default && (
+                            {!t.demo_profile && !t.is_default && (
                               <>
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem

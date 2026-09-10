@@ -8,7 +8,7 @@ import time
 from collections.abc import Callable
 from typing import Any, Literal, Protocol
 
-from pydantic import Field, model_validator
+from pydantic import Field, model_serializer, model_validator
 
 from app.schemas.evidence import EvidenceModel
 from app.services.extraction.annotation_execution import ExecutionLost
@@ -25,7 +25,10 @@ from app.services.extraction.ontology_guided.retrieval_fusion import (
     reciprocal_rank_fusion,
 )
 from app.services.extraction.ontology_guided.retrieval_query import build_subject_queries
-from app.services.extraction.ontology_guided.retrieval_views import build_retrieval_views
+from app.services.extraction.ontology_guided.retrieval_views import (
+    VIEW_POLICY_VERSION,
+    build_retrieval_views,
+)
 from app.services.extraction.ontology_guided.semantic_retrieval import (
     channel_orders,
     cosine_scores,
@@ -38,6 +41,7 @@ class SemanticRankingModel(Protocol):
     identity: dict[str, Any]
 
     def count_tokens(self, text: str) -> int: ...
+    def count_tokens_batch(self, texts: list[str]) -> list[int]: ...
     def embed(self, texts: list[str]) -> list[list[float]]: ...
     def score_pairs(self, pairs: list[tuple[str, str]]) -> list[float]: ...
 
@@ -55,6 +59,7 @@ class RankingPolicy(EvidenceModel):
     structure_quota: int = Field(default=16, ge=0)
     dense_quota: int = Field(default=16, ge=0)
     metadata_quota: int = Field(default=16, ge=0)
+    fill_candidate_pool: bool = True
     max_query_variants: int = Field(default=2, ge=2, le=2)
     max_windows_per_record: int = Field(default=1, ge=1, le=1)
     max_tokens_per_pair: int = Field(default=4096, ge=1)
@@ -67,7 +72,30 @@ class RankingPolicy(EvidenceModel):
     intent_weights: dict[str, float] = Field(
         default_factory=lambda: {"discover": 0.5, "counterevidence": 0.5}
     )
-    policy_version: Literal["semantic-ranking-v1"] = "semantic-ranking-v1"
+    policy_version: Literal["semantic-ranking-v1", "semantic-ranking-v2"] = "semantic-ranking-v1"
+
+    @model_serializer(mode="wrap")
+    def serialize_policy(self, handler):
+        # Default runs retain their pre-experiment checkpoint and hash identity.
+        # The experimental opt-out is explicit and participates in every hash.
+        result = handler(self)
+        if result.get("fill_candidate_pool") is True:
+            result.pop("fill_candidate_pool")
+        return result
+
+    @model_validator(mode="before")
+    @classmethod
+    def versioned_record_limit(cls, value):
+        # Absent versions remain historical v1. Only explicitly created v2 runs
+        # receive two base intents, each with its own finite technical retries.
+        if isinstance(value, dict) and value.get("policy_version") == "semantic-ranking-v2":
+            value = dict(value)
+            try:
+                retry_limit = int(value.get("technical_retry_limit", 1))
+            except (TypeError, ValueError):
+                return value  # The normal field validator supplies the error.
+            value.setdefault("max_model_calls_per_record", 2 * (1 + retry_limit))
+        return value
 
     @model_validator(mode="after")
     def coherent_weights(self):
@@ -174,6 +202,37 @@ def _failure_reason(exc: Exception) -> str:
     return str(exc) if str(exc) in allowed else f"ranking_technical_failure:{type(exc).__name__}"
 
 
+def _immutable_mutation(*args, **kwargs):
+    raise TypeError("ranking snapshot data is immutable")
+
+
+class _FrozenDict(dict):
+    __setitem__ = __delitem__ = clear = pop = popitem = setdefault = update = _immutable_mutation
+    __ior__ = _immutable_mutation
+
+    def __deepcopy__(self, memo):
+        return self
+
+
+class _FrozenList(list):
+    __setitem__ = __delitem__ = append = clear = extend = insert = pop = _immutable_mutation
+    remove = reverse = sort = __iadd__ = __imul__ = _immutable_mutation
+
+    def __deepcopy__(self, memo):
+        return self
+
+
+def _freeze(value):
+    """Detach once, then share JSON-compatible immutable state across snapshots."""
+    if isinstance(value, (_FrozenDict, _FrozenList)):
+        return value
+    if isinstance(value, dict):
+        return _FrozenDict((key, _freeze(item)) for key, item in value.items())
+    if isinstance(value, (tuple, list)):
+        return _FrozenList(_freeze(item) for item in value)
+    return value
+
+
 class RankingService:
     def __init__(
         self,
@@ -201,12 +260,17 @@ class RankingService:
         self._score_cache: dict[str, list[float]] = {}
         self._token_cache: dict[str, int] = {}
         self._record_call_counts: dict[str, int] = {}
+        self._record_intent_call_counts: dict[str, int] = {}
         self._request_attempts: dict[str, int] = {}
         self._dispatch_receipts: list[RankingDispatchReceipt] = []
         self._pending: dict[str, RankingEpoch] = {}
         self._paused_attempts: list[RankingEpoch] = []
         self._retryable_pending: set[str] = set()
         self._restored_model_observations = []
+        self._cache_snapshots: dict[str, tuple[int, dict]] = {}
+        self._epoch_snapshots: list[dict] = []
+        self._paused_snapshots: list[dict] = []
+        self._retrieval_view_cache: dict[str, dict] = {}
         if state:
             if state.get("policy") != policy.model_dump(mode="json"):
                 raise ValueError("ranking policy changed during recovery")
@@ -215,10 +279,13 @@ class RankingService:
             self.epochs = [RankingEpoch.model_validate(item) for item in state.get("epochs", [])]
             self.costs = {**_zero_costs(), **state.get("costs", {})}
             self.slot_costs = dict(state.get("slot_costs", {}))
-            self._cache = dict(state.get("cache", {}))
-            self._score_cache = copy.deepcopy(state.get("score_cache", {}))
+            self._cache = {key: _freeze(value) for key, value in state.get("cache", {}).items()}
+            self._score_cache = {
+                key: _freeze(value) for key, value in state.get("score_cache", {}).items()
+            }
             self._token_cache = dict(state.get("token_cache", {}))
             self._record_call_counts = dict(state.get("record_call_counts", {}))
+            self._record_intent_call_counts = dict(state.get("record_intent_call_counts", {}))
             self._request_attempts = dict(state.get("request_attempts", {}))
             self._dispatch_receipts = [
                 RankingDispatchReceipt.model_validate(item)
@@ -264,41 +331,80 @@ class RankingService:
             self._retryable_pending = {
                 key for key, epoch in self._pending.items() if epoch.status == "paused"
             }
+            self._epoch_snapshots = [_freeze(item) for item in state.get("epochs", [])]
+            self._paused_snapshots = [_freeze(item) for item in state.get("paused_attempts", [])]
 
     @property
     def budget_enabled(self) -> bool:
         return self._budget_enabled
 
     def snapshot(self) -> dict:
-        return copy.deepcopy(
-            {
-                "policy": self.policy.model_dump(mode="json"),
-                "budget_enabled": self.budget_enabled,
-                "model_identity": self.model_identity,
-                "epochs": [epoch.model_dump(mode="json") for epoch in self.epochs],
-                "pending_epochs": [
-                    epoch.model_dump(mode="json") for epoch in self._pending.values()
-                ],
-                "paused_attempts": [
-                    epoch.model_dump(mode="json") for epoch in self._paused_attempts
-                ],
-                "costs": self.costs,
-                "slot_costs": self.slot_costs,
-                "cache": self._cache,
-                "score_cache": self._score_cache,
-                "token_cache": self._token_cache,
-                "record_call_counts": self._record_call_counts,
-                "request_attempts": self._request_attempts,
-                "dispatch_receipts": [
-                    receipt.model_dump(mode="json") for receipt in self._dispatch_receipts
-                ],
-                "model_observations": [
-                    *self._restored_model_observations,
-                    *(getattr(self.model, "observations", [])[self._model_observation_start :]
-                      if self.budget_enabled else []),
-                ],
-            }
+        # Large immutable payloads are detached only at insertion. Snapshotting
+        # a reservation copies the small mutable ledgers, never all vectors or
+        # serializes every previously committed epoch again.
+        caches = {}
+        for name, values in (
+            ("cache", self._cache), ("score_cache", self._score_cache),
+            ("token_cache", self._token_cache),
+        ):
+            previous = self._cache_snapshots.get(name)
+            if previous is None or previous[0] != len(values):
+                previous = (len(values), _FrozenDict(values))
+                self._cache_snapshots[name] = previous
+            caches[name] = previous[1]
+        state = {
+            "policy": self.policy.model_dump(mode="json"),
+            "budget_enabled": self.budget_enabled,
+            "model_identity": self.model_identity,
+            "pending_epochs": [
+                epoch.model_dump(mode="json") for epoch in self._pending.values()
+            ],
+            "costs": self.costs,
+            "slot_costs": self.slot_costs,
+            "record_call_counts": self._record_call_counts,
+            "request_attempts": self._request_attempts,
+            "dispatch_receipts": [
+                receipt.model_dump(mode="json") for receipt in self._dispatch_receipts
+            ],
+            "model_observations": [
+                *self._restored_model_observations,
+                *(getattr(self.model, "observations", [])[self._model_observation_start :]
+                  if self.budget_enabled else []),
+            ],
+        }
+        if self.policy.policy_version == "semantic-ranking-v2":
+            state["record_intent_call_counts"] = self._record_intent_call_counts
+        result = copy.deepcopy(state)
+        result.update(caches)
+        result["epochs"] = _FrozenList(self._epoch_snapshots)
+        result["paused_attempts"] = _FrozenList(self._paused_snapshots)
+        return result
+
+    def fork(self, *, before_model_hook=None):
+        """Private mutable bookkeeping; only frozen snapshot payloads are shared."""
+        result = RankingService(
+            self.policy.model_copy(deep=True), self.model, state=self.snapshot(),
+            before_model_hook=before_model_hook,
         )
+        result._retrieval_view_cache = copy.deepcopy(self._retrieval_view_cache)
+        return result
+
+    def _views(self, index, metadata, *, scope_hash, count_tokens, count_tokens_batch=None):
+        key = evidence_hash([
+            index.ir.analysis_id, index.ir.document_hash, index.ir.structure_hash,
+            index.ir.ir_version, index.ir.parser_version, index.ir.structure_policy_version,
+            metadata, VIEW_POLICY_VERSION, self.policy.max_tokens_per_pair,
+            scope_hash, self.model_identity,
+            "validation" if count_tokens is len else self.policy.mode,
+            "max-tokenizers-special-true-padding-false-truncation-false-v1",
+        ])
+        if key not in self._retrieval_view_cache:
+            self._retrieval_view_cache[key] = build_retrieval_views(
+                index, metadata, count_tokens=count_tokens,
+                count_tokens_batch=count_tokens_batch,
+                max_record_tokens=self.policy.max_tokens_per_pair,
+            )
+        return self._retrieval_view_cache[key]
 
     def commit_epoch(self, epoch: RankingEpoch) -> RankingEpoch:
         existing = next((item for item in self.epochs if item.epoch_id == epoch.epoch_id), None)
@@ -317,6 +423,7 @@ class RankingService:
             raise ValueError("ranking epoch is not the exact prepared result")
         committed = epoch.model_copy(update={"status": "committed"})
         self.epochs.append(committed)
+        self._epoch_snapshots.append(_freeze(committed.model_dump(mode="json")))
         self._pending.pop(epoch.plan_id, None)
         return committed
 
@@ -335,11 +442,17 @@ class RankingService:
         permission_scope: str,
         mentions=None,
         dependency_refs=None,
+        candidate_record_ids: list[str] | None = None,
     ) -> None:
         """Recheck a durable result against current dependencies without model execution."""
         from app.services.extraction.ontology_guided.retrieval import validate_record_universe
 
         validate_record_universe(plan, index)
+        if candidate_record_ids is not None and (
+            len(candidate_record_ids) != len(set(candidate_record_ids))
+            or not set(candidate_record_ids).issubset(plan.frozen_record_ids)
+        ):
+            raise ValueError("candidate scope is outside the frozen record universe")
         queries = build_subject_queries(
             subject=plan.subject,
             subject_node=subject_node,
@@ -351,8 +464,8 @@ class RankingService:
             mentions=mentions,
             dependency_refs=dependency_refs,
         )
-        views = build_retrieval_views(
-            index, metadata, count_tokens=len, max_record_tokens=self.policy.max_tokens_per_pair
+        views = self._views(
+            index, metadata, scope_hash=evidence_hash(permission_scope), count_tokens=len,
         )
         if (
             epoch.plan_id != plan.plan_id
@@ -363,6 +476,10 @@ class RankingService:
             or epoch.model_identity != self.model_identity
             or epoch.permission_scope_hash != evidence_hash(permission_scope)
             or not set(epoch.record_ids).issubset(views)
+            or (
+                candidate_record_ids is not None
+                and not set(epoch.record_ids).issubset(candidate_record_ids)
+            )
             or epoch.pool_hash
             != evidence_hash([(rid, views[rid].retrieval_view_hash) for rid in epoch.record_ids])
         ):
@@ -383,10 +500,17 @@ class RankingService:
         required_record_ids: list[str] | None = None,
         mentions=None,
         dependency_refs=None,
+        candidate_record_ids: list[str] | None = None,
     ) -> RankingEpoch | None:
         from app.services.extraction.ontology_guided.retrieval import validate_record_universe
 
         validate_record_universe(plan, index)
+        candidate_scope = set(candidate_record_ids) if candidate_record_ids is not None else None
+        if candidate_scope is not None and (
+            len(candidate_record_ids) != len(candidate_scope)
+            or not candidate_scope.issubset(plan.frozen_record_ids)
+        ):
+            raise ValueError("candidate scope is outside the frozen record universe")
         scope_hash = evidence_hash(permission_scope)
         previous = [item for item in self.epochs if item.plan_id == plan.plan_id]
         pending = self._pending.get(plan.plan_id)
@@ -419,6 +543,7 @@ class RankingService:
             # the same cumulative limits. Repeated prepares in this service do
             # not implicitly retry another failure; a new restore is required.
             self._paused_attempts.append(pending)
+            self._paused_snapshots.append(_freeze(pending.model_dump(mode="json")))
             self._pending.pop(plan.plan_id)
             self._retryable_pending.discard(plan.plan_id)
         used = {rid for epoch in previous for rid in epoch.record_ids}
@@ -427,6 +552,7 @@ class RankingService:
             for item in plan.records
             if item.record_id not in used
             and plan.ledger[item.record_id].coverage_state == "unattempted"
+            and (candidate_scope is None or item.record_id in candidate_scope)
         ]
         if not available:
             return None
@@ -441,7 +567,11 @@ class RankingService:
             mentions=mentions,
             dependency_refs=dependency_refs,
         )
-        slot_key = evidence_hash([plan.subject.entity_id, predicate.iri])
+        slot_key = evidence_hash(
+            [scope_hash, plan.subject.entity_id, predicate.iri]
+            if self.policy.policy_version == "semantic-ranking-v2"
+            else [plan.subject.entity_id, predicate.iri]
+        )
         started = time.monotonic()
         costs = _zero_costs()
         if not self.budget_enabled:
@@ -459,37 +589,69 @@ class RankingService:
             if time.monotonic() - started >= self.policy.ranking_timeout:
                 raise TimeoutError("ranking_timeout")
 
+        def token_counters(texts):
+            check_deadline()
+            keys = [
+                evidence_hash([scope_hash, self.model_identity, text, "tokens"])
+                if self.policy.policy_version == "semantic-ranking-v1"
+                else evidence_hash([
+                    scope_hash, self.model_identity, text, self.policy.mode,
+                    "max-tokenizers-special-true-padding-false-truncation-false-v1",
+                ]) for text in texts
+            ]
+            missing = dict(
+                (key, text) for key, text in zip(keys, texts, strict=True)
+                if key not in self._token_cache
+            )
+            if self.budget_enabled:
+                hits = len(keys) - len(missing)
+                costs["token_cache_hits"] += hits
+                self.costs["token_cache_hits"] += hits
+            raw_batch = getattr(self.model, "count_tokens_batch", None)
+            uncached = list(missing.items())
+            for offset in range(0, len(uncached), self.policy.batch_size):
+                check_deadline()
+                batch = uncached[offset:offset + self.policy.batch_size]
+                if callable(raw_batch) and self.policy.mode == "semantic":
+                    values = raw_batch([text for _, text in batch])
+                else:
+                    values = []
+                    for _, text in batch:
+                        check_deadline()
+                        values.append(raw_token_counter(text))
+                        check_deadline()
+                check_deadline()
+                if len(values) != len(batch) or any(
+                    not isinstance(value, int) or isinstance(value, bool) or value < 0
+                    for value in values
+                ):
+                    raise ValueError("ranking_invalid_token_count")
+                self._token_cache.update(
+                    (key, value) for (key, _), value in zip(batch, values, strict=True)
+                )
+                self._cache_snapshots.pop("token_cache", None)
+            return [self._token_cache[key] for key in keys]
+
         def token_counter(text):
-            check_deadline()
-            cache_key = evidence_hash([scope_hash, self.model_identity, text, "tokens"])
-            if cache_key in self._token_cache:
-                if self.budget_enabled:
-                    costs["token_cache_hits"] += 1
-                    self.costs["token_cache_hits"] += 1
-                return self._token_cache[cache_key]
-            value = raw_token_counter(text)
-            check_deadline()
-            if not isinstance(value, int) or isinstance(value, bool) or value < 0:
-                raise ValueError("ranking_invalid_token_count")
-            self._token_cache[cache_key] = value
-            return value
+            return token_counters([text])[0]
 
         reason = None
         try:
-            views = build_retrieval_views(
+            views = self._views(
                 index,
                 metadata,
+                scope_hash=scope_hash,
                 count_tokens=token_counter,
-                max_record_tokens=self.policy.max_tokens_per_pair,
+                count_tokens_batch=token_counters,
             )
-            max_query_tokens = max(token_counter(query.model_text) for query in queries)
+            max_query_tokens = max(token_counters([query.model_text for query in queries]))
         except (ModelCancelled, ExecutionLost):
             raise
         except Exception as exc:
             reason = _failure_reason(exc)
             token_counter = len
-            views = build_retrieval_views(
-                index, metadata, count_tokens=len, max_record_tokens=self.policy.max_tokens_per_pair
+            views = self._views(
+                index, metadata, scope_hash=scope_hash, count_tokens=len,
             )
             max_query_tokens = max(len(query.model_text) for query in queries)
         eligible = [
@@ -529,7 +691,7 @@ class RankingService:
                 costs[key] += value
                 self.costs[key] += value
 
-        def model_call(method, values, *, pairs=False, record_ids=()):
+        def model_call(method, values, *, pairs=False, record_ids=(), intent=None):
             request_key = evidence_hash(
                 [
                     scope_hash,
@@ -554,6 +716,10 @@ class RankingService:
                 else sum(token_counter(value) for value in values)
             )
             record_keys = [evidence_hash([scope_hash, slot_key, rid]) for rid in record_ids]
+            intent_keys = (
+                [evidence_hash([scope_hash, slot_key, rid, intent]) for rid in record_ids]
+                if self.policy.policy_version == "semantic-ranking-v2" else []
+            )
             reservation_identity = evidence_hash([
                 request_key, score_key, record_keys, token_count, len(values), pairs,
             ])
@@ -602,6 +768,11 @@ class RankingService:
                         raise ValueError("ranking_call_budget_exhausted")
                     if prior_attempts >= self.policy.technical_retry_limit + 1:
                         raise ValueError("ranking_call_budget_exhausted")
+                    if any(
+                        self._record_intent_call_counts.get(key, 0)
+                        >= self.policy.technical_retry_limit + 1 for key in intent_keys
+                    ):
+                        raise ValueError("ranking_call_budget_exhausted")
                     charge(
                         token_count,
                         pairs=len(values) if pairs else 0,
@@ -613,6 +784,10 @@ class RankingService:
                         self.costs["technical_retries"] += 1
                     for key in record_keys:
                         self._record_call_counts[key] = self._record_call_counts.get(key, 0) + 1
+                    for key in intent_keys:
+                        self._record_intent_call_counts[key] = (
+                            self._record_intent_call_counts.get(key, 0) + 1
+                        )
                 persist_dispatch_state()
                 try:
                     check_deadline()
@@ -636,7 +811,8 @@ class RankingService:
                     if time.monotonic() - started > self.policy.ranking_timeout:
                         raise TimeoutError("ranking_timeout")
                     if pairs:
-                        self._score_cache[score_key] = list(result)
+                        self._score_cache[score_key] = _freeze(result)
+                        self._cache_snapshots.pop("score_cache", None)
                     return result
                 except (ModelCancelled, ExecutionLost):
                     raise
@@ -661,7 +837,8 @@ class RankingService:
                 for (key, _), vector in zip(batch, vectors, strict=True):
                     # Validation happens before a cache entry can be reused.
                     cosine_scores(vector, {"self": vector})
-                    self._cache[key] = vector
+                    self._cache[key] = _freeze(vector)
+                self._cache_snapshots.pop("cache", None)
             return [self._cache[key] for key in keys]
 
         try:
@@ -717,6 +894,7 @@ class RankingService:
                 "exploration": self.policy.exploration_quota,
                 **channel_quotas,
             },
+            fill_pool=self.policy.fill_candidate_pool,
         )
         # Tie breaking and every degraded epoch use the frozen deterministic order.
         base_pool = [rid for rid in available if rid in set(pool)]
@@ -729,6 +907,7 @@ class RankingService:
             and self.policy.enable_reranker
             and reason is None
             and not ordinary_exploration
+            and (pool or self.policy.fill_candidate_pool)
         ):
             try:
                 if not pool or any(rid in ineligible for rid in pool):
@@ -742,6 +921,7 @@ class RankingService:
                             [(query.model_text, views[rid].model_text) for rid in batch],
                             pairs=True,
                             record_ids=batch,
+                            intent=query.retrieval_intent,
                         )
                         values.update(zip(batch, scores, strict=True))
                     raw_by_intent[query.retrieval_intent] = values

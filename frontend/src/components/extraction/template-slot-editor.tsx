@@ -614,9 +614,9 @@ export function TemplateSlotEditor({
   });
   const sourceCapabilities = extractionCapabilities(sourceJobQuery.data);
   const canRecognizeSource = !!templateId && !!previewJobId;
-  const documentRun = useTemplateDocumentRun(templateId, previewJobId);
+  const documentRun = useTemplateDocumentRun(templateId, previewJobId, leftTab === "source");
   const runSource = documentRun.source?.recognition_run_id === documentRun.run?.recognition_run_id
-    && documentRun.source?.analysis_id === documentRun.graph?.graph_snapshot?.analysis_id
+    && documentRun.source?.analysis_id === documentRun.run?.identities.analysis_id
     ? documentRun.source : null;
 
   // 选中真实文档 → 按 job 引用取回正文（尽力而为，降级为「不可预览」；绝不抛错）。
@@ -1975,10 +1975,10 @@ export function TemplateSlotEditor({
                 <div className="rounded border bg-card p-6 shadow-sm">
                   {runSource || docContent.kind === "ready" ? (
                     <WordViewer
-                      key={runSource?.analysis_id ?? activeDocIri}
+                      key={runSource ? documentRun.sourceIdentity : activeDocIri}
                       content={runSource ? runSource.content as TiptapContent : docContent.kind === "ready" ? docContent.content : { type: "doc", content: [] }}
                       highlightRef={runSource ? null : selectedSourceRef}
-                      activeAnchor={runSource?.anchors[0] ?? null}
+                      activeAnchor={runSource ? documentRun.sourceSelection?.anchors[0] ?? null : null}
                     />
                   ) : docContent.kind === "loading" ? (
                     <div className="flex items-center justify-center gap-2 py-16 text-sm text-muted-foreground">

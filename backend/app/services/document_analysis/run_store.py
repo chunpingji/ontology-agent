@@ -768,9 +768,18 @@ class DocumentAnalysisRunStore:
         recognition_run_id: UUID | str,
         owner_id: str,
         execution_token: str,
+        *,
+        for_update: bool = False,
     ) -> DocumentAnalysisExecution:
         """Reject missing, expired, revoked, cross-run, or stale-generation tokens."""
 
+        if for_update:
+            _run, execution = self._lock_fence(
+                recognition_run_id, owner_id, execution_token, self._clock(),
+            )
+            # Waiting for another writer can cross the original lease deadline.
+            self._check_fence(execution, execution_token, self._clock())
+            return execution
         run = self.get_owned(recognition_run_id, owner_id)
         if run.deletion_state != "none":
             raise FenceViolation("run is being deleted", run_id=str(recognition_run_id))

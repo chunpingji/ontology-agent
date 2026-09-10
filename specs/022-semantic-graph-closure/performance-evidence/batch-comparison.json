@@ -1,0 +1,373 @@
+{
+  "scope": "one cold isolated worker per batch; complete frozen 86-record dual-intent ranking",
+  "baseline_batch": 4,
+  "runs": {
+    "4": {
+      "status": "passed",
+      "failure": null,
+      "policy_version": "semantic-ranking-v1",
+      "elapsed_seconds": 144.37671811599284,
+      "factory_seconds": 17.161845913971774,
+      "epochs": [
+        {
+          "epoch_id": "b2f0665de26d8fde6238cb8fc03b93ebe6543351767cffe229971e37b6511a50",
+          "status": "committed",
+          "temperature": "cold_worker_and_models",
+          "records": 86,
+          "actual_ranking_mode": "semantic",
+          "degraded": false,
+          "costs": {
+            "input_pairs": 172,
+            "embedding_inputs": 88,
+            "tokens": 212100,
+            "model_calls": 67,
+            "technical_retries": 0,
+            "cache_hits": 0,
+            "token_cache_hits": 432,
+            "elapsed_ms": 105485.96020403784
+          },
+          "elapsed_seconds": 105.806252189097,
+          "scheduler_requests": 90
+        }
+      ],
+      "coverage": {
+        "total_records": 86,
+        "ranking_eligible": 86,
+        "long_records_excluded_from_ranking": 0,
+        "ranked_records": 86,
+        "eligible_not_ranked": 0,
+        "ledger_unattempted": 86,
+        "recognition_records_examined": 0,
+        "full_universe_preserved": true,
+        "ranking_did_not_change_coverage": true
+      },
+      "costs": {
+        "scheduler_requests": 90,
+        "completed_requests": 90,
+        "measured_input_tokens": 212100,
+        "unknown_request_count": 0,
+        "queue_seconds": 0.815,
+        "request_seconds": 97.252,
+        "reserved_input_tokens": 212100
+      },
+      "operations": {
+        "count_tokens_batch": {
+          "requests": 23,
+          "input_count": 88,
+          "input_tokens": 0,
+          "elapsed_seconds": 41.045,
+          "queue_seconds": 0.16700000000000007,
+          "request_seconds": 40.87900000000001
+        },
+        "embed": {
+          "requests": 23,
+          "input_count": 88,
+          "input_tokens": 23436,
+          "elapsed_seconds": 16.301,
+          "queue_seconds": 0.19700000000000006,
+          "request_seconds": 16.103999999999996
+        },
+        "score_pairs": {
+          "requests": 44,
+          "input_count": 172,
+          "input_tokens": 188664,
+          "elapsed_seconds": 40.721,
+          "queue_seconds": 0.45100000000000023,
+          "request_seconds": 40.269
+        }
+      },
+      "restore": {
+        "extra_scheduler_requests": 0,
+        "state_unchanged": true,
+        "validated_epochs": 1,
+        "elapsed_seconds": 0.18905654200352728,
+        "operation": "validate_and_idempotently_replay_committed_epochs"
+      },
+      "gpu_memory": {
+        "cuda_peak_allocated_bytes": 3042677248,
+        "cuda_peak_reserved_bytes": 4143972352
+      },
+      "resources": {
+        "samples": 28,
+        "gpu0_first_used_mib": 6841,
+        "gpu0_peak_total_used_mib": 11089,
+        "gpu0_min_free_mib": 5182,
+        "gpu0_max_sampled_utilization_percent": 100,
+        "host_loadavg_1m_min": 5.19482421875,
+        "host_loadavg_1m_max": 20.55810546875,
+        "sampling_interval_seconds": 5,
+        "note": "GPU totals include existing llama allocations; host CPU load is shared."
+      }
+    },
+    "8": {
+      "status": "passed",
+      "failure": null,
+      "policy_version": "semantic-ranking-v1",
+      "elapsed_seconds": 139.3756829680642,
+      "factory_seconds": 17.100415077991784,
+      "epochs": [
+        {
+          "epoch_id": "d41c711f0b62af73ae0270df235f902889c65111ebe94d2ca3543c4573c8bfc4",
+          "status": "committed",
+          "temperature": "cold_worker_and_models",
+          "records": 86,
+          "actual_ranking_mode": "semantic",
+          "degraded": false,
+          "costs": {
+            "input_pairs": 172,
+            "embedding_inputs": 88,
+            "tokens": 212100,
+            "model_calls": 34,
+            "technical_retries": 0,
+            "cache_hits": 0,
+            "token_cache_hits": 432,
+            "elapsed_ms": 101122.01698799618
+          },
+          "elapsed_seconds": 101.4271977620665,
+          "scheduler_requests": 46
+        }
+      ],
+      "coverage": {
+        "total_records": 86,
+        "ranking_eligible": 86,
+        "long_records_excluded_from_ranking": 0,
+        "ranked_records": 86,
+        "eligible_not_ranked": 0,
+        "ledger_unattempted": 86,
+        "recognition_records_examined": 0,
+        "full_universe_preserved": true,
+        "ranking_did_not_change_coverage": true
+      },
+      "costs": {
+        "scheduler_requests": 46,
+        "completed_requests": 46,
+        "measured_input_tokens": 212100,
+        "unknown_request_count": 0,
+        "queue_seconds": 0.41,
+        "request_seconds": 96.905,
+        "reserved_input_tokens": 212100
+      },
+      "operations": {
+        "count_tokens_batch": {
+          "requests": 12,
+          "input_count": 88,
+          "input_tokens": 0,
+          "elapsed_seconds": 39.408,
+          "queue_seconds": 0.09200000000000003,
+          "request_seconds": 39.31300000000002
+        },
+        "embed": {
+          "requests": 12,
+          "input_count": 88,
+          "input_tokens": 23436,
+          "elapsed_seconds": 16.381999999999994,
+          "queue_seconds": 0.09999999999999998,
+          "request_seconds": 16.281000000000002
+        },
+        "score_pairs": {
+          "requests": 22,
+          "input_count": 172,
+          "input_tokens": 188664,
+          "elapsed_seconds": 41.534,
+          "queue_seconds": 0.21800000000000005,
+          "request_seconds": 41.311
+        }
+      },
+      "restore": {
+        "extra_scheduler_requests": 0,
+        "state_unchanged": true,
+        "validated_epochs": 1,
+        "elapsed_seconds": 0.17625533801037818,
+        "operation": "validate_and_idempotently_replay_committed_epochs"
+      },
+      "gpu_memory": {
+        "cuda_peak_allocated_bytes": 3801994752,
+        "cuda_peak_reserved_bytes": 5970591744
+      },
+      "resources": {
+        "samples": 27,
+        "gpu0_first_used_mib": 6841,
+        "gpu0_peak_total_used_mib": 12831,
+        "gpu0_min_free_mib": 3440,
+        "gpu0_max_sampled_utilization_percent": 100,
+        "host_loadavg_1m_min": 5.693359375,
+        "host_loadavg_1m_max": 9.40283203125,
+        "sampling_interval_seconds": 5,
+        "note": "GPU totals include existing llama allocations; host CPU load is shared."
+      }
+    },
+    "16": {
+      "status": "passed",
+      "failure": null,
+      "policy_version": "semantic-ranking-v1",
+      "elapsed_seconds": 137.28569657797925,
+      "factory_seconds": 16.950845263083465,
+      "epochs": [
+        {
+          "epoch_id": "589615328a4797af31dfd3bde123f5ba713d059fe68624c2b27126d9e87cd5f0",
+          "status": "committed",
+          "temperature": "cold_worker_and_models",
+          "records": 86,
+          "actual_ranking_mode": "semantic",
+          "degraded": false,
+          "costs": {
+            "input_pairs": 172,
+            "embedding_inputs": 88,
+            "tokens": 212100,
+            "model_calls": 19,
+            "technical_retries": 0,
+            "cache_hits": 0,
+            "token_cache_hits": 432,
+            "elapsed_ms": 99379.59281203803
+          },
+          "elapsed_seconds": 99.81592722597998,
+          "scheduler_requests": 26
+        }
+      ],
+      "coverage": {
+        "total_records": 86,
+        "ranking_eligible": 86,
+        "long_records_excluded_from_ranking": 0,
+        "ranked_records": 86,
+        "eligible_not_ranked": 0,
+        "ledger_unattempted": 86,
+        "recognition_records_examined": 0,
+        "full_universe_preserved": true,
+        "ranking_did_not_change_coverage": true
+      },
+      "costs": {
+        "scheduler_requests": 26,
+        "completed_requests": 26,
+        "measured_input_tokens": 212100,
+        "unknown_request_count": 0,
+        "queue_seconds": 0.242,
+        "request_seconds": 96.83800000000001,
+        "reserved_input_tokens": 212100
+      },
+      "operations": {
+        "count_tokens_batch": {
+          "requests": 7,
+          "input_count": 88,
+          "input_tokens": 0,
+          "elapsed_seconds": 38.95600000000001,
+          "queue_seconds": 0.06,
+          "request_seconds": 38.89600000000001
+        },
+        "embed": {
+          "requests": 7,
+          "input_count": 88,
+          "input_tokens": 23436,
+          "elapsed_seconds": 16.573000000000004,
+          "queue_seconds": 0.062000000000000006,
+          "request_seconds": 16.51
+        },
+        "score_pairs": {
+          "requests": 12,
+          "input_count": 172,
+          "input_tokens": 188664,
+          "elapsed_seconds": 41.552,
+          "queue_seconds": 0.11999999999999998,
+          "request_seconds": 41.432
+        }
+      },
+      "restore": {
+        "extra_scheduler_requests": 0,
+        "state_unchanged": true,
+        "validated_epochs": 1,
+        "elapsed_seconds": 0.18776797608006746,
+        "operation": "validate_and_idempotently_replay_committed_epochs"
+      },
+      "gpu_memory": {
+        "cuda_peak_allocated_bytes": 5324183552,
+        "cuda_peak_reserved_bytes": 8858370048
+      },
+      "resources": {
+        "samples": 27,
+        "gpu0_first_used_mib": 6841,
+        "gpu0_peak_total_used_mib": 14299,
+        "gpu0_min_free_mib": 1972,
+        "gpu0_max_sampled_utilization_percent": 100,
+        "host_loadavg_1m_min": 4.751953125,
+        "host_loadavg_1m_max": 5.380859375,
+        "sampling_interval_seconds": 5,
+        "note": "GPU totals include existing llama allocations; host CPU load is shared."
+      }
+    }
+  },
+  "equivalence_checks": {
+    "8": {
+      "scored": true,
+      "input_snapshot_equal": true,
+      "configuration_equal_except_batch": true,
+      "policy_equal_except_batch": true,
+      "model_equal_except_batch": true,
+      "whole_record_inventory_and_token_counts_equal": true,
+      "complete_ordered_input_pairs_equal": true,
+      "pool_source_order_equal": true,
+      "input_pairs": 172,
+      "input_pairs_sha256": "6370ab98d538a7c88c7e0eeb47b0e23eb055c956b363476cc0a43150701b6225"
+    },
+    "16": {
+      "scored": true,
+      "input_snapshot_equal": true,
+      "configuration_equal_except_batch": true,
+      "policy_equal_except_batch": true,
+      "model_equal_except_batch": true,
+      "whole_record_inventory_and_token_counts_equal": true,
+      "complete_ordered_input_pairs_equal": true,
+      "pool_source_order_equal": true,
+      "input_pairs": 172,
+      "input_pairs_sha256": "6370ab98d538a7c88c7e0eeb47b0e23eb055c956b363476cc0a43150701b6225"
+    }
+  },
+  "numerical_and_rank_differences": {
+    "8": {
+      "ordered_record_ids_equal": true,
+      "records_moved": 0,
+      "max_rank_shift": 0,
+      "pairwise_inversions": 0,
+      "spearman_rank_correlation": 1.0,
+      "top_10_overlap": 10,
+      "top_20_overlap": 20,
+      "by_intent": {
+        "discover": {
+          "scores_changed": 0,
+          "max_absolute_score_delta": 0.0,
+          "intent_rank_changed": 0
+        },
+        "counterevidence": {
+          "scores_changed": 0,
+          "max_absolute_score_delta": 0.0,
+          "intent_rank_changed": 0
+        }
+      }
+    },
+    "16": {
+      "ordered_record_ids_equal": true,
+      "records_moved": 0,
+      "max_rank_shift": 0,
+      "pairwise_inversions": 0,
+      "spearman_rank_correlation": 1.0,
+      "top_10_overlap": 10,
+      "top_20_overlap": 20,
+      "by_intent": {
+        "discover": {
+          "scores_changed": 0,
+          "max_absolute_score_delta": 0.0,
+          "intent_rank_changed": 0
+        },
+        "counterevidence": {
+          "scores_changed": 0,
+          "max_absolute_score_delta": 0.0,
+          "intent_rank_changed": 0
+        }
+      }
+    }
+  },
+  "limitations": [
+    "No main recognition LLM, asserted facts, expert gold quality or deployment.",
+    "Sequential one-shot runs share a host/GPU with existing workloads and page caches; elapsed time is descriptive, not causal speedup evidence.",
+    "All runs intentionally use historical v1 policy, retry_limit=0 and identical token budgets; this is not a v2 retry-policy experiment."
+  ],
+  "fixed_input_pairs_sha256": "6370ab98d538a7c88c7e0eeb47b0e23eb055c956b363476cc0a43150701b6225"
+}

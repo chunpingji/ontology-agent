@@ -38,6 +38,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { RelationPanel } from "@/components/extraction/relation-panel";
 import { DocumentActionsMenu } from "@/components/reports/document-actions-menu";
 import { Outline } from "@/components/reports/outline";
+import { isWordReportDocument } from "@/components/reports/report-word-workspace";
+import { BatchDemoWorkspaceGate } from "@/components/reports/batch-demo-workspace";
 import {
   documentContentKey,
   ReadingPane,
@@ -145,6 +147,7 @@ export default function ReportDetailPage() {
   const item: ReportOrDocument | null =
     paramItem ?? fallback.data?.items.find((entry) => entry.key === routeKey) ?? null;
   const isDoc = item?.kind === "uploaded-document";
+  const isWordDocument = isWordReportDocument(item);
 
   const [highlightRef, setHighlightRef] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
@@ -159,7 +162,7 @@ export default function ReportDetailPage() {
   const contentQuery = useQuery({
     queryKey: documentContentKey(item),
     queryFn: ({ signal }) => resolveDocumentContent(item as ReportOrDocument, signal),
-    enabled: Boolean(item) && isDoc,
+    enabled: Boolean(item) && isDoc && !isWordDocument,
   });
   const documentContent =
     contentQuery.data && "content" in contentQuery.data ? contentQuery.data.content : null;
@@ -190,7 +193,7 @@ export default function ReportDetailPage() {
   const decisionQuery = useQuery({
     queryKey: decisionKey,
     queryFn: () => getPdeConflictDecision(jobId as string),
-    enabled: Boolean(jobId) && hasConflict,
+    enabled: Boolean(jobId) && hasConflict && !isWordDocument,
   });
   const decision = decisionQuery.data ?? null;
 
@@ -340,7 +343,7 @@ export default function ReportDetailPage() {
             </Button>
           )}
           {/* 上传文档：右上角「操作」弹出菜单（AI 分析 / 生成风险评估报告 / 审计），紧邻分享。 */}
-          {isDoc && <DocumentActionsMenu item={item} />}
+          {isDoc && <DocumentActionsMenu key={item.iri} item={item} />}
           <Button variant="outline" onClick={handleShare}>
             {copied ? <Check /> : <Share2 />}
             {copied ? "已复制链接" : "分享"}
@@ -352,7 +355,7 @@ export default function ReportDetailPage() {
         <p className="text-sm text-destructive">下载失败，请稍后重试。</p>
       )}
 
-      <div
+      {isWordDocument ? <BatchDemoWorkspaceGate key={item.iri} documentIri={item.iri!} /> : <div
         ref={layoutRef}
         className="flex flex-col gap-6 lg:min-h-0 lg:flex-1 lg:flex-row lg:gap-0"
       >
@@ -370,7 +373,9 @@ export default function ReportDetailPage() {
             ) : isDoc ? (
               <Outline content={documentContent} onNavigate={handleNavigate} />
             ) : (
-              <Outline sections={REPORT_SECTIONS} onNavigate={handleNavigate} />
+              <Outline sections={item.category === "batch_record_demo"
+                ? [{ id: "report-overview", label: "报告概览" }, { id: "report-narratives", label: "批记录内容" }, { id: "report-download", label: "下载文档" }]
+                : REPORT_SECTIONS} onNavigate={handleNavigate} />
             )}
           </CardContent>
         </Card>
@@ -474,7 +479,7 @@ export default function ReportDetailPage() {
             )}
           </CardContent>
         </Card>
-      </div>
+      </div>}
     </div>
   );
 }

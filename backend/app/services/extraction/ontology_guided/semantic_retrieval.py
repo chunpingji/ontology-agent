@@ -77,6 +77,7 @@ def select_candidate_pool(
     protected_ids: list[str],
     exploration_ids: list[str],
     quotas: dict[str, int],
+    fill_pool: bool = True,
 ) -> tuple[list[str], dict[str, list[str]]]:
     if pool_size < 1 or len(record_ids) != len(set(record_ids)):
         raise ValueError("candidate pool requires a positive limit and unique records")
@@ -104,7 +105,7 @@ def select_candidate_pool(
 
     for name in ("protected", "exploration", *channels):
         take(name, quotas.get(name, 0))
-    while len(selected) < min(pool_size, len(record_ids)):
+    while fill_pool and len(selected) < min(pool_size, len(record_ids)):
         previous = len(selected)
         for name in channels:
             take(name, 1)

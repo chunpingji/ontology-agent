@@ -28,6 +28,7 @@ from app.services.document_analysis.run_store import (
     DocumentAnalysisRunStore,
     FenceViolation,
 )
+from app.services.document_analysis.state_artifacts import decode_state
 from app.services.extraction.ontology_guided.contracts import GraphNode
 from app.services.extraction.ontology_guided.executor import TaskOutcome
 from app.services.llm.model_runtime import ModelWaitFailure
@@ -217,12 +218,15 @@ def _checkpoint_payload(db, run_id: str) -> tuple[dict, DocumentRecognitionEvent
     assert receipt is not None
     artifact = db.get(DocumentAnalysisArtifact, receipt.checkpoint_artifact_id)
     assert artifact is not None and artifact.payload is not None
-    return artifact.payload, receipt
+    store = DocumentAnalysisRunStore(db)
+    return decode_state(store, store.get_owned(run_id, "analyst"), artifact.payload), receipt
 
 
+@pytest.mark.parametrize("performance_enabled", [False, True])
 def test_committed_batch_is_secret_free_closed_waterline_and_resumes_without_recall(
-    client, db, analyst_headers, tmp_path, monkeypatch
+    client, db, analyst_headers, tmp_path, monkeypatch, performance_enabled,
 ):
+    monkeypatch.setattr(settings, "document_analysis_performance_enabled", performance_enabled)
     run_id = _create_pending_run(
         client, analyst_headers, tmp_path, monkeypatch, key="crash-after-first-batch"
     )
@@ -232,6 +236,8 @@ def test_committed_batch_is_secret_free_closed_waterline_and_resumes_without_rec
     store, old_token = _crash_after_first_batch(db, run_id, monkeypatch)
     first_task_id = adapter.calls[0]
     checkpoint, receipt = _checkpoint_payload(db, run_id)
+    stored = db.get(DocumentAnalysisArtifact, receipt.checkpoint_artifact_id).payload
+    assert (stored.get("storage_schema_version") == 2) is performance_enabled
     serialized = json.dumps(checkpoint, ensure_ascii=False, sort_keys=True)
 
     assert old_token not in serialized
@@ -280,7 +286,9 @@ def test_committed_batch_is_secret_free_closed_waterline_and_resumes_without_rec
     assert graph_ref is not None
     graph_artifact = db.get(DocumentAnalysisArtifact, graph_ref.artifact_id)
     assert graph_artifact is not None
-    assert graph_artifact.payload["graph"] == checkpoint["graph_state"]
+    assert decode_state(store, store.get_owned(run_id, "analyst"), graph_artifact.payload)[
+        "graph"
+    ] == checkpoint["graph_state"]
 
     _expire_lease(db, run_id)
     new_token = store.claim(

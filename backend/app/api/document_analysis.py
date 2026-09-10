@@ -45,23 +45,28 @@ from app.schemas.document_analysis import (
     DocumentAnalysisRunResponse,
     GraphArtifactResponse,
     GraphProjection,
+    GraphRanking,
     MetadataArtifactResponse,
+    ReportDocumentSourceResponse,
     RunControlRequest,
     RunControlResponse,
     SourceArtifactResponse,
     SourceQuery,
+    SourceSelectionResponse,
     SseEvent,
     TemplateRunResponse,
 )
 from app.services.document_analysis.application import (
     DocumentAnalysisApplication,
     DocumentAnalysisError,
+    graph_etag,
     weak_etag,
 )
 from app.services.document_analysis.execution import (
     dispatch_run,
     notify_document_analysis_dispatcher,
 )
+from app.services.document_analysis.report_documents import ReportDocumentRuns
 from app.services.document_analysis.template_runs import TemplateDocumentRuns
 
 
@@ -230,6 +235,52 @@ async def create_template_document_run(
     return application.create_response(run, idempotent_replay=not created)
 
 
+@router.get("/documents/source", response_model=ReportDocumentSourceResponse)
+def get_report_document_source(
+    document_iri: str = Query(min_length=1),
+    identity: Identity = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    # The document library is shared by authenticated users; analysis runs are owned.
+    result = ReportDocumentRuns(_application(db)).preview(document_iri)
+    return _json_model(ReportDocumentSourceResponse.model_validate(result), headers={
+        "Cache-Control": "private, no-store",
+    })
+
+
+@router.get("/documents/runs", response_model=TemplateRunResponse)
+def get_report_document_run(
+    document_iri: str = Query(min_length=1),
+    identity: Identity = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    application = _application(db)
+    run = ReportDocumentRuns(application).latest(identity.username, document_iri)
+    return _json_model(TemplateRunResponse.model_validate({
+        "run": application.status_response(run, role=identity.role) if run else None,
+    }), headers={"Cache-Control": "private, no-store"})
+
+
+@router.post("/documents/runs", response_model=CreateRunResponse, status_code=202)
+async def create_report_document_run(
+    body: CreateTemplateRunRequest,
+    background_tasks: BackgroundTasks,
+    document_iri: str = Query(min_length=1),
+    identity: Identity = Depends(get_current_user),
+    db: Session = Depends(get_db),
+    engine: object = Depends(get_ontology_engine),
+):
+    if identity.role != "senior_analyst":
+        raise DocumentAnalysisError("ROLE_FORBIDDEN", "当前角色无运行写权限", status_code=403)
+    application = _application(db, engine)
+    run, created = await ReportDocumentRuns(application).create(
+        identity.username, document_iri, body.request_key,
+    )
+    if created:
+        _wake_dispatcher_or_fallback(background_tasks, run.recognition_run_id, bind=db.get_bind())
+    return application.create_response(run, idempotent_replay=not created)
+
+
 @router.post("/runs", response_model=CreateRunResponse, status_code=202)
 async def create_document_analysis_run(
     request: Request,
@@ -335,6 +386,7 @@ def get_document_analysis_metadata(
     app = _application(db)
     try:
         run = app.get_run(recognition_run_id, identity.username)
+        app.assert_artifacts_readable(run)
         etag = weak_etag(run)
         cached = _if_not_modified(if_none_match, etag)
         if cached is not None:
@@ -356,7 +408,8 @@ def get_document_analysis_graph(
     app = _application(db)
     try:
         run = app.get_run(recognition_run_id, identity.username)
-        etag = weak_etag(run)
+        app.assert_artifacts_readable(run)
+        etag = graph_etag(run, projection)
         cached = _if_not_modified(if_none_match, etag)
         if cached is not None:
             return cached
@@ -364,6 +417,63 @@ def get_document_analysis_graph(
             app.graph_response(run, projection=projection)
         )
         return _json_model(response, headers={"ETag": etag})
+    except DocumentAnalysisError as exc:
+        return _error(exc)
+
+
+@router.get("/runs/{recognition_run_id}/ranking-summary", response_model=GraphRanking)
+def get_document_analysis_ranking_summary(
+    recognition_run_id: UUID,
+    expected_summary_id: str | None = Query(default=None),
+    expected_budget_enabled: bool | None = Query(default=None),
+    identity: Identity = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    app = _application(db)
+    try:
+        run = app.get_run(recognition_run_id, identity.username)
+        app.assert_artifacts_readable(run)
+
+        def check_version():
+            summary_id = ((run.artifact_manifest or {}).get("ranking_summary") or {}).get(
+                "artifact_id", ""
+            )
+            if (
+                expected_summary_id is not None and expected_summary_id != summary_id
+                or expected_budget_enabled is not None
+                and expected_budget_enabled != run.ranking_budget_enabled
+            ):
+                raise DocumentAnalysisError(
+                    "RUN_REVISION_CONFLICT", "排序摘要已更新，请同步运行版本", status_code=409,
+                    retryable=True, current_revision=run.revision,
+                )
+
+        check_version()
+        response = GraphRanking.model_validate(app.ranking_summary_response(run))
+        # A commit may occur after the artifact reader last refreshed the run.
+        # Re-read after the payload, before accepting the client's immutable key.
+        run = app.get_run(recognition_run_id, identity.username)
+        app.assert_artifacts_readable(run)
+        check_version()
+        return _json_model(response, headers={"Cache-Control": "private, no-store"})
+    except DocumentAnalysisError as exc:
+        return _error(exc)
+
+
+@router.get("/runs/{recognition_run_id}/source-selection", response_model=SourceSelectionResponse)
+def get_document_analysis_source_selection(
+    recognition_run_id: UUID,
+    selection_ref: str = Query(min_length=1),
+    identity: Identity = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    app = _application(db)
+    try:
+        run = app.get_run(recognition_run_id, identity.username)
+        response = SourceSelectionResponse.model_validate(
+            app.source_selection_response(run, selection_ref=selection_ref)
+        )
+        return _json_model(response, headers={"Cache-Control": "private, no-store"})
     except DocumentAnalysisError as exc:
         return _error(exc)
 
@@ -389,6 +499,7 @@ def get_document_analysis_source(
     app = _application(db)
     try:
         run = app.get_run(recognition_run_id, identity.username)
+        app.assert_artifacts_readable(run)
         if query.format == "original":
             path, media_type, filename, document_hash = app.original_source(run)
             encoded = quote(filename, safe="")

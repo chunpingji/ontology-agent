@@ -12,6 +12,7 @@ from app.api import (
     actions,
     ast_templates,
     auth,
+    batch_demo,
     compliance,
     document_analysis,
     entities,
@@ -290,6 +291,7 @@ app.include_router(pde_conflict.router, prefix="/api/extraction", tags=["pde-con
 app.include_router(kg.router, prefix="/api/kg", tags=["knowledge-graph"])
 app.include_router(integration.router, prefix="/api/integration", tags=["integration"])
 app.include_router(actions.router, prefix="/api/actions", tags=["actions"])
+app.include_router(batch_demo.router, prefix="/api/reports", tags=["reports"])
 app.include_router(reports.router, prefix="/api/reports", tags=["reports"])
 app.include_router(report_runs.router, prefix="/api", tags=["reporting-v2"])
 app.include_router(compliance.router, prefix="/api/compliance", tags=["compliance"])

@@ -116,6 +116,10 @@ class ReportRunService:
     def prepare(self, schema, **kwargs):
         from app.services.reporting.template_preparation import prepare_template
 
+        profile = (schema.get("demo_profile") if isinstance(schema, dict)
+                   else getattr(schema, "demo_profile", None))
+        if profile:
+            raise ReportingError("STATIC_DEMO_TEMPLATE", "请在演示模板页面生成批记录", status=409)
         return prepare_template(self.db, schema, classes=self.model_schema, **kwargs)
 
     def load_contracts(self, schema):
@@ -324,6 +328,8 @@ class ReportRunService:
         )
         if schema is None:
             raise ReportingError("TEMPLATE_NOT_FOUND", status=404)
+        if schema.get("demo_profile") or (row and (row.schema_json or {}).get("demo_profile")):
+            raise ReportingError("STATIC_DEMO_TEMPLATE", "请在演示模板页面生成批记录", status=409)
         if schema.get("schema_version") != 2:
             raise ReportingError(
                 "TEMPLATE_MIGRATION_REQUIRED", template_id=str(row.id) if row else None

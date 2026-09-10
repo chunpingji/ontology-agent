@@ -58,6 +58,14 @@
 
 ## Architecture and Boundaries
 
+### 2026-09-10 报告树形交互适配
+
+用户已确认评估方案，澄清为仅迁移报告目录和共享 `TemplateGraphTree`，不扩展全站其他树。采用 ReUI Radix Tree 的 MIT 源码与 Headless Tree 1.6.3；新增 core/react 两个依赖用于统一键盘、焦点、选择和可见节点管理，复用已安装 Radix Slot、Lucide、主题变量，局部转换 Tailwind 4 样式为现有 Tailwind 3。运行时无外网请求。
+
+目录以 node_id/source_range 适配，图谱保留现有 O(V+E) 生成森林和引用跳转，转换为具有稳定 ID 的实体/谓词/断言/引用节点。非 button 的 treeitem 容器承载独立折叠与证据按钮；同步数据更新后重建可见树并保留有效状态。用户、文档、run、projection 构成重置边界。无需虚拟化、拖放、迁移数据库或变更 API。
+
+宪章检查（设计前/后）：范围和验收已补充 spec；本体、后端和事实提交均无修改；新增依赖直接服务已批准交互；MIT 声明随本地源码保存；离线运行满足要求。实施与检查任务见 `tree-interaction-tasks.md`，可执行验收见 `tree-interaction-quickstart.md`。
+
 2026-09-09 历史入口补充：沿用既有运行表和鉴权，通过 run store 的 owner 过滤与有界分页提供轻量列表，application 复用公开状态映射，路由新增只读集合 GET。前端复用 `api.ts`、现有卡片/按钮及 `documentRun` URL 恢复逻辑；创建后刷新首页，历史列表与当前结果分别取消过期请求。不新增依赖或迁移，不改变模型执行、保留期限和事实提交边界；宪章前后检查均无新增例外。
 
 1. **一份原文与冻结输入**：`analyze_word_core()`、`DocumentIR`、`parse_docx_structure()`、`table_records()` 和 `WordViewer` 继续定义物理来源。运行级 SourceArtifact、RecordIndex 和 MetadataSnapshot 引用同一 `analysis_id`；识别前冻结完整 fingerprint。

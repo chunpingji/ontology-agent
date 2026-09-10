@@ -11,6 +11,7 @@ import {
   updateAstTemplate,
 } from "@/lib/api";
 import { WordViewer } from "@/components/extraction/word-viewer";
+import { BatchDemoTemplate } from "@/components/reports/batch-demo-template";
 import { OutputTemplateEditor } from "@/components/reporting/output-template-editor";
 import { isTemplateV2, reportPost, type FrozenRecord, type TemplateV2 } from "@/lib/reporting-v2";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -71,7 +72,7 @@ function EditTemplateContent() {
 
   const tpl = query.data;
   const title = tpl
-    ? `编辑：${tpl.name} (${tpl.version})`
+    ? `${tpl.demo_profile ? "演示模板" : "编辑"}：${tpl.name} (${tpl.version})`
     : "编辑模板";
 
   return (
@@ -126,6 +127,8 @@ function EditTemplateContent() {
               返回列表
             </Button>
           </div>
+        ) : tpl?.demo_profile ? (
+          <BatchDemoTemplate key={tpl.id} templateId={tpl.id} />
         ) : tpl ? isTemplateV2(tpl.schema_json) ? (
           <OutputTemplateEditor key={tpl.id} schema={tpl.schema_json} templateId={tpl.id}
             initialTab={searchParams.get("tab") === "template" ? "template" : undefined}
