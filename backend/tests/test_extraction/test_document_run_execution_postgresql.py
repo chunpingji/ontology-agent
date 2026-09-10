@@ -11,9 +11,12 @@ from __future__ import annotations
 import os
 from concurrent.futures import ThreadPoolExecutor
 from datetime import UTC, datetime, timedelta
+from pathlib import Path
 from threading import Barrier
 
 import pytest
+from alembic.config import Config
+from alembic.script import ScriptDirectory
 from sqlalchemy import create_engine, select, text, update
 from sqlalchemy.engine import Engine, make_url
 from sqlalchemy.orm import Session
@@ -25,8 +28,8 @@ from app.models.document_analysis import (
 )
 from app.services.document_analysis.run_store import (
     DocumentAnalysisRunStore,
-    EventConflict,
     FenceViolation,
+    HeadConflict,
     LeaseBusy,
 )
 
@@ -57,9 +60,12 @@ def pg_engine() -> Engine:
     assert url.get_backend_name() == "postgresql"
     assert "document_analysis" in database and database.endswith("_test")
     engine = create_engine(raw_url, pool_pre_ping=True)
+    config = Config()
+    config.set_main_option("script_location", str(Path(__file__).parents[2] / "alembic"))
+    expected_revision = ScriptDirectory.from_config(config).get_current_head()
     with engine.begin() as connection:
         revision = connection.scalar(text("SELECT version_num FROM alembic_version"))
-        assert revision == "0033_document_analysis_runs"
+        assert revision == expected_revision
         present = set(
             connection.execute(
                 text(
@@ -139,7 +145,9 @@ def test_postgresql_claim_is_unique_and_expired_generation_fences_late_writes(
                 )
                 db.commit()
                 return "committed"
-            except EventConflict:
+            except HeadConflict as exc:
+                assert str(exc) == "stale event head"
+                assert exc.details == {"expected": 0, "actual": 1}
                 db.rollback()
                 return "conflict"
 

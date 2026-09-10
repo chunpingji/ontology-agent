@@ -28,6 +28,38 @@ def table_records(ir):
     return records if records is not None and records.ir is ir else TableRecords(ir)
 
 
+def table_binding_anchors(ir, anchors, subject=None):
+    """Keep row evidence separate from the server-created document root's title.
+
+    All anchors remain in the binding and undergo replay/scope/semantic checks.
+    Only the exact metadata root's non-table span is irrelevant to locating a
+    table row; other prose, other rows and other documents are never discarded.
+    """
+    if (subject is None or not subject.positive_eligible
+        or subject.extractor_version != "document-metadata-v1"
+        or subject.identity.get("document_root") != ir.document_hash
+        or subject.identity.get("classification_source") != "job_metadata"):
+        return anchors
+    root_anchors = [a for p in subject.provenance if p.kind == "document" for a in p.anchors]
+    retained = []
+    for anchor in anchors:
+        ir.resolve(anchor)
+        title = any(
+            not anchor.table_path and not root.table_path
+            and anchor.document_hash == root.document_hash == ir.document_hash
+            and anchor.evidence_id == root.evidence_id
+            and (root.span_start or 0) <= (anchor.span_start or 0)
+            and (anchor.span_end if anchor.span_end is not None
+                 else len(ir.unit(anchor.evidence_id).text))
+            <= (root.span_end if root.span_end is not None
+                else len(ir.unit(root.evidence_id).text))
+            for root in root_anchors
+        )
+        if not title:
+            retained.append(anchor)
+    return retained
+
+
 class TableRecords:
     def __init__(self, ir: DocumentIR):
         self.ir = ir

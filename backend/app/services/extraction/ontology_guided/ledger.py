@@ -42,6 +42,8 @@ class CheckpointEnvelope(EvidenceModel):
     task_outcomes: list[dict] = Field(default_factory=list)
     graph_state: dict
     diagnostics: list[str] = Field(default_factory=list)
+    ranking_state: dict = Field(default_factory=dict)
+    model_call_state: dict = Field(default_factory=dict)
     progress: RunProgress
     content_hash: str = Field(min_length=64, max_length=64)
 

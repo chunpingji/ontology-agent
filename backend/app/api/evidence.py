@@ -26,7 +26,7 @@ from app.models.evidence import (
     EvidenceCommit,
     EvidenceJobState,
 )
-from app.models.extraction import ExtractionJob
+from app.models.extraction import AnnotationExecution, ExtractionJob
 from app.schemas.evidence import Candidate, CandidateRef, EvidenceModel
 from app.services.extraction.candidate_store import CandidateConflict, CandidateStore
 from app.services.extraction.candidate_validation import validate_entered_candidate
@@ -230,7 +230,7 @@ def _graph_schema(job, candidates, schema):
 @router.get("/jobs/{job_id}/evidence")
 @profiled("evidence_read")
 def list_evidence(job_id: UUID, db: Session = Depends(get_db), engine=Depends(get_ontology_engine),
-                  debug: bool = False):
+                  debug: bool = False, view: Literal["all", "latest_run"] = "all"):
     from app.services.reasoning.calculation_review import job_calculations
     from app.services.reasoning.rule_service import required_checks
 
@@ -254,16 +254,28 @@ def list_evidence(job_id: UUID, db: Session = Depends(get_db), engine=Depends(ge
         versions = [run["extractor_version"]]
     schema = semantic_schema_from_engine(engine)
     candidates = CandidateStore(db).list(job_id)
+    if view == "latest_run" and run is not None and "candidates" in run:
+        active_ids = {candidate["candidate_id"] for candidate in run["candidates"]}
+        # Read the current stored revisions so user review/edits remain visible.
+        # Historical runs stay in the store and the default all-candidate view.
+        candidates = [candidate for candidate in candidates
+                      if candidate.candidate_id in active_ids]
     labels = {}
     for iri, definition in schema.items():
         labels[iri] = definition.get("label")
         for predicate in [*definition.get("properties", []), *definition.get("relationships", [])]:
             labels[predicate["iri"]] = predicate.get("label")
     graph_schema = _graph_schema(job, candidates, schema)
+    execution = db.get(AnnotationExecution, job_id, populate_existing=True)
+    from app.services.extraction.annotation_execution import public_progress
+
+    execution_status = ((public_progress(db, job_id) or {}).get("status", execution.status)
+                        if execution else None)
     return {
         "schema_version": 1,
         "candidates": [_candidate_json(c, labels) for c in candidates],
         "graph_schema": graph_schema,
+        "execution_status": execution_status,
         "calculation_required": bool(required_checks([
             {"source_slot_id": "document", "class_iri": graph_schema["document_class_iri"]}
         ])),

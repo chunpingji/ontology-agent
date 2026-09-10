@@ -90,11 +90,16 @@ def test_fact_fields_have_closed_fact_only_schema_and_reject_binding_only_backgr
     for span in ("FactSpan", "BindingSpan"):
         assert set(definitions[span]["properties"]) == {"evidence_id", "text"}
         assert definitions[span]["additionalProperties"] is False
+        proof = definitions[span.replace("Span", "Proof")]
+        assert set(proof["properties"]) == {"evidence_id"}
+        assert proof["required"] == ["evidence_id"]
+        assert proof["additionalProperties"] is False
+        assert proof["properties"]["evidence_id"] == definitions[span]["properties"]["evidence_id"]
     background = {"evidence_id": source_id(protocol, source, "A")}
     if kind == "entity":
         fields = definitions["EntityProposal"]["properties"]
         assert fields["mention"]["$ref"] == "#/$defs/FactSpan"
-        assert fields["assertion_spans"]["items"]["$ref"] == "#/$defs/BindingSpan"
+        assert fields["assertion_spans"]["items"]["$ref"] == "#/$defs/BindingProof"
         assert (
             definitions["IdentifierProposal"]["properties"]["value"]["$ref"]
             == "#/$defs/BindingSpan"
@@ -115,10 +120,10 @@ def test_fact_fields_have_closed_fact_only_schema_and_reject_binding_only_backgr
         assert fields["conditions"]["items"]["$ref"] == "#/$defs/BindingSpan"
         if kind == "property":
             assert fields["value"]["$ref"] == "#/$defs/FactSpan"
-            assert fields["assertion_spans"]["items"]["$ref"] == "#/$defs/BindingSpan"
+            assert fields["assertion_spans"]["items"]["$ref"] == "#/$defs/BindingProof"
             assertion = {"value": background}
         else:
-            assert fields["assertion_spans"]["items"]["$ref"] == "#/$defs/FactSpan"
+            assert fields["assertion_spans"]["items"]["$ref"] == "#/$defs/FactProof"
             assert fields["value"]["type"] == "null"
             assertion = {
                 "assertion_spans": [background],
@@ -143,14 +148,64 @@ def test_verification_spans_use_only_binding_domain(source, stage, response_type
         SYSTEM, original, response_type, ir=source, stage=stage, candidate=candidate(source)
     )
     assert (
-        protocol.schema["properties"]["assertion_spans"]["items"]["$ref"] == "#/$defs/BindingSpan"
+        protocol.schema["properties"]["assertion_spans"]["items"]["$ref"] == "#/$defs/BindingProof"
     )
     binding_ids = protocol.schema["$defs"]["BindingSpan"]["properties"]["evidence_id"]["enum"]
     assert source_id(protocol, source, "A") in binding_ids
     assert source_id(protocol, source, "Approval") not in binding_ids
+    proof = protocol.schema["$defs"]["BindingProof"]
+    assert proof["properties"]["evidence_id"]["enum"] == binding_ids
+    assert set(proof["properties"]) == {"evidence_id"}
+    assert proof["required"] == ["evidence_id"]
+    assert proof["additionalProperties"] is False
     if stage == "verify_binding":
         for name in ("source_unit", "boolean_legend"):
             assert {"$ref": "#/$defs/BindingSpan"} in protocol.schema["properties"][name]["anyOf"]
+
+
+@pytest.mark.parametrize("compact", [False, True])
+@pytest.mark.parametrize("intervals", [[(0, 1), (2, 4)], [(0, 2), (2, 4)], [(0, 3), (2, 4)]])
+def test_proof_pointers_are_not_offered_when_replay_needs_multiple_permissions(
+    source, compact, intervals
+):
+    protocol = CitationProtocol(
+        SYSTEM,
+        restricted(source, kind="relationship", intervals=intervals),
+        AssertionResponse,
+        ir=source,
+        stage="recall",
+        compact_identifiers=compact,
+    )
+    definitions = protocol.schema["$defs"]
+    assert "FactProof" not in definitions
+    assert "BindingProof" in definitions
+    fields = definitions["AssertionProposal"]["properties"]
+    assert fields["assertion_spans"]["items"]["$ref"] == "#/$defs/FactSpan"
+
+
+@pytest.mark.parametrize("compact", [False, True])
+def test_proof_pointer_never_silently_replaces_inexact_supplied_text(source, compact):
+    protocol = CitationProtocol(
+        SYSTEM,
+        restricted(source, kind="relationship"),
+        AssertionResponse,
+        ir=source,
+        stage="recall",
+        compact_identifiers=compact,
+    )
+    reference = {"evidence_id": source_id(protocol, source, "5 mg")}
+    raw = {"assertions": [{
+        "assertion_spans": [reference],
+        "object_candidate_id": subject_id(protocol, "C"),
+        "assertion_status": "negated",
+    }]}
+    result = protocol.decode(raw)["assertions"][0]
+    assert result["assertion_spans"][0]["text"] == "5 mg"
+    assert result["assertion_status"] == "negated"
+    for text in ("5mg", "5...mg", "invented"):
+        reference["text"] = text
+        with pytest.raises(ValueError, match="source_excerpt_mismatch"):
+            protocol.decode(raw)
 
 
 @pytest.mark.parametrize("compact", [False, True])

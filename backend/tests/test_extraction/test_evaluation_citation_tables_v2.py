@@ -144,7 +144,7 @@ def test_fourteen_column_record_keeps_every_header_and_never_moves_na(tmp_path, 
     )
     fragments = context(protocol)["fragments"]
     sources = {f["anchor"]["evidence_id"]: f for f in fragments}
-    assert PROTOCOL_VERSION == "evaluation-atomic-citations-v4"
+    assert PROTOCOL_VERSION == "atomic-citations-v8-condition-review"
     assert set(headers) <= {f["text"] for f in fragments}
     assert len([f for f in fragments if f["text"] == "N/A"]) == 12
     assert not any(f["text"] in {"DE64604", "12盘", "other"} for f in fragments)

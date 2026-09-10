@@ -9,6 +9,7 @@ Historical quality-runner replay lives in ``legacy_quality_guided_variant``.
 from __future__ import annotations
 
 from collections.abc import Callable
+from copy import deepcopy
 from time import perf_counter
 from typing import Any, Literal
 
@@ -33,6 +34,8 @@ from app.services.extraction.ontology_guided.executor import (
     TaskOutcome,
 )
 from app.services.extraction.ontology_guided.ontology_plan import compile_local_menu
+from app.services.extraction.ontology_guided.semantic_reranker import RankingService
+from app.services.llm.model_runtime import model_scope
 
 EVALUATOR_VERSION = "ontology-guided-evaluator-v1"
 RUN_SCHEMA_VERSION = "ontology-guided-evaluation-run-v1"
@@ -78,6 +81,8 @@ class OntologyGuidedEvaluationResult(EvidenceModel):
     events: list[EvaluationEvent] = Field(default_factory=list)
     adapter_calls: list[AdapterCall] = Field(default_factory=list)
     diagnostics: list[str] = Field(default_factory=list)
+    ranking: dict[str, Any] = Field(default_factory=dict)
+    model_call_state: dict[str, Any] = Field(default_factory=dict)
 
 
 class _ObservedAdapter:
@@ -104,12 +109,14 @@ class _ObservedAdapter:
             "context_hash": context.context_hash,
         }
         try:
-            outcome = self.delegate.inspect(task, context, predicate, menu)
-        except Exception as exc:
+            with model_scope(task_id=task.task_id):
+                outcome = self.delegate.inspect(task, context, predicate, menu)
+        except BaseException as exc:
             call = AdapterCall(
                 **common,
                 elapsed_seconds=perf_counter() - started,
                 status="failed",
+                reason_code=getattr(exc, "reason_code", None),
                 error_code=type(exc).__name__,
             )
             self._record(call)
@@ -147,6 +154,11 @@ class OntologyGuidedEvaluationRunner:
         phase1_section_limit: int = 3,
         progress_hook: Callable[[str], bool] | None = None,
         call_hook: Callable[[AdapterCall], None] | None = None,
+        ranking_service: RankingService | None = None,
+        max_model_calls_per_record: int = 6,
+        scheduler_bind: Any | None = None,
+        ranking_hook: Callable[[dict], None] | None = None,
+        model_call_hook: Callable[[dict], None] | None = None,
     ) -> None:
         if not adapter.model_identity:
             raise ValueError("evaluation adapter requires a frozen model identity")
@@ -155,6 +167,13 @@ class OntologyGuidedEvaluationRunner:
         self.ontology = ontology
         self.focus_path = tuple(focus_path)
         self.observed_adapter = _ObservedAdapter(adapter, call_hook)
+        self.ranking_service = ranking_service
+        self.max_model_calls_per_record = max_model_calls_per_record
+        self.scheduler_bind = scheduler_bind
+        self.ranking_hook = ranking_hook
+        self.model_call_hook = model_call_hook
+        self.latest_ranking_state: dict = {}
+        self.latest_model_call_state: dict = {}
 
         def predicate_filter(
             _subject: SubjectRef, predicate: SlotSpec | EdgeSpec, hop: int
@@ -172,6 +191,8 @@ class OntologyGuidedEvaluationRunner:
             phase1_section_limit=phase1_section_limit,
             progress_hook=progress_hook,
             predicate_filter=predicate_filter,
+            ranking_service=ranking_service,
+            max_model_calls_per_record=max_model_calls_per_record,
         )
 
     def run(
@@ -183,6 +204,7 @@ class OntologyGuidedEvaluationRunner:
         root_class_iri: str,
         root_class_label: str,
         filename: str,
+        model_call_state: dict | None = None,
     ) -> OntologyGuidedEvaluationResult:
         if self.focus_path:
             current_classes = {root_class_iri}
@@ -224,17 +246,42 @@ class OntologyGuidedEvaluationRunner:
                 "model_identity": self.observed_adapter.model_identity,
                 "scope_mode": "focus_path" if self.focus_path else "document_graph",
                 "focus_path": self.focus_path,
+                "max_model_calls_per_record": self.max_model_calls_per_record,
+                "ranking_policy": (
+                    self.ranking_service.policy.model_dump(mode="json")
+                    if self.ranking_service else {"mode": "deterministic"}
+                ),
+                "ranking_model_identity": (
+                    self.ranking_service.model_identity if self.ranking_service else {}
+                ),
             }
         )
-        execution = self.executor.run(
-            recognition_run_id=recognition_run_id,
-            run_fingerprint=run_fingerprint,
-            ir=ir,
-            metadata=metadata,
-            root_class_iri=root_class_iri,
-            root_class_label=root_class_label,
-            filename=filename,
-        )
+        def publish_ranking(state):
+            if self.ranking_hook is not None:
+                self.ranking_hook(state)
+            self.latest_ranking_state = deepcopy(state)
+
+        def publish_model_calls(state):
+            if self.model_call_hook is not None:
+                self.model_call_hook(state)
+            self.latest_model_call_state = deepcopy(state)
+
+        scope = {"run_id": recognition_run_id, "task_id": f"evaluation:{recognition_run_id}"}
+        if self.scheduler_bind is not None:
+            scope["bind"] = self.scheduler_bind
+        with model_scope(**scope):
+            execution = self.executor.run(
+                recognition_run_id=recognition_run_id,
+                run_fingerprint=run_fingerprint,
+                ir=ir,
+                metadata=metadata,
+                root_class_iri=root_class_iri,
+                root_class_label=root_class_label,
+                filename=filename,
+                ranking_hook=publish_ranking,
+                model_call_state=model_call_state,
+                model_call_hook=publish_model_calls,
+            )
         return OntologyGuidedEvaluationResult(
             recognition_run_id=recognition_run_id,
             run_fingerprint=run_fingerprint,
@@ -253,6 +300,15 @@ class OntologyGuidedEvaluationRunner:
             ],
             adapter_calls=self.observed_adapter.calls,
             diagnostics=execution.diagnostics,
+            ranking={
+                **execution.ranking_state,
+                "model_observations": list(
+                    getattr(getattr(self.ranking_service, "model", None), "observations", [])
+                ),
+            },
+            model_call_state=deepcopy(
+                getattr(execution, "model_call_state", self.latest_model_call_state)
+            ),
         )
 
 
@@ -267,6 +323,11 @@ def build_quality_guided_variant(
     phase1_section_limit: int = 3,
     progress_hook: Callable[[str], bool] | None = None,
     call_hook: Callable[[AdapterCall], None] | None = None,
+    ranking_service: RankingService | None = None,
+    max_model_calls_per_record: int = 6,
+    scheduler_bind: Any | None = None,
+    ranking_hook: Callable[[dict], None] | None = None,
+    model_call_hook: Callable[[dict], None] | None = None,
 ) -> OntologyGuidedEvaluationRunner:
     return OntologyGuidedEvaluationRunner(
         ontology=ontology,
@@ -278,4 +339,9 @@ def build_quality_guided_variant(
         phase1_section_limit=phase1_section_limit,
         progress_hook=progress_hook,
         call_hook=call_hook,
+        ranking_service=ranking_service,
+        max_model_calls_per_record=max_model_calls_per_record,
+        scheduler_bind=scheduler_bind,
+        ranking_hook=ranking_hook,
+        model_call_hook=model_call_hook,
     )

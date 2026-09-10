@@ -16,11 +16,16 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type {
   DocumentAnalysisGraphArtifact,
+  DocumentAnalysisStatus,
   DocumentGraphEntity,
   DocumentGraphProjection,
   DocumentGraphProperty,
   DocumentGraphRelationship,
 } from "@/lib/api";
+import {
+  formatDocumentAnalysisReason,
+  formatDocumentRankingPause,
+} from "@/lib/document-analysis";
 import { cn } from "@/lib/utils";
 
 const PROJECTION_LABELS: Record<DocumentGraphProjection, string> = {
@@ -147,13 +152,21 @@ export function DocumentRelationshipGraph({
   onProjectionChange,
   onSelectionRef,
   selectedSelectionRef,
+  compact = false,
+  runStatus,
+  rankingBudgetEnabled,
 }: {
   artifact: DocumentAnalysisGraphArtifact | null;
   projection: DocumentGraphProjection;
   onProjectionChange: (projection: DocumentGraphProjection) => void;
   onSelectionRef: (selectionRef: string) => void;
   selectedSelectionRef?: string | null;
+  compact?: boolean;
+  runStatus?: DocumentAnalysisStatus;
+  rankingBudgetEnabled?: boolean;
 }) {
+  const runContinuing = runStatus === "running" || runStatus === "queued";
+  const budgetEnabled = rankingBudgetEnabled ?? artifact?.ranking?.budget_enabled ?? true;
   const [selection, setSelection] = useState<GraphSelection | null>(null);
   const entitiesById = useMemo(
     () =>
@@ -211,10 +224,19 @@ export function DocumentRelationshipGraph({
   }, [selected]);
 
   return (
-    <section className="space-y-4" aria-label="关系图谱分析结果">
-      <Card>
-        <CardContent className="flex flex-col gap-3 p-4 lg:flex-row lg:items-center lg:justify-between">
+    <section
+      className="min-w-0 space-y-4 [overflow-wrap:anywhere]"
+      aria-label="关系图谱分析结果"
+    >
+      <Card className="min-w-0">
+        <CardContent
+          className={cn(
+            "flex min-w-0 flex-col gap-3 p-4",
+            !compact && "lg:flex-row lg:items-center lg:justify-between",
+          )}
+        >
           <div className="flex flex-wrap items-center gap-2">
+            <Badge variant="outline" aria-label="图谱排序预算限制">排序预算限制：{budgetEnabled ? "已启用" : "已禁用"}</Badge>
             <Badge
               variant={
                 artifact?.availability === "failed"
@@ -231,7 +253,7 @@ export function DocumentRelationshipGraph({
               </span>
             )}
           </div>
-          <label className="flex items-center gap-2 text-xs text-muted-foreground">
+          <label className="flex min-w-0 flex-wrap items-center gap-2 text-xs text-muted-foreground">
             图谱视图
             <select
               aria-label="图谱投影"
@@ -241,7 +263,7 @@ export function DocumentRelationshipGraph({
                   event.target.value as DocumentGraphProjection,
                 )
               }
-              className="h-9 max-w-48 rounded-md border border-input bg-background px-3 text-sm text-foreground"
+              className="h-9 min-w-0 max-w-48 rounded-md border border-input bg-background px-3 text-sm text-foreground"
             >
               {Object.entries(PROJECTION_LABELS).map(([value, label]) => (
                 <option key={value} value={value}>
@@ -250,6 +272,7 @@ export function DocumentRelationshipGraph({
               ))}
             </select>
           </label>
+          {!budgetEnabled && <p className="text-xs text-muted-foreground">预算统计已暂停（显示启用期间累计值）。排序模型仍可运行，输入长度、超时和单次重试限制保持有效。</p>}
         </CardContent>
       </Card>
 
@@ -258,6 +281,85 @@ export function DocumentRelationshipGraph({
           <AlertTitle>关系图谱运行异常，正在显示最后已提交快照</AlertTitle>
           <AlertDescription>{errorText(artifact.error)}</AlertDescription>
         </Alert>
+      )}
+
+      {artifact?.ranking?.paused && (
+        <Alert variant="warning">
+          <AlertTitle>{runContinuing ? "最近提交的排序快照" : "排序已暂停"}</AlertTitle>
+          <AlertDescription>
+            {runContinuing && <p>运行正在继续，以下为最近已提交快照的说明。</p>}
+            <p>{formatDocumentRankingPause(artifact.ranking, runContinuing, budgetEnabled)}</p>
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {artifact?.ranking && (
+        <details className="min-w-0 rounded-lg border p-4">
+          <summary className="cursor-pointer text-sm font-medium">
+            记录处理顺序与检索诊断 · 已提交 {artifact.ranking.committed_epochs} 轮
+            {artifact.ranking.paused ? " · 排序已暂停" : artifact.ranking.degraded ? " · 排序已降级" : ""}
+          </summary>
+          <div className="mt-4 space-y-3 text-xs">
+            {!budgetEnabled && <p className="font-medium">预算统计已暂停（显示启用期间累计值）。重新启用后从关闭前的累计量继续。</p>}
+            <p className="text-muted-foreground">
+              检索排名用于安排处理顺序，原始分数不代表事实正确概率。关系是否成立仍以原文证明和验证结果为准。
+            </p>
+            <p>
+              请求模式：{artifact.ranking.requested_mode}；实际模式：
+              {artifact.ranking.actual_modes.join("、") || "尚无已提交排序"}
+            </p>
+            {artifact.ranking.reasons.length > 0 && (
+              <div className="space-y-1">
+                <p>降级或未完成原因：{artifact.ranking.reasons.map((reason) => formatDocumentAnalysisReason(reason)).join(" ")}</p>
+                <p className="break-all font-mono text-muted-foreground">技术码：{artifact.ranking.reasons.join("、")}</p>
+              </div>
+            )}
+            <p>
+              排序请求预留 {artifact.ranking.cost.model_calls} 次 · 已记录请求 {artifact.ranking.cost.observed_requests ?? "—"} 次
+              {" "}· 输入对预留 {artifact.ranking.cost.input_pairs}
+              {" "}· 预留 tokens {artifact.ranking.cost.reserved_input_tokens ?? artifact.ranking.cost.input_tokens}
+              {" "}· 已计量 tokens {artifact.ranking.cost.measured_input_tokens ?? "—"}
+              {" "}· 未计量请求 {artifact.ranking.cost.unknown_request_count ?? "—"}
+              {" "}· 重试 {artifact.ranking.cost.retries}
+              {" "}· 耗时 {artifact.ranking.cost.elapsed_seconds.toFixed(2)} 秒
+              {" "}· 排队 {(artifact.ranking.cost.queue_seconds ?? 0).toFixed(2)} 秒
+            </p>
+            {artifact.ranking.epochs.map((epoch) => (
+              <details key={epoch.epoch_id} className="min-w-0 rounded-md border p-3">
+                <summary className="cursor-pointer break-all">
+                  {epoch.predicate_iri ? shortIri(epoch.predicate_iri) : "当前槽位"}
+                  {" · "}{epoch.actual_mode}{" · "}{epoch.records.length} 条记录
+                  {epoch.status === "paused" ? " · 未提交，排序暂停" : epoch.degraded ? " · 已降级" : ""}
+                  {epoch.budget_accounted === false ? " · 预算未计账" : ""}
+                </summary>
+                {epoch.budget_accounted === false && <p className="mt-2 text-muted-foreground">本轮排序未预扣或累计预算，不代表没有模型资源消耗。</p>}
+                <p className="my-2 break-all font-mono text-muted-foreground">
+                  {epoch.subject_ref ? `${epoch.subject_ref.entity_id}@${epoch.subject_ref.revision} · ` : ""}
+                  {epoch.epoch_id}
+                </p>
+                {epoch.reason && <p className="mb-2">{formatDocumentAnalysisReason(epoch.reason)}<span className="ml-1 break-all font-mono text-muted-foreground">（{epoch.reason}）</span></p>}
+                <div className="max-h-64 max-w-full overflow-auto">
+                  <table className="w-full min-w-[32rem] text-left text-xs">
+                    <thead className="text-muted-foreground">
+                      <tr><th className="p-2">池内名次</th><th className="p-2">记录</th><th className="p-2">通道</th><th className="p-2">意图内名次</th><th className="p-2">原始分数</th></tr>
+                    </thead>
+                    <tbody>
+                      {epoch.records.map((record) => (
+                        <tr key={record.record_id} className="border-t">
+                          <td className="p-2 tabular-nums">{record.rank}</td>
+                          <td className="break-all p-2 font-mono">{record.record_id}</td>
+                          <td className="p-2">{record.channels.join("、") || "—"}</td>
+                          <td className="p-2">{Object.entries(record.intent_ranks).map(([intent, rank]) => `${intent}: ${rank}`).join("；") || "—"}</td>
+                          <td className="p-2">{Object.entries(record.raw_scores).map(([intent, score]) => `${intent}: ${score}`).join("；") || "—"}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </details>
+            ))}
+          </div>
+        </details>
       )}
 
       {!artifact ? (
@@ -279,14 +381,19 @@ export function DocumentRelationshipGraph({
         </div>
       ) : (
         <>
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <div
+            className={cn(
+              "grid min-w-0 gap-3",
+              compact ? "grid-cols-2" : "sm:grid-cols-2 xl:grid-cols-4",
+            )}
+          >
             {[
               ["计划记录", artifact.coverage.records_planned],
               ["记录已检", artifact.coverage.records_examined],
               ["技术未完成", artifact.coverage.records_incomplete],
               ["待展开前沿", artifact.coverage.pending_frontiers],
             ].map(([label, value]) => (
-              <Card key={label}>
+              <Card key={label} className="min-w-0">
                 <CardContent className="p-3">
                   <p className="text-xs text-muted-foreground">{label}</p>
                   <p className="mt-1 text-xl font-semibold tabular-nums">
@@ -297,14 +404,26 @@ export function DocumentRelationshipGraph({
             ))}
           </div>
 
-          <div className="grid min-h-[34rem] gap-4 xl:grid-cols-[minmax(16rem,0.85fr)_minmax(22rem,1.35fr)_minmax(18rem,0.9fr)]">
-            <Card className="min-h-0 overflow-hidden">
+          <div
+            className={cn(
+              "grid min-w-0 gap-4",
+              compact
+                ? "grid-cols-1"
+                : "min-h-[34rem] xl:grid-cols-[minmax(16rem,0.85fr)_minmax(22rem,1.35fr)_minmax(18rem,0.9fr)]",
+            )}
+          >
+            <Card className="min-h-0 min-w-0 overflow-hidden">
               <CardHeader className="border-b p-4">
                 <CardTitle className="text-sm">
                   实体（{artifact.entities.length}）
                 </CardTitle>
               </CardHeader>
-              <CardContent className="h-[30rem] space-y-2 overflow-y-auto p-3 xl:h-full">
+              <CardContent
+                className={cn(
+                  "min-w-0 space-y-2 overflow-y-auto p-3",
+                  compact ? "max-h-64" : "h-[30rem] xl:h-full",
+                )}
+              >
                 {artifact.entities.map((entity) => (
                   <button
                     key={`${entity.entity_id}@${entity.revision}`}
@@ -340,8 +459,8 @@ export function DocumentRelationshipGraph({
               </CardContent>
             </Card>
 
-            <div className="min-h-0 space-y-4">
-              <Card>
+            <div className="min-h-0 min-w-0 space-y-4">
+              <Card className="min-w-0">
                 <CardHeader className="border-b p-4">
                   <CardTitle className="text-sm">
                     关系（{artifact.relationships.length}）
@@ -381,16 +500,16 @@ export function DocumentRelationshipGraph({
                           )}
                         >
                           <span className="flex flex-wrap items-center gap-1.5 text-sm">
-                            <span className="font-medium">
+                            <span className="min-w-0 font-medium">
                               {entitiesById.get(source.entity_id)?.label ||
                                 source.entity_id}
                             </span>
-                            <ArrowRight className="size-3.5 text-muted-foreground" />
-                            <span className="text-primary">
+                            <ArrowRight className="size-3.5 shrink-0 text-muted-foreground" />
+                            <span className="min-w-0 text-primary">
                               {edge.predicate_label}
                             </span>
-                            <ArrowRight className="size-3.5 text-muted-foreground" />
-                            <span className="font-medium">
+                            <ArrowRight className="size-3.5 shrink-0 text-muted-foreground" />
+                            <span className="min-w-0 font-medium">
                               {entitiesById.get(target.entity_id)?.label ||
                                 target.entity_id}
                             </span>
@@ -415,7 +534,7 @@ export function DocumentRelationshipGraph({
                                 ? "主体→对象"
                                 : "对象→主体"}
                             </Badge>
-                            <span className="font-mono text-[10px] text-muted-foreground">
+                            <span className="min-w-0 font-mono text-[10px] text-muted-foreground">
                               {edge.candidate_id}@{edge.revision}
                             </span>
                           </span>
@@ -426,7 +545,7 @@ export function DocumentRelationshipGraph({
                 </CardContent>
               </Card>
 
-              <Card>
+              <Card className="min-w-0">
                 <CardHeader className="border-b p-4">
                   <CardTitle className="text-sm">
                     属性（{artifact.properties.length}）
@@ -475,11 +594,16 @@ export function DocumentRelationshipGraph({
               </Card>
             </div>
 
-            <Card className="min-h-0 overflow-hidden">
+            <Card className="min-h-0 min-w-0 overflow-hidden">
               <CardHeader className="border-b p-4">
                 <CardTitle className="text-sm">候选详情与证据</CardTitle>
               </CardHeader>
-              <CardContent className="h-[30rem] space-y-5 overflow-y-auto p-4 xl:h-full">
+              <CardContent
+                className={cn(
+                  "min-w-0 space-y-5 overflow-y-auto p-4",
+                  !compact && "h-[30rem] xl:h-full",
+                )}
+              >
                 {!selected ? (
                   <p className="text-sm text-muted-foreground">
                     选择实体、关系或属性查看详情。
@@ -487,15 +611,15 @@ export function DocumentRelationshipGraph({
                 ) : (
                   <>
                     <section className="space-y-2">
-                      <div className="flex items-center gap-2">
+                      <div className="flex min-w-0 items-start gap-2">
                         {selected.kind === "entity" ? (
-                          <CircleDot className="size-4" />
+                          <CircleDot className="size-4 shrink-0" />
                         ) : selected.kind === "relationship" ? (
-                          <GitBranch className="size-4" />
+                          <GitBranch className="size-4 shrink-0" />
                         ) : (
-                          <Braces className="size-4" />
+                          <Braces className="size-4 shrink-0" />
                         )}
-                        <h3 className="break-words text-sm font-semibold">
+                        <h3 className="min-w-0 break-words text-sm font-semibold">
                           {selected.kind === "entity"
                             ? selected.item.label
                             : selected.item.predicate_label}
@@ -660,12 +784,17 @@ export function DocumentRelationshipGraph({
             </Card>
           </div>
 
-          <Card>
+          <Card className="min-w-0">
             <CardHeader className="border-b p-4">
               <CardTitle className="text-sm">覆盖与未完成范围</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4 p-4">
-              <div className="grid gap-2 text-xs sm:grid-cols-3 xl:grid-cols-6">
+            <CardContent className="min-w-0 space-y-4 p-4">
+              <div
+                className={cn(
+                  "grid min-w-0 gap-2 text-xs",
+                  compact ? "grid-cols-2" : "sm:grid-cols-3 xl:grid-cols-6",
+                )}
+              >
                 {[
                   ["计划记录", artifact.coverage.records_planned],
                   ["已检查", artifact.coverage.records_examined],
@@ -674,7 +803,7 @@ export function DocumentRelationshipGraph({
                   ["语义待定", artifact.unresolved.undetermined],
                   ["不支持", artifact.unresolved.unsupported],
                 ].map(([label, value]) => (
-                  <div key={label} className="rounded-md bg-muted/50 p-2">
+                  <div key={label} className="min-w-0 rounded-md bg-muted/50 p-2">
                     <span className="text-muted-foreground">{label}</span>
                     <strong className="ml-2 tabular-nums">{value}</strong>
                   </div>
@@ -685,15 +814,17 @@ export function DocumentRelationshipGraph({
                   尚无已提交的主体—谓词覆盖条目；请结合当前阶段判断，不能据此断言全文无关系。
                 </p>
               ) : (
-                <div className="overflow-x-auto rounded-md border">
+                <div className="max-w-full overflow-x-auto rounded-md border">
                   <table className="w-full min-w-[48rem] text-left text-xs">
                     <thead className="bg-muted/60 text-muted-foreground">
                       <tr>
                         {[
                           "主体",
                           "谓词",
-                          "Phase 1",
-                          "Phase 2",
+                          "第一阶段计划",
+                          "第一阶段实际执行",
+                          "第二阶段计划",
+                          "第二阶段实际执行",
                           "已检",
                           "未完成",
                           "未尝试",
@@ -720,7 +851,9 @@ export function DocumentRelationshipGraph({
                           </td>
                           {[
                             item.phase_counts.phase1,
+                            item.executed_phase_counts?.phase1 ?? "—",
                             item.phase_counts.phase2,
+                            item.executed_phase_counts?.phase2 ?? "—",
                             item.records_examined,
                             item.records_incomplete,
                             item.records_unattempted,
@@ -736,11 +869,21 @@ export function DocumentRelationshipGraph({
                   </table>
                 </div>
               )}
+              <p className="text-xs text-muted-foreground">
+                实际执行包含已启动但技术未完成的记录。计划保留的记录仍需执行；旧快照未记录的实际阶段数显示为“—”。
+              </p>
               {artifact.coverage.stop_reason && (
                 <Alert>
-                  <AlertTitle>停止原因</AlertTitle>
+                  <AlertTitle>{runContinuing ? "当前覆盖说明" : "覆盖未完成说明"}</AlertTitle>
                   <AlertDescription>
-                    {artifact.coverage.stop_reason}
+                    {runContinuing && <p>运行仍在继续，以下说明来自最近已提交的覆盖快照。</p>}
+                    <p>{artifact.coverage.stop_reason === "ranking_paused"
+                      ? formatDocumentRankingPause(artifact.ranking, runContinuing, budgetEnabled)
+                      : formatDocumentAnalysisReason(artifact.coverage.stop_reason)}</p>
+                    <details className="mt-2 text-xs">
+                      <summary className="cursor-pointer">技术诊断</summary>
+                      <p className="mt-1 break-all font-mono">{artifact.coverage.stop_reason}</p>
+                    </details>
                   </AlertDescription>
                 </Alert>
               )}

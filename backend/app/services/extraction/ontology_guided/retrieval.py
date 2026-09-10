@@ -5,7 +5,7 @@ from __future__ import annotations
 import re
 from collections import defaultdict, deque
 
-from app.services.extraction.evidence_identity import stable_id
+from app.services.extraction.evidence_identity import evidence_hash, stable_id
 from app.services.extraction.ontology_guided.contracts import (
     EdgeSpec,
     MetadataSnapshot,
@@ -152,7 +152,21 @@ def plan_slot(
         phase1_section_limit=phase1_section_limit,
         records=planned,
         ledger=ledger,
+        frozen_record_ids=[record.record_id for record in index.records],
+        frozen_record_hash=evidence_hash([record.record_id for record in index.records]),
     )
+
+
+def validate_record_universe(plan: RetrievalPlan, index: RecordIndex) -> None:
+    """Compare with independently rebuilt U, not merely two mutable plan lists."""
+    expected = [record.record_id for record in index.records]
+    if (
+        plan.frozen_record_ids != expected
+        or plan.frozen_record_hash != evidence_hash(expected)
+        or {record.record_id for record in plan.records} != set(expected)
+        or set(plan.ledger) != set(expected)
+    ):
+        raise ValueError("retrieval plan differs from the frozen RecordIndex universe")
 
 
 def mark_record(

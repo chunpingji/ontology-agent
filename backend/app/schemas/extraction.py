@@ -4,7 +4,7 @@ from datetime import datetime
 from typing import Any, Literal
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import AliasChoices, AliasPath, BaseModel, ConfigDict, Field
 
 
 class ExtractionConfigCreate(BaseModel):
@@ -36,6 +36,10 @@ class ExtractionJobResponse(BaseModel):
 
     id: UUID
     source_type: str
+    source_mode: str | None = Field(
+        default=None,
+        validation_alias=AliasChoices("source_mode", AliasPath("source_config", "mode")),
+    )
     source_filename: str | None = None
     document_path: str | None = None
     status: str

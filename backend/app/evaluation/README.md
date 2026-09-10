@@ -7,13 +7,14 @@
 `OntologyGuidedExecutor`、类型化契约、两阶段检索、证明门与投影。评测模块只增加运行身份、调用耗时和制品封装，不实现第二套识别算法，也不读取评分参考。`quality_guided` 使用冻结结构，`quality_guided_summary` 额外使用同一 preparation 内已冻结的摘要；标题和摘要仍只影响检索排序，不能成为事实证明。
 
 活动模式必须通过当前 `prepare` 新建输入快照。manifest v2 额外保存
-`ontology_snapshot.json`、语义哈希和文件哈希；旧 preparation 或 `fork_experiment` 没有该制品时会失败关闭，不能静默从实时本体重建。以下示例省略软截止，让完整覆盖由共享核心和任务上限决定：
+`ontology_snapshot.json`、显式根类型、语义哈希和文件哈希；旧 preparation 或 `fork_experiment` 没有该制品时会失败关闭，不能静默从实时本体重建。独立 `--source-docx` 入口要求 `--root-class-iri`，不查询旧作业数据库或模型端点；活动 executor 使用该冻结根类型，可选择冻结本体内的非 CMC 根。以下示例省略软截止，让完整覆盖由共享核心和任务上限决定：
 
 ```bash
 CMC_QUALITY_DIR=/app/data/evaluations/cmc-ontology-guided-example
 
 python -m app.evaluation.cmc_benchmark prepare \
-  --document-ref upload-23c872fb-3ab1-41de-a705-dd4b162dfa09 \
+  --source-docx /controlled/sources/independent-cmc-01.docx \
+  --root-class-iri https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport \
   --output "$CMC_QUALITY_DIR"
 
 python -m app.evaluation.cmc_benchmark summarize \
@@ -23,6 +24,10 @@ python -m app.evaluation.cmc_benchmark run --prepared "$CMC_QUALITY_DIR" \
   --output "$CMC_QUALITY_DIR/quality-01" \
   --mode quality_guided_summary --timeout 600 --timeout-retries 0
 ```
+
+本地原件必须通过 DOCX 和大小检查，复制后核验哈希，原件保持不变；输出目录必须新建。
+互斥的 `--document-ref` 兼容入口仅接受旧抽取作业中已登记为 CMCReport 的 doc_ref，
+不接受 DocumentAnalysisRun ID；显式根不得与登记类型冲突。legacy 模式仍限定 CMC 根。
 
 每个活动结果保存 `run.json`（版本化公共图、metadata、本体快照、coverage 和事件）、
 `result.json`（`ontology-guided-evaluation-manifest-v1`）、`events.json`、
@@ -39,7 +44,95 @@ python -m app.evaluation.cmc_benchmark score --prepared "$CMC_QUALITY_DIR" \
   --reference /controlled/gold/ontology_guided_reference_v1.json
 ```
 
-未提供参考时只生成 `pending_expert_reference`，不会把模型自评或工程 fixture 计为质量分数。当前仓库实现只完成确定性工程测试，**尚未执行三个独立真实模型新运行，也没有经业务专家批准的新金标**；因此 result manifest 的 release gate 固定为 blocked，不能声称 AC-T30 质量侧或生产发布完成。
+未提供参考时只生成 `pending_expert_reference`，不会把模型自评或工程 fixture 计为质量分数。当前仓库实现已有确定性及受控语义排序工程测试，**尚未执行三个独立真实模型新运行，也没有经业务专家批准的新金标**；因此 result manifest 的 release gate 固定为 blocked，不能声称 AC-T30 质量侧或生产发布完成。
+
+### 022 主体感知排序与独立评分
+
+活动 runner 接受同一个 `RankingService`，CLI 通过线上共用的
+`configured_ranking_service(settings)` 构造。未启用时冻结 deterministic；显式启用而
+制品缺失时按已冻结政策对整个池降级或暂停。结果新增 `ranking.json`、`costs.json`，
+`run.json.ranking` 保存查询、视图、池成员、原始分数、提交顺序与真实模型成本；
+`result.json.ranking_identity` 保存请求配置、模型身份及不可用原因；`ablation.json`
+保存可直接比较的公共输入、预算和注册因素。评分不改变图谱。
+
+本地适配使用已锁定的 Sentence Transformers 接口，严格 `local_files_only=True`、
+`trust_remote_code=False`、CPU、L2 向量及单 logit 输出。首次实际调用才创建私有模型进程；
+tokenizer 和每种模型权重首次加载前均与父进程冻结的制品身份再次核验，防止先分词、
+后加载期间文件替换仍沿用旧身份。
+超时/取消先终止该进程再释放共享调度槽。所有输入在真实 tokenizer 下检查完整 token 数，
+超过配置或模型上限时失败，不能静默截断。`score_pairs` 的负分是正常检索分数。
+
+启用前需要为 embedding/reranker 各交付一个本地目录及 `sha256sum` 格式清单，清单路径
+相对各自模型根，必须覆盖所有配置、tokenizer 和安全权重文件，禁止遗漏和符号链接。
+空清单不能通过。配置项为 `SEMANTIC_RANKING_ENABLED`、
+`SEMANTIC_RANKING_EMBEDDING_PATH` / `SEMANTIC_RANKING_EMBEDDING_MANIFEST_PATH`、
+`SEMANTIC_RANKING_RERANKER_PATH` / `SEMANTIC_RANKING_RERANKER_MANIFEST_PATH`，
+其余池/批大小、token、时间、重试与失败政策见 `app/config.py`。准备新 manifest 会冻结
+这些配置；旧 preparation 缺少字段时须重新 prepare。模型权重不提交 Git，也不在评测时下载。
+
+2026-09-08 本地核验：开发 `.venv` 缺少 torch、Sentence Transformers、transformers、
+tokenizers；本地只有旧 BGE/GLiNER 目录，`models/MODELS.sha256` 为空，未发现 reranker。
+适配器测试用受控子进程和临时制品验证程序边界，没有加载这些真实权重。
+
+同一 preparation 的活动运行可显式选择 A–D 注册因素：
+
+```bash
+python -m app.evaluation.cmc_benchmark run --prepared "$CMC_QUALITY_DIR" \
+  --output "$CMC_QUALITY_DIR/ranking-C-01" --mode quality_guided_summary \
+  --ranking-ablation C --timeout 600 --timeout-retries 0
+```
+
+A 为确定性排序，B 增加稠密召回，C 增加联合编码精排，D 再启用阶段交错；
+各组共用主体、谓词、章节公平策略及必要原文验证。A–C 关闭阶段交错。B 仅需 embedding，
+C/D 需要两种制品。运行目录和 run ID 独立，不得把降级为 deterministic 的 C/D
+冒充正常语义组；manifest 保留全部失败与新增成本。未指定组别时沿用正式配置。
+
+`ontology-guided-scorer-v2` 继续读取隔离的 `ontology-guided-reference-v1`，新增可选字段：
+条件 `conditions`、适用域 `applicability`、方向 `direction`、专家未决
+`expectation=undetermined`、`annotation_complete`、`paths`、实体 `local_id` /
+`aliases` / `mention_evidence_sets` 和 `global_identity_expected`。每个 expected 断言必须
+有非空 `allowed_evidence_sets` 才能计 TP；匹配 tuple 但原文证明错误计 FP 且金标仍为 FN。
+未配置证明、未裁决或范围外接受项单列 unscored 和精度上下界，并阻止正式 pass。
+没有预测而有正例时 P=N/A、R=0、F1=0；重复边只能匹配一个 TP，重复接受计 FP。
+`metrics.assertions` 单列关系/属性，`semantic_match_metrics` 和独立证明结果分开；
+显式 mention 来源约束在同一实体的全部端点声明间共享，过期主体/对象 revision
+不能匹配正确 tuple；多跳证明必须来自同一条实际连续路径，不能借用同名节点的其他路径。
+`max_path_traversals` 限制路径枚举，达到上限时报告 truncated 并阻止正式通过。
+不能用包含实体的 overall 冒充“完整断言精度提升”。全局身份无明确标注时不生成可信身份分数；
+可选 `entity_partitions=[{local_id,class_iri,mention_spans}]` 以独立物理 mention 分区
+计算错误合并/拆分：一个输出节点命中多个独立分区为错误合并，一个分区映射多个输出
+节点为错误拆分；未映射节点单列未评分。缺少该参考时显示 not_annotated，不用节点数替代。
+
+固定查询/原始 record 的排序诊断位于 `semantic_ranking_evaluation.py`：
+
+```bash
+python -m app.evaluation.semantic_ranking_evaluation \
+  --reference /controlled/gold/query-record-reference.json \
+  --observation /controlled/results/fixed-pool-observation.json \
+  --k 10 --output /controlled/results/retrieval-metrics.json
+```
+
+两个输入均绑定 `query_id`、`document_hash`、`query_content_hash`。参考含
+`records=[{record_id, grade:0..3, role:support|counterevidence|conditional|context}]` 和
+`annotation_complete`；观察含 `pool_record_ids`、`ranking_record_ids`、
+`dispatch_record_ids`、`assembled_record_ids`、`assembled_source_ids`。可选
+`assertions[].equivalent_evidence_sets[]` 明确 `target_record_ids` 与绑定-only
+`binding_source_ids`。工具按原始 record 去重，分别计算 Recall@pool、nDCG@K、MRR、
+支持/反证召回及入池/读取/装配闭包；零相关查询不记为 1，未裁决只作局部观察。
+
+`validate_ablation_pair` 比较 `semantic-ranking-ablation-v1` 的 `shared` 和 `factors`，
+共同 scope 包含显式根类型，根类型不同不能作为同输入消融比较；
+仅允许独立预注册的因素差异；固定池子实验额外检查 query/pool/view hashes 及相同记录集合。
+CLI 每轮生成的 `ablation.json` 可直接按 `fixed_pool=False` 比较；
+`build_ablation_manifest(result_manifest, run, epoch_id=...)` 可导出明确池的机器可比身份，
+若两个动态运行未形成同一池则固定池核验拒绝，须另用共同候选池进行子实验。
+固定池的可执行导出、三轮 A–D 预登记运行和聚合入口为
+`python -m app.evaluation.fixed_pool_benchmark`，完整命令及协议格式见
+[固定池运行说明](FIXED_POOL.md)。它从完整 epoch 冻结共同原文输入，使用独立调度库，
+对缺组、内容漂移、失败成本和未裁决参考实施显式门禁。
+运行级 A–D 动态前沿结果不能冒充 B/C 固定池子实验。检索参考只进入独立评分器，
+不会传给执行器。真实精度增量、置信区间、样本规模与成本门槛尚待独立协议和专家标注，
+这些工程指标不会自动宣告质量收益。
 
 ### 历史 runner 兼容边界
 
@@ -52,7 +145,7 @@ python -m app.evaluation.cmc_benchmark score --prepared "$CMC_QUALITY_DIR" \
 
 本次四组预算内试验已结束，结果见[实测报告](../../../docs/CMCReport结构摘要图谱识别实测报告.md)和[可离线复算归档](../../../docs/evaluations/cmc-23c872fb-20260907-02/README.md)。本次额外使用 `--deadline-seconds 600`，实际只尝试了 1/4/3/5 个任务，没有达到 24 次上限；所有组仍为全文未完成。以下命令是通用复现步骤，不应把只设任务上限的运行与本轮软时间预算直接混比。
 
-`prepare` 在数据库只读事务中按文档引用定位最新抽取作业，核对其显式类型为 `CMCReport`，然后复制原文、本体和运行代码，生成独立证据 IR、legacy 语义 schema、公共核心 `ontology_snapshot.json` 及清单。准备阶段的 OWL 存储位于实验临时目录；活动 run 使用冻结本体快照，legacy 模式才读取旧 schema，二者都不打开生产 OWL 存储。所有实验输出写入指定评测目录，不更新生产抽取作业、不提交候选、不写中央事实图谱。
+历史兼容入口 `prepare --document-ref` 在数据库只读事务中按文档引用定位最新抽取作业，核对其显式类型为 `CMCReport`，然后复制原文、本体和运行代码，生成独立证据 IR、legacy 语义 schema、公共核心 `ontology_snapshot.json` 及清单。独立新输入可用上文的 `--source-docx` 入口绕开旧作业查询。准备阶段的 OWL 存储位于实验临时目录；活动 run 使用冻结本体快照，legacy 模式才读取旧 schema，二者都不打开生产 OWL 存储。所有实验输出写入指定评测目录，不更新生产抽取作业、不提交候选、不写中央事实图谱。
 
 这不等于整个实验没有数据库写入。摘要和抽取复用现有共享模型调度器，可能产生 `LocalModelPool`、`LocalModelRequest` 等调度与用量记录；这些属于模型运行记录。只读保证针对 `prepare` 的源作业查询，生产抽取作业、候选和事实数据不由本评测提交或更新。
 

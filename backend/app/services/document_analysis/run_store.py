@@ -174,6 +174,7 @@ class DocumentAnalysisRunStore:
         ontology_snapshot_hash: str = "",
         source_artifact_ref: str | None = None,
         metadata_mode: str = "generate_summary",
+        ranking_budget_enabled: bool = True,
         scope_mode: str = "document_graph",
         focus_path: list[str] | None = None,
         provisional_fingerprint: str | None = None,
@@ -287,6 +288,7 @@ class DocumentAnalysisRunStore:
             root_class_label=root_class_label,
             ontology_snapshot_hash=ontology_snapshot_hash,
             metadata_mode=metadata_mode,
+            ranking_budget_enabled=ranking_budget_enabled,
             scope_mode=scope_mode,
             focus_path=focus,
             provisional_fingerprint=provisional_fingerprint,
@@ -423,6 +425,7 @@ class DocumentAnalysisRunStore:
         root_class_label: str = "",
         ontology_snapshot_hash: str = "",
         metadata_mode: str = "generate_summary",
+        ranking_budget_enabled: bool = True,
         scope_mode: str = "document_graph",
         focus_path: list[str] | None = None,
         provisional_fingerprint: str | None = None,
@@ -452,6 +455,7 @@ class DocumentAnalysisRunStore:
             root_class_label=root_class_label,
             ontology_snapshot_hash=ontology_snapshot_hash,
             metadata_mode=metadata_mode,
+            ranking_budget_enabled=ranking_budget_enabled,
             scope_mode=scope_mode,
             focus_path=focus_path,
             provisional_fingerprint=provisional_fingerprint,
@@ -483,6 +487,37 @@ class DocumentAnalysisRunStore:
                 ),
             },
         )
+
+    def list_owned(
+        self, owner_id: str, *, limit: int = 20, offset: int = 0
+    ) -> tuple[list[DocumentAnalysisRun], bool]:
+        """List retained online runs without claiming work or cleaning artifacts."""
+
+        if not 1 <= limit <= 100 or offset < 0:
+            raise ValueError("limit must be 1-100 and offset must be nonnegative")
+        rows = list(
+            self.db.scalars(
+                select(DocumentAnalysisRun)
+                .where(
+                    DocumentAnalysisRun.owner_id == owner_id,
+                    DocumentAnalysisRun.scope_mode == "document_graph",
+                    DocumentAnalysisRun.deletion_state != "deleted",
+                    DocumentAnalysisRun.execution_status.not_in(["deleted", "expired"]),
+                    or_(
+                        DocumentAnalysisRun.expires_at.is_(None),
+                        DocumentAnalysisRun.expires_at > self._clock(),
+                    ),
+                )
+                .order_by(
+                    DocumentAnalysisRun.created_at.desc(),
+                    DocumentAnalysisRun.recognition_run_id.desc(),
+                )
+                .offset(offset)
+                .limit(limit + 1)
+                .execution_options(populate_existing=True)
+            )
+        )
+        return rows[:limit], len(rows) > limit
 
     def get_owned(
         self,
@@ -1473,7 +1508,7 @@ class DocumentAnalysisRunStore:
             bool,
         ]
     ):
-        """Apply pause/resume/cancel/delete with a run or control-version CAS."""
+        """Apply lifecycle/budget controls with a run or control-version CAS."""
 
         if expected_revision is None and expected_version is None:
             raise ValueError("an expected run or control version is required")
@@ -1552,6 +1587,13 @@ class DocumentAnalysisRunStore:
                 self._revoke_execution(execution)
                 execution.pause_requested = False
                 execution.cancel_requested = False
+            elif action in {"ranking_budget_enable", "ranking_budget_disable"}:
+                if run.execution_status not in {"paused", "failed"}:
+                    raise InvalidRunState("only paused/failed runs can change ranking budgets")
+                if run.expires_at is not None and _aware(run.expires_at) <= stamp:
+                    raise InvalidRunState("an expired run cannot change ranking budgets")
+                values["ranking_budget_enabled"] = action == "ranking_budget_enable"
+                self._revoke_execution(execution)
             elif action == "cancel":
                 if run.execution_status in TERMINAL_EXECUTION_STATUSES:
                     raise InvalidRunState("terminal run cannot be cancelled again")
@@ -1646,7 +1688,13 @@ class DocumentAnalysisRunStore:
         restored = dict(payload)
         if not hmac.compare_digest(digest, content_hash(restored)):
             raise InvalidRunState("delete tombstone result failed integrity verification")
-        if set(restored) != _DELETE_CONTROL_RESULT_FIELDS:
+        if (
+            set(restored) - {"ranking_budget_enabled"} != _DELETE_CONTROL_RESULT_FIELDS
+            or (
+                "ranking_budget_enabled" in restored
+                and not isinstance(restored["ranking_budget_enabled"], bool)
+            )
+        ):
             raise InvalidRunState("delete tombstone result contains unsafe fields")
         if (
             restored.get("recognition_run_id") != str(recognition_run_id)

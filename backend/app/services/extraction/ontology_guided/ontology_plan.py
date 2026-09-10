@@ -165,6 +165,11 @@ def ontology_snapshot_from_engine(
             # Fold its direct (hop=1) declarations into the frozen snapshot now;
             # workers must not consult a newer live ontology later.
             relationships = _legacy_direct_relationships(engine, iri)
+        # Engine/RDF enumeration order is not declaration semantics. Keep
+        # parallel same-IRI constraints distinct, with full-payload tie breaks;
+        # never merge their ranges or rewrite an already frozen snapshot.
+        properties.sort(key=lambda item: (item.iri, evidence_hash(item)))
+        relationships.sort(key=lambda item: (item.iri, evidence_hash(item)))
         payload = {
             "iri": iri,
             "label": raw["label"],

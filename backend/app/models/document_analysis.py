@@ -23,6 +23,7 @@ from sqlalchemy import (
     String,
     Text,
     UniqueConstraint,
+    true,
 )
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -88,6 +89,9 @@ class DocumentAnalysisRun(Base):
     stop_reason: Mapped[str | None] = mapped_column(String(100))
     control_action: Mapped[str | None] = mapped_column(String(32))
     control_version: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    ranking_budget_enabled: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=True, server_default=true(),
+    )
     deletion_state: Mapped[str] = mapped_column(String(32), nullable=False, default="none")
     progress: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
     artifact_manifest: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)

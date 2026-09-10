@@ -15,6 +15,28 @@ POST /api/extraction/jobs/{job_id}/evidence/extract：运行通用抽取，返�
 可选 `pause_after` 为 1—32，限制本次最多新尝试的任务数而不改变累计预算身份；证据面板默认每批 8 项。无请求体保持原调用兼容。当前同步工作线程接口在该批处理完成后返回，非后台 202 任务接口。
 调度版本、传输协议和服务端对象分批预算均属于 run identity；变化时不复用旧 checkpoint。当前主体/谓词轮转及对象分批不会放宽独立绑定、审核和提交条件；必填字段/断言极性缺失不能用模型默认值代替。客户端不得注入对象预算或调度状态。
 GET /api/extraction/jobs/{job_id}/evidence：返回有版本候选和任务状态；原文/外部来源和绑定分开。
+可选 `view=latest_run` 仅投影当前服务端识别快照中的候选，使用候选仓库的最新审核版本；
+未建立识别快照时保持原有行为。模板关系图谱采用此视图，避免历史重跑结果与当前分支状态
+混杂。默认 `view=all` 保留完整历史候选查询；视图选择不删除候选、改写审核或启动识别。
+新增可选 `execution_status` 与 `run.branch_progress`（文档根直接关系，以谓词 IRI 为键）。
+分支返回 `status`、`reason_codes`、`discovery_tasks`、`relationship_tasks`、`failed_tasks`、
+`positive_count`、`coverage_complete`，区分排队、对象识别、对象失败、等待关系、关系识别、
+关系失败、已检查部分关系但无有效肯定关系（`relation_checked`）、已有有效关系及本轮完成
+无有效关系。否定、条件、假设、未决结果不能被投影为有效肯定关系，也不能退回“等待验证”。
+状态来自当前运行台账；历史缺台账显示未知，
+不得根据空候选推断全文没有关系。暂停/失败运行不得显示正在处理；GET 不启动模型。
+分支另返回 `property_status`、`property_tasks`、`positive_property_count`、
+`failed_property_tasks`，统计已验证关系所连接实体的属性处理情况。属性状态为
+`queued` / `extracting` / `incomplete` / `partial` / `complete` / `not_applicable`；
+`not_applicable` 表示当前本体未给关联实体声明数据属性。运行中的候选计数不等于最终
+发布的属性值，属性仍需经过暂停或完成时的联合归属核对；关系已识别不表示属性覆盖完成。
+
+2026-09-09 修复约定：引用失败可执行每个任务最多一次的自动纠错（独立于显式失败重试），
+先持久化原错误、纠错提示及累计预算，再请求模型重新给出逐字引用。提示只包含本次允许
+范围的精确匹配，不自动迁移证据 ID、不模糊匹配、不扩大 scope；空纠错响应仍为未完成。
+新运行先按模板消费路径及根直接关系轮转相关原文记录，实体菜单限于该关系 range 和合法
+子类，关系仍须独立绑定验证；相关记录处理后继续全文覆盖。旧断点保持原调度顺序和身份，
+只追加有界纠错与状态台账；重新识别才启用新调度。
 POST /api/extraction/jobs/{job_id}/evidence/candidates：创建人工/结构化外部候选，服务端仍验证主体、来源、类型和绑定，不信任客户端传入的 passed/confirmed。
 PUT /api/extraction/evidence/candidates/{id}/review：expected_revision、decision、reason、可选 edited_payload；过期 409，非法 422，缺权限 403。confirmed 只确认；编辑产生新 revision，需重验审核。
 POST /api/extraction/evidence/candidates/{id}/resolve：expected_revision、canonical target；防跨作业非法归并、环和自合并，更新依赖并重验。

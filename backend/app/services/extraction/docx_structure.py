@@ -843,7 +843,7 @@ def parse_docx_structure(
         level=0,
     )
     try:
-        from docx import Document
+        from app.services.extraction.docx_reader import load_docx_for_reading
     except Exception:
         return DocStructure(
             fallback_title, [], [], [], [], source_filename,
@@ -852,7 +852,7 @@ def parse_docx_structure(
         )
 
     try:
-        doc = Document(str(path))
+        doc = load_docx_for_reading(path)
     except Exception as exc:
         return DocStructure(
             fallback_title, [], [], [], [], source_filename,

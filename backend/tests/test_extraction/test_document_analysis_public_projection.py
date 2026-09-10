@@ -2,10 +2,11 @@ from __future__ import annotations
 
 from docx import Document
 
-from app.schemas.document_analysis import GraphArtifactResponse
+from app.schemas.document_analysis import GraphArtifactResponse, GraphRanking
 from app.services.document_analysis.public_projection import (
     build_selection_registry,
     public_graph_payload,
+    public_ranking_payload,
 )
 from app.services.extraction.ontology_guided.contracts import (
     CoverageSummary,
@@ -74,13 +75,13 @@ def test_public_projection_registers_role_specific_opaque_source_refs(tmp_path):
     progress = RunProgress(
         tasks_attempted=1,
         model_calls=1,
-        records_planned=1,
+        records_planned=8,
         records_examined=1,
         records_incomplete=0,
-        records_unattempted=0,
+        records_unattempted=7,
         phase_counts={"phase1": 1, "phase2": 0},
         supported=1,
-        completion="in_scope_complete",
+        completion="incomplete",
     )
     graph = project_graph(
         recognition_run_id="a4f9885d-1b70-4718-9a97-2eb03c3ef8c4",
@@ -97,7 +98,10 @@ def test_public_projection_registers_role_specific_opaque_source_refs(tmp_path):
                 predicate_iri=DESCRIBES,
                 predicate_label="描述",
                 phase1=1,
+                phase2=7,
+                executed_phase_counts={"phase1": 1, "phase2": 0},
                 examined=1,
+                unattempted=7,
             )
         ],
         progress=progress,
@@ -128,6 +132,9 @@ def test_public_projection_registers_role_specific_opaque_source_refs(tmp_path):
     )
 
     response = GraphArtifactResponse.model_validate(payload)
+    assert response.coverage.subjects[0].phase_counts.phase2 == 7
+    assert response.coverage.subjects[0].executed_phase_counts.phase2 == 0
+    assert not response.coverage.phase2_started
     assert len(response.relationships) == 1
     refs = response.relationships[0].source_selection_refs
     assert refs.object and refs.predicate_bridge
@@ -233,3 +240,72 @@ def test_public_projection_replays_durable_dependency_invalidations(tmp_path):
     )
     assert len(all_candidates.relationships) == 1
     assert all_candidates.relationships[0].invalidated is True
+
+
+def test_ranking_projection_preserves_negative_scores_and_hides_private_inputs():
+    state = {
+        "service": {
+            "policy": {"mode": "semantic"},
+            "cache": {"private-query": "uploaded document text"},
+            "costs": {"model_calls": 3, "input_pairs": 4, "tokens": 128,
+                      "technical_retries": 1, "elapsed_ms": 1500},
+            "model_observations": [
+                {"operation": "embed", "input_tokens": 64, "queue_seconds": 0.2},
+                {"operation": "score_pairs", "input_tokens": None, "queue_seconds": 0.1},
+            ],
+            "epochs": [{
+                "epoch_id": "epoch:one", "status": "committed",
+                "subject_ref": {"entity_id": "subject:one", "revision": 2},
+                "plan_id": "plan:one", "actual_ranking_mode": "deterministic",
+                "degraded": True, "reason": "ranking_timeout",
+                "queries": [{"query_id": "query:one", "predicate_iri": DESCRIBES,
+                             "model_text": "private source"}],
+                "ordered_record_ids": ["record:low", "record:high"],
+                "observations": [{"record_id": "record:low",
+                                  "retrieval_intent": "counterevidence", "intent_rank": 1,
+                                  "raw_rerank_score": -3.0, "channel_hits": ["dense"]}],
+            }, {"epoch_id": "epoch:pending", "status": "ready"}],
+        },
+    }
+    result = GraphRanking.model_validate(public_ranking_payload(state))
+    assert result.committed_epochs == 1
+    assert result.degraded and result.reasons == ["ranking_timeout"]
+    assert result.epochs[0].records[0].raw_scores == {"counterevidence": -3.0}
+    assert result.epochs[0].records[0].intent_ranks == {"counterevidence": 1}
+    assert result.epochs[0].records[0].channels == ["dense"]
+    assert result.cost.model_calls == 3 and result.cost.input_pairs == 4
+    assert result.cost.observed_requests == 2
+    assert result.cost.input_tokens == 128 and result.cost.retries == 1
+    assert result.cost.elapsed_seconds == 1.5
+    assert result.cost.reserved_input_tokens == 128
+    assert result.cost.measured_input_tokens == 64
+    assert result.cost.unknown_request_count == 2
+    assert round(result.cost.queue_seconds, 1) == 0.3
+    assert "private" not in result.model_dump_json()
+    assert state["service"]["epochs"][1]["status"] == "ready"
+
+
+def test_missing_ranking_is_explicitly_unobserved_deterministic():
+    result = GraphRanking.model_validate(public_ranking_payload({}))
+    assert result.requested_mode == "deterministic"
+    assert result.committed_epochs == 0 and result.actual_modes == []
+
+
+def test_paused_uncommitted_pool_does_not_claim_a_deterministic_execution():
+    state = {"service": {
+        "policy": {"mode": "semantic"},
+        "epochs": [{
+            "epoch_id": "completed", "status": "committed", "actual_ranking_mode": "semantic",
+        }],
+        "pending_epochs": [{
+            "epoch_id": "paused", "status": "paused", "actual_ranking_mode": "deterministic",
+            "reason": "ranking_call_budget_exhausted",
+        }],
+    }}
+    result = GraphRanking.model_validate(public_ranking_payload(state))
+    assert result.paused and result.reasons == ["ranking_call_budget_exhausted"]
+    assert result.actual_modes == ["semantic"] and result.committed_epochs == 1
+    state["service"]["epochs"] = []
+    result = GraphRanking.model_validate(public_ranking_payload(state))
+    assert result.paused and result.actual_modes == [] and result.committed_epochs == 0
+    assert not result.degraded and result.cost.model_calls == 0

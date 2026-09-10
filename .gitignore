@@ -9,6 +9,7 @@ frontend/tsconfig.tsbuildinfo
 __pycache__/
 *.pyc
 .venv/
+.venv-cuda12/
 venv/
 *.egg-info/
 .pytest_cache/

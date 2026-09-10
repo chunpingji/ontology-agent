@@ -917,8 +917,8 @@ export const createExtractionConfig = (data: Partial<ExtractionConfig>) =>
   });
 export const listExtractionJobs = () =>
   fetchAPI<ExtractionJob[]>("/api/extraction/jobs");
-export const getExtractionJob = (id: string) =>
-  fetchAPI<ExtractionJob>(`/api/extraction/jobs/${id}`);
+export const getExtractionJob = (id: string, signal?: AbortSignal) =>
+  fetchAPI<ExtractionJob>(`/api/extraction/jobs/${id}`, { signal });
 
 // 研发文档内容抽取（007 US2）：由文档个体人工发起 → 入队（pending）→ 手动 start。
 // 候选进入既有对齐复核队列，确认后入事实层并携 extractedFrom 溯源回链（FR-004/Q1）。
@@ -996,6 +996,7 @@ export interface ExtractionConfig {
 export interface ExtractionJob {
   id: string;
   source_type: string;
+  source_mode?: string | null;
   source_filename: string | null;
   document_path: string | null;
   status: string;
@@ -1866,7 +1867,9 @@ export type DocumentAnalysisStatus =
   | "deleting"
   | "deleted"
   | "expired";
-export type DocumentAnalysisAvailableAction = "pause" | "resume" | "cancel" | "delete";
+export type DocumentAnalysisAvailableAction =
+  | "pause" | "resume" | "cancel" | "delete"
+  | "ranking_budget_enable" | "ranking_budget_disable";
 
 export type DocumentAnalysisStage =
   | "accepted"
@@ -1915,6 +1918,18 @@ export interface DocumentAnalysisCreateResponse {
   links: DocumentAnalysisRunLinks;
 }
 
+export type DocumentAnalysisRunSummary = Pick<
+  DocumentAnalysisCreateResponse,
+  | "contract_version" | "recognition_run_id" | "run_revision" | "event_head"
+  | "artifact_revision" | "status" | "stage" | "input" | "created_at" | "expires_at"
+>;
+
+export interface DocumentAnalysisRunList {
+  contract_version: typeof DOCUMENT_ANALYSIS_CONTRACT_VERSION;
+  items: DocumentAnalysisRunSummary[];
+  has_more: boolean;
+}
+
 export interface DocumentAnalysisDecisionCounts {
   supported: number;
   unsupported: number;
@@ -1925,6 +1940,8 @@ export interface DocumentAnalysisDecisionCounts {
 export interface DocumentAnalysisProgress {
   tasks_attempted: number;
   model_calls: number;
+  model_calls_reserved?: number;
+  model_calls_unresolved?: number;
   records_planned: number;
   records_examined: number;
   records_incomplete: number;
@@ -1965,6 +1982,7 @@ export interface DocumentAnalysisRun {
   progress: DocumentAnalysisProgress;
   error: DocumentAnalysisRunFailure | null;
   available_actions: DocumentAnalysisAvailableAction[];
+  ranking_budget_enabled: boolean;
   created_at: string;
   started_at: string | null;
   paused_at: string | null;
@@ -2063,6 +2081,11 @@ export interface DocumentGraphEntity {
   identity_state: "document_local" | "verified_key" | "verified_external" | "undetermined";
   independent_review: "unreviewed" | "accepted" | "rejected";
   source_selection_refs: string[];
+  predicate_menu?: Array<{
+    predicate_iri: string;
+    predicate_label: string;
+    kind: "property" | "relationship";
+  }> | null;
 }
 
 export interface DocumentGraphAssertionBase {
@@ -2116,6 +2139,7 @@ export interface DocumentGraphCoverageSubject {
   records_incomplete: number;
   records_unattempted: number;
   phase_counts: { phase1: number; phase2: number };
+  executed_phase_counts?: { phase1: number; phase2: number } | null;
   pending_frontiers: number;
   stop_reason: string | null;
 }
@@ -2129,6 +2153,48 @@ export interface DocumentGraphCoverage {
   phase2_started: boolean;
   pending_frontiers: number;
   stop_reason: string | null;
+}
+
+export interface DocumentGraphRanking {
+  budget_enabled: boolean;
+  requested_mode: string;
+  actual_modes: string[];
+  degraded: boolean;
+  paused?: boolean;
+  reasons: string[];
+  committed_epochs: number;
+  cost: {
+    model_calls: number;
+    observed_requests?: number;
+    input_pairs: number;
+    input_tokens: number;
+    reserved_input_tokens?: number;
+    measured_input_tokens?: number;
+    unknown_request_count?: number;
+    queue_seconds?: number;
+    retries: number;
+    elapsed_seconds: number;
+  };
+  epochs: {
+    budget_accounted: boolean;
+    epoch_id: string;
+    status?: "committed" | "paused";
+    query_id: string | null;
+    subject_ref: DocumentAnalysisEntityRef | null;
+    predicate_iri: string | null;
+    plan_id: string | null;
+    requested_mode: string;
+    actual_mode: string;
+    degraded: boolean;
+    reason: string | null;
+    records: {
+      record_id: string;
+      rank: number;
+      channels: string[];
+      intent_ranks: Record<string, number>;
+      raw_scores: Record<string, number>;
+    }[];
+  }[];
 }
 
 export interface DocumentAnalysisGraphArtifact {
@@ -2145,6 +2211,7 @@ export interface DocumentAnalysisGraphArtifact {
   relationships: DocumentGraphRelationship[];
   invalidated_refs: DocumentAnalysisObjectRef[];
   coverage: DocumentGraphCoverage;
+  ranking?: DocumentGraphRanking;
   unresolved: {
     unsupported: number;
     undetermined: number;
@@ -2184,12 +2251,13 @@ export interface DocumentAnalysisRunControl {
   artifact_revision: number;
   status: DocumentAnalysisStatus;
   stage: DocumentAnalysisStage;
-  operation: "pause" | "resume" | "cancel" | "delete";
+  operation: DocumentAnalysisAvailableAction;
   operation_status: string;
   available_actions: DocumentAnalysisAvailableAction[];
+  ranking_budget_enabled: boolean;
 }
 
-export type DocumentAnalysisControlAction = "pause" | "resume" | "cancel";
+export type DocumentAnalysisControlAction = Exclude<DocumentAnalysisAvailableAction, "delete">;
 
 const DOCUMENT_ANALYSIS_EVENT_STREAM_POLICY: Readonly<Record<DocumentAnalysisStatus, boolean>> = {
   queued: true,
@@ -2240,6 +2308,7 @@ export function mergeDocumentAnalysisControlReceipt(
     status: receipt.status,
     stage: receipt.stage,
     available_actions: receipt.available_actions,
+    ranking_budget_enabled: receipt.ranking_budget_enabled ?? current.ranking_budget_enabled ?? true,
   };
 }
 
@@ -2274,6 +2343,18 @@ export interface DocumentAnalysisControlRequest {
 const documentRunPath = (recognitionRunId: string) =>
   `/api/document-analysis/runs/${encodeURIComponent(recognitionRunId)}`;
 
+const templateRunPath = (templateId: string, jobId: string) =>
+  `/api/document-analysis/templates/${encodeURIComponent(templateId)}/sources/${encodeURIComponent(jobId)}/runs`;
+
+export const getTemplateDocumentRun = (templateId: string, jobId: string, signal?: AbortSignal) =>
+  fetchAPI<{ run: DocumentAnalysisRun | null }>(templateRunPath(templateId, jobId), { signal });
+
+export const createTemplateDocumentRun = (
+  templateId: string, jobId: string, requestKey: string, signal?: AbortSignal,
+) => fetchAPI<DocumentAnalysisCreateResponse>(templateRunPath(templateId, jobId), {
+  method: "POST", body: JSON.stringify({ request_key: requestKey }), signal,
+});
+
 export const createDocumentAnalysisRun = (
   file: File,
   rootClassIri: string,
@@ -2293,8 +2374,19 @@ export const createDocumentAnalysisRun = (
   });
 };
 
+export const listDocumentAnalysisRuns = (limit = 20, offset = 0, signal?: AbortSignal) => {
+  const params = new URLSearchParams({ limit: String(limit), offset: String(offset) });
+  return fetchAPI<DocumentAnalysisRunList>(`/api/document-analysis/runs?${params}`, {
+    signal,
+    cache: "no-store",
+  });
+};
+
 export const getDocumentAnalysisRun = (recognitionRunId: string, signal?: AbortSignal) =>
-  fetchAPI<DocumentAnalysisRun>(documentRunPath(recognitionRunId), { signal });
+  fetchAPI<DocumentAnalysisRun>(documentRunPath(recognitionRunId), { signal }).then((run) => ({
+    ...run,
+    ranking_budget_enabled: run.ranking_budget_enabled ?? true,
+  }));
 
 export const getDocumentAnalysisMetadata = (recognitionRunId: string, signal?: AbortSignal) =>
   fetchAPI<DocumentAnalysisMetadataArtifact>(`${documentRunPath(recognitionRunId)}/metadata`, { signal });
@@ -2391,15 +2483,20 @@ export const controlDocumentAnalysisRun = (
   requestKey: string,
   reason: string,
   signal?: AbortSignal,
-) => fetchAPI<DocumentAnalysisRunControl>(`${documentRunPath(recognitionRunId)}/${action}`, {
-  method: "POST",
-  body: JSON.stringify({
-    expected_revision: expectedRevision,
-    request_key: requestKey,
-    reason,
-  }),
-  signal,
-});
+) => {
+  const operationPath = action === "ranking_budget_enable"
+    ? "ranking-budget/enable"
+    : action === "ranking_budget_disable" ? "ranking-budget/disable" : action;
+  return fetchAPI<DocumentAnalysisRunControl>(`${documentRunPath(recognitionRunId)}/${operationPath}`, {
+    method: "POST",
+    body: JSON.stringify({
+      expected_revision: expectedRevision,
+      request_key: requestKey,
+      reason,
+    }),
+    signal,
+  });
+};
 
 export const pauseDocumentAnalysisRun = (
   recognitionRunId: string,
@@ -2748,11 +2845,29 @@ export interface EvidenceJob {
   graph_schema?: EvidenceGraphSchema;
   calculations?: PDECalculation[];
   calculation_required?: boolean;
-  run: { completion: "complete" | "incomplete"; diagnostics: string[] } | null;
+  execution_status?: string | null;
+  run: { completion: "complete" | "incomplete"; diagnostics: string[];
+    branch_progress?: Record<string, EvidenceBranchProgress> } | null;
   analysis_id: string | null;
   snapshot_id: string | null;
   commits: EvidenceCommit[];
   extraction_version?: { current: string; stored: string[]; outdated: boolean };
+}
+
+export interface EvidenceBranchProgress {
+  status: "queued" | "extracting_entities" | "entities_failed" | "searching_entities"
+    | "awaiting_relation" | "extracting_relation" | "relation_failed" | "relation_checked"
+    | "identified" | "no_match";
+  reason_codes: string[];
+  discovery_tasks: number;
+  relationship_tasks: number;
+  failed_tasks: number;
+  positive_count: number;
+  coverage_complete: boolean;
+  property_status?: "queued" | "extracting" | "incomplete" | "partial" | "complete" | "not_applicable";
+  property_tasks?: number;
+  positive_property_count?: number;
+  failed_property_tasks?: number;
 }
 
 export interface PDECalculation {
@@ -2776,8 +2891,8 @@ export const decideCalculation = (jobId: string, body: {
   choice: "derived" | "asserted" | "rejected" | "pending"; reason: string;
 }) => fetchAPI(`/api/extraction/jobs/${jobId}/calculations/decision`, { method: "POST", body: JSON.stringify(body) });
 
-export const getJobEvidence = (jobId: string, signal?: AbortSignal) =>
-  fetchAPI<EvidenceJob>(`/api/extraction/jobs/${jobId}/evidence`, { signal });
+export const getJobEvidence = (jobId: string, signal?: AbortSignal, view: "all" | "latest_run" = "all") =>
+  fetchAPI<EvidenceJob>(`/api/extraction/jobs/${jobId}/evidence?view=${view}`, { signal });
 
 export interface InstanceCoverageTask {
   coverage_task_id?: string;
@@ -2971,7 +3086,7 @@ export const getAstTemplate = (id: string) =>
     }
   >(`/api/ast-templates/${id}`);
 export const createAstTemplate = (data: AstTemplateCreateInput) =>
-  fetchAPI<AstTemplateDTO>("/api/ast-templates", { method: "POST", ...jsonBody(data) });
+  saveTemplateRequest<AstTemplateDTO>("/api/ast-templates", jsonBody(data));
 export const updateAstTemplate = (id: string, data: AstTemplateUpdateInput) =>
   fetchAPI<AstTemplateDTO>(`/api/ast-templates/${id}`, { method: "PUT", ...jsonBody(data) });
 export const deleteAstTemplate = (id: string) =>
@@ -2992,16 +3107,29 @@ export interface ParseSampleResult {
   analysis?: DocumentEvidenceIR;
 }
 
-export async function parseSample(file: File): Promise<ParseSampleResult> {
+export async function parseSample(file: File, signal?: AbortSignal): Promise<ParseSampleResult> {
   const form = new FormData();
   form.append("file", file);
-  const res = await fetch(`${API_BASE}/api/ast-templates/parse-sample`, {
-    method: "POST",
-    headers: identityHeaders(),
-    body: form,
-  });
-  if (!res.ok) throw new Error(`API ${res.status}: ${await res.text()}`);
-  return (await res.json()) as ParseSampleResult;
+  const controller = new AbortController();
+  const cancel = () => controller.abort(signal?.reason);
+  if (signal?.aborted) cancel();
+  else signal?.addEventListener("abort", cancel, { once: true });
+  let timedOut = false;
+  const timer = setTimeout(() => {
+    timedOut = true;
+    controller.abort();
+  }, 180_000);
+  try {
+    return await fetchAPI<ParseSampleResult>("/api/ast-templates/parse-sample", {
+      method: "POST", body: form, signal: controller.signal,
+    });
+  } catch (error) {
+    if (timedOut) throw new Error("样例文档解析超时，请重试；较大的文档可先另存为 .docx 后上传。");
+    throw error;
+  } finally {
+    clearTimeout(timer);
+    signal?.removeEventListener("abort", cancel);
+  }
 }
 
 // 015 基本信息 tab：默认示例文档替换 / 默认源文件 / 训练数据（源文档→评估报告）。
@@ -3024,6 +3152,32 @@ export async function uploadTemplateSample(
   const form = new FormData();
   form.append("file", file);
   return postMultipart<ParseSampleResult>(`/api/ast-templates/${id}/sample`, form);
+}
+
+// 创建向导只需要持久化确认；避免再次下载、解析整份样例 JSON。
+export async function saveTemplateSample(id: string, file: File): Promise<void> {
+  const form = new FormData();
+  form.append("file", file);
+  return saveTemplateRequest<void>(`/api/ast-templates/${id}/sample?include_content=false`, {
+    body: form,
+  });
+}
+
+async function saveTemplateRequest<T>(path: string, options: RequestInit): Promise<T> {
+  const controller = new AbortController();
+  let timedOut = false;
+  const timer = setTimeout(() => {
+    timedOut = true;
+    controller.abort();
+  }, 180_000);
+  try {
+    return await fetchAPI<T>(path, { ...options, method: "POST", signal: controller.signal });
+  } catch (error) {
+    if (timedOut) throw new Error("保存等待超时，服务端可能仍在处理。请先返回列表核对保存结果，勿重复创建模板。");
+    throw error;
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 // 默认源文件（固化输出格式的参照原件）上传 / 清除。

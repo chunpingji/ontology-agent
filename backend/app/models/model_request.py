@@ -28,7 +28,8 @@ class LocalModelRequest(Base):
     logical_call_id: Mapped[str] = mapped_column(String(32), nullable=False)
     attempt: Mapped[int] = mapped_column(Integer, nullable=False)
     job_id: Mapped[str | None] = mapped_column(String(36))
-    run_id: Mapped[str | None] = mapped_column(String(32))
+    # Shared by legacy hex UUIDs, document UUIDs and prefixed evaluation IDs.
+    run_id: Mapped[str | None] = mapped_column(String(64))
     task_id: Mapped[str | None] = mapped_column(String(64))
     stage: Mapped[str] = mapped_column(String(64), nullable=False)
     status: Mapped[str] = mapped_column(String(24), nullable=False)

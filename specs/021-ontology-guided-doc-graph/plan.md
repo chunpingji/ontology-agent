@@ -8,7 +8,7 @@
 
 以一个持久、owner 隔离的 `DocumentAnalysisRun` 直接替换当前同步、临时的 Word 文档分析路径。用户上传 Word 并显式选择合法根类后，服务端只构建一次 DocumentIR，在识别前冻结 MetadataSnapshot 与 OntologySnapshot；标题和摘要只能为检索排序，不能成为事实证据。识别核心按当前已证明主体的本体直接菜单，对每个主体—谓词执行守恒的两阶段记录召回，分别验证物理提及、局部指称、类型、身份角色和具体谓词桥接，只让具有当前完整证明的肯定边驱动下一跳。
 
-运行、任务、对象 revision、proof、覆盖、事件水位、不可变图快照、租约和删除墓碑统一以 PostgreSQL 为权威存储。FastAPI 请求只负责验证、持久化和 202 应答；重工作由可恢复的 PostgreSQL dispatcher/worker 领取，lifespan 活跃时 API 只发送唤醒信号，`BackgroundTasks` 仅保留给不运行 lifespan 的测试/嵌入调用作兼容执行。页面保留 `/analysis?tab=document`，改为显式开始并提供恰好“分层元数据”和“关系图谱”两个结果 Tab；两个 Tab 只读同一运行及水位，不重复解析、摘要或模型调用。新分析产物不进入旧 CandidateStore，不自动审核或提交中央事实。
+运行、任务、对象 revision、proof、覆盖、事件水位、不可变图快照、租约和删除墓碑统一以 PostgreSQL 为权威存储。FastAPI 请求只负责验证、持久化和 202 应答；重工作由可恢复的 PostgreSQL dispatcher/worker 领取，lifespan 活跃时 API 只发送唤醒信号，`BackgroundTasks` 仅保留给不运行 lifespan 的测试/嵌入调用作兼容执行。页面保留 `/analysis?tab=document`，显式开始分析；按 2026-09-09 布局调整，分析历史位于左侧，章节树与原文预览共享显示，右侧提供恰好“节点元数据”和“关系图谱”两个结果 Tab。两个 Tab 只读同一运行及水位，不重复解析、摘要或模型调用。新分析产物不进入旧 CandidateStore，不自动审核或提交中央事实。
 
 ## Technical Context
 
@@ -57,6 +57,8 @@
 **Phase 1 gate result**: 任务化工程主体已在当前工作区落地并完成本地机制回归；G-C03、独立专家金标/批准 SLO/保留集、真实 PostgreSQL 和浏览器/真实模型结果仍是发布外部门。任何一个未满足时，开发结果只能保持非生产状态，不能执行旧域破坏性清理或开放正式入口。
 
 ## Architecture and Boundaries
+
+2026-09-09 历史入口补充：沿用既有运行表和鉴权，通过 run store 的 owner 过滤与有界分页提供轻量列表，application 复用公开状态映射，路由新增只读集合 GET。前端复用 `api.ts`、现有卡片/按钮及 `documentRun` URL 恢复逻辑；创建后刷新首页，历史列表与当前结果分别取消过期请求。不新增依赖或迁移，不改变模型执行、保留期限和事实提交边界；宪章前后检查均无新增例外。
 
 1. **一份原文与冻结输入**：`analyze_word_core()`、`DocumentIR`、`parse_docx_structure()`、`table_records()` 和 `WordViewer` 继续定义物理来源。运行级 SourceArtifact、RecordIndex 和 MetadataSnapshot 引用同一 `analysis_id`；识别前冻结完整 fingerprint。
 2. **在线/评测共用领域核心**：将 evaluation 中已验证的 staged retrieval、citation、instance/resolution 和 reconciliation 机制抽入 `app.services.extraction.ontology_guided`。生产代码不能 import `app.evaluation`；活动评测只做薄适配，历史冻结归档不改。

@@ -11,10 +11,12 @@ from app.evaluation import cmc_benchmark
 from app.evaluation.cmc_benchmark import ACTIVE_QUALITY_MODES, parser
 from app.evaluation.ontology_guided_scorer import (
     EntityMatcher,
+    EvidenceSpan,
     ExpertReview,
     OntologyGuidedReference,
     QualityThresholds,
     ReferenceEntity,
+    ReferenceProperty,
     ReferenceRelationship,
     score_evaluation,
 )
@@ -22,6 +24,7 @@ from app.evaluation.quality_guided_variant import build_quality_guided_variant
 from app.services.extraction.ontology_guided.executor import OntologyGuidedExecutor
 from app.services.extraction.ontology_guided.metadata import prepare_metadata
 from tests.test_extraction.test_ontology_guided_core import (
+    APPEARANCE,
     DESCRIBES,
     PRODUCT,
     REPORT,
@@ -103,12 +106,23 @@ def test_focus_path_must_exist_in_each_frozen_local_menu(tmp_path):
 
 def test_approved_reference_scores_exact_tuple_and_forbidden_assertions(tmp_path):
     analysis, _runner, result, _calls = _evaluation(tmp_path, focus_path=(DESCRIBES,))
+    unit = next(unit for unit in analysis.ir.evidence_units if "明确描述产品甲" in unit.text)
+    anchor = analysis.ir.anchor(unit.evidence_id, 0, len(unit.text))
+    evidence_sets = [[EvidenceSpan(evidence_id=anchor.evidence_id,
+                                  start=anchor.span_start, end=anchor.span_end)]]
     eligible_edges = [
-        edge.model_copy(update={"structural_valid": True, "policy_eligible": True})
+        edge.model_copy(update={"structural_valid": True, "policy_eligible": True,
+                                "evidence_refs": [anchor]})
         for edge in result.graph.edges
     ]
     result = result.model_copy(
-        update={"graph": result.graph.model_copy(update={"edges": eligible_edges})}
+        update={"graph": result.graph.model_copy(update={
+            "edges": eligible_edges,
+            "nodes": [node.model_copy(update={"evidence_refs": [anchor]})
+                      for node in result.graph.nodes],
+            "properties": [item.model_copy(update={"evidence_refs": [anchor]})
+                           for item in result.graph.properties],
+        })}
     )
     reference = OntologyGuidedReference(
         reference_id="expert-reference",
@@ -117,9 +131,10 @@ def test_approved_reference_scores_exact_tuple_and_forbidden_assertions(tmp_path
         root_class_iri=REPORT,
         scope_mode="focus_path",
         focus_path=[DESCRIBES],
-        scored_predicate_iris=[DESCRIBES],
+        scored_predicate_iris=[DESCRIBES, APPEARANCE],
         entities=[
-            ReferenceEntity(entity=EntityMatcher(class_iri=PRODUCT, label="产品甲")),
+            ReferenceEntity(entity=EntityMatcher(class_iri=PRODUCT, label="产品甲"),
+                            allowed_evidence_sets=evidence_sets),
             ReferenceEntity(
                 entity=EntityMatcher(class_iri=PRODUCT, label="产品乙"),
                 expectation="forbidden",
@@ -130,8 +145,13 @@ def test_approved_reference_scores_exact_tuple_and_forbidden_assertions(tmp_path
                 subject=EntityMatcher(class_iri=REPORT, document_root=True),
                 predicate_iri=DESCRIBES,
                 object=EntityMatcher(class_iri=PRODUCT, label="产品甲"),
+                allowed_evidence_sets=evidence_sets,
             )
         ],
+        properties=[ReferenceProperty(
+            subject=EntityMatcher(class_iri=PRODUCT, label="产品甲"),
+            predicate_iri=APPEARANCE, value="白色片剂", allowed_evidence_sets=evidence_sets,
+        )],
         expert_review=ExpertReview(
             status="approved",
             reviewer="independent-domain-expert",
@@ -149,7 +169,7 @@ def test_approved_reference_scores_exact_tuple_and_forbidden_assertions(tmp_path
     score = score_evaluation(result, reference, ir=analysis.ir)
 
     assert score["metrics"]["overall"] == {
-        "tp": 2,
+        "tp": 3,
         "fp": 0,
         "fn": 0,
         "precision": 1.0,
@@ -196,6 +216,7 @@ def test_active_benchmark_persists_versioned_unscored_manifest(tmp_path, monkeyp
         "source_filename": "source.docx",
         "document_hash": analysis.ir.document_hash,
         "ontology_snapshot_id": snapshot.snapshot_id,
+        "class_iri": REPORT,
         "ontology_semantic_hash": snapshot.ontology_hash,
         "ontology_snapshot_file_hash": cmc_benchmark.digest_file(
             prepared / "ontology_snapshot.json"
@@ -236,6 +257,12 @@ def test_active_benchmark_persists_versioned_unscored_manifest(tmp_path, monkeyp
     run_manifest = cmc_benchmark.read_json(output / "result.json")
     assert run_manifest["schema_version"] == "ontology-guided-evaluation-manifest-v1"
     assert run_manifest["legacy_runner_used"] is False
+    ablation = cmc_benchmark.read_json(output / "ablation.json")
+    assert ablation["schema_version"] == "semantic-ranking-ablation-v1"
+    assert ablation["shared"]["document_hash"] == analysis.ir.document_hash
+    assert ablation["factors"]["mode"] == "deterministic"
+    assert "ranking.json" in run_manifest["output_hashes"]
+    assert "costs.json" in run_manifest["output_hashes"]
     assert (
         run_manifest["run_fingerprint"]
         == cmc_benchmark.read_json(output / "run.json")["run_fingerprint"]

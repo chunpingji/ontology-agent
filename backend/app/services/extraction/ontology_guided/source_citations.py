@@ -8,6 +8,44 @@ from app.schemas.evidence import EvidenceAnchor, EvidenceModel
 from app.services.extraction.document_ir import DocumentIR
 
 
+def resolve_fragment_quote(evidence_id, text, fragments, *, fact_required=False):
+    """Resolve an atomic citation against immutable, role-authorized fragments.
+
+    Fragment text is constructed by replaying the frozen IR. Overlapping copies
+    of one interval count once; neither gaps nor permissions may be bridged.
+    """
+    sources = {
+        (fragment.anchor.span_start or 0, fragment.text): fragment.anchor
+        for fragment in fragments
+        if fragment.anchor.evidence_id == evidence_id
+        and (fragment.fact_eligible or not fact_required)
+    }
+    if not sources:
+        raise ValueError("source_quote_outside_scope")
+    if text is None:
+        if len(sources) != 1:
+            raise ValueError("ambiguous_allowed_source_fragments")
+        (start, text), anchor = next(iter(sources.items()))
+        if not text:
+            raise ValueError("source_excerpt_mismatch")
+        return anchor.model_copy(update={"span_start": start, "span_end": start + len(text)}), text
+    if not isinstance(text, str) or not text:
+        raise ValueError("source_excerpt_mismatch")
+    matches = {}
+    for (base, source), anchor in sources.items():
+        offset = source.find(text)
+        while offset >= 0:
+            interval = (base + offset, base + offset + len(text))
+            matches[interval] = anchor
+            offset = source.find(text, offset + 1)
+    if not matches:
+        raise ValueError("source_excerpt_mismatch")
+    if len(matches) != 1:
+        raise ValueError("ambiguous_source_quote")
+    (start, end), anchor = next(iter(matches.items()))
+    return anchor.model_copy(update={"span_start": start, "span_end": end}), text
+
+
 class SpanProposal(EvidenceModel):
     evidence_id: str
     start: int | None = Field(default=None, ge=0)

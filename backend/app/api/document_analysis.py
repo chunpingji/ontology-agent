@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import asyncio
 from collections.abc import Iterator
-from typing import Annotated
+from typing import Annotated, Literal
 from urllib.parse import quote
 from uuid import UUID
 
@@ -39,7 +39,9 @@ from app.schemas.document_analysis import (
     ApiErrorResponse,
     CreateRunRequest,
     CreateRunResponse,
+    CreateTemplateRunRequest,
     DeleteRunRequest,
+    DocumentAnalysisRunListResponse,
     DocumentAnalysisRunResponse,
     GraphArtifactResponse,
     GraphProjection,
@@ -49,6 +51,7 @@ from app.schemas.document_analysis import (
     SourceArtifactResponse,
     SourceQuery,
     SseEvent,
+    TemplateRunResponse,
 )
 from app.services.document_analysis.application import (
     DocumentAnalysisApplication,
@@ -59,6 +62,7 @@ from app.services.document_analysis.execution import (
     dispatch_run,
     notify_document_analysis_dispatcher,
 )
+from app.services.document_analysis.template_runs import TemplateDocumentRuns
 
 
 class DocumentAnalysisRoute(APIRoute):
@@ -192,6 +196,40 @@ def _wake_dispatcher_or_fallback(
     background_tasks.add_task(dispatch_run, recognition_run_id, bind=bind)
 
 
+@router.get("/templates/{template_id}/sources/{job_id}/runs", response_model=TemplateRunResponse)
+def get_template_document_run(
+    template_id: UUID,
+    job_id: UUID,
+    identity: Identity = Depends(get_current_user),
+    db: Session = Depends(get_db),
+    engine: object = Depends(get_ontology_engine),
+):
+    application = _application(db, engine)
+    run = TemplateDocumentRuns(application).latest(identity.username, template_id, job_id)
+    return {"run": application.status_response(run, role=identity.role) if run else None}
+
+
+@router.post("/templates/{template_id}/sources/{job_id}/runs",
+             response_model=CreateRunResponse, status_code=202)
+async def create_template_document_run(
+    template_id: UUID,
+    job_id: UUID,
+    body: CreateTemplateRunRequest,
+    background_tasks: BackgroundTasks,
+    identity: Identity = Depends(get_current_user),
+    db: Session = Depends(get_db),
+    engine: object = Depends(get_ontology_engine),
+):
+    if identity.role != "senior_analyst":
+        raise DocumentAnalysisError("ROLE_FORBIDDEN", "当前角色无运行写权限", status_code=403)
+    application = _application(db, engine)
+    run, created = await TemplateDocumentRuns(application).create(
+        identity.username, template_id, job_id, body.request_key)
+    if created:
+        _wake_dispatcher_or_fallback(background_tasks, run.recognition_run_id, bind=db.get_bind())
+    return application.create_response(run, idempotent_replay=not created)
+
+
 @router.post("/runs", response_model=CreateRunResponse, status_code=202)
 async def create_document_analysis_run(
     request: Request,
@@ -250,6 +288,19 @@ async def create_document_analysis_run(
             bind=db.get_bind(),
         )
     return response
+
+
+@router.get("/runs", response_model=DocumentAnalysisRunListResponse)
+def list_document_analysis_runs(
+    limit: int = Query(default=20, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+    identity: Identity = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    response = DocumentAnalysisRunListResponse.model_validate(
+        _application(db).list_runs(identity.username, limit=limit, offset=offset)
+    )
+    return _json_model(response, headers={"Cache-Control": "no-store"})
 
 
 @router.get("/runs/{recognition_run_id}", response_model=DocumentAnalysisRunResponse)
@@ -522,6 +573,25 @@ def cancel_document_analysis_run(
 ):
     return _control_response(
         action="cancel",
+        recognition_run_id=recognition_run_id,
+        request=request,
+        identity=identity,
+        db=db,
+        background_tasks=background_tasks,
+    )
+
+
+@router.post("/runs/{recognition_run_id}/ranking-budget/{mode}", response_model=RunControlResponse)
+def set_document_analysis_ranking_budget(
+    recognition_run_id: UUID,
+    mode: Literal["enable", "disable"],
+    request: RunControlRequest,
+    background_tasks: BackgroundTasks,
+    identity: Identity = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    return _control_response(
+        action=f"ranking_budget_{mode}",
         recognition_run_id=recognition_run_id,
         request=request,
         identity=identity,

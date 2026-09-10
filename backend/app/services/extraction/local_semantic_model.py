@@ -160,6 +160,10 @@ def configured_generic_runner(engine) -> GenericExtractionRunner:
         model_call,
         model_identity=identity,
         compact_identifiers=True,
+        citation_repair=True,
+        relationship_priority=True,
+        atomic_citations=True,
+        record_level_targets=True,
         budget=TaskBudget(
             max_input_tokens=settings.evidence_max_input_tokens,
             max_output_tokens=settings.evidence_max_output_tokens,

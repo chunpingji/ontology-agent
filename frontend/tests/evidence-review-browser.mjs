@@ -32,7 +32,10 @@ const jobs = {
     run: { completion: "incomplete", diagnostics: ["ambiguous_source_quote", "ambiguous_source_quote",
       "ambiguous_source_quote", "ambiguous_source_quote", "source_quote_outside_scope", "model_unavailable"] },
     extraction_version: { current: "generic-semantic-v8", stored: ["generic-semantic-v7"], outdated: true } },
-  second: { graph_schema: { ...graphSchema, document_label: "来源 B.docx" }, candidates: [documentCandidate("two", "合成产品 B")], commits: [], snapshot_id: null,
+  second: { graph_schema: { ...graphSchema, document_label: "来源 B.docx" }, candidates: [documentCandidate("second-root", "合成文档 B"),
+    { ...candidate("two", "第二份文档的生产计划"), class_iri: "urn:Plan", class_label: "生产计划" },
+    { ...candidate("second-edge", ""), kind: "relationship", subject: { candidate_id: "second-root", revision: 1 },
+      object: { candidate_id: "two", revision: 1 }, predicate_iri: "urn:hasProductionPlan", predicate_label: "生产计划" }], commits: [], snapshot_id: null,
     run: { completion: "complete", diagnostics: [] } },
 };
 const unavailable = { availability: "unavailable", template_id: "fixture", template_version: "v2.2",
@@ -81,6 +84,9 @@ try {
       { id: "job", source_filename: "来源 A.docx", status: "reviewing" },
       { id: "second", source_filename: "来源 B.docx", status: "reviewing" },
     ]);
+    if (/^\/api\/extraction\/jobs\/[^/]+$/.test(path)) return send({
+      id: path.split("/")[4], source_type: "word", source_mode: "template_default", status: "reviewing",
+    });
     if (path === "/api/entities") return send({ items: [{ iri: "urn:doc:second", class_iri: "urn:Report",
       label_zh: "来源 B.docx", properties_json: { job_id: "second" } }] });
     if (path.endsWith("/annotated-document")) return send({ content: sampleContent, relationships: [], doc_class: null });
@@ -152,15 +158,16 @@ try {
   await expect(tree.locator('[data-predicate-iri="urn:title"]')).toContainText("未识别到值");
   await expect(tree.locator('[data-candidate-id="one"] [data-candidate-id="plan"]')).toHaveCount(0);
   await expect(tree.locator('[data-unassociated]')).not.toHaveAttribute("open");
-  await expect(tree.getByText("自动通过", { exact: true })).toHaveCount(5);
+  await expect(tree.locator('[data-document-records]')).toHaveCount(0);
+  await expect(tree.getByText(/文档识别记录/)).toHaveCount(0);
+  await expect(tree.getByText("合成产品 A", { exact: true })).toHaveCount(0);
+  await expect(tree.getByText("自动通过", { exact: true })).toHaveCount(4);
   await expect(panel.getByRole("button", { name: "确认", exact: true })).toHaveCount(0);
   await expect(panel.locator("pre")).toHaveCount(0);
   await expect(panel.getByText(/报告数据检查暂不可用/)).toBeVisible();
   await expect(panel.getByRole("button", { name: "发布通过项（5）", exact: true })).toBeEnabled();
   assert.equal(requests.filter((entry) => entry.path.endsWith("/review")).length, 0);
-  await tree.locator('[data-document-records] > summary').click();
-  await tree.locator('[data-candidate-id="one"] > details > summary').click();
-  await tree.locator('[data-candidate-id="one"] > details > div').getByRole("button", { name: /查看原文/ }).click();
+  await productionBranch.locator('[data-candidate-id="plan"] > details > div').first().getByRole("button", { name: /查看原文/ }).click();
   await expect(page.locator("[data-evidence-id='paragraph-1']")).toBeVisible();
   await page.screenshot({ path: "/tmp/ontology-evidence-tree.png", fullPage: true });
   console.log("PASS: source ontology predicates organize the tree, including empty branches and nested property values");
@@ -238,15 +245,14 @@ try {
 
   holdReview = true;
   const waitingReview = new Promise((resolve) => { reviewHeld = resolve; });
-  await tree.locator('[data-document-records] > summary').click();
-  await tree.locator('[data-candidate-id="two"] > details > summary').click();
-  await tree.getByRole("button", { name: "提出异议", exact: true }).click();
+  await tree.locator('[data-candidate-id="two"] > details > div').getByRole("button", { name: "提出异议", exact: true }).click();
   await dialog.getByLabel("拒绝理由", { exact: true }).fill("第二份文档的异议");
   await dialog.getByRole("button", { name: "确认拒绝", exact: true }).click();
   await waitingReview;
   // Exercise a document switch during a pending mutation, even with the modal open.
   await page.getByRole("button", { name: "来源 A.docx", exact: true, includeHidden: true }).dispatchEvent("click");
-  await expect(tree.locator('[data-candidate-id="one"]')).toHaveCount(1);
+  await expect(productionBranch.locator('[data-candidate-id="plan"]')).toBeVisible();
+  await expect(tree.locator('[data-candidate-id="one"]')).toHaveCount(0);
   await expect(dialog).toHaveCount(0);
   const reviewResponse = page.waitForResponse((response) => response.url().endsWith("/two/review"));
   const secondReads = requests.filter((entry) => entry.path === "/api/extraction/jobs/second/evidence").length;
@@ -262,14 +268,15 @@ try {
     { ...candidate("unbound-plan", "只有实体没有关系的计划"), class_iri: "urn:Plan", class_label: "生产计划" }];
   await panel.getByRole("button", { name: "刷新状态", exact: true }).click();
   await expect(tree.locator('[data-document-class]')).toHaveCount(1);
-  await expect(tree.locator('[data-document-records] > summary')).toHaveText("文档识别记录（2）");
+  await expect(tree.locator('[data-document-records]')).toHaveCount(0);
+  await expect(tree.getByText("同名文档", { exact: true })).toHaveCount(0);
   await expect(productionBranch).toContainText("未识别到关系");
   await expect(productionBranch.locator('[data-candidate-id="unbound-plan"]')).toHaveCount(0);
   await expect(tree.locator('[data-unassociated]')).not.toHaveAttribute("open");
   await tree.locator('[data-unassociated] > summary').click();
   await tree.locator('[data-class-iri="urn:Plan"] > summary').click();
   await expect(tree.getByText("只有实体没有关系的计划", { exact: true })).toBeVisible();
-  console.log("PASS: duplicate document records share one schema root; class matches never invent relationships");
+  console.log("PASS: document records are hidden while the schema and unassociated entities remain accessible");
 
   const plan = (id, text) => ({ ...candidate(id, text), class_iri: "urn:Plan", class_label: "生产计划" });
   const relation = (id, subject, object, predicate = "urn:hasProductionPlan") => ({ ...candidate(id, ""), kind: "relationship",
@@ -295,9 +302,11 @@ try {
   await tree.locator('[data-candidate-id="plan-a"] > details > summary').click();
   await tree.locator('[data-candidate-id="shared"]').getByRole("button", { name: /查看实体/ }).click();
   await expect(tree.locator('[data-candidate-id="plan-a"] > details')).toHaveAttribute("open");
-  await tree.locator('[data-candidate-id="back"]').getByRole("button", { name: /查看实体/ }).click();
-  await expect(tree.locator('[data-candidate-id="cycle-root"] > details')).toHaveAttribute("open");
-  await expect(tree.locator('[data-document-records]')).toHaveAttribute("open");
+  await tree.locator('[data-candidate-id="back"]').getByRole("button", { name: /返回文档属性与关系/ }).click();
+  await expect(tree.locator('[data-document-class] > summary')).toBeFocused();
+  await expect(tree.locator('[data-document-class]')).toHaveAttribute("open");
+  await expect(tree.locator('[data-document-records]')).toHaveCount(0);
+  await expect(tree.getByText("循环测试文档", { exact: true })).toHaveCount(0);
   console.log("PASS: shared entities, cycle references and deep paths remain accessible under the document");
   const evidenceReads = () => requests.filter((entry) => entry.path.endsWith("/job/evidence")).length;
   const coverageReads = () => requests.filter((entry) => entry.path.endsWith("/coverage")).length;
@@ -325,7 +334,8 @@ try {
   await expect(page.getByRole("status").filter({ hasText: "准备重试" })).toContainText("已记录请求 3 次");
   console.log("PASS: model queue, active request and retry events show separate attempts and waiting budget");
   // The tree remains usable while the clock advances and SSE publishes counts.
-  await tree.locator('[data-document-records] > summary').click();
+  await tree.locator('[data-candidate-id="plan-b"] > details > summary').click();
+  await expect(tree.locator('[data-candidate-id="plan-b"] > details')).not.toHaveAttribute("open");
   jobs.job.candidates.push(plan("incremental-plan", "批次新增计划"),
     relation("incremental-edge", "cycle-root", "incremental-plan"));
   for (let revision = 2; revision <= 10; revision++) await emitProgress({ data_revision: revision, tasks_processed: revision });

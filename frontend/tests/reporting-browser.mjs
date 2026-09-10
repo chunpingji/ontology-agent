@@ -57,6 +57,7 @@ try {
     else if (path.endsWith("/evidence")) response = { candidates: [], commits: [], snapshot_id: "source-snapshot" };
     else if (path.endsWith("/evidence/coverage")) response = { availability: "available", material_status: "ready", completion: "complete", required_gaps: 0, diagnostics: [], tasks: [], snapshot_id: "source-snapshot" };
     else if (path === "/api/extraction/jobs") response = [{ id: "job", source_filename: "合成来源.docx", status: "reviewing" }, { id: "other-job", source_filename: "另一来源.docx", status: "reviewing" }];
+    else if (/^\/api\/extraction\/jobs\/[^/]+$/.test(path)) response = { id: path.split("/").at(-1), source_type: "word", source_mode: "template_default", status: "reviewing" };
     else if (path.endsWith("/reports")) response = reportCreated ? [{ id: "history", job_id: "job", report_run_id: "frozen-run", report_artifact_id: "draft-artifact", file_size: 12, created_at: "2026-09-06T08:00:00Z", actor: "fixture" }] : [];
     else if (path === "/api/report-previews") {
       if (payload.mode === "layout") { layoutRequest = payload; response = { body_ast: { kind: "document", children: [] } }; }

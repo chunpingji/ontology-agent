@@ -11,7 +11,9 @@ from __future__ import annotations
 import asyncio
 import logging
 import threading
+import traceback
 from collections.abc import Callable
+from copy import deepcopy
 from dataclasses import asdict
 from datetime import UTC, datetime, timedelta
 from hashlib import sha256
@@ -52,6 +54,7 @@ from app.services.extraction.doc_converter import DocConversionError, ensure_doc
 from app.services.extraction.document_annotator import annotate_word
 from app.services.extraction.document_ir import DocumentIR
 from app.services.extraction.evidence_identity import evidence_hash, stable_id
+from app.services.extraction.ontology_guided.context_records import CONTEXT_RECORDS_VERSION
 from app.services.extraction.ontology_guided.contracts import (
     CONTRACT_VERSION,
     METADATA_POLICY_VERSION,
@@ -76,9 +79,14 @@ from app.services.extraction.ontology_guided.ledger import (
     restore_checkpoint,
 )
 from app.services.extraction.ontology_guided.metadata import prepare_metadata
-from app.services.extraction.ontology_guided.model_adapter import configured_model_adapter
+from app.services.extraction.ontology_guided.model_adapter import (
+    ADAPTER_VERSION,
+    configured_model_adapter,
+)
 from app.services.extraction.ontology_guided.projection import project_graph
 from app.services.extraction.ontology_guided.records import RecordIndex
+from app.services.extraction.ontology_guided.semantic_reranker import RankingService
+from app.services.extraction.ontology_guided.task_citations import TASK_CITATION_VERSION
 from app.services.extraction.ontology_guided.verification import (
     EligibilityPolicy,
     PredicatePolicyRegistry,
@@ -89,6 +97,8 @@ from app.services.extraction.word_tree_summarizer import (
     summarize_word_tree,
 )
 from app.services.llm.local_client import get_local_llm
+from app.services.llm.model_runtime import ModelCancelled, model_scope
+from app.services.llm.semantic_ranking import configured_ranking_service
 
 logger = logging.getLogger(__name__)
 
@@ -317,7 +327,7 @@ def _append_progress_event(
         run.owner_id,
         token,
         expected_head=run.event_head,
-        event_key=f"progress:{content_hash(progress.model_dump(mode='json'))}",
+        event_key=f"progress:{run.event_head}:{content_hash(progress.model_dump(mode='json'))}",
         event_type="progress",
         payload={
             "contract_version": CONTRACT_VERSION,
@@ -343,18 +353,21 @@ def _persist_graph_objects(
     execution_events: list[tuple[str, dict]],
 ) -> DocumentAnalysisRun:
     run, event_sequence = _append_progress_event(db, store, run, token, graph.progress)
-    decisions_by_target: dict[str, list[dict[str, Any]]] = {}
-    proofs: dict[str, dict[str, Any]] = {}
+    proofs: list[tuple[dict[str, Any], list[dict[str, Any]]]] = []
     for event_type, payload in execution_events:
         if event_type != "task_outcome":
             continue
         outcome = payload.get("outcome") or {}
+        decisions_by_target: dict[str, list[dict[str, Any]]] = {}
         for decision in outcome.get("decision_payloads") or []:
             decisions_by_target.setdefault(str(decision.get("target_id")), []).append(decision)
         for proof in outcome.get("proof_payloads") or []:
-            proofs[str(proof["proof_id"])] = proof
+            proofs.append((proof, decisions_by_target.get(str(proof["target_id"]), [])))
 
-    for proof in proofs.values():
+    # Match the exact per-attempt bundle already persisted by the batch path.
+    # A stable semantic target can have several technical attempts; collecting
+    # all their decisions would silently rewrite every earlier proof payload.
+    for proof, decisions in proofs:
         target_id = str(proof["target_id"])
         store.put_proof(
             run.recognition_run_id,
@@ -365,7 +378,7 @@ def _persist_graph_objects(
             target_id=target_id,
             payload={
                 "predicate_evidence": proof,
-                "decisions": decisions_by_target.get(target_id, []),
+                "decisions": decisions,
             },
             event_sequence=event_sequence,
         )
@@ -459,12 +472,305 @@ def _failure_payload(exc: Exception) -> tuple[str, str]:
     return "ANALYSIS_FAILED", "文档分析执行失败"
 
 
+def _configured_ranking():
+    return configured_ranking_service(settings)
+
+
+def _restore_ranking_state(
+    db: Session,
+    store: DocumentAnalysisRunStore,
+    run: DocumentAnalysisRun,
+    *,
+    final_fingerprint: str,
+) -> dict:
+    ref = store.get_artifact(run.recognition_run_id, run.owner_id, "ranking_state")
+    if ref is None:
+        return {}
+    artifact = db.get(DocumentAnalysisArtifact, ref.artifact_id)
+    if (
+        artifact is None
+        or artifact.payload is None
+        or artifact.content_hash != ref.content_hash
+        or content_hash(artifact.payload) != ref.content_hash
+        or ref.event_head > run.event_head
+    ):
+        raise CheckpointMismatch("ranking artifact head is invalid")
+    state = dict(artifact.payload)
+    if (
+        state.get("recognition_run_id") != str(run.recognition_run_id)
+        or state.get("run_fingerprint") != final_fingerprint
+    ):
+        raise CheckpointMismatch("ranking state belongs to another run or fingerprint")
+    return state
+
+
+def _persist_ranking_state(
+    db: Session,
+    store: DocumentAnalysisRunStore,
+    run: DocumentAnalysisRun,
+    token: str,
+    *,
+    final_fingerprint: str,
+    state: dict,
+) -> None:
+    """Commit the complete ranking boundary before its first recognition call."""
+    try:
+        store.assert_fence(run.recognition_run_id, run.owner_id, token)
+        current = store.get_owned(run.recognition_run_id, run.owner_id)
+        if (
+            current.run_fingerprint != final_fingerprint
+            or state.get("run_fingerprint") != final_fingerprint
+            or state.get("recognition_run_id") != str(current.recognition_run_id)
+        ):
+            raise FingerprintMismatch("ranking response has stale run dependencies")
+        previous = _restore_ranking_state(db, store, current, final_fingerprint=final_fingerprint)
+        prior_service = previous.get("service") or {}
+        service = state.get("service") or {}
+        prior_epochs = prior_service.get("epochs") or []
+        epochs = service.get("epochs") or []
+        if previous and (
+            any(prior_service.get(key) != service.get(key) for key in ("policy", "model_identity"))
+            or any(
+                (state.get("committed_at") or {}).get(key) != value
+                for key, value in (previous.get("committed_at") or {}).items()
+            )
+            or any(
+                service.get("costs", {}).get(key, 0) < value
+                for key, value in prior_service.get("costs", {}).items()
+            )
+            or any(
+                service.get(ledger, {}).get(key, 0) < value
+                for ledger in ("request_attempts", "record_call_counts", "slot_costs")
+                for key, value in prior_service.get(ledger, {}).items()
+            )
+        ):
+            raise CheckpointMismatch("ranking dependencies, commit positions or cost regressed")
+        prior_receipts = prior_service.get("dispatch_receipts", [])
+        receipts = service.get("dispatch_receipts", [])
+        if receipts[:len(prior_receipts)] != prior_receipts:
+            # A durable claim consumes the known-unused reservation. Erasing or
+            # replacing its history would make the same reservation reusable.
+            raise CheckpointMismatch("ranking dispatch receipts cannot be replaced or removed")
+        by_id = {epoch["epoch_id"]: epoch for epoch in epochs}
+        if len(by_id) != len(epochs) or any(
+            by_id.get(epoch["epoch_id"]) != epoch for epoch in prior_epochs
+        ):
+            raise CheckpointMismatch("committed ranking epochs cannot be replaced or removed")
+        digest = content_hash(state)
+        if previous and content_hash(previous) == digest:
+            return
+        head = store.get_artifact_head(
+            current.recognition_run_id, current.owner_id, "ranking_state"
+        )
+        event = store.append_event(
+            current.recognition_run_id,
+            current.owner_id,
+            token,
+            expected_head=current.event_head,
+            event_key=f"ranking:{digest}",
+            event_type="progress",
+            payload={
+                "contract_version": CONTRACT_VERSION,
+                "recognition_run_id": str(current.recognition_run_id),
+                "run_revision": current.revision + 2,
+                "event_head": current.event_head + 1,
+                "artifact_revision": current.artifact_revision + 1,
+                "status": "running",
+                "stage": "extracting",
+                "ranking_epochs": len(epochs),
+            },
+        )
+        store.update_artifact(
+            current.recognition_run_id,
+            current.owner_id,
+            token,
+            artifact_kind="ranking_state",
+            expected_revision=head.revision if head else 0,
+            artifact_hash=digest,
+            status="ready",
+            artifact_id=stable_id("ranking-state", [str(current.recognition_run_id), digest]),
+            media_type="application/json",
+            payload=state,
+            event_head=event.sequence,
+        )
+        db.commit()
+    except BaseException:
+        db.rollback()
+        raise
+
+
+def _validate_model_call_state(state: dict) -> None:
+    """Validate private pre-request reservations without accepting request payloads."""
+    if not isinstance(state, dict) or set(state) != {
+        "version", "recognition_run_id", "run_fingerprint", "lineage_calls", "reservations"
+    }:
+        raise CheckpointMismatch("model call reservation envelope is invalid")
+    counts = state["lineage_calls"]
+    reservations = state["reservations"]
+    if (
+        type(state["version"]) is not int
+        or state["version"] != 1
+        or not isinstance(state["recognition_run_id"], str)
+        or not isinstance(state["run_fingerprint"], str)
+        or not isinstance(counts, dict)
+        or not isinstance(reservations, list)
+        or any(
+            not isinstance(lineage, str) or not lineage or type(count) is not int or count < 0
+            for lineage, count in counts.items()
+        )
+    ):
+        raise CheckpointMismatch("model call reservation values are invalid")
+    observed: dict[str, int] = {}
+    for sequence, reservation in enumerate(reservations, 1):
+        if (
+            not isinstance(reservation, dict)
+            or set(reservation) != {"sequence", "task_id", "stage", "ordinal", "lineage_id"}
+            or type(reservation.get("sequence")) is not int
+            or reservation["sequence"] != sequence
+            or type(reservation.get("ordinal")) is not int
+            or reservation["ordinal"] < 1
+            or any(
+                not isinstance(reservation.get(key), str) or not reservation[key]
+                for key in ("task_id", "stage", "lineage_id")
+            )
+        ):
+            raise CheckpointMismatch("model call reservation sequence is invalid")
+        lineage = reservation["lineage_id"]
+        observed[lineage] = observed.get(lineage, 0) + 1
+    # Older completed outcomes may predate reservations.  Their conservative
+    # count is carried forward when a subsequent request first reserves budget.
+    if any(count > counts.get(lineage, 0) for lineage, count in observed.items()):
+        raise CheckpointMismatch("model call reservation count is invalid")
+
+
+def _restore_model_call_state(
+    db: Session,
+    store: DocumentAnalysisRunStore,
+    run: DocumentAnalysisRun,
+    *,
+    final_fingerprint: str,
+) -> dict:
+    ref = store.get_artifact(run.recognition_run_id, run.owner_id, "recognition-model-calls")
+    if ref is None:
+        return {}
+    artifact = db.get(DocumentAnalysisArtifact, ref.artifact_id)
+    if (
+        artifact is None
+        or artifact.payload is None
+        or artifact.content_hash != ref.content_hash
+        or content_hash(artifact.payload) != ref.content_hash
+        or ref.event_head > run.event_head
+    ):
+        raise CheckpointMismatch("model call reservation artifact head is invalid")
+    state = deepcopy(artifact.payload)
+    _validate_model_call_state(state)
+    if (
+        state["recognition_run_id"] != str(run.recognition_run_id)
+        or state["run_fingerprint"] != final_fingerprint
+    ):
+        raise CheckpointMismatch("model call reservations belong to another run or fingerprint")
+    return state
+
+
+def _persist_model_call_state(
+    db: Session,
+    store: DocumentAnalysisRunStore,
+    run: DocumentAnalysisRun,
+    token: str,
+    *,
+    final_fingerprint: str,
+    state: dict,
+) -> None:
+    """Commit budget before chat, independently of the next completed batch."""
+    try:
+        store.assert_fence(run.recognition_run_id, run.owner_id, token)
+        current = store.get_owned(run.recognition_run_id, run.owner_id)
+        _validate_model_call_state(state)
+        if (
+            current.run_fingerprint != final_fingerprint
+            or state["run_fingerprint"] != final_fingerprint
+            or state["recognition_run_id"] != str(current.recognition_run_id)
+        ):
+            raise FingerprintMismatch("model call reservation has stale run dependencies")
+        previous = _restore_model_call_state(
+            db, store, current, final_fingerprint=final_fingerprint
+        )
+        if previous and (
+            state["reservations"][: len(previous["reservations"])] != previous["reservations"]
+            or any(
+                state["lineage_calls"].get(lineage, 0) < count
+                for lineage, count in previous["lineage_calls"].items()
+            )
+        ):
+            raise CheckpointMismatch("model call reservations cannot be removed or rewritten")
+        state = deepcopy(state)
+        digest = content_hash(state)
+        if previous and content_hash(previous) == digest:
+            return
+        reserved = sum(state["lineage_calls"].values())
+        progress = dict(current.progress or {})
+        progress.update(
+            model_calls_reserved=reserved,
+            model_calls_unresolved=max(0, reserved - int(progress.get("model_calls", 0))),
+        )
+        current = store.update_stage(
+            current.recognition_run_id,
+            current.owner_id,
+            token,
+            expected_revision=current.revision,
+            stage=current.stage,
+            progress=progress,
+        )
+        head = store.get_artifact_head(
+            current.recognition_run_id, current.owner_id, "recognition-model-calls"
+        )
+        event = store.append_event(
+            current.recognition_run_id,
+            current.owner_id,
+            token,
+            expected_head=current.event_head,
+            event_key=f"model-call-reservation:{digest}",
+            event_type="progress",
+            payload={
+                "contract_version": CONTRACT_VERSION,
+                "recognition_run_id": str(current.recognition_run_id),
+                "run_revision": current.revision + 2,
+                "event_head": current.event_head + 1,
+                "artifact_revision": current.artifact_revision + 1,
+                "status": "running",
+                "stage": "extracting",
+                "model_calls_reserved": sum(state["lineage_calls"].values()),
+            },
+        )
+        store.update_artifact(
+            current.recognition_run_id,
+            current.owner_id,
+            token,
+            artifact_kind="recognition-model-calls",
+            expected_revision=head.revision if head else 0,
+            artifact_hash=digest,
+            status="ready",
+            artifact_id=stable_id(
+                "recognition-model-calls", [str(current.recognition_run_id), digest]
+            ),
+            media_type="application/json",
+            payload=state,
+            event_head=event.sequence,
+        )
+        db.commit()
+    except BaseException:
+        db.rollback()
+        raise
+
+
 def _recognition_fingerprint(
     run: DocumentAnalysisRun,
     ir: DocumentIR,
     metadata: MetadataSnapshot,
     ontology: OntologySnapshot,
     adapter: object | None,
+    ranking_identity: dict | None = None,
+    origin: dict | None = None,
 ) -> str:
     """Freeze every semantic/configuration dependency needed for safe resume."""
 
@@ -483,6 +789,8 @@ def _recognition_fingerprint(
             "scope_mode": run.scope_mode,
             "focus_path": list(run.focus_path or []),
             "model_identity": getattr(adapter, "model_identity", None),
+            "ranking": ranking_identity,
+            "origin": origin,
             "tokenizer": {
                 "backend": settings.local_llm_tokenizer_backend,
                 "path": settings.local_llm_tokenizer_path,
@@ -494,6 +802,7 @@ def _recognition_fingerprint(
                 "max_tasks": settings.evidence_max_tasks,
                 "max_regions_per_task": settings.evidence_max_regions_per_task,
                 "max_objects_per_task": settings.evidence_max_objects_per_task,
+                "max_model_calls_per_record": settings.document_analysis_max_model_calls_per_record,
             },
             "retry": {
                 "timeout_seconds": settings.evidence_timeout_s,
@@ -509,7 +818,14 @@ def _recognition_fingerprint(
                 "predicate_policy": PredicatePolicyRegistry.version,
                 "eligibility": EligibilityPolicy.version,
                 "executor": OntologyGuidedExecutor.version,
-                "adapter": "ontology-guided-model-adapter-v1",
+                "adapter": ADAPTER_VERSION,
+                "citations": TASK_CITATION_VERSION,
+                "context_records": CONTEXT_RECORDS_VERSION,
+                "scheduler": "hierarchical-fair-scheduler-v1",
+                "phase_interleaving": True,
+                "phase_ratio": [4, 1],
+                "cold_start": [1, 2],
+                "exploration_every": 5,
             },
         }
     )
@@ -712,6 +1028,7 @@ def _persist_recognition_batch(
             "retrieval_plans": list(batch.recall_ledger.values()),
             "dependency_index": batch.dependency_index,
             "diagnostics": batch.diagnostics,
+            "ranking_state": batch.ranking_state,
         }
         graph_head = store.get_artifact_head(current.recognition_run_id, current.owner_id, "graph")
         store.update_artifact(
@@ -759,6 +1076,8 @@ def _persist_recognition_batch(
             task_outcomes=batch.task_outcomes,
             graph_state=graph.model_dump(mode="json"),
             diagnostics=batch.diagnostics,
+            ranking_state=batch.ranking_state,
+            model_call_state=batch.model_call_state,
             progress=graph.progress,
         )
         checkpoint_payload = checkpoint.model_dump(mode="json")
@@ -969,6 +1288,8 @@ def _execute_claimed(
         return
     storage = RunArtifactStorage(settings.document_analysis_storage_dir)
     source_artifact = _artifact(db, store, run.recognition_run_id, run.owner_id, "source")
+    origin = (source_artifact.payload or {}).get("origin")
+    priority_paths = [tuple(path) for path in (origin or {}).get("priority_paths", [])]
     ontology_artifact = _artifact(
         db, store, run.recognition_run_id, run.owner_id, "ontology_snapshot"
     )
@@ -1136,9 +1457,60 @@ def _execute_claimed(
     check_interrupted()
     if _complete_pause_at_boundary(db, store, run, token, public_stage="extracting"):
         return
-    adapter = configured_model_adapter()
-    final_fingerprint = _recognition_fingerprint(run, analysis_ir, metadata, ontology, adapter)
+    with model_scope(
+        run_id=str(run.recognition_run_id), bind=db.get_bind(), should_stop=should_stop,
+    ):
+        adapter = configured_model_adapter()
+        ranking_service, ranking_identity = _configured_ranking()
+        # Budget enforcement/accounting is an audited run control, separate
+        # from the frozen semantic dependencies. A pause/resume picks up its
+        # current value without changing existing policy or epoch identities.
+        ranking_service = RankingService(
+            ranking_service.policy, ranking_service.model,
+            budget_enabled=run.ranking_budget_enabled,
+        )
+    check_interrupted()
+    final_fingerprint = _recognition_fingerprint(
+        run, analysis_ir, metadata, ontology, adapter, ranking_identity, origin
+    )
     if run.run_fingerprint is not None and run.run_fingerprint != final_fingerprint:
+        if ranking_service.model is None and ranking_identity.get("unavailable_reason") in {
+            "ranking_cuda_out_of_memory", "ranking_cuda_probe_timeout",
+            "ranking_cuda_probe_failed", "ranking_cuda_unavailable", "ranking_cuda_kernel_failed",
+        }:
+            previous = _restore_ranking_state(
+                db, store, run, final_fingerprint=run.run_fingerprint,
+            )
+            prior_service = previous.get("service") or {}
+            prior_model = prior_service.get("model_identity")
+            rechecked_identity = {
+                **ranking_identity, "model_identity": prior_model, "unavailable_reason": None,
+            }
+            known_dependencies_match = bool(prior_model) and _recognition_fingerprint(
+                run, analysis_ir, metadata, ontology, adapter, rechecked_identity, origin,
+            ) == run.run_fingerprint
+            # A failed probe supplies no new numeric identity. Preserve the last
+            # successful checkpoint until it can be checked; other known input
+            # changes still fail the fingerprint comparison below. A crash before
+            # the first ranking state leaves nothing to compare and permits no work.
+            if known_dependencies_match or not previous:
+                pause = (prior_service.get("policy") or ranking_identity["policy"])[
+                    "failure_policy"
+                ] == "pause"
+                _finish(
+                    db, store, store.get_owned(run.recognition_run_id, run.owner_id), token,
+                    status="paused" if pause else "failed",
+                    public_status="paused" if pause else "retryable_failure",
+                    public_stage="extracting",
+                    progress=RunProgress.model_validate(run.progress or {}),
+                    stop_reason="ranking_paused" if pause else "ranking_unavailable",
+                    error={
+                        "code": "RANKING_PAUSED" if pause else "RANKING_UNAVAILABLE",
+                        "message": "GPU 排序设备暂时无法核验，已保留冻结身份和恢复水位",
+                        "retryable": True,
+                    },
+                )
+                return
         raise FingerprintMismatch("recognition dependencies changed after checkpointing")
     if run.run_fingerprint is None or run.stage != "recognition":
         run = store.update_stage(
@@ -1160,6 +1532,12 @@ def _execute_claimed(
         final_fingerprint=final_fingerprint,
     )
     index = RecordIndex(analysis_ir)
+    ranking_state = _restore_ranking_state(
+        db, store, run, final_fingerprint=final_fingerprint
+    )
+    model_call_state = _restore_model_call_state(
+        db, store, run, final_fingerprint=final_fingerprint
+    )
 
     def progress_hook(_boundary: str) -> bool:
         execution = store.heartbeat(
@@ -1185,40 +1563,71 @@ def _execute_claimed(
             batch=batch,
         )
 
-    try:
-        result = OntologyGuidedExecutor(
-            ontology=ontology,
-            # The frozen snapshot is authoritative; a live engine must not widen it.
-            engine=object(),
-            adapter=adapter,
-            max_tasks=settings.evidence_max_tasks,
-            progress_hook=progress_hook,
-        ).run(
-            recognition_run_id=str(run.recognition_run_id),
-            run_fingerprint=final_fingerprint,
-            ir=analysis_ir,
-            metadata=metadata,
-            root_class_iri=run.root_class_iri,
-            root_class_label=run.root_class_label,
-            filename=run.filename,
-            run_revision=run.revision,
-            event_head=run.event_head,
-            resume_state=(
-                {
-                    "task_outcomes": checkpoint.task_outcomes,
-                    "frontier": checkpoint.frontier,
-                    "recall_ledger": checkpoint.recall_ledger,
-                    "dependency_index": checkpoint.dependency_index,
-                }
-                if checkpoint is not None
-                else None
-            ),
-            batch_hook=batch_hook,
+    def ranking_hook(state: dict) -> None:
+        check_interrupted()
+        _persist_ranking_state(
+            db, store, run, token, final_fingerprint=final_fingerprint, state=state
         )
+
+    def model_call_hook(state: dict) -> None:
+        check_interrupted()
+        _persist_model_call_state(
+            db, store, run, token, final_fingerprint=final_fingerprint, state=state
+        )
+
+    try:
+        with model_scope(
+            run_id=str(run.recognition_run_id),
+            bind=db.get_bind(),
+            should_stop=should_stop,
+        ):
+            result = OntologyGuidedExecutor(
+                ontology=ontology,
+                # The frozen snapshot is authoritative; a live engine must not widen it.
+                engine=object(),
+                adapter=adapter,
+                max_tasks=settings.evidence_max_tasks,
+                max_model_calls_per_record=settings.document_analysis_max_model_calls_per_record,
+                progress_hook=progress_hook,
+                ranking_service=ranking_service,
+                priority_paths=priority_paths,
+            ).run(
+                recognition_run_id=str(run.recognition_run_id),
+                run_fingerprint=final_fingerprint,
+                ir=analysis_ir,
+                metadata=metadata,
+                root_class_iri=run.root_class_iri,
+                root_class_label=run.root_class_label,
+                filename=run.filename,
+                run_revision=run.revision,
+                event_head=run.event_head,
+                resume_state=(
+                    {
+                        "task_outcomes": checkpoint.task_outcomes,
+                        "frontier": checkpoint.frontier,
+                        "recall_ledger": checkpoint.recall_ledger,
+                        "dependency_index": checkpoint.dependency_index,
+                        "diagnostics": checkpoint.diagnostics,
+                    }
+                    if checkpoint is not None
+                    else None
+                ),
+                batch_hook=batch_hook,
+                ranking_state=ranking_state or (checkpoint.ranking_state if checkpoint else None),
+                ranking_hook=ranking_hook,
+                model_call_state=(
+                    model_call_state or (checkpoint.model_call_state if checkpoint else None)
+                ),
+                model_call_hook=model_call_hook,
+            )
     except ValueError as exc:
         if checkpoint is not None:
             raise CheckpointMismatch(str(exc)) from exc
         raise
+    finally:
+        close_ranking_model = getattr(ranking_service.model, "close", None)
+        if callable(close_ranking_model):
+            close_ranking_model()
     check_interrupted()
     store.assert_fence(run.recognition_run_id, run.owner_id, token)
     run = store.get_owned(run.recognition_run_id, run.owner_id)
@@ -1263,6 +1672,7 @@ def _execute_claimed(
                 else {"requirements": {}, "invalidated": [], "subscriptions": {}}
             ),
             "diagnostics": result.diagnostics,
+            "ranking_state": result.ranking_state,
         }
         run = _publish_artifact(
             db,
@@ -1277,8 +1687,28 @@ def _execute_claimed(
             graph_snapshot_id=graph_snapshot_id,
         )
 
+    # Stop causes are known after the last durable batch. Keep that batch's
+    # immutable graph and coverage counts, but publish the terminal execution
+    # outcome instead of its still-running progress marker.
+    terminal_progress = terminal_graph.progress.model_copy(update={
+        "stop_reason": result.graph.progress.stop_reason,
+        "completion": result.graph.progress.completion,
+    })
     current = store.get_owned(run.recognition_run_id, run.owner_id)
     if _complete_pause_at_boundary(db, store, current, token, public_stage="extracting"):
+        return
+
+    if result.graph.progress.stop_reason == "ranking_paused":
+        _finish(
+            db, store, current, token,
+            status="paused", public_status="paused", public_stage="extracting",
+            progress=terminal_progress, stop_reason="ranking_paused",
+            error={
+                "code": "RANKING_PAUSED",
+                "message": "排序能力未完成，已按本次运行的冻结政策暂停并保留覆盖",
+                "retryable": True,
+            },
+        )
         return
 
     if adapter is None:
@@ -1290,7 +1720,7 @@ def _execute_claimed(
             status="failed",
             public_status="retryable_failure",
             public_stage="extracting",
-            progress=terminal_graph.progress,
+            progress=terminal_progress,
             stop_reason="recognition_model_not_configured",
             error={
                 "code": "MODEL_UNAVAILABLE",
@@ -1300,7 +1730,7 @@ def _execute_claimed(
         )
         return
     terminal_status = (
-        "finished" if terminal_graph.progress.completion == "in_scope_complete" else "failed"
+        "finished" if terminal_progress.completion == "in_scope_complete" else "failed"
     )
     _finish(
         db,
@@ -1310,8 +1740,8 @@ def _execute_claimed(
         status=terminal_status,
         public_status="finished" if terminal_status == "finished" else "retryable_failure",
         public_stage="complete" if terminal_status == "finished" else "extracting",
-        progress=terminal_graph.progress,
-        stop_reason=terminal_graph.progress.stop_reason,
+        progress=terminal_progress,
+        stop_reason=terminal_progress.stop_reason,
         error=(
             None
             if terminal_status == "finished"
@@ -1355,6 +1785,31 @@ def _execute_dispatched_run(
             # A control action or a newer worker owns the generation. Never
             # publish a late error or overwrite its state.
             db.rollback()
+        except ModelCancelled:
+            db.rollback()
+            try:
+                current = store.get_owned(run.recognition_run_id, run.owner_id)
+                store.assert_fence(current.recognition_run_id, current.owner_id, token)
+                public_stage = {
+                    "ingest": "accepted", "parse": "parsing", "metadata": "preparing_metadata",
+                }.get(current.stage, "extracting")
+                if _complete_pause_at_boundary(
+                    db, store, current, token, public_stage=public_stage
+                ):
+                    return
+                # An interrupted request without a durable operator pause is
+                # incomplete. Preserve its reservations for an explicit retry.
+                _finish(
+                    db, store, current, token,
+                    status="failed", public_status="retryable_failure", public_stage=public_stage,
+                    progress=RunProgress.model_validate(current.progress or {}),
+                    stop_reason="model_interrupted",
+                    error={"code": "MODEL_INTERRUPTED", "message": "模型请求被中断，已保留恢复水位",
+                           "retryable": True},
+                )
+            except (FenceViolation, RunDeleted, RunNotFound):
+                # Cancel/delete/replacement has already revoked this worker.
+                db.rollback()
         except (FingerprintMismatch, CheckpointMismatch) as exc:
             db.rollback()
             logger.error(
@@ -1410,7 +1865,16 @@ def _execute_dispatched_run(
                     }.get(current.stage, "extracting"),
                     progress=progress,
                     stop_reason=code.lower(),
-                    error={"code": code, "message": message, "retryable": True},
+                    error={
+                        "code": code, "message": message, "retryable": True,
+                        # Internal diagnostics carry no prompts, exception
+                        # values or credentials. Public error mapping omits them.
+                        "failure_type": type(exc).__name__,
+                        "failure_frames": [
+                            {"file": frame.filename, "line": frame.lineno, "function": frame.name}
+                            for frame in traceback.extract_tb(exc.__traceback__)[-8:]
+                        ],
+                    },
                 )
             except (FenceViolation, RunDeleted, RunNotFound):
                 db.rollback()

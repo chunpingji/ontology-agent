@@ -22,11 +22,13 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-# 语义实体对齐后端（本地嵌入）。基础安装不含 torch；启用语义对齐时再装：
+# 语义实体对齐及关系图谱排序（本地 embedding / CrossEncoder）。基础安装不含 torch：
 #   uv sync --extra semantic
-# 未安装时 aligner 优雅回退字面匹配（见 services/extraction/semantic.py）。
-# torch 显式列出并经下方 [tool.uv.sources] 钉到 CPU 索引——目标机为纯 CPU，
-# 排除 nvidia-cuda-* 运行时（多 GB），镜像瘦身。
+# aligner 未安装时回退字面匹配；图谱排序按冻结 failure_policy 降级或暂停，
+# 不能把可选对齐的回退解释为语义精排已完成。
+# torch 显式列出并经下方 [tool.uv.sources] 钉到 CPU 索引，保留 CPU 默认安装。
+# CUDA 12.6/P100 使用独立 requirements-cuda12.lock 与 .venv-cuda12，
+# 见 GPU_CUDA12.md；不要将 CUDA 环境的依赖回写 CPU uv.lock。
 semantic = [
     "sentence-transformers>=3.0",
     "torch>=2.2",
@@ -51,7 +53,7 @@ llm = [
     "tokenizers>=0.20",
 ]
 
-# torch → PyTorch CPU 轮子索引（air-gap 目标机无 GPU）。`explicit = true` 意味着
+# torch → 默认 PyTorch CPU 轮子索引。`explicit = true` 意味着
 # 仅被 [tool.uv.sources] 显式指派的包才从此索引解析，其余包仍走默认 PyPI；
 # 故只有 torch 走 CPU 索引，绝不拉 nvidia-cuda-*。仅 `uv sync` 生效；Docker 内
 # 的 pip 不读本配置，CPU torch 由 Dockerfile 的 --index-url 单独保证。

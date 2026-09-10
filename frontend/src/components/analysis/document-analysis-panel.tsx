@@ -10,7 +10,7 @@ import {
   type DragEvent,
   type ReactNode,
 } from "react";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import {
   Ban,
   BookOpen,
@@ -22,7 +22,6 @@ import {
   Info,
   ListTree,
   Loader2,
-  PanelRight,
   Pause,
   Play,
   RefreshCw,
@@ -31,6 +30,7 @@ import {
   UploadCloud,
 } from "lucide-react";
 
+import { DocumentAnalysisHistory } from "@/components/analysis/document-analysis-history";
 import { DocumentRelationshipGraph } from "@/components/analysis/document-relationship-graph";
 import { WordViewer, type DocumentLocation } from "@/components/extraction/word-viewer";
 import { TreeView, type TreeDataItem } from "@/components/tree-view";
@@ -76,6 +76,13 @@ import {
   type WordPaginationMetadata,
   type WordSourceRange,
 } from "@/lib/api";
+import {
+  DOCUMENT_ANALYSIS_STATUS_LABELS as RUN_STATUS_LABELS,
+  documentRankingPauseReasons,
+  formatDocumentAnalysisDate as formatDate,
+  formatDocumentAnalysisReason,
+  formatDocumentRankingPause,
+} from "@/lib/document-analysis";
 import { cn } from "@/lib/utils";
 
 type SelectedTreeNode =
@@ -109,19 +116,6 @@ const BREAK_SOURCE_LABELS: Record<string, string> = {
   pageBreakBefore: "段前分页",
   section: "分页型分节",
   lastRendered: "Word 渲染分页",
-};
-
-const RUN_STATUS_LABELS: Record<DocumentAnalysisStatus, string> = {
-  queued: "已排队",
-  running: "运行中",
-  paused: "已暂停",
-  finished: "已完成",
-  retryable_failure: "可恢复失败",
-  blocked_dependency: "依赖阻塞",
-  cancelled: "已取消",
-  deleting: "正在删除",
-  deleted: "已删除",
-  expired: "已过期",
 };
 
 const STAGE_LABELS: Record<string, string> = {
@@ -385,9 +379,9 @@ function ChapterTreePanel({ tree, selectedNodeId, onSelect }: { tree: TreeDataIt
 
 function PanelCard({ title, children, className }: { title: string; children: ReactNode; className?: string }) {
   return (
-    <Card className={cn("min-h-0 overflow-hidden", className)}>
-      <CardHeader className="border-b p-4"><CardTitle className="text-sm">{title}</CardTitle></CardHeader>
-      <CardContent className="h-[calc(100%-3.25rem)] overflow-y-auto p-3">{children}</CardContent>
+    <Card role="region" aria-label={title} className={cn("flex min-h-0 min-w-0 flex-col overflow-hidden", className)}>
+      <CardHeader className="shrink-0 border-b p-3"><CardTitle className="text-sm">{title}</CardTitle></CardHeader>
+      <CardContent className="min-h-0 flex-1 overflow-auto p-3">{children}</CardContent>
     </Card>
   );
 }
@@ -396,12 +390,6 @@ function formatFileSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-}
-
-function formatDate(value: string | null): string {
-  if (!value) return "运行中不自动到期";
-  const parsed = new Date(value);
-  return Number.isNaN(parsed.getTime()) ? value : parsed.toLocaleString("zh-CN", { hour12: false });
 }
 
 function uniqueRequestKey(prefix: string): string {
@@ -423,7 +411,6 @@ function isOlderWatermark(
 }
 
 export function DocumentAnalysisPanel() {
-  const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -442,6 +429,7 @@ export function DocumentAnalysisPanel() {
   const [isCreating, setIsCreating] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
   const [createdRunId, setCreatedRunId] = useState<string | null>(null);
+  const [historyVersion, setHistoryVersion] = useState(0);
 
   const urlRunId = searchParams.get("documentRun")?.trim() || null;
   const activeRunId = urlRunId || createdRunId;
@@ -471,6 +459,12 @@ export function DocumentAnalysisPanel() {
   const [controlError, setControlError] = useState<string | null>(null);
   const eventStreamStatus = runState?.recognition_run_id === activeRunId ? runState.status : null;
   const eventStreamShouldConnect = shouldSubscribeDocumentAnalysisEvents(eventStreamStatus);
+
+  useEffect(() => () => {
+    createSequenceRef.current += 1;
+    createControllerRef.current?.abort();
+    sourceControllerRef.current?.abort();
+  }, []);
 
   useEffect(() => {
     activeRunIdRef.current = activeRunId;
@@ -589,8 +583,24 @@ export function DocumentAnalysisPanel() {
   const currentRun = runState?.recognition_run_id === activeRunId ? runState : null;
   const currentMetadata = metadataState?.recognition_run_id === activeRunId ? metadataState : null;
   const currentGraph = graphState?.runId === activeRunId && graphState.projection === projection ? graphState.value : null;
+  const rankingBudgetEnabled = currentRun?.ranking_budget_enabled
+    ?? currentGraph?.ranking?.budget_enabled ?? true;
+  const rankingBudgetAction = rankingBudgetEnabled ? "ranking_budget_disable" : "ranking_budget_enable";
   const currentReplay = sourceReplay?.runId === activeRunId ? sourceReplay : null;
   const currentSelectionRef = selectedSelectionRef?.runId === activeRunId ? selectedSelectionRef.value : null;
+  const runReason = currentRun?.progress.stop_reason;
+  const runReasonText = runReason === "ranking_paused"
+    ? formatDocumentRankingPause(
+      currentGraph?.ranking,
+      currentRun?.status === "running" || currentRun?.status === "queued",
+      rankingBudgetEnabled,
+    )
+    : runReason ? formatDocumentAnalysisReason(runReason, currentRun?.error?.safe_detail) : currentRun?.error?.safe_detail;
+  const runReasonCodes = [...new Set([
+    runReason,
+    currentRun?.error?.code,
+    ...(runReason === "ranking_paused" ? documentRankingPauseReasons(currentGraph?.ranking) : []),
+  ].filter((code): code is string => Boolean(code)))];
 
   const filteredClasses = useMemo(() => {
     const query = classSearch.trim().toLocaleLowerCase();
@@ -620,7 +630,7 @@ export function DocumentAnalysisPanel() {
     || "document";
 
   const replaceRunInUrl = useCallback((runId: string | null) => {
-    const params = new URLSearchParams(searchParams.toString());
+    const params = new URLSearchParams(window.location.search);
     if (runId) {
       params.set("tab", "document");
       params.set("documentRun", runId);
@@ -630,8 +640,9 @@ export function DocumentAnalysisPanel() {
     params.delete("job_id");
     params.delete("node_id");
     const query = params.toString();
-    router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
-  }, [pathname, router, searchParams]);
+    // Persist client-only selection before a refresh can interrupt navigation.
+    window.history.replaceState(null, "", query ? `${pathname}?${query}` : pathname);
+  }, [pathname]);
 
   const chooseFile = useCallback((file: File) => {
     const suffix = file.name.includes(".") ? file.name.slice(file.name.lastIndexOf(".")).toLowerCase() : "";
@@ -676,6 +687,7 @@ export function DocumentAnalysisPanel() {
         "generate_summary",
         controller.signal,
       );
+      setHistoryVersion((value) => value + 1);
       if (
         requestSequence !== createSequenceRef.current
         || activeRunIdRef.current !== activeRunAtStart
@@ -698,7 +710,7 @@ export function DocumentAnalysisPanel() {
   };
 
   const handleControl = async (action: DocumentAnalysisControlAction | "delete") => {
-    if (!currentRun || controlBusy) return;
+    if (!currentRun || controlBusy || !currentRun.available_actions.includes(action)) return;
     if (action === "cancel" && !window.confirm("取消后本运行不可恢复，已提交的快照仍会保留。确定取消吗？")) return;
     if (action === "delete" && !window.confirm("删除会清理本运行的独占源文件与产物，完成后不可恢复。确定删除吗？")) return;
     setControlBusy(action);
@@ -718,15 +730,20 @@ export function DocumentAnalysisPanel() {
           action,
           currentRun.run_revision,
           requestKey,
-          `用户在文档分析页面请求${action}`,
+          action === "ranking_budget_enable" ? "用户在文档分析页面启用排序预算限制"
+            : action === "ranking_budget_disable" ? "用户在文档分析页面禁用排序预算限制"
+              : `用户在文档分析页面请求${action}`,
         );
       }
       if (activeRunIdRef.current === currentRun.recognition_run_id) {
         setRunState((previous) => mergeDocumentAnalysisControlReceipt(previous, receipt));
         setPollNonce((value) => value + 1);
       }
+      setHistoryVersion((value) => value + 1);
     } catch (error) {
-      setControlError(errorMessage(error));
+      if (activeRunIdRef.current === currentRun.recognition_run_id) {
+        setControlError(errorMessage(error));
+      }
     } finally {
       setControlBusy(null);
     }
@@ -738,7 +755,6 @@ export function DocumentAnalysisPanel() {
     setSelectedSelectionRef({ runId, value: selectionRef });
     setSourceError(null);
     setSourceLoading(true);
-    setInnerTab("metadata");
     sourceControllerRef.current?.abort();
     const controller = new AbortController();
     sourceControllerRef.current = controller;
@@ -764,7 +780,11 @@ export function DocumentAnalysisPanel() {
         spanCount: source.anchors.length || selection?.span_refs.length || 0,
       });
     } catch (error) {
-      if (!isAbortError(error)) setSourceError(errorMessage(error));
+      if (
+        activeRunIdRef.current === runId
+        && sourceControllerRef.current === controller
+        && !isAbortError(error)
+      ) setSourceError(errorMessage(error));
     } finally {
       if (
         activeRunIdRef.current === runId
@@ -775,21 +795,34 @@ export function DocumentAnalysisPanel() {
   };
 
   const selectTreeNode = (nodeId: string) => {
+    sourceControllerRef.current?.abort();
+    sourceControllerRef.current = null;
+    setSourceLoading(false);
     setSelectedNodeId(nodeId);
     setSourceReplay(null);
     setSelectedSelectionRef(null);
     setSourceError(null);
   };
 
-  const closeRunView = () => {
+  const selectRunView = (runId: string | null) => {
+    activeRunIdRef.current = runId;
     createSequenceRef.current += 1;
     createControllerRef.current?.abort();
     sourceControllerRef.current?.abort();
-    setCreatedRunId(null);
+    setIsCreating(false);
+    setCreatedRunId(runId);
+    setSelectedNodeId(null);
     setSelectedSelectionRef(null);
     setSourceReplay(null);
-    replaceRunInUrl(null);
+    setSourceLoading(false);
+    setSourceError(null);
+    setControlError(null);
+    setProjection("effective_affirmed");
+    setInnerTab("metadata");
+    replaceRunInUrl(runId);
   };
+
+  const closeRunView = () => selectRunView(null);
 
   return (
     <div className="space-y-4">
@@ -893,142 +926,228 @@ export function DocumentAnalysisPanel() {
         </CardContent>
       </Card>
 
-      {activeRunId && !currentRun && pollError?.runId !== activeRunId && (
-        <Card>
-          <CardContent className="flex min-h-40 items-center justify-center gap-3 p-6 text-sm text-muted-foreground">
-            <Loader2 className="size-5 animate-spin" />正在只读恢复运行 {activeRunId}
-          </CardContent>
-        </Card>
-      )}
+      <section aria-label="文档分析布局" className="grid items-start gap-4 lg:grid-cols-[13rem_minmax(0,1fr)]">
+        <nav aria-label="分析历史导航" className="min-w-0 lg:sticky lg:top-4 lg:h-[calc(100vh-7rem)]">
+          <DocumentAnalysisHistory
+            key={historyVersion}
+            activeRunId={activeRunId}
+            currentRun={currentRun}
+            onSelect={selectRunView}
+            className="lg:h-full"
+          />
+        </nav>
 
-      {pollError?.runId === activeRunId && (
-        <Alert variant="destructive">
-          <TriangleAlert className="size-4" />
-          <AlertTitle>{pollError.unavailable ? "分析结果已删除、过期或不可访问" : "运行读取失败"}</AlertTitle>
-          <AlertDescription className="flex flex-wrap items-center justify-between gap-2">
-            <span>{pollError.message}</span>
-            <Button variant="outline" size="sm" onClick={() => setPollNonce((value) => value + 1)}><RefreshCw />重试只读请求</Button>
-          </AlertDescription>
-        </Alert>
-      )}
+        <div className="min-w-0 space-y-4">
+          {!activeRunId && (
+            <Card><CardContent className="flex min-h-64 flex-col items-center justify-center gap-3 p-6 text-center">
+              <BookOpen className="size-8 text-muted-foreground" />
+              <p className="text-sm font-medium">选择分析任务查看文档</p>
+              <p className="text-xs text-muted-foreground">从分析历史打开已有任务，或上传文档开始新的分析。</p>
+            </CardContent></Card>
+          )}
 
-      {currentRun && (
-        <Card aria-label="文档分析运行状态">
-          <CardContent className="space-y-4 p-4">
-            <div className="flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
-              <div className="min-w-0 space-y-2">
-                <div className="flex flex-wrap items-center gap-2">
-                  <p className="break-all text-sm font-semibold">{currentRun.input.filename}</p>
-                  <Badge>{RUN_STATUS_LABELS[currentRun.status]}</Badge>
-                  <Badge variant="outline">{STAGE_LABELS[currentRun.stage] || currentRun.stage}</Badge>
+          {activeRunId && !currentRun && pollError?.runId !== activeRunId && (
+            <Card>
+              <CardContent className="flex min-h-40 items-center justify-center gap-3 p-6 text-sm text-muted-foreground">
+                <Loader2 className="size-5 animate-spin" />正在只读恢复运行 {activeRunId}
+              </CardContent>
+            </Card>
+          )}
+
+          {pollError?.runId === activeRunId && (
+            <Alert variant="destructive">
+              <TriangleAlert className="size-4" />
+              <AlertTitle>{pollError.unavailable ? "分析结果已删除、过期或不可访问" : "运行读取失败"}</AlertTitle>
+              <AlertDescription className="flex flex-wrap items-center justify-between gap-2">
+                <span>{pollError.message}</span>
+                <Button variant="outline" size="sm" onClick={() => setPollNonce((value) => value + 1)}><RefreshCw />重试只读请求</Button>
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {currentRun && (
+            <Card aria-label="文档分析运行状态">
+              <CardContent className="space-y-4 p-4">
+                <div className="flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
+                  <div className="min-w-0 space-y-2">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="break-all text-sm font-semibold">{currentRun.input.filename}</p>
+                      <Badge>{RUN_STATUS_LABELS[currentRun.status]}</Badge>
+                      <Badge variant="outline">{STAGE_LABELS[currentRun.stage] || currentRun.stage}</Badge>
+                    </div>
+                    <p className="text-xs"><span className="font-medium">{currentRun.input.root_class_label}</span><span className="ml-2 break-all font-mono text-muted-foreground">{currentRun.input.root_class_iri}</span></p>
+                    <p className="break-all font-mono text-[11px] text-muted-foreground">recognition_run_id: {currentRun.recognition_run_id}</p>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {currentRun.available_actions.includes("pause") && <Button size="sm" variant="outline" disabled={Boolean(controlBusy)} onClick={() => void handleControl("pause")}><Pause />{controlBusy === "pause" ? "正在请求" : "暂停"}</Button>}
+                    {currentRun.available_actions.includes("resume") && <Button size="sm" variant="outline" disabled={Boolean(controlBusy)} onClick={() => void handleControl("resume")}><Play />{controlBusy === "resume" ? "正在请求" : "恢复"}</Button>}
+                    {currentRun.available_actions.includes("cancel") && <Button size="sm" variant="outline" disabled={Boolean(controlBusy)} onClick={() => void handleControl("cancel")}><Ban />{controlBusy === "cancel" ? "正在请求" : "取消"}</Button>}
+                    {currentRun.available_actions.includes("delete") && <Button size="sm" variant="destructive" disabled={Boolean(controlBusy)} onClick={() => void handleControl("delete")}><Trash2 />{controlBusy === "delete" ? "正在请求" : "删除"}</Button>}
+                    <Button size="sm" variant="ghost" onClick={closeRunView}>关闭视图</Button>
+                  </div>
                 </div>
-                <p className="text-xs"><span className="font-medium">{currentRun.input.root_class_label}</span><span className="ml-2 break-all font-mono text-muted-foreground">{currentRun.input.root_class_iri}</span></p>
-                <p className="break-all font-mono text-[11px] text-muted-foreground">recognition_run_id: {currentRun.recognition_run_id}</p>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {currentRun.available_actions.includes("pause") && <Button size="sm" variant="outline" disabled={Boolean(controlBusy)} onClick={() => void handleControl("pause")}><Pause />{controlBusy === "pause" ? "正在请求" : "暂停"}</Button>}
-                {currentRun.available_actions.includes("resume") && <Button size="sm" variant="outline" disabled={Boolean(controlBusy)} onClick={() => void handleControl("resume")}><Play />{controlBusy === "resume" ? "正在请求" : "恢复"}</Button>}
-                {currentRun.available_actions.includes("cancel") && <Button size="sm" variant="outline" disabled={Boolean(controlBusy)} onClick={() => void handleControl("cancel")}><Ban />{controlBusy === "cancel" ? "正在请求" : "取消"}</Button>}
-                {currentRun.available_actions.includes("delete") && <Button size="sm" variant="destructive" disabled={Boolean(controlBusy)} onClick={() => void handleControl("delete")}><Trash2 />{controlBusy === "delete" ? "正在请求" : "删除"}</Button>}
-                <Button size="sm" variant="ghost" onClick={closeRunView}>关闭视图</Button>
-              </div>
-            </div>
+                <section aria-label="排序预算限制" className="space-y-2 rounded-md border p-3 text-xs">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium">排序预算限制</span>
+                      <Badge variant="outline">{rankingBudgetEnabled ? "已启用" : "已禁用"}</Badge>
+                    </div>
+                    {currentRun.available_actions.includes(rankingBudgetAction) && (
+                      <Button size="sm" variant="outline" disabled={Boolean(controlBusy)} onClick={() => void handleControl(rankingBudgetAction)}>
+                        {controlBusy === rankingBudgetAction ? "正在更新" : rankingBudgetEnabled ? "禁用排序预算限制" : "启用排序预算限制"}
+                      </Button>
+                    )}
+                  </div>
+                  <p className="text-muted-foreground">
+                    {rankingBudgetEnabled
+                      ? "限制累计排序 tokens、记录与请求次数。"
+                      : "预算统计已暂停（显示启用期间累计值）。禁用期间不预扣或累计排序预算；重新启用后从关闭前的累计量继续。"}
+                  </p>
+                  <p className="text-muted-foreground">此开关不关闭 embedding 召回或 reranker 精排；输入长度、超时和单次重试限制仍然生效。切换不会自动恢复运行。</p>
+                  {(currentRun.status === "running" || currentRun.status === "queued") && <p className="text-muted-foreground">运行期间不可调整排序预算限制，请先暂停运行。</p>}
+                </section>
 
-            <div className="grid gap-2 text-xs sm:grid-cols-2 xl:grid-cols-4">
-              <div className="rounded-md bg-muted/40 p-2"><span className="text-muted-foreground">运行水位</span><strong className="ml-2">revision {currentRun.run_revision} / event {currentRun.event_head}</strong></div>
-              <div className="rounded-md bg-muted/40 p-2"><span className="text-muted-foreground">记录覆盖</span><strong className="ml-2">{currentRun.progress.records_examined} 已检 / {currentRun.progress.records_incomplete} 未完成 / {currentRun.progress.records_unattempted} 未尝试</strong></div>
-              <div className="rounded-md bg-muted/40 p-2"><span className="text-muted-foreground">判定</span><strong className="ml-2">{currentRun.progress.decisions.supported} 支持 / {currentRun.progress.decisions.unsupported} 不支持 / {currentRun.progress.decisions.undetermined} 待定</strong></div>
-              <div className="rounded-md bg-muted/40 p-2"><Clock3 className="mr-1 inline size-3.5" /><span className="text-muted-foreground">保留至</span><strong className="ml-2">{formatDate(currentRun.expires_at)}</strong></div>
-            </div>
+                <div className="grid gap-2 text-xs sm:grid-cols-2 xl:grid-cols-4">
+                  <div className="rounded-md bg-muted/40 p-2"><span className="text-muted-foreground">运行水位</span><strong className="ml-2">revision {currentRun.run_revision} / event {currentRun.event_head}</strong></div>
+                  <div className="rounded-md bg-muted/40 p-2"><span className="text-muted-foreground">记录覆盖</span><strong className="ml-2">{currentRun.progress.records_examined} 已检 / {currentRun.progress.records_incomplete} 未完成 / {currentRun.progress.records_unattempted} 未尝试</strong></div>
+                  <div className="rounded-md bg-muted/40 p-2"><span className="text-muted-foreground">判定</span><strong className="ml-2">{currentRun.progress.decisions.supported} 支持 / {currentRun.progress.decisions.unsupported} 不支持 / {currentRun.progress.decisions.undetermined} 待定</strong></div>
+                  <div className="rounded-md bg-muted/40 p-2"><Clock3 className="mr-1 inline size-3.5" /><span className="text-muted-foreground">保留至</span><strong className="ml-2">{formatDate(currentRun.expires_at)}</strong></div>
+                </div>
 
-            <div className="flex flex-wrap gap-2">
-              {Object.entries(currentRun.artifacts).map(([name, status]) => <Badge key={name} variant={status === "failed" ? "destructive" : "outline"}>{name}: {ARTIFACT_LABELS[status]}</Badge>)}
-              <Badge variant="outline">模型调用 {currentRun.progress.model_calls}</Badge>
-              <Badge variant="outline">任务尝试 {currentRun.progress.tasks_attempted}</Badge>
-              <Badge variant="outline">Phase 1 {currentRun.progress.phase_counts.phase1 ?? 0}</Badge>
-              <Badge variant="outline">Phase 2 {currentRun.progress.phase_counts.phase2 ?? 0}</Badge>
-            </div>
-            {(currentRun.error || currentRun.progress.stop_reason) && <Alert variant="warning"><TriangleAlert className="size-4" /><AlertTitle>运行说明</AlertTitle><AlertDescription>{currentRun.error?.safe_detail || currentRun.progress.stop_reason || "运行未完整结束。"}</AlertDescription></Alert>}
-            {controlError && <Alert variant="destructive"><TriangleAlert className="size-4" /><AlertTitle>运行控制失败</AlertTitle><AlertDescription>{controlError}</AlertDescription></Alert>}
-          </CardContent>
-        </Card>
-      )}
+                <div className="flex flex-wrap gap-2">
+                  {Object.entries(currentRun.artifacts).map(([name, status]) => <Badge key={name} variant={status === "failed" ? "destructive" : "outline"}>{name}: {ARTIFACT_LABELS[status]}</Badge>)}
+                  <Badge variant="outline">已记账模型调用 {currentRun.progress.model_calls}</Badge>
+                  {(currentRun.progress.model_calls_unresolved ?? 0) > 0 && (
+                    <Badge variant="outline">
+                      已预扣待核实 {currentRun.progress.model_calls_unresolved}
+                    </Badge>
+                  )}
+                  <Badge variant="outline">任务尝试 {currentRun.progress.tasks_attempted}</Badge>
+                  <Badge variant="outline">Phase 1 {currentRun.progress.phase_counts.phase1 ?? 0}</Badge>
+                  <Badge variant="outline">Phase 2 {currentRun.progress.phase_counts.phase2 ?? 0}</Badge>
+                </div>
+                {(currentRun.error || runReason) && (
+                  <Alert variant="warning">
+                    <TriangleAlert className="size-4" />
+                    <AlertTitle>运行说明</AlertTitle>
+                    <AlertDescription>
+                      <p>{runReasonText || "运行未完整结束。"}</p>
+                      {runReasonCodes.length > 0 && (
+                        <details className="mt-2 text-xs">
+                          <summary className="cursor-pointer">技术诊断</summary>
+                          <p className="mt-1 break-all font-mono">{runReasonCodes.join("、")}</p>
+                        </details>
+                      )}
+                    </AlertDescription>
+                  </Alert>
+                )}
+                {controlError && <Alert variant="destructive"><TriangleAlert className="size-4" /><AlertTitle>运行控制失败</AlertTitle><AlertDescription>{controlError}</AlertDescription></Alert>}
+              </CardContent>
+            </Card>
+          )}
 
-      {activeRunId && !(pollError?.runId === activeRunId && pollError.unavailable) && (
-        <Tabs value={innerTab} onValueChange={(value) => setInnerTab(value as InnerTab)}>
-          <TabsList aria-label="文档分析结果视图">
-            <TabsTrigger value="metadata"><FileText />分层元数据</TabsTrigger>
-            <TabsTrigger value="graph"><GitBranch />关系图谱</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="metadata" className="space-y-4">
-            {!currentMetadata ? (
-              <Card><CardContent className="space-y-3 p-8"><div className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="size-4 animate-spin" />正在读取已提交的分层元数据</div><Skeleton className="h-3 w-full" /><Skeleton className="h-3 w-4/5" /></CardContent></Card>
-            ) : (
-              <>
-                <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+          {activeRunId && !(pollError?.runId === activeRunId && pollError.unavailable) && (
+            <section aria-label="文档分析工作区" className="min-w-0 space-y-3">
+              {currentMetadata && (
+                <div className="flex flex-wrap items-center gap-2 break-all text-xs text-muted-foreground">
                   <Badge variant={currentMetadata.availability === "failed" ? "destructive" : "secondary"}>{ARTIFACT_LABELS[currentMetadata.availability]}</Badge>
                   <span>run revision {currentMetadata.run_revision} · artifact {currentMetadata.artifact_revision}</span>
                   {currentMetadata.metadata_snapshot && <span>metadata snapshot: {currentMetadata.metadata_snapshot.snapshot_id}</span>}
                   {currentMetadata.metadata_snapshot && <Badge variant="outline">{currentMetadata.metadata_snapshot.generation_source}</Badge>}
                 </div>
+              )}
+              {currentMetadata?.error && metadataError(currentMetadata.error) && <Alert variant="destructive"><TriangleAlert className="size-4" /><AlertTitle>分层元数据处理失败</AlertTitle><AlertDescription>{metadataError(currentMetadata.error)}</AlertDescription></Alert>}
+              {currentMetadata?.pagination?.warning && <Alert variant="warning"><Info className="size-4" /><AlertTitle>分页说明</AlertTitle><AlertDescription>{currentMetadata.pagination.warning}</AlertDescription></Alert>}
+              {currentMetadata && currentMetadata.warnings.length > 0 && <Alert><TriangleAlert className="size-4" /><AlertTitle>解析提示</AlertTitle><AlertDescription>{currentMetadata.warnings.join("；")}</AlertDescription></Alert>}
+              {currentSelectionRef && (
+                <Alert>
+                  {sourceLoading ? <Loader2 className="size-4 animate-spin" /> : <Info className="size-4" />}
+                  <AlertTitle>{sourceLoading ? "正在校验并定位图谱证据" : "已从关系图谱定位原文"}</AlertTitle>
+                  <AlertDescription>
+                    <span className="break-all font-mono text-xs">{currentSelectionRef}</span>
+                    {currentReplay && <span className="ml-2">· {currentReplay.spanCount} 个物理证据锚点</span>}
+                  </AlertDescription>
+                </Alert>
+              )}
+              {sourceError && <Alert variant="destructive"><TriangleAlert className="size-4" /><AlertTitle>原文证据定位失败</AlertTitle><AlertDescription>{sourceError}</AlertDescription></Alert>}
 
-                {metadataError(currentMetadata.error) && <Alert variant="destructive"><TriangleAlert className="size-4" /><AlertTitle>分层元数据处理失败</AlertTitle><AlertDescription>{metadataError(currentMetadata.error)}</AlertDescription></Alert>}
-                {currentMetadata.pagination?.warning && <Alert variant="warning"><Info className="size-4" /><AlertTitle>分页说明</AlertTitle><AlertDescription>{currentMetadata.pagination.warning}</AlertDescription></Alert>}
-                {currentMetadata.warnings.length > 0 && <Alert><TriangleAlert className="size-4" /><AlertTitle>解析提示</AlertTitle><AlertDescription>{currentMetadata.warnings.join("；")}</AlertDescription></Alert>}
-                {currentSelectionRef && (
-                  <Alert>
-                    {sourceLoading ? <Loader2 className="size-4 animate-spin" /> : <Info className="size-4" />}
-                    <AlertTitle>{sourceLoading ? "正在校验并定位图谱证据" : "已从关系图谱定位原文"}</AlertTitle>
-                    <AlertDescription>
-                      <span className="break-all font-mono text-xs">{currentSelectionRef}</span>
-                      {currentReplay && <span className="ml-2">· {currentReplay.spanCount} 个物理证据锚点</span>}
-                    </AlertDescription>
-                  </Alert>
-                )}
-                {sourceError && <Alert variant="destructive"><TriangleAlert className="size-4" /><AlertTitle>原文证据定位失败</AlertTitle><AlertDescription>{sourceError}</AlertDescription></Alert>}
+              <div className="flex justify-end xl:hidden">
+                <Sheet>
+                  <SheetTrigger asChild><Button variant="outline" size="sm" disabled={!displayTree || !selectedNode}><ListTree />章节树</Button></SheetTrigger>
+                  <SheetContent className="overflow-y-auto">
+                    <SheetHeader><SheetTitle>Word 章节树</SheetTitle><SheetDescription>选择章节以联动原文；跨页章节可继续选择页片段。</SheetDescription></SheetHeader>
+                    {displayTree && selectedNode && <ChapterTreePanel key={`mobile-tree-${analysisKey}`} tree={displayTree} selectedNodeId={selectedNode.node.node_id} onSelect={selectTreeNode} />}
+                  </SheetContent>
+                </Sheet>
+              </div>
 
-                {chapterTree && displayTree && selectedNode && previewContent ? (
-                  <>
-                    <div className="flex justify-end gap-2 lg:hidden">
-                      <Sheet>
-                        <SheetTrigger asChild><Button variant="outline" size="sm"><ListTree />章节树</Button></SheetTrigger>
-                        <SheetContent className="overflow-y-auto"><SheetHeader><SheetTitle>Word 章节树</SheetTitle><SheetDescription>选择章节以联动原文；跨页章节可继续选择页片段。</SheetDescription></SheetHeader><ChapterTreePanel key={`mobile-tree-${analysisKey}`} tree={displayTree} selectedNodeId={selectedNode.node.node_id} onSelect={selectTreeNode} /></SheetContent>
-                      </Sheet>
-                      <Sheet>
-                        <SheetTrigger asChild><Button variant="outline" size="sm"><PanelRight />节点元数据</Button></SheetTrigger>
-                        <SheetContent className="overflow-y-auto"><SheetHeader><SheetTitle>节点元数据</SheetTitle><SheetDescription>摘要、来源范围与分页可信度。</SheetDescription></SheetHeader><MetadataPanel selected={selectedNode} pagination={currentMetadata.pagination} /></SheetContent>
-                      </Sheet>
+              <div className="grid min-w-0 gap-3 xl:h-[calc(100vh-12rem)] xl:min-h-[36rem] xl:grid-cols-[10rem_minmax(0,1fr)_minmax(18rem,0.9fr)] 2xl:grid-cols-[12rem_minmax(0,1.3fr)_minmax(22rem,1fr)]">
+                <PanelCard title="Word 章节树" className="hidden xl:flex">
+                  {displayTree && selectedNode ? (
+                    <ChapterTreePanel key={`desktop-tree-${analysisKey}`} tree={displayTree} selectedNodeId={selectedNode.node.node_id} onSelect={selectTreeNode} />
+                  ) : (
+                    <p className="py-6 text-xs text-muted-foreground">{currentMetadata ? "章节结构尚未就绪" : "正在读取章节结构…"}</p>
+                  )}
+                </PanelCard>
+
+                <Card role="region" aria-label="原始文档预览" className="flex h-[32rem] min-h-0 min-w-0 flex-col overflow-hidden xl:h-auto">
+                  <CardHeader className="flex shrink-0 flex-row flex-wrap items-center justify-between gap-2 space-y-0 border-b p-3">
+                    <div className="min-w-0 flex-1">
+                      <CardTitle className="text-sm">文档预览</CardTitle>
+                      <p className="mt-1 truncate text-xs text-muted-foreground" title={currentMetadata?.filename || currentRun?.input.filename}>{currentMetadata?.filename || currentRun?.input.filename || "Word 原文"}</p>
                     </div>
-                    <div className="grid h-[calc(100vh-14rem)] min-h-[38rem] gap-4 lg:grid-cols-[minmax(15rem,0.8fr)_minmax(0,2.3fr)] xl:grid-cols-[minmax(15rem,0.8fr)_minmax(0,2.3fr)_minmax(18rem,0.9fr)]">
-                      <PanelCard title="Word 章节树" className="hidden lg:block"><ChapterTreePanel key={`desktop-tree-${analysisKey}`} tree={displayTree} selectedNodeId={selectedNode.node.node_id} onSelect={selectTreeNode} /></PanelCard>
-                      <Card className="min-h-0 overflow-hidden">
-                        <CardHeader className="flex-row items-center justify-between space-y-0 border-b p-4"><CardTitle className="min-w-0 truncate text-sm">{currentMetadata.filename || currentRun?.input.filename || "Word 原文"}</CardTitle><Badge variant="outline" className="ml-3 shrink-0">{selectedNode.kind === "page" ? pageLabel(selectedNode.node) : selectedNode.node.node_type === "document" ? "全文" : `${selectedNode.node.level} 级章节`}</Badge></CardHeader>
-                        <CardContent className="h-[calc(100%-3.25rem)] overflow-auto bg-muted/40 p-4">
-                          <WordViewer content={previewContent} activeLocation={currentReplay?.anchor ? null : activeLocation} activeAnchor={currentReplay?.anchor ?? null} fitTables />
-                        </CardContent>
-                      </Card>
-                      <PanelCard title="节点元数据" className="hidden xl:block"><MetadataPanel selected={selectedNode} pagination={currentMetadata.pagination} /></PanelCard>
-                    </div>
-                  </>
-                ) : (
-                  <Card><CardContent className="flex min-h-64 flex-col items-center justify-center gap-3 p-8 text-center"><FileText className="size-8 text-muted-foreground" /><p className="text-sm font-medium">文档结构尚未就绪</p><p className="text-xs text-muted-foreground">结构一经提交会在此显示；读取本 Tab 不会触发摘要重试。</p></CardContent></Card>
-                )}
-              </>
-            )}
-          </TabsContent>
+                    {selectedNode && <Badge variant="outline" className="shrink-0">{selectedNode.kind === "page" ? pageLabel(selectedNode.node) : selectedNode.node.node_type === "document" ? "全文" : `${selectedNode.node.level} 级章节`}</Badge>}
+                  </CardHeader>
+                  <CardContent className="min-h-0 flex-1 overflow-auto bg-muted/40 p-3">
+                    {previewContent ? (
+                      <WordViewer content={previewContent} activeLocation={currentReplay?.anchor ? null : activeLocation} activeAnchor={currentReplay?.anchor ?? null} fitTables />
+                    ) : (
+                      <div className="flex h-full flex-col items-center justify-center gap-3 text-center">
+                        {!currentMetadata ? <Loader2 className="size-6 animate-spin text-muted-foreground" /> : <FileText className="size-8 text-muted-foreground" />}
+                        <p className="text-sm font-medium">{currentMetadata ? "文档结构尚未就绪" : "正在读取文档预览"}</p>
+                        <p className="text-xs text-muted-foreground">原文解析完成后将在此显示。</p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
 
-          <TabsContent value="graph">
-            <DocumentRelationshipGraph
-              artifact={currentGraph}
-              projection={projection}
-              onProjectionChange={setProjection}
-              onSelectionRef={(selectionRef) => void handleSelectionRef(selectionRef)}
-              selectedSelectionRef={currentSelectionRef}
-            />
-          </TabsContent>
-        </Tabs>
-      )}
+                <Card role="region" aria-label="文档分析详情" className="flex h-[36rem] min-h-0 min-w-0 flex-col overflow-hidden xl:h-auto">
+                  <Tabs value={innerTab} onValueChange={(value) => setInnerTab(value as InnerTab)} className="flex min-h-0 flex-1 flex-col">
+                    <div className="shrink-0 border-b p-2">
+                      <TabsList aria-label="文档分析结果视图" className="grid w-full grid-cols-2">
+                        <TabsTrigger value="metadata" className="gap-1.5"><FileText className="size-4" />节点元数据</TabsTrigger>
+                        <TabsTrigger value="graph" className="gap-1.5"><GitBranch className="size-4" />关系图谱</TabsTrigger>
+                      </TabsList>
+                    </div>
+                    <TabsContent value="metadata" className="m-0 min-h-0 flex-1 overflow-auto p-3">
+                      {selectedNode ? (
+                        <MetadataPanel selected={selectedNode} pagination={currentMetadata?.pagination} />
+                      ) : !currentMetadata ? (
+                        <div className="space-y-3"><p className="text-xs text-muted-foreground">正在读取已提交的分层元数据…</p><Skeleton className="h-3 w-full" /><Skeleton className="h-3 w-4/5" /></div>
+                      ) : (
+                        <p className="py-6 text-sm text-muted-foreground">节点元数据尚未就绪。</p>
+                      )}
+                    </TabsContent>
+                    <TabsContent value="graph" forceMount className="m-0 min-h-0 flex-1 overflow-auto p-3 data-[state=inactive]:hidden">
+                      <DocumentRelationshipGraph
+                        key={activeRunId}
+                        compact
+                        artifact={currentGraph}
+                        runStatus={currentRun?.status}
+                        rankingBudgetEnabled={rankingBudgetEnabled}
+                        projection={projection}
+                        onProjectionChange={setProjection}
+                        onSelectionRef={(selectionRef) => void handleSelectionRef(selectionRef)}
+                        selectedSelectionRef={currentSelectionRef}
+                      />
+                    </TabsContent>
+                  </Tabs>
+                </Card>
+              </div>
+            </section>
+          )}
+        </div>
+      </section>
     </div>
   );
 }

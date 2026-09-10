@@ -239,6 +239,10 @@ class PlannedRecord(EvidenceModel):
     rank_score: float = 0
     score_components: dict[str, float] = Field(default_factory=dict)
     rationale: list[str] = Field(default_factory=list)
+    ranking_epoch_id: str | None = None
+    ranking_epoch_seq: int | None = Field(default=None, ge=1)
+    pool_rank: int | None = Field(default=None, ge=1)
+    ranking_mode: Literal["deterministic", "semantic"] = "deterministic"
 
 
 class RecallEntry(EvidenceModel):
@@ -264,6 +268,9 @@ class RetrievalPlan(EvidenceModel):
     ledger: dict[str, RecallEntry]
     excluded_heading_record_ids: list[str] = Field(default_factory=list)
     policy_version: str = RETRIEVAL_POLICY_VERSION
+    frozen_record_ids: list[str] = Field(default_factory=list)
+    frozen_record_hash: str = ""
+    ranking_epoch_ids: list[str] = Field(default_factory=list)
 
     @model_validator(mode="after")
     def conserved_records(self):
@@ -272,6 +279,15 @@ class RetrievalPlan(EvidenceModel):
             raise ValueError("retrieval phases must be disjoint")
         if set(ids) != set(self.ledger):
             raise ValueError("retrieval ledger must cover every planned record exactly once")
+        if self.frozen_record_hash:
+            from app.services.extraction.evidence_identity import evidence_hash
+
+            if (
+                len(self.frozen_record_ids) != len(set(self.frozen_record_ids))
+                or set(ids) != set(self.frozen_record_ids)
+                or evidence_hash(self.frozen_record_ids) != self.frozen_record_hash
+            ):
+                raise ValueError("retrieval plan must conserve its frozen record universe")
         return self
 
 
@@ -506,11 +522,18 @@ class CoverageSummary(EvidenceModel):
     incomplete: int = Field(default=0, ge=0)
     unattempted: int = Field(default=0, ge=0)
     unresolved_claims: int = Field(default=0, ge=0)
+    executed_phase_counts: dict[str, int] = Field(
+        default_factory=lambda: {"phase1": 0, "phase2": 0}
+    )
+    pending_frontiers: int = Field(default=0, ge=0)
+    stop_reason: str | None = None
 
 
 class RunProgress(EvidenceModel):
     tasks_attempted: int = Field(default=0, ge=0)
     model_calls: int = Field(default=0, ge=0)
+    model_calls_reserved: int = Field(default=0, ge=0)
+    model_calls_unresolved: int = Field(default=0, ge=0)
     records_planned: int = Field(default=0, ge=0)
     records_examined: int = Field(default=0, ge=0)
     records_incomplete: int = Field(default=0, ge=0)

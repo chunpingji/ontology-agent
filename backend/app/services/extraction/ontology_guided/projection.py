@@ -76,7 +76,12 @@ def project_graph(
             and _eligible_status(edge.decision_status, edge.polarity, projection)
             and (
                 projection != "effective"
-                or (dependencies.is_valid(_candidate_key(edge)) and effective_proof_gate(edge))
+                or (
+                    not edge.conditions
+                    and not edge.applicability
+                    and dependencies.is_valid(_candidate_key(edge))
+                    and effective_proof_gate(edge)
+                )
             )
         ):
             selected_edges.append(edge)
@@ -88,7 +93,12 @@ def project_graph(
             and _eligible_status(item.decision_status, item.polarity, projection)
             and (
                 projection != "effective"
-                or (dependencies.is_valid(_candidate_key(item)) and effective_proof_gate(item))
+                or (
+                    not item.conditions
+                    and not item.applicability
+                    and dependencies.is_valid(_candidate_key(item))
+                    and effective_proof_gate(item)
+                )
             )
         ):
             selected_properties.append(item)

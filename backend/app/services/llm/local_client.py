@@ -21,7 +21,12 @@ from uuid import uuid4
 
 from app.services.extraction.annotation_execution import ExecutionLost
 from app.services.extraction.text_scanner import strip_tag_blocks
-from app.services.llm.model_runtime import ModelCancelled, check_cancelled
+from app.services.llm.model_runtime import (
+    ModelCancelled,
+    ModelWaitFailure,
+    check_cancelled,
+    runtime,
+)
 from app.services.llm.model_scheduler import (
     HEARTBEAT_SECONDS,
     POLL_SECONDS,
@@ -126,10 +131,13 @@ async def _send(client, kwargs):
 
 async def _http_attempt(client, kwargs, ticket, deadline, request_timeout):
     operation = None
+    on_wait = runtime.get().get("on_model_wait")
     try:
         ticket.publish("queued")
         while True:
             check_cancelled()
+            if on_wait is not None:
+                on_wait()
             if monotonic() >= deadline:
                 raise StructuredModelError("model_total_timeout")
             if ticket.admit():
@@ -155,6 +163,8 @@ async def _http_attempt(client, kwargs, ticket, deadline, request_timeout):
         while not operation.done():
             await asyncio.wait({operation}, timeout=POLL_SECONDS)
             check_cancelled()
+            if on_wait is not None:
+                on_wait()
             if monotonic() - heartbeat >= HEARTBEAT_SECONDS:
                 ticket.heartbeat()
                 heartbeat = monotonic()
@@ -239,7 +249,7 @@ def chat_with_schema(
                     raise StructuredModelError("model_parse_error")
                 ticket.finish("complete", **_usage(response))
                 return parsed
-            except (ModelCancelled, ExecutionLost, ModelSlotLost):
+            except (ModelCancelled, ExecutionLost, ModelSlotLost, ModelWaitFailure):
                 ticket.finish("cancelled")
                 raise
             except Exception as exc:

@@ -2,14 +2,16 @@
 
 import { memo, useMemo, useRef, useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
-import { buildDocumentEvidenceGraph, evidenceBranches, evidenceLabel, evidenceStatus, evidenceValue, shortIri,
+import { branchProgressText, buildDocumentEvidenceGraph, evidenceBranches, evidenceLabel, evidenceStatus, evidenceValue, shortIri,
   type EvidenceBranch } from "@/lib/evidence-graph";
-import type { EvidenceAnchor, EvidenceCandidate, EvidenceGraphSchema, PDECalculation } from "@/lib/api";
+import type { EvidenceAnchor, EvidenceBranchProgress, EvidenceCandidate, EvidenceGraphSchema, PDECalculation } from "@/lib/api";
 import { PDECalculationCard, type CalculationAction } from "./pde-calculation-card";
 
 type Props = {
   candidates: EvidenceCandidate[];
   schema?: EvidenceGraphSchema;
+  branchProgress?: Record<string, EvidenceBranchProgress>;
+  executionStatus?: string | null;
   busy: boolean;
   onSource: (anchor: EvidenceAnchor) => void;
   onReject?: (candidate: EvidenceCandidate) => void;
@@ -82,7 +84,7 @@ function AssertionRow({ candidate, hideLabel = false, children, ...actions }: Ac
     </li>;
 }
 
-export const EvidenceGraphTree = memo(function EvidenceGraphTree({ candidates, schema, calculations = [], onCalculation, ...actions }: Props) {
+export const EvidenceGraphTree = memo(function EvidenceGraphTree({ candidates, schema, branchProgress, executionStatus, calculations = [], onCalculation, ...actions }: Props) {
   const graph = useMemo(() => buildDocumentEvidenceGraph(candidates, schema), [candidates, schema]);
   const calculationsBySubject = useMemo(() => {
     const index = new Map<string, PDECalculation[]>();
@@ -98,8 +100,11 @@ export const EvidenceGraphTree = memo(function EvidenceGraphTree({ candidates, s
   const classLabel = (iri?: string | null) => graph.classes[iri ?? ""]?.label || shortIri(iri);
 
   function revealEntity(id: string) {
-    const node = treeRef.current?.querySelector<HTMLElement>(`li[data-candidate-id="${CSS.escape(id)}"]`);
+    const documentRoot = graph.documentRoots.some((item) => item.candidate_id === id);
+    const node = treeRef.current?.querySelector<HTMLElement>(documentRoot
+      ? "[data-document-class]" : `li[data-candidate-id="${CSS.escape(id)}"]`);
     if (!node) return;
+    if (node instanceof HTMLDetailsElement) node.open = true;
     let ancestor: HTMLElement | null = node;
     while (ancestor && ancestor !== treeRef.current) {
       if (ancestor instanceof HTMLDetailsElement) ancestor.open = true;
@@ -123,8 +128,11 @@ export const EvidenceGraphTree = memo(function EvidenceGraphTree({ candidates, s
   }
 
   function entityReference(entity: EvidenceCandidate, relation?: EvidenceCandidate) {
+    const documentRoot = graph.documentRoots.some((item) => item.candidate_id === entity.candidate_id);
     return <li key={entity.candidate_id} className="px-2 py-1 text-xs">
-      <button className="text-primary hover:underline" onClick={() => revealEntity(entity.candidate_id)}>↗ {entity.text}（查看实体）</button>
+      <button className="text-primary hover:underline" onClick={() => revealEntity(entity.candidate_id)}>
+        ↗ {documentRoot ? "返回文档属性与关系" : `${entity.text}（查看实体）`}
+      </button>
       {relationEvidence(relation)}
     </li>;
   }
@@ -162,11 +170,14 @@ export const EvidenceGraphTree = memo(function EvidenceGraphTree({ candidates, s
   function branchNode(branch: EvidenceBranch, depth: number, referencesOnly: boolean) {
     const key = `${branch.kind}:${branch.iri}`;
     const range = branch.range.map(classLabel).join(" / ");
+    const progress = depth === 0 && branch.kind === "relationship" ? branchProgress?.[branch.iri] : undefined;
+    const statusText = branch.kind === "property" ? "尚无已识别值"
+      : depth === 0 ? branchProgressText(progress, executionStatus) : "尚无已识别关系，处理状态待核对";
     return <li key={key} data-predicate-iri={branch.iri} data-branch-kind={branch.kind} className="min-w-0">
       {!branch.candidates.length ? <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1 px-2 py-1.5 text-xs">
         <span title={branch.iri}>{branch.label}</span>
         {range && <span className="text-[11px] text-muted-foreground">{range}</span>}
-        <span className="ml-auto text-muted-foreground">{branch.kind === "property" ? "未识别到值" : "未识别到关系"}</span>
+        <span className="ml-auto text-muted-foreground" role="status">{statusText}</span>
       </div> : branch.kind === "property" && branch.candidates.length === 1
         ? <ul><AssertionRow candidate={branch.candidates[0]} {...actions} /></ul>
         : <details open={depth < 2}>
@@ -187,6 +198,15 @@ export const EvidenceGraphTree = memo(function EvidenceGraphTree({ candidates, s
             })}
           </ul>
         </details>}
+      {depth === 0 && branch.kind === "relationship" && progress && <p className="px-2 pb-1 text-[11px] text-muted-foreground">
+        {branch.candidates.length > 0 && <span role="status">{branchProgressText(progress, executionStatus)}。 </span>}
+        对象任务 {progress.discovery_tasks} · 关系任务 {progress.relationship_tasks} · 未完成任务 {progress.failed_tasks}
+        {progress.property_status !== "not_applicable" && progress.property_tasks !== undefined && <span>
+          {" · "}属性任务 {progress.property_tasks} · 属性候选 {progress.positive_property_count ?? 0}
+        </span>}
+        {progress.reason_codes.some((code) => ["source_excerpt_mismatch", "ambiguous_source_quote", "source_quote_outside_scope", "citation_repair_unresolved"].includes(code))
+          && <span>；原文引用校验未通过</span>}
+      </p>}
     </li>;
   }
 
@@ -237,17 +257,6 @@ export const EvidenceGraphTree = memo(function EvidenceGraphTree({ candidates, s
       {!!more.length && <details className="mt-2 text-xs">
         <summary className="cursor-pointer px-2 py-1 text-muted-foreground">深层关联实体</summary>
         <ul>{more}</ul>
-      </details>}
-      {!!graph.documentRoots.length && <details className="mt-3 border-t pt-2 text-xs" data-document-records>
-        <summary className="cursor-pointer text-muted-foreground">文档识别记录（{graph.documentRoots.length}）</summary>
-        <ul>{graph.documentRoots.map((candidate, index) => <li key={candidate.candidate_id} data-candidate-id={candidate.candidate_id}>
-          <details>
-            <summary className="cursor-pointer px-2 py-2">
-              <span className="mr-2">{graph.documentRoots.length > 1 ? `${index + 1}. ` : ""}{candidate.text}</span><Status candidate={candidate} />
-            </summary>
-            <SourceDetails candidate={candidate} {...actions} />
-          </details>
-        </li>)}</ul>
       </details>}
     </details>
     {!!(graph.unassociated.length + graph.orphans.length) && <details data-unassociated className="mt-3 rounded border p-2">

@@ -26,6 +26,7 @@ from app.services.document_analysis.artifact_store import (
 from app.services.document_analysis.public_projection import (
     PUBLIC_TO_INTERNAL_PROJECTION,
     public_graph_payload,
+    public_ranking_payload,
 )
 from app.services.document_analysis.run_store import (
     DocumentAnalysisRunStore,
@@ -37,8 +38,13 @@ from app.services.document_analysis.run_store import (
     content_hash,
 )
 from app.services.extraction.evidence_identity import evidence_hash
-from app.services.extraction.ontology_guided.contracts import CONTRACT_VERSION
+from app.services.extraction.ontology_guided.contracts import (
+    CONTRACT_VERSION,
+    OntologySnapshot,
+    SubjectRef,
+)
 from app.services.extraction.ontology_guided.ontology_plan import (
+    compile_local_menu,
     ontology_snapshot_from_engine,
 )
 
@@ -102,7 +108,8 @@ def _absolute_iri(value: str) -> bool:
 
 
 def _request_hash(
-    *, filename: str, document_hash: str, root_class_iri: str, metadata_mode: str
+    *, filename: str, document_hash: str, root_class_iri: str, metadata_mode: str,
+    origin: dict | None = None,
 ) -> str:
     return content_hash(
         {
@@ -113,6 +120,7 @@ def _request_hash(
             "metadata_mode": metadata_mode,
             "scope_mode": "document_graph",
             "focus_path": [],
+            **({"origin": origin} if origin is not None else {}),
         }
     )
 
@@ -150,7 +158,12 @@ def _available_actions(run: DocumentAnalysisRun, role: str | None) -> list[str]:
     if status in {"queued", "running"}:
         return ["pause", "cancel", "delete"]
     if status in {"paused", "retryable_failure"}:
-        return ["resume", "cancel", "delete"]
+        actions = ["resume", "cancel", "delete"]
+        if run.expires_at is None or _aware(run.expires_at) > datetime.now(UTC):
+            actions.append(
+                "ranking_budget_disable" if run.ranking_budget_enabled else "ranking_budget_enable"
+            )
+        return actions
     if status == "blocked_dependency":
         return ["cancel", "delete"]
     if status in {"finished", "cancelled"}:
@@ -168,6 +181,8 @@ def _progress(run: DocumentAnalysisRun) -> dict[str, Any]:
     return {
         "tasks_attempted": attempted,
         "model_calls": int(source.get("model_calls", 0)),
+        "model_calls_reserved": int(source.get("model_calls_reserved", 0)),
+        "model_calls_unresolved": int(source.get("model_calls_unresolved", 0)),
         "records_planned": int(source.get("records_planned", 0)),
         "records_examined": int(source.get("records_examined", 0)),
         "records_incomplete": int(source.get("records_incomplete", 0)),
@@ -183,7 +198,10 @@ def _progress(run: DocumentAnalysisRun) -> dict[str, Any]:
             "not_checked": max(0, attempted - supported - unsupported - undetermined),
         },
         "pending_frontiers": int(source.get("pending_frontiers", 0)),
-        "stop_reason": source.get("stop_reason") or run.stop_reason,
+        "stop_reason": (
+            None if run.execution_status in {"queued", "running", "pausing"}
+            else run.stop_reason or source.get("stop_reason")
+        ),
         "contract_version": CONTRACT_VERSION,
         "event_head": run.event_head,
         "artifact_revision": run.artifact_revision,
@@ -219,6 +237,7 @@ class DocumentAnalysisApplication:
         root_class_iri: str,
         request_key: str,
         metadata_mode: str,
+        origin: dict | None = None,
     ) -> tuple[DocumentAnalysisRun, bool]:
         if not request_key or len(request_key) > 200:
             raise DocumentAnalysisError(
@@ -251,6 +270,7 @@ class DocumentAnalysisApplication:
             document_hash=staged.document_hash,
             root_class_iri=root_class_iri,
             metadata_mode=metadata_mode,
+            origin=origin,
         )
         existing = self.db.scalar(
             select(DocumentAnalysisRun).where(
@@ -313,12 +333,14 @@ class DocumentAnalysisApplication:
                 ontology_snapshot_hash=ontology.ontology_hash,
                 metadata_mode=metadata_mode,
                 scope_mode="document_graph",
+                ranking_budget_enabled=settings.semantic_ranking_budget_enabled,
                 provisional_fingerprint=provisional_fingerprint,
                 recognition_run_id=run_id,
                 progress={},
                 source_payload={
                     "filename": staged.filename,
                     "document_hash": staged.document_hash,
+                    **({"origin": origin} if origin is not None else {}),
                 },
                 ontology_artifact_id=ontology.snapshot_id,
                 ontology_payload=ontology.model_dump(mode="json"),
@@ -345,6 +367,33 @@ class DocumentAnalysisApplication:
         if not created:
             self.storage.discard_run(run_id)
         return run, created
+
+    def list_runs(self, owner_id: str, *, limit: int = 20, offset: int = 0) -> dict[str, Any]:
+        runs, has_more = self.store.list_owned(owner_id, limit=limit, offset=offset)
+        return {
+            "contract_version": CONTRACT_VERSION,
+            "items": [
+                {
+                    "contract_version": CONTRACT_VERSION,
+                    "recognition_run_id": run.recognition_run_id,
+                    "run_revision": run.revision,
+                    "event_head": run.event_head,
+                    "artifact_revision": run.artifact_revision,
+                    "status": _status(run),
+                    "stage": _stage(run),
+                    "input": {
+                        "filename": run.filename,
+                        "root_class_iri": run.root_class_iri,
+                        "root_class_label": run.root_class_label,
+                        "metadata_mode": run.metadata_mode,
+                    },
+                    "created_at": _aware(run.created_at),
+                    "expires_at": _aware(run.expires_at),
+                }
+                for run in runs
+            ],
+            "has_more": has_more,
+        }
 
     def get_run(self, run_id: UUID | str, owner_id: str) -> DocumentAnalysisRun:
         try:
@@ -386,6 +435,7 @@ class DocumentAnalysisApplication:
             "artifact_revision": run.artifact_revision,
             "status": _status(run),
             "stage": _stage(run),
+            "ranking_budget_enabled": run.ranking_budget_enabled,
             "input": {
                 "filename": run.filename,
                 "root_class_iri": run.root_class_iri,
@@ -504,6 +554,8 @@ class DocumentAnalysisApplication:
         if projection not in PUBLIC_TO_INTERNAL_PROJECTION:
             raise DocumentAnalysisError("INVALID_REQUEST", "未知 graph projection", status_code=400)
         committed = self._artifact_payload(run, "graph")
+        ranking_artifact = self._artifact_payload(run, "ranking_state")
+        ranking_state = ranking_artifact[0] if ranking_artifact else {}
         if committed is None:
             return {
                 "contract_version": CONTRACT_VERSION,
@@ -518,6 +570,10 @@ class DocumentAnalysisApplication:
                 "properties": [],
                 "relationships": [],
                 "invalidated_refs": [],
+                "ranking": {
+                    **public_ranking_payload(ranking_state),
+                    "budget_enabled": run.ranking_budget_enabled,
+                },
                 "coverage": {
                     "subjects": [],
                     "records_planned": 0,
@@ -537,6 +593,8 @@ class DocumentAnalysisApplication:
                 "error": None,
             }
         payload, availability = committed
+        if ranking_artifact:
+            payload["ranking_state"] = ranking_state
         response = public_graph_payload(
             recognition_run_id=str(run.recognition_run_id),
             run_revision=run.revision,
@@ -546,7 +604,35 @@ class DocumentAnalysisApplication:
             projection=projection,
             stored_payload=payload,
         )
+        response["ranking"]["budget_enabled"] = run.ranking_budget_enabled
+        # A checkpoint graph is immutable replay evidence. Its last batch can
+        # predate a pause or resume; overlay only the current execution cause,
+        # leaving its coverage counts and per-slot results intact.
+        if run.execution_status in {"queued", "running", "pausing"}:
+            response["coverage"]["stop_reason"] = None
+        elif run.stop_reason:
+            response["coverage"]["stop_reason"] = (
+                "service_failure" if run.stop_reason == "recognition_model_not_configured"
+                else run.stop_reason
+            )
         response["error"] = None
+        frozen_ontology = self._artifact_payload(run, "ontology_snapshot")
+        if frozen_ontology:
+            ontology = OntologySnapshot.model_validate(frozen_ontology[0])
+            for entity in response["entities"]:
+                if entity["class_iri"] not in ontology.classes:
+                    # External range classes may lack a local definition. An
+                    # unknown menu is distinct from an explicitly empty menu.
+                    continue
+                menu = compile_local_menu(ontology, SubjectRef(
+                    entity_id=entity["entity_id"], revision=entity["revision"],
+                    class_iri=entity["class_iri"],
+                    is_document_root=entity["seed_origin"] == "user_selected",
+                ))
+                entity["predicate_menu"] = [
+                    {"predicate_iri": item.iri, "predicate_label": item.label, "kind": item.kind}
+                    for item in [*menu.relationships, *menu.properties]
+                ]
         return response
 
     def source_response(
@@ -771,6 +857,7 @@ class DocumentAnalysisApplication:
     ) -> tuple[DocumentAnalysisRun, bool]:
         if role not in WRITE_ROLES:
             raise DocumentAnalysisError("ROLE_FORBIDDEN", "当前角色无运行写权限", status_code=403)
+        previous_ranking_budget_enabled = run.ranking_budget_enabled
         try:
             outcome = self.store.request_control(
                 run.recognition_run_id,
@@ -806,6 +893,15 @@ class DocumentAnalysisApplication:
                         "artifact_revision": updated.artifact_revision,
                         "status": public_status,
                         "stage": _stage(updated),
+                        **({
+                            "action": action,
+                            "actor": run.owner_id,
+                            "actor_role": role,
+                            "reason": reason,
+                            "ranking_budget_enabled": updated.ranking_budget_enabled,
+                            "previous_ranking_budget_enabled": previous_ranking_budget_enabled,
+                            "control_version": updated.control_version,
+                        } if action in {"ranking_budget_enable", "ranking_budget_disable"} else {}),
                     },
                 )
             final_run = self.store.get_owned(
@@ -858,6 +954,7 @@ class DocumentAnalysisApplication:
             "status": _status(run),
             "stage": _stage(run),
             "operation": action,
+            "ranking_budget_enabled": run.ranking_budget_enabled,
             "operation_status": "accepted",
             "available_actions": _available_actions(run, role),
         }

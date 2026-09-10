@@ -44,13 +44,14 @@ function initialRender(kind: OutputRender["kind"], inputId = ""): OutputRender {
 }
 
 export function OutputTemplateEditor({ schema, templateId, schemaHash, saving, onSave, onCancel,
-  defaultSourceJobId, versions = [], onVersionSwitch, sampleContentJson, sampleText, meta, onMetaSaved }: {
+  defaultSourceJobId, versions = [], onVersionSwitch, sampleContentJson, sampleText, meta, onMetaSaved, initialTab }: {
   schema: TemplateV2; templateId?: string; schemaHash?: string; saving?: boolean;
   defaultSourceJobId?: string | null;
   onSave: (next: TemplateV2) => void; onCancel: () => void;
   versions?: TemplateVersionEntry[]; onVersionSwitch?: (id: string) => void;
   sampleContentJson?: TiptapContent | null; sampleText?: string | null;
   meta?: TemplateMeta; onMetaSaved?: () => void;
+  initialTab?: "basic" | "template";
 }) {
   const [draft, setDraft] = useState(() => structuredClone(schema));
   const [selected, setSelected] = useState("");
@@ -304,7 +305,6 @@ export function OutputTemplateEditor({ schema, templateId, schemaHash, saving, o
       </select></label>
       <p className="text-xs text-muted-foreground">默认流程要求 QA 审核及材料就绪。实际审核、签署和业务记录需在报告流程中完成。</p>
     </div></details>
-    <Button size="sm" disabled={saving || busy} onClick={() => onSave(draft)}>保存为新修订</Button>
   </section>;
   const origin = unit?.origin as TemplateOrigin | undefined;
   const sampleAnchor = origin?.label_anchor ? {
@@ -317,11 +317,23 @@ export function OutputTemplateEditor({ schema, templateId, schemaHash, saving, o
   return <TemplateSlotEditor
     schema={{ template_id: templateId ?? "new", doc_no: draft.doc_no, sections: [] }}
     mode={templateId ? "edit" : "create"}
+    initialTab={initialTab}
     templateId={templateId} meta={meta} versions={versions} onVersionSwitch={onVersionSwitch}
     onMetaSaved={onMetaSaved} iriPattern={meta?.iriPattern ?? draft.source_slots[0]?.class_iri}
     sampleContentJson={sampleContentJson} sampleText={sampleText}
     saving={saving} onSave={() => onSave(draft)} onCancel={onCancel}
     outputEditor={{
+      actions: <div className="flex shrink-0 flex-wrap items-center justify-between gap-2 border-b bg-background px-4 py-3">
+        <p className="text-xs text-muted-foreground">{templateId
+          ? "编辑完成后保存为新修订。"
+          : "模板尚未保存。点击「保存模板」后，可在报告模板列表中找到草稿。"}</p>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" disabled={saving || busy} onClick={onCancel}>返回列表</Button>
+          <Button size="sm" disabled={saving || busy} onClick={() => onSave(draft)}>
+            {saving ? "保存中…" : templateId ? "保存新修订" : "保存模板"}
+          </Button>
+        </div>
+      </div>,
       documentNo: draft.doc_no,
       onDocumentNoChange: (value) => edit((next) => { next.doc_no = value; }),
       documentClassIri: primarySource?.class_iri,
@@ -336,10 +348,6 @@ export function OutputTemplateEditor({ schema, templateId, schemaHash, saving, o
         <div className="shrink-0 border-b px-4 py-3 space-y-2">
           <div className="flex items-center justify-between gap-2">
             <span className="text-sm text-muted-foreground">{unitsIn(draft).length} 项内容 · 修订 {draft.revision_no}</span>
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={onCancel}>取消</Button>
-              <Button size="sm" disabled={saving || busy} onClick={() => onSave(draft)}>{saving ? "保存中…" : "保存新修订"}</Button>
-            </div>
           </div>
           <Button variant="outline" size="sm" disabled={!templateId || !schemaHash || busy}
             onClick={() => action(async () => { setPlan(await compileTemplate(templateId!, schemaHash!, draft)); })}>

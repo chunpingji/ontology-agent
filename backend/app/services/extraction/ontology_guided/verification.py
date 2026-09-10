@@ -34,6 +34,7 @@ PROOF_BUNDLE_CHECK_KINDS = frozenset(
         "local_coreference",
         "global_identity",
         "predicate_entailment",
+        "bridge_entailment",
         "applicability",
     }
 )

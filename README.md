@@ -13,7 +13,7 @@
 | 服务 | 镜像 / 构建 | 容器端口 | 说明 |
 |------|-------------|----------|------|
 | `db` | postgres:16-alpine | 5432 | 数据库,数据存于 `pgdata` 卷 |
-| `backend` | `./backend/Dockerfile` | 8000 | FastAPI（`uvicorn`，当前关闭自动重载） |
+| `backend` | `./backend/Dockerfile.cuda12`；CPU 可显式覆盖 | 8000 | FastAPI，默认 CUDA 12.6 排序环境（当前关闭自动重载） |
 | `frontend` | `./frontend/Dockerfile` | 3000 | Next.js,仅 `expose`,不直接对外 |
 | `web` | nginx:1.27-alpine | 80 | 单入口反代,前端 + `/api` 路由到后端 |
 
@@ -26,6 +26,7 @@
 | | 开发模式（默认,合并 override） | 生产模式（`-f docker-compose.yml` 忽略 override） |
 |---|---|---|
 | 前端 | `next dev` 热更新,源码 bind-mount | standalone 生产镜像（`runner`） |
+| 后端排序环境 | CUDA 12.6；CPU 使用独立覆盖文件 | CUDA 12.6；CPU 使用独立覆盖文件 |
 | 访问地址 | http://localhost:8081 | http://localhost:8081（可用 `WEB_HOST_PORT` 覆盖） |
 | 数据库主机端口 | 55432 | 55432（可用 `DB_HOST_PORT` 覆盖） |
 | 用途 | 日常开发,实时看修改 | 部署 / 验证生产构建 |
@@ -38,6 +39,9 @@
 ## 前置条件
 
 - Docker + Docker Compose v2（`>= 2.24`,override 用到了 `!override` 标签）
+- 默认后端镜像使用 NVIDIA Container Toolkit 的 `nvidia` runtime。GPU 排序须选择一张
+  有足够余量的卡；无 GPU 主机使用下方 CPU 覆盖入口。安装和兼容性见
+  [CUDA 12 部署说明](backend/GPU_CUDA12.md)。
 - 抽取引擎**默认本地、离线优先**（008）：结构化源走确定性映射,自由文本（Word 正文 /
   Excel 自由文本列）走本地零样本 NER。**云端 LLM 为可选项,默认关闭**,仅在显式开启且
   配置 Key 时触发;关闭即离线正常态,**非降级**。
@@ -67,6 +71,9 @@ cd backend
 uv sync --extra gliner --extra semantic     # 仅需 NER 用 --extra gliner
 ```
 
+上述 `uv sync` 保留宿主 CPU 环境；GPU 环境使用独立锁与 `.venv-cuda12`，见
+[CUDA 12 部署说明](backend/GPU_CUDA12.md)，不能用项目级 `uv sync` 替代。
+
 **2. 预备环境（有网）下载权重 + 生成校验和**:
 
 ```bash
@@ -90,6 +97,59 @@ echo 'TRANSFORMERS_OFFLINE=1' >> .env         # transformers 全程离线
 > 配套 `local_files_only=True`(代码内已固定),即便环境变量遗漏也绝不外发。
 > 缺权重/缺包/功能关闭时本地 NER 静默降级——结构化主路径零回归,作业不失败、不标 degraded。
 > 启动期 `lifespan` 会预热两模型,消除首作业冷启动;预热失败同样不阻断启动。
+
+---
+
+## 关系图谱语义排序（默认 GPU，显式启用）
+
+应用 Settings 与基础 Compose 默认使用 `cuda:0`、`float16`、CUDA `12.6`，
+batch 4、排序超时 1200 秒、文档执行并发 1。默认 GPU 镜像为
+`ontology-agent-backend:cuda12-2.7.1`；旧 NER 与实体对齐继续使用各自的 CPU 加载策略。
+
+排序能力开关仍为 `SEMANTIC_RANKING_ENABLED=false`，模型路径仍默认为空。
+要启用 embedding + reranker，须显式设 `SEMANTIC_RANKING_ENABLED=true`，并提供
+`SEMANTIC_RANKING_EMBEDDING_PATH`、`SEMANTIC_RANKING_EMBEDDING_MANIFEST_PATH`、
+`SEMANTIC_RANKING_RERANKER_PATH`、`SEMANTIC_RANKING_RERANKER_MANIFEST_PATH` 四项。
+Compose 中使用挂载后的 `/app/models/...` 路径；两模型及各自完整 SHA256 清单须先准备和校验，
+不能使用旧对齐模型路径替代。详见 [特性 quickstart](specs/022-semantic-graph-closure/quickstart.md)。
+
+排序预算限制独立于模型开关，`SEMANTIC_RANKING_BUDGET_ENABLED=true` 是新建运行的缺省。
+运行暂停后可在页面启用/禁用“排序预算限制”，再显式恢复同一运行。禁用期间不预扣、
+不累计排序预算，已记账历史保留；重新启用从原累计量继续。单次输入限制、超时及
+自动技术重试上限仍有效，禁用预算不会关闭 embedding/reranker。
+
+在项目根 `.env` 或当前 shell 中显式选择单张物理 GPU UUID/编号，容器内统一为 `cuda:0`：
+
+```bash
+export SEMANTIC_RANKING_GPU_ID=GPU_REPLACE_WITH_SELECTED_UUID
+docker compose config --quiet
+docker compose build backend
+```
+
+未配置 GPU ID 时基础 Compose 使用 `NVIDIA_VISIBLE_DEVICES=none`，不会自动占卡。
+排序已启用后，设备不可用或制品不完整按默认 `pause` 策略暂停，不自动切到 CPU 或
+确定性排序。`docker-compose.cuda12.yml` 保留为强制 GPU 覆盖入口，其 GPU ID 必须提供。
+
+CPU 部署保留独立镜像 `ontology-agent-backend:cpu`、原 `Dockerfile`、`.venv` 和 `uv.lock`。
+CPU 覆盖固定 `runc`、`cpu`、`float32`；即使 `.env` 中保留 GPU 精度也不会覆盖这些值。
+以下更新命令须在相关任务完成或暂停后执行：
+
+```bash
+# CPU 开发：显式保留本机 override，并把 CPU 文件放最后。
+docker compose -f docker-compose.yml -f docker-compose.override.yml \
+  -f docker-compose.cpu.yml config --quiet
+docker compose -f docker-compose.yml -f docker-compose.override.yml \
+  -f docker-compose.cpu.yml up -d --build backend
+
+# CPU 生产：不合并开发 override。
+docker compose -f docker-compose.yml -f docker-compose.cpu.yml config --quiet
+docker compose -f docker-compose.yml -f docker-compose.cpu.yml up -d --build backend
+```
+
+CPU 模式后续 `build`、`up`、`run` 均须保持同一文件序列；只用基础文件会恢复 GPU 默认。
+已冻结的 CPU 运行即使暂停，恢复时仍需原配置；切换 GPU 后应新建运行。
+默认配置变更不代表共享后端已经切换或排序能力已经开启，实际交付状态见
+[GPU 默认配置交付记录](specs/022-semantic-graph-closure/gpu-default.md)。
 
 ---
 

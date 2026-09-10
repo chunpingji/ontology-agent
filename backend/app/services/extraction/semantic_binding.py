@@ -4,7 +4,7 @@ from app.schemas.evidence import Candidate, DocumentProvenance, EvidenceAnchor, 
 from app.services.extraction.document_ir import DocumentIR
 from app.services.extraction.evidence_scope import document_anchors, scope_contains
 from app.services.extraction.performance import timed
-from app.services.extraction.table_records import table_records
+from app.services.extraction.table_records import table_binding_anchors, table_records
 
 
 @timed("candidate_validation")
@@ -122,8 +122,12 @@ def validate_document_candidate(
                 issue("record_mapping_mismatch")
         if binding.method == "table_record":
             try:
+                subject = (candidates.get(candidate.subject.candidate_id)
+                           if candidate.subject else None)
                 valid = table_records(ir).valid_mapping(
-                    binding.record_mapping, binding.anchors, document_anchors(candidate),
+                    binding.record_mapping,
+                    table_binding_anchors(ir, binding.anchors, subject),
+                    document_anchors(candidate),
                 )
             except ValueError:
                 valid = False

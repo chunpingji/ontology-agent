@@ -7,7 +7,7 @@ from app.services.extraction.evidence_identity import canonical_json
 
 PROTOCOL_VERSION = "closed-model-references-v5-context-quotes"
 # Transport changes do not invalidate validated semantic checkpoints or repack tasks.
-TRANSPORT_VERSION = "stable-prefix-local-verification-v1"
+TRANSPORT_VERSION = "stable-prefix-local-verification-v2-feedback"
 _CANDIDATE_FIELDS = {
     "candidate_id", "subject_candidate_id", "object_candidate_id", "subject_id",
     "supported_subject_ids", "shared_subject_ids",
@@ -46,6 +46,8 @@ class ModelProtocol:
         context = self._walk(context, encode=True)
         request["context"] = json.dumps(context, ensure_ascii=False, separators=(",", ":"))
         request["candidate"] = self._walk(request.get("candidate"), encode=True)
+        if "citation_feedback" in request:
+            request["citation_feedback"] = self._walk(request["citation_feedback"], encode=True)
         self.user = canonical_json(request)
         self.schema = planning_schema(schema) if planning else deepcopy(schema)
         definitions = self.schema.get("$defs", {})
@@ -105,6 +107,18 @@ class ModelProtocol:
                     method for method in properties["method"]["enum"]
                     if method != "table_record"
                 ]
+            if "method" in properties and len({
+                f["anchor"].get("section_node_id") for f in context["fragments"]
+            }) > 1:
+                # Cross-section proofs must not claim a single-section mapping.
+                properties["method"]["enum"] = [
+                    method for method in properties["method"]["enum"]
+                    if method != "section_record"
+                ]
+            if kind == "relationship":
+                for field in ("source_unit", "boolean_legend"):
+                    if field in properties:
+                        properties[field] = {"type": "null"}
             if "record_mapping" in properties:
                 # Structural record IDs, like character offsets, come from
                 # replayed anchors. Guessing the heading's section here can
@@ -145,6 +159,7 @@ class ModelProtocol:
             request["output_contract"] = self.schema
             self.user = json.dumps({key: request[key] for key in (
                 "stage", "context", "candidate", "focus", "output_contract",
+                "source_quote_rules", "citation_feedback",
             ) if key in request}, ensure_ascii=False, separators=(",", ":"))
 
     @staticmethod
@@ -158,7 +173,7 @@ class ModelProtocol:
     def _walk(self, value, field="", *, encode=False):
         kind = (
             "evidence" if field == "evidence_id" else
-            "class" if field in {"class_iri", "parents"} else
+            "class" if field in {"class_iri", "parents", "competing_class_iris"} else
             "candidate" if field in _CANDIDATE_FIELDS else None
         )
         if isinstance(value, str) and kind:

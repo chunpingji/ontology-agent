@@ -29,6 +29,91 @@ PUBLIC_TO_INTERNAL_PROJECTION = {
 }
 
 
+def public_ranking_payload(state: dict[str, Any]) -> dict[str, Any]:
+    """Project committed diagnostics without exposing query text or cache contents."""
+    service = state.get("service") or {}
+    epochs = []
+    for epoch in [*(service.get("epochs") or []), *(service.get("pending_epochs") or [])]:
+        if epoch.get("status") not in {"committed", "paused"}:
+            continue
+        observations = epoch.get("observations") or []
+        by_record: dict[str, list[dict]] = {}
+        for observation in observations:
+            by_record.setdefault(observation["record_id"], []).append(observation)
+        records = []
+        for rank, record_id in enumerate(epoch.get("ordered_record_ids") or [], start=1):
+            values = by_record.get(record_id, [])
+            channels = sorted({
+                channel
+                for value in values
+                for channel in value.get("channel_hits", [])
+            })
+            records.append({
+                "record_id": record_id,
+                "rank": rank,
+                "channels": channels,
+                "intent_ranks": {
+                    value["retrieval_intent"]: value["intent_rank"]
+                    for value in values
+                    if value.get("retrieval_intent") and value.get("intent_rank") is not None
+                },
+                "raw_scores": {
+                    value["retrieval_intent"]: value["raw_rerank_score"]
+                    for value in values
+                    if value.get("retrieval_intent") and value.get("raw_rerank_score") is not None
+                },
+            })
+        subject = epoch.get("subject_ref") or {}
+        queries = epoch.get("queries") or []
+        epochs.append({
+            "epoch_id": epoch["epoch_id"],
+            "status": epoch["status"],
+            "query_id": queries[0].get("query_id") if queries else None,
+            "subject_ref": {
+                "entity_id": subject.get("entity_id") or subject.get("id"),
+                "revision": subject["revision"],
+            } if subject else None,
+            "predicate_iri": queries[0].get("predicate_iri") if queries else None,
+            "plan_id": epoch.get("plan_id"),
+            "requested_mode": (service.get("policy") or {}).get("mode", "deterministic"),
+            "actual_mode": epoch.get("actual_ranking_mode", "deterministic"),
+            "degraded": bool(epoch.get("degraded", False)),
+            "reason": epoch.get("reason") or None,
+            "budget_accounted": (epoch.get("costs") or {}).get("budget_accounted", True),
+            "records": records,
+        })
+    costs = service.get("costs") or {}
+    observations = service.get("model_observations") or []
+    inference_observations = [
+        item for item in observations if item.get("operation") in {"embed", "score_pairs"}
+    ]
+    measured = [item for item in inference_observations if item.get("input_tokens") is not None]
+    return {
+        "requested_mode": (service.get("policy") or {}).get("mode", "deterministic"),
+        "budget_enabled": service.get("budget_enabled", True),
+        "actual_modes": sorted({
+            epoch["actual_mode"] for epoch in epochs if epoch["status"] == "committed"
+        }),
+        "degraded": any(epoch["degraded"] for epoch in epochs),
+        "paused": any(epoch["status"] == "paused" for epoch in epochs),
+        "reasons": sorted({epoch["reason"] for epoch in epochs if epoch["reason"]}),
+        "committed_epochs": sum(epoch["status"] == "committed" for epoch in epochs),
+        "epochs": epochs,
+        "cost": {
+            "model_calls": costs.get("model_calls", 0),
+            "observed_requests": len(inference_observations),
+            "input_pairs": costs.get("input_pairs", 0),
+            "input_tokens": costs.get("tokens", 0),
+            "reserved_input_tokens": costs.get("tokens", 0),
+            "measured_input_tokens": sum(item["input_tokens"] for item in measured),
+            "unknown_request_count": max(0, costs.get("model_calls", 0) - len(measured)),
+            "queue_seconds": sum(item.get("queue_seconds") or 0 for item in observations),
+            "retries": costs.get("technical_retries", 0),
+            "elapsed_seconds": costs.get("elapsed_ms", 0) / 1000,
+        },
+    }
+
+
 def _generic_ref(value) -> dict[str, Any] | None:
     if value is None:
         return None
@@ -327,8 +412,13 @@ def public_graph_payload(
             "records_incomplete": item.incomplete,
             "records_unattempted": item.unattempted,
             "phase_counts": {"phase1": item.phase1, "phase2": item.phase2},
-            "pending_frontiers": 0,
-            "stop_reason": None,
+            "executed_phase_counts": (
+                item.executed_phase_counts
+                if "executed_phase_counts" in item.model_fields_set
+                else None
+            ),
+            "pending_frontiers": getattr(item, "pending_frontiers", 0),
+            "stop_reason": getattr(item, "stop_reason", None),
         }
         for item in graph.coverage
     ]
@@ -354,6 +444,7 @@ def public_graph_payload(
         "properties": [_property(item, registry, invalidated) for item in graph.properties],
         "relationships": [_relationship(item, registry, invalidated) for item in graph.edges],
         "invalidated_refs": _versioned_refs(invalidated),
+        "ranking": public_ranking_payload(stored_payload.get("ranking_state") or {}),
         "coverage": {
             "subjects": coverage_subjects,
             "records_planned": progress.records_planned,

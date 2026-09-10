@@ -147,14 +147,24 @@ npm run lint
 npm run build
 ```
 
-production build 与 API 服务启动后再运行浏览器场景。当前工作区尚无下列脚本，因此本步骤是发布前待实现门禁，不得把 production build 通过当作浏览器验收：
+已有两个浏览器脚本，均需显式提供外置 Playwright 模块。`document-analysis-browser.mjs`
+读取指定隔离服务与已准备运行，验证真实 API 读取与证据定位；
+`document-analysis-history-browser.mjs` 拦截合成 API，验证历史导航、工作区布局、标签切换
+和窄屏显示。按脚本开头的环境变量说明配置服务与输出目录，不对共享运行执行创建测试。
 
 ```bash
 cd /opt/dev/chen/ontology-agent
 node frontend/tests/document-analysis-browser.mjs
+node frontend/tests/document-analysis-history-browser.mjs
 ```
 
-浏览器判据：页面只有“分层元数据”和“关系图谱”两个同级结果 Tab；两个 Tab 的 run/analysis/metadata identity 一致；metadata 可先显示；默认图不混入拒绝/条件/待定边；证据能定位到同一运行的段落或物理表格单元；刷新、SSE 重连、筛选和快速换运行不会额外 POST、调用模型或让迟到响应串文档。外置 Playwright 缺失或浏览器脚本只拦截合成 API 时须明确记录，不能冒充完整真实集成。
+浏览器判据：分析历史位于左侧；桌面工作区共享章节树和文档预览，右侧只有“节点元数据”
+和“关系图谱”两个同级 Tab。切换 Tab 不卸载预览，点击图谱证据保留图谱并定位原文。
+两个 Tab 的 run/analysis/metadata identity 一致；metadata 可先显示；默认图不混入
+拒绝/条件/待定边；证据能定位到同一运行的段落或物理表格单元；刷新、SSE 重连、筛选和
+快速换运行不会额外 POST、调用模型或让迟到响应串文档。外置 Playwright 缺失或浏览器
+脚本只拦截合成 API 时须明确记录，不能冒充完整真实集成。布局专项结果另记于
+[工作区布局验证](layout-validation.md)。
 
 ## 5. 手工 API 流程
 
@@ -387,6 +397,8 @@ dry-run 必须在以下任一条件成立时非零退出并输出 G-C03 blocked�
 **本 quickstart 不提供生产 execute 命令。** 只读 manifest 或 dry-run 成功不等于获准清理。只要 `published_or_confirmed` 物理删除集合非空，或独立质量门/保留集/批准 SLO、真实 PostgreSQL、权限、浏览器、T01—T31、维护窗口任一证据不可用，就禁止运行破坏性清理，也禁止正式切换。若确实要求物理删除已发布内容，必须先完成 Constitution 修订或正式治理决定，再重新生成并审批 manifest。
 
 ## 8. 完成判据
+
+历史入口补充验收（2026-09-09）：在 `/analysis?tab=document` 显式创建两个同名 Word 分析，确认历史列表分别显示两条任务及创建时间/状态。关闭结果、刷新，再从历史列表打开旧任务；确认 URL 的 `documentRun` 与所选任务一致，分层元数据和图谱沿用同一运行，网络无新建任务 POST。超过 10 条后翻页，模拟列表 GET 失败再重试；快速切换历史项不会显示上一任务迟到的结果。其他 owner、已删除和已过期任务不在列表中，现有保留政策继续生效。
 
 只有以下全部有可复现证据时才能把特性标为可切换：
 

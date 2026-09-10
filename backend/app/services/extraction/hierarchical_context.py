@@ -13,7 +13,7 @@ from app.services.extraction.model_protocol import PROTOCOL_VERSION, ModelProtoc
 from app.services.extraction.performance import timed
 from app.services.extraction.table_records import table_records
 
-MODEL_CONTEXT_VERSION = "model-context-v6-verified-identity"
+MODEL_CONTEXT_VERSION = "model-context-v10-structural-records"
 
 
 def model_anchor(anchor: dict) -> dict:
@@ -31,7 +31,7 @@ def model_candidate(candidate: dict | None, *, proposed_identity: bool = False) 
     if "proposed_entities" in candidate:
         return {"proposed_entities": [
             model_candidate(c, proposed_identity=True) for c in candidate["proposed_entities"]
-        ]}
+        ], "competing_class_iris": candidate.get("competing_class_iris", [])}
     if "shared_candidates" in candidate:
         return {
             "shared_candidates": [model_candidate(c) for c in candidate["shared_candidates"]],
@@ -215,6 +215,9 @@ def build_context(
     system_prompt: str = "",
     response_schema: dict | None = None,
     compact_identifiers: bool = False,
+    citation_protocol_version: str | None = None,
+    record_index=None,
+    required_context_refs: list[EvidenceAnchor] | None = None,
 ) -> ContextEnvelope:
     references = [
         ref
@@ -246,6 +249,7 @@ def build_context(
             "response_schema": response_schema,
             "model_context_version": MODEL_CONTEXT_VERSION,
             "reference_protocol": PROTOCOL_VERSION if compact_identifiers else "canonical",
+            "citation_protocol": citation_protocol_version,
         },
     )
     facts = []
@@ -276,6 +280,14 @@ def build_context(
         }
         for a in facts
     ]
+    for anchor in required_context_refs or []:
+        text = ir.resolve(anchor)
+        if anchor not in bindings:
+            bindings.append(anchor)
+            fragments.append({
+                "anchor": anchor.model_dump(mode="json"), "text": text,
+                "purpose": "related_section_reference_context", "fact_eligible": False,
+            })
     # Row and header evidence explain what each cell denotes, even when a source
     # window splits the record. They aid typing/binding but cannot propose facts
     # outside the task's target ranges.
@@ -312,13 +324,39 @@ def build_context(
                 }
             )
     if task.scope:
-        for anchor in task.scope.construction_evidence:
+        for anchor in [
+            *task.scope.construction_evidence,
+            *(anchor for expansion in task.scope.expansion_history
+              for anchor in expansion.evidence),
+        ]:
             if anchor not in bindings:
                 bindings.append(anchor)
                 fragments.append({
                     "anchor": anchor.model_dump(mode="json"), "text": ir.resolve(anchor),
-                    "purpose": "scope_construction_evidence", "fact_eligible": False,
+                    "purpose": ("scope_construction_evidence"
+                                if anchor in task.scope.construction_evidence
+                                else "reference_owner_context"), "fact_eligible": False,
                 })
+        if any(expansion.reason == "field_group_reference_lookup"
+               for expansion in task.scope.expansion_history):
+            from app.services.extraction.ontology_guided.records import RecordIndex
+            from app.services.extraction.record_targets import field_group_context
+
+            for group_id, units in field_group_context(task, record_index or RecordIndex(ir)):
+                for position, unit in enumerate(units):
+                    anchor = ir.anchor(unit.evidence_id)
+                    matching = [fragment for fragment in fragments
+                                if fragment["anchor"] == anchor.model_dump(mode="json")]
+                    if not matching:
+                        fragment = {
+                            "anchor": anchor.model_dump(mode="json"), "text": unit.text,
+                            "purpose": "field_group_reference_context", "fact_eligible": False,
+                        }
+                        fragments.append(fragment)
+                        bindings.append(anchor)
+                        matching = [fragment]
+                    for fragment in matching:
+                        fragment.update(field_group_id=group_id, field_index=position)
     payload = {
         "task": task.model_dump(mode="json"),
         "subjects": {
@@ -343,6 +381,7 @@ def build_context(
         },
         "fragments": fragments,
         "effective_class": effective_class,
+        "citation_protocol": citation_protocol_version,
     }
     # Includes instructions/schema in token accounting; no subject is sacrificed
     # for a long optional ancestor. Provider chat framing is reserved explicitly.

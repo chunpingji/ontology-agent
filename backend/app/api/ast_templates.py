@@ -10,7 +10,7 @@ import tempfile
 from pathlib import Path
 from uuid import UUID, uuid4
 
-from fastapi import APIRouter, BackgroundTasks, Depends, File, HTTPException, UploadFile
+from fastapi import APIRouter, BackgroundTasks, Depends, File, HTTPException, Response, UploadFile
 from sqlalchemy.orm import Session
 
 from app.db import get_db
@@ -471,11 +471,13 @@ def _get_template_or_404(template_id: UUID, db: Session) -> AstTemplate:
 async def replace_sample(
     template_id: UUID,
     file: UploadFile = File(...),
+    include_content: bool = True,
     db: Session = Depends(get_db),
     identity: object = Depends(_maintainer),
 ):
     """替换既有模板的默认示例文档（固化输出 section / 格式）。支持 .doc（后端转 .docx）
-    / .docx，解析为忠于原文结构的 tiptap 并同步 sample_text，供 AI 插槽建议与忠实预览。"""
+    / .docx，解析为忠于原文结构的 tiptap 并同步 sample_text，供 AI 插槽建议与忠实预览。
+    include_content=False 在持久化成功后仅返回 204，供无需立即预览的创建向导使用。"""
     row = _get_template_or_404(template_id, db)
     if row.status in {"published", "archived"}:
         raise ReportingError("TEMPLATE_REVISION_REQUIRED", status=409)
@@ -552,6 +554,8 @@ async def replace_sample(
                 Path(old_path).unlink(missing_ok=True)
         except Exception:
             _log.warning("替换示例后清理旧文件失败（已忽略）：%s", old_path, exc_info=True)
+    if not include_content:
+        return Response(status_code=204)
     return {
         "content_json": content_json,
         "plain_text": plain_text,

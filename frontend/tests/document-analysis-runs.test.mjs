@@ -115,6 +115,21 @@ test("create submits the complete persistent-run multipart contract", async () =
   );
 });
 
+test("history discovery is a cancellable, uncached, authenticated GET", async () => {
+  const requests = [];
+  const api = loadApi(async (url, options) => {
+    requests.push({ url, options });
+    return response({ items: [], has_more: false });
+  });
+  const signal = new AbortController().signal;
+  await api.listDocumentAnalysisRuns(10, 20, signal);
+  assert.equal(requests[0].url, "/api/document-analysis/runs?limit=10&offset=20");
+  assert.equal(requests[0].options.method, undefined);
+  assert.equal(requests[0].options.signal, signal);
+  assert.equal(requests[0].options.cache, "no-store");
+  assert.equal(new Headers(requests[0].options.headers).get("X-User"), "analyst");
+});
+
 test("status, metadata, graph and source functions are read-only GETs", async () => {
   const requests = [];
   const api = loadApi(async (url, options) => {
@@ -348,9 +363,63 @@ test("lifecycle writes carry revision CAS and operation idempotency keys", async
   assert.equal(requests[1].options.method, "DELETE");
 });
 
+test("ranking budget controls use explicit CAS endpoints with cancellation and no implicit resume", async () => {
+  const requests = [];
+  const api = loadApi(async (url, options) => {
+    requests.push({ url, options });
+    return response({});
+  });
+  const signal = new AbortController().signal;
+  for (const [action, revision] of [["disable", 8], ["enable", 9]]) {
+    await api.controlDocumentAnalysisRun("run / one", `ranking_budget_${action}`, revision,
+      `budget-${action}`, "显式调整排序预算限制", signal);
+  }
+  assert.equal(requests.length, 2);
+  for (const [index, action] of ["disable", "enable"].entries()) {
+    assert.equal(requests[index].url, `/api/document-analysis/runs/run%20%2F%20one/ranking-budget/${action}`);
+    assert.equal(requests[index].options.method, "POST");
+    assert.equal(requests[index].options.signal, signal);
+    assert.equal(new Headers(requests[index].options.headers).get("X-User"), "analyst");
+    assert.deepEqual(JSON.parse(requests[index].options.body), {
+      expected_revision: 8 + index, request_key: `budget-${action}`, reason: "显式调整排序预算限制",
+    });
+  }
+});
+
+test("budget receipts preserve paused work, reject stale and foreign responses, and keep disabled state", () => {
+  const api = loadApi(async () => response({}));
+  const current = { recognition_run_id: "budget-run", run_revision: 4, event_head: 9,
+    artifact_revision: 2, status: "paused", stage: "extracting", ranking_budget_enabled: true,
+    available_actions: ["resume", "ranking_budget_disable"], progress: { model_calls: 7 },
+    identities: { graph_snapshot_id: "unchanged-graph" } };
+  const receipt = { recognition_run_id: "budget-run", run_revision: 5, event_head: 10,
+    artifact_revision: 2, status: "paused", stage: "extracting", ranking_budget_enabled: false,
+    operation: "ranking_budget_disable", operation_status: "accepted",
+    available_actions: ["resume", "ranking_budget_enable"] };
+  const disabled = api.mergeDocumentAnalysisControlReceipt(current, receipt);
+  assert.equal(disabled.ranking_budget_enabled, false);
+  assert.equal(disabled.status, "paused");
+  assert.equal(api.shouldSubscribeDocumentAnalysisEvents(disabled.status), false);
+  assert.equal(disabled.progress, current.progress);
+  assert.equal(disabled.identities, current.identities);
+  assert.equal(api.mergeDocumentAnalysisControlReceipt(disabled, { ...receipt, run_revision: 4,
+    ranking_budget_enabled: true }), disabled);
+  assert.equal(api.mergeDocumentAnalysisControlReceipt(disabled, { ...receipt,
+    recognition_run_id: "another-run", ranking_budget_enabled: true }), disabled);
+  assert.equal(api.mergeDocumentAnalysisControlReceipt(disabled, { ...receipt,
+    ranking_budget_enabled: undefined }).ranking_budget_enabled, false);
+});
+
+test("legacy runs default to enabled ranking budgets while explicit false survives reading", async () => {
+  for (const [payload, expected] of [[{}, true], [{ ranking_budget_enabled: false }, false]]) {
+    const api = loadApi(async () => response(payload));
+    assert.equal((await api.getDocumentAnalysisRun("legacy-run")).ranking_budget_enabled, expected);
+  }
+});
+
 test("the panel has exactly two result tabs and restores by documentRun", () => {
   assert.equal((panelSource.match(/<TabsTrigger\b/g) || []).length, 2);
-  assert.match(panelSource, /value="metadata"[^>]*>[\s\S]*?分层元数据/);
+  assert.match(panelSource, /value="metadata"[^>]*>[\s\S]*?节点元数据/);
   assert.match(panelSource, /value="graph"[^>]*>[\s\S]*?关系图谱/);
   assert.match(panelSource, /searchParams\.get\("documentRun"\)/);
   assert.match(panelSource, /params\.set\("documentRun", runId\)/);
@@ -385,4 +454,43 @@ test("graph evidence is role-specific and only opaque selection refs cross the A
     /getDocumentAnalysisSource\(runId, selectionRef, controller\.signal\)/,
   );
   assert.doesNotMatch(panelSource, /getDocumentAnalysisSource\([^\n]*anchor/);
+});
+
+test("template bridge uses authenticated GET discovery and an explicit idempotent create", async () => {
+  const requests = [];
+  const api = loadApi(async (url, options) => {
+    requests.push({ url, options });
+    return response({ run: null });
+  });
+  const controller = new AbortController();
+  assert.deepEqual(JSON.parse(JSON.stringify(await api.getTemplateDocumentRun(
+    "template/a", "source b", controller.signal))), { run: null });
+  await api.createTemplateDocumentRun("template/a", "source b", "once", controller.signal);
+  assert.equal(requests[0].url,
+    "/api/document-analysis/templates/template%2Fa/sources/source%20b/runs");
+  assert.equal(requests[0].options.method || "GET", "GET");
+  assert.equal(requests[0].options.signal, controller.signal);
+  assert.equal(requests[1].options.method, "POST");
+  assert.deepEqual(JSON.parse(requests[1].options.body), { request_key: "once" });
+  assert.equal(requests[1].options.signal, controller.signal);
+});
+
+test("template branch progress preserves unattempted and incomplete work", () => {
+  const source = readFileSync(new URL(
+    "../src/components/analysis/template-document-graph-panel.tsx", import.meta.url), "utf8");
+  const exports = {};
+  vm.runInContext(ts.transpileModule(source, { compilerOptions: {
+    module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022,
+    jsx: ts.JsxEmit.ReactJSX,
+  } }).outputText, vm.createContext({ exports, require: () => ({}) }));
+  const progress = exports.branchProgress;
+  assert.equal(progress(), "未尝试");
+  assert.equal(progress({ records_planned: 12, records_examined: 0, records_incomplete: 0,
+    records_unattempted: 12 }), "未尝试");
+  const partial = progress({ records_planned: 12, records_examined: 3, records_incomplete: 2,
+    records_unattempted: 7 });
+  assert.match(partial, /3\/12/);
+  assert.match(partial, /2 条处理未完成/);
+  assert.match(partial, /7 条待检查/);
+  assert.doesNotMatch(partial, /未识别|没有关系|已完成/);
 });

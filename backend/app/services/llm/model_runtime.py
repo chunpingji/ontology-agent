@@ -6,6 +6,10 @@ from contextvars import ContextVar
 runtime = ContextVar("local_model_runtime", default={})
 
 
+class ModelWaitFailure(RuntimeError):
+    """A caller's durability barrier failed while waiting for a model response."""
+
+
 class ModelCancelled(Exception):
     """An interrupted task is resumable; this is not a model refusal."""
 

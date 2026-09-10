@@ -33,9 +33,10 @@ class DependencyIndex:
         self, *, record_or_group: str, owner_role: str, applicability: str
     ) -> set[str]:
         affected = set(self.subscriptions.get((record_or_group, owner_role, applicability), set()))
-        for claim in affected:
-            self.invalidated.add(claim)
-        return affected
+        changed: set[str] = set()
+        for claim in sorted(affected):
+            changed.update(self.invalidate(claim))
+        return changed
 
     def invalidate(self, dependency_id: str) -> set[str]:
         changed: set[str] = {dependency_id}
@@ -60,6 +61,20 @@ class DependencyIndex:
             return False
         alternatives = self.requirements.get(claim_id)
         return not alternatives or any(not (proof & self.invalidated) for proof in alternatives)
+
+    def restore(self, claim_id: str) -> bool:
+        """Restore only this binding after a new complete alternative proof.
+
+        Descendants keep their old invalidation until their own bounded tasks
+        actually recheck the new semantic dependency. This is not undo.
+        """
+        if claim_id not in self.invalidated:
+            return False
+        alternatives = self.requirements.get(claim_id, [])
+        if not any(not (proof & self.invalidated) for proof in alternatives):
+            return False
+        self.invalidated.remove(claim_id)
+        return True
 
     def snapshot(self) -> dict:
         return {

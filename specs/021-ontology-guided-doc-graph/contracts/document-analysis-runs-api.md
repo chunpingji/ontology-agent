@@ -64,6 +64,26 @@
 
 ## 2. 创建运行
 
+### 2.0 历史任务列表（2026-09-09 补充）
+
+`GET /api/document-analysis/runs?limit=10&offset=0`，认证和 owner 边界沿用通用规则。
+`limit` 默认 20，范围 1—100；`offset` 默认 0，非负。非法参数返回 400 `INVALID_REQUEST`。
+按 `created_at DESC, recognition_run_id DESC` 稳定排序，返回：
+
+```json
+{
+  "contract_version": "document-analysis-runs-v1",
+  "items": [],
+  "has_more": false
+}
+```
+
+每个 item 包含 `RunWatermark` 全部字段、`status`、`stage`、`input`（与创建回执一致）、
+`created_at`、`expires_at`；不携带源文件、图谱、内部路径、owner 或执行凭据。
+仅查询当前 owner 的 `document_graph` 运行；排除已删除、墓碑和 `expires_at <= now` 的运行。
+正在删除的运行返回 `deleting`，前端禁用其查看入口。列表查询不触发模型、派发、租约或清理写入。
+分页为当前数据库视图；创建任务后前端回到首页刷新，读取失败保留错误提示并允许重试。
+
 ```http
 POST /api/document-analysis/runs
 Content-Type: multipart/form-data

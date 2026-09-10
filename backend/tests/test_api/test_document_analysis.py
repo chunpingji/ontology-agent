@@ -75,6 +75,48 @@ def _create(
     )
 
 
+def test_current_pause_and_resume_do_not_rewrite_checkpoint_coverage(
+    client, db, analyst_headers, tmp_path, monkeypatch,
+):
+    from copy import deepcopy
+
+    from app.models.document_analysis import DocumentRunArtifactHead
+
+    monkeypatch.setattr(settings, "document_analysis_storage_dir", tmp_path / "artifacts")
+    created = _create(client, analyst_headers, _word_bytes(tmp_path), request_key="pause-view")
+    run_id = created.json()["recognition_run_id"]
+    run = db.get(DocumentAnalysisRun, run_id)
+    head = db.get(DocumentRunArtifactHead, (run_id, "graph"))
+    artifact = db.get(DocumentAnalysisArtifact, head.artifact_id)
+    frozen_payload = deepcopy(artifact.payload)
+    graph_url = f"/api/document-analysis/runs/{run_id}/graph"
+    original = client.get(graph_url, headers=analyst_headers).json()
+
+    run.execution_status = "paused"
+    run.stop_reason = "ranking_paused"
+    # Reproduce a graph/checkpoint batch that predates the terminal run status.
+    run.progress = {**run.progress, "stop_reason": "attempted_incomplete"}
+    db.commit()
+    paused = client.get(graph_url, headers=analyst_headers).json()
+    status = client.get(f"/api/document-analysis/runs/{run_id}", headers=analyst_headers).json()
+    assert paused["coverage"]["stop_reason"] == "ranking_paused"
+    assert status["progress"]["stop_reason"] == "ranking_paused"
+    assert {**paused["coverage"], "stop_reason": original["coverage"]["stop_reason"]} == (
+        original["coverage"]
+    )
+
+    run.execution_status = "running"
+    run.stop_reason = None
+    db.commit()
+    resumed = client.get(graph_url, headers=analyst_headers).json()
+    status = client.get(f"/api/document-analysis/runs/{run_id}", headers=analyst_headers).json()
+    assert resumed["coverage"]["stop_reason"] is None
+    assert status["progress"]["stop_reason"] is None
+    db.refresh(artifact)
+    assert artifact.payload == frozen_payload
+    assert resumed["graph_snapshot"] == original["graph_snapshot"]
+
+
 def test_run_builds_shared_metadata_and_honest_partial_graph(
     client, db, analyst_headers, tmp_path, monkeypatch
 ):
@@ -169,6 +211,29 @@ def test_configured_model_persists_effective_proof_and_replays_role_sources(
         if request["predicate"]["iri"] != USES_EQUIPMENT or target is None:
             return {"proposals": []}
         evidence_id = target["evidence_id"]
+        subject_support = (
+            []
+            if request["subject"]["is_document_root"]
+            else [{"evidence_id": evidence_id, "text": "本报告"}]
+        )
+        if request.get("stage") == "verification":
+            return {"verifications": [{
+                "candidate_id": candidate["candidate_id"],
+                "target_id": candidate["target_id"],
+                "type_verdict": "supported",
+                "type_support": [{"evidence_id": evidence_id}],
+                "role_verdict": "supported",
+                "subject_binding_verdict": "supported",
+                "predicate_verdict": "supported",
+                "applicability_verdict": "supported",
+                "counterevidence_verdict": "undetermined",
+                "bridge_verdict": "supported",
+                "predicate_support": [{"evidence_id": evidence_id, "text": "使用设备"}],
+                "subject_support": subject_support,
+                "condition_support": [],
+                "counterevidence_support": [],
+                "reason": "独立原文核验确认本报告使用冻干机A。",
+            } for candidate in request["candidates"]]}
         return {
             "proposals": [
                 {
@@ -177,7 +242,7 @@ def test_configured_model_persists_effective_proof_and_replays_role_sources(
                     "object_label": "冻干机A",
                     "object_quote": {"evidence_id": evidence_id, "text": "冻干机A"},
                     "predicate_support": [{"evidence_id": evidence_id, "text": "使用设备"}],
-                    "subject_support": [{"evidence_id": evidence_id, "text": "本报告"}],
+                    "subject_support": subject_support,
                     "bridge_kind": "explicit_assertion",
                     "type_verdict": "supported",
                     "role_verdict": "supported",
@@ -190,6 +255,9 @@ def test_configured_model_persists_effective_proof_and_replays_role_sources(
         }
 
     monkeypatch.setattr(model_adapter, "chat_with_schema", deterministic_model)
+    monkeypatch.setattr(
+        model_adapter._ConfiguredInputCounter, "count", lambda _self, text: len(text)
+    )
     monkeypatch.setattr(model_adapter, "get_local_llm", lambda: object())
     monkeypatch.setattr(settings, "local_llm_model", "deterministic-model")
     monkeypatch.setattr(settings, "local_llm_model_revision", "test-revision")
@@ -206,7 +274,7 @@ def test_configured_model_persists_effective_proof_and_replays_role_sources(
 
     status = client.get(f"/api/document-analysis/runs/{run_id}", headers=analyst_headers)
     assert status.status_code == 200, status.text
-    assert status.json()["status"] == "finished"
+    assert status.json()["status"] == "finished", status.text
 
     graph_response = client.get(
         f"/api/document-analysis/runs/{run_id}/graph", headers=analyst_headers
@@ -235,10 +303,17 @@ def test_configured_model_persists_effective_proof_and_replays_role_sources(
     assert proof_head.proof_revision == 1
 
     role_refs = relationship["source_selection_refs"]
-    assert role_refs["subject"]
+    assert role_refs["subject"] == []
+    root_ref = graph["graph_snapshot"]["root_ref"]
+    assert relationship["subject_ref"] == root_ref
+    root = next(item for item in graph["entities"] if item["entity_id"] == root_ref["entity_id"])
+    assert root["revision"] == root_ref["revision"] == 1
+    assert root["class_iri"] == ROOT_IRI
+    assert root["seed_origin"] == "user_selected"
+    assert root["source_selection_refs"] == []
     assert role_refs["object"]
     assert role_refs["predicate_bridge"]
-    for role in ("subject", "object", "predicate_bridge"):
+    for role in ("object", "predicate_bridge"):
         selection_ref = role_refs[role][0]
         replay = client.get(
             f"/api/document-analysis/runs/{run_id}/source",
@@ -564,6 +639,7 @@ def test_delete_api_keeps_shared_snapshot_tombstone_and_fences_late_worker(
     assert set(marker.delete_result_payload) == {
         "contract_version",
         "recognition_run_id",
+        "ranking_budget_enabled",
         "run_revision",
         "event_head",
         "artifact_revision",

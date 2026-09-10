@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { AlertCircle } from "lucide-react";
 
@@ -26,7 +26,14 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function EditTemplatePage() {
+  return <Suspense fallback={<p className="p-6 text-sm text-muted-foreground">正在加载模板…</p>}>
+    <EditTemplateContent />
+  </Suspense>;
+}
+
+function EditTemplateContent() {
   const { templateId } = useParams<{ templateId: string }>();
+  const searchParams = useSearchParams();
   const router = useRouter();
   const [saving, setSaving] = useState(false);
   async function migrate() {
@@ -87,6 +94,10 @@ export default function EditTemplatePage() {
         </Breadcrumb>
       </div>
 
+      {tpl && searchParams.get("created") === "1" && <p role="status" className="mb-3 rounded border bg-muted/30 px-4 py-2 text-sm">
+        模板已创建并保存为草稿。可继续编辑，后续修改请点击「保存新修订」。
+      </p>}
+
       <div className="flex-1 min-h-0 border-t -mx-6 -mb-6">
         {tpl && !isTemplateV2(tpl.schema_json) && <div className="border-b bg-amber-50 p-3 text-sm flex items-center gap-4">
           <p className="flex-1">这是历史 Slot 模板。迁移将创建新的 V2 草稿，并保留原版本与待确认事项。</p>
@@ -117,6 +128,7 @@ export default function EditTemplatePage() {
           </div>
         ) : tpl ? isTemplateV2(tpl.schema_json) ? (
           <OutputTemplateEditor key={tpl.id} schema={tpl.schema_json} templateId={tpl.id}
+            initialTab={searchParams.get("tab") === "template" ? "template" : undefined}
             schemaHash={tpl.schema_hash} saving={saving} onSave={handleSave}
             onCancel={() => router.push("/settings/ast-templates")}
             defaultSourceJobId={tpl.default_source_job_id} versions={tpl.versions} sampleContentJson={tpl.sample_content_json}

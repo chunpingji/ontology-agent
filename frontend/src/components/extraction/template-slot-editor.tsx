@@ -26,13 +26,13 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
+import { extractionCapabilities } from "@/lib/extraction-capabilities";
 import { Progress } from "@/components/ui/progress";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { WordViewer } from "./word-viewer";
 import { RelationPanel } from "./relation-panel";
-import { RecognitionTimer } from "./recognition-timer";
-import { ModelRequestProgress } from "./model-request-progress";
-import { EvidenceReviewPanel } from "./evidence-review-panel";
+import { TemplateDocumentGraphPanel } from "@/components/analysis/template-document-graph-panel";
+import { useTemplateDocumentRun } from "@/components/analysis/use-template-document-run";
 import { ASTTreeView } from "./ast-tree-view";
 import { SlotDetailPanel } from "./slot-detail-panel";
 import { SlotActionBar } from "./slot-action-bar";
@@ -42,6 +42,7 @@ import {
   generateSectionPrompt,
   previewSectionNarrative,
   getAnnotatedDocument,
+  getExtractionJob,
   getRelationSchema,
   getCoverageDocClasses,
   listDocuments,
@@ -74,13 +75,6 @@ import {
   generateRiskReport,
   downloadReport,
   pollReportStatus,
-  rerunAnnotation,
-  pauseAnnotation,
-  resumeAnnotation,
-  extractJobEvidence,
-  type EvidenceExtractOptions,
-  subscribeJobProgress,
-  type JobProgressEvent,
   type ASTCoverageDTO,
   type SlotCoverageDTO,
   type GeneratedReportDTO,
@@ -145,6 +139,7 @@ interface TemplateSlotEditorProps {
   iriPattern?: string | null;
   // 创建与编辑统一为同一视图：create=空骨架 schema 起步，edit=载入已有 schema。
   mode?: "create" | "edit";
+  initialTab?: "basic" | "template";
   // 015 基本信息页签：仅编辑模式（templateId 存在）渲染。meta 为模板标识/责任信息，
   // onMetaSaved 在保存元数据 / 替换示例 / 增删训练对后触发 page 重新拉取。
   templateId?: string;
@@ -155,6 +150,7 @@ interface TemplateSlotEditorProps {
   // V2 keeps the existing workspace, metadata and source review; only definition
   // authoring and report execution are supplied by the output template editor.
   outputEditor?: {
+    actions: ReactNode;
     sidebar: ReactNode;
     basicInfo: ReactNode;
     documentClassIri?: string;
@@ -308,6 +304,7 @@ export function TemplateSlotEditor({
   sampleContentJson,
   iriPattern,
   mode = "edit",
+  initialTab,
   templateId,
   meta,
   versions,
@@ -355,7 +352,6 @@ export function TemplateSlotEditor({
   // 左侧忠实预览的高亮锚点：点击建议→其 source_ref/evidence_span；点击真实 Slot→其 label（尽力而为）。
   const [activeRef, setActiveRef] = useState<string | null>(null);
   const [activeAnchor, setActiveAnchor] = useState<EvidenceAnchor | null>(null);
-  const [sourceAnchor, setSourceAnchor] = useState<EvidenceAnchor | null>(null);
   const [sourceUnavailable, setSourceUnavailable] = useState(false);
   const [activeSlotId, setActiveSlotId] = useState<string | null>(null);
 
@@ -380,8 +376,8 @@ export function TemplateSlotEditor({
   // 空/失败按气隙常态静默（不作错误呈现）。
   // 左侧多页签受控值（提升到组件级）：右侧面板据此在「关系图谱」（源文档页签）
   // 与「Slot 树」（AST模板定义 / 报告预览页签）间切换，避免删除唯一的编辑入口。
-  // 编辑模式（templateId 存在）默认落在「基本信息」；创建模式仍从「源文档」起步。
-  const [leftTab, setLeftTab] = useState(templateId ? "basic" : "source");
+  // 新模板直接展示输出样例和定义，保存入口在所有页签上方保留。
+  const [leftTab, setLeftTab] = useState<string>(initialTab ?? (templateId ? "basic" : "template"));
   const [reportOpened, setReportOpened] = useState(false);
 
   // ── 015 基本信息页签：元数据编辑 + 文档配置 + 训练数据 ─────────────────
@@ -593,26 +589,41 @@ export function TemplateSlotEditor({
     return docs.filter((d) => d.class_iri?.includes(pat));
   }, [docs, iriPattern]);
 
-  // 有效选中项：用户点选若仍在匹配集内则沿用，否则默认首个（render 派生，免 effect 同步）。
+  // 保留有效的手动选择；模板已有默认源时优先展示它，避免跳到另一份 IRI 匹配文档。
   const activeDocIri = useMemo(
     () =>
-      selectedDocIri === DEFAULT_SOURCE_IRI
+      selectedDocIri === DEFAULT_SOURCE_IRI && sourceJobId
         ? DEFAULT_SOURCE_IRI
         : selectedDocIri && matchedDocs.some((d) => d.iri === selectedDocIri)
           ? selectedDocIri
-          : matchedDocs[0]?.iri ?? null,
-    [selectedDocIri, matchedDocs],
+          : mode === "create" || initialTab === "template" ? null
+            : sourceJobId ? DEFAULT_SOURCE_IRI : matchedDocs[0]?.iri ?? null,
+    [selectedDocIri, matchedDocs, mode, initialTab, sourceJobId],
   );
   const activeShadow = useMemo(
     () => (activeDocIri ? docs.find((d) => d.iri === activeDocIri) ?? null : null),
     [activeDocIri, docs],
   );
 
+  const previewJobId = activeDocIri === DEFAULT_SOURCE_IRI
+    ? sourceJobId : docJobRef(activeShadow ?? undefined);
+  const sourceJobQuery = useQuery({
+    queryKey: ["extraction-job", previewJobId],
+    queryFn: ({ signal }) => getExtractionJob(previewJobId!, signal),
+    enabled: !!previewJobId,
+  });
+  const sourceCapabilities = extractionCapabilities(sourceJobQuery.data);
+  const canRecognizeSource = !!templateId && !!previewJobId;
+  const documentRun = useTemplateDocumentRun(templateId, previewJobId);
+  const runSource = documentRun.source?.recognition_run_id === documentRun.run?.recognition_run_id
+    && documentRun.source?.analysis_id === documentRun.graph?.graph_snapshot?.analysis_id
+    ? documentRun.source : null;
+
   // 选中真实文档 → 按 job 引用取回正文（尽力而为，降级为「不可预览」；绝不抛错）。
   // queryKey 包含 sourceJobId：DEFAULT_SOURCE_IRI 的预览依赖它；变化时自动重取。
   const docContentQuery = useQuery({
     queryKey: ["ast-source-doc-content", activeDocIri, activeDocIri === DEFAULT_SOURCE_IRI ? sourceJobId : null],
-    enabled: Boolean(activeDocIri),
+    enabled: Boolean(activeDocIri) && sourceCapabilities.preview,
     queryFn: async ({ signal }): Promise<DocPreviewState> => {
       const jobRef =
         activeDocIri === DEFAULT_SOURCE_IRI
@@ -639,7 +650,7 @@ export function TemplateSlotEditor({
   });
   const docContent: DocPreviewState = !activeDocIri
     ? { kind: "empty" }
-    : docContentQuery.isLoading
+    : sourceJobQuery.isLoading || docContentQuery.isLoading
       ? { kind: "loading" }
       : docContentQuery.data ?? { kind: "unavailable" };
 
@@ -721,13 +732,6 @@ export function TemplateSlotEditor({
   // ── 015 报告预览页签：AST 覆盖率分析（迁移自 /entities/extraction/[jobId]/ast）。
   // 从匹配文档解析 jobId，用当前模板计算覆盖率，支持生成/下载报告。
   const queryClient = useQueryClient();
-  const previewJobId = useMemo(
-    () =>
-      activeDocIri === DEFAULT_SOURCE_IRI
-        ? sourceJobId
-        : docJobRef(activeShadow ?? undefined),
-    [activeDocIri, activeShadow, sourceJobId],
-  );
   const [previewSlot, setPreviewSlot] = useState<SlotCoverageDTO | null>(null);
   const [previewScrollSlot, setPreviewScrollSlot] = useState<string | null>(null);
   const [previewHighlightRef, setPreviewHighlightRef] = useState<string | undefined>(undefined);
@@ -736,17 +740,14 @@ export function TemplateSlotEditor({
   const coverageQuery = useQuery({
     queryKey: ["ast-coverage", previewJobId, templateId ?? "default"],
     queryFn: ({ signal }) => getAstCoverage(previewJobId!, templateId, signal),
-    enabled: !!previewJobId && !outputEditor,
+    enabled: !!previewJobId && sourceCapabilities.recognition && !outputEditor,
   });
   const previewReportsQuery = useQuery({
     queryKey: ["reports", previewJobId],
     queryFn: () => listReports(previewJobId!),
-    enabled: !!previewJobId && !outputEditor,
+    enabled: !!previewJobId && sourceCapabilities.recognition && !outputEditor,
   });
   const previewCoverage = coverageQuery.data ?? null;
-  const refreshEvidenceCoverage = useCallback(() => {
-    void queryClient.invalidateQueries({ queryKey: ["ast-coverage", previewJobId] });
-  }, [queryClient, previewJobId]);
   const previewReports = previewReportsQuery.data ?? [];
 
   const dismissMut = useMutation({
@@ -804,96 +805,13 @@ export function TemplateSlotEditor({
       poll();
     },
   });
-  // POST 仅表示入队；持久化版本推进时刷新图谱，终态刷新覆盖检查。
-  const [sourceProgress, setSourceProgress] = useState<JobProgressEvent | null>(null);
-  const [sourceRunError, setSourceRunError] = useState<{ jobId: string; message: string } | null>(null);
-  const [evidenceRefresh, setEvidenceRefresh] = useState(0);
-  const [pauseRequestedJob, setPauseRequestedJob] = useState<string | null>(null);
-  const rerunMut = useMutation({
-    mutationFn: async ({ jobId, resume = false, continueOptions }: {
-      jobId: string; resume?: boolean; continueOptions?: EvidenceExtractOptions;
-    }) => {
-      if (continueOptions) return extractJobEvidence(jobId, continueOptions);
-      if (resume) return resumeAnnotation(jobId);
-      return rerunAnnotation(jobId, templateId);
-    },
-    onMutate: () => { setSourceRunError(null); setPauseRequestedJob(null); },
-    onSuccess: (run) => setSourceProgress({
-      job_id: run.job_id, run_id: run.run_id, stage: "annotating", annotation_stage: "queued",
-      pct: 0, status: "running", degraded: false,
-    }),
-    onError: (error, { jobId }) => setSourceRunError({
-      jobId,
-      message: error instanceof Error ? error.message : "重新识别请求失败，请重试",
-    }),
-  });
-  const pauseMut = useMutation({
-    mutationFn: (jobId: string) => pauseAnnotation(jobId),
-    onSuccess: (_data, jobId) => setPauseRequestedJob(jobId),
-    onError: (error, jobId) => setSourceRunError({ jobId,
-      message: error instanceof Error ? error.message : "暂停识别请求失败，请重试" }),
-  });
-
-  useEffect(() => {
-    // 打开/切换文档也订阅历史进度，可接续刷新页面前或其他页面发起的任务。
-    // 发起 POST 期间关闭旧流，避免回放上一次终态误将新任务判为完成。
-    if (!previewJobId || rerunMut.isPending) return;
-    let ignore = false;
-    let lastRevision: number | undefined;
-    let refreshTimer: ReturnType<typeof setTimeout> | undefined;
-    const unsubscribe = subscribeJobProgress(previewJobId, (event) => {
-      if (ignore || event.job_id !== previewJobId || !event.annotation_stage) return;
-      setSourceProgress(event);
-      if (event.status === "running") {
-        setSourceRunError(null);
-        if (event.data_revision !== undefined && event.data_revision !== lastRevision) {
-          lastRevision = event.data_revision;
-          if (!refreshTimer) refreshTimer = setTimeout(() => {
-            refreshTimer = undefined;
-            if (!ignore) setEvidenceRefresh((value) => value + 1);
-          }, 1500);
-        }
-      }
-      const terminal = event.annotation_stage;
-      if (!["complete", "failed", "paused", "interrupted"].includes(terminal)) return;
-      ignore = true;
-      clearTimeout(refreshTimer);
-      unsubscribe();
-      setPauseRequestedJob(null);
-      if (terminal !== "complete") {
-        setSourceRunError({
-          jobId: previewJobId,
-          message: event.has_checkpoint && event.can_resume === false
-            ? "本轮已达到处理上限，已保存部分结果；请检查未通过的任务和抽取配置"
-            : terminal === "interrupted"
-            ? event.has_checkpoint ? "识别已中断，已保存断点，可继续识别" : "识别已中断，请重新识别"
-            : terminal === "failed"
-            ? "关系识别失败，请检查模型服务和任务日志"
-            : "关系识别已暂停，已保存部分结果，可继续未处理任务",
-        });
-      }
-      void queryClient.refetchQueries({
-        queryKey: ["ast-source-doc-content", activeDocIri,
-          activeDocIri === DEFAULT_SOURCE_IRI ? sourceJobId : null],
-        exact: true,
-      });
-      void queryClient.invalidateQueries({ queryKey: ["ast-coverage", previewJobId] });
-      setEvidenceRefresh((value) => value + 1);
-    });
-    return () => { ignore = true; clearTimeout(refreshTimer); unsubscribe(); };
-  }, [activeDocIri, previewJobId, queryClient, rerunMut.isPending, sourceJobId]);
-
-  const recognitionRunning = rerunMut.isPending ||
-    (sourceProgress?.job_id === previewJobId && sourceProgress.status === "running");
-  const rerunSourceError = sourceRunError?.jobId === previewJobId ? sourceRunError.message : null;
-  const currentSourceProgress = sourceProgress?.job_id === previewJobId ? sourceProgress : null;
-  const canResumeSource = !recognitionRunning && currentSourceProgress?.has_checkpoint &&
-    currentSourceProgress.can_resume !== false;
-  const sourceProgressText = currentSourceProgress?.tasks_processed !== undefined
-    ? `已处理 ${currentSourceProgress.tasks_processed} 项：成功 ${currentSourceProgress.tasks_completed ?? 0} 项，未通过 ${currentSourceProgress.tasks_failed ?? 0} 项；模型调用 ${currentSourceProgress.model_calls ?? 0} 次`
-    : "正在解析文档并准备识别任务…";
+  const recognitionRunning = documentRun.running;
+  const rerunSourceError = documentRun.error?.message ?? null;
   const rerunCurrentSource = () => {
-    if (previewJobId && !recognitionRunning) rerunMut.mutate({ jobId: previewJobId });
+    if (canRecognizeSource && !recognitionRunning) {
+      setLeftTab("source");
+      documentRun.start();
+    }
   };
 
   const handlePreviewGenerate = () => {
@@ -1424,7 +1342,9 @@ export function TemplateSlotEditor({
   );
 
   return (
-    <div ref={containerRef} className="flex h-full min-h-0">
+    <div className="flex h-full min-h-0 flex-col">
+      {outputEditor?.actions}
+    <div ref={containerRef} className="flex flex-1 min-h-0">
       {/* ── Left: 多页签预览面板 ──────────────────────────────────── */}
       <div className="flex-1 min-w-0 flex flex-col">
         <Tabs value={leftTab} onValueChange={(value) => {
@@ -2047,16 +1967,18 @@ export function TemplateSlotEditor({
 
                 {docContent.kind === "ready" && docContent.previewOnly && (
                   <p className="text-xs text-muted-foreground" role="status">
-                    正文已加载。语义抽取独立执行；请在逐值证据面板继续抽取或刷新状态。
+                    {canRecognizeSource
+                      ? "正文已加载。可在关系图谱面板发起识别或查看已有结果。"
+                      : "正文已加载。关系图谱及历史任务请在「文档分析」中查看。"}
                   </p>
                 )}
                 <div className="rounded border bg-card p-6 shadow-sm">
-                  {docContent.kind === "ready" ? (
+                  {runSource || docContent.kind === "ready" ? (
                     <WordViewer
-                      key={activeDocIri}
-                      content={docContent.content}
-                      highlightRef={selectedSourceRef}
-                      activeAnchor={sourceAnchor}
+                      key={runSource?.analysis_id ?? activeDocIri}
+                      content={runSource ? runSource.content as TiptapContent : docContent.kind === "ready" ? docContent.content : { type: "doc", content: [] }}
+                      highlightRef={runSource ? null : selectedSourceRef}
+                      activeAnchor={runSource?.anchors[0] ?? null}
                     />
                   ) : docContent.kind === "loading" ? (
                     <div className="flex items-center justify-center gap-2 py-16 text-sm text-muted-foreground">
@@ -2157,7 +2079,7 @@ export function TemplateSlotEditor({
                   {recognitionRunning
                     ? <Loader2 className="mr-1 size-3.5 animate-spin" />
                     : <RotateCw className="mr-1 size-3.5" />}
-                  {recognitionRunning ? "分析中…" : "执行数据抽取与覆盖分析"}
+                  {recognitionRunning ? "识别中…" : "识别关系图谱"}
                 </Button>
                 {rerunSourceError && (
                   <p className="text-xs text-destructive">
@@ -2361,84 +2283,14 @@ export function TemplateSlotEditor({
       {/* ── Right: 基本信息/报告预览 → 无（左侧全宽）；源文档 → 关系图谱；其余 → Slot 树 + 内联 AI ── */}
       {leftTab === "source" ? (
         <div style={{ width: rightWidth }} className="flex shrink-0 flex-col min-h-0">
-          <div className="shrink-0 border-b px-4 py-3">
-            <div className="flex items-center justify-between gap-2">
-              <div className="text-sm font-semibold text-foreground">关系图谱</div>
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-7 gap-1.5 text-xs"
-                disabled={
-                  !previewJobId ||
-                  docContent.kind !== "ready" ||
-                  recognitionRunning
-                }
-                title={
-                  !previewJobId
-                    ? "需已关联真实文档"
-                    : docContent.kind !== "ready"
-                      ? "暂无可重识别的标注"
-                      : "对当前文档重新完整标注（实体+关系），较慢"
-                }
-                onClick={rerunCurrentSource}
-              >
-                {recognitionRunning ? (
-                  <Loader2 className="size-3.5 animate-spin" />
-                ) : (
-                  <RotateCw className="size-3.5" />
-                )}
-                {recognitionRunning ? "识别中…" : "重新识别"}
-              </Button>
+          {previewJobId && templateId ? <TemplateDocumentGraphPanel model={documentRun} /> : (
+            <div className="min-h-0 flex-1 overflow-y-auto p-4">
+              <h3 className="mb-3 text-sm font-semibold">关系图谱</h3>
+              <RelationPanel docClass={sourceDocClass} relationships={sourceRelationships}
+                selectedSourceRef={selectedSourceRef} onSelectSourceRef={setSelectedSourceRef}
+                emptyMessage="选择已保存模板的源文档后可开始识别。" />
             </div>
-            <p className="text-xs text-muted-foreground">
-              按源文档类型的属性和关系展开，查看关联实体与原文依据
-            </p>
-            {currentSourceProgress?.tasks_processed !== undefined && (
-              <p className="mt-1 text-xs text-muted-foreground" role="status">{sourceProgressText}</p>
-            )}
-            {recognitionRunning && (
-              <div className="mt-2 flex flex-wrap items-center gap-2 rounded border bg-muted/30 p-2">
-                <Loader2 className="size-5 animate-spin text-muted-foreground" />
-                <span className="text-xs text-muted-foreground">
-                  {pauseRequestedJob === previewJobId ? "正在取消请求并保存断点…" : "正在识别关系图谱…"}
-                </span>
-                <span className="px-4 text-center text-xs text-muted-foreground">{sourceProgressText}</span>
-                <RecognitionTimer startedAt={currentSourceProgress?.started_at} />
-                <ModelRequestProgress request={currentSourceProgress?.model_request}
-                  attempts={currentSourceProgress?.http_attempts} />
-                <Button variant="outline" size="sm"
-                  disabled={!previewJobId || rerunMut.isPending || pauseMut.isPending || pauseRequestedJob === previewJobId}
-                  onClick={() => previewJobId && pauseMut.mutate(previewJobId)}>
-                  {pauseRequestedJob === previewJobId ? "正在暂停…" : "暂停并保存结果"}
-                </Button>
-              </div>
-            )}
-            {canResumeSource && previewJobId && (
-              <Button variant="outline" size="sm" className="mt-2"
-                onClick={() => rerunMut.mutate({ jobId: previewJobId, resume: true })}>
-                从断点继续识别
-              </Button>
-            )}
-            {rerunSourceError && (
-              <p className="mt-1 text-xs text-destructive">{rerunSourceError}</p>
-            )}
-          </div>
-          {/* 识别结果与异议操作共用一棵关系树，保持单一滚动区。 */}
-          <div className="relative min-h-0 flex-1 overflow-y-auto">
-            {previewJobId ? <EvidenceReviewPanel key={`${previewJobId}:${templateId}`} jobId={previewJobId}
-              templateId={templateId} refreshKey={evidenceRefresh} running={recognitionRunning}
-              onContinue={(continueOptions) => rerunMut.mutate({ jobId: previewJobId, continueOptions })}
-              onSource={setSourceAnchor} onSnapshot={refreshEvidenceCoverage} /> : <RelationPanel
-              docClass={sourceDocClass}
-              relationships={sourceRelationships}
-              selectedSourceRef={selectedSourceRef}
-              onSelectSourceRef={setSelectedSourceRef}
-              emptyMessage={recognitionRunning ? "正在识别实体、属性和关系…"
-                : docContent.kind === "ready" && docContent.previewOnly
-                  ? "正文已加载，尚无完成的关系识别结果" : undefined}
-            />}
-
-          </div>
+          )}
         </div>
       ) : hasRightPanel && !outputEditor ? (
       <div style={{ width: rightWidth }} className="flex shrink-0 flex-col min-h-0">
@@ -2791,6 +2643,7 @@ export function TemplateSlotEditor({
       </div>
       ) : null}
 
+    </div>
     </div>
   );
 }

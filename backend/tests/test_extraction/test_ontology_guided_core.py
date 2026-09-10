@@ -509,7 +509,14 @@ def test_one_bounded_retry_does_not_starve_fresh_records(tmp_path):
 def test_supported_nonaffirmed_candidate_keeps_support_without_expanding_frontier(
     tmp_path, monkeypatch, polarity
 ):
-    analysis = sample(tmp_path)
+    document = Document()
+    source_text = (
+        "仅针对批次一，本报告描述产品甲。" if polarity == "conditional" else "本报告不描述产品甲。"
+    )
+    document.add_paragraph(source_text)
+    path = tmp_path / "polarity.docx"
+    document.save(path)
+    analysis = analyze_word_core(path)
     metadata = prepare_metadata(
         analysis.ir,
         section_tree=analysis.structure.section_tree.to_dict(),
@@ -522,13 +529,38 @@ def test_supported_nonaffirmed_candidate_keeps_support_without_expanding_frontie
             (
                 item
                 for item in request["fragments"]
-                if item["fact_eligible"] and "本报告明确描述产品甲" in item["text"]
+                if item["fact_eligible"] and source_text == item["text"]
             ),
             None,
         )
         if request["predicate"]["iri"] != DESCRIBES or fragment is None:
             return {"proposals": []}
         evidence_id = fragment["evidence_id"]
+        if request["stage"] == "verification":
+            return {"verifications": [
+                {
+                    "candidate_id": candidate["candidate_id"],
+                    "target_id": candidate["target_id"],
+                    "type_verdict": "supported",
+                    "role_verdict": "supported",
+                    "subject_binding_verdict": "supported",
+                    "predicate_verdict": "supported",
+                    "applicability_verdict": "supported",
+                    "counterevidence_verdict": "undetermined",
+                    "bridge_verdict": "supported",
+                    "type_support": [{"evidence_id": evidence_id, "text": source_text}],
+                    "predicate_support": [{"evidence_id": evidence_id, "text": source_text}],
+                    "subject_support": [],
+                    "condition_support": (
+                        [{"evidence_id": evidence_id, "text": "仅针对批次一"}]
+                        if polarity == "conditional"
+                        else []
+                    ),
+                    "counterevidence_support": [],
+                    "reason": "独立读取原文后确认带极性和条件的断言。",
+                }
+                for candidate in request["candidates"]
+            ]}
         return {
             "proposals": [
                 {
@@ -536,7 +568,7 @@ def test_supported_nonaffirmed_candidate_keeps_support_without_expanding_frontie
                     "object_class_iri": PRODUCT,
                     "object_label": "产品甲",
                     "object_quote": {"evidence_id": evidence_id, "text": "产品甲"},
-                    "predicate_support": [{"evidence_id": evidence_id, "text": "明确描述"}],
+                    "predicate_support": [{"evidence_id": evidence_id, "text": source_text}],
                     "subject_support": [{"evidence_id": evidence_id, "text": "本报告"}],
                     "bridge_kind": "explicit_assertion",
                     "type_verdict": "supported",
@@ -544,6 +576,11 @@ def test_supported_nonaffirmed_candidate_keeps_support_without_expanding_frontie
                     "predicate_verdict": "supported",
                     "applicability_verdict": "supported",
                     "polarity": polarity,
+                    "condition_support": (
+                        [{"evidence_id": evidence_id, "text": "仅针对批次一"}]
+                        if polarity == "conditional"
+                        else []
+                    ),
                     "reason": "原文明确支持带极性的断言。",
                 }
             ]
@@ -566,6 +603,11 @@ def test_supported_nonaffirmed_candidate_keeps_support_without_expanding_frontie
     )
 
     assert result.graph.edges[0].polarity == polarity
+    if polarity == "conditional":
+        assert result.graph.edges[0].conditions == ["仅针对批次一"]
+        assert [
+            analysis.ir.resolve(ref) for ref in result.graph.edges[0].condition_evidence_refs
+        ] == ["仅针对批次一"]
     assert result.graph.edges[0].decision_status == "supported"
     assert result.graph.edges[0].policy_eligible is True
     assert result.graph.nodes[-1].decision_status == "supported"

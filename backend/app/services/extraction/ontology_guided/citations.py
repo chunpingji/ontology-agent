@@ -26,7 +26,7 @@ from app.services.extraction.ontology_guided.source_citations import (
 from app.services.extraction.table_records import table_records
 from app.services.extraction.verification_context import verification_payload
 
-PROTOCOL_VERSION = "evaluation-atomic-citations-v4"
+PROTOCOL_VERSION = "atomic-citations-v8-condition-review"
 _SPAN_FIELDS = {
     "mention",
     "value",
@@ -55,6 +55,13 @@ _INSTRUCTION = (
     "表格的 table_context 按原始网格给出逻辑行列及 column_headers；"
     "必须按 covered_columns 将值与表头对应，不能把同行其他列的 N/A/数值移到当前列。"
     "合并单元格覆盖多个逻辑行列，不代表这些行的主体或属性可以合并。"
+    "FactProof/BindingProof 是整来源证明引用，仅输出 evidence_id；服务端回放完整允许"
+    "原文，不必重写证明文字。名称、属性值、单位及条件仍按各自的精确子串引用契约。"
+    "verify_binding 时，candidate.condition_anchors 是召回阶段提出的待核对条件，"
+    "不保证分类正确。condition_reviews 必须按从0开始的 condition_index 逐项独立判定"
+    "is_condition 并说明 reason；文档标题、普通列头、主体名称和记录归属背景通常不是"
+    "使断言成立受到限制的前提，但其中明示的适用范围、否定和真实条件必须保留。"
+    "不能因为条件妨碍肯定结论就移除它；conditions 返回最终识别的真实限制原文。"
 )
 _REFERENCE_INSTRUCTION = (
     "\n本次是独立跨记录归属复核。reference_verification 将已有原主体构造证据、"
@@ -62,6 +69,11 @@ _REFERENCE_INSTRUCTION = (
     "supported=true 时，assertion_spans 必须分别引用原主体身份证据和当前记录中"
     "实际建立同一主体身份/归属桥接的原文，同时覆盖当前候选事实。仅引用属性值不足以通过。"
     "比较设备编号等原文身份和竞争主体；同名、同行/邻接、父报告及摘要不能代替身份桥接。"
+    "field_groups_to_check 是完整连续键值表单的原文分组提示。局部字段归属须结合"
+    "表单中明确的主体角色字段（如项目名称）、当前字段标签、共同章节语义和完整组内"
+    "其他主体/限定条件独立判断；不能把这种表单简单当作两个无关孤立段落，也不能"
+    "只凭组号或相邻就通过。接受时引用原主体、表单主体角色字段和当前事实的原文。"
+    "局部表单归属不授予全局唯一身份，不允许覆盖其他产品、中间体、设备或试验的同名字段。"
     "找不到可回放的双端身份/归属证据时 supported=false；不得根据候选或摘要补造证据。"
 )
 
@@ -190,7 +202,17 @@ def _reference_groups(payload, candidate):
         return [model_anchor(value) for value in values]
 
     candidate = candidate or {}
+    groups = {}
+    for fragment in payload["fragments"]:
+        if fragment.get("field_group_id"):
+            groups.setdefault(fragment["field_group_id"], []).append(
+                model_anchor(fragment["anchor"]),
+            )
     return {
+        "field_groups_to_check": [
+            {"source_structure": "consecutive_labelled_fields", "sources": sources}
+            for sources in groups.values()
+        ],
         "subject_construction_sources": anchors(
             (payload["task"].get("scope") or {}).get("construction_evidence", [])
         ),
@@ -268,6 +290,8 @@ def project_verification_payload(payload, candidate, ir):
         *list(_anchors(candidate)),
         *list(_anchors(result["subjects"])),
         *(task.get("scope") or {}).get("construction_evidence", []),
+        *(anchor for expansion in (task.get("scope") or {}).get("expansion_history", [])
+          for anchor in expansion.get("evidence", [])),
     ]
     if not seeds:
         # A missing structural link is not permission to hide possible refutation.
@@ -370,7 +394,7 @@ def _canonical_enums(schema, references):
     return walk(schema)
 
 
-def _citation_schema(schema, references, envelope, stage, task_kind):
+def _citation_schema(schema, references, envelope, stage, task_kind, ir):
     """Separate source permissions in generation, not only after generation."""
     schema = deepcopy(schema)
     definitions = schema.get("$defs", {})
@@ -410,6 +434,25 @@ def _citation_schema(schema, references, envelope, stage, task_kind):
             alias for alias, canonical in references["evidence"].items() if canonical in permitted
         ]
         definitions[name] = definition
+    # A complete, uniquely permitted source needs no model transcription for a
+    # proof. Keep precise quotations for values/names/units and fragmented domains.
+    proofs = {}
+    for name, regions in (("FactSpan", envelope.allowed_fact_regions),
+                          ("BindingSpan", envelope.allowed_binding_regions)):
+        try:
+            for identity in {region.evidence_id for region in regions}:
+                left, right = _whole_permitted_interval(identity, regions, ir)
+                if not any(region.evidence_id == identity and _bounds(region, ir)[0] <= left
+                           and right <= _bounds(region, ir)[1] for region in regions):
+                    raise ValueError("non_contiguous_source_permission")
+        except ValueError:
+            continue
+        proof_name = name.replace("Span", "Proof")
+        proof = deepcopy(definitions[name])
+        proof["title"] = proof_name
+        proof["properties"].pop("text")
+        definitions[proof_name] = proof
+        proofs[name] = proof_name
     if stage == "recall":
         entity = definitions.get("EntityProposal", {}).get("properties", {})
         if "mention" in entity:
@@ -419,6 +462,13 @@ def _citation_schema(schema, references, envelope, stage, task_kind):
             assertion["value"] = {"$ref": "#/$defs/FactSpan"}
         if task_kind == "relationship" and "assertion_spans" in assertion:
             assertion["assertion_spans"]["items"] = {"$ref": "#/$defs/FactSpan"}
+    for properties in [schema.get("properties", {}),
+                       definitions.get("EntityProposal", {}).get("properties", {}),
+                       definitions.get("AssertionProposal", {}).get("properties", {})]:
+        items = properties.get("assertion_spans", {}).get("items", {})
+        name = items.get("$ref", "").rsplit("/", 1)[-1]
+        if name in proofs:
+            items["$ref"] = "#/$defs/" + proofs[name]
     return schema
 
 
@@ -458,6 +508,7 @@ class CitationProtocol:
         ontology_schema=None,
         compact_identifiers=True,
         project_verification=True,
+        citation_feedback=None,
     ):
         if envelope.serialized_input is None:
             raise ValueError(envelope.reason or "incomplete_context")
@@ -555,7 +606,17 @@ class CitationProtocol:
             self.envelope,
             stage,
             self.task_kind,
+            ir,
         )
+        if stage == "verify_binding" and "condition_reviews" in wire_schema.get("properties", {}):
+            count = len((candidate or {}).get("condition_anchors", []))
+            field = wire_schema["properties"]["condition_reviews"]
+            field.update(minItems=count, maxItems=count)
+            if count:
+                ModelProtocol._require(wire_schema, "condition_reviews")
+                wire_schema["$defs"]["ConditionReview"]["properties"]["condition_index"]["enum"] = (
+                    list(range(count))
+                )
         self.references = deepcopy(self._wire.references)
         self.schema = (
             wire_schema if compact_identifiers else _canonical_enums(wire_schema, self.references)
@@ -566,6 +627,11 @@ class CitationProtocol:
             self.system += _REFERENCE_INSTRUCTION
         request = json.loads(self._wire.user if compact_identifiers else user)
         request["output_contract"] = self.schema
+        if citation_feedback:
+            request["citation_feedback"] = (
+                self._wire._walk(citation_feedback, encode=True)
+                if compact_identifiers else deepcopy(citation_feedback)
+            )
         self.user = json.dumps(request, ensure_ascii=False, separators=(",", ":"))
 
     def _span(self, value, path):
@@ -606,7 +672,12 @@ class CitationProtocol:
             "text": proposal.text,
         }
 
-    def decode(self, raw):
+    def decode(self, raw, *, on_proposal_error=None):
+        """Reject a whole invalid proposal; optionally retain valid recall siblings.
+
+        Verification remains atomic: no support span can be dropped from a proof.
+        The runner must persist reported errors and mark the task incomplete.
+        """
         value = self._wire.decode(raw) if self.compact_identifiers else deepcopy(raw)
         if not self.compact_identifiers:
             self._wire._check_required(value, self.schema)
@@ -617,14 +688,39 @@ class CitationProtocol:
 
         def walk(item, path=()):
             if isinstance(item, list):
-                return [walk(value, path) for value in item]
+                values = []
+                for index, value in enumerate(item):
+                    try:
+                        values.append(walk(value, path))
+                    except ValueError as exc:
+                        if (on_proposal_error is None or self.stage != "recall"
+                            or path not in {("entities",), ("assertions",)}):
+                            raise
+                        details = dict(getattr(exc, "quote_details", {}))
+                        field = details.get("field_path", path[0])
+                        details["field_path"] = field.replace(
+                            path[0], f"{path[0]}[{index}]", 1,
+                        )
+                        exc.quote_details = details
+                        on_proposal_error(exc)
+                return values
             if isinstance(item, dict):
                 if (
                     path
                     and path[-1] in _SPAN_FIELDS
                     and ("evidence_id" in item or path[-1] != "value")
                 ):
-                    return self._span(item, path)
+                    try:
+                        return self._span(item, path)
+                    except ValueError as exc:
+                        text = item.get("text") or ""
+                        exc.quote_details = {
+                            "evidence_id": item.get("evidence_id"),
+                            "quote": text[:240], "quote_truncated": len(text) > 240,
+                            **getattr(exc, "quote_details", {}),
+                            "field_path": ".".join(path),
+                        }
+                        raise
                 return {key: walk(value, (*path, key)) for key, value in item.items()}
             return item
 

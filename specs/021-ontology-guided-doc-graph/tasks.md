@@ -276,6 +276,13 @@
 
 ## Reusable Regression Assets
 
+### 2026-09-09 历史入口补充
+
+- [x] H001 [US1] 实现当前 owner 的只读分页列表、轻量 schema 和客户端契约，覆盖隔离、排序、保留期与零派发副作用。
+- [x] H002 [US1] 页面常驻历史任务入口，创建后更新、点击恢复既有任务、显示加载/空态/失败及分页。
+- [x] H003 [US1] 验证关闭结果和重新进入后的回看、同名多任务、快速切换隔离及定向静态检查；实际验证边界见 `history-validation.md`。
+- [x] H004 [US1/US3] 按后续 UI 要求将分析历史移至左侧导航，章节树与预览共享，右侧节点元数据/关系图谱并列；保留证据联动与只读契约，适配窄栏图谱并验证实际浏览器布局，结果见 `layout-validation.md`。
+
 - 原子引用/表格：`backend/tests/test_extraction/test_evaluation_citation_protocol.py`、`backend/tests/test_extraction/test_evaluation_citation_tables_v2.py`、`backend/tests/test_extraction/test_docx_structure.py`。
 - 两跳与拒绝续检：`backend/tests/test_extraction/test_evaluation_cmc_product_api_path.py`、`backend/tests/test_extraction/test_evaluation_quality_rejection_continuation.py`、`backend/tests/test_extraction/test_staged_retrieval.py`。
 - 身份、归并与失效：`backend/tests/test_extraction/test_identity_context_quarantine.py`、`backend/tests/test_extraction/test_instance_registry.py`、`backend/tests/test_extraction/test_evaluation_quality_review_gate.py`。

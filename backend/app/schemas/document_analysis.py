@@ -68,8 +68,10 @@ GraphProjection = Literal[
     "undetermined",
     "rejected",
 ]
-AvailableAction = Literal["pause", "resume", "cancel", "delete"]
-RunOperation = Literal["pause", "resume", "cancel", "delete"]
+AvailableAction = Literal[
+    "pause", "resume", "cancel", "delete", "ranking_budget_enable", "ranking_budget_disable",
+]
+RunOperation = AvailableAction
 AssertionPolarity = Literal["affirmed", "negated", "conditional", "uncertain"]
 IndependentReview = Literal["unreviewed", "accepted", "rejected"]
 
@@ -94,6 +96,10 @@ class CreateRunRequest(ApiModel):
     root_class_iri: FullIri
     request_key: RequestKey
     metadata_mode: MetadataMode = "generate_summary"
+
+
+class CreateTemplateRunRequest(ApiModel):
+    request_key: RequestKey
 
 
 class CreateRunInput(ApiModel):
@@ -122,6 +128,20 @@ class CreateRunResponse(RunWatermark):
     created_at: AwareDatetime
     expires_at: AwareDatetime | None = None
     links: RunLinks
+
+
+class DocumentAnalysisRunSummary(RunWatermark):
+    status: RunStatus
+    stage: RunStage
+    input: CreateRunInput
+    created_at: AwareDatetime
+    expires_at: AwareDatetime | None = None
+
+
+class DocumentAnalysisRunListResponse(ApiModel):
+    contract_version: ContractVersion = CONTRACT_VERSION
+    items: list[DocumentAnalysisRunSummary]
+    has_more: bool
 
 
 class RunInput(ApiModel):
@@ -162,6 +182,8 @@ class DecisionCounts(ApiModel):
 class RunProgress(ApiModel):
     tasks_attempted: int = Field(default=0, ge=0)
     model_calls: int = Field(default=0, ge=0)
+    model_calls_reserved: int = Field(default=0, ge=0)
+    model_calls_unresolved: int = Field(default=0, ge=0)
     records_planned: int = Field(default=0, ge=0)
     records_examined: int = Field(default=0, ge=0)
     records_incomplete: int = Field(default=0, ge=0)
@@ -193,6 +215,7 @@ class RunFailure(ApiModel):
 class DocumentAnalysisRunResponse(RunWatermark):
     status: RunStatus
     stage: RunStage
+    ranking_budget_enabled: bool = True
     input: RunInput
     identities: RunIdentities
     artifacts: RunArtifacts
@@ -295,6 +318,10 @@ class RevisionRef(ApiModel):
     revision: int = Field(ge=1)
 
 
+class TemplateRunResponse(ApiModel):
+    run: DocumentAnalysisRunResponse | None = None
+
+
 class EntityRef(ApiModel):
     entity_id: NonEmpty
     revision: int = Field(ge=1)
@@ -321,6 +348,12 @@ class RoleSourceSelectionRefs(ApiModel):
     counterevidence: list[str] = Field(default_factory=list)
 
 
+class GraphPredicateMenuItem(ApiModel):
+    predicate_iri: FullIri
+    predicate_label: NonEmpty
+    kind: Literal["property", "relationship"]
+
+
 class GraphEntity(ApiModel):
     entity_id: NonEmpty
     revision: int = Field(ge=1)
@@ -333,6 +366,7 @@ class GraphEntity(ApiModel):
     ] = "document_local"
     independent_review: IndependentReview = "unreviewed"
     source_selection_refs: list[str] = Field(default_factory=list)
+    predicate_menu: list[GraphPredicateMenuItem] | None = None
 
 
 class GraphAssertion(ApiModel):
@@ -379,6 +413,8 @@ class CoverageSubject(ApiModel):
     records_incomplete: int = Field(ge=0)
     records_unattempted: int = Field(ge=0)
     phase_counts: PhaseCounts = Field(default_factory=PhaseCounts)
+    # phase_counts is the retained plan partition, not execution evidence.
+    executed_phase_counts: PhaseCounts | None = None
     pending_frontiers: int = Field(default=0, ge=0)
     stop_reason: str | None = None
 
@@ -415,6 +451,54 @@ class GraphUnresolved(ApiModel):
     unassociated_entities: int = Field(default=0, ge=0)
 
 
+class RankingRecord(ApiModel):
+    record_id: str
+    rank: int = Field(ge=1)
+    channels: list[str] = Field(default_factory=list)
+    intent_ranks: dict[str, int] = Field(default_factory=dict)
+    raw_scores: dict[str, float] = Field(default_factory=dict)
+
+
+class RankingEpoch(ApiModel):
+    epoch_id: str
+    status: Literal["committed", "paused"] = "committed"
+    budget_accounted: bool = True
+    query_id: str | None = None
+    subject_ref: EntityRef | None = None
+    predicate_iri: str | None = None
+    plan_id: str | None = None
+    requested_mode: str = "deterministic"
+    actual_mode: str = "deterministic"
+    degraded: bool = False
+    reason: str | None = None
+    records: list[RankingRecord] = Field(default_factory=list)
+
+
+class RankingCost(ApiModel):
+    model_calls: int = Field(default=0, ge=0)
+    observed_requests: int = Field(default=0, ge=0)
+    input_pairs: int = Field(default=0, ge=0)
+    input_tokens: int = Field(default=0, ge=0)
+    reserved_input_tokens: int = Field(default=0, ge=0)
+    measured_input_tokens: int = Field(default=0, ge=0)
+    unknown_request_count: int = Field(default=0, ge=0)
+    queue_seconds: float = Field(default=0, ge=0)
+    retries: int = Field(default=0, ge=0)
+    elapsed_seconds: float = Field(default=0, ge=0)
+
+
+class GraphRanking(ApiModel):
+    budget_enabled: bool = True
+    requested_mode: str = "deterministic"
+    actual_modes: list[str] = Field(default_factory=list)
+    degraded: bool = False
+    paused: bool = False
+    reasons: list[str] = Field(default_factory=list)
+    committed_epochs: int = Field(default=0, ge=0)
+    epochs: list[RankingEpoch] = Field(default_factory=list)
+    cost: RankingCost = Field(default_factory=RankingCost)
+
+
 class GraphArtifactResponse(RunWatermark):
     availability: ArtifactAvailability
     projection: GraphProjection = "effective_affirmed"
@@ -425,6 +509,7 @@ class GraphArtifactResponse(RunWatermark):
     invalidated_refs: list[RevisionRef] = Field(default_factory=list)
     coverage: GraphCoverage = Field(default_factory=GraphCoverage)
     unresolved: GraphUnresolved = Field(default_factory=GraphUnresolved)
+    ranking: GraphRanking = Field(default_factory=GraphRanking)
     error: RunFailure | None = None
 
     @model_validator(mode="after")
@@ -531,6 +616,7 @@ class DeleteRunRequest(ApiModel):
 class RunControlResponse(RunWatermark):
     status: RunStatus
     stage: RunStage
+    ranking_budget_enabled: bool = True
     operation: RunOperation
     operation_status: Literal["accepted"] = "accepted"
     available_actions: list[AvailableAction] = Field(default_factory=list)

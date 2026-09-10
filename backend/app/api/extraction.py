@@ -442,7 +442,7 @@ def get_job(job_id: UUID, db: Session = Depends(get_db)):
     return job
 
 
-_ANNOTATOR_VERSION = 29
+_ANNOTATOR_VERSION = 32
 
 
 def _annotation_cache_path(job_id) -> Path:
