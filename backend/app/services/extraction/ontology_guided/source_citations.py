@@ -8,12 +8,25 @@ from app.schemas.evidence import EvidenceAnchor, EvidenceModel
 from app.services.extraction.document_ir import DocumentIR
 
 
-def resolve_fragment_quote(evidence_id, text, fragments, *, fact_required=False):
+def resolve_fragment_quote(
+    evidence_id, text, fragments, *, fact_required=False, context_text=None,
+):
     """Resolve an atomic citation against immutable, role-authorized fragments.
 
     Fragment text is constructed by replaying the frozen IR. Overlapping copies
     of one interval count once; neither gaps nor permissions may be bridged.
     """
+    if context_text is not None:
+        enclosing, _ = resolve_fragment_quote(
+            evidence_id, context_text, fragments, fact_required=fact_required,
+        )
+        # Both the enclosing phrase and the value must resolve uniquely inside
+        # the same authorized fragment. No model coordinates or guessed ordinal.
+        scoped = [fragment.model_copy(update={"anchor": enclosing, "text": context_text})
+                  for fragment in fragments if fragment.anchor.evidence_id == evidence_id
+                  and (fragment.fact_eligible or not fact_required)
+                  and context_text in fragment.text]
+        return resolve_fragment_quote(evidence_id, text, scoped, fact_required=fact_required)
     sources = {
         (fragment.anchor.span_start or 0, fragment.text): fragment.anchor
         for fragment in fragments

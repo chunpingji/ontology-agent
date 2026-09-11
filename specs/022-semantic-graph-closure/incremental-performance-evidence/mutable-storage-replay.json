@@ -1,0 +1,1509 @@
+{
+  "input_sha256": "d98695dfc59bf69561be1f1bead21086aedb80078ca4dfddf577f92de23dedb0",
+  "input_bytes": 32167423,
+  "database": "isolated SQLite",
+  "model_calls": 0,
+  "scope": "storage only; fixed scalar change around frozen real state",
+  "cases": [
+    {
+      "kind": "ranking_state",
+      "scale": 1,
+      "version": 2,
+      "logical_bytes": 6129142,
+      "hot_median_seconds": 2.5119228570256382,
+      "hot_max_seconds": 2.520124097005464,
+      "samples": [
+        {
+          "revision": 1,
+          "seconds": 5.484290161984973,
+          "envelope_bytes": 227,
+          "sql": {
+            "select": 12,
+            "write": 5864
+          },
+          "baseline": false
+        },
+        {
+          "revision": 2,
+          "seconds": 2.520124097005464,
+          "envelope_bytes": 227,
+          "sql": {
+            "select": 12,
+            "write": 8
+          },
+          "baseline": false
+        },
+        {
+          "revision": 3,
+          "seconds": 2.5119228570256382,
+          "envelope_bytes": 227,
+          "sql": {
+            "select": 12,
+            "write": 8
+          },
+          "baseline": false
+        },
+        {
+          "revision": 4,
+          "seconds": 2.4829092130530626,
+          "envelope_bytes": 227,
+          "sql": {
+            "select": 12,
+            "write": 8
+          },
+          "baseline": false,
+          "cold_recovery_seconds": 0.6835248060524464,
+          "equal": true
+        }
+      ]
+    },
+    {
+      "kind": "ranking_state",
+      "scale": 1,
+      "version": 3,
+      "logical_bytes": 6129142,
+      "hot_median_seconds": 0.4301987549988553,
+      "hot_max_seconds": 0.43314634799025953,
+      "samples": [
+        {
+          "revision": 1,
+          "seconds": 8.779315643012524,
+          "envelope_bytes": 575,
+          "sql": {
+            "select": 17,
+            "write": 5864
+          },
+          "baseline": true
+        },
+        {
+          "revision": 2,
+          "seconds": 0.4284074129536748,
+          "envelope_bytes": 623,
+          "sql": {
+            "select": 14,
+            "write": 6
+          },
+          "baseline": false
+        },
+        {
+          "revision": 3,
+          "seconds": 0.4301987549988553,
+          "envelope_bytes": 623,
+          "sql": {
+            "select": 14,
+            "write": 6
+          },
+          "baseline": false
+        },
+        {
+          "revision": 4,
+          "seconds": 0.43314634799025953,
+          "envelope_bytes": 623,
+          "sql": {
+            "select": 14,
+            "write": 6
+          },
+          "baseline": false
+        },
+        {
+          "revision": 5,
+          "seconds": 0.42885111796204,
+          "envelope_bytes": 623,
+          "sql": {
+            "select": 14,
+            "write": 6
+          },
+          "baseline": false
+        },
+        {
+          "revision": 6,
+          "seconds": 0.42257889499887824,
+          "envelope_bytes": 623,
+          "sql": {
+            "select": 14,
+            "write": 6
+          },
+          "baseline": false
+        },
+        {
+          "revision": 7,
+          "seconds": 0.4241463930811733,
+          "envelope_bytes": 623,
+          "sql": {
+            "select": 14,
+            "write": 6
+          },
+          "baseline": false
+        },
+        {
+          "revision": 8,
+          "seconds": 0.4229913119925186,
+          "envelope_bytes": 623,
+          "sql": {
+            "select": 14,
+            "write": 6
+          },
+          "baseline": false
+        },
+        {
+          "revision": 9,
+          "seconds": 0.44604506401810795,
+          "envelope_bytes": 623,
+          "sql": {
+            "select": 14,
+            "write": 6
+          },
+          "baseline": false
+        },
+        {
+          "revision": 10,
+          "seconds": 0.4367536490317434,
+          "envelope_bytes": 624,
+          "sql": {
+            "select": 14,
+            "write": 6
+          },
+          "baseline": false
+        },
+        {
+          "revision": 11,
+          "seconds": 0.43326854205224663,
+          "envelope_bytes": 628,
+          "sql": {
+            "select": 14,
+            "write": 6
+          },
+          "baseline": false
+        },
+        {
+          "revision": 12,
+          "seconds": 0.42578136594966054,
+          "envelope_bytes": 628,
+          "sql": {
+            "select": 14,
+            "write": 6
+          },
+          "baseline": false
+        },
+        {
+          "revision": 13,
+          "seconds": 0.43807925493456423,
+          "envelope_bytes": 628,
+          "sql": {
+            "select": 14,
+            "write": 6
+          },
+          "baseline": false
+        },
+        {
+          "revision": 14,
+          "seconds": 0.43474905495531857,
+          "envelope_bytes": 628,
+          "sql": {
+            "select": 14,
+            "write": 6
+          },
+          "baseline": false
+        },
+        {
+          "revision": 15,
+          "seconds": 0.4416779140010476,
+          "envelope_bytes": 628,
+          "sql": {
+            "select": 14,
+            "write": 6
+          },
+          "baseline": false
+        },
+        {
+          "revision": 16,
+          "seconds": 0.4304944740142673,
+          "envelope_bytes": 628,
+          "sql": {
+            "select": 14,
+            "write": 6
+          },
+          "baseline": false
+        },
+        {
+          "revision": 17,
+          "seconds": 0.44339233089704067,
+          "envelope_bytes": 628,
+          "sql": {
+            "select": 14,
+            "write": 6
+          },
+          "baseline": false
+        },
+        {
+          "revision": 18,
+          "seconds": 0.4378904979676008,
+          "envelope_bytes": 628,
+          "sql": {
+            "select": 14,
+            "write": 6
+          },
+          "baseline": false
+        },
+        {
+          "revision": 19,
+          "seconds": 0.42575589602347463,
+          "envelope_bytes": 628,
+          "sql": {
+            "select": 14,
+            "write": 6
+          },
+          "baseline": false
+        },
+        {
+          "revision": 20,
+          "seconds": 0.43776927096769214,
+          "envelope_bytes": 628,
+          "sql": {
+            "select": 14,
+            "write": 6
+          },
+          "baseline": false
+        },
+        {
+          "revision": 21,
+          "seconds": 0.43597812799271196,
+          "envelope_bytes": 628,
+          "sql": {
+            "select": 14,
+            "write": 6
+          },
+          "baseline": false
+        },
+        {
+          "revision": 22,
+          "seconds": 0.43378982797730714,
+          "envelope_bytes": 628,
+          "sql": {
+            "select": 14,
+            "write": 6
+          },
+          "baseline": false
+        },
+        {
+          "revision": 23,
+          "seconds": 0.43526507797650993,
+          "envelope_bytes": 628,
+          "sql": {
+            "select": 14,
+            "write": 6
+          },
+          "baseline": false
+        },
+        {
+          "revision": 24,
+          "seconds": 0.44142440205905586,
+          "envelope_bytes": 628,
+          "sql": {
+            "select": 14,
+            "write": 6
+          },
+          "baseline": false
+        },
+        {
+          "revision": 25,
+          "seconds": 0.43877206498291343,
+          "envelope_bytes": 628,
+          "sql": {
+            "select": 14,
+            "write": 6
+          },
+          "baseline": false
+        },
+        {
+          "revision": 26,
+          "seconds": 0.4319693259894848,
+          "envelope_bytes": 628,
+          "sql": {
+            "select": 14,
+            "write": 6
+          },
+          "baseline": false
+        },
+        {
+          "revision": 27,
+          "seconds": 0.4313353890320286,
+          "envelope_bytes": 628,
+          "sql": {
+            "select": 14,
+            "write": 6
+          },
+          "baseline": false
+        },
+        {
+          "revision": 28,
+          "seconds": 0.4384025449398905,
+          "envelope_bytes": 628,
+          "sql": {
+            "select": 14,
+            "write": 6
+          },
+          "baseline": false
+        },
+        {
+          "revision": 29,
+          "seconds": 0.45087927393615246,
+          "envelope_bytes": 628,
+          "sql": {
+            "select": 14,
+            "write": 6
+          },
+          "baseline": false
+        },
+        {
+          "revision": 30,
+          "seconds": 0.4556460629682988,
+          "envelope_bytes": 628,
+          "sql": {
+            "select": 14,
+            "write": 6
+          },
+          "baseline": false
+        },
+        {
+          "revision": 31,
+          "seconds": 0.449629687005654,
+          "envelope_bytes": 628,
+          "sql": {
+            "select": 14,
+            "write": 6
+          },
+          "baseline": false
+        },
+        {
+          "revision": 32,
+          "seconds": 0.44060018798336387,
+          "envelope_bytes": 628,
+          "sql": {
+            "select": 14,
+            "write": 6
+          },
+          "baseline": false,
+          "cold_recovery_seconds": 17.525318154948764,
+          "equal": true
+        },
+        {
+          "revision": 33,
+          "seconds": 3.0057140530552715,
+          "envelope_bytes": 576,
+          "sql": {
+            "select": 17,
+            "write": 8
+          },
+          "baseline": true,
+          "cold_recovery_seconds": 4.436901484965347,
+          "equal": true
+        }
+      ]
+    },
+    {
+      "kind": "ranking_state",
+      "scale": 2,
+      "version": 2,
+      "logical_bytes": 12258254,
+      "hot_median_seconds": 5.588161429972388,
+      "hot_max_seconds": 5.596495034056716,
+      "samples": [
+        {
+          "revision": 1,
+          "seconds": 8.471011555986479,
+          "envelope_bytes": 227,
+          "sql": {
+            "select": 12,
+            "write": 5866
+          },
+          "baseline": false
+        },
+        {
+          "revision": 2,
+          "seconds": 5.588161429972388,
+          "envelope_bytes": 227,
+          "sql": {
+            "select": 12,
+            "write": 8
+          },
+          "baseline": false
+        },
+        {
+          "revision": 3,
+          "seconds": 5.585090168053284,
+          "envelope_bytes": 227,
+          "sql": {
+            "select": 12,
+            "write": 8
+          },
+          "baseline": false
+        },
+        {
+          "revision": 4,
+          "seconds": 5.596495034056716,
+          "envelope_bytes": 227,
+          "sql": {
+            "select": 12,
+            "write": 8
+          },
+          "baseline": false,
+          "cold_recovery_seconds": 1.0432205989491194,
+          "equal": true
+        }
+      ]
+    },
+    {
+      "kind": "ranking_state",
+      "scale": 2,
+      "version": 3,
+      "logical_bytes": 12258254,
+      "hot_median_seconds": 0.8590539919678122,
+      "hot_max_seconds": 0.8676824100548401,
+      "samples": [
+        {
+          "revision": 1,
+          "seconds": 15.194862684002146,
+          "envelope_bytes": 575,
+          "sql": {
+            "select": 17,
+            "write": 5866
+          },
+          "baseline": true
+        },
+        {
+          "revision": 2,
+          "seconds": 0.8676824100548401,
+          "envelope_bytes": 623,
+          "sql": {
+            "select": 14,
+            "write": 6
+          },
+          "baseline": false
+        },
+        {
+          "revision": 3,
+          "seconds": 0.8590539919678122,
+          "envelope_bytes": 623,
+          "sql": {
+            "select": 14,
+            "write": 6
+          },
+          "baseline": false
+        },
+        {
+          "revision": 4,
+          "seconds": 0.8376090279780328,
+          "envelope_bytes": 623,
+          "sql": {
+            "select": 14,
+            "write": 6
+          },
+          "baseline": false,
+          "cold_recovery_seconds": 10.65536476392299,
+          "equal": true
+        }
+      ]
+    },
+    {
+      "kind": "recognition-model-calls",
+      "scale": 1,
+      "version": 2,
+      "logical_bytes": 2232631,
+      "hot_median_seconds": 0.5461653129896149,
+      "hot_max_seconds": 0.5483466460136697,
+      "samples": [
+        {
+          "revision": 1,
+          "seconds": 1.1365545890294015,
+          "envelope_bytes": 227,
+          "sql": {
+            "select": 12,
+            "write": 1188
+          },
+          "baseline": false
+        },
+        {
+          "revision": 2,
+          "seconds": 0.5461653129896149,
+          "envelope_bytes": 227,
+          "sql": {
+            "select": 12,
+            "write": 8
+          },
+          "baseline": false
+        },
+        {
+          "revision": 3,
+          "seconds": 0.5296250469982624,
+          "envelope_bytes": 227,
+          "sql": {
+            "select": 12,
+            "write": 8
+          },
+          "baseline": false
+        },
+        {
+          "revision": 4,
+          "seconds": 0.5483466460136697,
+          "envelope_bytes": 227,
+          "sql": {
+            "select": 12,
+            "write": 8
+          },
+          "baseline": false,
+          "cold_recovery_seconds": 0.1652976250043139,
+          "equal": true
+        }
+      ]
+    },
+    {
+      "kind": "recognition-model-calls",
+      "scale": 1,
+      "version": 3,
+      "logical_bytes": 2232631,
+      "hot_median_seconds": 0.15138031903188676,
+      "hot_max_seconds": 0.1617082500597462,
+      "samples": [
+        {
+          "revision": 1,
+          "seconds": 2.113388044992462,
+          "envelope_bytes": 585,
+          "sql": {
+            "select": 17,
+            "write": 1188
+          },
+          "baseline": true
+        },
+        {
+          "revision": 2,
+          "seconds": 0.15138031903188676,
+          "envelope_bytes": 643,
+          "sql": {
+            "select": 14,
+            "write": 6
+          },
+          "baseline": false
+        },
+        {
+          "revision": 3,
+          "seconds": 0.1504366520093754,
+          "envelope_bytes": 643,
+          "sql": {
+            "select": 14,
+            "write": 6
+          },
+          "baseline": false
+        },
+        {
+          "revision": 4,
+          "seconds": 0.1617082500597462,
+          "envelope_bytes": 643,
+          "sql": {
+            "select": 14,
+            "write": 6
+          },
+          "baseline": false
+        },
+        {
+          "revision": 5,
+          "seconds": 0.16264676896389574,
+          "envelope_bytes": 643,
+          "sql": {
+            "select": 14,
+            "write": 6
+          },
+          "baseline": false
+        },
+        {
+          "revision": 6,
+          "seconds": 0.1596007850021124,
+          "envelope_bytes": 643,
+          "sql": {
+            "select": 14,
+            "write": 6
+          },
+          "baseline": false
+        },
+        {
+          "revision": 7,
+          "seconds": 0.1559394100913778,
+          "envelope_bytes": 643,
+          "sql": {
+            "select": 14,
+            "write": 6
+          },
+          "baseline": false
+        },
+        {
+          "revision": 8,
+          "seconds": 0.15542131301481277,
+          "envelope_bytes": 643,
+          "sql": {
+            "select": 14,
+            "write": 6
+          },
+          "baseline": false
+        },
+        {
+          "revision": 9,
+          "seconds": 0.15359934302978218,
+          "envelope_bytes": 643,
+          "sql": {
+            "select": 14,
+            "write": 6
+          },
+          "baseline": false
+        },
+        {
+          "revision": 10,
+          "seconds": 0.1577554860850796,
+          "envelope_bytes": 644,
+          "sql": {
+            "select": 14,
+            "write": 6
+          },
+          "baseline": false
+        },
+        {
+          "revision": 11,
+          "seconds": 0.15636964805889875,
+          "envelope_bytes": 648,
+          "sql": {
+            "select": 14,
+            "write": 6
+          },
+          "baseline": false
+        },
+        {
+          "revision": 12,
+          "seconds": 0.15348437894135714,
+          "envelope_bytes": 648,
+          "sql": {
+            "select": 14,
+            "write": 6
+          },
+          "baseline": false
+        },
+        {
+          "revision": 13,
+          "seconds": 0.15920449094846845,
+          "envelope_bytes": 648,
+          "sql": {
+            "select": 14,
+            "write": 6
+          },
+          "baseline": false
+        },
+        {
+          "revision": 14,
+          "seconds": 0.15205466491170228,
+          "envelope_bytes": 648,
+          "sql": {
+            "select": 14,
+            "write": 6
+          },
+          "baseline": false
+        },
+        {
+          "revision": 15,
+          "seconds": 0.15043485001660883,
+          "envelope_bytes": 648,
+          "sql": {
+            "select": 14,
+            "write": 6
+          },
+          "baseline": false
+        },
+        {
+          "revision": 16,
+          "seconds": 0.15612251090351492,
+          "envelope_bytes": 648,
+          "sql": {
+            "select": 14,
+            "write": 6
+          },
+          "baseline": false
+        },
+        {
+          "revision": 17,
+          "seconds": 0.15747123502660543,
+          "envelope_bytes": 648,
+          "sql": {
+            "select": 14,
+            "write": 6
+          },
+          "baseline": false
+        },
+        {
+          "revision": 18,
+          "seconds": 0.16067199502140284,
+          "envelope_bytes": 648,
+          "sql": {
+            "select": 14,
+            "write": 6
+          },
+          "baseline": false
+        },
+        {
+          "revision": 19,
+          "seconds": 0.16526182205416262,
+          "envelope_bytes": 648,
+          "sql": {
+            "select": 14,
+            "write": 6
+          },
+          "baseline": false
+        },
+        {
+          "revision": 20,
+          "seconds": 0.15758808993268758,
+          "envelope_bytes": 648,
+          "sql": {
+            "select": 14,
+            "write": 6
+          },
+          "baseline": false
+        },
+        {
+          "revision": 21,
+          "seconds": 0.15950944006908685,
+          "envelope_bytes": 648,
+          "sql": {
+            "select": 14,
+            "write": 6
+          },
+          "baseline": false
+        },
+        {
+          "revision": 22,
+          "seconds": 0.16067308001220226,
+          "envelope_bytes": 648,
+          "sql": {
+            "select": 14,
+            "write": 6
+          },
+          "baseline": false
+        },
+        {
+          "revision": 23,
+          "seconds": 0.1655846720095724,
+          "envelope_bytes": 648,
+          "sql": {
+            "select": 14,
+            "write": 6
+          },
+          "baseline": false
+        },
+        {
+          "revision": 24,
+          "seconds": 0.16235565801616758,
+          "envelope_bytes": 648,
+          "sql": {
+            "select": 14,
+            "write": 6
+          },
+          "baseline": false
+        },
+        {
+          "revision": 25,
+          "seconds": 0.15961209603119642,
+          "envelope_bytes": 648,
+          "sql": {
+            "select": 14,
+            "write": 6
+          },
+          "baseline": false
+        },
+        {
+          "revision": 26,
+          "seconds": 0.16012852208223194,
+          "envelope_bytes": 648,
+          "sql": {
+            "select": 14,
+            "write": 6
+          },
+          "baseline": false
+        },
+        {
+          "revision": 27,
+          "seconds": 0.15420355601236224,
+          "envelope_bytes": 648,
+          "sql": {
+            "select": 14,
+            "write": 6
+          },
+          "baseline": false
+        },
+        {
+          "revision": 28,
+          "seconds": 0.15952493995428085,
+          "envelope_bytes": 648,
+          "sql": {
+            "select": 14,
+            "write": 6
+          },
+          "baseline": false
+        },
+        {
+          "revision": 29,
+          "seconds": 0.1649602549150586,
+          "envelope_bytes": 648,
+          "sql": {
+            "select": 14,
+            "write": 6
+          },
+          "baseline": false
+        },
+        {
+          "revision": 30,
+          "seconds": 0.16266490903217345,
+          "envelope_bytes": 648,
+          "sql": {
+            "select": 14,
+            "write": 6
+          },
+          "baseline": false
+        },
+        {
+          "revision": 31,
+          "seconds": 0.165194951929152,
+          "envelope_bytes": 648,
+          "sql": {
+            "select": 14,
+            "write": 6
+          },
+          "baseline": false
+        },
+        {
+          "revision": 32,
+          "seconds": 0.16067675303202122,
+          "envelope_bytes": 648,
+          "sql": {
+            "select": 14,
+            "write": 6
+          },
+          "baseline": false,
+          "cold_recovery_seconds": 6.036753571010195,
+          "equal": true
+        },
+        {
+          "revision": 33,
+          "seconds": 0.6922977920621634,
+          "envelope_bytes": 586,
+          "sql": {
+            "select": 17,
+            "write": 8
+          },
+          "baseline": true,
+          "cold_recovery_seconds": 1.4270525639876723,
+          "equal": true
+        }
+      ]
+    },
+    {
+      "kind": "recognition-model-calls",
+      "scale": 2,
+      "version": 2,
+      "logical_bytes": 4465232,
+      "hot_median_seconds": 1.139448173926212,
+      "hot_max_seconds": 1.1493753229733557,
+      "samples": [
+        {
+          "revision": 1,
+          "seconds": 1.7634627890074626,
+          "envelope_bytes": 227,
+          "sql": {
+            "select": 12,
+            "write": 1190
+          },
+          "baseline": false
+        },
+        {
+          "revision": 2,
+          "seconds": 1.139448173926212,
+          "envelope_bytes": 227,
+          "sql": {
+            "select": 12,
+            "write": 8
+          },
+          "baseline": false
+        },
+        {
+          "revision": 3,
+          "seconds": 1.1316594310337678,
+          "envelope_bytes": 227,
+          "sql": {
+            "select": 12,
+            "write": 8
+          },
+          "baseline": false
+        },
+        {
+          "revision": 4,
+          "seconds": 1.1493753229733557,
+          "envelope_bytes": 227,
+          "sql": {
+            "select": 12,
+            "write": 8
+          },
+          "baseline": false,
+          "cold_recovery_seconds": 0.26802816800773144,
+          "equal": true
+        }
+      ]
+    },
+    {
+      "kind": "recognition-model-calls",
+      "scale": 2,
+      "version": 3,
+      "logical_bytes": 4465232,
+      "hot_median_seconds": 0.3267395549919456,
+      "hot_max_seconds": 0.33215590298641473,
+      "samples": [
+        {
+          "revision": 1,
+          "seconds": 4.070722959004343,
+          "envelope_bytes": 585,
+          "sql": {
+            "select": 17,
+            "write": 1190
+          },
+          "baseline": true
+        },
+        {
+          "revision": 2,
+          "seconds": 0.33215590298641473,
+          "envelope_bytes": 643,
+          "sql": {
+            "select": 14,
+            "write": 6
+          },
+          "baseline": false
+        },
+        {
+          "revision": 3,
+          "seconds": 0.3267395549919456,
+          "envelope_bytes": 643,
+          "sql": {
+            "select": 14,
+            "write": 6
+          },
+          "baseline": false
+        },
+        {
+          "revision": 4,
+          "seconds": 0.3190212019253522,
+          "envelope_bytes": 643,
+          "sql": {
+            "select": 14,
+            "write": 6
+          },
+          "baseline": false,
+          "cold_recovery_seconds": 3.7735053750220686,
+          "equal": true
+        }
+      ]
+    },
+    {
+      "kind": "recognition_checkpoint",
+      "scale": 1,
+      "version": 2,
+      "logical_bytes": 22254480,
+      "hot_median_seconds": 7.072762060910463,
+      "hot_max_seconds": 7.27644623501692,
+      "samples": [
+        {
+          "revision": 1,
+          "seconds": 11.887410365976393,
+          "envelope_bytes": 227,
+          "sql": {
+            "select": 12,
+            "write": 10032
+          },
+          "baseline": false
+        },
+        {
+          "revision": 2,
+          "seconds": 7.027658609091304,
+          "envelope_bytes": 227,
+          "sql": {
+            "select": 12,
+            "write": 8
+          },
+          "baseline": false
+        },
+        {
+          "revision": 3,
+          "seconds": 7.072762060910463,
+          "envelope_bytes": 227,
+          "sql": {
+            "select": 12,
+            "write": 8
+          },
+          "baseline": false
+        },
+        {
+          "revision": 4,
+          "seconds": 7.27644623501692,
+          "envelope_bytes": 227,
+          "sql": {
+            "select": 12,
+            "write": 8
+          },
+          "baseline": false,
+          "cold_recovery_seconds": 2.193135382956825,
+          "equal": true
+        }
+      ]
+    },
+    {
+      "kind": "recognition_checkpoint",
+      "scale": 1,
+      "version": 3,
+      "logical_bytes": 22254480,
+      "hot_median_seconds": 1.6760634538950399,
+      "hot_max_seconds": 1.689125168020837,
+      "samples": [
+        {
+          "revision": 1,
+          "seconds": 24.495491523994133,
+          "envelope_bytes": 584,
+          "sql": {
+            "select": 17,
+            "write": 10032
+          },
+          "baseline": true
+        },
+        {
+          "revision": 2,
+          "seconds": 1.6113245190354064,
+          "envelope_bytes": 641,
+          "sql": {
+            "select": 14,
+            "write": 6
+          },
+          "baseline": false
+        },
+        {
+          "revision": 3,
+          "seconds": 1.689125168020837,
+          "envelope_bytes": 641,
+          "sql": {
+            "select": 14,
+            "write": 6
+          },
+          "baseline": false
+        },
+        {
+          "revision": 4,
+          "seconds": 1.6760634538950399,
+          "envelope_bytes": 641,
+          "sql": {
+            "select": 14,
+            "write": 6
+          },
+          "baseline": false
+        },
+        {
+          "revision": 5,
+          "seconds": 1.7226832570740953,
+          "envelope_bytes": 641,
+          "sql": {
+            "select": 14,
+            "write": 6
+          },
+          "baseline": false
+        },
+        {
+          "revision": 6,
+          "seconds": 1.639055098989047,
+          "envelope_bytes": 641,
+          "sql": {
+            "select": 14,
+            "write": 6
+          },
+          "baseline": false
+        },
+        {
+          "revision": 7,
+          "seconds": 1.6394865770125762,
+          "envelope_bytes": 641,
+          "sql": {
+            "select": 14,
+            "write": 6
+          },
+          "baseline": false
+        },
+        {
+          "revision": 8,
+          "seconds": 1.660295634996146,
+          "envelope_bytes": 641,
+          "sql": {
+            "select": 14,
+            "write": 6
+          },
+          "baseline": false
+        },
+        {
+          "revision": 9,
+          "seconds": 1.6333568069385365,
+          "envelope_bytes": 641,
+          "sql": {
+            "select": 14,
+            "write": 6
+          },
+          "baseline": false
+        },
+        {
+          "revision": 10,
+          "seconds": 1.6666000400437042,
+          "envelope_bytes": 642,
+          "sql": {
+            "select": 14,
+            "write": 6
+          },
+          "baseline": false
+        },
+        {
+          "revision": 11,
+          "seconds": 1.6384254570584744,
+          "envelope_bytes": 646,
+          "sql": {
+            "select": 14,
+            "write": 6
+          },
+          "baseline": false
+        },
+        {
+          "revision": 12,
+          "seconds": 1.6290823490126058,
+          "envelope_bytes": 646,
+          "sql": {
+            "select": 14,
+            "write": 6
+          },
+          "baseline": false
+        },
+        {
+          "revision": 13,
+          "seconds": 1.6355037469184026,
+          "envelope_bytes": 646,
+          "sql": {
+            "select": 14,
+            "write": 6
+          },
+          "baseline": false
+        },
+        {
+          "revision": 14,
+          "seconds": 1.638089080923237,
+          "envelope_bytes": 646,
+          "sql": {
+            "select": 14,
+            "write": 6
+          },
+          "baseline": false
+        },
+        {
+          "revision": 15,
+          "seconds": 1.650764246005565,
+          "envelope_bytes": 646,
+          "sql": {
+            "select": 14,
+            "write": 6
+          },
+          "baseline": false
+        },
+        {
+          "revision": 16,
+          "seconds": 1.6643742310116068,
+          "envelope_bytes": 646,
+          "sql": {
+            "select": 14,
+            "write": 6
+          },
+          "baseline": false
+        },
+        {
+          "revision": 17,
+          "seconds": 1.6474769050255418,
+          "envelope_bytes": 646,
+          "sql": {
+            "select": 14,
+            "write": 6
+          },
+          "baseline": false
+        },
+        {
+          "revision": 18,
+          "seconds": 1.6412915519904345,
+          "envelope_bytes": 646,
+          "sql": {
+            "select": 14,
+            "write": 6
+          },
+          "baseline": false
+        },
+        {
+          "revision": 19,
+          "seconds": 1.6349626859882846,
+          "envelope_bytes": 646,
+          "sql": {
+            "select": 14,
+            "write": 6
+          },
+          "baseline": false
+        },
+        {
+          "revision": 20,
+          "seconds": 1.6433025440201163,
+          "envelope_bytes": 646,
+          "sql": {
+            "select": 14,
+            "write": 6
+          },
+          "baseline": false
+        },
+        {
+          "revision": 21,
+          "seconds": 1.6344427829608321,
+          "envelope_bytes": 646,
+          "sql": {
+            "select": 14,
+            "write": 6
+          },
+          "baseline": false
+        },
+        {
+          "revision": 22,
+          "seconds": 1.635344717069529,
+          "envelope_bytes": 646,
+          "sql": {
+            "select": 14,
+            "write": 6
+          },
+          "baseline": false
+        },
+        {
+          "revision": 23,
+          "seconds": 1.6445157929556444,
+          "envelope_bytes": 646,
+          "sql": {
+            "select": 14,
+            "write": 6
+          },
+          "baseline": false
+        },
+        {
+          "revision": 24,
+          "seconds": 1.597613723948598,
+          "envelope_bytes": 646,
+          "sql": {
+            "select": 14,
+            "write": 6
+          },
+          "baseline": false
+        },
+        {
+          "revision": 25,
+          "seconds": 1.6512182260630652,
+          "envelope_bytes": 646,
+          "sql": {
+            "select": 14,
+            "write": 6
+          },
+          "baseline": false
+        },
+        {
+          "revision": 26,
+          "seconds": 1.5982380060013384,
+          "envelope_bytes": 646,
+          "sql": {
+            "select": 14,
+            "write": 6
+          },
+          "baseline": false
+        },
+        {
+          "revision": 27,
+          "seconds": 1.6054946839576587,
+          "envelope_bytes": 646,
+          "sql": {
+            "select": 14,
+            "write": 6
+          },
+          "baseline": false
+        },
+        {
+          "revision": 28,
+          "seconds": 1.648224837030284,
+          "envelope_bytes": 646,
+          "sql": {
+            "select": 14,
+            "write": 6
+          },
+          "baseline": false
+        },
+        {
+          "revision": 29,
+          "seconds": 1.6526327260071412,
+          "envelope_bytes": 646,
+          "sql": {
+            "select": 14,
+            "write": 6
+          },
+          "baseline": false
+        },
+        {
+          "revision": 30,
+          "seconds": 1.6243172170361504,
+          "envelope_bytes": 646,
+          "sql": {
+            "select": 14,
+            "write": 6
+          },
+          "baseline": false
+        },
+        {
+          "revision": 31,
+          "seconds": 1.654695187928155,
+          "envelope_bytes": 646,
+          "sql": {
+            "select": 14,
+            "write": 6
+          },
+          "baseline": false
+        },
+        {
+          "revision": 32,
+          "seconds": 1.5988812070572749,
+          "envelope_bytes": 646,
+          "sql": {
+            "select": 14,
+            "write": 6
+          },
+          "baseline": false,
+          "cold_recovery_seconds": 65.09428766695783,
+          "equal": true
+        },
+        {
+          "revision": 33,
+          "seconds": 8.605045292060822,
+          "envelope_bytes": 585,
+          "sql": {
+            "select": 17,
+            "write": 8
+          },
+          "baseline": true,
+          "cold_recovery_seconds": 14.955941200023517,
+          "equal": true
+        }
+      ]
+    },
+    {
+      "kind": "recognition_checkpoint",
+      "scale": 2,
+      "version": 2,
+      "logical_bytes": 44508930,
+      "hot_median_seconds": 14.955525676021352,
+      "hot_max_seconds": 15.13045514607802,
+      "samples": [
+        {
+          "revision": 1,
+          "seconds": 20.126954865991138,
+          "envelope_bytes": 227,
+          "sql": {
+            "select": 12,
+            "write": 10034
+          },
+          "baseline": false
+        },
+        {
+          "revision": 2,
+          "seconds": 14.955525676021352,
+          "envelope_bytes": 227,
+          "sql": {
+            "select": 12,
+            "write": 8
+          },
+          "baseline": false
+        },
+        {
+          "revision": 3,
+          "seconds": 14.811552198021673,
+          "envelope_bytes": 227,
+          "sql": {
+            "select": 12,
+            "write": 8
+          },
+          "baseline": false
+        },
+        {
+          "revision": 4,
+          "seconds": 15.13045514607802,
+          "envelope_bytes": 227,
+          "sql": {
+            "select": 12,
+            "write": 8
+          },
+          "baseline": false,
+          "cold_recovery_seconds": 3.2428679700242355,
+          "equal": true
+        }
+      ]
+    },
+    {
+      "kind": "recognition_checkpoint",
+      "scale": 2,
+      "version": 3,
+      "logical_bytes": 44508930,
+      "hot_median_seconds": 3.2591770970029756,
+      "hot_max_seconds": 3.27899996296037,
+      "samples": [
+        {
+          "revision": 1,
+          "seconds": 43.59511793591082,
+          "envelope_bytes": 584,
+          "sql": {
+            "select": 17,
+            "write": 10034
+          },
+          "baseline": true
+        },
+        {
+          "revision": 2,
+          "seconds": 3.27899996296037,
+          "envelope_bytes": 641,
+          "sql": {
+            "select": 14,
+            "write": 6
+          },
+          "baseline": false
+        },
+        {
+          "revision": 3,
+          "seconds": 3.2431874061003327,
+          "envelope_bytes": 641,
+          "sql": {
+            "select": 14,
+            "write": 6
+          },
+          "baseline": false
+        },
+        {
+          "revision": 4,
+          "seconds": 3.2591770970029756,
+          "envelope_bytes": 641,
+          "sql": {
+            "select": 14,
+            "write": 6
+          },
+          "baseline": false,
+          "cold_recovery_seconds": 41.97797415498644,
+          "equal": true
+        }
+      ]
+    }
+  ]
+}

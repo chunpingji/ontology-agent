@@ -1,0 +1,450 @@
+{
+  "group": "automatic",
+  "repetition": 1,
+  "run_id": "heuristic-9d2192c51dbf424594f355ec0521029c",
+  "private_artifact_directory": "/tmp/ontology-evidence-repair-auto-hrs5592-20260910-v9-integer-d1",
+  "manifest_sha256": "3805dc01639166925c5574b82416f3de4ca8f2043fe16d7eb3d965576b87c3af",
+  "frozen_app_inventory_sha256": "60a97ff6dcde89e01b1e5a0e16f9f3f41e7687b38c1a1e809f8244eb32e9dd02",
+  "recognition_seconds": 428.6683521369705,
+  "failure": null,
+  "model_request_stages": {
+    "ontology_guided_discovery": {
+      "requests": 9,
+      "status_counts": {
+        "complete": 9
+      },
+      "request_seconds": 174.31300000000002,
+      "queue_seconds": 0.17100000000000004,
+      "input_tokens": null,
+      "prompt_tokens": 40085,
+      "completion_tokens": 1067,
+      "prompt_ms": 152050.058,
+      "predicted_ms": 18851.706000000002,
+      "cache_tokens": 1518,
+      "unknown_metrics": {
+        "input_tokens": 9
+      }
+    },
+    "ontology_guided_verification": {
+      "requests": 8,
+      "status_counts": {
+        "complete": 8
+      },
+      "request_seconds": 242.93,
+      "queue_seconds": 0.073,
+      "input_tokens": null,
+      "prompt_tokens": 45570,
+      "completion_tokens": 3607,
+      "prompt_ms": 175356.48700000002,
+      "predicted_ms": 65186.998999999996,
+      "cache_tokens": 1313,
+      "unknown_metrics": {
+        "input_tokens": 8
+      }
+    }
+  },
+  "source_review_scope": "six focus predicates; extra facts explicitly unscored",
+  "expert_quality_gate": "not_passed",
+  "progress": {
+    "completion": "incomplete",
+    "contract_version": "document-analysis-runs-v1",
+    "invalidated_count": 0,
+    "model_calls": 17,
+    "model_calls_reserved": 17,
+    "model_calls_unresolved": 0,
+    "pending_frontiers": 0,
+    "phase_counts": {
+      "phase1": 5,
+      "phase2": 3
+    },
+    "records_examined": 8,
+    "records_incomplete": 0,
+    "records_planned": 18655,
+    "records_unattempted": 18647,
+    "stop_reason": "adaptive_search_saturated",
+    "supported": 7,
+    "tasks_attempted": 8,
+    "undetermined": 0,
+    "unresolved_claims": 0,
+    "unsupported": 0
+  },
+  "task_batches": 9,
+  "reserved_main_requests": 17,
+  "requested_stop_reason": "registered_focus_paths_reached",
+  "timings": {
+    "context_assembly": {
+      "count": 9,
+      "max_seconds": 0.02415164897684008,
+      "min_seconds": 0.0006028009811416268,
+      "total_seconds": 0.07958124682772905
+    },
+    "heuristic_admission": {
+      "count": 66,
+      "max_seconds": 0.0003257140051573515,
+      "min_seconds": 8.776492904871702e-05,
+      "total_seconds": 0.009542894084006548
+    },
+    "heuristic_complete": {
+      "count": 1,
+      "max_seconds": 428.5027733859606,
+      "min_seconds": 428.5027733859606,
+      "total_seconds": 428.5027733859606
+    },
+    "heuristic_index_ready": {
+      "count": 1,
+      "max_seconds": 0.21348310203757137,
+      "min_seconds": 0.21348310203757137,
+      "total_seconds": 0.21348310203757137
+    },
+    "heuristic_slot_prepared": {
+      "count": 65,
+      "max_seconds": 0.10537584195844829,
+      "min_seconds": 0.0021359719103202224,
+      "total_seconds": 0.897454020800069
+    },
+    "model_and_ranking_configuration": {
+      "count": 1,
+      "max_seconds": 0.539119558990933,
+      "min_seconds": 0.539119558990933,
+      "total_seconds": 0.539119558990933
+    },
+    "ontology_guided_discovery": {
+      "count": 9,
+      "max_seconds": 42.05818996299058,
+      "min_seconds": 9.217270729946904,
+      "total_seconds": 175.42890659801196
+    },
+    "ontology_guided_verification": {
+      "count": 8,
+      "max_seconds": 51.540841192007065,
+      "min_seconds": 19.927615516004153,
+      "total_seconds": 243.8493825700134
+    },
+    "ontology_load_and_snapshot": {
+      "count": 1,
+      "max_seconds": 1.0310979830101132,
+      "min_seconds": 1.0310979830101132,
+      "total_seconds": 1.0310979830101132
+    },
+    "outcome_application": {
+      "count": 9,
+      "max_seconds": 0.8383741580182686,
+      "min_seconds": 0.014908371027559042,
+      "total_seconds": 1.8094236960168928
+    },
+    "parse_docx_and_ir": {
+      "count": 1,
+      "max_seconds": 1.1338336570188403,
+      "min_seconds": 1.1338336570188403,
+      "total_seconds": 1.1338336570188403
+    },
+    "recognition_input_tokenization": {
+      "count": 17,
+      "max_seconds": 0.17478343099355698,
+      "min_seconds": 0.013937393086962402,
+      "total_seconds": 0.6208556112833321
+    },
+    "root_menu_and_record_index": {
+      "count": 1,
+      "max_seconds": 0.15540258097462356,
+      "min_seconds": 0.15540258097462356,
+      "total_seconds": 0.15540258097462356
+    },
+    "structure_metadata": {
+      "count": 1,
+      "max_seconds": 0.29083401593379676,
+      "min_seconds": 0.29083401593379676,
+      "total_seconds": 0.29083401593379676
+    },
+    "task_inspection": {
+      "count": 9,
+      "max_seconds": 93.6524039870128,
+      "min_seconds": 15.346035670023412,
+      "total_seconds": 419.80051730328705
+    }
+  },
+  "local_persistence": {
+    "batch_graph": {
+      "bytes": 822888,
+      "count": 9,
+      "seconds": 0.0234502418898046
+    },
+    "checkpoint": {
+      "bytes": 114760384,
+      "count": 9,
+      "seconds": 2.0099255500826985
+    },
+    "effective_graph": {
+      "bytes": 419201,
+      "count": 10,
+      "seconds": 0.013738529058173299
+    },
+    "jsonl": {
+      "bytes": 4895153,
+      "count": 285,
+      "seconds": 0.22464400681201369
+    },
+    "model_reservation": {
+      "bytes": 14171405,
+      "count": 69,
+      "seconds": 0.3674765530740842
+    },
+    "snapshot": {
+      "bytes": 36045281,
+      "count": 11,
+      "seconds": 0.6071762174833566
+    }
+  },
+  "search_stages": {
+    "H0": {
+      "events": 27,
+      "first_event_seconds": 0.32708939898293465,
+      "status": "observed"
+    },
+    "H1": {
+      "events": 39,
+      "first_event_seconds": 0.37238446495030075,
+      "status": "observed"
+    },
+    "H2": {
+      "events": 0,
+      "first_event_seconds": null,
+      "status": "not_triggered"
+    },
+    "H3": {
+      "events": 0,
+      "first_event_seconds": null,
+      "status": "not_triggered"
+    }
+  },
+  "sql": {
+    "finalization": {
+      "count": 1,
+      "seconds": 0.0001818040618672967,
+      "statements": {
+        "SELECT": 1
+      }
+    },
+    "recognition": {
+      "count": 279,
+      "seconds": 0.041276511386968195,
+      "statements": {
+        "INSERT": 51,
+        "SELECT": 51,
+        "UPDATE": 177
+      }
+    },
+    "setup": {
+      "count": 4,
+      "seconds": 0.004865654045715928,
+      "statements": {
+        "CREATE": 4
+      }
+    }
+  },
+  "model_requests_by_search_stage": {
+    "H0": {
+      "request_seconds": 326.229,
+      "requests": 11
+    },
+    "H1": {
+      "request_seconds": 91.014,
+      "requests": 6
+    }
+  },
+  "coverage_counts": {
+    "phase1": 1117,
+    "phase2": 17538,
+    "examined": 8,
+    "unattempted": 18647,
+    "incomplete": 0,
+    "pending_frontiers": 0,
+    "unresolved_claims": 0
+  },
+  "candidates": [
+    {
+      "candidate_id": "4d5785b7d3c6a756273f28d20ee5ed47be155ba5530706497f34cf1f95d25cad",
+      "revision": 1,
+      "predicate": "usesEquipment",
+      "effective": true,
+      "decision_status": "supported",
+      "reason_code": "candidate_supported",
+      "source_review": "source_and_ownership_checked",
+      "first_effective_seconds": 95.49154529895168,
+      "source_table": 9,
+      "source_row": 3,
+      "subject_id": "1f114946bb00ded335431b1f06c52b691297cdbcd1fed0ab71455858cf28efd1",
+      "object_id": "b1f02c57c064fc7e2b114661ebc0a6b34ecc01b98a320f6480b5df8e309df95c",
+      "object_class": "Centrifuge"
+    },
+    {
+      "candidate_id": "2f7408c463a69c177d5a25282d26096b43a723fba278e5e744e975b5cd5979bf",
+      "revision": 1,
+      "predicate": "equipmentID",
+      "effective": true,
+      "decision_status": "supported",
+      "reason_code": "candidate_supported",
+      "source_review": "source_and_ownership_checked",
+      "first_effective_seconds": 171.32368092692923,
+      "source_row": 3,
+      "subject_id": "b1f02c57c064fc7e2b114661ebc0a6b34ecc01b98a320f6480b5df8e309df95c"
+    },
+    {
+      "candidate_id": "b6f7ef37c56599bb6e8535edb4318a3a27570ac5e1d60e83304eb0d233cd49f2",
+      "revision": 1,
+      "predicate": "hasProductionPlan",
+      "effective": true,
+      "decision_status": "supported",
+      "reason_code": "candidate_supported",
+      "source_review": "source_and_ownership_checked",
+      "first_effective_seconds": 204.36444976902567,
+      "source_paragraph": 26,
+      "subject_id": "1f114946bb00ded335431b1f06c52b691297cdbcd1fed0ab71455858cf28efd1",
+      "object_id": "2732b250d2968fb4f4f51a5227eb60f8dc9d3c104258b75e1ba1eb46441344ff"
+    },
+    {
+      "candidate_id": "20cf5d434b0187e9730fdda66b246093a601b16cc905c3055c2501b4db1bd1f1",
+      "revision": 1,
+      "predicate": "plannedProductionDate",
+      "effective": true,
+      "decision_status": "supported",
+      "reason_code": "candidate_supported",
+      "source_review": "source_and_ownership_checked",
+      "first_effective_seconds": 234.8840201209532,
+      "source_paragraph": 26,
+      "subject_id": "2732b250d2968fb4f4f51a5227eb60f8dc9d3c104258b75e1ba1eb46441344ff"
+    },
+    {
+      "candidate_id": "c8976a91da136d99c09e042a3de970d421c7c16edc609f030f48096c236b1cc5",
+      "revision": 1,
+      "predicate": "describes",
+      "effective": true,
+      "decision_status": "supported",
+      "reason_code": "candidate_supported",
+      "source_review": "unscored",
+      "first_effective_seconds": 326.35774810798466,
+      "object_class": "DrugProduct"
+    },
+    {
+      "candidate_id": "b0ff4f1bf6294e4f4724aedde19e2d4871d2d00d490427d0f4b5c05dfecd2256",
+      "revision": 1,
+      "predicate": "plannedBatchCount",
+      "effective": true,
+      "decision_status": "supported",
+      "reason_code": "candidate_supported",
+      "source_review": "source_and_ownership_checked",
+      "first_effective_seconds": 356.91784336895216,
+      "source_paragraph": 26,
+      "subject_id": "2732b250d2968fb4f4f51a5227eb60f8dc9d3c104258b75e1ba1eb46441344ff"
+    },
+    {
+      "candidate_id": "93012640a6ff1d308fdd6fae1fbef8e2ce2a501cd1412f85a49cb24182c3bd98",
+      "revision": 1,
+      "predicate": "modelSpecification",
+      "effective": true,
+      "decision_status": "supported",
+      "reason_code": "candidate_supported",
+      "source_review": "source_and_ownership_checked",
+      "first_effective_seconds": 428.3708859520266,
+      "source_row": 3,
+      "subject_id": "b1f02c57c064fc7e2b114661ebc0a6b34ecc01b98a320f6480b5df8e309df95c"
+    }
+  ],
+  "applied_candidate_history": [
+    {
+      "batch": "0001.json",
+      "candidate_id": "4d5785b7d3c6a756273f28d20ee5ed47be155ba5530706497f34cf1f95d25cad",
+      "revision": 1,
+      "predicate": "usesEquipment",
+      "decision_status": "supported",
+      "policy_eligible": true,
+      "reason_code": "candidate_supported"
+    },
+    {
+      "batch": "0002.json",
+      "candidate_id": "2f7408c463a69c177d5a25282d26096b43a723fba278e5e744e975b5cd5979bf",
+      "revision": 1,
+      "predicate": "equipmentID",
+      "decision_status": "supported",
+      "policy_eligible": true,
+      "reason_code": "candidate_supported"
+    },
+    {
+      "batch": "0003.json",
+      "candidate_id": "b6f7ef37c56599bb6e8535edb4318a3a27570ac5e1d60e83304eb0d233cd49f2",
+      "revision": 1,
+      "predicate": "hasProductionPlan",
+      "decision_status": "supported",
+      "policy_eligible": true,
+      "reason_code": "candidate_supported"
+    },
+    {
+      "batch": "0004.json",
+      "candidate_id": "20cf5d434b0187e9730fdda66b246093a601b16cc905c3055c2501b4db1bd1f1",
+      "revision": 1,
+      "predicate": "plannedProductionDate",
+      "decision_status": "supported",
+      "policy_eligible": true,
+      "reason_code": "candidate_supported"
+    },
+    {
+      "batch": "0005.json",
+      "candidate_id": "d4b13d438b03bdaf12c4d6e1ae40b7c6fde0bab8ade0a96e0b6187f0fad59ff0",
+      "revision": 1,
+      "predicate": "cleanedBy",
+      "decision_status": "unsupported",
+      "policy_eligible": false,
+      "reason_code": "local_coreference_not_supported"
+    },
+    {
+      "batch": "0007.json",
+      "candidate_id": "c8976a91da136d99c09e042a3de970d421c7c16edc609f030f48096c236b1cc5",
+      "revision": 1,
+      "predicate": "describes",
+      "decision_status": "supported",
+      "policy_eligible": true,
+      "reason_code": "candidate_supported"
+    },
+    {
+      "batch": "0008.json",
+      "candidate_id": "b0ff4f1bf6294e4f4724aedde19e2d4871d2d00d490427d0f4b5c05dfecd2256",
+      "revision": 1,
+      "predicate": "plannedBatchCount",
+      "decision_status": "supported",
+      "policy_eligible": true,
+      "reason_code": "candidate_supported"
+    },
+    {
+      "batch": "0009.json",
+      "candidate_id": "93012640a6ff1d308fdd6fae1fbef8e2ce2a501cd1412f85a49cb24182c3bd98",
+      "revision": 1,
+      "predicate": "modelSpecification",
+      "decision_status": "supported",
+      "policy_eligible": true,
+      "reason_code": "candidate_supported"
+    }
+  ],
+  "missing_focus_targets": [],
+  "source_review_counts": {
+    "source_and_ownership_checked": 6,
+    "unscored": 1
+  },
+  "correct_first_effective_seconds": {
+    "usesEquipment": 95.49154529895168,
+    "equipmentID": 171.32368092692923,
+    "modelSpecification": 428.3708859520266,
+    "hasProductionPlan": 204.36444976902567,
+    "plannedProductionDate": 234.8840201209532,
+    "plannedBatchCount": 356.91784336895216
+  },
+  "same_parent_complete_path_seconds": {
+    "usesEquipment": 428.3708859520266,
+    "hasProductionPlan": 356.91784336895216
+  },
+  "code_group": "v9_integer_quotes_v2_diagnostic",
+  "fixed_six_run_group_completed": false,
+  "frozen_files_verified": true,
+  "wire_response_count": 17,
+  "wire_response_scope": "parsed_model_json_before_citation_decode",
+  "all_costs_settled": true
+}

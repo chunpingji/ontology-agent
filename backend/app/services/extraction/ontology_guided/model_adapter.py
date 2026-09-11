@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 from hashlib import sha256
 from pathlib import Path
 from typing import Annotated, Literal
@@ -16,6 +17,7 @@ from app.services.extraction.ontology_guided.context import TaskContext, covers_
 from app.services.extraction.ontology_guided.contracts import (
     BridgeStep,
     EdgeSpec,
+    FieldRoleClaim,
     GraphEdge,
     GraphNode,
     GraphProperty,
@@ -24,12 +26,23 @@ from app.services.extraction.ontology_guided.contracts import (
     VerificationTarget,
     VersionedRef,
 )
+from app.services.extraction.ontology_guided.evidence_groups import (
+    LITERAL_QUOTE_VERSION,
+    SCOPE_PROTOCOL_VERSION,
+)
 from app.services.extraction.ontology_guided.executor import TaskOutcome
+from app.services.extraction.ontology_guided.field_bindings import (
+    OWNER_BINDING_VERSION,
+    contains,
+    validate_field_binding,
+    validate_local_owner,
+)
 from app.services.extraction.ontology_guided.source_citations import resolve_fragment_quote
 from app.services.extraction.ontology_guided.task_citations import (
     TASK_CITATION_VERSION,
     TaskCitationProtocol,
 )
+from app.services.extraction.ontology_guided.value_constraints import normalize_literal
 from app.services.extraction.ontology_guided.verification import ProofGate, observe_value
 from app.services.llm.local_client import ExecutionLost, chat_with_schema, get_local_llm
 from app.services.llm.model_runtime import (
@@ -281,9 +294,13 @@ def _unique_anchors(values: list[EvidenceAnchor]) -> list[EvidenceAnchor]:
     return result
 
 
-def _anchor(context: TaskContext, quote: Quote, *, fact_required: bool) -> EvidenceAnchor:
+def _anchor(
+    context: TaskContext, quote: Quote, *, fact_required: bool, context_text=None,
+) -> EvidenceAnchor:
     anchor, _ = resolve_fragment_quote(
-        quote.evidence_id, quote.text, context.fragments, fact_required=fact_required)
+        quote.evidence_id, quote.text, context.fragments, fact_required=fact_required,
+        context_text=context_text,
+    )
     return anchor
 
 
@@ -358,7 +375,7 @@ class LocalModelRecognitionAdapter:
         if before_call is not None:
             before_call(stage, model_calls + 1)
         try:
-            with model_scope(stage=stage):
+            with model_scope(stage=stage, task_id=context.target.task_id):
                 raw = chat_with_schema(
                     self.client,
                     system=system,
@@ -508,7 +525,12 @@ class LocalModelRecognitionAdapter:
                     for quote in proposal.condition_support
                 ]
                 endpoint_quote = proposal.object_quote or proposal.value_quote
-                endpoint_anchor = _anchor(context, endpoint_quote, fact_required=True)
+                quote_context = context.protocol_state.get("quote_contexts", {}).get(
+                    str(proposal_index)
+                ) if context.repair_enabled else None
+                endpoint_anchor = _anchor(
+                    context, endpoint_quote, fact_required=True, context_text=quote_context,
+                )
             except ValueError:
                 outcomes.append("not_checked")
                 continue
@@ -528,6 +550,25 @@ class LocalModelRecognitionAdapter:
                 "conditions": [item.model_dump(mode="json") for item in proposal.condition_support],
                 "bridge_kind": proposal.bridge_kind,
             }
+            if context.repair_enabled:
+                claim["assertion_generation"] = context.protocol_state.get(
+                    "assertion_generation", 0
+                )
+                claim["proof_menu_hash"] = context.proof_menu["menu_hash"]
+                claim["endpoint_context"] = quote_context
+                claim["field_binding_id"] = context.protocol_state.get("bindings", {}).get(
+                    evidence_hash(endpoint_quote.model_dump(mode="json"))
+                )
+                if context.incremental_performance and proposal.kind == "relationship":
+                    from app.services.extraction.ontology_guided.process_granularity import (
+                        method_scope,
+                    )
+
+                    method, _ = method_scope(
+                        context, predicate, proposal.object_class_iri, endpoint_anchor,
+                    )
+                    if method:
+                        claim["whole_method_field"] = method
             target_values = context.target.model_dump(mode="python", exclude={"target_id"})
             target_values.update(
                 assertion_polarity=proposal.polarity,
@@ -614,6 +655,9 @@ class LocalModelRecognitionAdapter:
                 frozen_item
             )
             verification = by_candidate[item["candidate_id"]]
+            facets = context.protocol_state.get("verification_facets", {}).get(
+                item["candidate_id"], {}
+            ) if context.repair_enabled else {}
             # Only the independent response may provide decisions and reasons;
             # its source selections cannot alter the frozen condition target.
             proposal = proposal.model_copy(update={
@@ -644,11 +688,62 @@ class LocalModelRecognitionAdapter:
                     _anchor(context, quote, fact_required=False)
                     for quote in verification.counterevidence_support
                 ]
+                role_refs = [
+                    _anchor(context, Quote.model_validate(quote), fact_required=False)
+                    for quote in facets.get("field_role_support", [])
+                ] if context.repair_enabled else [endpoint_anchor]
+                bridge_refs = [
+                    _anchor(context, Quote.model_validate(quote), fact_required=False)
+                    for quote in facets.get("bridge_support", [])
+                ] if context.repair_enabled else predicate_refs
             except ValueError:
                 outcomes.append("not_checked")
                 continue
             source_for_semantics = _unique_anchors([*predicate_refs, endpoint_anchor])
             applicability_verdict = proposal.applicability_verdict
+            field_issue = None
+            owner_issue = None
+            normalized_value = None
+            if context.repair_enabled:
+                field_issue = validate_field_binding(
+                    context, predicate, endpoint_anchor, item["claim"].get("field_binding_id"),
+                    role_refs, proposal.bridge_kind,
+                )
+                if proposal.kind == "relationship" and re.match(
+                    r"^(?:(?:目前|当前|现阶段)?(?:本项目|该项目|项目|产品|药物)?"
+                    r"(?:处于|属于|不属于)|(?:不是|并非|不含|不包含))",
+                    proposal.object_quote.text.strip(),
+                ):
+                    # These finite classification/state/negation clauses do
+                    # not name an entity. A real name elsewhere must be a new
+                    # proposal; never silently replace this frozen endpoint.
+                    field_issue = "entity_reference_not_specific"
+                if proposal.kind == "property":
+                    normalized_value, constraint_issue = normalize_literal(
+                        proposal.value_quote.text, predicate,
+                    )
+                    field_issue = field_issue or constraint_issue
+                elif context.incremental_performance:
+                    from app.services.extraction.ontology_guided.process_granularity import (
+                        validate_method_scope,
+                    )
+
+                    field_issue = field_issue or validate_method_scope(
+                        context, predicate, proposal.object_class_iri, endpoint_anchor, bridge_refs,
+                    )
+                if field_issue:
+                    proposal.role_verdict = "undetermined"
+                # Naming the owner does not make an assertion conditional.
+                if any(q.text.strip() == context.subject_label.strip()
+                       for q in proposal.condition_support):
+                    applicability_verdict = "undetermined"
+                endpoint_quote = proposal.object_quote or proposal.value_quote
+                if any(q.evidence_id == endpoint_quote.evidence_id
+                       and q.text.strip() == endpoint_quote.text.strip()
+                       for q in proposal.condition_support):
+                    # Repeating the exact endpoint citation establishes identity,
+                    # not an additional scope. A restriction needs its own text.
+                    applicability_verdict = "undetermined"
             if not covers_required_sources(condition_refs, frozen_conditions):
                 applicability_verdict = "undetermined"
             if proposal.polarity == "conditional" and not condition_refs:
@@ -671,7 +766,7 @@ class LocalModelRecognitionAdapter:
                     kind="bridge_entailment",
                     verdict=verification.bridge_verdict,
                     reason=proposal.reason,
-                    support_refs=predicate_refs,
+                    support_refs=bridge_refs,
                     model_identity=self.model_identity,
                     attempt_suffix=f"{proposal_index}:bridge",
                 ),
@@ -680,7 +775,7 @@ class LocalModelRecognitionAdapter:
                     kind="field_role",
                     verdict=proposal.role_verdict,
                     reason=proposal.reason,
-                    support_refs=[endpoint_anchor],
+                    support_refs=role_refs,
                     model_identity=self.model_identity,
                     attempt_suffix=f"{proposal_index}:role",
                 ),
@@ -725,6 +820,37 @@ class LocalModelRecognitionAdapter:
                     field_bound = any(covers_required_sources(subject_refs, [owner])
                                       for owner in context.owner_field_refs)
                     local_subject_refs = subject_refs if original_bound and field_bound else []
+                if context.repair_enabled and not local_subject_refs:
+                    binding = next((b for b in context.field_bindings
+                                    if b.field_binding_id == item["claim"].get("field_binding_id")),
+                                   None)
+                    if (binding and context.subject_evidence_refs
+                            and covers_required_sources(subject_refs, context.subject_evidence_refs)
+                            and any(any(contains(r, owner) for r in subject_refs)
+                                    for owner in binding.owner_candidate_refs)):
+                        local_subject_refs = subject_refs
+                if context.repair_enabled and not (
+                    context.subject_evidence_refs
+                    and covers_required_sources(subject_refs, context.subject_evidence_refs)
+                ):
+                    # A row's owner name alone cannot bind a different, even
+                    # identically named, previously established subject.
+                    local_subject_refs = []
+                if context.repair_enabled:
+                    binding = next((b for b in context.field_bindings
+                                    if b.field_binding_id == item["claim"].get("field_binding_id")),
+                                   None)
+                    original_refs = [_anchor(context, Quote.model_validate(q), fact_required=False)
+                                     for q in facets.get("original_subject_support", [])]
+                    local_refs = [_anchor(context, Quote.model_validate(q), fact_required=False)
+                                  for q in facets.get("local_subject_support", [])]
+                    owner_issue = validate_local_owner(
+                        context, binding, original_refs, local_refs, bridge_refs,
+                        proposal.bridge_kind,
+                    )
+                    if owner_issue:
+                        local_subject_refs = []
+                        proposal.subject_binding_verdict = "undetermined"
                 decisions.append(
                     _decision(
                         context=proposal_context,
@@ -810,7 +936,36 @@ class LocalModelRecognitionAdapter:
                 proof,
                 decisions,
                 is_property=proposal.kind == "property",
+                proof_menu=context.proof_menu if context.repair_enabled else None,
+                context=context if context.repair_enabled else None,
             )
+            if context.repair_enabled:
+                if owner_issue:
+                    bundle.validation_issues.append(owner_issue)
+                    bundle.policy_eligible = False
+                if field_issue:
+                    bundle.validation_issues.append(field_issue)
+                    bundle.policy_eligible = False
+                binding = next((b for b in context.field_bindings
+                                if b.field_binding_id == item["claim"].get("field_binding_id")),
+                               None)
+                role_claim = FieldRoleClaim(
+                    role_claim_id=endpoint_role.id, span_refs=[endpoint_anchor],
+                    header_refs=role_refs,
+                    record_view_ref=binding.record_view_ref if binding else context.record_id,
+                    owner_ref=VersionedRef(
+                        id=task.subject.entity_id, revision=task.subject.revision,
+                    ),
+                    role_kind="value" if proposal.kind == "property" else "object",
+                    ontology_slot_ref=VersionedRef(id=predicate.iri, revision=1),
+                    verdict=proposal.role_verdict,
+                )
+                context.protocol_state.setdefault("field_role_claims", {})[
+                    role_claim.role_claim_id
+                ] = role_claim.model_dump(mode="json")
+                context.protocol_state.setdefault("gate_issues", {})[item["candidate_id"]] = (
+                    bundle.validation_issues
+                )
             # Proof support and assertion polarity are orthogonal.  A quoted
             # negation or condition can be a fully supported candidate even
             # though only an unconditional affirmative edge is eligible for
@@ -840,16 +995,22 @@ class LocalModelRecognitionAdapter:
             )
             subject_ref = VersionedRef(id=task.subject.entity_id, revision=task.subject.revision)
             evidence_refs = _unique_anchors(
-                [*subject_refs, *source_for_semantics, *type_refs,
+                [*subject_refs, *source_for_semantics, *type_refs, *role_refs, *bridge_refs,
                  *condition_refs, *counterevidence_refs]
             )
             if proposal.kind == "relationship":
+                method = item["claim"].get("whole_method_field")
+                object_sources = ([EvidenceAnchor.model_validate(ref)
+                                   for ref in method["source_refs"]]
+                                  if method else [endpoint_anchor])
                 entity_id = stable_id(
                     "document-local-entity",
                     [
                         context.target.document_context.document_hash,
-                        proposal.object_class_iri,
-                        endpoint_anchor.model_dump(mode="json"),
+                        ("physical-mention-v1" if context.repair_enabled
+                         else proposal.object_class_iri),
+                        ([ref.model_dump(mode="json") for ref in object_sources]
+                         if method else endpoint_anchor.model_dump(mode="json")),
                     ],
                 )
                 node = GraphNode(
@@ -864,10 +1025,10 @@ class LocalModelRecognitionAdapter:
                         ),
                         proposal.object_class_iri.rsplit("/", 1)[-1],
                     ),
-                    label=endpoint_quote.text,
+                    label=method["text"] if method else endpoint_quote.text,
                     identity_status="document_local",
                     decision_status=status,
-                    evidence_refs=[endpoint_anchor],
+                    evidence_refs=object_sources,
                 )
                 nodes.append(node)
                 edges.append(
@@ -894,11 +1055,12 @@ class LocalModelRecognitionAdapter:
                         dependency_refs=proof.dependency_refs,
                         evidence_refs=evidence_refs,
                         subject_evidence_refs=subject_refs,
-                        object_evidence_refs=[endpoint_anchor],
+                        object_evidence_refs=object_sources,
                         predicate_evidence_refs=predicate_refs,
                         condition_evidence_refs=condition_refs,
                         counterevidence_refs=counterevidence_refs,
-                        reason_code=f"candidate_{status}",
+                        reason_code=(bundle.validation_issues[0] if context.repair_enabled
+                                     and bundle.validation_issues else f"candidate_{status}"),
                         reason=proposal.reason,
                     )
                 )
@@ -920,7 +1082,8 @@ class LocalModelRecognitionAdapter:
                             predicate_iri=predicate.iri,
                             predicate_label=predicate.label,
                             raw_value=observation.raw_text,
-                            normalized_value=observation.normalized_value,
+                            normalized_value=(normalized_value if context.repair_enabled
+                                              else observation.normalized_value),
                             polarity=proposal.polarity,
                             conditions=[quote.text for quote in proposal.condition_support],
                             applicability=proposal.applicability,
@@ -938,7 +1101,8 @@ class LocalModelRecognitionAdapter:
                             predicate_evidence_refs=predicate_refs,
                             condition_evidence_refs=condition_refs,
                             counterevidence_refs=counterevidence_refs,
-                            reason_code=f"candidate_{status}",
+                            reason_code=(bundle.validation_issues[0] if context.repair_enabled
+                                         and bundle.validation_issues else f"candidate_{status}"),
                             reason=proposal.reason,
                         )
                     )
@@ -968,11 +1132,15 @@ class LocalModelRecognitionAdapter:
         )
 
 
-def configured_model_adapter() -> LocalModelRecognitionAdapter | None:
+def configured_model_adapter(
+    *, protocol_version: str | None = None,
+) -> LocalModelRecognitionAdapter | None:
     client = get_local_llm()
     if client is None or not settings.local_llm_model_revision:
         return None
     counter = _ConfiguredInputCounter()
+    if protocol_version not in {None, "evidence-repair-v1"}:
+        raise ValueError("unsupported recognition model protocol")
     identity = stable_id(
         "ontology-guided-local-model",
         {
@@ -982,6 +1150,14 @@ def configured_model_adapter() -> LocalModelRecognitionAdapter | None:
             "adapter": ADAPTER_VERSION,
             "citations": TASK_CITATION_VERSION,
             "tokenizer": counter.identity,
+            **({"evidence_repair": protocol_version, "owner_binding": OWNER_BINDING_VERSION,
+                "scope_protocol": SCOPE_PROTOCOL_VERSION, "literal_quotes": LITERAL_QUOTE_VERSION}
+               if protocol_version else {}),
         },
     )
-    return LocalModelRecognitionAdapter(client, model_identity=identity, token_counter=counter)
+    adapter_type = LocalModelRecognitionAdapter
+    if protocol_version:
+        from app.services.extraction.ontology_guided.repair_adapter import EvidenceRepairAdapter
+
+        adapter_type = EvidenceRepairAdapter
+    return adapter_type(client, model_identity=identity, token_counter=counter)

@@ -16,6 +16,7 @@ from app.services.extraction.ontology_guided.context_records import (
     named_object_context,
 )
 from app.services.extraction.ontology_guided.contracts import VerificationTarget, VersionedRef
+from app.services.extraction.ontology_guided.field_bindings import FieldBinding, field_bindings
 from app.services.extraction.ontology_guided.records import RecordIndex
 
 
@@ -44,7 +45,22 @@ class TaskContext(EvidenceModel):
     token_count: int | None = Field(default=None, ge=0)
     budget_status: str = "within_budget"
     remaining_model_calls: int | None = Field(default=None, ge=0, exclude=True)
+    field_bindings: list[FieldBinding] = Field(default_factory=list)
+    proof_menu: dict = Field(default_factory=dict)
+    protocol_state: dict = Field(default_factory=dict, exclude=True)
+    repair_enabled: bool = Field(default=False, exclude=True)
+    incremental_performance: bool = Field(default=False, exclude=True)
     _before_model_call: Callable[[str, int], None] | None = PrivateAttr(default=None)
+    _protocol_hook: Callable[[dict], None] | None = PrivateAttr(default=None)
+    _actual_calls: int = PrivateAttr(default=0)
+
+    def bind_protocol_hook(self, callback: Callable[[dict], None]) -> None:
+        self._protocol_hook = callback
+
+    def save_protocol(self, state: dict) -> None:
+        if self._protocol_hook is not None:
+            self._protocol_hook(state)
+        self.protocol_state = state
 
     @property
     def before_model_call(self) -> Callable[[str, int], None] | None:
@@ -96,10 +112,22 @@ def assemble_context(
     subject_label: str = "",
     predicate=None,
     ontology=None,
+    repair_enabled: bool = False,
 ) -> TaskContext:
     record = index.by_id.get(record_ref)
     if record is None:
         raise ValueError("record does not belong to the frozen index")
+    if repair_enabled:
+        # A whole-source owner reference and its explicit complete span mean
+        # the same thing. Resolve that boundary before the citation gate so a
+        # full verbatim quote can prove it without weakening span containment.
+        subject_evidence_refs = [
+            ref.model_copy(update={
+                "span_start": ref.span_start or 0,
+                "span_end": (ref.span_end if ref.span_end is not None
+                             else len(index.ir.unit(ref.evidence_id).text)),
+            }) for ref in subject_evidence_refs or []
+        ]
     fragments: list[ContextFragment] = []
     seen: set[str] = set()
     for purpose, eligible, units in (
@@ -152,9 +180,8 @@ def assemble_context(
                     omitted.append(reference)
                 continue
             units = [unit]
-            for linked in index.records:
-                if any(source.evidence_id == unit.evidence_id for source in linked.source_units):
-                    units.extend([*linked.header_units, *linked.parent_units, *linked.note_units])
+            for linked in index.records_by_evidence.get(unit.evidence_id, []):
+                units.extend([*linked.header_units, *linked.parent_units, *linked.note_units])
             for source in units:
                 if source.evidence_id in seen or not source.text:
                     continue
@@ -178,6 +205,9 @@ def assemble_context(
         "counterevidence_refs": counterevidence_refs or [],
         "omitted_refs": omitted,
     }
+    bindings = field_bindings(index, record_ref) if repair_enabled else []
+    if repair_enabled:
+        payload["field_bindings"] = [item.model_dump(mode="json") for item in bindings]
     context_hash = evidence_hash(payload)
     serialized = json.dumps(
         payload,
@@ -185,6 +215,10 @@ def assemble_context(
         sort_keys=True,
         default=lambda value: value.model_dump(mode="json"),
     )
+    # In v2, private anchors are not transmitted. This is a source-text lower
+    # bound; the adapter measures the complete compact request plus schema.
+    if repair_enabled:
+        serialized = "\n".join(fragment.text for fragment in fragments)
     token_count = token_counter.count(serialized) if token_counter else None
     budget_status = (
         "required_context_missing"
@@ -223,6 +257,8 @@ def assemble_context(
         omitted_refs=omitted,
         token_count=token_count,
         budget_status=budget_status,
+        field_bindings=bindings,
+        repair_enabled=repair_enabled,
     )
 
 

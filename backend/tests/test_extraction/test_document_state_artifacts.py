@@ -159,3 +159,30 @@ def test_ranking_writer_reuses_only_its_exact_committed_boundary(db, monkeypatch
     new_store = DocumentAnalysisRunStore(db)
     restored = restore(db, new_store, run, final_fingerprint=run.run_fingerprint)
     assert restored["service"]["costs"] == {"model_calls": 2}
+
+
+def test_wide_state_decode_batches_queries_instead_of_select_per_block(db):
+    from sqlalchemy import event
+
+    store = DocumentAnalysisRunStore(db)
+    run, token = seed(store, "wide-batched-state")
+    payload = {"entries": [f"entry-{number}-" * 180 for number in range(200)]}
+    encoded = encode_state(store, run, token, payload)
+    db.commit()
+    assert db.scalar(select(func.count()).select_from(DocumentAnalysisArtifact)) > 200
+    queries = []
+
+    def observe(_conn, _cursor, statement, _parameters, _context, _many):
+        if statement.lstrip().upper().startswith("SELECT"):
+            queries.append(statement)
+
+    engine = db.get_bind()
+    event.listen(engine, "before_cursor_execute", observe)
+    try:
+        assert decode_state(store, run, encoded) == payload
+        assert len(queries) < 12
+        queries.clear()
+        assert encode_state(store, run, token, payload) == encoded
+        assert len(queries) < 12
+    finally:
+        event.remove(engine, "before_cursor_execute", observe)

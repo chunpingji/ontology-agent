@@ -74,10 +74,17 @@ from app.services.extraction.ontology_guided.contracts import (
     RunProgress,
     VersionedRef,
 )
+from app.services.extraction.ontology_guided.evidence_groups import (
+    LITERAL_QUOTE_VERSION,
+    SCOPE_PROTOCOL_VERSION,
+)
+from app.services.extraction.ontology_guided.evidence_work import EvidenceWorkQueue
 from app.services.extraction.ontology_guided.executor import (
     ExecutionBatch,
     OntologyGuidedExecutor,
 )
+from app.services.extraction.ontology_guided.field_bindings import OWNER_BINDING_VERSION
+from app.services.extraction.ontology_guided.heuristic_search import HeuristicSearchPolicy
 from app.services.extraction.ontology_guided.ledger import (
     CHECKPOINT_SCHEMA_VERSION,
     CheckpointEnvelope,
@@ -278,7 +285,7 @@ def _publish_artifact(
 ) -> DocumentAnalysisRun:
     logical_payload = payload
     if kind == "graph":
-        payload = encode_run_state(store, run, token, payload)
+        payload = encode_run_state(store, run, token, payload, kind=kind)
     artifact_hash = content_hash(payload)
     head = store.get_artifact_head(run.recognition_run_id, run.owner_id, kind)
     expected_artifact_revision = head.revision if head is not None else 0
@@ -532,6 +539,8 @@ def _persist_ranking_state(
     state: dict,
 ) -> None:
     """Commit the complete ranking boundary before its first recognition call."""
+    from app.services.document_analysis.incremental_state import structural_snapshot
+
     try:
         # Validate monotonic accounting under the same lock as block/head writes.
         store.assert_fence(run.recognition_run_id, run.owner_id, token, for_update=True)
@@ -592,10 +601,14 @@ def _persist_ranking_state(
             by_id.get(epoch["epoch_id"]) != epoch for epoch in prior_epochs
         ):
             raise CheckpointMismatch("committed ranking epochs cannot be replaced or removed")
-        if previous and content_hash(previous) == content_hash(state):
+        incremental = performance_policy(store, current).get("state_storage_version") == 3
+        tree = (structural_snapshot(store, current, "ranking-boundary", state)
+                if incremental else None)
+        if previous and (previous == state if incremental else
+                         content_hash(previous) == content_hash(state)):
             db.commit()  # Release the writer lock on idempotent acknowledgement.
             return
-        persisted_state = encode_run_state(store, current, token, state)
+        persisted_state = encode_run_state(store, current, token, state, kind="ranking_state")
         digest = content_hash(persisted_state)
         head = store.get_artifact_head(
             current.recognition_run_id, current.owner_id, "ranking_state"
@@ -639,24 +652,50 @@ def _persist_ranking_state(
         store._committed_ranking_state = (
             (str(current.recognition_run_id), committed_ref.artifact_id,
              committed_ref.content_hash),
-            deepcopy(state),
+            tree.value if tree is not None else deepcopy(state),
         )
     except BaseException:
         db.rollback()
         raise
 
 
-def _validate_model_call_state(state: dict) -> None:
+def _configured_recognition_adapter(performance: dict):
+    if performance.get("evidence_repair") is None:
+        return configured_model_adapter()
+    if performance["evidence_repair"] != "evidence-repair-v1":
+        raise CheckpointMismatch("unknown evidence repair policy version")
+    expected = {
+        "scope_protocol": SCOPE_PROTOCOL_VERSION,
+        "owner_binding": OWNER_BINDING_VERSION,
+        "evidence_work": EvidenceWorkQueue.version,
+        "literal_quotes": LITERAL_QUOTE_VERSION,
+    }
+    if performance.get("incremental_performance") is not None:
+        expected.update({
+            "incremental_performance": "incremental-performance-v1",
+            "state_storage_version": 3, "state_baseline_interval": 32,
+            "semantic_expansion": "bounded-semantic-v1",
+            "process_granularity": "whole-method-field-v1",
+            "attribute_priority": "source-field-priority-v1",
+            "heuristic_policy": "heuristic-first-v3",
+        })
+    if any(performance.get(key) != value for key, value in expected.items()):
+        raise CheckpointMismatch("evidence repair policy version mismatch")
+    return configured_model_adapter(protocol_version="evidence-repair-v1")
+
+
+def _validate_model_call_state(state: dict, *, previous: dict | None = None) -> None:
     """Validate private pre-request reservations without accepting request payloads."""
-    if not isinstance(state, dict) or set(state) != {
-        "version", "recognition_run_id", "run_fingerprint", "lineage_calls", "reservations"
-    }:
+    expected = {"version", "recognition_run_id", "run_fingerprint", "lineage_calls", "reservations"}
+    if isinstance(state, dict) and state.get("version") == 2:
+        expected.add("protocols")
+    if not isinstance(state, dict) or set(state) != expected:
         raise CheckpointMismatch("model call reservation envelope is invalid")
     counts = state["lineage_calls"]
     reservations = state["reservations"]
     if (
         type(state["version"]) is not int
-        or state["version"] != 1
+        or state["version"] not in (1, 2)
         or not isinstance(state["recognition_run_id"], str)
         or not isinstance(state["run_fingerprint"], str)
         or not isinstance(counts, dict)
@@ -671,7 +710,8 @@ def _validate_model_call_state(state: dict) -> None:
     for sequence, reservation in enumerate(reservations, 1):
         if (
             not isinstance(reservation, dict)
-            or set(reservation) != {"sequence", "task_id", "stage", "ordinal", "lineage_id"}
+            or set(reservation) != ({"sequence", "task_id", "stage", "ordinal", "lineage_id"}
+                                    | ({"protocol_attempt"} if state["version"] == 2 else set()))
             or type(reservation.get("sequence")) is not int
             or reservation["sequence"] != sequence
             or type(reservation.get("ordinal")) is not int
@@ -688,6 +728,28 @@ def _validate_model_call_state(state: dict) -> None:
     # count is carried forward when a subsequent request first reserves budget.
     if any(count > counts.get(lineage, 0) for lineage, count in observed.items()):
         raise CheckpointMismatch("model call reservation count is invalid")
+    if state["version"] == 2:
+        from app.services.extraction.ontology_guided.contracts import VerificationTarget
+
+        if not isinstance(state["protocols"], dict):
+            raise CheckpointMismatch("protocol checkpoints are invalid")
+        for lineage, protocol in state["protocols"].items():
+            if previous and protocol == previous.get("protocols", {}).get(lineage):
+                continue  # This exact protocol was validated at the durable head.
+            target = VerificationTarget.model_validate(protocol.get("base_target"))
+            if (protocol.get("version") != "evidence-repair-v1"
+                    or protocol.get("lineage_id") != lineage or target.claim_ref.id != lineage
+                    or len(protocol.get("evidence_hash", "")) != 64):
+                raise CheckpointMismatch("protocol checkpoint identity mismatch")
+            completed = protocol.get("completed_attempts", [])
+            attempts = protocol.get("request_attempt", 0)
+            if (type(attempts) is not int or attempts < 0 or not isinstance(completed, list)
+                    or any(type(n) is not int or not 1 <= n <= attempts for n in completed)
+                    or len(set(completed)) != len(completed)):
+                raise CheckpointMismatch("protocol response receipts are invalid")
+            paid = {r["protocol_attempt"] for r in reservations if r["lineage_id"] == lineage}
+            if not set(completed) <= paid:
+                raise CheckpointMismatch("protocol receipt has no reservation")
 
 
 def _restore_model_call_state(
@@ -709,7 +771,7 @@ def _restore_model_call_state(
         or ref.event_head > run.event_head
     ):
         raise CheckpointMismatch("model call reservation artifact head is invalid")
-    state = deepcopy(artifact.payload)
+    state = decode_state(store, run, deepcopy(artifact.payload))
     _validate_model_call_state(state)
     if (
         state["recognition_run_id"] != str(run.recognition_run_id)
@@ -729,19 +791,30 @@ def _persist_model_call_state(
     state: dict,
 ) -> None:
     """Commit budget before chat, independently of the next completed batch."""
+    from app.services.document_analysis.incremental_state import structural_snapshot
+
     try:
-        store.assert_fence(run.recognition_run_id, run.owner_id, token)
+        store.assert_fence(run.recognition_run_id, run.owner_id, token, for_update=True)
         current = store.get_owned(run.recognition_run_id, run.owner_id)
-        _validate_model_call_state(state)
         if (
             current.run_fingerprint != final_fingerprint
             or state["run_fingerprint"] != final_fingerprint
             or state["recognition_run_id"] != str(current.recognition_run_id)
         ):
             raise FingerprintMismatch("model call reservation has stale run dependencies")
-        previous = _restore_model_call_state(
+        head = store.get_artifact_head(
+            current.recognition_run_id, current.owner_id, "recognition-model-calls",
+        )
+        if head is not None:
+            db.refresh(head)
+        cache_key = (str(current.recognition_run_id), current.owner_id,
+                     head.artifact_id, head.content_hash) if head else None
+        cached = getattr(store, "_committed_model_call_state", None)
+        previous = cached[1] if cached and cached[0] == cache_key else _restore_model_call_state(
             db, store, current, final_fingerprint=final_fingerprint
         )
+        incremental = performance_policy(store, current).get("state_storage_version") == 3
+        _validate_model_call_state(state, previous=previous if incremental else None)
         if previous and (
             state["reservations"][: len(previous["reservations"])] != previous["reservations"]
             or any(
@@ -750,12 +823,40 @@ def _persist_model_call_state(
             )
         ):
             raise CheckpointMismatch("model call reservations cannot be removed or rewritten")
-        state = deepcopy(state)
-        digest = content_hash(state)
-        if previous and content_hash(previous) == digest:
+        if state["version"] == 2:
+            for protocol in state["protocols"].values():
+                source_hash = protocol["base_target"]["document_context"]["document_hash"]
+                if source_hash != current.document_hash:
+                    raise CheckpointMismatch("protocol source belongs to another document")
+        for lineage, prior in previous.get("protocols", {}).items():
+            current_protocol = state.get("protocols", {}).get(lineage)
+            if (current_protocol is None
+                    or current_protocol.get("evidence_revision", 0)
+                    < prior.get("evidence_revision", 0)):
+                raise CheckpointMismatch("protocol checkpoint revision cannot go backwards")
+            if (current_protocol.get("request_attempt", 0) < prior.get("request_attempt", 0)
+                    or current_protocol.get("completed_attempts", [])[:len(prior.get(
+                        "completed_attempts", []))] != prior.get("completed_attempts", [])):
+                raise CheckpointMismatch("protocol receipts cannot regress")
+            if (current_protocol["evidence_revision"] == prior["evidence_revision"]
+                    and current_protocol.get("assertion_generation", 0) == prior.get(
+                        "assertion_generation", 0)):
+                for name in ("evidence_hash", "base_target", "discovery", "verification"):
+                    if prior.get(name) is not None and current_protocol.get(name) != prior[name]:
+                        raise CheckpointMismatch("committed protocol stage cannot be rewritten")
+        tree = (structural_snapshot(store, current, "model-boundary", state)
+                if incremental else None)
+        state = tree.value if tree is not None else deepcopy(state)
+        digest = tree.digest if tree is not None else content_hash(state)
+        if previous and (previous == state if incremental else content_hash(previous) == digest):
+            db.commit()
             return
         reserved = sum(state["lineage_calls"].values())
         progress = dict(current.progress or {})
+        confirmed = sum(len(p.get("completed_attempts", []))
+                        for p in state.get("protocols", {}).values())
+        if state["version"] == 2:
+            progress["model_calls"] = max(int(progress.get("model_calls", 0)), confirmed)
         progress.update(
             model_calls_reserved=reserved,
             model_calls_unresolved=max(0, reserved - int(progress.get("model_calls", 0))),
@@ -789,23 +890,33 @@ def _persist_model_call_state(
                 "model_calls_reserved": sum(state["lineage_calls"].values()),
             },
         )
-        store.update_artifact(
+        persisted_state = (encode_run_state(store, current, token, state,
+                                           kind="recognition-model-calls")
+                           if state["version"] == 2 else state)
+        stored_digest = content_hash(persisted_state)
+        committed_ref = store.update_artifact(
             current.recognition_run_id,
             current.owner_id,
             token,
             artifact_kind="recognition-model-calls",
             expected_revision=head.revision if head else 0,
-            artifact_hash=digest,
+            artifact_hash=stored_digest,
             status="ready",
             artifact_id=stable_id(
-                "recognition-model-calls", [str(current.recognition_run_id), digest]
+                "recognition-model-calls", [str(current.recognition_run_id), stored_digest]
             ),
             media_type="application/json",
-            payload=state,
+            payload=persisted_state,
             event_head=event.sequence,
         )
         db.commit()
+        store._committed_model_call_state = (
+            (str(current.recognition_run_id), current.owner_id,
+             committed_ref.artifact_id, committed_ref.content_hash),
+            state if incremental else deepcopy(state),
+        )
     except BaseException:
+        store._committed_model_call_state = None
         db.rollback()
         raise
 
@@ -851,7 +962,11 @@ def _recognition_fingerprint(
                 "max_tasks": settings.evidence_max_tasks,
                 "max_regions_per_task": settings.evidence_max_regions_per_task,
                 "max_objects_per_task": settings.evidence_max_objects_per_task,
-                "max_model_calls_per_record": settings.document_analysis_max_model_calls_per_record,
+                "max_model_calls_per_record": (
+                    performance["max_lineage_calls"]
+                    if performance and performance.get("evidence_repair")
+                    else settings.document_analysis_max_model_calls_per_record
+                ),
             },
             "retry": {
                 "timeout_seconds": settings.evidence_timeout_s,
@@ -860,7 +975,11 @@ def _recognition_fingerprint(
             },
             "protocol": {
                 "contract": CONTRACT_VERSION,
-                "checkpoint": CHECKPOINT_SCHEMA_VERSION,
+                "checkpoint": ("document-recognition-checkpoint-v3"
+                               if performance and performance.get("incremental_performance")
+                               else "document-recognition-checkpoint-v2"
+                               if performance and performance.get("evidence_repair")
+                               else CHECKPOINT_SCHEMA_VERSION),
                 "retrieval": RETRIEVAL_POLICY_VERSION,
                 "proof": PROOF_POLICY_VERSION,
                 "projection": PROJECTION_POLICY_VERSION,
@@ -1003,13 +1122,16 @@ def _persist_recognition_batch(
     index: RecordIndex,
     batch: ExecutionBatch,
 ) -> None:
-    batch_hash = content_hash(
-        {
+    incremental = performance_policy(store, run).get("state_storage_version") == 3
+    from app.services.document_analysis.incremental_state import structural_digest
+
+    batch_value = {
             "checkpoint_schema_version": CHECKPOINT_SCHEMA_VERSION,
             "run_fingerprint": final_fingerprint,
-            "batch": batch.model_dump(mode="json"),
+            "batch": batch.incremental_payload() if incremental else batch.model_dump(mode="json"),
         }
-    )
+    batch_hash = (structural_digest(store, run, "batch-receipt", batch_value)
+                  if incremental else content_hash(batch_value))
     if (
         store.event_batch_receipt(
             run.recognition_run_id,
@@ -1078,9 +1200,10 @@ def _persist_recognition_batch(
             "dependency_index": batch.dependency_index,
             "diagnostics": batch.diagnostics,
             "ranking_state": batch.ranking_state,
+            "evidence_repair": batch.evidence_repair_summary,
         }
         graph_head = store.get_artifact_head(current.recognition_run_id, current.owner_id, "graph")
-        stored_graph = encode_run_state(store, current, token, graph_payload)
+        stored_graph = encode_run_state(store, current, token, graph_payload, kind="graph")
         store.update_artifact(
             current.recognition_run_id,
             current.owner_id,
@@ -1115,6 +1238,9 @@ def _persist_recognition_batch(
             "proof_revision",
         )
         checkpoint = checkpoint_envelope(
+            structural_digest=(lambda value: structural_digest(
+                store, current, "checkpoint-identity", value,
+            )) if incremental else None,
             recognition_run_id=str(current.recognition_run_id),
             run_fingerprint=final_fingerprint,
             execution_generation=execution.generation,
@@ -1135,7 +1261,8 @@ def _persist_recognition_batch(
             progress=graph.progress,
         )
         checkpoint_payload = encode_run_state(
-            store, current, token, checkpoint.model_dump(mode="json")
+            store, current, token, checkpoint.json_payload(),
+            kind="recognition_checkpoint",
         )
         checkpoint_head = store.get_artifact_head(
             current.recognition_run_id,
@@ -1531,7 +1658,8 @@ def _execute_claimed(
     with model_scope(
         run_id=str(run.recognition_run_id), bind=db.get_bind(), should_stop=should_stop,
     ):
-        adapter = configured_model_adapter()
+        repair = performance.get("evidence_repair") == "evidence-repair-v1"
+        adapter = _configured_recognition_adapter(performance)
         ranking_service, ranking_identity = _configured_ranking()
         if not performance and ranking_service.policy.policy_version != "semantic-ranking-v1":
             # A rollout must not silently upgrade the strategy of an older run.
@@ -1667,12 +1795,20 @@ def _execute_claimed(
                 engine=object(),
                 adapter=adapter,
                 max_tasks=settings.evidence_max_tasks,
-                max_model_calls_per_record=settings.document_analysis_max_model_calls_per_record,
+                max_model_calls_per_record=(
+                    performance["max_lineage_calls"] if repair
+                    else settings.document_analysis_max_model_calls_per_record
+                ),
                 progress_hook=progress_hook,
                 ranking_service=ranking_service,
                 priority_paths=priority_paths,
                 lazy_frontier=performance.get("frontier_version") == 2,
                 template_interleaving=performance.get("template_interleaving", False),
+                evidence_repair=repair,
+                incremental_performance=bool(performance.get("incremental_performance")),
+                heuristic_policy=HeuristicSearchPolicy.durable(
+                    incremental=bool(performance.get("incremental_performance")),
+                ) if repair else None,
             ).run(
                 recognition_run_id=str(run.recognition_run_id),
                 run_fingerprint=final_fingerprint,
@@ -1755,6 +1891,7 @@ def _execute_claimed(
             ),
             "diagnostics": result.diagnostics,
             "ranking_state": result.ranking_state,
+            "evidence_repair": result.evidence_repair_summary,
         }
         run = _publish_artifact(
             db,
@@ -1791,6 +1928,14 @@ def _execute_claimed(
                 "retryable": True,
             },
         )
+        return
+
+    if repair and result.graph.progress.stop_reason in {
+        "adaptive_search_saturated", "evidence_recheck_incomplete",
+    }:
+        _finish(db, store, current, token, status="paused", public_status="paused",
+                public_stage="extracting", progress=terminal_progress,
+                stop_reason=result.graph.progress.stop_reason)
         return
 
     if adapter is None:

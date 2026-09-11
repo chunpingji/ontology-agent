@@ -1,0 +1,49 @@
+{
+  "document_sha256": "1156ca7b694c5af10afa393a5df4158ad4f9528901eab560ae2cf96e55b6d44b",
+  "records": 86,
+  "parse_index_seconds": 0.4917092809919268,
+  "scan_seconds": 0.5858670029556379,
+  "method_groups": [
+    {
+      "record_id": "6224448009c3c6515db860f8e3ea71c00d0b0122c973fd52a70eb08aadacb0bb",
+      "table_path": [
+        "table:5"
+      ],
+      "row": 1,
+      "chars": 224,
+      "parts": 5,
+      "group_id": "bbac30a0de6c6e991d56af634fec4a3ed7715ce9405e7dc4d4defd6c7bd1e1a6"
+    },
+    {
+      "record_id": "aa5384ff4b4eac3ca470551a4c11bf899963fc3c15cb5179f8a8d374a9d1edf6",
+      "table_path": [
+        "table:5"
+      ],
+      "row": 2,
+      "chars": 225,
+      "parts": 5,
+      "group_id": "8f29fbc48055d46e50e9202efcd7a8f5673e2bdd0385492fdb8fb89017938f2a"
+    },
+    {
+      "record_id": "d328595104769a5e6e239499966a3974e5c2bd527d9fa5912e4eb3e63563739d",
+      "table_path": [
+        "table:5"
+      ],
+      "row": 3,
+      "chars": 129,
+      "parts": 5,
+      "group_id": "d02f0587a4f1a27e69974c0b0fdac9b27e8595c2cd530e218a9b85b283a1b7e3"
+    },
+    {
+      "record_id": "955d7a77baa5773982a16d24fc0d51f79c7380318e8bbc7998720cc777aeb317",
+      "table_path": [
+        "table:5"
+      ],
+      "row": 4,
+      "chars": 150,
+      "parts": 6,
+      "group_id": "72b5cb9eadd85c2f8c333e58e73193aad4c08e692d6507cc308e6d30e7e71331"
+    }
+  ],
+  "model_calls": 0
+}

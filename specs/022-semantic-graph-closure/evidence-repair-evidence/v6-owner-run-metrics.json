@@ -1,0 +1,626 @@
+{
+  "schema_version": "evidence-repair-reviewed-metrics-v1",
+  "code_group": "v6_after_owner_guard",
+  "owner_binding_version": "source-owned-binding-v2",
+  "independent_runs": 1,
+  "fixed_code_three_run_acceptance": false,
+  "model_calls_for_owner_replay": 0,
+  "frozen_app_matches_current_workspace": true,
+  "runs": [
+    {
+      "group": "automatic",
+      "repetition": 1,
+      "run_id": "heuristic-496f9ef953da4decaa4bb80a732e4503",
+      "private_artifact_directory": "/tmp/ontology-evidence-repair-auto-hrs5592-20260910-v6-owner-r1",
+      "manifest_sha256": "ae186cb73f4a048bc61e641e45b4947ff1cda5a8787e43320093ee145a9ffd01",
+      "frozen_app_inventory_sha256": "b0c0d4fef8478e81cf5ff4147cbd65a25b15858c09c2690cebbfb00fff605269",
+      "recognition_seconds": 1196.7808543129358,
+      "failure": null,
+      "model_request_stages": {
+        "ontology_guided_discovery": {
+          "requests": 24,
+          "status_counts": {
+            "complete": 24
+          },
+          "request_seconds": 517.6550000000001,
+          "queue_seconds": 0.30800000000000016,
+          "input_tokens": null,
+          "prompt_tokens": 116231,
+          "completion_tokens": 4275,
+          "prompt_ms": 426429.316,
+          "predicted_ms": 80474.15099999998,
+          "cache_tokens": 8544,
+          "unknown_metrics": {
+            "input_tokens": 24
+          }
+        },
+        "ontology_guided_verification": {
+          "requests": 21,
+          "status_counts": {
+            "complete": 21
+          },
+          "request_seconds": 647.967,
+          "queue_seconds": 0.19100000000000003,
+          "input_tokens": null,
+          "prompt_tokens": 122030,
+          "completion_tokens": 11189,
+          "prompt_ms": 443841.58699999994,
+          "predicted_ms": 196104.62800000003,
+          "cache_tokens": 9786,
+          "unknown_metrics": {
+            "input_tokens": 21
+          }
+        }
+      },
+      "source_review_scope": "six focus predicates; extra facts explicitly unscored",
+      "expert_quality_gate": "not_passed",
+      "progress": {
+        "completion": "incomplete",
+        "contract_version": "document-analysis-runs-v1",
+        "invalidated_count": 0,
+        "model_calls": 45,
+        "model_calls_reserved": 45,
+        "model_calls_unresolved": 0,
+        "pending_frontiers": 413,
+        "phase_counts": {
+          "phase1": 8,
+          "phase2": 8
+        },
+        "records_examined": 16,
+        "records_incomplete": 0,
+        "records_planned": 23534,
+        "records_unattempted": 23518,
+        "stop_reason": "task_budget_exhausted",
+        "supported": 7,
+        "tasks_attempted": 16,
+        "undetermined": 6,
+        "unresolved_claims": 6,
+        "unsupported": 0
+      },
+      "task_batches": 24,
+      "reserved_main_requests": 45,
+      "requested_stop_reason": null,
+      "timings": {
+        "context_assembly": {
+          "count": 24,
+          "max_seconds": 0.02521192899439484,
+          "min_seconds": 0.0006630209973081946,
+          "total_seconds": 0.17917926679365337
+        },
+        "heuristic_admission": {
+          "count": 85,
+          "max_seconds": 0.0006223679520189762,
+          "min_seconds": 8.901709225028753e-05,
+          "total_seconds": 0.012820536270737648
+        },
+        "heuristic_complete": {
+          "count": 1,
+          "max_seconds": 1196.5764176889788,
+          "min_seconds": 1196.5764176889788,
+          "total_seconds": 1196.5764176889788
+        },
+        "heuristic_index_ready": {
+          "count": 1,
+          "max_seconds": 0.19238912197761238,
+          "min_seconds": 0.19238912197761238,
+          "total_seconds": 0.19238912197761238
+        },
+        "heuristic_slot_prepared": {
+          "count": 82,
+          "max_seconds": 0.09166610392276198,
+          "min_seconds": 0.003228437970392406,
+          "total_seconds": 0.9478086050366983
+        },
+        "model_and_ranking_configuration": {
+          "count": 1,
+          "max_seconds": 0.6148393170442432,
+          "min_seconds": 0.6148393170442432,
+          "total_seconds": 0.6148393170442432
+        },
+        "ontology_guided_discovery": {
+          "count": 24,
+          "max_seconds": 46.475443043978885,
+          "min_seconds": 7.805444102967158,
+          "total_seconds": 520.826574665145
+        },
+        "ontology_guided_verification": {
+          "count": 21,
+          "max_seconds": 52.87955356400926,
+          "min_seconds": 17.505618114955723,
+          "total_seconds": 650.8668308092747
+        },
+        "ontology_load_and_snapshot": {
+          "count": 1,
+          "max_seconds": 1.0606352119939402,
+          "min_seconds": 1.0606352119939402,
+          "total_seconds": 1.0606352119939402
+        },
+        "outcome_application": {
+          "count": 24,
+          "max_seconds": 1.0304076550528407,
+          "min_seconds": 0.01332020794507116,
+          "total_seconds": 2.6678486329037696
+        },
+        "parse_docx_and_ir": {
+          "count": 1,
+          "max_seconds": 1.1765833890531212,
+          "min_seconds": 1.1765833890531212,
+          "total_seconds": 1.1765833890531212
+        },
+        "recognition_input_tokenization": {
+          "count": 45,
+          "max_seconds": 0.14947035803925246,
+          "min_seconds": 0.01361025299411267,
+          "total_seconds": 1.7088991771452129
+        },
+        "root_menu_and_record_index": {
+          "count": 1,
+          "max_seconds": 0.1686065369285643,
+          "min_seconds": 0.1686065369285643,
+          "total_seconds": 0.1686065369285643
+        },
+        "structure_metadata": {
+          "count": 1,
+          "max_seconds": 0.24619524204172194,
+          "min_seconds": 0.24619524204172194,
+          "total_seconds": 0.24619524204172194
+        },
+        "task_inspection": {
+          "count": 24,
+          "max_seconds": 96.95743187097833,
+          "min_seconds": 12.369367657927796,
+          "total_seconds": 1173.158661182737
+        }
+      },
+      "local_persistence": {
+        "batch_graph": {
+          "bytes": 3077743,
+          "count": 24,
+          "seconds": 0.07935972383711487
+        },
+        "checkpoint": {
+          "bytes": 392654902,
+          "count": 24,
+          "seconds": 6.600703949690796
+        },
+        "effective_graph": {
+          "bytes": 1195497,
+          "count": 25,
+          "seconds": 0.03900238126516342
+        },
+        "jsonl": {
+          "bytes": 7518605,
+          "count": 506,
+          "seconds": 0.4086134540848434
+        },
+        "model_reservation": {
+          "bytes": 56422510,
+          "count": 183,
+          "seconds": 1.3216486310120672
+        },
+        "snapshot": {
+          "bytes": 46847650,
+          "count": 11,
+          "seconds": 0.7954797260463238
+        }
+      },
+      "search_stages": {
+        "H0": {
+          "events": 32,
+          "first_event_seconds": 0.2890558739891276,
+          "status": "observed"
+        },
+        "H1": {
+          "events": 50,
+          "first_event_seconds": 0.3275244889082387,
+          "status": "observed"
+        },
+        "H2": {
+          "events": 0,
+          "first_event_seconds": null,
+          "status": "not_triggered"
+        },
+        "H3": {
+          "events": 3,
+          "first_event_seconds": 548.2110428069718,
+          "status": "observed"
+        }
+      },
+      "sql": {
+        "finalization": {
+          "count": 1,
+          "seconds": 0.00025238795205950737,
+          "statements": {
+            "SELECT": 1
+          }
+        },
+        "recognition": {
+          "count": 748,
+          "seconds": 0.12191809655632824,
+          "statements": {
+            "INSERT": 135,
+            "SELECT": 135,
+            "UPDATE": 478
+          }
+        },
+        "setup": {
+          "count": 4,
+          "seconds": 0.004134946037083864,
+          "statements": {
+            "CREATE": 4
+          }
+        }
+      },
+      "model_requests_by_search_stage": {
+        "H0": {
+          "request_seconds": 924.12,
+          "requests": 29
+        },
+        "H1": {
+          "request_seconds": 241.502,
+          "requests": 16
+        }
+      },
+      "coverage_counts": {
+        "phase1": 1419,
+        "phase2": 22115,
+        "examined": 16,
+        "unattempted": 23518,
+        "incomplete": 0,
+        "pending_frontiers": 0,
+        "unresolved_claims": 6
+      },
+      "candidates": [
+        {
+          "candidate_id": "e94e86525cc9307dd328bb9907504056e5f4069226d6389933ec319c1ed77180",
+          "revision": 1,
+          "predicate": "hasProductionPlan",
+          "effective": true,
+          "decision_status": "supported",
+          "reason_code": "candidate_supported",
+          "source_review": "source_and_ownership_checked",
+          "first_effective_seconds": 223.78325647697784,
+          "source_paragraph": 26,
+          "subject_id": "3752e6f45a21be357b7cc9e642edb6a96054e86c08d36f26086f2aa850c646f9",
+          "object_id": "2732b250d2968fb4f4f51a5227eb60f8dc9d3c104258b75e1ba1eb46441344ff"
+        },
+        {
+          "candidate_id": "060ce2486421049c4a58e01d21b48d9fc64977bf9f63e46fb8134b93d69159c6",
+          "revision": 1,
+          "predicate": "describes",
+          "effective": true,
+          "decision_status": "supported",
+          "reason_code": "candidate_supported",
+          "source_review": "unscored",
+          "first_effective_seconds": 331.08170061791316,
+          "object_class": "ClinicalTrialDrug"
+        },
+        {
+          "candidate_id": "20cf5d434b0187e9730fdda66b246093a601b16cc905c3055c2501b4db1bd1f1",
+          "revision": 1,
+          "predicate": "plannedProductionDate",
+          "effective": true,
+          "decision_status": "supported",
+          "reason_code": "candidate_supported",
+          "source_review": "source_and_ownership_checked",
+          "first_effective_seconds": 361.0001581219258,
+          "source_paragraph": 26,
+          "subject_id": "2732b250d2968fb4f4f51a5227eb60f8dc9d3c104258b75e1ba1eb46441344ff"
+        },
+        {
+          "candidate_id": "b0ff4f1bf6294e4f4724aedde19e2d4871d2d00d490427d0f4b5c05dfecd2256",
+          "revision": 1,
+          "predicate": "plannedBatchCount",
+          "effective": true,
+          "decision_status": "supported",
+          "reason_code": "candidate_supported",
+          "source_review": "source_and_ownership_checked",
+          "first_effective_seconds": 387.22173580899835,
+          "source_paragraph": 26,
+          "subject_id": "2732b250d2968fb4f4f51a5227eb60f8dc9d3c104258b75e1ba1eb46441344ff"
+        },
+        {
+          "candidate_id": "2c93dcc06d853f1975279b5b9dad29674a59bd7468e9bb40511df8d5a847947b",
+          "revision": 1,
+          "predicate": "currentDevelopmentStage",
+          "effective": true,
+          "decision_status": "supported",
+          "reason_code": "candidate_supported",
+          "source_review": "unscored",
+          "first_effective_seconds": 581.748995403992,
+          "object_class": "DevelopmentPhase"
+        },
+        {
+          "candidate_id": "975d889f310fc0e2bc26841ca015d237acef4d1a21d3a92a24f07b0f53ddb1c5",
+          "revision": 1,
+          "predicate": "registrationCategory",
+          "effective": true,
+          "decision_status": "supported",
+          "reason_code": "candidate_supported",
+          "source_review": "unscored",
+          "first_effective_seconds": 765.7671789649175,
+          "object_class": ""
+        },
+        {
+          "candidate_id": "58daf5d074939610396bf62f3b4a83ca32fce09a7ba65ebf23727cb843c59ade",
+          "revision": 1,
+          "predicate": "describes",
+          "effective": true,
+          "decision_status": "supported",
+          "reason_code": "candidate_supported",
+          "source_review": "unscored",
+          "first_effective_seconds": 845.5122566149803,
+          "object_class": "DrugProduct"
+        }
+      ],
+      "applied_candidate_history": [
+        {
+          "batch": "0001.json",
+          "candidate_id": "33de7d0710ac38be32e792fc5f62278df22abe5118e568f1ee593c9b0c1d823d",
+          "revision": 1,
+          "predicate": "usesEquipment",
+          "decision_status": "undetermined",
+          "policy_eligible": false,
+          "reason_code": "applicability_not_supported"
+        },
+        {
+          "batch": "0002.json",
+          "candidate_id": "33de7d0710ac38be32e792fc5f62278df22abe5118e568f1ee593c9b0c1d823d",
+          "revision": 2,
+          "predicate": "usesEquipment",
+          "decision_status": "undetermined",
+          "policy_eligible": false,
+          "reason_code": "applicability_not_supported"
+        },
+        {
+          "batch": "0003.json",
+          "candidate_id": "e94e86525cc9307dd328bb9907504056e5f4069226d6389933ec319c1ed77180",
+          "revision": 1,
+          "predicate": "hasProductionPlan",
+          "decision_status": "supported",
+          "policy_eligible": true,
+          "reason_code": "candidate_supported"
+        },
+        {
+          "batch": "0004.json",
+          "candidate_id": "5a3a144c08461031a37044d5b42952b2412036591b49c4b1cfae779fd02496be",
+          "revision": 1,
+          "predicate": "describes",
+          "decision_status": "undetermined",
+          "policy_eligible": false,
+          "reason_code": "field_role_not_supported"
+        },
+        {
+          "batch": "0004.json",
+          "candidate_id": "420308852caa36d094b1a1e2190f4ad893b9601813a1421ea120f15aea9d1bed",
+          "revision": 1,
+          "predicate": "describes",
+          "decision_status": "undetermined",
+          "policy_eligible": false,
+          "reason_code": "field_role_not_supported"
+        },
+        {
+          "batch": "0005.json",
+          "candidate_id": "060ce2486421049c4a58e01d21b48d9fc64977bf9f63e46fb8134b93d69159c6",
+          "revision": 1,
+          "predicate": "describes",
+          "decision_status": "supported",
+          "policy_eligible": true,
+          "reason_code": "candidate_supported"
+        },
+        {
+          "batch": "0006.json",
+          "candidate_id": "20cf5d434b0187e9730fdda66b246093a601b16cc905c3055c2501b4db1bd1f1",
+          "revision": 1,
+          "predicate": "plannedProductionDate",
+          "decision_status": "supported",
+          "policy_eligible": true,
+          "reason_code": "candidate_supported"
+        },
+        {
+          "batch": "0007.json",
+          "candidate_id": "b0ff4f1bf6294e4f4724aedde19e2d4871d2d00d490427d0f4b5c05dfecd2256",
+          "revision": 1,
+          "predicate": "plannedBatchCount",
+          "decision_status": "supported",
+          "policy_eligible": true,
+          "reason_code": "candidate_supported"
+        },
+        {
+          "batch": "0008.json",
+          "candidate_id": "3ea7867fd09bb7c6ca52cd386577977dea92e5ff73aad03879a0e65c843ec1c2",
+          "revision": 1,
+          "predicate": "usesEquipment",
+          "decision_status": "undetermined",
+          "policy_eligible": false,
+          "reason_code": "applicability_not_supported"
+        },
+        {
+          "batch": "0009.json",
+          "candidate_id": "3ea7867fd09bb7c6ca52cd386577977dea92e5ff73aad03879a0e65c843ec1c2",
+          "revision": 2,
+          "predicate": "usesEquipment",
+          "decision_status": "undetermined",
+          "policy_eligible": false,
+          "reason_code": "applicability_not_supported"
+        },
+        {
+          "batch": "0010.json",
+          "candidate_id": "f97962604e81a2d205ba969620225e718d3673c4bc45728862393f6551cdc69b",
+          "revision": 1,
+          "predicate": "currentDevelopmentStage",
+          "decision_status": "undetermined",
+          "policy_eligible": false,
+          "reason_code": "field_role_not_supported"
+        },
+        {
+          "batch": "0011.json",
+          "candidate_id": "2c93dcc06d853f1975279b5b9dad29674a59bd7468e9bb40511df8d5a847947b",
+          "revision": 1,
+          "predicate": "currentDevelopmentStage",
+          "decision_status": "supported",
+          "policy_eligible": true,
+          "reason_code": "candidate_supported"
+        },
+        {
+          "batch": "0012.json",
+          "candidate_id": "836d6c3071ef522cfa0b14c0d6e5cd97e9614f35106f370c64b3d0751b81db6d",
+          "revision": 1,
+          "predicate": "producedInArea",
+          "decision_status": "unsupported",
+          "policy_eligible": false,
+          "reason_code": "missing_predicate_support"
+        },
+        {
+          "batch": "0014.json",
+          "candidate_id": "1a5d09b54a1a9bfb3ce8d3ec4b5c3ef6fe14867f80f4ebb49ee349bb4257fcfa",
+          "revision": 1,
+          "predicate": "hasProductionPlan",
+          "decision_status": "unsupported",
+          "policy_eligible": false,
+          "reason_code": "missing_predicate_support"
+        },
+        {
+          "batch": "0016.json",
+          "candidate_id": "975d889f310fc0e2bc26841ca015d237acef4d1a21d3a92a24f07b0f53ddb1c5",
+          "revision": 1,
+          "predicate": "registrationCategory",
+          "decision_status": "supported",
+          "policy_eligible": true,
+          "reason_code": "candidate_supported"
+        },
+        {
+          "batch": "0017.json",
+          "candidate_id": "006415faa0bbc2a63a291b6b9e641e3757c5a04571b92cd6f94c8878511b0bf6",
+          "revision": 1,
+          "predicate": "plannedBatchSizeMax_kg",
+          "decision_status": "undetermined",
+          "policy_eligible": false,
+          "reason_code": "field_role_not_supported"
+        },
+        {
+          "batch": "0018.json",
+          "candidate_id": "58daf5d074939610396bf62f3b4a83ca32fce09a7ba65ebf23727cb843c59ade",
+          "revision": 1,
+          "predicate": "describes",
+          "decision_status": "supported",
+          "policy_eligible": true,
+          "reason_code": "candidate_supported"
+        },
+        {
+          "batch": "0019.json",
+          "candidate_id": "219be079ac90c1af3bb7f21e7e582f88689203e199dbca814007ae262e20a6bb",
+          "revision": 1,
+          "predicate": "hasProcessIntermediate",
+          "decision_status": "undetermined",
+          "policy_eligible": false,
+          "reason_code": "local_coreference_not_supported"
+        },
+        {
+          "batch": "0020.json",
+          "candidate_id": "219be079ac90c1af3bb7f21e7e582f88689203e199dbca814007ae262e20a6bb",
+          "revision": 2,
+          "predicate": "hasProcessIntermediate",
+          "decision_status": "undetermined",
+          "policy_eligible": false,
+          "reason_code": "local_coreference_not_supported"
+        },
+        {
+          "batch": "0022.json",
+          "candidate_id": "8e42fc7875ab11a9b90d0ca5b0f0dbc96f7d1d751d5cc04fd0de0ac83bd3b4ef",
+          "revision": 1,
+          "predicate": "usesEquipment",
+          "decision_status": "undetermined",
+          "policy_eligible": false,
+          "reason_code": "applicability_not_supported"
+        },
+        {
+          "batch": "0023.json",
+          "candidate_id": "8e42fc7875ab11a9b90d0ca5b0f0dbc96f7d1d751d5cc04fd0de0ac83bd3b4ef",
+          "revision": 2,
+          "predicate": "usesEquipment",
+          "decision_status": "undetermined",
+          "policy_eligible": false,
+          "reason_code": "applicability_not_supported"
+        },
+        {
+          "batch": "0024.json",
+          "candidate_id": "883f58d6a78901e567eebbd03e49e4750385172fed7c758eaff4b1ea97bfdb67",
+          "revision": 1,
+          "predicate": "producedInArea",
+          "decision_status": "undetermined",
+          "policy_eligible": false,
+          "reason_code": "local_coreference_not_supported"
+        },
+        {
+          "batch": "0024.json",
+          "candidate_id": "6eb0889ad47b568ea617b9bb5c396df0312f2455689e04cdb3f0f53c2d1268c3",
+          "revision": 1,
+          "predicate": "producedInArea",
+          "decision_status": "undetermined",
+          "policy_eligible": false,
+          "reason_code": "local_coreference_not_supported"
+        }
+      ],
+      "missing_focus_targets": [
+        "equipmentID",
+        "modelSpecification",
+        "usesEquipment"
+      ],
+      "source_review_counts": {
+        "source_and_ownership_checked": 3,
+        "unscored": 4
+      },
+      "correct_first_effective_seconds": {
+        "usesEquipment": null,
+        "equipmentID": null,
+        "modelSpecification": null,
+        "hasProductionPlan": 223.78325647697784,
+        "plannedProductionDate": 361.0001581219258,
+        "plannedBatchCount": 387.22173580899835
+      },
+      "same_parent_complete_path_seconds": {
+        "usesEquipment": null,
+        "hasProductionPlan": 387.22173580899835
+      },
+      "evidence_repair_summary": {
+        "enabled": true,
+        "reason_counts": {
+          "applicability_not_supported": 6,
+          "bridge_entailment_not_supported": 2,
+          "constraint_unresolved": 1,
+          "entity_reference_not_specific": 2,
+          "evidence_unresolved": 5,
+          "field_binding_missing": 3,
+          "field_role_not_supported": 6,
+          "local_coreference_not_supported": 3,
+          "no_new_evidence": 2,
+          "owner_identity_unproven": 3,
+          "predicate_entailment_not_supported": 2,
+          "type_not_supported": 2
+        },
+        "rechecks": 0,
+        "status_counts": {
+          "awaiting_evidence": 8,
+          "queued": 1,
+          "resolved": 2
+        },
+        "total": 11
+      },
+      "retry_kind_counts": {
+        "rediscovery:1": 8,
+        "first_inspection": 16
+      }
+    }
+  ],
+  "source_sha256": "2c1174bf616f30dd28c655fef4261c167762de807c8ad79e148fb8ef18e16436",
+  "ontology_snapshot_hash": "25a0576f6f6d0efb002c44c5449dfba4329144da3868f9b6234a4038d3d68b6c",
+  "model": {
+    "name": "Qwen3.6-35B-A3B",
+    "revision": "0b21525e972670ed59e1812e170b27c26355381f0656ecc4e25617ece7dac58b",
+    "temperature": 0.1,
+    "inflight": 1,
+    "semantic_ranking_enabled": false,
+    "forced_cache_clear": false
+  }
+}

@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Literal
 
-from app.services.extraction.evidence_identity import stable_id
+from app.services.extraction.evidence_identity import evidence_hash, stable_id
 from app.services.extraction.ontology_guided.contracts import (
     PredicateEvidence,
     SemanticDecision,
@@ -52,6 +52,34 @@ class PredicatePolicy:
 
 class PredicatePolicyRegistry:
     version = "predicate-policy-v1"
+
+    def task_menu(self, predicate_iri: str, *, is_property: bool, context) -> dict:
+        policy = self.policy_for(predicate_iri, is_property=is_property)
+        available = {"explicit_assertion", "document_subject_description"}
+        if any(b.kind == "table" and b.mapping_status == "structural_candidate"
+               for b in context.field_bindings):
+            available.add("role_mapped_table")
+        if any(b.kind == "field_group" for b in context.field_bindings):
+            available.add("owned_field_group")
+        # A source chain needs explicit linking evidence; co-occurrence is not a chain.
+        if any(f.purpose == "resolved_reference_chain" for f in context.fragments):
+            available.add("resolved_reference_chain")
+        required = {"field_role", "predicate_entailment", "bridge_entailment", "applicability"}
+        if not is_property:
+            required.add("type")
+        if not context.target.subject_ref.is_document_root:
+            required.add("local_coreference")
+        menu = {
+            "version": "proof-menu-v1", "registry_version": self.version,
+            "predicate_iri": predicate_iri, "kind": "property" if is_property else "relationship",
+            "allowed_bridges": sorted(policy.allowed_bridges & available),
+            "required_checks": sorted(required),
+            "structure_hash": evidence_hash(sorted([
+                b.model_dump(mode="json", exclude={"field_binding_id"})
+                for b in context.field_bindings
+            ], key=evidence_hash)),
+        }
+        return {**menu, "menu_hash": evidence_hash(menu)}
 
     def policy_for(self, predicate_iri: str, *, is_property: bool = False) -> PredicatePolicy:
         local_name = predicate_iri.rsplit("/", 1)[-1].rsplit("#", 1)[-1]
@@ -164,6 +192,8 @@ class ProofGate:
         *,
         is_property: bool,
         independent_review: str = "unreviewed",
+        proof_menu: dict | None = None,
+        context=None,
     ) -> VerificationBundle:
         issues: list[str] = []
         for decision in decisions:
@@ -209,6 +239,33 @@ class ProofGate:
             "predicate_entailment",
             "applicability",
         }
+        if proof_menu is not None:
+            if context is not None and proof_menu != self.registry.task_menu(
+                target.predicate_iri, is_property=is_property, context=context,
+            ):
+                issues.append("proof_menu_structure_mismatch")
+            if (proof_menu.get("predicate_iri") != target.predicate_iri
+                    or proof_menu.get("kind") != ("property" if is_property else "relationship")
+                    or proof_menu.get("registry_version") != self.registry.version
+                    or proof_menu.get("menu_hash") != evidence_hash({
+                        k: v for k, v in proof_menu.items() if k != "menu_hash"
+                    })):
+                issues.append("proof_menu_mismatch")
+            required.update({"field_role", "bridge_entailment"})
+            if not is_property:
+                required.add("type")
+            if not target.subject_ref.is_document_root:
+                required.add("local_coreference")
+            if set(proof_menu.get("required_checks", [])) != required:
+                issues.append("proof_menu_required_checks_mismatch")
+            if proof is not None and proof.bridge_kind not in proof_menu.get("allowed_bridges", []):
+                issues.append("bridge_kind_not_in_task_menu")
+            kinds = [d.check_kind for d in decisions]
+            if len(kinds) != len(set(kinds)):
+                issues.append("duplicate_semantic_check")
+            for decision in decisions:
+                if decision.verdict == "supported" and not decision.support_refs:
+                    issues.append(f"{decision.check_kind}_source_missing")
         by_kind = {decision.check_kind: decision for decision in decisions}
         for kind in required:
             decision = by_kind.get(kind)

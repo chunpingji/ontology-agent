@@ -294,6 +294,11 @@ export function TemplateDocumentGraphPanel({ model }: { model: Model }) {
         </div>
         {run.progress.stop_reason && <p className="text-xs text-muted-foreground">
           {formatDocumentAnalysisReason(run.progress.stop_reason)}</p>}
+        {graph?.evidence_repair?.enabled && <div className="text-xs text-muted-foreground" role="status">
+          <p>补证任务 {graph.evidence_repair.total} 项 · 已安排重验 {graph.evidence_repair.rechecks} 次</p>
+          {Object.entries(graph.evidence_repair.reason_counts).map(([reason, count]) =>
+            <p key={reason}>{formatDocumentAnalysisReason(reason)}：{count} 项</p>)}
+        </div>}
         {model.running && !root && <p className="text-xs text-muted-foreground" role="status">
           {rankingCalls > 0 ? "正在定位相关原文，尚未完成首项识别。" : "正在解析文档并准备原文索引。"}
         </p>}

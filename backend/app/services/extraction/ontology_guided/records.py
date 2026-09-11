@@ -57,6 +57,11 @@ class RecordIndex:
                 parent = self.nodes_by_id[unit.section_node_id].get("parent_id")
                 self.headings_by_parent[parent].append(unit)
         self.record_views = [self._view(record) for record in self.records]
+        self.record_views_by_id = {view.record_id: view for view in self.record_views}
+        self.records_by_evidence = defaultdict(list)
+        for record in self.records:
+            for unit in record.source_units:
+                self.records_by_evidence[unit.evidence_id].append(record)
         self.field_groups = self._field_groups()
         self.field_groups_by_record = defaultdict(list)
         for group in self.field_groups:

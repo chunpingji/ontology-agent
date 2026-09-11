@@ -345,8 +345,28 @@ class DocumentAnalysisApplication:
                         "state_storage_version": 2,
                         "frontier_version": 2,
                         "recognition_inflight": 1,
-                        "template_interleaving": settings.document_analysis_template_interleaving,
-                    } if settings.document_analysis_performance_enabled else {},
+                        "template_interleaving": (
+                            settings.document_analysis_template_interleaving
+                            or settings.document_analysis_evidence_repair_enabled
+                        ),
+                        **({"evidence_repair": "evidence-repair-v1",
+                            "incremental_performance": "incremental-performance-v1",
+                            "state_storage_version": 3,
+                            "state_baseline_interval": 32,
+                            "semantic_expansion": "bounded-semantic-v1",
+                            "process_granularity": "whole-method-field-v1",
+                            "attribute_priority": "source-field-priority-v1",
+                            "heuristic_policy": "heuristic-first-v3",
+                            "field_bindings": "ir-field-bindings-v1",
+                            "owner_binding": "source-owned-binding-v2",
+                            "scope_protocol": "source-quoted-scope-v1",
+                            "evidence_work": "evidence-work-v2",
+                            "literal_quotes": "source-integer-quotes-v2",
+                            "proof_menu": "proof-menu-v1", "identity": "physical-mention-v1",
+                            "model_call_state_version": 2, "max_lineage_calls": 8}
+                           if settings.document_analysis_evidence_repair_enabled else {}),
+                    } if (settings.document_analysis_performance_enabled
+                          or settings.document_analysis_evidence_repair_enabled) else {},
                     **({"origin": origin} if origin is not None else {}),
                 },
                 ontology_artifact_id=ontology.snapshot_id,

@@ -4,6 +4,26 @@
 
 ## Summary
 
+2026-09-11 剪枝评审修订仅更新设计，实施状态保持待开发。依据
+[专题方案](../../docs/剪枝和增强语义检索视图方案.md)和
+[自适应检索契约](contracts/adaptive-retrieval.md)，先完成专题 AR-P0 契约闭合，再允许
+AR-P1 改变准入结果；闭合前只能做不改变运行结果的 instrumentation 原型。
+待实现政策为 `heuristic-first-v4`，不覆盖 v1/v2/v3 的补位、成功停搜、快照形状与冻结测试。
+本次不修改代码、不运行新实验、不部署；历史 P0–P5/IP/ER 完成项不作为 AR 阶段通过证据。
+
+2026-09-11按 [在线增量契约](contracts/incremental-performance.md)推进IP-001–IP-005：
+先实现有界基线/增量链及结构hash、写者缓存与原子恢复，再实现H2小批升级与失效停派，
+然后接入完整清洗字段粒度门和同源属性的有限优先，最后做冻结22 MB检查点的保存回放与定向回归。
+复用既有制品及运行表，不新增数据库结构、不修改TTL、不重启在途运行。
+
+当前实施按[证据修复契约](contracts/evidence-repair.md)推进：R0契约→R1菜单→R2属性/IR字段→
+R3证据工单/冻结重验→R4恢复/公开状态→R5工程及真实验证。旧适配器协议保留，
+新协议显式版本化，由唯一协调器提交阶段制品；共享核心不导入evaluation，TTL不改写。
+
+v6后继续修复范围误填：先以原文引用约束发现阶段的scope_qualifiers，再独立核验与归属门，
+保留条件原值和来源、版本化缓存；先覆盖无条件/真实条件/身份假条件/越权引用与旧状态反例，
+随后用新目录复测本机设备及计划路径。固定代码的重复验收不得混入v5/v6结果。
+
 2026-09-10后续按用户要求进行跨记录证据定向实证，协议见
 [joint-evidence-validation-plan.md](joint-evidence-validation-plan.md)。隔离任务驱动器
 比较现有上下文与增加互补原文的上下文，复用正式适配器、引用协议、独立验证和证明门。
@@ -58,6 +78,37 @@ H3有界补查及补搜等待配额；默认关闭，不接受恢复输入，不
 - 有界初值：pool 64、batch 16、discover/counterevidence 双意图、每意图至多一模板、整记录无法容纳则 not_rerankable；阶段冷启 1:1 后 4:1，每阶段五次一次原始台账探索。
 - 精排耗时/输入对/token/重试分开计账；持久模型调度复用已有 request ticket；配置冻结到 run fingerprint。
 
+## Adaptive Retrieval Review Gate（待实现）
+
+专题任务使用 AR-P0–AR-P5 前缀，区别于 022 初始实施阶段。P0 文档写出目标契约不等于
+P0 已验收；下列代码/测试影响必须逐项闭合并由后续审查确认，才能实施主动剪枝：
+
+| 契约闭合项 | 后续代码与测试落点 | 必须保留或新增的判据 |
+|---|---|---|
+| 搜索处置和继续规则 | `heuristic_search.py`、`executor.py`、启发式/增量性能测试 | 拆分未评估/已评分待处置/软剪枝/可重激活/准入/依赖耗尽；v3 一个 supported 停搜反例原样保留；v4 多值和反证继续 |
+| 空池与活性 | `semantic_reranker.py`、`ranking_execution.py`、`executor.py`、恢复测试 | 区分新池、已评分待决策、门全拒、无可评分和技术暂停；没有 epoch 时也能持久推进或停止，不能卡在 `needs_semantic` |
+| 完整池与准入子集 | `contracts.py`、`semantic_reranker.py`、`heuristic_search.py`、排序/准入测试 | `exact_pool` 不变；小型 `AdmissionDecision` 引用 committed epoch 与 observations，校验精确子集/依赖/幂等；前置全拒不造 epoch |
+| 命中归属与组映射 | `retrieval_views.py`、`semantic_retrieval.py`、H0–H2 检索与任务测试 | 锚点级 source/context/structure 归属；组 ID 映射原始 record，重叠去重、上下文成员不自动获得 coverage |
+| v4 冻结与恢复 | `heuristic_search.py` 白名单、`resume_state`、执行冻结/状态制品、旧快照测试 | 仅 v4 写 `resume_state.schema_version=1`；旧形状/hash/省略规则不变，v1 仍不支持恢复，v2/v3 严格相等恢复不变 |
+| 持久与成本 | `ranking_execution.py`、状态制品/增量保存、费用与崩溃测试 | 门评估引用、cache hit/miss、费用和决策先持久再准入；不复制 observations/原文/向量或新增平行全量台账 |
+| 覆盖与公开投影 | 核心 `contracts.py`、`public_projection.py`、公共 schema、`frontend/src/lib/api.ts` 及实际调用方 | `soft_pruned ⊆ unattempted`；复用 `adaptive_search_saturated` 的 paused 映射并补诊断；不修改覆盖恒等式或以剪枝完成全文 |
+| 长输入与视图版本 | 视图构建/精排和长输入反例 | 各视图独立可用性；`not_rerankable` 不产生低分；必要来源/反证受保护；P2/P3 后重新采集影子数据 |
+| 样本与质量门 | 新验证协议和评测制品，禁止识别输入混入参考 | 两份 HRS 都是开发暴露样本；未暴露保留样本与至少三个真实新 run 分别满足；金标隔离 |
+
+设计保留 `RankingEpoch` 的 record 级全集和完整双意图评分；组视图仅改变召回入口。
+v4 根据 committed observations 派生引用式准入决定，不从 epoch 删除被拒记录。
+正常路径的 `used` 已排除历次 committed 池，风险集中在未入 epoch 的前置拒绝和新增子集
+处置链；不得以改批次缓存键为由认定正常路径反复评分。H3 当前是恢复资格后按页准入
+（默认一页32条），v4 需让软剪枝过滤与显式重激活同时约束 H0–H3。
+
+后续实施次序：AR-P0 契约与保留/新增测试映射 → AR-P1 observations 影子决策、持久屏障
+和公开诊断 → AR-P2 锚点、祖先/字段角色视图 → AR-P3 受控兄弟与组级召回 → AR-P4
+基于最终视图重新采集、校准并验证主动剪枝 → AR-P5 独立真实质量和交付。
+前置门非空只获得下一阶段资格，H2准入仍依赖完整epoch；三道门共享扩搜尝试身份，
+owner负责完成结果提交，阶段水位和技术恢复不重复计轮。任何提前启用的主动准入门也须先过 AR-P0
+及其工程/质量门，不能借 instrumentation 名义改变生产结果。
+不引入外部向量库或新的业务实体；运行身份、原文权限、本体和独立证明门保持原边界。
+
 ## Constitution Check
 
 | 原则 | 设计前/后检查 |
@@ -69,7 +120,8 @@ H3有界补查及补搜等待配额；默认关闭，不接受恢复输入，不
 | 最小复杂度 | 无向量库、无新运行域，缓存限 run 权限域；复用事件制品 |
 | 离线 | 无隐式出网；排序可选降级与主验证失败分开 |
 
-两次设计检查均无豁免。真实质量/发布/清理门不由本工程状态代替。
+原 022 两次设计检查均无豁免。新增 AR 设计遵守先契约、后实现及复用制品原则；
+AR-P0 闭合和实现后复审尚未验收。真实质量/发布/清理门不由本工程状态代替。
 
 ## Project Structure
 

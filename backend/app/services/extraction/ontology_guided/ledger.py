@@ -22,7 +22,10 @@ class LedgerEvent(EvidenceModel):
 
 
 class CheckpointEnvelope(EvidenceModel):
-    checkpoint_schema_version: Literal["document-recognition-checkpoint-v1"] = (
+    checkpoint_schema_version: Literal[
+        "document-recognition-checkpoint-v1", "document-recognition-checkpoint-v2",
+        "document-recognition-checkpoint-v3",
+    ] = (
         CHECKPOINT_SCHEMA_VERSION
     )
     recognition_run_id: str = Field(min_length=1)
@@ -46,6 +49,16 @@ class CheckpointEnvelope(EvidenceModel):
     model_call_state: dict = Field(default_factory=dict)
     progress: RunProgress
     content_hash: str = Field(min_length=64, max_length=64)
+
+    def json_payload(self):
+        """Reuse already-JSON state; the storage boundary detaches changed values."""
+        if self.checkpoint_schema_version != "document-recognition-checkpoint-v3":
+            return self.model_dump(mode="json")
+        states = {"frontier", "recall_ledger", "resolution_events", "dependency_index",
+                  "retry_queue", "task_outcomes", "graph_state", "ranking_state",
+                  "model_call_state"}
+        return {**self.model_dump(mode="json", exclude=states),
+                **{name: getattr(self, name) for name in states}}
 
 
 class EventLedger:
@@ -92,11 +105,17 @@ class EventLedger:
         return self.head
 
 
-def checkpoint_envelope(**values) -> CheckpointEnvelope:
+def checkpoint_envelope(*, structural_digest=None, **values) -> CheckpointEnvelope:
     payload = {key: value for key, value in values.items() if key != "content_hash"}
+    if payload.get("model_call_state", {}).get("version") == 2:
+        payload["checkpoint_schema_version"] = "document-recognition-checkpoint-v2"
+    if structural_digest is not None:
+        payload["checkpoint_schema_version"] = "document-recognition-checkpoint-v3"
     unchecked = CheckpointEnvelope(**payload, content_hash="0" * 64)
-    canonical = unchecked.model_dump(mode="json", exclude={"content_hash"})
-    return unchecked.model_copy(update={"content_hash": evidence_hash(canonical)})
+    canonical = unchecked.json_payload()
+    canonical.pop("content_hash")
+    digest = structural_digest(canonical) if structural_digest else evidence_hash(canonical)
+    return unchecked.model_copy(update={"content_hash": digest})
 
 
 def restore_checkpoint(
@@ -111,6 +130,12 @@ def restore_checkpoint(
     if envelope.run_fingerprint != run_fingerprint:
         raise ValueError("checkpoint fingerprint mismatch; create a new run")
     payload = envelope.model_dump(mode="json", exclude={"content_hash"})
-    if evidence_hash(payload) != envelope.content_hash:
+    if envelope.checkpoint_schema_version == "document-recognition-checkpoint-v3":
+        from app.services.extraction.ontology_guided.state_delta import snapshot_delta
+
+        digest = snapshot_delta(payload)[0].digest
+    else:
+        digest = evidence_hash(payload)
+    if digest != envelope.content_hash:
         raise ValueError("checkpoint content hash mismatch")
     return envelope

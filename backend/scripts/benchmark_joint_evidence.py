@@ -116,9 +116,17 @@ def prepare(args):
     for name in ("pyproject.toml", "uv.lock"):
         shutil.copy2(backend / name, output / name)
     write_json(output / "model-config.json", config)
-    write_json(output / "cases.json", cases())
+    registered_cases = cases()
+    if getattr(args, "evidence_repair", False):
+        registered_cases = [
+            c for c in registered_cases if c["id"] in {"production_plan", "equipment"}
+        ]
+    write_json(output / "cases.json", registered_cases)
     shutil.copy2(
-        backend.parent / "specs/022-semantic-graph-closure/joint-evidence-validation-plan.md",
+        backend.parent / "specs/022-semantic-graph-closure" / (
+            "evidence-repair-validation-plan.md" if getattr(args, "evidence_repair", False)
+            else "joint-evidence-validation-plan.md"
+        ),
         output / "protocol.md",
     )
     files = tree_hashes(output)
@@ -126,10 +134,12 @@ def prepare(args):
         raise RuntimeError("source changed during preparation")
     write_json(output / "manifest.json", {
         "version": VERSION, "created_at": utc_now(), "run_id": "joint-" + uuid.uuid4().hex,
+        "evidence_repair": bool(getattr(args, "evidence_repair", False)),
         "source_sha256": EXPECTED_SOURCE_HASH, "files": files,
         "frozen_files_sha256": hashlib.sha256(encoded(files)).hexdigest(),
         "limits": {"max_tasks": 32, "max_calls": 48, "deadline_seconds": 1200,
-                   "max_model_calls_per_record": 4},
+                   "max_model_calls_per_record": (
+                       8 if getattr(args, "evidence_repair", False) else 4)},
         "reference_is_recognition_input": False, "manual_source_context_intervention": True,
         "production_executor_used": False, "production_adapter_and_proof_gate_used": True,
         "conflict_revalidation_measured": False, "projection_only": True,
@@ -273,6 +283,7 @@ class Experiment:
             required_context_refs=required,
             token_counter=self.adapter.token_counter,
             max_input_tokens=self.settings.evidence_max_input_tokens,
+            repair_enabled=self.manifest.get("evidence_repair", False),
         )
         input_key = (case_id, subject.entity_id, predicate, context.context_hash)
         if input_key in self.seen_inputs:
@@ -291,6 +302,10 @@ class Experiment:
             "task": task.model_dump(mode="json"), "context": context.model_dump(mode="json"),
             "predicate": spec.model_dump(mode="json"), "menu": menu.model_dump(mode="json"),
         })
+        if self.manifest.get("evidence_repair"):
+            context.bind_protocol_hook(
+                lambda state: write_json(task_dir / "protocol-state.json", state)
+            )
         result = {
             "case": case_id, "arm": arm, "predicate": predicate, "task_id": task.task_id,
             "lineage": task.claim_lineage_id, "context_hash": context.context_hash,
@@ -309,6 +324,27 @@ class Experiment:
         try:
             with model_scope(bind=self.bind, run_id=self.manifest["run_id"], task_id=task.task_id):
                 outcome = self.adapter.inspect(task, context, spec, menu)
+                if self.manifest.get("evidence_repair"):
+                    from app.services.extraction.ontology_guided.evidence_work import (
+                        EvidenceWorkQueue,
+                    )
+
+                    work = EvidenceWorkQueue(self.index)
+                    recheck = work.observe(task, outcome, context, spec, context.protocol_state)
+                    # Keep the preregistered source intervention fixed. Only a
+                    # bounded change of the frozen assertion is exercised here;
+                    # automatic source supplementation belongs to the executor arm.
+                    if recheck is not None and recheck.retry_kind == "rediscovery:1":
+                        write_json(
+                            task_dir / "initial-outcome.json", outcome.model_dump(mode="json")
+                        )
+                        result["reproposal"] = recheck.model_dump(mode="json")
+                        context.remaining_model_calls = min(
+                            2, self.manifest["limits"]["max_calls"] - self.calls,
+                            self.manifest["limits"]["max_model_calls_per_record"]
+                            - self.lineage_calls.get(task.claim_lineage_id, 0),
+                        )
+                        outcome = self.adapter.inspect(recheck, context, spec, menu)
             result.update(status=outcome.semantic_outcome, complete=outcome.complete,
                           reason_code=outcome.reason_code, reason=outcome.reason)
             write_json(task_dir / "outcome.json", outcome.model_dump(mode="json"))
@@ -400,7 +436,10 @@ def execute(args):
         )
         root_subject = SubjectRef(entity_id=experiment.root.entity_id, revision=1,
                                   class_iri=CMC_ROOT, is_document_root=True)
-        experiment.adapter = model_adapter.configured_model_adapter()
+        experiment.adapter = (model_adapter.configured_model_adapter(
+                                  protocol_version="evidence-repair-v1")
+                              if manifest.get("evidence_repair")
+                              else model_adapter.configured_model_adapter())
         if experiment.adapter is None:
             raise RuntimeError("local model not available")
         transport = model_adapter.chat_with_schema
@@ -545,6 +584,7 @@ def main():
     parser.add_argument("--source")
     parser.add_argument("--model-config")
     parser.add_argument("--output")
+    parser.add_argument("--evidence-repair", action="store_true")
     args = parser.parse_args()
     if args.prepare:
         prepare(args)

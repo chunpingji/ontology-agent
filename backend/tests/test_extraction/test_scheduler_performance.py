@@ -247,6 +247,23 @@ def test_template_priority_is_separate_frozen_strategy_with_regular_and_tail_opp
     assert scheduler.snapshot() == restored.snapshot()
 
 
+def test_heuristic_admitted_tasks_keep_template_priority_and_fairness_after_restore():
+    scheduler = FrontierScheduler(template_interleaving=True)
+    # Heuristic admission materializes a small page instead of enqueueing a
+    # full logical plan; it must not lose the frozen template preference.
+    for n in range(9):
+        scheduler.enqueue(task(predicate="urn:ordinary", record=f"o{n}"), root_branch=True)
+        scheduler.enqueue(task(predicate="urn:priority", record=f"p{n}"), root_branch=True,
+                          template_priority=True)
+    selected = [scheduler.next_task().predicate_iri for _ in range(3)]
+    assert selected == ["urn:priority", "urn:priority", "urn:ordinary"]
+    restored = FrontierScheduler.from_snapshot(scheduler.snapshot())
+    assert restored.snapshot() == scheduler.snapshot()
+    while scheduler.pending:
+        assert restored.next_task() == scheduler.next_task()
+    assert restored.snapshot() == scheduler.snapshot()
+
+
 def test_logical_subject_discard_preserves_dedup_and_other_frontiers():
     scheduler = FrontierScheduler()
     plan = make_plan()

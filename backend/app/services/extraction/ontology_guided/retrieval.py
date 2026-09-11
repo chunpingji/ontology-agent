@@ -180,8 +180,7 @@ def mark_record(
     """Return a revised immutable plan while preserving coverage conservation."""
     if record_id not in plan.ledger:
         raise ValueError("record is outside this retrieval plan")
-    updated = plan.model_copy(deep=True)
-    entry = updated.ledger[record_id]
+    entry = plan.ledger[record_id].model_copy(deep=True)
     entry.coverage_state = coverage_state
     entry.execution_state = execution_state
     if semantic_outcomes is not None:
@@ -192,4 +191,5 @@ def mark_record(
         entry.call_ids.append(call_id)
     if reason_code and reason_code not in entry.reason_codes:
         entry.reason_codes.append(reason_code)
-    return RetrievalPlan.model_validate(updated.model_dump(mode="json"))
+    entry = type(entry).model_validate(entry.model_dump(mode="json"))
+    return plan.model_copy(update={"ledger": {**plan.ledger, record_id: entry}})

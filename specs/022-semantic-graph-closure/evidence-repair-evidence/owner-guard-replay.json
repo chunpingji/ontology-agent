@@ -1,0 +1,311 @@
+{
+  "owner_binding_version": "source-owned-binding-v2",
+  "scope": "deterministic owner guard only; not a new recognition run or full restore",
+  "model_calls": 0,
+  "results": [
+    {
+      "run_id": "heuristic-5624b75e823c4bca9a3b3b7cf9cd759f",
+      "batch": "0002.json",
+      "candidate_id": "2f7408c463a69c177d5a25282d26096b43a723fba278e5e744e975b5cd5979bf",
+      "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/equipment/equipmentID",
+      "previously_eligible": true,
+      "owner_guard_issue": null,
+      "current_owner_guard_passed": true,
+      "original_owner": {
+        "block_id": "table:9",
+        "row_index": 3,
+        "column_index": 1,
+        "paragraph_index": 0,
+        "span_start": 0,
+        "span_end": 3
+      },
+      "local_owner": {
+        "block_id": "table:9",
+        "row_index": 3,
+        "column_index": 1,
+        "paragraph_index": 0,
+        "span_start": 0,
+        "span_end": 3
+      }
+    },
+    {
+      "run_id": "heuristic-5624b75e823c4bca9a3b3b7cf9cd759f",
+      "batch": "0004.json",
+      "candidate_id": "20cf5d434b0187e9730fdda66b246093a601b16cc905c3055c2501b4db1bd1f1",
+      "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/plannedProductionDate",
+      "previously_eligible": true,
+      "owner_guard_issue": null,
+      "current_owner_guard_passed": true,
+      "original_owner": {
+        "block_id": "paragraph:26:0",
+        "row_index": null,
+        "column_index": null,
+        "paragraph_index": 26,
+        "span_start": 0,
+        "span_end": 81
+      },
+      "local_owner": {
+        "block_id": "paragraph:26:0",
+        "row_index": null,
+        "column_index": null,
+        "paragraph_index": 26,
+        "span_start": 0,
+        "span_end": 81
+      }
+    },
+    {
+      "run_id": "heuristic-5624b75e823c4bca9a3b3b7cf9cd759f",
+      "batch": "0009.json",
+      "candidate_id": "b0ff4f1bf6294e4f4724aedde19e2d4871d2d00d490427d0f4b5c05dfecd2256",
+      "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/plannedBatchCount",
+      "previously_eligible": true,
+      "owner_guard_issue": null,
+      "current_owner_guard_passed": true,
+      "original_owner": {
+        "block_id": "paragraph:26:0",
+        "row_index": null,
+        "column_index": null,
+        "paragraph_index": 26,
+        "span_start": 0,
+        "span_end": 81
+      },
+      "local_owner": {
+        "block_id": "paragraph:26:0",
+        "row_index": null,
+        "column_index": null,
+        "paragraph_index": 26,
+        "span_start": 0,
+        "span_end": 81
+      }
+    },
+    {
+      "run_id": "heuristic-5624b75e823c4bca9a3b3b7cf9cd759f",
+      "batch": "0010.json",
+      "candidate_id": "93012640a6ff1d308fdd6fae1fbef8e2ce2a501cd1412f85a49cb24182c3bd98",
+      "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/equipment/modelSpecification",
+      "previously_eligible": true,
+      "owner_guard_issue": null,
+      "current_owner_guard_passed": true,
+      "original_owner": {
+        "block_id": "table:9",
+        "row_index": 3,
+        "column_index": 1,
+        "paragraph_index": 0,
+        "span_start": 0,
+        "span_end": 3
+      },
+      "local_owner": {
+        "block_id": "table:9",
+        "row_index": 3,
+        "column_index": 1,
+        "paragraph_index": 0,
+        "span_start": 0,
+        "span_end": 3
+      }
+    },
+    {
+      "run_id": "heuristic-1046d4f3f83d4e059c9854a4f73e9a10",
+      "batch": "0002.json",
+      "candidate_id": "2f7408c463a69c177d5a25282d26096b43a723fba278e5e744e975b5cd5979bf",
+      "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/equipment/equipmentID",
+      "previously_eligible": true,
+      "owner_guard_issue": null,
+      "current_owner_guard_passed": true,
+      "original_owner": {
+        "block_id": "table:9",
+        "row_index": 3,
+        "column_index": 1,
+        "paragraph_index": 0,
+        "span_start": 0,
+        "span_end": 3
+      },
+      "local_owner": {
+        "block_id": "table:9",
+        "row_index": 3,
+        "column_index": 1,
+        "paragraph_index": 0,
+        "span_start": 0,
+        "span_end": 3
+      }
+    },
+    {
+      "run_id": "heuristic-1046d4f3f83d4e059c9854a4f73e9a10",
+      "batch": "0004.json",
+      "candidate_id": "20cf5d434b0187e9730fdda66b246093a601b16cc905c3055c2501b4db1bd1f1",
+      "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/plannedProductionDate",
+      "previously_eligible": true,
+      "owner_guard_issue": null,
+      "current_owner_guard_passed": true,
+      "original_owner": {
+        "block_id": "paragraph:26:0",
+        "row_index": null,
+        "column_index": null,
+        "paragraph_index": 26,
+        "span_start": 0,
+        "span_end": 81
+      },
+      "local_owner": {
+        "block_id": "paragraph:26:0",
+        "row_index": null,
+        "column_index": null,
+        "paragraph_index": 26,
+        "span_start": 0,
+        "span_end": 81
+      }
+    },
+    {
+      "run_id": "heuristic-1046d4f3f83d4e059c9854a4f73e9a10",
+      "batch": "0009.json",
+      "candidate_id": "b0ff4f1bf6294e4f4724aedde19e2d4871d2d00d490427d0f4b5c05dfecd2256",
+      "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/plannedBatchCount",
+      "previously_eligible": true,
+      "owner_guard_issue": null,
+      "current_owner_guard_passed": true,
+      "original_owner": {
+        "block_id": "paragraph:26:0",
+        "row_index": null,
+        "column_index": null,
+        "paragraph_index": 26,
+        "span_start": 0,
+        "span_end": 81
+      },
+      "local_owner": {
+        "block_id": "paragraph:26:0",
+        "row_index": null,
+        "column_index": null,
+        "paragraph_index": 26,
+        "span_start": 0,
+        "span_end": 81
+      }
+    },
+    {
+      "run_id": "heuristic-1046d4f3f83d4e059c9854a4f73e9a10",
+      "batch": "0010.json",
+      "candidate_id": "93012640a6ff1d308fdd6fae1fbef8e2ce2a501cd1412f85a49cb24182c3bd98",
+      "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/equipment/modelSpecification",
+      "previously_eligible": true,
+      "owner_guard_issue": null,
+      "current_owner_guard_passed": true,
+      "original_owner": {
+        "block_id": "table:9",
+        "row_index": 3,
+        "column_index": 1,
+        "paragraph_index": 0,
+        "span_start": 0,
+        "span_end": 3
+      },
+      "local_owner": {
+        "block_id": "table:9",
+        "row_index": 3,
+        "column_index": 1,
+        "paragraph_index": 0,
+        "span_start": 0,
+        "span_end": 3
+      }
+    },
+    {
+      "run_id": "heuristic-f9a92181b29145d39f2398cb61d53a35",
+      "batch": "0006.json",
+      "candidate_id": "20cf5d434b0187e9730fdda66b246093a601b16cc905c3055c2501b4db1bd1f1",
+      "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/plannedProductionDate",
+      "previously_eligible": true,
+      "owner_guard_issue": null,
+      "current_owner_guard_passed": true,
+      "original_owner": {
+        "block_id": "paragraph:26:0",
+        "row_index": null,
+        "column_index": null,
+        "paragraph_index": 26,
+        "span_start": 0,
+        "span_end": 81
+      },
+      "local_owner": {
+        "block_id": "paragraph:26:0",
+        "row_index": null,
+        "column_index": null,
+        "paragraph_index": 26,
+        "span_start": 0,
+        "span_end": 81
+      }
+    },
+    {
+      "run_id": "heuristic-f9a92181b29145d39f2398cb61d53a35",
+      "batch": "0007.json",
+      "candidate_id": "b0ff4f1bf6294e4f4724aedde19e2d4871d2d00d490427d0f4b5c05dfecd2256",
+      "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/plannedBatchCount",
+      "previously_eligible": true,
+      "owner_guard_issue": null,
+      "current_owner_guard_passed": true,
+      "original_owner": {
+        "block_id": "paragraph:26:0",
+        "row_index": null,
+        "column_index": null,
+        "paragraph_index": 26,
+        "span_start": 0,
+        "span_end": 81
+      },
+      "local_owner": {
+        "block_id": "paragraph:26:0",
+        "row_index": null,
+        "column_index": null,
+        "paragraph_index": 26,
+        "span_start": 0,
+        "span_end": 81
+      }
+    },
+    {
+      "run_id": "heuristic-f9a92181b29145d39f2398cb61d53a35",
+      "batch": "0010.json",
+      "candidate_id": "86692e24b63363e1857acd2b2d0d17a01643e3f35527528bea0a0ace38db0a69",
+      "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/equipment/equipmentID",
+      "previously_eligible": true,
+      "owner_guard_issue": "owner_identity_unproven",
+      "current_owner_guard_passed": false,
+      "original_owner": {
+        "block_id": "table:8",
+        "row_index": 7,
+        "column_index": 1,
+        "paragraph_index": 0,
+        "span_start": 0,
+        "span_end": 5
+      },
+      "local_owner": {
+        "block_id": "table:9",
+        "row_index": 30,
+        "column_index": 12,
+        "paragraph_index": 0,
+        "span_start": 0,
+        "span_end": 3
+      }
+    },
+    {
+      "run_id": "heuristic-f9a92181b29145d39f2398cb61d53a35",
+      "batch": "0012.json",
+      "candidate_id": "e58a6e7e829e82782bae7e2f6d4e72304ad5b2707848da6604ed3d0e8866e1c4",
+      "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/equipment/modelSpecification",
+      "previously_eligible": true,
+      "owner_guard_issue": "owner_identity_unproven",
+      "current_owner_guard_passed": false,
+      "original_owner": {
+        "block_id": "table:8",
+        "row_index": 7,
+        "column_index": 1,
+        "paragraph_index": 0,
+        "span_start": 0,
+        "span_end": 5
+      },
+      "local_owner": {
+        "block_id": "table:9",
+        "row_index": 30,
+        "column_index": 1,
+        "paragraph_index": 0,
+        "span_start": 0,
+        "span_end": 5
+      }
+    }
+  ],
+  "counts": {
+    "passed": 10,
+    "rejected": 2
+  }
+}

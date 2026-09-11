@@ -455,6 +455,10 @@ def public_graph_payload(
             "pending_frontiers": progress.pending_frontiers,
             "stop_reason": progress.stop_reason,
         },
+        "evidence_repair": {
+            key: value for key, value in stored_payload.get("evidence_repair", {}).items()
+            if key in {"enabled", "total", "status_counts", "reason_counts", "rechecks"}
+        },
         "unresolved": {
             "unsupported": progress.unsupported,
             "undetermined": progress.undetermined,

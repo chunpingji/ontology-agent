@@ -83,6 +83,8 @@ class Settings(BaseSettings):
     document_analysis_worker_id: str = "document-analysis-worker"
     document_analysis_max_model_calls_per_record: int = Field(default=6, ge=1, le=32)
     document_analysis_performance_enabled: bool = True
+    # New runs only; enable after source/protocol quality acceptance.
+    document_analysis_evidence_repair_enabled: bool = False
     document_analysis_template_interleaving: bool = False
 
     # 022: optional offline ranking; independent from entity alignment and

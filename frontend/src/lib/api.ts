@@ -2214,6 +2214,13 @@ export interface DocumentAnalysisGraphArtifact {
   invalidated_refs: DocumentAnalysisObjectRef[];
   coverage: DocumentGraphCoverage;
   ranking?: DocumentGraphRanking;
+  evidence_repair?: {
+    enabled: boolean;
+    total: number;
+    status_counts: Record<string, number>;
+    reason_counts: Record<string, number>;
+    rechecks: number;
+  };
   unresolved: {
     unsupported: number;
     undetermined: number;

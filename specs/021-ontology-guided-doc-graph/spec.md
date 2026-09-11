@@ -1,5 +1,9 @@
 # Feature Specification: 本体指引的文档结构与摘要关系图谱识别
 
+2026-09-10实施增量：新运行遵循[022证据修复契约](../022-semantic-graph-closure/contracts/evidence-repair.md)，
+允许断言不变时复用已提交发现并独立补验，新增有界证据聚合、独立属性及同源证明菜单。
+保持原文权限、完整覆盖与费用守恒；旧运行沿原协议恢复，父路径无效不展开属性。
+
 **Feature Branch**: `021-ontology-guided-doc-graph`
 
 **Created**: 2026-09-08

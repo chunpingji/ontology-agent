@@ -102,6 +102,9 @@ class FrontierScheduler:
         self._lazy_format = False
         self._next_arrival = 0
         self._template_turns: dict[str, int] = {}
+        self._raw_priority_slots: set[tuple] = set()
+        self._source_priority_tasks: dict[str, list[dict]] = {}
+        self._source_turns: dict[str, int] = {}
         self._branch_buckets: dict[str, dict[tuple, dict[int, object]]] = {
             "root": {}, "child": {},
         }
@@ -173,9 +176,17 @@ class FrontierScheduler:
     def prioritize_slot(self, subject: SubjectRef, predicate_iri: str) -> None:
         """Admit an already proved template successor; never infer proof here."""
         key = (subject.entity_id, subject.revision, predicate_iri)
+        if self._raw_priority_slots:
+            self._raw_priority_slots.add(key)
         for frontier in self._logical_frontiers.values():
             if frontier.slot_key == key:
                 frontier.template_priority = True
+
+    def prioritize_source(self, task, sources):
+        if task.predicate_kind != "property" or task.subject.is_document_root or not sources:
+            raise ValueError("source priority requires a proved local subject and attribute field")
+        self._source_priority_tasks[task.task_id] = sources
+        self._lazy_format = True
 
     def _arrival_of(self, task):
         return task.arrival if isinstance(task, LogicalRecord) else self._arrival[task.task_id]
@@ -197,7 +208,12 @@ class FrontierScheduler:
             task.retry_kind,
         )
 
-    def enqueue(self, task: RecognitionTask, *, root_branch: bool = False) -> bool:
+    def enqueue(
+        self, task: RecognitionTask, *, root_branch: bool = False, template_priority: bool = False,
+    ) -> bool:
+        if template_priority:
+            self._raw_priority_slots.add(self._slot_key(task))
+            self._lazy_format = True  # v2 persists fairness turns for admitted tasks too.
         if task.hop > self.max_hops:
             self.unexplored_frontier.append(
                 {"task_id": task.task_id, "reason": "max_hops", "hop": task.hop}
@@ -234,7 +250,8 @@ class FrontierScheduler:
         return (task.subject.entity_id, task.subject.revision, task.predicate_iri)
 
     def _select_fresh(self, queue, branch, excluded_slots, *, commit=True):
-        indexed = (queue is self._root or queue is self._child) and not self.template_interleaving
+        indexed = ((queue is self._root or queue is self._child)
+                   and not self.template_interleaving and not self._source_priority_tasks)
         if indexed:
             # Subject/kind/predicate rotation needs only each bucket's first
             # arrival. Expand records only after choosing the actual slot.
@@ -246,12 +263,24 @@ class FrontierScheduler:
             )
         else:
             available = [task for task in queue if self._slot_key(task) not in excluded_slots]
+        if self._source_priority_tasks:
+            priority = [task for task in available if task.task_id in self._source_priority_tasks]
+            ordinary = [task for task in available
+                        if task.task_id not in self._source_priority_tasks]
+            turn = self._source_turns.get(branch, 0)
+            if priority and ordinary:
+                available = priority if turn % 3 < 2 else ordinary
+            if commit and priority and ordinary:
+                self._source_turns[branch] = turn + 1
         if self.template_interleaving:
+            def preferred(task):
+                return (isinstance(task, LogicalRecord) and task.frontier.template_priority
+                        or self._slot_key(task) in self._raw_priority_slots)
+
             priority = [task for task in available
-                        if isinstance(task, LogicalRecord) and task.frontier.template_priority]
+                        if preferred(task)]
             ordinary = [
-                task for task in available
-                if not isinstance(task, LogicalRecord) or not task.frontier.template_priority
+                task for task in available if not preferred(task)
             ]
             turn = self._template_turns.get(branch, 0)
             if priority and ordinary:
@@ -526,6 +555,11 @@ class FrontierScheduler:
                 "next_arrival": self._next_arrival,
                 "template_interleaving": self.template_interleaving,
                 "template_turns": dict(self._template_turns),
+                **({"raw_priority_slots": [list(key) for key in sorted(self._raw_priority_slots)]}
+                   if self._raw_priority_slots else {}),
+                **({"source_priority_tasks": self._source_priority_tasks,
+                    "source_turns": dict(self._source_turns)}
+                   if self._source_priority_tasks else {}),
             })
         return payload
 
@@ -567,6 +601,11 @@ class FrontierScheduler:
             scheduler._lazy_format = True
             scheduler._next_arrival = raw["next_arrival"]
             scheduler._template_turns = dict(raw.get("template_turns", {}))
+            scheduler._source_priority_tasks = dict(raw.get("source_priority_tasks", {}))
+            scheduler._source_turns = dict(raw.get("source_turns", {}))
+            scheduler._raw_priority_slots = {
+                tuple(key) for key in raw.get("raw_priority_slots", [])
+            }
             for item in raw["logical_frontiers"]:
                 frontier = LogicalFrontier.from_snapshot(item)
                 if frontier.key in scheduler._logical_frontiers:

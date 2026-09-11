@@ -12,6 +12,36 @@ from app.services.document_analysis.public_projection import PUBLIC_TO_INTERNAL_
 from .test_document_analysis import _create, _word_bytes
 
 
+def test_repair_creation_freezes_required_policies_without_upgrading_old_runs(
+    client, db, analyst_headers, tmp_path, monkeypatch,
+):
+    monkeypatch.setattr(settings, "document_analysis_storage_dir", tmp_path / "artifacts")
+    monkeypatch.setattr(settings, "document_analysis_performance_enabled", False)
+    monkeypatch.setattr(settings, "document_analysis_template_interleaving", False)
+    monkeypatch.setattr(settings, "document_analysis_evidence_repair_enabled", False)
+    original = _word_bytes(tmp_path)
+    old = _create(client, analyst_headers, original, request_key="before-repair")
+    application = DocumentAnalysisApplication(db, ontology_engine=object())
+    old_run = application.get_run(old.json()["recognition_run_id"], "analyst")
+    assert application._artifact_payload(old_run, "source")[0]["performance_policy"] == {}
+    monkeypatch.setattr(settings, "document_analysis_evidence_repair_enabled", True)
+    created = _create(client, analyst_headers, original, request_key="with-repair")
+    run = application.get_run(created.json()["recognition_run_id"], "analyst")
+    frozen = application._artifact_payload(run, "source")[0]["performance_policy"]
+    assert frozen["evidence_repair"] == "evidence-repair-v1"
+    assert frozen["scope_protocol"] == "source-quoted-scope-v1"
+    assert frozen["evidence_work"] == "evidence-work-v2"
+    assert frozen["literal_quotes"] == "source-integer-quotes-v2"
+    assert frozen["state_storage_version"] == 3 and frozen["max_lineage_calls"] == 8
+    assert frozen["incremental_performance"] == "incremental-performance-v1"
+    assert frozen["heuristic_policy"] == "heuristic-first-v3"
+    assert frozen["semantic_expansion"] == "bounded-semantic-v1"
+    assert frozen["process_granularity"] == "whole-method-field-v1"
+    assert frozen["attribute_priority"] == "source-field-priority-v1"
+    assert frozen["template_interleaving"] is True
+    assert application._artifact_payload(old_run, "source")[0]["performance_policy"] == {}
+
+
 def test_compact_graph_matches_all_legacy_projections_without_loading_internal_state(
     client, db, analyst_headers, tmp_path, monkeypatch,
 ):

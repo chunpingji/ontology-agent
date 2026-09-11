@@ -516,6 +516,14 @@ class GraphRanking(ApiModel):
     cost: RankingCost = Field(default_factory=RankingCost)
 
 
+class EvidenceRepairSummary(ApiModel):
+    enabled: bool = False
+    total: int = Field(default=0, ge=0)
+    status_counts: dict[str, int] = Field(default_factory=dict)
+    reason_counts: dict[str, int] = Field(default_factory=dict)
+    rechecks: int = Field(default=0, ge=0)
+
+
 class GraphArtifactResponse(RunWatermark):
     availability: ArtifactAvailability
     projection: GraphProjection = "effective_affirmed"
@@ -527,6 +535,7 @@ class GraphArtifactResponse(RunWatermark):
     coverage: GraphCoverage = Field(default_factory=GraphCoverage)
     unresolved: GraphUnresolved = Field(default_factory=GraphUnresolved)
     ranking: GraphRanking = Field(default_factory=GraphRanking)
+    evidence_repair: EvidenceRepairSummary = Field(default_factory=EvidenceRepairSummary)
     error: RunFailure | None = None
 
     @model_validator(mode="after")

@@ -68,3 +68,7 @@ class RankingPreparation:
     def close(self):
         self._stopped.set()
         self._pool.shutdown(wait=True, cancel_futures=True)
+
+    def cancel(self):
+        """Stop future dispatches; the owner still drains and saves gross costs."""
+        self._stopped.set()

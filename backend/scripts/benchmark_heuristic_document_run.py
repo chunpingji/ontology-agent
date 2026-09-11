@@ -33,6 +33,14 @@ from pathlib import Path
 
 VERSION = "heuristic-document-benchmark-v1"
 CMC_ROOT = "https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport"
+DD = "https://ontology.pharma-gmp.cn/slpra/drug-development/"
+EQ = "https://ontology.pharma-gmp.cn/slpra/equipment/"
+REPAIR_FOCUS_PATHS = [
+    (DD + "usesEquipment", EQ + "equipmentID"),
+    (DD + "usesEquipment", EQ + "modelSpecification"),
+    (DD + "hasProductionPlan", DD + "plannedProductionDate"),
+    (DD + "hasProductionPlan", DD + "plannedBatchCount"),
+]
 EXPECTED_SOURCE_HASH = "2c1174bf616f30dd28c655fef4261c167762de807c8ad79e148fb8ef18e16436"
 CONFIG_KEYS = frozenset({
     "local_llm_enabled", "local_llm_base_url", "local_llm_model",
@@ -54,6 +62,25 @@ CONFIG_KEYS = frozenset({
 
 def utc_now():
     return datetime.now(UTC).isoformat()
+
+
+def focus_paths_observed(history):
+    """Timing stop only: required properties must belong to the same parent.
+
+    No values or reference locations enter this test; original-source quality
+    is reviewed after the run. It never declares whole-document completion.
+    """
+    by_subject = defaultdict(set)
+    for item in history:
+        path = tuple(item.get("predicate_path", []))
+        if item.get("currently_effective") and path in REPAIR_FOCUS_PATHS:
+            by_subject[(path[0], item["subject_ref"]["id"])].add(path[1])
+    required = defaultdict(set)
+    for relationship, attribute in REPAIR_FOCUS_PATHS:
+        required[relationship].add(attribute)
+    return all(any(root == relationship and fields <= values
+                   for (root, _subject), values in by_subject.items())
+               for relationship, fields in required.items())
 
 
 def digest_file(path):
@@ -184,6 +211,11 @@ def prepare(args):
     if ontology_hashes != tree_hashes(output / "ontology"):
         raise RuntimeError("ontology changed during freezing")
     write_json(output / "model-config.json", config)
+    if getattr(args, "evidence_repair", False):
+        shutil.copy2(
+            backend.parent / "specs/022-semantic-graph-closure/evidence-repair-validation-plan.md",
+            output / "protocol.md",
+        )
     files = tree_hashes(output)
     git = subprocess.run(
         ["git", "rev-parse", "HEAD"], cwd=backend, capture_output=True, text=True, check=False,
@@ -204,12 +236,14 @@ def prepare(args):
         "source_git_status_sha256": hashlib.sha256(dirty.encode()).hexdigest(),
         "files": files, "frozen_files_sha256": hashlib.sha256(encoded(files)).hexdigest(),
         "heuristic_policy_arguments": policy,
+        "evidence_repair": bool(getattr(args, "evidence_repair", False)),
         "ranking_policy_overrides": ranking_policy,
         "limits": {
             "max_tasks": args.max_tasks, "max_hops": args.max_hops,
             "max_calls": args.max_calls, "deadline_seconds": args.deadline_seconds,
             "max_model_calls_per_record": args.max_model_calls_per_record,
             "main_recognition_in_flight": 1,
+            "stop_after_focus_paths": bool(getattr(args, "stop_after_focus_paths", False)),
         },
         "model_config": config,
         "measurement_scope": "shared_core_with_isolated_sqlite_scheduler_and_local_artifacts",
@@ -323,6 +357,11 @@ class Recorder:
     def continue_run(self, boundary, limits):
         # All request-stage debit barriers call before_model; one task may use
         # two independent requests, so counting completed tasks is insufficient.
+        if limits.get("stop_after_focus_paths") and focus_paths_observed(
+            self.effective_history.values()
+        ):
+            self.stop_reason = self.stop_reason or "registered_focus_paths_reached"
+            return False
         if self.elapsed() is not None and self.elapsed() >= limits["deadline_seconds"]:
             self.stop_reason = self.stop_reason or "experiment_deadline_reached"
             return False
@@ -398,10 +437,29 @@ class Recorder:
 
 class ObservedAdapter:
     def __init__(self, delegate, recorder):
+        from app.services.extraction.ontology_guided import model_adapter
+
         self.delegate = delegate
         self.model_identity = delegate.model_identity
         self.recorder = recorder
         original_request = delegate._request
+        original_chat = model_adapter.chat_with_schema
+
+        def observed_chat(*args, **kwargs):
+            from app.services.llm.model_runtime import runtime
+
+            response = original_chat(*args, **kwargs)
+            # Private run artifacts only: preserve the wire value before citation
+            # decoding so a failed quote can be diagnosed without guessing.
+            recorder.event("model_wire_response", {
+                "task_id": runtime.get().get("task_id"),
+                "stage": kwargs.get("schema_name"),
+                "response_scope": "parsed_model_json_before_citation_decode",
+                "response": response,
+            }, filename="model-wire-responses.jsonl")
+            return response
+
+        model_adapter.chat_with_schema = observed_chat
 
         def observed_request(*args, **kwargs):
             from app.services.llm.model_runtime import runtime
@@ -427,6 +485,7 @@ class ObservedAdapter:
                 payload.update(
                     status="failed", error_code=type(exc).__name__,
                     reason_code=getattr(exc, "reason_code", None),
+                    cause_type=getattr(exc, "cause_type", None),
                     validation_errors=getattr(exc, "validation_errors", None),
                 )
                 raise
@@ -680,13 +739,16 @@ def execute(args):
             records = RecordIndex(analysis.ir)
         recorder.save("root-menu.json", root_menu.model_dump(mode="json"))
         with recorder.timing("model_and_ranking_configuration"):
-            adapter = configured_model_adapter()
+            adapter = (configured_model_adapter(protocol_version="evidence-repair-v1")
+                       if manifest.get("evidence_repair") else configured_model_adapter())
             if adapter is None:
                 raise RuntimeError("frozen local recognition model unavailable")
             ranking_service, ranking_identity = configured_ranking_service(
                 settings, policy_overrides=manifest["ranking_policy_overrides"],
             )
-        policy = HeuristicSearchPolicy(**manifest["heuristic_policy_arguments"])
+        policy = (HeuristicSearchPolicy.durable(**manifest["heuristic_policy_arguments"])
+                  if manifest.get("evidence_repair")
+                  else HeuristicSearchPolicy(**manifest["heuristic_policy_arguments"]))
         fingerprint_inputs = {
             "manifest_hash": evidence_hash(manifest), "source_hash": analysis.ir.document_hash,
             "structure_hash": analysis.ir.structure_hash, "ontology_hash": ontology.ontology_hash,
@@ -710,6 +772,9 @@ def execute(args):
             max_model_calls_per_record=limits["max_model_calls_per_record"],
             progress_hook=lambda boundary: recorder.continue_run(boundary, limits),
             ranking_service=ranking_service, heuristic_policy=policy, search_hook=recorder.search,
+            evidence_repair=manifest.get("evidence_repair", False),
+            template_interleaving=manifest.get("evidence_repair", False),
+            priority_paths=REPAIR_FOCUS_PATHS if manifest.get("evidence_repair") else [],
         )
         recorder.phase = "recognition"
         recorder.recognition_started = time.perf_counter()
@@ -864,6 +929,8 @@ def parser():
     result.add_argument("--exploration-page-size", type=int, default=32)
     result.add_argument("--max-exploration-pages", type=int, default=1)
     result.add_argument("--semantic-pool-size", type=int, default=16)
+    result.add_argument("--evidence-repair", action="store_true")
+    result.add_argument("--stop-after-focus-paths", action="store_true")
     return result
 
 
@@ -871,6 +938,8 @@ def main():
     argument_parser = parser()
     args = argument_parser.parse_args()
     if args.prepare:
+        if args.stop_after_focus_paths and not args.evidence_repair:
+            argument_parser.error("--stop-after-focus-paths requires --evidence-repair")
         for field in ("source_docx", "ontology_dir", "output", "model_config"):
             if not getattr(args, field):
                 argument_parser.error("--prepare requires --" + field.replace("_", "-"))

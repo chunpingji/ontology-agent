@@ -17,7 +17,9 @@ from app.services.extraction.ontology_guided.retrieval import plan_slot, validat
 from app.services.extraction.word_analysis import analyze_word_core
 
 
-def _search(tmp_path, paragraphs, *, predicate=None, policy=None, root=False, mentions=()):
+def _search(
+    tmp_path, paragraphs, *, predicate=None, policy=None, root=False, mentions=(), seeds=(),
+):
     document = Document()
     for position, text in enumerate(paragraphs):
         document.add_heading(f"节 {position}", 1)
@@ -38,6 +40,7 @@ def _search(tmp_path, paragraphs, *, predicate=None, policy=None, root=False, me
     return HeuristicSlotSearch(
         plan=plan, predicate=predicate, search_index=HeuristicSearchIndex(index, metadata),
         policy=policy or HeuristicSearchPolicy(), subject_mentions=list(mentions),
+        seed_record_ids=[index.records[position].record_id for position in seeds],
         run_fingerprint="test-run",
     )
 
@@ -100,6 +103,31 @@ def test_no_direct_hit_expands_registered_alias_before_semantic(tmp_path):
     assert page.stage == "H1"
     assert search.search_index.index.by_id[page.record_ids[0]].text.startswith("molecular")
     assert not search.needs_semantic
+
+
+def test_reordered_compound_uses_multiple_label_fragments_only_in_expansion(tmp_path):
+    search = _search(
+        tmp_path, ["计划在八月完成生产。", "生产设备维护。", "一般背景。"], root=True,
+        predicate=SlotSpec(iri="urn:plan", label="生产计划"),
+        policy=HeuristicSearchPolicy.durable(),
+    )
+    page = search.next_admission()
+    assert page.stage == "H1"
+    assert page.record_ids == [search.search_index.record_ids[0]]
+    assert search.snapshot()["examined_count"] == 0
+    assert search.snapshot()["deferred_count"] == 2
+
+
+def test_proved_subject_record_seeds_fields_without_expanding_same_name_records(tmp_path):
+    search = _search(
+        tmp_path, ["甲号产品本次制造1批。", "其他位置提到甲号产品。", "其他资料。"],
+        predicate=SlotSpec(iri="urn:count", label="批次数量"), mentions=["甲号产品"],
+        seeds=[0], policy=HeuristicSearchPolicy.durable(),
+    )
+    page = search.next_admission()
+    assert page.stage == "H1" and page.record_ids == [search.search_index.record_ids[0]]
+    assert search.snapshot()["examined_count"] == 0
+    assert search.snapshot()["deferred_count"] == 2
 
 
 def test_empty_and_rejected_pages_reach_real_semantic_then_distinct_tail(tmp_path):
@@ -241,3 +269,38 @@ def test_existing_core_retry_updates_latest_feedback_without_new_admission(tmp_p
         search.observe(
             rid, "unsupported", True, "changed_feedback", attempt_id="core-technical-once",
         )
+
+
+def test_durable_search_resumes_tail_without_erasing_supported_count(tmp_path):
+    from copy import deepcopy
+
+    search = _search(
+        tmp_path,
+        ["分子量：123.45", "现场背景资料", "另附文件待审"],
+        policy=HeuristicSearchPolicy.durable(exploration_page_size=1),
+    )
+    page = search.next_admission()
+    _observe_page(search, page, supported=True)
+    assert search.next_admission() is None
+    state = deepcopy(search.snapshot())
+    search.restore(state)
+    search.continue_search()
+    assert search.snapshot()["supported_output_count"] == 1
+    assert search.next_admission() is None and search.needs_semantic
+    search.skip_semantic("ranking_policy_deterministic")
+    next_page = search.next_admission()
+    assert next_page.stage == "H3"
+    assert set(next_page.record_ids).isdisjoint(page.record_ids)
+    assert search.snapshot()["supported_output_count"] == 1
+
+
+def test_short_code_boundary_does_not_match_molecular_formula(tmp_path):
+    search = _search(
+        tmp_path,
+        ["分子式C45H50F4O6N8S", "设备代号：F4", "设备代号：F40"],
+        predicate=SlotSpec(iri="urn:code", label="F4"),
+        policy=HeuristicSearchPolicy.durable(),
+    )
+    page = search.next_admission()
+    texts = [search.search_index.index.by_id[rid].text for rid in page.record_ids]
+    assert texts == ["设备代号：F4"]

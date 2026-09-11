@@ -39,6 +39,7 @@ class RecognitionCall:
         predicate = predicate.model_copy(deep=True)
         menu = menu.model_copy(deep=True)
         context.bind_model_call_hook(self.before_model)
+        context.bind_protocol_hook(self.protocol_checkpoint)
 
         def invoke():
             with model_scope(
@@ -53,10 +54,16 @@ class RecognitionCall:
         self.future = self.pool.submit(Context().run, invoke)
 
     def before_model(self, stage, ordinal):
+        self._barrier("request", stage, ordinal)
+
+    def protocol_checkpoint(self, state):
+        self._barrier("protocol", state, None)
+
+    def _barrier(self, kind, stage, ordinal):
         if self.cancelled.is_set():
             raise ModelCancelled()
         acknowledged, result = Event(), []
-        self.requests.put((stage, ordinal, acknowledged, result))
+        self.requests.put((kind, stage, ordinal, acknowledged, result))
         while not acknowledged.wait(0.02):
             if self.cancelled.is_set():
                 raise ModelCancelled()
@@ -65,14 +72,19 @@ class RecognitionCall:
         if self.cancelled.is_set():
             raise ModelCancelled()
 
-    def drain(self, reserve):
+    def drain(self, reserve, checkpoint=None):
         while True:
             try:
-                stage, ordinal, acknowledged, result = self.requests.get_nowait()
+                kind, stage, ordinal, acknowledged, result = self.requests.get_nowait()
             except Empty:
                 return
             try:
-                reserve(stage, ordinal)
+                if kind == "request":
+                    reserve(stage, ordinal)
+                elif checkpoint is not None:
+                    checkpoint(stage)
+                else:
+                    raise ValueError("protocol persistence callback is required")
             except BaseException as exc:
                 result.append(exc)
                 raise
@@ -83,7 +95,7 @@ class RecognitionCall:
         self.cancelled.set()
         while True:
             try:
-                _stage, _ordinal, acknowledged, result = self.requests.get_nowait()
+                _kind, _stage, _ordinal, acknowledged, result = self.requests.get_nowait()
             except Empty:
                 break
             result.append(ModelCancelled())

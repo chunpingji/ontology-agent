@@ -1,0 +1,599 @@
+{
+  "schema_version": "evidence-repair-reviewed-metrics-v1",
+  "code_group": "v7_scope_only_diagnostic",
+  "current_code_group": false,
+  "diagnostic_not_repetition": true,
+  "review_correction": "The exact-type-only reviewer initially rejected Dryer for VacuumDryer. Frozen ontology explicitly makes VacuumDryer a subclass of Dryer; legal superclass claims are permitted by the existing contract. Original review retained separately; no other source/ownership checks relaxed.",
+  "original_private_review": "/tmp/ontology-evidence-repair-v7-scope-source-review.json",
+  "corrected_private_review": "/tmp/ontology-evidence-repair-v7-scope-source-review-v2.json",
+  "runs": [
+    {
+      "group": "automatic",
+      "repetition": 1,
+      "run_id": "heuristic-d59d9907b6374da082f83016c8f943ca",
+      "private_artifact_directory": "/tmp/ontology-evidence-repair-auto-hrs5592-20260910-v7-scope-d1",
+      "manifest_sha256": "6204770b01ef6a6075eec1d1fbb5115c5436a9dc1bfd8562f7bf506ce69d7b70",
+      "frozen_app_inventory_sha256": "1b441846982e165ef6a304325687519c971183b83269c92f995105485454db83",
+      "recognition_seconds": 1222.3145917750662,
+      "failure": null,
+      "model_request_stages": {
+        "ontology_guided_discovery": {
+          "requests": 19,
+          "status_counts": {
+            "complete": 19
+          },
+          "request_seconds": 440.562,
+          "queue_seconds": 0.24800000000000008,
+          "input_tokens": null,
+          "prompt_tokens": 100928,
+          "completion_tokens": 2286,
+          "prompt_ms": 392493.00200000004,
+          "predicted_ms": 40996.526000000005,
+          "cache_tokens": 2043,
+          "unknown_metrics": {
+            "input_tokens": 19
+          }
+        },
+        "ontology_guided_verification": {
+          "requests": 20,
+          "status_counts": {
+            "complete": 20
+          },
+          "request_seconds": 741.2690000000001,
+          "queue_seconds": 0.19000000000000003,
+          "input_tokens": null,
+          "prompt_tokens": 144287,
+          "completion_tokens": 9275,
+          "prompt_ms": 567068.253,
+          "predicted_ms": 167591.29400000002,
+          "cache_tokens": 2569,
+          "unknown_metrics": {
+            "input_tokens": 20
+          }
+        }
+      },
+      "source_review_scope": "six focus predicates; extra facts explicitly unscored",
+      "expert_quality_gate": "not_passed",
+      "progress": {
+        "completion": "incomplete",
+        "contract_version": "document-analysis-runs-v1",
+        "invalidated_count": 0,
+        "model_calls": 39,
+        "model_calls_reserved": 39,
+        "model_calls_unresolved": 0,
+        "pending_frontiers": 0,
+        "phase_counts": {
+          "phase1": 12,
+          "phase2": 6
+        },
+        "records_examined": 18,
+        "records_incomplete": 0,
+        "records_planned": 32144,
+        "records_unattempted": 32126,
+        "stop_reason": "evidence_recheck_incomplete",
+        "supported": 8,
+        "tasks_attempted": 18,
+        "undetermined": 6,
+        "unresolved_claims": 6,
+        "unsupported": 1
+      },
+      "task_batches": 23,
+      "reserved_main_requests": 39,
+      "requested_stop_reason": "experiment_deadline_reached",
+      "timings": {
+        "context_assembly": {
+          "count": 23,
+          "max_seconds": 0.04223225906025618,
+          "min_seconds": 0.0006335899233818054,
+          "total_seconds": 0.3737077502300963
+        },
+        "heuristic_admission": {
+          "count": 115,
+          "max_seconds": 0.0006155350711196661,
+          "min_seconds": 9.3999900855124e-05,
+          "total_seconds": 0.017639865167438984
+        },
+        "heuristic_complete": {
+          "count": 1,
+          "max_seconds": 1221.7391871790169,
+          "min_seconds": 1221.7391871790169,
+          "total_seconds": 1221.7391871790169
+        },
+        "heuristic_index_ready": {
+          "count": 1,
+          "max_seconds": 0.17655812203884125,
+          "min_seconds": 0.17655812203884125,
+          "total_seconds": 0.17655812203884125
+        },
+        "heuristic_slot_prepared": {
+          "count": 112,
+          "max_seconds": 0.1197693319991231,
+          "min_seconds": 0.0019839239539578557,
+          "total_seconds": 1.492807472939603
+        },
+        "model_and_ranking_configuration": {
+          "count": 1,
+          "max_seconds": 0.5375312760006636,
+          "min_seconds": 0.5375312760006636,
+          "total_seconds": 0.5375312760006636
+        },
+        "ontology_guided_discovery": {
+          "count": 23,
+          "max_seconds": 41.69729120796546,
+          "min_seconds": 0.00019762106239795685,
+          "total_seconds": 443.86725204018876
+        },
+        "ontology_guided_verification": {
+          "count": 20,
+          "max_seconds": 52.26336769806221,
+          "min_seconds": 19.192264247103594,
+          "total_seconds": 745.0791397287976
+        },
+        "ontology_load_and_snapshot": {
+          "count": 1,
+          "max_seconds": 1.026647223974578,
+          "min_seconds": 1.026647223974578,
+          "total_seconds": 1.026647223974578
+        },
+        "outcome_application": {
+          "count": 23,
+          "max_seconds": 0.934034300968051,
+          "min_seconds": 0.013372453977353871,
+          "total_seconds": 4.183316586189903
+        },
+        "parse_docx_and_ir": {
+          "count": 1,
+          "max_seconds": 1.1404092010343447,
+          "min_seconds": 1.1404092010343447,
+          "total_seconds": 1.1404092010343447
+        },
+        "recognition_input_tokenization": {
+          "count": 39,
+          "max_seconds": 0.17316109291277826,
+          "min_seconds": 0.014657631050795317,
+          "total_seconds": 1.8113509827526286
+        },
+        "root_menu_and_record_index": {
+          "count": 1,
+          "max_seconds": 0.1609720109263435,
+          "min_seconds": 0.1609720109263435,
+          "total_seconds": 0.1609720109263435
+        },
+        "structure_metadata": {
+          "count": 1,
+          "max_seconds": 0.27511180692818016,
+          "min_seconds": 0.27511180692818016,
+          "total_seconds": 0.27511180692818016
+        },
+        "task_inspection": {
+          "count": 23,
+          "max_seconds": 94.04071755497716,
+          "min_seconds": 15.124737540027127,
+          "total_seconds": 1191.4991575391032
+        }
+      },
+      "local_persistence": {
+        "batch_graph": {
+          "bytes": 3621799,
+          "count": 23,
+          "seconds": 0.08451666217297316
+        },
+        "checkpoint": {
+          "bytes": 516941670,
+          "count": 23,
+          "seconds": 8.881177684874274
+        },
+        "effective_graph": {
+          "bytes": 1532947,
+          "count": 24,
+          "seconds": 0.04212549002841115
+        },
+        "jsonl": {
+          "bytes": 9722210,
+          "count": 545,
+          "seconds": 0.4668183446628973
+        },
+        "model_reservation": {
+          "bytes": 81811437,
+          "count": 163,
+          "seconds": 1.8578848289325833
+        },
+        "snapshot": {
+          "bytes": 63018821,
+          "count": 11,
+          "seconds": 1.0743880049558356
+        }
+      },
+      "search_stages": {
+        "H0": {
+          "events": 44,
+          "first_event_seconds": 0.2590597440721467,
+          "status": "observed"
+        },
+        "H1": {
+          "events": 69,
+          "first_event_seconds": 0.29269850603304803,
+          "status": "observed"
+        },
+        "H2": {
+          "events": 0,
+          "first_event_seconds": null,
+          "status": "not_triggered"
+        },
+        "H3": {
+          "events": 2,
+          "first_event_seconds": 357.90751412604004,
+          "status": "observed"
+        }
+      },
+      "sql": {
+        "finalization": {
+          "count": 1,
+          "seconds": 0.00015963800251483917,
+          "statements": {
+            "SELECT": 1
+          }
+        },
+        "recognition": {
+          "count": 683,
+          "seconds": 0.12358253332786262,
+          "statements": {
+            "INSERT": 117,
+            "SELECT": 117,
+            "UPDATE": 449
+          }
+        },
+        "setup": {
+          "count": 4,
+          "seconds": 0.009264826076105237,
+          "statements": {
+            "CREATE": 4
+          }
+        }
+      },
+      "model_requests_by_search_stage": {
+        "H0": {
+          "request_seconds": 1044.7380000000003,
+          "requests": 30
+        },
+        "H1": {
+          "request_seconds": 137.093,
+          "requests": 9
+        }
+      },
+      "coverage_counts": {
+        "phase1": 1857,
+        "phase2": 30287,
+        "examined": 18,
+        "unattempted": 32126,
+        "incomplete": 0,
+        "pending_frontiers": 0,
+        "unresolved_claims": 6
+      },
+      "candidates": [
+        {
+          "candidate_id": "98df73d6cbc1a4454618bfb7af7722958f4ff51276b6a7e3bb798c1da82dbe48",
+          "revision": 1,
+          "predicate": "usesEquipment",
+          "effective": true,
+          "decision_status": "supported",
+          "reason_code": "candidate_supported",
+          "source_review": "source_and_ownership_checked",
+          "first_effective_seconds": 95.87773276807275,
+          "source_table": 9,
+          "source_row": 3,
+          "subject_id": "11ef7fbc6176144458190dd7428436af475cd8cf4b36afe2bfca29ff63e15d94",
+          "object_id": "b1f02c57c064fc7e2b114661ebc0a6b34ecc01b98a320f6480b5df8e309df95c",
+          "object_class": "Centrifuge"
+        },
+        {
+          "candidate_id": "2f7408c463a69c177d5a25282d26096b43a723fba278e5e744e975b5cd5979bf",
+          "revision": 1,
+          "predicate": "equipmentID",
+          "effective": true,
+          "decision_status": "supported",
+          "reason_code": "candidate_supported",
+          "source_review": "source_and_ownership_checked",
+          "first_effective_seconds": 171.7601135170553,
+          "source_row": 3,
+          "subject_id": "b1f02c57c064fc7e2b114661ebc0a6b34ecc01b98a320f6480b5df8e309df95c"
+        },
+        {
+          "candidate_id": "c46961fb9a2732de66429cc0df840260f1eea0056e35b3ce620df2baf336785d",
+          "revision": 1,
+          "predicate": "hasProductionPlan",
+          "effective": true,
+          "decision_status": "supported",
+          "reason_code": "candidate_supported",
+          "source_review": "source_and_ownership_checked",
+          "first_effective_seconds": 205.60956953302957,
+          "source_paragraph": 26,
+          "subject_id": "11ef7fbc6176144458190dd7428436af475cd8cf4b36afe2bfca29ff63e15d94",
+          "object_id": "2732b250d2968fb4f4f51a5227eb60f8dc9d3c104258b75e1ba1eb46441344ff"
+        },
+        {
+          "candidate_id": "20cf5d434b0187e9730fdda66b246093a601b16cc905c3055c2501b4db1bd1f1",
+          "revision": 1,
+          "predicate": "plannedProductionDate",
+          "effective": true,
+          "decision_status": "supported",
+          "reason_code": "candidate_supported",
+          "source_review": "source_and_ownership_checked",
+          "first_effective_seconds": 235.95429816900287,
+          "source_paragraph": 26,
+          "subject_id": "2732b250d2968fb4f4f51a5227eb60f8dc9d3c104258b75e1ba1eb46441344ff"
+        },
+        {
+          "candidate_id": "3765441a15ae52c81790e4e5dd26e6751787d4b183e4ae111c8b7ecde4327ec0",
+          "revision": 1,
+          "predicate": "describes",
+          "effective": true,
+          "decision_status": "supported",
+          "reason_code": "candidate_supported",
+          "source_review": "unscored",
+          "first_effective_seconds": 327.57212546200026,
+          "object_class": "DrugProduct"
+        },
+        {
+          "candidate_id": "93012640a6ff1d308fdd6fae1fbef8e2ce2a501cd1412f85a49cb24182c3bd98",
+          "revision": 1,
+          "predicate": "modelSpecification",
+          "effective": true,
+          "decision_status": "supported",
+          "reason_code": "candidate_supported",
+          "source_review": "source_and_ownership_checked",
+          "first_effective_seconds": 430.51052625803277,
+          "source_row": 3,
+          "subject_id": "b1f02c57c064fc7e2b114661ebc0a6b34ecc01b98a320f6480b5df8e309df95c"
+        },
+        {
+          "candidate_id": "90b43c046405b310d906d8a4d2d91d681714b4b348fdb660932ccaaceac820a5",
+          "revision": 1,
+          "predicate": "usesEquipment",
+          "effective": true,
+          "decision_status": "supported",
+          "reason_code": "candidate_supported",
+          "source_review": "source_and_ownership_checked",
+          "first_effective_seconds": 496.1435960630188,
+          "source_table": 8,
+          "source_row": 7,
+          "subject_id": "11ef7fbc6176144458190dd7428436af475cd8cf4b36afe2bfca29ff63e15d94",
+          "object_id": "c7bef594d19f7898a78d35e775eec7511676dc55dc93f90e51d9179feb27d842",
+          "object_class": "Dryer"
+        },
+        {
+          "candidate_id": "e1ca7e59d4cb20bf49789edb2b756428896a5bac841c83fd8c98434e1848d099",
+          "revision": 1,
+          "predicate": "describes",
+          "effective": true,
+          "decision_status": "supported",
+          "reason_code": "candidate_supported",
+          "source_review": "unscored",
+          "first_effective_seconds": 874.1095275530824,
+          "object_class": "DrugProduct"
+        }
+      ],
+      "applied_candidate_history": [
+        {
+          "batch": "0001.json",
+          "candidate_id": "98df73d6cbc1a4454618bfb7af7722958f4ff51276b6a7e3bb798c1da82dbe48",
+          "revision": 1,
+          "predicate": "usesEquipment",
+          "decision_status": "supported",
+          "policy_eligible": true,
+          "reason_code": "candidate_supported"
+        },
+        {
+          "batch": "0002.json",
+          "candidate_id": "2f7408c463a69c177d5a25282d26096b43a723fba278e5e744e975b5cd5979bf",
+          "revision": 1,
+          "predicate": "equipmentID",
+          "decision_status": "supported",
+          "policy_eligible": true,
+          "reason_code": "candidate_supported"
+        },
+        {
+          "batch": "0003.json",
+          "candidate_id": "c46961fb9a2732de66429cc0df840260f1eea0056e35b3ce620df2baf336785d",
+          "revision": 1,
+          "predicate": "hasProductionPlan",
+          "decision_status": "supported",
+          "policy_eligible": true,
+          "reason_code": "candidate_supported"
+        },
+        {
+          "batch": "0004.json",
+          "candidate_id": "20cf5d434b0187e9730fdda66b246093a601b16cc905c3055c2501b4db1bd1f1",
+          "revision": 1,
+          "predicate": "plannedProductionDate",
+          "decision_status": "supported",
+          "policy_eligible": true,
+          "reason_code": "candidate_supported"
+        },
+        {
+          "batch": "0005.json",
+          "candidate_id": "d4b13d438b03bdaf12c4d6e1ae40b7c6fde0bab8ade0a96e0b6187f0fad59ff0",
+          "revision": 1,
+          "predicate": "cleanedBy",
+          "decision_status": "unsupported",
+          "policy_eligible": false,
+          "reason_code": "bridge_entailment_not_supported"
+        },
+        {
+          "batch": "0007.json",
+          "candidate_id": "3765441a15ae52c81790e4e5dd26e6751787d4b183e4ae111c8b7ecde4327ec0",
+          "revision": 1,
+          "predicate": "describes",
+          "decision_status": "supported",
+          "policy_eligible": true,
+          "reason_code": "candidate_supported"
+        },
+        {
+          "batch": "0008.json",
+          "candidate_id": "e2825b80db0a5ca471630a7905023052e99d8a890d061ba0914a543fbe326860",
+          "revision": 1,
+          "predicate": "plannedBatchCount",
+          "decision_status": "undetermined",
+          "policy_eligible": false,
+          "reason_code": "field_role_not_supported"
+        },
+        {
+          "batch": "0009.json",
+          "candidate_id": "93012640a6ff1d308fdd6fae1fbef8e2ce2a501cd1412f85a49cb24182c3bd98",
+          "revision": 1,
+          "predicate": "modelSpecification",
+          "decision_status": "supported",
+          "policy_eligible": true,
+          "reason_code": "candidate_supported"
+        },
+        {
+          "batch": "0010.json",
+          "candidate_id": "90b43c046405b310d906d8a4d2d91d681714b4b348fdb660932ccaaceac820a5",
+          "revision": 1,
+          "predicate": "usesEquipment",
+          "decision_status": "supported",
+          "policy_eligible": true,
+          "reason_code": "candidate_supported"
+        },
+        {
+          "batch": "0012.json",
+          "candidate_id": "86692e24b63363e1857acd2b2d0d17a01643e3f35527528bea0a0ace38db0a69",
+          "revision": 1,
+          "predicate": "equipmentID",
+          "decision_status": "undetermined",
+          "policy_eligible": false,
+          "reason_code": "local_coreference_not_supported"
+        },
+        {
+          "batch": "0013.json",
+          "candidate_id": "86692e24b63363e1857acd2b2d0d17a01643e3f35527528bea0a0ace38db0a69",
+          "revision": 2,
+          "predicate": "equipmentID",
+          "decision_status": "undetermined",
+          "policy_eligible": false,
+          "reason_code": "local_coreference_not_supported"
+        },
+        {
+          "batch": "0015.json",
+          "candidate_id": "5ba4080334bf89cd48367c01d764ffc34a34e2ba7497e6a2a75d6b3495012092",
+          "revision": 1,
+          "predicate": "equipmentID",
+          "decision_status": "undetermined",
+          "policy_eligible": false,
+          "reason_code": "local_coreference_not_supported"
+        },
+        {
+          "batch": "0016.json",
+          "candidate_id": "5ba4080334bf89cd48367c01d764ffc34a34e2ba7497e6a2a75d6b3495012092",
+          "revision": 2,
+          "predicate": "equipmentID",
+          "decision_status": "undetermined",
+          "policy_eligible": false,
+          "reason_code": "local_coreference_not_supported"
+        },
+        {
+          "batch": "0017.json",
+          "candidate_id": "2edb11648011fb607df0aafaf2de821180ac3f760f8e7300a1d76dfb4d61bbe7",
+          "revision": 1,
+          "predicate": "plannedBatchSizeMax_kg",
+          "decision_status": "undetermined",
+          "policy_eligible": false,
+          "reason_code": "field_role_not_supported"
+        },
+        {
+          "batch": "0018.json",
+          "candidate_id": "e1ca7e59d4cb20bf49789edb2b756428896a5bac841c83fd8c98434e1848d099",
+          "revision": 1,
+          "predicate": "describes",
+          "decision_status": "supported",
+          "policy_eligible": true,
+          "reason_code": "candidate_supported"
+        },
+        {
+          "batch": "0019.json",
+          "candidate_id": "e58a6e7e829e82782bae7e2f6d4e72304ad5b2707848da6604ed3d0e8866e1c4",
+          "revision": 1,
+          "predicate": "modelSpecification",
+          "decision_status": "undetermined",
+          "policy_eligible": false,
+          "reason_code": "local_coreference_not_supported"
+        },
+        {
+          "batch": "0020.json",
+          "candidate_id": "e58a6e7e829e82782bae7e2f6d4e72304ad5b2707848da6604ed3d0e8866e1c4",
+          "revision": 2,
+          "predicate": "modelSpecification",
+          "decision_status": "unsupported",
+          "policy_eligible": false,
+          "reason_code": "missing_predicate_support"
+        },
+        {
+          "batch": "0021.json",
+          "candidate_id": "5a948345fbb41b3bdfd652527726501366e4a4ac9fa2dac6e2b8d6b8ad0a776a",
+          "revision": 1,
+          "predicate": "modelSpecification",
+          "decision_status": "undetermined",
+          "policy_eligible": false,
+          "reason_code": "local_coreference_not_supported"
+        },
+        {
+          "batch": "0022.json",
+          "candidate_id": "5a948345fbb41b3bdfd652527726501366e4a4ac9fa2dac6e2b8d6b8ad0a776a",
+          "revision": 2,
+          "predicate": "modelSpecification",
+          "decision_status": "undetermined",
+          "policy_eligible": false,
+          "reason_code": "local_coreference_not_supported"
+        },
+        {
+          "batch": "0023.json",
+          "candidate_id": "e1759e96359d3a038b8b945bb4b71769b6662945579fa06d53444f24ce5f72c9",
+          "revision": 1,
+          "predicate": "usesEquipment",
+          "decision_status": "undetermined",
+          "policy_eligible": false,
+          "reason_code": "missing_predicate_support"
+        }
+      ],
+      "missing_focus_targets": [
+        "plannedBatchCount"
+      ],
+      "source_review_counts": {
+        "source_and_ownership_checked": 6,
+        "unscored": 2
+      },
+      "correct_first_effective_seconds": {
+        "usesEquipment": 95.87773276807275,
+        "equipmentID": 171.7601135170553,
+        "modelSpecification": 430.51052625803277,
+        "hasProductionPlan": 205.60956953302957,
+        "plannedProductionDate": 235.95429816900287,
+        "plannedBatchCount": null
+      },
+      "same_parent_complete_path_seconds": {
+        "usesEquipment": 430.51052625803277,
+        "hasProductionPlan": null
+      },
+      "evidence_repair_summary": {
+        "enabled": true,
+        "reason_counts": {
+          "bridge_entailment_not_supported": 1,
+          "constraint_unresolved": 1,
+          "datatype_mismatch": 1,
+          "evidence_unresolved": 1,
+          "field_role_not_supported": 3,
+          "field_role_source_missing": 1,
+          "local_coreference_not_supported": 5,
+          "no_new_evidence": 2,
+          "owner_identity_unproven": 5
+        },
+        "rechecks": 5,
+        "status_counts": {
+          "awaiting_evidence": 7,
+          "queued": 1
+        },
+        "total": 8
+      }
+    }
+  ]
+}

@@ -46,6 +46,7 @@ def publish_read_artifacts(store, run, token, *, kind, payload, status, event_he
                 for item in [*menu.relationships, *menu.properties]
             ]
         compact["predicate_menus"] = menus
+        compact["evidence_repair"] = payload.get("evidence_repair", {})
         outputs["public_graph"] = compact
         header = store.get_artifact(run.recognition_run_id, run.owner_id, "source_header")
         if header:

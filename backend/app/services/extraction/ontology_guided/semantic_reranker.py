@@ -34,6 +34,9 @@ from app.services.extraction.ontology_guided.semantic_retrieval import (
     cosine_scores,
     select_candidate_pool,
 )
+from app.services.extraction.ontology_guided.state_delta import FrozenDict as _FrozenDict
+from app.services.extraction.ontology_guided.state_delta import FrozenList as _FrozenList
+from app.services.extraction.ontology_guided.state_delta import freeze_json as _freeze
 from app.services.llm.model_runtime import ModelCancelled
 
 
@@ -130,6 +133,14 @@ class RankingEpoch(EvidenceModel):
     status: Literal["ready", "degraded", "paused", "committed"] = "ready"
     costs: dict = Field(default_factory=dict)
     authority: Literal["retrieval_only"] = "retrieval_only"
+    expansion_boundary: dict | None = None
+
+    @model_serializer(mode="wrap")
+    def serialize_epoch(self, handler):
+        result = handler(self)
+        if self.expansion_boundary is None:
+            result.pop("expansion_boundary", None)
+        return result
 
     @model_validator(mode="after")
     def exact_pool(self):
@@ -200,37 +211,6 @@ def _failure_reason(exc: Exception) -> str:
         "incomplete_view",
     }
     return str(exc) if str(exc) in allowed else f"ranking_technical_failure:{type(exc).__name__}"
-
-
-def _immutable_mutation(*args, **kwargs):
-    raise TypeError("ranking snapshot data is immutable")
-
-
-class _FrozenDict(dict):
-    __setitem__ = __delitem__ = clear = pop = popitem = setdefault = update = _immutable_mutation
-    __ior__ = _immutable_mutation
-
-    def __deepcopy__(self, memo):
-        return self
-
-
-class _FrozenList(list):
-    __setitem__ = __delitem__ = append = clear = extend = insert = pop = _immutable_mutation
-    remove = reverse = sort = __iadd__ = __imul__ = _immutable_mutation
-
-    def __deepcopy__(self, memo):
-        return self
-
-
-def _freeze(value):
-    """Detach once, then share JSON-compatible immutable state across snapshots."""
-    if isinstance(value, (_FrozenDict, _FrozenList)):
-        return value
-    if isinstance(value, dict):
-        return _FrozenDict((key, _freeze(item)) for key, item in value.items())
-    if isinstance(value, (tuple, list)):
-        return _FrozenList(_freeze(item) for item in value)
-    return value
 
 
 class RankingService:
@@ -443,11 +423,25 @@ class RankingService:
         mentions=None,
         dependency_refs=None,
         candidate_record_ids: list[str] | None = None,
+        expansion_boundary: dict | None = None,
     ) -> None:
         """Recheck a durable result against current dependencies without model execution."""
         from app.services.extraction.ontology_guided.retrieval import validate_record_universe
 
         validate_record_universe(plan, index)
+        boundary = epoch.expansion_boundary
+        if boundary is not None:
+            _validate_expansion_boundary(boundary)
+            if len(epoch.record_ids) > min(boundary["pool_limit"], self.policy.pool_size):
+                raise ValueError("ranking epoch exceeds its expansion boundary")
+            identity = [epoch.plan_id, epoch.epoch_seq, epoch.pool_hash,
+                        epoch.query_dependency_hash, epoch.policy_hash, epoch.model_identity,
+                        epoch.permission_scope_hash, boundary]
+            if (epoch.ranking_dependency_hash != evidence_hash(identity)
+                    or epoch.epoch_id != stable_id("ranking-epoch", identity)):
+                raise ValueError("ranking expansion boundary identity mismatch")
+        if expansion_boundary is not None and boundary != expansion_boundary:
+            raise ValueError("ranking expansion boundary changed")
         if candidate_record_ids is not None and (
             len(candidate_record_ids) != len(set(candidate_record_ids))
             or not set(candidate_record_ids).issubset(plan.frozen_record_ids)
@@ -501,10 +495,13 @@ class RankingService:
         mentions=None,
         dependency_refs=None,
         candidate_record_ids: list[str] | None = None,
+        expansion_boundary: dict | None = None,
     ) -> RankingEpoch | None:
         from app.services.extraction.ontology_guided.retrieval import validate_record_universe
 
         validate_record_universe(plan, index)
+        if expansion_boundary is not None:
+            _validate_expansion_boundary(expansion_boundary)
         candidate_scope = set(candidate_record_ids) if candidate_record_ids is not None else None
         if candidate_scope is not None and (
             len(candidate_record_ids) != len(candidate_scope)
@@ -530,6 +527,8 @@ class RankingService:
                 dependency_refs=dependency_refs,
             )
         if pending:
+            if pending.expansion_boundary != expansion_boundary:
+                raise ValueError("pending ranking expansion boundary changed")
             if (
                 plan.plan_id not in self._retryable_pending
                 or (self.budget_enabled and pending.reason in {
@@ -883,17 +882,24 @@ class RankingService:
             if self.policy.mode == "semantic" and eligible and reason is None
             else available
         )
+        pool_limit = min(self.policy.pool_size, expansion_boundary["pool_limit"]) \
+            if expansion_boundary else self.policy.pool_size
+        quotas = {"protected": self.policy.protected_quota,
+                  "exploration": self.policy.exploration_quota, **channel_quotas}
+        if expansion_boundary:
+            # Eight exploration seats must not swallow the entire first pool.
+            quotas = {name: (max(1, quota * pool_limit // self.policy.pool_size) if quota else 0)
+                      for name, quota in quotas.items()}
+            quotas["protected"] = min(pool_limit, max(
+                quotas["protected"], len(required_record_ids or []),
+            ))
         pool, protection = select_candidate_pool(
             candidate_ids,
             channels,
-            pool_size=self.policy.pool_size,
+            pool_size=pool_limit,
             protected_ids=required_record_ids or [],
             exploration_ids=[rid for rid in plan.frozen_record_ids if rid in candidate_ids],
-            quotas={
-                "protected": self.policy.protected_quota,
-                "exploration": self.policy.exploration_quota,
-                **channel_quotas,
-            },
+            quotas=quotas,
             fill_pool=self.policy.fill_candidate_pool,
         )
         # Tie breaking and every degraded epoch use the frozen deterministic order.
@@ -979,6 +985,8 @@ class RankingService:
             self.model_identity,
             scope_hash,
         ]
+        if expansion_boundary is not None:
+            identity.append(expansion_boundary)
         epoch_id = stable_id("ranking-epoch", identity)
         positions = {rid: rank for rank, rid in enumerate(ordered, 1)}
         observations = []
@@ -1054,11 +1062,22 @@ class RankingService:
             if reason
             else "ready",
             costs=costs,
+            expansion_boundary=expansion_boundary,
         )
         self._pending[plan.plan_id] = epoch
         if callable(set_deadline):
             set_deadline(None)
         return epoch
+
+
+def _validate_expansion_boundary(boundary):
+    sizes = (8, 16, 32, 64)
+    if (not isinstance(boundary, dict) or set(boundary) != {"version", "round", "pool_limit"}
+            or boundary["version"] != "bounded-semantic-v1"
+            or type(boundary["round"]) is not int or not 1 <= boundary["round"] <= 4
+            or type(boundary["pool_limit"]) is not int
+            or boundary["pool_limit"] != sizes[boundary["round"] - 1]):
+        raise ValueError("invalid semantic expansion boundary")
 
 
 def apply_epoch(plan: RetrievalPlan, epoch: RankingEpoch) -> RetrievalPlan:
@@ -1070,14 +1089,13 @@ def apply_epoch(plan: RetrievalPlan, epoch: RankingEpoch) -> RetrievalPlan:
         raise ValueError("only an exact committed epoch may update a plan")
     if not set(epoch.record_ids).issubset(plan.frozen_record_ids):
         raise ValueError("ranking epoch contains records outside the frozen universe")
-    result = plan.model_copy(deep=True)
     ranks = {rid: rank for rank, rid in enumerate(epoch.ordered_record_ids, 1)}
-    for record in result.records:
-        if record.record_id in ranks:
-            record.ranking_epoch_id = epoch.epoch_id
-            record.ranking_epoch_seq = epoch.epoch_seq
-            record.pool_rank = ranks[record.record_id]
-            record.ranking_mode = epoch.actual_ranking_mode
-    result.ranking_epoch_ids = list(dict.fromkeys([*result.ranking_epoch_ids, epoch.epoch_id]))
+    records = [record.model_copy(update={
+        "ranking_epoch_id": epoch.epoch_id, "ranking_epoch_seq": epoch.epoch_seq,
+        "pool_rank": ranks[record.record_id], "ranking_mode": epoch.actual_ranking_mode,
+    }) if record.record_id in ranks else record for record in plan.records]
     # Phase and section membership/order remain a scheduler concern.
-    return RetrievalPlan.model_validate(result.model_dump(mode="json"))
+    return plan.model_copy(update={
+        "records": records,
+        "ranking_epoch_ids": list(dict.fromkeys([*plan.ranking_epoch_ids, epoch.epoch_id])),
+    })

@@ -222,22 +222,28 @@ def _checkpoint_payload(db, run_id: str) -> tuple[dict, DocumentRecognitionEvent
     return decode_state(store, store.get_owned(run_id, "analyst"), artifact.payload), receipt
 
 
-@pytest.mark.parametrize("performance_enabled", [False, True])
+@pytest.mark.parametrize("performance_enabled,incremental", [
+    (False, False), (True, False), (True, True),
+])
 def test_committed_batch_is_secret_free_closed_waterline_and_resumes_without_recall(
-    client, db, analyst_headers, tmp_path, monkeypatch, performance_enabled,
+    client, db, analyst_headers, tmp_path, monkeypatch, performance_enabled, incremental,
 ):
     monkeypatch.setattr(settings, "document_analysis_performance_enabled", performance_enabled)
+    monkeypatch.setattr(settings, "document_analysis_evidence_repair_enabled", incremental)
     run_id = _create_pending_run(
         client, analyst_headers, tmp_path, monkeypatch, key="crash-after-first-batch"
     )
     adapter = CountingAdapter()
-    monkeypatch.setattr(execution_service, "configured_model_adapter", lambda: adapter)
+    monkeypatch.setattr(execution_service, "configured_model_adapter", lambda **_kw: adapter)
 
     store, old_token = _crash_after_first_batch(db, run_id, monkeypatch)
     first_task_id = adapter.calls[0]
     checkpoint, receipt = _checkpoint_payload(db, run_id)
     stored = db.get(DocumentAnalysisArtifact, receipt.checkpoint_artifact_id).payload
-    assert (stored.get("storage_schema_version") == 2) is performance_enabled
+    assert stored.get("storage_schema_version") == (3 if incremental else
+                                                    2 if performance_enabled else None)
+    if incremental:
+        assert checkpoint["checkpoint_schema_version"] == "document-recognition-checkpoint-v3"
     serialized = json.dumps(checkpoint, ensure_ascii=False, sort_keys=True)
 
     assert old_token not in serialized

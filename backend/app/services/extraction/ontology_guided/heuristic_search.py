@@ -10,6 +10,7 @@ from __future__ import annotations
 import re
 import unicodedata
 from collections import defaultdict
+from copy import deepcopy
 from dataclasses import asdict, dataclass, field
 
 from app.services.extraction.evidence_identity import evidence_hash, stable_id
@@ -64,7 +65,11 @@ class HeuristicSearchPolicy:
     max_cheap_tasks_before_semantic: int = 8
 
     def __post_init__(self):
-        if self.version != SEARCH_POLICY_VERSION or self.query_rules_version != QUERY_RULES_VERSION:
+        if (self.version, self.query_rules_version) not in {
+            (SEARCH_POLICY_VERSION, QUERY_RULES_VERSION),
+            ("heuristic-first-v2", "ontology-labels-and-registered-aliases-v2"),
+            ("heuristic-first-v3", "ontology-labels-and-registered-aliases-v2"),
+        }:
             raise ValueError("unsupported heuristic search policy version")
         for name in (
             "initial_page_size", "expanded_page_size", "exploration_page_size",
@@ -76,6 +81,11 @@ class HeuristicSearchPolicy:
 
     def snapshot(self) -> dict:
         return asdict(self)
+
+    @classmethod
+    def durable(cls, *, incremental=False, **values):
+        return cls(version="heuristic-first-v3" if incremental else "heuristic-first-v2",
+                   query_rules_version="ontology-labels-and-registered-aliases-v2", **values)
 
 
 @dataclass(frozen=True)
@@ -111,12 +121,19 @@ class HeuristicSearchIndex:
         self.context = {}
         self.structure = {}
         self.summary = {}
+        self.raw = {name: {} for name in ("source", "context", "structure", "summary")}
         self.sections: dict[str, list[str]] = defaultdict(list)
         self.tables: dict[tuple, list[str]] = defaultdict(list)
         nodes = {node.node_id: node for node in metadata.node_summaries}
         for record in index.records:
             rid = record.record_id
             node = nodes.get(record.section_node_id)
+            for lane, value in (
+                ("source", record.text), ("context", index.source_text(rid, include_context=True)),
+                ("structure", " / ".join(node.path) if node else ""),
+                ("summary", (node.summary or "") if node else ""),
+            ):
+                self.raw[lane][rid] = unicodedata.normalize("NFKC", value).casefold()
             self.source[rid] = _normalize(record.text)
             self.context[rid] = _normalize(index.source_text(rid, include_context=True))
             self.structure[rid] = _normalize(" / ".join(node.path) if node else "")
@@ -147,6 +164,8 @@ class HeuristicSearchIndex:
                 direct[normalized] = max(direct.get(normalized, 0), weight)
 
         add(predicate.label, 12)
+        if policy.version != SEARCH_POLICY_VERSION:
+            add(re.sub(r"^(包含|使用|具有|含|有)", "", predicate.label), 11)
         add(_local_name(predicate.iri), 10)
         if isinstance(predicate, EdgeSpec):
             for target in predicate.range_classes:
@@ -158,8 +177,9 @@ class HeuristicSearchIndex:
             normalized = [_normalize(value) for value in group]
             if any(value in direct for value in normalized):
                 expanded.update((value, max(expanded.get(value, 0), 4)) for value in normalized)
-        # Definition phrases help only H1. Do not turn every Chinese bigram or
-        # common English word into a hit that effectively activates the universe.
+        # Definition phrases help only H1. A single generic word/fragment must
+        # not activate the universe. Reordered Chinese compounds require a
+        # conjunction of fragments from one frozen ontology label below.
         definitions = [predicate.description]
         if isinstance(predicate, EdgeSpec):
             definitions.extend(item.description for item in predicate.range_classes)
@@ -170,13 +190,32 @@ class HeuristicSearchIndex:
                     expanded.setdefault(term, 2)
 
         mentions = [_normalize(value) for value in subject_mentions if len(value.strip()) >= 2]
+        compounds = []
+        if policy.version != SEARCH_POLICY_VERSION:
+            for term, weight in direct.items():
+                if 4 <= len(term) <= 16 and re.fullmatch(r"[\u4e00-\u9fff]+", term):
+                    parts = {term[i:i + 2] for i in range(len(term) - 1)}
+                    compounds.append((term, parts, weight))
+        code_patterns = {}
+
+        def hit(lane, rid, term):
+            if (policy.version != SEARCH_POLICY_VERSION and len(term) <= 16
+                    and re.fullmatch(r"[a-z0-9]+", term) and re.search(r"\d", term)):
+                if term not in code_patterns:
+                    code_patterns[term] = re.compile(
+                        r"(?<![a-z0-9])" + r"[-_\s]*".join(map(re.escape, term))
+                        + r"(?![a-z0-9])"
+                    )
+                return code_patterns[term].search(self.raw[lane][rid]) is not None
+            return term in getattr(self, lane)[rid]
+
         scores, expanded_scores, matches = {}, {}, {}
         section_scores: dict[str, float] = defaultdict(float)
         for rid in self.record_ids:
-            source_hits = [term for term in direct if term in self.source[rid]]
-            context_hits = [term for term in direct if term in self.context[rid]]
-            structure_hits = [term for term in direct if term in self.structure[rid]]
-            subject_hit = any(term in self.context[rid] for term in mentions)
+            source_hits = [term for term in direct if hit("source", rid, term)]
+            context_hits = [term for term in direct if hit("context", rid, term)]
+            structure_hits = [term for term in direct if hit("structure", rid, term)]
+            subject_hit = any(hit("context", rid, term) for term in mentions)
             score = (
                 sum(direct[term] for term in source_hits)
                 + 0.25 * sum(direct[term] for term in context_hits if term not in source_hits)
@@ -189,14 +228,19 @@ class HeuristicSearchIndex:
             matches[rid] = list(dict.fromkeys([*source_hits, *context_hits, *structure_hits]))
             section = self.index.by_id[rid].section_node_id
             section_scores[section] = max(section_scores[section], score)
-            wider_hits = [term for term in expanded if term in self.context[rid]]
-            wider_structure = [term for term in expanded if term in self.structure[rid]]
-            metadata_hits = [term for term in expanded if term in self.summary[rid]]
+            wider_hits = [term for term in expanded if hit("context", rid, term)]
+            wider_structure = [term for term in expanded if hit("structure", rid, term)]
+            metadata_hits = [term for term in expanded if hit("summary", rid, term)]
             expanded_scores[rid] = (
                 score + sum(expanded[term] for term in wider_hits)
                 + 0.5 * sum(expanded[term] for term in wider_structure)
                 + 0.1 * len(metadata_hits)
             )
+            for term, parts, weight in compounds:
+                hits = {part for part in parts if hit("context", rid, part)}
+                if len(hits) >= 2 and len(hits) / len(parts) >= 0.4:
+                    expanded_scores[rid] += weight * len(hits) / len(parts)
+                    wider_hits.append(term)
             matches[rid] = list(dict.fromkeys([*matches[rid], *wider_hits, *wider_structure]))
         section_order = sorted(
             section_scores,
@@ -219,6 +263,8 @@ class HeuristicSearchIndex:
         # Context expansion does not itself mean those rows have been examined.
         related = {other for rid in [*h0, *h1]
                    for other in self.context_record_ids(rid)} - set(h0) - set(h1)
+        if policy.version != SEARCH_POLICY_VERSION:
+            related = {rid for rid in related if scores[rid] or expanded_scores[rid]}
         h1.extend(sorted(related, key=self.index.record_positions.__getitem__))
         return h0, h1, matches
 
@@ -230,6 +276,8 @@ class HeuristicSlotSearch:
     search_index: HeuristicSearchIndex
     policy: HeuristicSearchPolicy = field(default_factory=HeuristicSearchPolicy)
     subject_mentions: list[str] = field(default_factory=list)
+    seed_record_ids: list[str] = field(default_factory=list)
+    priority_record_ids: list[str] = field(default_factory=list)
     run_fingerprint: str = ""
 
     def __post_init__(self):
@@ -245,7 +293,18 @@ class HeuristicSlotSearch:
         h0, h1, self._matches = self.search_index.candidates(
             self.predicate, subject_mentions=self.subject_mentions, policy=self.policy,
         )
+        if self.policy.version != SEARCH_POLICY_VERSION and not self.plan.subject.is_document_root:
+            if not set(self.seed_record_ids) <= set(self.plan.ledger):
+                raise ValueError("proved subject record is outside the source universe")
+            # Exact source records of a proved subject are cheap binding
+            # candidates for its fields; same-name hits elsewhere are not seeds.
+            h1 = list(dict.fromkeys([*(rid for rid in self.seed_record_ids if rid not in h0), *h1]))
         self._candidates = {"H0": h0, "H1": h1, "H2": [], "H3": []}
+        if self.policy.version == "heuristic-first-v3" and self.priority_record_ids:
+            if not set(self.priority_record_ids) <= set(self.plan.ledger):
+                raise ValueError("attribute field is outside the source universe")
+            self._candidates["H0"] = list(dict.fromkeys([*self.priority_record_ids, *h0]))
+            self._candidates["H1"] = [rid for rid in h1 if rid not in self.priority_record_ids]
         self._cursors = dict.fromkeys(self._candidates, 0)
         self.stage = "H0"
         self.status = "needs_search"
@@ -257,15 +316,26 @@ class HeuristicSlotSearch:
         self._pages: list[AdmissionPage] = []
         self._semantic_epoch_id: str | None = None
         self._semantic_received = False
+        self._semantic_epochs: list[str] = []
         self._semantic_skip_reason: str | None = None
         self._exploration_pages = 0
         self._supported_count = 0
+        self._pass_supported_baseline = 0
         self._reason = "initial_heuristic_search"
         self.events: list[dict] = []
 
     @property
     def needs_semantic(self) -> bool:
         return self.status == "needs_semantic"
+
+    @property
+    def semantic_boundary(self) -> dict | None:
+        if self.policy.version != "heuristic-first-v3":
+            return None
+        sizes = (8, 16, 32, 64)
+        round_index = min(len(self._semantic_epochs), len(sizes) - 1)
+        return {"version": "bounded-semantic-v1", "round": round_index + 1,
+                "pool_limit": sizes[round_index]}
 
     @property
     def deferred_record_ids(self) -> list[str]:
@@ -324,7 +394,7 @@ class HeuristicSlotSearch:
             if self.stage == "H0":
                 self._transition("H1", "local_candidates_consumed_expand_lexical_and_structure")
                 continue
-            if self._supported_count:
+            if self._supported_count > self._pass_supported_baseline:
                 self.status = (
                     "local_results_only" if self.deferred_record_ids else "pass_exhausted"
                 )
@@ -337,6 +407,12 @@ class HeuristicSlotSearch:
                 self.status = "needs_semantic"
                 return None
             if self.stage == "H2":
+                if (self.semantic_boundary is not None and len(self._semantic_epochs) < 4
+                        and self.deferred_record_ids and not self._semantic_skip_reason):
+                    self._semantic_received = False
+                    self.status = "needs_semantic"
+                    self._reason = "semantic_batch_consumed_without_valid_output"
+                    return None
                 self._transition("H3", "semantic_candidates_empty_or_without_valid_output")
                 # Explore both tail and other sections in bounded, stable pages.
                 sections = [list(reversed([rid for rid in values if rid not in self.admitted]))
@@ -396,6 +472,13 @@ class HeuristicSlotSearch:
             raise ValueError("semantic epoch contains duplicate records")
         if not set(ordered_record_ids).issubset(self.plan.ledger):
             raise ValueError("semantic epoch contains records from another source")
+        if self.semantic_boundary is not None:
+            if (epoch_id in self._semantic_epochs
+                    or len(ordered_record_ids) > self.semantic_boundary["pool_limit"]
+                    or set(ordered_record_ids) & self.admitted):
+                raise ValueError("semantic batch is repeated or exceeds its frozen boundary")
+            self._semantic_epochs.append(epoch_id)
+        self._cursors["H2"] = 0
         self._candidates["H2"] = [rid for rid in ordered_record_ids if rid not in self.admitted]
         self._semantic_epoch_id = epoch_id
         self._semantic_received = True
@@ -421,7 +504,8 @@ class HeuristicSlotSearch:
 
     def snapshot(self) -> dict:
         return {
-            "policy": self.policy.snapshot(), "resume_supported": False,
+            "policy": self.policy.snapshot(),
+            "resume_supported": self.policy.version != SEARCH_POLICY_VERSION,
             "plan_id": self.plan.plan_id, "run_fingerprint": self.run_fingerprint,
             "source_hash": self.search_index.index.ir.document_hash,
             "universe_hash": evidence_hash(list(self.search_index.record_ids)),
@@ -443,4 +527,57 @@ class HeuristicSlotSearch:
             "attempt_history": list(self._attempt_history),
             "admission_batches": [page.snapshot() for page in self._pages],
             "transitions": list(self.events),
+            **({"resume_state": {
+                "candidates": deepcopy(self._candidates), "matches": deepcopy(self._matches),
+                "active": list(self._active), "semantic_received": self._semantic_received,
+                **({"semantic_epochs": list(self._semantic_epochs)}
+                   if self.semantic_boundary is not None else {}),
+                "exploration_pages": self._exploration_pages,
+                "pass_supported_baseline": self._pass_supported_baseline,
+            }} if self.policy.version != SEARCH_POLICY_VERSION else {}),
         }
+
+    def restore(self, state):
+        if (state.get("policy") != self.policy.snapshot()
+                or state.get("run_fingerprint") != self.run_fingerprint
+                or state.get("plan_id") != self.plan.plan_id
+                or state.get("source_hash") != self.search_index.index.ir.document_hash
+                or state.get("universe_hash") != evidence_hash(list(self.search_index.record_ids))
+                or not state.get("resume_supported")):
+            raise ValueError("heuristic checkpoint identity mismatch")
+        saved = state["resume_state"]
+        universe = set(self.search_index.record_ids)
+        if not all(set(ids) <= universe for ids in saved["candidates"].values()):
+            raise ValueError("heuristic checkpoint contains foreign records")
+        self._candidates = deepcopy(saved["candidates"])
+        self._matches = deepcopy(saved["matches"])
+        self._active = list(saved["active"])
+        self._semantic_received = saved["semantic_received"]
+        self._semantic_epochs = list(saved.get("semantic_epochs", []))
+        if (len(self._semantic_epochs) > 4
+                or len(set(self._semantic_epochs)) != len(self._semantic_epochs)):
+            raise ValueError("invalid semantic batch history")
+        self._exploration_pages = saved["exploration_pages"]
+        self._pass_supported_baseline = saved["pass_supported_baseline"]
+        self._cursors = dict(state["cursors"])
+        self.admitted = set(state["admitted_record_ids"])
+        self.observed = deepcopy(state["observed"])
+        self._attempt_history = deepcopy(state["attempt_history"])
+        self._attempts = {(r["record_id"], r["attempt_id"]): {
+            k: v for k, v in r.items() if k not in {"record_id", "attempt_id"}
+        } for r in self._attempt_history}
+        self._pages = [AdmissionPage(**page) for page in state["admission_batches"]]
+        self._semantic_epoch_id = state["semantic_epoch_id"]
+        self._semantic_skip_reason = state["semantic_skip_reason"]
+        self._supported_count = state["supported_output_count"]
+        self.stage, self.status, self._reason = state["stage"], state["status"], state["reason"]
+        self.events = deepcopy(state["transitions"])
+        if self.snapshot() != state:
+            raise ValueError("heuristic checkpoint content mismatch")
+
+    def continue_search(self):
+        """Explicit resume activates another bounded page without forgetting coverage."""
+        if self.status in {"local_results_only", "pass_exhausted"} and self.deferred_record_ids:
+            self.status = "needs_search"
+            self._pass_supported_baseline = self._supported_count
+            self._exploration_pages = 0

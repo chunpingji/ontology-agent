@@ -1,5 +1,105 @@
 # Quickstart
 
+## 剪枝与增强检索视图：当前只进行设计修订
+
+新增目标行为见[自适应检索契约](contracts/adaptive-retrieval.md)和
+[专题方案](../../docs/剪枝和增强语义检索视图方案.md)。`heuristic-first-v4`、新的准入决定
+和公开剪枝诊断尚未实现；当前没有可用于启用它们的已验证命令或开关。本次不启动测试、
+模型、迁移或部署，旧 v1/v2/v3 运行继续使用原冻结行为。
+
+后续先按 `tasks.md` 的 AR-P0-01–AR-P0-10 闭合契约，全部通过前 AR-P1 只能做不改变
+准入/调度/结果的 instrumentation 原型。实现阶段验收应按以下场景登记，届时使用真实
+新增的测试入口，不能把本文场景或历史测试数量当作本次执行证据：
+
+1. 核验 v1 不写恢复状态且仍不支持恢复，回放 v2/v3 原快照及 v3 一个 supported 后
+   `local_results_only` 的冻结反例；
+   v4 则验证多值与反证继续，并单独验证 `resume_state.schema_version=1`。
+2. 对比全拒、部分准入、已评分无新池、前置评估全拒无 epoch 和技术不可评分：均能持久
+   推进、暂停或停止，不能卡在 `needs_semantic`；不伪造 epoch 或低分。
+3. 重复、错 epoch、越池、错依赖和提交前 `AdmissionDecision` 均按契约拒绝或幂等处理；
+   中断恢复不重新付费、不漏门评估/缓存/请求费用，也不重复创建原始 record 任务。
+4. 同组兄弟、重叠组、低分必要来源、跨节点主体、否定/条件、长输入与单视图超限分别核验；
+   组命中不等于全组已检查。覆盖恒等式不变，当前软剪枝仍属于 `unattempted`；公开状态
+   区分 `adaptive_search_saturated` 暂停与 `in_scope_complete`，重激活实际检查后才更新覆盖。
+5. P2/P3 变更视图后，按最终视图/查询/模型/策略重新采集影子数据，不能直接用 P1 旧视图
+   数据做 P4 校准。HRS-1597 与 HRS-5592 均只作为开发暴露/回归样本；另准备未暴露保留
+   文档、隔离金标和预注册门，继承至少三个真实新运行要求。重复运行不能替代独立样本。
+
+正式实现的 API/前端与专用 PostgreSQL 验收仍分别登记；未配置专用可销毁库的 skip 不能
+替代恢复/并发验收。完成文档检查不表示 AR-P0 验收、主动剪枝效果或部署完成。
+
+2026-09-10证据修复的代码/实测状态见 [evidence-repair-validation.md](evidence-repair-validation.md)，
+实际请求及恢复约束见 [evidence-repair契约](contracts/evidence-repair.md)。
+
+## 证据修复增量验证
+
+在 `backend/` 执行（隔离工程测试，不调用真实模型）：
+
+```bash
+.venv/bin/python -m pytest -p no:cacheprovider -q \
+  tests/test_extraction/test_evidence_repair.py \
+  tests/test_extraction/test_heuristic_search.py \
+  tests/test_extraction/test_document_state_artifacts.py \
+  tests/test_extraction/test_ontology_guided_boundaries.py
+```
+
+PostgreSQL 验收另用 `DOCUMENT_ANALYSIS_TEST_DATABASE_URL` 指向满足fixture要求的专用可销毁库，
+运行 `test_evidence_repair_postgresql.py`、`test_performance_postgresql.py` 和
+`test_document_run_execution_postgresql.py`；fixture会清表，不得指向共享业务库。
+
+真实组先冻结到新目录，准备阶段不调用模型；模型配置仅采用脚本允许的非敏感字段：
+
+```bash
+.venv/bin/python scripts/benchmark_joint_evidence.py --prepare \
+  --source /controlled/source.docx --model-config /controlled/model-config.json \
+  --output /controlled/new-directed-run --evidence-repair
+.venv/bin/python /controlled/new-directed-run/runtime/benchmark_joint_evidence.py \
+  --execute /controlled/new-directed-run
+
+.venv/bin/python scripts/benchmark_heuristic_document_run.py --prepare \
+  --source-docx /controlled/source.docx --source-filename '原件完整文件名.docx' \
+  --ontology-dir ../ontology/slpra --model-config /controlled/model-config.json \
+  --output /controlled/new-auto-run --max-model-calls-per-record 8 \
+  --max-tasks 24 --max-calls 48 --deadline-seconds 1200 --evidence-repair \
+  --stop-after-focus-paths
+.venv/bin/python /controlled/new-auto-run/runtime/benchmark_heuristic_document_run.py \
+  --execute /controlled/new-auto-run
+```
+
+以上为HRS-5592专用诊断入口，默认拒绝不符原件hash；两组各至少3个独立run，组内固定输入/代码/预算。
+定向组手工固定来源，仅自动组能证明实际检索与父子调度。查看summary、逐任务outcome、实际请求/响应与原文；
+不得以退出码0或非空图代替业务核对。模型串行运行，每次写独立调度库，不修改历史制品。
+`--stop-after-focus-paths` 仅用于预登记的关键节点计时：同一父对象的目标属性均进入有效投影
+即可停止，原文正确性仍须另查；省略该选项可继续至共同预算，均不自动代表全文完成。
+
+在线新运行只在 `DOCUMENT_ANALYSIS_EVIDENCE_REPAIR_ENABLED=true` 时冻结新协议，默认false。
+只改该配置不会升级旧运行；必要部署另按实际授权执行。恢复沿用已有显式操作，预算不会刷新。
+新归属政策`source-owned-binding-v2`要求原主体来源与局部主体引用分别留存；
+旧归属版本的冻结响应不得以新政策复用，复测使用独立新目录/身份。
+后续同时冻结`source-quoted-scope-v1`、`source-integer-quotes-v2`和`evidence-work-v2`；
+缺少这些政策的修复运行不能交给新适配器继续。新范围引用、整数引用及工单顺序回归入口为
+`test_evidence_scope_protocol.py`、`test_evidence_integer_quotes.py`与`test_evidence_work_continuation.py`。
+本次v5六轮与修复后v6单轮结果分别报告：定向协议通过，但自动完整路径稳定性未通过；
+不要把v5的两次成功合并为最终代码的三轮通过记录。
+后续v9同版本定向/自动各三轮已完成：自动每轮六目标及同父路径正确、约429–432秒/17请求，
+定向36项正例正确、6项日期反例实际拒绝。该指定目标验收不等于全图或独立专家质量门通过。
+v8仅执行自动首轮，其余五轮在发现整数引用技术失败后停止派发；不能算六轮验收完成。
+v9以完整整数引用组合重新冻结独立诊断，自动runner另存私有`model-wire-responses.jsonl`，
+记录引用解码前JSON；原文、响应与运行库不得复制到公共结果制品。
+
+识别结束后，用独立审阅入口核对目标原文与主体归属（结果写入私有目录）：
+
+```bash
+.venv/bin/python scripts/review_hrs5592_evidence_repair.py \
+  --run /controlled/new-auto-run --group automatic \
+  --output /controlled/new-auto-run/source-review.json
+```
+
+定向组使用`--group directed`。该入口固定HRS-5592源hash，直接读取DOCX XML与冻结本体祖先，
+逐项核对完整原值及引用区间；识别输出自称supported不能代替原文通过。错日期未实际拒绝、
+父关系失败导致子任务未执行、额外未评分事实均保留；此为开发样本审阅，不是专家金标评分。
+`test_evidence_repair_source_review.py`覆盖错误引用区间、同名异行、假条件及失败/未执行项保留。
+
 本特性复用已有后端和前端环境。下面先执行隔离工程检查；真实评测步骤仅在本地制品、服务和独立参考就绪后执行。工程检查不启动应用、不迁移共享数据库、不调用真实模型。
 
 既有工程记录见 [validation.md](validation.md)；2026-09-10 性能增量的实际命令、指标与边界见
@@ -341,3 +441,25 @@ API 使用同源鉴权与运行控制请求体：
 本轮工程验证、PostgreSQL 迁移范围、空库历史迁移缺口、真实控制往返及后端重载/健康
 实测见 [排序预算控制记录](budget-control.md)。T041 已完成；合成浏览器、真实控制 API
 往返与模型运行质量分别记载，T017 的正式质量门仍保持开放。
+
+
+## 2026-09-11 增量性能策略
+
+新建且开启证据修复的运行冻结 `incremental-performance-v1`、存储v3、启发式v3、
+`bounded-semantic-v1`、`whole-method-field-v1`、`source-field-priority-v1`。
+旧运行继续原格式与次序。本轮未部署，不能仅通过页面刷新让在途任务获得新策略。
+
+在backend目录执行新增验证：
+
+```bash
+.venv/bin/python -m pytest -p no:cacheprovider -q \
+  tests/test_extraction/test_incremental_state.py \
+  tests/test_extraction/test_incremental_performance.py
+.venv/bin/python -m scripts.benchmark_incremental_state \
+  --input /private/frozen/decoded-state-1.json \
+  --output /tmp/new-incremental-replay --immutable
+```
+
+回放只创建新SQLite库，不读写在线库、不调用模型；输出目录必须不存在。
+完整受影响回归清单、原件结构诊断、热保存/基线/冷恢复的不同口径见
+[增量性能验证](incremental-performance-validation.md)。缺少专用PostgreSQL配置的测试明确skip。
