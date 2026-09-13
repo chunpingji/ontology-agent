@@ -320,6 +320,8 @@ class DocumentAnalysisApplication:
 
         try:
             adaptive = configured_adaptive_policy(settings)
+            if adaptive is not None:
+                adaptive.validate_ontology_context(ontology)
         except (ValueError, OSError) as exc:
             self.storage.discard_run(run_id)
             raise DocumentAnalysisError(

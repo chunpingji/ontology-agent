@@ -289,6 +289,8 @@ class OntologyGuidedExecutor:
         property_repairs: list[dict] | None = None,
         repair_only: bool = False,
     ) -> ExecutionResult:
+        if self.adaptive_policy is not None:
+            self.adaptive_policy.validate_ontology_context(self.ontology)
         if self.heuristic_policy is not None and not self.evidence_repair and (
             resume_state is not None or ranking_state is not None or model_call_state is not None
         ):

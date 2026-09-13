@@ -254,13 +254,15 @@ def _ontology_snapshot_from_engine(
 def _canonical_lexical_labels(
     definitions: dict[str, OntologyClassDefinition], lexical: OntologyLexicalContext,
 ) -> dict[str, OntologyClassDefinition]:
-    """Do not let RDF enumeration choose among multiple display labels in v2."""
+    """Canonicalize display labels without adding aliases to H0/H1 vocabulary."""
     def label(iri: str, fallback: str) -> str:
-        terms = lexical.annotations.get(iri, [])
+        # Display labels are also consumed by existing heuristic/context paths.
+        # Keep altLabel-only terms in the bounded v2 semantic query selection.
+        terms = [term for term in lexical.annotations.get(iri, [])
+                 if term.predicate_iri == RDFS_LABEL_IRI]
         if not terms:
             return fallback
         preferred = sorted(terms, key=lambda term: (
-            term.predicate_iri != RDFS_LABEL_IRI,
             {"zh": 0, "en": 1, None: 2}.get(term.language, 3),
             term.language or "", term.text,
         ))

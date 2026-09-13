@@ -1,0 +1,685 @@
+{
+  "snapshot_at": "2026-09-13 15:58:07.067277+00:00",
+  "run_id": "e8f8bdc0-5361-4b49-862a-2711f4efc240",
+  "status": "failed",
+  "created_at": "2026-09-13 02:04:29.367015+00:00",
+  "finished_at": "2026-09-13 15:40:44.303525+00:00",
+  "error_code": "ANALYSIS_FAILED",
+  "failure_type": "HeadConflict",
+  "failure_frames": [
+    {
+      "file": "/app/app/services/document_analysis/execution.py",
+      "line": 2086,
+      "function": "_execute_dispatched_run"
+    },
+    {
+      "file": "/app/app/services/document_analysis/execution.py",
+      "line": 1872,
+      "function": "_execute_claimed"
+    },
+    {
+      "file": "/app/app/services/extraction/ontology_guided/executor.py",
+      "line": 2720,
+      "function": "run"
+    },
+    {
+      "file": "/app/app/services/document_analysis/execution.py",
+      "line": 1807,
+      "function": "batch_hook"
+    },
+    {
+      "file": "/app/app/services/document_analysis/execution.py",
+      "line": 1293,
+      "function": "_persist_recognition_batch"
+    }
+  ],
+  "progress": {
+    "retrieval_diagnostics": {
+      "schema_version": 1,
+      "policy_version": "adaptive-retrieval-v1",
+      "records_soft_pruned": 0,
+      "records_pending_disposition": 3822,
+      "records_reactivatable": 0,
+      "records_dependency_exhausted": 15169,
+      "reason_counts": {
+        "low_relevance": 0
+      },
+      "search_status": "searching",
+      "pruning_quality": "unvalidated"
+    },
+    "candidate_policy": "sparse-candidates-v1",
+    "tasks_attempted": 873,
+    "model_calls": 1244,
+    "model_calls_reserved": 1237,
+    "model_calls_unresolved": 0,
+    "records_planned": 2121,
+    "records_examined": 709,
+    "records_incomplete": 164,
+    "records_unattempted": 1248,
+    "phase_counts": {
+      "phase1": 569,
+      "phase2": 304
+    },
+    "supported": 89,
+    "unsupported": 17,
+    "undetermined": 106,
+    "pending_frontiers": 0,
+    "unresolved_claims": 106,
+    "invalidated_count": 226,
+    "stop_reason": "analysis_failed",
+    "completion": "incomplete",
+    "contract_version": "document-analysis-runs-v1"
+  },
+  "policy": {
+    "state_storage_version": 3,
+    "candidate_planning": "sparse-candidates-v1",
+    "heuristic_policy": "heuristic-first-v4",
+    "recognition_inflight": 1,
+    "state_baseline_interval": 32
+  },
+  "wall_partition": {
+    "total_s": 48974.93651008606,
+    "llm_s": 33462.82592797279,
+    "ranking_only_s": 54.20044469833374,
+    "visible_save_only_s": 397.63217878341675,
+    "confirmed_paused_only_s": 706.4288549423218,
+    "other_s": 14353.849103689194
+  },
+  "request_execution": {
+    "word_tree_summary": {
+      "count": 6,
+      "sum_s": 127.36813068389893,
+      "median_s": 16.702836990356445,
+      "p95_s": 47.59837293624878,
+      "first10_median_s": 16.702836990356445,
+      "last10_median_s": 16.702836990356445,
+      "max_s": 47.59837293624878
+    },
+    "ontology_guided_discovery": {
+      "count": 865,
+      "sum_s": 18225.573113441467,
+      "median_s": 17.01711106300354,
+      "p95_s": 38.483022928237915,
+      "first10_median_s": 15.752638101577759,
+      "last10_median_s": 13.235008478164673,
+      "max_s": 68.37280297279358
+    },
+    "ontology_guided_verification": {
+      "count": 372,
+      "sum_s": 15136.510574817657,
+      "median_s": 42.753018498420715,
+      "p95_s": 56.786728858947754,
+      "first10_median_s": 25.19088852405548,
+      "last10_median_s": 25.30070698261261,
+      "max_s": 261.79269313812256
+    },
+    "ranking_count_tokens_batch": {
+      "count": 110,
+      "sum_s": 45.835965394973755,
+      "median_s": 0.025044679641723633,
+      "p95_s": 0.07278800010681152,
+      "first10_median_s": 0.01899397373199463,
+      "last10_median_s": 0.041016578674316406,
+      "max_s": 42.417486906051636
+    },
+    "ranking_embed": {
+      "count": 113,
+      "sum_s": 47.15409731864929,
+      "median_s": 0.1520240306854248,
+      "p95_s": 0.7372159957885742,
+      "first10_median_s": 0.4173774719238281,
+      "last10_median_s": 0.18202996253967285,
+      "max_s": 11.776185989379883
+    },
+    "ranking_score_pairs": {
+      "count": 418,
+      "sum_s": 359.8812162876129,
+      "median_s": 0.6646956205368042,
+      "p95_s": 1.211620807647705,
+      "first10_median_s": 0.9610929489135742,
+      "last10_median_s": 0.6759045124053955,
+      "max_s": 51.44669508934021
+    }
+  },
+  "request_queue": {
+    "word_tree_summary": {
+      "count": 6,
+      "sum_s": 0.14049,
+      "median_s": 0.016524,
+      "p95_s": 0.047592,
+      "first10_median_s": 0.016524,
+      "last10_median_s": 0.016524,
+      "max_s": 0.047592
+    },
+    "ontology_guided_discovery": {
+      "count": 865,
+      "sum_s": 19.159046,
+      "median_s": 0.020676,
+      "p95_s": 0.038395,
+      "first10_median_s": 0.020329,
+      "last10_median_s": 0.021695,
+      "max_s": 0.121468
+    },
+    "ontology_guided_verification": {
+      "count": 372,
+      "sum_s": 7.513119,
+      "median_s": 0.020076,
+      "p95_s": 0.02771,
+      "first10_median_s": 0.0215905,
+      "last10_median_s": 0.0198255,
+      "max_s": 0.13539
+    },
+    "ranking_count_tokens_batch": {
+      "count": 110,
+      "sum_s": 2.739603,
+      "median_s": 0.0215795,
+      "p95_s": 0.042806,
+      "first10_median_s": 0.0195655,
+      "last10_median_s": 0.026947,
+      "max_s": 0.066083
+    },
+    "ranking_embed": {
+      "count": 113,
+      "sum_s": 2.255093,
+      "median_s": 0.019948,
+      "p95_s": 0.026286,
+      "first10_median_s": 0.021904,
+      "last10_median_s": 0.021655,
+      "max_s": 0.044723
+    },
+    "ranking_score_pairs": {
+      "count": 418,
+      "sum_s": 8.125086,
+      "median_s": 0.019767,
+      "p95_s": 0.025572,
+      "first10_median_s": 0.019556999999999998,
+      "last10_median_s": 0.021386000000000002,
+      "max_s": 0.037765
+    }
+  },
+  "numeric_metrics": {
+    "word_tree_summary": {
+      "queue_seconds": 0.13799999999999998,
+      "prompt_tokens": 8203,
+      "completion_tokens": 3834,
+      "cache_tokens": 360,
+      "prompt_ms": 50063.497,
+      "predicted_ms": 62576.334,
+      "request_seconds": 127.36999999999999,
+      "elapsed_seconds": 127.50900000000001
+    },
+    "ontology_guided_discovery": {
+      "queue_seconds": 18.848999999999887,
+      "prompt_tokens": 4187521,
+      "completion_tokens": 129619,
+      "cache_tokens": 289730,
+      "prompt_ms": 15659808.469999986,
+      "predicted_ms": 2186483.716000003,
+      "request_seconds": 18225.88200000001,
+      "elapsed_seconds": 18244.75799999999
+    },
+    "ontology_guided_verification": {
+      "queue_seconds": 7.385999999999985,
+      "prompt_tokens": 2903144,
+      "completion_tokens": 205598,
+      "cache_tokens": 80509,
+      "prompt_ms": 11321062.85700001,
+      "predicted_ms": 3643107.436,
+      "request_seconds": 15136.645999999993,
+      "elapsed_seconds": 15144.036000000002
+    },
+    "ranking_count_tokens_batch": {
+      "queue_seconds": 2.6999999999999993,
+      "input_count": 318,
+      "input_tokens": 0,
+      "elapsed_seconds": 48.58099999999997,
+      "request_seconds": 45.86800000000005
+    },
+    "ranking_embed": {
+      "queue_seconds": 2.2159999999999975,
+      "input_count": 320,
+      "input_tokens": 122941,
+      "elapsed_seconds": 49.41200000000001,
+      "worker_metrics.model_load_seconds": 7.2162489630281925,
+      "worker_metrics.inference_seconds": 22.824966528685763,
+      "request_seconds": 47.195
+    },
+    "ranking_score_pairs": {
+      "queue_seconds": 7.975999999999979,
+      "input_count": 1578,
+      "input_tokens": 1520180,
+      "elapsed_seconds": 368.0080000000001,
+      "worker_metrics.model_load_seconds": 6.568967072060332,
+      "worker_metrics.inference_seconds": 289.56854165450204,
+      "request_seconds": 360.0280000000001
+    }
+  },
+  "main_request_gaps": {
+    "count": 1236,
+    "sum_s": 15326.54893875122,
+    "median_s": 4.720922112464905,
+    "p95_s": 32.74085211753845,
+    "first10_median_s": 1.102786898612976,
+    "last10_median_s": 19.19918990135193,
+    "max_s": 1325.4740760326385
+  },
+  "longest_main_request_gaps": [
+    {
+      "prior_finish": "2026-09-13 09:15:49.861536+00:00",
+      "next_start": "2026-09-13 09:37:55.335612+00:00",
+      "gap_s": 1325.4740760326385
+    },
+    {
+      "prior_finish": "2026-09-13 09:38:28.339484+00:00",
+      "next_start": "2026-09-13 09:46:23.170828+00:00",
+      "gap_s": 474.83134412765503
+    },
+    {
+      "prior_finish": "2026-09-13 14:55:40.548144+00:00",
+      "next_start": "2026-09-13 14:58:36.965462+00:00",
+      "gap_s": 176.41731786727905
+    },
+    {
+      "prior_finish": "2026-09-13 15:17:01.486685+00:00",
+      "next_start": "2026-09-13 15:19:36.984030+00:00",
+      "gap_s": 155.49734497070312
+    },
+    {
+      "prior_finish": "2026-09-13 14:03:17.950836+00:00",
+      "next_start": "2026-09-13 14:05:43.359702+00:00",
+      "gap_s": 145.40886616706848
+    },
+    {
+      "prior_finish": "2026-09-13 13:19:33.876559+00:00",
+      "next_start": "2026-09-13 13:21:55.787148+00:00",
+      "gap_s": 141.91058897972107
+    },
+    {
+      "prior_finish": "2026-09-13 14:26:19.335652+00:00",
+      "next_start": "2026-09-13 14:28:35.665939+00:00",
+      "gap_s": 136.3302869796753
+    },
+    {
+      "prior_finish": "2026-09-13 12:38:57.448636+00:00",
+      "next_start": "2026-09-13 12:41:05.272510+00:00",
+      "gap_s": 127.82387399673462
+    }
+  ],
+  "artifact_timestamp_spans": {
+    "recognition-model-calls": {
+      "count": 5471,
+      "sum_s": 66.30493402481079,
+      "median_s": 0.011759042739868164,
+      "p95_s": 0.017604827880859375,
+      "first10_median_s": 0.011766552925109863,
+      "last10_median_s": 0.011001944541931152,
+      "max_s": 0.07682204246520996
+    },
+    "graph": {
+      "count": 1088,
+      "sum_s": 91.14145565032959,
+      "median_s": 0.02663397789001465,
+      "p95_s": 0.09281086921691895,
+      "first10_median_s": 0.028719067573547363,
+      "last10_median_s": 0.026161551475524902,
+      "max_s": 2.612398862838745
+    },
+    "public_graph": {
+      "count": 1088,
+      "sum_s": 112.71927905082703,
+      "median_s": 0.045073509216308594,
+      "p95_s": 0.13481903076171875,
+      "first10_median_s": 0.04692506790161133,
+      "last10_median_s": 0.05160355567932129,
+      "max_s": 2.6306028366088867
+    },
+    "recognition_checkpoint": {
+      "count": 1088,
+      "sum_s": 332.6759121417999,
+      "median_s": 0.19197893142700195,
+      "p95_s": 0.3222320079803467,
+      "first10_median_s": 0.09093606472015381,
+      "last10_median_s": 0.21776700019836426,
+      "max_s": 6.843111991882324
+    },
+    "ranking_state": {
+      "count": 891,
+      "sum_s": 10.722908973693848,
+      "median_s": 0.012062788009643555,
+      "p95_s": 0.014986991882324219,
+      "first10_median_s": 0.012707948684692383,
+      "last10_median_s": 0.011839985847473145,
+      "max_s": 0.02982306480407715
+    }
+  },
+  "artifact_baseline_timestamp_spans": {
+    "recognition-model-calls": {
+      "count": 171,
+      "sum_s": 2.268136501312256,
+      "median_s": 0.013180971145629883,
+      "p95_s": 0.01888585090637207,
+      "first10_median_s": 0.011778473854064941,
+      "last10_median_s": 0.012537002563476562,
+      "max_s": 0.020313024520874023
+    },
+    "graph": {
+      "count": 34,
+      "sum_s": 49.758522510528564,
+      "median_s": 1.642187476158142,
+      "p95_s": 2.399383068084717,
+      "first10_median_s": 0.5201408863067627,
+      "last10_median_s": 2.248697519302368,
+      "max_s": 2.612398862838745
+    },
+    "public_graph": {
+      "count": 34,
+      "sum_s": 50.32073664665222,
+      "median_s": 1.6565935611724854,
+      "p95_s": 2.4132609367370605,
+      "first10_median_s": 0.5341354608535767,
+      "last10_median_s": 2.264662027359009,
+      "max_s": 2.6306028366088867
+    },
+    "recognition_checkpoint": {
+      "count": 34,
+      "sum_s": 132.70636892318726,
+      "median_s": 4.367808938026428,
+      "p95_s": 6.512292146682739,
+      "first10_median_s": 1.4485679864883423,
+      "last10_median_s": 5.962720990180969,
+      "max_s": 6.843111991882324
+    },
+    "ranking_state": {
+      "count": 28,
+      "sum_s": 0.3817920684814453,
+      "median_s": 0.012599945068359375,
+      "p95_s": 0.026144981384277344,
+      "first10_median_s": 0.0117415189743042,
+      "last10_median_s": 0.012770533561706543,
+      "max_s": 0.02982306480407715
+    }
+  },
+  "artifact_nonbaseline_timestamp_spans": {
+    "recognition-model-calls": {
+      "count": 5300,
+      "sum_s": 64.03679752349854,
+      "median_s": 0.011747598648071289,
+      "p95_s": 0.017467021942138672,
+      "first10_median_s": 0.012887954711914062,
+      "last10_median_s": 0.011001944541931152,
+      "max_s": 0.07682204246520996
+    },
+    "recognition_checkpoint": {
+      "count": 1054,
+      "sum_s": 199.96954321861267,
+      "median_s": 0.1902555227279663,
+      "p95_s": 0.28260016441345215,
+      "first10_median_s": 0.08973658084869385,
+      "last10_median_s": 0.21776700019836426,
+      "max_s": 0.594810962677002
+    },
+    "public_graph": {
+      "count": 1054,
+      "sum_s": 62.398542404174805,
+      "median_s": 0.04471302032470703,
+      "p95_s": 0.10962891578674316,
+      "first10_median_s": 0.04535055160522461,
+      "last10_median_s": 0.05160355567932129,
+      "max_s": 0.5555908679962158
+    },
+    "graph": {
+      "count": 1054,
+      "sum_s": 41.382933139801025,
+      "median_s": 0.02651214599609375,
+      "p95_s": 0.0819849967956543,
+      "first10_median_s": 0.0270845890045166,
+      "last10_median_s": 0.026161551475524902,
+      "max_s": 0.1946430206298828
+    },
+    "ranking_state": {
+      "count": 863,
+      "sum_s": 10.341116905212402,
+      "median_s": 0.012056112289428711,
+      "p95_s": 0.014903068542480469,
+      "first10_median_s": 0.013162970542907715,
+      "last10_median_s": 0.011839985847473145,
+      "max_s": 0.019001007080078125
+    }
+  },
+  "artifact_counts": [
+    {
+      "artifact_kind": "graph",
+      "count": 1088,
+      "declared_bytes": null
+    },
+    {
+      "artifact_kind": "metadata",
+      "count": 1,
+      "declared_bytes": null
+    },
+    {
+      "artifact_kind": "ontology_snapshot",
+      "count": 1,
+      "declared_bytes": null
+    },
+    {
+      "artifact_kind": "public_graph",
+      "count": 1088,
+      "declared_bytes": null
+    },
+    {
+      "artifact_kind": "ranking_state",
+      "count": 891,
+      "declared_bytes": null
+    },
+    {
+      "artifact_kind": "ranking_summary",
+      "count": 742,
+      "declared_bytes": null
+    },
+    {
+      "artifact_kind": "recognition-model-calls",
+      "count": 5471,
+      "declared_bytes": null
+    },
+    {
+      "artifact_kind": "recognition_checkpoint",
+      "count": 1088,
+      "declared_bytes": null
+    },
+    {
+      "artifact_kind": "source",
+      "count": 1,
+      "declared_bytes": 119628
+    },
+    {
+      "artifact_kind": "source_header",
+      "count": 1,
+      "declared_bytes": null
+    },
+    {
+      "artifact_kind": "source_selections",
+      "count": 221,
+      "declared_bytes": null
+    },
+    {
+      "artifact_kind": "state_block",
+      "count": 42000,
+      "declared_bytes": 187629708
+    },
+    {
+      "artifact_kind": "structure",
+      "count": 1,
+      "declared_bytes": null
+    }
+  ],
+  "artifact_heads": [
+    {
+      "artifact_kind": "source",
+      "revision": 1,
+      "event_head": 1,
+      "delta_depth": null
+    },
+    {
+      "artifact_kind": "ontology_snapshot",
+      "revision": 1,
+      "event_head": 1,
+      "delta_depth": null
+    },
+    {
+      "artifact_kind": "structure",
+      "revision": 1,
+      "event_head": 3,
+      "delta_depth": null
+    },
+    {
+      "artifact_kind": "source_header",
+      "revision": 1,
+      "event_head": 3,
+      "delta_depth": null
+    },
+    {
+      "artifact_kind": "metadata",
+      "revision": 1,
+      "event_head": 5,
+      "delta_depth": null
+    },
+    {
+      "artifact_kind": "source_selections",
+      "revision": 221,
+      "event_head": 7406,
+      "delta_depth": null
+    },
+    {
+      "artifact_kind": "recognition-model-calls",
+      "revision": 5471,
+      "event_head": 7457,
+      "delta_depth": "30"
+    },
+    {
+      "artifact_kind": "graph",
+      "revision": 1088,
+      "event_head": 7458,
+      "delta_depth": "31"
+    },
+    {
+      "artifact_kind": "public_graph",
+      "revision": 1088,
+      "event_head": 7458,
+      "delta_depth": null
+    },
+    {
+      "artifact_kind": "recognition_checkpoint",
+      "revision": 1088,
+      "event_head": 7458,
+      "delta_depth": "31"
+    },
+    {
+      "artifact_kind": "ranking_summary",
+      "revision": 742,
+      "event_head": 7451,
+      "delta_depth": null
+    },
+    {
+      "artifact_kind": "ranking_state",
+      "revision": 891,
+      "event_head": 7452,
+      "delta_depth": "26"
+    }
+  ],
+  "public_graph_size": [
+    {
+      "nodes": 50,
+      "edges": 58,
+      "properties": 115,
+      "stored_payload_bytes": 808565
+    }
+  ],
+  "controls": [
+    {
+      "sequence": 1,
+      "event_type": "run_state",
+      "created_at": "2026-09-13 02:04:29.367015+00:00",
+      "status": "queued",
+      "stage": "accepted"
+    },
+    {
+      "sequence": 2,
+      "event_type": "run_state",
+      "created_at": "2026-09-13 02:04:29.525758+00:00",
+      "status": "running",
+      "stage": "parsing"
+    },
+    {
+      "sequence": 4,
+      "event_type": "run_state",
+      "created_at": "2026-09-13 02:04:30.696465+00:00",
+      "status": "running",
+      "stage": "preparing_metadata"
+    },
+    {
+      "sequence": 4656,
+      "event_type": "run_state",
+      "created_at": "2026-09-13 09:15:35.021559+00:00",
+      "status": "pausing",
+      "stage": "extracting"
+    },
+    {
+      "sequence": 4660,
+      "event_type": "run_state",
+      "created_at": "2026-09-13 09:20:10.844039+00:00",
+      "status": "paused",
+      "stage": "extracting"
+    },
+    {
+      "sequence": 4661,
+      "event_type": "run_state",
+      "created_at": "2026-09-13 09:31:57.272894+00:00",
+      "status": "queued",
+      "stage": "extracting"
+    },
+    {
+      "sequence": 7459,
+      "event_type": "run_state",
+      "created_at": "2026-09-13 15:38:22.617519+00:00",
+      "status": "running",
+      "stage": "extracting"
+    },
+    {
+      "sequence": 7460,
+      "event_type": "error",
+      "created_at": "2026-09-13 15:40:44.288881+00:00",
+      "status": "retryable_failure",
+      "stage": "extracting"
+    }
+  ],
+  "windows": [
+    {
+      "window": "first_two_hours",
+      "wall_s": 7200,
+      "models_s": 6586.1704087257385,
+      "visible_save_only_s": 45.31567454338074,
+      "other_s": 568.5139167308807
+    },
+    {
+      "window": "last_two_hours",
+      "wall_s": 7200,
+      "models_s": 3554.5303888320923,
+      "visible_save_only_s": 72.304767370224,
+      "other_s": 3573.1648437976837
+    }
+  ],
+  "limits": [
+    "Timestamp spans omit preparation before events and final commit.",
+    "Intervals are unioned with LLM, ranking, visible saves in that priority.",
+    "Other time has not been attributed to functions or SQL.",
+    "No model requests or application writes were performed.",
+    "Confirmed paused time is separated from the unattributed non-model interval."
+  ],
+  "evidence_scope": {
+    "kind": "read_only_runtime_metadata",
+    "model_requests_started": 0,
+    "database_writes": 0,
+    "timing_method": "Union of persisted request intervals; partial artifact spans from event creation to artifact creation, not function profiling."
+  }
+}

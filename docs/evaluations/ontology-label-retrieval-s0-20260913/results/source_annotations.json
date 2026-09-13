@@ -1,0 +1,55 @@
+{
+  "https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport": [
+    {
+      "text": "CMC Report",
+      "language": "en",
+      "predicate_iri": "http://www.w3.org/2000/01/rdf-schema#label"
+    },
+    {
+      "text": "CMC 报告",
+      "language": "zh",
+      "predicate_iri": "http://www.w3.org/2000/01/rdf-schema#label"
+    }
+  ],
+  "https://ontology.pharma-gmp.cn/slpra/drug-development/usesEquipment": [
+    {
+      "text": "uses equipment",
+      "language": "en",
+      "predicate_iri": "http://www.w3.org/2000/01/rdf-schema#label"
+    },
+    {
+      "text": "使用设备",
+      "language": "zh",
+      "predicate_iri": "http://www.w3.org/2000/01/rdf-schema#label"
+    }
+  ],
+  "https://ontology.pharma-gmp.cn/slpra/equipment/Equipment": [
+    {
+      "text": "Equipment",
+      "language": "en",
+      "predicate_iri": "http://www.w3.org/2000/01/rdf-schema#label"
+    },
+    {
+      "text": "设备",
+      "language": "zh",
+      "predicate_iri": "http://www.w3.org/2000/01/rdf-schema#label"
+    }
+  ],
+  "https://ontology.pharma-gmp.cn/slpra/equipment/Reactor": [
+    {
+      "text": "Reactor",
+      "language": "en",
+      "predicate_iri": "http://www.w3.org/2000/01/rdf-schema#label"
+    },
+    {
+      "text": "反应器",
+      "language": "zh",
+      "predicate_iri": "http://www.w3.org/2000/01/rdf-schema#label"
+    },
+    {
+      "text": "反应釜",
+      "language": "zh",
+      "predicate_iri": "http://www.w3.org/2004/02/skos/core#altLabel"
+    }
+  ]
+}

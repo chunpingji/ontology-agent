@@ -24,6 +24,7 @@ from app.services.extraction.ontology_guided.contextual_retrieval import anchor_
 from app.services.extraction.ontology_guided.contracts import (
     GraphNode,
     MetadataSnapshot,
+    OntologySnapshot,
     RetrievalPlan,
     VersionedRef,
 )
@@ -488,6 +489,14 @@ class RankingService:
         self._pending.pop(epoch.plan_id, None)
         return committed
 
+    def _validate_ontology_context(
+        self, plan: RetrievalPlan, ontology: OntologySnapshot | None,
+    ) -> None:
+        if ontology is not None and ontology.ontology_hash != plan.ontology_hash:
+            raise ValueError("ranking ontology does not match the frozen plan")
+        if self.adaptive_policy is not None:
+            self.adaptive_policy.validate_ontology_context(ontology)
+
     def validate_epoch(
         self,
         epoch: RankingEpoch,
@@ -501,6 +510,7 @@ class RankingService:
         root_ref: VersionedRef,
         root_class_iri: str,
         permission_scope: str,
+        ontology: OntologySnapshot | None = None,
         required_record_ids: list[str] | None = None,
         mentions=None,
         dependency_refs=None,
@@ -512,6 +522,7 @@ class RankingService:
         from app.services.extraction.ontology_guided.retrieval import validate_record_universe
 
         validate_record_universe(plan, index)
+        self._validate_ontology_context(plan, ontology)
         if required_record_ids is not None and not set(required_record_ids).issubset(
             record_universe(plan, index)
         ):
@@ -544,6 +555,7 @@ class RankingService:
             root_class_iri=root_class_iri,
             mentions=mentions,
             dependency_refs=dependency_refs,
+            ontology=ontology,
         )
         views = self._views(
             index, metadata, scope_hash=evidence_hash(permission_scope), count_tokens=len,
@@ -578,6 +590,7 @@ class RankingService:
         root_ref: VersionedRef,
         root_class_iri: str,
         permission_scope: str,
+        ontology: OntologySnapshot | None = None,
         required_record_ids: list[str] | None = None,
         mentions=None,
         dependency_refs=None,
@@ -588,6 +601,7 @@ class RankingService:
         from app.services.extraction.ontology_guided.retrieval import validate_record_universe
 
         validate_record_universe(plan, index)
+        self._validate_ontology_context(plan, ontology)
         if expansion_boundary is not None:
             _validate_expansion_boundary(expansion_boundary)
         candidate_scope = set(candidate_record_ids) if candidate_record_ids is not None else None
@@ -613,6 +627,7 @@ class RankingService:
                 permission_scope=permission_scope,
                 mentions=mentions,
                 dependency_refs=dependency_refs,
+                ontology=ontology,
             )
         if pending:
             if pending.expansion_boundary != expansion_boundary:
@@ -658,6 +673,7 @@ class RankingService:
             root_class_iri=root_class_iri,
             mentions=mentions,
             dependency_refs=dependency_refs,
+            ontology=ontology,
         )
         slot_key = evidence_hash(
             [scope_hash, plan.subject.entity_id, predicate.iri]

@@ -141,8 +141,22 @@ def build_subject_queries(
         )
         common["subject_class_terms"] = terms_for(selection, "subject_class", subject.class_iri)
         common["predicate"]["terms"] = terms_for(selection, "predicate", predicate.iri)
+        # Existing display fields must not reintroduce annotations omitted by
+        # the bounded selection (especially a long, sole skos:altLabel).
+        def display_label(current, terms, iri):
+            return current if current in terms else terms[0] if terms else iri
+
+        common["subject_class_label"] = display_label(
+            common["subject_class_label"], common["subject_class_terms"], subject.class_iri,
+        )
+        common["predicate"]["label"] = display_label(
+            common["predicate"]["label"], common["predicate"]["terms"], predicate.iri,
+        )
+        if common["literal_spec"] is not None:
+            common["literal_spec"]["label"] = common["predicate"]["label"]
         for target in common["allowed_object_types"]:
             target["terms"] = terms_for(selection, "object_type", target["iri"])
+            target["label"] = display_label(target.get("label"), target["terms"], target["iri"])
     dependency_hash = evidence_hash(
         {
             "subject": subject,

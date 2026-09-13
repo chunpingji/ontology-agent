@@ -5,11 +5,16 @@ from __future__ import annotations
 import math
 from typing import Literal
 
-from pydantic import Field, model_validator
+from pydantic import Field, model_serializer, model_validator
 
 from app.schemas.evidence import EvidenceModel
 from app.schemas.retrieval_diagnostics import RetrievalDiagnostics  # noqa: F401
 from app.services.extraction.evidence_identity import evidence_hash, stable_id
+from app.services.extraction.ontology_guided.contracts import OntologySnapshot
+from app.services.extraction.ontology_guided.lexical_query import (
+    LEXICAL_QUERY_VERSION,
+    LEXICAL_SELECTION_VERSION,
+)
 
 ADAPTIVE_VERSION = "adaptive-retrieval-v1"
 CONTEXT_VIEW_VERSION = "contextual-retrieval-view-v1"
@@ -23,7 +28,12 @@ class CalibrationProfile(EvidenceModel):
     model_hash: str
     view_version: str
     view_configuration_hash: str
-    query_version: Literal["subject-slot-query-v1"] = "subject-slot-query-v1"
+    query_version: Literal["subject-slot-query-v1", "subject-slot-query-v2"] = (
+        "subject-slot-query-v1"
+    )
+    ontology_hash: str | None = Field(default=None, pattern=r"^[0-9a-f]{64}$")
+    lexical_context_hash: str | None = Field(default=None, pattern=r"^[0-9a-f]{64}$")
+    lexical_selection_version: Literal["ontology-label-selection-v1"] | None = None
     predicate_iris: list[str]
     dense_thresholds: dict[str, float]
     self_thresholds: dict[str, float]
@@ -34,8 +44,22 @@ class CalibrationProfile(EvidenceModel):
     quality_status: Literal["development", "validated"] = "development"
     profile_hash: str = ""
 
+    @model_serializer(mode="wrap")
+    def preserve_legacy_profile(self, handler):
+        result = handler(self)
+        for key in ("ontology_hash", "lexical_context_hash", "lexical_selection_version"):
+            if getattr(self, key) is None:
+                result.pop(key, None)
+        return result
+
     @model_validator(mode="after")
     def coherent(self):
+        binding = (self.ontology_hash, self.lexical_context_hash, self.lexical_selection_version)
+        if self.query_version == LEXICAL_QUERY_VERSION:
+            if not all(binding):
+                raise ValueError("lexical calibration requires ontology and vocabulary bindings")
+        elif any(value is not None for value in binding):
+            raise ValueError("legacy calibration cannot carry lexical bindings")
         if not self.predicate_iris or len(set(self.predicate_iris)) != len(self.predicate_iris):
             raise ValueError("calibration requires explicit unique predicates")
         for scores in (
@@ -110,6 +134,24 @@ class AdaptivePolicy(EvidenceModel):
     @property
     def active_search(self):
         return self.mode in {"enhanced", "trial", "enforce"}
+
+    def validate_ontology_context(self, ontology: OntologySnapshot | None) -> None:
+        """Reject stale pruning thresholds before any retrieval/model work."""
+        profile = self.calibration
+        if profile is None:
+            return
+        context = ontology.lexical_context if ontology is not None else None
+        if context is None:
+            if profile.query_version != "subject-slot-query-v1":
+                raise ValueError("lexical calibration requires a frozen lexical ontology")
+            return
+        if (
+            profile.query_version != LEXICAL_QUERY_VERSION
+            or profile.ontology_hash != ontology.ontology_hash
+            or profile.lexical_context_hash != context.context_hash
+            or profile.lexical_selection_version != LEXICAL_SELECTION_VERSION
+        ):
+            raise ValueError("adaptive calibration ontology or lexical query changed")
 
     def thresholds(self, *, model_identity, predicate_iri, stage):
         profile = self.calibration

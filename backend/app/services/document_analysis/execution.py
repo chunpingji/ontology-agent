@@ -76,7 +76,6 @@ from app.services.extraction.ontology_guided.context_records import CONTEXT_RECO
 from app.services.extraction.ontology_guided.contracts import (
     CONTRACT_VERSION,
     METADATA_POLICY_VERSION,
-    ONTOLOGY_SNAPSHOT_VERSION,
     PROJECTION_POLICY_VERSION,
     PROOF_POLICY_VERSION,
     RETRIEVAL_POLICY_VERSION,
@@ -1044,7 +1043,7 @@ def _recognition_fingerprint(
             "parser_version": ir.parser_version,
             "structure_policy_version": ir.structure_policy_version,
             "ontology_hash": ontology.ontology_hash,
-            "ontology_schema_version": ONTOLOGY_SNAPSHOT_VERSION,
+            "ontology_schema_version": ontology.version,
             "metadata_dependency_hash": metadata.dependency_hash,
             "metadata_policy_version": METADATA_POLICY_VERSION,
             "root_class_iri": run.root_class_iri,
