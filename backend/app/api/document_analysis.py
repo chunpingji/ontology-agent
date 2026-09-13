@@ -56,6 +56,14 @@ from app.schemas.document_analysis import (
     SseEvent,
     TemplateRunResponse,
 )
+from app.schemas.document_analysis_review import (
+    CreatePropertyRepair,
+    CreatePropertyReview,
+    PropertyRepairList,
+    PropertyRepairResponse,
+    PropertyReviewList,
+    PropertyReviewResponse,
+)
 from app.services.document_analysis.application import (
     DocumentAnalysisApplication,
     DocumentAnalysisError,
@@ -67,6 +75,7 @@ from app.services.document_analysis.execution import (
     notify_document_analysis_dispatcher,
 )
 from app.services.document_analysis.report_documents import ReportDocumentRuns
+from app.services.document_analysis.reviews import DocumentPropertyReviewService
 from app.services.document_analysis.template_runs import TemplateDocumentRuns
 
 
@@ -597,6 +606,61 @@ async def stream_document_analysis_events(
             "X-Accel-Buffering": "no",
         },
     )
+
+
+@router.get("/runs/{recognition_run_id}/reviews", response_model=PropertyReviewList)
+def list_property_reviews(
+    recognition_run_id: UUID,
+    identity: Identity = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    result = DocumentPropertyReviewService(db, identity).listing(recognition_run_id)
+    return _json_model(PropertyReviewList.model_validate(result),
+                       headers={"Cache-Control": "private, no-store"})
+
+
+@router.post("/runs/{recognition_run_id}/reviews", response_model=PropertyReviewResponse)
+def create_property_review(
+    recognition_run_id: UUID,
+    request: CreatePropertyReview,
+    identity: Identity = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    result, replay = DocumentPropertyReviewService(db, identity).create_review(
+        recognition_run_id, request,
+    )
+    return _json_model(PropertyReviewResponse.model_validate(result),
+                       status_code=200 if replay else 201,
+                       headers={"Cache-Control": "private, no-store"})
+
+
+@router.get("/runs/{recognition_run_id}/repairs", response_model=PropertyRepairList)
+def list_property_repairs(
+    recognition_run_id: UUID,
+    identity: Identity = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    result = DocumentPropertyReviewService(db, identity).repairs(recognition_run_id)
+    return _json_model(PropertyRepairList.model_validate(result),
+                       headers={"Cache-Control": "private, no-store"})
+
+
+@router.post("/runs/{recognition_run_id}/repairs", response_model=PropertyRepairResponse,
+             status_code=202)
+def create_property_repair(
+    recognition_run_id: UUID,
+    request: CreatePropertyRepair,
+    background_tasks: BackgroundTasks,
+    identity: Identity = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    result, replay = DocumentPropertyReviewService(db, identity).create_repair(
+        recognition_run_id, request,
+    )
+    if not replay:
+        _wake_dispatcher_or_fallback(background_tasks, recognition_run_id, bind=db.get_bind())
+    return _json_model(PropertyRepairResponse.model_validate(result), status_code=202,
+                       headers={"Cache-Control": "private, no-store"})
 
 
 def _control_response(

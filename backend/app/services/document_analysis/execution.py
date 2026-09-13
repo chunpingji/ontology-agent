@@ -538,6 +538,18 @@ def _finish(
             "error": error,
         },
     )
+    if status in {"failed", "blocked_dependency"}:
+        from app.services.document_analysis.reviews import (
+            mark_repair_operation,
+            pending_review_operations,
+        )
+
+        for operation in pending_review_operations(db, run):
+            result = {"tasks_attempted": 0, "model_calls": 0,
+                      "replacement_candidate_refs": [], **operation.get("result", {}),
+                      "reason_code": stop_reason or "expert_repair_execution_failed"}
+            mark_repair_operation(db, run.recognition_run_id, run.owner_id, token,
+                                  operation["operation_id"], "failed", result)
     run = store.get_owned(run.recognition_run_id, run.owner_id)
     store.update_stage(
         run.recognition_run_id,
@@ -1327,6 +1339,13 @@ def _persist_recognition_batch(
             current.recognition_run_id, current.owner_id, token, expected_revision=current.revision,
             stage="recognition", progress=graph.progress.model_dump(mode="json"),
         )
+        from app.services.document_analysis.reviews import mark_repair_operation
+
+        for operation_id, operation in batch.evidence_repair_summary.get(
+            "expert_review", {},
+        ).get("operations", {}).items():
+            mark_repair_operation(db, current.recognition_run_id, current.owner_id, token,
+                                  operation_id, operation["status"], operation["result"])
         store.put_event_batch(
             current.recognition_run_id, current.owner_id, token, batch_id=batch.batch_id,
             batch_hash=batch_hash, first_sequence=event.sequence, last_sequence=event.sequence,
@@ -1810,6 +1829,13 @@ def _execute_claimed(
             db, store, run, token, final_fingerprint=final_fingerprint, state=state
         )
 
+    from app.services.document_analysis.reviews import repair_operations, review_operations
+
+    expert_reviews = review_operations(db, run)
+    expert_repairs = repair_operations(db, run)
+    repair_only = run.control_action == "repair" or any(
+        item["status"] in {"queued", "running"} for item in expert_repairs
+    )
     try:
         with model_scope(
             run_id=str(run.recognition_run_id),
@@ -1822,6 +1848,7 @@ def _execute_claimed(
                 engine=object(),
                 adapter=adapter,
                 candidate_policy=performance.get("candidate_planning"),
+                layered_recognition=bool(performance.get("layered_recognition")),
                 max_tasks=settings.evidence_max_tasks,
                 max_model_calls_per_record=(
                     performance["max_lineage_calls"] if repair
@@ -1870,6 +1897,9 @@ def _execute_claimed(
                     model_call_state or (checkpoint.model_call_state if checkpoint else None)
                 ),
                 model_call_hook=model_call_hook,
+                property_reviews=expert_reviews,
+                property_repairs=expert_repairs,
+                repair_only=repair_only,
             )
     except ValueError as exc:
         if checkpoint is not None:
@@ -1949,6 +1979,20 @@ def _execute_claimed(
     })
     current = store.get_owned(run.recognition_run_id, run.owner_id)
     if _complete_pause_at_boundary(db, store, current, token, public_stage="extracting"):
+        return
+
+    if repair_only:
+        # Completing a bounded repair does not finish an interrupted ordinary run.
+        origin = expert_repairs[-1].get("origin_execution_status") if expert_repairs else None
+        completed = result.graph.progress.stop_reason == "expert_repair_completed"
+        finished = completed and origin == "finished" and terminal_progress.completion in {
+            "in_scope_complete", "policy_complete",
+        }
+        _finish(db, store, current, token,
+                status="finished" if finished else "paused",
+                public_status="finished" if finished else "paused",
+                public_stage="complete" if finished else "extracting",
+                progress=terminal_progress, stop_reason=result.graph.progress.stop_reason)
         return
 
     if result.graph.progress.stop_reason == "ranking_paused":

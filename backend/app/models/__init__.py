@@ -19,6 +19,11 @@ from app.models.document_analysis import (
     DocumentVerificationProof,
     DocumentVerificationProofHead,
 )
+from app.models.document_analysis_review import (
+    DocumentPropertyRepair,
+    DocumentPropertyReview,
+    DocumentPropertyReviewHead,
+)
 from app.models.entity_shadow import EntityShadow
 from app.models.evidence import *  # noqa: F401,F403
 from app.models.extraction import *  # noqa: F401,F403
@@ -51,6 +56,9 @@ from app.models.report_expert_opinion import ReportExpertOpinion
 from app.models.reporting import *  # noqa: F401,F403
 
 __all__ = [
+    "DocumentPropertyRepair",
+    "DocumentPropertyReview",
+    "DocumentPropertyReviewHead",
     "ReportExpertOpinion",
     "EntityShadow",
     "DocumentAnalysisArtifact",

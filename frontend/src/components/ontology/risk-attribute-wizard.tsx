@@ -7,6 +7,8 @@ import {
   type RiskVocabulary,
 } from "@/lib/api";
 import { Badge } from "@/components/ui/badge";
+import { PropertyCardinalityEditor } from "@/components/ontology/property-cardinality-editor";
+import { cardinalityForm, cardinalityPayload } from "@/lib/property-cardinality";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -36,6 +38,7 @@ export function RiskAttributeWizard({
   const [vocabs, setVocabs] = useState<RiskVocabulary[]>([]);
   const [vocab, setVocab] = useState<string>("");
   const [form, setForm] = useState({ slpra_iri: MANAGED_PREFIX, label: "" });
+  const [cardinality, setCardinality] = useState(cardinalityForm);
   const [msg, setMsg] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -56,6 +59,7 @@ export function RiskAttributeWizard({
     if (!current) return;
     try {
       await createDataProperty({
+        ...cardinalityPayload(cardinality, selectedClassIri ?? ""),
         slpra_iri: form.slpra_iri,
         label: form.label,
         domain_iri: selectedClassIri || null,
@@ -119,6 +123,7 @@ export function RiskAttributeWizard({
         onChange={(e) => setForm({ ...form, label: e.target.value })}
         className="h-auto rounded px-2 py-1 text-sm"
       />
+      <PropertyCardinalityEditor value={cardinality} onChange={setCardinality} />
       <div className="flex gap-2">
         <Button
           onClick={submit}

@@ -17,6 +17,11 @@ def query_terms(query: SubjectSlotQuery) -> list[str]:
     values = [predicate["label"], predicate["iri"].rsplit("#", 1)[-1].rsplit("/", 1)[-1]]
     values.extend(payload["subject_mentions"])
     values.extend(item.get("label", "") for item in payload["allowed_object_types"])
+    if query.lexical_selection is not None:
+        values.extend(predicate.get("terms", []))
+        values.extend(payload.get("subject_class_terms", []))
+        values.extend(term for item in payload["allowed_object_types"]
+                      for term in item.get("terms", []))
     return list(dict.fromkeys(re.sub(r"\s+", "", value).casefold() for value in values if value))
 
 

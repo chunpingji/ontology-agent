@@ -369,6 +369,8 @@ class DocumentAnalysisApplication:
                             or settings.document_analysis_evidence_repair_enabled
                         ),
                         **({"evidence_repair": "evidence-repair-v1",
+                            "layered_recognition": "layered-recognition-v1",
+                            "expert_review_repair": "expert-review-repair-v1",
                             "candidate_planning": "sparse-candidates-v1",
                             "incremental_performance": "incremental-performance-v1",
                             "state_storage_version": 3,
@@ -476,6 +478,8 @@ class DocumentAnalysisApplication:
         }
 
     def status_response(self, run: DocumentAnalysisRun, *, role: str | None) -> dict[str, Any]:
+        from app.services.document_analysis.reviews import reviewed_snapshot_id
+
         manifest = dict(run.artifact_manifest or {})
         ontology_entry = manifest.get("ontology_snapshot") or {}
         return {
@@ -498,7 +502,7 @@ class DocumentAnalysisApplication:
                 "analysis_id": run.analysis_id,
                 "ontology_snapshot_id": ontology_entry.get("artifact_id"),
                 "metadata_snapshot_id": run.metadata_snapshot_id,
-                "graph_snapshot_id": run.graph_snapshot_id,
+                "graph_snapshot_id": reviewed_snapshot_id(self.db, run),
                 "structure_snapshot_id": (manifest.get("source_header") or {}).get("artifact_id")
                 or (manifest.get("structure") or {}).get("artifact_id"),
                 "ranking_summary_id": (manifest.get("ranking_summary") or {}).get("artifact_id"),
@@ -659,6 +663,9 @@ class DocumentAnalysisApplication:
                 "error": None,
             }
         payload, availability = committed
+        from app.services.document_analysis.reviews import review_overlay
+
+        payload = review_overlay(self.db, run, payload)
         if ranking_artifact:
             payload["ranking_state"] = ranking_state
         response = public_graph_payload(
@@ -667,9 +674,23 @@ class DocumentAnalysisApplication:
             event_head=run.event_head,
             artifact_revision=run.artifact_revision,
             availability=availability,
-            projection=projection,
+            projection="all_candidates" if projection == "rejected" else projection,
             stored_payload=payload,
         )
+        if projection == "rejected":
+            response["projection"] = projection
+            for public_name, source_name in (("properties", "properties"),
+                                             ("relationships", "edges")):
+                selected = {
+                    (item["candidate_id"], item["revision"])
+                    for item in payload["graph"][source_name]
+                    if item["decision_status"] == "unsupported"
+                    or item.get("independent_review") == "rejected"
+                }
+                response[public_name] = [
+                    item for item in response[public_name]
+                    if (item["candidate_id"], item["revision"]) in selected
+                ]
         response["ranking"]["budget_enabled"] = run.ranking_budget_enabled
         if summary:
             response["ranking"] = {**summary[0], "budget_enabled": run.ranking_budget_enabled}
@@ -983,6 +1004,15 @@ class DocumentAnalysisApplication:
             if receipt is None:
                 raise InvalidRunState("idempotent control operation has no receipt")
             if not replay:
+                cancelled_repairs = []
+                if action in {"cancel", "delete"}:
+                    from app.services.document_analysis.reviews import (
+                        cancel_pending_repair_operations,
+                    )
+
+                    cancelled_repairs = cancel_pending_repair_operations(
+                        self.db, updated, action=action,
+                    )
                 public_status = _status(updated)
                 event_type = "tombstone" if action == "delete" else "run_state"
                 self.store.append_owner_event(
@@ -999,6 +1029,8 @@ class DocumentAnalysisApplication:
                         "artifact_revision": updated.artifact_revision,
                         "status": public_status,
                         "stage": _stage(updated),
+                        **({"cancelled_repair_operation_ids": cancelled_repairs}
+                           if cancelled_repairs else {}),
                         **({
                             "action": action,
                             "actor": run.owner_id,

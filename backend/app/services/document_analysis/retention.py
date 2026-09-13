@@ -39,6 +39,11 @@ from app.models.document_analysis import (
     DocumentVerificationProof,
     DocumentVerificationProofHead,
 )
+from app.models.document_analysis_review import (
+    DocumentPropertyRepair,
+    DocumentPropertyReview,
+    DocumentPropertyReviewHead,
+)
 from app.services.document_analysis.artifact_store import (
     RunArtifactStorage,
     SourceArtifactError,
@@ -468,6 +473,9 @@ class DocumentAnalysisRetentionService:
         )
 
         for model in (
+            DocumentPropertyRepair,
+            DocumentPropertyReviewHead,
+            DocumentPropertyReview,
             DocumentRunArtifactHead,
             DocumentRunCandidateHead,
             DocumentVerificationProofHead,

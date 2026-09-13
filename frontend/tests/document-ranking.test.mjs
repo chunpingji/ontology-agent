@@ -57,6 +57,12 @@ function renderTemplateSummary(candidatePolicy) {
       }
       if (name === "@/lib/api") return { getIdentity: () => ({ username: "analyst", role: "senior_analyst" }) };
       if (name === "@/lib/document-analysis") return reasons;
+      if (name === "./property-review-dialog") return {
+        PropertyReviewDialog: () => assert.fail("summary render must not open property review"),
+      };
+      if (name === "@/lib/document-property-review") return {
+        freezePropertyReviewTarget: () => assert.fail("summary render must not freeze a review target"),
+      };
       return require(name);
     },
   });

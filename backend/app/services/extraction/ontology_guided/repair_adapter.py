@@ -244,6 +244,9 @@ class EvidenceRepairAdapter(LocalModelRecognitionAdapter):
         )
         digest = evidence_content_hash(context)
         old = context.protocol_state
+        feedback_hash = evidence_hash(context.expert_feedback) if context.expert_feedback else None
+        if old and old.get("expert_feedback_hash") != feedback_hash:
+            raise ValueError("frozen_assertion_expert_review_mismatch")
         if old and (
             old.get("version") != self.protocol_version
             or old.get("lineage_id") != task.claim_lineage_id
@@ -296,6 +299,7 @@ class EvidenceRepairAdapter(LocalModelRecognitionAdapter):
                 "discovery_source_hash": old.get("discovery_source_hash"),
                 "request_attempt": old.get("request_attempt", 0),
                 "completed_attempts": old.get("completed_attempts", []),
+                **({"expert_feedback_hash": feedback_hash} if feedback_hash else {}),
             }
         context.save_protocol(deepcopy(old))
         context._actual_calls = 0
@@ -407,6 +411,7 @@ class EvidenceRepairAdapter(LocalModelRecognitionAdapter):
                 "predicate": wire["predicate"],
                 "menu_hash": context.proof_menu["menu_hash"],
                 "candidates": wire.get("candidates", []),
+                **({"expert_feedback": context.expert_feedback} if context.expert_feedback else {}),
             }
         )
         if not discovery and state.get("verification_request_hash") == request_hash:

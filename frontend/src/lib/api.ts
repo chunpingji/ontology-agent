@@ -1227,18 +1227,22 @@ export const getTBoxClass = (iri: string) =>
   fetchAPI<TBoxClass>(`/api/ontology/classes/${encodeURIComponent(iri)}`);
 
 // --- E2 link type ----------------------------------------------------------
-export interface TBoxLinkType {
+export type PropertyMultiplicity = "unspecified" | "single" | "multiple";
+export interface PropertyCardinality {
+  multiplicity: PropertyMultiplicity;
+  min_cardinality: number | null;
+  max_cardinality: number | null;
+}
+export interface TBoxLinkType extends PropertyCardinality {
   id: string; slpra_iri: string; label: string; comment: string | null;
   domain_iri: string | null; range_iri: string | null; inverse_iri: string | null;
-  min_cardinality: number | null; max_cardinality: number | null;
   is_functional: boolean; is_symmetric: boolean; is_transitive: boolean;
   status: string; version: number; is_disabled: boolean;
   inherited_from_iri?: string | null; inherited_from_label?: string | null;
 }
-export interface LinkTypeInput {
+export interface LinkTypeInput extends Partial<PropertyCardinality> {
   slpra_iri?: string; label?: string; comment?: string | null;
   domain_iri?: string | null; range_iri?: string | null; inverse_iri?: string | null;
-  min_cardinality?: number | null; max_cardinality?: number | null;
   is_functional?: boolean; is_symmetric?: boolean; is_transitive?: boolean;
   expected_version?: number;
 }
@@ -1257,14 +1261,14 @@ export const deleteLinkType = (iri: string, expectedVersion: number) =>
   );
 
 // --- E3 data property ------------------------------------------------------
-export interface TBoxDataProperty {
+export interface TBoxDataProperty extends PropertyCardinality {
   id: string; slpra_iri: string; label: string; comment: string | null;
   domain_iri: string | null; datatype: string; unit: string | null;
   controlled_vocab: Record<string, unknown> | null;
   status: string; version: number; is_disabled: boolean;
   inherited_from_iri?: string | null; inherited_from_label?: string | null;
 }
-export interface DataPropertyInput {
+export interface DataPropertyInput extends Partial<PropertyCardinality> {
   slpra_iri?: string; label?: string; comment?: string | null;
   domain_iri?: string | null; datatype?: string; unit?: string | null;
   controlled_vocab?: Record<string, unknown> | null; expected_version?: number;
@@ -2154,6 +2158,73 @@ export interface DocumentGraphProperty extends DocumentGraphAssertionBase {
   };
 }
 
+export type DocumentPropertyReviewReason = "incorrect_value" | "incorrect_property"
+  | "incorrect_subject" | "incorrect_scope" | "unsupported" | "other";
+export interface DocumentPropertyReview {
+  review_id: string;
+  revision: number;
+  candidate_id: string;
+  candidate_revision: number;
+  graph_snapshot_id: string;
+  decision: "accepted" | "rejected";
+  reason_code: DocumentPropertyReviewReason;
+  reason: string;
+  author: string;
+  author_role: string;
+  created_at: string;
+}
+export interface DocumentPropertyReviewList {
+  run_revision: number;
+  items: DocumentPropertyReview[];
+  heads: DocumentPropertyReview[];
+  can_review: boolean;
+  can_repair: boolean;
+}
+export interface DocumentPropertyReviewInput {
+  request_key: string;
+  expected_run_revision: number;
+  graph_snapshot_id: string;
+  candidate_id: string;
+  candidate_revision: number;
+  expected_review_revision: number;
+  decision: "accepted" | "rejected";
+  reason_code: DocumentPropertyReviewReason;
+  reason: string;
+}
+export interface DocumentPropertyRepair {
+  operation_id: string;
+  review_id: string;
+  candidate_id: string;
+  candidate_revision: number;
+  status: "queued" | "running" | "completed" | "unresolved" | "failed" | "cancelled";
+  subject_ref: DocumentAnalysisEntityRef;
+  predicate_iri: string;
+  record_ids: string[];
+  max_tasks: 16;
+  max_model_calls: 32;
+  result: Record<string, unknown>;
+  created_at: string;
+  updated_at: string;
+}
+export interface DocumentPropertyRepairList {
+  run_revision: number;
+  items: DocumentPropertyRepair[];
+  can_repair: boolean;
+}
+export interface DocumentPropertyRepairInput {
+  request_key: string;
+  expected_run_revision: number;
+  review_id: string;
+}
+export interface DocumentPropertyReviewReceipt {
+  review: DocumentPropertyReview;
+  run: DocumentAnalysisRun;
+}
+export interface DocumentPropertyRepairReceipt {
+  operation: DocumentPropertyRepair;
+  run: DocumentAnalysisRun;
+}
+
 export interface DocumentGraphRelationship extends DocumentGraphAssertionBase {
   object_ref: DocumentAnalysisEntityRef;
   direction: "subject_to_object" | "object_to_subject";
@@ -2475,6 +2546,19 @@ export const getDocumentAnalysisGraph = (
   `${documentRunPath(recognitionRunId)}/graph?projection=${encodeURIComponent(projection)}`,
   { signal },
 );
+
+export const getDocumentPropertyReviews = (runId: string, signal?: AbortSignal) =>
+  fetchAPI<DocumentPropertyReviewList>(`${documentRunPath(runId)}/reviews`, { signal });
+export const reviewDocumentProperty = (runId: string, input: DocumentPropertyReviewInput) =>
+  fetchAPI<DocumentPropertyReviewReceipt>(`${documentRunPath(runId)}/reviews`, {
+    method: "POST", ...jsonBody(input),
+  });
+export const getDocumentPropertyRepairs = (runId: string, signal?: AbortSignal) =>
+  fetchAPI<DocumentPropertyRepairList>(`${documentRunPath(runId)}/repairs`, { signal });
+export const repairDocumentProperty = (runId: string, input: DocumentPropertyRepairInput) =>
+  fetchAPI<DocumentPropertyRepairReceipt>(`${documentRunPath(runId)}/repairs`, {
+    method: "POST", ...jsonBody(input),
+  });
 
 export const getDocumentAnalysisSource = (
   recognitionRunId: string,

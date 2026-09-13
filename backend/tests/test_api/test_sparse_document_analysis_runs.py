@@ -102,6 +102,9 @@ def _run_case(
         assert "candidate_planning" not in original.payload["performance_policy"]
     else:
         assert original.payload["performance_policy"]["candidate_planning"] == POLICY
+        assert original.payload["performance_policy"]["layered_recognition"] == (
+            "layered-recognition-v1"
+        )
     frozen_source = dict(original.payload)
     db.rollback()
     assert execution.dispatch_next_run(bind=db.get_bind(), worker_id="sparse-api-worker") is True
@@ -132,14 +135,14 @@ def test_new_run_freezes_sparse_policy_and_finishes_without_full_text_cross_prod
     assert status["status"] == "finished", status
     progress = status["progress"]
     assert progress["completion"] == "policy_complete"
-    assert progress["stop_reason"] == "candidate_search_exhausted"
+    assert progress["stop_reason"] == "layered_policy_complete"
     assert 0 < progress["records_planned"] < 40 * 2
     assert progress["records_planned"] == progress["records_examined"] == len(adapter.calls)
     assert progress["records_unattempted"] == progress["records_incomplete"] == 0
     coverage = graph["coverage"]
     assert coverage["candidate_policy"] == POLICY
     assert coverage["records_planned"] == progress["records_planned"]
-    assert coverage["stop_reason"] == "candidate_search_exhausted"
+    assert coverage["stop_reason"] == "layered_policy_complete"
     assert len(coverage["subjects"]) == 2
     assert all(subject["candidate_policy"] == POLICY for subject in coverage["subjects"])
     assert graph["relationships"] == graph["properties"] == []

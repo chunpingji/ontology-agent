@@ -359,6 +359,59 @@ class HeuristicSlotSearch:
         self.events.append({"from": self.stage, "to": stage, "reason": reason})
         self.stage, self._reason = stage, reason
 
+    def admit_conflict_check(self, record_ids, *, trigger_ref):
+        """Admit source-backed survey obligations without semantic ranking.
+
+        The caller checks the completed current page. This never deletes source
+        records or changes their opportunity for another subject or predicate.
+        """
+        if not trigger_ref or not set(record_ids) <= self.record_universe:
+            raise ValueError("conflict survey requires a bound trigger and source scope")
+        selected = [rid for rid in record_ids if rid not in self.admitted][:
+            self.policy.expanded_page_size
+        ]
+        if not selected:
+            return None
+        self.admitted.update(selected)
+        self._active = selected
+        page = AdmissionPage(
+            batch_id=stable_id("slot-conflict-admission", [
+                self.run_fingerprint, self.plan.plan_id, trigger_ref, selected,
+            ]),
+            plan_id=self.plan.plan_id, stage="H1", source="heuristic",
+            record_ids=selected, reason="single_value_conflict_check",
+            context_record_ids={rid: self.search_index.context_record_ids(rid) for rid in selected},
+            matched_terms={rid: [self.predicate.label] for rid in selected},
+        )
+        self._pages.append(page)
+        self.status = "ready"
+        self._reason = "single_value_conflict_check"
+        return page
+
+    def admit_expert_record(self, record_id, operation_id):
+        """Admit one authorised local source without moving the ordinary frontier."""
+        if record_id not in self.record_universe:
+            raise ValueError("expert source is outside the frozen search universe")
+        if record_id in self.admitted:
+            return
+        self.admitted.add(record_id)
+        self._pages.append(AdmissionPage(
+            batch_id=stable_id("expert-source-admission", [
+                self.plan.plan_id, operation_id, record_id,
+            ]), plan_id=self.plan.plan_id, stage=self.stage, source="expert_review",
+            record_ids=[record_id], reason="expert_rejected_source_returned",
+            context_record_ids={}, matched_terms={},
+        ))
+
+    def close_satisfied(self):
+        self.status = "local_results_only"
+        self._reason = "single_value_satisfied"
+
+    def reopen_satisfied(self):
+        if self._reason == "single_value_satisfied":
+            self.status = "needs_search"
+            self._reason = "slot_completion_invalidated"
+
     def next_admission(self) -> AdmissionPage | None:
         if self._active and not all(rid in self.observed for rid in self._active):
             return None

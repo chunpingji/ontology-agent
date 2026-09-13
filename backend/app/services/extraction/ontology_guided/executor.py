@@ -47,6 +47,14 @@ from app.services.extraction.ontology_guided.contracts import (
 )
 from app.services.extraction.ontology_guided.dependencies import DependencyIndex
 from app.services.extraction.ontology_guided.evidence_work import EvidenceWorkQueue
+from app.services.extraction.ontology_guided.expert_review import (
+    MAX_REPAIR_CALLS,
+    ReviewReplay,
+    apply_property_review,
+    assertion_identity,
+    local_repair_tasks,
+    repair_feedback,
+)
 from app.services.extraction.ontology_guided.heuristic_search import (
     HeuristicSearchIndex,
     HeuristicSearchPolicy,
@@ -73,6 +81,12 @@ from app.services.extraction.ontology_guided.semantic_reranker import (
     RankingService,
     apply_epoch,
 )
+from app.services.extraction.ontology_guided.slot_completion import (
+    LAYERED_RECOGNITION_VERSION,
+    SlotCompletionIndex,
+    single_value_candidate,
+)
+from app.services.extraction.ontology_guided.slot_replay import SlotSearchReplay
 from app.services.llm.model_runtime import ModelCancelled, ModelWaitFailure
 
 
@@ -82,6 +96,10 @@ class ModelCallPersistenceFailure(RuntimeError):
 
 class ModelCallPauseRequested(RuntimeError):
     """The owner requested a pause between independent model stages."""
+
+
+class ExpertRepairBudgetExhausted(RuntimeError):
+    """A bounded repair has no authority to reserve another model request."""
 
 
 class TaskOutcome(EvidenceModel):
@@ -170,6 +188,7 @@ class OntologyGuidedExecutor:
         incremental_performance: bool = False,
         adaptive_policy=None,
         candidate_policy: str | None = None,
+        layered_recognition: bool = False,
     ):
         self.ontology = ontology
         self.engine = engine
@@ -192,6 +211,7 @@ class OntologyGuidedExecutor:
         self.evidence_repair = evidence_repair
         self.incremental_performance = incremental_performance
         self.adaptive_policy = adaptive_policy
+        self.layered_recognition = layered_recognition
         if candidate_policy not in {None, CANDIDATE_POLICY_VERSION}:
             raise ValueError("unsupported candidate planning policy")
         if candidate_policy and (
@@ -220,6 +240,8 @@ class OntologyGuidedExecutor:
             self.version += "+sparse-candidates-v1"
         if heuristic_policy is not None and not evidence_repair:
             self.version = type(self).version + "+heuristic-first-experiment-v1"
+        if layered_recognition:
+            self.version += "+" + LAYERED_RECOGNITION_VERSION
 
     @staticmethod
     def root_node(
@@ -263,6 +285,9 @@ class OntologyGuidedExecutor:
         ranking_hook: Callable[[dict], None] | None = None,
         model_call_state: dict | None = None,
         model_call_hook: Callable[[dict], None] | None = None,
+        property_reviews: list[dict] | None = None,
+        property_repairs: list[dict] | None = None,
+        repair_only: bool = False,
     ) -> ExecutionResult:
         if self.heuristic_policy is not None and not self.evidence_repair and (
             resume_state is not None or ranking_state is not None or model_call_state is not None
@@ -360,6 +385,11 @@ class OntologyGuidedExecutor:
         )
         root_menu = compile_local_menu(self.ontology, root_subject, engine=self.engine)
         frozen_frontier = (resume_state or {}).get("frontier") or {}
+        frozen_layered = frozen_frontier.get("layered_recognition")
+        if frozen_layered and frozen_layered.get("version") != LAYERED_RECOGNITION_VERSION:
+            raise ValueError("unsupported layered recognition policy")
+        layered_recognition = (self.layered_recognition if resume_state is None
+                               else frozen_layered is not None)
         frontier_version = frozen_frontier.get("schema_version", 1)
         if frontier_version not in (1, 2):
             raise ValueError("unsupported scheduler snapshot version")
@@ -410,9 +440,29 @@ class OntologyGuidedExecutor:
         ranking_contexts: dict[str, dict] = {}
         searches: dict[tuple, HeuristicSlotSearch] = {}
         search_tasks: dict[tuple, dict] = {}
+        active_hop = 0
+        layer_phase = "property"
+        registered_subjects = {
+            (root_subject.entity_id, root_subject.revision): {
+                "subject": root_subject, "hop": 0, "binding_refs": [], "reopen": False,
+            },
+        }
+        slot_completion = SlotCompletionIndex(index)
+        slot_search_replay = SlotSearchReplay()
         task_outcomes: list[dict] = []
+        nodes = {root.entity_id: root}
+        edges: dict[str, GraphEdge] = {}
+        properties: dict[str, GraphProperty] = {}
         admission_log: list[dict] = []
         frozen_repair = frozen_frontier.get("evidence_repair", {})
+        review_replay = ReviewReplay(frozen_frontier.get("expert_review"))
+        expert_pending: list[RecognitionTask] = []
+        expert_operations: dict[str, dict] = {}
+        expert_lineages: dict[str, str] = {}
+        expert_rejected: dict[str, str] = {}
+        expert_reopened_slots: set[tuple] = set()
+        expert_review_heads: dict[tuple, int] = {}
+        reviews_admitted = False
         semantic_wait_key: tuple | None = None
         semantic_wait_started_at = 0
 
@@ -421,9 +471,79 @@ class OntologyGuidedExecutor:
             if self.search_hook is not None:
                 self.search_hook(kind, payload)
 
+        def slot_is_active(key):
+            if not layered_recognition or key in expert_reopened_slots:
+                return True
+            registration = registered_subjects.get(key[:2])
+            return bool(registration and registration["hop"] == active_hop
+                        and predicates[key].kind == layer_phase)
+
+        def prepare_slot_completion(key):
+            if not layered_recognition or not self.candidate_policy:
+                return False, None
+            plan, search = plans[key], searches[key]
+            candidate = single_value_candidate(
+                predicates[key], plan.subject, properties.values(), dependency_index,
+            )
+            receipt = slot_completion.get(key)
+            if receipt is not None:
+                if (candidate is not None
+                        and receipt["candidate_ref"] == {
+                            "id": candidate.candidate_id, "revision": candidate.revision,
+                        }
+                        and subject_is_active(plan.subject)):
+                    return True, None
+                slot_completion.reopen(key)
+                search.reopen_satisfied()
+                events.append(("slot_completion_reopened", {
+                    "slot": list(key), "reason": "bound_proof_invalidated",
+                }))
+            if candidate is None:
+                return False, None
+            if not subject_is_active(plan.subject):
+                return False, None
+            # Already-admitted work is an actual obligation. Wait for its real
+            # verification, preserving failures/retries and coverage unchanged.
+            if (key in scheduler.pending_slots
+                    or any(plan.ledger[rid].coverage_state != "examined"
+                           for rid in search.admitted)):
+                return True, None
+            if any(
+                item.get("slot") == [key[0], key[2]]
+                and item["status"] in {"queued", "incomplete", "deferred"}
+                for item in evidence_work.items.values()
+            ) or any(
+                candidate_tasks.get(claim) is not None
+                and candidate_tasks[claim].subject == plan.subject
+                and candidate_tasks[claim].predicate_iri == key[2]
+                for claim in conflict_claims
+            ):
+                return True, None
+            required = list(dict.fromkeys([
+                *slot_completion.conflict_records(predicates[key]),
+                *sorted(search.admitted, key=index.record_positions.__getitem__),
+            ]))
+            missing = [rid for rid in required if rid not in search.admitted]
+            if missing:
+                return True, search.admit_conflict_check(
+                    missing, trigger_ref=f"{candidate.candidate_id}@{candidate.revision}",
+                )
+            receipt = slot_completion.close(
+                key, plan=plan, candidate=candidate, checked_record_ids=required,
+                after_outcomes=len(task_outcomes),
+            )
+            search.close_satisfied()
+            expert_reopened_slots.discard(key)
+            events.append(("slot_search_satisfied", receipt))
+            return True, None
+
         def admit_search_page(key: tuple) -> bool:
+            if not slot_is_active(key):
+                return False
             started = time.perf_counter()
-            page = searches[key].next_admission()
+            handled, page = prepare_slot_completion(key)
+            if not handled:
+                page = searches[key].next_admission()
             if page is None:
                 return False
             plan = plans[key]
@@ -537,6 +657,8 @@ class OntologyGuidedExecutor:
             # Preferences only determine the first opportunity in each rotation;
             # the full menu, both phases and source exploration remain scheduled.
             for predicate in ordered_menu:
+                if layered_recognition and predicate.kind != layer_phase:
+                    continue
                 if self.predicate_filter is not None and not self.predicate_filter(
                     subject, predicate, hop
                 ):
@@ -570,6 +692,8 @@ class OntologyGuidedExecutor:
                 # Admission through a complete exact incoming assertion supplies
                 # the trust for this semantic plan, including its proof lineage.
                 ranking_contexts[plan.plan_id] = {
+                    **({"ontology": self.ontology} if self.ontology.lexical_context is not None
+                       else {}),
                     "mentions": [
                         QueryMention(
                             text=index.ir.resolve(anchor),
@@ -669,9 +793,6 @@ class OntologyGuidedExecutor:
                     )
 
         add_subject(root_subject, root_menu, hop=0)
-        nodes = {root.entity_id: root}
-        edges: dict[str, GraphEdge] = {}
-        properties: dict[str, GraphProperty] = {}
         model_calls = 0
         lineage_calls: dict[str, int] = {}
         candidate_tasks: dict[str, RecognitionTask] = {}
@@ -697,6 +818,24 @@ class OntologyGuidedExecutor:
 
         def current_frontier():
             state = scheduler.snapshot()
+            if layered_recognition:
+                state["layered_recognition"] = {
+                    "version": LAYERED_RECOGNITION_VERSION,
+                    "active_hop": active_hop,
+                    "phase": layer_phase,
+                    "subjects": [
+                        {**item, "subject": item["subject"].model_dump(mode="json")}
+                        for _key, item in sorted(registered_subjects.items())
+                    ],
+                    "slot_completion": slot_completion.snapshot(),
+                }
+            if review_replay.events:
+                state["expert_review"] = {
+                    **review_replay.snapshot(),
+                    "pending": [t.model_dump(mode="json") for t in expert_pending],
+                    "operations": deepcopy(expert_operations),
+                    "reopened_slots": [list(key) for key in sorted(expert_reopened_slots)],
+                }
             if self.candidate_policy:
                 state["candidate_planning"] = {
                     "policy": self.candidate_policy, "search_scope_ref": shared_scope(index)[2],
@@ -739,12 +878,21 @@ class OntologyGuidedExecutor:
                 lineage_calls.get(task.claim_lineage_id, 0),
                 reserved_calls.get(task.claim_lineage_id, 0),
             )
-            return max(0, self.max_model_calls_per_record - used)
+            remaining = max(0, self.max_model_calls_per_record - used)
+            operation_id = expert_lineages.get(task.claim_lineage_id)
+            if operation_id:
+                operation = expert_operations[operation_id]
+                spent = sum(max(lineage_calls.get(lineage, 0), reserved_calls.get(lineage, 0))
+                            for lineage, op in expert_lineages.items() if op == operation_id)
+                remaining = min(remaining, max(0, operation["max_model_calls"] - spent))
+            return remaining
 
         def reserve_model_call(task: RecognitionTask, stage: str, ordinal: int) -> None:
             if self.progress_hook is not None and not self.progress_hook("before_model"):
                 raise ModelCallPauseRequested("execution paused before the model request")
             if not remaining_calls(task):
+                if task.claim_lineage_id in expert_lineages:
+                    raise ExpertRepairBudgetExhausted("expert repair model call budget exhausted")
                 raise ModelCallPauseRequested("record model call budget exhausted")
             lineage = task.claim_lineage_id
             reserved_calls[lineage] = max(
@@ -963,6 +1111,12 @@ class OntologyGuidedExecutor:
             nonlocal pending_ranking, pending_ranking_key, pending_service_state, ranking
             nonlocal recovering_ranking_pause
             nonlocal semantic_wait_key, semantic_wait_started_at
+            if layered_recognition and resume_cursor < len(resume_outcomes):
+                # A layer transition is a deterministic, model-free event at the
+                # completed prefix. Recreate its plans before replaying admissions
+                # whose after_outcomes points at that same boundary.
+                while not scheduler.pending and advance_layer():
+                    pass
             if self.adaptive_policy and resume_validated:
                 from app.services.extraction.ontology_guided.adaptive_retrieval import (
                     SearchPreparationResult,
@@ -971,7 +1125,7 @@ class OntologyGuidedExecutor:
                 for saved_result in list(ranking.preparation_results.values()):
                     result = SearchPreparationResult.model_validate(saved_result["result"])
                     key = next((k for k, p in plans.items() if p.plan_id == result.plan_id), None)
-                    if (key is not None and searches[key].needs_semantic
+                    if (key is not None and slot_is_active(key) and searches[key].needs_semantic
                             and subject_is_active(plans[key].subject)
                             and searches[key].expansion_attempt_id == result.expansion_attempt_id):
                         searches[key].accept_result(result, ranking.gate_evaluations)
@@ -984,7 +1138,7 @@ class OntologyGuidedExecutor:
                         # checkpoint. Admit its exact paid pool after replay.
                         key = next(k for k, p in plans.items() if p.plan_id == epoch.plan_id)
                         search = searches[key]
-                        if (search.needs_semantic
+                        if (slot_is_active(key) and search.needs_semantic
                                 and search.semantic_boundary == epoch.expansion_boundary):
                             accept_ranked_search(key, epoch)
                             admit_search_page(key)
@@ -1035,8 +1189,10 @@ class OntologyGuidedExecutor:
                     admission_log.append(deepcopy(admission))
                 return
             if pending_ranking is not None:
-                invalidated = (pending_ranking_key not in plans or not subject_is_active(
-                    plans[pending_ranking_key].subject))
+                invalidated = (pending_ranking_key not in plans
+                               or not slot_is_active(pending_ranking_key)
+                               or slot_completion.get(pending_ranking_key) is not None
+                               or not subject_is_active(plans[pending_ranking_key].subject))
                 if self.incremental_performance and invalidated:
                     pending_ranking.cancel()
                 pending_ranking.drain(publish_preparation)
@@ -1067,7 +1223,8 @@ class OntologyGuidedExecutor:
                     )
 
                     if isinstance(epoch, SearchPreparationResult):
-                        if (key in plans and plans[key].plan_id == epoch.plan_id
+                        if (key in plans and slot_is_active(key)
+                                and plans[key].plan_id == epoch.plan_id
                                 and subject_is_active(plans[key].subject)):
                             accept_preparation_result(epoch)
                         else:
@@ -1081,6 +1238,7 @@ class OntologyGuidedExecutor:
                         return
                     if (
                         key not in plans
+                        or not slot_is_active(key)
                         or plans[key].plan_id != epoch.plan_id
                         or not subject_is_active(plans[key].subject)
                     ):
@@ -1106,16 +1264,21 @@ class OntologyGuidedExecutor:
                         # Close an actually exhausted last page before deciding
                         # whether the dispatch limit left further obligations.
                         for search_key in searches:
-                            if subject_is_active(plans[search_key].subject):
+                            if slot_is_active(search_key) and subject_is_active(
+                                plans[search_key].subject
+                            ):
                                 admit_search_page(search_key)
                     return
                 for search_key in list(searches):
+                    if not slot_is_active(search_key):
+                        continue
                     if subject_is_active(plans[search_key].subject):
                         admit_search_page(search_key)
                     elif self.adaptive_policy:
                         searches[search_key].exhaust_dependency()
                 for search_key, search in searches.items():
-                    if search.needs_semantic and subject_is_active(plans[search_key].subject):
+                    if (slot_is_active(search_key) and search.needs_semantic
+                            and subject_is_active(plans[search_key].subject)):
                         key = search_key
                         break
                 if key is None:
@@ -1251,6 +1414,22 @@ class OntologyGuidedExecutor:
             pending_frontiers = sum(
                 item.get("logical_records", 1) for item in scheduler.unexplored_frontier
             )
+            pending_layers = 0
+            if layered_recognition:
+                pending_layers = sum(
+                    active_hop < item["hop"] <= self.max_hops
+                    and subject_is_active(item["subject"])
+                    for item in registered_subjects.values()
+                )
+                if layer_phase == "property":
+                    pending_layers += sum(
+                        len(menus[item["subject"].entity_id].relationships)
+                        for item in registered_subjects.values()
+                        if item["hop"] == active_hop
+                        and item["subject"].entity_id in menus
+                        and subject_is_active(item["subject"])
+                    )
+                pending_frontiers += pending_layers
             if self.evidence_repair:
                 pending_frontiers += sum(
                     len(p.get("deferred_types", [])) for p in protocols.values()
@@ -1344,6 +1523,8 @@ class OntologyGuidedExecutor:
                     if not terminal
                     else "ranking_paused"
                     if ranking_paused
+                    else "layered_policy_complete" if complete and self.candidate_policy
+                    and layered_recognition
                     else "candidate_search_exhausted" if complete and self.candidate_policy
                     else "counterevidence_unresolved"
                     if conflict_claims
@@ -1352,7 +1533,9 @@ class OntologyGuidedExecutor:
                     else "service_failure"
                     if self.adapter is None
                     else "task_budget_exhausted"
-                    if budget_stopped_slots
+                    if budget_stopped_slots or (
+                        pending_layers and scheduler.dispatched >= scheduler.max_tasks
+                    )
                     else "attempted_incomplete"
                     if incomplete
                     else "evidence_recheck_incomplete"
@@ -1369,6 +1552,19 @@ class OntologyGuidedExecutor:
                 completion=("policy_complete" if complete and self.candidate_policy
                             else "in_scope_complete" if complete else "incomplete"),
             )
+            if terminal and repair_only:
+                requested = {item["operation_id"] for item in property_repairs or []
+                             if item["status"] in {"queued", "running"}}
+                if not requested and expert_operations:
+                    requested = {next(reversed(expert_operations))}
+                done = bool(requested) and all(
+                    expert_operations[key]["status"] == "completed" for key in requested
+                )
+                progress = progress.model_copy(update={
+                    "stop_reason": ("expert_repair_completed" if done
+                                    else "expert_repair_unresolved"),
+                    **({"completion": "incomplete"} if not done else {}),
+                })
             coverage = []
             for key, plan in plans.items():
                 entries = list(plan.ledger.values())
@@ -1422,6 +1618,8 @@ class OntologyGuidedExecutor:
                             )
                             else "unattempted"
                             if any(entry.coverage_state == "unattempted" for entry in entries)
+                            else "single_value_satisfied"
+                            if slot_completion.get(key) is not None
                             else "semantic_undetermined"
                             if self.candidate_policy and any(
                                 "undetermined" in entry.semantic_outcomes for entry in entries
@@ -1786,6 +1984,13 @@ class OntologyGuidedExecutor:
                             diagnostics.append("adapter_edge_object_revision_mismatch")
                             continue
                         candidate = candidate.model_copy(update={"object_ref": object_ref})
+                    if isinstance(candidate, GraphProperty):
+                        rejection = expert_rejected.get(assertion_identity(candidate))
+                        if rejection:
+                            candidate = candidate.model_copy(update={
+                                "independent_review": "rejected", "reason_code": "expert_rejected",
+                                "reason": rejection,
+                            })
                     current = heads.get(candidate.candidate_id)
                     if current is not None:
                         unchanged = current.model_dump(exclude={"revision"}) == (
@@ -1855,7 +2060,7 @@ class OntologyGuidedExecutor:
             events.append(("task_outcome", payload))
             register_dependencies(task, outcome)
             paused = not outcome.complete and outcome.reason_code == "execution_pause_requested"
-            if paused or (
+            if task.claim_lineage_id not in expert_lineages and (paused or (
                 not outcome.complete
                 and (
                     task.retry_kind is None
@@ -1866,7 +2071,7 @@ class OntologyGuidedExecutor:
                     "subject_dependency_invalidated",
                     "record_model_call_budget_exhausted",
                 }
-            ):
+            )):
                 retry = RecognitionTask.create(
                     subject=task.subject,
                     predicate_iri=task.predicate_iri,
@@ -1919,31 +2124,255 @@ class OntologyGuidedExecutor:
                         revision=object_node.revision,
                         class_iri=object_node.class_iri,
                     )
-                    try:
-                        menu = compile_local_menu(self.ontology, subject, engine=self.engine)
-                    except ValueError:
-                        diagnostics.append(
-                            f"object_class_outside_frozen_snapshot:{object_node.class_iri}"
-                        )
+                    if layered_recognition:
+                        subject_key = (subject.entity_id, subject.revision)
+                        registered = registered_subjects.get(subject_key)
+                        if registered is None:
+                            registered = {
+                                "subject": subject, "hop": task.hop + 1,
+                                "binding_refs": [], "reopen": restored,
+                            }
+                            registered_subjects[subject_key] = registered
+                            if registered["hop"] > self.max_hops:
+                                scheduler.unexplored_frontier.append({
+                                    "subject": subject.model_dump(mode="json"),
+                                    "reason": "max_hops", "hop": registered["hop"],
+                                    "logical_records": 1,
+                                })
+                        else:
+                            registered["hop"] = min(registered["hop"], task.hop + 1)
+                            registered["reopen"] = registered["reopen"] or restored
+                        reference = {"id": edge.candidate_id, "revision": edge.revision}
+                        if reference not in registered["binding_refs"]:
+                            registered["binding_refs"].append(reference)
                     else:
-                        menus[subject.entity_id] = menu
-                        add_subject(
-                            subject, menu, hop=task.hop + 1, reopen=restored, binding_edge=edge
-                        )
+                        try:
+                            menu = compile_local_menu(self.ontology, subject, engine=self.engine)
+                        except ValueError:
+                            diagnostics.append(
+                                f"object_class_outside_frozen_snapshot:{object_node.class_iri}"
+                            )
+                        else:
+                            menus[subject.entity_id] = menu
+                            add_subject(
+                                subject, menu, hop=task.hop + 1, reopen=restored, binding_edge=edge
+                            )
             for item in outcome.properties:
                 properties[item.candidate_id] = item
                 candidate_tasks[item.candidate_id] = task
                 process_conflicts(task, item)
 
+        def advance_layer():
+            nonlocal active_hop, layer_phase
+            if not layered_recognition or scheduler.pending or pending_ranking is not None:
+                return False
+            active_keys = [key for key in plans if slot_is_active(key)]
+            if any(
+                any(entry.coverage_state != "examined" for entry in plans[key].ledger.values())
+                or (key in searches and searches[key].status
+                    not in {"pass_exhausted", "local_results_only"})
+                for key in active_keys
+                if subject_is_active(plans[key].subject)
+            ) or any(item["status"] in {"queued", "incomplete", "deferred"}
+                     for item in evidence_work.items.values()):
+                return False
+            if layer_phase == "property":
+                layer_phase = "relationship"
+            else:
+                following = [item["hop"] for item in registered_subjects.values()
+                             if active_hop < item["hop"] <= self.max_hops
+                             and subject_is_active(item["subject"])]
+                if not following:
+                    return False
+                active_hop = min(following)
+                layer_phase = "property"
+            events.append(("recognition_layer_activated", {
+                "hop": active_hop, "phase": layer_phase, "after_outcomes": len(task_outcomes),
+            }))
+            for registration in registered_subjects.values():
+                subject = registration["subject"]
+                if registration["hop"] != active_hop or not subject_is_active(subject):
+                    continue
+                binding = None
+                if not subject.is_document_root:
+                    binding = next((edges[ref["id"]] for ref in registration["binding_refs"]
+                                    if ref["id"] in edges
+                                    and edges[ref["id"]].revision == ref["revision"]
+                                    and dependency_index.is_valid(
+                                        f"{ref['id']}@{ref['revision']}"
+                                    )), None)
+                    if binding is None:
+                        continue
+                try:
+                    menu = compile_local_menu(self.ontology, subject, engine=self.engine)
+                except ValueError:
+                    diagnostics.append(f"object_class_outside_frozen_snapshot:{subject.class_iri}")
+                    continue
+                menus[subject.entity_id] = menu
+                add_subject(subject, menu, hop=active_hop, reopen=registration["reopen"],
+                            binding_edge=binding)
+                registration["reopen"] = False
+            return True
+
+        def repair_summary():
+            summary = evidence_work.summary() if self.evidence_repair else {}
+            if expert_operations:
+                summary["expert_review"] = {"operations": {
+                    key: {"status": value["status"], "result": deepcopy(value["result"])}
+                    for key, value in expert_operations.items()
+                }}
+            return summary
+
+        def apply_review_events():
+            for event in review_replay.at(len(task_outcomes)):
+                value = event["payload"]
+                if event["kind"] == "review":
+                    base_key = (value["candidate_id"], value["candidate_revision"])
+                    target = {**value, "candidate_revision": expert_review_heads.get(
+                        base_key, value["candidate_revision"],
+                    )}
+                    updated = apply_property_review(target, properties, dependency_index)
+                    expert_review_heads[base_key] = updated.revision
+                    identity = assertion_identity(updated)
+                    if value["decision"] == "rejected":
+                        expert_rejected[identity] = value["reason"]
+                        key = (updated.subject_ref.id, updated.subject_ref.revision,
+                               updated.predicate_iri)
+                        slot_completion.reopen(key)
+                        expert_reopened_slots.add(key)
+                        if key in searches:
+                            searches[key].reopen_satisfied()
+                        conflict_claims.discard(updated.candidate_id)
+                    else:
+                        expert_rejected.pop(identity, None)
+                        # A confirmation changes the candidate reference, not its
+                        # valid conflict-survey scope. Update the receipt exactly.
+                        key = (updated.subject_ref.id, updated.subject_ref.revision,
+                               updated.predicate_iri)
+                        receipt = slot_completion.get(key)
+                        if receipt:
+                            slot_completion.close(key, plan=plans[key], candidate=updated,
+                                                  checked_record_ids=receipt["checked_record_ids"],
+                                                  after_outcomes=len(task_outcomes))
+                elif event["kind"] == "repair_stop":
+                    operation_id = value["operation_id"]
+                    operation = expert_operations[operation_id]
+                    operation["status"] = value["status"]
+                    operation["result"] = deepcopy(value["result"])
+                    expert_pending[:] = [t for t in expert_pending
+                                         if expert_lineages[t.claim_lineage_id] != operation_id]
+                else:
+                    operation_id = value["operation_id"]
+                    target = value["target"]
+                    menu = menus.get(target["subject_ref"]["id"])
+                    if menu is None:
+                        raise ValueError("expert repair subject has no frozen local menu")
+                    tasks, reason = local_repair_tasks(target, value, menu, index)
+                    operation = {**deepcopy(value), "status": "running" if tasks else "unresolved",
+                                 "max_model_calls": min(MAX_REPAIR_CALLS,
+                                                        value.get("max_model_calls", 32)),
+                                 "result": {"tasks_attempted": 0, "model_calls": 0,
+                                            "replacement_candidate_refs": [],
+                                            "reason_code": reason}}
+                    expert_operations[operation_id] = operation
+                    for task in tasks:
+                        key = (task.subject.entity_id, task.subject.revision, task.predicate_iri)
+                        if key not in plans:
+                            raise ValueError("expert repair predicate was not admitted for subject")
+                        plans[key] = admit_records(plans[key], index, [task.record_id],
+                                                   phase=task.phase)
+                        if key in searches:
+                            searches[key].plan = plans[key]
+                            searches[key].admit_expert_record(task.record_id, operation_id)
+                        expert_lineages[task.claim_lineage_id] = operation_id
+                        expert_pending.append(task)
+                review_replay.applied.add(event["event_id"])
+                events.append(("expert_" + event["kind"], deepcopy(value)))
+
+        def observe_expert_task(task, outcome):
+            operation_id = expert_lineages[task.claim_lineage_id]
+            operation = expert_operations[operation_id]
+            result = operation["result"]
+            result["tasks_attempted"] += 1
+            result["model_calls"] += outcome.model_calls
+            result["replacement_candidate_refs"] = [
+                {"id": candidate.candidate_id, "revision": candidate.revision}
+                for candidate in properties.values()
+                if candidate_tasks.get(candidate.candidate_id) is not None
+                and expert_lineages.get(candidate_tasks[candidate.candidate_id].claim_lineage_id)
+                == operation_id
+                and candidate.decision_status == "supported" and effective_proof_gate(candidate)
+                and dependency_index.is_valid(f"{candidate.candidate_id}@{candidate.revision}")
+                and assertion_identity(candidate) not in expert_rejected
+            ]
+            if not outcome.complete:
+                result["reason_code"] = outcome.reason_code
+            elif result["reason_code"] == "execution_pause_requested":
+                result["reason_code"] = None
+            if result["tasks_attempted"] >= min(16, operation.get("max_tasks", 16)):
+                if any(expert_lineages[t.claim_lineage_id] == operation_id for t in expert_pending):
+                    expert_pending[:] = [t for t in expert_pending
+                                         if expert_lineages[t.claim_lineage_id] != operation_id]
+                    result["reason_code"] = "expert_repair_task_limit"
+            if (outcome.reason_code == "execution_pause_requested"
+                    and result["tasks_attempted"] < min(16, operation.get("max_tasks", 16))):
+                retry = task.model_copy(update={"task_id": stable_id("expert-pause", [
+                    task.task_id, result["tasks_attempted"],
+                ])})
+                expert_pending.insert(0, retry)
+            if not any(expert_lineages[t.claim_lineage_id] == operation_id for t in expert_pending):
+                if result["replacement_candidate_refs"] and result["reason_code"] is None:
+                    operation["status"] = "completed"
+                else:
+                    operation["status"] = "unresolved"
+                    result["reason_code"] = result["reason_code"] or "expert_repair_no_replacement"
+
+        def publish_review_boundary():
+            if batch_hook is None or not review_replay.events:
+                return
+            original = review_replay.events[-1]["payload"]
+            task = RecognitionTask.model_validate(
+                original.get("original_task") or original["target"]["original_task"],
+            )
+            batch_hook(ExecutionBatch(
+                batch_id=stable_id("expert-review-boundary", [
+                    run_fingerprint, len(task_outcomes), review_replay.snapshot(),
+                ]), task=task,
+                outcome=TaskOutcome(semantic_outcome="not_checked", complete=False,
+                                    reason_code="expert_review_boundary",
+                                    reason="人工审核操作边界；不增加原文检查或模型调用"),
+                task_outcomes=list(task_outcomes), frontier=current_frontier(),
+                recall_ledger=current_recall_ledger(), dependency_index=dependency_index.snapshot(),
+                graph=snapshot_graph(), diagnostics=list(dict.fromkeys(diagnostics)),
+                ranking_state=current_ranking_state(), model_call_state=current_model_call_state(),
+                evidence_repair_summary=repair_summary(),
+            ))
+
         try:
-            if self.adapter is None:
+            if self.adapter is None and not (resume_outcomes or property_reviews
+                                              or review_replay.events):
                 diagnostics.append("recognition_model_not_configured")
             else:
                 while True:
+                    apply_review_events()
                     if resume_cursor == len(resume_outcomes):
                         validate_resume_boundary()
+                        if not reviews_admitted:
+                            reviews_admitted = True
+                            before = len(review_replay.events)
+                            review_replay.admit(property_reviews or [], property_repairs or [],
+                                                after_outcomes=len(task_outcomes))
+                            apply_review_events()
+                            if len(review_replay.events) != before:
+                                publish_review_boundary()
+                        if repair_only and not expert_pending:
+                            break
+                        if self.adapter is None and not expert_pending:
+                            diagnostics.append("recognition_model_not_configured")
+                            break
                     try:
-                        prepare_ranking()
+                        if not expert_pending:
+                            prepare_ranking()
                     except RankingPaused as exc:
                         ranking_paused = True
                         diagnostics.append(f"ranking_paused:{exc}")
@@ -1953,6 +2382,7 @@ class OntologyGuidedExecutor:
                     if (
                         restored_paused_epochs and pending_ranking is None
                         and resume_cursor == len(resume_outcomes)
+                        and not expert_pending and not repair_only
                     ):
                         # A completed recovery attempt may reveal another saved
                         # pause. Resolve the entire prefix before fresh work.
@@ -1963,7 +2393,7 @@ class OntologyGuidedExecutor:
                         )}
                         if resume_cursor < len(resume_outcomes) else blocked_ranking_slots()
                     )
-                    if pending_ranking is not None and (
+                    if pending_ranking is not None and not expert_pending and (
                         recovering_ranking_pause or scheduler.peek_task(excluded_slots) is None
                     ):
                         if self.progress_hook is not None and not self.progress_hook(
@@ -1976,7 +2406,8 @@ class OntologyGuidedExecutor:
                     # Record stopped slots before compacting the queues. Legacy
                     # summaries retain task IDs; v2 retains slot identities/counts.
                     task_budget_stopped_slots.update(budget_blocked_slots())
-                    task = scheduler.next_task(excluded_slots=excluded_slots)
+                    task = (expert_pending.pop(0) if expert_pending else
+                            scheduler.next_task(excluded_slots=excluded_slots))
                     if task is None:
                         if resume_cursor != len(resume_outcomes):
                             raise ValueError(
@@ -1986,9 +2417,12 @@ class OntologyGuidedExecutor:
                         # for H2 without creating recognition tasks. Let the owner
                         # dispatch that work before deciding the run is saturated.
                         if self.adaptive_policy and scheduler.dispatched < scheduler.max_tasks:
-                            if any(search.needs_semantic and subject_is_active(plans[key].subject)
+                            if any(search.needs_semantic and slot_is_active(key)
+                                   and subject_is_active(plans[key].subject)
                                    for key, search in searches.items()):
                                 continue
+                        if scheduler.dispatched < scheduler.max_tasks and advance_layer():
+                            continue
                         break
                     replaying = resume_cursor < len(resume_outcomes)
                     context = None
@@ -2088,6 +2522,12 @@ class OntologyGuidedExecutor:
                             ontology=self.ontology,
                             repair_enabled=self.evidence_repair,
                         )
+                        operation_id = expert_lineages.get(task.claim_lineage_id)
+                        if operation_id:
+                            operation = expert_operations[operation_id]
+                            context.expert_feedback = repair_feedback(
+                                operation["target"], operation,
+                            )
                         context.incremental_performance = self.incremental_performance
                         if self.evidence_repair:
                             context.protocol_state = (thaw_json if self.incremental_performance
@@ -2106,7 +2546,13 @@ class OntologyGuidedExecutor:
                         )
                         reservations_before = len(reservations)
                         try:
-                            if not subject_is_active(task.subject):
+                            if self.adapter is None:
+                                outcome = TaskOutcome(
+                                    semantic_outcome="not_checked", complete=False,
+                                    reason_code="recognition_model_not_configured",
+                                    reason="识别模型不可用，局部修复未完成。",
+                                )
+                            elif not subject_is_active(task.subject):
                                 outcome = TaskOutcome(
                                     semantic_outcome="not_checked",
                                     complete=False,
@@ -2157,6 +2603,13 @@ class OntologyGuidedExecutor:
                             ModelWaitFailure,
                         ):
                             raise
+                        except ExpertRepairBudgetExhausted:
+                            outcome = TaskOutcome(
+                                semantic_outcome="not_checked", complete=False,
+                                reason_code="expert_repair_model_call_budget_exhausted",
+                                reason="局部修复的模型调用预算已耗尽，保留未完成结果。",
+                                model_calls=len(reservations) - reservations_before,
+                            )
                         except ModelCallPauseRequested:
                             outcome = TaskOutcome(
                                 semantic_outcome="not_checked",
@@ -2181,6 +2634,8 @@ class OntologyGuidedExecutor:
                             # A completed verification is a durable safe boundary.
                             # Pausing must not discard it and repeat paid requests.
                             stop_after_batch = True
+                    key = (task.subject.entity_id, task.subject.revision, task.predicate_iri)
+                    is_expert_task = task.claim_lineage_id in expert_lineages
                     outcome_started = time.perf_counter()
                     apply_outcome(task, outcome, excluded_slots)
                     if self.evidence_repair:
@@ -2189,11 +2644,11 @@ class OntologyGuidedExecutor:
                             recheck = (RecognitionTask.model_validate(saved["evidence_recheck"])
                                        if saved.get("evidence_recheck") else None)
                         else:
-                            recheck = evidence_work.observe(
+                            recheck = None if is_expert_task else evidence_work.observe(
                                 task, outcome, context, predicates[key],
                                 protocols.get(task.claim_lineage_id, {}),
                             ) if context is not None else None
-                            if recheck is None:
+                            if recheck is None and not is_expert_task:
                                 recheck = evidence_work.next_deferred(subject_is_active)
                         if recheck is not None:
                             scheduler.enqueue(recheck, root_branch=recheck.subject.is_document_root)
@@ -2201,9 +2656,8 @@ class OntologyGuidedExecutor:
                         task_outcomes[-1]["evidence_recheck"] = (
                             recheck.model_dump(mode="json") if recheck else None
                         )
-                    if self.incremental_performance:
-                        task_outcomes[-1] = freeze_json(task_outcomes[-1])
-                    if search_index is not None and not (self.evidence_repair and replaying):
+                    if (search_index is not None
+                            and not (self.evidence_repair and replaying)):
                         search_event("outcome_application", {
                             "task_id": task.task_id,
                             "elapsed_seconds": time.perf_counter() - outcome_started,
@@ -2234,6 +2688,35 @@ class OntologyGuidedExecutor:
                             "reason_code": outcome.reason_code,
                             "state": searches[search_key].snapshot(),
                         })
+                    if search_index is not None and (layered_recognition or is_expert_task):
+                        search_key = (
+                            task.subject.entity_id, task.subject.revision, task.predicate_iri,
+                        )
+                        search = searches[search_key]
+                        delta_key = ("layered_search_delta" if layered_recognition
+                                     else "expert_search_delta")
+                        if replaying and self.evidence_repair:
+                            delta = thaw_json(saved[delta_key])
+                            search.restore(slot_search_replay.restore(search.plan.plan_id, delta))
+                        else:
+                            delta = slot_search_replay.capture(
+                                search.plan.plan_id, search.snapshot(),
+                            )
+                        task_outcomes[-1][delta_key] = delta
+                        if not is_expert_task:
+                            admit_search_page(search_key)
+                    if is_expert_task:
+                        observe_expert_task(task, outcome)
+                        if (layered_recognition and key in searches
+                                and set(slot_completion.conflict_records(predicates[key]))
+                                <= searches[key].admitted):
+                            # Reuse only already admitted conflict obligations;
+                            # a local repair never admits wider source work.
+                            prepare_slot_completion(key)
+                        if not replaying and outcome.reason_code == "execution_pause_requested":
+                            stop_after_batch = True
+                    if self.incremental_performance:
+                        task_outcomes[-1] = freeze_json(task_outcomes[-1])
                     if not replaying and batch_hook is not None:
                         graph = snapshot_graph()
                         batch_hook(
@@ -2257,8 +2740,7 @@ class OntologyGuidedExecutor:
                                 diagnostics=list(dict.fromkeys(diagnostics)),
                                 ranking_state=current_ranking_state(),
                                 model_call_state=current_model_call_state(),
-                                evidence_repair_summary=(evidence_work.summary()
-                                                         if self.evidence_repair else {}),
+                                evidence_repair_summary=repair_summary(),
                             )
                         )
                     if stop_after_batch:
@@ -2291,6 +2773,5 @@ class OntologyGuidedExecutor:
             diagnostics=list(dict.fromkeys(diagnostics)),
             ranking_state=current_ranking_state(),
             model_call_state=current_model_call_state(),
-                                evidence_repair_summary=(evidence_work.summary()
-                                                         if self.evidence_repair else {}),
+                                evidence_repair_summary=repair_summary(),
         )

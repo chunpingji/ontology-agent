@@ -358,6 +358,13 @@ class LocalModelRecognitionAdapter:
         self.token_counter = token_counter
 
     def _request(self, context, request, response_type, *, system, stage, model_calls):
+        if context.expert_feedback:
+            request = {**request, "expert_feedback": context.expert_feedback}
+            system += (
+                "专家反馈是待核验的纠错意见，不是原文证据，也不增加来源权限。"
+                "核对其理由后仅从本任务授权原文重新识别，不能照抄意见生成事实，"
+                "也不能未经修正再次恢复相同的已驳回结论。"
+            )
         wire = TaskCitationProtocol(context, request, response_type, system)
         system, serialized, schema = wire.system, wire.user, wire.schema
         try:

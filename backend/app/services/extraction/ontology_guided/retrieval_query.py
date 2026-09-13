@@ -5,16 +5,22 @@ from __future__ import annotations
 import json
 from typing import Literal
 
-from pydantic import Field
+from pydantic import Field, model_serializer
 
 from app.schemas.evidence import EvidenceAnchor, EvidenceModel
 from app.services.extraction.evidence_identity import evidence_hash, stable_id
 from app.services.extraction.ontology_guided.contracts import (
     EdgeSpec,
     GraphNode,
+    OntologySnapshot,
     SlotSpec,
     SubjectRef,
     VersionedRef,
+)
+from app.services.extraction.ontology_guided.lexical_query import (
+    LEXICAL_QUERY_VERSION,
+    select_query_vocabulary,
+    terms_for,
 )
 from app.services.extraction.ontology_guided.records import RecordIndex
 
@@ -41,6 +47,14 @@ class SubjectSlotQuery(EvidenceModel):
     dependency_refs: list[VersionedRef] = Field(default_factory=list)
     diagnostics: list[str] = Field(default_factory=list)
     authority: Literal["retrieval_only"] = "retrieval_only"
+    lexical_selection: dict | None = None
+
+    @model_serializer(mode="wrap")
+    def preserve_legacy_query(self, handler):
+        result = handler(self)
+        if self.lexical_selection is None:
+            result.pop("lexical_selection", None)
+        return result
 
 
 def build_subject_queries(
@@ -54,6 +68,7 @@ def build_subject_queries(
     root_class_iri: str,
     mentions: list[QueryMention] | None = None,
     dependency_refs: list[VersionedRef] | None = None,
+    ontology: OntologySnapshot | None = None,
 ) -> list[SubjectSlotQuery]:
     if (subject.entity_id, subject.revision, subject.class_iri) != (
         subject_node.entity_id,
@@ -118,6 +133,16 @@ def build_subject_queries(
         "document_class": root_class_iri,
         "contrast_roles": ["产品", "API原料", "批次", "试验来源", "工艺步骤", "中间体"],
     }
+    selection = None
+    if ontology is not None and ontology.lexical_context is not None:
+        selection = select_query_vocabulary(
+            ontology, subject_class_iri=subject.class_iri, predicate_iri=predicate.iri,
+            target_iris=[item["iri"] for item in common["allowed_object_types"]],
+        )
+        common["subject_class_terms"] = terms_for(selection, "subject_class", subject.class_iri)
+        common["predicate"]["terms"] = terms_for(selection, "predicate", predicate.iri)
+        for target in common["allowed_object_types"]:
+            target["terms"] = terms_for(selection, "object_type", target["iri"])
     dependency_hash = evidence_hash(
         {
             "subject": subject,
@@ -126,6 +151,9 @@ def build_subject_queries(
             "dependencies": dependencies,
             "root": root_ref,
             "source": index.ir.document_hash,
+            **({"ontology_hash": ontology.ontology_hash,
+                "query_version": LEXICAL_QUERY_VERSION,
+                "lexical_selection": selection} if selection is not None else {}),
         }
     )
     result = []
@@ -142,6 +170,8 @@ def build_subject_queries(
         result.append(
             SubjectSlotQuery(
                 query_id=stable_id("slot-query", [run_fingerprint, dependency_hash, intent]),
+                query_version=LEXICAL_QUERY_VERSION if selection is not None
+                else "subject-slot-query-v1",
                 run_fingerprint=run_fingerprint,
                 subject_ref=subject,
                 predicate_iri=predicate.iri,
@@ -152,6 +182,7 @@ def build_subject_queries(
                 excluded_sources=excluded,
                 dependency_refs=dependencies,
                 diagnostics=[] if predicate.description else ["predicate_definition_missing"],
+                lexical_selection=selection,
             )
         )
     return result

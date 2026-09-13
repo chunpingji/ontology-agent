@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import type { TreeInstance } from "@headless-tree/core";
 import { ExternalLink, Loader2, Pause, Play, RefreshCw } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -17,6 +17,8 @@ import {
   DOCUMENT_ANALYSIS_STATUS_LABELS, documentCoverageScope, formatDocumentAnalysisReason,
 } from "@/lib/document-analysis";
 import { useTemplateDocumentRun } from "./use-template-document-run";
+import { PropertyReviewDialog } from "./property-review-dialog";
+import { freezePropertyReviewTarget, type PropertyReviewTarget } from "@/lib/document-property-review";
 
 type Model = ReturnType<typeof useTemplateDocumentRun>;
 
@@ -48,11 +50,13 @@ function SourceButton({ refs, label, select }: { refs: string[]; label: string; 
 
 function AssertionProof({ item, select }: { item: DocumentGraphAssertionBase; select: Model["select"] }) {
   const effective = item.policy_eligible && item.structural_valid && item.model_supported
-    && item.polarity === "affirmed" && !item.invalidated && item.independent_review !== "rejected";
+    && item.polarity === "affirmed" && !item.invalidated;
   return <div className="space-y-1">
     <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
       <span>{effective ? "系统验证通过" : item.polarity === "negated" ? "否定陈述"
         : item.polarity === "conditional" ? "有条件陈述" : "未通过有效性核验"}</span>
+      <span>{item.independent_review === "accepted" ? "专家已确认"
+        : item.independent_review === "rejected" ? "专家已驳回" : "待专家审核"}</span>
       <SourceButton refs={item.source_selection_refs.predicate_bridge}
         label={item.source_selection_refs.value.length ? "属性依据" : "关系依据"} select={select} />
       <SourceButton refs={item.source_selection_refs.subject} label="主体归属" select={select} />
@@ -212,7 +216,11 @@ export function buildTemplateTreeData(index: GraphIndex) {
   return { rootId, nodes };
 }
 
-export function TemplateGraphTree({ graph, select }: { graph: DocumentAnalysisGraphArtifact; select: Model["select"] }) {
+export function TemplateGraphTree({ graph, select, onReview, reviewLabel = "专家审核", reviewDisabled = false }: {
+  graph: DocumentAnalysisGraphArtifact; select: Model["select"];
+  onReview?: (property: DocumentGraphProperty) => void;
+  reviewLabel?: string; reviewDisabled?: boolean;
+}) {
   const index = useMemo(() => buildTemplateGraphIndex(graph), [graph]);
   const data = useMemo(() => buildTemplateTreeData(index), [index]);
   const jump = (tree: TreeInstance<GraphTreeNode>, id: string) => {
@@ -250,6 +258,10 @@ export function TemplateGraphTree({ graph, select }: { graph: DocumentAnalysisGr
               <p className="text-xs text-muted-foreground">规范化值：{String(node.value.normalized_value)} {node.value.unit}</p>}
             <SourceButton refs={node.value.source_selection_refs.value} label="属性值" select={select} />
             <AssertionProof item={node.value} select={select} />
+            {onReview && <Button size="sm" variant="outline" data-tree-action="review"
+              disabled={reviewDisabled} onClick={() => onReview(node.value)}>
+              {reviewLabel}
+            </Button>}
           </div> : node.kind === "reference" ? <div className="space-y-1">
             {node.target ? <button type="button" data-tree-action="reference"
               className="text-left text-primary underline-offset-2 hover:underline"
@@ -334,6 +346,7 @@ export function TemplateDocumentGraphPanel({ model }: { model: Model }) {
             <option value="undetermined">未决结果</option>
             <option value="negated">否定陈述</option>
             <option value="conditional">有条件陈述</option>
+            <option value="rejected">已驳回属性与候选</option>
           </select>
         </label>
       </>}
@@ -344,12 +357,48 @@ export function TemplateDocumentGraphPanel({ model }: { model: Model }) {
       {model.sourceError && <p role="alert" className="text-xs text-destructive">原文定位失败：{model.sourceError.message}</p>}
     </div>
     <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-3">
-      {graph && <TemplateGraphTree key={JSON.stringify([username, role, run?.recognition_run_id, model.projection])} graph={graph} select={model.select} />}
+      {graph && <ReviewableGraphTree key={JSON.stringify([username, role, run?.recognition_run_id, model.projection])}
+        graph={graph} model={model} />}
       {!root && <p className="text-sm text-muted-foreground">{model.loading ? "正在读取运行…"
         : run ? "尚未生成关系图谱，已完成的结果会逐步显示。" : "尚未开始识别。"}</p>}
       {graph && <p className="text-xs text-muted-foreground">未决 {graph.unresolved.undetermined} 项 ·
         {graph.coverage.candidate_policy === "sparse-candidates-v1"
-          ? "未形成判定（含未发现候选）" : "未完成核验"} {graph.unresolved.not_checked} 项。系统验证结果尚未经人工确认。</p>}
+          ? "未形成判定（含未发现候选）" : "未完成核验"} {graph.unresolved.not_checked} 项。系统验证与专家审核分别记录。</p>}
     </div>
   </section>;
+}
+
+function ReviewableGraphTree({ graph, model }: { graph: DocumentAnalysisGraphArtifact; model: Model }) {
+  const [target, setTarget] = useState<PropertyReviewTarget | null>(null);
+  const [notice, setNotice] = useState("");
+  const { role } = getIdentity();
+  const canPause = role === "senior_analyst" && model.run?.available_actions.includes("pause");
+  const active = model.run?.status === "running" || model.run?.status === "queued";
+  const review = (property: DocumentGraphProperty) => {
+    if (!model.run) return;
+    if (active) {
+      if (canPause) {
+        model.control("pause");
+        setNotice("已请求暂停；运行停止后，请重新选择要审核的属性。");
+      }
+      return;
+    }
+    const frozen = freezePropertyReviewTarget(model.run, graph, property);
+    if (!frozen) {
+      setNotice("正在同步当前图谱版本，请刷新后重新选择属性。");
+      model.refresh();
+      return;
+    }
+    setNotice(""); setTarget(frozen);
+  };
+  return <>
+    {notice && <p role="status" className="text-xs text-muted-foreground">{notice}</p>}
+    <TemplateGraphTree graph={graph} select={model.select}
+      onReview={review}
+      reviewLabel={active ? canPause ? "暂停以审核" : "运行停止后审核" : "专家审核"}
+      reviewDisabled={model.busy || (active && !canPause)} />
+    {target && model.run && <PropertyReviewDialog target={target} run={model.run}
+      onClose={() => setTarget(null)} onRefresh={model.refresh} onSource={model.select}
+      review={model.reviewProperty} repair={model.repairProperty} />}
+  </>;
 }

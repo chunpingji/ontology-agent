@@ -2,15 +2,18 @@
 
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { newPropertyReviewRequestKey } from "@/lib/document-property-review";
 import {
   controlDocumentAnalysisRun, createTemplateDocumentRun, getDocumentAnalysisGraph,
   getDocumentAnalysisRankingSummary, getDocumentAnalysisSource, getDocumentAnalysisSourceSelection,
   getIdentity, getTemplateDocumentRun, shouldSubscribeDocumentAnalysisEvents,
   createReportDocumentRun, getReportDocumentRun, getDocumentAnalysisMetadata,
+  reviewDocumentProperty, repairDocumentProperty,
   subscribeDocumentAnalysisEvents, VersionConflictError, type DocumentAnalysisControlAction,
   type DocumentAnalysisRun, type DocumentAnalysisSourceArtifact,
   type DocumentAnalysisMetadataArtifact,
   type DocumentAnalysisSourceSelectionArtifact, type DocumentGraphProjection,
+  type DocumentPropertyReviewInput, type DocumentPropertyRepairInput,
 } from "@/lib/api";
 
 /** Serial, coalesced reads while connected; bounded backoff only while disconnected. */
@@ -253,12 +256,39 @@ function useSourceDocumentRun(
   });
   const control = useMutation({
     mutationFn: (input: { runId: string; action: DocumentAnalysisControlAction; revision: number }) =>
-      controlDocumentAnalysisRun(input.runId, input.action, input.revision, crypto.randomUUID(),
+      controlDocumentAnalysisRun(input.runId, input.action, input.revision, newPropertyReviewRequestKey(),
         documentIri ? "报告文档关系图谱面板操作" : "模板关系图谱面板操作"),
     onSettled: () => Promise.all([
       client.invalidateQueries({ queryKey: ["template-document-run"] }),
       client.invalidateQueries({ queryKey: ["report-document-run"] }),
     ]),
+  });
+  type PropertyMutationContext = {
+    runId: string; sourceQueryKey: readonly unknown[]; artifactQueryKey: readonly unknown[];
+    reviewQueryKey: readonly unknown[];
+  };
+  const refreshPropertyMutation = (_data: unknown, _error: unknown, input: PropertyMutationContext) =>
+    Promise.all([
+      client.invalidateQueries({ queryKey: input.sourceQueryKey, exact: true }),
+      client.invalidateQueries({ queryKey: input.artifactQueryKey }),
+      client.invalidateQueries({ queryKey: input.reviewQueryKey }),
+    ]);
+  const propertyReview = useMutation({
+    mutationFn: (input: PropertyMutationContext & { body: DocumentPropertyReviewInput }) =>
+      reviewDocumentProperty(input.runId, input.body),
+    onSettled: refreshPropertyMutation,
+    retry: false,
+  });
+  const propertyRepair = useMutation({
+    mutationFn: (input: PropertyMutationContext & { body: DocumentPropertyRepairInput }) =>
+      repairDocumentProperty(input.runId, input.body),
+    onSettled: refreshPropertyMutation,
+    retry: false,
+  });
+  const propertyContext = (targetRunId: string): PropertyMutationContext => ({
+    runId: targetRunId, sourceQueryKey: queryKey,
+    artifactQueryKey: ["template-document-artifact", username, role, targetRunId],
+    reviewQueryKey: ["document-property-review", username, role, targetRunId],
   });
   const creating = create.isPending && create.variables?.templateId === templateId
     && create.variables?.jobId === jobId && create.variables?.documentIri === documentIri;
@@ -279,14 +309,17 @@ function useSourceDocumentRun(
     sourceError: source.error || sourceSelection.error || selectionMismatch,
     sourceLoading: source.isFetching || sourceSelection.isFetching,
     selectionRef, loading: latest.isLoading,
-    running: active || creating, busy: creating || controlling, error,
+    running: active || creating,
+    busy: creating || controlling
+      || (propertyReview.isPending && propertyReview.variables?.runId === runId)
+      || (propertyRepair.isPending && propertyRepair.variables?.runId === runId), error,
     canCreate: role === "senior_analyst",
     projection, setProjection,
     select: (ref: string) => { if (runId) setSelection({ runId, ref }); },
     start: () => {
       if ((documentIri || (templateId && jobId)) && !active && !creating) {
         if (requestKey.current?.source !== sourceKey) {
-          requestKey.current = { source: sourceKey, key: crypto.randomUUID() };
+          requestKey.current = { source: sourceKey, key: newPropertyReviewRequestKey() };
         }
         create.mutate({ templateId, jobId, documentIri, requestKey: requestKey.current.key });
       }
@@ -295,6 +328,10 @@ function useSourceDocumentRun(
       if (run && !controlling) control.mutate({ runId: run.recognition_run_id,
         action, revision: run.run_revision });
     },
+    reviewProperty: (targetRunId: string, body: DocumentPropertyReviewInput) =>
+      propertyReview.mutateAsync({ ...propertyContext(targetRunId), body }),
+    repairProperty: (targetRunId: string, body: DocumentPropertyRepairInput) =>
+      propertyRepair.mutateAsync({ ...propertyContext(targetRunId), body }),
     refresh: () => {
       if (!visible) return;
       void latest.refetch();

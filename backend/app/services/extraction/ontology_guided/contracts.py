@@ -15,9 +15,11 @@ from pydantic import Field, model_serializer, model_validator
 from app.schemas.evidence import EvidenceAnchor, EvidenceModel
 from app.schemas.retrieval_diagnostics import RetrievalDiagnosticCarrier
 from app.services.extraction.evidence_identity import evidence_hash, stable_id
+from app.services.extraction.ontology_guided.ontology_lexical import OntologyLexicalContext
 
 CONTRACT_VERSION = "document-analysis-runs-v1"
 ONTOLOGY_SNAPSHOT_VERSION = "ontology-guided-snapshot-v1"
+ONTOLOGY_LEXICAL_SNAPSHOT_VERSION = "ontology-guided-snapshot-v2"
 METADATA_POLICY_VERSION = "ontology-guided-metadata-v1"
 RETRIEVAL_POLICY_VERSION = "ontology-guided-two-phase-v1"
 SPARSE_RETRIEVAL_POLICY_VERSION = "ontology-guided-sparse-candidates-v1"
@@ -109,8 +111,20 @@ class PredicateSpec(EvidenceModel):
     label: str = Field(min_length=1)
     description: str = ""
     declared_by: list[str] = Field(default_factory=list)
-    max_count: int | None = Field(default=None, ge=1)
+    multiplicity: Literal["unspecified", "single", "multiple"] = "unspecified"
+    min_count: int | None = Field(default=None, ge=0)
+    max_count: int | None = Field(default=None, ge=0)
     constraint_status: Literal["resolved", "constraint_unresolved"] = "resolved"
+
+    @model_serializer(mode="wrap")
+    def preserve_legacy_quantity_shape(self, handler):
+        data = handler(self)
+        # Restore old artifacts without inserting a new declaration into their
+        # recorded payload/hash. New engine snapshots explicitly set both fields.
+        for name in ("multiplicity", "min_count"):
+            if name not in self.model_fields_set:
+                data.pop(name, None)
+        return data
 
 
 class SlotSpec(PredicateSpec):
@@ -152,6 +166,28 @@ class OntologySnapshot(EvidenceModel):
     classes: dict[str, OntologyClassDefinition]
     created_from: Literal["ontology_engine", "frozen_fixture"] = "ontology_engine"
     diagnostics: list[str] = Field(default_factory=list)
+    lexical_context: OntologyLexicalContext | None = None
+
+    @model_serializer(mode="wrap")
+    def preserve_legacy_lexical_shape(self, handler):
+        data = handler(self)
+        if self.lexical_context is None:
+            data.pop("lexical_context", None)
+        return data
+
+    @model_validator(mode="after")
+    def validate_lexical_identity(self):
+        if self.version == ONTOLOGY_LEXICAL_SNAPSHOT_VERSION and self.lexical_context is None:
+            raise ValueError("ontology snapshot v2 requires its frozen lexical context")
+        if self.lexical_context is not None:
+            if self.version != ONTOLOGY_LEXICAL_SNAPSHOT_VERSION:
+                raise ValueError("ontology lexical context requires snapshot v2")
+            expected = evidence_hash({
+                "classes": self.classes, "lexical_context": self.lexical_context,
+            })
+            if self.ontology_hash != expected:
+                raise ValueError("ontology snapshot hash does not match its lexical content")
+        return self
 
 
 class LocalMenu(EvidenceModel):

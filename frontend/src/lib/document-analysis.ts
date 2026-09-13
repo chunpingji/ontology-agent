@@ -44,6 +44,10 @@ export function formatDocumentAnalysisDate(value: string | null): string {
 }
 
 const REASON_LABELS: Record<string, string> = {
+  layered_policy_complete: "逐层候选检索和核验已完成；未入选原文尚未逐条核验。",
+  single_value_satisfied: "该属性已形成有效单值绑定，并完成本轮冲突检查。",
+  expert_repair_completed: "局部重识别已完成，替代候选已通过原文核验。",
+  expert_repair_unresolved: "局部重识别仍有未解决项，请查看属性审核中的具体原因。",
   candidate_search_exhausted: "本轮候选检索和核验已完成；未入选原文尚未核验，不表示全文事实已穷尽。",
   adaptive_search_saturated: "当前检索阶段已结束，仍有原文待检查；可恢复运行以继续检索。",
   evidence_recheck_incomplete: "已找到补充证据，部分关系或属性仍待重新核验。",
@@ -110,6 +114,18 @@ const REASON_LABELS: Record<string, string> = {
   model_interrupted: "模型处理已中断，部分原文尚未完成识别或验证。",
   recognition_model_not_configured: "关系识别模型尚未配置，无法继续识别或验证。",
   fingerprint_mismatch: "运行依赖与冻结配置不一致，已阻止继续执行。",
+  expert_subject_localization_required: "主体归属尚未确定，需人工核对原文中的正确主体。",
+  expert_repair_no_local_alternative: "相关原文中没有可继续核验的属性候选，需补充证据或人工处理。",
+  expert_repair_no_replacement: "本次局部重识别未形成通过原文核验的新候选，需补充证据或人工处理。",
+  expert_repair_task_limit: "本次局部重识别已达到 16 项任务上限，仍有内容未完成核验。",
+  expert_repair_model_call_budget_exhausted: "本次局部重识别的 32 次模型请求额度已用完，仍有内容未完成核验。",
+  record_model_call_budget_exhausted: "该原文任务的模型请求额度已用完，仍未完成核验。",
+  expert_repair_execution_failed: "局部重识别执行失败，已有结果与已用额度已保留。",
+  subject_dependency_invalidated: "当前主体的归属证明已失效，需重新核对主体后才能继续。",
+  execution_pause_requested: "运行已暂停，恢复运行后继续核验。",
+  execution_stalled: "识别执行长时间没有进展，已停止并保留已有结果。",
+  run_cancelled: "运行已取消，局部重识别已停止。",
+  run_deleted: "运行已请求删除，局部重识别已停止。",
 };
 
 export function formatDocumentAnalysisReason(reason: string, fallback?: string): string {

@@ -49,6 +49,7 @@ export default function OntologyWorkbenchPage() {
   const [tab, setTab] = useState<Tab>("基本");
   const [classes, setClasses] = useState<TBoxClass[]>([]);
   const [linkTypes, setLinkTypes] = useState<TBoxLinkType[]>([]);
+  const [restrictionReload, setRestrictionReload] = useState(0);
   const conflict = useVersionConflict();
 
   // 适配 mrlightful TreeView:TreeNode → TreeDataItem,并保留 iri→原始节点 映射,
@@ -132,6 +133,7 @@ export default function OntologyWorkbenchPage() {
 
   const handleReloadAfterConflict = () => {
     conflict.clear();
+    setRestrictionReload((version) => version + 1);
     handleChanged(selectedIri ?? undefined);
   };
 
@@ -230,21 +232,51 @@ export default function OntologyWorkbenchPage() {
               <div className="p-4">
                 <TabsContent value="基本" className="mt-0">
                   <ClassPanel key={selectedIri ?? "new"} iri={selectedIri} conflict={conflict} onChanged={handleChanged} />
+                  {selectedIri && (
+                    <div className="mt-6 border-t pt-4">
+                      <RestrictionEditor
+                        key={`axioms-${selectedIri}-${restrictionReload}`}
+                        classIri={selectedIri}
+                        binding={null}
+                        conflict={conflict}
+                        onChanged={() => handleChanged(selectedIri)}
+                      />
+                    </div>
+                  )}
                 </TabsContent>
                 <TabsContent value="关系" className="mt-0">
-                  <div className="space-y-6">
-                    <LinkTypePanel
-                      key={`link-${selectedIri ?? "none"}`}
-                      selectedClassIri={selectedIri}
-                      focusedLinkIri={focusedLinkIri}
-                      onFocusLink={setFocusedLinkIri}
-                      onChanged={() => handleChanged(selectedIri ?? undefined)}
-                    />
-                    <RestrictionEditor key={`restr-${selectedIri ?? "none"}`} classIri={selectedIri} conflict={conflict} onChanged={() => handleChanged(selectedIri ?? undefined)} />
-                  </div>
+                  <LinkTypePanel
+                    key={`link-${selectedIri ?? "none"}`}
+                    selectedClassIri={selectedIri}
+                    focusedLinkIri={focusedLinkIri}
+                    onFocusLink={setFocusedLinkIri}
+                    onChanged={() => handleChanged(selectedIri ?? undefined)}
+                    renderRestrictions={selectedIri ? (link) => (
+                      <RestrictionEditor
+                        key={`restr-${selectedIri}-${link.slpra_iri}-${link.version}-${link.range_iri}-${restrictionReload}`}
+                        classIri={selectedIri}
+                        binding={{ propertyIri: link.slpra_iri, propertyKind: "object", defaultFillerIri: link.range_iri }}
+                        conflict={conflict}
+                        onChanged={() => handleChanged(selectedIri)}
+                      />
+                    ) : undefined}
+                  />
                 </TabsContent>
                 <TabsContent value="属性" className="mt-0">
-                  <DataPropertyPanel key={selectedIri ?? "none"} selectedClassIri={selectedIri} onChanged={() => handleChanged(selectedIri ?? undefined)} />
+                  <DataPropertyPanel
+                    key={selectedIri ?? "none"}
+                    selectedClassIri={selectedIri}
+                    onChanged={() => handleChanged(selectedIri ?? undefined)}
+                    renderRestrictions={selectedIri ? (property) => (
+                      <RestrictionEditor
+                        key={`restr-${selectedIri}-${property.slpra_iri}-${property.version}-${restrictionReload}`}
+                        classIri={selectedIri}
+                        binding={{ propertyIri: property.slpra_iri, propertyKind: "data", defaultFillerIri: null }}
+                        conflict={conflict}
+                        onChanged={() => handleChanged(selectedIri)}
+                      />
+                    ) : undefined}
+                  />
                 </TabsContent>
                 <TabsContent value="映射" className="mt-0">
                   <OntologyMappingPanel key={selectedIri ?? "none"} classIri={selectedIri} conflict={conflict} onChanged={() => handleChanged(selectedIri ?? undefined)} />

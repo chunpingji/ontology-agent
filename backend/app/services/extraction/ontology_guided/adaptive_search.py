@@ -223,6 +223,9 @@ class AdaptiveSlotSearch(HeuristicSlotSearch):
             self.status = "pass_exhausted"
             return None
 
+    def admit_conflict_check(self, record_ids, *, trigger_ref):
+        return self._audit_page(super().admit_conflict_check(record_ids, trigger_ref=trigger_ref))
+
     def accept_semantic(self, *args, **kwargs):
         raise ValueError("v4 requires the committed epoch and exact AdmissionDecision")
 

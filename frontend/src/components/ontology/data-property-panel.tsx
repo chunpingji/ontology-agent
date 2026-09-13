@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, type ReactNode } from "react";
+import { ChevronDown, ChevronRight } from "lucide-react";
 import {
   createDataProperty,
   deleteDataProperty,
@@ -9,6 +10,13 @@ import {
   type TBoxDataProperty,
 } from "@/lib/api";
 import { RiskAttributeWizard } from "@/components/ontology/risk-attribute-wizard";
+import { PropertyCardinalityEditor } from "@/components/ontology/property-cardinality-editor";
+import {
+  cardinalityForm,
+  cardinalityPayload,
+  cardinalitySummary,
+  type CardinalityFormState,
+} from "@/lib/property-cardinality";
 import { Field } from "@/components/ontology/field";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -25,7 +33,7 @@ const MANAGED_PREFIX = "https://ontology.pharma-gmp.cn/slpra/core/";
 const DATATYPES = ["string", "integer", "decimal", "boolean", "date", "dateTime", "anyURI"];
 
 type Mode = "list" | "create" | "edit" | "risk";
-type FormState = {
+type FormState = CardinalityFormState & {
   slpra_iri: string;
   label: string;
   domain_iri: string;
@@ -36,6 +44,7 @@ type FormState = {
 };
 
 const emptyForm = (domainIri: string | null): FormState => ({
+  ...cardinalityForm(),
   slpra_iri: MANAGED_PREFIX,
   label: "",
   domain_iri: domainIri ?? "",
@@ -53,9 +62,11 @@ const emptyForm = (domainIri: string | null): FormState => ({
 export function DataPropertyPanel({
   selectedClassIri,
   onChanged,
+  renderRestrictions,
 }: {
   selectedClassIri: string | null;
   onChanged: () => void;
+  renderRestrictions?: (property: TBoxDataProperty) => ReactNode;
 }) {
   const [items, setItems] = useState<TBoxDataProperty[]>([]);
   const [mode, setMode] = useState<Mode>("list");
@@ -64,6 +75,7 @@ export function DataPropertyPanel({
   const [msg, setMsg] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [vocabInput, setVocabInput] = useState("");
+  const [expandedIri, setExpandedIri] = useState<string | null>(null);
 
   const load = useCallback(() => {
     listDataProperties(selectedClassIri ?? undefined, true)
@@ -105,6 +117,7 @@ export function DataPropertyPanel({
     setEditing(dp);
     const cv = dp.controlled_vocab as Record<string, unknown> | null;
     setForm({
+      ...cardinalityForm(dp),
       slpra_iri: dp.slpra_iri,
       label: dp.label ?? "",
       domain_iri: dp.domain_iri ?? "",
@@ -125,6 +138,7 @@ export function DataPropertyPanel({
         ? { vocab: form.vocab_key || undefined, values: form.vocab_values }
         : null;
     try {
+      const cardinality = cardinalityPayload(form, form.domain_iri);
       if (mode === "edit" && editing) {
         await updateDataProperty(editing.slpra_iri, {
           label: form.label,
@@ -132,6 +146,7 @@ export function DataPropertyPanel({
           datatype: form.datatype,
           unit: form.unit || null,
           controlled_vocab,
+          ...cardinality,
           expected_version: editing.version,
         });
         afterWrite("已更新数据属性");
@@ -143,6 +158,7 @@ export function DataPropertyPanel({
           datatype: form.datatype,
           unit: form.unit || null,
           controlled_vocab,
+          ...cardinality,
         });
         afterWrite("已创建数据属性");
       }
@@ -204,67 +220,85 @@ export function DataPropertyPanel({
           {items.map((dp) => {
             const isRisk = dp.controlled_vocab != null;
             const inherited = dp.inherited_from_iri != null;
+            const expanded = expandedIri === dp.slpra_iri;
             return (
               <li
                 key={dp.id}
-                className={`flex items-center justify-between gap-2 px-2 py-1.5 ${inherited ? "bg-muted/60" : ""}`}
+                data-property-iri={dp.slpra_iri}
+                className={`px-2 py-1.5 ${inherited ? "bg-muted/60" : ""}`}
               >
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="truncate font-mono text-xs text-muted-foreground">
-                      {dp.slpra_iri.split("/").pop()}
-                    </span>
-                    {dp.label && <span className="truncate text-foreground">{dp.label}</span>}
-                    {isRisk && (
-                      <span className="shrink-0 rounded bg-destructive/10 px-1.5 py-0.5 text-[10px] text-destructive">
-                        风险
+                <div className="flex items-center justify-between gap-2">
+                  <button
+                    type="button"
+                    className="min-w-0 flex-1 cursor-pointer text-left"
+                    title="展开数据属性的类约束"
+                    aria-expanded={expanded}
+                    aria-controls={`data-restrictions-${dp.id}`}
+                    onClick={() => setExpandedIri(expanded ? null : dp.slpra_iri)}
+                  >
+                    <div className="flex items-center gap-2">
+                      {expanded ? <ChevronDown className="h-3.5 w-3.5 shrink-0" /> : <ChevronRight className="h-3.5 w-3.5 shrink-0" />}
+                      <span className="truncate font-mono text-xs text-muted-foreground">
+                        {dp.slpra_iri.split("/").pop()}
                       </span>
-                    )}
-                    {inherited && (
-                      <span
-                        className="shrink-0 rounded bg-warning/10 px-1.5 py-0.5 text-[10px] text-warning"
-                        title={`继承自 ${dp.inherited_from_label ?? dp.inherited_from_iri}`}
-                      >
-                        继承自 {dp.inherited_from_label ?? dp.inherited_from_iri?.split("/").pop()}
+                      {dp.label && <span className="truncate text-foreground">{dp.label}</span>}
+                      {isRisk && (
+                        <span className="shrink-0 rounded bg-destructive/10 px-1.5 py-0.5 text-[10px] text-destructive">
+                          风险
+                        </span>
+                      )}
+                      {inherited && (
+                        <span
+                          className="shrink-0 rounded bg-warning/10 px-1.5 py-0.5 text-[10px] text-warning"
+                          title={`继承自 ${dp.inherited_from_label ?? dp.inherited_from_iri}`}
+                        >
+                          继承自 {dp.inherited_from_label ?? dp.inherited_from_iri?.split("/").pop()}
+                        </span>
+                      )}
+                    </div>
+                    <div className="mt-0.5 flex flex-wrap gap-1 text-[11px] text-muted-foreground">
+                      <span className="rounded bg-muted px-1.5 py-0.5">{dp.datatype}</span>
+                      <span className="rounded bg-muted px-1.5 py-0.5">{cardinalitySummary(dp)}</span>
+                      {dp.unit && <span className="rounded bg-muted px-1.5 py-0.5">{dp.unit}</span>}
+                      {isRisk && Boolean((dp.controlled_vocab as Record<string, unknown>)?.vocab) && (
+                        <span className="rounded bg-muted px-1.5 py-0.5">
+                          词表: {String((dp.controlled_vocab as Record<string, unknown>).vocab)}
+                        </span>
+                      )}
+                    </div>
+                  </button>
+                  <div className="flex shrink-0 gap-1">
+                    {inherited ? (
+                      <span className="rounded border border-dashed px-2 py-0.5 text-xs text-muted-foreground">
+                        只读
                       </span>
-                    )}
-                  </div>
-                  <div className="mt-0.5 flex flex-wrap gap-1 text-[11px] text-muted-foreground">
-                    <span className="rounded bg-muted px-1.5 py-0.5">{dp.datatype}</span>
-                    {dp.unit && <span className="rounded bg-muted px-1.5 py-0.5">{dp.unit}</span>}
-                    {isRisk && Boolean((dp.controlled_vocab as Record<string, unknown>)?.vocab) && (
-                      <span className="rounded bg-muted px-1.5 py-0.5">
-                        词表: {String((dp.controlled_vocab as Record<string, unknown>).vocab)}
-                      </span>
+                    ) : (
+                      <>
+                        <Button
+                          onClick={() => startEdit(dp)}
+                          variant="outline"
+                          size="sm"
+                          className="h-auto rounded px-2 py-0.5 text-xs text-muted-foreground"
+                        >
+                          编辑
+                        </Button>
+                        <Button
+                          onClick={() => remove(dp)}
+                          variant="outline"
+                          size="sm"
+                          className="h-auto rounded border-destructive/40 px-2 py-0.5 text-xs text-destructive hover:bg-destructive/10"
+                        >
+                          删除
+                        </Button>
+                      </>
                     )}
                   </div>
                 </div>
-                <div className="flex shrink-0 gap-1">
-                  {inherited ? (
-                    <span className="rounded border border-dashed px-2 py-0.5 text-xs text-muted-foreground">
-                      只读
-                    </span>
-                  ) : (
-                    <>
-                      <Button
-                        onClick={() => startEdit(dp)}
-                        variant="outline"
-                        size="sm"
-                        className="h-auto rounded px-2 py-0.5 text-xs text-muted-foreground"
-                      >
-                        编辑
-                      </Button>
-                      <Button
-                        onClick={() => remove(dp)}
-                        variant="outline"
-                        size="sm"
-                        className="h-auto rounded border-destructive/40 px-2 py-0.5 text-xs text-destructive hover:bg-destructive/10"
-                      >
-                        删除
-                      </Button>
-                    </>
-                  )}
-                </div>
+                {expanded && renderRestrictions && (
+                  <div id={`data-restrictions-${dp.id}`} className="mt-3 border-t border-border pt-3 pb-1 pl-4">
+                    {renderRestrictions(dp)}
+                  </div>
+                )}
               </li>
             );
           })}
@@ -334,6 +368,10 @@ export function DataPropertyPanel({
               />
             </Field>
           </div>
+          <PropertyCardinalityEditor
+            value={form}
+            onChange={(cardinality) => setForm({ ...form, ...cardinality })}
+          />
           <Field label="受控词表" hint="可选，定义属性的合法取值列表">
             <Input
               placeholder="词表标识（可选，如 OEB）"

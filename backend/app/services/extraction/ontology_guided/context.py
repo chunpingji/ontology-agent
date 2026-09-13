@@ -50,6 +50,7 @@ class TaskContext(EvidenceModel):
     protocol_state: dict = Field(default_factory=dict, exclude=True)
     repair_enabled: bool = Field(default=False, exclude=True)
     incremental_performance: bool = Field(default=False, exclude=True)
+    expert_feedback: dict = Field(default_factory=dict, exclude=True)
     _before_model_call: Callable[[str, int], None] | None = PrivateAttr(default=None)
     _protocol_hook: Callable[[dict], None] | None = PrivateAttr(default=None)
     _actual_calls: int = PrivateAttr(default=0)

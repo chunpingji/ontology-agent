@@ -36,5 +36,6 @@ def evidence_content_hash(context) -> str:
                 ]
             ),
             "proof_menu": context.proof_menu,
+            **({"expert_feedback": context.expert_feedback} if context.expert_feedback else {}),
         }
     )

@@ -60,7 +60,9 @@ class FakeOntologyEngine:
     def __init__(self) -> None:
         self.projected: list = []
 
-    def project_entities(self, entities):  # best-effort World projection
+    def project_entities(self, entities, *, published_graph=None, publish_callback=None):
+        if publish_callback is not None:
+            publish_callback()
         self.projected.append(entities)
 
     def get_relation_schema(self, class_iri, max_hops=4):
@@ -110,7 +112,7 @@ def db():
 @pytest.fixture(autouse=True)
 def _isolate_ontology_dir(tmp_path, monkeypatch):
     """将 settings.ontology_dir 指向每个测试独立的临时目录，避免发布流程
-    （_write_and_commit）污染真实 ontology/ 目录或在真实仓库产生提交，
+    （_write_ttl / _commit_ttl）污染真实 ontology/ 目录或在真实仓库产生提交，
     并保证 export/diff 的基线图为空、可独立复现（测试隔离）。"""
     from app.config import settings
 

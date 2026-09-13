@@ -147,7 +147,20 @@ class OntologyClass(NamedEntityMixin, Base):
 
 
 # --- E2 ontology_link_type (object property / relation) ---------------------
-class OntologyLinkType(NamedEntityMixin, Base):
+class PropertyCardinalityMixin:
+    multiplicity: Mapped[str] = mapped_column(
+        String(20), nullable=False, default="unspecified", server_default="unspecified"
+    )
+    min_cardinality: Mapped[int | None] = mapped_column(Integer)
+    max_cardinality: Mapped[int | None] = mapped_column(Integer)
+    # Migration marks legacy data rows for one safe TTL reconciliation. New edits
+    # are authoritative even when all cardinality fields have been cleared.
+    cardinality_seeded: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=True, server_default="true"
+    )
+
+
+class OntologyLinkType(PropertyCardinalityMixin, NamedEntityMixin, Base):
     __tablename__ = "ontology_link_type"
 
     domain_class_id: Mapped[uuid.UUID | None] = mapped_column(
@@ -159,15 +172,13 @@ class OntologyLinkType(NamedEntityMixin, Base):
     inverse_link_id: Mapped[uuid.UUID | None] = mapped_column(
         GUID(), ForeignKey("ontology_link_type.id")
     )
-    min_cardinality: Mapped[int | None] = mapped_column(Integer)
-    max_cardinality: Mapped[int | None] = mapped_column(Integer)
     is_functional: Mapped[bool] = mapped_column(Boolean, default=False)
     is_symmetric: Mapped[bool] = mapped_column(Boolean, default=False)
     is_transitive: Mapped[bool] = mapped_column(Boolean, default=False)
 
 
 # --- E3 ontology_data_property ----------------------------------------------
-class OntologyDataProperty(NamedEntityMixin, Base):
+class OntologyDataProperty(PropertyCardinalityMixin, NamedEntityMixin, Base):
     __tablename__ = "ontology_data_property"
 
     domain_class_id: Mapped[uuid.UUID | None] = mapped_column(
