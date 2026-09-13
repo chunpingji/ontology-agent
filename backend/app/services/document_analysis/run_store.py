@@ -10,6 +10,7 @@ from __future__ import annotations
 import hmac
 import json
 import secrets
+import time
 from datetime import datetime, timedelta, timezone
 from hashlib import sha256
 from typing import Any, Callable
@@ -154,12 +155,35 @@ class InvalidRunState(RunStoreError):
     code = "INVALID_RUN_STATE"
 
 
+class PublicationTimeout(TimeoutError):
+    """The write transaction exceeded its operational publication bound."""
+
+
 class DocumentAnalysisRunStore:
     """SQLAlchemy repository for the independent DocumentAnalysisRun aggregate."""
 
     def __init__(self, db: Session, *, clock: Callable[[], datetime] = utcnow) -> None:
         self.db = db
         self._clock = clock
+
+    def check_publication_deadline(self):
+        deadline = getattr(self, "publication_deadline", None)
+        if deadline is not None and time.monotonic() >= deadline:
+            raise PublicationTimeout("document analysis publication deadline exceeded")
+
+    def _progress_watermark(self, run, execution):
+        if (execution.last_progress_at is not None
+                and execution.recovery_event_head == run.event_head):
+            return {}
+        latest = self.db.scalar(select(DocumentRecognitionEvent.created_at).where(
+            DocumentRecognitionEvent.recognition_run_id == run.recognition_run_id,
+            DocumentRecognitionEvent.sequence <= run.event_head,
+        ).order_by(DocumentRecognitionEvent.sequence.desc()).limit(1)) if run.event_head else None
+        return {
+            "recovery_event_head": run.event_head,
+            "recovery_attempts": 0,
+            "last_progress_at": latest or run.started_at or run.created_at,
+        }
 
     def create_run(
         self,
@@ -622,6 +646,7 @@ class DocumentAnalysisRunStore:
             self.get_owned(recognition_run_id, owner_id)
             execution = self._execution_for_update(recognition_run_id)
             run = self._run_for_update(recognition_run_id, owner_id)
+            stamp = self._clock()
             if run.deletion_state != "none" or run.execution_status not in {
                 "queued",
                 "running",
@@ -639,6 +664,14 @@ class DocumentAnalysisRunStore:
             if not available:
                 raise LeaseBusy(run_id=str(recognition_run_id))
             generation = execution.generation
+            progress_values = self._progress_watermark(run, execution)
+            if run.execution_status == "queued":
+                # Queue delay is not execution failure. An explicit resume also
+                # starts one new window; automatic replacement remains running.
+                progress_values.update(last_progress_at=stamp, recovery_attempts=0,
+                                       recovery_event_head=run.event_head)
+            elif not progress_values and run.execution_status in {"running", "pausing"}:
+                progress_values["recovery_attempts"] = execution.recovery_attempts + 1
             changed = self.db.execute(
                 update(DocumentAnalysisExecution)
                 .where(
@@ -660,6 +693,7 @@ class DocumentAnalysisRunStore:
                     pause_requested=run.execution_status == "pausing",
                     cancel_requested=False,
                     updated_at=stamp,
+                    **progress_values,
                 )
                 .execution_options(synchronize_session=False)
             )
@@ -804,6 +838,10 @@ class DocumentAnalysisRunStore:
         stamp = self._clock()
         with self.db.begin_nested():
             _run, execution = self._lock_fence(recognition_run_id, owner_id, execution_token, stamp)
+            # Lock acquisition may outlive the lease. Never acknowledge a renewal
+            # against a timestamp captured before waiting, or revive an expired owner.
+            stamp = self._clock()
+            self._check_fence(execution, execution_token, stamp)
             changed = self.db.execute(
                 update(DocumentAnalysisExecution)
                 .where(
@@ -818,6 +856,7 @@ class DocumentAnalysisRunStore:
                     heartbeat_at=stamp,
                     lease_expires_at=stamp + timedelta(seconds=lease_seconds),
                     updated_at=stamp,
+                    **self._progress_watermark(_run, execution),
                 )
                 .execution_options(synchronize_session=False)
             )
@@ -1596,6 +1635,9 @@ class DocumentAnalysisRunStore:
                 self._revoke_execution(execution)
                 execution.pause_requested = False
                 execution.cancel_requested = False
+                execution.recovery_attempts = 0
+                execution.last_progress_at = stamp
+                execution.recovery_event_head = run.event_head
             elif action in {"ranking_budget_enable", "ranking_budget_disable"}:
                 if run.execution_status not in {"paused", "failed"}:
                     raise InvalidRunState("only paused/failed runs can change ranking budgets")
@@ -1913,10 +1955,12 @@ class DocumentAnalysisRunStore:
         execution_token: str,
         stamp: datetime,
     ) -> tuple[DocumentAnalysisRun, DocumentAnalysisExecution]:
+        self.check_publication_deadline()
         self.get_owned(recognition_run_id, owner_id)
         execution = self._execution_for_update(recognition_run_id)
         self._check_fence(execution, execution_token, stamp)
         run = self._run_for_update(recognition_run_id, owner_id)
+        self._check_fence(execution, execution_token, self._clock())
         if run.deletion_state != "none":
             raise FenceViolation("run is being deleted", run_id=str(recognition_run_id))
         return run, execution

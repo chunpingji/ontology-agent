@@ -27,6 +27,7 @@ from app.services.document_analysis import execution as execution_service
 from app.services.document_analysis.run_store import (
     DocumentAnalysisRunStore,
     FenceViolation,
+    content_hash,
 )
 from app.services.document_analysis.state_artifacts import decode_state
 from app.services.extraction.ontology_guided.contracts import GraphNode
@@ -96,7 +97,12 @@ def _word_bytes(tmp_path: Path) -> bytes:
     return path.read_bytes()
 
 
-def _create_pending_run(client, analyst_headers, tmp_path, monkeypatch, *, key: str) -> str:
+def _create_pending_run(
+    client, analyst_headers, tmp_path, monkeypatch, *, key: str, evidence_repair: bool = False,
+) -> str:
+    # Shared recovery fixtures freeze historical protocols independently of online defaults.
+    monkeypatch.setattr(settings, "document_analysis_evidence_repair_enabled", evidence_repair)
+    monkeypatch.setattr(settings, "document_analysis_adaptive_retrieval_mode", "disabled")
     monkeypatch.setattr(settings, "document_analysis_storage_dir", tmp_path / "run-artifacts")
     monkeypatch.setattr(document_analysis, "dispatch_run", lambda *_args, **_kwargs: None)
     response = client.post(
@@ -140,6 +146,39 @@ def _expire_lease(db, run_id: str) -> None:
     )
     db.commit()
     db.expire_all()
+
+
+def test_stalled_recovery_stops_before_replay_and_keeps_paid_artifacts(
+    client, db, analyst_headers, tmp_path, monkeypatch,
+):
+    run_id = _create_pending_run(client, analyst_headers, tmp_path, monkeypatch,
+                                 key="stalled-paid-result")
+    store, token = _claim(db, run_id)
+    run = store.get_owned(run_id, "analyst")
+    paid = {"paid_result": "preserved", "calls": 2}
+    store.update_artifact(run_id, "analyst", token, artifact_kind="recognition-model-calls",
+                          expected_revision=0, artifact_hash=content_hash(paid), status="ready",
+                          artifact_id="stalled-paid-sidecar", payload=paid)
+    db.commit()
+    db.execute(update(DocumentAnalysisExecution).where(
+        DocumentAnalysisExecution.recognition_run_id == run_id,
+    ).values(lease_expires_at=datetime.now(UTC) - timedelta(seconds=1),
+             last_progress_at=datetime.now(UTC) - timedelta(hours=2),
+             recovery_event_head=run.event_head, recovery_attempts=3))
+    db.commit()
+
+    def must_not_replay(*args, **kwargs):
+        pytest.fail("a stalled run must stop before loading its large checkpoint")
+
+    monkeypatch.setattr(execution_service, "_execute_claimed", must_not_replay)
+    execution_service.dispatch_run(run_id, bind=db.get_bind())
+    db.expire_all()
+    run = store.get_owned(run_id, "analyst")
+    assert run.execution_status == "failed"
+    assert run.stop_reason == "execution_stalled"
+    assert run.error["code"] == "ANALYSIS_STALLED"
+    assert db.get(DocumentAnalysisArtifact, "stalled-paid-sidecar").payload == paid
+    assert store.list_events(run_id, "analyst")[-1].payload["error"]["code"] == "ANALYSIS_STALLED"
 
 
 @pytest.mark.parametrize("failure_class", [RuntimeError, ModelWaitFailure])
@@ -229,9 +268,9 @@ def test_committed_batch_is_secret_free_closed_waterline_and_resumes_without_rec
     client, db, analyst_headers, tmp_path, monkeypatch, performance_enabled, incremental,
 ):
     monkeypatch.setattr(settings, "document_analysis_performance_enabled", performance_enabled)
-    monkeypatch.setattr(settings, "document_analysis_evidence_repair_enabled", incremental)
     run_id = _create_pending_run(
-        client, analyst_headers, tmp_path, monkeypatch, key="crash-after-first-batch"
+        client, analyst_headers, tmp_path, monkeypatch, key="crash-after-first-batch",
+        evidence_repair=incremental,
     )
     adapter = CountingAdapter()
     monkeypatch.setattr(execution_service, "configured_model_adapter", lambda **_kw: adapter)

@@ -1,6 +1,7 @@
 """Canonical evidence content identity, independent of task IDs and retrieval order."""
 
 from app.services.extraction.evidence_identity import evidence_hash
+from app.services.extraction.ontology_guided.value_constraints import UNIT_NORMALIZATION_VERSION
 
 EVIDENCE_REPAIR_VERSION = "evidence-repair-v1"
 SCOPE_PROTOCOL_VERSION = "source-quoted-scope-v1"
@@ -16,6 +17,7 @@ def evidence_content_hash(context) -> str:
             "version": EVIDENCE_REPAIR_VERSION,
             "scope_protocol": SCOPE_PROTOCOL_VERSION,
             "literal_quotes": LITERAL_QUOTE_VERSION,
+            "unit_normalization": UNIT_NORMALIZATION_VERSION,
             "document": context.target.document_context,
             "ontology_hash": context.target.ontology_hash,
             "subject": context.target.subject_ref,

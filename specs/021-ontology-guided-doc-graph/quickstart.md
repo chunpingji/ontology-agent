@@ -4,6 +4,11 @@
 
 ## 1. 验收边界
 
+2026-09-13 新候选策略验收见
+[022 候选完成场景](../022-semantic-graph-closure/quickstart.md#候选台账与本轮完成2026-09-13)。
+新运行 `candidate_policy=sparse-candidates-v1` 的 records_* 是实际准入任务；旧冻结
+运行沿用原记录覆盖。不要对旧运行原地更换策略、重置预算，或将本轮完成当作全文穷尽。
+
 一次合格验证必须把以下证据分开记录：
 
 1. 纯领域与契约测试：菜单、引用、身份、谓词证明、两阶段守恒、依赖与图投影。
@@ -411,3 +416,28 @@ dry-run 必须在以下任一条件成立时非零退出并输出 G-C03 blocked�
 - 旧同步路由、旧 Word runner、旧 checkpoint 恢复和旧客户端生产可达数为 0；新运行写旧 CandidateStore 或中央事实库次数为 0。
 
 缺少任一项时，可以继续开发和非破坏性验证，但 `validation.md` 必须标记发布/清理/切换为 pending 或 blocked，不能用“测试桩全绿”“图连通”或“全部拒绝”替代真实完成。
+
+
+## 报告预览专家意见入口（2026-09-11）
+
+按用户进一步要求实施可保存、重读及导出的专家意见入口；需求、权限、版本、幂等及验收见[契约](contracts/expert-opinions.md)。该意见不自动变更图谱或校准质量状态。
+
+使用高级分析师或 QA 打开「报告中心 → 预览 → 专家意见」，选择类型、填写意见并保存；
+重新打开应显示个人历史，可以导出 JSON。普通角色无提交表单。原文版本变化应拒绝保存，
+翻阅历史不应清空正在填写的草稿，所有 GET 操作不得创建识别任务。
+
+后端定向回归（在 `backend/`）：
+```bash
+.venv/bin/python -m pytest -p no:cacheprovider -q tests/test_api/test_report_expert_opinions.py tests/test_api/test_report_document_runs.py
+```
+
+前端验证（在 `frontend/`，浏览器脚本支持指定已有的 `ESBUILD_MODULE`、`PLAYWRIGHT_MODULE`）：
+```bash
+./node_modules/.bin/tsc --noEmit
+npm run lint -- src/components/reports/expert-opinion-entry.tsx src/components/reports/report-word-workspace.tsx src/components/reports/batch-demo-workspace.tsx 'src/app/(dashboard)/reports/[reportId]/page.tsx' src/lib/api.ts
+node tests/expert-opinion-browser.mjs
+node tests/report-word-workspace-browser.mjs
+```
+
+部署核对数据库实际 revision 为 `0036_report_expert_opinions`，并检查入口 GET。
+若有识别在途，按既有运行控制协议暂停后重启，完成后仅恢复本次暂停的运行。

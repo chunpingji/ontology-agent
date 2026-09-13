@@ -11,8 +11,10 @@ from __future__ import annotations
 import asyncio
 import logging
 import threading
+import time
 import traceback
 from collections.abc import Callable
+from contextlib import contextmanager
 from copy import deepcopy
 from dataclasses import asdict
 from datetime import UTC, datetime, timedelta
@@ -21,8 +23,9 @@ from pathlib import Path
 from typing import Any
 from uuid import UUID
 
-from sqlalchemy import select
+from sqlalchemy import select, text
 from sqlalchemy.engine import Engine
+from sqlalchemy.exc import DBAPIError
 from sqlalchemy.orm import Session, sessionmaker
 
 from app.config import settings
@@ -33,7 +36,9 @@ from app.models.document_analysis import (
     DocumentAnalysisRun,
     DocumentRecognitionEventBatch,
     DocumentRunArtifact,
+    DocumentRunCandidate,
     DocumentRunCandidateHead,
+    DocumentVerificationProof,
     DocumentVerificationProofHead,
 )
 from app.services.document_analysis.artifact_store import (
@@ -41,25 +46,32 @@ from app.services.document_analysis.artifact_store import (
     SourceArtifactError,
 )
 from app.services.document_analysis.public_projection import build_selection_registry
-from app.services.document_analysis.read_artifacts import publish_read_artifacts
+from app.services.document_analysis.read_artifacts import (
+    prepare_read_artifacts,
+    publish_prepared_read_artifacts,
+)
 from app.services.document_analysis.run_store import (
     DocumentAnalysisRunStore,
     FenceViolation,
+    HeadConflict,
     InvalidRunState,
     LeaseBusy,
+    PublicationTimeout,
     RunDeleted,
     RunNotFound,
     content_hash,
 )
 from app.services.document_analysis.state_artifacts import (
     decode_state,
-    encode_run_state,
     performance_policy,
+    prepare_run_state,
+    publish_prepared_state,
 )
 from app.services.extraction.doc_converter import DocConversionError, ensure_docx
 from app.services.extraction.document_annotator import annotate_word
 from app.services.extraction.document_ir import DocumentIR
 from app.services.extraction.evidence_identity import evidence_hash, stable_id
+from app.services.extraction.ontology_guided.adaptive_retrieval import AdaptivePolicy
 from app.services.extraction.ontology_guided.context_records import CONTEXT_RECORDS_VERSION
 from app.services.extraction.ontology_guided.contracts import (
     CONTRACT_VERSION,
@@ -100,6 +112,7 @@ from app.services.extraction.ontology_guided.projection import project_graph
 from app.services.extraction.ontology_guided.records import RecordIndex
 from app.services.extraction.ontology_guided.semantic_reranker import RankingPolicy, RankingService
 from app.services.extraction.ontology_guided.task_citations import TASK_CITATION_VERSION
+from app.services.extraction.ontology_guided.value_constraints import UNIT_NORMALIZATION_VERSION
 from app.services.extraction.ontology_guided.verification import (
     EligibilityPolicy,
     PredicatePolicyRegistry,
@@ -128,6 +141,38 @@ class CheckpointMismatch(RuntimeError):
     """A private checkpoint does not match its durable run waterline."""
 
 
+class ExecutionStalled(RuntimeError):
+    """The owned run has made no durable progress within its operational bound."""
+
+
+@contextmanager
+def _publication(db, store):
+    """Bound the short write transaction after expensive preparation has finished."""
+    seconds = min(settings.document_analysis_publish_timeout_seconds,
+                  settings.document_analysis_lease_seconds / 2)
+    store.publication_deadline = time.monotonic() + seconds
+    try:
+        if db.get_bind().dialect.name == "postgresql":
+            milliseconds = str(max(1, int(seconds * 1000)))
+            db.execute(text("SELECT set_config('statement_timeout', :timeout, true), "
+                            "set_config('lock_timeout', :timeout, true)"),
+                       {"timeout": milliseconds})
+        with db.begin_nested():
+            yield
+            store.check_publication_deadline()
+        db.commit()
+    except BaseException as exc:
+        db.rollback()
+        if isinstance(exc, DBAPIError) and (
+            getattr(exc.orig, "pgcode", None) or getattr(exc.orig, "sqlstate", None)
+        ) in {"57014", "55P03"}:
+            # Keep SQL-bound evidence and driver parameter reprs out of logs.
+            raise PublicationTimeout("document analysis publication timed out") from None
+        raise
+    finally:
+        store.publication_deadline = None
+
+
 class _LeaseKeeper:
     """Renew one execution lease from a session independent of worker work."""
 
@@ -149,6 +194,7 @@ class _LeaseKeeper:
         self._stop = threading.Event()
         self._lost = threading.Event()
         self._control_requested = threading.Event()
+        self._stalled = threading.Event()
         self._thread = threading.Thread(
             target=self._run,
             name=f"document-analysis-lease-{recognition_run_id}",
@@ -165,9 +211,11 @@ class _LeaseKeeper:
     def raise_if_lost(self) -> None:
         if self._lost.is_set():
             raise WorkerInterrupted("document-analysis execution lease was lost")
+        if self._stalled.is_set():
+            raise ExecutionStalled("document-analysis made no durable progress")
 
     def should_stop(self) -> bool:
-        return self._lost.is_set() or self._control_requested.is_set()
+        return self._lost.is_set() or self._control_requested.is_set() or self._stalled.is_set()
 
     def _run(self) -> None:
         while not self._stop.wait(self._interval):
@@ -180,6 +228,8 @@ class _LeaseKeeper:
                     lease_seconds=self._lease_seconds,
                 )
                 db.commit()
+                if _execution_stalled(execution):
+                    self._stalled.set()
                 # Pause is a safe-boundary request. Cancelling an already paid
                 # model call here would lose its result and force a replay.
                 if execution.cancel_requested:
@@ -197,6 +247,19 @@ class _LeaseKeeper:
                 )
             finally:
                 db.close()
+
+
+def _execution_stalled(execution):
+    last = execution.last_progress_at
+    if last is not None:
+        last = last.replace(tzinfo=UTC) if last.tzinfo is None else last
+    return (
+        execution.recovery_attempts >= (
+            settings.document_analysis_max_recovery_attempts_without_progress
+        )
+        or last is not None and (datetime.now(UTC) - last).total_seconds()
+        >= settings.document_analysis_no_progress_timeout_seconds
+    )
 
 
 def _session_factory(bind: Engine | None):
@@ -283,57 +346,64 @@ def _publish_artifact(
     metadata_snapshot_id: str | None = None,
     graph_snapshot_id: str | None = None,
 ) -> DocumentAnalysisRun:
-    logical_payload = payload
-    if kind == "graph":
-        payload = encode_run_state(store, run, token, payload, kind=kind)
+    prepared_revision = run.revision
+    reads = prepare_read_artifacts(store, run, kind=kind, payload=payload)
+    prepared = prepare_run_state(store, run, payload, kind=kind) if kind == "graph" else None
+    if prepared is not None:
+        payload = prepared.payload
     artifact_hash = content_hash(payload)
     head = store.get_artifact_head(run.recognition_run_id, run.owner_id, kind)
     expected_artifact_revision = head.revision if head is not None else 0
-    event = store.append_event(
-        run.recognition_run_id,
-        run.owner_id,
-        token,
-        expected_head=run.event_head,
-        event_key=f"artifact:{kind}:{artifact_hash}",
-        event_type="artifact",
-        payload={
-            "contract_version": CONTRACT_VERSION,
-            "recognition_run_id": str(run.recognition_run_id),
-            "run_revision": run.revision + 2,
-            "event_head": run.event_head + 1,
-            "artifact_revision": run.artifact_revision + 1,
-            "status": "running",
-            "stage": {
-                "structure": "parsing",
-                "metadata": "preparing_metadata",
-                "graph": "extracting",
-            }.get(kind, run.stage),
-            "artifact_kind": kind,
-            "availability": status,
-            "link": f"/api/document-analysis/runs/{run.recognition_run_id}/{kind}",
-        },
-    )
-    store.update_artifact(
-        run.recognition_run_id,
-        run.owner_id,
-        token,
-        artifact_kind=kind,
-        expected_revision=expected_artifact_revision,
-        artifact_hash=artifact_hash,
-        status=status,
-        artifact_id=stable_id(f"{kind}-artifact", [str(run.recognition_run_id), artifact_hash]),
-        media_type="application/json",
-        payload=payload,
-        event_head=event.sequence,
-        analysis_id=analysis_id,
-        metadata_snapshot_id=metadata_snapshot_id,
-        graph_snapshot_id=graph_snapshot_id,
-    )
-    publish_read_artifacts(
-        store, run, token, kind=kind, payload=logical_payload, status=status,
-        event_head=event.sequence,
-    )
-    db.commit()
+    with _publication(db, store):
+        store.assert_fence(run.recognition_run_id, run.owner_id, token, for_update=True)
+        run = store.get_owned(run.recognition_run_id, run.owner_id)
+        if run.revision != prepared_revision:
+            raise HeadConflict("run changed during artifact preparation")
+        if prepared is not None:
+            publish_prepared_state(store, run, token, prepared)
+        event = store.append_event(
+            run.recognition_run_id,
+            run.owner_id,
+            token,
+            expected_head=run.event_head,
+            event_key=f"artifact:{kind}:{artifact_hash}",
+            event_type="artifact",
+            payload={
+                "contract_version": CONTRACT_VERSION,
+                "recognition_run_id": str(run.recognition_run_id),
+                "run_revision": run.revision + 2,
+                "event_head": run.event_head + 1,
+                "artifact_revision": run.artifact_revision + 1,
+                "status": "running",
+                "stage": {
+                    "structure": "parsing",
+                    "metadata": "preparing_metadata",
+                    "graph": "extracting",
+                }.get(kind, run.stage),
+                "artifact_kind": kind,
+                "availability": status,
+                "link": f"/api/document-analysis/runs/{run.recognition_run_id}/{kind}",
+            },
+        )
+        store.update_artifact(
+            run.recognition_run_id,
+            run.owner_id,
+            token,
+            artifact_kind=kind,
+            expected_revision=expected_artifact_revision,
+            artifact_hash=artifact_hash,
+            status=status,
+            artifact_id=stable_id(f"{kind}-artifact", [str(run.recognition_run_id), artifact_hash]),
+            media_type="application/json",
+            payload=payload,
+            event_head=event.sequence,
+            analysis_id=analysis_id,
+            metadata_snapshot_id=metadata_snapshot_id,
+            graph_snapshot_id=graph_snapshot_id,
+        )
+        publish_prepared_read_artifacts(
+            store, run, token, reads, status=status, event_head=event.sequence,
+        )
     return store.get_owned(run.recognition_run_id, run.owner_id)
 
 
@@ -488,6 +558,8 @@ def _finish(
 
 
 def _failure_payload(exc: Exception) -> tuple[str, str]:
+    if isinstance(exc, PublicationTimeout):
+        return "PUBLICATION_TIMEOUT", "状态发布超时，已回滚本批次并保留先前检查点和模型结果"
     if isinstance(exc, DocConversionError):
         return "INVALID_WORD", "文档转换失败"
     if isinstance(exc, SourceArtifactError):
@@ -542,9 +614,10 @@ def _persist_ranking_state(
     from app.services.document_analysis.incremental_state import structural_snapshot
 
     try:
-        # Validate monotonic accounting under the same lock as block/head writes.
-        store.assert_fence(run.recognition_run_id, run.owner_id, token, for_update=True)
+        # Validate and serialize without excluding the independent lease heartbeat.
+        store.assert_fence(run.recognition_run_id, run.owner_id, token)
         current = store.get_owned(run.recognition_run_id, run.owner_id)
+        prepared_revision = current.revision
         if (
             current.run_fingerprint != final_fingerprint
             or state.get("run_fingerprint") != final_fingerprint
@@ -608,47 +681,53 @@ def _persist_ranking_state(
                          content_hash(previous) == content_hash(state)):
             db.commit()  # Release the writer lock on idempotent acknowledgement.
             return
-        persisted_state = encode_run_state(store, current, token, state, kind="ranking_state")
+        prepared = prepare_run_state(store, current, state, kind="ranking_state")
+        reads = prepare_read_artifacts(store, current, kind="ranking_state", payload=state)
+        persisted_state = prepared.payload
         digest = content_hash(persisted_state)
         head = store.get_artifact_head(
             current.recognition_run_id, current.owner_id, "ranking_state"
         )
-        event = store.append_event(
-            current.recognition_run_id,
-            current.owner_id,
-            token,
-            expected_head=current.event_head,
-            event_key=f"ranking:{digest}",
-            event_type="progress",
-            payload={
-                "contract_version": CONTRACT_VERSION,
-                "recognition_run_id": str(current.recognition_run_id),
-                "run_revision": current.revision + 2,
-                "event_head": current.event_head + 1,
-                "artifact_revision": current.artifact_revision + 1,
-                "status": "running",
-                "stage": "extracting",
-                "ranking_epochs": len(epochs),
-            },
-        )
-        committed_ref = store.update_artifact(
-            current.recognition_run_id,
-            current.owner_id,
-            token,
-            artifact_kind="ranking_state",
-            expected_revision=head.revision if head else 0,
-            artifact_hash=digest,
-            status="ready",
-            artifact_id=stable_id("ranking-state", [str(current.recognition_run_id), digest]),
-            media_type="application/json",
-            payload=persisted_state,
-            event_head=event.sequence,
-        )
-        publish_read_artifacts(
-            store, current, token, kind="ranking_state", payload=state, status="ready",
-            event_head=event.sequence,
-        )
-        db.commit()
+        with _publication(db, store):
+            store.assert_fence(current.recognition_run_id, current.owner_id, token, for_update=True)
+            current = store.get_owned(current.recognition_run_id, current.owner_id)
+            if current.revision != prepared_revision:
+                raise HeadConflict("run changed during ranking preparation")
+            publish_prepared_state(store, current, token, prepared)
+            event = store.append_event(
+                current.recognition_run_id,
+                current.owner_id,
+                token,
+                expected_head=current.event_head,
+                event_key=f"ranking:{digest}",
+                event_type="progress",
+                payload={
+                    "contract_version": CONTRACT_VERSION,
+                    "recognition_run_id": str(current.recognition_run_id),
+                    "run_revision": current.revision + 2,
+                    "event_head": current.event_head + 1,
+                    "artifact_revision": current.artifact_revision + 1,
+                    "status": "running",
+                    "stage": "extracting",
+                    "ranking_epochs": len(epochs),
+                },
+            )
+            committed_ref = store.update_artifact(
+                current.recognition_run_id,
+                current.owner_id,
+                token,
+                artifact_kind="ranking_state",
+                expected_revision=head.revision if head else 0,
+                artifact_hash=digest,
+                status="ready",
+                artifact_id=stable_id("ranking-state", [str(current.recognition_run_id), digest]),
+                media_type="application/json",
+                payload=persisted_state,
+                event_head=event.sequence,
+            )
+            publish_prepared_read_artifacts(
+                store, current, token, reads, status="ready", event_head=event.sequence,
+            )
         store._committed_ranking_state = (
             (str(current.recognition_run_id), committed_ref.artifact_id,
              committed_ref.content_hash),
@@ -660,6 +739,8 @@ def _persist_ranking_state(
 
 
 def _configured_recognition_adapter(performance: dict):
+    if performance.get("candidate_planning") not in {None, "sparse-candidates-v1"}:
+        raise CheckpointMismatch("unknown candidate planning policy")
     if performance.get("evidence_repair") is None:
         return configured_model_adapter()
     if performance["evidence_repair"] != "evidence-repair-v1":
@@ -669,6 +750,7 @@ def _configured_recognition_adapter(performance: dict):
         "owner_binding": OWNER_BINDING_VERSION,
         "evidence_work": EvidenceWorkQueue.version,
         "literal_quotes": LITERAL_QUOTE_VERSION,
+        "unit_normalization": UNIT_NORMALIZATION_VERSION,
     }
     if performance.get("incremental_performance") is not None:
         expected.update({
@@ -677,8 +759,13 @@ def _configured_recognition_adapter(performance: dict):
             "semantic_expansion": "bounded-semantic-v1",
             "process_granularity": "whole-method-field-v1",
             "attribute_priority": "source-field-priority-v1",
-            "heuristic_policy": "heuristic-first-v3",
+            "heuristic_policy": "heuristic-first-v4" if performance.get("adaptive_retrieval")
+            else "heuristic-first-v3",
         })
+    if performance.get("adaptive_retrieval"):
+        adaptive = AdaptivePolicy.model_validate(performance["adaptive_retrieval"])
+        if adaptive.evaluation_only or not performance.get("incremental_performance"):
+            raise CheckpointMismatch("isolated adaptive policy cannot run online")
     if any(performance.get(key) != value for key, value in expected.items()):
         raise CheckpointMismatch("evidence repair policy version mismatch")
     return configured_model_adapter(protocol_version="evidence-repair-v1")
@@ -794,8 +881,9 @@ def _persist_model_call_state(
     from app.services.document_analysis.incremental_state import structural_snapshot
 
     try:
-        store.assert_fence(run.recognition_run_id, run.owner_id, token, for_update=True)
+        store.assert_fence(run.recognition_run_id, run.owner_id, token)
         current = store.get_owned(run.recognition_run_id, run.owner_id)
+        prepared_revision = current.revision
         if (
             current.run_fingerprint != final_fingerprint
             or state["run_fingerprint"] != final_fingerprint
@@ -861,55 +949,59 @@ def _persist_model_call_state(
             model_calls_reserved=reserved,
             model_calls_unresolved=max(0, reserved - int(progress.get("model_calls", 0))),
         )
-        current = store.update_stage(
-            current.recognition_run_id,
-            current.owner_id,
-            token,
-            expected_revision=current.revision,
-            stage=current.stage,
-            progress=progress,
-        )
-        head = store.get_artifact_head(
-            current.recognition_run_id, current.owner_id, "recognition-model-calls"
-        )
-        event = store.append_event(
-            current.recognition_run_id,
-            current.owner_id,
-            token,
-            expected_head=current.event_head,
-            event_key=f"model-call-reservation:{digest}",
-            event_type="progress",
-            payload={
-                "contract_version": CONTRACT_VERSION,
-                "recognition_run_id": str(current.recognition_run_id),
-                "run_revision": current.revision + 2,
-                "event_head": current.event_head + 1,
-                "artifact_revision": current.artifact_revision + 1,
-                "status": "running",
-                "stage": "extracting",
-                "model_calls_reserved": sum(state["lineage_calls"].values()),
-            },
-        )
-        persisted_state = (encode_run_state(store, current, token, state,
-                                           kind="recognition-model-calls")
-                           if state["version"] == 2 else state)
+        prepared = prepare_run_state(store, current, state, kind="recognition-model-calls")
+        persisted_state = prepared.payload
         stored_digest = content_hash(persisted_state)
-        committed_ref = store.update_artifact(
-            current.recognition_run_id,
-            current.owner_id,
-            token,
-            artifact_kind="recognition-model-calls",
-            expected_revision=head.revision if head else 0,
-            artifact_hash=stored_digest,
-            status="ready",
-            artifact_id=stable_id(
-                "recognition-model-calls", [str(current.recognition_run_id), stored_digest]
-            ),
-            media_type="application/json",
-            payload=persisted_state,
-            event_head=event.sequence,
-        )
-        db.commit()
+        with _publication(db, store):
+            store.assert_fence(current.recognition_run_id, current.owner_id, token, for_update=True)
+            current = store.get_owned(current.recognition_run_id, current.owner_id)
+            if current.revision != prepared_revision:
+                raise HeadConflict("run changed during model accounting preparation")
+            publish_prepared_state(store, current, token, prepared)
+            current = store.update_stage(
+                current.recognition_run_id,
+                current.owner_id,
+                token,
+                expected_revision=current.revision,
+                stage=current.stage,
+                progress=progress,
+            )
+            head = store.get_artifact_head(
+                current.recognition_run_id, current.owner_id, "recognition-model-calls"
+            )
+            event = store.append_event(
+                current.recognition_run_id,
+                current.owner_id,
+                token,
+                expected_head=current.event_head,
+                event_key=f"model-call-reservation:{digest}",
+                event_type="progress",
+                payload={
+                    "contract_version": CONTRACT_VERSION,
+                    "recognition_run_id": str(current.recognition_run_id),
+                    "run_revision": current.revision + 2,
+                    "event_head": current.event_head + 1,
+                    "artifact_revision": current.artifact_revision + 1,
+                    "status": "running",
+                    "stage": "extracting",
+                    "model_calls_reserved": sum(state["lineage_calls"].values()),
+                },
+            )
+            committed_ref = store.update_artifact(
+                current.recognition_run_id,
+                current.owner_id,
+                token,
+                artifact_kind="recognition-model-calls",
+                expected_revision=head.revision if head else 0,
+                artifact_hash=stored_digest,
+                status="ready",
+                artifact_id=stable_id(
+                    "recognition-model-calls", [str(current.recognition_run_id), stored_digest]
+                ),
+                media_type="application/json",
+                payload=persisted_state,
+                event_head=event.sequence,
+            )
         store._committed_model_call_state = (
             (str(current.recognition_run_id), current.owner_id,
              committed_ref.artifact_id, committed_ref.content_hash),
@@ -1021,77 +1113,67 @@ def _rebase_graph(
     )
 
 
-def _persist_batch_objects(
-    store: DocumentAnalysisRunStore,
-    run: DocumentAnalysisRun,
-    token: str,
-    batch: ExecutionBatch,
-    *,
-    event_sequence: int,
-) -> None:
-    decisions_by_target: dict[str, list[dict[str, Any]]] = {}
+def _prepare_batch_objects(db, run, batch):
+    """Validate old immutable revisions and prepare only the changed object writes."""
+    candidate_heads = {item.candidate_id: item for item in db.scalars(select(
+        DocumentRunCandidateHead,
+    ).where(DocumentRunCandidateHead.recognition_run_id == run.recognition_run_id))}
+    proof_heads = {item.proof_id: item for item in db.scalars(select(
+        DocumentVerificationProofHead,
+    ).where(DocumentVerificationProofHead.recognition_run_id == run.recognition_run_id))}
+    candidates = {key: item.revision for key, item in candidate_heads.items()}
+    proofs = {key: item.proof_revision for key, item in proof_heads.items()}
+    writes = []
+    decisions = {}
     for decision in batch.outcome.decision_payloads:
-        decisions_by_target.setdefault(str(decision.get("target_id")), []).append(decision)
+        decisions.setdefault(str(decision.get("target_id")), []).append(decision)
     for proof in batch.outcome.proof_payloads:
-        target_id = str(proof["target_id"])
-        proof_id = str(proof["proof_id"])
-        proof_head = store.db.get(
-            DocumentVerificationProofHead,
-            (run.recognition_run_id, proof_id),
-            populate_existing=True,
-        )
-        store.put_proof(
-            run.recognition_run_id,
-            run.owner_id,
-            token,
-            proof_id=proof_id,
-            proof_revision=int(proof.get("proof_revision", 1)),
-            target_id=target_id,
-            payload={
-                "predicate_evidence": proof,
-                "decisions": decisions_by_target.get(target_id, []),
-            },
-            expected_head_revision=(proof_head.proof_revision if proof_head is not None else 0),
-            event_sequence=event_sequence,
-        )
-
-    # A committed checkpoint must describe a completely reconstructable graph,
-    # not only the delta returned by its final model call.  In particular the
-    # document-root node is created by the executor rather than by an adapter;
-    # omitting it caused a hard crash during finalization to leave candidate
-    # heads ahead of the latest checkpoint and made safe recovery impossible.
-    candidates_by_revision: dict[tuple[str, str, int], Any] = {}
-    for kind, candidates in (
-        ("entity", batch.outcome.nodes),
-        ("relationship", batch.outcome.edges),
-        ("property", batch.outcome.properties),
-        ("entity", batch.graph.nodes),
-        ("relationship", batch.graph.edges),
-        ("property", batch.graph.properties),
+        identity, revision = str(proof["proof_id"]), int(proof.get("proof_revision", 1))
+        body = {"predicate_evidence": proof,
+                "decisions": decisions.get(str(proof["target_id"]), [])}
+        digest = content_hash(body)
+        existing = db.get(DocumentVerificationProof, (run.recognition_run_id, identity, revision))
+        if existing is not None:
+            if existing.payload_hash != digest or existing.target_id != str(proof["target_id"]):
+                raise HeadConflict("immutable proof revision changed")
+            continue
+        writes.append(("put_proof", {
+            "proof_id": identity, "proof_revision": revision, "target_id": str(proof["target_id"]),
+            "payload": body, "payload_hash": digest,
+            "expected_head_revision": proofs.get(identity, 0),
+        }))
+        proofs[identity] = revision
+    by_revision = {}
+    for kind, values in (
+        ("entity", batch.outcome.nodes), ("relationship", batch.outcome.edges),
+        ("property", batch.outcome.properties), ("entity", batch.graph.nodes),
+        ("relationship", batch.graph.edges), ("property", batch.graph.properties),
     ):
-        for candidate in candidates:
-            candidate_id = getattr(candidate, "candidate_id", None) or candidate.entity_id
-            candidates_by_revision[(kind, candidate_id, candidate.revision)] = candidate
-
-    for (kind, candidate_id, _revision), candidate in candidates_by_revision.items():
-        candidate_head = store.db.get(
-            DocumentRunCandidateHead,
-            (run.recognition_run_id, candidate_id),
-            populate_existing=True,
-        )
+        for candidate in values:
+            identity = getattr(candidate, "candidate_id", None) or candidate.entity_id
+            by_revision[(kind, identity, candidate.revision)] = candidate
+    for (kind, identity, revision), candidate in by_revision.items():
+        body = candidate.model_dump(mode="json")
+        digest = content_hash(body)
         proof_ref = getattr(candidate, "proof_ref", None)
-        store.put_candidate(
-            run.recognition_run_id,
-            run.owner_id,
-            token,
-            candidate_id=candidate_id,
-            revision=candidate.revision,
-            kind=kind,
-            payload=candidate.model_dump(mode="json"),
-            proof_refs=[proof_ref.model_dump(mode="json")] if proof_ref else [],
-            expected_head_revision=(candidate_head.revision if candidate_head is not None else 0),
-            event_sequence=event_sequence,
-        )
+        refs = [proof_ref.model_dump(mode="json")] if proof_ref else []
+        existing = db.get(DocumentRunCandidate, (run.recognition_run_id, identity, revision))
+        if existing is not None:
+            if (existing.kind != kind or existing.payload_hash != digest
+                    or existing.proof_refs != refs):
+                raise HeadConflict("immutable candidate revision changed")
+            continue
+        writes.append(("put_candidate", {
+            "candidate_id": identity, "revision": revision, "kind": kind, "payload": body,
+            "payload_hash": digest, "proof_refs": refs,
+            "expected_head_revision": candidates.get(identity, 0),
+        }))
+        candidates[identity] = revision
+    return (
+        writes,
+        [VersionedRef(id=key, revision=value) for key, value in sorted(candidates.items())],
+        [VersionedRef(id=key, revision=value) for key, value in sorted(proofs.items())],
+    )
 
 
 def _head_refs(db: Session, run_id: UUID | str, model, revision_field: str):
@@ -1144,168 +1226,112 @@ def _persist_recognition_batch(
     ):
         return
 
-    with db.begin_nested():
-        current = store.get_owned(run.recognition_run_id, run.owner_id)
+    current = store.get_owned(run.recognition_run_id, run.owner_id)
+    prepared_revision, event_sequence = current.revision, current.event_head + 1
+    writes, candidate_refs, proof_refs = _prepare_batch_objects(db, current, batch)
+    graph_revision = prepared_revision + 1 + len(writes)
+    graph = _rebase_graph(batch.graph, run_revision=graph_revision, event_head=event_sequence)
+    graph_snapshot_id = stable_id(
+        "graph-snapshot",
+        [str(current.recognition_run_id), graph.generated_from_hash, event_sequence],
+    )
+    graph_payload = {
+        "snapshot_id": graph_snapshot_id, "analysis_id": ir.analysis_id,
+        "ontology_snapshot_id": ontology.snapshot_id,
+        "generated_at": datetime.now(UTC).isoformat(), "graph": graph.model_dump(mode="json"),
+        "selection_registry": build_selection_registry(
+            recognition_run_id=str(current.recognition_run_id), analysis_id=ir.analysis_id,
+            graph=graph, index=index,
+        ),
+        "retrieval_plans": list(batch.recall_ledger.values()),
+        "dependency_index": batch.dependency_index, "diagnostics": batch.diagnostics,
+        "ranking_state": batch.ranking_state, "evidence_repair": batch.evidence_repair_summary,
+    }
+    prepared_graph = prepare_run_state(store, current, graph_payload, kind="graph")
+    graph_hash = content_hash(prepared_graph.payload)
+    prepared_reads = prepare_read_artifacts(store, current, kind="graph", payload=graph_payload)
+    execution = store.assert_fence(current.recognition_run_id, current.owner_id, token)
+    checkpoint = checkpoint_envelope(
+        structural_digest=(lambda value: structural_digest(
+            store, current, "checkpoint-identity", value,
+        )) if incremental else None,
+        recognition_run_id=str(current.recognition_run_id), run_fingerprint=final_fingerprint,
+        execution_generation=execution.generation, event_seq=event_sequence,
+        frontier=batch.frontier, recall_ledger=batch.recall_ledger,
+        candidate_head_refs=candidate_refs, proof_head_refs=proof_refs, resolution_events=[],
+        dependency_index=batch.dependency_index,
+        retry_queue=list(batch.frontier.get("retries") or []),
+        scheduler_turns=int(batch.frontier.get("turn", 0)), task_outcomes=batch.task_outcomes,
+        graph_state=graph.model_dump(mode="json"), diagnostics=batch.diagnostics,
+        ranking_state=batch.ranking_state, model_call_state=batch.model_call_state,
+        progress=graph.progress,
+    )
+    prepared_checkpoint = prepare_run_state(
+        store, current, checkpoint.json_payload(), kind="recognition_checkpoint",
+    )
+    checkpoint_hash = content_hash(prepared_checkpoint.payload)
+    checkpoint_artifact_id = stable_id(
+        "recognition-checkpoint-artifact",
+        [str(current.recognition_run_id), checkpoint.content_hash],
+    )
+    with _publication(db, store):
+        store.assert_fence(current.recognition_run_id, current.owner_id, token, for_update=True)
+        current = store.get_owned(current.recognition_run_id, current.owner_id)
+        if current.revision != prepared_revision:
+            raise HeadConflict("run changed during recognition batch preparation")
         event = store.append_event(
-            current.recognition_run_id,
-            current.owner_id,
-            token,
-            expected_head=current.event_head,
-            event_key=f"recognition-batch:{batch.batch_id}",
-            event_type="progress",
-            payload={
+            current.recognition_run_id, current.owner_id, token,
+            expected_head=event_sequence - 1, event_key=f"recognition-batch:{batch.batch_id}",
+            event_type="progress", payload={
                 "contract_version": CONTRACT_VERSION,
                 "recognition_run_id": str(current.recognition_run_id),
-                "run_revision": current.revision + 1,
-                "event_head": current.event_head + 1,
-                "artifact_revision": current.artifact_revision,
-                "status": "running",
-                "stage": "extracting",
-                "progress": batch.graph.progress.model_dump(mode="json"),
+                "run_revision": prepared_revision + 1, "event_head": event_sequence,
+                "artifact_revision": current.artifact_revision, "status": "running",
+                "stage": "extracting", "progress": batch.graph.progress.model_dump(mode="json"),
                 "task": batch.task.model_dump(mode="json"),
                 "outcome": batch.outcome.model_dump(mode="json"),
             },
         )
+        for method, arguments in writes:
+            getattr(store, method)(current.recognition_run_id, current.owner_id, token,
+                                   event_sequence=event_sequence, **arguments)
         current = store.get_owned(current.recognition_run_id, current.owner_id)
-        _persist_batch_objects(
-            store,
-            current,
-            token,
-            batch,
-            event_sequence=event.sequence,
-        )
-        current = store.get_owned(current.recognition_run_id, current.owner_id)
-        graph = _rebase_graph(
-            batch.graph,
-            run_revision=current.revision,
-            event_head=event.sequence,
-        )
-        graph_snapshot_id = stable_id(
-            "graph-snapshot",
-            [str(current.recognition_run_id), graph.generated_from_hash, event.sequence],
-        )
-        graph_payload = {
-            "snapshot_id": graph_snapshot_id,
-            "analysis_id": ir.analysis_id,
-            "ontology_snapshot_id": ontology.snapshot_id,
-            "generated_at": datetime.now(UTC).isoformat(),
-            "graph": graph.model_dump(mode="json"),
-            "selection_registry": build_selection_registry(
-                recognition_run_id=str(current.recognition_run_id),
-                analysis_id=ir.analysis_id,
-                graph=graph,
-                index=index,
-            ),
-            "retrieval_plans": list(batch.recall_ledger.values()),
-            "dependency_index": batch.dependency_index,
-            "diagnostics": batch.diagnostics,
-            "ranking_state": batch.ranking_state,
-            "evidence_repair": batch.evidence_repair_summary,
-        }
-        graph_head = store.get_artifact_head(current.recognition_run_id, current.owner_id, "graph")
-        stored_graph = encode_run_state(store, current, token, graph_payload, kind="graph")
+        if current.revision != graph_revision:
+            raise HeadConflict("recognition object waterline changed")
+        publish_prepared_state(store, current, token, prepared_graph)
         store.update_artifact(
-            current.recognition_run_id,
-            current.owner_id,
-            token,
-            artifact_kind="graph",
-            expected_revision=graph_head.revision if graph_head else 0,
-            artifact_hash=content_hash(stored_graph),
+            current.recognition_run_id, current.owner_id, token, artifact_kind="graph",
+            expected_revision=prepared_graph.expected_head[0], artifact_hash=graph_hash,
             status=graph.artifact_status,
-            artifact_id=stable_id(
-                "graph-artifact",
-                [str(current.recognition_run_id), graph_snapshot_id],
-            ),
-            media_type="application/json",
-            payload=stored_graph,
+            artifact_id=stable_id("graph-artifact", [
+                str(current.recognition_run_id), graph_snapshot_id,
+            ]),
+            media_type="application/json", payload=prepared_graph.payload,
             event_head=event.sequence,
-            analysis_id=ir.analysis_id,
-            metadata_snapshot_id=metadata.snapshot_id,
+            analysis_id=ir.analysis_id, metadata_snapshot_id=metadata.snapshot_id,
             graph_snapshot_id=graph_snapshot_id,
         )
-        publish_read_artifacts(
-            store, current, token, kind="graph", payload=graph_payload,
-            status=graph.artifact_status, event_head=event.sequence,
-        )
-        execution = store.assert_fence(current.recognition_run_id, current.owner_id, token)
-        candidate_refs = _head_refs(
-            db, current.recognition_run_id, DocumentRunCandidateHead, "revision"
-        )
-        proof_refs = _head_refs(
-            db,
-            current.recognition_run_id,
-            DocumentVerificationProofHead,
-            "proof_revision",
-        )
-        checkpoint = checkpoint_envelope(
-            structural_digest=(lambda value: structural_digest(
-                store, current, "checkpoint-identity", value,
-            )) if incremental else None,
-            recognition_run_id=str(current.recognition_run_id),
-            run_fingerprint=final_fingerprint,
-            execution_generation=execution.generation,
-            event_seq=event.sequence,
-            frontier=batch.frontier,
-            recall_ledger=batch.recall_ledger,
-            candidate_head_refs=candidate_refs,
-            proof_head_refs=proof_refs,
-            resolution_events=[],
-            dependency_index=batch.dependency_index,
-            retry_queue=list(batch.frontier.get("retries") or []),
-            scheduler_turns=int(batch.frontier.get("turn", 0)),
-            task_outcomes=batch.task_outcomes,
-            graph_state=graph.model_dump(mode="json"),
-            diagnostics=batch.diagnostics,
-            ranking_state=batch.ranking_state,
-            model_call_state=batch.model_call_state,
-            progress=graph.progress,
-        )
-        checkpoint_payload = encode_run_state(
-            store, current, token, checkpoint.json_payload(),
-            kind="recognition_checkpoint",
-        )
-        checkpoint_head = store.get_artifact_head(
-            current.recognition_run_id,
-            current.owner_id,
-            "recognition_checkpoint",
-        )
-        checkpoint_artifact_id = stable_id(
-            "recognition-checkpoint-artifact",
-            [str(current.recognition_run_id), checkpoint.content_hash],
-        )
+        publish_prepared_read_artifacts(store, current, token, prepared_reads,
+                                        status=graph.artifact_status, event_head=event.sequence)
+        publish_prepared_state(store, current, token, prepared_checkpoint)
         store.update_artifact(
-            current.recognition_run_id,
-            current.owner_id,
-            token,
+            current.recognition_run_id, current.owner_id, token,
             artifact_kind="recognition_checkpoint",
-            expected_revision=checkpoint_head.revision if checkpoint_head else 0,
-            artifact_hash=content_hash(checkpoint_payload),
-            status="ready",
-            artifact_id=checkpoint_artifact_id,
+            expected_revision=prepared_checkpoint.expected_head[0],
+            artifact_hash=checkpoint_hash, status="ready", artifact_id=checkpoint_artifact_id,
             media_type="application/vnd.slpra.document-recognition-checkpoint+json",
-            payload=checkpoint_payload,
-            event_head=event.sequence,
+            payload=prepared_checkpoint.payload, event_head=event.sequence,
         )
         current = store.get_owned(current.recognition_run_id, current.owner_id)
         store.update_stage(
-            current.recognition_run_id,
-            current.owner_id,
-            token,
-            expected_revision=current.revision,
-            stage="recognition",
-            progress=graph.progress.model_dump(mode="json"),
+            current.recognition_run_id, current.owner_id, token, expected_revision=current.revision,
+            stage="recognition", progress=graph.progress.model_dump(mode="json"),
         )
         store.put_event_batch(
-            current.recognition_run_id,
-            current.owner_id,
-            token,
-            batch_id=batch.batch_id,
-            batch_hash=batch_hash,
-            first_sequence=event.sequence,
-            last_sequence=event.sequence,
+            current.recognition_run_id, current.owner_id, token, batch_id=batch.batch_id,
+            batch_hash=batch_hash, first_sequence=event.sequence, last_sequence=event.sequence,
             checkpoint_artifact_id=checkpoint_artifact_id,
         )
-    db.commit()
 
 
 def _restore_recognition_checkpoint(
@@ -1748,6 +1774,7 @@ def _execute_claimed(
     )
 
     def progress_hook(_boundary: str) -> bool:
+        check_interrupted()
         execution = store.heartbeat(
             run.recognition_run_id,
             run.owner_id,
@@ -1794,6 +1821,7 @@ def _execute_claimed(
                 # The frozen snapshot is authoritative; a live engine must not widen it.
                 engine=object(),
                 adapter=adapter,
+                candidate_policy=performance.get("candidate_planning"),
                 max_tasks=settings.evidence_max_tasks,
                 max_model_calls_per_record=(
                     performance["max_lineage_calls"] if repair
@@ -1806,8 +1834,13 @@ def _execute_claimed(
                 template_interleaving=performance.get("template_interleaving", False),
                 evidence_repair=repair,
                 incremental_performance=bool(performance.get("incremental_performance")),
+                adaptive_policy=(
+                    AdaptivePolicy.model_validate(performance["adaptive_retrieval"])
+                    if performance.get("adaptive_retrieval") else None
+                ),
                 heuristic_policy=HeuristicSearchPolicy.durable(
                     incremental=bool(performance.get("incremental_performance")),
+                    adaptive=bool(performance.get("adaptive_retrieval")),
                 ) if repair else None,
             ).run(
                 recognition_run_id=str(run.recognition_run_id),
@@ -1865,7 +1898,8 @@ def _execute_claimed(
         # No logical task ran (for example, an empty ontology menu or a pause
         # before the first call), so there is no recognition checkpoint to reuse.
         terminal_graph = result.graph
-        run = _persist_graph_objects(db, store, run, token, terminal_graph, result.events)
+        with _publication(db, store):
+            run = _persist_graph_objects(db, store, run, token, terminal_graph, result.events)
         selection_registry = build_selection_registry(
             recognition_run_id=str(run.recognition_run_id),
             analysis_id=analysis_ir.analysis_id,
@@ -1957,7 +1991,8 @@ def _execute_claimed(
         )
         return
     terminal_status = (
-        "finished" if terminal_progress.completion == "in_scope_complete" else "failed"
+        "finished" if terminal_progress.completion in {"in_scope_complete", "policy_complete"}
+        else "failed"
     )
     _finish(
         db,
@@ -1998,8 +2033,12 @@ def _execute_dispatched_run(
         lease_seconds=settings.document_analysis_lease_seconds,
     )
     keeper.start()
+    store.interruption_check = keeper.raise_if_lost
     try:
         try:
+            execution = store.assert_fence(recognition_run_id, run.owner_id, token)
+            if _execution_stalled(execution):
+                raise ExecutionStalled("recovery has not advanced the durable watermark")
             _execute_claimed(
                 db,
                 store,
@@ -2008,10 +2047,30 @@ def _execute_dispatched_run(
                 interruption_check=keeper.raise_if_lost,
                 should_stop=keeper.should_stop,
             )
-        except (FenceViolation, RunDeleted, RunNotFound, WorkerInterrupted):
+        except ExecutionStalled:
+            db.rollback()
+            current = store.get_owned(recognition_run_id, run.owner_id)
+            try:
+                _finish(
+                    db, store, current, token, status="failed", public_status="retryable_failure",
+                    public_stage="extracting",
+                    progress=RunProgress.model_validate(current.progress or {}),
+                    stop_reason="execution_stalled",
+                    error={
+                        "code": "ANALYSIS_STALLED",
+                        "message": ("运行长时间没有持久进展，已停止自动恢复"
+                                    "并保留检查点和已付模型结果"),
+                        "retryable": True,
+                    },
+                )
+            except (FenceViolation, RunDeleted, RunNotFound):
+                db.rollback()
+        except (FenceViolation, RunDeleted, RunNotFound, WorkerInterrupted) as exc:
             # A control action or a newer worker owns the generation. Never
             # publish a late error or overwrite its state.
             db.rollback()
+            logger.warning("document-analysis execution interrupted run=%s reason=%s",
+                           recognition_run_id, type(exc).__name__)
         except ModelCancelled:
             db.rollback()
             try:

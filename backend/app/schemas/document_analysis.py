@@ -14,6 +14,7 @@ from uuid import UUID
 from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, model_validator
 
 from app.schemas.evidence import EvidenceAnchor
+from app.schemas.retrieval_diagnostics import RetrievalDiagnosticCarrier
 
 CONTRACT_VERSION = "document-analysis-runs-v1"
 
@@ -181,7 +182,7 @@ class DecisionCounts(ApiModel):
     not_checked: int = Field(default=0, ge=0)
 
 
-class RunProgress(ApiModel):
+class RunProgress(ApiModel, RetrievalDiagnosticCarrier):
     tasks_attempted: int = Field(default=0, ge=0)
     model_calls: int = Field(default=0, ge=0)
     model_calls_reserved: int = Field(default=0, ge=0)
@@ -194,6 +195,7 @@ class RunProgress(ApiModel):
     decisions: DecisionCounts = Field(default_factory=DecisionCounts)
     pending_frontiers: int = Field(default=0, ge=0)
     stop_reason: str | None = None
+    completion: Literal["incomplete", "in_scope_complete", "policy_complete"] | None = None
     contract_version: ContractVersion = CONTRACT_VERSION
     event_head: int = Field(ge=0)
     artifact_revision: int = Field(ge=0)
@@ -203,6 +205,12 @@ class RunProgress(ApiModel):
         accounted = self.records_examined + self.records_incomplete + self.records_unattempted
         if self.records_planned != accounted:
             raise ValueError("records_planned must equal examined + incomplete + unattempted")
+        if self.completion == "policy_complete" and (
+            self.candidate_policy != "sparse-candidates-v1"
+            or self.records_incomplete or self.records_unattempted or self.pending_frontiers
+            or self.model_calls_unresolved
+        ):
+            raise ValueError("candidate policy completion cannot hide unfinished recognition work")
         return self
 
 
@@ -357,6 +365,7 @@ class GraphSnapshotHeader(ApiModel):
 
 
 class RoleSourceSelectionRefs(ApiModel):
+    unit: list[str] = Field(default_factory=list)
     subject: list[str] = Field(default_factory=list)
     object: list[str] = Field(default_factory=list)
     value: list[str] = Field(default_factory=list)
@@ -414,6 +423,7 @@ class GraphProperty(GraphAssertion):
     normalized_value: Any = None
     datatype_iri: str | None = None
     unit: str | None = None
+    normalization_record: dict[str, Any] = Field(default_factory=dict)
 
 
 class GraphRelationship(GraphAssertion):
@@ -421,7 +431,7 @@ class GraphRelationship(GraphAssertion):
     direction: Literal["subject_to_object", "object_to_subject"] = "subject_to_object"
 
 
-class CoverageSubject(ApiModel):
+class CoverageSubject(ApiModel, RetrievalDiagnosticCarrier):
     subject_ref: EntityRef
     predicate_iri: FullIri
     predicate_label: NonEmpty
@@ -443,7 +453,7 @@ class CoverageSubject(ApiModel):
         return self
 
 
-class GraphCoverage(ApiModel):
+class GraphCoverage(ApiModel, RetrievalDiagnosticCarrier):
     subjects: list[CoverageSubject] = Field(default_factory=list)
     records_planned: int = Field(default=0, ge=0)
     records_examined: int = Field(default=0, ge=0)
@@ -568,6 +578,7 @@ class GraphArtifactResponse(RunWatermark):
 
 
 SourceSelectionRole = Literal[
+    "unit",
     "entity",
     "subject",
     "object",

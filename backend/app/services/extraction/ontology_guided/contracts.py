@@ -10,15 +10,18 @@ from __future__ import annotations
 
 from typing import Any, Literal
 
-from pydantic import Field, model_validator
+from pydantic import Field, model_serializer, model_validator
 
 from app.schemas.evidence import EvidenceAnchor, EvidenceModel
+from app.schemas.retrieval_diagnostics import RetrievalDiagnosticCarrier
 from app.services.extraction.evidence_identity import evidence_hash, stable_id
 
 CONTRACT_VERSION = "document-analysis-runs-v1"
 ONTOLOGY_SNAPSHOT_VERSION = "ontology-guided-snapshot-v1"
 METADATA_POLICY_VERSION = "ontology-guided-metadata-v1"
 RETRIEVAL_POLICY_VERSION = "ontology-guided-two-phase-v1"
+SPARSE_RETRIEVAL_POLICY_VERSION = "ontology-guided-sparse-candidates-v1"
+CANDIDATE_POLICY_VERSION = "sparse-candidates-v1"
 PROOF_POLICY_VERSION = "ontology-guided-proof-v1"
 PROJECTION_POLICY_VERSION = "ontology-guided-graph-v2"
 
@@ -271,6 +274,16 @@ class RetrievalPlan(EvidenceModel):
     frozen_record_ids: list[str] = Field(default_factory=list)
     frozen_record_hash: str = ""
     ranking_epoch_ids: list[str] = Field(default_factory=list)
+    # The document owns the record universe once. Sparse plans reference that
+    # immutable search domain; only admitted recognition work appears below.
+    search_scope_ref: dict[str, Any] | None = None
+
+    @model_serializer(mode="wrap")
+    def serialize_plan(self, handler):
+        result = handler(self)
+        if result.get("search_scope_ref") is None:
+            result.pop("search_scope_ref", None)
+        return result
 
     @model_validator(mode="after")
     def conserved_records(self):
@@ -279,7 +292,19 @@ class RetrievalPlan(EvidenceModel):
             raise ValueError("retrieval phases must be disjoint")
         if set(ids) != set(self.ledger):
             raise ValueError("retrieval ledger must cover every planned record exactly once")
-        if self.frozen_record_hash:
+        if self.policy_version == SPARSE_RETRIEVAL_POLICY_VERSION:
+            scope = self.search_scope_ref
+            if (not isinstance(scope, dict)
+                    or set(scope) != {"scope_id", "record_count", "record_hash"}
+                    or not isinstance(scope["scope_id"], str) or not scope["scope_id"]
+                    or type(scope["record_count"]) is not int or scope["record_count"] < len(ids)
+                    or not isinstance(scope["record_hash"], str)
+                    or len(scope["record_hash"]) != 64
+                    or self.frozen_record_ids or self.frozen_record_hash):
+                raise ValueError("sparse retrieval requires one shared record universe reference")
+        elif self.search_scope_ref is not None:
+            raise ValueError("shared search scope requires the sparse retrieval policy")
+        elif self.frozen_record_hash:
             from app.services.extraction.evidence_identity import evidence_hash
 
             if (
@@ -424,6 +449,8 @@ class PredicateEvidence(EvidenceModel):
     applicability_refs: list[VersionedRef] = Field(default_factory=list)
     dependency_refs: list[VersionedRef] = Field(default_factory=list)
     verdict: SemanticVerdict
+    unit_evidence_refs: list[EvidenceAnchor] = Field(default_factory=list)
+    normalization_record: dict[str, Any] = Field(default_factory=dict)
     proof_policy_version: str = PROOF_POLICY_VERSION
 
 
@@ -461,6 +488,8 @@ class GraphProperty(EvidenceModel):
     predicate_label: str = Field(min_length=1)
     raw_value: str
     normalized_value: Any = None
+    normalization_record: dict[str, Any] = Field(default_factory=dict)
+    unit_evidence_refs: list[EvidenceAnchor] = Field(default_factory=list)
     direction: Literal["outbound"] = "outbound"
     polarity: AssertionPolarity = "affirmed"
     conditions: list[str] = Field(default_factory=list)
@@ -512,7 +541,7 @@ class GraphEdge(EvidenceModel):
     reason: str = ""
 
 
-class CoverageSummary(EvidenceModel):
+class CoverageSummary(RetrievalDiagnosticCarrier):
     subject_ref: VersionedRef
     predicate_iri: str = Field(min_length=1)
     predicate_label: str = Field(min_length=1)
@@ -529,7 +558,7 @@ class CoverageSummary(EvidenceModel):
     stop_reason: str | None = None
 
 
-class RunProgress(EvidenceModel):
+class RunProgress(RetrievalDiagnosticCarrier):
     tasks_attempted: int = Field(default=0, ge=0)
     model_calls: int = Field(default=0, ge=0)
     model_calls_reserved: int = Field(default=0, ge=0)
@@ -546,7 +575,7 @@ class RunProgress(EvidenceModel):
     unresolved_claims: int = Field(default=0, ge=0)
     invalidated_count: int = Field(default=0, ge=0)
     stop_reason: str | None = None
-    completion: Literal["incomplete", "in_scope_complete"] = "incomplete"
+    completion: Literal["incomplete", "in_scope_complete", "policy_complete"] = "incomplete"
     contract_version: str = CONTRACT_VERSION
 
     @model_validator(mode="after")
@@ -555,10 +584,14 @@ class RunProgress(EvidenceModel):
             self.records_examined + self.records_incomplete + self.records_unattempted
         ):
             raise ValueError("planned records must equal examined + incomplete + unattempted")
-        if self.completion == "in_scope_complete" and (
+        if self.completion in {"in_scope_complete", "policy_complete"} and (
             self.records_incomplete or self.records_unattempted or self.pending_frontiers
         ):
             raise ValueError("in-scope completion cannot hide unfinished coverage")
+        if self.completion == "policy_complete" and (
+            self.candidate_policy != CANDIDATE_POLICY_VERSION or self.model_calls_unresolved
+        ):
+            raise ValueError("candidate policy completion cannot hide unresolved work")
         return self
 
 

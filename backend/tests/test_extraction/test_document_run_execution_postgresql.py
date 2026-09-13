@@ -12,7 +12,8 @@ import os
 from concurrent.futures import ThreadPoolExecutor
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
-from threading import Barrier
+from threading import Barrier, Event
+from time import monotonic, sleep
 
 import pytest
 from alembic.config import Config
@@ -95,6 +96,103 @@ def _seed_run(engine: Engine) -> tuple[str, str]:
         assert created
         db.commit()
         return str(run.recognition_run_id), run.owner_id
+
+
+@pytest.mark.parametrize("lock_wait", [5, 31])
+def test_postgresql_heartbeat_rechecks_clock_after_actual_row_lock(pg_engine, lock_wait):
+    run_id, owner_id = _seed_run(pg_engine)
+    clock = [datetime.now(UTC)]
+    with Session(pg_engine, expire_on_commit=False) as db:
+        store = DocumentAnalysisRunStore(db, clock=lambda: clock[0])
+        token = store.claim(run_id, owner_id, actor="test", worker_id="owner", lease_seconds=30)
+        db.commit()
+    entered, backend_pid = Event(), []
+
+    def heartbeat():
+        with Session(pg_engine, expire_on_commit=False) as db:
+            backend_pid.append(db.scalar(text("SELECT pg_backend_pid()")))
+            store = DocumentAnalysisRunStore(db, clock=lambda: clock[0])
+            original = store._lock_fence
+
+            def wait_on_lock(*args):
+                entered.set()
+                return original(*args)
+
+            store._lock_fence = wait_on_lock
+            try:
+                renewed = store.heartbeat(run_id, owner_id, token, lease_seconds=30)
+                db.commit()
+                return renewed.lease_expires_at
+            except FenceViolation:
+                db.rollback()
+                return "expired"
+
+    with ThreadPoolExecutor(max_workers=1) as pool:
+        with Session(pg_engine, expire_on_commit=False) as locked:
+            DocumentAnalysisRunStore(locked, clock=lambda: clock[0]).assert_fence(
+                run_id, owner_id, token, for_update=True,
+            )
+            future = pool.submit(heartbeat)
+            assert entered.wait(5)
+            deadline, waiting = monotonic() + 5, False
+            with pg_engine.connect() as observer:
+                while monotonic() < deadline:
+                    waiting = observer.scalar(text(
+                        "SELECT wait_event_type = 'Lock' FROM pg_stat_activity WHERE pid = :pid"
+                    ), {"pid": backend_pid[0]})
+                    observer.commit()
+                    if waiting:
+                        break
+                    sleep(0.01)
+            assert waiting, "heartbeat did not reach the independent row-lock wait"
+            clock[0] += timedelta(seconds=lock_wait)
+            locked.rollback()
+        result = future.result(timeout=5)
+    assert result == ("expired" if lock_wait > 30 else clock[0] + timedelta(seconds=30))
+
+
+def test_postgresql_cold_state_preparation_does_not_block_heartbeat(pg_engine, monkeypatch):
+    from app.services.document_analysis import execution
+
+    run_id, owner_id = _seed_run(pg_engine)
+    with Session(pg_engine, expire_on_commit=False) as db:
+        store = DocumentAnalysisRunStore(db)
+        token = store.claim(run_id, owner_id, actor="test", worker_id="owner", lease_seconds=30)
+        run = store.get_owned(run_id, owner_id)
+        run.run_fingerprint = "f" * 64
+        db.commit()
+    preparing, release = Event(), Event()
+    original = execution._restore_ranking_state
+
+    def slow_restore(*args, **kwargs):
+        value = original(*args, **kwargs)
+        preparing.set()
+        assert release.wait(5)
+        return value
+
+    monkeypatch.setattr(execution, "_restore_ranking_state", slow_restore)
+
+    def publish():
+        with Session(pg_engine, expire_on_commit=False) as db:
+            store = DocumentAnalysisRunStore(db)
+            execution._persist_ranking_state(
+                db, store, store.get_owned(run_id, owner_id), token,
+                final_fingerprint="f" * 64,
+                state={"recognition_run_id": run_id, "run_fingerprint": "f" * 64,
+                       "service": {"costs": {"model_calls": 1}, "cache": {}}},
+            )
+
+    with ThreadPoolExecutor(max_workers=1) as pool:
+        future = pool.submit(publish)
+        try:
+            assert preparing.wait(5)
+            with Session(pg_engine) as heartbeat_db:
+                heartbeat_db.execute(text("SET LOCAL lock_timeout = '250ms'"))
+                DocumentAnalysisRunStore(heartbeat_db).heartbeat(run_id, owner_id, token)
+                heartbeat_db.commit()
+        finally:
+            release.set()
+        future.result(timeout=5)
 
 
 def test_postgresql_claim_is_unique_and_expired_generation_fences_late_writes(

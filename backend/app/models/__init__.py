@@ -47,9 +47,11 @@ from app.models.reasoning import (
     ElectronicSignature,
     ReasoningExecution,
 )
+from app.models.report_expert_opinion import ReportExpertOpinion
 from app.models.reporting import *  # noqa: F401,F403
 
 __all__ = [
+    "ReportExpertOpinion",
     "EntityShadow",
     "DocumentAnalysisArtifact",
     "DocumentAnalysisControlOperation",

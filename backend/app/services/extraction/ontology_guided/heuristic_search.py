@@ -14,6 +14,7 @@ from copy import deepcopy
 from dataclasses import asdict, dataclass, field
 
 from app.services.extraction.evidence_identity import evidence_hash, stable_id
+from app.services.extraction.ontology_guided.candidate_planning import is_sparse, shared_scope
 from app.services.extraction.ontology_guided.contracts import (
     EdgeSpec,
     MetadataSnapshot,
@@ -69,6 +70,7 @@ class HeuristicSearchPolicy:
             (SEARCH_POLICY_VERSION, QUERY_RULES_VERSION),
             ("heuristic-first-v2", "ontology-labels-and-registered-aliases-v2"),
             ("heuristic-first-v3", "ontology-labels-and-registered-aliases-v2"),
+            ("heuristic-first-v4", "ontology-labels-and-registered-aliases-v2"),
         }:
             raise ValueError("unsupported heuristic search policy version")
         for name in (
@@ -83,8 +85,9 @@ class HeuristicSearchPolicy:
         return asdict(self)
 
     @classmethod
-    def durable(cls, *, incremental=False, **values):
-        return cls(version="heuristic-first-v3" if incremental else "heuristic-first-v2",
+    def durable(cls, *, incremental=False, adaptive=False, **values):
+        return cls(version="heuristic-first-v4" if adaptive else
+                   "heuristic-first-v3" if incremental else "heuristic-first-v2",
                    query_rules_version="ontology-labels-and-registered-aliases-v2", **values)
 
 
@@ -283,8 +286,12 @@ class HeuristicSlotSearch:
     def __post_init__(self):
         if self.plan.predicate_iri != self.predicate.iri:
             raise ValueError("heuristic predicate does not match its plan")
-        if set(self.plan.ledger) != set(self.search_index.record_ids):
+        if not is_sparse(self.plan) and set(self.plan.ledger) != set(self.search_index.record_ids):
             raise ValueError("heuristic plan must retain the complete source universe")
+        if is_sparse(self.plan) and self.plan.search_scope_ref != shared_scope(
+            self.search_index.index
+        )[2]:
+            raise ValueError("heuristic plan references a different source universe")
         if self.plan.metadata_snapshot_id != self.search_index.metadata.snapshot_id:
             raise ValueError("heuristic plan uses another metadata snapshot")
         # The document root has no proved product name; filenames are inadmissible.
@@ -293,15 +300,18 @@ class HeuristicSlotSearch:
         h0, h1, self._matches = self.search_index.candidates(
             self.predicate, subject_mentions=self.subject_mentions, policy=self.policy,
         )
+        if is_sparse(self.plan):
+            self._matches = {rid: matches for rid, matches in self._matches.items() if matches}
         if self.policy.version != SEARCH_POLICY_VERSION and not self.plan.subject.is_document_root:
-            if not set(self.seed_record_ids) <= set(self.plan.ledger):
+            if not set(self.seed_record_ids) <= self.record_universe:
                 raise ValueError("proved subject record is outside the source universe")
             # Exact source records of a proved subject are cheap binding
             # candidates for its fields; same-name hits elsewhere are not seeds.
             h1 = list(dict.fromkeys([*(rid for rid in self.seed_record_ids if rid not in h0), *h1]))
         self._candidates = {"H0": h0, "H1": h1, "H2": [], "H3": []}
-        if self.policy.version == "heuristic-first-v3" and self.priority_record_ids:
-            if not set(self.priority_record_ids) <= set(self.plan.ledger):
+        if (self.policy.version in {"heuristic-first-v3", "heuristic-first-v4"}
+                and self.priority_record_ids):
+            if not set(self.priority_record_ids) <= self.record_universe:
                 raise ValueError("attribute field is outside the source universe")
             self._candidates["H0"] = list(dict.fromkeys([*self.priority_record_ids, *h0]))
             self._candidates["H1"] = [rid for rid in h1 if rid not in self.priority_record_ids]
@@ -323,6 +333,10 @@ class HeuristicSlotSearch:
         self._pass_supported_baseline = 0
         self._reason = "initial_heuristic_search"
         self.events: list[dict] = []
+
+    @property
+    def record_universe(self):
+        return shared_scope(self.search_index.index)[1]
 
     @property
     def needs_semantic(self) -> bool:
@@ -394,7 +408,8 @@ class HeuristicSlotSearch:
             if self.stage == "H0":
                 self._transition("H1", "local_candidates_consumed_expand_lexical_and_structure")
                 continue
-            if self._supported_count > self._pass_supported_baseline:
+            if (not is_sparse(self.plan)
+                    and self._supported_count > self._pass_supported_baseline):
                 self.status = (
                     "local_results_only" if self.deferred_record_ids else "pass_exhausted"
                 )
@@ -421,6 +436,13 @@ class HeuristicSlotSearch:
                     for values in sections:
                         if values:
                             self._candidates["H3"].append(values.pop(0))
+                    if is_sparse(self.plan) and len(self._candidates["H3"]) >= (
+                        self.policy.exploration_page_size * self.policy.max_exploration_pages
+                    ):
+                        self._candidates["H3"] = self._candidates["H3"][:
+                            self.policy.exploration_page_size * self.policy.max_exploration_pages
+                        ]
+                        break
                 continue
             self.status = "pass_exhausted"
             return None
@@ -470,7 +492,7 @@ class HeuristicSlotSearch:
             raise ValueError("semantic admission requires a complete committed epoch")
         if len(ordered_record_ids) != len(set(ordered_record_ids)):
             raise ValueError("semantic epoch contains duplicate records")
-        if not set(ordered_record_ids).issubset(self.plan.ledger):
+        if not set(ordered_record_ids).issubset(self.record_universe):
             raise ValueError("semantic epoch contains records from another source")
         if self.semantic_boundary is not None:
             if (epoch_id in self._semantic_epochs
@@ -503,7 +525,7 @@ class HeuristicSlotSearch:
                             "semantic_skipped": True})
 
     def snapshot(self) -> dict:
-        return {
+        result = {
             "policy": self.policy.snapshot(),
             "resume_supported": self.policy.version != SEARCH_POLICY_VERSION,
             "plan_id": self.plan.plan_id, "run_fingerprint": self.run_fingerprint,
@@ -512,7 +534,7 @@ class HeuristicSlotSearch:
             "subject": self.plan.subject.model_dump(mode="json"),
             "predicate_iri": self.predicate.iri, "stage": self.stage,
             "status": self.status, "reason": self._reason,
-            "universe_count": len(self.plan.ledger),
+            "universe_count": len(self.record_universe),
             "admitted_count": len(self.admitted),
             "examined_count": sum(not item["technical_failure"]
                                   for item in self.observed.values()),
@@ -536,8 +558,16 @@ class HeuristicSlotSearch:
                 "pass_supported_baseline": self._pass_supported_baseline,
             }} if self.policy.version != SEARCH_POLICY_VERSION else {}),
         }
+        if is_sparse(self.plan):
+            result.pop("deferred_record_ids")
+            result["planning_policy"] = self.plan.policy_version
+        return result
 
     def restore(self, state):
+        if state.get("planning_policy") != (
+            self.plan.policy_version if is_sparse(self.plan) else None
+        ):
+            raise ValueError("candidate planning policy changed during recovery")
         if (state.get("policy") != self.policy.snapshot()
                 or state.get("run_fingerprint") != self.run_fingerprint
                 or state.get("plan_id") != self.plan.plan_id
@@ -577,6 +607,10 @@ class HeuristicSlotSearch:
 
     def continue_search(self):
         """Explicit resume activates another bounded page without forgetting coverage."""
+        if is_sparse(self.plan):
+            # Recovery cannot expand the frozen search policy or reset its paid
+            # rounds. Interrupted admissions retain their original cursor.
+            return
         if self.status in {"local_results_only", "pass_exhausted"} and self.deferred_record_ids:
             self.status = "needs_search"
             self._pass_supported_baseline = self._supported_count

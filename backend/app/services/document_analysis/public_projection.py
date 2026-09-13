@@ -225,6 +225,7 @@ def _property_role_anchors(item: GraphProperty) -> dict[str, list[EvidenceAnchor
         # it traceable but do not invent a subject/predicate distinction.
         value = item.evidence_refs
     return {
+        "unit": item.unit_evidence_refs,
         "subject": subject,
         "object": [],
         "value": value,
@@ -288,6 +289,7 @@ def _property(
         "direction": "subject_to_value",
         "raw_value": item.raw_value,
         "normalized_value": item.normalized_value,
+        "normalization_record": item.normalization_record,
         "polarity": item.polarity,
         "conditions": [{"text": value} for value in item.conditions],
         "applicability": item.applicability,
@@ -302,8 +304,8 @@ def _property(
         "source_selection_refs": _selection_roles(registry, _property_role_anchors(item)),
         "reason_code": item.reason_code or None,
         "reason": item.reason or None,
-        "datatype_iri": None,
-        "unit": None,
+        "datatype_iri": item.normalization_record.get("datatype_iri"),
+        "unit": item.normalization_record.get("to"),
     }
 
 
@@ -402,8 +404,11 @@ def public_graph_payload(
     registry = dict(stored_payload.get("selection_registry") or {})
     invalidated = set(dependency_index.invalidated)
     generated_at = stored_payload.get("generated_at") or datetime.now(UTC).isoformat()
+    from app.schemas.retrieval_diagnostics import diagnostic_payload
+
     coverage_subjects = [
         {
+            **diagnostic_payload(item),
             "subject_ref": _entity_ref(item.subject_ref),
             "predicate_iri": item.predicate_iri,
             "predicate_label": item.predicate_label,
@@ -446,6 +451,7 @@ def public_graph_payload(
         "invalidated_refs": _versioned_refs(invalidated),
         "ranking": public_ranking_payload(stored_payload.get("ranking_state") or {}),
         "coverage": {
+            **diagnostic_payload(progress),
             "subjects": coverage_subjects,
             "records_planned": progress.records_planned,
             "records_examined": progress.records_examined,

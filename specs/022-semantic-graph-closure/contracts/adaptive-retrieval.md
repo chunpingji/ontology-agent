@@ -1,8 +1,8 @@
-# 自适应剪枝与增强检索契约（设计版）
+# 自适应剪枝与增强检索契约
 
-日期：2026-09-11。状态：P0 契约设计，尚未实现或通过启用验收。
+日期：2026-09-11。状态：v4 工程实现及隔离验证已落地；后续授权默认 enhanced，独立质量及校准剪枝验收待完成。
 
-本契约对应[专题方案](../../../docs/剪枝和增强语义检索视图方案.md)及本特性的 AR 需求，补齐记录级搜索状态、准入、空结果、恢复、费用和公开诊断。它不追溯修改旧运行的冻结行为。P0 门未全部关闭前，仅允许不改变候选顺序、模型请求、任务、覆盖和停止行为的 instrumentation 原型。
+本契约对应[专题方案](../../../docs/剪枝和增强语义检索视图方案.md)及本特性的 AR 需求，补齐记录级搜索状态、准入、空结果、恢复、费用和公开诊断。它不追溯修改旧运行的冻结行为。后续用户授权实施后，已交付可审阅的关闭态代码；P0 样本材料与整体退出仍待完成。线上 observation 保持既有顺序/模型请求/覆盖/停止，开发主动策略只可隔离验证，工程证据不能替代上线校准。
 
 ## 1. 版本与兼容
 
@@ -14,7 +14,9 @@
 | 自适应政策 | 不存在时沿用原路径 | 冻结 `adaptive-retrieval-v1`，含模式、视图版本、校准版本、预算及继续规则 |
 | 公开诊断 | 字段缺失代表未采集 | 可选 `retrieval_diagnostics.schema_version=1`；不为旧运行补写持久化默认字段 |
 
-`observation` 模式只记录观测；`enforce` 模式允许新搜索行为和真实剪枝，两者进入运行指纹。视图增强、阈值、候选组映射、准入及搜索结果 schema 均参与各自依赖 hash。未知版本拒绝恢复；禁止给 v3 快照加默认键后通过归一化放宽原相等校验。
+`observation` 模式只记录观测；`enhanced` 启用新搜索行为和增强视图，但禁止携带校准，绝不按低分剪枝；`enforce` 允许新搜索行为和经过校准的真实剪枝。三者进入运行指纹，新增模式不改变既有模式的序列化形状。视图增强、阈值、候选组映射、准入及搜索结果 schema 均参与各自依赖 hash。未知版本拒绝恢复；禁止给 v3 快照加默认键后通过归一化放宽原相等校验。
+
+实际配置入口为 `DOCUMENT_ANALYSIS_ADAPTIVE_RETRIEVAL_MODE=disabled|observation|enhanced|enforce`，按后续启用授权默认 enhanced；线上 enforce 必须加载 `DOCUMENT_ANALYSIS_ADAPTIVE_CALIBRATION_PATH` 指定的完整校准制品。`CalibrationProfile` 绑定模型 hash、查询版本、视图版本/参数 hash、明确谓词集合及自身/上下文/结构组/精排的双意图阈值、样本和专家 hash。未覆盖谓词不剪枝。`evaluation_only=true` 的开发阈值及无阈值增强测量只在隔离驱动器接受，线上恢复明确拒绝。
 
 新运行冻结新契约，旧运行继续使用原策略及测试预期。不得通过配置热切换改变在途运行的冻结含义。新策略依赖现有证据修复/增量执行域；不支持该执行域的入口不得静默接受 v4。
 
@@ -22,7 +24,7 @@
 
 ### 2.1 六类搜索处置
 
-每个槽位保留现有记录全集 U。槽位身份包含主体版本、谓词、源和本体依赖；查询依赖变化产生新 generation，保留旧历史。对当前 generation，每个 record 有一个有效搜索处置；意图和视图级评估通过引用挂在该处置下。
+新 `sparse-candidates-v1` 的槽位引用共享记录全集 U 作为搜索域，不复制为逐槽位计划任务或覆盖条目；旧冻结运行保留原全集计划。槽位身份包含主体版本、谓词、源和本体依赖；查询依赖变化产生新 generation，保留旧历史。对当前 generation，每个 record 有一个有效搜索处置；意图和视图级评估通过引用挂在该处置下。
 
 | 处置 | 定义 | 允许的下一步 |
 | --- | --- | --- |
@@ -35,13 +37,14 @@
 
 `dependency_exhausted` 不吞并软剪枝：低相关仍记 `soft_pruned`；范围或主体失效、等价已完成工作等记录明确原因。超长视图不可用不等于依赖已耗尽。新 generation 先从同一逻辑槽位的准入/覆盖重建 admitted，其余无历史处置的记录才默认 unevaluated；已有核验结果不因后续补证筛选改为未尝试。若主体版本变化创建新计划，其新覆盖机会与原计划分别记账，不能清空旧历史。
 
-这些是搜索处置，不能加入覆盖计数相加。继续保留：
+这些是搜索处置，不能加入覆盖计数相加。新候选策略在实际准入任务上保留：
 
 ```text
 planned = examined + incomplete + unattempted
-current_soft_pruned ⊆ unattempted
-0 <= records_soft_pruned <= records_unattempted
 ```
+
+新模式未入选软剪枝只属搜索诊断，不是 unattempted 子集。旧冻结模式仍保留
+`current_soft_pruned ⊆ unattempted` 和 `records_soft_pruned <= records_unattempted`。
 
 `admitted` 尚在队列时也可能属于 `unattempted`，因此搜索处置与覆盖不是同一个分区。组命中、读取上下文、向量化和精排均不授予 examined。
 
@@ -59,6 +62,8 @@ current_soft_pruned ⊆ unattempted
 ## 3. 有类型的搜索结果和活性
 
 v4 的准备接口返回有类型的 `SearchPreparationResult`（设计名），同步和异步执行适配器均必须消费所有分支。旧 `prepare_next_epoch() -> RankingEpoch | None` 保留在旧路径；v4 适配层不能将裸 `None` 当作“继续等待”。
+
+实现适配：ranked 继续使用 `RankingEpoch`；filtered_empty/no_new_candidates/view_unavailable 使用 `SearchPreparationResult`。中间 gate_completed 由完整 `GateEvaluation` 及 owner 确认的持久回调承载，准备线程继续下一门；崩溃后先复用该门得分。disabled 复用 `skip_semantic`，blocked 复用 `RankingPaused`、取消/失租和持久失败异常；这些等价分支不另造 epoch。完成结果的主体/计划 generation 失效时保留制品与费用，仅丢弃准入作用。
 
 以下是 owner 应用侧的完成结果。私有准备线程只交准备产物及回执，owner 经过既有持久化屏障后封装 committed 引用，不将数据库 Session/提交职责下放工作线程。
 
@@ -145,15 +150,26 @@ v4 语义准入接口采用显式 `accept_semantic(committed_epoch, decision, pr
 
 复用已存在的 `adaptive_search_saturated`：executor 已有该原因，document_analysis/execution 已在证据修复域映射 `paused`。v4 补齐其前提：没有在途或待应用结果、没有可调度新候选/有效激活、没有可立即处理的必要补证；全局还有其他就绪槽位时不能提前结束运行。
 
-存在未核验软剪枝项时 `completion=incomplete`；有预算/技术阻塞优先报告对应原因。若用户继续或新线索使这些项重新激活且最终满足全部覆盖条件，仍可以达到 `in_scope_complete`，历史上发生过剪枝不构成永久障碍。
+对于新 `sparse-candidates-v1`，未入选软剪枝项本身不构成未完成任务。搜索阶段结束且
+实际候选、必要来源/反证/补验和前沿执行义务均已处理时，使用
+`completion=policy_complete`、`candidate_search_exhausted` 和 finished；有预算、
+技术阻塞或实际未处理义务时优先报告对应未完成原因。该结论不是全文穷尽。
+已完成必要核验的语义未决/冲突独立保留，不要求其转肯定才结束策略。
+旧冻结模式仍在未核验软剪枝项存在时保持 incomplete/adaptive_search_saturated；
+重激活且满足原全部覆盖条件后才可达到 `in_scope_complete`。详见
+[候选完成契约](candidate-completion.md)。
 
 在内核 progress/coverage、应用 progress、图谱 coverage 及前端类型同步增加可选诊断对象：`schema_version`、`policy_version`、`records_soft_pruned`、`records_pending_disposition`、`records_reactivatable`、`records_dependency_exhausted`、`reason_counts`、`search_status`。按槽位提供相同口径；聚合单位是主体/谓词/record 机会，同一文档 record 跨槽位计多次。
 
-诊断来自当前有效处置投影，历史累计事件/重新激活次数另标累计值。soft_pruned 是 unattempted 子集，其他搜索计数也不加入 coverage 恒等式。旧运行字段缺失显示“未采集”，不得伪装为零剪枝。公开字段不暴露未授权原文锚点和内部模型输入。
+诊断来自当前有效处置投影，历史累计事件/重新激活次数另标累计值。新候选模式的
+soft_pruned 不属于候选 unattempted，所有搜索计数不加入 coverage 恒等式；旧冻结
+模式保留原子集关系。旧运行字段缺失显示“未采集”，不得伪装为零剪枝。公开字段不暴露未授权原文锚点和内部模型输入。
 
 实施落点包含 `contracts.py`、`ledger.py`、`executor.py`、后端 `schemas/document_analysis.py`、`application.py`、`public_projection.py`、必要的执行状态映射、前端 `src/lib/api.ts`/`document-analysis.ts` 及实际图谱面板；前后端不能只显示“完成”来掩盖饱和暂停。
 
 ## 9. P0 退出与验证约束
+
+当前代码/测试映射及未完质量门见[实施记录](../adaptive-retrieval-validation.md)。廉价门首版只固化命中、保护和缺口，不以缺少关键词做排除；首次冷向量化的减少尚无实测证据。有效结构组命中保护尚需互补上下文的成员，组原文作为 binding 加载而不扩大事实权限。
 
 P0 的退出检查必须逐项覆盖：六类处置与调用者；空池/None/异步结果活性；小决策及 accept 校验；组到 record/task 映射；v1–v4 快照；门与决策费用屏障；覆盖和公开诊断；not_rerankable；supported 后多值/反证继续；FR-003/SC-002 和增量契约版本化；样本定级及校准隔离。文档写入不等于已通过这些实现验收。
 
@@ -162,3 +178,11 @@ v1/v2/v3 历史序列化形状及适用恢复保持原测试，v1 原不支持�
 HRS-1597、HRS-5592 均为开发暴露样本，只承担诊断/回归或明确声明的开发校准；不能改名或重跑后充当独立保留集。继承父方案至少三个真实新运行及合格专家参考，另需未暴露文档承担独立质量门；三个运行不是三个独立文档的替代。
 
 P1 旧视图的影子数据只校准同模型/视图/查询/归属版本。P2/P3 改变视图或组展开后必须重新采集相应配置的数据，原阈值不得直接用于 P4。比较性能保留固定输入/预算与冷暖条件；绝对成本、事实质量和覆盖范围分别验收，不以相对提速替代父方案质量门。
+
+## 10. 显式低分剪枝试运行（后续启用授权）
+
+新增 `trial`，必须加载标为 development 的阈值文件，禁止缺文件回退、伪造 validated 或放开原 enforce 门。校准文件的样本 hash 与专家审核 hash 分别指向真实冒烟样本制品与明确标为 pending 的审核文件；pending 文件没有专家签字。
+
+首版 trial 仅对精排双意图原始 logit 均 < -8、完整视图且无来源/上下文/结构组保护的项做软剪枝；更激进的阈值被配置校验拒绝。dense/self 前门返回无淘汰阈值，具有互补成员的多记录结构组正分仍保留保护；单记录组没有互补成员，不因自身向量正分额外保护。原始 logit 不是概率；阈值是显式试运行规则，未经真实文档质量校准。阈值绑定精确模型与视图、明确谓词列表，不自动覆盖其他本体/模型。
+
+公开诊断仅在 trial 写 `pruning_quality=unvalidated` 并展示待专家校准；其他模式省略新字段，保留旧快照形状。新运行冻结 trial；旧运行恢复不升级。软剪枝是否属于 unattempted 按第 2、8 节的冻结候选政策区分，重激活、完整 epoch、付费审计与覆盖恒等式保留。

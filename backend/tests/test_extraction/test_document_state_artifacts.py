@@ -97,6 +97,83 @@ def test_legacy_inline_payload_is_read_only(db):
     assert not list(db.scalars(select(DocumentAnalysisArtifact)))
 
 
+def test_prepared_state_is_read_only_detached_and_rejects_another_owner(db, monkeypatch):
+    from app.services.document_analysis import state_artifacts
+
+    store = DocumentAnalysisRunStore(db)
+    run, token = seed(store, "prepared-source")
+    original = {"nested": {"text": "source" * 3000}}
+    calls = []
+    fence = store.assert_fence
+
+    def observed(*args, **kwargs):
+        calls.append(kwargs.get("for_update", False))
+        return fence(*args, **kwargs)
+
+    monkeypatch.setattr(store, "assert_fence", observed)
+    prepared = state_artifacts.prepare_state_blocks(store, run, original)
+    assert calls == []
+    assert not list(db.scalars(select(DocumentAnalysisArtifact)))
+    original["nested"]["text"] = "changed after preparation"
+    other, other_token = seed(store, "prepared-other")
+    with pytest.raises(StateIntegrityError, match="another run"):
+        state_artifacts.publish_prepared_state(store, other, other_token, prepared)
+    db.rollback()
+    state_artifacts.publish_prepared_state(store, run, token, prepared)
+    db.commit()
+    assert decode_state(store, run, prepared.payload) == {"nested": {"text": "source" * 3000}}
+
+
+def test_prepared_state_rejects_a_changed_artifact_head(db):
+    from app.services.document_analysis.incremental_state import prepare_incremental_state
+    from app.services.document_analysis.run_store import ArtifactConflict
+    from app.services.document_analysis.state_artifacts import publish_prepared_state
+    from tests.test_extraction.test_incremental_state import save
+
+    store = DocumentAnalysisRunStore(db)
+    run, token = seed(store, "prepared-head-cas")
+    old = prepare_incremental_state(store, run, {"text": "stale" * 5000}, kind="checkpoint")
+    save(store, run, token, {"text": "newer" * 5000})
+    db.commit()
+    before = set(db.scalars(select(DocumentAnalysisArtifact.artifact_id)))
+    with pytest.raises(ArtifactConflict, match="predecessor"):
+        publish_prepared_state(store, run, token, old)
+    db.rollback()
+    assert set(db.scalars(select(DocumentAnalysisArtifact.artifact_id))) == before
+
+
+def test_publication_deadline_rolls_back_prepared_blocks_and_cached_head(db, monkeypatch):
+    from app.services.document_analysis import execution
+    from app.services.document_analysis.incremental_state import prepare_incremental_state
+    from app.services.document_analysis.run_store import PublicationTimeout
+    from app.services.document_analysis.state_artifacts import publish_prepared_state
+    from tests.test_extraction.test_incremental_state import save
+
+    store = DocumentAnalysisRunStore(db)
+    run, token = seed(store, "bounded-publication")
+    first = save(store, run, token, {"value": "original" * 2000})
+    db.commit()
+    before = set(db.scalars(select(DocumentAnalysisArtifact.artifact_id)))
+    prepared = prepare_incremental_state(
+        store, run, {"value": "rejected" * 2000}, kind="checkpoint",
+    )
+    clock = [100.0]
+    monkeypatch.setattr(execution.time, "monotonic", lambda: clock[0])
+    with pytest.raises(PublicationTimeout):
+        with execution._publication(db, store):
+            publish_prepared_state(store, run, token, prepared)
+            store.update_artifact(run.recognition_run_id, run.owner_id, token,
+                                  artifact_kind="checkpoint", expected_revision=1,
+                                  artifact_hash=content_hash(prepared.payload), status="ready",
+                                  artifact_id="timed-out-prepared", payload=prepared.payload)
+            clock[0] += 1000
+    assert set(db.scalars(select(DocumentAnalysisArtifact.artifact_id))) == before
+    third = save(store, run, token, {"value": "after rollback" * 2000})
+    db.commit()
+    assert decode_state(store, run, first) == {"value": "original" * 2000}
+    assert decode_state(store, run, third) == {"value": "after rollback" * 2000}
+
+
 def test_deletion_reclaims_immutable_blocks_only_for_the_owned_run(db, tmp_path):
     from app.services.document_analysis.retention import delete_run
 

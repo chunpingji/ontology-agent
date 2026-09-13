@@ -12,6 +12,13 @@ from app.services.extraction.ontology_guided.ontology_plan import compile_local_
 
 def publish_read_artifacts(store, run, token, *, kind, payload, status, event_head):
     """Caller owns the transaction containing the authoritative batch and heads."""
+    prepared = prepare_read_artifacts(store, run, kind=kind, payload=payload)
+    publish_prepared_read_artifacts(store, run, token, prepared, status=status,
+                                    event_head=event_head)
+
+
+def prepare_read_artifacts(store, run, *, kind, payload):
+    """Compile display projections before the authoritative publication lock."""
     outputs = {}
     if kind in {"structure", "metadata"}:
         ir = payload["analysis"]
@@ -57,12 +64,19 @@ def publish_read_artifacts(store, run, token, *, kind, payload, status, event_he
         # Empty/deterministic runs may publish a graph without a ranking hook.
         if not store.get_artifact(run.recognition_run_id, run.owner_id, "ranking_summary"):
             outputs["ranking_summary"] = public_ranking_payload(payload.get("ranking_state") or {})
+    prepared = []
     for artifact_kind, body in outputs.items():
         head = store.get_artifact_head(run.recognition_run_id, run.owner_id, artifact_kind)
         digest = content_hash(body)
+        prepared.append((artifact_kind, body, digest, head.revision if head else 0))
+    return prepared
+
+
+def publish_prepared_read_artifacts(store, run, token, prepared, *, status, event_head):
+    for artifact_kind, body, digest, revision in prepared:
         store.update_artifact(
             run.recognition_run_id, run.owner_id, token, artifact_kind=artifact_kind,
-            expected_revision=head.revision if head else 0,
+            expected_revision=revision,
             artifact_hash=digest, status=status,
             artifact_id=stable_id(artifact_kind, [str(run.recognition_run_id), digest]),
             payload=body, media_type="application/json", event_head=event_head,

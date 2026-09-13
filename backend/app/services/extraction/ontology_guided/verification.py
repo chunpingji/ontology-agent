@@ -31,6 +31,7 @@ PROOF_BUNDLE_CHECK_KINDS = frozenset(
     {
         "type",
         "field_role",
+        "unit_binding",
         "local_coreference",
         "global_identity",
         "predicate_entailment",

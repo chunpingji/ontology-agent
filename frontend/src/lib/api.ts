@@ -1937,7 +1937,22 @@ export interface DocumentAnalysisDecisionCounts {
   not_checked: number;
 }
 
+export interface DocumentRetrievalDiagnostics {
+  schema_version: 1;
+  policy_version: "adaptive-retrieval-v1";
+  records_soft_pruned: number;
+  records_pending_disposition: number;
+  records_reactivatable: number;
+  records_dependency_exhausted: number;
+  reason_counts: Record<string, number>;
+  search_status: string;
+  pruning_quality?: "unvalidated";
+}
+
 export interface DocumentAnalysisProgress {
+  candidate_policy?: "sparse-candidates-v1" | null;
+  completion?: "incomplete" | "policy_complete";
+  retrieval_diagnostics?: DocumentRetrievalDiagnostics;
   tasks_attempted: number;
   model_calls: number;
   model_calls_reserved?: number;
@@ -2107,6 +2122,7 @@ export interface DocumentGraphAssertionBase {
   decision_refs: DocumentAnalysisObjectRef[];
   dependency_refs: DocumentAnalysisObjectRef[];
   source_selection_refs: {
+    unit?: string[];
     subject: string[];
     object: string[];
     value: string[];
@@ -2125,6 +2141,17 @@ export interface DocumentGraphProperty extends DocumentGraphAssertionBase {
   normalized_value: unknown;
   datatype_iri: string | null;
   unit: string | null;
+  normalization_record?: {
+    raw_unit?: string;
+    from?: string;
+    to?: string;
+    factor?: string;
+    offset?: string;
+    mapping_kind?: "identity" | "alias" | "conversion";
+    registry_version?: string;
+    policy_version?: string;
+    datatype_iri?: string;
+  };
 }
 
 export interface DocumentGraphRelationship extends DocumentGraphAssertionBase {
@@ -2133,6 +2160,8 @@ export interface DocumentGraphRelationship extends DocumentGraphAssertionBase {
 }
 
 export interface DocumentGraphCoverageSubject {
+  candidate_policy?: "sparse-candidates-v1" | null;
+  retrieval_diagnostics?: DocumentRetrievalDiagnostics;
   subject_ref: DocumentAnalysisEntityRef;
   predicate_iri: string;
   predicate_label: string;
@@ -2147,6 +2176,8 @@ export interface DocumentGraphCoverageSubject {
 }
 
 export interface DocumentGraphCoverage {
+  candidate_policy?: "sparse-candidates-v1" | null;
+  retrieval_diagnostics?: DocumentRetrievalDiagnostics;
   subjects: DocumentGraphCoverageSubject[];
   records_planned: number;
   records_examined: number;
@@ -2237,7 +2268,7 @@ export interface DocumentSourceSelection {
   record_view_ref: string | null;
   source_cell_id: string | null;
   span_refs: string[];
-  selection_role: "entity" | "subject" | "object" | "value" | "predicate_bridge" | "condition" | "counterevidence";
+  selection_role: "entity" | "subject" | "object" | "value" | "unit" | "predicate_bridge" | "condition" | "counterevidence";
 }
 
 export interface DocumentAnalysisSourceArtifact {
@@ -4300,3 +4331,59 @@ export const generateBatchDemo = (
 ) => fetchAPI<BatchDemoReport>(`/api/reports/batch-demo?document_iri=${encodeURIComponent(documentIri)}`, {
   method: "POST", body: JSON.stringify(body),
 });
+
+// Expert feedback is stored separately from graph decisions and calibration approval.
+export interface ExpertOpinionTarget {
+  document_iri?: string | null;
+  job_id?: string | null;
+  report_id?: string | null;
+}
+export interface ExpertOpinionContext {
+  target: ExpertOpinionTarget;
+  filename: string;
+  source_hash: string;
+  source_version: string;
+  recognition_run_id: string | null;
+  graph_artifact_id: string | null;
+  graph_content_hash: string | null;
+}
+export type ExpertOpinionCategory = "general" | "relationship" | "attribute" | "missing"
+  | "subject_binding" | "negation" | "pruning";
+export interface CreateExpertOpinion {
+  request_key: string;
+  context: ExpertOpinionContext;
+  category: ExpertOpinionCategory;
+  location: string;
+  opinion: string;
+  suggestion: string;
+}
+export interface ExpertOpinion extends Omit<CreateExpertOpinion, "request_key"> {
+  opinion_id: string;
+  revision: 1;
+  author: string;
+  author_role: string;
+  created_at: string;
+}
+export interface ExpertOpinionList {
+  context: ExpertOpinionContext;
+  can_submit: boolean;
+  items: ExpertOpinion[];
+  total: number;
+  offset: number;
+  limit: number;
+}
+function expertOpinionQuery(target: ExpertOpinionTarget, runId?: string, offset = 0) {
+  const query = new URLSearchParams({ offset: String(offset) });
+  for (const [key, value] of Object.entries(target)) if (value) query.set(key, value);
+  if (runId) query.set("recognition_run_id", runId);
+  return query.toString();
+}
+export const listExpertOpinions = (target: ExpertOpinionTarget, runId?: string, offset = 0,
+  signal?: AbortSignal) => fetchAPI<ExpertOpinionList>(
+    `/api/report-center/expert-opinions?${expertOpinionQuery(target, runId, offset)}`, { signal });
+export const createExpertOpinion = (body: CreateExpertOpinion) => fetchAPI<ExpertOpinion>(
+  "/api/report-center/expert-opinions", { method: "POST", ...jsonBody(body) });
+export const exportExpertOpinions = (target: ExpertOpinionTarget) => fetchAPI<{
+  schema_version: "report-expert-opinions-v1"; target: ExpertOpinionTarget;
+  calibration_approved: false; opinions: ExpertOpinion[];
+}>(`/api/report-center/expert-opinions/export?${expertOpinionQuery(target)}`);

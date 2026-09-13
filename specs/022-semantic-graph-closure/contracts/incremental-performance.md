@@ -58,9 +58,10 @@ v1 仍不写 `resume_state` 且不支持恢复，v2 沿原冻结契约恢复；�
 - v4 一个 supported 不再单独终止槽位；继续判断多值、必要补证/反证、剩余可执行集合
   与有限探索/预算。H3 旧行为是恢复探索资格后按页准入（默认一页32条），新版软剪枝
   同时约束 H0–H3，只有登记的重激活或有限探索条件才恢复资格。
-- 当前 `soft_pruned` 是 `unattempted` 带原因的子集，覆盖恒等式不变。复用已有
-  `adaptive_search_saturated` 及暂停映射，补齐处置耗尽条件和公共诊断；当前仍有未核验
-  剪枝项时 `completion=incomplete`，不是全文完成。重激活后真正核验完仍可达完整覆盖。
+- 旧冻结运行的 `soft_pruned` 仍是 `unattempted` 带原因的子集，并保留
+  `adaptive_search_saturated` 暂停与原完整覆盖要求。新 `sparse-candidates-v1` 只将
+  实际准入候选计入台账，未入选剪枝属于搜索诊断；实际义务和合法搜索阶段全部结束后
+  才可 `policy_complete`，并明确非全文穷尽，见[候选完成契约](candidate-completion.md)。
 - 仅 v4 写独立 `resume_state.schema_version=1`；白名单、运行指纹与新快照同时冻结。
   v1/v2/v3 继续原序列化、hash 和字段省略；v1 仍不支持恢复，v2/v3 保留严格相等恢复，
   不通过默认字段静默迁移。

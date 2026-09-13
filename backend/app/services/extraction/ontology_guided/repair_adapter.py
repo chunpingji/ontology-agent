@@ -24,6 +24,7 @@ from app.services.extraction.ontology_guided.model_adapter import (
     Quote,
     VerificationResponse,
 )
+from app.services.extraction.ontology_guided.value_constraints import UNIT_NORMALIZATION_VERSION
 
 Verdict = Literal["supported", "unsupported", "undetermined"]
 Bridge = Literal[
@@ -64,6 +65,10 @@ class LocatedValueQuote(Quote):
         min_length=1,
         description="值在同一来源重复时，给唯一包含它的逐字短语；值在短语内也必须唯一。不得改写。",
     )
+
+
+class UnitQuote(Quote):
+    context_text: str | None = Field(default=None, min_length=1)
 
 
 class PropertyAssertion(Assertion):
@@ -121,6 +126,9 @@ class PropertyVerification(EvidenceModel):
     predicate_support: list[Quote]
     condition_support: list[Quote]
     counterevidence_support: list[Quote]
+    unit_verdict: Verdict = "undetermined"
+    source_unit_quote: UnitQuote | None = None
+    unit_binding_support: list[Quote] = Field(default_factory=list)
     missing_facets: list[str] = Field(default_factory=list)
     reason: str = Field(min_length=1, max_length=400)
 
@@ -200,6 +208,13 @@ PROPERTY = (
     "本任务提取属性原值，按datatype、字段角色、主体归属、谓词及适用性检查。"
     "数量属性引用原文数字子串，单位及角色由完整来源另证；不改写值。"
     "短值在同一来源重复时，value_quote.context_text填写唯一含该值的逐字短语，以唯一定位。"
+    "本体要求canonical_unit时，独立核验必须返回unit_verdict、source_unit_quote和"
+    "unit_binding_support。source_unit_quote逐字引用完整原文单位（含分母），重复时用"
+    "context_text定位；unit_binding_support引用包含数值及单位的完整原句，或数值格及对应"
+    "真实列头。须核验单位确实修饰当前数值，不能借用其他字段、主体或相邻单位。"
+    "区间下限/上限引用对应数字，单位须覆盖整个区间；比较符号、近似和适用条件不能省略。"
+    "KG、Kg、千克、公斤可表示kg；只引用原文写法，程序负责规范化和换算。"
+    "不得从谓词名、字段目标单位推断缺失的原文单位；缺单位时unit_verdict=undetermined。"
 )
 REVIEW = (
     "这是独立核验：所有候选是假设，不继承发现结论。逐一匹配冻结candidate_id和target_id，"
@@ -213,6 +228,7 @@ REVIEW = (
     "显式owner指代链仅证明主体归属，不能自动证明属性谓词。"
     "applicability的值是发现阶段引用的限制短句，须另查原文确实限制断言；引用存在不代表条件成立。"
     "required_counterevidence逐条比较，counterevidence_verdict=supported才表示已比较后断言仍成立。"
+    "未发现反证仅限本次已核验来源，不声明全文无反证；无额外适用条件仍限定当前主体和断言。"
 )
 
 
@@ -239,6 +255,8 @@ class EvidenceRepairAdapter(LocalModelRecognitionAdapter):
             raise ValueError("frozen_assertion_scope_policy_mismatch")
         if old and old.get("literal_quote_version") != LITERAL_QUOTE_VERSION:
             raise ValueError("frozen_assertion_literal_policy_mismatch")
+        if old and old.get("unit_normalization_version") != UNIT_NORMALIZATION_VERSION:
+            raise ValueError("frozen_assertion_unit_policy_mismatch")
         rediscovery = bool(task.retry_kind and task.retry_kind.startswith("rediscovery:"))
         requested_generation = int(task.retry_kind.split(":", 1)[1]) if rediscovery else 0
         new_assertion = requested_generation > old.get("assertion_generation", 0)
@@ -257,6 +275,7 @@ class EvidenceRepairAdapter(LocalModelRecognitionAdapter):
                 "owner_binding_version": OWNER_BINDING_VERSION,
                 "scope_protocol_version": SCOPE_PROTOCOL_VERSION,
                 "literal_quote_version": LITERAL_QUOTE_VERSION,
+                "unit_normalization_version": UNIT_NORMALIZATION_VERSION,
                 "lineage_id": task.claim_lineage_id,
                 "base_target": context.target.model_dump(mode="json"),
                 "evidence_hash": digest,
@@ -328,6 +347,7 @@ class EvidenceRepairAdapter(LocalModelRecognitionAdapter):
         wire["protocol_version"] = self.protocol_version
         wire["scope_protocol_version"] = SCOPE_PROTOCOL_VERSION
         wire["literal_quote_version"] = LITERAL_QUOTE_VERSION
+        wire["unit_normalization_version"] = UNIT_NORMALIZATION_VERSION
         # Retrieval field menus are repeated for every descendant type in the
         # frozen snapshot. The verifier needs class definitions and ancestry;
         # actual source field roles are supplied separately by field_bindings.
@@ -379,6 +399,7 @@ class EvidenceRepairAdapter(LocalModelRecognitionAdapter):
                 "protocol": self.protocol_version,
                 "scope_protocol": SCOPE_PROTOCOL_VERSION,
                 "literal_quotes": LITERAL_QUOTE_VERSION,
+                "unit_normalization": UNIT_NORMALIZATION_VERSION,
                 "stage": stage,
                 "evidence_hash": state["evidence_hash"],
                 "generation": state.get("assertion_generation", 0),
@@ -467,7 +488,8 @@ class EvidenceRepairAdapter(LocalModelRecognitionAdapter):
                 raw["subject_support"] = [*owner["support"], *owner["local_support"]]
                 facets[review.candidate_id] = {
                     key: raw.pop(key)
-                    for key in ("field_role_support", "bridge_support", "missing_facets")
+                    for key in ("field_role_support", "bridge_support", "missing_facets",
+                                "unit_verdict", "source_unit_quote", "unit_binding_support")
                 }
                 facets[review.candidate_id].update(
                     original_subject_support=owner["support"],

@@ -107,6 +107,7 @@ def assemble_context(
     subject_evidence_refs: list[EvidenceAnchor] | None = None,
     required_context_refs: list[EvidenceAnchor] | None = None,
     counterevidence_refs: list[EvidenceAnchor] | None = None,
+    retrieval_context_refs: list[EvidenceAnchor] | None = None,
     token_counter=None,
     max_input_tokens: int | None = None,
     subject_label: str = "",
@@ -170,6 +171,7 @@ def assemble_context(
         ("subject_binding", subject_evidence_refs or []),
         ("required_context", required_context_refs or []),
         ("counterevidence", counterevidence_refs or []),
+        ("retrieval_group_binding", retrieval_context_refs or []),
     ):
         for reference in references:
             try:

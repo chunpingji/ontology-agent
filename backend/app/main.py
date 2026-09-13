@@ -24,6 +24,7 @@ from app.api import (
     ontology,
     pde_conflict,
     reasoning,
+    report_expert_opinions,
     report_runs,
     reports,
     system_config,
@@ -294,6 +295,8 @@ app.include_router(actions.router, prefix="/api/actions", tags=["actions"])
 app.include_router(batch_demo.router, prefix="/api/reports", tags=["reports"])
 app.include_router(reports.router, prefix="/api/reports", tags=["reports"])
 app.include_router(report_runs.router, prefix="/api", tags=["reporting-v2"])
+app.include_router(report_expert_opinions.router, prefix="/api/report-center/expert-opinions",
+                   tags=["report-expert-opinions"])
 app.include_router(compliance.router, prefix="/api/compliance", tags=["compliance"])
 app.include_router(system_config.router, prefix="/api/system-config", tags=["system-config"])
 app.include_router(ast_templates.router, prefix="/api/ast-templates", tags=["ast-templates"])

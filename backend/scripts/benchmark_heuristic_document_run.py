@@ -187,6 +187,12 @@ def prepare(args):
         "protected_quota": 0, "exploration_quota": 0,
         "structure_quota": 4, "dense_quota": 8, "metadata_quota": 4,
     }
+    adaptive_policy = (read_json(args.adaptive_policy)
+                       if getattr(args, "adaptive_policy", None) else None)
+    if adaptive_policy:
+        if not args.evidence_repair:
+            raise ValueError("adaptive policy requires --evidence-repair")
+        ranking_policy["policy_version"] = "semantic-ranking-v2"
     source_code = {str(p.relative_to(backend / "app")): digest_file(p)
                    for p in sorted((backend / "app").rglob("*.py"))}
     ontology_hashes = tree_hashes(ontology)
@@ -237,6 +243,8 @@ def prepare(args):
         "files": files, "frozen_files_sha256": hashlib.sha256(encoded(files)).hexdigest(),
         "heuristic_policy_arguments": policy,
         "evidence_repair": bool(getattr(args, "evidence_repair", False)),
+        **({"adaptive_retrieval": adaptive_policy, "incremental_performance": True}
+           if adaptive_policy else {}),
         "ranking_policy_overrides": ranking_policy,
         "limits": {
             "max_tasks": args.max_tasks, "max_hops": args.max_hops,
@@ -746,7 +754,13 @@ def execute(args):
             ranking_service, ranking_identity = configured_ranking_service(
                 settings, policy_overrides=manifest["ranking_policy_overrides"],
             )
-        policy = (HeuristicSearchPolicy.durable(**manifest["heuristic_policy_arguments"])
+        from app.services.extraction.ontology_guided.adaptive_retrieval import AdaptivePolicy
+
+        adaptive = (AdaptivePolicy.model_validate(manifest["adaptive_retrieval"])
+                    if manifest.get("adaptive_retrieval") else None)
+        policy = (HeuristicSearchPolicy.durable(
+            incremental=bool(manifest.get("incremental_performance")), adaptive=bool(adaptive),
+            **manifest["heuristic_policy_arguments"])
                   if manifest.get("evidence_repair")
                   else HeuristicSearchPolicy(**manifest["heuristic_policy_arguments"]))
         fingerprint_inputs = {
@@ -773,6 +787,8 @@ def execute(args):
             progress_hook=lambda boundary: recorder.continue_run(boundary, limits),
             ranking_service=ranking_service, heuristic_policy=policy, search_hook=recorder.search,
             evidence_repair=manifest.get("evidence_repair", False),
+            incremental_performance=manifest.get("incremental_performance", False),
+            adaptive_policy=adaptive,
             template_interleaving=manifest.get("evidence_repair", False),
             priority_paths=REPAIR_FOCUS_PATHS if manifest.get("evidence_repair") else [],
         )
@@ -930,6 +946,7 @@ def parser():
     result.add_argument("--max-exploration-pages", type=int, default=1)
     result.add_argument("--semantic-pool-size", type=int, default=16)
     result.add_argument("--evidence-repair", action="store_true")
+    result.add_argument("--adaptive-policy", help="Frozen v4 policy JSON for isolated evaluation")
     result.add_argument("--stop-after-focus-paths", action="store_true")
     return result
 

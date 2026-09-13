@@ -117,11 +117,14 @@ def test_current_pause_and_resume_do_not_rewrite_checkpoint_coverage(
     assert resumed["graph_snapshot"] == original["graph_snapshot"]
 
 
+@pytest.mark.parametrize("sparse_candidates", [False, True])
 def test_run_builds_shared_metadata_and_honest_partial_graph(
-    client, db, analyst_headers, tmp_path, monkeypatch
+    client, db, analyst_headers, tmp_path, monkeypatch, sparse_candidates,
 ):
     storage = tmp_path / "run-artifacts"
     monkeypatch.setattr(settings, "document_analysis_storage_dir", storage)
+    monkeypatch.setattr(settings, "document_analysis_evidence_repair_enabled", sparse_candidates)
+    monkeypatch.setattr(settings, "document_analysis_adaptive_retrieval_mode", "disabled")
 
     raw = _word_bytes(tmp_path)
     created = _create(client, analyst_headers, raw)
@@ -146,7 +149,16 @@ def test_run_builds_shared_metadata_and_honest_partial_graph(
     }
     assert run["identities"]["analysis_id"]
     assert run["identities"]["metadata_snapshot_id"]
-    assert run["progress"]["records_unattempted"] > 0
+    if sparse_candidates:
+        # No model service means no admission/execution took place. Search scope
+        # must not be fabricated into candidate tasks, or reported as complete.
+        assert run["progress"]["candidate_policy"] == "sparse-candidates-v1"
+        assert run["progress"]["completion"] == "incomplete"
+        assert run["progress"]["records_planned"] == 0
+        assert run["progress"]["records_unattempted"] == 0
+    else:
+        assert "candidate_policy" not in run["progress"]
+        assert run["progress"]["records_unattempted"] > 0
     assert run["progress"]["stop_reason"] == "recognition_model_not_configured"
     assert run["expires_at"] is not None
 
@@ -166,7 +178,13 @@ def test_run_builds_shared_metadata_and_honest_partial_graph(
     assert len(graph_payload["entities"]) == 1
     assert graph_payload["entities"][0]["seed_origin"] == "user_selected"
     assert graph_payload["relationships"] == []
-    assert graph_payload["coverage"]["records_unattempted"] > 0
+    if sparse_candidates:
+        assert graph_payload["coverage"]["candidate_policy"] == "sparse-candidates-v1"
+        assert graph_payload["coverage"]["records_planned"] == 0
+        assert graph_payload["coverage"]["records_examined"] == 0
+    else:
+        assert "candidate_policy" not in graph_payload["coverage"]
+        assert graph_payload["coverage"]["records_unattempted"] > 0
     assert graph_payload["coverage"]["stop_reason"] == "service_failure"
 
     source = client.get(f"/api/document-analysis/runs/{run_id}/source", headers=analyst_headers)
@@ -197,6 +215,9 @@ def test_configured_model_persists_effective_proof_and_replays_role_sources(
     """Exercise the configured adapter path without contacting an external model."""
 
     monkeypatch.setattr(settings, "document_analysis_storage_dir", tmp_path / "run-artifacts")
+    # The response fixture below implements the original adapter's proof protocol.
+    monkeypatch.setattr(settings, "document_analysis_evidence_repair_enabled", False)
+    monkeypatch.setattr(settings, "document_analysis_adaptive_retrieval_mode", "disabled")
 
     def deterministic_model(_client, *, user, **_kwargs):
         request = json.loads(user)

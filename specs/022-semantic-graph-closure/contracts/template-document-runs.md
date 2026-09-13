@@ -32,7 +32,9 @@ GraphEntity 增加可选 `predicate_menu`：
 `[{predicate_iri, predicate_label, kind: "property" | "relationship"}] | null`。
 菜单只从该运行冻结本体编译；空数组表示本体未声明任何菜单，null 表示定义不可用。
 不能用当前在线本体补齐历史菜单。coverage 继续使用已计划、检查、未完成、未尝试的
-守恒计数；没有有效结果不构成全文否定或已完成结论。
+守恒计数；`candidate_policy=sparse-candidates-v1` 时计实际候选任务，未入选全文
+范围单独诊断。finished 显示“本轮识别完成”；没有有效结果不构成全文否定，也不能
+仅凭空图宣称策略完成。旧载荷保留原计数口径，详见[候选完成契约](candidate-completion.md)。
 
 模板面板默认读取 `effective_affirmed`。候选详情、实体名、属性值、主体归属、谓词、
 条件、反证均用 run-owned selection_ref 获取原文。正文与锚点同时来自该 source 响应，

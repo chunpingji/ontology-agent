@@ -13,6 +13,14 @@ from pydantic import Field, model_serializer, model_validator
 from app.schemas.evidence import EvidenceModel
 from app.services.extraction.annotation_execution import ExecutionLost
 from app.services.extraction.evidence_identity import evidence_hash, stable_id
+from app.services.extraction.ontology_guided.adaptive_retrieval import (
+    AdaptivePolicy,
+    AdmissionDecision,
+    GateEvaluation,
+    SearchPreparationResult,
+)
+from app.services.extraction.ontology_guided.candidate_planning import is_sparse, record_universe
+from app.services.extraction.ontology_guided.contextual_retrieval import anchor_hits
 from app.services.extraction.ontology_guided.contracts import (
     GraphNode,
     MetadataSnapshot,
@@ -32,6 +40,7 @@ from app.services.extraction.ontology_guided.retrieval_views import (
 from app.services.extraction.ontology_guided.semantic_retrieval import (
     channel_orders,
     cosine_scores,
+    query_terms,
     select_candidate_pool,
 )
 from app.services.extraction.ontology_guided.state_delta import FrozenDict as _FrozenDict
@@ -221,10 +230,52 @@ class RankingService:
         state: dict | None = None,
         before_model_hook: Callable[[dict], None] | None = None,
         budget_enabled: bool | None = None,
+        adaptive_policy: AdaptivePolicy | None = None,
     ):
         self.policy = policy
         self.model = model
         self.before_model_hook = before_model_hook
+        self.adaptive_policy = adaptive_policy
+        self.gate_evaluations: dict[str, dict] = {}
+        self.admission_decisions: dict[str, dict] = {}
+        self.preparation_results: dict[str, dict] = {}
+        self.adaptive_inputs: dict[str, dict] = {}
+        self.adaptive_requests: dict[str, dict] = {}
+        if state:
+            frozen_adaptive = state.get("adaptive_policy")
+            if frozen_adaptive != (adaptive_policy.model_dump(mode="json")
+                                   if adaptive_policy else None):
+                raise ValueError("adaptive ranking policy changed during recovery")
+            self.gate_evaluations = {
+                key: _freeze(GateEvaluation.model_validate(value).model_dump(mode="json"))
+                for key, value in state.get("gate_evaluations", {}).items()
+            }
+            self.admission_decisions = {
+                key: _freeze(AdmissionDecision.model_validate(value).model_dump(mode="json"))
+                for key, value in state.get("admission_decisions", {}).items()
+            }
+            for values, field in ((self.gate_evaluations, "evaluation_id"),
+                                  (self.admission_decisions, "decision_id")):
+                if any(key != value[field] for key, value in values.items()):
+                    raise ValueError("adaptive artifact identity mismatch")
+            self.preparation_results = {
+                key: _freeze(value) for key, value in state.get("preparation_results", {}).items()
+            }
+            for key, value in self.preparation_results.items():
+                result = SearchPreparationResult.model_validate(value["result"])
+                if key != result.expansion_attempt_id:
+                    raise ValueError("preparation result identity mismatch")
+            self.adaptive_inputs = {
+                key: _freeze(value) for key, value in state.get("adaptive_inputs", {}).items()
+            }
+            if any(key != evidence_hash(value) for key, value in self.adaptive_inputs.items()):
+                raise ValueError("adaptive input manifest hash mismatch")
+            self.adaptive_requests = {
+                key: _freeze(value) for key, value in state.get("adaptive_requests", {}).items()
+            }
+            if any(key != value["request_key"] or value["manifest_hash"] not in self.adaptive_inputs
+                   for key, value in self.adaptive_requests.items()):
+                raise ValueError("adaptive request manifest mismatch")
         self._budget_enabled = (
             (state or {}).get("budget_enabled", True)
             if budget_enabled is None else budget_enabled
@@ -358,6 +409,13 @@ class RankingService:
         result.update(caches)
         result["epochs"] = _FrozenList(self._epoch_snapshots)
         result["paused_attempts"] = _FrozenList(self._paused_snapshots)
+        if self.adaptive_policy:
+            result.update({"adaptive_policy": self.adaptive_policy.model_dump(mode="json"),
+                           "gate_evaluations": _FrozenDict(self.gate_evaluations),
+                           "admission_decisions": _FrozenDict(self.admission_decisions),
+                           "preparation_results": _FrozenDict(self.preparation_results),
+                           "adaptive_inputs": _FrozenDict(self.adaptive_inputs),
+                           "adaptive_requests": _FrozenDict(self.adaptive_requests)})
         return result
 
     def fork(self, *, before_model_hook=None):
@@ -365,8 +423,11 @@ class RankingService:
         result = RankingService(
             self.policy.model_copy(deep=True), self.model, state=self.snapshot(),
             before_model_hook=before_model_hook,
+            adaptive_policy=self.adaptive_policy,
         )
-        result._retrieval_view_cache = copy.deepcopy(self._retrieval_view_cache)
+        # Cached view models are treated as immutable; query-specific selection
+        # uses model_copy. A worker only adds cache entries to its own mapping.
+        result._retrieval_view_cache = dict(self._retrieval_view_cache)
         return result
 
     def _views(self, index, metadata, *, scope_hash, count_tokens, count_tokens_batch=None):
@@ -378,12 +439,32 @@ class RankingService:
             "validation" if count_tokens is len else self.policy.mode,
             "max-tokenizers-special-true-padding-false-truncation-false-v1",
         ])
-        if key not in self._retrieval_view_cache:
-            self._retrieval_view_cache[key] = build_retrieval_views(
-                index, metadata, count_tokens=count_tokens,
-                count_tokens_batch=count_tokens_batch,
-                max_record_tokens=self.policy.max_tokens_per_pair,
+        enhanced = bool(self.adaptive_policy and self.adaptive_policy.active_search
+                        and self.adaptive_policy.view_version == "contextual-retrieval-view-v1")
+        if enhanced:
+            from app.services.extraction.ontology_guided.contextual_retrieval import (
+                view_configuration,
             )
+
+            key = evidence_hash([key, view_configuration(self.adaptive_policy)])
+        if key not in self._retrieval_view_cache:
+            if enhanced:
+                from app.services.extraction.ontology_guided.contextual_retrieval import (
+                    build_contextual_views,
+                )
+
+                self._retrieval_view_cache[key] = build_contextual_views(
+                    index, metadata, self.adaptive_policy,
+                    count_tokens_batch=count_tokens_batch or
+                    (lambda texts: [count_tokens(text) for text in texts]),
+                    max_record_tokens=self.policy.max_tokens_per_pair,
+                )
+            else:
+                self._retrieval_view_cache[key] = build_retrieval_views(
+                    index, metadata, count_tokens=count_tokens,
+                    count_tokens_batch=count_tokens_batch,
+                    max_record_tokens=self.policy.max_tokens_per_pair,
+                )
         return self._retrieval_view_cache[key]
 
     def commit_epoch(self, epoch: RankingEpoch) -> RankingEpoch:
@@ -420,15 +501,21 @@ class RankingService:
         root_ref: VersionedRef,
         root_class_iri: str,
         permission_scope: str,
+        required_record_ids: list[str] | None = None,
         mentions=None,
         dependency_refs=None,
         candidate_record_ids: list[str] | None = None,
         expansion_boundary: dict | None = None,
+        expansion_attempt_id: str | None = None,
     ) -> None:
         """Recheck a durable result against current dependencies without model execution."""
         from app.services.extraction.ontology_guided.retrieval import validate_record_universe
 
         validate_record_universe(plan, index)
+        if required_record_ids is not None and not set(required_record_ids).issubset(
+            record_universe(plan, index)
+        ):
+            raise ValueError("protected records are outside the frozen record universe")
         boundary = epoch.expansion_boundary
         if boundary is not None:
             _validate_expansion_boundary(boundary)
@@ -444,7 +531,7 @@ class RankingService:
             raise ValueError("ranking expansion boundary changed")
         if candidate_record_ids is not None and (
             len(candidate_record_ids) != len(set(candidate_record_ids))
-            or not set(candidate_record_ids).issubset(plan.frozen_record_ids)
+            or not set(candidate_record_ids).issubset(record_universe(plan, index))
         ):
             raise ValueError("candidate scope is outside the frozen record universe")
         queries = build_subject_queries(
@@ -496,7 +583,8 @@ class RankingService:
         dependency_refs=None,
         candidate_record_ids: list[str] | None = None,
         expansion_boundary: dict | None = None,
-    ) -> RankingEpoch | None:
+        expansion_attempt_id: str | None = None,
+    ) -> RankingEpoch | SearchPreparationResult | None:
         from app.services.extraction.ontology_guided.retrieval import validate_record_universe
 
         validate_record_universe(plan, index)
@@ -505,7 +593,7 @@ class RankingService:
         candidate_scope = set(candidate_record_ids) if candidate_record_ids is not None else None
         if candidate_scope is not None and (
             len(candidate_record_ids) != len(candidate_scope)
-            or not candidate_scope.issubset(plan.frozen_record_ids)
+            or not candidate_scope.issubset(record_universe(plan, index))
         ):
             raise ValueError("candidate scope is outside the frozen record universe")
         scope_hash = evidence_hash(permission_scope)
@@ -546,14 +634,19 @@ class RankingService:
             self._pending.pop(plan.plan_id)
             self._retryable_pending.discard(plan.plan_id)
         used = {rid for epoch in previous for rid in epoch.record_ids}
-        available = [
-            item.record_id
-            for item in plan.records
-            if item.record_id not in used
-            and plan.ledger[item.record_id].coverage_state == "unattempted"
-            and (candidate_scope is None or item.record_id in candidate_scope)
-        ]
+        ordered_ids = (record_universe(plan, index) if is_sparse(plan)
+                       else [item.record_id for item in plan.records])
+        available = [rid for rid in ordered_ids if rid not in used
+                     and (rid not in plan.ledger
+                          or plan.ledger[rid].coverage_state == "unattempted")
+                     and (candidate_scope is None or rid in candidate_scope)]
         if not available:
+            if self.adaptive_policy:
+                return SearchPreparationResult(
+                    kind="no_new_candidates", plan_id=plan.plan_id,
+                    expansion_attempt_id=expansion_attempt_id or "",
+                    reason="committed_scope_exhausted",
+                )
             return None
         queries = build_subject_queries(
             subject=plan.subject,
@@ -653,6 +746,14 @@ class RankingService:
                 index, metadata, scope_hash=scope_hash, count_tokens=len,
             )
             max_query_tokens = max(len(query.model_text) for query in queries)
+        if self.adaptive_policy and self.adaptive_policy.active_search:
+            from app.services.extraction.ontology_guided.contextual_retrieval import (
+                select_available_view,
+            )
+
+            views = {rid: select_available_view(view, max_query_tokens,
+                                                self.policy.max_tokens_per_pair)
+                     if hasattr(view, "variants") else view for rid, view in views.items()}
         eligible = [
             rid
             for rid in available
@@ -668,6 +769,77 @@ class RankingService:
         )
         signals = {}
         channels = {}
+        initial_embedding_cache = set(self._cache) if self.adaptive_policy else set()
+        enforcing = self.adaptive_policy and self.adaptive_policy.active_search
+        cached_observations = {}
+        group_observations = {}
+        groups = {}
+        thresholds = (self.adaptive_policy.thresholds(
+            model_identity=self.model_identity, predicate_iri=predicate.iri, stage="dense",
+        ) if enforcing else None)
+        self_thresholds = (self.adaptive_policy.thresholds(
+            model_identity=self.model_identity, predicate_iri=predicate.iri, stage="self",
+        ) if enforcing else None)
+        group_thresholds = (self.adaptive_policy.thresholds(
+            model_identity=self.model_identity, predicate_iri=predicate.iri, stage="group",
+        ) if enforcing else None)
+        if enforcing:
+            for gate in self.gate_evaluations.values():
+                if (gate["plan_id"] == plan.plan_id and gate["stage"] == "dense"
+                        and gate["query_dependency_hash"] == queries[0].query_dependency_hash
+                        and gate["permission_scope_hash"] == scope_hash
+                        and gate["policy_hash"] == evidence_hash(self.adaptive_policy)):
+                    group_observations.update({gid: {**value, "scores": dict(value["scores"]),
+                        "matched_intents": list(value.get("matched_intents", []))}
+                        for gid, value in gate.get("group_observations", {}).items()})
+                    for observation in gate["observations"]:
+                        rid = observation["record_id"]
+                        if (rid in available and observation["view_hash"]
+                                == views[rid].retrieval_view_hash):
+                            cached_observations[rid] = observation
+            if eligible and hasattr(views[eligible[0]], "variants") and reason is None:
+                from app.services.extraction.ontology_guided.contextual_retrieval import (
+                    build_group_views,
+                    view_configuration,
+                )
+
+                group_key = evidence_hash(["groups", index.ir.document_hash,
+                                          index.ir.structure_hash, metadata, scope_hash,
+                                          view_configuration(self.adaptive_policy),
+                                          self.model_identity, self.policy.max_tokens_per_pair])
+                if group_key not in self._retrieval_view_cache:
+                    self._retrieval_view_cache[group_key] = build_group_views(
+                        index, metadata, self.adaptive_policy, count_tokens_batch=token_counters,
+                        max_record_tokens=self.policy.max_tokens_per_pair,
+                    )
+                groups = self._retrieval_view_cache[group_key]
+        if self.adaptive_policy:
+            view_manifest = {
+                "permission_scope_hash": scope_hash,
+                "source_hash": index.ir.document_hash,
+                "model_hash": evidence_hash(self.model_identity),
+                "views": {rid: {
+                    "view_hash": view.retrieval_view_hash,
+                    "source_roles": getattr(view, "source_roles", []),
+                    "variants": {kind: {"input_hash": evidence_hash(value["model_text"]),
+                                         "source_roles": value["source_roles"]}
+                                 for kind, value in getattr(view, "variants", {}).items()},
+                } for rid, view in views.items()},
+            }
+            view_manifest_hash = evidence_hash(view_manifest)
+            self.adaptive_inputs.setdefault(view_manifest_hash, _freeze(view_manifest))
+            group_manifest_hash = evidence_hash({"group_views": groups})
+            self.adaptive_inputs.setdefault(group_manifest_hash, _freeze({"group_views": groups}))
+            manifest = {"plan_id": plan.plan_id, "attempt": expansion_attempt_id,
+                        "query_dependency_hash": queries[0].query_dependency_hash,
+                        "permission_scope_hash": scope_hash,
+                        "view_manifest_ref": view_manifest_hash,
+                        "group_manifest_ref": group_manifest_hash,
+                        "records": {rid: {"view_hash": views[rid].retrieval_view_hash,
+                                          "input_hash": evidence_hash(views[rid].model_text)}
+                                    for rid in available}}
+            manifest_hash = evidence_hash(manifest)
+            self.adaptive_inputs.setdefault(manifest_hash, _freeze(manifest))
 
         def charge(tokens, *, pairs=0, embeddings=0):
             if time.monotonic() - started > self.policy.ranking_timeout:
@@ -700,6 +872,13 @@ class RankingService:
                     values,
                 ]
             )
+            if self.adaptive_policy:
+                self.adaptive_requests.setdefault(request_key, _freeze({
+                    "manifest_hash": manifest_hash, "input_hash": evidence_hash(values),
+                    "input_hashes": [evidence_hash(value) for value in values],
+                    "method": "rerank" if pairs else "embedding", "intent": intent,
+                    "model_hash": evidence_hash(self.model_identity), "request_key": request_key,
+                }))
             score_key = evidence_hash([
                 request_key, run_fingerprint, plan.plan_id, queries[0].query_dependency_hash,
                 [(rid, views[rid].retrieval_view_hash) for rid in record_ids],
@@ -840,6 +1019,39 @@ class RankingService:
                 self._cache_snapshots.pop("cache", None)
             return [self._cache[key] for key in keys]
 
+        lexical_gate = None
+        if enforcing and reason is None:
+
+            lexical_gate = next((GateEvaluation.model_validate(value)
+                                 for value in self.gate_evaluations.values()
+                                 if value["plan_id"] == plan.plan_id
+                                 and value["expansion_attempt_id"] == expansion_attempt_id
+                                 and value["stage"] == "lexical"), None)
+            if lexical_gate is None:
+                # Absence of a keyword is inconclusive. This cheap gate freezes
+                # protection/gaps before vectorization; it never invents a
+                # negative lexical rule to avoid paying for unknown evidence.
+                terms = list(dict.fromkeys(t for q in queries for t in query_terms(q)))
+                lexical_gate = GateEvaluation(
+                    plan_id=plan.plan_id, subject_ref=plan.subject.model_dump(mode="json"),
+                    query_dependency_hash=queries[0].query_dependency_hash,
+                    permission_scope_hash=scope_hash,
+                    policy_hash=evidence_hash(self.adaptive_policy),
+                    expansion_attempt_id=expansion_attempt_id or "", stage="lexical",
+                    record_ids=available, passed_record_ids=available,
+                    input_manifest_hash=manifest_hash,
+                    observations=[{
+                        "record_id": rid, "view_hash": views[rid].retrieval_view_hash,
+                        "source_protected": rid in set(required_record_ids or []),
+                        "anchor_hits": anchor_hits(index, rid, terms),
+                        "reason": "literal_absence_is_inconclusive",
+                    } for rid in available],
+                )
+                self.gate_evaluations[lexical_gate.evaluation_id] = _freeze(
+                    lexical_gate.model_dump(mode="json"))
+                if self.before_model_hook:
+                    self.before_model_hook(self.snapshot())
+
         try:
             if reason:
                 raise ValueError(reason)
@@ -847,27 +1059,182 @@ class RankingService:
                 raise ValueError("semantic_ranking_model_unavailable")
             dense = {}
             if self.policy.mode == "semantic" and self.policy.enable_dense and eligible:
-                vectors = embeddings([views[rid].model_text for rid in eligible])
+                fresh = [rid for rid in eligible if rid not in cached_observations]
+                vectors = embeddings([views[rid].model_text for rid in fresh])
                 query_vectors = embeddings([query.model_text for query in queries])
                 dense = {
                     query.retrieval_intent: cosine_scores(
-                        vector, dict(zip(eligible, vectors, strict=True))
+                        vector, dict(zip(fresh, vectors, strict=True))
                     )
                     for query, vector in zip(queries, query_vectors, strict=True)
                 }
             for query in queries:
+                for rid, observation in cached_observations.items():
+                    score = observation["channel_raw_scores"].get(f"dense:{query.retrieval_intent}")
+                    if score is not None:
+                        dense.setdefault(query.retrieval_intent, {})[rid] = score
                 orders, raw = channel_orders(
                     query, views, eligible, dense_scores=dense.get(query.retrieval_intent)
                 )
+                if self.adaptive_policy and eligible and hasattr(views[eligible[0]], "variants"):
+                    from app.services.extraction.ontology_guided.contextual_retrieval import (
+                        contextual_channels,
+                    )
+
+                    extra_orders, extra_raw = contextual_channels(query, views, eligible)
+                    orders.update(extra_orders)
+                    raw.update(extra_raw)
                 for channel, order in orders.items():
                     channels[f"{channel}:{query.retrieval_intent}"] = order
                     signals[f"{channel}:{query.retrieval_intent}"] = raw[channel]
+            if groups and self.policy.mode == "semantic" and self.policy.enable_dense:
+                from app.services.extraction.ontology_guided.semantic_retrieval import (
+                    sparse_scores,
+                )
+
+                own_ids = [rid for rid in eligible if rid not in cached_observations
+                           and views[rid].variants["self"]["token_count"]
+                           + max_query_tokens <= self.policy.max_tokens_per_pair]
+                own_vectors = embeddings([views[rid].variants["self"]["model_text"]
+                                          for rid in own_ids])
+                group_ids = [gid for gid, group in groups.items()
+                             if group["status"] == "complete" and gid not in group_observations]
+                group_vectors = embeddings([groups[gid]["model_text"] for gid in group_ids])
+                for query, vector in zip(queries, query_vectors, strict=True):
+                    intent = query.retrieval_intent
+                    self_scores = cosine_scores(
+                        vector, dict(zip(own_ids, own_vectors, strict=True)))
+                    for rid, observation in cached_observations.items():
+                        score = observation["channel_raw_scores"].get(f"dense_self:{intent}")
+                        if score is not None:
+                            self_scores[rid] = score
+                    signals[f"dense_self:{intent}"] = self_scores
+                    channels[f"dense_self:{intent}"] = rank_scores(self_scores, eligible)
+                    group_scores = cosine_scores(vector, dict(zip(group_ids, group_vectors,
+                                                                  strict=True)))
+                    for gid, score in group_scores.items():
+                        group_observations.setdefault(gid, {
+                            "input_hash": groups[gid]["input_hash"], "scores": {},
+                            "selected_record_ids": groups[gid]["selected_record_ids"],
+                        })["scores"][intent] = score
+                    literal = sparse_scores({gid: g["model_text"] for gid, g in groups.items()},
+                                            query_terms(query))
+                    group_order = []
+                    for gid, observation in group_observations.items():
+                        # Group score stays on the group, never masquerades as
+                        # the independent score of each expanded record.
+                        score = observation["scores"].get(intent, -math.inf)
+                        hit = bool(literal.get(gid)) or (
+                            score >= group_thresholds[intent] if group_thresholds else score > 0)
+                        observation["literal_hit"] = bool(literal.get(gid)) or observation.get(
+                            "literal_hit", False)
+                        observation.setdefault("matched_intents", [])
+                        if hit and intent not in observation["matched_intents"]:
+                            observation["matched_intents"].append(intent)
+                        if hit:
+                            group_order.extend(rid for rid in observation["selected_record_ids"]
+                                               if rid in eligible)
+                    channels[f"group:{intent}"] = list(dict.fromkeys(group_order))
+                    signals[f"group:{intent}"] = {}
+            # Restored stage scores are reusable independently of batch slicing.
+            for rid, observation in cached_observations.items():
+                for name, score in observation["channel_raw_scores"].items():
+                    signals.setdefault(name, {})[rid] = score
         except (ModelCancelled, ExecutionLost):
             raise
         except Exception as exc:
             if isinstance(exc, RankingPersistenceError):
                 raise
             reason = reason or _failure_reason(exc)
+
+        adaptive_gate = None
+        if self.adaptive_policy and self.adaptive_policy.active_search and reason is None:
+            thresholds = self.adaptive_policy.thresholds(
+                model_identity=self.model_identity, predicate_iri=predicate.iri, stage="dense",
+            )
+            previous_gate = next((GateEvaluation.model_validate(value)
+                                  for value in self.gate_evaluations.values()
+                                  if value["expansion_attempt_id"] == expansion_attempt_id
+                                  and value["plan_id"] == plan.plan_id
+                                  and value["stage"] == "dense"), None)
+            if previous_gate:
+                adaptive_gate = previous_gate
+            else:
+                pruned = []
+                observations = []
+                required = set(required_record_ids or [])
+                for rid in available:
+                    raw = {name: values[rid] for name, values in signals.items() if rid in values}
+                    protected = rid in required or any(
+                        value > 0 for name, value in raw.items()
+                        if name.startswith(("structure:", "metadata:", "self:", "context:"))
+                    )
+                    group_protected = any(
+                        rid in observation["selected_record_ids"]
+                        and observation.get("matched_intents")
+                        and (self.adaptive_policy.mode != "trial"
+                             or len(observation["selected_record_ids"]) > 1)
+                        for observation in group_observations.values()
+                    )
+                    protected = protected or group_protected or not getattr(
+                        views[rid], "context_complete", True)
+                    names = ("dense", "dense_self") if groups else ("dense",)
+                    scores = {(name, intent): raw.get(f"{name}:{intent}")
+                              for name in names for intent in ("discover", "counterevidence")}
+                    if (rid in eligible and thresholds and not protected
+                            and all(scores[i] is not None and scores[i] < (
+                                self_thresholds if i[0] == "dense_self" else thresholds)[i[1]]
+                                    for i in scores)):
+                        pruned.append(rid)
+                    key = evidence_hash([scope_hash, views[rid].model_text,
+                                         self.model_identity, "embedding"])
+                    observations.append({
+                        "record_id": rid, "view_hash": views[rid].retrieval_view_hash,
+                        "model_input_hash": evidence_hash(views[rid].model_text),
+                        "view_status": "not_rerankable" if rid in ineligible else "complete",
+                        "channel_raw_scores": raw, "source_protected": protected,
+                        "embedding_cache_ref": key if key in self._cache else None,
+                        "embedding_cache_hit": key in initial_embedding_cache,
+                        "source_roles_ref": [view_manifest_hash, rid],
+                        "reused_evaluation": rid in cached_observations,
+                        "group_protected": group_protected,
+                    })
+                adaptive_gate = GateEvaluation(
+                    plan_id=plan.plan_id, subject_ref=plan.subject.model_dump(mode="json"),
+                    query_dependency_hash=queries[0].query_dependency_hash,
+                    permission_scope_hash=scope_hash,
+                    policy_hash=evidence_hash(self.adaptive_policy),
+                    expansion_attempt_id=expansion_attempt_id or "",
+                    stage="dense", record_ids=available, observations=observations,
+                    input_manifest_hash=manifest_hash, group_observations=group_observations,
+                    passed_record_ids=[rid for rid in eligible if rid not in set(pruned)],
+                    pruned_record_ids=pruned,
+                    unavailable_record_ids=[rid for rid in available if rid in ineligible],
+                    request_refs=[key for key, request in self.adaptive_requests.items()
+                                  if request["manifest_hash"] == manifest_hash],
+                    elapsed_seconds=time.monotonic() - started,
+                )
+                self.gate_evaluations[adaptive_gate.evaluation_id] = _freeze(
+                    adaptive_gate.model_dump(mode="json"))
+                if self.before_model_hook:
+                    self.before_model_hook(self.snapshot())
+            eligible = list(adaptive_gate.passed_record_ids)
+            channels = {key: [rid for rid in ids if rid in set(eligible)]
+                        for key, ids in channels.items()}
+            if not eligible:
+                if self.budget_enabled:
+                    costs["elapsed_ms"] = (time.monotonic() - started) * 1000
+                    self.costs["elapsed_ms"] += costs["elapsed_ms"]
+                if callable(set_deadline):
+                    set_deadline(None)
+                return SearchPreparationResult(
+                    kind="view_unavailable" if adaptive_gate.unavailable_record_ids
+                    else "filtered_empty", plan_id=plan.plan_id,
+                    expansion_attempt_id=expansion_attempt_id or "",
+                    evaluation_refs=[lexical_gate.evaluation_id, adaptive_gate.evaluation_id],
+                    reason="no_complete_view" if adaptive_gate.unavailable_record_ids
+                    else "all_candidates_below_calibrated_threshold",
+                )
 
         channel_quotas = {}
         for channel in ("structure", "dense", "metadata"):
@@ -876,6 +1243,12 @@ class RankingService:
                 channel_quotas[f"{channel}:{query.retrieval_intent}"] = quota // len(queries) + int(
                     number < quota % len(queries)
                 )
+        if self.adaptive_policy and self.adaptive_policy.active_search:
+            for channel in ("self", "context", "group", "dense_self"):
+                for query in queries:
+                    channel_quotas[f"{channel}:{query.retrieval_intent}"] = max(
+                        1, self.policy.structure_quota // 6,
+                    )
         # Non-rerankable records stay in U and receive ordinary/exploration turns.
         candidate_ids = (
             eligible
@@ -898,9 +1271,9 @@ class RankingService:
             channels,
             pool_size=pool_limit,
             protected_ids=required_record_ids or [],
-            exploration_ids=[rid for rid in plan.frozen_record_ids if rid in candidate_ids],
+            exploration_ids=[rid for rid in record_universe(plan, index) if rid in candidate_ids],
             quotas=quotas,
-            fill_pool=self.policy.fill_candidate_pool,
+            fill_pool=self.policy.fill_candidate_pool if not adaptive_gate else False,
         )
         # Tie breaking and every degraded epoch use the frozen deterministic order.
         base_pool = [rid for rid in available if rid in set(pool)]
@@ -1033,6 +1406,18 @@ class RankingService:
                         else "not_selected",
                         "authority": "retrieval_only",
                         "score_semantics": "raw_relevance_not_probability",
+                        **({"source_roles": getattr(views[rid], "source_roles", []),
+                            "attribution_status": "role_anchors" if hasattr(views[rid], "variants")
+                            else "legacy_record_channels",
+                            "group_refs": getattr(views[rid], "group_refs", []),
+                            "context_complete": getattr(views[rid], "context_complete", True),
+                            "group_protected": any(
+                                rid in g["selected_record_ids"] and g.get("matched_intents")
+                                and (self.adaptive_policy.mode != "trial"
+                                     or len(g["selected_record_ids"]) > 1)
+                                for g in group_observations.values()),
+                            "anchor_hits": anchor_hits(index, rid, query_terms(query))}
+                           if self.adaptive_policy else {}),
                     }
                 )
         epoch = RankingEpoch(
@@ -1046,7 +1431,9 @@ class RankingService:
             record_ids=base_pool,
             ordered_record_ids=ordered,
             queries=[query.model_dump(mode="json") for query in queries],
-            retrieval_views=[views[rid].model_dump(mode="json") for rid in base_pool],
+            retrieval_views=[views[rid].model_dump(
+                mode="json", exclude={"variants"} if self.adaptive_policy else set(),
+            ) for rid in base_pool],
             observations=observations,
             model_identity=self.model_identity,
             policy_hash=policy_hash,
@@ -1080,14 +1467,17 @@ def _validate_expansion_boundary(boundary):
         raise ValueError("invalid semantic expansion boundary")
 
 
-def apply_epoch(plan: RetrievalPlan, epoch: RankingEpoch) -> RetrievalPlan:
+def apply_epoch(plan: RetrievalPlan, epoch: RankingEpoch, *, index=None) -> RetrievalPlan:
     if (
         epoch.status != "committed"
         or epoch.plan_id != plan.plan_id
         or epoch.subject_ref != (plan.subject.model_dump(mode="json"))
     ):
         raise ValueError("only an exact committed epoch may update a plan")
-    if not set(epoch.record_ids).issubset(plan.frozen_record_ids):
+    if is_sparse(plan) and index is None:
+        raise ValueError("sparse ranking requires the shared record index")
+    universe = record_universe(plan, index) if index is not None else plan.frozen_record_ids
+    if not set(epoch.record_ids).issubset(universe):
         raise ValueError("ranking epoch contains records outside the frozen universe")
     ranks = {rid: rank for rank, rid in enumerate(epoch.ordered_record_ids, 1)}
     records = [record.model_copy(update={

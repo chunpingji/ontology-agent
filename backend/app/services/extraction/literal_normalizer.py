@@ -33,17 +33,26 @@ UNITS = {
     "K": ("temperature", "1"),
     "°C": ("temperature", "1"),
 }
-UNIT_REGISTRY_VERSION = "si-subset-v2-compound"
+UNIT_REGISTRY_VERSION = "si-subset-v3-unit-aliases"
+UNIT_ALIASES = {
+    "KG": "kg", "Kg": "kg", "千克": "kg", "公斤": "kg",
+    "克": "g", "毫克": "mg", "微克": "ug", "纳克": "ng",
+    "升": "L", "毫升": "mL",
+    "℃": "°C", "C": "°C", "d": "day", "天": "day",
+}
 
 
 def canonical_unit(unit):
-    unit = normalize("NFKC", unit).replace("μ", "u").replace("µ", "u")
-    return {"℃": "°C", "C": "°C", "d": "day", "天": "day"}.get(unit, unit)
+    # SI symbols are case-sensitive: never lowercase mg/Mg, mL/ML, etc.
+    unit = normalize("NFKC", unit).replace("μ", "u").replace("µ", "u").strip()
+    return "/".join(UNIT_ALIASES.get(part.strip(), part.strip()) for part in unit.split("/"))
 
 
 def unit_definition(unit):
     parts = canonical_unit(unit).split("/")
     if any(part not in UNITS for part in parts):
+        raise LiteralNormalizationError("unit_unknown")
+    if len(parts) > 1 and any(part in {"°C", "K"} for part in parts):
         raise LiteralNormalizationError("unit_unknown")
     dimension, scale = UNITS[parts[0]]
     scale = Fraction(scale)

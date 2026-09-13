@@ -23,6 +23,9 @@ import type {
   DocumentGraphRelationship,
 } from "@/lib/api";
 import {
+  documentCoverageLabel,
+  documentCoverageScope,
+  documentRetrievalSummary,
   formatDocumentAnalysisReason,
   formatDocumentRankingPause,
 } from "@/lib/document-analysis";
@@ -49,6 +52,7 @@ const SOURCE_ROLE_LABELS = {
   subject: "主体",
   object: "对象",
   value: "值",
+  unit: "单位依据",
   predicate_bridge: "谓词桥接",
   condition: "适用条件",
   counterevidence: "反证/竞争者",
@@ -388,8 +392,8 @@ export function DocumentRelationshipGraph({
             )}
           >
             {[
-              ["计划记录", artifact.coverage.records_planned],
-              ["记录已检", artifact.coverage.records_examined],
+              [`计划${documentCoverageLabel(artifact.coverage)}`, artifact.coverage.records_planned],
+              [`${documentCoverageLabel(artifact.coverage)}已检`, artifact.coverage.records_examined],
               ["技术未完成", artifact.coverage.records_incomplete],
               ["待展开前沿", artifact.coverage.pending_frontiers],
             ].map(([label, value]) => (
@@ -586,6 +590,10 @@ export function DocumentRelationshipGraph({
                         </span>
                         <span className="max-w-[45%] break-words text-right text-sm">
                           {property.raw_value || "—"}
+                          {property.unit && property.normalized_value != null &&
+                            <span className="block text-xs text-muted-foreground">
+                              规范化值：{String(property.normalized_value)} {property.unit}
+                            </span>}
                         </span>
                       </button>
                     ))
@@ -697,10 +705,15 @@ export function DocumentRelationshipGraph({
                                 />
                               </>
                             ) : (
+                              <>
                               <DetailRow
                                 label="原始值"
                                 value={selected.item.raw_value || "—"}
                               />
+                              {selected.item.unit && selected.item.normalized_value != null &&
+                                <DetailRow label="规范化值"
+                                  value={`${String(selected.item.normalized_value)} ${selected.item.unit}`} />}
+                              </>
                             )}
                             <DetailRow
                               label="断言极性"
@@ -796,7 +809,7 @@ export function DocumentRelationshipGraph({
                 )}
               >
                 {[
-                  ["计划记录", artifact.coverage.records_planned],
+                  [`计划${documentCoverageLabel(artifact.coverage)}`, artifact.coverage.records_planned],
                   ["已检查", artifact.coverage.records_examined],
                   ["技术未完成", artifact.coverage.records_incomplete],
                   ["未尝试", artifact.coverage.records_unattempted],
@@ -809,6 +822,10 @@ export function DocumentRelationshipGraph({
                   </div>
                 ))}
               </div>
+              <p className="text-xs text-muted-foreground">{documentCoverageScope(artifact.coverage)}</p>
+              <p className="text-xs text-muted-foreground">
+                {documentRetrievalSummary(artifact.coverage)}
+              </p>
               {artifact.coverage.subjects.length === 0 ? (
                 <p className="text-xs text-muted-foreground">
                   尚无已提交的主体—谓词覆盖条目；请结合当前阶段判断，不能据此断言全文无关系。
@@ -870,11 +887,13 @@ export function DocumentRelationshipGraph({
                 </div>
               )}
               <p className="text-xs text-muted-foreground">
-                实际执行包含已启动但技术未完成的记录。计划保留的记录仍需执行；旧快照未记录的实际阶段数显示为“—”。
+                实际执行包含已启动但技术未完成的{documentCoverageLabel(artifact.coverage)}。计划中的待处理项仍需执行；旧快照未记录的实际阶段数显示为“—”。
               </p>
               {artifact.coverage.stop_reason && (
                 <Alert>
-                  <AlertTitle>{runContinuing ? "当前覆盖说明" : "覆盖未完成说明"}</AlertTitle>
+                  <AlertTitle>{runContinuing ? "当前覆盖说明"
+                    : artifact.coverage.stop_reason === "candidate_search_exhausted"
+                      ? "本轮识别完成说明" : "覆盖未完成说明"}</AlertTitle>
                   <AlertDescription>
                     {runContinuing && <p>运行仍在继续，以下说明来自最近已提交的覆盖快照。</p>}
                     <p>{artifact.coverage.stop_reason === "ranking_paused"

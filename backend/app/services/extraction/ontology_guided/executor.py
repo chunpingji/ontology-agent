@@ -21,12 +21,14 @@ from app.schemas.evidence import EvidenceAnchor, EvidenceModel
 from app.services.extraction.annotation_execution import ExecutionLost
 from app.services.extraction.document_ir import DocumentIR
 from app.services.extraction.evidence_identity import evidence_hash, stable_id
+from app.services.extraction.ontology_guided.candidate_planning import admit_records, shared_scope
 from app.services.extraction.ontology_guided.context import (
     TaskContext,
     assemble_context,
     covers_required_sources,
 )
 from app.services.extraction.ontology_guided.contracts import (
+    CANDIDATE_POLICY_VERSION,
     CoverageSummary,
     DocumentContext,
     EdgeSpec,
@@ -166,6 +168,8 @@ class OntologyGuidedExecutor:
         search_hook: Callable[[str, dict], None] | None = None,
         evidence_repair: bool = False,
         incremental_performance: bool = False,
+        adaptive_policy=None,
+        candidate_policy: str | None = None,
     ):
         self.ontology = ontology
         self.engine = engine
@@ -187,12 +191,33 @@ class OntologyGuidedExecutor:
         self.search_hook = search_hook
         self.evidence_repair = evidence_repair
         self.incremental_performance = incremental_performance
+        self.adaptive_policy = adaptive_policy
+        if candidate_policy not in {None, CANDIDATE_POLICY_VERSION}:
+            raise ValueError("unsupported candidate planning policy")
+        if candidate_policy and (
+            not evidence_repair or not incremental_performance or heuristic_policy is None
+            or heuristic_policy.version not in {"heuristic-first-v3", "heuristic-first-v4"}
+        ):
+            raise ValueError("sparse candidate planning requires durable incremental search")
+        self.candidate_policy = candidate_policy
+        if adaptive_policy is not None and (
+            not incremental_performance or heuristic_policy is None
+            or heuristic_policy.version != "heuristic-first-v4"
+        ):
+            raise ValueError("adaptive retrieval requires v4 and incremental evidence repair")
+        if heuristic_policy is not None and heuristic_policy.version == "heuristic-first-v4" \
+                and adaptive_policy is None:
+            raise ValueError("v4 requires a frozen adaptive policy")
         if incremental_performance and not evidence_repair:
             raise ValueError("incremental performance requires evidence repair")
         if evidence_repair:
             self.version = type(self).version + "+evidence-repair-v1"
         if incremental_performance:
             self.version += "+incremental-performance-v1"
+        if adaptive_policy:
+            self.version += "+adaptive-retrieval-v1"
+        if candidate_policy:
+            self.version += "+sparse-candidates-v1"
         if heuristic_policy is not None and not evidence_repair:
             self.version = type(self).version + "+heuristic-first-experiment-v1"
 
@@ -243,6 +268,11 @@ class OntologyGuidedExecutor:
             resume_state is not None or ranking_state is not None or model_call_state is not None
         ):
             raise ValueError("heuristic experiment requires a fresh run; resume is not implemented")
+        if resume_state is not None and (
+            (resume_state.get("frontier") or {}).get("candidate_planning", {}).get("policy")
+            != self.candidate_policy
+        ):
+            raise ValueError("candidate planning policy changed; a new run is required")
         search_started = time.perf_counter()
         index = RecordIndex(ir)
         search_index = (
@@ -301,6 +331,7 @@ class OntologyGuidedExecutor:
             model=configured_ranking.model,
             state=restored_ranking.get("service"),
             budget_enabled=configured_ranking.budget_enabled,
+            adaptive_policy=self.adaptive_policy,
         )
         committed_at = dict(restored_ranking.get("committed_at") or {})
         applied_epochs: set[str] = set()
@@ -360,6 +391,8 @@ class OntologyGuidedExecutor:
                     blocked.update(
                         key for key, plan in plans.items()
                         if any(item.coverage_state != "examined" for item in plan.ledger.values())
+                        or (self.candidate_policy and searches[key].status
+                            not in {"pass_exhausted", "local_results_only"})
                     )
             return blocked
 
@@ -394,6 +427,15 @@ class OntologyGuidedExecutor:
             if page is None:
                 return False
             plan = plans[key]
+            if self.candidate_policy:
+                epoch = next((item for item in ranking.epochs
+                              if item.epoch_id == page.epoch_id), None)
+                plan = admit_records(
+                    plan, index, page.record_ids, phase=1 if page.stage in {"H0", "H1"} else 2,
+                    epoch=epoch,
+                )
+                plans[key] = plan
+                searches[key].plan = plan
             by_id = {record.record_id: record for record in plan.records}
             search_event("heuristic_admission", {
                 "plan_id": plan.plan_id, "subject_id": key[0], "predicate_iri": key[2],
@@ -430,6 +472,7 @@ class OntologyGuidedExecutor:
                 admission_log.append({
                     "batch_id": page.batch_id, "after_outcomes": len(task_outcomes),
                     "tasks": page_tasks,
+                    **({"ranking_epoch_id": page.epoch_id} if self.candidate_policy else {}),
                     **({"source_priorities": source_priorities}
                        if self.incremental_performance else {}),
                 })
@@ -510,6 +553,7 @@ class OntologyGuidedExecutor:
                     metadata,
                     ontology_hash=self.ontology.ontology_hash,
                     phase1_section_limit=self.phase1_section_limit,
+                    sparse_candidates=bool(self.candidate_policy),
                 )
                 generation = proof_generations.get(subject.entity_id, 0)
                 if generation:
@@ -554,7 +598,30 @@ class OntologyGuidedExecutor:
                 ])
                 if search_index is not None:
                     started = time.perf_counter()
-                    searches[key] = HeuristicSlotSearch(
+                    search_type = HeuristicSlotSearch
+                    adaptive_arguments = {}
+                    if self.adaptive_policy:
+                        from app.services.extraction.ontology_guided.adaptive_search import (
+                            AdaptiveSlotSearch,
+                        )
+                        from app.services.extraction.ontology_guided.retrieval_query import (
+                            build_subject_queries,
+                        )
+
+                        search_type = AdaptiveSlotSearch
+                        queries = build_subject_queries(
+                            subject=plan.subject, subject_node=(root if subject.is_document_root
+                                                              else nodes[subject.entity_id]),
+                            predicate=predicate, index=index, run_fingerprint=run_fingerprint,
+                            root_ref=VersionedRef(id=root.entity_id, revision=root.revision),
+                            root_class_iri=root_class_iri, **ranking_contexts[plan.plan_id],
+                        )
+                        adaptive_arguments = {
+                            "adaptive_policy": self.adaptive_policy,
+                            "permission_scope_hash": evidence_hash(recognition_run_id),
+                            "query_dependency_hash": queries[0].query_dependency_hash,
+                        }
+                    searches[key] = search_type(
                         plan=plan, predicate=predicate, search_index=search_index,
                         policy=self.heuristic_policy,
                         priority_record_ids=list(attribute_sources.get(key, {})),
@@ -568,6 +635,7 @@ class OntologyGuidedExecutor:
                         subject_mentions=[
                             item.text for item in ranking_contexts[plan.plan_id]["mentions"]
                         ],
+                        **adaptive_arguments,
                     )
                     search_event("heuristic_slot_prepared", {
                         "plan_id": plan.plan_id, "predicate_iri": predicate.iri,
@@ -629,6 +697,10 @@ class OntologyGuidedExecutor:
 
         def current_frontier():
             state = scheduler.snapshot()
+            if self.candidate_policy:
+                state["candidate_planning"] = {
+                    "policy": self.candidate_policy, "search_scope_ref": shared_scope(index)[2],
+                }
             if self.evidence_repair:
                 state["evidence_repair"] = {
                     "version": "evidence-repair-v1", "work": evidence_work.snapshot(),
@@ -726,7 +798,10 @@ class OntologyGuidedExecutor:
             if key not in plans:
                 raise ValueError("ranking epoch references an unavailable subject or plan")
             arguments = ranking_arguments(key)
-            if self.incremental_performance and not resume_validated:
+            if self.adaptive_policy:
+                arguments["candidate_record_ids"] = None
+                arguments["expansion_boundary"] = epoch.expansion_boundary
+            elif self.incremental_performance and not resume_validated:
                 saved = frozen_repair["searches"][epoch.plan_id]["resume_state"]
                 history = saved["semantic_epochs"]
                 number = history.index(epoch.epoch_id) + 1 if epoch.epoch_id in history else (
@@ -738,7 +813,9 @@ class OntologyGuidedExecutor:
                     "pool_limit": (8, 16, 32, 64)[number - 1],
                 }
             ranking.validate_epoch(epoch, **arguments)
-            plans[key] = apply_epoch(plans[key], epoch)
+            plans[key] = apply_epoch(plans[key], epoch, index=index)
+            if self.candidate_policy:
+                searches[key].plan = plans[key]
             scheduler.reorder_slot(
                 plans[key].subject,
                 key[2],
@@ -782,8 +859,14 @@ class OntologyGuidedExecutor:
                 root_ref=VersionedRef(id=root.entity_id, revision=root.revision),
                 root_class_iri=root_class_iri,
                 permission_scope=recognition_run_id,
-                **({"candidate_record_ids": searches[key].deferred_record_ids}
+                **({"candidate_record_ids": searches[key].needs_evaluation_ids()
+                    if self.adaptive_policy and self.adaptive_policy.active_search
+                    else searches[key].deferred_record_ids}
                    if search_index is not None else {}),
+                **({"expansion_attempt_id": searches[key].expansion_attempt_id,
+                    "required_record_ids": list(dict.fromkeys([
+                        *searches[key].seed_record_ids, *searches[key].priority_record_ids,
+                    ]))} if self.adaptive_policy else {}),
                 **({"expansion_boundary": searches[key].semantic_boundary}
                    if self.incremental_performance and search_index is not None else {}),
                 **ranking_contexts[plan.plan_id],
@@ -820,15 +903,79 @@ class OntologyGuidedExecutor:
             events.append(("ranking_epoch_committed", committed.model_dump(mode="json")))
             if search_index is not None:
                 key = next(key for key, plan in plans.items() if plan.plan_id == epoch.plan_id)
-                searches[key].accept_semantic(
-                    committed.ordered_record_ids, epoch_id=committed.epoch_id, committed=True,
-                )
+                accept_ranked_search(key, committed)
                 admit_search_page(key)
+
+        def accept_ranked_search(key, epoch):
+            if not self.adaptive_policy:
+                searches[key].accept_semantic(epoch.ordered_record_ids, epoch.epoch_id,
+                                             committed=True)
+                return
+            from app.services.extraction.ontology_guided.adaptive_retrieval import (
+                GateEvaluation,
+                epoch_decision,
+                gate_decision,
+            )
+
+            search = searches[key]
+            gates = []
+            for gate in ranking.gate_evaluations.values():
+                if (gate["plan_id"] == epoch.plan_id
+                        and gate["expansion_attempt_id"] == search.expansion_attempt_id):
+                    gates.append(gate)
+                    decision = gate_decision(GateEvaluation.model_validate(gate),
+                                             self.adaptive_policy)
+                    ranking.admission_decisions[decision.decision_id] = freeze_json(
+                        decision.model_dump(mode="json"))
+            decision = epoch_decision(epoch, self.adaptive_policy)
+            ranking.admission_decisions[decision.decision_id] = freeze_json(
+                decision.model_dump(mode="json"))
+            if ranking_hook is not None:
+                ranking_hook(current_ranking_state())
+            for gate in gates:
+                search.apply_gate(gate)
+            search.accept_ranked(epoch, decision)
+
+        def accept_preparation_result(result):
+            from app.services.extraction.ontology_guided.adaptive_retrieval import (
+                GateEvaluation,
+                gate_decision,
+            )
+
+            key = next(k for k, plan in plans.items() if plan.plan_id == result.plan_id)
+            identity = result.expansion_attempt_id
+            ranking.preparation_results[identity] = freeze_json({
+                "result": result.model_dump(mode="json"), "after_outcomes": len(task_outcomes),
+            })
+            for ref in result.evaluation_refs:
+                decision = gate_decision(
+                    GateEvaluation.model_validate(ranking.gate_evaluations[ref]),
+                    self.adaptive_policy,
+                )
+                ranking.admission_decisions[decision.decision_id] = freeze_json(
+                    decision.model_dump(mode="json"))
+            if ranking_hook is not None:
+                ranking_hook(current_ranking_state())
+            searches[key].accept_result(result, ranking.gate_evaluations)
+            admit_search_page(key)
 
         def prepare_ranking() -> None:
             nonlocal pending_ranking, pending_ranking_key, pending_service_state, ranking
             nonlocal recovering_ranking_pause
             nonlocal semantic_wait_key, semantic_wait_started_at
+            if self.adaptive_policy and resume_validated:
+                from app.services.extraction.ontology_guided.adaptive_retrieval import (
+                    SearchPreparationResult,
+                )
+
+                for saved_result in list(ranking.preparation_results.values()):
+                    result = SearchPreparationResult.model_validate(saved_result["result"])
+                    key = next((k for k, p in plans.items() if p.plan_id == result.plan_id), None)
+                    if (key is not None and searches[key].needs_semantic
+                            and subject_is_active(plans[key].subject)
+                            and searches[key].expansion_attempt_id == result.expansion_attempt_id):
+                        searches[key].accept_result(result, ranking.gate_evaluations)
+                        admit_search_page(key)
             for epoch in ranking.epochs:
                 if committed_at.get(epoch.epoch_id) == len(task_outcomes):
                     apply_ranking_epoch(epoch)
@@ -839,8 +986,7 @@ class OntologyGuidedExecutor:
                         search = searches[key]
                         if (search.needs_semantic
                                 and search.semantic_boundary == epoch.expansion_boundary):
-                            search.accept_semantic(epoch.ordered_record_ids, epoch.epoch_id,
-                                                   committed=True)
+                            accept_ranked_search(key, epoch)
                             admit_search_page(key)
             if self.evidence_repair and resume_cursor < len(resume_outcomes):
                 logged = {entry["batch_id"] for entry in admission_log}
@@ -852,6 +998,19 @@ class OntologyGuidedExecutor:
                         admitted_task = RecognitionTask.model_validate(raw)
                         slot = (admitted_task.subject.entity_id, admitted_task.subject.revision,
                                 admitted_task.predicate_iri)
+                        if slot in plans and self.candidate_policy:
+                            epoch = next((item for item in ranking.epochs
+                                          if item.epoch_id == admission.get("ranking_epoch_id")),
+                                         None)
+                            if admission.get("ranking_epoch_id") and epoch is None:
+                                raise ValueError(
+                                    "restored admission has no committed ranking epoch"
+                                )
+                            plans[slot] = admit_records(
+                                plans[slot], index, [admitted_task.record_id],
+                                phase=admitted_task.phase, epoch=epoch,
+                            )
+                            searches[slot].plan = plans[slot]
                         if slot not in plans or admitted_task.record_id not in plans[slot].ledger:
                             raise ValueError("restored admission target mismatch")
                         scheduler.enqueue(
@@ -903,6 +1062,23 @@ class OntologyGuidedExecutor:
                 if self.incremental_performance and invalidated and ranking_hook is not None:
                     ranking_hook(current_ranking_state())
                 if epoch is not None:
+                    from app.services.extraction.ontology_guided.adaptive_retrieval import (
+                        SearchPreparationResult,
+                    )
+
+                    if isinstance(epoch, SearchPreparationResult):
+                        if (key in plans and plans[key].plan_id == epoch.plan_id
+                                and subject_is_active(plans[key].subject)):
+                            accept_preparation_result(epoch)
+                        else:
+                            ranking.preparation_results[epoch.expansion_attempt_id] = freeze_json({
+                                "result": epoch.model_dump(mode="json"),
+                                "after_outcomes": len(task_outcomes),
+                                "discarded_reason": "subject_dependency_invalidated",
+                            })
+                            if ranking_hook is not None:
+                                ranking_hook(current_ranking_state())
+                        return
                     if (
                         key not in plans
                         or plans[key].plan_id != epoch.plan_id
@@ -913,7 +1089,8 @@ class OntologyGuidedExecutor:
                         discarded_epochs.append(epoch.model_dump(mode="json"))
                         saved = ranking.snapshot()
                         saved["pending_epochs"] = []
-                        ranking = RankingService(ranking.policy, ranking.model, state=saved)
+                        ranking = RankingService(ranking.policy, ranking.model, state=saved,
+                                                 adaptive_policy=self.adaptive_policy)
                         if ranking_hook is not None:
                             ranking_hook(current_ranking_state())
                     else:
@@ -925,10 +1102,18 @@ class OntologyGuidedExecutor:
             key = None
             if search_index is not None:
                 if scheduler.dispatched >= scheduler.max_tasks:
+                    if self.candidate_policy:
+                        # Close an actually exhausted last page before deciding
+                        # whether the dispatch limit left further obligations.
+                        for search_key in searches:
+                            if subject_is_active(plans[search_key].subject):
+                                admit_search_page(search_key)
                     return
                 for search_key in list(searches):
                     if subject_is_active(plans[search_key].subject):
                         admit_search_page(search_key)
+                    elif self.adaptive_policy:
+                        searches[search_key].exhaust_dependency()
                 for search_key, search in searches.items():
                     if search.needs_semantic and subject_is_active(plans[search_key].subject):
                         key = search_key
@@ -979,7 +1164,8 @@ class OntologyGuidedExecutor:
                     item for item in saved["pending_epochs"]
                     if item["plan_id"] != paused["plan_id"]
                 ]
-                ranking = RankingService(ranking.policy, ranking.model, state=saved)
+                ranking = RankingService(ranking.policy, ranking.model, state=saved,
+                                         adaptive_policy=self.adaptive_policy)
                 if ranking_hook is not None:
                     ranking_hook(current_ranking_state())
                 key = None
@@ -1014,7 +1200,14 @@ class OntologyGuidedExecutor:
                 return
             epoch = ranking.prepare_next_epoch(**ranking_arguments(key))
             if epoch is not None:
-                commit_ranking(epoch)
+                from app.services.extraction.ontology_guided.adaptive_retrieval import (
+                    SearchPreparationResult,
+                )
+
+                if isinstance(epoch, SearchPreparationResult):
+                    accept_preparation_result(epoch)
+                else:
+                    commit_ranking(epoch)
 
         def subject_is_active(subject: SubjectRef) -> bool:
             if subject.is_document_root:
@@ -1079,16 +1272,53 @@ class OntologyGuidedExecutor:
             )
             confirmed = {lineage: len(protocol.get("completed_attempts", []))
                          for lineage, protocol in protocols.items()}
+            unresolved_calls = sum(
+                max(0, reserved - max(lineage_calls.get(lineage, 0), confirmed.get(lineage, 0)))
+                for lineage, reserved in reserved_calls.items()
+            )
+            search_incomplete = any(
+                search.status not in {"pass_exhausted", "local_results_only"}
+                or bool(getattr(search, "_unavailable", ()))
+                for search in searches.values()
+            ) if self.candidate_policy else False
+            if self.candidate_policy:
+                # Policy execution and semantic truth are separate dimensions.
+                # A completed comparison may legitimately report a conflict or
+                # undetermined fact; only actual missing work blocks this end.
+                complete = bool(
+                    terminal and self.adapter is not None
+                    and not incomplete and not unattempted and not pending_frontiers
+                    and not ranking_paused and not unresolved_calls and not scheduler.pending
+                    and not search_incomplete and not budget_stopped_slots
+                    and not any(w["status"] in {"queued", "incomplete", "deferred"}
+                                for w in evidence_work.items.values())
+                )
+            retrieval_diagnostics = {}
+            if self.adaptive_policy:
+                from app.schemas.retrieval_diagnostics import RetrievalDiagnostics
+
+                summaries = [search.diagnostics() for search in searches.values()]
+                fields = ("records_soft_pruned", "records_pending_disposition",
+                          "records_reactivatable", "records_dependency_exhausted")
+                retrieval_diagnostics = {"retrieval_diagnostics": RetrievalDiagnostics(
+                    pruning_quality=("unvalidated" if self.adaptive_policy.mode == "trial"
+                                     else None),
+                    **{name: sum(getattr(item, name) for item in summaries) for name in fields},
+                    search_status=("searching" if not terminal else "complete" if complete
+                                   else "blocked" if ranking_paused or incomplete
+                                   else "budget_limited" if budget_stopped_slots
+                                   else "saturated"),
+                    reason_counts={"low_relevance": sum(s.records_soft_pruned for s in summaries)},
+                )}
             progress = RunProgress(
+                **retrieval_diagnostics,
+                **({"candidate_policy": self.candidate_policy} if self.candidate_policy else {}),
                 tasks_attempted=examined + incomplete,
                 model_calls=(sum(max(lineage_calls.get(key, 0), confirmed.get(key, 0))
                                  for key in set(lineage_calls) | set(confirmed))
                              if self.evidence_repair else model_calls),
                 model_calls_reserved=sum(reserved_calls.values()),
-                model_calls_unresolved=sum(
-                    max(0, reserved - max(lineage_calls.get(lineage, 0), confirmed.get(lineage, 0)))
-                    for lineage, reserved in reserved_calls.items()
-                ),
+                model_calls_unresolved=unresolved_calls,
                 records_planned=records_planned,
                 records_examined=examined,
                 records_incomplete=incomplete,
@@ -1114,6 +1344,7 @@ class OntologyGuidedExecutor:
                     if not terminal
                     else "ranking_paused"
                     if ranking_paused
+                    else "candidate_search_exhausted" if complete and self.candidate_policy
                     else "counterevidence_unresolved"
                     if conflict_claims
                     else "queue_exhausted"
@@ -1127,11 +1358,16 @@ class OntologyGuidedExecutor:
                     else "evidence_recheck_incomplete"
                     if any(w["status"] in {"queued", "incomplete", "deferred"}
                            for w in evidence_work.items.values())
+                    else "model_calls_unresolved"
+                    if self.candidate_policy and unresolved_calls
+                    else "candidate_search_incomplete"
+                    if self.candidate_policy and search_incomplete
                     else "adaptive_search_saturated"
                     if search_index is not None
                     else "unattempted"
                 ),
-                completion="in_scope_complete" if complete else "incomplete",
+                completion=("policy_complete" if complete and self.candidate_policy
+                            else "in_scope_complete" if complete else "incomplete"),
             )
             coverage = []
             for key, plan in plans.items():
@@ -1139,6 +1375,10 @@ class OntologyGuidedExecutor:
                 predicate = predicates[key]
                 coverage.append(
                     CoverageSummary(
+                        **({"candidate_policy": self.candidate_policy}
+                           if self.candidate_policy else {}),
+                        **({"retrieval_diagnostics": searches[key].diagnostics()}
+                           if self.adaptive_policy else {}),
                         subject_ref=VersionedRef(id=key[0], revision=key[1]),
                         predicate_iri=predicate.iri,
                         predicate_label=predicate.label,
@@ -1182,6 +1422,16 @@ class OntologyGuidedExecutor:
                             )
                             else "unattempted"
                             if any(entry.coverage_state == "unattempted" for entry in entries)
+                            else "semantic_undetermined"
+                            if self.candidate_policy and any(
+                                "undetermined" in entry.semantic_outcomes for entry in entries
+                            )
+                            else "candidate_search_exhausted"
+                            if self.candidate_policy and searches[key].status in {
+                                "pass_exhausted", "local_results_only",
+                            } and not getattr(searches[key], "_unavailable", ())
+                            else "candidate_search_incomplete"
+                            if self.candidate_policy
                             else "queue_exhausted"
                         ),
                         unresolved_claims=sum(
@@ -1585,7 +1835,7 @@ class OntologyGuidedExecutor:
                 plan,
                 task.record_id,
                 coverage_state="examined" if outcome.complete or (
-                    self.evidence_repair and task.retry_kind
+                    self.evidence_repair and not self.candidate_policy and task.retry_kind
                     and plan.ledger[task.record_id].coverage_state == "examined"
                 ) else "attempted_incomplete",
                 execution_state="finished" if outcome.complete else "retryable_failure",
@@ -1594,6 +1844,8 @@ class OntologyGuidedExecutor:
                 reason_code=outcome.reason_code,
             )
             plans[key] = plan
+            if self.candidate_policy:
+                searches[key].plan = plan
             payload = {
                 "task": task.model_dump(mode="json"),
                 "outcome": outcome.model_dump(mode="json"),
@@ -1730,11 +1982,22 @@ class OntologyGuidedExecutor:
                             raise ValueError(
                                 "checkpoint contains tasks outside the rebuilt frontier"
                             )
+                        # A consumed empty gate/epoch can leave another slot ready
+                        # for H2 without creating recognition tasks. Let the owner
+                        # dispatch that work before deciding the run is saturated.
+                        if self.adaptive_policy and scheduler.dispatched < scheduler.max_tasks:
+                            if any(search.needs_semantic and subject_is_active(plans[key].subject)
+                                   for key, search in searches.items()):
+                                continue
                         break
                     replaying = resume_cursor < len(resume_outcomes)
                     context = None
                     stop_after_batch = False
                     if replaying:
+                        if self.progress_hook is not None and not self.progress_hook(
+                            "checkpoint_replay"
+                        ):
+                            raise ExecutionLost("execution interrupted during checkpoint replay")
                         saved = resume_outcomes[resume_cursor]
                         saved_task = RecognitionTask.model_validate(saved.get("task"))
                         if saved_task != task:
@@ -1817,6 +2080,8 @@ class OntologyGuidedExecutor:
                             subject_evidence_refs=subject_sources,
                             required_context_refs=required,
                             counterevidence_refs=counters,
+                            retrieval_context_refs=(searches[key].group_context_refs(task.record_id)
+                                                    if self.adaptive_policy else None),
                             proof_dependencies=dependencies,
                             subject_label=nodes[task.subject.entity_id].label,
                             predicate=predicate,

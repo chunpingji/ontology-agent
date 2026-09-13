@@ -12,6 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getIdentity, getReportDocumentSource, type BatchDemoAvailable } from "@/lib/api";
 import { ReportDocumentOutline, reportDocumentError, ReportWordWorkspace } from "./report-word-workspace";
 import { useBatchDemo } from "./use-batch-demo";
+import { ExpertOpinionEntry } from "./expert-opinion-entry";
 
 export function BatchDemoWorkspaceGate({ documentIri }: { documentIri: string }) {
   const demo = useBatchDemo(documentIri);
@@ -47,7 +48,9 @@ export function BatchDemoWorkspace({ data }: { data: BatchDemoAvailable }) {
           startBlockId: chapter.source_range.start_block_id, endBlockId: chapter.source_range.end_block_id });
       }} />}</CardContent>
     </Card>
-    <Card className="flex min-h-0 flex-col overflow-hidden"><CardHeader className="p-3"><CardTitle className="text-sm">文档预览</CardTitle></CardHeader>
+    <Card className="flex min-h-0 flex-col overflow-hidden"><CardHeader className="flex-row items-center justify-between gap-2 p-3"><CardTitle className="text-sm">文档预览</CardTitle>
+      <ExpertOpinionEntry target={{ document_iri: data.document_iri }} sourceHash={source.data?.document_hash} />
+    </CardHeader>
       <CardContent className="min-h-0 flex-1 overflow-auto p-2">
         {source.isLoading && <p className="p-4 text-sm">正在读取原件…</p>}
         {source.error && <Alert variant="destructive"><AlertDescription>{reportDocumentError(source.error)}<Button variant="outline" onClick={() => void source.refetch()}>重试</Button></AlertDescription></Alert>}

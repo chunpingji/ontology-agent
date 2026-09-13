@@ -1,10 +1,12 @@
-import type { DocumentAnalysisStatus, DocumentGraphRanking } from "@/lib/api";
+import type {
+  DocumentAnalysisStatus, DocumentGraphRanking, DocumentRetrievalDiagnostics,
+} from "@/lib/api";
 
 export const DOCUMENT_ANALYSIS_STATUS_LABELS: Record<DocumentAnalysisStatus, string> = {
   queued: "已排队",
   running: "运行中",
   paused: "已暂停",
-  finished: "已完成",
+  finished: "本轮识别完成",
   retryable_failure: "可恢复失败",
   blocked_dependency: "依赖阻塞",
   cancelled: "已取消",
@@ -13,6 +15,28 @@ export const DOCUMENT_ANALYSIS_STATUS_LABELS: Record<DocumentAnalysisStatus, str
   expired: "已过期",
 };
 
+type CandidateCoverage = { candidate_policy?: "sparse-candidates-v1" | null };
+
+export function documentCoverageLabel(coverage: CandidateCoverage): string {
+  return coverage.candidate_policy === "sparse-candidates-v1" ? "候选任务" : "记录";
+}
+
+export function documentCoverageScope(coverage: CandidateCoverage): string {
+  return coverage.candidate_policy === "sparse-candidates-v1"
+    ? "计数仅包含本轮实际入选的主体—谓词候选任务；同一原文可对应多个任务。未入选原文未核验，本轮结束不表示全文事实已穷尽。"
+    : "计数沿用该运行冻结的记录覆盖范围；处理完成不构成全文无关系的证明。";
+}
+
+export function documentRetrievalSummary(
+  coverage: CandidateCoverage & { retrieval_diagnostics?: DocumentRetrievalDiagnostics },
+): string {
+  const diagnostics = coverage.retrieval_diagnostics;
+  if (!diagnostics) return "该运行未采集剪枝诊断。";
+  const scope = coverage.candidate_policy === "sparse-candidates-v1"
+    ? "搜索范围中" : "未尝试范围中";
+  return `${scope} ${diagnostics.records_soft_pruned} 项因检索相关性暂缓，尚未核验；${diagnostics.records_reactivatable} 项可继续检索。${diagnostics.pruning_quality === "unvalidated" ? "剪枝试运行，待专家校准。" : ""}`;
+}
+
 export function formatDocumentAnalysisDate(value: string | null): string {
   if (!value) return "运行中不自动到期";
   const parsed = new Date(value);
@@ -20,6 +44,7 @@ export function formatDocumentAnalysisDate(value: string | null): string {
 }
 
 const REASON_LABELS: Record<string, string> = {
+  candidate_search_exhausted: "本轮候选检索和核验已完成；未入选原文尚未核验，不表示全文事实已穷尽。",
   adaptive_search_saturated: "当前检索阶段已结束，仍有原文待检查；可恢复运行以继续检索。",
   evidence_recheck_incomplete: "已找到补充证据，部分关系或属性仍待重新核验。",
   no_new_evidence: "尚未找到可补充的新证据。",
@@ -30,6 +55,17 @@ const REASON_LABELS: Record<string, string> = {
   predicate_entailment_not_supported: "原文尚不能证明当前关系或属性。",
   applicability_not_supported: "适用条件尚未核清。",
   constraint_unresolved: "属性的数据类型或单位约束尚未确定。",
+  unit_source_missing: "缺少修饰当前数值的原文单位。",
+  unit_binding_source_missing: "单位证明未覆盖当前数值及单位来源。",
+  unit_binding_not_supported: "原文尚未证明单位属于当前数值。",
+  unit_record_mismatch: "单位不属于当前数值所在表达式或对应字段。",
+  unit_quote_partial: "单位引用不完整，不能省略前缀、分母或指数。",
+  quantity_value_partial: "数值引用截取了另一个数字的一部分。",
+  source_unit_conflict: "数值后缀单位与引用的来源单位冲突。",
+  unit_unknown: "原文单位尚未登记，无法确定其含义。",
+  unit_missing_or_incompatible: "原文单位缺失或与属性要求的单位不兼容。",
+  unit_conversion_not_exact: "单位换算无法精确表示，尚未配置舍入规则。",
+  scalar_value_required: "区间或比较值不能直接作为精确标量，须独立核验字段角色。",
   datatype_mismatch: "原文值与属性数据类型不一致。",
   evidence_unresolved: "证据尚不充分，需要进一步核验。",
   field_binding_missing: "缺少值与原文字段的对应证据。",

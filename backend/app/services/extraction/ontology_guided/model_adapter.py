@@ -42,7 +42,12 @@ from app.services.extraction.ontology_guided.task_citations import (
     TASK_CITATION_VERSION,
     TaskCitationProtocol,
 )
-from app.services.extraction.ontology_guided.value_constraints import normalize_literal
+from app.services.extraction.ontology_guided.unit_evidence import replay_unit_binding
+from app.services.extraction.ontology_guided.value_constraints import (
+    CONSTRAINT_REASONS,
+    UNIT_NORMALIZATION_VERSION,
+    normalize_literal,
+)
 from app.services.extraction.ontology_guided.verification import ProofGate, observe_value
 from app.services.llm.local_client import ExecutionLost, chat_with_schema, get_local_llm
 from app.services.llm.model_runtime import (
@@ -704,6 +709,10 @@ class LocalModelRecognitionAdapter:
             field_issue = None
             owner_issue = None
             normalized_value = None
+            constraint_issue = None
+            normalization_record = {}
+            unit_refs = []
+            unit_verdict = "supported"
             if context.repair_enabled:
                 field_issue = validate_field_binding(
                     context, predicate, endpoint_anchor, item["claim"].get("field_binding_id"),
@@ -719,10 +728,20 @@ class LocalModelRecognitionAdapter:
                     # proposal; never silently replace this frozen endpoint.
                     field_issue = "entity_reference_not_specific"
                 if proposal.kind == "property":
-                    normalized_value, constraint_issue = normalize_literal(
-                        proposal.value_quote.text, predicate,
-                    )
-                    field_issue = field_issue or constraint_issue
+                    source_unit = None
+                    if predicate.canonical_unit:
+                        source_unit, unit_refs, constraint_issue = replay_unit_binding(
+                            context, endpoint_anchor, item["claim"].get("field_binding_id"),
+                            facets.get("source_unit_quote"), facets.get("unit_binding_support", []),
+                        )
+                        unit_verdict = facets.get("unit_verdict", "undetermined")
+                        if unit_verdict != "supported":
+                            constraint_issue = constraint_issue or "unit_binding_not_supported"
+                    if not constraint_issue:
+                        normalized_value, constraint_issue = normalize_literal(
+                            proposal.value_quote.text, predicate, source_unit=source_unit,
+                            normalization_record=normalization_record,
+                        )
                 elif context.incremental_performance:
                     from app.services.extraction.ontology_guided.process_granularity import (
                         validate_method_scope,
@@ -800,6 +819,12 @@ class LocalModelRecognitionAdapter:
                     attempt_suffix=f"{proposal_index}:applicability",
                 ),
             ]
+            if context.repair_enabled and proposal.kind == "property" and predicate.canonical_unit:
+                decisions.append(_decision(
+                    context=proposal_context, kind="unit_binding", verdict=unit_verdict,
+                    reason=proposal.reason, support_refs=unit_refs,
+                    model_identity=self.model_identity, attempt_suffix=f"{proposal_index}:unit",
+                ))
             if not task.subject.is_document_root:
                 # A nonempty synthetic role ID is not an owner proof. Require
                 # original-source binding to the current subject explicitly.
@@ -930,6 +955,8 @@ class LocalModelRecognitionAdapter:
                 counterevidence_refs=explicit_counterevidence,
                 dependency_refs=list(context.proof_dependencies),
                 verdict=proposal.predicate_verdict,
+                unit_evidence_refs=unit_refs,
+                normalization_record=normalization_record,
             )
             bundle = self.gate.evaluate(
                 proposal_context.target,
@@ -945,6 +972,12 @@ class LocalModelRecognitionAdapter:
                     bundle.policy_eligible = False
                 if field_issue:
                     bundle.validation_issues.append(field_issue)
+                    bundle.policy_eligible = False
+                if constraint_issue:
+                    # Unit/datatype failures are program constraints, not a
+                    # replacement for the independent field-role verdict.
+                    bundle.validation_issues.insert(0, constraint_issue)
+                    bundle.structural_valid = False
                     bundle.policy_eligible = False
                 binding = next((b for b in context.field_bindings
                                 if b.field_binding_id == item["claim"].get("field_binding_id")),
@@ -982,6 +1015,7 @@ class LocalModelRecognitionAdapter:
                     proposal.applicability_verdict,
                     proposal.subject_binding_verdict,
                     verification.bridge_verdict,
+                    unit_verdict,
                 }
                 else "undetermined"
             )
@@ -996,7 +1030,7 @@ class LocalModelRecognitionAdapter:
             subject_ref = VersionedRef(id=task.subject.entity_id, revision=task.subject.revision)
             evidence_refs = _unique_anchors(
                 [*subject_refs, *source_for_semantics, *type_refs, *role_refs, *bridge_refs,
-                 *condition_refs, *counterevidence_refs]
+                 *condition_refs, *counterevidence_refs, *unit_refs]
             )
             if proposal.kind == "relationship":
                 method = item["claim"].get("whole_method_field")
@@ -1084,6 +1118,8 @@ class LocalModelRecognitionAdapter:
                             raw_value=observation.raw_text,
                             normalized_value=(normalized_value if context.repair_enabled
                                               else observation.normalized_value),
+                            normalization_record=normalization_record,
+                            unit_evidence_refs=unit_refs,
                             polarity=proposal.polarity,
                             conditions=[quote.text for quote in proposal.condition_support],
                             applicability=proposal.applicability,
@@ -1103,7 +1139,12 @@ class LocalModelRecognitionAdapter:
                             counterevidence_refs=counterevidence_refs,
                             reason_code=(bundle.validation_issues[0] if context.repair_enabled
                                          and bundle.validation_issues else f"candidate_{status}"),
-                            reason=proposal.reason,
+                            reason=(
+                                "数值/单位核验未通过："
+                                f"{CONSTRAINT_REASONS.get(constraint_issue, constraint_issue)}。"
+                                f"模型语义说明：{proposal.reason}"
+                                if constraint_issue else proposal.reason
+                            ),
                         )
                     )
             proofs.append(proof.model_dump(mode="json"))
@@ -1151,7 +1192,8 @@ def configured_model_adapter(
             "citations": TASK_CITATION_VERSION,
             "tokenizer": counter.identity,
             **({"evidence_repair": protocol_version, "owner_binding": OWNER_BINDING_VERSION,
-                "scope_protocol": SCOPE_PROTOCOL_VERSION, "literal_quotes": LITERAL_QUOTE_VERSION}
+                "scope_protocol": SCOPE_PROTOCOL_VERSION, "literal_quotes": LITERAL_QUOTE_VERSION,
+                "unit_normalization": UNIT_NORMALIZATION_VERSION}
                if protocol_version else {}),
         },
     )

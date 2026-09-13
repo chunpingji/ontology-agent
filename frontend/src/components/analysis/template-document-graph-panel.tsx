@@ -13,12 +13,21 @@ import {
   type DocumentGraphCoverageSubject, type DocumentGraphEntity,
   type DocumentGraphProperty, type DocumentGraphRelationship,
 } from "@/lib/api";
-import { DOCUMENT_ANALYSIS_STATUS_LABELS, formatDocumentAnalysisReason } from "@/lib/document-analysis";
+import {
+  DOCUMENT_ANALYSIS_STATUS_LABELS, documentCoverageScope, formatDocumentAnalysisReason,
+} from "@/lib/document-analysis";
 import { useTemplateDocumentRun } from "./use-template-document-run";
 
 type Model = ReturnType<typeof useTemplateDocumentRun>;
 
 export function branchProgress(branch?: DocumentGraphCoverageSubject): string {
+  if (branch?.candidate_policy === "sparse-candidates-v1") {
+    if (!branch.records_planned) return "本轮尚无入选候选，原文未核验";
+    const parts = [`已核验 ${branch.records_examined}/${branch.records_planned} 项候选任务`];
+    if (branch.records_incomplete) parts.push(`${branch.records_incomplete} 项技术未完成`);
+    if (branch.records_unattempted) parts.push(`${branch.records_unattempted} 项待处理`);
+    return parts.join(" · ");
+  }
   if (!branch || branch.records_examined + branch.records_incomplete === 0) return "未尝试";
   const parts = [`已检查 ${branch.records_examined}/${branch.records_planned} 条原文`];
   if (branch.records_incomplete) parts.push(`${branch.records_incomplete} 条处理未完成`);
@@ -47,6 +56,7 @@ function AssertionProof({ item, select }: { item: DocumentGraphAssertionBase; se
       <SourceButton refs={item.source_selection_refs.predicate_bridge}
         label={item.source_selection_refs.value.length ? "属性依据" : "关系依据"} select={select} />
       <SourceButton refs={item.source_selection_refs.subject} label="主体归属" select={select} />
+      <SourceButton refs={item.source_selection_refs.unit ?? []} label="单位依据" select={select} />
       <SourceButton refs={item.source_selection_refs.condition} label="条件" select={select} />
       <SourceButton refs={item.source_selection_refs.counterevidence} label="反证" select={select} />
     </div>
@@ -236,6 +246,8 @@ export function TemplateGraphTree({ graph, select }: { graph: DocumentAnalysisGr
             {node.incoming && <AssertionProof item={node.incoming} select={select} />}
           </div> : node.kind === "value" ? <div className="space-y-1">
             <p>{node.value.raw_value}</p>
+            {node.value.unit && node.value.normalized_value != null &&
+              <p className="text-xs text-muted-foreground">规范化值：{String(node.value.normalized_value)} {node.value.unit}</p>}
             <SourceButton refs={node.value.source_selection_refs.value} label="属性值" select={select} />
             <AssertionProof item={node.value} select={select} />
           </div> : node.kind === "reference" ? <div className="space-y-1">
@@ -284,6 +296,13 @@ export function TemplateDocumentGraphPanel({ model }: { model: Model }) {
           </span>
           {model.running && <Loader2 className="size-3.5 animate-spin" />}
         </div>
+        <p className="text-xs text-muted-foreground">{documentCoverageScope(run.progress)}</p>
+        {run.progress.candidate_policy === "sparse-candidates-v1" && (
+          <p className="text-xs text-muted-foreground" role="status">
+            入选候选 {run.progress.records_planned} 项 · 已核验 {run.progress.records_examined} 项
+            {` · 技术未完成 ${run.progress.records_incomplete} 项 · 待处理 ${run.progress.records_unattempted} 项`}
+          </p>
+        )}
         <div className="flex flex-wrap gap-2">
           {run.available_actions.includes("pause") && <Button size="sm" variant="outline"
             disabled={model.busy} onClick={() => model.control("pause")}><Pause className="mr-1 size-3" />暂停并保存结果</Button>}
@@ -329,7 +348,8 @@ export function TemplateDocumentGraphPanel({ model }: { model: Model }) {
       {!root && <p className="text-sm text-muted-foreground">{model.loading ? "正在读取运行…"
         : run ? "尚未生成关系图谱，已完成的结果会逐步显示。" : "尚未开始识别。"}</p>}
       {graph && <p className="text-xs text-muted-foreground">未决 {graph.unresolved.undetermined} 项 ·
-        未完成核验 {graph.unresolved.not_checked} 项。系统验证结果尚未经人工确认。</p>}
+        {graph.coverage.candidate_policy === "sparse-candidates-v1"
+          ? "未形成判定（含未发现候选）" : "未完成核验"} {graph.unresolved.not_checked} 项。系统验证结果尚未经人工确认。</p>}
     </div>
   </section>;
 }

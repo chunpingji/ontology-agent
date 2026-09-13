@@ -31,7 +31,7 @@ class ReportDocumentRuns:
         self.application = application
         self.db = application.db
 
-    def _source(self, document_iri: str):
+    def _source(self, document_iri: str, *, word_only: bool = True):
         document = self.db.scalar(select(EntityShadow).where(
             EntityShadow.iri == document_iri, EntityShadow.module == "document",
         ))
@@ -48,7 +48,7 @@ class ReportDocumentRuns:
         job = self.db.get(ExtractionJob, job_id)
         if job is None:
             raise DocumentAnalysisError("SOURCE_NOT_FOUND", "文档源作业不存在", status_code=404)
-        if job.source_type.strip().lower() not in {"word", "doc", "docx"}:
+        if word_only and job.source_type.strip().lower() not in {"word", "doc", "docx"}:
             raise DocumentAnalysisError(
                 "SOURCE_TYPE_MISMATCH", "该文档不是 Word 原件", status_code=422,
             )

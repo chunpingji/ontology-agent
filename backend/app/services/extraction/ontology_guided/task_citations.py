@@ -10,9 +10,9 @@ TASK_CITATION_VERSION = "ontology-task-citations-v1"
 _ENDPOINTS = {"object_quote", "value_quote"}
 _SUPPORTS = {"type_support", "predicate_support", "subject_support",
              "condition_support", "condition_quote", "counterevidence_support",
-             "field_role_support", "bridge_support"}
+             "field_role_support", "bridge_support", "source_unit_quote", "unit_binding_support"}
 _PROOFS = {"type_support", "predicate_support", "subject_support", "counterevidence_support",
-           "field_role_support", "bridge_support"}
+           "field_role_support", "bridge_support", "unit_binding_support"}
 INSTRUCTION = (
     "本次使用原子引用：名称和属性值必须给evidence_id及唯一逐字text；"
     "类型/谓词/主体/反证的整来源证明只给evidence_id，程序回放原文。"
@@ -139,6 +139,11 @@ class TaskCitationProtocol:
                 elif request["stage"] == "discovery":
                     self.schema["properties"]["proposals"]["maxItems"] = 0
 
+        if "UnitQuote" in definitions:
+            definitions["UnitQuote"]["properties"]["evidence_id"]["enum"] = list(
+                self.references["evidence_id"],
+            )
+
         def schema_walk(value, field=""):
             if isinstance(value, dict):
                 if value.get("$ref") == "#/$defs/Quote":
@@ -205,6 +210,10 @@ class TaskCitationProtocol:
                         value.setdefault("required", []).append("field_binding_id")
                     if "field_role_support" in fields and header_ids:
                         fields["field_role_support"]["items"] = {"$ref": "#/$defs/FieldRoleProof"}
+                    if "unit_verdict" in fields and request["predicate"].get("canonical_unit"):
+                        value.setdefault("required", []).extend(
+                            ["unit_verdict", "source_unit_quote", "unit_binding_support"],
+                        )
                     if "bridge_kind" in fields:
                         fields["bridge_kind"]["enum"] = request["proof_menu"]["allowed_bridges"]
                     if "object_class_iri" in fields:
@@ -291,7 +300,7 @@ class TaskCitationProtocol:
             if isinstance(value, dict):
                 if field in _ENDPOINTS | _SUPPORTS:
                     allowed = {"evidence_id", "text"}
-                    if self.repair and field == "value_quote":
+                    if self.repair and field in {"value_quote", "source_unit_quote"}:
                         allowed.add("context_text")
                     if set(value) - allowed:
                         raise ValueError("invalid_atomic_citation_fields")

@@ -7,6 +7,7 @@ from copy import deepcopy
 
 from app.services.extraction.evidence_identity import evidence_hash
 from app.services.extraction.ontology_guided.scheduler import RecognitionTask
+from app.services.extraction.ontology_guided.value_constraints import CONSTRAINT_REASONS
 
 
 class EvidenceWorkQueue:
@@ -219,7 +220,7 @@ class EvidenceWorkQueue:
                 "context_budget_exceeded",
                 "constraint_unresolved",
                 "datatype_mismatch",
-            }
+            } | CONSTRAINT_REASONS.keys()
             for reason in set(work.get("missing_facets", [])):
                 reason = reason if reason in public_reasons else "evidence_unresolved"
                 reasons[reason] = reasons.get(reason, 0) + 1

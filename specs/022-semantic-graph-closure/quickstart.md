@@ -1,15 +1,36 @@
 # Quickstart
 
-## 剪枝与增强检索视图：当前只进行设计修订
+## 候选台账与本轮完成（2026-09-13）
+
+先核对[候选完成契约](contracts/candidate-completion.md)与 CC 任务状态；以下为验收
+步骤，不是已执行结果。新策略只能由新运行冻结，GET/刷新不创建或重启运行。
+
+1. 在隔离夹具中准备大量全文记录和多个可达本体槽位，每槽仅准入少量候选。
+   检查任务、计划与台账条目随准入量增长，非主体×谓词×全文；原文搜索域仍完整共享。
+2. 检索无新候选、候选全部核验且无其他实际义务时，读取状态与 graph：
+   `candidate_policy=sparse-candidates-v1`，progress 的 `completion=policy_complete`，
+   `stop_reason=candidate_search_exhausted`，最终 status 为 finished。未入选记录不计
+   records_unattempted，页面显示“本轮识别完成”并说明其不表示全文穷尽。
+3. 分别注入已准入未派发、技术失败、必要补验未执行、预算/跳数截断，核对完成被
+   阻止并保存对应原因；已完成必要核验仍未决/冲突时允许本轮策略结束，但保留数量
+   和证据、不计有效事实。零候选也必须实际结束检索阶段，不能靠空图达标。
+4. 重复准入/恢复不重复首次任务或模型费用；同原文跨合法主体—谓词正常独立计数。
+   原旧快照恢复后身份、预算、计数与完成规则不变；新策略需要不同 recognition_run_id。
+5. 在专用可销毁 PostgreSQL 中注入慢保存、续期竞争、失租和迟到提交；陈旧执行者
+   不得写入，无进展恢复耗尽后明确失败，最后完整制品可读。未配置专用库则报告 skip。
+6. 前端在 frontend/ 运行 `node --test tests/document-analysis-runs.test.mjs tests/document-ranking.test.mjs`，
+   再执行定向 ESLint 和 `./node_modules/.bin/tsc --noEmit`。工程通过后，真实模型用新运行
+   与新输出目录另报耗时、候选量、费用及事实质量；不能改写旧运行或历史评测。
+
+## 剪枝与增强检索视图：隔离工程验证
 
 新增目标行为见[自适应检索契约](contracts/adaptive-retrieval.md)和
 [专题方案](../../docs/剪枝和增强语义检索视图方案.md)。`heuristic-first-v4`、新的准入决定
-和公开剪枝诊断尚未实现；当前没有可用于启用它们的已验证命令或开关。本次不启动测试、
-模型、迁移或部署，旧 v1/v2/v3 运行继续使用原冻结行为。
+和公开剪枝诊断已实现，线上默认 disabled，旧 v1/v2/v3 运行继续使用原冻结行为。
+工程记录见 [adaptive-retrieval-validation.md](adaptive-retrieval-validation.md)；初次交付未部署或执行真实模型质量评测，后续启用见[部署记录](adaptive-retrieval-deployment.md)。
 
-后续先按 `tasks.md` 的 AR-P0-01–AR-P0-10 闭合契约，全部通过前 AR-P1 只能做不改变
-准入/调度/结果的 instrumentation 原型。实现阶段验收应按以下场景登记，届时使用真实
-新增的测试入口，不能把本文场景或历史测试数量当作本次执行证据：
+状态/准入/恢复契约已由新增测试闭合，`tasks.md` 中的独立样本材料与整体 P0 退出仍待验。
+以下场景对应已实现的工程验证；独立质量通过前不启用线上主动剪枝：
 
 1. 核验 v1 不写恢复状态且仍不支持恢复，回放 v2/v3 原快照及 v3 一个 supported 后
    `local_results_only` 的冻结反例；
@@ -19,14 +40,50 @@
 3. 重复、错 epoch、越池、错依赖和提交前 `AdmissionDecision` 均按契约拒绝或幂等处理；
    中断恢复不重新付费、不漏门评估/缓存/请求费用，也不重复创建原始 record 任务。
 4. 同组兄弟、重叠组、低分必要来源、跨节点主体、否定/条件、长输入与单视图超限分别核验；
-   组命中不等于全组已检查。覆盖恒等式不变，当前软剪枝仍属于 `unattempted`；公开状态
-   区分 `adaptive_search_saturated` 暂停与 `in_scope_complete`，重激活实际检查后才更新覆盖。
+   组命中不等于全组已检查。覆盖恒等式不变；旧冻结运行保留软剪枝属于 unattempted、
+   adaptive_search_saturated 暂停及 in_scope_complete。新候选模式按上节单独验收，
+   搜索诊断与实际候选台账分开，不将未入选原文标为已核验。
 5. P2/P3 变更视图后，按最终视图/查询/模型/策略重新采集影子数据，不能直接用 P1 旧视图
    数据做 P4 校准。HRS-1597 与 HRS-5592 均只作为开发暴露/回归样本；另准备未暴露保留
    文档、隔离金标和预注册门，继承至少三个真实新运行要求。重复运行不能替代独立样本。
 
-正式实现的 API/前端与专用 PostgreSQL 验收仍分别登记；未配置专用可销毁库的 skip 不能
-替代恢复/并发验收。完成文档检查不表示 AR-P0 验收、主动剪枝效果或部署完成。
+API/前端和专用 PostgreSQL 验收分别登记；未配置专用可销毁库的 skip 不能替代恢复/并发验收。
+完成工程检查不表示主动剪枝效果或部署完成。
+
+在 `backend/` 运行新增隔离用例：
+
+```bash
+.venv/bin/python -m pytest -p no:cacheprovider -q \
+  tests/test_extraction/test_adaptive_retrieval.py \
+  tests/test_extraction/test_adaptive_expert_review.py
+```
+
+增强视图的数据采集可使用不剪枝的隔离策略 JSON：
+
+```json
+{"mode":"enforce","evaluation_only":true,"calibration":null}
+```
+
+给既有 `scripts/benchmark_heuristic_document_run.py --prepare` 增加
+`--evidence-repair --adaptive-policy /controlled/adaptive-policy.json`，仍需显式原件 hash、模型配置、
+本体目录、新输出目录及预登记预算。准备命令只冻结文件，执行必须使用生成的冻结 runner。
+该配置改变增强检索行为，属于测量组 C，不是保证 v3 等价的 observation 模式。
+线上 `enforce` 只接受与实际模型/视图参数匹配且 `quality_status=validated` 的完整校准文件。
+
+人工审核包和校验：
+
+```bash
+.venv/bin/python -m app.evaluation.adaptive_expert_review prepare \
+  --ir /controlled/run/ir.json --ontology /controlled/run/ontology-snapshot.json \
+  --root-class-iri https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport \
+  --exposure development --graph /controlled/run/graph/result.json \
+  --output /controlled/new-expert-package
+.venv/bin/python -m app.evaluation.adaptive_expert_review validate \
+  --package /controlled/new-expert-package
+```
+
+第二条命令必须在专家完成全部原文审阅、补齐遗漏、引用与批准信息后执行；草稿预期被拒绝。
+两份 HRS 只能登记 development，未暴露文档另登记 holdout。不要将审核参考路径传给识别驱动器。
 
 2026-09-10证据修复的代码/实测状态见 [evidence-repair-validation.md](evidence-repair-validation.md)，
 实际请求及恢复约束见 [evidence-repair契约](contracts/evidence-repair.md)。
@@ -463,3 +520,13 @@ API 使用同源鉴权与运行控制请求体：
 回放只创建新SQLite库，不读写在线库、不调用模型；输出目录必须不存在。
 完整受影响回归清单、原件结构诊断、热保存/基线/冷恢复的不同口径见
 [增量性能验证](incremental-performance-validation.md)。缺少专用PostgreSQL配置的测试明确skip。
+
+## 后续授权的线上默认值
+
+默认 `DOCUMENT_ANALYSIS_ADAPTIVE_RETRIEVAL_MODE=enhanced` 和 `DOCUMENT_ANALYSIS_EVIDENCE_REPAIR_ENABLED=true`；无需校准文件即可使用增强视图及 v4 搜索，低分剪枝关闭。`enforce` 仍须配置容器可读的 `DOCUMENT_ANALYSIS_ADAPTIVE_CALIBRATION_PATH`，不能用开发阈值冒充验收。
+
+回退新运行到 v3：设置模式 `disabled` 后重新创建 backend 容器。已有运行保持各自冻结政策；关闭前置证据修复也须同时关闭自适应策略。部署详见[记录](adaptive-retrieval-deployment.md)。
+
+## 低分剪枝试运行
+
+显式 `DOCUMENT_ANALYSIS_ADAPTIVE_RETRIEVAL_MODE=trial`，配合容器可读的 development 阈值文件路径，开启待专家校准的精排后软剪枝。trial 禁止缺文件、概率分数、比 -8 更激进的 logit 阈值及抬高多记录组保护门，不执行 dense 前置淘汰。该模式依用户进一步指令启用，不能以试运行冒充 enforce 的独立质量验收。实际本机路径及回退方式见[启用记录](pruning-trial-deployment.md)。

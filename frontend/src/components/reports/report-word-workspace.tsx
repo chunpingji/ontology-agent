@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tree, TreeItem, TreeItemLabel } from "@/components/ui/tree";
 import { useDocumentTree, type DocumentTreeNode } from "@/components/ui/use-document-tree";
+import { ExpertOpinionEntry } from "./expert-opinion-entry";
 import {
   getIdentity, getReportDocumentSource,
   type ReportOrDocument, type WordChapterNode,
@@ -122,7 +123,10 @@ export function ReportWordWorkspace({ documentIri }: { documentIri: string }) {
     <Card className="flex min-h-0 min-w-0 flex-col">
       <CardHeader className="flex-row items-center justify-between gap-2 p-4 pb-2">
         <CardTitle className="text-sm">文档预览</CardTitle>
-        <Button variant="ghost" size="sm" onClick={refresh}>刷新</Button>
+        <div className="flex items-center gap-2">
+          <ExpertOpinionEntry target={{ document_iri: documentIri }} runId={runId} sourceHash={identity?.document_hash} />
+          <Button variant="ghost" size="sm" onClick={refresh}>刷新</Button>
+        </div>
       </CardHeader>
       <CardContent className="min-h-0 flex-1 overflow-auto p-4">
         {readError && <Alert variant="destructive" className="mb-3">

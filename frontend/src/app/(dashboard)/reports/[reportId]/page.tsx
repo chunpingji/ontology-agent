@@ -40,6 +40,7 @@ import { DocumentActionsMenu } from "@/components/reports/document-actions-menu"
 import { Outline } from "@/components/reports/outline";
 import { isWordReportDocument } from "@/components/reports/report-word-workspace";
 import { BatchDemoWorkspaceGate } from "@/components/reports/batch-demo-workspace";
+import { ExpertOpinionEntry } from "@/components/reports/expert-opinion-entry";
 import {
   documentContentKey,
   ReadingPane,
@@ -336,6 +337,8 @@ export default function ReportDetailPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          {!isWordDocument && <ExpertOpinionEntry target={item.kind === "uploaded-document"
+            ? { document_iri: item.iri } : { job_id: item.jobId, report_id: item.reportId }} />}
           {item.kind === "generated-report" && (
             <Button onClick={() => download.mutate()} disabled={download.isPending}>
               {download.isPending ? <Loader2 className="animate-spin" /> : <Download />}

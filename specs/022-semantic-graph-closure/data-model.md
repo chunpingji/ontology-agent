@@ -8,7 +8,7 @@
 - `RankingEpoch`：epoch_id/seq、plan/subject/query/pool/policy/permission hash、完整池及顺序、queries、retrieval_views、observations、模型身份、实际模式和成本。持久 status 为 ready/degraded/paused/committed；准备/评分过程由服务预算和缓存快照记录，失效轮次存 executor 的 discarded_epochs，不能继续应用。
 - `RankingObservation`：query/record/epoch、逐对 input hash、channel hits/raw scores/ranks、raw pair score、intent/pool ranks、view/score status、authority=retrieval_only。批次耗时、排队、实测 tokens 和缓存观察另存 service 的 model_observations；预扣费用不伪装为实耗。
 - `RecognitionTask`：task_id、claim_lineage_id、subject/predicate/record、dependency_hash；阶段、章节、ranking_epoch_seq/pool_rank 仅为调度元数据。任务身份不含排名，lineage 不因版本或重验刷新调用额度。
-- `RecallLedger`：与冻结 RecordIndex 全集独立比较，逐槽位 unattempted/attempted_incomplete/examined；评分成功不计原文 examined。
+- `RecallLedger`：新 `sparse-candidates-v1` 逐槽位统计实际准入候选的 unattempted/attempted_incomplete/examined；共享 RecordIndex 全集只校验来源与搜索域，不预建逐槽位覆盖条目。旧冻结运行继续与原全集比较；评分成功不计原文 examined。
 - `TaskContext`：VerificationTarget、目标/主体/必要/反证原文 fragments、权限、遗漏和预算状态。新 object/value 只来自当前目标，binding 不能独自成为新 claim 来源。
 - `GraphNode` 与断言版本：物理节点的同版原文解释不可被后续关系判定覆盖；主体查询的信任另由有效精确入边及其 proof refs 冻结。边/属性载荷改变形成递增 revision；相同语义目标的模型尝试具有独立决策/证明身份，不原地改写旧证明。
 - `DependencyIndex`：精确版本的证明 AND/OR 依赖、语义范围订阅和失效闭包。晚到潜在冲突及断言资格撤回停止依赖使用；恢复父证明后，下游必须真正重验。

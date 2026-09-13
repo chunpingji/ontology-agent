@@ -167,3 +167,83 @@ def test_delta_rejects_unbounded_or_invalid_paths():
     ]:
         with pytest.raises(ValueError):
             apply_delta({"items": [1, 2]}, [operation])
+
+
+def test_many_delta_edits_copy_a_wide_ancestor_once_and_preserve_aliases():
+    class CountedDict(dict):
+        copies = 0
+
+        def __iter__(self):
+            return super().__iter__()
+
+        def keys(self):
+            type(self).copies += 1
+            return super().keys()
+
+    shared = CountedDict({str(index): index for index in range(1000)})
+    source = {"ledger": shared, "alias": shared}
+    edits = [{"op": "put", "path": ["ledger", str(index)], "value": -index - 1}
+             for index in range(1000)]
+    result = apply_delta(source, edits)
+    assert result["ledger"]["999"] == -1000
+    assert result["alias"] is shared and shared["999"] == 999
+    assert CountedDict.copies == 1
+    assert result["ledger"] is not shared
+
+
+def test_large_state_rebuild_and_patch_are_cooperatively_interruptible():
+    class Interrupted(RuntimeError):
+        pass
+
+    visits = []
+
+    def guard():
+        visits.append(1)
+        if len(visits) == 20:
+            raise Interrupted()
+
+    source = {str(index): index for index in range(1000)}
+    with pytest.raises(Interrupted):
+        snapshot_delta(source, check=guard)
+    assert len(visits) == 20
+    visits.clear()
+    with pytest.raises(Interrupted):
+        apply_delta(source, [{"op": "put", "path": [str(index)], "value": -1}
+                             for index in range(1000)], check=guard)
+    assert source["0"] == 0 and source["19"] == 19
+
+
+def test_graph_plan_mapping_avoids_rewriting_middle_list_payload(db, monkeypatch):
+    from app.services.document_analysis import state_artifacts
+
+    store = DocumentAnalysisRunStore(db)
+    run, token = seed(store, "graph-stable-plans")
+    monkeypatch.setattr(state_artifacts, "performance_policy",
+                        lambda *_: {"state_storage_version": 3})
+    plans = [{"plan_id": f"plan-{index}", "ledger": {"record": "large evidence " * 300}}
+             for index in range(100)]
+
+    def publish(value):
+        head = store.get_artifact_head(run.recognition_run_id, run.owner_id, "graph")
+        revision = head.revision if head else 0
+        prepared = state_artifacts.prepare_run_state(store, run, value, kind="graph")
+        state_artifacts.publish_prepared_state(store, run, token, prepared)
+        store.update_artifact(run.recognition_run_id, run.owner_id, token, artifact_kind="graph",
+                              expected_revision=revision,
+                              artifact_hash=content_hash(prepared.payload),
+                              artifact_id=f"graph:{revision + 1}", payload=prepared.payload,
+                              status="ready")
+        db.commit()
+        return prepared.payload
+
+    first = publish({"retrieval_plans": plans})
+    # The incident changed an early plan and appended a new one in the same
+    # batch. A list splice then included every unchanged plan in between.
+    changed = [{**plans[0], "status": "examined"}, *plans[1:],
+               {"plan_id": "new-plan", "ledger": {}}]
+    second = publish({"retrieval_plans": changed})
+    assert len(str(second["operations"])) < 1000
+    assert state_artifacts.decode_state(DocumentAnalysisRunStore(db), run, second) == {
+        "retrieval_plans": changed,
+    }
+    assert state_artifacts.decode_state(store, run, first) == {"retrieval_plans": plans}

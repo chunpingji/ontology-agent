@@ -213,3 +213,28 @@ test("indexes preserve separate subjects, predicates, properties and incomplete 
   assert.equal(index.properties.get("1:0"), undefined);
   assert.match(graphModule.branchProgress(index.coverage.get("1:1").get("field")), /1 条处理未完成/);
 });
+
+test("quantity properties show raw and normalized values with their own unit sources", () => {
+  const graph = graphFixture(1, 1);
+  graph.properties.push({
+    candidate_id: "quantity", subject_ref: { entity_id: "0:0" },
+    predicate_iri: "batch-min", predicate_label: "预计批量下限（kg）",
+    raw_value: "3800", normalized_value: "3.8", unit: "kg",
+    structural_valid: true, model_supported: true, policy_eligible: true, polarity: "affirmed",
+    source_selection_refs: { value: ["value-ref"], unit: ["unit-ref"], subject: [],
+      object: [], predicate_bridge: [], condition: [], counterevidence: [] },
+  });
+  const render = () => renderToStaticMarkup(React.createElement(graphModule.TemplateGraphTree,
+    { graph, select() {} }));
+  const html = render();
+  assert.match(html, /3800/);
+  assert.match(html, /规范化值：3\.8 kg/);
+  assert.match(html, /单位依据原文/);
+  assert.match(html, /系统验证通过/);
+  Object.assign(graph.properties[0], { normalized_value: null, unit: null,
+    structural_valid: false, policy_eligible: false,
+    reason: "数值/单位核验未通过：原文单位不兼容。模型语义说明：原文支持当前计划的批量下限。" });
+  const failed = render();
+  assert.match(failed, /原文单位不兼容/);
+  assert.doesNotMatch(failed, /规范化值/);
+});

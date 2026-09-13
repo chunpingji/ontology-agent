@@ -77,14 +77,21 @@ class Settings(BaseSettings):
     document_analysis_max_upload_bytes: int = 50 * 1024 * 1024
     document_analysis_retention_days: int = 7
     document_analysis_lease_seconds: int = 120
+    document_analysis_no_progress_timeout_seconds: float = Field(default=900, ge=120)
+    document_analysis_max_recovery_attempts_without_progress: int = Field(default=3, ge=1)
+    document_analysis_publish_timeout_seconds: float = Field(default=30, gt=0)
     document_analysis_dispatch_poll_seconds: float = 1.0
     document_analysis_dispatch_concurrency: int = 1
     document_analysis_sse_window_seconds: int = 30
     document_analysis_worker_id: str = "document-analysis-worker"
     document_analysis_max_model_calls_per_record: int = Field(default=6, ge=1, le=32)
     document_analysis_performance_enabled: bool = True
-    # New runs only; enable after source/protocol quality acceptance.
-    document_analysis_evidence_repair_enabled: bool = False
+    # New runs only. Enhanced retrieval is on; pruning requires reviewed calibration.
+    document_analysis_evidence_repair_enabled: bool = True
+    document_analysis_adaptive_retrieval_mode: Literal[
+        "disabled", "observation", "enhanced", "trial", "enforce"
+    ] = "enhanced"
+    document_analysis_adaptive_calibration_path: str = ""
     document_analysis_template_interleaving: bool = False
 
     # 022: optional offline ranking; independent from entity alignment and

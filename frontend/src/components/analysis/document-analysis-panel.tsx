@@ -78,6 +78,9 @@ import {
 } from "@/lib/api";
 import {
   DOCUMENT_ANALYSIS_STATUS_LABELS as RUN_STATUS_LABELS,
+  documentCoverageLabel,
+  documentCoverageScope,
+  documentRetrievalSummary,
   documentRankingPauseReasons,
   formatDocumentAnalysisDate as formatDate,
   formatDocumentAnalysisReason,
@@ -1009,10 +1012,17 @@ export function DocumentAnalysisPanel() {
 
                 <div className="grid gap-2 text-xs sm:grid-cols-2 xl:grid-cols-4">
                   <div className="rounded-md bg-muted/40 p-2"><span className="text-muted-foreground">运行水位</span><strong className="ml-2">revision {currentRun.run_revision} / event {currentRun.event_head}</strong></div>
-                  <div className="rounded-md bg-muted/40 p-2"><span className="text-muted-foreground">记录覆盖</span><strong className="ml-2">{currentRun.progress.records_examined} 已检 / {currentRun.progress.records_incomplete} 未完成 / {currentRun.progress.records_unattempted} 未尝试</strong></div>
+                  <div className="rounded-md bg-muted/40 p-2"><span className="text-muted-foreground">{documentCoverageLabel(currentRun.progress)}覆盖</span><strong className="ml-2">{currentRun.progress.records_examined} 已检 / {currentRun.progress.records_incomplete} 未完成 / {currentRun.progress.records_unattempted} 未尝试</strong></div>
+                  {currentRun.progress.retrieval_diagnostics && (
+                    <div className="rounded-md bg-muted/40 p-2 text-muted-foreground">
+                      {documentRetrievalSummary(currentRun.progress)}
+                    </div>
+                  )}
                   <div className="rounded-md bg-muted/40 p-2"><span className="text-muted-foreground">判定</span><strong className="ml-2">{currentRun.progress.decisions.supported} 支持 / {currentRun.progress.decisions.unsupported} 不支持 / {currentRun.progress.decisions.undetermined} 待定</strong></div>
                   <div className="rounded-md bg-muted/40 p-2"><Clock3 className="mr-1 inline size-3.5" /><span className="text-muted-foreground">保留至</span><strong className="ml-2">{formatDate(currentRun.expires_at)}</strong></div>
                 </div>
+
+                <p className="text-xs text-muted-foreground">{documentCoverageScope(currentRun.progress)}</p>
 
                 <div className="flex flex-wrap gap-2">
                   {Object.entries(currentRun.artifacts).map(([name, status]) => <Badge key={name} variant={status === "failed" ? "destructive" : "outline"}>{name}: {ARTIFACT_LABELS[status]}</Badge>)}

@@ -4,12 +4,23 @@
 
 ## Summary
 
-2026-09-11 剪枝评审修订仅更新设计，实施状态保持待开发。依据
+2026-09-13 候选完成与租约活性修复：按[候选完成契约](contracts/candidate-completion.md)
+先修订 021 FR-022/023/029 和本规范 FR-006/AR-005/PF-009，再在新运行冻结
+`candidate_planning=sparse-candidates-v1`。共享全文只作搜索域，按实际准入候选建立
+任务/台账；策略阶段结束与全文穷尽分开。公共 progress/coverage 暴露 candidate_policy，
+progress 使用 policy_complete，前端说明实际候选口径。旧运行不改身份或预算，新策略
+须新建运行；无进展旧运行有限恢复后失败并保留制品。受控工程、专用 PostgreSQL、真实
+模型质量和生产部署分别验收；不修改历史冻结评测输出。
+
+2026-09-11 后续启用授权：默认 `enhanced`，部署增强视图及 v4 搜索但不启用未经校准的低分剪枝。实施顺序：模式契约 → 默认值/Compose 注入 → 配置、无剪枝和恢复回归 → 保存在途任务后重新部署 → 核对实际策略、数据库版本和旧运行。此前关闭态验收记录保留为历史；专家质量门仍待完成。实际结果见[部署记录](adaptive-retrieval-deployment.md)。
+
+2026-09-11 后续实施授权已交付默认关闭的 v4 工程实现。依据
 [专题方案](../../docs/剪枝和增强语义检索视图方案.md)和
 [自适应检索契约](contracts/adaptive-retrieval.md)，先完成专题 AR-P0 契约闭合，再允许
-AR-P1 改变准入结果；闭合前只能做不改变运行结果的 instrumentation 原型。
-待实现政策为 `heuristic-first-v4`，不覆盖 v1/v2/v3 的补位、成功停搜、快照形状与冻结测试。
-本次不修改代码、不运行新实验、不部署；历史 P0–P5/IP/ER 完成项不作为 AR 阶段通过证据。
+AR-P1 改变线上准入结果；状态、空池、决策和恢复已有受控验证，样本材料与整体 P0 退出仍待完成。
+新增政策为 `heuristic-first-v4`，不覆盖 v1/v2/v3 的补位、成功停搜、快照形状与冻结测试。
+本次完成代码和隔离工程测试，未进行真实模型质量验收或部署；详见
+[实施记录](adaptive-retrieval-validation.md)。历史 P0–P5/IP/ER 完成项不作为 AR 阶段通过证据。
 
 2026-09-11按 [在线增量契约](contracts/incremental-performance.md)推进IP-001–IP-005：
 先实现有界基线/增量链及结构hash、写者缓存与原子恢复，再实现H2小批升级与失效停派，
@@ -78,10 +89,10 @@ H3有界补查及补搜等待配额；默认关闭，不接受恢复输入，不
 - 有界初值：pool 64、batch 16、discover/counterevidence 双意图、每意图至多一模板、整记录无法容纳则 not_rerankable；阶段冷启 1:1 后 4:1，每阶段五次一次原始台账探索。
 - 精排耗时/输入对/token/重试分开计账；持久模型调度复用已有 request ticket；配置冻结到 run fingerprint。
 
-## Adaptive Retrieval Review Gate（待实现）
+## Adaptive Retrieval Review Gate（工程已落地，质量门待验）
 
 专题任务使用 AR-P0–AR-P5 前缀，区别于 022 初始实施阶段。P0 文档写出目标契约不等于
-P0 已验收；下列代码/测试影响必须逐项闭合并由后续审查确认，才能实施主动剪枝：
+P0 已验收；下列代码/测试影响已按实施记录映射，样本与校准门继续约束线上启用：
 
 | 契约闭合项 | 后续代码与测试落点 | 必须保留或新增的判据 |
 |---|---|---|
@@ -91,7 +102,7 @@ P0 已验收；下列代码/测试影响必须逐项闭合并由后续审查确�
 | 命中归属与组映射 | `retrieval_views.py`、`semantic_retrieval.py`、H0–H2 检索与任务测试 | 锚点级 source/context/structure 归属；组 ID 映射原始 record，重叠去重、上下文成员不自动获得 coverage |
 | v4 冻结与恢复 | `heuristic_search.py` 白名单、`resume_state`、执行冻结/状态制品、旧快照测试 | 仅 v4 写 `resume_state.schema_version=1`；旧形状/hash/省略规则不变，v1 仍不支持恢复，v2/v3 严格相等恢复不变 |
 | 持久与成本 | `ranking_execution.py`、状态制品/增量保存、费用与崩溃测试 | 门评估引用、cache hit/miss、费用和决策先持久再准入；不复制 observations/原文/向量或新增平行全量台账 |
-| 覆盖与公开投影 | 核心 `contracts.py`、`public_projection.py`、公共 schema、`frontend/src/lib/api.ts` 及实际调用方 | `soft_pruned ⊆ unattempted`；复用 `adaptive_search_saturated` 的 paused 映射并补诊断；不修改覆盖恒等式或以剪枝完成全文 |
+| 覆盖与公开投影 | 核心 `contracts.py`、`public_projection.py`、公共 schema、`frontend/src/lib/api.ts` 及实际调用方 | 新候选模式只统计实际准入任务，soft_pruned 独立诊断；policy_complete 明确非全文穷尽。旧冻结运行保留原子集关系及 adaptive_search_saturated 暂停，覆盖恒等式不变 |
 | 长输入与视图版本 | 视图构建/精排和长输入反例 | 各视图独立可用性；`not_rerankable` 不产生低分；必要来源/反证受保护；P2/P3 后重新采集影子数据 |
 | 样本与质量门 | 新验证协议和评测制品，禁止识别输入混入参考 | 两份 HRS 都是开发暴露样本；未暴露保留样本与至少三个真实新 run 分别满足；金标隔离 |
 
@@ -185,3 +196,8 @@ RankingPolicy/模型身份/fingerprint；恢复以当前 run 控制值优先于�
 4. 真实质量先冻结独立标注与主指标；CPU 制品已就绪，缺专家标注和协议时保留 pending。P5 可选补充精排另列，不让其阻塞首期必要闭包。
 5. CUDA 增量由 T032 文档契约 → T033 适配器/冻结链，T034 隔离环境可并行；两者齐备后
    执行 T035 回归与 T036 同文档真实对照。只按实际结果更新 GPU 验收记录。
+
+
+后续低分剪枝授权：契约新增 trial → 保守后置门/公开待校准标记 → 本机模型分数冒烟与开发阈值制品 → 回归及配置核验 → 保存活动任务后部署并恢复原策略。独立专家验收继续待完成。
+
+低分剪枝试运行已按进一步授权实现并部署，54 项相关后端测试及前端检查通过；详见[启用记录](pruning-trial-deployment.md)。独立质量门仍待验。

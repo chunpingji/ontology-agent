@@ -554,4 +554,13 @@ test("template branch progress preserves unattempted and incomplete work", () =>
   assert.match(partial, /2 条处理未完成/);
   assert.match(partial, /7 条待检查/);
   assert.doesNotMatch(partial, /未识别|没有关系|已完成/);
+  const sparse = { candidate_policy: "sparse-candidates-v1", records_planned: 4,
+    records_examined: 2, records_incomplete: 1, records_unattempted: 1 };
+  const pending = progress(sparse);
+  assert.match(pending, /已核验 2\/4 项候选任务/);
+  assert.match(pending, /1 项技术未完成/);
+  assert.match(pending, /1 项待处理/);
+  assert.doesNotMatch(pending, /条原文|已完成/);
+  assert.equal(progress({ ...sparse, records_planned: 0, records_examined: 0,
+    records_incomplete: 0, records_unattempted: 0 }), "本轮尚无入选候选，原文未核验");
 });

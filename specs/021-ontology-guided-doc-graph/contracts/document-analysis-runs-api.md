@@ -183,6 +183,8 @@ GET /api/document-analysis/runs/{recognition_run_id}
     "graph": "partial"
   },
   "progress": {
+    "candidate_policy": "sparse-candidates-v1",
+    "completion": "incomplete",
     "tasks_attempted": 12,
     "model_calls": 20,
     "records_planned": 117,
@@ -323,6 +325,7 @@ GET /api/document-analysis/runs/{recognition_run_id}/graph?projection=effective_
   "relationships": [],
   "invalidated_refs": [],
   "coverage": {
+    "candidate_policy": "sparse-candidates-v1",
     "subjects": [],
     "records_planned": 117,
     "records_examined": 8,
@@ -349,6 +352,15 @@ Property/relationship item 还必须包含：
 - subject、object/value、predicate bridge、condition、counterevidence 的 `source_selection_refs`，不能只返回两端 span。
 
 根 seed 不计为抽取 TP；仅根的空图必须同时显示运行/coverage，不能称“全文无关系”。
+
+新运行的 `candidate_policy=sparse-candidates-v1` 表示 `records_*` 只统计实际准入的
+主体—谓词候选任务；同一原文跨槽位可分别计数，未入选全文记录属于搜索诊断而非
+unattempted。`progress.completion=policy_complete` 与
+`stop_reason=candidate_search_exhausted` 表示本轮策略结束，状态为 finished，
+不代表全文事实穷尽。失败、预算不足与未执行的必要补验仍阻止该完成结论；已完成
+核验的语义未决/冲突独立保留并展示，不要求其转为有效肯定事实才结束运行。
+旧载荷省略新字段、保留原冻结口径；完整判据与迁移见
+[候选完成契约](../../022-semantic-graph-closure/contracts/candidate-completion.md)。
 
 ## 6. 读取原文与定位
 

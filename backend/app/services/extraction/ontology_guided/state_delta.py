@@ -81,8 +81,10 @@ def _equal(left, right):
     return left == right
 
 
-def snapshot_delta(value, previous: JsonState | None = None, path=()):
+def snapshot_delta(value, previous: JsonState | None = None, path=(), *, check=None):
     """Return a detached tree and explicit operations from an optional prior tree."""
+    if check is not None:
+        check()
     if previous is not None and _equal(value, previous.value):
         return previous, []
     same_kind = previous is not None and _kind(value) is _kind(previous.value)
@@ -93,7 +95,7 @@ def snapshot_delta(value, previous: JsonState | None = None, path=()):
         old = previous.children if same_kind else {}
         children = {}
         for key, item in value.items():
-            children[key], edits = snapshot_delta(item, old.get(key), (*path, key))
+            children[key], edits = snapshot_delta(item, old.get(key), (*path, key), check=check)
             operations.extend(edits)
         for key in sorted(set(old) - set(value)):
             operations.append({"op": "remove", "path": [*path, key]})
@@ -106,7 +108,7 @@ def snapshot_delta(value, previous: JsonState | None = None, path=()):
         if len(value) == len(old):
             children = []
             for index, item in enumerate(value):
-                child, edits = snapshot_delta(item, old[index], (*path, index))
+                child, edits = snapshot_delta(item, old[index], (*path, index), check=check)
                 children.append(child)
                 operations.extend(edits)
         else:
@@ -121,7 +123,7 @@ def snapshot_delta(value, previous: JsonState | None = None, path=()):
             ):
                 suffix += 1
             middle = value[prefix:len(value) - suffix]
-            new = [snapshot_delta(item)[0] for item in middle]
+            new = [snapshot_delta(item, check=check)[0] for item in middle]
             children = [*old[:prefix], *new, *(old[len(old) - suffix:] if suffix else [])]
             operations = [{"op": "splice", "path": list(path), "index": prefix,
                            "delete_count": len(old) - prefix - suffix,
@@ -140,29 +142,44 @@ def snapshot_delta(value, previous: JsonState | None = None, path=()):
     return tree, operations
 
 
-def apply_delta(value, operations):
+def apply_delta(value, operations, *, check=None):
     """Strict path operations; clone only ancestors, leaving the prior version intact."""
+    # A large patch often updates thousands of keys under the same ledger. Keep
+    # each private ancestor clone for this application, rather than copying that
+    # whole ledger again for every operation. Object retention prevents id reuse;
+    # aliases in the input are detached separately when their own path is edited.
+    owned = {}
+
+    def mutable(current):
+        if id(current) in owned:
+            return current
+        result = dict(current) if isinstance(current, dict) else list(current)
+        owned[id(result)] = result
+        return result
+
     def change(current, path, edit):
         if not path:
             if edit["op"] == "put":
-                return snapshot_delta(edit["value"])[0].value
+                return snapshot_delta(edit["value"], check=check)[0].value
             if edit["op"] != "splice" or not isinstance(current, list):
                 raise ValueError("invalid state delta target")
             index, count = edit["index"], edit["delete_count"]
             if (type(index) is not int or type(count) is not int or index < 0 or count < 0
                     or index + count > len(current) or not isinstance(edit["values"], list)):
                 raise ValueError("invalid state delta splice")
-            additions = snapshot_delta(edit["values"])[0].value
-            return [*current[:index], *additions, *current[index + count:]]
+            additions = snapshot_delta(edit["values"], check=check)[0].value
+            result = mutable(current)
+            result[index:index + count] = additions
+            return result
         key, tail = path[0], path[1:]
         if isinstance(current, dict) and isinstance(key, str):
-            result = dict(current)
+            result = mutable(current)
             if not tail and edit["op"] == "remove":
                 if key not in result:
                     raise ValueError("state delta removes an absent key")
                 del result[key]
             elif not tail and edit["op"] == "put":
-                result[key] = snapshot_delta(edit["value"])[0].value
+                result[key] = snapshot_delta(edit["value"], check=check)[0].value
             else:
                 if key not in result:
                     raise ValueError("state delta path is absent")
@@ -170,12 +187,14 @@ def apply_delta(value, operations):
             return result
         if (isinstance(current, list) and type(key) is int and 0 <= key < len(current)
                 and edit["op"] != "remove"):
-            result = list(current)
+            result = mutable(current)
             result[key] = change(result[key], tail, edit)
             return result
         raise ValueError("invalid state delta path")
 
     for edit in operations:
+        if check is not None:
+            check()
         keys = {"put": {"op", "path", "value"}, "remove": {"op", "path"},
                 "splice": {"op", "path", "index", "delete_count", "values"}}
         if (not isinstance(edit, dict) or set(edit) != keys.get(edit.get("op"))

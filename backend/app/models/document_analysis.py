@@ -129,6 +129,13 @@ class DocumentAnalysisExecution(Base):
     worker_id: Mapped[str | None] = mapped_column(String(200))
     lease_expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     heartbeat_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    recovery_event_head: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, server_default="0"
+    )
+    recovery_attempts: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, server_default="0"
+    )
+    last_progress_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     pause_requested: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     cancel_requested: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)

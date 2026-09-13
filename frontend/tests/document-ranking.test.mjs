@@ -40,6 +40,46 @@ function render(artifact, runStatus, rankingBudgetEnabled) {
   }));
 }
 
+function renderTemplateSummary(candidatePolicy) {
+  const template = {};
+  vm.runInNewContext(ts.transpileModule(readFileSync(new URL(
+    "../src/components/analysis/template-document-graph-panel.tsx", import.meta.url), "utf8"), {
+    compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022,
+      jsx: ts.JsxEmit.ReactJSX },
+  }).outputText, {
+    exports: template,
+    require(name) {
+      if (name === "@/components/ui/use-document-tree") {
+        return { useDocumentTree: () => ({ getItems: () => [] }) };
+      }
+      if (name.startsWith("@/components/ui/")) {
+        return new Proxy({}, { get: () => ({ children }) => React.createElement("div", null, children) });
+      }
+      if (name === "@/lib/api") return { getIdentity: () => ({ username: "analyst", role: "senior_analyst" }) };
+      if (name === "@/lib/document-analysis") return reasons;
+      return require(name);
+    },
+  });
+  const coverage = { candidate_policy: candidatePolicy, records_planned: 4,
+    records_examined: 4, records_incomplete: 0, records_unattempted: 0, subjects: [] };
+  return renderToStaticMarkup(React.createElement(template.TemplateDocumentGraphPanel, { model: {
+    run: { status: "finished", available_actions: [], progress: { ...coverage,
+      tasks_attempted: 4, model_calls: 4 } },
+    graph: { entities: [], relationships: [], properties: [], coverage,
+      unresolved: { undetermined: 0, not_checked: 4 } },
+    projection: "effective_affirmed", select() {},
+  } }));
+}
+
+test("finished empty discoveries are not presented as unfinished candidate verification", () => {
+  const html = renderTemplateSummary("sparse-candidates-v1");
+  assert.match(html, /本轮识别完成/);
+  assert.match(html, /技术未完成 0 项/);
+  assert.match(html, /未形成判定（含未发现候选） 4 项/);
+  assert.doesNotMatch(html, /未完成核验 4 项/);
+  assert.match(renderTemplateSummary(undefined), /未完成核验 4 项/);
+});
+
 const ranking = {
   requested_mode: "semantic", actual_modes: ["deterministic"], degraded: true,
   reasons: ["ranking_timeout"], committed_epochs: 1,
@@ -59,6 +99,41 @@ test("committed ranking remains readable before the first graph snapshot", () =>
   assert.match(html, /counterevidence: -3/);
   assert.match(html, /原始分数不代表事实正确概率/);
   assert.match(html, /关系图谱尚未形成可读快照/);
+});
+
+test("candidate completion separates admitted tasks from unchecked search scope", () => {
+  const html = render({ availability: "ready", graph_snapshot: {}, entities: [],
+    properties: [], relationships: [], ranking,
+    coverage: { candidate_policy: "sparse-candidates-v1", records_planned: 2,
+      records_examined: 2, records_incomplete: 0, records_unattempted: 0,
+      pending_frontiers: 0, stop_reason: "candidate_search_exhausted", subjects: [],
+      retrieval_diagnostics: { records_soft_pruned: 100, records_reactivatable: 0 } },
+    unresolved: { undetermined: 1, unsupported: 2 },
+  }, "finished");
+  assert.match(html, /计划候选任务/);
+  assert.match(html, /本轮识别完成说明/);
+  assert.match(html, /搜索范围中 100 项/);
+  assert.match(html, /未入选原文未核验/);
+  assert.match(html, /不表示全文事实已穷尽/);
+  assert.match(html, /语义待定/);
+  assert.doesNotMatch(html, /未尝试范围中 100|覆盖未完成说明/);
+  assert.equal(reasons.DOCUMENT_ANALYSIS_STATUS_LABELS.finished, "本轮识别完成");
+  assert.equal(reasons.DOCUMENT_ANALYSIS_STATUS_LABELS.paused, "已暂停");
+  assert.equal(reasons.DOCUMENT_ANALYSIS_STATUS_LABELS.retryable_failure, "可恢复失败");
+});
+
+test("candidate technical and semantic failures remain visible before completion", () => {
+  const html = render({ availability: "partial", graph_snapshot: {}, entities: [],
+    properties: [], relationships: [], ranking,
+    coverage: { candidate_policy: "sparse-candidates-v1", records_planned: 3,
+      records_examined: 1, records_incomplete: 1, records_unattempted: 1,
+      pending_frontiers: 0, stop_reason: "task_budget_exhausted", subjects: [] },
+    unresolved: { undetermined: 1, unsupported: 0 },
+  }, "paused");
+  assert.match(html, /技术未完成/);
+  assert.match(html, /语义待定/);
+  assert.match(html, /覆盖未完成说明/);
+  assert.doesNotMatch(html, /本轮识别完成说明/);
 });
 
 test("coverage distinguishes retained phase plans from actual dispatch", () => {

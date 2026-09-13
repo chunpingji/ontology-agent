@@ -48,6 +48,7 @@ from app.services.extraction.ontology_guided.ontology_plan import (
     compile_local_menu,
     ontology_snapshot_from_engine,
 )
+from app.services.extraction.ontology_guided.value_constraints import UNIT_NORMALIZATION_VERSION
 
 PUBLIC_STATUS = {
     "queued": "queued",
@@ -188,6 +189,11 @@ def _progress(run: DocumentAnalysisRun) -> dict[str, Any]:
         "records_examined": int(source.get("records_examined", 0)),
         "records_incomplete": int(source.get("records_incomplete", 0)),
         "records_unattempted": int(source.get("records_unattempted", 0)),
+        **({"retrieval_diagnostics": source["retrieval_diagnostics"]}
+           if source.get("retrieval_diagnostics") is not None else {}),
+        **({"candidate_policy": source["candidate_policy"],
+            "completion": source.get("completion", "incomplete")}
+           if source.get("candidate_policy") is not None else {}),
         "phase_counts": {
             "phase1": int(phase_counts.get("phase1", 0)),
             "phase2": int(phase_counts.get("phase2", 0)),
@@ -310,6 +316,16 @@ class DocumentAnalysisApplication:
                 "所选类型不在当前本体或不符合根类型策略",
                 status_code=422,
             )
+        from app.services.document_analysis.adaptive_configuration import configured_adaptive_policy
+
+        try:
+            adaptive = configured_adaptive_policy(settings)
+        except (ValueError, OSError) as exc:
+            self.storage.discard_run(run_id)
+            raise DocumentAnalysisError(
+                "ADAPTIVE_CONFIGURATION_INVALID", "自适应检索配置或校准制品无效",
+                status_code=503, retryable=True,
+            ) from exc
         provisional_fingerprint = evidence_hash(
             {
                 "request_hash": request_digest,
@@ -337,7 +353,10 @@ class DocumentAnalysisApplication:
                 ranking_budget_enabled=settings.semantic_ranking_budget_enabled,
                 provisional_fingerprint=provisional_fingerprint,
                 recognition_run_id=run_id,
-                progress={},
+                progress=(
+                    {"candidate_policy": "sparse-candidates-v1", "completion": "incomplete"}
+                    if settings.document_analysis_evidence_repair_enabled else {}
+                ),
                 source_payload={
                     "filename": staged.filename,
                     "document_hash": staged.document_hash,
@@ -350,6 +369,7 @@ class DocumentAnalysisApplication:
                             or settings.document_analysis_evidence_repair_enabled
                         ),
                         **({"evidence_repair": "evidence-repair-v1",
+                            "candidate_planning": "sparse-candidates-v1",
                             "incremental_performance": "incremental-performance-v1",
                             "state_storage_version": 3,
                             "state_baseline_interval": 32,
@@ -357,11 +377,15 @@ class DocumentAnalysisApplication:
                             "process_granularity": "whole-method-field-v1",
                             "attribute_priority": "source-field-priority-v1",
                             "heuristic_policy": "heuristic-first-v3",
+                            **({"heuristic_policy": "heuristic-first-v4",
+                                "adaptive_retrieval": adaptive.model_dump(mode="json")}
+                               if adaptive else {}),
                             "field_bindings": "ir-field-bindings-v1",
                             "owner_binding": "source-owned-binding-v2",
                             "scope_protocol": "source-quoted-scope-v1",
                             "evidence_work": "evidence-work-v2",
                             "literal_quotes": "source-integer-quotes-v2",
+                            "unit_normalization": UNIT_NORMALIZATION_VERSION,
                             "proof_menu": "proof-menu-v1", "identity": "physical-mention-v1",
                             "model_call_state_version": 2, "max_lineage_calls": 8}
                            if settings.document_analysis_evidence_repair_enabled else {}),
@@ -615,6 +639,8 @@ class DocumentAnalysisApplication:
                     "budget_enabled": run.ranking_budget_enabled,
                 },
                 "coverage": {
+                    **({"candidate_policy": run.progress["candidate_policy"]}
+                       if (run.progress or {}).get("candidate_policy") is not None else {}),
                     "subjects": [],
                     "records_planned": 0,
                     "records_examined": 0,

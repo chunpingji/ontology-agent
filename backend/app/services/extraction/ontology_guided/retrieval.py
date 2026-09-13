@@ -7,6 +7,7 @@ from collections import defaultdict, deque
 
 from app.services.extraction.evidence_identity import evidence_hash, stable_id
 from app.services.extraction.ontology_guided.contracts import (
+    SPARSE_RETRIEVAL_POLICY_VERSION,
     EdgeSpec,
     MetadataSnapshot,
     PlannedRecord,
@@ -46,12 +47,27 @@ def plan_slot(
     *,
     ontology_hash: str,
     phase1_section_limit: int = 3,
+    sparse_candidates: bool = False,
 ) -> RetrievalPlan:
     """Partition all non-heading records into disjoint primary/fallback phases."""
     if phase1_section_limit < 1:
         raise ValueError("phase1_section_limit must be positive")
     if metadata.analysis_id != index.ir.analysis_id:
         raise ValueError("metadata and record index belong to different analyses")
+    if sparse_candidates:
+        from app.services.extraction.ontology_guided.candidate_planning import shared_scope
+
+        scope = shared_scope(index)[2]
+        return RetrievalPlan(
+            plan_id=stable_id("candidate-retrieval-plan", [
+                subject_ref, slot_spec, metadata.snapshot_id, ontology_hash, scope,
+                SPARSE_RETRIEVAL_POLICY_VERSION,
+            ]),
+            subject=subject_ref, predicate_iri=slot_spec.iri, predicate_kind=slot_spec.kind,
+            metadata_snapshot_id=metadata.snapshot_id, ontology_hash=ontology_hash,
+            phase1_section_limit=phase1_section_limit, records=[], ledger={},
+            policy_version=SPARSE_RETRIEVAL_POLICY_VERSION, search_scope_ref=dict(scope),
+        )
     terms = _terms(slot_spec)
     node_metadata = {node.node_id: node for node in metadata.node_summaries}
     grouped: dict[str, list[dict]] = defaultdict(list)
@@ -156,6 +172,16 @@ def plan_slot(
 
 def validate_record_universe(plan: RetrievalPlan, index: RecordIndex) -> None:
     """Compare with independently rebuilt U, not merely two mutable plan lists."""
+    from app.services.extraction.ontology_guided.candidate_planning import is_sparse, shared_scope
+
+    if is_sparse(plan):
+        _ids, universe, reference = shared_scope(index)
+        ids = [record.record_id for record in plan.records]
+        if (plan.search_scope_ref != reference or plan.frozen_record_ids or plan.frozen_record_hash
+                or len(ids) != len(set(ids)) or set(ids) != set(plan.ledger)
+                or not set(ids) <= universe):
+            raise ValueError("candidate plan differs from its shared record universe")
+        return
     expected = [record.record_id for record in index.records]
     if (
         plan.frozen_record_ids != expected
