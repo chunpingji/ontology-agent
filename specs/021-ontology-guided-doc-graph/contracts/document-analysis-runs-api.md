@@ -6,6 +6,8 @@
 
 前缀：`/api/document-analysis/runs`
 
+2026-09-14 状态存储补充：新建运行冻结 `state_storage_version=4`，按[当前状态契约](../../022-semantic-graph-closure/contracts/current-state.md)继续同一运行；没有历史检查点选择参数。API 的暂停/继续、公开图投影、部分完成状态及审核契约保持不变。服务端 `work_version`、`request_version`、`ranking_version` 分别管理工作与独立账目提交，公共 `run_revision` 继续用于客户端刷新及控制操作。已有文档分析运行按其原冻结格式读取和继续；这与下文禁止恢复旧 word 端点作业是不同范围。
+
 本契约完全替换旧 `POST /api/document-analysis/word`。不提供双读、双写、旧 response adapter、旧 checkpoint 恢复或算法选择开关。
 
 ## 1. 通用规则
@@ -51,6 +53,7 @@
 | 415 | UNSUPPORTED_SOURCE_TYPE | 非 `.doc`/`.docx` 或实际类型不符 |
 | 422 | EMPTY_SOURCE / INVALID_WORD / INVALID_ROOT_CLASS | 可读但不满足启动条件 |
 | 503 | ONTOLOGY_UNAVAILABLE | 创建前无法冻结/校验本体；不调用模型 |
+| 503 | ADAPTIVE_CONFIGURATION_INVALID | 自适应检索配置或校准制品无效；未创建运行、不调用模型，修正配置后可重试 |
 
 后台转换、摘要或模型故障在已创建 run 的 `status/error/progress` 中表示，不把已接受的 202 事后改成 HTTP 错误。
 

@@ -62,6 +62,7 @@ def project_graph(
     dependency_index: DependencyIndex | None = None,
     projection: str = "effective",
     artifact_status: str = "partial",
+    current_content_hash: str | None = None,
 ) -> GraphSnapshot:
     node_heads = {item.entity_id: item.revision for item in nodes}
     dependencies = dependency_index or DependencyIndex()
@@ -126,7 +127,9 @@ def project_graph(
         endpoint_ids.update(edge.object_ref.id for edge in selected_edges)
         endpoint_ids.update(item.subject_ref.id for item in selected_properties)
         selected_nodes = [item for item in nodes if item.entity_id in endpoint_ids]
-    payload = {
+    payload = None
+    if current_content_hash is None:
+        payload = {
         "recognition_run_id": recognition_run_id,
         "run_revision": run_revision,
         "event_head": event_head,
@@ -152,5 +155,5 @@ def project_graph(
         properties=selected_properties,
         coverage=coverage,
         progress=progress,
-        generated_from_hash=evidence_hash(payload),
+        generated_from_hash=current_content_hash or evidence_hash(payload),
     )

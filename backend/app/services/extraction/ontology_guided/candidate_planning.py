@@ -47,8 +47,11 @@ def admit_records(plan, index, record_ids, *, phase, epoch=None):
         raise ValueError("candidate admission is outside the shared source scope")
     if len(record_ids) != len(set(record_ids)):
         raise ValueError("candidate admission contains duplicate records")
-    records = list(plan.records)
-    ledger = dict(plan.ledger)
+    from app.services.extraction.ontology_guided.current_work import WorkMap
+
+    current = isinstance(plan.ledger, WorkMap)
+    records = plan.records if current else list(plan.records)
+    ledger = plan.ledger if current else dict(plan.ledger)
     ranks = {rid: rank for rank, rid in enumerate(epoch.ordered_record_ids, 1)} if epoch else {}
     for rid in record_ids:
         if rid in ledger:

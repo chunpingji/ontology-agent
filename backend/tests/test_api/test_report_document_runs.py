@@ -11,6 +11,14 @@ from app.config import settings
 from app.models.document_analysis import DocumentAnalysisArtifact, DocumentAnalysisRun
 from app.models.entity_shadow import EntityShadow
 from app.models.extraction import AnnotationExecution, ExtractionJob
+from app.services.document_analysis.adaptive_configuration import configured_adaptive_policy
+from app.services.extraction.evidence_identity import evidence_hash
+from app.services.extraction.ontology_guided.adaptive_retrieval import (
+    AdaptivePolicy,
+    CalibrationProfile,
+)
+from app.services.extraction.ontology_guided.ontology_lexical import RDFS_LABEL_IRI
+from app.services.extraction.ontology_guided.ontology_plan import ontology_snapshot_from_engine
 
 from .test_document_analysis import ROOT_IRI, _word_bytes
 
@@ -214,3 +222,102 @@ def test_run_can_replay_its_owned_original_after_library_copy_is_removed(
                           headers=analyst_headers)
     assert download.status_code == 200
     assert download.content == original
+
+
+@pytest.mark.parametrize(
+    "failure", ["repair_disabled", "calibration_missing", "calibration_invalid"],
+)
+def test_creation_reports_invalid_adaptive_configuration_without_creating_a_run(
+    client, db, analyst_headers, report_source, tmp_path, monkeypatch, failure,
+):
+    document, _job, path, dispatched = report_source
+    original = path.read_bytes()
+    monkeypatch.setattr(settings, "document_analysis_evidence_repair_enabled", True)
+    monkeypatch.setattr(settings, "document_analysis_adaptive_retrieval_mode", "trial")
+    profile = tmp_path / "calibration.json"
+    monkeypatch.setattr(settings, "document_analysis_adaptive_calibration_path", str(profile))
+    if failure == "repair_disabled":
+        monkeypatch.setattr(settings, "document_analysis_evidence_repair_enabled", False)
+        monkeypatch.setattr(settings, "document_analysis_adaptive_retrieval_mode", "enhanced")
+    elif failure == "calibration_invalid":
+        profile.write_text("{}", encoding="utf-8")
+
+    response = _post(client, analyst_headers, document, request_key="invalid-configuration")
+
+    assert response.status_code == 503, response.text
+    assert response.json() == {
+        "contract_version": "document-analysis-runs-v1",
+        "error": {
+            "code": "ADAPTIVE_CONFIGURATION_INVALID",
+            "message": "自适应检索配置或校准制品无效",
+            "retryable": True,
+            "current_revision": None,
+        },
+    }
+    assert db.scalar(select(func.count()).select_from(DocumentAnalysisRun)) == 0
+    assert db.scalar(select(func.count()).select_from(DocumentAnalysisArtifact)) == 0
+    assert not list(settings.document_analysis_storage_dir.iterdir())
+    assert path.read_bytes() == original
+    assert not dispatched
+
+
+def test_legacy_calibration_rejects_lexical_ontology_but_enhanced_creates_a_run(
+    client, db, analyst_headers, report_source, fake_engine, tmp_path, monkeypatch,
+):
+    document, _job, path, dispatched = report_source
+    original = path.read_bytes()
+    monkeypatch.setattr(fake_engine, "get_lexical_annotations", lambda iris: {
+        iri: [{"text": "CMC报告", "language": "zh", "predicate_iri": RDFS_LABEL_IRI}]
+        if iri == ROOT_IRI else [] for iri in iris
+    })
+    ontology = ontology_snapshot_from_engine(fake_engine, ROOT_IRI)
+    assert ontology.lexical_context is not None
+    policy = AdaptivePolicy(mode="observation")
+    legacy = CalibrationProfile(
+        model_hash="a" * 64,
+        view_version=policy.view_version,
+        view_configuration_hash=evidence_hash({key: getattr(policy, key) for key in (
+            "view_version", "sibling_limit", "ancestor_limit", "group_member_limit",
+        )}),
+        predicate_iris=[ontology.classes[ROOT_IRI].declared_relationships[0].iri],
+        dense_thresholds={"discover": -2, "counterevidence": -2},
+        self_thresholds={"discover": -2, "counterevidence": -2},
+        group_thresholds={"discover": 0, "counterevidence": 0},
+        rerank_thresholds={"discover": -8, "counterevidence": -8},
+        sample_manifest_hash="b" * 64,
+        expert_review_hash="c" * 64,
+    )
+    profile = tmp_path / "legacy-calibration.json"
+    profile.write_text(legacy.model_dump_json(), encoding="utf-8")
+    monkeypatch.setattr(settings, "document_analysis_evidence_repair_enabled", True)
+    monkeypatch.setattr(settings, "document_analysis_adaptive_retrieval_mode", "trial")
+    monkeypatch.setattr(settings, "document_analysis_adaptive_calibration_path", str(profile))
+    configured = configured_adaptive_policy(settings)
+    assert configured.calibration.query_version == "subject-slot-query-v1"
+    assert configured.calibration.ontology_hash is None
+    assert configured.calibration.lexical_context_hash is None
+
+    rejected = _post(client, analyst_headers, document, request_key="lexical-source")
+
+    assert rejected.status_code == 503, rejected.text
+    assert rejected.json()["error"]["code"] == "ADAPTIVE_CONFIGURATION_INVALID"
+    assert rejected.json()["error"]["retryable"] is True
+    assert db.scalar(select(func.count()).select_from(DocumentAnalysisRun)) == 0
+    assert db.scalar(select(func.count()).select_from(DocumentAnalysisArtifact)) == 0
+    assert not list(settings.document_analysis_storage_dir.iterdir())
+    assert path.read_bytes() == original
+    assert not dispatched
+
+    monkeypatch.setattr(settings, "document_analysis_adaptive_retrieval_mode", "enhanced")
+    accepted = _post(client, analyst_headers, document, request_key="lexical-source")
+
+    assert accepted.status_code == 202, accepted.text
+    run = db.get(DocumentAnalysisRun, accepted.json()["recognition_run_id"])
+    source = db.get(DocumentAnalysisArtifact, run.source_artifact_ref)
+    frozen_policy = source.payload["performance_policy"]["adaptive_retrieval"]
+    assert frozen_policy["mode"] == "enhanced"
+    assert frozen_policy["calibration"] is None
+    assert run.ontology_snapshot_hash == ontology.ontology_hash
+    assert db.scalar(select(func.count()).select_from(DocumentAnalysisRun)) == 1
+    assert dispatched == [run.recognition_run_id]
+    assert path.read_bytes() == original

@@ -2,6 +2,8 @@
 
 from copy import deepcopy
 
+import pytest
+
 from app.config import settings
 from app.services.document_analysis import execution as execution_service
 from app.services.extraction.ontology_guided.semantic_reranker import RankingPolicy, RankingService
@@ -13,8 +15,9 @@ from tests.test_extraction.test_document_analysis_execution_recovery import (
 from tests.test_extraction.test_semantic_ranking import RankingModel
 
 
+@pytest.mark.parametrize("current_state", [False, True])
 def test_disable_resumes_original_budget_pause_and_freezes_budget_accounting(
-    client, db, analyst_headers, tmp_path, monkeypatch,
+    client, db, analyst_headers, tmp_path, monkeypatch, current_state,
 ):
     monkeypatch.setattr(settings, "semantic_ranking_budget_enabled", True)
     monkeypatch.setattr(settings, "evidence_max_tasks", 2)
@@ -33,6 +36,7 @@ def test_disable_resumes_original_budget_pause_and_freezes_budget_accounting(
     ))
     run_id = _create_pending_run(
         client, analyst_headers, tmp_path, monkeypatch, key="switch-budget-execution",
+        current_state=current_state,
     )
     store, token = _claim(db, run_id)
     execution_service._execute_claimed(db, store, store.get_owned(run_id, "analyst"), token)

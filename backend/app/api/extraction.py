@@ -1830,6 +1830,8 @@ def list_reports(
     identity: Identity = Depends(get_current_user),
 ):
     """List all historical reports for a job (011 FR-API-002)."""
+    from app.services.reporting.report_listing import visible_report_conditions
+
     job = db.get(ExtractionJob, job_id)
     if not job:
         raise HTTPException(404, "作业不存在")
@@ -1837,13 +1839,7 @@ def list_reports(
         db.query(GeneratedReport)
         .filter(
             GeneratedReport.job_id == job_id,
-            or_(GeneratedReport.report_type != "batch_record_demo",
-                GeneratedReport.actor == identity.username),
-            GeneratedReport.deleted_at.is_(None),
-            or_(
-                GeneratedReport.report_status == "completed",
-                and_(GeneratedReport.report_status.is_(None), GeneratedReport.file_size > 0),
-            ),
+            *visible_report_conditions(identity.username),
         )
         .order_by(GeneratedReport.created_at.desc())
         .all()

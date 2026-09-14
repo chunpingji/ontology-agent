@@ -38,20 +38,28 @@ def prepare_read_artifacts(store, run, *, kind, payload):
             "invalidated": dependencies.get("invalidated", []),
         }
         ontology_ref = store.get_artifact(run.recognition_run_id, run.owner_id, "ontology_snapshot")
-        ontology_artifact = store.db.get(DocumentAnalysisArtifact, ontology_ref.artifact_id)
-        ontology = OntologySnapshot.model_validate(ontology_artifact.payload)
+        cached = getattr(store, "_display_ontology", None)
+        if cached is None or cached[0] != ontology_ref.artifact_id:
+            ontology_artifact = store.db.get(DocumentAnalysisArtifact, ontology_ref.artifact_id)
+            cached = (ontology_ref.artifact_id,
+                      OntologySnapshot.model_validate(ontology_artifact.payload), {})
+            store._display_ontology = cached
+        ontology, class_menus = cached[1:]
         menus = {}
         for entity in payload["graph"]["nodes"]:
             if entity["class_iri"] not in ontology.classes:
                 continue
-            menu = compile_local_menu(ontology, SubjectRef(
-                entity_id=entity["entity_id"], revision=entity["revision"],
-                class_iri=entity["class_iri"], is_document_root=entity.get("root", False),
-            ))
-            menus[entity["entity_id"]] = [
-                {"predicate_iri": item.iri, "predicate_label": item.label, "kind": item.kind}
-                for item in [*menu.relationships, *menu.properties]
-            ]
+            menu_key = (entity["class_iri"], entity.get("root", False))
+            if menu_key not in class_menus:
+                menu = compile_local_menu(ontology, SubjectRef(
+                    entity_id=entity["entity_id"], revision=entity["revision"],
+                    class_iri=entity["class_iri"], is_document_root=entity.get("root", False),
+                ))
+                class_menus[menu_key] = [
+                    {"predicate_iri": item.iri, "predicate_label": item.label, "kind": item.kind}
+                    for item in [*menu.relationships, *menu.properties]
+                ]
+            menus[entity["entity_id"]] = class_menus[menu_key]
         compact["predicate_menus"] = menus
         compact["evidence_repair"] = payload.get("evidence_repair", {})
         outputs["public_graph"] = compact

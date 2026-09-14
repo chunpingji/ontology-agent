@@ -1,0 +1,864 @@
+{
+  "date": "2026-09-14",
+  "scope": "live business data; local gateway; Next development mode; one sample per mode",
+  "measurements": [
+    {
+      "mode": "fresh_browser",
+      "titleReadyMs": 804,
+      "listReadyMs": 1384,
+      "errorCount": 0,
+      "navigation": {
+        "ttfb": 73.39999997615814,
+        "domContentLoaded": 410.7000000476837
+      },
+      "api": [
+        {
+          "kind": "reports",
+          "method": "GET",
+          "status": 200,
+          "bytes": 7410,
+          "bodyUnavailable": false,
+          "count": 25,
+          "total": 92,
+          "timing": {
+            "start": 775.5390625,
+            "requestStart": 51.976,
+            "responseStart": 79.989,
+            "responseEnd": 82.007
+          }
+        },
+        {
+          "kind": "documents",
+          "method": "GET",
+          "status": 200,
+          "bytes": 3264,
+          "bodyUnavailable": false,
+          "count": 4,
+          "total": 4,
+          "timing": {
+            "start": 774.6279296875,
+            "requestStart": 49.754,
+            "responseStart": 85.555,
+            "responseEnd": 87.793
+          }
+        }
+      ],
+      "scriptCount": 21,
+      "scriptDecodedBytes": 4725986,
+      "scriptTransferredBytes": 910011,
+      "largestScripts": [
+        {
+          "path": "/_next/static/chunks/node_modules_next_dist_compiled_react-dom_096_9a-._.js",
+          "type": "script",
+          "start": 107.60000002384186,
+          "duration": 73.10000002384186,
+          "transfer": 184040,
+          "decoded": 1057980,
+          "protocol": "http/1.1"
+        },
+        {
+          "path": "/_next/static/chunks/node_modules_next_dist_client_0r5nbpw._.js",
+          "type": "script",
+          "start": 108.10000002384186,
+          "duration": 64.89999997615814,
+          "transfer": 152645,
+          "decoded": 748200,
+          "protocol": "http/1.1"
+        },
+        {
+          "path": "/_next/static/chunks/node_modules_next_dist_compiled_next-devtools_index_090k2jm.js",
+          "type": "script",
+          "start": 107.60000002384186,
+          "duration": 57.5,
+          "transfer": 218109,
+          "decoded": 746551,
+          "protocol": "http/1.1"
+        },
+        {
+          "path": "/_next/static/chunks/node_modules_0062lzq._.js",
+          "type": "script",
+          "start": 109.79999995231628,
+          "duration": 96.60000002384186,
+          "transfer": 78920,
+          "decoded": 589227,
+          "protocol": "http/1.1"
+        },
+        {
+          "path": "/_next/static/chunks/node_modules_1dl7mpl._.js",
+          "type": "script",
+          "start": 108.79999995231628,
+          "duration": 67.40000009536743,
+          "transfer": 54635,
+          "decoded": 323754,
+          "protocol": "http/1.1"
+        },
+        {
+          "path": "/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js",
+          "type": "script",
+          "start": 108.29999995231628,
+          "duration": 58.700000047683716,
+          "transfer": 46342,
+          "decoded": 248032,
+          "protocol": "http/1.1"
+        },
+        {
+          "path": "/_next/static/chunks/node_modules_187ag3b._.js",
+          "type": "script",
+          "start": 109.29999995231628,
+          "duration": 85.30000007152557,
+          "transfer": 32938,
+          "decoded": 232104,
+          "protocol": "http/1.1"
+        },
+        {
+          "path": "/_next/static/chunks/src_0hh4byi._.js",
+          "type": "script",
+          "start": 109.20000004768372,
+          "duration": 79.69999992847443,
+          "transfer": 31435,
+          "decoded": 178621,
+          "protocol": "http/1.1"
+        }
+      ],
+      "longTasks": [
+        {
+          "start": 232.39999997615814,
+          "duration": 175
+        },
+        {
+          "start": 534.8999999761581,
+          "duration": 86
+        },
+        {
+          "start": 621.6000000238419,
+          "duration": 124
+        },
+        {
+          "start": 857.5,
+          "duration": 253
+        },
+        {
+          "start": 1144.1000000238419,
+          "duration": 196
+        }
+      ],
+      "paint": [
+        {
+          "name": "first-paint",
+          "start": 216
+        },
+        {
+          "name": "first-contentful-paint",
+          "start": 512
+        }
+      ],
+      "resourceCount": 58,
+      "failedRequests": [
+        {
+          "path": "/api/entities",
+          "error": "net::ERR_ABORTED"
+        },
+        {
+          "path": "/api/reports",
+          "error": "net::ERR_ABORTED"
+        }
+      ],
+      "editorResources": [],
+      "fonts": [
+        {
+          "path": "/_next/static/media/inter-latin-700-normal.4421omqeymgmp.woff2",
+          "type": "css",
+          "start": 628.1000000238419,
+          "duration": 130.29999995231628,
+          "transfer": 24656,
+          "decoded": 24356,
+          "protocol": "http/1.1"
+        },
+        {
+          "path": "/_next/static/media/inter-latin-600-normal.2dov6rjg62vru.woff2",
+          "type": "css",
+          "start": 628.3999999761581,
+          "duration": 131.39999997615814,
+          "transfer": 24752,
+          "decoded": 24452,
+          "protocol": "http/1.1"
+        },
+        {
+          "path": "/_next/static/media/inter-latin-400-normal.2qdljeg3s-lsl.woff2",
+          "type": "css",
+          "start": 628.6000000238419,
+          "duration": 136.39999997615814,
+          "transfer": 23964,
+          "decoded": 23664,
+          "protocol": "http/1.1"
+        },
+        {
+          "path": "/_next/static/media/inter-latin-500-normal.1d14jwmkqqa0f.woff2",
+          "type": "css",
+          "start": 628.7000000476837,
+          "duration": 141.39999997615814,
+          "transfer": 24572,
+          "decoded": 24272,
+          "protocol": "http/1.1"
+        },
+        {
+          "path": "/_next/static/media/noto-sans-sc-118-400-normal.1fhj3m7dk3i7y.woff2",
+          "type": "css",
+          "start": 654,
+          "duration": 120.10000002384186,
+          "transfer": 25020,
+          "decoded": 24720,
+          "protocol": "http/1.1"
+        },
+        {
+          "path": "/_next/static/media/noto-sans-sc-117-400-normal.0jez0twjtb6gw.woff2",
+          "type": "css",
+          "start": 654.1000000238419,
+          "duration": 123.19999992847443,
+          "transfer": 28164,
+          "decoded": 27864,
+          "protocol": "http/1.1"
+        },
+        {
+          "path": "/_next/static/media/noto-sans-sc-115-400-normal.1-25t82pu_xdy.woff2",
+          "type": "css",
+          "start": 654.1000000238419,
+          "duration": 127.10000002384186,
+          "transfer": 30268,
+          "decoded": 29968,
+          "protocol": "http/1.1"
+        },
+        {
+          "path": "/_next/static/media/noto-sans-sc-114-400-normal.0aj6z_evf_02o.woff2",
+          "type": "css",
+          "start": 654.2000000476837,
+          "duration": 130.89999997615814,
+          "transfer": 31012,
+          "decoded": 30712,
+          "protocol": "http/1.1"
+        },
+        {
+          "path": "/_next/static/media/noto-sans-sc-113-400-normal.2jw7kd_isnh_p.woff2",
+          "type": "css",
+          "start": 654.2999999523163,
+          "duration": 133.90000009536743,
+          "transfer": 31296,
+          "decoded": 30996,
+          "protocol": "http/1.1"
+        },
+        {
+          "path": "/_next/static/media/noto-sans-sc-112-400-normal.0ga4m302gs6t0.woff2",
+          "type": "css",
+          "start": 654.2999999523163,
+          "duration": 138.60000002384186,
+          "transfer": 30772,
+          "decoded": 30472,
+          "protocol": "http/1.1"
+        },
+        {
+          "path": "/_next/static/media/noto-sans-sc-116-400-normal.0h_qovb466wo7.woff2",
+          "type": "css",
+          "start": 672.3999999761581,
+          "duration": 123.39999997615814,
+          "transfer": 28420,
+          "decoded": 28120,
+          "protocol": "http/1.1"
+        },
+        {
+          "path": "/_next/static/media/noto-sans-sc-119-400-normal.3euzl1429cgiy.woff2",
+          "type": "css",
+          "start": 677.5,
+          "duration": 121.5,
+          "transfer": 41588,
+          "decoded": 41288,
+          "protocol": "http/1.1"
+        },
+        {
+          "path": "/_next/static/media/noto-sans-sc-110-400-normal.0-r9nzt4v86-6.woff2",
+          "type": "css",
+          "start": 677.6000000238419,
+          "duration": 124.19999992847443,
+          "transfer": 32976,
+          "decoded": 32676,
+          "protocol": "http/1.1"
+        },
+        {
+          "path": "/_next/static/media/noto-sans-sc-118-700-normal.2odh0b8prxw-v.woff2",
+          "type": "css",
+          "start": 686.2000000476837,
+          "duration": 118.39999997615814,
+          "transfer": 25316,
+          "decoded": 25016,
+          "protocol": "http/1.1"
+        },
+        {
+          "path": "/_next/static/media/noto-sans-sc-116-700-normal.2n_6r9bkud7l-.woff2",
+          "type": "css",
+          "start": 686.2000000476837,
+          "duration": 121.19999992847443,
+          "transfer": 28864,
+          "decoded": 28564,
+          "protocol": "http/1.1"
+        },
+        {
+          "path": "/_next/static/media/noto-sans-sc-111-700-normal.25izriznp3wt0.woff2",
+          "type": "css",
+          "start": 701.1000000238419,
+          "duration": 110.39999997615814,
+          "transfer": 34072,
+          "decoded": 33772,
+          "protocol": "http/1.1"
+        },
+        {
+          "path": "/_next/static/media/noto-sans-sc-114-700-normal.1j9m35thidz03.woff2",
+          "type": "css",
+          "start": 702.8999999761581,
+          "duration": 111.20000004768372,
+          "transfer": 31516,
+          "decoded": 31216,
+          "protocol": "http/1.1"
+        },
+        {
+          "path": "/_next/static/media/noto-sans-sc-119-500-normal.3nhduq20b9kav.woff2",
+          "type": "css",
+          "start": 708.5,
+          "duration": 108.20000004768372,
+          "transfer": 41900,
+          "decoded": 41600,
+          "protocol": "http/1.1"
+        },
+        {
+          "path": "/_next/static/media/noto-sans-sc-118-500-normal.0hvvasi6ozfs1.woff2",
+          "type": "css",
+          "start": 708.5,
+          "duration": 110.20000004768372,
+          "transfer": 25108,
+          "decoded": 24808,
+          "protocol": "http/1.1"
+        },
+        {
+          "path": "/_next/static/media/noto-sans-sc-111-400-normal.0d5tt-la4fok_.woff2",
+          "type": "css",
+          "start": 718,
+          "duration": 103.20000004768372,
+          "transfer": 33464,
+          "decoded": 33164,
+          "protocol": "http/1.1"
+        },
+        {
+          "path": "/_next/static/media/noto-sans-sc-119-700-normal.0ndoqw0pjivrm.woff2",
+          "type": "css",
+          "start": 719.7999999523163,
+          "duration": 103.60000002384186,
+          "transfer": 43140,
+          "decoded": 42840,
+          "protocol": "http/1.1"
+        },
+        {
+          "path": "/_next/static/media/noto-sans-sc-117-700-normal.3e4rk6xd31hla.woff2",
+          "type": "css",
+          "start": 723,
+          "duration": 103.79999995231628,
+          "transfer": 28684,
+          "decoded": 28384,
+          "protocol": "http/1.1"
+        },
+        {
+          "path": "/_next/static/media/noto-sans-sc-115-700-normal.39lru3dgpfmxo.woff2",
+          "type": "css",
+          "start": 723.1000000238419,
+          "duration": 105,
+          "transfer": 30784,
+          "decoded": 30484,
+          "protocol": "http/1.1"
+        },
+        {
+          "path": "/_next/static/media/noto-sans-sc-114-500-normal.0_qtnrohv-sud.woff2",
+          "type": "css",
+          "start": 724.8999999761581,
+          "duration": 104.89999997615814,
+          "transfer": 31400,
+          "decoded": 31100,
+          "protocol": "http/1.1"
+        },
+        {
+          "path": "/_next/static/media/noto-sans-sc-117-500-normal.3duiuop1bnjmg.woff2",
+          "type": "css",
+          "start": 734.8999999761581,
+          "duration": 96,
+          "transfer": 28456,
+          "decoded": 28156,
+          "protocol": "http/1.1"
+        },
+        {
+          "path": "/_next/static/media/noto-sans-sc-116-500-normal.08v1pz6yfn82n.woff2",
+          "type": "css",
+          "start": 735.1000000238419,
+          "duration": 96.69999992847443,
+          "transfer": 28668,
+          "decoded": 28368,
+          "protocol": "http/1.1"
+        },
+        {
+          "path": "/_next/static/media/noto-sans-sc-115-500-normal.08gyg26numd1r.woff2",
+          "type": "css",
+          "start": 1118.2000000476837,
+          "duration": 28.59999990463257,
+          "transfer": 30632,
+          "decoded": 30332,
+          "protocol": "http/1.1"
+        },
+        {
+          "path": "/_next/static/media/noto-sans-sc-112-500-normal.23orqusc449vw.woff2",
+          "type": "css",
+          "start": 1119.1000000238419,
+          "duration": 28.299999952316284,
+          "transfer": 31120,
+          "decoded": 30820,
+          "protocol": "http/1.1"
+        },
+        {
+          "path": "/_next/static/media/noto-sans-sc-113-500-normal.0v1el-ui13nzv.woff2",
+          "type": "css",
+          "start": 1119.7000000476837,
+          "duration": 28.899999976158142,
+          "transfer": 31732,
+          "decoded": 31432,
+          "protocol": "http/1.1"
+        },
+        {
+          "path": "/_next/static/media/noto-sans-sc-108-400-normal.03eyzx4a73w06.woff2",
+          "type": "css",
+          "start": 1125.8999999761581,
+          "duration": 23.200000047683716,
+          "transfer": 34444,
+          "decoded": 34144,
+          "protocol": "http/1.1"
+        }
+      ]
+    },
+    {
+      "mode": "reload",
+      "titleReadyMs": 291,
+      "listReadyMs": 612,
+      "errorCount": 0,
+      "navigation": {
+        "ttfb": 71.89999997615814,
+        "domContentLoaded": 160.79999995231628
+      },
+      "api": [
+        {
+          "kind": "documents",
+          "method": "GET",
+          "status": 200,
+          "bytes": 3264,
+          "bodyUnavailable": false,
+          "count": 4,
+          "total": 4,
+          "timing": {
+            "start": 281.567138671875,
+            "requestStart": 5.715,
+            "responseStart": 26.597,
+            "responseEnd": 28.507
+          }
+        },
+        {
+          "kind": "reports",
+          "method": "GET",
+          "status": 200,
+          "bytes": 7410,
+          "bodyUnavailable": false,
+          "count": 25,
+          "total": 92,
+          "timing": {
+            "start": 282.8701171875,
+            "requestStart": 4.595,
+            "responseStart": 46.909,
+            "responseEnd": 48.76
+          }
+        }
+      ],
+      "scriptCount": 21,
+      "scriptDecodedBytes": 4725986,
+      "scriptTransferredBytes": 6300,
+      "largestScripts": [
+        {
+          "path": "/_next/static/chunks/node_modules_next_dist_compiled_react-dom_096_9a-._.js",
+          "type": "script",
+          "start": 79.5,
+          "duration": 32.799999952316284,
+          "transfer": 300,
+          "decoded": 1057980,
+          "protocol": ""
+        },
+        {
+          "path": "/_next/static/chunks/node_modules_next_dist_client_0r5nbpw._.js",
+          "type": "script",
+          "start": 79.70000004768372,
+          "duration": 32.799999952316284,
+          "transfer": 300,
+          "decoded": 748200,
+          "protocol": ""
+        },
+        {
+          "path": "/_next/static/chunks/node_modules_next_dist_compiled_next-devtools_index_090k2jm.js",
+          "type": "script",
+          "start": 79.39999997615814,
+          "duration": 29.5,
+          "transfer": 300,
+          "decoded": 746551,
+          "protocol": ""
+        },
+        {
+          "path": "/_next/static/chunks/node_modules_0062lzq._.js",
+          "type": "script",
+          "start": 80.5,
+          "duration": 49.89999997615814,
+          "transfer": 300,
+          "decoded": 589227,
+          "protocol": ""
+        },
+        {
+          "path": "/_next/static/chunks/node_modules_1dl7mpl._.js",
+          "type": "script",
+          "start": 80,
+          "duration": 36.799999952316284,
+          "transfer": 300,
+          "decoded": 323754,
+          "protocol": ""
+        },
+        {
+          "path": "/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js",
+          "type": "script",
+          "start": 79.79999995231628,
+          "duration": 27.700000047683716,
+          "transfer": 300,
+          "decoded": 248032,
+          "protocol": ""
+        },
+        {
+          "path": "/_next/static/chunks/node_modules_187ag3b._.js",
+          "type": "script",
+          "start": 80.29999995231628,
+          "duration": 42.200000047683716,
+          "transfer": 300,
+          "decoded": 232104,
+          "protocol": ""
+        },
+        {
+          "path": "/_next/static/chunks/src_0hh4byi._.js",
+          "type": "script",
+          "start": 80.20000004768372,
+          "duration": 40.799999952316284,
+          "transfer": 300,
+          "decoded": 178621,
+          "protocol": ""
+        }
+      ],
+      "longTasks": [
+        {
+          "start": 198.60000002384186,
+          "duration": 55
+        },
+        {
+          "start": 364.5,
+          "duration": 204
+        }
+      ],
+      "paint": [
+        {
+          "name": "first-paint",
+          "start": 136
+        },
+        {
+          "name": "first-contentful-paint",
+          "start": 192
+        }
+      ],
+      "resourceCount": 57,
+      "failedRequests": [
+        {
+          "path": "/api/entities",
+          "error": "net::ERR_ABORTED"
+        },
+        {
+          "path": "/api/reports",
+          "error": "net::ERR_ABORTED"
+        }
+      ],
+      "editorResources": [],
+      "fonts": [
+        {
+          "path": "/_next/static/media/inter-latin-400-normal.2qdljeg3s-lsl.woff2",
+          "type": "css",
+          "start": 102.39999997615814,
+          "duration": 0,
+          "transfer": 0,
+          "decoded": 23664,
+          "protocol": "http/1.1"
+        },
+        {
+          "path": "/_next/static/media/inter-latin-500-normal.1d14jwmkqqa0f.woff2",
+          "type": "css",
+          "start": 102.89999997615814,
+          "duration": 0,
+          "transfer": 0,
+          "decoded": 24272,
+          "protocol": "http/1.1"
+        },
+        {
+          "path": "/_next/static/media/inter-latin-600-normal.2dov6rjg62vru.woff2",
+          "type": "css",
+          "start": 103.39999997615814,
+          "duration": 0,
+          "transfer": 0,
+          "decoded": 24452,
+          "protocol": "http/1.1"
+        },
+        {
+          "path": "/_next/static/media/inter-latin-700-normal.4421omqeymgmp.woff2",
+          "type": "css",
+          "start": 103.89999997615814,
+          "duration": 0,
+          "transfer": 0,
+          "decoded": 24356,
+          "protocol": "http/1.1"
+        },
+        {
+          "path": "/_next/static/media/noto-sans-sc-108-400-normal.03eyzx4a73w06.woff2",
+          "type": "css",
+          "start": 109.20000004768372,
+          "duration": 0,
+          "transfer": 0,
+          "decoded": 34144,
+          "protocol": "http/1.1"
+        },
+        {
+          "path": "/_next/static/media/noto-sans-sc-110-400-normal.0-r9nzt4v86-6.woff2",
+          "type": "css",
+          "start": 109.79999995231628,
+          "duration": 0,
+          "transfer": 0,
+          "decoded": 32676,
+          "protocol": "http/1.1"
+        },
+        {
+          "path": "/_next/static/media/noto-sans-sc-111-400-normal.0d5tt-la4fok_.woff2",
+          "type": "css",
+          "start": 109.89999997615814,
+          "duration": 0,
+          "transfer": 0,
+          "decoded": 33164,
+          "protocol": "http/1.1"
+        },
+        {
+          "path": "/_next/static/media/noto-sans-sc-112-400-normal.0ga4m302gs6t0.woff2",
+          "type": "css",
+          "start": 110,
+          "duration": 0,
+          "transfer": 0,
+          "decoded": 30472,
+          "protocol": "http/1.1"
+        },
+        {
+          "path": "/_next/static/media/noto-sans-sc-113-400-normal.2jw7kd_isnh_p.woff2",
+          "type": "css",
+          "start": 110.20000004768372,
+          "duration": 0,
+          "transfer": 0,
+          "decoded": 30996,
+          "protocol": "http/1.1"
+        },
+        {
+          "path": "/_next/static/media/noto-sans-sc-114-400-normal.0aj6z_evf_02o.woff2",
+          "type": "css",
+          "start": 110.39999997615814,
+          "duration": 0,
+          "transfer": 0,
+          "decoded": 30712,
+          "protocol": "http/1.1"
+        },
+        {
+          "path": "/_next/static/media/noto-sans-sc-115-400-normal.1-25t82pu_xdy.woff2",
+          "type": "css",
+          "start": 110.60000002384186,
+          "duration": 0,
+          "transfer": 0,
+          "decoded": 29968,
+          "protocol": "http/1.1"
+        },
+        {
+          "path": "/_next/static/media/noto-sans-sc-116-400-normal.0h_qovb466wo7.woff2",
+          "type": "css",
+          "start": 110.70000004768372,
+          "duration": 0,
+          "transfer": 0,
+          "decoded": 28120,
+          "protocol": "http/1.1"
+        },
+        {
+          "path": "/_next/static/media/noto-sans-sc-117-400-normal.0jez0twjtb6gw.woff2",
+          "type": "css",
+          "start": 110.79999995231628,
+          "duration": 0,
+          "transfer": 0,
+          "decoded": 27864,
+          "protocol": "http/1.1"
+        },
+        {
+          "path": "/_next/static/media/noto-sans-sc-118-400-normal.1fhj3m7dk3i7y.woff2",
+          "type": "css",
+          "start": 111,
+          "duration": 0,
+          "transfer": 0,
+          "decoded": 24720,
+          "protocol": "http/1.1"
+        },
+        {
+          "path": "/_next/static/media/noto-sans-sc-119-400-normal.3euzl1429cgiy.woff2",
+          "type": "css",
+          "start": 111.20000004768372,
+          "duration": 0,
+          "transfer": 0,
+          "decoded": 41288,
+          "protocol": "http/1.1"
+        },
+        {
+          "path": "/_next/static/media/noto-sans-sc-112-500-normal.23orqusc449vw.woff2",
+          "type": "css",
+          "start": 118.89999997615814,
+          "duration": 0,
+          "transfer": 0,
+          "decoded": 30820,
+          "protocol": "http/1.1"
+        },
+        {
+          "path": "/_next/static/media/noto-sans-sc-113-500-normal.0v1el-ui13nzv.woff2",
+          "type": "css",
+          "start": 119.10000002384186,
+          "duration": 0,
+          "transfer": 0,
+          "decoded": 31432,
+          "protocol": "http/1.1"
+        },
+        {
+          "path": "/_next/static/media/noto-sans-sc-114-500-normal.0_qtnrohv-sud.woff2",
+          "type": "css",
+          "start": 119.20000004768372,
+          "duration": 0,
+          "transfer": 0,
+          "decoded": 31100,
+          "protocol": "http/1.1"
+        },
+        {
+          "path": "/_next/static/media/noto-sans-sc-115-500-normal.08gyg26numd1r.woff2",
+          "type": "css",
+          "start": 119.39999997615814,
+          "duration": 0,
+          "transfer": 0,
+          "decoded": 30332,
+          "protocol": "http/1.1"
+        },
+        {
+          "path": "/_next/static/media/noto-sans-sc-116-500-normal.08v1pz6yfn82n.woff2",
+          "type": "css",
+          "start": 119.5,
+          "duration": 0,
+          "transfer": 0,
+          "decoded": 28368,
+          "protocol": "http/1.1"
+        },
+        {
+          "path": "/_next/static/media/noto-sans-sc-117-500-normal.3duiuop1bnjmg.woff2",
+          "type": "css",
+          "start": 119.70000004768372,
+          "duration": 0,
+          "transfer": 0,
+          "decoded": 28156,
+          "protocol": "http/1.1"
+        },
+        {
+          "path": "/_next/static/media/noto-sans-sc-118-500-normal.0hvvasi6ozfs1.woff2",
+          "type": "css",
+          "start": 119.89999997615814,
+          "duration": 0,
+          "transfer": 0,
+          "decoded": 24808,
+          "protocol": "http/1.1"
+        },
+        {
+          "path": "/_next/static/media/noto-sans-sc-119-500-normal.3nhduq20b9kav.woff2",
+          "type": "css",
+          "start": 120,
+          "duration": 0,
+          "transfer": 0,
+          "decoded": 41600,
+          "protocol": "http/1.1"
+        },
+        {
+          "path": "/_next/static/media/noto-sans-sc-111-700-normal.25izriznp3wt0.woff2",
+          "type": "css",
+          "start": 128.70000004768372,
+          "duration": 0,
+          "transfer": 0,
+          "decoded": 33772,
+          "protocol": "http/1.1"
+        },
+        {
+          "path": "/_next/static/media/noto-sans-sc-114-700-normal.1j9m35thidz03.woff2",
+          "type": "css",
+          "start": 129,
+          "duration": 0,
+          "transfer": 0,
+          "decoded": 31216,
+          "protocol": "http/1.1"
+        },
+        {
+          "path": "/_next/static/media/noto-sans-sc-115-700-normal.39lru3dgpfmxo.woff2",
+          "type": "css",
+          "start": 129.20000004768372,
+          "duration": 0,
+          "transfer": 0,
+          "decoded": 30484,
+          "protocol": "http/1.1"
+        },
+        {
+          "path": "/_next/static/media/noto-sans-sc-116-700-normal.2n_6r9bkud7l-.woff2",
+          "type": "css",
+          "start": 129.29999995231628,
+          "duration": 0,
+          "transfer": 0,
+          "decoded": 28564,
+          "protocol": "http/1.1"
+        },
+        {
+          "path": "/_next/static/media/noto-sans-sc-117-700-normal.3e4rk6xd31hla.woff2",
+          "type": "css",
+          "start": 129.39999997615814,
+          "duration": 0,
+          "transfer": 0,
+          "decoded": 28384,
+          "protocol": "http/1.1"
+        },
+        {
+          "path": "/_next/static/media/noto-sans-sc-118-700-normal.2odh0b8prxw-v.woff2",
+          "type": "css",
+          "start": 129.60000002384186,
+          "duration": 0,
+          "transfer": 0,
+          "decoded": 25016,
+          "protocol": "http/1.1"
+        },
+        {
+          "path": "/_next/static/media/noto-sans-sc-119-700-normal.0ndoqw0pjivrm.woff2",
+          "type": "css",
+          "start": 129.79999995231628,
+          "duration": 0,
+          "transfer": 0,
+          "decoded": 42840,
+          "protocol": "http/1.1"
+        }
+      ]
+    }
+  ]
+}

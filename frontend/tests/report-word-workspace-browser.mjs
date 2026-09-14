@@ -32,7 +32,7 @@ const bundle = await build({ stdin: { contents: entry, resolveDir: frontend, loa
   define: { "process.env.NODE_ENV": '"development"', "process.env.NEXT_PUBLIC_API_URL": '""' } });
 const requests = [], errors = [], held = [];
 const runs = new Map();
-let holdSource = false, failSource = false, failCreate = false;
+let holdSource = false, failSource = false, failCreate = null;
 const content = (id) => ({ type: "doc", content: [
   { type: "heading", attrs: { level: 1, sourceBlockId: `heading-${id}` },
     content: [{ type: "text", text: `章节 ${id}` }] },
@@ -75,7 +75,7 @@ const server = createServer(async (request, response) => {
     const key = `${caller}:${id}`;
     if (url.pathname.endsWith("/runs")) {
       if (request.method === "POST") {
-        if (failCreate) { json(response, { error: { message: "识别服务暂不可用" } }, 503); return; }
+        if (failCreate) { json(response, failCreate.body, failCreate.status); return; }
         runs.set(key, run(id));
         json(response, { recognition_run_id: `run-${id}` }, 202);
       } else json(response, { run: runs.get(key) ?? null });
@@ -107,11 +107,13 @@ try {
   await expect(page.locator(".tiptap")).toContainText("原件正文 a");
   assert.equal(posts().length, 0);
   // Failed writes retain their key so retry cannot accidentally create a second run.
-  failCreate = true;
+  failCreate = { status: 503, body: { error: {
+    code: "ADAPTIVE_CONFIGURATION_INVALID", message: "自适应检索配置或校准制品无效",
+  } } };
   await page.getByRole("button", { name: "开始识别", exact: true }).click();
-  await expect(page.getByRole("alert")).toContainText("识别服务暂不可用");
+  await expect(page.getByRole("alert")).toContainText("自适应检索配置或校准制品无效");
   const firstKey = JSON.parse(posts()[0].body).request_key;
-  failCreate = false;
+  failCreate = null;
   await page.getByRole("button", { name: "开始识别", exact: true }).click();
   await expect(page.locator('[data-entity-id="root-a"]')).toContainText("新图谱 a");
   assert.equal(JSON.parse(posts()[1].body).request_key, firstKey);
@@ -119,6 +121,20 @@ try {
   await page.reload();
   await expect(page.locator('[data-entity-id="root-a"]')).toContainText("新图谱 a");
   assert.equal(posts().length, 2);
+  // A server contract error during rerun is not a failure to read the Word original.
+  failCreate = { status: 422, body: { detail: {
+    code: "CONTRACT_SCHEMA_INVALID", diagnostics: [{ schema_path: "error.code", message: "Invalid code" }],
+  } } };
+  await page.getByRole("button", { name: "重新识别", exact: true }).click();
+  await expect(page.getByRole("alert")).toContainText("服务响应格式异常，请稍后重试。");
+  await expect(page.getByRole("alert")).not.toContainText("文档读取失败");
+  await expect(page.locator(".tiptap")).toContainText("原件正文 a");
+  const rerunKey = JSON.parse(posts()[2].body).request_key;
+  assert.notEqual(rerunKey, firstKey);
+  failCreate = null;
+  await page.getByRole("button", { name: "重新识别", exact: true }).click();
+  await expect(page.getByRole("alert")).toHaveCount(0);
+  assert.equal(JSON.parse(posts()[3].body).request_key, rerunKey);
   // Another caller never reuses the previous caller's graph cache.
   await page.getByRole("button", { name: "switch caller" }).click();
   await expect(page.getByText("尚未开始识别。", { exact: true })).toBeVisible();
@@ -142,13 +158,13 @@ try {
   failSource = false;
   await page.getByRole("button", { name: "刷新", exact: true }).click();
   await expect(page.locator(".tiptap")).toContainText("原件正文 b");
-  assert.equal(posts().length, 2);
+  assert.equal(posts().length, 4);
   assert.ok(requests.every((request) => !request.path.startsWith("/api/extraction")));
   assert.equal(requests.filter((request) => /\/runs\/run-[^/]+\/source$/.test(request.path)).length, 0,
     "metadata already carries the original content; no duplicate full source read");
   assert.deepEqual(errors, []);
   console.log(JSON.stringify({ ok: true, checks: ["preview", "outline", "read-only refresh", "explicit create",
-    "idempotent retry", "restore run", "owner isolation", "late response isolation", "source error and retry"],
+    "idempotent retry", "rerun contract error", "restore run", "owner isolation", "late response isolation", "source error and retry"],
     requests: requests.length, posts: posts().length }));
 } finally {
   for (const pending of held) pending.response.destroy();

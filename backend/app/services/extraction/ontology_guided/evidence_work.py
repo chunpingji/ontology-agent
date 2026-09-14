@@ -24,6 +24,8 @@ class EvidenceWorkQueue:
     def observe(self, task, outcome, context, predicate, protocol):
         lineage = task.claim_lineage_id
         existing = self.items.get(lineage)
+        if existing is not None and hasattr(self.items, "touch"):
+            self.items.touch(lineage)
         if (
             existing
             and task.retry_kind
@@ -153,6 +155,8 @@ class EvidenceWorkQueue:
         return self._task(work)
 
     def _task(self, work):
+        if hasattr(self.items, "touch"):
+            self.items.touch(work["original_task"]["claim_lineage_id"])
         task = RecognitionTask.model_validate(work["original_task"])
         return RecognitionTask.create(
             subject=task.subject,
@@ -177,6 +181,8 @@ class EvidenceWorkQueue:
             task = RecognitionTask.model_validate(work["original_task"])
             if not subject_is_active(task.subject):
                 work["missing_facets"] = ["parent_not_effective"]
+                if hasattr(self.items, "touch"):
+                    self.items.touch(task.claim_lineage_id)
                 continue
             active = sum(
                 w["slot"] == work["slot"] and w["status"] == "queued" for w in self.items.values()

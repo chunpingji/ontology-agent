@@ -1,5 +1,37 @@
 # Quickstart
 
+## 当前状态暂停继续（2026-09-14）
+
+新运行冻结 `state_storage_version=4`，无需前端存储格式开关。运行部署需包含
+`0040_current_recognition_state` 迁移；2026-09-14 已按后续授权实际迁移业务库并重启后端。
+旧运行仍使用原格式，无自动升级或历史制品清理。行为及结果见
+[当前状态契约](contracts/current-state.md)和[验证记录](current-state-validation.md)。
+
+在 `backend/` 运行定向隔离检查（合成输入，不调用真实模型）：
+
+```bash
+.venv/bin/python -m pytest -p no:cacheprovider -q -s \
+  tests/test_extraction/test_current_work_resume.py \
+  tests/test_extraction/test_document_current_state.py \
+  tests/test_extraction/test_current_state_transactions.py \
+  tests/test_extraction/test_current_state_migration.py \
+  tests/test_extraction/test_document_analysis_budget_execution.py
+```
+
+`test_current_state_transactions.py` 的 PostgreSQL 竞争用例及
+`test_evidence_repair_postgresql.py` 只接受显式配置的专用可销毁
+`DOCUMENT_ANALYSIS_TEST_DATABASE_URL`；未配置时 skip，不自动连接业务库。
+
+本机已配置独立数据库及 Git 忽略的 `backend/.env.postgresql-test`。在仓库根目录运行以下
+入口会自动载入测试连接并执行 PostgreSQL 验收（本次 **20 passed、0 skipped**）：
+
+```bash
+backend/.venv/bin/python backend/scripts/test_document_analysis_postgresql.py
+```
+
+测试会清空独立库的测试表，同库串行执行。账号、初始化边界及指定模块的用法见
+[PostgreSQL 测试说明](../../backend/tests/POSTGRESQL.md)。
+
 ## 候选台账与本轮完成（2026-09-13）
 
 先核对[候选完成契约](contracts/candidate-completion.md)与 CC 任务状态；以下为验收

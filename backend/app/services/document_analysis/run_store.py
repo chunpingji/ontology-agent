@@ -1057,7 +1057,8 @@ class DocumentAnalysisRunStore:
         batch_hash: str,
         first_sequence: int,
         last_sequence: int,
-        checkpoint_artifact_id: str,
+        checkpoint_artifact_id: str | None = None,
+        committed_work_version: int | None = None,
     ) -> DocumentRecognitionEventBatch:
         """Append one immutable, fenced batch receipt in the caller transaction."""
 
@@ -1095,9 +1096,12 @@ class DocumentAnalysisRunStore:
                     is None
                 ):
                     raise HeadConflict("batch event range is not owned by this run")
-            checkpoint = self.db.get(DocumentAnalysisArtifact, checkpoint_artifact_id)
-            if checkpoint is None or checkpoint.artifact_kind != "recognition_checkpoint":
-                raise ArtifactConflict("batch checkpoint artifact is missing or invalid")
+            if checkpoint_artifact_id is not None:
+                checkpoint = self.db.get(DocumentAnalysisArtifact, checkpoint_artifact_id)
+                if checkpoint is None or checkpoint.artifact_kind != "recognition_checkpoint":
+                    raise ArtifactConflict("batch checkpoint artifact is missing or invalid")
+            elif committed_work_version != run.work_version or not committed_work_version:
+                raise HeadConflict("batch current work version is invalid")
             row = DocumentRecognitionEventBatch(
                 recognition_run_id=run.recognition_run_id,
                 batch_id=batch_id,
@@ -1105,6 +1109,7 @@ class DocumentAnalysisRunStore:
                 first_sequence=first_sequence,
                 last_sequence=last_sequence,
                 checkpoint_artifact_id=checkpoint_artifact_id,
+                committed_work_version=committed_work_version,
                 created_at=self._clock(),
             )
             self.db.add(row)

@@ -114,6 +114,7 @@ def repair_operations(db, run):
         {**deepcopy(row.payload), "operation_id": str(row.operation_id),
          "review_id": str(row.review_id), "status": row.status,
          "base_checkpoint_artifact_id": row.base_checkpoint_artifact_id,
+         "base_work_version": row.base_work_version,
          "result": deepcopy(row.result)} for row in rows
     ]
 
@@ -257,6 +258,19 @@ class DocumentPropertyReviewService:
         return row
 
     def _checkpoint(self, run):
+        from types import SimpleNamespace
+
+        from app.services.document_analysis.current_state import enabled, get_row
+
+        if enabled(self.store, run):
+            control = get_row(self.store, run, "work:control")
+            if control is None or control["run_fingerprint"] != run.run_fingerprint:
+                raise HeadConflict("current repair boundary is missing or invalid")
+            return SimpleNamespace(artifact_id=None, content_hash=content_hash(control)), {
+                "work_version": run.work_version,
+                "completed_tasks": control["completed_tasks"],
+                "run_fingerprint": run.run_fingerprint,
+            }
         reference = self.store.get_artifact(
             run.recognition_run_id, run.owner_id, "recognition_checkpoint",
         )
@@ -301,6 +315,15 @@ class DocumentPropertyReviewService:
             prop["candidate_id"] == candidate.candidate_id
             for prop in item.get("outcome", {}).get("properties", [])
         )), None)
+        if "work_version" in checkpoint:
+            import json
+
+            from app.services.document_analysis.current_state import get_row
+
+            origin = get_row(self.store, run, "work:candidate_tasks",
+                             json.dumps(candidate.candidate_id, ensure_ascii=False,
+                                        separators=(",", ":")))
+            original = origin["value"] if origin else None
         if original is None:
             raise DocumentAnalysisError(
                 "REPAIR_UNAVAILABLE", "候选缺少可回放原始任务", status_code=409,
@@ -333,7 +356,8 @@ class DocumentPropertyReviewService:
         return {
             "sequence": run.event_head + 1,
             "reason": request.reason, "reason_code": request.reason_code,
-            "after_outcomes": len(outcomes), "subject_ref": prop["subject_ref"],
+            "after_outcomes": checkpoint.get("completed_tasks", len(outcomes)),
+            "subject_ref": prop["subject_ref"],
             "predicate_iri": prop["predicate_iri"], "original_task": original,
             "record_ids": list(dict.fromkeys(records))[:16],
             "source_record_count": len(set(records)),
@@ -437,7 +461,9 @@ class DocumentPropertyReviewService:
                 request_key=request.request_key,
                 request_hash=content_hash(request.model_dump(mode="json")),
                 base_checkpoint_artifact_id=reference.artifact_id, status="queued",
-                payload={"after_outcomes": len(checkpoint.get("task_outcomes", [])),
+                base_work_version=checkpoint.get("work_version"),
+                payload={"after_outcomes": checkpoint.get("completed_tasks", len(
+                    checkpoint.get("task_outcomes", []))),
                          "origin_execution_status": run.execution_status,
                          "base_checkpoint_content_hash": reference.content_hash,
                          "target": target, "max_tasks": 16, "max_model_calls": 32},

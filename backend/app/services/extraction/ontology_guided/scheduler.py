@@ -109,6 +109,95 @@ class FrontierScheduler:
             "root": {}, "child": {},
         }
 
+    _work_maps = (
+        "subject_turns", "kind_turns", "predicate_turns", "section_turns", "phase_turns",
+        "phase_counts", "arrival", "template_turns", "source_priority_tasks", "source_turns",
+    )
+
+    def enable_current_state(self, *, restored=False):
+        from app.services.extraction.ontology_guided.current_work import WorkMap, WorkSet
+
+        for name in self._work_maps:
+            values = WorkMap(getattr(self, "_" + name))
+            if restored:
+                values.changed.clear()
+            setattr(self, "_" + name, values)
+        self._seen = WorkSet(self._seen)
+        self._raw_priority_slots = WorkSet(self._raw_priority_slots)
+        self._logical_frontiers = WorkMap(self._logical_frontiers, encode=lambda f: {
+            "subject": f.subject.model_dump(mode="json"), "predicate_iri": f.predicate_iri,
+            "predicate_kind": f.predicate_kind, "hop": f.hop, "dependency_hash": f.dependency_hash,
+            "root_branch": f.root_branch, "arrival_start": f.arrival_start,
+            "template_priority": f.template_priority, "content_hash": f.content_hash,
+            "record_count": len(f.records),
+        })
+        self._logical_records = WorkMap(encode=lambda r: {
+            "record": [r.record_id, r.phase, r.section_node_id, r.source_position],
+            "pending": r.pending, "arrival": r.arrival, "frontier": list(r.frontier.key),
+            "ranking_epoch_seq": r.ranking_epoch_seq, "pool_rank": r.pool_rank,
+        })
+        for frontier in self._logical_frontiers.values():
+            for record in frontier.records:
+                self._touch_frontier(record)
+        if restored:
+            self._seen.changes.changed.clear()
+            self._raw_priority_slots.changes.changed.clear()
+            self._logical_frontiers.changed.clear()
+            self._logical_records.changed.clear()
+
+    def current_changes(self):
+        control = {
+            "root": [item.model_dump(mode="json") for item in self._root
+                     if not isinstance(item, LogicalRecord)],
+            "child": [item.model_dump(mode="json") for item in self._child
+                      if not isinstance(item, LogicalRecord)],
+            "retries": [item.model_dump(mode="json") for item in self._retries],
+            "turn": self._turn, "dispatched": self.dispatched,
+            "unexplored_frontier": list(self.unexplored_frontier),
+            "fresh_since_retry": self._fresh_since_retry,
+            "ranking_sequence": self._ranking_sequence,
+            "phase_interleaving": self.phase_interleaving,
+            "schema_version": 2 if self._lazy_format else 1,
+            "next_arrival": self._next_arrival,
+            "template_interleaving": self.template_interleaving,
+        }
+        return {"scheduler:control": {"current": control}, **{
+            "scheduler:" + name: getattr(self, "_" + name).drain()
+            for name in (*self._work_maps, "seen", "raw_priority_slots", "logical_frontiers",
+                         "logical_records")}}
+
+    @classmethod
+    def from_current(cls, rows, **limits):
+        from app.services.extraction.ontology_guided.current_work import WorkMap
+
+        raw = dict(rows["scheduler:control"]["current"])
+        for name in cls._work_maps:
+            raw[name] = dict(WorkMap.load(rows.get("scheduler:" + name, {})))
+        for name in ("seen", "raw_priority_slots"):
+            raw[name] = [row["key"] for row in rows.get("scheduler:" + name, {}).values()]
+        raw["logical_frontiers"] = []
+        records = {}
+        for row in rows.get("scheduler:logical_records", {}).values():
+            value = row["value"]
+            records.setdefault(tuple(value["frontier"]), []).append(value)
+        for row in rows.get("scheduler:logical_frontiers", {}).values():
+            value = dict(row["value"])
+            items = sorted(records.get(tuple(row["key"]), []), key=lambda r: r["arrival"])
+            if value.pop("record_count") != len(items):
+                raise ValueError("current frontier is missing logical records")
+            value["records"] = [r["record"] for r in items]
+            value["consumed"] = [i for i, r in enumerate(items) if not r["pending"]]
+            value["ranks"] = [[i, r["ranking_epoch_seq"], r["pool_rank"]]
+                              for i, r in enumerate(items) if r["ranking_epoch_seq"] is not None]
+            raw["logical_frontiers"].append(value)
+        result = cls.from_snapshot(raw, **limits)
+        result.enable_current_state(restored=True)
+        return result
+
+    def _touch_frontier(self, task):
+        if isinstance(task, LogicalRecord) and hasattr(self, "_logical_records"):
+            self._logical_records[(*task.frontier.key, task.record_id)] = task
+
     def _bucket_key(self, task):
         return (*self._slot_key(task), task.predicate_kind)
 
@@ -117,6 +206,7 @@ class FrontierScheduler:
         bucket[self._arrival_of(task)] = task
 
     def _index_remove(self, task, branch):
+        self._touch_frontier(task)
         key = self._bucket_key(task)
         bucket = self._branch_buckets[branch][key]
         del bucket[self._arrival_of(task)]
@@ -160,6 +250,7 @@ class FrontierScheduler:
         queue = self._root if root_branch else self._child
         admitted = 0
         for record in frontier.records:
+            self._touch_frontier(record)
             if self._dedup_key(record) in self._seen or hop > self.max_hops:
                 record.pending = False
                 continue
@@ -181,6 +272,8 @@ class FrontierScheduler:
         for frontier in self._logical_frontiers.values():
             if frontier.slot_key == key:
                 frontier.template_priority = True
+                if hasattr(self._logical_frontiers, "touch"):
+                    self._logical_frontiers.touch(frontier.key)
 
     def prioritize_source(self, task, sources):
         if task.predicate_kind != "property" or task.subject.is_document_root or not sources:
@@ -417,6 +510,7 @@ class FrontierScheduler:
                     if task.retry_kind is None:
                         self._index_remove(task, "root" if queue is self._root else "child")
                     if isinstance(task, LogicalRecord):
+                        self._touch_frontier(task)
                         task.pending = False
                     discarded.append(task)
         return discarded
@@ -450,6 +544,7 @@ class FrontierScheduler:
                         continue
                     if isinstance(task, LogicalRecord):
                         task.ranking_epoch_seq = sequence
+                        self._touch_frontier(task)
                         task.pool_rank = ranks[task.record_id]
                     else:
                         queue[position] = task.model_copy(
@@ -472,6 +567,7 @@ class FrontierScheduler:
                     if isinstance(task, LogicalRecord):
                         key = task.frontier.slot_key
                         blocked[key] = blocked.get(key, 0) + 1
+                        self._touch_frontier(task)
                         task.pending = False
                     else:
                         self.unexplored_frontier.append({
@@ -557,7 +653,7 @@ class FrontierScheduler:
                 "template_turns": dict(self._template_turns),
                 **({"raw_priority_slots": [list(key) for key in sorted(self._raw_priority_slots)]}
                    if self._raw_priority_slots else {}),
-                **({"source_priority_tasks": self._source_priority_tasks,
+                **({"source_priority_tasks": dict(self._source_priority_tasks),
                     "source_turns": dict(self._source_turns)}
                    if self._source_priority_tasks else {}),
             })

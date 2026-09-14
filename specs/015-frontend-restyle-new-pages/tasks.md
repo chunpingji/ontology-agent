@@ -258,6 +258,15 @@ Add US2 → US3 → US4 (each a first-class P2 page, `/approvals` superseded at 
 
 ## Notes
 
+### 2026-09-14 报告列表优化
+
+- [x] RC01 按用户明确需求更新摘要分页契约和实施边界。
+- [x] RC02 后端直接分页查询摘要列，复用现有报告可见性过滤。
+- [x] RC03 前端并行加载、追加报告页、保留上传/删除及用户隔离；拆出轻量工具。
+- [x] RC04 验证权限、分页、大字段隔离、浏览器请求/资源及必要静态检查，记录结果。
+
+以下 Notes 为历史 015 范围，此次优化按 RC 契约验证。
+
 - **No automated tests** by design (plan.md, Constitution IV scoped) — validation is the executable [quickstart.md](quickstart.md); the per-phase quickstart tasks (T031, T039, T046, T055, T062, T067, T071, T072) are the "does it work" gates.
 - `[P]` = different files, no incomplete dependency. `[Story]` maps each task to its user story for traceability.
 - **Invariants to hold in every relevant task**: credentials as env-var-name references only (no plaintext); role gating (senior_analyst/operator/qa) unchanged; tokens only (no raw palette); zh-CN; offline-first (bundled fonts/icons; air-gap-from-cloud is normal, not an error); no new backend endpoint/logic (FR-027).

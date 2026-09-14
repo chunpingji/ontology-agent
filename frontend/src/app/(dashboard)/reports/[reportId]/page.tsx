@@ -46,18 +46,19 @@ import {
   ReadingPane,
   REPORT_SECTIONS,
   resolveDocumentContent,
-  saveBlob,
 } from "@/components/reports/reading-pane";
 import {
   decidePdeConflict,
   downloadReportById,
   getPdeConflictDecision,
-  listReportCenterItems,
+  resolveReportCenterItem,
   VersionConflictError,
   type PdeDecisionChoice,
   type ReportOrDocument,
 } from "@/lib/api";
 import { cn } from "@/lib/utils";
+import { saveBlob } from "@/lib/file-utils";
+import { useIdentity } from "@/lib/use-identity";
 
 type ReadonlyParams = Pick<URLSearchParams, "get">;
 
@@ -128,6 +129,7 @@ const DEFAULT_GRAPH_WIDTH = 300;
 const MIN_GRAPH_WIDTH = 220;
 
 export default function ReportDetailPage() {
+  const { identity, role } = useIdentity();
   const params = useParams();
   const searchParams = useSearchParams();
   const queryClient = useQueryClient();
@@ -138,15 +140,15 @@ export default function ReportDetailPage() {
     [routeKey, searchParams],
   );
 
-  // 深链回退：query 参数不足时，重新聚合并按 key 查回条目。
+  // 深链回退：仅 query 参数不足时按摘要查回条目，正常列表导航无需重复查询。
   const fallback = useQuery({
-    queryKey: ["report-center-resolve", routeKey],
-    queryFn: () => listReportCenterItems({ maxJobs: 100 }),
+    queryKey: ["report-center-resolve", identity.username, role, routeKey],
+    queryFn: ({ signal }) => resolveReportCenterItem(routeKey, signal),
     enabled: !paramItem,
   });
 
   const item: ReportOrDocument | null =
-    paramItem ?? fallback.data?.items.find((entry) => entry.key === routeKey) ?? null;
+    paramItem ?? fallback.data ?? null;
   const isDoc = item?.kind === "uploaded-document";
   const isWordDocument = isWordReportDocument(item);
 

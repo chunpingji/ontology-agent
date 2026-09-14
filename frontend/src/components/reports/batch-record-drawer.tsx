@@ -14,7 +14,7 @@ import {
   type BatchDemoAvailable,
 } from "@/lib/api";
 import { cn } from "@/lib/utils";
-import { saveBlob } from "./reading-pane";
+import { saveBlob } from "@/lib/file-utils";
 import { BatchReportPreview } from "./batch-report-preview";
 import { reportDocumentError } from "./report-word-workspace";
 

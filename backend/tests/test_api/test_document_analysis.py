@@ -75,19 +75,26 @@ def _create(
     )
 
 
+@pytest.mark.parametrize("state_storage_version", [2, 4])
 def test_current_pause_and_resume_do_not_rewrite_checkpoint_coverage(
-    client, db, analyst_headers, tmp_path, monkeypatch,
+    client, db, analyst_headers, tmp_path, monkeypatch, state_storage_version,
 ):
     from copy import deepcopy
 
-    from app.models.document_analysis import DocumentRunArtifactHead
+    from app.models.document_analysis import DocumentRunArtifactHead, DocumentRunCurrentState
+    from app.services.document_analysis import application, current_state
 
+    monkeypatch.setattr(application, "CURRENT_STATE_STORAGE_VERSION", state_storage_version)
     monkeypatch.setattr(settings, "document_analysis_storage_dir", tmp_path / "artifacts")
     created = _create(client, analyst_headers, _word_bytes(tmp_path), request_key="pause-view")
     run_id = created.json()["recognition_run_id"]
     run = db.get(DocumentAnalysisRun, run_id)
-    head = db.get(DocumentRunArtifactHead, (run_id, "graph"))
-    artifact = db.get(DocumentAnalysisArtifact, head.artifact_id)
+    if state_storage_version == 4:
+        artifact = db.get(DocumentRunCurrentState,
+                          (run_id, "display:public_graph", current_state._key("current")))
+    else:
+        head = db.get(DocumentRunArtifactHead, (run_id, "graph"))
+        artifact = db.get(DocumentAnalysisArtifact, head.artifact_id)
     frozen_payload = deepcopy(artifact.payload)
     graph_url = f"/api/document-analysis/runs/{run_id}/graph"
     original = client.get(graph_url, headers=analyst_headers).json()

@@ -13,6 +13,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import { formatBytes, saveBlob } from "@/lib/file-utils";
 import { BatchReportPreview } from "./batch-report-preview";
 import {
   downloadReportById,
@@ -100,31 +101,6 @@ export async function resolveDocumentContent(
     return { unavailable: true };
   }
   return { unavailable: true };
-}
-
-/** Blob → 对象 URL → 锚点，触发浏览器保存（生成报告下载原件）。 */
-export function saveBlob(blob: Blob, filename: string): void {
-  const url = URL.createObjectURL(blob);
-  const anchor = document.createElement("a");
-  anchor.href = url;
-  anchor.download = filename;
-  document.body.appendChild(anchor);
-  anchor.click();
-  anchor.remove();
-  URL.revokeObjectURL(url);
-}
-
-export function formatBytes(bytes: number | null): string {
-  if (bytes == null) return "—";
-  if (bytes < 1024) return `${bytes} B`;
-  const units = ["KB", "MB", "GB"];
-  let value = bytes / 1024;
-  let unit = 0;
-  while (value >= 1024 && unit < units.length - 1) {
-    value /= 1024;
-    unit += 1;
-  }
-  return `${value.toFixed(1)} ${units[unit]}`;
 }
 
 function MetaRow({ label, value }: { label: string; value: ReactNode }) {

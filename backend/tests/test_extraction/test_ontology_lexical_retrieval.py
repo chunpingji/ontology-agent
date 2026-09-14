@@ -279,6 +279,36 @@ def test_calibration_requires_exact_query_ontology_and_selection_binding(tmp_pat
                                            LEXICAL_QUERY_VERSION})
 
 
+@pytest.mark.parametrize("next_cutoff", [-4.0, -2.5])
+def test_lexical_trial_uses_manual_cutoff_and_preserves_frozen_policy(tmp_path, next_cutoff):
+    from app.config import Settings
+    from app.services.document_analysis.adaptive_configuration import configured_adaptive_policy
+
+    snapshot = lexical_snapshot()
+    raw = calibration(snapshot).model_dump(mode="json", exclude={"profile_hash"})
+    raw["rerank_thresholds"] = dict.fromkeys(("discover", "counterevidence"), -3.0)
+    path = tmp_path / "manual-thresholds.json"
+    profile = CalibrationProfile.model_validate(raw)
+    path.write_text(profile.model_dump_json(), encoding="utf-8")
+    settings = Settings(_env_file=None, document_analysis_adaptive_retrieval_mode="trial",
+                        document_analysis_adaptive_calibration_path=str(path))
+    frozen = configured_adaptive_policy(settings)
+    frozen.validate_ontology_context(snapshot)
+    assert frozen.calibration.rerank_thresholds == raw["rerank_thresholds"]
+    assert frozen.calibration.quality_status == "development"
+    with pytest.raises(ValueError, match="isolated"):
+        AdaptivePolicy(mode="enforce", calibration=frozen.calibration)
+
+    raw["rerank_thresholds"] = dict.fromkeys(("discover", "counterevidence"), next_cutoff)
+    adjusted = CalibrationProfile.model_validate(raw)
+    path.write_text(adjusted.model_dump_json(), encoding="utf-8")
+    assert configured_adaptive_policy(settings).calibration.rerank_thresholds == (
+        raw["rerank_thresholds"]
+    )
+    assert frozen.calibration.rerank_thresholds == {"discover": -3.0, "counterevidence": -3.0}
+    assert adjusted.profile_hash != frozen.calibration.profile_hash
+
+
 @pytest.mark.parametrize("adaptive", [False, True])
 def test_executor_passes_frozen_vocabulary_through_ranking_context(tmp_path, adaptive):
     snapshot = lexical_snapshot()

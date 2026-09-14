@@ -21,6 +21,7 @@ from app.services.extraction.ontology_guided.contracts import (
     RetrievalPlan,
     SlotSpec,
 )
+from app.services.extraction.ontology_guided.current_work import search_mutation
 from app.services.extraction.ontology_guided.records import RecordIndex
 
 SEARCH_POLICY_VERSION = "heuristic-first-v1"
@@ -64,8 +65,11 @@ class HeuristicSearchPolicy:
     semantic_page_size: int = 8
     primary_section_limit: int = 3
     max_cheap_tasks_before_semantic: int = 8
+    source_object_candidates: bool = False
 
     def __post_init__(self):
+        if type(self.source_object_candidates) is not bool:
+            raise ValueError("source_object_candidates must be a boolean")
         if (self.version, self.query_rules_version) not in {
             (SEARCH_POLICY_VERSION, QUERY_RULES_VERSION),
             ("heuristic-first-v2", "ontology-labels-and-registered-aliases-v2"),
@@ -82,10 +86,17 @@ class HeuristicSearchPolicy:
                 raise ValueError(f"{name} must be a positive integer")
 
     def snapshot(self) -> dict:
-        return asdict(self)
+        value = asdict(self)
+        if not self.source_object_candidates:
+            value.pop("source_object_candidates")
+        return value
 
     @classmethod
     def durable(cls, *, incremental=False, adaptive=False, **values):
+        if values.get("source_object_candidates"):
+            # These "cheap" tasks still invoke discovery/review models. Do not
+            # postpone an available semantic filter behind eight such tasks.
+            values.setdefault("max_cheap_tasks_before_semantic", 1)
         return cls(version="heuristic-first-v4" if adaptive else
                    "heuristic-first-v3" if incremental else "heuristic-first-v2",
                    query_rules_version="ontology-labels-and-registered-aliases-v2", **values)
@@ -174,6 +185,11 @@ class HeuristicSearchIndex:
             for target in predicate.range_classes:
                 add(target.label, 5)
                 for label in target.direct_field_labels:
+                    # Ordinary attributes locate object context, not a new
+                    # endpoint. Keep those records available to semantic search
+                    # and exploration, and to their own property predicates.
+                    if policy.source_object_candidates and not _identity_field(label):
+                        continue
                     add(label, 14 if _identity_field(label) else 3)
         expanded = dict(direct)
         for group in _ALIASES:
@@ -193,6 +209,29 @@ class HeuristicSearchIndex:
                     expanded.setdefault(term, 2)
 
         mentions = [_normalize(value) for value in subject_mentions if len(value.strip()) >= 2]
+        object_fields = {}
+        if policy.source_object_candidates and isinstance(predicate, EdgeSpec):
+            ordinary = {_normalize(label) for target in predicate.range_classes
+                        for label in target.direct_field_labels if not _identity_field(label)}
+            classes = {_normalize(target.label) for target in predicate.range_classes}
+            for record in self.index.records:
+                # In a form, a class name in a field label (e.g. 是否细胞毒药物)
+                # is not an object mention. Keep the value itself searchable:
+                # a named object or explicit relation in that value still counts.
+                if record.kind != "paragraph" or len(record.source_units) != 1:
+                    continue
+                parts = re.split(r"[：:＝=]", record.text, maxsplit=1)
+                if len(parts) != 2:
+                    continue
+                label, value = _normalize(parts[0]), parts[1]
+                classification = (
+                    re.sub(r"^是否(?:是|为)?", "", label) in classes
+                    and _normalize(value) in {"是", "否", "yes", "no", "true", "false"}
+                )
+                if label in ordinary or classification:
+                    object_fields[record.record_id] = unicodedata.normalize(
+                        "NFKC", value,
+                    ).casefold()
         compounds = []
         if policy.version != SEARCH_POLICY_VERSION:
             for term, weight in direct.items():
@@ -202,6 +241,8 @@ class HeuristicSearchIndex:
         code_patterns = {}
 
         def hit(lane, rid, term):
+            if lane in {"source", "context"} and rid in object_fields:
+                return term in _normalize(object_fields[rid])
             if (policy.version != SEARCH_POLICY_VERSION and len(term) <= 16
                     and re.fullmatch(r"[a-z0-9]+", term) and re.search(r"\d", term)):
                 if term not in code_patterns:
@@ -245,6 +286,10 @@ class HeuristicSearchIndex:
                     expanded_scores[rid] += weight * len(hits) / len(parts)
                     wider_hits.append(term)
             matches[rid] = list(dict.fromkeys([*matches[rid], *wider_hits, *wider_structure]))
+            if rid in object_fields and not source_hits:
+                # A heading or summary cannot turn an attribute-only value into
+                # an endpoint. It remains in the later semantic/exploration scope.
+                scores[rid] = expanded_scores[rid] = 0
         section_order = sorted(
             section_scores,
             key=lambda sid: (
@@ -359,6 +404,7 @@ class HeuristicSlotSearch:
         self.events.append({"from": self.stage, "to": stage, "reason": reason})
         self.stage, self._reason = stage, reason
 
+    @search_mutation
     def admit_conflict_check(self, record_ids, *, trigger_ref):
         """Admit source-backed survey obligations without semantic ranking.
 
@@ -388,6 +434,7 @@ class HeuristicSlotSearch:
         self._reason = "single_value_conflict_check"
         return page
 
+    @search_mutation
     def admit_expert_record(self, record_id, operation_id):
         """Admit one authorised local source without moving the ordinary frontier."""
         if record_id not in self.record_universe:
@@ -403,15 +450,18 @@ class HeuristicSlotSearch:
             context_record_ids={}, matched_terms={},
         ))
 
+    @search_mutation
     def close_satisfied(self):
         self.status = "local_results_only"
         self._reason = "single_value_satisfied"
 
+    @search_mutation
     def reopen_satisfied(self):
         if self._reason == "single_value_satisfied":
             self.status = "needs_search"
             self._reason = "slot_completion_invalidated"
 
+    @search_mutation
     def next_admission(self) -> AdmissionPage | None:
         if self._active and not all(rid in self.observed for rid in self._active):
             return None
@@ -500,6 +550,7 @@ class HeuristicSlotSearch:
             self.status = "pass_exhausted"
             return None
 
+    @search_mutation
     def observe(
         self, record_id: str, semantic_outcome: str, complete: bool, reason_code: str,
         supported_count: int = 0, attempt_id: str | None = None,
@@ -535,6 +586,7 @@ class HeuristicSlotSearch:
             self.status = "needs_search"
             self._reason = "existing_core_retry_completed"
 
+    @search_mutation
     def accept_semantic(
         self, ordered_record_ids: list[str], epoch_id: str, *, committed: bool,
     ) -> None:
@@ -560,6 +612,7 @@ class HeuristicSlotSearch:
         self.status = "needs_search"
         self._reason = "committed_semantic_epoch"
 
+    @search_mutation
     def skip_semantic(self, reason: str) -> None:
         """An explicitly disabled capability may proceed without a fake epoch.
 
@@ -658,6 +711,7 @@ class HeuristicSlotSearch:
         if self.snapshot() != state:
             raise ValueError("heuristic checkpoint content mismatch")
 
+    @search_mutation
     def continue_search(self):
         """Explicit resume activates another bounded page without forgetting coverage."""
         if is_sparse(self.plan):

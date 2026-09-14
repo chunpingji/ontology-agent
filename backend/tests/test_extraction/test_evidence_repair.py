@@ -537,8 +537,9 @@ def test_type_coalescing_keeps_the_exact_selected_proof():
 
 
 @pytest.mark.parametrize("incremental", [False, True])
+@pytest.mark.parametrize("current_state", [False, True])
 def test_production_stage_receipt_survives_interruption_without_rediscovery(
-    db, tmp_path, monkeypatch, incremental,
+    db, tmp_path, monkeypatch, incremental, current_state,
 ):
     from app.services.document_analysis import execution
     from app.services.document_analysis.run_store import DocumentAnalysisRunStore
@@ -556,10 +557,10 @@ def test_production_stage_receipt_survives_interruption_without_rediscovery(
     run, token = seed(store, "repair-durable")
     run.document_hash = analysis.ir.document_hash
     run.run_fingerprint = "repair-durable-fingerprint"
-    if incremental:
+    if incremental or current_state:
         from app.services.document_analysis.run_store import content_hash
 
-        payload = {"performance_policy": {"state_storage_version": 3}}
+        payload = {"performance_policy": {"state_storage_version": 4 if current_state else 3}}
         store.update_artifact(
             run.recognition_run_id, run.owner_id, token, artifact_kind="source",
             expected_revision=0, artifact_id=f"{run.recognition_run_id}:source",
@@ -586,7 +587,9 @@ def test_production_stage_receipt_survives_interruption_without_rediscovery(
             state=state,
         )
         saved.append(deepcopy(state))
-        if any((p.get("discovery") or {}).get("proposals") for p in state["protocols"].values()):
+        protocols = [row["value"] for row in state["protocols"].values()] if current_state else (
+            state["protocols"].values())
+        if any((p.get("discovery") or {}).get("proposals") for p in protocols):
             raise RuntimeError("process exited after committed discovery")
 
     def execute(**kwargs):
@@ -601,6 +604,7 @@ def test_production_stage_receipt_survives_interruption_without_rediscovery(
             incremental_performance=incremental,
             max_tasks=8,
             max_model_calls_per_record=8,
+            current_state=current_state,
         ).run(
             recognition_run_id=str(run.recognition_run_id),
             run_fingerprint=run.run_fingerprint,
@@ -624,7 +628,11 @@ def test_production_stage_receipt_survives_interruption_without_rediscovery(
         run,
         final_fingerprint=run.run_fingerprint,
     )
-    assert restored == saved[-1]
+    if current_state:
+        assert any(p.get("discovery") for p in restored["protocols"].values())
+        assert restored["reservation_sequence"] == saved[-1]["reservation_sequence"]
+    else:
+        assert restored == saved[-1]
     first_lineage = calls[0]["target"]["claim_ref"]["id"]
     result = execute(model_call_state=restored)
     assert (
@@ -638,7 +646,15 @@ def test_production_stage_receipt_survives_interruption_without_rediscovery(
     assert result.graph.progress.model_calls_unresolved == 0
     changed = deepcopy(restored)
     changed["protocols"][first_lineage]["completed_attempts"] = []
-    with pytest.raises(execution.CheckpointMismatch, match="receipts cannot regress"):
+    from app.services.document_analysis.run_store import HeadConflict
+    from app.services.extraction.ontology_guided.current_work import WorkMap
+
+    if current_state:
+        changed["current_calls"] = 1
+        for domain in ("protocols", "lineage_calls"):
+            changed[domain] = WorkMap(changed[domain]).drain()
+    with pytest.raises(HeadConflict if current_state else execution.CheckpointMismatch,
+                       match="results regressed" if current_state else "receipts cannot regress"):
         execution._persist_model_call_state(
             db,
             store,
@@ -777,7 +793,10 @@ def test_verification_receipt_replays_after_reordering_sources(tmp_path, monkeyp
     assert len(calls) == 2 and result.model_calls == 0
 
 
-def test_unproven_late_negative_suspends_positive_path_and_rechecks_sources(tmp_path, monkeypatch):
+@pytest.mark.parametrize("current_state", [False, True])
+def test_unproven_late_negative_suspends_positive_path_and_rechecks_sources(
+    tmp_path, monkeypatch, current_state,
+):
     from app.services.extraction.ontology_guided.dependencies import DependencyIndex
     from app.services.extraction.ontology_guided.executor import OntologyGuidedExecutor
     from app.services.extraction.ontology_guided.metadata import prepare_metadata
@@ -790,6 +809,23 @@ def test_unproven_late_negative_suspends_positive_path_and_rechecks_sources(tmp_
     )
 
     analysis, batches, calls = _analysis(tmp_path, negative=True), [], []
+    from tests.test_extraction.test_current_work_resume import merge
+
+    rows = {}
+    saved_calls = {"lineage_calls": {}, "protocols": {}, "reservations": []}
+
+    def save_calls(state):
+        if current_state:
+            for name in ("version", "recognition_run_id", "run_fingerprint",
+                         "reservation_sequence"):
+                saved_calls[name] = state[name]
+            for name in ("lineage_calls", "protocols"):
+                saved_calls[name].update({r["key"]: r["value"] for r in state[name].values()})
+
+    def commit(batch):
+        batches.append(batch)
+        if current_state:
+            merge(rows, batch.work_changes)
 
     def respond(_client, *, user, **_kwargs):
         request = json.loads(user)
@@ -833,14 +869,16 @@ def test_unproven_late_negative_suspends_positive_path_and_rechecks_sources(tmp_
         return result
 
     monkeypatch.setattr(model_adapter, "chat_with_schema", respond)
-    result = OntologyGuidedExecutor(
+    executor = OntologyGuidedExecutor(
         ontology=_ontology(),
         engine=object(),
         adapter=EvidenceRepairAdapter(object(), model_identity="repair-fixture"),
         evidence_repair=True,
         max_model_calls_per_record=8,
         max_tasks=50,
-    ).run(
+        current_state=current_state,
+    )
+    args = dict(
         recognition_run_id="negative-repair",
         run_fingerprint="negative-fingerprint",
         ir=analysis.ir,
@@ -852,19 +890,38 @@ def test_unproven_late_negative_suspends_positive_path_and_rechecks_sources(tmp_
         root_class_iri=ROOT,
         root_class_label="报告",
         filename="source.docx",
-        batch_hook=batches.append,
     )
+    result = executor.run(**args, batch_hook=commit,
+                          work_hook=lambda changes: merge(rows, changes),
+                          model_call_hook=save_calls)
     state = batches[-1]
-    effective = _effective(result, DependencyIndex.from_snapshot(state.dependency_index))
+    dependencies = DependencyIndex.from_current(rows) if current_state else (
+        DependencyIndex.from_snapshot(state.dependency_index))
+    effective = _effective(result, dependencies)
     assert [edge.predicate_iri for edge in effective.edges] == [DESCRIBES]
     assert any(r["required_counterevidence"] for r in calls)
     assert result.graph.progress.invalidated_count > 0
     assert result.graph.progress.completion == "incomplete"
     assert any(e.polarity == "negated" and not e.policy_eligible for e in result.graph.edges)
+    if current_state:
+        before = len(calls)
+        control = rows["control"]["current"]
+        restored = executor.run(**args, model_call_state=saved_calls, resume_state={
+            "work_state": rows, "frontier": control["frontier_policy"],
+            "diagnostics": control["diagnostics"],
+        })
+        assert len(calls) == before
+        assert restored.graph.progress == result.graph.progress
+        assert restored.graph.coverage == result.graph.coverage
+        assert restored.graph.nodes == result.graph.nodes
+        assert restored.graph.edges == result.graph.edges
+        assert restored.graph == result.graph
+        assert _effective(restored, dependencies).edges == effective.edges
 
 
+@pytest.mark.parametrize("current_state", [False, True])
 def test_last_paid_result_can_be_applied_after_restart_with_zero_remaining_budget(
-    tmp_path, monkeypatch
+    tmp_path, monkeypatch, current_state,
 ):
     from docx import Document
 
@@ -901,6 +958,7 @@ def test_last_paid_result_can_be_applied_after_restart_with_zero_remaining_budge
             heuristic_policy=HeuristicSearchPolicy.durable(initial_page_size=1),
             max_tasks=1,
             max_model_calls_per_record=2,
+            current_state=current_state,
         ).run(
             recognition_run_id="paid-limit",
             run_fingerprint="paid-limit-fingerprint",
@@ -916,9 +974,19 @@ def test_last_paid_result_can_be_applied_after_restart_with_zero_remaining_budge
             **kwargs,
         )
 
+    current_calls = {"lineage_calls": {}, "protocols": {}, "reservations": []}
+
     def crash(state):
-        states.append(deepcopy(state))
-        if any(p.get("outcome") for p in state["protocols"].values()):
+        if current_state:
+            for name in ("version", "recognition_run_id", "run_fingerprint",
+                         "reservation_sequence"):
+                current_calls[name] = state[name]
+            for name in ("lineage_calls", "protocols"):
+                current_calls[name].update({r["key"]: r["value"] for r in state[name].values()})
+            states.append(deepcopy(current_calls))
+        else:
+            states.append(deepcopy(state))
+        if any(p.get("outcome") for p in states[-1]["protocols"].values()):
             raise RuntimeError("crash after last paid result")
 
     with pytest.raises(ModelCallPersistenceFailure):

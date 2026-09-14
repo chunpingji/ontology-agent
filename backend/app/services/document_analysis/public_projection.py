@@ -141,15 +141,15 @@ def build_selection_registry(
 ) -> dict[str, dict[str, Any]]:
     """Register every graph citation as an opaque, run-owned source selection."""
 
-    record_by_evidence: dict[str, tuple[str, str]] = {}
-    for record, view in zip(index.records, index.record_views, strict=True):
-        for unit in [
-            *record.source_units,
-            *record.header_units,
-            *record.note_units,
-            *record.parent_units,
-        ]:
-            record_by_evidence.setdefault(unit.evidence_id, (record.record_id, view.record_view_id))
+    record_by_evidence = getattr(index, "_selection_record_index", None)
+    if record_by_evidence is None:
+        record_by_evidence = {}
+        for record, view in zip(index.records, index.record_views, strict=True):
+            for unit in [*record.source_units, *record.header_units, *record.note_units,
+                         *record.parent_units]:
+                record_by_evidence.setdefault(unit.evidence_id,
+                                             (record.record_id, view.record_view_id))
+        index._selection_record_index = record_by_evidence
 
     registry: dict[str, dict[str, Any]] = {}
 

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from copy import deepcopy
 from typing import Literal
 
@@ -23,6 +24,10 @@ from app.services.extraction.ontology_guided.model_adapter import (
     ModelResponse,
     Quote,
     VerificationResponse,
+)
+from app.services.extraction.ontology_guided.ontology_plan import (
+    CMC_DESCRIBES_SCOPE_VERSION,
+    scope_cmc_describes,
 )
 from app.services.extraction.ontology_guided.value_constraints import UNIT_NORMALIZATION_VERSION
 
@@ -236,6 +241,13 @@ class EvidenceRepairAdapter(LocalModelRecognitionAdapter):
     protocol_version = EVIDENCE_REPAIR_VERSION
 
     def inspect(self, task, context, predicate, menu) -> TaskOutcome:
+        scoped = scope_cmc_describes(predicate, task.subject)
+        type_scope = (
+            CMC_DESCRIBES_SCOPE_VERSION
+            if context.cmc_describes_type_scope and scoped is not predicate else None
+        )
+        if type_scope:
+            predicate = scoped
         context.repair_enabled = True
         context.proof_menu = self.gate.registry.task_menu(
             predicate.iri,
@@ -244,6 +256,8 @@ class EvidenceRepairAdapter(LocalModelRecognitionAdapter):
         )
         digest = evidence_content_hash(context)
         old = context.protocol_state
+        if old and old.get("cmc_describes_type_scope") != type_scope:
+            raise ValueError("frozen_assertion_type_scope_mismatch")
         feedback_hash = evidence_hash(context.expert_feedback) if context.expert_feedback else None
         if old and old.get("expert_feedback_hash") != feedback_hash:
             raise ValueError("frozen_assertion_expert_review_mismatch")
@@ -279,6 +293,7 @@ class EvidenceRepairAdapter(LocalModelRecognitionAdapter):
                 "scope_protocol_version": SCOPE_PROTOCOL_VERSION,
                 "literal_quote_version": LITERAL_QUOTE_VERSION,
                 "unit_normalization_version": UNIT_NORMALIZATION_VERSION,
+                **({"cmc_describes_type_scope": type_scope} if type_scope else {}),
                 "lineage_id": task.claim_lineage_id,
                 "base_target": context.target.model_dump(mode="json"),
                 "evidence_hash": digest,
@@ -352,6 +367,15 @@ class EvidenceRepairAdapter(LocalModelRecognitionAdapter):
         wire["scope_protocol_version"] = SCOPE_PROTOCOL_VERSION
         wire["literal_quote_version"] = LITERAL_QUOTE_VERSION
         wire["unit_normalization_version"] = UNIT_NORMALIZATION_VERSION
+        if state.get("cmc_describes_type_scope"):
+            wire["cmc_describes_type_scope"] = state["cmc_describes_type_scope"]
+            # Generic project-name/code fields locate an endpoint, but do not
+            # themselves express its drug role. Keep them available for every
+            # other proof and endpoint; type proof must cite the role context.
+            wire["type_support_source_ids"] = list(dict.fromkeys(
+                f.anchor.evidence_id for f in context.fragments
+                if not re.match(r"^项目(?:名称|代码|编号)\s*[:：]", f.text.strip())
+            ))
         # Retrieval field menus are repeated for every descendant type in the
         # frozen snapshot. The verifier needs class definitions and ancestry;
         # actual source field roles are supplied separately by field_bindings.
@@ -379,7 +403,7 @@ class EvidenceRepairAdapter(LocalModelRecognitionAdapter):
             from app.services.extraction.ontology_guided.process_granularity import method_fields
 
             wire["whole_method_fields"] = method_fields(context)
-            wire["method_granularity_instruction"] = (
+            method_instruction = (
                 "清洗过程须区分整套方法与单个动作。whole_method_fields按同一物理方法单元格分组，"
                 "只表示来源范围，不证明类型、归属或关系。多动作方法不能拆成多个独立清洗过程。"
                 "整套方法以首段完整原文作object_quote定位；多段会冻结为whole_method_field，"
@@ -387,6 +411,10 @@ class EvidenceRepairAdapter(LocalModelRecognitionAdapter):
                 "partial_cleaning_method需重新选择整套方法，cleaning_method_scope_incomplete需补全"
                 "整组证明。独立单步方法或明确命名过程按实际语义核验；备选设备不能当同时使用。"
             )
+            if not context.compact_recognition or wire["whole_method_fields"]:
+                wire["method_granularity_instruction"] = method_instruction
+            else:
+                wire.pop("whole_method_fields")
         is_property = request["predicate"]["kind"] == "property"
         if is_property:
             wire.pop("allowed_object_classes", None)
@@ -411,6 +439,8 @@ class EvidenceRepairAdapter(LocalModelRecognitionAdapter):
                 "predicate": wire["predicate"],
                 "menu_hash": context.proof_menu["menu_hash"],
                 "candidates": wire.get("candidates", []),
+                **({"cmc_describes_type_scope": state["cmc_describes_type_scope"]}
+                   if state.get("cmc_describes_type_scope") else {}),
                 **({"expert_feedback": context.expert_feedback} if context.expert_feedback else {}),
             }
         )
@@ -441,6 +471,23 @@ class EvidenceRepairAdapter(LocalModelRecognitionAdapter):
                 else COMMON
             )
             + (PROPERTY if is_property else RELATION)
+            + (
+                "本任务为CMCReport.describes，类型识别到DrugProduct（药品）即可。"
+                "依据原文中药品名称/代号与药品角色、文档描述主体的联系核验type_verdict。"
+                "不要求区分原料药或制剂，不要求证明成品剂型，也不细分DrugProduct子类；"
+                "未区分这些细节不能作为类型未决的理由。ActivePharmaceuticalIngredient"
+                "表示活性药物成分，本任务不识别组成成分关系。名称或项目代码本身不能证明"
+                "药品角色；须结合可引用的同源字段或正文核验。设备、工序、辅料或仅共现的"
+                "对照药品不能据此成为本报告描述的药品。缺少药品角色或描述关系证据时，"
+                "相应维度仍返回undetermined/unsupported，不因唯一允许类型就自动通过。"
+                "核验type_support须引用实际表达药品角色的原文，可来自同源用途、药理、"
+                "剂型等字段；不能只引用项目名称，不能用文件名或文档类型替代这项正文证据。"
+                if state.get("cmc_describes_type_scope") else
+                "对象名称或项目代码仅证明提及，不单独证明所选类型。类型须依据类定义及原文"
+                "表达的实际角色核验；例如生产物料与计划制剂应分别判断，不能因允许类型菜单"
+                "中只剩某类就推定该类成立。缺少类型证据时返回undetermined及缺口。"
+                if context.compact_recognition and not is_property else ""
+            )
             + (DISCOVER if discovery else REVIEW),
             stage=stage,
             model_calls=context._actual_calls,
@@ -487,6 +534,11 @@ class EvidenceRepairAdapter(LocalModelRecognitionAdapter):
         else:
             values, facets = [], {}
             for review in response.verifications:
+                if state.get("cmc_describes_type_scope") and review.type_verdict == "supported":
+                    allowed_type_sources = set(wire["type_support_source_ids"])
+                    if not any(q.evidence_id in allowed_type_sources for q in review.type_support):
+                        review.type_verdict = "undetermined"
+                        review.missing_facets.append("drug_role_evidence_missing")
                 raw = review.model_dump(mode="json")
                 owner = raw.pop("subject_binding")
                 raw["subject_binding_verdict"] = owner["verdict"]

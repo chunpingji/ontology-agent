@@ -12,9 +12,41 @@ class DependencyIndex:
         self.invalidated: set[str] = set()
         self.subscriptions: dict[tuple[str, str, str], set[str]] = defaultdict(set)
 
+    def enable_current_state(self, *, restored=False):
+        from app.services.extraction.ontology_guided.current_work import WorkMap, WorkSet
+
+        self.requirements = WorkMap(self.requirements,
+                                    encode=lambda ps: [sorted(p) for p in ps])
+        self.subscriptions = WorkMap(self.subscriptions, encode=lambda ids: sorted(ids))
+        self.invalidated = WorkSet(self.invalidated)
+        if restored:
+            self.requirements.changed.clear()
+            self.subscriptions.changed.clear()
+            self.invalidated.changes.changed.clear()
+
+    def current_changes(self):
+        return {"dependencies:" + name: getattr(self, name).drain()
+                for name in ("requirements", "subscriptions", "invalidated")}
+
+    @classmethod
+    def from_current(cls, rows):
+        index = cls()
+        for row in rows.get("dependencies:requirements", {}).values():
+            for proof in row["value"]:
+                index.add_proof(row["key"], proof)
+        for row in rows.get("dependencies:subscriptions", {}).values():
+            index.subscriptions[tuple(row["key"])].update(row["value"])
+        index.invalidated.update(row["key"] for row in rows.get(
+            "dependencies:invalidated", {}).values())
+        index.enable_current_state(restored=True)
+        return index
+
     def add_proof(self, claim_id: str, dependency_ids: list[str]) -> None:
         proof = frozenset(dependency_ids)
+        self.requirements.setdefault(claim_id, [])
         if proof not in self.requirements[claim_id]:
+            if hasattr(self.requirements, "touch"):
+                self.requirements.touch(claim_id)
             self.requirements[claim_id].append(proof)
         for dependency in proof:
             self.dependents[dependency].add(claim_id)
@@ -27,7 +59,10 @@ class DependencyIndex:
         owner_role: str,
         applicability: str,
     ) -> None:
-        self.subscriptions[(record_or_group, owner_role, applicability)].add(claim_id)
+        key = (record_or_group, owner_role, applicability)
+        self.subscriptions.setdefault(key, set()).add(claim_id)
+        if hasattr(self.subscriptions, "touch"):
+            self.subscriptions.touch(key)
 
     def notify_competitor(
         self, *, record_or_group: str, owner_role: str, applicability: str

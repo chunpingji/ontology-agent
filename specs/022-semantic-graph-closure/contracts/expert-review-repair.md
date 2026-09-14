@@ -1,6 +1,8 @@
 # 属性审核与局部修复 API v1
 前缀 `/api/document-analysis/runs/{run_id}`，沿用文档分析身份、错误响应和拥有者隔离。高级分析师与 QA 可审核自有运行及请求其已驳回属性的局部修复；越权来源返回404。
 
+`state_storage_version=4` 使用当前 `base_work_version`、精确候选/原文引用和 `work:candidate_tasks` 保存的原始任务建立修复边界，`base_checkpoint_artifact_id` 为空。当前工作状态保存已处理审核及修复状态，继续时不重放已执行任务。以下历史检查点和回放描述仅适用于旧冻结格式；公开审核与修复请求/响应不增加存储实现字段。
+
 - `GET /reviews`：审核历史、head 与操作能力，只读。
 - `POST /reviews`：request_key、expected_run_revision、graph_snapshot_id、candidate_id、candidate_revision、expected_review_revision（初始0）、decision（accepted/rejected）、reason（驳回必填）、reason_code（incorrect_value/incorrect_property/incorrect_subject/incorrect_scope/unsupported/other）。来源范围由服务端解析。返回审核条目和更新运行水位。活动运行409，先暂停。
 - `POST /repairs`：request_key、expected_run_revision、review_id；冻结准确驳回及原检查点，复用原运行 dispatcher 排队局部修复；返回 operation 与 run。普通 resume 终态规则不放宽。

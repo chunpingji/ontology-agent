@@ -11,7 +11,7 @@ import {
   createExpertOpinion, exportExpertOpinions, getIdentity, listExpertOpinions,
   type ExpertOpinionCategory, type ExpertOpinionContext, type ExpertOpinionTarget,
 } from "@/lib/api";
-import { saveBlob } from "./reading-pane";
+import { saveBlob } from "@/lib/file-utils";
 
 const categories: Record<ExpertOpinionCategory, string> = {
   general: "总体意见", relationship: "关系错误", attribute: "属性错误", missing: "事实遗漏",

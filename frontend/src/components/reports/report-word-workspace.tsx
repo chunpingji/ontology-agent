@@ -23,13 +23,18 @@ export function isWordReportDocument(item: ReportOrDocument | null): boolean {
 
 export function reportDocumentError(error: unknown): string {
   const message = error instanceof Error ? error.message : String(error);
-  const body = message.match(/^API \d+:\s*([\s\S]*)$/)?.[1];
+  const response = message.match(/^API (\d+):\s*([\s\S]*)$/);
+  const body = response?.[2];
   if (body) {
     try {
       const parsed = JSON.parse(body);
       if (typeof parsed.error?.message === "string") return parsed.error.message;
       if (typeof parsed.detail === "string") return parsed.detail;
-      return "文档读取失败，请重试。";
+      if (typeof parsed.detail?.message === "string") return parsed.detail.message;
+      if (parsed.detail?.code === "CONTRACT_SCHEMA_INVALID") {
+        return "服务响应格式异常，请稍后重试。";
+      }
+      return `请求失败（HTTP ${response?.[1]}），请重试。`;
     } catch { /* A non-JSON error still has a readable message. */ }
   }
   return message;

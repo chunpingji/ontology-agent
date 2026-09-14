@@ -121,6 +121,22 @@ class DocExtractionRequest(BaseModel):
     config_id: UUID
 
 
+class GeneratedReportSummary(BaseModel):
+    id: UUID
+    job_id: UUID
+    source_filename: str | None
+    report_type: str
+    file_size: int | None
+    created_at: datetime
+
+
+class GeneratedReportListResponse(BaseModel):
+    items: list[GeneratedReportSummary]
+    total: int
+    page: int
+    page_size: int
+
+
 class GeneratedReportResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 

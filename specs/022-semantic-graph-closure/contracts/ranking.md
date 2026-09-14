@@ -7,7 +7,7 @@
 
 排序模型仅返回逐 query-view 原始分值或向量及不可变身份/技术成本；不返回事实、跨池 rank 或修改租约。服务协议由领域模型 Protocol 定义，适配层在 `services/llm/semantic_ranking.py`；在线与评测传同一实例接口。
 
-`OntologyGuidedExecutor` 接收可选 ranking service/policy 和排序提交 hook。ExecutionBatch 与最终结果携带 ranking state；恢复传同一 state，已经 committed 的池不得重评分。提交 hook 检查运行 token、当前 fingerprint 及 query/subject/plan/epoch 精确身份，在首个依赖其顺序的记录调用前落盘。失败不推进调度。
+`OntologyGuidedExecutor` 接收可选 ranking service/policy 和排序提交 hook。旧格式的 ExecutionBatch 与最终结果携带 ranking state；已经 committed 的池不得重评分。新格式 `state_storage_version=4` 使用[当前状态契约](current-state.md)：hook 只给出变化的结果、请求计数与活动控制，不把完整 ranking state 放进批次或最终结果；恢复直接加载独立结果，工作状态保存已消费 epoch/协议结果标记。提交 hook 检查运行 token、当前 fingerprint 及 query/subject/plan/epoch 精确身份，在首个依赖其顺序的记录调用前落盘。失败不推进调度。
 
 新建本体快照按声明 IRI 及完整载荷 hash 规范化无序菜单；并行同 IRI 约束分别保留，不合并 range、不回写旧快照。相同声明的枚举顺序不改变 source/snapshot 身份，真实字段变化仍使身份改变。
 
@@ -48,6 +48,8 @@ tokenizer 与模型输入均遵守 `complete-no-truncation`，返回向量保持
 不可精排是记录输入状态，保留 U 和探索资格。全部剩余记录不可精排时提交确定性探索顺序，`reason=no_rerankable_records`、`degraded=false`，逐记录 `score_status=not_selected`、分值为空；这不表示模型评分成功。真实技术失败仍遵循冻结的整池暂停/降级政策。取消、执行 owner 丢失及调度租约丢失原样中止，不技术重试或降级。
 
 `run(model_call_state=..., model_call_hook=...)` 接收独立识别请求预扣端口。状态为 `version=1`、`recognition_run_id`、`run_fingerprint`、`lineage_calls` 和顺序追加 `reservations`；每项包含从 1 开始的 `sequence`、`task_id`、`stage`、从 1 开始的 `ordinal`、`lineage_id`。线上使用私有 `recognition-model-calls` 制品，并核验 owner/fingerprint、计数单调及历史前缀不可改写。恢复可用额度取完成调用数和预扣数的较大者；崩溃前预扣不被当作已完成模型响应。ExecutionBatch/Checkpoint/ExecutionResult 同时携带此状态。
+
+v4 主识别调用按 lineage/attempt 保存请求，预扣前持久化 `dispatch_claimed`，无法确认的费用保持 `unknown`；协议响应与请求结果引用在同一事务提交。`reserved_cost/actual_cost` 的单位是模型请求次数，不表示货币或 token 估算。恢复使用累计计数及最新协议，热保存不携带完整 reservations 数组。精排预算关闭期间的既有不记账政策保持不变。
 
 ## Public read contract
 

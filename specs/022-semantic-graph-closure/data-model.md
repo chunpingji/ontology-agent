@@ -32,3 +32,9 @@
 - 排序v2为每个权限/槽位/记录/意图保留基础调用和有限技术重试；v1历史额度不升级。
 
 接口、恢复及失败契约见 [performance.md](contracts/performance.md)。
+
+## 当前状态格式 v4
+
+运行入口增加独立 `work_version` 和当前提交标识。`DocumentRunCurrentState` 按 run、domain、business_key 保存当前分区和内容哈希；不保存分区历史。候选/证明正文仍由既有精确版本表权威保存。`DocumentRunResult` 按精确结果键保存单份精排/协议结果；`DocumentRunRequest` 按请求键保存当前派发状态、费用与响应引用。展示缓存属于 current 分区，不能参与权威恢复。
+
+批次回执增加 committed_work_version，旧 checkpoint 外键改为可空。修复保存当前工作版本和原始任务边界，旧 checkpoint 外键仅对旧运行适用。新增表随所属运行删除；不改写旧制品。

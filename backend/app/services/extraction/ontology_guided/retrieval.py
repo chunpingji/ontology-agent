@@ -218,4 +218,9 @@ def mark_record(
     if reason_code and reason_code not in entry.reason_codes:
         entry.reason_codes.append(reason_code)
     entry = type(entry).model_validate(entry.model_dump(mode="json"))
+    from app.services.extraction.ontology_guided.current_work import WorkMap
+
+    if isinstance(plan.ledger, WorkMap):
+        plan.ledger[record_id] = entry
+        return plan.model_copy()
     return plan.model_copy(update={"ledger": {**plan.ledger, record_id: entry}})

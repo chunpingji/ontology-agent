@@ -10,8 +10,9 @@ from tests.test_extraction.test_evidence_repair import (
 
 
 @pytest.mark.parametrize("incremental", [False, True])
+@pytest.mark.parametrize("current_state", [False, True])
 def test_postgresql_committed_discovery_survives_worker_loss(
-    pg_engine, tmp_path, monkeypatch, incremental,
+    pg_engine, tmp_path, monkeypatch, incremental, current_state,
 ):
     with Session(pg_engine) as db:
-        check_stage_recovery(db, tmp_path, monkeypatch, incremental)
+        check_stage_recovery(db, tmp_path, monkeypatch, incremental, current_state)

@@ -179,9 +179,9 @@ export const getRelationSchema = (classIri: string, maxHops = 4) =>
   );
 
 // Entities
-export const searchEntities = (params: Record<string, string>) => {
+export const searchEntities = (params: Record<string, string>, signal?: AbortSignal) => {
   const qs = new URLSearchParams(params).toString();
-  return fetchAPI<EntitySearchResult>(`/api/entities?${qs}`);
+  return fetchAPI<EntitySearchResult>(`/api/entities?${qs}`, { signal });
 };
 export const getEntity = (iri: string) =>
   fetchAPI<Individual>(`/api/entities/${encodeURIComponent(iri)}`);
@@ -805,10 +805,10 @@ export const connectorDocIris = async (connectorId: string): Promise<string[]> =
 };
 
 /** 列出研发文档个体（module=document），可按研发阶段过滤（US3 FR-005）。 */
-export const listDocuments = (developmentPhaseIri?: string, pageSize = 100) => {
+export const listDocuments = (developmentPhaseIri?: string, pageSize = 100, signal?: AbortSignal) => {
   const params: Record<string, string> = { module: "document", page_size: String(pageSize) };
   if (developmentPhaseIri) params.development_phase = developmentPhaseIri;
-  return searchEntities(params);
+  return searchEntities(params, signal);
 };
 export const deleteDocument = (iri: string) =>
   fetchAPI<void>(`/api/entities/${encodeURIComponent(iri)}`, { method: "DELETE" });
@@ -3918,90 +3918,73 @@ export interface ReportOrDocument {
   status?: "processing" | "ready";
 }
 
-export interface ReportCenterResult {
+export interface ReportCenterPage {
   items: ReportOrDocument[];
-  /** True when the generated-report fan-out was bounded (UI shows "load more"). */
-  truncated: boolean;
-  jobsScanned: number;
-  totalJobs: number;
+  total: number;
+  page: number;
+  page_size: number;
 }
 
-/**
- * Compose the unified Report Center list client-side (research R2 — NO new
- * backend). Documents come from the global `listDocuments()`; generated reports
- * are aggregated via a **bounded** fan-out of `listReports(jobId)` over
- * `listExtractionJobs()`. The fan-out is explicitly capped by `maxJobs` and the
- * result reports `truncated` + `jobsScanned`/`totalJobs` so the UI can offer a
- * visible "load more" — never a silent truncation.
- */
-export async function listReportCenterItems(
-  opts: { maxJobs?: number } = {},
-): Promise<ReportCenterResult> {
-  const maxJobs = opts.maxJobs ?? 25;
+export interface GeneratedReportSummary {
+  id: string;
+  job_id: string;
+  source_filename: string | null;
+  report_type: string;
+  file_size: number | null;
+  created_at: string;
+}
 
-  // Documents (global, single call).
-  const docItems: ReportOrDocument[] = [];
-  try {
-    const docs = await listDocuments();
-    for (const d of docs.items) {
-      const phase = (d.properties_json?.hasDevelopmentPhase as string) ?? null;
-      docItems.push({
-        key: d.iri,
-        kind: "uploaded-document",
-        title: d.label_zh || d.label_en || d.iri.split("/").pop() || d.iri,
-        // 文件夹（category）= 研发阶段（左侧分类轴）；类型（type）= 文档类，列展示。
-        category: phase ? phaseLabel(phase) : "未分阶段",
-        type: docTypeLabel(d.class_iri) || "文档",
-        date: (d.properties_json?.created_at as string) ?? (d.properties_json?.ingested_at as string) ?? null,
-        size: null,
-        iri: d.iri,
-      });
-    }
-  } catch {
-    // Intranet source unreachable → degrade gracefully (empty docs), never crash.
-  }
+export async function listReportCenterDocuments(signal?: AbortSignal): Promise<ReportOrDocument[]> {
+  const docs = await listDocuments(undefined, 100, signal);
+  return docs.items.map((d) => {
+    const phase = (d.properties_json?.hasDevelopmentPhase as string) ?? null;
+    return {
+      key: d.iri,
+      kind: "uploaded-document",
+      title: d.label_zh || d.label_en || d.iri.split("/").pop() || d.iri,
+      // 文件夹（category）= 研发阶段（左侧分类轴）；类型（type）= 文档类，列展示。
+      category: phase ? phaseLabel(phase) : "未分阶段",
+      type: docTypeLabel(d.class_iri) || "文档",
+      date: (d.properties_json?.created_at as string) ?? (d.properties_json?.ingested_at as string) ?? null,
+      size: null,
+      iri: d.iri,
+    };
+  });
+}
 
-  // Generated reports — bounded fan-out over jobs.
-  const reportItems: ReportOrDocument[] = [];
-  let totalJobs = 0;
-  let jobsScanned = 0;
-  try {
-    const jobs = await listExtractionJobs();
-    totalJobs = jobs.length;
-    const bounded = jobs.slice(0, maxJobs);
-    jobsScanned = bounded.length;
-    const perJob = await Promise.all(
-      bounded.map((j) =>
-        listReports(j.id)
-          .then((rs) => ({ job: j, rs }))
-          .catch(() => ({ job: j, rs: [] as GeneratedReportDTO[] })),
-      ),
-    );
-    for (const { job, rs } of perJob) {
-      for (const r of rs) {
-        reportItems.push({
-          key: r.id,
-          kind: "generated-report",
-          title: `${r.report_type === "batch_record_demo" ? "批记录报告（演示）" : r.report_type}（${job.source_filename ?? job.id.slice(0, 8)}）`,
-          category: r.report_type,
-          type: r.report_type === "batch_record_demo" ? "批记录报告（演示）" : r.report_type,
-          date: r.created_at,
-          size: r.file_size,
-          jobId: r.job_id,
-          reportId: r.id,
-        });
-      }
-    }
-  } catch {
-    // No jobs / unreachable → degrade to documents-only.
-  }
-
+/** One bounded summary page; details and report bodies are fetched only when opened. */
+export async function listReportCenterReports(page = 1, signal?: AbortSignal): Promise<ReportCenterPage> {
+  const result = await fetchAPI<Omit<ReportCenterPage, "items"> & { items: GeneratedReportSummary[] }>(
+    `/api/reports?page=${page}&page_size=25`,
+    { signal },
+  );
   return {
-    items: [...reportItems, ...docItems],
-    truncated: totalJobs > jobsScanned,
-    jobsScanned,
-    totalJobs,
+    ...result,
+    items: result.items.map((r) => ({
+      key: r.id,
+      kind: "generated-report",
+      title: `${r.report_type === "batch_record_demo" ? "批记录报告（演示）" : r.report_type}（${r.source_filename ?? r.job_id.slice(0, 8)}）`,
+      category: r.report_type,
+      type: r.report_type === "batch_record_demo" ? "批记录报告（演示）" : r.report_type,
+      date: r.created_at,
+      size: r.file_size,
+      jobId: r.job_id,
+      reportId: r.id,
+    })),
   };
+}
+
+/** Preserve query-less detail links using summaries, without loading task/report bodies. */
+export async function resolveReportCenterItem(key: string, signal?: AbortSignal): Promise<ReportOrDocument | null> {
+  if (!/^[\da-f]{8}(?:-[\da-f]{4}){3}-[\da-f]{12}$/i.test(key)) {
+    return (await listReportCenterDocuments(signal)).find((item) => item.key === key) ?? null;
+  }
+  for (let page = 1; ; page++) {
+    const result = await listReportCenterReports(page, signal);
+    const item = result.items.find((entry) => entry.key === key);
+    if (item) return item;
+    if (result.page * result.page_size >= result.total || result.items.length === 0) return null;
+  }
 }
 
 // ---------------------------------------------------------------------------

@@ -18,6 +18,9 @@ from .test_document_analysis import _create, _word_bytes
 def test_repair_creation_freezes_required_policies_without_upgrading_old_runs(
     client, db, analyst_headers, tmp_path, monkeypatch, adaptive_mode,
 ):
+    from app.services.document_analysis import application as application_module
+
+    monkeypatch.setattr(application_module, "CURRENT_STATE_STORAGE_VERSION", 2)
     monkeypatch.setattr(settings, "document_analysis_storage_dir", tmp_path / "artifacts")
     monkeypatch.setattr(settings, "document_analysis_performance_enabled", False)
     monkeypatch.setattr(settings, "document_analysis_template_interleaving", False)
@@ -29,6 +32,7 @@ def test_repair_creation_freezes_required_policies_without_upgrading_old_runs(
     application = DocumentAnalysisApplication(db, ontology_engine=object())
     old_run = application.get_run(old.json()["recognition_run_id"], "analyst")
     assert application._artifact_payload(old_run, "source")[0]["performance_policy"] == {}
+    monkeypatch.setattr(application_module, "CURRENT_STATE_STORAGE_VERSION", 4)
     monkeypatch.setattr(settings, "document_analysis_evidence_repair_enabled", True)
     if adaptive_mode == "trial":
         from tests.test_extraction.test_adaptive_retrieval import trial_fixture
@@ -46,8 +50,12 @@ def test_repair_creation_freezes_required_policies_without_upgrading_old_runs(
     assert frozen["evidence_work"] == "evidence-work-v2"
     assert frozen["literal_quotes"] == "source-integer-quotes-v2"
     assert frozen["unit_normalization"] == UNIT_NORMALIZATION_VERSION
-    assert frozen["state_storage_version"] == 3 and frozen["max_lineage_calls"] == 8
+    assert frozen["state_storage_version"] == 4 and frozen["max_lineage_calls"] == 8
+    assert "state_baseline_interval" not in frozen
     assert frozen["incremental_performance"] == "incremental-performance-v1"
+    assert frozen["source_object_recognition"] == "source-object-recognition-v1"
+    assert frozen["cmc_describes_type_scope"] == "drug-product-only-v1"
+    assert frozen["layered_recognition"] == "dependency-ready-v1"
     assert frozen["heuristic_policy"] == (
         "heuristic-first-v3" if adaptive_mode == "disabled" else "heuristic-first-v4"
     )

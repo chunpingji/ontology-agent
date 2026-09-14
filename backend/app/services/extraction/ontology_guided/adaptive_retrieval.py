@@ -123,7 +123,11 @@ class AdaptivePolicy(EvidenceModel):
             if self.mode == "trial":
                 if self.calibration.quality_status != "development":
                     raise ValueError("trial pruning must remain explicitly unvalidated")
-                if any(value > -8 for value in self.calibration.rerank_thresholds.values()):
+                # Lexical-query trials use the explicitly configured, human-adjusted
+                # thresholds. Preserve the original v1 trial limit for frozen runs.
+                if self.calibration.query_version != LEXICAL_QUERY_VERSION and any(
+                    value > -8 for value in self.calibration.rerank_thresholds.values()
+                ):
                     raise ValueError("trial pruning requires conservative raw logits at most -8")
                 if any(value > 0 for value in self.calibration.group_thresholds.values()):
                     raise ValueError("trial pruning must retain positive group evidence")

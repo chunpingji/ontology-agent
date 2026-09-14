@@ -229,6 +229,9 @@ def _run_error(run: DocumentAnalysisRun) -> dict[str, Any] | None:
     }
 
 
+CURRENT_STATE_STORAGE_VERSION = 4
+
+
 class DocumentAnalysisApplication:
     def __init__(self, db: Session, *, ontology_engine: object) -> None:
         self.db = db
@@ -363,7 +366,7 @@ class DocumentAnalysisApplication:
                     "filename": staged.filename,
                     "document_hash": staged.document_hash,
                     "performance_policy": {
-                        "state_storage_version": 2,
+                        "state_storage_version": CURRENT_STATE_STORAGE_VERSION,
                         "frontier_version": 2,
                         "recognition_inflight": 1,
                         "template_interleaving": (
@@ -371,12 +374,15 @@ class DocumentAnalysisApplication:
                             or settings.document_analysis_evidence_repair_enabled
                         ),
                         **({"evidence_repair": "evidence-repair-v1",
-                            "layered_recognition": "layered-recognition-v1",
+                            "layered_recognition": "dependency-ready-v1",
+                            "source_object_recognition": "source-object-recognition-v1",
+                            "cmc_describes_type_scope": "drug-product-only-v1",
                             "expert_review_repair": "expert-review-repair-v1",
                             "candidate_planning": "sparse-candidates-v1",
                             "incremental_performance": "incremental-performance-v1",
-                            "state_storage_version": 3,
-                            "state_baseline_interval": 32,
+                            **({"state_storage_version": 4}
+                               if CURRENT_STATE_STORAGE_VERSION == 4 else
+                               {"state_storage_version": 3, "state_baseline_interval": 32}),
                             "semantic_expansion": "bounded-semantic-v1",
                             "process_granularity": "whole-method-field-v1",
                             "attribute_priority": "source-field-priority-v1",
@@ -393,7 +399,8 @@ class DocumentAnalysisApplication:
                             "proof_menu": "proof-menu-v1", "identity": "physical-mention-v1",
                             "model_call_state_version": 2, "max_lineage_calls": 8}
                            if settings.document_analysis_evidence_repair_enabled else {}),
-                    } if (settings.document_analysis_performance_enabled
+                    } if (CURRENT_STATE_STORAGE_VERSION == 4
+                          or settings.document_analysis_performance_enabled
                           or settings.document_analysis_evidence_repair_enabled) else {},
                     **({"origin": origin} if origin is not None else {}),
                 },
@@ -528,6 +535,23 @@ class DocumentAnalysisApplication:
         self, run: DocumentAnalysisRun, kind: str
     ) -> tuple[dict[str, Any], str] | None:
         self.assert_artifacts_readable(run)
+        from app.services.document_analysis.current_state import (
+            enabled,
+            read_display,
+            read_ranking_summary,
+        )
+
+        if kind in {"graph", "public_graph", "source_selections", "ranking_summary"} and enabled(
+            self.store, run
+        ):
+            body = (read_display(self.store, run) if kind in {
+                "graph", "public_graph", "source_selections",
+            } else read_ranking_summary(self.store, run))
+            if body is not None and kind == "source_selections":
+                source, _ = self._artifact_payload(run, "source_header")
+                body = {**source, "selection_registry": body["selection_registry"]}
+            if body is not None:
+                return body, body.get("graph", {}).get("artifact_status", "ready")
         ref = self.store.get_artifact(run.recognition_run_id, run.owner_id, kind)
         if ref is None:
             return None

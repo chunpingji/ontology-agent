@@ -232,7 +232,9 @@ class RankingService:
         before_model_hook: Callable[[dict], None] | None = None,
         budget_enabled: bool | None = None,
         adaptive_policy: AdaptivePolicy | None = None,
+        current_state: bool = False,
     ):
+        self.current_state = current_state
         self.policy = policy
         self.model = model
         self.before_model_hook = before_model_hook
@@ -366,6 +368,75 @@ class RankingService:
             self._epoch_snapshots = [_freeze(item) for item in state.get("epochs", [])]
             self._paused_snapshots = [_freeze(item) for item in state.get("paused_attempts", [])]
 
+        self.epochs_by_id = {e.epoch_id: e for e in self.epochs}
+        self.epochs_by_plan = {}
+        for epoch in self.epochs:
+            self.epochs_by_plan.setdefault(epoch.plan_id, []).append(epoch)
+        if self.current_state:
+            from app.services.extraction.ontology_guided.current_work import WorkMap
+
+            for name in self._current_maps():
+                values = WorkMap(getattr(self, name))
+                if state:
+                    values.changed.clear()
+                setattr(self, name, values)
+            self._saved_positions = {
+                "epochs": len(self.epochs) if state else 0,
+                "paused_attempts": len(self._paused_attempts) if state else 0,
+                "dispatch_receipts": len(self._dispatch_receipts) if state else 0,
+                "model_observations": len(self._restored_model_observations) if state else 0,
+            }
+
+    @staticmethod
+    def _current_maps():
+        return ("slot_costs", "_cache", "_score_cache", "_token_cache",
+                "_record_call_counts", "_record_intent_call_counts", "_request_attempts",
+                "gate_evaluations", "admission_decisions", "preparation_results",
+                "adaptive_inputs", "adaptive_requests")
+
+    def current_changes(self):
+        """Only changed request counters/results plus bounded active control."""
+        from app.services.extraction.ontology_guided.current_work import json_value
+
+        changes = {name.lstrip("_"): getattr(self, name).drain()
+                   for name in self._current_maps()}
+        for name, values in (("epochs", self.epochs), ("paused_attempts", self._paused_attempts),
+                             ("dispatch_receipts", self._dispatch_receipts)):
+            start = self._saved_positions[name]
+            changes[name] = {str(i): {"key": i, "value": json_value(values[i])}
+                             for i in range(start, len(values))}
+            self._saved_positions[name] = len(values)
+        observations = getattr(self.model, "observations", []) if self.budget_enabled else []
+        start = max(self._model_observation_start,
+                    self._saved_positions["model_observations"]
+                    - len(self._restored_model_observations) + self._model_observation_start)
+        changes["model_observations"] = {
+            str(len(self._restored_model_observations) + i - self._model_observation_start): {
+                "key": len(self._restored_model_observations) + i - self._model_observation_start,
+                "value": json_value(observations[i]),
+            } for i in range(start, len(observations))}
+        self._saved_positions["model_observations"] += len(observations) - start
+        changes["control"] = {"current": {
+            "policy": self.policy.model_dump(mode="json"), "budget_enabled": self.budget_enabled,
+            "model_identity": self.model_identity, "costs": dict(self.costs),
+            "pending_epochs": [p.model_dump(mode="json") for p in self._pending.values()],
+            **({"adaptive_policy": self.adaptive_policy.model_dump(mode="json")}
+               if self.adaptive_policy else {}),
+        }}
+        return {"current_ranking": 1, "changes": changes}
+
+    def durability_state(self):
+        return self.current_changes() if self.current_state else self.snapshot()
+
+    def pending_epochs(self):
+        return [epoch.model_dump(mode="json") for epoch in self._pending.values()]
+
+    def discard_pending(self, plan_id=None):
+        keys = [plan_id] if plan_id is not None else list(self._pending)
+        for key in keys:
+            self._pending.pop(key, None)
+            self._retryable_pending.discard(key)
+
     @property
     def budget_enabled(self) -> bool:
         return self._budget_enabled
@@ -421,6 +492,28 @@ class RankingService:
 
     def fork(self, *, before_model_hook=None):
         """Private mutable bookkeeping; only frozen snapshot payloads are shared."""
+        if self.current_state:
+            from app.services.extraction.ontology_guided.current_work import WorkMap
+
+            result = copy.copy(self)
+            result.before_model_hook = before_model_hook
+            for name in self._current_maps():
+                values = WorkMap(getattr(self, name))
+                values.changed = dict(getattr(self, name).changed)
+                setattr(result, name, values)
+            result.costs = dict(self.costs)
+            result.epochs_by_id = dict(self.epochs_by_id)
+            result.epochs_by_plan = {key: list(values)
+                                     for key, values in self.epochs_by_plan.items()}
+            for name in ("epochs", "_dispatch_receipts", "_paused_attempts",
+                         "_epoch_snapshots", "_paused_snapshots"):
+                setattr(result, name, list(getattr(self, name)))
+            result._pending = copy.deepcopy(self._pending)
+            result._retryable_pending = set(self._retryable_pending)
+            result._saved_positions = dict(self._saved_positions)
+            result._cache_snapshots = dict(self._cache_snapshots)
+            result._retrieval_view_cache = dict(self._retrieval_view_cache)
+            return result
         result = RankingService(
             self.policy.model_copy(deep=True), self.model, state=self.snapshot(),
             before_model_hook=before_model_hook,
@@ -469,7 +562,7 @@ class RankingService:
         return self._retrieval_view_cache[key]
 
     def commit_epoch(self, epoch: RankingEpoch) -> RankingEpoch:
-        existing = next((item for item in self.epochs if item.epoch_id == epoch.epoch_id), None)
+        existing = self.epochs_by_id.get(epoch.epoch_id)
         if existing:
             if existing.model_copy(update={"status": epoch.status}) != epoch:
                 raise ValueError("committed ranking epoch cannot change")
@@ -485,6 +578,8 @@ class RankingService:
             raise ValueError("ranking epoch is not the exact prepared result")
         committed = epoch.model_copy(update={"status": "committed"})
         self.epochs.append(committed)
+        self.epochs_by_id[committed.epoch_id] = committed
+        self.epochs_by_plan.setdefault(committed.plan_id, []).append(committed)
         self._epoch_snapshots.append(_freeze(committed.model_dump(mode="json")))
         self._pending.pop(epoch.plan_id, None)
         return committed
@@ -611,7 +706,7 @@ class RankingService:
         ):
             raise ValueError("candidate scope is outside the frozen record universe")
         scope_hash = evidence_hash(permission_scope)
-        previous = [item for item in self.epochs if item.plan_id == plan.plan_id]
+        previous = self.epochs_by_plan.get(plan.plan_id, [])
         pending = self._pending.get(plan.plan_id)
         for epoch in [*previous, *([pending] if pending else [])]:
             self.validate_epoch(
@@ -921,7 +1016,7 @@ class RankingService:
             def persist_dispatch_state():
                 if self.before_model_hook is not None:
                     try:
-                        self.before_model_hook(self.snapshot())
+                        self.before_model_hook(self.durability_state())
                     except (ModelCancelled, ExecutionLost):
                         raise
                     except Exception as exc:
@@ -1019,9 +1114,12 @@ class RankingService:
                 evidence_hash([scope_hash, text, self.model_identity, "embedding"])
                 for text in texts
             ]
-            missing = [
-                (key, text) for key, text in zip(keys, texts, strict=True) if key not in self._cache
-            ]
+            # The same model text can occur in several retrieval views. Build
+            # the missing queue by cache identity before batching; otherwise a
+            # later batch recomputes and rewrites an already durable vector.
+            missing = list({
+                key: text for key, text in zip(keys, texts, strict=True) if key not in self._cache
+            }.items())
             if self.budget_enabled:
                 costs["cache_hits"] += len(texts) - len(missing)
                 self.costs["cache_hits"] += len(texts) - len(missing)
@@ -1066,7 +1164,7 @@ class RankingService:
                 self.gate_evaluations[lexical_gate.evaluation_id] = _freeze(
                     lexical_gate.model_dump(mode="json"))
                 if self.before_model_hook:
-                    self.before_model_hook(self.snapshot())
+                    self.before_model_hook(self.durability_state())
 
         try:
             if reason:
@@ -1233,7 +1331,7 @@ class RankingService:
                 self.gate_evaluations[adaptive_gate.evaluation_id] = _freeze(
                     adaptive_gate.model_dump(mode="json"))
                 if self.before_model_hook:
-                    self.before_model_hook(self.snapshot())
+                    self.before_model_hook(self.durability_state())
             eligible = list(adaptive_gate.passed_record_ids)
             channels = {key: [rid for rid in ids if rid in set(eligible)]
                         for key, ids in channels.items()}
@@ -1496,10 +1594,22 @@ def apply_epoch(plan: RetrievalPlan, epoch: RankingEpoch, *, index=None) -> Retr
     if not set(epoch.record_ids).issubset(universe):
         raise ValueError("ranking epoch contains records outside the frozen universe")
     ranks = {rid: rank for rank, rid in enumerate(epoch.ordered_record_ids, 1)}
-    records = [record.model_copy(update={
-        "ranking_epoch_id": epoch.epoch_id, "ranking_epoch_seq": epoch.epoch_seq,
-        "pool_rank": ranks[record.record_id], "ranking_mode": epoch.actual_ranking_mode,
-    }) if record.record_id in ranks else record for record in plan.records]
+    from app.services.extraction.ontology_guided.current_work import WorkRecords
+
+    if isinstance(plan.records, WorkRecords):
+        records = plan.records
+        for rid, rank in ranks.items():
+            position = records.positions.get(rid)
+            if position is not None:
+                records[position] = records[position].model_copy(update={
+                    "ranking_epoch_id": epoch.epoch_id, "ranking_epoch_seq": epoch.epoch_seq,
+                    "pool_rank": rank, "ranking_mode": epoch.actual_ranking_mode,
+                })
+    else:
+        records = [record.model_copy(update={
+            "ranking_epoch_id": epoch.epoch_id, "ranking_epoch_seq": epoch.epoch_seq,
+            "pool_rank": ranks[record.record_id], "ranking_mode": epoch.actual_ranking_mode,
+        }) if record.record_id in ranks else record for record in plan.records]
     # Phase and section membership/order remain a scheduler concern.
     return plan.model_copy(update={
         "records": records,

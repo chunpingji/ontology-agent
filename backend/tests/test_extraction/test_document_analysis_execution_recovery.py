@@ -99,10 +99,14 @@ def _word_bytes(tmp_path: Path) -> bytes:
 
 def _create_pending_run(
     client, analyst_headers, tmp_path, monkeypatch, *, key: str, evidence_repair: bool = False,
+    current_state: bool = False, adaptive_mode: str = "disabled",
 ) -> str:
     # Shared recovery fixtures freeze historical protocols independently of online defaults.
+    from app.services.document_analysis import application
+
+    monkeypatch.setattr(application, "CURRENT_STATE_STORAGE_VERSION", 4 if current_state else 2)
     monkeypatch.setattr(settings, "document_analysis_evidence_repair_enabled", evidence_repair)
-    monkeypatch.setattr(settings, "document_analysis_adaptive_retrieval_mode", "disabled")
+    monkeypatch.setattr(settings, "document_analysis_adaptive_retrieval_mode", adaptive_mode)
     monkeypatch.setattr(settings, "document_analysis_storage_dir", tmp_path / "run-artifacts")
     monkeypatch.setattr(document_analysis, "dispatch_run", lambda *_args, **_kwargs: None)
     response = client.post(

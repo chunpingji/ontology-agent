@@ -36,6 +36,9 @@ from app.models.document_analysis import (
     DocumentRunArtifactHead,
     DocumentRunCandidate,
     DocumentRunCandidateHead,
+    DocumentRunCurrentState,
+    DocumentRunRequest,
+    DocumentRunResult,
     DocumentVerificationProof,
     DocumentVerificationProofHead,
 )
@@ -486,6 +489,9 @@ class DocumentAnalysisRetentionService:
             DocumentRecognitionEventBatch,
             DocumentRecognitionEvent,
             DocumentRunCandidate,
+            DocumentRunCurrentState,
+            DocumentRunRequest,
+            DocumentRunResult,
             DocumentVerificationProof,
             DocumentRunArtifact,
         ):

@@ -10,6 +10,7 @@ from app.services.extraction.evidence_identity import evidence_hash, stable_id
 from app.services.extraction.ontology_guided.projection import effective_proof_gate
 
 LAYERED_RECOGNITION_VERSION = "layered-properties-first-v1"
+DEPENDENCY_READY_VERSION = "dependency-ready-v1"
 SLOT_COMPLETION_VERSION = "single-value-conflict-survey-v1"
 
 

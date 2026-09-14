@@ -22,6 +22,80 @@ INSTRUCTION = (
 )
 
 
+def _compact_request(request):
+    """Project transport only; the server keeps the complete frozen target."""
+    wire = deepcopy(request)
+    target = wire["target"]
+    wire["target"] = {key: target[key] for key in ("check_kind", "assertion_polarity")
+                      if key in target}
+    document = target.get("document_context", {})
+    if document:
+        wire["document_class_iri"] = document["document_class_iri"]
+    wire["subject"] = {key: value for key, value in wire["subject"].items()
+                       if key not in {"entity_id", "revision"}}
+    wire["subject_binding"] = {key: value for key, value in wire["subject_binding"].items()
+                               if key not in {"root_ref", "subject_ref", "document_hash"}}
+    predicate = wire["predicate"]
+    # The legal classes remain both defined here and constrained in the schema.
+    predicate.pop("range_class_iris", None)
+    for binding in wire.get("field_bindings", []):
+        for key in ("record_view_ref", "source_cell_id"):
+            binding.pop(key, None)
+        if binding.get("kind") == "field_group":
+            for key in ("table_path", "row_index", "column_indices", "row_span", "column_span"):
+                binding.pop(key, None)
+    for key in ("version", "registry_version", "structure_hash", "menu_hash"):
+        wire["proof_menu"].pop(key, None)
+    for candidate in wire.get("candidates", []):
+        candidate.pop("target", None)
+        for key in ("endpoint_anchor", "assertion_generation", "proof_menu_hash"):
+            candidate["claim"].pop(key, None)
+    for key in ("protocol_version", "scope_protocol_version", "literal_quote_version",
+                "unit_normalization_version", "assertion_generation"):
+        wire.pop(key, None)
+    return wire
+
+
+def _compact_schema(schema, *, relationship):
+    """Remove presentation metadata and unreachable definitions, keeping constraints."""
+    def clean(value):
+        if isinstance(value, dict):
+            value.pop("title", None)
+            fields = value.get("properties", {})
+            if relationship and "candidate_id" in fields:
+                for key in ("unit_verdict", "source_unit_quote", "unit_binding_support"):
+                    fields.pop(key, None)
+                    if key in value.get("required", []):
+                        value["required"].remove(key)
+            for item in value.values():
+                clean(item)
+        elif isinstance(value, list):
+            for item in value:
+                clean(item)
+
+    clean(schema)
+    definitions = schema.get("$defs", {})
+    used = set()
+
+    def visit(value):
+        if isinstance(value, dict):
+            reference = value.get("$ref", "")
+            if reference.startswith("#/$defs/"):
+                name = reference.removeprefix("#/$defs/")
+                if name not in used:
+                    used.add(name)
+                    visit(definitions[name])
+            for key, item in value.items():
+                if key != "$defs":
+                    visit(item)
+        elif isinstance(value, list):
+            for item in value:
+                visit(item)
+
+    visit(schema)
+    schema["$defs"] = {key: value for key, value in definitions.items() if key in used}
+
+
 def _integer_quote_alternatives(context, aliases):
     """Bind lexical integers to a source and an actually resolvable locating quote."""
     grouped = {}
@@ -68,6 +142,7 @@ class TaskCitationProtocol:
     def __init__(self, context, request, response_type, system):
         self.context = context
         self.repair = request.get("protocol_version") == "evidence-repair-v1"
+        self.compact = self.repair and context.compact_recognition
         self.references = {
             "evidence_id": {f"E{i + 1}": identity for i, identity in enumerate(dict.fromkeys(
                 fragment.anchor.evidence_id for fragment in context.fragments))},
@@ -78,6 +153,12 @@ class TaskCitationProtocol:
             "target_id": {item["target_id"]: item["target_id"]
                           for item in request.get("candidates", [])},
         }
+        if self.compact:
+            for field, prefix in (("candidate_id", "C"), ("target_id", "T")):
+                self.references[field] = {
+                    f"{prefix}{i + 1}": item[field]
+                    for i, item in enumerate(request.get("candidates", []))
+                }
         self.reverse = {field: {value: key for key, value in values.items()}
                         for field, values in self.references.items()}
         self.schema = deepcopy(response_type.model_json_schema())
@@ -157,6 +238,24 @@ class TaskCitationProtocol:
                     schema_walk(item, field)
 
         schema_walk(self.schema)
+        if "type_support_source_ids" in request:
+            type_ids = set(request["type_support_source_ids"])
+            definitions["TypeRoleProof"] = deepcopy(definitions["BindingProof"])
+            if type_ids:
+                definitions["TypeRoleProof"]["properties"]["evidence_id"]["enum"] = [
+                    alias for alias, identity in self.references["evidence_id"].items()
+                    if identity in type_ids
+                ]
+            for definition in definitions.values():
+                support = definition.get("properties", {}).get("type_support")
+                if support is not None:
+                    support["items"] = {"$ref": "#/$defs/TypeRoleProof"}
+                    support["description"] = (
+                        "引用表达药品角色的同源正文；项目名称/代码仅用于定位，不能充当类型证明。"
+                        "无需判定原料药或制剂；无药品角色原文时type_verdict=undetermined且此处[]。"
+                    )
+                    if not type_ids:
+                        support["maxItems"] = 0
         # The nested owner verdict cannot claim support without its own source.
         # Only the frozen document root has an explicit programmatic exemption.
         owner_ids = {r.evidence_id for r in context.subject_evidence_refs}
@@ -243,8 +342,16 @@ class TaskCitationProtocol:
         self.system = system + INSTRUCTION
         self.allowed_bridges = request.get("proof_menu", {}).get("allowed_bridges")
         self.binding_ids = {b.field_binding_id for b in context.field_bindings} if repair else None
-        self.user = json.dumps(self._walk(request, encode=True), ensure_ascii=False,
-                               separators=(",", ":"))
+        if self.compact:
+            _compact_schema(
+                self.schema, relationship=request["predicate"]["kind"] == "relationship",
+            )
+        transport = _compact_request(request) if self.compact else deepcopy(request)
+        transport.pop("type_support_source_ids", None)
+        self.user = json.dumps(
+            self._walk(transport, encode=True),
+            ensure_ascii=False, separators=(",", ":"),
+        )
 
     def _walk(self, value, field="", *, encode=False):
         if isinstance(value, dict):
@@ -272,6 +379,11 @@ class TaskCitationProtocol:
         return mapping.get(field, {}).get(value, value) if isinstance(value, str) else value
 
     def decode(self, raw):
+        if self.compact:
+            for review in raw.get("verifications", []):
+                for field in ("candidate_id", "target_id"):
+                    if review.get(field) not in self.references[field]:
+                        raise ValueError("verification_reference_outside_task")
         decoded = self._walk(raw)
         if self.allowed_bridges is not None:
             for proposal in decoded.get("proposals", []):

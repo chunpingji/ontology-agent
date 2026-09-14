@@ -108,9 +108,10 @@ class DocumentPropertyRepair(Base):
     )
     request_key: Mapped[str] = mapped_column(String(200), nullable=False)
     request_hash: Mapped[str] = mapped_column(String(64), nullable=False)
-    base_checkpoint_artifact_id: Mapped[str] = mapped_column(
-        String(200), ForeignKey("document_analysis_artifacts.artifact_id"), nullable=False,
+    base_checkpoint_artifact_id: Mapped[str | None] = mapped_column(
+        String(200), ForeignKey("document_analysis_artifacts.artifact_id"), nullable=True,
     )
+    base_work_version: Mapped[int | None] = mapped_column(Integer)
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="queued")
     payload: Mapped[dict] = mapped_column(JSON, nullable=False)
     result: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)

@@ -15,6 +15,7 @@ from app.services.extraction.ontology_guided.adaptive_retrieval import (
 )
 from app.services.extraction.ontology_guided.candidate_planning import is_sparse
 from app.services.extraction.ontology_guided.contextual_retrieval import anchor_hits
+from app.services.extraction.ontology_guided.current_work import search_mutation
 from app.services.extraction.ontology_guided.heuristic_search import (
     AdmissionPage,
     HeuristicSlotSearch,
@@ -128,6 +129,7 @@ class AdaptiveSlotSearch(HeuristicSlotSearch):
         )
         return page
 
+    @search_mutation
     def next_admission(self):
         if not self.enforcing:
             return self._audit_page(super().next_admission())
@@ -226,6 +228,7 @@ class AdaptiveSlotSearch(HeuristicSlotSearch):
     def admit_conflict_check(self, record_ids, *, trigger_ref):
         return self._audit_page(super().admit_conflict_check(record_ids, trigger_ref=trigger_ref))
 
+    @search_mutation
     def accept_semantic(self, *args, **kwargs):
         raise ValueError("v4 requires the committed epoch and exact AdmissionDecision")
 
@@ -239,6 +242,7 @@ class AdaptiveSlotSearch(HeuristicSlotSearch):
         ):
             raise ValueError("adaptive result belongs to another slot or dependency")
 
+    @search_mutation
     def accept_ranked(self, epoch, decision):
         self._validate_context(epoch)
         decision = AdmissionDecision.model_validate(decision.model_dump(mode="json"))
@@ -278,6 +282,7 @@ class AdaptiveSlotSearch(HeuristicSlotSearch):
         self.status = "needs_search"
         self._reason = "committed_admission_decision"
 
+    @search_mutation
     def accept_result(self, result, gates):
         digest = evidence_hash(result)
         if result.expansion_attempt_id in self._results:
@@ -303,6 +308,7 @@ class AdaptiveSlotSearch(HeuristicSlotSearch):
         self.status = "needs_search"
         self._reason = result.reason
 
+    @search_mutation
     def apply_gate(self, value):
         gate = GateEvaluation.model_validate(value)
         self._validate_context(gate)
@@ -352,6 +358,7 @@ class AdaptiveSlotSearch(HeuristicSlotSearch):
                     )
                 self.reactivate(members, reason="group_member", trigger_ref=group_id)
 
+    @search_mutation
     def reactivate(self, record_ids, *, reason, trigger_ref):
         if (
             reason not in {"group_member", "required_evidence", "counterevidence"}
@@ -377,6 +384,7 @@ class AdaptiveSlotSearch(HeuristicSlotSearch):
             )
         )
 
+    @search_mutation
     def exhaust_dependency(self):
         # In sparse mode the default disposition belongs to the entire slot.
         # Never materialize one identical entry for every untouched source row.
@@ -486,6 +494,7 @@ class AdaptiveSlotSearch(HeuristicSlotSearch):
         ):
             raise ValueError("admission and disposition disagree")
 
+    @search_mutation
     def continue_search(self):
         if is_sparse(self.plan):
             return
