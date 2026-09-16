@@ -45,10 +45,14 @@ from app.schemas.extraction import (
     TemplateMatchResponse,
     TrainingPairResponse,
 )
+from app.schemas.template_finder import RecognitionEngineUpdate
 from app.services import audit
 from app.services.reporting.ast_template import ReportTemplate
 from app.services.reporting.report_run_service import schema_hash
 from app.services.reporting.template_v2 import ReportingError, TemplateV2
+from app.services.template_finder.configuration import configuration, save_configuration
+from app.services.template_finder.policy import resolve as finder_binding
+from app.services.template_finder.policy import response_fields as finder_fields
 
 
 def _protect_demo_template(request: Request, db: Session = Depends(get_db)):
@@ -118,6 +122,7 @@ def _count_slots(schema_json: dict) -> int:
 
 def _template_response(t: AstTemplate) -> AstTemplateResponse:
     return AstTemplateResponse(
+        **finder_fields(t),
         id=t.id,
         name=t.name,
         version=t.version,
@@ -166,6 +171,8 @@ def get_template(
     if not row:
         raise HTTPException(404, "模板不存在")
 
+    from app.services.extraction.template_structure_builder import template_structure_titles
+
     resp = _template_response(row)
     pairs = sorted(row.training_pairs, key=lambda p: p.created_at)
     # 同名模板的所有版本（供编辑器切换历史版本）。
@@ -185,6 +192,9 @@ def get_template(
         "sample_text": row.sample_text,
         "sample_content_json": row.sample_content_json,
         "sample_analysis": row.sample_analysis,
+        "structure_titles": template_structure_titles(
+            row.schema_json, row.sample_analysis or (row.sample_content_json or {}).get("analysis")
+        ),
         "training_pairs": [TrainingPairResponse.model_validate(p).model_dump() for p in pairs],
         "versions": versions,
     }
@@ -336,6 +346,27 @@ def _auto_version(current: str) -> str:
     return f"{current}.1"
 
 
+@router.get("/{template_id}/recognition-engine")
+def get_recognition_engine(template_id: UUID, db: Session = Depends(get_db)):
+    row = db.get(AstTemplate, template_id)
+    if not row:
+        raise HTTPException(404, "模板不存在")
+    return configuration(row)
+
+
+@router.patch("/{template_id}/recognition-engine")
+def update_recognition_engine(
+    template_id: UUID,
+    req: RecognitionEngineUpdate,
+    db: Session = Depends(get_db),
+    identity: object = Depends(_maintainer),
+):
+    row = db.get(AstTemplate, template_id)
+    if not row:
+        raise HTTPException(404, "模板不存在")
+    return save_configuration(db, row, req, getattr(identity, "username", "system"))
+
+
 _VALID_STATUSES = {"draft", "published", "archived"}
 
 
@@ -395,6 +426,7 @@ def update_template_meta(
         changed["status"] = req.status
     if req.iri_pattern is not None:
         row.iri_pattern = req.iri_pattern or None
+        finder_binding(row)  # Reject incompatible root changes before committing metadata.
         changed["iri_pattern"] = row.iri_pattern
 
     if changed:
@@ -608,6 +640,9 @@ async def upload_default_source(
 
     row = _get_template_or_404(template_id, db)
     suffix = Path(file.filename or "").suffix.lower()
+    finder = finder_binding(row)
+    if finder and suffix not in (".doc", ".docx"):
+        raise HTTPException(422, "本体指引1.0仅支持 Word 原件")
     if suffix not in (".doc", ".docx", ".xlsx", ".xls"):
         raise HTTPException(422, "仅支持 Word(.doc/.docx) 或 Excel(.xlsx/.xls) 文件")
 
@@ -649,7 +684,7 @@ async def upload_default_source(
             "template_id": str(template_id),
             "doc_class_iri": row.iri_pattern,
         },
-        status="running",
+        status="pending" if finder else "running",
     )
     db.add(job)
     db.flush()
@@ -677,7 +712,7 @@ async def upload_default_source(
 
     # 提交成功后再清理旧资源（best-effort）：旧源文件（若与新路径不同）与旧标注缓存。
 
-    if source_type in ("word", "excel"):
+    if not finder and source_type in ("word", "excel"):
         _enqueue_annotation(job.id, background, engine, db, mode="start",
                             actor=getattr(identity, "username", "system"))
 
@@ -911,11 +946,9 @@ def generate_section_prompt_endpoint(
     req: GenerateSectionPromptRequest,
     identity: object = Depends(_maintainer),
 ):
-    raise ReportingError(
-        "STRUCTURED_OUTPUT_PROMPT_REQUIRED",
-        status=409,
-        message="Configure authorized InputRefs and a versioned prompt policy.",
-    )
+    from app.services.reporting.section_narrative import generate_prompt
+
+    return generate_prompt(req)
 
 
 @router.post("/preview-section-narrative", response_model=PreviewSectionNarrativeResponse)
@@ -923,12 +956,11 @@ def preview_section_narrative_endpoint(
     req: PreviewSectionNarrativeRequest,
     identity: object = Depends(_maintainer),
     db: Session = Depends(get_db),
+    engine: object = Depends(get_ontology_engine),
 ):
-    raise ReportingError(
-        "STRUCTURED_OUTPUT_PREVIEW_REQUIRED",
-        status=409,
-        message="Use /api/report-previews with a V2 template revision.",
-    )
+    from app.services.reporting.section_preview import preview_section
+
+    return preview_section(db, engine, identity.username, req)
 
 
 # ── Template match (T011) ───────────────────────────────────────────────

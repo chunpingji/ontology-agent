@@ -4,13 +4,15 @@ import { Suspense, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, Settings } from "lucide-react";
 
 import {
   getAstTemplate,
   updateAstTemplate,
 } from "@/lib/api";
 import { WordViewer } from "@/components/extraction/word-viewer";
+import { FinderTemplateSource } from "@/components/analysis/finder-template-source";
+import { TemplateRecognitionEngine } from "@/components/reporting/template-recognition-engine";
 import { BatchDemoTemplate } from "@/components/reports/batch-demo-template";
 import { OutputTemplateEditor } from "@/components/reporting/output-template-editor";
 import { isTemplateV2, reportPost, type FrozenRecord, type TemplateV2 } from "@/lib/reporting-v2";
@@ -24,6 +26,14 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function EditTemplatePage() {
@@ -50,7 +60,7 @@ function EditTemplateContent() {
 
   const query = useQuery({
     queryKey: ["ast-template", templateId],
-    queryFn: () => getAstTemplate(templateId),
+    queryFn: ({ signal }) => getAstTemplate(templateId, signal),
   });
 
   async function handleSave(updated: Record<string, unknown>) {
@@ -77,8 +87,8 @@ function EditTemplateContent() {
 
   return (
     <div className="flex flex-col h-[calc(100vh-56px-3rem)]">
-      <div className="px-6 pt-4 pb-3">
-        <Breadcrumb>
+      <div className="flex shrink-0 items-center justify-between gap-3 px-6 pt-4 pb-3">
+        <Breadcrumb className="min-w-0">
           <BreadcrumbList>
             <BreadcrumbItem>
               <BreadcrumbLink asChild>
@@ -93,6 +103,21 @@ function EditTemplateContent() {
             </BreadcrumbItem>
           </BreadcrumbList>
         </Breadcrumb>
+        {tpl && !tpl.demo_profile && <Dialog key={tpl.id}>
+          <DialogTrigger asChild>
+            <Button type="button" variant="ghost" size="icon" className="shrink-0"
+              aria-label="关系图谱识别引擎配置" title="关系图谱识别引擎配置">
+              <Settings className="h-4 w-4" aria-hidden="true" />
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] overflow-y-auto rounded-lg sm:max-w-md">
+            <DialogHeader className="pr-6 text-left">
+              <DialogTitle>关系图谱识别引擎配置</DialogTitle>
+              <DialogDescription>选择当前模板修订使用的识别引擎并保存。</DialogDescription>
+            </DialogHeader>
+            <TemplateRecognitionEngine templateId={tpl.id} rootClassIri={tpl.iri_pattern} />
+          </DialogContent>
+        </Dialog>}
       </div>
 
       {tpl && searchParams.get("created") === "1" && <p role="status" className="mb-3 rounded border bg-muted/30 px-4 py-2 text-sm">
@@ -131,11 +156,14 @@ function EditTemplateContent() {
           <BatchDemoTemplate key={tpl.id} templateId={tpl.id} />
         ) : tpl ? isTemplateV2(tpl.schema_json) ? (
           <OutputTemplateEditor key={tpl.id} schema={tpl.schema_json} templateId={tpl.id}
+            recognitionMode={tpl.recognition_mode}
             initialTab={searchParams.get("tab") === "template" ? "template" : undefined}
             schemaHash={tpl.schema_hash} saving={saving} onSave={handleSave}
             onCancel={() => router.push("/settings/ast-templates")}
             defaultSourceJobId={tpl.default_source_job_id} versions={tpl.versions} sampleContentJson={tpl.sample_content_json}
             sampleText={tpl.sample_text}
+            sampleAnalysis={tpl.sample_analysis}
+            structureTitles={tpl.structure_titles}
             meta={{
               name: tpl.name,
               docNo: tpl.doc_no,
@@ -153,6 +181,7 @@ function EditTemplateContent() {
         ) : (
           <div className="h-full overflow-auto p-6 space-y-4">
             <p>历史模板只读。编辑内容请先创建 V2 迁移草稿。</p>
+            {tpl.recognition_mode === "finder_legacy" && <FinderTemplateSource key={tpl.id} template={tpl} />}
             <select aria-label="历史模板版本" className="border rounded p-2" value={tpl.id}
               onChange={(e) => router.push("/settings/ast-templates/" + e.target.value)}>
               {tpl.versions?.map((v) => <option key={v.id} value={v.id}>{v.version}</option>)}

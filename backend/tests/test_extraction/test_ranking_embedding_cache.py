@@ -9,6 +9,15 @@ from tests.test_extraction.test_document_state_artifacts import seed
 from tests.test_extraction.test_semantic_ranking import RankingModel, setup_slot
 
 
+def test_ranking_write_failure_has_a_specific_public_message():
+    from app.services.document_analysis.execution import _failure_payload
+    from app.services.llm.model_runtime import ModelWaitFailure
+
+    assert _failure_payload(ModelWaitFailure("ranking_persistence_failed")) == (
+        "RANKING_STATE_PERSISTENCE_FAILED", "语义检索进度保存失败，已保留已完成结果",
+    )
+
+
 def test_repeated_text_cannot_overwrite_paid_embedding_and_resumes_without_model_calls(
     db, tmp_path, monkeypatch,
 ):

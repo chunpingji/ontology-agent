@@ -1,0 +1,1944 @@
+{
+  "reviewer": "independent_assistant_source_review",
+  "review_level": "assistant_silver_not_domain_expert_gold",
+  "input_restriction": "仅查看 candidates/proposal.json、sources.json、subject-cards.json；未读 verification、评分 reference 或 result.json 内容。",
+  "matching_contract": "subject_id/group/field/proposal_index/proposal 保留原始候选；observations 使用 observation_index。",
+  "scopes": [
+    {
+      "scope": "A-pde_conflict",
+      "input_paths": [
+        "/tmp/cmc-tools-late-review/A-pde_conflict/candidates/proposal.json",
+        "/tmp/cmc-tools-late-review/A-pde_conflict/sources.json",
+        "/tmp/cmc-tools-late-review/A-pde_conflict/subject-cards.json"
+      ],
+      "subjects": [
+        {
+          "subject_id": "s1",
+          "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/SharedLineAssessmentData",
+          "anchor": {
+            "ref": "u13",
+            "quote": "HRS-1597",
+            "span_id": "source:u13"
+          },
+          "verdict": "undetermined",
+          "reason": "u13是列0活性成分(API) HRS-1597，row_span=2覆盖两试验。它能标记共有API，不能独立标记试验1或犬试验对应的SharedLineAssessmentData记录；不得把两条试验行合成一条数据主体。"
+        },
+        {
+          "subject_id": "s2",
+          "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/ActivePharmaceuticalIngredient",
+          "anchor": {
+            "ref": "",
+            "quote": "",
+            "span_id": ""
+          },
+          "verdict": "not_proposed",
+          "reason": "anchor为空且无非空声明，槽位未形成实体，不计作专业类型假阳性。"
+        }
+      ],
+      "claims": [
+        {
+          "subject_id": "document",
+          "group": "relations",
+          "field": "hasSharedLineData",
+          "proposal_index": 0,
+          "proposal": {
+            "target_id": "s1",
+            "evidence": {
+              "ref": "u0",
+              "quote": "表1 产品NOAEL、F值",
+              "span_id": "source:u0"
+            },
+            "condition": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "polarity": "affirmed"
+          },
+          "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasSharedLineData",
+          "verdict": "undetermined",
+          "reason": "表1确有本报告共线评估相关NOAEL/F/PDE数据，关系类别与方向可以支持；但s1用跨行API名锚定，并混合两条试验记录，尚无被证明的单一目标数据记录。该关系不能证明后续两组行数据属于同一记录。",
+          "raw_evidence_verdict": "supported",
+          "subject_record_verdict": "undetermined",
+          "support_refs": [
+            "u0",
+            "u13",
+            "u14",
+            "u24"
+          ]
+        },
+        {
+          "subject_id": "s1",
+          "group": "attributes",
+          "field": "activeIngredient",
+          "proposal_index": 0,
+          "proposal": {
+            "raw": "HRS-1597",
+            "source": {
+              "ref": "u13",
+              "quote": "HRS-1597",
+              "span_id": "source:u13"
+            },
+            "field": {
+              "ref": "u1",
+              "quote": "活性成分(API)",
+              "span_id": "source:u1"
+            },
+            "unit": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "condition": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            }
+          },
+          "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/activeIngredient",
+          "verdict": "undetermined",
+          "reason": "活性成分(API)列确为HRS-1597，原值与字段正确，且对两试验共享。但完整声明还要求s1是确定的数据记录；当前API名跨两行，主体记录未唯一建立。",
+          "raw_evidence_verdict": "supported",
+          "field_verdict": "supported",
+          "subject_record_verdict": "undetermined",
+          "support_refs": [
+            "u1",
+            "u13"
+          ]
+        },
+        {
+          "subject_id": "s1",
+          "group": "attributes",
+          "field": "f1",
+          "proposal_index": 0,
+          "proposal": {
+            "raw": "5",
+            "source": {
+              "ref": "u16",
+              "quote": "5",
+              "span_id": "source:u16"
+            },
+            "field": {
+              "ref": "u4",
+              "quote": "F1",
+              "span_id": "source:u4"
+            },
+            "unit": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "condition": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            }
+          },
+          "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/f1",
+          "verdict": "unsupported",
+          "reason": "原值与列/试验项目对应可核验，但完整声明挂到跨两行的API主体s1，未将大鼠与犬试验分成独立数据主体；丢失同一试验内PDE、F值、来源、周期、种属和试验项目的组合归属。不能因共享API单元跨行而合并记录。",
+          "raw_evidence_verdict": "supported",
+          "field_verdict": "supported",
+          "subject_record_verdict": "unsupported",
+          "expected_logical_row": 1,
+          "expected_trial_ref": "u14",
+          "expected_trial_text": "大鼠14天亚急毒试验（试验1）",
+          "support_refs": [
+            "u16",
+            "u4",
+            "u13",
+            "u14"
+          ],
+          "unit_verdict": "not_required",
+          "unit_reason": "F值为表格及备注所示系数；本次无需补造质量或时间单位。"
+        },
+        {
+          "subject_id": "s1",
+          "group": "attributes",
+          "field": "f1",
+          "proposal_index": 1,
+          "proposal": {
+            "raw": "2",
+            "source": {
+              "ref": "u26",
+              "quote": "2",
+              "span_id": "source:u26"
+            },
+            "field": {
+              "ref": "u4",
+              "quote": "F1",
+              "span_id": "source:u4"
+            },
+            "unit": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "condition": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            }
+          },
+          "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/f1",
+          "verdict": "unsupported",
+          "reason": "原值与列/试验项目对应可核验，但完整声明挂到跨两行的API主体s1，未将大鼠与犬试验分成独立数据主体；丢失同一试验内PDE、F值、来源、周期、种属和试验项目的组合归属。不能因共享API单元跨行而合并记录。",
+          "raw_evidence_verdict": "supported",
+          "field_verdict": "supported",
+          "subject_record_verdict": "unsupported",
+          "expected_logical_row": 2,
+          "expected_trial_ref": "u24",
+          "expected_trial_text": "犬14天亚急毒",
+          "support_refs": [
+            "u26",
+            "u4",
+            "u13",
+            "u24"
+          ],
+          "unit_verdict": "not_required",
+          "unit_reason": "F值为表格及备注所示系数；本次无需补造质量或时间单位。"
+        },
+        {
+          "subject_id": "s1",
+          "group": "attributes",
+          "field": "f2",
+          "proposal_index": 0,
+          "proposal": {
+            "raw": "10",
+            "source": {
+              "ref": "u17",
+              "quote": "10",
+              "span_id": "source:u17"
+            },
+            "field": {
+              "ref": "u5",
+              "quote": "F2",
+              "span_id": "source:u5"
+            },
+            "unit": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "condition": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            }
+          },
+          "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/f2",
+          "verdict": "unsupported",
+          "reason": "原值与列/试验项目对应可核验，但完整声明挂到跨两行的API主体s1，未将大鼠与犬试验分成独立数据主体；丢失同一试验内PDE、F值、来源、周期、种属和试验项目的组合归属。不能因共享API单元跨行而合并记录。",
+          "raw_evidence_verdict": "supported",
+          "field_verdict": "supported",
+          "subject_record_verdict": "unsupported",
+          "expected_logical_row": 1,
+          "expected_trial_ref": "u14",
+          "expected_trial_text": "大鼠14天亚急毒试验（试验1）",
+          "support_refs": [
+            "u17",
+            "u5",
+            "u13",
+            "u14"
+          ],
+          "unit_verdict": "not_required",
+          "unit_reason": "F值为表格及备注所示系数；本次无需补造质量或时间单位。"
+        },
+        {
+          "subject_id": "s1",
+          "group": "attributes",
+          "field": "f2",
+          "proposal_index": 1,
+          "proposal": {
+            "raw": "10",
+            "source": {
+              "ref": "u27",
+              "quote": "10",
+              "span_id": "source:u27"
+            },
+            "field": {
+              "ref": "u5",
+              "quote": "F2",
+              "span_id": "source:u5"
+            },
+            "unit": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "condition": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            }
+          },
+          "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/f2",
+          "verdict": "unsupported",
+          "reason": "原值与列/试验项目对应可核验，但完整声明挂到跨两行的API主体s1，未将大鼠与犬试验分成独立数据主体；丢失同一试验内PDE、F值、来源、周期、种属和试验项目的组合归属。不能因共享API单元跨行而合并记录。",
+          "raw_evidence_verdict": "supported",
+          "field_verdict": "supported",
+          "subject_record_verdict": "unsupported",
+          "expected_logical_row": 2,
+          "expected_trial_ref": "u24",
+          "expected_trial_text": "犬14天亚急毒",
+          "support_refs": [
+            "u27",
+            "u5",
+            "u13",
+            "u24"
+          ],
+          "unit_verdict": "not_required",
+          "unit_reason": "F值为表格及备注所示系数；本次无需补造质量或时间单位。"
+        },
+        {
+          "subject_id": "s1",
+          "group": "attributes",
+          "field": "f3",
+          "proposal_index": 0,
+          "proposal": {
+            "raw": "10",
+            "source": {
+              "ref": "u18",
+              "quote": "10",
+              "span_id": "source:u18"
+            },
+            "field": {
+              "ref": "u6",
+              "quote": "F3",
+              "span_id": "source:u6"
+            },
+            "unit": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "condition": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            }
+          },
+          "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/f3",
+          "verdict": "unsupported",
+          "reason": "原值与列/试验项目对应可核验，但完整声明挂到跨两行的API主体s1，未将大鼠与犬试验分成独立数据主体；丢失同一试验内PDE、F值、来源、周期、种属和试验项目的组合归属。不能因共享API单元跨行而合并记录。",
+          "raw_evidence_verdict": "supported",
+          "field_verdict": "supported",
+          "subject_record_verdict": "unsupported",
+          "expected_logical_row": 1,
+          "expected_trial_ref": "u14",
+          "expected_trial_text": "大鼠14天亚急毒试验（试验1）",
+          "support_refs": [
+            "u18",
+            "u6",
+            "u13",
+            "u14"
+          ],
+          "unit_verdict": "not_required",
+          "unit_reason": "F值为表格及备注所示系数；本次无需补造质量或时间单位。"
+        },
+        {
+          "subject_id": "s1",
+          "group": "attributes",
+          "field": "f3",
+          "proposal_index": 1,
+          "proposal": {
+            "raw": "10",
+            "source": {
+              "ref": "u28",
+              "quote": "10",
+              "span_id": "source:u28"
+            },
+            "field": {
+              "ref": "u6",
+              "quote": "F3",
+              "span_id": "source:u6"
+            },
+            "unit": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "condition": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            }
+          },
+          "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/f3",
+          "verdict": "unsupported",
+          "reason": "原值与列/试验项目对应可核验，但完整声明挂到跨两行的API主体s1，未将大鼠与犬试验分成独立数据主体；丢失同一试验内PDE、F值、来源、周期、种属和试验项目的组合归属。不能因共享API单元跨行而合并记录。",
+          "raw_evidence_verdict": "supported",
+          "field_verdict": "supported",
+          "subject_record_verdict": "unsupported",
+          "expected_logical_row": 2,
+          "expected_trial_ref": "u24",
+          "expected_trial_text": "犬14天亚急毒",
+          "support_refs": [
+            "u28",
+            "u6",
+            "u13",
+            "u24"
+          ],
+          "unit_verdict": "not_required",
+          "unit_reason": "F值为表格及备注所示系数；本次无需补造质量或时间单位。"
+        },
+        {
+          "subject_id": "s1",
+          "group": "attributes",
+          "field": "f4",
+          "proposal_index": 0,
+          "proposal": {
+            "raw": "1",
+            "source": {
+              "ref": "u19",
+              "quote": "1",
+              "span_id": "source:u19"
+            },
+            "field": {
+              "ref": "u7",
+              "quote": "F4",
+              "span_id": "source:u7"
+            },
+            "unit": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "condition": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            }
+          },
+          "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/f4",
+          "verdict": "unsupported",
+          "reason": "原值与列/试验项目对应可核验，但完整声明挂到跨两行的API主体s1，未将大鼠与犬试验分成独立数据主体；丢失同一试验内PDE、F值、来源、周期、种属和试验项目的组合归属。不能因共享API单元跨行而合并记录。",
+          "raw_evidence_verdict": "supported",
+          "field_verdict": "supported",
+          "subject_record_verdict": "unsupported",
+          "expected_logical_row": 1,
+          "expected_trial_ref": "u14",
+          "expected_trial_text": "大鼠14天亚急毒试验（试验1）",
+          "support_refs": [
+            "u19",
+            "u7",
+            "u13",
+            "u14"
+          ],
+          "unit_verdict": "not_required",
+          "unit_reason": "F值为表格及备注所示系数；本次无需补造质量或时间单位。"
+        },
+        {
+          "subject_id": "s1",
+          "group": "attributes",
+          "field": "f4",
+          "proposal_index": 1,
+          "proposal": {
+            "raw": "1",
+            "source": {
+              "ref": "u29",
+              "quote": "1",
+              "span_id": "source:u29"
+            },
+            "field": {
+              "ref": "u7",
+              "quote": "F4",
+              "span_id": "source:u7"
+            },
+            "unit": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "condition": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            }
+          },
+          "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/f4",
+          "verdict": "unsupported",
+          "reason": "原值与列/试验项目对应可核验，但完整声明挂到跨两行的API主体s1，未将大鼠与犬试验分成独立数据主体；丢失同一试验内PDE、F值、来源、周期、种属和试验项目的组合归属。不能因共享API单元跨行而合并记录。",
+          "raw_evidence_verdict": "supported",
+          "field_verdict": "supported",
+          "subject_record_verdict": "unsupported",
+          "expected_logical_row": 2,
+          "expected_trial_ref": "u24",
+          "expected_trial_text": "犬14天亚急毒",
+          "support_refs": [
+            "u29",
+            "u7",
+            "u13",
+            "u24"
+          ],
+          "unit_verdict": "not_required",
+          "unit_reason": "F值为表格及备注所示系数；本次无需补造质量或时间单位。"
+        },
+        {
+          "subject_id": "s1",
+          "group": "attributes",
+          "field": "f5",
+          "proposal_index": 0,
+          "proposal": {
+            "raw": "1",
+            "source": {
+              "ref": "u20",
+              "quote": "1",
+              "span_id": "source:u20"
+            },
+            "field": {
+              "ref": "u8",
+              "quote": "F5",
+              "span_id": "source:u8"
+            },
+            "unit": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "condition": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            }
+          },
+          "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/f5",
+          "verdict": "unsupported",
+          "reason": "原值与列/试验项目对应可核验，但完整声明挂到跨两行的API主体s1，未将大鼠与犬试验分成独立数据主体；丢失同一试验内PDE、F值、来源、周期、种属和试验项目的组合归属。不能因共享API单元跨行而合并记录。",
+          "raw_evidence_verdict": "supported",
+          "field_verdict": "supported",
+          "subject_record_verdict": "unsupported",
+          "expected_logical_row": 1,
+          "expected_trial_ref": "u14",
+          "expected_trial_text": "大鼠14天亚急毒试验（试验1）",
+          "support_refs": [
+            "u20",
+            "u8",
+            "u13",
+            "u14"
+          ],
+          "unit_verdict": "not_required",
+          "unit_reason": "F值为表格及备注所示系数；本次无需补造质量或时间单位。"
+        },
+        {
+          "subject_id": "s1",
+          "group": "attributes",
+          "field": "f5",
+          "proposal_index": 1,
+          "proposal": {
+            "raw": "1",
+            "source": {
+              "ref": "u30",
+              "quote": "1",
+              "span_id": "source:u30"
+            },
+            "field": {
+              "ref": "u8",
+              "quote": "F5",
+              "span_id": "source:u8"
+            },
+            "unit": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "condition": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            }
+          },
+          "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/f5",
+          "verdict": "unsupported",
+          "reason": "原值与列/试验项目对应可核验，但完整声明挂到跨两行的API主体s1，未将大鼠与犬试验分成独立数据主体；丢失同一试验内PDE、F值、来源、周期、种属和试验项目的组合归属。不能因共享API单元跨行而合并记录。",
+          "raw_evidence_verdict": "supported",
+          "field_verdict": "supported",
+          "subject_record_verdict": "unsupported",
+          "expected_logical_row": 2,
+          "expected_trial_ref": "u24",
+          "expected_trial_text": "犬14天亚急毒",
+          "support_refs": [
+            "u30",
+            "u8",
+            "u13",
+            "u24"
+          ],
+          "unit_verdict": "not_required",
+          "unit_reason": "F值为表格及备注所示系数；本次无需补造质量或时间单位。"
+        },
+        {
+          "subject_id": "s1",
+          "group": "attributes",
+          "field": "noaelDuration",
+          "proposal_index": 0,
+          "proposal": {
+            "raw": "14天",
+            "source": {
+              "ref": "u14",
+              "quote": "大鼠14天亚急毒试验（试验1）",
+              "span_id": "source:u14"
+            },
+            "field": {
+              "ref": "u2",
+              "quote": "试验项目",
+              "span_id": "source:u2"
+            },
+            "unit": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "condition": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            }
+          },
+          "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/noaelDuration",
+          "verdict": "unsupported",
+          "reason": "原值与列/试验项目对应可核验，但完整声明挂到跨两行的API主体s1，未将大鼠与犬试验分成独立数据主体；丢失同一试验内PDE、F值、来源、周期、种属和试验项目的组合归属。不能因共享API单元跨行而合并记录。",
+          "raw_evidence_verdict": "supported",
+          "field_verdict": "supported",
+          "subject_record_verdict": "unsupported",
+          "expected_logical_row": 1,
+          "expected_trial_ref": "u14",
+          "expected_trial_text": "大鼠14天亚急毒试验（试验1）",
+          "support_refs": [
+            "u14",
+            "u2",
+            "u13",
+            "u14"
+          ]
+        },
+        {
+          "subject_id": "s1",
+          "group": "attributes",
+          "field": "noaelDuration",
+          "proposal_index": 1,
+          "proposal": {
+            "raw": "14天",
+            "source": {
+              "ref": "u24",
+              "quote": "犬14天亚急毒",
+              "span_id": "source:u24"
+            },
+            "field": {
+              "ref": "u2",
+              "quote": "试验项目",
+              "span_id": "source:u2"
+            },
+            "unit": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "condition": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            }
+          },
+          "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/noaelDuration",
+          "verdict": "unsupported",
+          "reason": "原值与列/试验项目对应可核验，但完整声明挂到跨两行的API主体s1，未将大鼠与犬试验分成独立数据主体；丢失同一试验内PDE、F值、来源、周期、种属和试验项目的组合归属。不能因共享API单元跨行而合并记录。",
+          "raw_evidence_verdict": "supported",
+          "field_verdict": "supported",
+          "subject_record_verdict": "unsupported",
+          "expected_logical_row": 2,
+          "expected_trial_ref": "u24",
+          "expected_trial_text": "犬14天亚急毒",
+          "support_refs": [
+            "u24",
+            "u2",
+            "u13",
+            "u24"
+          ]
+        },
+        {
+          "subject_id": "s1",
+          "group": "attributes",
+          "field": "noaelSpecies",
+          "proposal_index": 0,
+          "proposal": {
+            "raw": "大鼠",
+            "source": {
+              "ref": "u14",
+              "quote": "大鼠14天亚急毒试验（试验1）",
+              "span_id": "source:u14"
+            },
+            "field": {
+              "ref": "u2",
+              "quote": "试验项目",
+              "span_id": "source:u2"
+            },
+            "unit": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "condition": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            }
+          },
+          "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/noaelSpecies",
+          "verdict": "unsupported",
+          "reason": "原值与列/试验项目对应可核验，但完整声明挂到跨两行的API主体s1，未将大鼠与犬试验分成独立数据主体；丢失同一试验内PDE、F值、来源、周期、种属和试验项目的组合归属。不能因共享API单元跨行而合并记录。",
+          "raw_evidence_verdict": "supported",
+          "field_verdict": "supported",
+          "subject_record_verdict": "unsupported",
+          "expected_logical_row": 1,
+          "expected_trial_ref": "u14",
+          "expected_trial_text": "大鼠14天亚急毒试验（试验1）",
+          "support_refs": [
+            "u14",
+            "u2",
+            "u13",
+            "u14"
+          ]
+        },
+        {
+          "subject_id": "s1",
+          "group": "attributes",
+          "field": "noaelSpecies",
+          "proposal_index": 1,
+          "proposal": {
+            "raw": "犬",
+            "source": {
+              "ref": "u24",
+              "quote": "犬14天亚急毒",
+              "span_id": "source:u24"
+            },
+            "field": {
+              "ref": "u2",
+              "quote": "试验项目",
+              "span_id": "source:u2"
+            },
+            "unit": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "condition": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            }
+          },
+          "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/noaelSpecies",
+          "verdict": "unsupported",
+          "reason": "原值与列/试验项目对应可核验，但完整声明挂到跨两行的API主体s1，未将大鼠与犬试验分成独立数据主体；丢失同一试验内PDE、F值、来源、周期、种属和试验项目的组合归属。不能因共享API单元跨行而合并记录。",
+          "raw_evidence_verdict": "supported",
+          "field_verdict": "supported",
+          "subject_record_verdict": "unsupported",
+          "expected_logical_row": 2,
+          "expected_trial_ref": "u24",
+          "expected_trial_text": "犬14天亚急毒",
+          "support_refs": [
+            "u24",
+            "u2",
+            "u13",
+            "u24"
+          ]
+        },
+        {
+          "subject_id": "s1",
+          "group": "attributes",
+          "field": "oebBand",
+          "proposal_index": 0,
+          "proposal": {
+            "raw": "1",
+            "source": {
+              "ref": "u23",
+              "quote": "1",
+              "span_id": "source:u23"
+            },
+            "field": {
+              "ref": "u12",
+              "quote": "OEB",
+              "span_id": "source:u12"
+            },
+            "unit": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "condition": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            }
+          },
+          "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/oebBand",
+          "verdict": "unsupported",
+          "reason": "原值与列/试验项目对应可核验，但完整声明挂到跨两行的API主体s1，未将大鼠与犬试验分成独立数据主体；丢失同一试验内PDE、F值、来源、周期、种属和试验项目的组合归属。不能因共享API单元跨行而合并记录。",
+          "raw_evidence_verdict": "supported",
+          "field_verdict": "supported",
+          "subject_record_verdict": "unsupported",
+          "expected_logical_row": 1,
+          "expected_trial_ref": "u14",
+          "expected_trial_text": "大鼠14天亚急毒试验（试验1）",
+          "support_refs": [
+            "u23",
+            "u12",
+            "u13",
+            "u14"
+          ]
+        },
+        {
+          "subject_id": "s1",
+          "group": "attributes",
+          "field": "oebBand",
+          "proposal_index": 1,
+          "proposal": {
+            "raw": "1",
+            "source": {
+              "ref": "u33",
+              "quote": "1",
+              "span_id": "source:u33"
+            },
+            "field": {
+              "ref": "u12",
+              "quote": "OEB",
+              "span_id": "source:u12"
+            },
+            "unit": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "condition": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            }
+          },
+          "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/oebBand",
+          "verdict": "unsupported",
+          "reason": "原值与列/试验项目对应可核验，但完整声明挂到跨两行的API主体s1，未将大鼠与犬试验分成独立数据主体；丢失同一试验内PDE、F值、来源、周期、种属和试验项目的组合归属。不能因共享API单元跨行而合并记录。",
+          "raw_evidence_verdict": "supported",
+          "field_verdict": "supported",
+          "subject_record_verdict": "unsupported",
+          "expected_logical_row": 2,
+          "expected_trial_ref": "u24",
+          "expected_trial_text": "犬14天亚急毒",
+          "support_refs": [
+            "u33",
+            "u12",
+            "u13",
+            "u24"
+          ]
+        },
+        {
+          "subject_id": "s1",
+          "group": "attributes",
+          "field": "pde_mg_per_day",
+          "proposal_index": 0,
+          "proposal": {
+            "raw": "100",
+            "source": {
+              "ref": "u21",
+              "quote": "100",
+              "span_id": "source:u21"
+            },
+            "field": {
+              "ref": "u9",
+              "quote": "PDE",
+              "span_id": "source:u9"
+            },
+            "unit": {
+              "ref": "u10",
+              "quote": "(mg/天)",
+              "span_id": "source:u10"
+            },
+            "condition": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            }
+          },
+          "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/pde_mg_per_day",
+          "verdict": "unsupported",
+          "reason": "原值与列/试验项目对应可核验，但完整声明挂到跨两行的API主体s1，未将大鼠与犬试验分成独立数据主体；丢失同一试验内PDE、F值、来源、周期、种属和试验项目的组合归属。不能因共享API单元跨行而合并记录。",
+          "raw_evidence_verdict": "supported",
+          "field_verdict": "supported",
+          "subject_record_verdict": "unsupported",
+          "expected_logical_row": 1,
+          "expected_trial_ref": "u14",
+          "expected_trial_text": "大鼠14天亚急毒试验（试验1）",
+          "support_refs": [
+            "u21",
+            "u9",
+            "u13",
+            "u14"
+          ],
+          "unit_verdict": "supported",
+          "source_unit": "(mg/天)",
+          "expected_canonical_unit": "mg/day",
+          "unit_reason": "u10与PDE列同一表头单元，确实分别修饰u21=100及u31=7.5；单位正确不能修复试验主体合并。"
+        },
+        {
+          "subject_id": "s1",
+          "group": "attributes",
+          "field": "pde_mg_per_day",
+          "proposal_index": 1,
+          "proposal": {
+            "raw": "7.5",
+            "source": {
+              "ref": "u31",
+              "quote": "7.5",
+              "span_id": "source:u31"
+            },
+            "field": {
+              "ref": "u9",
+              "quote": "PDE",
+              "span_id": "source:u9"
+            },
+            "unit": {
+              "ref": "u10",
+              "quote": "(mg/天)",
+              "span_id": "source:u10"
+            },
+            "condition": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            }
+          },
+          "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/pde_mg_per_day",
+          "verdict": "unsupported",
+          "reason": "原值与列/试验项目对应可核验，但完整声明挂到跨两行的API主体s1，未将大鼠与犬试验分成独立数据主体；丢失同一试验内PDE、F值、来源、周期、种属和试验项目的组合归属。不能因共享API单元跨行而合并记录。",
+          "raw_evidence_verdict": "supported",
+          "field_verdict": "supported",
+          "subject_record_verdict": "unsupported",
+          "expected_logical_row": 2,
+          "expected_trial_ref": "u24",
+          "expected_trial_text": "犬14天亚急毒",
+          "support_refs": [
+            "u31",
+            "u9",
+            "u13",
+            "u24"
+          ],
+          "unit_verdict": "supported",
+          "source_unit": "(mg/天)",
+          "expected_canonical_unit": "mg/day",
+          "unit_reason": "u10与PDE列同一表头单元，确实分别修饰u21=100及u31=7.5；单位正确不能修复试验主体合并。"
+        },
+        {
+          "subject_id": "s1",
+          "group": "attributes",
+          "field": "sourceReference",
+          "proposal_index": 0,
+          "proposal": {
+            "raw": "19191-25030-NG",
+            "source": {
+              "ref": "u22",
+              "quote": "19191-25030-NG",
+              "span_id": "source:u22"
+            },
+            "field": {
+              "ref": "u11",
+              "quote": "来源",
+              "span_id": "source:u11"
+            },
+            "unit": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "condition": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            }
+          },
+          "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/sourceReference",
+          "verdict": "unsupported",
+          "reason": "原值与列/试验项目对应可核验，但完整声明挂到跨两行的API主体s1，未将大鼠与犬试验分成独立数据主体；丢失同一试验内PDE、F值、来源、周期、种属和试验项目的组合归属。不能因共享API单元跨行而合并记录。",
+          "raw_evidence_verdict": "supported",
+          "field_verdict": "supported",
+          "subject_record_verdict": "unsupported",
+          "expected_logical_row": 1,
+          "expected_trial_ref": "u14",
+          "expected_trial_text": "大鼠14天亚急毒试验（试验1）",
+          "support_refs": [
+            "u22",
+            "u11",
+            "u13",
+            "u14"
+          ]
+        },
+        {
+          "subject_id": "s1",
+          "group": "attributes",
+          "field": "sourceReference",
+          "proposal_index": 1,
+          "proposal": {
+            "raw": "19191-25031-NG",
+            "source": {
+              "ref": "u32",
+              "quote": "19191-25031-NG",
+              "span_id": "source:u32"
+            },
+            "field": {
+              "ref": "u11",
+              "quote": "来源",
+              "span_id": "source:u11"
+            },
+            "unit": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "condition": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            }
+          },
+          "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/sourceReference",
+          "verdict": "unsupported",
+          "reason": "原值与列/试验项目对应可核验，但完整声明挂到跨两行的API主体s1，未将大鼠与犬试验分成独立数据主体；丢失同一试验内PDE、F值、来源、周期、种属和试验项目的组合归属。不能因共享API单元跨行而合并记录。",
+          "raw_evidence_verdict": "supported",
+          "field_verdict": "supported",
+          "subject_record_verdict": "unsupported",
+          "expected_logical_row": 2,
+          "expected_trial_ref": "u24",
+          "expected_trial_text": "犬14天亚急毒",
+          "support_refs": [
+            "u32",
+            "u11",
+            "u13",
+            "u24"
+          ]
+        },
+        {
+          "subject_id": "s1",
+          "group": "attributes",
+          "field": "studyType",
+          "proposal_index": 0,
+          "proposal": {
+            "raw": "大鼠14天亚急毒试验（试验1）",
+            "source": {
+              "ref": "u14",
+              "quote": "大鼠14天亚急毒试验（试验1）",
+              "span_id": "source:u14"
+            },
+            "field": {
+              "ref": "u2",
+              "quote": "试验项目",
+              "span_id": "source:u2"
+            },
+            "unit": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "condition": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            }
+          },
+          "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/studyType",
+          "verdict": "unsupported",
+          "reason": "原值与列/试验项目对应可核验，但完整声明挂到跨两行的API主体s1，未将大鼠与犬试验分成独立数据主体；丢失同一试验内PDE、F值、来源、周期、种属和试验项目的组合归属。不能因共享API单元跨行而合并记录。",
+          "raw_evidence_verdict": "supported",
+          "field_verdict": "supported",
+          "subject_record_verdict": "unsupported",
+          "expected_logical_row": 1,
+          "expected_trial_ref": "u14",
+          "expected_trial_text": "大鼠14天亚急毒试验（试验1）",
+          "support_refs": [
+            "u14",
+            "u2",
+            "u13",
+            "u14"
+          ]
+        },
+        {
+          "subject_id": "s1",
+          "group": "attributes",
+          "field": "studyType",
+          "proposal_index": 1,
+          "proposal": {
+            "raw": "犬14天亚急毒",
+            "source": {
+              "ref": "u24",
+              "quote": "犬14天亚急毒",
+              "span_id": "source:u24"
+            },
+            "field": {
+              "ref": "u2",
+              "quote": "试验项目",
+              "span_id": "source:u2"
+            },
+            "unit": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "condition": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            }
+          },
+          "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/studyType",
+          "verdict": "unsupported",
+          "reason": "原值与列/试验项目对应可核验，但完整声明挂到跨两行的API主体s1，未将大鼠与犬试验分成独立数据主体；丢失同一试验内PDE、F值、来源、周期、种属和试验项目的组合归属。不能因共享API单元跨行而合并记录。",
+          "raw_evidence_verdict": "supported",
+          "field_verdict": "supported",
+          "subject_record_verdict": "unsupported",
+          "expected_logical_row": 2,
+          "expected_trial_ref": "u24",
+          "expected_trial_text": "犬14天亚急毒",
+          "support_refs": [
+            "u24",
+            "u2",
+            "u13",
+            "u24"
+          ]
+        }
+      ],
+      "observations": [
+        {
+          "observation_index": 0,
+          "proposal": {
+            "value": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "field": {
+              "ref": "u3",
+              "quote": "NOAEL",
+              "span_id": "source:u3"
+            },
+            "legend": {
+              "ref": "u35",
+              "quote": " NOAEL：无可见损害作用水平；",
+              "span_id": "source:u35"
+            },
+            "condition": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "state": "unmapped",
+            "reason": "NOAEL数值存在但单位缺失，无法映射到mg/kg/天属性"
+          },
+          "verdict": "unsupported",
+          "reason": "NOAEL确有200/30且本范围未给该列单位；保持未决方向正确。但value.ref/quote均为空，不能分别定位u15/u25及相应试验行，两条内容完全相同，不能算保留了两条缺单位观察。",
+          "issue": "missing_source_value",
+          "support_refs": [
+            "u3",
+            "u15",
+            "u25",
+            "u35"
+          ]
+        },
+        {
+          "observation_index": 1,
+          "proposal": {
+            "value": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "field": {
+              "ref": "u3",
+              "quote": "NOAEL",
+              "span_id": "source:u3"
+            },
+            "legend": {
+              "ref": "u35",
+              "quote": " NOAEL：无可见损害作用水平；",
+              "span_id": "source:u35"
+            },
+            "condition": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "state": "unmapped",
+            "reason": "NOAEL数值存在但单位缺失，无法映射到mg/kg/天属性"
+          },
+          "verdict": "unsupported",
+          "reason": "NOAEL确有200/30且本范围未给该列单位；保持未决方向正确。但value.ref/quote均为空，不能分别定位u15/u25及相应试验行，两条内容完全相同，不能算保留了两条缺单位观察。",
+          "issue": "missing_source_value",
+          "support_refs": [
+            "u3",
+            "u15",
+            "u25",
+            "u35"
+          ]
+        },
+        {
+          "observation_index": 2,
+          "proposal": {
+            "value": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "field": {
+              "ref": "u4",
+              "quote": "F1",
+              "span_id": "source:u4"
+            },
+            "legend": {
+              "ref": "u40",
+              "quote": " F1：考虑种类之间差异的系数；F1 = 5，适用于从大鼠外推到人；F1 = 2，适用于  从犬外推到人",
+              "span_id": "source:u40"
+            },
+            "condition": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "state": "unmapped",
+            "reason": "F1值存在但具体适用条件（大鼠/犬）分散在不同行，需结合试验项目判断，此处作为观察记录"
+          },
+          "verdict": "unsupported",
+          "reason": "对应F系数及解释备注存在，但value.ref/quote为空，没有观察对象；原文数值本可按试验行定位，状态unmapped及理由不能替代可定位原值，也不能补回被合并的试验主体。",
+          "issue": "missing_source_value",
+          "support_refs": [
+            "u4",
+            "u40"
+          ]
+        },
+        {
+          "observation_index": 3,
+          "proposal": {
+            "value": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "field": {
+              "ref": "u5",
+              "quote": "F2",
+              "span_id": "source:u5"
+            },
+            "legend": {
+              "ref": "u41",
+              "quote": " F2：考虑个体之间差异的系数；F2 = 10。",
+              "span_id": "source:u41"
+            },
+            "condition": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "state": "unmapped",
+            "reason": "F2值存在但作为固定系数，无需特定条件触发"
+          },
+          "verdict": "unsupported",
+          "reason": "对应F系数及解释备注存在，但value.ref/quote为空，没有观察对象；原文数值本可按试验行定位，状态unmapped及理由不能替代可定位原值，也不能补回被合并的试验主体。",
+          "issue": "missing_source_value",
+          "support_refs": [
+            "u5",
+            "u41"
+          ]
+        },
+        {
+          "observation_index": 4,
+          "proposal": {
+            "value": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "field": {
+              "ref": "u6",
+              "quote": "F3",
+              "span_id": "source:u6"
+            },
+            "legend": {
+              "ref": "u42",
+              "quote": " F3：为短期接触急性毒性研究的可变系数；F3 = 10，14天的研究；",
+              "span_id": "source:u42"
+            },
+            "condition": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "state": "unmapped",
+            "reason": "F3值存在，条件为14天研究，已在studyType中体现"
+          },
+          "verdict": "unsupported",
+          "reason": "对应F系数及解释备注存在，但value.ref/quote为空，没有观察对象；原文数值本可按试验行定位，状态unmapped及理由不能替代可定位原值，也不能补回被合并的试验主体。",
+          "issue": "missing_source_value",
+          "support_refs": [
+            "u6",
+            "u42"
+          ]
+        },
+        {
+          "observation_index": 5,
+          "proposal": {
+            "value": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "field": {
+              "ref": "u7",
+              "quote": "F4",
+              "span_id": "source:u7"
+            },
+            "legend": {
+              "ref": "u43",
+              "quote": " F4：为用于产生严重毒性数据情况的系数，如非遗传致癌毒性，神经毒性或致畸性；F4 = 1，未观察到严重影响",
+              "span_id": "source:u43"
+            },
+            "condition": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "state": "unmapped",
+            "reason": "F4值存在，条件为未观察到严重影响"
+          },
+          "verdict": "unsupported",
+          "reason": "对应F系数及解释备注存在，但value.ref/quote为空，没有观察对象；原文数值本可按试验行定位，状态unmapped及理由不能替代可定位原值，也不能补回被合并的试验主体。",
+          "issue": "missing_source_value",
+          "support_refs": [
+            "u7",
+            "u43"
+          ]
+        },
+        {
+          "observation_index": 6,
+          "proposal": {
+            "value": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "field": {
+              "ref": "u8",
+              "quote": "F5",
+              "span_id": "source:u8"
+            },
+            "legend": {
+              "ref": "u44",
+              "quote": " F5：可变系数，在没有建立NOEL时应用。F5=1，NOAEL",
+              "span_id": "source:u44"
+            },
+            "condition": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "state": "unmapped",
+            "reason": "F5值存在，条件为NOAEL已建立"
+          },
+          "verdict": "unsupported",
+          "reason": "对应F系数及解释备注存在，但value.ref/quote为空，没有观察对象；原文数值本可按试验行定位，状态unmapped及理由不能替代可定位原值，也不能补回被合并的试验主体。",
+          "issue": "missing_source_value",
+          "support_refs": [
+            "u8",
+            "u44"
+          ]
+        }
+      ],
+      "scope_findings": [
+        "共24条声明逐条复核：22条试验级属性原值多正确但完整主体/试验归属不成立；activeIngredient及hasSharedLineData的原意可支持，当前单一目标记录身份仍未决。",
+        "不能将该问题表述为原报告PDE冲突被自动裁决：两试验各有PDE100与7.5，同列源单位mg/天均真实，必须各守其行。",
+        "NOAEL200/30没有可定位的源单位；没有生成noael_mg_per_kg_day事实是正确保守行为，但两条空value观察不算完整保留。",
+        "所有7条额外unmapped观察的value均为空；F1-F5的解释性备注不补造缺失的观察对象。",
+        "API专门槽s2为空，不计该槽专业类型假阳性；也不能用这个空槽替代s1记录身份。"
+      ],
+      "counts": {
+        "claims": 24,
+        "claim_verdicts": {
+          "undetermined": 2,
+          "unsupported": 22
+        },
+        "observations": 7,
+        "observation_verdicts": {
+          "unsupported": 7
+        }
+      }
+    },
+    {
+      "scope": "B-toxicity_unknown",
+      "input_paths": [
+        "/tmp/cmc-tools-late-review/B-toxicity_unknown/candidates/proposal.json",
+        "/tmp/cmc-tools-late-review/B-toxicity_unknown/sources.json",
+        "/tmp/cmc-tools-late-review/B-toxicity_unknown/subject-cards.json"
+      ],
+      "subjects": [
+        {
+          "subject_id": "s1",
+          "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/DrugProduct",
+          "anchor": {
+            "ref": "u6",
+            "quote": "HRS-1597",
+            "span_id": "source:u6"
+          },
+          "verdict": "supported",
+          "reason": "表2标题产品毒性信息、同表产品名称列及u6 HRS-1597支持本地DrugProduct主体；不支持高致敏、细胞毒等专业子类。"
+        },
+        {
+          "subject_id": "s2",
+          "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/GenotoxicityProfile",
+          "anchor": {
+            "ref": "",
+            "quote": "",
+            "span_id": ""
+          },
+          "verdict": "not_proposed",
+          "reason": "anchor为空且无非空声明，槽位未形成实体，不计作专业类型假阳性。"
+        },
+        {
+          "subject_id": "s3",
+          "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/SensitizationPotential",
+          "anchor": {
+            "ref": "",
+            "quote": "",
+            "span_id": ""
+          },
+          "verdict": "not_proposed",
+          "reason": "anchor为空且无非空声明，槽位未形成实体，不计作专业类型假阳性。"
+        }
+      ],
+      "claims": [
+        {
+          "subject_id": "document",
+          "group": "relations",
+          "field": "describes",
+          "proposal_index": 0,
+          "proposal": {
+            "target_id": "s1",
+            "evidence": {
+              "ref": "u0",
+              "quote": "表2 产品毒性信息",
+              "span_id": "source:u0"
+            },
+            "condition": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "polarity": "affirmed"
+          },
+          "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/describes",
+          "verdict": "supported",
+          "reason": "本报告表2明确为产品毒性信息，产品名称列的唯一行是HRS-1597；结合u0/u1/u6，document→s1 DrugProduct的describes方向及主体对象有原文支持。只在此本地产品对象范围成立。",
+          "support_refs": [
+            "u0",
+            "u1",
+            "u6"
+          ]
+        },
+        {
+          "subject_id": "s1",
+          "group": "attributes",
+          "field": "productIdentifier",
+          "proposal_index": 0,
+          "proposal": {
+            "raw": "HRS-1597",
+            "source": {
+              "ref": "u6",
+              "quote": "HRS-1597",
+              "span_id": "source:u6"
+            },
+            "field": {
+              "ref": "u1",
+              "quote": "产品名称",
+              "span_id": "source:u1"
+            },
+            "unit": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "condition": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            }
+          },
+          "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug/productIdentifier",
+          "verdict": "unsupported",
+          "reason": "u1明确为产品名称，u6是名称HRS-1597。卡片productIdentifier要求原文明示的产品/API唯一标识，并明令不得以名称替代具体实例身份。原文未证明唯一标识或批次/规格唯一性，不能因字符串像代码或本表只有一行而赋此属性。",
+          "raw_evidence_verdict": "supported",
+          "field_verdict": "unsupported",
+          "support_refs": [
+            "u1",
+            "u6"
+          ],
+          "card_constraint": "原文明示的产品/API标识；不以名称、共同项目、设备型号或试验用药名称替代具体实例身份。存在批次、规格等区分时须能唯一指向该实例，否则不可据此归并。"
+        }
+      ],
+      "observations": [
+        {
+          "observation_index": 0,
+          "proposal": {
+            "value": {
+              "ref": "u8",
+              "quote": "×",
+              "span_id": "source:u8"
+            },
+            "field": {
+              "ref": "u3",
+              "quote": "基因毒性",
+              "span_id": "source:u3"
+            },
+            "legend": {
+              "ref": "u11",
+              "quote": "备注：“√”代表有相应毒性；“×”代表没有相应的毒性 ；“—”代表相关的研究数据不充分。",
+              "span_id": "source:u11"
+            },
+            "condition": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "state": "negated",
+            "reason": "基因毒性检测结果为无（×）"
+          },
+          "verdict": "supported",
+          "reason": "值单元与字段同列同一产品行，u11实际图例明确×=没有相应毒性、—=研究数据不充分；候选保留正确字段及原状态，不把基因毒性否定转成细胞毒性false，也不把未知转成N/A或高致敏阳性。",
+          "support_refs": [
+            "u8",
+            "u3",
+            "u6",
+            "u11"
+          ]
+        },
+        {
+          "observation_index": 1,
+          "proposal": {
+            "value": {
+              "ref": "u7",
+              "quote": "—",
+              "span_id": "source:u7"
+            },
+            "field": {
+              "ref": "u2",
+              "quote": "生殖发育毒性",
+              "span_id": "source:u2"
+            },
+            "legend": {
+              "ref": "u11",
+              "quote": "备注：“√”代表有相应毒性；“×”代表没有相应的毒性 ；“—”代表相关的研究数据不充分。",
+              "span_id": "source:u11"
+            },
+            "condition": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "state": "unknown",
+            "reason": "生殖发育毒性数据不充分（—）"
+          },
+          "verdict": "supported",
+          "reason": "值单元与字段同列同一产品行，u11实际图例明确×=没有相应毒性、—=研究数据不充分；候选保留正确字段及原状态，不把基因毒性否定转成细胞毒性false，也不把未知转成N/A或高致敏阳性。",
+          "support_refs": [
+            "u7",
+            "u2",
+            "u6",
+            "u11"
+          ]
+        },
+        {
+          "observation_index": 2,
+          "proposal": {
+            "value": {
+              "ref": "u9",
+              "quote": "—",
+              "span_id": "source:u9"
+            },
+            "field": {
+              "ref": "u4",
+              "quote": "致癌性",
+              "span_id": "source:u4"
+            },
+            "legend": {
+              "ref": "u11",
+              "quote": "备注：“√”代表有相应毒性；“×”代表没有相应的毒性 ；“—”代表相关的研究数据不充分。",
+              "span_id": "source:u11"
+            },
+            "condition": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "state": "unknown",
+            "reason": "致癌性数据不充分（—）"
+          },
+          "verdict": "supported",
+          "reason": "值单元与字段同列同一产品行，u11实际图例明确×=没有相应毒性、—=研究数据不充分；候选保留正确字段及原状态，不把基因毒性否定转成细胞毒性false，也不把未知转成N/A或高致敏阳性。",
+          "support_refs": [
+            "u9",
+            "u4",
+            "u6",
+            "u11"
+          ]
+        },
+        {
+          "observation_index": 3,
+          "proposal": {
+            "value": {
+              "ref": "u10",
+              "quote": "—",
+              "span_id": "source:u10"
+            },
+            "field": {
+              "ref": "u5",
+              "quote": "致敏性",
+              "span_id": "source:u5"
+            },
+            "legend": {
+              "ref": "u11",
+              "quote": "备注：“√”代表有相应毒性；“×”代表没有相应的毒性 ；“—”代表相关的研究数据不充分。",
+              "span_id": "source:u11"
+            },
+            "condition": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "state": "unknown",
+            "reason": "致敏性数据不充分（—）"
+          },
+          "verdict": "supported",
+          "reason": "值单元与字段同列同一产品行，u11实际图例明确×=没有相应毒性、—=研究数据不充分；候选保留正确字段及原状态，不把基因毒性否定转成细胞毒性false，也不把未知转成N/A或高致敏阳性。",
+          "support_refs": [
+            "u10",
+            "u5",
+            "u6",
+            "u11"
+          ]
+        }
+      ],
+      "scope_findings": [
+        "没有HighSensitizingDrug或CytotoxicDrug类型声明，GenotoxicityProfile与SensitizationPotential槽为空。",
+        "四格状态完整且绑定正确：生殖发育毒性—未知、基因毒性×否定、致癌性—未知、致敏性—未知；均引用真实完整图例。",
+        "额外productIdentifier声明不成立：产品名称不能当原文明示的唯一身份。describes关系在此产品表上下文成立。",
+        "基因毒性否定只反映本表/图例的局部报告内容，不扩大为所有毒性为false或全文排除毒性。"
+      ],
+      "counts": {
+        "claims": 2,
+        "claim_verdicts": {
+          "supported": 1,
+          "unsupported": 1
+        },
+        "observations": 4,
+        "observation_verdicts": {
+          "supported": 4
+        }
+      }
+    },
+    {
+      "scope": "A-toxicity_unknown",
+      "input_paths": [
+        "/tmp/cmc-tools-late-review/A-toxicity_unknown/candidates/proposal.json",
+        "/tmp/cmc-tools-late-review/A-toxicity_unknown/sources.json",
+        "/tmp/cmc-tools-late-review/A-toxicity_unknown/subject-cards.json"
+      ],
+      "subjects": [
+        {
+          "subject_id": "s1",
+          "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/DrugProduct",
+          "anchor": {
+            "ref": "u6",
+            "quote": "HRS-1597",
+            "span_id": "source:u6"
+          },
+          "verdict": "supported",
+          "reason": "表2标题产品毒性信息、同表产品名称列及u6 HRS-1597支持本地DrugProduct主体；不支持高致敏、细胞毒等专业子类。"
+        },
+        {
+          "subject_id": "s2",
+          "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/GenotoxicityProfile",
+          "anchor": {
+            "ref": "",
+            "quote": "",
+            "span_id": ""
+          },
+          "verdict": "not_proposed",
+          "reason": "anchor为空且无非空声明，槽位未形成实体，不计作专业类型假阳性。"
+        },
+        {
+          "subject_id": "s3",
+          "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/SensitizationPotential",
+          "anchor": {
+            "ref": "",
+            "quote": "",
+            "span_id": ""
+          },
+          "verdict": "not_proposed",
+          "reason": "anchor为空且无非空声明，槽位未形成实体，不计作专业类型假阳性。"
+        }
+      ],
+      "claims": [
+        {
+          "subject_id": "document",
+          "group": "relations",
+          "field": "describes",
+          "proposal_index": 0,
+          "proposal": {
+            "target_id": "s1",
+            "evidence": {
+              "ref": "u0",
+              "quote": "表2 产品毒性信息",
+              "span_id": "source:u0"
+            },
+            "condition": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "polarity": "affirmed"
+          },
+          "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/describes",
+          "verdict": "supported",
+          "reason": "本报告表2明确为产品毒性信息，产品名称列的唯一行是HRS-1597；结合u0/u1/u6，document→s1 DrugProduct的describes方向及主体对象有原文支持。只在此本地产品对象范围成立。",
+          "support_refs": [
+            "u0",
+            "u1",
+            "u6"
+          ]
+        },
+        {
+          "subject_id": "s1",
+          "group": "attributes",
+          "field": "productIdentifier",
+          "proposal_index": 0,
+          "proposal": {
+            "raw": "HRS-1597",
+            "source": {
+              "ref": "u6",
+              "quote": "HRS-1597",
+              "span_id": "source:u6"
+            },
+            "field": {
+              "ref": "u1",
+              "quote": "产品名称",
+              "span_id": "source:u1"
+            },
+            "unit": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "condition": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            }
+          },
+          "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug/productIdentifier",
+          "verdict": "unsupported",
+          "reason": "u1明确为产品名称，u6是名称HRS-1597。卡片productIdentifier要求原文明示的产品/API唯一标识，并明令不得以名称替代具体实例身份。原文未证明唯一标识或批次/规格唯一性，不能因字符串像代码或本表只有一行而赋此属性。",
+          "raw_evidence_verdict": "supported",
+          "field_verdict": "unsupported",
+          "support_refs": [
+            "u1",
+            "u6"
+          ],
+          "card_constraint": "原文明示的产品/API标识；不以名称、共同项目、设备型号或试验用药名称替代具体实例身份。存在批次、规格等区分时须能唯一指向该实例，否则不可据此归并。"
+        }
+      ],
+      "observations": [
+        {
+          "observation_index": 0,
+          "proposal": {
+            "value": {
+              "ref": "u7",
+              "quote": "—",
+              "span_id": "source:u7"
+            },
+            "field": {
+              "ref": "u2",
+              "quote": "生殖发育毒性",
+              "span_id": "source:u2"
+            },
+            "legend": {
+              "ref": "u11",
+              "quote": "“—”代表相关的研究数据不充分。",
+              "span_id": "source:u11"
+            },
+            "condition": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "state": "unknown",
+            "reason": "数据不充分"
+          },
+          "verdict": "supported",
+          "reason": "值/字段同列同产品行；图例quote是u11内逐字且唯一的完整相应符号解释，—=研究数据不充分，×=没有相应毒性。引用全句source:u11作为上下文并引用其唯一子句不改变语义，也未拼接或扩大毒性结论。",
+          "support_refs": [
+            "u7",
+            "u2",
+            "u6",
+            "u11"
+          ],
+          "legend_quote_span": {
+            "start": 28,
+            "end": 44
+          }
+        },
+        {
+          "observation_index": 1,
+          "proposal": {
+            "value": {
+              "ref": "u8",
+              "quote": "×",
+              "span_id": "source:u8"
+            },
+            "field": {
+              "ref": "u3",
+              "quote": "基因毒性",
+              "span_id": "source:u3"
+            },
+            "legend": {
+              "ref": "u11",
+              "quote": "“×”代表没有相应的毒性",
+              "span_id": "source:u11"
+            },
+            "condition": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "state": "negated",
+            "reason": "无基因毒性"
+          },
+          "verdict": "supported",
+          "reason": "值/字段同列同产品行；图例quote是u11内逐字且唯一的完整相应符号解释，—=研究数据不充分，×=没有相应毒性。引用全句source:u11作为上下文并引用其唯一子句不改变语义，也未拼接或扩大毒性结论。",
+          "support_refs": [
+            "u8",
+            "u3",
+            "u6",
+            "u11"
+          ],
+          "legend_quote_span": {
+            "start": 14,
+            "end": 26
+          }
+        },
+        {
+          "observation_index": 2,
+          "proposal": {
+            "value": {
+              "ref": "u9",
+              "quote": "—",
+              "span_id": "source:u9"
+            },
+            "field": {
+              "ref": "u4",
+              "quote": "致癌性",
+              "span_id": "source:u4"
+            },
+            "legend": {
+              "ref": "u11",
+              "quote": "“—”代表相关的研究数据不充分。",
+              "span_id": "source:u11"
+            },
+            "condition": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "state": "unknown",
+            "reason": "数据不充分"
+          },
+          "verdict": "supported",
+          "reason": "值/字段同列同产品行；图例quote是u11内逐字且唯一的完整相应符号解释，—=研究数据不充分，×=没有相应毒性。引用全句source:u11作为上下文并引用其唯一子句不改变语义，也未拼接或扩大毒性结论。",
+          "support_refs": [
+            "u9",
+            "u4",
+            "u6",
+            "u11"
+          ],
+          "legend_quote_span": {
+            "start": 28,
+            "end": 44
+          }
+        },
+        {
+          "observation_index": 3,
+          "proposal": {
+            "value": {
+              "ref": "u10",
+              "quote": "—",
+              "span_id": "source:u10"
+            },
+            "field": {
+              "ref": "u5",
+              "quote": "致敏性",
+              "span_id": "source:u5"
+            },
+            "legend": {
+              "ref": "u11",
+              "quote": "“—”代表相关的研究数据不充分。",
+              "span_id": "source:u11"
+            },
+            "condition": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "state": "unknown",
+            "reason": "数据不充分"
+          },
+          "verdict": "supported",
+          "reason": "值/字段同列同产品行；图例quote是u11内逐字且唯一的完整相应符号解释，—=研究数据不充分，×=没有相应毒性。引用全句source:u11作为上下文并引用其唯一子句不改变语义，也未拼接或扩大毒性结论。",
+          "support_refs": [
+            "u10",
+            "u5",
+            "u6",
+            "u11"
+          ],
+          "legend_quote_span": {
+            "start": 28,
+            "end": 44
+          }
+        }
+      ],
+      "scope_findings": [
+        "与B组相同：DrugProduct本地类型及document→describes关系受表题和产品名称行支持，两个专业类型槽为空，不计专业类型假阳性。",
+        "四格正确：生殖发育毒性—未知、基因毒性×否定、致癌性—未知、致敏性—未知；实际图例均有逐字对应解释。",
+        "A组采用u11完整source ID并引用唯一图例子句：属于可核对的上下文收敛，语义正确；不能仅因quote短于源ID全文判作业务错误。",
+        "额外productIdentifier声明仍不成立：产品名称不构成卡片要求的原文明示唯一身份。"
+      ],
+      "counts": {
+        "claims": 2,
+        "claim_verdicts": {
+          "supported": 1,
+          "unsupported": 1
+        },
+        "observations": 4,
+        "observation_verdicts": {
+          "supported": 4
+        }
+      }
+    },
+    {
+      "scope": "B-pde_conflict",
+      "review_status": "not_evaluated",
+      "execution_status": "technical_failure",
+      "reason": "主代理告知本组PDE请求超时，未获得候选，未提供可复核candidates/proposal.json；不编造候选，不将技术失败算作无错误或质量通过。",
+      "status_source": "parent_agent_run_status_message",
+      "input_paths": [],
+      "subjects": [],
+      "claims": [],
+      "observations": [],
+      "counts": {
+        "proposed_claim_count": null,
+        "reviewed_claim_count": 0,
+        "quality_pass": null
+      }
+    }
+  ]
+}

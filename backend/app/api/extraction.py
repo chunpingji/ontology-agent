@@ -158,7 +158,10 @@ def delete_config(config_id: UUID, db: Session = Depends(get_db)):
 
 @router.get("/jobs", response_model=list[ExtractionJobResponse])
 def list_jobs(db: Session = Depends(get_db)):
-    return db.query(ExtractionJob).order_by(ExtractionJob.created_at.desc()).all()
+    mode = ExtractionJob.source_config["mode"].as_string()
+    return db.query(ExtractionJob).filter(
+        or_(mode.is_(None), mode != "finder_template_demo"),
+    ).order_by(ExtractionJob.created_at.desc()).all()
 
 
 async def _run_pipeline_bg(job_id, config_id, file_path, engine, db: Session):
@@ -859,9 +862,21 @@ def _claim_annotation(job_id, db, *, mode="continue", actor="evidence-extractor"
     from app.models.extraction import AstTemplate
 
     config = job.source_config or {}
-    selected = template_id or config.get("recognition_template_id") or config.get("template_id")
+    previous = db.get(AnnotationExecution, job_id)
+    continuing = mode in {"resume", "continue"} and previous is not None
+    selected = (config.get("recognition_template_id") if continuing else
+                (template_id or config.get("template_id")))
     selected_row = db.get(AstTemplate, UUID(str(selected))) if selected else None
-    if selected_row and (selected_row.schema_json or {}).get("demo_profile"):
+    if template_id and not continuing and selected_row is None:
+        raise HTTPException(404, "模板不存在")
+    if selected_row and not continuing:
+        from app.services.template_finder.policy import require_normal
+
+        if (selected_row.iri_pattern and config.get("doc_class_iri")
+                and selected_row.iri_pattern not in config["doc_class_iri"]):
+            raise HTTPException(422, "源文档登记类型与模板不匹配")
+        require_normal(selected_row)
+    if selected_row and not continuing and (selected_row.schema_json or {}).get("demo_profile"):
         raise HTTPException(409, "演示模板使用共享静态图谱，无需抽取")
     if job.source_type not in ("word", "excel"):
         raise HTTPException(422, "仅 Word/Excel 作业支持关系识别")
@@ -889,11 +904,11 @@ def _claim_annotation(job_id, db, *, mode="continue", actor="evidence-extractor"
                 raise HTTPException(422, "本轮已达到处理上限，请检查未通过的任务和抽取配置")
         if mode in {"rerun", "start", "auxiliary"}:
             _backfill_job_document_context(job, db)
-            _set_annotation_template(job, template_id, db)
+            _set_annotation_template(job, selected, db)
         else:
             _backfill_job_document_context(job, db)
-            if "extraction_priority_paths" not in (job.source_config or {}):
-                _set_annotation_template(job, None, db)
+            if not continuing or "extraction_priority_paths" not in (job.source_config or {}):
+                _set_annotation_template(job, selected, db)
         # Validate before touching files; the claim still holds the row write lock.
         if mode in {"rerun", "start", "auxiliary"}:
             _clear_annotation_checkpoint(job_id)
@@ -1835,7 +1850,7 @@ def list_reports(
     job = db.get(ExtractionJob, job_id)
     if not job:
         raise HTTPException(404, "作业不存在")
-    return (
+    reports = (
         db.query(GeneratedReport)
         .filter(
             GeneratedReport.job_id == job_id,
@@ -1844,6 +1859,12 @@ def list_reports(
         .order_by(GeneratedReport.created_at.desc())
         .all()
     )
+    return [
+        GeneratedReportResponse.model_validate(report).model_copy(
+            update={"demonstration": bool((report.narratives or {}).get("demonstration"))}
+        )
+        for report in reports
+    ]
 
 
 @router.delete("/jobs/{job_id}/reports/{report_id}", status_code=204)

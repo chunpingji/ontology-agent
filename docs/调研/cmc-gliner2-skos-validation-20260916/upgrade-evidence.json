@@ -1,0 +1,382 @@
+{
+  "checked_on": "2026-09-16",
+  "scope": "upgrade research, public metadata, source analysis and weight-free probes",
+  "new_qwen_calls": 0,
+  "boundary_model_weights_downloaded": false,
+  "boundary_full_model_inference_completed": false,
+  "deployed": false,
+  "model": {
+    "id": "fastino/gliner2.5-multi-v1",
+    "sha": "aaecfe45db1d828c963717054ccb868e8ad1f1d5",
+    "lastModified": "2026-08-22T10:26:56.000Z",
+    "safetensors": {
+      "parameters": {
+        "F32": 287355159
+      },
+      "total": 287355159
+    }
+  },
+  "model_license": "apache-2.0",
+  "model_files": [
+    {
+      "rfilename": "README.md",
+      "blobId": "1bb58788bd88ecb84481a82949d4a01871d463a1",
+      "size": 21622
+    },
+    {
+      "rfilename": "config.json",
+      "blobId": "c4c540f52d2e48b5ca2582c6fc23f72b5ae9c79c",
+      "size": 3151
+    },
+    {
+      "rfilename": "encoder_config/config.json",
+      "blobId": "0bb5e495baad2e7fdc35500f0072d5f2d957ed5a",
+      "size": 857
+    },
+    {
+      "rfilename": "model.safetensors",
+      "blobId": "058ee36213f2851edaef1bcc213ff71f7e045a7b",
+      "size": 1149461028,
+      "lfs": {
+        "sha256": "c1ff4ec0bc00031c15530b8f3c33d3677f27949e6a0cb52e1247a6224b6c5395",
+        "size": 1149461028,
+        "pointerSize": 135
+      }
+    },
+    {
+      "rfilename": "tokenizer.json",
+      "blobId": "68f13318410c91def2c27f608b69446f28254bf9",
+      "size": 16035853,
+      "lfs": {
+        "sha256": "c62446df87ae18ec98b133f8f84fc449a07cc89bbf8ef192a4cb5f9c53777a7a",
+        "size": 16035853,
+        "pointerSize": 133
+      }
+    },
+    {
+      "rfilename": "tokenizer_config.json",
+      "blobId": "5efd586306801b08ca13390b0619a94c943046e4",
+      "size": 645
+    }
+  ],
+  "model_config": {
+    "architecture": "boundary",
+    "architecture_version": 1,
+    "architectures": [
+      "BoundaryExtractor"
+    ],
+    "attn_implementation": "sdpa",
+    "boundary_head": {
+      "abstention_loss_weight": 0.2,
+      "abstention_threshold": 0.5,
+      "adaptive_threshold": false,
+      "bidirectional_proposals": true,
+      "boundary_attention_heads": 4,
+      "boundary_attention_layers": 2,
+      "boundary_attention_window": 128,
+      "boundary_dim": 128,
+      "boundary_ffn_multiplier": 2.0,
+      "boundary_focal_clip": 0.05,
+      "boundary_focal_gamma_negative": 2.0,
+      "boundary_focal_gamma_positive": 0.0,
+      "boundary_marginal_loss": "asymmetric_focal",
+      "boundary_negative_weight": 0.5,
+      "boundary_refinement_layers": 1,
+      "boundary_top_k_alpha": 0.08,
+      "boundary_top_k_bucket": 8,
+      "boundary_top_k_max": 128,
+      "candidate_attention_heads": 4,
+      "candidate_attention_layers": 0,
+      "candidate_budget": 192,
+      "candidate_pool": "shared",
+      "classification_loss_weight": 1.0,
+      "classification_temperature": 1.0,
+      "consistency_loss_weight": 0.1,
+      "consistency_warmup_steps": 2000,
+      "content_dim": 64,
+      "content_soft_max_pool": false,
+      "count_loss_weight": 0.2,
+      "directional_relation_states": true,
+      "dropout": 0.1,
+      "enable_abstention": true,
+      "enable_count_head": true,
+      "enable_records": true,
+      "enable_relations": true,
+      "enable_rotary_endpoints": true,
+      "enable_span_content": true,
+      "end_block_size": 256,
+      "end_top_k": 24,
+      "endpoint_difference_features": true,
+      "ends_per_start": 12,
+      "export_mode": "auto",
+      "hard_negative_keep_all_when_absent": true,
+      "hard_negatives_per_positive": 20,
+      "loss_reduction": "sum",
+      "max_gold_per_query": 64,
+      "max_negative_queries_per_batch": 64,
+      "min_pool_per_query": 8,
+      "minimum_hard_negatives": 16,
+      "multihead_pair_compat_heads": 8,
+      "negative_query_ratio": 1.0,
+      "overlap_policy": "flat",
+      "pair_dim": 128,
+      "pair_temperature": 1.0,
+      "pool_boundary_top_k": 32,
+      "pool_size": 192,
+      "proposal_loss_weight": 0.3,
+      "query_attention_layers": 0,
+      "query_conditioned_inside_weight": true,
+      "record_anchor_proposal_threshold": 0.2,
+      "record_anchor_threshold": 0.5,
+      "record_dim": 128,
+      "record_field_threshold": 0.5,
+      "record_instance_queries": 32,
+      "record_loss_weight": 1.0,
+      "record_temperature": 1.0,
+      "relation_argument_proposal_threshold": 0.2,
+      "relation_biaffine_content": true,
+      "relation_heads_per_type": 32,
+      "relation_loss_weight": 1.0,
+      "relation_pair_cap": 64,
+      "relation_tails_per_type": 32,
+      "relation_temperature": 1.0,
+      "rerank_listwise_weight": 0.3,
+      "reranker_endpoint_compat": true,
+      "rotary_base": 10000.0,
+      "soft_iou_anneal_steps": 20000,
+      "soft_iou_aux_weight": 0.2,
+      "start_top_k": 24,
+      "starts_per_end": 12,
+      "training_candidate_budget": 192,
+      "use_inside_evidence": true,
+      "vectorized_pair_elements": 16777216
+    },
+    "config_version": 3,
+    "max_len": 4096,
+    "model_name": "microsoft/mdeberta-v3-base",
+    "model_type": "extractor",
+    "token_pooling": "first",
+    "transformers_version": "5.8.0"
+  },
+  "encoder_config": {
+    "attention_probs_dropout_prob": 0.1,
+    "bos_token_id": null,
+    "dtype": "float16",
+    "eos_token_id": null,
+    "hidden_act": "gelu",
+    "hidden_dropout_prob": 0.1,
+    "hidden_size": 768,
+    "initializer_range": 0.02,
+    "intermediate_size": 3072,
+    "layer_norm_eps": 1e-07,
+    "legacy": true,
+    "max_position_embeddings": 512,
+    "max_relative_positions": -1,
+    "model_type": "deberta-v2",
+    "norm_rel_ebd": "layer_norm",
+    "num_attention_heads": 12,
+    "num_hidden_layers": 12,
+    "pad_token_id": 0,
+    "pooler_dropout": 0.0,
+    "pooler_hidden_act": "gelu",
+    "pooler_hidden_size": 768,
+    "pos_att_type": [
+      "p2c",
+      "c2p"
+    ],
+    "position_biased_input": false,
+    "position_buckets": 256,
+    "relative_attention": true,
+    "share_att_key": true,
+    "tie_word_embeddings": true,
+    "transformers_version": "5.8.0",
+    "type_vocab_size": 0,
+    "vocab_size": 250112
+  },
+  "tokenizer_config": {
+    "add_prefix_space": true,
+    "backend": "tokenizers",
+    "bos_token": "[CLS]",
+    "cls_token": "[CLS]",
+    "do_lower_case": false,
+    "eos_token": "[SEP]",
+    "extra_special_tokens": [
+      "[SEP_STRUCT]",
+      "[SEP_TEXT]",
+      "[P]",
+      "[C]",
+      "[E]",
+      "[R]",
+      "[L]",
+      "[EXAMPLE]",
+      "[OUTPUT]",
+      "[DESCRIPTION]"
+    ],
+    "is_local": true,
+    "local_files_only": false,
+    "mask_token": "[MASK]",
+    "model_max_length": 1000000000000000019884624838656,
+    "pad_token": "[PAD]",
+    "sep_token": "[SEP]",
+    "split_by_punct": false,
+    "tokenizer_class": "DebertaV2Tokenizer",
+    "unk_id": 3,
+    "unk_token": "[UNK]",
+    "vocab_type": "spm"
+  },
+  "public_metadata_sha256": {
+    "multi-config.json": "8b59a0f426a65859c89cd1ea850c3529c09aa3be3a6fafd8eddfdd17b1bf0146",
+    "multi-encoder_config-config.json": "fa4f9ef2903b5369ab172333aae4574e6a476511d7465845cf59f8360ee18716",
+    "multi-tokenizer_config.json": "0bf3ea0873234bd9bfdd3853c440395009ac6365a925b91654daed5396d655e1",
+    "multi-README.md": "059ff6387aeeff4925ca02cd8645dd5879bef7f2e6f211949c2e68905029a2ee"
+  },
+  "tokenizer_json_verified_sha256": "c62446df87ae18ec98b133f8f84fc449a07cc89bbf8ef192a4cb5f9c53777a7a",
+  "package": {
+    "name": "gliner2",
+    "version": "2.0.0",
+    "wheel_url": "https://files.pythonhosted.org/packages/00/44/87d2803c5c5c6c0bd22bce4d52c66c965dacae29e0121d7e04c9883711df/gliner2-2.0.0-py3-none-any.whl",
+    "wheel_sha256": "6f7c4cba0ef3173636d8bd9404aa94d4e0ccf36d4b4b9a0d27d740dd2d3236c3",
+    "source_files_sha256": {
+      "auto.py": "00acf7529ca40469de4ac2dc29bcfe46a05b8a26e10347b8e56a7129a6d7ffcb",
+      "configuration.py": "96f06de2f4783e1b0af82539bb0cd2cc880bd9c77a8a0409ebf0ad641bd0ab20",
+      "models/base.py": "791814c58c3674f0b546c67d90ab5013bf645e5eda29d25e9fd17fa100aaa061",
+      "models/boundary/model.py": "b6c838a93096d958a7411df4d0a199c6aba25f80588430bbeb3a74db944165b3",
+      "models/boundary/pool.py": "1b6ab4f7af64cd499d474a9052823d2b0a3d2f8caf50ed8f037cbdb23d08ff9b",
+      "models/boundary/engine.py": "80a250e2454ae8b3ae832c98d93d1bedf84113b76b113b42e2eff813313d6595",
+      "processor.py": "f6fd971d977d2136128e9d4cb7149a608b5fdb4a026cd56cbba6cd45416ae78b",
+      "processing/boundary_preprocessing.py": "d73a3c3df058db40ec97715319410c1563708966176d27b3577ef4614e8b911c",
+      "processing/word_splitter.py": "8c533d4defec1cc469578bdb87244d57a82684ecff57431d0556a54e9a6eefc8"
+    }
+  },
+  "source_notes": {
+    "context7_libraries": [
+      "/fastino-ai/gliner2",
+      "/urchade/gliner",
+      "/huggingface/transformers/v4.57.3"
+    ],
+    "github_main_checked_commit": "0652bae572c1705c050e3a9c15131947464afbc4",
+    "missing_main_docs": [
+      "docs/boundary_architecture.md",
+      "docs/gliner2_5_boundary_architecture.md"
+    ]
+  },
+  "shared_pool_synthetic": {
+    "scope": "original shared candidate-pool code only; no weights, encoder, tokenizer, GPU or Qwen",
+    "torch": "2.12.1+cpu",
+    "settings": {
+      "candidate_pool": "shared",
+      "pool_boundary_top_k": 32,
+      "pool_size": 192,
+      "min_pool_per_query": 8
+    },
+    "long_span_beyond_old_max_width_8": {
+      "valid_candidates": 192,
+      "output_slots": 192,
+      "long_target_0_96_present": true,
+      "maximum_span_width": 96
+    },
+    "boundary_top_k_excludes_weak_target_start": {
+      "valid_candidates": 192,
+      "output_slots": 192,
+      "long_target_0_96_present": false,
+      "maximum_span_width": 95
+    },
+    "1024_legal_pairs_capped_to_192": {
+      "valid_candidates": 192,
+      "output_slots": 192,
+      "long_target_0_96_present": true,
+      "maximum_span_width": 96
+    },
+    "assertions": "passed"
+  },
+  "tokenizer_and_boundary_metadata_preflight": {
+    "scope": "tokenizer and preprocessing only; no model weights or inference",
+    "packages": {
+      "gliner2": "2.0.0",
+      "transformers": "4.57.6",
+      "tokenizers": "0.22.2",
+      "torch": "2.7.1+cu126"
+    },
+    "official_tokenizer_loader": {
+      "status": "failed",
+      "errors": [
+        {
+          "type": "ImportError",
+          "message": "\n requires the protobuf library but it was not found in your environment. Check out the instructions on the\ninstallation page of its repo: https://github.com/protocolbuffers/protobuf/tree/master/python#installation and follow the ones\nthat match your environment. Please note that you may need to restart your runtime after installation.\n"
+        },
+        {
+          "type": "AttributeError",
+          "message": "'list' object has no attribute 'keys'"
+        }
+      ]
+    },
+    "status": "normalized_preprocessing_passed",
+    "architecture": "boundary",
+    "normalization": "AutoTokenizer kwargs extra_special_tokens={}; processor registers markers",
+    "original_tokenizer_json_modified": false,
+    "full_vocabulary_ids_unchanged": true,
+    "auto_extractor_available": true,
+    "tokenizer_class": "DebertaV2TokenizerFast",
+    "tokenizer_length": 250112,
+    "special_ids": {
+      "[SEP_STRUCT]": 250102,
+      "[SEP_TEXT]": 250103,
+      "[P]": 250104,
+      "[C]": 250105,
+      "[E]": 250106,
+      "[R]": 250107,
+      "[L]": 250108,
+      "[EXAMPLE]": 250109,
+      "[OUTPUT]": 250110,
+      "[DESCRIPTION]": 250111
+    },
+    "source_words": 25,
+    "encoder_input_tokens": 87,
+    "exact_source_metadata_queries": 1,
+    "default_collator_preserves_source": false,
+    "default_collator_source": "编号：ABC-123.",
+    "synthetic_input": "编号：ABC-123"
+  },
+  "probe_scripts": {
+    "shared-pool-synthetic.py": {
+      "sha256": "9614c6523b95f85f4e1691441c6a25822a205a4b3a8d7c5d24e2020727c2caa6",
+      "source": "\"\"\"Weight-free GLiNER2 2.0.0 shared candidate-pool checks; no encoder/model load.\"\"\"\nimport importlib\nimport json\nimport sys\nimport types\nfrom pathlib import Path\n\nimport torch\n\nsource = Path('/tmp/cmc-gliner2-public-metadata/package-source/gliner2')\n# Bypass package __init__ only; all candidate-pool code/dependencies are original.\n# This avoids importing model/tokenizer/runtime extras and requires only torch.\nfor package, relative in [('gliner2', ''), ('gliner2.models', 'models'), ('gliner2.models.boundary', 'models/boundary')]:\n    module = types.ModuleType(package)\n    module.__path__ = [str(source / relative)]\n    sys.modules[package] = module\nDocumentCandidatePool = importlib.import_module('gliner2.models.boundary.pool').DocumentCandidatePool\nconfig = json.loads(Path('/tmp/cmc-gliner25-public-metadata/multi-config.json').read_text())['boundary_head']\ntorch.set_num_threads(1)\ntorch.manual_seed(0)\npool = DocumentCandidatePool(\n    4,\n    pool_boundary_top_k=config['pool_boundary_top_k'],\n    pool_size=config['pool_size'],\n    min_pool_per_query=config['min_pool_per_query'],\n).eval()\nwith torch.no_grad():\n    for parameter in pool.parameters():\n        parameter.zero_()\n\nn = 97  # 96 words => boundaries [0,96]. No transformer/encoder is instantiated.\nboundaries = torch.zeros(1, n, 4)\nmask = torch.ones(1, n, dtype=torch.bool)\nquery_mask = torch.ones(1, 1, dtype=torch.bool)\n\ndef run(start, end):\n    with torch.no_grad():\n        output = pool(boundaries, mask, query_mask, start, end)\n    spans = output.indices[0][output.mask[0]]\n    return {\n        'valid_candidates': len(spans),\n        'output_slots': output.indices.shape[1],\n        'long_target_0_96_present': bool(((spans[:, 0] == 0) & (spans[:, 1] == 96)).any()),\n        'maximum_span_width': int((spans[:, 1] - spans[:, 0]).max()) if len(spans) else 0,\n    }\n\nstart = torch.full((1, 1, n), -10.0)\nend = torch.full((1, 1, n), -10.0)\nstart[0, 0, 0] = 10\nend[0, 0, 96] = 10\nlong_span = run(start, end)\nassert long_span['long_target_0_96_present']\nassert long_span['maximum_span_width'] == 96\n\nstart_excluded = start.clone()\nstart_excluded[0, 0, 0] = 0\nstart_excluded[0, 0, 1:33] = 10\nboundary_budget = run(start_excluded, end)\nassert not boundary_budget['long_target_0_96_present']\n\nstart_dense = torch.full((1, 1, n), -10.0)\nend_dense = torch.full((1, 1, n), -10.0)\nstart_dense[0, 0, :32] = 10\nend_dense[0, 0, 65:97] = 10\npool_cap = run(start_dense, end_dense)\nassert pool_cap['valid_candidates'] == 192\n\nprint(json.dumps({\n    'scope': 'original shared candidate-pool code only; no weights, encoder, tokenizer, GPU or Qwen',\n    'torch': torch.__version__,\n    'settings': {k: config[k] for k in ['candidate_pool','pool_boundary_top_k','pool_size','min_pool_per_query']},\n    'long_span_beyond_old_max_width_8': long_span,\n    'boundary_top_k_excludes_weak_target_start': boundary_budget,\n    '1024_legal_pairs_capped_to_192': pool_cap,\n    'assertions': 'passed',\n}, ensure_ascii=False, indent=2))\n"
+    },
+    "tokenizer-preflight.py": {
+      "sha256": "20bc0d028c20f4434a125bea1b3ea0c7d2a7ef75e409e72d0acd390da11e1cb0",
+      "source": "\"\"\"No-weight, offline GLiNER2.5 tokenizer / boundary metadata compatibility probe.\"\"\"\nimport importlib.metadata\nimport json\nimport sys\nfrom pathlib import Path\n\nimport gliner2\nfrom gliner2.configuration import ExtractorConfig\nfrom gliner2.inference.schema import Schema\nfrom gliner2.processor import SchemaTransformer\nfrom gliner2.models.base import load_extractor_tokenizer\nfrom transformers import AutoTokenizer\n\nroot = Path(sys.argv[1])\nresult = {\"scope\": \"tokenizer and preprocessing only; no model weights or inference\",\n          \"packages\": {name: importlib.metadata.version(name) for name in\n                       (\"gliner2\", \"transformers\", \"tokenizers\", \"torch\")}}\ndef error_chain(exc):\n    rows = []\n    while exc is not None:\n        rows.append({\"type\": type(exc).__name__, \"message\": str(exc)})\n        exc = exc.__cause__ or exc.__context__\n    return rows\n\ntry:\n    config = ExtractorConfig.from_pretrained(str(root), local_files_only=True)\n    try:\n        load_extractor_tokenizer(str(root))\n        result[\"official_tokenizer_loader\"] = {\"status\": \"passed\"}\n    except Exception as exc:\n        result[\"official_tokenizer_loader\"] = {\"status\": \"failed\", \"errors\": error_chain(exc)}\n    tokenizer = AutoTokenizer.from_pretrained(\n        str(root), local_files_only=True, extra_special_tokens={})\n    processor = SchemaTransformer(tokenizer=tokenizer, word_splitter=\"char\")\n    raw_tokenizer = json.loads((root / \"tokenizer.json\").read_text())\n    original_vocabulary = {entry[0]: index for index, entry in\n                           enumerate(raw_tokenizer[\"model\"][\"vocab\"])}\n    original_vocabulary.update({entry[\"content\"]: entry[\"id\"]\n                               for entry in raw_tokenizer[\"added_tokens\"]})\n    assert tokenizer.get_vocab() == original_vocabulary\n    schema = Schema().entities({\"工艺描述值\": \"抽取工艺操作及其完整条件，不抽字段标题。\"}).build()\n    text = \"工艺描述：在氮气保护下缓慢加入乙醇并搅拌至完全溶解\"\n    record = processor.transform_and_format(text, schema)\n    batch = processor._pad_batch([record])\n    batch = processor._add_boundary_metadata(batch, \"boundary\", is_training=False)\n    assert record.text == text and batch.original_texts == [text]\n    assert len(batch.query_layouts) == 1 and len(batch.query_layouts[0].queries) == 1\n    assert len(record.text_tokens) > 8\n    special_ids = {t: tokenizer.convert_tokens_to_ids(t) for t in processor.SPECIAL_TOKENS}\n    assert len(set(special_ids.values())) == len(special_ids)\n    assert tokenizer.unk_token_id not in special_ids.values()\n    probe_text = \"编号：ABC-123\"\n    default_batch = processor.collate_fn_inference(\n        [(probe_text, schema)], architecture=\"boundary\", error_policy=\"raise\")\n    result.update(status=\"normalized_preprocessing_passed\", architecture=config.architecture,\n                  normalization=\"AutoTokenizer kwargs extra_special_tokens={}; processor registers markers\",\n                  original_tokenizer_json_modified=False, full_vocabulary_ids_unchanged=True,\n                  auto_extractor_available=hasattr(gliner2, \"AutoExtractor\"),\n                  tokenizer_class=type(tokenizer).__name__,\n                  tokenizer_length=len(tokenizer), special_ids=special_ids,\n                  source_words=len(record.text_tokens), encoder_input_tokens=len(record.input_ids),\n                  exact_source_metadata_queries=len(batch.query_layouts[0].queries),\n                  default_collator_preserves_source=default_batch.original_texts == [probe_text],\n                  default_collator_source=default_batch.original_texts[0],\n                  synthetic_input=probe_text)\nexcept Exception as exc:\n    result.update(status=\"failed\", error_type=type(exc).__name__, error=str(exc))\n    print(json.dumps(result, ensure_ascii=False, indent=2))\n    raise\nprint(json.dumps(result, ensure_ascii=False, indent=2))\n"
+    }
+  },
+  "preflight_limits": [
+    "No trained model or encoder was loaded.",
+    "Tokenizer normalization was tested independently, not integrated into AutoExtractor.",
+    "The official tokenizer loader still fails in the unchanged isolated environment.",
+    "Source-preserving boundary metadata was tested; full inference was not.",
+    "No CMC accuracy, latency, GPU memory or long-context quality conclusion."
+  ],
+  "engineering_validation": {
+    "workdir": "backend",
+    "pytest_command": ".venv/bin/python -m pytest -p no:cacheprovider -q tests/test_extraction/test_schema_card_gliner2.py tests/test_extraction/test_gliner2_extractor.py tests/test_extraction/test_tool_vocabulary.py tests/test_extraction/test_tool_mentions.py tests/test_extraction/test_schema_card_tools.py tests/test_extraction/test_tool_evidence.py tests/test_extraction/test_tool_metric.py tests/test_extraction/test_tool_shacl.py tests/test_extraction/test_gliner_strict.py tests/test_extraction/test_gliner_extractor.py tests/test_extraction/test_ontology_guided_boundaries.py tests/test_extraction/test_schema_card_tightened.py tests/test_extraction/test_schema_card_evidence.py",
+    "pytest_passed": 340,
+    "pytest_warnings": 4,
+    "ruff_command": ".venv/bin/ruff check --no-cache app/services/extraction/gliner2_extractor.py tests/test_extraction/test_gliner2_extractor.py app/evaluation/schema_card_gliner2.py tests/test_extraction/test_schema_card_gliner2.py app/services/extraction/tool_validation/vocabulary.py app/services/extraction/tool_validation/mentions.py tests/test_extraction/test_tool_vocabulary.py tests/test_extraction/test_tool_mentions.py",
+    "ruff_status": "passed"
+  },
+  "probe_input_notes": {
+    "tokenizer_and_boundary_metadata_preflight": {
+      "preprocessing_input": "工艺描述：在氮气保护下缓慢加入乙醇并搅拌至完全溶解",
+      "preprocessing_input_result_fields": [
+        "source_words",
+        "encoder_input_tokens",
+        "exact_source_metadata_queries"
+      ],
+      "default_collator_input": "编号：ABC-123",
+      "default_collator_input_result_fields": [
+        "synthetic_input",
+        "default_collator_source",
+        "default_collator_preserves_source"
+      ],
+      "note": "Post-run annotation of the two distinct synthetic strings in the preserved probe source; original probe output is unchanged."
+    }
+  }
+}

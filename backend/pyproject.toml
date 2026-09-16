@@ -22,6 +22,9 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+# Local SHACL validation for the isolated tool-assisted extraction experiment.
+shacl = ["pyshacl==0.31.0"]
+
 # 语义实体对齐及关系图谱排序（本地 embedding / CrossEncoder）。基础安装不含 torch：
 #   uv sync --extra semantic
 # aligner 未安装时回退字面匹配；图谱排序按冻结 failure_policy 降级或暂停，

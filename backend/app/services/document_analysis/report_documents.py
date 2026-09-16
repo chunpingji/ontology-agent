@@ -53,6 +53,8 @@ class ReportDocumentRuns:
                 "SOURCE_TYPE_MISMATCH", "该文档不是 Word 原件", status_code=422,
             )
         config = job.source_config or {}
+        if config.get("mode") == "finder_template_demo":
+            raise DocumentAnalysisError("SOURCE_NOT_FOUND", "文档源作业不存在", status_code=404)
         if (config.get("doc_class_iri") and config["doc_class_iri"] != document.class_iri) or (
             config.get("doc_ref") and config["doc_ref"] != document.iri
         ):

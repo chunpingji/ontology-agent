@@ -1,0 +1,165 @@
+{
+  "$defs": {
+    "Content": {
+      "additionalProperties": false,
+      "properties": {
+        "text": {
+          "title": "Text",
+          "type": "string"
+        },
+        "section_path": {
+          "title": "Section Path",
+          "type": "string"
+        },
+        "previous_context": {
+          "title": "Previous Context",
+          "type": "string"
+        },
+        "next_context": {
+          "title": "Next Context",
+          "type": "string"
+        }
+      },
+      "required": [
+        "text",
+        "section_path",
+        "previous_context",
+        "next_context"
+      ],
+      "title": "Content",
+      "type": "object"
+    },
+    "OpenSlot": {
+      "additionalProperties": false,
+      "properties": {
+        "predicate_hint": {
+          "title": "Predicate Hint",
+          "type": "string"
+        },
+        "missing_role": {
+          "enum": [
+            "subject",
+            "object",
+            "schema"
+          ],
+          "title": "Missing Role",
+          "type": "string"
+        },
+        "expected_type_hint": {
+          "title": "Expected Type Hint",
+          "type": "string"
+        },
+        "evidence": {
+          "title": "Evidence",
+          "type": "string"
+        }
+      },
+      "required": [
+        "predicate_hint",
+        "missing_role",
+        "expected_type_hint",
+        "evidence"
+      ],
+      "title": "OpenSlot",
+      "type": "object"
+    },
+    "RetrievalOptions": {
+      "additionalProperties": false,
+      "properties": {
+        "top_k": {
+          "maximum": 5,
+          "minimum": 1,
+          "title": "Top K",
+          "type": "integer"
+        },
+        "max_depth": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Max Depth",
+          "type": "integer"
+        },
+        "include_siblings": {
+          "title": "Include Siblings",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "top_k",
+        "max_depth",
+        "include_siblings"
+      ],
+      "title": "RetrievalOptions",
+      "type": "object"
+    },
+    "SemanticQuery": {
+      "additionalProperties": false,
+      "properties": {
+        "intent": {
+          "title": "Intent",
+          "type": "string"
+        },
+        "anchors": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Anchors",
+          "type": "array"
+        }
+      },
+      "required": [
+        "intent",
+        "anchors"
+      ],
+      "title": "SemanticQuery",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "scope_id": {
+      "title": "Scope Id",
+      "type": "string"
+    },
+    "content": {
+      "$ref": "#/$defs/Content"
+    },
+    "semantic_query": {
+      "$ref": "#/$defs/SemanticQuery"
+    },
+    "candidate_concepts": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Candidate Concepts",
+      "type": "array"
+    },
+    "active_frames": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Active Frames",
+      "type": "array"
+    },
+    "open_slots": {
+      "items": {
+        "$ref": "#/$defs/OpenSlot"
+      },
+      "title": "Open Slots",
+      "type": "array"
+    },
+    "retrieval": {
+      "$ref": "#/$defs/RetrievalOptions"
+    }
+  },
+  "required": [
+    "scope_id",
+    "content",
+    "semantic_query",
+    "candidate_concepts",
+    "active_frames",
+    "open_slots",
+    "retrieval"
+  ],
+  "title": "RetrievalRequest",
+  "type": "object"
+}

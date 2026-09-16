@@ -1,0 +1,802 @@
+{
+  "reviewer": "independent assistant source review; not expert gold",
+  "scope": "A/B storage and residue_missing candidate proposals only. Read sources.json, subject-cards.json, candidates/proposal.json; no verification artifacts read; no model calls.",
+  "interpretation": "Semantic source support is separate from exact citation/span-id mechanics. A supported row condition record must not be interpreted as rdf:type(StorageCondition) on the drug itself. Raw N/A preservation and its expanded applicability/availability meaning are judged separately.",
+  "cases": [
+    {
+      "arm": "A",
+      "scope_id": "storage",
+      "artifacts": {
+        "/tmp/cmc-tools-late-review/A-storage/sources.json": "289e1f351691a045573e9ba0c9c87a61f0e0b186d9d39b0e43180139cfa9dfb6",
+        "/tmp/cmc-tools-late-review/A-storage/subject-cards.json": "2aec50f657ed11518a5e72cba60e1efc9d936e1482412ec776bfcb8b0bf6ba70",
+        "/tmp/cmc-tools-late-review/A-storage/candidates/proposal.json": "9ad5222d69322e0be44d2d69bae04524a7f8dac04500818326389337b752534e"
+      },
+      "subjects": [
+        {
+          "path": "subjects.s1.anchor",
+          "subject_id": "s1",
+          "field": "type",
+          "class": "https://ontology.pharma-gmp.cn/slpra/drug-development/StorageCondition",
+          "proposal": {
+            "ref": "u6",
+            "quote": "HRS-1597",
+            "span_id": "evidence:u6:0:8"
+          },
+          "verdict": "supported",
+          "reason": "存放条件这一信息记录有标题、表头和完整同一行数据支持，HRS-1597锚点仅识别该产品的局部条件行；不得把药品自身赋StorageCondition类型。"
+        }
+      ],
+      "claims": [
+        {
+          "candidate_id": "c1",
+          "path": "subjects.document.relations.hasStorageCondition[0]",
+          "subject_id": "document",
+          "field": "hasStorageCondition",
+          "kind": "relations",
+          "proposal": {
+            "target_id": "s1",
+            "evidence": {
+              "ref": "u8",
+              "quote": "密封，双层聚乙烯薄膜袋，不超过25℃保存",
+              "span_id": "evidence:u8:0:20"
+            },
+            "condition": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "polarity": "affirmed"
+          },
+          "verdict": "supported",
+          "reason": "标题、表头与数据行明确列出HRS-1597的存放条件；CMCReport→该局部存放条件记录的关系有依据。",
+          "supporting_source_refs": [
+            "u0",
+            "u2",
+            "u4",
+            "u6",
+            "u8"
+          ]
+        },
+        {
+          "candidate_id": "c2",
+          "path": "subjects.s1.attributes.packagingType[0]",
+          "subject_id": "s1",
+          "field": "packagingType",
+          "kind": "attributes",
+          "proposal": {
+            "raw": "双层聚乙烯薄膜袋外加药品包装用复合袋",
+            "source": {
+              "ref": "u7",
+              "quote": "双层聚乙烯薄膜袋外加药品包装用复合袋",
+              "span_id": "evidence:u7:0:18"
+            },
+            "field": {
+              "ref": "u3",
+              "quote": "包装方式",
+              "span_id": "evidence:u3:0:4"
+            },
+            "unit": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "condition": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            }
+          },
+          "verdict": "supported",
+          "reason": "完整保留双层聚乙烯薄膜袋外加药品包装用复合袋，未遗漏外层复合袋；u7与HRS-1597位于同一逻辑行，u3为对应表头。",
+          "supporting_source_refs": [
+            "u3",
+            "u6",
+            "u7"
+          ]
+        },
+        {
+          "candidate_id": "c3",
+          "path": "subjects.s1.attributes.shelfLife[0]",
+          "subject_id": "s1",
+          "field": "shelfLife",
+          "kind": "attributes",
+          "proposal": {
+            "raw": "24M",
+            "source": {
+              "ref": "u9",
+              "quote": "有效期24M",
+              "span_id": "evidence:u9:0:6"
+            },
+            "field": {
+              "ref": "u5",
+              "quote": "有效期/复测期",
+              "span_id": "evidence:u5:0:7"
+            },
+            "unit": {
+              "ref": "u9",
+              "quote": "M",
+              "span_id": "evidence:u9:5:6"
+            },
+            "condition": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            }
+          },
+          "verdict": "supported",
+          "reason": "u9原文有效期24M：A提取24M且保留完整source，B保留有效期24M，均支持原有有效期表述；这是字符串表达差异，不是事实错误。M保持原样，不据此算到期日期，也不能换成另一物理量单位。",
+          "supporting_source_refs": [
+            "u5",
+            "u6",
+            "u9"
+          ]
+        },
+        {
+          "candidate_id": "c4",
+          "path": "subjects.s1.attributes.storageTemperature[0]",
+          "subject_id": "s1",
+          "field": "storageTemperature",
+          "kind": "attributes",
+          "proposal": {
+            "raw": "不超过25℃",
+            "source": {
+              "ref": "u8",
+              "quote": "不超过25℃保存",
+              "span_id": "evidence:u8:0:20"
+            },
+            "field": {
+              "ref": "u4",
+              "quote": "存放条件（温度、湿度、是否避光）",
+              "span_id": "evidence:u4:0:16"
+            },
+            "unit": {
+              "ref": "u8",
+              "quote": "℃",
+              "span_id": "evidence:u8:17:18"
+            },
+            "condition": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            }
+          },
+          "verdict": "supported",
+          "reason": "raw不超过25℃完整保留上限比较，含义为≤25℃而非恒温25℃；对应同一存放条件行。condition为空是合适的，温度上限本身不是触发条件/图例。",
+          "supporting_source_refs": [
+            "u4",
+            "u6",
+            "u8"
+          ]
+        }
+      ],
+      "observations": [
+        {
+          "candidate_id": "o1",
+          "path": "observations[0]",
+          "subject_id": null,
+          "field": "observation",
+          "proposal": {
+            "value": {
+              "ref": "u6",
+              "quote": "HRS-1597",
+              "span_id": "evidence:u6:0:8"
+            },
+            "field": {
+              "ref": "u2",
+              "quote": "中间体/成品",
+              "span_id": "evidence:u2:0:6"
+            },
+            "legend": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "condition": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "state": "unmapped",
+            "reason": "Subject anchor identified as product code HRS-1597 under column '中间体/成品'."
+          },
+          "verdict": "supported",
+          "reason": "中间体/成品列中有HRS-1597这一局部对象名称，当前未建立产品实体映射，保留为unmapped观察合理；未据名称声称全局唯一标识。"
+        },
+        {
+          "candidate_id": "o2",
+          "path": "observations[1]",
+          "subject_id": null,
+          "field": "observation",
+          "proposal": {
+            "value": {
+              "ref": "u8",
+              "quote": "密封，双层聚乙烯薄膜袋，不超过25℃保存",
+              "span_id": "evidence:u8:0:20"
+            },
+            "field": {
+              "ref": "u4",
+              "quote": "存放条件（温度、湿度、是否避光）",
+              "span_id": "evidence:u4:0:16"
+            },
+            "legend": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "condition": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "state": "unmapped",
+            "reason": "Raw storage condition string containing temperature, packaging, and sealing info."
+          },
+          "verdict": "supported",
+          "reason": "完整原句保留密封、双层袋和≤25℃；其中密封未被现有字段单独表示，作为未完全映射的原文观察合理。已映射的温度/包装不应重复计为新增召回。"
+        },
+        {
+          "candidate_id": "o3",
+          "path": "observations[2]",
+          "subject_id": null,
+          "field": "observation",
+          "proposal": {
+            "value": {
+              "ref": "u9",
+              "quote": "有效期24M",
+              "span_id": "evidence:u9:0:6"
+            },
+            "field": {
+              "ref": "u5",
+              "quote": "有效期/复测期",
+              "span_id": "evidence:u5:0:7"
+            },
+            "legend": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "condition": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "state": "unmapped",
+            "reason": "Raw shelf life string."
+          },
+          "verdict": "unsupported",
+          "reason": "有效期24M已经由本候选shelfLife=24M及其完整source表示。该观察原文是真的，但没有说明仍未映射的独立语义，unmapped状态不成立；这属于重复/状态标签问题，不是有效期值错误。"
+        }
+      ],
+      "completeness_notes": [
+        "两组都完整保留包装外层复合袋，温度比较符未丢。",
+        "shelfLife的24M/有效期24M均是源文表达，不得仅凭是否含字段标签判语义错误。",
+        "没有将湿度或避光缺失补成数值/false。",
+        "A以完整unmapped原句保存密封这一未独立映射语义。"
+      ],
+      "counts": {
+        "subjects": {
+          "supported": 1
+        },
+        "claims": {
+          "supported": 4
+        },
+        "observations": {
+          "supported": 2,
+          "unsupported": 1
+        }
+      }
+    },
+    {
+      "arm": "B",
+      "scope_id": "storage",
+      "artifacts": {
+        "/tmp/cmc-tools-late-review/B-storage/sources.json": "289e1f351691a045573e9ba0c9c87a61f0e0b186d9d39b0e43180139cfa9dfb6",
+        "/tmp/cmc-tools-late-review/B-storage/subject-cards.json": "2aec50f657ed11518a5e72cba60e1efc9d936e1482412ec776bfcb8b0bf6ba70",
+        "/tmp/cmc-tools-late-review/B-storage/candidates/proposal.json": "195c068f4e77ccc18a5221c080651640ed4e090be4a0409c5e9f486018358cdf"
+      },
+      "subjects": [
+        {
+          "path": "subjects.s1.anchor",
+          "subject_id": "s1",
+          "field": "type",
+          "class": "https://ontology.pharma-gmp.cn/slpra/drug-development/StorageCondition",
+          "proposal": {
+            "ref": "u6",
+            "quote": "HRS-1597",
+            "span_id": "source:u6"
+          },
+          "verdict": "supported",
+          "reason": "存放条件这一信息记录有标题、表头和完整同一行数据支持，HRS-1597锚点仅识别该产品的局部条件行；不得把药品自身赋StorageCondition类型。"
+        }
+      ],
+      "claims": [
+        {
+          "candidate_id": "c1",
+          "path": "subjects.document.relations.hasStorageCondition[0]",
+          "subject_id": "document",
+          "field": "hasStorageCondition",
+          "kind": "relations",
+          "proposal": {
+            "target_id": "s1",
+            "evidence": {
+              "ref": "u8",
+              "quote": "密封，双层聚乙烯薄膜袋，不超过25℃保存",
+              "span_id": "source:u8"
+            },
+            "condition": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "polarity": "affirmed"
+          },
+          "verdict": "supported",
+          "reason": "标题、表头与数据行明确列出HRS-1597的存放条件；CMCReport→该局部存放条件记录的关系有依据。",
+          "supporting_source_refs": [
+            "u0",
+            "u2",
+            "u4",
+            "u6",
+            "u8"
+          ]
+        },
+        {
+          "candidate_id": "c2",
+          "path": "subjects.s1.attributes.packagingType[0]",
+          "subject_id": "s1",
+          "field": "packagingType",
+          "kind": "attributes",
+          "proposal": {
+            "raw": "双层聚乙烯薄膜袋外加药品包装用复合袋",
+            "source": {
+              "ref": "u7",
+              "quote": "双层聚乙烯薄膜袋外加药品包装用复合袋",
+              "span_id": "source:u7"
+            },
+            "field": {
+              "ref": "u3",
+              "quote": "包装方式",
+              "span_id": "source:u3"
+            },
+            "unit": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "condition": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            }
+          },
+          "verdict": "supported",
+          "reason": "完整保留双层聚乙烯薄膜袋外加药品包装用复合袋，未遗漏外层复合袋；u7与HRS-1597位于同一逻辑行，u3为对应表头。",
+          "supporting_source_refs": [
+            "u3",
+            "u6",
+            "u7"
+          ]
+        },
+        {
+          "candidate_id": "c3",
+          "path": "subjects.s1.attributes.shelfLife[0]",
+          "subject_id": "s1",
+          "field": "shelfLife",
+          "kind": "attributes",
+          "proposal": {
+            "raw": "有效期24M",
+            "source": {
+              "ref": "u9",
+              "quote": "有效期24M",
+              "span_id": "source:u9"
+            },
+            "field": {
+              "ref": "u5",
+              "quote": "有效期/复测期",
+              "span_id": "source:u5"
+            },
+            "unit": {
+              "ref": "u9",
+              "quote": "M",
+              "span_id": "evidence:u9:5:6"
+            },
+            "condition": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            }
+          },
+          "verdict": "supported",
+          "reason": "u9原文有效期24M：A提取24M且保留完整source，B保留有效期24M，均支持原有有效期表述；这是字符串表达差异，不是事实错误。M保持原样，不据此算到期日期，也不能换成另一物理量单位。",
+          "supporting_source_refs": [
+            "u5",
+            "u6",
+            "u9"
+          ]
+        },
+        {
+          "candidate_id": "c4",
+          "path": "subjects.s1.attributes.storageTemperature[0]",
+          "subject_id": "s1",
+          "field": "storageTemperature",
+          "kind": "attributes",
+          "proposal": {
+            "raw": "不超过25℃",
+            "source": {
+              "ref": "u8",
+              "quote": "不超过25℃",
+              "span_id": "source:u8"
+            },
+            "field": {
+              "ref": "u4",
+              "quote": "存放条件（温度、湿度、是否避光）",
+              "span_id": "source:u4"
+            },
+            "unit": {
+              "ref": "u8",
+              "quote": "℃",
+              "span_id": "evidence:u8:17:18"
+            },
+            "condition": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            }
+          },
+          "verdict": "supported",
+          "reason": "raw不超过25℃完整保留上限比较，含义为≤25℃而非恒温25℃；对应同一存放条件行。condition为空是合适的，温度上限本身不是触发条件/图例。",
+          "supporting_source_refs": [
+            "u4",
+            "u6",
+            "u8"
+          ]
+        }
+      ],
+      "observations": [
+        {
+          "candidate_id": "o1",
+          "path": "observations[0]",
+          "subject_id": null,
+          "field": "observation",
+          "proposal": {
+            "value": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "field": {
+              "ref": "u4",
+              "quote": "存放条件（温度、湿度、是否避光）",
+              "span_id": "source:u4"
+            },
+            "legend": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "condition": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "state": "unknown",
+            "reason": "存放条件字段包含湿度和避光要求，但数据行中未提供具体数值或布尔值，仅提及温度和包装。"
+          },
+          "verdict": "unsupported",
+          "reason": "表头列举湿度/是否避光，但行值未说明二者；value为空，不能把未抽到或未提供字段当原文明示unknown。应记局部覆盖缺口，不能由此生成湿度未知或避光false事实。两条还重复覆盖避光缺口。"
+        },
+        {
+          "candidate_id": "o2",
+          "path": "observations[1]",
+          "subject_id": null,
+          "field": "observation",
+          "proposal": {
+            "value": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "field": {
+              "ref": "u4",
+              "quote": "存放条件（温度、湿度、是否避光）",
+              "span_id": "source:u4"
+            },
+            "legend": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "condition": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "state": "unknown",
+            "reason": "存放条件字段包含避光要求，但数据行中未明确说明是否避光。"
+          },
+          "verdict": "unsupported",
+          "reason": "表头列举湿度/是否避光，但行值未说明二者；value为空，不能把未抽到或未提供字段当原文明示unknown。应记局部覆盖缺口，不能由此生成湿度未知或避光false事实。两条还重复覆盖避光缺口。"
+        }
+      ],
+      "completeness_notes": [
+        "两组都完整保留包装外层复合袋，温度比较符未丢。",
+        "shelfLife的24M/有效期24M均是源文表达，不得仅凭是否含字段标签判语义错误。",
+        "没有将湿度或避光缺失补成数值/false。",
+        "B关系evidence仍包含密封原句，但未像A将其保留为独立未映射观察；两个unknown观察不能替代这一信息。"
+      ],
+      "counts": {
+        "subjects": {
+          "supported": 1
+        },
+        "claims": {
+          "supported": 4
+        },
+        "observations": {
+          "unsupported": 2
+        }
+      }
+    },
+    {
+      "arm": "A",
+      "scope_id": "residue_missing",
+      "artifacts": {
+        "/tmp/cmc-tools-late-review/A-residue_missing/sources.json": "361efedd805e8654446408c2f5263b28739335488f2e10a8960d0d1ba8142c24",
+        "/tmp/cmc-tools-late-review/A-residue_missing/subject-cards.json": "bcd264f0cb13b3fc26ab7c204586b5aeac6002abf9724b6d72fba6d44d2e07ac",
+        "/tmp/cmc-tools-late-review/A-residue_missing/candidates/proposal.json": "286454aa129daa104b357f624c7276e8088687c93bf9ba9efb5ffef26392c231"
+      },
+      "subjects": [
+        {
+          "path": "subjects.s1.anchor",
+          "subject_id": "s1",
+          "field": "type",
+          "class": "https://ontology.pharma-gmp.cn/slpra/drug/Residue",
+          "proposal": {
+            "ref": "",
+            "quote": "",
+            "span_id": ""
+          },
+          "verdict": "inactive_not_asserted",
+          "reason": "anchor和字段均为空；只预分配槽位，未据章节标题或N/A断言存在残留物/清洗设备实体。"
+        },
+        {
+          "path": "subjects.s2.anchor",
+          "subject_id": "s2",
+          "field": "type",
+          "class": "https://ontology.pharma-gmp.cn/slpra/equipment/CleaningEquipment",
+          "proposal": {
+            "ref": "",
+            "quote": "",
+            "span_id": ""
+          },
+          "verdict": "inactive_not_asserted",
+          "reason": "anchor和字段均为空；只预分配槽位，未据章节标题或N/A断言存在残留物/清洗设备实体。"
+        }
+      ],
+      "claims": [],
+      "observations": [
+        {
+          "candidate_id": "o1",
+          "path": "observations[0]",
+          "subject_id": null,
+          "field": "observation",
+          "proposal": {
+            "value": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "field": {
+              "ref": "u0",
+              "quote": "3.5.2设备清洗残留物基本信息",
+              "span_id": "source:u0"
+            },
+            "legend": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "condition": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "state": "not_applicable",
+            "reason": "Section header indicates topic, but content is N/A."
+          },
+          "verdict": "undetermined",
+          "reason": "标题只命名设备清洗残留物基本信息，value为空。邻接N/A提供状态标记但没有图例定义其适用性/可用性含义；该观察没有把N/A绑定为value，not_applicable解读未充分证明。",
+          "raw_na_supported": false,
+          "asserts_absence_of_residue": false
+        },
+        {
+          "candidate_id": "o2",
+          "path": "observations[1]",
+          "subject_id": null,
+          "field": "observation",
+          "proposal": {
+            "value": {
+              "ref": "u1",
+              "quote": "N/A",
+              "span_id": "source:u1"
+            },
+            "field": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "legend": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "condition": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "state": "not_applicable",
+            "reason": "Content is explicitly N/A, no residue or equipment data available."
+          },
+          "verdict": "undetermined",
+          "reason": "value=N/A是逐字支持的原始状态标记，保留该标记正确；本scope没有图例定义N/A，not_applicable作为规范化语义仅是惯用解读，不能等同无残留或无设备。reason只说无可用具体数据，不应扩大为事实不存在。",
+          "raw_na_supported": true,
+          "asserts_absence_of_residue": false
+        }
+      ],
+      "completeness_notes": [
+        "无属性/关系声明，两个类型槽位均未激活；A/B都没有把N/A变成无残留、残留量0或无需清洗。",
+        "N/A原始引文可支持；not_applicable与not_available/unknown必须区分，当前scope缺少明确图例，不以约定自动当事实解释。"
+      ],
+      "counts": {
+        "subjects": {
+          "inactive_not_asserted": 2
+        },
+        "claims": {},
+        "observations": {
+          "undetermined": 2
+        }
+      }
+    },
+    {
+      "arm": "B",
+      "scope_id": "residue_missing",
+      "artifacts": {
+        "/tmp/cmc-tools-late-review/B-residue_missing/sources.json": "361efedd805e8654446408c2f5263b28739335488f2e10a8960d0d1ba8142c24",
+        "/tmp/cmc-tools-late-review/B-residue_missing/subject-cards.json": "bcd264f0cb13b3fc26ab7c204586b5aeac6002abf9724b6d72fba6d44d2e07ac",
+        "/tmp/cmc-tools-late-review/B-residue_missing/candidates/proposal.json": "dfe5fff81e115d2e4dade4f6ac1921607712e3298343948fe95e201b521a79b3"
+      },
+      "subjects": [
+        {
+          "path": "subjects.s1.anchor",
+          "subject_id": "s1",
+          "field": "type",
+          "class": "https://ontology.pharma-gmp.cn/slpra/drug/Residue",
+          "proposal": {
+            "ref": "",
+            "quote": "",
+            "span_id": ""
+          },
+          "verdict": "inactive_not_asserted",
+          "reason": "anchor和字段均为空；只预分配槽位，未据章节标题或N/A断言存在残留物/清洗设备实体。"
+        },
+        {
+          "path": "subjects.s2.anchor",
+          "subject_id": "s2",
+          "field": "type",
+          "class": "https://ontology.pharma-gmp.cn/slpra/equipment/CleaningEquipment",
+          "proposal": {
+            "ref": "",
+            "quote": "",
+            "span_id": ""
+          },
+          "verdict": "inactive_not_asserted",
+          "reason": "anchor和字段均为空；只预分配槽位，未据章节标题或N/A断言存在残留物/清洗设备实体。"
+        }
+      ],
+      "claims": [],
+      "observations": [
+        {
+          "candidate_id": "o1",
+          "path": "observations[0]",
+          "subject_id": null,
+          "field": "observation",
+          "proposal": {
+            "value": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "field": {
+              "ref": "u0",
+              "quote": "3.5.2设备清洗残留物基本信息",
+              "span_id": "source:u0"
+            },
+            "legend": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "condition": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "state": "not_applicable",
+            "reason": "文档仅包含标题和N/A，无具体残留物或设备数据。"
+          },
+          "verdict": "undetermined",
+          "reason": "标题只命名设备清洗残留物基本信息，value为空。邻接N/A提供状态标记但没有图例定义其适用性/可用性含义；该观察没有把N/A绑定为value，not_applicable解读未充分证明。",
+          "raw_na_supported": false,
+          "asserts_absence_of_residue": false
+        },
+        {
+          "candidate_id": "o2",
+          "path": "observations[1]",
+          "subject_id": null,
+          "field": "observation",
+          "proposal": {
+            "value": {
+              "ref": "u1",
+              "quote": "N/A",
+              "span_id": "source:u1"
+            },
+            "field": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "legend": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "condition": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "state": "not_applicable",
+            "reason": "数据标记为N/A，表示无可用数据。"
+          },
+          "verdict": "unsupported",
+          "reason": "N/A原始标记有依据，但state=not_applicable与reason“表示无可用数据”混同适用性与可用性；无图例时不能确定其扩展含义，更不能推成无残留。应保留原始N/A及解释未决。",
+          "raw_na_supported": true,
+          "asserts_absence_of_residue": false
+        }
+      ],
+      "completeness_notes": [
+        "无属性/关系声明，两个类型槽位均未激活；A/B都没有把N/A变成无残留、残留量0或无需清洗。",
+        "N/A原始引文可支持；not_applicable与not_available/unknown必须区分，当前scope缺少明确图例，不以约定自动当事实解释。"
+      ],
+      "counts": {
+        "subjects": {
+          "inactive_not_asserted": 2
+        },
+        "claims": {},
+        "observations": {
+          "undetermined": 1,
+          "unsupported": 1
+        }
+      }
+    }
+  ],
+  "comparison": {
+    "storage": "A/B均4声明且语义有据，核心声明没有NER可见收益。A raw24M、B raw有效期24M不构成优劣。A观察较完整保留密封，但其有效期unmapped是冗余错标签；B新增两条源文没有明确unknown的缺项观察。",
+    "residue_missing": "A/B都未产生残留物/设备实例或属性关系，避免N/A→无残留。两组各2观察；空value的标题状态绑定未决，原始N/A可保留。B把not_applicable解释成无可用数据，语义混同更明确。",
+    "limits": "只评候选语义，不代表最终门禁通过率，不覆盖或修复原始模型响应。N/A扩展含义未决是本次独立审查结论，未读取模型verification或既有评分参考。"
+  },
+  "total_counts": {
+    "subjects": {
+      "supported": 2,
+      "inactive_not_asserted": 4
+    },
+    "claims": {
+      "supported": 8
+    },
+    "observations": {
+      "supported": 2,
+      "unsupported": 4,
+      "undetermined": 3
+    }
+  }
+}

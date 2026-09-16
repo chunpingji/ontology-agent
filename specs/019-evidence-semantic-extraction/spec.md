@@ -1,5 +1,7 @@
 # Feature Specification: 统一文档证据与通用语义抽取
 
+2026-09-14 限定例外：[025 指定模板 Finder 演示](../025-template-finder-demo/spec.md)在独立展示域恢复显式绑定模板的确定性 Finder。其结果不进入本规范的候选、审核和事实提交，普通识别域的退役与原文证明要求不变。
+
 **Feature Branch**: `019-evidence-semantic-extraction`
 **Created**: 2026-09-05
 **Status**: Ready for planning

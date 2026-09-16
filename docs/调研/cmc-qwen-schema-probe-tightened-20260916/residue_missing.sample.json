@@ -1,0 +1,152 @@
+{
+  "scope_id": "residue_missing",
+  "source_units": {
+    "u0": {
+      "evidence_id": "58825513a350603d84e1078f57e62bacf4a16c0bab909e88c217b40e5e955809",
+      "kind": "heading",
+      "text": "3.5.2设备清洗残留物基本信息",
+      "section_node_id": "section:79",
+      "block_id": "paragraph:79:0",
+      "paragraph_index": 79,
+      "fragment_index": 0,
+      "table_path": null,
+      "row_index": null,
+      "column_index": null,
+      "physical_page_number": 5,
+      "source_cell_id": null,
+      "paragraph_offset": 0,
+      "ref": "u0",
+      "row_span": 1,
+      "column_span": 1,
+      "logical_rows": [],
+      "column_indices": [],
+      "grid_rows": [],
+      "grid_columns": [],
+      "column_header_refs": [],
+      "is_header": false,
+      "parser_header_candidate": false,
+      "header_status": "not_a_table",
+      "cell_structure_valid": false
+    },
+    "u1": {
+      "evidence_id": "72e4e463466bb3bd559a9723f42f09014be5d86ce051481cc5623a19fa87ca8e",
+      "kind": "paragraph",
+      "text": "N/A",
+      "section_node_id": "section:79",
+      "block_id": "paragraph:80:0",
+      "paragraph_index": 80,
+      "fragment_index": 0,
+      "table_path": null,
+      "row_index": null,
+      "column_index": null,
+      "physical_page_number": 5,
+      "source_cell_id": null,
+      "paragraph_offset": 0,
+      "ref": "u1",
+      "row_span": 1,
+      "column_span": 1,
+      "logical_rows": [],
+      "column_indices": [],
+      "grid_rows": [],
+      "grid_columns": [],
+      "column_header_refs": [],
+      "is_header": false,
+      "parser_header_candidate": false,
+      "header_status": "not_a_table",
+      "cell_structure_valid": false
+    }
+  },
+  "discovery_qwen": {
+    "frames": [],
+    "observations": [
+      {
+        "value": {
+          "ref": "u1",
+          "quote": "N/A"
+        },
+        "field": {
+          "ref": "u0",
+          "quote": "3.5.2设备清洗残留物基本信息"
+        },
+        "legend": {
+          "ref": "u1",
+          "quote": "N/A"
+        },
+        "condition": {
+          "ref": "",
+          "quote": ""
+        },
+        "state": "not_applicable",
+        "reason": "原文中该部分基本信息标记为N/A，表示不适用或无数据。"
+      }
+    ]
+  },
+  "claims_qwen": {
+    "document": {
+      "attributes": {},
+      "relations": {}
+    }
+  },
+  "rechecked_result": {
+    "scope_id": "residue_missing",
+    "calls": [],
+    "status": "complete",
+    "accepted": [],
+    "observations": [
+      {
+        "value": {
+          "ref": "u1",
+          "quote": "N/A"
+        },
+        "field": {
+          "ref": "u0",
+          "quote": "3.5.2设备清洗残留物基本信息"
+        },
+        "legend": {
+          "ref": "u1",
+          "quote": "N/A"
+        },
+        "condition": {
+          "ref": "",
+          "quote": ""
+        },
+        "state": "not_applicable",
+        "reason": "原文中该部分基本信息标记为N/A，表示不适用或无数据。"
+      }
+    ],
+    "rejected": [],
+    "discovery_contract_pass": true,
+    "frames": {},
+    "claims_contract_pass": true,
+    "acceptance": {
+      "checks": [
+        {
+          "check": "required_observations",
+          "expected": {
+            "quote": "N/A",
+            "state": "not_applicable"
+          },
+          "pass": true
+        },
+        {
+          "check": "forbidden_predicate",
+          "expected": "hasCleaningResidue",
+          "pass": true
+        },
+        {
+          "check": "forbidden_predicate",
+          "expected": "producesResidue",
+          "pass": true
+        },
+        {
+          "check": "no_facts",
+          "pass": true
+        }
+      ],
+      "passed": 4,
+      "total": 4,
+      "all_pass": true,
+      "passed_with_no_rejections": true
+    }
+  }
+}

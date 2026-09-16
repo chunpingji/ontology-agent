@@ -1,0 +1,2992 @@
+{
+  "audit": "independent_read_only_artifact_validation_v1",
+  "schema_validator": {
+    "package": "jsonschema",
+    "version": "4.23.0"
+  },
+  "target": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-gliner25-skos-20260916/completed",
+  "ner": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-gliner25-skos-20260916/ner",
+  "baseline": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-tools-20260916/checked",
+  "status": "incomplete",
+  "check_counts": {
+    "passed": 497,
+    "skipped": 5
+  },
+  "call_counts": {
+    "http_request_files": 15,
+    "stage_calls": 15,
+    "scope_calls": 15,
+    "root_calls": 15,
+    "completed_scopes": 7,
+    "expected_scopes": 8
+  },
+  "technical_failures": [
+    {
+      "scope": "pde_conflict",
+      "stage": "candidates",
+      "http_call": 1,
+      "error_type": "BadRequestError",
+      "status_code": 400,
+      "seconds": 0.72
+    }
+  ],
+  "checks": [
+    {
+      "check": "experiment_completed",
+      "status": "passed",
+      "required": true,
+      "detail": "completed"
+    },
+    {
+      "check": "frozen_scopes",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "budget_configuration",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "source_document_hash",
+      "status": "passed",
+      "required": true,
+      "detail": {
+        "file": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-gliner25-skos-20260916/completed/source.docx",
+        "actual_sha256": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+        "expected_sha256": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7"
+      }
+    },
+    {
+      "check": "input_hashes/nonempty",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "input_hashes/cases.json",
+      "status": "passed",
+      "required": true,
+      "detail": {
+        "file": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-gliner25-skos-20260916/completed/cases.json",
+        "actual_sha256": "3cb1670630526a84ec66f29232c954fc63939b251b71b2e50ecac23d3b0bf247",
+        "expected_sha256": "3cb1670630526a84ec66f29232c954fc63939b251b71b2e50ecac23d3b0bf247"
+      }
+    },
+    {
+      "check": "input_hashes/cards.json",
+      "status": "passed",
+      "required": true,
+      "detail": {
+        "file": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-gliner25-skos-20260916/completed/cards.json",
+        "actual_sha256": "3b2a50862d1f977adb76044d08360cc03e02629f8bae8de86a142b7e388044a6",
+        "expected_sha256": "3b2a50862d1f977adb76044d08360cc03e02629f8bae8de86a142b7e388044a6"
+      }
+    },
+    {
+      "check": "input_hashes/ir.json",
+      "status": "passed",
+      "required": true,
+      "detail": {
+        "file": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-gliner25-skos-20260916/completed/ir.json",
+        "actual_sha256": "858dddbb762217ede057ed85e659bb6d0349fc90e0c936fbf42756859c882134",
+        "expected_sha256": "858dddbb762217ede057ed85e659bb6d0349fc90e0c936fbf42756859c882134"
+      }
+    },
+    {
+      "check": "input_hashes/reference.json",
+      "status": "passed",
+      "required": true,
+      "detail": {
+        "file": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-gliner25-skos-20260916/completed/reference.json",
+        "actual_sha256": "49095440a7572936424e7b7de6a8c9bcee17cd70c5cc86c5b78a35cfaec65097",
+        "expected_sha256": "49095440a7572936424e7b7de6a8c9bcee17cd70c5cc86c5b78a35cfaec65097"
+      }
+    },
+    {
+      "check": "input_hashes/acceptance.json",
+      "status": "passed",
+      "required": true,
+      "detail": {
+        "file": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-gliner25-skos-20260916/completed/acceptance.json",
+        "actual_sha256": "78c1960afb566ba8cc19742584972483fadccd92e5c73ef070685ceb637aca2e",
+        "expected_sha256": "78c1960afb566ba8cc19742584972483fadccd92e5c73ef070685ceb637aca2e"
+      }
+    },
+    {
+      "check": "code_hashes/nonempty",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "code_hashes/schema_card_tools.py",
+      "status": "passed",
+      "required": true,
+      "detail": {
+        "file": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-gliner25-skos-20260916/completed/code/schema_card_tools.py",
+        "actual_sha256": "eefa476d356be85cac6a1da66c6744634fe06bcb15aacd39e0b4a4e13f4220cc",
+        "expected_sha256": "eefa476d356be85cac6a1da66c6744634fe06bcb15aacd39e0b4a4e13f4220cc"
+      }
+    },
+    {
+      "check": "code_hashes/schema_card_tightened.py",
+      "status": "passed",
+      "required": true,
+      "detail": {
+        "file": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-gliner25-skos-20260916/completed/code/schema_card_tightened.py",
+        "actual_sha256": "2fb24c9ae845a6d2be1b27415a5732677c4f2e1bd67d05d4333aa2eb822484d2",
+        "expected_sha256": "2fb24c9ae845a6d2be1b27415a5732677c4f2e1bd67d05d4333aa2eb822484d2"
+      }
+    },
+    {
+      "check": "code_hashes/schema_card_evidence.py",
+      "status": "passed",
+      "required": true,
+      "detail": {
+        "file": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-gliner25-skos-20260916/completed/code/schema_card_evidence.py",
+        "actual_sha256": "e391d939a269e7864a02aacf0a40ce06bc5962cf980b60470a22594d8522d715",
+        "expected_sha256": "e391d939a269e7864a02aacf0a40ce06bc5962cf980b60470a22594d8522d715"
+      }
+    },
+    {
+      "check": "code_hashes/__init__.py",
+      "status": "passed",
+      "required": true,
+      "detail": {
+        "file": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-gliner25-skos-20260916/completed/code/__init__.py",
+        "actual_sha256": "e1c8a83f0dc96e983ce56e5f04a289074c4c93a91d1bdd0b4e2b30156f53b785",
+        "expected_sha256": "e1c8a83f0dc96e983ce56e5f04a289074c4c93a91d1bdd0b4e2b30156f53b785"
+      }
+    },
+    {
+      "check": "code_hashes/evidence.py",
+      "status": "passed",
+      "required": true,
+      "detail": {
+        "file": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-gliner25-skos-20260916/completed/code/evidence.py",
+        "actual_sha256": "4fd074f4b4bc84ac15a066cfa4e40a82b9d2db8b33f9d7b81730a27fa6a11ff1",
+        "expected_sha256": "4fd074f4b4bc84ac15a066cfa4e40a82b9d2db8b33f9d7b81730a27fa6a11ff1"
+      }
+    },
+    {
+      "check": "code_hashes/mentions.py",
+      "status": "passed",
+      "required": true,
+      "detail": {
+        "file": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-gliner25-skos-20260916/completed/code/mentions.py",
+        "actual_sha256": "326a67b269d8a7b6a40e35977d5dfcd713fed49c4127c3a317c2c0a197361df2",
+        "expected_sha256": "326a67b269d8a7b6a40e35977d5dfcd713fed49c4127c3a317c2c0a197361df2"
+      }
+    },
+    {
+      "check": "code_hashes/metric.py",
+      "status": "passed",
+      "required": true,
+      "detail": {
+        "file": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-gliner25-skos-20260916/completed/code/metric.py",
+        "actual_sha256": "917a310df340845a2c9b37e35c57c816699c801eb53a21d4a6f41b601e125f95",
+        "expected_sha256": "917a310df340845a2c9b37e35c57c816699c801eb53a21d4a6f41b601e125f95"
+      }
+    },
+    {
+      "check": "code_hashes/shacl.py",
+      "status": "passed",
+      "required": true,
+      "detail": {
+        "file": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-gliner25-skos-20260916/completed/code/shacl.py",
+        "actual_sha256": "e597a4f8a24cc0e0fd9ea29341e159dbac3a2222123bef1a780544a86896eec0",
+        "expected_sha256": "e597a4f8a24cc0e0fd9ea29341e159dbac3a2222123bef1a780544a86896eec0"
+      }
+    },
+    {
+      "check": "code_hashes/vocabulary.py",
+      "status": "passed",
+      "required": true,
+      "detail": {
+        "file": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-gliner25-skos-20260916/completed/code/vocabulary.py",
+        "actual_sha256": "9baff70abc72d13928bb34ddbdfb3acae2ff6bb84858396309f989918b271c34",
+        "expected_sha256": "9baff70abc72d13928bb34ddbdfb3acae2ff6bb84858396309f989918b271c34"
+      }
+    },
+    {
+      "check": "code_hashes/gliner_extractor.py",
+      "status": "passed",
+      "required": true,
+      "detail": {
+        "file": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-gliner25-skos-20260916/completed/code/gliner_extractor.py",
+        "actual_sha256": "4bdd2f1e944889cc048254c8183e116a5638bed79f0b3c57949355798e8bfa38",
+        "expected_sha256": "4bdd2f1e944889cc048254c8183e116a5638bed79f0b3c57949355798e8bfa38"
+      }
+    },
+    {
+      "check": "code_hashes/schema_card_gliner2.py",
+      "status": "passed",
+      "required": true,
+      "detail": {
+        "file": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-gliner25-skos-20260916/completed/code/schema_card_gliner2.py",
+        "actual_sha256": "44be66e781ef85255e3489eb0d03a76ae7e2fdc966a376bf050ea4668d662d8e",
+        "expected_sha256": "44be66e781ef85255e3489eb0d03a76ae7e2fdc966a376bf050ea4668d662d8e"
+      }
+    },
+    {
+      "check": "code_hashes/gliner2_extractor.py",
+      "status": "passed",
+      "required": true,
+      "detail": {
+        "file": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-gliner25-skos-20260916/completed/code/gliner2_extractor.py",
+        "actual_sha256": "f02c91cd4875135b592d186b7e1aa57bedc3f6283bf3c947c7e36cc225020b47",
+        "expected_sha256": "f02c91cd4875135b592d186b7e1aa57bedc3f6283bf3c947c7e36cc225020b47"
+      }
+    },
+    {
+      "check": "code_hashes/cmc_extraction_vocabulary.ttl",
+      "status": "passed",
+      "required": true,
+      "detail": {
+        "file": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-gliner25-skos-20260916/completed/code/cmc_extraction_vocabulary.ttl",
+        "actual_sha256": "c45b99fc23229de77b33ba593da328fd85ee8ceee584fb582857e760807b6456",
+        "expected_sha256": "c45b99fc23229de77b33ba593da328fd85ee8ceee584fb582857e760807b6456"
+      }
+    },
+    {
+      "check": "vocabulary_hash",
+      "status": "passed",
+      "required": true,
+      "detail": {
+        "file": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-gliner25-skos-20260916/completed/vocabularies.json",
+        "actual_sha256": "b07ffa2feab64cecd96f5cd4b669abb79d842961d7e663054a4bcf681577a458",
+        "expected_sha256": "b07ffa2feab64cecd96f5cd4b669abb79d842961d7e663054a4bcf681577a458"
+      }
+    },
+    {
+      "check": "ner_identity",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "ner_manifest/source_sha256",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "ner_manifest/ontology_hash",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "ner_manifest/input_hashes",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "ner_manifest/code_hashes",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "ner_manifest/gliner2_model",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "ner_manifest/ner_device",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "ner_manifest/labels_per_batch",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "ner_manifest/version",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "ner_manifest/backend",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "ner_manifest/architecture",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "ner_manifest/packages",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "ner_manifest/prepared_tool_hashes",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "ner_manifest/vocabulary_sha256",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "ner_file/source.docx",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "ner_file/vocabularies.json",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "ner_file/cases.json",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "ner_file/cards.json",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "ner_file/ir.json",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "ner_file/reference.json",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "ner_file/acceptance.json",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "ner_code/schema_card_tools.py",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "ner_code/schema_card_tightened.py",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "ner_code/schema_card_evidence.py",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "ner_code/__init__.py",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "ner_code/evidence.py",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "ner_code/mentions.py",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "ner_code/metric.py",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "ner_code/shacl.py",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "ner_code/vocabulary.py",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "ner_code/gliner_extractor.py",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "ner_code/schema_card_gliner2.py",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "ner_code/gliner2_extractor.py",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "ner_code/cmc_extraction_vocabulary.ttl",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "baseline_identity",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "baseline_input/source.docx",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "baseline_input/cases.json",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "baseline_input/cards.json",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "baseline_input/ir.json",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "baseline_input/reference.json",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "baseline_input/acceptance.json",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "root_scope_ids",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "root_scope_coverage",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "introduction/prepared_hash/sources.json",
+      "status": "passed",
+      "required": true,
+      "detail": {
+        "file": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-gliner25-skos-20260916/completed/C/introduction/sources.json",
+        "actual_sha256": "41796029764c9531b94322797bb5cee8f0a5c117b93c9b199bbdcb8c31262f77",
+        "expected_sha256": "41796029764c9531b94322797bb5cee8f0a5c117b93c9b199bbdcb8c31262f77"
+      }
+    },
+    {
+      "check": "introduction/ner_file/sources.json",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "introduction/prepared_hash/plan/proposal.json",
+      "status": "passed",
+      "required": true,
+      "detail": {
+        "file": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-gliner25-skos-20260916/completed/C/introduction/plan/proposal.json",
+        "actual_sha256": "223d53c61b8dc3dc8df8d571347cf160e6088b08295f0133a1481d2d7e136553",
+        "expected_sha256": "223d53c61b8dc3dc8df8d571347cf160e6088b08295f0133a1481d2d7e136553"
+      }
+    },
+    {
+      "check": "introduction/ner_file/plan/proposal.json",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "introduction/prepared_hash/plan/schema.json",
+      "status": "passed",
+      "required": true,
+      "detail": {
+        "file": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-gliner25-skos-20260916/completed/C/introduction/plan/schema.json",
+        "actual_sha256": "249549145afda479b6e316fa67842efe5a3bbe74de9bbac26ed8c81cd36b1a19",
+        "expected_sha256": "249549145afda479b6e316fa67842efe5a3bbe74de9bbac26ed8c81cd36b1a19"
+      }
+    },
+    {
+      "check": "introduction/ner_file/plan/schema.json",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "introduction/prepared_hash/vocabulary.json",
+      "status": "passed",
+      "required": true,
+      "detail": {
+        "file": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-gliner25-skos-20260916/completed/C/introduction/vocabulary.json",
+        "actual_sha256": "edb93dce6e895287d6e56eb9abaa97fed838eb31973631d53ac0ab89d866205c",
+        "expected_sha256": "edb93dce6e895287d6e56eb9abaa97fed838eb31973631d53ac0ab89d866205c"
+      }
+    },
+    {
+      "check": "introduction/ner_file/vocabulary.json",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "introduction/prepared_hash/tools.json",
+      "status": "passed",
+      "required": true,
+      "detail": {
+        "file": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-gliner25-skos-20260916/completed/C/introduction/tools.json",
+        "actual_sha256": "3f5cfe870510e9eddc73ef587fc0969d920a0d093bcc0dc9f3b8fa8e745d2dcb",
+        "expected_sha256": "3f5cfe870510e9eddc73ef587fc0969d920a0d093bcc0dc9f3b8fa8e745d2dcb"
+      }
+    },
+    {
+      "check": "introduction/ner_file/tools.json",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "introduction/prepared_inventory",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "introduction/baseline/sources.json",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "introduction/baseline/plan/proposal.json",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "introduction/baseline/plan/schema.json",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "introduction/plan_provenance",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "introduction/plan_hash",
+      "status": "passed",
+      "required": true,
+      "detail": {
+        "file": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-gliner25-skos-20260916/completed/C/introduction/plan/proposal.json",
+        "actual_sha256": "223d53c61b8dc3dc8df8d571347cf160e6088b08295f0133a1481d2d7e136553",
+        "expected_sha256": "223d53c61b8dc3dc8df8d571347cf160e6088b08295f0133a1481d2d7e136553"
+      }
+    },
+    {
+      "check": "introduction/ner_complete",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "introduction/ner_vocabulary_hash",
+      "status": "passed",
+      "required": true,
+      "detail": {
+        "file": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-gliner25-skos-20260916/completed/C/introduction/vocabulary.json",
+        "actual_sha256": "edb93dce6e895287d6e56eb9abaa97fed838eb31973631d53ac0ab89d866205c",
+        "expected_sha256": "edb93dce6e895287d6e56eb9abaa97fed838eb31973631d53ac0ab89d866205c"
+      }
+    },
+    {
+      "check": "introduction/candidates/no_retry",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "introduction/candidates/request_ledger_count",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "introduction/candidates/request_identity",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "introduction/candidates/response_identity",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "introduction/candidates/requested_schema",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "introduction/candidates/prompt_schema",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "introduction/candidates/prompt_cards",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "introduction/candidates/response_choice",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "introduction/candidates/response_ledger",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "introduction/candidates/model_request",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "introduction/candidates/raw_http_schema",
+      "status": "passed",
+      "required": true,
+      "detail": []
+    },
+    {
+      "check": "introduction/candidates/raw_equals_saved_proposal",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "introduction/verification/no_retry",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "introduction/verification/request_ledger_count",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "introduction/verification/request_identity",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "introduction/verification/response_identity",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "introduction/verification/requested_schema",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "introduction/verification/prompt_schema",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "introduction/verification/response_choice",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "introduction/verification/response_ledger",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "introduction/verification/model_request",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "introduction/verification/raw_http_schema",
+      "status": "passed",
+      "required": true,
+      "detail": []
+    },
+    {
+      "check": "introduction/verification/raw_equals_saved_proposal",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "introduction/no_plan_http",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "introduction/scope_call_budget",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "introduction/scope_identity",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "introduction/scope_ledger",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "introduction/root_ledger",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "introduction/contract_passes",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "introduction/complete_state",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "introduction/raw_to_frozen_claims",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "introduction/raw_to_frozen_observations",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "introduction/frozen_ids_unique",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "introduction/candidate_partition",
+      "status": "passed",
+      "required": true,
+      "detail": {
+        "missing": [],
+        "extra": []
+      }
+    },
+    {
+      "check": "introduction/declared_candidate_counts",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "introduction/active_frames",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "introduction/subject_partition",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "introduction/verification_id_coverage",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "product_properties/prepared_hash/sources.json",
+      "status": "passed",
+      "required": true,
+      "detail": {
+        "file": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-gliner25-skos-20260916/completed/C/product_properties/sources.json",
+        "actual_sha256": "01f76b654e6ef5746a3b947bac00e9367c5bc20946aaec822358b9b6e4cec246",
+        "expected_sha256": "01f76b654e6ef5746a3b947bac00e9367c5bc20946aaec822358b9b6e4cec246"
+      }
+    },
+    {
+      "check": "product_properties/ner_file/sources.json",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "product_properties/prepared_hash/plan/proposal.json",
+      "status": "passed",
+      "required": true,
+      "detail": {
+        "file": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-gliner25-skos-20260916/completed/C/product_properties/plan/proposal.json",
+        "actual_sha256": "126afe2fe647afe5d79c9ded59707955bf530c732dc20dcc51da25153e7b7e36",
+        "expected_sha256": "126afe2fe647afe5d79c9ded59707955bf530c732dc20dcc51da25153e7b7e36"
+      }
+    },
+    {
+      "check": "product_properties/ner_file/plan/proposal.json",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "product_properties/prepared_hash/plan/schema.json",
+      "status": "passed",
+      "required": true,
+      "detail": {
+        "file": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-gliner25-skos-20260916/completed/C/product_properties/plan/schema.json",
+        "actual_sha256": "a1e658dd4f0fd143cb5a5eb1d4d1885143e101eae060a26904badc5cf1b3372d",
+        "expected_sha256": "a1e658dd4f0fd143cb5a5eb1d4d1885143e101eae060a26904badc5cf1b3372d"
+      }
+    },
+    {
+      "check": "product_properties/ner_file/plan/schema.json",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "product_properties/prepared_hash/vocabulary.json",
+      "status": "passed",
+      "required": true,
+      "detail": {
+        "file": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-gliner25-skos-20260916/completed/C/product_properties/vocabulary.json",
+        "actual_sha256": "184cc941d60bab032858e5448fa1e46322df93efef8333bb69a6aeda579f020e",
+        "expected_sha256": "184cc941d60bab032858e5448fa1e46322df93efef8333bb69a6aeda579f020e"
+      }
+    },
+    {
+      "check": "product_properties/ner_file/vocabulary.json",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "product_properties/prepared_hash/tools.json",
+      "status": "passed",
+      "required": true,
+      "detail": {
+        "file": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-gliner25-skos-20260916/completed/C/product_properties/tools.json",
+        "actual_sha256": "6f21d2f359f1eddb1ed1e7836f2520dd72e917720bff7e55170a8caf8db6de5c",
+        "expected_sha256": "6f21d2f359f1eddb1ed1e7836f2520dd72e917720bff7e55170a8caf8db6de5c"
+      }
+    },
+    {
+      "check": "product_properties/ner_file/tools.json",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "product_properties/prepared_inventory",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "product_properties/baseline/sources.json",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "product_properties/baseline/plan/proposal.json",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "product_properties/baseline/plan/schema.json",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "product_properties/plan_provenance",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "product_properties/plan_hash",
+      "status": "passed",
+      "required": true,
+      "detail": {
+        "file": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-gliner25-skos-20260916/completed/C/product_properties/plan/proposal.json",
+        "actual_sha256": "126afe2fe647afe5d79c9ded59707955bf530c732dc20dcc51da25153e7b7e36",
+        "expected_sha256": "126afe2fe647afe5d79c9ded59707955bf530c732dc20dcc51da25153e7b7e36"
+      }
+    },
+    {
+      "check": "product_properties/ner_complete",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "product_properties/ner_vocabulary_hash",
+      "status": "passed",
+      "required": true,
+      "detail": {
+        "file": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-gliner25-skos-20260916/completed/C/product_properties/vocabulary.json",
+        "actual_sha256": "184cc941d60bab032858e5448fa1e46322df93efef8333bb69a6aeda579f020e",
+        "expected_sha256": "184cc941d60bab032858e5448fa1e46322df93efef8333bb69a6aeda579f020e"
+      }
+    },
+    {
+      "check": "product_properties/candidates/no_retry",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "product_properties/candidates/request_ledger_count",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "product_properties/candidates/request_identity",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "product_properties/candidates/response_identity",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "product_properties/candidates/requested_schema",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "product_properties/candidates/prompt_schema",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "product_properties/candidates/prompt_cards",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "product_properties/candidates/response_choice",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "product_properties/candidates/response_ledger",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "product_properties/candidates/model_request",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "product_properties/candidates/raw_http_schema",
+      "status": "passed",
+      "required": true,
+      "detail": []
+    },
+    {
+      "check": "product_properties/candidates/raw_equals_saved_proposal",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "product_properties/verification/no_retry",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "product_properties/verification/request_ledger_count",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "product_properties/verification/request_identity",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "product_properties/verification/response_identity",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "product_properties/verification/requested_schema",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "product_properties/verification/prompt_schema",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "product_properties/verification/response_choice",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "product_properties/verification/response_ledger",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "product_properties/verification/model_request",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "product_properties/verification/raw_http_schema",
+      "status": "passed",
+      "required": true,
+      "detail": []
+    },
+    {
+      "check": "product_properties/verification/raw_equals_saved_proposal",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "product_properties/no_plan_http",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "product_properties/scope_call_budget",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "product_properties/scope_identity",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "product_properties/scope_ledger",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "product_properties/root_ledger",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "product_properties/contract_passes",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "product_properties/complete_state",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "product_properties/raw_to_frozen_claims",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "product_properties/raw_to_frozen_observations",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "product_properties/frozen_ids_unique",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "product_properties/candidate_partition",
+      "status": "passed",
+      "required": true,
+      "detail": {
+        "missing": [],
+        "extra": []
+      }
+    },
+    {
+      "check": "product_properties/declared_candidate_counts",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "product_properties/active_frames",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "product_properties/subject_partition",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "product_properties/verification_id_coverage",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "process_equipment/prepared_hash/sources.json",
+      "status": "passed",
+      "required": true,
+      "detail": {
+        "file": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-gliner25-skos-20260916/completed/C/process_equipment/sources.json",
+        "actual_sha256": "5a6125cd54dc2d5d59c83fac2a28f3c080c93416e2d5c768736ca7f50f3454a8",
+        "expected_sha256": "5a6125cd54dc2d5d59c83fac2a28f3c080c93416e2d5c768736ca7f50f3454a8"
+      }
+    },
+    {
+      "check": "process_equipment/ner_file/sources.json",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "process_equipment/prepared_hash/plan/proposal.json",
+      "status": "passed",
+      "required": true,
+      "detail": {
+        "file": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-gliner25-skos-20260916/completed/C/process_equipment/plan/proposal.json",
+        "actual_sha256": "422d38834ec79099870ee6e0d3e4dacd4347c15aa6f59f9658a448aa8b47eb99",
+        "expected_sha256": "422d38834ec79099870ee6e0d3e4dacd4347c15aa6f59f9658a448aa8b47eb99"
+      }
+    },
+    {
+      "check": "process_equipment/ner_file/plan/proposal.json",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "process_equipment/prepared_hash/plan/schema.json",
+      "status": "passed",
+      "required": true,
+      "detail": {
+        "file": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-gliner25-skos-20260916/completed/C/process_equipment/plan/schema.json",
+        "actual_sha256": "587211512c5022434ea23feffb2c9a6c78dd8c5241f6a9dc4a9e5d0f850a9c5e",
+        "expected_sha256": "587211512c5022434ea23feffb2c9a6c78dd8c5241f6a9dc4a9e5d0f850a9c5e"
+      }
+    },
+    {
+      "check": "process_equipment/ner_file/plan/schema.json",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "process_equipment/prepared_hash/vocabulary.json",
+      "status": "passed",
+      "required": true,
+      "detail": {
+        "file": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-gliner25-skos-20260916/completed/C/process_equipment/vocabulary.json",
+        "actual_sha256": "fe486f08f84afa0a61b925dbf0b46d212972783be4769cf2943fdf63af7e0d70",
+        "expected_sha256": "fe486f08f84afa0a61b925dbf0b46d212972783be4769cf2943fdf63af7e0d70"
+      }
+    },
+    {
+      "check": "process_equipment/ner_file/vocabulary.json",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "process_equipment/prepared_hash/tools.json",
+      "status": "passed",
+      "required": true,
+      "detail": {
+        "file": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-gliner25-skos-20260916/completed/C/process_equipment/tools.json",
+        "actual_sha256": "f36d94c040a9d18b1339e78a48d1ea969c46b4f2f9d0a99b553ac8588ad03173",
+        "expected_sha256": "f36d94c040a9d18b1339e78a48d1ea969c46b4f2f9d0a99b553ac8588ad03173"
+      }
+    },
+    {
+      "check": "process_equipment/ner_file/tools.json",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "process_equipment/prepared_inventory",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "process_equipment/baseline/sources.json",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "process_equipment/baseline/plan/proposal.json",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "process_equipment/baseline/plan/schema.json",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "process_equipment/plan_provenance",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "process_equipment/plan_hash",
+      "status": "passed",
+      "required": true,
+      "detail": {
+        "file": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-gliner25-skos-20260916/completed/C/process_equipment/plan/proposal.json",
+        "actual_sha256": "422d38834ec79099870ee6e0d3e4dacd4347c15aa6f59f9658a448aa8b47eb99",
+        "expected_sha256": "422d38834ec79099870ee6e0d3e4dacd4347c15aa6f59f9658a448aa8b47eb99"
+      }
+    },
+    {
+      "check": "process_equipment/ner_complete",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "process_equipment/ner_vocabulary_hash",
+      "status": "passed",
+      "required": true,
+      "detail": {
+        "file": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-gliner25-skos-20260916/completed/C/process_equipment/vocabulary.json",
+        "actual_sha256": "fe486f08f84afa0a61b925dbf0b46d212972783be4769cf2943fdf63af7e0d70",
+        "expected_sha256": "fe486f08f84afa0a61b925dbf0b46d212972783be4769cf2943fdf63af7e0d70"
+      }
+    },
+    {
+      "check": "process_equipment/candidates/no_retry",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "process_equipment/candidates/request_ledger_count",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "process_equipment/candidates/request_identity",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "process_equipment/candidates/response_identity",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "process_equipment/candidates/requested_schema",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "process_equipment/candidates/prompt_schema",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "process_equipment/candidates/prompt_cards",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "process_equipment/candidates/response_choice",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "process_equipment/candidates/response_ledger",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "process_equipment/candidates/model_request",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "process_equipment/candidates/raw_http_schema",
+      "status": "passed",
+      "required": true,
+      "detail": []
+    },
+    {
+      "check": "process_equipment/candidates/raw_equals_saved_proposal",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "process_equipment/verification/no_retry",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "process_equipment/verification/request_ledger_count",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "process_equipment/verification/request_identity",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "process_equipment/verification/response_identity",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "process_equipment/verification/requested_schema",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "process_equipment/verification/prompt_schema",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "process_equipment/verification/response_choice",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "process_equipment/verification/response_ledger",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "process_equipment/verification/model_request",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "process_equipment/verification/raw_http_schema",
+      "status": "passed",
+      "required": true,
+      "detail": []
+    },
+    {
+      "check": "process_equipment/verification/raw_equals_saved_proposal",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "process_equipment/no_plan_http",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "process_equipment/scope_call_budget",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "process_equipment/scope_identity",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "process_equipment/scope_ledger",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "process_equipment/root_ledger",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "process_equipment/contract_passes",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "process_equipment/complete_state",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "process_equipment/raw_to_frozen_claims",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "process_equipment/raw_to_frozen_observations",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "process_equipment/frozen_ids_unique",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "process_equipment/candidate_partition",
+      "status": "passed",
+      "required": true,
+      "detail": {
+        "missing": [],
+        "extra": []
+      }
+    },
+    {
+      "check": "process_equipment/declared_candidate_counts",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "process_equipment/active_frames",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "process_equipment/subject_partition",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "process_equipment/verification_id_coverage",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "quality_condition/prepared_hash/sources.json",
+      "status": "passed",
+      "required": true,
+      "detail": {
+        "file": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-gliner25-skos-20260916/completed/C/quality_condition/sources.json",
+        "actual_sha256": "0b6ef5a7241ac6def2727950e30b9739215b5d20102c60a04aab271ccc30a76f",
+        "expected_sha256": "0b6ef5a7241ac6def2727950e30b9739215b5d20102c60a04aab271ccc30a76f"
+      }
+    },
+    {
+      "check": "quality_condition/ner_file/sources.json",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "quality_condition/prepared_hash/plan/proposal.json",
+      "status": "passed",
+      "required": true,
+      "detail": {
+        "file": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-gliner25-skos-20260916/completed/C/quality_condition/plan/proposal.json",
+        "actual_sha256": "423d76f82493b8860d6eb12c35370a5b197ad8e29f22c38797af926ce7e28983",
+        "expected_sha256": "423d76f82493b8860d6eb12c35370a5b197ad8e29f22c38797af926ce7e28983"
+      }
+    },
+    {
+      "check": "quality_condition/ner_file/plan/proposal.json",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "quality_condition/prepared_hash/plan/schema.json",
+      "status": "passed",
+      "required": true,
+      "detail": {
+        "file": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-gliner25-skos-20260916/completed/C/quality_condition/plan/schema.json",
+        "actual_sha256": "7c9af35fa509c87bb80d82c98d762f897606de69d16198967317bd45172b47d1",
+        "expected_sha256": "7c9af35fa509c87bb80d82c98d762f897606de69d16198967317bd45172b47d1"
+      }
+    },
+    {
+      "check": "quality_condition/ner_file/plan/schema.json",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "quality_condition/prepared_hash/vocabulary.json",
+      "status": "passed",
+      "required": true,
+      "detail": {
+        "file": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-gliner25-skos-20260916/completed/C/quality_condition/vocabulary.json",
+        "actual_sha256": "151a02928aae07ed4bf9f95c2e55ddfad28496903140269e277dff97caac28d9",
+        "expected_sha256": "151a02928aae07ed4bf9f95c2e55ddfad28496903140269e277dff97caac28d9"
+      }
+    },
+    {
+      "check": "quality_condition/ner_file/vocabulary.json",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "quality_condition/prepared_hash/tools.json",
+      "status": "passed",
+      "required": true,
+      "detail": {
+        "file": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-gliner25-skos-20260916/completed/C/quality_condition/tools.json",
+        "actual_sha256": "18d420b6485925d5809fa4f8f4695bea74b37b88b906511793b662f36c370fc4",
+        "expected_sha256": "18d420b6485925d5809fa4f8f4695bea74b37b88b906511793b662f36c370fc4"
+      }
+    },
+    {
+      "check": "quality_condition/ner_file/tools.json",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "quality_condition/prepared_inventory",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "quality_condition/baseline/sources.json",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "quality_condition/baseline/plan/proposal.json",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "quality_condition/baseline/plan/schema.json",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "quality_condition/plan_provenance",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "quality_condition/plan_hash",
+      "status": "passed",
+      "required": true,
+      "detail": {
+        "file": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-gliner25-skos-20260916/completed/C/quality_condition/plan/proposal.json",
+        "actual_sha256": "423d76f82493b8860d6eb12c35370a5b197ad8e29f22c38797af926ce7e28983",
+        "expected_sha256": "423d76f82493b8860d6eb12c35370a5b197ad8e29f22c38797af926ce7e28983"
+      }
+    },
+    {
+      "check": "quality_condition/ner_complete",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "quality_condition/ner_vocabulary_hash",
+      "status": "passed",
+      "required": true,
+      "detail": {
+        "file": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-gliner25-skos-20260916/completed/C/quality_condition/vocabulary.json",
+        "actual_sha256": "151a02928aae07ed4bf9f95c2e55ddfad28496903140269e277dff97caac28d9",
+        "expected_sha256": "151a02928aae07ed4bf9f95c2e55ddfad28496903140269e277dff97caac28d9"
+      }
+    },
+    {
+      "check": "quality_condition/candidates/no_retry",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "quality_condition/candidates/request_ledger_count",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "quality_condition/candidates/request_identity",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "quality_condition/candidates/response_identity",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "quality_condition/candidates/requested_schema",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "quality_condition/candidates/prompt_schema",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "quality_condition/candidates/prompt_cards",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "quality_condition/candidates/response_choice",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "quality_condition/candidates/response_ledger",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "quality_condition/candidates/model_request",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "quality_condition/candidates/raw_http_schema",
+      "status": "passed",
+      "required": true,
+      "detail": []
+    },
+    {
+      "check": "quality_condition/candidates/raw_equals_saved_proposal",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "quality_condition/verification/no_retry",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "quality_condition/verification/request_ledger_count",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "quality_condition/verification/request_identity",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "quality_condition/verification/response_identity",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "quality_condition/verification/requested_schema",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "quality_condition/verification/prompt_schema",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "quality_condition/verification/response_choice",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "quality_condition/verification/response_ledger",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "quality_condition/verification/model_request",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "quality_condition/verification/raw_http_schema",
+      "status": "passed",
+      "required": true,
+      "detail": []
+    },
+    {
+      "check": "quality_condition/verification/raw_equals_saved_proposal",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "quality_condition/no_plan_http",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "quality_condition/scope_call_budget",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "quality_condition/scope_identity",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "quality_condition/scope_ledger",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "quality_condition/root_ledger",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "quality_condition/contract_passes",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "quality_condition/complete_state",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "quality_condition/raw_to_frozen_claims",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "quality_condition/raw_to_frozen_observations",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "quality_condition/frozen_ids_unique",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "quality_condition/candidate_partition",
+      "status": "passed",
+      "required": true,
+      "detail": {
+        "missing": [],
+        "extra": []
+      }
+    },
+    {
+      "check": "quality_condition/declared_candidate_counts",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "quality_condition/active_frames",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "quality_condition/subject_partition",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "quality_condition/verification_id_coverage",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "storage/prepared_hash/sources.json",
+      "status": "passed",
+      "required": true,
+      "detail": {
+        "file": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-gliner25-skos-20260916/completed/C/storage/sources.json",
+        "actual_sha256": "289e1f351691a045573e9ba0c9c87a61f0e0b186d9d39b0e43180139cfa9dfb6",
+        "expected_sha256": "289e1f351691a045573e9ba0c9c87a61f0e0b186d9d39b0e43180139cfa9dfb6"
+      }
+    },
+    {
+      "check": "storage/ner_file/sources.json",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "storage/prepared_hash/plan/proposal.json",
+      "status": "passed",
+      "required": true,
+      "detail": {
+        "file": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-gliner25-skos-20260916/completed/C/storage/plan/proposal.json",
+        "actual_sha256": "c1372230c0dbc9443f1e0361a7c6debe2e55c45643e8bad7908eea5ea1805b5f",
+        "expected_sha256": "c1372230c0dbc9443f1e0361a7c6debe2e55c45643e8bad7908eea5ea1805b5f"
+      }
+    },
+    {
+      "check": "storage/ner_file/plan/proposal.json",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "storage/prepared_hash/plan/schema.json",
+      "status": "passed",
+      "required": true,
+      "detail": {
+        "file": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-gliner25-skos-20260916/completed/C/storage/plan/schema.json",
+        "actual_sha256": "c539bfe790c172affa12ddb7d42c072f27aceddb30d6c4b22e95779dfac5440a",
+        "expected_sha256": "c539bfe790c172affa12ddb7d42c072f27aceddb30d6c4b22e95779dfac5440a"
+      }
+    },
+    {
+      "check": "storage/ner_file/plan/schema.json",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "storage/prepared_hash/vocabulary.json",
+      "status": "passed",
+      "required": true,
+      "detail": {
+        "file": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-gliner25-skos-20260916/completed/C/storage/vocabulary.json",
+        "actual_sha256": "19823abd4abb039792389f01e18ddad7b55859b050a4d97b6a54ece6eb766947",
+        "expected_sha256": "19823abd4abb039792389f01e18ddad7b55859b050a4d97b6a54ece6eb766947"
+      }
+    },
+    {
+      "check": "storage/ner_file/vocabulary.json",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "storage/prepared_hash/tools.json",
+      "status": "passed",
+      "required": true,
+      "detail": {
+        "file": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-gliner25-skos-20260916/completed/C/storage/tools.json",
+        "actual_sha256": "c5f43ad9b1ed54d6d20ac36b0913a0d1069f287e0266dc00fdd114bfc77aedbd",
+        "expected_sha256": "c5f43ad9b1ed54d6d20ac36b0913a0d1069f287e0266dc00fdd114bfc77aedbd"
+      }
+    },
+    {
+      "check": "storage/ner_file/tools.json",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "storage/prepared_inventory",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "storage/baseline/sources.json",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "storage/baseline/plan/proposal.json",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "storage/baseline/plan/schema.json",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "storage/plan_provenance",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "storage/plan_hash",
+      "status": "passed",
+      "required": true,
+      "detail": {
+        "file": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-gliner25-skos-20260916/completed/C/storage/plan/proposal.json",
+        "actual_sha256": "c1372230c0dbc9443f1e0361a7c6debe2e55c45643e8bad7908eea5ea1805b5f",
+        "expected_sha256": "c1372230c0dbc9443f1e0361a7c6debe2e55c45643e8bad7908eea5ea1805b5f"
+      }
+    },
+    {
+      "check": "storage/ner_complete",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "storage/ner_vocabulary_hash",
+      "status": "passed",
+      "required": true,
+      "detail": {
+        "file": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-gliner25-skos-20260916/completed/C/storage/vocabulary.json",
+        "actual_sha256": "19823abd4abb039792389f01e18ddad7b55859b050a4d97b6a54ece6eb766947",
+        "expected_sha256": "19823abd4abb039792389f01e18ddad7b55859b050a4d97b6a54ece6eb766947"
+      }
+    },
+    {
+      "check": "storage/candidates/no_retry",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "storage/candidates/request_ledger_count",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "storage/candidates/request_identity",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "storage/candidates/response_identity",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "storage/candidates/requested_schema",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "storage/candidates/prompt_schema",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "storage/candidates/prompt_cards",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "storage/candidates/response_choice",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "storage/candidates/response_ledger",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "storage/candidates/model_request",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "storage/candidates/raw_http_schema",
+      "status": "passed",
+      "required": true,
+      "detail": []
+    },
+    {
+      "check": "storage/candidates/raw_equals_saved_proposal",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "storage/verification/no_retry",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "storage/verification/request_ledger_count",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "storage/verification/request_identity",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "storage/verification/response_identity",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "storage/verification/requested_schema",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "storage/verification/prompt_schema",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "storage/verification/response_choice",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "storage/verification/response_ledger",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "storage/verification/model_request",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "storage/verification/raw_http_schema",
+      "status": "passed",
+      "required": true,
+      "detail": []
+    },
+    {
+      "check": "storage/verification/raw_equals_saved_proposal",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "storage/no_plan_http",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "storage/scope_call_budget",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "storage/scope_identity",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "storage/scope_ledger",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "storage/root_ledger",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "storage/contract_passes",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "storage/complete_state",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "storage/raw_to_frozen_claims",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "storage/raw_to_frozen_observations",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "storage/frozen_ids_unique",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "storage/candidate_partition",
+      "status": "passed",
+      "required": true,
+      "detail": {
+        "missing": [],
+        "extra": []
+      }
+    },
+    {
+      "check": "storage/declared_candidate_counts",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "storage/active_frames",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "storage/subject_partition",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "storage/verification_id_coverage",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "residue_missing/prepared_hash/sources.json",
+      "status": "passed",
+      "required": true,
+      "detail": {
+        "file": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-gliner25-skos-20260916/completed/C/residue_missing/sources.json",
+        "actual_sha256": "361efedd805e8654446408c2f5263b28739335488f2e10a8960d0d1ba8142c24",
+        "expected_sha256": "361efedd805e8654446408c2f5263b28739335488f2e10a8960d0d1ba8142c24"
+      }
+    },
+    {
+      "check": "residue_missing/ner_file/sources.json",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "residue_missing/prepared_hash/plan/proposal.json",
+      "status": "passed",
+      "required": true,
+      "detail": {
+        "file": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-gliner25-skos-20260916/completed/C/residue_missing/plan/proposal.json",
+        "actual_sha256": "09d5e2e7ad06b4826bcc552b0097702fd0be21728b61728d060ad488276d23c4",
+        "expected_sha256": "09d5e2e7ad06b4826bcc552b0097702fd0be21728b61728d060ad488276d23c4"
+      }
+    },
+    {
+      "check": "residue_missing/ner_file/plan/proposal.json",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "residue_missing/prepared_hash/plan/schema.json",
+      "status": "passed",
+      "required": true,
+      "detail": {
+        "file": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-gliner25-skos-20260916/completed/C/residue_missing/plan/schema.json",
+        "actual_sha256": "cbbf623150a7ceab3f288fcc63004cfac3a6167aa55b2f7f67fede9be1a11ba2",
+        "expected_sha256": "cbbf623150a7ceab3f288fcc63004cfac3a6167aa55b2f7f67fede9be1a11ba2"
+      }
+    },
+    {
+      "check": "residue_missing/ner_file/plan/schema.json",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "residue_missing/prepared_hash/vocabulary.json",
+      "status": "passed",
+      "required": true,
+      "detail": {
+        "file": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-gliner25-skos-20260916/completed/C/residue_missing/vocabulary.json",
+        "actual_sha256": "12b7a252e3b4ca81b908c30aca0fc8421e05099a1fc0539f7996aa79d4970baa",
+        "expected_sha256": "12b7a252e3b4ca81b908c30aca0fc8421e05099a1fc0539f7996aa79d4970baa"
+      }
+    },
+    {
+      "check": "residue_missing/ner_file/vocabulary.json",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "residue_missing/prepared_hash/tools.json",
+      "status": "passed",
+      "required": true,
+      "detail": {
+        "file": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-gliner25-skos-20260916/completed/C/residue_missing/tools.json",
+        "actual_sha256": "ccca4f82a0b31b8cc1afaca042f50f12a6087acc3cf1d9d36e3da79f7d74321b",
+        "expected_sha256": "ccca4f82a0b31b8cc1afaca042f50f12a6087acc3cf1d9d36e3da79f7d74321b"
+      }
+    },
+    {
+      "check": "residue_missing/ner_file/tools.json",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "residue_missing/prepared_inventory",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "residue_missing/baseline/sources.json",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "residue_missing/baseline/plan/proposal.json",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "residue_missing/baseline/plan/schema.json",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "residue_missing/plan_provenance",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "residue_missing/plan_hash",
+      "status": "passed",
+      "required": true,
+      "detail": {
+        "file": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-gliner25-skos-20260916/completed/C/residue_missing/plan/proposal.json",
+        "actual_sha256": "09d5e2e7ad06b4826bcc552b0097702fd0be21728b61728d060ad488276d23c4",
+        "expected_sha256": "09d5e2e7ad06b4826bcc552b0097702fd0be21728b61728d060ad488276d23c4"
+      }
+    },
+    {
+      "check": "residue_missing/ner_complete",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "residue_missing/ner_vocabulary_hash",
+      "status": "passed",
+      "required": true,
+      "detail": {
+        "file": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-gliner25-skos-20260916/completed/C/residue_missing/vocabulary.json",
+        "actual_sha256": "12b7a252e3b4ca81b908c30aca0fc8421e05099a1fc0539f7996aa79d4970baa",
+        "expected_sha256": "12b7a252e3b4ca81b908c30aca0fc8421e05099a1fc0539f7996aa79d4970baa"
+      }
+    },
+    {
+      "check": "residue_missing/candidates/no_retry",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "residue_missing/candidates/request_ledger_count",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "residue_missing/candidates/request_identity",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "residue_missing/candidates/response_identity",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "residue_missing/candidates/requested_schema",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "residue_missing/candidates/prompt_schema",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "residue_missing/candidates/prompt_cards",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "residue_missing/candidates/response_choice",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "residue_missing/candidates/response_ledger",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "residue_missing/candidates/model_request",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "residue_missing/candidates/raw_http_schema",
+      "status": "passed",
+      "required": true,
+      "detail": []
+    },
+    {
+      "check": "residue_missing/candidates/raw_equals_saved_proposal",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "residue_missing/verification/no_retry",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "residue_missing/verification/request_ledger_count",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "residue_missing/verification/request_identity",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "residue_missing/verification/response_identity",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "residue_missing/verification/requested_schema",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "residue_missing/verification/prompt_schema",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "residue_missing/verification/response_choice",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "residue_missing/verification/response_ledger",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "residue_missing/verification/model_request",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "residue_missing/verification/raw_http_schema",
+      "status": "passed",
+      "required": true,
+      "detail": []
+    },
+    {
+      "check": "residue_missing/verification/raw_equals_saved_proposal",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "residue_missing/no_plan_http",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "residue_missing/scope_call_budget",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "residue_missing/scope_identity",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "residue_missing/scope_ledger",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "residue_missing/root_ledger",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "residue_missing/contract_passes",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "residue_missing/complete_state",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "residue_missing/raw_to_frozen_claims",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "residue_missing/raw_to_frozen_observations",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "residue_missing/frozen_ids_unique",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "residue_missing/candidate_partition",
+      "status": "passed",
+      "required": true,
+      "detail": {
+        "missing": [],
+        "extra": []
+      }
+    },
+    {
+      "check": "residue_missing/declared_candidate_counts",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "residue_missing/active_frames",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "residue_missing/subject_partition",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "residue_missing/verification_id_coverage",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "pde_conflict/prepared_hash/sources.json",
+      "status": "passed",
+      "required": true,
+      "detail": {
+        "file": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-gliner25-skos-20260916/completed/C/pde_conflict/sources.json",
+        "actual_sha256": "dcaee2c123f12dbfc3d3974163ba207de97a5d56abf5b05ddfa858b88e1cae27",
+        "expected_sha256": "dcaee2c123f12dbfc3d3974163ba207de97a5d56abf5b05ddfa858b88e1cae27"
+      }
+    },
+    {
+      "check": "pde_conflict/ner_file/sources.json",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "pde_conflict/prepared_hash/plan/proposal.json",
+      "status": "passed",
+      "required": true,
+      "detail": {
+        "file": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-gliner25-skos-20260916/completed/C/pde_conflict/plan/proposal.json",
+        "actual_sha256": "7bbf7b872932ebfea3013a3479d679207d424e225bc23b349741ce57f1de45f6",
+        "expected_sha256": "7bbf7b872932ebfea3013a3479d679207d424e225bc23b349741ce57f1de45f6"
+      }
+    },
+    {
+      "check": "pde_conflict/ner_file/plan/proposal.json",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "pde_conflict/prepared_hash/plan/schema.json",
+      "status": "passed",
+      "required": true,
+      "detail": {
+        "file": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-gliner25-skos-20260916/completed/C/pde_conflict/plan/schema.json",
+        "actual_sha256": "a73e9f013178e8820b4ed85c43ead0b504f9546f2859b9139ae6bb390eb560b3",
+        "expected_sha256": "a73e9f013178e8820b4ed85c43ead0b504f9546f2859b9139ae6bb390eb560b3"
+      }
+    },
+    {
+      "check": "pde_conflict/ner_file/plan/schema.json",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "pde_conflict/prepared_hash/vocabulary.json",
+      "status": "passed",
+      "required": true,
+      "detail": {
+        "file": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-gliner25-skos-20260916/completed/C/pde_conflict/vocabulary.json",
+        "actual_sha256": "f2805ed77dcc8e90d2f1bfa4fc2aed5bcadc91b30449f7d77eb4919ba5e8eb12",
+        "expected_sha256": "f2805ed77dcc8e90d2f1bfa4fc2aed5bcadc91b30449f7d77eb4919ba5e8eb12"
+      }
+    },
+    {
+      "check": "pde_conflict/ner_file/vocabulary.json",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "pde_conflict/prepared_hash/tools.json",
+      "status": "passed",
+      "required": true,
+      "detail": {
+        "file": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-gliner25-skos-20260916/completed/C/pde_conflict/tools.json",
+        "actual_sha256": "ad5e045d316eb950c304bfffacc441882cacfe822ecffdd3c7fbde7c95e08e07",
+        "expected_sha256": "ad5e045d316eb950c304bfffacc441882cacfe822ecffdd3c7fbde7c95e08e07"
+      }
+    },
+    {
+      "check": "pde_conflict/ner_file/tools.json",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "pde_conflict/prepared_inventory",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "pde_conflict/baseline/sources.json",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "pde_conflict/baseline/plan/proposal.json",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "pde_conflict/baseline/plan/schema.json",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "pde_conflict/plan_provenance",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "pde_conflict/plan_hash",
+      "status": "passed",
+      "required": true,
+      "detail": {
+        "file": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-gliner25-skos-20260916/completed/C/pde_conflict/plan/proposal.json",
+        "actual_sha256": "7bbf7b872932ebfea3013a3479d679207d424e225bc23b349741ce57f1de45f6",
+        "expected_sha256": "7bbf7b872932ebfea3013a3479d679207d424e225bc23b349741ce57f1de45f6"
+      }
+    },
+    {
+      "check": "pde_conflict/ner_complete",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "pde_conflict/ner_vocabulary_hash",
+      "status": "passed",
+      "required": true,
+      "detail": {
+        "file": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-gliner25-skos-20260916/completed/C/pde_conflict/vocabulary.json",
+        "actual_sha256": "f2805ed77dcc8e90d2f1bfa4fc2aed5bcadc91b30449f7d77eb4919ba5e8eb12",
+        "expected_sha256": "f2805ed77dcc8e90d2f1bfa4fc2aed5bcadc91b30449f7d77eb4919ba5e8eb12"
+      }
+    },
+    {
+      "check": "pde_conflict/candidates/no_retry",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "pde_conflict/candidates/request_ledger_count",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "pde_conflict/candidates/request_identity",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "pde_conflict/candidates/response_identity",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "pde_conflict/candidates/requested_schema",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "pde_conflict/candidates/prompt_schema",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "pde_conflict/candidates/prompt_cards",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "pde_conflict/candidates/transport_failure_preserved",
+      "status": "passed",
+      "required": true,
+      "detail": {
+        "error_type": "BadRequestError",
+        "status_code": 400
+      }
+    },
+    {
+      "check": "pde_conflict/candidates/raw_http_schema",
+      "status": "skipped",
+      "required": true,
+      "detail": "transport_failure_no_response"
+    },
+    {
+      "check": "pde_conflict/verification/execution",
+      "status": "skipped",
+      "required": true,
+      "detail": "stage_not_attempted_or_pending"
+    },
+    {
+      "check": "pde_conflict/no_plan_http",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "pde_conflict/scope_call_budget",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "pde_conflict/scope_identity",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "pde_conflict/scope_ledger",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "pde_conflict/root_ledger",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "pde_conflict/contract_passes",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "pde_conflict/failure_state",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "pde_conflict/model_validation_complete",
+      "status": "skipped",
+      "required": true,
+      "detail": "model_request_failed"
+    },
+    {
+      "check": "pde_conflict/candidate_partition",
+      "status": "skipped",
+      "required": true,
+      "detail": "scope_not_complete"
+    },
+    {
+      "check": "toxicity_unknown/prepared_hash/sources.json",
+      "status": "passed",
+      "required": true,
+      "detail": {
+        "file": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-gliner25-skos-20260916/completed/C/toxicity_unknown/sources.json",
+        "actual_sha256": "0da78598e367c4fcdf62e5b3e3ff1712d11d2f23116c30a0e72410a04301e224",
+        "expected_sha256": "0da78598e367c4fcdf62e5b3e3ff1712d11d2f23116c30a0e72410a04301e224"
+      }
+    },
+    {
+      "check": "toxicity_unknown/ner_file/sources.json",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "toxicity_unknown/prepared_hash/plan/proposal.json",
+      "status": "passed",
+      "required": true,
+      "detail": {
+        "file": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-gliner25-skos-20260916/completed/C/toxicity_unknown/plan/proposal.json",
+        "actual_sha256": "636733cca1493d670740dfc208e3527a3e620d6cb145c289f661b48255443eaf",
+        "expected_sha256": "636733cca1493d670740dfc208e3527a3e620d6cb145c289f661b48255443eaf"
+      }
+    },
+    {
+      "check": "toxicity_unknown/ner_file/plan/proposal.json",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "toxicity_unknown/prepared_hash/plan/schema.json",
+      "status": "passed",
+      "required": true,
+      "detail": {
+        "file": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-gliner25-skos-20260916/completed/C/toxicity_unknown/plan/schema.json",
+        "actual_sha256": "1ee16f0f87f115deee94b249e7bc7fffe8f50fb8d83fb9bc73bcd85b838ddbed",
+        "expected_sha256": "1ee16f0f87f115deee94b249e7bc7fffe8f50fb8d83fb9bc73bcd85b838ddbed"
+      }
+    },
+    {
+      "check": "toxicity_unknown/ner_file/plan/schema.json",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "toxicity_unknown/prepared_hash/vocabulary.json",
+      "status": "passed",
+      "required": true,
+      "detail": {
+        "file": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-gliner25-skos-20260916/completed/C/toxicity_unknown/vocabulary.json",
+        "actual_sha256": "8141f551d3c9eacd5819efa2db7bcf6cb49a87b4f6ea4eadc6bac6a933b742c1",
+        "expected_sha256": "8141f551d3c9eacd5819efa2db7bcf6cb49a87b4f6ea4eadc6bac6a933b742c1"
+      }
+    },
+    {
+      "check": "toxicity_unknown/ner_file/vocabulary.json",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "toxicity_unknown/prepared_hash/tools.json",
+      "status": "passed",
+      "required": true,
+      "detail": {
+        "file": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-gliner25-skos-20260916/completed/C/toxicity_unknown/tools.json",
+        "actual_sha256": "5ef05e997faf126c76fb5a48cf95e84d2f202fb2ec3882c9646dbfab5cbea07a",
+        "expected_sha256": "5ef05e997faf126c76fb5a48cf95e84d2f202fb2ec3882c9646dbfab5cbea07a"
+      }
+    },
+    {
+      "check": "toxicity_unknown/ner_file/tools.json",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "toxicity_unknown/prepared_inventory",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "toxicity_unknown/baseline/sources.json",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "toxicity_unknown/baseline/plan/proposal.json",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "toxicity_unknown/baseline/plan/schema.json",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "toxicity_unknown/plan_provenance",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "toxicity_unknown/plan_hash",
+      "status": "passed",
+      "required": true,
+      "detail": {
+        "file": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-gliner25-skos-20260916/completed/C/toxicity_unknown/plan/proposal.json",
+        "actual_sha256": "636733cca1493d670740dfc208e3527a3e620d6cb145c289f661b48255443eaf",
+        "expected_sha256": "636733cca1493d670740dfc208e3527a3e620d6cb145c289f661b48255443eaf"
+      }
+    },
+    {
+      "check": "toxicity_unknown/ner_complete",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "toxicity_unknown/ner_vocabulary_hash",
+      "status": "passed",
+      "required": true,
+      "detail": {
+        "file": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-gliner25-skos-20260916/completed/C/toxicity_unknown/vocabulary.json",
+        "actual_sha256": "8141f551d3c9eacd5819efa2db7bcf6cb49a87b4f6ea4eadc6bac6a933b742c1",
+        "expected_sha256": "8141f551d3c9eacd5819efa2db7bcf6cb49a87b4f6ea4eadc6bac6a933b742c1"
+      }
+    },
+    {
+      "check": "toxicity_unknown/candidates/no_retry",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "toxicity_unknown/candidates/request_ledger_count",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "toxicity_unknown/candidates/request_identity",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "toxicity_unknown/candidates/response_identity",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "toxicity_unknown/candidates/requested_schema",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "toxicity_unknown/candidates/prompt_schema",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "toxicity_unknown/candidates/prompt_cards",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "toxicity_unknown/candidates/response_choice",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "toxicity_unknown/candidates/response_ledger",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "toxicity_unknown/candidates/model_request",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "toxicity_unknown/candidates/raw_http_schema",
+      "status": "passed",
+      "required": true,
+      "detail": []
+    },
+    {
+      "check": "toxicity_unknown/candidates/raw_equals_saved_proposal",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "toxicity_unknown/verification/no_retry",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "toxicity_unknown/verification/request_ledger_count",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "toxicity_unknown/verification/request_identity",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "toxicity_unknown/verification/response_identity",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "toxicity_unknown/verification/requested_schema",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "toxicity_unknown/verification/prompt_schema",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "toxicity_unknown/verification/response_choice",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "toxicity_unknown/verification/response_ledger",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "toxicity_unknown/verification/model_request",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "toxicity_unknown/verification/raw_http_schema",
+      "status": "passed",
+      "required": true,
+      "detail": []
+    },
+    {
+      "check": "toxicity_unknown/verification/raw_equals_saved_proposal",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "toxicity_unknown/no_plan_http",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "toxicity_unknown/scope_call_budget",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "toxicity_unknown/scope_identity",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "toxicity_unknown/scope_ledger",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "toxicity_unknown/root_ledger",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "toxicity_unknown/contract_passes",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "toxicity_unknown/complete_state",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "toxicity_unknown/raw_to_frozen_claims",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "toxicity_unknown/raw_to_frozen_observations",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "toxicity_unknown/frozen_ids_unique",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "toxicity_unknown/candidate_partition",
+      "status": "passed",
+      "required": true,
+      "detail": {
+        "missing": [],
+        "extra": []
+      }
+    },
+    {
+      "check": "toxicity_unknown/declared_candidate_counts",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "toxicity_unknown/active_frames",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "toxicity_unknown/subject_partition",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "toxicity_unknown/verification_id_coverage",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "total_call_budget",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "three_level_ledgers",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "all_scopes_validated",
+      "status": "skipped",
+      "required": true,
+      "detail": {
+        "completed": 7,
+        "expected": 8
+      }
+    },
+    {
+      "check": "summary_snapshot",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "check": "summary_counts",
+      "status": "passed",
+      "required": true,
+      "detail": {
+        "scopes": 8,
+        "completed": 7,
+        "new_http_calls": 15,
+        "contracts_passed": 14,
+        "accepted_candidates": 21,
+        "observations": 6,
+        "unresolved": 12,
+        "rejected": 11,
+        "prompt_tokens": 225457,
+        "completion_tokens": 20434
+      }
+    }
+  ]
+}

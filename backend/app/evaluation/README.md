@@ -359,3 +359,38 @@ python -m app.evaluation.root_guided_analysis \
 ```
 
 该命令输出 JSON 到 stdout，不修改输入。首路径要求参考匹配的实体和关系端点真实连接；它是补充指标，不改变主评分的参考分母。没有快照时不会用模型自评或调用结束时间推算首个正确结果。
+
+## 7. CMCReport Schema 卡片与工具协作验证
+
+`schema_card_tools` 在冻结的 8 scopes 上执行 Qwen 工具规划、固定主体候选和语义核验，A/B 仅切换已有 GLiNER 工具。引用/归属、单位规范化与 SHACL 使用 `services/extraction/tool_validation`，不依赖线上作业状态，不提交事实。需要本地 Qwen、GLiNER 权重及 `shacl` extra；不下载权重或隐式访问云模型。
+
+```bash
+python -m app.evaluation.schema_card_tools \
+  --baseline /path/to/frozen-tightened-run --output /path/to/new-tool-run
+```
+
+`--prepare-only` 无模型调用；`--ner-only` 仅跑本地 GLiNER。每片段 Qwen 上限 3 次，总上限 48 次，关闭重试与截断追加请求。候选、工具结果、Schema、原始响应及最终门分别保存；银标只在识别后评分。
+
+本次上下文 span 解释器修正使用 `schema_card_tools_finalize --source <已结束工具实验> --output <新目录>`，复用原计划/候选，仅补尚未执行的第三次请求，保留原错误，累计不超过原预算。详见[规范](../../../specs/026-cmc-tool-validation/spec.md)和[实测记录](../../../docs/调研/cmc-qwen-tool-assisted-validation-20260916/results/README.md)。
+
+### GLiNER2.5 与 SKOS C 组
+
+`schema_card_gliner2` 使用固定的官方 GLiNER2.5 多语言 boundary checkpoint，按本地本体直接 SKOS 别名及明确标注的人工 overlay 编译标签/描述。复用旧 B 的工具计划，替换工具提及，再执行每片段最多两次、全轮最多 16 次 Qwen 请求。
+
+运行需要独立环境中的 `gliner2==2.0.0`（包含 2.5 架构）、本地已校验权重及离线开关。先以 `--ner-only` 完成工具推理，再以新输出目录和 `--prepared-tools <NER 目录>` 进入 Qwen；复用时核对代码、输入、依赖与工具摘要。详见[运行说明](../../../specs/026-cmc-tool-validation/quickstart.md)及[GLiNER2/SKOS 验证记录](../../../docs/调研/cmc-gliner2-skos-validation-20260916/README.md)。该入口不替换线上默认抽取器，NER 与 SHACL 均不能独立证明语义正确。
+
+## Schema 卡片 + 现有摘要检索 D 组
+
+`schema_card_summary_tools` 在 C 组工具协议前复用 `prepare_metadata`、`RecordIndex` 和 `plan_slot`，以固定类／谓词需求从全文完整记录检索原文；摘要只参与排序。新评测适配跨需求组内查询等权汇总，最多选择 6 个完整记录／12,000 去重原文字符，保留摘要启用／屏蔽的检索对照；不代表生产逐谓词执行器或语义精排。
+
+先 `--prepare-only`，再 `--ner-only`，最后用 `--prepared-tools` 在新输出目录执行至多 16 次项目 Qwen 请求。历史摘要、旧 C 制品、权威本体和线上识别器保持原状，不将旧固定片段银标用于新范围的质量评分。入口参数见[隔离验证说明](../../../specs/026-cmc-tool-validation/quickstart.md)，结果与原文复核见[摘要检索验证](../../../docs/调研/cmc-summary-retrieval-validation-20260916/README.md)。
+
+## 静态 Mock 设备实例 E0/E1/E2
+
+`schema_card_mock_tools` 使用同源 D 输入中的全文 IR、本体和摘要，围绕 usesEquipment 从全文检索三条完整记录，也可能命中清洗语境。E0 不给模型 Mock；E1 使用相同原文/NER 并增加静态设备候选；E2 再将 Mock 名称/编号加入检索排序。工具是明确命名的 `mock_equipment/equipment_archive` 冻结静态来源，不代表数据库管理页或实时设备服务。
+
+仍分 `--prepare-only`、`--ner-only` 和新目录 `--prepared-tools` 三阶段；每 case 至多两次、全轮至多18次Qwen。限定设备类型、编号/名称/规格和报告 usesEquipment，显式保留 one_of，外部字段与原文属性分别保存。NER原始结果全量留存，模型可见候选上限48；输入消息超60,000字符不发请求。见[运行说明](../../../specs/026-cmc-tool-validation/quickstart.md)及[三组验证](../../../docs/调研/cmc-mock-entity-validation-20260916/README.md)。
+
+2026-09-16 实测：126 项定向工程测试通过；真实 Qwen 18 次请求，9/9 case 完成，18/18 原始 Schema 通过。E1 成功关联两个已知编号并保留未知编号，但未证明同源抽取质量提升；E2 最终仍有一条证据不足的清洗使用关系，过滤器备选未成功保留。数值单位校准未评估，未切换线上识别器。
+
+后续架构见[文档抽取引擎 2.0 设计方案](../../../docs/文档抽取引擎2.0设计方案.md)：复用现有本体指引核心，设计有界局部修复、关系补证、备选组与数值表示，并规定独立 F1 验收。该文档是设计提案，不代表新增能力已实施、已评测或已部署。

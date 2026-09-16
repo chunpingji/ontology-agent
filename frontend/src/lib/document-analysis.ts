@@ -44,6 +44,9 @@ export function formatDocumentAnalysisDate(value: string | null): string {
 }
 
 const REASON_LABELS: Record<string, string> = {
+  ranking_state_persistence_failed: "语义检索进度保存失败，已保留已完成结果，可修复后继续。",
+  cleaning_method_scope_incomplete: "清洗方法的证明仅覆盖部分步骤，尚需补全整套方法的原文引用。",
+  partial_cleaning_method: "当前候选仅包含部分清洗步骤，尚需识别完整清洗方法。",
   layered_policy_complete: "逐层候选检索和核验已完成；未入选原文尚未逐条核验。",
   single_value_satisfied: "该属性已形成有效单值绑定，并完成本轮冲突检查。",
   expert_repair_completed: "局部重识别已完成，替代候选已通过原文核验。",

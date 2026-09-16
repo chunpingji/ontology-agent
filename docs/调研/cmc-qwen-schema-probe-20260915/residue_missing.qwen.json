@@ -1,0 +1,33 @@
+{
+  "scope_id": "residue_missing",
+  "mentions": [
+    {
+      "id": "mention_heading",
+      "text": "3.5.2设备清洗残留物基本信息",
+      "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport",
+      "evidence_id": "58825513a350603d84e1078f57e62bacf4a16c0bab909e88c217b40e5e955809",
+      "evidence": "3.5.2设备清洗残留物基本信息"
+    },
+    {
+      "id": "mention_na",
+      "text": "N/A",
+      "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/Residue",
+      "evidence_id": "72e4e463466bb3bd559a9723f42f09014be5d86ce051481cc5623a19fa87ca8e",
+      "evidence": "N/A"
+    }
+  ],
+  "claims": [
+    {
+      "subject_id": "upload-23c872fb-3ab1-41de-a705-dd4b162dfa09",
+      "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasCleaningResidue",
+      "object_id": "mention_na",
+      "literal_value": "",
+      "polarity": "negated",
+      "condition": "",
+      "evidence_id": "72e4e463466bb3bd559a9723f42f09014be5d86ce051481cc5623a19fa87ca8e",
+      "evidence": "N/A"
+    }
+  ],
+  "open_slots": [],
+  "schema_gaps": []
+}

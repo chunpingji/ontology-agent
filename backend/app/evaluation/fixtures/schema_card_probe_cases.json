@@ -1,0 +1,10 @@
+[
+  {"scope_id": "introduction", "section_node_id": "section:25"},
+  {"scope_id": "product_properties", "section_node_id": "section:29", "text_prefixes": ["项目名称：", "性状：", "溶解性：", "制剂剂型：", "是否是肿瘤药物：", "是否细胞毒药物："]},
+  {"scope_id": "process_equipment", "section_node_id": "section:67", "text_prefixes": ["HRS-1597结晶纯化", "投料", "步骤一："]},
+  {"scope_id": "quality_condition", "section_node_id": "section:67", "text_prefixes": ["HRS-1597结晶纯化", "HPLC", "取样送检HPLC"]},
+  {"scope_id": "storage", "section_node_id": "section:73"},
+  {"scope_id": "residue_missing", "section_node_id": "section:79"},
+  {"scope_id": "pde_conflict", "section_node_id": "section:102", "table_rows": [0, 1, 2]},
+  {"scope_id": "toxicity_unknown", "section_node_id": "section:116"}
+]

@@ -482,6 +482,12 @@ class EvidenceRepairAdapter(LocalModelRecognitionAdapter):
                 "相应维度仍返回undetermined/unsupported，不因唯一允许类型就自动通过。"
                 "核验type_support须引用实际表达药品角色的原文，可来自同源用途、药理、"
                 "剂型等字段；不能只引用项目名称，不能用文件名或文档类型替代这项正文证据。"
+                "document_subject_description允许用同一基本信息字段组证明报告描述对象："
+                "将名称字段、表达药品角色的字段及field_bindings中的原文映射联合核验。"
+                "结构用于定位，字段含义及归属仍须核对；同组药品信息可以支持已定位的名称，"
+                "无需每个属性字段重复药品名称，也无需改写为独立叙述句。"
+                "fact_eligible=false只禁止从背景新建端点，不禁止将同组背景引用为类型、"
+                "字段角色或描述关系的证明。若有多个归属候选、另一对象或对照范围则保留未决。"
                 if state.get("cmc_describes_type_scope") else
                 "对象名称或项目代码仅证明提及，不单独证明所选类型。类型须依据类定义及原文"
                 "表达的实际角色核验；例如生产物料与计划制剂应分别判断，不能因允许类型菜单"

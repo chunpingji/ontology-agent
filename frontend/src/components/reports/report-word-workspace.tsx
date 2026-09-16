@@ -65,10 +65,10 @@ export function ReportDocumentOutline({ tree, onNavigate }: {
   </nav>;
 }
 
-export function ReportWordWorkspace({ documentIri }: { documentIri: string }) {
+export function ReportWordWorkspace({ documentIri, templateId }: { documentIri: string; templateId?: string }) {
   const layout = useRef<HTMLDivElement>(null);
   const [graphWidth, setGraphWidth] = useState(300);
-  const model = useReportDocumentRun(documentIri);
+  const model = useReportDocumentRun(documentIri, templateId);
   const { username, role } = getIdentity();
   const run = model.run;
   const runId = run?.recognition_run_id;

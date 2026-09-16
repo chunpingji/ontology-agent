@@ -6,6 +6,12 @@ from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
+    template_finder_config_path: Path = (
+        Path(__file__).resolve().parent / "services/template_finder/profiles/bindings.json"
+    )
+    template_finder_storage_dir: Path = (
+        Path(__file__).resolve().parent.parent / "data/template-finder"
+    )
     database_url: str = "postgresql://slpra:slpra_dev@localhost:5432/slpra"
     ontology_dir: Path = Path(__file__).resolve().parent.parent.parent / "ontology" / "slpra"
     owl_store_path: Path = Path(__file__).resolve().parent.parent / "data" / "slpra.sqlite3"

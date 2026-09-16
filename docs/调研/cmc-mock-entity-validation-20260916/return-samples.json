@@ -1,0 +1,961 @@
+{
+  "samples": [
+    {
+      "arm": "E1",
+      "scope_id": "record-c54c3238c67b",
+      "purpose": "known_identifier_external_link",
+      "artifact_directory": "output/schema-card-qwen-cmc-mock-20260916/completed/E1/record-c54c3238c67b",
+      "candidate_sha256": "6a38069bd7e07d4615270252e03d21b0f9efb353e125c4c96928c65fdb0620ae",
+      "candidate": {
+        "entities": [
+          {
+            "id": "e1",
+            "class_iri": "https://ontology.pharma-gmp.cn/slpra/equipment/ProcessEquipment",
+            "anchor": {
+              "ref": "u16",
+              "quote": "200L反应釜"
+            },
+            "equipment_id": {
+              "ref": "u17",
+              "quote": "RE64611"
+            },
+            "external_key": "RE64611",
+            "attributes": [
+              {
+                "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/equipment/equipmentName",
+                "raw": "200L反应釜",
+                "source": {
+                  "ref": "u16",
+                  "quote": "200L反应釜"
+                },
+                "field": {
+                  "ref": "u3",
+                  "quote": "设备名称"
+                }
+              },
+              {
+                "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/equipment/modelSpecification",
+                "raw": "200L",
+                "source": {
+                  "ref": "u18",
+                  "quote": "200L"
+                },
+                "field": {
+                  "ref": "u5",
+                  "quote": "规格型号"
+                }
+              }
+            ]
+          }
+        ],
+        "relations": [
+          {
+            "subject_id": "document",
+            "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/usesEquipment",
+            "object_ids": [
+              "e1"
+            ],
+            "selection": "all",
+            "evidence": {
+              "ref": "u15",
+              "quote": "HRS-1597成品结晶"
+            },
+            "condition": {
+              "ref": "u15",
+              "quote": "HRS-1597成品结晶"
+            },
+            "polarity": "affirmed"
+          }
+        ],
+        "observations": [
+          {
+            "evidence": {
+              "ref": "u15",
+              "quote": "HRS-1597成品结晶"
+            },
+            "reason": "u15为岗位/工艺步骤名称，非设备实体，故不作为anchor。"
+          }
+        ]
+      },
+      "final_destinations": {
+        "accepted": [
+          {
+            "id": "e1",
+            "kind": "entity",
+            "issues": []
+          },
+          {
+            "id": "e1.a1",
+            "kind": "property",
+            "issues": []
+          },
+          {
+            "id": "e1.a2",
+            "kind": "property",
+            "issues": []
+          },
+          {
+            "id": "r1",
+            "kind": "relation",
+            "issues": []
+          },
+          {
+            "id": "o1",
+            "kind": "observation",
+            "issues": []
+          }
+        ],
+        "unresolved": [],
+        "rejected": []
+      },
+      "external_records": [
+        {
+          "arm": "E1",
+          "case": "record-c54c3238c67b",
+          "entity_id": "e1",
+          "key": "RE64611",
+          "version": "3492419e990385886a36e27419120c0b950ea36342b7316283f9396e3306e94d",
+          "mapped_field_count": 3
+        }
+      ],
+      "source_only_review": [
+        {
+          "arm": "E1",
+          "scope_id": "record-c54c3238c67b",
+          "id": "e1",
+          "kind": "entity",
+          "program_destination": "accepted",
+          "overall_verdict": "supported",
+          "content_verdict": "supported",
+          "program_model_verdict": "supported",
+          "reason": "u16“200L反应釜”、u17“RE64611”同属 table:6 第1逻辑行，列头 u3/u4 明确设备名称和编号角色。实际提供的 Mock 唯一精确编号 RE64611 具有规格200L、材质搪玻璃，分别与原文 u18/u19 相符；其名称“搪玻璃反应釜”与原文容量修饰的“200L反应釜”可在该相同编号和属性组合下相容，支持冻结档案链接。仍保留原文名称，不将 Mock 名称替代文档属性，不把链接当作实际使用证明。",
+          "program_issues": [],
+          "entity_dimensions": {
+            "role_verdict": "supported",
+            "identifier_owner_verdict": "supported",
+            "external_link_verdict": "supported"
+          }
+        },
+        {
+          "arm": "E1",
+          "scope_id": "record-c54c3238c67b",
+          "id": "e1.a1",
+          "kind": "property",
+          "program_destination": "accepted",
+          "overall_verdict": "supported",
+          "content_verdict": "supported",
+          "program_model_verdict": "supported",
+          "reason": "u16 原文完整名称“200L反应釜”位于设备名称列 u3，和 e1 编号 u17“RE64611”同属第1逻辑行，支持名称内容与归属。Mock 的“搪玻璃反应釜”不是此原文属性值，不能覆盖提案中原文名称。",
+          "program_issues": [],
+          "entity_dimensions": {}
+        },
+        {
+          "arm": "E1",
+          "scope_id": "record-c54c3238c67b",
+          "id": "e1.a2",
+          "kind": "property",
+          "program_destination": "accepted",
+          "overall_verdict": "supported",
+          "content_verdict": "supported",
+          "program_model_verdict": "supported",
+          "reason": "u18“200L”位于规格型号列 u5，与 e1 名称 u16、编号 u17 同属第1逻辑行，支持完整字符串规格。u20“30L/215L”是不同字段的物料最小/最大搅拌体积，不应混入该属性。",
+          "program_issues": [],
+          "entity_dimensions": {}
+        },
+        {
+          "arm": "E1",
+          "scope_id": "record-c54c3238c67b",
+          "id": "r1",
+          "kind": "relation",
+          "program_destination": "accepted",
+          "overall_verdict": "supported",
+          "content_verdict": "supported",
+          "program_model_verdict": "supported",
+          "reason": "u1“设备需求”与覆盖第1行的 u15“HRS-1597成品结晶”岗位，以及同一行设备 u16/u17 和用途 u23“溶料，脱色”，支持按活动卡 equipment required 定义的 CMC document→e1 设备需求。方向、单对象 all、肯定极性一致；condition 保留工艺范围。Mock 不提供关系依据，不能据此断言实际生产已使用。",
+          "program_issues": [],
+          "entity_dimensions": {}
+        },
+        {
+          "arm": "E1",
+          "scope_id": "record-c54c3238c67b",
+          "id": "o1",
+          "kind": "observation",
+          "program_destination": "accepted",
+          "overall_verdict": "supported",
+          "content_verdict": "supported",
+          "program_model_verdict": "supported",
+          "reason": "u15“HRS-1597成品结晶”位于岗位列 u2，并以合并单元覆盖第1至5逻辑行；设备名称另列 u3、具体实体锚点为 u16。因此将 u15 识别为岗位/工艺背景而非设备实体，且不把它用作设备 anchor 的观察有原文表格依据。",
+          "program_issues": [],
+          "entity_dimensions": {}
+        }
+      ]
+    },
+    {
+      "arm": "E1",
+      "scope_id": "record-0c9a7e82c53b",
+      "purpose": "unknown_identifier_and_bad_condition_citation",
+      "artifact_directory": "output/schema-card-qwen-cmc-mock-20260916/completed/E1/record-0c9a7e82c53b",
+      "candidate_sha256": "c66e128fdf739ec50918a8e0e369123f589ee1d090520d6ff8c9c20f04e04815",
+      "candidate": {
+        "entities": [
+          {
+            "id": "e1",
+            "class_iri": "https://ontology.pharma-gmp.cn/slpra/equipment/ProcessEquipment",
+            "anchor": {
+              "ref": "u16",
+              "quote": "真空干燥箱"
+            },
+            "equipment_id": {
+              "ref": "u17",
+              "quote": "DE64603"
+            },
+            "external_key": "",
+            "attributes": [
+              {
+                "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/equipment/equipmentName",
+                "raw": "真空干燥箱",
+                "source": {
+                  "ref": "u16",
+                  "quote": "真空干燥箱"
+                },
+                "field": {
+                  "ref": "u3",
+                  "quote": "设备名称"
+                }
+              },
+              {
+                "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/equipment/modelSpecification",
+                "raw": "24盘",
+                "source": {
+                  "ref": "u18",
+                  "quote": "24盘"
+                },
+                "field": {
+                  "ref": "u5",
+                  "quote": "规格型号"
+                }
+              }
+            ]
+          }
+        ],
+        "relations": [
+          {
+            "subject_id": "document",
+            "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/usesEquipment",
+            "object_ids": [
+              "e1"
+            ],
+            "selection": "all",
+            "evidence": {
+              "ref": "u16",
+              "quote": "真空干燥箱"
+            },
+            "condition": {
+              "ref": "u10",
+              "quote": "干燥"
+            },
+            "polarity": "affirmed"
+          }
+        ],
+        "observations": [
+          {
+            "evidence": {
+              "ref": "u17",
+              "quote": "DE64603"
+            },
+            "reason": "原文设备编号DE64603在Mock候选库中无完全匹配记录，故external_key留空。"
+          }
+        ]
+      },
+      "final_destinations": {
+        "accepted": [
+          {
+            "id": "e1",
+            "kind": "entity",
+            "issues": []
+          },
+          {
+            "id": "e1.a1",
+            "kind": "property",
+            "issues": []
+          },
+          {
+            "id": "e1.a2",
+            "kind": "property",
+            "issues": []
+          },
+          {
+            "id": "o1",
+            "kind": "observation",
+            "issues": []
+          }
+        ],
+        "unresolved": [
+          {
+            "id": "r1",
+            "kind": "relation",
+            "issues": [
+              "citation_quote_not_in_source"
+            ]
+          }
+        ],
+        "rejected": []
+      },
+      "external_records": [],
+      "source_only_review": [
+        {
+          "arm": "E1",
+          "scope_id": "record-0c9a7e82c53b",
+          "id": "e1",
+          "kind": "entity",
+          "program_destination": "accepted",
+          "overall_verdict": "supported",
+          "content_verdict": "supported",
+          "program_model_verdict": "supported",
+          "reason": "u16“真空干燥箱”、u17“DE64603”在设备名称/设备编号列且同属 table:6 第5逻辑行，支持设备角色和编号归属。提供的7个 Mock 候选均为同名其他编号，没有 DE64603；external_key 留空与证据边界一致，无请求外部链接，不把同名或规格24盘当作合并证明。",
+          "program_issues": [],
+          "entity_dimensions": {
+            "role_verdict": "supported",
+            "identifier_owner_verdict": "supported",
+            "external_link_verdict": "not_applicable"
+          }
+        },
+        {
+          "arm": "E1",
+          "scope_id": "record-0c9a7e82c53b",
+          "id": "e1.a1",
+          "kind": "property",
+          "program_destination": "accepted",
+          "overall_verdict": "supported",
+          "content_verdict": "supported",
+          "program_model_verdict": "supported",
+          "reason": "u16“真空干燥箱”位于设备名称列 u3，和 e1 的编号 u17“DE64603”同属第5逻辑行；名称与主体归属由原文支持，Mock 的同名设备不改变该归属。",
+          "program_issues": [],
+          "entity_dimensions": {}
+        },
+        {
+          "arm": "E1",
+          "scope_id": "record-0c9a7e82c53b",
+          "id": "e1.a2",
+          "kind": "property",
+          "program_destination": "accepted",
+          "overall_verdict": "supported",
+          "content_verdict": "supported",
+          "program_model_verdict": "supported",
+          "reason": "u18“24盘”位于规格型号列 u5，和 e1 的名称 u16、编号 u17 同属第5逻辑行；完整字符串规格及主体归属有原文依据，不需要外部档案补证。",
+          "program_issues": [],
+          "entity_dimensions": {}
+        },
+        {
+          "arm": "E1",
+          "scope_id": "record-0c9a7e82c53b",
+          "id": "r1",
+          "kind": "relation",
+          "program_destination": "unresolved",
+          "overall_verdict": "unsupported",
+          "content_verdict": "supported",
+          "program_model_verdict": "supported",
+          "reason": "精确提案的 condition={ref:u10,quote:干燥} 不成立：u10 原文是表头“设备用途以及工艺要求”，不包含“干燥”；实际“干燥”位于设备行 u23。因此整体提案因错误引用判 unsupported。关系内容另判 supported：u1 设备需求、u15 工艺岗位和第5行真空干燥箱/DE64603/用途干燥支持按活动卡 equipment required 的 document→e1 需求，单对象 all、方向及肯定极性正确；不能把此内容支持当作对错误引用的自动修复，亦不证明实际使用事件。",
+          "program_issues": [
+            "citation_quote_not_in_source"
+          ],
+          "entity_dimensions": {}
+        },
+        {
+          "arm": "E1",
+          "scope_id": "record-0c9a7e82c53b",
+          "id": "o1",
+          "kind": "observation",
+          "program_destination": "accepted",
+          "overall_verdict": "supported",
+          "content_verdict": "supported",
+          "program_model_verdict": "supported",
+          "reason": "u17 原文确为 DE64603；实际提供的 Mock 候选7项均不含该编号，coverage 显示完整检查211条、exact_identifier=0、candidate_overflow=false。故“无完全匹配记录并留空 external_key”的观察符合本次冻结 Mock 返回；这不表示原文设备不存在，也不能用同名或相近编号替代。",
+          "program_issues": [],
+          "entity_dimensions": {}
+        }
+      ]
+    },
+    {
+      "arm": "E2",
+      "scope_id": "record-be0b530ec6ae",
+      "purpose": "anchor_conflicts_blocked_but_relation_undetermined",
+      "artifact_directory": "output/schema-card-qwen-cmc-mock-20260916/completed/E2/record-be0b530ec6ae",
+      "candidate_sha256": "08da90b6e7cd84d3aca3c2577142bd2254c51c8bb165b7ed34ceb0d1a186e01a",
+      "candidate": {
+        "entities": [
+          {
+            "id": "e1",
+            "class_iri": "https://ontology.pharma-gmp.cn/slpra/equipment/ProcessEquipment",
+            "anchor": {
+              "ref": "u6",
+              "quote": "200L反应釜"
+            },
+            "equipment_id": {
+              "ref": "u7",
+              "quote": "RE64611"
+            },
+            "external_key": "RE64611",
+            "attributes": [
+              {
+                "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/equipment/equipmentName",
+                "raw": "200L反应釜",
+                "source": {
+                  "ref": "u6",
+                  "quote": "200L反应釜"
+                },
+                "field": {
+                  "ref": "u3",
+                  "quote": "设备名称及编号"
+                }
+              },
+              {
+                "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/equipment/modelSpecification",
+                "raw": "200L",
+                "source": {
+                  "ref": "u6",
+                  "quote": "200L反应釜"
+                },
+                "field": {
+                  "ref": "u3",
+                  "quote": "设备名称及编号"
+                }
+              }
+            ]
+          },
+          {
+            "id": "e2",
+            "class_iri": "https://ontology.pharma-gmp.cn/slpra/equipment/ProcessEquipment",
+            "anchor": {
+              "ref": "u7",
+              "quote": "（RE64611）压滤器"
+            },
+            "equipment_id": {
+              "ref": "u7",
+              "quote": "PF64216"
+            },
+            "external_key": "PF64216",
+            "attributes": [
+              {
+                "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/equipment/equipmentName",
+                "raw": "压滤器",
+                "source": {
+                  "ref": "u7",
+                  "quote": "（RE64611）压滤器（PF64216或PF64616）串联清洗"
+                },
+                "field": {
+                  "ref": "u3",
+                  "quote": "设备名称及编号"
+                }
+              }
+            ]
+          },
+          {
+            "id": "e3",
+            "class_iri": "https://ontology.pharma-gmp.cn/slpra/equipment/ProcessEquipment",
+            "anchor": {
+              "ref": "u7",
+              "quote": "（RE64611）压滤器"
+            },
+            "equipment_id": {
+              "ref": "u7",
+              "quote": "PF64616"
+            },
+            "external_key": "PF64616",
+            "attributes": [
+              {
+                "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/equipment/equipmentName",
+                "raw": "压滤器",
+                "source": {
+                  "ref": "u7",
+                  "quote": "（RE64611）压滤器（PF64216或PF64616）串联清洗"
+                },
+                "field": {
+                  "ref": "u3",
+                  "quote": "设备名称及编号"
+                }
+              }
+            ]
+          }
+        ],
+        "relations": [
+          {
+            "subject_id": "document",
+            "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/usesEquipment",
+            "object_ids": [
+              "e1"
+            ],
+            "selection": "all",
+            "evidence": {
+              "ref": "u8",
+              "quote": "用纯化水冲洗反应釜内壁5~10分钟"
+            },
+            "condition": {
+              "ref": "u5",
+              "quote": "HRS-1597成品"
+            },
+            "polarity": "affirmed"
+          },
+          {
+            "subject_id": "document",
+            "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/usesEquipment",
+            "object_ids": [
+              "e2",
+              "e3"
+            ],
+            "selection": "one_of",
+            "evidence": {
+              "ref": "u7",
+              "quote": "（RE64611）压滤器（PF64216或PF64616）串联清洗"
+            },
+            "condition": {
+              "ref": "u5",
+              "quote": "HRS-1597成品"
+            },
+            "polarity": "affirmed"
+          }
+        ],
+        "observations": [
+          {
+            "evidence": {
+              "ref": "u7",
+              "quote": "（RE64611）压滤器（PF64216或PF64616）串联清洗"
+            },
+            "reason": "原文表述为PF64216或PF64616，视为二选一关系，未明确具体使用哪一个，故生成one_of关系。"
+          }
+        ]
+      },
+      "final_destinations": {
+        "accepted": [
+          {
+            "id": "e1",
+            "kind": "entity",
+            "issues": []
+          },
+          {
+            "id": "e1.a1",
+            "kind": "property",
+            "issues": []
+          },
+          {
+            "id": "e1.a2",
+            "kind": "property",
+            "issues": []
+          },
+          {
+            "id": "r1",
+            "kind": "relation",
+            "issues": []
+          },
+          {
+            "id": "o1",
+            "kind": "observation",
+            "issues": []
+          }
+        ],
+        "unresolved": [
+          {
+            "id": "e2",
+            "kind": "entity",
+            "issues": [
+              "anchor_equipment_id_conflict"
+            ]
+          },
+          {
+            "id": "e2.a1",
+            "kind": "property",
+            "issues": [
+              "subject_not_supported"
+            ]
+          },
+          {
+            "id": "e3",
+            "kind": "entity",
+            "issues": [
+              "anchor_equipment_id_conflict"
+            ]
+          },
+          {
+            "id": "e3.a1",
+            "kind": "property",
+            "issues": [
+              "subject_not_supported"
+            ]
+          },
+          {
+            "id": "r2",
+            "kind": "relation",
+            "issues": [
+              "object_not_supported"
+            ]
+          }
+        ],
+        "rejected": []
+      },
+      "external_records": [
+        {
+          "arm": "E2",
+          "case": "record-be0b530ec6ae",
+          "entity_id": "e1",
+          "key": "RE64611",
+          "version": "3492419e990385886a36e27419120c0b950ea36342b7316283f9396e3306e94d",
+          "mapped_field_count": 3
+        }
+      ],
+      "source_only_review": [
+        {
+          "arm": "E2",
+          "scope_id": "record-be0b530ec6ae",
+          "id": "e1",
+          "kind": "entity",
+          "program_destination": "accepted",
+          "overall_verdict": "supported",
+          "content_verdict": "supported",
+          "program_model_verdict": "supported",
+          "reason": "u6/u7为同一设备名称及编号单元格的相邻段落；200L反应釜后紧接（RE64611），可将该编号归于反应釜。反应釜属于生产工艺设备；清洗语境不改变其设备类别。Mock的同编号200L搪玻璃反应釜与此不矛盾，但不据此证明生产使用关系。",
+          "program_issues": [],
+          "entity_dimensions": {
+            "role_verdict": "supported",
+            "identifier_owner_verdict": "supported",
+            "external_link_verdict": "supported"
+          }
+        },
+        {
+          "arm": "E2",
+          "scope_id": "record-be0b530ec6ae",
+          "id": "e1.a1",
+          "kind": "property",
+          "program_destination": "accepted",
+          "overall_verdict": "supported",
+          "content_verdict": "supported",
+          "program_model_verdict": "supported",
+          "reason": "设备名称及编号列明确写200L反应釜，归属e1反应釜；保留该完整设备名称有直接原文依据。",
+          "program_issues": [],
+          "entity_dimensions": {}
+        },
+        {
+          "arm": "E2",
+          "scope_id": "record-be0b530ec6ae",
+          "id": "e1.a2",
+          "kind": "property",
+          "program_destination": "accepted",
+          "overall_verdict": "supported",
+          "content_verdict": "supported",
+          "program_model_verdict": "supported",
+          "reason": "200L反应釜中的200L明确限定该反应釜容量，足以作为字符串规格型号值；不是清洗水量。引文包含完整设备称谓且容量逐字存在，未将Mock规格补作原文。",
+          "program_issues": [],
+          "entity_dimensions": {}
+        },
+        {
+          "arm": "E2",
+          "scope_id": "record-be0b530ec6ae",
+          "id": "e2",
+          "kind": "entity",
+          "program_destination": "unresolved",
+          "overall_verdict": "unsupported",
+          "content_verdict": "supported",
+          "program_model_verdict": "undetermined",
+          "reason": "完整u6/u7支持压滤器的PF64216备选提及，但所选anchor“（RE64611）压滤器”将前一个反应釜编号和后一个设备名连为单一实体锚点，与本实体equipment_id=PF64216不一致。不能凭Mock中存在PF64216修复该锚定错误；原文压滤器与Mock钛棒过滤器的名称差异仍需解释。",
+          "program_issues": [
+            "anchor_equipment_id_conflict"
+          ],
+          "entity_dimensions": {
+            "role_verdict": "supported",
+            "identifier_owner_verdict": "unsupported",
+            "external_link_verdict": "undetermined"
+          }
+        },
+        {
+          "arm": "E2",
+          "scope_id": "record-be0b530ec6ae",
+          "id": "e2.a1",
+          "kind": "property",
+          "program_destination": "unresolved",
+          "overall_verdict": "unsupported",
+          "content_verdict": "supported",
+          "program_model_verdict": "supported",
+          "reason": "原文将压滤器名称用于PF64216或PF64616这一备选组，故名称内容成立；当前主语e2却锚定含RE64611的跨设备片段，完整候选的主体绑定不成立。",
+          "program_issues": [
+            "subject_not_supported"
+          ],
+          "entity_dimensions": {}
+        },
+        {
+          "arm": "E2",
+          "scope_id": "record-be0b530ec6ae",
+          "id": "e3",
+          "kind": "entity",
+          "program_destination": "unresolved",
+          "overall_verdict": "unsupported",
+          "content_verdict": "supported",
+          "program_model_verdict": "undetermined",
+          "reason": "完整u6/u7支持压滤器的PF64616备选提及，但所选anchor“（RE64611）压滤器”带入另一反应釜的编号，与本实体equipment_id=PF64616矛盾。不能仅凭档案编号命中认定这一混合锚点正确；原文与Mock的命名差异保留待核。",
+          "program_issues": [
+            "anchor_equipment_id_conflict"
+          ],
+          "entity_dimensions": {
+            "role_verdict": "supported",
+            "identifier_owner_verdict": "unsupported",
+            "external_link_verdict": "undetermined"
+          }
+        },
+        {
+          "arm": "E2",
+          "scope_id": "record-be0b530ec6ae",
+          "id": "e3.a1",
+          "kind": "property",
+          "program_destination": "unresolved",
+          "overall_verdict": "unsupported",
+          "content_verdict": "supported",
+          "program_model_verdict": "supported",
+          "reason": "压滤器这一名称在原文对应PF64216或PF64616，内容上支持备选设备称谓；因e3仍使用包含RE64611的混合锚点，所提属性整体主体绑定不通过。",
+          "program_issues": [
+            "subject_not_supported"
+          ],
+          "entity_dimensions": {}
+        },
+        {
+          "arm": "E2",
+          "scope_id": "record-be0b530ec6ae",
+          "id": "r1",
+          "kind": "relation",
+          "program_destination": "accepted",
+          "overall_verdict": "undetermined",
+          "content_verdict": "undetermined",
+          "program_model_verdict": "supported",
+          "reason": "u8直接证明针对该反应釜的内壁清洗要求，而非本报告的生产使用/设备需求关系；清洗对象在本报告被提及并不足以独立证明usesEquipment。HRS-1597成品是表格分组对象，不能补出缺少的使用关系。本包既未直接支持该关系，也未明确否定它。",
+          "program_issues": [],
+          "entity_dimensions": {}
+        },
+        {
+          "arm": "E2",
+          "scope_id": "record-be0b530ec6ae",
+          "id": "r2",
+          "kind": "relation",
+          "program_destination": "unresolved",
+          "overall_verdict": "unsupported",
+          "content_verdict": "undetermined",
+          "program_model_verdict": "supported",
+          "reason": "原文清楚保留PF64216或PF64616这一二选一清洗对象组，one_of方向正确，但清洗对象不自动证明报告所需生产设备的usesEquipment关系，关系内容仍未决；此外e2/e3各自锚点均混入RE64611，现有端点绑定明确有误，完整关系不支持。",
+          "program_issues": [
+            "object_not_supported"
+          ],
+          "entity_dimensions": {}
+        },
+        {
+          "arm": "E2",
+          "scope_id": "record-be0b530ec6ae",
+          "id": "o1",
+          "kind": "observation",
+          "program_destination": "accepted",
+          "overall_verdict": "supported",
+          "content_verdict": "supported",
+          "program_model_verdict": "supported",
+          "reason": "u7逐字列出PF64216或PF64616，支持备选观察，未指定实际采用哪台；one_of可表示该局部二选一提及，不能解释为两台同时生产使用。",
+          "program_issues": [],
+          "entity_dimensions": {}
+        }
+      ]
+    },
+    {
+      "arm": "E2",
+      "scope_id": "record-d29114c4e0c5",
+      "purpose": "merged_alternatives_blocked",
+      "artifact_directory": "output/schema-card-qwen-cmc-mock-20260916/completed/E2/record-d29114c4e0c5",
+      "candidate_sha256": "6ff1ba1db3f38113a465ef0efa814cf59130c55371eb44d7de9abf0ede1fb53d",
+      "candidate": {
+        "entities": [
+          {
+            "id": "e1",
+            "class_iri": "https://ontology.pharma-gmp.cn/slpra/equipment/ProcessEquipment",
+            "anchor": {
+              "ref": "u16",
+              "quote": "钛棒过滤器"
+            },
+            "equipment_id": {
+              "ref": "u17",
+              "quote": "PF64216或PF64616"
+            },
+            "external_key": "",
+            "attributes": [
+              {
+                "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/equipment/equipmentName",
+                "raw": "钛棒过滤器",
+                "source": {
+                  "ref": "u16",
+                  "quote": "钛棒过滤器"
+                },
+                "field": {
+                  "ref": "u3",
+                  "quote": "设备名称"
+                }
+              },
+              {
+                "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/equipment/modelSpecification",
+                "raw": "10英寸3芯",
+                "source": {
+                  "ref": "u18",
+                  "quote": "10英寸3芯"
+                },
+                "field": {
+                  "ref": "u5",
+                  "quote": "规格型号"
+                }
+              }
+            ]
+          }
+        ],
+        "relations": [
+          {
+            "subject_id": "document",
+            "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/usesEquipment",
+            "object_ids": [
+              "e1"
+            ],
+            "selection": "one_of",
+            "evidence": {
+              "ref": "u17",
+              "quote": "PF64216或PF64616"
+            },
+            "condition": {
+              "ref": "u17",
+              "quote": "PF64216或PF64616"
+            },
+            "polarity": "affirmed"
+          }
+        ],
+        "observations": [
+          {
+            "evidence": {
+              "ref": "u17",
+              "quote": "PF64216或PF64616"
+            },
+            "reason": "原文设备编号为'PF64216或PF64616'，存在二选一关系，故external_key留空，relations中selection设为one_of。"
+          }
+        ]
+      },
+      "final_destinations": {
+        "accepted": [
+          {
+            "id": "o1",
+            "kind": "observation",
+            "issues": []
+          }
+        ],
+        "unresolved": [
+          {
+            "id": "e1",
+            "kind": "entity",
+            "issues": [
+              "equipment_id_must_be_single_identifier"
+            ]
+          },
+          {
+            "id": "e1.a1",
+            "kind": "property",
+            "issues": [
+              "subject_not_supported"
+            ]
+          },
+          {
+            "id": "e1.a2",
+            "kind": "property",
+            "issues": [
+              "subject_not_supported"
+            ]
+          },
+          {
+            "id": "r1",
+            "kind": "relation",
+            "issues": [
+              "alternative_group_source_missing",
+              "object_not_supported"
+            ]
+          }
+        ],
+        "rejected": []
+      },
+      "external_records": [],
+      "source_only_review": [
+        {
+          "arm": "E2",
+          "scope_id": "record-d29114c4e0c5",
+          "id": "e1",
+          "kind": "entity",
+          "program_destination": "unresolved",
+          "overall_verdict": "unsupported",
+          "content_verdict": "supported",
+          "program_model_verdict": "supported",
+          "reason": "原文确实在设备需求表列出钛棒过滤器，类型和设备称谓有依据；但equipment_id将PF64216或PF64616完整备选表达存成一个实体编号，合并了两个明确不同的设备身份。external_key留空未消除这种身份合并。",
+          "program_issues": [
+            "equipment_id_must_be_single_identifier"
+          ],
+          "entity_dimensions": {
+            "role_verdict": "supported",
+            "identifier_owner_verdict": "unsupported",
+            "external_link_verdict": "undetermined"
+          }
+        },
+        {
+          "arm": "E2",
+          "scope_id": "record-d29114c4e0c5",
+          "id": "e1.a1",
+          "kind": "property",
+          "program_destination": "unresolved",
+          "overall_verdict": "unsupported",
+          "content_verdict": "supported",
+          "program_model_verdict": "supported",
+          "reason": "钛棒过滤器是原文设备名称列，名称内容支持；当前属性主语e1却用两个备选编号组成一个设备身份，完整候选的主体表达有误。该共同名称可分别归于两个备选设备，但需要先正确拆分身份。",
+          "program_issues": [
+            "subject_not_supported"
+          ],
+          "entity_dimensions": {}
+        },
+        {
+          "arm": "E2",
+          "scope_id": "record-d29114c4e0c5",
+          "id": "e1.a2",
+          "kind": "property",
+          "program_destination": "unresolved",
+          "overall_verdict": "unsupported",
+          "content_verdict": "supported",
+          "program_model_verdict": "supported",
+          "reason": "原文规格型号列明确为10英寸3芯，与这一备选过滤器需求同行，内容支持且不应拆掉3芯或补造单位换算；现有主语e1合并两个设备编号，整体主体绑定仍不支持。",
+          "program_issues": [
+            "subject_not_supported"
+          ],
+          "entity_dimensions": {}
+        },
+        {
+          "arm": "E2",
+          "scope_id": "record-d29114c4e0c5",
+          "id": "r1",
+          "kind": "relation",
+          "program_destination": "unresolved",
+          "overall_verdict": "unsupported",
+          "content_verdict": "supported",
+          "program_model_verdict": "supported",
+          "reason": "设备需求表支持PF64216或PF64616二选一过滤器需求，关系内容成立；但object_ids仅含一个已合并两编号的e1，selection=one_of没有两个独立备选端点。condition又重复编号备选表达而未表达本行HRS-1597成品结晶的用途范围，现有结构不能正确保留二选一设备关系。",
+          "program_issues": [
+            "alternative_group_source_missing",
+            "object_not_supported"
+          ],
+          "entity_dimensions": {}
+        },
+        {
+          "arm": "E2",
+          "scope_id": "record-d29114c4e0c5",
+          "id": "o1",
+          "kind": "observation",
+          "program_destination": "accepted",
+          "overall_verdict": "supported",
+          "content_verdict": "supported",
+          "program_model_verdict": "supported",
+          "reason": "u17直接列出PF64216或PF64616，支持二选一观察及暂不选定单个external_key；观察本身未声称两台同时使用。实际关系仍须两个独立设备端点，单写one_of不足以修复实体合并。",
+          "program_issues": [],
+          "entity_dimensions": {}
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,755 @@
+{
+  "generated_at_utc": "2026-09-16T06:23:28.754130+00:00",
+  "scope": "Saved candidate HTTP requests only; plan/repair/usage/result conclusions not read.",
+  "definitions": {
+    "request_json_file_bytes": "Exact stored JSON file byte count, including serialization.",
+    "messages_content_characters": "Unicode character count of decoded message content strings.",
+    "ner_spans_in_request": "Length of input.tool_results.propose_mentions.spans.",
+    "sources_in_request": "Length of input.source; actual supplied evidence units.",
+    "limitations": [
+      "Character and byte counts are not tokenizer token counts.",
+      "HTTP400 cause is not inferred; error response bodies are unavailable.",
+      "D completed is the completed artifact snapshot; unsaved usage is not zero-cost usage."
+    ]
+  },
+  "roots": {
+    "C": "output/schema-card-qwen-cmc-gliner25-skos-20260916/completed",
+    "D": "output/schema-card-qwen-cmc-summary-retrieval-20260916/completed"
+  },
+  "arms": {
+    "C": {
+      "introduction": {
+        "saved_candidate_request_count": 1,
+        "requests": [
+          {
+            "path": "output/schema-card-qwen-cmc-gliner25-skos-20260916/completed/C/introduction/candidates/http-01-request.json",
+            "request_json_file_bytes": 95083,
+            "messages": [
+              {
+                "role": "system",
+                "content_characters": 907
+              },
+              {
+                "role": "user",
+                "content_characters": 63439
+              }
+            ],
+            "messages_content_characters": 64346,
+            "sources_in_request": 3,
+            "source_text_characters": 251,
+            "ner_spans_in_request": 67,
+            "ner_groups_in_request": null
+          }
+        ],
+        "saved_source_count": 3,
+        "saved_source_text_characters": 251,
+        "saved_ner_span_count": 67,
+        "saved_ner_group_count": 2
+      },
+      "pde_conflict": {
+        "saved_candidate_request_count": 1,
+        "requests": [
+          {
+            "path": "output/schema-card-qwen-cmc-gliner25-skos-20260916/completed/C/pde_conflict/candidates/http-01-request.json",
+            "request_json_file_bytes": 310889,
+            "messages": [
+              {
+                "role": "system",
+                "content_characters": 907
+              },
+              {
+                "role": "user",
+                "content_characters": 232498
+              }
+            ],
+            "messages_content_characters": 233405,
+            "sources_in_request": 45,
+            "source_text_characters": 439,
+            "ner_spans_in_request": 403,
+            "ner_groups_in_request": null
+          }
+        ],
+        "saved_source_count": 45,
+        "saved_source_text_characters": 439,
+        "saved_ner_span_count": 403,
+        "saved_ner_group_count": 3
+      },
+      "process_equipment": {
+        "saved_candidate_request_count": 1,
+        "requests": [
+          {
+            "path": "output/schema-card-qwen-cmc-gliner25-skos-20260916/completed/C/process_equipment/candidates/http-01-request.json",
+            "request_json_file_bytes": 136539,
+            "messages": [
+              {
+                "role": "system",
+                "content_characters": 907
+              },
+              {
+                "role": "user",
+                "content_characters": 91753
+              }
+            ],
+            "messages_content_characters": 92660,
+            "sources_in_request": 3,
+            "source_text_characters": 221,
+            "ner_spans_in_request": 78,
+            "ner_groups_in_request": null
+          }
+        ],
+        "saved_source_count": 3,
+        "saved_source_text_characters": 221,
+        "saved_ner_span_count": 78,
+        "saved_ner_group_count": 3
+      },
+      "product_properties": {
+        "saved_candidate_request_count": 1,
+        "requests": [
+          {
+            "path": "output/schema-card-qwen-cmc-gliner25-skos-20260916/completed/C/product_properties/candidates/http-01-request.json",
+            "request_json_file_bytes": 144417,
+            "messages": [
+              {
+                "role": "system",
+                "content_characters": 907
+              },
+              {
+                "role": "user",
+                "content_characters": 99266
+              }
+            ],
+            "messages_content_characters": 100173,
+            "sources_in_request": 6,
+            "source_text_characters": 76,
+            "ner_spans_in_request": 139,
+            "ner_groups_in_request": null
+          }
+        ],
+        "saved_source_count": 6,
+        "saved_source_text_characters": 76,
+        "saved_ner_span_count": 139,
+        "saved_ner_group_count": 3
+      },
+      "quality_condition": {
+        "saved_candidate_request_count": 1,
+        "requests": [
+          {
+            "path": "output/schema-card-qwen-cmc-gliner25-skos-20260916/completed/C/quality_condition/candidates/http-01-request.json",
+            "request_json_file_bytes": 72958,
+            "messages": [
+              {
+                "role": "system",
+                "content_characters": 907
+              },
+              {
+                "role": "user",
+                "content_characters": 46302
+              }
+            ],
+            "messages_content_characters": 47209,
+            "sources_in_request": 3,
+            "source_text_characters": 111,
+            "ner_spans_in_request": 22,
+            "ner_groups_in_request": null
+          }
+        ],
+        "saved_source_count": 3,
+        "saved_source_text_characters": 111,
+        "saved_ner_span_count": 22,
+        "saved_ner_group_count": 2
+      },
+      "residue_missing": {
+        "saved_candidate_request_count": 1,
+        "requests": [
+          {
+            "path": "output/schema-card-qwen-cmc-gliner25-skos-20260916/completed/C/residue_missing/candidates/http-01-request.json",
+            "request_json_file_bytes": 40334,
+            "messages": [
+              {
+                "role": "system",
+                "content_characters": 907
+              },
+              {
+                "role": "user",
+                "content_characters": 22869
+              }
+            ],
+            "messages_content_characters": 23776,
+            "sources_in_request": 2,
+            "source_text_characters": 19,
+            "ner_spans_in_request": 0,
+            "ner_groups_in_request": null
+          }
+        ],
+        "saved_source_count": 2,
+        "saved_source_text_characters": 19,
+        "saved_ner_span_count": 0,
+        "saved_ner_group_count": 2
+      },
+      "storage": {
+        "saved_candidate_request_count": 1,
+        "requests": [
+          {
+            "path": "output/schema-card-qwen-cmc-gliner25-skos-20260916/completed/C/storage/candidates/http-01-request.json",
+            "request_json_file_bytes": 47660,
+            "messages": [
+              {
+                "role": "system",
+                "content_characters": 907
+              },
+              {
+                "role": "user",
+                "content_characters": 29569
+              }
+            ],
+            "messages_content_characters": 30476,
+            "sources_in_request": 10,
+            "source_text_characters": 123,
+            "ner_spans_in_request": 24,
+            "ner_groups_in_request": null
+          }
+        ],
+        "saved_source_count": 10,
+        "saved_source_text_characters": 123,
+        "saved_ner_span_count": 24,
+        "saved_ner_group_count": 3
+      },
+      "toxicity_unknown": {
+        "saved_candidate_request_count": 1,
+        "requests": [
+          {
+            "path": "output/schema-card-qwen-cmc-gliner25-skos-20260916/completed/C/toxicity_unknown/candidates/http-01-request.json",
+            "request_json_file_bytes": 134719,
+            "messages": [
+              {
+                "role": "system",
+                "content_characters": 907
+              },
+              {
+                "role": "user",
+                "content_characters": 91562
+              }
+            ],
+            "messages_content_characters": 92469,
+            "sources_in_request": 15,
+            "source_text_characters": 112,
+            "ner_spans_in_request": 119,
+            "ner_groups_in_request": null
+          }
+        ],
+        "saved_source_count": 15,
+        "saved_source_text_characters": 112,
+        "saved_ner_span_count": 119,
+        "saved_ner_group_count": 2
+      }
+    },
+    "D": {
+      "introduction": {
+        "saved_candidate_request_count": 1,
+        "requests": [
+          {
+            "path": "output/schema-card-qwen-cmc-summary-retrieval-20260916/completed/D/introduction/candidates/http-01-request.json",
+            "request_json_file_bytes": 542672,
+            "messages": [
+              {
+                "role": "system",
+                "content_characters": 907
+              },
+              {
+                "role": "user",
+                "content_characters": 414445
+              }
+            ],
+            "messages_content_characters": 415352,
+            "sources_in_request": 103,
+            "source_text_characters": 982,
+            "ner_spans_in_request": 543,
+            "ner_groups_in_request": null
+          }
+        ],
+        "saved_source_count": 103,
+        "saved_source_text_characters": 982,
+        "saved_ner_span_count": 543,
+        "saved_ner_group_count": 2
+      },
+      "pde_conflict": {
+        "saved_candidate_request_count": 1,
+        "requests": [
+          {
+            "path": "output/schema-card-qwen-cmc-summary-retrieval-20260916/completed/D/pde_conflict/candidates/http-01-request.json",
+            "request_json_file_bytes": 344621,
+            "messages": [
+              {
+                "role": "system",
+                "content_characters": 907
+              },
+              {
+                "role": "user",
+                "content_characters": 258529
+              }
+            ],
+            "messages_content_characters": 259436,
+            "sources_in_request": 46,
+            "source_text_characters": 448,
+            "ner_spans_in_request": 403,
+            "ner_groups_in_request": null
+          }
+        ],
+        "saved_source_count": 46,
+        "saved_source_text_characters": 448,
+        "saved_ner_span_count": 403,
+        "saved_ner_group_count": 3
+      },
+      "process_equipment": {
+        "saved_candidate_request_count": 1,
+        "requests": [
+          {
+            "path": "output/schema-card-qwen-cmc-summary-retrieval-20260916/completed/D/process_equipment/candidates/http-01-request.json",
+            "request_json_file_bytes": 680932,
+            "messages": [
+              {
+                "role": "system",
+                "content_characters": 907
+              },
+              {
+                "role": "user",
+                "content_characters": 516385
+              }
+            ],
+            "messages_content_characters": 517292,
+            "sources_in_request": 94,
+            "source_text_characters": 763,
+            "ner_spans_in_request": 798,
+            "ner_groups_in_request": null
+          }
+        ],
+        "saved_source_count": 94,
+        "saved_source_text_characters": 763,
+        "saved_ner_span_count": 798,
+        "saved_ner_group_count": 3
+      },
+      "product_properties": {
+        "saved_candidate_request_count": 1,
+        "requests": [
+          {
+            "path": "output/schema-card-qwen-cmc-summary-retrieval-20260916/completed/D/product_properties/candidates/http-01-request.json",
+            "request_json_file_bytes": 928905,
+            "messages": [
+              {
+                "role": "system",
+                "content_characters": 907
+              },
+              {
+                "role": "user",
+                "content_characters": 709571
+              }
+            ],
+            "messages_content_characters": 710478,
+            "sources_in_request": 103,
+            "source_text_characters": 982,
+            "ner_spans_in_request": 1251,
+            "ner_groups_in_request": null
+          }
+        ],
+        "saved_source_count": 103,
+        "saved_source_text_characters": 982,
+        "saved_ner_span_count": 1251,
+        "saved_ner_group_count": 3
+      },
+      "quality_condition": {
+        "saved_candidate_request_count": 1,
+        "requests": [
+          {
+            "path": "output/schema-card-qwen-cmc-summary-retrieval-20260916/completed/D/quality_condition/candidates/http-01-request.json",
+            "request_json_file_bytes": 460999,
+            "messages": [
+              {
+                "role": "system",
+                "content_characters": 907
+              },
+              {
+                "role": "user",
+                "content_characters": 343208
+              }
+            ],
+            "messages_content_characters": 344115,
+            "sources_in_request": 75,
+            "source_text_characters": 1577,
+            "ner_spans_in_request": 425,
+            "ner_groups_in_request": null
+          }
+        ],
+        "saved_source_count": 75,
+        "saved_source_text_characters": 1577,
+        "saved_ner_span_count": 425,
+        "saved_ner_group_count": 2
+      },
+      "residue_missing": {
+        "saved_candidate_request_count": 1,
+        "requests": [
+          {
+            "path": "output/schema-card-qwen-cmc-summary-retrieval-20260916/completed/D/residue_missing/candidates/http-01-request.json",
+            "request_json_file_bytes": 450646,
+            "messages": [
+              {
+                "role": "system",
+                "content_characters": 907
+              },
+              {
+                "role": "user",
+                "content_characters": 342832
+              }
+            ],
+            "messages_content_characters": 343739,
+            "sources_in_request": 94,
+            "source_text_characters": 763,
+            "ner_spans_in_request": 446,
+            "ner_groups_in_request": null
+          }
+        ],
+        "saved_source_count": 94,
+        "saved_source_text_characters": 763,
+        "saved_ner_span_count": 446,
+        "saved_ner_group_count": 2
+      },
+      "storage": {
+        "saved_candidate_request_count": 1,
+        "requests": [
+          {
+            "path": "output/schema-card-qwen-cmc-summary-retrieval-20260916/completed/D/storage/candidates/http-01-request.json",
+            "request_json_file_bytes": 51382,
+            "messages": [
+              {
+                "role": "system",
+                "content_characters": 907
+              },
+              {
+                "role": "user",
+                "content_characters": 32541
+              }
+            ],
+            "messages_content_characters": 33448,
+            "sources_in_request": 11,
+            "source_text_characters": 125,
+            "ner_spans_in_request": 24,
+            "ner_groups_in_request": null
+          }
+        ],
+        "saved_source_count": 11,
+        "saved_source_text_characters": 125,
+        "saved_ner_span_count": 24,
+        "saved_ner_group_count": 3
+      },
+      "toxicity_unknown": {
+        "saved_candidate_request_count": 1,
+        "requests": [
+          {
+            "path": "output/schema-card-qwen-cmc-summary-retrieval-20260916/completed/D/toxicity_unknown/candidates/http-01-request.json",
+            "request_json_file_bytes": 895406,
+            "messages": [
+              {
+                "role": "system",
+                "content_characters": 907
+              },
+              {
+                "role": "user",
+                "content_characters": 683186
+              }
+            ],
+            "messages_content_characters": 684093,
+            "sources_in_request": 103,
+            "source_text_characters": 982,
+            "ner_spans_in_request": 1189,
+            "ner_groups_in_request": null
+          }
+        ],
+        "saved_source_count": 103,
+        "saved_source_text_characters": 982,
+        "saved_ner_span_count": 1189,
+        "saved_ner_group_count": 2
+      }
+    }
+  },
+  "C_D_comparison": {
+    "introduction": {
+      "comparison_status": "paired_saved_requests",
+      "metrics": {
+        "request_json_file_bytes": {
+          "C": 95083,
+          "D": 542672,
+          "delta": 447589,
+          "D_over_C": 5.707350420159229
+        },
+        "messages_content_characters": {
+          "C": 64346,
+          "D": 415352,
+          "delta": 351006,
+          "D_over_C": 6.454977776396357
+        },
+        "sources_in_request": {
+          "C": 3,
+          "D": 103,
+          "delta": 100,
+          "D_over_C": 34.333333333333336
+        },
+        "source_text_characters": {
+          "C": 251,
+          "D": 982,
+          "delta": 731,
+          "D_over_C": 3.912350597609562
+        },
+        "ner_spans_in_request": {
+          "C": 67,
+          "D": 543,
+          "delta": 476,
+          "D_over_C": 8.104477611940299
+        }
+      }
+    },
+    "pde_conflict": {
+      "comparison_status": "paired_saved_requests",
+      "metrics": {
+        "request_json_file_bytes": {
+          "C": 310889,
+          "D": 344621,
+          "delta": 33732,
+          "D_over_C": 1.1085017482123845
+        },
+        "messages_content_characters": {
+          "C": 233405,
+          "D": 259436,
+          "delta": 26031,
+          "D_over_C": 1.1115271737966197
+        },
+        "sources_in_request": {
+          "C": 45,
+          "D": 46,
+          "delta": 1,
+          "D_over_C": 1.0222222222222221
+        },
+        "source_text_characters": {
+          "C": 439,
+          "D": 448,
+          "delta": 9,
+          "D_over_C": 1.020501138952164
+        },
+        "ner_spans_in_request": {
+          "C": 403,
+          "D": 403,
+          "delta": 0,
+          "D_over_C": 1.0
+        }
+      }
+    },
+    "process_equipment": {
+      "comparison_status": "paired_saved_requests",
+      "metrics": {
+        "request_json_file_bytes": {
+          "C": 136539,
+          "D": 680932,
+          "delta": 544393,
+          "D_over_C": 4.98708793824475
+        },
+        "messages_content_characters": {
+          "C": 92660,
+          "D": 517292,
+          "delta": 424632,
+          "D_over_C": 5.58268940211526
+        },
+        "sources_in_request": {
+          "C": 3,
+          "D": 94,
+          "delta": 91,
+          "D_over_C": 31.333333333333332
+        },
+        "source_text_characters": {
+          "C": 221,
+          "D": 763,
+          "delta": 542,
+          "D_over_C": 3.4524886877828056
+        },
+        "ner_spans_in_request": {
+          "C": 78,
+          "D": 798,
+          "delta": 720,
+          "D_over_C": 10.23076923076923
+        }
+      }
+    },
+    "product_properties": {
+      "comparison_status": "paired_saved_requests",
+      "metrics": {
+        "request_json_file_bytes": {
+          "C": 144417,
+          "D": 928905,
+          "delta": 784488,
+          "D_over_C": 6.432102868775837
+        },
+        "messages_content_characters": {
+          "C": 100173,
+          "D": 710478,
+          "delta": 610305,
+          "D_over_C": 7.092509957773053
+        },
+        "sources_in_request": {
+          "C": 6,
+          "D": 103,
+          "delta": 97,
+          "D_over_C": 17.166666666666668
+        },
+        "source_text_characters": {
+          "C": 76,
+          "D": 982,
+          "delta": 906,
+          "D_over_C": 12.921052631578947
+        },
+        "ner_spans_in_request": {
+          "C": 139,
+          "D": 1251,
+          "delta": 1112,
+          "D_over_C": 9.0
+        }
+      }
+    },
+    "quality_condition": {
+      "comparison_status": "paired_saved_requests",
+      "metrics": {
+        "request_json_file_bytes": {
+          "C": 72958,
+          "D": 460999,
+          "delta": 388041,
+          "D_over_C": 6.318690205323611
+        },
+        "messages_content_characters": {
+          "C": 47209,
+          "D": 344115,
+          "delta": 296906,
+          "D_over_C": 7.28918214747188
+        },
+        "sources_in_request": {
+          "C": 3,
+          "D": 75,
+          "delta": 72,
+          "D_over_C": 25.0
+        },
+        "source_text_characters": {
+          "C": 111,
+          "D": 1577,
+          "delta": 1466,
+          "D_over_C": 14.207207207207206
+        },
+        "ner_spans_in_request": {
+          "C": 22,
+          "D": 425,
+          "delta": 403,
+          "D_over_C": 19.318181818181817
+        }
+      }
+    },
+    "residue_missing": {
+      "comparison_status": "paired_saved_requests",
+      "metrics": {
+        "request_json_file_bytes": {
+          "C": 40334,
+          "D": 450646,
+          "delta": 410312,
+          "D_over_C": 11.17285664699757
+        },
+        "messages_content_characters": {
+          "C": 23776,
+          "D": 343739,
+          "delta": 319963,
+          "D_over_C": 14.45739401076716
+        },
+        "sources_in_request": {
+          "C": 2,
+          "D": 94,
+          "delta": 92,
+          "D_over_C": 47.0
+        },
+        "source_text_characters": {
+          "C": 19,
+          "D": 763,
+          "delta": 744,
+          "D_over_C": 40.1578947368421
+        },
+        "ner_spans_in_request": {
+          "C": 0,
+          "D": 446,
+          "delta": 446,
+          "D_over_C": null
+        }
+      }
+    },
+    "storage": {
+      "comparison_status": "paired_saved_requests",
+      "metrics": {
+        "request_json_file_bytes": {
+          "C": 47660,
+          "D": 51382,
+          "delta": 3722,
+          "D_over_C": 1.0780948384389426
+        },
+        "messages_content_characters": {
+          "C": 30476,
+          "D": 33448,
+          "delta": 2972,
+          "D_over_C": 1.0975193594959969
+        },
+        "sources_in_request": {
+          "C": 10,
+          "D": 11,
+          "delta": 1,
+          "D_over_C": 1.1
+        },
+        "source_text_characters": {
+          "C": 123,
+          "D": 125,
+          "delta": 2,
+          "D_over_C": 1.016260162601626
+        },
+        "ner_spans_in_request": {
+          "C": 24,
+          "D": 24,
+          "delta": 0,
+          "D_over_C": 1.0
+        }
+      }
+    },
+    "toxicity_unknown": {
+      "comparison_status": "paired_saved_requests",
+      "metrics": {
+        "request_json_file_bytes": {
+          "C": 134719,
+          "D": 895406,
+          "delta": 760687,
+          "D_over_C": 6.646471544474053
+        },
+        "messages_content_characters": {
+          "C": 92469,
+          "D": 684093,
+          "delta": 591624,
+          "D_over_C": 7.398079356324822
+        },
+        "sources_in_request": {
+          "C": 15,
+          "D": 103,
+          "delta": 88,
+          "D_over_C": 6.866666666666666
+        },
+        "source_text_characters": {
+          "C": 112,
+          "D": 982,
+          "delta": 870,
+          "D_over_C": 8.767857142857142
+        },
+        "ner_spans_in_request": {
+          "C": 119,
+          "D": 1189,
+          "delta": 1070,
+          "D_over_C": 9.991596638655462
+        }
+      }
+    }
+  }
+}

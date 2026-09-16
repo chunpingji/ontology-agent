@@ -1,0 +1,165 @@
+{
+  "scope_id": "storage",
+  "arms": {
+    "A": {
+      "document": {
+        "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport",
+        "label": "CMC 报告",
+        "anchor": {
+          "ref": "",
+          "quote": ""
+        },
+        "fields": {
+          "hasStorageCondition": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasStorageCondition",
+            "label": "存放条件",
+            "description": "Links a CMC report, synthesis step, or process intermediate to its storage conditions.",
+            "multiplicity": "unspecified",
+            "kind": "relationship",
+            "range_class_iris": [
+              "https://ontology.pharma-gmp.cn/slpra/drug-development/StorageCondition"
+            ]
+          }
+        }
+      },
+      "s1": {
+        "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/StorageCondition",
+        "label": "存放条件",
+        "anchor": {
+          "ref": "",
+          "quote": ""
+        },
+        "fields": {
+          "lightProtection": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/lightProtection",
+            "label": "是否避光",
+            "multiplicity": "unspecified",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#boolean"
+            ]
+          },
+          "packagingType": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/packagingType",
+            "label": "包装方式",
+            "description": "E.g. 双层聚乙烯薄膜袋外加铝箔袋, 旋蒸瓶.",
+            "multiplicity": "unspecified",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#string"
+            ]
+          },
+          "shelfLife": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/shelfLife",
+            "label": "有效期/复测期",
+            "description": "E.g. 15天, 1个月, 1年.",
+            "multiplicity": "unspecified",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#string"
+            ]
+          },
+          "storageHumidity": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/storageHumidity",
+            "label": "存放湿度",
+            "multiplicity": "unspecified",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#string"
+            ]
+          },
+          "storageTemperature": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/storageTemperature",
+            "label": "存放温度",
+            "description": "E.g. 2-8℃, -20±5℃, 室温.",
+            "multiplicity": "unspecified",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#string"
+            ]
+          }
+        }
+      }
+    },
+    "B": {
+      "document": {
+        "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport",
+        "label": "CMC 报告",
+        "anchor": {
+          "ref": "",
+          "quote": ""
+        },
+        "fields": {
+          "hasStorageCondition": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasStorageCondition",
+            "label": "存放条件",
+            "description": "Links a CMC report, synthesis step, or process intermediate to its storage conditions.",
+            "multiplicity": "unspecified",
+            "kind": "relationship",
+            "range_class_iris": [
+              "https://ontology.pharma-gmp.cn/slpra/drug-development/StorageCondition"
+            ]
+          }
+        }
+      },
+      "s1": {
+        "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/StorageCondition",
+        "label": "存放条件",
+        "anchor": {
+          "ref": "",
+          "quote": ""
+        },
+        "fields": {
+          "lightProtection": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/lightProtection",
+            "label": "是否避光",
+            "multiplicity": "unspecified",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#boolean"
+            ]
+          },
+          "packagingType": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/packagingType",
+            "label": "包装方式",
+            "description": "E.g. 双层聚乙烯薄膜袋外加铝箔袋, 旋蒸瓶.",
+            "multiplicity": "unspecified",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#string"
+            ]
+          },
+          "shelfLife": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/shelfLife",
+            "label": "有效期/复测期",
+            "description": "E.g. 15天, 1个月, 1年.",
+            "multiplicity": "unspecified",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#string"
+            ]
+          },
+          "storageHumidity": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/storageHumidity",
+            "label": "存放湿度",
+            "multiplicity": "unspecified",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#string"
+            ]
+          },
+          "storageTemperature": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/storageTemperature",
+            "label": "存放温度",
+            "description": "E.g. 2-8℃, -20±5℃, 室温.",
+            "multiplicity": "unspecified",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#string"
+            ]
+          }
+        }
+      }
+    }
+  }
+}

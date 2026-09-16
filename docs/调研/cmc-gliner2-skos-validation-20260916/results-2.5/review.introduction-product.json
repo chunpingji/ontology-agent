@@ -1,0 +1,1386 @@
+{
+  "reviewer": "assistant independent source review not expert gold",
+  "status_definitions": {
+    "supported": "原文支持该项的主体角色、字段或关系语义；整体声明还须主体绑定正确。",
+    "unsupported": "存在明确错角色、错绑定或与原文/卡片语义相矛盾的推断。",
+    "undetermined": "只缺充分证明，或有无法消解的指向/限定歧义；缺证不作为反证。"
+  },
+  "cases": [
+    {
+      "arm": "C",
+      "scope_id": "introduction",
+      "review_input": "output/schema-card-qwen-cmc-gliner25-skos-20260916/review-inputs/introduction.json",
+      "review_input_sha256": "c9fc90e401e62cc3b9cad71cea5af2be18edba0aadbe71d454eeea0525602f29",
+      "source_artifacts": {
+        "sources.json": "41796029764c9531b94322797bb5cee8f0a5c117b93c9b199bbdcb8c31262f77",
+        "subject-cards.json": "f8e7dca942c1816324c1a68daf1e1b525a7cb36f264e13420d8538ac9c96057c",
+        "candidates/proposal.json": "de0049e7c5a371c5ce00d70b6bfbfe1a9fc893653f34ec19afd008bb542342f1"
+      },
+      "subjects": [
+        {
+          "id": "document",
+          "path": "subjects.document",
+          "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport",
+          "proposal": {
+            "attributes": {},
+            "relations": {
+              "hasProductionPlan": [
+                {
+                  "target_id": "s1",
+                  "evidence": {
+                    "ref": "u1",
+                    "quote": "本次备样用于Ⅰ期临床，计划在2026年6月于642和646车间，完成本次临床样品生产及检测，批量3.8- 6.6kg。",
+                    "span_id": "source:u1"
+                  },
+                  "condition": {
+                    "ref": "",
+                    "quote": "",
+                    "span_id": ""
+                  },
+                  "polarity": "affirmed"
+                }
+              ]
+            },
+            "anchor": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            }
+          },
+          "status": "supported",
+          "reason": "document是本复核包给定的CMCReport文档上下文主体，并非由“简介”标题新推断出的实体类型；u1明确包含本次临床备样计划叙述。空anchor在此预设文档主体上不构成药品或计划实体身份依据。",
+          "supporting_source_refs": [
+            "u0",
+            "u1"
+          ]
+        },
+        {
+          "id": "s1",
+          "path": "subjects.s1",
+          "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/ClinicalSampleProductionPlan",
+          "proposal": {
+            "attributes": {
+              "plannedBatchCount": [],
+              "plannedBatchSizeMax_kg": [
+                {
+                  "raw": "6.6",
+                  "source": {
+                    "ref": "u1",
+                    "quote": "6.6",
+                    "span_id": "evidence:u1:184:187"
+                  },
+                  "field": {
+                    "ref": "u1",
+                    "quote": "批量3.8- 6.6kg",
+                    "span_id": "source:u1"
+                  },
+                  "unit": {
+                    "ref": "u1",
+                    "quote": "kg",
+                    "span_id": "evidence:u1:187:189"
+                  },
+                  "condition": {
+                    "ref": "",
+                    "quote": "",
+                    "span_id": ""
+                  }
+                }
+              ],
+              "plannedBatchSizeMin_kg": [
+                {
+                  "raw": "3.8",
+                  "source": {
+                    "ref": "u1",
+                    "quote": "3.8",
+                    "span_id": "evidence:u1:179:182"
+                  },
+                  "field": {
+                    "ref": "u1",
+                    "quote": "批量3.8- 6.6kg",
+                    "span_id": "source:u1"
+                  },
+                  "unit": {
+                    "ref": "u1",
+                    "quote": "kg",
+                    "span_id": "evidence:u1:187:189"
+                  },
+                  "condition": {
+                    "ref": "",
+                    "quote": "",
+                    "span_id": ""
+                  }
+                }
+              ],
+              "plannedProductionDate": [
+                {
+                  "raw": "2026年6月",
+                  "source": {
+                    "ref": "u1",
+                    "quote": "2026年6月",
+                    "span_id": "evidence:u1:145:149"
+                  },
+                  "field": {
+                    "ref": "u1",
+                    "quote": "计划在2026年6月",
+                    "span_id": "source:u1"
+                  },
+                  "unit": {
+                    "ref": "",
+                    "quote": "",
+                    "span_id": ""
+                  },
+                  "condition": {
+                    "ref": "",
+                    "quote": "",
+                    "span_id": ""
+                  }
+                }
+              ],
+              "productionPurpose": [
+                {
+                  "raw": "Ⅰ期临床",
+                  "source": {
+                    "ref": "u1",
+                    "quote": "本次备样用于Ⅰ期临床",
+                    "span_id": "source:u1"
+                  },
+                  "field": {
+                    "ref": "u1",
+                    "quote": "本次备样用于Ⅰ期临床",
+                    "span_id": "source:u1"
+                  },
+                  "unit": {
+                    "ref": "",
+                    "quote": "",
+                    "span_id": ""
+                  },
+                  "condition": {
+                    "ref": "",
+                    "quote": "",
+                    "span_id": ""
+                  }
+                }
+              ]
+            },
+            "relations": {},
+            "anchor": {
+              "ref": "u1",
+              "quote": "HRS-1597",
+              "span_id": "mention-e270a39cd9357badc252aae2"
+            }
+          },
+          "status": "unsupported",
+          "reason": "提交的anchor在u1中仅为“HRS-1597”，该段开头明确称其为“APLNR激动剂新分子”，不是临床备样计划的名称或指称。u1后半“本次备样用于Ⅰ期临床，计划在2026年6月……”确实支持存在一项局部计划，但需以这段计划提及锚定s1；不能把同段药名直接当作计划实体锚点。",
+          "supporting_source_refs": [
+            "u1"
+          ]
+        },
+        {
+          "id": "s2",
+          "path": "subjects.s2",
+          "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/ActivePharmaceuticalIngredient",
+          "proposal": {
+            "attributes": {
+              "oel_ug_per_m3": [],
+              "pde_mg_per_day": [],
+              "productIdentifier": [
+                {
+                  "raw": "HRS-1597",
+                  "source": {
+                    "ref": "u1",
+                    "quote": "HRS-1597",
+                    "span_id": "evidence:u1:0:3"
+                  },
+                  "field": {
+                    "ref": "u1",
+                    "quote": "HRS-1597为上海闵行于2024年07月转移至连云港一所的APLNR激动剂新分子",
+                    "span_id": "source:u1"
+                  },
+                  "unit": {
+                    "ref": "",
+                    "quote": "",
+                    "span_id": ""
+                  },
+                  "condition": {
+                    "ref": "",
+                    "quote": "",
+                    "span_id": ""
+                  }
+                }
+              ]
+            },
+            "relations": {},
+            "anchor": {
+              "ref": "u1",
+              "quote": "HRS-1597",
+              "span_id": "mention-22e2e32bd27991ac4bb20553"
+            }
+          },
+          "status": "supported",
+          "reason": "u1围绕HRS-1597连续说明2025年08月亚急毒供样和2025年09月毒理批供样，均明示“供样形式为原料药”，支持本段该药物在原料药/API角色下的局部主体。仅支持角色及名称，不证明各供样批次与临床批为同一具体实例，也不证明名称是唯一标识。",
+          "supporting_source_refs": [
+            "u1"
+          ]
+        },
+        {
+          "id": "s3",
+          "path": "subjects.s3",
+          "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/Purification",
+          "proposal": {
+            "attributes": {
+              "inProcessControl": [],
+              "outputMassRange_kg": [],
+              "reactionConditions": [],
+              "stepOrder": [],
+              "yieldRangePercent": []
+            },
+            "relations": {
+              "producesFinalProduct": [
+                {
+                  "target_id": "s2",
+                  "evidence": {
+                    "ref": "u2",
+                    "quote": "本次修改仅对于HRS-1597结晶纯化步骤",
+                    "span_id": "source:u2"
+                  },
+                  "condition": {
+                    "ref": "",
+                    "quote": "",
+                    "span_id": ""
+                  },
+                  "polarity": "affirmed"
+                }
+              ]
+            },
+            "anchor": {
+              "ref": "u2",
+              "quote": "HRS-1597结晶纯化步骤",
+              "span_id": "mention-71f6b673aecca2d872bf517c"
+            }
+          },
+          "status": "supported",
+          "reason": "u2明确出现“HRS-1597结晶纯化步骤”，同时说明该步骤增加重结晶操作，足以支持局部Purification步骤主体及锚点；没有据此认定它是整条路线最终步骤。",
+          "supporting_source_refs": [
+            "u2"
+          ]
+        }
+      ],
+      "claims": [
+        {
+          "id": "c1",
+          "path": "subjects.document.relations.hasProductionPlan[0]",
+          "subject_id": "document",
+          "field": "hasProductionPlan",
+          "kind": "relation",
+          "proposal": {
+            "target_id": "s1",
+            "evidence": {
+              "ref": "u1",
+              "quote": "本次备样用于Ⅰ期临床，计划在2026年6月于642和646车间，完成本次临床样品生产及检测，批量3.8- 6.6kg。",
+              "span_id": "source:u1"
+            },
+            "condition": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "polarity": "affirmed"
+          },
+          "status": "unsupported",
+          "reason": "u1直接写“本次备样用于Ⅰ期临床，计划在2026年6月于642和646车间，完成本次临床样品生产及检测”，支持文档包含该临床样品生产计划，方向为文档→计划。陈述是计划存在及内容，不表示生产检测已经完成。",
+          "supporting_source_refs": [
+            "u1"
+          ],
+          "subject_binding_issue": "s1提交的anchor仅为药名HRS-1597，不能单独锚定计划；本条内容可归属于u1后半明确写出的本次临床备样计划，保留时须先纠正主体锚点。内容支持不等于该主体锚点已合格。",
+          "content_verdict": "supported",
+          "overall_verdict": "unsupported",
+          "overall_reason": "字段/关系内容本身有原文支持，但提交的s1锚点“HRS-1597”在原句明确承担新分子/药物名称角色，不是计划提及。以该错角色锚点作为计划主体的当前整体声明不支持；应先改为u1中的本次临床备样计划提及再提交。"
+        },
+        {
+          "id": "c2",
+          "path": "subjects.s1.attributes.plannedBatchSizeMax_kg[0]",
+          "subject_id": "s1",
+          "field": "plannedBatchSizeMax_kg",
+          "kind": "property",
+          "proposal": {
+            "raw": "6.6",
+            "source": {
+              "ref": "u1",
+              "quote": "6.6",
+              "span_id": "evidence:u1:184:187"
+            },
+            "field": {
+              "ref": "u1",
+              "quote": "批量3.8- 6.6kg",
+              "span_id": "source:u1"
+            },
+            "unit": {
+              "ref": "u1",
+              "quote": "kg",
+              "span_id": "evidence:u1:187:189"
+            },
+            "condition": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            }
+          },
+          "status": "unsupported",
+          "reason": "u1在同一本次临床备样计划句中写“批量3.8- 6.6kg”，6.6是该范围上端，kg明确修饰整个批量范围，支持预计批量上限6.6 kg；不是实际完成得量，也不是批次数。",
+          "supporting_source_refs": [
+            "u1"
+          ],
+          "subject_binding_issue": "s1提交的anchor仅为药名HRS-1597，不能单独锚定计划；本条内容可归属于u1后半明确写出的本次临床备样计划，保留时须先纠正主体锚点。内容支持不等于该主体锚点已合格。",
+          "content_verdict": "supported",
+          "overall_verdict": "unsupported",
+          "overall_reason": "字段/关系内容本身有原文支持，但提交的s1锚点“HRS-1597”在原句明确承担新分子/药物名称角色，不是计划提及。以该错角色锚点作为计划主体的当前整体声明不支持；应先改为u1中的本次临床备样计划提及再提交。"
+        },
+        {
+          "id": "c3",
+          "path": "subjects.s1.attributes.plannedBatchSizeMin_kg[0]",
+          "subject_id": "s1",
+          "field": "plannedBatchSizeMin_kg",
+          "kind": "property",
+          "proposal": {
+            "raw": "3.8",
+            "source": {
+              "ref": "u1",
+              "quote": "3.8",
+              "span_id": "evidence:u1:179:182"
+            },
+            "field": {
+              "ref": "u1",
+              "quote": "批量3.8- 6.6kg",
+              "span_id": "source:u1"
+            },
+            "unit": {
+              "ref": "u1",
+              "quote": "kg",
+              "span_id": "evidence:u1:187:189"
+            },
+            "condition": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            }
+          },
+          "status": "unsupported",
+          "reason": "u1同一句“批量3.8- 6.6kg”给出完整区间，3.8是下端且与末尾kg共同组成数量范围，支持预计批量下限3.8 kg。空格不改变范围语义。",
+          "supporting_source_refs": [
+            "u1"
+          ],
+          "subject_binding_issue": "s1提交的anchor仅为药名HRS-1597，不能单独锚定计划；本条内容可归属于u1后半明确写出的本次临床备样计划，保留时须先纠正主体锚点。内容支持不等于该主体锚点已合格。",
+          "content_verdict": "supported",
+          "overall_verdict": "unsupported",
+          "overall_reason": "字段/关系内容本身有原文支持，但提交的s1锚点“HRS-1597”在原句明确承担新分子/药物名称角色，不是计划提及。以该错角色锚点作为计划主体的当前整体声明不支持；应先改为u1中的本次临床备样计划提及再提交。"
+        },
+        {
+          "id": "c4",
+          "path": "subjects.s1.attributes.plannedProductionDate[0]",
+          "subject_id": "s1",
+          "field": "plannedProductionDate",
+          "kind": "property",
+          "proposal": {
+            "raw": "2026年6月",
+            "source": {
+              "ref": "u1",
+              "quote": "2026年6月",
+              "span_id": "evidence:u1:145:149"
+            },
+            "field": {
+              "ref": "u1",
+              "quote": "计划在2026年6月",
+              "span_id": "source:u1"
+            },
+            "unit": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "condition": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            }
+          },
+          "status": "unsupported",
+          "reason": "u1明确写“计划在2026年6月”，所述是本次临床样品生产及检测安排，支持计划生产月份2026年6月。前文2024年07月转移、2025年08月/09月供样是不同历史事件，不能替代本计划月份。",
+          "supporting_source_refs": [
+            "u1"
+          ],
+          "subject_binding_issue": "s1提交的anchor仅为药名HRS-1597，不能单独锚定计划；本条内容可归属于u1后半明确写出的本次临床备样计划，保留时须先纠正主体锚点。内容支持不等于该主体锚点已合格。",
+          "content_verdict": "supported",
+          "overall_verdict": "unsupported",
+          "overall_reason": "字段/关系内容本身有原文支持，但提交的s1锚点“HRS-1597”在原句明确承担新分子/药物名称角色，不是计划提及。以该错角色锚点作为计划主体的当前整体声明不支持；应先改为u1中的本次临床备样计划提及再提交。"
+        },
+        {
+          "id": "c5",
+          "path": "subjects.s1.attributes.productionPurpose[0]",
+          "subject_id": "s1",
+          "field": "productionPurpose",
+          "kind": "property",
+          "proposal": {
+            "raw": "Ⅰ期临床",
+            "source": {
+              "ref": "u1",
+              "quote": "本次备样用于Ⅰ期临床",
+              "span_id": "source:u1"
+            },
+            "field": {
+              "ref": "u1",
+              "quote": "本次备样用于Ⅰ期临床",
+              "span_id": "source:u1"
+            },
+            "unit": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "condition": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            }
+          },
+          "status": "unsupported",
+          "reason": "u1明示“本次备样用于Ⅰ期临床”，直接支持本次生产用途为Ⅰ期临床；未把前述亚急毒或毒理批用途并入本计划。",
+          "supporting_source_refs": [
+            "u1"
+          ],
+          "subject_binding_issue": "s1提交的anchor仅为药名HRS-1597，不能单独锚定计划；本条内容可归属于u1后半明确写出的本次临床备样计划，保留时须先纠正主体锚点。内容支持不等于该主体锚点已合格。",
+          "content_verdict": "supported",
+          "overall_verdict": "unsupported",
+          "overall_reason": "字段/关系内容本身有原文支持，但提交的s1锚点“HRS-1597”在原句明确承担新分子/药物名称角色，不是计划提及。以该错角色锚点作为计划主体的当前整体声明不支持；应先改为u1中的本次临床备样计划提及再提交。"
+        },
+        {
+          "id": "c6",
+          "path": "subjects.s2.attributes.productIdentifier[0]",
+          "subject_id": "s2",
+          "field": "productIdentifier",
+          "kind": "property",
+          "proposal": {
+            "raw": "HRS-1597",
+            "source": {
+              "ref": "u1",
+              "quote": "HRS-1597",
+              "span_id": "evidence:u1:0:3"
+            },
+            "field": {
+              "ref": "u1",
+              "quote": "HRS-1597为上海闵行于2024年07月转移至连云港一所的APLNR激动剂新分子",
+              "span_id": "source:u1"
+            },
+            "unit": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "condition": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            }
+          },
+          "status": "unsupported",
+          "reason": "u1称HRS-1597为新分子，并叙述多次不同时间和用途的供样；未将其明示为能够唯一指向具体产品/API实例的标识。Schema卡片明确禁止以名称或共同项目替代具体实例身份，因此不能将该名称直接写入productIdentifier。此判断不否定HRS-1597这个原文名称存在。",
+          "supporting_source_refs": [
+            "u1"
+          ],
+          "content_verdict": "unsupported",
+          "overall_verdict": "unsupported",
+          "overall_reason": "u1称HRS-1597为新分子，并叙述多次不同时间和用途的供样；未将其明示为能够唯一指向具体产品/API实例的标识。Schema卡片明确禁止以名称或共同项目替代具体实例身份，因此不能将该名称直接写入productIdentifier。此判断不否定HRS-1597这个原文名称存在。"
+        },
+        {
+          "id": "c7",
+          "path": "subjects.s3.relations.producesFinalProduct[0]",
+          "subject_id": "s3",
+          "field": "producesFinalProduct",
+          "kind": "relation",
+          "proposal": {
+            "target_id": "s2",
+            "evidence": {
+              "ref": "u2",
+              "quote": "本次修改仅对于HRS-1597结晶纯化步骤",
+              "span_id": "source:u2"
+            },
+            "condition": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "polarity": "affirmed"
+          },
+          "status": "undetermined",
+          "reason": "u2仅说明本次修改涉及“HRS-1597结晶纯化步骤”，因杂质未达过控标准增加两次重结晶。没有明示该步骤属于最终合成步骤，也未明示它直接产出最终API；关系可能成立但目前证据不足。步骤名称及药名共现不能补足最终产出角色，亦不能据缺证判断该关系为假。",
+          "supporting_source_refs": [
+            "u2"
+          ],
+          "content_verdict": "undetermined",
+          "overall_verdict": "undetermined",
+          "overall_reason": "u2仅说明本次修改涉及“HRS-1597结晶纯化步骤”，因杂质未达过控标准增加两次重结晶。没有明示该步骤属于最终合成步骤，也未明示它直接产出最终API；关系可能成立但目前证据不足。步骤名称及药名共现不能补足最终产出角色，亦不能据缺证判断该关系为假。"
+        }
+      ],
+      "observations": [
+        {
+          "id": "o1",
+          "proposal": {
+            "value": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "field": {
+              "ref": "u1",
+              "quote": "计划在2026年6月于642和646车间",
+              "span_id": "source:u1"
+            },
+            "legend": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "condition": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "state": "unmapped",
+            "reason": "生产地点（642和646车间）在s1的allowed_relations中未定义对应关系槽位，且s1无对应属性。"
+          },
+          "path": "observations[0]",
+          "status": "supported",
+          "reason": "u1明确给出“642和646车间”为计划生产地点，s1卡片所列字段只有批次数、批量上下限、生产时间、用途，没有地点属性或关系。将地点作为未映射观察保留符合当前卡片范围；不是原文缺失地点。",
+          "supporting_source_refs": [
+            "u1"
+          ]
+        },
+        {
+          "id": "o2",
+          "proposal": {
+            "value": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "field": {
+              "ref": "u2",
+              "quote": "由于中控过程杂质含量未达过控标准，增加两次重结晶操作",
+              "span_id": "source:u2"
+            },
+            "legend": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "condition": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "state": "unmapped",
+            "reason": "s3 (Purification) 缺少描述修改原因、IPC未达标或重结晶次数的属性槽位。"
+          },
+          "path": "observations[1]",
+          "status": "supported",
+          "reason": "u2直接给出“杂质含量未达过控标准”这一修改原因以及“增加两次重结晶操作”。s3卡片虽有inProcessControl，但定义为方法和验收标准，不等同于实际未达标结果、修改原因或重结晶次数；其他槽位也不承载这些内容，保留为未映射观察有依据。",
+          "supporting_source_refs": [
+            "u2"
+          ]
+        }
+      ],
+      "coverage": {
+        "subjects": 4,
+        "claims": 7,
+        "observations": 2,
+        "all_indexed_items_reviewed": true
+      },
+      "notes": [
+        "本复核只读本包source、cards、candidate_proposal、claim_index和observations；没有读取程序判断、返回核验、参考答案或验收结果。",
+        "claims同时记录content_verdict与overall_verdict；status使用整体声明口径。s1的锚点明确错角色，因此c1-c5虽内容获支持，当前整体声明为unsupported，不能统计为正确绑定声明。",
+        "空属性列表没有被转换为否定事实；本复核不评价包外全文召回。引用核验依ref和原文quote，不将NER分数或不透明span_id当语义依据。"
+      ]
+    },
+    {
+      "arm": "C",
+      "scope_id": "product_properties",
+      "review_input": "output/schema-card-qwen-cmc-gliner25-skos-20260916/review-inputs/product_properties.json",
+      "review_input_sha256": "4aa3ea3926b58f8ca9f757fcf48ccc5745bb26c472b6d1c3f117b72ad18fdb52",
+      "source_artifacts": {
+        "sources.json": "01f76b654e6ef5746a3b947bac00e9367c5bc20946aaec822358b9b6e4cec246",
+        "subject-cards.json": "a0e4054a1f1fe9f1049d72701cc6819ca9d4ca35562682b7df528a37665303ab",
+        "candidates/proposal.json": "dd8679d0168d63a4226b5c19f87e28405949c07942140481e50173d84dab47bc"
+      },
+      "subjects": [
+        {
+          "id": "document",
+          "path": "subjects.document",
+          "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport",
+          "proposal": {
+            "attributes": {},
+            "relations": {
+              "describes": [
+                {
+                  "target_id": "s1",
+                  "evidence": {
+                    "ref": "u0",
+                    "quote": "项目名称：HRS-1597",
+                    "span_id": "source:u0"
+                  },
+                  "condition": {
+                    "ref": "",
+                    "quote": "",
+                    "span_id": ""
+                  },
+                  "polarity": "affirmed"
+                }
+              ]
+            },
+            "anchor": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            }
+          },
+          "status": "supported",
+          "reason": "document是本包给定的CMCReport上下文主体，复核不从某个字段标题另行推断报告类型；其包含u0-u5这些项目和药物属性叙述。",
+          "supporting_source_refs": [
+            "u0",
+            "u1",
+            "u2",
+            "u3",
+            "u4",
+            "u5"
+          ],
+          "card_constraint": {
+            "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport",
+            "label": "CMC 报告"
+          }
+        },
+        {
+          "id": "s1",
+          "path": "subjects.s1",
+          "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/DrugProduct",
+          "proposal": {
+            "attributes": {
+              "registrationCategory": [],
+              "regulatoryStatus": [],
+              "targetIndication": [],
+              "appearance": [
+                {
+                  "raw": "类白色到白色粉末",
+                  "source": {
+                    "ref": "u1",
+                    "quote": "性状：类白色到白色粉末",
+                    "span_id": "source:u1"
+                  },
+                  "field": {
+                    "ref": "u1",
+                    "quote": "性状",
+                    "span_id": "source:u1"
+                  },
+                  "unit": {
+                    "ref": "",
+                    "quote": "",
+                    "span_id": ""
+                  },
+                  "condition": {
+                    "ref": "",
+                    "quote": "",
+                    "span_id": ""
+                  }
+                }
+              ],
+              "casNumber": [],
+              "chemicalNameEn": [],
+              "chemicalNameZh": [],
+              "dosageForm": [
+                {
+                  "raw": "口服片剂",
+                  "source": {
+                    "ref": "u3",
+                    "quote": "制剂剂型：口服片剂 ",
+                    "span_id": "source:u3"
+                  },
+                  "field": {
+                    "ref": "u3",
+                    "quote": "制剂剂型",
+                    "span_id": "source:u3"
+                  },
+                  "unit": {
+                    "ref": "",
+                    "quote": "",
+                    "span_id": ""
+                  },
+                  "condition": {
+                    "ref": "",
+                    "quote": "",
+                    "span_id": ""
+                  }
+                }
+              ],
+              "drugSpecification": [],
+              "hasPrionRisk": [],
+              "inactivationMethod": [],
+              "isBetaLactam": [],
+              "isCytotoxic": [
+                {
+                  "raw": "否",
+                  "source": {
+                    "ref": "u5",
+                    "quote": "是否细胞毒药物：否",
+                    "span_id": "source:u5"
+                  },
+                  "field": {
+                    "ref": "u5",
+                    "quote": "是否细胞毒药物",
+                    "span_id": "source:u5"
+                  },
+                  "unit": {
+                    "ref": "",
+                    "quote": "",
+                    "span_id": ""
+                  },
+                  "condition": {
+                    "ref": "",
+                    "quote": "",
+                    "span_id": ""
+                  }
+                }
+              ],
+              "isHighlyActive": [],
+              "isHighlySensitizing": [],
+              "isHormonal": [],
+              "isOncologyDrug": [
+                {
+                  "raw": "否",
+                  "source": {
+                    "ref": "u4",
+                    "quote": "是否是肿瘤药物：否",
+                    "span_id": "source:u4"
+                  },
+                  "field": {
+                    "ref": "u4",
+                    "quote": "是否是肿瘤药物",
+                    "span_id": "source:u4"
+                  },
+                  "unit": {
+                    "ref": "",
+                    "quote": "",
+                    "span_id": ""
+                  },
+                  "condition": {
+                    "ref": "",
+                    "quote": "",
+                    "span_id": ""
+                  }
+                }
+              ],
+              "isPenicillinType": [],
+              "maximumDailyDose_mg": [],
+              "minimumTherapeuticDose_mg": [],
+              "molecularFormula": [],
+              "molecularWeight": [],
+              "productIdentifier": [],
+              "projectCode": [],
+              "projectName": [
+                {
+                  "raw": "HRS-1597",
+                  "source": {
+                    "ref": "u0",
+                    "quote": "项目名称：HRS-1597",
+                    "span_id": "source:u0"
+                  },
+                  "field": {
+                    "ref": "u0",
+                    "quote": "项目名称",
+                    "span_id": "source:u0"
+                  },
+                  "unit": {
+                    "ref": "",
+                    "quote": "",
+                    "span_id": ""
+                  },
+                  "condition": {
+                    "ref": "",
+                    "quote": "",
+                    "span_id": ""
+                  }
+                }
+              ],
+              "routeOfAdministration": [],
+              "solubility": [
+                {
+                  "raw": "DCM易溶，H2O、Heptane难溶",
+                  "source": {
+                    "ref": "u2",
+                    "quote": "溶解性： DCM易溶，H2O、Heptane难溶",
+                    "span_id": "source:u2"
+                  },
+                  "field": {
+                    "ref": "u2",
+                    "quote": "溶解性",
+                    "span_id": "source:u2"
+                  },
+                  "unit": {
+                    "ref": "",
+                    "quote": "",
+                    "span_id": ""
+                  },
+                  "condition": {
+                    "ref": "",
+                    "quote": "",
+                    "span_id": ""
+                  }
+                }
+              ]
+            },
+            "relations": {
+              "hasActiveIngredient": []
+            },
+            "anchor": {
+              "ref": "u0",
+              "quote": "HRS-1597",
+              "span_id": "source:u0"
+            }
+          },
+          "status": "undetermined",
+          "reason": "u0的HRS-1597明确是“项目名称”值，u3表明项目资料中存在“口服片剂”这一制剂剂型，但包内没有明确说明该名称直接指哪一具体DrugProduct，也没有区分u1粉末性状、u2溶解性与制剂的主体层级。项目名可以与药品有关，但同段落组共现不足以确定当前s1的药物产品角色与实例绑定；不能将缺少身份说明当作其一定不是DrugProduct。",
+          "supporting_source_refs": [
+            "u0",
+            "u1",
+            "u2",
+            "u3"
+          ],
+          "card_constraint": {
+            "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/DrugProduct",
+            "label": "药物产品"
+          }
+        },
+        {
+          "id": "s2",
+          "path": "subjects.s2",
+          "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/ActivePharmaceuticalIngredient",
+          "proposal": {
+            "attributes": {
+              "oel_ug_per_m3": [],
+              "pde_mg_per_day": [],
+              "productIdentifier": []
+            },
+            "relations": {},
+            "anchor": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            }
+          },
+          "status": "undetermined",
+          "reason": "s2为API卡片占位，原始提议中anchor为空且无属性或关系。包内u0-u5没有明示“原料药/活性成分”角色或API名称；粉末性状与溶解性不能自行证明API类型。当前不足以确认s2实体，也不据此断言报告不存在API。",
+          "supporting_source_refs": [
+            "u0",
+            "u1",
+            "u2",
+            "u3",
+            "u4",
+            "u5"
+          ],
+          "card_constraint": {
+            "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/ActivePharmaceuticalIngredient",
+            "label": "活性药物成分"
+          }
+        }
+      ],
+      "claims": [
+        {
+          "id": "c1",
+          "path": "subjects.document.relations.describes[0]",
+          "subject_id": "document",
+          "field": "describes",
+          "kind": "relation",
+          "proposal": {
+            "target_id": "s1",
+            "evidence": {
+              "ref": "u0",
+              "quote": "项目名称：HRS-1597",
+              "span_id": "source:u0"
+            },
+            "condition": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "polarity": "affirmed"
+          },
+          "status": "undetermined",
+          "content_verdict": "undetermined",
+          "overall_verdict": "undetermined",
+          "reason": "u0仅标明“项目名称：HRS-1597”，支持报告记载这个项目名称；u3提及制剂剂型但未明确该项目名称如何指向当前s1具体药物产品。describes的目标要求药物产品/药物物质角色，不能只从项目名字段补足该角色与目标绑定。",
+          "overall_reason": "本条整体声明仍缺少目标/主体s1的DrugProduct角色与实例绑定证明；字面字段值受支持不等于整体归属已经确定。",
+          "subject_binding_issue": "s1只用u0项目名称值作DrugProduct锚点；本包未明确该项目名与具体药物产品实例及各属性所属层级的绑定，不能用同section共现或卡片列出该字段补足事实归属。",
+          "supporting_source_refs": [
+            "u0",
+            "u3"
+          ],
+          "card_constraint": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/describes",
+            "label": "描述",
+            "description": "Links a CMC report to the drug product / drug substance it documents.",
+            "multiplicity": "unspecified",
+            "kind": "relationship",
+            "range_class_iris": [
+              "https://ontology.pharma-gmp.cn/slpra/drug/BetaLactamDrug",
+              "https://ontology.pharma-gmp.cn/slpra/drug/BiologicalProduct",
+              "https://ontology.pharma-gmp.cn/slpra/drug/ClinicalTrialDrug",
+              "https://ontology.pharma-gmp.cn/slpra/drug/CommercialDrug",
+              "https://ontology.pharma-gmp.cn/slpra/drug/CytotoxicDrug",
+              "https://ontology.pharma-gmp.cn/slpra/drug/DrugProduct",
+              "https://ontology.pharma-gmp.cn/slpra/drug/HighActivityDrug",
+              "https://ontology.pharma-gmp.cn/slpra/drug/HighSensitizingDrug",
+              "https://ontology.pharma-gmp.cn/slpra/drug/HormonalDrug",
+              "https://ontology.pharma-gmp.cn/slpra/drug/PenicillinDrug",
+              "https://ontology.pharma-gmp.cn/slpra/drug/SterileDrugProduct",
+              "https://ontology.pharma-gmp.cn/slpra/drug/TraditionalChineseMedicine"
+            ]
+          }
+        },
+        {
+          "id": "c2",
+          "path": "subjects.s1.attributes.appearance[0]",
+          "subject_id": "s1",
+          "field": "appearance",
+          "kind": "property",
+          "proposal": {
+            "raw": "类白色到白色粉末",
+            "source": {
+              "ref": "u1",
+              "quote": "性状：类白色到白色粉末",
+              "span_id": "source:u1"
+            },
+            "field": {
+              "ref": "u1",
+              "quote": "性状",
+              "span_id": "source:u1"
+            },
+            "unit": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "condition": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            }
+          },
+          "status": "undetermined",
+          "content_verdict": "supported",
+          "overall_verdict": "undetermined",
+          "reason": "u1明确以“性状”字段给出完整值“类白色到白色粉末”，提议没有混入字段标题，字面性状内容准确。该粉末描述属于API、其他物料还是制剂产品，当前包没有明确区分。",
+          "overall_reason": "本条整体声明仍缺少目标/主体s1的DrugProduct角色与实例绑定证明；字面字段值受支持不等于整体归属已经确定。",
+          "subject_binding_issue": "s1只用u0项目名称值作DrugProduct锚点；本包未明确该项目名与具体药物产品实例及各属性所属层级的绑定，不能用同section共现或卡片列出该字段补足事实归属。",
+          "supporting_source_refs": [
+            "u1",
+            "u0",
+            "u3"
+          ],
+          "card_constraint": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug/appearance",
+            "label": "性状",
+            "multiplicity": "unspecified",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#string"
+            ]
+          }
+        },
+        {
+          "id": "c3",
+          "path": "subjects.s1.attributes.dosageForm[0]",
+          "subject_id": "s1",
+          "field": "dosageForm",
+          "kind": "property",
+          "proposal": {
+            "raw": "口服片剂",
+            "source": {
+              "ref": "u3",
+              "quote": "制剂剂型：口服片剂 ",
+              "span_id": "source:u3"
+            },
+            "field": {
+              "ref": "u3",
+              "quote": "制剂剂型",
+              "span_id": "source:u3"
+            },
+            "unit": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "condition": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            }
+          },
+          "status": "undetermined",
+          "content_verdict": "supported",
+          "overall_verdict": "undetermined",
+          "reason": "u3明确写“制剂剂型：口服片剂”，所取值完整且保留“口服”限定。字段与值角色正确；本条内容不自行证明s1项目名已唯一或明确绑定到该制剂实例。",
+          "overall_reason": "本条整体声明仍缺少目标/主体s1的DrugProduct角色与实例绑定证明；字面字段值受支持不等于整体归属已经确定。",
+          "subject_binding_issue": "s1只用u0项目名称值作DrugProduct锚点；本包未明确该项目名与具体药物产品实例及各属性所属层级的绑定，不能用同section共现或卡片列出该字段补足事实归属。",
+          "supporting_source_refs": [
+            "u3",
+            "u0"
+          ],
+          "card_constraint": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug/dosageForm",
+            "label": "制剂剂型",
+            "multiplicity": "unspecified",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#string"
+            ]
+          }
+        },
+        {
+          "id": "c4",
+          "path": "subjects.s1.attributes.isCytotoxic[0]",
+          "subject_id": "s1",
+          "field": "isCytotoxic",
+          "kind": "property",
+          "proposal": {
+            "raw": "否",
+            "source": {
+              "ref": "u5",
+              "quote": "是否细胞毒药物：否",
+              "span_id": "source:u5"
+            },
+            "field": {
+              "ref": "u5",
+              "quote": "是否细胞毒药物",
+              "span_id": "source:u5"
+            },
+            "unit": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "condition": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            }
+          },
+          "status": "undetermined",
+          "content_verdict": "supported",
+          "overall_verdict": "undetermined",
+          "reason": "u5明确写“是否细胞毒药物：否”，提议保留原文明示否定，支持本段问项的布尔否值；不能把问句中“细胞毒药物”字样当成肯定类型，也不外推到未绑定的其他API或批次。",
+          "overall_reason": "本条整体声明仍缺少目标/主体s1的DrugProduct角色与实例绑定证明；字面字段值受支持不等于整体归属已经确定。",
+          "subject_binding_issue": "s1只用u0项目名称值作DrugProduct锚点；本包未明确该项目名与具体药物产品实例及各属性所属层级的绑定，不能用同section共现或卡片列出该字段补足事实归属。",
+          "supporting_source_refs": [
+            "u5",
+            "u0"
+          ],
+          "card_constraint": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug/isCytotoxic",
+            "label": "是否细胞毒药物",
+            "multiplicity": "unspecified",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#boolean"
+            ]
+          }
+        },
+        {
+          "id": "c5",
+          "path": "subjects.s1.attributes.isOncologyDrug[0]",
+          "subject_id": "s1",
+          "field": "isOncologyDrug",
+          "kind": "property",
+          "proposal": {
+            "raw": "否",
+            "source": {
+              "ref": "u4",
+              "quote": "是否是肿瘤药物：否",
+              "span_id": "source:u4"
+            },
+            "field": {
+              "ref": "u4",
+              "quote": "是否是肿瘤药物",
+              "span_id": "source:u4"
+            },
+            "unit": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "condition": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            }
+          },
+          "status": "undetermined",
+          "content_verdict": "supported",
+          "overall_verdict": "undetermined",
+          "reason": "u4明确写“是否是肿瘤药物：否”，值“否”与对应字段匹配，否定极性保留。该问项内容不是“肿瘤药物”肯定分类；具体实例归属仍受s1主体绑定不足限制。",
+          "overall_reason": "本条整体声明仍缺少目标/主体s1的DrugProduct角色与实例绑定证明；字面字段值受支持不等于整体归属已经确定。",
+          "subject_binding_issue": "s1只用u0项目名称值作DrugProduct锚点；本包未明确该项目名与具体药物产品实例及各属性所属层级的绑定，不能用同section共现或卡片列出该字段补足事实归属。",
+          "supporting_source_refs": [
+            "u4",
+            "u0"
+          ],
+          "card_constraint": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug/isOncologyDrug",
+            "label": "是否肿瘤药物",
+            "multiplicity": "unspecified",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#boolean"
+            ]
+          }
+        },
+        {
+          "id": "c6",
+          "path": "subjects.s1.attributes.projectName[0]",
+          "subject_id": "s1",
+          "field": "projectName",
+          "kind": "property",
+          "proposal": {
+            "raw": "HRS-1597",
+            "source": {
+              "ref": "u0",
+              "quote": "项目名称：HRS-1597",
+              "span_id": "source:u0"
+            },
+            "field": {
+              "ref": "u0",
+              "quote": "项目名称",
+              "span_id": "source:u0"
+            },
+            "unit": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "condition": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            }
+          },
+          "status": "undetermined",
+          "content_verdict": "supported",
+          "overall_verdict": "undetermined",
+          "reason": "u0字段“项目名称”与值“HRS-1597”直接对应，支持projectName的字面内容。提议没有把该值写成projectCode或productIdentifier，这是字段角色上的正确区分；但项目名所属具体DrugProduct仍未明确。",
+          "overall_reason": "本条整体声明仍缺少目标/主体s1的DrugProduct角色与实例绑定证明；字面字段值受支持不等于整体归属已经确定。",
+          "subject_binding_issue": "s1只用u0项目名称值作DrugProduct锚点；本包未明确该项目名与具体药物产品实例及各属性所属层级的绑定，不能用同section共现或卡片列出该字段补足事实归属。",
+          "supporting_source_refs": [
+            "u0"
+          ],
+          "card_constraint": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug/projectName",
+            "label": "项目名称",
+            "multiplicity": "unspecified",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#string"
+            ]
+          }
+        },
+        {
+          "id": "c7",
+          "path": "subjects.s1.attributes.solubility[0]",
+          "subject_id": "s1",
+          "field": "solubility",
+          "kind": "property",
+          "proposal": {
+            "raw": "DCM易溶，H2O、Heptane难溶",
+            "source": {
+              "ref": "u2",
+              "quote": "溶解性： DCM易溶，H2O、Heptane难溶",
+              "span_id": "source:u2"
+            },
+            "field": {
+              "ref": "u2",
+              "quote": "溶解性",
+              "span_id": "source:u2"
+            },
+            "unit": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "condition": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            }
+          },
+          "status": "undetermined",
+          "content_verdict": "supported",
+          "overall_verdict": "undetermined",
+          "reason": "u2明示“DCM易溶，H2O、Heptane难溶”，提议完整保留三种溶剂及各自易溶/难溶关系，没有截取成孤立溶剂名或丢失难溶限定。内容支持的是被描述物的溶解性，不证明这些溶剂为API或活性成分；被描述物与s1的层级绑定尚不充分。",
+          "overall_reason": "本条整体声明仍缺少目标/主体s1的DrugProduct角色与实例绑定证明；字面字段值受支持不等于整体归属已经确定。",
+          "subject_binding_issue": "s1只用u0项目名称值作DrugProduct锚点；本包未明确该项目名与具体药物产品实例及各属性所属层级的绑定，不能用同section共现或卡片列出该字段补足事实归属。",
+          "supporting_source_refs": [
+            "u2",
+            "u0",
+            "u3"
+          ],
+          "card_constraint": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug/solubility",
+            "label": "溶解性",
+            "multiplicity": "unspecified",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#string"
+            ]
+          }
+        }
+      ],
+      "observations": [
+        {
+          "id": "o1",
+          "proposal": {
+            "value": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "field": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "legend": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "condition": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "state": "unknown",
+            "reason": "未提供注册分类、申报状态、适应症、CAS号、化学名、规格、朊病毒风险、灭活方法、β-内酰胺、高活性、高致敏、激素、日剂量、分子式、分子量、给药途径、API标识等信息"
+          },
+          "path": "observations[0]",
+          "status": "unsupported",
+          "reason": "这是一条打包多个缺项的观察。多数所列字段在本包确未见值，但“未提供……给药途径”与u3明示的“口服片剂”中的“口服”相冲突：原文已经提供途径信息，不能因没有独立“给药途径”标题就称该信息未提供。应拆分缺项；途径与具体主体的绑定可以未决，但不能把已有原文内容说成缺失。",
+          "supporting_source_refs": [
+            "u3",
+            "u0",
+            "u1",
+            "u2",
+            "u4",
+            "u5"
+          ],
+          "card_constraints": {
+            "routeOfAdministration": {
+              "iri": "https://ontology.pharma-gmp.cn/slpra/drug/routeOfAdministration",
+              "label": "给药途径",
+              "multiplicity": "unspecified",
+              "kind": "property",
+              "datatype_iris": [
+                "http://www.w3.org/2001/XMLSchema#string"
+              ]
+            },
+            "dosageForm": {
+              "iri": "https://ontology.pharma-gmp.cn/slpra/drug/dosageForm",
+              "label": "制剂剂型",
+              "multiplicity": "unspecified",
+              "kind": "property",
+              "datatype_iris": [
+                "http://www.w3.org/2001/XMLSchema#string"
+              ]
+            }
+          }
+        },
+        {
+          "id": "o2",
+          "proposal": {
+            "value": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "field": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "legend": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "condition": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "state": "unknown",
+            "reason": "未提供API的职业暴露限值、PDE、唯一标识等信息"
+          },
+          "path": "observations[1]",
+          "status": "supported",
+          "reason": "在本包u0-u5内未见API职业暴露限值、PDE或唯一实例标识，保留为本轮输入的unknown有依据；u0项目名称不能代替API唯一标识。此支持仅针对当前包的信息缺口，不表示全文未提供这些值，也不据此确认空锚点s2为实际API实体。",
+          "supporting_source_refs": [
+            "u0",
+            "u1",
+            "u2",
+            "u3",
+            "u4",
+            "u5"
+          ],
+          "card_constraints": {
+            "oel_ug_per_m3": {
+              "iri": "https://ontology.pharma-gmp.cn/slpra/drug/oel_ug_per_m3",
+              "label": "职业暴露限值 (μg/m³)",
+              "multiplicity": "unspecified",
+              "kind": "property",
+              "datatype_iris": [
+                "http://www.w3.org/2001/XMLSchema#decimal"
+              ],
+              "canonical_unit": "ug/m3"
+            },
+            "pde_mg_per_day": {
+              "iri": "https://ontology.pharma-gmp.cn/slpra/drug/pde_mg_per_day",
+              "label": "PDE (mg/天)",
+              "multiplicity": "unspecified",
+              "kind": "property",
+              "datatype_iris": [
+                "http://www.w3.org/2001/XMLSchema#decimal"
+              ],
+              "canonical_unit": "mg/day"
+            },
+            "productIdentifier": {
+              "iri": "https://ontology.pharma-gmp.cn/slpra/drug/productIdentifier",
+              "label": "产品或原料药唯一标识",
+              "description": "原文明示的产品/API标识；不以名称、共同项目、设备型号或试验用药名称替代具体实例身份。存在批次、规格等区分时须能唯一指向该实例，否则不可据此归并。",
+              "multiplicity": "unspecified",
+              "kind": "property",
+              "datatype_iris": [
+                "http://www.w3.org/2001/XMLSchema#string"
+              ]
+            }
+          }
+        }
+      ],
+      "coverage": {
+        "subjects": 3,
+        "claims": 7,
+        "observations": 2,
+        "all_indexed_items_reviewed": true
+      },
+      "notes": [
+        "只读取该产品属性复核包与本代理已有复核输出；没有读取程序核验、参考、验收或保留结果。",
+        "未将简介包关于原料药角色的说明传播为本包s1/s2的全局身份依据；各包局部编号不得按同名自动归并。",
+        "claims的content_verdict区分字面字段/关系内容，overall_verdict及status包含主体锚点和归属；当前主体角色证据不足用undetermined，不当作反证。",
+        "粉末性状与口服片剂可能描述不同物料层级，本包不足以确定，未因两者并列就作肯定合并或认定矛盾。",
+        "空属性列表不是否定事实；unknown观察只就本包可见原文评价，不等同全文否定或医学专家金标。"
+      ]
+    }
+  ]
+}

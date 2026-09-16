@@ -1,0 +1,228 @@
+{
+  "document": {
+    "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport",
+    "label": "CMC 报告",
+    "anchor": {
+      "ref": "",
+      "quote": ""
+    },
+    "fields": {
+      "hasCleaningResidue": {
+        "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasCleaningResidue",
+        "label": "含清洗残留物",
+        "description": "Links a CMC report to the residue information for cleaning validation.",
+        "multiplicity": "unspecified",
+        "kind": "relationship",
+        "range_class_iris": [
+          "https://ontology.pharma-gmp.cn/slpra/drug/ActiveSubstanceResidue",
+          "https://ontology.pharma-gmp.cn/slpra/drug/CleaningAgentResidue",
+          "https://ontology.pharma-gmp.cn/slpra/drug/MicrobialResidue",
+          "https://ontology.pharma-gmp.cn/slpra/drug/ParticulateResidue",
+          "https://ontology.pharma-gmp.cn/slpra/drug/Residue"
+        ]
+      }
+    }
+  },
+  "s1": {
+    "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/Crystallization",
+    "label": "结晶/析晶",
+    "anchor": {
+      "ref": "",
+      "quote": ""
+    },
+    "fields": {
+      "inProcessControl": {
+        "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/inProcessControl",
+        "label": "过程控制",
+        "description": "IPC method and acceptance criteria, e.g. TLC endpoint, HPLC purity.",
+        "multiplicity": "unspecified",
+        "kind": "property",
+        "datatype_iris": [
+          "http://www.w3.org/2001/XMLSchema#string"
+        ]
+      },
+      "outputMassRange_kg": {
+        "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/outputMassRange_kg",
+        "label": "得量范围（kg）",
+        "multiplicity": "unspecified",
+        "kind": "property",
+        "datatype_iris": [
+          "http://www.w3.org/2001/XMLSchema#string"
+        ]
+      },
+      "reactionConditions": {
+        "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/reactionConditions",
+        "label": "反应条件",
+        "description": "Temperature, pressure, atmosphere, duration, catalyst loading, etc.",
+        "multiplicity": "unspecified",
+        "kind": "property",
+        "datatype_iris": [
+          "http://www.w3.org/2001/XMLSchema#string"
+        ]
+      },
+      "stepOrder": {
+        "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/stepOrder",
+        "label": "步骤序号",
+        "multiplicity": "unspecified",
+        "kind": "property",
+        "datatype_iris": [
+          "http://www.w3.org/2001/XMLSchema#integer"
+        ]
+      },
+      "yieldRangePercent": {
+        "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/yieldRangePercent",
+        "label": "收率范围（%）",
+        "multiplicity": "unspecified",
+        "kind": "property",
+        "datatype_iris": [
+          "http://www.w3.org/2001/XMLSchema#string"
+        ]
+      },
+      "nextStep": {
+        "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/nextStep",
+        "label": "下一步骤",
+        "description": "Ordered chain linking synthesis steps within a route.",
+        "multiplicity": "unspecified",
+        "kind": "relationship",
+        "range_class_iris": [
+          "https://ontology.pharma-gmp.cn/slpra/drug-development/ColumnChromatography",
+          "https://ontology.pharma-gmp.cn/slpra/drug-development/Concentration",
+          "https://ontology.pharma-gmp.cn/slpra/drug-development/Crystallization",
+          "https://ontology.pharma-gmp.cn/slpra/drug-development/Deprotection",
+          "https://ontology.pharma-gmp.cn/slpra/drug-development/Drying",
+          "https://ontology.pharma-gmp.cn/slpra/drug-development/Extraction",
+          "https://ontology.pharma-gmp.cn/slpra/drug-development/Filtration",
+          "https://ontology.pharma-gmp.cn/slpra/drug-development/Purification",
+          "https://ontology.pharma-gmp.cn/slpra/drug-development/Reaction",
+          "https://ontology.pharma-gmp.cn/slpra/drug-development/SaltFormation",
+          "https://ontology.pharma-gmp.cn/slpra/drug-development/SynthesisStep"
+        ]
+      }
+    }
+  },
+  "s2": {
+    "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/Purification",
+    "label": "精制/纯化",
+    "anchor": {
+      "ref": "",
+      "quote": ""
+    },
+    "fields": {
+      "inProcessControl": {
+        "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/inProcessControl",
+        "label": "过程控制",
+        "description": "IPC method and acceptance criteria, e.g. TLC endpoint, HPLC purity.",
+        "multiplicity": "unspecified",
+        "kind": "property",
+        "datatype_iris": [
+          "http://www.w3.org/2001/XMLSchema#string"
+        ]
+      },
+      "outputMassRange_kg": {
+        "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/outputMassRange_kg",
+        "label": "得量范围（kg）",
+        "multiplicity": "unspecified",
+        "kind": "property",
+        "datatype_iris": [
+          "http://www.w3.org/2001/XMLSchema#string"
+        ]
+      },
+      "reactionConditions": {
+        "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/reactionConditions",
+        "label": "反应条件",
+        "description": "Temperature, pressure, atmosphere, duration, catalyst loading, etc.",
+        "multiplicity": "unspecified",
+        "kind": "property",
+        "datatype_iris": [
+          "http://www.w3.org/2001/XMLSchema#string"
+        ]
+      },
+      "stepOrder": {
+        "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/stepOrder",
+        "label": "步骤序号",
+        "multiplicity": "unspecified",
+        "kind": "property",
+        "datatype_iris": [
+          "http://www.w3.org/2001/XMLSchema#integer"
+        ]
+      },
+      "yieldRangePercent": {
+        "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/yieldRangePercent",
+        "label": "收率范围（%）",
+        "multiplicity": "unspecified",
+        "kind": "property",
+        "datatype_iris": [
+          "http://www.w3.org/2001/XMLSchema#string"
+        ]
+      },
+      "nextStep": {
+        "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/nextStep",
+        "label": "下一步骤",
+        "description": "Ordered chain linking synthesis steps within a route.",
+        "multiplicity": "unspecified",
+        "kind": "relationship",
+        "range_class_iris": [
+          "https://ontology.pharma-gmp.cn/slpra/drug-development/ColumnChromatography",
+          "https://ontology.pharma-gmp.cn/slpra/drug-development/Concentration",
+          "https://ontology.pharma-gmp.cn/slpra/drug-development/Crystallization",
+          "https://ontology.pharma-gmp.cn/slpra/drug-development/Deprotection",
+          "https://ontology.pharma-gmp.cn/slpra/drug-development/Drying",
+          "https://ontology.pharma-gmp.cn/slpra/drug-development/Extraction",
+          "https://ontology.pharma-gmp.cn/slpra/drug-development/Filtration",
+          "https://ontology.pharma-gmp.cn/slpra/drug-development/Purification",
+          "https://ontology.pharma-gmp.cn/slpra/drug-development/Reaction",
+          "https://ontology.pharma-gmp.cn/slpra/drug-development/SaltFormation",
+          "https://ontology.pharma-gmp.cn/slpra/drug-development/SynthesisStep"
+        ]
+      }
+    }
+  },
+  "s3": {
+    "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/Residue",
+    "label": "残留物",
+    "anchor": {
+      "ref": "",
+      "quote": ""
+    },
+    "fields": {
+      "residueSolubility": {
+        "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/residueSolubility",
+        "label": "残留物溶解度",
+        "description": "Qualitative solubility descriptor: 易溶, 溶解, 微溶, 几乎不溶.",
+        "multiplicity": "unspecified",
+        "kind": "property",
+        "datatype_iris": [
+          "http://www.w3.org/2001/XMLSchema#string"
+        ]
+      },
+      "residueSolubilityTemperature": {
+        "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/residueSolubilityTemperature",
+        "label": "溶解度测试温度",
+        "multiplicity": "unspecified",
+        "kind": "property",
+        "datatype_iris": [
+          "http://www.w3.org/2001/XMLSchema#string"
+        ]
+      },
+      "residueSolvent": {
+        "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/residueSolvent",
+        "label": "残留物清洗溶剂",
+        "description": "Solvent used to dissolve the residue for cleaning, e.g. 丙酮, 乙醇+水, 丙酮+2N三氟乙酸水溶液.",
+        "multiplicity": "unspecified",
+        "kind": "property",
+        "datatype_iris": [
+          "http://www.w3.org/2001/XMLSchema#string"
+        ]
+      }
+    }
+  },
+  "s4": {
+    "class_iri": "https://ontology.pharma-gmp.cn/slpra/facility/GeneralArea",
+    "label": "一般区",
+    "anchor": {
+      "ref": "",
+      "quote": ""
+    },
+    "fields": {}
+  }
+}

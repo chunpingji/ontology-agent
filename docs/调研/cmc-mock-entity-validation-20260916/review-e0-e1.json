@@ -1,0 +1,758 @@
+{
+  "reviews": [
+    {
+      "arm": "E0",
+      "scope_id": "record-8717014d83b3",
+      "packet_sha256": "032c7bed25766376e532b4bd077985ef1c218be0254de68fe372592c3d067680",
+      "review_type": "independent_source_only_non_expert",
+      "targets": [
+        {
+          "id": "e1",
+          "kind": "entity",
+          "proposal": {
+            "id": "e1",
+            "class_iri": "https://ontology.pharma-gmp.cn/slpra/equipment/ProcessEquipment",
+            "anchor": {
+              "ref": "u16",
+              "quote": "离心机"
+            },
+            "equipment_id": {
+              "ref": "u17",
+              "quote": "CT64610"
+            },
+            "external_key": "",
+            "attributes": [
+              {
+                "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/equipment/equipmentName",
+                "raw": "离心机",
+                "source": {
+                  "ref": "u16",
+                  "quote": "离心机"
+                },
+                "field": {
+                  "ref": "u3",
+                  "quote": "设备名称"
+                }
+              },
+              {
+                "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/equipment/modelSpecification",
+                "raw": "600",
+                "source": {
+                  "ref": "u18",
+                  "quote": "600"
+                },
+                "field": {
+                  "ref": "u5",
+                  "quote": "规格型号"
+                }
+              }
+            ]
+          },
+          "overall_verdict": "supported",
+          "content_verdict": "supported",
+          "reason": "u16/u17 分别为 table:6 第4逻辑行的设备名称“离心机”和设备编号“CT64610”，列头 u3/u4 明确角色；可以支持该生产设备及编号的局部归属。未请求外部档案链接，不能借此断言全局身份或已发生实际使用。",
+          "role_verdict": "supported",
+          "identifier_owner_verdict": "supported",
+          "external_link_verdict": "not_applicable"
+        },
+        {
+          "id": "e1.a1",
+          "kind": "property",
+          "entity_id": "e1",
+          "proposal": {
+            "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/equipment/equipmentName",
+            "raw": "离心机",
+            "source": {
+              "ref": "u16",
+              "quote": "离心机"
+            },
+            "field": {
+              "ref": "u3",
+              "quote": "设备名称"
+            }
+          },
+          "overall_verdict": "supported",
+          "content_verdict": "supported",
+          "reason": "原文 u16“离心机”位于设备名称列（u3），与主体编号 CT64610 的 u17 同为 table:6 第4逻辑行；名称内容、属性角色及主体归属均有直接表格依据。"
+        },
+        {
+          "id": "e1.a2",
+          "kind": "property",
+          "entity_id": "e1",
+          "proposal": {
+            "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/equipment/modelSpecification",
+            "raw": "600",
+            "source": {
+              "ref": "u18",
+              "quote": "600"
+            },
+            "field": {
+              "ref": "u5",
+              "quote": "规格型号"
+            }
+          },
+          "overall_verdict": "supported",
+          "content_verdict": "supported",
+          "reason": "原文 u18“600”位于规格型号列（u5），与 e1 的名称 u16、编号 u17 同为 table:6 第4逻辑行；可支持字符串规格型号 600，不能补成容积或其他带单位指标。"
+        },
+        {
+          "id": "r1",
+          "kind": "relation",
+          "proposal": {
+            "subject_id": "document",
+            "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/usesEquipment",
+            "object_ids": [
+              "e1"
+            ],
+            "selection": "all",
+            "evidence": {
+              "ref": "u15",
+              "quote": "HRS-1597成品结晶"
+            },
+            "condition": {
+              "ref": "u15",
+              "quote": "HRS-1597成品结晶"
+            },
+            "polarity": "affirmed"
+          },
+          "overall_verdict": "supported",
+          "content_verdict": "supported",
+          "reason": "活动 Schema 卡将 usesEquipment 定义为 CMC 报告到所需设备的关系（equipment required）。u1“设备需求”、覆盖第4行的岗位 u15“HRS-1597成品结晶”、同一设备行 u16/u17 及用途 u23“甩滤”共同支持报告在该工艺背景下需要此离心机。方向 document→e1、单一对象 selection=all 和肯定极性相符；condition 引用仅保留岗位/工艺范围，不构成已完成实际使用的事件证明。"
+        }
+      ]
+    },
+    {
+      "arm": "E1",
+      "scope_id": "record-8717014d83b3",
+      "packet_sha256": "05e84fc638f0b80d402005f59e239d255c8b7da4d38a641c165a5187dd3f5ec8",
+      "review_type": "independent_source_only_non_expert",
+      "targets": [
+        {
+          "id": "e1",
+          "kind": "entity",
+          "proposal": {
+            "id": "e1",
+            "class_iri": "https://ontology.pharma-gmp.cn/slpra/equipment/ProcessEquipment",
+            "anchor": {
+              "ref": "u16",
+              "quote": "离心机"
+            },
+            "equipment_id": {
+              "ref": "u17",
+              "quote": "CT64610"
+            },
+            "external_key": "CT64610",
+            "attributes": [
+              {
+                "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/equipment/equipmentName",
+                "raw": "离心机",
+                "source": {
+                  "ref": "u16",
+                  "quote": "离心机"
+                },
+                "field": {
+                  "ref": "u3",
+                  "quote": "设备名称"
+                }
+              },
+              {
+                "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/equipment/modelSpecification",
+                "raw": "600",
+                "source": {
+                  "ref": "u18",
+                  "quote": "600"
+                },
+                "field": {
+                  "ref": "u5",
+                  "quote": "规格型号"
+                }
+              }
+            ]
+          },
+          "overall_verdict": "supported",
+          "content_verdict": "supported",
+          "reason": "u16“离心机”和 u17“CT64610”在 table:6 同一第4逻辑行，u3/u4 明确名称和编号字段。实际提供的 Mock 中唯一精确编号候选 CT64610 同时具有名称“离心机”、规格“600”，与该文档行相符，故支持此冻结档案链接；其 material“316L不锈钢”与 u19“不锈钢衬HALAR”表述不同，前者未明确否定衬层，不能仅凭表述差异断言不同设备，但也不能宣称材质一致或用档案覆盖原文。链接不证明实际使用事件。",
+          "role_verdict": "supported",
+          "identifier_owner_verdict": "supported",
+          "external_link_verdict": "supported"
+        },
+        {
+          "id": "e1.a1",
+          "kind": "property",
+          "entity_id": "e1",
+          "proposal": {
+            "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/equipment/equipmentName",
+            "raw": "离心机",
+            "source": {
+              "ref": "u16",
+              "quote": "离心机"
+            },
+            "field": {
+              "ref": "u3",
+              "quote": "设备名称"
+            }
+          },
+          "overall_verdict": "supported",
+          "content_verdict": "supported",
+          "reason": "u16“离心机”位于设备名称列 u3，和 e1 的编号 u17“CT64610”属于 table:6 第4逻辑行；原文独立支持名称内容、属性角色及主体归属，无需以 Mock 补证。"
+        },
+        {
+          "id": "e1.a2",
+          "kind": "property",
+          "entity_id": "e1",
+          "proposal": {
+            "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/equipment/modelSpecification",
+            "raw": "600",
+            "source": {
+              "ref": "u18",
+              "quote": "600"
+            },
+            "field": {
+              "ref": "u5",
+              "quote": "规格型号"
+            }
+          },
+          "overall_verdict": "supported",
+          "content_verdict": "supported",
+          "reason": "u18“600”在规格型号列 u5，和 e1 名称 u16、编号 u17 同属 table:6 第4逻辑行；支持该设备字符串规格型号，未增加单位。Mock 同值仅是辅助对照，属性证据来自原文。"
+        },
+        {
+          "id": "r1",
+          "kind": "relation",
+          "proposal": {
+            "subject_id": "document",
+            "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/usesEquipment",
+            "object_ids": [
+              "e1"
+            ],
+            "selection": "all",
+            "evidence": {
+              "ref": "u16",
+              "quote": "离心机"
+            },
+            "condition": {
+              "ref": "u15",
+              "quote": "HRS-1597成品结晶"
+            },
+            "polarity": "affirmed"
+          },
+          "overall_verdict": "supported",
+          "content_verdict": "supported",
+          "reason": "当前 usesEquipment 卡描述为 CMC 报告到所需设备（equipment required）。u1“设备需求”、与 e1 同行的用途 u23“甩滤”、覆盖该行的岗位 u15“HRS-1597成品结晶”共同支持 document→e1 的设备需求，单对象 selection=all 与肯定极性正确。condition 保留岗位/工艺范围；这不证明实际生产中已经使用，Mock 不提供关系证明。"
+        }
+      ]
+    },
+    {
+      "arm": "E0",
+      "scope_id": "record-0c9a7e82c53b",
+      "packet_sha256": "1d14dcd511172177104496adad2e331d9977a6bb19cc053accde2a91eba6e9b3",
+      "review_type": "independent_source_only_non_expert",
+      "targets": [
+        {
+          "id": "e1",
+          "kind": "entity",
+          "proposal": {
+            "id": "e1",
+            "class_iri": "https://ontology.pharma-gmp.cn/slpra/equipment/ProcessEquipment",
+            "anchor": {
+              "ref": "u16",
+              "quote": "真空干燥箱"
+            },
+            "equipment_id": {
+              "ref": "u17",
+              "quote": "DE64603"
+            },
+            "external_key": "",
+            "attributes": [
+              {
+                "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/equipment/equipmentName",
+                "raw": "真空干燥箱",
+                "source": {
+                  "ref": "u16",
+                  "quote": "真空干燥箱"
+                },
+                "field": {
+                  "ref": "u3",
+                  "quote": "设备名称"
+                }
+              },
+              {
+                "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/equipment/modelSpecification",
+                "raw": "24盘",
+                "source": {
+                  "ref": "u18",
+                  "quote": "24盘"
+                },
+                "field": {
+                  "ref": "u5",
+                  "quote": "规格型号"
+                }
+              }
+            ]
+          },
+          "overall_verdict": "supported",
+          "content_verdict": "supported",
+          "reason": "u16“真空干燥箱”及 u17“DE64603”同属 table:6 第5逻辑行，对应列头 u3 设备名称和 u4 设备编号，足以支持文档中的生产设备及其局部编号归属。此包未提供 Mock、未请求外部链接，不从其他上下文补造档案身份。",
+          "role_verdict": "supported",
+          "identifier_owner_verdict": "supported",
+          "external_link_verdict": "not_applicable"
+        },
+        {
+          "id": "e1.a1",
+          "kind": "property",
+          "entity_id": "e1",
+          "proposal": {
+            "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/equipment/equipmentName",
+            "raw": "真空干燥箱",
+            "source": {
+              "ref": "u16",
+              "quote": "真空干燥箱"
+            },
+            "field": {
+              "ref": "u3",
+              "quote": "设备名称"
+            }
+          },
+          "overall_verdict": "supported",
+          "content_verdict": "supported",
+          "reason": "u16“真空干燥箱”在设备名称列 u3，且与 e1 编号 u17“DE64603”同属第5逻辑行；名称值、字段角色与主体归属均由原文表格支持。"
+        },
+        {
+          "id": "e1.a2",
+          "kind": "property",
+          "entity_id": "e1",
+          "proposal": {
+            "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/equipment/modelSpecification",
+            "raw": "24盘",
+            "source": {
+              "ref": "u18",
+              "quote": "24盘"
+            },
+            "field": {
+              "ref": "u5",
+              "quote": "规格型号"
+            }
+          },
+          "overall_verdict": "supported",
+          "content_verdict": "supported",
+          "reason": "u18“24盘”属于规格型号列 u5，与 e1 的名称 u16 和编号 u17 同属第5逻辑行；应保留完整字符串规格“24盘”，不能把24改成其他容积或数值指标。"
+        },
+        {
+          "id": "r1",
+          "kind": "relation",
+          "proposal": {
+            "subject_id": "document",
+            "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/usesEquipment",
+            "object_ids": [
+              "e1"
+            ],
+            "selection": "all",
+            "evidence": {
+              "ref": "u16",
+              "quote": "真空干燥箱"
+            },
+            "condition": {
+              "ref": "u15",
+              "quote": "HRS-1597成品结晶"
+            },
+            "polarity": "affirmed"
+          },
+          "overall_verdict": "supported",
+          "content_verdict": "supported",
+          "reason": "u1“设备需求”下的第5设备行给出真空干燥箱、编号 DE64603 和 u23 用途“干燥”；u15 岗位“HRS-1597成品结晶”的合并单元覆盖该行。依活动卡 equipment required 的含义，支持 CMC document→e1 的设备需求，单对象 all、方向和肯定极性正确；condition 仅保留工艺范围，不能扩成已经发生实际使用的结论。"
+        }
+      ]
+    },
+    {
+      "arm": "E0",
+      "scope_id": "record-c54c3238c67b",
+      "packet_sha256": "909f4c5ebe225a00294ce65f14bb05a66415b6cbb0356fb3b6011e7d98648d18",
+      "review_type": "independent_source_only_non_expert",
+      "targets": [
+        {
+          "id": "e1",
+          "kind": "entity",
+          "proposal": {
+            "id": "e1",
+            "class_iri": "https://ontology.pharma-gmp.cn/slpra/equipment/ProcessEquipment",
+            "anchor": {
+              "ref": "u16",
+              "quote": "200L反应釜"
+            },
+            "equipment_id": {
+              "ref": "u17",
+              "quote": "RE64611"
+            },
+            "external_key": "",
+            "attributes": [
+              {
+                "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/equipment/equipmentName",
+                "raw": "200L反应釜",
+                "source": {
+                  "ref": "u16",
+                  "quote": "200L反应釜"
+                },
+                "field": {
+                  "ref": "u3",
+                  "quote": "设备名称"
+                }
+              },
+              {
+                "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/equipment/modelSpecification",
+                "raw": "200L",
+                "source": {
+                  "ref": "u18",
+                  "quote": "200L"
+                },
+                "field": {
+                  "ref": "u5",
+                  "quote": "规格型号"
+                }
+              }
+            ]
+          },
+          "overall_verdict": "supported",
+          "content_verdict": "supported",
+          "reason": "u16“200L反应釜”和 u17“RE64611”均在 table:6 第1逻辑行，分别对应设备名称列 u3 和设备编号列 u4；名称和实际设备行角色支持 ProcessEquipment，编号归属清楚。external_key 为空，外部链接不适用；不把规格或设备需求推成实际使用事件。",
+          "role_verdict": "supported",
+          "identifier_owner_verdict": "supported",
+          "external_link_verdict": "not_applicable"
+        },
+        {
+          "id": "e1.a1",
+          "kind": "property",
+          "entity_id": "e1",
+          "proposal": {
+            "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/equipment/equipmentName",
+            "raw": "200L反应釜",
+            "source": {
+              "ref": "u16",
+              "quote": "200L反应釜"
+            },
+            "field": {
+              "ref": "u3",
+              "quote": "设备名称"
+            }
+          },
+          "overall_verdict": "supported",
+          "content_verdict": "supported",
+          "reason": "u16 完整原文“200L反应釜”位于设备名称列 u3，与 e1 编号 u17“RE64611”同属第1逻辑行，支持该名称内容和主体归属；未擅自删除名称中的200L。"
+        },
+        {
+          "id": "e1.a2",
+          "kind": "property",
+          "entity_id": "e1",
+          "proposal": {
+            "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/equipment/modelSpecification",
+            "raw": "200L",
+            "source": {
+              "ref": "u18",
+              "quote": "200L"
+            },
+            "field": {
+              "ref": "u5",
+              "quote": "规格型号"
+            }
+          },
+          "overall_verdict": "supported",
+          "content_verdict": "supported",
+          "reason": "u18“200L”在规格型号列 u5，与 e1 同属第1逻辑行；支持完整字符串规格。u20 的“30L/215L”属于另一列物料最小/最大搅拌体积，不能替代或改写该规格。"
+        },
+        {
+          "id": "r1",
+          "kind": "relation",
+          "proposal": {
+            "subject_id": "document",
+            "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/usesEquipment",
+            "object_ids": [
+              "e1"
+            ],
+            "selection": "all",
+            "evidence": {
+              "ref": "u15",
+              "quote": "HRS-1597成品结晶"
+            },
+            "condition": {
+              "ref": "u15",
+              "quote": "HRS-1597成品结晶"
+            },
+            "polarity": "affirmed"
+          },
+          "overall_verdict": "supported",
+          "content_verdict": "supported",
+          "reason": "u1“设备需求”限定需求场景；合并岗位单元 u15“HRS-1597成品结晶”覆盖 e1 所在第1行，同一行用途 u23 为“溶料，脱色”。依活动卡 equipment required，支持 CMC document→e1 的需求关系，方向、单对象 selection=all、肯定极性正确；condition 保留工艺/岗位范围，不证明实际使用已经发生。"
+        }
+      ]
+    },
+    {
+      "arm": "E1",
+      "scope_id": "record-0c9a7e82c53b",
+      "packet_sha256": "637dfdde9f2ff80f0d7db776fc5da5b472e0385ec6897df33202490fb189f23a",
+      "review_type": "independent_source_only_non_expert",
+      "targets": [
+        {
+          "id": "e1",
+          "kind": "entity",
+          "proposal": {
+            "id": "e1",
+            "class_iri": "https://ontology.pharma-gmp.cn/slpra/equipment/ProcessEquipment",
+            "anchor": {
+              "ref": "u16",
+              "quote": "真空干燥箱"
+            },
+            "equipment_id": {
+              "ref": "u17",
+              "quote": "DE64603"
+            },
+            "external_key": "",
+            "attributes": [
+              {
+                "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/equipment/equipmentName",
+                "raw": "真空干燥箱",
+                "source": {
+                  "ref": "u16",
+                  "quote": "真空干燥箱"
+                },
+                "field": {
+                  "ref": "u3",
+                  "quote": "设备名称"
+                }
+              },
+              {
+                "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/equipment/modelSpecification",
+                "raw": "24盘",
+                "source": {
+                  "ref": "u18",
+                  "quote": "24盘"
+                },
+                "field": {
+                  "ref": "u5",
+                  "quote": "规格型号"
+                }
+              }
+            ]
+          },
+          "overall_verdict": "supported",
+          "content_verdict": "supported",
+          "reason": "u16“真空干燥箱”、u17“DE64603”在设备名称/设备编号列且同属 table:6 第5逻辑行，支持设备角色和编号归属。提供的7个 Mock 候选均为同名其他编号，没有 DE64603；external_key 留空与证据边界一致，无请求外部链接，不把同名或规格24盘当作合并证明。",
+          "role_verdict": "supported",
+          "identifier_owner_verdict": "supported",
+          "external_link_verdict": "not_applicable"
+        },
+        {
+          "id": "e1.a1",
+          "kind": "property",
+          "entity_id": "e1",
+          "proposal": {
+            "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/equipment/equipmentName",
+            "raw": "真空干燥箱",
+            "source": {
+              "ref": "u16",
+              "quote": "真空干燥箱"
+            },
+            "field": {
+              "ref": "u3",
+              "quote": "设备名称"
+            }
+          },
+          "overall_verdict": "supported",
+          "content_verdict": "supported",
+          "reason": "u16“真空干燥箱”位于设备名称列 u3，和 e1 的编号 u17“DE64603”同属第5逻辑行；名称与主体归属由原文支持，Mock 的同名设备不改变该归属。"
+        },
+        {
+          "id": "e1.a2",
+          "kind": "property",
+          "entity_id": "e1",
+          "proposal": {
+            "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/equipment/modelSpecification",
+            "raw": "24盘",
+            "source": {
+              "ref": "u18",
+              "quote": "24盘"
+            },
+            "field": {
+              "ref": "u5",
+              "quote": "规格型号"
+            }
+          },
+          "overall_verdict": "supported",
+          "content_verdict": "supported",
+          "reason": "u18“24盘”位于规格型号列 u5，和 e1 的名称 u16、编号 u17 同属第5逻辑行；完整字符串规格及主体归属有原文依据，不需要外部档案补证。"
+        },
+        {
+          "id": "r1",
+          "kind": "relation",
+          "proposal": {
+            "subject_id": "document",
+            "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/usesEquipment",
+            "object_ids": [
+              "e1"
+            ],
+            "selection": "all",
+            "evidence": {
+              "ref": "u16",
+              "quote": "真空干燥箱"
+            },
+            "condition": {
+              "ref": "u10",
+              "quote": "干燥"
+            },
+            "polarity": "affirmed"
+          },
+          "overall_verdict": "unsupported",
+          "content_verdict": "supported",
+          "reason": "精确提案的 condition={ref:u10,quote:干燥} 不成立：u10 原文是表头“设备用途以及工艺要求”，不包含“干燥”；实际“干燥”位于设备行 u23。因此整体提案因错误引用判 unsupported。关系内容另判 supported：u1 设备需求、u15 工艺岗位和第5行真空干燥箱/DE64603/用途干燥支持按活动卡 equipment required 的 document→e1 需求，单对象 all、方向及肯定极性正确；不能把此内容支持当作对错误引用的自动修复，亦不证明实际使用事件。"
+        },
+        {
+          "id": "o1",
+          "kind": "observation",
+          "proposal": {
+            "evidence": {
+              "ref": "u17",
+              "quote": "DE64603"
+            },
+            "reason": "原文设备编号DE64603在Mock候选库中无完全匹配记录，故external_key留空。"
+          },
+          "overall_verdict": "supported",
+          "content_verdict": "supported",
+          "reason": "u17 原文确为 DE64603；实际提供的 Mock 候选7项均不含该编号，coverage 显示完整检查211条、exact_identifier=0、candidate_overflow=false。故“无完全匹配记录并留空 external_key”的观察符合本次冻结 Mock 返回；这不表示原文设备不存在，也不能用同名或相近编号替代。"
+        }
+      ]
+    },
+    {
+      "arm": "E1",
+      "scope_id": "record-c54c3238c67b",
+      "packet_sha256": "b39380a7511ad3f01229b4e3a57fb5f5a4380a02e0fd277161c76958e46cef9b",
+      "review_type": "independent_source_only_non_expert",
+      "targets": [
+        {
+          "id": "e1",
+          "kind": "entity",
+          "proposal": {
+            "id": "e1",
+            "class_iri": "https://ontology.pharma-gmp.cn/slpra/equipment/ProcessEquipment",
+            "anchor": {
+              "ref": "u16",
+              "quote": "200L反应釜"
+            },
+            "equipment_id": {
+              "ref": "u17",
+              "quote": "RE64611"
+            },
+            "external_key": "RE64611",
+            "attributes": [
+              {
+                "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/equipment/equipmentName",
+                "raw": "200L反应釜",
+                "source": {
+                  "ref": "u16",
+                  "quote": "200L反应釜"
+                },
+                "field": {
+                  "ref": "u3",
+                  "quote": "设备名称"
+                }
+              },
+              {
+                "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/equipment/modelSpecification",
+                "raw": "200L",
+                "source": {
+                  "ref": "u18",
+                  "quote": "200L"
+                },
+                "field": {
+                  "ref": "u5",
+                  "quote": "规格型号"
+                }
+              }
+            ]
+          },
+          "overall_verdict": "supported",
+          "content_verdict": "supported",
+          "reason": "u16“200L反应釜”、u17“RE64611”同属 table:6 第1逻辑行，列头 u3/u4 明确设备名称和编号角色。实际提供的 Mock 唯一精确编号 RE64611 具有规格200L、材质搪玻璃，分别与原文 u18/u19 相符；其名称“搪玻璃反应釜”与原文容量修饰的“200L反应釜”可在该相同编号和属性组合下相容，支持冻结档案链接。仍保留原文名称，不将 Mock 名称替代文档属性，不把链接当作实际使用证明。",
+          "role_verdict": "supported",
+          "identifier_owner_verdict": "supported",
+          "external_link_verdict": "supported"
+        },
+        {
+          "id": "e1.a1",
+          "kind": "property",
+          "entity_id": "e1",
+          "proposal": {
+            "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/equipment/equipmentName",
+            "raw": "200L反应釜",
+            "source": {
+              "ref": "u16",
+              "quote": "200L反应釜"
+            },
+            "field": {
+              "ref": "u3",
+              "quote": "设备名称"
+            }
+          },
+          "overall_verdict": "supported",
+          "content_verdict": "supported",
+          "reason": "u16 原文完整名称“200L反应釜”位于设备名称列 u3，和 e1 编号 u17“RE64611”同属第1逻辑行，支持名称内容与归属。Mock 的“搪玻璃反应釜”不是此原文属性值，不能覆盖提案中原文名称。"
+        },
+        {
+          "id": "e1.a2",
+          "kind": "property",
+          "entity_id": "e1",
+          "proposal": {
+            "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/equipment/modelSpecification",
+            "raw": "200L",
+            "source": {
+              "ref": "u18",
+              "quote": "200L"
+            },
+            "field": {
+              "ref": "u5",
+              "quote": "规格型号"
+            }
+          },
+          "overall_verdict": "supported",
+          "content_verdict": "supported",
+          "reason": "u18“200L”位于规格型号列 u5，与 e1 名称 u16、编号 u17 同属第1逻辑行，支持完整字符串规格。u20“30L/215L”是不同字段的物料最小/最大搅拌体积，不应混入该属性。"
+        },
+        {
+          "id": "r1",
+          "kind": "relation",
+          "proposal": {
+            "subject_id": "document",
+            "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/usesEquipment",
+            "object_ids": [
+              "e1"
+            ],
+            "selection": "all",
+            "evidence": {
+              "ref": "u15",
+              "quote": "HRS-1597成品结晶"
+            },
+            "condition": {
+              "ref": "u15",
+              "quote": "HRS-1597成品结晶"
+            },
+            "polarity": "affirmed"
+          },
+          "overall_verdict": "supported",
+          "content_verdict": "supported",
+          "reason": "u1“设备需求”与覆盖第1行的 u15“HRS-1597成品结晶”岗位，以及同一行设备 u16/u17 和用途 u23“溶料，脱色”，支持按活动卡 equipment required 定义的 CMC document→e1 设备需求。方向、单对象 all、肯定极性一致；condition 保留工艺范围。Mock 不提供关系依据，不能据此断言实际生产已使用。"
+        },
+        {
+          "id": "o1",
+          "kind": "observation",
+          "proposal": {
+            "evidence": {
+              "ref": "u15",
+              "quote": "HRS-1597成品结晶"
+            },
+            "reason": "u15为岗位/工艺步骤名称，非设备实体，故不作为anchor。"
+          },
+          "overall_verdict": "supported",
+          "content_verdict": "supported",
+          "reason": "u15“HRS-1597成品结晶”位于岗位列 u2，并以合并单元覆盖第1至5逻辑行；设备名称另列 u3、具体实体锚点为 u16。因此将 u15 识别为岗位/工艺背景而非设备实体，且不把它用作设备 anchor 的观察有原文表格依据。"
+        }
+      ]
+    }
+  ]
+}

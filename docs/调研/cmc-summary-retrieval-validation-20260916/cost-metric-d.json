@@ -1,0 +1,1112 @@
+{
+  "run_root": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-summary-retrieval-20260916/completed",
+  "arm": "D",
+  "manifest_status": "completed",
+  "declared_scope_count": 8,
+  "scope_statuses": {
+    "failed": 8
+  },
+  "undeclared_observed_scopes": [],
+  "scope_count": 8,
+  "complete_scope_count": 0,
+  "cost_scope": "candidates and verification only; historical plan calls excluded; missing usage is unknown, not zero",
+  "http": {
+    "http_calls": 9,
+    "usage_reported_calls": 2,
+    "usage_missing_calls": 7,
+    "reported_prompt_tokens": 18324,
+    "reported_completion_tokens": 9383,
+    "reported_total_tokens": 27707,
+    "token_field_coverage": {
+      "prompt_tokens": {
+        "reported_calls": 2,
+        "missing_or_invalid_calls": 7
+      },
+      "completion_tokens": {
+        "reported_calls": 2,
+        "missing_or_invalid_calls": 7
+      },
+      "total_tokens": {
+        "reported_calls": 2,
+        "missing_or_invalid_calls": 7
+      }
+    },
+    "http_seconds": "229.299",
+    "http_seconds_reported_calls": 9,
+    "http_seconds_missing_or_invalid_calls": 0,
+    "finish_reasons": {
+      "unreported": 7,
+      "stop": 1,
+      "length": 1
+    }
+  },
+  "unknown_stage_calls_not_included_in_cost": [],
+  "excluded_plan_calls": 0,
+  "http_by_stage": {
+    "candidates": {
+      "http_calls": 8,
+      "usage_reported_calls": 1,
+      "usage_missing_calls": 7,
+      "reported_prompt_tokens": 13659,
+      "reported_completion_tokens": 1191,
+      "reported_total_tokens": 14850,
+      "token_field_coverage": {
+        "prompt_tokens": {
+          "reported_calls": 1,
+          "missing_or_invalid_calls": 7
+        },
+        "completion_tokens": {
+          "reported_calls": 1,
+          "missing_or_invalid_calls": 7
+        },
+        "total_tokens": {
+          "reported_calls": 1,
+          "missing_or_invalid_calls": 7
+        }
+      },
+      "http_seconds": "78.841",
+      "http_seconds_reported_calls": 8,
+      "http_seconds_missing_or_invalid_calls": 0,
+      "finish_reasons": {
+        "unreported": 7,
+        "stop": 1
+      }
+    },
+    "verification": {
+      "http_calls": 1,
+      "usage_reported_calls": 1,
+      "usage_missing_calls": 0,
+      "reported_prompt_tokens": 4665,
+      "reported_completion_tokens": 8192,
+      "reported_total_tokens": 12857,
+      "token_field_coverage": {
+        "prompt_tokens": {
+          "reported_calls": 1,
+          "missing_or_invalid_calls": 0
+        },
+        "completion_tokens": {
+          "reported_calls": 1,
+          "missing_or_invalid_calls": 0
+        },
+        "total_tokens": {
+          "reported_calls": 1,
+          "missing_or_invalid_calls": 0
+        }
+      },
+      "http_seconds": "150.458",
+      "http_seconds_reported_calls": 1,
+      "http_seconds_missing_or_invalid_calls": 0,
+      "finish_reasons": {
+        "length": 1
+      }
+    }
+  },
+  "metric_count_scope": "Saved precheck and final invocation results in this selected artifact snapshot. Not cumulative historical rerun invocations; an exception before writing may leave unrecorded calls.",
+  "precheck": {
+    "saved_metric_invocation_records": 3,
+    "metric_execution_status": {
+      "completed": 3
+    },
+    "metric_validation_status": {
+      "incomplete": 3
+    },
+    "numeric_slot_candidates": 0,
+    "slot_datatype_missing_candidates": 0,
+    "quantity_parsed_candidates": 0,
+    "numeric_quantity_parse_missing": 0,
+    "shacl_attempt_records": 0,
+    "shacl_evaluated_records": 0,
+    "strict_shacl_covered_conformant_claims": 0,
+    "strict_shacl_actual_focus_visits": 0,
+    "numeric_shacl_attempts": 0,
+    "numeric_strict_shacl_covered_conformant_claims": 0,
+    "numeric_normalized_claims": 0,
+    "numeric_strict_shacl_denominator": 0,
+    "numeric_strict_shacl_pass_fraction": null,
+    "numeric_accepted_by_program": 0,
+    "numeric_scale_or_offset_conversions": 0,
+    "numeric_conversion_audit": {},
+    "numeric_unit_mappings": {},
+    "unit_checks_status": {
+      "not_required": 3
+    },
+    "blocking_issues": {
+      "semantic_not_checked": 3
+    }
+  },
+  "final": {
+    "saved_metric_invocation_records": 0,
+    "metric_execution_status": {},
+    "metric_validation_status": {},
+    "numeric_slot_candidates": 0,
+    "slot_datatype_missing_candidates": 0,
+    "quantity_parsed_candidates": 0,
+    "numeric_quantity_parse_missing": 0,
+    "shacl_attempt_records": 0,
+    "shacl_evaluated_records": 0,
+    "strict_shacl_covered_conformant_claims": 0,
+    "strict_shacl_actual_focus_visits": 0,
+    "numeric_shacl_attempts": 0,
+    "numeric_strict_shacl_covered_conformant_claims": 0,
+    "numeric_normalized_claims": 0,
+    "numeric_strict_shacl_denominator": 0,
+    "numeric_strict_shacl_pass_fraction": null,
+    "numeric_accepted_by_program": 0,
+    "numeric_scale_or_offset_conversions": 0,
+    "numeric_conversion_audit": {},
+    "numeric_unit_mappings": {},
+    "unit_checks_status": {},
+    "blocking_issues": {}
+  },
+  "combined_saved_metric_invocation_records": 3,
+  "unique_frozen_property_candidates": 3,
+  "numeric_coverage_over_all_frozen_candidates": {
+    "frozen_numeric_candidates": 0,
+    "final_numeric_records": 0,
+    "missing_final_candidate_ids": [],
+    "strict_shacl_covered_conformant_candidates": 0,
+    "strict_shacl_pass_fraction": null,
+    "note": "Includes frozen numeric candidates without final results; not full-document recall or numeric calibration accuracy."
+  },
+  "scopes": [
+    {
+      "scope_id": "introduction",
+      "status": "failed",
+      "error_code": "model_request_failed",
+      "error_type": "StructuredModelError",
+      "failure_stage": "candidates",
+      "result_artifact_present": true,
+      "excluded_plan_calls": 0,
+      "unknown_stage_calls": [],
+      "calls": {
+        "http_calls": 1,
+        "usage_reported_calls": 0,
+        "usage_missing_calls": 1,
+        "reported_prompt_tokens": 0,
+        "reported_completion_tokens": 0,
+        "reported_total_tokens": 0,
+        "token_field_coverage": {
+          "prompt_tokens": {
+            "reported_calls": 0,
+            "missing_or_invalid_calls": 1
+          },
+          "completion_tokens": {
+            "reported_calls": 0,
+            "missing_or_invalid_calls": 1
+          },
+          "total_tokens": {
+            "reported_calls": 0,
+            "missing_or_invalid_calls": 1
+          }
+        },
+        "http_seconds": "1.315",
+        "http_seconds_reported_calls": 1,
+        "http_seconds_missing_or_invalid_calls": 0,
+        "finish_reasons": {
+          "unreported": 1
+        }
+      },
+      "call_copies_match": true,
+      "precheck": {
+        "saved_metric_invocation_records": 0,
+        "metric_execution_status": {},
+        "metric_validation_status": {},
+        "numeric_slot_candidates": 0,
+        "slot_datatype_missing_candidates": 0,
+        "quantity_parsed_candidates": 0,
+        "numeric_quantity_parse_missing": 0,
+        "shacl_attempt_records": 0,
+        "shacl_evaluated_records": 0,
+        "strict_shacl_covered_conformant_claims": 0,
+        "strict_shacl_actual_focus_visits": 0,
+        "numeric_shacl_attempts": 0,
+        "numeric_strict_shacl_covered_conformant_claims": 0,
+        "numeric_normalized_claims": 0,
+        "numeric_strict_shacl_denominator": 0,
+        "numeric_strict_shacl_pass_fraction": null,
+        "numeric_accepted_by_program": 0,
+        "numeric_scale_or_offset_conversions": 0,
+        "numeric_conversion_audit": {},
+        "numeric_unit_mappings": {},
+        "unit_checks_status": {},
+        "blocking_issues": {}
+      },
+      "final": {
+        "saved_metric_invocation_records": 0,
+        "metric_execution_status": {},
+        "metric_validation_status": {},
+        "numeric_slot_candidates": 0,
+        "slot_datatype_missing_candidates": 0,
+        "quantity_parsed_candidates": 0,
+        "numeric_quantity_parse_missing": 0,
+        "shacl_attempt_records": 0,
+        "shacl_evaluated_records": 0,
+        "strict_shacl_covered_conformant_claims": 0,
+        "strict_shacl_actual_focus_visits": 0,
+        "numeric_shacl_attempts": 0,
+        "numeric_strict_shacl_covered_conformant_claims": 0,
+        "numeric_normalized_claims": 0,
+        "numeric_strict_shacl_denominator": 0,
+        "numeric_strict_shacl_pass_fraction": null,
+        "numeric_accepted_by_program": 0,
+        "numeric_scale_or_offset_conversions": 0,
+        "numeric_conversion_audit": {},
+        "numeric_unit_mappings": {},
+        "unit_checks_status": {},
+        "blocking_issues": {}
+      },
+      "frozen_property_candidates": 0,
+      "frozen_numeric_candidates": 0,
+      "frozen_artifact_present": false,
+      "final_metric_artifact_present": false,
+      "accepted_property_candidates": 0
+    },
+    {
+      "scope_id": "pde_conflict",
+      "status": "failed",
+      "error_code": "model_request_failed",
+      "error_type": "StructuredModelError",
+      "failure_stage": "candidates",
+      "result_artifact_present": true,
+      "excluded_plan_calls": 0,
+      "unknown_stage_calls": [],
+      "calls": {
+        "http_calls": 1,
+        "usage_reported_calls": 0,
+        "usage_missing_calls": 1,
+        "reported_prompt_tokens": 0,
+        "reported_completion_tokens": 0,
+        "reported_total_tokens": 0,
+        "token_field_coverage": {
+          "prompt_tokens": {
+            "reported_calls": 0,
+            "missing_or_invalid_calls": 1
+          },
+          "completion_tokens": {
+            "reported_calls": 0,
+            "missing_or_invalid_calls": 1
+          },
+          "total_tokens": {
+            "reported_calls": 0,
+            "missing_or_invalid_calls": 1
+          }
+        },
+        "http_seconds": "0.297",
+        "http_seconds_reported_calls": 1,
+        "http_seconds_missing_or_invalid_calls": 0,
+        "finish_reasons": {
+          "unreported": 1
+        }
+      },
+      "call_copies_match": true,
+      "precheck": {
+        "saved_metric_invocation_records": 0,
+        "metric_execution_status": {},
+        "metric_validation_status": {},
+        "numeric_slot_candidates": 0,
+        "slot_datatype_missing_candidates": 0,
+        "quantity_parsed_candidates": 0,
+        "numeric_quantity_parse_missing": 0,
+        "shacl_attempt_records": 0,
+        "shacl_evaluated_records": 0,
+        "strict_shacl_covered_conformant_claims": 0,
+        "strict_shacl_actual_focus_visits": 0,
+        "numeric_shacl_attempts": 0,
+        "numeric_strict_shacl_covered_conformant_claims": 0,
+        "numeric_normalized_claims": 0,
+        "numeric_strict_shacl_denominator": 0,
+        "numeric_strict_shacl_pass_fraction": null,
+        "numeric_accepted_by_program": 0,
+        "numeric_scale_or_offset_conversions": 0,
+        "numeric_conversion_audit": {},
+        "numeric_unit_mappings": {},
+        "unit_checks_status": {},
+        "blocking_issues": {}
+      },
+      "final": {
+        "saved_metric_invocation_records": 0,
+        "metric_execution_status": {},
+        "metric_validation_status": {},
+        "numeric_slot_candidates": 0,
+        "slot_datatype_missing_candidates": 0,
+        "quantity_parsed_candidates": 0,
+        "numeric_quantity_parse_missing": 0,
+        "shacl_attempt_records": 0,
+        "shacl_evaluated_records": 0,
+        "strict_shacl_covered_conformant_claims": 0,
+        "strict_shacl_actual_focus_visits": 0,
+        "numeric_shacl_attempts": 0,
+        "numeric_strict_shacl_covered_conformant_claims": 0,
+        "numeric_normalized_claims": 0,
+        "numeric_strict_shacl_denominator": 0,
+        "numeric_strict_shacl_pass_fraction": null,
+        "numeric_accepted_by_program": 0,
+        "numeric_scale_or_offset_conversions": 0,
+        "numeric_conversion_audit": {},
+        "numeric_unit_mappings": {},
+        "unit_checks_status": {},
+        "blocking_issues": {}
+      },
+      "frozen_property_candidates": 0,
+      "frozen_numeric_candidates": 0,
+      "frozen_artifact_present": false,
+      "final_metric_artifact_present": false,
+      "accepted_property_candidates": 0
+    },
+    {
+      "scope_id": "process_equipment",
+      "status": "failed",
+      "error_code": "model_request_failed",
+      "error_type": "StructuredModelError",
+      "failure_stage": "candidates",
+      "result_artifact_present": true,
+      "excluded_plan_calls": 0,
+      "unknown_stage_calls": [],
+      "calls": {
+        "http_calls": 1,
+        "usage_reported_calls": 0,
+        "usage_missing_calls": 1,
+        "reported_prompt_tokens": 0,
+        "reported_completion_tokens": 0,
+        "reported_total_tokens": 0,
+        "token_field_coverage": {
+          "prompt_tokens": {
+            "reported_calls": 0,
+            "missing_or_invalid_calls": 1
+          },
+          "completion_tokens": {
+            "reported_calls": 0,
+            "missing_or_invalid_calls": 1
+          },
+          "total_tokens": {
+            "reported_calls": 0,
+            "missing_or_invalid_calls": 1
+          }
+        },
+        "http_seconds": "0.398",
+        "http_seconds_reported_calls": 1,
+        "http_seconds_missing_or_invalid_calls": 0,
+        "finish_reasons": {
+          "unreported": 1
+        }
+      },
+      "call_copies_match": true,
+      "precheck": {
+        "saved_metric_invocation_records": 0,
+        "metric_execution_status": {},
+        "metric_validation_status": {},
+        "numeric_slot_candidates": 0,
+        "slot_datatype_missing_candidates": 0,
+        "quantity_parsed_candidates": 0,
+        "numeric_quantity_parse_missing": 0,
+        "shacl_attempt_records": 0,
+        "shacl_evaluated_records": 0,
+        "strict_shacl_covered_conformant_claims": 0,
+        "strict_shacl_actual_focus_visits": 0,
+        "numeric_shacl_attempts": 0,
+        "numeric_strict_shacl_covered_conformant_claims": 0,
+        "numeric_normalized_claims": 0,
+        "numeric_strict_shacl_denominator": 0,
+        "numeric_strict_shacl_pass_fraction": null,
+        "numeric_accepted_by_program": 0,
+        "numeric_scale_or_offset_conversions": 0,
+        "numeric_conversion_audit": {},
+        "numeric_unit_mappings": {},
+        "unit_checks_status": {},
+        "blocking_issues": {}
+      },
+      "final": {
+        "saved_metric_invocation_records": 0,
+        "metric_execution_status": {},
+        "metric_validation_status": {},
+        "numeric_slot_candidates": 0,
+        "slot_datatype_missing_candidates": 0,
+        "quantity_parsed_candidates": 0,
+        "numeric_quantity_parse_missing": 0,
+        "shacl_attempt_records": 0,
+        "shacl_evaluated_records": 0,
+        "strict_shacl_covered_conformant_claims": 0,
+        "strict_shacl_actual_focus_visits": 0,
+        "numeric_shacl_attempts": 0,
+        "numeric_strict_shacl_covered_conformant_claims": 0,
+        "numeric_normalized_claims": 0,
+        "numeric_strict_shacl_denominator": 0,
+        "numeric_strict_shacl_pass_fraction": null,
+        "numeric_accepted_by_program": 0,
+        "numeric_scale_or_offset_conversions": 0,
+        "numeric_conversion_audit": {},
+        "numeric_unit_mappings": {},
+        "unit_checks_status": {},
+        "blocking_issues": {}
+      },
+      "frozen_property_candidates": 0,
+      "frozen_numeric_candidates": 0,
+      "frozen_artifact_present": false,
+      "final_metric_artifact_present": false,
+      "accepted_property_candidates": 0
+    },
+    {
+      "scope_id": "product_properties",
+      "status": "failed",
+      "error_code": "model_request_failed",
+      "error_type": "StructuredModelError",
+      "failure_stage": "candidates",
+      "result_artifact_present": true,
+      "excluded_plan_calls": 0,
+      "unknown_stage_calls": [],
+      "calls": {
+        "http_calls": 1,
+        "usage_reported_calls": 0,
+        "usage_missing_calls": 1,
+        "reported_prompt_tokens": 0,
+        "reported_completion_tokens": 0,
+        "reported_total_tokens": 0,
+        "token_field_coverage": {
+          "prompt_tokens": {
+            "reported_calls": 0,
+            "missing_or_invalid_calls": 1
+          },
+          "completion_tokens": {
+            "reported_calls": 0,
+            "missing_or_invalid_calls": 1
+          },
+          "total_tokens": {
+            "reported_calls": 0,
+            "missing_or_invalid_calls": 1
+          }
+        },
+        "http_seconds": "0.582",
+        "http_seconds_reported_calls": 1,
+        "http_seconds_missing_or_invalid_calls": 0,
+        "finish_reasons": {
+          "unreported": 1
+        }
+      },
+      "call_copies_match": true,
+      "precheck": {
+        "saved_metric_invocation_records": 0,
+        "metric_execution_status": {},
+        "metric_validation_status": {},
+        "numeric_slot_candidates": 0,
+        "slot_datatype_missing_candidates": 0,
+        "quantity_parsed_candidates": 0,
+        "numeric_quantity_parse_missing": 0,
+        "shacl_attempt_records": 0,
+        "shacl_evaluated_records": 0,
+        "strict_shacl_covered_conformant_claims": 0,
+        "strict_shacl_actual_focus_visits": 0,
+        "numeric_shacl_attempts": 0,
+        "numeric_strict_shacl_covered_conformant_claims": 0,
+        "numeric_normalized_claims": 0,
+        "numeric_strict_shacl_denominator": 0,
+        "numeric_strict_shacl_pass_fraction": null,
+        "numeric_accepted_by_program": 0,
+        "numeric_scale_or_offset_conversions": 0,
+        "numeric_conversion_audit": {},
+        "numeric_unit_mappings": {},
+        "unit_checks_status": {},
+        "blocking_issues": {}
+      },
+      "final": {
+        "saved_metric_invocation_records": 0,
+        "metric_execution_status": {},
+        "metric_validation_status": {},
+        "numeric_slot_candidates": 0,
+        "slot_datatype_missing_candidates": 0,
+        "quantity_parsed_candidates": 0,
+        "numeric_quantity_parse_missing": 0,
+        "shacl_attempt_records": 0,
+        "shacl_evaluated_records": 0,
+        "strict_shacl_covered_conformant_claims": 0,
+        "strict_shacl_actual_focus_visits": 0,
+        "numeric_shacl_attempts": 0,
+        "numeric_strict_shacl_covered_conformant_claims": 0,
+        "numeric_normalized_claims": 0,
+        "numeric_strict_shacl_denominator": 0,
+        "numeric_strict_shacl_pass_fraction": null,
+        "numeric_accepted_by_program": 0,
+        "numeric_scale_or_offset_conversions": 0,
+        "numeric_conversion_audit": {},
+        "numeric_unit_mappings": {},
+        "unit_checks_status": {},
+        "blocking_issues": {}
+      },
+      "frozen_property_candidates": 0,
+      "frozen_numeric_candidates": 0,
+      "frozen_artifact_present": false,
+      "final_metric_artifact_present": false,
+      "accepted_property_candidates": 0
+    },
+    {
+      "scope_id": "quality_condition",
+      "status": "failed",
+      "error_code": "model_request_failed",
+      "error_type": "StructuredModelError",
+      "failure_stage": "candidates",
+      "result_artifact_present": true,
+      "excluded_plan_calls": 0,
+      "unknown_stage_calls": [],
+      "calls": {
+        "http_calls": 1,
+        "usage_reported_calls": 0,
+        "usage_missing_calls": 1,
+        "reported_prompt_tokens": 0,
+        "reported_completion_tokens": 0,
+        "reported_total_tokens": 0,
+        "token_field_coverage": {
+          "prompt_tokens": {
+            "reported_calls": 0,
+            "missing_or_invalid_calls": 1
+          },
+          "completion_tokens": {
+            "reported_calls": 0,
+            "missing_or_invalid_calls": 1
+          },
+          "total_tokens": {
+            "reported_calls": 0,
+            "missing_or_invalid_calls": 1
+          }
+        },
+        "http_seconds": "0.289",
+        "http_seconds_reported_calls": 1,
+        "http_seconds_missing_or_invalid_calls": 0,
+        "finish_reasons": {
+          "unreported": 1
+        }
+      },
+      "call_copies_match": true,
+      "precheck": {
+        "saved_metric_invocation_records": 0,
+        "metric_execution_status": {},
+        "metric_validation_status": {},
+        "numeric_slot_candidates": 0,
+        "slot_datatype_missing_candidates": 0,
+        "quantity_parsed_candidates": 0,
+        "numeric_quantity_parse_missing": 0,
+        "shacl_attempt_records": 0,
+        "shacl_evaluated_records": 0,
+        "strict_shacl_covered_conformant_claims": 0,
+        "strict_shacl_actual_focus_visits": 0,
+        "numeric_shacl_attempts": 0,
+        "numeric_strict_shacl_covered_conformant_claims": 0,
+        "numeric_normalized_claims": 0,
+        "numeric_strict_shacl_denominator": 0,
+        "numeric_strict_shacl_pass_fraction": null,
+        "numeric_accepted_by_program": 0,
+        "numeric_scale_or_offset_conversions": 0,
+        "numeric_conversion_audit": {},
+        "numeric_unit_mappings": {},
+        "unit_checks_status": {},
+        "blocking_issues": {}
+      },
+      "final": {
+        "saved_metric_invocation_records": 0,
+        "metric_execution_status": {},
+        "metric_validation_status": {},
+        "numeric_slot_candidates": 0,
+        "slot_datatype_missing_candidates": 0,
+        "quantity_parsed_candidates": 0,
+        "numeric_quantity_parse_missing": 0,
+        "shacl_attempt_records": 0,
+        "shacl_evaluated_records": 0,
+        "strict_shacl_covered_conformant_claims": 0,
+        "strict_shacl_actual_focus_visits": 0,
+        "numeric_shacl_attempts": 0,
+        "numeric_strict_shacl_covered_conformant_claims": 0,
+        "numeric_normalized_claims": 0,
+        "numeric_strict_shacl_denominator": 0,
+        "numeric_strict_shacl_pass_fraction": null,
+        "numeric_accepted_by_program": 0,
+        "numeric_scale_or_offset_conversions": 0,
+        "numeric_conversion_audit": {},
+        "numeric_unit_mappings": {},
+        "unit_checks_status": {},
+        "blocking_issues": {}
+      },
+      "frozen_property_candidates": 0,
+      "frozen_numeric_candidates": 0,
+      "frozen_artifact_present": false,
+      "final_metric_artifact_present": false,
+      "accepted_property_candidates": 0
+    },
+    {
+      "scope_id": "residue_missing",
+      "status": "failed",
+      "error_code": "model_request_failed",
+      "error_type": "StructuredModelError",
+      "failure_stage": "candidates",
+      "result_artifact_present": true,
+      "excluded_plan_calls": 0,
+      "unknown_stage_calls": [],
+      "calls": {
+        "http_calls": 1,
+        "usage_reported_calls": 0,
+        "usage_missing_calls": 1,
+        "reported_prompt_tokens": 0,
+        "reported_completion_tokens": 0,
+        "reported_total_tokens": 0,
+        "token_field_coverage": {
+          "prompt_tokens": {
+            "reported_calls": 0,
+            "missing_or_invalid_calls": 1
+          },
+          "completion_tokens": {
+            "reported_calls": 0,
+            "missing_or_invalid_calls": 1
+          },
+          "total_tokens": {
+            "reported_calls": 0,
+            "missing_or_invalid_calls": 1
+          }
+        },
+        "http_seconds": "0.743",
+        "http_seconds_reported_calls": 1,
+        "http_seconds_missing_or_invalid_calls": 0,
+        "finish_reasons": {
+          "unreported": 1
+        }
+      },
+      "call_copies_match": true,
+      "precheck": {
+        "saved_metric_invocation_records": 0,
+        "metric_execution_status": {},
+        "metric_validation_status": {},
+        "numeric_slot_candidates": 0,
+        "slot_datatype_missing_candidates": 0,
+        "quantity_parsed_candidates": 0,
+        "numeric_quantity_parse_missing": 0,
+        "shacl_attempt_records": 0,
+        "shacl_evaluated_records": 0,
+        "strict_shacl_covered_conformant_claims": 0,
+        "strict_shacl_actual_focus_visits": 0,
+        "numeric_shacl_attempts": 0,
+        "numeric_strict_shacl_covered_conformant_claims": 0,
+        "numeric_normalized_claims": 0,
+        "numeric_strict_shacl_denominator": 0,
+        "numeric_strict_shacl_pass_fraction": null,
+        "numeric_accepted_by_program": 0,
+        "numeric_scale_or_offset_conversions": 0,
+        "numeric_conversion_audit": {},
+        "numeric_unit_mappings": {},
+        "unit_checks_status": {},
+        "blocking_issues": {}
+      },
+      "final": {
+        "saved_metric_invocation_records": 0,
+        "metric_execution_status": {},
+        "metric_validation_status": {},
+        "numeric_slot_candidates": 0,
+        "slot_datatype_missing_candidates": 0,
+        "quantity_parsed_candidates": 0,
+        "numeric_quantity_parse_missing": 0,
+        "shacl_attempt_records": 0,
+        "shacl_evaluated_records": 0,
+        "strict_shacl_covered_conformant_claims": 0,
+        "strict_shacl_actual_focus_visits": 0,
+        "numeric_shacl_attempts": 0,
+        "numeric_strict_shacl_covered_conformant_claims": 0,
+        "numeric_normalized_claims": 0,
+        "numeric_strict_shacl_denominator": 0,
+        "numeric_strict_shacl_pass_fraction": null,
+        "numeric_accepted_by_program": 0,
+        "numeric_scale_or_offset_conversions": 0,
+        "numeric_conversion_audit": {},
+        "numeric_unit_mappings": {},
+        "unit_checks_status": {},
+        "blocking_issues": {}
+      },
+      "frozen_property_candidates": 0,
+      "frozen_numeric_candidates": 0,
+      "frozen_artifact_present": false,
+      "final_metric_artifact_present": false,
+      "accepted_property_candidates": 0
+    },
+    {
+      "scope_id": "storage",
+      "status": "failed",
+      "error_code": "model_output_truncated",
+      "error_type": "StructuredModelError",
+      "failure_stage": "verification",
+      "result_artifact_present": true,
+      "excluded_plan_calls": 0,
+      "unknown_stage_calls": [],
+      "calls": {
+        "http_calls": 2,
+        "usage_reported_calls": 2,
+        "usage_missing_calls": 0,
+        "reported_prompt_tokens": 18324,
+        "reported_completion_tokens": 9383,
+        "reported_total_tokens": 27707,
+        "token_field_coverage": {
+          "prompt_tokens": {
+            "reported_calls": 2,
+            "missing_or_invalid_calls": 0
+          },
+          "completion_tokens": {
+            "reported_calls": 2,
+            "missing_or_invalid_calls": 0
+          },
+          "total_tokens": {
+            "reported_calls": 2,
+            "missing_or_invalid_calls": 0
+          }
+        },
+        "http_seconds": "225.097",
+        "http_seconds_reported_calls": 2,
+        "http_seconds_missing_or_invalid_calls": 0,
+        "finish_reasons": {
+          "stop": 1,
+          "length": 1
+        }
+      },
+      "call_copies_match": true,
+      "precheck": {
+        "saved_metric_invocation_records": 3,
+        "metric_execution_status": {
+          "completed": 3
+        },
+        "metric_validation_status": {
+          "incomplete": 3
+        },
+        "numeric_slot_candidates": 0,
+        "slot_datatype_missing_candidates": 0,
+        "quantity_parsed_candidates": 0,
+        "numeric_quantity_parse_missing": 0,
+        "shacl_attempt_records": 0,
+        "shacl_evaluated_records": 0,
+        "strict_shacl_covered_conformant_claims": 0,
+        "strict_shacl_actual_focus_visits": 0,
+        "numeric_shacl_attempts": 0,
+        "numeric_strict_shacl_covered_conformant_claims": 0,
+        "numeric_normalized_claims": 0,
+        "numeric_strict_shacl_denominator": 0,
+        "numeric_strict_shacl_pass_fraction": null,
+        "numeric_accepted_by_program": 0,
+        "numeric_scale_or_offset_conversions": 0,
+        "numeric_conversion_audit": {},
+        "numeric_unit_mappings": {},
+        "unit_checks_status": {
+          "not_required": 3
+        },
+        "blocking_issues": {
+          "semantic_not_checked": 3
+        }
+      },
+      "final": {
+        "saved_metric_invocation_records": 0,
+        "metric_execution_status": {},
+        "metric_validation_status": {},
+        "numeric_slot_candidates": 0,
+        "slot_datatype_missing_candidates": 0,
+        "quantity_parsed_candidates": 0,
+        "numeric_quantity_parse_missing": 0,
+        "shacl_attempt_records": 0,
+        "shacl_evaluated_records": 0,
+        "strict_shacl_covered_conformant_claims": 0,
+        "strict_shacl_actual_focus_visits": 0,
+        "numeric_shacl_attempts": 0,
+        "numeric_strict_shacl_covered_conformant_claims": 0,
+        "numeric_normalized_claims": 0,
+        "numeric_strict_shacl_denominator": 0,
+        "numeric_strict_shacl_pass_fraction": null,
+        "numeric_accepted_by_program": 0,
+        "numeric_scale_or_offset_conversions": 0,
+        "numeric_conversion_audit": {},
+        "numeric_unit_mappings": {},
+        "unit_checks_status": {},
+        "blocking_issues": {}
+      },
+      "frozen_property_candidates": 3,
+      "frozen_numeric_candidates": 0,
+      "frozen_artifact_present": true,
+      "final_metric_artifact_present": false,
+      "accepted_property_candidates": 0
+    },
+    {
+      "scope_id": "toxicity_unknown",
+      "status": "failed",
+      "error_code": "model_request_failed",
+      "error_type": "StructuredModelError",
+      "failure_stage": "candidates",
+      "result_artifact_present": true,
+      "excluded_plan_calls": 0,
+      "unknown_stage_calls": [],
+      "calls": {
+        "http_calls": 1,
+        "usage_reported_calls": 0,
+        "usage_missing_calls": 1,
+        "reported_prompt_tokens": 0,
+        "reported_completion_tokens": 0,
+        "reported_total_tokens": 0,
+        "token_field_coverage": {
+          "prompt_tokens": {
+            "reported_calls": 0,
+            "missing_or_invalid_calls": 1
+          },
+          "completion_tokens": {
+            "reported_calls": 0,
+            "missing_or_invalid_calls": 1
+          },
+          "total_tokens": {
+            "reported_calls": 0,
+            "missing_or_invalid_calls": 1
+          }
+        },
+        "http_seconds": "0.578",
+        "http_seconds_reported_calls": 1,
+        "http_seconds_missing_or_invalid_calls": 0,
+        "finish_reasons": {
+          "unreported": 1
+        }
+      },
+      "call_copies_match": true,
+      "precheck": {
+        "saved_metric_invocation_records": 0,
+        "metric_execution_status": {},
+        "metric_validation_status": {},
+        "numeric_slot_candidates": 0,
+        "slot_datatype_missing_candidates": 0,
+        "quantity_parsed_candidates": 0,
+        "numeric_quantity_parse_missing": 0,
+        "shacl_attempt_records": 0,
+        "shacl_evaluated_records": 0,
+        "strict_shacl_covered_conformant_claims": 0,
+        "strict_shacl_actual_focus_visits": 0,
+        "numeric_shacl_attempts": 0,
+        "numeric_strict_shacl_covered_conformant_claims": 0,
+        "numeric_normalized_claims": 0,
+        "numeric_strict_shacl_denominator": 0,
+        "numeric_strict_shacl_pass_fraction": null,
+        "numeric_accepted_by_program": 0,
+        "numeric_scale_or_offset_conversions": 0,
+        "numeric_conversion_audit": {},
+        "numeric_unit_mappings": {},
+        "unit_checks_status": {},
+        "blocking_issues": {}
+      },
+      "final": {
+        "saved_metric_invocation_records": 0,
+        "metric_execution_status": {},
+        "metric_validation_status": {},
+        "numeric_slot_candidates": 0,
+        "slot_datatype_missing_candidates": 0,
+        "quantity_parsed_candidates": 0,
+        "numeric_quantity_parse_missing": 0,
+        "shacl_attempt_records": 0,
+        "shacl_evaluated_records": 0,
+        "strict_shacl_covered_conformant_claims": 0,
+        "strict_shacl_actual_focus_visits": 0,
+        "numeric_shacl_attempts": 0,
+        "numeric_strict_shacl_covered_conformant_claims": 0,
+        "numeric_normalized_claims": 0,
+        "numeric_strict_shacl_denominator": 0,
+        "numeric_strict_shacl_pass_fraction": null,
+        "numeric_accepted_by_program": 0,
+        "numeric_scale_or_offset_conversions": 0,
+        "numeric_conversion_audit": {},
+        "numeric_unit_mappings": {},
+        "unit_checks_status": {},
+        "blocking_issues": {}
+      },
+      "frozen_property_candidates": 0,
+      "frozen_numeric_candidates": 0,
+      "frozen_artifact_present": false,
+      "final_metric_artifact_present": false,
+      "accepted_property_candidates": 0
+    }
+  ],
+  "numeric_final_details": [],
+  "caveats": [
+    "Zero numeric SHACL coverage is unvalidated, not numerical calibration success.",
+    "quantity != null counts parsed quantities, not all numeric slot attempts; use card datatype denominator.",
+    "Empty conversion_record for a text/date and identity/alias mappings are not numerical scale conversions.",
+    "unit_checks=passed alone does not prove source/owner/semantic validation or SHACL execution.",
+    "fact_eligible is deliberately false even on validate_metric success; use final accepted candidate ID separately.",
+    "claim URNs repeat across scopes; count scope-qualified candidates or focus visits, not global bare-URN uniqueness.",
+    "SHACL profile validates one literal representation, not clinical truth, unit semantics or full business graph.",
+    "Summed HTTP seconds are stage request durations; not total elapsed experiment wall time.",
+    "Declared scopes without result files remain not_recorded; candidates never generated by a failed scope cannot enter a candidate denominator.",
+    "Per-stage numeric fractions describe that stage only; use numeric_coverage_over_all_frozen_candidates for overall coverage.",
+    "Real scale/offset conversion requires an explicit complete record and exact source*factor+offset=normalized check; identity/alias do not count."
+  ],
+  "comparison_to_C": {
+    "source": "/tmp/cmc-gliner25-public-metadata/cost-metric-c.json",
+    "complete_scopes": {
+      "C": 7,
+      "D": 0,
+      "common_complete_scope_ids": []
+    },
+    "http_summary": {
+      "C": {
+        "http_calls": 15,
+        "usage_reported_calls": 14,
+        "usage_missing_calls": 1,
+        "reported_prompt_tokens": 225457,
+        "reported_completion_tokens": 20434,
+        "reported_total_tokens": 245891,
+        "token_field_coverage": {
+          "prompt_tokens": {
+            "reported_calls": 14,
+            "missing_or_invalid_calls": 1
+          },
+          "completion_tokens": {
+            "reported_calls": 14,
+            "missing_or_invalid_calls": 1
+          },
+          "total_tokens": {
+            "reported_calls": 14,
+            "missing_or_invalid_calls": 1
+          }
+        },
+        "http_seconds": "1326.010",
+        "http_seconds_reported_calls": 15,
+        "http_seconds_missing_or_invalid_calls": 0,
+        "finish_reasons": {
+          "stop": 14,
+          "unreported": 1
+        }
+      },
+      "D": {
+        "http_calls": 9,
+        "usage_reported_calls": 2,
+        "usage_missing_calls": 7,
+        "reported_prompt_tokens": 18324,
+        "reported_completion_tokens": 9383,
+        "reported_total_tokens": 27707,
+        "token_field_coverage": {
+          "prompt_tokens": {
+            "reported_calls": 2,
+            "missing_or_invalid_calls": 7
+          },
+          "completion_tokens": {
+            "reported_calls": 2,
+            "missing_or_invalid_calls": 7
+          },
+          "total_tokens": {
+            "reported_calls": 2,
+            "missing_or_invalid_calls": 7
+          }
+        },
+        "http_seconds": "229.299",
+        "http_seconds_reported_calls": 9,
+        "http_seconds_missing_or_invalid_calls": 0,
+        "finish_reasons": {
+          "unreported": 7,
+          "stop": 1,
+          "length": 1
+        }
+      }
+    },
+    "final_metric_summary": {
+      "C": {
+        "saved_metric_invocation_records": 21,
+        "metric_execution_status": {
+          "completed": 21
+        },
+        "metric_validation_status": {
+          "incomplete": 2,
+          "passed": 16,
+          "failed": 3
+        },
+        "numeric_slot_candidates": 3,
+        "slot_datatype_missing_candidates": 0,
+        "quantity_parsed_candidates": 3,
+        "numeric_quantity_parse_missing": 0,
+        "shacl_attempt_records": 16,
+        "shacl_evaluated_records": 16,
+        "strict_shacl_covered_conformant_claims": 16,
+        "strict_shacl_actual_focus_visits": 16,
+        "numeric_shacl_attempts": 0,
+        "numeric_strict_shacl_covered_conformant_claims": 0,
+        "numeric_normalized_claims": 0,
+        "numeric_strict_shacl_denominator": 3,
+        "numeric_strict_shacl_pass_fraction": 0.0,
+        "numeric_accepted_by_program": 0,
+        "numeric_scale_or_offset_conversions": 0,
+        "numeric_conversion_audit": {
+          "no_unit_mapping_record": 3
+        },
+        "numeric_unit_mappings": {},
+        "unit_checks_status": {
+          "incomplete": 2,
+          "not_required": 18,
+          "passed": 1
+        },
+        "blocking_issues": {
+          "scalar_value_required": 2,
+          "unit_source_missing": 2,
+          "raw_value_not_in_quote": 2,
+          "semantic_undetermined": 3,
+          "citation_coordinates_invalid": 1,
+          "inactive_subject_slot": 1
+        }
+      },
+      "D": {
+        "saved_metric_invocation_records": 0,
+        "metric_execution_status": {},
+        "metric_validation_status": {},
+        "numeric_slot_candidates": 0,
+        "slot_datatype_missing_candidates": 0,
+        "quantity_parsed_candidates": 0,
+        "numeric_quantity_parse_missing": 0,
+        "shacl_attempt_records": 0,
+        "shacl_evaluated_records": 0,
+        "strict_shacl_covered_conformant_claims": 0,
+        "strict_shacl_actual_focus_visits": 0,
+        "numeric_shacl_attempts": 0,
+        "numeric_strict_shacl_covered_conformant_claims": 0,
+        "numeric_normalized_claims": 0,
+        "numeric_strict_shacl_denominator": 0,
+        "numeric_strict_shacl_pass_fraction": null,
+        "numeric_accepted_by_program": 0,
+        "numeric_scale_or_offset_conversions": 0,
+        "numeric_conversion_audit": {},
+        "numeric_unit_mappings": {},
+        "unit_checks_status": {},
+        "blocking_issues": {}
+      }
+    },
+    "storage_candidate_stage_only": {
+      "C": {
+        "stage": "candidates",
+        "finish_reason": "stop",
+        "seconds": 70.333,
+        "usage": {
+          "completion_tokens": 1214,
+          "prompt_tokens": 12454,
+          "total_tokens": 13668,
+          "completion_tokens_details": null,
+          "prompt_tokens_details": {
+            "audio_tokens": null,
+            "cached_tokens": 493
+          }
+        }
+      },
+      "D": {
+        "stage": "candidates",
+        "finish_reason": "stop",
+        "seconds": 74.639,
+        "usage": {
+          "completion_tokens": 1191,
+          "prompt_tokens": 13659,
+          "total_tokens": 14850,
+          "completion_tokens_details": null,
+          "prompt_tokens_details": {
+            "audio_tokens": null,
+            "cached_tokens": 493
+          }
+        }
+      }
+    },
+    "cost_comparability": "No common completed scope; no end-to-end cost saving or quality comparison can be computed. D executes fewer verification calls because seven candidate calls fail. Token sums include only reported usage; full C and D token totals remain unknown.",
+    "numeric_calibration_comparability": "C has 0/3 strict covered conformant numeric final claims. D has zero frozen numeric candidates and zero final metric results: denominator 0, fraction null, evaluation not reached. This is neither 0% numeric quality nor numeric calibration success.",
+    "storage_stage_limit": "Only storage candidate stage has successful responses on both arms. Its request evidence differs; D verification truncates at 8192 completion tokens, so this is not a completed pipeline comparison."
+  },
+  "token_usage_totals_including_unknown_calls": {
+    "prompt_tokens": null,
+    "completion_tokens": null,
+    "total_tokens": null,
+    "reason": "7 of 9 HTTP calls have no usage report; missing usage is unknown, not zero."
+  },
+  "numeric_calibration_status": "not_evaluated_no_final_metric_results"
+}

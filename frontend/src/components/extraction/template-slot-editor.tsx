@@ -1,5 +1,10 @@
 "use client";
 
+import { tiptapToText } from "@/lib/reporting-v2";
+
+import { FinderDocumentGraphPanel, FinderOriginal } from "@/components/analysis/finder-document-graph-panel";
+import { useTemplateFinder } from "@/components/analysis/use-template-finder";
+
 import { useState, useCallback, useEffect, useMemo, useRef, type ReactNode, type MouseEvent as ReactMouseEvent } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Sparkles, GripVertical, Pencil, Trash2, MoreVertical, FileText, LayoutTemplate, Eye, Info, Loader2, Upload, Save, FileDown, Download, Check, ListTree, GitBranch, ArrowRight, X, Plus, RotateCw } from "lucide-react";
@@ -124,6 +129,7 @@ interface TemplateSchema {
 }
 
 interface TemplateSlotEditorProps {
+  recognitionMode?: "ontology_guided" | "finder_legacy";
   schema: TemplateSchema;
   onSave: (updated: TemplateSchema) => void;
   onCancel: () => void;
@@ -158,6 +164,7 @@ interface TemplateSlotEditorProps {
     onDocumentNoChange?: (value: string) => void;
     onDocumentClassChange?: (iri: string) => void;
     reportPreview: (sourceJobId: string | null) => ReactNode;
+    onSourceSelection?: (sourceJobId: string | null) => void;
     sampleAnchor?: EvidenceAnchor | null;
   };
 }
@@ -235,18 +242,6 @@ type DocPreviewState =
     }
   | { kind: "unavailable" };
 
-// 从忠于原文结构的 tiptap 文档提取纯文本（供 legacy 无 sample_text 时的行文 Prompt 生成）。
-function tiptapToText(node: unknown): string {
-  if (!node || typeof node !== "object") return "";
-  const n = node as { type?: string; text?: string; content?: unknown[] };
-  if (n.type === "text" && typeof n.text === "string") return n.text;
-  const inner = Array.isArray(n.content)
-    ? n.content.map(tiptapToText).join("")
-    : "";
-  // 段落级节点之间补换行，尽量保留原文段落边界。
-  return n.type === "paragraph" || n.type === "heading" ? `${inner}\n` : inner;
-}
-
 // 插槽来源类型的中文标签（语义化 + 旧式定型）。旧式来源仅在既有插槽上只读显示。
 const SOURCE_KIND_LABELS: Record<string, string> = {
   semantic: "语义化",
@@ -311,7 +306,9 @@ export function TemplateSlotEditor({
   onVersionSwitch,
   onMetaSaved,
   outputEditor,
+  recognitionMode = "ontology_guided",
 }: TemplateSlotEditorProps) {
+  const finderMode = recognitionMode === "finder_legacy";
   const [sections, setSections] = useState<SectionDef[]>(
     () => cloneSections(schema.sections),
   );
@@ -586,8 +583,8 @@ export function TemplateSlotEditor({
   const matchedDocs = useMemo(() => {
     const pat = iriPattern?.trim();
     if (!pat) return docs;
-    return docs.filter((d) => d.class_iri?.includes(pat));
-  }, [docs, iriPattern]);
+    return docs.filter((d) => finderMode ? d.class_iri === pat : d.class_iri?.includes(pat));
+  }, [docs, iriPattern, finderMode]);
 
   // 保留有效的手动选择；模板已有默认源时优先展示它，避免跳到另一份 IRI 匹配文档。
   const activeDocIri = useMemo(
@@ -607,14 +604,17 @@ export function TemplateSlotEditor({
 
   const previewJobId = activeDocIri === DEFAULT_SOURCE_IRI
     ? sourceJobId : docJobRef(activeShadow ?? undefined);
+  const onSourceSelection = outputEditor?.onSourceSelection;
+  useEffect(() => { onSourceSelection?.(previewJobId ?? sourceJobId); }, [onSourceSelection, previewJobId, sourceJobId]);
   const sourceJobQuery = useQuery({
     queryKey: ["extraction-job", previewJobId],
     queryFn: ({ signal }) => getExtractionJob(previewJobId!, signal),
-    enabled: !!previewJobId,
+    enabled: !!previewJobId && !finderMode,
   });
   const sourceCapabilities = extractionCapabilities(sourceJobQuery.data);
-  const canRecognizeSource = !!templateId && !!previewJobId;
-  const documentRun = useTemplateDocumentRun(templateId, previewJobId, leftTab === "source");
+  const canRecognizeSource = !!templateId && !!previewJobId && !finderMode;
+  const documentRun = useTemplateDocumentRun(templateId, previewJobId, leftTab === "source" && !finderMode);
+  const finder = useTemplateFinder(templateId, previewJobId, leftTab === "source" && finderMode);
   const runSource = documentRun.source?.recognition_run_id === documentRun.run?.recognition_run_id
     && documentRun.source?.analysis_id === documentRun.run?.identities.analysis_id
     ? documentRun.source : null;
@@ -623,7 +623,7 @@ export function TemplateSlotEditor({
   // queryKey 包含 sourceJobId：DEFAULT_SOURCE_IRI 的预览依赖它；变化时自动重取。
   const docContentQuery = useQuery({
     queryKey: ["ast-source-doc-content", activeDocIri, activeDocIri === DEFAULT_SOURCE_IRI ? sourceJobId : null],
-    enabled: Boolean(activeDocIri) && sourceCapabilities.preview,
+    enabled: Boolean(activeDocIri) && sourceCapabilities.preview && !finderMode,
     queryFn: async ({ signal }): Promise<DocPreviewState> => {
       const jobRef =
         activeDocIri === DEFAULT_SOURCE_IRI
@@ -1972,7 +1972,7 @@ export function TemplateSlotEditor({
                       : "正文已加载。关系图谱及历史任务请在「文档分析」中查看。"}
                   </p>
                 )}
-                <div className="rounded border bg-card p-6 shadow-sm">
+                {finderMode ? <FinderOriginal model={finder} documentIri={activeShadow?.iri} /> : <div className="rounded border bg-card p-6 shadow-sm">
                   {runSource || docContent.kind === "ready" ? (
                     <WordViewer
                       key={runSource ? documentRun.sourceIdentity : activeDocIri}
@@ -1997,7 +1997,7 @@ export function TemplateSlotEditor({
                       从左侧选择一篇文档以预览其正文
                     </div>
                   )}
-                </div>
+                </div>}
               </div>
             </div>
           </TabsContent>
@@ -2283,7 +2283,7 @@ export function TemplateSlotEditor({
       {/* ── Right: 基本信息/报告预览 → 无（左侧全宽）；源文档 → 关系图谱；其余 → Slot 树 + 内联 AI ── */}
       {leftTab === "source" ? (
         <div style={{ width: rightWidth }} className="flex shrink-0 flex-col min-h-0">
-          {previewJobId && templateId ? <TemplateDocumentGraphPanel model={documentRun} /> : (
+          {finderMode ? <FinderDocumentGraphPanel model={finder} /> : previewJobId && templateId ? <TemplateDocumentGraphPanel model={documentRun} /> : (
             <div className="min-h-0 flex-1 overflow-y-auto p-4">
               <h3 className="mb-3 text-sm font-semibold">关系图谱</h3>
               <RelationPanel docClass={sourceDocClass} relationships={sourceRelationships}

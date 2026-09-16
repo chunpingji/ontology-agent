@@ -244,7 +244,7 @@ function useSourceDocumentRun(
     mutationFn: (input: {
       templateId?: string; jobId?: string | null; documentIri?: string; requestKey: string;
     }) => input.documentIri
-      ? createReportDocumentRun(input.documentIri, input.requestKey)
+      ? createReportDocumentRun(input.documentIri, input.requestKey, undefined, input.templateId)
       : createTemplateDocumentRun(input.templateId!, input.jobId!, input.requestKey),
     onSuccess: (_data, input) => {
       if (requestKey.current?.key === input.requestKey) requestKey.current = null;
@@ -346,6 +346,6 @@ export function useTemplateDocumentRun(
   return useSourceDocumentRun(templateId, jobId, panelVisible);
 }
 
-export function useReportDocumentRun(documentIri: string) {
-  return useSourceDocumentRun(undefined, undefined, true, documentIri);
+export function useReportDocumentRun(documentIri: string, templateId?: string) {
+  return useSourceDocumentRun(templateId, undefined, true, documentIri);
 }

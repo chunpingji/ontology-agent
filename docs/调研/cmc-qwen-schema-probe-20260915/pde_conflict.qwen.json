@@ -1,0 +1,166 @@
+{
+  "scope_id": "pde_conflict",
+  "mentions": [
+    {
+      "id": "mention_pde_calc_1",
+      "text": "表1 产品NOAEL、F值",
+      "class_iri": "https://ontology.pharma-gmp.cn/slpra/risk/PDECalculation",
+      "evidence_id": "92a3f75b9bbfd08d7d78cf00abf14bd4a9688c6860dc1c797081c1e76ccb56c2",
+      "evidence": "表1 产品NOAEL、F值"
+    },
+    {
+      "id": "mention_pde_calc_2",
+      "text": "大鼠14天亚急毒试验（试验1）",
+      "class_iri": "https://ontology.pharma-gmp.cn/slpra/risk/PDECalculation",
+      "evidence_id": "859d82d093815d0491941be31f8a1fb58c2db749cf474d160cec2cc612a2a630",
+      "evidence": "大鼠14天亚急毒试验（试验1）"
+    },
+    {
+      "id": "mention_pde_calc_3",
+      "text": "犬14天亚急毒",
+      "class_iri": "https://ontology.pharma-gmp.cn/slpra/risk/PDECalculation",
+      "evidence_id": "c839f95d57f323df72969ecbebe9824f566c7f6d0c9c6b1b2c4f50e573b74234",
+      "evidence": "犬14天亚急毒"
+    }
+  ],
+  "claims": [
+    {
+      "subject_id": "mention_pde_calc_1",
+      "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/risk/calculatedPDE_mg_per_day",
+      "object_id": "",
+      "literal_value": "100",
+      "polarity": "affirmed",
+      "condition": "",
+      "evidence_id": "2535b270085bd646ca40fdce53ddb61080cfd3756c0a4fbaba1ab22e21546d28",
+      "evidence": "100"
+    },
+    {
+      "subject_id": "mention_pde_calc_1",
+      "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/risk/adjustmentFactor_F1",
+      "object_id": "",
+      "literal_value": "5",
+      "polarity": "affirmed",
+      "condition": "适用于从大鼠外推到人",
+      "evidence_id": "ce7978e34f916839b6615316b357c6b979783fa764b2ccf19afa427e29735023",
+      "evidence": "5"
+    },
+    {
+      "subject_id": "mention_pde_calc_1",
+      "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/risk/adjustmentFactor_F2",
+      "object_id": "",
+      "literal_value": "10",
+      "polarity": "affirmed",
+      "condition": "",
+      "evidence_id": "8cde2e1365d46a44c419a2f521df1a4d5021739d808e06846a35b4ecbd735767",
+      "evidence": "10"
+    },
+    {
+      "subject_id": "mention_pde_calc_1",
+      "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/risk/adjustmentFactor_F3",
+      "object_id": "",
+      "literal_value": "10",
+      "polarity": "affirmed",
+      "condition": "14天的研究",
+      "evidence_id": "c283830f473de2547bf2e891448a120aeac3c321e4e959598e1c5c2599871a38",
+      "evidence": "10"
+    },
+    {
+      "subject_id": "mention_pde_calc_1",
+      "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/risk/adjustmentFactor_F4",
+      "object_id": "",
+      "literal_value": "1",
+      "polarity": "affirmed",
+      "condition": "未观察到严重影响",
+      "evidence_id": "71f7d4c966dc76370e610d14240b484478c284502eb8cb3b05db906fff6324d4",
+      "evidence": "1"
+    },
+    {
+      "subject_id": "mention_pde_calc_1",
+      "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/risk/adjustmentFactor_F5",
+      "object_id": "",
+      "literal_value": "1",
+      "polarity": "affirmed",
+      "condition": "NOAEL",
+      "evidence_id": "7bf5c8a958790ef0356b1c7ee36ccd237318b7e13dfc84fa5666dbd18d65dcf1",
+      "evidence": "1"
+    },
+    {
+      "subject_id": "mention_pde_calc_2",
+      "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/risk/calculatedPDE_mg_per_day",
+      "object_id": "",
+      "literal_value": "7.5",
+      "polarity": "affirmed",
+      "condition": "",
+      "evidence_id": "5e801619b129f3615d71e87fa67328b265be34e1ac4e15f20168190d40da0e86",
+      "evidence": "7.5"
+    },
+    {
+      "subject_id": "mention_pde_calc_2",
+      "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/risk/adjustmentFactor_F1",
+      "object_id": "",
+      "literal_value": "2",
+      "polarity": "affirmed",
+      "condition": "适用于从犬外推到人",
+      "evidence_id": "bd0a2033eb08423a2c7e7bacfa8f6698d187cb2cc9a008695cf587544912e04d",
+      "evidence": "2"
+    },
+    {
+      "subject_id": "mention_pde_calc_2",
+      "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/risk/adjustmentFactor_F2",
+      "object_id": "",
+      "literal_value": "10",
+      "polarity": "affirmed",
+      "condition": "",
+      "evidence_id": "a29386192a8d9e7b0d3bd8a449119e6bd1d8125f9fa7aeccb67012d59c31eef7",
+      "evidence": "10"
+    },
+    {
+      "subject_id": "mention_pde_calc_2",
+      "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/risk/adjustmentFactor_F3",
+      "object_id": "",
+      "literal_value": "10",
+      "polarity": "affirmed",
+      "condition": "14天的研究",
+      "evidence_id": "3795c43202b5c011b5e0d7ce94463294ecfe76a76bf70ef5b0040ed808f40389",
+      "evidence": "10"
+    },
+    {
+      "subject_id": "mention_pde_calc_2",
+      "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/risk/adjustmentFactor_F4",
+      "object_id": "",
+      "literal_value": "1",
+      "polarity": "affirmed",
+      "condition": "未观察到严重影响",
+      "evidence_id": "4cd3ad44d66e15940f519e3dbf2777bc5804ec6e814acc8bd1c3a353fb2e96d4",
+      "evidence": "1"
+    },
+    {
+      "subject_id": "mention_pde_calc_2",
+      "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/risk/adjustmentFactor_F5",
+      "object_id": "",
+      "literal_value": "1",
+      "polarity": "affirmed",
+      "condition": "NOAEL",
+      "evidence_id": "a78b8c17dd8ada8058daa59dd8f990fd75b6489f3bbf563a4e187e1167690798",
+      "evidence": "1"
+    }
+  ],
+  "open_slots": [
+    {
+      "predicate_hint": "https://ontology.pharma-gmp.cn/slpra/risk/pod_mg_per_kg_per_day",
+      "missing_role": "subject",
+      "expected_type_hint": "decimal",
+      "evidence": "NOAEL：无可见损害作用水平；"
+    },
+    {
+      "predicate_hint": "https://ontology.pharma-gmp.cn/slpra/risk/bodyWeightCorrection_kg",
+      "missing_role": "subject",
+      "expected_type_hint": "decimal",
+      "evidence": "BW：服用下一产品患者体重（50 kg）；"
+    }
+  ],
+  "schema_gaps": [
+    "原文提供了NOAEL数值（200, 30），但PDE计算属性要求pod_mg_per_kg_per_day（单位mg/kg/天），原文未提供体重或剂量换算依据，无法直接提取符合本体定义的POD值。",
+    "原文提供了BW数值（50 kg），但未明确将其绑定到具体的PDE计算实例中作为属性值，仅作为备注说明。"
+  ]
+}

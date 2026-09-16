@@ -1,5 +1,7 @@
 # Feature Specification: 报告输出语义化
 
+2026-09-14 限定例外：[025 指定模板 Finder 演示](../025-template-finder-demo/spec.md)支持模板/报告中心的图谱与原文展示。V1/V2 模板协议与识别模式相互独立；不恢复 V1 报告执行器，Finder 缓存不是本规范的报告事实输入，普通执行链退役约束不变。
+
 **Feature Branch**: `020-report-output-semantics`
 **Created**: 2026-09-06
 **Status**: Implementation

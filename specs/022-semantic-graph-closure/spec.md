@@ -1,5 +1,7 @@
 # Feature Specification: 主体感知语义精排与关系图谱闭环
 
+2026-09-14 模板入口增量：[025 指定模板 Finder 演示](../025-template-finder-demo/spec.md)仅恢复显式绑定模板的展示能力。Finder 不调用本规范的精排、修复或模型调度，不创建本规范运行；普通模板与已有运行的继续语义不变。
+
 **Feature Branch**: `022-semantic-graph-closure`
 **Created**: 2026-09-08
 **Status**: CPU and CUDA 12 engineering implemented and validated; independent real-model quality gate pending

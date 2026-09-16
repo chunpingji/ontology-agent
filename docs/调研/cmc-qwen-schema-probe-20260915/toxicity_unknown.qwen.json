@@ -1,0 +1,83 @@
+{
+  "scope_id": "toxicity_unknown",
+  "mentions": [
+    {
+      "id": "doc_cmc",
+      "text": "表2 产品毒性信息\n产品名称\n生殖发育毒性\n基因毒性\n致癌性\n致敏性\nHRS-1597\n—\n×\n—\n—\n备注：“√”代表有相应毒性；“×”代表没有相应的毒性 ；“—”代表相关的研究数据不充分。",
+      "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport",
+      "evidence_id": "eb0575248a78ff735ebb476bb8796c408ce27326b0510d76dc6c1a125b3b13a0",
+      "evidence": "表2 产品毒性信息"
+    },
+    {
+      "id": "drug_hr1597",
+      "text": "HRS-1597",
+      "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/DrugProduct",
+      "evidence_id": "77fd655d1783a0c2eb855743ab41b8ab776b8879a4016e2a76ff1ab55caf0aa5",
+      "evidence": "HRS-1597"
+    }
+  ],
+  "claims": [
+    {
+      "subject_id": "doc_cmc",
+      "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/describes",
+      "object_id": "drug_hr1597",
+      "literal_value": "",
+      "polarity": "affirmed",
+      "condition": "",
+      "evidence_id": "77fd655d1783a0c2eb855743ab41b8ab776b8879a4016e2a76ff1ab55caf0aa5",
+      "evidence": "HRS-1597"
+    },
+    {
+      "subject_id": "drug_hr1597",
+      "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasSafetyRiskAssessment",
+      "object_id": "",
+      "literal_value": "基因毒性",
+      "polarity": "negated",
+      "condition": "",
+      "evidence_id": "36c860473268df555e3ba949da03e2382f785102bb6e47a44da580afe2083a37",
+      "evidence": "×"
+    },
+    {
+      "subject_id": "drug_hr1597",
+      "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasSafetyRiskAssessment",
+      "object_id": "",
+      "literal_value": "生殖发育毒性",
+      "polarity": "affirmed",
+      "condition": "",
+      "evidence_id": "e0961fabea6068ef718f23444d23c89376d5f894d05a7c746e45601de7999d0b",
+      "evidence": "—"
+    },
+    {
+      "subject_id": "drug_hr1597",
+      "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasSafetyRiskAssessment",
+      "object_id": "",
+      "literal_value": "致癌性",
+      "polarity": "affirmed",
+      "condition": "",
+      "evidence_id": "5d10857419ef096af355a6c479931d6228f1b3ea809eef23f3e605974971efe2",
+      "evidence": "—"
+    },
+    {
+      "subject_id": "drug_hr1597",
+      "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasSafetyRiskAssessment",
+      "object_id": "",
+      "literal_value": "致敏性",
+      "polarity": "affirmed",
+      "condition": "",
+      "evidence_id": "e799ecdf5d2e9224f95e0128fcec71cc2324235f43001a4da3bb201a90cbe6d5",
+      "evidence": "—"
+    }
+  ],
+  "open_slots": [
+    {
+      "predicate_hint": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasSafetyRiskAssessment",
+      "missing_role": "object",
+      "expected_type_hint": "ToxicityAssessment",
+      "evidence": "—"
+    }
+  ],
+  "schema_gaps": [
+    "Schema lacks specific classes for Toxicity types (e.g., Genotoxicity, Reproductive Toxicity) as objects for hasSafetyRiskAssessment.",
+    "Schema lacks a class for 'Data Sufficiency' status (e.g., Insufficient Data) to represent the '—' symbol explicitly."
+  ]
+}

@@ -1,0 +1,1339 @@
+{
+  "audit": "D_masked_summary_input_equivalence_v1",
+  "run_root": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-summary-retrieval-20260916/completed",
+  "run_id": "cmc-summary-tools-653cb0cb7f744de5",
+  "status": "passed",
+  "method": "Rebuild masked original sources/refs/plans/cards; verify identical NER inputs; reuse the SAME frozen NER; reconstruct and compare tools, schema and candidate payload.",
+  "new_ner_calls": 0,
+  "new_qwen_calls": 0,
+  "candidate_or_verification_response_read": false,
+  "conclusion": "Duplicate masked candidate Qwen call is unnecessary only under the verified identical source/cards/tools/schema/prompt/parameters and frozen NER reuse. This is input equivalence, not a second independent model evaluation or a quality gain.",
+  "verification_note": "Every available verification request is compared after rebuilding its source/cards/schema and reusing the same frozen candidate output. Equality is conditional on that reuse; semantic verification responses are never inspected.",
+  "check_counts": {
+    "passed": 293
+  },
+  "scopes": {
+    "introduction": {
+      "source_units": 103,
+      "ner_spans_reused": 543,
+      "selected_record_order_equal": false,
+      "input_equal": true,
+      "actual_candidate_request_checked": true,
+      "actual_verification_request_checked": false,
+      "verification_conditional_on_same_frozen_candidates": null,
+      "ner_input_sha256": "98acdebb8be8e2e3d3cbcbcc074923835ac2bc02611e9871b86053af71d26cde",
+      "frozen_ner_output_sha256": "cd4c4d11ae752bc2e970f9aebfbb8c817b822abf223716999f506784ac8d7f39",
+      "source_sha256": "7d24a1f88d9d186f99a621f3dbe77ec96bab6849896f862e8591836be224d499",
+      "subject_cards_sha256": "9b9448bc4186c74cf02760b8e9c84cf667cafd1b6d7a14397951560ff00a23a3",
+      "model_tool_results_sha256": "946936a844a8b05aaddf39eb5cfc42fc461557218e29ddb1206e5e50b928b9a4",
+      "candidate_schema_sha256": "ecec9660f8cd5b548f2cffcc7711b55ba568285ed60e56e5620e16f20d31b569",
+      "full_candidate_payload_sha256": "1837e5266b600a187ebf236d0240a8525dd42ab2e53a6bb12263a37a90076eea",
+      "ner_reexecuted": false,
+      "qwen_reexecuted": false
+    },
+    "product_properties": {
+      "source_units": 103,
+      "ner_spans_reused": 1251,
+      "selected_record_order_equal": true,
+      "input_equal": true,
+      "actual_candidate_request_checked": true,
+      "actual_verification_request_checked": false,
+      "verification_conditional_on_same_frozen_candidates": null,
+      "ner_input_sha256": "be3030b0a8c830ad4d80faffde899c92566440187aea1d4205f2a0a0bb5f21a4",
+      "frozen_ner_output_sha256": "ac48486dda83125d3bd11e9777007c9685ab6d1f33b9ba7379c46fed083e1689",
+      "source_sha256": "7d24a1f88d9d186f99a621f3dbe77ec96bab6849896f862e8591836be224d499",
+      "subject_cards_sha256": "8d914370d4c0a2afe0e1b46580ecb76212e1810f6cee0a299ecd32e6a16950af",
+      "model_tool_results_sha256": "3ea37ff3da85ae4e5d9f943de471626ddd2def1f806dcb0f4305fb5695e23b50",
+      "candidate_schema_sha256": "0fe055cedb2a7fec2eda5fe739999e862174c34b23f85080554c4d3b0a936136",
+      "full_candidate_payload_sha256": "a87b8178e06986fba4173dbba0032d55005cf7f168194c4b3e661bb070a17756",
+      "ner_reexecuted": false,
+      "qwen_reexecuted": false
+    },
+    "process_equipment": {
+      "source_units": 94,
+      "ner_spans_reused": 798,
+      "selected_record_order_equal": true,
+      "input_equal": true,
+      "actual_candidate_request_checked": true,
+      "actual_verification_request_checked": false,
+      "verification_conditional_on_same_frozen_candidates": null,
+      "ner_input_sha256": "53ee931a2bbdaa15d28fb8bc17216d91bc0c94e0f231c3b536f90f47de29c071",
+      "frozen_ner_output_sha256": "3952b22635ac95061b85845bae2f70c77f1b7204151343a37ae034a0eb24c47a",
+      "source_sha256": "3fa68315bd42169ff2fb6f73b28038e32645634407909ae8c21d23e51e7bc93b",
+      "subject_cards_sha256": "4bc98eb4dc1fd6275a1fe547cc30002534d01c39ba42aea248f9403e5d669c41",
+      "model_tool_results_sha256": "25437668a1a0aa439324fdab288dcd8460e6e9dde0aa655bff87010150bdf827",
+      "candidate_schema_sha256": "634b97d3d5920c069cbe60ec3baff5260d475068523fd9a3de60eb521aab95e1",
+      "full_candidate_payload_sha256": "828a3560a7d2f65d8399a6820dfd84f9821fa90587d6a67cf222baa98820aa8b",
+      "ner_reexecuted": false,
+      "qwen_reexecuted": false
+    },
+    "quality_condition": {
+      "source_units": 75,
+      "ner_spans_reused": 425,
+      "selected_record_order_equal": true,
+      "input_equal": true,
+      "actual_candidate_request_checked": true,
+      "actual_verification_request_checked": false,
+      "verification_conditional_on_same_frozen_candidates": null,
+      "ner_input_sha256": "4c5e4b5bd838c69a0d37a9447d0b77e5498fb1951ad96cb94dc79fd5603f75c9",
+      "frozen_ner_output_sha256": "d6bcf5712fa83c5cd395739c1c856080bcdc51bc1703a2da0cdc0acf1731e2b1",
+      "source_sha256": "4cae25620d301934e36571ca49299c5936161e6c9a087ab36ce7e40c61f184a6",
+      "subject_cards_sha256": "776c6f4c785793d241f6fe4a2307d41311c32d2ec1ea7c78278fcabd438cd994",
+      "model_tool_results_sha256": "f97ac8a24c38ea7ee2e3f1d86927107b023642d5a407a54fac5c5c6c660ee74e",
+      "candidate_schema_sha256": "f449de2dff791598bea78dd389dd6e8e048c20fe5b28a001c9c4949291698a71",
+      "full_candidate_payload_sha256": "d126b9e93c180b93ffcc03a66cb8b388c8d94603f4c70dcc84628dc00e492b1d",
+      "ner_reexecuted": false,
+      "qwen_reexecuted": false
+    },
+    "storage": {
+      "source_units": 11,
+      "ner_spans_reused": 24,
+      "selected_record_order_equal": true,
+      "input_equal": true,
+      "actual_candidate_request_checked": true,
+      "actual_verification_request_checked": true,
+      "verification_conditional_on_same_frozen_candidates": {
+        "reused_frozen_candidates_sha256": "b16b6fb7ab20b97e33c057e6cb2f8730905457b80e19c2de19c375e77b4592cc",
+        "payload_sha256": "901ecca730fe4ec62a63c0f69b922bbc0582eeabf6b4e2f21aa267b394d78316",
+        "schema_sha256": "af7c435e13f283fee0e87217b5e49285cb10333791466e406345bfaf23f09380"
+      },
+      "ner_input_sha256": "e1a9bb09b645d6b968abbd6fe037e4e387856717426bad80d751c732b388c140",
+      "frozen_ner_output_sha256": "5032072ea4a0c8c3cb12db49879d4f0bfbde75f55b8c748782583ef996955af6",
+      "source_sha256": "1bba245259fb74e6395e3d39ad6d19e4763e5b5174f26fa9e65f3eb1f199f1b1",
+      "subject_cards_sha256": "423398ef86406ffff349d00f13b8e236e761b1c0800bbb0fba5c4ebd91e8c55d",
+      "model_tool_results_sha256": "bbfb107c006f43ad06690c19ccb554daef572ff093c9cd30ff73899c693aca62",
+      "candidate_schema_sha256": "17043387aba31c1af79632d3bcd33c1ef37af834d00a02dbab67729e9a6bf166",
+      "full_candidate_payload_sha256": "3b0199615cfe2ee57fc816fc125efcd19f9c9f4166cbef081ab9a9b4683429ba",
+      "ner_reexecuted": false,
+      "qwen_reexecuted": false
+    },
+    "residue_missing": {
+      "source_units": 94,
+      "ner_spans_reused": 446,
+      "selected_record_order_equal": true,
+      "input_equal": true,
+      "actual_candidate_request_checked": true,
+      "actual_verification_request_checked": false,
+      "verification_conditional_on_same_frozen_candidates": null,
+      "ner_input_sha256": "cc6f0f2bfeb3dd3759b10f31eaeb15345433ee1ee2054357336ab2a0accf35a8",
+      "frozen_ner_output_sha256": "0e68d42d008f9c6165a2a0d769ecd1f5fcdcbef10ecc8c662068d4847d5ad884",
+      "source_sha256": "3fa68315bd42169ff2fb6f73b28038e32645634407909ae8c21d23e51e7bc93b",
+      "subject_cards_sha256": "7d89fa80bd3e14b6ca9b11754b5e4067e1efdacf8f1bbb6ee9e78db88b00287e",
+      "model_tool_results_sha256": "a00c9c5096fb52801926664df1a48c3b5166da6a846e1b1d76b375f61f8208e4",
+      "candidate_schema_sha256": "1c9ffb704ef085a60b29b1eedd70595f3dd8865b9d681ecfb1b1b4a81ae6ae22",
+      "full_candidate_payload_sha256": "fba3f6e577980296b20d4f91e47382809ca1b6e0f9f4fbc8c6933d8c2f2540f7",
+      "ner_reexecuted": false,
+      "qwen_reexecuted": false
+    },
+    "pde_conflict": {
+      "source_units": 46,
+      "ner_spans_reused": 403,
+      "selected_record_order_equal": true,
+      "input_equal": true,
+      "actual_candidate_request_checked": true,
+      "actual_verification_request_checked": false,
+      "verification_conditional_on_same_frozen_candidates": null,
+      "ner_input_sha256": "eedaf4fbfab3be88867c0a25f5737f05d57c050370fda683199b1b4a5a242608",
+      "frozen_ner_output_sha256": "687c99179d3659200c3f0e150360b936598d2646b8bae546cde1fffe480d1252",
+      "source_sha256": "fddbc5d494d45821a60aa6cd40bf26cad4f9774add6ba8a56cc0eed7e59ef6bb",
+      "subject_cards_sha256": "f8fc53bf6dbb74ac96ea44c194ef4d43ef432c4f742905af67673bb6ce09fd7d",
+      "model_tool_results_sha256": "f6cccff2fdb0be980c0b4de39dd6945043d84fec6141a7bf85a085a7a58e3a31",
+      "candidate_schema_sha256": "086688837f33b4ce0d5be19f02d36a9b2349bc4f5c3215afb5b861c4ed2705f9",
+      "full_candidate_payload_sha256": "97ce4f29df121039edb8274f101423569ede0b0c63926dd1892b2d356eb58b04",
+      "ner_reexecuted": false,
+      "qwen_reexecuted": false
+    },
+    "toxicity_unknown": {
+      "source_units": 103,
+      "ner_spans_reused": 1189,
+      "selected_record_order_equal": true,
+      "input_equal": true,
+      "actual_candidate_request_checked": true,
+      "actual_verification_request_checked": false,
+      "verification_conditional_on_same_frozen_candidates": null,
+      "ner_input_sha256": "d92f991011ab80d7c0ffb1d16b9f5c90592058b860f5ef985f77cfb74a7d3a4e",
+      "frozen_ner_output_sha256": "d0193eaea0a7f7e51a98a6903ea4411d60575e3184b53d0baed7adb197fdc106",
+      "source_sha256": "7d24a1f88d9d186f99a621f3dbe77ec96bab6849896f862e8591836be224d499",
+      "subject_cards_sha256": "98cde818d48e3b8f13d15a8854c27ffd27af66908e61ed2ec6511a9564ac85e6",
+      "model_tool_results_sha256": "e821ae5b4a977b9a9be5c36a29799cc32ab5abb4cc070243936dc904075eedb8",
+      "candidate_schema_sha256": "88943d4c5760d357592694345b3217eb7ad1f94f5f8f92e59f764a3dda289404",
+      "full_candidate_payload_sha256": "c6d42abbf57ad594d1b9441d1c496f8caa37b300dc7946f6e1ca163faf789945",
+      "ner_reexecuted": false,
+      "qwen_reexecuted": false
+    }
+  },
+  "checks": [
+    {
+      "check": "D_identity",
+      "status": "passed"
+    },
+    {
+      "check": "frozen_code/schema_card_tools.py",
+      "status": "passed"
+    },
+    {
+      "check": "reconstruction_code/schema_card_tools.py",
+      "status": "passed"
+    },
+    {
+      "check": "frozen_code/schema_card_tightened.py",
+      "status": "passed"
+    },
+    {
+      "check": "reconstruction_code/schema_card_tightened.py",
+      "status": "passed"
+    },
+    {
+      "check": "frozen_code/schema_card_evidence.py",
+      "status": "passed"
+    },
+    {
+      "check": "reconstruction_code/schema_card_evidence.py",
+      "status": "passed"
+    },
+    {
+      "check": "frozen_code/schema_card_probe.py",
+      "status": "passed"
+    },
+    {
+      "check": "reconstruction_code/schema_card_probe.py",
+      "status": "passed"
+    },
+    {
+      "check": "frozen_code/schema_card_gliner2.py",
+      "status": "passed"
+    },
+    {
+      "check": "reconstruction_code/schema_card_gliner2.py",
+      "status": "passed"
+    },
+    {
+      "check": "frozen_code/schema_card_summary_tools.py",
+      "status": "passed"
+    },
+    {
+      "check": "reconstruction_code/schema_card_summary_tools.py",
+      "status": "passed"
+    },
+    {
+      "check": "frozen_code/schema_card_summary_retrieval.py",
+      "status": "passed"
+    },
+    {
+      "check": "reconstruction_code/schema_card_summary_retrieval.py",
+      "status": "passed"
+    },
+    {
+      "check": "frozen_code/__init__.py",
+      "status": "passed"
+    },
+    {
+      "check": "reconstruction_code/__init__.py",
+      "status": "passed"
+    },
+    {
+      "check": "frozen_code/evidence.py",
+      "status": "passed"
+    },
+    {
+      "check": "reconstruction_code/evidence.py",
+      "status": "passed"
+    },
+    {
+      "check": "frozen_code/mentions.py",
+      "status": "passed"
+    },
+    {
+      "check": "reconstruction_code/mentions.py",
+      "status": "passed"
+    },
+    {
+      "check": "frozen_code/metric.py",
+      "status": "passed"
+    },
+    {
+      "check": "reconstruction_code/metric.py",
+      "status": "passed"
+    },
+    {
+      "check": "frozen_code/shacl.py",
+      "status": "passed"
+    },
+    {
+      "check": "reconstruction_code/shacl.py",
+      "status": "passed"
+    },
+    {
+      "check": "frozen_code/vocabulary.py",
+      "status": "passed"
+    },
+    {
+      "check": "reconstruction_code/vocabulary.py",
+      "status": "passed"
+    },
+    {
+      "check": "frozen_code/gliner_extractor.py",
+      "status": "passed"
+    },
+    {
+      "check": "reconstruction_code/gliner_extractor.py",
+      "status": "passed"
+    },
+    {
+      "check": "frozen_code/gliner2_extractor.py",
+      "status": "passed"
+    },
+    {
+      "check": "reconstruction_code/gliner2_extractor.py",
+      "status": "passed"
+    },
+    {
+      "check": "frozen_code/document_ir.py",
+      "status": "passed"
+    },
+    {
+      "check": "reconstruction_code/document_ir.py",
+      "status": "passed"
+    },
+    {
+      "check": "frozen_code/evidence_identity.py",
+      "status": "passed"
+    },
+    {
+      "check": "reconstruction_code/evidence_identity.py",
+      "status": "passed"
+    },
+    {
+      "check": "frozen_code/contracts.py",
+      "status": "passed"
+    },
+    {
+      "check": "reconstruction_code/contracts.py",
+      "status": "passed"
+    },
+    {
+      "check": "frozen_code/records.py",
+      "status": "passed"
+    },
+    {
+      "check": "reconstruction_code/records.py",
+      "status": "passed"
+    },
+    {
+      "check": "frozen_code/retrieval.py",
+      "status": "passed"
+    },
+    {
+      "check": "reconstruction_code/retrieval.py",
+      "status": "passed"
+    },
+    {
+      "check": "frozen_code/metadata.py",
+      "status": "passed"
+    },
+    {
+      "check": "reconstruction_code/metadata.py",
+      "status": "passed"
+    },
+    {
+      "check": "frozen_code/cmc_extraction_vocabulary.ttl",
+      "status": "passed"
+    },
+    {
+      "check": "reconstruction_code/cmc_extraction_vocabulary.ttl",
+      "status": "passed"
+    },
+    {
+      "check": "root_input/source.docx",
+      "status": "passed"
+    },
+    {
+      "check": "root_input/ir.json",
+      "status": "passed"
+    },
+    {
+      "check": "root_input/cards.json",
+      "status": "passed"
+    },
+    {
+      "check": "root_input/cases.json",
+      "status": "passed"
+    },
+    {
+      "check": "root_input/vocabularies.json",
+      "status": "passed"
+    },
+    {
+      "check": "metadata_input/metadata.json",
+      "status": "passed"
+    },
+    {
+      "check": "metadata_input/section-tree.json",
+      "status": "passed"
+    },
+    {
+      "check": "metadata_input/summaries.json",
+      "status": "passed"
+    },
+    {
+      "check": "metadata_input/manifest.json",
+      "status": "passed"
+    },
+    {
+      "check": "retrieval_metadata_source",
+      "status": "passed"
+    },
+    {
+      "check": "introduction/input_hash/case.json",
+      "status": "passed"
+    },
+    {
+      "check": "introduction/input_hash/sources.json",
+      "status": "passed"
+    },
+    {
+      "check": "introduction/input_hash/demand.json",
+      "status": "passed"
+    },
+    {
+      "check": "introduction/input_hash/retrieval.json",
+      "status": "passed"
+    },
+    {
+      "check": "introduction/input_hash/coverage.json",
+      "status": "passed"
+    },
+    {
+      "check": "introduction/input_hash/plan/proposal.json",
+      "status": "passed"
+    },
+    {
+      "check": "introduction/input_hash/plan/schema.json",
+      "status": "passed"
+    },
+    {
+      "check": "introduction/input_hash/vocabulary.json",
+      "status": "passed"
+    },
+    {
+      "check": "introduction/tools_hash",
+      "status": "passed"
+    },
+    {
+      "check": "introduction/ner_completed",
+      "status": "passed"
+    },
+    {
+      "check": "introduction/selected_ids_unique",
+      "status": "passed"
+    },
+    {
+      "check": "introduction/selected_ids_unique",
+      "status": "passed"
+    },
+    {
+      "check": "introduction/enabled_sources_match_frozen",
+      "status": "passed"
+    },
+    {
+      "check": "introduction/enabled_plan_match_frozen",
+      "status": "passed"
+    },
+    {
+      "check": "introduction/masked_sources_and_refs_equal",
+      "status": "passed"
+    },
+    {
+      "check": "introduction/masked_plan_equal",
+      "status": "passed"
+    },
+    {
+      "check": "introduction/ner_groups_equal",
+      "status": "passed"
+    },
+    {
+      "check": "introduction/ner_vocabulary_identity",
+      "status": "passed"
+    },
+    {
+      "check": "introduction/full_ner_input_equal",
+      "status": "passed"
+    },
+    {
+      "check": "introduction/all_frozen_tools_equal",
+      "status": "passed"
+    },
+    {
+      "check": "introduction/model_visible_source_equal",
+      "status": "passed"
+    },
+    {
+      "check": "introduction/model_visible_subjects_equal",
+      "status": "passed"
+    },
+    {
+      "check": "introduction/model_visible_tool_results_equal",
+      "status": "passed"
+    },
+    {
+      "check": "introduction/candidate_schema_equal",
+      "status": "passed"
+    },
+    {
+      "check": "introduction/full_candidate_input_equal",
+      "status": "passed"
+    },
+    {
+      "check": "introduction/actual_request_payload",
+      "status": "passed"
+    },
+    {
+      "check": "introduction/actual_request_schema",
+      "status": "passed"
+    },
+    {
+      "check": "introduction/actual_request_prompt",
+      "status": "passed"
+    },
+    {
+      "check": "introduction/actual_request_parameters",
+      "status": "passed"
+    },
+    {
+      "check": "product_properties/input_hash/case.json",
+      "status": "passed"
+    },
+    {
+      "check": "product_properties/input_hash/sources.json",
+      "status": "passed"
+    },
+    {
+      "check": "product_properties/input_hash/demand.json",
+      "status": "passed"
+    },
+    {
+      "check": "product_properties/input_hash/retrieval.json",
+      "status": "passed"
+    },
+    {
+      "check": "product_properties/input_hash/coverage.json",
+      "status": "passed"
+    },
+    {
+      "check": "product_properties/input_hash/plan/proposal.json",
+      "status": "passed"
+    },
+    {
+      "check": "product_properties/input_hash/plan/schema.json",
+      "status": "passed"
+    },
+    {
+      "check": "product_properties/input_hash/vocabulary.json",
+      "status": "passed"
+    },
+    {
+      "check": "product_properties/tools_hash",
+      "status": "passed"
+    },
+    {
+      "check": "product_properties/ner_completed",
+      "status": "passed"
+    },
+    {
+      "check": "product_properties/selected_ids_unique",
+      "status": "passed"
+    },
+    {
+      "check": "product_properties/selected_ids_unique",
+      "status": "passed"
+    },
+    {
+      "check": "product_properties/enabled_sources_match_frozen",
+      "status": "passed"
+    },
+    {
+      "check": "product_properties/enabled_plan_match_frozen",
+      "status": "passed"
+    },
+    {
+      "check": "product_properties/masked_sources_and_refs_equal",
+      "status": "passed"
+    },
+    {
+      "check": "product_properties/masked_plan_equal",
+      "status": "passed"
+    },
+    {
+      "check": "product_properties/ner_groups_equal",
+      "status": "passed"
+    },
+    {
+      "check": "product_properties/ner_vocabulary_identity",
+      "status": "passed"
+    },
+    {
+      "check": "product_properties/full_ner_input_equal",
+      "status": "passed"
+    },
+    {
+      "check": "product_properties/all_frozen_tools_equal",
+      "status": "passed"
+    },
+    {
+      "check": "product_properties/model_visible_source_equal",
+      "status": "passed"
+    },
+    {
+      "check": "product_properties/model_visible_subjects_equal",
+      "status": "passed"
+    },
+    {
+      "check": "product_properties/model_visible_tool_results_equal",
+      "status": "passed"
+    },
+    {
+      "check": "product_properties/candidate_schema_equal",
+      "status": "passed"
+    },
+    {
+      "check": "product_properties/full_candidate_input_equal",
+      "status": "passed"
+    },
+    {
+      "check": "product_properties/actual_request_payload",
+      "status": "passed"
+    },
+    {
+      "check": "product_properties/actual_request_schema",
+      "status": "passed"
+    },
+    {
+      "check": "product_properties/actual_request_prompt",
+      "status": "passed"
+    },
+    {
+      "check": "product_properties/actual_request_parameters",
+      "status": "passed"
+    },
+    {
+      "check": "process_equipment/input_hash/case.json",
+      "status": "passed"
+    },
+    {
+      "check": "process_equipment/input_hash/sources.json",
+      "status": "passed"
+    },
+    {
+      "check": "process_equipment/input_hash/demand.json",
+      "status": "passed"
+    },
+    {
+      "check": "process_equipment/input_hash/retrieval.json",
+      "status": "passed"
+    },
+    {
+      "check": "process_equipment/input_hash/coverage.json",
+      "status": "passed"
+    },
+    {
+      "check": "process_equipment/input_hash/plan/proposal.json",
+      "status": "passed"
+    },
+    {
+      "check": "process_equipment/input_hash/plan/schema.json",
+      "status": "passed"
+    },
+    {
+      "check": "process_equipment/input_hash/vocabulary.json",
+      "status": "passed"
+    },
+    {
+      "check": "process_equipment/tools_hash",
+      "status": "passed"
+    },
+    {
+      "check": "process_equipment/ner_completed",
+      "status": "passed"
+    },
+    {
+      "check": "process_equipment/selected_ids_unique",
+      "status": "passed"
+    },
+    {
+      "check": "process_equipment/selected_ids_unique",
+      "status": "passed"
+    },
+    {
+      "check": "process_equipment/enabled_sources_match_frozen",
+      "status": "passed"
+    },
+    {
+      "check": "process_equipment/enabled_plan_match_frozen",
+      "status": "passed"
+    },
+    {
+      "check": "process_equipment/masked_sources_and_refs_equal",
+      "status": "passed"
+    },
+    {
+      "check": "process_equipment/masked_plan_equal",
+      "status": "passed"
+    },
+    {
+      "check": "process_equipment/ner_groups_equal",
+      "status": "passed"
+    },
+    {
+      "check": "process_equipment/ner_vocabulary_identity",
+      "status": "passed"
+    },
+    {
+      "check": "process_equipment/full_ner_input_equal",
+      "status": "passed"
+    },
+    {
+      "check": "process_equipment/all_frozen_tools_equal",
+      "status": "passed"
+    },
+    {
+      "check": "process_equipment/model_visible_source_equal",
+      "status": "passed"
+    },
+    {
+      "check": "process_equipment/model_visible_subjects_equal",
+      "status": "passed"
+    },
+    {
+      "check": "process_equipment/model_visible_tool_results_equal",
+      "status": "passed"
+    },
+    {
+      "check": "process_equipment/candidate_schema_equal",
+      "status": "passed"
+    },
+    {
+      "check": "process_equipment/full_candidate_input_equal",
+      "status": "passed"
+    },
+    {
+      "check": "process_equipment/actual_request_payload",
+      "status": "passed"
+    },
+    {
+      "check": "process_equipment/actual_request_schema",
+      "status": "passed"
+    },
+    {
+      "check": "process_equipment/actual_request_prompt",
+      "status": "passed"
+    },
+    {
+      "check": "process_equipment/actual_request_parameters",
+      "status": "passed"
+    },
+    {
+      "check": "quality_condition/input_hash/case.json",
+      "status": "passed"
+    },
+    {
+      "check": "quality_condition/input_hash/sources.json",
+      "status": "passed"
+    },
+    {
+      "check": "quality_condition/input_hash/demand.json",
+      "status": "passed"
+    },
+    {
+      "check": "quality_condition/input_hash/retrieval.json",
+      "status": "passed"
+    },
+    {
+      "check": "quality_condition/input_hash/coverage.json",
+      "status": "passed"
+    },
+    {
+      "check": "quality_condition/input_hash/plan/proposal.json",
+      "status": "passed"
+    },
+    {
+      "check": "quality_condition/input_hash/plan/schema.json",
+      "status": "passed"
+    },
+    {
+      "check": "quality_condition/input_hash/vocabulary.json",
+      "status": "passed"
+    },
+    {
+      "check": "quality_condition/tools_hash",
+      "status": "passed"
+    },
+    {
+      "check": "quality_condition/ner_completed",
+      "status": "passed"
+    },
+    {
+      "check": "quality_condition/selected_ids_unique",
+      "status": "passed"
+    },
+    {
+      "check": "quality_condition/selected_ids_unique",
+      "status": "passed"
+    },
+    {
+      "check": "quality_condition/enabled_sources_match_frozen",
+      "status": "passed"
+    },
+    {
+      "check": "quality_condition/enabled_plan_match_frozen",
+      "status": "passed"
+    },
+    {
+      "check": "quality_condition/masked_sources_and_refs_equal",
+      "status": "passed"
+    },
+    {
+      "check": "quality_condition/masked_plan_equal",
+      "status": "passed"
+    },
+    {
+      "check": "quality_condition/ner_groups_equal",
+      "status": "passed"
+    },
+    {
+      "check": "quality_condition/ner_vocabulary_identity",
+      "status": "passed"
+    },
+    {
+      "check": "quality_condition/full_ner_input_equal",
+      "status": "passed"
+    },
+    {
+      "check": "quality_condition/all_frozen_tools_equal",
+      "status": "passed"
+    },
+    {
+      "check": "quality_condition/model_visible_source_equal",
+      "status": "passed"
+    },
+    {
+      "check": "quality_condition/model_visible_subjects_equal",
+      "status": "passed"
+    },
+    {
+      "check": "quality_condition/model_visible_tool_results_equal",
+      "status": "passed"
+    },
+    {
+      "check": "quality_condition/candidate_schema_equal",
+      "status": "passed"
+    },
+    {
+      "check": "quality_condition/full_candidate_input_equal",
+      "status": "passed"
+    },
+    {
+      "check": "quality_condition/actual_request_payload",
+      "status": "passed"
+    },
+    {
+      "check": "quality_condition/actual_request_schema",
+      "status": "passed"
+    },
+    {
+      "check": "quality_condition/actual_request_prompt",
+      "status": "passed"
+    },
+    {
+      "check": "quality_condition/actual_request_parameters",
+      "status": "passed"
+    },
+    {
+      "check": "storage/input_hash/case.json",
+      "status": "passed"
+    },
+    {
+      "check": "storage/input_hash/sources.json",
+      "status": "passed"
+    },
+    {
+      "check": "storage/input_hash/demand.json",
+      "status": "passed"
+    },
+    {
+      "check": "storage/input_hash/retrieval.json",
+      "status": "passed"
+    },
+    {
+      "check": "storage/input_hash/coverage.json",
+      "status": "passed"
+    },
+    {
+      "check": "storage/input_hash/plan/proposal.json",
+      "status": "passed"
+    },
+    {
+      "check": "storage/input_hash/plan/schema.json",
+      "status": "passed"
+    },
+    {
+      "check": "storage/input_hash/vocabulary.json",
+      "status": "passed"
+    },
+    {
+      "check": "storage/tools_hash",
+      "status": "passed"
+    },
+    {
+      "check": "storage/ner_completed",
+      "status": "passed"
+    },
+    {
+      "check": "storage/selected_ids_unique",
+      "status": "passed"
+    },
+    {
+      "check": "storage/selected_ids_unique",
+      "status": "passed"
+    },
+    {
+      "check": "storage/enabled_sources_match_frozen",
+      "status": "passed"
+    },
+    {
+      "check": "storage/enabled_plan_match_frozen",
+      "status": "passed"
+    },
+    {
+      "check": "storage/masked_sources_and_refs_equal",
+      "status": "passed"
+    },
+    {
+      "check": "storage/masked_plan_equal",
+      "status": "passed"
+    },
+    {
+      "check": "storage/ner_groups_equal",
+      "status": "passed"
+    },
+    {
+      "check": "storage/ner_vocabulary_identity",
+      "status": "passed"
+    },
+    {
+      "check": "storage/full_ner_input_equal",
+      "status": "passed"
+    },
+    {
+      "check": "storage/all_frozen_tools_equal",
+      "status": "passed"
+    },
+    {
+      "check": "storage/model_visible_source_equal",
+      "status": "passed"
+    },
+    {
+      "check": "storage/model_visible_subjects_equal",
+      "status": "passed"
+    },
+    {
+      "check": "storage/model_visible_tool_results_equal",
+      "status": "passed"
+    },
+    {
+      "check": "storage/candidate_schema_equal",
+      "status": "passed"
+    },
+    {
+      "check": "storage/full_candidate_input_equal",
+      "status": "passed"
+    },
+    {
+      "check": "storage/actual_request_payload",
+      "status": "passed"
+    },
+    {
+      "check": "storage/actual_request_schema",
+      "status": "passed"
+    },
+    {
+      "check": "storage/actual_request_prompt",
+      "status": "passed"
+    },
+    {
+      "check": "storage/actual_request_parameters",
+      "status": "passed"
+    },
+    {
+      "check": "storage/verification_input_equal",
+      "status": "passed"
+    },
+    {
+      "check": "storage/verification_schema_equal",
+      "status": "passed"
+    },
+    {
+      "check": "storage/actual_verification_payload",
+      "status": "passed"
+    },
+    {
+      "check": "storage/actual_verification_schema",
+      "status": "passed"
+    },
+    {
+      "check": "storage/actual_verification_prompt",
+      "status": "passed"
+    },
+    {
+      "check": "storage/actual_verification_parameters",
+      "status": "passed"
+    },
+    {
+      "check": "residue_missing/input_hash/case.json",
+      "status": "passed"
+    },
+    {
+      "check": "residue_missing/input_hash/sources.json",
+      "status": "passed"
+    },
+    {
+      "check": "residue_missing/input_hash/demand.json",
+      "status": "passed"
+    },
+    {
+      "check": "residue_missing/input_hash/retrieval.json",
+      "status": "passed"
+    },
+    {
+      "check": "residue_missing/input_hash/coverage.json",
+      "status": "passed"
+    },
+    {
+      "check": "residue_missing/input_hash/plan/proposal.json",
+      "status": "passed"
+    },
+    {
+      "check": "residue_missing/input_hash/plan/schema.json",
+      "status": "passed"
+    },
+    {
+      "check": "residue_missing/input_hash/vocabulary.json",
+      "status": "passed"
+    },
+    {
+      "check": "residue_missing/tools_hash",
+      "status": "passed"
+    },
+    {
+      "check": "residue_missing/ner_completed",
+      "status": "passed"
+    },
+    {
+      "check": "residue_missing/selected_ids_unique",
+      "status": "passed"
+    },
+    {
+      "check": "residue_missing/selected_ids_unique",
+      "status": "passed"
+    },
+    {
+      "check": "residue_missing/enabled_sources_match_frozen",
+      "status": "passed"
+    },
+    {
+      "check": "residue_missing/enabled_plan_match_frozen",
+      "status": "passed"
+    },
+    {
+      "check": "residue_missing/masked_sources_and_refs_equal",
+      "status": "passed"
+    },
+    {
+      "check": "residue_missing/masked_plan_equal",
+      "status": "passed"
+    },
+    {
+      "check": "residue_missing/ner_groups_equal",
+      "status": "passed"
+    },
+    {
+      "check": "residue_missing/ner_vocabulary_identity",
+      "status": "passed"
+    },
+    {
+      "check": "residue_missing/full_ner_input_equal",
+      "status": "passed"
+    },
+    {
+      "check": "residue_missing/all_frozen_tools_equal",
+      "status": "passed"
+    },
+    {
+      "check": "residue_missing/model_visible_source_equal",
+      "status": "passed"
+    },
+    {
+      "check": "residue_missing/model_visible_subjects_equal",
+      "status": "passed"
+    },
+    {
+      "check": "residue_missing/model_visible_tool_results_equal",
+      "status": "passed"
+    },
+    {
+      "check": "residue_missing/candidate_schema_equal",
+      "status": "passed"
+    },
+    {
+      "check": "residue_missing/full_candidate_input_equal",
+      "status": "passed"
+    },
+    {
+      "check": "residue_missing/actual_request_payload",
+      "status": "passed"
+    },
+    {
+      "check": "residue_missing/actual_request_schema",
+      "status": "passed"
+    },
+    {
+      "check": "residue_missing/actual_request_prompt",
+      "status": "passed"
+    },
+    {
+      "check": "residue_missing/actual_request_parameters",
+      "status": "passed"
+    },
+    {
+      "check": "pde_conflict/input_hash/case.json",
+      "status": "passed"
+    },
+    {
+      "check": "pde_conflict/input_hash/sources.json",
+      "status": "passed"
+    },
+    {
+      "check": "pde_conflict/input_hash/demand.json",
+      "status": "passed"
+    },
+    {
+      "check": "pde_conflict/input_hash/retrieval.json",
+      "status": "passed"
+    },
+    {
+      "check": "pde_conflict/input_hash/coverage.json",
+      "status": "passed"
+    },
+    {
+      "check": "pde_conflict/input_hash/plan/proposal.json",
+      "status": "passed"
+    },
+    {
+      "check": "pde_conflict/input_hash/plan/schema.json",
+      "status": "passed"
+    },
+    {
+      "check": "pde_conflict/input_hash/vocabulary.json",
+      "status": "passed"
+    },
+    {
+      "check": "pde_conflict/tools_hash",
+      "status": "passed"
+    },
+    {
+      "check": "pde_conflict/ner_completed",
+      "status": "passed"
+    },
+    {
+      "check": "pde_conflict/selected_ids_unique",
+      "status": "passed"
+    },
+    {
+      "check": "pde_conflict/selected_ids_unique",
+      "status": "passed"
+    },
+    {
+      "check": "pde_conflict/enabled_sources_match_frozen",
+      "status": "passed"
+    },
+    {
+      "check": "pde_conflict/enabled_plan_match_frozen",
+      "status": "passed"
+    },
+    {
+      "check": "pde_conflict/masked_sources_and_refs_equal",
+      "status": "passed"
+    },
+    {
+      "check": "pde_conflict/masked_plan_equal",
+      "status": "passed"
+    },
+    {
+      "check": "pde_conflict/ner_groups_equal",
+      "status": "passed"
+    },
+    {
+      "check": "pde_conflict/ner_vocabulary_identity",
+      "status": "passed"
+    },
+    {
+      "check": "pde_conflict/full_ner_input_equal",
+      "status": "passed"
+    },
+    {
+      "check": "pde_conflict/all_frozen_tools_equal",
+      "status": "passed"
+    },
+    {
+      "check": "pde_conflict/model_visible_source_equal",
+      "status": "passed"
+    },
+    {
+      "check": "pde_conflict/model_visible_subjects_equal",
+      "status": "passed"
+    },
+    {
+      "check": "pde_conflict/model_visible_tool_results_equal",
+      "status": "passed"
+    },
+    {
+      "check": "pde_conflict/candidate_schema_equal",
+      "status": "passed"
+    },
+    {
+      "check": "pde_conflict/full_candidate_input_equal",
+      "status": "passed"
+    },
+    {
+      "check": "pde_conflict/actual_request_payload",
+      "status": "passed"
+    },
+    {
+      "check": "pde_conflict/actual_request_schema",
+      "status": "passed"
+    },
+    {
+      "check": "pde_conflict/actual_request_prompt",
+      "status": "passed"
+    },
+    {
+      "check": "pde_conflict/actual_request_parameters",
+      "status": "passed"
+    },
+    {
+      "check": "toxicity_unknown/input_hash/case.json",
+      "status": "passed"
+    },
+    {
+      "check": "toxicity_unknown/input_hash/sources.json",
+      "status": "passed"
+    },
+    {
+      "check": "toxicity_unknown/input_hash/demand.json",
+      "status": "passed"
+    },
+    {
+      "check": "toxicity_unknown/input_hash/retrieval.json",
+      "status": "passed"
+    },
+    {
+      "check": "toxicity_unknown/input_hash/coverage.json",
+      "status": "passed"
+    },
+    {
+      "check": "toxicity_unknown/input_hash/plan/proposal.json",
+      "status": "passed"
+    },
+    {
+      "check": "toxicity_unknown/input_hash/plan/schema.json",
+      "status": "passed"
+    },
+    {
+      "check": "toxicity_unknown/input_hash/vocabulary.json",
+      "status": "passed"
+    },
+    {
+      "check": "toxicity_unknown/tools_hash",
+      "status": "passed"
+    },
+    {
+      "check": "toxicity_unknown/ner_completed",
+      "status": "passed"
+    },
+    {
+      "check": "toxicity_unknown/selected_ids_unique",
+      "status": "passed"
+    },
+    {
+      "check": "toxicity_unknown/selected_ids_unique",
+      "status": "passed"
+    },
+    {
+      "check": "toxicity_unknown/enabled_sources_match_frozen",
+      "status": "passed"
+    },
+    {
+      "check": "toxicity_unknown/enabled_plan_match_frozen",
+      "status": "passed"
+    },
+    {
+      "check": "toxicity_unknown/masked_sources_and_refs_equal",
+      "status": "passed"
+    },
+    {
+      "check": "toxicity_unknown/masked_plan_equal",
+      "status": "passed"
+    },
+    {
+      "check": "toxicity_unknown/ner_groups_equal",
+      "status": "passed"
+    },
+    {
+      "check": "toxicity_unknown/ner_vocabulary_identity",
+      "status": "passed"
+    },
+    {
+      "check": "toxicity_unknown/full_ner_input_equal",
+      "status": "passed"
+    },
+    {
+      "check": "toxicity_unknown/all_frozen_tools_equal",
+      "status": "passed"
+    },
+    {
+      "check": "toxicity_unknown/model_visible_source_equal",
+      "status": "passed"
+    },
+    {
+      "check": "toxicity_unknown/model_visible_subjects_equal",
+      "status": "passed"
+    },
+    {
+      "check": "toxicity_unknown/model_visible_tool_results_equal",
+      "status": "passed"
+    },
+    {
+      "check": "toxicity_unknown/candidate_schema_equal",
+      "status": "passed"
+    },
+    {
+      "check": "toxicity_unknown/full_candidate_input_equal",
+      "status": "passed"
+    },
+    {
+      "check": "toxicity_unknown/actual_request_payload",
+      "status": "passed"
+    },
+    {
+      "check": "toxicity_unknown/actual_request_schema",
+      "status": "passed"
+    },
+    {
+      "check": "toxicity_unknown/actual_request_prompt",
+      "status": "passed"
+    },
+    {
+      "check": "toxicity_unknown/actual_request_parameters",
+      "status": "passed"
+    }
+  ]
+}

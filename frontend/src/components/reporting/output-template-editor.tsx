@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -8,16 +8,32 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   compileTemplate, consumersOf, groupsIn, moveUnit, reportGet, reportPost, unitsIn,
   syncBindingDependencies, changeSourceType, resolveModelBinding, automaticChecks, type OntologyClassContract,
+  materializeTemplateStructure, applyStructureTitles, applySemanticPatches, coalesceUnconfiguredTables, isUploadDocumentContainer, tiptapToText,
+  type SemanticSourceOption, type SemanticSuggestion,
   type BindingDefinition, type Compilation, type ContentNode, type InputDefinition,
   type OutputGroup, type OutputRender, type OutputUnit,
   type RegisteredContract, type TemplateV2,
 } from "@/lib/reporting-v2";
 import { SemanticBindingFields, SemanticProjectionFields } from "./semantic-binding-fields";
 import { TemplateReportPreview } from "./template-report-preview";
+import { SlotSemanticsEditor } from "./slot-semantics-editor";
+import { SectionNarrativeEditor } from "./section-narrative-editor";
 import { TemplateSlotEditor, type TemplateMeta, type TemplateVersionEntry } from "@/components/extraction/template-slot-editor";
-import { type TemplateOrigin, type TiptapContent } from "@/lib/api";
+import { suggestSlots, type DocumentEvidenceIR, type SuggestSlotsResponse,
+  type TemplateOrigin, type TiptapContent } from "@/lib/api";
 
 const fieldClass = "w-full min-w-0 rounded border bg-background px-3 py-2 text-sm";
+
+function structureDiagnostic(message: string): string {
+  const messages: Record<string, string> = {
+    analysis_required: "样例缺少结构信息，请重新上传模板样例。",
+    invalid_analysis: "样例结构信息不可用，请重新上传模板样例。",
+    semantic_model_disabled: "语义模型未启用，已保留原文结构。",
+    section_budget_exceeded: "部分章节超出单次语义分析范围，已保留原文结构。",
+    invalid_semantic_proposal: "部分语义建议未通过校验，已保留原文结构。",
+  };
+  return messages[message.split(":")[0]] ?? "部分分析未完成，请检查样例后重试。";
+}
 
 export function ContractJson<T>({ value, onApply, label }: {
   value: T; onApply: (next: T) => void; label: string;
@@ -44,21 +60,39 @@ function initialRender(kind: OutputRender["kind"], inputId = ""): OutputRender {
 }
 
 export function OutputTemplateEditor({ schema, templateId, schemaHash, saving, onSave, onCancel,
-  defaultSourceJobId, versions = [], onVersionSwitch, sampleContentJson, sampleText, meta, onMetaSaved, initialTab }: {
+  defaultSourceJobId, versions = [], onVersionSwitch, sampleContentJson, sampleText, sampleAnalysis,
+  meta, onMetaSaved, initialTab, recognitionMode, structureTitles }: {
   schema: TemplateV2; templateId?: string; schemaHash?: string; saving?: boolean;
   defaultSourceJobId?: string | null;
   onSave: (next: TemplateV2) => void; onCancel: () => void;
   versions?: TemplateVersionEntry[]; onVersionSwitch?: (id: string) => void;
   sampleContentJson?: TiptapContent | null; sampleText?: string | null;
+  sampleAnalysis?: DocumentEvidenceIR | null;
+  structureTitles?: Record<string, string>;
   meta?: TemplateMeta; onMetaSaved?: () => void;
   initialTab?: "basic" | "template";
+  recognitionMode?: "ontology_guided" | "finder_legacy";
 }) {
-  const [draft, setDraft] = useState(() => structuredClone(schema));
+  const [draft, setDraft] = useState(() => applyStructureTitles(schema, structureTitles));
   const [selected, setSelected] = useState("");
   const [tab, setTab] = useState<"bindings" | "inputs" | "render">("render");
   const [error, setError] = useState("");
   const [plan, setPlan] = useState<Compilation | null>(null);
   const [busy, setBusy] = useState(false);
+  const [analyzing, setAnalyzing] = useState(false);
+  const [analysis, setAnalysis] = useState<SuggestSlotsResponse | null>(null);
+  const [semanticSourceJobId, setSemanticSourceJobId] = useState<string | null>(defaultSourceJobId || null);
+  const [semanticProgress, setSemanticProgress] = useState("");
+  const [semanticDiagnostics, setSemanticDiagnostics] = useState<SemanticSuggestion["diagnostics"]>([]);
+  const semanticRequest = useRef<AbortController | null>(null);
+  useEffect(() => () => { semanticRequest.current?.abort(); }, [templateId, recognitionMode, semanticSourceJobId]);
+  const semanticSources = useQuery({
+    queryKey: ["slot-semantic-sources", templateId, recognitionMode, semanticSourceJobId, draft.ontology_release_ref],
+    enabled: !!templateId,
+    queryFn: () => reportGet<{ options: SemanticSourceOption[] }>(`ast-templates/${templateId}/semantic-sources${semanticSourceJobId ? "?source_job_id=" + encodeURIComponent(semanticSourceJobId) : ""}`),
+  });
+  const samplePreview = useMemo(() => sampleContentJson && !sampleContentJson.analysis && sampleAnalysis
+    ? { ...sampleContentJson, analysis: sampleAnalysis } : sampleContentJson, [sampleContentJson, sampleAnalysis]);
   const contracts = useQuery({ queryKey: ["report-contracts"], queryFn: () => reportGet<RegisteredContract[]>("report-contracts") });
   const model = useQuery({ queryKey: ["report-model-context", draft.ontology_release_ref],
     queryFn: () => reportGet<RegisteredContract>("report-model-context?ref=" + encodeURIComponent(draft.ontology_release_ref)) });
@@ -77,6 +111,49 @@ export function OutputTemplateEditor({ schema, templateId, schemaHash, saving, o
     setBusy(true); setError("");
     try { await fn(); } catch (e) { setError(e instanceof Error ? e.message : "操作失败"); }
     finally { setBusy(false); }
+  }
+  async function analyzeStructure() {
+    if (analyzing || (!draft.sections.length && !sampleContentJson && !sampleText)) return;
+    const controller = new AbortController();
+    semanticRequest.current?.abort(); semanticRequest.current = controller;
+    setAnalyzing(true); setError(""); setAnalysis(null); setSemanticDiagnostics([]);
+    let baseline = coalesceUnconfiguredTables(draft);
+    setDraft((current) => current === draft ? coalesceUnconfiguredTables(current) : current);
+    try {
+      if (!baseline.sections.length) {
+        setSemanticProgress("正在识别样例结构…");
+        const result = await suggestSlots({
+          ...(sampleContentJson ? { sample_content_json: sampleContentJson } : { document_text: sampleText }),
+          ...(!sampleContentJson?.analysis && sampleAnalysis ? { analysis: sampleAnalysis } : {}),
+          doc_class_iri: primarySource?.class_iri || meta?.iriPattern,
+        });
+        if (controller.signal.aborted) return;
+        setAnalysis(result);
+        baseline = coalesceUnconfiguredTables(materializeTemplateStructure(baseline, result.sections ?? []));
+        setDraft((current) => current.sections.length ? current : coalesceUnconfiguredTables(materializeTemplateStructure(current, result.sections ?? [])));
+      }
+      const targets = unitsIn(baseline).filter((item) => !item.inputs.length && !item.bindings.length
+        && item.render.kind === "narrative" && item.render.mode !== "assisted" && !item.render.nodes?.length);
+      if (!templateId) { setSemanticProgress("结构已生成；保存模板后可自动关联图谱和外部数据。"); return; }
+      for (let offset = 0; offset < targets.length; offset += 4) {
+        if (controller.signal.aborted) return;
+        setSemanticProgress(`正在关联数据 ${offset + 1}–${Math.min(offset + 4, targets.length)} / ${targets.length}…`);
+        const requested = baseline;
+        const result = await reportPost<SemanticSuggestion>(`ast-templates/${templateId}/suggest-semantics`, {
+          draft_schema: requested, source_job_id: semanticSourceJobId,
+          output_ids: targets.slice(offset, offset + 4).map((item) => item.output_id),
+        }, controller.signal);
+        if (controller.signal.aborted) return;
+        setDraft((current) => applySemanticPatches(current, requested, result.patches));
+        baseline = applySemanticPatches(requested, requested, result.patches);
+        setSemanticDiagnostics((current) => [...current, ...result.diagnostics]);
+      }
+      setSemanticProgress(targets.length ? "自动关联完成；请检查已关联字段和未解决项，再保存新修订。" : "现有内容已配置或含人工编辑，已保留。可展开内容项调整来源。");
+      setPlan(null);
+      void semanticSources.refetch();
+    } catch (failure) {
+      if (!controller.signal.aborted) setError(failure instanceof Error ? failure.message : "分析失败，请重试");
+    } finally { if (semanticRequest.current === controller) setAnalyzing(false); }
   }
   function addUnit(groupId: string) {
     const id = crypto.randomUUID();
@@ -158,6 +235,12 @@ export function OutputTemplateEditor({ schema, templateId, schemaHash, saving, o
   const unitEditor = <div className="space-y-4 min-w-0">{!unit ? <p className="text-muted-foreground">选择或添加一项报告内容，配置绑定、输入和呈现。</p> : <>
           <input aria-label="内容标题" className={fieldClass + " font-semibold"} value={unit.title}
             onChange={(e) => editUnit((next) => { next.title = e.target.value; })} />
+          <SlotSemanticsEditor key={`${unit.output_id}:${templateId}:${recognitionMode}:${semanticSourceJobId}`} templateId={templateId} sourceJobId={semanticSourceJobId}
+            onRefresh={() => { void semanticSources.refetch(); }}
+            template={draft} unit={unit} options={semanticSources.data?.options || []}
+            onApply={(baseline, patch) => { setDraft((current) => applySemanticPatches(current, baseline, [patch])); setPlan(null); }}
+            onChange={edit} />
+          <details><summary className="cursor-pointer text-xs text-muted-foreground">详细配置：数据绑定、输入变量与呈现方式</summary>
           <Tabs value={tab} onValueChange={(value) => setTab(value as typeof tab)}>
             <TabsList aria-label="内容配置" className="grid w-full grid-cols-3">
               {(["bindings", "inputs", "render"] as const).map((key, i) => <TabsTrigger key={key} value={key} className="px-2 text-xs">
@@ -243,6 +326,7 @@ export function OutputTemplateEditor({ schema, templateId, schemaHash, saving, o
             <ContractJson key={selected + ":" + JSON.stringify(unit.render)} label="条件、重复、格式和行文配置" value={unit.render} onApply={(value) => editUnit((next) => { next.render = value; })} />
           </TabsContent>
           </Tabs>
+          </details>
           <details><summary>原文定位与稳定标识</summary><pre className="text-xs whitespace-pre-wrap">{JSON.stringify({ output_id: unit.output_id, origin: unit.origin }, null, 2)}</pre></details>
         </>}</div>;
   const settings = <section className="space-y-3">
@@ -280,7 +364,7 @@ export function OutputTemplateEditor({ schema, templateId, schemaHash, saving, o
           onApply={(value) => edit((next) => { next.source_slots = value; })} />
         <div className="space-y-2 rounded border p-3">
           <p className="font-medium">自动适用的规则</p>
-          <p className="text-xs text-muted-foreground">系统根据来源类型建立检查计划。参数缺失、未发布变更和未处理异议会阻止完成报告。</p>
+          <p className="text-xs text-muted-foreground">{recognitionMode === "finder_legacy" ? "演示报告只执行内容项明确引用的计算；原文风险值保留为原文记载。" : "系统根据来源类型建立检查计划。参数缺失、未发布变更和未处理异议会阻止完成报告。"}</p>
           {resolvedSchema.calculation_checks.map((check) => <p className="text-sm" key={check.check_id}>
             {check.source_slot} · {String(contracts.data?.find((c) => c.contract_id === check.contract_ref)?.definition.title || check.contract_ref)} · 必需
           </p>)}
@@ -315,12 +399,13 @@ export function OutputTemplateEditor({ schema, templateId, schemaHash, saving, o
   } : null;
 
   return <TemplateSlotEditor
+    recognitionMode={recognitionMode}
     schema={{ template_id: templateId ?? "new", doc_no: draft.doc_no, sections: [] }}
     mode={templateId ? "edit" : "create"}
     initialTab={initialTab}
     templateId={templateId} meta={meta} versions={versions} onVersionSwitch={onVersionSwitch}
     onMetaSaved={onMetaSaved} iriPattern={meta?.iriPattern ?? draft.source_slots[0]?.class_iri}
-    sampleContentJson={sampleContentJson} sampleText={sampleText}
+    sampleContentJson={samplePreview} sampleText={sampleText}
     saving={saving} onSave={() => onSave(draft)} onCancel={onCancel}
     outputEditor={{
       actions: <div className="flex shrink-0 flex-wrap items-center justify-between gap-2 border-b bg-background px-4 py-3">
@@ -329,11 +414,12 @@ export function OutputTemplateEditor({ schema, templateId, schemaHash, saving, o
           : "模板尚未保存。点击「保存模板」后，可在报告模板列表中找到草稿。"}</p>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" disabled={saving || busy} onClick={onCancel}>返回列表</Button>
-          <Button size="sm" disabled={saving || busy} onClick={() => onSave(draft)}>
+          <Button size="sm" disabled={saving || busy || analyzing} onClick={() => onSave(draft)}>
             {saving ? "保存中…" : templateId ? "保存新修订" : "保存模板"}
           </Button>
         </div>
       </div>,
+      onSourceSelection: setSemanticSourceJobId,
       documentNo: draft.doc_no,
       onDocumentNoChange: (value) => edit((next) => { next.doc_no = value; }),
       documentClassIri: primarySource?.class_iri,
@@ -349,10 +435,29 @@ export function OutputTemplateEditor({ schema, templateId, schemaHash, saving, o
           <div className="flex items-center justify-between gap-2">
             <span className="text-sm text-muted-foreground">{unitsIn(draft).length} 项内容 · 修订 {draft.revision_no}</span>
           </div>
-          <Button variant="outline" size="sm" disabled={!templateId || !schemaHash || busy}
+          <div className="flex flex-wrap gap-2">
+          <Button variant="outline" size="sm" onClick={analyzeStructure}
+            disabled={analyzing || busy || saving || (!draft.sections.length && !sampleContentJson && !sampleText)}
+            title={!sampleContentJson && !sampleText ? "请先上传模板样例" : undefined}>
+            {analyzing ? "正在分析与关联…" : "AI 自动分析结构"}
+          </Button>
+          <Button variant="outline" size="sm" disabled={!templateId || !schemaHash || busy || analyzing}
             onClick={() => action(async () => { setPlan(await compileTemplate(templateId!, schemaHash!, draft)); })}>
             {busy ? "校验中…" : "校验语义"}
           </Button>
+          </div>
+          <p className="text-xs text-muted-foreground">生成结构并自动关联源图谱和外部数据；已有配置与人工修改保留。</p>
+          {semanticProgress && <p role="status" className="text-xs text-muted-foreground">{semanticProgress}</p>}
+          {!!semanticDiagnostics.length && <details className="text-xs"><summary>待配置内容（{semanticDiagnostics.length}）</summary>
+            {semanticDiagnostics.map((item, index) => <p key={index}>{unitsIn(draft).find((unit) => unit.output_id === item.output_id)?.title}：{item.message || item.code}</p>)}
+          </details>}
+          {semanticSources.error && <p className="text-xs text-destructive">来源目录：{semanticSources.error.message}</p>}
+          {analysis && <div role="status" className="space-y-1 text-xs text-muted-foreground">
+            <p>{analysis.completion === "complete" ? "结构分析完成。" : "结构分析未全部完成。"}
+              {analysis.sections?.length ? ` 识别到 ${analysis.sections.length} 个章节；空模板已生成结构草稿，已有章节保留。` : " 未生成可用结构。"}</p>
+            {analysis.document_summary && <p>{analysis.document_summary}</p>}
+            {[...new Set(analysis.diagnostics.map(structureDiagnostic))].map((message) => <p key={message}>{message}</p>)}
+          </div>}
         </div>
         <div className="flex-1 min-h-0 overflow-y-auto break-words px-3 py-3 space-y-3">
           {error && <p role="alert" className="text-destructive text-sm whitespace-pre-wrap">{error}</p>}
@@ -374,21 +479,31 @@ export function OutputTemplateEditor({ schema, templateId, schemaHash, saving, o
             </div>
           </details>}
           <nav aria-label="报告章节">
-            {draft.sections.map((section) => <details open key={section.section_id} className="mb-3 rounded-lg border p-3">
-          <summary className="cursor-pointer font-semibold">
-          <input aria-label="章节标题" placeholder="未命名章节" className="w-[calc(100%-1.5rem)] bg-transparent font-semibold" value={section.title}
-            onChange={(e) => edit((next) => { next.sections.find((s) => s.section_id === section.section_id)!.title = e.target.value; })} />
-          </summary>
-          {section.groups.map(groupTree)}
-          <ContractJson key={section.section_id + JSON.stringify(section.completeness_requirements)}
-            label="章节独立完整性要求" value={section.completeness_requirements ?? []}
-            onApply={(value) => edit((next) => { next.sections.find((s) => s.section_id === section.section_id)!.completeness_requirements = value; })} />
-          <Button variant="ghost" size="sm" onClick={() => edit((next) => {
-            next.sections.find((s) => s.section_id === section.section_id)!.groups.push({
-              group_id: crypto.randomUUID(), title: "新分组", units: [],
-            });
-          })}>＋分组</Button>
-        </details>)}
+            {draft.sections.map((section) => {
+              const content = <>
+                <SectionNarrativeEditor key={`${section.section_id}:${templateId}:${recognitionMode}:${semanticSourceJobId}`}
+                  sectionId={section.section_id} template={draft} templateId={templateId}
+                  sourceJobId={semanticSourceJobId} recognitionMode={recognitionMode}
+                  sampleText={sampleText || tiptapToText(sampleContentJson)} onChange={edit} />
+                {section.groups.map(groupTree)}
+                <ContractJson key={section.section_id + JSON.stringify(section.completeness_requirements)}
+                  label="章节独立完整性要求" value={section.completeness_requirements ?? []}
+                  onApply={(value) => edit((next) => { next.sections.find((s) => s.section_id === section.section_id)!.completeness_requirements = value; })} />
+                <Button variant="ghost" size="sm" onClick={() => edit((next) => {
+                  next.sections.find((s) => s.section_id === section.section_id)!.groups.push({
+                    group_id: crypto.randomUUID(), title: "新分组", units: [],
+                  });
+                })}>＋分组</Button>
+              </>;
+              if (isUploadDocumentContainer(section)) return <div key={section.section_id}>{content}</div>;
+              return <details open key={section.section_id} className="mb-3 rounded-lg border p-3">
+                <summary className="cursor-pointer font-semibold">
+                  <input aria-label="章节标题" placeholder="未命名章节" className="w-[calc(100%-1.5rem)] bg-transparent font-semibold" value={section.title}
+                    onChange={(e) => edit((next) => { next.sections.find((s) => s.section_id === section.section_id)!.title = e.target.value; })} />
+                </summary>
+                {content}
+              </details>;
+            })}
         <Button variant="outline" onClick={() => edit((next) => {
           next.sections.push({ section_id: crypto.randomUUID(), title: "新章节", groups: [] });
         })}>＋章节</Button>
@@ -396,6 +511,7 @@ export function OutputTemplateEditor({ schema, templateId, schemaHash, saving, o
         </div>
       </>,
       reportPreview: (sourceJobId) => <TemplateReportPreview templateId={templateId} draftSchema={draft}
+        recognitionMode={recognitionMode}
         templateName={meta?.name} defaultSourceJobId={sourceJobId ?? defaultSourceJobId} />,
     }}
   />;

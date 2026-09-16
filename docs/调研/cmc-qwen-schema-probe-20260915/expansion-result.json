@@ -1,0 +1,92 @@
+{
+  "run_id": "schema-expand-adb937d6be4f4ebf959e",
+  "parent_run_id": "schema-probe-67039239109b453185fe",
+  "model": "Qwen3.6-35B-A3B",
+  "source_sha256": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+  "ontology_hash": "555519c5c92c9555e3ac7cd358918cbf853baf38bb07c21a86bb62e72ff9a469",
+  "script_sha256": "2b8baabeefab206fbe8f7bd5b1788112e47358a361411c061d25bef82848c9dd",
+  "reference_sha256": "e4214646154c62d3c12025911e94a54a05fc9f59de21cbeefe0422cfb739afeb",
+  "reference_is_model_input": false,
+  "reference_level": "assistant_silver",
+  "schema_fallback": false,
+  "max_attempts": 1,
+  "results": [
+    {
+      "scope_id": "introduction",
+      "added_card_iris": [
+        "https://ontology.pharma-gmp.cn/slpra/drug-development/ClinicalSampleProductionPlan",
+        "https://ontology.pharma-gmp.cn/slpra/drug/ClinicalTrialDrug"
+      ],
+      "calls": [
+        {
+          "http_call": 1,
+          "usage": {
+            "completion_tokens": 2265,
+            "prompt_tokens": 16330,
+            "total_tokens": 18595,
+            "completion_tokens_details": null,
+            "prompt_tokens_details": {
+              "audio_tokens": null,
+              "cached_tokens": 291
+            }
+          },
+          "finish_reason": "stop",
+          "seconds": 179.509
+        }
+      ],
+      "status": "complete",
+      "extraction_contract_pass": true,
+      "checker_errors": [
+        "predicate_not_allowed_for_subject",
+        "range_or_endpoint_mismatch",
+        "relation_has_literal",
+        "predicate_not_allowed_for_subject"
+      ],
+      "silver_assertions": {
+        "checks": [
+          false,
+          true
+        ],
+        "passed": 1,
+        "total": 2,
+        "all_pass": false
+      }
+    },
+    {
+      "scope_id": "product_properties",
+      "added_card_iris": [
+        "https://ontology.pharma-gmp.cn/slpra/drug/DrugProduct"
+      ],
+      "calls": [
+        {
+          "http_call": 1,
+          "usage": {
+            "completion_tokens": 1146,
+            "prompt_tokens": 14148,
+            "total_tokens": 15294,
+            "completion_tokens_details": null,
+            "prompt_tokens_details": {
+              "audio_tokens": null,
+              "cached_tokens": 291
+            }
+          },
+          "finish_reason": "stop",
+          "seconds": 124.283
+        }
+      ],
+      "status": "complete",
+      "extraction_contract_pass": true,
+      "checker_errors": [],
+      "silver_assertions": {
+        "checks": [
+          true,
+          true,
+          true
+        ],
+        "passed": 3,
+        "total": 3,
+        "all_pass": true
+      }
+    }
+  ]
+}

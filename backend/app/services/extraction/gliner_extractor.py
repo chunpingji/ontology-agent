@@ -17,12 +17,22 @@ research R7）：
 from __future__ import annotations
 
 import logging
+import math
 from functools import lru_cache
 
 from app.config import settings
 from app.services.extraction.text_scanner import unicode_words
 
 logger = logging.getLogger(__name__)
+
+
+class GlinerExtractionError(RuntimeError):
+    """Strict tool API failure; legacy extraction methods still degrade gracefully."""
+
+    def __init__(self, code: str, *, stage: str) -> None:
+        super().__init__(code)
+        self.code = code
+        self.stage = stage
 
 
 class _CJKAwareWordsSplitter:
@@ -105,6 +115,63 @@ class GlinerExtractor:
 
     def is_available(self) -> bool:
         return self._ensure_model() is not None
+
+    def prepare_strict(self) -> dict:
+        """Load locally or raise; report limits without claiming encoder coverage.
+
+        The optional legacy NER path intentionally swallows load/inference errors.
+        Tool callers must use this strict path to distinguish failure from no hits.
+        """
+        model = self._ensure_model()
+        if model is None:
+            raise GlinerExtractionError("model_unavailable", stage="load")
+        splitter = getattr(getattr(model, "data_processor", None), "words_splitter", None)
+        if not isinstance(getattr(splitter, "splitter", None), _CJKAwareWordsSplitter):
+            raise GlinerExtractionError("cjk_splitter_unavailable", stage="load")
+        config = getattr(model, "config", None)
+        return {
+            "max_len": getattr(config, "max_len", None),
+            "max_width": getattr(config, "max_width", None),
+            "encoder_truncation": "unknown",
+        }
+
+    def extract_text_with_spans_strict(
+        self, text: str, labels: list[str], threshold: float | None = None
+    ) -> list[dict]:
+        """Span API with explicit load, inference and malformed-output failures."""
+        return self.extract_batch_with_spans_strict([text], labels, threshold)[0]
+
+    def extract_batch_with_spans_strict(
+        self, texts: list[str], labels: list[str], threshold: float | None = None
+    ) -> list[list[dict]]:
+        """Return one verified span list per input, never turn failures into no hits."""
+        out: list[list[dict]] = [[] for _ in texts]
+        if not texts or not labels or not any(texts):
+            return out
+        limits = self.prepare_strict()
+        slots = [index for index, text in enumerate(texts) if text]
+        payload = [texts[index] for index in slots]
+        max_len = limits["max_len"]
+        if isinstance(max_len, int) and any(
+            sum(1 for _ in unicode_words(text)) > max_len for text in payload
+        ):
+            raise GlinerExtractionError("input_word_limit_exceeded", stage="input")
+        thr = settings.gliner_threshold if threshold is None else threshold
+        try:
+            batched = self._model.batch_predict_entities(payload, labels, threshold=thr)
+        except Exception as exc:
+            raise GlinerExtractionError("inference_failed", stage="inference") from exc
+        if not isinstance(batched, list) or len(batched) != len(payload):
+            raise GlinerExtractionError("batch_alignment_invalid", stage="output")
+        allowed = set(labels)
+        for slot, text, entities in zip(slots, payload, batched):
+            if not isinstance(entities, list):
+                raise GlinerExtractionError("entities_invalid", stage="output")
+            for entity in entities:
+                if not _valid_source_span(entity, text, allowed):
+                    raise GlinerExtractionError("span_invalid", stage="output")
+            out[slot] = _entities_to_spans(entities, allowed, preserve_scores=True)
+        return out
 
     def extract_text(
         self, text: str, labels: list[str], threshold: float | None = None
@@ -200,7 +267,27 @@ class GlinerExtractor:
         return out
 
 
-def _entities_to_spans(entities: list[dict], allowed: set[str]) -> list[dict]:
+def _valid_source_span(entity: object, text: str, allowed: set[str]) -> bool:
+    """Validate GLiNER coordinates before normalization or overlap filtering."""
+    if not isinstance(entity, dict):
+        return False
+    start, end, score = entity.get("start"), entity.get("end"), entity.get("score")
+    return (
+        type(start) is int
+        and type(end) is int
+        and 0 <= start < end <= len(text)
+        and entity.get("text") == text[start:end]
+        and isinstance(entity.get("label"), str)
+        and entity["label"] in allowed
+        and type(score) in (int, float)
+        and math.isfinite(score)
+        and 0 <= score <= 1
+    )
+
+
+def _entities_to_spans(
+    entities: list[dict], allowed: set[str], *, preserve_scores: bool = False
+) -> list[dict]:
     """GLiNER predict_entities 输出 → 规整 span 列表。
 
     过滤越界 label 后，按分数贪心消除重叠/重复：字符级分词放开 span 枚举边界后，
@@ -220,7 +307,7 @@ def _entities_to_spans(entities: list[dict], allowed: set[str]) -> list[dict]:
             "end": ent.get("end", 0),
             "text": value,
             "label": label,
-            "score": round(ent.get("score", 0.0), 4),
+            "score": ent.get("score", 0.0) if preserve_scores else round(ent.get("score", 0.0), 4),
         })
 
     # 分数降序贪心：仅保留与已选 span 无字符交集者（相邻 end==start 不算交集）。

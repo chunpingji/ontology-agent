@@ -118,7 +118,7 @@ const TreeView = React.forwardRef<HTMLDivElement, TreeProps>(
         }, [draggedItem, onDocumentDrag])
 
         const expandedItemIds = React.useMemo(() => {
-            if (!initialSelectedItemId) {
+            if (!initialSelectedItemId && !expandAll) {
                 return [] as string[]
             }
 
@@ -126,7 +126,7 @@ const TreeView = React.forwardRef<HTMLDivElement, TreeProps>(
 
             function walkTreeItems(
                 items: TreeDataItem[] | TreeDataItem,
-                targetId: string
+                targetId: string | undefined
             ) {
                 if (Array.isArray(items)) {
                     for (let i = 0; i < items.length; i++) {

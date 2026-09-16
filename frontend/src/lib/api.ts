@@ -1676,6 +1676,7 @@ export interface DocClassification {
 
 // 关系边上对象端点回填的数据属性；``iri`` 为 null 表示未匹配到本体数据属性（原文兜底）。
 export interface RelationDataProperty {
+  source?: FinderSource;
   iri: string | null;
   label: string;
   value: unknown;
@@ -1720,11 +1721,13 @@ export interface PdeConflict {
     provenance: Record<string, unknown>;
   };
   delta_bands: number;
+  pde_ratio?: number;
   summary: string;
 }
 
 // 子关系（如 合成路线→包含步骤→使用设备/产出中间体），``sub_relationships`` 递归。
 export interface SubRelationship {
+  source?: FinderSource;
   predicate_iri: string;
   predicate_label: string;
   object_class_iri: string;
@@ -1736,6 +1739,7 @@ export interface SubRelationship {
   source_ref: RelationSourceRef | null;
   // 仅 CMCReport 共线评估端点可能携带；命中「推导 vs 原文」PDE 冲突时下发（人工裁决）。
   conflict?: PdeConflict | null;
+  pde_review_issues?: string[];
 }
 
 // 顶层对象属性边（主语为文档分类类，如 CMCReport ─describes→ DrugProduct）。
@@ -2497,8 +2501,9 @@ export const getReportDocumentRun = (documentIri: string, signal?: AbortSignal) 
   });
 
 export const createReportDocumentRun = (
-  documentIri: string, requestKey: string, signal?: AbortSignal,
-) => fetchAPI<DocumentAnalysisCreateResponse>(reportDocumentPath("runs", documentIri), {
+  documentIri: string, requestKey: string, signal?: AbortSignal, templateId?: string,
+) => fetchAPI<DocumentAnalysisCreateResponse>(reportDocumentPath("runs", documentIri)
+  + (templateId ? `&template_id=${encodeURIComponent(templateId)}` : ""), {
   method: "POST", body: JSON.stringify({ request_key: requestKey }), signal,
 });
 
@@ -2846,6 +2851,7 @@ export interface ReportSectionNarrativeDTO {
 }
 
 export interface ReportNarrativesDTO {
+  demonstration?: boolean;
   subject_description: string | null;
   conclusion: string | null;
   sections: ReportSectionNarrativeDTO[];
@@ -2862,6 +2868,7 @@ export interface GeneratedReportDTO {
   actor: string;
   report_run_id?: string | null;
   report_artifact_id?: string | null;
+  demonstration?: boolean;
   created_at: string;
   // 015: present on the status-poll response; null for legacy/LLM-off reports.
   narratives?: ReportNarrativesDTO | null;
@@ -2869,6 +2876,13 @@ export interface GeneratedReportDTO {
 
 export const listReports = (jobId: string) =>
   fetchAPI<GeneratedReportDTO[]>(`/api/extraction/jobs/${jobId}/reports`);
+export async function getReportRunArtifact(runId: string, artifactId: string, signal?: AbortSignal): Promise<Blob> {
+  const response = await fetch(`${API_BASE}/api/report-runs/${encodeURIComponent(runId)}/artifacts/${encodeURIComponent(artifactId)}`, {
+    headers: identityHeaders(), signal,
+  });
+  if (!response.ok) throw new Error(`API ${response.status}: ${await response.text()}`);
+  return response.blob();
+}
 export const deleteReport = (jobId: string, reportId: string) =>
   fetchAPI<void>(`/api/extraction/jobs/${jobId}/reports/${reportId}`, { method: "DELETE" });
 
@@ -3204,6 +3218,8 @@ export interface StaticDemoProfile {
 }
 
 export interface AstTemplateDTO {
+  recognition_mode?: "ontology_guided" | "finder_legacy";
+  finder_profile_id?: string | null;
   id: string;
   name: string;
   version: string;
@@ -3270,16 +3286,18 @@ export interface TemplateMatchDTO {
 
 export const fetchAstTemplates = () =>
   fetchAPI<AstTemplateDTO[]>("/api/ast-templates");
-export const getAstTemplate = (id: string) =>
+export const getAstTemplate = (id: string, signal?: AbortSignal) =>
   fetchAPI<
     AstTemplateDTO & {
       schema_json: Record<string, unknown>;
       sample_text: string | null;
       sample_content_json: TiptapContent | null;
+      sample_analysis?: DocumentEvidenceIR | null;
+      structure_titles?: Record<string, string>;
       training_pairs: TrainingPairDTO[];
       versions: { id: string; version: string; created_at: string }[];
     }
-  >(`/api/ast-templates/${id}`);
+  >(`/api/ast-templates/${id}`, { signal });
 export const createAstTemplate = (data: AstTemplateCreateInput) =>
   saveTemplateRequest<AstTemplateDTO>("/api/ast-templates", jsonBody(data));
 export const updateAstTemplate = (id: string, data: AstTemplateUpdateInput) =>
@@ -3291,6 +3309,25 @@ export const setDefaultTemplate = (id: string) =>
 // 015: PATCH in-place metadata (status / iri_pattern) without a version bump.
 export const updateAstTemplateMeta = (id: string, data: AstTemplateMetaUpdateInput) =>
   fetchAPI<AstTemplateDTO>(`/api/ast-templates/${id}`, { method: "PATCH", ...jsonBody(data) });
+export interface TemplateRecognitionEngine {
+  recognition_mode: "ontology_guided" | "finder_legacy";
+  finder_profile_id: string | null;
+  finder_profiles: { id: string; label: string }[];
+}
+
+export interface TemplateRecognitionEngineUpdate {
+  recognition_mode: TemplateRecognitionEngine["recognition_mode"];
+  finder_profile_id: string | null;
+  expected_recognition_mode: TemplateRecognitionEngine["recognition_mode"];
+  expected_finder_profile_id: string | null;
+}
+
+export const getTemplateRecognitionEngine = (id: string, signal?: AbortSignal) =>
+  fetchAPI<TemplateRecognitionEngine>(`/api/ast-templates/${id}/recognition-engine`, { signal });
+export const updateTemplateRecognitionEngine = (id: string, data: TemplateRecognitionEngineUpdate) =>
+  fetchAPI<TemplateRecognitionEngine>(`/api/ast-templates/${id}/recognition-engine`, {
+    method: "PATCH", ...jsonBody(data),
+  });
 export const matchTemplateForJob = (jobId: string) =>
   fetchAPI<TemplateMatchDTO>(`/api/ast-templates/match/${jobId}`);
 
@@ -3475,6 +3512,7 @@ export interface AiStructureCandidate {
   id: string;
   origin: TemplateOrigin;
   label: string;
+  semantic_label?: string;
   evidence_span?: string;
   evidence_offset?: number;
 }
@@ -3528,11 +3566,13 @@ export interface GenerateSectionPromptRequest {
   section_title: string;
   slot_labels?: string[];
   sample_text?: string;
+  instructions?: string;
 }
 
-export const generateSectionPrompt = (data: GenerateSectionPromptRequest) =>
+export const generateSectionPrompt = (data: GenerateSectionPromptRequest, signal?: AbortSignal) =>
   fetchAPI<{ prompt: string }>("/api/ast-templates/generate-section-prompt", {
     method: "POST",
+    signal,
     ...jsonBody(data),
   });
 
@@ -3544,14 +3584,22 @@ export interface PreviewSectionNarrativeRequest {
   template_id: string;
   section_id: string;
   prompt: string;
+  draft_schema?: import("./reporting-v2").TemplateV2;
+}
+
+export interface SectionNarrativePreview {
+  narrative: string;
+  warnings: string[];
+  source: { kind: string; job_id: string; execution_id: string; source_filename: string };
 }
 
 export const previewSectionNarrative = (
   data: PreviewSectionNarrativeRequest,
+  signal?: AbortSignal,
 ) =>
-  fetchAPI<{ narrative: string }>(
+  fetchAPI<SectionNarrativePreview>(
     "/api/ast-templates/preview-section-narrative",
-    { method: "POST", ...jsonBody(data) },
+    { method: "POST", signal, ...jsonBody(data) },
   );
 
 // 013: Async report generation (when LLM enhancement flags are on)
@@ -4454,3 +4502,85 @@ export const exportExpertOpinions = (target: ExpertOpinionTarget) => fetchAPI<{
   schema_version: "report-expert-opinions-v1"; target: ExpertOpinionTarget;
   calibration_approved: false; opinions: ExpertOpinion[];
 }>(`/api/report-center/expert-opinions/export?${expertOpinionQuery(target)}`);
+
+export interface FinderSource {
+  kind: "document" | "external" | "computed";
+  label: string;
+  anchors: EvidenceAnchor[];
+  raw_value?: unknown;
+}
+export interface FinderStatus {
+  mode: "finder_legacy";
+  template_id: string;
+  source_job_id: string;
+  execution_id: string | null;
+  status: "not_started" | "queued" | "running" | "completed" | "failed" | "interrupted";
+  stage: string | null;
+  input: Record<string, unknown> | null;
+  has_result: boolean;
+  stale: boolean;
+  error: string | null;
+  counts: { nodes?: number; properties?: number; located_properties?: number };
+}
+export interface FinderDocument {
+  execution_id: string | null;
+  template_id: string;
+  source_job_id: string;
+  document_hash: string;
+  parser_version: string;
+  structure_hash: string;
+  analysis_id: string;
+  filename: string | null;
+  content: TiptapContent;
+  section_tree: WordChapterNode;
+  pagination: WordPaginationMetadata;
+  warnings: string[];
+}
+export interface FinderGraph extends Pick<FinderDocument,
+  "execution_id" | "template_id" | "source_job_id" | "document_hash" | "parser_version" | "structure_hash" | "analysis_id"> {
+  relationships: Relationship[];
+  doc_class: DocClassification;
+  counts: FinderStatus["counts"];
+}
+export interface RecognitionTemplateContext {
+  template_id: string;
+  name: string;
+  version: string;
+  schema_version: number;
+  recognition_mode: "finder_legacy" | "ontology_guided" | "static_demo";
+  finder_profile_id: string | null;
+}
+export interface RecognitionContext {
+  document_iri: string;
+  source_job_id: string;
+  selected: RecognitionTemplateContext | null;
+  templates: RecognitionTemplateContext[];
+  selection_required: boolean;
+  selection_locked: boolean;
+}
+const finderPath = (template: string, source: string) =>
+  `/api/ast-templates/${encodeURIComponent(template)}/sources/${encodeURIComponent(source)}/finder`;
+export const getTemplateFinder = (template: string, source: string, signal?: AbortSignal) =>
+  fetchAPI<FinderStatus>(finderPath(template, source), { signal });
+export const startTemplateFinder = (template: string, source: string,
+  body: { request_key: string; expected_execution_id: string | null }) =>
+  fetchAPI<FinderStatus>(finderPath(template, source), { method: "POST", ...jsonBody(body) });
+export const getTemplateFinderGraph = (template: string, source: string, execution: string,
+  signal?: AbortSignal) => fetchAPI<FinderGraph>(
+    `${finderPath(template, source)}/graph?execution_id=${encodeURIComponent(execution)}`, { signal });
+export const getTemplateFinderSource = (template: string, source: string, execution: string | null,
+  signal?: AbortSignal) => fetchAPI<FinderDocument>(
+    `${finderPath(template, source)}/source${execution ? `?execution_id=${encodeURIComponent(execution)}` : ""}`, { signal });
+export const getFinderPdeDecision = (template: string, source: string, execution: string,
+  signal?: AbortSignal) => fetchAPI<PdeConflictDecision>(
+    `${finderPath(template, source)}/pde-conflict/decision?execution_id=${encodeURIComponent(execution)}`,
+    { signal });
+export const saveFinderPdeDecision = (template: string, source: string, execution: string,
+  body: { chosen: PdeDecisionChoice; note?: string; expected_version: number }) =>
+  fetchAPI<PdeConflictDecision>(
+    `${finderPath(template, source)}/pde-conflict/decision?execution_id=${encodeURIComponent(execution)}`,
+    { method: "POST", ...jsonBody(body) });
+export const getRecognitionContext = (documentIri: string, templateId?: string | null,
+  signal?: AbortSignal) => fetchAPI<RecognitionContext>(
+    `/api/ast-templates/recognition-context?${new URLSearchParams({ document_iri: documentIri,
+      ...(templateId ? { template_id: templateId } : {}) })}`, { signal });

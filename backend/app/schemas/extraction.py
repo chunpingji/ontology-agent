@@ -155,6 +155,7 @@ class GeneratedReportResponse(BaseModel):
     source_discovery_hash: str | None = None
     report_run_id: str | None = None
     report_artifact_id: str | None = None
+    demonstration: bool = False
 
 
 # --------------------------------------------------------------------------- #
@@ -203,6 +204,8 @@ class AstTemplateResponse(BaseModel):
     slot_count: int = 0
     demo_profile: dict | None = None
     schema_version: int = 1
+    recognition_mode: str = "ontology_guided"
+    finder_profile_id: str | None = None
     template_family_id: str | None = None
     revision_no: int = 1
     schema_hash: str | None = None
@@ -237,9 +240,10 @@ class TemplateMatchResponse(BaseModel):
 class GenerateSectionPromptRequest(BaseModel):
     """015: derive a 行文 Prompt for a section from the sample + its slot labels."""
 
-    section_title: str
-    slot_labels: list[str] = []
-    sample_text: str = ""
+    section_title: str = Field(max_length=500)
+    slot_labels: list[str] = Field(default_factory=list, max_length=100)
+    sample_text: str = Field(default="", max_length=12000)
+    instructions: str = Field(default="", max_length=4000)
 
 
 class GenerateSectionPromptResponse(BaseModel):
@@ -252,12 +256,15 @@ class PreviewSectionNarrativeRequest(BaseModel):
 
     job_id: UUID  # 已关联真实文档的抽取作业（真实事实来源）
     template_id: UUID  # 当前编辑的模板（取本节结构 + 确定性风险/覆盖）
-    section_id: str
-    prompt: str  # 当前（可能未保存）的行文 Prompt
+    section_id: str = Field(max_length=500)
+    prompt: str = Field(max_length=12000)  # 当前（可能未保存）的行文 Prompt
+    draft_schema: dict | None = None  # 未保存的模板结构；不接收客户端事实
 
 
 class PreviewSectionNarrativeResponse(BaseModel):
     narrative: str
+    warnings: list[str] = Field(default_factory=list)
+    source: dict = Field(default_factory=dict)
 
 
 # --------------------------------------------------------------------------- #

@@ -123,7 +123,7 @@ from app.services.extraction.word_tree_summarizer import (
     summarize_word_tree,
 )
 from app.services.llm.local_client import get_local_llm
-from app.services.llm.model_runtime import ModelCancelled, model_scope
+from app.services.llm.model_runtime import ModelCancelled, ModelWaitFailure, model_scope
 from app.services.llm.semantic_ranking import configured_ranking_service
 
 logger = logging.getLogger(__name__)
@@ -571,6 +571,8 @@ def _finish(
 
 
 def _failure_payload(exc: Exception) -> tuple[str, str]:
+    if isinstance(exc, ModelWaitFailure) and str(exc) == "ranking_persistence_failed":
+        return "RANKING_STATE_PERSISTENCE_FAILED", "语义检索进度保存失败，已保留已完成结果"
     if isinstance(exc, PublicationTimeout):
         return "PUBLICATION_TIMEOUT", "状态发布超时，已回滚本批次并保留先前检查点和模型结果"
     if isinstance(exc, DocConversionError):

@@ -1,0 +1,1373 @@
+{
+  "review_type": "Independent assistant source review; not expert gold",
+  "exact_candidate_matching_passed": true,
+  "artifact_sha_matching_passed": true,
+  "manifest_scope_results_matching_passed": true,
+  "coverage": [
+    {
+      "arm": "E0",
+      "scope_id": "record-8717014d83b3",
+      "targets": 4,
+      "packet_sha256": "032c7bed25766376e532b4bd077985ef1c218be0254de68fe372592c3d067680"
+    },
+    {
+      "arm": "E1",
+      "scope_id": "record-8717014d83b3",
+      "targets": 4,
+      "packet_sha256": "05e84fc638f0b80d402005f59e239d255c8b7da4d38a641c165a5187dd3f5ec8"
+    },
+    {
+      "arm": "E0",
+      "scope_id": "record-0c9a7e82c53b",
+      "targets": 4,
+      "packet_sha256": "1d14dcd511172177104496adad2e331d9977a6bb19cc053accde2a91eba6e9b3"
+    },
+    {
+      "arm": "E0",
+      "scope_id": "record-c54c3238c67b",
+      "targets": 4,
+      "packet_sha256": "909f4c5ebe225a00294ce65f14bb05a66415b6cbb0356fb3b6011e7d98648d18"
+    },
+    {
+      "arm": "E1",
+      "scope_id": "record-0c9a7e82c53b",
+      "targets": 5,
+      "packet_sha256": "637dfdde9f2ff80f0d7db776fc5da5b472e0385ec6897df33202490fb189f23a"
+    },
+    {
+      "arm": "E1",
+      "scope_id": "record-c54c3238c67b",
+      "targets": 5,
+      "packet_sha256": "b39380a7511ad3f01229b4e3a57fb5f5a4380a02e0fd277161c76958e46cef9b"
+    },
+    {
+      "arm": "E2",
+      "scope_id": "record-be0b530ec6ae",
+      "targets": 10,
+      "packet_sha256": "267570bf8957d07793ae60080c231d5930b791776f5bf18309a23c3947b2c4fd"
+    },
+    {
+      "arm": "E2",
+      "scope_id": "record-8717014d83b3",
+      "targets": 4,
+      "packet_sha256": "65c5d91595855edb0c5dc9cf7aae27b75af1b9080c560ed5e32b60782916a4c6"
+    },
+    {
+      "arm": "E2",
+      "scope_id": "record-d29114c4e0c5",
+      "targets": 5,
+      "packet_sha256": "245d108e5b22a2720899b994d91673c6ac41a6235e483ccb36429cafbc829a8a"
+    }
+  ],
+  "review_file_hashes": {
+    "/tmp/cmc-mock-validation-20260916/review-e0-e1.json": "76b283e0b48593e7bdc706ca15bd4ba4df4b072bc9ba4784ce4109e9839d70c0",
+    "/tmp/cmc-mock-validation-20260916/review-e2.json": "5df9425c5a17fe57ea78cb5632b92be4c543b89edf8da32c3b14d72b8e99f9e8"
+  },
+  "counting_policy": "All reviewed targets stay in their destination denominator. Independent unsupported/undetermined are never dropped or counted as supported. Overall judges the exact proposal including citations, identity and binding; content judges underlying content separately. Not expert gold or recall.",
+  "unreviewed": [],
+  "by_arm": {
+    "E0": {
+      "all": {
+        "count": 12,
+        "overall": {
+          "supported": 12
+        },
+        "content": {
+          "supported": 12
+        },
+        "overall_supported_count": 12,
+        "content_supported_count": 12
+      },
+      "accepted": {
+        "count": 12,
+        "overall": {
+          "supported": 12
+        },
+        "content": {
+          "supported": 12
+        },
+        "overall_supported_count": 12,
+        "content_supported_count": 12
+      },
+      "unresolved": {
+        "count": 0,
+        "overall": {},
+        "content": {},
+        "overall_supported_count": 0,
+        "content_supported_count": 0
+      },
+      "rejected": {
+        "count": 0,
+        "overall": {},
+        "content": {},
+        "overall_supported_count": 0,
+        "content_supported_count": 0
+      },
+      "not_finalized": {
+        "count": 0,
+        "overall": {},
+        "content": {},
+        "overall_supported_count": 0,
+        "content_supported_count": 0
+      },
+      "accepted_by_kind": {
+        "entity": {
+          "count": 3,
+          "overall": {
+            "supported": 3
+          },
+          "content": {
+            "supported": 3
+          },
+          "overall_supported_count": 3,
+          "content_supported_count": 3
+        },
+        "property": {
+          "count": 6,
+          "overall": {
+            "supported": 6
+          },
+          "content": {
+            "supported": 6
+          },
+          "overall_supported_count": 6,
+          "content_supported_count": 6
+        },
+        "relation": {
+          "count": 3,
+          "overall": {
+            "supported": 3
+          },
+          "content": {
+            "supported": 3
+          },
+          "overall_supported_count": 3,
+          "content_supported_count": 3
+        },
+        "observation": {
+          "count": 0,
+          "overall": {},
+          "content": {},
+          "overall_supported_count": 0,
+          "content_supported_count": 0
+        }
+      }
+    },
+    "E1": {
+      "all": {
+        "count": 14,
+        "overall": {
+          "supported": 13,
+          "unsupported": 1
+        },
+        "content": {
+          "supported": 14
+        },
+        "overall_supported_count": 13,
+        "content_supported_count": 14
+      },
+      "accepted": {
+        "count": 13,
+        "overall": {
+          "supported": 13
+        },
+        "content": {
+          "supported": 13
+        },
+        "overall_supported_count": 13,
+        "content_supported_count": 13
+      },
+      "unresolved": {
+        "count": 1,
+        "overall": {
+          "unsupported": 1
+        },
+        "content": {
+          "supported": 1
+        },
+        "overall_supported_count": 0,
+        "content_supported_count": 1
+      },
+      "rejected": {
+        "count": 0,
+        "overall": {},
+        "content": {},
+        "overall_supported_count": 0,
+        "content_supported_count": 0
+      },
+      "not_finalized": {
+        "count": 0,
+        "overall": {},
+        "content": {},
+        "overall_supported_count": 0,
+        "content_supported_count": 0
+      },
+      "accepted_by_kind": {
+        "entity": {
+          "count": 3,
+          "overall": {
+            "supported": 3
+          },
+          "content": {
+            "supported": 3
+          },
+          "overall_supported_count": 3,
+          "content_supported_count": 3
+        },
+        "property": {
+          "count": 6,
+          "overall": {
+            "supported": 6
+          },
+          "content": {
+            "supported": 6
+          },
+          "overall_supported_count": 6,
+          "content_supported_count": 6
+        },
+        "relation": {
+          "count": 2,
+          "overall": {
+            "supported": 2
+          },
+          "content": {
+            "supported": 2
+          },
+          "overall_supported_count": 2,
+          "content_supported_count": 2
+        },
+        "observation": {
+          "count": 2,
+          "overall": {
+            "supported": 2
+          },
+          "content": {
+            "supported": 2
+          },
+          "overall_supported_count": 2,
+          "content_supported_count": 2
+        }
+      }
+    },
+    "E2": {
+      "all": {
+        "count": 19,
+        "overall": {
+          "supported": 9,
+          "unsupported": 9,
+          "undetermined": 1
+        },
+        "content": {
+          "supported": 17,
+          "undetermined": 2
+        },
+        "overall_supported_count": 9,
+        "content_supported_count": 17
+      },
+      "accepted": {
+        "count": 10,
+        "overall": {
+          "supported": 9,
+          "undetermined": 1
+        },
+        "content": {
+          "supported": 9,
+          "undetermined": 1
+        },
+        "overall_supported_count": 9,
+        "content_supported_count": 9
+      },
+      "unresolved": {
+        "count": 9,
+        "overall": {
+          "unsupported": 9
+        },
+        "content": {
+          "supported": 8,
+          "undetermined": 1
+        },
+        "overall_supported_count": 0,
+        "content_supported_count": 8
+      },
+      "rejected": {
+        "count": 0,
+        "overall": {},
+        "content": {},
+        "overall_supported_count": 0,
+        "content_supported_count": 0
+      },
+      "not_finalized": {
+        "count": 0,
+        "overall": {},
+        "content": {},
+        "overall_supported_count": 0,
+        "content_supported_count": 0
+      },
+      "accepted_by_kind": {
+        "entity": {
+          "count": 2,
+          "overall": {
+            "supported": 2
+          },
+          "content": {
+            "supported": 2
+          },
+          "overall_supported_count": 2,
+          "content_supported_count": 2
+        },
+        "property": {
+          "count": 4,
+          "overall": {
+            "supported": 4
+          },
+          "content": {
+            "supported": 4
+          },
+          "overall_supported_count": 4,
+          "content_supported_count": 4
+        },
+        "relation": {
+          "count": 2,
+          "overall": {
+            "undetermined": 1,
+            "supported": 1
+          },
+          "content": {
+            "undetermined": 1,
+            "supported": 1
+          },
+          "overall_supported_count": 1,
+          "content_supported_count": 1
+        },
+        "observation": {
+          "count": 2,
+          "overall": {
+            "supported": 2
+          },
+          "content": {
+            "supported": 2
+          },
+          "overall_supported_count": 2,
+          "content_supported_count": 2
+        }
+      }
+    }
+  },
+  "by_scope": [
+    {
+      "arm": "E0",
+      "scope_id": "record-0c9a7e82c53b",
+      "status": "complete",
+      "accepted": {
+        "count": 4,
+        "overall": {
+          "supported": 4
+        },
+        "content": {
+          "supported": 4
+        },
+        "overall_supported_count": 4,
+        "content_supported_count": 4
+      },
+      "unresolved": {
+        "count": 0,
+        "overall": {},
+        "content": {},
+        "overall_supported_count": 0,
+        "content_supported_count": 0
+      },
+      "rejected": {
+        "count": 0,
+        "overall": {},
+        "content": {},
+        "overall_supported_count": 0,
+        "content_supported_count": 0
+      },
+      "not_finalized": {
+        "count": 0,
+        "overall": {},
+        "content": {},
+        "overall_supported_count": 0,
+        "content_supported_count": 0
+      }
+    },
+    {
+      "arm": "E0",
+      "scope_id": "record-8717014d83b3",
+      "status": "complete",
+      "accepted": {
+        "count": 4,
+        "overall": {
+          "supported": 4
+        },
+        "content": {
+          "supported": 4
+        },
+        "overall_supported_count": 4,
+        "content_supported_count": 4
+      },
+      "unresolved": {
+        "count": 0,
+        "overall": {},
+        "content": {},
+        "overall_supported_count": 0,
+        "content_supported_count": 0
+      },
+      "rejected": {
+        "count": 0,
+        "overall": {},
+        "content": {},
+        "overall_supported_count": 0,
+        "content_supported_count": 0
+      },
+      "not_finalized": {
+        "count": 0,
+        "overall": {},
+        "content": {},
+        "overall_supported_count": 0,
+        "content_supported_count": 0
+      }
+    },
+    {
+      "arm": "E0",
+      "scope_id": "record-c54c3238c67b",
+      "status": "complete",
+      "accepted": {
+        "count": 4,
+        "overall": {
+          "supported": 4
+        },
+        "content": {
+          "supported": 4
+        },
+        "overall_supported_count": 4,
+        "content_supported_count": 4
+      },
+      "unresolved": {
+        "count": 0,
+        "overall": {},
+        "content": {},
+        "overall_supported_count": 0,
+        "content_supported_count": 0
+      },
+      "rejected": {
+        "count": 0,
+        "overall": {},
+        "content": {},
+        "overall_supported_count": 0,
+        "content_supported_count": 0
+      },
+      "not_finalized": {
+        "count": 0,
+        "overall": {},
+        "content": {},
+        "overall_supported_count": 0,
+        "content_supported_count": 0
+      }
+    },
+    {
+      "arm": "E1",
+      "scope_id": "record-0c9a7e82c53b",
+      "status": "complete",
+      "accepted": {
+        "count": 4,
+        "overall": {
+          "supported": 4
+        },
+        "content": {
+          "supported": 4
+        },
+        "overall_supported_count": 4,
+        "content_supported_count": 4
+      },
+      "unresolved": {
+        "count": 1,
+        "overall": {
+          "unsupported": 1
+        },
+        "content": {
+          "supported": 1
+        },
+        "overall_supported_count": 0,
+        "content_supported_count": 1
+      },
+      "rejected": {
+        "count": 0,
+        "overall": {},
+        "content": {},
+        "overall_supported_count": 0,
+        "content_supported_count": 0
+      },
+      "not_finalized": {
+        "count": 0,
+        "overall": {},
+        "content": {},
+        "overall_supported_count": 0,
+        "content_supported_count": 0
+      }
+    },
+    {
+      "arm": "E1",
+      "scope_id": "record-8717014d83b3",
+      "status": "complete",
+      "accepted": {
+        "count": 4,
+        "overall": {
+          "supported": 4
+        },
+        "content": {
+          "supported": 4
+        },
+        "overall_supported_count": 4,
+        "content_supported_count": 4
+      },
+      "unresolved": {
+        "count": 0,
+        "overall": {},
+        "content": {},
+        "overall_supported_count": 0,
+        "content_supported_count": 0
+      },
+      "rejected": {
+        "count": 0,
+        "overall": {},
+        "content": {},
+        "overall_supported_count": 0,
+        "content_supported_count": 0
+      },
+      "not_finalized": {
+        "count": 0,
+        "overall": {},
+        "content": {},
+        "overall_supported_count": 0,
+        "content_supported_count": 0
+      }
+    },
+    {
+      "arm": "E1",
+      "scope_id": "record-c54c3238c67b",
+      "status": "complete",
+      "accepted": {
+        "count": 5,
+        "overall": {
+          "supported": 5
+        },
+        "content": {
+          "supported": 5
+        },
+        "overall_supported_count": 5,
+        "content_supported_count": 5
+      },
+      "unresolved": {
+        "count": 0,
+        "overall": {},
+        "content": {},
+        "overall_supported_count": 0,
+        "content_supported_count": 0
+      },
+      "rejected": {
+        "count": 0,
+        "overall": {},
+        "content": {},
+        "overall_supported_count": 0,
+        "content_supported_count": 0
+      },
+      "not_finalized": {
+        "count": 0,
+        "overall": {},
+        "content": {},
+        "overall_supported_count": 0,
+        "content_supported_count": 0
+      }
+    },
+    {
+      "arm": "E2",
+      "scope_id": "record-8717014d83b3",
+      "status": "complete",
+      "accepted": {
+        "count": 4,
+        "overall": {
+          "supported": 4
+        },
+        "content": {
+          "supported": 4
+        },
+        "overall_supported_count": 4,
+        "content_supported_count": 4
+      },
+      "unresolved": {
+        "count": 0,
+        "overall": {},
+        "content": {},
+        "overall_supported_count": 0,
+        "content_supported_count": 0
+      },
+      "rejected": {
+        "count": 0,
+        "overall": {},
+        "content": {},
+        "overall_supported_count": 0,
+        "content_supported_count": 0
+      },
+      "not_finalized": {
+        "count": 0,
+        "overall": {},
+        "content": {},
+        "overall_supported_count": 0,
+        "content_supported_count": 0
+      }
+    },
+    {
+      "arm": "E2",
+      "scope_id": "record-be0b530ec6ae",
+      "status": "complete",
+      "accepted": {
+        "count": 5,
+        "overall": {
+          "supported": 4,
+          "undetermined": 1
+        },
+        "content": {
+          "supported": 4,
+          "undetermined": 1
+        },
+        "overall_supported_count": 4,
+        "content_supported_count": 4
+      },
+      "unresolved": {
+        "count": 5,
+        "overall": {
+          "unsupported": 5
+        },
+        "content": {
+          "supported": 4,
+          "undetermined": 1
+        },
+        "overall_supported_count": 0,
+        "content_supported_count": 4
+      },
+      "rejected": {
+        "count": 0,
+        "overall": {},
+        "content": {},
+        "overall_supported_count": 0,
+        "content_supported_count": 0
+      },
+      "not_finalized": {
+        "count": 0,
+        "overall": {},
+        "content": {},
+        "overall_supported_count": 0,
+        "content_supported_count": 0
+      }
+    },
+    {
+      "arm": "E2",
+      "scope_id": "record-d29114c4e0c5",
+      "status": "complete",
+      "accepted": {
+        "count": 1,
+        "overall": {
+          "supported": 1
+        },
+        "content": {
+          "supported": 1
+        },
+        "overall_supported_count": 1,
+        "content_supported_count": 1
+      },
+      "unresolved": {
+        "count": 4,
+        "overall": {
+          "unsupported": 4
+        },
+        "content": {
+          "supported": 4
+        },
+        "overall_supported_count": 0,
+        "content_supported_count": 4
+      },
+      "rejected": {
+        "count": 0,
+        "overall": {},
+        "content": {},
+        "overall_supported_count": 0,
+        "content_supported_count": 0
+      },
+      "not_finalized": {
+        "count": 0,
+        "overall": {},
+        "content": {},
+        "overall_supported_count": 0,
+        "content_supported_count": 0
+      }
+    }
+  ],
+  "accepted_not_independently_supported": [
+    {
+      "arm": "E2",
+      "scope_id": "record-be0b530ec6ae",
+      "id": "r1",
+      "kind": "relation",
+      "program_destination": "accepted",
+      "overall_verdict": "undetermined",
+      "content_verdict": "undetermined",
+      "program_model_verdict": "supported",
+      "reason": "u8直接证明针对该反应釜的内壁清洗要求，而非本报告的生产使用/设备需求关系；清洗对象在本报告被提及并不足以独立证明usesEquipment。HRS-1597成品是表格分组对象，不能补出缺少的使用关系。本包既未直接支持该关系，也未明确否定它。",
+      "program_issues": [],
+      "entity_dimensions": {}
+    }
+  ],
+  "records": [
+    {
+      "arm": "E0",
+      "scope_id": "record-8717014d83b3",
+      "id": "e1",
+      "kind": "entity",
+      "program_destination": "accepted",
+      "overall_verdict": "supported",
+      "content_verdict": "supported",
+      "program_model_verdict": "supported",
+      "reason": "u16/u17 分别为 table:6 第4逻辑行的设备名称“离心机”和设备编号“CT64610”，列头 u3/u4 明确角色；可以支持该生产设备及编号的局部归属。未请求外部档案链接，不能借此断言全局身份或已发生实际使用。",
+      "program_issues": [],
+      "entity_dimensions": {
+        "role_verdict": "supported",
+        "identifier_owner_verdict": "supported",
+        "external_link_verdict": "not_applicable"
+      }
+    },
+    {
+      "arm": "E0",
+      "scope_id": "record-8717014d83b3",
+      "id": "e1.a1",
+      "kind": "property",
+      "program_destination": "accepted",
+      "overall_verdict": "supported",
+      "content_verdict": "supported",
+      "program_model_verdict": "supported",
+      "reason": "原文 u16“离心机”位于设备名称列（u3），与主体编号 CT64610 的 u17 同为 table:6 第4逻辑行；名称内容、属性角色及主体归属均有直接表格依据。",
+      "program_issues": [],
+      "entity_dimensions": {}
+    },
+    {
+      "arm": "E0",
+      "scope_id": "record-8717014d83b3",
+      "id": "e1.a2",
+      "kind": "property",
+      "program_destination": "accepted",
+      "overall_verdict": "supported",
+      "content_verdict": "supported",
+      "program_model_verdict": "supported",
+      "reason": "原文 u18“600”位于规格型号列（u5），与 e1 的名称 u16、编号 u17 同为 table:6 第4逻辑行；可支持字符串规格型号 600，不能补成容积或其他带单位指标。",
+      "program_issues": [],
+      "entity_dimensions": {}
+    },
+    {
+      "arm": "E0",
+      "scope_id": "record-8717014d83b3",
+      "id": "r1",
+      "kind": "relation",
+      "program_destination": "accepted",
+      "overall_verdict": "supported",
+      "content_verdict": "supported",
+      "program_model_verdict": "supported",
+      "reason": "活动 Schema 卡将 usesEquipment 定义为 CMC 报告到所需设备的关系（equipment required）。u1“设备需求”、覆盖第4行的岗位 u15“HRS-1597成品结晶”、同一设备行 u16/u17 及用途 u23“甩滤”共同支持报告在该工艺背景下需要此离心机。方向 document→e1、单一对象 selection=all 和肯定极性相符；condition 引用仅保留岗位/工艺范围，不构成已完成实际使用的事件证明。",
+      "program_issues": [],
+      "entity_dimensions": {}
+    },
+    {
+      "arm": "E1",
+      "scope_id": "record-8717014d83b3",
+      "id": "e1",
+      "kind": "entity",
+      "program_destination": "accepted",
+      "overall_verdict": "supported",
+      "content_verdict": "supported",
+      "program_model_verdict": "supported",
+      "reason": "u16“离心机”和 u17“CT64610”在 table:6 同一第4逻辑行，u3/u4 明确名称和编号字段。实际提供的 Mock 中唯一精确编号候选 CT64610 同时具有名称“离心机”、规格“600”，与该文档行相符，故支持此冻结档案链接；其 material“316L不锈钢”与 u19“不锈钢衬HALAR”表述不同，前者未明确否定衬层，不能仅凭表述差异断言不同设备，但也不能宣称材质一致或用档案覆盖原文。链接不证明实际使用事件。",
+      "program_issues": [],
+      "entity_dimensions": {
+        "role_verdict": "supported",
+        "identifier_owner_verdict": "supported",
+        "external_link_verdict": "supported"
+      }
+    },
+    {
+      "arm": "E1",
+      "scope_id": "record-8717014d83b3",
+      "id": "e1.a1",
+      "kind": "property",
+      "program_destination": "accepted",
+      "overall_verdict": "supported",
+      "content_verdict": "supported",
+      "program_model_verdict": "supported",
+      "reason": "u16“离心机”位于设备名称列 u3，和 e1 的编号 u17“CT64610”属于 table:6 第4逻辑行；原文独立支持名称内容、属性角色及主体归属，无需以 Mock 补证。",
+      "program_issues": [],
+      "entity_dimensions": {}
+    },
+    {
+      "arm": "E1",
+      "scope_id": "record-8717014d83b3",
+      "id": "e1.a2",
+      "kind": "property",
+      "program_destination": "accepted",
+      "overall_verdict": "supported",
+      "content_verdict": "supported",
+      "program_model_verdict": "supported",
+      "reason": "u18“600”在规格型号列 u5，和 e1 名称 u16、编号 u17 同属 table:6 第4逻辑行；支持该设备字符串规格型号，未增加单位。Mock 同值仅是辅助对照，属性证据来自原文。",
+      "program_issues": [],
+      "entity_dimensions": {}
+    },
+    {
+      "arm": "E1",
+      "scope_id": "record-8717014d83b3",
+      "id": "r1",
+      "kind": "relation",
+      "program_destination": "accepted",
+      "overall_verdict": "supported",
+      "content_verdict": "supported",
+      "program_model_verdict": "supported",
+      "reason": "当前 usesEquipment 卡描述为 CMC 报告到所需设备（equipment required）。u1“设备需求”、与 e1 同行的用途 u23“甩滤”、覆盖该行的岗位 u15“HRS-1597成品结晶”共同支持 document→e1 的设备需求，单对象 selection=all 与肯定极性正确。condition 保留岗位/工艺范围；这不证明实际生产中已经使用，Mock 不提供关系证明。",
+      "program_issues": [],
+      "entity_dimensions": {}
+    },
+    {
+      "arm": "E0",
+      "scope_id": "record-0c9a7e82c53b",
+      "id": "e1",
+      "kind": "entity",
+      "program_destination": "accepted",
+      "overall_verdict": "supported",
+      "content_verdict": "supported",
+      "program_model_verdict": "supported",
+      "reason": "u16“真空干燥箱”及 u17“DE64603”同属 table:6 第5逻辑行，对应列头 u3 设备名称和 u4 设备编号，足以支持文档中的生产设备及其局部编号归属。此包未提供 Mock、未请求外部链接，不从其他上下文补造档案身份。",
+      "program_issues": [],
+      "entity_dimensions": {
+        "role_verdict": "supported",
+        "identifier_owner_verdict": "supported",
+        "external_link_verdict": "not_applicable"
+      }
+    },
+    {
+      "arm": "E0",
+      "scope_id": "record-0c9a7e82c53b",
+      "id": "e1.a1",
+      "kind": "property",
+      "program_destination": "accepted",
+      "overall_verdict": "supported",
+      "content_verdict": "supported",
+      "program_model_verdict": "supported",
+      "reason": "u16“真空干燥箱”在设备名称列 u3，且与 e1 编号 u17“DE64603”同属第5逻辑行；名称值、字段角色与主体归属均由原文表格支持。",
+      "program_issues": [],
+      "entity_dimensions": {}
+    },
+    {
+      "arm": "E0",
+      "scope_id": "record-0c9a7e82c53b",
+      "id": "e1.a2",
+      "kind": "property",
+      "program_destination": "accepted",
+      "overall_verdict": "supported",
+      "content_verdict": "supported",
+      "program_model_verdict": "supported",
+      "reason": "u18“24盘”属于规格型号列 u5，与 e1 的名称 u16 和编号 u17 同属第5逻辑行；应保留完整字符串规格“24盘”，不能把24改成其他容积或数值指标。",
+      "program_issues": [],
+      "entity_dimensions": {}
+    },
+    {
+      "arm": "E0",
+      "scope_id": "record-0c9a7e82c53b",
+      "id": "r1",
+      "kind": "relation",
+      "program_destination": "accepted",
+      "overall_verdict": "supported",
+      "content_verdict": "supported",
+      "program_model_verdict": "supported",
+      "reason": "u1“设备需求”下的第5设备行给出真空干燥箱、编号 DE64603 和 u23 用途“干燥”；u15 岗位“HRS-1597成品结晶”的合并单元覆盖该行。依活动卡 equipment required 的含义，支持 CMC document→e1 的设备需求，单对象 all、方向和肯定极性正确；condition 仅保留工艺范围，不能扩成已经发生实际使用的结论。",
+      "program_issues": [],
+      "entity_dimensions": {}
+    },
+    {
+      "arm": "E0",
+      "scope_id": "record-c54c3238c67b",
+      "id": "e1",
+      "kind": "entity",
+      "program_destination": "accepted",
+      "overall_verdict": "supported",
+      "content_verdict": "supported",
+      "program_model_verdict": "supported",
+      "reason": "u16“200L反应釜”和 u17“RE64611”均在 table:6 第1逻辑行，分别对应设备名称列 u3 和设备编号列 u4；名称和实际设备行角色支持 ProcessEquipment，编号归属清楚。external_key 为空，外部链接不适用；不把规格或设备需求推成实际使用事件。",
+      "program_issues": [],
+      "entity_dimensions": {
+        "role_verdict": "supported",
+        "identifier_owner_verdict": "supported",
+        "external_link_verdict": "not_applicable"
+      }
+    },
+    {
+      "arm": "E0",
+      "scope_id": "record-c54c3238c67b",
+      "id": "e1.a1",
+      "kind": "property",
+      "program_destination": "accepted",
+      "overall_verdict": "supported",
+      "content_verdict": "supported",
+      "program_model_verdict": "supported",
+      "reason": "u16 完整原文“200L反应釜”位于设备名称列 u3，与 e1 编号 u17“RE64611”同属第1逻辑行，支持该名称内容和主体归属；未擅自删除名称中的200L。",
+      "program_issues": [],
+      "entity_dimensions": {}
+    },
+    {
+      "arm": "E0",
+      "scope_id": "record-c54c3238c67b",
+      "id": "e1.a2",
+      "kind": "property",
+      "program_destination": "accepted",
+      "overall_verdict": "supported",
+      "content_verdict": "supported",
+      "program_model_verdict": "supported",
+      "reason": "u18“200L”在规格型号列 u5，与 e1 同属第1逻辑行；支持完整字符串规格。u20 的“30L/215L”属于另一列物料最小/最大搅拌体积，不能替代或改写该规格。",
+      "program_issues": [],
+      "entity_dimensions": {}
+    },
+    {
+      "arm": "E0",
+      "scope_id": "record-c54c3238c67b",
+      "id": "r1",
+      "kind": "relation",
+      "program_destination": "accepted",
+      "overall_verdict": "supported",
+      "content_verdict": "supported",
+      "program_model_verdict": "supported",
+      "reason": "u1“设备需求”限定需求场景；合并岗位单元 u15“HRS-1597成品结晶”覆盖 e1 所在第1行，同一行用途 u23 为“溶料，脱色”。依活动卡 equipment required，支持 CMC document→e1 的需求关系，方向、单对象 selection=all、肯定极性正确；condition 保留工艺/岗位范围，不证明实际使用已经发生。",
+      "program_issues": [],
+      "entity_dimensions": {}
+    },
+    {
+      "arm": "E1",
+      "scope_id": "record-0c9a7e82c53b",
+      "id": "e1",
+      "kind": "entity",
+      "program_destination": "accepted",
+      "overall_verdict": "supported",
+      "content_verdict": "supported",
+      "program_model_verdict": "supported",
+      "reason": "u16“真空干燥箱”、u17“DE64603”在设备名称/设备编号列且同属 table:6 第5逻辑行，支持设备角色和编号归属。提供的7个 Mock 候选均为同名其他编号，没有 DE64603；external_key 留空与证据边界一致，无请求外部链接，不把同名或规格24盘当作合并证明。",
+      "program_issues": [],
+      "entity_dimensions": {
+        "role_verdict": "supported",
+        "identifier_owner_verdict": "supported",
+        "external_link_verdict": "not_applicable"
+      }
+    },
+    {
+      "arm": "E1",
+      "scope_id": "record-0c9a7e82c53b",
+      "id": "e1.a1",
+      "kind": "property",
+      "program_destination": "accepted",
+      "overall_verdict": "supported",
+      "content_verdict": "supported",
+      "program_model_verdict": "supported",
+      "reason": "u16“真空干燥箱”位于设备名称列 u3，和 e1 的编号 u17“DE64603”同属第5逻辑行；名称与主体归属由原文支持，Mock 的同名设备不改变该归属。",
+      "program_issues": [],
+      "entity_dimensions": {}
+    },
+    {
+      "arm": "E1",
+      "scope_id": "record-0c9a7e82c53b",
+      "id": "e1.a2",
+      "kind": "property",
+      "program_destination": "accepted",
+      "overall_verdict": "supported",
+      "content_verdict": "supported",
+      "program_model_verdict": "supported",
+      "reason": "u18“24盘”位于规格型号列 u5，和 e1 的名称 u16、编号 u17 同属第5逻辑行；完整字符串规格及主体归属有原文依据，不需要外部档案补证。",
+      "program_issues": [],
+      "entity_dimensions": {}
+    },
+    {
+      "arm": "E1",
+      "scope_id": "record-0c9a7e82c53b",
+      "id": "r1",
+      "kind": "relation",
+      "program_destination": "unresolved",
+      "overall_verdict": "unsupported",
+      "content_verdict": "supported",
+      "program_model_verdict": "supported",
+      "reason": "精确提案的 condition={ref:u10,quote:干燥} 不成立：u10 原文是表头“设备用途以及工艺要求”，不包含“干燥”；实际“干燥”位于设备行 u23。因此整体提案因错误引用判 unsupported。关系内容另判 supported：u1 设备需求、u15 工艺岗位和第5行真空干燥箱/DE64603/用途干燥支持按活动卡 equipment required 的 document→e1 需求，单对象 all、方向及肯定极性正确；不能把此内容支持当作对错误引用的自动修复，亦不证明实际使用事件。",
+      "program_issues": [
+        "citation_quote_not_in_source"
+      ],
+      "entity_dimensions": {}
+    },
+    {
+      "arm": "E1",
+      "scope_id": "record-0c9a7e82c53b",
+      "id": "o1",
+      "kind": "observation",
+      "program_destination": "accepted",
+      "overall_verdict": "supported",
+      "content_verdict": "supported",
+      "program_model_verdict": "supported",
+      "reason": "u17 原文确为 DE64603；实际提供的 Mock 候选7项均不含该编号，coverage 显示完整检查211条、exact_identifier=0、candidate_overflow=false。故“无完全匹配记录并留空 external_key”的观察符合本次冻结 Mock 返回；这不表示原文设备不存在，也不能用同名或相近编号替代。",
+      "program_issues": [],
+      "entity_dimensions": {}
+    },
+    {
+      "arm": "E1",
+      "scope_id": "record-c54c3238c67b",
+      "id": "e1",
+      "kind": "entity",
+      "program_destination": "accepted",
+      "overall_verdict": "supported",
+      "content_verdict": "supported",
+      "program_model_verdict": "supported",
+      "reason": "u16“200L反应釜”、u17“RE64611”同属 table:6 第1逻辑行，列头 u3/u4 明确设备名称和编号角色。实际提供的 Mock 唯一精确编号 RE64611 具有规格200L、材质搪玻璃，分别与原文 u18/u19 相符；其名称“搪玻璃反应釜”与原文容量修饰的“200L反应釜”可在该相同编号和属性组合下相容，支持冻结档案链接。仍保留原文名称，不将 Mock 名称替代文档属性，不把链接当作实际使用证明。",
+      "program_issues": [],
+      "entity_dimensions": {
+        "role_verdict": "supported",
+        "identifier_owner_verdict": "supported",
+        "external_link_verdict": "supported"
+      }
+    },
+    {
+      "arm": "E1",
+      "scope_id": "record-c54c3238c67b",
+      "id": "e1.a1",
+      "kind": "property",
+      "program_destination": "accepted",
+      "overall_verdict": "supported",
+      "content_verdict": "supported",
+      "program_model_verdict": "supported",
+      "reason": "u16 原文完整名称“200L反应釜”位于设备名称列 u3，和 e1 编号 u17“RE64611”同属第1逻辑行，支持名称内容与归属。Mock 的“搪玻璃反应釜”不是此原文属性值，不能覆盖提案中原文名称。",
+      "program_issues": [],
+      "entity_dimensions": {}
+    },
+    {
+      "arm": "E1",
+      "scope_id": "record-c54c3238c67b",
+      "id": "e1.a2",
+      "kind": "property",
+      "program_destination": "accepted",
+      "overall_verdict": "supported",
+      "content_verdict": "supported",
+      "program_model_verdict": "supported",
+      "reason": "u18“200L”位于规格型号列 u5，与 e1 名称 u16、编号 u17 同属第1逻辑行，支持完整字符串规格。u20“30L/215L”是不同字段的物料最小/最大搅拌体积，不应混入该属性。",
+      "program_issues": [],
+      "entity_dimensions": {}
+    },
+    {
+      "arm": "E1",
+      "scope_id": "record-c54c3238c67b",
+      "id": "r1",
+      "kind": "relation",
+      "program_destination": "accepted",
+      "overall_verdict": "supported",
+      "content_verdict": "supported",
+      "program_model_verdict": "supported",
+      "reason": "u1“设备需求”与覆盖第1行的 u15“HRS-1597成品结晶”岗位，以及同一行设备 u16/u17 和用途 u23“溶料，脱色”，支持按活动卡 equipment required 定义的 CMC document→e1 设备需求。方向、单对象 all、肯定极性一致；condition 保留工艺范围。Mock 不提供关系依据，不能据此断言实际生产已使用。",
+      "program_issues": [],
+      "entity_dimensions": {}
+    },
+    {
+      "arm": "E1",
+      "scope_id": "record-c54c3238c67b",
+      "id": "o1",
+      "kind": "observation",
+      "program_destination": "accepted",
+      "overall_verdict": "supported",
+      "content_verdict": "supported",
+      "program_model_verdict": "supported",
+      "reason": "u15“HRS-1597成品结晶”位于岗位列 u2，并以合并单元覆盖第1至5逻辑行；设备名称另列 u3、具体实体锚点为 u16。因此将 u15 识别为岗位/工艺背景而非设备实体，且不把它用作设备 anchor 的观察有原文表格依据。",
+      "program_issues": [],
+      "entity_dimensions": {}
+    },
+    {
+      "arm": "E2",
+      "scope_id": "record-be0b530ec6ae",
+      "id": "e1",
+      "kind": "entity",
+      "program_destination": "accepted",
+      "overall_verdict": "supported",
+      "content_verdict": "supported",
+      "program_model_verdict": "supported",
+      "reason": "u6/u7为同一设备名称及编号单元格的相邻段落；200L反应釜后紧接（RE64611），可将该编号归于反应釜。反应釜属于生产工艺设备；清洗语境不改变其设备类别。Mock的同编号200L搪玻璃反应釜与此不矛盾，但不据此证明生产使用关系。",
+      "program_issues": [],
+      "entity_dimensions": {
+        "role_verdict": "supported",
+        "identifier_owner_verdict": "supported",
+        "external_link_verdict": "supported"
+      }
+    },
+    {
+      "arm": "E2",
+      "scope_id": "record-be0b530ec6ae",
+      "id": "e1.a1",
+      "kind": "property",
+      "program_destination": "accepted",
+      "overall_verdict": "supported",
+      "content_verdict": "supported",
+      "program_model_verdict": "supported",
+      "reason": "设备名称及编号列明确写200L反应釜，归属e1反应釜；保留该完整设备名称有直接原文依据。",
+      "program_issues": [],
+      "entity_dimensions": {}
+    },
+    {
+      "arm": "E2",
+      "scope_id": "record-be0b530ec6ae",
+      "id": "e1.a2",
+      "kind": "property",
+      "program_destination": "accepted",
+      "overall_verdict": "supported",
+      "content_verdict": "supported",
+      "program_model_verdict": "supported",
+      "reason": "200L反应釜中的200L明确限定该反应釜容量，足以作为字符串规格型号值；不是清洗水量。引文包含完整设备称谓且容量逐字存在，未将Mock规格补作原文。",
+      "program_issues": [],
+      "entity_dimensions": {}
+    },
+    {
+      "arm": "E2",
+      "scope_id": "record-be0b530ec6ae",
+      "id": "e2",
+      "kind": "entity",
+      "program_destination": "unresolved",
+      "overall_verdict": "unsupported",
+      "content_verdict": "supported",
+      "program_model_verdict": "undetermined",
+      "reason": "完整u6/u7支持压滤器的PF64216备选提及，但所选anchor“（RE64611）压滤器”将前一个反应釜编号和后一个设备名连为单一实体锚点，与本实体equipment_id=PF64216不一致。不能凭Mock中存在PF64216修复该锚定错误；原文压滤器与Mock钛棒过滤器的名称差异仍需解释。",
+      "program_issues": [
+        "anchor_equipment_id_conflict"
+      ],
+      "entity_dimensions": {
+        "role_verdict": "supported",
+        "identifier_owner_verdict": "unsupported",
+        "external_link_verdict": "undetermined"
+      }
+    },
+    {
+      "arm": "E2",
+      "scope_id": "record-be0b530ec6ae",
+      "id": "e2.a1",
+      "kind": "property",
+      "program_destination": "unresolved",
+      "overall_verdict": "unsupported",
+      "content_verdict": "supported",
+      "program_model_verdict": "supported",
+      "reason": "原文将压滤器名称用于PF64216或PF64616这一备选组，故名称内容成立；当前主语e2却锚定含RE64611的跨设备片段，完整候选的主体绑定不成立。",
+      "program_issues": [
+        "subject_not_supported"
+      ],
+      "entity_dimensions": {}
+    },
+    {
+      "arm": "E2",
+      "scope_id": "record-be0b530ec6ae",
+      "id": "e3",
+      "kind": "entity",
+      "program_destination": "unresolved",
+      "overall_verdict": "unsupported",
+      "content_verdict": "supported",
+      "program_model_verdict": "undetermined",
+      "reason": "完整u6/u7支持压滤器的PF64616备选提及，但所选anchor“（RE64611）压滤器”带入另一反应釜的编号，与本实体equipment_id=PF64616矛盾。不能仅凭档案编号命中认定这一混合锚点正确；原文与Mock的命名差异保留待核。",
+      "program_issues": [
+        "anchor_equipment_id_conflict"
+      ],
+      "entity_dimensions": {
+        "role_verdict": "supported",
+        "identifier_owner_verdict": "unsupported",
+        "external_link_verdict": "undetermined"
+      }
+    },
+    {
+      "arm": "E2",
+      "scope_id": "record-be0b530ec6ae",
+      "id": "e3.a1",
+      "kind": "property",
+      "program_destination": "unresolved",
+      "overall_verdict": "unsupported",
+      "content_verdict": "supported",
+      "program_model_verdict": "supported",
+      "reason": "压滤器这一名称在原文对应PF64216或PF64616，内容上支持备选设备称谓；因e3仍使用包含RE64611的混合锚点，所提属性整体主体绑定不通过。",
+      "program_issues": [
+        "subject_not_supported"
+      ],
+      "entity_dimensions": {}
+    },
+    {
+      "arm": "E2",
+      "scope_id": "record-be0b530ec6ae",
+      "id": "r1",
+      "kind": "relation",
+      "program_destination": "accepted",
+      "overall_verdict": "undetermined",
+      "content_verdict": "undetermined",
+      "program_model_verdict": "supported",
+      "reason": "u8直接证明针对该反应釜的内壁清洗要求，而非本报告的生产使用/设备需求关系；清洗对象在本报告被提及并不足以独立证明usesEquipment。HRS-1597成品是表格分组对象，不能补出缺少的使用关系。本包既未直接支持该关系，也未明确否定它。",
+      "program_issues": [],
+      "entity_dimensions": {}
+    },
+    {
+      "arm": "E2",
+      "scope_id": "record-be0b530ec6ae",
+      "id": "r2",
+      "kind": "relation",
+      "program_destination": "unresolved",
+      "overall_verdict": "unsupported",
+      "content_verdict": "undetermined",
+      "program_model_verdict": "supported",
+      "reason": "原文清楚保留PF64216或PF64616这一二选一清洗对象组，one_of方向正确，但清洗对象不自动证明报告所需生产设备的usesEquipment关系，关系内容仍未决；此外e2/e3各自锚点均混入RE64611，现有端点绑定明确有误，完整关系不支持。",
+      "program_issues": [
+        "object_not_supported"
+      ],
+      "entity_dimensions": {}
+    },
+    {
+      "arm": "E2",
+      "scope_id": "record-be0b530ec6ae",
+      "id": "o1",
+      "kind": "observation",
+      "program_destination": "accepted",
+      "overall_verdict": "supported",
+      "content_verdict": "supported",
+      "program_model_verdict": "supported",
+      "reason": "u7逐字列出PF64216或PF64616，支持备选观察，未指定实际采用哪台；one_of可表示该局部二选一提及，不能解释为两台同时生产使用。",
+      "program_issues": [],
+      "entity_dimensions": {}
+    },
+    {
+      "arm": "E2",
+      "scope_id": "record-8717014d83b3",
+      "id": "e1",
+      "kind": "entity",
+      "program_destination": "accepted",
+      "overall_verdict": "supported",
+      "content_verdict": "supported",
+      "program_model_verdict": "supported",
+      "reason": "设备需求表同一物理行明确列出离心机、设备编号CT64610、规格600以及用途甩滤，足以支持生产设备类别和编号归属。Mock同编号的名称和规格一致，允许在此档案范围关联身份；原文材质不锈钢衬HALAR与Mock的316L不锈钢存在需保留的字段差异，不能以档案覆盖原文。",
+      "program_issues": [],
+      "entity_dimensions": {
+        "role_verdict": "supported",
+        "identifier_owner_verdict": "supported",
+        "external_link_verdict": "supported"
+      }
+    },
+    {
+      "arm": "E2",
+      "scope_id": "record-8717014d83b3",
+      "id": "e1.a1",
+      "kind": "property",
+      "program_destination": "accepted",
+      "overall_verdict": "supported",
+      "content_verdict": "supported",
+      "program_model_verdict": "supported",
+      "reason": "设备名称列u16逐字为离心机，与编号CT64610同一逻辑行；field指向设备名称表头，主体和字段归属成立。",
+      "program_issues": [],
+      "entity_dimensions": {}
+    },
+    {
+      "arm": "E2",
+      "scope_id": "record-8717014d83b3",
+      "id": "e1.a2",
+      "kind": "property",
+      "program_destination": "accepted",
+      "overall_verdict": "supported",
+      "content_verdict": "supported",
+      "program_model_verdict": "supported",
+      "reason": "规格型号列u18逐字为600，属于同一行离心机CT64610。Schema为字符串槽位，保持600即可，不能凭经验补毫米等单位。",
+      "program_issues": [],
+      "entity_dimensions": {}
+    },
+    {
+      "arm": "E2",
+      "scope_id": "record-8717014d83b3",
+      "id": "r1",
+      "kind": "relation",
+      "program_destination": "accepted",
+      "overall_verdict": "supported",
+      "content_verdict": "supported",
+      "program_model_verdict": "supported",
+      "reason": "本包包含设备需求标题、同一行用途甩滤及离心机编号，支持报告所需设备关系；跨行合并的岗位单元格HRS-1597成品结晶在logical_rows中覆盖本行，条件归属成立。selection=all仅含一台明确设备，不表示已实际生产。",
+      "program_issues": [],
+      "entity_dimensions": {}
+    },
+    {
+      "arm": "E2",
+      "scope_id": "record-d29114c4e0c5",
+      "id": "e1",
+      "kind": "entity",
+      "program_destination": "unresolved",
+      "overall_verdict": "unsupported",
+      "content_verdict": "supported",
+      "program_model_verdict": "supported",
+      "reason": "原文确实在设备需求表列出钛棒过滤器，类型和设备称谓有依据；但equipment_id将PF64216或PF64616完整备选表达存成一个实体编号，合并了两个明确不同的设备身份。external_key留空未消除这种身份合并。",
+      "program_issues": [
+        "equipment_id_must_be_single_identifier"
+      ],
+      "entity_dimensions": {
+        "role_verdict": "supported",
+        "identifier_owner_verdict": "unsupported",
+        "external_link_verdict": "undetermined"
+      }
+    },
+    {
+      "arm": "E2",
+      "scope_id": "record-d29114c4e0c5",
+      "id": "e1.a1",
+      "kind": "property",
+      "program_destination": "unresolved",
+      "overall_verdict": "unsupported",
+      "content_verdict": "supported",
+      "program_model_verdict": "supported",
+      "reason": "钛棒过滤器是原文设备名称列，名称内容支持；当前属性主语e1却用两个备选编号组成一个设备身份，完整候选的主体表达有误。该共同名称可分别归于两个备选设备，但需要先正确拆分身份。",
+      "program_issues": [
+        "subject_not_supported"
+      ],
+      "entity_dimensions": {}
+    },
+    {
+      "arm": "E2",
+      "scope_id": "record-d29114c4e0c5",
+      "id": "e1.a2",
+      "kind": "property",
+      "program_destination": "unresolved",
+      "overall_verdict": "unsupported",
+      "content_verdict": "supported",
+      "program_model_verdict": "supported",
+      "reason": "原文规格型号列明确为10英寸3芯，与这一备选过滤器需求同行，内容支持且不应拆掉3芯或补造单位换算；现有主语e1合并两个设备编号，整体主体绑定仍不支持。",
+      "program_issues": [
+        "subject_not_supported"
+      ],
+      "entity_dimensions": {}
+    },
+    {
+      "arm": "E2",
+      "scope_id": "record-d29114c4e0c5",
+      "id": "r1",
+      "kind": "relation",
+      "program_destination": "unresolved",
+      "overall_verdict": "unsupported",
+      "content_verdict": "supported",
+      "program_model_verdict": "supported",
+      "reason": "设备需求表支持PF64216或PF64616二选一过滤器需求，关系内容成立；但object_ids仅含一个已合并两编号的e1，selection=one_of没有两个独立备选端点。condition又重复编号备选表达而未表达本行HRS-1597成品结晶的用途范围，现有结构不能正确保留二选一设备关系。",
+      "program_issues": [
+        "alternative_group_source_missing",
+        "object_not_supported"
+      ],
+      "entity_dimensions": {}
+    },
+    {
+      "arm": "E2",
+      "scope_id": "record-d29114c4e0c5",
+      "id": "o1",
+      "kind": "observation",
+      "program_destination": "accepted",
+      "overall_verdict": "supported",
+      "content_verdict": "supported",
+      "program_model_verdict": "supported",
+      "reason": "u17直接列出PF64216或PF64616，支持二选一观察及暂不选定单个external_key；观察本身未声称两台同时使用。实际关系仍须两个独立设备端点，单写one_of不足以修复实体合并。",
+      "program_issues": [],
+      "entity_dimensions": {}
+    }
+  ]
+}

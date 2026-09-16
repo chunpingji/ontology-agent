@@ -33,6 +33,8 @@ class TemplateDocumentRuns:
             raise DocumentAnalysisError(
                 "RUN_STATE_CONFLICT", "演示模板使用共享静态图谱，无需抽取", status_code=409)
         config = job.source_config or {}
+        if config.get("mode") == "finder_template_demo":
+            raise DocumentAnalysisError("SOURCE_NOT_FOUND", "源文档不存在", status_code=404)
         root = config.get("doc_class_iri")
         if not root or (template.iri_pattern and template.iri_pattern not in root):
             raise DocumentAnalysisError(
@@ -62,6 +64,15 @@ class TemplateDocumentRuns:
 
     async def create(self, owner_id: str, template_id: UUID, job_id: UUID, request_key: str):
         template, job, root = self._source(template_id, job_id)
+        from fastapi import HTTPException
+
+        from app.services.template_finder.policy import require_normal
+
+        try:
+            require_normal(template)
+        except HTTPException as exc:
+            raise DocumentAnalysisError(exc.detail["code"], exc.detail["message"],
+                                        status_code=exc.status_code) from exc
         if not job.document_path or not Path(job.document_path).is_file():
             raise DocumentAnalysisError("SOURCE_NOT_FOUND", "源文档原件不可用", status_code=404)
         template_hash = evidence_hash(template.schema_json)

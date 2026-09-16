@@ -39,7 +39,7 @@ import { RelationPanel } from "@/components/extraction/relation-panel";
 import { DocumentActionsMenu } from "@/components/reports/document-actions-menu";
 import { Outline } from "@/components/reports/outline";
 import { isWordReportDocument } from "@/components/reports/report-word-workspace";
-import { BatchDemoWorkspaceGate } from "@/components/reports/batch-demo-workspace";
+import { ReportRecognitionWorkspace } from "@/components/reports/report-recognition-workspace";
 import { ExpertOpinionEntry } from "@/components/reports/expert-opinion-entry";
 import {
   documentContentKey,
@@ -348,7 +348,7 @@ export default function ReportDetailPage() {
             </Button>
           )}
           {/* 上传文档：右上角「操作」弹出菜单（AI 分析 / 生成风险评估报告 / 审计），紧邻分享。 */}
-          {isDoc && <DocumentActionsMenu key={item.iri} item={item} />}
+          {isDoc && <DocumentActionsMenu key={item.iri} item={item} templateId={searchParams.get("template_id")} />}
           <Button variant="outline" onClick={handleShare}>
             {copied ? <Check /> : <Share2 />}
             {copied ? "已复制链接" : "分享"}
@@ -360,7 +360,8 @@ export default function ReportDetailPage() {
         <p className="text-sm text-destructive">下载失败，请稍后重试。</p>
       )}
 
-      {isWordDocument ? <BatchDemoWorkspaceGate key={item.iri} documentIri={item.iri!} /> : <div
+      {isWordDocument ? <ReportRecognitionWorkspace key={item.iri} documentIri={item.iri!}
+        templateId={searchParams.get("template_id")} /> : <div
         ref={layoutRef}
         className="flex flex-col gap-6 lg:min-h-0 lg:flex-1 lg:flex-row lg:gap-0"
       >

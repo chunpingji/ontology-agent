@@ -2,7 +2,7 @@ import logging
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-from fastapi import FastAPI, Request
+from fastapi import Depends, FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import ValidationError
@@ -28,6 +28,7 @@ from app.api import (
     report_runs,
     reports,
     system_config,
+    template_finder,
 )
 from app.config import settings
 from app.dependencies import identity_from_authorization, identity_from_token
@@ -286,9 +287,12 @@ app.include_router(
     prefix="/api/document-analysis",
     tags=["document-analysis"],
 )
-app.include_router(extraction.router, prefix="/api/extraction", tags=["extraction"])
-app.include_router(evidence.router, prefix="/api/extraction", tags=["evidence"])
-app.include_router(pde_conflict.router, prefix="/api/extraction", tags=["pde-conflict"])
+app.include_router(extraction.router, prefix="/api/extraction", tags=["extraction"],
+                   dependencies=[Depends(template_finder.reject_private_job)])
+app.include_router(evidence.router, prefix="/api/extraction", tags=["evidence"],
+                   dependencies=[Depends(template_finder.reject_private_job)])
+app.include_router(pde_conflict.router, prefix="/api/extraction", tags=["pde-conflict"],
+                   dependencies=[Depends(template_finder.reject_private_job)])
 app.include_router(kg.router, prefix="/api/kg", tags=["knowledge-graph"])
 app.include_router(integration.router, prefix="/api/integration", tags=["integration"])
 app.include_router(actions.router, prefix="/api/actions", tags=["actions"])
@@ -299,6 +303,7 @@ app.include_router(report_expert_opinions.router, prefix="/api/report-center/exp
                    tags=["report-expert-opinions"])
 app.include_router(compliance.router, prefix="/api/compliance", tags=["compliance"])
 app.include_router(system_config.router, prefix="/api/system-config", tags=["system-config"])
+app.include_router(template_finder.router, prefix="/api/ast-templates", tags=["template-finder"])
 app.include_router(ast_templates.router, prefix="/api/ast-templates", tags=["ast-templates"])
 app.include_router(mock_sources.router, prefix="/api/mock-sources", tags=["mock-sources"])
 

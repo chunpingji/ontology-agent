@@ -7,22 +7,25 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { WordViewer } from "@/components/extraction/word-viewer";
 import { ReportHistoryList } from "@/components/extraction/report-history-list";
-import { downloadReport, listReports, type DocumentEvidenceIR, type EvidenceAnchor, type GeneratedReportDTO, type TiptapContent } from "@/lib/api";
+import { getTemplateFinder, getTemplateFinderSource, downloadReport, listReports, type DocumentEvidenceIR, type EvidenceAnchor, type GeneratedReportDTO, type TiptapContent } from "@/lib/api";
 import { downloadArtifact, reportGet, reportPost, requestKey, type OutputNode, type ReportRun, type TemplateV2 } from "@/lib/reporting-v2";
 import { type ReportInputSnapshot, type ReportOutputResult } from "@/lib/report-preview";
 import { OutputPreview } from "./output-preview";
 import { ReportPreviewDashboard } from "./report-preview-dashboard";
 import { ReportSigningPanel } from "./report-signing-panel";
+import { useIdentity } from "@/lib/use-identity";
 
 type RunSelection = { id: string; config: string; mode: "data" | "report" };
 const fieldClass = "mt-1 block w-full min-w-0 rounded border bg-background p-2 text-sm";
 const running = (run?: ReportRun) => run?.execution_status === "pending" || run?.execution_status === "running";
 
-export function TemplateReportPreview({ templateId, defaultSourceJobId, draftSchema, templateName }: {
+export function TemplateReportPreview({ templateId, defaultSourceJobId, draftSchema, templateName, recognitionMode }: {
   templateId?: string; templateName?: string;
   defaultSourceJobId?: string | null; draftSchema: TemplateV2;
+  recognitionMode?: "finder_legacy" | "ontology_guided";
 }) {
   const queryClient = useQueryClient();
+  const { identity: { username, role } } = useIdentity();
   const [selection, setSelection] = useState<RunSelection | null>(null);
   const [report, setReport] = useState<RunSelection | null>(null);
   const [sources, setSources] = useState<Record<string, string>>({});
@@ -34,6 +37,7 @@ export function TemplateReportPreview({ templateId, defaultSourceJobId, draftSch
   const [records, setRecords] = useState("{}");
   const [at, setAt] = useState("");
   const [trace, setTrace] = useState<unknown>(null);
+  const [mockSource, setMockSource] = useState<unknown>(null);
   const [busy, setBusy] = useState("");
   const [error, setError] = useState("");
   const [confirmGenerate, setConfirmGenerate] = useState(false);
@@ -42,7 +46,7 @@ export function TemplateReportPreview({ templateId, defaultSourceJobId, draftSch
   const sourceArea = useRef<HTMLDivElement>(null);
   const pendingRequests = useRef(new Map<string, string>());
   const schemaKey = JSON.stringify(draftSchema);
-  const config = JSON.stringify([draftSchema, sourceSelections, records, at]);
+  const config = JSON.stringify([draftSchema, sourceSelections, records, at, recognitionMode]);
   const currentQuery = useQuery({ queryKey: ["report-run", selection?.id], enabled: !!selection,
     queryFn: () => reportGet<ReportRun>("report-runs/" + selection!.id),
     refetchInterval: (query) => running(query.state.data) ? 2000 : false });
@@ -55,12 +59,12 @@ export function TemplateReportPreview({ templateId, defaultSourceJobId, draftSch
   const snapshot = inputsQuery.data;
   const outputsQuery = useQuery({ queryKey: ["report-outputs", selection?.id, current?.attempt, current?.execution_status], enabled: !!current?.input_snapshot_id,
     queryFn: () => reportGet<ReportOutputResult[]>("report-runs/" + selection!.id + "/outputs") });
-  const jobs = useQuery({ queryKey: ["report-source-jobs"], enabled: !!templateId,
+  const jobs = useQuery({ queryKey: ["report-source-jobs", username, role], enabled: !!templateId,
     queryFn: () => reportGet<{ id: string; source_filename: string; status: string }[]>("extraction/jobs") });
   const sourceJobIds = [...new Set(Object.values(sourceSelections).filter(Boolean))];
   const displayedJobIds = snapshot ? [...new Set(Object.values(snapshot.source_bundle.sources)
-    .map((source) => source.job_id).filter((id): id is string => !!id))] : sourceJobIds;
-  const historyQuery = useQuery({ queryKey: ["report-preview-history", sourceJobIds], enabled: sourceJobIds.length > 0,
+    .map((source) => source.job_id).filter((id): id is string => !!id))] : recognitionMode === "finder_legacy" ? [] : sourceJobIds;
+  const historyQuery = useQuery({ queryKey: ["report-preview-history", username, role, sourceJobIds], enabled: sourceJobIds.length > 0,
     queryFn: async () => (await Promise.all(sourceJobIds.map(listReports))).flat().sort((a, b) => b.created_at.localeCompare(a.created_at)) });
   const history = historyQuery.data ?? [];
   const isReport = selection?.mode === "report";
@@ -69,7 +73,9 @@ export function TemplateReportPreview({ templateId, defaultSourceJobId, draftSch
   const latestDownload = history.find((item) => item.report_artifact_id || item.file_size);
   const stale = !!selection?.config && selection.config !== config;
   const hasSources = sourceSlots.every((slot) => slot.required === false || !!sourceSelections[slot.source_slot_id]);
-  const disabled = !!busy || running(current);
+  const loadingCoverage = selection?.mode === "data" && !!current?.input_snapshot_id && inputsQuery.isPending;
+  const refreshingCoverage = busy === "coverage" || (selection?.mode === "data" && running(current)) || loadingCoverage;
+  const disabled = !!busy || running(current) || loadingCoverage;
   const canRetry = current?.execution_status === "failed" || (running(current) && !!current?.lease_expires_at
     && Date.parse(current.lease_expires_at) <= currentQuery.dataUpdatedAt);
 
@@ -82,9 +88,14 @@ export function TemplateReportPreview({ templateId, defaultSourceJobId, draftSch
     const recordRefs: unknown = JSON.parse(records);
     if (!recordRefs || typeof recordRefs !== "object" || Array.isArray(recordRefs)
       || Object.values(recordRefs).some((value) => typeof value !== "string")) throw new Error("记录引用需填写为记录名称与版本 ID 的 JSON 对象。");
+    const sourceBindings = Object.fromEntries(await Promise.all(Object.entries(sourceSelections).filter(([, job]) => job).map(async ([slot, job_id]) => {
+      if (recognitionMode !== "finder_legacy" || !templateId) return [slot, { job_id }];
+      const state = await getTemplateFinder(templateId, job_id);
+      return [slot, { job_id, finder_execution_id: state.execution_id }];
+    })));
     const payload = {
       mode, template_id: templateId, applicable_at: at || null, draft_schema: draftSchema,
-      source_bindings: Object.fromEntries(Object.entries(sourceSelections).filter(([, job]) => job).map(([slot, job_id]) => [slot, { job_id }])),
+      source_bindings: sourceBindings,
       record_refs: recordRefs,
     };
     const hash = JSON.stringify(payload);
@@ -94,7 +105,7 @@ export function TemplateReportPreview({ templateId, defaultSourceJobId, draftSch
     pendingRequests.current.delete(hash);
     queryClient.setQueryData(["report-run", result.run_id], result);
     const next = { id: result.run_id, config, mode };
-    setSelection(next); setTrace(null); setLayout(null); setAnchor(null);
+    setSelection(next); setTrace(null); setMockSource(null); setLayout(null); setAnchor(null);
     if (mode === "report") { setReport(next); void historyQuery.refetch(); }
   }
   function generate() {
@@ -110,7 +121,14 @@ export function TemplateReportPreview({ templateId, defaultSourceJobId, draftSch
       return null;
     }
     const found = find(node.provenance_refs);
-    if (!found) { setError("该引用未包含可定位的原文锚点，请查看「原文定位」中的依据记录。"); return; }
+    if (!found) {
+      const mockRefs = node.provenance_refs?.filter((ref) => ref.kind === "mock") || [];
+      if (mockRefs.length) {
+        const records = Object.values(snapshot?.source_bundle.records || {}).filter((record) => mockRefs.some((ref) => ref.record_hash === record.provenance?.record_hash));
+        setMockSource({ sources: mockRefs, records }); setError(""); return;
+      }
+      setError("该引用未包含可定位的原文锚点，请查看「原文定位」中的依据记录。"); return;
+    }
     setAnchor(found); sourceArea.current?.scrollIntoView({ block: "start", behavior: "smooth" });
   }
   async function historyDownload(item: GeneratedReportDTO) {
@@ -120,15 +138,16 @@ export function TemplateReportPreview({ templateId, defaultSourceJobId, draftSch
   }
 
   return <div className="flex flex-col gap-4 px-6 py-4">
+    {(current?.demonstration || recognitionMode === "finder_legacy" || Object.keys(draftSchema.record_sources || {}).length > 0 || draftSchema.sections.some((s) => s.narrative?.enabled)) && <p className="rounded border bg-muted p-3 text-sm">演示草稿 · 请核对行文、数据来源与缺口，不能用于正式签署。</p>}
     <div className="flex flex-wrap items-center justify-between gap-2">
-      <span className="text-sm font-semibold text-foreground">AST 覆盖率</span>
+      <span className="text-sm font-semibold text-foreground">报告输入与生成</span>
       <div className="flex flex-wrap items-center gap-1.5">
         <Button size="sm" variant="ghost" disabled={disabled} onClick={() => action("layout", async () => {
           const result = await reportPost<{ body_ast: OutputNode }>("report-previews", { mode: "layout", draft_schema: draftSchema, idempotency_key: requestKey() });
           setLayout({ schema: schemaKey, ast: result.body_ast });
         })}><Eye className="mr-1 size-3.5" />版式预览</Button>
         <Button variant="outline" size="sm" disabled={disabled || !templateId || !hasSources} onClick={() => action("coverage", () => create("data"))}>
-          {busy === "coverage" ? <Loader2 className="mr-1 size-3.5 animate-spin" /> : <RotateCw className="mr-1 size-3.5" />}刷新覆盖率
+          {refreshingCoverage ? <Loader2 className="mr-1 size-3.5 animate-spin" /> : <RotateCw className="mr-1 size-3.5" />}刷新覆盖率
         </Button><Button size="sm" disabled={disabled || !templateId || !hasSources} onClick={generate}>
           {busy === "generate" || (isReport && running(current)) ? <Loader2 className="mr-1 size-3.5 animate-spin" /> : <FileDown className="mr-1 size-3.5" />}
           {busy === "generate" || (isReport && running(current)) ? "生成中..." : "生成报告"}
@@ -159,13 +178,13 @@ export function TemplateReportPreview({ templateId, defaultSourceJobId, draftSch
     {[error, currentQuery.error?.message, inputsQuery.error?.message, outputsQuery.error?.message, jobs.error?.message, historyQuery.error?.message, current?.error?.message || current?.error?.code].filter(Boolean).map((message, index) => <div key={index} role="alert" className="max-h-48 overflow-auto whitespace-pre-wrap break-words rounded border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">{message}</div>)}
     <ReportPreviewDashboard template={snapshot?.source_bundle.template ?? draftSchema} templateName={templateName}
       snapshot={snapshot} outputs={outputsQuery.data ?? []} current={current} hasSources={hasSources} isReport={isReport}
-      generating={busy === "generate" || (isReport && running(current))} refreshing={busy === "coverage" || (!isReport && running(current))}
+      generating={busy === "generate" || (isReport && running(current))} refreshing={!!refreshingCoverage}
       onLocateSource={locateSource} onDownload={artifact && current
         ? () => action("download", () => downloadArtifact(current.run_id, artifact.artifact_id))
         : !current && latestDownload ? () => action("download", () => historyDownload(latestDownload)) : undefined} />
     {current && <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
       <span>材料：{({ ready: "齐备", incomplete: "不完整", conflict: "存在冲突", invalid: "无效" } as Record<string, string>)[current.material_status] || "待检查"}</span>
-      <span>· 第 {current.attempt} 次生成</span>
+      <span>· 第 {current.attempt} 次{isReport ? "生成" : "检查"}</span>
       {canRetry && <Button size="sm" variant="outline" disabled={!!busy} onClick={() => action("retry", async () => {
         const result = await reportPost<ReportRun>("report-runs/" + current.run_id + "/attempts", { expected_revision: current.revision_no });
         queryClient.setQueryData(["report-run", current.run_id], result); void historyQuery.refetch();
@@ -195,8 +214,13 @@ export function TemplateReportPreview({ templateId, defaultSourceJobId, draftSch
       <div className="mt-3"><OutputPreview key={`${current.run_id}-${current.attempt}`} ast={current.body_ast} onLocateSource={locateSource} /></div>
     </details>}
     {displayedJobIds.length > 0 && <div ref={sourceArea} className="space-y-4">{displayedJobIds.map((jobId) => <SourceDocument key={jobId} jobId={jobId} anchor={anchor}
-      filename={jobs.data?.find((job) => job.id === jobId)?.source_filename} />)}</div>}
-    {signingRun?.body_hash && signingRun.execution_status === "completed" && <details className="rounded-lg border bg-card p-4">
+      filename={jobs.data?.find((job) => job.id === jobId)?.source_filename}
+      finder={Object.values(snapshot?.source_bundle.sources || {}).find((source) => source.job_id === jobId && source.kind === "finder_demo")} />)}</div>}
+    <Dialog open={mockSource !== null} onOpenChange={(open) => { if (!open) setMockSource(null); }}><DialogContent><DialogHeader><DialogTitle>Mock 数据来源</DialogTitle></DialogHeader>
+      <p className="text-sm text-muted-foreground">本次生成实际读取的本地演示记录及筛选范围；名单不代表签署。</p>
+      <pre className="max-h-[60vh] overflow-auto whitespace-pre-wrap break-all text-xs">{JSON.stringify(mockSource, null, 2)}</pre>
+    </DialogContent></Dialog>
+    {signingRun?.body_hash && !signingRun.demonstration && signingRun.execution_status === "completed" && <details className="rounded-lg border bg-card p-4">
       <summary className="cursor-pointer text-sm font-semibold">正文审核与签署</summary>
       <div className="mt-3"><ReportSigningPanel key={signingRun.run_id} run={signingRun} /></div>
     </details>}
@@ -208,9 +232,13 @@ export function TemplateReportPreview({ templateId, defaultSourceJobId, draftSch
   </div>;
 }
 
-function SourceDocument({ jobId, filename, anchor }: { jobId: string; filename?: string; anchor: EvidenceAnchor | null }) {
-  const documentQuery = useQuery({ queryKey: ["report-source-document", jobId],
-    queryFn: () => reportGet<{ content: TiptapContent }>("extraction/jobs/" + jobId + "/annotated-document") });
+function SourceDocument({ jobId, filename, anchor, finder }: { jobId: string; filename?: string; anchor: EvidenceAnchor | null;
+  finder?: { template_id?: string; execution_id?: string };
+}) {
+  const documentQuery = useQuery({ queryKey: ["report-source-document", jobId, finder?.template_id, finder?.execution_id],
+    queryFn: () => finder?.template_id && finder.execution_id
+      ? getTemplateFinderSource(finder.template_id, jobId, finder.execution_id)
+      : reportGet<{ content: TiptapContent }>("extraction/jobs/" + jobId + "/annotated-document") });
   const documentHash = (documentQuery.data?.content?.analysis as DocumentEvidenceIR | undefined)?.document_hash;
   return <section aria-label="报告源文档" className="rounded-lg border bg-card p-4">
     <div className="mb-2 flex items-center justify-between gap-2"><h4 className="text-sm font-semibold">源文档</h4><span className="truncate text-xs text-muted-foreground">{filename}</span></div>

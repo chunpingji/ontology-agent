@@ -275,6 +275,7 @@ async def create_report_document_run(
     body: CreateTemplateRunRequest,
     background_tasks: BackgroundTasks,
     document_iri: str = Query(min_length=1),
+    template_id: UUID | None = Query(default=None),
     identity: Identity = Depends(get_current_user),
     db: Session = Depends(get_db),
     engine: object = Depends(get_ontology_engine),
@@ -282,6 +283,19 @@ async def create_report_document_run(
     if identity.role != "senior_analyst":
         raise DocumentAnalysisError("ROLE_FORBIDDEN", "当前角色无运行写权限", status_code=403)
     application = _application(db, engine)
+    if template_id is not None:
+        from fastapi import HTTPException
+
+        from app.services.template_finder.service import context
+
+        try:
+            selected = context(db, document_iri, template_id)["selected"]
+        except HTTPException as exc:
+            raise DocumentAnalysisError(exc.detail["code"], exc.detail["message"],
+                                        status_code=exc.status_code) from exc
+        if selected["recognition_mode"] != "ontology_guided":
+            raise DocumentAnalysisError("RECOGNITION_MODE_MISMATCH",
+                                        "该模板请使用对应的 Finder 或静态演示入口", status_code=409)
     run, created = await ReportDocumentRuns(application).create(
         identity.username, document_iri, body.request_key,
     )
