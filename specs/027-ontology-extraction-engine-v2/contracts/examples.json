@@ -48,7 +48,7 @@
       "target_unit_id": null
     },
     "validate_graph": {
-      "graph_ref": "graph-1",
+      "claim_id": "p1",
       "shape_profile_id": "quantity-representation-v2"
     }
   },
@@ -127,42 +127,6 @@
     "external_links": [],
     "observations": []
   },
-  "verification_targets": [
-    {
-      "target_id": "entity:e1",
-      "content_hash": "80bf36a89cc5dbbfa0c0037247ae2ce659c0b68786d257b7b1577dc7f2c0a734",
-      "required_facets": [
-        "type",
-        "referent",
-        "subject_role"
-      ],
-      "target_kind": "entity"
-    },
-    {
-      "target_id": "entity:e2",
-      "content_hash": "52094eecafe275655c589ac1ba1e12c069446f048b101fa6525fb224634df9bd",
-      "required_facets": [
-        "type",
-        "referent",
-        "subject_role"
-      ],
-      "target_kind": "entity"
-    },
-    {
-      "target_id": "relation:r1",
-      "content_hash": "0198a65ac31ab4419179557c2ef30efae928907e16ed44b83cff9c50aad799fc",
-      "required_facets": [
-        "subject_binding",
-        "object_binding",
-        "predicate",
-        "bridge",
-        "selection",
-        "qualifiers",
-        "counterevidence"
-      ],
-      "target_kind": "relation"
-    }
-  ],
   "verification": {
     "verifications": [
       {
@@ -399,7 +363,7 @@
     }
   },
   "responses_exchange": {
-    "note": "合成 wire-format 示例。model 是项目配置模型名的占位符，执行前由现有配置替换；其余引用来自 fixture_context。没有真实请求/用量。",
+    "note": "合成 wire-format 示例。model 是项目配置模型名的占位符，执行前由现有配置替换；其余引用来自 fixture_context。没有真实请求/用量。 current_protocol 只保存阶段初始输入与制品引用；continuation_request.input 是即时派生的线缆示例。 此恢复样例仅一个 request_attempt，call_id 唯一性只在该响应批次内检查；运行时结果按 (request_attempt,call_id) 配对。",
     "request": {
       "model": "PROJECT_QWEN_MODEL",
       "instructions": "基于授权原文和本体卡片抽取；工具结果不自动证明事实。最终提交 discovery Schema 的候选，保留条件与选择组。",
@@ -942,50 +906,32 @@
       ],
       "error": null,
       "incomplete_details": null
+    },
+    "current_protocol": {
+      "stage_input_items": [
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "input_text",
+              "text": "{\"task\":{\"subject_id\":\"s\",\"predicate_iri\":\"urn:example:relatesTo\",\"stage\":\"discovery\"},\"allowed_class_iris\":[\"urn:example:SourceType\",\"urn:example:T\"],\"registered_entities\":[{\"entity_id\":\"s\",\"revision\":1,\"class_iri\":\"urn:example:SourceType\",\"origin\":\"user_specified_document_root\"}],\"evidence_catalog\":[{\"evidence_id\":\"ev-1\",\"record_id\":\"record-1\",\"role\":\"target\"}]}"
+            }
+          ]
+        }
+      ],
+      "turn_refs": [
+        "response"
+      ],
+      "completed_tool_results": [
+        "tool_outputs/0"
+      ]
     }
   },
   "verification_exchange": {
     "note": "新阶段独立请求，只有完整冻结声明及授权材料。实体、关系组、限定和根来源均明确；不包含 discovery 消息、工具历史或 reasoning。",
     "verification_input": {
       "discovery_ref": "result-discovery-1",
-      "claim_set_hash": "e8a76cec9a6135fea98c5f90365ca3b52533d831739e7b8d9dd7f63f9b3c4f66",
       "targets": [
-        {
-          "target_id": "entity:e1",
-          "content_hash": "80bf36a89cc5dbbfa0c0037247ae2ce659c0b68786d257b7b1577dc7f2c0a734",
-          "required_facets": [
-            "type",
-            "referent",
-            "subject_role"
-          ],
-          "target_kind": "entity"
-        },
-        {
-          "target_id": "entity:e2",
-          "content_hash": "52094eecafe275655c589ac1ba1e12c069446f048b101fa6525fb224634df9bd",
-          "required_facets": [
-            "type",
-            "referent",
-            "subject_role"
-          ],
-          "target_kind": "entity"
-        },
-        {
-          "target_id": "relation:r1",
-          "content_hash": "0198a65ac31ab4419179557c2ef30efae928907e16ed44b83cff9c50aad799fc",
-          "required_facets": [
-            "subject_binding",
-            "object_binding",
-            "predicate",
-            "bridge",
-            "selection",
-            "qualifiers",
-            "counterevidence"
-          ],
-          "target_kind": "relation"
-        }
-      ],
-      "claims": [
         {
           "target_id": "entity:e1",
           "target_kind": "entity",
@@ -1012,7 +958,12 @@
             "scope_id": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
             "members": []
           },
-          "dependency_refs": []
+          "dependency_refs": [],
+          "required_facets": [
+            "type",
+            "referent",
+            "subject_role"
+          ]
         },
         {
           "target_id": "entity:e2",
@@ -1040,7 +991,12 @@
             "scope_id": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
             "members": []
           },
-          "dependency_refs": []
+          "dependency_refs": [],
+          "required_facets": [
+            "type",
+            "referent",
+            "subject_role"
+          ]
         },
         {
           "target_id": "relation:r1",
@@ -1105,6 +1061,15 @@
               "id": "e2",
               "revision": 1
             }
+          ],
+          "required_facets": [
+            "subject_binding",
+            "object_binding",
+            "predicate",
+            "bridge",
+            "selection",
+            "qualifiers",
+            "counterevidence"
           ]
         }
       ],
@@ -1156,98 +1121,11 @@
           ],
           "dependency_refs": [],
           "content_hash": "e64fb790fb0f9d9f222b6497628efd2e7521acda3b220aaf56b3033117000bd6"
-        },
-        {
-          "entity_ref": {
-            "id": "e1",
-            "revision": 1
-          },
-          "class_iri": "urn:example:T",
-          "grounding_kind": "mention",
-          "root_origin": null,
-          "proposal": {
-            "local_id": "e1",
-            "class_iri": "urn:example:T",
-            "representation": "mention",
-            "mentions": [
-              {
-                "evidence_id": "ev-1",
-                "text": "对象甲",
-                "context_text": null
-              }
-            ],
-            "record_components": [],
-            "identifier_claims": []
-          },
-          "source_refs": [
-            {
-              "document_hash": "6a9a1ac57da367b51666bf965b3af5a7b08c90ae859ae9d45a51d82306337db3",
-              "parser_version": "synthetic-ir-v1",
-              "structure_hash": "083a179a3abf13b198e0cef466a8d4d2ae253de48f98bbd102c029d2b46fee91",
-              "evidence_id": "ev-1",
-              "section_node_id": "section-1",
-              "block_id": "block-ev-1",
-              "paragraph_index": 0,
-              "fragment_index": null,
-              "table_path": null,
-              "row_index": null,
-              "column_index": null,
-              "span_start": 0,
-              "span_end": 33,
-              "physical_page_number": null
-            }
-          ],
-          "dependency_refs": [],
-          "content_hash": "69b8a278a3f5ad0527c95043b006a024f1ed261225d5de148669a4ffd49af830"
-        },
-        {
-          "entity_ref": {
-            "id": "e2",
-            "revision": 1
-          },
-          "class_iri": "urn:example:T",
-          "grounding_kind": "mention",
-          "root_origin": null,
-          "proposal": {
-            "local_id": "e2",
-            "class_iri": "urn:example:T",
-            "representation": "mention",
-            "mentions": [
-              {
-                "evidence_id": "ev-1",
-                "text": "对象乙",
-                "context_text": null
-              }
-            ],
-            "record_components": [],
-            "identifier_claims": []
-          },
-          "source_refs": [
-            {
-              "document_hash": "6a9a1ac57da367b51666bf965b3af5a7b08c90ae859ae9d45a51d82306337db3",
-              "parser_version": "synthetic-ir-v1",
-              "structure_hash": "083a179a3abf13b198e0cef466a8d4d2ae253de48f98bbd102c029d2b46fee91",
-              "evidence_id": "ev-1",
-              "section_node_id": "section-1",
-              "block_id": "block-ev-1",
-              "paragraph_index": 0,
-              "fragment_index": null,
-              "table_path": null,
-              "row_index": null,
-              "column_index": null,
-              "span_start": 0,
-              "span_end": 33,
-              "physical_page_number": null
-            }
-          ],
-          "dependency_refs": [],
-          "content_hash": "57255a2751cada53b5809b5e8e2b9b76223d32a49c97958caace64b83c2344ff"
         }
       ],
       "external_candidates": [],
       "bridge_dependencies": [],
-      "scope_resolutions": [],
-      "input_hash": "46f1cf372b95129e934ff8ea016f9ae93f556e75dfe1c4ca04012c57c8c33eb7"
+      "scope_resolutions": []
     },
     "request": {
       "model": "PROJECT_QWEN_MODEL",
@@ -1258,7 +1136,7 @@
           "content": [
             {
               "type": "input_text",
-              "text": "{\"task_id\":\"task-1\",\"subject_ref\":{\"id\":\"s\",\"revision\":1},\"predicate_iri\":\"urn:example:relatesTo\",\"scope\":{\"scope_id\":\"4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945\",\"members\":[]},\"stage\":\"verification\",\"context_hash\":\"3210da7d1c54dda5639dcac5645d694cadd61e23b351666c7c9bca0cbc9ebfd5\",\"evidence_hash\":\"d484d2efb29b7d58dd8bd9382fe22be32c8c0cc4e23fd7a76c718916b7bbf302\",\"schema_card\":{\"schema_card_id\":\"card-1\",\"subject_ref\":{\"id\":\"s\",\"revision\":1},\"class_iris\":[\"urn:example:SourceType\"],\"ontology_snapshot_id\":\"synthetic-ontology-1\",\"menu_id\":\"menu-1\",\"predicates\":[{\"iri\":\"urn:example:relatesTo\",\"label\":\"关联\",\"description\":\"主体指向原文指定的类型 T 对象；保留选择组和限定。\",\"declared_by\":[\"urn:example:SourceType\"],\"multiplicity\":\"multiple\",\"min_count\":null,\"max_count\":null,\"constraint_status\":\"resolved\",\"kind\":\"relationship\",\"range_class_iris\":[\"urn:example:T\"],\"range_classes\":[{\"iri\":\"urn:example:T\",\"label\":\"类型T\",\"description\":\"合成测试类型\",\"parent_iris\":[],\"identity_property_iris\":[],\"direct_field_labels\":[]}]}],\"quantity_policies\":[],\"identity_keys\":[],\"unsupported_constraints\":[]},\"source_catalog\":[{\"record_id\":\"record-1\",\"title\":null,\"summary\":null,\"summary_source\":null,\"authorized_evidence_ids\":[\"ev-1\"]}],\"evidence_units\":[{\"evidence_id\":\"ev-1\",\"record_id\":\"record-1\",\"text\":\"主体S在条件C下关联类型T的对象甲或类型T的对象乙，二者恰选其一。\",\"span_start\":0,\"span_end\":33,\"role\":\"target\",\"fact_eligible\":true,\"table\":null}],\"registered_refs\":[{\"id\":\"s\",\"revision\":1},{\"id\":\"e1\",\"revision\":1},{\"id\":\"e2\",\"revision\":1},{\"id\":\"r1\",\"revision\":1}],\"verification_input\":{\"discovery_ref\":\"result-discovery-1\",\"claim_set_hash\":\"e8a76cec9a6135fea98c5f90365ca3b52533d831739e7b8d9dd7f63f9b3c4f66\",\"targets\":[{\"target_id\":\"entity:e1\",\"content_hash\":\"80bf36a89cc5dbbfa0c0037247ae2ce659c0b68786d257b7b1577dc7f2c0a734\",\"required_facets\":[\"type\",\"referent\",\"subject_role\"],\"target_kind\":\"entity\"},{\"target_id\":\"entity:e2\",\"content_hash\":\"52094eecafe275655c589ac1ba1e12c069446f048b101fa6525fb224634df9bd\",\"required_facets\":[\"type\",\"referent\",\"subject_role\"],\"target_kind\":\"entity\"},{\"target_id\":\"relation:r1\",\"content_hash\":\"0198a65ac31ab4419179557c2ef30efae928907e16ed44b83cff9c50aad799fc\",\"required_facets\":[\"subject_binding\",\"object_binding\",\"predicate\",\"bridge\",\"selection\",\"qualifiers\",\"counterevidence\"],\"target_kind\":\"relation\"}],\"claims\":[{\"target_id\":\"entity:e1\",\"target_kind\":\"entity\",\"claim_ref\":{\"id\":\"e1\",\"revision\":1},\"content_hash\":\"80bf36a89cc5dbbfa0c0037247ae2ce659c0b68786d257b7b1577dc7f2c0a734\",\"payload\":{\"local_id\":\"e1\",\"class_iri\":\"urn:example:T\",\"representation\":\"mention\",\"mentions\":[{\"evidence_id\":\"ev-1\",\"text\":\"对象甲\",\"context_text\":null}],\"record_components\":[],\"identifier_claims\":[]},\"scope\":{\"scope_id\":\"4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945\",\"members\":[]},\"dependency_refs\":[]},{\"target_id\":\"entity:e2\",\"target_kind\":\"entity\",\"claim_ref\":{\"id\":\"e2\",\"revision\":1},\"content_hash\":\"52094eecafe275655c589ac1ba1e12c069446f048b101fa6525fb224634df9bd\",\"payload\":{\"local_id\":\"e2\",\"class_iri\":\"urn:example:T\",\"representation\":\"mention\",\"mentions\":[{\"evidence_id\":\"ev-1\",\"text\":\"对象乙\",\"context_text\":null}],\"record_components\":[],\"identifier_claims\":[]},\"scope\":{\"scope_id\":\"4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945\",\"members\":[]},\"dependency_refs\":[]},{\"target_id\":\"relation:r1\",\"target_kind\":\"relation\",\"claim_ref\":{\"id\":\"r1\",\"revision\":1},\"content_hash\":\"0198a65ac31ab4419179557c2ef30efae928907e16ed44b83cff9c50aad799fc\",\"payload\":{\"local_id\":\"r1\",\"subject_id\":\"s\",\"predicate_iri\":\"urn:example:relatesTo\",\"object_ids\":[\"e1\",\"e2\"],\"selection\":\"one_of\",\"bridge_support\":[{\"evidence_id\":\"ev-1\",\"text\":\"主体S在条件C下关联类型T的对象甲或类型T的对象乙，二者恰选其一。\",\"context_text\":null}],\"selection_support\":[{\"evidence_id\":\"ev-1\",\"text\":\"类型T的对象甲或类型T的对象乙，二者恰选其一\",\"context_text\":null}],\"qualifiers\":{\"polarity\":\"affirmed\",\"modality\":\"asserted\",\"condition_support\":[{\"evidence_id\":\"ev-1\",\"text\":\"在条件C下\",\"context_text\":null}],\"scope_qualifiers\":[]},\"bridge_kind\":\"explicit_assertion\",\"bridge_ref_ids\":[]},\"scope\":{\"scope_id\":\"4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945\",\"members\":[]},\"dependency_refs\":[{\"id\":\"s\",\"revision\":1},{\"id\":\"e1\",\"revision\":1},{\"id\":\"e2\",\"revision\":1}]}],\"local_ref_map\":{\"s\":{\"id\":\"s\",\"revision\":1},\"e1\":{\"id\":\"e1\",\"revision\":1},\"e2\":{\"id\":\"e2\",\"revision\":1},\"r1\":{\"id\":\"r1\",\"revision\":1}},\"entity_dependencies\":[{\"entity_ref\":{\"id\":\"s\",\"revision\":1},\"class_iri\":\"urn:example:SourceType\",\"grounding_kind\":\"document_root\",\"root_origin\":\"user_specified_document_root\",\"proposal\":null,\"source_refs\":[{\"document_hash\":\"6a9a1ac57da367b51666bf965b3af5a7b08c90ae859ae9d45a51d82306337db3\",\"parser_version\":\"synthetic-ir-v1\",\"structure_hash\":\"083a179a3abf13b198e0cef466a8d4d2ae253de48f98bbd102c029d2b46fee91\",\"evidence_id\":\"ev-1\",\"section_node_id\":\"section-1\",\"block_id\":\"block-ev-1\",\"paragraph_index\":0,\"fragment_index\":null,\"table_path\":null,\"row_index\":null,\"column_index\":null,\"span_start\":0,\"span_end\":33,\"physical_page_number\":null}],\"dependency_refs\":[],\"content_hash\":\"e64fb790fb0f9d9f222b6497628efd2e7521acda3b220aaf56b3033117000bd6\"},{\"entity_ref\":{\"id\":\"e1\",\"revision\":1},\"class_iri\":\"urn:example:T\",\"grounding_kind\":\"mention\",\"root_origin\":null,\"proposal\":{\"local_id\":\"e1\",\"class_iri\":\"urn:example:T\",\"representation\":\"mention\",\"mentions\":[{\"evidence_id\":\"ev-1\",\"text\":\"对象甲\",\"context_text\":null}],\"record_components\":[],\"identifier_claims\":[]},\"source_refs\":[{\"document_hash\":\"6a9a1ac57da367b51666bf965b3af5a7b08c90ae859ae9d45a51d82306337db3\",\"parser_version\":\"synthetic-ir-v1\",\"structure_hash\":\"083a179a3abf13b198e0cef466a8d4d2ae253de48f98bbd102c029d2b46fee91\",\"evidence_id\":\"ev-1\",\"section_node_id\":\"section-1\",\"block_id\":\"block-ev-1\",\"paragraph_index\":0,\"fragment_index\":null,\"table_path\":null,\"row_index\":null,\"column_index\":null,\"span_start\":0,\"span_end\":33,\"physical_page_number\":null}],\"dependency_refs\":[],\"content_hash\":\"69b8a278a3f5ad0527c95043b006a024f1ed261225d5de148669a4ffd49af830\"},{\"entity_ref\":{\"id\":\"e2\",\"revision\":1},\"class_iri\":\"urn:example:T\",\"grounding_kind\":\"mention\",\"root_origin\":null,\"proposal\":{\"local_id\":\"e2\",\"class_iri\":\"urn:example:T\",\"representation\":\"mention\",\"mentions\":[{\"evidence_id\":\"ev-1\",\"text\":\"对象乙\",\"context_text\":null}],\"record_components\":[],\"identifier_claims\":[]},\"source_refs\":[{\"document_hash\":\"6a9a1ac57da367b51666bf965b3af5a7b08c90ae859ae9d45a51d82306337db3\",\"parser_version\":\"synthetic-ir-v1\",\"structure_hash\":\"083a179a3abf13b198e0cef466a8d4d2ae253de48f98bbd102c029d2b46fee91\",\"evidence_id\":\"ev-1\",\"section_node_id\":\"section-1\",\"block_id\":\"block-ev-1\",\"paragraph_index\":0,\"fragment_index\":null,\"table_path\":null,\"row_index\":null,\"column_index\":null,\"span_start\":0,\"span_end\":33,\"physical_page_number\":null}],\"dependency_refs\":[],\"content_hash\":\"57255a2751cada53b5809b5e8e2b9b76223d32a49c97958caace64b83c2344ff\"}],\"external_candidates\":[],\"bridge_dependencies\":[],\"scope_resolutions\":[],\"input_hash\":\"46f1cf372b95129e934ff8ea016f9ae93f556e75dfe1c4ca04012c57c8c33eb7\"},\"tool_observations\":[],\"feedback\":[],\"turn\":{\"stage\":\"verification\",\"mode\":\"answer\",\"allowed_tool_names\":[],\"model_calls_remaining\":1,\"reserved_model_calls\":0,\"reason_code\":\"verification_answer_reserved\"}}"
+              "text": "{\"task_id\":\"task-1\",\"subject_ref\":{\"id\":\"s\",\"revision\":1},\"predicate_iri\":\"urn:example:relatesTo\",\"scope\":{\"scope_id\":\"4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945\",\"members\":[]},\"stage\":\"verification\",\"context_hash\":\"3210da7d1c54dda5639dcac5645d694cadd61e23b351666c7c9bca0cbc9ebfd5\",\"evidence_hash\":\"d484d2efb29b7d58dd8bd9382fe22be32c8c0cc4e23fd7a76c718916b7bbf302\",\"schema_card\":{\"schema_card_id\":\"card-1\",\"subject_ref\":{\"id\":\"s\",\"revision\":1},\"class_iris\":[\"urn:example:SourceType\"],\"ontology_snapshot_id\":\"synthetic-ontology-1\",\"menu_id\":\"menu-1\",\"predicates\":[{\"iri\":\"urn:example:relatesTo\",\"label\":\"关联\",\"description\":\"主体指向原文指定的类型 T 对象；保留选择组和限定。\",\"declared_by\":[\"urn:example:SourceType\"],\"multiplicity\":\"multiple\",\"min_count\":null,\"max_count\":null,\"constraint_status\":\"resolved\",\"kind\":\"relationship\",\"range_class_iris\":[\"urn:example:T\"],\"range_classes\":[{\"iri\":\"urn:example:T\",\"label\":\"类型T\",\"description\":\"合成测试类型\",\"parent_iris\":[],\"identity_property_iris\":[],\"direct_field_labels\":[]}]}],\"quantity_policies\":[],\"identity_keys\":[],\"unsupported_constraints\":[]},\"source_catalog\":[{\"record_id\":\"record-1\",\"title\":null,\"summary\":null,\"summary_source\":null,\"authorized_evidence_ids\":[\"ev-1\"]}],\"evidence_units\":[{\"evidence_id\":\"ev-1\",\"record_id\":\"record-1\",\"text\":\"主体S在条件C下关联类型T的对象甲或类型T的对象乙，二者恰选其一。\",\"span_start\":0,\"span_end\":33,\"role\":\"target\",\"fact_eligible\":true,\"table\":null}],\"registered_refs\":[{\"id\":\"s\",\"revision\":1},{\"id\":\"e1\",\"revision\":1},{\"id\":\"e2\",\"revision\":1},{\"id\":\"r1\",\"revision\":1}],\"verification_input\":{\"discovery_ref\":\"result-discovery-1\",\"targets\":[{\"target_id\":\"entity:e1\",\"target_kind\":\"entity\",\"claim_ref\":{\"id\":\"e1\",\"revision\":1},\"content_hash\":\"80bf36a89cc5dbbfa0c0037247ae2ce659c0b68786d257b7b1577dc7f2c0a734\",\"payload\":{\"local_id\":\"e1\",\"class_iri\":\"urn:example:T\",\"representation\":\"mention\",\"mentions\":[{\"evidence_id\":\"ev-1\",\"text\":\"对象甲\",\"context_text\":null}],\"record_components\":[],\"identifier_claims\":[]},\"scope\":{\"scope_id\":\"4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945\",\"members\":[]},\"dependency_refs\":[],\"required_facets\":[\"type\",\"referent\",\"subject_role\"]},{\"target_id\":\"entity:e2\",\"target_kind\":\"entity\",\"claim_ref\":{\"id\":\"e2\",\"revision\":1},\"content_hash\":\"52094eecafe275655c589ac1ba1e12c069446f048b101fa6525fb224634df9bd\",\"payload\":{\"local_id\":\"e2\",\"class_iri\":\"urn:example:T\",\"representation\":\"mention\",\"mentions\":[{\"evidence_id\":\"ev-1\",\"text\":\"对象乙\",\"context_text\":null}],\"record_components\":[],\"identifier_claims\":[]},\"scope\":{\"scope_id\":\"4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945\",\"members\":[]},\"dependency_refs\":[],\"required_facets\":[\"type\",\"referent\",\"subject_role\"]},{\"target_id\":\"relation:r1\",\"target_kind\":\"relation\",\"claim_ref\":{\"id\":\"r1\",\"revision\":1},\"content_hash\":\"0198a65ac31ab4419179557c2ef30efae928907e16ed44b83cff9c50aad799fc\",\"payload\":{\"local_id\":\"r1\",\"subject_id\":\"s\",\"predicate_iri\":\"urn:example:relatesTo\",\"object_ids\":[\"e1\",\"e2\"],\"selection\":\"one_of\",\"bridge_support\":[{\"evidence_id\":\"ev-1\",\"text\":\"主体S在条件C下关联类型T的对象甲或类型T的对象乙，二者恰选其一。\",\"context_text\":null}],\"selection_support\":[{\"evidence_id\":\"ev-1\",\"text\":\"类型T的对象甲或类型T的对象乙，二者恰选其一\",\"context_text\":null}],\"qualifiers\":{\"polarity\":\"affirmed\",\"modality\":\"asserted\",\"condition_support\":[{\"evidence_id\":\"ev-1\",\"text\":\"在条件C下\",\"context_text\":null}],\"scope_qualifiers\":[]},\"bridge_kind\":\"explicit_assertion\",\"bridge_ref_ids\":[]},\"scope\":{\"scope_id\":\"4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945\",\"members\":[]},\"dependency_refs\":[{\"id\":\"s\",\"revision\":1},{\"id\":\"e1\",\"revision\":1},{\"id\":\"e2\",\"revision\":1}],\"required_facets\":[\"subject_binding\",\"object_binding\",\"predicate\",\"bridge\",\"selection\",\"qualifiers\",\"counterevidence\"]}],\"local_ref_map\":{\"s\":{\"id\":\"s\",\"revision\":1},\"e1\":{\"id\":\"e1\",\"revision\":1},\"e2\":{\"id\":\"e2\",\"revision\":1},\"r1\":{\"id\":\"r1\",\"revision\":1}},\"entity_dependencies\":[{\"entity_ref\":{\"id\":\"s\",\"revision\":1},\"class_iri\":\"urn:example:SourceType\",\"grounding_kind\":\"document_root\",\"root_origin\":\"user_specified_document_root\",\"proposal\":null,\"source_refs\":[{\"document_hash\":\"6a9a1ac57da367b51666bf965b3af5a7b08c90ae859ae9d45a51d82306337db3\",\"parser_version\":\"synthetic-ir-v1\",\"structure_hash\":\"083a179a3abf13b198e0cef466a8d4d2ae253de48f98bbd102c029d2b46fee91\",\"evidence_id\":\"ev-1\",\"section_node_id\":\"section-1\",\"block_id\":\"block-ev-1\",\"paragraph_index\":0,\"fragment_index\":null,\"table_path\":null,\"row_index\":null,\"column_index\":null,\"span_start\":0,\"span_end\":33,\"physical_page_number\":null}],\"dependency_refs\":[],\"content_hash\":\"e64fb790fb0f9d9f222b6497628efd2e7521acda3b220aaf56b3033117000bd6\"}],\"external_candidates\":[],\"bridge_dependencies\":[],\"scope_resolutions\":[]},\"tool_observations\":[],\"feedback\":[],\"turn\":{\"stage\":\"verification\",\"mode\":\"answer\",\"allowed_tool_names\":[],\"model_calls_remaining\":1,\"reserved_model_calls\":0,\"reason_code\":\"verification_answer_reserved\"}}"
             }
           ]
         }
@@ -1666,7 +1544,7 @@
     }
   ],
   "context_authorization_resume_example": {
-    "note": "补证已由协调器确认；result-retrieve-1 内持有完整当前授权定位描述，协议只保存这一引用。恢复从冻结 IR 重建，不读取 active_input_items 推导权限。样例中的 before/after 是比较断言，不是运行时双份权威状态。",
+    "note": "协调器在同一屏障保存工具结果引用和 protocol.context_authorization；权限描述及版本/hash仅存当前协议一份。恢复从冻结 IR 重建 TaskContext，expected_restored_context 是派生结果的测试预期。",
     "frozen_ir": {
       "identity": {
         "document_hash": "6a9a1ac57da367b51666bf965b3af5a7b08c90ae859ae9d45a51d82306337db3",
@@ -2055,367 +1933,6 @@
       "evidence_revision": 2
     },
     "confirmed_result_ref": "result-retrieve-1",
-    "confirmed_authorization": {
-      "task_id": "task-1",
-      "ir_identity": {
-        "document_hash": "6a9a1ac57da367b51666bf965b3af5a7b08c90ae859ae9d45a51d82306337db3",
-        "parser_version": "synthetic-ir-v1",
-        "structure_hash": "083a179a3abf13b198e0cef466a8d4d2ae253de48f98bbd102c029d2b46fee91"
-      },
-      "context_policy_hash": "23916c162d94d0c3ea684d663a8cd2938f485e14765216e858416601157edcb8",
-      "record_ids": [
-        "record-1",
-        "record-2"
-      ],
-      "fragments": [
-        {
-          "record_id": "record-1",
-          "evidence_id": "ev-1",
-          "span_start": 0,
-          "span_end": 33,
-          "role": "target",
-          "fact_eligible": true
-        },
-        {
-          "record_id": "record-2",
-          "evidence_id": "ev-2",
-          "span_start": 0,
-          "span_end": 23,
-          "role": "required_context",
-          "fact_eligible": false
-        }
-      ],
-      "bindings": {
-        "endpoint_evidence": [],
-        "proof_dependencies": [],
-        "competing_subject_refs": [],
-        "subject_evidence_refs": [
-          {
-            "document_hash": "6a9a1ac57da367b51666bf965b3af5a7b08c90ae859ae9d45a51d82306337db3",
-            "parser_version": "synthetic-ir-v1",
-            "structure_hash": "083a179a3abf13b198e0cef466a8d4d2ae253de48f98bbd102c029d2b46fee91",
-            "evidence_id": "ev-1",
-            "section_node_id": "section-1",
-            "block_id": "block-ev-1",
-            "paragraph_index": 0,
-            "fragment_index": null,
-            "table_path": null,
-            "row_index": null,
-            "column_index": null,
-            "span_start": 0,
-            "span_end": 3,
-            "physical_page_number": null
-          }
-        ],
-        "owner_field_refs": [
-          {
-            "document_hash": "6a9a1ac57da367b51666bf965b3af5a7b08c90ae859ae9d45a51d82306337db3",
-            "parser_version": "synthetic-ir-v1",
-            "structure_hash": "083a179a3abf13b198e0cef466a8d4d2ae253de48f98bbd102c029d2b46fee91",
-            "evidence_id": "ev-1",
-            "section_node_id": "section-1",
-            "block_id": "block-ev-1",
-            "paragraph_index": 0,
-            "fragment_index": null,
-            "table_path": null,
-            "row_index": null,
-            "column_index": null,
-            "span_start": 0,
-            "span_end": 3,
-            "physical_page_number": null
-          }
-        ],
-        "required_context_refs": [
-          {
-            "document_hash": "6a9a1ac57da367b51666bf965b3af5a7b08c90ae859ae9d45a51d82306337db3",
-            "parser_version": "synthetic-ir-v1",
-            "structure_hash": "083a179a3abf13b198e0cef466a8d4d2ae253de48f98bbd102c029d2b46fee91",
-            "evidence_id": "ev-2",
-            "section_node_id": "section-1",
-            "block_id": "block-ev-2",
-            "paragraph_index": 1,
-            "fragment_index": null,
-            "table_path": null,
-            "row_index": null,
-            "column_index": null,
-            "span_start": 0,
-            "span_end": 23,
-            "physical_page_number": null
-          }
-        ],
-        "counterevidence_refs": [],
-        "omitted_refs": []
-      },
-      "evidence_revision": 2,
-      "evidence_hash": "dddbae849930ea571177e5ff4e363e7e646d1f8df7d64c0d445f4008d02f0a06",
-      "context_hash": "f686ab25165470d117c2a4d3fd3a793cea5c9a3531f2b8a77336eb6d22cc7572"
-    },
-    "protocol_before_pause": {
-      "lineage_id": "lineage-1",
-      "scope_id": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
-      "context_authorization_ref": "result-retrieve-1",
-      "evidence_revision": 2,
-      "evidence_hash": "dddbae849930ea571177e5ff4e363e7e646d1f8df7d64c0d445f4008d02f0a06",
-      "context_hash": "f686ab25165470d117c2a4d3fd3a793cea5c9a3531f2b8a77336eb6d22cc7572",
-      "completed_tool_results": [
-        "result-retrieve-1"
-      ],
-      "pending_call_ids": [],
-      "tool_calls_used": 2
-    },
-    "protocol_after_resume": {
-      "lineage_id": "lineage-1",
-      "scope_id": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
-      "context_authorization_ref": "result-retrieve-1",
-      "evidence_revision": 2,
-      "evidence_hash": "dddbae849930ea571177e5ff4e363e7e646d1f8df7d64c0d445f4008d02f0a06",
-      "context_hash": "f686ab25165470d117c2a4d3fd3a793cea5c9a3531f2b8a77336eb6d22cc7572",
-      "completed_tool_results": [
-        "result-retrieve-1"
-      ],
-      "pending_call_ids": [],
-      "tool_calls_used": 2
-    },
-    "context_before_pause": {
-      "task_id": "task-1",
-      "fragments": [
-        {
-          "record_id": "record-1",
-          "evidence_id": "ev-1",
-          "span_start": 0,
-          "span_end": 33,
-          "role": "target",
-          "fact_eligible": true,
-          "text": "主体S在条件C下关联类型T的对象甲或类型T的对象乙，二者恰选其一。"
-        },
-        {
-          "record_id": "record-2",
-          "evidence_id": "ev-2",
-          "span_start": 0,
-          "span_end": 23,
-          "role": "required_context",
-          "fact_eligible": false,
-          "text": "补充原文：主体S只在条件C满足时适用上述关联。"
-        }
-      ],
-      "bindings": {
-        "endpoint_evidence": [],
-        "proof_dependencies": [],
-        "competing_subject_refs": [],
-        "subject_evidence_refs": [
-          {
-            "document_hash": "6a9a1ac57da367b51666bf965b3af5a7b08c90ae859ae9d45a51d82306337db3",
-            "parser_version": "synthetic-ir-v1",
-            "structure_hash": "083a179a3abf13b198e0cef466a8d4d2ae253de48f98bbd102c029d2b46fee91",
-            "evidence_id": "ev-1",
-            "section_node_id": "section-1",
-            "block_id": "block-ev-1",
-            "paragraph_index": 0,
-            "fragment_index": null,
-            "table_path": null,
-            "row_index": null,
-            "column_index": null,
-            "span_start": 0,
-            "span_end": 3,
-            "physical_page_number": null
-          }
-        ],
-        "owner_field_refs": [
-          {
-            "document_hash": "6a9a1ac57da367b51666bf965b3af5a7b08c90ae859ae9d45a51d82306337db3",
-            "parser_version": "synthetic-ir-v1",
-            "structure_hash": "083a179a3abf13b198e0cef466a8d4d2ae253de48f98bbd102c029d2b46fee91",
-            "evidence_id": "ev-1",
-            "section_node_id": "section-1",
-            "block_id": "block-ev-1",
-            "paragraph_index": 0,
-            "fragment_index": null,
-            "table_path": null,
-            "row_index": null,
-            "column_index": null,
-            "span_start": 0,
-            "span_end": 3,
-            "physical_page_number": null
-          }
-        ],
-        "required_context_refs": [
-          {
-            "document_hash": "6a9a1ac57da367b51666bf965b3af5a7b08c90ae859ae9d45a51d82306337db3",
-            "parser_version": "synthetic-ir-v1",
-            "structure_hash": "083a179a3abf13b198e0cef466a8d4d2ae253de48f98bbd102c029d2b46fee91",
-            "evidence_id": "ev-2",
-            "section_node_id": "section-1",
-            "block_id": "block-ev-2",
-            "paragraph_index": 1,
-            "fragment_index": null,
-            "table_path": null,
-            "row_index": null,
-            "column_index": null,
-            "span_start": 0,
-            "span_end": 23,
-            "physical_page_number": null
-          }
-        ],
-        "counterevidence_refs": [],
-        "omitted_refs": []
-      },
-      "evidence_revision": 2,
-      "evidence_hash": "dddbae849930ea571177e5ff4e363e7e646d1f8df7d64c0d445f4008d02f0a06",
-      "context_hash": "f686ab25165470d117c2a4d3fd3a793cea5c9a3531f2b8a77336eb6d22cc7572",
-      "target": {
-        "target_id": "86452a2613a10c7456bbf908a46d0ef553c86a873148f1f539be3e0baf630c5a",
-        "claim_ref": {
-          "id": "s",
-          "revision": 1
-        },
-        "task_id": "task-1",
-        "check_kind": "predicate_entailment",
-        "document_context": {
-          "document_hash": "6a9a1ac57da367b51666bf965b3af5a7b08c90ae859ae9d45a51d82306337db3",
-          "document_class_iri": "urn:example:SourceType",
-          "root_ref": {
-            "id": "s",
-            "revision": 1
-          }
-        },
-        "subject_ref": {
-          "entity_id": "s",
-          "revision": 1,
-          "class_iri": "urn:example:SourceType",
-          "referent_id": null,
-          "is_document_root": true
-        },
-        "predicate_spec_ref": null,
-        "predicate_iri": "urn:example:relatesTo",
-        "object_ref": null,
-        "literal_hash": null,
-        "assertion_polarity": "affirmed",
-        "applicability": {},
-        "ontology_hash": "094d279bf528b7ead9dc9d6f707f3eb31c144306af391134f53f9f534e06e4a9",
-        "source_scope_hash": "26efef250e11a93d98c0e98f834c962ec5d1890a3210a69f03f07d5cc3837cdb",
-        "context_hash": "f686ab25165470d117c2a4d3fd3a793cea5c9a3531f2b8a77336eb6d22cc7572"
-      }
-    },
-    "context_after_resume": {
-      "task_id": "task-1",
-      "fragments": [
-        {
-          "record_id": "record-1",
-          "evidence_id": "ev-1",
-          "span_start": 0,
-          "span_end": 33,
-          "role": "target",
-          "fact_eligible": true,
-          "text": "主体S在条件C下关联类型T的对象甲或类型T的对象乙，二者恰选其一。"
-        },
-        {
-          "record_id": "record-2",
-          "evidence_id": "ev-2",
-          "span_start": 0,
-          "span_end": 23,
-          "role": "required_context",
-          "fact_eligible": false,
-          "text": "补充原文：主体S只在条件C满足时适用上述关联。"
-        }
-      ],
-      "bindings": {
-        "endpoint_evidence": [],
-        "proof_dependencies": [],
-        "competing_subject_refs": [],
-        "subject_evidence_refs": [
-          {
-            "document_hash": "6a9a1ac57da367b51666bf965b3af5a7b08c90ae859ae9d45a51d82306337db3",
-            "parser_version": "synthetic-ir-v1",
-            "structure_hash": "083a179a3abf13b198e0cef466a8d4d2ae253de48f98bbd102c029d2b46fee91",
-            "evidence_id": "ev-1",
-            "section_node_id": "section-1",
-            "block_id": "block-ev-1",
-            "paragraph_index": 0,
-            "fragment_index": null,
-            "table_path": null,
-            "row_index": null,
-            "column_index": null,
-            "span_start": 0,
-            "span_end": 3,
-            "physical_page_number": null
-          }
-        ],
-        "owner_field_refs": [
-          {
-            "document_hash": "6a9a1ac57da367b51666bf965b3af5a7b08c90ae859ae9d45a51d82306337db3",
-            "parser_version": "synthetic-ir-v1",
-            "structure_hash": "083a179a3abf13b198e0cef466a8d4d2ae253de48f98bbd102c029d2b46fee91",
-            "evidence_id": "ev-1",
-            "section_node_id": "section-1",
-            "block_id": "block-ev-1",
-            "paragraph_index": 0,
-            "fragment_index": null,
-            "table_path": null,
-            "row_index": null,
-            "column_index": null,
-            "span_start": 0,
-            "span_end": 3,
-            "physical_page_number": null
-          }
-        ],
-        "required_context_refs": [
-          {
-            "document_hash": "6a9a1ac57da367b51666bf965b3af5a7b08c90ae859ae9d45a51d82306337db3",
-            "parser_version": "synthetic-ir-v1",
-            "structure_hash": "083a179a3abf13b198e0cef466a8d4d2ae253de48f98bbd102c029d2b46fee91",
-            "evidence_id": "ev-2",
-            "section_node_id": "section-1",
-            "block_id": "block-ev-2",
-            "paragraph_index": 1,
-            "fragment_index": null,
-            "table_path": null,
-            "row_index": null,
-            "column_index": null,
-            "span_start": 0,
-            "span_end": 23,
-            "physical_page_number": null
-          }
-        ],
-        "counterevidence_refs": [],
-        "omitted_refs": []
-      },
-      "evidence_revision": 2,
-      "evidence_hash": "dddbae849930ea571177e5ff4e363e7e646d1f8df7d64c0d445f4008d02f0a06",
-      "context_hash": "f686ab25165470d117c2a4d3fd3a793cea5c9a3531f2b8a77336eb6d22cc7572",
-      "target": {
-        "target_id": "86452a2613a10c7456bbf908a46d0ef553c86a873148f1f539be3e0baf630c5a",
-        "claim_ref": {
-          "id": "s",
-          "revision": 1
-        },
-        "task_id": "task-1",
-        "check_kind": "predicate_entailment",
-        "document_context": {
-          "document_hash": "6a9a1ac57da367b51666bf965b3af5a7b08c90ae859ae9d45a51d82306337db3",
-          "document_class_iri": "urn:example:SourceType",
-          "root_ref": {
-            "id": "s",
-            "revision": 1
-          }
-        },
-        "subject_ref": {
-          "entity_id": "s",
-          "revision": 1,
-          "class_iri": "urn:example:SourceType",
-          "referent_id": null,
-          "is_document_root": true
-        },
-        "predicate_spec_ref": null,
-        "predicate_iri": "urn:example:relatesTo",
-        "object_ref": null,
-        "literal_hash": null,
-        "assertion_polarity": "affirmed",
-        "applicability": {},
-        "ontology_hash": "094d279bf528b7ead9dc9d6f707f3eb31c144306af391134f53f9f534e06e4a9",
-        "source_scope_hash": "26efef250e11a93d98c0e98f834c962ec5d1890a3210a69f03f07d5cc3837cdb",
-        "context_hash": "f686ab25165470d117c2a4d3fd3a793cea5c9a3531f2b8a77336eb6d22cc7572"
-      }
-    },
     "inspect_call": {
       "call_id": "call_inspect_resumed",
       "name": "inspect_evidence",
@@ -2443,6 +1960,229 @@
         "ev-2"
       ],
       "issues": []
+    },
+    "current_protocol": {
+      "lineage_id": "lineage-1",
+      "scope_id": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "evidence_revision": 2,
+      "evidence_hash": "dddbae849930ea571177e5ff4e363e7e646d1f8df7d64c0d445f4008d02f0a06",
+      "context_hash": "f686ab25165470d117c2a4d3fd3a793cea5c9a3531f2b8a77336eb6d22cc7572",
+      "completed_tool_results": [
+        "result-retrieve-1"
+      ],
+      "tool_calls_used": 2,
+      "context_authorization": {
+        "task_id": "task-1",
+        "ir_identity": {
+          "document_hash": "6a9a1ac57da367b51666bf965b3af5a7b08c90ae859ae9d45a51d82306337db3",
+          "parser_version": "synthetic-ir-v1",
+          "structure_hash": "083a179a3abf13b198e0cef466a8d4d2ae253de48f98bbd102c029d2b46fee91"
+        },
+        "context_policy_hash": "23916c162d94d0c3ea684d663a8cd2938f485e14765216e858416601157edcb8",
+        "record_ids": [
+          "record-1",
+          "record-2"
+        ],
+        "fragments": [
+          {
+            "record_id": "record-1",
+            "evidence_id": "ev-1",
+            "span_start": 0,
+            "span_end": 33,
+            "role": "target",
+            "fact_eligible": true
+          },
+          {
+            "record_id": "record-2",
+            "evidence_id": "ev-2",
+            "span_start": 0,
+            "span_end": 23,
+            "role": "required_context",
+            "fact_eligible": false
+          }
+        ],
+        "bindings": {
+          "endpoint_evidence": [],
+          "proof_dependencies": [],
+          "competing_subject_refs": [],
+          "subject_evidence_refs": [
+            {
+              "document_hash": "6a9a1ac57da367b51666bf965b3af5a7b08c90ae859ae9d45a51d82306337db3",
+              "parser_version": "synthetic-ir-v1",
+              "structure_hash": "083a179a3abf13b198e0cef466a8d4d2ae253de48f98bbd102c029d2b46fee91",
+              "evidence_id": "ev-1",
+              "section_node_id": "section-1",
+              "block_id": "block-ev-1",
+              "paragraph_index": 0,
+              "fragment_index": null,
+              "table_path": null,
+              "row_index": null,
+              "column_index": null,
+              "span_start": 0,
+              "span_end": 3,
+              "physical_page_number": null
+            }
+          ],
+          "owner_field_refs": [
+            {
+              "document_hash": "6a9a1ac57da367b51666bf965b3af5a7b08c90ae859ae9d45a51d82306337db3",
+              "parser_version": "synthetic-ir-v1",
+              "structure_hash": "083a179a3abf13b198e0cef466a8d4d2ae253de48f98bbd102c029d2b46fee91",
+              "evidence_id": "ev-1",
+              "section_node_id": "section-1",
+              "block_id": "block-ev-1",
+              "paragraph_index": 0,
+              "fragment_index": null,
+              "table_path": null,
+              "row_index": null,
+              "column_index": null,
+              "span_start": 0,
+              "span_end": 3,
+              "physical_page_number": null
+            }
+          ],
+          "required_context_refs": [
+            {
+              "document_hash": "6a9a1ac57da367b51666bf965b3af5a7b08c90ae859ae9d45a51d82306337db3",
+              "parser_version": "synthetic-ir-v1",
+              "structure_hash": "083a179a3abf13b198e0cef466a8d4d2ae253de48f98bbd102c029d2b46fee91",
+              "evidence_id": "ev-2",
+              "section_node_id": "section-1",
+              "block_id": "block-ev-2",
+              "paragraph_index": 1,
+              "fragment_index": null,
+              "table_path": null,
+              "row_index": null,
+              "column_index": null,
+              "span_start": 0,
+              "span_end": 23,
+              "physical_page_number": null
+            }
+          ],
+          "counterevidence_refs": [],
+          "omitted_refs": []
+        }
+      }
+    },
+    "expected_restored_context": {
+      "task_id": "task-1",
+      "fragments": [
+        {
+          "record_id": "record-1",
+          "evidence_id": "ev-1",
+          "span_start": 0,
+          "span_end": 33,
+          "role": "target",
+          "fact_eligible": true,
+          "text": "主体S在条件C下关联类型T的对象甲或类型T的对象乙，二者恰选其一。"
+        },
+        {
+          "record_id": "record-2",
+          "evidence_id": "ev-2",
+          "span_start": 0,
+          "span_end": 23,
+          "role": "required_context",
+          "fact_eligible": false,
+          "text": "补充原文：主体S只在条件C满足时适用上述关联。"
+        }
+      ],
+      "bindings": {
+        "endpoint_evidence": [],
+        "proof_dependencies": [],
+        "competing_subject_refs": [],
+        "subject_evidence_refs": [
+          {
+            "document_hash": "6a9a1ac57da367b51666bf965b3af5a7b08c90ae859ae9d45a51d82306337db3",
+            "parser_version": "synthetic-ir-v1",
+            "structure_hash": "083a179a3abf13b198e0cef466a8d4d2ae253de48f98bbd102c029d2b46fee91",
+            "evidence_id": "ev-1",
+            "section_node_id": "section-1",
+            "block_id": "block-ev-1",
+            "paragraph_index": 0,
+            "fragment_index": null,
+            "table_path": null,
+            "row_index": null,
+            "column_index": null,
+            "span_start": 0,
+            "span_end": 3,
+            "physical_page_number": null
+          }
+        ],
+        "owner_field_refs": [
+          {
+            "document_hash": "6a9a1ac57da367b51666bf965b3af5a7b08c90ae859ae9d45a51d82306337db3",
+            "parser_version": "synthetic-ir-v1",
+            "structure_hash": "083a179a3abf13b198e0cef466a8d4d2ae253de48f98bbd102c029d2b46fee91",
+            "evidence_id": "ev-1",
+            "section_node_id": "section-1",
+            "block_id": "block-ev-1",
+            "paragraph_index": 0,
+            "fragment_index": null,
+            "table_path": null,
+            "row_index": null,
+            "column_index": null,
+            "span_start": 0,
+            "span_end": 3,
+            "physical_page_number": null
+          }
+        ],
+        "required_context_refs": [
+          {
+            "document_hash": "6a9a1ac57da367b51666bf965b3af5a7b08c90ae859ae9d45a51d82306337db3",
+            "parser_version": "synthetic-ir-v1",
+            "structure_hash": "083a179a3abf13b198e0cef466a8d4d2ae253de48f98bbd102c029d2b46fee91",
+            "evidence_id": "ev-2",
+            "section_node_id": "section-1",
+            "block_id": "block-ev-2",
+            "paragraph_index": 1,
+            "fragment_index": null,
+            "table_path": null,
+            "row_index": null,
+            "column_index": null,
+            "span_start": 0,
+            "span_end": 23,
+            "physical_page_number": null
+          }
+        ],
+        "counterevidence_refs": [],
+        "omitted_refs": []
+      },
+      "evidence_revision": 2,
+      "evidence_hash": "dddbae849930ea571177e5ff4e363e7e646d1f8df7d64c0d445f4008d02f0a06",
+      "context_hash": "f686ab25165470d117c2a4d3fd3a793cea5c9a3531f2b8a77336eb6d22cc7572",
+      "target": {
+        "target_id": "86452a2613a10c7456bbf908a46d0ef553c86a873148f1f539be3e0baf630c5a",
+        "claim_ref": {
+          "id": "s",
+          "revision": 1
+        },
+        "task_id": "task-1",
+        "check_kind": "predicate_entailment",
+        "document_context": {
+          "document_hash": "6a9a1ac57da367b51666bf965b3af5a7b08c90ae859ae9d45a51d82306337db3",
+          "document_class_iri": "urn:example:SourceType",
+          "root_ref": {
+            "id": "s",
+            "revision": 1
+          }
+        },
+        "subject_ref": {
+          "entity_id": "s",
+          "revision": 1,
+          "class_iri": "urn:example:SourceType",
+          "referent_id": null,
+          "is_document_root": true
+        },
+        "predicate_spec_ref": null,
+        "predicate_iri": "urn:example:relatesTo",
+        "object_ref": null,
+        "literal_hash": null,
+        "assertion_polarity": "affirmed",
+        "applicability": {},
+        "ontology_hash": "094d279bf528b7ead9dc9d6f707f3eb31c144306af391134f53f9f534e06e4a9",
+        "source_scope_hash": "26efef250e11a93d98c0e98f834c962ec5d1890a3210a69f03f07d5cc3837cdb",
+        "context_hash": "f686ab25165470d117c2a4d3fd3a793cea5c9a3531f2b8a77336eb6d22cc7572"
+      }
     }
   },
   "tool_visibility": {

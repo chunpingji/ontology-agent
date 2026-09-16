@@ -7,20 +7,10 @@
       "discovery_ref": {
         "type": "string"
       },
-      "claim_set_hash": {
-        "type": "string",
-        "pattern": "^[0-9a-f]{64}$"
-      },
       "targets": {
         "type": "array",
         "items": {
           "$ref": "context-schemas.json#/$defs/VerificationTargetSpec"
-        }
-      },
-      "claims": {
-        "type": "array",
-        "items": {
-          "$ref": "context-schemas.json#/$defs/VerificationClaimView"
         }
       },
       "local_ref_map": {
@@ -52,23 +42,16 @@
         "items": {
           "$ref": "context-schemas.json#/$defs/VerificationScopeResolution"
         }
-      },
-      "input_hash": {
-        "type": "string",
-        "pattern": "^[0-9a-f]{64}$"
       }
     },
     "required": [
       "discovery_ref",
-      "claim_set_hash",
       "targets",
-      "claims",
       "local_ref_map",
       "entity_dependencies",
       "external_candidates",
       "bridge_dependencies",
-      "scope_resolutions",
-      "input_hash"
+      "scope_resolutions"
     ],
     "additionalProperties": false
   },
@@ -99,18 +82,6 @@
       },
       "bindings": {
         "$ref": "context-schemas.json#/$defs/ContextBindingRefs"
-      },
-      "evidence_revision": {
-        "type": "integer",
-        "minimum": 1
-      },
-      "evidence_hash": {
-        "type": "string",
-        "pattern": "^[0-9a-f]{64}$"
-      },
-      "context_hash": {
-        "type": "string",
-        "pattern": "^[0-9a-f]{64}$"
       }
     },
     "required": [
@@ -119,10 +90,7 @@
       "context_policy_hash",
       "record_ids",
       "fragments",
-      "bindings",
-      "evidence_revision",
-      "evidence_hash",
-      "context_hash"
+      "bindings"
     ],
     "additionalProperties": false
   },
@@ -344,38 +312,196 @@
       "additionalProperties": false
     },
     "VerificationTargetSpec": {
-      "type": "object",
-      "properties": {
-        "target_id": {
-          "type": "string"
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "target_id": {
+              "type": "string"
+            },
+            "target_kind": {
+              "const": "entity"
+            },
+            "claim_ref": {
+              "$ref": "context-schemas.json#/$defs/VersionedRef"
+            },
+            "content_hash": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            },
+            "payload": {
+              "$ref": "urn:ontology-tool-extraction:discovery#/$defs/EntityProposal"
+            },
+            "scope": {
+              "$ref": "context-schemas.json#/$defs/TraversalScope"
+            },
+            "dependency_refs": {
+              "type": "array",
+              "items": {
+                "$ref": "context-schemas.json#/$defs/VersionedRef"
+              }
+            },
+            "required_facets": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "required": [
+            "target_id",
+            "target_kind",
+            "claim_ref",
+            "content_hash",
+            "payload",
+            "scope",
+            "dependency_refs",
+            "required_facets"
+          ],
+          "additionalProperties": false
         },
-        "target_kind": {
-          "type": "string",
-          "enum": [
-            "entity",
-            "property",
-            "relation",
-            "external_link"
-          ]
+        {
+          "type": "object",
+          "properties": {
+            "target_id": {
+              "type": "string"
+            },
+            "target_kind": {
+              "const": "property"
+            },
+            "claim_ref": {
+              "$ref": "context-schemas.json#/$defs/VersionedRef"
+            },
+            "content_hash": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            },
+            "payload": {
+              "$ref": "urn:ontology-tool-extraction:discovery#/$defs/PropertyProposal"
+            },
+            "scope": {
+              "$ref": "context-schemas.json#/$defs/TraversalScope"
+            },
+            "dependency_refs": {
+              "type": "array",
+              "items": {
+                "$ref": "context-schemas.json#/$defs/VersionedRef"
+              }
+            },
+            "required_facets": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "required": [
+            "target_id",
+            "target_kind",
+            "claim_ref",
+            "content_hash",
+            "payload",
+            "scope",
+            "dependency_refs",
+            "required_facets"
+          ],
+          "additionalProperties": false
         },
-        "content_hash": {
-          "type": "string",
-          "pattern": "^[0-9a-f]{64}$"
+        {
+          "type": "object",
+          "properties": {
+            "target_id": {
+              "type": "string"
+            },
+            "target_kind": {
+              "const": "relation"
+            },
+            "claim_ref": {
+              "$ref": "context-schemas.json#/$defs/VersionedRef"
+            },
+            "content_hash": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            },
+            "payload": {
+              "$ref": "urn:ontology-tool-extraction:discovery#/$defs/RelationProposal"
+            },
+            "scope": {
+              "$ref": "context-schemas.json#/$defs/TraversalScope"
+            },
+            "dependency_refs": {
+              "type": "array",
+              "items": {
+                "$ref": "context-schemas.json#/$defs/VersionedRef"
+              }
+            },
+            "required_facets": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "required": [
+            "target_id",
+            "target_kind",
+            "claim_ref",
+            "content_hash",
+            "payload",
+            "scope",
+            "dependency_refs",
+            "required_facets"
+          ],
+          "additionalProperties": false
         },
-        "required_facets": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
+        {
+          "type": "object",
+          "properties": {
+            "target_id": {
+              "type": "string"
+            },
+            "target_kind": {
+              "const": "external_link"
+            },
+            "claim_ref": {
+              "$ref": "context-schemas.json#/$defs/VersionedRef"
+            },
+            "content_hash": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            },
+            "payload": {
+              "$ref": "urn:ontology-tool-extraction:discovery#/$defs/ExternalLinkProposal"
+            },
+            "scope": {
+              "$ref": "context-schemas.json#/$defs/TraversalScope"
+            },
+            "dependency_refs": {
+              "type": "array",
+              "items": {
+                "$ref": "context-schemas.json#/$defs/VersionedRef"
+              }
+            },
+            "required_facets": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "required": [
+            "target_id",
+            "target_kind",
+            "claim_ref",
+            "content_hash",
+            "payload",
+            "scope",
+            "dependency_refs",
+            "required_facets"
+          ],
+          "additionalProperties": false
         }
-      },
-      "required": [
-        "target_id",
-        "target_kind",
-        "content_hash",
-        "required_facets"
-      ],
-      "additionalProperties": false
+      ]
     },
     "EntityDependencyView": {
       "type": "object",
@@ -972,170 +1098,6 @@
         "issues"
       ],
       "additionalProperties": false
-    },
-    "VerificationClaimView": {
-      "oneOf": [
-        {
-          "type": "object",
-          "properties": {
-            "target_id": {
-              "type": "string"
-            },
-            "target_kind": {
-              "const": "entity"
-            },
-            "claim_ref": {
-              "$ref": "context-schemas.json#/$defs/VersionedRef"
-            },
-            "content_hash": {
-              "type": "string",
-              "pattern": "^[0-9a-f]{64}$"
-            },
-            "payload": {
-              "$ref": "urn:ontology-tool-extraction:discovery#/$defs/EntityProposal"
-            },
-            "scope": {
-              "$ref": "context-schemas.json#/$defs/TraversalScope"
-            },
-            "dependency_refs": {
-              "type": "array",
-              "items": {
-                "$ref": "context-schemas.json#/$defs/VersionedRef"
-              }
-            }
-          },
-          "required": [
-            "target_id",
-            "target_kind",
-            "claim_ref",
-            "content_hash",
-            "payload",
-            "scope",
-            "dependency_refs"
-          ],
-          "additionalProperties": false
-        },
-        {
-          "type": "object",
-          "properties": {
-            "target_id": {
-              "type": "string"
-            },
-            "target_kind": {
-              "const": "property"
-            },
-            "claim_ref": {
-              "$ref": "context-schemas.json#/$defs/VersionedRef"
-            },
-            "content_hash": {
-              "type": "string",
-              "pattern": "^[0-9a-f]{64}$"
-            },
-            "payload": {
-              "$ref": "urn:ontology-tool-extraction:discovery#/$defs/PropertyProposal"
-            },
-            "scope": {
-              "$ref": "context-schemas.json#/$defs/TraversalScope"
-            },
-            "dependency_refs": {
-              "type": "array",
-              "items": {
-                "$ref": "context-schemas.json#/$defs/VersionedRef"
-              }
-            }
-          },
-          "required": [
-            "target_id",
-            "target_kind",
-            "claim_ref",
-            "content_hash",
-            "payload",
-            "scope",
-            "dependency_refs"
-          ],
-          "additionalProperties": false
-        },
-        {
-          "type": "object",
-          "properties": {
-            "target_id": {
-              "type": "string"
-            },
-            "target_kind": {
-              "const": "relation"
-            },
-            "claim_ref": {
-              "$ref": "context-schemas.json#/$defs/VersionedRef"
-            },
-            "content_hash": {
-              "type": "string",
-              "pattern": "^[0-9a-f]{64}$"
-            },
-            "payload": {
-              "$ref": "urn:ontology-tool-extraction:discovery#/$defs/RelationProposal"
-            },
-            "scope": {
-              "$ref": "context-schemas.json#/$defs/TraversalScope"
-            },
-            "dependency_refs": {
-              "type": "array",
-              "items": {
-                "$ref": "context-schemas.json#/$defs/VersionedRef"
-              }
-            }
-          },
-          "required": [
-            "target_id",
-            "target_kind",
-            "claim_ref",
-            "content_hash",
-            "payload",
-            "scope",
-            "dependency_refs"
-          ],
-          "additionalProperties": false
-        },
-        {
-          "type": "object",
-          "properties": {
-            "target_id": {
-              "type": "string"
-            },
-            "target_kind": {
-              "const": "external_link"
-            },
-            "claim_ref": {
-              "$ref": "context-schemas.json#/$defs/VersionedRef"
-            },
-            "content_hash": {
-              "type": "string",
-              "pattern": "^[0-9a-f]{64}$"
-            },
-            "payload": {
-              "$ref": "urn:ontology-tool-extraction:discovery#/$defs/ExternalLinkProposal"
-            },
-            "scope": {
-              "$ref": "context-schemas.json#/$defs/TraversalScope"
-            },
-            "dependency_refs": {
-              "type": "array",
-              "items": {
-                "$ref": "context-schemas.json#/$defs/VersionedRef"
-              }
-            }
-          },
-          "required": [
-            "target_id",
-            "target_kind",
-            "claim_ref",
-            "content_hash",
-            "payload",
-            "scope",
-            "dependency_refs"
-          ],
-          "additionalProperties": false
-        }
-      ]
     }
   }
 }

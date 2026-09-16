@@ -84,19 +84,19 @@ flowchart TD
 | 工具结果 | 原始 ToolCall + 可空 parsed_arguments + 类型化 result；非法调用也能反馈和恢复，合法引用已经登记 |
 | 校验反馈 | 失败 code、字段位置、目标/维度和可访问证据；解释缺口，不给出评测答案 |
 
-`ModelContextView` 是现有 TaskContext、protocol、卡片和已确认工具结果的派生视图。只在构建请求时生成；当前 active_instructions、active_input_items 和引用映射继续承担暂停所需状态，不新增工作副本。它们保存协议内容，不承担证据授权来源职责。检索后的当前权限仅从 context_authorization_ref 指向的已确认 ConfirmedRetrievalResult.authorization 和冻结 IR/RecordIndex 重建，模型只接收该外壳中的 result。授权描述包含完整当前位置、角色、权限、绑定与 hash，不含全文，不沿历史增量链合成。引用为 null 时从冻结基础上下文构建。类型与签名见 plan M07。
+`ModelContextView` 是现有 TaskContext、protocol、卡片和已确认工具结果的派生视图，只在构建请求时生成。当前状态保存 active_instructions、stage_input_items 和精确结果引用；stage_input_items 仅含阶段初始材料，完整 input 按当前有序 turn_refs 和 completed_tool_results 装配，不重复存储累积会话。待处理调用从当前响应与已确认结果派生。这些协议内容不承担证据授权职责；检索后的权限仅从唯一当前 protocol.context_authorization 和冻结 IR/RecordIndex 重建。授权描述含位置、角色、权限和绑定，不含全文；证据版本和 hash 只使用外层 protocol 的既有字段。工具结果不附加累计权限快照，授权为 null 时从冻结基础上下文构建。类型与签名见 plan M07。
 
 上下文 hash 重建使用协调器按同一 run_fingerprint 和初次组装目标工厂派生的 target_seed，尚未绑定 context_hash；不能直接用已返回 TaskContext.target 再计算。该输入由既有冻结运行派生，不新增目标存储或模型权限。
 
 输入项装配规则：
 
 1. 摘要、NER 标签、外部元数据与原文分别标注角色；只有满足授权和回放的原文才能进入文档声明证明。
-2. 所有工具均输出可解析 ID。未显示的记录须经 retrieve/inspect 的授权路径读取；摘要提到某记录不自动授予引用权限。检索结果及 context_authorization_ref 经协调器同一屏障确认后，以冻结 IR、同一组装策略、精确 subject 依赖、任务/scope 和重算的 context_policy_hash/evidence_hash/context_hash 校验并重建 TaskContext；field_bindings/subject_label 从对应冻结来源派生，首次开放和暂停继续采用同一函数。策略和 hash 不能由模型指定；worker 深拷贝内的修改、未确认检索、过期来源或模型输入中的 ID 都不能扩大权限。
-3. 阶段内完整保留每次返回的有序 output items，再追加每个 function_call 对应的 function_call_output。配对键为 call_id，不是 output item.id；工具反馈 output 为结果 JSON 字符串。不删去半个调用批次或其他协议项省 token，重复静态说明在首次装配时消除。
+2. 所有工具均输出可解析 ID。未显示的记录须经 retrieve/inspect 的授权路径读取；摘要提到某记录不自动授予引用权限。检索结果、当前 context_authorization 和外层证据版本/hash 经协调器同一提交屏障确认后，以冻结 IR、同一组装策略、精确 subject 依赖、任务/scope 和重算的 context_policy_hash/evidence_hash/context_hash 校验并重建 TaskContext；恢复函数显式接收外层 protocol 的预期版本/hash，field_bindings/subject_label 从对应冻结来源派生，首次开放和暂停继续采用同一函数。策略和 hash 不能由模型指定；worker 深拷贝内的修改、未确认检索、过期来源或模型输入中的 ID 都不能扩大权限。
+3. 阶段内每次返回的完整有序 output items 只保存在对应响应结果，工具结果独立保存；发请求时按响应顺序加入完整 output，再按调用顺序追加配对的 function_call_output。配对键为 call_id，不是 output item.id；工具反馈 output 为结果 JSON 字符串。不删去半个调用批次或其他协议项省 token，不另存每轮累积 input，重复静态说明在首次装配时消除。
 4. 实际返回的 reasoning/encrypted 内容作为不透明协议项保存并在同阶段续传，不解释、不改写、不展示为证据；只在端点能力确认后发送对应 include。核验阶段按已确认 discovery_ref 构建 VerificationInput，包含完整声明 payload、目标/维度及所需实体、外部候选、桥接、scope 依赖，再结合授权原文重新建上下文；不继承生成阶段自评分和 reasoning。缺声明内容、hash 不匹配或未经授权的依赖必须阻止请求，不能只发送 opaque ID/hash 后让模型重新猜测候选。
 5. 请求总量计入 instructions、完整当前阶段 input items、工具 Schema、text.format Schema 和预留输出。必需原文/反证无法保真容纳时返回 deferred/context_budget_exceeded，并保留覆盖缺口。
 6. 本期不增加 LLM 摘要压缩轮次。阶段边界释放上一阶段活动 input，后续只引用已确认业务结果；禁止用压缩摘要替代原文证据。
-7. 使用无服务端会话依赖的 `store=false`，每轮显式发送 instructions 与完整 active_input_items，不使用 previous_response_id/conversation。response_id 只记录响应身份；不会成为第二个恢复入口。
+7. 使用无服务端会话依赖的 `store=false`，每轮显式发送 instructions 与从当前初始材料及精确引用派生的完整 input，不使用 previous_response_id/conversation。恢复只加载当前阶段引用，不扫描历史或重放工具；response_id 只记录响应身份，不成为第二个恢复入口。
 
 工具定义采用 Responses 的平铺 `{type:"function",name,description,parameters,strict}` 字段，基础配置明确 `strict=false`，经能力确认才使用 true；省略 strict 不作为关闭严格模式。最终阶段回答使用 text.format，不沿用 Chat 的 response_format。客户端只发送项目 Qwen 已确认支持的参数，不因为协议相同就携带任意 GPT reasoning/verbosity 配置。
 
@@ -129,11 +129,11 @@ flowchart TD
 
 ### 5.2 必检和一次恢复
 
-候选必须经过引用/菜单检查、冻结、独立核验、数量/单位/SHACL 的适用检查以及 proof/dependency 门，才能构图。validate_metric/validate_graph 本期是 controller-only，控制器在 finalize 必须运行适用检查；模型没有调用这两个函数的路径，也不能因可选工具额度耗尽而跳过它们。不满足可信前置条件时，返回真实缺口，不生成假定校准值。
+候选必须经过引用/菜单检查、冻结、独立核验、数量/单位/SHACL 的适用检查以及 proof/dependency 门，才能构图。validate_metric/validate_graph 本期是 controller-only，控制器在 finalize 必须运行适用检查；模型没有调用这两个函数的路径，也不能因可选工具额度耗尽而跳过它们。不满足可信前置条件时，返回真实缺口，不生成假定校准值。可信规范化结果在同次 finalize 内传给 SHACL；表示图仅为局部变量，不新增图引用或登记/恢复状态，中途暂停后可重新执行纯本地计算。
 
 evidence/reproposal 仍是共享一次恢复机会的模式：前者保留声明并补证，后者产生新候选代并重新核验。必检的真实缺口进入该既有恢复规划；若可恢复且预算足够，在原 discovery/verification 阶段提供对应反馈，不新增校准会话、阶段或免费 Qwen 轮次。计划修复不能保证补证有命中，预算不足不能降低核验要求。Qwen 不能修改 shape、可信前置条件或接纳门；声明否定、技术失败、未执行、缺证各自保留。
 
-保存边界继续是：请求预留 → 完整 response 结果 → 每个工具结果/引用登记 → 下一轮。现有 protocol checkpoint 不能假定已检查软暂停；需由协调器在确认完整 output/每个工具结果后检查，再释放 worker 开始下一项。取消、失去执行权和持久化失败交还现有运行层处理，不包装成成功空结果。暂停继续只加载当前状态和精确结果；发最终回答前必须完成本批合法 call_id 的配对，额度不足或最终回答再次返回 function_call 不能借 finalize 免费重问。已收到 incomplete/failed 有精确响应收据，与请求结果未知分别记录；两者都不返还预留预算。
+保存边界继续是：请求预留 → 完整 response 结果及 turn_refs → 每个工具结果及其引用 → 下一轮。现有 protocol checkpoint 不能假定已检查软暂停；需由协调器在确认完整 output/每个工具结果后检查，再释放 worker 开始下一项。取消、失去执行权和持久化失败交还现有运行层处理，不包装成成功空结果。暂停继续只加载当前状态和精确结果，派生完整 input 与未完成调用，不额外存储这两份派生值；发最终回答前必须完成本批合法 call_id 的配对，额度不足或最终回答再次返回 function_call 不能借 finalize 免费重问。已收到 incomplete/failed 有精确响应收据，与请求结果未知分别记录；两者都不返还预留预算。
 
 ## 6. 反馈可操作，约束可执行
 

@@ -120,7 +120,7 @@ node tests/document-analysis-browser.mjs
 
 capabilities.json 固定 api_protocol=responses，记录实际工具 strict、阶段结构化输出、无状态完整项续传和可选加密项结果。具体字段不兼容、response.status 非完整、incomplete_details 或 refusal 如实报告；不执行该批工具，不把拒绝或缺回答记为成功空图，不切换旧 Chat 协议。
 
-`run` 输出最小集合：manifest.json、final-graph.json、coverage.json、metrics.json、calls.json、protocol-checks.json。在线仍使用现有当前存储；离线制品不成为新的线上真理来源。calls 记录实际请求/用量，不为每次调用复制全部运行快照。
+新增 CLI 只装配命令和 Responses probe；`run` 复用 quality_guided_variant.py 的现有离线评测器，`score` 扩展 ontology_guided_scorer.score_evaluation 的组/scope/模态评分，不另建执行或评分引擎。`run` 输出最小集合：manifest.json、final-graph.json、coverage.json、metrics.json、calls.json、protocol-checks.json。在线仍使用现有当前存储；离线制品不成为新的线上真理来源。calls 记录实际请求/用量，不为每次调用复制全部运行快照。
 
 失败定位复用这些输出及现有引用：报告受影响 task/claim/target/facet/call_id、reason_code、可空 field_path 与证据 ref，并保留对应 output item 的 id；不混淆两种身份，不复制完整运行状态或新建日志服务。开发者将已确认失败整理成任务卡的最小反例，加入对应模块的定向回归；识别输入仍不得读取评分参考，回归也不把真实答案写进模型提示。
 
@@ -142,8 +142,8 @@ capabilities.json 固定 api_protocol=responses，记录实际工具 strict、�
 | 按需 ModelContextView | 摘要/索引帮助选取完整授权证据，范围/角色不丢；完整请求放不下时明确未完成，不裁切为误导片段或新增持久状态 |
 | 独立核验包含冻结声明及授权依赖 | 从 discovery_ref 派生完整 verification_input，不继承发现 reasoning；对象、原单位、selection 或限定变化准确体现在输入，缺内容/错 hash 不发请求 |
 | discovery/verification 阶段内 recovery mode | 由真实缺口和 recovery_kind 派生白名单，只用一次恢复机会；不新增运行阶段或重置请求/工具额度 |
-| 保存完整 ResponseTurn/函数结果后暂停 | 恢复 active_input_items/active_instructions/pending_call_ids，复用 attempt+call_id 已确认结果和完整输出项；不丢 reasoning、不重复模型或工具，无 owner 写权限时停止 |
-| 检索确认新证据 → 暂停 → 恢复读取 | 从当前 context_authorization_ref 和冻结 IR 重建授权上下文；文本、跨度、角色、归属、fact_eligible、scope 和 hash 与暂停前相同；未确认/过期描述不授予权限 |
+| 保存完整 ResponseTurn/函数结果后暂停 | 从 stage_input_items、有序 turn_refs 和 completed_tool_results 派生完整 input/未处理 call_id，每轮发送 active_instructions；结果正文只存一份，不丢 reasoning、不扫描历史或重放已确认工具，无 owner 写权限时停止 |
+| 检索确认新证据 → 暂停 → 恢复读取 | 从当前 protocol.context_authorization、外层预期证据版本/hash 和冻结 IR 重建上下文；文本、跨度、角色、归属、fact_eligible、scope 和 hash 与暂停前相同；工具结果不附加累计权限快照，未确认/过期描述不授予权限 |
 | 旧 run 冷恢复和原投影视图 | 原键、hash、序列化和冻结语义不变；旧 verified 请求拒绝，不补 scope 后重算 |
 | GLiNER 应用环境与离线加载 | 共同求解固定包和应用依赖，通过受影响模型回归；导入前 OFFLINE，共享清单校验，缺文件/错 hash 明确失败 |
 | 无编号或无名称记录主体 | 有合法组成和类型证明可交付；不伪造 span 或全局键 |
@@ -153,7 +153,7 @@ capabilities.json 固定 api_protocol=responses，记录实际工具 strict、�
 | conditional 过滤父选择组而保留子声明 | scope_resolutions 仍含精确版本派生的选择/限定与证据；不计新增事实 |
 | 区间/比较与端点 | 普通 scalar 不截值，显式 endpoint 保留完整来源；边界和比较符不丢 |
 | mg→g 等真实尺度换算及已注册偏移 | 精确数值正确；未知/错量纲/单位 owner 错误未决或拒绝，不补单位 |
-| SHACL 空图、错 focus、异构声明 | 非空/完整 focus 才完成；每声明适用 profile，不拿单一 slot 校验整图 |
+| SHACL 空图、错 focus、异构声明 | 非空/完整 focus 才完成；每声明适用 profile，不拿单一 slot 校验整图；表示图只在 finalize 内临时构建，暂停后可重做纯本地计算，无图引用登记或恢复状态 |
 | 标准工具目录与模型可见集合 | 十项已注册；metric/graph 的 model_callable=false，所有模型阶段均不发送二者，主动请求返回 tool_not_allowed；控制器仍按可信前置条件完成适用必检，finalize 不增模型轮次 |
 | 来源关闭、未知键、同名冲突、外部值差异 | 局部实体仍保留；身份不伪造，值不覆写 |
 | 新本体/IRI 重命名/等义表达 | 同一算法，无领域分支；不支持构造显式报告 |
@@ -176,6 +176,10 @@ capabilities.json 固定 api_protocol=responses，记录实际工具 strict、�
 
 **历史 Responses 协议、审查修复前记录**：2026-09-16 使用系统 Python 与 jsonschema 检查：3 个 JSON 文件可解析；10 个工具参数 Schema、2 个阶段 Schema 合法，25 个对象定义均禁止额外字段并列全 required；12 份有效输入通过，36 个缺字段/额外字段/错类型反例被拒绝。18 个逐字引用、3 个核验目标集合、98 处本地链接及 26 项无环任务依赖通过检查。另核对 1 组 Responses 合成请求、完整 output 项、function_call_output 与本地完整 input 续传，阶段 text.format 的 Schema 与制品一致；1 组错误反馈的 call_id、参数、field_path 与阻断结果配对通过。11 段 Python 接口示意可解析，git diff --check 通过。当时只验证设计制品，未实施运行代码，未执行工程/浏览器测试或真实 Qwen、GLiNER 调用；项目 Qwen 支持 Responses 以用户确认为设计前提，具体字段兼容仍须按上述接通验收执行。
 
-**本次 Harness 审查修复记录**：2026-09-16 实际执行 `python specs/027-ontology-extraction-engine-v2/check_design.py --self-test` 通过。4 个 JSON 文件、10 个工具参数 Schema、2 个阶段输出 Schema、3 个控制输入 Schema、53 个封闭对象定义及 1 个类型化动态引用映射通过；12 份有效输入通过，36 个参数/阶段 Schema 反例被拒绝。完整 discovery 往返、独立 verification 请求及 3 个目标、2 类错误保存恢复与 2 次纠正、1 个检索授权重建样例通过；模型可见目录为 8 项、控制器独占 2 项。15 项制品变异被预期检查拒绝，包含缺声明内容、过期 hash、重算 hash 后仍悬空的实体引用、call_id 失配、错误反馈空 issues、授权升级、悬空链接和任务环；另有 3 项表头单位 hash 检查通过，3 种非标准 JSON 常量被拒绝。27 个逐字引用、132 处本地文件链接、11 段 Python 接口示意、18 个需求到 13 个模块的归属及 26 项无环任务依赖通过。
+**历史 Harness 审查修复、极简审查前记录**：2026-09-16 实际执行 `python specs/027-ontology-extraction-engine-v2/check_design.py --self-test` 通过。4 个 JSON 文件、10 个工具参数 Schema、2 个阶段输出 Schema、3 个控制输入 Schema、53 个封闭对象定义及 1 个类型化动态引用映射通过；12 份有效输入通过，36 个参数/阶段 Schema 反例被拒绝。完整 discovery 往返、独立 verification 请求及 3 个目标、2 类错误保存恢复与 2 次纠正、1 个检索授权重建样例通过；模型可见目录为 8 项、控制器独占 2 项。15 项制品变异被预期检查拒绝，包含缺声明内容、过期 hash、重算 hash 后仍悬空的实体引用、call_id 失配、错误反馈空 issues、授权升级、悬空链接和任务环；另有 3 项表头单位 hash 检查通过，3 种非标准 JSON 常量被拒绝。27 个逐字引用、132 处本地文件链接、11 段 Python 接口示意、18 个需求到 13 个模块的归属及 26 项无环任务依赖通过。
 
 实际执行 `backend/.venv/bin/ruff check --config backend/pyproject.toml specs/027-ontology-extraction-engine-v2/check_design.py` 和 `git diff --check` 均通过。独立检查器从其他工作目录运行也通过，缺少 jsonschema 的环境明确退出；本次未安装依赖。以上是设计制品和检查器验收，不是运行引擎、暂停恢复实现或真实 Qwen/GLiNER 的通过记录；26 项开发任务保持待实施。
+
+**本次极简设计收紧后记录**：2026-09-16 实际执行上述仓库检查器 `--self-test`、定向 Ruff 和 `git diff --check` 均通过。4 份 JSON、10 个工具、2 个输出阶段、3 个控制输入 Schema、52 个封闭对象和 1 个类型化引用映射通过；12 份有效输入通过，36 个非法输入及 22 项制品变异被拒绝。另通过 2 项协议输入重建、3 项单位语义 hash 检查，拒绝 3 种非标准 JSON 常量；完整核验、错误反馈及授权恢复样例、135 处本地文件链接、11 段 Python 接口示意、18 个需求到 13 个模块的归属及 26 项无环任务依赖通过。
+
+新增反例覆盖重复权威字段、重复实体副本、丢失完整 output/reasoning，以及同步删去目标和回答后仍能发现未核验声明。仅为设计制品验证，未执行应用测试、真实模型或部署。

@@ -52,15 +52,15 @@ Harness 的错误反馈必须可定位和行动：field_path 仅指本次模型�
 
 完整 Responses 批次通过调用身份检查后，先保存原始 ToolCall，再查注册表/白名单和解析参数。未知函数、model_callable/阶段拒绝或非法 JSON/字段产生 ToolErrorResult：data=null、issues 非空；无法定位到参数字段时 field_path=null。这类调用的 parsed_arguments=null，恢复时加载原始调用和统一错误类型，不再次强制将未知名称转为 ToolName 或将坏 JSON 转成参数模型。合法调用及其执行失败仍按注册表保留已验证参数和对应具体结果类型。ToolErrorResult 不替代所有工具结果的类型检查。
 
-拟新增 `ToolContext` 为只读运行时依赖集合：`task, context, index, ontology, menu, cards, frozen_claims, semantic_decisions, materialized_refs, mention_index, external_candidates, representation_graphs, instance_reader, mention_extractor, vocabulary, limits, check_cancelled`。其中 index 等读取对象使用隔离副本或不可变视图；不包含 SQLAlchemy Session、运行仓库写入口或业务提交服务。模型看不到该对象。
+拟新增 `ToolContext` 为只读运行时依赖集合：`task, context, index, ontology, menu, cards, frozen_claims, semantic_decisions, materialized_refs, mention_index, external_candidates, metric_result:MetricData|null, instance_reader, mention_extractor, vocabulary, limits, check_cancelled`。metric_result 仅在控制器同次 finalize 的 SHACL 调用中传入，其他调用为 null；不持久化该临时字段。其中 index 等读取对象使用隔离副本或不可变视图；不包含 SQLAlchemy Session、运行仓库写入口或业务提交服务。模型看不到该对象。
 
-`materialized_refs` 是当前协议中已确认结果的引用映射，供上述 cards/mention_index/external_candidates/representation_graphs 视图解析，不是另一份实体或图谱存储。每项为 `{kind,id,result_ref,content_hash,context_hash,dependency_refs:list[VersionedRef]}`，kind 为 schema_card/mention/external_candidate/representation_graph；id 只在当前运行、lineage 和依赖下有效。handler 可计算确定的结果 ID，但不能自行登记权限。协调器核对工具结果、引用来源及版本，通过现有结果存储和协议屏障确认 result_ref 与映射后，才回传结果并构造下一轮 ToolContext。映射只引用结果中的对应对象；表示图按规范化结果和冻结 slot/profile 重建，不再持久化一份 RDF 图副本。
+`materialized_refs` 是当前协议中已确认结果的引用映射，供上述 cards/mention_index/external_candidates 视图解析，不是另一份实体或图谱存储。每项为 `{kind,id,result_ref,content_hash,context_hash,dependency_refs:list[VersionedRef]}`，kind 为 schema_card/mention/external_candidate；id 只在当前运行、lineage 和依赖下有效。handler 可计算确定的结果 ID，但不能自行登记权限。协调器核对工具结果、引用来源及版本，通过现有结果存储和协议屏障确认 result_ref 与映射后，才回传结果并构造下一轮 ToolContext。映射只引用结果中的对应对象；SHACL 的临时表示图不生成或登记独立引用。
 
 `ToolLimits={max_calls_per_response:8,max_calls_per_lineage:16,max_external_candidates:8,max_evidence_units_per_call:16,max_result_tokens:int}`。这些是初始资源上限，运行创建时冻结，可按模型上下文预算调整；不改变事实语义。max_result_tokens 从该请求剩余空间分配，不能默认无限大；完整记录不能保真容纳时返回 blocked/result_budget_exceeded 并保留 deferred 覆盖。
 
 工具调用额度针对模型发出的调用，`tool_calls_used` 在每次获准分派前由协调器预扣并保存；参数错误、未知函数及执行失败的已尝试调用也消耗额度。超出单响应上限的批次不部分执行，额度不足时不进入 handler。控制器必做的 binding/metric/SHACL 不消耗模型选工具的额度，仍受任务执行预算约束并单列本地执行次数/耗时；不能因模型已耗尽工具额度而跳过必检。模型 HTTP 请求继续独立计入[总体方案第 8 节](../../../docs/文档抽取引擎2.0设计方案.md)的四次上限。
 
-一次调用由当前 lineage 内的 `(request_attempt,call_id)` 标识。call_id 取自 Responses 输出的 `type="function_call"` 项；同项的 `id` 是输出项身份，不能替代 call_id。已确认结果恢复时直接加载，不重新扣工具额度、不重复 NER/查询/计算；只有预扣但未确认结果的调用保持未完成，若在原运行契约下重新尝试，则再次预扣并受剩余额度限制。恢复时同时加载 materialized_refs，不能让已返回的 mention/candidate/graph ID 失去解析入口。声明或上下文依赖改变时拒绝不再适用的旧引用；不靠重新执行工具掩盖版本不匹配。
+一次模型工具调用由当前 lineage 内的 `(request_attempt,call_id)` 标识。call_id 取自 Responses 输出的 `type="function_call"` 项；同项的 `id` 是输出项身份，不能替代 call_id。已确认结果恢复时直接加载，不重新扣工具额度、不重复 NER/查询/计算；只有预扣但未确认结果的调用保持未完成，若在原运行契约下重新尝试，则再次预扣并受剩余额度限制。恢复时同时加载 materialized_refs，不能让已返回的 mention/candidate ID 失去解析入口。声明或上下文依赖改变时拒绝不再适用的旧引用；不靠重新执行工具掩盖版本不匹配。控制器 finalize 内未确认的纯本地计算不建立 call_id 或中间恢复点。
 
 拟新增于 `tool_runtime.py`：
 
@@ -81,7 +81,7 @@ def to_function_call_output(call_id: str, result: ToolResult) -> dict: ...
 
 新运行每轮发送 `store=false`、当前阶段 instructions 和完整 input 项；本地保留输入项与原样 output 项，包含模型返回的 reasoning 项。续轮将前轮完整 output 加入 input，再加入对应 function_call_output，不能只截取调用或 output_text。仅在端点能力验收通过时请求 `include=["reasoning.encrypted_content"]`，并将返回内容作为不透明续传项保存；reasoning、摘要或加密项均不作为文档事实证据。禁止使用 previous_response_id 或 conversation 代替本地当前状态。
 
-当前协议使用 `active_input_items`、`active_instructions`、`pending_call_ids` 和 `api_protocol=responses`，字段归属见 [data-model.md](../data-model.md)。暂停后先恢复完整项和当前未完成 call_id，已确认结果直接组装 function_call_output；不依赖远端会话或重新生成前轮响应。每轮 instructions 都显式重发；独立 verification 重新构造阶段输入，不继承 discovery 的理由或 reasoning。
+当前协议保存 `stage_input_items`（仅阶段初始输入）、`active_instructions`、当前有序 `turn_refs`、`completed_tool_results` 和 `api_protocol=responses`，字段归属见 [data-model.md](../data-model.md)。发送时按引用装配完整 input，待处理 call_id 从最后已保存响应减已确认结果派生，不再持久化累积会话正文或待调用清单。暂停后先恢复并处理当前未完成 call_id，已确认结果直接组装 function_call_output；不依赖远端会话、遍历历史或重新生成前轮响应。每轮 instructions 都显式重发；独立 verification 重新构造阶段输入，不继承 discovery 的理由或 reasoning。
 
 阶段回答使用 `text.format={type:"json_schema",name,schema,strict}`，输出预算参数为 `max_output_tokens`；阶段 strict 基线同样显式 false，具体能力验收后才冻结 true，与工具 parameters 的 strict 分别配置和验收。编排器检查 response.status、incomplete_details 及输出中的 refusal；非完整响应或 model refusal 属于执行/协议层没有可用回答，保留未完成及原因，不生成声明的 semantic rejected，也不生成原文 negated，不能解释为空候选或空图成功。工具只在通过这些响应检查后分派，语义核验和最终证明门不因协议改变而省略。
 
@@ -145,29 +145,29 @@ def to_function_call_output(call_id: str, result: ToolResult) -> dict: ...
 - Data `RetrievalData`：`record_ids:list[str], evidence_ids:list[str], context_hash:str, new_evidence:bool, coverage:{examined_records:list[str],unattempted_records:list[str],stop_reason:str|null}`。
 - 复用 SubjectSlotQuery、RecordIndex、摘要/精排及 EvidenceWorkQueue；不按章节名或具体谓词决定目的地。保持完整逻辑记录、已知反证及竞争 owner。
 - 新记录必须先通过协调器确认权限、上下文 hash 和引用表更新，再向后续工具/模型开放。工具不直接改变全局 coverage；同记录补验不重复增加 examined。无新增来源时 no_match。
-- 确认检索结果使用既有结果域中的内部外壳 `ConfirmedRetrievalResult={result:ToolResult[RetrievalData],authorization:ContextAuthorization}`；模型只收到 result，authorization 的唯一字段定义在 [data-model.md](../data-model.md)。描述覆盖当前完整授权集合的坐标、角色、fact_eligible、归属/反证绑定及冻结身份，不保存全文，也不形成恢复时逐项遍历的增量链。无新增或失败的检索不能替换当前授权；内部外壳仅用于已获协调器确认的有效上下文。
-- 现有协调器在同一确认边界保存该结果并更新唯一 `context_authorization_ref`，之后才开放新引用；恢复从这条当前结果、冻结 IR/RecordIndex、同一 context_policy_hash 对应策略及精确主体依赖重建 TaskContext。field_bindings 与 subject_label 按冻结输入重新派生，重算完整 context_hash/evidence_hash 并比较。初始引用为 null 时使用冻结基础上下文，不从 active_input_items 或工具参数授予权限、不重新检索可变来源。权限恢复失败以 context_authorization_mismatch 阻断继续。
+- 结果域只保存 ToolResult[RetrievalData]；完整当前授权描述保存在唯一的 protocol.context_authorization，字段定义见 [data-model.md](../data-model.md)。描述包含坐标、角色、fact_eligible、归属/反证绑定及冻结身份，不含全文；不在每份检索结果中再保存累计授权副本。无新增或失败的检索不能替换当前授权。
+- 现有协调器在同一确认边界保存工具结果并更新当前授权及协议既有 evidence_revision/evidence_hash/context_hash，之后才开放新引用；恢复从该当前授权、冻结 IR/RecordIndex、同一 context_policy_hash 对应策略及精确主体依赖重建 TaskContext。field_bindings 与 subject_label 按冻结输入重新派生，重算完整 context_hash/evidence_hash 并与协议权威字段比较。初始授权为 null 时使用冻结基础上下文，不从模型 input 或工具参数授予权限、不重新检索可变来源。权限恢复失败以 context_authorization_mismatch 阻断继续。
 
 ### propose_repair
 
 - Args：`claim_id:str, issue_code:str`，issue_code 必须出现在当前声明真实检查结果中。
-- Data `RepairData`：`claim_ref:VersionedRef, action:none|rebind_quote|reproposal|supplement, proposed_quotes:list[Quote], required_facets:list[FacetName], changes_claim:bool, reason_code:str`。
-- 引用修复仅限原授权 owner/字段的唯一匹配；对象/选择/条件变化走新 generation 的重提。函数只提案，协调器选择一个恢复分支；不主动调用模型、覆盖声明或循环重试。
+- Data `RepairData`：`claim_ref:VersionedRef, proposed_quotes:list[Quote], reason_code:str`。
+- 引用修复仅限原授权 owner/字段的唯一匹配；对象/选择/条件变化走新 generation 的重提。工具只在既定恢复模式内给出引用建议，不再返回另一份恢复路线、缺失维度或 changes_claim 标志；路线由已有 EvidenceRecoveryPlan 决定，缺口来自核验目标，声明是否变化由冻结内容比较确定。无合法建议时返回空 proposed_quotes 和明确原因；不主动调用模型、覆盖声明或循环重试。
 
 ### validate_metric
 
 - Args：`claim_id:str,target_unit_id:str|null`。非 null 须为卡片允许目标，由 handler 解析为受控单位字符串；null 优先使用 slot 已声明的 canonical_unit，没有声明目标时保留源单位，不能从允许集合任挑一个或删除物理单位。单位必需但原文缺失仍为 incomplete。
-- Data `MetricData`：`claim_ref:VersionedRef,validation_status:passed|failed|incomplete,quantity:QuantityValue|null,normalized_literal:str|bool|null,graph_ref:str|null,issues:list[ToolIssue]`。
-- 原值/单位来源/语义判定均从冻结上下文读取。语义未支持时可返回解析诊断，但不得返回可信 normalized_literal/graph_ref。
-- `normalize_metric(...,target_unit:str|null)->MetricNormalization` 为纯计算；`MetricNormalization={claim_ref,validation_status,quantity,normalized_literal,issues}`，字段类型与 MetricData 对应但不含 graph_ref，也不捕获 ToolContext。handler 传入可信绑定/核验和已解析目标，成功后构建单声明表示图，计算 graph_ref 并交协调器登记；只有登记确认后才向后续调用开放图引用。数值字面量使用精确字符串，boolean 保留 bool，不能直接将 Python int 混入该返回类型。
+- Data `MetricData`：`claim_ref:VersionedRef,validation_status:passed|failed|incomplete,quantity:QuantityValue|null,normalized_literal:str|bool|null,issues:list[ToolIssue]`。
+- 原值/单位来源/语义判定均从冻结上下文读取。语义未支持时可返回解析诊断，但不得返回可信 normalized_literal。
+- `normalize_metric(...,target_unit:str|null)->MetricData` 为纯计算，与工具共用同一结果类型，不捕获 ToolContext。handler 传入可信绑定/核验和已解析目标，包装 ToolResult 后返回；不构造或登记图引用。数值字面量使用精确字符串，boolean 保留 bool，不能直接将 Python int 混入该返回类型。
 - SHACL 由 validate_graph 检查，控制器保证执行；MetricData.validation_status=passed 仅表示规范化前置条件和表示生成通过，不表示 SHACL 已完成或事实已接纳。当前 metric.validate_metric 混合规范化与 SHACL：实施时提取 normalize_metric，旧函数作为现有调用兼容组合，不把新路径重复校验两次。
 
 ### validate_graph
 
-- Args：`graph_ref:str,shape_profile_id:str`，只能指当前声明的服务端图和适用的固定 profile。
+- Args：`claim_id:str,shape_profile_id:str`，只能指当前已冻结声明和适用的固定 profile；不接受任意图或模型提供的规范化值。
 - Data `ShaclData`：`profile:str,evaluated:bool,conforms:bool|null,validation_status:passed|failed|incomplete,report:list[ShaclIssue],coverage:FocusCoverage`。
 - `ShaclIssue={focus_node,path:str|null,value:str|null,source_shape,constraint_component,severity,messages:list[str]}`；`FocusCoverage={expected:list[str],actual:list[str],missing:list[str],executed_shapes:list[str],complete:bool}`。
-- 本期 graph_ref 指一个声明的表示图；混合谓词逐声明调用各自 profile 后由控制器汇总，不拿第一个 SlotSpec 校验整图。
+- 控制器将本次已通过的 MetricData 作为只读 ToolContext.metric_result 传入；handler 核对 claim_ref 和可信前置条件，用冻结 slot/profile 构造一个声明的临时表示图后立即校验。结果为空、未通过或声明不符则阻断，不隐式选择别的结果。混合谓词逐声明调用各自 profile 后由控制器汇总，不拿第一个 SlotSpec 校验整图。表示图无需 ID、登记、存储或恢复生命周期；若 finalize 在确认 TaskOutcome 前暂停，继续时重做未确认的纯本地计算。
 - 复用 literal 表示 profile，新增 quantity 表示 profile；禁用导入、JS、推理和模型自定义 shapes。focus 必须非空且完整相等；正常执行但不合格为 ok/conforms=false，异常为 error/shacl_execution_failed。
 
 ## 3. 阶段白名单与必检

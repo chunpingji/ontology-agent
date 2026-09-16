@@ -294,12 +294,10 @@ class DesignChecker:
         self.schema_value(self.context_schemas["verification_input"], value, location)
         targets = {target["target_id"]: target for target in value["targets"]}
         require(
-            value["targets"] == self.examples["verification_targets"]
-            and len(value["claims"]) == len(targets)
-            and {claim["target_id"] for claim in value["claims"]} == set(targets),
+            len(value["targets"]) == len(targets),
             location,
             "VERIFICATION_CONTENT",
-            "every target must have exactly one frozen claim payload",
+            "every target must occur exactly once with its frozen claim payload",
         )
         collections = {
             "entity": "entities",
@@ -307,37 +305,63 @@ class DesignChecker:
             "relation": "relations",
             "external_link": "external_links",
         }
+        expected_claims = {
+            (kind, proposal["local_id"])
+            for kind, collection in collections.items()
+            for proposal in self.examples["discovery"][collection]
+        }
+        actual_claims = [
+            (target["target_kind"], target["payload"]["local_id"])
+            for target in value["targets"]
+        ]
+        require(
+            len(actual_claims) == len(set(actual_claims))
+            and set(actual_claims) == expected_claims,
+            location + "/targets",
+            "VERIFICATION_COVERAGE",
+            "this fixture rejects no frozen claims; each discovery proposal needs one target",
+        )
 
         def ref_key(ref: dict[str, Any]) -> tuple[str, int]:
             return ref["id"], ref["revision"]
 
-        entities = {ref_key(item["entity_ref"]): item for item in value["entity_dependencies"]}
+        entities = {
+            ref_key(item["claim_ref"]): item
+            for item in value["targets"]
+            if item["target_kind"] == "entity"
+        }
+        context_entities = {
+            ref_key(item["entity_ref"]): item for item in value["entity_dependencies"]
+        }
         require(
-            len(entities) == len(value["entity_dependencies"]),
+            len(context_entities) == len(value["entity_dependencies"])
+            and not entities.keys() & context_entities.keys(),
             location + "/entity_dependencies",
             "REFERENCE_CLOSURE",
-            "entity dependencies must have unique exact references",
+            "context dependencies must be unique and exclude entities already present in targets",
         )
+        entities.update(context_entities)
         for index, entity in enumerate(value["entity_dependencies"]):
             if entity["grounding_kind"] == "document_root":
+                require(
+                    entity["proposal"] is None and bool(entity["root_origin"]),
+                    f"{location}/entity_dependencies/{index}",
+                    "REFERENCE_CLOSURE",
+                    "document root needs explicit configured origin, not a synthesized proposal",
+                )
                 continue
             proposal = entity["proposal"]
             require(
-                proposal in self.examples["discovery"]["entities"]
+                proposal is not None
+                and proposal["class_iri"] == entity["class_iri"]
                 and value["local_ref_map"].get(proposal["local_id"]) == entity["entity_ref"],
                 f"{location}/entity_dependencies/{index}",
                 "REFERENCE_CLOSURE",
-                "non-root entity dependency must resolve to its exact frozen proposal",
+                "registered context entity must include its frozen proposal and exact reference",
             )
-        for index, claim in enumerate(value["claims"]):
-            claim_path = f"{location}/claims/{index}"
+        for index, claim in enumerate(value["targets"]):
+            claim_path = f"{location}/targets/{index}"
             kind, payload = claim["target_kind"], claim["payload"]
-            require(
-                targets[claim["target_id"]]["target_kind"] == kind,
-                claim_path,
-                "REFERENCE_CLOSURE",
-                "target and claim kinds must match",
-            )
             endpoint_ids = []
             if kind in ("property", "relation", "external_link"):
                 endpoint_ids.append(payload["subject_id"])
@@ -352,7 +376,7 @@ class DesignChecker:
                     and ref_key(ref) in dependency_refs,
                     f"{claim_path}/payload/{local_id}",
                     "REFERENCE_CLOSURE",
-                    "local endpoint must bind an exact current entity dependency",
+                    "endpoint must resolve to an entity target or registered context entity",
                 )
             expected_hash = canonical_hash(
                 {
@@ -363,9 +387,7 @@ class DesignChecker:
                 }
             )
             require(
-                claim["content_hash"]
-                == expected_hash
-                == targets[claim["target_id"]]["content_hash"],
+                claim["content_hash"] == expected_hash,
                 f"{claim_path}/content_hash",
                 "CLAIM_HASH",
                 "claim hash does not cover semantic content, scope and dependencies",
@@ -377,18 +399,6 @@ class DesignChecker:
                 "FROZEN_PAYLOAD",
                 "verification payload must resolve to the submitted discovery result and exact ref",
             )
-        expected_set_hash = canonical_hash(
-            [
-                {"claim_ref": item["claim_ref"], "content_hash": item["content_hash"]}
-                for item in value["claims"]
-            ]
-        )
-        require(
-            value["claim_set_hash"] == expected_set_hash,
-            f"{location}/claim_set_hash",
-            "CLAIM_SET_HASH",
-            "claim set hash must bind all exact claim identities",
-        )
         for collection in ("entity_dependencies", "bridge_dependencies"):
             for index, item in enumerate(value[collection]):
                 require(
@@ -400,13 +410,6 @@ class DesignChecker:
                     "DEPENDENCY_HASH",
                     "dependency content does not match its frozen hash",
                 )
-        require(
-            value["input_hash"]
-            == canonical_hash({key: item for key, item in value.items() if key != "input_hash"}),
-            f"{location}/input_hash",
-            "VERIFICATION_INPUT_HASH",
-            "verification input hash must bind the complete payload and dependencies",
-        )
         request = exchange["request"]
         self.check_request(request, f"{EXAMPLES}#/verification_exchange/request")
         require(
@@ -527,9 +530,12 @@ class DesignChecker:
     def check_authorization_resume(self) -> None:
         example = self.examples["context_authorization_resume_example"]
         path = f"{EXAMPLES}#/context_authorization_resume_example"
-        auth = example["confirmed_authorization"]
+        protocol = example["current_protocol"]
+        auth = protocol["context_authorization"]
         self.schema_value(
-            self.context_schemas["context_authorization"], auth, path + "/confirmed_authorization"
+            self.context_schemas["context_authorization"],
+            auth,
+            path + "/current_protocol/context_authorization",
         )
         ir = example["frozen_ir"]
         require(
@@ -545,8 +551,9 @@ class DesignChecker:
         assembled = example["assembled_context_payload"]
         expected_context = canonical_hash(assembled)
         require(
-            auth["evidence_hash"] == expected_evidence and auth["context_hash"] == expected_context,
-            path + "/confirmed_authorization",
+            protocol["evidence_hash"] == expected_evidence
+            and protocol["context_hash"] == expected_context,
+            path + "/current_protocol/context_authorization",
             "AUTHORIZATION_HASH",
             "evidence/context hashes must include authorization roles, permissions and bindings",
         )
@@ -560,7 +567,7 @@ class DesignChecker:
                 and evidence_id in records.get(record_id, set())
                 and evidence_id in units
                 and 0 <= fragment["span_start"] < fragment["span_end"] <= len(units[evidence_id]),
-                f"{path}/confirmed_authorization/fragments/{index}",
+                f"{path}/current_protocol/context_authorization/fragments/{index}",
                 "AUTHORIZATION_FRAGMENT",
                 "authorized record/evidence span must exist in the frozen IR",
             )
@@ -571,22 +578,18 @@ class DesignChecker:
                 }
             )
         expected = {
+            "task_id": auth["task_id"],
+            "bindings": auth["bindings"],
             **{
-                key: auth[key]
-                for key in (
-                    "task_id",
-                    "bindings",
-                    "evidence_revision",
-                    "evidence_hash",
-                    "context_hash",
-                )
+                key: protocol[key]
+                for key in ("evidence_revision", "evidence_hash", "context_hash")
             },
             "fragments": reconstructed,
         }
         seed = example["context_policy"]["base_target"]
         bound_target = {
             **seed,
-            "context_hash": auth["context_hash"],
+            "context_hash": protocol["context_hash"],
             "source_scope_hash": canonical_hash(
                 [
                     [item["anchor"], item["fact_eligible"], item["purpose"]]
@@ -637,36 +640,31 @@ class DesignChecker:
             and all(assembled[key] == value for key, value in auth["bindings"].items())
             and all(
                 assembled[key] == auth[key]
-                for key in ("task_id", "context_policy_hash", "record_ids", "evidence_revision")
-            ),
+                for key in ("task_id", "context_policy_hash", "record_ids")
+            )
+            and assembled["evidence_revision"] == protocol["evidence_revision"],
             path + "/assembled_context_payload",
             "CONTEXT_PAYLOAD",
             "context hash payload must use frozen task seed, rebuilt text and exact authorization",
         )
         require(
-            example["context_before_pause"] == example["context_after_resume"] == expected,
+            example["expected_restored_context"] == expected,
             path,
             "AUTHORIZATION_RECONSTRUCTION",
-            "both contexts must equal the view derived from confirmed authorization and frozen IR",
+            "restored context must be derived from the current authorization and frozen IR",
         )
-        for key in ("protocol_before_pause", "protocol_after_resume"):
-            protocol = example[key]
-            require(
-                protocol["context_authorization_ref"] == example["confirmed_result_ref"]
-                and example["confirmed_result_ref"] in protocol["completed_tool_results"]
-                and all(
-                    protocol[field] == auth[field]
-                    for field in ("evidence_revision", "evidence_hash", "context_hash")
-                ),
-                f"{path}/{key}",
-                "AUTHORIZATION_CONFIRMATION",
-                "resume must reference a confirmed result with exact authorization identity",
-            )
         require(
-            example["protocol_before_pause"] == example["protocol_after_resume"],
-            path,
+            example["confirmed_result_ref"] in protocol["completed_tool_results"],
+            path + "/current_protocol",
             "AUTHORIZATION_CONFIRMATION",
-            "pause alone must not change the current protocol or budget",
+            "current permission update must be confirmed together with its tool result",
+        )
+        require(
+            not {"context_authorization_ref", "pending_call_ids"}.intersection(protocol)
+            and not {"evidence_revision", "evidence_hash", "context_hash"}.intersection(auth),
+            path + "/current_protocol",
+            "SINGLE_AUTHORITY",
+            "permission metadata and derived pending calls must not acquire a second authority",
         )
         call = example["inspect_call"]
         args = decode_json(call["arguments_json"], path + "/inspect_call/arguments_json")
@@ -795,6 +793,69 @@ class DesignChecker:
                 "tool result must use the common typed envelope",
             )
 
+    def derive_protocol_input(
+        self, exchange: dict[str, Any], location: str
+    ) -> tuple[list[dict[str, Any]], list[str]]:
+        """Reconstruct this one-response fixture, with call IDs scoped to its single attempt."""
+        protocol = exchange["current_protocol"]
+        require(
+            set(protocol) == {"stage_input_items", "turn_refs", "completed_tool_results"},
+            location,
+            "SINGLE_AUTHORITY",
+            "persist only stage initial input and refs, not accumulated input or pending IDs",
+        )
+        require(
+            len(protocol["turn_refs"]) == len(set(protocol["turn_refs"]))
+            and len(protocol["completed_tool_results"])
+            == len(set(protocol["completed_tool_results"])),
+            location,
+            "CALL_PAIRING",
+            "confirmed artifact refs must occur once",
+        )
+        require(
+            protocol["turn_refs"] == ["response"],
+            location,
+            "FIXTURE_SCOPE",
+            "this example has one model attempt; production pairs by (request_attempt, call_id)",
+        )
+        results = {}
+        for ref in protocol["completed_tool_results"]:
+            name, index = ref.split("/")
+            result = exchange[name][int(index)]
+            require(
+                result["call_id"] not in results,
+                location,
+                "CALL_PAIRING",
+                "a call cannot acquire two confirmed results",
+            )
+            results[result["call_id"]] = result
+        items = list(protocol["stage_input_items"])
+        seen, pending = set(), []
+        output = exchange[protocol["turn_refs"][0]]["output"]
+        items.extend(output)
+        calls = [item for item in output if item.get("type") == "function_call"]
+        for call in calls:
+            call_id = call["call_id"]
+            require(
+                call_id not in seen,
+                location,
+                "CALL_PAIRING",
+                "call_id must be unique within this response batch",
+            )
+            seen.add(call_id)
+            if call_id in results:
+                self.check_pairs([call], [results[call_id]], location)
+                items.append(results[call_id])
+            else:
+                pending.append(call_id)
+        require(
+            results.keys() <= seen,
+            location,
+            "CALL_PAIRING",
+            "confirmed tool results must bind existing calls",
+        )
+        return items, pending
+
     def check_responses(self) -> None:
         fixture = self.examples["fixture_context"]
         require(
@@ -817,9 +878,12 @@ class DesignChecker:
             "successful exchange must contain completed responses",
         )
         self.check_pairs(response["output"], exchange["tool_outputs"], path)
+        derived_input, pending_call_ids = self.derive_protocol_input(exchange, path)
         require(
             first["instructions"] == follow["instructions"]
-            and follow["input"] == first["input"] + response["output"] + exchange["tool_outputs"],
+            and first["input"] == exchange["current_protocol"]["stage_input_items"]
+            and not pending_call_ids
+            and follow["input"] == derived_input,
             f"{path}/continuation_request/input",
             "COMPLETE_ITEMS",
             "continuation must preserve input, every ordered output item and all tool results",
@@ -923,11 +987,12 @@ class DesignChecker:
                 "RELATION_BINDING",
                 "relation endpoints must resolve uniquely and selection needs support",
             )
-        targets = {target["target_id"]: target for target in self.examples["verification_targets"]}
+        target_items = self.examples["verification_exchange"]["verification_input"]["targets"]
+        targets = {target["target_id"]: target for target in target_items}
         checks = self.examples["verification"]["verifications"]
         verified = {item["target_id"]: item for item in checks}
         require(
-            len(targets) == len(self.examples["verification_targets"])
+            len(targets) == len(target_items)
             and len(verified) == len(checks)
             and set(targets) == set(verified),
             f"{EXAMPLES}#/verification",
@@ -941,7 +1006,7 @@ class DesignChecker:
                 and target["content_hash"] == verified[target_id]["content_hash"]
                 and len(facets) == len(set(facets))
                 and set(facets) == set(target["required_facets"]),
-                f"{EXAMPLES}#/verification_targets/{target_id}",
+                f"{EXAMPLES}#/verification_exchange/verification_input/targets/{target_id}",
                 "VERIFICATION_TARGETS",
                 "target kind/hash/facet set must match the independent verification result",
             )
@@ -1152,6 +1217,40 @@ def self_test(artifacts: Artifacts) -> dict[str, int]:
         ].pop(0),
     )
     add(
+        "accumulated input stored as a second authority",
+        "SINGLE_AUTHORITY",
+        lambda data: data.json_files[EXAMPLES]["responses_exchange"]["current_protocol"].update(
+            active_input_items=[]
+        ),
+    )
+    add(
+        "pending calls stored instead of derived",
+        "SINGLE_AUTHORITY",
+        lambda data: data.json_files[EXAMPLES]["responses_exchange"]["current_protocol"].update(
+            pending_call_ids=[]
+        ),
+    )
+    reasoning_item = {
+        "type": "reasoning",
+        "id": "reasoning-example",
+        "summary": [],
+        "encrypted_content": "synthetic-encrypted-reasoning",
+    }
+    add(
+        "dropped reasoning output on resume",
+        "COMPLETE_ITEMS",
+        lambda data: data.json_files[EXAMPLES]["responses_exchange"]["response"]["output"].insert(
+            0, reasoning_item
+        ),
+    )
+    add(
+        "confirmed result referenced twice",
+        "CALL_PAIRING",
+        lambda data: data.json_files[EXAMPLES]["responses_exchange"]["current_protocol"][
+            "completed_tool_results"
+        ].append("tool_outputs/0"),
+    )
+    add(
         "dangling local link",
         "LOCAL_LINK",
         lambda data: data.markdown.update(
@@ -1176,19 +1275,19 @@ def self_test(artifacts: Artifacts) -> dict[str, int]:
         "missing verification payload",
         "JSON_SCHEMA",
         lambda data: data.json_files[EXAMPLES]["verification_exchange"]["verification_input"][
-            "claims"
+            "targets"
         ][0].pop("payload"),
     )
     add(
         "changed relation selection with stale hash",
         "CLAIM_HASH",
         lambda data: data.json_files[EXAMPLES]["verification_exchange"]["verification_input"][
-            "claims"
+            "targets"
         ][-1]["payload"].update(selection="all"),
     )
     add(
-        "changed verification input hash",
-        "VERIFICATION_INPUT_HASH",
+        "redundant verification input hash restored",
+        "JSON_SCHEMA",
         lambda data: data.json_files[EXAMPLES]["verification_exchange"][
             "verification_input"
         ].update(input_hash="0" * 64),
@@ -1211,15 +1310,22 @@ def self_test(artifacts: Artifacts) -> dict[str, int]:
         "unconfirmed authorization result",
         "AUTHORIZATION_CONFIRMATION",
         lambda data: data.json_files[EXAMPLES]["context_authorization_resume_example"][
-            "protocol_after_resume"
+            "current_protocol"
         ].update(completed_tool_results=[]),
     )
     add(
         "restored permission escalation",
         "AUTHORIZATION_RECONSTRUCTION",
         lambda data: data.json_files[EXAMPLES]["context_authorization_resume_example"][
-            "context_after_resume"
+            "expected_restored_context"
         ]["fragments"][-1].update(fact_eligible=True),
+    )
+    add(
+        "authorization hash stored twice",
+        "JSON_SCHEMA",
+        lambda data: data.json_files[EXAMPLES]["context_authorization_resume_example"][
+            "current_protocol"
+        ]["context_authorization"].update(context_hash="0" * 64),
     )
     add(
         "controller calibration tool exposed to model",
@@ -1231,22 +1337,59 @@ def self_test(artifacts: Artifacts) -> dict[str, int]:
     add(
         "unregistered schema resource",
         "SCHEMA_REFERENCE",
-        lambda data: data.json_files[CONTEXT]["verification_input"]["properties"]["claims"].update(
+        lambda data: data.json_files[CONTEXT]["verification_input"]["properties"]["targets"].update(
             items={"$ref": "https://unregistered.invalid/schema.json"}
         ),
     )
 
-    def dangling_root_with_valid_input_hash(data: Artifacts) -> None:
+    add(
+        "dangling registered root",
+        "REFERENCE_CLOSURE",
+        lambda data: data.json_files[EXAMPLES]["verification_exchange"]["verification_input"][
+            "local_ref_map"
+        ].update(s={"id": "unregistered-root", "revision": 1}),
+    )
+
+    def duplicate_entity(data: Artifacts) -> None:
         value = data.json_files[EXAMPLES]["verification_exchange"]["verification_input"]
-        value["local_ref_map"]["s"] = {"id": "unregistered-root", "revision": 1}
-        value["input_hash"] = canonical_hash(
-            {key: item for key, item in value.items() if key != "input_hash"}
+        claim = value["targets"][0]
+        redundant = copy.deepcopy(value["entity_dependencies"][0])
+        redundant.update(
+            entity_ref=claim["claim_ref"],
+            class_iri=claim["payload"]["class_iri"],
+            grounding_kind="mention",
+            root_origin=None,
+            proposal=claim["payload"],
         )
+        value["entity_dependencies"].append(redundant)
+
+    add("duplicate entity target as dependency", "REFERENCE_CLOSURE", duplicate_entity)
+
+    def omit_target_consistently(data: Artifacts) -> None:
+        examples = data.json_files[EXAMPLES]
+        exchange = examples["verification_exchange"]
+        value = exchange["verification_input"]
+        omitted = value["targets"].pop()
+        value["local_ref_map"].pop(omitted["payload"]["local_id"])
+        examples["verification"]["verifications"] = [
+            item
+            for item in examples["verification"]["verifications"]
+            if item["target_id"] != omitted["target_id"]
+        ]
+        message = exchange["request"]["input"][0]["content"][0]
+        context = decode_json(message["text"], "self-test/omitted-target-context")
+        context["verification_input"] = value
+        message["text"] = json.dumps(context, ensure_ascii=False, separators=(",", ":"))
+        for output in exchange["response"]["output"]:
+            if output["type"] == "message":
+                for part in output["content"]:
+                    if part["type"] == "output_text":
+                        part["text"] = json.dumps(examples["verification"], ensure_ascii=False)
 
     add(
-        "dangling root with valid input hash",
-        "REFERENCE_CLOSURE",
-        dangling_root_with_valid_input_hash,
+        "target omitted consistently from input and answer",
+        "VERIFICATION_COVERAGE",
+        omit_target_consistently,
     )
     for name, code, mutate in mutations:
         broken = copy.deepcopy(artifacts)
@@ -1257,6 +1400,29 @@ def self_test(artifacts: Artifacts) -> dict[str, int]:
             require(f"[{code}]" in str(error), name, "SELF_TEST", f"wrong rejection: {error}")
         else:
             raise DesignError(f"[SELF_TEST] {name}: invalid artifact was accepted")
+
+    checker = DesignChecker(artifacts)
+    exchange = copy.deepcopy(artifacts.json_files[EXAMPLES]["responses_exchange"])
+    exchange["response"]["output"].insert(0, reasoning_item)
+    protocol = exchange["current_protocol"]
+    confirmed_refs = protocol["completed_tool_results"]
+    protocol["completed_tool_results"] = []
+    incomplete, pending = checker.derive_protocol_input(exchange, "self-test/pending-call")
+    require(
+        incomplete == protocol["stage_input_items"] + exchange["response"]["output"]
+        and pending == [exchange["response"]["output"][1]["call_id"]],
+        "self-test/pending-call",
+        "SELF_TEST",
+        "unconfirmed call must remain pending without losing complete reasoning/output items",
+    )
+    protocol["completed_tool_results"] = confirmed_refs
+    complete, pending = checker.derive_protocol_input(exchange, "self-test/confirmed-call")
+    require(
+        complete == incomplete + exchange["tool_outputs"] and pending == [],
+        "self-test/confirmed-call",
+        "SELF_TEST",
+        "confirmed result must pair once and clear derived pending calls",
+    )
 
     # A legal property whose numeric quote and table-header unit are separate.
     # This catches the reviewed mg -> g identity failure without relying on a
@@ -1284,7 +1450,6 @@ def self_test(artifacts: Artifacts) -> dict[str, int]:
     changed_unit["unit_support"] = [quote("g")]
     added_proof = copy.deepcopy(property_value)
     added_proof["unit_support"].append({**quote("mg"), "evidence_id": "second-unit-source"})
-    checker = DesignChecker(artifacts)
     schema = {"$ref": "urn:ontology-tool-extraction:discovery#/$defs/PropertyProposal"}
     for name, value in (
         ("original unit", property_value),
@@ -1327,6 +1492,7 @@ def self_test(artifacts: Artifacts) -> dict[str, int]:
             raise DesignError(f"[SELF_TEST] nonstandard JSON accepted: {token}")
     return {
         "rejected_self_test_mutations": len(mutations),
+        "protocol_reconstruction_checks": 2,
         "property_unit_hash_checks": hash_checks,
         "rejected_nonstandard_json_values": invalid_json_count,
     }

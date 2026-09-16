@@ -255,11 +255,11 @@
   {
     "type": "function",
     "name": "validate_graph",
-    "description": "按服务端规定的本地表示 profile 校验当前声明表示图，保留实际 focus 覆盖；不改写图或约束。",
+    "description": "从冻结声明与当前可信规范化结果临时构造表示图，按服务端规定的本地 profile 校验并保留实际 focus 覆盖；不持久化图引用，不改写声明或约束。",
     "parameters": {
       "type": "object",
       "properties": {
-        "graph_ref": {
+        "claim_id": {
           "type": "string"
         },
         "shape_profile_id": {
@@ -267,7 +267,7 @@
         }
       },
       "required": [
-        "graph_ref",
+        "claim_id",
         "shape_profile_id"
       ],
       "additionalProperties": false
