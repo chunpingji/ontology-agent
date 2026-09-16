@@ -1,0 +1,277 @@
+[
+  {
+    "type": "function",
+    "name": "get_schema_card",
+    "description": "读取当前主体的本体菜单或指定谓词卡片；定义约束，不证明原文事实。",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "subject_id": {
+          "type": "string"
+        },
+        "predicate_iri": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "subject_id",
+        "predicate_iri"
+      ],
+      "additionalProperties": false
+    },
+    "strict": false
+  },
+  {
+    "type": "function",
+    "name": "inspect_evidence",
+    "description": "读取当前任务授权的完整原文单元及记录角色；不自动授予事实资格。",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "evidence_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "evidence_ids"
+      ],
+      "additionalProperties": false
+    },
+    "strict": false
+  },
+  {
+    "type": "function",
+    "name": "resolve_source_anchor",
+    "description": "以逐字文本和可选同源上下文唯一定位原文；歧义时不选择最近匹配。",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "evidence_id": {
+          "type": "string"
+        },
+        "quote": {
+          "type": "string"
+        },
+        "context_text": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "evidence_id",
+        "quote",
+        "context_text"
+      ],
+      "additionalProperties": false
+    },
+    "strict": false
+  },
+  {
+    "type": "function",
+    "name": "propose_mentions",
+    "description": "依据当前本体卡片及受控词表建议提及跨度和类型角色；不确认实体身份。",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "evidence_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "schema_card_id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "evidence_ids",
+        "schema_card_id"
+      ],
+      "additionalProperties": false
+    },
+    "strict": false
+  },
+  {
+    "type": "function",
+    "name": "check_claim_binding",
+    "description": "检查已冻结声明的主体、字段、对象和单位引用归属；不替代语义核验。",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "claim_id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "claim_id"
+      ],
+      "additionalProperties": false
+    },
+    "strict": false
+  },
+  {
+    "type": "function",
+    "name": "query_instances",
+    "description": "以文档提及在已授权来源查询实例候选；命中不等于身份或文档关系成立。",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "mention_ref": {
+          "type": "string"
+        },
+        "class_iri": {
+          "type": "string"
+        },
+        "source_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "mention_ref",
+        "class_iri",
+        "source_ids"
+      ],
+      "additionalProperties": false
+    },
+    "strict": false
+  },
+  {
+    "type": "function",
+    "name": "retrieve_evidence",
+    "description": "针对当前主体谓词和缺失维度，从同一文档检索完整补充记录；摘要只作定位。",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "subject_id": {
+          "type": "string"
+        },
+        "predicate_iri": {
+          "type": "string"
+        },
+        "missing_facets": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "type",
+              "referent",
+              "subject_role",
+              "subject_binding",
+              "object_binding",
+              "field_role",
+              "predicate",
+              "bridge",
+              "selection",
+              "qualifiers",
+              "counterevidence",
+              "value",
+              "unit",
+              "identity_owner",
+              "identity_key",
+              "identity_scope"
+            ]
+          }
+        }
+      },
+      "required": [
+        "subject_id",
+        "predicate_iri",
+        "missing_facets"
+      ],
+      "additionalProperties": false
+    },
+    "strict": false
+  },
+  {
+    "type": "function",
+    "name": "propose_repair",
+    "description": "针对当前冻结声明实际存在的错误提出局部修复，不直接改写声明或接纳状态。",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "claim_id": {
+          "type": "string"
+        },
+        "issue_code": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "claim_id",
+        "issue_code"
+      ],
+      "additionalProperties": false
+    },
+    "strict": false
+  },
+  {
+    "type": "function",
+    "name": "validate_metric",
+    "description": "校验声明数量表示及单位；语义前置条件由服务端读取，未满足时不输出可信规范化结果。",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "claim_id": {
+          "type": "string"
+        },
+        "target_unit_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "claim_id",
+        "target_unit_id"
+      ],
+      "additionalProperties": false
+    },
+    "strict": false
+  },
+  {
+    "type": "function",
+    "name": "validate_graph",
+    "description": "按服务端规定的本地表示 profile 校验当前声明表示图，保留实际 focus 覆盖；不改写图或约束。",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "graph_ref": {
+          "type": "string"
+        },
+        "shape_profile_id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "graph_ref",
+        "shape_profile_id"
+      ],
+      "additionalProperties": false
+    },
+    "strict": false
+  }
+]
