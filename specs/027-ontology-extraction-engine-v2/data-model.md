@@ -59,7 +59,17 @@ PropertyProposal 和 RelationProposal 均另含 `bridge_kind`、`bridge_ref_ids`
 
 ## 4. 独立核验
 
-程序构造目标 `{target_id,target_kind,content_hash,required_facets}`。模型逐目标返回 target_id、content_hash、facets；每个 facet 为 `{name,verdict,support,counterevidence_support,reason}`，verdict=supported/unsupported/undetermined。
+程序构造目标 `VerificationTargetSpec={target_id,target_kind,content_hash,required_facets}`。目标是核验清单，必须随完整 `VerificationInput` 发送，不能只传不透明 ID/hash。模型逐目标返回 target_id、content_hash、facets；每个 facet 为 `{name,verdict,support,counterevidence_support,reason}`，verdict=supported/unsupported/undetermined。
+
+`VerificationInput={discovery_ref,claim_set_hash,targets:list[VerificationTargetSpec],claims:list[VerificationClaimView],local_ref_map:dict[str,VersionedRef],entity_dependencies:list[EntityDependencyView],external_candidates:list[ExternalCandidate],bridge_dependencies:list[BridgeDependencyView],scope_resolutions:list[VerificationScopeResolution],input_hash}`。协调器从已确认 discovery_ref 加载 FrozenClaimSet，核对内容和精确依赖后纯派生此视图；不新增声明存储。发现阶段 reasoning、工具交互历史和模型自评不进入核验输入。
+
+`VerificationClaimView={target_id,target_kind,claim_ref:VersionedRef,content_hash,payload,scope:TraversalScope,dependency_refs:list[VersionedRef]}`。payload 是 target_kind 判别的完整 EntityProposal / PropertyProposal / RelationProposal / ExternalLinkProposal，不裁掉原值、单位原文、端点、选择、极性、模态、条件、桥接或来源。targets 与 claims 必须一一对应，kind/hash 相等。local_ref_map 来自冻结结果；payload 的局部端点 ID 必须准确解析到同版实体依赖，不能靠标签猜测。它是唯一允许动态键的引用映射，值仍为封闭 VersionedRef。
+
+`EntityDependencyView={entity_ref,class_iri,grounding_kind,root_origin:str|null,proposal:EntityProposal|null,source_refs:list[EvidenceAnchor],dependency_refs:list[VersionedRef],content_hash}`。根来源由程序提供，根的 proposal 为 null；非根须给出实体提议和来源，不能只提供实体 ID。`BridgeDependencyView={bridge_id,bridge_ref,bridge_kind,steps:list[BridgeStepView],dependency_refs,content_hash}`；每步 `BridgeStepView={kind:referent_binding|owner_binding|predicate_assertion,subject_ref,object_ref:VersionedRef|null,predicate_iri:str|null,source_refs:list[EvidenceAnchor]}`，完整链必须含 predicate_assertion。外部候选按第 5 节保留来源、记录版本及匹配/字段内容。`VerificationScopeResolution={scope_id,steps:list[VerificationScopeStep]}`；每步为 `{relation_ref,member_ref,selection,polarity,modality,conditions:list[str],applicability:list[GroundedScopeQualifier],evidence_refs:list[EvidenceAnchor]}`，单边 selection=null，GroundedScopeQualifier 见第 6 节。核验视图使用原文锚点而非公开图的 evidence_selection_ids，逐步限定及来源须在当前 evidence_units 中授权并可定位。各视图均只是已确认对象的类型化渲染，引用不授予读取权。
+
+所有 hash 复用 evidence_identity.evidence_hash 的规范 JSON/SHA256；数组次序由冻结函数固定。声明 content_hash 覆盖 `{target_kind,semantic_content,scope,dependency_refs}`。实体的 semantic_content 是完整 EntityProposal（提及/组成改变意味着另一指称）；外链为 local_id/subject_id/external_candidate_id；属性与关系包含 local_id/subject_id/predicate_iri/bridge_kind/bridge_ref_ids、完整限定语义，属性另含原值全文 raw_value 和 unit_support 中去重排序的 source_unit_texts，关系另含 object_ids/selection。限定语义为 polarity/modality、condition_texts 和 `{predicate_iri,text}` 的 scope_qualifiers；原值须保留完整表达，表头等分离单位也计入语义。额外 field/bridge/selection 佐证或同单位的新引文不属于声明语义，补证只改变 evidence_revision/evidence_hash/input_hash；改变原值、单位、对象、条件或精确依赖则改变 content_hash。claim_set_hash 对规范顺序的 `{claim_ref,content_hash}` 列表求 hash。实体/桥接依赖的 content_hash 对其余全部字段求 hash；VerificationInput.input_hash 对除自身外的完整输入求 hash，因此补证、外部记录版本或依赖材料变化不能复用旧核验。缺少 payload、hash 不匹配、依赖未授权/无法精确解析时不发核验请求。
+
+[控制输入 Schema](contracts/context-schemas.json) 定义以上类型；以本地资源别名 `urn:ontology-tool-extraction:discovery` 引用阶段 Schema 的 discovery 子对象，禁止网络解析。控制输入不是第三种模型回答阶段。[完整独立请求样例](contracts/examples.json) 的 verification_exchange 使用新输入及原 verification 输出 Schema。
 
 | 目标 | 必需 facet |
 |---|---|
@@ -146,6 +156,7 @@ RunResponse 与 GraphArtifactResponse 新增 `extraction_protocol:str|null`，�
 | turn_refs | 当前阶段按 attempt 引用 ModelTurnResult；直接恢复，不扫描历史 |
 | pending_call_ids、completed_tool_results | 当前 function_call 批次未完成的 call_id 与已确认结果引用；output item.id 不能替代 call_id |
 | tool_calls_used、materialized_refs | 当前 lineage 模型请求的工具尝试数及当前可用卡片/mention/candidate/graph 引用；每项 kind/id/result_ref/content_hash/context_hash/dependency_refs，类型见[工具契约](contracts/tool-contracts.md)；只保存继续所需映射 |
+| context_authorization_ref | str\|null；唯一当前已确认检索结果引用，指向 ConfirmedRetrievalResult 内的完整当前授权描述；尚无补充检索时为 null，从原任务冻结材料重建 |
 | discovery_ref、verification_ref、outcome_ref | 当前已提交业务阶段结果引用 |
 | recovery_kind、recovery_used | none/evidence/reproposal；共享一次恢复机会 |
 
@@ -160,6 +171,23 @@ ModelTurnResult.input_hash 对应 pending_request.request_hash，覆盖 api_prot
 提交顺序：预留→模型请求→提交完整 response→确认可消费状态并登记完整 output items→逐工具执行/提交并追加 function_call_output→下一次预留。没有持久化确认不继续。保存响应后暂停可继续待执行工具；保存工具结果后不重复调用。预留后结果未知保持未知费用和未完成，不假定未发出或自动零成本重发；已经收到 incomplete/failed 与未收到结果分别记录。
 
 DocumentRunCandidate.kind、当前状态 domain 为字符串，body 为 JSON，现有约束没有 kind 枚举；新增关系组与协议结果预计无需数据库迁移。必须修改 collection 白名单和序列化，验证 PostgreSQL 事务/租约路径；不新建表或历史快照树。
+
+### 8.1 检索确认与授权重建
+
+检索的内部存储外壳为 `ConfirmedRetrievalResult={result:ToolResult[RetrievalData],authorization:ContextAuthorization}`，仍保存于既有结果域。模型只收到 result；authorization 由协调器核验形成，绝不由 Qwen 参数或 active_input_items 反推。context_authorization_ref 指向同一已确认 result_ref。每次授权变更保存**完整当前授权定位集合**并替换该引用，不保存可串接的授权增量历史，不另存原文或 TaskContext 快照。
+
+`ContextAuthorization={task_id,ir_identity,context_policy_hash,record_ids,fragments:list[AuthorizedFragment],bindings:ContextBindingRefs,evidence_revision,evidence_hash,context_hash}`：
+
+- ir_identity 为 `{document_hash,parser_version,structure_hash}`，必须匹配冻结 IR。record_ids 是完整当前授权记录，非只有本次新增记录。
+- `AuthorizedFragment={record_id,evidence_id,span_start,span_end,role,fact_eligible}`。跨度为非空半开区间、源于 IR；role 对应 ContextFragment.purpose。位置、角色和事实使用权限均不可仅靠 evidence_id 推断；同证据不同片段/角色分别保存。
+- `ContextBindingRefs` 复用 TaskContext 的 endpoint_evidence、proof_dependencies、competing_subject_refs（VersionedRef 列表），以及 subject_evidence_refs、owner_field_refs、required_context_refs、counterevidence_refs、omitted_refs（EvidenceAnchor 列表）。它记录当前归属和必读闭包，不替代实体或关系语义证明。
+- context_policy_hash 覆盖冻结任务 base_target/scope、SchemaCard/menu/profile 与上下文/字段绑定组装版本及配置。原文、字段结构来自冻结 IR/index；subject_label 来自精确主体依赖，field_bindings 按同版策略和 IR/index 重建，不能从模型文本恢复。
+
+restore_authorized_context 从冻结任务材料、该唯一确认结果和冻结 IR/index 重建 TaskContext；核对结果归属、IR 身份、策略、引用和边界，重建完整原文、角色/权限/owner 后比较 hash。evidence_hash 对 `{ir_identity,fragments,bindings}` 求 hash。context_hash 复用现有 context.py 的完整组装 payload：target、record_id、fragments、endpoint_evidence、proof_dependencies、competing_subject_refs、subject_evidence_refs、subject_label、owner_field_refs、context_records_version、required_context_refs、counterevidence_refs、omitted_refs，以及启用时的 field_bindings；新协议在此基上纳入 task_id、context_policy_hash、record_ids 和 evidence_revision，不能用授权 ID 列表的 hash 替代。归属、字段绑定、scope、卡片或组装策略变化均会失效旧上下文。
+
+哈希 payload 中的 target 是绑定当前 context_hash 之前的目标种子，由冻结任务、运行身份和同版策略确定性派生；不能直接使用已返回 TaskContext.target，因为既有 assemble_context 已给它重新绑定 context_hash/source_scope_hash 和 target_id。恢复先重建相同未绑定种子，再组装并计算 context_hash，最后按同一 VerificationTarget.create 规则绑定目标和 source_scope_hash；该次重绑定沿用 assemble_context，以 target_seed.target_id 作为 create 的 run_fingerprint 参数，原运行身份用于种子的派生与校验。比较最终目标及当前 hash，避免自引用。种子不另存历史快照。合成样例的 context_policy.base_target 是该确定性种子的可读展开，assembled_context_payload 展示完整哈希材料，不是新增线上状态。
+
+确认结果和当前引用完成同一协调器屏障前，新证据不进入 inspect_evidence 权限集合；worker 的 TaskContext 深拷贝修改不算确认。暂停继续时，未确认、其他任务、过期或 hash 不匹配的结果均不能授权；不自动重新检索来掩盖不一致，也不从历史结果拼接授权。样例 context_authorization_resume_example 比较恢复前后的派生输入及 inspect 输出，before/after 仅为测试断言，运行期仍只有一份当前权威状态。
 
 ## 9. Harness 的派生上下文和本轮计划
 
@@ -188,15 +216,17 @@ plan_model_turn 在当前工具批次处理完毕后调用；已有持久化阶�
 | source_catalog | list[SourceCatalogEntry]，按任务裁选的定位目录 |
 | evidence_units | list[EvidenceUnit]，授权完整原文及必要结构/反证 |
 | registered_refs | list[VersionedRef]，本轮允许引用的当前精确实体/声明；不授予新权限 |
-| verification_targets | list[VerificationTargetSpec]，核验阶段的精确目标，否则为空 |
+| verification_input | VerificationInput\|null；verification 必需包含第 4 节完整冻结内容和依赖，discovery 为 null |
 | tool_observations | list[ToolObservation]，当前阶段已确认调用/结果，由现有 result_ref 加载 |
 | feedback | list[ContextFeedback]，已发生的检查缺口 |
 | turn | TurnPlan，展示额度与可用动作的只读副本 |
 
 `SourceCatalogEntry={record_id:str,title:str|null,summary:str|null,summary_source:str|null,authorized_evidence_ids:list[str]}`。目录摘要永远是定位线索；列表只包含已有权限的 evidence_id，未读取记录通过现有 retrieve 路径取得。目录本身不产生 EvidenceAnchor。
 
-`ToolObservation={request_attempt:int,call_id:str,tool_name:ToolName,arguments:EvidenceModel,result_ref:str,result:ToolResult}` 是 tool_contracts.py 中的冻结 dataclass，arguments/result 按同一静态注册表解析为具体类型。恢复从原 ModelTurnResult 的 function_call 项与已确认工具结果组装，不重复存储这些数据。渲染调用实际具体类型的序列化方法，不用基类字段裁掉工具数据；对应当前 input 中的 function_call/function_call_output 配对项，不能把同一完整结果又复制到 user 内容。其他 output 项继续按原序保存，不因工具视图不使用而丢弃。
+`ToolCall={call_id:str,name:str,arguments_json:str}` 原样承接 function_call 的 call_id/name/arguments；不能在保存前将 name 收紧为 ToolName 或强制 arguments 已是合法 JSON。`ToolObservation={request_attempt:int,call:ToolCall,parsed_arguments:EvidenceModel|null,result_ref:str,result:ToolResult}` 是 tool_contracts.py 中的冻结 dataclass。分派顺序为注册/调用者及阶段白名单检查，再解析参数，再检查引用权限并执行。参数通过校验后的执行或引用授权失败仍保留已解析参数和对应具体结果类型。未知函数、model_callable/阶段拒绝、非法 JSON 或不符合参数 Schema 时，parsed_arguments=null，result 是统一 `ToolErrorResult`，status=blocked/error、data=null，含类型化 ToolIssue。它不进入 handler，也不能为绕过校验而使用松散 dict。坏 JSON 的 field_path 为 null；Schema 错误指向参数 JSON Pointer；未知名称及调用者/阶段拒绝的 field_path 为 null，原名称仍保留在 call.name。
+
+恢复从原 ModelTurnResult 的 function_call 项与已确认工具结果组装，不重复存储这些数据，也不要求错误调用成功解析后才恢复。渲染调用实际具体类型的序列化方法，不用基类字段裁掉合法工具数据；对应当前 input 中的 function_call/function_call_output 配对项，不能把同一完整结果又复制到 user 内容。未知名称/坏参数保持原始调用与 error envelope，已确认调用不重复计费或执行，纠正调用按新 call_id 计入剩余额度。其他 output 项继续按原序保存，不因工具视图不使用而丢弃。examples.json 的 tool_protocol_error_examples 覆盖未知函数及坏 JSON 的保存、恢复和配对；不将执行错误记为语义否定。
 
 `ContextFeedback={target_id:str|null,facet:str|null,code:str,field_path:str|null,message:str,evidence_ids:list[str]}` 定义在 context.py。字段错误使用 JSON Pointer，非字段错误为 null；target/facet 从服务端检查结果读取，不接受模型自报已通过。反馈说明受违反的约束及允许的下一步，不包含未授权来源或金标答案。
 
-context.py 对 SchemaCard、ToolObservation、TurnPlan 等仅作 TYPE_CHECKING 类型引用；纯派生函数操作已传入的类型化对象，禁止导入编排器执行逻辑造成 context↔adapter 或 context↔tool_contracts 的运行时循环。持久化仍使用第 8 节的 active_instructions、active_input_items、turn_refs 和 materialized_refs。
+context.py 对 SchemaCard、VerificationInput、ToolObservation、TurnPlan 等仅作 TYPE_CHECKING 类型引用；纯派生函数操作已传入的类型化对象，禁止导入编排器执行逻辑造成 context↔adapter 或 context↔tool_contracts 的运行时循环。持久化仍使用第 8 节的 active_instructions、active_input_items、turn_refs、materialized_refs 和唯一 context_authorization_ref。

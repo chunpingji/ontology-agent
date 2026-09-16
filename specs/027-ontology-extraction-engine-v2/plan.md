@@ -92,6 +92,10 @@ def build_verification_targets(
 def build_verification_input(
     claims: FrozenClaimSet, *, discovery_ref: str,
     targets: list[VerificationTargetSpec], context: TaskContext,
+    entity_dependencies: list[EntityDependencyView],
+    external_candidates: list[ExternalCandidate],
+    bridge_dependencies: list[BridgeDependencyView],
+    scope_resolutions: list[VerificationScopeResolution],
 ) -> VerificationInput: ...
 
 def validate_verification(
@@ -109,6 +113,8 @@ def finalize_claims(
 
 独立核验输入使用 data-model §4/9 的 VerificationInput，不能只把 target ID/hash/facet 发给模型。协调器按已确认 discovery_ref 加载 FrozenClaimSet，核对 claim_set_hash 和精确依赖，再由 build_verification_input 纯构造完整声明及所需实体、外部候选、桥接和 scope 视图。每个 VerificationClaimView 保留实际端点/实体指称、原值和单位、selection、模态、条件及 scope；目标内容来自冻结 payload，不让模型从同一原文重新猜测正在检查哪条声明。材料缺失、hash 不符或依赖未经授权时阻止核验请求，不以摘要、历史 reasoning 或另一候选补齐。VerificationInput 只派生、不另存为权威声明；targets 仅在其中维护一份。
 
+依赖视图由协调器从当前精确实体/证明及已确认工具结果加载，作为上述显式参数传入；不能假设 TaskContext 的引用列表已经携带这些对象内容。作用域视图使用 VerificationScopeResolution 的内部原文锚点，不依赖前端选区注册表。属性内容 hash 同时覆盖原值及分离表头中的单位文本，单位含义变化不能沿用旧核验。
+
 VerifiedClaimSet 含逐目标内容 hash、facet 结论/引用和 missing_facets，不含改写后的候选。finalize_claims 复用 ProofGate，增加组和记录主体检查；受控 key/外链核验不使关系自动通过。接纳结果以 TaskOutcome 的实体/属性/边/组、证明和 decision payload 回到协调器。
 
 `verification.py` 新增 `build_generic_proof_menu(card,context,required_facets)->dict` 和 `ProofGate.evaluate_frozen_claim(claim,decisions,*,entity_proofs,proof_menu,checks)->VerificationBundle`：复用原引用/依赖检查，但采用本协议 facet 和精确实体证明，不走旧按 describes/hasActiveIngredient 等 local name 区分的 PredicatePolicyRegistry。property/relationship 只按声明种类与实际结构决定必需角色，谓词含义交给本体定义和原文核验。保留旧 evaluate 供冻结旧协议读取/原调用方使用，不把其业务分支带入新路径。
@@ -119,7 +125,7 @@ VerifiedClaimSet 含逐目标内容 hash、facet 结论/引用和 missing_facets
 
 ## 5. M03/M04：工具契约与执行
 
-完整类型、10 个 handler 和错误表见 [工具契约](contracts/tool-contracts.md)。每个函数实现同形签名 `handler(args,ctx)->ToolResult[Data]`；静态注册表将参数类型、结果类型、调用者/阶段白名单、处理函数连在一起，定义与执行不能各写一套。10 个函数是标准目录；`validate_metric`、`validate_graph` 本期仅由控制器在 finalize 调用，不进入任何 Qwen 请求的 tools。其余 8 个函数仍按 discovery/verification 和 recovery mode 裁选，不能把目录全集当模型可见集。调用者身份来自服务端分派入口，模型参数不能将自身改成控制器。
+完整类型、10 个 handler 和错误表见 [工具契约](contracts/tool-contracts.md)。每个函数实现同形签名 `handler(args,ctx)->ToolResult[Data]`；静态注册表将参数类型、结果类型、model_callable/阶段白名单、处理函数连在一起，定义与执行不能各写一套。10 个函数是标准目录；`validate_metric`、`validate_graph` 的 model_callable=false，本期仅由控制器在 finalize 调用，不进入任何 Qwen 请求的 tools。该标记是本地注册元数据，不写入 OpenAI 工具定义。其余 8 个函数仍按 discovery/verification 和 recovery mode 裁选，不能把目录全集当模型可见集。调用者身份来自服务端分派入口，模型参数不能将自身改成控制器。
 
 上下文来自当前任务的只读材料：IR、卡片、冻结声明、已有判定、来源版本、词表和额度；模型 client 仅由阶段编排器持有，工具不自行发起模型请求。工具不得捕获 owner Session、改当前图或提交业务数据。纯本地工具调用前后 `check_cancelled()`；需要新来源的 retrieve 先形成上下文增量提案，通过 `context.save_protocol()` 的协调器屏障验证/持久化后开放新引用。
 
@@ -203,7 +209,7 @@ def plan_model_turn(
 ) -> TurnPlan: ...
 ```
 
-`plan_model_turn` 是本模块纯函数，TurnPlan 字段见 data-model；remaining_model_calls 来自协调器已经预留的账本及当前 attempt，不能反复读 TaskContext 初始额度。available_tools 先从注册表按模型调用者、阶段、recovery mode 和前置引用裁选，永远不含 controller-only 的 validate_metric/validate_graph；finalize 必须返回 stop 且不生成模型请求。只有待处理工具批次已经完成时才调用；batch_progress 在整批结果合并后按参数和精确依赖判定，第一次 no_match 不直接判无进展。
+`plan_model_turn` 是本模块纯函数，TurnPlan 字段见 data-model；remaining_model_calls 来自协调器已经预留的账本及当前 attempt，不能反复读 TaskContext 初始额度。available_tools 先从注册表按模型调用者、阶段、recovery mode 和前置引用裁选，永远不含 controller-only 的 validate_metric/validate_graph；finalize 不调用 plan_model_turn，直接由控制器执行必检；TurnPlan 仅描述 discovery/verification 的模型决策。只有待处理工具批次已经完成时才调用；batch_progress 在整批结果合并后按参数和精确依赖判定，合法调用采用规范化参数，未解析调用采用原始 name/arguments_json 与错误 code，不伪造 parsed_arguments。第一次 no_match 不直接判无进展，首个参数错误保留预算内修正机会。
 
 精确流程：
 
@@ -233,15 +239,19 @@ def build_model_context(
 ) -> ModelContextView: ...
 
 def restore_authorized_context(
-    base: TaskContext, *, authorization: ContextAuthorization, index: RecordIndex,
+    task: RecognitionTask, base: TaskContext, *,
+    authorization: ContextAuthorization, index: RecordIndex,
+    target_seed: VerificationTarget, run_fingerprint: str,
+    card: SchemaCard, profile: ExtractionProfile,
+    entity_dependencies: list[EntityDependencyView], scope: TraversalScope,
 ) -> TaskContext: ...
 ```
 
 字段见 data-model 第 9 节。固定规则进入每轮 instructions；任务卡片、定位目录、原文、完整 VerificationInput、工具结果和核验反馈分别渲染为 input 项，原文/元数据不拼成指令。verification_input 在 discovery 为 null，在 verification 必须为按 M02 构建且 hash/依赖匹配的完整视图；缺失不得发送。只包含当前 subject/predicate/scope 所需材料，保留已知反证、竞争归属和完整记录。阶段内完整续传标准 output 与 function_call_output 项，包括实际返回的不透明 reasoning；核验阶段重新组装。省略非必需目录/重复说明时可追溯到原引用，不能删必需声明内容/证据、reasoning 协议项或半个工具批次。该视图不持久化为第二份当前状态；不增加 LLM 压缩请求。
 
-复用 RecordIndex、SubjectSlotQuery、现有摘要/精排和 EvidenceWorkQueue。`retrieve_evidence` 的已确认 RetrievalData 除模型可读结果外，包含完整当前 ContextAuthorization：冻结 IR 身份、context_policy_hash、记录和片段位置/角色/fact_eligible、owner/必需上下文/反证等绑定，以及 evidence_revision/evidence_hash/context_hash；具体字段只在 data-model/工具契约维护。它不存原文副本，也不是需要遍历的增量历史链。协议只保存 context_authorization_ref 指向当前该结果；初始未检索时为 null，从冻结基础上下文构建。
+复用 RecordIndex、SubjectSlotQuery、现有摘要/精排和 EvidenceWorkQueue。`retrieve_evidence` 的内部持久化外壳是 ConfirmedRetrievalResult={result:ToolResult[RetrievalData],authorization:ContextAuthorization}，模型只接收 result。authorization 包含完整当前冻结 IR 身份、context_policy_hash、记录和片段位置/角色/fact_eligible、owner/必需上下文/反证等绑定，以及 evidence_revision/evidence_hash/context_hash；具体字段只在 data-model/工具契约维护。它不存原文副本，也不是需要遍历的增量历史链。协议只保存 context_authorization_ref 指向当前该内部结果；初始未检索时为 null，从冻结基础上下文构建。
 
-协调器以当前任务/来源/策略身份校验授权描述，确认结果和该引用后，调用 restore_authorized_context 从冻结 IR/RecordIndex 还原文本、跨度、角色、绑定与读取权限，重新计算并比对 evidence_hash/context_hash，再开放新增 evidence_id。RecognitionCall 的 worker 持有深拷贝，不能依赖 worker 修改 TaskContext 传播到协调器；初次提交和冷恢复均走相同重建函数。未确认结果、来源过期、scope/任务/策略不符或 hash 失配不能授予读取权，active_input_items 和模型提出的 ID 也不授予权限。原文及角色保留 target/binding/counterevidence，补证范围不能转成另开事实发现任务。请求词来自主体合格指称、谓词定义、词表及真实 missing_facets，不追加领域章节/字段优先词。
+协调器以当前任务/来源/策略身份校验授权描述，确认结果和该引用后，调用 restore_authorized_context 从 index.ir 所绑定的冻结 DocumentIR/RecordIndex 还原文本、跨度、角色、绑定与读取权限。card/profile、scope、精确实体依赖和 run_fingerprint 均由服务端冻结输入加载；target_seed 由协调器复用初次上下文组装前的目标工厂和同一冻结输入派生，尚未绑定 context_hash，不新增存储。RecognitionTask 本身没有 base_target 或 run_fingerprint 字段，不能以 task 或已返回的 base.target 隐式替代这些输入；后者已绑定 context_hash，用它计算会改变 target_id 或形成循环。按已冻结并匹配的 context/field-binding 组装版本与配置重算 context_policy_hash，不能让模型传入策略或该 hash 来决定权限。field_bindings 从索引和同一组装规则派生，subject_label 从精确 subject 依赖派生；context 哈希 payload 使用未绑定的 target_seed、record_id、context_records_version 和上述字段，不遗漏影响行为的字段。重新计算并比对 evidence_hash/context_hash 后再按既有流程绑定 target 并开放新增 evidence_id。RecognitionCall 的 worker 持有深拷贝，不能依赖 worker 修改 TaskContext 传播到协调器；初次提交和冷恢复均走相同重建函数。未确认结果、来源过期、scope/任务/策略不符或 hash 失配不能授予读取权，active_input_items 和模型提出的 ID 也不授予权限。原文及角色保留 target/binding/counterevidence，补证范围不能转成另开事实发现任务。请求词来自主体合格指称、谓词定义、词表及真实 missing_facets，不追加领域章节/字段优先词。
 
 拟将 EvidenceWorkQueue 的缺口选择拆成纯函数：
 
@@ -319,7 +329,7 @@ current_work 的主体、slot、plan、coverage 键按 data-model 改为含 scop
 
 同时扩展 `da/execution._validate_model_call_state()` 接受新协议并校验 attempt 单调、request_hash、assertion_generation 和 evidence_revision；内部字段沿用 data-model 所列既有名称。executor 当前多个 checkpoint/reservation 路径受 self.evidence_repair 门控，改为显式识别是否有冻结阶段协议；新工具协议启用同一屏障，但不能因此进入旧领域 repair 逻辑。持久化屏障失败不得继续发 HTTP。每次工具结果提交需要复核 call ID、上下文和来源版本；未知异常不会变成成功空结果。
 
-恢复先按 context_authorization_ref 读取已确认 RetrievalData 中的完整 ContextAuthorization；引用为 null 时使用冻结基础上下文。按 M07 从冻结 IR/RecordIndex 重建 TaskContext，校验任务/scope/来源/context_policy_hash、evidence_revision 和重算的 evidence_hash/context_hash；不能从 input 项或 worker 深拷贝反推授权，也不重新检索或遍历历史增量。随后加载 tool_calls_used 和 materialized_refs，按 result_ref 恢复当前所需卡片、物理提及和外部候选，按冻结规范化结果重建表示图；校验 id/content_hash/context_hash 与精确依赖，不重新执行已确认工具。未知名称/坏参数结果按 ToolObservation 的原始 ToolCall 与 ToolErrorResult 恢复，不要求错误调用匹配注册表。新的上下文只保留仍适用的引用，候选或依赖变化使旧 graph_ref 等失效。登记、授权引用和完成结果由同一协调器屏障确认，不出现已发送 ID 却未登记的状态。
+恢复先按 context_authorization_ref 读取已确认 ConfirmedRetrievalResult 内的完整 ContextAuthorization；引用为 null 时使用冻结基础上下文。按 M07 从冻结 IR/RecordIndex、同一组装策略和精确 subject 依赖重建 TaskContext，校验任务/scope/来源/context_policy_hash、evidence_revision 和重算的 evidence_hash/context_hash；不能从 input 项或 worker 深拷贝反推授权，也不重新检索或遍历历史增量。随后加载 tool_calls_used 和 materialized_refs，按 result_ref 恢复当前所需卡片、物理提及和外部候选，按冻结规范化结果重建表示图；校验 id/content_hash/context_hash 与精确依赖，不重新执行已确认工具。未知名称/坏参数结果按 ToolObservation 的原始 ToolCall 与 ToolErrorResult 恢复，不要求错误调用匹配注册表。新的上下文只保留仍适用的引用，候选或依赖变化使旧 graph_ref 等失效。登记、授权引用和完成结果由同一协调器屏障确认，不出现已发送 ID 却未登记的状态。
 
 组存储复用现有 JSON 域：`kind=relationship_group`、`work:relationship_groups`、`display:relationship_groups`。修改 write_work、restore_work、write_proofs、display_payload、rebuild_display、executor.current_work_changes 与恢复白名单；加 proof/selection/scope 的选区。只维护一份当前工作和最新展示缓存，按变更更新。
 

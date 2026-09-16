@@ -46,8 +46,8 @@
 - [模块计划](plan.md)：文件归属、拟新增签名、接入点和关键算法。
 - [Harness 设计](harness.md)：研发/运行两层边界、按需上下文、有界循环及失败反馈闭环。
 - [数据模型](data-model.md)：字段、引用、图谱组和状态不变量。
-- [工具契约](contracts/tool-contracts.md)、[函数定义](contracts/tools.json)、[阶段 Schema](contracts/stage-schemas.json)：编码输入。
+- [工具契约](contracts/tool-contracts.md)、[函数定义](contracts/tools.json)、[阶段 Schema](contracts/stage-schemas.json)、[控制输入 Schema](contracts/context-schemas.json)：编码输入。
 - [任务清单](tasks.md)、[验收步骤](quickstart.md)：依赖顺序、工程检查、真实 Qwen 和质量验收。
-- [Harness 相容性审查](harness-review.md)：当前设计的契约缺口、修订位置及验收反例；审查发现尚未修复。
+- [Harness 相容性审查](harness-review.md)：五项发现的原始依据、设计修订及验收入口；运行实现仍待开发。
 
 实现完成须通过必过工程边界和真实原生 Qwen 往返；质量提升须有固定参考、范围和预算下的独立评分。生产质量数值门槛由完成标注后的验收规范固定，不虚设已达到指标，也不阻断本设计内编码。

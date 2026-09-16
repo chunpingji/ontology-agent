@@ -1,0 +1,1141 @@
+{
+  "protocol_version": "ontology-tool-extraction-v1",
+  "note": "控制层输入 Schema，不是新增模型回答阶段。仅通过本地已注册制品解析 $ref，禁止联网解析；urn:ontology-tool-extraction:discovery 映射 stage-schemas.json 的 discovery 子对象；local_ref_map 是唯一允许动态键的局部引用映射。",
+  "verification_input": {
+    "type": "object",
+    "properties": {
+      "discovery_ref": {
+        "type": "string"
+      },
+      "claim_set_hash": {
+        "type": "string",
+        "pattern": "^[0-9a-f]{64}$"
+      },
+      "targets": {
+        "type": "array",
+        "items": {
+          "$ref": "context-schemas.json#/$defs/VerificationTargetSpec"
+        }
+      },
+      "claims": {
+        "type": "array",
+        "items": {
+          "$ref": "context-schemas.json#/$defs/VerificationClaimView"
+        }
+      },
+      "local_ref_map": {
+        "type": "object",
+        "additionalProperties": {
+          "$ref": "context-schemas.json#/$defs/VersionedRef"
+        }
+      },
+      "entity_dependencies": {
+        "type": "array",
+        "items": {
+          "$ref": "context-schemas.json#/$defs/EntityDependencyView"
+        }
+      },
+      "external_candidates": {
+        "type": "array",
+        "items": {
+          "$ref": "context-schemas.json#/$defs/ExternalCandidate"
+        }
+      },
+      "bridge_dependencies": {
+        "type": "array",
+        "items": {
+          "$ref": "context-schemas.json#/$defs/BridgeDependencyView"
+        }
+      },
+      "scope_resolutions": {
+        "type": "array",
+        "items": {
+          "$ref": "context-schemas.json#/$defs/VerificationScopeResolution"
+        }
+      },
+      "input_hash": {
+        "type": "string",
+        "pattern": "^[0-9a-f]{64}$"
+      }
+    },
+    "required": [
+      "discovery_ref",
+      "claim_set_hash",
+      "targets",
+      "claims",
+      "local_ref_map",
+      "entity_dependencies",
+      "external_candidates",
+      "bridge_dependencies",
+      "scope_resolutions",
+      "input_hash"
+    ],
+    "additionalProperties": false
+  },
+  "context_authorization": {
+    "type": "object",
+    "properties": {
+      "task_id": {
+        "type": "string"
+      },
+      "ir_identity": {
+        "$ref": "context-schemas.json#/$defs/IRIdentity"
+      },
+      "context_policy_hash": {
+        "type": "string",
+        "pattern": "^[0-9a-f]{64}$"
+      },
+      "record_ids": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "fragments": {
+        "type": "array",
+        "items": {
+          "$ref": "context-schemas.json#/$defs/AuthorizedFragment"
+        }
+      },
+      "bindings": {
+        "$ref": "context-schemas.json#/$defs/ContextBindingRefs"
+      },
+      "evidence_revision": {
+        "type": "integer",
+        "minimum": 1
+      },
+      "evidence_hash": {
+        "type": "string",
+        "pattern": "^[0-9a-f]{64}$"
+      },
+      "context_hash": {
+        "type": "string",
+        "pattern": "^[0-9a-f]{64}$"
+      }
+    },
+    "required": [
+      "task_id",
+      "ir_identity",
+      "context_policy_hash",
+      "record_ids",
+      "fragments",
+      "bindings",
+      "evidence_revision",
+      "evidence_hash",
+      "context_hash"
+    ],
+    "additionalProperties": false
+  },
+  "tool_protocol_error_observation": {
+    "type": "object",
+    "properties": {
+      "request_attempt": {
+        "type": "integer",
+        "minimum": 1
+      },
+      "call": {
+        "$ref": "context-schemas.json#/$defs/ToolCall"
+      },
+      "parsed_arguments": {
+        "type": "null"
+      },
+      "result_ref": {
+        "type": "string"
+      },
+      "result": {
+        "$ref": "context-schemas.json#/$defs/ToolErrorResult"
+      }
+    },
+    "required": [
+      "request_attempt",
+      "call",
+      "parsed_arguments",
+      "result_ref",
+      "result"
+    ],
+    "additionalProperties": false
+  },
+  "$defs": {
+    "VersionedRef": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "revision": {
+          "type": "integer",
+          "minimum": 1
+        }
+      },
+      "required": [
+        "id",
+        "revision"
+      ],
+      "additionalProperties": false
+    },
+    "IRIdentity": {
+      "type": "object",
+      "properties": {
+        "document_hash": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "parser_version": {
+          "type": "string"
+        },
+        "structure_hash": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        }
+      },
+      "required": [
+        "document_hash",
+        "parser_version",
+        "structure_hash"
+      ],
+      "additionalProperties": false
+    },
+    "ScopeMember": {
+      "type": "object",
+      "properties": {
+        "relation_ref": {
+          "$ref": "context-schemas.json#/$defs/VersionedRef"
+        },
+        "member_ref": {
+          "$ref": "context-schemas.json#/$defs/VersionedRef"
+        }
+      },
+      "required": [
+        "relation_ref",
+        "member_ref"
+      ],
+      "additionalProperties": false
+    },
+    "TraversalScope": {
+      "type": "object",
+      "properties": {
+        "scope_id": {
+          "type": "string"
+        },
+        "members": {
+          "type": "array",
+          "items": {
+            "$ref": "context-schemas.json#/$defs/ScopeMember"
+          }
+        }
+      },
+      "required": [
+        "scope_id",
+        "members"
+      ],
+      "additionalProperties": false
+    },
+    "EvidenceAnchor": {
+      "type": "object",
+      "properties": {
+        "document_hash": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "parser_version": {
+          "type": "string"
+        },
+        "structure_hash": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "evidence_id": {
+          "type": "string"
+        },
+        "section_node_id": {
+          "type": "string"
+        },
+        "block_id": {
+          "type": "string"
+        },
+        "paragraph_index": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "fragment_index": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "table_path": {
+          "anyOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "row_index": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "column_index": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "span_start": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "span_end": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "physical_page_number": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "document_hash",
+        "parser_version",
+        "structure_hash",
+        "evidence_id",
+        "section_node_id",
+        "block_id",
+        "paragraph_index",
+        "fragment_index",
+        "table_path",
+        "row_index",
+        "column_index",
+        "span_start",
+        "span_end",
+        "physical_page_number"
+      ],
+      "additionalProperties": false
+    },
+    "VerificationTargetSpec": {
+      "type": "object",
+      "properties": {
+        "target_id": {
+          "type": "string"
+        },
+        "target_kind": {
+          "type": "string",
+          "enum": [
+            "entity",
+            "property",
+            "relation",
+            "external_link"
+          ]
+        },
+        "content_hash": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "required_facets": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "target_id",
+        "target_kind",
+        "content_hash",
+        "required_facets"
+      ],
+      "additionalProperties": false
+    },
+    "EntityDependencyView": {
+      "type": "object",
+      "properties": {
+        "entity_ref": {
+          "$ref": "context-schemas.json#/$defs/VersionedRef"
+        },
+        "class_iri": {
+          "type": "string"
+        },
+        "grounding_kind": {
+          "type": "string",
+          "enum": [
+            "document_root",
+            "mention",
+            "record"
+          ]
+        },
+        "root_origin": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "proposal": {
+          "anyOf": [
+            {
+              "$ref": "urn:ontology-tool-extraction:discovery#/$defs/EntityProposal"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "source_refs": {
+          "type": "array",
+          "items": {
+            "$ref": "context-schemas.json#/$defs/EvidenceAnchor"
+          }
+        },
+        "dependency_refs": {
+          "type": "array",
+          "items": {
+            "$ref": "context-schemas.json#/$defs/VersionedRef"
+          }
+        },
+        "content_hash": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        }
+      },
+      "required": [
+        "entity_ref",
+        "class_iri",
+        "grounding_kind",
+        "root_origin",
+        "proposal",
+        "source_refs",
+        "dependency_refs",
+        "content_hash"
+      ],
+      "additionalProperties": false
+    },
+    "ExternalCandidate": {
+      "type": "object",
+      "properties": {
+        "candidate_id": {
+          "type": "string"
+        },
+        "source_id": {
+          "type": "string"
+        },
+        "system": {
+          "type": "string"
+        },
+        "dataset": {
+          "type": "string"
+        },
+        "record_key": {
+          "type": "string"
+        },
+        "record_version": {
+          "type": "string"
+        },
+        "class_iri": {
+          "type": "string"
+        },
+        "matches": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "predicate_iri": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "document_quote": {
+                "$ref": "urn:ontology-tool-extraction:discovery#/$defs/Quote"
+              },
+              "record_field": {
+                "type": "string"
+              },
+              "record_value": {
+                "type": "string"
+              },
+              "match_kind": {
+                "type": "string",
+                "enum": [
+                  "exact_key",
+                  "key_component",
+                  "name",
+                  "alias"
+                ]
+              }
+            },
+            "required": [
+              "predicate_iri",
+              "document_quote",
+              "record_field",
+              "record_value",
+              "match_kind"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "mapped_fields": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "predicate_iri": {
+                "type": "string"
+              },
+              "raw_value": {
+                "type": "string"
+              },
+              "datatype_iri": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "predicate_iri",
+              "raw_value",
+              "datatype_iri"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "metadata": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "value": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "name",
+              "value"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": [
+        "candidate_id",
+        "source_id",
+        "system",
+        "dataset",
+        "record_key",
+        "record_version",
+        "class_iri",
+        "matches",
+        "mapped_fields",
+        "metadata"
+      ],
+      "additionalProperties": false
+    },
+    "BridgeStepView": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": [
+            "referent_binding",
+            "owner_binding",
+            "predicate_assertion"
+          ]
+        },
+        "subject_ref": {
+          "$ref": "context-schemas.json#/$defs/VersionedRef"
+        },
+        "object_ref": {
+          "anyOf": [
+            {
+              "$ref": "context-schemas.json#/$defs/VersionedRef"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "predicate_iri": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "source_refs": {
+          "type": "array",
+          "items": {
+            "$ref": "context-schemas.json#/$defs/EvidenceAnchor"
+          }
+        }
+      },
+      "required": [
+        "kind",
+        "subject_ref",
+        "object_ref",
+        "predicate_iri",
+        "source_refs"
+      ],
+      "additionalProperties": false
+    },
+    "BridgeDependencyView": {
+      "type": "object",
+      "properties": {
+        "bridge_id": {
+          "type": "string"
+        },
+        "bridge_ref": {
+          "$ref": "context-schemas.json#/$defs/VersionedRef"
+        },
+        "bridge_kind": {
+          "type": "string"
+        },
+        "steps": {
+          "type": "array",
+          "items": {
+            "$ref": "context-schemas.json#/$defs/BridgeStepView"
+          }
+        },
+        "dependency_refs": {
+          "type": "array",
+          "items": {
+            "$ref": "context-schemas.json#/$defs/VersionedRef"
+          }
+        },
+        "content_hash": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        }
+      },
+      "required": [
+        "bridge_id",
+        "bridge_ref",
+        "bridge_kind",
+        "steps",
+        "dependency_refs",
+        "content_hash"
+      ],
+      "additionalProperties": false
+    },
+    "GroundedScopeQualifier": {
+      "type": "object",
+      "properties": {
+        "predicate_iri": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "text": {
+          "type": "string"
+        },
+        "evidence_refs": {
+          "type": "array",
+          "items": {
+            "$ref": "context-schemas.json#/$defs/EvidenceAnchor"
+          }
+        }
+      },
+      "required": [
+        "predicate_iri",
+        "text",
+        "evidence_refs"
+      ],
+      "additionalProperties": false
+    },
+    "VerificationScopeStep": {
+      "type": "object",
+      "properties": {
+        "relation_ref": {
+          "$ref": "context-schemas.json#/$defs/VersionedRef"
+        },
+        "member_ref": {
+          "$ref": "context-schemas.json#/$defs/VersionedRef"
+        },
+        "selection": {
+          "anyOf": [
+            {
+              "type": "string",
+              "enum": [
+                "all",
+                "one_of",
+                "alternatives",
+                "undetermined"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "polarity": {
+          "type": "string",
+          "enum": [
+            "affirmed",
+            "negated"
+          ]
+        },
+        "modality": {
+          "type": "string",
+          "enum": [
+            "asserted",
+            "required",
+            "possible",
+            "planned",
+            "unspecified"
+          ]
+        },
+        "conditions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "applicability": {
+          "type": "array",
+          "items": {
+            "$ref": "context-schemas.json#/$defs/GroundedScopeQualifier"
+          }
+        },
+        "evidence_refs": {
+          "type": "array",
+          "items": {
+            "$ref": "context-schemas.json#/$defs/EvidenceAnchor"
+          }
+        }
+      },
+      "required": [
+        "relation_ref",
+        "member_ref",
+        "selection",
+        "polarity",
+        "modality",
+        "conditions",
+        "applicability",
+        "evidence_refs"
+      ],
+      "additionalProperties": false
+    },
+    "VerificationScopeResolution": {
+      "type": "object",
+      "properties": {
+        "scope_id": {
+          "type": "string"
+        },
+        "steps": {
+          "type": "array",
+          "items": {
+            "$ref": "context-schemas.json#/$defs/VerificationScopeStep"
+          }
+        }
+      },
+      "required": [
+        "scope_id",
+        "steps"
+      ],
+      "additionalProperties": false
+    },
+    "AuthorizedFragment": {
+      "type": "object",
+      "properties": {
+        "record_id": {
+          "type": "string"
+        },
+        "evidence_id": {
+          "type": "string"
+        },
+        "span_start": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "span_end": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "role": {
+          "type": "string"
+        },
+        "fact_eligible": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "record_id",
+        "evidence_id",
+        "span_start",
+        "span_end",
+        "role",
+        "fact_eligible"
+      ],
+      "additionalProperties": false
+    },
+    "ContextBindingRefs": {
+      "type": "object",
+      "properties": {
+        "endpoint_evidence": {
+          "type": "array",
+          "items": {
+            "$ref": "context-schemas.json#/$defs/VersionedRef"
+          }
+        },
+        "proof_dependencies": {
+          "type": "array",
+          "items": {
+            "$ref": "context-schemas.json#/$defs/VersionedRef"
+          }
+        },
+        "competing_subject_refs": {
+          "type": "array",
+          "items": {
+            "$ref": "context-schemas.json#/$defs/VersionedRef"
+          }
+        },
+        "subject_evidence_refs": {
+          "type": "array",
+          "items": {
+            "$ref": "context-schemas.json#/$defs/EvidenceAnchor"
+          }
+        },
+        "owner_field_refs": {
+          "type": "array",
+          "items": {
+            "$ref": "context-schemas.json#/$defs/EvidenceAnchor"
+          }
+        },
+        "required_context_refs": {
+          "type": "array",
+          "items": {
+            "$ref": "context-schemas.json#/$defs/EvidenceAnchor"
+          }
+        },
+        "counterevidence_refs": {
+          "type": "array",
+          "items": {
+            "$ref": "context-schemas.json#/$defs/EvidenceAnchor"
+          }
+        },
+        "omitted_refs": {
+          "type": "array",
+          "items": {
+            "$ref": "context-schemas.json#/$defs/EvidenceAnchor"
+          }
+        }
+      },
+      "required": [
+        "endpoint_evidence",
+        "proof_dependencies",
+        "competing_subject_refs",
+        "subject_evidence_refs",
+        "owner_field_refs",
+        "required_context_refs",
+        "counterevidence_refs",
+        "omitted_refs"
+      ],
+      "additionalProperties": false
+    },
+    "ToolCall": {
+      "type": "object",
+      "properties": {
+        "call_id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "arguments_json": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "call_id",
+        "name",
+        "arguments_json"
+      ],
+      "additionalProperties": false
+    },
+    "ToolIssue": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "string"
+        },
+        "field_path": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "message": {
+          "type": "string"
+        },
+        "evidence_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "code",
+        "field_path",
+        "message",
+        "evidence_ids"
+      ],
+      "additionalProperties": false
+    },
+    "ToolErrorResult": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": [
+            "blocked",
+            "error"
+          ]
+        },
+        "data": {
+          "type": "null"
+        },
+        "evidence_refs": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "issues": {
+          "type": "array",
+          "items": {
+            "$ref": "context-schemas.json#/$defs/ToolIssue"
+          },
+          "minItems": 1
+        }
+      },
+      "required": [
+        "status",
+        "data",
+        "evidence_refs",
+        "issues"
+      ],
+      "additionalProperties": false
+    },
+    "VerificationClaimView": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "target_id": {
+              "type": "string"
+            },
+            "target_kind": {
+              "const": "entity"
+            },
+            "claim_ref": {
+              "$ref": "context-schemas.json#/$defs/VersionedRef"
+            },
+            "content_hash": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            },
+            "payload": {
+              "$ref": "urn:ontology-tool-extraction:discovery#/$defs/EntityProposal"
+            },
+            "scope": {
+              "$ref": "context-schemas.json#/$defs/TraversalScope"
+            },
+            "dependency_refs": {
+              "type": "array",
+              "items": {
+                "$ref": "context-schemas.json#/$defs/VersionedRef"
+              }
+            }
+          },
+          "required": [
+            "target_id",
+            "target_kind",
+            "claim_ref",
+            "content_hash",
+            "payload",
+            "scope",
+            "dependency_refs"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "target_id": {
+              "type": "string"
+            },
+            "target_kind": {
+              "const": "property"
+            },
+            "claim_ref": {
+              "$ref": "context-schemas.json#/$defs/VersionedRef"
+            },
+            "content_hash": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            },
+            "payload": {
+              "$ref": "urn:ontology-tool-extraction:discovery#/$defs/PropertyProposal"
+            },
+            "scope": {
+              "$ref": "context-schemas.json#/$defs/TraversalScope"
+            },
+            "dependency_refs": {
+              "type": "array",
+              "items": {
+                "$ref": "context-schemas.json#/$defs/VersionedRef"
+              }
+            }
+          },
+          "required": [
+            "target_id",
+            "target_kind",
+            "claim_ref",
+            "content_hash",
+            "payload",
+            "scope",
+            "dependency_refs"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "target_id": {
+              "type": "string"
+            },
+            "target_kind": {
+              "const": "relation"
+            },
+            "claim_ref": {
+              "$ref": "context-schemas.json#/$defs/VersionedRef"
+            },
+            "content_hash": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            },
+            "payload": {
+              "$ref": "urn:ontology-tool-extraction:discovery#/$defs/RelationProposal"
+            },
+            "scope": {
+              "$ref": "context-schemas.json#/$defs/TraversalScope"
+            },
+            "dependency_refs": {
+              "type": "array",
+              "items": {
+                "$ref": "context-schemas.json#/$defs/VersionedRef"
+              }
+            }
+          },
+          "required": [
+            "target_id",
+            "target_kind",
+            "claim_ref",
+            "content_hash",
+            "payload",
+            "scope",
+            "dependency_refs"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "target_id": {
+              "type": "string"
+            },
+            "target_kind": {
+              "const": "external_link"
+            },
+            "claim_ref": {
+              "$ref": "context-schemas.json#/$defs/VersionedRef"
+            },
+            "content_hash": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            },
+            "payload": {
+              "$ref": "urn:ontology-tool-extraction:discovery#/$defs/ExternalLinkProposal"
+            },
+            "scope": {
+              "$ref": "context-schemas.json#/$defs/TraversalScope"
+            },
+            "dependency_refs": {
+              "type": "array",
+              "items": {
+                "$ref": "context-schemas.json#/$defs/VersionedRef"
+              }
+            }
+          },
+          "required": [
+            "target_id",
+            "target_kind",
+            "claim_ref",
+            "content_hash",
+            "payload",
+            "scope",
+            "dependency_refs"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    }
+  }
+}

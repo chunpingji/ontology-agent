@@ -4,6 +4,21 @@
 
 研发任务从 [Harness 设计](harness.md)、[模块计划](plan.md) 和 [任务卡模板](tasks.md#每次提交的检查) 定位所需上下文。研发 Harness 的反馈是代码/契约/界面验收结果；运行 Harness 的反馈是 Qwen 工具结果、冻结声明和证明，两层不共用另一套任务状态或 Agent 框架。
 
+## 0. 当前可执行的设计制品检查
+
+仓库入口为 [check_design.py](check_design.py)，从脚本位置定位仓库根，不依赖当前工作目录或 `/tmp` 文件。环境为 Python 3.11+、`jsonschema==4.23.0`，依赖写在脚本的 PEP 723 元数据中；使用预先准备好该依赖的设计检查环境。脚本不联网、不自动安装依赖、不调用模型，不导入应用运行模块。本工作区实际使用已有系统 Python；backend/.venv 未安装此依赖，不能将其当作已准备好的设计检查环境。
+
+从仓库根运行：
+
+```bash
+python specs/027-ontology-extraction-engine-v2/check_design.py
+python specs/027-ontology-extraction-engine-v2/check_design.py --self-test
+```
+
+第一条检查本地 Schema、样例、完整 Responses 往返、核验声明/依赖/hash、授权恢复描述、工具可见性、链接、需求归属及任务依赖。第二条另在内存副本上验证非法输入和制品变异会被拒绝，不改仓库文件。错误须指出具体制品/字段；缺依赖必须明确失败，不能跳过后报告通过。外部 `$ref` 不触发网络读取，只允许显式注册的本地契约。
+
+控制层输入契约见 [context-schemas.json](contracts/context-schemas.json)，覆盖 verification_input、context_authorization 与分派前错误观察；它们不是新的模型输出阶段。下面的工程测试仍负责验证实际实现与制品同义，设计自检不能代替运行、暂停恢复或真实模型验收。
+
 ## 1. 环境与输入
 
 使用 backend/pyproject.toml、uv.lock 和已有环境。纯工程测试不下载权重；真实 GLiNER2.5 使用固定本地模型与兼容依赖，真实 Qwen 使用项目配置端点/模型。用户已确认 Qwen 支持 Responses，027 主协议固定为 Responses API；验收具体字段、严格参数、结构化输出和无状态续传，不把协议支持重新当成待猜测条件。旧 Chat Completions 仅做已有调用回归，新运行不建设双栈/回退。确认必需工具可用，缺项明确报告；不得把关闭 NER 作为“完整工具方案通过”。不重启共享后端来替代隔离验证。
@@ -159,4 +174,8 @@ capabilities.json 固定 api_protocol=responses，记录实际工具 strict、�
 
 **历史 Chat 协议、Harness 修订后记录**：10 个工具参数/2 个阶段 Schema、12 份有效输入、36 个非法输入反例、18 个逐字引用及 3 个核验目标集合仍通过；96 处本地链接可解析，26 项任务依赖无环。另检查 11 段 Python 接口示意的语法，以及新增错误反馈的调用 ID、参数、field_path 与阻断结果配对。git diff --check 通过。以上均为当时设计制品检查，没有执行目标运行循环、工程/浏览器测试或真实模型，也不证明本次 Responses 契约已通过。
 
-**本次 Responses 协议修订记录**：2026-09-16 使用系统 Python 与 jsonschema 检查：3 个 JSON 文件可解析；10 个工具参数 Schema、2 个阶段 Schema 合法，25 个对象定义均禁止额外字段并列全 required；12 份有效输入通过，36 个缺字段/额外字段/错类型反例被拒绝。18 个逐字引用、3 个核验目标集合、98 处本地链接及 26 项无环任务依赖通过检查。另核对 1 组 Responses 合成请求、完整 output 项、function_call_output 与本地完整 input 续传，阶段 text.format 的 Schema 与制品一致；1 组错误反馈的 call_id、参数、field_path 与阻断结果配对通过。11 段 Python 接口示意可解析，git diff --check 通过。本次只验证设计制品，未实施运行代码，未执行工程/浏览器测试或真实 Qwen、GLiNER 调用；项目 Qwen 支持 Responses 以用户确认为设计前提，具体字段兼容仍须按上述接通验收执行。
+**历史 Responses 协议、审查修复前记录**：2026-09-16 使用系统 Python 与 jsonschema 检查：3 个 JSON 文件可解析；10 个工具参数 Schema、2 个阶段 Schema 合法，25 个对象定义均禁止额外字段并列全 required；12 份有效输入通过，36 个缺字段/额外字段/错类型反例被拒绝。18 个逐字引用、3 个核验目标集合、98 处本地链接及 26 项无环任务依赖通过检查。另核对 1 组 Responses 合成请求、完整 output 项、function_call_output 与本地完整 input 续传，阶段 text.format 的 Schema 与制品一致；1 组错误反馈的 call_id、参数、field_path 与阻断结果配对通过。11 段 Python 接口示意可解析，git diff --check 通过。当时只验证设计制品，未实施运行代码，未执行工程/浏览器测试或真实 Qwen、GLiNER 调用；项目 Qwen 支持 Responses 以用户确认为设计前提，具体字段兼容仍须按上述接通验收执行。
+
+**本次 Harness 审查修复记录**：2026-09-16 实际执行 `python specs/027-ontology-extraction-engine-v2/check_design.py --self-test` 通过。4 个 JSON 文件、10 个工具参数 Schema、2 个阶段输出 Schema、3 个控制输入 Schema、53 个封闭对象定义及 1 个类型化动态引用映射通过；12 份有效输入通过，36 个参数/阶段 Schema 反例被拒绝。完整 discovery 往返、独立 verification 请求及 3 个目标、2 类错误保存恢复与 2 次纠正、1 个检索授权重建样例通过；模型可见目录为 8 项、控制器独占 2 项。15 项制品变异被预期检查拒绝，包含缺声明内容、过期 hash、重算 hash 后仍悬空的实体引用、call_id 失配、错误反馈空 issues、授权升级、悬空链接和任务环；另有 3 项表头单位 hash 检查通过，3 种非标准 JSON 常量被拒绝。27 个逐字引用、132 处本地文件链接、11 段 Python 接口示意、18 个需求到 13 个模块的归属及 26 项无环任务依赖通过。
+
+实际执行 `backend/.venv/bin/ruff check --config backend/pyproject.toml specs/027-ontology-extraction-engine-v2/check_design.py` 和 `git diff --check` 均通过。独立检查器从其他工作目录运行也通过，缺少 jsonschema 的环境明确退出；本次未安装依赖。以上是设计制品和检查器验收，不是运行引擎、暂停恢复实现或真实 Qwen/GLiNER 的通过记录；26 项开发任务保持待实施。

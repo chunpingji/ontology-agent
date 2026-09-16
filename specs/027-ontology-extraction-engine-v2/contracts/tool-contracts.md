@@ -50,7 +50,7 @@ Harness 的错误反馈必须可定位和行动：field_path 仅指本次模型�
 
 实现后由同一类型/静态注册表导出函数定义及本地结果 Schema，与本规范参数和示例检查同义；description 可调整，字段、required、nullable、枚举和额外字段限制不得静默漂移。ToolCall/ToolObservation 的权威字段见 data-model 第 9 节；它们保留原始 name:str、arguments_json:str 及可空的类型化 parsed_arguments，不增加持久化实体。
 
-完整 Responses 批次通过调用身份检查后，先保存原始 ToolCall，再查注册表/白名单和解析参数。未知函数或非法 JSON/字段产生 ToolErrorResult：data=null、issues 非空；无法定位到参数字段时 field_path=null。这类调用的 parsed_arguments=null，恢复时加载原始调用和统一错误类型，不再次强制将未知名称转为 ToolName 或将坏 JSON 转成参数模型。合法调用及其执行失败仍按注册表保留已验证参数和对应具体结果类型。ToolErrorResult 不替代所有工具结果的类型检查。
+完整 Responses 批次通过调用身份检查后，先保存原始 ToolCall，再查注册表/白名单和解析参数。未知函数、model_callable/阶段拒绝或非法 JSON/字段产生 ToolErrorResult：data=null、issues 非空；无法定位到参数字段时 field_path=null。这类调用的 parsed_arguments=null，恢复时加载原始调用和统一错误类型，不再次强制将未知名称转为 ToolName 或将坏 JSON 转成参数模型。合法调用及其执行失败仍按注册表保留已验证参数和对应具体结果类型。ToolErrorResult 不替代所有工具结果的类型检查。
 
 拟新增 `ToolContext` 为只读运行时依赖集合：`task, context, index, ontology, menu, cards, frozen_claims, semantic_decisions, materialized_refs, mention_index, external_candidates, representation_graphs, instance_reader, mention_extractor, vocabulary, limits, check_cancelled`。其中 index 等读取对象使用隔离副本或不可变视图；不包含 SQLAlchemy Session、运行仓库写入口或业务提交服务。模型看不到该对象。
 
@@ -145,6 +145,8 @@ def to_function_call_output(call_id: str, result: ToolResult) -> dict: ...
 - Data `RetrievalData`：`record_ids:list[str], evidence_ids:list[str], context_hash:str, new_evidence:bool, coverage:{examined_records:list[str],unattempted_records:list[str],stop_reason:str|null}`。
 - 复用 SubjectSlotQuery、RecordIndex、摘要/精排及 EvidenceWorkQueue；不按章节名或具体谓词决定目的地。保持完整逻辑记录、已知反证及竞争 owner。
 - 新记录必须先通过协调器确认权限、上下文 hash 和引用表更新，再向后续工具/模型开放。工具不直接改变全局 coverage；同记录补验不重复增加 examined。无新增来源时 no_match。
+- 确认检索结果使用既有结果域中的内部外壳 `ConfirmedRetrievalResult={result:ToolResult[RetrievalData],authorization:ContextAuthorization}`；模型只收到 result，authorization 的唯一字段定义在 [data-model.md](../data-model.md)。描述覆盖当前完整授权集合的坐标、角色、fact_eligible、归属/反证绑定及冻结身份，不保存全文，也不形成恢复时逐项遍历的增量链。无新增或失败的检索不能替换当前授权；内部外壳仅用于已获协调器确认的有效上下文。
+- 现有协调器在同一确认边界保存该结果并更新唯一 `context_authorization_ref`，之后才开放新引用；恢复从这条当前结果、冻结 IR/RecordIndex、同一 context_policy_hash 对应策略及精确主体依赖重建 TaskContext。field_bindings 与 subject_label 按冻结输入重新派生，重算完整 context_hash/evidence_hash 并比较。初始引用为 null 时使用冻结基础上下文，不从 active_input_items 或工具参数授予权限、不重新检索可变来源。权限恢复失败以 context_authorization_mismatch 阻断继续。
 
 ### propose_repair
 

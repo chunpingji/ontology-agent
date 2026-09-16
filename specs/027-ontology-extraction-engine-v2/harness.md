@@ -84,12 +84,14 @@ flowchart TD
 | 工具结果 | 原始 ToolCall + 可空 parsed_arguments + 类型化 result；非法调用也能反馈和恢复，合法引用已经登记 |
 | 校验反馈 | 失败 code、字段位置、目标/维度和可访问证据；解释缺口，不给出评测答案 |
 
-`ModelContextView` 是现有 TaskContext、protocol、卡片和已确认工具结果的派生视图。只在构建请求时生成；当前 active_instructions、active_input_items 和引用映射继续承担暂停所需状态，不新增工作副本。它们保存协议内容，不承担证据授权来源职责。检索后的当前权限仅从 context_authorization_ref 指向的已确认 RetrievalData 内 ContextAuthorization 和冻结 IR/RecordIndex 重建；描述包含完整当前位置、角色、权限、绑定与 hash，不含全文，不沿历史增量链合成。引用为 null 时从冻结基础上下文构建。类型与签名见 plan M07。
+`ModelContextView` 是现有 TaskContext、protocol、卡片和已确认工具结果的派生视图。只在构建请求时生成；当前 active_instructions、active_input_items 和引用映射继续承担暂停所需状态，不新增工作副本。它们保存协议内容，不承担证据授权来源职责。检索后的当前权限仅从 context_authorization_ref 指向的已确认 ConfirmedRetrievalResult.authorization 和冻结 IR/RecordIndex 重建，模型只接收该外壳中的 result。授权描述包含完整当前位置、角色、权限、绑定与 hash，不含全文，不沿历史增量链合成。引用为 null 时从冻结基础上下文构建。类型与签名见 plan M07。
+
+上下文 hash 重建使用协调器按同一 run_fingerprint 和初次组装目标工厂派生的 target_seed，尚未绑定 context_hash；不能直接用已返回 TaskContext.target 再计算。该输入由既有冻结运行派生，不新增目标存储或模型权限。
 
 输入项装配规则：
 
 1. 摘要、NER 标签、外部元数据与原文分别标注角色；只有满足授权和回放的原文才能进入文档声明证明。
-2. 所有工具均输出可解析 ID。未显示的记录须经 retrieve/inspect 的授权路径读取；摘要提到某记录不自动授予引用权限。检索结果及 context_authorization_ref 经协调器同一屏障确认后，以冻结 IR、context_policy_hash、任务/scope 和重算的 evidence_hash/context_hash 校验并重建 TaskContext；首次开放和暂停继续采用同一函数。worker 深拷贝内的修改、未确认检索、过期来源或模型输入中的 ID 都不能扩大权限。
+2. 所有工具均输出可解析 ID。未显示的记录须经 retrieve/inspect 的授权路径读取；摘要提到某记录不自动授予引用权限。检索结果及 context_authorization_ref 经协调器同一屏障确认后，以冻结 IR、同一组装策略、精确 subject 依赖、任务/scope 和重算的 context_policy_hash/evidence_hash/context_hash 校验并重建 TaskContext；field_bindings/subject_label 从对应冻结来源派生，首次开放和暂停继续采用同一函数。策略和 hash 不能由模型指定；worker 深拷贝内的修改、未确认检索、过期来源或模型输入中的 ID 都不能扩大权限。
 3. 阶段内完整保留每次返回的有序 output items，再追加每个 function_call 对应的 function_call_output。配对键为 call_id，不是 output item.id；工具反馈 output 为结果 JSON 字符串。不删去半个调用批次或其他协议项省 token，重复静态说明在首次装配时消除。
 4. 实际返回的 reasoning/encrypted 内容作为不透明协议项保存并在同阶段续传，不解释、不改写、不展示为证据；只在端点能力确认后发送对应 include。核验阶段按已确认 discovery_ref 构建 VerificationInput，包含完整声明 payload、目标/维度及所需实体、外部候选、桥接、scope 依赖，再结合授权原文重新建上下文；不继承生成阶段自评分和 reasoning。缺声明内容、hash 不匹配或未经授权的依赖必须阻止请求，不能只发送 opaque ID/hash 后让模型重新猜测候选。
 5. 请求总量计入 instructions、完整当前阶段 input items、工具 Schema、text.format Schema 和预留输出。必需原文/反证无法保真容纳时返回 deferred/context_budget_exceeded，并保留覆盖缺口。
@@ -104,7 +106,7 @@ flowchart TD
 
 ### 5.1 本轮决策
 
-`plan_model_turn()` 在每个模型请求前生成 TurnPlan：tools、answer 或 stop。它读取协调器已经预留的账本余量、当前阶段、可用工具和已确认结果；不反复读取 TaskContext 的初始额度快照，未知结局仍占额度。可用工具已经按模型调用者与阶段/recovery mode 筛选，不含 validate_metric/validate_graph；finalize 固定 stop。函数不发模型请求，也不持久化另一个计划。
+`plan_model_turn()` 在每个模型请求前生成 TurnPlan：tools、answer 或 stop。它读取协调器已经预留的账本余量、当前阶段、可用工具和已确认结果；不反复读取 TaskContext 的初始额度快照，未知结局仍占额度。可用工具已经按模型调用者与阶段/recovery mode 筛选，不含 validate_metric/validate_graph；finalize 不调用该函数，由控制器直接执行必检。函数不发模型请求，也不持久化另一个计划。
 
 | 当前情况 | 下一步 |
 |---|---|
@@ -123,7 +125,7 @@ flowchart TD
 
 同一 lineage 仍至多 4 次模型请求，包括工具选择、错误纠正、候选、核验与恢复。第二个 discovery 工具轮只有在仍可保留两次底额时允许。依赖上一工具新 ID 的调用必须由后续模型轮生成，不能服务端改写参数拼接。参数错误等反馈可在剩余额度内处理，不能在客户端暗中重试。
 
-“无进展”在整批合法调用都有结果后，按当前结果里的工具名、规范化参数、context/dependency 身份及是否产生新材料判定；第一次 no_match 不等于全文无事实，也不阻断其他有用工具。首个参数错误也保留预算内纠正机会。重复观察只影响可选工具继续策略；已有完整 response 和配对 function_call_output 结果、当前引用足够作判断，不增加长期循环日志或缓存平台。
+“无进展”在本批全部合法 call_id 都有结果后，按当前结果里的工具名、参数、context/dependency 身份及是否产生新材料判定：合法参数使用规范化值，未知函数/未解析参数使用原始 name/arguments_json 与错误 code，不伪造已解析参数。第一次 no_match 不等于全文无事实，也不阻断其他有用工具。首个参数错误也保留预算内纠正机会。重复观察只影响可选工具继续策略；已有完整 response 和配对 function_call_output 结果、当前引用足够作判断，不增加长期循环日志或缓存平台。
 
 ### 5.2 必检和一次恢复
 
