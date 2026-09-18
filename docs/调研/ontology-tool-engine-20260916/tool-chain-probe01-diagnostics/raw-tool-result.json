@@ -1,0 +1,311 @@
+{
+  "status": "ok",
+  "data": {
+    "mentions": [
+      {
+        "mention_ref": "c4868d712db93185f50b1cf759990e43ecdea3c780caa6f855fc9babb440e2e8",
+        "evidence_id": "7af9c911fa84ccf07f9423a0d7faa580704ee3ecd1b704ef6100878d89b87cb4",
+        "start": 0,
+        "end": 8,
+        "text": "HRS-1597",
+        "class_iris": [
+          "https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport"
+        ],
+        "predicate_iris": [],
+        "role": "entity",
+        "score": 0.8355191349983215
+      },
+      {
+        "mention_ref": "c4868d712db93185f50b1cf759990e43ecdea3c780caa6f855fc9babb440e2e8",
+        "evidence_id": "7af9c911fa84ccf07f9423a0d7faa580704ee3ecd1b704ef6100878d89b87cb4",
+        "start": 0,
+        "end": 8,
+        "text": "HRS-1597",
+        "class_iris": [],
+        "predicate_iris": [
+          "https://ontology.pharma-gmp.cn/slpra/drug-development/usesEquipment"
+        ],
+        "role": "field_label",
+        "score": 0.9153101444244385
+      },
+      {
+        "mention_ref": "db3061b88193c1bec4dbce71881263452609fd85e62fd32a152580fe7b66a5df",
+        "evidence_id": "e3b9600f70eb6ff186066a7c5270b4fd63c782f3f3e51dfcee1333950be19138",
+        "start": 0,
+        "end": 11,
+        "text": "C23H28N6O5S",
+        "class_iris": [
+          "https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport"
+        ],
+        "predicate_iris": [],
+        "role": "entity",
+        "score": 0.9303841590881348
+      },
+      {
+        "mention_ref": "db3061b88193c1bec4dbce71881263452609fd85e62fd32a152580fe7b66a5df",
+        "evidence_id": "e3b9600f70eb6ff186066a7c5270b4fd63c782f3f3e51dfcee1333950be19138",
+        "start": 0,
+        "end": 11,
+        "text": "C23H28N6O5S",
+        "class_iris": [],
+        "predicate_iris": [
+          "https://ontology.pharma-gmp.cn/slpra/drug-development/usesEquipment"
+        ],
+        "role": "field_label",
+        "score": 0.9604722261428833
+      },
+      {
+        "mention_ref": "0f1e7f09b7658178382977453525bd27725cb63acba6f61b92a9726ee1486809",
+        "evidence_id": "2ec5433c97df365f29c65c63357a84038a339efeaaf1fa84507a52e8eaeaf198",
+        "start": 0,
+        "end": 8,
+        "text": "HRS-1597",
+        "class_iris": [],
+        "predicate_iris": [
+          "https://ontology.pharma-gmp.cn/slpra/drug-development/usesEquipment"
+        ],
+        "role": "field_label",
+        "score": 0.8069041967391968
+      },
+      {
+        "mention_ref": "d430a65fa13f58e7f9761bbbf63517e84941a7a423e1d5a6dc381c45ab25a03e",
+        "evidence_id": "16438631527487298ec0944d6b00559c2dbb71c7e9387096dd808d8c26ccaeda",
+        "start": 0,
+        "end": 7,
+        "text": "RE64611",
+        "class_iris": [
+          "https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport"
+        ],
+        "predicate_iris": [],
+        "role": "entity",
+        "score": 0.8201066851615906
+      },
+      {
+        "mention_ref": "d430a65fa13f58e7f9761bbbf63517e84941a7a423e1d5a6dc381c45ab25a03e",
+        "evidence_id": "16438631527487298ec0944d6b00559c2dbb71c7e9387096dd808d8c26ccaeda",
+        "start": 0,
+        "end": 7,
+        "text": "RE64611",
+        "class_iris": [],
+        "predicate_iris": [
+          "https://ontology.pharma-gmp.cn/slpra/drug-development/usesEquipment"
+        ],
+        "role": "field_label",
+        "score": 0.9403574466705322
+      }
+    ],
+    "coverage": {
+      "requested_units": [
+        "7af9c911fa84ccf07f9423a0d7faa580704ee3ecd1b704ef6100878d89b87cb4",
+        "a19a42e1371bfb33bc3b3d29fab8aed3fc81e1688b8adf5487d5df8d4cc7acf3",
+        "16438631527487298ec0944d6b00559c2dbb71c7e9387096dd808d8c26ccaeda",
+        "ecb41123f3fbbdd3370fa83d7f296bd13e8ca0f3012aec14f1086ec29e6aee49",
+        "1629570ef6fb2b20416ed0d110a760db5cf4869f8c707a8a03c660b8cae76cf2",
+        "67b6e4633c5a397f03e459aeb046364a02fe07ae17503078d05557adc7db864f",
+        "653506c24cc382a0afd0fa90bde189c5c235fd6890b88dc37ded8bb7ce759167",
+        "2ec5433c97df365f29c65c63357a84038a339efeaaf1fa84507a52e8eaeaf198",
+        "5fed0c4a45b772a428ad0fc641bf81015e62516bd9a1d0b5e9c2832f438611e4",
+        "0135b815abaf6d8c4088e1f080b85d8540fe77bd89135124414596a2fcfcfd9b",
+        "e3b9600f70eb6ff186066a7c5270b4fd63c782f3f3e51dfcee1333950be19138",
+        "1d8949662d0c2fb6e7812de5a376d223aae8ed237607ce18778465d10269db9e",
+        "dfb28928e5670944301d0d1fdc0b06dd252d266a781d0a6ee66e5156da202268",
+        "abd57615a899dbd5b0e5786ae51e4e33562b6637e531950ee821db4ab8d03e0f"
+      ],
+      "processed_units": [
+        "7af9c911fa84ccf07f9423a0d7faa580704ee3ecd1b704ef6100878d89b87cb4",
+        "a19a42e1371bfb33bc3b3d29fab8aed3fc81e1688b8adf5487d5df8d4cc7acf3",
+        "16438631527487298ec0944d6b00559c2dbb71c7e9387096dd808d8c26ccaeda",
+        "ecb41123f3fbbdd3370fa83d7f296bd13e8ca0f3012aec14f1086ec29e6aee49",
+        "1629570ef6fb2b20416ed0d110a760db5cf4869f8c707a8a03c660b8cae76cf2",
+        "67b6e4633c5a397f03e459aeb046364a02fe07ae17503078d05557adc7db864f",
+        "653506c24cc382a0afd0fa90bde189c5c235fd6890b88dc37ded8bb7ce759167",
+        "2ec5433c97df365f29c65c63357a84038a339efeaaf1fa84507a52e8eaeaf198",
+        "5fed0c4a45b772a428ad0fc641bf81015e62516bd9a1d0b5e9c2832f438611e4",
+        "0135b815abaf6d8c4088e1f080b85d8540fe77bd89135124414596a2fcfcfd9b",
+        "e3b9600f70eb6ff186066a7c5270b4fd63c782f3f3e51dfcee1333950be19138",
+        "1d8949662d0c2fb6e7812de5a376d223aae8ed237607ce18778465d10269db9e",
+        "dfb28928e5670944301d0d1fdc0b06dd252d266a781d0a6ee66e5156da202268",
+        "abd57615a899dbd5b0e5786ae51e4e33562b6637e531950ee821db4ab8d03e0f"
+      ],
+      "unprocessed_units": []
+    },
+    "limits": {
+      "labels_per_batch": 8,
+      "window_chars": 160,
+      "overlap_chars": 24,
+      "word_limit": 160,
+      "encoder_token_limit": 512,
+      "candidate_pool_limit": 192,
+      "max_returned_mentions": 64
+    },
+    "omissions": [
+      {
+        "code": "definition_missing",
+        "field_path": null,
+        "message": "检查未通过：definition_missing；请核对当前授权引用和参数。",
+        "evidence_ids": []
+      },
+      {
+        "code": "definition_missing",
+        "field_path": null,
+        "message": "检查未通过：definition_missing；请核对当前授权引用和参数。",
+        "evidence_ids": []
+      },
+      {
+        "code": "definition_missing",
+        "field_path": null,
+        "message": "检查未通过：definition_missing；请核对当前授权引用和参数。",
+        "evidence_ids": []
+      },
+      {
+        "code": "definition_missing",
+        "field_path": null,
+        "message": "检查未通过：definition_missing；请核对当前授权引用和参数。",
+        "evidence_ids": []
+      },
+      {
+        "code": "definition_missing",
+        "field_path": null,
+        "message": "检查未通过：definition_missing；请核对当前授权引用和参数。",
+        "evidence_ids": []
+      },
+      {
+        "code": "definition_missing",
+        "field_path": null,
+        "message": "检查未通过：definition_missing；请核对当前授权引用和参数。",
+        "evidence_ids": []
+      },
+      {
+        "code": "definition_missing",
+        "field_path": null,
+        "message": "检查未通过：definition_missing；请核对当前授权引用和参数。",
+        "evidence_ids": []
+      },
+      {
+        "code": "definition_missing",
+        "field_path": null,
+        "message": "检查未通过：definition_missing；请核对当前授权引用和参数。",
+        "evidence_ids": []
+      },
+      {
+        "code": "definition_missing",
+        "field_path": null,
+        "message": "检查未通过：definition_missing；请核对当前授权引用和参数。",
+        "evidence_ids": []
+      },
+      {
+        "code": "definition_missing",
+        "field_path": null,
+        "message": "检查未通过：definition_missing；请核对当前授权引用和参数。",
+        "evidence_ids": []
+      },
+      {
+        "code": "definition_missing",
+        "field_path": null,
+        "message": "检查未通过：definition_missing；请核对当前授权引用和参数。",
+        "evidence_ids": []
+      },
+      {
+        "code": "definition_missing",
+        "field_path": null,
+        "message": "检查未通过：definition_missing；请核对当前授权引用和参数。",
+        "evidence_ids": []
+      },
+      {
+        "code": "definition_missing",
+        "field_path": null,
+        "message": "检查未通过：definition_missing；请核对当前授权引用和参数。",
+        "evidence_ids": []
+      },
+      {
+        "code": "definition_missing",
+        "field_path": null,
+        "message": "检查未通过：definition_missing；请核对当前授权引用和参数。",
+        "evidence_ids": []
+      },
+      {
+        "code": "definition_missing",
+        "field_path": null,
+        "message": "检查未通过：definition_missing；请核对当前授权引用和参数。",
+        "evidence_ids": []
+      },
+      {
+        "code": "definition_missing",
+        "field_path": null,
+        "message": "检查未通过：definition_missing；请核对当前授权引用和参数。",
+        "evidence_ids": []
+      },
+      {
+        "code": "definition_missing",
+        "field_path": null,
+        "message": "检查未通过：definition_missing；请核对当前授权引用和参数。",
+        "evidence_ids": []
+      },
+      {
+        "code": "definition_missing",
+        "field_path": null,
+        "message": "检查未通过：definition_missing；请核对当前授权引用和参数。",
+        "evidence_ids": []
+      },
+      {
+        "code": "definition_missing",
+        "field_path": null,
+        "message": "检查未通过：definition_missing；请核对当前授权引用和参数。",
+        "evidence_ids": []
+      },
+      {
+        "code": "definition_missing",
+        "field_path": null,
+        "message": "检查未通过：definition_missing；请核对当前授权引用和参数。",
+        "evidence_ids": []
+      },
+      {
+        "code": "definition_missing",
+        "field_path": null,
+        "message": "检查未通过：definition_missing；请核对当前授权引用和参数。",
+        "evidence_ids": []
+      },
+      {
+        "code": "definition_missing",
+        "field_path": null,
+        "message": "检查未通过：definition_missing；请核对当前授权引用和参数。",
+        "evidence_ids": []
+      },
+      {
+        "code": "definition_missing",
+        "field_path": null,
+        "message": "检查未通过：definition_missing；请核对当前授权引用和参数。",
+        "evidence_ids": []
+      },
+      {
+        "code": "definition_missing",
+        "field_path": null,
+        "message": "检查未通过：definition_missing；请核对当前授权引用和参数。",
+        "evidence_ids": []
+      },
+      {
+        "code": "definition_missing",
+        "field_path": null,
+        "message": "检查未通过：definition_missing；请核对当前授权引用和参数。",
+        "evidence_ids": []
+      }
+    ]
+  },
+  "evidence_refs": [
+    "7af9c911fa84ccf07f9423a0d7faa580704ee3ecd1b704ef6100878d89b87cb4",
+    "a19a42e1371bfb33bc3b3d29fab8aed3fc81e1688b8adf5487d5df8d4cc7acf3",
+    "16438631527487298ec0944d6b00559c2dbb71c7e9387096dd808d8c26ccaeda",
+    "ecb41123f3fbbdd3370fa83d7f296bd13e8ca0f3012aec14f1086ec29e6aee49",
+    "1629570ef6fb2b20416ed0d110a760db5cf4869f8c707a8a03c660b8cae76cf2",
+    "67b6e4633c5a397f03e459aeb046364a02fe07ae17503078d05557adc7db864f",
+    "653506c24cc382a0afd0fa90bde189c5c235fd6890b88dc37ded8bb7ce759167",
+    "2ec5433c97df365f29c65c63357a84038a339efeaaf1fa84507a52e8eaeaf198",
+    "5fed0c4a45b772a428ad0fc641bf81015e62516bd9a1d0b5e9c2832f438611e4",
+    "0135b815abaf6d8c4088e1f080b85d8540fe77bd89135124414596a2fcfcfd9b",
+    "e3b9600f70eb6ff186066a7c5270b4fd63c782f3f3e51dfcee1333950be19138",
+    "1d8949662d0c2fb6e7812de5a376d223aae8ed237607ce18778465d10269db9e",
+    "dfb28928e5670944301d0d1fdc0b06dd252d266a781d0a6ee66e5156da202268",
+    "abd57615a899dbd5b0e5786ae51e4e33562b6637e531950ee821db4ab8d03e0f"
+  ],
+  "issues": []
+}

@@ -98,10 +98,12 @@ def test_failed_model_projection_does_not_approve_the_previous_runtime_schema(
         == 200
     )
 
-    def fail(*args):
+    def fail(*args, **kwargs):
         raise RuntimeError("projection unavailable")
 
     monkeypatch.setattr(fake_engine, "project_entities", fail)
     response = client.post(f"{ONTO}/releases/{identity}/publish", headers=analyst_headers)
-    assert response.status_code == 200  # Existing release workflow is preserved.
-    assert db.get(OntologyRelease, UUID(identity)).semantic_snapshot_ref is None
+    assert response.status_code == 409
+    release = db.get(OntologyRelease, UUID(identity))
+    assert release.status == "in_review"
+    assert release.semantic_snapshot_ref is None

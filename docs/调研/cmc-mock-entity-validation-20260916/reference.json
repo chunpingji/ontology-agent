@@ -1,0 +1,4227 @@
+{
+  "reference_version": "cmc-equipment-assistant-reference-v1",
+  "authority": "Hand-reviewed assistant reference, not expert-adjudicated gold and not a full graph gold set.",
+  "blindness": "Prepared from the full IR and static Mock archive before this round of predictions. No future prediction or retrieval-selection artifact was read.",
+  "recognition_input_policy": "Evaluation only. This reference must not enter prompts, retrieval selection, tools, or recognition inputs.",
+  "source": {
+    "document_ref": "upload-23c872fb-3ab1-41de-a705-dd4b162dfa09",
+    "ir_path": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-summary-retrieval-20260916/completed/ir.json",
+    "ir_file_sha256": "858dddbb762217ede057ed85e659bb6d0349fc90e0c936fbf42756859c882134",
+    "analysis_id": "5f6992c2a638b88af184de4d32753e2b8612a45210bb3056e736dca810aed934",
+    "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+    "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+    "title": "HRXS-P-2419(HRS-1597)",
+    "all_ir_units_reviewed": 447,
+    "raw_text_characters": 5398,
+    "mock_path": "/opt/dev/chen/ontology-agent/backend/app/resources/equipment_archive.json",
+    "mock_file_sha256": "7cd6148df2575179441e44e68ed8d6f5c7bdcfa7dd7f10ac4391686fb1c9fa35",
+    "mock_entry_count": 211,
+    "mock_unique_identifier_count": 211
+  },
+  "summary": {
+    "distinct_explicit_equipment_ids": 6,
+    "identifier_mention_occurrences": 18,
+    "mention_occurrences_by_context": {
+      "process": 6,
+      "cleaning": 6,
+      "requirements": 6
+    },
+    "equipment_requirement_rows": 5,
+    "alternative_groups": 1,
+    "archive_exact_matches": 5,
+    "archive_not_found": [
+      "DE64603"
+    ],
+    "actual_attribute_value_discrepancies": 1,
+    "strict_semantic_attribute_contradictions_proven": 0
+  },
+  "equipment_id_mentions": [
+    {
+      "mention_id": "equipment-id-67-12",
+      "equipment_id": "RE64611",
+      "source": {
+        "unit_index": 67,
+        "quote": "RE64611",
+        "anchor": {
+          "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+          "parser_version": "4",
+          "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+          "evidence_id": "332f40090c06eff4f9c04e9d2de846cf6dc7e535341ae6a246ccaec1fb376310",
+          "section_node_id": "section:67",
+          "block_id": "table:0",
+          "paragraph_index": 0,
+          "fragment_index": 0,
+          "table_path": [
+            "table:0"
+          ],
+          "row_index": 0,
+          "column_index": 1,
+          "span_start": 12,
+          "span_end": 19,
+          "physical_page_number": 5
+        }
+      },
+      "context": {
+        "unit_index": 67,
+        "quote": "步骤一：200L反应釜（RE64611）内加入AR级别丙酮(丙酮投料量/L= HRS-1597粗品投入量/kg×13.5*0.79)和纯化水(纯化水投料量/L= HRS-1597粗品投入量/kg×1.5*1)，氮气置换4次。加入HRS-1597粗品，釜内温度上升至55℃，搅拌溶清。随后氮气保护下加入颗粒活性炭（活性炭投料量/Kg= HRS-1597粗品投入量/kg×0.2），维持50~55℃继续搅拌1-2小时。",
+        "anchor": {
+          "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+          "parser_version": "4",
+          "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+          "evidence_id": "332f40090c06eff4f9c04e9d2de846cf6dc7e535341ae6a246ccaec1fb376310",
+          "section_node_id": "section:67",
+          "block_id": "table:0",
+          "paragraph_index": 0,
+          "fragment_index": 0,
+          "table_path": [
+            "table:0"
+          ],
+          "row_index": 0,
+          "column_index": 1,
+          "span_start": 0,
+          "span_end": 207,
+          "physical_page_number": 5
+        }
+      },
+      "reference_scope": "process",
+      "alternative_group_id": null
+    },
+    {
+      "mention_id": "equipment-id-69-20",
+      "equipment_id": "PF64216",
+      "source": {
+        "unit_index": 69,
+        "quote": "PF64216",
+        "anchor": {
+          "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+          "parser_version": "4",
+          "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+          "evidence_id": "0fb079a418cb8b4765ca7e6be3221465bb4e9867d7316b5838b64700ed951104",
+          "section_node_id": "section:67",
+          "block_id": "table:0",
+          "paragraph_index": 2,
+          "fragment_index": 0,
+          "table_path": [
+            "table:0"
+          ],
+          "row_index": 0,
+          "column_index": 1,
+          "span_start": 20,
+          "span_end": 27,
+          "physical_page_number": 5
+        }
+      },
+      "context": {
+        "unit_index": 69,
+        "quote": "上述溶液经过滤芯（钛棒滤芯和囊式滤芯）（PF64216或PF64616）压滤快速压入进500L结晶釜（RE64613）（氮气置换四次后氮气保护）。压毕，使用 (丙酮：水体积比为9：1)的混合溶液（丙酮投料量/kg = HRS-1597粗品投入量/kg×0.8×2.7，纯化水投料量/kg = HRS-1597粗品投入量/kg×1×0.3 混合均匀）冲洗反应釜，洗涤溶液压进结晶釜内进行合并（结晶釜可提前预热（加热介质设定55℃），避免遇冷析出，若固体析出，重新升温至55℃搅拌溶清）。",
+        "anchor": {
+          "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+          "parser_version": "4",
+          "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+          "evidence_id": "0fb079a418cb8b4765ca7e6be3221465bb4e9867d7316b5838b64700ed951104",
+          "section_node_id": "section:67",
+          "block_id": "table:0",
+          "paragraph_index": 2,
+          "fragment_index": 0,
+          "table_path": [
+            "table:0"
+          ],
+          "row_index": 0,
+          "column_index": 1,
+          "span_start": 0,
+          "span_end": 242,
+          "physical_page_number": 5
+        }
+      },
+      "reference_scope": "process",
+      "alternative_group_id": "filter-choice"
+    },
+    {
+      "mention_id": "equipment-id-69-28",
+      "equipment_id": "PF64616",
+      "source": {
+        "unit_index": 69,
+        "quote": "PF64616",
+        "anchor": {
+          "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+          "parser_version": "4",
+          "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+          "evidence_id": "0fb079a418cb8b4765ca7e6be3221465bb4e9867d7316b5838b64700ed951104",
+          "section_node_id": "section:67",
+          "block_id": "table:0",
+          "paragraph_index": 2,
+          "fragment_index": 0,
+          "table_path": [
+            "table:0"
+          ],
+          "row_index": 0,
+          "column_index": 1,
+          "span_start": 28,
+          "span_end": 35,
+          "physical_page_number": 5
+        }
+      },
+      "context": {
+        "unit_index": 69,
+        "quote": "上述溶液经过滤芯（钛棒滤芯和囊式滤芯）（PF64216或PF64616）压滤快速压入进500L结晶釜（RE64613）（氮气置换四次后氮气保护）。压毕，使用 (丙酮：水体积比为9：1)的混合溶液（丙酮投料量/kg = HRS-1597粗品投入量/kg×0.8×2.7，纯化水投料量/kg = HRS-1597粗品投入量/kg×1×0.3 混合均匀）冲洗反应釜，洗涤溶液压进结晶釜内进行合并（结晶釜可提前预热（加热介质设定55℃），避免遇冷析出，若固体析出，重新升温至55℃搅拌溶清）。",
+        "anchor": {
+          "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+          "parser_version": "4",
+          "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+          "evidence_id": "0fb079a418cb8b4765ca7e6be3221465bb4e9867d7316b5838b64700ed951104",
+          "section_node_id": "section:67",
+          "block_id": "table:0",
+          "paragraph_index": 2,
+          "fragment_index": 0,
+          "table_path": [
+            "table:0"
+          ],
+          "row_index": 0,
+          "column_index": 1,
+          "span_start": 0,
+          "span_end": 242,
+          "physical_page_number": 5
+        }
+      },
+      "reference_scope": "process",
+      "alternative_group_id": "filter-choice"
+    },
+    {
+      "mention_id": "equipment-id-69-51",
+      "equipment_id": "RE64613",
+      "source": {
+        "unit_index": 69,
+        "quote": "RE64613",
+        "anchor": {
+          "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+          "parser_version": "4",
+          "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+          "evidence_id": "0fb079a418cb8b4765ca7e6be3221465bb4e9867d7316b5838b64700ed951104",
+          "section_node_id": "section:67",
+          "block_id": "table:0",
+          "paragraph_index": 2,
+          "fragment_index": 0,
+          "table_path": [
+            "table:0"
+          ],
+          "row_index": 0,
+          "column_index": 1,
+          "span_start": 51,
+          "span_end": 58,
+          "physical_page_number": 5
+        }
+      },
+      "context": {
+        "unit_index": 69,
+        "quote": "上述溶液经过滤芯（钛棒滤芯和囊式滤芯）（PF64216或PF64616）压滤快速压入进500L结晶釜（RE64613）（氮气置换四次后氮气保护）。压毕，使用 (丙酮：水体积比为9：1)的混合溶液（丙酮投料量/kg = HRS-1597粗品投入量/kg×0.8×2.7，纯化水投料量/kg = HRS-1597粗品投入量/kg×1×0.3 混合均匀）冲洗反应釜，洗涤溶液压进结晶釜内进行合并（结晶釜可提前预热（加热介质设定55℃），避免遇冷析出，若固体析出，重新升温至55℃搅拌溶清）。",
+        "anchor": {
+          "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+          "parser_version": "4",
+          "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+          "evidence_id": "0fb079a418cb8b4765ca7e6be3221465bb4e9867d7316b5838b64700ed951104",
+          "section_node_id": "section:67",
+          "block_id": "table:0",
+          "paragraph_index": 2,
+          "fragment_index": 0,
+          "table_path": [
+            "table:0"
+          ],
+          "row_index": 0,
+          "column_index": 1,
+          "span_start": 0,
+          "span_end": 242,
+          "physical_page_number": 5
+        }
+      },
+      "reference_scope": "process",
+      "alternative_group_id": null
+    },
+    {
+      "mention_id": "equipment-id-77-12",
+      "equipment_id": "CT64610",
+      "source": {
+        "unit_index": 77,
+        "quote": "CT64610",
+        "anchor": {
+          "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+          "parser_version": "4",
+          "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+          "evidence_id": "14d1a5d61cf43a7a7a52109969bbf57ded0d846b59c4d25cba07484b3c7b019f",
+          "section_node_id": "section:67",
+          "block_id": "table:0",
+          "paragraph_index": 0,
+          "fragment_index": 0,
+          "table_path": [
+            "table:0"
+          ],
+          "row_index": 1,
+          "column_index": 1,
+          "span_start": 12,
+          "span_end": 19,
+          "physical_page_number": 5
+        }
+      },
+      "context": {
+        "unit_index": 77,
+        "quote": "析晶结束，物料用离心机（CT64610）甩滤放出浆液，氮气保护甩滤。",
+        "anchor": {
+          "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+          "parser_version": "4",
+          "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+          "evidence_id": "14d1a5d61cf43a7a7a52109969bbf57ded0d846b59c4d25cba07484b3c7b019f",
+          "section_node_id": "section:67",
+          "block_id": "table:0",
+          "paragraph_index": 0,
+          "fragment_index": 0,
+          "table_path": [
+            "table:0"
+          ],
+          "row_index": 1,
+          "column_index": 1,
+          "span_start": 0,
+          "span_end": 34,
+          "physical_page_number": 5
+        }
+      },
+      "reference_scope": "process",
+      "alternative_group_id": null
+    },
+    {
+      "mention_id": "equipment-id-83-25",
+      "equipment_id": "DE64603",
+      "source": {
+        "unit_index": 83,
+        "quote": "DE64603",
+        "anchor": {
+          "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+          "parser_version": "4",
+          "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+          "evidence_id": "ecd195abdb4cc333d0740acdb6847c4ac5e29f90727ab310285afd6e60ef8d53",
+          "section_node_id": "section:67",
+          "block_id": "table:0",
+          "paragraph_index": 0,
+          "fragment_index": 0,
+          "table_path": [
+            "table:0"
+          ],
+          "row_index": 3,
+          "column_index": 1,
+          "span_start": 25,
+          "span_end": 32,
+          "physical_page_number": 5
+        }
+      },
+      "context": {
+        "unit_index": 83,
+        "quote": "将上述所得滤饼存分5-10盘，包好转入真空干燥箱（DE64603）中，打开真空，室温抽真空10~30分钟，打开加热，控制温度于45~50℃干燥18~24小时，每隔约3小时记录一次温度，每隔约6小时翻料一次 HRS-1597得量参考范围为3.0~6.0 Kg，收率参考范围为50%~85.0%。收率=HRS-1597成品得量÷HRS-1597粗品得量×100%。干燥结束后，将所得产品装到450×700mm双层药用低密度聚乙烯袋内（使用数量2-4个）外加480×800mm药品包装用复合袋（使用数量1-2个），密封，不超过25℃保存。",
+        "anchor": {
+          "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+          "parser_version": "4",
+          "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+          "evidence_id": "ecd195abdb4cc333d0740acdb6847c4ac5e29f90727ab310285afd6e60ef8d53",
+          "section_node_id": "section:67",
+          "block_id": "table:0",
+          "paragraph_index": 0,
+          "fragment_index": 0,
+          "table_path": [
+            "table:0"
+          ],
+          "row_index": 3,
+          "column_index": 1,
+          "span_start": 0,
+          "span_end": 266,
+          "physical_page_number": 5
+        }
+      },
+      "reference_scope": "process",
+      "alternative_group_id": null
+    },
+    {
+      "mention_id": "equipment-id-135-1",
+      "equipment_id": "RE64611",
+      "source": {
+        "unit_index": 135,
+        "quote": "RE64611",
+        "anchor": {
+          "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+          "parser_version": "4",
+          "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+          "evidence_id": "c1e8f7303138ba417ae9c7fe0bd6ba13ae69417a9c6e46a98e26eb26320ef35c",
+          "section_node_id": "section:81",
+          "block_id": "table:5",
+          "paragraph_index": 1,
+          "fragment_index": 0,
+          "table_path": [
+            "table:5"
+          ],
+          "row_index": 1,
+          "column_index": 1,
+          "span_start": 1,
+          "span_end": 8,
+          "physical_page_number": 5
+        }
+      },
+      "context": {
+        "unit_index": 135,
+        "quote": "（RE64611）压滤器（PF64216或PF64616）串联清洗",
+        "anchor": {
+          "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+          "parser_version": "4",
+          "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+          "evidence_id": "c1e8f7303138ba417ae9c7fe0bd6ba13ae69417a9c6e46a98e26eb26320ef35c",
+          "section_node_id": "section:81",
+          "block_id": "table:5",
+          "paragraph_index": 1,
+          "fragment_index": 0,
+          "table_path": [
+            "table:5"
+          ],
+          "row_index": 1,
+          "column_index": 1,
+          "span_start": 0,
+          "span_end": 33,
+          "physical_page_number": 5
+        }
+      },
+      "reference_scope": "cleaning",
+      "alternative_group_id": null
+    },
+    {
+      "mention_id": "equipment-id-135-13",
+      "equipment_id": "PF64216",
+      "source": {
+        "unit_index": 135,
+        "quote": "PF64216",
+        "anchor": {
+          "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+          "parser_version": "4",
+          "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+          "evidence_id": "c1e8f7303138ba417ae9c7fe0bd6ba13ae69417a9c6e46a98e26eb26320ef35c",
+          "section_node_id": "section:81",
+          "block_id": "table:5",
+          "paragraph_index": 1,
+          "fragment_index": 0,
+          "table_path": [
+            "table:5"
+          ],
+          "row_index": 1,
+          "column_index": 1,
+          "span_start": 13,
+          "span_end": 20,
+          "physical_page_number": 5
+        }
+      },
+      "context": {
+        "unit_index": 135,
+        "quote": "（RE64611）压滤器（PF64216或PF64616）串联清洗",
+        "anchor": {
+          "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+          "parser_version": "4",
+          "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+          "evidence_id": "c1e8f7303138ba417ae9c7fe0bd6ba13ae69417a9c6e46a98e26eb26320ef35c",
+          "section_node_id": "section:81",
+          "block_id": "table:5",
+          "paragraph_index": 1,
+          "fragment_index": 0,
+          "table_path": [
+            "table:5"
+          ],
+          "row_index": 1,
+          "column_index": 1,
+          "span_start": 0,
+          "span_end": 33,
+          "physical_page_number": 5
+        }
+      },
+      "reference_scope": "cleaning",
+      "alternative_group_id": "filter-choice"
+    },
+    {
+      "mention_id": "equipment-id-135-21",
+      "equipment_id": "PF64616",
+      "source": {
+        "unit_index": 135,
+        "quote": "PF64616",
+        "anchor": {
+          "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+          "parser_version": "4",
+          "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+          "evidence_id": "c1e8f7303138ba417ae9c7fe0bd6ba13ae69417a9c6e46a98e26eb26320ef35c",
+          "section_node_id": "section:81",
+          "block_id": "table:5",
+          "paragraph_index": 1,
+          "fragment_index": 0,
+          "table_path": [
+            "table:5"
+          ],
+          "row_index": 1,
+          "column_index": 1,
+          "span_start": 21,
+          "span_end": 28,
+          "physical_page_number": 5
+        }
+      },
+      "context": {
+        "unit_index": 135,
+        "quote": "（RE64611）压滤器（PF64216或PF64616）串联清洗",
+        "anchor": {
+          "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+          "parser_version": "4",
+          "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+          "evidence_id": "c1e8f7303138ba417ae9c7fe0bd6ba13ae69417a9c6e46a98e26eb26320ef35c",
+          "section_node_id": "section:81",
+          "block_id": "table:5",
+          "paragraph_index": 1,
+          "fragment_index": 0,
+          "table_path": [
+            "table:5"
+          ],
+          "row_index": 1,
+          "column_index": 1,
+          "span_start": 0,
+          "span_end": 33,
+          "physical_page_number": 5
+        }
+      },
+      "reference_scope": "cleaning",
+      "alternative_group_id": "filter-choice"
+    },
+    {
+      "mention_id": "equipment-id-142-1",
+      "equipment_id": "RE64613",
+      "source": {
+        "unit_index": 142,
+        "quote": "RE64613",
+        "anchor": {
+          "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+          "parser_version": "4",
+          "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+          "evidence_id": "c7718ac45e08780a7ace6633bdf5fc2d7e99d9548475dfd9c613e85435213018",
+          "section_node_id": "section:81",
+          "block_id": "table:5",
+          "paragraph_index": 1,
+          "fragment_index": 0,
+          "table_path": [
+            "table:5"
+          ],
+          "row_index": 2,
+          "column_index": 1,
+          "span_start": 1,
+          "span_end": 8,
+          "physical_page_number": 5
+        }
+      },
+      "context": {
+        "unit_index": 142,
+        "quote": "（RE64613）以及穿墙管道串联清洗",
+        "anchor": {
+          "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+          "parser_version": "4",
+          "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+          "evidence_id": "c7718ac45e08780a7ace6633bdf5fc2d7e99d9548475dfd9c613e85435213018",
+          "section_node_id": "section:81",
+          "block_id": "table:5",
+          "paragraph_index": 1,
+          "fragment_index": 0,
+          "table_path": [
+            "table:5"
+          ],
+          "row_index": 2,
+          "column_index": 1,
+          "span_start": 0,
+          "span_end": 19,
+          "physical_page_number": 5
+        }
+      },
+      "reference_scope": "cleaning",
+      "alternative_group_id": null
+    },
+    {
+      "mention_id": "equipment-id-149-1",
+      "equipment_id": "CT64610",
+      "source": {
+        "unit_index": 149,
+        "quote": "CT64610",
+        "anchor": {
+          "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+          "parser_version": "4",
+          "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+          "evidence_id": "c29de58830ae27ec4afbff5413ab79a0531c4b432d7356ff295f84cb115a8405",
+          "section_node_id": "section:81",
+          "block_id": "table:5",
+          "paragraph_index": 1,
+          "fragment_index": 0,
+          "table_path": [
+            "table:5"
+          ],
+          "row_index": 3,
+          "column_index": 1,
+          "span_start": 1,
+          "span_end": 8,
+          "physical_page_number": 5
+        }
+      },
+      "context": {
+        "unit_index": 149,
+        "quote": "（CT64610）",
+        "anchor": {
+          "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+          "parser_version": "4",
+          "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+          "evidence_id": "c29de58830ae27ec4afbff5413ab79a0531c4b432d7356ff295f84cb115a8405",
+          "section_node_id": "section:81",
+          "block_id": "table:5",
+          "paragraph_index": 1,
+          "fragment_index": 0,
+          "table_path": [
+            "table:5"
+          ],
+          "row_index": 3,
+          "column_index": 1,
+          "span_start": 0,
+          "span_end": 9,
+          "physical_page_number": 5
+        }
+      },
+      "reference_scope": "cleaning",
+      "alternative_group_id": null
+    },
+    {
+      "mention_id": "equipment-id-156-1",
+      "equipment_id": "DE64603",
+      "source": {
+        "unit_index": 156,
+        "quote": "DE64603",
+        "anchor": {
+          "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+          "parser_version": "4",
+          "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+          "evidence_id": "a1b2a79046bb9579eac66d1ae217436b58c12547de8ad0266d2f5f7af3de40bf",
+          "section_node_id": "section:81",
+          "block_id": "table:5",
+          "paragraph_index": 1,
+          "fragment_index": 0,
+          "table_path": [
+            "table:5"
+          ],
+          "row_index": 4,
+          "column_index": 1,
+          "span_start": 1,
+          "span_end": 8,
+          "physical_page_number": 5
+        }
+      },
+      "context": {
+        "unit_index": 156,
+        "quote": "（DE64603）",
+        "anchor": {
+          "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+          "parser_version": "4",
+          "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+          "evidence_id": "a1b2a79046bb9579eac66d1ae217436b58c12547de8ad0266d2f5f7af3de40bf",
+          "section_node_id": "section:81",
+          "block_id": "table:5",
+          "paragraph_index": 1,
+          "fragment_index": 0,
+          "table_path": [
+            "table:5"
+          ],
+          "row_index": 4,
+          "column_index": 1,
+          "span_start": 0,
+          "span_end": 9,
+          "physical_page_number": 5
+        }
+      },
+      "reference_scope": "cleaning",
+      "alternative_group_id": null
+    },
+    {
+      "mention_id": "equipment-id-182-0",
+      "equipment_id": "RE64611",
+      "source": {
+        "unit_index": 182,
+        "quote": "RE64611",
+        "anchor": {
+          "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+          "parser_version": "4",
+          "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+          "evidence_id": "16438631527487298ec0944d6b00559c2dbb71c7e9387096dd808d8c26ccaeda",
+          "section_node_id": "section:84",
+          "block_id": "table:6",
+          "paragraph_index": 0,
+          "fragment_index": 0,
+          "table_path": [
+            "table:6"
+          ],
+          "row_index": 1,
+          "column_index": 2,
+          "span_start": 0,
+          "span_end": 7,
+          "physical_page_number": 5
+        }
+      },
+      "context": {
+        "unit_index": 182,
+        "quote": "RE64611",
+        "anchor": {
+          "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+          "parser_version": "4",
+          "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+          "evidence_id": "16438631527487298ec0944d6b00559c2dbb71c7e9387096dd808d8c26ccaeda",
+          "section_node_id": "section:84",
+          "block_id": "table:6",
+          "paragraph_index": 0,
+          "fragment_index": 0,
+          "table_path": [
+            "table:6"
+          ],
+          "row_index": 1,
+          "column_index": 2,
+          "span_start": 0,
+          "span_end": 7,
+          "physical_page_number": 5
+        }
+      },
+      "reference_scope": "requirements",
+      "alternative_group_id": null
+    },
+    {
+      "mention_id": "equipment-id-195-0",
+      "equipment_id": "PF64216",
+      "source": {
+        "unit_index": 195,
+        "quote": "PF64216",
+        "anchor": {
+          "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+          "parser_version": "4",
+          "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+          "evidence_id": "5544bc205a1b3f200e65c2279d7cfc0d5582b86442475daf7181137bf181d2cd",
+          "section_node_id": "section:84",
+          "block_id": "table:6",
+          "paragraph_index": 0,
+          "fragment_index": 0,
+          "table_path": [
+            "table:6"
+          ],
+          "row_index": 2,
+          "column_index": 2,
+          "span_start": 0,
+          "span_end": 7,
+          "physical_page_number": 5
+        }
+      },
+      "context": {
+        "unit_index": 195,
+        "quote": "PF64216或PF64616",
+        "anchor": {
+          "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+          "parser_version": "4",
+          "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+          "evidence_id": "5544bc205a1b3f200e65c2279d7cfc0d5582b86442475daf7181137bf181d2cd",
+          "section_node_id": "section:84",
+          "block_id": "table:6",
+          "paragraph_index": 0,
+          "fragment_index": 0,
+          "table_path": [
+            "table:6"
+          ],
+          "row_index": 2,
+          "column_index": 2,
+          "span_start": 0,
+          "span_end": 15,
+          "physical_page_number": 5
+        }
+      },
+      "reference_scope": "requirements",
+      "alternative_group_id": "filter-choice"
+    },
+    {
+      "mention_id": "equipment-id-195-8",
+      "equipment_id": "PF64616",
+      "source": {
+        "unit_index": 195,
+        "quote": "PF64616",
+        "anchor": {
+          "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+          "parser_version": "4",
+          "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+          "evidence_id": "5544bc205a1b3f200e65c2279d7cfc0d5582b86442475daf7181137bf181d2cd",
+          "section_node_id": "section:84",
+          "block_id": "table:6",
+          "paragraph_index": 0,
+          "fragment_index": 0,
+          "table_path": [
+            "table:6"
+          ],
+          "row_index": 2,
+          "column_index": 2,
+          "span_start": 8,
+          "span_end": 15,
+          "physical_page_number": 5
+        }
+      },
+      "context": {
+        "unit_index": 195,
+        "quote": "PF64216或PF64616",
+        "anchor": {
+          "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+          "parser_version": "4",
+          "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+          "evidence_id": "5544bc205a1b3f200e65c2279d7cfc0d5582b86442475daf7181137bf181d2cd",
+          "section_node_id": "section:84",
+          "block_id": "table:6",
+          "paragraph_index": 0,
+          "fragment_index": 0,
+          "table_path": [
+            "table:6"
+          ],
+          "row_index": 2,
+          "column_index": 2,
+          "span_start": 0,
+          "span_end": 15,
+          "physical_page_number": 5
+        }
+      },
+      "reference_scope": "requirements",
+      "alternative_group_id": "filter-choice"
+    },
+    {
+      "mention_id": "equipment-id-208-0",
+      "equipment_id": "RE64613",
+      "source": {
+        "unit_index": 208,
+        "quote": "RE64613",
+        "anchor": {
+          "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+          "parser_version": "4",
+          "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+          "evidence_id": "b467ff57f54677a5d98aa46ba5474722a223ff606fa8862a4a52ee49a18bf057",
+          "section_node_id": "section:84",
+          "block_id": "table:6",
+          "paragraph_index": 0,
+          "fragment_index": 0,
+          "table_path": [
+            "table:6"
+          ],
+          "row_index": 3,
+          "column_index": 2,
+          "span_start": 0,
+          "span_end": 7,
+          "physical_page_number": 5
+        }
+      },
+      "context": {
+        "unit_index": 208,
+        "quote": "RE64613",
+        "anchor": {
+          "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+          "parser_version": "4",
+          "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+          "evidence_id": "b467ff57f54677a5d98aa46ba5474722a223ff606fa8862a4a52ee49a18bf057",
+          "section_node_id": "section:84",
+          "block_id": "table:6",
+          "paragraph_index": 0,
+          "fragment_index": 0,
+          "table_path": [
+            "table:6"
+          ],
+          "row_index": 3,
+          "column_index": 2,
+          "span_start": 0,
+          "span_end": 7,
+          "physical_page_number": 5
+        }
+      },
+      "reference_scope": "requirements",
+      "alternative_group_id": null
+    },
+    {
+      "mention_id": "equipment-id-223-0",
+      "equipment_id": "CT64610",
+      "source": {
+        "unit_index": 223,
+        "quote": "CT64610",
+        "anchor": {
+          "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+          "parser_version": "4",
+          "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+          "evidence_id": "df9b4d09713883ed06ca247dd4cb6e375c766c25fc4b01fccff3e83c1bd3e8e1",
+          "section_node_id": "section:84",
+          "block_id": "table:6",
+          "paragraph_index": 0,
+          "fragment_index": 0,
+          "table_path": [
+            "table:6"
+          ],
+          "row_index": 4,
+          "column_index": 2,
+          "span_start": 0,
+          "span_end": 7,
+          "physical_page_number": 5
+        }
+      },
+      "context": {
+        "unit_index": 223,
+        "quote": "CT64610",
+        "anchor": {
+          "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+          "parser_version": "4",
+          "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+          "evidence_id": "df9b4d09713883ed06ca247dd4cb6e375c766c25fc4b01fccff3e83c1bd3e8e1",
+          "section_node_id": "section:84",
+          "block_id": "table:6",
+          "paragraph_index": 0,
+          "fragment_index": 0,
+          "table_path": [
+            "table:6"
+          ],
+          "row_index": 4,
+          "column_index": 2,
+          "span_start": 0,
+          "span_end": 7,
+          "physical_page_number": 5
+        }
+      },
+      "reference_scope": "requirements",
+      "alternative_group_id": null
+    },
+    {
+      "mention_id": "equipment-id-236-0",
+      "equipment_id": "DE64603",
+      "source": {
+        "unit_index": 236,
+        "quote": "DE64603",
+        "anchor": {
+          "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+          "parser_version": "4",
+          "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+          "evidence_id": "c847ce52e1d637718b869613a834c00cd8bfb22403e45f6eea35bf3806ca27c9",
+          "section_node_id": "section:84",
+          "block_id": "table:6",
+          "paragraph_index": 0,
+          "fragment_index": 0,
+          "table_path": [
+            "table:6"
+          ],
+          "row_index": 5,
+          "column_index": 2,
+          "span_start": 0,
+          "span_end": 7,
+          "physical_page_number": 5
+        }
+      },
+      "context": {
+        "unit_index": 236,
+        "quote": "DE64603",
+        "anchor": {
+          "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+          "parser_version": "4",
+          "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+          "evidence_id": "c847ce52e1d637718b869613a834c00cd8bfb22403e45f6eea35bf3806ca27c9",
+          "section_node_id": "section:84",
+          "block_id": "table:6",
+          "paragraph_index": 0,
+          "fragment_index": 0,
+          "table_path": [
+            "table:6"
+          ],
+          "row_index": 5,
+          "column_index": 2,
+          "span_start": 0,
+          "span_end": 7,
+          "physical_page_number": 5
+        }
+      },
+      "reference_scope": "requirements",
+      "alternative_group_id": null
+    }
+  ],
+  "equipment_identities": [
+    {
+      "equipment_id": "CT64610",
+      "identity_scope": "same_report_equipment_identifier",
+      "mention_ids": [
+        "equipment-id-77-12",
+        "equipment-id-149-1",
+        "equipment-id-223-0"
+      ],
+      "name_identifier_bindings": [
+        {
+          "raw_name": "离心机",
+          "name_source": {
+            "unit_index": 77,
+            "quote": "离心机",
+            "anchor": {
+              "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+              "parser_version": "4",
+              "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+              "evidence_id": "14d1a5d61cf43a7a7a52109969bbf57ded0d846b59c4d25cba07484b3c7b019f",
+              "section_node_id": "section:67",
+              "block_id": "table:0",
+              "paragraph_index": 0,
+              "fragment_index": 0,
+              "table_path": [
+                "table:0"
+              ],
+              "row_index": 1,
+              "column_index": 1,
+              "span_start": 8,
+              "span_end": 11,
+              "physical_page_number": 5
+            }
+          },
+          "identifier_source": {
+            "unit_index": 77,
+            "quote": "CT64610",
+            "anchor": {
+              "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+              "parser_version": "4",
+              "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+              "evidence_id": "14d1a5d61cf43a7a7a52109969bbf57ded0d846b59c4d25cba07484b3c7b019f",
+              "section_node_id": "section:67",
+              "block_id": "table:0",
+              "paragraph_index": 0,
+              "fragment_index": 0,
+              "table_path": [
+                "table:0"
+              ],
+              "row_index": 1,
+              "column_index": 1,
+              "span_start": 12,
+              "span_end": 19,
+              "physical_page_number": 5
+            }
+          },
+          "binding_basis": "same_source_phrase",
+          "qualifier": "planned_required_equipment"
+        },
+        {
+          "raw_name": "离心机",
+          "name_source": {
+            "unit_index": 148,
+            "quote": "离心机",
+            "anchor": {
+              "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+              "parser_version": "4",
+              "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+              "evidence_id": "5e945eed0eeac97ef6fbdcefc42fd63a1358f49b6f7a7de527849b55d0358e1f",
+              "section_node_id": "section:81",
+              "block_id": "table:5",
+              "paragraph_index": 0,
+              "fragment_index": 0,
+              "table_path": [
+                "table:5"
+              ],
+              "row_index": 3,
+              "column_index": 1,
+              "span_start": 0,
+              "span_end": 3,
+              "physical_page_number": 5
+            }
+          },
+          "identifier_source": {
+            "unit_index": 149,
+            "quote": "CT64610",
+            "anchor": {
+              "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+              "parser_version": "4",
+              "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+              "evidence_id": "c29de58830ae27ec4afbff5413ab79a0531c4b432d7356ff295f84cb115a8405",
+              "section_node_id": "section:81",
+              "block_id": "table:5",
+              "paragraph_index": 1,
+              "fragment_index": 0,
+              "table_path": [
+                "table:5"
+              ],
+              "row_index": 3,
+              "column_index": 1,
+              "span_start": 1,
+              "span_end": 8,
+              "physical_page_number": 5
+            }
+          },
+          "binding_basis": "same_physical_cell_fragments",
+          "qualifier": "planned_required_equipment"
+        },
+        {
+          "raw_name": "离心机",
+          "name_source": {
+            "unit_index": 222,
+            "quote": "离心机",
+            "anchor": {
+              "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+              "parser_version": "4",
+              "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+              "evidence_id": "f0527dba0a16bd9612d16f9409f168a7ac95bb487679886f614bb774ccf6f96e",
+              "section_node_id": "section:84",
+              "block_id": "table:6",
+              "paragraph_index": 0,
+              "fragment_index": 0,
+              "table_path": [
+                "table:6"
+              ],
+              "row_index": 4,
+              "column_index": 1,
+              "span_start": 0,
+              "span_end": 3,
+              "physical_page_number": 5
+            }
+          },
+          "identifier_source": {
+            "unit_index": 223,
+            "quote": "CT64610",
+            "anchor": {
+              "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+              "parser_version": "4",
+              "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+              "evidence_id": "df9b4d09713883ed06ca247dd4cb6e375c766c25fc4b01fccff3e83c1bd3e8e1",
+              "section_node_id": "section:84",
+              "block_id": "table:6",
+              "paragraph_index": 0,
+              "fragment_index": 0,
+              "table_path": [
+                "table:6"
+              ],
+              "row_index": 4,
+              "column_index": 2,
+              "span_start": 0,
+              "span_end": 7,
+              "physical_page_number": 5
+            }
+          },
+          "binding_basis": "same_table_row_explicit_name_and_id_headers",
+          "qualifier": "planned_required_equipment"
+        }
+      ],
+      "requirement_row_ref": "req-row-4",
+      "archive_lookup": {
+        "status": "exact_match",
+        "match_count": 1,
+        "entry": {
+          "source": "static_mock_archive",
+          "json_pointer": "/113",
+          "equipment_id": "CT64610",
+          "value": {
+            "workshop": "646",
+            "equipment_id": "CT64610",
+            "name": "离心机",
+            "specification": "600",
+            "material": "316L不锈钢",
+            "location": "一般区南平台下",
+            "area_type": "一般区"
+          }
+        }
+      },
+      "identity_limit": "Exact archive lookup does not prove actual use, erase alternative choice, or grant document evidence to Mock-only attributes."
+    },
+    {
+      "equipment_id": "DE64603",
+      "identity_scope": "same_report_equipment_identifier",
+      "mention_ids": [
+        "equipment-id-83-25",
+        "equipment-id-156-1",
+        "equipment-id-236-0"
+      ],
+      "name_identifier_bindings": [
+        {
+          "raw_name": "真空干燥箱",
+          "name_source": {
+            "unit_index": 83,
+            "quote": "真空干燥箱",
+            "anchor": {
+              "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+              "parser_version": "4",
+              "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+              "evidence_id": "ecd195abdb4cc333d0740acdb6847c4ac5e29f90727ab310285afd6e60ef8d53",
+              "section_node_id": "section:67",
+              "block_id": "table:0",
+              "paragraph_index": 0,
+              "fragment_index": 0,
+              "table_path": [
+                "table:0"
+              ],
+              "row_index": 3,
+              "column_index": 1,
+              "span_start": 19,
+              "span_end": 24,
+              "physical_page_number": 5
+            }
+          },
+          "identifier_source": {
+            "unit_index": 83,
+            "quote": "DE64603",
+            "anchor": {
+              "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+              "parser_version": "4",
+              "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+              "evidence_id": "ecd195abdb4cc333d0740acdb6847c4ac5e29f90727ab310285afd6e60ef8d53",
+              "section_node_id": "section:67",
+              "block_id": "table:0",
+              "paragraph_index": 0,
+              "fragment_index": 0,
+              "table_path": [
+                "table:0"
+              ],
+              "row_index": 3,
+              "column_index": 1,
+              "span_start": 25,
+              "span_end": 32,
+              "physical_page_number": 5
+            }
+          },
+          "binding_basis": "same_source_phrase",
+          "qualifier": "planned_required_equipment"
+        },
+        {
+          "raw_name": "真空干燥箱",
+          "name_source": {
+            "unit_index": 155,
+            "quote": "真空干燥箱",
+            "anchor": {
+              "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+              "parser_version": "4",
+              "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+              "evidence_id": "fa490058ef652cbb79c799fcde2df046615af5475d81fd7c3252e0aebad65ac4",
+              "section_node_id": "section:81",
+              "block_id": "table:5",
+              "paragraph_index": 0,
+              "fragment_index": 0,
+              "table_path": [
+                "table:5"
+              ],
+              "row_index": 4,
+              "column_index": 1,
+              "span_start": 0,
+              "span_end": 5,
+              "physical_page_number": 5
+            }
+          },
+          "identifier_source": {
+            "unit_index": 156,
+            "quote": "DE64603",
+            "anchor": {
+              "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+              "parser_version": "4",
+              "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+              "evidence_id": "a1b2a79046bb9579eac66d1ae217436b58c12547de8ad0266d2f5f7af3de40bf",
+              "section_node_id": "section:81",
+              "block_id": "table:5",
+              "paragraph_index": 1,
+              "fragment_index": 0,
+              "table_path": [
+                "table:5"
+              ],
+              "row_index": 4,
+              "column_index": 1,
+              "span_start": 1,
+              "span_end": 8,
+              "physical_page_number": 5
+            }
+          },
+          "binding_basis": "same_physical_cell_fragments",
+          "qualifier": "planned_required_equipment"
+        },
+        {
+          "raw_name": "真空干燥箱",
+          "name_source": {
+            "unit_index": 235,
+            "quote": "真空干燥箱",
+            "anchor": {
+              "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+              "parser_version": "4",
+              "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+              "evidence_id": "16dfa2cd4ab3794bcb0b42f4f25d82c5213034035b80aab78f53610c2adfde92",
+              "section_node_id": "section:84",
+              "block_id": "table:6",
+              "paragraph_index": 0,
+              "fragment_index": 0,
+              "table_path": [
+                "table:6"
+              ],
+              "row_index": 5,
+              "column_index": 1,
+              "span_start": 0,
+              "span_end": 5,
+              "physical_page_number": 5
+            }
+          },
+          "identifier_source": {
+            "unit_index": 236,
+            "quote": "DE64603",
+            "anchor": {
+              "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+              "parser_version": "4",
+              "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+              "evidence_id": "c847ce52e1d637718b869613a834c00cd8bfb22403e45f6eea35bf3806ca27c9",
+              "section_node_id": "section:84",
+              "block_id": "table:6",
+              "paragraph_index": 0,
+              "fragment_index": 0,
+              "table_path": [
+                "table:6"
+              ],
+              "row_index": 5,
+              "column_index": 2,
+              "span_start": 0,
+              "span_end": 7,
+              "physical_page_number": 5
+            }
+          },
+          "binding_basis": "same_table_row_explicit_name_and_id_headers",
+          "qualifier": "planned_required_equipment"
+        }
+      ],
+      "requirement_row_ref": "req-row-5",
+      "archive_lookup": {
+        "status": "not_found",
+        "match_count": 0,
+        "entry": null
+      },
+      "identity_limit": "Exact archive lookup does not prove actual use, erase alternative choice, or grant document evidence to Mock-only attributes."
+    },
+    {
+      "equipment_id": "PF64216",
+      "identity_scope": "same_report_equipment_identifier",
+      "mention_ids": [
+        "equipment-id-69-20",
+        "equipment-id-135-13",
+        "equipment-id-195-0"
+      ],
+      "name_identifier_bindings": [
+        {
+          "raw_name": "压滤器",
+          "name_source": {
+            "unit_index": 135,
+            "quote": "压滤器",
+            "anchor": {
+              "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+              "parser_version": "4",
+              "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+              "evidence_id": "c1e8f7303138ba417ae9c7fe0bd6ba13ae69417a9c6e46a98e26eb26320ef35c",
+              "section_node_id": "section:81",
+              "block_id": "table:5",
+              "paragraph_index": 1,
+              "fragment_index": 0,
+              "table_path": [
+                "table:5"
+              ],
+              "row_index": 1,
+              "column_index": 1,
+              "span_start": 9,
+              "span_end": 12,
+              "physical_page_number": 5
+            }
+          },
+          "identifier_source": {
+            "unit_index": 135,
+            "quote": "PF64216",
+            "anchor": {
+              "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+              "parser_version": "4",
+              "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+              "evidence_id": "c1e8f7303138ba417ae9c7fe0bd6ba13ae69417a9c6e46a98e26eb26320ef35c",
+              "section_node_id": "section:81",
+              "block_id": "table:5",
+              "paragraph_index": 1,
+              "fragment_index": 0,
+              "table_path": [
+                "table:5"
+              ],
+              "row_index": 1,
+              "column_index": 1,
+              "span_start": 13,
+              "span_end": 20,
+              "physical_page_number": 5
+            }
+          },
+          "binding_basis": "same_source_phrase",
+          "qualifier": "alternative"
+        },
+        {
+          "raw_name": "钛棒过滤器",
+          "name_source": {
+            "unit_index": 194,
+            "quote": "钛棒过滤器",
+            "anchor": {
+              "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+              "parser_version": "4",
+              "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+              "evidence_id": "137ec4908e2190908404a39b40c24b6d9545bdaa1f510d84e06bf408e6d9a1e9",
+              "section_node_id": "section:84",
+              "block_id": "table:6",
+              "paragraph_index": 0,
+              "fragment_index": 0,
+              "table_path": [
+                "table:6"
+              ],
+              "row_index": 2,
+              "column_index": 1,
+              "span_start": 0,
+              "span_end": 5,
+              "physical_page_number": 5
+            }
+          },
+          "identifier_source": {
+            "unit_index": 195,
+            "quote": "PF64216",
+            "anchor": {
+              "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+              "parser_version": "4",
+              "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+              "evidence_id": "5544bc205a1b3f200e65c2279d7cfc0d5582b86442475daf7181137bf181d2cd",
+              "section_node_id": "section:84",
+              "block_id": "table:6",
+              "paragraph_index": 0,
+              "fragment_index": 0,
+              "table_path": [
+                "table:6"
+              ],
+              "row_index": 2,
+              "column_index": 2,
+              "span_start": 0,
+              "span_end": 7,
+              "physical_page_number": 5
+            }
+          },
+          "binding_basis": "same_table_row_explicit_name_and_id_headers",
+          "qualifier": "alternative"
+        }
+      ],
+      "requirement_row_ref": "req-row-2",
+      "archive_lookup": {
+        "status": "exact_match",
+        "match_count": 1,
+        "entry": {
+          "source": "static_mock_archive",
+          "json_pointer": "/101",
+          "equipment_id": "PF64216",
+          "value": {
+            "workshop": "642",
+            "equipment_id": "PF64216",
+            "name": "钛棒过滤器",
+            "specification": "10英寸3芯",
+            "material": "316L不锈钢",
+            "location": "一般区",
+            "area_type": "一般区"
+          }
+        }
+      },
+      "identity_limit": "Exact archive lookup does not prove actual use, erase alternative choice, or grant document evidence to Mock-only attributes."
+    },
+    {
+      "equipment_id": "PF64616",
+      "identity_scope": "same_report_equipment_identifier",
+      "mention_ids": [
+        "equipment-id-69-28",
+        "equipment-id-135-21",
+        "equipment-id-195-8"
+      ],
+      "name_identifier_bindings": [
+        {
+          "raw_name": "压滤器",
+          "name_source": {
+            "unit_index": 135,
+            "quote": "压滤器",
+            "anchor": {
+              "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+              "parser_version": "4",
+              "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+              "evidence_id": "c1e8f7303138ba417ae9c7fe0bd6ba13ae69417a9c6e46a98e26eb26320ef35c",
+              "section_node_id": "section:81",
+              "block_id": "table:5",
+              "paragraph_index": 1,
+              "fragment_index": 0,
+              "table_path": [
+                "table:5"
+              ],
+              "row_index": 1,
+              "column_index": 1,
+              "span_start": 9,
+              "span_end": 12,
+              "physical_page_number": 5
+            }
+          },
+          "identifier_source": {
+            "unit_index": 135,
+            "quote": "PF64616",
+            "anchor": {
+              "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+              "parser_version": "4",
+              "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+              "evidence_id": "c1e8f7303138ba417ae9c7fe0bd6ba13ae69417a9c6e46a98e26eb26320ef35c",
+              "section_node_id": "section:81",
+              "block_id": "table:5",
+              "paragraph_index": 1,
+              "fragment_index": 0,
+              "table_path": [
+                "table:5"
+              ],
+              "row_index": 1,
+              "column_index": 1,
+              "span_start": 21,
+              "span_end": 28,
+              "physical_page_number": 5
+            }
+          },
+          "binding_basis": "same_source_phrase",
+          "qualifier": "alternative"
+        },
+        {
+          "raw_name": "钛棒过滤器",
+          "name_source": {
+            "unit_index": 194,
+            "quote": "钛棒过滤器",
+            "anchor": {
+              "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+              "parser_version": "4",
+              "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+              "evidence_id": "137ec4908e2190908404a39b40c24b6d9545bdaa1f510d84e06bf408e6d9a1e9",
+              "section_node_id": "section:84",
+              "block_id": "table:6",
+              "paragraph_index": 0,
+              "fragment_index": 0,
+              "table_path": [
+                "table:6"
+              ],
+              "row_index": 2,
+              "column_index": 1,
+              "span_start": 0,
+              "span_end": 5,
+              "physical_page_number": 5
+            }
+          },
+          "identifier_source": {
+            "unit_index": 195,
+            "quote": "PF64616",
+            "anchor": {
+              "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+              "parser_version": "4",
+              "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+              "evidence_id": "5544bc205a1b3f200e65c2279d7cfc0d5582b86442475daf7181137bf181d2cd",
+              "section_node_id": "section:84",
+              "block_id": "table:6",
+              "paragraph_index": 0,
+              "fragment_index": 0,
+              "table_path": [
+                "table:6"
+              ],
+              "row_index": 2,
+              "column_index": 2,
+              "span_start": 8,
+              "span_end": 15,
+              "physical_page_number": 5
+            }
+          },
+          "binding_basis": "same_table_row_explicit_name_and_id_headers",
+          "qualifier": "alternative"
+        }
+      ],
+      "requirement_row_ref": "req-row-2",
+      "archive_lookup": {
+        "status": "exact_match",
+        "match_count": 1,
+        "entry": {
+          "source": "static_mock_archive",
+          "json_pointer": "/207",
+          "equipment_id": "PF64616",
+          "value": {
+            "workshop": "646",
+            "equipment_id": "PF64616",
+            "name": "钛棒过滤器",
+            "specification": "10英寸3芯",
+            "material": "316L不锈钢",
+            "location": "一般区",
+            "area_type": "一般区"
+          }
+        }
+      },
+      "identity_limit": "Exact archive lookup does not prove actual use, erase alternative choice, or grant document evidence to Mock-only attributes."
+    },
+    {
+      "equipment_id": "RE64611",
+      "identity_scope": "same_report_equipment_identifier",
+      "mention_ids": [
+        "equipment-id-67-12",
+        "equipment-id-135-1",
+        "equipment-id-182-0"
+      ],
+      "name_identifier_bindings": [
+        {
+          "raw_name": "200L反应釜",
+          "name_source": {
+            "unit_index": 67,
+            "quote": "200L反应釜",
+            "anchor": {
+              "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+              "parser_version": "4",
+              "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+              "evidence_id": "332f40090c06eff4f9c04e9d2de846cf6dc7e535341ae6a246ccaec1fb376310",
+              "section_node_id": "section:67",
+              "block_id": "table:0",
+              "paragraph_index": 0,
+              "fragment_index": 0,
+              "table_path": [
+                "table:0"
+              ],
+              "row_index": 0,
+              "column_index": 1,
+              "span_start": 4,
+              "span_end": 11,
+              "physical_page_number": 5
+            }
+          },
+          "identifier_source": {
+            "unit_index": 67,
+            "quote": "RE64611",
+            "anchor": {
+              "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+              "parser_version": "4",
+              "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+              "evidence_id": "332f40090c06eff4f9c04e9d2de846cf6dc7e535341ae6a246ccaec1fb376310",
+              "section_node_id": "section:67",
+              "block_id": "table:0",
+              "paragraph_index": 0,
+              "fragment_index": 0,
+              "table_path": [
+                "table:0"
+              ],
+              "row_index": 0,
+              "column_index": 1,
+              "span_start": 12,
+              "span_end": 19,
+              "physical_page_number": 5
+            }
+          },
+          "binding_basis": "same_source_phrase",
+          "qualifier": "planned_required_equipment"
+        },
+        {
+          "raw_name": "200L反应釜",
+          "name_source": {
+            "unit_index": 134,
+            "quote": "200L反应釜",
+            "anchor": {
+              "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+              "parser_version": "4",
+              "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+              "evidence_id": "28ccd56c9312c0cb682eab0fd3e8b8a7a884437dc161ef10d51815567b1a9607",
+              "section_node_id": "section:81",
+              "block_id": "table:5",
+              "paragraph_index": 0,
+              "fragment_index": 0,
+              "table_path": [
+                "table:5"
+              ],
+              "row_index": 1,
+              "column_index": 1,
+              "span_start": 0,
+              "span_end": 7,
+              "physical_page_number": 5
+            }
+          },
+          "identifier_source": {
+            "unit_index": 135,
+            "quote": "RE64611",
+            "anchor": {
+              "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+              "parser_version": "4",
+              "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+              "evidence_id": "c1e8f7303138ba417ae9c7fe0bd6ba13ae69417a9c6e46a98e26eb26320ef35c",
+              "section_node_id": "section:81",
+              "block_id": "table:5",
+              "paragraph_index": 1,
+              "fragment_index": 0,
+              "table_path": [
+                "table:5"
+              ],
+              "row_index": 1,
+              "column_index": 1,
+              "span_start": 1,
+              "span_end": 8,
+              "physical_page_number": 5
+            }
+          },
+          "binding_basis": "same_physical_cell_fragments",
+          "qualifier": "planned_required_equipment"
+        },
+        {
+          "raw_name": "200L反应釜",
+          "name_source": {
+            "unit_index": 181,
+            "quote": "200L反应釜",
+            "anchor": {
+              "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+              "parser_version": "4",
+              "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+              "evidence_id": "a19a42e1371bfb33bc3b3d29fab8aed3fc81e1688b8adf5487d5df8d4cc7acf3",
+              "section_node_id": "section:84",
+              "block_id": "table:6",
+              "paragraph_index": 0,
+              "fragment_index": 0,
+              "table_path": [
+                "table:6"
+              ],
+              "row_index": 1,
+              "column_index": 1,
+              "span_start": 0,
+              "span_end": 7,
+              "physical_page_number": 5
+            }
+          },
+          "identifier_source": {
+            "unit_index": 182,
+            "quote": "RE64611",
+            "anchor": {
+              "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+              "parser_version": "4",
+              "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+              "evidence_id": "16438631527487298ec0944d6b00559c2dbb71c7e9387096dd808d8c26ccaeda",
+              "section_node_id": "section:84",
+              "block_id": "table:6",
+              "paragraph_index": 0,
+              "fragment_index": 0,
+              "table_path": [
+                "table:6"
+              ],
+              "row_index": 1,
+              "column_index": 2,
+              "span_start": 0,
+              "span_end": 7,
+              "physical_page_number": 5
+            }
+          },
+          "binding_basis": "same_table_row_explicit_name_and_id_headers",
+          "qualifier": "planned_required_equipment"
+        }
+      ],
+      "requirement_row_ref": "req-row-1",
+      "archive_lookup": {
+        "status": "exact_match",
+        "match_count": 1,
+        "entry": {
+          "source": "static_mock_archive",
+          "json_pointer": "/156",
+          "equipment_id": "RE64611",
+          "value": {
+            "workshop": "646",
+            "equipment_id": "RE64611",
+            "name": "搪玻璃反应釜",
+            "specification": "200L",
+            "material": "搪玻璃",
+            "location": "一般区南平台",
+            "area_type": "一般区"
+          }
+        }
+      },
+      "identity_limit": "Exact archive lookup does not prove actual use, erase alternative choice, or grant document evidence to Mock-only attributes."
+    },
+    {
+      "equipment_id": "RE64613",
+      "identity_scope": "same_report_equipment_identifier",
+      "mention_ids": [
+        "equipment-id-69-51",
+        "equipment-id-142-1",
+        "equipment-id-208-0"
+      ],
+      "name_identifier_bindings": [
+        {
+          "raw_name": "500L结晶釜",
+          "name_source": {
+            "unit_index": 69,
+            "quote": "500L结晶釜",
+            "anchor": {
+              "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+              "parser_version": "4",
+              "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+              "evidence_id": "0fb079a418cb8b4765ca7e6be3221465bb4e9867d7316b5838b64700ed951104",
+              "section_node_id": "section:67",
+              "block_id": "table:0",
+              "paragraph_index": 2,
+              "fragment_index": 0,
+              "table_path": [
+                "table:0"
+              ],
+              "row_index": 0,
+              "column_index": 1,
+              "span_start": 43,
+              "span_end": 50,
+              "physical_page_number": 5
+            }
+          },
+          "identifier_source": {
+            "unit_index": 69,
+            "quote": "RE64613",
+            "anchor": {
+              "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+              "parser_version": "4",
+              "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+              "evidence_id": "0fb079a418cb8b4765ca7e6be3221465bb4e9867d7316b5838b64700ed951104",
+              "section_node_id": "section:67",
+              "block_id": "table:0",
+              "paragraph_index": 2,
+              "fragment_index": 0,
+              "table_path": [
+                "table:0"
+              ],
+              "row_index": 0,
+              "column_index": 1,
+              "span_start": 51,
+              "span_end": 58,
+              "physical_page_number": 5
+            }
+          },
+          "binding_basis": "same_source_phrase",
+          "qualifier": "planned_required_equipment"
+        },
+        {
+          "raw_name": "500L反应釜",
+          "name_source": {
+            "unit_index": 141,
+            "quote": "500L反应釜",
+            "anchor": {
+              "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+              "parser_version": "4",
+              "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+              "evidence_id": "4d6956bb4359459e74d9a5640d304b62886acd6aa59f10ee6989ae417970a9bf",
+              "section_node_id": "section:81",
+              "block_id": "table:5",
+              "paragraph_index": 0,
+              "fragment_index": 0,
+              "table_path": [
+                "table:5"
+              ],
+              "row_index": 2,
+              "column_index": 1,
+              "span_start": 0,
+              "span_end": 7,
+              "physical_page_number": 5
+            }
+          },
+          "identifier_source": {
+            "unit_index": 142,
+            "quote": "RE64613",
+            "anchor": {
+              "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+              "parser_version": "4",
+              "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+              "evidence_id": "c7718ac45e08780a7ace6633bdf5fc2d7e99d9548475dfd9c613e85435213018",
+              "section_node_id": "section:81",
+              "block_id": "table:5",
+              "paragraph_index": 1,
+              "fragment_index": 0,
+              "table_path": [
+                "table:5"
+              ],
+              "row_index": 2,
+              "column_index": 1,
+              "span_start": 1,
+              "span_end": 8,
+              "physical_page_number": 5
+            }
+          },
+          "binding_basis": "same_physical_cell_fragments",
+          "qualifier": "planned_required_equipment"
+        },
+        {
+          "raw_name": "500L反应釜",
+          "name_source": {
+            "unit_index": 207,
+            "quote": "500L反应釜",
+            "anchor": {
+              "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+              "parser_version": "4",
+              "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+              "evidence_id": "b115b4988e34981a923ce45c249091716242894362dacf4979e0a1dfdc536564",
+              "section_node_id": "section:84",
+              "block_id": "table:6",
+              "paragraph_index": 0,
+              "fragment_index": 0,
+              "table_path": [
+                "table:6"
+              ],
+              "row_index": 3,
+              "column_index": 1,
+              "span_start": 0,
+              "span_end": 7,
+              "physical_page_number": 5
+            }
+          },
+          "identifier_source": {
+            "unit_index": 208,
+            "quote": "RE64613",
+            "anchor": {
+              "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+              "parser_version": "4",
+              "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+              "evidence_id": "b467ff57f54677a5d98aa46ba5474722a223ff606fa8862a4a52ee49a18bf057",
+              "section_node_id": "section:84",
+              "block_id": "table:6",
+              "paragraph_index": 0,
+              "fragment_index": 0,
+              "table_path": [
+                "table:6"
+              ],
+              "row_index": 3,
+              "column_index": 2,
+              "span_start": 0,
+              "span_end": 7,
+              "physical_page_number": 5
+            }
+          },
+          "binding_basis": "same_table_row_explicit_name_and_id_headers",
+          "qualifier": "planned_required_equipment"
+        }
+      ],
+      "requirement_row_ref": "req-row-3",
+      "archive_lookup": {
+        "status": "exact_match",
+        "match_count": 1,
+        "entry": {
+          "source": "static_mock_archive",
+          "json_pointer": "/158",
+          "equipment_id": "RE64613",
+          "value": {
+            "workshop": "646",
+            "equipment_id": "RE64613",
+            "name": "搪玻璃反应釜",
+            "specification": "500L",
+            "material": "搪玻璃",
+            "location": "洁净区精制间钢平台",
+            "area_type": "洁净区"
+          }
+        }
+      },
+      "identity_limit": "Exact archive lookup does not prove actual use, erase alternative choice, or grant document evidence to Mock-only attributes."
+    }
+  ],
+  "requirement_rows": [
+    {
+      "reference_id": "req-row-1",
+      "table_path": [
+        "table:6"
+      ],
+      "row_index": 1,
+      "identifier_members": [
+        "RE64611"
+      ],
+      "modality": "planned_required_equipment",
+      "alternative_group_id": null,
+      "document_fields": {
+        "equipmentName": {
+          "raw_value": "200L反应釜",
+          "source": {
+            "unit_index": 181,
+            "quote": "200L反应釜",
+            "anchor": {
+              "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+              "parser_version": "4",
+              "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+              "evidence_id": "a19a42e1371bfb33bc3b3d29fab8aed3fc81e1688b8adf5487d5df8d4cc7acf3",
+              "section_node_id": "section:84",
+              "block_id": "table:6",
+              "paragraph_index": 0,
+              "fragment_index": 0,
+              "table_path": [
+                "table:6"
+              ],
+              "row_index": 1,
+              "column_index": 1,
+              "span_start": 0,
+              "span_end": 7,
+              "physical_page_number": 5
+            }
+          },
+          "field_header": {
+            "unit_index": 167,
+            "quote": "设备名称",
+            "anchor": {
+              "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+              "parser_version": "4",
+              "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+              "evidence_id": "291a310cc59ec69b19c37a2161ce27b8df6869e327a4fb153f4cf4bf8f418e28",
+              "section_node_id": "section:84",
+              "block_id": "table:6",
+              "paragraph_index": 0,
+              "fragment_index": 0,
+              "table_path": [
+                "table:6"
+              ],
+              "row_index": 0,
+              "column_index": 1,
+              "span_start": 0,
+              "span_end": 4,
+              "physical_page_number": 5
+            }
+          }
+        },
+        "equipmentID": {
+          "raw_value": "RE64611",
+          "source": {
+            "unit_index": 182,
+            "quote": "RE64611",
+            "anchor": {
+              "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+              "parser_version": "4",
+              "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+              "evidence_id": "16438631527487298ec0944d6b00559c2dbb71c7e9387096dd808d8c26ccaeda",
+              "section_node_id": "section:84",
+              "block_id": "table:6",
+              "paragraph_index": 0,
+              "fragment_index": 0,
+              "table_path": [
+                "table:6"
+              ],
+              "row_index": 1,
+              "column_index": 2,
+              "span_start": 0,
+              "span_end": 7,
+              "physical_page_number": 5
+            }
+          },
+          "field_header": {
+            "unit_index": 168,
+            "quote": "设备编号",
+            "anchor": {
+              "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+              "parser_version": "4",
+              "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+              "evidence_id": "f2783299394838ece13aab0b33ded87653b120a95058989df7e26fae968f7918",
+              "section_node_id": "section:84",
+              "block_id": "table:6",
+              "paragraph_index": 0,
+              "fragment_index": 0,
+              "table_path": [
+                "table:6"
+              ],
+              "row_index": 0,
+              "column_index": 2,
+              "span_start": 0,
+              "span_end": 4,
+              "physical_page_number": 5
+            }
+          }
+        },
+        "modelSpecification": {
+          "raw_value": "200L",
+          "source": {
+            "unit_index": 183,
+            "quote": "200L",
+            "anchor": {
+              "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+              "parser_version": "4",
+              "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+              "evidence_id": "ecb41123f3fbbdd3370fa83d7f296bd13e8ca0f3012aec14f1086ec29e6aee49",
+              "section_node_id": "section:84",
+              "block_id": "table:6",
+              "paragraph_index": 0,
+              "fragment_index": 0,
+              "table_path": [
+                "table:6"
+              ],
+              "row_index": 1,
+              "column_index": 3,
+              "span_start": 0,
+              "span_end": 4,
+              "physical_page_number": 5
+            }
+          },
+          "field_header": {
+            "unit_index": 169,
+            "quote": "规格型号",
+            "anchor": {
+              "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+              "parser_version": "4",
+              "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+              "evidence_id": "fb05a3374bf9b2d319118f318e050cf23fca2fa4b0f27cd77c687ddbb3571806",
+              "section_node_id": "section:84",
+              "block_id": "table:6",
+              "paragraph_index": 0,
+              "fragment_index": 0,
+              "table_path": [
+                "table:6"
+              ],
+              "row_index": 0,
+              "column_index": 3,
+              "span_start": 0,
+              "span_end": 4,
+              "physical_page_number": 5
+            }
+          }
+        },
+        "material": {
+          "raw_value": "搪玻璃",
+          "source": {
+            "unit_index": 184,
+            "quote": "搪玻璃",
+            "anchor": {
+              "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+              "parser_version": "4",
+              "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+              "evidence_id": "1629570ef6fb2b20416ed0d110a760db5cf4869f8c707a8a03c660b8cae76cf2",
+              "section_node_id": "section:84",
+              "block_id": "table:6",
+              "paragraph_index": 0,
+              "fragment_index": 0,
+              "table_path": [
+                "table:6"
+              ],
+              "row_index": 1,
+              "column_index": 4,
+              "span_start": 0,
+              "span_end": 3,
+              "physical_page_number": 5
+            }
+          },
+          "field_header": {
+            "unit_index": 170,
+            "quote": "主体材质",
+            "anchor": {
+              "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+              "parser_version": "4",
+              "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+              "evidence_id": "f3f66bf9779c9bb1200d982234da0f1bb29198d7b9a59204e4fff20a8365f1e8",
+              "section_node_id": "section:84",
+              "block_id": "table:6",
+              "paragraph_index": 0,
+              "fragment_index": 0,
+              "table_path": [
+                "table:6"
+              ],
+              "row_index": 0,
+              "column_index": 4,
+              "span_start": 0,
+              "span_end": 4,
+              "physical_page_number": 5
+            }
+          }
+        }
+      },
+      "scope_note": "Equipment requirement/process plan, not proof of completed physical use."
+    },
+    {
+      "reference_id": "req-row-2",
+      "table_path": [
+        "table:6"
+      ],
+      "row_index": 2,
+      "identifier_members": [
+        "PF64216",
+        "PF64616"
+      ],
+      "modality": "alternative",
+      "alternative_group_id": "filter-choice",
+      "document_fields": {
+        "equipmentName": {
+          "raw_value": "钛棒过滤器",
+          "source": {
+            "unit_index": 194,
+            "quote": "钛棒过滤器",
+            "anchor": {
+              "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+              "parser_version": "4",
+              "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+              "evidence_id": "137ec4908e2190908404a39b40c24b6d9545bdaa1f510d84e06bf408e6d9a1e9",
+              "section_node_id": "section:84",
+              "block_id": "table:6",
+              "paragraph_index": 0,
+              "fragment_index": 0,
+              "table_path": [
+                "table:6"
+              ],
+              "row_index": 2,
+              "column_index": 1,
+              "span_start": 0,
+              "span_end": 5,
+              "physical_page_number": 5
+            }
+          },
+          "field_header": {
+            "unit_index": 167,
+            "quote": "设备名称",
+            "anchor": {
+              "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+              "parser_version": "4",
+              "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+              "evidence_id": "291a310cc59ec69b19c37a2161ce27b8df6869e327a4fb153f4cf4bf8f418e28",
+              "section_node_id": "section:84",
+              "block_id": "table:6",
+              "paragraph_index": 0,
+              "fragment_index": 0,
+              "table_path": [
+                "table:6"
+              ],
+              "row_index": 0,
+              "column_index": 1,
+              "span_start": 0,
+              "span_end": 4,
+              "physical_page_number": 5
+            }
+          }
+        },
+        "equipmentID": {
+          "raw_value": "PF64216或PF64616",
+          "source": {
+            "unit_index": 195,
+            "quote": "PF64216或PF64616",
+            "anchor": {
+              "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+              "parser_version": "4",
+              "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+              "evidence_id": "5544bc205a1b3f200e65c2279d7cfc0d5582b86442475daf7181137bf181d2cd",
+              "section_node_id": "section:84",
+              "block_id": "table:6",
+              "paragraph_index": 0,
+              "fragment_index": 0,
+              "table_path": [
+                "table:6"
+              ],
+              "row_index": 2,
+              "column_index": 2,
+              "span_start": 0,
+              "span_end": 15,
+              "physical_page_number": 5
+            }
+          },
+          "field_header": {
+            "unit_index": 168,
+            "quote": "设备编号",
+            "anchor": {
+              "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+              "parser_version": "4",
+              "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+              "evidence_id": "f2783299394838ece13aab0b33ded87653b120a95058989df7e26fae968f7918",
+              "section_node_id": "section:84",
+              "block_id": "table:6",
+              "paragraph_index": 0,
+              "fragment_index": 0,
+              "table_path": [
+                "table:6"
+              ],
+              "row_index": 0,
+              "column_index": 2,
+              "span_start": 0,
+              "span_end": 4,
+              "physical_page_number": 5
+            }
+          }
+        },
+        "modelSpecification": {
+          "raw_value": "10英寸3芯",
+          "source": {
+            "unit_index": 196,
+            "quote": "10英寸3芯",
+            "anchor": {
+              "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+              "parser_version": "4",
+              "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+              "evidence_id": "8486b7fa8acef4d9ee3c78db72ce212bdbd9453e61fa65a63ad8997eb063a095",
+              "section_node_id": "section:84",
+              "block_id": "table:6",
+              "paragraph_index": 0,
+              "fragment_index": 0,
+              "table_path": [
+                "table:6"
+              ],
+              "row_index": 2,
+              "column_index": 3,
+              "span_start": 0,
+              "span_end": 6,
+              "physical_page_number": 5
+            }
+          },
+          "field_header": {
+            "unit_index": 169,
+            "quote": "规格型号",
+            "anchor": {
+              "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+              "parser_version": "4",
+              "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+              "evidence_id": "fb05a3374bf9b2d319118f318e050cf23fca2fa4b0f27cd77c687ddbb3571806",
+              "section_node_id": "section:84",
+              "block_id": "table:6",
+              "paragraph_index": 0,
+              "fragment_index": 0,
+              "table_path": [
+                "table:6"
+              ],
+              "row_index": 0,
+              "column_index": 3,
+              "span_start": 0,
+              "span_end": 4,
+              "physical_page_number": 5
+            }
+          }
+        },
+        "material": {
+          "raw_value": "不锈钢",
+          "source": {
+            "unit_index": 197,
+            "quote": "不锈钢",
+            "anchor": {
+              "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+              "parser_version": "4",
+              "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+              "evidence_id": "c493faf1eb0e51ae6e0b070936c40fc259dea6769b407a0928c4082efa67138e",
+              "section_node_id": "section:84",
+              "block_id": "table:6",
+              "paragraph_index": 0,
+              "fragment_index": 0,
+              "table_path": [
+                "table:6"
+              ],
+              "row_index": 2,
+              "column_index": 4,
+              "span_start": 0,
+              "span_end": 3,
+              "physical_page_number": 5
+            }
+          },
+          "field_header": {
+            "unit_index": 170,
+            "quote": "主体材质",
+            "anchor": {
+              "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+              "parser_version": "4",
+              "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+              "evidence_id": "f3f66bf9779c9bb1200d982234da0f1bb29198d7b9a59204e4fff20a8365f1e8",
+              "section_node_id": "section:84",
+              "block_id": "table:6",
+              "paragraph_index": 0,
+              "fragment_index": 0,
+              "table_path": [
+                "table:6"
+              ],
+              "row_index": 0,
+              "column_index": 4,
+              "span_start": 0,
+              "span_end": 4,
+              "physical_page_number": 5
+            }
+          }
+        }
+      },
+      "scope_note": "Both IDs are mentioned as choices; the document does not select a winner or assert that both filters were actually used."
+    },
+    {
+      "reference_id": "req-row-3",
+      "table_path": [
+        "table:6"
+      ],
+      "row_index": 3,
+      "identifier_members": [
+        "RE64613"
+      ],
+      "modality": "planned_required_equipment",
+      "alternative_group_id": null,
+      "document_fields": {
+        "equipmentName": {
+          "raw_value": "500L反应釜",
+          "source": {
+            "unit_index": 207,
+            "quote": "500L反应釜",
+            "anchor": {
+              "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+              "parser_version": "4",
+              "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+              "evidence_id": "b115b4988e34981a923ce45c249091716242894362dacf4979e0a1dfdc536564",
+              "section_node_id": "section:84",
+              "block_id": "table:6",
+              "paragraph_index": 0,
+              "fragment_index": 0,
+              "table_path": [
+                "table:6"
+              ],
+              "row_index": 3,
+              "column_index": 1,
+              "span_start": 0,
+              "span_end": 7,
+              "physical_page_number": 5
+            }
+          },
+          "field_header": {
+            "unit_index": 167,
+            "quote": "设备名称",
+            "anchor": {
+              "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+              "parser_version": "4",
+              "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+              "evidence_id": "291a310cc59ec69b19c37a2161ce27b8df6869e327a4fb153f4cf4bf8f418e28",
+              "section_node_id": "section:84",
+              "block_id": "table:6",
+              "paragraph_index": 0,
+              "fragment_index": 0,
+              "table_path": [
+                "table:6"
+              ],
+              "row_index": 0,
+              "column_index": 1,
+              "span_start": 0,
+              "span_end": 4,
+              "physical_page_number": 5
+            }
+          }
+        },
+        "equipmentID": {
+          "raw_value": "RE64613",
+          "source": {
+            "unit_index": 208,
+            "quote": "RE64613",
+            "anchor": {
+              "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+              "parser_version": "4",
+              "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+              "evidence_id": "b467ff57f54677a5d98aa46ba5474722a223ff606fa8862a4a52ee49a18bf057",
+              "section_node_id": "section:84",
+              "block_id": "table:6",
+              "paragraph_index": 0,
+              "fragment_index": 0,
+              "table_path": [
+                "table:6"
+              ],
+              "row_index": 3,
+              "column_index": 2,
+              "span_start": 0,
+              "span_end": 7,
+              "physical_page_number": 5
+            }
+          },
+          "field_header": {
+            "unit_index": 168,
+            "quote": "设备编号",
+            "anchor": {
+              "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+              "parser_version": "4",
+              "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+              "evidence_id": "f2783299394838ece13aab0b33ded87653b120a95058989df7e26fae968f7918",
+              "section_node_id": "section:84",
+              "block_id": "table:6",
+              "paragraph_index": 0,
+              "fragment_index": 0,
+              "table_path": [
+                "table:6"
+              ],
+              "row_index": 0,
+              "column_index": 2,
+              "span_start": 0,
+              "span_end": 4,
+              "physical_page_number": 5
+            }
+          }
+        },
+        "modelSpecification": {
+          "raw_value": "500L",
+          "source": {
+            "unit_index": 209,
+            "quote": "500L",
+            "anchor": {
+              "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+              "parser_version": "4",
+              "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+              "evidence_id": "01918fda883461c6d76805e4f49e0c3025c0206ef9aa267020537d72a9da86d0",
+              "section_node_id": "section:84",
+              "block_id": "table:6",
+              "paragraph_index": 0,
+              "fragment_index": 0,
+              "table_path": [
+                "table:6"
+              ],
+              "row_index": 3,
+              "column_index": 3,
+              "span_start": 0,
+              "span_end": 4,
+              "physical_page_number": 5
+            }
+          },
+          "field_header": {
+            "unit_index": 169,
+            "quote": "规格型号",
+            "anchor": {
+              "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+              "parser_version": "4",
+              "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+              "evidence_id": "fb05a3374bf9b2d319118f318e050cf23fca2fa4b0f27cd77c687ddbb3571806",
+              "section_node_id": "section:84",
+              "block_id": "table:6",
+              "paragraph_index": 0,
+              "fragment_index": 0,
+              "table_path": [
+                "table:6"
+              ],
+              "row_index": 0,
+              "column_index": 3,
+              "span_start": 0,
+              "span_end": 4,
+              "physical_page_number": 5
+            }
+          }
+        },
+        "material": {
+          "raw_value": "搪玻璃",
+          "source": {
+            "unit_index": 210,
+            "quote": "搪玻璃",
+            "anchor": {
+              "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+              "parser_version": "4",
+              "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+              "evidence_id": "ce59f85b17db84dd311942dd9e50927e04a4d50e3ba9d1c494e2eda01ae54d39",
+              "section_node_id": "section:84",
+              "block_id": "table:6",
+              "paragraph_index": 0,
+              "fragment_index": 0,
+              "table_path": [
+                "table:6"
+              ],
+              "row_index": 3,
+              "column_index": 4,
+              "span_start": 0,
+              "span_end": 3,
+              "physical_page_number": 5
+            }
+          },
+          "field_header": {
+            "unit_index": 170,
+            "quote": "主体材质",
+            "anchor": {
+              "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+              "parser_version": "4",
+              "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+              "evidence_id": "f3f66bf9779c9bb1200d982234da0f1bb29198d7b9a59204e4fff20a8365f1e8",
+              "section_node_id": "section:84",
+              "block_id": "table:6",
+              "paragraph_index": 0,
+              "fragment_index": 0,
+              "table_path": [
+                "table:6"
+              ],
+              "row_index": 0,
+              "column_index": 4,
+              "span_start": 0,
+              "span_end": 4,
+              "physical_page_number": 5
+            }
+          }
+        }
+      },
+      "scope_note": "Equipment requirement/process plan, not proof of completed physical use."
+    },
+    {
+      "reference_id": "req-row-4",
+      "table_path": [
+        "table:6"
+      ],
+      "row_index": 4,
+      "identifier_members": [
+        "CT64610"
+      ],
+      "modality": "planned_required_equipment",
+      "alternative_group_id": null,
+      "document_fields": {
+        "equipmentName": {
+          "raw_value": "离心机",
+          "source": {
+            "unit_index": 222,
+            "quote": "离心机",
+            "anchor": {
+              "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+              "parser_version": "4",
+              "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+              "evidence_id": "f0527dba0a16bd9612d16f9409f168a7ac95bb487679886f614bb774ccf6f96e",
+              "section_node_id": "section:84",
+              "block_id": "table:6",
+              "paragraph_index": 0,
+              "fragment_index": 0,
+              "table_path": [
+                "table:6"
+              ],
+              "row_index": 4,
+              "column_index": 1,
+              "span_start": 0,
+              "span_end": 3,
+              "physical_page_number": 5
+            }
+          },
+          "field_header": {
+            "unit_index": 167,
+            "quote": "设备名称",
+            "anchor": {
+              "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+              "parser_version": "4",
+              "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+              "evidence_id": "291a310cc59ec69b19c37a2161ce27b8df6869e327a4fb153f4cf4bf8f418e28",
+              "section_node_id": "section:84",
+              "block_id": "table:6",
+              "paragraph_index": 0,
+              "fragment_index": 0,
+              "table_path": [
+                "table:6"
+              ],
+              "row_index": 0,
+              "column_index": 1,
+              "span_start": 0,
+              "span_end": 4,
+              "physical_page_number": 5
+            }
+          }
+        },
+        "equipmentID": {
+          "raw_value": "CT64610",
+          "source": {
+            "unit_index": 223,
+            "quote": "CT64610",
+            "anchor": {
+              "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+              "parser_version": "4",
+              "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+              "evidence_id": "df9b4d09713883ed06ca247dd4cb6e375c766c25fc4b01fccff3e83c1bd3e8e1",
+              "section_node_id": "section:84",
+              "block_id": "table:6",
+              "paragraph_index": 0,
+              "fragment_index": 0,
+              "table_path": [
+                "table:6"
+              ],
+              "row_index": 4,
+              "column_index": 2,
+              "span_start": 0,
+              "span_end": 7,
+              "physical_page_number": 5
+            }
+          },
+          "field_header": {
+            "unit_index": 168,
+            "quote": "设备编号",
+            "anchor": {
+              "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+              "parser_version": "4",
+              "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+              "evidence_id": "f2783299394838ece13aab0b33ded87653b120a95058989df7e26fae968f7918",
+              "section_node_id": "section:84",
+              "block_id": "table:6",
+              "paragraph_index": 0,
+              "fragment_index": 0,
+              "table_path": [
+                "table:6"
+              ],
+              "row_index": 0,
+              "column_index": 2,
+              "span_start": 0,
+              "span_end": 4,
+              "physical_page_number": 5
+            }
+          }
+        },
+        "modelSpecification": {
+          "raw_value": "600",
+          "source": {
+            "unit_index": 224,
+            "quote": "600",
+            "anchor": {
+              "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+              "parser_version": "4",
+              "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+              "evidence_id": "f56484d1d7843da0a3b21bef71ebf983ab29d52cf8562c980e22ddbcd372e019",
+              "section_node_id": "section:84",
+              "block_id": "table:6",
+              "paragraph_index": 0,
+              "fragment_index": 0,
+              "table_path": [
+                "table:6"
+              ],
+              "row_index": 4,
+              "column_index": 3,
+              "span_start": 0,
+              "span_end": 3,
+              "physical_page_number": 5
+            }
+          },
+          "field_header": {
+            "unit_index": 169,
+            "quote": "规格型号",
+            "anchor": {
+              "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+              "parser_version": "4",
+              "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+              "evidence_id": "fb05a3374bf9b2d319118f318e050cf23fca2fa4b0f27cd77c687ddbb3571806",
+              "section_node_id": "section:84",
+              "block_id": "table:6",
+              "paragraph_index": 0,
+              "fragment_index": 0,
+              "table_path": [
+                "table:6"
+              ],
+              "row_index": 0,
+              "column_index": 3,
+              "span_start": 0,
+              "span_end": 4,
+              "physical_page_number": 5
+            }
+          }
+        },
+        "material": {
+          "raw_value": "不锈钢衬HALAR",
+          "source": {
+            "unit_index": 225,
+            "quote": "不锈钢衬HALAR",
+            "anchor": {
+              "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+              "parser_version": "4",
+              "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+              "evidence_id": "d8339cb1a9940b471ab02b6fc9e7524422c40b471d5f35a7a03f4edcbc317c4a",
+              "section_node_id": "section:84",
+              "block_id": "table:6",
+              "paragraph_index": 0,
+              "fragment_index": 0,
+              "table_path": [
+                "table:6"
+              ],
+              "row_index": 4,
+              "column_index": 4,
+              "span_start": 0,
+              "span_end": 9,
+              "physical_page_number": 5
+            }
+          },
+          "field_header": {
+            "unit_index": 170,
+            "quote": "主体材质",
+            "anchor": {
+              "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+              "parser_version": "4",
+              "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+              "evidence_id": "f3f66bf9779c9bb1200d982234da0f1bb29198d7b9a59204e4fff20a8365f1e8",
+              "section_node_id": "section:84",
+              "block_id": "table:6",
+              "paragraph_index": 0,
+              "fragment_index": 0,
+              "table_path": [
+                "table:6"
+              ],
+              "row_index": 0,
+              "column_index": 4,
+              "span_start": 0,
+              "span_end": 4,
+              "physical_page_number": 5
+            }
+          }
+        }
+      },
+      "scope_note": "Equipment requirement/process plan, not proof of completed physical use."
+    },
+    {
+      "reference_id": "req-row-5",
+      "table_path": [
+        "table:6"
+      ],
+      "row_index": 5,
+      "identifier_members": [
+        "DE64603"
+      ],
+      "modality": "planned_required_equipment",
+      "alternative_group_id": null,
+      "document_fields": {
+        "equipmentName": {
+          "raw_value": "真空干燥箱",
+          "source": {
+            "unit_index": 235,
+            "quote": "真空干燥箱",
+            "anchor": {
+              "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+              "parser_version": "4",
+              "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+              "evidence_id": "16dfa2cd4ab3794bcb0b42f4f25d82c5213034035b80aab78f53610c2adfde92",
+              "section_node_id": "section:84",
+              "block_id": "table:6",
+              "paragraph_index": 0,
+              "fragment_index": 0,
+              "table_path": [
+                "table:6"
+              ],
+              "row_index": 5,
+              "column_index": 1,
+              "span_start": 0,
+              "span_end": 5,
+              "physical_page_number": 5
+            }
+          },
+          "field_header": {
+            "unit_index": 167,
+            "quote": "设备名称",
+            "anchor": {
+              "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+              "parser_version": "4",
+              "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+              "evidence_id": "291a310cc59ec69b19c37a2161ce27b8df6869e327a4fb153f4cf4bf8f418e28",
+              "section_node_id": "section:84",
+              "block_id": "table:6",
+              "paragraph_index": 0,
+              "fragment_index": 0,
+              "table_path": [
+                "table:6"
+              ],
+              "row_index": 0,
+              "column_index": 1,
+              "span_start": 0,
+              "span_end": 4,
+              "physical_page_number": 5
+            }
+          }
+        },
+        "equipmentID": {
+          "raw_value": "DE64603",
+          "source": {
+            "unit_index": 236,
+            "quote": "DE64603",
+            "anchor": {
+              "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+              "parser_version": "4",
+              "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+              "evidence_id": "c847ce52e1d637718b869613a834c00cd8bfb22403e45f6eea35bf3806ca27c9",
+              "section_node_id": "section:84",
+              "block_id": "table:6",
+              "paragraph_index": 0,
+              "fragment_index": 0,
+              "table_path": [
+                "table:6"
+              ],
+              "row_index": 5,
+              "column_index": 2,
+              "span_start": 0,
+              "span_end": 7,
+              "physical_page_number": 5
+            }
+          },
+          "field_header": {
+            "unit_index": 168,
+            "quote": "设备编号",
+            "anchor": {
+              "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+              "parser_version": "4",
+              "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+              "evidence_id": "f2783299394838ece13aab0b33ded87653b120a95058989df7e26fae968f7918",
+              "section_node_id": "section:84",
+              "block_id": "table:6",
+              "paragraph_index": 0,
+              "fragment_index": 0,
+              "table_path": [
+                "table:6"
+              ],
+              "row_index": 0,
+              "column_index": 2,
+              "span_start": 0,
+              "span_end": 4,
+              "physical_page_number": 5
+            }
+          }
+        },
+        "modelSpecification": {
+          "raw_value": "24盘",
+          "source": {
+            "unit_index": 237,
+            "quote": "24盘",
+            "anchor": {
+              "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+              "parser_version": "4",
+              "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+              "evidence_id": "28b2b7549141bccfd95fe014d8f95171a469537e5df68e18941579fd21645541",
+              "section_node_id": "section:84",
+              "block_id": "table:6",
+              "paragraph_index": 0,
+              "fragment_index": 0,
+              "table_path": [
+                "table:6"
+              ],
+              "row_index": 5,
+              "column_index": 3,
+              "span_start": 0,
+              "span_end": 3,
+              "physical_page_number": 5
+            }
+          },
+          "field_header": {
+            "unit_index": 169,
+            "quote": "规格型号",
+            "anchor": {
+              "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+              "parser_version": "4",
+              "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+              "evidence_id": "fb05a3374bf9b2d319118f318e050cf23fca2fa4b0f27cd77c687ddbb3571806",
+              "section_node_id": "section:84",
+              "block_id": "table:6",
+              "paragraph_index": 0,
+              "fragment_index": 0,
+              "table_path": [
+                "table:6"
+              ],
+              "row_index": 0,
+              "column_index": 3,
+              "span_start": 0,
+              "span_end": 4,
+              "physical_page_number": 5
+            }
+          }
+        },
+        "material": {
+          "raw_value": "不锈钢衬HALAR",
+          "source": {
+            "unit_index": 238,
+            "quote": "不锈钢衬HALAR",
+            "anchor": {
+              "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+              "parser_version": "4",
+              "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+              "evidence_id": "df705001b4a3c220ba6a2427a4a4820568646bb326baa7cd8f56e2b4ab72afc2",
+              "section_node_id": "section:84",
+              "block_id": "table:6",
+              "paragraph_index": 0,
+              "fragment_index": 0,
+              "table_path": [
+                "table:6"
+              ],
+              "row_index": 5,
+              "column_index": 4,
+              "span_start": 0,
+              "span_end": 9,
+              "physical_page_number": 5
+            }
+          },
+          "field_header": {
+            "unit_index": 170,
+            "quote": "主体材质",
+            "anchor": {
+              "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+              "parser_version": "4",
+              "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+              "evidence_id": "f3f66bf9779c9bb1200d982234da0f1bb29198d7b9a59204e4fff20a8365f1e8",
+              "section_node_id": "section:84",
+              "block_id": "table:6",
+              "paragraph_index": 0,
+              "fragment_index": 0,
+              "table_path": [
+                "table:6"
+              ],
+              "row_index": 0,
+              "column_index": 4,
+              "span_start": 0,
+              "span_end": 4,
+              "physical_page_number": 5
+            }
+          }
+        }
+      },
+      "scope_note": "Equipment requirement/process plan, not proof of completed physical use."
+    }
+  ],
+  "alternative_groups": [
+    {
+      "group_id": "filter-choice",
+      "operator": "alternative",
+      "members": [
+        "PF64216",
+        "PF64616"
+      ],
+      "selected_member": null,
+      "observed_actual_use": "not_established",
+      "sources": [
+        {
+          "unit_index": 69,
+          "quote": "PF64216或PF64616",
+          "anchor": {
+            "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+            "parser_version": "4",
+            "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+            "evidence_id": "0fb079a418cb8b4765ca7e6be3221465bb4e9867d7316b5838b64700ed951104",
+            "section_node_id": "section:67",
+            "block_id": "table:0",
+            "paragraph_index": 2,
+            "fragment_index": 0,
+            "table_path": [
+              "table:0"
+            ],
+            "row_index": 0,
+            "column_index": 1,
+            "span_start": 20,
+            "span_end": 35,
+            "physical_page_number": 5
+          }
+        },
+        {
+          "unit_index": 135,
+          "quote": "PF64216或PF64616",
+          "anchor": {
+            "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+            "parser_version": "4",
+            "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+            "evidence_id": "c1e8f7303138ba417ae9c7fe0bd6ba13ae69417a9c6e46a98e26eb26320ef35c",
+            "section_node_id": "section:81",
+            "block_id": "table:5",
+            "paragraph_index": 1,
+            "fragment_index": 0,
+            "table_path": [
+              "table:5"
+            ],
+            "row_index": 1,
+            "column_index": 1,
+            "span_start": 13,
+            "span_end": 28,
+            "physical_page_number": 5
+          }
+        },
+        {
+          "unit_index": 195,
+          "quote": "PF64216或PF64616",
+          "anchor": {
+            "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+            "parser_version": "4",
+            "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+            "evidence_id": "5544bc205a1b3f200e65c2279d7cfc0d5582b86442475daf7181137bf181d2cd",
+            "section_node_id": "section:84",
+            "block_id": "table:6",
+            "paragraph_index": 0,
+            "fragment_index": 0,
+            "table_path": [
+              "table:6"
+            ],
+            "row_index": 2,
+            "column_index": 2,
+            "span_start": 0,
+            "span_end": 15,
+            "physical_page_number": 5
+          }
+        }
+      ],
+      "required_behavior": "Preserve the complete 或 condition in all three contexts; neither join IDs into a new identity nor turn the two possibilities into two unconditional used-device facts."
+    }
+  ],
+  "document_mock_comparisons": [
+    {
+      "equipment_id": "CT64610",
+      "field": "equipmentName",
+      "classification": "exact_value_agreement",
+      "document": {
+        "raw_value": "离心机",
+        "source": {
+          "unit_index": 222,
+          "quote": "离心机",
+          "anchor": {
+            "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+            "parser_version": "4",
+            "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+            "evidence_id": "f0527dba0a16bd9612d16f9409f168a7ac95bb487679886f614bb774ccf6f96e",
+            "section_node_id": "section:84",
+            "block_id": "table:6",
+            "paragraph_index": 0,
+            "fragment_index": 0,
+            "table_path": [
+              "table:6"
+            ],
+            "row_index": 4,
+            "column_index": 1,
+            "span_start": 0,
+            "span_end": 3,
+            "physical_page_number": 5
+          }
+        },
+        "field_header": {
+          "unit_index": 167,
+          "quote": "设备名称",
+          "anchor": {
+            "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+            "parser_version": "4",
+            "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+            "evidence_id": "291a310cc59ec69b19c37a2161ce27b8df6869e327a4fb153f4cf4bf8f418e28",
+            "section_node_id": "section:84",
+            "block_id": "table:6",
+            "paragraph_index": 0,
+            "fragment_index": 0,
+            "table_path": [
+              "table:6"
+            ],
+            "row_index": 0,
+            "column_index": 1,
+            "span_start": 0,
+            "span_end": 4,
+            "physical_page_number": 5
+          }
+        }
+      },
+      "mock": {
+        "source": "static_mock_archive",
+        "json_pointer": "/113/name",
+        "equipment_id": "CT64610",
+        "value": "离心机"
+      },
+      "qualifier": "planned_required_equipment"
+    },
+    {
+      "equipment_id": "CT64610",
+      "field": "modelSpecification",
+      "classification": "exact_value_agreement",
+      "document": {
+        "raw_value": "600",
+        "source": {
+          "unit_index": 224,
+          "quote": "600",
+          "anchor": {
+            "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+            "parser_version": "4",
+            "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+            "evidence_id": "f56484d1d7843da0a3b21bef71ebf983ab29d52cf8562c980e22ddbcd372e019",
+            "section_node_id": "section:84",
+            "block_id": "table:6",
+            "paragraph_index": 0,
+            "fragment_index": 0,
+            "table_path": [
+              "table:6"
+            ],
+            "row_index": 4,
+            "column_index": 3,
+            "span_start": 0,
+            "span_end": 3,
+            "physical_page_number": 5
+          }
+        },
+        "field_header": {
+          "unit_index": 169,
+          "quote": "规格型号",
+          "anchor": {
+            "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+            "parser_version": "4",
+            "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+            "evidence_id": "fb05a3374bf9b2d319118f318e050cf23fca2fa4b0f27cd77c687ddbb3571806",
+            "section_node_id": "section:84",
+            "block_id": "table:6",
+            "paragraph_index": 0,
+            "fragment_index": 0,
+            "table_path": [
+              "table:6"
+            ],
+            "row_index": 0,
+            "column_index": 3,
+            "span_start": 0,
+            "span_end": 4,
+            "physical_page_number": 5
+          }
+        }
+      },
+      "mock": {
+        "source": "static_mock_archive",
+        "json_pointer": "/113/specification",
+        "equipment_id": "CT64610",
+        "value": "600"
+      },
+      "qualifier": "planned_required_equipment"
+    },
+    {
+      "equipment_id": "CT64610",
+      "field": "material",
+      "classification": "source_value_discrepancy_requires_review",
+      "document": {
+        "raw_value": "不锈钢衬HALAR",
+        "source": {
+          "unit_index": 225,
+          "quote": "不锈钢衬HALAR",
+          "anchor": {
+            "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+            "parser_version": "4",
+            "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+            "evidence_id": "d8339cb1a9940b471ab02b6fc9e7524422c40b471d5f35a7a03f4edcbc317c4a",
+            "section_node_id": "section:84",
+            "block_id": "table:6",
+            "paragraph_index": 0,
+            "fragment_index": 0,
+            "table_path": [
+              "table:6"
+            ],
+            "row_index": 4,
+            "column_index": 4,
+            "span_start": 0,
+            "span_end": 9,
+            "physical_page_number": 5
+          }
+        },
+        "field_header": {
+          "unit_index": 170,
+          "quote": "主体材质",
+          "anchor": {
+            "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+            "parser_version": "4",
+            "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+            "evidence_id": "f3f66bf9779c9bb1200d982234da0f1bb29198d7b9a59204e4fff20a8365f1e8",
+            "section_node_id": "section:84",
+            "block_id": "table:6",
+            "paragraph_index": 0,
+            "fragment_index": 0,
+            "table_path": [
+              "table:6"
+            ],
+            "row_index": 0,
+            "column_index": 4,
+            "span_start": 0,
+            "span_end": 4,
+            "physical_page_number": 5
+          }
+        }
+      },
+      "mock": {
+        "source": "static_mock_archive",
+        "json_pointer": "/113/material",
+        "equipment_id": "CT64610",
+        "value": "316L不锈钢"
+      },
+      "qualifier": "planned_required_equipment",
+      "interpretation": "Document states 不锈钢衬HALAR while Mock records 316L不锈钢. This is an attribute value discrepancy; the Mock does not explicitly negate a lining, so strict physical incompatibility is not proven. Keep both sourced values and flag the difference; do not overwrite either or call either the verified real-world material."
+    },
+    {
+      "equipment_id": "PF64216",
+      "field": "equipmentName",
+      "classification": "exact_value_agreement",
+      "document": {
+        "raw_value": "钛棒过滤器",
+        "source": {
+          "unit_index": 194,
+          "quote": "钛棒过滤器",
+          "anchor": {
+            "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+            "parser_version": "4",
+            "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+            "evidence_id": "137ec4908e2190908404a39b40c24b6d9545bdaa1f510d84e06bf408e6d9a1e9",
+            "section_node_id": "section:84",
+            "block_id": "table:6",
+            "paragraph_index": 0,
+            "fragment_index": 0,
+            "table_path": [
+              "table:6"
+            ],
+            "row_index": 2,
+            "column_index": 1,
+            "span_start": 0,
+            "span_end": 5,
+            "physical_page_number": 5
+          }
+        },
+        "field_header": {
+          "unit_index": 167,
+          "quote": "设备名称",
+          "anchor": {
+            "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+            "parser_version": "4",
+            "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+            "evidence_id": "291a310cc59ec69b19c37a2161ce27b8df6869e327a4fb153f4cf4bf8f418e28",
+            "section_node_id": "section:84",
+            "block_id": "table:6",
+            "paragraph_index": 0,
+            "fragment_index": 0,
+            "table_path": [
+              "table:6"
+            ],
+            "row_index": 0,
+            "column_index": 1,
+            "span_start": 0,
+            "span_end": 4,
+            "physical_page_number": 5
+          }
+        }
+      },
+      "mock": {
+        "source": "static_mock_archive",
+        "json_pointer": "/101/name",
+        "equipment_id": "PF64216",
+        "value": "钛棒过滤器"
+      },
+      "qualifier": "alternative"
+    },
+    {
+      "equipment_id": "PF64216",
+      "field": "modelSpecification",
+      "classification": "exact_value_agreement",
+      "document": {
+        "raw_value": "10英寸3芯",
+        "source": {
+          "unit_index": 196,
+          "quote": "10英寸3芯",
+          "anchor": {
+            "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+            "parser_version": "4",
+            "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+            "evidence_id": "8486b7fa8acef4d9ee3c78db72ce212bdbd9453e61fa65a63ad8997eb063a095",
+            "section_node_id": "section:84",
+            "block_id": "table:6",
+            "paragraph_index": 0,
+            "fragment_index": 0,
+            "table_path": [
+              "table:6"
+            ],
+            "row_index": 2,
+            "column_index": 3,
+            "span_start": 0,
+            "span_end": 6,
+            "physical_page_number": 5
+          }
+        },
+        "field_header": {
+          "unit_index": 169,
+          "quote": "规格型号",
+          "anchor": {
+            "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+            "parser_version": "4",
+            "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+            "evidence_id": "fb05a3374bf9b2d319118f318e050cf23fca2fa4b0f27cd77c687ddbb3571806",
+            "section_node_id": "section:84",
+            "block_id": "table:6",
+            "paragraph_index": 0,
+            "fragment_index": 0,
+            "table_path": [
+              "table:6"
+            ],
+            "row_index": 0,
+            "column_index": 3,
+            "span_start": 0,
+            "span_end": 4,
+            "physical_page_number": 5
+          }
+        }
+      },
+      "mock": {
+        "source": "static_mock_archive",
+        "json_pointer": "/101/specification",
+        "equipment_id": "PF64216",
+        "value": "10英寸3芯"
+      },
+      "qualifier": "alternative"
+    },
+    {
+      "equipment_id": "PF64216",
+      "field": "material",
+      "classification": "mock_more_specific_grade_not_a_conflict",
+      "document": {
+        "raw_value": "不锈钢",
+        "source": {
+          "unit_index": 197,
+          "quote": "不锈钢",
+          "anchor": {
+            "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+            "parser_version": "4",
+            "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+            "evidence_id": "c493faf1eb0e51ae6e0b070936c40fc259dea6769b407a0928c4082efa67138e",
+            "section_node_id": "section:84",
+            "block_id": "table:6",
+            "paragraph_index": 0,
+            "fragment_index": 0,
+            "table_path": [
+              "table:6"
+            ],
+            "row_index": 2,
+            "column_index": 4,
+            "span_start": 0,
+            "span_end": 3,
+            "physical_page_number": 5
+          }
+        },
+        "field_header": {
+          "unit_index": 170,
+          "quote": "主体材质",
+          "anchor": {
+            "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+            "parser_version": "4",
+            "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+            "evidence_id": "f3f66bf9779c9bb1200d982234da0f1bb29198d7b9a59204e4fff20a8365f1e8",
+            "section_node_id": "section:84",
+            "block_id": "table:6",
+            "paragraph_index": 0,
+            "fragment_index": 0,
+            "table_path": [
+              "table:6"
+            ],
+            "row_index": 0,
+            "column_index": 4,
+            "span_start": 0,
+            "span_end": 4,
+            "physical_page_number": 5
+          }
+        }
+      },
+      "mock": {
+        "source": "static_mock_archive",
+        "json_pointer": "/101/material",
+        "equipment_id": "PF64216",
+        "value": "316L不锈钢"
+      },
+      "qualifier": "alternative"
+    },
+    {
+      "equipment_id": "PF64616",
+      "field": "equipmentName",
+      "classification": "exact_value_agreement",
+      "document": {
+        "raw_value": "钛棒过滤器",
+        "source": {
+          "unit_index": 194,
+          "quote": "钛棒过滤器",
+          "anchor": {
+            "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+            "parser_version": "4",
+            "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+            "evidence_id": "137ec4908e2190908404a39b40c24b6d9545bdaa1f510d84e06bf408e6d9a1e9",
+            "section_node_id": "section:84",
+            "block_id": "table:6",
+            "paragraph_index": 0,
+            "fragment_index": 0,
+            "table_path": [
+              "table:6"
+            ],
+            "row_index": 2,
+            "column_index": 1,
+            "span_start": 0,
+            "span_end": 5,
+            "physical_page_number": 5
+          }
+        },
+        "field_header": {
+          "unit_index": 167,
+          "quote": "设备名称",
+          "anchor": {
+            "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+            "parser_version": "4",
+            "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+            "evidence_id": "291a310cc59ec69b19c37a2161ce27b8df6869e327a4fb153f4cf4bf8f418e28",
+            "section_node_id": "section:84",
+            "block_id": "table:6",
+            "paragraph_index": 0,
+            "fragment_index": 0,
+            "table_path": [
+              "table:6"
+            ],
+            "row_index": 0,
+            "column_index": 1,
+            "span_start": 0,
+            "span_end": 4,
+            "physical_page_number": 5
+          }
+        }
+      },
+      "mock": {
+        "source": "static_mock_archive",
+        "json_pointer": "/207/name",
+        "equipment_id": "PF64616",
+        "value": "钛棒过滤器"
+      },
+      "qualifier": "alternative"
+    },
+    {
+      "equipment_id": "PF64616",
+      "field": "modelSpecification",
+      "classification": "exact_value_agreement",
+      "document": {
+        "raw_value": "10英寸3芯",
+        "source": {
+          "unit_index": 196,
+          "quote": "10英寸3芯",
+          "anchor": {
+            "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+            "parser_version": "4",
+            "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+            "evidence_id": "8486b7fa8acef4d9ee3c78db72ce212bdbd9453e61fa65a63ad8997eb063a095",
+            "section_node_id": "section:84",
+            "block_id": "table:6",
+            "paragraph_index": 0,
+            "fragment_index": 0,
+            "table_path": [
+              "table:6"
+            ],
+            "row_index": 2,
+            "column_index": 3,
+            "span_start": 0,
+            "span_end": 6,
+            "physical_page_number": 5
+          }
+        },
+        "field_header": {
+          "unit_index": 169,
+          "quote": "规格型号",
+          "anchor": {
+            "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+            "parser_version": "4",
+            "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+            "evidence_id": "fb05a3374bf9b2d319118f318e050cf23fca2fa4b0f27cd77c687ddbb3571806",
+            "section_node_id": "section:84",
+            "block_id": "table:6",
+            "paragraph_index": 0,
+            "fragment_index": 0,
+            "table_path": [
+              "table:6"
+            ],
+            "row_index": 0,
+            "column_index": 3,
+            "span_start": 0,
+            "span_end": 4,
+            "physical_page_number": 5
+          }
+        }
+      },
+      "mock": {
+        "source": "static_mock_archive",
+        "json_pointer": "/207/specification",
+        "equipment_id": "PF64616",
+        "value": "10英寸3芯"
+      },
+      "qualifier": "alternative"
+    },
+    {
+      "equipment_id": "PF64616",
+      "field": "material",
+      "classification": "mock_more_specific_grade_not_a_conflict",
+      "document": {
+        "raw_value": "不锈钢",
+        "source": {
+          "unit_index": 197,
+          "quote": "不锈钢",
+          "anchor": {
+            "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+            "parser_version": "4",
+            "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+            "evidence_id": "c493faf1eb0e51ae6e0b070936c40fc259dea6769b407a0928c4082efa67138e",
+            "section_node_id": "section:84",
+            "block_id": "table:6",
+            "paragraph_index": 0,
+            "fragment_index": 0,
+            "table_path": [
+              "table:6"
+            ],
+            "row_index": 2,
+            "column_index": 4,
+            "span_start": 0,
+            "span_end": 3,
+            "physical_page_number": 5
+          }
+        },
+        "field_header": {
+          "unit_index": 170,
+          "quote": "主体材质",
+          "anchor": {
+            "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+            "parser_version": "4",
+            "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+            "evidence_id": "f3f66bf9779c9bb1200d982234da0f1bb29198d7b9a59204e4fff20a8365f1e8",
+            "section_node_id": "section:84",
+            "block_id": "table:6",
+            "paragraph_index": 0,
+            "fragment_index": 0,
+            "table_path": [
+              "table:6"
+            ],
+            "row_index": 0,
+            "column_index": 4,
+            "span_start": 0,
+            "span_end": 4,
+            "physical_page_number": 5
+          }
+        }
+      },
+      "mock": {
+        "source": "static_mock_archive",
+        "json_pointer": "/207/material",
+        "equipment_id": "PF64616",
+        "value": "316L不锈钢"
+      },
+      "qualifier": "alternative"
+    },
+    {
+      "equipment_id": "RE64611",
+      "field": "equipmentName",
+      "classification": "different_compatible_descriptions_not_a_conflict",
+      "document": {
+        "raw_value": "200L反应釜",
+        "source": {
+          "unit_index": 181,
+          "quote": "200L反应釜",
+          "anchor": {
+            "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+            "parser_version": "4",
+            "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+            "evidence_id": "a19a42e1371bfb33bc3b3d29fab8aed3fc81e1688b8adf5487d5df8d4cc7acf3",
+            "section_node_id": "section:84",
+            "block_id": "table:6",
+            "paragraph_index": 0,
+            "fragment_index": 0,
+            "table_path": [
+              "table:6"
+            ],
+            "row_index": 1,
+            "column_index": 1,
+            "span_start": 0,
+            "span_end": 7,
+            "physical_page_number": 5
+          }
+        },
+        "field_header": {
+          "unit_index": 167,
+          "quote": "设备名称",
+          "anchor": {
+            "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+            "parser_version": "4",
+            "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+            "evidence_id": "291a310cc59ec69b19c37a2161ce27b8df6869e327a4fb153f4cf4bf8f418e28",
+            "section_node_id": "section:84",
+            "block_id": "table:6",
+            "paragraph_index": 0,
+            "fragment_index": 0,
+            "table_path": [
+              "table:6"
+            ],
+            "row_index": 0,
+            "column_index": 1,
+            "span_start": 0,
+            "span_end": 4,
+            "physical_page_number": 5
+          }
+        }
+      },
+      "mock": {
+        "source": "static_mock_archive",
+        "json_pointer": "/156/name",
+        "equipment_id": "RE64611",
+        "value": "搪玻璃反应釜"
+      },
+      "qualifier": "planned_required_equipment"
+    },
+    {
+      "equipment_id": "RE64611",
+      "field": "modelSpecification",
+      "classification": "exact_value_agreement",
+      "document": {
+        "raw_value": "200L",
+        "source": {
+          "unit_index": 183,
+          "quote": "200L",
+          "anchor": {
+            "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+            "parser_version": "4",
+            "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+            "evidence_id": "ecb41123f3fbbdd3370fa83d7f296bd13e8ca0f3012aec14f1086ec29e6aee49",
+            "section_node_id": "section:84",
+            "block_id": "table:6",
+            "paragraph_index": 0,
+            "fragment_index": 0,
+            "table_path": [
+              "table:6"
+            ],
+            "row_index": 1,
+            "column_index": 3,
+            "span_start": 0,
+            "span_end": 4,
+            "physical_page_number": 5
+          }
+        },
+        "field_header": {
+          "unit_index": 169,
+          "quote": "规格型号",
+          "anchor": {
+            "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+            "parser_version": "4",
+            "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+            "evidence_id": "fb05a3374bf9b2d319118f318e050cf23fca2fa4b0f27cd77c687ddbb3571806",
+            "section_node_id": "section:84",
+            "block_id": "table:6",
+            "paragraph_index": 0,
+            "fragment_index": 0,
+            "table_path": [
+              "table:6"
+            ],
+            "row_index": 0,
+            "column_index": 3,
+            "span_start": 0,
+            "span_end": 4,
+            "physical_page_number": 5
+          }
+        }
+      },
+      "mock": {
+        "source": "static_mock_archive",
+        "json_pointer": "/156/specification",
+        "equipment_id": "RE64611",
+        "value": "200L"
+      },
+      "qualifier": "planned_required_equipment"
+    },
+    {
+      "equipment_id": "RE64611",
+      "field": "material",
+      "classification": "exact_value_agreement",
+      "document": {
+        "raw_value": "搪玻璃",
+        "source": {
+          "unit_index": 184,
+          "quote": "搪玻璃",
+          "anchor": {
+            "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+            "parser_version": "4",
+            "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+            "evidence_id": "1629570ef6fb2b20416ed0d110a760db5cf4869f8c707a8a03c660b8cae76cf2",
+            "section_node_id": "section:84",
+            "block_id": "table:6",
+            "paragraph_index": 0,
+            "fragment_index": 0,
+            "table_path": [
+              "table:6"
+            ],
+            "row_index": 1,
+            "column_index": 4,
+            "span_start": 0,
+            "span_end": 3,
+            "physical_page_number": 5
+          }
+        },
+        "field_header": {
+          "unit_index": 170,
+          "quote": "主体材质",
+          "anchor": {
+            "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+            "parser_version": "4",
+            "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+            "evidence_id": "f3f66bf9779c9bb1200d982234da0f1bb29198d7b9a59204e4fff20a8365f1e8",
+            "section_node_id": "section:84",
+            "block_id": "table:6",
+            "paragraph_index": 0,
+            "fragment_index": 0,
+            "table_path": [
+              "table:6"
+            ],
+            "row_index": 0,
+            "column_index": 4,
+            "span_start": 0,
+            "span_end": 4,
+            "physical_page_number": 5
+          }
+        }
+      },
+      "mock": {
+        "source": "static_mock_archive",
+        "json_pointer": "/156/material",
+        "equipment_id": "RE64611",
+        "value": "搪玻璃"
+      },
+      "qualifier": "planned_required_equipment"
+    },
+    {
+      "equipment_id": "RE64613",
+      "field": "equipmentName",
+      "classification": "different_compatible_descriptions_not_a_conflict",
+      "document": {
+        "raw_value": "500L反应釜",
+        "source": {
+          "unit_index": 207,
+          "quote": "500L反应釜",
+          "anchor": {
+            "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+            "parser_version": "4",
+            "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+            "evidence_id": "b115b4988e34981a923ce45c249091716242894362dacf4979e0a1dfdc536564",
+            "section_node_id": "section:84",
+            "block_id": "table:6",
+            "paragraph_index": 0,
+            "fragment_index": 0,
+            "table_path": [
+              "table:6"
+            ],
+            "row_index": 3,
+            "column_index": 1,
+            "span_start": 0,
+            "span_end": 7,
+            "physical_page_number": 5
+          }
+        },
+        "field_header": {
+          "unit_index": 167,
+          "quote": "设备名称",
+          "anchor": {
+            "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+            "parser_version": "4",
+            "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+            "evidence_id": "291a310cc59ec69b19c37a2161ce27b8df6869e327a4fb153f4cf4bf8f418e28",
+            "section_node_id": "section:84",
+            "block_id": "table:6",
+            "paragraph_index": 0,
+            "fragment_index": 0,
+            "table_path": [
+              "table:6"
+            ],
+            "row_index": 0,
+            "column_index": 1,
+            "span_start": 0,
+            "span_end": 4,
+            "physical_page_number": 5
+          }
+        }
+      },
+      "mock": {
+        "source": "static_mock_archive",
+        "json_pointer": "/158/name",
+        "equipment_id": "RE64613",
+        "value": "搪玻璃反应釜"
+      },
+      "qualifier": "planned_required_equipment"
+    },
+    {
+      "equipment_id": "RE64613",
+      "field": "modelSpecification",
+      "classification": "exact_value_agreement",
+      "document": {
+        "raw_value": "500L",
+        "source": {
+          "unit_index": 209,
+          "quote": "500L",
+          "anchor": {
+            "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+            "parser_version": "4",
+            "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+            "evidence_id": "01918fda883461c6d76805e4f49e0c3025c0206ef9aa267020537d72a9da86d0",
+            "section_node_id": "section:84",
+            "block_id": "table:6",
+            "paragraph_index": 0,
+            "fragment_index": 0,
+            "table_path": [
+              "table:6"
+            ],
+            "row_index": 3,
+            "column_index": 3,
+            "span_start": 0,
+            "span_end": 4,
+            "physical_page_number": 5
+          }
+        },
+        "field_header": {
+          "unit_index": 169,
+          "quote": "规格型号",
+          "anchor": {
+            "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+            "parser_version": "4",
+            "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+            "evidence_id": "fb05a3374bf9b2d319118f318e050cf23fca2fa4b0f27cd77c687ddbb3571806",
+            "section_node_id": "section:84",
+            "block_id": "table:6",
+            "paragraph_index": 0,
+            "fragment_index": 0,
+            "table_path": [
+              "table:6"
+            ],
+            "row_index": 0,
+            "column_index": 3,
+            "span_start": 0,
+            "span_end": 4,
+            "physical_page_number": 5
+          }
+        }
+      },
+      "mock": {
+        "source": "static_mock_archive",
+        "json_pointer": "/158/specification",
+        "equipment_id": "RE64613",
+        "value": "500L"
+      },
+      "qualifier": "planned_required_equipment"
+    },
+    {
+      "equipment_id": "RE64613",
+      "field": "material",
+      "classification": "exact_value_agreement",
+      "document": {
+        "raw_value": "搪玻璃",
+        "source": {
+          "unit_index": 210,
+          "quote": "搪玻璃",
+          "anchor": {
+            "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+            "parser_version": "4",
+            "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+            "evidence_id": "ce59f85b17db84dd311942dd9e50927e04a4d50e3ba9d1c494e2eda01ae54d39",
+            "section_node_id": "section:84",
+            "block_id": "table:6",
+            "paragraph_index": 0,
+            "fragment_index": 0,
+            "table_path": [
+              "table:6"
+            ],
+            "row_index": 3,
+            "column_index": 4,
+            "span_start": 0,
+            "span_end": 3,
+            "physical_page_number": 5
+          }
+        },
+        "field_header": {
+          "unit_index": 170,
+          "quote": "主体材质",
+          "anchor": {
+            "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+            "parser_version": "4",
+            "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+            "evidence_id": "f3f66bf9779c9bb1200d982234da0f1bb29198d7b9a59204e4fff20a8365f1e8",
+            "section_node_id": "section:84",
+            "block_id": "table:6",
+            "paragraph_index": 0,
+            "fragment_index": 0,
+            "table_path": [
+              "table:6"
+            ],
+            "row_index": 0,
+            "column_index": 4,
+            "span_start": 0,
+            "span_end": 4,
+            "physical_page_number": 5
+          }
+        }
+      },
+      "mock": {
+        "source": "static_mock_archive",
+        "json_pointer": "/158/material",
+        "equipment_id": "RE64613",
+        "value": "搪玻璃"
+      },
+      "qualifier": "planned_required_equipment"
+    }
+  ],
+  "attribute_value_discrepancies": [
+    {
+      "equipment_id": "CT64610",
+      "field": "material",
+      "classification": "source_value_discrepancy_requires_review",
+      "document": {
+        "raw_value": "不锈钢衬HALAR",
+        "source": {
+          "unit_index": 225,
+          "quote": "不锈钢衬HALAR",
+          "anchor": {
+            "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+            "parser_version": "4",
+            "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+            "evidence_id": "d8339cb1a9940b471ab02b6fc9e7524422c40b471d5f35a7a03f4edcbc317c4a",
+            "section_node_id": "section:84",
+            "block_id": "table:6",
+            "paragraph_index": 0,
+            "fragment_index": 0,
+            "table_path": [
+              "table:6"
+            ],
+            "row_index": 4,
+            "column_index": 4,
+            "span_start": 0,
+            "span_end": 9,
+            "physical_page_number": 5
+          }
+        },
+        "field_header": {
+          "unit_index": 170,
+          "quote": "主体材质",
+          "anchor": {
+            "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+            "parser_version": "4",
+            "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+            "evidence_id": "f3f66bf9779c9bb1200d982234da0f1bb29198d7b9a59204e4fff20a8365f1e8",
+            "section_node_id": "section:84",
+            "block_id": "table:6",
+            "paragraph_index": 0,
+            "fragment_index": 0,
+            "table_path": [
+              "table:6"
+            ],
+            "row_index": 0,
+            "column_index": 4,
+            "span_start": 0,
+            "span_end": 4,
+            "physical_page_number": 5
+          }
+        }
+      },
+      "mock": {
+        "source": "static_mock_archive",
+        "json_pointer": "/113/material",
+        "equipment_id": "CT64610",
+        "value": "316L不锈钢"
+      },
+      "qualifier": "planned_required_equipment",
+      "interpretation": "Document states 不锈钢衬HALAR while Mock records 316L不锈钢. This is an attribute value discrepancy; the Mock does not explicitly negate a lining, so strict physical incompatibility is not proven. Keep both sourced values and flag the difference; do not overwrite either or call either the verified real-world material."
+    }
+  ],
+  "unknown_archive_devices": [
+    {
+      "equipment_id": "DE64603",
+      "document_source": {
+        "unit_index": 236,
+        "quote": "DE64603",
+        "anchor": {
+          "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+          "parser_version": "4",
+          "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+          "evidence_id": "c847ce52e1d637718b869613a834c00cd8bfb22403e45f6eea35bf3806ca27c9",
+          "section_node_id": "section:84",
+          "block_id": "table:6",
+          "paragraph_index": 0,
+          "fragment_index": 0,
+          "table_path": [
+            "table:6"
+          ],
+          "row_index": 5,
+          "column_index": 2,
+          "span_start": 0,
+          "span_end": 7,
+          "physical_page_number": 5
+        }
+      },
+      "expected_lookup_status": "not_found",
+      "lookup_scope": "This frozen 211-entry static archive only.",
+      "not_proven": "Non-existence in the real world; invalidity of the source document identifier.",
+      "forbidden_name_only_substitution": {
+        "source": "static_mock_archive",
+        "json_pointer": "/14",
+        "equipment_id": "DE64203",
+        "value": {
+          "workshop": "642",
+          "equipment_id": "DE64203",
+          "name": "真空干燥箱",
+          "specification": "24盘",
+          "material": "304不锈钢衬HALAR",
+          "location": "洁净区干燥间",
+          "area_type": "洁净区"
+        }
+      },
+      "reason": "DE64203 shares the vacuum-dryer name and 24盘 specification but has a different explicit identifier."
+    }
+  ],
+  "non_identifier_boundaries": [
+    {
+      "kind": "consumable_not_equipment_id",
+      "sources": [
+        {
+          "unit_index": 273,
+          "quote": "囊式滤芯",
+          "anchor": {
+            "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+            "parser_version": "4",
+            "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+            "evidence_id": "46598d6932f98285f1cdc6c1ac221aecc35b1d5766caaa697248434319b24a56",
+            "section_node_id": "section:86",
+            "block_id": "table:7",
+            "paragraph_index": 0,
+            "fragment_index": 0,
+            "table_path": [
+              "table:7"
+            ],
+            "row_index": 3,
+            "column_index": 1,
+            "span_start": 0,
+            "span_end": 4,
+            "physical_page_number": 6
+          }
+        },
+        {
+          "unit_index": 274,
+          "quote": "WSF-10-SLHPF0022P",
+          "anchor": {
+            "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+            "parser_version": "4",
+            "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+            "evidence_id": "f7abc1cd8ca011fee499634690e8f76e58123307184bc60c50099d1bf7f8fceb",
+            "section_node_id": "section:86",
+            "block_id": "table:7",
+            "paragraph_index": 0,
+            "fragment_index": 0,
+            "table_path": [
+              "table:7"
+            ],
+            "row_index": 3,
+            "column_index": 2,
+            "span_start": 0,
+            "span_end": 17,
+            "physical_page_number": 6
+          }
+        },
+        {
+          "unit_index": 278,
+          "quote": "反应耗材",
+          "anchor": {
+            "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+            "parser_version": "4",
+            "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+            "evidence_id": "21697a550cc10058880c506cc737ac308a0d4fbf744b76b850ec9bf4335cd1dd",
+            "section_node_id": "section:86",
+            "block_id": "table:7",
+            "paragraph_index": 0,
+            "fragment_index": 0,
+            "table_path": [
+              "table:7"
+            ],
+            "row_index": 3,
+            "column_index": 6,
+            "span_start": 0,
+            "span_end": 4,
+            "physical_page_number": 6
+          }
+        }
+      ],
+      "note": "囊式滤芯 / WSF-10-SLHPF0022P is in the materials table as 反应耗材; do not equate its model to a PF equipment ID."
+    },
+    {
+      "kind": "consumable_not_equipment_id",
+      "sources": [
+        {
+          "unit_index": 280,
+          "quote": "钛棒滤芯",
+          "anchor": {
+            "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+            "parser_version": "4",
+            "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+            "evidence_id": "0f8683b2b84f51275e439c9b55f438100b585ab2bf17b802b52633cfbf38e846",
+            "section_node_id": "section:86",
+            "block_id": "table:7",
+            "paragraph_index": 0,
+            "fragment_index": 0,
+            "table_path": [
+              "table:7"
+            ],
+            "row_index": 4,
+            "column_index": 1,
+            "span_start": 0,
+            "span_end": 4,
+            "physical_page_number": 6
+          }
+        },
+        {
+          "unit_index": 281,
+          "quote": "TIC-0045L10SP",
+          "anchor": {
+            "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+            "parser_version": "4",
+            "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+            "evidence_id": "8182c301baa6f6b89e74bdd731ef50aa08c214337223411d81d514b77a12cf53",
+            "section_node_id": "section:86",
+            "block_id": "table:7",
+            "paragraph_index": 0,
+            "fragment_index": 0,
+            "table_path": [
+              "table:7"
+            ],
+            "row_index": 4,
+            "column_index": 2,
+            "span_start": 0,
+            "span_end": 13,
+            "physical_page_number": 6
+          }
+        },
+        {
+          "unit_index": 285,
+          "quote": "反应耗材",
+          "anchor": {
+            "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+            "parser_version": "4",
+            "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+            "evidence_id": "90d411b6af26b78b5c17e740f6dcfb26df831c3d99738f3a755824ab7622c5ad",
+            "section_node_id": "section:86",
+            "block_id": "table:7",
+            "paragraph_index": 0,
+            "fragment_index": 0,
+            "table_path": [
+              "table:7"
+            ],
+            "row_index": 4,
+            "column_index": 6,
+            "span_start": 0,
+            "span_end": 4,
+            "physical_page_number": 6
+          }
+        }
+      ],
+      "note": "钛棒滤芯 / TIC-0045L10SP is a consumable, not the 钛棒过滤器 equipment identity."
+    },
+    {
+      "kind": "unnumbered_auxiliary",
+      "sources": [
+        {
+          "unit_index": 142,
+          "quote": "穿墙管道",
+          "anchor": {
+            "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+            "parser_version": "4",
+            "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+            "evidence_id": "c7718ac45e08780a7ace6633bdf5fc2d7e99d9548475dfd9c613e85435213018",
+            "section_node_id": "section:81",
+            "block_id": "table:5",
+            "paragraph_index": 1,
+            "fragment_index": 0,
+            "table_path": [
+              "table:5"
+            ],
+            "row_index": 2,
+            "column_index": 1,
+            "span_start": 11,
+            "span_end": 15,
+            "physical_page_number": 5
+          }
+        }
+      ],
+      "note": "A pipe is mentioned but has no explicit equipment ID; reference does not invent an archive match."
+    },
+    {
+      "kind": "analytical_method_not_identified_instrument",
+      "sources": [
+        {
+          "unit_index": 80,
+          "quote": "HPLC",
+          "anchor": {
+            "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+            "parser_version": "4",
+            "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+            "evidence_id": "eb97242f159426bfe5f0cb0e79f0571c72b6a08c8b1968efdc5fe3de8ad3b1b1",
+            "section_node_id": "section:67",
+            "block_id": "table:0",
+            "paragraph_index": 0,
+            "fragment_index": 0,
+            "table_path": [
+              "table:0"
+            ],
+            "row_index": 2,
+            "column_index": 0,
+            "span_start": 0,
+            "span_end": 4,
+            "physical_page_number": 5
+          }
+        },
+        {
+          "unit_index": 81,
+          "quote": "取样送检HPLC和重金属检测，质量标准要同时满足：单个杂质应不得过0.2%总杂应不得过2.0%,重金属残留不得超过百万分之二十，若不符合质量标准，则重复上述全部结晶操作（从一般区溶解物料）。",
+          "anchor": {
+            "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+            "parser_version": "4",
+            "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+            "evidence_id": "48ca1378de103138ed5b81cadc51a59226bacfb6558400667fd3c39bbefb979b",
+            "section_node_id": "section:67",
+            "block_id": "table:0",
+            "paragraph_index": 0,
+            "fragment_index": 0,
+            "table_path": [
+              "table:0"
+            ],
+            "row_index": 2,
+            "column_index": 1,
+            "span_start": 0,
+            "span_end": 95,
+            "physical_page_number": 5
+          }
+        }
+      ],
+      "note": "HPLC is a testing label in this context and does not identify a particular archive instrument."
+    }
+  ],
+  "review_plan": [
+    "Freeze this reference and archive hash before predictions; keep reference inaccessible to retrieval/prompt construction.",
+    "Replay each predicted quote against the same IR, then classify mention identity, field role, table-row ownership, and alternative qualifiers independently.",
+    "Score mention-level identifier recall separately from distinct identifier recall; report selected-source coverage separately from model extraction success.",
+    "Evaluate the five requirement rows and three repeated alternative contexts; do not treat six identifier strings as six unconditional usage relations.",
+    "For identity lookup, compare exact ID status with the five matches and DE64603 not_found. Name/spec similarity must not repair DE64603 into DE64203.",
+    "Compare document and Mock attributes with source authority separated. Flag CT64610 material discrepancy; treat compatible names and more-specific steel grades separately.",
+    "Evaluate text-property datatype/SHACL representation only after evidence and semantic checks. No numeric calibration indicator exists for these xsd:string slots.",
+    "Keep technical failures and unattempted candidates in coverage reporting; do not calculate end-to-end quality only on successful outputs."
+  ]
+}

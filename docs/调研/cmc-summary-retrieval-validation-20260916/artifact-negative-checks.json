@@ -1,0 +1,36 @@
+{
+  "status": "passed",
+  "jsonschema_version": "4.23.0",
+  "copy_method": "shutil.copytree, no hardlinks",
+  "source_artifacts_unchanged": true,
+  "new_model_calls": 0,
+  "checks": [
+    {
+      "case": "invalid_raw_http_schema_and_unchanged_saved_proposal",
+      "expected_detected": [
+        "introduction/candidates/raw_equals_saved_proposal",
+        "introduction/candidates/raw_http_schema"
+      ],
+      "status": "passed"
+    },
+    {
+      "case": "duplicate_ledger_without_second_request",
+      "expected_detected": [
+        "introduction/candidates/no_retry",
+        "introduction/candidates/request_ledger_count"
+      ],
+      "status": "passed"
+    },
+    {
+      "case": "source_file_hash_mutation",
+      "expected_detected": [
+        "source_hash"
+      ],
+      "status": "passed"
+    },
+    {
+      "case": "duplicate_raw_JSON_key",
+      "status": "passed"
+    }
+  ]
+}

@@ -27,6 +27,8 @@ from app.schemas.evidence import (
     TypeVerification,
     ValidationIssue,
 )
+from app.services.extraction.branch_progress import project_branches
+from app.services.extraction.citation_repair import QUOTE_ERRORS, REPAIR_VERSION, repair_feedback
 from app.services.extraction.document_ir import DocumentIR
 from app.services.extraction.evidence_identity import canonical_json, evidence_hash, stable_id
 from app.services.extraction.evidence_scope import (
@@ -55,19 +57,37 @@ from app.services.extraction.model_protocol import (
     TRANSPORT_VERSION,
     ModelProtocol,
 )
+from app.services.extraction.ontology_guided.citations import (
+    PROTOCOL_VERSION as CITATION_PROTOCOL_VERSION,
+)
+from app.services.extraction.ontology_guided.citations import CitationProtocol
+from app.services.extraction.ontology_guided.records import RecordIndex
 from app.services.extraction.ontology_guided.source_citations import (
     SpanProposal,
     resolve_source_anchor,
     resolve_source_anchors,
 )
 from app.services.extraction.performance import measure, timed, tracking
+from app.services.extraction.record_targets import (
+    RECORD_TARGET_VERSION,
+    field_group_scope,
+    record_targets,
+    related_heading_context,
+    validate_record_target,
+)
+from app.services.extraction.relationship_priority import relation_records
 from app.services.extraction.semantic_binding import validate_document_candidate
-from app.services.extraction.table_records import record_snapshot, table_records
+from app.services.extraction.table_records import (
+    record_snapshot,
+    table_binding_anchors,
+    table_records,
+)
 from app.services.extraction.verification_context import verification_payload
 from app.services.llm.model_runtime import ModelCancelled, model_scope
 
-SEMANTIC_VERSION = "generic-semantic-v8"
+SEMANTIC_VERSION = "generic-semantic-v10"
 SCHEDULER_VERSION = "document-batch-priority-v4"
+OUTPUT_SPLIT_VERSION = "output-truncation-split-v1"
 
 
 def round_robin(streams):
@@ -103,6 +123,13 @@ SYSTEM = (
     "verify_entity_types 阶段逐一独立复核 proposed_entities 的类型是否有原文支持，"
     "每个 candidate_id 恰好返回一项 decisions（supported、reason），reason 简短说明类型依据；"
     "召回建议不是已确认事实。"
+    "除本体明确声明限制外，类不是必须有全局编号的抽象模板；有原文可定位的局部实例"
+    "即可核验其类型。子类实例也属于其父类；证据无法细分子类时可保留受支持的声明父类，"
+    "不得以缺少全局唯一编号否定局部类型支持。整体对象和其单个组成步骤仍须分别判断。"
+    "原文标题可以命名本章节具体对象，应结合相关章节和条目原文核验其存在。对于整体对象，"
+    "若原文展开了多个有序组成步骤，可用原文整体标题作 mention，并在 assertion_spans"
+    "分别引用展开条目支持类型；不要求全部内容集中于命名单元，不能以某个单步替代整体。"
+    "孤立标题且没有展开原文时仍不足以通过；仅提及另一文档或未来计划也不等于对象已存在。"
     "实体可用 identifier 引用 identity_properties 中声明的唯一标识属性及原文值。"
     "verify_entity_types 的 identity_supported 独立核对该标识是否唯一标识此具体实例；"
     "同名、项目代号、型号不等于设备/批次/试验身份。有不同批次、规格或试验限定而标识"
@@ -112,6 +139,7 @@ SYSTEM = (
     "若谓词定义表示文档描述/包含对象，应核对正文是否描述该对象，无需原文重复文档标题。"
     "验证也须检查值的形状和角色是否满足谓词；整个区间不能支持仅要求一个端点的属性。"
     "绑定证据应引用说明主体、属性含义和数值角色的完整断言，表格可联合引用表头及行单元；"
+    "引用表头时须同时引用该列对应的同行数据，表头不能替代设备或产品实例。"
     "只引用一个裸数字不能证明它是上限还是下限，也不能证明主体归属。"
     "verify_binding 用 source_unit 逐字引用原句或对应列头中的单位；不得从谓词名猜单位。"
     "若 value 只有裸数字而属性要求 canonical_unit，必须引用支持该值的原文单位。"
@@ -121,6 +149,8 @@ SYSTEM = (
     "指代断言，核对竞争主体；相邻或使用相同名称不能单独证明指代。"
     "同现、近邻、标题先验和解释文字不是关系证据。保留否定、条件、假设与不确定性；"
     "supported=false 表示证据不足，不等于原文否定；assertion_status=negated 仅用于原文明示否定。"
+    "conditions 仅引用使断言成立受到限制的原文明示前提；文档标题、普通表头、主体名称"
+    "及引用的来源角色本身不是条件，应按其作用放入 assertion_spans。没有条件时返回空列表。"
     "充分支持的否定/条件断言可以 supported=true，但绝不能改成肯定。无法判断时拒答。"
     "\n仅输出符合以下 JSON Schema 的对象：\n"
 )
@@ -171,6 +201,12 @@ class AssertionResponse(EvidenceModel):
     refusal_reason: str | None = None
 
 
+class ConditionReview(EvidenceModel):
+    condition_index: int = Field(ge=0, strict=True)
+    is_condition: bool = Field(strict=True)
+    reason: str = Field(min_length=1, max_length=160)
+
+
 class BindingDecision(EvidenceModel):
     supported: bool
     subject_candidate_id: str
@@ -179,6 +215,7 @@ class BindingDecision(EvidenceModel):
     method: Literal["explicit_assertion", "section_record", "table_record", "identity_reference"]
     assertion_spans: list[SpanProposal] = Field(default_factory=list)
     conditions: list[SpanProposal] = Field(default_factory=list)
+    condition_reviews: list[ConditionReview] = Field(default_factory=list)
     record_mapping: dict[str, Any] = Field(default_factory=dict)
     source_unit: SpanProposal | None = None
     boolean_legend: SpanProposal | None = None
@@ -211,6 +248,7 @@ class ExtractionRun(EvidenceModel):
     checkpoint: dict[str, Any] = Field(default_factory=dict)
     stage_statistics: dict[str, dict[str, int]] = Field(default_factory=dict)
     performance: dict[str, Any] = Field(default_factory=dict)
+    branch_progress: dict[str, dict[str, Any]] = Field(default_factory=dict)
 
 
 class PartialTaskFailure(ValueError):
@@ -225,7 +263,7 @@ class PartialTaskFailure(ValueError):
         self.issues = issues
 
 
-def binding_record_mapping(method, anchors, supplied, *, ir=None, fact_anchors=()):
+def binding_record_mapping(method, anchors, supplied, *, ir=None, fact_anchors=(), subject=None):
     """Complete structural coordinates from replayed anchors, never semantic roles.
 
     The model chooses the binding method and must still support attribution.
@@ -239,7 +277,8 @@ def binding_record_mapping(method, anchors, supplied, *, ir=None, fact_anchors=(
             mapping.setdefault("section_node_id", next(iter(sections)))
     elif method == "table_record":
         if ir is not None:
-            for key, value in table_records(ir).infer_mapping(anchors, fact_anchors).items():
+            record_anchors = table_binding_anchors(ir, anchors, subject)
+            for key, value in table_records(ir).infer_mapping(record_anchors, fact_anchors).items():
                 mapping.setdefault(key, value)
             return mapping
         records = {(tuple(a.table_path or []), a.row_index) for a in anchors}
@@ -331,6 +370,10 @@ class GenericExtractionRunner:
         budget: TaskBudget | None = None,
         compact_identifiers: bool = False,
         priority_paths: list[tuple[str, ...]] | None = None,
+        citation_repair: bool = False,
+        relationship_priority: bool = False,
+        atomic_citations: bool = False,
+        record_level_targets: bool = False,
     ):
         self.schema = schema
         self.tokenizer = tokenizer
@@ -340,6 +383,15 @@ class GenericExtractionRunner:
         self.budget = budget or TaskBudget()
         self.compact_identifiers = compact_identifiers
         self.priority_paths = list(dict.fromkeys(tuple(path) for path in priority_paths or []))
+        self.citation_repair = citation_repair
+        self.relationship_priority = relationship_priority
+        self.atomic_citations = atomic_citations
+        self.record_level_targets = record_level_targets
+        self.execution_policy = ({"version": "template-recognition-v1",
+                                  "citation_repair": citation_repair,
+                                  "relationship_priority": relationship_priority}
+                                 if citation_repair or relationship_priority else None)
+        self._citation_feedback = {}
         self.trace_fn = None
         self.ontology_release = evidence_hash(schema)
         self._calls = 0
@@ -349,6 +401,8 @@ class GenericExtractionRunner:
         self._restorable_tasks = set()
 
     def _context(self, task, ir, candidates, effective_class, response_type):
+        if task.target_record_id:
+            validate_record_target(task, self._index(ir))
         refs = [task.subject, task.path_root, *task.competing_subjects,
                 *task.object_candidates, *task.dependency_refs]
         # Include content as well as revisions: callers can construct mutable
@@ -359,6 +413,7 @@ class GenericExtractionRunner:
             task, source_id, self.ontology_release, self.model_identity,
             self.tokenizer.identity, effective_class, SYSTEM,
             MODEL_CONTEXT_VERSION, PROTOCOL_VERSION, self.compact_identifiers,
+            CITATION_PROTOCOL_VERSION if self.atomic_citations else None,
             response_type.model_json_schema(),
             {r.candidate_id: candidates.get(r.candidate_id) for r in refs if r is not None},
         ])
@@ -370,11 +425,27 @@ class GenericExtractionRunner:
             effective_class=effective_class, system_prompt=SYSTEM,
             response_schema=response_type.model_json_schema(),
             compact_identifiers=self.compact_identifiers,
+            citation_protocol_version=CITATION_PROTOCOL_VERSION if self.atomic_citations else None,
+            record_index=self._index(ir) if self.record_level_targets else None,
+            required_context_refs=(related_heading_context(task, self._index(ir), self.schema)
+                                   if self.record_level_targets else None),
         )
         if len(self._contexts) >= 32:
             self._contexts.popitem(last=False)
         self._contexts[key] = envelope
         return envelope
+
+    def _index(self, ir):
+        if getattr(self, "_record_ir", None) is not ir:
+            self._record_ir = ir
+            self._record_index = RecordIndex(ir)
+        return self._record_index
+
+    def _target_batches(self, ir, regions):
+        if self.record_level_targets:
+            yield from record_targets(self._index(ir), regions)
+        else:
+            yield from ((None, batch) for batch in self.pack_regions(ir, regions))
 
     def _record_issue(self, code, **details):
         self._task_events.append({
@@ -401,8 +472,14 @@ class GenericExtractionRunner:
     def _anchor(
         span: SpanProposal, ir: DocumentIR, allowed: list[EvidenceAnchor],
         contexts: list[EvidenceAnchor] | None = None,
+        *, field_path: str | None = None,
     ) -> EvidenceAnchor:
-        return resolve_source_anchor(span, ir, allowed, contexts)
+        try:
+            return resolve_source_anchor(span, ir, allowed, contexts)
+        except ValueError as exc:
+            if field_path:
+                exc.quote_details = {**getattr(exc, "quote_details", {}), "field_path": field_path}
+            raise
 
     @staticmethod
     def _resolve_anchor(
@@ -412,9 +489,14 @@ class GenericExtractionRunner:
         return resolve_source_anchor(span, ir, allowed, contexts)
 
     @classmethod
-    def _anchors(cls, spans, ir, allowed):
+    def _anchors(cls, spans, ir, allowed, *, field_path=None):
         """Resolve full quotations first, then disambiguate shorter co-quotes."""
-        return resolve_source_anchors(spans, ir, allowed)
+        try:
+            return resolve_source_anchors(spans, ir, allowed)
+        except ValueError as exc:
+            if field_path:
+                exc.quote_details = {**getattr(exc, "quote_details", {}), "field_path": field_path}
+            raise
 
     def _invoke(self, task, envelope, response_type, stage, candidate=None):
         self._task_id = task.task_id
@@ -425,19 +507,64 @@ class GenericExtractionRunner:
             "verify_reference": "reference_verification",
         }.get(stage, stage)
         if envelope.serialized_input is None:
-            raise ValueError(envelope.reason or "incomplete_context")
+            raise ValueError(
+                "context_budget_exceeded" if task.target_record_id
+                and envelope.reason == "budget_exceeded"
+                else envelope.reason or "incomplete_context"
+            )
+        if self.atomic_citations:
+            wire = CitationProtocol(
+                SYSTEM, envelope, response_type, ir=self._task_ir, stage=stage,
+                candidate=candidate, ontology_schema=self.schema,
+                compact_identifiers=self.compact_identifiers,
+                citation_feedback={
+                    key: value
+                    for key, value in self._citation_feedback.get(task.task_id, {}).items()
+                    if not key.startswith("_")
+                },
+            )
+            return self._dispatch(task, envelope, response_type, stage, wire=wire)
         payload = json.loads(envelope.serialized_input)
         if stage == "verify_entity_types":
             payload = verification_payload(payload, candidate["proposed_entities"], self.schema,
                                            candidate.get("competing_class_iris", ()))
         user = model_request(payload, stage, candidate)
+        if self.citation_repair and stage in {"recall", "verify_binding", "verify_reference"}:
+            request = json.loads(user)
+            request["source_quote_rules"] = (
+                "每个引用的 evidence_id 必须来自 fragments.anchor，text 必须是该片段的"
+                "连续逐字原文。表格行预览、表头拼接、跨单元格拼接不可当作某个片段原文。"
+                "跨单元格证据请分别放入 assertion_spans；验证阶段 context 必须为 null，"
+                "用更完整的逐字 text 定位，不把另一格的设备名或表头写作 context。"
+                "候选自带引用不是独立证明，仍须核验本次谓词、主体、对象、否定和条件。"
+            )
+            if task.task_id in self._citation_feedback:
+                request["citation_feedback"] = {
+                    key: value for key, value in self._citation_feedback[task.task_id].items()
+                    if not key.startswith("_")
+                }
+            user = canonical_json(request)
         schema = response_type.model_json_schema()
+        if (self.citation_repair and stage in {"verify_binding", "verify_reference"}
+            and "SpanProposal" in schema.get("$defs", {})):
+            schema["$defs"]["SpanProposal"]["properties"]["context"] = {"type": "null"}
         wire = ModelProtocol(SYSTEM, user, schema) if self.compact_identifiers else None
         system = wire.system if wire else SYSTEM + canonical_json(schema)
         user, schema = (wire.user, wire.schema) if wire else (user, schema)
+        return self._dispatch(
+            task, envelope, response_type, stage, wire=wire,
+            system=system, user=user, schema=schema,
+        )
+
+    def _dispatch(self, task, envelope, response_type, stage, *, wire=None,
+                  system=None, user=None, schema=None):
+        if wire is not None:
+            system, user, schema = wire.system, wire.user, wire.schema
         tokens = self.tokenizer.count(user + system) + 128
         if tokens > task.budget.max_input_tokens:
-            raise ValueError("budget_exceeded")
+            raise ValueError(
+                "context_budget_exceeded" if task.target_record_id else "budget_exceeded"
+            )
         if self._calls >= self.budget.max_tasks * 2:
             raise ValueError("model_call_budget_exceeded")
         if self.assert_owner_fn and self.assert_owner_fn():
@@ -459,7 +586,10 @@ class GenericExtractionRunner:
                     "task_id": task.task_id,
                     "stage": stage,
                     "transport_version": TRANSPORT_VERSION,
-                    "context_hash": envelope.context_hash,
+                    "context_hash": (
+                        wire.envelope.context_hash if isinstance(wire, CitationProtocol)
+                        else envelope.context_hash
+                    ),
                     "model_identity": self.model_identity,
                     "ontology_release": self.ontology_release,
                     "budget": task.budget.model_dump(mode="json"),
@@ -474,7 +604,14 @@ class GenericExtractionRunner:
         if raw is None:
             raise ValueError("model_unavailable")
         if wire:
-            raw = wire.decode(raw)
+            if isinstance(wire, CitationProtocol):
+                def failed_proposal(exc):
+                    self._recall_decode_issues.append(str(exc))
+                    self._record_issue(exc)
+
+                raw = wire.decode(raw, on_proposal_error=failed_proposal)
+            else:
+                raw = wire.decode(raw)
         try:
             return response_type.model_validate(raw, strict=True)
         except ValueError as exc:
@@ -488,6 +625,8 @@ class GenericExtractionRunner:
         effective_class="",
     ) -> list[Candidate]:
         self._task_events = []
+        self._recall_decode_issues = []
+        self._task_ir = ir
         self._task_id = task.task_id
         self._stage = "scope"
         response_type = EntityResponse if task.task_kind == "entity" else AssertionResponse
@@ -499,7 +638,7 @@ class GenericExtractionRunner:
             self._record_issue("model_partial_refusal", reason=response.refusal_reason[:160])
         result = []
         if isinstance(response, EntityResponse):
-            issues = []
+            issues = list(self._recall_decode_issues)
             for proposal_index, proposal in enumerate(response.entities):
                 try:
                     if proposal.supported is False:
@@ -513,9 +652,12 @@ class GenericExtractionRunner:
                         raise ValueError("unsupported_class")
                     contexts = self._anchors(
                         proposal.assertion_spans, ir, envelope.allowed_binding_regions,
+                        field_path=f"entities[{proposal_index}].assertion_spans",
                     )
                     anchor = self._anchor(
-                        proposal.mention, ir, envelope.allowed_fact_regions, contexts,
+                        proposal.mention, ir, envelope.allowed_fact_regions,
+                        None if self.atomic_citations else contexts,
+                        field_path=f"entities[{proposal_index}].mention",
                     )
                     identity, identity_anchors = {}, []
                     if proposal.identifier:
@@ -527,7 +669,9 @@ class GenericExtractionRunner:
                             raise ValueError("undeclared_identity_key")
                         key_anchor = self._anchor(
                             proposal.identifier.value, ir,
-                            envelope.allowed_binding_regions, contexts,
+                            envelope.allowed_binding_regions,
+                            None if self.atomic_citations else contexts,
+                            field_path=f"entities[{proposal_index}].identifier.value",
                         )
                         tables = table_records(ir)
                         mention_unit, key_unit = ir.unit(anchor.evidence_id), ir.unit(
@@ -579,8 +723,11 @@ class GenericExtractionRunner:
             size = min(
                 task.budget.max_objects_per_task, max(1, task.budget.max_output_tokens // 512),
             )
-            for offset in range(0, len(result), size):
-                batch = result[offset : offset + size]
+            batches = deque(
+                result[offset : offset + size] for offset in range(0, len(result), size)
+            )
+            while batches:
+                batch = batches.popleft()
                 try:
                     decision = self._invoke(
                         task, envelope, EntityTypeResponse, "verify_entity_types",
@@ -621,6 +768,12 @@ class GenericExtractionRunner:
                     raise ModelCancelled(verified) from exc
                 except (ValueError, RuntimeError, TimeoutError) as exc:
                     self._record_issue(exc)
+                    if str(exc) == "model_output_truncated" and len(batch) > 1:
+                        # Retry only this unfinished verdict batch, retaining every
+                        # competing type and the already independently checked siblings.
+                        middle = len(batch) // 2
+                        batches.extendleft(reversed([batch[:middle], batch[middle:]]))
+                        continue
                     raise PartialTaskFailure(verified, [*issues, str(exc)]) from exc
             if issues:
                 raise PartialTaskFailure(verified, issues)
@@ -628,19 +781,23 @@ class GenericExtractionRunner:
                 self._record_issue("no_candidates")
             return verified
 
-        def assertion_candidate(proposal):
+        def assertion_candidate(proposal, proposal_index):
+            path = f"assertions[{proposal_index}]"
             object_ref = None
             literal = None
             assertion_anchors = self._anchors(
                 proposal.assertion_spans, ir,
                 envelope.allowed_binding_regions if task.task_kind == "property"
                 else envelope.allowed_fact_regions,
+                field_path=f"{path}.assertion_spans",
             )
             if task.task_kind == "property":
                 if proposal.value is None or proposal.object_candidate_id is not None:
                     raise ValueError("property_value_required")
                 anchors = [self._anchor(
-                    proposal.value, ir, envelope.allowed_fact_regions, assertion_anchors,
+                    proposal.value, ir, envelope.allowed_fact_regions,
+                    None if self.atomic_citations else assertion_anchors,
+                    field_path=f"{path}.value",
                 )]
                 # The verifier sees the original value. Unit/legend semantics
                 # are not available until its independent, replayable decision.
@@ -663,8 +820,9 @@ class GenericExtractionRunner:
                 if not anchors:
                     raise ValueError("no_relationship_evidence")
             conditions = [
-                self._anchor(span, ir, envelope.allowed_binding_regions)
-                for span in proposal.conditions
+                self._anchor(span, ir, envelope.allowed_binding_regions,
+                             field_path=f"{path}.conditions[{index}]")
+                for index, span in enumerate(proposal.conditions)
             ]
             payload = {
                 "kind": task.task_kind,
@@ -706,14 +864,17 @@ class GenericExtractionRunner:
                 raise ValueError("assertion_polarity_conflict")
             binding_anchors = self._anchors(
                 decision.assertion_spans, ir, envelope.allowed_binding_regions,
+                field_path="decision.assertion_spans",
             )
             if literal is not None:
                 self._stage = "normalization"
                 unit_anchor = self._anchor(
                     decision.source_unit, ir, envelope.allowed_binding_regions, binding_anchors,
+                    field_path="decision.source_unit",
                 ) if decision.source_unit else None
                 legend_anchor = self._anchor(
                     decision.boolean_legend, ir, envelope.allowed_binding_regions,
+                    field_path="decision.boolean_legend",
                 ) if decision.boolean_legend else None
                 # A unit is part of the independently verified assertion, never
                 # arbitrary text elsewhere in the document or another row.
@@ -753,11 +914,44 @@ class GenericExtractionRunner:
                     }
                 candidate = candidate.model_copy(update={"literal": literal})
             condition_anchors = [
-                self._anchor(span, ir, envelope.allowed_binding_regions)
-                for span in decision.conditions
+                self._anchor(span, ir, envelope.allowed_binding_regions,
+                             field_path=f"decision.conditions[{index}]")
+                for index, span in enumerate(decision.conditions)
             ]
+            reviews = decision.condition_reviews
+            if reviews or (self.atomic_citations and conditions):
+                indexes = {review.condition_index for review in reviews}
+                if (len(reviews) != len(conditions)
+                    or indexes != set(range(len(conditions)))
+                    or any(not review.reason.strip() for review in reviews)):
+                    raise ValueError("condition_review_incomplete")
+                # An empty verification list alone cannot erase a real qualifier.
+                # Every recalled condition needs its own independent verdict.
+                retained = [conditions[review.condition_index] for review in reviews
+                            if review.is_condition]
+                if any(conditions[review.condition_index] in condition_anchors
+                       for review in reviews if not review.is_condition):
+                    raise ValueError("condition_review_conflict")
+                condition_anchors = list({canonical_json(anchor): anchor for anchor in (
+                    *retained, *condition_anchors,
+                )}.values())
+            else:
+                condition_anchors = condition_anchors or conditions
             bindings = []
             if binding_anchors:
+                record_mapping = binding_record_mapping(
+                    decision.method, binding_anchors, decision.record_mapping,
+                    ir=ir, fact_anchors=anchors,
+                    subject=candidates.get(task.subject.candidate_id),
+                )
+                if decision.method in {"table_record", "section_record"} and not record_mapping:
+                    raise ValueError("record_mapping_mismatch")
+                if reviews:
+                    record_mapping["condition_reviews"] = [
+                        {**review.model_dump(mode="json"),
+                         "anchor": conditions[review.condition_index].model_dump(mode="json")}
+                        for review in reviews
+                    ]
                 bindings = [
                     BindingEvidence(
                         method=decision.method,
@@ -765,16 +959,13 @@ class GenericExtractionRunner:
                         predicate_iri=task.predicate_iri,
                         object_candidate_id=object_ref.candidate_id if object_ref else None,
                         anchors=binding_anchors,
-                        record_mapping=binding_record_mapping(
-                            decision.method, binding_anchors, decision.record_mapping,
-                            ir=ir, fact_anchors=anchors,
-                        ),
+                        record_mapping=record_mapping,
                     )
                 ]
             candidate = candidate.model_copy(
                 update={
                     "bindings": bindings,
-                    "condition_anchors": condition_anchors or conditions,
+                    "condition_anchors": condition_anchors,
                 }
             )
             reference_ranges = task.scope.reference_ranges if task.scope else []
@@ -791,6 +982,7 @@ class GenericExtractionRunner:
                 )
                 references = self._anchors(
                     reference.assertion_spans, ir, envelope.allowed_binding_regions,
+                    field_path="reference.assertion_spans",
                 )
 
                 def overlaps(left, right):
@@ -830,11 +1022,11 @@ class GenericExtractionRunner:
             self._record_candidate(candidate)
             return candidate
 
-        issues = []
-        for proposal in response.assertions:
+        issues = list(self._recall_decode_issues)
+        for proposal_index, proposal in enumerate(response.assertions):
             try:
                 self._stage = f"{task.task_kind}_recall"
-                result.append(assertion_candidate(proposal))
+                result.append(assertion_candidate(proposal, proposal_index))
             except (ValueError, RuntimeError, TimeoutError) as exc:
                 self._record_issue(exc)
                 issues.append(str(exc))
@@ -905,7 +1097,41 @@ class GenericExtractionRunner:
         if group:
             yield group
 
-    def input_id(self, ir: DocumentIR, effective_class: str = "", *, scheduler_version=None) -> str:
+    def split_output_task(self, task: ExtractionTask) -> list[ExtractionTask]:
+        """Partition recall work, never raw JSON, source spans or proof requirements."""
+        if task.task_kind == "relationship" and len(task.object_candidates) > 1:
+            field = "object_candidates"
+        elif len(task.target_ranges) > 1 and not task.target_record_id:
+            field = "target_ranges"
+        elif task.task_kind == "entity" and len(task.target_class_iris) > 1:
+            field = "target_class_iris"
+        else:
+            return []
+        values = getattr(task, field)
+        middle = len(values) // 2
+        children = []
+        for subset in (values[:middle], values[middle:]):
+            update = {field: subset}
+            if field == "target_ranges":
+                update["target_evidence_ids"] = list(dict.fromkeys(r.evidence_id for r in subset))
+            elif field == "target_class_iris":
+                update["predicate_definition"] = {
+                    **task.predicate_definition,
+                    "classes": {
+                        iri: task.predicate_definition["classes"][iri] for iri in subset
+                    },
+                }
+            update["task_id"] = stable_id(
+                "output-task-split", [OUTPUT_SPLIT_VERSION, task.task_id, update],
+            )
+            children.append(task.model_copy(update=update))
+        return children
+
+    def input_id(
+        self, ir: DocumentIR, effective_class: str = "", *, scheduler_version=None,
+        output_split_version=OUTPUT_SPLIT_VERSION,
+        execution_policy="configured",
+    ) -> str:
         return stable_id(
             "extraction-run",
             {
@@ -921,6 +1147,13 @@ class GenericExtractionRunner:
                 "priority_paths": self.priority_paths,
                 "model_context_version": MODEL_CONTEXT_VERSION,
                 "reference_protocol": PROTOCOL_VERSION if self.compact_identifiers else "canonical",
+                "citation_protocol": CITATION_PROTOCOL_VERSION if self.atomic_citations else None,
+                "record_targets": RECORD_TARGET_VERSION if self.record_level_targets else None,
+                **({"output_split_version": output_split_version} if output_split_version else {}),
+                **({"execution_policy": self.execution_policy}
+                   if execution_policy == "configured" and self.execution_policy else
+                   {"execution_policy": execution_policy}
+                   if execution_policy != "configured" and execution_policy else {}),
             },
         )
 
@@ -936,11 +1169,21 @@ class GenericExtractionRunner:
         if task.task_id in self._restorable_tasks:
             yield task
             return
-        envelope = self._context(task, ir, candidates, effective_class, AssertionResponse)
+        try:
+            envelope = self._context(task, ir, candidates, effective_class, AssertionResponse)
+        except ValueError as exc:
+            if str(exc) != "task target outside accepted scope":
+                raise
+            # Keep the rejected complete record as an explicit failed task.
+            yield task
+            return
         if envelope.reason != "budget_exceeded":
             yield task
             return
         field = "object_candidates" if len(task.object_candidates) > 1 else "target_ranges"
+        if field == "target_ranges" and task.target_record_id:
+            yield task
+            return
         values = getattr(task, field)
         if len(values) < 2:
             yield task
@@ -972,10 +1215,35 @@ class GenericExtractionRunner:
         # Compatible legacy checkpoints retain their original task identities and
         # order. New runs use interleaving; upgrades never discard completed work.
         legacy = "document-path-priority-v3"
+        policy = checkpoint.get("execution_policy") if checkpoint else self.execution_policy
+        if policy and policy.get("version") != "template-recognition-v1":
+            raise ValueError("unsupported template recognition checkpoint policy")
+        checkpoint_policy = checkpoint.get("output_split_version") if checkpoint else (
+            OUTPUT_SPLIT_VERSION
+        )
+        if checkpoint_policy not in (None, OUTPUT_SPLIT_VERSION):
+            raise ValueError("unsupported output split checkpoint version")
         self._legacy_scheduler = SCHEDULER_VERSION == legacy or bool(
             checkpoint and checkpoint.get("input_id") == self.input_id(
-                ir, effective_class, scheduler_version=legacy
+                ir, effective_class, scheduler_version=legacy,
+                output_split_version=checkpoint_policy,
+                execution_policy=policy,
             )
+        )
+        scheduler_version = legacy if self._legacy_scheduler else SCHEDULER_VERSION
+        self._identity_output_split_version = OUTPUT_SPLIT_VERSION
+        self._identity_execution_policy = self.execution_policy
+        if checkpoint and checkpoint.get("input_id") == self.input_id(
+            ir, effective_class, scheduler_version=scheduler_version,
+            output_split_version=checkpoint_policy,
+            execution_policy=policy,
+        ):
+            # An additive recovery policy may adopt old recall failures without
+            # changing completed task IDs. All other identity dependencies still match.
+            self._identity_output_split_version = checkpoint_policy
+            self._identity_execution_policy = policy
+        self._priority_enabled = bool(
+            (self._identity_execution_policy or {}).get("relationship_priority")
         )
         self._contexts.clear()
         self._restorable_tasks.clear()
@@ -1020,7 +1288,11 @@ class GenericExtractionRunner:
         scheduler_version = (
             "document-path-priority-v3" if self._legacy_scheduler else SCHEDULER_VERSION
         )
-        input_id = self.input_id(ir, effective_class, scheduler_version=scheduler_version)
+        input_id = self.input_id(
+            ir, effective_class, scheduler_version=scheduler_version,
+            output_split_version=self._identity_output_split_version,
+            execution_policy=self._identity_execution_policy,
+        )
         result = ExtractionRun(input_id=input_id, scheduler_version=scheduler_version)
         self._active_result = result
         self._active_candidates = {}
@@ -1069,7 +1341,10 @@ class GenericExtractionRunner:
         failures = previous.get("failures", {})
         joint_completed = previous.get("joint_completed", {})
         task_outcomes = dict(previous.get("task_outcomes", {}))
-        self._restorable_tasks = set(completed) | (
+        splits = dict(previous.get("output_splits", {}))
+        self._citation_feedback = dict(previous.get("citation_repairs", {}))
+        ledger = dict(previous.get("task_ledger", {}))
+        self._restorable_tasks = set(completed) | set(splits) | (
             {key for key, failure in failures.items() if not failure.get("interrupted")}
             if not retry_failed else set()
         )
@@ -1084,7 +1359,9 @@ class GenericExtractionRunner:
         self._calls = previous.get("model_calls", 0)
         statistics = defaultdict(Counter)
         published_ids = set()
+        published_progress = None
         stable_tasks = set()
+        task_owners = {}
 
         def stable_entity(candidate):
             return (
@@ -1124,19 +1401,52 @@ class GenericExtractionRunner:
             return list(safe.values())
 
         def append_event(event):
-            result.tasks.append(event)
+            if event["status"] != "running":
+                result.tasks.append(event)
+            task = event.get("task", {})
+            if task.get("task_id"):
+                status = event["status"]
+                previous_entry = ledger.get(task["task_id"], {})
+                reasons = {o["code"] for o in event.get("outcomes", [])
+                           if o["category"] not in {"passed", "not_found"}}
+                attempted = status != "interrupted" or previous_entry.get("attempted", False)
+                if status == "interrupted" and previous_entry.get("status") == "incomplete":
+                    # A pause before the reserved repair has not resolved the
+                    # original citation failure or attempted another model task.
+                    status = "incomplete"
+                    reasons.update(previous_entry.get("reasons", []))
+                ledger[task["task_id"]] = {
+                    "kind": task["task_kind"], "classes": task.get("target_class_iris", []),
+                    "predicate": task.get("predicate_iri"),
+                    "subject": (task.get("subject") or {}).get("candidate_id"),
+                    "root": bool(task.get("subject") and task.get("path_root")
+                                 and task["subject"] == task["path_root"]
+                                 and not task.get("dependency_refs")),
+                    "status": "complete" if status == "restored" else status,
+                    "attempted": attempted, "reasons": sorted(reasons),
+                }
             for outcome in event.get("outcomes", []):
                 statistics[outcome["stage"]][outcome["category"]] += 1
 
         def save_checkpoint():
+            nonlocal published_progress
             result.stage_statistics = {
                 stage: dict(statistics[stage]) for stage in sorted(statistics)
             }
             result.performance = self._performance.snapshot()
+            result.branch_progress = project_branches(
+                self.schema, effective_class, list(current.values()), ledger,
+                complete=result.completion == "complete",
+            )
             result.checkpoint = {
                 "input_id": input_id,
                 "transport_version": TRANSPORT_VERSION,
                 "scheduler_version": scheduler_version,
+                "output_split_version": self._identity_output_split_version,
+                "output_splits": splits,
+                "execution_policy": self._identity_execution_policy,
+                "citation_repairs": self._citation_feedback,
+                "task_ledger": ledger,
                 "completed": completed,
                 "failures": failures,
                 "attempt_count": consumed,
@@ -1151,24 +1461,90 @@ class GenericExtractionRunner:
             # Properties can still be invalidated by joint binding verification.
             # Only stable, validated graph nodes/edges are safe to expose early.
             safe = stable_graph() if snapshot_fn else []
-            if snapshot_fn and any(c.candidate_id not in published_ids for c in safe):
+            progress_hash = evidence_hash(result.branch_progress)
+            if snapshot_fn and (any(c.candidate_id not in published_ids for c in safe)
+                                or progress_hash != published_progress):
                 snapshot_fn(result.model_copy(update={"candidates": safe, "checkpoint": {}}))
                 published_ids.update(c.candidate_id for c in safe)
+                published_progress = progress_hash
 
         save_checkpoint()
 
-        def execute(task):
+        def execute_split(task, children, owner, *, restored=False):
+            entry = {
+                "version": OUTPUT_SPLIT_VERSION,
+                "children": [child.model_dump(mode="json") for child in children],
+            }
+            if restored and splits[task.task_id] != entry:
+                raise ValueError("output split checkpoint does not match task partition")
+            splits[task.task_id] = entry
+            failures.pop(task.task_id, None)
+            append_event({
+                "task": task.model_dump(mode="json"), "status": "split",
+                "reason": "model_output_truncated", "restored": restored,
+                "child_task_ids": [child.task_id for child in children],
+                "outcomes": task_outcomes.get(task.task_id, []),
+            })
+            # Commit the partition before any child request; a restart must never
+            # retry the oversized parent or reset its consumed attempt/model calls.
+            save_checkpoint()
+            return all(execute(child, owner=owner) for child in children)
+
+        def repair(task, outcomes, owner):
+            response_type = EntityResponse if task.task_kind == "entity" else AssertionResponse
+            envelope = self._context(task, ir, current, effective_class, response_type)
+            self._citation_feedback[task.task_id] = repair_feedback(
+                outcomes, ir, envelope.allowed_fact_regions, envelope.allowed_binding_regions,
+                task_kind=task.task_kind,
+            )
+            self._citation_feedback[task.task_id]["_pending"] = True
+            # The retry reservation and original failure survive pause/crash.
+            save_checkpoint()
+            return execute(task, owner=owner, repairing=True)
+
+        def execute(task, *, owner=None, repairing=False):
             nonlocal consumed
+            owner = owner or task.task_id
+            task_owners[task.task_id] = owner
             if all(
                 region.start == 0 and region.end == len(ir.unit(region.evidence_id).text)
                 for region in task.target_ranges
             ):
                 stable_tasks.add(task.task_id)
+            if task.task_id in splits:
+                return execute_split(
+                    task, self.split_output_task(task), owner, restored=True,
+                )
             failure = failures.get(task.task_id)
+            preserved = {c["candidate_id"]: c for c in (failure or {}).get("candidates", [])}
+            repairing = repairing or self._citation_feedback.get(task.task_id, {}).get(
+                "_pending", False,
+            )
+            if (repairing and self._citation_feedback[task.task_id].get("version")
+                != REPAIR_VERSION):
+                # Rebuild an already reserved repair under current field permissions;
+                # do not grant a new attempt or retain old out-of-domain hints.
+                return repair(task, task_outcomes.get(task.task_id, []), owner)
             if failure:
                 values = [Candidate.model_validate(c) for c in failure.get("candidates", [])]
                 current.update({c.candidate_id: c for c in values})
-                if not retry_failed and not failure.get("interrupted"):
+                if (
+                    failure["reason"] == "model_output_truncated" and not values
+                    and any(
+                        event.get("code") == "model_output_truncated"
+                        and event.get("stage") == f"{task.task_kind}_recall"
+                        for event in task_outcomes.get(task.task_id, [])
+                    )
+                ):
+                    children = self.split_output_task(task)
+                    if children:
+                        return execute_split(task, children, owner)
+                if (self.citation_repair and not repairing
+                    and task.task_id not in self._citation_feedback
+                    and any(e.get("code") in QUOTE_ERRORS
+                            for e in task_outcomes.get(task.task_id, []))):
+                    return repair(task, task_outcomes[task.task_id], owner)
+                if not repairing and not retry_failed and not failure.get("interrupted"):
                     append_event(
                         {
                             "task": task.model_dump(mode="json"),
@@ -1192,8 +1568,17 @@ class GenericExtractionRunner:
                                      "outcomes": [diagnostic("scheduler", "task_budget_or_pause")]})
                 return False
             consumed += 1
+            append_event({"task": task.model_dump(mode="json"), "status": "running"})
+            save_checkpoint()
             try:
                 values = self.execute_task(task, ir, current, effective_class)
+                if task.task_id in self._citation_feedback and not values:
+                    raise ValueError("citation_repair_unresolved")
+                if task.task_id in self._citation_feedback:
+                    self._citation_feedback[task.task_id]["_pending"] = False
+                    values = list({**{key: Candidate.model_validate(c)
+                                      for key, c in preserved.items()},
+                                   **{c.candidate_id: c for c in values}}.values())
                 current.update({c.candidate_id: c for c in values})
                 completed[task.task_id] = [c.model_dump(mode="json") for c in values]
                 failures.pop(task.task_id, None)
@@ -1207,7 +1592,8 @@ class GenericExtractionRunner:
                 current.update({c.candidate_id: c for c in exc.candidates})
                 failures[task.task_id] = {
                     "reason": "model_cancelled", "interrupted": True,
-                    "candidates": [c.model_dump(mode="json") for c in exc.candidates],
+                    "candidates": list({**preserved, **{c.candidate_id: c.model_dump(mode="json")
+                                                       for c in exc.candidates}}.values()),
                 }
                 self._record_issue("model_cancelled")
                 task_outcomes[task.task_id] = list(self._task_events)
@@ -1220,15 +1606,26 @@ class GenericExtractionRunner:
                 # Never release invalid proposals; keep valid siblings and the
                 # incomplete task status together in the durable checkpoint.
                 values = exc.candidates if isinstance(exc, PartialTaskFailure) else []
+                if task.task_id in self._citation_feedback:
+                    self._citation_feedback[task.task_id]["_pending"] = False
                 current.update({c.candidate_id: c for c in values})
                 issues = exc.issues if isinstance(exc, PartialTaskFailure) else [str(exc)]
                 if not isinstance(exc, PartialTaskFailure):
                     self._record_issue(exc)
                 task_outcomes[task.task_id] = list(self._task_events)
+                if (
+                    str(exc) == "model_output_truncated"
+                    and self._stage == f"{task.task_kind}_recall"
+                    and not isinstance(exc, PartialTaskFailure)
+                ):
+                    children = self.split_output_task(task)
+                    if children:
+                        return execute_split(task, children, owner)
                 failures[task.task_id] = {
                     "reason": str(exc),
                     "issues": issues,
-                    "candidates": [c.model_dump(mode="json") for c in values],
+                    "candidates": list({**preserved, **{c.candidate_id: c.model_dump(mode="json")
+                                                       for c in values}}.values()),
                 }
                 append_event(
                     {
@@ -1238,6 +1635,10 @@ class GenericExtractionRunner:
                         "outcomes": task_outcomes[task.task_id],
                     }
                 )
+                if (self.citation_repair and task.task_id not in self._citation_feedback
+                    and any(e.get("code") in QUOTE_ERRORS
+                            for e in task_outcomes[task.task_id])):
+                    return repair(task, task_outcomes[task.task_id], owner)
                 result.diagnostics.extend(issues)
                 if isinstance(exc, TokenizationUnavailable) or str(exc) in MODEL_FAILURES | {
                     "model_unavailable",
@@ -1298,7 +1699,9 @@ class GenericExtractionRunner:
         document_scoped_subjects = set()
 
         def schedule_subject(subject, *, root=None, prefix=None, dependencies=None,
-                             only_objects=None, relationships_only=False):
+                             only_objects=None, relationships_only=False,
+                             focus_predicate=None, focus_regions=None,
+                             properties_only=False, focused_properties=False):
             prefix, dependencies = prefix or [], dependencies or []
             competitors = [
                 c
@@ -1320,6 +1723,8 @@ class GenericExtractionRunner:
                     and current[ref.candidate_id].revision == ref.revision
                 ],
             )
+            if self.record_level_targets:
+                scope = field_group_scope(scope, subject, self._index(ir))
             definition = self.schema[subject.class_iri]
             root = root or candidate_ref(subject)
             root_candidate = current[root.candidate_id]
@@ -1327,7 +1732,9 @@ class GenericExtractionRunner:
                 document_scoped_subjects.add(subject.candidate_id)
             visit = evidence_hash(
                 [candidate_ref(subject), root, prefix, dependencies, scope, self.ontology_release,
-                 sorted(only_objects) if only_objects is not None else None, relationships_only]
+                 sorted(only_objects) if only_objects is not None else None, relationships_only,
+                 properties_only, focused_properties,
+                 *([focus_predicate, focus_regions] if focus_predicate else [])]
             )
             if visit in scheduled:
                 return []
@@ -1364,7 +1771,22 @@ class GenericExtractionRunner:
                         max(1, self.budget.max_input_tokens // 4),
                     )
                 )
-                for batch in self.pack_regions(ir, regions):
+                if focus_regions is not None:
+                    regions = iter(focus_regions)
+                if focused_properties and kind == "property":
+                    # A field label ranks source records; it is not a binding verdict.
+                    label = predicate.get("label", "")
+                    batches = list(self._target_batches(ir, regions))
+                    matched = [(record_id, batch) for record_id, batch in batches
+                               if label and any(label in ir.unit(region.evidence_id).text
+                                                for region in batch)]
+                    # Label matching is a retrieval preference, not a requirement
+                    # for a source-backed value (e.g. a source-reference property).
+                    # Each predicate also gets one complete local record probe.
+                    batches = (matched or batches)[:1]
+                else:
+                    batches = self._target_batches(ir, regions)
+                for record_id, batch in batches:
                     if not prefix and subject.candidate_id in document_scoped_subjects:
                         # A rooted path has better attribution and may add bound
                         # prose. Stop the older standalone stream for this object.
@@ -1375,6 +1797,7 @@ class GenericExtractionRunner:
                         task = make_task(
                             kind,
                             batch,
+                            target_record_id=record_id,
                             subject=candidate_ref(subject),
                             scope=scope,
                             predicate_iri=predicate["iri"],
@@ -1401,7 +1824,11 @@ class GenericExtractionRunner:
             ))
             preferred, remaining = [], []
             for kind, predicate in predicates:
+                if focus_predicate and predicate["iri"] != focus_predicate:
+                    continue
                 if relationships_only and kind != "relationship":
+                    continue
+                if properties_only and kind != "property":
                     continue
                 path = (*prefix, predicate["iri"])
                 target = preferred if any(
@@ -1423,6 +1850,101 @@ class GenericExtractionRunner:
         early_objects = set()
         early_relationships = []
         early_turns = 0
+        early_properties = deque()
+        early_property_subjects = set()
+
+        def queue_early_properties(edge):
+            if not self.record_level_targets or not edge.positive_eligible:
+                return
+            key = (edge.object.candidate_id, edge.object.revision)
+            if key in early_property_subjects:
+                return
+            early_property_subjects.add(key)
+            refs = [*edge.dependency_refs, edge.subject, candidate_ref(edge)]
+            early_properties.append(iter(schedule_subject(
+                current[edge.object.candidate_id], root=edge.path_root,
+                prefix=edge.relationship_path, dependencies=refs,
+                properties_only=True, focused_properties=True,
+            )))
+
+        def advance_properties():
+            nonlocal stopped
+            while early_properties:
+                stream = early_properties.popleft()
+                try:
+                    task = next(stream)
+                except StopIteration:
+                    continue
+                if not execute(task):
+                    stopped = True
+                    return
+                early_properties.append(stream)
+                return
+
+        # Bounded lookahead over direct root relationships. Every focused task
+        # retains its own ranges/menu; the full scan below remains unchanged.
+        if self._priority_enabled:
+            for root_subject in roots:
+                plans = relation_records(
+                    ir, self.schema, root_subject, self.priority_paths, index=self._index(ir),
+                )
+                for record_offset in range(3):
+                    for predicate, target_classes, records in plans:
+                        if record_offset >= len(records):
+                            continue
+                        record = records[record_offset]
+                        regions = [EvidenceRange(evidence_id=u.evidence_id, start=start, end=end)
+                                   for u in record.source_units
+                                   for start, end in split_windows(
+                                       u.text, self.tokenizer,
+                                       max(1, self.budget.max_input_tokens // 4))]
+                        for record_id, batch in self._target_batches(ir, regions):
+                            for menu in self.pack_classes(target_classes):
+                                definition = self.entity_menu(menu)
+                                definition["predicate_definition"]["relation_focus"] = predicate
+                                if not execute(make_task(
+                                    "entity", batch, target_record_id=record_id, **definition,
+                                )):
+                                    stopped = True
+                                    break
+                            if stopped:
+                                break
+                        if stopped:
+                            break
+                        subjects = [c for c in current.values()
+                                    if c.kind == "entity" and c.positive_eligible]
+                        record_ids = {r.evidence_id for r in regions}
+                        object_ids = {c.candidate_id for c in subjects
+                                      if any(a.evidence_id in record_ids
+                                             for a in document_anchors(c))}
+                        tasks = schedule_subject(
+                            root_subject, relationships_only=True,
+                            only_objects=object_ids,
+                            focus_predicate=predicate["iri"], focus_regions=regions,
+                        )
+                        for task in tasks:
+                            if not execute(task):
+                                stopped = True
+                                break
+                            early_relationships.extend(
+                                c for c in current.values() if c.task_id == task.task_id
+                                and c.kind == "relationship" and c.positive_eligible
+                            )
+                            for edge in early_relationships:
+                                queue_early_properties(edge)
+                        if not stopped:
+                            advance_properties()
+                        if stopped:
+                            break
+                    if stopped:
+                        break
+                if stopped:
+                    break
+
+        # Verified first-level branches get field recognition before the broad
+        # entity scan. Rotate subjects, and keep later full-scope checks intact.
+        while early_properties and not stopped:
+            advance_properties()
 
         def advance_early(limit=None):
             nonlocal stopped, early_turns
@@ -1440,13 +1962,17 @@ class GenericExtractionRunner:
                 turns += 1
                 early_turns += 1
                 early_relationships.extend(
-                    c for c in current.values() if c.task_id == task.task_id
+                    c for c in current.values() if task_owners.get(c.task_id) == task.task_id
                     and c.kind == "relationship" and c.positive_eligible
                 )
 
-        for regions in self.pack_regions(ir, source_regions):
+        for record_id, regions in self._target_batches(ir, source_regions):
+            if stopped:
+                break
             for menu in menus:
-                task = make_task("entity", regions, **self.entity_menu(menu))
+                task = make_task(
+                    "entity", regions, target_record_id=record_id, **self.entity_menu(menu),
+                )
                 if not execute(task):
                     stopped = True
                     break
@@ -1518,7 +2044,8 @@ class GenericExtractionRunner:
             turn += 1
             queue.append((stream, visited))
             for parent in list(current.values()):
-                if parent.task_id == task.task_id and parent.kind == "relationship":
+                if (task_owners.get(parent.task_id) == task.task_id
+                    and parent.kind == "relationship"):
                     follow_relationship(parent, visited)
         groups = {}
         for candidate in current.values():

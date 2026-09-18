@@ -8,6 +8,11 @@
 
 ## Format: `[ID] [P?] [Story] [R#] Description`
 
+2026-09-13 生产活性修复任务追踪见
+[022 CC 清单](../022-semantic-graph-closure/tasks.md#候选台账与完成修复--cc2026-09-13)。
+本规范 FR-022/023/029/072、SC-004 与数据模型已按实际候选口径同步；旧冻结运行
+不静默迁移。历史已勾选两阶段全文验收只适用于原策略，不代表新候选策略验收通过。
+
 - **[P]**：与同阶段相邻任务修改不同文件，且不依赖其未稳定输出，可并行执行。
 - **[US1]–[US5]**：映射到 specification 中的用户故事；Setup/Foundation/最终门禁不强行挂故事标签。
 - **[R0]–[R7]**：映射到源方案第 14.1 节的重构包。
@@ -276,6 +281,13 @@
 
 ## Reusable Regression Assets
 
+### 2026-09-09 历史入口补充
+
+- [x] H001 [US1] 实现当前 owner 的只读分页列表、轻量 schema 和客户端契约，覆盖隔离、排序、保留期与零派发副作用。
+- [x] H002 [US1] 页面常驻历史任务入口，创建后更新、点击恢复既有任务、显示加载/空态/失败及分页。
+- [x] H003 [US1] 验证关闭结果和重新进入后的回看、同名多任务、快速切换隔离及定向静态检查；实际验证边界见 `history-validation.md`。
+- [x] H004 [US1/US3] 按后续 UI 要求将分析历史移至左侧导航，章节树与预览共享，右侧节点元数据/关系图谱并列；保留证据联动与只读契约，适配窄栏图谱并验证实际浏览器布局，结果见 `layout-validation.md`。
+
 - 原子引用/表格：`backend/tests/test_extraction/test_evaluation_citation_protocol.py`、`backend/tests/test_extraction/test_evaluation_citation_tables_v2.py`、`backend/tests/test_extraction/test_docx_structure.py`。
 - 两跳与拒绝续检：`backend/tests/test_extraction/test_evaluation_cmc_product_api_path.py`、`backend/tests/test_extraction/test_evaluation_quality_rejection_continuation.py`、`backend/tests/test_extraction/test_staged_retrieval.py`。
 - 身份、归并与失效：`backend/tests/test_extraction/test_identity_context_quarantine.py`、`backend/tests/test_extraction/test_instance_registry.py`、`backend/tests/test_extraction/test_evaluation_quality_review_gate.py`。
@@ -294,3 +306,13 @@
 - 前端虽有 Node/browser 脚本，但 package.json 没有 test runner script，浏览器脚本依赖外置 Playwright且多用合成 API；它们不能替代真实后端、SSE、鉴权和文件生命周期集成。
 - 仓库未配置覆盖率门、统一 CI workflow 或测试 marker；每个 validation 记录必须给出实际命令、环境、收集数、pass/fail/skip 和未覆盖边界。
 - Constitution III 禁止物理删除或就地篡改已发布内容；生产旧域 manifest 尚未证明目标全是未发布独占产物，因此破坏性清理当前必须保持阻断，不能用用户要求或备份替代治理门。
+
+
+## 报告预览专家意见入口（2026-09-11）
+
+按用户进一步要求实施可保存、重读及导出的专家意见入口；需求、权限、版本、幂等及验收见[契约](contracts/expert-opinions.md)。该意见不自动变更图谱或校准质量状态。
+
+- [x] 定义专家意见契约、不可变存储及 0036 迁移。
+- [x] 实现原件/图谱归属校验、角色门禁、幂等与同事务审计。
+- [x] 接入各类报告预览，提供表单、个人历史和 JSON 导出。
+- [x] 完成定向 API 测试、前端类型与静态检查、隔离浏览器回归。

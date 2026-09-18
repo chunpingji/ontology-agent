@@ -1,0 +1,179 @@
+{
+  "mode": "frozen_input_literal_overlap_check",
+  "real_model_requests": 0,
+  "system_sources_sha256": "da13fb1fc3d6f7bb01a6dd650707ec009525cb715712c76617e2e3a8e944e041",
+  "ir_sha256": "858dddbb762217ede057ed85e659bb6d0349fc90e0c936fbf42756859c882134",
+  "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+  "sources": {
+    "system-mock-equipment": {
+      "records": 211,
+      "matched_records": 5,
+      "matched_names": 5,
+      "source_units": 10,
+      "matches": [
+        {
+          "record_key": "1b10c945-9649-4b07-8d75-25695c78efdf",
+          "record_version": "0867dee411f0e12dafcf3f9c29d3f1cc42858d76f11a34bdeb26987bc7d80f8a",
+          "field": "equipment_id",
+          "name": "RE64611",
+          "evidence_id": "332f40090c06eff4f9c04e9d2de846cf6dc7e535341ae6a246ccaec1fb376310",
+          "span_start": 12,
+          "span_end": 19
+        },
+        {
+          "record_key": "1b10c945-9649-4b07-8d75-25695c78efdf",
+          "record_version": "0867dee411f0e12dafcf3f9c29d3f1cc42858d76f11a34bdeb26987bc7d80f8a",
+          "field": "equipment_id",
+          "name": "RE64611",
+          "evidence_id": "c1e8f7303138ba417ae9c7fe0bd6ba13ae69417a9c6e46a98e26eb26320ef35c",
+          "span_start": 1,
+          "span_end": 8
+        },
+        {
+          "record_key": "1b10c945-9649-4b07-8d75-25695c78efdf",
+          "record_version": "0867dee411f0e12dafcf3f9c29d3f1cc42858d76f11a34bdeb26987bc7d80f8a",
+          "field": "equipment_id",
+          "name": "RE64611",
+          "evidence_id": "16438631527487298ec0944d6b00559c2dbb71c7e9387096dd808d8c26ccaeda",
+          "span_start": 0,
+          "span_end": 7
+        },
+        {
+          "record_key": "247e13b5-7d9b-495b-abe6-a552b7c860ca",
+          "record_version": "a28f0fba30339a291166ef577473d80c53fa47847f1c3b3dee565bbbc30b9d1b",
+          "field": "equipment_id",
+          "name": "PF64216",
+          "evidence_id": "0fb079a418cb8b4765ca7e6be3221465bb4e9867d7316b5838b64700ed951104",
+          "span_start": 20,
+          "span_end": 27
+        },
+        {
+          "record_key": "247e13b5-7d9b-495b-abe6-a552b7c860ca",
+          "record_version": "a28f0fba30339a291166ef577473d80c53fa47847f1c3b3dee565bbbc30b9d1b",
+          "field": "equipment_id",
+          "name": "PF64216",
+          "evidence_id": "c1e8f7303138ba417ae9c7fe0bd6ba13ae69417a9c6e46a98e26eb26320ef35c",
+          "span_start": 13,
+          "span_end": 20
+        },
+        {
+          "record_key": "247e13b5-7d9b-495b-abe6-a552b7c860ca",
+          "record_version": "a28f0fba30339a291166ef577473d80c53fa47847f1c3b3dee565bbbc30b9d1b",
+          "field": "equipment_id",
+          "name": "PF64216",
+          "evidence_id": "5544bc205a1b3f200e65c2279d7cfc0d5582b86442475daf7181137bf181d2cd",
+          "span_start": 0,
+          "span_end": 7
+        },
+        {
+          "record_key": "7d4a02ab-1974-45ca-9e9d-492b53fd14ba",
+          "record_version": "09cab9a4936b9223f4392928a36059422ddbb0716aee01255f2edba2a3163183",
+          "field": "equipment_id",
+          "name": "RE64613",
+          "evidence_id": "0fb079a418cb8b4765ca7e6be3221465bb4e9867d7316b5838b64700ed951104",
+          "span_start": 51,
+          "span_end": 58
+        },
+        {
+          "record_key": "7d4a02ab-1974-45ca-9e9d-492b53fd14ba",
+          "record_version": "09cab9a4936b9223f4392928a36059422ddbb0716aee01255f2edba2a3163183",
+          "field": "equipment_id",
+          "name": "RE64613",
+          "evidence_id": "c7718ac45e08780a7ace6633bdf5fc2d7e99d9548475dfd9c613e85435213018",
+          "span_start": 1,
+          "span_end": 8
+        },
+        {
+          "record_key": "7d4a02ab-1974-45ca-9e9d-492b53fd14ba",
+          "record_version": "09cab9a4936b9223f4392928a36059422ddbb0716aee01255f2edba2a3163183",
+          "field": "equipment_id",
+          "name": "RE64613",
+          "evidence_id": "b467ff57f54677a5d98aa46ba5474722a223ff606fa8862a4a52ee49a18bf057",
+          "span_start": 0,
+          "span_end": 7
+        },
+        {
+          "record_key": "aef19c1b-ff62-4533-9fb1-86323ecd013b",
+          "record_version": "59f9ab3810f51c514b8a54e7ee6b9cf67b0b627f8e7a22194a364fd11543a32d",
+          "field": "equipment_id",
+          "name": "CT64610",
+          "evidence_id": "14d1a5d61cf43a7a7a52109969bbf57ded0d846b59c4d25cba07484b3c7b019f",
+          "span_start": 12,
+          "span_end": 19
+        },
+        {
+          "record_key": "aef19c1b-ff62-4533-9fb1-86323ecd013b",
+          "record_version": "59f9ab3810f51c514b8a54e7ee6b9cf67b0b627f8e7a22194a364fd11543a32d",
+          "field": "equipment_id",
+          "name": "CT64610",
+          "evidence_id": "c29de58830ae27ec4afbff5413ab79a0531c4b432d7356ff295f84cb115a8405",
+          "span_start": 1,
+          "span_end": 8
+        },
+        {
+          "record_key": "aef19c1b-ff62-4533-9fb1-86323ecd013b",
+          "record_version": "59f9ab3810f51c514b8a54e7ee6b9cf67b0b627f8e7a22194a364fd11543a32d",
+          "field": "equipment_id",
+          "name": "CT64610",
+          "evidence_id": "df9b4d09713883ed06ca247dd4cb6e375c766c25fc4b01fccff3e83c1bd3e8e1",
+          "span_start": 0,
+          "span_end": 7
+        },
+        {
+          "record_key": "c78dcbce-00e4-4bab-9aba-02d5a49be52e",
+          "record_version": "4f522f403b0f62edc52708e0e45d9cbe5e4c5154db78d7dd1bacd8de8b07fe27",
+          "field": "equipment_id",
+          "name": "PF64616",
+          "evidence_id": "0fb079a418cb8b4765ca7e6be3221465bb4e9867d7316b5838b64700ed951104",
+          "span_start": 28,
+          "span_end": 35
+        },
+        {
+          "record_key": "c78dcbce-00e4-4bab-9aba-02d5a49be52e",
+          "record_version": "4f522f403b0f62edc52708e0e45d9cbe5e4c5154db78d7dd1bacd8de8b07fe27",
+          "field": "equipment_id",
+          "name": "PF64616",
+          "evidence_id": "c1e8f7303138ba417ae9c7fe0bd6ba13ae69417a9c6e46a98e26eb26320ef35c",
+          "span_start": 21,
+          "span_end": 28
+        },
+        {
+          "record_key": "c78dcbce-00e4-4bab-9aba-02d5a49be52e",
+          "record_version": "4f522f403b0f62edc52708e0e45d9cbe5e4c5154db78d7dd1bacd8de8b07fe27",
+          "field": "equipment_id",
+          "name": "PF64616",
+          "evidence_id": "5544bc205a1b3f200e65c2279d7cfc0d5582b86442475daf7181137bf181d2cd",
+          "span_start": 8,
+          "span_end": 15
+        }
+      ]
+    },
+    "system-mock-roles": {
+      "records": 5,
+      "matched_records": 1,
+      "matched_names": 1,
+      "source_units": 1,
+      "matches": [
+        {
+          "record_key": "02fa9ef5-7a73-4261-b2d1-cd5586eaf8f0",
+          "record_version": "4daed0c12a5c2996b9aab3d47adb82d055d89a21f2bdca4ffd0fc6c0be8dd9ed",
+          "field": "label",
+          "name": "QA",
+          "evidence_id": "e627f38d15370e1c6b10a40b5adfd599d26b43c0dc97c2e5d62e818f33a2b3ca",
+          "span_start": 0,
+          "span_end": 2
+        },
+        {
+          "record_key": "02fa9ef5-7a73-4261-b2d1-cd5586eaf8f0",
+          "record_version": "4daed0c12a5c2996b9aab3d47adb82d055d89a21f2bdca4ffd0fc6c0be8dd9ed",
+          "field": "code",
+          "name": "QA",
+          "evidence_id": "e627f38d15370e1c6b10a40b5adfd599d26b43c0dc97c2e5d62e818f33a2b3ca",
+          "span_start": 0,
+          "span_end": 2
+        }
+      ]
+    }
+  },
+  "interpretation": "仅确认外部名称/编号在指定原文中的字面出现，允许子串与同名多条记录；不证明实体类型、身份或关系。未命中不等于语义不存在。此诊断不加入识别manifest或模型输入。"
+}

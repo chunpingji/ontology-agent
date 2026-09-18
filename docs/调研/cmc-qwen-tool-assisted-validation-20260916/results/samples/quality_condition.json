@@ -1,0 +1,1111 @@
+{
+  "scope_id": "quality_condition",
+  "review_status": "model_output_not_expert_gold",
+  "arms": {
+    "A": {
+      "plan": {
+        "get_schema_card": [
+          {
+            "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/Crystallization"
+          },
+          {
+            "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/Purification"
+          },
+          {
+            "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/Residue"
+          }
+        ],
+        "inspect_evidence": [
+          {
+            "ref": "u0"
+          },
+          {
+            "ref": "u2"
+          }
+        ],
+        "propose_mentions": [
+          {
+            "group": "entities"
+          },
+          {
+            "group": "values"
+          }
+        ]
+      },
+      "candidates": {
+        "subjects": {
+          "document": {
+            "attributes": {},
+            "relations": {
+              "hasCleaningResidue": []
+            },
+            "anchor": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            }
+          },
+          "s1": {
+            "attributes": {
+              "inProcessControl": [
+                {
+                  "raw": "取样送检HPLC和重金属检测，质量标准要同时满足：单个杂质应不得过0.2%总杂应不得过2.0%,重金属残留不得超过百万分之二十，若不符合质量标准，则重复上述全部结晶操作（从一般区溶解物料）。",
+                  "source": {
+                    "ref": "u2",
+                    "quote": "取样送检HPLC和重金属检测，质量标准要同时满足：单个杂质应不得过0.2%总杂应不得过2.0%,重金属残留不得超过百万分之二十，若不符合质量标准，则重复上述全部结晶操作（从一般区溶解物料）。",
+                    "span_id": "source:u2"
+                  },
+                  "field": {
+                    "ref": "u2",
+                    "quote": "取样送检HPLC和重金属检测，质量标准要同时满足：单个杂质应不得过0.2%总杂应不得过2.0%,重金属残留不得超过百万分之二十，若不符合质量标准，则重复上述全部结晶操作（从一般区溶解物料）。",
+                    "span_id": "source:u2"
+                  },
+                  "unit": {
+                    "ref": "",
+                    "quote": "",
+                    "span_id": ""
+                  },
+                  "condition": {
+                    "ref": "",
+                    "quote": "",
+                    "span_id": ""
+                  }
+                }
+              ],
+              "outputMassRange_kg": [],
+              "reactionConditions": [],
+              "stepOrder": [],
+              "yieldRangePercent": []
+            },
+            "relations": {
+              "nextStep": [
+                {
+                  "target_id": "s2",
+                  "evidence": {
+                    "ref": "u0",
+                    "quote": "HRS-1597结晶纯化",
+                    "span_id": "source:u0"
+                  },
+                  "condition": {
+                    "ref": "",
+                    "quote": "",
+                    "span_id": ""
+                  },
+                  "polarity": "affirmed"
+                }
+              ]
+            },
+            "anchor": {
+              "ref": "u0",
+              "quote": "HRS-1597结晶纯化",
+              "span_id": "source:u0"
+            }
+          },
+          "s2": {
+            "attributes": {
+              "inProcessControl": [],
+              "outputMassRange_kg": [],
+              "reactionConditions": [],
+              "stepOrder": [],
+              "yieldRangePercent": []
+            },
+            "relations": {
+              "nextStep": []
+            },
+            "anchor": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            }
+          },
+          "s3": {
+            "attributes": {
+              "residueSolubility": [],
+              "residueSolubilityTemperature": [],
+              "residueSolvent": []
+            },
+            "relations": {},
+            "anchor": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            }
+          }
+        },
+        "observations": [
+          {
+            "value": {
+              "ref": "u2",
+              "quote": "0.2",
+              "span_id": "evidence:u2:33:36"
+            },
+            "field": {
+              "ref": "u2",
+              "quote": "单个杂质应不得过0.2%",
+              "span_id": "source:u2"
+            },
+            "legend": {
+              "ref": "u2",
+              "quote": "%",
+              "span_id": "evidence:u2:36:37"
+            },
+            "condition": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "state": "conditional",
+            "reason": "质量标准中的限度要求，非实测值"
+          },
+          {
+            "value": {
+              "ref": "u2",
+              "quote": "2.0",
+              "span_id": "evidence:u2:43:46"
+            },
+            "field": {
+              "ref": "u2",
+              "quote": "总杂应不得过2.0%",
+              "span_id": "source:u2"
+            },
+            "legend": {
+              "ref": "u2",
+              "quote": "%",
+              "span_id": "evidence:u2:46:47"
+            },
+            "condition": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "state": "conditional",
+            "reason": "质量标准中的限度要求，非实测值"
+          },
+          {
+            "value": {
+              "ref": "u2",
+              "quote": "百万分之二十",
+              "span_id": "source:u2"
+            },
+            "field": {
+              "ref": "u2",
+              "quote": "重金属残留不得超过百万分之二十",
+              "span_id": "source:u2"
+            },
+            "legend": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "condition": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "state": "conditional",
+            "reason": "质量标准中的限度要求，非实测值"
+          },
+          {
+            "value": {
+              "ref": "u2",
+              "quote": "若不符合质量标准，则重复上述全部结晶操作（从一般区溶解物料）",
+              "span_id": "source:u2"
+            },
+            "field": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "legend": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "condition": {
+              "ref": "u2",
+              "quote": "若不符合质量标准",
+              "span_id": "source:u2"
+            },
+            "state": "conditional",
+            "reason": "触发重复结晶操作的条件"
+          }
+        ]
+      },
+      "final": {
+        "status": "complete",
+        "accepted": [
+          {
+            "kind": "property",
+            "subject_id": "s1",
+            "subject_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/Crystallization",
+            "subject_text": "HRS-1597结晶纯化",
+            "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/inProcessControl",
+            "evidence": {
+              "ref": "u2",
+              "quote": "取样送检HPLC和重金属检测，质量标准要同时满足：单个杂质应不得过0.2%总杂应不得过2.0%,重金属残留不得超过百万分之二十，若不符合质量标准，则重复上述全部结晶操作（从一般区溶解物料）。",
+              "start": 0,
+              "end": 95
+            },
+            "condition": {
+              "ref": "",
+              "quote": ""
+            },
+            "raw_value": "取样送检HPLC和重金属检测，质量标准要同时满足：单个杂质应不得过0.2%总杂应不得过2.0%,重金属残留不得超过百万分之二十，若不符合质量标准，则重复上述全部结晶操作（从一般区溶解物料）。",
+            "field": {
+              "ref": "u2",
+              "quote": "取样送检HPLC和重金属检测，质量标准要同时满足：单个杂质应不得过0.2%总杂应不得过2.0%,重金属残留不得超过百万分之二十，若不符合质量标准，则重复上述全部结晶操作（从一般区溶解物料）。",
+              "start": 0,
+              "end": 95
+            },
+            "unit": {
+              "ref": "",
+              "quote": ""
+            },
+            "value_span": {
+              "ref": "u2",
+              "quote": "取样送检HPLC和重金属检测，质量标准要同时满足：单个杂质应不得过0.2%总杂应不得过2.0%,重金属残留不得超过百万分之二十，若不符合质量标准，则重复上述全部结晶操作（从一般区溶解物料）。",
+              "start": 0,
+              "end": 95
+            },
+            "value": "取样送检HPLC和重金属检测，质量标准要同时满足：单个杂质应不得过0.2%总杂应不得过2.0%,重金属残留不得超过百万分之二十，若不符合质量标准，则重复上述全部结晶操作（从一般区溶解物料）。",
+            "candidate_id": "c1",
+            "semantic_status": "supported",
+            "validation_status": "passed"
+          }
+        ],
+        "observations": [
+          {
+            "value": {
+              "ref": "u2",
+              "quote": "若不符合质量标准，则重复上述全部结晶操作（从一般区溶解物料）",
+              "start": 64,
+              "end": 94
+            },
+            "field": {
+              "ref": "",
+              "quote": ""
+            },
+            "legend": {
+              "ref": "",
+              "quote": ""
+            },
+            "condition": {
+              "ref": "u2",
+              "quote": "若不符合质量标准",
+              "start": 64,
+              "end": 72
+            },
+            "state": "conditional",
+            "reason": "触发重复结晶操作的条件"
+          }
+        ],
+        "unresolved": [
+          {
+            "kind": "observation",
+            "candidate_id": "o1",
+            "proposal": {
+              "value": {
+                "ref": "u2",
+                "quote": "0.2",
+                "start": 33,
+                "end": 36
+              },
+              "field": {
+                "ref": "u2",
+                "quote": "单个杂质应不得过0.2%",
+                "start": 25,
+                "end": 37
+              },
+              "legend": {
+                "ref": "u2",
+                "quote": "%",
+                "start": 36,
+                "end": 37
+              },
+              "condition": {
+                "ref": "",
+                "quote": ""
+              },
+              "state": "conditional",
+              "reason": "质量标准中的限度要求，非实测值"
+            },
+            "issues": [
+              "conditional_observation_missing_condition"
+            ]
+          },
+          {
+            "kind": "observation",
+            "candidate_id": "o2",
+            "proposal": {
+              "value": {
+                "ref": "u2",
+                "quote": "2.0",
+                "start": 43,
+                "end": 46
+              },
+              "field": {
+                "ref": "u2",
+                "quote": "总杂应不得过2.0%",
+                "start": 37,
+                "end": 47
+              },
+              "legend": {
+                "ref": "u2",
+                "quote": "%",
+                "start": 46,
+                "end": 47
+              },
+              "condition": {
+                "ref": "",
+                "quote": ""
+              },
+              "state": "conditional",
+              "reason": "质量标准中的限度要求，非实测值"
+            },
+            "issues": [
+              "conditional_observation_missing_condition"
+            ]
+          },
+          {
+            "kind": "observation",
+            "candidate_id": "o3",
+            "proposal": {
+              "value": {
+                "ref": "u2",
+                "quote": "百万分之二十",
+                "start": 57,
+                "end": 63
+              },
+              "field": {
+                "ref": "u2",
+                "quote": "重金属残留不得超过百万分之二十",
+                "start": 48,
+                "end": 63
+              },
+              "legend": {
+                "ref": "",
+                "quote": ""
+              },
+              "condition": {
+                "ref": "",
+                "quote": ""
+              },
+              "state": "conditional",
+              "reason": "质量标准中的限度要求，非实测值"
+            },
+            "issues": [
+              "conditional_observation_missing_condition"
+            ]
+          }
+        ],
+        "rejected": [
+          {
+            "candidate_id": "c2",
+            "subject_id": "s1",
+            "field": "nextStep",
+            "proposal": {
+              "target_id": "s2",
+              "evidence": {
+                "ref": "u0",
+                "quote": "HRS-1597结晶纯化",
+                "start": 0,
+                "end": 12
+              },
+              "condition": {
+                "ref": "",
+                "quote": ""
+              },
+              "polarity": "affirmed"
+            },
+            "issues": [
+              "citation_ref_missing",
+              "inactive_subject_slot",
+              "semantic_role_unsupported",
+              "semantic_predicate_unsupported",
+              "semantic_binding_unsupported",
+              "semantic_applicability_unsupported",
+              "semantic_counterevidence_unsupported",
+              "semantic_support_missing"
+            ],
+            "reason": "citation_ref_missing"
+          }
+        ],
+        "acceptance": {
+          "checks": [
+            {
+              "check": "required_properties",
+              "expected": {
+                "predicate": "inProcessControl",
+                "value_contains": [
+                  "单个杂质应不得过0.2%",
+                  "总杂应不得过2.0%",
+                  "重金属残留不得超过百万分之二十"
+                ]
+              },
+              "pass": true
+            },
+            {
+              "check": "required_observations",
+              "expected": {
+                "quote": "若不符合质量标准，则重复上述全部结晶操作（从一般区溶解物料）",
+                "state": "conditional",
+                "column": 1
+              },
+              "pass": true
+            },
+            {
+              "check": "forbidden_predicate",
+              "expected": "detectionLimit_ug",
+              "pass": true
+            },
+            {
+              "check": "forbidden_predicate",
+              "expected": "quantitationLimit_ug",
+              "pass": true
+            },
+            {
+              "check": "forbidden_predicate",
+              "expected": "hasCleaningMethod",
+              "pass": true
+            }
+          ],
+          "passed": 5,
+          "total": 5,
+          "all_pass": true,
+          "evaluated": true
+        },
+        "extended_acceptance": {
+          "checks": [
+            {
+              "check": "semantic_review_present",
+              "candidate_id": "c1",
+              "pass": true
+            },
+            {
+              "check": "request_budget",
+              "pass": true
+            }
+          ],
+          "evaluated": true,
+          "all_pass": true,
+          "manual_review_required": [
+            "subject_type",
+            "subject_binding",
+            "predicate_or_metric_meaning",
+            "relation_direction_and_endpoints",
+            "source_unit_and_normalization",
+            "polarity_and_unknown",
+            "field_legend_condition_roles",
+            "long_value_completeness"
+          ],
+          "manual_review_status": "not_performed"
+        }
+      }
+    },
+    "B": {
+      "plan": {
+        "get_schema_card": [
+          {
+            "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/Crystallization"
+          },
+          {
+            "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/Purification"
+          },
+          {
+            "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/Residue"
+          },
+          {
+            "class_iri": "https://ontology.pharma-gmp.cn/slpra/facility/GeneralArea"
+          }
+        ],
+        "inspect_evidence": [
+          {
+            "ref": "u0"
+          },
+          {
+            "ref": "u2"
+          }
+        ],
+        "propose_mentions": [
+          {
+            "group": "entities"
+          },
+          {
+            "group": "values"
+          }
+        ]
+      },
+      "candidates": {
+        "subjects": {
+          "document": {
+            "attributes": {},
+            "relations": {
+              "hasCleaningResidue": []
+            },
+            "anchor": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            }
+          },
+          "s1": {
+            "attributes": {
+              "inProcessControl": [
+                {
+                  "raw": "取样送检HPLC和重金属检测，质量标准要同时满足：单个杂质应不得过0.2%总杂应不得过2.0%,重金属残留不得超过百万分之二十，若不符合质量标准，则重复上述全部结晶操作（从一般区溶解物料）。",
+                  "source": {
+                    "ref": "u2",
+                    "quote": "取样送检HPLC和重金属检测，质量标准要同时满足：单个杂质应不得过0.2%总杂应不得过2.0%,重金属残留不得超过百万分之二十，若不符合质量标准，则重复上述全部结晶操作（从一般区溶解物料）。",
+                    "span_id": "source:u2"
+                  },
+                  "field": {
+                    "ref": "u2",
+                    "quote": "取样送检HPLC和重金属检测，质量标准要同时满足：单个杂质应不得过0.2%总杂应不得过2.0%,重金属残留不得超过百万分之二十，若不符合质量标准，则重复上述全部结晶操作（从一般区溶解物料）。",
+                    "span_id": "source:u2"
+                  },
+                  "unit": {
+                    "ref": "",
+                    "quote": "",
+                    "span_id": ""
+                  },
+                  "condition": {
+                    "ref": "",
+                    "quote": "",
+                    "span_id": ""
+                  }
+                }
+              ],
+              "outputMassRange_kg": [],
+              "reactionConditions": [],
+              "stepOrder": [],
+              "yieldRangePercent": []
+            },
+            "relations": {
+              "nextStep": [
+                {
+                  "target_id": "s2",
+                  "evidence": {
+                    "ref": "u0",
+                    "quote": "HRS-1597结晶纯化",
+                    "span_id": "source:u0"
+                  },
+                  "condition": {
+                    "ref": "",
+                    "quote": "",
+                    "span_id": ""
+                  },
+                  "polarity": "affirmed"
+                }
+              ]
+            },
+            "anchor": {
+              "ref": "u0",
+              "quote": "HRS-1597结晶纯化",
+              "span_id": "source:u0"
+            }
+          },
+          "s2": {
+            "attributes": {
+              "inProcessControl": [],
+              "outputMassRange_kg": [],
+              "reactionConditions": [],
+              "stepOrder": [],
+              "yieldRangePercent": []
+            },
+            "relations": {
+              "nextStep": []
+            },
+            "anchor": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            }
+          },
+          "s3": {
+            "attributes": {
+              "residueSolubility": [],
+              "residueSolubilityTemperature": [],
+              "residueSolvent": []
+            },
+            "relations": {},
+            "anchor": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            }
+          },
+          "s4": {
+            "attributes": {},
+            "relations": {},
+            "anchor": {
+              "ref": "u2",
+              "quote": "一般区",
+              "span_id": "mention-d72539dee262611d2b6a4777"
+            }
+          }
+        },
+        "observations": [
+          {
+            "value": {
+              "ref": "u2",
+              "quote": "单个杂质应不得过0.2%",
+              "span_id": "source:u2"
+            },
+            "field": {
+              "ref": "u2",
+              "quote": "单个杂质应不得过0.2%",
+              "span_id": "source:u2"
+            },
+            "legend": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "condition": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "state": "conditional",
+            "reason": "质量标准中的杂质限度，属于过程控制条件"
+          },
+          {
+            "value": {
+              "ref": "u2",
+              "quote": "总杂应不得过2.0%",
+              "span_id": "source:u2"
+            },
+            "field": {
+              "ref": "u2",
+              "quote": "总杂应不得过2.0%",
+              "span_id": "source:u2"
+            },
+            "legend": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "condition": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "state": "conditional",
+            "reason": "质量标准中的总杂限度，属于过程控制条件"
+          },
+          {
+            "value": {
+              "ref": "u2",
+              "quote": "重金属残留不得超过百万分之二十",
+              "span_id": "source:u2"
+            },
+            "field": {
+              "ref": "u2",
+              "quote": "重金属残留不得超过百万分之二十",
+              "span_id": "source:u2"
+            },
+            "legend": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "condition": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "state": "conditional",
+            "reason": "质量标准中的重金属限度，属于过程控制条件"
+          },
+          {
+            "value": {
+              "ref": "u2",
+              "quote": "若不符合质量标准，则重复上述全部结晶操作（从一般区溶解物料）",
+              "span_id": "source:u2"
+            },
+            "field": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "legend": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "condition": {
+              "ref": "u2",
+              "quote": "若不符合质量标准",
+              "span_id": "source:u2"
+            },
+            "state": "conditional",
+            "reason": "不合格时的重复操作条件"
+          }
+        ]
+      },
+      "final": {
+        "status": "complete",
+        "accepted": [
+          {
+            "kind": "property",
+            "subject_id": "s1",
+            "subject_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/Crystallization",
+            "subject_text": "HRS-1597结晶纯化",
+            "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/inProcessControl",
+            "evidence": {
+              "ref": "u2",
+              "quote": "取样送检HPLC和重金属检测，质量标准要同时满足：单个杂质应不得过0.2%总杂应不得过2.0%,重金属残留不得超过百万分之二十，若不符合质量标准，则重复上述全部结晶操作（从一般区溶解物料）。",
+              "start": 0,
+              "end": 95
+            },
+            "condition": {
+              "ref": "",
+              "quote": ""
+            },
+            "raw_value": "取样送检HPLC和重金属检测，质量标准要同时满足：单个杂质应不得过0.2%总杂应不得过2.0%,重金属残留不得超过百万分之二十，若不符合质量标准，则重复上述全部结晶操作（从一般区溶解物料）。",
+            "field": {
+              "ref": "u2",
+              "quote": "取样送检HPLC和重金属检测，质量标准要同时满足：单个杂质应不得过0.2%总杂应不得过2.0%,重金属残留不得超过百万分之二十，若不符合质量标准，则重复上述全部结晶操作（从一般区溶解物料）。",
+              "start": 0,
+              "end": 95
+            },
+            "unit": {
+              "ref": "",
+              "quote": ""
+            },
+            "value_span": {
+              "ref": "u2",
+              "quote": "取样送检HPLC和重金属检测，质量标准要同时满足：单个杂质应不得过0.2%总杂应不得过2.0%,重金属残留不得超过百万分之二十，若不符合质量标准，则重复上述全部结晶操作（从一般区溶解物料）。",
+              "start": 0,
+              "end": 95
+            },
+            "value": "取样送检HPLC和重金属检测，质量标准要同时满足：单个杂质应不得过0.2%总杂应不得过2.0%,重金属残留不得超过百万分之二十，若不符合质量标准，则重复上述全部结晶操作（从一般区溶解物料）。",
+            "candidate_id": "c1",
+            "semantic_status": "supported",
+            "validation_status": "passed"
+          }
+        ],
+        "observations": [
+          {
+            "value": {
+              "ref": "u2",
+              "quote": "若不符合质量标准，则重复上述全部结晶操作（从一般区溶解物料）",
+              "start": 64,
+              "end": 94
+            },
+            "field": {
+              "ref": "",
+              "quote": ""
+            },
+            "legend": {
+              "ref": "",
+              "quote": ""
+            },
+            "condition": {
+              "ref": "u2",
+              "quote": "若不符合质量标准",
+              "start": 64,
+              "end": 72
+            },
+            "state": "conditional",
+            "reason": "不合格时的重复操作条件"
+          }
+        ],
+        "unresolved": [
+          {
+            "kind": "observation",
+            "candidate_id": "o1",
+            "proposal": {
+              "value": {
+                "ref": "u2",
+                "quote": "单个杂质应不得过0.2%",
+                "start": 25,
+                "end": 37
+              },
+              "field": {
+                "ref": "u2",
+                "quote": "单个杂质应不得过0.2%",
+                "start": 25,
+                "end": 37
+              },
+              "legend": {
+                "ref": "",
+                "quote": ""
+              },
+              "condition": {
+                "ref": "",
+                "quote": ""
+              },
+              "state": "conditional",
+              "reason": "质量标准中的杂质限度，属于过程控制条件"
+            },
+            "issues": [
+              "conditional_observation_missing_condition"
+            ]
+          },
+          {
+            "kind": "observation",
+            "candidate_id": "o2",
+            "proposal": {
+              "value": {
+                "ref": "u2",
+                "quote": "总杂应不得过2.0%",
+                "start": 37,
+                "end": 47
+              },
+              "field": {
+                "ref": "u2",
+                "quote": "总杂应不得过2.0%",
+                "start": 37,
+                "end": 47
+              },
+              "legend": {
+                "ref": "",
+                "quote": ""
+              },
+              "condition": {
+                "ref": "",
+                "quote": ""
+              },
+              "state": "conditional",
+              "reason": "质量标准中的总杂限度，属于过程控制条件"
+            },
+            "issues": [
+              "conditional_observation_missing_condition"
+            ]
+          },
+          {
+            "kind": "observation",
+            "candidate_id": "o3",
+            "proposal": {
+              "value": {
+                "ref": "u2",
+                "quote": "重金属残留不得超过百万分之二十",
+                "start": 48,
+                "end": 63
+              },
+              "field": {
+                "ref": "u2",
+                "quote": "重金属残留不得超过百万分之二十",
+                "start": 48,
+                "end": 63
+              },
+              "legend": {
+                "ref": "",
+                "quote": ""
+              },
+              "condition": {
+                "ref": "",
+                "quote": ""
+              },
+              "state": "conditional",
+              "reason": "质量标准中的重金属限度，属于过程控制条件"
+            },
+            "issues": [
+              "conditional_observation_missing_condition"
+            ]
+          }
+        ],
+        "rejected": [
+          {
+            "candidate_id": "c2",
+            "subject_id": "s1",
+            "field": "nextStep",
+            "proposal": {
+              "target_id": "s2",
+              "evidence": {
+                "ref": "u0",
+                "quote": "HRS-1597结晶纯化",
+                "start": 0,
+                "end": 12
+              },
+              "condition": {
+                "ref": "",
+                "quote": ""
+              },
+              "polarity": "affirmed"
+            },
+            "issues": [
+              "citation_ref_missing",
+              "inactive_subject_slot"
+            ],
+            "reason": "citation_ref_missing"
+          }
+        ],
+        "acceptance": {
+          "checks": [
+            {
+              "check": "required_properties",
+              "expected": {
+                "predicate": "inProcessControl",
+                "value_contains": [
+                  "单个杂质应不得过0.2%",
+                  "总杂应不得过2.0%",
+                  "重金属残留不得超过百万分之二十"
+                ]
+              },
+              "pass": true
+            },
+            {
+              "check": "required_observations",
+              "expected": {
+                "quote": "若不符合质量标准，则重复上述全部结晶操作（从一般区溶解物料）",
+                "state": "conditional",
+                "column": 1
+              },
+              "pass": true
+            },
+            {
+              "check": "forbidden_predicate",
+              "expected": "detectionLimit_ug",
+              "pass": true
+            },
+            {
+              "check": "forbidden_predicate",
+              "expected": "quantitationLimit_ug",
+              "pass": true
+            },
+            {
+              "check": "forbidden_predicate",
+              "expected": "hasCleaningMethod",
+              "pass": true
+            }
+          ],
+          "passed": 5,
+          "total": 5,
+          "all_pass": true,
+          "evaluated": true
+        },
+        "extended_acceptance": {
+          "checks": [
+            {
+              "check": "semantic_review_present",
+              "candidate_id": "c1",
+              "pass": true
+            },
+            {
+              "check": "request_budget",
+              "pass": true
+            }
+          ],
+          "evaluated": true,
+          "all_pass": true,
+          "manual_review_required": [
+            "subject_type",
+            "subject_binding",
+            "predicate_or_metric_meaning",
+            "relation_direction_and_endpoints",
+            "source_unit_and_normalization",
+            "polarity_and_unknown",
+            "field_legend_condition_roles",
+            "long_value_completeness"
+          ],
+          "manual_review_status": "not_performed"
+        }
+      }
+    }
+  },
+  "sources": {
+    "u0": {
+      "evidence_id": "63c9cc94a162d7b088843eb62fedcf9f50775e6d381d083eb86aaa506264f0c3",
+      "kind": "heading",
+      "text": "HRS-1597结晶纯化",
+      "section_node_id": "section:67",
+      "block_id": "paragraph:67:0",
+      "paragraph_index": 67,
+      "fragment_index": 0,
+      "table_path": null,
+      "row_index": null,
+      "column_index": null,
+      "physical_page_number": 5,
+      "source_cell_id": null,
+      "paragraph_offset": 0,
+      "ref": "u0",
+      "row_span": 1,
+      "column_span": 1,
+      "logical_rows": [],
+      "column_indices": [],
+      "grid_rows": [],
+      "grid_columns": [],
+      "column_header_refs": [],
+      "is_header": false,
+      "parser_header_candidate": false,
+      "header_status": "not_a_table",
+      "cell_structure_valid": false
+    },
+    "u1": {
+      "evidence_id": "eb97242f159426bfe5f0cb0e79f0571c72b6a08c8b1968efdc5fe3de8ad3b1b1",
+      "kind": "cell_paragraph",
+      "text": "HPLC",
+      "section_node_id": "section:67",
+      "block_id": "table:0",
+      "paragraph_index": 0,
+      "fragment_index": 0,
+      "table_path": [
+        "table:0"
+      ],
+      "row_index": 2,
+      "column_index": 0,
+      "physical_page_number": 5,
+      "source_cell_id": "table:0/cell:2:0",
+      "paragraph_offset": 0,
+      "ref": "u1",
+      "row_span": 1,
+      "column_span": 1,
+      "logical_rows": [
+        2
+      ],
+      "column_indices": [
+        0
+      ],
+      "grid_rows": [
+        2
+      ],
+      "grid_columns": [
+        0
+      ],
+      "column_header_refs": [],
+      "is_header": false,
+      "parser_header_candidate": false,
+      "header_status": "unconfirmed",
+      "cell_structure_valid": true
+    },
+    "u2": {
+      "evidence_id": "48ca1378de103138ed5b81cadc51a59226bacfb6558400667fd3c39bbefb979b",
+      "kind": "cell_paragraph",
+      "text": "取样送检HPLC和重金属检测，质量标准要同时满足：单个杂质应不得过0.2%总杂应不得过2.0%,重金属残留不得超过百万分之二十，若不符合质量标准，则重复上述全部结晶操作（从一般区溶解物料）。",
+      "section_node_id": "section:67",
+      "block_id": "table:0",
+      "paragraph_index": 0,
+      "fragment_index": 0,
+      "table_path": [
+        "table:0"
+      ],
+      "row_index": 2,
+      "column_index": 1,
+      "physical_page_number": 5,
+      "source_cell_id": "table:0/cell:2:1",
+      "paragraph_offset": 0,
+      "ref": "u2",
+      "row_span": 1,
+      "column_span": 1,
+      "logical_rows": [
+        2
+      ],
+      "column_indices": [
+        1
+      ],
+      "grid_rows": [
+        2
+      ],
+      "grid_columns": [
+        1
+      ],
+      "column_header_refs": [],
+      "is_header": false,
+      "parser_header_candidate": false,
+      "header_status": "unconfirmed",
+      "cell_structure_valid": true
+    }
+  }
+}

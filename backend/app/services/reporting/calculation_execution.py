@@ -11,7 +11,11 @@ from app.services.reporting.template_v2 import ReportingError
 
 def execute_checks(template, bundle):
     output = {}
+    consumed = {b.check_ref for b in template.definitions.bindings.values()
+                if b.kind == "derived" and b.provider == "calculation"}
     for check in template.calculation_checks:
+        if bundle.get("demonstration") and check.check_id not in consumed:
+            continue  # Display-only demo inputs are not a request for automatic PDE evaluation.
         contract = bundle.get("contracts", {}).get(check.contract_ref)
         if not contract:
             raise ReportingError("CALCULATION_CONTRACT_UNAVAILABLE")

@@ -1,0 +1,29 @@
+{
+  "document_ref": "upload-23c872fb-3ab1-41de-a705-dd4b162dfa09",
+  "root_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport",
+  "source_sha256": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+  "model": "Qwen3.6-35B-A3B",
+  "main_run_id": "schema-probe-67039239109b453185fe",
+  "expansion_run_id": "schema-expand-adb937d6be4f4ebf959e",
+  "case_count": 8,
+  "distinct_source_units": 86,
+  "ontology_card_count": 329,
+  "structured_responses": 19,
+  "structured_contract_passes": 19,
+  "retrieval_request_contract_passes": 8,
+  "extraction_contract_passes": 11,
+  "source_and_card_checker_passes": 2,
+  "extraction_responses_checked": 11,
+  "input_tokens": 124419,
+  "output_tokens": 18974,
+  "http_seconds_sum_not_wall_time": 1083.757,
+  "pilot_excluded_from_core_counts": {
+    "completed_requests": 3,
+    "interrupted_then_expired": 1
+  },
+  "schema_fallback": false,
+  "original_job_final_status": "paused",
+  "formal_precision_recall": "not_measured",
+  "expert_gold_available": false,
+  "conclusion": "structured_protocol_feasible_fact_extraction_not_accepted"
+}

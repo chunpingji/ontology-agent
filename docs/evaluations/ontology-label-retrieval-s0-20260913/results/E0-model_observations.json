@@ -1,0 +1,116 @@
+[
+  {
+    "operation": "embed",
+    "status": "completed",
+    "input_count": 2,
+    "input_tokens": 596,
+    "elapsed_seconds": 1.6802300779381767,
+    "score_semantics": null,
+    "worker_metrics": {
+      "worker_pid": 12,
+      "actual_device": "cpu",
+      "actual_dtype": "float32",
+      "max_input_tokens": 300,
+      "input_token_counts": [
+        300,
+        296
+      ],
+      "inference_seconds": 1.6575002169702202
+    },
+    "queue_seconds": 0.008,
+    "request_seconds": 1.672
+  },
+  {
+    "operation": "score_pairs",
+    "status": "completed",
+    "input_count": 4,
+    "input_tokens": 1540,
+    "elapsed_seconds": 14.212455024011433,
+    "score_semantics": "raw_single_logit",
+    "worker_metrics": {
+      "worker_pid": 12,
+      "model_load_seconds": 2.636960735078901,
+      "actual_device": "cpu",
+      "actual_dtype": "float32",
+      "max_input_tokens": 387,
+      "input_token_counts": [
+        386,
+        387,
+        381,
+        386
+      ],
+      "inference_seconds": 4.414366638055071
+    },
+    "queue_seconds": 0.008,
+    "request_seconds": 14.204
+  },
+  {
+    "operation": "score_pairs",
+    "status": "completed",
+    "input_count": 4,
+    "input_tokens": 1525,
+    "elapsed_seconds": 4.197803430026397,
+    "score_semantics": "raw_single_logit",
+    "worker_metrics": {
+      "worker_pid": 12,
+      "actual_device": "cpu",
+      "actual_dtype": "float32",
+      "max_input_tokens": 384,
+      "input_token_counts": [
+        384,
+        382,
+        377,
+        382
+      ],
+      "inference_seconds": 4.178180475952104
+    },
+    "queue_seconds": 0.007,
+    "request_seconds": 4.191
+  },
+  {
+    "operation": "score_pairs",
+    "status": "completed",
+    "input_count": 4,
+    "input_tokens": 1524,
+    "elapsed_seconds": 3.8981678219279274,
+    "score_semantics": "raw_single_logit",
+    "worker_metrics": {
+      "worker_pid": 12,
+      "actual_device": "cpu",
+      "actual_dtype": "float32",
+      "max_input_tokens": 383,
+      "input_token_counts": [
+        382,
+        383,
+        377,
+        382
+      ],
+      "inference_seconds": 3.868733439943753
+    },
+    "queue_seconds": 0.008,
+    "request_seconds": 3.89
+  },
+  {
+    "operation": "score_pairs",
+    "status": "completed",
+    "input_count": 4,
+    "input_tokens": 1509,
+    "elapsed_seconds": 3.814909916021861,
+    "score_semantics": "raw_single_logit",
+    "worker_metrics": {
+      "worker_pid": 12,
+      "actual_device": "cpu",
+      "actual_dtype": "float32",
+      "max_input_tokens": 380,
+      "input_token_counts": [
+        380,
+        378,
+        373,
+        378
+      ],
+      "inference_seconds": 3.792132532922551
+    },
+    "queue_seconds": 0.008,
+    "request_seconds": 3.807
+  }
+]

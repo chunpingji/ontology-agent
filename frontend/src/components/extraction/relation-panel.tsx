@@ -18,6 +18,8 @@ import {
 } from "@/lib/relation-source-ref";
 import type {
   DocClassification,
+  EvidenceAnchor,
+  FinderSource,
   PdeConflict,
   PdeConflictDecision,
   PdeDecisionChoice,
@@ -26,6 +28,8 @@ import type {
 } from "@/lib/api";
 
 interface RelationPanelProps {
+  onSelectFinderSource?: (anchor: EvidenceAnchor | null) => void;
+  collapseProperties?: boolean;
   docClass?: DocClassification | null;
   relationships?: Relationship[];
   selectedSourceRef?: string | null;
@@ -271,6 +275,19 @@ function ConflictBanner({
 }
 
 // 单个对象端点：可展开看数据属性 + 递归子关系（合成路线→步骤→设备/中间体）。
+function FinderSourceButtons({ source, onSelect }: {
+  source: FinderSource; onSelect?: (anchor: EvidenceAnchor | null) => void;
+}) {
+  return <span className="flex flex-wrap items-center gap-1 px-2 text-[10px] text-muted-foreground">
+    <span>{source.kind === "computed" ? "计算/拼接" : source.kind === "external" ? "外部来源" : "原文"}</span>
+    {source.anchors.length ? source.anchors.map((anchor, i) =>
+      <button type="button" key={`${anchor.evidence_id}:${i}`} className="text-primary underline"
+        title={source.label} onClick={() => onSelect?.(anchor)}>
+        {source.anchors.length > 1 ? `出处 ${i + 1}` : "查看出处"}
+      </button>) : <span>{source.label}</span>}
+  </span>;
+}
+
 function EndpointRow({
   node,
   depth,
@@ -280,6 +297,8 @@ function EndpointRow({
   decision,
   onDecide,
   decisionPending,
+  collapseProperties,
+  onSelectFinderSource,
 }: {
   node: SubRelationship;
   depth: number;
@@ -289,6 +308,8 @@ function EndpointRow({
   decision?: PdeConflictDecision | null;
   onDecide?: (chosen: PdeDecisionChoice) => void;
   decisionPending?: boolean;
+  collapseProperties?: boolean;
+  onSelectFinderSource?: (anchor: EvidenceAnchor | null) => void;
 }) {
   const hasDetail =
     node.object_data_properties.length > 0 || node.sub_relationships.length > 0;
@@ -345,6 +366,12 @@ function EndpointRow({
         )}
       </button>
 
+      {node.source && <FinderSourceButtons source={node.source} onSelect={onSelectFinderSource} />}
+
+      {!!node.pde_review_issues?.length && <p className="my-1 ml-5 rounded-md border border-amber-300 bg-amber-50 p-2.5 text-xs text-amber-900 dark:border-amber-800/60 dark:bg-amber-950/30 dark:text-amber-200">
+        PDE 待复核：{node.pde_review_issues.join("；")}
+      </p>}
+
       {/* PDE 冲突横幅：始终展示（不随行折叠），紧随端点标题；仅共线评估端点会携带。 */}
       {node.conflict && (
         <ConflictBanner
@@ -359,7 +386,7 @@ function EndpointRow({
         <div className="ml-5 mb-1 space-y-1 border-l-2 border-muted pl-3">
           {/* 数据属性 */}
           {node.object_data_properties.length > 0 && (
-            <div className="space-y-0.5 py-0.5">
+            <PropertyDisclosure collapsed={collapseProperties} count={node.object_data_properties.length}>
               {node.object_data_properties.map((dp, i) => (
                 <div
                   key={`${dp.label}:${i}`}
@@ -373,9 +400,10 @@ function EndpointRow({
                     {!dp.iri && <span className="text-muted-foreground/50">*</span>}:
                   </span>
                   <span className="break-all">{formatPropertyValue(dp.value)}</span>
+                  {dp.source && <FinderSourceButtons source={dp.source} onSelect={onSelectFinderSource} />}
                 </div>
               ))}
-            </div>
+            </PropertyDisclosure>
           )}
 
           {/* 递归子关系（按谓词分组） */}
@@ -396,9 +424,11 @@ function EndpointRow({
                     rowKey={`${rowKey}:${g.predicate}:${i}`}
                     selectedSourceRef={selectedSourceRef}
                     onSelectSourceRef={onSelectSourceRef}
+                    onSelectFinderSource={onSelectFinderSource}
                     decision={decision}
                     onDecide={onDecide}
                     decisionPending={decisionPending}
+                    collapseProperties={collapseProperties}
                   />
                 ))}
               </div>
@@ -418,11 +448,15 @@ export function RelationPanel({
   onDecide,
   decisionPending,
   emptyMessage,
+  collapseProperties,
+  onSelectFinderSource,
 }: RelationPanelProps) {
   const rels = relationships ?? [];
   const groups = useMemo(() => groupByPredicate(relationships ?? []), [relationships]);
   const classificationBadge =
-    docClass?.source === "explicit" && docClass.score === 0
+    docClass?.source === "static_demo"
+      ? "静态演示"
+      : docClass?.source === "explicit" && docClass.score === 0
       ? "显式指定"
       : `匹配分 ${docClass?.score ?? 0}`;
 
@@ -504,9 +538,11 @@ export function RelationPanel({
                       rowKey={`${group.predicate}:${i}`}
                       selectedSourceRef={selectedSourceRef}
                       onSelectSourceRef={onSelectSourceRef}
+                      onSelectFinderSource={onSelectFinderSource}
                       decision={decision}
                       onDecide={onDecide}
                       decisionPending={decisionPending}
+                      collapseProperties={collapseProperties}
                     />
                   ))}
                 </div>
@@ -517,4 +553,13 @@ export function RelationPanel({
       )}
     </div>
   );
+}
+
+function PropertyDisclosure({ collapsed, count, children }: {
+  collapsed?: boolean; count: number; children: ReactNode;
+}) {
+  return collapsed ? <details className="space-y-1 py-1">
+    <summary className="cursor-pointer text-xs text-muted-foreground">实体属性 · {count} 项</summary>
+    {children}
+  </details> : <div className="space-y-0.5 py-0.5">{children}</div>;
 }

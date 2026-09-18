@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+from typing import Annotated, Literal
 
 from pydantic import BaseModel, Field
 
@@ -57,7 +58,7 @@ class ClassDetailResponse(BaseModel):
 
 
 class VersionedMixin(BaseModel):
-    """Carries the opt/dev/chen/ontology-agent/specsimistic-concurrency version the client last read (R4)."""
+    """Carries the optimistic-concurrency version the client last read (R4)."""
 
     expected_version: int = Field(..., description="客户端读取时的版本号；服务端 CAS 不匹配→409")
 
@@ -197,15 +198,19 @@ class ClassDetail(BaseModel):
 
 
 # --- E2 link type (object property / relation) -----------------------------
-class LinkTypeCreate(BaseModel):
+class PropertyCardinality(BaseModel):
+    multiplicity: Literal["unspecified", "single", "multiple"] = "unspecified"
+    min_cardinality: Annotated[int, Field(strict=True, ge=0)] | None = None
+    max_cardinality: Annotated[int, Field(strict=True, ge=0)] | None = None
+
+
+class LinkTypeCreate(PropertyCardinality):
     slpra_iri: str
     label: str
     comment: str | None = None
     domain_iri: str | None = None
     range_iri: str | None = None
     inverse_iri: str | None = None
-    min_cardinality: int | None = None
-    max_cardinality: int | None = None
     is_functional: bool = False
     is_symmetric: bool = False
     is_transitive: bool = False
@@ -216,7 +221,7 @@ class LinkTypeUpdate(LinkTypeCreate, VersionedMixin):
     label: str | None = None  # type: ignore[assignment]
 
 
-class LinkTypeDetail(BaseModel):
+class LinkTypeDetail(PropertyCardinality):
     id: str
     slpra_iri: str
     label: str
@@ -224,8 +229,6 @@ class LinkTypeDetail(BaseModel):
     domain_iri: str | None = None
     range_iri: str | None = None
     inverse_iri: str | None = None
-    min_cardinality: int | None = None
-    max_cardinality: int | None = None
     is_functional: bool = False
     is_symmetric: bool = False
     is_transitive: bool = False
@@ -238,7 +241,7 @@ class LinkTypeDetail(BaseModel):
 
 
 # --- E3 data property ------------------------------------------------------
-class DataPropertyCreate(BaseModel):
+class DataPropertyCreate(PropertyCardinality):
     slpra_iri: str
     label: str
     comment: str | None = None
@@ -255,7 +258,7 @@ class DataPropertyUpdate(DataPropertyCreate, VersionedMixin):
 
 
 
-class DataPropertyDetail(BaseModel):
+class DataPropertyDetail(PropertyCardinality):
     id: str
     slpra_iri: str
     label: str

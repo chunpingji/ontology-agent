@@ -67,6 +67,107 @@ def claim(store, run, *, owner="alice"):
     )
 
 
+def test_heartbeat_checks_expiry_after_waiting_for_writer_lock(db, monkeypatch):
+    clock = Clock()
+    store = DocumentAnalysisRunStore(db, clock=clock)
+    run, _ = create_run(store)
+    token = claim(store, run)
+    db.commit()
+    original = store._lock_fence
+
+    def waited(*args):
+        clock.advance(31)
+        return original(*args)
+
+    monkeypatch.setattr(store, "_lock_fence", waited)
+    with pytest.raises(FenceViolation):
+        store.heartbeat(run.recognition_run_id, run.owner_id, token, lease_seconds=30)
+    db.rollback()
+    execution = db.get(DocumentAnalysisExecution, run.recognition_run_id, populate_existing=True)
+    assert execution.heartbeat_at.replace(tzinfo=timezone.utc) == (
+        clock.value - timedelta(seconds=31)
+    )
+    assert execution.generation == 1
+
+
+def test_heartbeat_renews_from_time_after_a_short_lock_wait(db, monkeypatch):
+    clock = Clock()
+    store = DocumentAnalysisRunStore(db, clock=clock)
+    run, _ = create_run(store)
+    token = claim(store, run)
+    db.commit()
+    original = store._lock_fence
+
+    def waited(*args):
+        clock.advance(5)
+        return original(*args)
+
+    monkeypatch.setattr(store, "_lock_fence", waited)
+    execution = store.heartbeat(run.recognition_run_id, run.owner_id, token, lease_seconds=30)
+    assert execution.heartbeat_at.replace(tzinfo=timezone.utc) == clock.value
+    assert execution.lease_expires_at.replace(tzinfo=timezone.utc) == (
+        clock.value + timedelta(seconds=30)
+    )
+
+
+def test_automatic_recovery_keeps_progress_clock_but_queue_and_resume_start_windows(db):
+    clock = Clock()
+    store = DocumentAnalysisRunStore(db, clock=clock)
+    run, _ = create_run(store)
+    db.commit()
+    clock.advance(1800)  # Waiting in the queue must not exhaust an execution budget.
+    token = claim(store, run)
+    db.commit()
+    initial = clock.value
+    execution = db.get(DocumentAnalysisExecution, run.recognition_run_id, populate_existing=True)
+    assert execution.last_progress_at.replace(tzinfo=timezone.utc) == initial
+    for attempt in (1, 2, 3):
+        clock.advance(31)
+        token = claim(store, run)
+        db.commit()
+        execution = db.get(DocumentAnalysisExecution, run.recognition_run_id,
+                           populate_existing=True)
+        assert execution.recovery_attempts == attempt
+        assert execution.last_progress_at.replace(tzinfo=timezone.utc) == initial
+    current = store.get_owned(run.recognition_run_id, run.owner_id)
+    store.update_stage(run.recognition_run_id, run.owner_id, token,
+                       expected_revision=current.revision, stage="recognition",
+                       execution_status="failed")
+    db.commit()
+    current = store.get_owned(run.recognition_run_id, run.owner_id)
+    store.request_control(run.recognition_run_id, run.owner_id, action="resume",
+                          expected_revision=current.revision)
+    db.commit()
+    clock.advance(1800)
+    claim(store, run)
+    db.commit()
+    execution = db.get(DocumentAnalysisExecution, run.recognition_run_id, populate_existing=True)
+    assert execution.recovery_attempts == 0
+    assert execution.last_progress_at.replace(tzinfo=timezone.utc) == clock.value
+
+
+def test_new_durable_event_resets_automatic_recovery_count(db):
+    clock = Clock()
+    store = DocumentAnalysisRunStore(db, clock=clock)
+    run, _ = create_run(store)
+    token = claim(store, run)
+    db.commit()
+    clock.advance(31)
+    token = claim(store, run)
+    db.commit()
+    clock.advance(1)
+    store.append_event(run.recognition_run_id, run.owner_id, token, expected_head=0,
+                       event_key="paid-result", event_type="progress", payload={"model_calls": 1})
+    db.commit()
+    event_time = clock.value
+    clock.advance(1)
+    execution = store.heartbeat(run.recognition_run_id, run.owner_id, token)
+    db.commit()
+    assert execution.recovery_event_head == 1
+    assert execution.recovery_attempts == 0
+    assert execution.last_progress_at.replace(tzinfo=timezone.utc) == event_time
+
+
 def test_owner_request_key_is_idempotent_but_not_cross_owner(db):
     store = DocumentAnalysisRunStore(db)
     first, created = create_run(store)

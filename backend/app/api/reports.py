@@ -4,15 +4,28 @@ from __future__ import annotations
 
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Response
+from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from sqlalchemy.orm import Session
 
 from app.db import get_db
+from app.dependencies import Identity, get_current_user
 from app.models.reasoning import ReasoningExecution
+from app.schemas.extraction import GeneratedReportListResponse
 from app.schemas.reporting import RiskReportResponse
+from app.services.reporting.report_listing import list_report_summaries
 from app.services.reporting.risk_report import build_report_json, render_report_pdf
 
 router = APIRouter()
+
+
+@router.get("", response_model=GeneratedReportListResponse)
+def list_reports(
+    page: int = Query(1, ge=1),
+    page_size: int = Query(25, ge=1, le=100),
+    db: Session = Depends(get_db),
+    identity: Identity = Depends(get_current_user),
+):
+    return list_report_summaries(db, identity.username, page=page, page_size=page_size)
 
 
 def _get_conclusion(conclusion_id: UUID, db: Session) -> ReasoningExecution:

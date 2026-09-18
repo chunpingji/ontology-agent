@@ -1,0 +1,387 @@
+{
+  "u0": {
+    "evidence_id": "f89acaccc04381d5785e4143d18319ae42595c364ff52eb5b716a491f919e266",
+    "kind": "heading",
+    "text": "工艺",
+    "section_node_id": "section:51",
+    "block_id": "paragraph:51:0",
+    "paragraph_index": 51,
+    "fragment_index": 0,
+    "table_path": null,
+    "row_index": null,
+    "column_index": null,
+    "physical_page_number": 4,
+    "source_cell_id": null,
+    "paragraph_offset": 0,
+    "ref": "u0",
+    "row_span": 1,
+    "column_span": 1,
+    "logical_rows": [],
+    "column_indices": [],
+    "grid_rows": [],
+    "grid_columns": [],
+    "column_header_refs": [],
+    "is_header": false,
+    "parser_header_candidate": false,
+    "header_status": "not_a_table",
+    "cell_structure_valid": false
+  },
+  "u1": {
+    "evidence_id": "8ef3c2b6036f155369dcc55a2b322b5bb9fc6c8a2e2aa7914e919f89d1d7d1ef",
+    "kind": "heading",
+    "text": "存放条件",
+    "section_node_id": "section:73",
+    "block_id": "paragraph:73:0",
+    "paragraph_index": 73,
+    "fragment_index": 0,
+    "table_path": null,
+    "row_index": null,
+    "column_index": null,
+    "physical_page_number": 5,
+    "source_cell_id": null,
+    "paragraph_offset": 0,
+    "ref": "u1",
+    "row_span": 1,
+    "column_span": 1,
+    "logical_rows": [],
+    "column_indices": [],
+    "grid_rows": [],
+    "grid_columns": [],
+    "column_header_refs": [],
+    "is_header": false,
+    "parser_header_candidate": false,
+    "header_status": "not_a_table",
+    "cell_structure_valid": false
+  },
+  "u2": {
+    "evidence_id": "b71b7d6a1aea6494b526b0737d4c1867b8b5dae3af609f9441b2fcc965543984",
+    "kind": "paragraph",
+    "text": "（包括中间体、中间态 以及成品的存放条件、包装方式、有效期/复测期）",
+    "section_node_id": "section:73",
+    "block_id": "paragraph:74:0",
+    "paragraph_index": 74,
+    "fragment_index": 0,
+    "table_path": null,
+    "row_index": null,
+    "column_index": null,
+    "physical_page_number": 5,
+    "source_cell_id": null,
+    "paragraph_offset": 0,
+    "ref": "u2",
+    "row_span": 1,
+    "column_span": 1,
+    "logical_rows": [],
+    "column_indices": [],
+    "grid_rows": [],
+    "grid_columns": [],
+    "column_header_refs": [],
+    "is_header": false,
+    "parser_header_candidate": false,
+    "header_status": "not_a_table",
+    "cell_structure_valid": false
+  },
+  "u3": {
+    "evidence_id": "0b2076ba73fd5645ab647b6e3724babf7c92ef74a6f433b6ee5460c2b5d79842",
+    "kind": "cell_paragraph",
+    "text": "中间体/成品",
+    "section_node_id": "section:73",
+    "block_id": "table:3",
+    "paragraph_index": 0,
+    "fragment_index": 0,
+    "table_path": [
+      "table:3"
+    ],
+    "row_index": 0,
+    "column_index": 0,
+    "physical_page_number": 5,
+    "source_cell_id": "table:3/cell:0:0",
+    "paragraph_offset": 0,
+    "ref": "u3",
+    "row_span": 1,
+    "column_span": 1,
+    "logical_rows": [
+      0
+    ],
+    "column_indices": [
+      0
+    ],
+    "grid_rows": [
+      0
+    ],
+    "grid_columns": [
+      0
+    ],
+    "column_header_refs": [],
+    "is_header": true,
+    "parser_header_candidate": true,
+    "header_status": "heuristic_candidate",
+    "cell_structure_valid": true
+  },
+  "u4": {
+    "evidence_id": "3ff031c6c850a010d479e0ca3776eaf8235db511aa8dfaa1bcbb1525e49ef089",
+    "kind": "cell_paragraph",
+    "text": "包装方式",
+    "section_node_id": "section:73",
+    "block_id": "table:3",
+    "paragraph_index": 0,
+    "fragment_index": 0,
+    "table_path": [
+      "table:3"
+    ],
+    "row_index": 0,
+    "column_index": 1,
+    "physical_page_number": 5,
+    "source_cell_id": "table:3/cell:0:1",
+    "paragraph_offset": 0,
+    "ref": "u4",
+    "row_span": 1,
+    "column_span": 1,
+    "logical_rows": [
+      0
+    ],
+    "column_indices": [
+      1
+    ],
+    "grid_rows": [
+      0
+    ],
+    "grid_columns": [
+      1
+    ],
+    "column_header_refs": [],
+    "is_header": true,
+    "parser_header_candidate": true,
+    "header_status": "heuristic_candidate",
+    "cell_structure_valid": true
+  },
+  "u5": {
+    "evidence_id": "7ef52aa5f4eef1fc382587b606e178f0e5c12ccff75fdeca9be7d42575a5b986",
+    "kind": "cell_paragraph",
+    "text": "存放条件（温度、湿度、是否避光）",
+    "section_node_id": "section:73",
+    "block_id": "table:3",
+    "paragraph_index": 0,
+    "fragment_index": 0,
+    "table_path": [
+      "table:3"
+    ],
+    "row_index": 0,
+    "column_index": 2,
+    "physical_page_number": 5,
+    "source_cell_id": "table:3/cell:0:2",
+    "paragraph_offset": 0,
+    "ref": "u5",
+    "row_span": 1,
+    "column_span": 1,
+    "logical_rows": [
+      0
+    ],
+    "column_indices": [
+      2
+    ],
+    "grid_rows": [
+      0
+    ],
+    "grid_columns": [
+      2
+    ],
+    "column_header_refs": [],
+    "is_header": true,
+    "parser_header_candidate": true,
+    "header_status": "heuristic_candidate",
+    "cell_structure_valid": true
+  },
+  "u6": {
+    "evidence_id": "538df099cc7621879d25fcc593975ab253fc566a75ee52a83b4a279f12aaf408",
+    "kind": "cell_paragraph",
+    "text": "有效期/复测期",
+    "section_node_id": "section:73",
+    "block_id": "table:3",
+    "paragraph_index": 0,
+    "fragment_index": 0,
+    "table_path": [
+      "table:3"
+    ],
+    "row_index": 0,
+    "column_index": 3,
+    "physical_page_number": 5,
+    "source_cell_id": "table:3/cell:0:3",
+    "paragraph_offset": 0,
+    "ref": "u6",
+    "row_span": 1,
+    "column_span": 1,
+    "logical_rows": [
+      0
+    ],
+    "column_indices": [
+      3
+    ],
+    "grid_rows": [
+      0
+    ],
+    "grid_columns": [
+      3
+    ],
+    "column_header_refs": [],
+    "is_header": true,
+    "parser_header_candidate": true,
+    "header_status": "heuristic_candidate",
+    "cell_structure_valid": true
+  },
+  "u7": {
+    "evidence_id": "8dc4996566337e1f4152bc14f32dadd8cb09fab3ed0200466342d9299787437e",
+    "kind": "cell_paragraph",
+    "text": "HRS-1597",
+    "section_node_id": "section:73",
+    "block_id": "table:3",
+    "paragraph_index": 0,
+    "fragment_index": 0,
+    "table_path": [
+      "table:3"
+    ],
+    "row_index": 1,
+    "column_index": 0,
+    "physical_page_number": 5,
+    "source_cell_id": "table:3/cell:1:0",
+    "paragraph_offset": 0,
+    "ref": "u7",
+    "row_span": 1,
+    "column_span": 1,
+    "logical_rows": [
+      1
+    ],
+    "column_indices": [
+      0
+    ],
+    "grid_rows": [
+      1
+    ],
+    "grid_columns": [
+      0
+    ],
+    "column_header_refs": [
+      "u3"
+    ],
+    "is_header": false,
+    "parser_header_candidate": false,
+    "header_status": "unconfirmed",
+    "cell_structure_valid": true
+  },
+  "u8": {
+    "evidence_id": "8e18429ffe1fa8425cce79aeb6c4db99ea5760829527384ee964ffec67cbdd73",
+    "kind": "cell_paragraph",
+    "text": "双层聚乙烯薄膜袋外加药品包装用复合袋",
+    "section_node_id": "section:73",
+    "block_id": "table:3",
+    "paragraph_index": 0,
+    "fragment_index": 0,
+    "table_path": [
+      "table:3"
+    ],
+    "row_index": 1,
+    "column_index": 1,
+    "physical_page_number": 5,
+    "source_cell_id": "table:3/cell:1:1",
+    "paragraph_offset": 0,
+    "ref": "u8",
+    "row_span": 1,
+    "column_span": 1,
+    "logical_rows": [
+      1
+    ],
+    "column_indices": [
+      1
+    ],
+    "grid_rows": [
+      1
+    ],
+    "grid_columns": [
+      1
+    ],
+    "column_header_refs": [
+      "u4"
+    ],
+    "is_header": false,
+    "parser_header_candidate": false,
+    "header_status": "unconfirmed",
+    "cell_structure_valid": true
+  },
+  "u9": {
+    "evidence_id": "622cb804a11629b61be543c3a3fff7b4560cba38ef5e13faee283be71b6fa88d",
+    "kind": "cell_paragraph",
+    "text": "密封，双层聚乙烯薄膜袋，不超过25℃保存",
+    "section_node_id": "section:73",
+    "block_id": "table:3",
+    "paragraph_index": 0,
+    "fragment_index": 0,
+    "table_path": [
+      "table:3"
+    ],
+    "row_index": 1,
+    "column_index": 2,
+    "physical_page_number": 5,
+    "source_cell_id": "table:3/cell:1:2",
+    "paragraph_offset": 0,
+    "ref": "u9",
+    "row_span": 1,
+    "column_span": 1,
+    "logical_rows": [
+      1
+    ],
+    "column_indices": [
+      2
+    ],
+    "grid_rows": [
+      1
+    ],
+    "grid_columns": [
+      2
+    ],
+    "column_header_refs": [
+      "u5"
+    ],
+    "is_header": false,
+    "parser_header_candidate": false,
+    "header_status": "unconfirmed",
+    "cell_structure_valid": true
+  },
+  "u10": {
+    "evidence_id": "e47adf407a59221337f9297e143a6f39c52fbed93dda819f377e1c5a28a1aa9f",
+    "kind": "cell_paragraph",
+    "text": "有效期24M",
+    "section_node_id": "section:73",
+    "block_id": "table:3",
+    "paragraph_index": 0,
+    "fragment_index": 0,
+    "table_path": [
+      "table:3"
+    ],
+    "row_index": 1,
+    "column_index": 3,
+    "physical_page_number": 5,
+    "source_cell_id": "table:3/cell:1:3",
+    "paragraph_offset": 0,
+    "ref": "u10",
+    "row_span": 1,
+    "column_span": 1,
+    "logical_rows": [
+      1
+    ],
+    "column_indices": [
+      3
+    ],
+    "grid_rows": [
+      1
+    ],
+    "grid_columns": [
+      3
+    ],
+    "column_header_refs": [
+      "u6"
+    ],
+    "is_header": false,
+    "parser_header_candidate": false,
+    "header_status": "unconfirmed",
+    "cell_structure_valid": true
+  }
+}

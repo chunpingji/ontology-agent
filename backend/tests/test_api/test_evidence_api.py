@@ -65,6 +65,55 @@ def manual_request(name="A", **changes):
     }
 
 
+def test_branch_progress_read_is_preserved_without_model_calls(
+    client, analyst_headers, db, evidence_api_job, monkeypatch,
+):
+    from app.models.evidence import EvidenceJobState
+    from app.models.extraction import AnnotationExecution
+    from app.services.extraction.extraction_tasks import GenericExtractionRunner
+
+    def forbidden(*args, **kwargs):
+        raise AssertionError("GET must not execute recognition")
+
+    monkeypatch.setattr(GenericExtractionRunner, "run", forbidden)
+    progress = {"urn:test:uses": {
+        "status": "entities_failed", "reason_codes": ["source_excerpt_mismatch"],
+        "discovery_tasks": 1, "relationship_tasks": 0, "failed_tasks": 1,
+        "positive_count": 0, "coverage_complete": False,
+    }}
+    state = EvidenceJobState(job_id=evidence_api_job.id, revision=1, extraction_run={
+        "completion": "incomplete", "diagnostics": ["source_excerpt_mismatch"],
+        "branch_progress": progress,
+    })
+    db.add(state)
+    db.commit()
+    for _ in range(2):
+        response = client.get(f"/api/extraction/jobs/{evidence_api_job.id}/evidence",
+                              headers=analyst_headers)
+        assert response.status_code == 200, response.text
+        assert response.json()["run"]["branch_progress"] == progress
+        assert response.json()["execution_status"] is None
+    db.refresh(state)
+    assert state.revision == 1
+    from datetime import datetime, timezone
+
+    db.add(AnnotationExecution(
+        job_id=evidence_api_job.id, run_id="paused-run", status="paused",
+        lease_expires_at=datetime.now(timezone.utc), updated_at=datetime.now(timezone.utc),
+    ))
+    db.commit()
+    response = client.get(f"/api/extraction/jobs/{evidence_api_job.id}/evidence",
+                          headers=analyst_headers)
+    assert response.json()["execution_status"] == "paused"
+    head = db.get(AnnotationExecution, evidence_api_job.id)
+    head.status = "running"
+    head.progress = {"status": "running"}
+    db.commit()  # The lease above has expired; a read must project interruption.
+    response = client.get(f"/api/extraction/jobs/{evidence_api_job.id}/evidence",
+                          headers=analyst_headers)
+    assert response.json()["execution_status"] == "interrupted"
+
+
 def test_evidence_exposes_source_schema_before_any_assertion_exists(
     client, analyst_headers, db, evidence_api_job
 ):
@@ -89,6 +138,36 @@ def test_evidence_exposes_source_schema_before_any_assertion_exists(
     assert definition["relationships"][0]["range"] == ["urn:test:Equipment"]
     assert "urn:test:Equipment" in graph["classes"]
     assert result["commits"] == [] and result["snapshot_id"] is None
+
+
+def test_latest_run_graph_uses_current_revisions_without_deleting_history(
+    client, analyst_headers, db, evidence_api_job, monkeypatch,
+):
+    from app.models.evidence import EvidenceJobState
+    from app.schemas.evidence import Candidate
+    from app.services.extraction.candidate_store import CandidateStore
+
+    values = [Candidate(candidate_id=name, kind="entity", class_iri="urn:test:Drug",
+                        text=name, provenance=manual_request(name)["candidate"]["provenance"])
+              for name in ("older-run", "current-run")]
+    monkeypatch.setattr(CandidateStore, "list", lambda self, job: values)
+    state = EvidenceJobState(job_id=evidence_api_job.id, revision=1, extraction_run={
+        "candidates": [values[1].model_dump(mode="json")], "completion": "incomplete",
+    })
+    db.add(state)
+    db.commit()
+    # A subsequent review is authoritative even though the run holds an old copy.
+    values[1] = values[1].model_copy(update={"revision": 2, "review_status": "rejected"})
+    url = f"/api/extraction/jobs/{evidence_api_job.id}/evidence"
+    latest = client.get(url + "?view=latest_run", headers=analyst_headers)
+    assert latest.status_code == 200, latest.text
+    assert [(c["candidate_id"], c["revision"], c["review_status"])
+            for c in latest.json()["candidates"]] == [("current-run", 2, "rejected")]
+    assert len(client.get(url, headers=analyst_headers).json()["candidates"]) == 2
+    state.extraction_run = {"candidates": [], "completion": "incomplete"}
+    db.commit()
+    assert client.get(url + "?view=latest_run", headers=analyst_headers).json()["candidates"] == []
+    assert len(client.get(url, headers=analyst_headers).json()["candidates"]) == 2
 
 
 def test_graph_schema_uses_source_type_and_only_unambiguous_document_root_fallback():

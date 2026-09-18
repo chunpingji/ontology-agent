@@ -1,0 +1,336 @@
+{
+  "document_iri": "http://slpra.org/facts#upload-a255fd30-192c-4f81-92df-5f76a56b8383",
+  "original_run_id": "98935847-00e1-4e39-b7ff-cc318d57b959",
+  "document_hash": "1156ca7b694c5af10afa393a5df4158ad4f9528901eab560ae2cf96e55b6d44b",
+  "type_scope": "drug-product-only-v1",
+  "calibration_threshold": -3,
+  "production_run_modified": false,
+  "full_graph_evaluated": false,
+  "evaluations": [
+    {
+      "evaluation_id": "eval-cmc-drug-product-a6d91875cbcd4f26991219538a5cd1ee",
+      "elapsed_seconds": 29.833,
+      "new_model_calls": 2,
+      "failure": null,
+      "model_requests": [
+        {
+          "stage": "ontology_guided_discovery",
+          "status": "complete",
+          "metrics": {
+            "queue_seconds": 0.028,
+            "prompt_tokens": 2460,
+            "completion_tokens": 159,
+            "cache_tokens": 0,
+            "prompt_ms": 9621.328,
+            "predicted_ms": 2882.97,
+            "cache_n": 0,
+            "prompt_n": 2460,
+            "predicted_n": 159,
+            "request_seconds": 13.321,
+            "elapsed_seconds": 13.349
+          },
+          "started_at": "2026-09-14 06:35:27.852667+00:00",
+          "finished_at": "2026-09-14 06:35:41.173108+00:00"
+        },
+        {
+          "stage": "ontology_guided_verification",
+          "status": "complete",
+          "metrics": {
+            "queue_seconds": 0.011,
+            "prompt_tokens": 2752,
+            "completion_tokens": 306,
+            "cache_tokens": 0,
+            "prompt_ms": 10385.443,
+            "predicted_ms": 5565.532,
+            "cache_n": 0,
+            "prompt_n": 2752,
+            "predicted_n": 306,
+            "request_seconds": 16.259,
+            "elapsed_seconds": 16.27
+          },
+          "started_at": "2026-09-14 06:35:41.223929+00:00",
+          "finished_at": "2026-09-14 06:35:57.482459+00:00"
+        }
+      ],
+      "result": {
+        "complete": true,
+        "semantic_outcome": "supported",
+        "reason_code": "record_supported",
+        "model_calls": 2,
+        "nodes": [
+          {
+            "label": "HRS-1597",
+            "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/DrugProduct"
+          }
+        ],
+        "edges": [
+          {
+            "decision_status": "supported",
+            "policy_eligible": true
+          }
+        ]
+      },
+      "verification": {
+        "verifications": [
+          {
+            "candidate_id": "c19017e4b984caff372f40393be61fb9827b2c615e136886f31884a4dc92e2b7",
+            "target_id": "726eb1c36c0ed23372720ae75b7d6b94e14fdd85f19f599b49bd62e3076926e7",
+            "type_verdict": "supported",
+            "role_verdict": "supported",
+            "subject_binding_verdict": "supported",
+            "predicate_verdict": "supported",
+            "applicability_verdict": "supported",
+            "counterevidence_verdict": "supported",
+            "bridge_verdict": "supported",
+            "type_support": [
+              {
+                "evidence_id": "49a1908c6905641fbbf6aeca512f0fcf7ab81aa04c014de89f6472751bcf8680",
+                "text": "项目名称：HRS-1597"
+              }
+            ],
+            "predicate_support": [
+              {
+                "evidence_id": "49a1908c6905641fbbf6aeca512f0fcf7ab81aa04c014de89f6472751bcf8680",
+                "text": "项目名称：HRS-1597"
+              }
+            ],
+            "subject_support": [],
+            "condition_support": [],
+            "counterevidence_support": [],
+            "reason": "文档标题及E1明确指称HRS-1597为项目名称，且文档为CMC报告，符合describes关系。"
+          }
+        ],
+        "refusal_reason": null
+      },
+      "production_run_modified": false,
+      "validation_note": "单类型初次实测：模型返回 supported，但类型仍仅引用项目名称，不能作为最终证据验收。",
+      "request_seconds_total": 29.58,
+      "prompt_tokens_total": 5212,
+      "cache_tokens_total": 0
+    },
+    {
+      "evaluation_id": "eval-cmc-drug-evidence-d97456132d714b62a557fc00c2349a03",
+      "elapsed_seconds": 30.898,
+      "new_model_calls": 2,
+      "failure": null,
+      "model_requests": [
+        {
+          "stage": "ontology_guided_discovery",
+          "status": "complete",
+          "metrics": {
+            "queue_seconds": 0.027,
+            "prompt_tokens": 2498,
+            "completion_tokens": 159,
+            "cache_tokens": 0,
+            "prompt_ms": 9758.195,
+            "predicted_ms": 3005.99,
+            "cache_n": 0,
+            "prompt_n": 2498,
+            "predicted_n": 159,
+            "request_seconds": 13.614,
+            "elapsed_seconds": 13.641
+          },
+          "started_at": "2026-09-14 06:38:32.250087+00:00",
+          "finished_at": "2026-09-14 06:38:45.864178+00:00"
+        },
+        {
+          "stage": "ontology_guided_verification",
+          "status": "complete",
+          "metrics": {
+            "queue_seconds": 0.011,
+            "prompt_tokens": 2790,
+            "completion_tokens": 334,
+            "cache_tokens": 0,
+            "prompt_ms": 10493.869,
+            "predicted_ms": 6281.828,
+            "cache_n": 0,
+            "prompt_n": 2790,
+            "predicted_n": 334,
+            "request_seconds": 17.024,
+            "elapsed_seconds": 17.035
+          },
+          "started_at": "2026-09-14 06:38:45.929325+00:00",
+          "finished_at": "2026-09-14 06:39:02.952820+00:00"
+        }
+      ],
+      "result": {
+        "complete": true,
+        "semantic_outcome": "supported",
+        "reason_code": "record_supported",
+        "model_calls": 2,
+        "nodes": [
+          {
+            "label": "HRS-1597",
+            "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/DrugProduct"
+          }
+        ],
+        "edges": [
+          {
+            "decision_status": "supported",
+            "policy_eligible": true
+          }
+        ]
+      },
+      "verification": {
+        "verifications": [
+          {
+            "candidate_id": "c19017e4b984caff372f40393be61fb9827b2c615e136886f31884a4dc92e2b7",
+            "target_id": "726eb1c36c0ed23372720ae75b7d6b94e14fdd85f19f599b49bd62e3076926e7",
+            "type_verdict": "supported",
+            "role_verdict": "supported",
+            "subject_binding_verdict": "supported",
+            "predicate_verdict": "supported",
+            "applicability_verdict": "supported",
+            "counterevidence_verdict": "supported",
+            "bridge_verdict": "supported",
+            "type_support": [
+              {
+                "evidence_id": "49a1908c6905641fbbf6aeca512f0fcf7ab81aa04c014de89f6472751bcf8680",
+                "text": "项目名称：HRS-1597"
+              }
+            ],
+            "predicate_support": [
+              {
+                "evidence_id": "49a1908c6905641fbbf6aeca512f0fcf7ab81aa04c014de89f6472751bcf8680",
+                "text": "项目名称：HRS-1597"
+              }
+            ],
+            "subject_support": [],
+            "condition_support": [],
+            "counterevidence_support": [],
+            "reason": "文档标题明确为'HRS-1597原料临床备样生产信息表'，且正文E1确认项目名称为HRS-1597。文档性质为CMC Report，描述该原料药的制备信息，符合describes关系。无相反证据。"
+          }
+        ],
+        "refusal_reason": null
+      },
+      "production_run_modified": false,
+      "validation_note": "补充提示实测：仍仅引用项目名称，促使增加类型引用约束；不是最终交付版本。",
+      "request_seconds_total": 30.638,
+      "prompt_tokens_total": 5288,
+      "cache_tokens_total": 0
+    },
+    {
+      "evaluation_id": "eval-cmc-drug-final-bf02dcd95edc4ee9b2db287a9ae45cd2",
+      "elapsed_seconds": 24.632,
+      "new_model_calls": 2,
+      "failure": null,
+      "model_requests": [
+        {
+          "stage": "ontology_guided_discovery",
+          "status": "complete",
+          "metrics": {
+            "queue_seconds": 0.03,
+            "prompt_tokens": 2498,
+            "completion_tokens": 159,
+            "cache_tokens": 715,
+            "prompt_ms": 7231.849,
+            "predicted_ms": 3017.913,
+            "cache_n": 715,
+            "prompt_n": 1783,
+            "predicted_n": 159,
+            "request_seconds": 11.12,
+            "elapsed_seconds": 11.149
+          },
+          "started_at": "2026-09-14 06:42:50.431326+00:00",
+          "finished_at": "2026-09-14 06:43:01.550678+00:00"
+        },
+        {
+          "stage": "ontology_guided_verification",
+          "status": "complete",
+          "metrics": {
+            "queue_seconds": 0.018,
+            "prompt_tokens": 2790,
+            "completion_tokens": 306,
+            "cache_tokens": 902,
+            "prompt_ms": 7535.472,
+            "predicted_ms": 5610.054,
+            "cache_n": 902,
+            "prompt_n": 1888,
+            "predicted_n": 306,
+            "request_seconds": 13.242,
+            "elapsed_seconds": 13.26
+          },
+          "started_at": "2026-09-14 06:43:01.624816+00:00",
+          "finished_at": "2026-09-14 06:43:14.866063+00:00"
+        }
+      ],
+      "result": {
+        "complete": true,
+        "semantic_outcome": "supported",
+        "reason_code": "record_supported",
+        "model_calls": 2,
+        "nodes": [
+          {
+            "label": "HRS-1597",
+            "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/DrugProduct"
+          }
+        ],
+        "edges": [
+          {
+            "decision_status": "supported",
+            "policy_eligible": true
+          }
+        ]
+      },
+      "verification": {
+        "verifications": [
+          {
+            "candidate_id": "c19017e4b984caff372f40393be61fb9827b2c615e136886f31884a4dc92e2b7",
+            "target_id": "726eb1c36c0ed23372720ae75b7d6b94e14fdd85f19f599b49bd62e3076926e7",
+            "type_verdict": "supported",
+            "role_verdict": "supported",
+            "subject_binding_verdict": "supported",
+            "predicate_verdict": "supported",
+            "applicability_verdict": "supported",
+            "counterevidence_verdict": "supported",
+            "bridge_verdict": "supported",
+            "type_support": [
+              {
+                "evidence_id": "b24791b5d4dd576847c796da5b00c8657f638cd68d75d151310bd5aad36f7521",
+                "text": "制剂剂型：口服片剂 "
+              }
+            ],
+            "predicate_support": [
+              {
+                "evidence_id": "49a1908c6905641fbbf6aeca512f0fcf7ab81aa04c014de89f6472751bcf8680",
+                "text": "项目名称：HRS-1597"
+              }
+            ],
+            "subject_support": [],
+            "condition_support": [],
+            "counterevidence_support": [],
+            "reason": "文档标题及E1明确指称HRS-1597为项目名称，且文档为CMC报告，符合describes关系。"
+          }
+        ],
+        "refusal_reason": null
+      },
+      "verification_facets": {
+        "c19017e4b984caff372f40393be61fb9827b2c615e136886f31884a4dc92e2b7": {
+          "field_role_support": [
+            {
+              "evidence_id": "49a1908c6905641fbbf6aeca512f0fcf7ab81aa04c014de89f6472751bcf8680",
+              "text": "项目名称：HRS-1597"
+            }
+          ],
+          "bridge_support": [
+            {
+              "evidence_id": "49a1908c6905641fbbf6aeca512f0fcf7ab81aa04c014de89f6472751bcf8680",
+              "text": "项目名称：HRS-1597"
+            }
+          ],
+          "missing_facets": [],
+          "unit_verdict": "undetermined",
+          "source_unit_quote": null,
+          "unit_binding_support": [],
+          "original_subject_support": [],
+          "local_subject_support": []
+        }
+      },
+      "production_run_modified": false,
+      "validation_note": "最终版本：类型引用同源制剂剂型字段，仅证明药品角色，不输出原料药/制剂分类。",
+      "request_seconds_total": 24.362,
+      "prompt_tokens_total": 5288,
+      "cache_tokens_total": 1617
+    }
+  ]
+}

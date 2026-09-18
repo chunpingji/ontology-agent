@@ -1,0 +1,154 @@
+{
+  "status": "passed",
+  "scope": "synthetic APIs; real React Query/tree/WordViewer",
+  "checks": [
+    "selection content cache and stable reader",
+    "lazy collapse and shared reference jump",
+    "ranking-only version refresh",
+    "stale summary and budget identity conflict recovery",
+    "healthy SSE no polling",
+    "disconnected fallback",
+    "hidden no requests",
+    "hidden abort",
+    "late response document isolation"
+  ],
+  "requests": [
+    {
+      "method": "GET",
+      "path": "/api/document-analysis/templates/template/sources/a/runs",
+      "query": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/document-analysis/runs/a/graph",
+      "query": "?projection=effective_affirmed"
+    },
+    {
+      "method": "GET",
+      "path": "/api/document-analysis/runs/a/ranking-summary",
+      "query": "?expected_summary_id=ranking-1&expected_budget_enabled=true"
+    },
+    {
+      "method": "GET",
+      "path": "/api/document-analysis/runs/a/source",
+      "query": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/document-analysis/runs/a/events",
+      "query": "?x_user=analyst&x_role=senior_analyst"
+    },
+    {
+      "method": "GET",
+      "path": "/api/document-analysis/runs/a/source-selection",
+      "query": "?selection_ref=first"
+    },
+    {
+      "method": "GET",
+      "path": "/api/document-analysis/runs/a/source-selection",
+      "query": "?selection_ref=second"
+    },
+    {
+      "method": "GET",
+      "path": "/api/document-analysis/templates/template/sources/a/runs",
+      "query": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/document-analysis/runs/a/ranking-summary",
+      "query": "?expected_summary_id=ranking-2&expected_budget_enabled=true"
+    },
+    {
+      "method": "GET",
+      "path": "/api/document-analysis/templates/template/sources/a/runs",
+      "query": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/document-analysis/runs/a/ranking-summary",
+      "query": "?expected_summary_id=ranking-3&expected_budget_enabled=true"
+    },
+    {
+      "method": "GET",
+      "path": "/api/document-analysis/templates/template/sources/a/runs",
+      "query": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/document-analysis/runs/a/ranking-summary",
+      "query": "?expected_summary_id=ranking-4&expected_budget_enabled=false"
+    },
+    {
+      "method": "GET",
+      "path": "/api/document-analysis/runs/a/events",
+      "query": "?x_user=analyst&x_role=senior_analyst"
+    },
+    {
+      "method": "GET",
+      "path": "/api/document-analysis/templates/template/sources/a/runs",
+      "query": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/document-analysis/templates/template/sources/a/runs",
+      "query": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/document-analysis/runs/a/events",
+      "query": "?x_user=analyst&x_role=senior_analyst"
+    },
+    {
+      "method": "GET",
+      "path": "/api/document-analysis/templates/template/sources/a/runs",
+      "query": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/document-analysis/templates/template/sources/a/runs",
+      "query": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/document-analysis/templates/template/sources/a/runs",
+      "query": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/document-analysis/runs/a/events",
+      "query": "?x_user=analyst&x_role=senior_analyst"
+    },
+    {
+      "method": "GET",
+      "path": "/api/document-analysis/runs/a/source-selection",
+      "query": "?selection_ref=late"
+    },
+    {
+      "method": "GET",
+      "path": "/api/document-analysis/templates/template/sources/b/runs",
+      "query": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/document-analysis/runs/b/graph",
+      "query": "?projection=effective_affirmed"
+    },
+    {
+      "method": "GET",
+      "path": "/api/document-analysis/runs/b/ranking-summary",
+      "query": "?expected_summary_id=ranking-4&expected_budget_enabled=false"
+    },
+    {
+      "method": "GET",
+      "path": "/api/document-analysis/runs/b/source",
+      "query": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/document-analysis/runs/b/events",
+      "query": "?x_user=analyst&x_role=senior_analyst"
+    }
+  ],
+  "aborted": 2,
+  "summaryConflicts": 1
+}

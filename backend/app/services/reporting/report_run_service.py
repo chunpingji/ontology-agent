@@ -109,13 +109,18 @@ def _contract_refs(value):
 
 
 class ReportRunService:
-    def __init__(self, db, *, model_schema=None):
+    def __init__(self, db, *, model_schema=None, finder_engine=None):
         self.db, self.registry = db, ContractRegistry(db)
         self.model_schema = model_schema
+        self.finder_engine = finder_engine
 
     def prepare(self, schema, **kwargs):
         from app.services.reporting.template_preparation import prepare_template
 
+        profile = (schema.get("demo_profile") if isinstance(schema, dict)
+                   else getattr(schema, "demo_profile", None))
+        if profile:
+            raise ReportingError("STATIC_DEMO_TEMPLATE", "请在演示模板页面生成批记录", status=409)
         return prepare_template(self.db, schema, classes=self.model_schema, **kwargs)
 
     def load_contracts(self, schema):
@@ -324,9 +329,22 @@ class ReportRunService:
         )
         if schema is None:
             raise ReportingError("TEMPLATE_NOT_FOUND", status=404)
+        if schema.get("demo_profile") or (row and (row.schema_json or {}).get("demo_profile")):
+            raise ReportingError("STATIC_DEMO_TEMPLATE", "请在演示模板页面生成批记录", status=409)
         if schema.get("schema_version") != 2:
             raise ReportingError(
                 "TEMPLATE_MIGRATION_REQUIRED", template_id=str(row.id) if row else None
+            )
+        from app.services.reporting.demo_sources import load_finder, load_mock
+        from app.services.template_finder.policy import resolve as finder_policy
+
+        finder_mode = bool(row and finder_policy(row))
+        from app.services.reporting.section_narrative import is_custom_draft
+
+        demonstration = finder_mode or bool(schema.get("record_sources")) or is_custom_draft(schema)
+        if demonstration and (not preview or payload.get("purpose", "draft") != "draft"):
+            raise ReportingError(
+                "DEMO_REPORT_ONLY", "本体指引1.0、Mock 和自定义 AI 行文仅可生成草稿", status=409
             )
         if not preview and (row is None or row.status != "published"):
             raise ReportingError("TEMPLATE_NOT_PUBLISHED")
@@ -363,6 +381,15 @@ class ReportRunService:
             job = self.db.get(ExtractionJob, UUID(selected["job_id"]))
             if job is None:
                 raise ReportingError("SOURCE_NOT_FOUND", status=404)
+            if finder_mode:
+                sources[slot.source_slot_id] = load_finder(
+                    self.db, self.finder_engine, row, job, actor, selected
+                )
+                if slot.class_iri != row.iri_pattern:
+                    raise ReportingError("SOURCE_TYPE_MISMATCH")
+                continue
+            if selected.get("finder_execution_id"):
+                raise ReportingError("RECOGNITION_MODE_MISMATCH", status=409)
             _require_report_source(job)
             if (job.source_config or {}).get("document_role") in {
                 "template_sample",
@@ -440,10 +467,14 @@ class ReportRunService:
             slot: self.registry.load_record(ref)
             for slot, ref in payload.get("record_refs", {}).items()
         }
+        for record_slot, config in template.record_sources.items():
+            if record_slot in records:
+                raise ReportingError("RECORD_SOURCE_CONFLICT")
+            records[record_slot] = load_mock(self.db, config, template.budget.max_records)
         from app.services.reasoning.calculation_review import decision_history
 
         for source in sources.values():
-            if source.get("job_id"):
+            if source.get("job_id") and source.get("kind") != "finder_demo":
                 job_id = UUID(source["job_id"])
                 source["calculation_decisions"] = decision_history(self.db, job_id)
                 state = self.db.get(EvidenceJobState, job_id, populate_existing=True)
@@ -481,6 +512,9 @@ class ReportRunService:
                             "contract_id": binding.contract_ref,
                         },
                     }
+        from app.services.reporting.docx_layout import freeze_layout
+
+        layout = freeze_layout(row, template.model_dump(mode="json"))
         bundle = {
             "template": template.model_dump(mode="json"),
             "template_status": row.status
@@ -501,7 +535,10 @@ class ReportRunService:
             "model_enabled": bool(settings.local_llm_enabled),
             "model_endpoint": settings.local_llm_base_url,
             "preview_mode": payload.get("mode"),
+            "demonstration": demonstration,
         }
+        if layout:
+            bundle["docx_layout"] = layout
         bundle["source_bundle_id"] = evidence_hash(bundle)
         run = ReportRun(
             id=uuid4().hex,
@@ -661,7 +698,11 @@ class ReportRunService:
                 style = run.source_bundle["contracts"][
                     run.source_bundle["template"]["style_profile_ref"]
                 ]["definition"]
-                self.artifact(run, body, render_docx(rendered["body_ast"], style), "docx")
+                self.artifact(run, body, render_docx(
+                    rendered["body_ast"], style,
+                    layout=run.source_bundle.get("docx_layout"),
+                    layout_nodes=rendered.get("layout_nodes"),
+                ), "docx")
             run.execution_status = rendered["execution_status"]
             run.phase = "completed" if run.execution_status == "completed" else "failed"
             run.worker_token, run.lease_expires_at = None, None
@@ -813,6 +854,7 @@ class ReportRunService:
             "input_snapshot_id": run.input_snapshot_id,
             "template_id": str(run.template_id) if run.template_id else None,
             "template_status": run.source_bundle["template_status"],
+            "demonstration": bool(run.source_bundle.get("demonstration")),
             "execution_status": run.execution_status,
             "material_status": run.material_status,
             "review_status": run.review_status,
@@ -840,6 +882,7 @@ class ReportRunService:
                 "attempt": run.attempt,
                 "body_hash": response["body_hash"],
                 "material_status": run.material_status,
+                "demonstration": bool(run.source_bundle.get("demonstration")),
             }
             if artifact:
                 row = self.db.get(ReportArtifact, artifact["artifact_id"])

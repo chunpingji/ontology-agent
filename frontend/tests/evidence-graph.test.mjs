@@ -9,6 +9,33 @@ vm.runInNewContext(ts.transpileModule(readFileSync(new URL("../src/lib/evidence-
   compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
 }).outputText, { exports });
 const { buildEvidenceGraph, buildDocumentEvidenceGraph, evidenceBranches, publishableEvidence, evidenceValue } = exports;
+const { branchProgressText } = exports;
+
+test("empty branches distinguish unavailable history, waiting, citation failure and completed coverage", () => {
+  assert.equal(branchProgressText(), "尚无分支处理记录");
+  assert.equal(branchProgressText({ status: "queued" }, "running"), "等待识别");
+  assert.match(branchProgressText({ status: "entities_failed" }), /关联对象识别未完成/);
+  assert.match(branchProgressText({ status: "awaiting_relation" }), /已识别关联对象/);
+  assert.equal(branchProgressText({ status: "relation_checked", coverage_complete: false }), "已检查部分关系，尚未形成有效肯定关系");
+  assert.match(branchProgressText({ status: "no_match", coverage_complete: false }), /尚未完成/);
+  assert.match(branchProgressText({ status: "no_match", coverage_complete: true }), /本轮处理完成/);
+  assert.match(branchProgressText({ status: "identified", coverage_complete: false }), /覆盖尚未完成/);
+});
+
+test("paused and failed runs do not retain an actively processing branch label", () => {
+  assert.equal(branchProgressText({ status: "extracting_relation" }, "running"), "正在验证关系");
+  assert.equal(branchProgressText({ status: "extracting_relation" }, "paused"), "已暂停；关系验证尚未完成");
+  assert.equal(branchProgressText({ status: "extracting_entities" }, "failed"), "运行失败；关联对象识别尚未完成");
+  assert.doesNotMatch(branchProgressText({ status: "extracting_entities" }), /正在/);
+});
+
+test("a recognized relation retains unfinished entity-property progress", () => {
+  assert.match(branchProgressText({ status: "identified", property_status: "queued" }), /属性等待识别/);
+  assert.match(branchProgressText({ status: "identified", property_status: "not_applicable" }), /本体未声明/);
+  assert.match(branchProgressText({ status: "identified", property_status: "incomplete" }), /属性识别未完成/);
+  assert.match(branchProgressText({ status: "identified", property_status: "extracting" }, "running"), /正在识别关联实体属性/);
+  assert.doesNotMatch(branchProgressText({ status: "identified", property_status: "extracting" }, "paused"), /正在识别/);
+});
 const entity = (id) => ({ candidate_id: id, revision: 1, kind: "entity", text: "同名对象",
   review_status: "confirmed", validation_status: "passed", commit_status: "not_requested" });
 const edge = (id, subject, object) => ({ ...entity(id), kind: "relationship",

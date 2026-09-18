@@ -1,0 +1,3529 @@
+{
+  "reviewer": "assistant-independent-source-and-vocabulary-review",
+  "input_root": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-gliner25-skos-20260916/ner/C",
+  "scope": "852 NER mentions; mechanical counts over all mentions, illustrative semantic samples only",
+  "not_expert_gold": true,
+  "precision_recall_measured": false,
+  "read_inputs": [
+    "C/*/tools.json",
+    "C/*/sources.json",
+    "C/*/vocabulary.json"
+  ],
+  "reference_or_acceptance_read": false,
+  "physical_span_key_within_scope": [
+    "ref",
+    "start",
+    "end"
+  ],
+  "physical_span_key_across_scopes": [
+    "source.evidence_id",
+    "start",
+    "end"
+  ],
+  "long_span_definition": "More than 8 tokens using gliner2 2.0.0 official CharLevelSplitter regex [A-Za-z0-9@._\\-+]+|\\S; ASCII runs count as one token, not character count.",
+  "scopes": {
+    "introduction": {
+      "file_sha256": {
+        "tools": "3f5cfe870510e9eddc73ef587fc0969d920a0d093bcc0dc9f3b8fa8e745d2dcb",
+        "sources": "41796029764c9531b94322797bb5cee8f0a5c117b93c9b199bbdcb8c31262f77",
+        "vocabulary": "edb93dce6e895287d6e56eb9abaa97fed838eb31973631d53ac0ab89d866205c"
+      },
+      "execution_status": "completed",
+      "semantic_status": "not_checked",
+      "fact_eligible": false,
+      "counts": {
+        "mentions": 67,
+        "physical_spans": 10,
+        "multi_label_physical_spans": 8,
+        "label_multiplicity_excess": 57,
+        "cross_role_physical_spans": 4,
+        "header_cell_mentions": 0,
+        "heading_mentions": 0,
+        "char_tokens_gt_8_mentions": 0,
+        "char_tokens_gt_8_physical_spans": 0,
+        "exact_coordinate_errors": 0,
+        "same_label_coordinate_duplicates": 0
+      },
+      "role_counts": {
+        "record_anchor": 8,
+        "attribute_value": 57,
+        "entity_name": 2
+      },
+      "label_counts": {
+        "临床样品生产计划名称": 4,
+        "纯化步骤名称": 4,
+        "过程控制方法和完整验收标准": 4,
+        "明确产品或原料药标识值": 4,
+        "计划生产年月或日期值": 4,
+        "活性成分或原料药名称": 2,
+        "工艺产出质量范围值": 6,
+        "预计单批质量下限值": 4,
+        "生产用途原文值": 5,
+        "工艺操作条件完整原文值": 5,
+        "收率范围原文值": 3,
+        "职业暴露限值数值": 7,
+        "原料药允许日暴露量数值": 6,
+        "预计单批质量上限值": 3,
+        "计划生产批次数值": 3,
+        "工艺步骤序号值": 3
+      },
+      "physical_spans_with_multiple_labels": [
+        {
+          "ref": "u2",
+          "start": 7,
+          "end": 15,
+          "text": "HRS-1597",
+          "label_count": 14,
+          "labels": [
+            "临床样品生产计划名称",
+            "纯化步骤名称",
+            "活性成分或原料药名称",
+            "过程控制方法和完整验收标准",
+            "工艺产出质量范围值",
+            "预计单批质量上限值",
+            "预计单批质量下限值",
+            "生产用途原文值",
+            "工艺操作条件完整原文值",
+            "工艺步骤序号值",
+            "收率范围原文值",
+            "职业暴露限值数值",
+            "原料药允许日暴露量数值",
+            "明确产品或原料药标识值"
+          ],
+          "roles": [
+            "attribute_value",
+            "entity_name",
+            "record_anchor"
+          ]
+        },
+        {
+          "ref": "u1",
+          "start": 153,
+          "end": 156,
+          "text": "642",
+          "label_count": 11,
+          "labels": [
+            "临床样品生产计划名称",
+            "纯化步骤名称",
+            "过程控制方法和完整验收标准",
+            "工艺产出质量范围值",
+            "计划生产批次数值",
+            "生产用途原文值",
+            "工艺操作条件完整原文值",
+            "工艺步骤序号值",
+            "职业暴露限值数值",
+            "原料药允许日暴露量数值",
+            "明确产品或原料药标识值"
+          ],
+          "roles": [
+            "attribute_value",
+            "record_anchor"
+          ]
+        },
+        {
+          "ref": "u1",
+          "start": 157,
+          "end": 160,
+          "text": "646",
+          "label_count": 11,
+          "labels": [
+            "临床样品生产计划名称",
+            "纯化步骤名称",
+            "过程控制方法和完整验收标准",
+            "工艺产出质量范围值",
+            "计划生产批次数值",
+            "生产用途原文值",
+            "工艺操作条件完整原文值",
+            "工艺步骤序号值",
+            "职业暴露限值数值",
+            "原料药允许日暴露量数值",
+            "明确产品或原料药标识值"
+          ],
+          "roles": [
+            "attribute_value",
+            "record_anchor"
+          ]
+        },
+        {
+          "ref": "u1",
+          "start": 106,
+          "end": 114,
+          "text": "2025年09月",
+          "label_count": 9,
+          "labels": [
+            "工艺产出质量范围值",
+            "预计单批质量上限值",
+            "预计单批质量下限值",
+            "计划生产年月或日期值",
+            "生产用途原文值",
+            "工艺操作条件完整原文值",
+            "收率范围原文值",
+            "职业暴露限值数值",
+            "原料药允许日暴露量数值"
+          ],
+          "roles": [
+            "attribute_value"
+          ]
+        },
+        {
+          "ref": "u1",
+          "start": 81,
+          "end": 89,
+          "text": "2025年08月",
+          "label_count": 8,
+          "labels": [
+            "工艺产出质量范围值",
+            "预计单批质量下限值",
+            "计划生产年月或日期值",
+            "生产用途原文值",
+            "工艺操作条件完整原文值",
+            "收率范围原文值",
+            "职业暴露限值数值",
+            "原料药允许日暴露量数值"
+          ],
+          "roles": [
+            "attribute_value"
+          ]
+        },
+        {
+          "ref": "u1",
+          "start": 179,
+          "end": 189,
+          "text": "3.8- 6.6kg",
+          "label_count": 6,
+          "labels": [
+            "工艺产出质量范围值",
+            "计划生产批次数值",
+            "预计单批质量上限值",
+            "预计单批质量下限值",
+            "职业暴露限值数值",
+            "原料药允许日暴露量数值"
+          ],
+          "roles": [
+            "attribute_value"
+          ]
+        },
+        {
+          "ref": "u1",
+          "start": 0,
+          "end": 8,
+          "text": "HRS-1597",
+          "label_count": 4,
+          "labels": [
+            "临床样品生产计划名称",
+            "纯化步骤名称",
+            "过程控制方法和完整验收标准",
+            "明确产品或原料药标识值"
+          ],
+          "roles": [
+            "attribute_value",
+            "record_anchor"
+          ]
+        },
+        {
+          "ref": "u1",
+          "start": 145,
+          "end": 152,
+          "text": "2026年6月",
+          "label_count": 2,
+          "labels": [
+            "计划生产年月或日期值",
+            "职业暴露限值数值"
+          ],
+          "roles": [
+            "attribute_value"
+          ]
+        }
+      ],
+      "all_long_mentions": [],
+      "manual_examples": [
+        {
+          "judgement": "valid_mention",
+          "reason": "原文明确是本次临床样品生产计划年月。",
+          "mention": {
+            "start": 145,
+            "end": 152,
+            "text": "2026年6月",
+            "label": "计划生产年月或日期值",
+            "score": 0.9790209531784058,
+            "ref": "u1",
+            "group": "values",
+            "id": "mention-ca1161c0ff6dd59e5bad5f83",
+            "concept_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/plannedProductionDate",
+            "extraction_role": "attribute_value"
+          },
+          "official_char_token_count": 4,
+          "source_text": "HRS-1597为上海闵行于2024年07月转移至连云港一所的APLNR激动剂新分子，适应症为减肥增肌。其开发形式经过多次变化且亚急毒和毒理样品需求量不断增长。于2025年08月供样亚急毒样品，供样形式为原料药。2025年09月供样毒理批样品，供样形式为原料药。本次备样用于Ⅰ期临床，计划在2026年6月于642和646车间，完成本次临床样品生产及检测，批量3.8- 6.6kg。 ",
+          "source_evidence_id": "e7ea5dada6b23ad6052384f5a6c6b75296797baf482c2fe0842911a1646a1e87",
+          "source_kind": "paragraph",
+          "is_header": false,
+          "source_location": {
+            "block_id": "paragraph:26:0",
+            "paragraph_index": 26,
+            "table_path": null,
+            "row_index": null,
+            "column_index": null
+          },
+          "label_description": "抽取对应字段的原文值，不抽字段标题；保留否定、范围、比较和完整限定。抽取本次生产计划对应年月或日期，保留原格式，不把历史转移、供样或检测日期替代当前计划。 上下文术语提示：计划生产时间、planned production date、计划生产日期、计划生产月份。术语是字段语义线索，不是待返回的字段标题。"
+        },
+        {
+          "judgement": "useful_partial_evidence",
+          "reason": "确为计划批量范围，可作为数值候选；不能仅凭此提及确定具体工艺步骤产出。",
+          "mention": {
+            "start": 179,
+            "end": 189,
+            "text": "3.8- 6.6kg",
+            "label": "工艺产出质量范围值",
+            "score": 0.7770202159881592,
+            "ref": "u1",
+            "group": "values",
+            "id": "mention-625754b7ba9dd70ca4d58029",
+            "concept_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/outputMassRange_kg",
+            "extraction_role": "attribute_value"
+          },
+          "official_char_token_count": 2,
+          "source_text": "HRS-1597为上海闵行于2024年07月转移至连云港一所的APLNR激动剂新分子，适应症为减肥增肌。其开发形式经过多次变化且亚急毒和毒理样品需求量不断增长。于2025年08月供样亚急毒样品，供样形式为原料药。2025年09月供样毒理批样品，供样形式为原料药。本次备样用于Ⅰ期临床，计划在2026年6月于642和646车间，完成本次临床样品生产及检测，批量3.8- 6.6kg。 ",
+          "source_evidence_id": "e7ea5dada6b23ad6052384f5a6c6b75296797baf482c2fe0842911a1646a1e87",
+          "source_kind": "paragraph",
+          "is_header": false,
+          "source_location": {
+            "block_id": "paragraph:26:0",
+            "paragraph_index": 26,
+            "table_path": null,
+            "row_index": null,
+            "column_index": null
+          },
+          "label_description": "抽取对应字段的原文值，不抽字段标题；保留否定、范围、比较和完整限定。抽取步骤产出物的质量范围及单位，不能把原料投入质量、溶剂加入量或计划批量映射为得量。 上下文术语提示：得量范围（kg）、output mass range、产出质量范围、产物得量范围。术语是字段语义线索，不是待返回的字段标题。"
+        },
+        {
+          "judgement": "wrong_entity_role",
+          "reason": "APLNR在这里是激动剂作用靶点，不是活性药物成分名称。",
+          "mention": {
+            "start": 31,
+            "end": 36,
+            "text": "APLNR",
+            "label": "活性成分或原料药名称",
+            "score": 0.722235381603241,
+            "ref": "u1",
+            "group": "entities",
+            "id": "mention-6520e509ceb4f56b52bbffc6",
+            "concept_iri": "https://ontology.pharma-gmp.cn/slpra/drug/ActivePharmaceuticalIngredient",
+            "extraction_role": "entity_name"
+          },
+          "official_char_token_count": 1,
+          "source_text": "HRS-1597为上海闵行于2024年07月转移至连云港一所的APLNR激动剂新分子，适应症为减肥增肌。其开发形式经过多次变化且亚急毒和毒理样品需求量不断增长。于2025年08月供样亚急毒样品，供样形式为原料药。2025年09月供样毒理批样品，供样形式为原料药。本次备样用于Ⅰ期临床，计划在2026年6月于642和646车间，完成本次临床样品生产及检测，批量3.8- 6.6kg。 ",
+          "source_evidence_id": "e7ea5dada6b23ad6052384f5a6c6b75296797baf482c2fe0842911a1646a1e87",
+          "source_kind": "paragraph",
+          "is_header": false,
+          "source_location": {
+            "block_id": "paragraph:26:0",
+            "paragraph_index": 26,
+            "table_path": null,
+            "row_index": null,
+            "column_index": null
+          },
+          "label_description": "抽取有原文明示角色的实体名称或称谓；不抽类别表头，名称不证明唯一身份。仅抽上下文明确承担药物活性成分或原料药角色的物质名称。溶剂、辅料或一般化学式并不因此成为API。 上下文术语提示：活性药物成分、API、active pharmaceutical ingredient、原料药、活性成分。"
+        },
+        {
+          "judgement": "wrong_temporal_role",
+          "reason": "是既往亚急毒供样时间，词表要求不能当本次生产计划。",
+          "mention": {
+            "start": 81,
+            "end": 89,
+            "text": "2025年08月",
+            "label": "计划生产年月或日期值",
+            "score": 0.9746331572532654,
+            "ref": "u1",
+            "group": "values",
+            "id": "mention-aac69adac976a15a732a59f1",
+            "concept_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/plannedProductionDate",
+            "extraction_role": "attribute_value"
+          },
+          "official_char_token_count": 4,
+          "source_text": "HRS-1597为上海闵行于2024年07月转移至连云港一所的APLNR激动剂新分子，适应症为减肥增肌。其开发形式经过多次变化且亚急毒和毒理样品需求量不断增长。于2025年08月供样亚急毒样品，供样形式为原料药。2025年09月供样毒理批样品，供样形式为原料药。本次备样用于Ⅰ期临床，计划在2026年6月于642和646车间，完成本次临床样品生产及检测，批量3.8- 6.6kg。 ",
+          "source_evidence_id": "e7ea5dada6b23ad6052384f5a6c6b75296797baf482c2fe0842911a1646a1e87",
+          "source_kind": "paragraph",
+          "is_header": false,
+          "source_location": {
+            "block_id": "paragraph:26:0",
+            "paragraph_index": 26,
+            "table_path": null,
+            "row_index": null,
+            "column_index": null
+          },
+          "label_description": "抽取对应字段的原文值，不抽字段标题；保留否定、范围、比较和完整限定。抽取本次生产计划对应年月或日期，保留原格式，不把历史转移、供样或检测日期替代当前计划。 上下文术语提示：计划生产时间、planned production date、计划生产日期、计划生产月份。术语是字段语义线索，不是待返回的字段标题。"
+        },
+        {
+          "judgement": "wrong_attribute_role",
+          "reason": "原文为车间编号，不是批次数量。",
+          "mention": {
+            "start": 153,
+            "end": 156,
+            "text": "642",
+            "label": "计划生产批次数值",
+            "score": 0.6160415410995483,
+            "ref": "u1",
+            "group": "values",
+            "id": "mention-868801649ed4590460b66ccf",
+            "concept_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/plannedBatchCount",
+            "extraction_role": "attribute_value"
+          },
+          "official_char_token_count": 1,
+          "source_text": "HRS-1597为上海闵行于2024年07月转移至连云港一所的APLNR激动剂新分子，适应症为减肥增肌。其开发形式经过多次变化且亚急毒和毒理样品需求量不断增长。于2025年08月供样亚急毒样品，供样形式为原料药。2025年09月供样毒理批样品，供样形式为原料药。本次备样用于Ⅰ期临床，计划在2026年6月于642和646车间，完成本次临床样品生产及检测，批量3.8- 6.6kg。 ",
+          "source_evidence_id": "e7ea5dada6b23ad6052384f5a6c6b75296797baf482c2fe0842911a1646a1e87",
+          "source_kind": "paragraph",
+          "is_header": false,
+          "source_location": {
+            "block_id": "paragraph:26:0",
+            "paragraph_index": 26,
+            "table_path": null,
+            "row_index": null,
+            "column_index": null
+          },
+          "label_description": "抽取对应字段的原文值，不抽字段标题；保留否定、范围、比较和完整限定。抽取计划批次的计数，不把批量质量或工艺操作次数作为生产批数。 上下文术语提示：计划生产批次数、planned batch count、拟生产批数、计划批次数。术语是字段语义线索，不是待返回的字段标题。"
+        }
+      ]
+    },
+    "pde_conflict": {
+      "file_sha256": {
+        "tools": "ad5e045d316eb950c304bfffacc441882cacfe822ecffdd3c7fbde7c95e08e07",
+        "sources": "dcaee2c123f12dbfc3d3974163ba207de97a5d56abf5b05ddfa858b88e1cae27",
+        "vocabulary": "f2805ed77dcc8e90d2f1bfa4fc2aed5bcadc91b30449f7d77eb4919ba5e8eb12"
+      },
+      "execution_status": "completed",
+      "semantic_status": "not_checked",
+      "fact_eligible": false,
+      "counts": {
+        "mentions": 403,
+        "physical_spans": 49,
+        "multi_label_physical_spans": 41,
+        "label_multiplicity_excess": 354,
+        "cross_role_physical_spans": 38,
+        "header_cell_mentions": 72,
+        "heading_mentions": 39,
+        "char_tokens_gt_8_mentions": 2,
+        "char_tokens_gt_8_physical_spans": 1,
+        "exact_coordinate_errors": 0,
+        "same_label_coordinate_duplicates": 0
+      },
+      "role_counts": {
+        "record_anchor": 34,
+        "entity_name": 14,
+        "unit": 46,
+        "attribute_value": 309
+      },
+      "label_counts": {
+        "独立毒理或共线评估记录名称": 34,
+        "活性成分或原料药名称": 14,
+        "微克单位": 8,
+        "评估记录活性成分名称值": 20,
+        "给药方案完整原文值": 17,
+        "F1系数值": 19,
+        "F2系数值": 17,
+        "F5系数值": 16,
+        "人体等效剂量数值": 13,
+        "职业暴露分级值": 20,
+        "拟定最高给药剂量数值": 11,
+        "拟定临床起始剂量数值": 12,
+        "数据来源文献或报告原文值": 12,
+        "完整试验项目名称值": 24,
+        "职业暴露限值数值": 15,
+        "原料药允许日暴露量数值": 11,
+        "明确产品或原料药标识值": 21,
+        "克单位": 5,
+        "微克每日单位": 7,
+        "F3系数值": 18,
+        "F4系数值": 18,
+        "NOAEL研究动物种属值": 11,
+        "综合安全系数数值": 19,
+        "NOAEL研究时长原文值": 8,
+        "独立评估记录允许日暴露量数值": 5,
+        "天单位": 6,
+        "微克每立方米单位": 1,
+        "未观察到不良反应剂量数值": 2,
+        "微克每千克每日单位": 3,
+        "千克单位": 4,
+        "小时单位": 2,
+        "毫克单位": 3,
+        "毫克每日单位": 3,
+        "毫克每千克每日单位": 2,
+        "分钟单位": 2
+      },
+      "physical_spans_with_multiple_labels": [
+        {
+          "ref": "u40",
+          "start": 21,
+          "end": 22,
+          "text": "5",
+          "label_count": 31,
+          "labels": [
+            "天单位",
+            "克单位",
+            "小时单位",
+            "千克单位",
+            "毫克单位",
+            "毫克每日单位",
+            "毫克每千克每日单位",
+            "分钟单位",
+            "微克单位",
+            "微克每日单位",
+            "微克每千克每日单位",
+            "评估记录活性成分名称值",
+            "给药方案完整原文值",
+            "F1系数值",
+            "F2系数值",
+            "F3系数值",
+            "F4系数值",
+            "F5系数值",
+            "人体等效剂量数值",
+            "NOAEL研究时长原文值",
+            "NOAEL研究动物种属值",
+            "职业暴露分级值",
+            "独立评估记录允许日暴露量数值",
+            "拟定最高给药剂量数值",
+            "拟定临床起始剂量数值",
+            "综合安全系数数值",
+            "数据来源文献或报告原文值",
+            "完整试验项目名称值",
+            "职业暴露限值数值",
+            "原料药允许日暴露量数值",
+            "明确产品或原料药标识值"
+          ],
+          "roles": [
+            "attribute_value",
+            "unit"
+          ]
+        },
+        {
+          "ref": "u40",
+          "start": 39,
+          "end": 40,
+          "text": "2",
+          "label_count": 31,
+          "labels": [
+            "天单位",
+            "克单位",
+            "小时单位",
+            "千克单位",
+            "毫克单位",
+            "毫克每日单位",
+            "毫克每千克每日单位",
+            "分钟单位",
+            "微克单位",
+            "微克每日单位",
+            "微克每千克每日单位",
+            "评估记录活性成分名称值",
+            "给药方案完整原文值",
+            "F1系数值",
+            "F2系数值",
+            "F3系数值",
+            "F4系数值",
+            "F5系数值",
+            "人体等效剂量数值",
+            "NOAEL研究时长原文值",
+            "NOAEL研究动物种属值",
+            "职业暴露分级值",
+            "独立评估记录允许日暴露量数值",
+            "拟定最高给药剂量数值",
+            "拟定临床起始剂量数值",
+            "综合安全系数数值",
+            "数据来源文献或报告原文值",
+            "完整试验项目名称值",
+            "职业暴露限值数值",
+            "原料药允许日暴露量数值",
+            "明确产品或原料药标识值"
+          ],
+          "roles": [
+            "attribute_value",
+            "unit"
+          ]
+        },
+        {
+          "ref": "u0",
+          "start": 11,
+          "end": 12,
+          "text": "F",
+          "label_count": 22,
+          "labels": [
+            "独立毒理或共线评估记录名称",
+            "克单位",
+            "微克单位",
+            "微克每日单位",
+            "评估记录活性成分名称值",
+            "给药方案完整原文值",
+            "F1系数值",
+            "F2系数值",
+            "F3系数值",
+            "F4系数值",
+            "F5系数值",
+            "人体等效剂量数值",
+            "NOAEL研究动物种属值",
+            "职业暴露分级值",
+            "拟定最高给药剂量数值",
+            "拟定临床起始剂量数值",
+            "综合安全系数数值",
+            "数据来源文献或报告原文值",
+            "完整试验项目名称值",
+            "职业暴露限值数值",
+            "原料药允许日暴露量数值",
+            "明确产品或原料药标识值"
+          ],
+          "roles": [
+            "attribute_value",
+            "record_anchor",
+            "unit"
+          ]
+        },
+        {
+          "ref": "u22",
+          "start": 0,
+          "end": 14,
+          "text": "19191-25030-NG",
+          "label_count": 22,
+          "labels": [
+            "独立毒理或共线评估记录名称",
+            "活性成分或原料药名称",
+            "评估记录活性成分名称值",
+            "给药方案完整原文值",
+            "F1系数值",
+            "F2系数值",
+            "F3系数值",
+            "F4系数值",
+            "F5系数值",
+            "人体等效剂量数值",
+            "NOAEL研究时长原文值",
+            "NOAEL研究动物种属值",
+            "未观察到不良反应剂量数值",
+            "职业暴露分级值",
+            "拟定最高给药剂量数值",
+            "拟定临床起始剂量数值",
+            "综合安全系数数值",
+            "数据来源文献或报告原文值",
+            "完整试验项目名称值",
+            "职业暴露限值数值",
+            "原料药允许日暴露量数值",
+            "明确产品或原料药标识值"
+          ],
+          "roles": [
+            "attribute_value",
+            "entity_name",
+            "record_anchor"
+          ]
+        },
+        {
+          "ref": "u32",
+          "start": 0,
+          "end": 14,
+          "text": "19191-25031-NG",
+          "label_count": 22,
+          "labels": [
+            "独立毒理或共线评估记录名称",
+            "活性成分或原料药名称",
+            "评估记录活性成分名称值",
+            "给药方案完整原文值",
+            "F1系数值",
+            "F2系数值",
+            "F3系数值",
+            "F4系数值",
+            "F5系数值",
+            "人体等效剂量数值",
+            "NOAEL研究动物种属值",
+            "未观察到不良反应剂量数值",
+            "职业暴露分级值",
+            "独立评估记录允许日暴露量数值",
+            "拟定最高给药剂量数值",
+            "拟定临床起始剂量数值",
+            "综合安全系数数值",
+            "数据来源文献或报告原文值",
+            "完整试验项目名称值",
+            "职业暴露限值数值",
+            "原料药允许日暴露量数值",
+            "明确产品或原料药标识值"
+          ],
+          "roles": [
+            "attribute_value",
+            "entity_name",
+            "record_anchor"
+          ]
+        },
+        {
+          "ref": "u41",
+          "start": 21,
+          "end": 23,
+          "text": "10",
+          "label_count": 22,
+          "labels": [
+            "克单位",
+            "千克单位",
+            "毫克单位",
+            "毫克每日单位",
+            "微克单位",
+            "微克每日单位",
+            "评估记录活性成分名称值",
+            "F1系数值",
+            "F2系数值",
+            "F3系数值",
+            "F4系数值",
+            "F5系数值",
+            "人体等效剂量数值",
+            "NOAEL研究动物种属值",
+            "职业暴露分级值",
+            "独立评估记录允许日暴露量数值",
+            "拟定最高给药剂量数值",
+            "拟定临床起始剂量数值",
+            "综合安全系数数值",
+            "完整试验项目名称值",
+            "职业暴露限值数值",
+            "原料药允许日暴露量数值"
+          ],
+          "roles": [
+            "attribute_value",
+            "unit"
+          ]
+        },
+        {
+          "ref": "u13",
+          "start": 0,
+          "end": 8,
+          "text": "HRS-1597",
+          "label_count": 18,
+          "labels": [
+            "独立毒理或共线评估记录名称",
+            "评估记录活性成分名称值",
+            "给药方案完整原文值",
+            "F1系数值",
+            "F2系数值",
+            "F3系数值",
+            "F4系数值",
+            "人体等效剂量数值",
+            "NOAEL研究时长原文值",
+            "NOAEL研究动物种属值",
+            "职业暴露分级值",
+            "拟定最高给药剂量数值",
+            "拟定临床起始剂量数值",
+            "综合安全系数数值",
+            "数据来源文献或报告原文值",
+            "完整试验项目名称值",
+            "职业暴露限值数值",
+            "明确产品或原料药标识值"
+          ],
+          "roles": [
+            "attribute_value",
+            "record_anchor"
+          ]
+        },
+        {
+          "ref": "u0",
+          "start": 5,
+          "end": 10,
+          "text": "NOAEL",
+          "label_count": 17,
+          "labels": [
+            "独立毒理或共线评估记录名称",
+            "活性成分或原料药名称",
+            "微克单位",
+            "评估记录活性成分名称值",
+            "给药方案完整原文值",
+            "F1系数值",
+            "F2系数值",
+            "F5系数值",
+            "人体等效剂量数值",
+            "职业暴露分级值",
+            "拟定最高给药剂量数值",
+            "拟定临床起始剂量数值",
+            "数据来源文献或报告原文值",
+            "完整试验项目名称值",
+            "职业暴露限值数值",
+            "原料药允许日暴露量数值",
+            "明确产品或原料药标识值"
+          ],
+          "roles": [
+            "attribute_value",
+            "entity_name",
+            "record_anchor",
+            "unit"
+          ]
+        },
+        {
+          "ref": "u36",
+          "start": 1,
+          "end": 6,
+          "text": "HNSTD",
+          "label_count": 16,
+          "labels": [
+            "独立毒理或共线评估记录名称",
+            "活性成分或原料药名称",
+            "评估记录活性成分名称值",
+            "给药方案完整原文值",
+            "F1系数值",
+            "F2系数值",
+            "F3系数值",
+            "F4系数值",
+            "F5系数值",
+            "NOAEL研究动物种属值",
+            "职业暴露分级值",
+            "综合安全系数数值",
+            "数据来源文献或报告原文值",
+            "完整试验项目名称值",
+            "原料药允许日暴露量数值",
+            "明确产品或原料药标识值"
+          ],
+          "roles": [
+            "attribute_value",
+            "entity_name",
+            "record_anchor"
+          ]
+        },
+        {
+          "ref": "u14",
+          "start": 11,
+          "end": 14,
+          "text": "试验1",
+          "label_count": 15,
+          "labels": [
+            "独立毒理或共线评估记录名称",
+            "给药方案完整原文值",
+            "F1系数值",
+            "F2系数值",
+            "F3系数值",
+            "F4系数值",
+            "F5系数值",
+            "NOAEL研究动物种属值",
+            "职业暴露分级值",
+            "拟定临床起始剂量数值",
+            "综合安全系数数值",
+            "数据来源文献或报告原文值",
+            "完整试验项目名称值",
+            "职业暴露限值数值",
+            "明确产品或原料药标识值"
+          ],
+          "roles": [
+            "attribute_value",
+            "record_anchor"
+          ]
+        },
+        {
+          "ref": "u43",
+          "start": 39,
+          "end": 45,
+          "text": "F4 = 1",
+          "label_count": 15,
+          "labels": [
+            "评估记录活性成分名称值",
+            "给药方案完整原文值",
+            "F1系数值",
+            "F2系数值",
+            "F3系数值",
+            "F4系数值",
+            "F5系数值",
+            "NOAEL研究动物种属值",
+            "职业暴露分级值",
+            "拟定最高给药剂量数值",
+            "拟定临床起始剂量数值",
+            "综合安全系数数值",
+            "完整试验项目名称值",
+            "职业暴露限值数值",
+            "明确产品或原料药标识值"
+          ],
+          "roles": [
+            "attribute_value"
+          ]
+        },
+        {
+          "ref": "u44",
+          "start": 25,
+          "end": 26,
+          "text": "1",
+          "label_count": 13,
+          "labels": [
+            "微克每日单位",
+            "F1系数值",
+            "F2系数值",
+            "F3系数值",
+            "F4系数值",
+            "F5系数值",
+            "人体等效剂量数值",
+            "职业暴露分级值",
+            "拟定最高给药剂量数值",
+            "拟定临床起始剂量数值",
+            "综合安全系数数值",
+            "职业暴露限值数值",
+            "原料药允许日暴露量数值"
+          ],
+          "roles": [
+            "attribute_value",
+            "unit"
+          ]
+        },
+        {
+          "ref": "u1",
+          "start": 5,
+          "end": 8,
+          "text": "API",
+          "label_count": 12,
+          "labels": [
+            "独立毒理或共线评估记录名称",
+            "活性成分或原料药名称",
+            "评估记录活性成分名称值",
+            "给药方案完整原文值",
+            "F1系数值",
+            "F2系数值",
+            "F3系数值",
+            "F4系数值",
+            "职业暴露分级值",
+            "综合安全系数数值",
+            "完整试验项目名称值",
+            "明确产品或原料药标识值"
+          ],
+          "roles": [
+            "attribute_value",
+            "entity_name",
+            "record_anchor"
+          ]
+        },
+        {
+          "ref": "u8",
+          "start": 0,
+          "end": 2,
+          "text": "F5",
+          "label_count": 12,
+          "labels": [
+            "独立毒理或共线评估记录名称",
+            "评估记录活性成分名称值",
+            "F1系数值",
+            "F2系数值",
+            "F3系数值",
+            "F4系数值",
+            "F5系数值",
+            "职业暴露分级值",
+            "综合安全系数数值",
+            "完整试验项目名称值",
+            "职业暴露限值数值",
+            "明确产品或原料药标识值"
+          ],
+          "roles": [
+            "attribute_value",
+            "record_anchor"
+          ]
+        },
+        {
+          "ref": "u6",
+          "start": 0,
+          "end": 2,
+          "text": "F3",
+          "label_count": 10,
+          "labels": [
+            "独立毒理或共线评估记录名称",
+            "F1系数值",
+            "F2系数值",
+            "F3系数值",
+            "F4系数值",
+            "F5系数值",
+            "职业暴露分级值",
+            "综合安全系数数值",
+            "完整试验项目名称值",
+            "明确产品或原料药标识值"
+          ],
+          "roles": [
+            "attribute_value",
+            "record_anchor"
+          ]
+        },
+        {
+          "ref": "u7",
+          "start": 0,
+          "end": 2,
+          "text": "F4",
+          "label_count": 10,
+          "labels": [
+            "独立毒理或共线评估记录名称",
+            "F1系数值",
+            "F2系数值",
+            "F3系数值",
+            "F4系数值",
+            "F5系数值",
+            "职业暴露分级值",
+            "综合安全系数数值",
+            "完整试验项目名称值",
+            "明确产品或原料药标识值"
+          ],
+          "roles": [
+            "attribute_value",
+            "record_anchor"
+          ]
+        },
+        {
+          "ref": "u5",
+          "start": 0,
+          "end": 2,
+          "text": "F2",
+          "label_count": 9,
+          "labels": [
+            "独立毒理或共线评估记录名称",
+            "F1系数值",
+            "F2系数值",
+            "F3系数值",
+            "F4系数值",
+            "F5系数值",
+            "职业暴露分级值",
+            "综合安全系数数值",
+            "完整试验项目名称值"
+          ],
+          "roles": [
+            "attribute_value",
+            "record_anchor"
+          ]
+        },
+        {
+          "ref": "u44",
+          "start": 22,
+          "end": 24,
+          "text": "F5",
+          "label_count": 8,
+          "labels": [
+            "独立毒理或共线评估记录名称",
+            "微克单位",
+            "评估记录活性成分名称值",
+            "给药方案完整原文值",
+            "职业暴露分级值",
+            "数据来源文献或报告原文值",
+            "完整试验项目名称值",
+            "明确产品或原料药标识值"
+          ],
+          "roles": [
+            "attribute_value",
+            "record_anchor",
+            "unit"
+          ]
+        },
+        {
+          "ref": "u21",
+          "start": 0,
+          "end": 3,
+          "text": "100",
+          "label_count": 7,
+          "labels": [
+            "微克每日单位",
+            "微克每立方米单位",
+            "人体等效剂量数值",
+            "拟定最高给药剂量数值",
+            "拟定临床起始剂量数值",
+            "职业暴露限值数值",
+            "原料药允许日暴露量数值"
+          ],
+          "roles": [
+            "attribute_value",
+            "unit"
+          ]
+        },
+        {
+          "ref": "u42",
+          "start": 1,
+          "end": 3,
+          "text": "F3",
+          "label_count": 7,
+          "labels": [
+            "独立毒理或共线评估记录名称",
+            "活性成分或原料药名称",
+            "评估记录活性成分名称值",
+            "给药方案完整原文值",
+            "综合安全系数数值",
+            "完整试验项目名称值",
+            "明确产品或原料药标识值"
+          ],
+          "roles": [
+            "attribute_value",
+            "entity_name",
+            "record_anchor"
+          ]
+        },
+        {
+          "ref": "u42",
+          "start": 21,
+          "end": 23,
+          "text": "F3",
+          "label_count": 7,
+          "labels": [
+            "独立毒理或共线评估记录名称",
+            "活性成分或原料药名称",
+            "评估记录活性成分名称值",
+            "给药方案完整原文值",
+            "综合安全系数数值",
+            "完整试验项目名称值",
+            "明确产品或原料药标识值"
+          ],
+          "roles": [
+            "attribute_value",
+            "entity_name",
+            "record_anchor"
+          ]
+        },
+        {
+          "ref": "u39",
+          "start": 15,
+          "end": 20,
+          "text": "50 kg",
+          "label_count": 6,
+          "labels": [
+            "克单位",
+            "微克每日单位",
+            "微克每千克每日单位",
+            "人体等效剂量数值",
+            "职业暴露分级值",
+            "职业暴露限值数值"
+          ],
+          "roles": [
+            "attribute_value",
+            "unit"
+          ]
+        },
+        {
+          "ref": "u43",
+          "start": 1,
+          "end": 3,
+          "text": "F4",
+          "label_count": 6,
+          "labels": [
+            "独立毒理或共线评估记录名称",
+            "活性成分或原料药名称",
+            "评估记录活性成分名称值",
+            "给药方案完整原文值",
+            "数据来源文献或报告原文值",
+            "明确产品或原料药标识值"
+          ],
+          "roles": [
+            "attribute_value",
+            "entity_name",
+            "record_anchor"
+          ]
+        },
+        {
+          "ref": "u43",
+          "start": 39,
+          "end": 41,
+          "text": "F4",
+          "label_count": 6,
+          "labels": [
+            "独立毒理或共线评估记录名称",
+            "活性成分或原料药名称",
+            "评估记录活性成分名称值",
+            "给药方案完整原文值",
+            "数据来源文献或报告原文值",
+            "明确产品或原料药标识值"
+          ],
+          "roles": [
+            "attribute_value",
+            "entity_name",
+            "record_anchor"
+          ]
+        },
+        {
+          "ref": "u44",
+          "start": 1,
+          "end": 3,
+          "text": "F5",
+          "label_count": 6,
+          "labels": [
+            "独立毒理或共线评估记录名称",
+            "微克单位",
+            "评估记录活性成分名称值",
+            "给药方案完整原文值",
+            "完整试验项目名称值",
+            "明确产品或原料药标识值"
+          ],
+          "roles": [
+            "attribute_value",
+            "record_anchor",
+            "unit"
+          ]
+        },
+        {
+          "ref": "u10",
+          "start": 1,
+          "end": 5,
+          "text": "mg/天",
+          "label_count": 5,
+          "labels": [
+            "人体等效剂量数值",
+            "NOAEL研究时长原文值",
+            "独立评估记录允许日暴露量数值",
+            "职业暴露限值数值",
+            "原料药允许日暴露量数值"
+          ],
+          "roles": [
+            "attribute_value"
+          ]
+        },
+        {
+          "ref": "u35",
+          "start": 1,
+          "end": 6,
+          "text": "NOAEL",
+          "label_count": 5,
+          "labels": [
+            "独立毒理或共线评估记录名称",
+            "活性成分或原料药名称",
+            "评估记录活性成分名称值",
+            "完整试验项目名称值",
+            "明确产品或原料药标识值"
+          ],
+          "roles": [
+            "attribute_value",
+            "entity_name",
+            "record_anchor"
+          ]
+        },
+        {
+          "ref": "u4",
+          "start": 0,
+          "end": 2,
+          "text": "F1",
+          "label_count": 5,
+          "labels": [
+            "独立毒理或共线评估记录名称",
+            "F1系数值",
+            "F3系数值",
+            "F4系数值",
+            "综合安全系数数值"
+          ],
+          "roles": [
+            "attribute_value",
+            "record_anchor"
+          ]
+        },
+        {
+          "ref": "u3",
+          "start": 0,
+          "end": 5,
+          "text": "NOAEL",
+          "label_count": 4,
+          "labels": [
+            "独立毒理或共线评估记录名称",
+            "评估记录活性成分名称值",
+            "职业暴露分级值",
+            "完整试验项目名称值"
+          ],
+          "roles": [
+            "attribute_value",
+            "record_anchor"
+          ]
+        },
+        {
+          "ref": "u42",
+          "start": 26,
+          "end": 28,
+          "text": "10",
+          "label_count": 4,
+          "labels": [
+            "天单位",
+            "F1系数值",
+            "F4系数值",
+            "F5系数值"
+          ],
+          "roles": [
+            "attribute_value",
+            "unit"
+          ]
+        },
+        {
+          "ref": "u12",
+          "start": 0,
+          "end": 3,
+          "text": "OEB",
+          "label_count": 2,
+          "labels": [
+            "独立毒理或共线评估记录名称",
+            "完整试验项目名称值"
+          ],
+          "roles": [
+            "attribute_value",
+            "record_anchor"
+          ]
+        },
+        {
+          "ref": "u14",
+          "start": 0,
+          "end": 10,
+          "text": "大鼠14天亚急毒试验",
+          "label_count": 2,
+          "labels": [
+            "独立毒理或共线评估记录名称",
+            "NOAEL研究动物种属值"
+          ],
+          "roles": [
+            "attribute_value",
+            "record_anchor"
+          ]
+        },
+        {
+          "ref": "u14",
+          "start": 2,
+          "end": 5,
+          "text": "14天",
+          "label_count": 2,
+          "labels": [
+            "天单位",
+            "NOAEL研究时长原文值"
+          ],
+          "roles": [
+            "attribute_value",
+            "unit"
+          ]
+        },
+        {
+          "ref": "u15",
+          "start": 0,
+          "end": 3,
+          "text": "200",
+          "label_count": 2,
+          "labels": [
+            "天单位",
+            "人体等效剂量数值"
+          ],
+          "roles": [
+            "attribute_value",
+            "unit"
+          ]
+        },
+        {
+          "ref": "u24",
+          "start": 1,
+          "end": 4,
+          "text": "14天",
+          "label_count": 2,
+          "labels": [
+            "天单位",
+            "NOAEL研究时长原文值"
+          ],
+          "roles": [
+            "attribute_value",
+            "unit"
+          ]
+        },
+        {
+          "ref": "u37",
+          "start": 1,
+          "end": 4,
+          "text": "PDE",
+          "label_count": 2,
+          "labels": [
+            "独立毒理或共线评估记录名称",
+            "活性成分或原料药名称"
+          ],
+          "roles": [
+            "entity_name",
+            "record_anchor"
+          ]
+        },
+        {
+          "ref": "u40",
+          "start": 16,
+          "end": 18,
+          "text": "F1",
+          "label_count": 2,
+          "labels": [
+            "独立毒理或共线评估记录名称",
+            "活性成分或原料药名称"
+          ],
+          "roles": [
+            "entity_name",
+            "record_anchor"
+          ]
+        },
+        {
+          "ref": "u41",
+          "start": 1,
+          "end": 3,
+          "text": "F2",
+          "label_count": 2,
+          "labels": [
+            "独立毒理或共线评估记录名称",
+            "活性成分或原料药名称"
+          ],
+          "roles": [
+            "entity_name",
+            "record_anchor"
+          ]
+        },
+        {
+          "ref": "u41",
+          "start": 16,
+          "end": 18,
+          "text": "F2",
+          "label_count": 2,
+          "labels": [
+            "独立毒理或共线评估记录名称",
+            "活性成分或原料药名称"
+          ],
+          "roles": [
+            "entity_name",
+            "record_anchor"
+          ]
+        },
+        {
+          "ref": "u42",
+          "start": 26,
+          "end": 32,
+          "text": "10，14天",
+          "label_count": 2,
+          "labels": [
+            "F3系数值",
+            "NOAEL研究时长原文值"
+          ],
+          "roles": [
+            "attribute_value"
+          ]
+        },
+        {
+          "ref": "u9",
+          "start": 0,
+          "end": 3,
+          "text": "PDE",
+          "label_count": 2,
+          "labels": [
+            "独立毒理或共线评估记录名称",
+            "完整试验项目名称值"
+          ],
+          "roles": [
+            "attribute_value",
+            "record_anchor"
+          ]
+        }
+      ],
+      "all_long_mentions": [
+        {
+          "start": 0,
+          "end": 10,
+          "text": "大鼠14天亚急毒试验",
+          "label": "独立毒理或共线评估记录名称",
+          "score": 0.9533061385154724,
+          "ref": "u14",
+          "group": "entities",
+          "id": "mention-377190eaa0cbd1d72b4fb815",
+          "concept_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/SharedLineAssessmentData",
+          "extraction_role": "record_anchor",
+          "official_char_token_count": 9
+        },
+        {
+          "start": 0,
+          "end": 10,
+          "text": "大鼠14天亚急毒试验",
+          "label": "NOAEL研究动物种属值",
+          "score": 0.5230578780174255,
+          "ref": "u14",
+          "group": "values",
+          "id": "mention-5c387d49ac8e15f4296125c1",
+          "concept_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/noaelSpecies",
+          "extraction_role": "attribute_value",
+          "official_char_token_count": 9
+        }
+      ],
+      "manual_examples": [
+        {
+          "judgement": "valid_mention",
+          "reason": "完整的局部试验项目名称，可作该试验记录候选锚点。",
+          "mention": {
+            "start": 0,
+            "end": 7,
+            "text": "犬14天亚急毒",
+            "label": "独立毒理或共线评估记录名称",
+            "score": 0.9624882936477661,
+            "ref": "u24",
+            "group": "entities",
+            "id": "mention-0d31b54dbb8c81f4db6f0505",
+            "concept_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/SharedLineAssessmentData",
+            "extraction_role": "record_anchor"
+          },
+          "official_char_token_count": 6,
+          "source_text": "犬14天亚急毒",
+          "source_evidence_id": "c839f95d57f323df72969ecbebe9824f566c7f6d0c9c6b1b2c4f50e573b74234",
+          "source_kind": "cell_paragraph",
+          "is_header": false,
+          "source_location": {
+            "block_id": "table:10",
+            "paragraph_index": 0,
+            "table_path": [
+              "table:10"
+            ],
+            "row_index": 2,
+            "column_index": 1
+          },
+          "label_description": "抽取单条信息记录或工艺步骤的名称、标题或明确标识；不以跨记录共享名称替代。抽取独立研究或评估记录的完整标题、试验名称。每条试验记录分别定位，产品名、共享API单元、表头不能替代单条记录身份。 上下文术语提示：共线评估数据、shared-line assessment data、共线风险评估数据。"
+        },
+        {
+          "judgement": "valid_mention",
+          "reason": "体重50 kg内的单位字符精确，量纲和主体仍需上下文校准。",
+          "mention": {
+            "start": 18,
+            "end": 20,
+            "text": "kg",
+            "label": "千克单位",
+            "score": 0.7610457539558411,
+            "ref": "u39",
+            "group": "units",
+            "id": "mention-8c6fc5c284fcc8294e976461",
+            "concept_iri": "urn:ontology-agent:cmc-extraction-vocabulary:UnitKg",
+            "extraction_role": "unit"
+          },
+          "official_char_token_count": 1,
+          "source_text": " BW：服用下一产品患者体重（50 kg）；",
+          "source_evidence_id": "34ff4471afcd350c46a8ec8fe1305e2beda365d19e992494a35d331943ee2855",
+          "source_kind": "paragraph",
+          "is_header": false,
+          "source_location": {
+            "block_id": "paragraph:108:0",
+            "paragraph_index": 108,
+            "table_path": null,
+            "row_index": null,
+            "column_index": null
+          },
+          "label_description": "只抽原文实际出现的完整单位，包括分母和幂；不抽数值，不由目标单位补造源单位。质量单位千克。保留原词，不在词表阶段换算。 上下文术语提示：千克、kg、kilogram、公斤。"
+        },
+        {
+          "judgement": "valid_mention",
+          "reason": "原文F1 = 5且说明适用于大鼠外推到人。",
+          "mention": {
+            "start": 21,
+            "end": 22,
+            "text": "5",
+            "label": "F1系数值",
+            "score": 0.9931679964065552,
+            "ref": "u40",
+            "group": "values",
+            "id": "mention-0439b40af003ae4f7712f96c",
+            "concept_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/f1",
+            "extraction_role": "attribute_value"
+          },
+          "official_char_token_count": 1,
+          "source_text": " F1：考虑种类之间差异的系数；F1 = 5，适用于从大鼠外推到人；F1 = 2，适用于  从犬外推到人",
+          "source_evidence_id": "c0a7d12964390825f31a80ddd9031fab5ae727d8f45c587ee10fde451d1191aa",
+          "source_kind": "paragraph",
+          "is_header": false,
+          "source_location": {
+            "block_id": "paragraph:109:0",
+            "paragraph_index": 109,
+            "table_path": null,
+            "row_index": null,
+            "column_index": null
+          },
+          "label_description": "抽取对应字段的原文值，不抽字段标题；保留否定、范围、比较和完整限定。仅抽原文F1对应系数。常见PDE方法用其处理种间外推，但本工具不计算、不补默认值，不与F2至F5合并。 上下文术语提示：F1、F1系数、种间外推系数。术语是字段语义线索，不是待返回的字段标题。"
+        },
+        {
+          "judgement": "useful_partial_evidence",
+          "reason": "9个官方char tokens，保留长试验名，但省略原文（试验1）后缀，不能据此合并同类试验。",
+          "mention": {
+            "start": 0,
+            "end": 10,
+            "text": "大鼠14天亚急毒试验",
+            "label": "独立毒理或共线评估记录名称",
+            "score": 0.9533061385154724,
+            "ref": "u14",
+            "group": "entities",
+            "id": "mention-377190eaa0cbd1d72b4fb815",
+            "concept_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/SharedLineAssessmentData",
+            "extraction_role": "record_anchor"
+          },
+          "official_char_token_count": 9,
+          "source_text": "大鼠14天亚急毒试验（试验1）",
+          "source_evidence_id": "859d82d093815d0491941be31f8a1fb58c2db749cf474d160cec2cc612a2a630",
+          "source_kind": "cell_paragraph",
+          "is_header": false,
+          "source_location": {
+            "block_id": "table:10",
+            "paragraph_index": 0,
+            "table_path": [
+              "table:10"
+            ],
+            "row_index": 1,
+            "column_index": 1
+          },
+          "label_description": "抽取单条信息记录或工艺步骤的名称、标题或明确标识；不以跨记录共享名称替代。抽取独立研究或评估记录的完整标题、试验名称。每条试验记录分别定位，产品名、共享API单元、表头不能替代单条记录身份。 上下文术语提示：共线评估数据、shared-line assessment data、共线风险评估数据。"
+        },
+        {
+          "judgement": "wrong_attribute_boundary",
+          "reason": "动物种属只应为大鼠，不能把完整试验名作为种属值。",
+          "mention": {
+            "start": 0,
+            "end": 10,
+            "text": "大鼠14天亚急毒试验",
+            "label": "NOAEL研究动物种属值",
+            "score": 0.5230578780174255,
+            "ref": "u14",
+            "group": "values",
+            "id": "mention-5c387d49ac8e15f4296125c1",
+            "concept_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/noaelSpecies",
+            "extraction_role": "attribute_value"
+          },
+          "official_char_token_count": 9,
+          "source_text": "大鼠14天亚急毒试验（试验1）",
+          "source_evidence_id": "859d82d093815d0491941be31f8a1fb58c2db749cf474d160cec2cc612a2a630",
+          "source_kind": "cell_paragraph",
+          "is_header": false,
+          "source_location": {
+            "block_id": "table:10",
+            "paragraph_index": 0,
+            "table_path": [
+              "table:10"
+            ],
+            "row_index": 1,
+            "column_index": 1
+          },
+          "label_description": "抽取对应字段的原文值，不抽字段标题；保留否定、范围、比较和完整限定。抽取该NOAEL研究的动物种属、品系等原文信息；不能因别条研究同属一API就共用动物种属。 上下文术语提示：NOAEL 动物种属、NOAEL试验种属、毒理试验动物种属。术语是字段语义线索，不是待返回的字段标题。"
+        },
+        {
+          "judgement": "wrong_unit",
+          "reason": "mg是毫克，不能校准成微克。",
+          "mention": {
+            "start": 1,
+            "end": 3,
+            "text": "mg",
+            "label": "微克单位",
+            "score": 0.6169560551643372,
+            "ref": "u10",
+            "group": "units",
+            "id": "mention-f86c02b3da99f0b1a90e83c9",
+            "concept_iri": "urn:ontology-agent:cmc-extraction-vocabulary:UnitUg",
+            "extraction_role": "unit"
+          },
+          "official_char_token_count": 1,
+          "source_text": "(mg/天)",
+          "source_evidence_id": "cfc262f650ff30ead660dabf39df7e6079cfd16d0c8cf8009fc6dde884173072",
+          "source_kind": "cell_paragraph",
+          "is_header": true,
+          "source_location": {
+            "block_id": "table:10",
+            "paragraph_index": 1,
+            "table_path": [
+              "table:10"
+            ],
+            "row_index": 0,
+            "column_index": 8
+          },
+          "label_description": "只抽原文实际出现的完整单位，包括分母和幂；不抽数值，不由目标单位补造源单位。质量单位微克；希腊字形变体仅作词形提示。 上下文术语提示：微克、microgram、ug、µg、μg。"
+        },
+        {
+          "judgement": "header_as_value",
+          "reason": "该物理单元is_header=true，F1是列名，不是系数数值。",
+          "mention": {
+            "start": 0,
+            "end": 2,
+            "text": "F1",
+            "label": "F1系数值",
+            "score": 0.8067287802696228,
+            "ref": "u4",
+            "group": "values",
+            "id": "mention-d703257acd7b26265197ea51",
+            "concept_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/f1",
+            "extraction_role": "attribute_value"
+          },
+          "official_char_token_count": 1,
+          "source_text": "F1",
+          "source_evidence_id": "d7fd7fbd3738bf0ef0a91de68791790aafb7eb86a349852dcfb0f3eb34dd3664",
+          "source_kind": "cell_paragraph",
+          "is_header": true,
+          "source_location": {
+            "block_id": "table:10",
+            "paragraph_index": 0,
+            "table_path": [
+              "table:10"
+            ],
+            "row_index": 0,
+            "column_index": 3
+          },
+          "label_description": "抽取对应字段的原文值，不抽字段标题；保留否定、范围、比较和完整限定。仅抽原文F1对应系数。常见PDE方法用其处理种间外推，但本工具不计算、不补默认值，不与F2至F5合并。 上下文术语提示：F1、F1系数、种间外推系数。术语是字段语义线索，不是待返回的字段标题。"
+        },
+        {
+          "judgement": "number_as_unit",
+          "reason": "F1 = 5的5没有任何质量单位。",
+          "mention": {
+            "start": 21,
+            "end": 22,
+            "text": "5",
+            "label": "千克单位",
+            "score": 0.9724773168563843,
+            "ref": "u40",
+            "group": "units",
+            "id": "mention-8b491a4ac2087df827a7e980",
+            "concept_iri": "urn:ontology-agent:cmc-extraction-vocabulary:UnitKg",
+            "extraction_role": "unit"
+          },
+          "official_char_token_count": 1,
+          "source_text": " F1：考虑种类之间差异的系数；F1 = 5，适用于从大鼠外推到人；F1 = 2，适用于  从犬外推到人",
+          "source_evidence_id": "c0a7d12964390825f31a80ddd9031fab5ae727d8f45c587ee10fde451d1191aa",
+          "source_kind": "paragraph",
+          "is_header": false,
+          "source_location": {
+            "block_id": "paragraph:109:0",
+            "paragraph_index": 109,
+            "table_path": null,
+            "row_index": null,
+            "column_index": null
+          },
+          "label_description": "只抽原文实际出现的完整单位，包括分母和幂；不抽数值，不由目标单位补造源单位。质量单位千克。保留原词，不在词表阶段换算。 上下文术语提示：千克、kg、kilogram、公斤。"
+        }
+      ]
+    },
+    "process_equipment": {
+      "file_sha256": {
+        "tools": "f36d94c040a9d18b1339e78a48d1ea969c46b4f2f9d0a99b553ac8588ad03173",
+        "sources": "5a6125cd54dc2d5d59c83fac2a28f3c080c93416e2d5c768736ca7f50f3454a8",
+        "vocabulary": "fe486f08f84afa0a61b925dbf0b46d212972783be4769cf2943fdf63af7e0d70"
+      },
+      "execution_status": "completed",
+      "semantic_status": "not_checked",
+      "fact_eligible": false,
+      "counts": {
+        "mentions": 78,
+        "physical_spans": 18,
+        "multi_label_physical_spans": 8,
+        "label_multiplicity_excess": 60,
+        "cross_role_physical_spans": 8,
+        "header_cell_mentions": 0,
+        "heading_mentions": 19,
+        "char_tokens_gt_8_mentions": 0,
+        "char_tokens_gt_8_physical_spans": 0,
+        "exact_coordinate_errors": 0,
+        "same_label_coordinate_duplicates": 0
+      },
+      "role_counts": {
+        "entity_name": 10,
+        "record_anchor": 10,
+        "unit": 6,
+        "attribute_value": 52
+      },
+      "label_counts": {
+        "工艺粗品名称": 5,
+        "结晶操作或步骤名称": 5,
+        "合成工艺步骤名称": 5,
+        "工艺设备名称或明确称谓": 5,
+        "小时单位": 2,
+        "过程控制方法和完整验收标准": 2,
+        "明确工艺中间体标识值": 4,
+        "工艺产出质量范围值": 2,
+        "工艺操作条件完整原文值": 3,
+        "工艺步骤序号值": 5,
+        "收率范围原文值": 2,
+        "明确设备编号值": 6,
+        "设备名称属性值": 11,
+        "设备当前专用状态原文值": 3,
+        "设备所在洁净区域状态值": 2,
+        "设备规格型号值": 6,
+        "设备专用要求原文值": 2,
+        "灭活验证要求原文值": 2,
+        "独立空调系统要求原文值": 2,
+        "摄氏温度单位": 3,
+        "百分比单位": 1
+      },
+      "physical_spans_with_multiple_labels": [
+        {
+          "ref": "u0",
+          "start": 0,
+          "end": 8,
+          "text": "HRS-1597",
+          "label_count": 19,
+          "labels": [
+            "工艺粗品名称",
+            "结晶操作或步骤名称",
+            "合成工艺步骤名称",
+            "工艺设备名称或明确称谓",
+            "小时单位",
+            "过程控制方法和完整验收标准",
+            "明确工艺中间体标识值",
+            "工艺产出质量范围值",
+            "工艺操作条件完整原文值",
+            "工艺步骤序号值",
+            "收率范围原文值",
+            "明确设备编号值",
+            "设备名称属性值",
+            "设备当前专用状态原文值",
+            "设备所在洁净区域状态值",
+            "设备规格型号值",
+            "设备专用要求原文值",
+            "灭活验证要求原文值",
+            "独立空调系统要求原文值"
+          ],
+          "roles": [
+            "attribute_value",
+            "entity_name",
+            "record_anchor",
+            "unit"
+          ]
+        },
+        {
+          "ref": "u2",
+          "start": 167,
+          "end": 175,
+          "text": "HRS-1597",
+          "label_count": 17,
+          "labels": [
+            "工艺粗品名称",
+            "合成工艺步骤名称",
+            "工艺设备名称或明确称谓",
+            "过程控制方法和完整验收标准",
+            "明确工艺中间体标识值",
+            "工艺产出质量范围值",
+            "工艺操作条件完整原文值",
+            "工艺步骤序号值",
+            "收率范围原文值",
+            "明确设备编号值",
+            "设备名称属性值",
+            "设备当前专用状态原文值",
+            "设备所在洁净区域状态值",
+            "设备规格型号值",
+            "设备专用要求原文值",
+            "灭活验证要求原文值",
+            "独立空调系统要求原文值"
+          ],
+          "roles": [
+            "attribute_value",
+            "entity_name",
+            "record_anchor"
+          ]
+        },
+        {
+          "ref": "u2",
+          "start": 71,
+          "end": 74,
+          "text": "纯化水",
+          "label_count": 8,
+          "labels": [
+            "工艺粗品名称",
+            "结晶操作或步骤名称",
+            "合成工艺步骤名称",
+            "工艺设备名称或明确称谓",
+            "明确工艺中间体标识值",
+            "工艺操作条件完整原文值",
+            "设备名称属性值",
+            "设备当前专用状态原文值"
+          ],
+          "roles": [
+            "attribute_value",
+            "entity_name",
+            "record_anchor"
+          ]
+        },
+        {
+          "ref": "u2",
+          "start": 12,
+          "end": 19,
+          "text": "RE64611",
+          "label_count": 6,
+          "labels": [
+            "工艺粗品名称",
+            "合成工艺步骤名称",
+            "工艺设备名称或明确称谓",
+            "明确设备编号值",
+            "设备名称属性值",
+            "设备规格型号值"
+          ],
+          "roles": [
+            "attribute_value",
+            "entity_name",
+            "record_anchor"
+          ]
+        },
+        {
+          "ref": "u2",
+          "start": 67,
+          "end": 70,
+          "text": "纯化水",
+          "label_count": 5,
+          "labels": [
+            "结晶操作或步骤名称",
+            "合成工艺步骤名称",
+            "工艺设备名称或明确称谓",
+            "明确工艺中间体标识值",
+            "设备名称属性值"
+          ],
+          "roles": [
+            "attribute_value",
+            "entity_name",
+            "record_anchor"
+          ]
+        },
+        {
+          "ref": "u2",
+          "start": 114,
+          "end": 122,
+          "text": "HRS-1597",
+          "label_count": 5,
+          "labels": [
+            "工艺粗品名称",
+            "摄氏温度单位",
+            "工艺步骤序号值",
+            "明确设备编号值",
+            "设备规格型号值"
+          ],
+          "roles": [
+            "attribute_value",
+            "entity_name",
+            "unit"
+          ]
+        },
+        {
+          "ref": "u2",
+          "start": 39,
+          "end": 47,
+          "text": "HRS-1597",
+          "label_count": 4,
+          "labels": [
+            "摄氏温度单位",
+            "工艺步骤序号值",
+            "明确设备编号值",
+            "设备规格型号值"
+          ],
+          "roles": [
+            "attribute_value",
+            "unit"
+          ]
+        },
+        {
+          "ref": "u2",
+          "start": 81,
+          "end": 89,
+          "text": "HRS-1597",
+          "label_count": 4,
+          "labels": [
+            "摄氏温度单位",
+            "工艺步骤序号值",
+            "明确设备编号值",
+            "设备规格型号值"
+          ],
+          "roles": [
+            "attribute_value",
+            "unit"
+          ]
+        }
+      ],
+      "all_long_mentions": [],
+      "manual_examples": [
+        {
+          "judgement": "valid_mention",
+          "reason": "原文200L反应釜（RE64611）明确给出设备编号。",
+          "mention": {
+            "start": 12,
+            "end": 19,
+            "text": "RE64611",
+            "label": "明确设备编号值",
+            "score": 0.5207267999649048,
+            "ref": "u2",
+            "group": "values",
+            "id": "mention-934c109ba819f8f9b3d590d7",
+            "concept_iri": "https://ontology.pharma-gmp.cn/slpra/equipment/equipmentID",
+            "extraction_role": "attribute_value"
+          },
+          "official_char_token_count": 1,
+          "source_text": "步骤一：200L反应釜（RE64611）内加入AR级别丙酮(丙酮投料量/L= HRS-1597粗品投入量/kg×13.5*0.79)和纯化水(纯化水投料量/L= HRS-1597粗品投入量/kg×1.5*1)，氮气置换4次。加入HRS-1597粗品，釜内温度上升至55℃，搅拌溶清。随后氮气保护下加入颗粒活性炭（活性炭投料量/Kg= HRS-1597粗品投入量/kg×0.2），维持50~55℃继续搅拌1-2小时。",
+          "source_evidence_id": "332f40090c06eff4f9c04e9d2de846cf6dc7e535341ae6a246ccaec1fb376310",
+          "source_kind": "cell_paragraph",
+          "is_header": false,
+          "source_location": {
+            "block_id": "table:0",
+            "paragraph_index": 0,
+            "table_path": [
+              "table:0"
+            ],
+            "row_index": 0,
+            "column_index": 1
+          },
+          "label_description": "抽取对应字段的原文值，不抽字段标题；保留否定、范围、比较和完整限定。抽取被原文明示为具体设备编号或位号的字符；型号、容积、房间号与项目编号不得替代设备身份。 上下文术语提示：设备编号、equipment identifier、设备位号、设备编码。术语是字段语义线索，不是待返回的字段标题。"
+        },
+        {
+          "judgement": "useful_partial_evidence",
+          "reason": "所选提及紧邻粗品后缀，可作为粗品名称线索；编号本身不证明全局唯一中间体。",
+          "mention": {
+            "start": 114,
+            "end": 122,
+            "text": "HRS-1597",
+            "label": "工艺粗品名称",
+            "score": 0.504795491695404,
+            "ref": "u2",
+            "group": "entities",
+            "id": "mention-7c62f3ca72fb2cf645dd0756",
+            "concept_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/CrudeProduct",
+            "extraction_role": "entity_name"
+          },
+          "official_char_token_count": 1,
+          "source_text": "步骤一：200L反应釜（RE64611）内加入AR级别丙酮(丙酮投料量/L= HRS-1597粗品投入量/kg×13.5*0.79)和纯化水(纯化水投料量/L= HRS-1597粗品投入量/kg×1.5*1)，氮气置换4次。加入HRS-1597粗品，釜内温度上升至55℃，搅拌溶清。随后氮气保护下加入颗粒活性炭（活性炭投料量/Kg= HRS-1597粗品投入量/kg×0.2），维持50~55℃继续搅拌1-2小时。",
+          "source_evidence_id": "332f40090c06eff4f9c04e9d2de846cf6dc7e535341ae6a246ccaec1fb376310",
+          "source_kind": "cell_paragraph",
+          "is_header": false,
+          "source_location": {
+            "block_id": "table:0",
+            "paragraph_index": 0,
+            "table_path": [
+              "table:0"
+            ],
+            "row_index": 0,
+            "column_index": 1
+          },
+          "label_description": "抽取有原文明示角色的实体名称或称谓；不抽类别表头，名称不证明唯一身份。抽取原文明确作为粗品或未精制产物的名称，不能将名称自动视为唯一中间体标识。 上下文术语提示：粗品、crude product、未精制产物。"
+        },
+        {
+          "judgement": "wrong_entity_role",
+          "reason": "丙酮是投入物料/溶剂，不是设备名称。",
+          "mention": {
+            "start": 23,
+            "end": 29,
+            "text": "AR级别丙酮",
+            "label": "设备名称属性值",
+            "score": 0.5546750426292419,
+            "ref": "u2",
+            "group": "values",
+            "id": "mention-c98dcc86c00074c80acf36e5",
+            "concept_iri": "https://ontology.pharma-gmp.cn/slpra/equipment/equipmentName",
+            "extraction_role": "attribute_value"
+          },
+          "official_char_token_count": 5,
+          "source_text": "步骤一：200L反应釜（RE64611）内加入AR级别丙酮(丙酮投料量/L= HRS-1597粗品投入量/kg×13.5*0.79)和纯化水(纯化水投料量/L= HRS-1597粗品投入量/kg×1.5*1)，氮气置换4次。加入HRS-1597粗品，釜内温度上升至55℃，搅拌溶清。随后氮气保护下加入颗粒活性炭（活性炭投料量/Kg= HRS-1597粗品投入量/kg×0.2），维持50~55℃继续搅拌1-2小时。",
+          "source_evidence_id": "332f40090c06eff4f9c04e9d2de846cf6dc7e535341ae6a246ccaec1fb376310",
+          "source_kind": "cell_paragraph",
+          "is_header": false,
+          "source_location": {
+            "block_id": "table:0",
+            "paragraph_index": 0,
+            "table_path": [
+              "table:0"
+            ],
+            "row_index": 0,
+            "column_index": 1
+          },
+          "label_description": "抽取对应字段的原文值，不抽字段标题；保留否定、范围、比较和完整限定。抽取设备的名称描述，保留必要的类别限定；编号和型号由对应字段处理，不据名称自动合并实例。 上下文术语提示：设备名称、equipment name、设备品名。术语是字段语义线索，不是待返回的字段标题。"
+        },
+        {
+          "judgement": "wrong_entity_role",
+          "reason": "纯化水是投入物料，不是结晶操作。",
+          "mention": {
+            "start": 67,
+            "end": 70,
+            "text": "纯化水",
+            "label": "结晶操作或步骤名称",
+            "score": 0.9263601303100586,
+            "ref": "u2",
+            "group": "entities",
+            "id": "mention-e4ad6b88de04c4ce3bee2c8c",
+            "concept_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/Crystallization",
+            "extraction_role": "record_anchor"
+          },
+          "official_char_token_count": 3,
+          "source_text": "步骤一：200L反应釜（RE64611）内加入AR级别丙酮(丙酮投料量/L= HRS-1597粗品投入量/kg×13.5*0.79)和纯化水(纯化水投料量/L= HRS-1597粗品投入量/kg×1.5*1)，氮气置换4次。加入HRS-1597粗品，釜内温度上升至55℃，搅拌溶清。随后氮气保护下加入颗粒活性炭（活性炭投料量/Kg= HRS-1597粗品投入量/kg×0.2），维持50~55℃继续搅拌1-2小时。",
+          "source_evidence_id": "332f40090c06eff4f9c04e9d2de846cf6dc7e535341ae6a246ccaec1fb376310",
+          "source_kind": "cell_paragraph",
+          "is_header": false,
+          "source_location": {
+            "block_id": "table:0",
+            "paragraph_index": 0,
+            "table_path": [
+              "table:0"
+            ],
+            "row_index": 0,
+            "column_index": 1
+          },
+          "label_description": "抽取单条信息记录或工艺步骤的名称、标题或明确标识；不以跨记录共享名称替代。抽取形成晶体的具体操作或工艺步骤名称，包括原文明示的再次结晶操作；不能仅因属于纯化就判为结晶。 上下文术语提示：结晶/析晶、crystallization、析晶。"
+        },
+        {
+          "judgement": "wrong_unit",
+          "reason": "产品名称不是℃单位。",
+          "mention": {
+            "start": 39,
+            "end": 47,
+            "text": "HRS-1597",
+            "label": "摄氏温度单位",
+            "score": 0.5188611745834351,
+            "ref": "u2",
+            "group": "units",
+            "id": "mention-3839f612b6d74f3bcfec4517",
+            "concept_iri": "urn:ontology-agent:cmc-extraction-vocabulary:UnitCelsius",
+            "extraction_role": "unit"
+          },
+          "official_char_token_count": 1,
+          "source_text": "步骤一：200L反应釜（RE64611）内加入AR级别丙酮(丙酮投料量/L= HRS-1597粗品投入量/kg×13.5*0.79)和纯化水(纯化水投料量/L= HRS-1597粗品投入量/kg×1.5*1)，氮气置换4次。加入HRS-1597粗品，釜内温度上升至55℃，搅拌溶清。随后氮气保护下加入颗粒活性炭（活性炭投料量/Kg= HRS-1597粗品投入量/kg×0.2），维持50~55℃继续搅拌1-2小时。",
+          "source_evidence_id": "332f40090c06eff4f9c04e9d2de846cf6dc7e535341ae6a246ccaec1fb376310",
+          "source_kind": "cell_paragraph",
+          "is_header": false,
+          "source_location": {
+            "block_id": "table:0",
+            "paragraph_index": 0,
+            "table_path": [
+              "table:0"
+            ],
+            "row_index": 0,
+            "column_index": 1
+          },
+          "label_description": "只抽原文实际出现的完整单位，包括分母和幂；不抽数值，不由目标单位补造源单位。摄氏温度单位；单位抽取不能删除值中的不超过、区间或正负容差。 上下文术语提示：摄氏度、degree Celsius、°C、℃。"
+        },
+        {
+          "judgement": "unit_value_boundary_mixed",
+          "reason": "选入时间范围而非独立单位小时；可用于时间线索，不能直接作为单位词表命中。",
+          "mention": {
+            "start": 201,
+            "end": 206,
+            "text": "1-2小时",
+            "label": "小时单位",
+            "score": 0.821166455745697,
+            "ref": "u2",
+            "group": "units",
+            "id": "mention-5cd50ceb205e9e1843634acb",
+            "concept_iri": "urn:ontology-agent:cmc-extraction-vocabulary:UnitHour",
+            "extraction_role": "unit"
+          },
+          "official_char_token_count": 3,
+          "source_text": "步骤一：200L反应釜（RE64611）内加入AR级别丙酮(丙酮投料量/L= HRS-1597粗品投入量/kg×13.5*0.79)和纯化水(纯化水投料量/L= HRS-1597粗品投入量/kg×1.5*1)，氮气置换4次。加入HRS-1597粗品，釜内温度上升至55℃，搅拌溶清。随后氮气保护下加入颗粒活性炭（活性炭投料量/Kg= HRS-1597粗品投入量/kg×0.2），维持50~55℃继续搅拌1-2小时。",
+          "source_evidence_id": "332f40090c06eff4f9c04e9d2de846cf6dc7e535341ae6a246ccaec1fb376310",
+          "source_kind": "cell_paragraph",
+          "is_header": false,
+          "source_location": {
+            "block_id": "table:0",
+            "paragraph_index": 0,
+            "table_path": [
+              "table:0"
+            ],
+            "row_index": 0,
+            "column_index": 1
+          },
+          "label_description": "只抽原文实际出现的完整单位，包括分母和幂；不抽数值，不由目标单位补造源单位。时间单位小时，不由数值或工艺常识推断。 上下文术语提示：小时、h、hour、hr。"
+        }
+      ]
+    },
+    "product_properties": {
+      "file_sha256": {
+        "tools": "6f21d2f359f1eddb1ed1e7836f2520dd72e917720bff7e55170a8caf8db6de5c",
+        "sources": "01f76b654e6ef5746a3b947bac00e9367c5bc20946aaec822358b9b6e4cec246",
+        "vocabulary": "184cc941d60bab032858e5448fa1e46322df93efef8333bb69a6aeda579f020e"
+      },
+      "execution_status": "completed",
+      "semantic_status": "not_checked",
+      "fact_eligible": false,
+      "counts": {
+        "mentions": 139,
+        "physical_spans": 14,
+        "multi_label_physical_spans": 12,
+        "label_multiplicity_excess": 125,
+        "cross_role_physical_spans": 5,
+        "header_cell_mentions": 0,
+        "heading_mentions": 0,
+        "char_tokens_gt_8_mentions": 0,
+        "char_tokens_gt_8_physical_spans": 0,
+        "exact_coordinate_errors": 0,
+        "same_label_coordinate_duplicates": 0
+      },
+      "role_counts": {
+        "entity_name": 10,
+        "attribute_value": 129
+      },
+      "label_counts": {
+        "药品或制剂产品名称": 7,
+        "药品注册分类原文值": 8,
+        "申报或注册状态原文值": 2,
+        "目标适应症原文值": 6,
+        "药品性状原文值": 9,
+        "CAS登记号值": 2,
+        "英文化学名称值": 7,
+        "中文化学名称值": 8,
+        "制剂剂型原文值": 5,
+        "药品规格原文值": 4,
+        "朊病毒风险原文判断值": 6,
+        "灭活方法完整原文值": 4,
+        "细胞毒性原文判断值": 5,
+        "高活性药物原文判断值": 6,
+        "高致敏性原文判断值": 5,
+        "激素类药物原文判断值": 6,
+        "肿瘤药物原文判断值": 6,
+        "青霉素类别原文判断值": 6,
+        "分子式原文值": 5,
+        "明确产品或原料药标识值": 9,
+        "项目代码原文值": 2,
+        "项目名称原文值": 6,
+        "给药途径原文值": 1,
+        "完整溶剂与溶解性原文值": 6,
+        "最大日剂量数值": 1,
+        "职业暴露限值数值": 1,
+        "活性成分或原料药名称": 3,
+        "β内酰胺类别原文判断值": 3
+      },
+      "physical_spans_with_multiple_labels": [
+        {
+          "ref": "u0",
+          "start": 4,
+          "end": 13,
+          "text": "：HRS-1597",
+          "label_count": 24,
+          "labels": [
+            "药品或制剂产品名称",
+            "药品注册分类原文值",
+            "申报或注册状态原文值",
+            "目标适应症原文值",
+            "药品性状原文值",
+            "CAS登记号值",
+            "英文化学名称值",
+            "中文化学名称值",
+            "制剂剂型原文值",
+            "药品规格原文值",
+            "朊病毒风险原文判断值",
+            "灭活方法完整原文值",
+            "细胞毒性原文判断值",
+            "高活性药物原文判断值",
+            "高致敏性原文判断值",
+            "激素类药物原文判断值",
+            "肿瘤药物原文判断值",
+            "青霉素类别原文判断值",
+            "分子式原文值",
+            "明确产品或原料药标识值",
+            "项目代码原文值",
+            "项目名称原文值",
+            "给药途径原文值",
+            "完整溶剂与溶解性原文值"
+          ],
+          "roles": [
+            "attribute_value",
+            "entity_name"
+          ]
+        },
+        {
+          "ref": "u2",
+          "start": 5,
+          "end": 8,
+          "text": "DCM",
+          "label_count": 22,
+          "labels": [
+            "活性成分或原料药名称",
+            "药品或制剂产品名称",
+            "药品注册分类原文值",
+            "目标适应症原文值",
+            "药品性状原文值",
+            "英文化学名称值",
+            "中文化学名称值",
+            "制剂剂型原文值",
+            "药品规格原文值",
+            "朊病毒风险原文判断值",
+            "灭活方法完整原文值",
+            "β内酰胺类别原文判断值",
+            "细胞毒性原文判断值",
+            "高活性药物原文判断值",
+            "高致敏性原文判断值",
+            "激素类药物原文判断值",
+            "肿瘤药物原文判断值",
+            "青霉素类别原文判断值",
+            "分子式原文值",
+            "明确产品或原料药标识值",
+            "项目名称原文值",
+            "完整溶剂与溶解性原文值"
+          ],
+          "roles": [
+            "attribute_value",
+            "entity_name"
+          ]
+        },
+        {
+          "ref": "u2",
+          "start": 11,
+          "end": 14,
+          "text": "H2O",
+          "label_count": 22,
+          "labels": [
+            "活性成分或原料药名称",
+            "药品或制剂产品名称",
+            "药品注册分类原文值",
+            "目标适应症原文值",
+            "药品性状原文值",
+            "英文化学名称值",
+            "中文化学名称值",
+            "制剂剂型原文值",
+            "药品规格原文值",
+            "朊病毒风险原文判断值",
+            "灭活方法完整原文值",
+            "β内酰胺类别原文判断值",
+            "细胞毒性原文判断值",
+            "高活性药物原文判断值",
+            "高致敏性原文判断值",
+            "激素类药物原文判断值",
+            "肿瘤药物原文判断值",
+            "青霉素类别原文判断值",
+            "分子式原文值",
+            "明确产品或原料药标识值",
+            "项目名称原文值",
+            "完整溶剂与溶解性原文值"
+          ],
+          "roles": [
+            "attribute_value",
+            "entity_name"
+          ]
+        },
+        {
+          "ref": "u2",
+          "start": 15,
+          "end": 22,
+          "text": "Heptane",
+          "label_count": 22,
+          "labels": [
+            "活性成分或原料药名称",
+            "药品或制剂产品名称",
+            "药品注册分类原文值",
+            "目标适应症原文值",
+            "药品性状原文值",
+            "英文化学名称值",
+            "中文化学名称值",
+            "制剂剂型原文值",
+            "药品规格原文值",
+            "朊病毒风险原文判断值",
+            "灭活方法完整原文值",
+            "β内酰胺类别原文判断值",
+            "细胞毒性原文判断值",
+            "高活性药物原文判断值",
+            "高致敏性原文判断值",
+            "激素类药物原文判断值",
+            "肿瘤药物原文判断值",
+            "青霉素类别原文判断值",
+            "分子式原文值",
+            "明确产品或原料药标识值",
+            "项目名称原文值",
+            "完整溶剂与溶解性原文值"
+          ],
+          "roles": [
+            "attribute_value",
+            "entity_name"
+          ]
+        },
+        {
+          "ref": "u0",
+          "start": 5,
+          "end": 13,
+          "text": "HRS-1597",
+          "label_count": 18,
+          "labels": [
+            "药品注册分类原文值",
+            "申报或注册状态原文值",
+            "药品性状原文值",
+            "CAS登记号值",
+            "英文化学名称值",
+            "中文化学名称值",
+            "制剂剂型原文值",
+            "高活性药物原文判断值",
+            "激素类药物原文判断值",
+            "肿瘤药物原文判断值",
+            "青霉素类别原文判断值",
+            "最大日剂量数值",
+            "分子式原文值",
+            "职业暴露限值数值",
+            "明确产品或原料药标识值",
+            "项目代码原文值",
+            "项目名称原文值",
+            "完整溶剂与溶解性原文值"
+          ],
+          "roles": [
+            "attribute_value"
+          ]
+        },
+        {
+          "ref": "u1",
+          "start": 4,
+          "end": 11,
+          "text": "白色到白色粉末",
+          "label_count": 10,
+          "labels": [
+            "药品注册分类原文值",
+            "目标适应症原文值",
+            "朊病毒风险原文判断值",
+            "细胞毒性原文判断值",
+            "高活性药物原文判断值",
+            "高致敏性原文判断值",
+            "激素类药物原文判断值",
+            "肿瘤药物原文判断值",
+            "青霉素类别原文判断值",
+            "明确产品或原料药标识值"
+          ],
+          "roles": [
+            "attribute_value"
+          ]
+        },
+        {
+          "ref": "u1",
+          "start": 4,
+          "end": 6,
+          "text": "白色",
+          "label_count": 5,
+          "labels": [
+            "药品注册分类原文值",
+            "药品性状原文值",
+            "英文化学名称值",
+            "中文化学名称值",
+            "明确产品或原料药标识值"
+          ],
+          "roles": [
+            "attribute_value"
+          ]
+        },
+        {
+          "ref": "u1",
+          "start": 4,
+          "end": 9,
+          "text": "白色到白色",
+          "label_count": 5,
+          "labels": [
+            "药品注册分类原文值",
+            "药品性状原文值",
+            "英文化学名称值",
+            "中文化学名称值",
+            "明确产品或原料药标识值"
+          ],
+          "roles": [
+            "attribute_value"
+          ]
+        },
+        {
+          "ref": "u2",
+          "start": 11,
+          "end": 22,
+          "text": "H2O、Heptane",
+          "label_count": 3,
+          "labels": [
+            "药品性状原文值",
+            "朊病毒风险原文判断值",
+            "完整溶剂与溶解性原文值"
+          ],
+          "roles": [
+            "attribute_value"
+          ]
+        },
+        {
+          "ref": "u1",
+          "start": 7,
+          "end": 9,
+          "text": "白色",
+          "label_count": 2,
+          "labels": [
+            "药品性状原文值",
+            "中文化学名称值"
+          ],
+          "roles": [
+            "attribute_value"
+          ]
+        },
+        {
+          "ref": "u4",
+          "start": 0,
+          "end": 7,
+          "text": "是否是肿瘤药物",
+          "label_count": 2,
+          "labels": [
+            "明确产品或原料药标识值",
+            "项目名称原文值"
+          ],
+          "roles": [
+            "attribute_value"
+          ]
+        },
+        {
+          "ref": "u5",
+          "start": 2,
+          "end": 7,
+          "text": "细胞毒药物",
+          "label_count": 2,
+          "labels": [
+            "药品或制剂产品名称",
+            "目标适应症原文值"
+          ],
+          "roles": [
+            "attribute_value",
+            "entity_name"
+          ]
+        }
+      ],
+      "all_long_mentions": [],
+      "manual_examples": [
+        {
+          "judgement": "valid_mention",
+          "reason": "项目名称字段后的精确值，未包含冒号。",
+          "mention": {
+            "start": 5,
+            "end": 13,
+            "text": "HRS-1597",
+            "label": "项目名称原文值",
+            "score": 0.6310772895812988,
+            "ref": "u0",
+            "group": "values",
+            "id": "mention-33de8cb684b346608232dd37",
+            "concept_iri": "https://ontology.pharma-gmp.cn/slpra/drug/projectName",
+            "extraction_role": "attribute_value"
+          },
+          "official_char_token_count": 1,
+          "source_text": "项目名称：HRS-1597",
+          "source_evidence_id": "7e40b958711ea6960b4883abb79b631567b8cc3a7354ad43fd8b0dcdc818037d",
+          "source_kind": "paragraph",
+          "is_header": false,
+          "source_location": {
+            "block_id": "paragraph:33:0",
+            "paragraph_index": 33,
+            "table_path": null,
+            "row_index": null,
+            "column_index": null
+          },
+          "label_description": "抽取对应字段的原文值，不抽字段标题；保留否定、范围、比较和完整限定。抽取项目名称对应的原值；名字可以由代码字符组成，但名称角色本身不证明全局唯一实例身份。 上下文术语提示：项目名称、project name、项目名。术语是字段语义线索，不是待返回的字段标题。"
+        },
+        {
+          "judgement": "incomplete_value",
+          "reason": "完整值为类白色到白色粉末；此边界遗漏类和粉末。",
+          "mention": {
+            "start": 4,
+            "end": 9,
+            "text": "白色到白色",
+            "label": "药品性状原文值",
+            "score": 0.6625587940216064,
+            "ref": "u1",
+            "group": "values",
+            "id": "mention-b4af53fef497a76693041e70",
+            "concept_iri": "https://ontology.pharma-gmp.cn/slpra/drug/appearance",
+            "extraction_role": "attribute_value"
+          },
+          "official_char_token_count": 5,
+          "source_text": "性状：类白色到白色粉末",
+          "source_evidence_id": "c56a1c0abab309a9f15c8db4f6f0fa054d05e7024e9068cfef4bd11a50ce090a",
+          "source_kind": "paragraph",
+          "is_header": false,
+          "source_location": {
+            "block_id": "paragraph:38:0",
+            "paragraph_index": 38,
+            "table_path": null,
+            "row_index": null,
+            "column_index": null
+          },
+          "label_description": "抽取对应字段的原文值，不抽字段标题；保留否定、范围、比较和完整限定。抽取对应药品或物料的颜色、形态等完整性状值；不抽字段标题，不把制剂剂型自动作为性状。 上下文术语提示：性状、appearance、外观性状。术语是字段语义线索，不是待返回的字段标题。"
+        },
+        {
+          "judgement": "wrong_entity_role",
+          "reason": "溶解性描述中的溶剂不是药物API。",
+          "mention": {
+            "start": 5,
+            "end": 8,
+            "text": "DCM",
+            "label": "活性成分或原料药名称",
+            "score": 0.9570793509483337,
+            "ref": "u2",
+            "group": "entities",
+            "id": "mention-41d137fe8b64194c1339c1db",
+            "concept_iri": "https://ontology.pharma-gmp.cn/slpra/drug/ActivePharmaceuticalIngredient",
+            "extraction_role": "entity_name"
+          },
+          "official_char_token_count": 1,
+          "source_text": "溶解性： DCM易溶，H2O、Heptane难溶",
+          "source_evidence_id": "d2a9e68c8d5c11e4f2e430014cc7960c2bc2c90ac4586d64449b4c7b11a0a0fb",
+          "source_kind": "paragraph",
+          "is_header": false,
+          "source_location": {
+            "block_id": "paragraph:39:0",
+            "paragraph_index": 39,
+            "table_path": null,
+            "row_index": null,
+            "column_index": null
+          },
+          "label_description": "抽取有原文明示角色的实体名称或称谓；不抽类别表头，名称不证明唯一身份。仅抽上下文明确承担药物活性成分或原料药角色的物质名称。溶剂、辅料或一般化学式并不因此成为API。 上下文术语提示：活性药物成分、API、active pharmaceutical ingredient、原料药、活性成分。"
+        },
+        {
+          "judgement": "wrong_entity_role",
+          "reason": "这是剂型值，不是产品名称。",
+          "mention": {
+            "start": 5,
+            "end": 9,
+            "text": "口服片剂",
+            "label": "药品或制剂产品名称",
+            "score": 0.6962459087371826,
+            "ref": "u3",
+            "group": "entities",
+            "id": "mention-2ab7f59145bae4293b3d575b",
+            "concept_iri": "https://ontology.pharma-gmp.cn/slpra/drug/DrugProduct",
+            "extraction_role": "entity_name"
+          },
+          "official_char_token_count": 4,
+          "source_text": "制剂剂型：口服片剂 ",
+          "source_evidence_id": "43f9fdc379f20eff81318db18d2aa7ae509b407f3a6bb03fde019ea4ec5f5e57",
+          "source_kind": "paragraph",
+          "is_header": false,
+          "source_location": {
+            "block_id": "paragraph:42:0",
+            "paragraph_index": 42,
+            "table_path": null,
+            "row_index": null,
+            "column_index": null
+          },
+          "label_description": "抽取有原文明示角色的实体名称或称谓；不抽类别表头，名称不证明唯一身份。抽取原文明示为药品或制剂产品的名称。原料药、溶剂或项目名不因共现自动成为制剂实例；名称不证明风险子类或唯一身份。 上下文术语提示：药物产品、drug product、制剂产品、药品产品。"
+        },
+        {
+          "judgement": "field_prompt_as_value",
+          "reason": "字段问题被当项目名称，同时未提取实际否定值。",
+          "mention": {
+            "start": 0,
+            "end": 7,
+            "text": "是否是肿瘤药物",
+            "label": "项目名称原文值",
+            "score": 0.6212279200553894,
+            "ref": "u4",
+            "group": "values",
+            "id": "mention-0c68aba26ad45102a7119edf",
+            "concept_iri": "https://ontology.pharma-gmp.cn/slpra/drug/projectName",
+            "extraction_role": "attribute_value"
+          },
+          "official_char_token_count": 7,
+          "source_text": "是否是肿瘤药物：否",
+          "source_evidence_id": "f6d5c3353e371f53884516a227d0dc11fc5f2b947f8e2ec9608cd32894549d47",
+          "source_kind": "paragraph",
+          "is_header": false,
+          "source_location": {
+            "block_id": "paragraph:43:0",
+            "paragraph_index": 43,
+            "table_path": null,
+            "row_index": null,
+            "column_index": null
+          },
+          "label_description": "抽取对应字段的原文值，不抽字段标题；保留否定、范围、比较和完整限定。抽取项目名称对应的原值；名字可以由代码字符组成，但名称角色本身不证明全局唯一实例身份。 上下文术语提示：项目名称、project name、项目名。术语是字段语义线索，不是待返回的字段标题。"
+        }
+      ]
+    },
+    "quality_condition": {
+      "file_sha256": {
+        "tools": "18d420b6485925d5809fa4f8f4695bea74b37b88b906511793b662f36c370fc4",
+        "sources": "0b6ef5a7241ac6def2727950e30b9739215b5d20102c60a04aab271ccc30a76f",
+        "vocabulary": "151a02928aae07ed4bf9f95c2e55ddfad28496903140269e277dff97caac28d9"
+      },
+      "execution_status": "completed",
+      "semantic_status": "not_checked",
+      "fact_eligible": false,
+      "counts": {
+        "mentions": 22,
+        "physical_spans": 6,
+        "multi_label_physical_spans": 3,
+        "label_multiplicity_excess": 16,
+        "cross_role_physical_spans": 3,
+        "header_cell_mentions": 0,
+        "heading_mentions": 12,
+        "char_tokens_gt_8_mentions": 0,
+        "char_tokens_gt_8_physical_spans": 0,
+        "exact_coordinate_errors": 0,
+        "same_label_coordinate_duplicates": 0
+      },
+      "role_counts": {
+        "record_anchor": 5,
+        "entity_name": 5,
+        "attribute_value": 12
+      },
+      "label_counts": {
+        "结晶操作或步骤名称": 2,
+        "纯化步骤名称": 3,
+        "清洗残留物名称": 1,
+        "一般生产区域名称": 4,
+        "过程控制方法和完整验收标准": 3,
+        "工艺产出质量范围值": 1,
+        "工艺操作条件完整原文值": 1,
+        "残留物溶解性原文值": 3,
+        "残留物溶解测试温度原文值": 1,
+        "残留物清洗溶剂完整名称值": 1,
+        "工艺步骤序号值": 1,
+        "收率范围原文值": 1
+      },
+      "physical_spans_with_multiple_labels": [
+        {
+          "ref": "u0",
+          "start": 0,
+          "end": 8,
+          "text": "HRS-1597",
+          "label_count": 12,
+          "labels": [
+            "结晶操作或步骤名称",
+            "纯化步骤名称",
+            "清洗残留物名称",
+            "一般生产区域名称",
+            "过程控制方法和完整验收标准",
+            "工艺产出质量范围值",
+            "工艺操作条件完整原文值",
+            "残留物溶解性原文值",
+            "残留物溶解测试温度原文值",
+            "残留物清洗溶剂完整名称值",
+            "工艺步骤序号值",
+            "收率范围原文值"
+          ],
+          "roles": [
+            "attribute_value",
+            "entity_name",
+            "record_anchor"
+          ]
+        },
+        {
+          "ref": "u2",
+          "start": 4,
+          "end": 8,
+          "text": "HPLC",
+          "label_count": 4,
+          "labels": [
+            "结晶操作或步骤名称",
+            "纯化步骤名称",
+            "一般生产区域名称",
+            "过程控制方法和完整验收标准"
+          ],
+          "roles": [
+            "attribute_value",
+            "entity_name",
+            "record_anchor"
+          ]
+        },
+        {
+          "ref": "u2",
+          "start": 9,
+          "end": 12,
+          "text": "重金属",
+          "label_count": 3,
+          "labels": [
+            "纯化步骤名称",
+            "一般生产区域名称",
+            "过程控制方法和完整验收标准"
+          ],
+          "roles": [
+            "attribute_value",
+            "entity_name",
+            "record_anchor"
+          ]
+        }
+      ],
+      "all_long_mentions": [],
+      "manual_examples": [
+        {
+          "judgement": "useful_partial_evidence",
+          "reason": "HPLC可定位检测方法，但不包含同时满足的三项阈值和条件，不是完整验收标准。",
+          "mention": {
+            "start": 4,
+            "end": 8,
+            "text": "HPLC",
+            "label": "过程控制方法和完整验收标准",
+            "score": 0.9470358490943909,
+            "ref": "u2",
+            "group": "values",
+            "id": "mention-ed98d050f69f1a7ee705a0e9",
+            "concept_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/inProcessControl",
+            "extraction_role": "attribute_value"
+          },
+          "official_char_token_count": 1,
+          "source_text": "取样送检HPLC和重金属检测，质量标准要同时满足：单个杂质应不得过0.2%总杂应不得过2.0%,重金属残留不得超过百万分之二十，若不符合质量标准，则重复上述全部结晶操作（从一般区溶解物料）。",
+          "source_evidence_id": "48ca1378de103138ed5b81cadc51a59226bacfb6558400667fd3c39bbefb979b",
+          "source_kind": "cell_paragraph",
+          "is_header": false,
+          "source_location": {
+            "block_id": "table:0",
+            "paragraph_index": 0,
+            "table_path": [
+              "table:0"
+            ],
+            "row_index": 2,
+            "column_index": 1
+          },
+          "label_description": "抽取对应字段的原文值，不抽字段标题；保留否定、范围、比较和完整限定。抽取过程检测方法与完整联合验收标准，保留各项阈值、比较符和触发后的动作。已发生的不合格情况或修订原因不等于验收标准，检测方法名本身不等于条件。 上下文术语提示：过程控制、IPC、in-process control、中控、中间过程控制。术语是字段语义线索，不是待返回的字段标题。"
+        },
+        {
+          "judgement": "wrong_entity_role",
+          "reason": "分析检测方法不是生产区域。",
+          "mention": {
+            "start": 4,
+            "end": 8,
+            "text": "HPLC",
+            "label": "一般生产区域名称",
+            "score": 0.9567540287971497,
+            "ref": "u2",
+            "group": "entities",
+            "id": "mention-6ab1a2bbc896563e95c4ee22",
+            "concept_iri": "https://ontology.pharma-gmp.cn/slpra/facility/GeneralArea",
+            "extraction_role": "entity_name"
+          },
+          "official_char_token_count": 1,
+          "source_text": "取样送检HPLC和重金属检测，质量标准要同时满足：单个杂质应不得过0.2%总杂应不得过2.0%,重金属残留不得超过百万分之二十，若不符合质量标准，则重复上述全部结晶操作（从一般区溶解物料）。",
+          "source_evidence_id": "48ca1378de103138ed5b81cadc51a59226bacfb6558400667fd3c39bbefb979b",
+          "source_kind": "cell_paragraph",
+          "is_header": false,
+          "source_location": {
+            "block_id": "table:0",
+            "paragraph_index": 0,
+            "table_path": [
+              "table:0"
+            ],
+            "row_index": 2,
+            "column_index": 1
+          },
+          "label_description": "抽取有原文明示角色的实体名称或称谓；不抽类别表头，名称不证明唯一身份。抽取明确标为一般区的区域名称；不把普通车间、洁净区或房间默认归为一般区。 上下文术语提示：一般区、general production area、一般生产区。"
+        },
+        {
+          "judgement": "wrong_attribute_role",
+          "reason": "该值是单个杂质限度，不是残留物溶解度。",
+          "mention": {
+            "start": 33,
+            "end": 37,
+            "text": "0.2%",
+            "label": "残留物溶解性原文值",
+            "score": 0.6882742047309875,
+            "ref": "u2",
+            "group": "values",
+            "id": "mention-ae4e834c41652485bd313f04",
+            "concept_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/residueSolubility",
+            "extraction_role": "attribute_value"
+          },
+          "official_char_token_count": 2,
+          "source_text": "取样送检HPLC和重金属检测，质量标准要同时满足：单个杂质应不得过0.2%总杂应不得过2.0%,重金属残留不得超过百万分之二十，若不符合质量标准，则重复上述全部结晶操作（从一般区溶解物料）。",
+          "source_evidence_id": "48ca1378de103138ed5b81cadc51a59226bacfb6558400667fd3c39bbefb979b",
+          "source_kind": "cell_paragraph",
+          "is_header": false,
+          "source_location": {
+            "block_id": "table:0",
+            "paragraph_index": 0,
+            "table_path": [
+              "table:0"
+            ],
+            "row_index": 2,
+            "column_index": 1
+          },
+          "label_description": "抽取对应字段的原文值，不抽字段标题；保留否定、范围、比较和完整限定。抽取具体残留物在明确溶剂中的溶解程度，保留对应条件和对象；原药溶解性不可无依据移作清洗残留物溶解性。 上下文术语提示：残留物溶解度、residue solubility、残留物溶解性。术语是字段语义线索，不是待返回的字段标题。"
+        },
+        {
+          "judgement": "wrong_entity_role",
+          "reason": "结晶纯化标题中的产品名称并未声明为清洗残留物。",
+          "mention": {
+            "start": 0,
+            "end": 8,
+            "text": "HRS-1597",
+            "label": "清洗残留物名称",
+            "score": 0.9898638129234314,
+            "ref": "u0",
+            "group": "entities",
+            "id": "mention-c1c8d65ff5266d223a08b289",
+            "concept_iri": "https://ontology.pharma-gmp.cn/slpra/drug/Residue",
+            "extraction_role": "entity_name"
+          },
+          "official_char_token_count": 1,
+          "source_text": "HRS-1597结晶纯化",
+          "source_evidence_id": "63c9cc94a162d7b088843eb62fedcf9f50775e6d381d083eb86aaa506264f0c3",
+          "source_kind": "heading",
+          "is_header": false,
+          "source_location": {
+            "block_id": "paragraph:67:0",
+            "paragraph_index": 67,
+            "table_path": null,
+            "row_index": null,
+            "column_index": null
+          },
+          "label_description": "抽取有原文明示角色的实体名称或称谓；不抽类别表头，名称不证明唯一身份。抽取原文明示存在或待评价的具体残留物名称。残留章节标题、不适用标记和空白不证明存在残留物或没有残留。 上下文术语提示：残留物、residue、残留物质。"
+        }
+      ]
+    },
+    "residue_missing": {
+      "file_sha256": {
+        "tools": "ccca4f82a0b31b8cc1afaca042f50f12a6087acc3cf1d9d36e3da79f7d74321b",
+        "sources": "361efedd805e8654446408c2f5263b28739335488f2e10a8960d0d1ba8142c24",
+        "vocabulary": "12b7a252e3b4ca81b908c30aca0fc8421e05099a1fc0539f7996aa79d4970baa"
+      },
+      "execution_status": "completed",
+      "semantic_status": "not_checked",
+      "fact_eligible": false,
+      "counts": {
+        "mentions": 0,
+        "physical_spans": 0,
+        "multi_label_physical_spans": 0,
+        "label_multiplicity_excess": 0,
+        "cross_role_physical_spans": 0,
+        "header_cell_mentions": 0,
+        "heading_mentions": 0,
+        "char_tokens_gt_8_mentions": 0,
+        "char_tokens_gt_8_physical_spans": 0,
+        "exact_coordinate_errors": 0,
+        "same_label_coordinate_duplicates": 0
+      },
+      "role_counts": {},
+      "label_counts": {},
+      "physical_spans_with_multiple_labels": [],
+      "all_long_mentions": [],
+      "manual_examples": [],
+      "manual_empty_result_review": {
+        "source_texts": {
+          "u0": "3.5.2设备清洗残留物基本信息",
+          "u1": "N/A"
+        },
+        "judgement": "reasonable_local_empty",
+        "reason": "该局部仅有残留物标题和N/A，零提及没有补造残留物；不能据此判定全文或现实中不存在残留物。"
+      }
+    },
+    "storage": {
+      "file_sha256": {
+        "tools": "c5f43ad9b1ed54d6d20ac36b0913a0d1069f287e0266dc00fdd114bfc77aedbd",
+        "sources": "289e1f351691a045573e9ba0c9c87a61f0e0b186d9d39b0e43180139cfa9dfb6",
+        "vocabulary": "19823abd4abb039792389f01e18ddad7b55859b050a4d97b6a54ece6eb766947"
+      },
+      "execution_status": "completed",
+      "semantic_status": "not_checked",
+      "fact_eligible": false,
+      "counts": {
+        "mentions": 24,
+        "physical_spans": 10,
+        "multi_label_physical_spans": 4,
+        "label_multiplicity_excess": 14,
+        "cross_role_physical_spans": 4,
+        "header_cell_mentions": 9,
+        "heading_mentions": 0,
+        "char_tokens_gt_8_mentions": 0,
+        "char_tokens_gt_8_physical_spans": 0,
+        "exact_coordinate_errors": 0,
+        "same_label_coordinate_duplicates": 0
+      },
+      "role_counts": {
+        "record_anchor": 6,
+        "attribute_value": 15,
+        "unit": 3
+      },
+      "label_counts": {
+        "存放要求记录或完整要求短语": 6,
+        "避光储存要求原文值": 4,
+        "存放湿度要求原文值": 4,
+        "存放温度要求原文值": 3,
+        "完整包装方式原文值": 2,
+        "有效期或复测期原文值": 2,
+        "天单位": 1,
+        "月期限单位": 1,
+        "年期限单位": 1
+      },
+      "physical_spans_with_multiple_labels": [
+        {
+          "ref": "u6",
+          "start": 0,
+          "end": 8,
+          "text": "HRS-1597",
+          "label_count": 6,
+          "labels": [
+            "存放要求记录或完整要求短语",
+            "避光储存要求原文值",
+            "完整包装方式原文值",
+            "有效期或复测期原文值",
+            "存放湿度要求原文值",
+            "存放温度要求原文值"
+          ],
+          "roles": [
+            "attribute_value",
+            "record_anchor"
+          ]
+        },
+        {
+          "ref": "u4",
+          "start": 5,
+          "end": 7,
+          "text": "温度",
+          "label_count": 4,
+          "labels": [
+            "存放要求记录或完整要求短语",
+            "避光储存要求原文值",
+            "存放湿度要求原文值",
+            "存放温度要求原文值"
+          ],
+          "roles": [
+            "attribute_value",
+            "record_anchor"
+          ]
+        },
+        {
+          "ref": "u4",
+          "start": 8,
+          "end": 10,
+          "text": "湿度",
+          "label_count": 4,
+          "labels": [
+            "存放要求记录或完整要求短语",
+            "避光储存要求原文值",
+            "存放湿度要求原文值",
+            "存放温度要求原文值"
+          ],
+          "roles": [
+            "attribute_value",
+            "record_anchor"
+          ]
+        },
+        {
+          "ref": "u9",
+          "start": 3,
+          "end": 6,
+          "text": "24M",
+          "label_count": 4,
+          "labels": [
+            "天单位",
+            "月期限单位",
+            "年期限单位",
+            "有效期或复测期原文值"
+          ],
+          "roles": [
+            "attribute_value",
+            "unit"
+          ]
+        }
+      ],
+      "all_long_mentions": [],
+      "manual_examples": [
+        {
+          "judgement": "valid_mention",
+          "reason": "有效期24M字段的原文值；月份解释仍需单位规则。",
+          "mention": {
+            "start": 3,
+            "end": 6,
+            "text": "24M",
+            "label": "有效期或复测期原文值",
+            "score": 0.9041292667388916,
+            "ref": "u9",
+            "group": "values",
+            "id": "mention-2ec4e78c58e0624de8eaad4a",
+            "concept_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/shelfLife",
+            "extraction_role": "attribute_value"
+          },
+          "official_char_token_count": 1,
+          "source_text": "有效期24M",
+          "source_evidence_id": "e47adf407a59221337f9297e143a6f39c52fbed93dda819f377e1c5a28a1aa9f",
+          "source_kind": "cell_paragraph",
+          "is_header": false,
+          "source_location": {
+            "block_id": "table:3",
+            "paragraph_index": 0,
+            "table_path": [
+              "table:3"
+            ],
+            "row_index": 1,
+            "column_index": 3
+          },
+          "label_description": "抽取对应字段的原文值，不抽字段标题；保留否定、范围、比较和完整限定。抽取期限及原时间单位，保留它是有效期还是复测期；两者由同一属性容纳但不是等价业务概念，不互换、不换算成未给出的到期日。 上下文术语提示：有效期/复测期、shelf life or retest period、有效期限或复测期限。术语是字段语义线索，不是待返回的字段标题。"
+        },
+        {
+          "judgement": "useful_partial_evidence",
+          "reason": "本单元确有包装材料，但独立包装字段还有外加药品包装用复合袋，不能替代完整包装方式。",
+          "mention": {
+            "start": 3,
+            "end": 11,
+            "text": "双层聚乙烯薄膜袋",
+            "label": "完整包装方式原文值",
+            "score": 0.6656384468078613,
+            "ref": "u8",
+            "group": "values",
+            "id": "mention-e3bcc2edb3411a9000527aec",
+            "concept_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/packagingType",
+            "extraction_role": "attribute_value"
+          },
+          "official_char_token_count": 8,
+          "source_text": "密封，双层聚乙烯薄膜袋，不超过25℃保存",
+          "source_evidence_id": "622cb804a11629b61be543c3a3fff7b4560cba38ef5e13faee283be71b6fa88d",
+          "source_kind": "cell_paragraph",
+          "is_header": false,
+          "source_location": {
+            "block_id": "table:3",
+            "paragraph_index": 0,
+            "table_path": [
+              "table:3"
+            ],
+            "row_index": 1,
+            "column_index": 2
+          },
+          "label_description": "抽取对应字段的原文值，不抽字段标题；保留否定、范围、比较和完整限定。抽取完整多层包装材料及内外层组合，保留外加包装和封装要求；不要只抽单层袋名或材料名。 上下文术语提示：包装方式、packaging type、包装形式、包装要求。术语是字段语义线索，不是待返回的字段标题。"
+        },
+        {
+          "judgement": "header_as_value",
+          "reason": "表头温度不是具体温度要求。",
+          "mention": {
+            "start": 5,
+            "end": 7,
+            "text": "温度",
+            "label": "存放温度要求原文值",
+            "score": 0.7326847314834595,
+            "ref": "u4",
+            "group": "values",
+            "id": "mention-9675778b90512826c321c60c",
+            "concept_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/storageTemperature",
+            "extraction_role": "attribute_value"
+          },
+          "official_char_token_count": 2,
+          "source_text": "存放条件（温度、湿度、是否避光）",
+          "source_evidence_id": "7ef52aa5f4eef1fc382587b606e178f0e5c12ccff75fdeca9be7d42575a5b986",
+          "source_kind": "cell_paragraph",
+          "is_header": true,
+          "source_location": {
+            "block_id": "table:3",
+            "paragraph_index": 0,
+            "table_path": [
+              "table:3"
+            ],
+            "row_index": 0,
+            "column_index": 2
+          },
+          "label_description": "抽取对应字段的原文值，不抽字段标题；保留否定、范围、比较和完整限定。抽取完整储存温度表达，包括上下限、区间、室温等；温度上限不可变成恒温标量，也不是触发条件。 上下文术语提示：存放温度、storage temperature、储存温度、贮存温度。术语是字段语义线索，不是待返回的字段标题。"
+        },
+        {
+          "judgement": "wrong_attribute_role",
+          "reason": "温度上限被标成湿度。",
+          "mention": {
+            "start": 12,
+            "end": 18,
+            "text": "不超过25℃",
+            "label": "存放湿度要求原文值",
+            "score": 0.616155743598938,
+            "ref": "u8",
+            "group": "values",
+            "id": "mention-88e53348e1c69be9034fd76b",
+            "concept_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/storageHumidity",
+            "extraction_role": "attribute_value"
+          },
+          "official_char_token_count": 5,
+          "source_text": "密封，双层聚乙烯薄膜袋，不超过25℃保存",
+          "source_evidence_id": "622cb804a11629b61be543c3a3fff7b4560cba38ef5e13faee283be71b6fa88d",
+          "source_kind": "cell_paragraph",
+          "is_header": false,
+          "source_location": {
+            "block_id": "table:3",
+            "paragraph_index": 0,
+            "table_path": [
+              "table:3"
+            ],
+            "row_index": 1,
+            "column_index": 2
+          },
+          "label_description": "抽取对应字段的原文值，不抽字段标题；保留否定、范围、比较和完整限定。抽取明确湿度要求及区间或比较限定，表头存在而值缺失时不补unknown或默认湿度。 上下文术语提示：存放湿度、storage humidity、储存湿度、贮存湿度。术语是字段语义线索，不是待返回的字段标题。"
+        },
+        {
+          "judgement": "wrong_attribute_role",
+          "reason": "原文没有避光要求，该片段只是温度条件。",
+          "mention": {
+            "start": 12,
+            "end": 20,
+            "text": "不超过25℃保存",
+            "label": "避光储存要求原文值",
+            "score": 0.6395326256752014,
+            "ref": "u8",
+            "group": "values",
+            "id": "mention-1ed3fcbc64091aa964912d4b",
+            "concept_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/lightProtection",
+            "extraction_role": "attribute_value"
+          },
+          "official_char_token_count": 7,
+          "source_text": "密封，双层聚乙烯薄膜袋，不超过25℃保存",
+          "source_evidence_id": "622cb804a11629b61be543c3a3fff7b4560cba38ef5e13faee283be71b6fa88d",
+          "source_kind": "cell_paragraph",
+          "is_header": false,
+          "source_location": {
+            "block_id": "table:3",
+            "paragraph_index": 0,
+            "table_path": [
+              "table:3"
+            ],
+            "row_index": 1,
+            "column_index": 2
+          },
+          "label_description": "抽取对应字段的原文值，不抽字段标题；保留否定、范围、比较和完整限定。抽取原文明示的避光要求或否定，不能因表头提到是否避光而为未填写数据补造值。 上下文术语提示：是否避光、light protection requirement、避光要求。术语是字段语义线索，不是待返回的字段标题。"
+        },
+        {
+          "judgement": "wrong_unit",
+          "reason": "期限中的M不可作为天单位，且整段还包含数值。",
+          "mention": {
+            "start": 3,
+            "end": 6,
+            "text": "24M",
+            "label": "天单位",
+            "score": 0.7292891144752502,
+            "ref": "u9",
+            "group": "units",
+            "id": "mention-9f5374524c0646f22b7b33c0",
+            "concept_iri": "urn:ontology-agent:cmc-extraction-vocabulary:UnitDay",
+            "extraction_role": "unit"
+          },
+          "official_char_token_count": 1,
+          "source_text": "有效期24M",
+          "source_evidence_id": "e47adf407a59221337f9297e143a6f39c52fbed93dda819f377e1c5a28a1aa9f",
+          "source_kind": "cell_paragraph",
+          "is_header": false,
+          "source_location": {
+            "block_id": "table:3",
+            "paragraph_index": 0,
+            "table_path": [
+              "table:3"
+            ],
+            "row_index": 1,
+            "column_index": 3
+          },
+          "label_description": "只抽原文实际出现的完整单位，包括分母和幂；不抽数值，不由目标单位补造源单位。日历或持续时间单位天，不能截取复合剂量单位中的分母当独立持续时间。 上下文术语提示：天、d、day、日。"
+        }
+      ]
+    },
+    "toxicity_unknown": {
+      "file_sha256": {
+        "tools": "5ef05e997faf126c76fb5a48cf95e84d2f202fb2ec3882c9646dbfab5cbea07a",
+        "sources": "0da78598e367c4fcdf62e5b3e3ff1712d11d2f23116c30a0e72410a04301e224",
+        "vocabulary": "8141f551d3c9eacd5819efa2db7bcf6cb49a87b4f6ea4eadc6bac6a933b742c1"
+      },
+      "execution_status": "completed",
+      "semantic_status": "not_checked",
+      "fact_eligible": false,
+      "counts": {
+        "mentions": 119,
+        "physical_spans": 5,
+        "multi_label_physical_spans": 4,
+        "label_multiplicity_excess": 114,
+        "cross_role_physical_spans": 4,
+        "header_cell_mentions": 1,
+        "heading_mentions": 0,
+        "char_tokens_gt_8_mentions": 0,
+        "char_tokens_gt_8_physical_spans": 0,
+        "exact_coordinate_errors": 0,
+        "same_label_coordinate_duplicates": 0
+      },
+      "role_counts": {
+        "entity_name": 3,
+        "record_anchor": 8,
+        "attribute_value": 108
+      },
+      "label_counts": {
+        "药品或制剂产品名称": 3,
+        "基因毒性评价记录名称": 4,
+        "致敏性评价记录名称": 4,
+        "药品注册分类原文值": 4,
+        "申报或注册状态原文值": 4,
+        "目标适应症原文值": 4,
+        "药品性状原文值": 5,
+        "CAS登记号值": 4,
+        "英文化学名称值": 4,
+        "中文化学名称值": 4,
+        "制剂剂型原文值": 4,
+        "药品规格原文值": 4,
+        "朊病毒风险原文判断值": 4,
+        "灭活方法完整原文值": 4,
+        "β内酰胺类别原文判断值": 4,
+        "细胞毒性原文判断值": 4,
+        "高活性药物原文判断值": 4,
+        "高致敏性原文判断值": 4,
+        "激素类药物原文判断值": 4,
+        "肿瘤药物原文判断值": 4,
+        "青霉素类别原文判断值": 4,
+        "最大日剂量数值": 2,
+        "分子式原文值": 4,
+        "分子量数值": 4,
+        "明确产品或原料药标识值": 4,
+        "项目代码原文值": 4,
+        "项目名称原文值": 4,
+        "给药途径原文值": 4,
+        "原文明示致敏级别值": 4,
+        "完整溶剂与溶解性原文值": 4,
+        "最小治疗剂量数值": 1
+      },
+      "physical_spans_with_multiple_labels": [
+        {
+          "ref": "u11",
+          "start": 4,
+          "end": 5,
+          "text": "√",
+          "label_count": 30,
+          "labels": [
+            "药品或制剂产品名称",
+            "基因毒性评价记录名称",
+            "致敏性评价记录名称",
+            "药品注册分类原文值",
+            "申报或注册状态原文值",
+            "目标适应症原文值",
+            "药品性状原文值",
+            "CAS登记号值",
+            "英文化学名称值",
+            "中文化学名称值",
+            "制剂剂型原文值",
+            "药品规格原文值",
+            "朊病毒风险原文判断值",
+            "灭活方法完整原文值",
+            "β内酰胺类别原文判断值",
+            "细胞毒性原文判断值",
+            "高活性药物原文判断值",
+            "高致敏性原文判断值",
+            "激素类药物原文判断值",
+            "肿瘤药物原文判断值",
+            "青霉素类别原文判断值",
+            "最大日剂量数值",
+            "分子式原文值",
+            "分子量数值",
+            "明确产品或原料药标识值",
+            "项目代码原文值",
+            "项目名称原文值",
+            "给药途径原文值",
+            "原文明示致敏级别值",
+            "完整溶剂与溶解性原文值"
+          ],
+          "roles": [
+            "attribute_value",
+            "entity_name",
+            "record_anchor"
+          ]
+        },
+        {
+          "ref": "u6",
+          "start": 0,
+          "end": 8,
+          "text": "HRS-1597",
+          "label_count": 30,
+          "labels": [
+            "基因毒性评价记录名称",
+            "致敏性评价记录名称",
+            "药品注册分类原文值",
+            "申报或注册状态原文值",
+            "目标适应症原文值",
+            "药品性状原文值",
+            "CAS登记号值",
+            "英文化学名称值",
+            "中文化学名称值",
+            "制剂剂型原文值",
+            "药品规格原文值",
+            "朊病毒风险原文判断值",
+            "灭活方法完整原文值",
+            "β内酰胺类别原文判断值",
+            "细胞毒性原文判断值",
+            "高活性药物原文判断值",
+            "高致敏性原文判断值",
+            "激素类药物原文判断值",
+            "肿瘤药物原文判断值",
+            "青霉素类别原文判断值",
+            "最大日剂量数值",
+            "最小治疗剂量数值",
+            "分子式原文值",
+            "分子量数值",
+            "明确产品或原料药标识值",
+            "项目代码原文值",
+            "项目名称原文值",
+            "给药途径原文值",
+            "原文明示致敏级别值",
+            "完整溶剂与溶解性原文值"
+          ],
+          "roles": [
+            "attribute_value",
+            "record_anchor"
+          ]
+        },
+        {
+          "ref": "u11",
+          "start": 15,
+          "end": 16,
+          "text": "×",
+          "label_count": 29,
+          "labels": [
+            "药品或制剂产品名称",
+            "基因毒性评价记录名称",
+            "致敏性评价记录名称",
+            "药品注册分类原文值",
+            "申报或注册状态原文值",
+            "目标适应症原文值",
+            "药品性状原文值",
+            "CAS登记号值",
+            "英文化学名称值",
+            "中文化学名称值",
+            "制剂剂型原文值",
+            "药品规格原文值",
+            "朊病毒风险原文判断值",
+            "灭活方法完整原文值",
+            "β内酰胺类别原文判断值",
+            "细胞毒性原文判断值",
+            "高活性药物原文判断值",
+            "高致敏性原文判断值",
+            "激素类药物原文判断值",
+            "肿瘤药物原文判断值",
+            "青霉素类别原文判断值",
+            "分子式原文值",
+            "分子量数值",
+            "明确产品或原料药标识值",
+            "项目代码原文值",
+            "项目名称原文值",
+            "给药途径原文值",
+            "原文明示致敏级别值",
+            "完整溶剂与溶解性原文值"
+          ],
+          "roles": [
+            "attribute_value",
+            "entity_name",
+            "record_anchor"
+          ]
+        },
+        {
+          "ref": "u11",
+          "start": 29,
+          "end": 30,
+          "text": "—",
+          "label_count": 29,
+          "labels": [
+            "药品或制剂产品名称",
+            "基因毒性评价记录名称",
+            "致敏性评价记录名称",
+            "药品注册分类原文值",
+            "申报或注册状态原文值",
+            "目标适应症原文值",
+            "药品性状原文值",
+            "CAS登记号值",
+            "英文化学名称值",
+            "中文化学名称值",
+            "制剂剂型原文值",
+            "药品规格原文值",
+            "朊病毒风险原文判断值",
+            "灭活方法完整原文值",
+            "β内酰胺类别原文判断值",
+            "细胞毒性原文判断值",
+            "高活性药物原文判断值",
+            "高致敏性原文判断值",
+            "激素类药物原文判断值",
+            "肿瘤药物原文判断值",
+            "青霉素类别原文判断值",
+            "分子式原文值",
+            "分子量数值",
+            "明确产品或原料药标识值",
+            "项目代码原文值",
+            "项目名称原文值",
+            "给药途径原文值",
+            "原文明示致敏级别值",
+            "完整溶剂与溶解性原文值"
+          ],
+          "roles": [
+            "attribute_value",
+            "entity_name",
+            "record_anchor"
+          ]
+        }
+      ],
+      "all_long_mentions": [],
+      "manual_examples": [
+        {
+          "judgement": "useful_partial_evidence",
+          "reason": "确定位到产品名称单元；原文列头是产品名称，不能单靠这个标签扩充项目属性或评估记录身份。",
+          "mention": {
+            "start": 0,
+            "end": 8,
+            "text": "HRS-1597",
+            "label": "项目名称原文值",
+            "score": 0.7784073948860168,
+            "ref": "u6",
+            "group": "values",
+            "id": "mention-e43496ac82f9a6cafae874b2",
+            "concept_iri": "https://ontology.pharma-gmp.cn/slpra/drug/projectName",
+            "extraction_role": "attribute_value"
+          },
+          "official_char_token_count": 1,
+          "source_text": "HRS-1597",
+          "source_evidence_id": "77fd655d1783a0c2eb855743ab41b8ab776b8879a4016e2a76ff1ab55caf0aa5",
+          "source_kind": "cell_paragraph",
+          "is_header": false,
+          "source_location": {
+            "block_id": "table:11",
+            "paragraph_index": 0,
+            "table_path": [
+              "table:11"
+            ],
+            "row_index": 1,
+            "column_index": 0
+          },
+          "label_description": "抽取对应字段的原文值，不抽字段标题；保留否定、范围、比较和完整限定。抽取项目名称对应的原值；名字可以由代码字符组成，但名称角色本身不证明全局唯一实例身份。 上下文术语提示：项目名称、project name、项目名。术语是字段语义线索，不是待返回的字段标题。"
+        },
+        {
+          "judgement": "legend_as_entity",
+          "reason": "图例中的有毒性符号不是产品。",
+          "mention": {
+            "start": 4,
+            "end": 5,
+            "text": "√",
+            "label": "药品或制剂产品名称",
+            "score": 0.9528900980949402,
+            "ref": "u11",
+            "group": "entities",
+            "id": "mention-9fd247d93aa89d40baaf546d",
+            "concept_iri": "https://ontology.pharma-gmp.cn/slpra/drug/DrugProduct",
+            "extraction_role": "entity_name"
+          },
+          "official_char_token_count": 1,
+          "source_text": "备注：“√”代表有相应毒性；“×”代表没有相应的毒性 ；“—”代表相关的研究数据不充分。",
+          "source_evidence_id": "3c294326188460eb8a1283c4c680a7ec4f53825f3fece0548be87229fa5c83a9",
+          "source_kind": "paragraph",
+          "is_header": false,
+          "source_location": {
+            "block_id": "paragraph:117:0",
+            "paragraph_index": 117,
+            "table_path": null,
+            "row_index": null,
+            "column_index": null
+          },
+          "label_description": "抽取有原文明示角色的实体名称或称谓；不抽类别表头，名称不证明唯一身份。抽取原文明示为药品或制剂产品的名称。原料药、溶剂或项目名不因共现自动成为制剂实例；名称不证明风险子类或唯一身份。 上下文术语提示：药物产品、drug product、制剂产品、药品产品。"
+        },
+        {
+          "judgement": "legend_as_claim",
+          "reason": "这是通用图例，表示研究数据不充分；不能成为具体产品高致敏性的判断。",
+          "mention": {
+            "start": 29,
+            "end": 30,
+            "text": "—",
+            "label": "高致敏性原文判断值",
+            "score": 0.8917788863182068,
+            "ref": "u11",
+            "group": "values",
+            "id": "mention-d84cfd12b99f1ea835aa643a",
+            "concept_iri": "https://ontology.pharma-gmp.cn/slpra/drug/isHighlySensitizing",
+            "extraction_role": "attribute_value"
+          },
+          "official_char_token_count": 1,
+          "source_text": "备注：“√”代表有相应毒性；“×”代表没有相应的毒性 ；“—”代表相关的研究数据不充分。",
+          "source_evidence_id": "3c294326188460eb8a1283c4c680a7ec4f53825f3fece0548be87229fa5c83a9",
+          "source_kind": "paragraph",
+          "is_header": false,
+          "source_location": {
+            "block_id": "paragraph:117:0",
+            "paragraph_index": 117,
+            "table_path": null,
+            "row_index": null,
+            "column_index": null
+          },
+          "label_description": "抽取对应字段的原文值，不抽字段标题；保留否定、范围、比较和完整限定。仅抽高致敏性的明确判断；致敏数据不足、一般致敏潜力和名称均不能证明高致敏。 上下文术语提示：是否高致敏药物、high sensitization status、高致敏分类判断。术语是字段语义线索，不是待返回的字段标题。"
+        },
+        {
+          "judgement": "header_as_value",
+          "reason": "致癌性列头片段不是药品性状。",
+          "mention": {
+            "start": 0,
+            "end": 2,
+            "text": "致癌",
+            "label": "药品性状原文值",
+            "score": 0.5254706740379333,
+            "ref": "u4",
+            "group": "values",
+            "id": "mention-14944426b4e26ba64ae0aea2",
+            "concept_iri": "https://ontology.pharma-gmp.cn/slpra/drug/appearance",
+            "extraction_role": "attribute_value"
+          },
+          "official_char_token_count": 2,
+          "source_text": "致癌性",
+          "source_evidence_id": "8eda55bceff855d78f5626f972e47f03e467c49a350ceca2f7500c172df6742e",
+          "source_kind": "cell_paragraph",
+          "is_header": true,
+          "source_location": {
+            "block_id": "table:11",
+            "paragraph_index": 0,
+            "table_path": [
+              "table:11"
+            ],
+            "row_index": 0,
+            "column_index": 3
+          },
+          "label_description": "抽取对应字段的原文值，不抽字段标题；保留否定、范围、比较和完整限定。抽取对应药品或物料的颜色、形态等完整性状值；不抽字段标题，不把制剂剂型自动作为性状。 上下文术语提示：性状、appearance、外观性状。术语是字段语义线索，不是待返回的字段标题。"
+        }
+      ]
+    }
+  },
+  "totals": {
+    "mentions": 852,
+    "physical_spans": 112,
+    "multi_label_physical_spans": 80,
+    "label_multiplicity_excess": 740,
+    "cross_role_physical_spans": 66,
+    "header_cell_mentions": 82,
+    "heading_mentions": 70,
+    "char_tokens_gt_8_mentions": 2,
+    "char_tokens_gt_8_physical_spans": 1,
+    "exact_coordinate_errors": 0,
+    "same_label_coordinate_duplicates": 0,
+    "unique_physical_spans_across_scopes": 111
+  },
+  "conclusions": [
+    "852个带标签提及只覆盖112个scope内物理span，按evidence_id跨scope去重为111；740是额外标签赋值数，不是740个新事实。",
+    "坐标切片全部匹配原文，但语义角色错误、数字/单位混淆和表头/值混淆普遍；高置信度不能替代语义核验。",
+    "仅2个提及超过8个官方char tokens，来自同一9-token试验名称；其中动物种属标签错误，记录名仍省略试验编号后缀。不能由boundary架构无限宽度推出本报告长值召回改善。",
+    "82个提及出自表头单元、70个出自章节标题；这些是来源类别计数而非错误数，需按标签角色逐项审查。",
+    "工艺条件、完整质量标准、包装要求和毒性符号归属仍需原文/表格结构工具与Qwen复核。",
+    "人工例子用于解释失败模式，不是随机抽样，不报告NER precision/recall；未读取reference/acceptance。"
+  ]
+}

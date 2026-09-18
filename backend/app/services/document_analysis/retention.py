@@ -36,8 +36,16 @@ from app.models.document_analysis import (
     DocumentRunArtifactHead,
     DocumentRunCandidate,
     DocumentRunCandidateHead,
+    DocumentRunCurrentState,
+    DocumentRunRequest,
+    DocumentRunResult,
     DocumentVerificationProof,
     DocumentVerificationProofHead,
+)
+from app.models.document_analysis_review import (
+    DocumentPropertyRepair,
+    DocumentPropertyReview,
+    DocumentPropertyReviewHead,
 )
 from app.services.document_analysis.artifact_store import (
     RunArtifactStorage,
@@ -468,6 +476,9 @@ class DocumentAnalysisRetentionService:
         )
 
         for model in (
+            DocumentPropertyRepair,
+            DocumentPropertyReviewHead,
+            DocumentPropertyReview,
             DocumentRunArtifactHead,
             DocumentRunCandidateHead,
             DocumentVerificationProofHead,
@@ -478,6 +489,9 @@ class DocumentAnalysisRetentionService:
             DocumentRecognitionEventBatch,
             DocumentRecognitionEvent,
             DocumentRunCandidate,
+            DocumentRunCurrentState,
+            DocumentRunRequest,
+            DocumentRunResult,
             DocumentVerificationProof,
             DocumentRunArtifact,
         ):

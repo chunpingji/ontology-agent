@@ -10,7 +10,8 @@ from time import monotonic
 
 from app.services.extraction.performance import timed
 
-MAPS = {"completed", "failures", "joint_completed", "task_outcomes"}
+MAPS = {"completed", "failures", "joint_completed", "task_outcomes", "output_splits",
+        "citation_repairs", "task_ledger"}
 
 
 def journal_path(path):
@@ -102,6 +103,8 @@ class CheckpointJournal:
             return
         changes = {}
         for name in MAPS:
+            if name not in self.previous and name not in value:
+                continue
             before, after = self.previous.get(name, {}), value.get(name, {})
             changes[name] = {
                 "removed": sorted(before.keys() - after.keys()),

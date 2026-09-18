@@ -3,19 +3,50 @@
 from __future__ import annotations
 
 from collections import deque
+from contextlib import nullcontext
 from copy import deepcopy
+from inspect import getattr_static
 from typing import Any
 
 from app.services.extraction.evidence_identity import evidence_hash, stable_id
 from app.services.extraction.ontology_guided.contracts import (
+    ONTOLOGY_LEXICAL_SNAPSHOT_VERSION,
+    ONTOLOGY_SNAPSHOT_VERSION,
     EdgeSpec,
     LocalMenu,
     OntologyClassDefinition,
     OntologySnapshot,
+    PredicateSpec,
     RangeClass,
     SlotSpec,
     SubjectRef,
 )
+from app.services.extraction.ontology_guided.ontology_lexical import (
+    RDFS_LABEL_IRI,
+    OntologyLexicalContext,
+    build_lexical_context,
+)
+
+CMC_REPORT_IRI = "https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport"
+CMC_DESCRIBES_IRI = "https://ontology.pharma-gmp.cn/slpra/drug-development/describes"
+DRUG_PRODUCT_IRI = "https://ontology.pharma-gmp.cn/slpra/drug/DrugProduct"
+CMC_DESCRIBES_SCOPE_VERSION = "drug-product-only-v1"
+
+
+def scope_cmc_describes(predicate: PredicateSpec, subject: SubjectRef) -> PredicateSpec:
+    """Limit this task's type granularity without changing the frozen ontology."""
+    if not (
+        isinstance(predicate, EdgeSpec)
+        and subject.class_iri == CMC_REPORT_IRI
+        and predicate.iri == CMC_DESCRIBES_IRI
+        and DRUG_PRODUCT_IRI in predicate.range_class_iris
+        and predicate.constraint_status == "resolved"
+    ):
+        return predicate
+    return predicate.model_copy(update={
+        "range_class_iris": [DRUG_PRODUCT_IRI],
+        "range_classes": [c for c in predicate.range_classes if c.iri == DRUG_PRODUCT_IRI],
+    })
 
 
 def _safe_call(target: object, name: str, *args: Any, default: Any = None) -> Any:
@@ -88,11 +119,16 @@ def _property_specs(engine: object, class_iri: str) -> tuple[list[SlotSpec], lis
                 label=str(prop.get("label") or prop.get("name") or iri.rsplit("/", 1)[-1]),
                 description=str(prop.get("description") or ""),
                 declared_by=[class_iri],
+                multiplicity=prop.get("multiplicity", "unspecified"),
+                min_count=prop.get("min_count"),
                 max_count=prop.get("max_count"),
                 datatype_iris=sorted(dict.fromkeys(ranges)),
                 canonical_unit=prop.get("canonical_unit"),
                 identity_key=prop.get("identity_key") is True,
-                constraint_status="resolved" if ranges else "constraint_unresolved",
+                constraint_status=(
+                    prop.get("constraint_status", "resolved")
+                    if ranges else "constraint_unresolved"
+                ),
             )
         )
     relationships = []
@@ -111,8 +147,11 @@ def _property_specs(engine: object, class_iri: str) -> tuple[list[SlotSpec], lis
                 label=str(prop.get("label") or prop.get("name") or iri.rsplit("/", 1)[-1]),
                 description=str(prop.get("description") or ""),
                 declared_by=[class_iri],
+                multiplicity=prop.get("multiplicity", "unspecified"),
+                min_count=prop.get("min_count"),
                 max_count=prop.get("max_count"),
                 range_class_iris=ranges,
+                constraint_status=prop.get("constraint_status", "resolved"),
             )
         )
     return properties, relationships
@@ -126,6 +165,25 @@ def ontology_snapshot_from_engine(
     The function intentionally does not consume ``get_relation_schema`` because
     that API pre-expands multiple hops and loses declaration provenance.
     """
+    # Capability detection must not accept a legacy fixture's catch-all
+    # __getattr__ no-op as an implemented lexical reader or read scope.
+    lexical_reader = (
+        getattr(engine, "get_lexical_annotations")
+        if getattr_static(engine, "get_lexical_annotations", None) is not None else None
+    )
+    read_scope = (
+        getattr(engine, "lexical_read_scope")
+        if getattr_static(engine, "lexical_read_scope", None) is not None else None
+    )
+    if lexical_reader is not None and not callable(lexical_reader):
+        raise TypeError("ontology lexical reader must be callable")
+    with read_scope() if read_scope is not None else nullcontext():
+        return _ontology_snapshot_from_engine(engine, root_class_iri, lexical_reader)
+
+
+def _ontology_snapshot_from_engine(
+    engine: object, root_class_iri: str | None, lexical_reader: Any,
+) -> OntologySnapshot:
     raw_classes = _walk_classes(engine)
     diagnostics: list[str] = []
     if root_class_iri and root_class_iri not in raw_classes:
@@ -165,6 +223,11 @@ def ontology_snapshot_from_engine(
             # Fold its direct (hop=1) declarations into the frozen snapshot now;
             # workers must not consult a newer live ontology later.
             relationships = _legacy_direct_relationships(engine, iri)
+        # Engine/RDF enumeration order is not declaration semantics. Keep
+        # parallel same-IRI constraints distinct, with full-payload tie breaks;
+        # never merge their ranges or rewrite an already frozen snapshot.
+        properties.sort(key=lambda item: (item.iri, evidence_hash(item)))
+        relationships.sort(key=lambda item: (item.iri, evidence_hash(item)))
         payload = {
             "iri": iri,
             "label": raw["label"],
@@ -179,14 +242,63 @@ def ontology_snapshot_from_engine(
         )
     if not definitions:
         diagnostics.append("ontology_snapshot_empty")
+    lexical_context = None
+    if lexical_reader is not None:
+        lexical_iris = set(definitions)
+        for definition in definitions.values():
+            lexical_iris.update(prop.iri for prop in definition.declared_properties)
+            for edge in definition.declared_relationships:
+                lexical_iris.add(edge.iri)
+                lexical_iris.update(edge.range_class_iris)
+        annotations = lexical_reader(sorted(lexical_iris))
+        if not isinstance(annotations, dict) or set(annotations) != lexical_iris:
+            raise ValueError("ontology lexical read must explicitly cover every requested IRI")
+        lexical_context = build_lexical_context(annotations)
+        definitions = _canonical_lexical_labels(definitions, lexical_context)
     serializable = {iri: item.model_dump(mode="json") for iri, item in definitions.items()}
-    ontology_hash = evidence_hash(serializable)
+    ontology_hash = evidence_hash(serializable) if lexical_context is None else evidence_hash({
+        "classes": serializable, "lexical_context": lexical_context,
+    })
     return OntologySnapshot(
         snapshot_id=stable_id("ontology-snapshot", [ontology_hash, "one-hop-declarations"]),
+        version=(
+            ONTOLOGY_LEXICAL_SNAPSHOT_VERSION if lexical_context is not None
+            else ONTOLOGY_SNAPSHOT_VERSION
+        ),
         ontology_hash=ontology_hash,
         classes=definitions,
         diagnostics=diagnostics,
+        lexical_context=lexical_context,
     )
+
+
+def _canonical_lexical_labels(
+    definitions: dict[str, OntologyClassDefinition], lexical: OntologyLexicalContext,
+) -> dict[str, OntologyClassDefinition]:
+    """Canonicalize display labels without adding aliases to H0/H1 vocabulary."""
+    def label(iri: str, fallback: str) -> str:
+        # Display labels are also consumed by existing heuristic/context paths.
+        # Keep altLabel-only terms in the bounded v2 semantic query selection.
+        terms = [term for term in lexical.annotations.get(iri, [])
+                 if term.predicate_iri == RDFS_LABEL_IRI]
+        if not terms:
+            return fallback
+        preferred = sorted(terms, key=lambda term: (
+            {"zh": 0, "en": 1, None: 2}.get(term.language, 3),
+            term.language or "", term.text,
+        ))
+        return preferred[0].text
+
+    canonical = {}
+    for iri, definition in definitions.items():
+        payload = definition.model_dump(mode="json", exclude={"source_hash"})
+        payload["label"] = label(iri, definition.label)
+        for field in ("declared_properties", "declared_relationships"):
+            for predicate in payload[field]:
+                predicate["label"] = label(predicate["iri"], predicate["label"])
+            payload[field].sort(key=lambda value: (value["iri"], evidence_hash(value)))
+        canonical[iri] = OntologyClassDefinition(**payload, source_hash=evidence_hash(payload))
+    return canonical
 
 
 def _legacy_direct_relationships(engine: object, class_iri: str) -> list[EdgeSpec]:
@@ -229,6 +341,39 @@ def _ancestors(snapshot: OntologySnapshot, class_iri: str) -> list[str]:
     return result
 
 
+def _merge_cardinality(values: list[PredicateSpec], diagnostics: list[str]) -> dict:
+    if not any({"multiplicity", "min_count"} & value.model_fields_set for value in values):
+        # A resumed old run must retain its original menu/dependency identity.
+        # New semantics enter only when freezing a new ontology snapshot.
+        return {"constraint_status": (
+            "constraint_unresolved"
+            if isinstance(values[0], SlotSpec)
+            and any(value.constraint_status != "resolved" for value in values)
+            else "resolved"
+        )}
+    lower = [value.min_count for value in values if value.min_count is not None]
+    upper = [value.max_count for value in values if value.max_count is not None]
+    modes = {value.multiplicity for value in values} - {"unspecified"}
+    if "single" in modes:
+        upper.append(1)
+    minimum = max(lower) if lower else None
+    maximum = min(upper) if upper else None
+    unresolved = (
+        any(value.constraint_status == "constraint_unresolved" for value in values)
+        or len(modes) > 1
+        or (minimum is not None and maximum is not None and minimum > maximum)
+        or ("multiple" in modes and maximum is not None and maximum < 2)
+    )
+    if unresolved:
+        diagnostics.append(f"cardinality_constraint_unresolved:{values[0].iri}")
+    return {
+        "multiplicity": next(iter(modes)) if len(modes) == 1 else "unspecified",
+        "min_count": minimum,
+        "max_count": maximum,
+        "constraint_status": "constraint_unresolved" if unresolved else "resolved",
+    }
+
+
 def _merge_properties(declarations: list[SlotSpec], diagnostics: list[str]) -> list[SlotSpec]:
     grouped: dict[str, list[SlotSpec]] = {}
     for declaration in declarations:
@@ -242,15 +387,11 @@ def _merge_properties(declarations: list[SlotSpec], diagnostics: list[str]) -> l
         merged.append(
             latest.model_copy(
                 update={
+                    **_merge_cardinality(values, diagnostics),
                     "declared_by": sorted(
                         {owner for value in values for owner in value.declared_by}
                     ),
                     "datatype_iris": ranges,
-                    "constraint_status": (
-                        "resolved"
-                        if all(value.constraint_status == "resolved" for value in values)
-                        else "constraint_unresolved"
-                    ),
                 }
             )
         )
@@ -313,7 +454,8 @@ def _merge_relationships(
         # their intersection; if the engine projection cannot represent one,
         # preserve the narrowest declared set and surface a diagnostic.
         ranges = set.intersection(*declared_ranges) if declared_ranges else set()
-        status = "resolved"
+        cardinality = _merge_cardinality(values, diagnostics)
+        status = cardinality["constraint_status"]
         if not ranges:
             ranges = min(declared_ranges, key=len) if declared_ranges else set()
             status = "constraint_unresolved"
@@ -322,6 +464,7 @@ def _merge_relationships(
         merged.append(
             latest.model_copy(
                 update={
+                    **cardinality,
                     "declared_by": sorted(
                         {owner for value in values for owner in value.declared_by}
                     ),
@@ -339,6 +482,7 @@ def compile_local_menu(
     subject: SubjectRef,
     *,
     engine: object | None = None,
+    cmc_describes_type_scope: bool = False,
 ) -> LocalMenu:
     """Compile exactly one predicate hop for a concrete, typed subject.
 
@@ -366,6 +510,8 @@ def compile_local_menu(
         snapshot=ontology,
         diagnostics=diagnostics,
     )
+    if cmc_describes_type_scope:
+        relationships = [scope_cmc_describes(edge, subject) for edge in relationships]
     identity = {
         "ontology_snapshot_id": ontology.snapshot_id,
         "subject": subject.model_dump(mode="json"),

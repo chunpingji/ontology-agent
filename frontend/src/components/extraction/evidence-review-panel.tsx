@@ -51,7 +51,7 @@ function EvidenceReviewSession({ jobId, templateId, refreshKey = 0, running = fa
     readRequest.current = controller;
     const current = () => mounted.current && !controller.signal.aborted;
     await Promise.all([
-      getJobEvidence(jobId, controller.signal).then((result) => {
+      getJobEvidence(jobId, controller.signal, "latest_run").then((result) => {
         if (current()) { setData(result); setError(""); if (!running) onSnapshot(result.snapshot_id); }
       }).catch((e) => { if (current()) setError(`识别结果读取失败：${String(e)}`); }),
       !running && getEvidenceCoverage(jobId, templateId, controller.signal).then((result) => {
@@ -126,9 +126,16 @@ function EvidenceReviewSession({ jobId, templateId, refreshKey = 0, running = fa
   const diagnosticLabels: Record<string, string> = {
     ambiguous_source_quote: "原文引用存在歧义", source_quote_outside_scope: "原文引用超出允许范围",
     model_unavailable: "模型调用不可用",
+    model_request_failed: "模型请求失败，尚未完成验证",
     model_timeout: "模型响应超时", model_total_timeout: "模型排队与响应已达到总等待时限",
     model_cancelled: "请求已取消，可从断点继续", model_partial_refusal: "部分提案缺少支持",
     source_excerpt_mismatch: "引用与原文不一致", unsupported_type: "实体类型缺少原文支持",
+    context_budget_exceeded: "完整原文记录超出上下文预算，尚未完成验证",
+    incomplete_record_target: "逻辑记录不完整，未启动识别",
+    unknown_or_disallowed_citation_source: "引用来源不在当前字段允许范围",
+    record_mapping_mismatch: "引用与原文记录结构不一致",
+    condition_review_incomplete: "原文条件尚未逐项完成复核",
+    condition_review_conflict: "原文条件复核结果存在冲突",
   };
   const counts = {
     entity: candidates.filter((candidate) => candidate.kind === "entity").length,
@@ -157,6 +164,7 @@ function EvidenceReviewSession({ jobId, templateId, refreshKey = 0, running = fa
     </p>}
     {data && !candidates.length && <p className="text-muted-foreground">暂无识别结果。完成文档识别后，实体及属性将在此处显示。</p>}
     <EvidenceGraphTree candidates={candidates} schema={data?.graph_schema} busy={busy} onSource={onSource}
+      branchProgress={data?.run?.branch_progress} executionStatus={data?.execution_status}
       calculations={data?.calculations} onCalculation={mayEdit ? handleCalculation : undefined}
       onReject={mayEdit ? handleReject : undefined} />
 

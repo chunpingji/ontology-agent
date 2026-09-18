@@ -65,6 +65,8 @@ def test_shared_core_has_no_persistence_review_or_evaluation_dependency():
     forbidden = (
         "app.evaluation",
         "app.models",
+        "sqlalchemy",
+        "app.db",
         "app.services.extraction.candidate_store",
         "app.services.extraction.extraction_tasks",
         "app.services.fact_commit",
@@ -80,6 +82,17 @@ def test_shared_core_has_no_persistence_review_or_evaluation_dependency():
         if matches:
             offenders[str(path.relative_to(BACKEND))] = matches
     assert offenders == {}
+
+
+def test_tools_do_not_own_model_transport_or_provider_sdk():
+    forbidden = ("openai", "app.services.llm", "app.services.document_analysis")
+    for name in ("tool_contracts.py", "tool_runtime.py"):
+        imports = _imports(CORE / name)
+        # Cancellation/deadline checks share runtime state, never a model client.
+        imports.discard("app.services.llm.model_runtime")
+        assert not {value for value in imports if any(
+            value == prefix or value.startswith(prefix + ".") for prefix in forbidden
+        )}, name
 
 
 def test_shared_contracts_have_no_legacy_runner_selection_field():

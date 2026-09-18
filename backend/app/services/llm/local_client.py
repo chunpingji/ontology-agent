@@ -6,6 +6,7 @@ gracefully to zero-LLM behaviour.
 
 012: ``get_local_llm()`` — client factory.
 013: ``chat_with_schema()`` — structured-output helper with prompt-based fallback.
+027: ``responses_create()`` — one native Responses request without fallback or retries.
 """
 
 from __future__ import annotations
@@ -21,7 +22,13 @@ from uuid import uuid4
 
 from app.services.extraction.annotation_execution import ExecutionLost
 from app.services.extraction.text_scanner import strip_tag_blocks
-from app.services.llm.model_runtime import ModelCancelled, check_cancelled
+from app.services.llm.model_runtime import (
+    ModelCancelled,
+    ModelWaitFailure,
+    check_cancelled,
+    observe,
+    runtime,
+)
 from app.services.llm.model_scheduler import (
     HEARTBEAT_SECONDS,
     POLL_SECONDS,
@@ -34,6 +41,18 @@ logger = logging.getLogger(__name__)
 
 class StructuredModelError(RuntimeError):
     """Stable failure code; provider responses and credentials stay out of diagnostics."""
+
+
+@dataclass(frozen=True)
+class ResponseTurn:
+    """Provider output for the controller to persist before deciding whether to consume it."""
+
+    response_id: str
+    output_items: list[dict]
+    response_status: str
+    incomplete_details: dict | None
+    error: dict | None
+    usage: dict | None
 
 
 def _model_error(exc):
@@ -124,12 +143,48 @@ async def _send(client, kwargs):
     return await response
 
 
-async def _http_attempt(client, kwargs, ticket, deadline, request_timeout):
+async def _consume_response(connection, kwargs):
+    response = await connection.responses.create(**kwargs)
+    if not kwargs.get("stream"):
+        return response
+    final = None
+    async with response as stream:
+        async for event in stream:
+            check_cancelled()
+            if event.type in {
+                "response.output_text.delta", "response.reasoning_text.delta",
+                "response.reasoning_summary_text.delta", "response.refusal.delta",
+            }:
+                observe("delta", channel=("thinking" if "reasoning" in event.type else "output"),
+                        text=event.delta)
+            elif event.type in {"response.completed", "response.failed", "response.incomplete"}:
+                final = event.response
+            elif event.type == "error":
+                raise StructuredModelError("model_stream_error")
+    if final is None:
+        raise StructuredModelError("model_stream_incomplete")
+    return final
+
+
+async def _send_response(client, kwargs):
+    if isinstance(client, LocalModelClient):
+        async with client.open() as connection:
+            return await _consume_response(connection, kwargs)
+    # A caller-owned SDK client may have its default retries enabled. Its copy
+    # shares the caller's connection; neither instance is closed by this facade.
+    connection = client.with_options(max_retries=0) if hasattr(client, "with_options") else client
+    return await _consume_response(connection, kwargs)
+
+
+async def _http_attempt(client, kwargs, ticket, deadline, request_timeout, *, send=_send):
     operation = None
+    on_wait = runtime.get().get("on_model_wait")
     try:
         ticket.publish("queued")
         while True:
             check_cancelled()
+            if on_wait is not None:
+                on_wait()
             if monotonic() >= deadline:
                 raise StructuredModelError("model_total_timeout")
             if ticket.admit():
@@ -148,13 +203,15 @@ async def _http_attempt(client, kwargs, ticket, deadline, request_timeout):
             async with asyncio.timeout(limit):
                 check_cancelled()
                 ticket.start()
-                return await _send(client, kwargs)
+                return await send(client, kwargs)
 
         operation = asyncio.create_task(request())
         heartbeat = monotonic()
         while not operation.done():
             await asyncio.wait({operation}, timeout=POLL_SECONDS)
             check_cancelled()
+            if on_wait is not None:
+                on_wait()
             if monotonic() - heartbeat >= HEARTBEAT_SECONDS:
                 ticket.heartbeat()
                 heartbeat = monotonic()
@@ -169,6 +226,121 @@ async def _http_attempt(client, kwargs, ticket, deadline, request_timeout):
                 # Also retrieve a completed task's exception when ownership was
                 # lost at the same instant; preserve the outer control signal.
                 pass
+
+
+def _run_sync(run):
+    try:
+        asyncio.get_running_loop()
+    except RuntimeError:
+        return asyncio.run(run())
+    # Legacy async API handlers call these synchronous worker facades directly.
+    # Keep the request loop in one thread and propagate its ownership context.
+    from concurrent.futures import ThreadPoolExecutor
+    from contextvars import copy_context
+
+    with ThreadPoolExecutor(max_workers=1) as executor:
+        return executor.submit(copy_context().run, lambda: asyncio.run(run())).result()
+
+
+def _responses_usage(usage):
+    """Map native measurements without counting cached/reasoning subtotals twice."""
+    usage = usage or {}
+    input_details = usage.get("input_tokens_details") or {}
+    output_details = usage.get("output_tokens_details") or {}
+    values = {
+        "prompt_tokens": usage.get("input_tokens"),
+        "completion_tokens": usage.get("output_tokens"),
+        "total_tokens": usage.get("total_tokens"),
+        "cache_tokens": input_details.get("cached_tokens"),
+        "reasoning_tokens": output_details.get("reasoning_tokens"),
+    }
+    return {
+        key: value for key, value in values.items()
+        if isinstance(value, (int, float)) and not isinstance(value, bool)
+    }
+
+
+def responses_create(
+    client, *, input_items: list[dict], instructions: str,
+    model: str | None = None,
+    tools: list[dict] | None = None,
+    tool_choice: str | dict | None = None,
+    text_format: dict | None = None,
+    max_output_tokens: int | None = None,
+    include: list[str] | None = None,
+    reasoning: dict | None = None,
+    timeout_s: float | None = None,
+    total_timeout_s: float | None = None,
+) -> ResponseTurn:
+    """Send one Responses HTTP attempt through the existing admission/cancellation path.
+
+    Model failures, refusals and incomplete outputs are returned intact. The
+    controller owns protocol validation and must persist the turn before using it.
+    This transport neither executes tools nor parses a stage's answer JSON.
+    """
+    from app.config import settings
+
+    if client is None:
+        raise StructuredModelError("model_unavailable")
+    total = total_timeout_s if total_timeout_s is not None else settings.local_llm_total_timeout_s
+    deadline = monotonic() + total
+    request_timeout = timeout_s if timeout_s is not None else total
+    kwargs = {
+        "model": model or settings.local_llm_model,
+        "input": input_items,
+        "instructions": instructions,
+        "store": False,
+        "max_output_tokens": (
+            max_output_tokens if max_output_tokens is not None else settings.local_llm_max_tokens
+        ),
+    }
+    for name, value in (
+        ("tools", tools), ("tool_choice", tool_choice), ("include", include),
+        ("reasoning", reasoning),
+    ):
+        if value is not None:
+            kwargs[name] = value
+    if text_format is not None:
+        kwargs["text"] = {"format": text_format}
+    if runtime.get().get("on_harness_event") is not None:
+        kwargs["stream"] = True
+
+    async def run():
+        check_cancelled()
+        remaining = deadline - monotonic()
+        if remaining <= 0:
+            raise StructuredModelError("model_total_timeout")
+        ticket = RequestTicket(str(client.base_url), uuid4().hex, 1, remaining)
+        try:
+            response = await _http_attempt(
+                client, kwargs, ticket, deadline, request_timeout, send=_send_response,
+            )
+            # SDK-only conversion stays at this boundary. exclude_unset preserves
+            # optional protocol fields exactly, including opaque reasoning data.
+            payload = response.model_dump(mode="json", exclude_unset=True)
+            turn = ResponseTurn(
+                response_id=payload["id"], output_items=payload["output"],
+                response_status=payload["status"],
+                incomplete_details=payload.get("incomplete_details"),
+                error=payload.get("error"), usage=payload.get("usage"),
+            )
+            ticket.finish("complete", **_responses_usage(turn.usage))
+            observe("model_end", status=turn.response_status, usage=turn.usage,
+                    output_items=turn.output_items)
+            return turn
+        except (ModelCancelled, ExecutionLost, ModelSlotLost, ModelWaitFailure):
+            ticket.finish("cancelled")
+            observe("model_end", status="interrupted")
+            raise
+        except Exception as exc:
+            failure = _model_error(exc)
+            if monotonic() >= deadline:
+                failure = StructuredModelError("model_total_timeout")
+            ticket.finish("failed", error_code=str(failure))
+            observe("model_end", status="failed", error_code=str(failure))
+            raise failure from exc
+
+    return _run_sync(run)
 
 
 def chat_with_schema(
@@ -187,11 +359,14 @@ def chat_with_schema(
     raise_on_error: bool = False,
     timeout_retries: int = 0,
     total_timeout_s: float | None = None,
+    truncation_max_tokens: int | None = None,
 ) -> dict[str, Any] | None:
     """Shared admission, hard total deadline and cancellable, observable retries.
 
     Queueing, HTTP attempts and optional schema fallback share ONE total budget.
     SDK retries are disabled. Ownership and pause signals are never swallowed.
+    Opt-in truncation recovery raises the output limit once within this deadline
+    and max_attempts, retaining structured output. Other callers keep their policy.
     This synchronous facade is used by existing worker/thread entry points.
     """
     from app.config import settings
@@ -239,7 +414,7 @@ def chat_with_schema(
                     raise StructuredModelError("model_parse_error")
                 ticket.finish("complete", **_usage(response))
                 return parsed
-            except (ModelCancelled, ExecutionLost, ModelSlotLost):
+            except (ModelCancelled, ExecutionLost, ModelSlotLost, ModelWaitFailure):
                 ticket.finish("cancelled")
                 raise
             except Exception as exc:
@@ -252,9 +427,16 @@ def chat_with_schema(
                     ticket.publish("retrying")
                     logger.warning("Evidence model timeout; retry %s/%s", retries, timeout_retries)
                     continue
+                if str(failure) == "model_output_truncated" and truncation_max_tokens is not None:
+                    if attempt < max_attempts and kwargs["max_tokens"] < truncation_max_tokens:
+                        kwargs["max_tokens"] = truncation_max_tokens
+                        ticket.publish("retrying")
+                        continue
+                    raise failure
                 if (
                     not fallback
                     and max_attempts > 1
+                    and (truncation_max_tokens is None or attempt < max_attempts)
                     and str(failure) not in {"model_timeout", "model_total_timeout"}
                 ):
                     fallback = True
@@ -274,17 +456,7 @@ def chat_with_schema(
                 raise failure from exc
 
     try:
-        try:
-            asyncio.get_running_loop()
-        except RuntimeError:
-            return asyncio.run(run())
-        # A few legacy async API handlers call this synchronous facade directly.
-        # Keep the loop/connection in one thread, propagating its ownership context.
-        from concurrent.futures import ThreadPoolExecutor
-        from contextvars import copy_context
-
-        with ThreadPoolExecutor(max_workers=1) as executor:
-            return executor.submit(copy_context().run, lambda: asyncio.run(run())).result()
+        return _run_sync(run)
     except StructuredModelError:
         if raise_on_error:
             raise

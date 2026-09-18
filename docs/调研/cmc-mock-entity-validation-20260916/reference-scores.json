@@ -1,0 +1,2405 @@
+{
+  "run_root": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-mock-20260916/completed",
+  "reference_path": "/tmp/cmc-mock-validation-20260916/reference.json",
+  "reference_sha256": "baebe8e16138e52f87cb790976ce2d72ace9f26a7fc608346a9a5eea84f66a54",
+  "script_sha256": "2df0bc753e9a8f3fe50c322c17b2f7052045c2092369bea1aac03858233055cb",
+  "reference_authority": "Hand-reviewed assistant reference, not expert-adjudicated gold and not a full graph gold set.",
+  "summary": {
+    "full_report_reference_ids": [
+      "CT64610",
+      "DE64603",
+      "PF64216",
+      "PF64616",
+      "RE64611",
+      "RE64613"
+    ],
+    "full_report_reference_id_count": 6,
+    "full_report_reference_mentions": 18,
+    "cases": 9,
+    "source_only_semantic_review": "pending_separate_assistant_review"
+  },
+  "arms": {
+    "E0": {
+      "selected_source_coverage": {
+        "primary": {
+          "equipment_ids": [
+            "CT64610",
+            "DE64603",
+            "RE64611"
+          ],
+          "full_report_id_denominator": 6,
+          "full_report_id_coverage": 0.5,
+          "mention_occurrences": 3,
+          "full_report_mention_denominator": 18,
+          "full_report_mention_coverage": 0.16666666666666666
+        },
+        "context": {
+          "equipment_ids": [],
+          "full_report_id_denominator": 6,
+          "full_report_id_coverage": 0.0,
+          "mention_occurrences": 0,
+          "full_report_mention_denominator": 18,
+          "full_report_mention_coverage": 0.0
+        }
+      },
+      "selected_ids_union": [
+        "CT64610",
+        "DE64603",
+        "RE64611"
+      ],
+      "unselected_report_ids": [
+        "PF64216",
+        "PF64616",
+        "RE64613"
+      ],
+      "stages": {
+        "candidate": {
+          "cases_with_output": 3,
+          "total_selected_cases": 3,
+          "source_bound_predicted_ids": [
+            "CT64610",
+            "DE64603",
+            "RE64611"
+          ],
+          "selected_primary_reference_denominator": 3,
+          "selected_all_reference_denominator": 3,
+          "primary_output_id_coverage_fraction_over_all_selected": 1.0,
+          "primary_ids_without_stage_evaluation": [],
+          "outside_selected_reference_ids": [],
+          "multi_identifier_merge_count": 0,
+          "anchor_identifier_conflict_count": 0,
+          "primary_alternative_statuses": {},
+          "context_alternative_statuses": {},
+          "meaning": "Output coverage over all selected reference IDs, not entity semantic accuracy or recall of the full report. Failed cases remain in coverage denominators."
+        },
+        "final": {
+          "cases_with_output": 3,
+          "total_selected_cases": 3,
+          "source_bound_predicted_ids": [
+            "CT64610",
+            "DE64603",
+            "RE64611"
+          ],
+          "selected_primary_reference_denominator": 3,
+          "selected_all_reference_denominator": 3,
+          "primary_output_id_coverage_fraction_over_all_selected": 1.0,
+          "primary_ids_without_stage_evaluation": [],
+          "outside_selected_reference_ids": [],
+          "multi_identifier_merge_count": 0,
+          "anchor_identifier_conflict_count": 0,
+          "primary_alternative_statuses": {},
+          "context_alternative_statuses": {},
+          "meaning": "Output coverage over all selected reference IDs, not entity semantic accuracy or recall of the full report. Failed cases remain in coverage denominators."
+        }
+      },
+      "invalid_final_external_links": 0
+    },
+    "E1": {
+      "selected_source_coverage": {
+        "primary": {
+          "equipment_ids": [
+            "CT64610",
+            "DE64603",
+            "RE64611"
+          ],
+          "full_report_id_denominator": 6,
+          "full_report_id_coverage": 0.5,
+          "mention_occurrences": 3,
+          "full_report_mention_denominator": 18,
+          "full_report_mention_coverage": 0.16666666666666666
+        },
+        "context": {
+          "equipment_ids": [],
+          "full_report_id_denominator": 6,
+          "full_report_id_coverage": 0.0,
+          "mention_occurrences": 0,
+          "full_report_mention_denominator": 18,
+          "full_report_mention_coverage": 0.0
+        }
+      },
+      "selected_ids_union": [
+        "CT64610",
+        "DE64603",
+        "RE64611"
+      ],
+      "unselected_report_ids": [
+        "PF64216",
+        "PF64616",
+        "RE64613"
+      ],
+      "stages": {
+        "candidate": {
+          "cases_with_output": 3,
+          "total_selected_cases": 3,
+          "source_bound_predicted_ids": [
+            "CT64610",
+            "DE64603",
+            "RE64611"
+          ],
+          "selected_primary_reference_denominator": 3,
+          "selected_all_reference_denominator": 3,
+          "primary_output_id_coverage_fraction_over_all_selected": 1.0,
+          "primary_ids_without_stage_evaluation": [],
+          "outside_selected_reference_ids": [],
+          "multi_identifier_merge_count": 0,
+          "anchor_identifier_conflict_count": 0,
+          "primary_alternative_statuses": {},
+          "context_alternative_statuses": {},
+          "meaning": "Output coverage over all selected reference IDs, not entity semantic accuracy or recall of the full report. Failed cases remain in coverage denominators."
+        },
+        "final": {
+          "cases_with_output": 3,
+          "total_selected_cases": 3,
+          "source_bound_predicted_ids": [
+            "CT64610",
+            "DE64603",
+            "RE64611"
+          ],
+          "selected_primary_reference_denominator": 3,
+          "selected_all_reference_denominator": 3,
+          "primary_output_id_coverage_fraction_over_all_selected": 1.0,
+          "primary_ids_without_stage_evaluation": [],
+          "outside_selected_reference_ids": [],
+          "multi_identifier_merge_count": 0,
+          "anchor_identifier_conflict_count": 0,
+          "primary_alternative_statuses": {},
+          "context_alternative_statuses": {},
+          "meaning": "Output coverage over all selected reference IDs, not entity semantic accuracy or recall of the full report. Failed cases remain in coverage denominators."
+        }
+      },
+      "invalid_final_external_links": 0
+    },
+    "E2": {
+      "selected_source_coverage": {
+        "primary": {
+          "equipment_ids": [
+            "CT64610",
+            "PF64216",
+            "PF64616",
+            "RE64611"
+          ],
+          "full_report_id_denominator": 6,
+          "full_report_id_coverage": 0.6666666666666666,
+          "mention_occurrences": 6,
+          "full_report_mention_denominator": 18,
+          "full_report_mention_coverage": 0.3333333333333333
+        },
+        "context": {
+          "equipment_ids": [],
+          "full_report_id_denominator": 6,
+          "full_report_id_coverage": 0.0,
+          "mention_occurrences": 0,
+          "full_report_mention_denominator": 18,
+          "full_report_mention_coverage": 0.0
+        }
+      },
+      "selected_ids_union": [
+        "CT64610",
+        "PF64216",
+        "PF64616",
+        "RE64611"
+      ],
+      "unselected_report_ids": [
+        "DE64603",
+        "RE64613"
+      ],
+      "stages": {
+        "candidate": {
+          "cases_with_output": 3,
+          "total_selected_cases": 3,
+          "source_bound_predicted_ids": [
+            "CT64610",
+            "PF64216",
+            "PF64616",
+            "RE64611"
+          ],
+          "selected_primary_reference_denominator": 4,
+          "selected_all_reference_denominator": 4,
+          "primary_output_id_coverage_fraction_over_all_selected": 1.0,
+          "primary_ids_without_stage_evaluation": [],
+          "outside_selected_reference_ids": [],
+          "multi_identifier_merge_count": 1,
+          "anchor_identifier_conflict_count": 2,
+          "primary_alternative_statuses": {
+            "one_of_preserved": 1,
+            "split_or_unconditional_or_incomplete": 1
+          },
+          "context_alternative_statuses": {},
+          "meaning": "Output coverage over all selected reference IDs, not entity semantic accuracy or recall of the full report. Failed cases remain in coverage denominators."
+        },
+        "final": {
+          "cases_with_output": 3,
+          "total_selected_cases": 3,
+          "source_bound_predicted_ids": [
+            "CT64610",
+            "RE64611"
+          ],
+          "selected_primary_reference_denominator": 4,
+          "selected_all_reference_denominator": 4,
+          "primary_output_id_coverage_fraction_over_all_selected": 0.5,
+          "primary_ids_without_stage_evaluation": [],
+          "outside_selected_reference_ids": [],
+          "multi_identifier_merge_count": 0,
+          "anchor_identifier_conflict_count": 0,
+          "primary_alternative_statuses": {
+            "not_output": 2
+          },
+          "context_alternative_statuses": {},
+          "meaning": "Output coverage over all selected reference IDs, not entity semantic accuracy or recall of the full report. Failed cases remain in coverage denominators."
+        }
+      },
+      "invalid_final_external_links": 0
+    }
+  },
+  "cases": [
+    {
+      "arm": "E0",
+      "scope_id": "record-8717014d83b3",
+      "record_id": "8717014d83b3a775f33fe098947737aa30ae5a953c04d22898e648a2627961d3",
+      "run_status": "complete",
+      "source_reference_coverage": {
+        "primary": {
+          "mention_ids": [
+            "equipment-id-223-0"
+          ],
+          "equipment_ids": [
+            "CT64610"
+          ]
+        },
+        "context": {
+          "mention_ids": [],
+          "equipment_ids": []
+        },
+        "context_only_equipment_ids": [],
+        "selected_equipment_ids": [
+          "CT64610"
+        ]
+      },
+      "candidate": {
+        "stage_output_available": true,
+        "entities": [
+          {
+            "local_entity_id": "e1",
+            "raw_equipment_id": "CT64610",
+            "single_identifier": "CT64610",
+            "identifier_quote_valid": true,
+            "anchor_quote_valid": true,
+            "anchor_identifier_strings": [],
+            "raw_identifier_strings": [
+              "CT64610"
+            ],
+            "multiple_identifiers_merged": false,
+            "identifier_field_merges_multiple_ids": false,
+            "anchor_contains_multiple_ids": false,
+            "anchor_identifier_disagrees": false,
+            "external_key": ""
+          }
+        ],
+        "entity_count": 1,
+        "unnumbered_entities": 0,
+        "malformed_numbered_entities": 0,
+        "invalid_identifier_quotes": 0,
+        "lexical_identifier_sets": {
+          "status": "evaluated_lexical_only",
+          "predicted_ids": [
+            "CT64610"
+          ],
+          "primary_reference_denominator": 1,
+          "selected_reference_denominator": 1,
+          "primary_exact_matches": [
+            "CT64610"
+          ],
+          "context_only_predictions": [],
+          "not_in_selected_reference_ids": [],
+          "missing_primary_ids": [],
+          "not_evaluated_primary_ids": [],
+          "primary_exact_set_precision": 1.0,
+          "primary_exact_set_recall": 1.0,
+          "selected_exact_set_precision": 1.0,
+          "selected_exact_set_recall": 1.0
+        },
+        "source_bound_identifier_sets": {
+          "status": "evaluated_lexical_only",
+          "predicted_ids": [
+            "CT64610"
+          ],
+          "primary_reference_denominator": 1,
+          "selected_reference_denominator": 1,
+          "primary_exact_matches": [
+            "CT64610"
+          ],
+          "context_only_predictions": [],
+          "not_in_selected_reference_ids": [],
+          "missing_primary_ids": [],
+          "not_evaluated_primary_ids": [],
+          "primary_exact_set_precision": 1.0,
+          "primary_exact_set_recall": 1.0,
+          "selected_exact_set_precision": 1.0,
+          "selected_exact_set_recall": 1.0
+        },
+        "multi_identifier_merges": [],
+        "anchor_identifier_conflicts": [],
+        "same_name_multi_identifier_merges_proven_by_explicit_ids": [],
+        "duplicate_local_entities_for_one_identifier": {},
+        "merge_limit": "An omitted same-name ID alone is not evidence of an entity merge; it is reported as missing/unexamined, not a proven merge.",
+        "alternatives": []
+      },
+      "final": {
+        "stage_output_available": true,
+        "entities": [
+          {
+            "local_entity_id": "e1",
+            "raw_equipment_id": "CT64610",
+            "single_identifier": "CT64610",
+            "identifier_quote_valid": true,
+            "anchor_quote_valid": true,
+            "anchor_identifier_strings": [],
+            "raw_identifier_strings": [
+              "CT64610"
+            ],
+            "multiple_identifiers_merged": false,
+            "identifier_field_merges_multiple_ids": false,
+            "anchor_contains_multiple_ids": false,
+            "anchor_identifier_disagrees": false,
+            "external_key": ""
+          }
+        ],
+        "entity_count": 1,
+        "unnumbered_entities": 0,
+        "malformed_numbered_entities": 0,
+        "invalid_identifier_quotes": 0,
+        "lexical_identifier_sets": {
+          "status": "evaluated_lexical_only",
+          "predicted_ids": [
+            "CT64610"
+          ],
+          "primary_reference_denominator": 1,
+          "selected_reference_denominator": 1,
+          "primary_exact_matches": [
+            "CT64610"
+          ],
+          "context_only_predictions": [],
+          "not_in_selected_reference_ids": [],
+          "missing_primary_ids": [],
+          "not_evaluated_primary_ids": [],
+          "primary_exact_set_precision": 1.0,
+          "primary_exact_set_recall": 1.0,
+          "selected_exact_set_precision": 1.0,
+          "selected_exact_set_recall": 1.0
+        },
+        "source_bound_identifier_sets": {
+          "status": "evaluated_lexical_only",
+          "predicted_ids": [
+            "CT64610"
+          ],
+          "primary_reference_denominator": 1,
+          "selected_reference_denominator": 1,
+          "primary_exact_matches": [
+            "CT64610"
+          ],
+          "context_only_predictions": [],
+          "not_in_selected_reference_ids": [],
+          "missing_primary_ids": [],
+          "not_evaluated_primary_ids": [],
+          "primary_exact_set_precision": 1.0,
+          "primary_exact_set_recall": 1.0,
+          "selected_exact_set_precision": 1.0,
+          "selected_exact_set_recall": 1.0
+        },
+        "multi_identifier_merges": [],
+        "anchor_identifier_conflicts": [],
+        "same_name_multi_identifier_merges_proven_by_explicit_ids": [],
+        "duplicate_local_entities_for_one_identifier": {},
+        "merge_limit": "An omitted same-name ID alone is not evidence of an entity merge; it is reported as missing/unexamined, not a proven merge.",
+        "alternatives": []
+      },
+      "external_links": {
+        "proposed": [],
+        "final": [],
+        "invalid_final_links": []
+      },
+      "unknown_archive_devices": [
+        {
+          "equipment_id": "DE64603",
+          "primary_selected": false,
+          "context_selected": false,
+          "candidate_stage_available": true,
+          "final_stage_complete": true,
+          "candidate_retained": false,
+          "final_retained": false,
+          "candidate_wrong_surrogate_present": false,
+          "final_wrong_surrogate_present": false,
+          "unexpected_final_external_links": [],
+          "limit": "A surrogate ID appearing while the source unknown ID is omitted is a replacement warning; exact role/identity substitution requires source-only review."
+        }
+      ]
+    },
+    {
+      "arm": "E0",
+      "scope_id": "record-0c9a7e82c53b",
+      "record_id": "0c9a7e82c53bd0fd1416b995decd9c3ec51ee0a1e76d5280b80776e55f6c6b20",
+      "run_status": "complete",
+      "source_reference_coverage": {
+        "primary": {
+          "mention_ids": [
+            "equipment-id-236-0"
+          ],
+          "equipment_ids": [
+            "DE64603"
+          ]
+        },
+        "context": {
+          "mention_ids": [],
+          "equipment_ids": []
+        },
+        "context_only_equipment_ids": [],
+        "selected_equipment_ids": [
+          "DE64603"
+        ]
+      },
+      "candidate": {
+        "stage_output_available": true,
+        "entities": [
+          {
+            "local_entity_id": "e1",
+            "raw_equipment_id": "DE64603",
+            "single_identifier": "DE64603",
+            "identifier_quote_valid": true,
+            "anchor_quote_valid": true,
+            "anchor_identifier_strings": [],
+            "raw_identifier_strings": [
+              "DE64603"
+            ],
+            "multiple_identifiers_merged": false,
+            "identifier_field_merges_multiple_ids": false,
+            "anchor_contains_multiple_ids": false,
+            "anchor_identifier_disagrees": false,
+            "external_key": ""
+          }
+        ],
+        "entity_count": 1,
+        "unnumbered_entities": 0,
+        "malformed_numbered_entities": 0,
+        "invalid_identifier_quotes": 0,
+        "lexical_identifier_sets": {
+          "status": "evaluated_lexical_only",
+          "predicted_ids": [
+            "DE64603"
+          ],
+          "primary_reference_denominator": 1,
+          "selected_reference_denominator": 1,
+          "primary_exact_matches": [
+            "DE64603"
+          ],
+          "context_only_predictions": [],
+          "not_in_selected_reference_ids": [],
+          "missing_primary_ids": [],
+          "not_evaluated_primary_ids": [],
+          "primary_exact_set_precision": 1.0,
+          "primary_exact_set_recall": 1.0,
+          "selected_exact_set_precision": 1.0,
+          "selected_exact_set_recall": 1.0
+        },
+        "source_bound_identifier_sets": {
+          "status": "evaluated_lexical_only",
+          "predicted_ids": [
+            "DE64603"
+          ],
+          "primary_reference_denominator": 1,
+          "selected_reference_denominator": 1,
+          "primary_exact_matches": [
+            "DE64603"
+          ],
+          "context_only_predictions": [],
+          "not_in_selected_reference_ids": [],
+          "missing_primary_ids": [],
+          "not_evaluated_primary_ids": [],
+          "primary_exact_set_precision": 1.0,
+          "primary_exact_set_recall": 1.0,
+          "selected_exact_set_precision": 1.0,
+          "selected_exact_set_recall": 1.0
+        },
+        "multi_identifier_merges": [],
+        "anchor_identifier_conflicts": [],
+        "same_name_multi_identifier_merges_proven_by_explicit_ids": [],
+        "duplicate_local_entities_for_one_identifier": {},
+        "merge_limit": "An omitted same-name ID alone is not evidence of an entity merge; it is reported as missing/unexamined, not a proven merge.",
+        "alternatives": []
+      },
+      "final": {
+        "stage_output_available": true,
+        "entities": [
+          {
+            "local_entity_id": "e1",
+            "raw_equipment_id": "DE64603",
+            "single_identifier": "DE64603",
+            "identifier_quote_valid": true,
+            "anchor_quote_valid": true,
+            "anchor_identifier_strings": [],
+            "raw_identifier_strings": [
+              "DE64603"
+            ],
+            "multiple_identifiers_merged": false,
+            "identifier_field_merges_multiple_ids": false,
+            "anchor_contains_multiple_ids": false,
+            "anchor_identifier_disagrees": false,
+            "external_key": ""
+          }
+        ],
+        "entity_count": 1,
+        "unnumbered_entities": 0,
+        "malformed_numbered_entities": 0,
+        "invalid_identifier_quotes": 0,
+        "lexical_identifier_sets": {
+          "status": "evaluated_lexical_only",
+          "predicted_ids": [
+            "DE64603"
+          ],
+          "primary_reference_denominator": 1,
+          "selected_reference_denominator": 1,
+          "primary_exact_matches": [
+            "DE64603"
+          ],
+          "context_only_predictions": [],
+          "not_in_selected_reference_ids": [],
+          "missing_primary_ids": [],
+          "not_evaluated_primary_ids": [],
+          "primary_exact_set_precision": 1.0,
+          "primary_exact_set_recall": 1.0,
+          "selected_exact_set_precision": 1.0,
+          "selected_exact_set_recall": 1.0
+        },
+        "source_bound_identifier_sets": {
+          "status": "evaluated_lexical_only",
+          "predicted_ids": [
+            "DE64603"
+          ],
+          "primary_reference_denominator": 1,
+          "selected_reference_denominator": 1,
+          "primary_exact_matches": [
+            "DE64603"
+          ],
+          "context_only_predictions": [],
+          "not_in_selected_reference_ids": [],
+          "missing_primary_ids": [],
+          "not_evaluated_primary_ids": [],
+          "primary_exact_set_precision": 1.0,
+          "primary_exact_set_recall": 1.0,
+          "selected_exact_set_precision": 1.0,
+          "selected_exact_set_recall": 1.0
+        },
+        "multi_identifier_merges": [],
+        "anchor_identifier_conflicts": [],
+        "same_name_multi_identifier_merges_proven_by_explicit_ids": [],
+        "duplicate_local_entities_for_one_identifier": {},
+        "merge_limit": "An omitted same-name ID alone is not evidence of an entity merge; it is reported as missing/unexamined, not a proven merge.",
+        "alternatives": []
+      },
+      "external_links": {
+        "proposed": [],
+        "final": [],
+        "invalid_final_links": []
+      },
+      "unknown_archive_devices": [
+        {
+          "equipment_id": "DE64603",
+          "primary_selected": true,
+          "context_selected": false,
+          "candidate_stage_available": true,
+          "final_stage_complete": true,
+          "candidate_retained": true,
+          "final_retained": true,
+          "candidate_wrong_surrogate_present": false,
+          "final_wrong_surrogate_present": false,
+          "unexpected_final_external_links": [],
+          "limit": "A surrogate ID appearing while the source unknown ID is omitted is a replacement warning; exact role/identity substitution requires source-only review."
+        }
+      ]
+    },
+    {
+      "arm": "E0",
+      "scope_id": "record-c54c3238c67b",
+      "record_id": "c54c3238c67bc1e9fa52ed792378ddd68de02b3bd416cef9d369eece2f2971e9",
+      "run_status": "complete",
+      "source_reference_coverage": {
+        "primary": {
+          "mention_ids": [
+            "equipment-id-182-0"
+          ],
+          "equipment_ids": [
+            "RE64611"
+          ]
+        },
+        "context": {
+          "mention_ids": [],
+          "equipment_ids": []
+        },
+        "context_only_equipment_ids": [],
+        "selected_equipment_ids": [
+          "RE64611"
+        ]
+      },
+      "candidate": {
+        "stage_output_available": true,
+        "entities": [
+          {
+            "local_entity_id": "e1",
+            "raw_equipment_id": "RE64611",
+            "single_identifier": "RE64611",
+            "identifier_quote_valid": true,
+            "anchor_quote_valid": true,
+            "anchor_identifier_strings": [],
+            "raw_identifier_strings": [
+              "RE64611"
+            ],
+            "multiple_identifiers_merged": false,
+            "identifier_field_merges_multiple_ids": false,
+            "anchor_contains_multiple_ids": false,
+            "anchor_identifier_disagrees": false,
+            "external_key": ""
+          }
+        ],
+        "entity_count": 1,
+        "unnumbered_entities": 0,
+        "malformed_numbered_entities": 0,
+        "invalid_identifier_quotes": 0,
+        "lexical_identifier_sets": {
+          "status": "evaluated_lexical_only",
+          "predicted_ids": [
+            "RE64611"
+          ],
+          "primary_reference_denominator": 1,
+          "selected_reference_denominator": 1,
+          "primary_exact_matches": [
+            "RE64611"
+          ],
+          "context_only_predictions": [],
+          "not_in_selected_reference_ids": [],
+          "missing_primary_ids": [],
+          "not_evaluated_primary_ids": [],
+          "primary_exact_set_precision": 1.0,
+          "primary_exact_set_recall": 1.0,
+          "selected_exact_set_precision": 1.0,
+          "selected_exact_set_recall": 1.0
+        },
+        "source_bound_identifier_sets": {
+          "status": "evaluated_lexical_only",
+          "predicted_ids": [
+            "RE64611"
+          ],
+          "primary_reference_denominator": 1,
+          "selected_reference_denominator": 1,
+          "primary_exact_matches": [
+            "RE64611"
+          ],
+          "context_only_predictions": [],
+          "not_in_selected_reference_ids": [],
+          "missing_primary_ids": [],
+          "not_evaluated_primary_ids": [],
+          "primary_exact_set_precision": 1.0,
+          "primary_exact_set_recall": 1.0,
+          "selected_exact_set_precision": 1.0,
+          "selected_exact_set_recall": 1.0
+        },
+        "multi_identifier_merges": [],
+        "anchor_identifier_conflicts": [],
+        "same_name_multi_identifier_merges_proven_by_explicit_ids": [],
+        "duplicate_local_entities_for_one_identifier": {},
+        "merge_limit": "An omitted same-name ID alone is not evidence of an entity merge; it is reported as missing/unexamined, not a proven merge.",
+        "alternatives": []
+      },
+      "final": {
+        "stage_output_available": true,
+        "entities": [
+          {
+            "local_entity_id": "e1",
+            "raw_equipment_id": "RE64611",
+            "single_identifier": "RE64611",
+            "identifier_quote_valid": true,
+            "anchor_quote_valid": true,
+            "anchor_identifier_strings": [],
+            "raw_identifier_strings": [
+              "RE64611"
+            ],
+            "multiple_identifiers_merged": false,
+            "identifier_field_merges_multiple_ids": false,
+            "anchor_contains_multiple_ids": false,
+            "anchor_identifier_disagrees": false,
+            "external_key": ""
+          }
+        ],
+        "entity_count": 1,
+        "unnumbered_entities": 0,
+        "malformed_numbered_entities": 0,
+        "invalid_identifier_quotes": 0,
+        "lexical_identifier_sets": {
+          "status": "evaluated_lexical_only",
+          "predicted_ids": [
+            "RE64611"
+          ],
+          "primary_reference_denominator": 1,
+          "selected_reference_denominator": 1,
+          "primary_exact_matches": [
+            "RE64611"
+          ],
+          "context_only_predictions": [],
+          "not_in_selected_reference_ids": [],
+          "missing_primary_ids": [],
+          "not_evaluated_primary_ids": [],
+          "primary_exact_set_precision": 1.0,
+          "primary_exact_set_recall": 1.0,
+          "selected_exact_set_precision": 1.0,
+          "selected_exact_set_recall": 1.0
+        },
+        "source_bound_identifier_sets": {
+          "status": "evaluated_lexical_only",
+          "predicted_ids": [
+            "RE64611"
+          ],
+          "primary_reference_denominator": 1,
+          "selected_reference_denominator": 1,
+          "primary_exact_matches": [
+            "RE64611"
+          ],
+          "context_only_predictions": [],
+          "not_in_selected_reference_ids": [],
+          "missing_primary_ids": [],
+          "not_evaluated_primary_ids": [],
+          "primary_exact_set_precision": 1.0,
+          "primary_exact_set_recall": 1.0,
+          "selected_exact_set_precision": 1.0,
+          "selected_exact_set_recall": 1.0
+        },
+        "multi_identifier_merges": [],
+        "anchor_identifier_conflicts": [],
+        "same_name_multi_identifier_merges_proven_by_explicit_ids": [],
+        "duplicate_local_entities_for_one_identifier": {},
+        "merge_limit": "An omitted same-name ID alone is not evidence of an entity merge; it is reported as missing/unexamined, not a proven merge.",
+        "alternatives": []
+      },
+      "external_links": {
+        "proposed": [],
+        "final": [],
+        "invalid_final_links": []
+      },
+      "unknown_archive_devices": [
+        {
+          "equipment_id": "DE64603",
+          "primary_selected": false,
+          "context_selected": false,
+          "candidate_stage_available": true,
+          "final_stage_complete": true,
+          "candidate_retained": false,
+          "final_retained": false,
+          "candidate_wrong_surrogate_present": false,
+          "final_wrong_surrogate_present": false,
+          "unexpected_final_external_links": [],
+          "limit": "A surrogate ID appearing while the source unknown ID is omitted is a replacement warning; exact role/identity substitution requires source-only review."
+        }
+      ]
+    },
+    {
+      "arm": "E1",
+      "scope_id": "record-8717014d83b3",
+      "record_id": "8717014d83b3a775f33fe098947737aa30ae5a953c04d22898e648a2627961d3",
+      "run_status": "complete",
+      "source_reference_coverage": {
+        "primary": {
+          "mention_ids": [
+            "equipment-id-223-0"
+          ],
+          "equipment_ids": [
+            "CT64610"
+          ]
+        },
+        "context": {
+          "mention_ids": [],
+          "equipment_ids": []
+        },
+        "context_only_equipment_ids": [],
+        "selected_equipment_ids": [
+          "CT64610"
+        ]
+      },
+      "candidate": {
+        "stage_output_available": true,
+        "entities": [
+          {
+            "local_entity_id": "e1",
+            "raw_equipment_id": "CT64610",
+            "single_identifier": "CT64610",
+            "identifier_quote_valid": true,
+            "anchor_quote_valid": true,
+            "anchor_identifier_strings": [],
+            "raw_identifier_strings": [
+              "CT64610"
+            ],
+            "multiple_identifiers_merged": false,
+            "identifier_field_merges_multiple_ids": false,
+            "anchor_contains_multiple_ids": false,
+            "anchor_identifier_disagrees": false,
+            "external_key": "CT64610"
+          }
+        ],
+        "entity_count": 1,
+        "unnumbered_entities": 0,
+        "malformed_numbered_entities": 0,
+        "invalid_identifier_quotes": 0,
+        "lexical_identifier_sets": {
+          "status": "evaluated_lexical_only",
+          "predicted_ids": [
+            "CT64610"
+          ],
+          "primary_reference_denominator": 1,
+          "selected_reference_denominator": 1,
+          "primary_exact_matches": [
+            "CT64610"
+          ],
+          "context_only_predictions": [],
+          "not_in_selected_reference_ids": [],
+          "missing_primary_ids": [],
+          "not_evaluated_primary_ids": [],
+          "primary_exact_set_precision": 1.0,
+          "primary_exact_set_recall": 1.0,
+          "selected_exact_set_precision": 1.0,
+          "selected_exact_set_recall": 1.0
+        },
+        "source_bound_identifier_sets": {
+          "status": "evaluated_lexical_only",
+          "predicted_ids": [
+            "CT64610"
+          ],
+          "primary_reference_denominator": 1,
+          "selected_reference_denominator": 1,
+          "primary_exact_matches": [
+            "CT64610"
+          ],
+          "context_only_predictions": [],
+          "not_in_selected_reference_ids": [],
+          "missing_primary_ids": [],
+          "not_evaluated_primary_ids": [],
+          "primary_exact_set_precision": 1.0,
+          "primary_exact_set_recall": 1.0,
+          "selected_exact_set_precision": 1.0,
+          "selected_exact_set_recall": 1.0
+        },
+        "multi_identifier_merges": [],
+        "anchor_identifier_conflicts": [],
+        "same_name_multi_identifier_merges_proven_by_explicit_ids": [],
+        "duplicate_local_entities_for_one_identifier": {},
+        "merge_limit": "An omitted same-name ID alone is not evidence of an entity merge; it is reported as missing/unexamined, not a proven merge.",
+        "alternatives": []
+      },
+      "final": {
+        "stage_output_available": true,
+        "entities": [
+          {
+            "local_entity_id": "e1",
+            "raw_equipment_id": "CT64610",
+            "single_identifier": "CT64610",
+            "identifier_quote_valid": true,
+            "anchor_quote_valid": true,
+            "anchor_identifier_strings": [],
+            "raw_identifier_strings": [
+              "CT64610"
+            ],
+            "multiple_identifiers_merged": false,
+            "identifier_field_merges_multiple_ids": false,
+            "anchor_contains_multiple_ids": false,
+            "anchor_identifier_disagrees": false,
+            "external_key": "CT64610"
+          }
+        ],
+        "entity_count": 1,
+        "unnumbered_entities": 0,
+        "malformed_numbered_entities": 0,
+        "invalid_identifier_quotes": 0,
+        "lexical_identifier_sets": {
+          "status": "evaluated_lexical_only",
+          "predicted_ids": [
+            "CT64610"
+          ],
+          "primary_reference_denominator": 1,
+          "selected_reference_denominator": 1,
+          "primary_exact_matches": [
+            "CT64610"
+          ],
+          "context_only_predictions": [],
+          "not_in_selected_reference_ids": [],
+          "missing_primary_ids": [],
+          "not_evaluated_primary_ids": [],
+          "primary_exact_set_precision": 1.0,
+          "primary_exact_set_recall": 1.0,
+          "selected_exact_set_precision": 1.0,
+          "selected_exact_set_recall": 1.0
+        },
+        "source_bound_identifier_sets": {
+          "status": "evaluated_lexical_only",
+          "predicted_ids": [
+            "CT64610"
+          ],
+          "primary_reference_denominator": 1,
+          "selected_reference_denominator": 1,
+          "primary_exact_matches": [
+            "CT64610"
+          ],
+          "context_only_predictions": [],
+          "not_in_selected_reference_ids": [],
+          "missing_primary_ids": [],
+          "not_evaluated_primary_ids": [],
+          "primary_exact_set_precision": 1.0,
+          "primary_exact_set_recall": 1.0,
+          "selected_exact_set_precision": 1.0,
+          "selected_exact_set_recall": 1.0
+        },
+        "multi_identifier_merges": [],
+        "anchor_identifier_conflicts": [],
+        "same_name_multi_identifier_merges_proven_by_explicit_ids": [],
+        "duplicate_local_entities_for_one_identifier": {},
+        "merge_limit": "An omitted same-name ID alone is not evidence of an entity merge; it is reported as missing/unexamined, not a proven merge.",
+        "alternatives": []
+      },
+      "external_links": {
+        "proposed": [
+          {
+            "entity_id": "e1",
+            "key": "CT64610",
+            "identifier": "CT64610",
+            "key_returned_by_tool": true,
+            "key_exactly_matches_source_identifier": true
+          }
+        ],
+        "final": [
+          {
+            "entity_id": "e1",
+            "key": "CT64610",
+            "source_identifier": "CT64610",
+            "accepted_entity_present": true,
+            "key_returned_by_tool": true,
+            "key_exactly_matches_source_identifier": true,
+            "entity_external_key_matches": true,
+            "link_record_key_matches": true
+          }
+        ],
+        "invalid_final_links": []
+      },
+      "unknown_archive_devices": [
+        {
+          "equipment_id": "DE64603",
+          "primary_selected": false,
+          "context_selected": false,
+          "candidate_stage_available": true,
+          "final_stage_complete": true,
+          "candidate_retained": false,
+          "final_retained": false,
+          "candidate_wrong_surrogate_present": false,
+          "final_wrong_surrogate_present": false,
+          "unexpected_final_external_links": [],
+          "limit": "A surrogate ID appearing while the source unknown ID is omitted is a replacement warning; exact role/identity substitution requires source-only review."
+        }
+      ]
+    },
+    {
+      "arm": "E1",
+      "scope_id": "record-0c9a7e82c53b",
+      "record_id": "0c9a7e82c53bd0fd1416b995decd9c3ec51ee0a1e76d5280b80776e55f6c6b20",
+      "run_status": "complete",
+      "source_reference_coverage": {
+        "primary": {
+          "mention_ids": [
+            "equipment-id-236-0"
+          ],
+          "equipment_ids": [
+            "DE64603"
+          ]
+        },
+        "context": {
+          "mention_ids": [],
+          "equipment_ids": []
+        },
+        "context_only_equipment_ids": [],
+        "selected_equipment_ids": [
+          "DE64603"
+        ]
+      },
+      "candidate": {
+        "stage_output_available": true,
+        "entities": [
+          {
+            "local_entity_id": "e1",
+            "raw_equipment_id": "DE64603",
+            "single_identifier": "DE64603",
+            "identifier_quote_valid": true,
+            "anchor_quote_valid": true,
+            "anchor_identifier_strings": [],
+            "raw_identifier_strings": [
+              "DE64603"
+            ],
+            "multiple_identifiers_merged": false,
+            "identifier_field_merges_multiple_ids": false,
+            "anchor_contains_multiple_ids": false,
+            "anchor_identifier_disagrees": false,
+            "external_key": ""
+          }
+        ],
+        "entity_count": 1,
+        "unnumbered_entities": 0,
+        "malformed_numbered_entities": 0,
+        "invalid_identifier_quotes": 0,
+        "lexical_identifier_sets": {
+          "status": "evaluated_lexical_only",
+          "predicted_ids": [
+            "DE64603"
+          ],
+          "primary_reference_denominator": 1,
+          "selected_reference_denominator": 1,
+          "primary_exact_matches": [
+            "DE64603"
+          ],
+          "context_only_predictions": [],
+          "not_in_selected_reference_ids": [],
+          "missing_primary_ids": [],
+          "not_evaluated_primary_ids": [],
+          "primary_exact_set_precision": 1.0,
+          "primary_exact_set_recall": 1.0,
+          "selected_exact_set_precision": 1.0,
+          "selected_exact_set_recall": 1.0
+        },
+        "source_bound_identifier_sets": {
+          "status": "evaluated_lexical_only",
+          "predicted_ids": [
+            "DE64603"
+          ],
+          "primary_reference_denominator": 1,
+          "selected_reference_denominator": 1,
+          "primary_exact_matches": [
+            "DE64603"
+          ],
+          "context_only_predictions": [],
+          "not_in_selected_reference_ids": [],
+          "missing_primary_ids": [],
+          "not_evaluated_primary_ids": [],
+          "primary_exact_set_precision": 1.0,
+          "primary_exact_set_recall": 1.0,
+          "selected_exact_set_precision": 1.0,
+          "selected_exact_set_recall": 1.0
+        },
+        "multi_identifier_merges": [],
+        "anchor_identifier_conflicts": [],
+        "same_name_multi_identifier_merges_proven_by_explicit_ids": [],
+        "duplicate_local_entities_for_one_identifier": {},
+        "merge_limit": "An omitted same-name ID alone is not evidence of an entity merge; it is reported as missing/unexamined, not a proven merge.",
+        "alternatives": []
+      },
+      "final": {
+        "stage_output_available": true,
+        "entities": [
+          {
+            "local_entity_id": "e1",
+            "raw_equipment_id": "DE64603",
+            "single_identifier": "DE64603",
+            "identifier_quote_valid": true,
+            "anchor_quote_valid": true,
+            "anchor_identifier_strings": [],
+            "raw_identifier_strings": [
+              "DE64603"
+            ],
+            "multiple_identifiers_merged": false,
+            "identifier_field_merges_multiple_ids": false,
+            "anchor_contains_multiple_ids": false,
+            "anchor_identifier_disagrees": false,
+            "external_key": ""
+          }
+        ],
+        "entity_count": 1,
+        "unnumbered_entities": 0,
+        "malformed_numbered_entities": 0,
+        "invalid_identifier_quotes": 0,
+        "lexical_identifier_sets": {
+          "status": "evaluated_lexical_only",
+          "predicted_ids": [
+            "DE64603"
+          ],
+          "primary_reference_denominator": 1,
+          "selected_reference_denominator": 1,
+          "primary_exact_matches": [
+            "DE64603"
+          ],
+          "context_only_predictions": [],
+          "not_in_selected_reference_ids": [],
+          "missing_primary_ids": [],
+          "not_evaluated_primary_ids": [],
+          "primary_exact_set_precision": 1.0,
+          "primary_exact_set_recall": 1.0,
+          "selected_exact_set_precision": 1.0,
+          "selected_exact_set_recall": 1.0
+        },
+        "source_bound_identifier_sets": {
+          "status": "evaluated_lexical_only",
+          "predicted_ids": [
+            "DE64603"
+          ],
+          "primary_reference_denominator": 1,
+          "selected_reference_denominator": 1,
+          "primary_exact_matches": [
+            "DE64603"
+          ],
+          "context_only_predictions": [],
+          "not_in_selected_reference_ids": [],
+          "missing_primary_ids": [],
+          "not_evaluated_primary_ids": [],
+          "primary_exact_set_precision": 1.0,
+          "primary_exact_set_recall": 1.0,
+          "selected_exact_set_precision": 1.0,
+          "selected_exact_set_recall": 1.0
+        },
+        "multi_identifier_merges": [],
+        "anchor_identifier_conflicts": [],
+        "same_name_multi_identifier_merges_proven_by_explicit_ids": [],
+        "duplicate_local_entities_for_one_identifier": {},
+        "merge_limit": "An omitted same-name ID alone is not evidence of an entity merge; it is reported as missing/unexamined, not a proven merge.",
+        "alternatives": []
+      },
+      "external_links": {
+        "proposed": [],
+        "final": [],
+        "invalid_final_links": []
+      },
+      "unknown_archive_devices": [
+        {
+          "equipment_id": "DE64603",
+          "primary_selected": true,
+          "context_selected": false,
+          "candidate_stage_available": true,
+          "final_stage_complete": true,
+          "candidate_retained": true,
+          "final_retained": true,
+          "candidate_wrong_surrogate_present": false,
+          "final_wrong_surrogate_present": false,
+          "unexpected_final_external_links": [],
+          "limit": "A surrogate ID appearing while the source unknown ID is omitted is a replacement warning; exact role/identity substitution requires source-only review."
+        }
+      ]
+    },
+    {
+      "arm": "E1",
+      "scope_id": "record-c54c3238c67b",
+      "record_id": "c54c3238c67bc1e9fa52ed792378ddd68de02b3bd416cef9d369eece2f2971e9",
+      "run_status": "complete",
+      "source_reference_coverage": {
+        "primary": {
+          "mention_ids": [
+            "equipment-id-182-0"
+          ],
+          "equipment_ids": [
+            "RE64611"
+          ]
+        },
+        "context": {
+          "mention_ids": [],
+          "equipment_ids": []
+        },
+        "context_only_equipment_ids": [],
+        "selected_equipment_ids": [
+          "RE64611"
+        ]
+      },
+      "candidate": {
+        "stage_output_available": true,
+        "entities": [
+          {
+            "local_entity_id": "e1",
+            "raw_equipment_id": "RE64611",
+            "single_identifier": "RE64611",
+            "identifier_quote_valid": true,
+            "anchor_quote_valid": true,
+            "anchor_identifier_strings": [],
+            "raw_identifier_strings": [
+              "RE64611"
+            ],
+            "multiple_identifiers_merged": false,
+            "identifier_field_merges_multiple_ids": false,
+            "anchor_contains_multiple_ids": false,
+            "anchor_identifier_disagrees": false,
+            "external_key": "RE64611"
+          }
+        ],
+        "entity_count": 1,
+        "unnumbered_entities": 0,
+        "malformed_numbered_entities": 0,
+        "invalid_identifier_quotes": 0,
+        "lexical_identifier_sets": {
+          "status": "evaluated_lexical_only",
+          "predicted_ids": [
+            "RE64611"
+          ],
+          "primary_reference_denominator": 1,
+          "selected_reference_denominator": 1,
+          "primary_exact_matches": [
+            "RE64611"
+          ],
+          "context_only_predictions": [],
+          "not_in_selected_reference_ids": [],
+          "missing_primary_ids": [],
+          "not_evaluated_primary_ids": [],
+          "primary_exact_set_precision": 1.0,
+          "primary_exact_set_recall": 1.0,
+          "selected_exact_set_precision": 1.0,
+          "selected_exact_set_recall": 1.0
+        },
+        "source_bound_identifier_sets": {
+          "status": "evaluated_lexical_only",
+          "predicted_ids": [
+            "RE64611"
+          ],
+          "primary_reference_denominator": 1,
+          "selected_reference_denominator": 1,
+          "primary_exact_matches": [
+            "RE64611"
+          ],
+          "context_only_predictions": [],
+          "not_in_selected_reference_ids": [],
+          "missing_primary_ids": [],
+          "not_evaluated_primary_ids": [],
+          "primary_exact_set_precision": 1.0,
+          "primary_exact_set_recall": 1.0,
+          "selected_exact_set_precision": 1.0,
+          "selected_exact_set_recall": 1.0
+        },
+        "multi_identifier_merges": [],
+        "anchor_identifier_conflicts": [],
+        "same_name_multi_identifier_merges_proven_by_explicit_ids": [],
+        "duplicate_local_entities_for_one_identifier": {},
+        "merge_limit": "An omitted same-name ID alone is not evidence of an entity merge; it is reported as missing/unexamined, not a proven merge.",
+        "alternatives": []
+      },
+      "final": {
+        "stage_output_available": true,
+        "entities": [
+          {
+            "local_entity_id": "e1",
+            "raw_equipment_id": "RE64611",
+            "single_identifier": "RE64611",
+            "identifier_quote_valid": true,
+            "anchor_quote_valid": true,
+            "anchor_identifier_strings": [],
+            "raw_identifier_strings": [
+              "RE64611"
+            ],
+            "multiple_identifiers_merged": false,
+            "identifier_field_merges_multiple_ids": false,
+            "anchor_contains_multiple_ids": false,
+            "anchor_identifier_disagrees": false,
+            "external_key": "RE64611"
+          }
+        ],
+        "entity_count": 1,
+        "unnumbered_entities": 0,
+        "malformed_numbered_entities": 0,
+        "invalid_identifier_quotes": 0,
+        "lexical_identifier_sets": {
+          "status": "evaluated_lexical_only",
+          "predicted_ids": [
+            "RE64611"
+          ],
+          "primary_reference_denominator": 1,
+          "selected_reference_denominator": 1,
+          "primary_exact_matches": [
+            "RE64611"
+          ],
+          "context_only_predictions": [],
+          "not_in_selected_reference_ids": [],
+          "missing_primary_ids": [],
+          "not_evaluated_primary_ids": [],
+          "primary_exact_set_precision": 1.0,
+          "primary_exact_set_recall": 1.0,
+          "selected_exact_set_precision": 1.0,
+          "selected_exact_set_recall": 1.0
+        },
+        "source_bound_identifier_sets": {
+          "status": "evaluated_lexical_only",
+          "predicted_ids": [
+            "RE64611"
+          ],
+          "primary_reference_denominator": 1,
+          "selected_reference_denominator": 1,
+          "primary_exact_matches": [
+            "RE64611"
+          ],
+          "context_only_predictions": [],
+          "not_in_selected_reference_ids": [],
+          "missing_primary_ids": [],
+          "not_evaluated_primary_ids": [],
+          "primary_exact_set_precision": 1.0,
+          "primary_exact_set_recall": 1.0,
+          "selected_exact_set_precision": 1.0,
+          "selected_exact_set_recall": 1.0
+        },
+        "multi_identifier_merges": [],
+        "anchor_identifier_conflicts": [],
+        "same_name_multi_identifier_merges_proven_by_explicit_ids": [],
+        "duplicate_local_entities_for_one_identifier": {},
+        "merge_limit": "An omitted same-name ID alone is not evidence of an entity merge; it is reported as missing/unexamined, not a proven merge.",
+        "alternatives": []
+      },
+      "external_links": {
+        "proposed": [
+          {
+            "entity_id": "e1",
+            "key": "RE64611",
+            "identifier": "RE64611",
+            "key_returned_by_tool": true,
+            "key_exactly_matches_source_identifier": true
+          }
+        ],
+        "final": [
+          {
+            "entity_id": "e1",
+            "key": "RE64611",
+            "source_identifier": "RE64611",
+            "accepted_entity_present": true,
+            "key_returned_by_tool": true,
+            "key_exactly_matches_source_identifier": true,
+            "entity_external_key_matches": true,
+            "link_record_key_matches": true
+          }
+        ],
+        "invalid_final_links": []
+      },
+      "unknown_archive_devices": [
+        {
+          "equipment_id": "DE64603",
+          "primary_selected": false,
+          "context_selected": false,
+          "candidate_stage_available": true,
+          "final_stage_complete": true,
+          "candidate_retained": false,
+          "final_retained": false,
+          "candidate_wrong_surrogate_present": false,
+          "final_wrong_surrogate_present": false,
+          "unexpected_final_external_links": [],
+          "limit": "A surrogate ID appearing while the source unknown ID is omitted is a replacement warning; exact role/identity substitution requires source-only review."
+        }
+      ]
+    },
+    {
+      "arm": "E2",
+      "scope_id": "record-be0b530ec6ae",
+      "record_id": "be0b530ec6ae738dd0e81be4e1052ce8749178a3883d8f85298bb7ccc894453e",
+      "run_status": "complete",
+      "source_reference_coverage": {
+        "primary": {
+          "mention_ids": [
+            "equipment-id-135-1",
+            "equipment-id-135-13",
+            "equipment-id-135-21"
+          ],
+          "equipment_ids": [
+            "PF64216",
+            "PF64616",
+            "RE64611"
+          ]
+        },
+        "context": {
+          "mention_ids": [],
+          "equipment_ids": []
+        },
+        "context_only_equipment_ids": [],
+        "selected_equipment_ids": [
+          "PF64216",
+          "PF64616",
+          "RE64611"
+        ]
+      },
+      "candidate": {
+        "stage_output_available": true,
+        "entities": [
+          {
+            "local_entity_id": "e1",
+            "raw_equipment_id": "RE64611",
+            "single_identifier": "RE64611",
+            "identifier_quote_valid": true,
+            "anchor_quote_valid": true,
+            "anchor_identifier_strings": [],
+            "raw_identifier_strings": [
+              "RE64611"
+            ],
+            "multiple_identifiers_merged": false,
+            "identifier_field_merges_multiple_ids": false,
+            "anchor_contains_multiple_ids": false,
+            "anchor_identifier_disagrees": false,
+            "external_key": "RE64611"
+          },
+          {
+            "local_entity_id": "e2",
+            "raw_equipment_id": "PF64216",
+            "single_identifier": "PF64216",
+            "identifier_quote_valid": true,
+            "anchor_quote_valid": true,
+            "anchor_identifier_strings": [
+              "RE64611"
+            ],
+            "raw_identifier_strings": [
+              "PF64216"
+            ],
+            "multiple_identifiers_merged": false,
+            "identifier_field_merges_multiple_ids": false,
+            "anchor_contains_multiple_ids": false,
+            "anchor_identifier_disagrees": true,
+            "external_key": "PF64216"
+          },
+          {
+            "local_entity_id": "e3",
+            "raw_equipment_id": "PF64616",
+            "single_identifier": "PF64616",
+            "identifier_quote_valid": true,
+            "anchor_quote_valid": true,
+            "anchor_identifier_strings": [
+              "RE64611"
+            ],
+            "raw_identifier_strings": [
+              "PF64616"
+            ],
+            "multiple_identifiers_merged": false,
+            "identifier_field_merges_multiple_ids": false,
+            "anchor_contains_multiple_ids": false,
+            "anchor_identifier_disagrees": true,
+            "external_key": "PF64616"
+          }
+        ],
+        "entity_count": 3,
+        "unnumbered_entities": 0,
+        "malformed_numbered_entities": 0,
+        "invalid_identifier_quotes": 0,
+        "lexical_identifier_sets": {
+          "status": "evaluated_lexical_only",
+          "predicted_ids": [
+            "PF64216",
+            "PF64616",
+            "RE64611"
+          ],
+          "primary_reference_denominator": 3,
+          "selected_reference_denominator": 3,
+          "primary_exact_matches": [
+            "PF64216",
+            "PF64616",
+            "RE64611"
+          ],
+          "context_only_predictions": [],
+          "not_in_selected_reference_ids": [],
+          "missing_primary_ids": [],
+          "not_evaluated_primary_ids": [],
+          "primary_exact_set_precision": 1.0,
+          "primary_exact_set_recall": 1.0,
+          "selected_exact_set_precision": 1.0,
+          "selected_exact_set_recall": 1.0
+        },
+        "source_bound_identifier_sets": {
+          "status": "evaluated_lexical_only",
+          "predicted_ids": [
+            "PF64216",
+            "PF64616",
+            "RE64611"
+          ],
+          "primary_reference_denominator": 3,
+          "selected_reference_denominator": 3,
+          "primary_exact_matches": [
+            "PF64216",
+            "PF64616",
+            "RE64611"
+          ],
+          "context_only_predictions": [],
+          "not_in_selected_reference_ids": [],
+          "missing_primary_ids": [],
+          "not_evaluated_primary_ids": [],
+          "primary_exact_set_precision": 1.0,
+          "primary_exact_set_recall": 1.0,
+          "selected_exact_set_precision": 1.0,
+          "selected_exact_set_recall": 1.0
+        },
+        "multi_identifier_merges": [],
+        "anchor_identifier_conflicts": [
+          "e2",
+          "e3"
+        ],
+        "same_name_multi_identifier_merges_proven_by_explicit_ids": [],
+        "duplicate_local_entities_for_one_identifier": {},
+        "merge_limit": "An omitted same-name ID alone is not evidence of an entity merge; it is reported as missing/unexamined, not a proven merge.",
+        "alternatives": [
+          {
+            "group_id": "filter-choice",
+            "members": [
+              "PF64216",
+              "PF64616"
+            ],
+            "primary_reference_occurrences": 1,
+            "selected_reference_occurrences": 1,
+            "scope": "primary",
+            "status": "one_of_preserved",
+            "preserved_relations": [
+              {
+                "relation_index": 2,
+                "selection": "one_of",
+                "object_identifier_strings": [
+                  "PF64216",
+                  "PF64616"
+                ],
+                "raw_object_identifier_strings": [
+                  "PF64216",
+                  "PF64616"
+                ],
+                "object_ids_are_atomic_and_source_bound": true,
+                "polarity": "affirmed"
+              }
+            ],
+            "malformed_relations": [],
+            "semantic_limit": "Object ID set and 或 are checked; process role, polarity, and full relation semantics still need independent source review."
+          }
+        ]
+      },
+      "final": {
+        "stage_output_available": true,
+        "entities": [
+          {
+            "local_entity_id": "e1",
+            "raw_equipment_id": "RE64611",
+            "single_identifier": "RE64611",
+            "identifier_quote_valid": true,
+            "anchor_quote_valid": true,
+            "anchor_identifier_strings": [],
+            "raw_identifier_strings": [
+              "RE64611"
+            ],
+            "multiple_identifiers_merged": false,
+            "identifier_field_merges_multiple_ids": false,
+            "anchor_contains_multiple_ids": false,
+            "anchor_identifier_disagrees": false,
+            "external_key": "RE64611"
+          }
+        ],
+        "entity_count": 1,
+        "unnumbered_entities": 0,
+        "malformed_numbered_entities": 0,
+        "invalid_identifier_quotes": 0,
+        "lexical_identifier_sets": {
+          "status": "evaluated_lexical_only",
+          "predicted_ids": [
+            "RE64611"
+          ],
+          "primary_reference_denominator": 3,
+          "selected_reference_denominator": 3,
+          "primary_exact_matches": [
+            "RE64611"
+          ],
+          "context_only_predictions": [],
+          "not_in_selected_reference_ids": [],
+          "missing_primary_ids": [
+            "PF64216",
+            "PF64616"
+          ],
+          "not_evaluated_primary_ids": [],
+          "primary_exact_set_precision": 1.0,
+          "primary_exact_set_recall": 0.3333333333333333,
+          "selected_exact_set_precision": 1.0,
+          "selected_exact_set_recall": 0.3333333333333333
+        },
+        "source_bound_identifier_sets": {
+          "status": "evaluated_lexical_only",
+          "predicted_ids": [
+            "RE64611"
+          ],
+          "primary_reference_denominator": 3,
+          "selected_reference_denominator": 3,
+          "primary_exact_matches": [
+            "RE64611"
+          ],
+          "context_only_predictions": [],
+          "not_in_selected_reference_ids": [],
+          "missing_primary_ids": [
+            "PF64216",
+            "PF64616"
+          ],
+          "not_evaluated_primary_ids": [],
+          "primary_exact_set_precision": 1.0,
+          "primary_exact_set_recall": 0.3333333333333333,
+          "selected_exact_set_precision": 1.0,
+          "selected_exact_set_recall": 0.3333333333333333
+        },
+        "multi_identifier_merges": [],
+        "anchor_identifier_conflicts": [],
+        "same_name_multi_identifier_merges_proven_by_explicit_ids": [],
+        "duplicate_local_entities_for_one_identifier": {},
+        "merge_limit": "An omitted same-name ID alone is not evidence of an entity merge; it is reported as missing/unexamined, not a proven merge.",
+        "alternatives": [
+          {
+            "group_id": "filter-choice",
+            "members": [
+              "PF64216",
+              "PF64616"
+            ],
+            "primary_reference_occurrences": 1,
+            "selected_reference_occurrences": 1,
+            "scope": "primary",
+            "status": "not_output",
+            "preserved_relations": [],
+            "malformed_relations": [],
+            "semantic_limit": "Object ID set and 或 are checked; process role, polarity, and full relation semantics still need independent source review."
+          }
+        ]
+      },
+      "external_links": {
+        "proposed": [
+          {
+            "entity_id": "e1",
+            "key": "RE64611",
+            "identifier": "RE64611",
+            "key_returned_by_tool": true,
+            "key_exactly_matches_source_identifier": true
+          },
+          {
+            "entity_id": "e2",
+            "key": "PF64216",
+            "identifier": "PF64216",
+            "key_returned_by_tool": true,
+            "key_exactly_matches_source_identifier": true
+          },
+          {
+            "entity_id": "e3",
+            "key": "PF64616",
+            "identifier": "PF64616",
+            "key_returned_by_tool": true,
+            "key_exactly_matches_source_identifier": true
+          }
+        ],
+        "final": [
+          {
+            "entity_id": "e1",
+            "key": "RE64611",
+            "source_identifier": "RE64611",
+            "accepted_entity_present": true,
+            "key_returned_by_tool": true,
+            "key_exactly_matches_source_identifier": true,
+            "entity_external_key_matches": true,
+            "link_record_key_matches": true
+          }
+        ],
+        "invalid_final_links": []
+      },
+      "unknown_archive_devices": [
+        {
+          "equipment_id": "DE64603",
+          "primary_selected": false,
+          "context_selected": false,
+          "candidate_stage_available": true,
+          "final_stage_complete": true,
+          "candidate_retained": false,
+          "final_retained": false,
+          "candidate_wrong_surrogate_present": false,
+          "final_wrong_surrogate_present": false,
+          "unexpected_final_external_links": [],
+          "limit": "A surrogate ID appearing while the source unknown ID is omitted is a replacement warning; exact role/identity substitution requires source-only review."
+        }
+      ]
+    },
+    {
+      "arm": "E2",
+      "scope_id": "record-8717014d83b3",
+      "record_id": "8717014d83b3a775f33fe098947737aa30ae5a953c04d22898e648a2627961d3",
+      "run_status": "complete",
+      "source_reference_coverage": {
+        "primary": {
+          "mention_ids": [
+            "equipment-id-223-0"
+          ],
+          "equipment_ids": [
+            "CT64610"
+          ]
+        },
+        "context": {
+          "mention_ids": [],
+          "equipment_ids": []
+        },
+        "context_only_equipment_ids": [],
+        "selected_equipment_ids": [
+          "CT64610"
+        ]
+      },
+      "candidate": {
+        "stage_output_available": true,
+        "entities": [
+          {
+            "local_entity_id": "e1",
+            "raw_equipment_id": "CT64610",
+            "single_identifier": "CT64610",
+            "identifier_quote_valid": true,
+            "anchor_quote_valid": true,
+            "anchor_identifier_strings": [],
+            "raw_identifier_strings": [
+              "CT64610"
+            ],
+            "multiple_identifiers_merged": false,
+            "identifier_field_merges_multiple_ids": false,
+            "anchor_contains_multiple_ids": false,
+            "anchor_identifier_disagrees": false,
+            "external_key": "CT64610"
+          }
+        ],
+        "entity_count": 1,
+        "unnumbered_entities": 0,
+        "malformed_numbered_entities": 0,
+        "invalid_identifier_quotes": 0,
+        "lexical_identifier_sets": {
+          "status": "evaluated_lexical_only",
+          "predicted_ids": [
+            "CT64610"
+          ],
+          "primary_reference_denominator": 1,
+          "selected_reference_denominator": 1,
+          "primary_exact_matches": [
+            "CT64610"
+          ],
+          "context_only_predictions": [],
+          "not_in_selected_reference_ids": [],
+          "missing_primary_ids": [],
+          "not_evaluated_primary_ids": [],
+          "primary_exact_set_precision": 1.0,
+          "primary_exact_set_recall": 1.0,
+          "selected_exact_set_precision": 1.0,
+          "selected_exact_set_recall": 1.0
+        },
+        "source_bound_identifier_sets": {
+          "status": "evaluated_lexical_only",
+          "predicted_ids": [
+            "CT64610"
+          ],
+          "primary_reference_denominator": 1,
+          "selected_reference_denominator": 1,
+          "primary_exact_matches": [
+            "CT64610"
+          ],
+          "context_only_predictions": [],
+          "not_in_selected_reference_ids": [],
+          "missing_primary_ids": [],
+          "not_evaluated_primary_ids": [],
+          "primary_exact_set_precision": 1.0,
+          "primary_exact_set_recall": 1.0,
+          "selected_exact_set_precision": 1.0,
+          "selected_exact_set_recall": 1.0
+        },
+        "multi_identifier_merges": [],
+        "anchor_identifier_conflicts": [],
+        "same_name_multi_identifier_merges_proven_by_explicit_ids": [],
+        "duplicate_local_entities_for_one_identifier": {},
+        "merge_limit": "An omitted same-name ID alone is not evidence of an entity merge; it is reported as missing/unexamined, not a proven merge.",
+        "alternatives": []
+      },
+      "final": {
+        "stage_output_available": true,
+        "entities": [
+          {
+            "local_entity_id": "e1",
+            "raw_equipment_id": "CT64610",
+            "single_identifier": "CT64610",
+            "identifier_quote_valid": true,
+            "anchor_quote_valid": true,
+            "anchor_identifier_strings": [],
+            "raw_identifier_strings": [
+              "CT64610"
+            ],
+            "multiple_identifiers_merged": false,
+            "identifier_field_merges_multiple_ids": false,
+            "anchor_contains_multiple_ids": false,
+            "anchor_identifier_disagrees": false,
+            "external_key": "CT64610"
+          }
+        ],
+        "entity_count": 1,
+        "unnumbered_entities": 0,
+        "malformed_numbered_entities": 0,
+        "invalid_identifier_quotes": 0,
+        "lexical_identifier_sets": {
+          "status": "evaluated_lexical_only",
+          "predicted_ids": [
+            "CT64610"
+          ],
+          "primary_reference_denominator": 1,
+          "selected_reference_denominator": 1,
+          "primary_exact_matches": [
+            "CT64610"
+          ],
+          "context_only_predictions": [],
+          "not_in_selected_reference_ids": [],
+          "missing_primary_ids": [],
+          "not_evaluated_primary_ids": [],
+          "primary_exact_set_precision": 1.0,
+          "primary_exact_set_recall": 1.0,
+          "selected_exact_set_precision": 1.0,
+          "selected_exact_set_recall": 1.0
+        },
+        "source_bound_identifier_sets": {
+          "status": "evaluated_lexical_only",
+          "predicted_ids": [
+            "CT64610"
+          ],
+          "primary_reference_denominator": 1,
+          "selected_reference_denominator": 1,
+          "primary_exact_matches": [
+            "CT64610"
+          ],
+          "context_only_predictions": [],
+          "not_in_selected_reference_ids": [],
+          "missing_primary_ids": [],
+          "not_evaluated_primary_ids": [],
+          "primary_exact_set_precision": 1.0,
+          "primary_exact_set_recall": 1.0,
+          "selected_exact_set_precision": 1.0,
+          "selected_exact_set_recall": 1.0
+        },
+        "multi_identifier_merges": [],
+        "anchor_identifier_conflicts": [],
+        "same_name_multi_identifier_merges_proven_by_explicit_ids": [],
+        "duplicate_local_entities_for_one_identifier": {},
+        "merge_limit": "An omitted same-name ID alone is not evidence of an entity merge; it is reported as missing/unexamined, not a proven merge.",
+        "alternatives": []
+      },
+      "external_links": {
+        "proposed": [
+          {
+            "entity_id": "e1",
+            "key": "CT64610",
+            "identifier": "CT64610",
+            "key_returned_by_tool": true,
+            "key_exactly_matches_source_identifier": true
+          }
+        ],
+        "final": [
+          {
+            "entity_id": "e1",
+            "key": "CT64610",
+            "source_identifier": "CT64610",
+            "accepted_entity_present": true,
+            "key_returned_by_tool": true,
+            "key_exactly_matches_source_identifier": true,
+            "entity_external_key_matches": true,
+            "link_record_key_matches": true
+          }
+        ],
+        "invalid_final_links": []
+      },
+      "unknown_archive_devices": [
+        {
+          "equipment_id": "DE64603",
+          "primary_selected": false,
+          "context_selected": false,
+          "candidate_stage_available": true,
+          "final_stage_complete": true,
+          "candidate_retained": false,
+          "final_retained": false,
+          "candidate_wrong_surrogate_present": false,
+          "final_wrong_surrogate_present": false,
+          "unexpected_final_external_links": [],
+          "limit": "A surrogate ID appearing while the source unknown ID is omitted is a replacement warning; exact role/identity substitution requires source-only review."
+        }
+      ]
+    },
+    {
+      "arm": "E2",
+      "scope_id": "record-d29114c4e0c5",
+      "record_id": "d29114c4e0c5edec1ed5918dc4075ee72abef7c0787c63ea016218945f368b2d",
+      "run_status": "complete",
+      "source_reference_coverage": {
+        "primary": {
+          "mention_ids": [
+            "equipment-id-195-0",
+            "equipment-id-195-8"
+          ],
+          "equipment_ids": [
+            "PF64216",
+            "PF64616"
+          ]
+        },
+        "context": {
+          "mention_ids": [],
+          "equipment_ids": []
+        },
+        "context_only_equipment_ids": [],
+        "selected_equipment_ids": [
+          "PF64216",
+          "PF64616"
+        ]
+      },
+      "candidate": {
+        "stage_output_available": true,
+        "entities": [
+          {
+            "local_entity_id": "e1",
+            "raw_equipment_id": "PF64216或PF64616",
+            "single_identifier": null,
+            "identifier_quote_valid": true,
+            "anchor_quote_valid": true,
+            "anchor_identifier_strings": [],
+            "raw_identifier_strings": [
+              "PF64216",
+              "PF64616"
+            ],
+            "multiple_identifiers_merged": true,
+            "identifier_field_merges_multiple_ids": true,
+            "anchor_contains_multiple_ids": false,
+            "anchor_identifier_disagrees": false,
+            "external_key": ""
+          }
+        ],
+        "entity_count": 1,
+        "unnumbered_entities": 0,
+        "malformed_numbered_entities": 1,
+        "invalid_identifier_quotes": 0,
+        "lexical_identifier_sets": {
+          "status": "evaluated_lexical_only",
+          "predicted_ids": [],
+          "primary_reference_denominator": 2,
+          "selected_reference_denominator": 2,
+          "primary_exact_matches": [],
+          "context_only_predictions": [],
+          "not_in_selected_reference_ids": [],
+          "missing_primary_ids": [
+            "PF64216",
+            "PF64616"
+          ],
+          "not_evaluated_primary_ids": [],
+          "primary_exact_set_precision": null,
+          "primary_exact_set_recall": 0.0,
+          "selected_exact_set_precision": null,
+          "selected_exact_set_recall": 0.0
+        },
+        "source_bound_identifier_sets": {
+          "status": "evaluated_lexical_only",
+          "predicted_ids": [],
+          "primary_reference_denominator": 2,
+          "selected_reference_denominator": 2,
+          "primary_exact_matches": [],
+          "context_only_predictions": [],
+          "not_in_selected_reference_ids": [],
+          "missing_primary_ids": [
+            "PF64216",
+            "PF64616"
+          ],
+          "not_evaluated_primary_ids": [],
+          "primary_exact_set_precision": null,
+          "primary_exact_set_recall": 0.0,
+          "selected_exact_set_precision": null,
+          "selected_exact_set_recall": 0.0
+        },
+        "multi_identifier_merges": [
+          "e1"
+        ],
+        "anchor_identifier_conflicts": [],
+        "same_name_multi_identifier_merges_proven_by_explicit_ids": [
+          {
+            "entity_id": "e1",
+            "reference_name": "压滤器",
+            "represented_identifiers": [
+              "PF64216",
+              "PF64616"
+            ]
+          },
+          {
+            "entity_id": "e1",
+            "reference_name": "钛棒过滤器",
+            "represented_identifiers": [
+              "PF64216",
+              "PF64616"
+            ]
+          }
+        ],
+        "duplicate_local_entities_for_one_identifier": {},
+        "merge_limit": "An omitted same-name ID alone is not evidence of an entity merge; it is reported as missing/unexamined, not a proven merge.",
+        "alternatives": [
+          {
+            "group_id": "filter-choice",
+            "members": [
+              "PF64216",
+              "PF64616"
+            ],
+            "primary_reference_occurrences": 1,
+            "selected_reference_occurrences": 1,
+            "scope": "primary",
+            "status": "split_or_unconditional_or_incomplete",
+            "preserved_relations": [],
+            "malformed_relations": [
+              {
+                "relation_index": 1,
+                "selection": "one_of",
+                "object_identifier_strings": [],
+                "raw_object_identifier_strings": [
+                  "PF64216",
+                  "PF64616"
+                ],
+                "object_ids_are_atomic_and_source_bound": false,
+                "polarity": "affirmed"
+              }
+            ],
+            "semantic_limit": "Object ID set and 或 are checked; process role, polarity, and full relation semantics still need independent source review."
+          }
+        ]
+      },
+      "final": {
+        "stage_output_available": true,
+        "entities": [],
+        "entity_count": 0,
+        "unnumbered_entities": 0,
+        "malformed_numbered_entities": 0,
+        "invalid_identifier_quotes": 0,
+        "lexical_identifier_sets": {
+          "status": "evaluated_lexical_only",
+          "predicted_ids": [],
+          "primary_reference_denominator": 2,
+          "selected_reference_denominator": 2,
+          "primary_exact_matches": [],
+          "context_only_predictions": [],
+          "not_in_selected_reference_ids": [],
+          "missing_primary_ids": [
+            "PF64216",
+            "PF64616"
+          ],
+          "not_evaluated_primary_ids": [],
+          "primary_exact_set_precision": null,
+          "primary_exact_set_recall": 0.0,
+          "selected_exact_set_precision": null,
+          "selected_exact_set_recall": 0.0
+        },
+        "source_bound_identifier_sets": {
+          "status": "evaluated_lexical_only",
+          "predicted_ids": [],
+          "primary_reference_denominator": 2,
+          "selected_reference_denominator": 2,
+          "primary_exact_matches": [],
+          "context_only_predictions": [],
+          "not_in_selected_reference_ids": [],
+          "missing_primary_ids": [
+            "PF64216",
+            "PF64616"
+          ],
+          "not_evaluated_primary_ids": [],
+          "primary_exact_set_precision": null,
+          "primary_exact_set_recall": 0.0,
+          "selected_exact_set_precision": null,
+          "selected_exact_set_recall": 0.0
+        },
+        "multi_identifier_merges": [],
+        "anchor_identifier_conflicts": [],
+        "same_name_multi_identifier_merges_proven_by_explicit_ids": [],
+        "duplicate_local_entities_for_one_identifier": {},
+        "merge_limit": "An omitted same-name ID alone is not evidence of an entity merge; it is reported as missing/unexamined, not a proven merge.",
+        "alternatives": [
+          {
+            "group_id": "filter-choice",
+            "members": [
+              "PF64216",
+              "PF64616"
+            ],
+            "primary_reference_occurrences": 1,
+            "selected_reference_occurrences": 1,
+            "scope": "primary",
+            "status": "not_output",
+            "preserved_relations": [],
+            "malformed_relations": [],
+            "semantic_limit": "Object ID set and 或 are checked; process role, polarity, and full relation semantics still need independent source review."
+          }
+        ]
+      },
+      "external_links": {
+        "proposed": [],
+        "final": [],
+        "invalid_final_links": []
+      },
+      "unknown_archive_devices": [
+        {
+          "equipment_id": "DE64603",
+          "primary_selected": false,
+          "context_selected": false,
+          "candidate_stage_available": true,
+          "final_stage_complete": true,
+          "candidate_retained": false,
+          "final_retained": false,
+          "candidate_wrong_surrogate_present": false,
+          "final_wrong_surrogate_present": false,
+          "unexpected_final_external_links": [],
+          "limit": "A surrogate ID appearing while the source unknown ID is omitted is a replacement warning; exact role/identity substitution requires source-only review."
+        }
+      ]
+    }
+  ],
+  "paired_E0_E1": [
+    {
+      "record_id": "8717014d83b3a775f33fe098947737aa30ae5a953c04d22898e648a2627961d3",
+      "same_reference_source_coverage": true,
+      "E0": {
+        "candidate": {
+          "status": "evaluated_lexical_only",
+          "predicted_ids": [
+            "CT64610"
+          ],
+          "primary_reference_denominator": 1,
+          "selected_reference_denominator": 1,
+          "primary_exact_matches": [
+            "CT64610"
+          ],
+          "context_only_predictions": [],
+          "not_in_selected_reference_ids": [],
+          "missing_primary_ids": [],
+          "not_evaluated_primary_ids": [],
+          "primary_exact_set_precision": 1.0,
+          "primary_exact_set_recall": 1.0,
+          "selected_exact_set_precision": 1.0,
+          "selected_exact_set_recall": 1.0
+        },
+        "final": {
+          "status": "evaluated_lexical_only",
+          "predicted_ids": [
+            "CT64610"
+          ],
+          "primary_reference_denominator": 1,
+          "selected_reference_denominator": 1,
+          "primary_exact_matches": [
+            "CT64610"
+          ],
+          "context_only_predictions": [],
+          "not_in_selected_reference_ids": [],
+          "missing_primary_ids": [],
+          "not_evaluated_primary_ids": [],
+          "primary_exact_set_precision": 1.0,
+          "primary_exact_set_recall": 1.0,
+          "selected_exact_set_precision": 1.0,
+          "selected_exact_set_recall": 1.0
+        }
+      },
+      "E1": {
+        "candidate": {
+          "status": "evaluated_lexical_only",
+          "predicted_ids": [
+            "CT64610"
+          ],
+          "primary_reference_denominator": 1,
+          "selected_reference_denominator": 1,
+          "primary_exact_matches": [
+            "CT64610"
+          ],
+          "context_only_predictions": [],
+          "not_in_selected_reference_ids": [],
+          "missing_primary_ids": [],
+          "not_evaluated_primary_ids": [],
+          "primary_exact_set_precision": 1.0,
+          "primary_exact_set_recall": 1.0,
+          "selected_exact_set_precision": 1.0,
+          "selected_exact_set_recall": 1.0
+        },
+        "final": {
+          "status": "evaluated_lexical_only",
+          "predicted_ids": [
+            "CT64610"
+          ],
+          "primary_reference_denominator": 1,
+          "selected_reference_denominator": 1,
+          "primary_exact_matches": [
+            "CT64610"
+          ],
+          "context_only_predictions": [],
+          "not_in_selected_reference_ids": [],
+          "missing_primary_ids": [],
+          "not_evaluated_primary_ids": [],
+          "primary_exact_set_precision": 1.0,
+          "primary_exact_set_recall": 1.0,
+          "selected_exact_set_precision": 1.0,
+          "selected_exact_set_recall": 1.0
+        }
+      }
+    },
+    {
+      "record_id": "0c9a7e82c53bd0fd1416b995decd9c3ec51ee0a1e76d5280b80776e55f6c6b20",
+      "same_reference_source_coverage": true,
+      "E0": {
+        "candidate": {
+          "status": "evaluated_lexical_only",
+          "predicted_ids": [
+            "DE64603"
+          ],
+          "primary_reference_denominator": 1,
+          "selected_reference_denominator": 1,
+          "primary_exact_matches": [
+            "DE64603"
+          ],
+          "context_only_predictions": [],
+          "not_in_selected_reference_ids": [],
+          "missing_primary_ids": [],
+          "not_evaluated_primary_ids": [],
+          "primary_exact_set_precision": 1.0,
+          "primary_exact_set_recall": 1.0,
+          "selected_exact_set_precision": 1.0,
+          "selected_exact_set_recall": 1.0
+        },
+        "final": {
+          "status": "evaluated_lexical_only",
+          "predicted_ids": [
+            "DE64603"
+          ],
+          "primary_reference_denominator": 1,
+          "selected_reference_denominator": 1,
+          "primary_exact_matches": [
+            "DE64603"
+          ],
+          "context_only_predictions": [],
+          "not_in_selected_reference_ids": [],
+          "missing_primary_ids": [],
+          "not_evaluated_primary_ids": [],
+          "primary_exact_set_precision": 1.0,
+          "primary_exact_set_recall": 1.0,
+          "selected_exact_set_precision": 1.0,
+          "selected_exact_set_recall": 1.0
+        }
+      },
+      "E1": {
+        "candidate": {
+          "status": "evaluated_lexical_only",
+          "predicted_ids": [
+            "DE64603"
+          ],
+          "primary_reference_denominator": 1,
+          "selected_reference_denominator": 1,
+          "primary_exact_matches": [
+            "DE64603"
+          ],
+          "context_only_predictions": [],
+          "not_in_selected_reference_ids": [],
+          "missing_primary_ids": [],
+          "not_evaluated_primary_ids": [],
+          "primary_exact_set_precision": 1.0,
+          "primary_exact_set_recall": 1.0,
+          "selected_exact_set_precision": 1.0,
+          "selected_exact_set_recall": 1.0
+        },
+        "final": {
+          "status": "evaluated_lexical_only",
+          "predicted_ids": [
+            "DE64603"
+          ],
+          "primary_reference_denominator": 1,
+          "selected_reference_denominator": 1,
+          "primary_exact_matches": [
+            "DE64603"
+          ],
+          "context_only_predictions": [],
+          "not_in_selected_reference_ids": [],
+          "missing_primary_ids": [],
+          "not_evaluated_primary_ids": [],
+          "primary_exact_set_precision": 1.0,
+          "primary_exact_set_recall": 1.0,
+          "selected_exact_set_precision": 1.0,
+          "selected_exact_set_recall": 1.0
+        }
+      }
+    },
+    {
+      "record_id": "c54c3238c67bc1e9fa52ed792378ddd68de02b3bd416cef9d369eece2f2971e9",
+      "same_reference_source_coverage": true,
+      "E0": {
+        "candidate": {
+          "status": "evaluated_lexical_only",
+          "predicted_ids": [
+            "RE64611"
+          ],
+          "primary_reference_denominator": 1,
+          "selected_reference_denominator": 1,
+          "primary_exact_matches": [
+            "RE64611"
+          ],
+          "context_only_predictions": [],
+          "not_in_selected_reference_ids": [],
+          "missing_primary_ids": [],
+          "not_evaluated_primary_ids": [],
+          "primary_exact_set_precision": 1.0,
+          "primary_exact_set_recall": 1.0,
+          "selected_exact_set_precision": 1.0,
+          "selected_exact_set_recall": 1.0
+        },
+        "final": {
+          "status": "evaluated_lexical_only",
+          "predicted_ids": [
+            "RE64611"
+          ],
+          "primary_reference_denominator": 1,
+          "selected_reference_denominator": 1,
+          "primary_exact_matches": [
+            "RE64611"
+          ],
+          "context_only_predictions": [],
+          "not_in_selected_reference_ids": [],
+          "missing_primary_ids": [],
+          "not_evaluated_primary_ids": [],
+          "primary_exact_set_precision": 1.0,
+          "primary_exact_set_recall": 1.0,
+          "selected_exact_set_precision": 1.0,
+          "selected_exact_set_recall": 1.0
+        }
+      },
+      "E1": {
+        "candidate": {
+          "status": "evaluated_lexical_only",
+          "predicted_ids": [
+            "RE64611"
+          ],
+          "primary_reference_denominator": 1,
+          "selected_reference_denominator": 1,
+          "primary_exact_matches": [
+            "RE64611"
+          ],
+          "context_only_predictions": [],
+          "not_in_selected_reference_ids": [],
+          "missing_primary_ids": [],
+          "not_evaluated_primary_ids": [],
+          "primary_exact_set_precision": 1.0,
+          "primary_exact_set_recall": 1.0,
+          "selected_exact_set_precision": 1.0,
+          "selected_exact_set_recall": 1.0
+        },
+        "final": {
+          "status": "evaluated_lexical_only",
+          "predicted_ids": [
+            "RE64611"
+          ],
+          "primary_reference_denominator": 1,
+          "selected_reference_denominator": 1,
+          "primary_exact_matches": [
+            "RE64611"
+          ],
+          "context_only_predictions": [],
+          "not_in_selected_reference_ids": [],
+          "missing_primary_ids": [],
+          "not_evaluated_primary_ids": [],
+          "primary_exact_set_precision": 1.0,
+          "primary_exact_set_recall": 1.0,
+          "selected_exact_set_precision": 1.0,
+          "selected_exact_set_recall": 1.0
+        }
+      }
+    }
+  ],
+  "material_discrepancies": [
+    {
+      "equipment_id": "CT64610",
+      "field": "material",
+      "document_value": "不锈钢衬HALAR",
+      "mock_value": "316L不锈钢",
+      "classification": "source_value_discrepancy_not_proven_strict_semantic_contradiction",
+      "scoring": "Not scored as a mapped document property; this scope permits only ID/name/model. Observational conflict interpretation requires source-only review."
+    }
+  ],
+  "limits": [
+    "Reference created before predictions; no verification/review output defines gold labels.",
+    "Exact identifier strings and source quote replay do not prove equipment class, identity scope, process role, or full relationship semantics.",
+    "Per-case primary and context coverage are separate; an unselected or unproduced ID is never labeled negated.",
+    "Empty-denominator precision/recall is null; stages without a parsed candidate or completed final result are not evaluated.",
+    "E0/E1 same-source comparison is paired; E2 changes selected records and is reported independently. No result is treated as an improvement over D.",
+    "Same-name omission alone cannot prove an erroneous identity merge.",
+    "This assistant reference is not expert gold and is not a full graph gold set."
+  ]
+}

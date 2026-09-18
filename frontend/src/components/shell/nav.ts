@@ -10,7 +10,6 @@ import {
   ClipboardCheck,
   Settings,
   FileText,
-  Database,
   Building2,
   UserCog,
   Wrench,
@@ -86,6 +85,7 @@ export const NAV: NavNode[] = [
   },
   { href: "/settings", label: "抽取配置", icon: Settings, bottom: true },
   { href: "/settings/ast-templates", label: "报告模板", icon: FileText, bottom: true },
+  { href: "/mock/gxp-process", label: "GxP工艺规程配置", icon: Workflow, bottom: true },
 ];
 
 export function isGroup(node: NavNode): node is NavGroup {

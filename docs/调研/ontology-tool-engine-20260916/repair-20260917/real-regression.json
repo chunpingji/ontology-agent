@@ -1,0 +1,91 @@
+{
+  "scope": "two_selected_regression_cases_not_full_graph_quality",
+  "cases": [
+    {
+      "case": "previous_relation",
+      "finished": true,
+      "elapsed_seconds": 692.223,
+      "requests_started": 4,
+      "responses_returned": 4,
+      "complete": true,
+      "reason_code": "record_supported",
+      "nodes": 1,
+      "edges": 1,
+      "relationship_groups": 0,
+      "properties": 0,
+      "controller_checks": {
+        "binding": 1,
+        "metric": 0,
+        "shacl": 0,
+        "elapsed_seconds": 0.0021400710102170706
+      },
+      "usage": {
+        "input_tokens": 18525,
+        "output_tokens": 23984,
+        "total_tokens": 42509
+      },
+      "tools": [],
+      "model_answer_formats": [
+        {
+          "valid_json": false,
+          "markdown_fence": true
+        },
+        {
+          "valid_json": true,
+          "markdown_fence": false
+        },
+        {
+          "valid_json": true,
+          "markdown_fence": false
+        },
+        {
+          "valid_json": true,
+          "markdown_fence": false
+        }
+      ],
+      "max_request_input_tokens": 5558,
+      "max_request_output_tokens": 11553
+    },
+    {
+      "case": "external_name",
+      "finished": true,
+      "elapsed_seconds": 603.326,
+      "requests_started": 3,
+      "responses_returned": 3,
+      "complete": false,
+      "reason_code": "identity_property_outside_menu",
+      "nodes": 0,
+      "edges": 0,
+      "relationship_groups": 0,
+      "properties": 0,
+      "controller_checks": {
+        "binding": 0,
+        "metric": 0,
+        "shacl": 0,
+        "elapsed_seconds": 0.000046688830479979515
+      },
+      "usage": {
+        "input_tokens": 36933,
+        "output_tokens": 17820,
+        "total_tokens": 54753
+      },
+      "tools": [],
+      "model_answer_formats": [
+        {
+          "valid_json": false,
+          "markdown_fence": true
+        },
+        {
+          "valid_json": true,
+          "markdown_fence": false
+        },
+        {
+          "valid_json": true,
+          "markdown_fence": false
+        }
+      ],
+      "max_request_input_tokens": 13118,
+      "max_request_output_tokens": 8705
+    }
+  ]
+}

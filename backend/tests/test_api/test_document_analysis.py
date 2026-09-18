@@ -75,11 +75,112 @@ def _create(
     )
 
 
+def test_projection_uses_frozen_protocol_and_graph_get_does_not_start_work(
+    client, db, analyst_headers, tmp_path, monkeypatch,
+):
+    monkeypatch.setattr(settings, "document_analysis_storage_dir", tmp_path / "artifacts")
+    calls = []
+    monkeypatch.setattr(
+        document_analysis, "dispatch_run", lambda *_args, **_kwargs: calls.append(1),
+    )
+    created = _create(client, analyst_headers, _word_bytes(tmp_path), request_key="protocol-view")
+    assert created.status_code == 202
+    run_id = created.json()["recognition_run_id"]
+    calls.clear()
+    url = f"/api/document-analysis/runs/{run_id}"
+    run = db.get(DocumentAnalysisRun, run_id)
+    source = db.get(DocumentAnalysisArtifact, run.artifact_manifest["source"]["artifact_id"])
+    frozen_new = source.payload["performance_policy"]
+    assert frozen_new["extraction_protocol"] == "ontology-tool-extraction-v1"
+    assert frozen_new["api_protocol"] == "responses" and frozen_new["max_lineage_calls"] == 4
+    # Explicit historical fixture: legacy runs have no new protocol marker.
+    source.payload = {**source.payload, "performance_policy": {"state_storage_version": 4}}
+    db.commit()
+    legacy = client.get(f"{url}/graph?projection=verified", headers=analyst_headers)
+    assert legacy.status_code == 400
+    assert legacy.json()["error"]["code"] == "unsupported_projection"
+    assert "extraction_protocol" not in client.get(url, headers=analyst_headers).json()
+
+    source.payload = {**source.payload, "performance_policy": frozen_new}
+    db.commit()
+    status = client.get(url, headers=analyst_headers)
+    assert status.json()["extraction_protocol"] == "ontology-tool-extraction-v1"
+    graph = client.get(f"{url}/graph?projection=verified", headers=analyst_headers)
+    assert graph.status_code == 200, graph.text
+    payload = graph.json()
+    assert payload["projection"] == "verified" and payload["availability"] == "pending"
+    assert payload["relationship_groups"] == payload["scope_resolutions"] == []
+    assert calls == []
+
+
+@pytest.mark.parametrize("state_storage_version", [2, 4])
+def test_current_pause_and_resume_do_not_rewrite_checkpoint_coverage(
+    client, db, analyst_headers, tmp_path, monkeypatch, state_storage_version,
+):
+    from copy import deepcopy
+
+    from app.models.document_analysis import DocumentRunArtifactHead, DocumentRunCurrentState
+    from app.services.document_analysis import application, current_state, execution
+    from tests.test_extraction.test_document_analysis_execution_recovery import frozen_legacy_policy
+
+    monkeypatch.setattr(application, "CURRENT_STATE_STORAGE_VERSION", state_storage_version)
+    monkeypatch.setattr(execution, "freeze_tool_engine_policy", lambda: frozen_legacy_policy(
+        current_state=state_storage_version == 4, evidence_repair=False,
+    ))
+    monkeypatch.setattr(settings, "document_analysis_storage_dir", tmp_path / "artifacts")
+    created = _create(client, analyst_headers, _word_bytes(tmp_path), request_key="pause-view")
+    run_id = created.json()["recognition_run_id"]
+    run = db.get(DocumentAnalysisRun, run_id)
+    if state_storage_version == 4:
+        artifact = db.get(DocumentRunCurrentState,
+                          (run_id, "display:public_graph", current_state._key("current")))
+    else:
+        head = db.get(DocumentRunArtifactHead, (run_id, "graph"))
+        artifact = db.get(DocumentAnalysisArtifact, head.artifact_id)
+    frozen_payload = deepcopy(artifact.payload)
+    graph_url = f"/api/document-analysis/runs/{run_id}/graph"
+    original = client.get(graph_url, headers=analyst_headers).json()
+
+    run.execution_status = "paused"
+    run.stop_reason = "ranking_paused"
+    # Reproduce a graph/checkpoint batch that predates the terminal run status.
+    run.progress = {**run.progress, "stop_reason": "attempted_incomplete"}
+    db.commit()
+    paused = client.get(graph_url, headers=analyst_headers).json()
+    status = client.get(f"/api/document-analysis/runs/{run_id}", headers=analyst_headers).json()
+    assert paused["coverage"]["stop_reason"] == "ranking_paused"
+    assert status["progress"]["stop_reason"] == "ranking_paused"
+    assert {**paused["coverage"], "stop_reason": original["coverage"]["stop_reason"]} == (
+        original["coverage"]
+    )
+
+    run.execution_status = "running"
+    run.stop_reason = None
+    db.commit()
+    resumed = client.get(graph_url, headers=analyst_headers).json()
+    status = client.get(f"/api/document-analysis/runs/{run_id}", headers=analyst_headers).json()
+    assert resumed["coverage"]["stop_reason"] is None
+    assert status["progress"]["stop_reason"] is None
+    db.refresh(artifact)
+    assert artifact.payload == frozen_payload
+    assert resumed["graph_snapshot"] == original["graph_snapshot"]
+
+
+@pytest.mark.parametrize("sparse_candidates", [False, True])
 def test_run_builds_shared_metadata_and_honest_partial_graph(
-    client, db, analyst_headers, tmp_path, monkeypatch
+    client, db, analyst_headers, tmp_path, monkeypatch, sparse_candidates,
 ):
     storage = tmp_path / "run-artifacts"
     monkeypatch.setattr(settings, "document_analysis_storage_dir", storage)
+    monkeypatch.setattr(settings, "document_analysis_evidence_repair_enabled", sparse_candidates)
+    monkeypatch.setattr(settings, "document_analysis_adaptive_retrieval_mode", "disabled")
+
+    from app.services.document_analysis import execution
+    from tests.test_extraction.test_document_analysis_execution_recovery import frozen_legacy_policy
+
+    monkeypatch.setattr(execution, "freeze_tool_engine_policy", lambda: frozen_legacy_policy(
+        current_state=True, evidence_repair=sparse_candidates,
+    ))
 
     raw = _word_bytes(tmp_path)
     created = _create(client, analyst_headers, raw)
@@ -104,7 +205,16 @@ def test_run_builds_shared_metadata_and_honest_partial_graph(
     }
     assert run["identities"]["analysis_id"]
     assert run["identities"]["metadata_snapshot_id"]
-    assert run["progress"]["records_unattempted"] > 0
+    if sparse_candidates:
+        # No model service means no admission/execution took place. Search scope
+        # must not be fabricated into candidate tasks, or reported as complete.
+        assert run["progress"]["candidate_policy"] == "sparse-candidates-v1"
+        assert run["progress"]["completion"] == "incomplete"
+        assert run["progress"]["records_planned"] == 0
+        assert run["progress"]["records_unattempted"] == 0
+    else:
+        assert "candidate_policy" not in run["progress"]
+        assert run["progress"]["records_unattempted"] > 0
     assert run["progress"]["stop_reason"] == "recognition_model_not_configured"
     assert run["expires_at"] is not None
 
@@ -124,7 +234,13 @@ def test_run_builds_shared_metadata_and_honest_partial_graph(
     assert len(graph_payload["entities"]) == 1
     assert graph_payload["entities"][0]["seed_origin"] == "user_selected"
     assert graph_payload["relationships"] == []
-    assert graph_payload["coverage"]["records_unattempted"] > 0
+    if sparse_candidates:
+        assert graph_payload["coverage"]["candidate_policy"] == "sparse-candidates-v1"
+        assert graph_payload["coverage"]["records_planned"] == 0
+        assert graph_payload["coverage"]["records_examined"] == 0
+    else:
+        assert "candidate_policy" not in graph_payload["coverage"]
+        assert graph_payload["coverage"]["records_unattempted"] > 0
     assert graph_payload["coverage"]["stop_reason"] == "service_failure"
 
     source = client.get(f"/api/document-analysis/runs/{run_id}/source", headers=analyst_headers)
@@ -155,6 +271,15 @@ def test_configured_model_persists_effective_proof_and_replays_role_sources(
     """Exercise the configured adapter path without contacting an external model."""
 
     monkeypatch.setattr(settings, "document_analysis_storage_dir", tmp_path / "run-artifacts")
+    # The response fixture below implements the original adapter's proof protocol.
+    monkeypatch.setattr(settings, "document_analysis_evidence_repair_enabled", False)
+    monkeypatch.setattr(settings, "document_analysis_adaptive_retrieval_mode", "disabled")
+    from app.services.document_analysis import execution
+    from tests.test_extraction.test_document_analysis_execution_recovery import frozen_legacy_policy
+
+    monkeypatch.setattr(execution, "freeze_tool_engine_policy", lambda: frozen_legacy_policy(
+        current_state=True, evidence_repair=False,
+    ))
 
     def deterministic_model(_client, *, user, **_kwargs):
         request = json.loads(user)
@@ -169,6 +294,29 @@ def test_configured_model_persists_effective_proof_and_replays_role_sources(
         if request["predicate"]["iri"] != USES_EQUIPMENT or target is None:
             return {"proposals": []}
         evidence_id = target["evidence_id"]
+        subject_support = (
+            []
+            if request["subject"]["is_document_root"]
+            else [{"evidence_id": evidence_id, "text": "本报告"}]
+        )
+        if request.get("stage") == "verification":
+            return {"verifications": [{
+                "candidate_id": candidate["candidate_id"],
+                "target_id": candidate["target_id"],
+                "type_verdict": "supported",
+                "type_support": [{"evidence_id": evidence_id}],
+                "role_verdict": "supported",
+                "subject_binding_verdict": "supported",
+                "predicate_verdict": "supported",
+                "applicability_verdict": "supported",
+                "counterevidence_verdict": "undetermined",
+                "bridge_verdict": "supported",
+                "predicate_support": [{"evidence_id": evidence_id, "text": "使用设备"}],
+                "subject_support": subject_support,
+                "condition_support": [],
+                "counterevidence_support": [],
+                "reason": "独立原文核验确认本报告使用冻干机A。",
+            } for candidate in request["candidates"]]}
         return {
             "proposals": [
                 {
@@ -177,7 +325,7 @@ def test_configured_model_persists_effective_proof_and_replays_role_sources(
                     "object_label": "冻干机A",
                     "object_quote": {"evidence_id": evidence_id, "text": "冻干机A"},
                     "predicate_support": [{"evidence_id": evidence_id, "text": "使用设备"}],
-                    "subject_support": [{"evidence_id": evidence_id, "text": "本报告"}],
+                    "subject_support": subject_support,
                     "bridge_kind": "explicit_assertion",
                     "type_verdict": "supported",
                     "role_verdict": "supported",
@@ -190,6 +338,9 @@ def test_configured_model_persists_effective_proof_and_replays_role_sources(
         }
 
     monkeypatch.setattr(model_adapter, "chat_with_schema", deterministic_model)
+    monkeypatch.setattr(
+        model_adapter._ConfiguredInputCounter, "count", lambda _self, text: len(text)
+    )
     monkeypatch.setattr(model_adapter, "get_local_llm", lambda: object())
     monkeypatch.setattr(settings, "local_llm_model", "deterministic-model")
     monkeypatch.setattr(settings, "local_llm_model_revision", "test-revision")
@@ -206,7 +357,7 @@ def test_configured_model_persists_effective_proof_and_replays_role_sources(
 
     status = client.get(f"/api/document-analysis/runs/{run_id}", headers=analyst_headers)
     assert status.status_code == 200, status.text
-    assert status.json()["status"] == "finished"
+    assert status.json()["status"] == "finished", status.text
 
     graph_response = client.get(
         f"/api/document-analysis/runs/{run_id}/graph", headers=analyst_headers
@@ -235,10 +386,17 @@ def test_configured_model_persists_effective_proof_and_replays_role_sources(
     assert proof_head.proof_revision == 1
 
     role_refs = relationship["source_selection_refs"]
-    assert role_refs["subject"]
+    assert role_refs["subject"] == []
+    root_ref = graph["graph_snapshot"]["root_ref"]
+    assert relationship["subject_ref"] == root_ref
+    root = next(item for item in graph["entities"] if item["entity_id"] == root_ref["entity_id"])
+    assert root["revision"] == root_ref["revision"] == 1
+    assert root["class_iri"] == ROOT_IRI
+    assert root["seed_origin"] == "user_selected"
+    assert root["source_selection_refs"] == []
     assert role_refs["object"]
     assert role_refs["predicate_bridge"]
-    for role in ("subject", "object", "predicate_bridge"):
+    for role in ("object", "predicate_bridge"):
         selection_ref = role_refs[role][0]
         replay = client.get(
             f"/api/document-analysis/runs/{run_id}/source",
@@ -251,6 +409,14 @@ def test_configured_model_persists_effective_proof_and_replays_role_sources(
         assert replayed["selection"]["selection_role"] == role
         assert replayed["anchors"]
         assert replayed["anchors"][0]["document_hash"] == replayed["document_hash"]
+        located = client.get(
+            f"/api/document-analysis/runs/{run_id}/source-selection",
+            headers=analyst_headers, params={"selection_ref": selection_ref},
+        )
+        assert located.status_code == 200, located.text
+        assert located.json() == {
+            key: value for key, value in replayed.items() if key not in {"content", "filename"}
+        }
 
 
 def test_create_is_owner_scoped_idempotent_and_rejects_changed_input(
@@ -564,6 +730,7 @@ def test_delete_api_keeps_shared_snapshot_tombstone_and_fences_late_worker(
     assert set(marker.delete_result_payload) == {
         "contract_version",
         "recognition_run_id",
+        "ranking_budget_enabled",
         "run_revision",
         "event_head",
         "artifact_revision",
@@ -693,3 +860,86 @@ def test_get_tabs_and_etag_are_side_effect_free(client, db, analyst_headers, tmp
     assert (after.revision, after.event_head, after.artifact_revision) == watermark
     assert db.query(DocumentRecognitionEvent).count() == event_count
     assert db.query(DocumentRunCandidate).count() == candidate_count
+
+
+def test_harness_current_context_is_private_read_only_and_call_bound(
+    client, db, analyst_headers, tmp_path, monkeypatch,
+):
+    from app.services.document_analysis.harness import TEXT_LIMIT, HarnessObserver
+
+    monkeypatch.setattr(settings, "document_analysis_storage_dir", tmp_path / "artifacts")
+    dispatched = []
+    monkeypatch.setattr(document_analysis, "dispatch_run", lambda *a, **kw: dispatched.append(1))
+    created = _create(client, analyst_headers, _word_bytes(tmp_path), request_key="harness").json()
+    run_id = created["recognition_run_id"]
+    dispatched.clear()
+    url = f"/api/document-analysis/runs/{run_id}/harness"
+    empty = client.get(url, headers=analyst_headers)
+    assert empty.status_code == 200 and empty.json()["snapshot"] is None
+    store = DocumentAnalysisRunStore(db)
+    token = store.claim(run_id, "analyst", actor="dispatcher", worker_id="test-harness")
+    db.commit()
+    run = store.get_owned(run_id, "analyst")
+    watermark = (run.revision, run.event_head, run.work_version)
+    db.commit()
+    observer = HarnessObserver(db.get_bind(), run_id, "analyst", token)
+    request = {"model": "qwen-test", "instructions": "合法指令", "input": [
+        {"type": "reasoning", "encrypted_content": "opaque-secret", "summary": []},
+    ]}
+    observer("model_start", {"call_id": "call-1", "stage": "discovery", "input_tokens": 10,
+                             "request": request, "schema_card": {"predicates": []}})
+    observer("delta", {"channel": "output", "text": "x" * (TEXT_LIMIT + 1)})
+    observer("delta", {"channel": "thinking", "text": "服务端可读内容"})
+    observer.flush(force=True)
+    snapshot = client.get(url, headers=analyst_headers).json()["snapshot"]
+    assert snapshot["call"]["status"] == "running"
+    assert len(snapshot["output"]) == TEXT_LIMIT and snapshot["truncated"] == ["output"]
+    assert snapshot["thinking"] == "服务端可读内容"
+    context = client.get(url + "/context?call_id=call-1", headers=analyst_headers)
+    assert context.status_code == 200
+    assert "opaque-secret" not in context.text
+    assert request["input"][0]["encrypted_content"] == "opaque-secret"  # display redaction only
+    stranger = {**analyst_headers, "X-User": "other-owner"}
+    assert client.get(url, headers=stranger).status_code == 404
+    assert client.get(url + "/context?call_id=call-1", headers=stranger).status_code == 404
+    observer("model_start", {"call_id": "call-2", "stage": "verification", "input_tokens": 11,
+                             "request": request, "schema_card": {"predicates": ["second"]}})
+    assert client.get(url + "/context?call_id=call-1", headers=analyst_headers).status_code == 409
+    assert client.get(url + "/context?call_id=call-2", headers=analyst_headers).status_code == 200
+    # A stale execution must never replace the current context.
+    stale = HarnessObserver(db.get_bind(), run_id, "analyst", "invalid-token")
+    stale("model_start", {"call_id": "stale", "stage": "discovery", "input_tokens": 0,
+                          "request": request, "schema_card": {}})
+    latest = client.get(url, headers=analyst_headers).json()["snapshot"]
+    assert latest["call"]["call_id"] == "call-2"
+    db.expire_all()
+    current = store.get_owned(run_id, "analyst")
+    assert (current.revision, current.event_head, current.work_version) == watermark
+    assert not dispatched
+
+
+def test_harness_sse_is_current_display_without_durable_event_id(
+    client, db, analyst_headers, tmp_path, monkeypatch,
+):
+    from app.services.document_analysis.harness import HarnessObserver
+
+    monkeypatch.setattr(settings, "document_analysis_storage_dir", tmp_path / "artifacts")
+    monkeypatch.setattr(settings, "document_analysis_sse_window_seconds", 0.01)
+    monkeypatch.setattr(document_analysis, "dispatch_run", lambda *args, **kwargs: None)
+    run_id = _create(client, analyst_headers, _word_bytes(tmp_path),
+                     request_key="harness-sse").json()["recognition_run_id"]
+    store = DocumentAnalysisRunStore(db)
+    token = store.claim(run_id, "analyst", actor="dispatcher", worker_id="harness-sse")
+    db.commit()
+    observer = HarnessObserver(db.get_bind(), run_id, "analyst", token)
+    observer("model_start", {"call_id": "call-stream", "stage": "discovery", "input_tokens": 1,
+        "request": {"model": "qwen", "input": [], "instructions": "context-not-in-stream"},
+        "schema_card": {}})
+    observer("delta", {"channel": "output", "text": "first incremental output"})
+    observer.flush(force=True)
+    response = client.get(f"/api/document-analysis/runs/{run_id}/events", headers=analyst_headers)
+    assert response.status_code == 200
+    frame = next(frame for frame in response.text.split("\n\n") if "event: harness" in frame)
+    assert not frame.startswith("id:")
+    assert "first incremental output" in frame and "context-not-in-stream" not in frame
+    assert '"status": "running"' in frame

@@ -29,6 +29,7 @@ from app.models.reporting import (
 from app.services.reporting.contract_registry import ContractRegistry
 from app.services.reporting.report_run_service import ReportRunService, schema_hash, verify_frozen
 from app.services.reporting.report_signing import ReportSigning
+from app.services.reporting.slot_semantics import SlotChoice
 from app.services.reporting.template_v2 import Model, ReportingError, TemplateV2
 
 router = APIRouter(dependencies=[Depends(get_current_user)])
@@ -42,6 +43,7 @@ class Request(Model):
 class SourceBinding(Model):
     job_id: UUID
     snapshot_id: str | None = None
+    finder_execution_id: str | None = None
     root_entity_id: str | None = None
 
 
@@ -177,13 +179,17 @@ def frozen_response(row):
 def model_service(db, engine):
     from app.services.extraction.extraction_tasks import semantic_schema_from_engine
 
-    return ReportRunService(db, model_schema=lambda: semantic_schema_from_engine(engine))
+    return ReportRunService(
+        db, model_schema=lambda: semantic_schema_from_engine(engine), finder_engine=engine
+    )
 
 
 def template_row(db, template_id):
     row = db.get(AstTemplate, template_id)
     if row is None:
         raise ReportingError("TEMPLATE_NOT_FOUND", status=404)
+    if (row.schema_json or {}).get("demo_profile"):
+        raise ReportingError("STATIC_DEMO_TEMPLATE", "请在演示模板页面生成批记录", status=409)
     return row
 
 
@@ -201,11 +207,21 @@ def require_source_bindings(db: Session, bindings: dict[str, SourceBinding]) -> 
 @router.get("/report-contracts")
 def contracts(db: Session = Depends(get_db)):
     from app.services.reasoning.rule_service import rule_catalog
+    from app.services.reporting.demo_sources import (
+        PROMPT_REF,
+        PROVIDERS,
+        builtin_contract,
+        contract_ref,
+    )
     from app.services.reporting.template_preparation import POLICY_REF, STYLE_REF, builtin_profile
 
     registry = ContractRegistry(db)
     return [
-        *rule_catalog(), builtin_profile(STYLE_REF), builtin_profile(POLICY_REF),
+        *rule_catalog(),
+        builtin_profile(STYLE_REF),
+        builtin_profile(POLICY_REF),
+        builtin_contract(PROMPT_REF),
+        *[builtin_contract(contract_ref(key)) for key in PROVIDERS],
         *[
             registry.load(row.id, published=False)
             for row in db.scalars(
@@ -218,8 +234,9 @@ def contracts(db: Session = Depends(get_db)):
 
 
 @router.get("/report-model-context")
-def model_context(ref: str = "auto:ontology", db: Session = Depends(get_db),
-                  engine=Depends(get_ontology_engine)):
+def model_context(
+    ref: str = "auto:ontology", db: Session = Depends(get_db), engine=Depends(get_ontology_engine)
+):
     from app.services.extraction.extraction_tasks import semantic_schema_from_engine
     from app.services.ontology_model_context import ModelContext
 
@@ -429,8 +446,12 @@ def rule_migration_plan(rule_id: UUID, db: Session = Depends(get_db), identity=D
 
 
 @router.post("/report-runs", status_code=201)
-def create_run(req: RunRequest, db: Session = Depends(get_db), identity=Depends(get_current_user),
-               engine=Depends(get_ontology_engine)):
+def create_run(
+    req: RunRequest,
+    db: Session = Depends(get_db),
+    identity=Depends(get_current_user),
+    engine=Depends(get_ontology_engine),
+):
     require_source_bindings(db, req.source_bindings)
     service = model_service(db, engine)
     run, created = service.start(req, identity.username)
@@ -441,16 +462,27 @@ def create_run(req: RunRequest, db: Session = Depends(get_db), identity=Depends(
 
 
 @router.post("/report-previews")
-def preview(req: PreviewRequest, db: Session = Depends(get_db), identity=Depends(get_current_user),
-            engine=Depends(get_ontology_engine)):
+def preview(
+    req: PreviewRequest,
+    db: Session = Depends(get_db),
+    identity=Depends(get_current_user),
+    engine=Depends(get_ontology_engine),
+):
+    if req.template_id:
+        template_row(db, req.template_id)
+    if req.draft_schema and req.draft_schema.demo_profile:
+        raise ReportingError("STATIC_DEMO_TEMPLATE", "请在演示模板页面生成批记录", status=409)
     service = model_service(db, engine)
     if req.mode == "layout":
         from app.services.reporting.output_ast import OutputNode
+        from app.services.reporting.section_narrative import expand_sections
         from app.services.reporting.template_compiler import walk_groups
 
         template = req.draft_schema or TemplateV2.model_validate(
             template_row(db, req.template_id).schema_json
         )
+        template = template.model_copy(deep=True)
+        expand_sections(template)
         ast = OutputNode(
             node_id="layout",
             kind="document",
@@ -491,7 +523,11 @@ def preview(req: PreviewRequest, db: Session = Depends(get_db), identity=Depends
             "material_status": "incomplete",
             "business_values": False,
         }
-    require_source_bindings(db, req.source_bindings)
+    from app.services.template_finder.policy import resolve as finder_policy
+
+    is_finder = bool(req.template_id and finder_policy(template_row(db, req.template_id)))
+    if not is_finder:
+        require_source_bindings(db, req.source_bindings)
     run, created = service.start(req, identity.username, preview=True)
     db.commit()
     if created or run.execution_status == "pending":
@@ -697,3 +733,141 @@ def signing_envelope(ref: str, db: Session = Depends(get_db)):
         for a in db.scalars(select(ReportArtifact).where(ReportArtifact.envelope_id == ref))
     ]
     return result
+
+
+class SemanticRequest(Model):
+    draft_schema: TemplateV2
+    source_job_id: UUID | None = None
+    output_ids: list[str] = Field(default_factory=list, max_length=4)
+
+
+class SlotConfigurationRequest(SemanticRequest):
+    choice: SlotChoice
+
+
+def semantic_catalog(db, engine, row, template, source_job_id, actor):
+    from app.services.reporting.demo_sources import load_finder
+    from app.services.reporting.slot_semantics import catalog
+    from app.services.template_finder.policy import resolve as finder_policy
+
+    service = model_service(db, engine)
+    template = service.prepare(template)
+    ontology, _ = service.load_contracts(template)
+    sources = {}
+    selected = source_job_id or row.default_source_job_id
+    if selected and finder_policy(row):
+        job = db.get(ExtractionJob, selected)
+        if job is None:
+            raise ReportingError("SOURCE_NOT_FOUND", status=404)
+        source = load_finder(db, engine, row, job, actor, {})
+        for slot in template.source_slots:
+            if slot.class_iri == row.iri_pattern:
+                sources[slot.source_slot_id] = source
+    return catalog(template, ontology, sources)
+
+
+@router.get("/ast-templates/{template_id}/semantic-sources")
+def semantic_sources(
+    template_id: UUID,
+    source_job_id: UUID | None = None,
+    db: Session = Depends(get_db),
+    identity=Depends(get_current_user),
+    engine=Depends(get_ontology_engine),
+):
+    row = template_row(db, template_id)
+    template = TemplateV2.model_validate(row.schema_json)
+    return {
+        "options": semantic_catalog(db, engine, row, template, source_job_id, identity.username)
+    }
+
+
+@router.post("/ast-templates/{template_id}/suggest-semantics")
+def suggest_semantics(
+    template_id: UUID,
+    req: SemanticRequest,
+    db: Session = Depends(get_db),
+    identity=Depends(maintainer),
+    engine=Depends(get_ontology_engine),
+):
+    from app.config import settings
+    from app.services.llm.local_client import get_local_llm
+    from app.services.reporting.slot_semantics import apply_patch, suggest
+    from app.services.reporting.template_compiler import compile_template
+
+    row = template_row(db, template_id)
+    options = semantic_catalog(
+        db, engine, row, req.draft_schema, req.source_job_id, identity.username
+    )
+    result = suggest(
+        row,
+        req.draft_schema,
+        options,
+        get_local_llm() if settings.llm_suggest_slots_enabled else None,
+        output_ids=req.output_ids,
+    )
+    # Compile each proposed Slot against its reachable definitions before returning it.
+    service = model_service(db, engine)
+    accepted = []
+    for patch in result["patches"]:
+        candidate = apply_patch(req.draft_schema, patch)
+        candidate.sections = [
+            type(candidate.sections[0]).model_validate(
+                {
+                    "section_id": "semantic-validation-section",
+                    "groups": [{"group_id": "semantic-validation-group", "units": [patch["unit"]]}],
+                }
+            )
+        ]
+        candidate.record_sources = {
+            k: v for k, v in candidate.record_sources.items() if k in patch["record_sources"]
+        }
+        prepared = service.prepare(candidate)
+        ontology, contracts = service.load_contracts(prepared)
+        plan = compile_template(prepared, ontology, contracts)
+        if plan["valid"]:
+            accepted.append(patch)
+        else:
+            result["diagnostics"].append(
+                {
+                    "output_id": patch["output_id"],
+                    "code": "SLOT_CONFIGURATION_INVALID",
+                    "message": "建议未通过编译：" + "；".join(
+                        d.get("message") or d["code"] for d in plan["diagnostics"]
+                        if d["severity"] == "error"
+                    ),
+                }
+            )
+    result["patches"] = accepted
+    result["completion"] = "incomplete" if result["diagnostics"] else "complete"
+    return {**result, "options": options}
+
+
+@router.post("/ast-templates/{template_id}/configure-slot")
+def configure_slot(
+    template_id: UUID,
+    req: SlotConfigurationRequest,
+    db: Session = Depends(get_db),
+    identity=Depends(maintainer),
+    engine=Depends(get_ontology_engine),
+):
+    from app.services.reporting.slot_semantics import build_slot
+    from app.services.reporting.template_compiler import walk_groups
+
+    row = template_row(db, template_id)
+    choice = req.choice
+    unit = next(
+        (
+            u
+            for s in req.draft_schema.sections
+            for g, _ in walk_groups(s.groups)
+            for u in g.units
+            if u.output_id == choice.output_id
+        ),
+        None,
+    )
+    if unit is None:
+        raise ReportingError("OUTPUT_NOT_FOUND", status=404)
+    options = semantic_catalog(
+        db, engine, row, req.draft_schema, req.source_job_id, identity.username
+    )
+    return build_slot(req.draft_schema, unit, choice, options)

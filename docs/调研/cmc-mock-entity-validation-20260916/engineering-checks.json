@@ -1,0 +1,24 @@
+{
+  "pytest": {
+    "cwd": "backend",
+    "command": ".venv/bin/python -m pytest -p no:cacheprovider -q tests/test_extraction/test_tool_mock_entities.py tests/test_extraction/test_schema_card_mock_retrieval.py tests/test_extraction/test_schema_card_mock_protocol.py tests/test_extraction/test_schema_card_mock_tools.py tests/test_extraction/test_ontology_guided_boundaries.py",
+    "passed": 126,
+    "warnings": 4,
+    "seconds": 5.19
+  },
+  "ruff": {
+    "status": "passed",
+    "cwd": "backend",
+    "paths": [
+      "app/services/extraction/tool_validation/mock_entities.py",
+      "app/evaluation/schema_card_mock_retrieval.py",
+      "app/evaluation/schema_card_mock_protocol.py",
+      "app/evaluation/schema_card_mock_tools.py",
+      "tests/test_extraction/test_tool_mock_entities.py",
+      "tests/test_extraction/test_schema_card_mock_retrieval.py",
+      "tests/test_extraction/test_schema_card_mock_protocol.py",
+      "tests/test_extraction/test_schema_card_mock_tools.py"
+    ]
+  },
+  "note": "Engineering checks completed before NER/Qwen freeze; protocol unit tests use explicit metric stubs and do not prove actual SHACL/model quality."
+}

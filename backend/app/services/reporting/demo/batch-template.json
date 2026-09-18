@@ -1,0 +1,135 @@
+{
+  "template_id": "8542466b-d6e6-4052-ae7e-05ca9c99a1c3",
+  "contract_id": "cmc-batch-demo-v1",
+  "name": "HRS-5592 批记录（演示专用）",
+  "version": "2.2",
+  "root_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport",
+  "fixture_id": "hrs5592-cmc-demo-v1",
+  "sections": [
+    {
+      "id": "product",
+      "title": "一、产品及生产计划",
+      "path": [
+        "https://ontology.pharma-gmp.cn/slpra/drug-development/describes"
+      ],
+      "required_properties": [],
+      "mode": "properties",
+      "min_count": 1
+    },
+    {
+      "id": "plan",
+      "title": "二、生产计划",
+      "path": [
+        "https://ontology.pharma-gmp.cn/slpra/drug-development/hasProductionPlan"
+      ],
+      "required_properties": [],
+      "mode": "properties",
+      "min_count": 1
+    },
+    {
+      "id": "equipment",
+      "title": "三、设备清单",
+      "path": [
+        "https://ontology.pharma-gmp.cn/slpra/drug-development/usesEquipment"
+      ],
+      "required_properties": [
+        "https://ontology.pharma-gmp.cn/slpra/equipment/equipmentID"
+      ],
+      "mode": "properties",
+      "min_count": 1
+    },
+    {
+      "id": "materials",
+      "title": "四、物料清单",
+      "path": [
+        "https://ontology.pharma-gmp.cn/slpra/drug-development/usesMaterial"
+      ],
+      "required_properties": [
+        "https://ontology.pharma-gmp.cn/slpra/drug-development/materialGrade"
+      ],
+      "mode": "properties",
+      "min_count": 1
+    },
+    {
+      "id": "process",
+      "title": "五、工艺描述",
+      "path": [
+        "https://ontology.pharma-gmp.cn/slpra/drug-development/hasSynthesisRoute"
+      ],
+      "required_properties": [
+        "https://ontology.pharma-gmp.cn/slpra/drug-development/processDescription"
+      ],
+      "mode": "properties",
+      "min_count": 1
+    },
+    {
+      "id": "steps",
+      "title": "六、批生产操作记录",
+      "path": [
+        "https://ontology.pharma-gmp.cn/slpra/drug-development/hasSynthesisRoute",
+        "https://ontology.pharma-gmp.cn/slpra/drug-development/hasStep"
+      ],
+      "required_properties": [
+        "https://ontology.pharma-gmp.cn/slpra/drug-development/stepOrder",
+        "https://ontology.pharma-gmp.cn/slpra/drug-development/reactionConditions"
+      ],
+      "mode": "operations",
+      "min_count": 4
+    },
+    {
+      "id": "intermediates",
+      "title": "七、中间体信息",
+      "path": [
+        "https://ontology.pharma-gmp.cn/slpra/drug-development/hasSynthesisRoute",
+        "https://ontology.pharma-gmp.cn/slpra/drug-development/hasStep",
+        "https://ontology.pharma-gmp.cn/slpra/drug-development/producesIntermediate"
+      ],
+      "required_properties": [
+        "https://ontology.pharma-gmp.cn/slpra/drug-development/intermediateIdentifier"
+      ],
+      "mode": "properties",
+      "min_count": 3
+    },
+    {
+      "id": "final",
+      "title": "八、最终产品",
+      "path": [
+        "https://ontology.pharma-gmp.cn/slpra/drug-development/hasSynthesisRoute",
+        "https://ontology.pharma-gmp.cn/slpra/drug-development/hasStep",
+        "https://ontology.pharma-gmp.cn/slpra/drug-development/producesFinalProduct"
+      ],
+      "required_properties": [],
+      "mode": "properties",
+      "min_count": 1
+    },
+    {
+      "id": "cleaning",
+      "title": "九、设备清洗记录",
+      "path": [
+        "https://ontology.pharma-gmp.cn/slpra/drug-development/hasCleaningMethod"
+      ],
+      "required_properties": [],
+      "mode": "properties",
+      "min_count": 1
+    },
+    {
+      "id": "safety",
+      "title": "十、安全控制",
+      "path": [
+        "https://ontology.pharma-gmp.cn/slpra/drug-development/hasSafetyRiskAssessment"
+      ],
+      "required_properties": [],
+      "mode": "properties",
+      "min_count": 1
+    }
+  ],
+  "manual_fields": [
+    "实际批号",
+    "生产日期",
+    "实际得量/收率",
+    "偏差记录",
+    "操作人/日期",
+    "复核人/日期",
+    "QA审核/日期"
+  ]
+}

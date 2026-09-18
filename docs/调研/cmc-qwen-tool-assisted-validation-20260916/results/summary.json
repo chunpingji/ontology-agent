@@ -1,0 +1,899 @@
+{
+  "run_id": "cmc-tools-110a04ca3bd54cc3",
+  "source_sha256": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+  "model": "Qwen3.6-35B-A3B",
+  "declared_model_revision": "0b21525e972670ed59e1812e170b27c26355381f0656ecc4e25617ece7dac58b",
+  "ontology_hash": "555519c5c92c9555e3ac7cd358918cbf853baf38bb07c21a86bb62e72ff9a469",
+  "input_hashes": {
+    "cases.json": "3cb1670630526a84ec66f29232c954fc63939b251b71b2e50ecac23d3b0bf247",
+    "cards.json": "3b2a50862d1f977adb76044d08360cc03e02629f8bae8de86a142b7e388044a6",
+    "ir.json": "858dddbb762217ede057ed85e659bb6d0349fc90e0c936fbf42756859c882134",
+    "reference.json": "49095440a7572936424e7b7de6a8c9bcee17cd70c5cc86c5b78a35cfaec65097",
+    "acceptance.json": "78c1960afb566ba8cc19742584972483fadccd92e5c73ef070685ceb637aca2e"
+  },
+  "code_hashes": {
+    "schema_card_tools.py": "eefa476d356be85cac6a1da66c6744634fe06bcb15aacd39e0b4a4e13f4220cc",
+    "schema_card_tightened.py": "2fb24c9ae845a6d2be1b27415a5732677c4f2e1bd67d05d4333aa2eb822484d2",
+    "schema_card_evidence.py": "e391d939a269e7864a02aacf0a40ce06bc5962cf980b60470a22594d8522d715",
+    "__init__.py": "e1c8a83f0dc96e983ce56e5f04a289074c4c93a91d1bdd0b4e2b30156f53b785",
+    "evidence.py": "4fd074f4b4bc84ac15a066cfa4e40a82b9d2db8b33f9d7b81730a27fa6a11ff1",
+    "mentions.py": "70f5339a4ffa463aceb6384162fac879d89c31e65907e9dc69616edcc1fc4478",
+    "metric.py": "917a310df340845a2c9b37e35c57c816699c801eb53a21d4a6f41b601e125f95",
+    "shacl.py": "e597a4f8a24cc0e0fd9ea29341e159dbac3a2222123bef1a780544a86896eec0",
+    "gliner_extractor.py": "4bdd2f1e944889cc048254c8183e116a5638bed79f0b3c57949355798e8bfa38",
+    "cmc-recheck-tools.py": "42a2e83d26fb028d74163441362ddbdafbabc0acf1e1dc45d3812115b2492199",
+    "schema_card_tools_finalize.py": "d6353e927579fa41ada9936fad4a26f326304462cddfb87b6164b7f023665ce3"
+  },
+  "summary": {
+    "A": {
+      "scopes": 8,
+      "completed": 8,
+      "http_calls": 24,
+      "contracts_passed": 24,
+      "accepted_candidates": 26,
+      "observations": 9,
+      "rejected": 5,
+      "unresolved": 44,
+      "local_checklists_passed": 5,
+      "prompt_tokens": 203097,
+      "completion_tokens": 34654,
+      "usage_reported_calls": 24,
+      "usage_missing_calls": 0,
+      "token_count_scope": "reported_usage_only",
+      "http_seconds": 1387.817,
+      "finish_reasons": {
+        "stop": 24
+      }
+    },
+    "B": {
+      "scopes": 8,
+      "completed": 7,
+      "http_calls": 23,
+      "contracts_passed": 22,
+      "accepted_candidates": 23,
+      "observations": 8,
+      "rejected": 8,
+      "unresolved": 12,
+      "local_checklists_passed": 4,
+      "prompt_tokens": 173862,
+      "completion_tokens": 22192,
+      "usage_reported_calls": 22,
+      "usage_missing_calls": 1,
+      "token_count_scope": "reported_usage_only",
+      "http_seconds": 1298.21,
+      "finish_reasons": {
+        "stop": 22,
+        "error": 1
+      }
+    }
+  },
+  "checker_revision": "quantity-boundary-and-result-accounting-v3",
+  "offline_only": true,
+  "interpretation": "Validation candidates, not committed facts or expert gold; 8 scopes only.",
+  "prior_model_calls": 47,
+  "offline_new_model_calls": 0,
+  "scopes": [
+    {
+      "arm": "A",
+      "scope_id": "introduction",
+      "status": "complete",
+      "error_code": null,
+      "original_error": "citation_span_id_mismatch",
+      "http_calls": 3,
+      "contracts_passed": 3,
+      "accepted_candidates": 6,
+      "observations": 0,
+      "unresolved": 4,
+      "rejected": 0,
+      "checklist": {
+        "evaluated": true,
+        "all_pass": false,
+        "passed": 3,
+        "total": 4
+      },
+      "shacl": {
+        "literal_checks": 6,
+        "evaluated": 4,
+        "not_evaluated": 2,
+        "complete_coverage": 4,
+        "conforms_true": 4,
+        "normalized": 4,
+        "numeric_evaluated": 0,
+        "precondition_issues": {
+          "scalar_value_required": 2,
+          "unit_source_missing": 2
+        }
+      },
+      "ner": {
+        "execution_status": "disabled",
+        "span_count": 0,
+        "timing": null
+      }
+    },
+    {
+      "arm": "B",
+      "scope_id": "introduction",
+      "status": "complete",
+      "error_code": null,
+      "original_error": "citation_span_id_mismatch",
+      "http_calls": 3,
+      "contracts_passed": 3,
+      "accepted_candidates": 6,
+      "observations": 2,
+      "unresolved": 2,
+      "rejected": 0,
+      "checklist": {
+        "evaluated": true,
+        "all_pass": false,
+        "passed": 3,
+        "total": 4
+      },
+      "shacl": {
+        "literal_checks": 6,
+        "evaluated": 4,
+        "not_evaluated": 2,
+        "complete_coverage": 4,
+        "conforms_true": 4,
+        "normalized": 4,
+        "numeric_evaluated": 0,
+        "precondition_issues": {
+          "scalar_value_required": 2,
+          "unit_source_missing": 2
+        }
+      },
+      "ner": {
+        "execution_status": "completed",
+        "span_count": 4,
+        "timing": {
+          "load_seconds": 0.000322,
+          "inference_seconds": 3.483527
+        }
+      }
+    },
+    {
+      "arm": "B",
+      "scope_id": "product_properties",
+      "status": "complete",
+      "error_code": null,
+      "original_error": "citation_span_id_mismatch",
+      "http_calls": 3,
+      "contracts_passed": 3,
+      "accepted_candidates": 8,
+      "observations": 0,
+      "unresolved": 0,
+      "rejected": 3,
+      "checklist": {
+        "evaluated": true,
+        "all_pass": true,
+        "passed": 4,
+        "total": 4
+      },
+      "shacl": {
+        "literal_checks": 7,
+        "evaluated": 7,
+        "not_evaluated": 0,
+        "complete_coverage": 7,
+        "conforms_true": 7,
+        "normalized": 7,
+        "numeric_evaluated": 0,
+        "precondition_issues": {}
+      },
+      "ner": {
+        "execution_status": "completed",
+        "span_count": 3,
+        "timing": {
+          "load_seconds": 5.8e-05,
+          "inference_seconds": 1.212396
+        }
+      }
+    },
+    {
+      "arm": "A",
+      "scope_id": "product_properties",
+      "status": "complete",
+      "error_code": null,
+      "original_error": "citation_span_id_mismatch",
+      "http_calls": 3,
+      "contracts_passed": 3,
+      "accepted_candidates": 9,
+      "observations": 0,
+      "unresolved": 2,
+      "rejected": 0,
+      "checklist": {
+        "evaluated": true,
+        "all_pass": true,
+        "passed": 4,
+        "total": 4
+      },
+      "shacl": {
+        "literal_checks": 8,
+        "evaluated": 8,
+        "not_evaluated": 0,
+        "complete_coverage": 8,
+        "conforms_true": 8,
+        "normalized": 8,
+        "numeric_evaluated": 0,
+        "precondition_issues": {}
+      },
+      "ner": {
+        "execution_status": "disabled",
+        "span_count": 0,
+        "timing": null
+      }
+    },
+    {
+      "arm": "A",
+      "scope_id": "process_equipment",
+      "status": "complete",
+      "error_code": null,
+      "original_error": "citation_span_id_mismatch",
+      "http_calls": 3,
+      "contracts_passed": 3,
+      "accepted_candidates": 2,
+      "observations": 0,
+      "unresolved": 5,
+      "rejected": 4,
+      "checklist": {
+        "evaluated": true,
+        "all_pass": false,
+        "passed": 4,
+        "total": 5
+      },
+      "shacl": {
+        "literal_checks": 6,
+        "evaluated": 2,
+        "not_evaluated": 4,
+        "complete_coverage": 2,
+        "conforms_true": 2,
+        "normalized": 2,
+        "numeric_evaluated": 0,
+        "precondition_issues": {
+          "semantic_undetermined": 4,
+          "raw_value_not_in_quote": 1,
+          "citation_coordinates_invalid": 1,
+          "inactive_subject_slot": 1
+        }
+      },
+      "ner": {
+        "execution_status": "disabled",
+        "span_count": 0,
+        "timing": null
+      }
+    },
+    {
+      "arm": "B",
+      "scope_id": "process_equipment",
+      "status": "complete",
+      "error_code": null,
+      "original_error": "citation_span_id_mismatch",
+      "http_calls": 3,
+      "contracts_passed": 3,
+      "accepted_candidates": 2,
+      "observations": 0,
+      "unresolved": 4,
+      "rejected": 4,
+      "checklist": {
+        "evaluated": true,
+        "all_pass": false,
+        "passed": 4,
+        "total": 5
+      },
+      "shacl": {
+        "literal_checks": 6,
+        "evaluated": 2,
+        "not_evaluated": 4,
+        "complete_coverage": 2,
+        "conforms_true": 2,
+        "normalized": 2,
+        "numeric_evaluated": 0,
+        "precondition_issues": {
+          "semantic_undetermined": 4,
+          "raw_value_not_in_quote": 1,
+          "citation_coordinates_invalid": 1,
+          "inactive_subject_slot": 1
+        }
+      },
+      "ner": {
+        "execution_status": "completed",
+        "span_count": 7,
+        "timing": {
+          "load_seconds": 0.000156,
+          "inference_seconds": 4.033965
+        }
+      }
+    },
+    {
+      "arm": "B",
+      "scope_id": "quality_condition",
+      "status": "complete",
+      "error_code": null,
+      "original_error": "citation_span_id_mismatch",
+      "http_calls": 3,
+      "contracts_passed": 3,
+      "accepted_candidates": 1,
+      "observations": 1,
+      "unresolved": 3,
+      "rejected": 1,
+      "checklist": {
+        "evaluated": true,
+        "all_pass": true,
+        "passed": 5,
+        "total": 5
+      },
+      "shacl": {
+        "literal_checks": 1,
+        "evaluated": 1,
+        "not_evaluated": 0,
+        "complete_coverage": 1,
+        "conforms_true": 1,
+        "normalized": 1,
+        "numeric_evaluated": 0,
+        "precondition_issues": {}
+      },
+      "ner": {
+        "execution_status": "completed",
+        "span_count": 5,
+        "timing": {
+          "load_seconds": 3.6e-05,
+          "inference_seconds": 1.603655
+        }
+      }
+    },
+    {
+      "arm": "A",
+      "scope_id": "quality_condition",
+      "status": "complete",
+      "error_code": null,
+      "original_error": "citation_span_id_mismatch",
+      "http_calls": 3,
+      "contracts_passed": 3,
+      "accepted_candidates": 1,
+      "observations": 1,
+      "unresolved": 3,
+      "rejected": 1,
+      "checklist": {
+        "evaluated": true,
+        "all_pass": true,
+        "passed": 5,
+        "total": 5
+      },
+      "shacl": {
+        "literal_checks": 1,
+        "evaluated": 1,
+        "not_evaluated": 0,
+        "complete_coverage": 1,
+        "conforms_true": 1,
+        "normalized": 1,
+        "numeric_evaluated": 0,
+        "precondition_issues": {}
+      },
+      "ner": {
+        "execution_status": "disabled",
+        "span_count": 0,
+        "timing": null
+      }
+    },
+    {
+      "arm": "A",
+      "scope_id": "storage",
+      "status": "complete",
+      "error_code": null,
+      "original_error": "citation_span_id_mismatch",
+      "http_calls": 3,
+      "contracts_passed": 3,
+      "accepted_candidates": 4,
+      "observations": 3,
+      "unresolved": 0,
+      "rejected": 0,
+      "checklist": {
+        "evaluated": true,
+        "all_pass": true,
+        "passed": 6,
+        "total": 6
+      },
+      "shacl": {
+        "literal_checks": 3,
+        "evaluated": 3,
+        "not_evaluated": 0,
+        "complete_coverage": 3,
+        "conforms_true": 3,
+        "normalized": 3,
+        "numeric_evaluated": 0,
+        "precondition_issues": {}
+      },
+      "ner": {
+        "execution_status": "disabled",
+        "span_count": 0,
+        "timing": null
+      }
+    },
+    {
+      "arm": "B",
+      "scope_id": "storage",
+      "status": "complete",
+      "error_code": null,
+      "original_error": "citation_span_id_mismatch",
+      "http_calls": 3,
+      "contracts_passed": 3,
+      "accepted_candidates": 4,
+      "observations": 0,
+      "unresolved": 2,
+      "rejected": 0,
+      "checklist": {
+        "evaluated": true,
+        "all_pass": false,
+        "passed": 4,
+        "total": 6
+      },
+      "shacl": {
+        "literal_checks": 3,
+        "evaluated": 3,
+        "not_evaluated": 0,
+        "complete_coverage": 3,
+        "conforms_true": 3,
+        "normalized": 3,
+        "numeric_evaluated": 0,
+        "precondition_issues": {}
+      },
+      "ner": {
+        "execution_status": "completed",
+        "span_count": 7,
+        "timing": {
+          "load_seconds": 0.000123,
+          "inference_seconds": 2.903229
+        }
+      }
+    },
+    {
+      "arm": "B",
+      "scope_id": "residue_missing",
+      "status": "complete",
+      "error_code": null,
+      "original_error": null,
+      "http_calls": 3,
+      "contracts_passed": 3,
+      "accepted_candidates": 0,
+      "observations": 1,
+      "unresolved": 1,
+      "rejected": 0,
+      "checklist": {
+        "evaluated": true,
+        "all_pass": true,
+        "passed": 4,
+        "total": 4
+      },
+      "shacl": {
+        "literal_checks": 0,
+        "evaluated": 0,
+        "not_evaluated": 0,
+        "complete_coverage": 0,
+        "conforms_true": 0,
+        "normalized": 0,
+        "numeric_evaluated": 0,
+        "precondition_issues": {}
+      },
+      "ner": {
+        "execution_status": "completed",
+        "span_count": 1,
+        "timing": {
+          "load_seconds": 0.000145,
+          "inference_seconds": 0.480612
+        }
+      }
+    },
+    {
+      "arm": "A",
+      "scope_id": "residue_missing",
+      "status": "complete",
+      "error_code": null,
+      "original_error": null,
+      "http_calls": 3,
+      "contracts_passed": 3,
+      "accepted_candidates": 0,
+      "observations": 1,
+      "unresolved": 1,
+      "rejected": 0,
+      "checklist": {
+        "evaluated": true,
+        "all_pass": true,
+        "passed": 4,
+        "total": 4
+      },
+      "shacl": {
+        "literal_checks": 0,
+        "evaluated": 0,
+        "not_evaluated": 0,
+        "complete_coverage": 0,
+        "conforms_true": 0,
+        "normalized": 0,
+        "numeric_evaluated": 0,
+        "precondition_issues": {}
+      },
+      "ner": {
+        "execution_status": "disabled",
+        "span_count": 0,
+        "timing": null
+      }
+    },
+    {
+      "arm": "A",
+      "scope_id": "pde_conflict",
+      "status": "complete",
+      "error_code": null,
+      "original_error": null,
+      "http_calls": 3,
+      "contracts_passed": 3,
+      "accepted_candidates": 2,
+      "observations": 0,
+      "unresolved": 29,
+      "rejected": 0,
+      "checklist": {
+        "evaluated": true,
+        "all_pass": false,
+        "passed": 2,
+        "total": 15
+      },
+      "shacl": {
+        "literal_checks": 23,
+        "evaluated": 1,
+        "not_evaluated": 22,
+        "complete_coverage": 1,
+        "conforms_true": 1,
+        "normalized": 1,
+        "numeric_evaluated": 0,
+        "precondition_issues": {
+          "owner_record_ambiguous": 22,
+          "semantic_undetermined": 6
+        }
+      },
+      "ner": {
+        "execution_status": "disabled",
+        "span_count": 0,
+        "timing": null
+      }
+    },
+    {
+      "arm": "B",
+      "scope_id": "pde_conflict",
+      "status": "failed",
+      "error_code": "model_timeout",
+      "original_error": "model_timeout",
+      "http_calls": 2,
+      "contracts_passed": 1,
+      "accepted_candidates": 0,
+      "observations": 0,
+      "unresolved": 0,
+      "rejected": 0,
+      "checklist": {
+        "evaluated": false,
+        "all_pass": false,
+        "passed": 2,
+        "total": 15
+      },
+      "shacl": {
+        "literal_checks": 0,
+        "evaluated": 0,
+        "not_evaluated": 0,
+        "complete_coverage": 0,
+        "conforms_true": 0,
+        "normalized": 0,
+        "numeric_evaluated": 0,
+        "precondition_issues": {}
+      },
+      "ner": {
+        "execution_status": "completed",
+        "span_count": 18,
+        "timing": {
+          "load_seconds": 0.000157,
+          "inference_seconds": 8.424335
+        }
+      }
+    },
+    {
+      "arm": "B",
+      "scope_id": "toxicity_unknown",
+      "status": "complete",
+      "error_code": null,
+      "original_error": null,
+      "http_calls": 3,
+      "contracts_passed": 3,
+      "accepted_candidates": 2,
+      "observations": 4,
+      "unresolved": 0,
+      "rejected": 0,
+      "checklist": {
+        "evaluated": true,
+        "all_pass": true,
+        "passed": 12,
+        "total": 12
+      },
+      "shacl": {
+        "literal_checks": 1,
+        "evaluated": 1,
+        "not_evaluated": 0,
+        "complete_coverage": 1,
+        "conforms_true": 1,
+        "normalized": 1,
+        "numeric_evaluated": 0,
+        "precondition_issues": {}
+      },
+      "ner": {
+        "execution_status": "completed",
+        "span_count": 1,
+        "timing": {
+          "load_seconds": 0.000103,
+          "inference_seconds": 3.004142
+        }
+      }
+    },
+    {
+      "arm": "A",
+      "scope_id": "toxicity_unknown",
+      "status": "complete",
+      "error_code": null,
+      "original_error": "citation_span_id_mismatch",
+      "http_calls": 3,
+      "contracts_passed": 3,
+      "accepted_candidates": 2,
+      "observations": 4,
+      "unresolved": 0,
+      "rejected": 0,
+      "checklist": {
+        "evaluated": true,
+        "all_pass": true,
+        "passed": 12,
+        "total": 12
+      },
+      "shacl": {
+        "literal_checks": 1,
+        "evaluated": 1,
+        "not_evaluated": 0,
+        "complete_coverage": 1,
+        "conforms_true": 1,
+        "normalized": 1,
+        "numeric_evaluated": 0,
+        "precondition_issues": {}
+      },
+      "ner": {
+        "execution_status": "disabled",
+        "span_count": 0,
+        "timing": null
+      }
+    }
+  ],
+  "cost": {
+    "initial_model_wall_seconds": 2148.196,
+    "completion_wall_seconds": 566.116,
+    "deterministic_recheck_seconds": 0.37,
+    "initial_run_ner_probe": {
+      "package_version": "0.2.29",
+      "weights": [
+        {
+          "path": ".cache/huggingface/.gitignore",
+          "bytes": 1,
+          "sha256": "684888c0ebb17f374298b65ee2807526c066094c701bcc7ebbe1c1095f494fc1"
+        },
+        {
+          "path": ".cache/huggingface/download/.gitattributes.lock",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": ".cache/huggingface/download/.gitattributes.metadata",
+          "bytes": 101,
+          "sha256": "95baeeac79634cc5f8a6bb71867294ce415bee7e6f92c325a173fc89cbeaeb86"
+        },
+        {
+          "path": ".cache/huggingface/download/README.md.lock",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": ".cache/huggingface/download/README.md.metadata",
+          "bytes": 101,
+          "sha256": "8b5b6308982b653624a06fee11f628e3122eb51f3d9c447074f22ce1151ce269"
+        },
+        {
+          "path": ".cache/huggingface/download/gliner_config.json.lock",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": ".cache/huggingface/download/gliner_config.json.metadata",
+          "bytes": 101,
+          "sha256": "01aa8815dfb5a8ce85adbfc6a522708af9d98d7416cdc9617980de8fe4422225"
+        },
+        {
+          "path": ".cache/huggingface/download/model.safetensors.lock",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": ".cache/huggingface/download/model.safetensors.metadata",
+          "bytes": 124,
+          "sha256": "acf8ba7db628f63c426cdb729084aa0e498977a5f0bc639a083aa0df21461407"
+        },
+        {
+          "path": ".cache/huggingface/download/pytorch_model.bin.lock",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": ".cache/huggingface/download/pytorch_model.bin.metadata",
+          "bytes": 125,
+          "sha256": "7ceada2c662122c6cde34c5466b68378a193498e036f6d94f000a0bdc5b220a8"
+        },
+        {
+          "path": ".gitattributes",
+          "bytes": 1519,
+          "sha256": "11ad7efa24975ee4b0c3c3a38ed18737f0658a5f75a0a96787b576a78a023361"
+        },
+        {
+          "path": "README.md",
+          "bytes": 4770,
+          "sha256": "820125f2ea897716cc38645d94f73f390ec9dfd392980c436be1d25c2e106b55"
+        },
+        {
+          "path": "added_tokens.json",
+          "bytes": 23,
+          "sha256": "fb697283833d25e2c711f1bc37730ecd8b20f4bd5f015db1d84aefe0adc9155a"
+        },
+        {
+          "path": "gliner_config.json",
+          "bytes": 1255,
+          "sha256": "fab34d31fa361751a6d839834100c6cbfcba0a8401d3ecb195a5afdc0a9fae7c"
+        },
+        {
+          "path": "model.safetensors",
+          "bytes": 1155830112,
+          "sha256": "2100142f31627531497850659dcb3821c99d5e71c08a8e01a98e4b11ef32a199"
+        },
+        {
+          "path": "pytorch_model.bin",
+          "bytes": 1155900362,
+          "sha256": "580d8b061bcb6596bd79be7f29736cea84fdfef0679fc3ae9c14c08d2e974fad"
+        },
+        {
+          "path": "special_tokens_map.json",
+          "bytes": 286,
+          "sha256": "9463f61e1b109a8eb4688b829260d7c6b1e6dff04c98ff7269bb89e2b92369b9"
+        },
+        {
+          "path": "spm.model",
+          "bytes": 4305025,
+          "sha256": "13c8d666d62a7bc4ac8f040aab68e942c861f93303156cc28f5c7e885d86d6e3"
+        },
+        {
+          "path": "tokenizer.json",
+          "bytes": 16350764,
+          "sha256": "9ddbe35b768b22d6cd0d61a0a88ea3a188b7c00bbb7b825f9f247cf0b79c2365"
+        },
+        {
+          "path": "tokenizer_config.json",
+          "bytes": 19675,
+          "sha256": "8032d12bf0b260fc43a05ceb8e640f31847c5f97c9ef7c0229109a62458147c7"
+        }
+      ],
+      "weight_identity": "500ec47fe3f3390386c24255c9b289d2118221ed780ccd9b0aa89ee06123a2a3",
+      "seconds": 53.42,
+      "completed": true,
+      "scope_count": 8,
+      "span_count": 37
+    },
+    "standalone_ner_probe": {
+      "package_version": "0.2.29",
+      "weights": [
+        {
+          "path": ".cache/huggingface/.gitignore",
+          "bytes": 1,
+          "sha256": "684888c0ebb17f374298b65ee2807526c066094c701bcc7ebbe1c1095f494fc1"
+        },
+        {
+          "path": ".cache/huggingface/download/.gitattributes.lock",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": ".cache/huggingface/download/.gitattributes.metadata",
+          "bytes": 101,
+          "sha256": "95baeeac79634cc5f8a6bb71867294ce415bee7e6f92c325a173fc89cbeaeb86"
+        },
+        {
+          "path": ".cache/huggingface/download/README.md.lock",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": ".cache/huggingface/download/README.md.metadata",
+          "bytes": 101,
+          "sha256": "8b5b6308982b653624a06fee11f628e3122eb51f3d9c447074f22ce1151ce269"
+        },
+        {
+          "path": ".cache/huggingface/download/gliner_config.json.lock",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": ".cache/huggingface/download/gliner_config.json.metadata",
+          "bytes": 101,
+          "sha256": "01aa8815dfb5a8ce85adbfc6a522708af9d98d7416cdc9617980de8fe4422225"
+        },
+        {
+          "path": ".cache/huggingface/download/model.safetensors.lock",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": ".cache/huggingface/download/model.safetensors.metadata",
+          "bytes": 124,
+          "sha256": "acf8ba7db628f63c426cdb729084aa0e498977a5f0bc639a083aa0df21461407"
+        },
+        {
+          "path": ".cache/huggingface/download/pytorch_model.bin.lock",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": ".cache/huggingface/download/pytorch_model.bin.metadata",
+          "bytes": 125,
+          "sha256": "7ceada2c662122c6cde34c5466b68378a193498e036f6d94f000a0bdc5b220a8"
+        },
+        {
+          "path": ".gitattributes",
+          "bytes": 1519,
+          "sha256": "11ad7efa24975ee4b0c3c3a38ed18737f0658a5f75a0a96787b576a78a023361"
+        },
+        {
+          "path": "README.md",
+          "bytes": 4770,
+          "sha256": "820125f2ea897716cc38645d94f73f390ec9dfd392980c436be1d25c2e106b55"
+        },
+        {
+          "path": "added_tokens.json",
+          "bytes": 23,
+          "sha256": "fb697283833d25e2c711f1bc37730ecd8b20f4bd5f015db1d84aefe0adc9155a"
+        },
+        {
+          "path": "gliner_config.json",
+          "bytes": 1255,
+          "sha256": "fab34d31fa361751a6d839834100c6cbfcba0a8401d3ecb195a5afdc0a9fae7c"
+        },
+        {
+          "path": "model.safetensors",
+          "bytes": 1155830112,
+          "sha256": "2100142f31627531497850659dcb3821c99d5e71c08a8e01a98e4b11ef32a199"
+        },
+        {
+          "path": "pytorch_model.bin",
+          "bytes": 1155900362,
+          "sha256": "580d8b061bcb6596bd79be7f29736cea84fdfef0679fc3ae9c14c08d2e974fad"
+        },
+        {
+          "path": "special_tokens_map.json",
+          "bytes": 286,
+          "sha256": "9463f61e1b109a8eb4688b829260d7c6b1e6dff04c98ff7269bb89e2b92369b9"
+        },
+        {
+          "path": "spm.model",
+          "bytes": 4305025,
+          "sha256": "13c8d666d62a7bc4ac8f040aab68e942c861f93303156cc28f5c7e885d86d6e3"
+        },
+        {
+          "path": "tokenizer.json",
+          "bytes": 16350764,
+          "sha256": "9ddbe35b768b22d6cd0d61a0a88ea3a188b7c00bbb7b825f9f247cf0b79c2365"
+        },
+        {
+          "path": "tokenizer_config.json",
+          "bytes": 19675,
+          "sha256": "8032d12bf0b260fc43a05ceb8e640f31847c5f97c9ef7c0229109a62458147c7"
+        }
+      ],
+      "weight_identity": "500ec47fe3f3390386c24255c9b289d2118221ed780ccd9b0aa89ee06123a2a3",
+      "seconds": 55.276,
+      "completed": true,
+      "scope_count": 8,
+      "span_count": 37
+    }
+  }
+}

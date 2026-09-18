@@ -96,6 +96,7 @@ def _snapshot_header() -> dict:
 
 def _source_roles() -> dict:
     return {
+        "unit": [],
         "subject": ["selection:subject"],
         "object": ["selection:object"],
         "value": [],

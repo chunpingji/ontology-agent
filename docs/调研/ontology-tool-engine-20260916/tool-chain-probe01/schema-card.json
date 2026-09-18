@@ -1,0 +1,343 @@
+{
+  "schema_card_id": "e09a86e008b525104d9925a77199f7028fe7df259dc35c55d765356cde4f20af",
+  "subject_ref": {
+    "id": "d360c5a971854ba5c3b5ae7f65dbdf84a406563f30e0f1ac733a06630a1f5194",
+    "revision": 1
+  },
+  "class_iris": [
+    "https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport",
+    "https://ontology.pharma-gmp.cn/slpra/equipment/CIPSystem",
+    "https://ontology.pharma-gmp.cn/slpra/equipment/CapsuleFiller",
+    "https://ontology.pharma-gmp.cn/slpra/equipment/Centrifuge",
+    "https://ontology.pharma-gmp.cn/slpra/equipment/ChromatographyColumnSystem",
+    "https://ontology.pharma-gmp.cn/slpra/equipment/CleaningEquipment",
+    "https://ontology.pharma-gmp.cn/slpra/equipment/CoatingMachine",
+    "https://ontology.pharma-gmp.cn/slpra/equipment/CompressedAirSystem",
+    "https://ontology.pharma-gmp.cn/slpra/equipment/Dryer",
+    "https://ontology.pharma-gmp.cn/slpra/equipment/ElectricVacuumDryer",
+    "https://ontology.pharma-gmp.cn/slpra/equipment/Equipment",
+    "https://ontology.pharma-gmp.cn/slpra/equipment/FillingMachine",
+    "https://ontology.pharma-gmp.cn/slpra/equipment/FilterPress",
+    "https://ontology.pharma-gmp.cn/slpra/equipment/Granulator",
+    "https://ontology.pharma-gmp.cn/slpra/equipment/HVACSystem",
+    "https://ontology.pharma-gmp.cn/slpra/equipment/HotAirBlastDryer",
+    "https://ontology.pharma-gmp.cn/slpra/equipment/HotAirDryer",
+    "https://ontology.pharma-gmp.cn/slpra/equipment/ManualCleaningTool",
+    "https://ontology.pharma-gmp.cn/slpra/equipment/Mixer",
+    "https://ontology.pharma-gmp.cn/slpra/equipment/ProcessEquipment",
+    "https://ontology.pharma-gmp.cn/slpra/equipment/Reactor",
+    "https://ontology.pharma-gmp.cn/slpra/equipment/RotaryEvaporator",
+    "https://ontology.pharma-gmp.cn/slpra/equipment/TabletPress",
+    "https://ontology.pharma-gmp.cn/slpra/equipment/UtilityEquipment",
+    "https://ontology.pharma-gmp.cn/slpra/equipment/VacuumDryer",
+    "https://ontology.pharma-gmp.cn/slpra/equipment/WaterSystem"
+  ],
+  "ontology_snapshot_id": "3523126749dbbd0a67a9ed33fff91566ed25ddfc6f42b1a9f3afccf4e2a50c32",
+  "menu_id": "664d28e42f0658f28c8504a1641d75d7d61cca605ecae54ab86f2fbd200638cb",
+  "predicates": [
+    {
+      "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/usesEquipment",
+      "label": "使用设备",
+      "description": "Links a synthesis step or CMC report to the equipment required.",
+      "declared_by": [
+        "https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport"
+      ],
+      "multiplicity": "unspecified",
+      "min_count": null,
+      "max_count": null,
+      "constraint_status": "resolved",
+      "kind": "relationship",
+      "range_class_iris": [
+        "https://ontology.pharma-gmp.cn/slpra/equipment/CIPSystem",
+        "https://ontology.pharma-gmp.cn/slpra/equipment/CapsuleFiller",
+        "https://ontology.pharma-gmp.cn/slpra/equipment/Centrifuge",
+        "https://ontology.pharma-gmp.cn/slpra/equipment/ChromatographyColumnSystem",
+        "https://ontology.pharma-gmp.cn/slpra/equipment/CleaningEquipment",
+        "https://ontology.pharma-gmp.cn/slpra/equipment/CoatingMachine",
+        "https://ontology.pharma-gmp.cn/slpra/equipment/CompressedAirSystem",
+        "https://ontology.pharma-gmp.cn/slpra/equipment/Dryer",
+        "https://ontology.pharma-gmp.cn/slpra/equipment/ElectricVacuumDryer",
+        "https://ontology.pharma-gmp.cn/slpra/equipment/Equipment",
+        "https://ontology.pharma-gmp.cn/slpra/equipment/FillingMachine",
+        "https://ontology.pharma-gmp.cn/slpra/equipment/FilterPress",
+        "https://ontology.pharma-gmp.cn/slpra/equipment/Granulator",
+        "https://ontology.pharma-gmp.cn/slpra/equipment/HVACSystem",
+        "https://ontology.pharma-gmp.cn/slpra/equipment/HotAirBlastDryer",
+        "https://ontology.pharma-gmp.cn/slpra/equipment/HotAirDryer",
+        "https://ontology.pharma-gmp.cn/slpra/equipment/ManualCleaningTool",
+        "https://ontology.pharma-gmp.cn/slpra/equipment/Mixer",
+        "https://ontology.pharma-gmp.cn/slpra/equipment/ProcessEquipment",
+        "https://ontology.pharma-gmp.cn/slpra/equipment/Reactor",
+        "https://ontology.pharma-gmp.cn/slpra/equipment/RotaryEvaporator",
+        "https://ontology.pharma-gmp.cn/slpra/equipment/TabletPress",
+        "https://ontology.pharma-gmp.cn/slpra/equipment/UtilityEquipment",
+        "https://ontology.pharma-gmp.cn/slpra/equipment/VacuumDryer",
+        "https://ontology.pharma-gmp.cn/slpra/equipment/WaterSystem"
+      ],
+      "range_classes": [
+        {
+          "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/CIPSystem",
+          "label": "在线清洗系统",
+          "description": "",
+          "parent_iris": [
+            "https://ontology.pharma-gmp.cn/slpra/equipment/CleaningEquipment"
+          ],
+          "identity_property_iris": [],
+          "direct_field_labels": []
+        },
+        {
+          "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/CapsuleFiller",
+          "label": "胶囊填充机",
+          "description": "",
+          "parent_iris": [
+            "https://ontology.pharma-gmp.cn/slpra/equipment/ProcessEquipment"
+          ],
+          "identity_property_iris": [],
+          "direct_field_labels": []
+        },
+        {
+          "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/Centrifuge",
+          "label": "离心机",
+          "description": "",
+          "parent_iris": [
+            "https://ontology.pharma-gmp.cn/slpra/equipment/ProcessEquipment"
+          ],
+          "identity_property_iris": [],
+          "direct_field_labels": []
+        },
+        {
+          "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/ChromatographyColumnSystem",
+          "label": "微压柱系统",
+          "description": "",
+          "parent_iris": [
+            "https://ontology.pharma-gmp.cn/slpra/equipment/ProcessEquipment"
+          ],
+          "identity_property_iris": [],
+          "direct_field_labels": []
+        },
+        {
+          "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/CleaningEquipment",
+          "label": "清洗设备",
+          "description": "",
+          "parent_iris": [
+            "https://ontology.pharma-gmp.cn/slpra/equipment/Equipment"
+          ],
+          "identity_property_iris": [],
+          "direct_field_labels": []
+        },
+        {
+          "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/CoatingMachine",
+          "label": "包衣机",
+          "description": "",
+          "parent_iris": [
+            "https://ontology.pharma-gmp.cn/slpra/equipment/ProcessEquipment"
+          ],
+          "identity_property_iris": [],
+          "direct_field_labels": []
+        },
+        {
+          "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/CompressedAirSystem",
+          "label": "压缩空气系统",
+          "description": "",
+          "parent_iris": [
+            "https://ontology.pharma-gmp.cn/slpra/equipment/UtilityEquipment"
+          ],
+          "identity_property_iris": [],
+          "direct_field_labels": []
+        },
+        {
+          "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/Dryer",
+          "label": "干燥设备",
+          "description": "",
+          "parent_iris": [
+            "https://ontology.pharma-gmp.cn/slpra/equipment/ProcessEquipment"
+          ],
+          "identity_property_iris": [],
+          "direct_field_labels": []
+        },
+        {
+          "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/ElectricVacuumDryer",
+          "label": "电热真空干燥箱",
+          "description": "",
+          "parent_iris": [
+            "https://ontology.pharma-gmp.cn/slpra/equipment/VacuumDryer"
+          ],
+          "identity_property_iris": [],
+          "direct_field_labels": []
+        },
+        {
+          "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/Equipment",
+          "label": "设备",
+          "description": "",
+          "parent_iris": [],
+          "identity_property_iris": [
+            "https://ontology.pharma-gmp.cn/slpra/equipment/equipmentID"
+          ],
+          "direct_field_labels": [
+            "设备编号",
+            "设备名称",
+            "is dedicated equipment",
+            "is in clean area",
+            "规格型号",
+            "requires dedication",
+            "requires inactivation validation",
+            "requires independent HVAC"
+          ]
+        },
+        {
+          "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/FillingMachine",
+          "label": "灌装机",
+          "description": "",
+          "parent_iris": [
+            "https://ontology.pharma-gmp.cn/slpra/equipment/ProcessEquipment"
+          ],
+          "identity_property_iris": [],
+          "direct_field_labels": []
+        },
+        {
+          "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/FilterPress",
+          "label": "压滤器",
+          "description": "",
+          "parent_iris": [
+            "https://ontology.pharma-gmp.cn/slpra/equipment/ProcessEquipment"
+          ],
+          "identity_property_iris": [],
+          "direct_field_labels": []
+        },
+        {
+          "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/Granulator",
+          "label": "制粒机",
+          "description": "",
+          "parent_iris": [
+            "https://ontology.pharma-gmp.cn/slpra/equipment/ProcessEquipment"
+          ],
+          "identity_property_iris": [],
+          "direct_field_labels": []
+        },
+        {
+          "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/HVACSystem",
+          "label": "暖通空调系统",
+          "description": "",
+          "parent_iris": [
+            "https://ontology.pharma-gmp.cn/slpra/equipment/UtilityEquipment"
+          ],
+          "identity_property_iris": [],
+          "direct_field_labels": []
+        },
+        {
+          "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/HotAirBlastDryer",
+          "label": "电热鼓风干燥箱",
+          "description": "",
+          "parent_iris": [
+            "https://ontology.pharma-gmp.cn/slpra/equipment/Dryer"
+          ],
+          "identity_property_iris": [],
+          "direct_field_labels": []
+        },
+        {
+          "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/HotAirDryer",
+          "label": "热风循环干燥箱",
+          "description": "",
+          "parent_iris": [
+            "https://ontology.pharma-gmp.cn/slpra/equipment/Dryer"
+          ],
+          "identity_property_iris": [],
+          "direct_field_labels": []
+        },
+        {
+          "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/ManualCleaningTool",
+          "label": "手动清洗工具",
+          "description": "",
+          "parent_iris": [
+            "https://ontology.pharma-gmp.cn/slpra/equipment/CleaningEquipment"
+          ],
+          "identity_property_iris": [],
+          "direct_field_labels": []
+        },
+        {
+          "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/Mixer",
+          "label": "混合机",
+          "description": "",
+          "parent_iris": [
+            "https://ontology.pharma-gmp.cn/slpra/equipment/ProcessEquipment"
+          ],
+          "identity_property_iris": [],
+          "direct_field_labels": []
+        },
+        {
+          "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/ProcessEquipment",
+          "label": "生产设备",
+          "description": "",
+          "parent_iris": [
+            "https://ontology.pharma-gmp.cn/slpra/equipment/Equipment"
+          ],
+          "identity_property_iris": [],
+          "direct_field_labels": []
+        },
+        {
+          "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/Reactor",
+          "label": "反应器",
+          "description": "",
+          "parent_iris": [
+            "https://ontology.pharma-gmp.cn/slpra/equipment/ProcessEquipment"
+          ],
+          "identity_property_iris": [],
+          "direct_field_labels": []
+        },
+        {
+          "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/RotaryEvaporator",
+          "label": "旋蒸",
+          "description": "",
+          "parent_iris": [
+            "https://ontology.pharma-gmp.cn/slpra/equipment/ProcessEquipment"
+          ],
+          "identity_property_iris": [],
+          "direct_field_labels": []
+        },
+        {
+          "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/TabletPress",
+          "label": "压片机",
+          "description": "",
+          "parent_iris": [
+            "https://ontology.pharma-gmp.cn/slpra/equipment/ProcessEquipment"
+          ],
+          "identity_property_iris": [],
+          "direct_field_labels": []
+        },
+        {
+          "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/UtilityEquipment",
+          "label": "公用设备",
+          "description": "",
+          "parent_iris": [
+            "https://ontology.pharma-gmp.cn/slpra/equipment/Equipment"
+          ],
+          "identity_property_iris": [],
+          "direct_field_labels": []
+        },
+        {
+          "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/VacuumDryer",
+          "label": "真空干燥箱",
+          "description": "",
+          "parent_iris": [
+            "https://ontology.pharma-gmp.cn/slpra/equipment/Dryer"
+          ],
+          "identity_property_iris": [],
+          "direct_field_labels": []
+        },
+        {
+          "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/WaterSystem",
+          "label": "水系统",
+          "description": "",
+          "parent_iris": [
+            "https://ontology.pharma-gmp.cn/slpra/equipment/UtilityEquipment"
+          ],
+          "identity_property_iris": [],
+          "direct_field_labels": []
+        }
+      ]
+    }
+  ],
+  "quantity_policies": [],
+  "identity_keys": [],
+  "unsupported_constraints": []
+}

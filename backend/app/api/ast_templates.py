@@ -10,7 +10,16 @@ import tempfile
 from pathlib import Path
 from uuid import UUID, uuid4
 
-from fastapi import APIRouter, BackgroundTasks, Depends, File, HTTPException, UploadFile
+from fastapi import (
+    APIRouter,
+    BackgroundTasks,
+    Depends,
+    File,
+    HTTPException,
+    Request,
+    Response,
+    UploadFile,
+)
 from sqlalchemy.orm import Session
 
 from app.db import get_db
@@ -36,12 +45,31 @@ from app.schemas.extraction import (
     TemplateMatchResponse,
     TrainingPairResponse,
 )
+from app.schemas.template_finder import RecognitionEngineUpdate
 from app.services import audit
 from app.services.reporting.ast_template import ReportTemplate
 from app.services.reporting.report_run_service import schema_hash
 from app.services.reporting.template_v2 import ReportingError, TemplateV2
+from app.services.template_finder.configuration import configuration, save_configuration
+from app.services.template_finder.policy import resolve as finder_binding
+from app.services.template_finder.policy import response_fields as finder_fields
 
-router = APIRouter()
+
+def _protect_demo_template(request: Request, db: Session = Depends(get_db)):
+    template_id = request.path_params.get("template_id")
+    if not template_id:
+        return
+    try:
+        row = db.get(AstTemplate, UUID(str(template_id)))
+    except ValueError:
+        return  # The endpoint reports its normal validation error.
+    if row and (row.schema_json or {}).get("demo_profile"):
+        if request.method == "GET" and request.url.path.rstrip("/").endswith(str(template_id)):
+            return
+        raise HTTPException(409, "演示模板使用共享静态数据，请在专用页面查看和生成批记录")
+
+
+router = APIRouter(dependencies=[Depends(_protect_demo_template)])
 
 _log = logging.getLogger(__name__)
 
@@ -72,6 +100,10 @@ def _best_effort_unlink(path: str | None) -> None:
 
 
 def _count_slots(schema_json: dict) -> int:
+    if schema_json.get("demo_profile"):
+        from app.services.reporting.batch_demo import definitions
+
+        return len(definitions()[1]["sections"])
     if schema_json.get("schema_version") == 2:
         from app.services.reporting.template_compiler import walk_groups
 
@@ -90,6 +122,7 @@ def _count_slots(schema_json: dict) -> int:
 
 def _template_response(t: AstTemplate) -> AstTemplateResponse:
     return AstTemplateResponse(
+        **finder_fields(t),
         id=t.id,
         name=t.name,
         version=t.version,
@@ -109,6 +142,7 @@ def _template_response(t: AstTemplate) -> AstTemplateResponse:
         template_family_id=t.template_family_id or str(t.id),
         revision_no=t.revision_no or 1,
         schema_hash=schema_hash(t.schema_json),
+        demo_profile=t.schema_json.get("demo_profile"),
     )
 
 
@@ -137,6 +171,8 @@ def get_template(
     if not row:
         raise HTTPException(404, "模板不存在")
 
+    from app.services.extraction.template_structure_builder import template_structure_titles
+
     resp = _template_response(row)
     pairs = sorted(row.training_pairs, key=lambda p: p.created_at)
     # 同名模板的所有版本（供编辑器切换历史版本）。
@@ -156,6 +192,9 @@ def get_template(
         "sample_text": row.sample_text,
         "sample_content_json": row.sample_content_json,
         "sample_analysis": row.sample_analysis,
+        "structure_titles": template_structure_titles(
+            row.schema_json, row.sample_analysis or (row.sample_content_json or {}).get("analysis")
+        ),
         "training_pairs": [TrainingPairResponse.model_validate(p).model_dump() for p in pairs],
         "versions": versions,
     }
@@ -168,6 +207,8 @@ def create_template(
     identity: object = Depends(_maintainer),
     engine: object = Depends(get_ontology_engine),
 ):
+    if req.schema_json.get("demo_profile"):
+        raise HTTPException(409, "演示模板仅通过专用特化工具配置")
     try:
         (
             TemplateV2 if req.schema_json.get("schema_version") == 2 else ReportTemplate
@@ -305,6 +346,27 @@ def _auto_version(current: str) -> str:
     return f"{current}.1"
 
 
+@router.get("/{template_id}/recognition-engine")
+def get_recognition_engine(template_id: UUID, db: Session = Depends(get_db)):
+    row = db.get(AstTemplate, template_id)
+    if not row:
+        raise HTTPException(404, "模板不存在")
+    return configuration(row)
+
+
+@router.patch("/{template_id}/recognition-engine")
+def update_recognition_engine(
+    template_id: UUID,
+    req: RecognitionEngineUpdate,
+    db: Session = Depends(get_db),
+    identity: object = Depends(_maintainer),
+):
+    row = db.get(AstTemplate, template_id)
+    if not row:
+        raise HTTPException(404, "模板不存在")
+    return save_configuration(db, row, req, getattr(identity, "username", "system"))
+
+
 _VALID_STATUSES = {"draft", "published", "archived"}
 
 
@@ -364,6 +426,7 @@ def update_template_meta(
         changed["status"] = req.status
     if req.iri_pattern is not None:
         row.iri_pattern = req.iri_pattern or None
+        finder_binding(row)  # Reject incompatible root changes before committing metadata.
         changed["iri_pattern"] = row.iri_pattern
 
     if changed:
@@ -471,11 +534,13 @@ def _get_template_or_404(template_id: UUID, db: Session) -> AstTemplate:
 async def replace_sample(
     template_id: UUID,
     file: UploadFile = File(...),
+    include_content: bool = True,
     db: Session = Depends(get_db),
     identity: object = Depends(_maintainer),
 ):
     """替换既有模板的默认示例文档（固化输出 section / 格式）。支持 .doc（后端转 .docx）
-    / .docx，解析为忠于原文结构的 tiptap 并同步 sample_text，供 AI 插槽建议与忠实预览。"""
+    / .docx，解析为忠于原文结构的 tiptap 并同步 sample_text，供 AI 插槽建议与忠实预览。
+    include_content=False 在持久化成功后仅返回 204，供无需立即预览的创建向导使用。"""
     row = _get_template_or_404(template_id, db)
     if row.status in {"published", "archived"}:
         raise ReportingError("TEMPLATE_REVISION_REQUIRED", status=409)
@@ -552,6 +617,8 @@ async def replace_sample(
                 Path(old_path).unlink(missing_ok=True)
         except Exception:
             _log.warning("替换示例后清理旧文件失败（已忽略）：%s", old_path, exc_info=True)
+    if not include_content:
+        return Response(status_code=204)
     return {
         "content_json": content_json,
         "plain_text": plain_text,
@@ -573,6 +640,9 @@ async def upload_default_source(
 
     row = _get_template_or_404(template_id, db)
     suffix = Path(file.filename or "").suffix.lower()
+    finder = finder_binding(row)
+    if finder and suffix not in (".doc", ".docx"):
+        raise HTTPException(422, "本体指引1.0仅支持 Word 原件")
     if suffix not in (".doc", ".docx", ".xlsx", ".xls"):
         raise HTTPException(422, "仅支持 Word(.doc/.docx) 或 Excel(.xlsx/.xls) 文件")
 
@@ -614,7 +684,7 @@ async def upload_default_source(
             "template_id": str(template_id),
             "doc_class_iri": row.iri_pattern,
         },
-        status="running",
+        status="pending" if finder else "running",
     )
     db.add(job)
     db.flush()
@@ -642,7 +712,7 @@ async def upload_default_source(
 
     # 提交成功后再清理旧资源（best-effort）：旧源文件（若与新路径不同）与旧标注缓存。
 
-    if source_type in ("word", "excel"):
+    if not finder and source_type in ("word", "excel"):
         _enqueue_annotation(job.id, background, engine, db, mode="start",
                             actor=getattr(identity, "username", "system"))
 
@@ -876,11 +946,9 @@ def generate_section_prompt_endpoint(
     req: GenerateSectionPromptRequest,
     identity: object = Depends(_maintainer),
 ):
-    raise ReportingError(
-        "STRUCTURED_OUTPUT_PROMPT_REQUIRED",
-        status=409,
-        message="Configure authorized InputRefs and a versioned prompt policy.",
-    )
+    from app.services.reporting.section_narrative import generate_prompt
+
+    return generate_prompt(req)
 
 
 @router.post("/preview-section-narrative", response_model=PreviewSectionNarrativeResponse)
@@ -888,12 +956,11 @@ def preview_section_narrative_endpoint(
     req: PreviewSectionNarrativeRequest,
     identity: object = Depends(_maintainer),
     db: Session = Depends(get_db),
+    engine: object = Depends(get_ontology_engine),
 ):
-    raise ReportingError(
-        "STRUCTURED_OUTPUT_PREVIEW_REQUIRED",
-        status=409,
-        message="Use /api/report-previews with a V2 template revision.",
-    )
+    from app.services.reporting.section_preview import preview_section
+
+    return preview_section(db, engine, identity.username, req)
 
 
 # ── Template match (T011) ───────────────────────────────────────────────

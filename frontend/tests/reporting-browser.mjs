@@ -18,6 +18,8 @@ const requirements = [
   { requirement_id: "gap", input_id: "rows", field_path: ["spec"], origin_refs: ["two"], execution_scope_id: "root", required: true, activation: "active", satisfied: false, issue_refs: ["missing-spec"] },
 ];
 let previewCount = 0, reportCreated = false;
+let holdInputs = true, releaseInputs, markInputsRequested;
+const inputsRequested = new Promise(resolve => { markInputsRequested = resolve; });
 const frozen = new Map();
 const sampleContent = { type: "doc", content: [{ type: "paragraph", content: [{ type: "text", text: "模板样例原文" }] }] };
 let saved, preview, layoutRequest, compilationRequest, metadataSaved, sessionCreated = false;
@@ -38,6 +40,8 @@ try {
     if (path === "/api/report-model-context") response = contracts[0];
     else if (path === "/api/report-contracts") response = contracts;
     else if (path === "/api/ast-templates/coverage-doc-classes") response = { capable: ["urn:Report"] };
+    else if (path.endsWith("/recognition-engine")) response = { recognition_mode: "ontology_guided", finder_profile_id: null, finder_profiles: [] };
+    else if (path.endsWith("/semantic-sources")) response = { options: [] };
     else if (path.endsWith("/training-pairs")) response = [];
     else if (path.endsWith("/revisions")) { saved = payload; response = { id: "fixture-2" }; }
     else if (path.endsWith("/compile")) {
@@ -57,6 +61,7 @@ try {
     else if (path.endsWith("/evidence")) response = { candidates: [], commits: [], snapshot_id: "source-snapshot" };
     else if (path.endsWith("/evidence/coverage")) response = { availability: "available", material_status: "ready", completion: "complete", required_gaps: 0, diagnostics: [], tasks: [], snapshot_id: "source-snapshot" };
     else if (path === "/api/extraction/jobs") response = [{ id: "job", source_filename: "合成来源.docx", status: "reviewing" }, { id: "other-job", source_filename: "另一来源.docx", status: "reviewing" }];
+    else if (/^\/api\/extraction\/jobs\/[^/]+$/.test(path)) response = { id: path.split("/").at(-1), source_type: "word", source_mode: "template_default", status: "reviewing" };
     else if (path.endsWith("/reports")) response = reportCreated ? [{ id: "history", job_id: "job", report_run_id: "frozen-run", report_artifact_id: "draft-artifact", file_size: 12, created_at: "2026-09-06T08:00:00Z", actor: "fixture" }] : [];
     else if (path === "/api/report-previews") {
       if (payload.mode === "layout") { layoutRequest = payload; response = { body_ast: { kind: "document", children: [] } }; }
@@ -69,7 +74,13 @@ try {
           material_status: "incomplete", blocking_issues: [{ issue_id: "missing-spec", code: "REQUIRED_INPUT_UNMET", state: "missing", message: "缺少设备规格" }] } });
       }
     }
-    else if (/\/report-runs\/[^/]+\/inputs$/.test(path)) response = frozen.get(path.split("/")[3]).snapshot;
+    else if (/\/report-runs\/[^/]+\/inputs$/.test(path)) {
+      if (holdInputs && path.includes("data-run-")) {
+        holdInputs = false;
+        await new Promise(resolve => { releaseInputs = resolve; markInputsRequested(); });
+      }
+      response = frozen.get(path.split("/")[3]).snapshot;
+    }
     else if (/\/report-runs\/[^/]+\/outputs$/.test(path)) response = ["table", "two"].map((output_id) => ({ id: output_id, payload: { output_id, execution_scope_id: "root", execution_status: "completed", inactive: false, output_ast: ast } }));
     else if (/\/report-runs\/[^/]+\/artifacts\/draft-artifact$/.test(path)) {
       await route.fulfill({ status: 200, contentType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document", body: "synthetic-docx" }); return;
@@ -150,10 +161,19 @@ try {
   await page.getByLabel("适用时间", { exact: true }).fill("2026-09-06");
   await reportTab.locator("summary").filter({ hasText: "来源与生成设置" }).click();
   await page.getByRole("button", { name: "刷新覆盖率", exact: true }).click();
+  await inputsRequested;
+  assert.equal(await page.getByRole("button", { name: "刷新覆盖率", exact: true }).isDisabled(), true);
+  assert.equal(await page.getByRole("button", { name: "生成报告", exact: true }).isDisabled(), true);
+  assert.match(await progress.innerText(), /重新分析中/);
+  assert.doesNotMatch(await progress.innerText(), /覆盖率检查已完成/);
+  releaseInputs();
   await structure.getByRole("button", { name: "未满足 1", exact: true }).waitFor();
   assert.equal(preview.mode, "data");
   assert.match(await structure.innerText(), /50%/);
-  assert.match(await progress.innerText(), /60%/);
+  assert.match(await progress.innerText(), /覆盖率检查进度\n100%/);
+  assert.match(await progress.innerText(), /覆盖率检查已完成/);
+  assert.match(await progress.innerText(), /仍有 1 项输入要求未满足/);
+  assert.doesNotMatch(await progress.innerText(), /AI 行文生成|DOCX 报告渲染/);
   await structure.getByRole("button", { name: "未满足 1", exact: true }).click();
   await structure.getByText("缺少设备规格", { exact: true }).waitFor();
   assert.equal(await structure.getByRole("button", { name: "共享说明 有缺口", exact: true }).getAttribute("aria-pressed"), "true");
@@ -170,6 +190,9 @@ try {
   await structure.getByRole("button", { name: "下载报告", exact: true }).click();
   assert.match((await downloadEvent).suggestedFilename(), /draft-artifa/);
   assert.match(await progress.innerText(), /100%/);
+  assert.match(await progress.innerText(), /报告生成进度/);
+  assert.match(await progress.innerText(), /AI 行文生成/);
+  assert.match(await progress.innerText(), /DOCX 报告渲染/);
   await reportTab.locator("summary").filter({ hasText: /^正文审核与签署$/ }).click();
   await page.getByRole("button", { name: "创建签署会话", exact: true }).click();
   assert.equal(await page.getByRole("button", { name: "封装正式报告", exact: true }).isDisabled(), true);

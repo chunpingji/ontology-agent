@@ -1,0 +1,205 @@
+{
+  "mode": "frozen_vocabulary_read_only_check",
+  "real_model_requests": 0,
+  "entries": 2,
+  "entry_roles": {
+    "entity": 1,
+    "field_label": 1
+  },
+  "effective_entries": {
+    "vocab_c685b6af8b51c28b8f1ab7f0": {
+      "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport",
+      "role": "entity",
+      "pref_label": "CMC 报告",
+      "alt_labels": [],
+      "description": "抽取有原文明示角色的实体名称或称谓；不抽类别表头，名称不证明唯一身份。Chemistry, Manufacturing, and Controls documentation: drug substance/product specification, manufacturing process, analytical methods. 上下文术语提示：CMC 报告。",
+      "sources": [
+        {
+          "kind": "ontology",
+          "snapshot_id": "3523126749dbbd0a67a9ed33fff91566ed25ddfc6f42b1a9f3afccf4e2a50c32",
+          "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport",
+          "field": "definition"
+        },
+        {
+          "kind": "ontology",
+          "snapshot_id": "3523126749dbbd0a67a9ed33fff91566ed25ddfc6f42b1a9f3afccf4e2a50c32",
+          "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport",
+          "predicate": "http://www.w3.org/2000/01/rdf-schema#label",
+          "value": "CMC Report",
+          "language": "en"
+        },
+        {
+          "kind": "ontology",
+          "snapshot_id": "3523126749dbbd0a67a9ed33fff91566ed25ddfc6f42b1a9f3afccf4e2a50c32",
+          "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport",
+          "predicate": "http://www.w3.org/2000/01/rdf-schema#label",
+          "value": "CMC 报告",
+          "language": "zh"
+        }
+      ]
+    },
+    "vocab_d2f0354c75d706cef43ee123": {
+      "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/usesEquipment",
+      "role": "field_label",
+      "pref_label": "使用设备",
+      "alt_labels": [],
+      "description": "抽取原文明示的字段标题或字段名称，不把标题当作字段值。Links a synthesis step or CMC report to the equipment required. 上下文术语提示：使用设备。",
+      "sources": [
+        {
+          "kind": "ontology",
+          "snapshot_id": "3523126749dbbd0a67a9ed33fff91566ed25ddfc6f42b1a9f3afccf4e2a50c32",
+          "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/usesEquipment",
+          "field": "definition"
+        },
+        {
+          "kind": "ontology",
+          "snapshot_id": "3523126749dbbd0a67a9ed33fff91566ed25ddfc6f42b1a9f3afccf4e2a50c32",
+          "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/usesEquipment",
+          "predicate": "http://www.w3.org/2000/01/rdf-schema#label",
+          "value": "uses equipment",
+          "language": "en"
+        },
+        {
+          "kind": "ontology",
+          "snapshot_id": "3523126749dbbd0a67a9ed33fff91566ed25ddfc6f42b1a9f3afccf4e2a50c32",
+          "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/usesEquipment",
+          "predicate": "http://www.w3.org/2000/01/rdf-schema#label",
+          "value": "使用设备",
+          "language": "zh"
+        }
+      ]
+    }
+  },
+  "missing_count": 25,
+  "missing_reasons": {
+    "definition_missing": 25
+  },
+  "missing": [
+    {
+      "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/CIPSystem",
+      "role": "entity",
+      "reason": "definition_missing"
+    },
+    {
+      "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/CapsuleFiller",
+      "role": "entity",
+      "reason": "definition_missing"
+    },
+    {
+      "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/Centrifuge",
+      "role": "entity",
+      "reason": "definition_missing"
+    },
+    {
+      "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/ChromatographyColumnSystem",
+      "role": "entity",
+      "reason": "definition_missing"
+    },
+    {
+      "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/CleaningEquipment",
+      "role": "entity",
+      "reason": "definition_missing"
+    },
+    {
+      "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/CoatingMachine",
+      "role": "entity",
+      "reason": "definition_missing"
+    },
+    {
+      "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/CompressedAirSystem",
+      "role": "entity",
+      "reason": "definition_missing"
+    },
+    {
+      "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/Dryer",
+      "role": "entity",
+      "reason": "definition_missing"
+    },
+    {
+      "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/ElectricVacuumDryer",
+      "role": "entity",
+      "reason": "definition_missing"
+    },
+    {
+      "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/Equipment",
+      "role": "entity",
+      "reason": "definition_missing"
+    },
+    {
+      "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/FillingMachine",
+      "role": "entity",
+      "reason": "definition_missing"
+    },
+    {
+      "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/FilterPress",
+      "role": "entity",
+      "reason": "definition_missing"
+    },
+    {
+      "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/Granulator",
+      "role": "entity",
+      "reason": "definition_missing"
+    },
+    {
+      "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/HVACSystem",
+      "role": "entity",
+      "reason": "definition_missing"
+    },
+    {
+      "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/HotAirBlastDryer",
+      "role": "entity",
+      "reason": "definition_missing"
+    },
+    {
+      "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/HotAirDryer",
+      "role": "entity",
+      "reason": "definition_missing"
+    },
+    {
+      "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/ManualCleaningTool",
+      "role": "entity",
+      "reason": "definition_missing"
+    },
+    {
+      "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/Mixer",
+      "role": "entity",
+      "reason": "definition_missing"
+    },
+    {
+      "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/ProcessEquipment",
+      "role": "entity",
+      "reason": "definition_missing"
+    },
+    {
+      "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/Reactor",
+      "role": "entity",
+      "reason": "definition_missing"
+    },
+    {
+      "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/RotaryEvaporator",
+      "role": "entity",
+      "reason": "definition_missing"
+    },
+    {
+      "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/TabletPress",
+      "role": "entity",
+      "reason": "definition_missing"
+    },
+    {
+      "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/UtilityEquipment",
+      "role": "entity",
+      "reason": "definition_missing"
+    },
+    {
+      "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/VacuumDryer",
+      "role": "entity",
+      "reason": "definition_missing"
+    },
+    {
+      "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/WaterSystem",
+      "role": "entity",
+      "reason": "definition_missing"
+    }
+  ],
+  "overlay_changed": false
+}

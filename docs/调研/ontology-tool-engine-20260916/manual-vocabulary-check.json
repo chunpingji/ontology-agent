@@ -1,0 +1,1043 @@
+{
+  "mode": "manual_vocabulary_compile_check",
+  "qwen_requests": 0,
+  "gliner_inference_calls": 0,
+  "ontology_sha256": "1cabf0a4e744160737832cfc5aa4634719765dd786e0ffc5b25473cec5ed80c7",
+  "overlay_file_sha256": "30d2890f655d4427d535357144aac6b65950ae21bba87da2daf23a6f2f3b872a",
+  "overlay_content_hash": "0fa92d06d9dc399941ab8c148b7f06adb073cd2c9aa62ef30d177f2671d232fd",
+  "schema_card_id": "e09a86e008b525104d9925a77199f7028fe7df259dc35c55d765356cde4f20af",
+  "before": {
+    "entries": 2,
+    "missing": 25
+  },
+  "after": {
+    "entries": 27,
+    "roles": {
+      "entity": 26,
+      "field_label": 1
+    },
+    "missing": []
+  },
+  "ontology_unchanged": true,
+  "existing_manifests_unchanged": true,
+  "graph_written": false,
+  "expert_review": "not_reviewed",
+  "f1_status": "not_scored",
+  "compiled_entries": {
+    "vocab_c685b6af8b51c28b8f1ab7f0": {
+      "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport",
+      "role": "entity",
+      "pref_label": "CMC 报告",
+      "alt_labels": [],
+      "description": "抽取有原文明示角色的实体名称或称谓；不抽类别表头，名称不证明唯一身份。Chemistry, Manufacturing, and Controls documentation: drug substance/product specification, manufacturing process, analytical methods. 上下文术语提示：CMC 报告。",
+      "sources": [
+        {
+          "kind": "ontology",
+          "snapshot_id": "3523126749dbbd0a67a9ed33fff91566ed25ddfc6f42b1a9f3afccf4e2a50c32",
+          "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport",
+          "field": "definition"
+        },
+        {
+          "kind": "ontology",
+          "snapshot_id": "3523126749dbbd0a67a9ed33fff91566ed25ddfc6f42b1a9f3afccf4e2a50c32",
+          "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport",
+          "predicate": "http://www.w3.org/2000/01/rdf-schema#label",
+          "value": "CMC Report",
+          "language": "en"
+        },
+        {
+          "kind": "ontology",
+          "snapshot_id": "3523126749dbbd0a67a9ed33fff91566ed25ddfc6f42b1a9f3afccf4e2a50c32",
+          "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport",
+          "predicate": "http://www.w3.org/2000/01/rdf-schema#label",
+          "value": "CMC 报告",
+          "language": "zh"
+        }
+      ]
+    },
+    "vocab_d2f0354c75d706cef43ee123": {
+      "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/usesEquipment",
+      "role": "field_label",
+      "pref_label": "使用设备",
+      "alt_labels": [],
+      "description": "抽取原文明示的字段标题或字段名称，不把标题当作字段值。Links a synthesis step or CMC report to the equipment required. 上下文术语提示：使用设备。",
+      "sources": [
+        {
+          "kind": "ontology",
+          "snapshot_id": "3523126749dbbd0a67a9ed33fff91566ed25ddfc6f42b1a9f3afccf4e2a50c32",
+          "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/usesEquipment",
+          "field": "definition"
+        },
+        {
+          "kind": "ontology",
+          "snapshot_id": "3523126749dbbd0a67a9ed33fff91566ed25ddfc6f42b1a9f3afccf4e2a50c32",
+          "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/usesEquipment",
+          "predicate": "http://www.w3.org/2000/01/rdf-schema#label",
+          "value": "uses equipment",
+          "language": "en"
+        },
+        {
+          "kind": "ontology",
+          "snapshot_id": "3523126749dbbd0a67a9ed33fff91566ed25ddfc6f42b1a9f3afccf4e2a50c32",
+          "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/usesEquipment",
+          "predicate": "http://www.w3.org/2000/01/rdf-schema#label",
+          "value": "使用设备",
+          "language": "zh"
+        }
+      ]
+    },
+    "vocab_c04ee29c78fd2de64818e189": {
+      "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/CIPSystem",
+      "role": "entity",
+      "pref_label": "在线清洗系统",
+      "alt_labels": [
+        "就地清洗系统",
+        "CIP system"
+      ],
+      "description": "抽取有原文明示角色的实体名称或称谓；不抽类别表头，名称不证明唯一身份。在不拆卸主要设备的情况下，向设备内部输送及循环清洗介质的在线清洗系统。 上下文术语提示：在线清洗系统、就地清洗系统、CIP system。",
+      "sources": [
+        {
+          "kind": "ontology",
+          "snapshot_id": "3523126749dbbd0a67a9ed33fff91566ed25ddfc6f42b1a9f3afccf4e2a50c32",
+          "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/CIPSystem",
+          "field": "labels"
+        },
+        {
+          "kind": "ontology",
+          "snapshot_id": "3523126749dbbd0a67a9ed33fff91566ed25ddfc6f42b1a9f3afccf4e2a50c32",
+          "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/CIPSystem",
+          "predicate": "http://www.w3.org/2000/01/rdf-schema#label",
+          "value": "CIP System",
+          "language": "en"
+        },
+        {
+          "kind": "ontology",
+          "snapshot_id": "3523126749dbbd0a67a9ed33fff91566ed25ddfc6f42b1a9f3afccf4e2a50c32",
+          "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/CIPSystem",
+          "predicate": "http://www.w3.org/2000/01/rdf-schema#label",
+          "value": "在线清洗系统",
+          "language": "zh"
+        },
+        {
+          "kind": "manual_overlay",
+          "source_ref": "manual-vocabulary-notes.md#manual-general-knowledge"
+        }
+      ]
+    },
+    "vocab_6260edef34f5e50a258f024f": {
+      "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/CapsuleFiller",
+      "role": "entity",
+      "pref_label": "胶囊填充机",
+      "alt_labels": [
+        "胶囊充填机",
+        "capsule filling machine"
+      ],
+      "description": "抽取有原文明示角色的实体名称或称谓；不抽类别表头，名称不证明唯一身份。将物料按设定量装入胶囊壳的胶囊填充设备。 上下文术语提示：胶囊填充机、胶囊充填机、capsule filling machine。",
+      "sources": [
+        {
+          "kind": "ontology",
+          "snapshot_id": "3523126749dbbd0a67a9ed33fff91566ed25ddfc6f42b1a9f3afccf4e2a50c32",
+          "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/CapsuleFiller",
+          "field": "labels"
+        },
+        {
+          "kind": "ontology",
+          "snapshot_id": "3523126749dbbd0a67a9ed33fff91566ed25ddfc6f42b1a9f3afccf4e2a50c32",
+          "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/CapsuleFiller",
+          "predicate": "http://www.w3.org/2000/01/rdf-schema#label",
+          "value": "Capsule Filler",
+          "language": "en"
+        },
+        {
+          "kind": "ontology",
+          "snapshot_id": "3523126749dbbd0a67a9ed33fff91566ed25ddfc6f42b1a9f3afccf4e2a50c32",
+          "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/CapsuleFiller",
+          "predicate": "http://www.w3.org/2000/01/rdf-schema#label",
+          "value": "胶囊填充机",
+          "language": "zh"
+        },
+        {
+          "kind": "manual_overlay",
+          "source_ref": "manual-vocabulary-notes.md#manual-general-knowledge"
+        }
+      ]
+    },
+    "vocab_a02bd10e6edc4a8e470ff73e": {
+      "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/Centrifuge",
+      "role": "entity",
+      "pref_label": "离心机",
+      "alt_labels": [
+        "centrifuge"
+      ],
+      "description": "抽取有原文明示角色的实体名称或称谓；不抽类别表头，名称不证明唯一身份。利用旋转产生的离心作用分离不同密度组分的设备。 上下文术语提示：离心机、centrifuge。",
+      "sources": [
+        {
+          "kind": "ontology",
+          "snapshot_id": "3523126749dbbd0a67a9ed33fff91566ed25ddfc6f42b1a9f3afccf4e2a50c32",
+          "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/Centrifuge",
+          "field": "labels"
+        },
+        {
+          "kind": "ontology",
+          "snapshot_id": "3523126749dbbd0a67a9ed33fff91566ed25ddfc6f42b1a9f3afccf4e2a50c32",
+          "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/Centrifuge",
+          "predicate": "http://www.w3.org/2000/01/rdf-schema#label",
+          "value": "Centrifuge",
+          "language": "en"
+        },
+        {
+          "kind": "ontology",
+          "snapshot_id": "3523126749dbbd0a67a9ed33fff91566ed25ddfc6f42b1a9f3afccf4e2a50c32",
+          "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/Centrifuge",
+          "predicate": "http://www.w3.org/2000/01/rdf-schema#label",
+          "value": "离心机",
+          "language": "zh"
+        },
+        {
+          "kind": "manual_overlay",
+          "source_ref": "manual-vocabulary-notes.md#manual-general-knowledge"
+        }
+      ]
+    },
+    "vocab_6c21c3cefe490479323f846e": {
+      "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/ChromatographyColumnSystem",
+      "role": "entity",
+      "pref_label": "微压柱系统",
+      "alt_labels": [
+        "色谱柱系统",
+        "chromatography column system"
+      ],
+      "description": "抽取有原文明示角色的实体名称或称谓；不抽类别表头，名称不证明唯一身份。以色谱柱为分离部件，通过流动相与固定相的相互作用分离组分的设备系统。 上下文术语提示：微压柱系统、色谱柱系统、chromatography column system。",
+      "sources": [
+        {
+          "kind": "ontology",
+          "snapshot_id": "3523126749dbbd0a67a9ed33fff91566ed25ddfc6f42b1a9f3afccf4e2a50c32",
+          "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/ChromatographyColumnSystem",
+          "field": "labels"
+        },
+        {
+          "kind": "ontology",
+          "snapshot_id": "3523126749dbbd0a67a9ed33fff91566ed25ddfc6f42b1a9f3afccf4e2a50c32",
+          "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/ChromatographyColumnSystem",
+          "predicate": "http://www.w3.org/2000/01/rdf-schema#label",
+          "value": "Chromatography Column System",
+          "language": "en"
+        },
+        {
+          "kind": "ontology",
+          "snapshot_id": "3523126749dbbd0a67a9ed33fff91566ed25ddfc6f42b1a9f3afccf4e2a50c32",
+          "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/ChromatographyColumnSystem",
+          "predicate": "http://www.w3.org/2000/01/rdf-schema#label",
+          "value": "微压柱系统",
+          "language": "zh"
+        },
+        {
+          "kind": "manual_overlay",
+          "source_ref": "manual-vocabulary-notes.md#manual-general-knowledge"
+        }
+      ]
+    },
+    "vocab_0d400561383220f5dc3375d4": {
+      "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/CleaningEquipment",
+      "role": "entity",
+      "pref_label": "清洗设备",
+      "alt_labels": [
+        "cleaning equipment"
+      ],
+      "description": "抽取有原文明示角色的实体名称或称谓；不抽类别表头，名称不证明唯一身份。用于对物体或设备执行清洗操作的设备。 上下文术语提示：清洗设备、cleaning equipment。",
+      "sources": [
+        {
+          "kind": "ontology",
+          "snapshot_id": "3523126749dbbd0a67a9ed33fff91566ed25ddfc6f42b1a9f3afccf4e2a50c32",
+          "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/CleaningEquipment",
+          "field": "labels"
+        },
+        {
+          "kind": "ontology",
+          "snapshot_id": "3523126749dbbd0a67a9ed33fff91566ed25ddfc6f42b1a9f3afccf4e2a50c32",
+          "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/CleaningEquipment",
+          "predicate": "http://www.w3.org/2000/01/rdf-schema#label",
+          "value": "Cleaning Equipment",
+          "language": "en"
+        },
+        {
+          "kind": "ontology",
+          "snapshot_id": "3523126749dbbd0a67a9ed33fff91566ed25ddfc6f42b1a9f3afccf4e2a50c32",
+          "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/CleaningEquipment",
+          "predicate": "http://www.w3.org/2000/01/rdf-schema#label",
+          "value": "清洗设备",
+          "language": "zh"
+        },
+        {
+          "kind": "manual_overlay",
+          "source_ref": "manual-vocabulary-notes.md#manual-general-knowledge"
+        }
+      ]
+    },
+    "vocab_058dfc4a11915a204d69b0f0": {
+      "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/CoatingMachine",
+      "role": "entity",
+      "pref_label": "包衣机",
+      "alt_labels": [
+        "coating machine"
+      ],
+      "description": "抽取有原文明示角色的实体名称或称谓；不抽类别表头，名称不证明唯一身份。将包衣材料施加到颗粒或片剂等物体表面的设备。 上下文术语提示：包衣机、coating machine。",
+      "sources": [
+        {
+          "kind": "ontology",
+          "snapshot_id": "3523126749dbbd0a67a9ed33fff91566ed25ddfc6f42b1a9f3afccf4e2a50c32",
+          "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/CoatingMachine",
+          "field": "labels"
+        },
+        {
+          "kind": "ontology",
+          "snapshot_id": "3523126749dbbd0a67a9ed33fff91566ed25ddfc6f42b1a9f3afccf4e2a50c32",
+          "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/CoatingMachine",
+          "predicate": "http://www.w3.org/2000/01/rdf-schema#label",
+          "value": "Coating Machine",
+          "language": "en"
+        },
+        {
+          "kind": "ontology",
+          "snapshot_id": "3523126749dbbd0a67a9ed33fff91566ed25ddfc6f42b1a9f3afccf4e2a50c32",
+          "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/CoatingMachine",
+          "predicate": "http://www.w3.org/2000/01/rdf-schema#label",
+          "value": "包衣机",
+          "language": "zh"
+        },
+        {
+          "kind": "manual_overlay",
+          "source_ref": "manual-vocabulary-notes.md#manual-general-knowledge"
+        }
+      ]
+    },
+    "vocab_432f7c28b2492469446c63cd": {
+      "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/CompressedAirSystem",
+      "role": "entity",
+      "pref_label": "压缩空气系统",
+      "alt_labels": [
+        "compressed air system"
+      ],
+      "description": "抽取有原文明示角色的实体名称或称谓；不抽类别表头，名称不证明唯一身份。用于产生、处理、储存或输送压缩空气的公用工程系统。 上下文术语提示：压缩空气系统、compressed air system。",
+      "sources": [
+        {
+          "kind": "ontology",
+          "snapshot_id": "3523126749dbbd0a67a9ed33fff91566ed25ddfc6f42b1a9f3afccf4e2a50c32",
+          "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/CompressedAirSystem",
+          "field": "labels"
+        },
+        {
+          "kind": "ontology",
+          "snapshot_id": "3523126749dbbd0a67a9ed33fff91566ed25ddfc6f42b1a9f3afccf4e2a50c32",
+          "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/CompressedAirSystem",
+          "predicate": "http://www.w3.org/2000/01/rdf-schema#label",
+          "value": "Compressed Air System",
+          "language": "en"
+        },
+        {
+          "kind": "ontology",
+          "snapshot_id": "3523126749dbbd0a67a9ed33fff91566ed25ddfc6f42b1a9f3afccf4e2a50c32",
+          "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/CompressedAirSystem",
+          "predicate": "http://www.w3.org/2000/01/rdf-schema#label",
+          "value": "压缩空气系统",
+          "language": "zh"
+        },
+        {
+          "kind": "manual_overlay",
+          "source_ref": "manual-vocabulary-notes.md#manual-general-knowledge"
+        }
+      ]
+    },
+    "vocab_3543f0e2bdce7d33f88a2e7d": {
+      "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/Dryer",
+      "role": "entity",
+      "pref_label": "干燥设备",
+      "alt_labels": [
+        "dryer"
+      ],
+      "description": "抽取有原文明示角色的实体名称或称谓；不抽类别表头，名称不证明唯一身份。通过移除水分或溶剂以降低物料湿含量的干燥设备。 上下文术语提示：干燥设备、dryer。",
+      "sources": [
+        {
+          "kind": "ontology",
+          "snapshot_id": "3523126749dbbd0a67a9ed33fff91566ed25ddfc6f42b1a9f3afccf4e2a50c32",
+          "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/Dryer",
+          "field": "labels"
+        },
+        {
+          "kind": "ontology",
+          "snapshot_id": "3523126749dbbd0a67a9ed33fff91566ed25ddfc6f42b1a9f3afccf4e2a50c32",
+          "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/Dryer",
+          "predicate": "http://www.w3.org/2000/01/rdf-schema#label",
+          "value": "Dryer",
+          "language": "en"
+        },
+        {
+          "kind": "ontology",
+          "snapshot_id": "3523126749dbbd0a67a9ed33fff91566ed25ddfc6f42b1a9f3afccf4e2a50c32",
+          "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/Dryer",
+          "predicate": "http://www.w3.org/2000/01/rdf-schema#label",
+          "value": "干燥设备",
+          "language": "zh"
+        },
+        {
+          "kind": "manual_overlay",
+          "source_ref": "manual-vocabulary-notes.md#manual-general-knowledge"
+        }
+      ]
+    },
+    "vocab_d1fc713253ae369e28f3b718": {
+      "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/ElectricVacuumDryer",
+      "role": "entity",
+      "pref_label": "电热真空干燥箱",
+      "alt_labels": [
+        "电加热真空干燥机",
+        "electric vacuum dryer"
+      ],
+      "description": "抽取有原文明示角色的实体名称或称谓；不抽类别表头，名称不证明唯一身份。采用电加热并在减压条件下干燥物料的设备。 上下文术语提示：电热真空干燥箱、电加热真空干燥机、electric vacuum dryer。",
+      "sources": [
+        {
+          "kind": "ontology",
+          "snapshot_id": "3523126749dbbd0a67a9ed33fff91566ed25ddfc6f42b1a9f3afccf4e2a50c32",
+          "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/ElectricVacuumDryer",
+          "field": "labels"
+        },
+        {
+          "kind": "ontology",
+          "snapshot_id": "3523126749dbbd0a67a9ed33fff91566ed25ddfc6f42b1a9f3afccf4e2a50c32",
+          "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/ElectricVacuumDryer",
+          "predicate": "http://www.w3.org/2000/01/rdf-schema#label",
+          "value": "Electric Heated Vacuum Dryer",
+          "language": "en"
+        },
+        {
+          "kind": "ontology",
+          "snapshot_id": "3523126749dbbd0a67a9ed33fff91566ed25ddfc6f42b1a9f3afccf4e2a50c32",
+          "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/ElectricVacuumDryer",
+          "predicate": "http://www.w3.org/2000/01/rdf-schema#label",
+          "value": "电热真空干燥箱",
+          "language": "zh"
+        },
+        {
+          "kind": "manual_overlay",
+          "source_ref": "manual-vocabulary-notes.md#manual-general-knowledge"
+        }
+      ]
+    },
+    "vocab_6b7cee18b1d53c960f0c5afd": {
+      "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/Equipment",
+      "role": "entity",
+      "pref_label": "设备",
+      "alt_labels": [
+        "equipment"
+      ],
+      "description": "抽取有原文明示角色的实体名称或称谓；不抽类别表头，名称不证明唯一身份。承担明确操作或技术功能的设备；具体实例必须由原文提及定位，类别名称不证明实例身份。 上下文术语提示：设备、equipment。",
+      "sources": [
+        {
+          "kind": "ontology",
+          "snapshot_id": "3523126749dbbd0a67a9ed33fff91566ed25ddfc6f42b1a9f3afccf4e2a50c32",
+          "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/Equipment",
+          "field": "labels"
+        },
+        {
+          "kind": "ontology",
+          "snapshot_id": "3523126749dbbd0a67a9ed33fff91566ed25ddfc6f42b1a9f3afccf4e2a50c32",
+          "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/Equipment",
+          "predicate": "http://www.w3.org/2000/01/rdf-schema#label",
+          "value": "Equipment",
+          "language": "en"
+        },
+        {
+          "kind": "ontology",
+          "snapshot_id": "3523126749dbbd0a67a9ed33fff91566ed25ddfc6f42b1a9f3afccf4e2a50c32",
+          "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/Equipment",
+          "predicate": "http://www.w3.org/2000/01/rdf-schema#label",
+          "value": "设备",
+          "language": "zh"
+        },
+        {
+          "kind": "manual_overlay",
+          "source_ref": "manual-vocabulary-notes.md#manual-general-knowledge"
+        }
+      ]
+    },
+    "vocab_afe1c569130317443e8b5dc2": {
+      "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/FillingMachine",
+      "role": "entity",
+      "pref_label": "灌装机",
+      "alt_labels": [
+        "filling machine"
+      ],
+      "description": "抽取有原文明示角色的实体名称或称谓；不抽类别表头，名称不证明唯一身份。将物料按设定量装入容器的灌装设备。 上下文术语提示：灌装机、filling machine。",
+      "sources": [
+        {
+          "kind": "ontology",
+          "snapshot_id": "3523126749dbbd0a67a9ed33fff91566ed25ddfc6f42b1a9f3afccf4e2a50c32",
+          "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/FillingMachine",
+          "field": "labels"
+        },
+        {
+          "kind": "ontology",
+          "snapshot_id": "3523126749dbbd0a67a9ed33fff91566ed25ddfc6f42b1a9f3afccf4e2a50c32",
+          "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/FillingMachine",
+          "predicate": "http://www.w3.org/2000/01/rdf-schema#label",
+          "value": "Filling Machine",
+          "language": "en"
+        },
+        {
+          "kind": "ontology",
+          "snapshot_id": "3523126749dbbd0a67a9ed33fff91566ed25ddfc6f42b1a9f3afccf4e2a50c32",
+          "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/FillingMachine",
+          "predicate": "http://www.w3.org/2000/01/rdf-schema#label",
+          "value": "灌装机",
+          "language": "zh"
+        },
+        {
+          "kind": "manual_overlay",
+          "source_ref": "manual-vocabulary-notes.md#manual-general-knowledge"
+        }
+      ]
+    },
+    "vocab_53b734298670ee353b772eb3": {
+      "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/FilterPress",
+      "role": "entity",
+      "pref_label": "压滤器",
+      "alt_labels": [
+        "filter press"
+      ],
+      "description": "抽取有原文明示角色的实体名称或称谓；不抽类别表头，名称不证明唯一身份。以压力差使液体通过过滤介质而截留固体的压滤设备。 上下文术语提示：压滤器、filter press。",
+      "sources": [
+        {
+          "kind": "ontology",
+          "snapshot_id": "3523126749dbbd0a67a9ed33fff91566ed25ddfc6f42b1a9f3afccf4e2a50c32",
+          "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/FilterPress",
+          "field": "labels"
+        },
+        {
+          "kind": "ontology",
+          "snapshot_id": "3523126749dbbd0a67a9ed33fff91566ed25ddfc6f42b1a9f3afccf4e2a50c32",
+          "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/FilterPress",
+          "predicate": "http://www.w3.org/2000/01/rdf-schema#label",
+          "value": "Filter Press",
+          "language": "en"
+        },
+        {
+          "kind": "ontology",
+          "snapshot_id": "3523126749dbbd0a67a9ed33fff91566ed25ddfc6f42b1a9f3afccf4e2a50c32",
+          "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/FilterPress",
+          "predicate": "http://www.w3.org/2000/01/rdf-schema#label",
+          "value": "压滤器",
+          "language": "zh"
+        },
+        {
+          "kind": "manual_overlay",
+          "source_ref": "manual-vocabulary-notes.md#manual-general-knowledge"
+        }
+      ]
+    },
+    "vocab_17c8b87db29b08d52a184c3c": {
+      "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/Granulator",
+      "role": "entity",
+      "pref_label": "制粒机",
+      "alt_labels": [
+        "granulator"
+      ],
+      "description": "抽取有原文明示角色的实体名称或称谓；不抽类别表头，名称不证明唯一身份。将粉末或其他细小物料加工为颗粒的设备。 上下文术语提示：制粒机、granulator。",
+      "sources": [
+        {
+          "kind": "ontology",
+          "snapshot_id": "3523126749dbbd0a67a9ed33fff91566ed25ddfc6f42b1a9f3afccf4e2a50c32",
+          "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/Granulator",
+          "field": "labels"
+        },
+        {
+          "kind": "ontology",
+          "snapshot_id": "3523126749dbbd0a67a9ed33fff91566ed25ddfc6f42b1a9f3afccf4e2a50c32",
+          "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/Granulator",
+          "predicate": "http://www.w3.org/2000/01/rdf-schema#label",
+          "value": "Granulator",
+          "language": "en"
+        },
+        {
+          "kind": "ontology",
+          "snapshot_id": "3523126749dbbd0a67a9ed33fff91566ed25ddfc6f42b1a9f3afccf4e2a50c32",
+          "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/Granulator",
+          "predicate": "http://www.w3.org/2000/01/rdf-schema#label",
+          "value": "制粒机",
+          "language": "zh"
+        },
+        {
+          "kind": "manual_overlay",
+          "source_ref": "manual-vocabulary-notes.md#manual-general-knowledge"
+        }
+      ]
+    },
+    "vocab_39b1fc140015898bcb7cdb5c": {
+      "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/HVACSystem",
+      "role": "entity",
+      "pref_label": "暖通空调系统",
+      "alt_labels": [
+        "heating ventilation and air conditioning system"
+      ],
+      "description": "抽取有原文明示角色的实体名称或称谓；不抽类别表头，名称不证明唯一身份。为场所提供采暖、通风和空气调节的系统。 上下文术语提示：暖通空调系统、heating ventilation and air conditioning system。",
+      "sources": [
+        {
+          "kind": "ontology",
+          "snapshot_id": "3523126749dbbd0a67a9ed33fff91566ed25ddfc6f42b1a9f3afccf4e2a50c32",
+          "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/HVACSystem",
+          "field": "labels"
+        },
+        {
+          "kind": "ontology",
+          "snapshot_id": "3523126749dbbd0a67a9ed33fff91566ed25ddfc6f42b1a9f3afccf4e2a50c32",
+          "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/HVACSystem",
+          "predicate": "http://www.w3.org/2000/01/rdf-schema#label",
+          "value": "HVAC System",
+          "language": "en"
+        },
+        {
+          "kind": "ontology",
+          "snapshot_id": "3523126749dbbd0a67a9ed33fff91566ed25ddfc6f42b1a9f3afccf4e2a50c32",
+          "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/HVACSystem",
+          "predicate": "http://www.w3.org/2000/01/rdf-schema#label",
+          "value": "暖通空调系统",
+          "language": "zh"
+        },
+        {
+          "kind": "manual_overlay",
+          "source_ref": "manual-vocabulary-notes.md#manual-general-knowledge"
+        }
+      ]
+    },
+    "vocab_89d5f8985bc1bef358801c7f": {
+      "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/HotAirBlastDryer",
+      "role": "entity",
+      "pref_label": "电热鼓风干燥箱",
+      "alt_labels": [
+        "鼓风干燥"
+      ],
+      "description": "抽取有原文明示角色的实体名称或称谓；不抽类别表头，名称不证明唯一身份。采用鼓风方式输送热空气以干燥物料的设备。 上下文术语提示：电热鼓风干燥箱、鼓风干燥。",
+      "sources": [
+        {
+          "kind": "ontology",
+          "snapshot_id": "3523126749dbbd0a67a9ed33fff91566ed25ddfc6f42b1a9f3afccf4e2a50c32",
+          "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/HotAirBlastDryer",
+          "field": "labels"
+        },
+        {
+          "kind": "ontology",
+          "snapshot_id": "3523126749dbbd0a67a9ed33fff91566ed25ddfc6f42b1a9f3afccf4e2a50c32",
+          "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/HotAirBlastDryer",
+          "predicate": "http://www.w3.org/2000/01/rdf-schema#label",
+          "value": "Hot Air Blast Dryer",
+          "language": "en"
+        },
+        {
+          "kind": "ontology",
+          "snapshot_id": "3523126749dbbd0a67a9ed33fff91566ed25ddfc6f42b1a9f3afccf4e2a50c32",
+          "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/HotAirBlastDryer",
+          "predicate": "http://www.w3.org/2000/01/rdf-schema#label",
+          "value": "电热鼓风干燥箱",
+          "language": "zh"
+        },
+        {
+          "kind": "ontology",
+          "snapshot_id": "3523126749dbbd0a67a9ed33fff91566ed25ddfc6f42b1a9f3afccf4e2a50c32",
+          "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/HotAirBlastDryer",
+          "predicate": "http://www.w3.org/2004/02/skos/core#altLabel",
+          "value": "鼓风干燥",
+          "language": "zh"
+        },
+        {
+          "kind": "manual_overlay",
+          "source_ref": "manual-vocabulary-notes.md#manual-general-knowledge"
+        }
+      ]
+    },
+    "vocab_c218abe6c1385d283f901582": {
+      "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/HotAirDryer",
+      "role": "entity",
+      "pref_label": "热风循环干燥箱",
+      "alt_labels": [
+        "hot air dryer"
+      ],
+      "description": "抽取有原文明示角色的实体名称或称谓；不抽类别表头，名称不证明唯一身份。利用热空气传热并带走湿分的干燥设备。 上下文术语提示：热风循环干燥箱、hot air dryer。",
+      "sources": [
+        {
+          "kind": "ontology",
+          "snapshot_id": "3523126749dbbd0a67a9ed33fff91566ed25ddfc6f42b1a9f3afccf4e2a50c32",
+          "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/HotAirDryer",
+          "field": "labels"
+        },
+        {
+          "kind": "ontology",
+          "snapshot_id": "3523126749dbbd0a67a9ed33fff91566ed25ddfc6f42b1a9f3afccf4e2a50c32",
+          "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/HotAirDryer",
+          "predicate": "http://www.w3.org/2000/01/rdf-schema#label",
+          "value": "Hot Air Circulating Dryer",
+          "language": "en"
+        },
+        {
+          "kind": "ontology",
+          "snapshot_id": "3523126749dbbd0a67a9ed33fff91566ed25ddfc6f42b1a9f3afccf4e2a50c32",
+          "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/HotAirDryer",
+          "predicate": "http://www.w3.org/2000/01/rdf-schema#label",
+          "value": "热风循环干燥箱",
+          "language": "zh"
+        },
+        {
+          "kind": "manual_overlay",
+          "source_ref": "manual-vocabulary-notes.md#manual-general-knowledge"
+        }
+      ]
+    },
+    "vocab_f9404ac15ecf6c3e516a5f76": {
+      "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/ManualCleaningTool",
+      "role": "entity",
+      "pref_label": "手动清洗工具",
+      "alt_labels": [
+        "手工清洗工具",
+        "manual cleaning tool"
+      ],
+      "description": "抽取有原文明示角色的实体名称或称谓；不抽类别表头，名称不证明唯一身份。由人员直接操作以完成清洗工作的器具。 上下文术语提示：手动清洗工具、手工清洗工具、manual cleaning tool。",
+      "sources": [
+        {
+          "kind": "ontology",
+          "snapshot_id": "3523126749dbbd0a67a9ed33fff91566ed25ddfc6f42b1a9f3afccf4e2a50c32",
+          "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/ManualCleaningTool",
+          "field": "labels"
+        },
+        {
+          "kind": "ontology",
+          "snapshot_id": "3523126749dbbd0a67a9ed33fff91566ed25ddfc6f42b1a9f3afccf4e2a50c32",
+          "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/ManualCleaningTool",
+          "predicate": "http://www.w3.org/2000/01/rdf-schema#label",
+          "value": "Manual Cleaning Tool",
+          "language": "en"
+        },
+        {
+          "kind": "ontology",
+          "snapshot_id": "3523126749dbbd0a67a9ed33fff91566ed25ddfc6f42b1a9f3afccf4e2a50c32",
+          "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/ManualCleaningTool",
+          "predicate": "http://www.w3.org/2000/01/rdf-schema#label",
+          "value": "手动清洗工具",
+          "language": "zh"
+        },
+        {
+          "kind": "manual_overlay",
+          "source_ref": "manual-vocabulary-notes.md#manual-general-knowledge"
+        }
+      ]
+    },
+    "vocab_9ee269f2589c44d374a1435a": {
+      "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/Mixer",
+      "role": "entity",
+      "pref_label": "混合机",
+      "alt_labels": [
+        "混合设备",
+        "mixer"
+      ],
+      "description": "抽取有原文明示角色的实体名称或称谓；不抽类别表头，名称不证明唯一身份。使两种或多种物料混合的设备。 上下文术语提示：混合机、混合设备、mixer。",
+      "sources": [
+        {
+          "kind": "ontology",
+          "snapshot_id": "3523126749dbbd0a67a9ed33fff91566ed25ddfc6f42b1a9f3afccf4e2a50c32",
+          "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/Mixer",
+          "field": "labels"
+        },
+        {
+          "kind": "ontology",
+          "snapshot_id": "3523126749dbbd0a67a9ed33fff91566ed25ddfc6f42b1a9f3afccf4e2a50c32",
+          "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/Mixer",
+          "predicate": "http://www.w3.org/2000/01/rdf-schema#label",
+          "value": "Mixer",
+          "language": "en"
+        },
+        {
+          "kind": "ontology",
+          "snapshot_id": "3523126749dbbd0a67a9ed33fff91566ed25ddfc6f42b1a9f3afccf4e2a50c32",
+          "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/Mixer",
+          "predicate": "http://www.w3.org/2000/01/rdf-schema#label",
+          "value": "混合机",
+          "language": "zh"
+        },
+        {
+          "kind": "manual_overlay",
+          "source_ref": "manual-vocabulary-notes.md#manual-general-knowledge"
+        }
+      ]
+    },
+    "vocab_36a935f7b68f7c63f6bfde18": {
+      "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/ProcessEquipment",
+      "role": "entity",
+      "pref_label": "生产设备",
+      "alt_labels": [
+        "工艺设备",
+        "process equipment"
+      ],
+      "description": "抽取有原文明示角色的实体名称或称谓；不抽类别表头，名称不证明唯一身份。直接用于实施物料处理、转化或分离等工艺操作的设备。 上下文术语提示：生产设备、工艺设备、process equipment。",
+      "sources": [
+        {
+          "kind": "ontology",
+          "snapshot_id": "3523126749dbbd0a67a9ed33fff91566ed25ddfc6f42b1a9f3afccf4e2a50c32",
+          "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/ProcessEquipment",
+          "field": "labels"
+        },
+        {
+          "kind": "ontology",
+          "snapshot_id": "3523126749dbbd0a67a9ed33fff91566ed25ddfc6f42b1a9f3afccf4e2a50c32",
+          "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/ProcessEquipment",
+          "predicate": "http://www.w3.org/2000/01/rdf-schema#label",
+          "value": "Process Equipment",
+          "language": "en"
+        },
+        {
+          "kind": "ontology",
+          "snapshot_id": "3523126749dbbd0a67a9ed33fff91566ed25ddfc6f42b1a9f3afccf4e2a50c32",
+          "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/ProcessEquipment",
+          "predicate": "http://www.w3.org/2000/01/rdf-schema#label",
+          "value": "生产设备",
+          "language": "zh"
+        },
+        {
+          "kind": "manual_overlay",
+          "source_ref": "manual-vocabulary-notes.md#manual-general-knowledge"
+        }
+      ]
+    },
+    "vocab_9ef9812b82c469b2f55f077b": {
+      "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/Reactor",
+      "role": "entity",
+      "pref_label": "反应器",
+      "alt_labels": [
+        "反应釜"
+      ],
+      "description": "抽取有原文明示角色的实体名称或称谓；不抽类别表头，名称不证明唯一身份。用于使物料在规定条件下发生化学反应的设备或容器。 上下文术语提示：反应器、反应釜。",
+      "sources": [
+        {
+          "kind": "ontology",
+          "snapshot_id": "3523126749dbbd0a67a9ed33fff91566ed25ddfc6f42b1a9f3afccf4e2a50c32",
+          "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/Reactor",
+          "field": "labels"
+        },
+        {
+          "kind": "ontology",
+          "snapshot_id": "3523126749dbbd0a67a9ed33fff91566ed25ddfc6f42b1a9f3afccf4e2a50c32",
+          "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/Reactor",
+          "predicate": "http://www.w3.org/2000/01/rdf-schema#label",
+          "value": "Reactor",
+          "language": "en"
+        },
+        {
+          "kind": "ontology",
+          "snapshot_id": "3523126749dbbd0a67a9ed33fff91566ed25ddfc6f42b1a9f3afccf4e2a50c32",
+          "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/Reactor",
+          "predicate": "http://www.w3.org/2000/01/rdf-schema#label",
+          "value": "反应器",
+          "language": "zh"
+        },
+        {
+          "kind": "ontology",
+          "snapshot_id": "3523126749dbbd0a67a9ed33fff91566ed25ddfc6f42b1a9f3afccf4e2a50c32",
+          "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/Reactor",
+          "predicate": "http://www.w3.org/2004/02/skos/core#altLabel",
+          "value": "反应釜",
+          "language": "zh"
+        },
+        {
+          "kind": "manual_overlay",
+          "source_ref": "manual-vocabulary-notes.md#manual-general-knowledge"
+        }
+      ]
+    },
+    "vocab_5a8655628af4ff54b81f647e": {
+      "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/RotaryEvaporator",
+      "role": "entity",
+      "pref_label": "旋蒸",
+      "alt_labels": [
+        "旋转蒸发器",
+        "rotary evaporator"
+      ],
+      "description": "抽取有原文明示角色的实体名称或称谓；不抽类别表头，名称不证明唯一身份。通过旋转容器形成液膜并蒸发溶剂，常配合减压操作的设备。 上下文术语提示：旋蒸、旋转蒸发器、rotary evaporator。",
+      "sources": [
+        {
+          "kind": "ontology",
+          "snapshot_id": "3523126749dbbd0a67a9ed33fff91566ed25ddfc6f42b1a9f3afccf4e2a50c32",
+          "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/RotaryEvaporator",
+          "field": "labels"
+        },
+        {
+          "kind": "ontology",
+          "snapshot_id": "3523126749dbbd0a67a9ed33fff91566ed25ddfc6f42b1a9f3afccf4e2a50c32",
+          "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/RotaryEvaporator",
+          "predicate": "http://www.w3.org/2000/01/rdf-schema#label",
+          "value": "Rotary Evaporator",
+          "language": "en"
+        },
+        {
+          "kind": "ontology",
+          "snapshot_id": "3523126749dbbd0a67a9ed33fff91566ed25ddfc6f42b1a9f3afccf4e2a50c32",
+          "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/RotaryEvaporator",
+          "predicate": "http://www.w3.org/2000/01/rdf-schema#label",
+          "value": "旋蒸",
+          "language": "zh"
+        },
+        {
+          "kind": "manual_overlay",
+          "source_ref": "manual-vocabulary-notes.md#manual-general-knowledge"
+        }
+      ]
+    },
+    "vocab_c3975e276d474d1433293a9d": {
+      "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/TabletPress",
+      "role": "entity",
+      "pref_label": "压片机",
+      "alt_labels": [
+        "压片设备",
+        "tablet press"
+      ],
+      "description": "抽取有原文明示角色的实体名称或称谓；不抽类别表头，名称不证明唯一身份。将粉末或颗粒压制成片的设备。 上下文术语提示：压片机、压片设备、tablet press。",
+      "sources": [
+        {
+          "kind": "ontology",
+          "snapshot_id": "3523126749dbbd0a67a9ed33fff91566ed25ddfc6f42b1a9f3afccf4e2a50c32",
+          "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/TabletPress",
+          "field": "labels"
+        },
+        {
+          "kind": "ontology",
+          "snapshot_id": "3523126749dbbd0a67a9ed33fff91566ed25ddfc6f42b1a9f3afccf4e2a50c32",
+          "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/TabletPress",
+          "predicate": "http://www.w3.org/2000/01/rdf-schema#label",
+          "value": "Tablet Press",
+          "language": "en"
+        },
+        {
+          "kind": "ontology",
+          "snapshot_id": "3523126749dbbd0a67a9ed33fff91566ed25ddfc6f42b1a9f3afccf4e2a50c32",
+          "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/TabletPress",
+          "predicate": "http://www.w3.org/2000/01/rdf-schema#label",
+          "value": "压片机",
+          "language": "zh"
+        },
+        {
+          "kind": "manual_overlay",
+          "source_ref": "manual-vocabulary-notes.md#manual-general-knowledge"
+        }
+      ]
+    },
+    "vocab_ceddc7beb5fc997a347e4df9": {
+      "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/UtilityEquipment",
+      "role": "entity",
+      "pref_label": "公用设备",
+      "alt_labels": [
+        "公用工程设备",
+        "utility equipment"
+      ],
+      "description": "抽取有原文明示角色的实体名称或称谓；不抽类别表头，名称不证明唯一身份。为工艺或设施提供能源、介质或环境条件等公用工程支持的设备。 上下文术语提示：公用设备、公用工程设备、utility equipment。",
+      "sources": [
+        {
+          "kind": "ontology",
+          "snapshot_id": "3523126749dbbd0a67a9ed33fff91566ed25ddfc6f42b1a9f3afccf4e2a50c32",
+          "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/UtilityEquipment",
+          "field": "labels"
+        },
+        {
+          "kind": "ontology",
+          "snapshot_id": "3523126749dbbd0a67a9ed33fff91566ed25ddfc6f42b1a9f3afccf4e2a50c32",
+          "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/UtilityEquipment",
+          "predicate": "http://www.w3.org/2000/01/rdf-schema#label",
+          "value": "Utility Equipment",
+          "language": "en"
+        },
+        {
+          "kind": "ontology",
+          "snapshot_id": "3523126749dbbd0a67a9ed33fff91566ed25ddfc6f42b1a9f3afccf4e2a50c32",
+          "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/UtilityEquipment",
+          "predicate": "http://www.w3.org/2000/01/rdf-schema#label",
+          "value": "公用设备",
+          "language": "zh"
+        },
+        {
+          "kind": "manual_overlay",
+          "source_ref": "manual-vocabulary-notes.md#manual-general-knowledge"
+        }
+      ]
+    },
+    "vocab_c43ca4e6f3ba8170828ae910": {
+      "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/VacuumDryer",
+      "role": "entity",
+      "pref_label": "真空干燥箱",
+      "alt_labels": [
+        "真空干燥机",
+        "vacuum dryer"
+      ],
+      "description": "抽取有原文明示角色的实体名称或称谓；不抽类别表头，名称不证明唯一身份。在低于环境压力的条件下移除物料中水分或溶剂的干燥设备。 上下文术语提示：真空干燥箱、真空干燥机、vacuum dryer。",
+      "sources": [
+        {
+          "kind": "ontology",
+          "snapshot_id": "3523126749dbbd0a67a9ed33fff91566ed25ddfc6f42b1a9f3afccf4e2a50c32",
+          "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/VacuumDryer",
+          "field": "labels"
+        },
+        {
+          "kind": "ontology",
+          "snapshot_id": "3523126749dbbd0a67a9ed33fff91566ed25ddfc6f42b1a9f3afccf4e2a50c32",
+          "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/VacuumDryer",
+          "predicate": "http://www.w3.org/2000/01/rdf-schema#label",
+          "value": "Vacuum Dryer",
+          "language": "en"
+        },
+        {
+          "kind": "ontology",
+          "snapshot_id": "3523126749dbbd0a67a9ed33fff91566ed25ddfc6f42b1a9f3afccf4e2a50c32",
+          "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/VacuumDryer",
+          "predicate": "http://www.w3.org/2000/01/rdf-schema#label",
+          "value": "真空干燥箱",
+          "language": "zh"
+        },
+        {
+          "kind": "manual_overlay",
+          "source_ref": "manual-vocabulary-notes.md#manual-general-knowledge"
+        }
+      ]
+    },
+    "vocab_7df74e402d4f1df6dfa08c58": {
+      "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/WaterSystem",
+      "role": "entity",
+      "pref_label": "水系统",
+      "alt_labels": [
+        "供水系统",
+        "water system"
+      ],
+      "description": "抽取有原文明示角色的实体名称或称谓；不抽类别表头，名称不证明唯一身份。用于制备、储存或输送用水的系统；水质等级须由原文另行证明。 上下文术语提示：水系统、供水系统、water system。",
+      "sources": [
+        {
+          "kind": "ontology",
+          "snapshot_id": "3523126749dbbd0a67a9ed33fff91566ed25ddfc6f42b1a9f3afccf4e2a50c32",
+          "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/WaterSystem",
+          "field": "labels"
+        },
+        {
+          "kind": "ontology",
+          "snapshot_id": "3523126749dbbd0a67a9ed33fff91566ed25ddfc6f42b1a9f3afccf4e2a50c32",
+          "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/WaterSystem",
+          "predicate": "http://www.w3.org/2000/01/rdf-schema#label",
+          "value": "Water System",
+          "language": "en"
+        },
+        {
+          "kind": "ontology",
+          "snapshot_id": "3523126749dbbd0a67a9ed33fff91566ed25ddfc6f42b1a9f3afccf4e2a50c32",
+          "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/WaterSystem",
+          "predicate": "http://www.w3.org/2000/01/rdf-schema#label",
+          "value": "水系统",
+          "language": "zh"
+        },
+        {
+          "kind": "manual_overlay",
+          "source_ref": "manual-vocabulary-notes.md#manual-general-knowledge"
+        }
+      ]
+    }
+  }
+}

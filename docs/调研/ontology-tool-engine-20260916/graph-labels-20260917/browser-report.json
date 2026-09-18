@@ -1,0 +1,64 @@
+{
+  "status": "passed",
+  "browser": "131.0.6778.85",
+  "createCount": 1,
+  "sourceReads": 2,
+  "budgetRequests": [
+    {
+      "operation": "disable",
+      "body": {
+        "expected_revision": 1,
+        "request_key": "document-run-ranking_budget_disable:63f0fde0-ae95-41ea-a3f3-c721aaf8b25b",
+        "reason": "用户在文档分析页面禁用排序预算限制"
+      }
+    },
+    {
+      "operation": "enable",
+      "body": {
+        "expected_revision": 2,
+        "request_key": "document-run-ranking_budget_enable:457b6609-b667-4ac7-a876-6c22fb95807f",
+        "reason": "用户在文档分析页面启用排序预算限制"
+      }
+    },
+    {
+      "operation": "enable",
+      "body": {
+        "expected_revision": 3,
+        "request_key": "document-run-ranking_budget_enable:bbe6bf0e-5ecf-4b19-b7d8-017f3731e057",
+        "reason": "用户在文档分析页面启用排序预算限制"
+      }
+    }
+  ],
+  "output": "/tmp/document-graph-business-labels-20260917-final",
+  "layoutChecks": [
+    "explicit budget disable/enable keeps run paused, preserves accounting and handles CAS conflicts",
+    "business entity/relationship/property names and coverage labels replace IDs; business codes and conditions preserved; technical IDs collapsed; named evidence preserves source refs",
+    "desktop 2/3 drawer with tree/preview/metadata geometry",
+    "detail tabs preserve chapter tree and preview editor",
+    "graph canvas with long labels replays a physical source span while staying on graph tab",
+    "chapter selection survives an aborted or late source response",
+    "read-only and running states do not expose budget mutation controls",
+    "768px history navigation, chapter sheet and preview remain usable without page overflow",
+    "390px history navigation, chapter sheet and preview remain usable without page overflow",
+    "1920px drawer/tree/preview/details geometry"
+  ],
+  "writes": [
+    {
+      "method": "POST",
+      "pathname": "/api/document-analysis/runs/history-12/ranking-budget/disable"
+    },
+    {
+      "method": "POST",
+      "pathname": "/api/document-analysis/runs/history-12/ranking-budget/enable"
+    },
+    {
+      "method": "POST",
+      "pathname": "/api/document-analysis/runs/history-12/ranking-budget/enable"
+    },
+    {
+      "method": "POST",
+      "pathname": "/api/document-analysis/runs"
+    }
+  ],
+  "scope": "Synthetic API UI regression; no backend or model execution"
+}

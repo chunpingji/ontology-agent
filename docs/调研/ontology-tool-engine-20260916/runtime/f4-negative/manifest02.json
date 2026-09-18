@@ -1,0 +1,36 @@
+{
+  "run_id": "ontology-tool-f4-negative-02",
+  "document": {
+    "path": "source.docx",
+    "sha256": "a677af99167744bd1338a7a60106394ac3ad5c47a42d1159994641f0952a2c88"
+  },
+  "ir": {
+    "path": "ir.json",
+    "sha256": "f9ac159cc41f3f82d5f839942e92b402cd124e9dec1467cac7f8e0ca95df57fc"
+  },
+  "ontology": {
+    "path": "ontology.json",
+    "sha256": "b9febc04eeacc8ba0f431ed5248f783240a75478f2aa9f246805b763efd524b6"
+  },
+  "metadata": {
+    "path": "metadata.json",
+    "sha256": "04f940bd0deed2d630bbf418629df5785e0e870c72e30fef12bb45c7625c55f5"
+  },
+  "root_class_iri": "urn:validation:MeasurementReport",
+  "model": "Qwen3.6-35B-A3B",
+  "model_revision": "0b21525e972670ed59e1812e170b27c26355381f0656ecc4e25617ece7dac58b",
+  "budgets": {
+    "max_model_calls": 4,
+    "max_input_tokens": 32768,
+    "max_output_tokens": 8192,
+    "max_tasks": 1,
+    "max_hops": 1,
+    "max_result_tokens": 4096
+  },
+  "options": {
+    "responses": {
+      "strict_tools": false,
+      "strict_answers": false
+    }
+  }
+}

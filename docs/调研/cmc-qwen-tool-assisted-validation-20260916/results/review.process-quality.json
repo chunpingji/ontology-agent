@@ -1,0 +1,3025 @@
+{
+  "review_version": "cmc-process-quality-semantic-review-v1",
+  "reviewer": "assistant_source_review_not_expert_gold",
+  "scope": "四个既有原始候选scope的逐项静态审查；未调用Qwen，未读取第三阶段核验来决定本审查结论。",
+  "verdict_definition": {
+    "supported": "当前允许原文与冻结卡片支持该声明的语义；不表示引用协议通过。",
+    "unsupported": "错角色、关系无据或将模型处理说明冒充原文状态。",
+    "undetermined": "不足以肯定或否定；空槽位不算类型事实。"
+  },
+  "protocol_separation": "citation_audit仅记录逐字/次数/span一致性；ID与quote不相等本身不作为语义否定。stepOrder的1原值违规与顺序语义支持分开。",
+  "comparison_limit": "原文片段审查，不推断全文缺失；本审查是assistant silver，不是专家金标。",
+  "scopes": [
+    {
+      "arm": "A",
+      "scope_id": "process_equipment",
+      "source_directory": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-tools-20260916/initial-progress/A/process_equipment",
+      "candidate_file": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-tools-20260916/initial-progress/A/process_equipment/candidates/proposal.json",
+      "candidate_sha256": "a8ee8d3da4973e319c2d4582de86679c3d5a6ac376175db6470b4a0adfeb1c06",
+      "sources_sha256": "5a6125cd54dc2d5d59c83fac2a28f3c080c93416e2d5c768736ca7f50f3454a8",
+      "subject_cards_sha256": "6b643b2b2c7c08432a989753655ede59287cde1ac4e66f463dd9e30752cb730a",
+      "summary": {
+        "range_preservation": "保持50~55℃、继续搅拌1-2小时两个区间均保留；没有截成55℃或1小时。",
+        "coverage_omissions": [
+          "升温至55℃的动作未作为属性保留",
+          "氮气保护/置换及活性炭加入量未作为反应条件完整保留"
+        ],
+        "direction": "已提出usesEquipment方向正确；未提出producesIntermediate，避免将投料误当产出。",
+        "identity": "粗品类型可支持；intermediateIdentifier命名/标识角色不足，保持未决。"
+      }
+    },
+    {
+      "arm": "A",
+      "scope_id": "quality_condition",
+      "source_directory": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-tools-20260916/initial-progress/A/quality_condition",
+      "candidate_file": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-tools-20260916/initial-progress/A/quality_condition/candidates/proposal.json",
+      "candidate_sha256": "798503176fc97f9910297bb0b048248b026247f536aafdd49a093e2e3ddb96e7",
+      "sources_sha256": "0b6ef5a7241ac6def2727950e30b9739215b5d20102c60a04aab271ccc30a76f",
+      "subject_cards_sha256": "423795b1bcab5300eb3b485b913c672802dbaeae665ca20b3073c14c55ff1645",
+      "summary": {
+        "ipc_completeness": {
+          "methods": [
+            "HPLC",
+            "重金属检测"
+          ],
+          "simultaneous_criteria": [
+            "单个杂质不得过0.2%",
+            "总杂不得过2.0%",
+            "重金属残留不得超过百万分之二十"
+          ],
+          "all_preserved": true,
+          "trigger": "若不符合质量标准",
+          "consequence": "重复上述全部结晶操作（从一般区溶解物料）"
+        },
+        "direction": "nextStep额外候选无原文顺序支持，且目标未启用。",
+        "observation_roles": "三个标准阈值被误叫conditional；A另外将两个%单位误填legend。",
+        "not_observed": [
+          "没有把百分比阈值写成μg检测限",
+          "空Residue槽位没有变成清洗残留事实"
+        ]
+      }
+    },
+    {
+      "arm": "B",
+      "scope_id": "process_equipment",
+      "source_directory": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-tools-20260916/initial-progress/B/process_equipment/process_equipment",
+      "candidate_file": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-tools-20260916/initial-progress/B/process_equipment/process_equipment/candidates/proposal.json",
+      "candidate_sha256": "a83807061c5e6d4ffe06316df4286922a3c4e50ce24c8cd7fd3e7f62d42ccdc8",
+      "sources_sha256": "5a6125cd54dc2d5d59c83fac2a28f3c080c93416e2d5c768736ca7f50f3454a8",
+      "subject_cards_sha256": "6b643b2b2c7c08432a989753655ede59287cde1ac4e66f463dd9e30752cb730a",
+      "summary": {
+        "range_preservation": "保持50~55℃、继续搅拌1-2小时两个区间均保留；没有截成55℃或1小时。",
+        "coverage_omissions": [
+          "升温至55℃的动作未作为属性保留",
+          "氮气保护/置换及活性炭加入量未作为反应条件完整保留"
+        ],
+        "direction": "已提出usesEquipment方向正确；未提出producesIntermediate，避免将投料误当产出。",
+        "identity": "粗品类型可支持；intermediateIdentifier命名/标识角色不足，保持未决。"
+      }
+    },
+    {
+      "arm": "B",
+      "scope_id": "quality_condition",
+      "source_directory": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-tools-20260916/initial-progress/B/quality_condition",
+      "candidate_file": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-tools-20260916/initial-progress/B/quality_condition/candidates/proposal.json",
+      "candidate_sha256": "f53522ed5cca37809815e664a08279792cd4a41712a1b3042a4646f30ea0fe2d",
+      "sources_sha256": "0b6ef5a7241ac6def2727950e30b9739215b5d20102c60a04aab271ccc30a76f",
+      "subject_cards_sha256": "2c98bc56326f633a54cfae3bf004bc0a3dc99a5c5e1520ada81cc3e135fa2881",
+      "summary": {
+        "ipc_completeness": {
+          "methods": [
+            "HPLC",
+            "重金属检测"
+          ],
+          "simultaneous_criteria": [
+            "单个杂质不得过0.2%",
+            "总杂不得过2.0%",
+            "重金属残留不得超过百万分之二十"
+          ],
+          "all_preserved": true,
+          "trigger": "若不符合质量标准",
+          "consequence": "重复上述全部结晶操作（从一般区溶解物料）"
+        },
+        "direction": "nextStep额外候选无原文顺序支持，且目标未启用。",
+        "observation_roles": "三个标准阈值被误叫conditional；A另外将两个%单位误填legend。",
+        "not_observed": [
+          "没有把百分比阈值写成μg检测限",
+          "空Residue槽位没有变成清洗残留事实"
+        ]
+      }
+    }
+  ],
+  "records": [
+    {
+      "arm": "A",
+      "scope_id": "process_equipment",
+      "candidate_file": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-tools-20260916/initial-progress/A/process_equipment/candidates/proposal.json",
+      "candidate_path": "/subjects/document/anchor",
+      "subject_id": "document",
+      "field": "rdf:type",
+      "proposal": {
+        "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport",
+        "anchor": {
+          "ref": "",
+          "quote": "",
+          "span_id": ""
+        }
+      },
+      "kind": "subject_type",
+      "semantic_verdict": "supported",
+      "reason": "CMCReport 为本轮已给定文档根，不是模型新识别的类型。",
+      "citation_audit": [],
+      "active_subject": true,
+      "new_type_claim": false
+    },
+    {
+      "arm": "A",
+      "scope_id": "process_equipment",
+      "candidate_file": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-tools-20260916/initial-progress/A/process_equipment/candidates/proposal.json",
+      "candidate_path": "/subjects/s1/anchor",
+      "subject_id": "s1",
+      "field": "rdf:type",
+      "proposal": {
+        "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/SynthesisStep",
+        "anchor": {
+          "ref": "u2",
+          "quote": "步骤一",
+          "span_id": "evidence:u2:0:207"
+        }
+      },
+      "kind": "subject_type",
+      "semantic_verdict": "supported",
+      "reason": "原文明确“步骤一”及投料、溶清、活性炭处理操作；SynthesisStep 定义包括路线中的单元操作，不要求此处发生化学反应。",
+      "citation_audit": [
+        {
+          "citation_path": "/anchor",
+          "quote_verbatim": true,
+          "quote_occurrences": [
+            [
+              0,
+              3
+            ]
+          ],
+          "span_id": "evidence:u2:0:207",
+          "span_ref_matches": true,
+          "span_source_replays": true,
+          "quote_equals_span_text": false,
+          "containing_occurrences": [
+            [
+              0,
+              3
+            ]
+          ]
+        }
+      ],
+      "active_subject": true,
+      "new_type_claim": true
+    },
+    {
+      "arm": "A",
+      "scope_id": "process_equipment",
+      "candidate_file": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-tools-20260916/initial-progress/A/process_equipment/candidates/proposal.json",
+      "candidate_path": "/subjects/s1/attributes/reactionConditions/0",
+      "subject_id": "s1",
+      "field": "reactionConditions",
+      "proposal": {
+        "raw": "50~55℃",
+        "source": {
+          "ref": "u2",
+          "quote": "维持50~55℃",
+          "span_id": "evidence:u2:191:193"
+        },
+        "field": {
+          "ref": "u2",
+          "quote": "维持50~55℃",
+          "span_id": "evidence:u2:191:193"
+        },
+        "unit": {
+          "ref": "u2",
+          "quote": "℃",
+          "span_id": "evidence:u2:196:197"
+        },
+        "condition": {
+          "ref": "",
+          "quote": "",
+          "span_id": ""
+        }
+      },
+      "kind": "property",
+      "semantic_verdict": "supported",
+      "reason": "原文“维持50~55℃继续搅拌1-2小时”支持该步骤的保持温度区间；raw 保留上下界和℃，未捏造成单点温度。",
+      "citation_audit": [
+        {
+          "citation_path": "/source",
+          "quote_verbatim": true,
+          "quote_occurrences": [
+            [
+              189,
+              197
+            ]
+          ],
+          "span_id": "evidence:u2:191:193",
+          "span_ref_matches": true,
+          "span_source_replays": true,
+          "quote_equals_span_text": false,
+          "containing_occurrences": [
+            [
+              189,
+              197
+            ]
+          ]
+        },
+        {
+          "citation_path": "/field",
+          "quote_verbatim": true,
+          "quote_occurrences": [
+            [
+              189,
+              197
+            ]
+          ],
+          "span_id": "evidence:u2:191:193",
+          "span_ref_matches": true,
+          "span_source_replays": true,
+          "quote_equals_span_text": false,
+          "containing_occurrences": [
+            [
+              189,
+              197
+            ]
+          ]
+        },
+        {
+          "citation_path": "/unit",
+          "quote_verbatim": true,
+          "quote_occurrences": [
+            [
+              134,
+              135
+            ],
+            [
+              196,
+              197
+            ]
+          ],
+          "span_id": "evidence:u2:196:197",
+          "span_ref_matches": true,
+          "span_source_replays": true,
+          "quote_equals_span_text": true,
+          "containing_occurrences": [
+            [
+              196,
+              197
+            ]
+          ]
+        }
+      ],
+      "protocol_notes": []
+    },
+    {
+      "arm": "A",
+      "scope_id": "process_equipment",
+      "candidate_file": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-tools-20260916/initial-progress/A/process_equipment/candidates/proposal.json",
+      "candidate_path": "/subjects/s1/attributes/reactionConditions/1",
+      "subject_id": "s1",
+      "field": "reactionConditions",
+      "proposal": {
+        "raw": "1-2小时",
+        "source": {
+          "ref": "u2",
+          "quote": "继续搅拌1-2小时",
+          "span_id": "evidence:u2:201:202"
+        },
+        "field": {
+          "ref": "u2",
+          "quote": "继续搅拌1-2小时",
+          "span_id": "evidence:u2:201:202"
+        },
+        "unit": {
+          "ref": "",
+          "quote": "",
+          "span_id": ""
+        },
+        "condition": {
+          "ref": "",
+          "quote": "",
+          "span_id": ""
+        }
+      },
+      "kind": "property",
+      "semantic_verdict": "supported",
+      "reason": "原文明确继续搅拌1-2小时，duration 属卡片 reactionConditions；时间区间完整保留。",
+      "citation_audit": [
+        {
+          "citation_path": "/source",
+          "quote_verbatim": true,
+          "quote_occurrences": [
+            [
+              197,
+              206
+            ]
+          ],
+          "span_id": "evidence:u2:201:202",
+          "span_ref_matches": true,
+          "span_source_replays": true,
+          "quote_equals_span_text": false,
+          "containing_occurrences": [
+            [
+              197,
+              206
+            ]
+          ]
+        },
+        {
+          "citation_path": "/field",
+          "quote_verbatim": true,
+          "quote_occurrences": [
+            [
+              197,
+              206
+            ]
+          ],
+          "span_id": "evidence:u2:201:202",
+          "span_ref_matches": true,
+          "span_source_replays": true,
+          "quote_equals_span_text": false,
+          "containing_occurrences": [
+            [
+              197,
+              206
+            ]
+          ]
+        }
+      ],
+      "protocol_notes": []
+    },
+    {
+      "arm": "A",
+      "scope_id": "process_equipment",
+      "candidate_file": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-tools-20260916/initial-progress/A/process_equipment/candidates/proposal.json",
+      "candidate_path": "/subjects/s1/attributes/stepOrder/0",
+      "subject_id": "s1",
+      "field": "stepOrder",
+      "proposal": {
+        "raw": "1",
+        "source": {
+          "ref": "u2",
+          "quote": "步骤一",
+          "span_id": "evidence:u2:0:207"
+        },
+        "field": {
+          "ref": "u2",
+          "quote": "步骤一",
+          "span_id": "evidence:u2:0:207"
+        },
+        "unit": {
+          "ref": "",
+          "quote": "",
+          "span_id": ""
+        },
+        "condition": {
+          "ref": "",
+          "quote": "",
+          "span_id": ""
+        }
+      },
+      "kind": "property",
+      "semantic_verdict": "supported",
+      "reason": "“步骤一”语义支持步骤序号1；但 raw=1 并非 source.quote 中的逐字值，属于原始值协议违规，不是步骤顺序语义错误。",
+      "citation_audit": [
+        {
+          "citation_path": "/source",
+          "quote_verbatim": true,
+          "quote_occurrences": [
+            [
+              0,
+              3
+            ]
+          ],
+          "span_id": "evidence:u2:0:207",
+          "span_ref_matches": true,
+          "span_source_replays": true,
+          "quote_equals_span_text": false,
+          "containing_occurrences": [
+            [
+              0,
+              3
+            ]
+          ]
+        },
+        {
+          "citation_path": "/field",
+          "quote_verbatim": true,
+          "quote_occurrences": [
+            [
+              0,
+              3
+            ]
+          ],
+          "span_id": "evidence:u2:0:207",
+          "span_ref_matches": true,
+          "span_source_replays": true,
+          "quote_equals_span_text": false,
+          "containing_occurrences": [
+            [
+              0,
+              3
+            ]
+          ]
+        }
+      ],
+      "protocol_notes": [
+        "raw_not_verbatim: 源文为“一”，候选raw为“1”；若转换必须由显式规范化规则处理。"
+      ]
+    },
+    {
+      "arm": "A",
+      "scope_id": "process_equipment",
+      "candidate_file": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-tools-20260916/initial-progress/A/process_equipment/candidates/proposal.json",
+      "candidate_path": "/subjects/s1/relations/usesEquipment/0",
+      "subject_id": "s1",
+      "field": "usesEquipment",
+      "proposal": {
+        "target_id": "s3",
+        "evidence": {
+          "ref": "u2",
+          "quote": "200L反应釜（RE64611）",
+          "span_id": "evidence:u2:0:207"
+        },
+        "condition": {
+          "ref": "",
+          "quote": "",
+          "span_id": ""
+        },
+        "polarity": "affirmed"
+      },
+      "kind": "relation",
+      "semantic_verdict": "supported",
+      "reason": "完整原文明确步骤一在该反应釜内加入物料，支持 step→equipment 使用关系及其方向；不能仅凭候选的设备短语单独证明，需要当前scope完整句。",
+      "citation_audit": [
+        {
+          "citation_path": "/evidence",
+          "quote_verbatim": true,
+          "quote_occurrences": [
+            [
+              4,
+              20
+            ]
+          ],
+          "span_id": "evidence:u2:0:207",
+          "span_ref_matches": true,
+          "span_source_replays": true,
+          "quote_equals_span_text": false,
+          "containing_occurrences": [
+            [
+              4,
+              20
+            ]
+          ]
+        }
+      ],
+      "protocol_notes": []
+    },
+    {
+      "arm": "A",
+      "scope_id": "process_equipment",
+      "candidate_file": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-tools-20260916/initial-progress/A/process_equipment/candidates/proposal.json",
+      "candidate_path": "/subjects/s2/anchor",
+      "subject_id": "s2",
+      "field": "rdf:type",
+      "proposal": {
+        "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/Crystallization",
+        "anchor": {
+          "ref": "",
+          "quote": "",
+          "span_id": ""
+        }
+      },
+      "kind": "subject_type",
+      "semantic_verdict": "undetermined",
+      "reason": "空锚点的未启用卡片槽位，不构成已提出的类型事实；不能计作类型假阳性。",
+      "citation_audit": [],
+      "active_subject": false,
+      "new_type_claim": false
+    },
+    {
+      "arm": "A",
+      "scope_id": "process_equipment",
+      "candidate_file": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-tools-20260916/initial-progress/A/process_equipment/candidates/proposal.json",
+      "candidate_path": "/subjects/s3/anchor",
+      "subject_id": "s3",
+      "field": "rdf:type",
+      "proposal": {
+        "class_iri": "https://ontology.pharma-gmp.cn/slpra/equipment/Equipment",
+        "anchor": {
+          "ref": "u2",
+          "quote": "200L反应釜（RE64611）",
+          "span_id": "evidence:u2:4:7"
+        }
+      },
+      "kind": "subject_type",
+      "semantic_verdict": "supported",
+      "reason": "“200L反应釜（RE64611）”明确为设备，Equipment 通用类型有依据。",
+      "citation_audit": [
+        {
+          "citation_path": "/anchor",
+          "quote_verbatim": true,
+          "quote_occurrences": [
+            [
+              4,
+              20
+            ]
+          ],
+          "span_id": "evidence:u2:4:7",
+          "span_ref_matches": true,
+          "span_source_replays": true,
+          "quote_equals_span_text": false,
+          "containing_occurrences": [
+            [
+              4,
+              20
+            ]
+          ]
+        }
+      ],
+      "active_subject": true,
+      "new_type_claim": true
+    },
+    {
+      "arm": "A",
+      "scope_id": "process_equipment",
+      "candidate_file": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-tools-20260916/initial-progress/A/process_equipment/candidates/proposal.json",
+      "candidate_path": "/subjects/s3/attributes/equipmentID/0",
+      "subject_id": "s3",
+      "field": "equipmentID",
+      "proposal": {
+        "raw": "RE64611",
+        "source": {
+          "ref": "u2",
+          "quote": "RE64611",
+          "span_id": "evidence:u2:14:19"
+        },
+        "field": {
+          "ref": "u2",
+          "quote": "RE64611",
+          "span_id": "evidence:u2:14:19"
+        },
+        "unit": {
+          "ref": "",
+          "quote": "",
+          "span_id": ""
+        },
+        "condition": {
+          "ref": "",
+          "quote": "",
+          "span_id": ""
+        }
+      },
+      "kind": "property",
+      "semantic_verdict": "supported",
+      "reason": "反应釜名称后括号中的 RE64611 有设备编号语义，归属于同一反应釜。",
+      "citation_audit": [
+        {
+          "citation_path": "/source",
+          "quote_verbatim": true,
+          "quote_occurrences": [
+            [
+              12,
+              19
+            ]
+          ],
+          "span_id": "evidence:u2:14:19",
+          "span_ref_matches": true,
+          "span_source_replays": true,
+          "quote_equals_span_text": false,
+          "containing_occurrences": [
+            [
+              12,
+              19
+            ]
+          ]
+        },
+        {
+          "citation_path": "/field",
+          "quote_verbatim": true,
+          "quote_occurrences": [
+            [
+              12,
+              19
+            ]
+          ],
+          "span_id": "evidence:u2:14:19",
+          "span_ref_matches": true,
+          "span_source_replays": true,
+          "quote_equals_span_text": false,
+          "containing_occurrences": [
+            [
+              12,
+              19
+            ]
+          ]
+        }
+      ],
+      "protocol_notes": []
+    },
+    {
+      "arm": "A",
+      "scope_id": "process_equipment",
+      "candidate_file": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-tools-20260916/initial-progress/A/process_equipment/candidates/proposal.json",
+      "candidate_path": "/subjects/s3/attributes/equipmentName/0",
+      "subject_id": "s3",
+      "field": "equipmentName",
+      "proposal": {
+        "raw": "200L反应釜",
+        "source": {
+          "ref": "u2",
+          "quote": "200L反应釜",
+          "span_id": "evidence:u2:4:7"
+        },
+        "field": {
+          "ref": "u2",
+          "quote": "200L反应釜",
+          "span_id": "evidence:u2:4:7"
+        },
+        "unit": {
+          "ref": "",
+          "quote": "",
+          "span_id": ""
+        },
+        "condition": {
+          "ref": "",
+          "quote": "",
+          "span_id": ""
+        }
+      },
+      "kind": "property",
+      "semantic_verdict": "supported",
+      "reason": "200L反应釜为原文设备称谓，含容量修饰但没有改变设备归属。",
+      "citation_audit": [
+        {
+          "citation_path": "/source",
+          "quote_verbatim": true,
+          "quote_occurrences": [
+            [
+              4,
+              11
+            ]
+          ],
+          "span_id": "evidence:u2:4:7",
+          "span_ref_matches": true,
+          "span_source_replays": true,
+          "quote_equals_span_text": false,
+          "containing_occurrences": [
+            [
+              4,
+              11
+            ]
+          ]
+        },
+        {
+          "citation_path": "/field",
+          "quote_verbatim": true,
+          "quote_occurrences": [
+            [
+              4,
+              11
+            ]
+          ],
+          "span_id": "evidence:u2:4:7",
+          "span_ref_matches": true,
+          "span_source_replays": true,
+          "quote_equals_span_text": false,
+          "containing_occurrences": [
+            [
+              4,
+              11
+            ]
+          ]
+        }
+      ],
+      "protocol_notes": []
+    },
+    {
+      "arm": "A",
+      "scope_id": "process_equipment",
+      "candidate_file": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-tools-20260916/initial-progress/A/process_equipment/candidates/proposal.json",
+      "candidate_path": "/subjects/s4/anchor",
+      "subject_id": "s4",
+      "field": "rdf:type",
+      "proposal": {
+        "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/CrudeProduct",
+        "anchor": {
+          "ref": "u2",
+          "quote": "HRS-1597粗品",
+          "span_id": "evidence:u2:39:42"
+        }
+      },
+      "kind": "subject_type",
+      "semantic_verdict": "supported",
+      "reason": "原文明说“HRS-1597粗品”且作为加入物料，CrudeProduct 类型有依据；其投料角色不能变成该步骤产出。",
+      "citation_audit": [
+        {
+          "citation_path": "/anchor",
+          "quote_verbatim": true,
+          "quote_occurrences": [
+            [
+              39,
+              49
+            ],
+            [
+              81,
+              91
+            ],
+            [
+              114,
+              124
+            ],
+            [
+              167,
+              177
+            ]
+          ],
+          "span_id": "evidence:u2:39:42",
+          "span_ref_matches": true,
+          "span_source_replays": true,
+          "quote_equals_span_text": false,
+          "containing_occurrences": [
+            [
+              39,
+              49
+            ]
+          ]
+        }
+      ],
+      "active_subject": true,
+      "new_type_claim": true
+    },
+    {
+      "arm": "A",
+      "scope_id": "process_equipment",
+      "candidate_file": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-tools-20260916/initial-progress/A/process_equipment/candidates/proposal.json",
+      "candidate_path": "/subjects/s4/attributes/intermediateIdentifier/0",
+      "subject_id": "s4",
+      "field": "intermediateIdentifier",
+      "proposal": {
+        "raw": "HRS-1597粗品",
+        "source": {
+          "ref": "u2",
+          "quote": "HRS-1597粗品",
+          "span_id": "evidence:u2:39:42"
+        },
+        "field": {
+          "ref": "u2",
+          "quote": "HRS-1597粗品",
+          "span_id": "evidence:u2:39:42"
+        },
+        "unit": {
+          "ref": "",
+          "quote": "",
+          "span_id": ""
+        },
+        "condition": {
+          "ref": "",
+          "quote": "",
+          "span_id": ""
+        }
+      },
+      "kind": "property",
+      "semantic_verdict": "undetermined",
+      "reason": "原文以“HRS-1597粗品”命名投料物料，但未明确将整个名称作为工艺中间体标识字段；HRS-1597也指产品代码，不能由该短语确定专属中间体标识。",
+      "citation_audit": [
+        {
+          "citation_path": "/source",
+          "quote_verbatim": true,
+          "quote_occurrences": [
+            [
+              39,
+              49
+            ],
+            [
+              81,
+              91
+            ],
+            [
+              114,
+              124
+            ],
+            [
+              167,
+              177
+            ]
+          ],
+          "span_id": "evidence:u2:39:42",
+          "span_ref_matches": true,
+          "span_source_replays": true,
+          "quote_equals_span_text": false,
+          "containing_occurrences": [
+            [
+              39,
+              49
+            ]
+          ]
+        },
+        {
+          "citation_path": "/field",
+          "quote_verbatim": true,
+          "quote_occurrences": [
+            [
+              39,
+              49
+            ],
+            [
+              81,
+              91
+            ],
+            [
+              114,
+              124
+            ],
+            [
+              167,
+              177
+            ]
+          ],
+          "span_id": "evidence:u2:39:42",
+          "span_ref_matches": true,
+          "span_source_replays": true,
+          "quote_equals_span_text": false,
+          "containing_occurrences": [
+            [
+              39,
+              49
+            ]
+          ]
+        }
+      ],
+      "protocol_notes": [
+        "同一源单元多次出现该短语；其位置歧义是独立引用问题，不作为本项语义未决的唯一理由。"
+      ]
+    },
+    {
+      "arm": "A",
+      "scope_id": "process_equipment",
+      "candidate_file": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-tools-20260916/initial-progress/A/process_equipment/candidates/proposal.json",
+      "candidate_path": "/observations/0",
+      "subject_id": null,
+      "field": "observation",
+      "proposal": {
+        "value": {
+          "ref": "",
+          "quote": "",
+          "span_id": ""
+        },
+        "field": {
+          "ref": "",
+          "quote": "",
+          "span_id": ""
+        },
+        "legend": {
+          "ref": "",
+          "quote": "",
+          "span_id": ""
+        },
+        "condition": {
+          "ref": "",
+          "quote": "",
+          "span_id": ""
+        },
+        "state": "unknown",
+        "reason": "s2 (结晶/析晶) 的anchor为空，且文档中未明确区分s1与s2的具体步骤边界或s2的具体操作内容，s2无独立证据支持其属性或关系。"
+      },
+      "kind": "observation",
+      "semantic_verdict": "unsupported",
+      "reason": "这是模型空槽位/步骤边界不足的处理说明，不是原文给出的unknown状态；不能作为来源观察。空引用另属协议问题。",
+      "citation_audit": [],
+      "review_notes": [
+        "谨慎不启用s2合理；未启用卡片不能证明原文不存在结晶工艺。"
+      ]
+    },
+    {
+      "arm": "A",
+      "scope_id": "process_equipment",
+      "candidate_file": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-tools-20260916/initial-progress/A/process_equipment/candidates/proposal.json",
+      "candidate_path": "/observations/1",
+      "subject_id": null,
+      "field": "observation",
+      "proposal": {
+        "value": {
+          "ref": "",
+          "quote": "",
+          "span_id": ""
+        },
+        "field": {
+          "ref": "",
+          "quote": "",
+          "span_id": ""
+        },
+        "legend": {
+          "ref": "",
+          "quote": "",
+          "span_id": ""
+        },
+        "condition": {
+          "ref": "",
+          "quote": "",
+          "span_id": ""
+        },
+        "state": "unknown",
+        "reason": "s1 (合成步骤) 的producesIntermediate关系目标s4 (粗品) 在原文中是作为投料原料(HRS-1597粗品投入量)出现的，而非s1的产出。s1的产出未在文本中明确说明。"
+      },
+      "kind": "observation",
+      "semantic_verdict": "unsupported",
+      "reason": "拒绝将投入粗品当步骤产出的判断合理，但该对象是模型抽取决策说明，不是原文unknown观察；不能由未提取产出关系断言原文未知。",
+      "citation_audit": [],
+      "review_notes": [
+        "原文“加入HRS-1597粗品”支持投入方向；不能用“通常不直接产出”等常识替代当前source证据。"
+      ]
+    },
+    {
+      "arm": "A",
+      "scope_id": "process_equipment",
+      "candidate_file": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-tools-20260916/initial-progress/A/process_equipment/candidates/proposal.json",
+      "candidate_path": "/observations/2",
+      "subject_id": null,
+      "field": "observation",
+      "proposal": {
+        "value": {
+          "ref": "",
+          "quote": "",
+          "span_id": ""
+        },
+        "field": {
+          "ref": "",
+          "quote": "",
+          "span_id": ""
+        },
+        "legend": {
+          "ref": "",
+          "quote": "",
+          "span_id": ""
+        },
+        "condition": {
+          "ref": "",
+          "quote": "",
+          "span_id": ""
+        },
+        "state": "unknown",
+        "reason": "s1的reactionConditions中温度55℃是升温过程，50~55℃是维持过程，原文未明确区分哪些属于严格的'反应条件'属性定义，且s1作为'步骤一'可能涵盖投料和反应，但s2作为结晶步骤无数据。此处仅提取明确的维持条件。"
+      },
+      "kind": "observation",
+      "semantic_verdict": "unsupported",
+      "reason": "升温至55℃与维持50~55℃可同时成立，卡片明确允许温度/持续时间；未提取升温条件不是原文unknown状态。",
+      "citation_audit": [],
+      "review_notes": [
+        "该理由不证明反应条件含义不足；两种温度动作应分别保留，不应互相排斥。"
+      ]
+    },
+    {
+      "arm": "A",
+      "scope_id": "quality_condition",
+      "candidate_file": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-tools-20260916/initial-progress/A/quality_condition/candidates/proposal.json",
+      "candidate_path": "/subjects/document/anchor",
+      "subject_id": "document",
+      "field": "rdf:type",
+      "proposal": {
+        "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport",
+        "anchor": {
+          "ref": "",
+          "quote": "",
+          "span_id": ""
+        }
+      },
+      "kind": "subject_type",
+      "semantic_verdict": "supported",
+      "reason": "CMCReport 为本轮已给定文档根，不是模型新识别的类型。",
+      "citation_audit": [],
+      "active_subject": true,
+      "new_type_claim": false
+    },
+    {
+      "arm": "A",
+      "scope_id": "quality_condition",
+      "candidate_file": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-tools-20260916/initial-progress/A/quality_condition/candidates/proposal.json",
+      "candidate_path": "/subjects/s1/anchor",
+      "subject_id": "s1",
+      "field": "rdf:type",
+      "proposal": {
+        "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/Crystallization",
+        "anchor": {
+          "ref": "u0",
+          "quote": "HRS-1597结晶纯化",
+          "span_id": "source:u0"
+        }
+      },
+      "kind": "subject_type",
+      "semantic_verdict": "supported",
+      "reason": "标题“结晶纯化”结合正文“上述全部结晶操作”支持局部结晶工艺主体；不支持拆成具有先后次序的两个独立步骤。",
+      "citation_audit": [
+        {
+          "citation_path": "/anchor",
+          "quote_verbatim": true,
+          "quote_occurrences": [
+            [
+              0,
+              12
+            ]
+          ],
+          "span_id": "source:u0",
+          "span_ref_matches": true,
+          "span_source_replays": true,
+          "quote_equals_span_text": true,
+          "containing_occurrences": [
+            [
+              0,
+              12
+            ]
+          ]
+        }
+      ],
+      "active_subject": true,
+      "new_type_claim": true
+    },
+    {
+      "arm": "A",
+      "scope_id": "quality_condition",
+      "candidate_file": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-tools-20260916/initial-progress/A/quality_condition/candidates/proposal.json",
+      "candidate_path": "/subjects/s1/attributes/inProcessControl/0",
+      "subject_id": "s1",
+      "field": "inProcessControl",
+      "proposal": {
+        "raw": "取样送检HPLC和重金属检测，质量标准要同时满足：单个杂质应不得过0.2%总杂应不得过2.0%,重金属残留不得超过百万分之二十，若不符合质量标准，则重复上述全部结晶操作（从一般区溶解物料）。",
+        "source": {
+          "ref": "u2",
+          "quote": "取样送检HPLC和重金属检测，质量标准要同时满足：单个杂质应不得过0.2%总杂应不得过2.0%,重金属残留不得超过百万分之二十，若不符合质量标准，则重复上述全部结晶操作（从一般区溶解物料）。",
+          "span_id": "source:u2"
+        },
+        "field": {
+          "ref": "u2",
+          "quote": "取样送检HPLC和重金属检测，质量标准要同时满足：单个杂质应不得过0.2%总杂应不得过2.0%,重金属残留不得超过百万分之二十，若不符合质量标准，则重复上述全部结晶操作（从一般区溶解物料）。",
+          "span_id": "source:u2"
+        },
+        "unit": {
+          "ref": "",
+          "quote": "",
+          "span_id": ""
+        },
+        "condition": {
+          "ref": "",
+          "quote": "",
+          "span_id": ""
+        }
+      },
+      "kind": "property",
+      "semantic_verdict": "supported",
+      "reason": "完整保留HPLC和重金属检测、必须同时满足的单杂≤0.2%/总杂≤2.0%/重金属≤百万分之二十，以及不合格时从一般区溶解物料开始重复全部结晶操作。归属于标题结晶工艺。",
+      "citation_audit": [
+        {
+          "citation_path": "/source",
+          "quote_verbatim": true,
+          "quote_occurrences": [
+            [
+              0,
+              95
+            ]
+          ],
+          "span_id": "source:u2",
+          "span_ref_matches": true,
+          "span_source_replays": true,
+          "quote_equals_span_text": true,
+          "containing_occurrences": [
+            [
+              0,
+              95
+            ]
+          ]
+        },
+        {
+          "citation_path": "/field",
+          "quote_verbatim": true,
+          "quote_occurrences": [
+            [
+              0,
+              95
+            ]
+          ],
+          "span_id": "source:u2",
+          "span_ref_matches": true,
+          "span_source_replays": true,
+          "quote_equals_span_text": true,
+          "containing_occurrences": [
+            [
+              0,
+              95
+            ]
+          ]
+        }
+      ],
+      "protocol_notes": [
+        "condition引用为空不等于条件丢失：原始字符串完整包含触发条件及重做动作；不是声称重结晶已实际发生。"
+      ]
+    },
+    {
+      "arm": "A",
+      "scope_id": "quality_condition",
+      "candidate_file": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-tools-20260916/initial-progress/A/quality_condition/candidates/proposal.json",
+      "candidate_path": "/subjects/s1/relations/nextStep/0",
+      "subject_id": "s1",
+      "field": "nextStep",
+      "proposal": {
+        "target_id": "s2",
+        "evidence": {
+          "ref": "u0",
+          "quote": "HRS-1597结晶纯化",
+          "span_id": "source:u0"
+        },
+        "condition": {
+          "ref": "",
+          "quote": "",
+          "span_id": ""
+        },
+        "polarity": "affirmed"
+      },
+      "kind": "relation",
+      "semantic_verdict": "unsupported",
+      "reason": "nextStep 将“结晶纯化”复合工艺名称误解为结晶后接独立纯化步骤；原文没有这种顺序声明，且目标s2为未启用空锚点。",
+      "citation_audit": [
+        {
+          "citation_path": "/evidence",
+          "quote_verbatim": true,
+          "quote_occurrences": [
+            [
+              0,
+              12
+            ]
+          ],
+          "span_id": "source:u0",
+          "span_ref_matches": true,
+          "span_source_replays": true,
+          "quote_equals_span_text": true,
+          "containing_occurrences": [
+            [
+              0,
+              12
+            ]
+          ]
+        }
+      ],
+      "protocol_notes": []
+    },
+    {
+      "arm": "A",
+      "scope_id": "quality_condition",
+      "candidate_file": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-tools-20260916/initial-progress/A/quality_condition/candidates/proposal.json",
+      "candidate_path": "/subjects/s2/anchor",
+      "subject_id": "s2",
+      "field": "rdf:type",
+      "proposal": {
+        "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/Purification",
+        "anchor": {
+          "ref": "",
+          "quote": "",
+          "span_id": ""
+        }
+      },
+      "kind": "subject_type",
+      "semantic_verdict": "undetermined",
+      "reason": "空锚点的未启用卡片槽位，不构成已提出的类型事实；不能计作类型假阳性。",
+      "citation_audit": [],
+      "active_subject": false,
+      "new_type_claim": false
+    },
+    {
+      "arm": "A",
+      "scope_id": "quality_condition",
+      "candidate_file": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-tools-20260916/initial-progress/A/quality_condition/candidates/proposal.json",
+      "candidate_path": "/subjects/s3/anchor",
+      "subject_id": "s3",
+      "field": "rdf:type",
+      "proposal": {
+        "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/Residue",
+        "anchor": {
+          "ref": "",
+          "quote": "",
+          "span_id": ""
+        }
+      },
+      "kind": "subject_type",
+      "semantic_verdict": "undetermined",
+      "reason": "空锚点的未启用卡片槽位，不构成已提出的类型事实；不能计作类型假阳性。",
+      "citation_audit": [],
+      "active_subject": false,
+      "new_type_claim": false
+    },
+    {
+      "arm": "A",
+      "scope_id": "quality_condition",
+      "candidate_file": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-tools-20260916/initial-progress/A/quality_condition/candidates/proposal.json",
+      "candidate_path": "/observations/0",
+      "subject_id": null,
+      "field": "observation",
+      "proposal": {
+        "value": {
+          "ref": "u2",
+          "quote": "0.2",
+          "span_id": "evidence:u2:33:36"
+        },
+        "field": {
+          "ref": "u2",
+          "quote": "单个杂质应不得过0.2%",
+          "span_id": "source:u2"
+        },
+        "legend": {
+          "ref": "u2",
+          "quote": "%",
+          "span_id": "evidence:u2:36:37"
+        },
+        "condition": {
+          "ref": "",
+          "quote": "",
+          "span_id": ""
+        },
+        "state": "conditional",
+        "reason": "质量标准中的限度要求，非实测值"
+      },
+      "kind": "observation",
+      "semantic_verdict": "unsupported",
+      "reason": "该内容是必须同时满足的质量阈值，并非具有触发条件与后果动作的conditional观察；condition为空，不能把标准要求本身改成条件动作。",
+      "citation_audit": [
+        {
+          "citation_path": "/value",
+          "quote_verbatim": true,
+          "quote_occurrences": [
+            [
+              33,
+              36
+            ]
+          ],
+          "span_id": "evidence:u2:33:36",
+          "span_ref_matches": true,
+          "span_source_replays": true,
+          "quote_equals_span_text": true,
+          "containing_occurrences": [
+            [
+              33,
+              36
+            ]
+          ]
+        },
+        {
+          "citation_path": "/field",
+          "quote_verbatim": true,
+          "quote_occurrences": [
+            [
+              25,
+              37
+            ]
+          ],
+          "span_id": "source:u2",
+          "span_ref_matches": true,
+          "span_source_replays": true,
+          "quote_equals_span_text": false,
+          "containing_occurrences": [
+            [
+              25,
+              37
+            ]
+          ]
+        },
+        {
+          "citation_path": "/legend",
+          "quote_verbatim": true,
+          "quote_occurrences": [
+            [
+              36,
+              37
+            ],
+            [
+              46,
+              47
+            ]
+          ],
+          "span_id": "evidence:u2:36:37",
+          "span_ref_matches": true,
+          "span_source_replays": true,
+          "quote_equals_span_text": true,
+          "containing_occurrences": [
+            [
+              36,
+              37
+            ]
+          ]
+        }
+      ],
+      "review_notes": [
+        "阈值文本本身有原文支持，错误是观察状态/字段角色；完整IPC字符串已正确保留该标准。 legend引用的%是单位符号，不是解释状态符号的图例；该角色也不成立。"
+      ]
+    },
+    {
+      "arm": "A",
+      "scope_id": "quality_condition",
+      "candidate_file": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-tools-20260916/initial-progress/A/quality_condition/candidates/proposal.json",
+      "candidate_path": "/observations/1",
+      "subject_id": null,
+      "field": "observation",
+      "proposal": {
+        "value": {
+          "ref": "u2",
+          "quote": "2.0",
+          "span_id": "evidence:u2:43:46"
+        },
+        "field": {
+          "ref": "u2",
+          "quote": "总杂应不得过2.0%",
+          "span_id": "source:u2"
+        },
+        "legend": {
+          "ref": "u2",
+          "quote": "%",
+          "span_id": "evidence:u2:46:47"
+        },
+        "condition": {
+          "ref": "",
+          "quote": "",
+          "span_id": ""
+        },
+        "state": "conditional",
+        "reason": "质量标准中的限度要求，非实测值"
+      },
+      "kind": "observation",
+      "semantic_verdict": "unsupported",
+      "reason": "该内容是必须同时满足的质量阈值，并非具有触发条件与后果动作的conditional观察；condition为空，不能把标准要求本身改成条件动作。",
+      "citation_audit": [
+        {
+          "citation_path": "/value",
+          "quote_verbatim": true,
+          "quote_occurrences": [
+            [
+              43,
+              46
+            ]
+          ],
+          "span_id": "evidence:u2:43:46",
+          "span_ref_matches": true,
+          "span_source_replays": true,
+          "quote_equals_span_text": true,
+          "containing_occurrences": [
+            [
+              43,
+              46
+            ]
+          ]
+        },
+        {
+          "citation_path": "/field",
+          "quote_verbatim": true,
+          "quote_occurrences": [
+            [
+              37,
+              47
+            ]
+          ],
+          "span_id": "source:u2",
+          "span_ref_matches": true,
+          "span_source_replays": true,
+          "quote_equals_span_text": false,
+          "containing_occurrences": [
+            [
+              37,
+              47
+            ]
+          ]
+        },
+        {
+          "citation_path": "/legend",
+          "quote_verbatim": true,
+          "quote_occurrences": [
+            [
+              36,
+              37
+            ],
+            [
+              46,
+              47
+            ]
+          ],
+          "span_id": "evidence:u2:46:47",
+          "span_ref_matches": true,
+          "span_source_replays": true,
+          "quote_equals_span_text": true,
+          "containing_occurrences": [
+            [
+              46,
+              47
+            ]
+          ]
+        }
+      ],
+      "review_notes": [
+        "阈值文本本身有原文支持，错误是观察状态/字段角色；完整IPC字符串已正确保留该标准。 legend引用的%是单位符号，不是解释状态符号的图例；该角色也不成立。"
+      ]
+    },
+    {
+      "arm": "A",
+      "scope_id": "quality_condition",
+      "candidate_file": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-tools-20260916/initial-progress/A/quality_condition/candidates/proposal.json",
+      "candidate_path": "/observations/2",
+      "subject_id": null,
+      "field": "observation",
+      "proposal": {
+        "value": {
+          "ref": "u2",
+          "quote": "百万分之二十",
+          "span_id": "source:u2"
+        },
+        "field": {
+          "ref": "u2",
+          "quote": "重金属残留不得超过百万分之二十",
+          "span_id": "source:u2"
+        },
+        "legend": {
+          "ref": "",
+          "quote": "",
+          "span_id": ""
+        },
+        "condition": {
+          "ref": "",
+          "quote": "",
+          "span_id": ""
+        },
+        "state": "conditional",
+        "reason": "质量标准中的限度要求，非实测值"
+      },
+      "kind": "observation",
+      "semantic_verdict": "unsupported",
+      "reason": "该内容是必须同时满足的质量阈值，并非具有触发条件与后果动作的conditional观察；condition为空，不能把标准要求本身改成条件动作。",
+      "citation_audit": [
+        {
+          "citation_path": "/value",
+          "quote_verbatim": true,
+          "quote_occurrences": [
+            [
+              57,
+              63
+            ]
+          ],
+          "span_id": "source:u2",
+          "span_ref_matches": true,
+          "span_source_replays": true,
+          "quote_equals_span_text": false,
+          "containing_occurrences": [
+            [
+              57,
+              63
+            ]
+          ]
+        },
+        {
+          "citation_path": "/field",
+          "quote_verbatim": true,
+          "quote_occurrences": [
+            [
+              48,
+              63
+            ]
+          ],
+          "span_id": "source:u2",
+          "span_ref_matches": true,
+          "span_source_replays": true,
+          "quote_equals_span_text": false,
+          "containing_occurrences": [
+            [
+              48,
+              63
+            ]
+          ]
+        }
+      ],
+      "review_notes": [
+        "阈值文本本身有原文支持，错误是观察状态/字段角色；完整IPC字符串已正确保留该标准。"
+      ]
+    },
+    {
+      "arm": "A",
+      "scope_id": "quality_condition",
+      "candidate_file": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-tools-20260916/initial-progress/A/quality_condition/candidates/proposal.json",
+      "candidate_path": "/observations/3",
+      "subject_id": null,
+      "field": "observation",
+      "proposal": {
+        "value": {
+          "ref": "u2",
+          "quote": "若不符合质量标准，则重复上述全部结晶操作（从一般区溶解物料）",
+          "span_id": "source:u2"
+        },
+        "field": {
+          "ref": "",
+          "quote": "",
+          "span_id": ""
+        },
+        "legend": {
+          "ref": "",
+          "quote": "",
+          "span_id": ""
+        },
+        "condition": {
+          "ref": "u2",
+          "quote": "若不符合质量标准",
+          "span_id": "source:u2"
+        },
+        "state": "conditional",
+        "reason": "触发重复结晶操作的条件"
+      },
+      "kind": "observation",
+      "semantic_verdict": "supported",
+      "reason": "原文明确若不符合质量标准则重复全部结晶操作；value保留重做范围和从一般区溶解物料的起点，condition正确指向触发条件。",
+      "citation_audit": [
+        {
+          "citation_path": "/value",
+          "quote_verbatim": true,
+          "quote_occurrences": [
+            [
+              64,
+              94
+            ]
+          ],
+          "span_id": "source:u2",
+          "span_ref_matches": true,
+          "span_source_replays": true,
+          "quote_equals_span_text": false,
+          "containing_occurrences": [
+            [
+              64,
+              94
+            ]
+          ]
+        },
+        {
+          "citation_path": "/condition",
+          "quote_verbatim": true,
+          "quote_occurrences": [
+            [
+              64,
+              72
+            ]
+          ],
+          "span_id": "source:u2",
+          "span_ref_matches": true,
+          "span_source_replays": true,
+          "quote_equals_span_text": false,
+          "containing_occurrences": [
+            [
+              64,
+              72
+            ]
+          ]
+        }
+      ],
+      "review_notes": [
+        "这是条件操作要求，不代表本次已发生重结晶。"
+      ]
+    },
+    {
+      "arm": "B",
+      "scope_id": "process_equipment",
+      "candidate_file": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-tools-20260916/initial-progress/B/process_equipment/process_equipment/candidates/proposal.json",
+      "candidate_path": "/subjects/document/anchor",
+      "subject_id": "document",
+      "field": "rdf:type",
+      "proposal": {
+        "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport",
+        "anchor": {
+          "ref": "",
+          "quote": "",
+          "span_id": ""
+        }
+      },
+      "kind": "subject_type",
+      "semantic_verdict": "supported",
+      "reason": "CMCReport 为本轮已给定文档根，不是模型新识别的类型。",
+      "citation_audit": [],
+      "active_subject": true,
+      "new_type_claim": false
+    },
+    {
+      "arm": "B",
+      "scope_id": "process_equipment",
+      "candidate_file": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-tools-20260916/initial-progress/B/process_equipment/process_equipment/candidates/proposal.json",
+      "candidate_path": "/subjects/s1/anchor",
+      "subject_id": "s1",
+      "field": "rdf:type",
+      "proposal": {
+        "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/SynthesisStep",
+        "anchor": {
+          "ref": "u2",
+          "quote": "步骤一：200L反应釜（RE64611）内加入AR级别丙酮(丙酮投料量/L= HRS-1597粗品投入量/kg×13.5*0.79)和纯化水(纯化水投料量/L= HRS-1597粗品投入量/kg×1.5*1)，氮气置换4次。加入HRS-1597粗品，釜内温度上升至55℃，搅拌溶清。随后氮气保护下加入颗粒活性炭（活性炭投料量/Kg= HRS-1597粗品投入量/kg×0.2），维持50~55℃继续搅拌1-2小时。",
+          "span_id": "source:u2"
+        }
+      },
+      "kind": "subject_type",
+      "semantic_verdict": "supported",
+      "reason": "原文明确“步骤一”及投料、溶清、活性炭处理操作；SynthesisStep 定义包括路线中的单元操作，不要求此处发生化学反应。",
+      "citation_audit": [
+        {
+          "citation_path": "/anchor",
+          "quote_verbatim": true,
+          "quote_occurrences": [
+            [
+              0,
+              207
+            ]
+          ],
+          "span_id": "source:u2",
+          "span_ref_matches": true,
+          "span_source_replays": true,
+          "quote_equals_span_text": true,
+          "containing_occurrences": [
+            [
+              0,
+              207
+            ]
+          ]
+        }
+      ],
+      "active_subject": true,
+      "new_type_claim": true
+    },
+    {
+      "arm": "B",
+      "scope_id": "process_equipment",
+      "candidate_file": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-tools-20260916/initial-progress/B/process_equipment/process_equipment/candidates/proposal.json",
+      "candidate_path": "/subjects/s1/attributes/reactionConditions/0",
+      "subject_id": "s1",
+      "field": "reactionConditions",
+      "proposal": {
+        "raw": "50~55℃",
+        "source": {
+          "ref": "u2",
+          "quote": "维持50~55℃",
+          "span_id": "evidence:u2:191:193"
+        },
+        "field": {
+          "ref": "u2",
+          "quote": "维持50~55℃",
+          "span_id": "evidence:u2:191:193"
+        },
+        "unit": {
+          "ref": "u2",
+          "quote": "℃",
+          "span_id": "evidence:u2:196:197"
+        },
+        "condition": {
+          "ref": "",
+          "quote": "",
+          "span_id": ""
+        }
+      },
+      "kind": "property",
+      "semantic_verdict": "supported",
+      "reason": "原文“维持50~55℃继续搅拌1-2小时”支持该步骤的保持温度区间；raw 保留上下界和℃，未捏造成单点温度。",
+      "citation_audit": [
+        {
+          "citation_path": "/source",
+          "quote_verbatim": true,
+          "quote_occurrences": [
+            [
+              189,
+              197
+            ]
+          ],
+          "span_id": "evidence:u2:191:193",
+          "span_ref_matches": true,
+          "span_source_replays": true,
+          "quote_equals_span_text": false,
+          "containing_occurrences": [
+            [
+              189,
+              197
+            ]
+          ]
+        },
+        {
+          "citation_path": "/field",
+          "quote_verbatim": true,
+          "quote_occurrences": [
+            [
+              189,
+              197
+            ]
+          ],
+          "span_id": "evidence:u2:191:193",
+          "span_ref_matches": true,
+          "span_source_replays": true,
+          "quote_equals_span_text": false,
+          "containing_occurrences": [
+            [
+              189,
+              197
+            ]
+          ]
+        },
+        {
+          "citation_path": "/unit",
+          "quote_verbatim": true,
+          "quote_occurrences": [
+            [
+              134,
+              135
+            ],
+            [
+              196,
+              197
+            ]
+          ],
+          "span_id": "evidence:u2:196:197",
+          "span_ref_matches": true,
+          "span_source_replays": true,
+          "quote_equals_span_text": true,
+          "containing_occurrences": [
+            [
+              196,
+              197
+            ]
+          ]
+        }
+      ],
+      "protocol_notes": []
+    },
+    {
+      "arm": "B",
+      "scope_id": "process_equipment",
+      "candidate_file": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-tools-20260916/initial-progress/B/process_equipment/process_equipment/candidates/proposal.json",
+      "candidate_path": "/subjects/s1/attributes/reactionConditions/1",
+      "subject_id": "s1",
+      "field": "reactionConditions",
+      "proposal": {
+        "raw": "1-2小时",
+        "source": {
+          "ref": "u2",
+          "quote": "继续搅拌1-2小时",
+          "span_id": "evidence:u2:201:202"
+        },
+        "field": {
+          "ref": "u2",
+          "quote": "继续搅拌1-2小时",
+          "span_id": "evidence:u2:201:202"
+        },
+        "unit": {
+          "ref": "",
+          "quote": "",
+          "span_id": ""
+        },
+        "condition": {
+          "ref": "",
+          "quote": "",
+          "span_id": ""
+        }
+      },
+      "kind": "property",
+      "semantic_verdict": "supported",
+      "reason": "原文明确继续搅拌1-2小时，duration 属卡片 reactionConditions；时间区间完整保留。",
+      "citation_audit": [
+        {
+          "citation_path": "/source",
+          "quote_verbatim": true,
+          "quote_occurrences": [
+            [
+              197,
+              206
+            ]
+          ],
+          "span_id": "evidence:u2:201:202",
+          "span_ref_matches": true,
+          "span_source_replays": true,
+          "quote_equals_span_text": false,
+          "containing_occurrences": [
+            [
+              197,
+              206
+            ]
+          ]
+        },
+        {
+          "citation_path": "/field",
+          "quote_verbatim": true,
+          "quote_occurrences": [
+            [
+              197,
+              206
+            ]
+          ],
+          "span_id": "evidence:u2:201:202",
+          "span_ref_matches": true,
+          "span_source_replays": true,
+          "quote_equals_span_text": false,
+          "containing_occurrences": [
+            [
+              197,
+              206
+            ]
+          ]
+        }
+      ],
+      "protocol_notes": []
+    },
+    {
+      "arm": "B",
+      "scope_id": "process_equipment",
+      "candidate_file": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-tools-20260916/initial-progress/B/process_equipment/process_equipment/candidates/proposal.json",
+      "candidate_path": "/subjects/s1/attributes/stepOrder/0",
+      "subject_id": "s1",
+      "field": "stepOrder",
+      "proposal": {
+        "raw": "1",
+        "source": {
+          "ref": "u2",
+          "quote": "步骤一",
+          "span_id": "evidence:u2:0:207"
+        },
+        "field": {
+          "ref": "u2",
+          "quote": "步骤一",
+          "span_id": "evidence:u2:0:207"
+        },
+        "unit": {
+          "ref": "",
+          "quote": "",
+          "span_id": ""
+        },
+        "condition": {
+          "ref": "",
+          "quote": "",
+          "span_id": ""
+        }
+      },
+      "kind": "property",
+      "semantic_verdict": "supported",
+      "reason": "“步骤一”语义支持步骤序号1；但 raw=1 并非 source.quote 中的逐字值，属于原始值协议违规，不是步骤顺序语义错误。",
+      "citation_audit": [
+        {
+          "citation_path": "/source",
+          "quote_verbatim": true,
+          "quote_occurrences": [
+            [
+              0,
+              3
+            ]
+          ],
+          "span_id": "evidence:u2:0:207",
+          "span_ref_matches": true,
+          "span_source_replays": true,
+          "quote_equals_span_text": false,
+          "containing_occurrences": [
+            [
+              0,
+              3
+            ]
+          ]
+        },
+        {
+          "citation_path": "/field",
+          "quote_verbatim": true,
+          "quote_occurrences": [
+            [
+              0,
+              3
+            ]
+          ],
+          "span_id": "evidence:u2:0:207",
+          "span_ref_matches": true,
+          "span_source_replays": true,
+          "quote_equals_span_text": false,
+          "containing_occurrences": [
+            [
+              0,
+              3
+            ]
+          ]
+        }
+      ],
+      "protocol_notes": [
+        "raw_not_verbatim: 源文为“一”，候选raw为“1”；若转换必须由显式规范化规则处理。"
+      ]
+    },
+    {
+      "arm": "B",
+      "scope_id": "process_equipment",
+      "candidate_file": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-tools-20260916/initial-progress/B/process_equipment/process_equipment/candidates/proposal.json",
+      "candidate_path": "/subjects/s1/relations/usesEquipment/0",
+      "subject_id": "s1",
+      "field": "usesEquipment",
+      "proposal": {
+        "target_id": "s3",
+        "evidence": {
+          "ref": "u2",
+          "quote": "200L反应釜（RE64611）",
+          "span_id": "evidence:u2:4:7"
+        },
+        "condition": {
+          "ref": "",
+          "quote": "",
+          "span_id": ""
+        },
+        "polarity": "affirmed"
+      },
+      "kind": "relation",
+      "semantic_verdict": "supported",
+      "reason": "完整原文明确步骤一在该反应釜内加入物料，支持 step→equipment 使用关系及其方向；不能仅凭候选的设备短语单独证明，需要当前scope完整句。",
+      "citation_audit": [
+        {
+          "citation_path": "/evidence",
+          "quote_verbatim": true,
+          "quote_occurrences": [
+            [
+              4,
+              20
+            ]
+          ],
+          "span_id": "evidence:u2:4:7",
+          "span_ref_matches": true,
+          "span_source_replays": true,
+          "quote_equals_span_text": false,
+          "containing_occurrences": [
+            [
+              4,
+              20
+            ]
+          ]
+        }
+      ],
+      "protocol_notes": []
+    },
+    {
+      "arm": "B",
+      "scope_id": "process_equipment",
+      "candidate_file": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-tools-20260916/initial-progress/B/process_equipment/process_equipment/candidates/proposal.json",
+      "candidate_path": "/subjects/s2/anchor",
+      "subject_id": "s2",
+      "field": "rdf:type",
+      "proposal": {
+        "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/Crystallization",
+        "anchor": {
+          "ref": "",
+          "quote": "",
+          "span_id": ""
+        }
+      },
+      "kind": "subject_type",
+      "semantic_verdict": "undetermined",
+      "reason": "空锚点的未启用卡片槽位，不构成已提出的类型事实；不能计作类型假阳性。",
+      "citation_audit": [],
+      "active_subject": false,
+      "new_type_claim": false
+    },
+    {
+      "arm": "B",
+      "scope_id": "process_equipment",
+      "candidate_file": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-tools-20260916/initial-progress/B/process_equipment/process_equipment/candidates/proposal.json",
+      "candidate_path": "/subjects/s3/anchor",
+      "subject_id": "s3",
+      "field": "rdf:type",
+      "proposal": {
+        "class_iri": "https://ontology.pharma-gmp.cn/slpra/equipment/Equipment",
+        "anchor": {
+          "ref": "u2",
+          "quote": "200L反应釜（RE64611）",
+          "span_id": "evidence:u2:4:7"
+        }
+      },
+      "kind": "subject_type",
+      "semantic_verdict": "supported",
+      "reason": "“200L反应釜（RE64611）”明确为设备，Equipment 通用类型有依据。",
+      "citation_audit": [
+        {
+          "citation_path": "/anchor",
+          "quote_verbatim": true,
+          "quote_occurrences": [
+            [
+              4,
+              20
+            ]
+          ],
+          "span_id": "evidence:u2:4:7",
+          "span_ref_matches": true,
+          "span_source_replays": true,
+          "quote_equals_span_text": false,
+          "containing_occurrences": [
+            [
+              4,
+              20
+            ]
+          ]
+        }
+      ],
+      "active_subject": true,
+      "new_type_claim": true
+    },
+    {
+      "arm": "B",
+      "scope_id": "process_equipment",
+      "candidate_file": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-tools-20260916/initial-progress/B/process_equipment/process_equipment/candidates/proposal.json",
+      "candidate_path": "/subjects/s3/attributes/equipmentID/0",
+      "subject_id": "s3",
+      "field": "equipmentID",
+      "proposal": {
+        "raw": "RE64611",
+        "source": {
+          "ref": "u2",
+          "quote": "RE64611",
+          "span_id": "evidence:u2:14:19"
+        },
+        "field": {
+          "ref": "u2",
+          "quote": "RE64611",
+          "span_id": "evidence:u2:14:19"
+        },
+        "unit": {
+          "ref": "",
+          "quote": "",
+          "span_id": ""
+        },
+        "condition": {
+          "ref": "",
+          "quote": "",
+          "span_id": ""
+        }
+      },
+      "kind": "property",
+      "semantic_verdict": "supported",
+      "reason": "反应釜名称后括号中的 RE64611 有设备编号语义，归属于同一反应釜。",
+      "citation_audit": [
+        {
+          "citation_path": "/source",
+          "quote_verbatim": true,
+          "quote_occurrences": [
+            [
+              12,
+              19
+            ]
+          ],
+          "span_id": "evidence:u2:14:19",
+          "span_ref_matches": true,
+          "span_source_replays": true,
+          "quote_equals_span_text": false,
+          "containing_occurrences": [
+            [
+              12,
+              19
+            ]
+          ]
+        },
+        {
+          "citation_path": "/field",
+          "quote_verbatim": true,
+          "quote_occurrences": [
+            [
+              12,
+              19
+            ]
+          ],
+          "span_id": "evidence:u2:14:19",
+          "span_ref_matches": true,
+          "span_source_replays": true,
+          "quote_equals_span_text": false,
+          "containing_occurrences": [
+            [
+              12,
+              19
+            ]
+          ]
+        }
+      ],
+      "protocol_notes": []
+    },
+    {
+      "arm": "B",
+      "scope_id": "process_equipment",
+      "candidate_file": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-tools-20260916/initial-progress/B/process_equipment/process_equipment/candidates/proposal.json",
+      "candidate_path": "/subjects/s3/attributes/equipmentName/0",
+      "subject_id": "s3",
+      "field": "equipmentName",
+      "proposal": {
+        "raw": "200L反应釜",
+        "source": {
+          "ref": "u2",
+          "quote": "200L反应釜",
+          "span_id": "evidence:u2:4:7"
+        },
+        "field": {
+          "ref": "u2",
+          "quote": "200L反应釜",
+          "span_id": "evidence:u2:4:7"
+        },
+        "unit": {
+          "ref": "",
+          "quote": "",
+          "span_id": ""
+        },
+        "condition": {
+          "ref": "",
+          "quote": "",
+          "span_id": ""
+        }
+      },
+      "kind": "property",
+      "semantic_verdict": "supported",
+      "reason": "200L反应釜为原文设备称谓，含容量修饰但没有改变设备归属。",
+      "citation_audit": [
+        {
+          "citation_path": "/source",
+          "quote_verbatim": true,
+          "quote_occurrences": [
+            [
+              4,
+              11
+            ]
+          ],
+          "span_id": "evidence:u2:4:7",
+          "span_ref_matches": true,
+          "span_source_replays": true,
+          "quote_equals_span_text": false,
+          "containing_occurrences": [
+            [
+              4,
+              11
+            ]
+          ]
+        },
+        {
+          "citation_path": "/field",
+          "quote_verbatim": true,
+          "quote_occurrences": [
+            [
+              4,
+              11
+            ]
+          ],
+          "span_id": "evidence:u2:4:7",
+          "span_ref_matches": true,
+          "span_source_replays": true,
+          "quote_equals_span_text": false,
+          "containing_occurrences": [
+            [
+              4,
+              11
+            ]
+          ]
+        }
+      ],
+      "protocol_notes": []
+    },
+    {
+      "arm": "B",
+      "scope_id": "process_equipment",
+      "candidate_file": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-tools-20260916/initial-progress/B/process_equipment/process_equipment/candidates/proposal.json",
+      "candidate_path": "/subjects/s4/anchor",
+      "subject_id": "s4",
+      "field": "rdf:type",
+      "proposal": {
+        "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/CrudeProduct",
+        "anchor": {
+          "ref": "u2",
+          "quote": "HRS-1597粗品",
+          "span_id": "evidence:u2:39:42"
+        }
+      },
+      "kind": "subject_type",
+      "semantic_verdict": "supported",
+      "reason": "原文明说“HRS-1597粗品”且作为加入物料，CrudeProduct 类型有依据；其投料角色不能变成该步骤产出。",
+      "citation_audit": [
+        {
+          "citation_path": "/anchor",
+          "quote_verbatim": true,
+          "quote_occurrences": [
+            [
+              39,
+              49
+            ],
+            [
+              81,
+              91
+            ],
+            [
+              114,
+              124
+            ],
+            [
+              167,
+              177
+            ]
+          ],
+          "span_id": "evidence:u2:39:42",
+          "span_ref_matches": true,
+          "span_source_replays": true,
+          "quote_equals_span_text": false,
+          "containing_occurrences": [
+            [
+              39,
+              49
+            ]
+          ]
+        }
+      ],
+      "active_subject": true,
+      "new_type_claim": true
+    },
+    {
+      "arm": "B",
+      "scope_id": "process_equipment",
+      "candidate_file": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-tools-20260916/initial-progress/B/process_equipment/process_equipment/candidates/proposal.json",
+      "candidate_path": "/subjects/s4/attributes/intermediateIdentifier/0",
+      "subject_id": "s4",
+      "field": "intermediateIdentifier",
+      "proposal": {
+        "raw": "HRS-1597粗品",
+        "source": {
+          "ref": "u2",
+          "quote": "HRS-1597粗品",
+          "span_id": "evidence:u2:39:42"
+        },
+        "field": {
+          "ref": "u2",
+          "quote": "HRS-1597粗品",
+          "span_id": "evidence:u2:39:42"
+        },
+        "unit": {
+          "ref": "",
+          "quote": "",
+          "span_id": ""
+        },
+        "condition": {
+          "ref": "",
+          "quote": "",
+          "span_id": ""
+        }
+      },
+      "kind": "property",
+      "semantic_verdict": "undetermined",
+      "reason": "原文以“HRS-1597粗品”命名投料物料，但未明确将整个名称作为工艺中间体标识字段；HRS-1597也指产品代码，不能由该短语确定专属中间体标识。",
+      "citation_audit": [
+        {
+          "citation_path": "/source",
+          "quote_verbatim": true,
+          "quote_occurrences": [
+            [
+              39,
+              49
+            ],
+            [
+              81,
+              91
+            ],
+            [
+              114,
+              124
+            ],
+            [
+              167,
+              177
+            ]
+          ],
+          "span_id": "evidence:u2:39:42",
+          "span_ref_matches": true,
+          "span_source_replays": true,
+          "quote_equals_span_text": false,
+          "containing_occurrences": [
+            [
+              39,
+              49
+            ]
+          ]
+        },
+        {
+          "citation_path": "/field",
+          "quote_verbatim": true,
+          "quote_occurrences": [
+            [
+              39,
+              49
+            ],
+            [
+              81,
+              91
+            ],
+            [
+              114,
+              124
+            ],
+            [
+              167,
+              177
+            ]
+          ],
+          "span_id": "evidence:u2:39:42",
+          "span_ref_matches": true,
+          "span_source_replays": true,
+          "quote_equals_span_text": false,
+          "containing_occurrences": [
+            [
+              39,
+              49
+            ]
+          ]
+        }
+      ],
+      "protocol_notes": [
+        "同一源单元多次出现该短语；其位置歧义是独立引用问题，不作为本项语义未决的唯一理由。"
+      ]
+    },
+    {
+      "arm": "B",
+      "scope_id": "process_equipment",
+      "candidate_file": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-tools-20260916/initial-progress/B/process_equipment/process_equipment/candidates/proposal.json",
+      "candidate_path": "/observations/0",
+      "subject_id": null,
+      "field": "observation",
+      "proposal": {
+        "value": {
+          "ref": "",
+          "quote": "",
+          "span_id": ""
+        },
+        "field": {
+          "ref": "",
+          "quote": "",
+          "span_id": ""
+        },
+        "legend": {
+          "ref": "",
+          "quote": "",
+          "span_id": ""
+        },
+        "condition": {
+          "ref": "",
+          "quote": "",
+          "span_id": ""
+        },
+        "state": "unknown",
+        "reason": "s2 (结晶/析晶) 的 anchor 为空，且文档中未明确区分 s1 和 s2 的具体步骤边界，s1 已占用步骤一。s2 无对应文本证据。"
+      },
+      "kind": "observation",
+      "semantic_verdict": "unsupported",
+      "reason": "这是模型空槽位/步骤边界不足的处理说明，不是原文给出的unknown状态；不能作为来源观察。空引用另属协议问题。",
+      "citation_audit": [],
+      "review_notes": [
+        "谨慎不启用s2合理；未启用卡片不能证明原文不存在结晶工艺。"
+      ]
+    },
+    {
+      "arm": "B",
+      "scope_id": "process_equipment",
+      "candidate_file": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-tools-20260916/initial-progress/B/process_equipment/process_equipment/candidates/proposal.json",
+      "candidate_path": "/observations/1",
+      "subject_id": null,
+      "field": "observation",
+      "proposal": {
+        "value": {
+          "ref": "",
+          "quote": "",
+          "span_id": ""
+        },
+        "field": {
+          "ref": "",
+          "quote": "",
+          "span_id": ""
+        },
+        "legend": {
+          "ref": "",
+          "quote": "",
+          "span_id": ""
+        },
+        "condition": {
+          "ref": "",
+          "quote": "",
+          "span_id": ""
+        },
+        "state": "unknown",
+        "reason": "s1 产出中间体 s4 的关系未建立，因为 s1 是投料/溶解/活性炭处理步骤，通常不直接产出最终中间体或作为结晶步骤的产出方，且 s2 为空。"
+      },
+      "kind": "observation",
+      "semantic_verdict": "unsupported",
+      "reason": "拒绝将投入粗品当步骤产出的判断合理，但该对象是模型抽取决策说明，不是原文unknown观察；不能由未提取产出关系断言原文未知。",
+      "citation_audit": [],
+      "review_notes": [
+        "原文“加入HRS-1597粗品”支持投入方向；不能用“通常不直接产出”等常识替代当前source证据。"
+      ]
+    },
+    {
+      "arm": "B",
+      "scope_id": "quality_condition",
+      "candidate_file": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-tools-20260916/initial-progress/B/quality_condition/candidates/proposal.json",
+      "candidate_path": "/subjects/document/anchor",
+      "subject_id": "document",
+      "field": "rdf:type",
+      "proposal": {
+        "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport",
+        "anchor": {
+          "ref": "",
+          "quote": "",
+          "span_id": ""
+        }
+      },
+      "kind": "subject_type",
+      "semantic_verdict": "supported",
+      "reason": "CMCReport 为本轮已给定文档根，不是模型新识别的类型。",
+      "citation_audit": [],
+      "active_subject": true,
+      "new_type_claim": false
+    },
+    {
+      "arm": "B",
+      "scope_id": "quality_condition",
+      "candidate_file": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-tools-20260916/initial-progress/B/quality_condition/candidates/proposal.json",
+      "candidate_path": "/subjects/s1/anchor",
+      "subject_id": "s1",
+      "field": "rdf:type",
+      "proposal": {
+        "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/Crystallization",
+        "anchor": {
+          "ref": "u0",
+          "quote": "HRS-1597结晶纯化",
+          "span_id": "source:u0"
+        }
+      },
+      "kind": "subject_type",
+      "semantic_verdict": "supported",
+      "reason": "标题“结晶纯化”结合正文“上述全部结晶操作”支持局部结晶工艺主体；不支持拆成具有先后次序的两个独立步骤。",
+      "citation_audit": [
+        {
+          "citation_path": "/anchor",
+          "quote_verbatim": true,
+          "quote_occurrences": [
+            [
+              0,
+              12
+            ]
+          ],
+          "span_id": "source:u0",
+          "span_ref_matches": true,
+          "span_source_replays": true,
+          "quote_equals_span_text": true,
+          "containing_occurrences": [
+            [
+              0,
+              12
+            ]
+          ]
+        }
+      ],
+      "active_subject": true,
+      "new_type_claim": true
+    },
+    {
+      "arm": "B",
+      "scope_id": "quality_condition",
+      "candidate_file": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-tools-20260916/initial-progress/B/quality_condition/candidates/proposal.json",
+      "candidate_path": "/subjects/s1/attributes/inProcessControl/0",
+      "subject_id": "s1",
+      "field": "inProcessControl",
+      "proposal": {
+        "raw": "取样送检HPLC和重金属检测，质量标准要同时满足：单个杂质应不得过0.2%总杂应不得过2.0%,重金属残留不得超过百万分之二十，若不符合质量标准，则重复上述全部结晶操作（从一般区溶解物料）。",
+        "source": {
+          "ref": "u2",
+          "quote": "取样送检HPLC和重金属检测，质量标准要同时满足：单个杂质应不得过0.2%总杂应不得过2.0%,重金属残留不得超过百万分之二十，若不符合质量标准，则重复上述全部结晶操作（从一般区溶解物料）。",
+          "span_id": "source:u2"
+        },
+        "field": {
+          "ref": "u2",
+          "quote": "取样送检HPLC和重金属检测，质量标准要同时满足：单个杂质应不得过0.2%总杂应不得过2.0%,重金属残留不得超过百万分之二十，若不符合质量标准，则重复上述全部结晶操作（从一般区溶解物料）。",
+          "span_id": "source:u2"
+        },
+        "unit": {
+          "ref": "",
+          "quote": "",
+          "span_id": ""
+        },
+        "condition": {
+          "ref": "",
+          "quote": "",
+          "span_id": ""
+        }
+      },
+      "kind": "property",
+      "semantic_verdict": "supported",
+      "reason": "完整保留HPLC和重金属检测、必须同时满足的单杂≤0.2%/总杂≤2.0%/重金属≤百万分之二十，以及不合格时从一般区溶解物料开始重复全部结晶操作。归属于标题结晶工艺。",
+      "citation_audit": [
+        {
+          "citation_path": "/source",
+          "quote_verbatim": true,
+          "quote_occurrences": [
+            [
+              0,
+              95
+            ]
+          ],
+          "span_id": "source:u2",
+          "span_ref_matches": true,
+          "span_source_replays": true,
+          "quote_equals_span_text": true,
+          "containing_occurrences": [
+            [
+              0,
+              95
+            ]
+          ]
+        },
+        {
+          "citation_path": "/field",
+          "quote_verbatim": true,
+          "quote_occurrences": [
+            [
+              0,
+              95
+            ]
+          ],
+          "span_id": "source:u2",
+          "span_ref_matches": true,
+          "span_source_replays": true,
+          "quote_equals_span_text": true,
+          "containing_occurrences": [
+            [
+              0,
+              95
+            ]
+          ]
+        }
+      ],
+      "protocol_notes": [
+        "condition引用为空不等于条件丢失：原始字符串完整包含触发条件及重做动作；不是声称重结晶已实际发生。"
+      ]
+    },
+    {
+      "arm": "B",
+      "scope_id": "quality_condition",
+      "candidate_file": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-tools-20260916/initial-progress/B/quality_condition/candidates/proposal.json",
+      "candidate_path": "/subjects/s1/relations/nextStep/0",
+      "subject_id": "s1",
+      "field": "nextStep",
+      "proposal": {
+        "target_id": "s2",
+        "evidence": {
+          "ref": "u0",
+          "quote": "HRS-1597结晶纯化",
+          "span_id": "source:u0"
+        },
+        "condition": {
+          "ref": "",
+          "quote": "",
+          "span_id": ""
+        },
+        "polarity": "affirmed"
+      },
+      "kind": "relation",
+      "semantic_verdict": "unsupported",
+      "reason": "nextStep 将“结晶纯化”复合工艺名称误解为结晶后接独立纯化步骤；原文没有这种顺序声明，且目标s2为未启用空锚点。",
+      "citation_audit": [
+        {
+          "citation_path": "/evidence",
+          "quote_verbatim": true,
+          "quote_occurrences": [
+            [
+              0,
+              12
+            ]
+          ],
+          "span_id": "source:u0",
+          "span_ref_matches": true,
+          "span_source_replays": true,
+          "quote_equals_span_text": true,
+          "containing_occurrences": [
+            [
+              0,
+              12
+            ]
+          ]
+        }
+      ],
+      "protocol_notes": []
+    },
+    {
+      "arm": "B",
+      "scope_id": "quality_condition",
+      "candidate_file": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-tools-20260916/initial-progress/B/quality_condition/candidates/proposal.json",
+      "candidate_path": "/subjects/s2/anchor",
+      "subject_id": "s2",
+      "field": "rdf:type",
+      "proposal": {
+        "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/Purification",
+        "anchor": {
+          "ref": "",
+          "quote": "",
+          "span_id": ""
+        }
+      },
+      "kind": "subject_type",
+      "semantic_verdict": "undetermined",
+      "reason": "空锚点的未启用卡片槽位，不构成已提出的类型事实；不能计作类型假阳性。",
+      "citation_audit": [],
+      "active_subject": false,
+      "new_type_claim": false
+    },
+    {
+      "arm": "B",
+      "scope_id": "quality_condition",
+      "candidate_file": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-tools-20260916/initial-progress/B/quality_condition/candidates/proposal.json",
+      "candidate_path": "/subjects/s3/anchor",
+      "subject_id": "s3",
+      "field": "rdf:type",
+      "proposal": {
+        "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/Residue",
+        "anchor": {
+          "ref": "",
+          "quote": "",
+          "span_id": ""
+        }
+      },
+      "kind": "subject_type",
+      "semantic_verdict": "undetermined",
+      "reason": "空锚点的未启用卡片槽位，不构成已提出的类型事实；不能计作类型假阳性。",
+      "citation_audit": [],
+      "active_subject": false,
+      "new_type_claim": false
+    },
+    {
+      "arm": "B",
+      "scope_id": "quality_condition",
+      "candidate_file": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-tools-20260916/initial-progress/B/quality_condition/candidates/proposal.json",
+      "candidate_path": "/subjects/s4/anchor",
+      "subject_id": "s4",
+      "field": "rdf:type",
+      "proposal": {
+        "class_iri": "https://ontology.pharma-gmp.cn/slpra/facility/GeneralArea",
+        "anchor": {
+          "ref": "u2",
+          "quote": "一般区",
+          "span_id": "mention-d72539dee262611d2b6a4777"
+        }
+      },
+      "kind": "subject_type",
+      "semantic_verdict": "supported",
+      "reason": "条件动作明确说“从一般区溶解物料”，支持 GeneralArea 的局部位置提及；不证明独立设施全局身份或新增位置关系。",
+      "citation_audit": [
+        {
+          "citation_path": "/anchor",
+          "quote_verbatim": true,
+          "quote_occurrences": [
+            [
+              86,
+              89
+            ]
+          ],
+          "span_id": "mention-d72539dee262611d2b6a4777",
+          "span_ref_matches": true,
+          "span_source_replays": true,
+          "quote_equals_span_text": true,
+          "containing_occurrences": [
+            [
+              86,
+              89
+            ]
+          ]
+        }
+      ],
+      "active_subject": true,
+      "new_type_claim": true
+    },
+    {
+      "arm": "B",
+      "scope_id": "quality_condition",
+      "candidate_file": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-tools-20260916/initial-progress/B/quality_condition/candidates/proposal.json",
+      "candidate_path": "/observations/0",
+      "subject_id": null,
+      "field": "observation",
+      "proposal": {
+        "value": {
+          "ref": "u2",
+          "quote": "单个杂质应不得过0.2%",
+          "span_id": "source:u2"
+        },
+        "field": {
+          "ref": "u2",
+          "quote": "单个杂质应不得过0.2%",
+          "span_id": "source:u2"
+        },
+        "legend": {
+          "ref": "",
+          "quote": "",
+          "span_id": ""
+        },
+        "condition": {
+          "ref": "",
+          "quote": "",
+          "span_id": ""
+        },
+        "state": "conditional",
+        "reason": "质量标准中的杂质限度，属于过程控制条件"
+      },
+      "kind": "observation",
+      "semantic_verdict": "unsupported",
+      "reason": "该内容是必须同时满足的质量阈值，并非具有触发条件与后果动作的conditional观察；condition为空，不能把标准要求本身改成条件动作。",
+      "citation_audit": [
+        {
+          "citation_path": "/value",
+          "quote_verbatim": true,
+          "quote_occurrences": [
+            [
+              25,
+              37
+            ]
+          ],
+          "span_id": "source:u2",
+          "span_ref_matches": true,
+          "span_source_replays": true,
+          "quote_equals_span_text": false,
+          "containing_occurrences": [
+            [
+              25,
+              37
+            ]
+          ]
+        },
+        {
+          "citation_path": "/field",
+          "quote_verbatim": true,
+          "quote_occurrences": [
+            [
+              25,
+              37
+            ]
+          ],
+          "span_id": "source:u2",
+          "span_ref_matches": true,
+          "span_source_replays": true,
+          "quote_equals_span_text": false,
+          "containing_occurrences": [
+            [
+              25,
+              37
+            ]
+          ]
+        }
+      ],
+      "review_notes": [
+        "阈值文本本身有原文支持，错误是观察状态/字段角色；完整IPC字符串已正确保留该标准。"
+      ]
+    },
+    {
+      "arm": "B",
+      "scope_id": "quality_condition",
+      "candidate_file": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-tools-20260916/initial-progress/B/quality_condition/candidates/proposal.json",
+      "candidate_path": "/observations/1",
+      "subject_id": null,
+      "field": "observation",
+      "proposal": {
+        "value": {
+          "ref": "u2",
+          "quote": "总杂应不得过2.0%",
+          "span_id": "source:u2"
+        },
+        "field": {
+          "ref": "u2",
+          "quote": "总杂应不得过2.0%",
+          "span_id": "source:u2"
+        },
+        "legend": {
+          "ref": "",
+          "quote": "",
+          "span_id": ""
+        },
+        "condition": {
+          "ref": "",
+          "quote": "",
+          "span_id": ""
+        },
+        "state": "conditional",
+        "reason": "质量标准中的总杂限度，属于过程控制条件"
+      },
+      "kind": "observation",
+      "semantic_verdict": "unsupported",
+      "reason": "该内容是必须同时满足的质量阈值，并非具有触发条件与后果动作的conditional观察；condition为空，不能把标准要求本身改成条件动作。",
+      "citation_audit": [
+        {
+          "citation_path": "/value",
+          "quote_verbatim": true,
+          "quote_occurrences": [
+            [
+              37,
+              47
+            ]
+          ],
+          "span_id": "source:u2",
+          "span_ref_matches": true,
+          "span_source_replays": true,
+          "quote_equals_span_text": false,
+          "containing_occurrences": [
+            [
+              37,
+              47
+            ]
+          ]
+        },
+        {
+          "citation_path": "/field",
+          "quote_verbatim": true,
+          "quote_occurrences": [
+            [
+              37,
+              47
+            ]
+          ],
+          "span_id": "source:u2",
+          "span_ref_matches": true,
+          "span_source_replays": true,
+          "quote_equals_span_text": false,
+          "containing_occurrences": [
+            [
+              37,
+              47
+            ]
+          ]
+        }
+      ],
+      "review_notes": [
+        "阈值文本本身有原文支持，错误是观察状态/字段角色；完整IPC字符串已正确保留该标准。"
+      ]
+    },
+    {
+      "arm": "B",
+      "scope_id": "quality_condition",
+      "candidate_file": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-tools-20260916/initial-progress/B/quality_condition/candidates/proposal.json",
+      "candidate_path": "/observations/2",
+      "subject_id": null,
+      "field": "observation",
+      "proposal": {
+        "value": {
+          "ref": "u2",
+          "quote": "重金属残留不得超过百万分之二十",
+          "span_id": "source:u2"
+        },
+        "field": {
+          "ref": "u2",
+          "quote": "重金属残留不得超过百万分之二十",
+          "span_id": "source:u2"
+        },
+        "legend": {
+          "ref": "",
+          "quote": "",
+          "span_id": ""
+        },
+        "condition": {
+          "ref": "",
+          "quote": "",
+          "span_id": ""
+        },
+        "state": "conditional",
+        "reason": "质量标准中的重金属限度，属于过程控制条件"
+      },
+      "kind": "observation",
+      "semantic_verdict": "unsupported",
+      "reason": "该内容是必须同时满足的质量阈值，并非具有触发条件与后果动作的conditional观察；condition为空，不能把标准要求本身改成条件动作。",
+      "citation_audit": [
+        {
+          "citation_path": "/value",
+          "quote_verbatim": true,
+          "quote_occurrences": [
+            [
+              48,
+              63
+            ]
+          ],
+          "span_id": "source:u2",
+          "span_ref_matches": true,
+          "span_source_replays": true,
+          "quote_equals_span_text": false,
+          "containing_occurrences": [
+            [
+              48,
+              63
+            ]
+          ]
+        },
+        {
+          "citation_path": "/field",
+          "quote_verbatim": true,
+          "quote_occurrences": [
+            [
+              48,
+              63
+            ]
+          ],
+          "span_id": "source:u2",
+          "span_ref_matches": true,
+          "span_source_replays": true,
+          "quote_equals_span_text": false,
+          "containing_occurrences": [
+            [
+              48,
+              63
+            ]
+          ]
+        }
+      ],
+      "review_notes": [
+        "阈值文本本身有原文支持，错误是观察状态/字段角色；完整IPC字符串已正确保留该标准。"
+      ]
+    },
+    {
+      "arm": "B",
+      "scope_id": "quality_condition",
+      "candidate_file": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-tools-20260916/initial-progress/B/quality_condition/candidates/proposal.json",
+      "candidate_path": "/observations/3",
+      "subject_id": null,
+      "field": "observation",
+      "proposal": {
+        "value": {
+          "ref": "u2",
+          "quote": "若不符合质量标准，则重复上述全部结晶操作（从一般区溶解物料）",
+          "span_id": "source:u2"
+        },
+        "field": {
+          "ref": "",
+          "quote": "",
+          "span_id": ""
+        },
+        "legend": {
+          "ref": "",
+          "quote": "",
+          "span_id": ""
+        },
+        "condition": {
+          "ref": "u2",
+          "quote": "若不符合质量标准",
+          "span_id": "source:u2"
+        },
+        "state": "conditional",
+        "reason": "不合格时的重复操作条件"
+      },
+      "kind": "observation",
+      "semantic_verdict": "supported",
+      "reason": "原文明确若不符合质量标准则重复全部结晶操作；value保留重做范围和从一般区溶解物料的起点，condition正确指向触发条件。",
+      "citation_audit": [
+        {
+          "citation_path": "/value",
+          "quote_verbatim": true,
+          "quote_occurrences": [
+            [
+              64,
+              94
+            ]
+          ],
+          "span_id": "source:u2",
+          "span_ref_matches": true,
+          "span_source_replays": true,
+          "quote_equals_span_text": false,
+          "containing_occurrences": [
+            [
+              64,
+              94
+            ]
+          ]
+        },
+        {
+          "citation_path": "/condition",
+          "quote_verbatim": true,
+          "quote_occurrences": [
+            [
+              64,
+              72
+            ]
+          ],
+          "span_id": "source:u2",
+          "span_ref_matches": true,
+          "span_source_replays": true,
+          "quote_equals_span_text": false,
+          "containing_occurrences": [
+            [
+              64,
+              72
+            ]
+          ]
+        }
+      ],
+      "review_notes": [
+        "这是条件操作要求，不代表本次已发生重结晶。"
+      ]
+    }
+  ],
+  "counts": {
+    "all_records": 50,
+    "by_kind": {
+      "subject_type": 19,
+      "property": 14,
+      "relation": 4,
+      "observation": 13
+    },
+    "semantic_verdicts": {
+      "supported": 29,
+      "undetermined": 8,
+      "unsupported": 13
+    },
+    "claims_only": {
+      "supported": 14,
+      "undetermined": 2,
+      "unsupported": 2
+    }
+  }
+}

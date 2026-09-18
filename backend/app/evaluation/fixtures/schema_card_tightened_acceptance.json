@@ -1,0 +1,345 @@
+{
+  "reference_level": "assistant_silver",
+  "source_sha256": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+  "notes": [
+    "本清单由前轮报告、原始返回和指定 Word 的固定 8 个片段独立复核后制定；仅用于调用后的局部验收，不得作为模型提示或识别输入，不是业务专家金标。",
+    "required_properties、required_relations 和 required_observations 必须全部满足；空输出不能通过。事实与保留的未决/缺失观察分别计数，观察不能计为已验证事实。",
+    "predicate 和 subject_class 为完整 IRI 的 localname。value 使用本轮保守归一化后的字符串或 JSON 布尔值；value_contains 要求所有指定子串均被同一属性值保留。owner_contains、subject_contains、object_contains 匹配实体原文名称或其逐字提及，不匹配任意邻近上下文。",
+    "subject_groups.required_property_indices 指向同案 required_properties 的0基索引；同组全部条件须由同一subject_id的事实共同满足，不能任取不同主体的属性拼合。组内subject_class限制该主体类型，anchor约束该主体锚点实际来源位置。distinct_subject_groups=true要求各组有互不相同的匹配主体ID。",
+    "row 和 column 均为 IR 的 0 基行列索引，约束实际值证据单元的位置。任何存在性匹配仍须通过主体卡片、关系方向、数据类型、指标/单位、逐字证据及表格行归属检查。",
+    "仅检查局部必留项不能证明全文精确率或召回率；未要求的额外输出也必须经过统一事实检查，不能因未列入本清单而自动接受。"
+  ],
+  "cases": {
+    "introduction": {
+      "required_properties": [
+        {
+          "predicate": "plannedProductionDate",
+          "value": "2026-06"
+        }
+      ],
+      "required_relations": [
+        {
+          "predicate": "describes",
+          "subject_id": "document",
+          "object_contains": "HRS-1597"
+        },
+        {
+          "predicate": "hasProductionPlan",
+          "subject_id": "document"
+        }
+      ],
+      "required_observations": [],
+      "forbidden_predicates": [
+        "outputMassRange_kg"
+      ],
+      "notes": [
+        "paragraph:26:0，evidence_id=e7ea5dada6b23ad6052384f5a6c6b75296797baf482c2fe0842911a1646a1e87，明示产品、临床备样计划及2026年6月。",
+        "备样计划须为 ClinicalSampleProductionPlan；document 关系方向不得反转。2025年08月/09月供样是另一时间背景，不能当本次计划日期；不得臆造具体日。",
+        "批量3.8-6.6kg、Ⅰ期临床及642/646车间是可抽取补充项，本轮最小验收不强制全部返回；若返回须保留计划归属，不能映射为已完成工艺产出。",
+        "paragraph:27:0 属于另一证据单元；不得把两段拼接引文挂在单一 evidence_id 下。"
+      ]
+    },
+    "product_properties": {
+      "required_properties": [
+        {
+          "predicate": "appearance",
+          "value": "类白色到白色粉末",
+          "owner_contains": "HRS-1597"
+        },
+        {
+          "predicate": "dosageForm",
+          "value": "口服片剂",
+          "owner_contains": "HRS-1597"
+        },
+        {
+          "predicate": "isOncologyDrug",
+          "value": false,
+          "owner_contains": "HRS-1597"
+        },
+        {
+          "predicate": "isCytotoxic",
+          "value": false,
+          "owner_contains": "HRS-1597"
+        }
+      ],
+      "required_relations": [],
+      "required_observations": [],
+      "forbidden_predicates": [],
+      "notes": [
+        "产品锚点 paragraph:33:0，7e40b958711ea6960b4883abb79b631567b8cc3a7354ad43fd8b0dcdc818037d。",
+        "性状 paragraph:38:0，c56a1c0abab309a9f15c8db4f6f0fa054d05e7024e9068cfef4bd11a50ce090a；剂型 paragraph:42:0，43f9fdc379f20eff81318db18d2aa7ae509b407f3a6bb03fde019ea4ec5f5e57。",
+        "肿瘤药物否 paragraph:43:0，f6d5c3353e371f53884516a227d0dc11fc5f2b947f8e2ec9608cd32894549d47；细胞毒药物否 paragraph:44:0，9d8516f9fbaa216fa3475cedc170ac1cb95489220b6ea84bfe8d8acad22a0bdf。",
+        "false 已表达属性否定，不能再加 negated 造成双重否定。溶解性不是本轮最小必留项；若返回，必须保留 DCM易溶、H2O和Heptane难溶的区别。"
+      ]
+    },
+    "process_equipment": {
+      "required_properties": [
+        {
+          "predicate": "equipmentID",
+          "value": "RE64611"
+        }
+      ],
+      "required_relations": [
+        {
+          "predicate": "usesEquipment",
+          "object_contains": "RE64611"
+        }
+      ],
+      "required_observations": [],
+      "forbidden_predicates": [
+        "producesFinalProduct",
+        "producesIntermediate",
+        "locatedIn"
+      ],
+      "notes": [
+        "table:0 row=0 column=1，332f40090c06eff4f9c04e9d2de846cf6dc7e535341ae6a246ccaec1fb376310，明示步骤一使用200L反应釜（RE64611）。",
+        "usesEquipment 必须由合法步骤/报告指向设备；设备编号事实和关系端点须属于同一设备。",
+        "HRS-1597粗品是投入物，本片段未明示产出物；不能生成 producesFinalProduct/producesIntermediate。RE64611 不足以证明安装在646车间，故本片段禁止 locatedIn。",
+        "不要求把每种投入物都建立关系，也不强制原文未支持的工艺结果。"
+      ]
+    },
+    "quality_condition": {
+      "required_properties": [
+        {
+          "predicate": "inProcessControl",
+          "value_contains": [
+            "单个杂质应不得过0.2%",
+            "总杂应不得过2.0%",
+            "重金属残留不得超过百万分之二十"
+          ]
+        }
+      ],
+      "required_relations": [],
+      "required_observations": [
+        {
+          "quote": "若不符合质量标准，则重复上述全部结晶操作（从一般区溶解物料）",
+          "state": "conditional",
+          "column": 1
+        }
+      ],
+      "forbidden_predicates": [
+        "detectionLimit_ug",
+        "quantitationLimit_ug",
+        "hasCleaningMethod"
+      ],
+      "notes": [
+        "table:0 row=2 column=1，48ca1378de103138ed5b81cadc51a59226bacfb6558400667fd3c39bbefb979b，同一原文单元包含检测、三个同时满足的标准以及条件重结晶。",
+        "现有 SynthesisStep.inProcessControl 支持IPC方法与验收标准；不能因没有独立 AcceptanceCriterion 类型而把全部标准当本体缺口。该属性仍要求合法工艺步骤主体。",
+        "value_contains 使用原文阈值子串而不要求整段完全一致，允许合法选择原文摘录范围；条件以独立观察保留，不能变成已执行的重结晶事实。",
+        "HPLC与重金属检测不是清洗方法；百分比及百万分比限度不是检测限/定量限，禁止为了适配字段而换成μg。"
+      ]
+    },
+    "storage": {
+      "required_properties": [
+        {
+          "predicate": "packagingType",
+          "subject_class": "StorageCondition",
+          "value": "双层聚乙烯薄膜袋外加药品包装用复合袋",
+          "row": 1
+        },
+        {
+          "predicate": "storageTemperature",
+          "subject_class": "StorageCondition",
+          "value": "不超过25℃",
+          "row": 1
+        },
+        {
+          "predicate": "shelfLife",
+          "subject_class": "StorageCondition",
+          "value": "24M",
+          "row": 1
+        }
+      ],
+      "required_relations": [],
+      "required_observations": [],
+      "subject_groups": [
+        {
+          "name": "storage_condition",
+          "required_property_indices": [0, 1, 2],
+          "subject_class": "StorageCondition"
+        }
+      ],
+      "forbidden_predicates": [
+        "lightProtection",
+        "storageHumidity"
+      ],
+      "notes": [
+        "table:3 row=1：产品 column=0；包装 column=1，8e18429ffe1fa8425cce79aeb6c4db99ea5760829527384ee964ffec67cbdd73；温度 column=2，622cb804a11629b61be543c3a3fff7b4560cba38ef5e13faee283be71b6fa88d；有效期 column=3，e47adf407a59221337f9297e143a6f39c52fbed93dda819f377e1c5a28a1aa9f。",
+        "三条属性须属于同一 StorageCondition 并保持该行HRS-1597的范围。完整包装不可只剩内袋，不超过25℃不可变成恒温25℃。",
+        "本轮保守保留24M，不额外推导起算日或到期日。表头提到湿度/是否避光不代表原文给出了相应值。"
+      ]
+    },
+    "residue_missing": {
+      "required_properties": [],
+      "required_relations": [],
+      "required_observations": [
+        {
+          "quote": "N/A",
+          "state": "not_applicable"
+        }
+      ],
+      "forbidden_predicates": [
+        "hasCleaningResidue",
+        "producesResidue"
+      ],
+      "no_facts": true,
+      "notes": [
+        "paragraph:80:0，72e4e463466bb3bd559a9723f42f09014be5d86ce051481cc5623a19fa87ca8e；章节为设备清洗残留物基本信息。",
+        "not_applicable 仅记录原文N/A标记，不裁决它的业务成因为不适用或未填，也不推出无残留。不能创建名为N/A的Residue或任何肯定/否定残留事实。",
+        "允许零事实，但必须有带证据的N/A状态观察；完全空输出不通过。"
+      ]
+    },
+    "pde_conflict": {
+      "required_properties": [
+        {
+          "predicate": "studyType",
+          "subject_class": "SharedLineAssessmentData",
+          "value": "大鼠14天亚急毒试验（试验1）",
+          "owner_contains": "大鼠",
+          "row": 1
+        },
+        {
+          "predicate": "sourceReference",
+          "subject_class": "SharedLineAssessmentData",
+          "value": "19191-25030-NG",
+          "owner_contains": "大鼠",
+          "row": 1
+        },
+        {
+          "predicate": "pde_mg_per_day",
+          "subject_class": "SharedLineAssessmentData",
+          "value": "100",
+          "owner_contains": "大鼠",
+          "row": 1
+        },
+        {
+          "predicate": "f1",
+          "subject_class": "SharedLineAssessmentData",
+          "value": "5",
+          "owner_contains": "大鼠",
+          "row": 1
+        },
+        {
+          "predicate": "studyType",
+          "subject_class": "SharedLineAssessmentData",
+          "value": "犬14天亚急毒",
+          "owner_contains": "犬",
+          "row": 2
+        },
+        {
+          "predicate": "sourceReference",
+          "subject_class": "SharedLineAssessmentData",
+          "value": "19191-25031-NG",
+          "owner_contains": "犬",
+          "row": 2
+        },
+        {
+          "predicate": "pde_mg_per_day",
+          "subject_class": "SharedLineAssessmentData",
+          "value": "7.5",
+          "owner_contains": "犬",
+          "row": 2
+        },
+        {
+          "predicate": "f1",
+          "subject_class": "SharedLineAssessmentData",
+          "value": "2",
+          "owner_contains": "犬",
+          "row": 2
+        }
+      ],
+      "required_relations": [],
+      "required_observations": [
+        {
+          "quote": "200",
+          "state": "unknown",
+          "column": 2
+        },
+        {
+          "quote": "30",
+          "state": "unknown",
+          "column": 2
+        }
+      ],
+      "subject_groups": [
+        {
+          "name": "rat_study",
+          "required_property_indices": [0, 1, 2, 3],
+          "subject_class": "SharedLineAssessmentData",
+          "anchor": {
+            "table_path": ["table:10"],
+            "row": 1,
+            "column": 1
+          }
+        },
+        {
+          "name": "dog_study",
+          "required_property_indices": [4, 5, 6, 7],
+          "subject_class": "SharedLineAssessmentData",
+          "anchor": {
+            "table_path": ["table:10"],
+            "row": 2,
+            "column": 1
+          }
+        }
+      ],
+      "distinct_subject_groups": true,
+      "forbidden_predicates": [
+        "noael_mg_per_kg_per_day",
+        "pod_mg_per_kg_per_day"
+      ],
+      "notes": [
+        "table:10：试验column=1、NOAEL column=2、F1 column=3、PDE column=8、来源column=9。大鼠row=1，犬row=2；二者必须是不同的SharedLineAssessmentData主体，不能用表标题代替试验身份。",
+        "大鼠试验859d82d093815d0491941be31f8a1fb58c2db749cf474d160cec2cc612a2a630；PDE100为2535b270085bd646ca40fdce53ddb61080cfd3756c0a4fbaba1ab22e21546d28；来源19191-25030-NG为c397bd6234effb8334de65557943c320be55b79f2aeceee1f2b917933d342c9e。",
+        "犬试验c839f95d57f323df72969ecbebe9824f566c7f6d0c9c6b1b2c4f50e573b74234；PDE7.5为5e801619b129f3615d71e87fa67328b265be34e1ac4e15f20168190d40da0e86；来源19191-25031-NG为9ad002bba89181c782c007a89280036d5397f26b6451fd3f19d283bff700d9d7。",
+        "PDE单位由同一列row=0的cfc262f650ff30ead660dabf39df7e6079cfd16d0c8cf8009fc6dde884173072 '(mg/天)'支持，不能仅因为谓词名带单位而认为已经证明单位。",
+        "API单元table:10/cell:1:0具有row_span=2，IR grid[2][0]指向该单元，允许按明确合并单元共享HRS-1597；其他试验、PDE、F值和来源不得跨行。",
+        "NOAEL表头没有mg/kg/day单位。原值200和30分别保留为单位待确认观察，不填入带该单位的正式属性。unknown描述单位/映射未决，不表示原文没有给数值。",
+        "100和7.5都是带各自试验上下文的报告值，不是本轮重新计算或裁决后的产品唯一PDE。不得把100自行改为20，也不得择7.5覆盖另一行。"
+      ]
+    },
+    "toxicity_unknown": {
+      "required_properties": [],
+      "required_relations": [],
+      "required_observations": [
+        {
+          "quote": "—",
+          "state": "unknown",
+          "column": 1
+        },
+        {
+          "quote": "×",
+          "state": "negated",
+          "column": 2
+        },
+        {
+          "quote": "—",
+          "state": "unknown",
+          "column": 3
+        },
+        {
+          "quote": "—",
+          "state": "unknown",
+          "column": 4
+        }
+      ],
+      "forbidden_predicates": [
+        "hasSafetyRiskAssessment",
+        "hasToxicityProfile",
+        "basedOnToxicityProfile",
+        "hasSensitizationPotential",
+        "isHighlySensitizing",
+        "isCytotoxic",
+        "isGenotoxic",
+        "isCarcinogenic"
+      ],
+      "notes": [
+        "table:11 row=1：column=1生殖发育毒性—，e0961fabea6068ef718f23444d23c89376d5f894d05a7c746e45601de7999d0b；column=2基因毒性×，36c860473268df555e3ba949da03e2382f785102bb6e47a44da580afe2083a37。",
+        "column=3致癌性—，5d10857419ef096af355a6c479931d6228f1b3ea809eef23f3e605974971efe2；column=4致敏性—，e799ecdf5d2e9224f95e0128fcec71cc2324235f43001a4da3bb201a90cbe6d5。",
+        "图例paragraph:117:0，3c294326188460eb8a1283c4c680a7ec4f53825f3fece0548be87229fa5c83a9：×表示没有相应毒性，—表示相关研究数据不充分。每个状态须保留相应表头、产品行和图例的解释支持。",
+        "四格必须分别保留；不能以一句泛化未知覆盖全部，不能把×也降为未知，不能把—映射为肯定/否定。",
+        "本体无受支持的对应属性时仅保存原文观察及未映射原因，不新建毒性谓词，也不使用含义不同的既有关系。合法document describes产品不是本案必留项，也不属于禁止范围。"
+      ]
+    }
+  }
+}

@@ -1,0 +1,652 @@
+{
+  "protocol_version": "ontology-tool-extraction-v1",
+  "discovery": {
+    "type": "object",
+    "properties": {
+      "entities": {
+        "type": "array",
+        "items": {
+          "$ref": "#/$defs/EntityProposal"
+        }
+      },
+      "properties": {
+        "type": "array",
+        "items": {
+          "$ref": "#/$defs/PropertyProposal"
+        }
+      },
+      "relations": {
+        "type": "array",
+        "items": {
+          "$ref": "#/$defs/RelationProposal"
+        }
+      },
+      "external_links": {
+        "type": "array",
+        "items": {
+          "$ref": "#/$defs/ExternalLinkProposal"
+        }
+      },
+      "observations": {
+        "type": "array",
+        "items": {
+          "$ref": "#/$defs/ObservationProposal"
+        }
+      },
+      "reference_bindings": {
+        "items": {
+          "$ref": "#/$defs/ReferenceBindingProposal"
+        },
+        "type": "array"
+      }
+    },
+    "required": [
+      "entities",
+      "properties",
+      "relations",
+      "external_links",
+      "observations"
+    ],
+    "additionalProperties": false,
+    "$defs": {
+      "Quote": {
+        "type": "object",
+        "properties": {
+          "evidence_id": {
+            "type": "string"
+          },
+          "text": {
+            "type": "string"
+          },
+          "context_text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "evidence_id",
+          "text",
+          "context_text"
+        ],
+        "additionalProperties": false
+      },
+      "Qualifiers": {
+        "type": "object",
+        "properties": {
+          "polarity": {
+            "type": "string",
+            "enum": [
+              "affirmed",
+              "negated"
+            ]
+          },
+          "modality": {
+            "type": "string",
+            "enum": [
+              "asserted",
+              "required",
+              "possible",
+              "planned",
+              "unspecified"
+            ]
+          },
+          "condition_support": {
+            "type": "array",
+            "items": {
+              "$ref": "#/$defs/Quote"
+            }
+          },
+          "scope_qualifiers": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "predicate_iri": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "quote": {
+                  "$ref": "#/$defs/Quote"
+                }
+              },
+              "required": [
+                "predicate_iri",
+                "quote"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "polarity",
+          "modality",
+          "condition_support",
+          "scope_qualifiers"
+        ],
+        "additionalProperties": false
+      },
+      "EntityProposal": {
+        "type": "object",
+        "properties": {
+          "local_id": {
+            "type": "string"
+          },
+          "class_iri": {
+            "type": "string"
+          },
+          "representation": {
+            "type": "string",
+            "enum": [
+              "mention",
+              "record"
+            ]
+          },
+          "mentions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/$defs/Quote"
+            }
+          },
+          "record_components": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "role": {
+                  "type": "string",
+                  "enum": [
+                    "subject",
+                    "field",
+                    "value",
+                    "context"
+                  ]
+                },
+                "quote": {
+                  "$ref": "#/$defs/Quote"
+                }
+              },
+              "required": [
+                "role",
+                "quote"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "identifier_claims": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "predicate_iri": {
+                  "type": "string"
+                },
+                "value_quote": {
+                  "$ref": "#/$defs/Quote"
+                }
+              },
+              "required": [
+                "predicate_iri",
+                "value_quote"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "local_id",
+          "class_iri",
+          "representation",
+          "mentions",
+          "record_components",
+          "identifier_claims"
+        ],
+        "additionalProperties": false
+      },
+      "PropertyProposal": {
+        "type": "object",
+        "properties": {
+          "local_id": {
+            "type": "string"
+          },
+          "subject_id": {
+            "type": "string"
+          },
+          "predicate_iri": {
+            "type": "string"
+          },
+          "value_quote": {
+            "$ref": "#/$defs/Quote"
+          },
+          "field_support": {
+            "type": "array",
+            "items": {
+              "$ref": "#/$defs/Quote"
+            }
+          },
+          "unit_support": {
+            "type": "array",
+            "items": {
+              "$ref": "#/$defs/Quote"
+            }
+          },
+          "qualifiers": {
+            "$ref": "#/$defs/Qualifiers"
+          },
+          "bridge_kind": {
+            "type": "string",
+            "enum": [
+              "explicit_assertion",
+              "owned_field_group",
+              "role_mapped_table",
+              "resolved_reference_chain",
+              "document_subject_description"
+            ]
+          },
+          "bridge_ref_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "local_id",
+          "subject_id",
+          "predicate_iri",
+          "value_quote",
+          "field_support",
+          "unit_support",
+          "qualifiers",
+          "bridge_kind",
+          "bridge_ref_ids"
+        ],
+        "additionalProperties": false
+      },
+      "RelationProposal": {
+        "type": "object",
+        "properties": {
+          "local_id": {
+            "type": "string"
+          },
+          "subject_id": {
+            "type": "string"
+          },
+          "predicate_iri": {
+            "type": "string"
+          },
+          "object_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "selection": {
+            "type": "string",
+            "enum": [
+              "all",
+              "one_of",
+              "alternatives",
+              "undetermined"
+            ]
+          },
+          "bridge_support": {
+            "type": "array",
+            "items": {
+              "$ref": "#/$defs/Quote"
+            }
+          },
+          "selection_support": {
+            "type": "array",
+            "items": {
+              "$ref": "#/$defs/Quote"
+            }
+          },
+          "qualifiers": {
+            "$ref": "#/$defs/Qualifiers"
+          },
+          "bridge_kind": {
+            "type": "string",
+            "enum": [
+              "explicit_assertion",
+              "owned_field_group",
+              "role_mapped_table",
+              "resolved_reference_chain",
+              "document_subject_description"
+            ]
+          },
+          "bridge_ref_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "source_assertion": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/SourceAssertion"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          }
+        },
+        "required": [
+          "local_id",
+          "subject_id",
+          "predicate_iri",
+          "object_ids",
+          "selection",
+          "bridge_support",
+          "selection_support",
+          "qualifiers",
+          "bridge_kind",
+          "bridge_ref_ids"
+        ],
+        "additionalProperties": false
+      },
+      "ExternalLinkProposal": {
+        "type": "object",
+        "properties": {
+          "local_id": {
+            "type": "string"
+          },
+          "subject_id": {
+            "type": "string"
+          },
+          "external_candidate_id": {
+            "type": "string"
+          },
+          "identity_support": {
+            "type": "array",
+            "items": {
+              "$ref": "#/$defs/Quote"
+            }
+          }
+        },
+        "required": [
+          "local_id",
+          "subject_id",
+          "external_candidate_id",
+          "identity_support"
+        ],
+        "additionalProperties": false
+      },
+      "ObservationProposal": {
+        "type": "object",
+        "properties": {
+          "subject_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "predicate_iri": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "quote": {
+            "$ref": "#/$defs/Quote"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "missing",
+              "unknown",
+              "ambiguous",
+              "unbound"
+            ]
+          },
+          "reason": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "subject_id",
+          "predicate_iri",
+          "quote",
+          "kind",
+          "reason"
+        ],
+        "additionalProperties": false
+      },
+      "ReferenceBindingProposal": {
+        "additionalProperties": false,
+        "properties": {
+          "local_id": {
+            "type": "string"
+          },
+          "source_id": {
+            "type": "string"
+          },
+          "target_id": {
+            "type": "string"
+          },
+          "binding_kind": {
+            "enum": [
+              "anaphora",
+              "coreference"
+            ],
+            "type": "string"
+          },
+          "support": {
+            "items": {
+              "$ref": "#/$defs/Quote"
+            },
+            "minItems": 1,
+            "type": "array"
+          }
+        },
+        "required": [
+          "local_id",
+          "source_id",
+          "target_id",
+          "binding_kind",
+          "support"
+        ],
+        "type": "object"
+      },
+      "SourceAssertion": {
+        "additionalProperties": false,
+        "properties": {
+          "subject_support": {
+            "items": {
+              "$ref": "#/$defs/Quote"
+            },
+            "type": "array"
+          },
+          "object_support": {
+            "items": {
+              "$ref": "#/$defs/ObjectSourceSupport"
+            },
+            "type": "array"
+          },
+          "predicate_support": {
+            "items": {
+              "$ref": "#/$defs/Quote"
+            },
+            "minItems": 1,
+            "type": "array"
+          },
+          "binding_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "subject_support",
+          "object_support",
+          "predicate_support",
+          "binding_ids"
+        ],
+        "type": "object"
+      },
+      "ObjectSourceSupport": {
+        "additionalProperties": false,
+        "properties": {
+          "object_id": {
+            "type": "string"
+          },
+          "support": {
+            "items": {
+              "$ref": "#/$defs/Quote"
+            },
+            "minItems": 1,
+            "type": "array"
+          }
+        },
+        "required": [
+          "object_id",
+          "support"
+        ],
+        "type": "object"
+      }
+    }
+  },
+  "verification": {
+    "type": "object",
+    "properties": {
+      "verifications": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "target_id": {
+              "type": "string"
+            },
+            "content_hash": {
+              "type": "string"
+            },
+            "facets": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "enum": [
+                      "type",
+                      "referent",
+                      "subject_role",
+                      "subject_binding",
+                      "object_binding",
+                      "field_role",
+                      "predicate",
+                      "bridge",
+                      "selection",
+                      "qualifiers",
+                      "counterevidence",
+                      "value",
+                      "unit",
+                      "identity_owner",
+                      "identity_key",
+                      "identity_scope",
+                      "reference_identity",
+                      "reference_scope"
+                    ],
+                    "type": "string"
+                  },
+                  "verdict": {
+                    "type": "string",
+                    "enum": [
+                      "supported",
+                      "unsupported",
+                      "undetermined"
+                    ]
+                  },
+                  "support": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/$defs/Quote"
+                    }
+                  },
+                  "counterevidence_support": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/$defs/Quote"
+                    }
+                  },
+                  "reason": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "name",
+                  "verdict",
+                  "support",
+                  "counterevidence_support",
+                  "reason"
+                ],
+                "additionalProperties": false
+              }
+            }
+          },
+          "required": [
+            "target_id",
+            "content_hash",
+            "facets"
+          ],
+          "additionalProperties": false
+        }
+      }
+    },
+    "required": [
+      "verifications"
+    ],
+    "additionalProperties": false,
+    "$defs": {
+      "Quote": {
+        "type": "object",
+        "properties": {
+          "evidence_id": {
+            "type": "string"
+          },
+          "text": {
+            "type": "string"
+          },
+          "context_text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "evidence_id",
+          "text",
+          "context_text"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  "api_protocol": "responses"
+}

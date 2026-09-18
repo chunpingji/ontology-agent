@@ -1,0 +1,143 @@
+{
+  "contract_version": "document-analysis-runs-v1",
+  "recognition_run_id": "ontology-tool-f4-negative-03",
+  "run_revision": 0,
+  "event_head": 1,
+  "metadata_snapshot_id": "05092dbb26de73aa6d1a2cd08c5c03198cb092862ee0a41f514cf19ce3056345",
+  "root_ref": {
+    "id": "742c210e9cabf71247b380f24b2ee8a0d01dc3feb987138bd02c56e44b3a8ec9",
+    "revision": 1
+  },
+  "projection": "verified",
+  "projection_policy": "ontology-tool-graph-v1",
+  "artifact_status": "partial",
+  "nodes": [
+    {
+      "entity_id": "742c210e9cabf71247b380f24b2ee8a0d01dc3feb987138bd02c56e44b3a8ec9",
+      "revision": 1,
+      "class_iri": "urn:validation:MeasurementReport",
+      "class_label": "测量记录",
+      "label": "source.docx",
+      "root": true,
+      "root_origin": "user_specified",
+      "identity_status": "document_local",
+      "decision_status": "supported",
+      "independent_review": "unreviewed",
+      "evidence_refs": [],
+      "grounding_kind": "document_root"
+    },
+    {
+      "entity_id": "20a19636475e12030e698329de0455787df335399765fe269c0cf63cccdb5dea",
+      "revision": 2,
+      "class_iri": "urn:validation:MeasurementReport",
+      "class_label": "urn:validation:MeasurementReport",
+      "label": "本测量记录",
+      "root": false,
+      "root_origin": "recognized",
+      "identity_status": "document_local",
+      "decision_status": "supported",
+      "independent_review": "unreviewed",
+      "evidence_refs": [
+        {
+          "document_hash": "a677af99167744bd1338a7a60106394ac3ad5c47a42d1159994641f0952a2c88",
+          "parser_version": "4",
+          "structure_hash": "a86bc40448af70b05bf3807ddc3ba06b8eb97c88ec7190804b68b9ccb54ed088",
+          "evidence_id": "c6d915ccaad6c0f8c15334de9e4db85a8cdab5097012f930376d5634ddb94070",
+          "section_node_id": "document",
+          "block_id": "paragraph:0:0",
+          "paragraph_index": 0,
+          "fragment_index": 0,
+          "table_path": null,
+          "row_index": null,
+          "column_index": null,
+          "span_start": 0,
+          "span_end": 5,
+          "physical_page_number": null
+        }
+      ],
+      "referent_ref": {
+        "id": "c38a6ba1d6761ebb25af77faa5abad2b9f14d95c1ab08ed2a0c18f747c3fd884",
+        "revision": 1
+      },
+      "type_decision_ref": {
+        "id": "9d7ec7aafde1a9d4f0eb0cb0376379a0804c34bf003d8880bd42176ecb1c72ca",
+        "revision": 1
+      },
+      "referent_decision_ref": {
+        "id": "6bf517bac25adf22f5623e90eceb6be6bfdf230848ccbfaf1657ea19b9a4cdc6",
+        "revision": 1
+      },
+      "dependency_refs": [
+        {
+          "id": "9d7ec7aafde1a9d4f0eb0cb0376379a0804c34bf003d8880bd42176ecb1c72ca",
+          "revision": 1
+        },
+        {
+          "id": "6bf517bac25adf22f5623e90eceb6be6bfdf230848ccbfaf1657ea19b9a4cdc6",
+          "revision": 1
+        },
+        {
+          "id": "76767a38bd62e0d6fbb7b1fab265bc82c5ab4011ebcb2d984123dd91fddd0564",
+          "revision": 1
+        }
+      ],
+      "grounding_kind": "mention",
+      "composition_decision_ref": null
+    }
+  ],
+  "edges": [],
+  "properties": [],
+  "coverage": [
+    {
+      "retrieval_diagnostics": null,
+      "candidate_policy": null,
+      "subject_ref": {
+        "id": "742c210e9cabf71247b380f24b2ee8a0d01dc3feb987138bd02c56e44b3a8ec9",
+        "revision": 1
+      },
+      "predicate_iri": "urn:validation:mass",
+      "predicate_label": "质量",
+      "phase1": 1,
+      "phase2": 0,
+      "examined": 0,
+      "incomplete": 1,
+      "unattempted": 0,
+      "unresolved_claims": 0,
+      "executed_phase_counts": {
+        "phase1": 1,
+        "phase2": 0
+      },
+      "pending_frontiers": 0,
+      "stop_reason": "attempted_incomplete",
+      "scope": {
+        "scope_id": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "members": []
+      }
+    }
+  ],
+  "progress": {
+    "tasks_attempted": 1,
+    "model_calls": 4,
+    "model_calls_reserved": 4,
+    "model_calls_unresolved": 0,
+    "records_planned": 1,
+    "records_examined": 0,
+    "records_incomplete": 1,
+    "records_unattempted": 0,
+    "phase_counts": {
+      "phase1": 1,
+      "phase2": 0
+    },
+    "supported": 1,
+    "unsupported": 0,
+    "undetermined": 0,
+    "pending_frontiers": 0,
+    "unresolved_claims": 0,
+    "invalidated_count": 0,
+    "stop_reason": "attempted_incomplete",
+    "completion": "incomplete",
+    "contract_version": "document-analysis-runs-v1"
+  },
+  "generated_from_hash": "1acee510a5d3a46ed7310f4949ffdb71b3b9facf68080b74c236e9c4670dbe2d",
+  "relationship_groups": []
+}

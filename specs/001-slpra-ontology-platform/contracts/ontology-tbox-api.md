@@ -70,6 +70,17 @@
 | PUT | `/restrictions/{id}` | `RestrictionUpdate` + `expected_version` |
 | DELETE | `/restrictions/{id}` | `?expected_version=` |
 
+约束编辑更新原 `id` 并递增版本。更新中遗漏的字段保留原值；显式 `null` 清空
+`property_iri`、`property_kind`、`filler_iri` 或 `cardinality`，按更新后的完整状态校验。
+切换类型时应清空不再适用的字段；清空新类型必需字段返回 `400`，版本冲突返回 `409`，
+均不改变原约束。页面提供原值回填、保存修改和取消编辑；取消不发送写请求。
+
+界面将属性约束嵌入对应的对象属性 / 关系（数据属性在「属性」页签）行内，展开后仅展示
+当前类中 `property_iri` 与该行匹配的约束。新增、编辑固定引用该属性，不提供关系 IRI 输入；
+对象属性默认引用已保存的 range，允许自定义目标类，编辑时保留原约束的目标类。
+继承属性下新增约束仍作用于当前选中的类，不修改声明该属性的父类。
+`disjoint/equivalent` 独立置于「基本 → 类公理」，不绑定属性。
+
 `RestrictionCreate` = `{ kind, property_iri?, property_kind?, filler_iri?, cardinality? }`，`kind ∈ {some,only,exactly,min,max,disjoint,equivalent}`。
 校验（→`400`）：`some/only` 需 `property_iri`+`filler_iri`；`exactly/min/max` 需 `property_iri`+`cardinality`；`disjoint/equivalent` 需目标类。映射 Owlready2 `is_a`（R1）。
 

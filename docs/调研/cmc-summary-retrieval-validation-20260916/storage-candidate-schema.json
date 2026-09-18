@@ -1,0 +1,314 @@
+{
+  "type": "object",
+  "properties": {
+    "subjects": {
+      "type": "object",
+      "properties": {
+        "document": {
+          "type": "object",
+          "properties": {
+            "attributes": {
+              "type": "object",
+              "properties": {},
+              "required": [],
+              "additionalProperties": false
+            },
+            "relations": {
+              "type": "object",
+              "properties": {
+                "hasStorageCondition": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "target_id": {
+                        "type": "string",
+                        "enum": [
+                          "s1"
+                        ]
+                      },
+                      "evidence": {
+                        "$ref": "#/$defs/Citation"
+                      },
+                      "condition": {
+                        "$ref": "#/$defs/Citation"
+                      },
+                      "polarity": {
+                        "type": "string",
+                        "enum": [
+                          "affirmed",
+                          "negated"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "target_id",
+                      "evidence",
+                      "condition",
+                      "polarity"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "maxItems": 6
+                }
+              },
+              "required": [
+                "hasStorageCondition"
+              ],
+              "additionalProperties": false
+            },
+            "anchor": {
+              "$ref": "#/$defs/Citation"
+            }
+          },
+          "required": [
+            "attributes",
+            "relations",
+            "anchor"
+          ],
+          "additionalProperties": false
+        },
+        "s1": {
+          "type": "object",
+          "properties": {
+            "attributes": {
+              "type": "object",
+              "properties": {
+                "lightProtection": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/Value"
+                  },
+                  "maxItems": 3
+                },
+                "packagingType": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/Value"
+                  },
+                  "maxItems": 3
+                },
+                "shelfLife": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/Value"
+                  },
+                  "maxItems": 3
+                },
+                "storageHumidity": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/Value"
+                  },
+                  "maxItems": 3
+                },
+                "storageTemperature": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/Value"
+                  },
+                  "maxItems": 3
+                }
+              },
+              "required": [
+                "lightProtection",
+                "packagingType",
+                "shelfLife",
+                "storageHumidity",
+                "storageTemperature"
+              ],
+              "additionalProperties": false
+            },
+            "relations": {
+              "type": "object",
+              "properties": {},
+              "required": [],
+              "additionalProperties": false
+            },
+            "anchor": {
+              "$ref": "#/$defs/Citation"
+            }
+          },
+          "required": [
+            "attributes",
+            "relations",
+            "anchor"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "document",
+        "s1"
+      ],
+      "additionalProperties": false
+    },
+    "observations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "value": {
+            "$ref": "#/$defs/Citation"
+          },
+          "field": {
+            "$ref": "#/$defs/Citation"
+          },
+          "legend": {
+            "$ref": "#/$defs/Citation"
+          },
+          "condition": {
+            "$ref": "#/$defs/Citation"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "unknown",
+              "not_applicable",
+              "negated",
+              "conditional",
+              "unmapped"
+            ]
+          },
+          "reason": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "value",
+          "field",
+          "legend",
+          "condition",
+          "state",
+          "reason"
+        ],
+        "additionalProperties": false
+      },
+      "maxItems": 12
+    }
+  },
+  "required": [
+    "subjects",
+    "observations"
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "Citation": {
+      "type": "object",
+      "properties": {
+        "ref": {
+          "type": "string",
+          "enum": [
+            "",
+            "u0",
+            "u1",
+            "u2",
+            "u3",
+            "u4",
+            "u5",
+            "u6",
+            "u7",
+            "u8",
+            "u9",
+            "u10"
+          ]
+        },
+        "quote": {
+          "type": "string"
+        },
+        "span_id": {
+          "type": "string",
+          "enum": [
+            "",
+            "source:u0",
+            "source:u1",
+            "source:u2",
+            "source:u3",
+            "source:u4",
+            "source:u5",
+            "source:u6",
+            "source:u7",
+            "source:u8",
+            "source:u9",
+            "source:u10",
+            "mention-311f08b4762051a42248c2ea",
+            "mention-79c8593656511667523e8742",
+            "mention-f3f08f3d4d17ba91651442b9",
+            "mention-73f64c7ac3727b0ca47c059e",
+            "mention-bdc897bb6cc1b2404b767d0c",
+            "mention-a44eda73a5ff737c32428d2d",
+            "mention-6331e48829e5fd5a6fbf2755",
+            "mention-51e808ff9840667c13336533",
+            "mention-fb7f3c22d78ea38a9bea3799",
+            "mention-c1e5ed2dcba2687cb6c13f1f",
+            "mention-30dc457ada760eb021daec74",
+            "mention-402324eb3850e39a8de93d94",
+            "mention-75d4dbb07478a3aa6f2fd2d5",
+            "mention-bb8404eda13bab64f9a8a9db",
+            "mention-5e6dcdca0ea7b0f65d315c82",
+            "mention-69d6b6d04dad5a6ae3f4a916",
+            "mention-00f355b16f0f9a273222d692",
+            "mention-ec49a6677dfe1b5b9f84c571",
+            "mention-cbee55baf103e31c68e14c4e",
+            "mention-00cb07e0b172326558924d7b",
+            "mention-7218bdf6372c65c4617a6286",
+            "mention-b3ebb97328cbec578fc62c29",
+            "mention-b920faaa7000a18cc3dd08f3",
+            "mention-5d359a607bb353bc3e6672f3",
+            "evidence:u0:0:2",
+            "evidence:u1:0:4",
+            "evidence:u2:0:34",
+            "evidence:u3:0:6",
+            "evidence:u4:0:4",
+            "evidence:u5:0:16",
+            "evidence:u6:0:7",
+            "evidence:u7:0:8",
+            "evidence:u7:0:3",
+            "evidence:u7:3:8",
+            "evidence:u8:0:18",
+            "evidence:u9:0:20",
+            "evidence:u9:15:17",
+            "evidence:u9:17:18",
+            "evidence:u10:0:6",
+            "evidence:u10:3:5",
+            "evidence:u10:5:6"
+          ]
+        }
+      },
+      "required": [
+        "ref",
+        "quote",
+        "span_id"
+      ],
+      "additionalProperties": false
+    },
+    "Value": {
+      "type": "object",
+      "properties": {
+        "raw": {
+          "type": "string"
+        },
+        "source": {
+          "$ref": "#/$defs/Citation"
+        },
+        "field": {
+          "$ref": "#/$defs/Citation"
+        },
+        "unit": {
+          "$ref": "#/$defs/Citation"
+        },
+        "condition": {
+          "$ref": "#/$defs/Citation"
+        }
+      },
+      "required": [
+        "raw",
+        "source",
+        "field",
+        "unit",
+        "condition"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

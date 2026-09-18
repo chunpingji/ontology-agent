@@ -11,9 +11,10 @@ from __future__ import annotations
 from typing import Annotated, Any, Literal, Self
 from uuid import UUID
 
-from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, model_validator
+from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, model_serializer, model_validator
 
-from app.schemas.evidence import EvidenceAnchor
+from app.schemas.evidence import EvidenceAnchor, ExternalRecordProvenance
+from app.schemas.retrieval_diagnostics import RetrievalDiagnosticCarrier
 
 CONTRACT_VERSION = "document-analysis-runs-v1"
 
@@ -60,6 +61,7 @@ RunStage = Literal[
 ]
 ArtifactAvailability = Literal["pending", "ready", "partial", "failed"]
 GraphProjection = Literal[
+    "verified",
     "effective_affirmed",
     "all_candidates",
     "unassociated",
@@ -68,9 +70,13 @@ GraphProjection = Literal[
     "undetermined",
     "rejected",
 ]
-AvailableAction = Literal["pause", "resume", "cancel", "delete"]
-RunOperation = Literal["pause", "resume", "cancel", "delete"]
+AvailableAction = Literal[
+    "pause", "resume", "cancel", "delete", "ranking_budget_enable", "ranking_budget_disable",
+]
+RunOperation = AvailableAction
 AssertionPolarity = Literal["affirmed", "negated", "conditional", "uncertain"]
+AssertionModality = Literal["asserted", "required", "possible", "planned", "unspecified"]
+RelationSelection = Literal["all", "one_of", "alternatives", "undetermined"]
 IndependentReview = Literal["unreviewed", "accepted", "rejected"]
 
 
@@ -94,6 +100,10 @@ class CreateRunRequest(ApiModel):
     root_class_iri: FullIri
     request_key: RequestKey
     metadata_mode: MetadataMode = "generate_summary"
+
+
+class CreateTemplateRunRequest(ApiModel):
+    request_key: RequestKey
 
 
 class CreateRunInput(ApiModel):
@@ -124,6 +134,20 @@ class CreateRunResponse(RunWatermark):
     links: RunLinks
 
 
+class DocumentAnalysisRunSummary(RunWatermark):
+    status: RunStatus
+    stage: RunStage
+    input: CreateRunInput
+    created_at: AwareDatetime
+    expires_at: AwareDatetime | None = None
+
+
+class DocumentAnalysisRunListResponse(ApiModel):
+    contract_version: ContractVersion = CONTRACT_VERSION
+    items: list[DocumentAnalysisRunSummary]
+    has_more: bool
+
+
 class RunInput(ApiModel):
     filename: NonEmpty
     root_class_iri: FullIri
@@ -137,6 +161,8 @@ class RunIdentities(ApiModel):
     ontology_snapshot_id: str | None = None
     metadata_snapshot_id: str | None = None
     graph_snapshot_id: str | None = None
+    structure_snapshot_id: str | None = None
+    ranking_summary_id: str | None = None
     fingerprint_status: Literal["provisional", "frozen"]
 
 
@@ -159,9 +185,11 @@ class DecisionCounts(ApiModel):
     not_checked: int = Field(default=0, ge=0)
 
 
-class RunProgress(ApiModel):
+class RunProgress(ApiModel, RetrievalDiagnosticCarrier):
     tasks_attempted: int = Field(default=0, ge=0)
     model_calls: int = Field(default=0, ge=0)
+    model_calls_reserved: int = Field(default=0, ge=0)
+    model_calls_unresolved: int = Field(default=0, ge=0)
     records_planned: int = Field(default=0, ge=0)
     records_examined: int = Field(default=0, ge=0)
     records_incomplete: int = Field(default=0, ge=0)
@@ -170,6 +198,7 @@ class RunProgress(ApiModel):
     decisions: DecisionCounts = Field(default_factory=DecisionCounts)
     pending_frontiers: int = Field(default=0, ge=0)
     stop_reason: str | None = None
+    completion: Literal["incomplete", "in_scope_complete", "policy_complete"] | None = None
     contract_version: ContractVersion = CONTRACT_VERSION
     event_head: int = Field(ge=0)
     artifact_revision: int = Field(ge=0)
@@ -179,6 +208,12 @@ class RunProgress(ApiModel):
         accounted = self.records_examined + self.records_incomplete + self.records_unattempted
         if self.records_planned != accounted:
             raise ValueError("records_planned must equal examined + incomplete + unattempted")
+        if self.completion == "policy_complete" and (
+            self.candidate_policy != "sparse-candidates-v1"
+            or self.records_incomplete or self.records_unattempted or self.pending_frontiers
+            or self.model_calls_unresolved
+        ):
+            raise ValueError("candidate policy completion cannot hide unfinished recognition work")
         return self
 
 
@@ -191,8 +226,10 @@ class RunFailure(ApiModel):
 
 
 class DocumentAnalysisRunResponse(RunWatermark):
+    extraction_protocol: str | None = None
     status: RunStatus
     stage: RunStage
+    ranking_budget_enabled: bool = True
     input: RunInput
     identities: RunIdentities
     artifacts: RunArtifacts
@@ -204,6 +241,13 @@ class DocumentAnalysisRunResponse(RunWatermark):
     paused_at: AwareDatetime | None = None
     finished_at: AwareDatetime | None = None
     expires_at: AwareDatetime | None = None
+
+    @model_serializer(mode="wrap")
+    def preserve_legacy_protocol(self, handler):
+        data = handler(self)
+        if "extraction_protocol" not in self.model_fields_set:
+            data.pop("extraction_protocol", None)
+        return data
 
     @model_validator(mode="after")
     def validate_watermarks_and_actions(self) -> Self:
@@ -245,6 +289,21 @@ class Pagination(ApiModel):
     physical_page_numbers_available: bool
     is_estimated: bool
     warning: str | None = None
+
+
+class ReportDocumentSourceResponse(ApiModel):
+    document_iri: FullIri
+    source_job_id: UUID
+    document_version: NonEmpty
+    root_class_iri: FullIri
+    filename: NonEmpty
+    document_hash: Digest
+    analysis_id: NonEmpty
+    structure_hash: Digest
+    content: DocumentContent
+    section_tree: dict[str, Any]
+    pagination: Pagination
+    warnings: list[str] = Field(default_factory=list)
 
 
 class MetadataArtifactResponse(RunWatermark):
@@ -295,6 +354,10 @@ class RevisionRef(ApiModel):
     revision: int = Field(ge=1)
 
 
+class TemplateRunResponse(ApiModel):
+    run: DocumentAnalysisRunResponse | None = None
+
+
 class EntityRef(ApiModel):
     entity_id: NonEmpty
     revision: int = Field(ge=1)
@@ -313,12 +376,57 @@ class GraphSnapshotHeader(ApiModel):
 
 
 class RoleSourceSelectionRefs(ApiModel):
+    unit: list[str] = Field(default_factory=list)
     subject: list[str] = Field(default_factory=list)
     object: list[str] = Field(default_factory=list)
     value: list[str] = Field(default_factory=list)
     predicate_bridge: list[str] = Field(default_factory=list)
     condition: list[str] = Field(default_factory=list)
     counterevidence: list[str] = Field(default_factory=list)
+    selection: list[str] = Field(default_factory=list)
+
+    @model_serializer(mode="wrap")
+    def preserve_legacy_roles(self, handler):
+        data = handler(self)
+        if "selection" not in self.model_fields_set:
+            data.pop("selection", None)
+        return data
+
+
+class ScopeMember(ApiModel):
+    relation_ref: RevisionRef
+    member_ref: EntityRef
+
+
+class TraversalScope(ApiModel):
+    scope_id: Digest
+    members: list[ScopeMember]
+
+
+class PublicScopeQualifier(ApiModel):
+    predicate_iri: FullIri | None
+    text: NonEmpty
+    evidence_selection_ids: list[str]
+
+
+class ResolvedScopeMember(ScopeMember):
+    selection: RelationSelection | None
+    polarity: AssertionPolarity
+    modality: AssertionModality
+    conditions: list[str]
+    applicability: list[PublicScopeQualifier]
+    evidence_selection_ids: list[str]
+
+
+class ScopeResolution(ApiModel):
+    scope_id: Digest
+    steps: list[ResolvedScopeMember]
+
+
+class GraphPredicateMenuItem(ApiModel):
+    predicate_iri: FullIri
+    predicate_label: NonEmpty
+    kind: Literal["property", "relationship"]
 
 
 class GraphEntity(ApiModel):
@@ -333,6 +441,22 @@ class GraphEntity(ApiModel):
     ] = "document_local"
     independent_review: IndependentReview = "unreviewed"
     source_selection_refs: list[str] = Field(default_factory=list)
+    predicate_menu: list[GraphPredicateMenuItem] | None = None
+    grounding_kind: Literal["document_root", "mention", "record"] | None = None
+    type_decision_ref: RevisionRef | None = None
+    referent_decision_ref: RevisionRef | None = None
+    composition_decision_ref: RevisionRef | None = None
+    external_provenance: list[ExternalRecordProvenance] = Field(default_factory=list)
+    identity_decision_refs: list[RevisionRef] = Field(default_factory=list)
+
+    @model_serializer(mode="wrap")
+    def preserve_legacy_grounding(self, handler):
+        data = handler(self)
+        for key in ("grounding_kind", "type_decision_ref", "referent_decision_ref",
+                    "composition_decision_ref", "external_provenance", "identity_decision_refs"):
+            if key not in self.model_fields_set:
+                data.pop(key, None)
+        return data
 
 
 class GraphAssertion(ApiModel):
@@ -355,6 +479,16 @@ class GraphAssertion(ApiModel):
     reason_code: str | None = None
     reason: str | None = None
     source_selection_refs: RoleSourceSelectionRefs
+    modality: AssertionModality | None = None
+    scope: TraversalScope | None = None
+
+    @model_serializer(mode="wrap")
+    def preserve_legacy_qualifiers(self, handler):
+        data = handler(self)
+        for key in ("modality", "scope"):
+            if key not in self.model_fields_set:
+                data.pop(key, None)
+        return data
 
 
 class GraphProperty(GraphAssertion):
@@ -363,6 +497,7 @@ class GraphProperty(GraphAssertion):
     normalized_value: Any = None
     datatype_iri: str | None = None
     unit: str | None = None
+    normalization_record: dict[str, Any] = Field(default_factory=dict)
 
 
 class GraphRelationship(GraphAssertion):
@@ -370,7 +505,20 @@ class GraphRelationship(GraphAssertion):
     direction: Literal["subject_to_object", "object_to_subject"] = "subject_to_object"
 
 
-class CoverageSubject(ApiModel):
+class GraphRelationshipGroup(GraphAssertion):
+    object_refs: list[EntityRef] = Field(min_length=2)
+    direction: Literal["subject_to_object", "object_to_subject"] = "subject_to_object"
+    selection: RelationSelection
+
+    @model_validator(mode="after")
+    def unique_members(self) -> Self:
+        if len({ref.entity_id for ref in self.object_refs}) != len(self.object_refs):
+            raise ValueError("relationship group members must identify distinct entities")
+        return self
+
+
+class CoverageSubject(ApiModel, RetrievalDiagnosticCarrier):
+    scope: TraversalScope | None = None
     subject_ref: EntityRef
     predicate_iri: FullIri
     predicate_label: NonEmpty
@@ -379,8 +527,17 @@ class CoverageSubject(ApiModel):
     records_incomplete: int = Field(ge=0)
     records_unattempted: int = Field(ge=0)
     phase_counts: PhaseCounts = Field(default_factory=PhaseCounts)
+    # phase_counts is the retained plan partition, not execution evidence.
+    executed_phase_counts: PhaseCounts | None = None
     pending_frontiers: int = Field(default=0, ge=0)
     stop_reason: str | None = None
+
+    @model_serializer(mode="wrap")
+    def preserve_legacy_scope(self, handler):
+        data = handler(self)
+        if "scope" not in self.model_fields_set:
+            data.pop("scope", None)
+        return data
 
     @model_validator(mode="after")
     def conserve_records(self) -> Self:
@@ -390,7 +547,7 @@ class CoverageSubject(ApiModel):
         return self
 
 
-class GraphCoverage(ApiModel):
+class GraphCoverage(ApiModel, RetrievalDiagnosticCarrier):
     subjects: list[CoverageSubject] = Field(default_factory=list)
     records_planned: int = Field(default=0, ge=0)
     records_examined: int = Field(default=0, ge=0)
@@ -415,31 +572,104 @@ class GraphUnresolved(ApiModel):
     unassociated_entities: int = Field(default=0, ge=0)
 
 
+class RankingRecord(ApiModel):
+    record_id: str
+    rank: int = Field(ge=1)
+    channels: list[str] = Field(default_factory=list)
+    intent_ranks: dict[str, int] = Field(default_factory=dict)
+    raw_scores: dict[str, float] = Field(default_factory=dict)
+
+
+class RankingEpoch(ApiModel):
+    epoch_id: str
+    status: Literal["committed", "paused"] = "committed"
+    budget_accounted: bool = True
+    query_id: str | None = None
+    subject_ref: EntityRef | None = None
+    predicate_iri: str | None = None
+    plan_id: str | None = None
+    requested_mode: str = "deterministic"
+    actual_mode: str = "deterministic"
+    degraded: bool = False
+    reason: str | None = None
+    records: list[RankingRecord] = Field(default_factory=list)
+
+
+class RankingCost(ApiModel):
+    model_calls: int = Field(default=0, ge=0)
+    observed_requests: int = Field(default=0, ge=0)
+    input_pairs: int = Field(default=0, ge=0)
+    input_tokens: int = Field(default=0, ge=0)
+    reserved_input_tokens: int = Field(default=0, ge=0)
+    measured_input_tokens: int = Field(default=0, ge=0)
+    unknown_request_count: int = Field(default=0, ge=0)
+    queue_seconds: float = Field(default=0, ge=0)
+    retries: int = Field(default=0, ge=0)
+    elapsed_seconds: float = Field(default=0, ge=0)
+
+
+class GraphRanking(ApiModel):
+    budget_enabled: bool = True
+    requested_mode: str = "deterministic"
+    actual_modes: list[str] = Field(default_factory=list)
+    degraded: bool = False
+    paused: bool = False
+    reasons: list[str] = Field(default_factory=list)
+    committed_epochs: int = Field(default=0, ge=0)
+    epochs: list[RankingEpoch] = Field(default_factory=list)
+    cost: RankingCost = Field(default_factory=RankingCost)
+
+
+class EvidenceRepairSummary(ApiModel):
+    enabled: bool = False
+    total: int = Field(default=0, ge=0)
+    status_counts: dict[str, int] = Field(default_factory=dict)
+    reason_counts: dict[str, int] = Field(default_factory=dict)
+    rechecks: int = Field(default=0, ge=0)
+
+
 class GraphArtifactResponse(RunWatermark):
+    extraction_protocol: str | None = None
     availability: ArtifactAvailability
     projection: GraphProjection = "effective_affirmed"
     graph_snapshot: GraphSnapshotHeader | None = None
     entities: list[GraphEntity] = Field(default_factory=list)
     properties: list[GraphProperty] = Field(default_factory=list)
     relationships: list[GraphRelationship] = Field(default_factory=list)
+    relationship_groups: list[GraphRelationshipGroup] = Field(default_factory=list)
+    scope_resolutions: list[ScopeResolution] = Field(default_factory=list)
     invalidated_refs: list[RevisionRef] = Field(default_factory=list)
     coverage: GraphCoverage = Field(default_factory=GraphCoverage)
     unresolved: GraphUnresolved = Field(default_factory=GraphUnresolved)
+    ranking: GraphRanking = Field(default_factory=GraphRanking)
+    evidence_repair: EvidenceRepairSummary = Field(default_factory=EvidenceRepairSummary)
     error: RunFailure | None = None
+
+    @model_serializer(mode="wrap")
+    def preserve_legacy_graph(self, handler):
+        data = handler(self)
+        for key in ("extraction_protocol", "relationship_groups", "scope_resolutions"):
+            if key not in self.model_fields_set:
+                data.pop(key, None)
+        return data
 
     @model_validator(mode="after")
     def validate_projection(self) -> Self:
         if self.availability == "pending":
             if self.graph_snapshot is not None:
                 raise ValueError("pending graph cannot expose an uncommitted snapshot")
-            if self.entities or self.properties or self.relationships:
+            if self.entities or self.properties or self.relationships or self.relationship_groups:
                 raise ValueError("pending graph cannot expose projected graph items")
         elif self.availability in {"ready", "partial"} and self.graph_snapshot is None:
             raise ValueError("available graph requires a public snapshot header")
 
-        if self.projection == "effective_affirmed":
-            for item in [*self.properties, *self.relationships]:
-                if item.polarity != "affirmed":
+        if (self.projection == "verified"
+                and self.extraction_protocol != "ontology-tool-extraction-v1"):
+            raise ValueError("unsupported_projection")
+        if self.projection in {"effective_affirmed", "verified"}:
+            resolved_scopes = {scope.scope_id: scope for scope in self.scope_resolutions}
+            for item in [*self.properties, *self.relationships, *self.relationship_groups]:
+                if self.projection == "effective_affirmed" and item.polarity != "affirmed":
                     raise ValueError("effective_affirmed cannot include non-affirmed assertions")
                 if not (
                     item.structural_valid
@@ -451,12 +681,28 @@ class GraphArtifactResponse(RunWatermark):
                     and item.independent_review != "rejected"
                 ):
                     raise ValueError(
-                        "effective_affirmed can include only current proof-gate results"
+                        f"{self.projection} can include only current proof-gate results"
                     )
+                if self.extraction_protocol == "ontology-tool-extraction-v1":
+                    if item.scope is None or item.modality is None:
+                        raise ValueError("tool graph assertions must retain modality and scope")
+                    if (isinstance(item, GraphRelationshipGroup)
+                            and item.selection == "undetermined"):
+                        raise ValueError("verified relationship groups require resolved selection")
+                    if item.scope.members:
+                        resolution = resolved_scopes.get(item.scope.scope_id)
+                        if resolution is None or [
+                            (step.relation_ref, step.member_ref) for step in resolution.steps
+                        ] != [
+                            (step.relation_ref, step.member_ref) for step in item.scope.members
+                        ]:
+                            raise ValueError("verified scope requires all exact parent resolutions")
         return self
 
 
 SourceSelectionRole = Literal[
+    "selection",
+    "unit",
     "entity",
     "subject",
     "object",
@@ -496,14 +742,12 @@ class SourceSelection(ApiModel):
         return self
 
 
-class SourceArtifactResponse(ApiModel):
+class SourceSelectionResponse(ApiModel):
     contract_version: ContractVersion = CONTRACT_VERSION
     recognition_run_id: UUID
     analysis_id: NonEmpty
     document_hash: Digest
     structure_hash: Digest
-    filename: NonEmpty
-    content: DocumentContent
     selection: SourceSelection | None = None
     anchors: list[EvidenceAnchor] = Field(default_factory=list)
 
@@ -515,6 +759,11 @@ class SourceArtifactResponse(ApiModel):
             if anchor.structure_hash != self.structure_hash:
                 raise ValueError("source anchor belongs to another structure revision")
         return self
+
+
+class SourceArtifactResponse(SourceSelectionResponse):
+    filename: NonEmpty
+    content: DocumentContent
 
 
 class RunControlRequest(ApiModel):
@@ -531,6 +780,7 @@ class DeleteRunRequest(ApiModel):
 class RunControlResponse(RunWatermark):
     status: RunStatus
     stage: RunStage
+    ranking_budget_enabled: bool = True
     operation: RunOperation
     operation_status: Literal["accepted"] = "accepted"
     available_actions: list[AvailableAction] = Field(default_factory=list)
@@ -581,7 +831,9 @@ class SseEvent(ApiModel):
 
 
 ErrorCode = Literal[
+    "unsupported_projection",
     "INVALID_REQUEST",
+    "CONTEXT_CHANGED",
     "UNAUTHENTICATED",
     "ROLE_FORBIDDEN",
     "RUN_NOT_FOUND",
@@ -593,10 +845,15 @@ ErrorCode = Literal[
     "RUN_EXPIRED",
     "SOURCE_TOO_LARGE",
     "UNSUPPORTED_SOURCE_TYPE",
+    "SOURCE_NOT_FOUND",
+    "SOURCE_TYPE_MISMATCH",
     "EMPTY_SOURCE",
     "INVALID_WORD",
     "INVALID_ROOT_CLASS",
     "ONTOLOGY_UNAVAILABLE",
+    "ADAPTIVE_CONFIGURATION_INVALID",
+    "RECOGNITION_MODE_MISMATCH",
+    "FINDER_CONFIG_INVALID",
 ]
 
 
@@ -664,3 +921,57 @@ __all__ = [
     "SourceSelection",
     "SseEvent",
 ]
+
+
+class HarnessDetail(ApiModel):
+    text: str
+    truncated: bool
+
+
+class HarnessOperation(ApiModel):
+    id: str
+    kind: Literal["model", "tool", "validation", "graph"]
+    name: str
+    status: str
+    started_at: AwareDatetime
+    elapsed_ms: int | None
+    arguments: HarnessDetail | None = None
+    result: HarnessDetail | None = None
+
+
+class HarnessCall(ApiModel):
+    call_id: str
+    stage: Literal["discovery", "verification"]
+    subject_label: str | None = None
+    predicate_label: str | None = None
+    input_tokens: int
+    status: str
+    started_at: AwareDatetime
+    model: str
+    usage: dict[str, Any] | None = None
+
+
+class HarnessSnapshot(ApiModel):
+    session_id: str
+    sequence: int
+    call: HarnessCall | None
+    output: str
+    thinking: str
+    truncated: list[Literal["output", "thinking"]]
+    operations: list[HarnessOperation]
+    tool_counts: dict[str, int]
+    updated_at: AwareDatetime | None
+
+
+class HarnessResponse(ApiModel):
+    recognition_run_id: UUID
+    configuration: dict[str, Any]
+    snapshot: HarnessSnapshot | None
+
+
+class HarnessContextResponse(ApiModel):
+    recognition_run_id: UUID
+    call_id: str
+    request: dict[str, Any]
+    schema_card: dict[str, Any]
+    class_labels: dict[str, str] = Field(default_factory=dict)

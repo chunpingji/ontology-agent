@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 from collections import Counter
+from copy import deepcopy
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
@@ -26,9 +27,12 @@ from app.services.document_analysis import execution as execution_service
 from app.services.document_analysis.run_store import (
     DocumentAnalysisRunStore,
     FenceViolation,
+    content_hash,
 )
+from app.services.document_analysis.state_artifacts import decode_state
 from app.services.extraction.ontology_guided.contracts import GraphNode
 from app.services.extraction.ontology_guided.executor import TaskOutcome
+from app.services.llm.model_runtime import ModelWaitFailure
 
 ROOT_IRI = "https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport"
 
@@ -93,9 +97,67 @@ def _word_bytes(tmp_path: Path) -> bytes:
     return path.read_bytes()
 
 
-def _create_pending_run(client, analyst_headers, tmp_path, monkeypatch, *, key: str) -> str:
+def frozen_legacy_policy(*, current_state, evidence_repair):
+    # These tests hydrate the older frozen execution domains; a new online
+    # default must not silently reinterpret their CountingAdapter contract.
+    legacy_policy = {}
+    if current_state or settings.document_analysis_performance_enabled or evidence_repair:
+        legacy_policy = {
+            "state_storage_version": 4 if current_state else 2, "frontier_version": 2,
+            "recognition_inflight": 1,
+            "template_interleaving": (
+                settings.document_analysis_template_interleaving or evidence_repair
+            ),
+        }
+    if evidence_repair:
+        from app.services.document_analysis.adaptive_configuration import configured_adaptive_policy
+        from app.services.extraction.ontology_guided.value_constraints import (
+            UNIT_NORMALIZATION_VERSION,
+        )
+
+        adaptive = configured_adaptive_policy(settings)
+        legacy_policy.update({
+            "evidence_repair": "evidence-repair-v1",
+            "layered_recognition": "dependency-ready-v1",
+            "source_object_recognition": "source-object-recognition-v1",
+            "cmc_describes_type_scope": "drug-product-only-v1",
+            "expert_review_repair": "expert-review-repair-v1",
+            "candidate_planning": "sparse-candidates-v1",
+            "incremental_performance": "incremental-performance-v1",
+            "state_storage_version": 4 if current_state else 3,
+            **({"state_baseline_interval": 32} if not current_state else {}),
+            "semantic_expansion": "bounded-semantic-v1",
+            "process_granularity": "whole-method-field-v1",
+            "attribute_priority": "source-field-priority-v1",
+            "heuristic_policy": "heuristic-first-v3",
+            **({"heuristic_policy": "heuristic-first-v4",
+                "adaptive_retrieval": adaptive.model_dump(mode="json")} if adaptive else {}),
+            "field_bindings": "ir-field-bindings-v1", "owner_binding": "source-owned-binding-v2",
+            "scope_protocol": "source-quoted-scope-v1", "evidence_work": "evidence-work-v2",
+            "literal_quotes": "source-integer-quotes-v2",
+            "unit_normalization": UNIT_NORMALIZATION_VERSION,
+            "proof_menu": "proof-menu-v1", "identity": "physical-mention-v1",
+            "model_call_state_version": 2, "max_lineage_calls": 8,
+        })
+    return legacy_policy
+
+
+def _create_pending_run(
+    client, analyst_headers, tmp_path, monkeypatch, *, key: str, evidence_repair: bool = False,
+    current_state: bool = False, adaptive_mode: str = "disabled",
+) -> str:
+    # Shared recovery fixtures freeze historical protocols independently of online defaults.
+    from app.services.document_analysis import application
+
+    monkeypatch.setattr(application, "CURRENT_STATE_STORAGE_VERSION", 4 if current_state else 2)
+    monkeypatch.setattr(settings, "document_analysis_evidence_repair_enabled", evidence_repair)
+    monkeypatch.setattr(settings, "document_analysis_adaptive_retrieval_mode", adaptive_mode)
     monkeypatch.setattr(settings, "document_analysis_storage_dir", tmp_path / "run-artifacts")
     monkeypatch.setattr(document_analysis, "dispatch_run", lambda *_args, **_kwargs: None)
+    legacy_policy = frozen_legacy_policy(
+        current_state=current_state, evidence_repair=evidence_repair,
+    )
+    monkeypatch.setattr(execution_service, "freeze_tool_engine_policy", lambda: legacy_policy)
     response = client.post(
         "/api/document-analysis/runs",
         headers=analyst_headers,
@@ -139,6 +201,89 @@ def _expire_lease(db, run_id: str) -> None:
     db.expire_all()
 
 
+def test_stalled_recovery_stops_before_replay_and_keeps_paid_artifacts(
+    client, db, analyst_headers, tmp_path, monkeypatch,
+):
+    run_id = _create_pending_run(client, analyst_headers, tmp_path, monkeypatch,
+                                 key="stalled-paid-result")
+    store, token = _claim(db, run_id)
+    run = store.get_owned(run_id, "analyst")
+    paid = {"paid_result": "preserved", "calls": 2}
+    store.update_artifact(run_id, "analyst", token, artifact_kind="recognition-model-calls",
+                          expected_revision=0, artifact_hash=content_hash(paid), status="ready",
+                          artifact_id="stalled-paid-sidecar", payload=paid)
+    db.commit()
+    db.execute(update(DocumentAnalysisExecution).where(
+        DocumentAnalysisExecution.recognition_run_id == run_id,
+    ).values(lease_expires_at=datetime.now(UTC) - timedelta(seconds=1),
+             last_progress_at=datetime.now(UTC) - timedelta(hours=2),
+             recovery_event_head=run.event_head, recovery_attempts=3))
+    db.commit()
+
+    def must_not_replay(*args, **kwargs):
+        pytest.fail("a stalled run must stop before loading its large checkpoint")
+
+    monkeypatch.setattr(execution_service, "_execute_claimed", must_not_replay)
+    execution_service.dispatch_run(run_id, bind=db.get_bind())
+    db.expire_all()
+    run = store.get_owned(run_id, "analyst")
+    assert run.execution_status == "failed"
+    assert run.stop_reason == "execution_stalled"
+    assert run.error["code"] == "ANALYSIS_STALLED"
+    assert db.get(DocumentAnalysisArtifact, "stalled-paid-sidecar").payload == paid
+    assert store.list_events(run_id, "analyst")[-1].payload["error"]["code"] == "ANALYSIS_STALLED"
+
+
+@pytest.mark.parametrize("failure_class", [RuntimeError, ModelWaitFailure])
+def test_worker_failure_keeps_bounded_diagnostics_private(
+    client, db, analyst_headers, tmp_path, monkeypatch, failure_class,
+):
+    run_id = _create_pending_run(
+        client, analyst_headers, tmp_path, monkeypatch, key="private-worker-diagnostics"
+    )
+    private_value = "synthetic-private-exception-value"
+
+    def raise_deep_failure(depth):
+        if depth:
+            return raise_deep_failure(depth - 1)
+        raise failure_class(private_value)
+
+    def fail_worker(*_args, **_kwargs):
+        raise_deep_failure(12)
+
+    monkeypatch.setattr(execution_service, "_execute_claimed", fail_worker)
+    store, token = _claim(db, run_id)
+    execution_service._execute_dispatched_run(
+        db, store, store.get_owned(run_id, "analyst"), token
+    )
+    run = store.get_owned(run_id, "analyst")
+    assert run.execution_status == "failed"
+    assert run.error["code"] == "ANALYSIS_FAILED"
+    assert run.error["failure_type"] == failure_class.__name__
+    frames = run.error["failure_frames"]
+    assert len(frames) == 8
+    assert all(set(frame) == {"file", "line", "function"} for frame in frames)
+    assert frames[-1]["function"] == "raise_deep_failure"
+    assert all(isinstance(frame["line"], int) and frame["line"] > 0 for frame in frames)
+    assert private_value not in json.dumps(run.error)
+
+    for suffix in ("", "/graph", "/events"):
+        response = client.get(
+            f"/api/document-analysis/runs/{run_id}{suffix}", headers=analyst_headers
+        )
+        assert response.status_code == 200, response.text
+        for private_detail in (
+            "failure_type", "failure_frames", "raise_deep_failure", __file__, private_value,
+        ):
+            assert private_detail not in response.text
+        if not suffix:
+            error = response.json()["error"]
+            assert set(error) == {"code", "stage", "retryable", "safe_detail", "occurred_at"}
+            assert error["code"] == "ANALYSIS_FAILED"
+            assert error["retryable"] is True
+            assert error["safe_detail"] == "文档分析执行失败"
+
+
 def _crash_after_first_batch(db, run_id: str, monkeypatch):
     store, old_token = _claim(db, run_id)
     original = execution_service._persist_recognition_batch
@@ -165,21 +310,32 @@ def _checkpoint_payload(db, run_id: str) -> tuple[dict, DocumentRecognitionEvent
     assert receipt is not None
     artifact = db.get(DocumentAnalysisArtifact, receipt.checkpoint_artifact_id)
     assert artifact is not None and artifact.payload is not None
-    return artifact.payload, receipt
+    store = DocumentAnalysisRunStore(db)
+    return decode_state(store, store.get_owned(run_id, "analyst"), artifact.payload), receipt
 
 
+@pytest.mark.parametrize("performance_enabled,incremental", [
+    (False, False), (True, False), (True, True),
+])
 def test_committed_batch_is_secret_free_closed_waterline_and_resumes_without_recall(
-    client, db, analyst_headers, tmp_path, monkeypatch
+    client, db, analyst_headers, tmp_path, monkeypatch, performance_enabled, incremental,
 ):
+    monkeypatch.setattr(settings, "document_analysis_performance_enabled", performance_enabled)
     run_id = _create_pending_run(
-        client, analyst_headers, tmp_path, monkeypatch, key="crash-after-first-batch"
+        client, analyst_headers, tmp_path, monkeypatch, key="crash-after-first-batch",
+        evidence_repair=incremental,
     )
     adapter = CountingAdapter()
-    monkeypatch.setattr(execution_service, "configured_model_adapter", lambda: adapter)
+    monkeypatch.setattr(execution_service, "configured_model_adapter", lambda **_kw: adapter)
 
     store, old_token = _crash_after_first_batch(db, run_id, monkeypatch)
     first_task_id = adapter.calls[0]
     checkpoint, receipt = _checkpoint_payload(db, run_id)
+    stored = db.get(DocumentAnalysisArtifact, receipt.checkpoint_artifact_id).payload
+    assert stored.get("storage_schema_version") == (3 if incremental else
+                                                    2 if performance_enabled else None)
+    if incremental:
+        assert checkpoint["checkpoint_schema_version"] == "document-recognition-checkpoint-v3"
     serialized = json.dumps(checkpoint, ensure_ascii=False, sort_keys=True)
 
     assert old_token not in serialized
@@ -228,7 +384,9 @@ def test_committed_batch_is_secret_free_closed_waterline_and_resumes_without_rec
     assert graph_ref is not None
     graph_artifact = db.get(DocumentAnalysisArtifact, graph_ref.artifact_id)
     assert graph_artifact is not None
-    assert graph_artifact.payload["graph"] == checkpoint["graph_state"]
+    assert decode_state(store, store.get_owned(run_id, "analyst"), graph_artifact.payload)[
+        "graph"
+    ] == checkpoint["graph_state"]
 
     _expire_lease(db, run_id)
     new_token = store.claim(
@@ -315,9 +473,24 @@ def test_hard_crash_before_terminal_event_reuses_checkpoint_without_new_graph_re
     assert graph_head_after.artifact_id == graph_head_before.artifact_id
 
 
+@pytest.mark.parametrize("budget_setting,initial_value,changed_value", [
+    ("evidence_max_tasks", None, None), ("semantic_ranking_pool_size", None, None),
+    ("semantic_ranking_device", "cpu", "cuda:0"),
+    ("semantic_ranking_device", "cuda:0", "cpu"),
+    ("semantic_ranking_dtype", "float32", "float16"),
+    ("semantic_ranking_dtype", "float16", "float32"),
+    ("semantic_ranking_cuda_version", "12.6", "12.8"),
+])
 def test_changed_fingerprint_blocks_recovery_without_another_model_call(
-    client, db, analyst_headers, tmp_path, monkeypatch
+    client, db, analyst_headers, tmp_path, monkeypatch, budget_setting, initial_value,
+    changed_value,
 ):
+    # Freeze an explicit valid baseline: changing application defaults must not
+    # accidentally turn a drift test into a no-op. Cover both CPU/GPU directions.
+    monkeypatch.setattr(settings, "semantic_ranking_device", "cuda:0")
+    monkeypatch.setattr(settings, "semantic_ranking_dtype", "float32")
+    if initial_value is not None:
+        monkeypatch.setattr(settings, budget_setting, initial_value)
     run_id = _create_pending_run(
         client, analyst_headers, tmp_path, monkeypatch, key="fingerprint-mismatch"
     )
@@ -327,7 +500,10 @@ def test_changed_fingerprint_blocks_recovery_without_another_model_call(
     calls_before = list(adapter.calls)
 
     _expire_lease(db, run_id)
-    monkeypatch.setattr(settings, "evidence_max_tasks", settings.evidence_max_tasks + 1)
+    monkeypatch.setattr(
+        settings, budget_setting,
+        getattr(settings, budget_setting) + 1 if changed_value is None else changed_value,
+    )
     execution_service.dispatch_run(run_id, bind=db.get_bind())
     db.expire_all()
 
@@ -374,3 +550,363 @@ def test_startup_recovery_claims_expired_pausing_run_and_finishes_pause(
     with pytest.raises(FenceViolation):
         store.assert_fence(run_id, "analyst", old_token)
     assert execution_service.recover_document_analysis_runs(bind=db.get_bind()) == 0
+
+
+def test_ranking_commit_is_fenced_immutable_and_read_only_before_graph(
+    client, db, analyst_headers, tmp_path, monkeypatch,
+):
+    from copy import deepcopy
+
+    run_id = _create_pending_run(
+        client, analyst_headers, tmp_path, monkeypatch, key="ranking-boundary"
+    )
+    store, token = _claim(db, run_id)
+    run = store.get_owned(run_id, "analyst")
+    run = store.update_stage(
+        run_id, "analyst", token, expected_revision=run.revision,
+        stage="recognition", run_fingerprint="ranking-fingerprint",
+    )
+    db.commit()
+    state = {
+        "recognition_run_id": run_id, "run_fingerprint": "ranking-fingerprint",
+        "service": {"policy": {"mode": "semantic"}, "costs": {"model_calls": 2},
+                    "epochs": [{"epoch_id": "epoch:one", "status": "committed",
+                                "actual_ranking_mode": "deterministic", "degraded": True,
+                                "reason": "model_unavailable", "ordered_record_ids": []}]},
+    }
+    execution_service._persist_ranking_state(
+        db, store, run, token, final_fingerprint="ranking-fingerprint", state=state
+    )
+    current = store.get_owned(run_id, "analyst")
+    waterline = (current.revision, current.event_head, current.artifact_revision)
+    restored = execution_service._restore_ranking_state(
+        db, store, current, final_fingerprint="ranking-fingerprint"
+    )
+    assert restored == state
+    for _ in range(2):
+        response = client.get(
+            f"/api/document-analysis/runs/{run_id}/graph", headers=analyst_headers
+        )
+        assert response.status_code == 200
+        assert response.json()["graph_snapshot"] is None
+        assert response.json()["ranking"]["committed_epochs"] == 1
+        assert response.json()["ranking"]["degraded"]
+    db.expire_all()
+    current = store.get_owned(run_id, "analyst")
+    assert (current.revision, current.event_head, current.artifact_revision) == waterline
+    changed = deepcopy(state)
+    changed["service"]["epochs"][0]["reason"] = "silently_reordered"
+    with pytest.raises(execution_service.CheckpointMismatch):
+        execution_service._persist_ranking_state(
+            db, store, current, token, final_fingerprint="ranking-fingerprint", state=changed
+        )
+    _expire_lease(db, run_id)
+    _claim(db, run_id)
+    with pytest.raises(FenceViolation):
+        execution_service._persist_ranking_state(
+            db, store, current, token, final_fingerprint="ranking-fingerprint", state=state
+        )
+    assert execution_service._restore_ranking_state(
+        db, store, store.get_owned(run_id, "analyst"), final_fingerprint="ranking-fingerprint"
+    ) == state
+
+
+def test_ranking_policy_and_model_configuration_are_frozen(monkeypatch):
+    monkeypatch.setattr(settings, "semantic_ranking_enabled", False)
+    first, identity = execution_service._configured_ranking()
+    assert first.policy.mode == "deterministic"
+    monkeypatch.setattr(settings, "semantic_ranking_max_tokens_per_run", 123456)
+    second, changed = execution_service._configured_ranking()
+    assert second.policy.max_ranking_tokens_per_run == 123456
+    assert identity != changed
+    assert identity["policy"]["intent_weights"] == {"discover": 0.5, "counterevidence": 0.5}
+
+
+def test_ranking_factory_inherits_owner_cancellation_before_freezing(
+    client, db, analyst_headers, tmp_path, monkeypatch,
+):
+    from app.services.llm.model_runtime import ModelCancelled, check_cancelled, runtime
+
+    run_id = _create_pending_run(
+        client, analyst_headers, tmp_path, monkeypatch, key="probe-owner-cancellation",
+    )
+    adapter = CountingAdapter()
+    monkeypatch.setattr(execution_service, "configured_model_adapter", lambda: adapter)
+    stopped = False
+
+    def factory():
+        nonlocal stopped
+        assert runtime.get()["run_id"] == run_id
+        assert runtime.get()["bind"] is db.get_bind()
+        assert callable(runtime.get()["should_stop"])
+        stopped = True
+        check_cancelled()
+        pytest.fail("cancelled GPU probe returned to execution")
+
+    monkeypatch.setattr(execution_service, "_configured_ranking", factory)
+    store, token = _claim(db, run_id)
+    with pytest.raises(ModelCancelled):
+        execution_service._execute_claimed(
+            db, store, store.get_owned(run_id, "analyst"), token,
+            should_stop=lambda: stopped,
+        )
+    assert adapter.calls == []
+    assert store.get_owned(run_id, "analyst").run_fingerprint is None
+
+
+@pytest.mark.parametrize("failure_policy", ["pause", "deterministic"])
+@pytest.mark.parametrize("reason", [
+    "ranking_cuda_out_of_memory", "ranking_cuda_probe_timeout", "ranking_cuda_unavailable",
+])
+@pytest.mark.parametrize("state_boundary", ["checkpoint", "fingerprint_only"])
+def test_transient_probe_failure_preserves_frozen_identity_and_can_resume(
+    client, db, analyst_headers, tmp_path, monkeypatch, failure_policy, reason, state_boundary,
+):
+    from app.services.extraction.ontology_guided.semantic_reranker import (
+        RankingPolicy,
+        RankingService,
+    )
+    from tests.test_extraction.test_semantic_ranking import RankingModel
+
+    run_id = _create_pending_run(
+        client, analyst_headers, tmp_path, monkeypatch, key="transient-probe-recovery",
+    )
+    adapter, model = CountingAdapter(), RankingModel()
+    model.identity = {"device": "cuda:0", "dtype": "float16", "cuda_version": "12.6",
+                      "numeric_environment": {"device_uuid": "controlled-original-GPU"}}
+    policy = RankingPolicy(mode="semantic", failure_policy=failure_policy)
+    available = True
+
+    def factory():
+        return RankingService(policy, model if available else None), {
+            "configuration": {"device": "cuda:0", "dtype": "float16", "cuda_version": "12.6"},
+            "policy": policy.model_dump(mode="json"),
+            "model_identity": deepcopy(model.identity) if available else None,
+            "unavailable_reason": None if available else reason,
+        }
+
+    monkeypatch.setattr(execution_service, "configured_model_adapter", lambda: adapter)
+    monkeypatch.setattr(execution_service, "_configured_ranking", factory)
+    if state_boundary == "checkpoint":
+        store, _token = _crash_after_first_batch(db, run_id, monkeypatch)
+    else:
+        store, token = _claim(db, run_id)
+        persist = execution_service._persist_ranking_state
+
+        def crash_before_first_ranking_state(*_args, **_kwargs):
+            raise SimulatedProcessCrash("after frozen fingerprint before ranking state")
+
+        monkeypatch.setattr(
+            execution_service, "_persist_ranking_state", crash_before_first_ranking_state,
+        )
+        with pytest.raises(SimulatedProcessCrash):
+            execution_service._execute_claimed(
+                db, store, store.get_owned(run_id, "analyst"), token,
+            )
+        monkeypatch.setattr(execution_service, "_persist_ranking_state", persist)
+        db.expire_all()
+        assert adapter.calls == []
+        assert store.get_artifact_head(run_id, "analyst", "ranking_state") is None
+    current = store.get_owned(run_id, "analyst")
+    fingerprint = current.run_fingerprint
+    assert fingerprint is not None
+
+    def artifact_head_id(kind):
+        head = store.get_artifact_head(run_id, "analyst", kind)
+        return head.artifact_id if head is not None else None
+
+    heads = {
+        kind: artifact_head_id(kind)
+        for kind in ("ranking_state", "recognition_checkpoint", "graph")
+    }
+    main_calls, rank_calls = list(adapter.calls), list(model.calls)
+    available = False
+    _expire_lease(db, run_id)
+    execution_service.dispatch_run(run_id, bind=db.get_bind())
+    db.expire_all()
+    current = store.get_owned(run_id, "analyst")
+    assert current.execution_status == ("paused" if failure_policy == "pause" else "failed")
+    assert current.error["code"] == (
+        "RANKING_PAUSED" if failure_policy == "pause" else "RANKING_UNAVAILABLE"
+    )
+    assert current.error["retryable"] is True
+    assert current.run_fingerprint == fingerprint
+    assert adapter.calls == main_calls and model.calls == rank_calls
+    assert all(artifact_head_id(kind) == identifier
+               for kind, identifier in heads.items())
+
+    available = True
+    token = store.resume(
+        run_id, "analyst", expected_revision=current.revision,
+        actor="gpu-probe-retry", worker_id="gpu-recovered-worker",
+    )
+    db.commit()
+    execution_service._execute_claimed(db, store, store.get_owned(run_id, "analyst"), token)
+    assert store.get_owned(run_id, "analyst").execution_status == "finished"
+    assert store.get_owned(run_id, "analyst").run_fingerprint == fingerprint
+    assert len(adapter.calls) == len(set(adapter.calls))
+
+
+def test_probe_unavailability_does_not_hide_changed_frozen_configuration(
+    client, db, analyst_headers, tmp_path, monkeypatch,
+):
+    from app.services.extraction.ontology_guided.semantic_reranker import (
+        RankingPolicy,
+        RankingService,
+    )
+    from tests.test_extraction.test_semantic_ranking import RankingModel
+
+    run_id = _create_pending_run(
+        client, analyst_headers, tmp_path, monkeypatch, key="probe-real-drift",
+    )
+    adapter, model = CountingAdapter(), RankingModel()
+    policy = RankingPolicy(mode="semantic", failure_policy="pause")
+    available = True
+    config = {"device": "cuda:0", "dtype": "float16", "cuda_version": "12.6"}
+
+    def factory():
+        return RankingService(policy, model if available else None), {
+            "configuration": dict(config), "policy": policy.model_dump(mode="json"),
+            "model_identity": model.identity if available else None,
+            "unavailable_reason": None if available else "ranking_cuda_probe_timeout",
+        }
+
+    monkeypatch.setattr(execution_service, "configured_model_adapter", lambda: adapter)
+    monkeypatch.setattr(execution_service, "_configured_ranking", factory)
+    _crash_after_first_batch(db, run_id, monkeypatch)
+    calls = list(adapter.calls)
+    config["device"] = "cuda:1"
+    available = False
+    _expire_lease(db, run_id)
+    execution_service.dispatch_run(run_id, bind=db.get_bind())
+    db.expire_all()
+    current = db.get(DocumentAnalysisRun, run_id)
+    assert current.execution_status == "blocked_dependency"
+    assert current.error["code"] == "FINGERPRINT_MISMATCH"
+    assert current.error["retryable"] is False
+    assert adapter.calls == calls
+
+
+@pytest.mark.parametrize("crash_boundary", ["committed", "reserved"])
+def test_crash_after_ranking_commit_restores_order_without_rescoring(
+    client, db, analyst_headers, tmp_path, monkeypatch, crash_boundary,
+):
+    from app.services.extraction.ontology_guided.semantic_reranker import (
+        RankingPolicy,
+        RankingService,
+    )
+
+    class CountingRankingModel:
+        identity = {"model": "controlled-local-ranker-v1"}
+
+        def __init__(self):
+            self.pairs = Counter()
+
+        def count_tokens(self, text):
+            return len(text)
+
+        def embed(self, texts):
+            return [[1.0, 0.0] for _ in texts]
+
+        def score_pairs(self, pairs):
+            from app.services.llm.model_runtime import runtime
+
+            assert runtime.get()["run_id"] == run_id
+            assert runtime.get()["bind"] is db.get_bind()
+            self.pairs.update(pairs)
+            return [-float(len(text)) for _query, text in pairs]
+
+    run_id = _create_pending_run(
+        client, analyst_headers, tmp_path, monkeypatch, key="ranking-crash-before-inspect"
+    )
+    adapter = CountingAdapter()
+    model = CountingRankingModel()
+    policy = RankingPolicy(mode="semantic")
+    monkeypatch.setattr(execution_service, "configured_model_adapter", lambda: adapter)
+    monkeypatch.setattr(
+        execution_service, "_configured_ranking",
+        lambda: (RankingService(policy, model), {"policy": policy.model_dump(),
+                                               "model": model.identity}),
+    )
+    store, token = _claim(db, run_id)
+    persist = execution_service._persist_ranking_state
+
+    def persist_then_crash(*args, **kwargs):
+        persist(*args, **kwargs)
+        service_state = kwargs["state"]["service"]
+        if service_state["epochs"] or (
+            crash_boundary == "reserved" and service_state["costs"]["model_calls"] > 0
+        ):
+            raise SimulatedProcessCrash("after committed ranking before record verification")
+
+    monkeypatch.setattr(execution_service, "_persist_ranking_state", persist_then_crash)
+    with pytest.raises(SimulatedProcessCrash):
+        execution_service._execute_claimed(db, store, store.get_owned(run_id, "analyst"), token)
+    assert adapter.calls == []
+    first_pool_calls = dict(model.pairs)
+    assert bool(first_pool_calls) == (crash_boundary == "committed")
+    state = execution_service._restore_ranking_state(
+        db, store, store.get_owned(run_id, "analyst"),
+        final_fingerprint=store.get_owned(run_id, "analyst").run_fingerprint,
+    )
+    assert len(state["service"]["epochs"]) == (1 if crash_boundary == "committed" else 0)
+    assert list(state["committed_at"].values()) == (
+        [0] if crash_boundary == "committed" else []
+    )
+    reserved_calls = state["service"]["costs"]["model_calls"]
+    assert reserved_calls > 0
+    monkeypatch.setattr(execution_service, "_persist_ranking_state", persist)
+    _expire_lease(db, run_id)
+    store, replacement = _claim(db, run_id)
+    execution_service._execute_claimed(
+        db, store, store.get_owned(run_id, "analyst"), replacement
+    )
+    assert store.get_owned(run_id, "analyst").execution_status == "finished"
+    assert all(model.pairs[pair] == count for pair, count in first_pool_calls.items())
+    assert adapter.calls and len(set(adapter.calls)) == len(adapter.calls)
+    current = store.get_owned(run_id, "analyst")
+    recovered_state = execution_service._restore_ranking_state(
+        db, store, current, final_fingerprint=current.run_fingerprint
+    )
+    assert recovered_state["service"]["costs"]["model_calls"] >= reserved_calls
+
+
+def test_ranking_pause_is_durable_and_does_not_turn_into_empty_success(
+    client, db, analyst_headers, tmp_path, monkeypatch,
+):
+    run_id = _create_pending_run(
+        client, analyst_headers, tmp_path, monkeypatch, key="ranking-unavailable-pause"
+    )
+    adapter = CountingAdapter()
+    monkeypatch.setattr(execution_service, "configured_model_adapter", lambda: adapter)
+    monkeypatch.setattr(settings, "semantic_ranking_enabled", True)
+    monkeypatch.setattr(settings, "semantic_ranking_failure_policy", "pause")
+    monkeypatch.setattr(settings, "semantic_ranking_embedding_path", "")
+    store, token = _claim(db, run_id)
+    execution_service._execute_claimed(db, store, store.get_owned(run_id, "analyst"), token)
+    paused = store.get_owned(run_id, "analyst")
+    assert paused.execution_status == "paused"
+    assert paused.stop_reason == "ranking_paused"
+    assert adapter.calls == []
+    ranking = client.get(
+        f"/api/document-analysis/runs/{run_id}/graph", headers=analyst_headers
+    ).json()["ranking"]
+    assert ranking["paused"] and ranking["committed_epochs"] == 0
+    assert ranking["epochs"][0]["status"] == "paused"
+    fingerprint = paused.run_fingerprint
+    initial = execution_service._restore_ranking_state(
+        db, store, paused, final_fingerprint=fingerprint
+    )
+    token = store.resume(
+        run_id, "analyst", expected_revision=paused.revision,
+        actor="ranking-pause-test", worker_id="replacement-worker",
+    )
+    db.commit()
+    execution_service._execute_claimed(db, store, store.get_owned(run_id, "analyst"), token)
+    current = store.get_owned(run_id, "analyst")
+    assert current.execution_status == "paused" and adapter.calls == []
+    restored = execution_service._restore_ranking_state(
+        db, store, current, final_fingerprint=fingerprint
+    )
+    assert restored["service"]["costs"] == initial["service"]["costs"]
+    assert restored["service"]["pending_epochs"] == initial["service"]["pending_epochs"]

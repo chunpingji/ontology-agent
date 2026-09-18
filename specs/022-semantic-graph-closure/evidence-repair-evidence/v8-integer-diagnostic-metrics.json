@@ -1,0 +1,763 @@
+{
+  "group": "automatic",
+  "repetition": 1,
+  "run_id": "heuristic-29bf8fcc739f4a88906f56568718395d",
+  "private_artifact_directory": "/tmp/ontology-evidence-repair-auto-hrs5592-20260910-v8-r1",
+  "manifest_sha256": "16dc370a1dac89e950bf30edfd4f4a7224aac8126f6e9c399b5cf7795a50ef4d",
+  "frozen_app_inventory_sha256": "df81b6b0ad6c358d6e1a5fea952dc95b08e15457f414edefc5e78aaf3b206fce",
+  "recognition_seconds": 1222.7329702930292,
+  "failure": null,
+  "model_request_stages": {
+    "ontology_guided_discovery": {
+      "requests": 21,
+      "status_counts": {
+        "complete": 21
+      },
+      "request_seconds": 503.571,
+      "queue_seconds": 0.29000000000000015,
+      "input_tokens": null,
+      "prompt_tokens": 116692,
+      "completion_tokens": 2672,
+      "prompt_ms": 447793.971,
+      "predicted_ms": 47971.933,
+      "cache_tokens": 4086,
+      "unknown_metrics": {
+        "input_tokens": 21
+      }
+    },
+    "ontology_guided_verification": {
+      "requests": 18,
+      "status_counts": {
+        "complete": 18
+      },
+      "request_seconds": 679.41,
+      "queue_seconds": 0.168,
+      "input_tokens": null,
+      "prompt_tokens": 134249,
+      "completion_tokens": 8312,
+      "prompt_ms": 523330.96200000006,
+      "predicted_ms": 150229.905,
+      "cache_tokens": 3368,
+      "unknown_metrics": {
+        "input_tokens": 18
+      }
+    }
+  },
+  "source_review_scope": "six focus predicates; extra facts explicitly unscored",
+  "expert_quality_gate": "not_passed",
+  "progress": {
+    "completion": "incomplete",
+    "contract_version": "document-analysis-runs-v1",
+    "invalidated_count": 0,
+    "model_calls": 39,
+    "model_calls_reserved": 39,
+    "model_calls_unresolved": 0,
+    "pending_frontiers": 0,
+    "phase_counts": {
+      "phase1": 12,
+      "phase2": 5
+    },
+    "records_examined": 16,
+    "records_incomplete": 1,
+    "records_planned": 32144,
+    "records_unattempted": 32127,
+    "stop_reason": "task_budget_exhausted",
+    "supported": 9,
+    "tasks_attempted": 17,
+    "undetermined": 3,
+    "unresolved_claims": 3,
+    "unsupported": 0
+  },
+  "task_batches": 24,
+  "reserved_main_requests": 39,
+  "requested_stop_reason": "experiment_deadline_reached",
+  "timings": {
+    "context_assembly": {
+      "count": 24,
+      "max_seconds": 0.03355045593343675,
+      "min_seconds": 0.0006327079609036446,
+      "total_seconds": 0.3624457059195265
+    },
+    "heuristic_admission": {
+      "count": 113,
+      "max_seconds": 0.00030522095039486885,
+      "min_seconds": 8.850102312862873e-05,
+      "total_seconds": 0.016139840707182884
+    },
+    "heuristic_complete": {
+      "count": 1,
+      "max_seconds": 1222.4156232320238,
+      "min_seconds": 1222.4156232320238,
+      "total_seconds": 1222.4156232320238
+    },
+    "heuristic_index_ready": {
+      "count": 1,
+      "max_seconds": 0.20316006802022457,
+      "min_seconds": 0.20316006802022457,
+      "total_seconds": 0.20316006802022457
+    },
+    "heuristic_slot_prepared": {
+      "count": 112,
+      "max_seconds": 0.09406958403997123,
+      "min_seconds": 0.001938918954692781,
+      "total_seconds": 1.3354801886016503
+    },
+    "model_and_ranking_configuration": {
+      "count": 1,
+      "max_seconds": 0.5556007389677688,
+      "min_seconds": 0.5556007389677688,
+      "total_seconds": 0.5556007389677688
+    },
+    "ontology_guided_discovery": {
+      "count": 24,
+      "max_seconds": 41.672362764016725,
+      "min_seconds": 0.0001842690398916602,
+      "total_seconds": 506.68024637014605
+    },
+    "ontology_guided_verification": {
+      "count": 18,
+      "max_seconds": 49.078418220975436,
+      "min_seconds": 20.318730999948457,
+      "total_seconds": 682.4077063928125
+    },
+    "ontology_load_and_snapshot": {
+      "count": 1,
+      "max_seconds": 1.0447659629862756,
+      "min_seconds": 1.0447659629862756,
+      "total_seconds": 1.0447659629862756
+    },
+    "outcome_application": {
+      "count": 24,
+      "max_seconds": 0.8949852120131254,
+      "min_seconds": 0.013536304933950305,
+      "total_seconds": 3.684164344915189
+    },
+    "parse_docx_and_ir": {
+      "count": 1,
+      "max_seconds": 1.0974672329612076,
+      "min_seconds": 1.0974672329612076,
+      "total_seconds": 1.0974672329612076
+    },
+    "recognition_input_tokenization": {
+      "count": 39,
+      "max_seconds": 0.16389299603179097,
+      "min_seconds": 0.003120961948297918,
+      "total_seconds": 1.6103920149616897
+    },
+    "root_menu_and_record_index": {
+      "count": 1,
+      "max_seconds": 0.16720824292860925,
+      "min_seconds": 0.16720824292860925,
+      "total_seconds": 0.16720824292860925
+    },
+    "structure_metadata": {
+      "count": 1,
+      "max_seconds": 0.26205162808764726,
+      "min_seconds": 0.26205162808764726,
+      "total_seconds": 0.26205162808764726
+    },
+    "task_inspection": {
+      "count": 24,
+      "max_seconds": 89.088030555984,
+      "min_seconds": 7.377392472000793,
+      "total_seconds": 1191.095584075898
+    }
+  },
+  "local_persistence": {
+    "batch_graph": {
+      "bytes": 3550772,
+      "count": 24,
+      "seconds": 0.09458265383727849
+    },
+    "checkpoint": {
+      "bytes": 523293357,
+      "count": 24,
+      "seconds": 9.033404054818675
+    },
+    "effective_graph": {
+      "bytes": 1612735,
+      "count": 25,
+      "seconds": 0.04666826839093119
+    },
+    "jsonl": {
+      "bytes": 9556438,
+      "count": 548,
+      "seconds": 0.4586590928956866
+    },
+    "model_reservation": {
+      "bytes": 74442160,
+      "count": 159,
+      "seconds": 1.595382634550333
+    },
+    "snapshot": {
+      "bytes": 62570508,
+      "count": 11,
+      "seconds": 1.0618118579732254
+    }
+  },
+  "search_stages": {
+    "H0": {
+      "events": 44,
+      "first_event_seconds": 0.29274512303527445,
+      "status": "observed"
+    },
+    "H1": {
+      "events": 69,
+      "first_event_seconds": 0.3261882340302691,
+      "status": "observed"
+    },
+    "H2": {
+      "events": 0,
+      "first_event_seconds": null,
+      "status": "not_triggered"
+    },
+    "H3": {
+      "events": 0,
+      "first_event_seconds": null,
+      "status": "not_triggered"
+    }
+  },
+  "sql": {
+    "finalization": {
+      "count": 1,
+      "seconds": 0.00018990610260516405,
+      "statements": {
+        "SELECT": 1
+      }
+    },
+    "recognition": {
+      "count": 686,
+      "seconds": 0.11675712978467345,
+      "statements": {
+        "INSERT": 117,
+        "SELECT": 117,
+        "UPDATE": 452
+      }
+    },
+    "setup": {
+      "count": 4,
+      "seconds": 0.004950564005412161,
+      "statements": {
+        "CREATE": 4
+      }
+    }
+  },
+  "model_requests_by_search_stage": {
+    "H0": {
+      "request_seconds": 1087.6709999999998,
+      "requests": 32
+    },
+    "H1": {
+      "request_seconds": 95.31,
+      "requests": 7
+    }
+  },
+  "coverage_counts": {
+    "phase1": 1857,
+    "phase2": 30287,
+    "examined": 16,
+    "unattempted": 32127,
+    "incomplete": 1,
+    "pending_frontiers": 0,
+    "unresolved_claims": 3
+  },
+  "candidates": [
+    {
+      "candidate_id": "afa62b4340c09afc032d960e6b6443e2dba516eda085c0da3dfca7e39889912f",
+      "revision": 1,
+      "predicate": "usesEquipment",
+      "effective": true,
+      "decision_status": "supported",
+      "reason_code": "candidate_supported",
+      "source_review": "source_and_ownership_checked",
+      "first_effective_seconds": 91.03756991506089,
+      "source_table": 9,
+      "source_row": 3,
+      "subject_id": "b9792df6117b29aaac42d3ea16fac9ab093bed02463647fbd6ce610c669919bb",
+      "object_id": "b1f02c57c064fc7e2b114661ebc0a6b34ecc01b98a320f6480b5df8e309df95c",
+      "object_class": "Centrifuge"
+    },
+    {
+      "candidate_id": "2f7408c463a69c177d5a25282d26096b43a723fba278e5e744e975b5cd5979bf",
+      "revision": 1,
+      "predicate": "equipmentID",
+      "effective": true,
+      "decision_status": "supported",
+      "reason_code": "candidate_supported",
+      "source_review": "source_and_ownership_checked",
+      "first_effective_seconds": 166.59098475601058,
+      "source_row": 3,
+      "subject_id": "b1f02c57c064fc7e2b114661ebc0a6b34ecc01b98a320f6480b5df8e309df95c"
+    },
+    {
+      "candidate_id": "f0b190ec5123508c6b2f4f5bba8f0ba7cdfc8a79cef9d9f6d0516ff48231c105",
+      "revision": 1,
+      "predicate": "hasProductionPlan",
+      "effective": true,
+      "decision_status": "supported",
+      "reason_code": "candidate_supported",
+      "source_review": "source_and_ownership_checked",
+      "first_effective_seconds": 199.55001228500623,
+      "source_paragraph": 26,
+      "subject_id": "b9792df6117b29aaac42d3ea16fac9ab093bed02463647fbd6ce610c669919bb",
+      "object_id": "2732b250d2968fb4f4f51a5227eb60f8dc9d3c104258b75e1ba1eb46441344ff"
+    },
+    {
+      "candidate_id": "20cf5d434b0187e9730fdda66b246093a601b16cc905c3055c2501b4db1bd1f1",
+      "revision": 1,
+      "predicate": "plannedProductionDate",
+      "effective": true,
+      "decision_status": "supported",
+      "reason_code": "candidate_supported",
+      "source_review": "source_and_ownership_checked",
+      "first_effective_seconds": 229.83589982695412,
+      "source_paragraph": 26,
+      "subject_id": "2732b250d2968fb4f4f51a5227eb60f8dc9d3c104258b75e1ba1eb46441344ff"
+    },
+    {
+      "candidate_id": "7dd010386b9df3b48ec82c2f286fdce110bc8c062416074cebc9938d0e215ac6",
+      "revision": 1,
+      "predicate": "describes",
+      "effective": true,
+      "decision_status": "supported",
+      "reason_code": "candidate_supported",
+      "source_review": "unscored",
+      "first_effective_seconds": 320.708393436973,
+      "object_class": "DrugProduct"
+    },
+    {
+      "candidate_id": "93012640a6ff1d308fdd6fae1fbef8e2ce2a501cd1412f85a49cb24182c3bd98",
+      "revision": 1,
+      "predicate": "modelSpecification",
+      "effective": true,
+      "decision_status": "supported",
+      "reason_code": "candidate_supported",
+      "source_review": "source_and_ownership_checked",
+      "first_effective_seconds": 414.72824203106575,
+      "source_row": 3,
+      "subject_id": "b1f02c57c064fc7e2b114661ebc0a6b34ecc01b98a320f6480b5df8e309df95c"
+    },
+    {
+      "candidate_id": "2bfcf5acc343a3642bb5f5c25a37d5b4254922d18d7f34a9a6a68d84222e39dc",
+      "revision": 1,
+      "predicate": "usesEquipment",
+      "effective": true,
+      "decision_status": "supported",
+      "reason_code": "candidate_supported",
+      "source_review": "source_and_ownership_checked",
+      "first_effective_seconds": 480.7778100169962,
+      "source_table": 8,
+      "source_row": 7,
+      "subject_id": "b9792df6117b29aaac42d3ea16fac9ab093bed02463647fbd6ce610c669919bb",
+      "object_id": "c7bef594d19f7898a78d35e775eec7511676dc55dc93f90e51d9179feb27d842",
+      "object_class": "Dryer"
+    },
+    {
+      "candidate_id": "f7c948034661b2ea25685fe2553e7639cfff3c93f89634f16e344aaa29b1757c",
+      "revision": 1,
+      "predicate": "constructedOf",
+      "effective": true,
+      "decision_status": "supported",
+      "reason_code": "candidate_supported",
+      "source_review": "unscored",
+      "first_effective_seconds": 926.0330511450302,
+      "object_class": "SS304WithHALARCoating"
+    },
+    {
+      "candidate_id": "de7bf88775c8e434953c84754696d392e5cd336ad9939352d4e7fe09740c56d8",
+      "revision": 1,
+      "predicate": "describes",
+      "effective": true,
+      "decision_status": "supported",
+      "reason_code": "candidate_supported",
+      "source_review": "unscored",
+      "first_effective_seconds": 974.487854607054,
+      "object_class": "DrugProduct"
+    }
+  ],
+  "applied_candidate_history": [
+    {
+      "batch": "0001.json",
+      "candidate_id": "afa62b4340c09afc032d960e6b6443e2dba516eda085c0da3dfca7e39889912f",
+      "revision": 1,
+      "predicate": "usesEquipment",
+      "decision_status": "supported",
+      "policy_eligible": true,
+      "reason_code": "candidate_supported"
+    },
+    {
+      "batch": "0002.json",
+      "candidate_id": "2f7408c463a69c177d5a25282d26096b43a723fba278e5e744e975b5cd5979bf",
+      "revision": 1,
+      "predicate": "equipmentID",
+      "decision_status": "supported",
+      "policy_eligible": true,
+      "reason_code": "candidate_supported"
+    },
+    {
+      "batch": "0003.json",
+      "candidate_id": "f0b190ec5123508c6b2f4f5bba8f0ba7cdfc8a79cef9d9f6d0516ff48231c105",
+      "revision": 1,
+      "predicate": "hasProductionPlan",
+      "decision_status": "supported",
+      "policy_eligible": true,
+      "reason_code": "candidate_supported"
+    },
+    {
+      "batch": "0004.json",
+      "candidate_id": "20cf5d434b0187e9730fdda66b246093a601b16cc905c3055c2501b4db1bd1f1",
+      "revision": 1,
+      "predicate": "plannedProductionDate",
+      "decision_status": "supported",
+      "policy_eligible": true,
+      "reason_code": "candidate_supported"
+    },
+    {
+      "batch": "0005.json",
+      "candidate_id": "d4b13d438b03bdaf12c4d6e1ae40b7c6fde0bab8ade0a96e0b6187f0fad59ff0",
+      "revision": 1,
+      "predicate": "cleanedBy",
+      "decision_status": "unsupported",
+      "policy_eligible": false,
+      "reason_code": "bridge_entailment_not_supported"
+    },
+    {
+      "batch": "0007.json",
+      "candidate_id": "7dd010386b9df3b48ec82c2f286fdce110bc8c062416074cebc9938d0e215ac6",
+      "revision": 1,
+      "predicate": "describes",
+      "decision_status": "supported",
+      "policy_eligible": true,
+      "reason_code": "candidate_supported"
+    },
+    {
+      "batch": "0010.json",
+      "candidate_id": "93012640a6ff1d308fdd6fae1fbef8e2ce2a501cd1412f85a49cb24182c3bd98",
+      "revision": 1,
+      "predicate": "modelSpecification",
+      "decision_status": "supported",
+      "policy_eligible": true,
+      "reason_code": "candidate_supported"
+    },
+    {
+      "batch": "0011.json",
+      "candidate_id": "2bfcf5acc343a3642bb5f5c25a37d5b4254922d18d7f34a9a6a68d84222e39dc",
+      "revision": 1,
+      "predicate": "usesEquipment",
+      "decision_status": "supported",
+      "policy_eligible": true,
+      "reason_code": "candidate_supported"
+    },
+    {
+      "batch": "0012.json",
+      "candidate_id": "836d6c3071ef522cfa0b14c0d6e5cd97e9614f35106f370c64b3d0751b81db6d",
+      "revision": 1,
+      "predicate": "producedInArea",
+      "decision_status": "unsupported",
+      "policy_eligible": false,
+      "reason_code": "missing_predicate_support"
+    },
+    {
+      "batch": "0014.json",
+      "candidate_id": "5ba4080334bf89cd48367c01d764ffc34a34e2ba7497e6a2a75d6b3495012092",
+      "revision": 1,
+      "predicate": "equipmentID",
+      "decision_status": "undetermined",
+      "policy_eligible": false,
+      "reason_code": "local_coreference_not_supported"
+    },
+    {
+      "batch": "0015.json",
+      "candidate_id": "5ba4080334bf89cd48367c01d764ffc34a34e2ba7497e6a2a75d6b3495012092",
+      "revision": 2,
+      "predicate": "equipmentID",
+      "decision_status": "undetermined",
+      "policy_eligible": false,
+      "reason_code": "local_coreference_not_supported"
+    },
+    {
+      "batch": "0017.json",
+      "candidate_id": "86692e24b63363e1857acd2b2d0d17a01643e3f35527528bea0a0ace38db0a69",
+      "revision": 1,
+      "predicate": "equipmentID",
+      "decision_status": "undetermined",
+      "policy_eligible": false,
+      "reason_code": "local_coreference_not_supported"
+    },
+    {
+      "batch": "0018.json",
+      "candidate_id": "86692e24b63363e1857acd2b2d0d17a01643e3f35527528bea0a0ace38db0a69",
+      "revision": 2,
+      "predicate": "equipmentID",
+      "decision_status": "undetermined",
+      "policy_eligible": false,
+      "reason_code": "local_coreference_not_supported"
+    },
+    {
+      "batch": "0019.json",
+      "candidate_id": "f7c948034661b2ea25685fe2553e7639cfff3c93f89634f16e344aaa29b1757c",
+      "revision": 1,
+      "predicate": "constructedOf",
+      "decision_status": "supported",
+      "policy_eligible": true,
+      "reason_code": "candidate_supported"
+    },
+    {
+      "batch": "0020.json",
+      "candidate_id": "de7bf88775c8e434953c84754696d392e5cd336ad9939352d4e7fe09740c56d8",
+      "revision": 1,
+      "predicate": "describes",
+      "decision_status": "supported",
+      "policy_eligible": true,
+      "reason_code": "candidate_supported"
+    },
+    {
+      "batch": "0021.json",
+      "candidate_id": "e58a6e7e829e82782bae7e2f6d4e72304ad5b2707848da6604ed3d0e8866e1c4",
+      "revision": 1,
+      "predicate": "modelSpecification",
+      "decision_status": "undetermined",
+      "policy_eligible": false,
+      "reason_code": "local_coreference_not_supported"
+    },
+    {
+      "batch": "0022.json",
+      "candidate_id": "e58a6e7e829e82782bae7e2f6d4e72304ad5b2707848da6604ed3d0e8866e1c4",
+      "revision": 2,
+      "predicate": "modelSpecification",
+      "decision_status": "unsupported",
+      "policy_eligible": false,
+      "reason_code": "missing_predicate_support"
+    },
+    {
+      "batch": "0023.json",
+      "candidate_id": "5a948345fbb41b3bdfd652527726501366e4a4ac9fa2dac6e2b8d6b8ad0a776a",
+      "revision": 1,
+      "predicate": "modelSpecification",
+      "decision_status": "undetermined",
+      "policy_eligible": false,
+      "reason_code": "local_coreference_not_supported"
+    }
+  ],
+  "missing_focus_targets": [
+    "plannedBatchCount"
+  ],
+  "source_review_counts": {
+    "source_and_ownership_checked": 6,
+    "unscored": 3
+  },
+  "correct_first_effective_seconds": {
+    "usesEquipment": 91.03756991506089,
+    "equipmentID": 166.59098475601058,
+    "modelSpecification": 414.72824203106575,
+    "hasProductionPlan": 199.55001228500623,
+    "plannedProductionDate": 229.83589982695412,
+    "plannedBatchCount": null
+  },
+  "same_parent_complete_path_seconds": {
+    "usesEquipment": 414.72824203106575,
+    "hasProductionPlan": null
+  },
+  "code_group": "v8_integer_quotes_v1",
+  "fixed_six_run_group_completed": false,
+  "remaining_five_runs": "not_executed_after_first_run_citation_failure",
+  "frozen_files_verified": true,
+  "online_rejected_property_attempts": [
+    {
+      "batch": 14,
+      "seconds": 650.8204104730394,
+      "candidate_id": "5ba4080334bf89cd48367c01d764ffc34a34e2ba7497e6a2a75d6b3495012092",
+      "predicate": "equipmentID",
+      "effective": false,
+      "reason": "local_coreference_not_supported",
+      "original_owner_sources": [
+        {
+          "block_id": "table:9",
+          "row_index": 3,
+          "column_index": 1,
+          "paragraph_index": 0,
+          "span_start": 0,
+          "span_end": 3
+        }
+      ],
+      "value_sources": [
+        {
+          "block_id": "table:9",
+          "row_index": 15,
+          "column_index": 2,
+          "paragraph_index": 0,
+          "span_start": 0,
+          "span_end": 15
+        }
+      ]
+    },
+    {
+      "batch": 15,
+      "seconds": 699.4161224160343,
+      "candidate_id": "5ba4080334bf89cd48367c01d764ffc34a34e2ba7497e6a2a75d6b3495012092",
+      "predicate": "equipmentID",
+      "effective": false,
+      "reason": "local_coreference_not_supported",
+      "original_owner_sources": [
+        {
+          "block_id": "table:9",
+          "row_index": 3,
+          "column_index": 1,
+          "paragraph_index": 0,
+          "span_start": 0,
+          "span_end": 3
+        }
+      ],
+      "value_sources": [
+        {
+          "block_id": "table:9",
+          "row_index": 15,
+          "column_index": 2,
+          "paragraph_index": 0,
+          "span_start": 0,
+          "span_end": 15
+        }
+      ]
+    },
+    {
+      "batch": 17,
+      "seconds": 795.3003091469873,
+      "candidate_id": "86692e24b63363e1857acd2b2d0d17a01643e3f35527528bea0a0ace38db0a69",
+      "predicate": "equipmentID",
+      "effective": false,
+      "reason": "local_coreference_not_supported",
+      "original_owner_sources": [
+        {
+          "block_id": "table:8",
+          "row_index": 7,
+          "column_index": 1,
+          "paragraph_index": 0,
+          "span_start": 0,
+          "span_end": 5
+        }
+      ],
+      "value_sources": [
+        {
+          "block_id": "table:9",
+          "row_index": 30,
+          "column_index": 2,
+          "paragraph_index": 0,
+          "span_start": 0,
+          "span_end": 7
+        }
+      ]
+    },
+    {
+      "batch": 18,
+      "seconds": 842.4986299360171,
+      "candidate_id": "86692e24b63363e1857acd2b2d0d17a01643e3f35527528bea0a0ace38db0a69",
+      "predicate": "equipmentID",
+      "effective": false,
+      "reason": "local_coreference_not_supported",
+      "original_owner_sources": [
+        {
+          "block_id": "table:8",
+          "row_index": 7,
+          "column_index": 1,
+          "paragraph_index": 0,
+          "span_start": 0,
+          "span_end": 5
+        }
+      ],
+      "value_sources": [
+        {
+          "block_id": "table:9",
+          "row_index": 30,
+          "column_index": 2,
+          "paragraph_index": 0,
+          "span_start": 0,
+          "span_end": 7
+        }
+      ]
+    },
+    {
+      "batch": 21,
+      "seconds": 1051.782867879956,
+      "candidate_id": "e58a6e7e829e82782bae7e2f6d4e72304ad5b2707848da6604ed3d0e8866e1c4",
+      "predicate": "modelSpecification",
+      "effective": false,
+      "reason": "local_coreference_not_supported",
+      "original_owner_sources": [
+        {
+          "block_id": "table:8",
+          "row_index": 7,
+          "column_index": 1,
+          "paragraph_index": 0,
+          "span_start": 0,
+          "span_end": 5
+        }
+      ],
+      "value_sources": [
+        {
+          "block_id": "table:9",
+          "row_index": 30,
+          "column_index": 3,
+          "paragraph_index": 0,
+          "span_start": 0,
+          "span_end": 3
+        }
+      ]
+    },
+    {
+      "batch": 22,
+      "seconds": 1102.1544503970072,
+      "candidate_id": "e58a6e7e829e82782bae7e2f6d4e72304ad5b2707848da6604ed3d0e8866e1c4",
+      "predicate": "modelSpecification",
+      "effective": false,
+      "reason": "missing_predicate_support",
+      "original_owner_sources": [
+        {
+          "block_id": "table:8",
+          "row_index": 7,
+          "column_index": 1,
+          "paragraph_index": 0,
+          "span_start": 0,
+          "span_end": 5
+        }
+      ],
+      "value_sources": [
+        {
+          "block_id": "table:9",
+          "row_index": 30,
+          "column_index": 3,
+          "paragraph_index": 0,
+          "span_start": 0,
+          "span_end": 3
+        }
+      ]
+    },
+    {
+      "batch": 23,
+      "seconds": 1178.3781827529892,
+      "candidate_id": "5a948345fbb41b3bdfd652527726501366e4a4ac9fa2dac6e2b8d6b8ad0a776a",
+      "predicate": "modelSpecification",
+      "effective": false,
+      "reason": "local_coreference_not_supported",
+      "original_owner_sources": [
+        {
+          "block_id": "table:9",
+          "row_index": 3,
+          "column_index": 1,
+          "paragraph_index": 0,
+          "span_start": 0,
+          "span_end": 3
+        }
+      ],
+      "value_sources": [
+        {
+          "block_id": "table:9",
+          "row_index": 15,
+          "column_index": 3,
+          "paragraph_index": 0,
+          "span_start": 0,
+          "span_end": 5
+        }
+      ]
+    }
+  ]
+}

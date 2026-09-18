@@ -38,23 +38,27 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { RelationPanel } from "@/components/extraction/relation-panel";
 import { DocumentActionsMenu } from "@/components/reports/document-actions-menu";
 import { Outline } from "@/components/reports/outline";
+import { isWordReportDocument } from "@/components/reports/report-word-workspace";
+import { ReportRecognitionWorkspace } from "@/components/reports/report-recognition-workspace";
+import { ExpertOpinionEntry } from "@/components/reports/expert-opinion-entry";
 import {
   documentContentKey,
   ReadingPane,
   REPORT_SECTIONS,
   resolveDocumentContent,
-  saveBlob,
 } from "@/components/reports/reading-pane";
 import {
   decidePdeConflict,
   downloadReportById,
   getPdeConflictDecision,
-  listReportCenterItems,
+  resolveReportCenterItem,
   VersionConflictError,
   type PdeDecisionChoice,
   type ReportOrDocument,
 } from "@/lib/api";
 import { cn } from "@/lib/utils";
+import { saveBlob } from "@/lib/file-utils";
+import { useIdentity } from "@/lib/use-identity";
 
 type ReadonlyParams = Pick<URLSearchParams, "get">;
 
@@ -125,6 +129,7 @@ const DEFAULT_GRAPH_WIDTH = 300;
 const MIN_GRAPH_WIDTH = 220;
 
 export default function ReportDetailPage() {
+  const { identity, role } = useIdentity();
   const params = useParams();
   const searchParams = useSearchParams();
   const queryClient = useQueryClient();
@@ -135,16 +140,17 @@ export default function ReportDetailPage() {
     [routeKey, searchParams],
   );
 
-  // 深链回退：query 参数不足时，重新聚合并按 key 查回条目。
+  // 深链回退：仅 query 参数不足时按摘要查回条目，正常列表导航无需重复查询。
   const fallback = useQuery({
-    queryKey: ["report-center-resolve", routeKey],
-    queryFn: () => listReportCenterItems({ maxJobs: 100 }),
+    queryKey: ["report-center-resolve", identity.username, role, routeKey],
+    queryFn: ({ signal }) => resolveReportCenterItem(routeKey, signal),
     enabled: !paramItem,
   });
 
   const item: ReportOrDocument | null =
-    paramItem ?? fallback.data?.items.find((entry) => entry.key === routeKey) ?? null;
+    paramItem ?? fallback.data ?? null;
   const isDoc = item?.kind === "uploaded-document";
+  const isWordDocument = isWordReportDocument(item);
 
   const [highlightRef, setHighlightRef] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
@@ -159,7 +165,7 @@ export default function ReportDetailPage() {
   const contentQuery = useQuery({
     queryKey: documentContentKey(item),
     queryFn: ({ signal }) => resolveDocumentContent(item as ReportOrDocument, signal),
-    enabled: Boolean(item) && isDoc,
+    enabled: Boolean(item) && isDoc && !isWordDocument,
   });
   const documentContent =
     contentQuery.data && "content" in contentQuery.data ? contentQuery.data.content : null;
@@ -190,7 +196,7 @@ export default function ReportDetailPage() {
   const decisionQuery = useQuery({
     queryKey: decisionKey,
     queryFn: () => getPdeConflictDecision(jobId as string),
-    enabled: Boolean(jobId) && hasConflict,
+    enabled: Boolean(jobId) && hasConflict && !isWordDocument,
   });
   const decision = decisionQuery.data ?? null;
 
@@ -333,6 +339,8 @@ export default function ReportDetailPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          {!isWordDocument && <ExpertOpinionEntry target={item.kind === "uploaded-document"
+            ? { document_iri: item.iri } : { job_id: item.jobId, report_id: item.reportId }} />}
           {item.kind === "generated-report" && (
             <Button onClick={() => download.mutate()} disabled={download.isPending}>
               {download.isPending ? <Loader2 className="animate-spin" /> : <Download />}
@@ -340,7 +348,7 @@ export default function ReportDetailPage() {
             </Button>
           )}
           {/* 上传文档：右上角「操作」弹出菜单（AI 分析 / 生成风险评估报告 / 审计），紧邻分享。 */}
-          {isDoc && <DocumentActionsMenu item={item} />}
+          {isDoc && <DocumentActionsMenu key={item.iri} item={item} templateId={searchParams.get("template_id")} />}
           <Button variant="outline" onClick={handleShare}>
             {copied ? <Check /> : <Share2 />}
             {copied ? "已复制链接" : "分享"}
@@ -352,7 +360,8 @@ export default function ReportDetailPage() {
         <p className="text-sm text-destructive">下载失败，请稍后重试。</p>
       )}
 
-      <div
+      {isWordDocument ? <ReportRecognitionWorkspace key={item.iri} documentIri={item.iri!}
+        templateId={searchParams.get("template_id")} /> : <div
         ref={layoutRef}
         className="flex flex-col gap-6 lg:min-h-0 lg:flex-1 lg:flex-row lg:gap-0"
       >
@@ -370,7 +379,9 @@ export default function ReportDetailPage() {
             ) : isDoc ? (
               <Outline content={documentContent} onNavigate={handleNavigate} />
             ) : (
-              <Outline sections={REPORT_SECTIONS} onNavigate={handleNavigate} />
+              <Outline sections={item.category === "batch_record_demo"
+                ? [{ id: "report-overview", label: "报告概览" }, { id: "report-narratives", label: "批记录内容" }, { id: "report-download", label: "下载文档" }]
+                : REPORT_SECTIONS} onNavigate={handleNavigate} />
             )}
           </CardContent>
         </Card>
@@ -474,7 +485,7 @@ export default function ReportDetailPage() {
             )}
           </CardContent>
         </Card>
-      </div>
+      </div>}
     </div>
   );
 }

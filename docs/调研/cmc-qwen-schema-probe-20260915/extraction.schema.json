@@ -1,0 +1,169 @@
+{
+  "$defs": {
+    "Claim": {
+      "additionalProperties": false,
+      "properties": {
+        "subject_id": {
+          "title": "Subject Id",
+          "type": "string"
+        },
+        "predicate_iri": {
+          "title": "Predicate Iri",
+          "type": "string"
+        },
+        "object_id": {
+          "title": "Object Id",
+          "type": "string"
+        },
+        "literal_value": {
+          "title": "Literal Value",
+          "type": "string"
+        },
+        "polarity": {
+          "enum": [
+            "affirmed",
+            "negated"
+          ],
+          "title": "Polarity",
+          "type": "string"
+        },
+        "condition": {
+          "title": "Condition",
+          "type": "string"
+        },
+        "evidence_id": {
+          "title": "Evidence Id",
+          "type": "string"
+        },
+        "evidence": {
+          "title": "Evidence",
+          "type": "string"
+        }
+      },
+      "required": [
+        "subject_id",
+        "predicate_iri",
+        "object_id",
+        "literal_value",
+        "polarity",
+        "condition",
+        "evidence_id",
+        "evidence"
+      ],
+      "title": "Claim",
+      "type": "object"
+    },
+    "Mention": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "text": {
+          "title": "Text",
+          "type": "string"
+        },
+        "class_iri": {
+          "title": "Class Iri",
+          "type": "string"
+        },
+        "evidence_id": {
+          "title": "Evidence Id",
+          "type": "string"
+        },
+        "evidence": {
+          "title": "Evidence",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "text",
+        "class_iri",
+        "evidence_id",
+        "evidence"
+      ],
+      "title": "Mention",
+      "type": "object"
+    },
+    "OpenSlot": {
+      "additionalProperties": false,
+      "properties": {
+        "predicate_hint": {
+          "title": "Predicate Hint",
+          "type": "string"
+        },
+        "missing_role": {
+          "enum": [
+            "subject",
+            "object",
+            "schema"
+          ],
+          "title": "Missing Role",
+          "type": "string"
+        },
+        "expected_type_hint": {
+          "title": "Expected Type Hint",
+          "type": "string"
+        },
+        "evidence": {
+          "title": "Evidence",
+          "type": "string"
+        }
+      },
+      "required": [
+        "predicate_hint",
+        "missing_role",
+        "expected_type_hint",
+        "evidence"
+      ],
+      "title": "OpenSlot",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "scope_id": {
+      "title": "Scope Id",
+      "type": "string"
+    },
+    "mentions": {
+      "items": {
+        "$ref": "#/$defs/Mention"
+      },
+      "title": "Mentions",
+      "type": "array"
+    },
+    "claims": {
+      "items": {
+        "$ref": "#/$defs/Claim"
+      },
+      "title": "Claims",
+      "type": "array"
+    },
+    "open_slots": {
+      "items": {
+        "$ref": "#/$defs/OpenSlot"
+      },
+      "title": "Open Slots",
+      "type": "array"
+    },
+    "schema_gaps": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Schema Gaps",
+      "type": "array"
+    }
+  },
+  "required": [
+    "scope_id",
+    "mentions",
+    "claims",
+    "open_slots",
+    "schema_gaps"
+  ],
+  "title": "Extraction",
+  "type": "object"
+}

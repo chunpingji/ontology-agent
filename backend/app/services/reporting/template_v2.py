@@ -380,6 +380,8 @@ class Projection(Model):
         "records",
         "field",
         "relation_presence",
+        "source_text",
+        "source_field",
     ]
     property_iri: str | None = None
     type_contract_ref: str | None = None
@@ -387,12 +389,15 @@ class Projection(Model):
     class_iri: str | None = None
     fields: dict[str, ProjectionField] = Field(default_factory=dict)
     field_path: list[str] = Field(default_factory=list)
+    source_field: str | None = None
     item_identity: str = "entity_id"
     display_property_iri: str | None = None
     languages: list[str] = Field(default_factory=lambda: ["zh", "en"])
 
     @model_validator(mode="after")
     def shape(self):
+        if self.kind == "source_field" and not self.source_field:
+            raise ValueError("source_field projection requires an explicit profile field key")
         if self.type_contract_ref and self.kind != "property":
             raise ValueError("a property type supplement requires a property projection")
         if self.kind == "property" and not self.property_iri:
@@ -404,6 +409,13 @@ class Projection(Model):
         if self.kind == "relation_presence" and not self.predicate_path:
             raise ValueError("relation presence requires an explicit path")
         return self
+
+    @model_serializer(mode="wrap")
+    def preserve_source_identity(self, handler):
+        data = handler(self)
+        if self.source_field is None:
+            data.pop("source_field", None)
+        return data
 
 
 class StatusPolicy(Model):
@@ -609,12 +621,24 @@ class CompletenessRequirement(Model):
     when: Expression | None = None
 
 
+class SectionNarrative(PromptSpec):
+    enabled: bool = False
+
+
 class Section(Model):
     section_id: Id
     title: str = ""
     origin: dict | None = None
     completeness_requirements: list[CompletenessRequirement] = Field(default_factory=list)
     groups: list[Group] = Field(default_factory=list)
+    narrative: SectionNarrative | None = None
+
+    @model_serializer(mode="wrap")
+    def preserve_legacy_identity(self, handler):
+        data = handler(self)
+        if self.narrative is None:
+            data.pop("narrative", None)
+        return data
 
 
 class SourceSlot(Model):
@@ -670,6 +694,21 @@ class TemplateStyle(Model):
     assets: list[str] = Field(default_factory=list)
 
 
+class StaticDemoProfile(Model):
+    fixture_id: Literal["hrs5592-cmc-demo-v1"]
+    contract_id: Literal["cmc-batch-demo-v1"]
+    document_iri: Id
+
+
+class RecordSource(Model):
+    provider: Literal[
+        "assessment_team", "approver_team", "equipment", "production_areas", "equipment_schedules"
+    ]
+    contract_ref: Id
+    filters: dict[str, str | list[str]] = Field(default_factory=dict)
+    input_filters: dict[str, InputRef] = Field(default_factory=dict)
+
+
 class TemplateV2(Model):
     schema_version: Literal[2]
     template_family_id: Id
@@ -680,6 +719,7 @@ class TemplateV2(Model):
     ontology_release_ref: Id = "auto:ontology"
     source_slots: list[SourceSlot] = Field(default_factory=list)
     definitions: Definitions = Field(default_factory=Definitions)
+    record_sources: dict[str, RecordSource] = Field(default_factory=dict)
     calculation_checks: list[CalculationCheck] = Field(default_factory=list)
     sections: list[Section] = Field(default_factory=list)
     style_profile_ref: Id = "auto:style"
@@ -688,12 +728,17 @@ class TemplateV2(Model):
     budget: Budget = Field(default_factory=Budget)
     legacy: LegacyOrigin | None = None
     migration_issues: list[MigrationIssue] = Field(default_factory=list)
+    demo_profile: StaticDemoProfile | None = None
 
     @model_serializer(mode="wrap")
     def preserve_legacy_identity(self, handler):
         data = handler(self)
+        if not self.record_sources:
+            data.pop("record_sources", None)
         if self.style is None:
             data.pop("style", None)
+        if self.demo_profile is None:
+            data.pop("demo_profile", None)
         return data
 
 

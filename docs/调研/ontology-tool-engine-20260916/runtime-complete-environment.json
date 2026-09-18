@@ -1,0 +1,16 @@
+{
+  "versions": {
+    "gliner2": "2.0.0",
+    "transformers": "4.57.6",
+    "huggingface-hub": "0.36.2",
+    "tokenizers": "0.22.2",
+    "peft": "0.21.0",
+    "protobuf": "6.33.5",
+    "torch": "2.7.1+cu126",
+    "sentence-transformers": "5.6.0",
+    "pyshacl": "0.31.0"
+  },
+  "pip_check": "No broken requirements found.",
+  "environment": "/tmp/ontology-tool-complete-runtime-20260916",
+  "isolation": "new standard venv inheriting application base; no shared dependency mutation"
+}

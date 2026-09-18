@@ -19,7 +19,7 @@ from app.services.reporting.output_ast import OutputNode, walk
 from app.services.reporting.template_compiler import walk_groups
 from app.services.reporting.template_v2 import Format, ReportingError, TemplateV2
 
-RENDERER_VERSION = "output-renderer-v2.1"
+RENDERER_VERSION = "output-renderer-v2.4"
 STATE_TEXT = {
     "missing": "待补充",
     "confirmed_absent": "已确认不存在",
@@ -32,7 +32,12 @@ STATE_TEXT = {
 }
 
 
-def display(value, fmt):
+def display(value, fmt, *, partial_draft=False):
+    if partial_draft:
+        from app.services.reporting.section_narrative import draft_blocked
+
+        if draft_blocked(value):
+            return "待补充"
     if value.state != "ready" and value.display_action == "omit":
         return ""
     if value.resolved_type.kind == "entity":
@@ -47,13 +52,15 @@ def display(value, fmt):
             )
         return "未配置显示属性"
     if value.resolved_type.kind == "list":
-        texts = [display(item, fmt) for item in value.items]
+        texts = [display(item, fmt, partial_draft=partial_draft) for item in value.items]
         suffix = "（部分数据）" if value.discovery and value.discovery.status != "complete" else ""
         return (
             fmt.separator.join(texts) + suffix if texts else STATE_TEXT.get(value.state, "待补充")
         )
     if value.resolved_type.kind == "record":
-        return fmt.separator.join(display(child, fmt) for child in value.fields.values())
+        return fmt.separator.join(
+            display(child, fmt, partial_draft=partial_draft) for child in value.fields.values()
+        )
     if value.state != "ready":
         return STATE_TEXT.get(value.state, "待补充")
     raw, kind = value.value, value.resolved_type.kind
@@ -119,6 +126,18 @@ class UnitRenderer:
             raise ReportingError("OUTPUT_REFERENCE_INVALID")
         selected = project_value(source, path)
         blocked = any(i.blocks_subtree for i in selected.issues)
+        partial_draft = False
+        render = self.unit.render
+        if (render.kind == "narrative" and render.mode == "assisted"
+                and self.snapshot["source_bundle"].get("demonstration")):
+            policy = self.snapshot["source_bundle"].get("contracts", {}).get(
+                render.prompt.policy_ref, {},
+            ).get("definition", {})
+            if policy.get("allow_custom_text") and policy.get("draft_only"):
+                from app.services.reporting.section_narrative import draft_blocked
+
+                blocked = draft_blocked(selected)
+                partial_draft = True
 
         def lineage(node):
             yield node
@@ -128,7 +147,7 @@ class UnitRenderer:
         referenced = list(lineage(selected))
         return self.node(
             "value",
-            text="数据不可用" if blocked else display(selected, fmt),
+            text="数据不可用" if blocked else display(selected, fmt, partial_draft=partial_draft),
             state=selected.state,
             input_ref={
                 "input_id": input_id,
@@ -213,6 +232,12 @@ class UnitRenderer:
                         metadata,
                         "completed",
                     )
+            if render.kind == "narrative" and render.mode == "composed" and not render.nodes:
+                return self.result(
+                    [self.node("paragraph", text="待配置：" + self.unit.title, state="missing")],
+                    metadata,
+                    "completed",
+                )
             if render.kind == "table":
                 children = [self.table(render)]
             elif render.kind == "form":
@@ -281,9 +306,17 @@ class UnitRenderer:
                     policy = self.snapshot["source_bundle"]["contracts"][render.prompt.policy_ref][
                         "definition"
                     ]
+                    if policy.get("allow_custom_text") and (
+                        not policy.get("draft_only")
+                        or not self.snapshot["source_bundle"].get("demonstration")
+                    ):
+                        raise ReportingError("DEMO_REPORT_ONLY", "自定义 AI 行文仅可生成草稿")
                     try:
                         nodes, metadata = assisted_nodes(
-                            render, self.inputs, self.catalog, policy, self.budget, self.provider
+                            render, self.inputs, self.catalog, policy, self.budget, self.provider,
+                            input_labels={key: value.get("label", key) for key, value in
+                                self.snapshot["source_bundle"]["template"]["definitions"]["inputs"].items()},
+                            partial_draft=bool(self.snapshot["source_bundle"].get("demonstration")),
                         )
                     except ReportingError as exc:
                         if render.fallback is None:
@@ -479,6 +512,15 @@ def render_snapshot(snapshot, *, provider=None, completed=None, checkpoint=None)
             )
         ]
     sections.extend(calculation_sections(checks))
+    if snapshot["source_bundle"].get("demonstration"):
+        sections.insert(
+            0,
+            OutputNode(
+                node_id="demo-notice",
+                kind="paragraph",
+                text="演示草稿：请核对行文、数据来源与缺口，不表示事实审核或正式批准。",
+            ),
+        )
     ast = OutputNode(
         node_id=evidence_hash([snapshot["input_snapshot_id"], "body"]),
         kind="document",
@@ -486,6 +528,7 @@ def render_snapshot(snapshot, *, provider=None, completed=None, checkpoint=None)
     )
     return {
         "output_results": results,
+        "layout_nodes": {r["output_ast"]["node_id"]: r["output_id"] for r in results},
         "body_ast": ast.model_dump(mode="json"),
         "body_hash": evidence_hash(ast),
         "calculation_checks": checks,
@@ -497,11 +540,16 @@ def render_snapshot(snapshot, *, provider=None, completed=None, checkpoint=None)
     }
 
 
-def render_docx(ast, style=None):
+def render_docx(ast, style=None, *, layout=None, layout_nodes=None):
     from docx import Document
     from docx.shared import Pt
 
     from app.services.reporting.output_ast import plain_text
+
+    if layout:
+        from app.services.reporting.docx_layout import render_template_docx
+
+        return render_template_docx(ast, style or {}, layout, layout_nodes or {})
 
     ast = OutputNode.model_validate(ast)
     doc = Document()
@@ -545,6 +593,9 @@ def render_docx(ast, style=None):
             emit(child)
 
     emit(ast)
+    from app.services.reporting.docx_layout import use_black_text
+
+    use_black_text(doc)
     stream = BytesIO()
     doc.save(stream)
     return stream.getvalue()

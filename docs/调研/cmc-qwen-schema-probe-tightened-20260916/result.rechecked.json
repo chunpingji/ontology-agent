@@ -1,0 +1,3216 @@
+{
+  "run_id": "recheck-7b2680a25b6e48899e1f",
+  "started_at": "2026-09-16T00:46:47.448946+00:00",
+  "baseline_run_id": "schema-probe-67039239109b453185fe",
+  "source_sha256": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+  "model": "Qwen3.6-35B-A3B",
+  "declared_model_revision": "0b21525e972670ed59e1812e170b27c26355381f0656ecc4e25617ece7dac58b",
+  "ontology_hash": "555519c5c92c9555e3ac7cd358918cbf853baf38bb07c21a86bb62e72ff9a469",
+  "case_count": 8,
+  "input_hashes": {
+    "cases.json": "3cb1670630526a84ec66f29232c954fc63939b251b71b2e50ecac23d3b0bf247",
+    "cards.json": "3b2a50862d1f977adb76044d08360cc03e02629f8bae8de86a142b7e388044a6",
+    "ir.json": "858dddbb762217ede057ed85e659bb6d0349fc90e0c936fbf42756859c882134"
+  },
+  "reference_sha256": "49095440a7572936424e7b7de6a8c9bcee17cd70c5cc86c5b78a35cfaec65097",
+  "reference_is_model_input": false,
+  "script_sha256": "2fb24c9ae845a6d2be1b27415a5732677c4f2e1bd67d05d4333aa2eb822484d2",
+  "schema_fallback": false,
+  "max_attempts": 1,
+  "temperature": 0,
+  "max_output_tokens_per_call": 4096,
+  "max_model_calls": 0,
+  "status": "completed",
+  "source_run_id": "tightened-090af44d1e7a467aa362",
+  "source_run_path": "../output/schema-card-qwen-cmc-tightened-20260916/run",
+  "execution_mode": "offline_recheck",
+  "new_model_calls": 0,
+  "results": [
+    {
+      "scope_id": "introduction",
+      "calls": [],
+      "status": "complete",
+      "accepted": [
+        {
+          "subject_id": "document",
+          "subject_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport",
+          "subject_text": "",
+          "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasProductionPlan",
+          "evidence": {
+            "ref": "u1",
+            "quote": "本次备样用于Ⅰ期临床，计划在2026年6月于642和646车间，完成本次临床样品生产及检测，批量3.8- 6.6kg。"
+          },
+          "condition": {
+            "ref": "",
+            "quote": ""
+          },
+          "kind": "relation",
+          "object_id": "s1",
+          "object_text": "本次备样用于Ⅰ期临床，计划在2026年6月于642和646车间，完成本次临床样品生产及检测，批量3.8- 6.6kg。",
+          "object_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/ClinicalSampleProductionPlan",
+          "polarity": "affirmed"
+        },
+        {
+          "subject_id": "s1",
+          "subject_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/ClinicalSampleProductionPlan",
+          "subject_text": "本次备样用于Ⅰ期临床，计划在2026年6月于642和646车间，完成本次临床样品生产及检测，批量3.8- 6.6kg。",
+          "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/plannedBatchSizeMax_kg",
+          "evidence": {
+            "ref": "u1",
+            "quote": "批量3.8- 6.6kg"
+          },
+          "condition": {
+            "ref": "",
+            "quote": ""
+          },
+          "kind": "property",
+          "value": "6.6",
+          "raw_value": "6.6",
+          "field": {
+            "ref": "u1",
+            "quote": "批量"
+          },
+          "unit": {
+            "ref": "u1",
+            "quote": "kg"
+          }
+        },
+        {
+          "subject_id": "s1",
+          "subject_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/ClinicalSampleProductionPlan",
+          "subject_text": "本次备样用于Ⅰ期临床，计划在2026年6月于642和646车间，完成本次临床样品生产及检测，批量3.8- 6.6kg。",
+          "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/productionPurpose",
+          "evidence": {
+            "ref": "u1",
+            "quote": "本次备样用于Ⅰ期临床"
+          },
+          "condition": {
+            "ref": "",
+            "quote": ""
+          },
+          "kind": "property",
+          "value": "Ⅰ期临床",
+          "raw_value": "Ⅰ期临床",
+          "field": {
+            "ref": "u1",
+            "quote": "用于"
+          },
+          "unit": {
+            "ref": "",
+            "quote": ""
+          }
+        }
+      ],
+      "observations": [],
+      "rejected": [
+        {
+          "kind": "observation",
+          "proposal": {
+            "value": {
+              "ref": "u1",
+              "quote": "本次备样用于Ⅰ期临床"
+            },
+            "field": {
+              "ref": "u1",
+              "quote": "本次备样用于Ⅰ期临床"
+            },
+            "legend": {
+              "ref": "u1",
+              "quote": "Ⅰ期临床"
+            },
+            "condition": {
+              "ref": "",
+              "quote": ""
+            },
+            "state": "not_applicable",
+            "reason": "计划生产用途为Ⅰ期临床，非共线评估所需的毒理/最大日剂量场景，故F因子等共线评估数据不适用。"
+          },
+          "reason": "observation_state_not_supported"
+        },
+        {
+          "kind": "observation",
+          "proposal": {
+            "value": {
+              "ref": "u1",
+              "quote": "计划在2026年6月"
+            },
+            "field": {
+              "ref": "u1",
+              "quote": "计划生产时间"
+            },
+            "legend": {
+              "ref": "u1",
+              "quote": "2026年6月"
+            },
+            "condition": {
+              "ref": "",
+              "quote": ""
+            },
+            "state": "not_applicable",
+            "reason": "计划生产时间为未来时间，非已执行的毒理或临床批次时间，不适用于共线评估的历史数据追溯。"
+          },
+          "reason": "citation_quote_not_in_source"
+        },
+        {
+          "kind": "observation",
+          "proposal": {
+            "value": {
+              "ref": "u1",
+              "quote": "于642和646车间"
+            },
+            "field": {
+              "ref": "u1",
+              "quote": "生产地点"
+            },
+            "legend": {
+              "ref": "u1",
+              "quote": "642和646车间"
+            },
+            "condition": {
+              "ref": "",
+              "quote": ""
+            },
+            "state": "not_applicable",
+            "reason": "计划生产地点为未来车间，非已执行的毒理或临床批次地点，不适用于共线评估。"
+          },
+          "reason": "citation_quote_not_in_source"
+        },
+        {
+          "kind": "observation",
+          "proposal": {
+            "value": {
+              "ref": "u1",
+              "quote": "批量3.8- 6.6kg"
+            },
+            "field": {
+              "ref": "u1",
+              "quote": "预计批量上限（kg）"
+            },
+            "legend": {
+              "ref": "u1",
+              "quote": "6.6"
+            },
+            "condition": {
+              "ref": "",
+              "quote": ""
+            },
+            "state": "not_applicable",
+            "reason": "计划批量为临床备样规模，非共线评估所需的毒理或临床批次规模，不适用于共线评估。"
+          },
+          "reason": "citation_quote_not_in_source"
+        },
+        {
+          "kind": "observation",
+          "proposal": {
+            "value": {
+              "ref": "u1",
+              "quote": "批量3.8- 6.6kg"
+            },
+            "field": {
+              "ref": "u1",
+              "quote": "预计批量下限（kg）"
+            },
+            "legend": {
+              "ref": "u1",
+              "quote": "3.8"
+            },
+            "condition": {
+              "ref": "",
+              "quote": ""
+            },
+            "state": "not_applicable",
+            "reason": "计划批量为临床备样规模，非共线评估所需的毒理或临床批次规模，不适用于共线评估。"
+          },
+          "reason": "citation_quote_not_in_source"
+        },
+        {
+          "kind": "observation",
+          "proposal": {
+            "value": {
+              "ref": "u1",
+              "quote": "HRS-1597"
+            },
+            "field": {
+              "ref": "u1",
+              "quote": "HRS-1597"
+            },
+            "legend": {
+              "ref": "u1",
+              "quote": "HRS-1597"
+            },
+            "condition": {
+              "ref": "",
+              "quote": ""
+            },
+            "state": "not_applicable",
+            "reason": "活性成分名称虽存在，但因本计划为临床备样且无共线评估所需毒理数据，故整体共线评估数据框架不适用。"
+          },
+          "reason": "observation_state_not_supported"
+        },
+        {
+          "kind": "observation",
+          "proposal": {
+            "value": {
+              "ref": "u1",
+              "quote": "适应症为减肥增肌"
+            },
+            "field": {
+              "ref": "u1",
+              "quote": "适应症"
+            },
+            "legend": {
+              "ref": "u1",
+              "quote": "减肥增肌"
+            },
+            "condition": {
+              "ref": "",
+              "quote": ""
+            },
+            "state": "not_applicable",
+            "reason": "适应症信息存在，但非共线评估直接所需的毒理/剂量参数，且整体评估不适用。"
+          },
+          "reason": "observation_state_not_supported"
+        },
+        {
+          "kind": "observation",
+          "proposal": {
+            "value": {
+              "ref": "u1",
+              "quote": "于2025年08月供样亚急毒样品"
+            },
+            "field": {
+              "ref": "u1",
+              "quote": "亚急毒供样时间"
+            },
+            "legend": {
+              "ref": "u1",
+              "quote": "2025年08月"
+            },
+            "condition": {
+              "ref": "",
+              "quote": ""
+            },
+            "state": "not_applicable",
+            "reason": "亚急毒供样时间为历史事件，非本次临床备样计划的一部分，不适用于本次计划评估。"
+          },
+          "reason": "citation_quote_not_in_source"
+        },
+        {
+          "kind": "observation",
+          "proposal": {
+            "value": {
+              "ref": "u1",
+              "quote": "于2025年09月供样毒理批样品"
+            },
+            "field": {
+              "ref": "u1",
+              "quote": "毒理批供样时间"
+            },
+            "legend": {
+              "ref": "u1",
+              "quote": "2025年09月"
+            },
+            "condition": {
+              "ref": "",
+              "quote": ""
+            },
+            "state": "not_applicable",
+            "reason": "毒理批供样时间为历史事件，非本次临床备样计划的一部分，不适用于本次计划评估。"
+          },
+          "reason": "citation_quote_not_in_source"
+        },
+        {
+          "kind": "observation",
+          "proposal": {
+            "value": {
+              "ref": "u2",
+              "quote": "本次修改仅对于HRS-1597结晶纯化步骤"
+            },
+            "field": {
+              "ref": "u2",
+              "quote": "修改范围"
+            },
+            "legend": {
+              "ref": "u2",
+              "quote": "结晶纯化步骤"
+            },
+            "condition": {
+              "ref": "",
+              "quote": ""
+            },
+            "state": "not_applicable",
+            "reason": "工艺修改描述为历史/当前状态，非本次临床备样计划的具体执行参数，不适用于本次计划评估。"
+          },
+          "reason": "citation_quote_not_in_source"
+        },
+        {
+          "kind": "observation",
+          "proposal": {
+            "value": {
+              "ref": "u2",
+              "quote": "由于中控过程杂质含量未达过控标准"
+            },
+            "field": {
+              "ref": "u2",
+              "quote": "修改原因"
+            },
+            "legend": {
+              "ref": "u2",
+              "quote": "中控过程杂质含量未达过控标准"
+            },
+            "condition": {
+              "ref": "",
+              "quote": ""
+            },
+            "state": "not_applicable",
+            "reason": "修改原因为历史背景，非本次临床备样计划的具体执行参数，不适用于本次计划评估。"
+          },
+          "reason": "citation_quote_not_in_source"
+        },
+        {
+          "kind": "observation",
+          "proposal": {
+            "value": {
+              "ref": "u2",
+              "quote": "增加两次重结晶操作"
+            },
+            "field": {
+              "ref": "u2",
+              "quote": "修改内容"
+            },
+            "legend": {
+              "ref": "u2",
+              "quote": "增加两次重结晶操作"
+            },
+            "condition": {
+              "ref": "",
+              "quote": ""
+            },
+            "state": "not_applicable",
+            "reason": "修改内容为工艺变更描述，非本次临床备样计划的具体执行参数，不适用于本次计划评估。"
+          },
+          "reason": "citation_quote_not_in_source"
+        },
+        {
+          "subject_id": "s1",
+          "field": "plannedBatchSizeMin_kg",
+          "proposal": {
+            "raw": "3.8",
+            "source": {
+              "ref": "u1",
+              "quote": "批量3.8- 6.6kg"
+            },
+            "field": {
+              "ref": "u1",
+              "quote": "批量"
+            },
+            "unit": {
+              "ref": "u1",
+              "quote": "kg"
+            },
+            "condition": {
+              "ref": "",
+              "quote": ""
+            }
+          },
+          "reason": "scalar_value_required"
+        },
+        {
+          "subject_id": "s1",
+          "field": "plannedProductionDate",
+          "proposal": {
+            "raw": "2026年06月",
+            "source": {
+              "ref": "u1",
+              "quote": "计划在2026年6月"
+            },
+            "field": {
+              "ref": "u1",
+              "quote": "计划"
+            },
+            "unit": {
+              "ref": "",
+              "quote": ""
+            },
+            "condition": {
+              "ref": "",
+              "quote": ""
+            }
+          },
+          "reason": "raw_value_not_in_quote"
+        }
+      ],
+      "discovery_contract_pass": true,
+      "frames": {
+        "s1": {
+          "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/ClinicalSampleProductionPlan",
+          "anchor": {
+            "ref": "u1",
+            "quote": "本次备样用于Ⅰ期临床，计划在2026年6月于642和646车间，完成本次临床样品生产及检测，批量3.8- 6.6kg。"
+          }
+        }
+      },
+      "claims_contract_pass": true,
+      "acceptance": {
+        "checks": [
+          {
+            "check": "required_properties",
+            "expected": {
+              "predicate": "plannedProductionDate",
+              "value": "2026-06"
+            },
+            "pass": false
+          },
+          {
+            "check": "required_relations",
+            "expected": {
+              "predicate": "describes",
+              "subject_id": "document",
+              "object_contains": "HRS-1597"
+            },
+            "pass": false
+          },
+          {
+            "check": "required_relations",
+            "expected": {
+              "predicate": "hasProductionPlan",
+              "subject_id": "document"
+            },
+            "pass": true
+          },
+          {
+            "check": "forbidden_predicate",
+            "expected": "outputMassRange_kg",
+            "pass": true
+          }
+        ],
+        "passed": 2,
+        "total": 4,
+        "all_pass": false,
+        "passed_with_no_rejections": false
+      }
+    },
+    {
+      "scope_id": "product_properties",
+      "calls": [],
+      "status": "complete",
+      "accepted": [
+        {
+          "subject_id": "document",
+          "subject_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport",
+          "subject_text": "",
+          "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/describes",
+          "evidence": {
+            "ref": "u0",
+            "quote": "项目名称：HRS-1597"
+          },
+          "condition": {
+            "ref": "",
+            "quote": ""
+          },
+          "kind": "relation",
+          "object_id": "s1",
+          "object_text": "项目名称：HRS-1597",
+          "object_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/DrugProduct",
+          "polarity": "affirmed"
+        },
+        {
+          "subject_id": "s1",
+          "subject_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/DrugProduct",
+          "subject_text": "项目名称：HRS-1597",
+          "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug/appearance",
+          "evidence": {
+            "ref": "u1",
+            "quote": "性状：类白色到白色粉末"
+          },
+          "condition": {
+            "ref": "",
+            "quote": ""
+          },
+          "kind": "property",
+          "value": "类白色到白色粉末",
+          "raw_value": "类白色到白色粉末",
+          "field": {
+            "ref": "u1",
+            "quote": "性状"
+          },
+          "unit": {
+            "ref": "",
+            "quote": ""
+          }
+        },
+        {
+          "subject_id": "s1",
+          "subject_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/DrugProduct",
+          "subject_text": "项目名称：HRS-1597",
+          "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug/dosageForm",
+          "evidence": {
+            "ref": "u3",
+            "quote": "制剂剂型：口服片剂 "
+          },
+          "condition": {
+            "ref": "",
+            "quote": ""
+          },
+          "kind": "property",
+          "value": "口服片剂",
+          "raw_value": "口服片剂",
+          "field": {
+            "ref": "u3",
+            "quote": "制剂剂型"
+          },
+          "unit": {
+            "ref": "",
+            "quote": ""
+          }
+        },
+        {
+          "subject_id": "s1",
+          "subject_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/DrugProduct",
+          "subject_text": "项目名称：HRS-1597",
+          "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug/isCytotoxic",
+          "evidence": {
+            "ref": "u5",
+            "quote": "是否细胞毒药物：否"
+          },
+          "condition": {
+            "ref": "",
+            "quote": ""
+          },
+          "kind": "property",
+          "value": false,
+          "raw_value": "否",
+          "field": {
+            "ref": "u5",
+            "quote": "是否细胞毒药物"
+          },
+          "unit": {
+            "ref": "",
+            "quote": ""
+          }
+        },
+        {
+          "subject_id": "s1",
+          "subject_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/DrugProduct",
+          "subject_text": "项目名称：HRS-1597",
+          "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug/isOncologyDrug",
+          "evidence": {
+            "ref": "u4",
+            "quote": "是否是肿瘤药物：否"
+          },
+          "condition": {
+            "ref": "",
+            "quote": ""
+          },
+          "kind": "property",
+          "value": false,
+          "raw_value": "否",
+          "field": {
+            "ref": "u4",
+            "quote": "是否是肿瘤药物"
+          },
+          "unit": {
+            "ref": "",
+            "quote": ""
+          }
+        },
+        {
+          "subject_id": "s1",
+          "subject_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/DrugProduct",
+          "subject_text": "项目名称：HRS-1597",
+          "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug/projectName",
+          "evidence": {
+            "ref": "u0",
+            "quote": "项目名称：HRS-1597"
+          },
+          "condition": {
+            "ref": "",
+            "quote": ""
+          },
+          "kind": "property",
+          "value": "HRS-1597",
+          "raw_value": "HRS-1597",
+          "field": {
+            "ref": "u0",
+            "quote": "项目名称"
+          },
+          "unit": {
+            "ref": "",
+            "quote": ""
+          }
+        },
+        {
+          "subject_id": "s1",
+          "subject_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/DrugProduct",
+          "subject_text": "项目名称：HRS-1597",
+          "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug/solubility",
+          "evidence": {
+            "ref": "u2",
+            "quote": "溶解性： DCM易溶，H2O、Heptane难溶"
+          },
+          "condition": {
+            "ref": "",
+            "quote": ""
+          },
+          "kind": "property",
+          "value": "DCM易溶，H2O、Heptane难溶",
+          "raw_value": "DCM易溶，H2O、Heptane难溶",
+          "field": {
+            "ref": "u2",
+            "quote": "溶解性"
+          },
+          "unit": {
+            "ref": "",
+            "quote": ""
+          }
+        }
+      ],
+      "observations": [],
+      "rejected": [
+        {
+          "kind": "observation",
+          "proposal": {
+            "value": {
+              "ref": "u1",
+              "quote": "性状：类白色到白色粉末"
+            },
+            "field": {
+              "ref": "u1",
+              "quote": "性状"
+            },
+            "legend": {
+              "ref": "u1",
+              "quote": "类白色到白色粉末"
+            },
+            "condition": {
+              "ref": "",
+              "quote": ""
+            },
+            "state": "unknown",
+            "reason": "原文提供了性状描述，但无具体测试条件或标准引用，作为事实观察保留。"
+          },
+          "reason": "unknown_observation_requires_marker_or_unresolved_number"
+        },
+        {
+          "kind": "observation",
+          "proposal": {
+            "value": {
+              "ref": "u2",
+              "quote": "溶解性： DCM易溶，H2O、Heptane难溶"
+            },
+            "field": {
+              "ref": "u2",
+              "quote": "溶解性"
+            },
+            "legend": {
+              "ref": "u2",
+              "quote": "DCM易溶，H2O、Heptane难溶"
+            },
+            "condition": {
+              "ref": "",
+              "quote": ""
+            },
+            "state": "unknown",
+            "reason": "原文提供了溶解性观察结果，包含具体溶剂和溶解程度，作为事实观察保留。"
+          },
+          "reason": "unknown_observation_requires_marker_or_unresolved_number"
+        },
+        {
+          "kind": "observation",
+          "proposal": {
+            "value": {
+              "ref": "u3",
+              "quote": "制剂剂型：口服片剂 "
+            },
+            "field": {
+              "ref": "u3",
+              "quote": "制剂剂型"
+            },
+            "legend": {
+              "ref": "u3",
+              "quote": "口服片剂"
+            },
+            "condition": {
+              "ref": "",
+              "quote": ""
+            },
+            "state": "unknown",
+            "reason": "原文提供了制剂剂型的具体描述，作为事实观察保留。"
+          },
+          "reason": "unknown_observation_requires_marker_or_unresolved_number"
+        },
+        {
+          "kind": "observation",
+          "proposal": {
+            "value": {
+              "ref": "u4",
+              "quote": "是否是肿瘤药物：否"
+            },
+            "field": {
+              "ref": "u4",
+              "quote": "是否是肿瘤药物"
+            },
+            "legend": {
+              "ref": "u4",
+              "quote": "否"
+            },
+            "condition": {
+              "ref": "",
+              "quote": ""
+            },
+            "state": "negated",
+            "reason": "原文明确否定该药物为肿瘤药物。"
+          },
+          "reason": "citation_quote_ambiguous"
+        },
+        {
+          "kind": "observation",
+          "proposal": {
+            "value": {
+              "ref": "u5",
+              "quote": "是否细胞毒药物：否"
+            },
+            "field": {
+              "ref": "u5",
+              "quote": "是否细胞毒药物"
+            },
+            "legend": {
+              "ref": "u5",
+              "quote": "否"
+            },
+            "condition": {
+              "ref": "",
+              "quote": ""
+            },
+            "state": "negated",
+            "reason": "原文明确否定该药物为细胞毒药物。"
+          },
+          "reason": "citation_quote_ambiguous"
+        }
+      ],
+      "discovery_contract_pass": true,
+      "frames": {
+        "s1": {
+          "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/DrugProduct",
+          "anchor": {
+            "ref": "u0",
+            "quote": "项目名称：HRS-1597"
+          }
+        }
+      },
+      "claims_contract_pass": true,
+      "acceptance": {
+        "checks": [
+          {
+            "check": "required_properties",
+            "expected": {
+              "predicate": "appearance",
+              "value": "类白色到白色粉末",
+              "owner_contains": "HRS-1597"
+            },
+            "pass": true
+          },
+          {
+            "check": "required_properties",
+            "expected": {
+              "predicate": "dosageForm",
+              "value": "口服片剂",
+              "owner_contains": "HRS-1597"
+            },
+            "pass": true
+          },
+          {
+            "check": "required_properties",
+            "expected": {
+              "predicate": "isOncologyDrug",
+              "value": false,
+              "owner_contains": "HRS-1597"
+            },
+            "pass": true
+          },
+          {
+            "check": "required_properties",
+            "expected": {
+              "predicate": "isCytotoxic",
+              "value": false,
+              "owner_contains": "HRS-1597"
+            },
+            "pass": true
+          }
+        ],
+        "passed": 4,
+        "total": 4,
+        "all_pass": true,
+        "passed_with_no_rejections": false
+      }
+    },
+    {
+      "scope_id": "process_equipment",
+      "calls": [],
+      "status": "complete",
+      "accepted": [
+        {
+          "subject_id": "s2",
+          "subject_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/SynthesisStep",
+          "subject_text": "步骤一：200L反应釜（RE64611）内加入AR级别丙酮(丙酮投料量/L= HRS-1597粗品投入量/kg×13.5*0.79)和纯化水(纯化水投料量/L= HRS-1597粗品投入量/kg×1.5*1)，氮气置换4次。加入HRS-1597粗品，釜内温度上升至55℃，搅拌溶清。随后氮气保护下加入颗粒活性炭（活性炭投料量/Kg= HRS-1597粗品投入量/kg×0.2），维持50~55℃继续搅拌1-2小时。",
+          "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/reactionConditions",
+          "evidence": {
+            "ref": "u2",
+            "quote": "维持50~55℃继续搅拌1-2小时"
+          },
+          "condition": {
+            "ref": "",
+            "quote": ""
+          },
+          "kind": "property",
+          "value": "1-2小时",
+          "raw_value": "1-2小时",
+          "field": {
+            "ref": "u2",
+            "quote": "步骤一：200L反应釜（RE64611）内加入AR级别丙酮(丙酮投料量/L= HRS-1597粗品投入量/kg×13.5*0.79)和纯化水(纯化水投料量/L= HRS-1597粗品投入量/kg×1.5*1)，氮气置换4次。加入HRS-1597粗品，釜内温度上升至55℃，搅拌溶清。随后氮气保护下加入颗粒活性炭（活性炭投料量/Kg= HRS-1597粗品投入量/kg×0.2），维持50~55℃继续搅拌1-2小时。"
+          },
+          "unit": {
+            "ref": "u2",
+            "quote": "小时"
+          }
+        },
+        {
+          "subject_id": "s2",
+          "subject_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/SynthesisStep",
+          "subject_text": "步骤一：200L反应釜（RE64611）内加入AR级别丙酮(丙酮投料量/L= HRS-1597粗品投入量/kg×13.5*0.79)和纯化水(纯化水投料量/L= HRS-1597粗品投入量/kg×1.5*1)，氮气置换4次。加入HRS-1597粗品，釜内温度上升至55℃，搅拌溶清。随后氮气保护下加入颗粒活性炭（活性炭投料量/Kg= HRS-1597粗品投入量/kg×0.2），维持50~55℃继续搅拌1-2小时。",
+          "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/usesEquipment",
+          "evidence": {
+            "ref": "u2",
+            "quote": "200L反应釜（RE64611）"
+          },
+          "condition": {
+            "ref": "",
+            "quote": ""
+          },
+          "kind": "relation",
+          "object_id": "s3",
+          "object_text": "200L反应釜（RE64611）",
+          "object_class_iri": "https://ontology.pharma-gmp.cn/slpra/equipment/Equipment",
+          "polarity": "affirmed"
+        },
+        {
+          "subject_id": "s3",
+          "subject_class_iri": "https://ontology.pharma-gmp.cn/slpra/equipment/Equipment",
+          "subject_text": "200L反应釜（RE64611）",
+          "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/equipment/equipmentID",
+          "evidence": {
+            "ref": "u2",
+            "quote": "200L反应釜（RE64611）"
+          },
+          "condition": {
+            "ref": "",
+            "quote": ""
+          },
+          "kind": "property",
+          "value": "RE64611",
+          "raw_value": "RE64611",
+          "field": {
+            "ref": "u2",
+            "quote": "200L反应釜（RE64611）"
+          },
+          "unit": {
+            "ref": "",
+            "quote": ""
+          }
+        },
+        {
+          "subject_id": "s3",
+          "subject_class_iri": "https://ontology.pharma-gmp.cn/slpra/equipment/Equipment",
+          "subject_text": "200L反应釜（RE64611）",
+          "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/equipment/equipmentName",
+          "evidence": {
+            "ref": "u2",
+            "quote": "200L反应釜（RE64611）"
+          },
+          "condition": {
+            "ref": "",
+            "quote": ""
+          },
+          "kind": "property",
+          "value": "200L反应釜",
+          "raw_value": "200L反应釜",
+          "field": {
+            "ref": "u2",
+            "quote": "200L反应釜（RE64611）"
+          },
+          "unit": {
+            "ref": "",
+            "quote": ""
+          }
+        }
+      ],
+      "observations": [],
+      "rejected": [
+        {
+          "kind": "frame",
+          "proposal": {
+            "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/CrudeProduct",
+            "anchor": {
+              "ref": "u2",
+              "quote": "HRS-1597粗品"
+            }
+          },
+          "reason": "citation_quote_ambiguous"
+        },
+        {
+          "kind": "observation",
+          "proposal": {
+            "value": {
+              "ref": "u2",
+              "quote": "200L"
+            },
+            "field": {
+              "ref": "u2",
+              "quote": "200L反应釜"
+            },
+            "legend": {
+              "ref": "",
+              "quote": ""
+            },
+            "condition": {
+              "ref": "",
+              "quote": ""
+            },
+            "state": "unknown",
+            "reason": "原文数值200L未明确指定单位是体积还是其他，且作为设备规格描述的一部分，保留为unknown观察以符合'缺少原文单位的数值保留unknown观察'规则（此处200L虽通常指体积，但严格遵循指令不臆造单位，且原文未单独列出单位列）"
+          },
+          "reason": "unknown_observation_requires_marker_or_unresolved_number"
+        },
+        {
+          "kind": "observation",
+          "proposal": {
+            "value": {
+              "ref": "u2",
+              "quote": "RE64611"
+            },
+            "field": {
+              "ref": "u2",
+              "quote": "设备编号"
+            },
+            "legend": {
+              "ref": "",
+              "quote": ""
+            },
+            "condition": {
+              "ref": "",
+              "quote": ""
+            },
+            "state": "unknown",
+            "reason": "原文中RE64611为设备编号，但无明确字段标签，引用原文定位"
+          },
+          "reason": "citation_quote_not_in_source"
+        },
+        {
+          "kind": "observation",
+          "proposal": {
+            "value": {
+              "ref": "u2",
+              "quote": "AR级别"
+            },
+            "field": {
+              "ref": "u2",
+              "quote": "丙酮"
+            },
+            "legend": {
+              "ref": "",
+              "quote": ""
+            },
+            "condition": {
+              "ref": "",
+              "quote": ""
+            },
+            "state": "unknown",
+            "reason": "丙酮的纯度等级为AR级别，原文描述"
+          },
+          "reason": "citation_quote_ambiguous"
+        },
+        {
+          "kind": "observation",
+          "proposal": {
+            "value": {
+              "ref": "u2",
+              "quote": "HRS-1597粗品投入量/kg×13.5*0.79"
+            },
+            "field": {
+              "ref": "u2",
+              "quote": "丙酮投料量/L"
+            },
+            "legend": {
+              "ref": "",
+              "quote": ""
+            },
+            "condition": {
+              "ref": "",
+              "quote": ""
+            },
+            "state": "conditional",
+            "reason": "丙酮投料量依赖于HRS-1597粗品投入量，为条件性数据"
+          },
+          "reason": "conditional_observation_missing_condition"
+        },
+        {
+          "kind": "observation",
+          "proposal": {
+            "value": {
+              "ref": "u2",
+              "quote": "HRS-1597粗品投入量/kg×1.5*1"
+            },
+            "field": {
+              "ref": "u2",
+              "quote": "纯化水投料量/L"
+            },
+            "legend": {
+              "ref": "",
+              "quote": ""
+            },
+            "condition": {
+              "ref": "",
+              "quote": ""
+            },
+            "state": "conditional",
+            "reason": "纯化水投料量依赖于HRS-1597粗品投入量，为条件性数据"
+          },
+          "reason": "conditional_observation_missing_condition"
+        },
+        {
+          "kind": "observation",
+          "proposal": {
+            "value": {
+              "ref": "u2",
+              "quote": "4次"
+            },
+            "field": {
+              "ref": "u2",
+              "quote": "氮气置换次数"
+            },
+            "legend": {
+              "ref": "",
+              "quote": ""
+            },
+            "condition": {
+              "ref": "",
+              "quote": ""
+            },
+            "state": "unknown",
+            "reason": "氮气置换次数为4次，原文描述"
+          },
+          "reason": "citation_quote_not_in_source"
+        },
+        {
+          "kind": "observation",
+          "proposal": {
+            "value": {
+              "ref": "u2",
+              "quote": "55℃"
+            },
+            "field": {
+              "ref": "u2",
+              "quote": "釜内温度"
+            },
+            "legend": {
+              "ref": "",
+              "quote": ""
+            },
+            "condition": {
+              "ref": "",
+              "quote": ""
+            },
+            "state": "unknown",
+            "reason": "加入HRS-1597粗品后釜内温度上升至55℃"
+          },
+          "reason": "citation_quote_ambiguous"
+        },
+        {
+          "kind": "observation",
+          "proposal": {
+            "value": {
+              "ref": "u2",
+              "quote": "HRS-1597粗品投入量/kg×0.2"
+            },
+            "field": {
+              "ref": "u2",
+              "quote": "活性炭投料量/Kg"
+            },
+            "legend": {
+              "ref": "",
+              "quote": ""
+            },
+            "condition": {
+              "ref": "",
+              "quote": ""
+            },
+            "state": "conditional",
+            "reason": "活性炭投料量依赖于HRS-1597粗品投入量，为条件性数据"
+          },
+          "reason": "conditional_observation_missing_condition"
+        },
+        {
+          "kind": "observation",
+          "proposal": {
+            "value": {
+              "ref": "u2",
+              "quote": "50~55℃"
+            },
+            "field": {
+              "ref": "u2",
+              "quote": "搅拌温度"
+            },
+            "legend": {
+              "ref": "",
+              "quote": ""
+            },
+            "condition": {
+              "ref": "",
+              "quote": "氮气保护下"
+            },
+            "state": "conditional",
+            "reason": "维持50~55℃继续搅拌1-2小时，条件为氮气保护下"
+          },
+          "reason": "citation_quote_not_in_source"
+        },
+        {
+          "kind": "observation",
+          "proposal": {
+            "value": {
+              "ref": "u2",
+              "quote": "1-2小时"
+            },
+            "field": {
+              "ref": "u2",
+              "quote": "搅拌时间"
+            },
+            "legend": {
+              "ref": "",
+              "quote": ""
+            },
+            "condition": {
+              "ref": "",
+              "quote": "氮气保护下，维持50~55℃"
+            },
+            "state": "conditional",
+            "reason": "搅拌时间为1-2小时，条件为氮气保护下且温度维持50~55℃"
+          },
+          "reason": "citation_quote_not_in_source"
+        },
+        {
+          "subject_id": "s2",
+          "field": "reactionConditions",
+          "proposal": {
+            "raw": "55℃",
+            "source": {
+              "ref": "u2",
+              "quote": "釜内温度上升至55℃"
+            },
+            "field": {
+              "ref": "u2",
+              "quote": "步骤一：200L反应釜（RE64611）内加入AR级别丙酮(丙酮投料量/L= HRS-1597粗品投入量/kg×13.5*0.79)和纯化水(纯化水投料量/L= HRS-1597粗品投入量/kg×1.5*1)，氮气置换4次。加入HRS-1597粗品，釜内温度上升至55℃，搅拌溶清。随后氮气保护下加入颗粒活性炭（活性炭投料量/Kg= HRS-1597粗品投入量/kg×0.2），维持50~55℃继续搅拌1-2小时。"
+            },
+            "unit": {
+              "ref": "u2",
+              "quote": "℃"
+            },
+            "condition": {
+              "ref": "",
+              "quote": ""
+            }
+          },
+          "reason": "citation_quote_ambiguous"
+        },
+        {
+          "subject_id": "s2",
+          "field": "reactionConditions",
+          "proposal": {
+            "raw": "50~55℃",
+            "source": {
+              "ref": "u2",
+              "quote": "维持50~55℃继续搅拌1-2小时"
+            },
+            "field": {
+              "ref": "u2",
+              "quote": "步骤一：200L反应釜（RE64611）内加入AR级别丙酮(丙酮投料量/L= HRS-1597粗品投入量/kg×13.5*0.79)和纯化水(纯化水投料量/L= HRS-1597粗品投入量/kg×1.5*1)，氮气置换4次。加入HRS-1597粗品，釜内温度上升至55℃，搅拌溶清。随后氮气保护下加入颗粒活性炭（活性炭投料量/Kg= HRS-1597粗品投入量/kg×0.2），维持50~55℃继续搅拌1-2小时。"
+            },
+            "unit": {
+              "ref": "u2",
+              "quote": "℃"
+            },
+            "condition": {
+              "ref": "",
+              "quote": ""
+            }
+          },
+          "reason": "citation_quote_ambiguous"
+        },
+        {
+          "subject_id": "s2",
+          "field": "stepOrder",
+          "proposal": {
+            "raw": "步骤一",
+            "source": {
+              "ref": "u2",
+              "quote": "步骤一"
+            },
+            "field": {
+              "ref": "u2",
+              "quote": "步骤一：200L反应釜（RE64611）内加入AR级别丙酮(丙酮投料量/L= HRS-1597粗品投入量/kg×13.5*0.79)和纯化水(纯化水投料量/L= HRS-1597粗品投入量/kg×1.5*1)，氮气置换4次。加入HRS-1597粗品，釜内温度上升至55℃，搅拌溶清。随后氮气保护下加入颗粒活性炭（活性炭投料量/Kg= HRS-1597粗品投入量/kg×0.2），维持50~55℃继续搅拌1-2小时。"
+            },
+            "unit": {
+              "ref": "",
+              "quote": ""
+            },
+            "condition": {
+              "ref": "",
+              "quote": ""
+            }
+          },
+          "reason": "datatype_mismatch"
+        }
+      ],
+      "discovery_contract_pass": true,
+      "frames": {
+        "s1": {
+          "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/Purification",
+          "anchor": {
+            "ref": "u0",
+            "quote": "HRS-1597结晶纯化"
+          }
+        },
+        "s2": {
+          "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/SynthesisStep",
+          "anchor": {
+            "ref": "u2",
+            "quote": "步骤一：200L反应釜（RE64611）内加入AR级别丙酮(丙酮投料量/L= HRS-1597粗品投入量/kg×13.5*0.79)和纯化水(纯化水投料量/L= HRS-1597粗品投入量/kg×1.5*1)，氮气置换4次。加入HRS-1597粗品，釜内温度上升至55℃，搅拌溶清。随后氮气保护下加入颗粒活性炭（活性炭投料量/Kg= HRS-1597粗品投入量/kg×0.2），维持50~55℃继续搅拌1-2小时。"
+          }
+        },
+        "s3": {
+          "class_iri": "https://ontology.pharma-gmp.cn/slpra/equipment/Equipment",
+          "anchor": {
+            "ref": "u2",
+            "quote": "200L反应釜（RE64611）"
+          }
+        }
+      },
+      "claims_contract_pass": true,
+      "acceptance": {
+        "checks": [
+          {
+            "check": "required_properties",
+            "expected": {
+              "predicate": "equipmentID",
+              "value": "RE64611"
+            },
+            "pass": true
+          },
+          {
+            "check": "required_relations",
+            "expected": {
+              "predicate": "usesEquipment",
+              "object_contains": "RE64611"
+            },
+            "pass": true
+          },
+          {
+            "check": "forbidden_predicate",
+            "expected": "producesFinalProduct",
+            "pass": true
+          },
+          {
+            "check": "forbidden_predicate",
+            "expected": "producesIntermediate",
+            "pass": true
+          },
+          {
+            "check": "forbidden_predicate",
+            "expected": "locatedIn",
+            "pass": true
+          }
+        ],
+        "passed": 5,
+        "total": 5,
+        "all_pass": true,
+        "passed_with_no_rejections": false
+      }
+    },
+    {
+      "scope_id": "quality_condition",
+      "calls": [],
+      "status": "complete",
+      "accepted": [
+        {
+          "subject_id": "s1",
+          "subject_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/Purification",
+          "subject_text": "HRS-1597结晶纯化",
+          "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/inProcessControl",
+          "evidence": {
+            "ref": "u2",
+            "quote": "取样送检HPLC和重金属检测，质量标准要同时满足：单个杂质应不得过0.2%总杂应不得过2.0%,重金属残留不得超过百万分之二十，若不符合质量标准，则重复上述全部结晶操作（从一般区溶解物料）。"
+          },
+          "condition": {
+            "ref": "",
+            "quote": ""
+          },
+          "kind": "property",
+          "value": "取样送检HPLC和重金属检测，质量标准要同时满足：单个杂质应不得过0.2%总杂应不得过2.0%,重金属残留不得超过百万分之二十，若不符合质量标准，则重复上述全部结晶操作（从一般区溶解物料）。",
+          "raw_value": "取样送检HPLC和重金属检测，质量标准要同时满足：单个杂质应不得过0.2%总杂应不得过2.0%,重金属残留不得超过百万分之二十，若不符合质量标准，则重复上述全部结晶操作（从一般区溶解物料）。",
+          "field": {
+            "ref": "u2",
+            "quote": "取样送检HPLC和重金属检测，质量标准要同时满足：单个杂质应不得过0.2%总杂应不得过2.0%,重金属残留不得超过百万分之二十，若不符合质量标准，则重复上述全部结晶操作（从一般区溶解物料）。"
+          },
+          "unit": {
+            "ref": "",
+            "quote": ""
+          }
+        }
+      ],
+      "observations": [
+        {
+          "value": {
+            "ref": "u1",
+            "quote": "HPLC"
+          },
+          "field": {
+            "ref": "u1",
+            "quote": "HPLC"
+          },
+          "legend": {
+            "ref": "u1",
+            "quote": "HPLC"
+          },
+          "condition": {
+            "ref": "u2",
+            "quote": "取样送检HPLC和重金属检测"
+          },
+          "state": "conditional",
+          "reason": "原文描述了取样送检HPLC的动作，但未提供具体的检测结果数值，仅描述了检测动作本身。"
+        }
+      ],
+      "rejected": [
+        {
+          "kind": "observation",
+          "proposal": {
+            "value": {
+              "ref": "u2",
+              "quote": "单个杂质应不得过0.2%"
+            },
+            "field": {
+              "ref": "u2",
+              "quote": "单个杂质应不得过0.2%"
+            },
+            "legend": {
+              "ref": "u2",
+              "quote": "质量标准"
+            },
+            "condition": {
+              "ref": "u2",
+              "quote": "质量标准要同时满足"
+            },
+            "state": "conditional",
+            "reason": "原文规定了单个杂质的质量标准上限，属于条件性观察。"
+          },
+          "reason": "citation_quote_ambiguous"
+        },
+        {
+          "kind": "observation",
+          "proposal": {
+            "value": {
+              "ref": "u2",
+              "quote": "总杂应不得过2.0%"
+            },
+            "field": {
+              "ref": "u2",
+              "quote": "总杂应不得过2.0%"
+            },
+            "legend": {
+              "ref": "u2",
+              "quote": "质量标准"
+            },
+            "condition": {
+              "ref": "u2",
+              "quote": "质量标准要同时满足"
+            },
+            "state": "conditional",
+            "reason": "原文规定了总杂质的质量标准上限，属于条件性观察。"
+          },
+          "reason": "citation_quote_ambiguous"
+        },
+        {
+          "kind": "observation",
+          "proposal": {
+            "value": {
+              "ref": "u2",
+              "quote": "重金属残留不得超过百万分之二十"
+            },
+            "field": {
+              "ref": "u2",
+              "quote": "重金属残留不得超过百万分之二十"
+            },
+            "legend": {
+              "ref": "u2",
+              "quote": "质量标准"
+            },
+            "condition": {
+              "ref": "u2",
+              "quote": "质量标准要同时满足"
+            },
+            "state": "conditional",
+            "reason": "原文规定了重金属残留的质量标准上限，属于条件性观察。"
+          },
+          "reason": "citation_quote_ambiguous"
+        },
+        {
+          "kind": "observation",
+          "proposal": {
+            "value": {
+              "ref": "u2",
+              "quote": "若不符合质量标准，则重复上述全部结晶操作（从一般区溶解物料）"
+            },
+            "field": {
+              "ref": "u2",
+              "quote": "若不符合质量标准，则重复上述全部结晶操作"
+            },
+            "legend": {
+              "ref": "u2",
+              "quote": "不符合质量标准时的处理措施"
+            },
+            "condition": {
+              "ref": "u2",
+              "quote": "若不符合质量标准"
+            },
+            "state": "conditional",
+            "reason": "原文描述了当检测结果不符合质量标准时的后续操作条件。"
+          },
+          "reason": "citation_quote_not_in_source"
+        }
+      ],
+      "discovery_contract_pass": true,
+      "frames": {
+        "s1": {
+          "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/Purification",
+          "anchor": {
+            "ref": "u0",
+            "quote": "HRS-1597结晶纯化"
+          }
+        }
+      },
+      "claims_contract_pass": true,
+      "acceptance": {
+        "checks": [
+          {
+            "check": "required_properties",
+            "expected": {
+              "predicate": "inProcessControl",
+              "value_contains": [
+                "单个杂质应不得过0.2%",
+                "总杂应不得过2.0%",
+                "重金属残留不得超过百万分之二十"
+              ]
+            },
+            "pass": true
+          },
+          {
+            "check": "required_observations",
+            "expected": {
+              "quote": "若不符合质量标准，则重复上述全部结晶操作（从一般区溶解物料）",
+              "state": "conditional",
+              "column": 1
+            },
+            "pass": false
+          },
+          {
+            "check": "forbidden_predicate",
+            "expected": "detectionLimit_ug",
+            "pass": true
+          },
+          {
+            "check": "forbidden_predicate",
+            "expected": "quantitationLimit_ug",
+            "pass": true
+          },
+          {
+            "check": "forbidden_predicate",
+            "expected": "hasCleaningMethod",
+            "pass": true
+          }
+        ],
+        "passed": 4,
+        "total": 5,
+        "all_pass": false,
+        "passed_with_no_rejections": false
+      }
+    },
+    {
+      "scope_id": "storage",
+      "calls": [],
+      "status": "complete",
+      "accepted": [
+        {
+          "subject_id": "document",
+          "subject_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport",
+          "subject_text": "",
+          "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasStorageCondition",
+          "evidence": {
+            "ref": "u6",
+            "quote": "HRS-1597"
+          },
+          "condition": {
+            "ref": "u4",
+            "quote": "存放条件（温度、湿度、是否避光）"
+          },
+          "kind": "relation",
+          "object_id": "s1",
+          "object_text": "HRS-1597",
+          "object_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/StorageCondition",
+          "polarity": "affirmed"
+        },
+        {
+          "subject_id": "s1",
+          "subject_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/StorageCondition",
+          "subject_text": "HRS-1597",
+          "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/packagingType",
+          "evidence": {
+            "ref": "u7",
+            "quote": "双层聚乙烯薄膜袋外加药品包装用复合袋"
+          },
+          "condition": {
+            "ref": "",
+            "quote": ""
+          },
+          "kind": "property",
+          "value": "双层聚乙烯薄膜袋外加药品包装用复合袋",
+          "raw_value": "双层聚乙烯薄膜袋外加药品包装用复合袋",
+          "field": {
+            "ref": "u3",
+            "quote": "包装方式"
+          },
+          "unit": {
+            "ref": "",
+            "quote": ""
+          }
+        },
+        {
+          "subject_id": "s1",
+          "subject_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/StorageCondition",
+          "subject_text": "HRS-1597",
+          "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/shelfLife",
+          "evidence": {
+            "ref": "u9",
+            "quote": "有效期24M"
+          },
+          "condition": {
+            "ref": "",
+            "quote": ""
+          },
+          "kind": "property",
+          "value": "有效期24M",
+          "raw_value": "有效期24M",
+          "field": {
+            "ref": "u5",
+            "quote": "有效期/复测期"
+          },
+          "unit": {
+            "ref": "",
+            "quote": ""
+          }
+        },
+        {
+          "subject_id": "s1",
+          "subject_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/StorageCondition",
+          "subject_text": "HRS-1597",
+          "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/storageTemperature",
+          "evidence": {
+            "ref": "u8",
+            "quote": "密封，双层聚乙烯薄膜袋，不超过25℃保存"
+          },
+          "condition": {
+            "ref": "",
+            "quote": ""
+          },
+          "kind": "property",
+          "value": "不超过25℃",
+          "raw_value": "不超过25℃",
+          "field": {
+            "ref": "u4",
+            "quote": "存放条件（温度、湿度、是否避光）"
+          },
+          "unit": {
+            "ref": "u8",
+            "quote": "℃"
+          }
+        }
+      ],
+      "observations": [
+        {
+          "value": {
+            "ref": "u7",
+            "quote": "双层聚乙烯薄膜袋外加药品包装用复合袋"
+          },
+          "field": {
+            "ref": "u3",
+            "quote": "包装方式"
+          },
+          "legend": {
+            "ref": "u3",
+            "quote": "包装方式"
+          },
+          "condition": {
+            "ref": "u6",
+            "quote": "HRS-1597"
+          },
+          "state": "unmapped",
+          "reason": "原文提供了具体的包装描述，但未明确映射到候选卡片中的特定布尔或枚举字段（如是否避光等），作为整体包装方式记录。"
+        },
+        {
+          "value": {
+            "ref": "u8",
+            "quote": "密封，双层聚乙烯薄膜袋，不超过25℃保存"
+          },
+          "field": {
+            "ref": "u4",
+            "quote": "存放条件（温度、湿度、是否避光）"
+          },
+          "legend": {
+            "ref": "u4",
+            "quote": "存放条件（温度、湿度、是否避光）"
+          },
+          "condition": {
+            "ref": "u6",
+            "quote": "HRS-1597"
+          },
+          "state": "conditional",
+          "reason": "原文包含多个条件：'密封'、'双层聚乙烯薄膜袋'、'不超过25℃保存'。其中温度有具体数值'不超过25℃'，但'是否避光'和'湿度'在原文中未明确提及（既未说避光也未说不避光，既未提湿度也未提不控制湿度），因此部分字段为unknown或需进一步解析。此处将整句作为条件观察保留，因为'不超过25℃'是一个条件性陈述（上限）。"
+        },
+        {
+          "value": {
+            "ref": "u9",
+            "quote": "有效期24M"
+          },
+          "field": {
+            "ref": "u5",
+            "quote": "有效期/复测期"
+          },
+          "legend": {
+            "ref": "u5",
+            "quote": "有效期/复测期"
+          },
+          "condition": {
+            "ref": "u6",
+            "quote": "HRS-1597"
+          },
+          "state": "unmapped",
+          "reason": "原文提供了'有效期24M'，但候选卡片中无直接对应的'有效期'数值字段，仅有布尔或枚举字段。根据规则，保留原文观察，状态为unmapped因为无法直接映射到候选字段的枚举值。"
+        },
+        {
+          "value": {
+            "ref": "u8",
+            "quote": "不超过25℃"
+          },
+          "field": {
+            "ref": "u4",
+            "quote": "存放条件（温度、湿度、是否避光）"
+          },
+          "legend": {
+            "ref": "u4",
+            "quote": "存放条件（温度、湿度、是否避光）"
+          },
+          "condition": {
+            "ref": "u6",
+            "quote": "HRS-1597"
+          },
+          "state": "conditional",
+          "reason": "原文'不超过25℃'是一个条件性温度描述，非固定值。"
+        }
+      ],
+      "rejected": [
+        {
+          "kind": "observation",
+          "proposal": {
+            "value": {
+              "ref": "u8",
+              "quote": "密封，双层聚乙烯薄膜袋，不超过25℃保存"
+            },
+            "field": {
+              "ref": "u4",
+              "quote": "存放条件（温度、湿度、是否避光）"
+            },
+            "legend": {
+              "ref": "u4",
+              "quote": "存放条件（温度、湿度、是否避光）"
+            },
+            "condition": {
+              "ref": "u6",
+              "quote": "HRS-1597"
+            },
+            "state": "unknown",
+            "reason": "原文'存放条件'列中未明确提及'是否避光'和'湿度'的具体状态。'不超过25℃'暗示了温度控制，但未明确湿度和避光要求。根据规则，缺少原文单位的数值保留unknown观察；条件动作保留conditional观察。此处针对'避光'和'湿度'字段，原文未提供明确肯定或否定信息，故标记为unknown。"
+          },
+          "reason": "unknown_observation_requires_marker_or_unresolved_number"
+        }
+      ],
+      "discovery_contract_pass": true,
+      "frames": {
+        "s1": {
+          "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/StorageCondition",
+          "anchor": {
+            "ref": "u6",
+            "quote": "HRS-1597"
+          }
+        }
+      },
+      "claims_contract_pass": true,
+      "acceptance": {
+        "checks": [
+          {
+            "check": "required_properties",
+            "expected": {
+              "predicate": "packagingType",
+              "subject_class": "StorageCondition",
+              "value": "双层聚乙烯薄膜袋外加药品包装用复合袋",
+              "row": 1
+            },
+            "pass": true
+          },
+          {
+            "check": "required_properties",
+            "expected": {
+              "predicate": "storageTemperature",
+              "subject_class": "StorageCondition",
+              "value": "不超过25℃",
+              "row": 1
+            },
+            "pass": true
+          },
+          {
+            "check": "required_properties",
+            "expected": {
+              "predicate": "shelfLife",
+              "subject_class": "StorageCondition",
+              "value": "24M",
+              "row": 1
+            },
+            "pass": false
+          },
+          {
+            "check": "subject_group",
+            "expected": {
+              "name": "storage_condition",
+              "required_property_indices": [
+                0,
+                1,
+                2
+              ],
+              "subject_class": "StorageCondition"
+            },
+            "pass": false
+          },
+          {
+            "check": "forbidden_predicate",
+            "expected": "lightProtection",
+            "pass": true
+          },
+          {
+            "check": "forbidden_predicate",
+            "expected": "storageHumidity",
+            "pass": true
+          }
+        ],
+        "passed": 4,
+        "total": 6,
+        "all_pass": false,
+        "passed_with_no_rejections": false
+      }
+    },
+    {
+      "scope_id": "residue_missing",
+      "calls": [],
+      "status": "complete",
+      "accepted": [],
+      "observations": [
+        {
+          "value": {
+            "ref": "u1",
+            "quote": "N/A"
+          },
+          "field": {
+            "ref": "u0",
+            "quote": "3.5.2设备清洗残留物基本信息"
+          },
+          "legend": {
+            "ref": "u1",
+            "quote": "N/A"
+          },
+          "condition": {
+            "ref": "",
+            "quote": ""
+          },
+          "state": "not_applicable",
+          "reason": "原文中该部分基本信息标记为N/A，表示不适用或无数据。"
+        }
+      ],
+      "rejected": [],
+      "discovery_contract_pass": true,
+      "frames": {},
+      "claims_contract_pass": true,
+      "acceptance": {
+        "checks": [
+          {
+            "check": "required_observations",
+            "expected": {
+              "quote": "N/A",
+              "state": "not_applicable"
+            },
+            "pass": true
+          },
+          {
+            "check": "forbidden_predicate",
+            "expected": "hasCleaningResidue",
+            "pass": true
+          },
+          {
+            "check": "forbidden_predicate",
+            "expected": "producesResidue",
+            "pass": true
+          },
+          {
+            "check": "no_facts",
+            "pass": true
+          }
+        ],
+        "passed": 4,
+        "total": 4,
+        "all_pass": true,
+        "passed_with_no_rejections": true
+      }
+    },
+    {
+      "scope_id": "pde_conflict",
+      "calls": [],
+      "status": "complete",
+      "accepted": [
+        {
+          "subject_id": "s1",
+          "subject_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/SharedLineAssessmentData",
+          "subject_text": "大鼠14天亚急毒试验（试验1）",
+          "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/activeIngredient",
+          "evidence": {
+            "ref": "u13",
+            "quote": "HRS-1597"
+          },
+          "condition": {
+            "ref": "",
+            "quote": ""
+          },
+          "kind": "property",
+          "value": "HRS-1597",
+          "raw_value": "HRS-1597",
+          "field": {
+            "ref": "u1",
+            "quote": "活性成分(API)"
+          },
+          "unit": {
+            "ref": "",
+            "quote": ""
+          }
+        },
+        {
+          "subject_id": "s1",
+          "subject_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/SharedLineAssessmentData",
+          "subject_text": "大鼠14天亚急毒试验（试验1）",
+          "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/f1",
+          "evidence": {
+            "ref": "u16",
+            "quote": "5"
+          },
+          "condition": {
+            "ref": "u40",
+            "quote": "F1 = 5，适用于从大鼠外推到人"
+          },
+          "kind": "property",
+          "value": "5",
+          "raw_value": "5",
+          "field": {
+            "ref": "u4",
+            "quote": "F1"
+          },
+          "unit": {
+            "ref": "",
+            "quote": ""
+          }
+        },
+        {
+          "subject_id": "s1",
+          "subject_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/SharedLineAssessmentData",
+          "subject_text": "大鼠14天亚急毒试验（试验1）",
+          "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/f2",
+          "evidence": {
+            "ref": "u17",
+            "quote": "10"
+          },
+          "condition": {
+            "ref": "u41",
+            "quote": "F2 = 10。"
+          },
+          "kind": "property",
+          "value": "10",
+          "raw_value": "10",
+          "field": {
+            "ref": "u5",
+            "quote": "F2"
+          },
+          "unit": {
+            "ref": "",
+            "quote": ""
+          }
+        },
+        {
+          "subject_id": "s1",
+          "subject_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/SharedLineAssessmentData",
+          "subject_text": "大鼠14天亚急毒试验（试验1）",
+          "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/f3",
+          "evidence": {
+            "ref": "u18",
+            "quote": "10"
+          },
+          "condition": {
+            "ref": "u42",
+            "quote": "F3 = 10，14天的研究；"
+          },
+          "kind": "property",
+          "value": "10",
+          "raw_value": "10",
+          "field": {
+            "ref": "u6",
+            "quote": "F3"
+          },
+          "unit": {
+            "ref": "",
+            "quote": ""
+          }
+        },
+        {
+          "subject_id": "s1",
+          "subject_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/SharedLineAssessmentData",
+          "subject_text": "大鼠14天亚急毒试验（试验1）",
+          "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/f4",
+          "evidence": {
+            "ref": "u19",
+            "quote": "1"
+          },
+          "condition": {
+            "ref": "u43",
+            "quote": "F4 = 1，未观察到严重影响"
+          },
+          "kind": "property",
+          "value": "1",
+          "raw_value": "1",
+          "field": {
+            "ref": "u7",
+            "quote": "F4"
+          },
+          "unit": {
+            "ref": "",
+            "quote": ""
+          }
+        },
+        {
+          "subject_id": "s1",
+          "subject_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/SharedLineAssessmentData",
+          "subject_text": "大鼠14天亚急毒试验（试验1）",
+          "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/f5",
+          "evidence": {
+            "ref": "u20",
+            "quote": "1"
+          },
+          "condition": {
+            "ref": "u44",
+            "quote": "F5=1，NOAEL"
+          },
+          "kind": "property",
+          "value": "1",
+          "raw_value": "1",
+          "field": {
+            "ref": "u8",
+            "quote": "F5"
+          },
+          "unit": {
+            "ref": "",
+            "quote": ""
+          }
+        },
+        {
+          "subject_id": "s1",
+          "subject_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/SharedLineAssessmentData",
+          "subject_text": "大鼠14天亚急毒试验（试验1）",
+          "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/noaelDuration",
+          "evidence": {
+            "ref": "u14",
+            "quote": "大鼠14天亚急毒试验（试验1）"
+          },
+          "condition": {
+            "ref": "",
+            "quote": ""
+          },
+          "kind": "property",
+          "value": "14天",
+          "raw_value": "14天",
+          "field": {
+            "ref": "u2",
+            "quote": "试验项目"
+          },
+          "unit": {
+            "ref": "",
+            "quote": ""
+          }
+        },
+        {
+          "subject_id": "s1",
+          "subject_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/SharedLineAssessmentData",
+          "subject_text": "大鼠14天亚急毒试验（试验1）",
+          "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/noaelSpecies",
+          "evidence": {
+            "ref": "u14",
+            "quote": "大鼠14天亚急毒试验（试验1）"
+          },
+          "condition": {
+            "ref": "",
+            "quote": ""
+          },
+          "kind": "property",
+          "value": "大鼠",
+          "raw_value": "大鼠",
+          "field": {
+            "ref": "u2",
+            "quote": "试验项目"
+          },
+          "unit": {
+            "ref": "",
+            "quote": ""
+          }
+        },
+        {
+          "subject_id": "s1",
+          "subject_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/SharedLineAssessmentData",
+          "subject_text": "大鼠14天亚急毒试验（试验1）",
+          "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/oebBand",
+          "evidence": {
+            "ref": "u23",
+            "quote": "1"
+          },
+          "condition": {
+            "ref": "",
+            "quote": ""
+          },
+          "kind": "property",
+          "value": "1",
+          "raw_value": "1",
+          "field": {
+            "ref": "u12",
+            "quote": "OEB"
+          },
+          "unit": {
+            "ref": "",
+            "quote": ""
+          }
+        },
+        {
+          "subject_id": "s1",
+          "subject_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/SharedLineAssessmentData",
+          "subject_text": "大鼠14天亚急毒试验（试验1）",
+          "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/pde_mg_per_day",
+          "evidence": {
+            "ref": "u21",
+            "quote": "100"
+          },
+          "condition": {
+            "ref": "",
+            "quote": ""
+          },
+          "kind": "property",
+          "value": "100",
+          "raw_value": "100",
+          "field": {
+            "ref": "u9",
+            "quote": "PDE"
+          },
+          "unit": {
+            "ref": "u10",
+            "quote": "(mg/天)"
+          }
+        },
+        {
+          "subject_id": "s1",
+          "subject_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/SharedLineAssessmentData",
+          "subject_text": "大鼠14天亚急毒试验（试验1）",
+          "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/sourceReference",
+          "evidence": {
+            "ref": "u22",
+            "quote": "19191-25030-NG"
+          },
+          "condition": {
+            "ref": "",
+            "quote": ""
+          },
+          "kind": "property",
+          "value": "19191-25030-NG",
+          "raw_value": "19191-25030-NG",
+          "field": {
+            "ref": "u11",
+            "quote": "来源"
+          },
+          "unit": {
+            "ref": "",
+            "quote": ""
+          }
+        },
+        {
+          "subject_id": "s1",
+          "subject_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/SharedLineAssessmentData",
+          "subject_text": "大鼠14天亚急毒试验（试验1）",
+          "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/studyType",
+          "evidence": {
+            "ref": "u14",
+            "quote": "大鼠14天亚急毒试验（试验1）"
+          },
+          "condition": {
+            "ref": "",
+            "quote": ""
+          },
+          "kind": "property",
+          "value": "大鼠14天亚急毒试验（试验1）",
+          "raw_value": "大鼠14天亚急毒试验（试验1）",
+          "field": {
+            "ref": "u2",
+            "quote": "试验项目"
+          },
+          "unit": {
+            "ref": "",
+            "quote": ""
+          }
+        },
+        {
+          "subject_id": "s2",
+          "subject_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/SharedLineAssessmentData",
+          "subject_text": "犬14天亚急毒",
+          "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/activeIngredient",
+          "evidence": {
+            "ref": "u13",
+            "quote": "HRS-1597"
+          },
+          "condition": {
+            "ref": "",
+            "quote": ""
+          },
+          "kind": "property",
+          "value": "HRS-1597",
+          "raw_value": "HRS-1597",
+          "field": {
+            "ref": "u1",
+            "quote": "活性成分(API)"
+          },
+          "unit": {
+            "ref": "",
+            "quote": ""
+          }
+        },
+        {
+          "subject_id": "s2",
+          "subject_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/SharedLineAssessmentData",
+          "subject_text": "犬14天亚急毒",
+          "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/f1",
+          "evidence": {
+            "ref": "u26",
+            "quote": "2"
+          },
+          "condition": {
+            "ref": "u40",
+            "quote": "F1 = 2，适用于  从犬外推到人"
+          },
+          "kind": "property",
+          "value": "2",
+          "raw_value": "2",
+          "field": {
+            "ref": "u4",
+            "quote": "F1"
+          },
+          "unit": {
+            "ref": "",
+            "quote": ""
+          }
+        },
+        {
+          "subject_id": "s2",
+          "subject_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/SharedLineAssessmentData",
+          "subject_text": "犬14天亚急毒",
+          "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/f2",
+          "evidence": {
+            "ref": "u27",
+            "quote": "10"
+          },
+          "condition": {
+            "ref": "u41",
+            "quote": "F2 = 10。"
+          },
+          "kind": "property",
+          "value": "10",
+          "raw_value": "10",
+          "field": {
+            "ref": "u5",
+            "quote": "F2"
+          },
+          "unit": {
+            "ref": "",
+            "quote": ""
+          }
+        },
+        {
+          "subject_id": "s2",
+          "subject_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/SharedLineAssessmentData",
+          "subject_text": "犬14天亚急毒",
+          "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/f3",
+          "evidence": {
+            "ref": "u28",
+            "quote": "10"
+          },
+          "condition": {
+            "ref": "u42",
+            "quote": "F3 = 10，14天的研究；"
+          },
+          "kind": "property",
+          "value": "10",
+          "raw_value": "10",
+          "field": {
+            "ref": "u6",
+            "quote": "F3"
+          },
+          "unit": {
+            "ref": "",
+            "quote": ""
+          }
+        },
+        {
+          "subject_id": "s2",
+          "subject_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/SharedLineAssessmentData",
+          "subject_text": "犬14天亚急毒",
+          "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/f4",
+          "evidence": {
+            "ref": "u29",
+            "quote": "1"
+          },
+          "condition": {
+            "ref": "u43",
+            "quote": "F4 = 1，未观察到严重影响"
+          },
+          "kind": "property",
+          "value": "1",
+          "raw_value": "1",
+          "field": {
+            "ref": "u7",
+            "quote": "F4"
+          },
+          "unit": {
+            "ref": "",
+            "quote": ""
+          }
+        },
+        {
+          "subject_id": "s2",
+          "subject_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/SharedLineAssessmentData",
+          "subject_text": "犬14天亚急毒",
+          "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/f5",
+          "evidence": {
+            "ref": "u30",
+            "quote": "1"
+          },
+          "condition": {
+            "ref": "u44",
+            "quote": "F5=1，NOAEL"
+          },
+          "kind": "property",
+          "value": "1",
+          "raw_value": "1",
+          "field": {
+            "ref": "u8",
+            "quote": "F5"
+          },
+          "unit": {
+            "ref": "",
+            "quote": ""
+          }
+        },
+        {
+          "subject_id": "s2",
+          "subject_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/SharedLineAssessmentData",
+          "subject_text": "犬14天亚急毒",
+          "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/noaelDuration",
+          "evidence": {
+            "ref": "u24",
+            "quote": "犬14天亚急毒"
+          },
+          "condition": {
+            "ref": "",
+            "quote": ""
+          },
+          "kind": "property",
+          "value": "14天",
+          "raw_value": "14天",
+          "field": {
+            "ref": "u2",
+            "quote": "试验项目"
+          },
+          "unit": {
+            "ref": "",
+            "quote": ""
+          }
+        },
+        {
+          "subject_id": "s2",
+          "subject_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/SharedLineAssessmentData",
+          "subject_text": "犬14天亚急毒",
+          "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/noaelSpecies",
+          "evidence": {
+            "ref": "u24",
+            "quote": "犬14天亚急毒"
+          },
+          "condition": {
+            "ref": "",
+            "quote": ""
+          },
+          "kind": "property",
+          "value": "犬",
+          "raw_value": "犬",
+          "field": {
+            "ref": "u2",
+            "quote": "试验项目"
+          },
+          "unit": {
+            "ref": "",
+            "quote": ""
+          }
+        },
+        {
+          "subject_id": "s2",
+          "subject_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/SharedLineAssessmentData",
+          "subject_text": "犬14天亚急毒",
+          "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/oebBand",
+          "evidence": {
+            "ref": "u33",
+            "quote": "1"
+          },
+          "condition": {
+            "ref": "",
+            "quote": ""
+          },
+          "kind": "property",
+          "value": "1",
+          "raw_value": "1",
+          "field": {
+            "ref": "u12",
+            "quote": "OEB"
+          },
+          "unit": {
+            "ref": "",
+            "quote": ""
+          }
+        },
+        {
+          "subject_id": "s2",
+          "subject_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/SharedLineAssessmentData",
+          "subject_text": "犬14天亚急毒",
+          "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/pde_mg_per_day",
+          "evidence": {
+            "ref": "u31",
+            "quote": "7.5"
+          },
+          "condition": {
+            "ref": "",
+            "quote": ""
+          },
+          "kind": "property",
+          "value": "7.5",
+          "raw_value": "7.5",
+          "field": {
+            "ref": "u9",
+            "quote": "PDE"
+          },
+          "unit": {
+            "ref": "u10",
+            "quote": "(mg/天)"
+          }
+        },
+        {
+          "subject_id": "s2",
+          "subject_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/SharedLineAssessmentData",
+          "subject_text": "犬14天亚急毒",
+          "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/sourceReference",
+          "evidence": {
+            "ref": "u32",
+            "quote": "19191-25031-NG"
+          },
+          "condition": {
+            "ref": "",
+            "quote": ""
+          },
+          "kind": "property",
+          "value": "19191-25031-NG",
+          "raw_value": "19191-25031-NG",
+          "field": {
+            "ref": "u11",
+            "quote": "来源"
+          },
+          "unit": {
+            "ref": "",
+            "quote": ""
+          }
+        },
+        {
+          "subject_id": "s2",
+          "subject_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/SharedLineAssessmentData",
+          "subject_text": "犬14天亚急毒",
+          "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/studyType",
+          "evidence": {
+            "ref": "u24",
+            "quote": "犬14天亚急毒"
+          },
+          "condition": {
+            "ref": "",
+            "quote": ""
+          },
+          "kind": "property",
+          "value": "犬14天亚急毒",
+          "raw_value": "犬14天亚急毒",
+          "field": {
+            "ref": "u2",
+            "quote": "试验项目"
+          },
+          "unit": {
+            "ref": "",
+            "quote": ""
+          }
+        }
+      ],
+      "observations": [
+        {
+          "value": {
+            "ref": "u15",
+            "quote": "200"
+          },
+          "field": {
+            "ref": "u3",
+            "quote": "NOAEL"
+          },
+          "legend": {
+            "ref": "u15",
+            "quote": "200"
+          },
+          "condition": {
+            "ref": "",
+            "quote": ""
+          },
+          "state": "unknown",
+          "reason": "数值200对应NOAEL列，但表头未明确单位，且备注中NOAEL定义为无可见损害作用水平，通常单位为mg/kg或mg/kg/day，此处保留unknown状态。"
+        },
+        {
+          "value": {
+            "ref": "u16",
+            "quote": "5"
+          },
+          "field": {
+            "ref": "u4",
+            "quote": "F1"
+          },
+          "legend": {
+            "ref": "u16",
+            "quote": "5"
+          },
+          "condition": {
+            "ref": "u40",
+            "quote": "F1 = 5，适用于从大鼠外推到人"
+          },
+          "state": "conditional",
+          "reason": "F1值为5，根据备注u40，此系数适用于从大鼠外推到人的情况，与试验项目（大鼠）一致。"
+        },
+        {
+          "value": {
+            "ref": "u17",
+            "quote": "10"
+          },
+          "field": {
+            "ref": "u5",
+            "quote": "F2"
+          },
+          "legend": {
+            "ref": "u17",
+            "quote": "10"
+          },
+          "condition": {
+            "ref": "u41",
+            "quote": "F2 = 10。"
+          },
+          "state": "conditional",
+          "reason": "F2值为10，根据备注u41，这是考虑个体之间差异的系数，固定值为10。"
+        },
+        {
+          "value": {
+            "ref": "u18",
+            "quote": "10"
+          },
+          "field": {
+            "ref": "u6",
+            "quote": "F3"
+          },
+          "legend": {
+            "ref": "u18",
+            "quote": "10"
+          },
+          "condition": {
+            "ref": "u42",
+            "quote": "F3 = 10，14天的研究；"
+          },
+          "state": "conditional",
+          "reason": "F3值为10，根据备注u42，这是为短期接触急性毒性研究的可变系数，适用于14天的研究，与试验周期一致。"
+        },
+        {
+          "value": {
+            "ref": "u19",
+            "quote": "1"
+          },
+          "field": {
+            "ref": "u7",
+            "quote": "F4"
+          },
+          "legend": {
+            "ref": "u19",
+            "quote": "1"
+          },
+          "condition": {
+            "ref": "u43",
+            "quote": "F4 = 1，未观察到严重影响"
+          },
+          "state": "conditional",
+          "reason": "F4值为1，根据备注u43，这是用于产生严重毒性数据情况的系数，此处未观察到严重影响，故为1。"
+        },
+        {
+          "value": {
+            "ref": "u20",
+            "quote": "1"
+          },
+          "field": {
+            "ref": "u8",
+            "quote": "F5"
+          },
+          "legend": {
+            "ref": "u20",
+            "quote": "1"
+          },
+          "condition": {
+            "ref": "u44",
+            "quote": "F5=1，NOAEL"
+          },
+          "state": "conditional",
+          "reason": "F5值为1，根据备注u44，这是在没有建立NOEL时应用的系数，此处有NOAEL，故为1。"
+        },
+        {
+          "value": {
+            "ref": "u23",
+            "quote": "1"
+          },
+          "field": {
+            "ref": "u12",
+            "quote": "OEB"
+          },
+          "legend": {
+            "ref": "u23",
+            "quote": "1"
+          },
+          "condition": {
+            "ref": "u38",
+            "quote": "OBE：职业暴露等级；"
+          },
+          "state": "unknown",
+          "reason": "OEB值为1，根据备注u38，OBE为职业暴露等级。"
+        },
+        {
+          "value": {
+            "ref": "u25",
+            "quote": "30"
+          },
+          "field": {
+            "ref": "u3",
+            "quote": "NOAEL"
+          },
+          "legend": {
+            "ref": "u25",
+            "quote": "30"
+          },
+          "condition": {
+            "ref": "",
+            "quote": ""
+          },
+          "state": "unknown",
+          "reason": "数值30对应NOAEL列，但表头未明确单位，且备注中NOAEL定义为无可见损害作用水平，通常单位为mg/kg或mg/kg/day，此处保留unknown状态。"
+        },
+        {
+          "value": {
+            "ref": "u26",
+            "quote": "2"
+          },
+          "field": {
+            "ref": "u4",
+            "quote": "F1"
+          },
+          "legend": {
+            "ref": "u26",
+            "quote": "2"
+          },
+          "condition": {
+            "ref": "u40",
+            "quote": "F1 = 2，适用于  从犬外推到人"
+          },
+          "state": "conditional",
+          "reason": "F1值为2，根据备注u40，此系数适用于从犬外推到人的情况，与试验项目（犬）一致。"
+        }
+      ],
+      "rejected": [
+        {
+          "kind": "observation",
+          "proposal": {
+            "value": {
+              "ref": "u13",
+              "quote": "HRS-1597"
+            },
+            "field": {
+              "ref": "u1",
+              "quote": "活性成分(API)"
+            },
+            "legend": {
+              "ref": "u13",
+              "quote": "HRS-1597"
+            },
+            "condition": {
+              "ref": "",
+              "quote": ""
+            },
+            "state": "unknown",
+            "reason": "API名称在表格中跨行显示，适用于该列所有试验记录。"
+          },
+          "reason": "unknown_observation_requires_marker_or_unresolved_number"
+        },
+        {
+          "kind": "observation",
+          "proposal": {
+            "value": {
+              "ref": "u21",
+              "quote": "100"
+            },
+            "field": {
+              "ref": "u9",
+              "quote": "PDE"
+            },
+            "legend": {
+              "ref": "u10",
+              "quote": "(mg/天)"
+            },
+            "condition": {
+              "ref": "",
+              "quote": ""
+            },
+            "state": "unknown",
+            "reason": "PDE数值为100，单位为mg/天，但这是基于NOAEL和F因子计算得出的结果，非直接观察值，且题目要求数据表数值不是重新执行计算结果，故保留为unknown观察。"
+          },
+          "reason": "unknown_number_has_source_unit"
+        },
+        {
+          "kind": "observation",
+          "proposal": {
+            "value": {
+              "ref": "u22",
+              "quote": "19191-25030-NG"
+            },
+            "field": {
+              "ref": "u11",
+              "quote": "来源"
+            },
+            "legend": {
+              "ref": "u22",
+              "quote": "19191-25030-NG"
+            },
+            "condition": {
+              "ref": "",
+              "quote": ""
+            },
+            "state": "unknown",
+            "reason": "来源编号为19191-25030-NG。"
+          },
+          "reason": "unknown_observation_requires_marker_or_unresolved_number"
+        },
+        {
+          "subject_id": "document",
+          "field": "hasSharedLineData",
+          "proposal": {
+            "target_id": "s1",
+            "evidence": {
+              "ref": "u13",
+              "quote": "HRS-1597"
+            },
+            "condition": {
+              "ref": "",
+              "quote": ""
+            },
+            "polarity": "affirmed"
+          },
+          "reason": "relation_target_not_in_evidence"
+        },
+        {
+          "subject_id": "document",
+          "field": "hasSharedLineData",
+          "proposal": {
+            "target_id": "s2",
+            "evidence": {
+              "ref": "u13",
+              "quote": "HRS-1597"
+            },
+            "condition": {
+              "ref": "",
+              "quote": ""
+            },
+            "polarity": "affirmed"
+          },
+          "reason": "relation_target_not_in_evidence"
+        }
+      ],
+      "discovery_contract_pass": true,
+      "frames": {
+        "s1": {
+          "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/SharedLineAssessmentData",
+          "anchor": {
+            "ref": "u14",
+            "quote": "大鼠14天亚急毒试验（试验1）"
+          }
+        },
+        "s2": {
+          "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/SharedLineAssessmentData",
+          "anchor": {
+            "ref": "u24",
+            "quote": "犬14天亚急毒"
+          }
+        }
+      },
+      "claims_contract_pass": true,
+      "acceptance": {
+        "checks": [
+          {
+            "check": "required_properties",
+            "expected": {
+              "predicate": "studyType",
+              "subject_class": "SharedLineAssessmentData",
+              "value": "大鼠14天亚急毒试验（试验1）",
+              "owner_contains": "大鼠",
+              "row": 1
+            },
+            "pass": true
+          },
+          {
+            "check": "required_properties",
+            "expected": {
+              "predicate": "sourceReference",
+              "subject_class": "SharedLineAssessmentData",
+              "value": "19191-25030-NG",
+              "owner_contains": "大鼠",
+              "row": 1
+            },
+            "pass": true
+          },
+          {
+            "check": "required_properties",
+            "expected": {
+              "predicate": "pde_mg_per_day",
+              "subject_class": "SharedLineAssessmentData",
+              "value": "100",
+              "owner_contains": "大鼠",
+              "row": 1
+            },
+            "pass": true
+          },
+          {
+            "check": "required_properties",
+            "expected": {
+              "predicate": "f1",
+              "subject_class": "SharedLineAssessmentData",
+              "value": "5",
+              "owner_contains": "大鼠",
+              "row": 1
+            },
+            "pass": true
+          },
+          {
+            "check": "required_properties",
+            "expected": {
+              "predicate": "studyType",
+              "subject_class": "SharedLineAssessmentData",
+              "value": "犬14天亚急毒",
+              "owner_contains": "犬",
+              "row": 2
+            },
+            "pass": true
+          },
+          {
+            "check": "required_properties",
+            "expected": {
+              "predicate": "sourceReference",
+              "subject_class": "SharedLineAssessmentData",
+              "value": "19191-25031-NG",
+              "owner_contains": "犬",
+              "row": 2
+            },
+            "pass": true
+          },
+          {
+            "check": "required_properties",
+            "expected": {
+              "predicate": "pde_mg_per_day",
+              "subject_class": "SharedLineAssessmentData",
+              "value": "7.5",
+              "owner_contains": "犬",
+              "row": 2
+            },
+            "pass": true
+          },
+          {
+            "check": "required_properties",
+            "expected": {
+              "predicate": "f1",
+              "subject_class": "SharedLineAssessmentData",
+              "value": "2",
+              "owner_contains": "犬",
+              "row": 2
+            },
+            "pass": true
+          },
+          {
+            "check": "subject_group",
+            "expected": {
+              "name": "rat_study",
+              "required_property_indices": [
+                0,
+                1,
+                2,
+                3
+              ],
+              "subject_class": "SharedLineAssessmentData",
+              "anchor": {
+                "table_path": [
+                  "table:10"
+                ],
+                "row": 1,
+                "column": 1
+              }
+            },
+            "pass": true
+          },
+          {
+            "check": "subject_group",
+            "expected": {
+              "name": "dog_study",
+              "required_property_indices": [
+                4,
+                5,
+                6,
+                7
+              ],
+              "subject_class": "SharedLineAssessmentData",
+              "anchor": {
+                "table_path": [
+                  "table:10"
+                ],
+                "row": 2,
+                "column": 1
+              }
+            },
+            "pass": true
+          },
+          {
+            "check": "distinct_subject_groups",
+            "pass": true
+          },
+          {
+            "check": "required_observations",
+            "expected": {
+              "quote": "200",
+              "state": "unknown",
+              "column": 2
+            },
+            "pass": true
+          },
+          {
+            "check": "required_observations",
+            "expected": {
+              "quote": "30",
+              "state": "unknown",
+              "column": 2
+            },
+            "pass": true
+          },
+          {
+            "check": "forbidden_predicate",
+            "expected": "noael_mg_per_kg_per_day",
+            "pass": true
+          },
+          {
+            "check": "forbidden_predicate",
+            "expected": "pod_mg_per_kg_per_day",
+            "pass": true
+          }
+        ],
+        "passed": 15,
+        "total": 15,
+        "all_pass": true,
+        "passed_with_no_rejections": false
+      }
+    },
+    {
+      "scope_id": "toxicity_unknown",
+      "calls": [],
+      "status": "complete",
+      "accepted": [
+        {
+          "subject_id": "document",
+          "subject_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport",
+          "subject_text": "",
+          "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/describes",
+          "evidence": {
+            "ref": "u6",
+            "quote": "HRS-1597"
+          },
+          "condition": {
+            "ref": "",
+            "quote": ""
+          },
+          "kind": "relation",
+          "object_id": "s1",
+          "object_text": "HRS-1597",
+          "object_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/HighSensitizingDrug",
+          "polarity": "affirmed"
+        }
+      ],
+      "observations": [
+        {
+          "value": {
+            "ref": "u8",
+            "quote": "×"
+          },
+          "field": {
+            "ref": "u3",
+            "quote": "基因毒性"
+          },
+          "legend": {
+            "ref": "u11",
+            "quote": "“×”代表没有相应的毒性"
+          },
+          "condition": {
+            "ref": "u11",
+            "quote": "备注：“√”代表有相应毒性；“×”代表没有相应的毒性 ；“—”代表相关的研究数据不充分。"
+          },
+          "state": "negated",
+          "reason": "Symbol '×' explicitly denotes absence of toxicity."
+        }
+      ],
+      "rejected": [
+        {
+          "kind": "observation",
+          "proposal": {
+            "value": {
+              "ref": "u7",
+              "quote": "—"
+            },
+            "field": {
+              "ref": "u2",
+              "quote": "生殖发育毒性"
+            },
+            "legend": {
+              "ref": "u11",
+              "quote": "“—”代表相关的研究数据不充分"
+            },
+            "condition": {
+              "ref": "u11",
+              "quote": "备注：“√”代表有相应毒性；“×”代表没有相应的毒性 ；“—”代表相关的研究数据不充分。"
+            },
+            "state": "not_applicable",
+            "reason": "Symbol '—' indicates insufficient data, not a factual negative result."
+          },
+          "reason": "source_state_mismatch"
+        },
+        {
+          "kind": "observation",
+          "proposal": {
+            "value": {
+              "ref": "u9",
+              "quote": "—"
+            },
+            "field": {
+              "ref": "u4",
+              "quote": "致癌性"
+            },
+            "legend": {
+              "ref": "u11",
+              "quote": "“—”代表相关的研究数据不充分"
+            },
+            "condition": {
+              "ref": "u11",
+              "quote": "备注：“√”代表有相应毒性；“×”代表没有相应的毒性 ；“—”代表相关的研究数据不充分。"
+            },
+            "state": "not_applicable",
+            "reason": "Symbol '—' indicates insufficient data, not a factual negative result."
+          },
+          "reason": "source_state_mismatch"
+        },
+        {
+          "kind": "observation",
+          "proposal": {
+            "value": {
+              "ref": "u10",
+              "quote": "—"
+            },
+            "field": {
+              "ref": "u5",
+              "quote": "致敏性"
+            },
+            "legend": {
+              "ref": "u11",
+              "quote": "“—”代表相关的研究数据不充分"
+            },
+            "condition": {
+              "ref": "u11",
+              "quote": "备注：“√”代表有相应毒性；“×”代表没有相应的毒性 ；“—”代表相关的研究数据不充分。"
+            },
+            "state": "not_applicable",
+            "reason": "Symbol '—' indicates insufficient data, not a factual negative result."
+          },
+          "reason": "source_state_mismatch"
+        },
+        {
+          "subject_id": "s1",
+          "field": "isCytotoxic",
+          "proposal": {
+            "raw": "×",
+            "source": {
+              "ref": "u8",
+              "quote": "×"
+            },
+            "field": {
+              "ref": "u3",
+              "quote": "基因毒性"
+            },
+            "unit": {
+              "ref": "",
+              "quote": ""
+            },
+            "condition": {
+              "ref": "u11",
+              "quote": "“×”代表没有相应的毒性"
+            }
+          },
+          "reason": "status_marker_is_not_literal"
+        }
+      ],
+      "discovery_contract_pass": true,
+      "frames": {
+        "s1": {
+          "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/HighSensitizingDrug",
+          "anchor": {
+            "ref": "u6",
+            "quote": "HRS-1597"
+          }
+        }
+      },
+      "claims_contract_pass": true,
+      "acceptance": {
+        "checks": [
+          {
+            "check": "required_observations",
+            "expected": {
+              "quote": "—",
+              "state": "unknown",
+              "column": 1
+            },
+            "pass": false
+          },
+          {
+            "check": "required_observations",
+            "expected": {
+              "quote": "×",
+              "state": "negated",
+              "column": 2
+            },
+            "pass": true
+          },
+          {
+            "check": "required_observations",
+            "expected": {
+              "quote": "—",
+              "state": "unknown",
+              "column": 3
+            },
+            "pass": false
+          },
+          {
+            "check": "required_observations",
+            "expected": {
+              "quote": "—",
+              "state": "unknown",
+              "column": 4
+            },
+            "pass": false
+          },
+          {
+            "check": "forbidden_predicate",
+            "expected": "hasSafetyRiskAssessment",
+            "pass": true
+          },
+          {
+            "check": "forbidden_predicate",
+            "expected": "hasToxicityProfile",
+            "pass": true
+          },
+          {
+            "check": "forbidden_predicate",
+            "expected": "basedOnToxicityProfile",
+            "pass": true
+          },
+          {
+            "check": "forbidden_predicate",
+            "expected": "hasSensitizationPotential",
+            "pass": true
+          },
+          {
+            "check": "forbidden_predicate",
+            "expected": "isHighlySensitizing",
+            "pass": true
+          },
+          {
+            "check": "forbidden_predicate",
+            "expected": "isCytotoxic",
+            "pass": true
+          },
+          {
+            "check": "forbidden_predicate",
+            "expected": "isGenotoxic",
+            "pass": true
+          },
+          {
+            "check": "forbidden_predicate",
+            "expected": "isCarcinogenic",
+            "pass": true
+          }
+        ],
+        "passed": 9,
+        "total": 12,
+        "all_pass": false,
+        "passed_with_no_rejections": false
+      }
+    }
+  ],
+  "finished_at": "2026-09-16T00:46:47.512402+00:00"
+}

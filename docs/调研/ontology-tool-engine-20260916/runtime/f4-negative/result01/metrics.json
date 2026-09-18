@@ -1,0 +1,49 @@
+{
+  "scoring_status": "not_scored",
+  "reason": "reference_is_separate",
+  "cost": {
+    "ranking": {
+      "count_tokens": {
+        "calls": 0,
+        "failed_calls": 0,
+        "inputs": 0,
+        "tokens": null,
+        "elapsed_seconds": 0,
+        "queue_seconds": null,
+        "compute_seconds": null
+      },
+      "embed": {
+        "calls": 0,
+        "failed_calls": 0,
+        "inputs": 0,
+        "tokens": null,
+        "elapsed_seconds": 0,
+        "queue_seconds": null,
+        "compute_seconds": null
+      },
+      "score_pairs": {
+        "calls": 0,
+        "failed_calls": 0,
+        "inputs": 0,
+        "tokens": null,
+        "elapsed_seconds": 0,
+        "queue_seconds": null,
+        "compute_seconds": null
+      }
+    },
+    "inspection_calls": 1,
+    "recognition_model_calls": 3,
+    "inspection_elapsed_seconds": 122.9836061289534,
+    "summary_seconds": null,
+    "peak_resources": null,
+    "cache_state": "not_measured",
+    "ranking_measurement_status": "not_measured",
+    "responses_returned": 3,
+    "response_usage": {
+      "input_tokens": 13029,
+      "output_tokens": 4130,
+      "total_tokens": 17159
+    },
+    "controller_checks": {}
+  }
+}

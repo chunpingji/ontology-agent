@@ -1,0 +1,205 @@
+{
+  "schema_version": 1,
+  "scope": "模板核心一级关系及属性验收；不代表整文召回率、PDE 或业务事实发布验收。",
+  "checked_at": "2026-09-09T19:01:36.562862+00:00",
+  "template_id": "8542466b-d6e6-4052-ae7e-05ca9c99a1c3",
+  "job_id": "885c6aec-9b09-49ec-a368-926100e93a02",
+  "run_id": "200789fc3ff6471b9b5a36156d5b0665",
+  "input_id": "0c1039a995141e834e5b92659b0f25d1a5b48582ce5a1e37c68ac0db33223384",
+  "document_hash": "2c1174bf616f30dd28c655fef4261c167762de807c8ad79e148fb8ef18e16436",
+  "route": "B0 + B1 CitationProtocol + B2 RecordIndex；面板仍使用旧抽取域。",
+  "ontology_guided_gate": "未通过本模板前置实测，未切换 OntologyGuidedExecutor 投影。",
+  "frozen_identity": {
+    "model_identity": "5a46fff148e304c800f4bcf8847ea02760d2512358927436d8c0a1d6808a224b",
+    "ontology_release": "42651364332c0c1428906a80c90582405c98d72d8b1ca23ad3a1b3d0738f2181",
+    "transport_version": "stable-prefix-local-verification-v2-feedback"
+  },
+  "protocol_version": "atomic-citations-v8-condition-review",
+  "semantic_version": "generic-semantic-v10",
+  "execution_status": "paused",
+  "completion": "incomplete",
+  "progress": {
+    "tasks_processed": 24,
+    "tasks_completed": 21,
+    "tasks_failed": 2,
+    "model_calls": 53,
+    "can_resume": true,
+    "first_relationship_seconds": 62.539
+  },
+  "model_request_counts": {
+    "complete": 52,
+    "cancelled_on_operator_pause": 1,
+    "active_after_pause": 0
+  },
+  "panel_candidate_counts_including_rejected": {
+    "entity": 12,
+    "relationship": 6,
+    "property": 6
+  },
+  "checks": {
+    "correct_frozen_document": true,
+    "safe_boundary": true,
+    "current_run_identity": true,
+    "panel_candidate_set_complete": true,
+    "all_anchors_replay_and_endpoints_current": true,
+    "describes_correct_product": true,
+    "product_properties": true,
+    "whole_synthesis_route": true,
+    "route_source_basis": true,
+    "cleaning_method": true,
+    "no_wrong_product_weight_or_na_cas": true
+  },
+  "anchor_replay_count": 52,
+  "anchor_and_dependency_errors": [],
+  "product_property_checks": {
+    "registrationCategory": true,
+    "projectName": true,
+    "molecularFormula": true,
+    "molecularWeight": true
+  },
+  "core_branches": [
+    {
+      "predicate": "describes",
+      "class": "DrugProduct",
+      "name": "HRS-5592",
+      "properties": {
+        "registrationCategory": "化1类新药",
+        "molecularFormula": "C26H25F2N7O2S",
+        "molecularWeight": "537.18",
+        "projectName": "HRS-5592"
+      },
+      "progress": {
+        "status": "identified",
+        "reason_codes": [],
+        "discovery_tasks": 1,
+        "relationship_tasks": 1,
+        "failed_tasks": 0,
+        "positive_count": 1,
+        "coverage_complete": false,
+        "property_status": "partial",
+        "property_tasks": 4,
+        "positive_property_count": 4,
+        "failed_property_tasks": 0
+      }
+    },
+    {
+      "predicate": "hasSynthesisRoute",
+      "class": "SynthesisRoute",
+      "name": "3.1.1合成路线图",
+      "properties": {
+        "processBasis": "3.1.1合成路线图"
+      },
+      "progress": {
+        "status": "identified",
+        "reason_codes": [],
+        "discovery_tasks": 1,
+        "relationship_tasks": 1,
+        "failed_tasks": 0,
+        "positive_count": 1,
+        "coverage_complete": false,
+        "property_status": "partial",
+        "property_tasks": 2,
+        "positive_property_count": 1,
+        "failed_property_tasks": 0
+      }
+    },
+    {
+      "predicate": "hasCleaningMethod",
+      "class": "CleaningProcess",
+      "source_description": "首段反应釜纯化水清洗过程；精确名称与原文保存在受控运行制品。",
+      "properties": {},
+      "progress": {
+        "status": "identified",
+        "reason_codes": [],
+        "discovery_tasks": 1,
+        "relationship_tasks": 1,
+        "failed_tasks": 0,
+        "positive_count": 1,
+        "coverage_complete": false,
+        "property_status": "not_applicable",
+        "property_tasks": 0,
+        "positive_property_count": 0,
+        "failed_property_tasks": 0
+      }
+    }
+  ],
+  "other_branch_states": {
+    "hasCleaningResidue": {
+      "status": "entities_failed",
+      "property_status": "queued",
+      "reason_codes": [
+        "unsupported_type"
+      ],
+      "coverage_complete": false
+    },
+    "hasDegradationPathway": {
+      "status": "relation_failed",
+      "property_status": "queued",
+      "reason_codes": [
+        "assertion_polarity_conflict"
+      ],
+      "coverage_complete": false
+    },
+    "hasProductionPlan": {
+      "status": "identified",
+      "property_status": "queued",
+      "reason_codes": [],
+      "coverage_complete": false
+    },
+    "hasProductionRiskAssessment": {
+      "status": "awaiting_relation",
+      "property_status": "queued",
+      "reason_codes": [],
+      "coverage_complete": false
+    },
+    "hasQualityRiskAssessment": {
+      "status": "queued",
+      "property_status": "queued",
+      "reason_codes": [],
+      "coverage_complete": false
+    },
+    "hasSafetyRiskAssessment": {
+      "status": "queued",
+      "property_status": "queued",
+      "reason_codes": [],
+      "coverage_complete": false
+    },
+    "hasSharedLineData": {
+      "status": "identified",
+      "property_status": "incomplete",
+      "reason_codes": [],
+      "coverage_complete": false
+    },
+    "hasStorageCondition": {
+      "status": "queued",
+      "property_status": "queued",
+      "reason_codes": [],
+      "coverage_complete": false
+    },
+    "usesEquipment": {
+      "status": "queued",
+      "property_status": "queued",
+      "reason_codes": [],
+      "coverage_complete": false
+    }
+  },
+  "retained_failures": {
+    "assertion_polarity_conflict": 1,
+    "unsupported numeric grammar": 1,
+    "model_cancelled": 1
+  },
+  "browser": {
+    "checked_at": "2026-09-09T19:02:49.326Z",
+    "real_backend": true,
+    "current_run_view": true,
+    "correct_default_source": true,
+    "branch_statuses_checked": true,
+    "source_navigation_checks": 11,
+    "source_navigation_all_passed": true,
+    "page_errors": [],
+    "api_errors": [],
+    "attempted_writes": []
+  },
+  "passed": true,
+  "full_artifacts": "/app/data/uploads/template-atomic-recovery-20260909/gold-run-722e1617d840421f9dc29069c54ea146/"
+}

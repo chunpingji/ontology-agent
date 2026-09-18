@@ -1,0 +1,1452 @@
+{
+  "scope_id": "storage",
+  "review_status": "model_output_not_expert_gold",
+  "arms": {
+    "A": {
+      "plan": {
+        "get_schema_card": [
+          {
+            "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/StorageCondition"
+          }
+        ],
+        "inspect_evidence": [
+          {
+            "ref": "u2"
+          },
+          {
+            "ref": "u3"
+          },
+          {
+            "ref": "u4"
+          },
+          {
+            "ref": "u5"
+          },
+          {
+            "ref": "u6"
+          },
+          {
+            "ref": "u7"
+          },
+          {
+            "ref": "u8"
+          },
+          {
+            "ref": "u9"
+          }
+        ],
+        "propose_mentions": [
+          {
+            "group": "entities"
+          },
+          {
+            "group": "values"
+          },
+          {
+            "group": "units"
+          }
+        ]
+      },
+      "candidates": {
+        "subjects": {
+          "document": {
+            "attributes": {},
+            "relations": {
+              "hasStorageCondition": [
+                {
+                  "target_id": "s1",
+                  "evidence": {
+                    "ref": "u8",
+                    "quote": "密封，双层聚乙烯薄膜袋，不超过25℃保存",
+                    "span_id": "evidence:u8:0:20"
+                  },
+                  "condition": {
+                    "ref": "",
+                    "quote": "",
+                    "span_id": ""
+                  },
+                  "polarity": "affirmed"
+                }
+              ]
+            },
+            "anchor": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            }
+          },
+          "s1": {
+            "attributes": {
+              "lightProtection": [],
+              "packagingType": [
+                {
+                  "raw": "双层聚乙烯薄膜袋外加药品包装用复合袋",
+                  "source": {
+                    "ref": "u7",
+                    "quote": "双层聚乙烯薄膜袋外加药品包装用复合袋",
+                    "span_id": "evidence:u7:0:18"
+                  },
+                  "field": {
+                    "ref": "u3",
+                    "quote": "包装方式",
+                    "span_id": "evidence:u3:0:4"
+                  },
+                  "unit": {
+                    "ref": "",
+                    "quote": "",
+                    "span_id": ""
+                  },
+                  "condition": {
+                    "ref": "",
+                    "quote": "",
+                    "span_id": ""
+                  }
+                }
+              ],
+              "shelfLife": [
+                {
+                  "raw": "24M",
+                  "source": {
+                    "ref": "u9",
+                    "quote": "有效期24M",
+                    "span_id": "evidence:u9:0:6"
+                  },
+                  "field": {
+                    "ref": "u5",
+                    "quote": "有效期/复测期",
+                    "span_id": "evidence:u5:0:7"
+                  },
+                  "unit": {
+                    "ref": "u9",
+                    "quote": "M",
+                    "span_id": "evidence:u9:5:6"
+                  },
+                  "condition": {
+                    "ref": "",
+                    "quote": "",
+                    "span_id": ""
+                  }
+                }
+              ],
+              "storageHumidity": [],
+              "storageTemperature": [
+                {
+                  "raw": "不超过25℃",
+                  "source": {
+                    "ref": "u8",
+                    "quote": "不超过25℃保存",
+                    "span_id": "evidence:u8:0:20"
+                  },
+                  "field": {
+                    "ref": "u4",
+                    "quote": "存放条件（温度、湿度、是否避光）",
+                    "span_id": "evidence:u4:0:16"
+                  },
+                  "unit": {
+                    "ref": "u8",
+                    "quote": "℃",
+                    "span_id": "evidence:u8:17:18"
+                  },
+                  "condition": {
+                    "ref": "",
+                    "quote": "",
+                    "span_id": ""
+                  }
+                }
+              ]
+            },
+            "relations": {},
+            "anchor": {
+              "ref": "u6",
+              "quote": "HRS-1597",
+              "span_id": "evidence:u6:0:8"
+            }
+          }
+        },
+        "observations": [
+          {
+            "value": {
+              "ref": "u6",
+              "quote": "HRS-1597",
+              "span_id": "evidence:u6:0:8"
+            },
+            "field": {
+              "ref": "u2",
+              "quote": "中间体/成品",
+              "span_id": "evidence:u2:0:6"
+            },
+            "legend": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "condition": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "state": "unmapped",
+            "reason": "Subject anchor identified as product code HRS-1597 under column '中间体/成品'."
+          },
+          {
+            "value": {
+              "ref": "u8",
+              "quote": "密封，双层聚乙烯薄膜袋，不超过25℃保存",
+              "span_id": "evidence:u8:0:20"
+            },
+            "field": {
+              "ref": "u4",
+              "quote": "存放条件（温度、湿度、是否避光）",
+              "span_id": "evidence:u4:0:16"
+            },
+            "legend": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "condition": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "state": "unmapped",
+            "reason": "Raw storage condition string containing temperature, packaging, and sealing info."
+          },
+          {
+            "value": {
+              "ref": "u9",
+              "quote": "有效期24M",
+              "span_id": "evidence:u9:0:6"
+            },
+            "field": {
+              "ref": "u5",
+              "quote": "有效期/复测期",
+              "span_id": "evidence:u5:0:7"
+            },
+            "legend": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "condition": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "state": "unmapped",
+            "reason": "Raw shelf life string."
+          }
+        ]
+      },
+      "final": {
+        "status": "complete",
+        "accepted": [
+          {
+            "kind": "relation",
+            "subject_id": "document",
+            "subject_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport",
+            "subject_text": "",
+            "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasStorageCondition",
+            "evidence": {
+              "ref": "u8",
+              "quote": "密封，双层聚乙烯薄膜袋，不超过25℃保存",
+              "start": 0,
+              "end": 20
+            },
+            "condition": {
+              "ref": "",
+              "quote": ""
+            },
+            "object_id": "s1",
+            "object_text": "HRS-1597",
+            "object_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/StorageCondition",
+            "polarity": "affirmed",
+            "candidate_id": "c1",
+            "semantic_status": "supported",
+            "validation_status": "passed"
+          },
+          {
+            "kind": "property",
+            "subject_id": "s1",
+            "subject_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/StorageCondition",
+            "subject_text": "HRS-1597",
+            "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/packagingType",
+            "evidence": {
+              "ref": "u7",
+              "quote": "双层聚乙烯薄膜袋外加药品包装用复合袋",
+              "start": 0,
+              "end": 18
+            },
+            "condition": {
+              "ref": "",
+              "quote": ""
+            },
+            "raw_value": "双层聚乙烯薄膜袋外加药品包装用复合袋",
+            "field": {
+              "ref": "u3",
+              "quote": "包装方式",
+              "start": 0,
+              "end": 4
+            },
+            "unit": {
+              "ref": "",
+              "quote": ""
+            },
+            "value_span": {
+              "ref": "u7",
+              "quote": "双层聚乙烯薄膜袋外加药品包装用复合袋",
+              "start": 0,
+              "end": 18
+            },
+            "value": "双层聚乙烯薄膜袋外加药品包装用复合袋",
+            "candidate_id": "c2",
+            "semantic_status": "supported",
+            "validation_status": "passed"
+          },
+          {
+            "kind": "property",
+            "subject_id": "s1",
+            "subject_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/StorageCondition",
+            "subject_text": "HRS-1597",
+            "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/shelfLife",
+            "evidence": {
+              "ref": "u9",
+              "quote": "有效期24M",
+              "start": 0,
+              "end": 6
+            },
+            "condition": {
+              "ref": "",
+              "quote": ""
+            },
+            "raw_value": "24M",
+            "field": {
+              "ref": "u5",
+              "quote": "有效期/复测期",
+              "start": 0,
+              "end": 7
+            },
+            "unit": {
+              "ref": "u9",
+              "quote": "M",
+              "start": 5,
+              "end": 6
+            },
+            "value_span": {
+              "ref": "u9",
+              "quote": "24M",
+              "start": 3,
+              "end": 6
+            },
+            "value": "24M",
+            "candidate_id": "c3",
+            "semantic_status": "supported",
+            "validation_status": "passed"
+          },
+          {
+            "kind": "property",
+            "subject_id": "s1",
+            "subject_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/StorageCondition",
+            "subject_text": "HRS-1597",
+            "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/storageTemperature",
+            "evidence": {
+              "ref": "u8",
+              "quote": "不超过25℃保存",
+              "start": 12,
+              "end": 20
+            },
+            "condition": {
+              "ref": "",
+              "quote": ""
+            },
+            "raw_value": "不超过25℃",
+            "field": {
+              "ref": "u4",
+              "quote": "存放条件（温度、湿度、是否避光）",
+              "start": 0,
+              "end": 16
+            },
+            "unit": {
+              "ref": "u8",
+              "quote": "℃",
+              "start": 17,
+              "end": 18
+            },
+            "value_span": {
+              "ref": "u8",
+              "quote": "不超过25℃",
+              "start": 12,
+              "end": 18
+            },
+            "value": "不超过25℃",
+            "candidate_id": "c4",
+            "semantic_status": "supported",
+            "validation_status": "passed"
+          }
+        ],
+        "observations": [
+          {
+            "value": {
+              "ref": "u6",
+              "quote": "HRS-1597",
+              "start": 0,
+              "end": 8
+            },
+            "field": {
+              "ref": "u2",
+              "quote": "中间体/成品",
+              "start": 0,
+              "end": 6
+            },
+            "legend": {
+              "ref": "",
+              "quote": ""
+            },
+            "condition": {
+              "ref": "",
+              "quote": ""
+            },
+            "state": "unmapped",
+            "reason": "Subject anchor identified as product code HRS-1597 under column '中间体/成品'."
+          },
+          {
+            "value": {
+              "ref": "u8",
+              "quote": "密封，双层聚乙烯薄膜袋，不超过25℃保存",
+              "start": 0,
+              "end": 20
+            },
+            "field": {
+              "ref": "u4",
+              "quote": "存放条件（温度、湿度、是否避光）",
+              "start": 0,
+              "end": 16
+            },
+            "legend": {
+              "ref": "",
+              "quote": ""
+            },
+            "condition": {
+              "ref": "",
+              "quote": ""
+            },
+            "state": "unmapped",
+            "reason": "Raw storage condition string containing temperature, packaging, and sealing info."
+          },
+          {
+            "value": {
+              "ref": "u9",
+              "quote": "有效期24M",
+              "start": 0,
+              "end": 6
+            },
+            "field": {
+              "ref": "u5",
+              "quote": "有效期/复测期",
+              "start": 0,
+              "end": 7
+            },
+            "legend": {
+              "ref": "",
+              "quote": ""
+            },
+            "condition": {
+              "ref": "",
+              "quote": ""
+            },
+            "state": "unmapped",
+            "reason": "Raw shelf life string."
+          }
+        ],
+        "unresolved": [],
+        "rejected": [],
+        "acceptance": {
+          "checks": [
+            {
+              "check": "required_properties",
+              "expected": {
+                "predicate": "packagingType",
+                "subject_class": "StorageCondition",
+                "value": "双层聚乙烯薄膜袋外加药品包装用复合袋",
+                "row": 1
+              },
+              "pass": true
+            },
+            {
+              "check": "required_properties",
+              "expected": {
+                "predicate": "storageTemperature",
+                "subject_class": "StorageCondition",
+                "value": "不超过25℃",
+                "row": 1
+              },
+              "pass": true
+            },
+            {
+              "check": "required_properties",
+              "expected": {
+                "predicate": "shelfLife",
+                "subject_class": "StorageCondition",
+                "value": "24M",
+                "row": 1
+              },
+              "pass": true
+            },
+            {
+              "check": "subject_group",
+              "expected": {
+                "name": "storage_condition",
+                "required_property_indices": [
+                  0,
+                  1,
+                  2
+                ],
+                "subject_class": "StorageCondition"
+              },
+              "pass": true
+            },
+            {
+              "check": "forbidden_predicate",
+              "expected": "lightProtection",
+              "pass": true
+            },
+            {
+              "check": "forbidden_predicate",
+              "expected": "storageHumidity",
+              "pass": true
+            }
+          ],
+          "passed": 6,
+          "total": 6,
+          "all_pass": true,
+          "evaluated": true
+        },
+        "extended_acceptance": {
+          "checks": [
+            {
+              "check": "semantic_review_present",
+              "candidate_id": "c1",
+              "pass": true
+            },
+            {
+              "check": "semantic_review_present",
+              "candidate_id": "c2",
+              "pass": true
+            },
+            {
+              "check": "semantic_review_present",
+              "candidate_id": "c3",
+              "pass": true
+            },
+            {
+              "check": "semantic_review_present",
+              "candidate_id": "c4",
+              "pass": true
+            },
+            {
+              "check": "request_budget",
+              "pass": true
+            }
+          ],
+          "evaluated": true,
+          "all_pass": true,
+          "manual_review_required": [
+            "subject_type",
+            "subject_binding",
+            "predicate_or_metric_meaning",
+            "relation_direction_and_endpoints",
+            "source_unit_and_normalization",
+            "polarity_and_unknown",
+            "field_legend_condition_roles",
+            "long_value_completeness"
+          ],
+          "manual_review_status": "not_performed"
+        }
+      }
+    },
+    "B": {
+      "plan": {
+        "get_schema_card": [
+          {
+            "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/StorageCondition"
+          }
+        ],
+        "inspect_evidence": [
+          {
+            "ref": "u2"
+          },
+          {
+            "ref": "u3"
+          },
+          {
+            "ref": "u4"
+          },
+          {
+            "ref": "u5"
+          },
+          {
+            "ref": "u6"
+          },
+          {
+            "ref": "u7"
+          },
+          {
+            "ref": "u8"
+          },
+          {
+            "ref": "u9"
+          }
+        ],
+        "propose_mentions": [
+          {
+            "group": "entities"
+          },
+          {
+            "group": "values"
+          },
+          {
+            "group": "units"
+          }
+        ]
+      },
+      "candidates": {
+        "subjects": {
+          "document": {
+            "attributes": {},
+            "relations": {
+              "hasStorageCondition": [
+                {
+                  "target_id": "s1",
+                  "evidence": {
+                    "ref": "u8",
+                    "quote": "密封，双层聚乙烯薄膜袋，不超过25℃保存",
+                    "span_id": "source:u8"
+                  },
+                  "condition": {
+                    "ref": "",
+                    "quote": "",
+                    "span_id": ""
+                  },
+                  "polarity": "affirmed"
+                }
+              ]
+            },
+            "anchor": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            }
+          },
+          "s1": {
+            "attributes": {
+              "lightProtection": [],
+              "packagingType": [
+                {
+                  "raw": "双层聚乙烯薄膜袋外加药品包装用复合袋",
+                  "source": {
+                    "ref": "u7",
+                    "quote": "双层聚乙烯薄膜袋外加药品包装用复合袋",
+                    "span_id": "source:u7"
+                  },
+                  "field": {
+                    "ref": "u3",
+                    "quote": "包装方式",
+                    "span_id": "source:u3"
+                  },
+                  "unit": {
+                    "ref": "",
+                    "quote": "",
+                    "span_id": ""
+                  },
+                  "condition": {
+                    "ref": "",
+                    "quote": "",
+                    "span_id": ""
+                  }
+                }
+              ],
+              "shelfLife": [
+                {
+                  "raw": "有效期24M",
+                  "source": {
+                    "ref": "u9",
+                    "quote": "有效期24M",
+                    "span_id": "source:u9"
+                  },
+                  "field": {
+                    "ref": "u5",
+                    "quote": "有效期/复测期",
+                    "span_id": "source:u5"
+                  },
+                  "unit": {
+                    "ref": "u9",
+                    "quote": "M",
+                    "span_id": "evidence:u9:5:6"
+                  },
+                  "condition": {
+                    "ref": "",
+                    "quote": "",
+                    "span_id": ""
+                  }
+                }
+              ],
+              "storageHumidity": [],
+              "storageTemperature": [
+                {
+                  "raw": "不超过25℃",
+                  "source": {
+                    "ref": "u8",
+                    "quote": "不超过25℃",
+                    "span_id": "source:u8"
+                  },
+                  "field": {
+                    "ref": "u4",
+                    "quote": "存放条件（温度、湿度、是否避光）",
+                    "span_id": "source:u4"
+                  },
+                  "unit": {
+                    "ref": "u8",
+                    "quote": "℃",
+                    "span_id": "evidence:u8:17:18"
+                  },
+                  "condition": {
+                    "ref": "",
+                    "quote": "",
+                    "span_id": ""
+                  }
+                }
+              ]
+            },
+            "relations": {},
+            "anchor": {
+              "ref": "u6",
+              "quote": "HRS-1597",
+              "span_id": "source:u6"
+            }
+          }
+        },
+        "observations": [
+          {
+            "value": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "field": {
+              "ref": "u4",
+              "quote": "存放条件（温度、湿度、是否避光）",
+              "span_id": "source:u4"
+            },
+            "legend": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "condition": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "state": "unknown",
+            "reason": "存放条件字段包含湿度和避光要求，但数据行中未提供具体数值或布尔值，仅提及温度和包装。"
+          },
+          {
+            "value": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "field": {
+              "ref": "u4",
+              "quote": "存放条件（温度、湿度、是否避光）",
+              "span_id": "source:u4"
+            },
+            "legend": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "condition": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "state": "unknown",
+            "reason": "存放条件字段包含避光要求，但数据行中未明确说明是否避光。"
+          }
+        ]
+      },
+      "final": {
+        "status": "complete",
+        "accepted": [
+          {
+            "kind": "relation",
+            "subject_id": "document",
+            "subject_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport",
+            "subject_text": "",
+            "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasStorageCondition",
+            "evidence": {
+              "ref": "u8",
+              "quote": "密封，双层聚乙烯薄膜袋，不超过25℃保存",
+              "start": 0,
+              "end": 20
+            },
+            "condition": {
+              "ref": "",
+              "quote": ""
+            },
+            "object_id": "s1",
+            "object_text": "HRS-1597",
+            "object_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/StorageCondition",
+            "polarity": "affirmed",
+            "candidate_id": "c1",
+            "semantic_status": "supported",
+            "validation_status": "passed"
+          },
+          {
+            "kind": "property",
+            "subject_id": "s1",
+            "subject_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/StorageCondition",
+            "subject_text": "HRS-1597",
+            "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/packagingType",
+            "evidence": {
+              "ref": "u7",
+              "quote": "双层聚乙烯薄膜袋外加药品包装用复合袋",
+              "start": 0,
+              "end": 18
+            },
+            "condition": {
+              "ref": "",
+              "quote": ""
+            },
+            "raw_value": "双层聚乙烯薄膜袋外加药品包装用复合袋",
+            "field": {
+              "ref": "u3",
+              "quote": "包装方式",
+              "start": 0,
+              "end": 4
+            },
+            "unit": {
+              "ref": "",
+              "quote": ""
+            },
+            "value_span": {
+              "ref": "u7",
+              "quote": "双层聚乙烯薄膜袋外加药品包装用复合袋",
+              "start": 0,
+              "end": 18
+            },
+            "value": "双层聚乙烯薄膜袋外加药品包装用复合袋",
+            "candidate_id": "c2",
+            "semantic_status": "supported",
+            "validation_status": "passed"
+          },
+          {
+            "kind": "property",
+            "subject_id": "s1",
+            "subject_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/StorageCondition",
+            "subject_text": "HRS-1597",
+            "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/shelfLife",
+            "evidence": {
+              "ref": "u9",
+              "quote": "有效期24M",
+              "start": 0,
+              "end": 6
+            },
+            "condition": {
+              "ref": "",
+              "quote": ""
+            },
+            "raw_value": "有效期24M",
+            "field": {
+              "ref": "u5",
+              "quote": "有效期/复测期",
+              "start": 0,
+              "end": 7
+            },
+            "unit": {
+              "ref": "u9",
+              "quote": "M",
+              "start": 5,
+              "end": 6
+            },
+            "value_span": {
+              "ref": "u9",
+              "quote": "有效期24M",
+              "start": 0,
+              "end": 6
+            },
+            "value": "有效期24M",
+            "candidate_id": "c3",
+            "semantic_status": "supported",
+            "validation_status": "passed"
+          },
+          {
+            "kind": "property",
+            "subject_id": "s1",
+            "subject_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/StorageCondition",
+            "subject_text": "HRS-1597",
+            "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/storageTemperature",
+            "evidence": {
+              "ref": "u8",
+              "quote": "不超过25℃",
+              "start": 12,
+              "end": 18
+            },
+            "condition": {
+              "ref": "",
+              "quote": ""
+            },
+            "raw_value": "不超过25℃",
+            "field": {
+              "ref": "u4",
+              "quote": "存放条件（温度、湿度、是否避光）",
+              "start": 0,
+              "end": 16
+            },
+            "unit": {
+              "ref": "u8",
+              "quote": "℃",
+              "start": 17,
+              "end": 18
+            },
+            "value_span": {
+              "ref": "u8",
+              "quote": "不超过25℃",
+              "start": 12,
+              "end": 18
+            },
+            "value": "不超过25℃",
+            "candidate_id": "c4",
+            "semantic_status": "supported",
+            "validation_status": "passed"
+          }
+        ],
+        "observations": [],
+        "unresolved": [
+          {
+            "kind": "observation",
+            "candidate_id": "o1",
+            "proposal": {
+              "value": {
+                "ref": "",
+                "quote": ""
+              },
+              "field": {
+                "ref": "u4",
+                "quote": "存放条件（温度、湿度、是否避光）",
+                "start": 0,
+                "end": 16
+              },
+              "legend": {
+                "ref": "",
+                "quote": ""
+              },
+              "condition": {
+                "ref": "",
+                "quote": ""
+              },
+              "state": "unknown",
+              "reason": "存放条件字段包含湿度和避光要求，但数据行中未提供具体数值或布尔值，仅提及温度和包装。"
+            },
+            "issues": [
+              "source_quote_missing"
+            ]
+          },
+          {
+            "kind": "observation",
+            "candidate_id": "o2",
+            "proposal": {
+              "value": {
+                "ref": "",
+                "quote": ""
+              },
+              "field": {
+                "ref": "u4",
+                "quote": "存放条件（温度、湿度、是否避光）",
+                "start": 0,
+                "end": 16
+              },
+              "legend": {
+                "ref": "",
+                "quote": ""
+              },
+              "condition": {
+                "ref": "",
+                "quote": ""
+              },
+              "state": "unknown",
+              "reason": "存放条件字段包含避光要求，但数据行中未明确说明是否避光。"
+            },
+            "issues": [
+              "source_quote_missing"
+            ]
+          }
+        ],
+        "rejected": [],
+        "acceptance": {
+          "checks": [
+            {
+              "check": "required_properties",
+              "expected": {
+                "predicate": "packagingType",
+                "subject_class": "StorageCondition",
+                "value": "双层聚乙烯薄膜袋外加药品包装用复合袋",
+                "row": 1
+              },
+              "pass": true
+            },
+            {
+              "check": "required_properties",
+              "expected": {
+                "predicate": "storageTemperature",
+                "subject_class": "StorageCondition",
+                "value": "不超过25℃",
+                "row": 1
+              },
+              "pass": true
+            },
+            {
+              "check": "required_properties",
+              "expected": {
+                "predicate": "shelfLife",
+                "subject_class": "StorageCondition",
+                "value": "24M",
+                "row": 1
+              },
+              "pass": false
+            },
+            {
+              "check": "subject_group",
+              "expected": {
+                "name": "storage_condition",
+                "required_property_indices": [
+                  0,
+                  1,
+                  2
+                ],
+                "subject_class": "StorageCondition"
+              },
+              "pass": false
+            },
+            {
+              "check": "forbidden_predicate",
+              "expected": "lightProtection",
+              "pass": true
+            },
+            {
+              "check": "forbidden_predicate",
+              "expected": "storageHumidity",
+              "pass": true
+            }
+          ],
+          "passed": 4,
+          "total": 6,
+          "all_pass": false,
+          "evaluated": true
+        },
+        "extended_acceptance": {
+          "checks": [
+            {
+              "check": "semantic_review_present",
+              "candidate_id": "c1",
+              "pass": true
+            },
+            {
+              "check": "semantic_review_present",
+              "candidate_id": "c2",
+              "pass": true
+            },
+            {
+              "check": "semantic_review_present",
+              "candidate_id": "c3",
+              "pass": true
+            },
+            {
+              "check": "semantic_review_present",
+              "candidate_id": "c4",
+              "pass": true
+            },
+            {
+              "check": "request_budget",
+              "pass": true
+            }
+          ],
+          "evaluated": true,
+          "all_pass": true,
+          "manual_review_required": [
+            "subject_type",
+            "subject_binding",
+            "predicate_or_metric_meaning",
+            "relation_direction_and_endpoints",
+            "source_unit_and_normalization",
+            "polarity_and_unknown",
+            "field_legend_condition_roles",
+            "long_value_completeness"
+          ],
+          "manual_review_status": "not_performed"
+        }
+      }
+    }
+  },
+  "sources": {
+    "u0": {
+      "evidence_id": "8ef3c2b6036f155369dcc55a2b322b5bb9fc6c8a2e2aa7914e919f89d1d7d1ef",
+      "kind": "heading",
+      "text": "存放条件",
+      "section_node_id": "section:73",
+      "block_id": "paragraph:73:0",
+      "paragraph_index": 73,
+      "fragment_index": 0,
+      "table_path": null,
+      "row_index": null,
+      "column_index": null,
+      "physical_page_number": 5,
+      "source_cell_id": null,
+      "paragraph_offset": 0,
+      "ref": "u0",
+      "row_span": 1,
+      "column_span": 1,
+      "logical_rows": [],
+      "column_indices": [],
+      "grid_rows": [],
+      "grid_columns": [],
+      "column_header_refs": [],
+      "is_header": false,
+      "parser_header_candidate": false,
+      "header_status": "not_a_table",
+      "cell_structure_valid": false
+    },
+    "u1": {
+      "evidence_id": "b71b7d6a1aea6494b526b0737d4c1867b8b5dae3af609f9441b2fcc965543984",
+      "kind": "paragraph",
+      "text": "（包括中间体、中间态 以及成品的存放条件、包装方式、有效期/复测期）",
+      "section_node_id": "section:73",
+      "block_id": "paragraph:74:0",
+      "paragraph_index": 74,
+      "fragment_index": 0,
+      "table_path": null,
+      "row_index": null,
+      "column_index": null,
+      "physical_page_number": 5,
+      "source_cell_id": null,
+      "paragraph_offset": 0,
+      "ref": "u1",
+      "row_span": 1,
+      "column_span": 1,
+      "logical_rows": [],
+      "column_indices": [],
+      "grid_rows": [],
+      "grid_columns": [],
+      "column_header_refs": [],
+      "is_header": false,
+      "parser_header_candidate": false,
+      "header_status": "not_a_table",
+      "cell_structure_valid": false
+    },
+    "u2": {
+      "evidence_id": "0b2076ba73fd5645ab647b6e3724babf7c92ef74a6f433b6ee5460c2b5d79842",
+      "kind": "cell_paragraph",
+      "text": "中间体/成品",
+      "section_node_id": "section:73",
+      "block_id": "table:3",
+      "paragraph_index": 0,
+      "fragment_index": 0,
+      "table_path": [
+        "table:3"
+      ],
+      "row_index": 0,
+      "column_index": 0,
+      "physical_page_number": 5,
+      "source_cell_id": "table:3/cell:0:0",
+      "paragraph_offset": 0,
+      "ref": "u2",
+      "row_span": 1,
+      "column_span": 1,
+      "logical_rows": [
+        0
+      ],
+      "column_indices": [
+        0
+      ],
+      "grid_rows": [
+        0
+      ],
+      "grid_columns": [
+        0
+      ],
+      "column_header_refs": [],
+      "is_header": true,
+      "parser_header_candidate": true,
+      "header_status": "heuristic_candidate",
+      "cell_structure_valid": true
+    },
+    "u3": {
+      "evidence_id": "3ff031c6c850a010d479e0ca3776eaf8235db511aa8dfaa1bcbb1525e49ef089",
+      "kind": "cell_paragraph",
+      "text": "包装方式",
+      "section_node_id": "section:73",
+      "block_id": "table:3",
+      "paragraph_index": 0,
+      "fragment_index": 0,
+      "table_path": [
+        "table:3"
+      ],
+      "row_index": 0,
+      "column_index": 1,
+      "physical_page_number": 5,
+      "source_cell_id": "table:3/cell:0:1",
+      "paragraph_offset": 0,
+      "ref": "u3",
+      "row_span": 1,
+      "column_span": 1,
+      "logical_rows": [
+        0
+      ],
+      "column_indices": [
+        1
+      ],
+      "grid_rows": [
+        0
+      ],
+      "grid_columns": [
+        1
+      ],
+      "column_header_refs": [],
+      "is_header": true,
+      "parser_header_candidate": true,
+      "header_status": "heuristic_candidate",
+      "cell_structure_valid": true
+    },
+    "u4": {
+      "evidence_id": "7ef52aa5f4eef1fc382587b606e178f0e5c12ccff75fdeca9be7d42575a5b986",
+      "kind": "cell_paragraph",
+      "text": "存放条件（温度、湿度、是否避光）",
+      "section_node_id": "section:73",
+      "block_id": "table:3",
+      "paragraph_index": 0,
+      "fragment_index": 0,
+      "table_path": [
+        "table:3"
+      ],
+      "row_index": 0,
+      "column_index": 2,
+      "physical_page_number": 5,
+      "source_cell_id": "table:3/cell:0:2",
+      "paragraph_offset": 0,
+      "ref": "u4",
+      "row_span": 1,
+      "column_span": 1,
+      "logical_rows": [
+        0
+      ],
+      "column_indices": [
+        2
+      ],
+      "grid_rows": [
+        0
+      ],
+      "grid_columns": [
+        2
+      ],
+      "column_header_refs": [],
+      "is_header": true,
+      "parser_header_candidate": true,
+      "header_status": "heuristic_candidate",
+      "cell_structure_valid": true
+    },
+    "u5": {
+      "evidence_id": "538df099cc7621879d25fcc593975ab253fc566a75ee52a83b4a279f12aaf408",
+      "kind": "cell_paragraph",
+      "text": "有效期/复测期",
+      "section_node_id": "section:73",
+      "block_id": "table:3",
+      "paragraph_index": 0,
+      "fragment_index": 0,
+      "table_path": [
+        "table:3"
+      ],
+      "row_index": 0,
+      "column_index": 3,
+      "physical_page_number": 5,
+      "source_cell_id": "table:3/cell:0:3",
+      "paragraph_offset": 0,
+      "ref": "u5",
+      "row_span": 1,
+      "column_span": 1,
+      "logical_rows": [
+        0
+      ],
+      "column_indices": [
+        3
+      ],
+      "grid_rows": [
+        0
+      ],
+      "grid_columns": [
+        3
+      ],
+      "column_header_refs": [],
+      "is_header": true,
+      "parser_header_candidate": true,
+      "header_status": "heuristic_candidate",
+      "cell_structure_valid": true
+    },
+    "u6": {
+      "evidence_id": "8dc4996566337e1f4152bc14f32dadd8cb09fab3ed0200466342d9299787437e",
+      "kind": "cell_paragraph",
+      "text": "HRS-1597",
+      "section_node_id": "section:73",
+      "block_id": "table:3",
+      "paragraph_index": 0,
+      "fragment_index": 0,
+      "table_path": [
+        "table:3"
+      ],
+      "row_index": 1,
+      "column_index": 0,
+      "physical_page_number": 5,
+      "source_cell_id": "table:3/cell:1:0",
+      "paragraph_offset": 0,
+      "ref": "u6",
+      "row_span": 1,
+      "column_span": 1,
+      "logical_rows": [
+        1
+      ],
+      "column_indices": [
+        0
+      ],
+      "grid_rows": [
+        1
+      ],
+      "grid_columns": [
+        0
+      ],
+      "column_header_refs": [
+        "u2"
+      ],
+      "is_header": false,
+      "parser_header_candidate": false,
+      "header_status": "unconfirmed",
+      "cell_structure_valid": true
+    },
+    "u7": {
+      "evidence_id": "8e18429ffe1fa8425cce79aeb6c4db99ea5760829527384ee964ffec67cbdd73",
+      "kind": "cell_paragraph",
+      "text": "双层聚乙烯薄膜袋外加药品包装用复合袋",
+      "section_node_id": "section:73",
+      "block_id": "table:3",
+      "paragraph_index": 0,
+      "fragment_index": 0,
+      "table_path": [
+        "table:3"
+      ],
+      "row_index": 1,
+      "column_index": 1,
+      "physical_page_number": 5,
+      "source_cell_id": "table:3/cell:1:1",
+      "paragraph_offset": 0,
+      "ref": "u7",
+      "row_span": 1,
+      "column_span": 1,
+      "logical_rows": [
+        1
+      ],
+      "column_indices": [
+        1
+      ],
+      "grid_rows": [
+        1
+      ],
+      "grid_columns": [
+        1
+      ],
+      "column_header_refs": [
+        "u3"
+      ],
+      "is_header": false,
+      "parser_header_candidate": false,
+      "header_status": "unconfirmed",
+      "cell_structure_valid": true
+    },
+    "u8": {
+      "evidence_id": "622cb804a11629b61be543c3a3fff7b4560cba38ef5e13faee283be71b6fa88d",
+      "kind": "cell_paragraph",
+      "text": "密封，双层聚乙烯薄膜袋，不超过25℃保存",
+      "section_node_id": "section:73",
+      "block_id": "table:3",
+      "paragraph_index": 0,
+      "fragment_index": 0,
+      "table_path": [
+        "table:3"
+      ],
+      "row_index": 1,
+      "column_index": 2,
+      "physical_page_number": 5,
+      "source_cell_id": "table:3/cell:1:2",
+      "paragraph_offset": 0,
+      "ref": "u8",
+      "row_span": 1,
+      "column_span": 1,
+      "logical_rows": [
+        1
+      ],
+      "column_indices": [
+        2
+      ],
+      "grid_rows": [
+        1
+      ],
+      "grid_columns": [
+        2
+      ],
+      "column_header_refs": [
+        "u4"
+      ],
+      "is_header": false,
+      "parser_header_candidate": false,
+      "header_status": "unconfirmed",
+      "cell_structure_valid": true
+    },
+    "u9": {
+      "evidence_id": "e47adf407a59221337f9297e143a6f39c52fbed93dda819f377e1c5a28a1aa9f",
+      "kind": "cell_paragraph",
+      "text": "有效期24M",
+      "section_node_id": "section:73",
+      "block_id": "table:3",
+      "paragraph_index": 0,
+      "fragment_index": 0,
+      "table_path": [
+        "table:3"
+      ],
+      "row_index": 1,
+      "column_index": 3,
+      "physical_page_number": 5,
+      "source_cell_id": "table:3/cell:1:3",
+      "paragraph_offset": 0,
+      "ref": "u9",
+      "row_span": 1,
+      "column_span": 1,
+      "logical_rows": [
+        1
+      ],
+      "column_indices": [
+        3
+      ],
+      "grid_rows": [
+        1
+      ],
+      "grid_columns": [
+        3
+      ],
+      "column_header_refs": [
+        "u5"
+      ],
+      "is_header": false,
+      "parser_header_candidate": false,
+      "header_status": "unconfirmed",
+      "cell_structure_valid": true
+    }
+  }
+}

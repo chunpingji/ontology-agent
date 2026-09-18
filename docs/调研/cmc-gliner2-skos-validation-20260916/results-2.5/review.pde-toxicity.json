@@ -1,0 +1,426 @@
+{
+  "reviewer": "assistant independent source review not expert gold",
+  "status_definitions": {
+    "supported": "原文支持该项的主体角色、字段或关系语义；整体声明还须主体绑定正确。",
+    "unsupported": "存在明确错角色、错绑定或与原文/卡片语义相矛盾的推断。",
+    "undetermined": "只缺充分证明，或有无法消解的指向/限定歧义；缺证不作为反证。"
+  },
+  "review_boundary": "初版独立复核仅阅读 source/cards/original generation 包并先保存，未读取对应 verification、checker、reference 或 acceptance。之后成本统计脚本读取 completed 制品；本次 c2 字段角色复核仍仅依据该包原文和卡片明确条款，未使用程序语义判断。",
+  "cases": [
+    {
+      "arm": "C",
+      "scope_id": "toxicity_unknown",
+      "review_input": "output/schema-card-qwen-cmc-gliner25-skos-20260916/review-inputs/toxicity_unknown.json",
+      "review_input_sha256": "67c66741d0d7bc17cd7b2b1474d02c7c82b44d27878c90597a2b62692d4d411e",
+      "source_artifacts": {
+        "sources.json": "0da78598e367c4fcdf62e5b3e3ff1712d11d2f23116c30a0e72410a04301e224",
+        "subject-cards.json": "031995821cbc060e869f2d84bc9dd5d413768a5b19d5cebc38c01037d46a5d43",
+        "candidates/proposal.json": "6059fcf4f71611a1f393e85e2b3cdf8a4973d229b866d90a673bdacd6260e976"
+      },
+      "subjects": [
+        {
+          "id": "document",
+          "path": "subjects.document",
+          "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport",
+          "proposal": {
+            "attributes": {},
+            "relations": {
+              "describes": [
+                {
+                  "target_id": "s1",
+                  "evidence": {
+                    "ref": "u0",
+                    "quote": "表2 产品毒性信息",
+                    "span_id": "source:u0"
+                  },
+                  "condition": {
+                    "ref": "",
+                    "quote": "",
+                    "span_id": ""
+                  },
+                  "polarity": "affirmed"
+                }
+              ]
+            },
+            "anchor": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            }
+          },
+          "status": "supported",
+          "reason": "按本次任务已指定的 CMCReport 文档根处理；此项是已给定文档身份，不能仅由“表2 产品毒性信息”推导完整报告类型。",
+          "supporting_source_refs": [
+            "u0"
+          ],
+          "instantiated": true
+        },
+        {
+          "id": "s1",
+          "path": "subjects.s1",
+          "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/DrugProduct",
+          "proposal": {
+            "attributes": {
+              "registrationCategory": [],
+              "regulatoryStatus": [],
+              "targetIndication": [],
+              "appearance": [],
+              "casNumber": [],
+              "chemicalNameEn": [],
+              "chemicalNameZh": [],
+              "dosageForm": [],
+              "drugSpecification": [],
+              "hasPrionRisk": [],
+              "inactivationMethod": [],
+              "isBetaLactam": [],
+              "isCytotoxic": [],
+              "isHighlyActive": [],
+              "isHighlySensitizing": [],
+              "isHormonal": [],
+              "isOncologyDrug": [],
+              "isPenicillinType": [],
+              "maximumDailyDose_mg": [],
+              "minimumTherapeuticDose_mg": [],
+              "molecularFormula": [],
+              "molecularWeight": [],
+              "productIdentifier": [
+                {
+                  "raw": "HRS-1597",
+                  "source": {
+                    "ref": "u6",
+                    "quote": "HRS-1597",
+                    "span_id": "source:u6"
+                  },
+                  "field": {
+                    "ref": "u1",
+                    "quote": "产品名称",
+                    "span_id": "source:u1"
+                  },
+                  "unit": {
+                    "ref": "",
+                    "quote": "",
+                    "span_id": ""
+                  },
+                  "condition": {
+                    "ref": "",
+                    "quote": "",
+                    "span_id": ""
+                  }
+                }
+              ],
+              "projectCode": [],
+              "projectName": [],
+              "routeOfAdministration": [],
+              "solubility": []
+            },
+            "relations": {
+              "hasSensitizationPotential": []
+            },
+            "anchor": {
+              "ref": "u6",
+              "quote": "HRS-1597",
+              "span_id": "source:u6"
+            }
+          },
+          "status": "undetermined",
+          "reason": "u6 明示本表被描述对象的名称为 HRS-1597，可定位该行对象；但本包只有“产品名称”和毒性信息，未给出区分 DrugProduct 与原料/API 等实体层级的充分证据。不能以表头“产品”单独确认所选 DrugProduct 类。",
+          "supporting_source_refs": [
+            "u0",
+            "u1",
+            "u6"
+          ],
+          "instantiated": true
+        },
+        {
+          "id": "s2",
+          "path": "subjects.s2",
+          "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/GenotoxicityProfile",
+          "proposal": {
+            "attributes": {},
+            "relations": {},
+            "anchor": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            }
+          },
+          "status": "supported",
+          "reason": "空锚点、无属性或关系，未实例化 GenotoxicityProfile。基因毒性单元格的“×”可保留为带图例的否定观察，不需凭表头创建新实体。此判断只认可未制造主体，不表示实体召回已完整。",
+          "supporting_source_refs": [
+            "u3",
+            "u8",
+            "u11"
+          ],
+          "instantiated": false
+        },
+        {
+          "id": "s3",
+          "path": "subjects.s3",
+          "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/SensitizationPotential",
+          "proposal": {
+            "attributes": {
+              "sensitizationLevel": []
+            },
+            "relations": {},
+            "anchor": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            }
+          },
+          "status": "supported",
+          "reason": "空锚点、无属性或关系，未实例化 SensitizationPotential；致敏性“—”仅表示研究数据不足，不支持致敏级别或阳性潜力实体。",
+          "supporting_source_refs": [
+            "u5",
+            "u10",
+            "u11"
+          ],
+          "instantiated": false
+        }
+      ],
+      "claims": [
+        {
+          "id": "c1",
+          "path": "subjects.document.relations.describes[0]",
+          "subject_id": "document",
+          "field": "describes",
+          "kind": "relation",
+          "proposal": {
+            "target_id": "s1",
+            "evidence": {
+              "ref": "u0",
+              "quote": "表2 产品毒性信息",
+              "span_id": "source:u0"
+            },
+            "condition": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "polarity": "affirmed"
+          },
+          "status": "undetermined",
+          "content_verdict": "supported",
+          "overall_verdict": "undetermined",
+          "reason": "表题 u0、产品名称列 u1 和数据行 u6 联合支持该文档描述 HRS-1597 的产品毒性信息；关系方向由文档指向被描述对象，没有条件或否定逆转。单独的题注 u0 不足以识别具体端点，内容判断使用同表的名称列及数据行共同定位。",
+          "supporting_source_refs": [
+            "u0",
+            "u1",
+            "u6"
+          ],
+          "subject_binding_issue": "目标 s1 的 DrugProduct 专业类型尚未充分证明。",
+          "overall_reason": "文档描述该行对象这一内容有依据，但 describes 卡片要求的目标实体类型及所选 DrugProduct 绑定尚未确定，整体保留未决。"
+        },
+        {
+          "id": "c2",
+          "path": "subjects.s1.attributes.productIdentifier[0]",
+          "subject_id": "s1",
+          "field": "productIdentifier",
+          "kind": "property",
+          "proposal": {
+            "raw": "HRS-1597",
+            "source": {
+              "ref": "u6",
+              "quote": "HRS-1597",
+              "span_id": "source:u6"
+            },
+            "field": {
+              "ref": "u1",
+              "quote": "产品名称",
+              "span_id": "source:u1"
+            },
+            "unit": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "condition": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            }
+          },
+          "status": "unsupported",
+          "content_verdict": "unsupported",
+          "overall_verdict": "unsupported",
+          "reason": "HRS-1597 原字串及其同列位置真实，但 u1 明确把它列为“产品名称”。productIdentifier 卡片明确规定不得以名称替代具体实例身份；当前提案正把该名称字段投射为唯一标识，违反字段角色限制。不能凭字符串外观像编号就解除这项限制。",
+          "supporting_source_refs": [
+            "u1",
+            "u6"
+          ],
+          "subject_binding_issue": "属性证据角色误用已成立；另外 s1 的 DrugProduct 专业类型仍为未决，二者分开记录。",
+          "overall_reason": "名称到唯一实例标识的投射与卡片明确排除条款冲突，因此内容及整体均 unsupported；主体类型缺证本身仍为 undetermined，不作为反证。"
+        }
+      ],
+      "observations": [
+        {
+          "id": "o1",
+          "proposal": {
+            "value": {
+              "ref": "u7",
+              "quote": "—",
+              "span_id": "source:u7"
+            },
+            "field": {
+              "ref": "u2",
+              "quote": "生殖发育毒性",
+              "span_id": "source:u2"
+            },
+            "legend": {
+              "ref": "u11",
+              "quote": "“—”代表相关的研究数据不充分。",
+              "span_id": "source:u11"
+            },
+            "condition": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "state": "unknown",
+            "reason": "数据不充分"
+          },
+          "path": "observations[0]",
+          "status": "supported",
+          "reason": "HRS-1597 同一数据行的生殖发育毒性列为“—”，列头和值的表格坐标一致。原文图例明确“—”代表相关研究数据不充分，unknown 忠实保留未知状态，不能改成无毒性、阳性或已完成研究。",
+          "supporting_source_refs": [
+            "u6",
+            "u2",
+            "u7",
+            "u11"
+          ]
+        },
+        {
+          "id": "o2",
+          "proposal": {
+            "value": {
+              "ref": "u8",
+              "quote": "×",
+              "span_id": "source:u8"
+            },
+            "field": {
+              "ref": "u3",
+              "quote": "基因毒性",
+              "span_id": "source:u3"
+            },
+            "legend": {
+              "ref": "u11",
+              "quote": "“×”代表没有相应的毒性",
+              "span_id": "source:u11"
+            },
+            "condition": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "state": "negated",
+            "reason": "无基因毒性"
+          },
+          "path": "observations[1]",
+          "status": "supported",
+          "reason": "HRS-1597 同一数据行的基因毒性列为“×”，列头和值的表格坐标一致。原文图例明确“×”代表没有相应毒性，因此本表报告的是基因毒性否定；这是对报告断言的忠实记录，不外推为所有试验或所有条件下的绝对无风险。",
+          "supporting_source_refs": [
+            "u6",
+            "u3",
+            "u8",
+            "u11"
+          ]
+        },
+        {
+          "id": "o3",
+          "proposal": {
+            "value": {
+              "ref": "u9",
+              "quote": "—",
+              "span_id": "source:u9"
+            },
+            "field": {
+              "ref": "u4",
+              "quote": "致癌性",
+              "span_id": "source:u4"
+            },
+            "legend": {
+              "ref": "u11",
+              "quote": "“—”代表相关的研究数据不充分。",
+              "span_id": "source:u11"
+            },
+            "condition": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "state": "unknown",
+            "reason": "数据不充分"
+          },
+          "path": "observations[2]",
+          "status": "supported",
+          "reason": "HRS-1597 同一数据行的致癌性列为“—”，列头和值的表格坐标一致。原文图例明确“—”代表相关研究数据不充分，unknown 忠实保留未知状态，不能改成无毒性、阳性或已完成研究。",
+          "supporting_source_refs": [
+            "u6",
+            "u4",
+            "u9",
+            "u11"
+          ]
+        },
+        {
+          "id": "o4",
+          "proposal": {
+            "value": {
+              "ref": "u10",
+              "quote": "—",
+              "span_id": "source:u10"
+            },
+            "field": {
+              "ref": "u5",
+              "quote": "致敏性",
+              "span_id": "source:u5"
+            },
+            "legend": {
+              "ref": "u11",
+              "quote": "“—”代表相关的研究数据不充分。",
+              "span_id": "source:u11"
+            },
+            "condition": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "state": "unknown",
+            "reason": "数据不充分"
+          },
+          "path": "observations[3]",
+          "status": "supported",
+          "reason": "HRS-1597 同一数据行的致敏性列为“—”，列头和值的表格坐标一致。原文图例明确“—”代表相关研究数据不充分，unknown 忠实保留未知状态，不能改成无毒性、阳性或已完成研究。",
+          "supporting_source_refs": [
+            "u6",
+            "u5",
+            "u10",
+            "u11"
+          ]
+        }
+      ],
+      "coverage": {
+        "subjects": 4,
+        "claims": 2,
+        "observations": 4,
+        "all_indexed_items_reviewed": true
+      },
+      "notes": [
+        "四个毒性单元格的状态均有表格列头和原文图例证明：三个未知，一个基因毒性否定。",
+        "空主体槽位的 supported 表示未制造无依据实例，不等价于支持该类别实体存在。",
+        "content_verdict 与 overall_verdict 分开，避免将真实名称或表格描述自动提升为已证明的实体类型/唯一身份。",
+        "所有提供的非空引文均为对应原文的精确子串。包内未提供 span_catalog，本复核不额外声称验证了 span_id 到坐标的工具协议。",
+        "该包不含数值或单位候选，不能用于评价 PDE 量纲、单位归一化或数值 SHACL。",
+        "卡片契约复核后，将 c2 从未决更正为 unsupported：原文已有“产品名称”的正面字段角色证据，而卡片明确排除此证据角色用于唯一实例标识。该更正不依赖其他案例分数或模型/程序判断。"
+      ]
+    }
+  ],
+  "not_evaluated": [
+    {
+      "arm": "C",
+      "scope_id": "pde_conflict",
+      "status": "not_evaluated",
+      "reason": "主代理报告候选阶段 HTTP 400 技术失败，没有候选 review-input 包；保持技术缺测，不推断正确、错误或单位校准质量。",
+      "source_of_execution_information": "parent message; no PDE program output/reference/acceptance read before review"
+    }
+  ]
+}

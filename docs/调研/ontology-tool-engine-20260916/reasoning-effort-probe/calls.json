@@ -1,0 +1,169 @@
+[
+  {
+    "scenario": "baseline",
+    "request": {
+      "model": "Qwen3.6-35B-A3B",
+      "input": [
+        {
+          "role": "user",
+          "content": "返回合成确认值 synthetic-ok。"
+        }
+      ],
+      "instructions": "这是合成协议检查。请直接且仅返回一个紧凑JSON对象：{\"answer\":\"synthetic-ok\"}。禁止Markdown、代码围栏和额外说明。",
+      "store": false,
+      "max_output_tokens": 1024,
+      "text": {
+        "format": {
+          "type": "json_schema",
+          "name": "synthetic_answer",
+          "strict": false,
+          "schema": {
+            "type": "object",
+            "properties": {
+              "answer": {
+                "type": "string",
+                "enum": [
+                  "synthetic-ok"
+                ]
+              }
+            },
+            "required": [
+              "answer"
+            ],
+            "additionalProperties": false
+          }
+        }
+      }
+    },
+    "status": "returned",
+    "response": {
+      "response_id": "resp_qHWWEAePRP3w86sRcunHLxSeQFAYsB0l",
+      "output_items": [
+        {
+          "id": "rs_TWkVL32qIgGZqqirykOPTYsWULyvbHAj",
+          "summary": [],
+          "type": "reasoning",
+          "content": [
+            {
+              "text": "好的，我现在需要处理用户的查询。用户要求返回一个紧凑的JSON对象，格式是{\"answer\":\"synthetic-ok\"}，并且强调不要使用Markdown、代码围栏或额外说明。首先，我要确认用户的具体指令。用户提到“合成协议检查”，并要求直接返回指定格式的JSON。这看起来像是一个测试或者验证协议，可能用于确认系统是否正确解析指令。\n\n接下来，我需要检查自己的响应是否符合用户的要求。用户明确要求只返回JSON对象，没有其他内容。因此，我必须确保输出中没有额外的文本或格式。同时，要确认JSON的结构是否正确，键和值是否准确，特别是答案部分是否为“synthetic-ok”。\n\n然后，考虑可能的陷阱。用户可能测试系统是否能严格遵守指令，避免任何多余的输出。例如，如果我在JSON前后添加空格、换行，或者使用Markdown格式，都会导致错误。此外，需要确保JSON是有效的，键名用双引号，字符串值也用双引号，并且正确转义任何特殊字符，但在这个例子中，字符串简单，没有特殊字符需要处理。\n\n最后，验证输出是否符合用户的所有要求。检查JSON结构是否正确，是否包含所需的键值对，以及是否没有任何额外内容。确认无误后，就可以生成最终的响应。\n",
+              "type": "reasoning_text"
+            }
+          ],
+          "encrypted_content": "",
+          "status": "completed"
+        },
+        {
+          "id": "msg_FIfqZ9J1vGmcRJtKvNinSQkeNfcgSjwN",
+          "content": [
+            {
+              "annotations": [],
+              "text": "{\"answer\":\"synthetic-ok\"}",
+              "type": "output_text",
+              "logprobs": []
+            }
+          ],
+          "role": "assistant",
+          "status": "completed",
+          "type": "message"
+        }
+      ],
+      "response_status": "completed",
+      "incomplete_details": null,
+      "error": null,
+      "usage": {
+        "input_tokens": 53,
+        "input_tokens_details": {
+          "cached_tokens": 0
+        },
+        "output_tokens": 266,
+        "total_tokens": 319
+      }
+    },
+    "elapsed_seconds": 7.048297259025276
+  },
+  {
+    "scenario": "effort_none",
+    "request": {
+      "model": "Qwen3.6-35B-A3B",
+      "input": [
+        {
+          "role": "user",
+          "content": "返回合成确认值 synthetic-ok。"
+        }
+      ],
+      "instructions": "这是合成协议检查。请直接且仅返回一个紧凑JSON对象：{\"answer\":\"synthetic-ok\"}。禁止Markdown、代码围栏和额外说明。",
+      "store": false,
+      "max_output_tokens": 1024,
+      "text": {
+        "format": {
+          "type": "json_schema",
+          "name": "synthetic_answer",
+          "strict": false,
+          "schema": {
+            "type": "object",
+            "properties": {
+              "answer": {
+                "type": "string",
+                "enum": [
+                  "synthetic-ok"
+                ]
+              }
+            },
+            "required": [
+              "answer"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "reasoning": {
+        "effort": "none"
+      }
+    },
+    "status": "returned",
+    "response": {
+      "response_id": "resp_TCnom9OrXc3COWfv07JF61OKSFoDDaks",
+      "output_items": [
+        {
+          "id": "rs_CnjPdW2xSBQN95wF2PtpZSKwbeSOBEkE",
+          "summary": [],
+          "type": "reasoning",
+          "content": [
+            {
+              "text": "好的，用户让我直接返回一个JSON对象，里面是{\"answer\":\"synthetic-ok\"}。首先，我需要确认用户的具体要求。他们强调要简洁，只返回JSON，不要任何额外的内容，比如Markdown或者解释。这可能是在测试我的指令遵循能力，或者用于自动化系统，需要严格格式的响应。\n\n接下来，我得检查是否有其他可能的陷阱。用户提到“合成协议检查”，可能涉及某种验证流程，但根据问题描述，只需要返回特定字符串。我需要确保没有添加多余的信息，保持完全符合指示。另外，用户可能希望系统快速响应，避免延迟，所以结构必须紧凑，没有空格或换行。最后，再次确认JSON格式是否正确，键值对是否准确，确保引号使用正确，避免语法错误导致解析失败。\n",
+              "type": "reasoning_text"
+            }
+          ],
+          "encrypted_content": "",
+          "status": "completed"
+        },
+        {
+          "id": "msg_8qiWZlBdtNbMPcQRiVnsl24mQEPnMhpo",
+          "content": [
+            {
+              "annotations": [],
+              "text": "{\"answer\":\"synthetic-ok\"}",
+              "type": "output_text",
+              "logprobs": []
+            }
+          ],
+          "role": "assistant",
+          "status": "completed",
+          "type": "message"
+        }
+      ],
+      "response_status": "completed",
+      "incomplete_details": null,
+      "error": null,
+      "usage": {
+        "input_tokens": 53,
+        "input_tokens_details": {
+          "cached_tokens": 36
+        },
+        "output_tokens": 171,
+        "total_tokens": 224
+      }
+    },
+    "elapsed_seconds": 3.5949791229795665
+  }
+]

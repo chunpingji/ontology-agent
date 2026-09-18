@@ -1,0 +1,15 @@
+{
+  "pytest": {
+    "cwd": "backend",
+    "command": ".venv/bin/python -m pytest -p no:cacheprovider -q tests/test_extraction/test_schema_card_summary_retrieval.py tests/test_extraction/test_schema_card_summary_tools.py tests/test_extraction/test_schema_card_gliner2.py tests/test_extraction/test_ontology_guided_boundaries.py",
+    "passed": 77,
+    "warnings": 4,
+    "seconds": 4.54
+  },
+  "ruff": {
+    "cwd": "backend",
+    "command": ".venv/bin/ruff check --no-cache app/evaluation/schema_card_summary_retrieval.py app/evaluation/schema_card_summary_tools.py tests/test_extraction/test_schema_card_summary_retrieval.py tests/test_extraction/test_schema_card_summary_tools.py",
+    "status": "passed"
+  },
+  "note": "Completed before the D NER/model freeze; not whole-repository or production quality acceptance."
+}

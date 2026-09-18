@@ -1,0 +1,192 @@
+diff --git a/common/chat-auto-parser-generator.cpp b/common/chat-auto-parser-generator.cpp
+index 36aab7ecb..cf0aa5799 100644
+--- a/common/chat-auto-parser-generator.cpp
++++ b/common/chat-auto-parser-generator.cpp
+@@ -140,6 +140,19 @@ common_peg_arena autoparser::build_parser(const generation_params & inputs, cons
+                 p.literal("```json") + p.space() + response_format + p.space() + p.literal("```"),
+                 p.space() + response_format  + p.space()
+             }) + p.end();
++            if (has_tools && inputs.tool_choice != COMMON_CHAT_TOOL_CHOICE_NONE && jinja_caps.supports_tool_calls) {
++                // The tool branch must contain a call; otherwise it admits arbitrary answers.
++                auto tool_inputs = inputs;
++                tool_inputs.tool_choice = COMMON_CHAT_TOOL_CHOICE_REQUIRED;
++                parser_build_context tool_ctx(p, tool_inputs);
++                tool_ctx.extracting_reasoning = ctx.extracting_reasoning;
++                tool_ctx.reasoning_parser = ctx.reasoning_parser;
++                tool_ctx.content = ctx.content;
++                tool_ctx.reasoning = ctx.reasoning;
++                auto tool_parser = tools.build_parser(tool_ctx);
++                parser = inputs.tool_choice == COMMON_CHAT_TOOL_CHOICE_REQUIRED
++                    ? tool_parser : p.choice({parser, tool_parser});
++            }
+             pure_content = false;
+         } else if (has_tools && inputs.tool_choice != COMMON_CHAT_TOOL_CHOICE_NONE && jinja_caps.supports_tool_calls) {
+             parser = tools.build_parser(ctx);
+@@ -237,6 +250,10 @@ common_peg_parser analyze_tools::build_tool_parser_json_native(parser_build_cont
+             format.fun_name_is_key, format.id_field, format.gen_id_field, format.parameter_order, format.openai_wrapper_trigger);
+     }
+ 
++    if (inputs.json_schema.is_object() && !inputs.json_schema.empty()) {
++        return ctx.reasoning_parser + p.space() + tools_parser + p.end();
++    }
++
+     // Handle content wrappers if present
+     if (ctx.content && ctx.content->is_always_wrapped()) {
+         auto wrapped_content = ctx.content->build_optional_wrapped(ctx);
+@@ -359,7 +376,9 @@ common_peg_parser analyze_tools::build_tool_parser_tag_json(parser_build_context
+ 
+     std::string trigger_marker       = !format.section_start.empty() ? format.section_start : format.per_call_start;
+     auto        content_before_tools = trigger_marker.empty() ? p.eps() : p.until(trigger_marker);
+-    return ctx.reasoning_parser + p.optional(p.content(content_before_tools)) + tool_calls + p.end();
++    auto prefix = inputs.json_schema.is_object() && !inputs.json_schema.empty()
++        ? p.space() : p.optional(p.content(content_before_tools));
++    return ctx.reasoning_parser + prefix + tool_calls + p.end();
+ }
+ 
+ common_peg_parser analyze_tools::build_tool_parser_tag_tagged(parser_build_context & ctx) const {
+@@ -490,7 +509,9 @@ common_peg_parser analyze_tools::build_tool_parser_tag_tagged(parser_build_conte
+ 
+     std::string trigger_marker       = !format.section_start.empty() ? format.section_start : format.per_call_start;
+     auto        content_before_tools = trigger_marker.empty() ? p.eps() : p.until(trigger_marker);
+-    return ctx.reasoning_parser + p.optional(p.content(content_before_tools)) + tool_calls + p.end();
++    auto prefix = inputs.json_schema.is_object() && !inputs.json_schema.empty()
++        ? p.space() : p.optional(p.content(content_before_tools));
++    return ctx.reasoning_parser + prefix + tool_calls + p.end();
+ }
+ 
+ }  // namespace autoparser
+diff --git a/tests/test-chat.cpp b/tests/test-chat.cpp
+index 5f71e5da6..c9ff2eadd 100644
+--- a/tests/test-chat.cpp
++++ b/tests/test-chat.cpp
+@@ -1713,6 +1713,28 @@ static void test_tools_oaicompat_json_conversion() {
+ }
+ 
+ static void test_convert_responses_to_chatcmpl() {
++
++    for (bool strict : {false, true}) {
++        auto input = json::parse(R"({"input":"test","text":{"format":{"type":"json_schema","name":"answer","schema":{"type":"object","properties":{"ok":{"type":"boolean"}},"required":["ok"],"additionalProperties":false}}}})");
++        input["text"]["format"]["strict"] = strict;
++        auto result = server_chat_convert_responses_to_chatcmpl(input);
++        assert_equals(false, result.contains("text"));
++        assert_equals(input["text"]["format"]["schema"], result["response_format"]["json_schema"]["schema"]);
++        assert_equals(strict, result["response_format"]["json_schema"]["strict"].get<bool>());
++    }
++    for (auto type : {"json_object", "text"}) {
++        json input = {{"input", "test"}, {"text", {{"format", {{"type", type}}}}}};
++        assert_equals(std::string(type), server_chat_convert_responses_to_chatcmpl(input)["response_format"]["type"].get<std::string>());
++    }
++    for (auto bad : {R"({"type":"unknown"})", R"({"type":"json_schema"})", R"({"type":"json_schema","schema":null})", R"("bad")"}) {
++        bool rejected = false;
++        try {
++            server_chat_convert_responses_to_chatcmpl({{"input", "test"}, {"text", {{"format", json::parse(bad)}}}});
++        } catch (const std::invalid_argument &) {
++            rejected = true;
++        }
++        assert_equals(true, rejected);
++    }
+     LOG_DBG("%s\n", __func__);
+ 
+     // Test basic conversion with input messages (user/assistant alternating)
+@@ -2036,6 +2058,59 @@ static void test_template_output_peg_parsers(bool detailed_debug) {
+         // Qwen3.5 (basically same as Nemotron, but keeping separate tests just in case)
+         auto tst = peg_tester("models/templates/Qwen3.5-4B.jinja", detailed_debug);
+ 
++        {
++            auto templates = read_templates("models/templates/Qwen3.5-4B.jinja");
++            common_chat_templates_inputs inputs;
++            inputs.messages = {message_user};
++            inputs.tools = {special_function_tool};
++            inputs.enable_thinking = false;
++            inputs.reasoning_format = COMMON_REASONING_FORMAT_AUTO;
++            inputs.json_schema = R"({"type":"object","properties":{"subject_id":{"type":"string"}},"required":["subject_id"],"additionalProperties":false})";
++            for (auto choice : {COMMON_CHAT_TOOL_CHOICE_AUTO, COMMON_CHAT_TOOL_CHOICE_NONE}) {
++                inputs.tool_choice = choice;
++                auto params = common_chat_templates_apply(templates.get(), inputs);
++                assert_equals(false, params.grammar.empty());
++                assert_equals(false, params.grammar_lazy);
++                for (auto invalid : {R"({})", R"({"subject_id":7})", R"({"subject_id":"s","extra":1})", "plain text"}) {
++                    auto grammar = build_grammar(params.grammar);
++                    assert_equals(false, match_string(params.generation_prompt + invalid, grammar.get()));
++                }
++                auto grammar = build_grammar(params.grammar);
++                assert_equals(true, match_string(params.generation_prompt + R"({"subject_id":"s"})", grammar.get()));
++            }
++        }
++
++        // A response schema must constrain text without disabling native tool calls.
++        for (auto choice : {COMMON_CHAT_TOOL_CHOICE_AUTO, COMMON_CHAT_TOOL_CHOICE_REQUIRED}) {
++            tst.test("<tool_call>\n<function=special_function>\n"
++                     "<parameter=arg1>\n1\n</parameter>\n</function>\n</tool_call>")
++                .enable_thinking(false)
++                .reasoning_format(COMMON_REASONING_FORMAT_AUTO)
++                .tools({ special_function_tool })
++                .tool_choice(choice)
++                .json_schema(const_schema)
++                .expect(message_assist_call)
++                .run();
++        }
++        for (auto choice : {COMMON_CHAT_TOOL_CHOICE_AUTO, COMMON_CHAT_TOOL_CHOICE_NONE}) {
++            tst.test("\"42\"")
++                .enable_thinking(false)
++                .reasoning_format(COMMON_REASONING_FORMAT_AUTO)
++                .tools({ special_function_tool })
++                .tool_choice(choice)
++                .json_schema(const_schema)
++                .expect_content(R"("42")")
++                .run();
++        }
++        tst.test("Checking.\n</think>\n\n\"42\"")
++            .enable_thinking(true)
++            .reasoning_format(COMMON_REASONING_FORMAT_AUTO)
++            .tools({ special_function_tool })
++            .json_schema(const_schema)
++            .expect_reasoning("Checking.")
++            .expect_content(R"("42")")
++            .run();
++
+         tst.test("I'm\nthinking\n</think>\n\nHello, world!\nWhat's up?")
+             .reasoning_format(COMMON_REASONING_FORMAT_AUTO)
+             .enable_thinking(true)
+diff --git a/tools/server/server-chat.cpp b/tools/server/server-chat.cpp
+index 02858a2a0..0c991ddf0 100644
+--- a/tools/server/server-chat.cpp
++++ b/tools/server/server-chat.cpp
+@@ -278,6 +278,37 @@ json server_chat_convert_responses_to_chatcmpl(const json & response_body) {
+         }
+     }
+ 
++    if (response_body.contains("text")) {
++        const auto & text = response_body.at("text");
++        if (!text.is_object()) {
++            throw std::invalid_argument("'text' must be an object");
++        }
++        if (text.contains("format")) {
++            const auto & format = text.at("format");
++            if (!format.is_object()) {
++                throw std::invalid_argument("'text.format' must be an object");
++            }
++            const auto type = json_value(format, "type", std::string("text"));
++            json response_format = {{"type", type}};
++            if (type == "json_schema") {
++                if (!format.contains("schema") || !format.at("schema").is_object()) {
++                    throw std::invalid_argument("'text.format.schema' must be an object");
++                }
++                auto schema = format;
++                schema.erase("type");
++                response_format["json_schema"] = std::move(schema);
++            } else if (type != "text" && type != "json_object") {
++                throw std::invalid_argument("unsupported 'text.format.type'");
++            }
++            if (response_body.contains("response_format") &&
++                response_body.at("response_format") != response_format) {
++                throw std::invalid_argument("conflicting response format parameters");
++            }
++            chatcmpl_body["response_format"] = std::move(response_format);
++        }
++        chatcmpl_body.erase("text");
++    }
++
+     if (response_body.contains("max_output_tokens")) {
+         chatcmpl_body.erase("max_output_tokens");
+         chatcmpl_body["max_tokens"] = response_body["max_output_tokens"];

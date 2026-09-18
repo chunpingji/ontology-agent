@@ -1,0 +1,203 @@
+{
+  "document": {
+    "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport",
+    "label": "CMC 报告",
+    "anchor": {
+      "ref": "",
+      "quote": ""
+    },
+    "fields": {
+      "hasProductionPlan": {
+        "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasProductionPlan",
+        "label": "含备样生产计划",
+        "description": "Links a CMC report to the clinical sample production plan it describes.",
+        "multiplicity": "unspecified",
+        "kind": "relationship",
+        "range_class_iris": [
+          "https://ontology.pharma-gmp.cn/slpra/drug-development/ClinicalSampleProductionPlan"
+        ]
+      }
+    }
+  },
+  "s1": {
+    "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/ClinicalSampleProductionPlan",
+    "label": "临床备样生产计划",
+    "anchor": {
+      "ref": "",
+      "quote": ""
+    },
+    "fields": {
+      "plannedBatchCount": {
+        "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/plannedBatchCount",
+        "label": "计划生产批次数",
+        "multiplicity": "unspecified",
+        "kind": "property",
+        "datatype_iris": [
+          "http://www.w3.org/2001/XMLSchema#integer"
+        ]
+      },
+      "plannedBatchSizeMax_kg": {
+        "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/plannedBatchSizeMax_kg",
+        "label": "预计批量上限（kg）",
+        "multiplicity": "unspecified",
+        "kind": "property",
+        "datatype_iris": [
+          "http://www.w3.org/2001/XMLSchema#decimal"
+        ],
+        "canonical_unit": "kg"
+      },
+      "plannedBatchSizeMin_kg": {
+        "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/plannedBatchSizeMin_kg",
+        "label": "预计批量下限（kg）",
+        "multiplicity": "unspecified",
+        "kind": "property",
+        "datatype_iris": [
+          "http://www.w3.org/2001/XMLSchema#decimal"
+        ],
+        "canonical_unit": "kg"
+      },
+      "plannedProductionDate": {
+        "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/plannedProductionDate",
+        "label": "计划生产时间",
+        "description": "Planned production month, e.g. 2026-02.",
+        "multiplicity": "unspecified",
+        "kind": "property",
+        "datatype_iris": [
+          "http://www.w3.org/2001/XMLSchema#gYearMonth"
+        ]
+      },
+      "productionPurpose": {
+        "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/productionPurpose",
+        "label": "生产用途",
+        "description": "Intended use of the produced batch, e.g. 临床I期试验.",
+        "multiplicity": "unspecified",
+        "kind": "property",
+        "datatype_iris": [
+          "http://www.w3.org/2001/XMLSchema#string"
+        ]
+      }
+    }
+  },
+  "s2": {
+    "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/ActivePharmaceuticalIngredient",
+    "label": "活性药物成分",
+    "anchor": {
+      "ref": "",
+      "quote": ""
+    },
+    "fields": {
+      "oel_ug_per_m3": {
+        "iri": "https://ontology.pharma-gmp.cn/slpra/drug/oel_ug_per_m3",
+        "label": "职业暴露限值 (μg/m³)",
+        "multiplicity": "unspecified",
+        "kind": "property",
+        "datatype_iris": [
+          "http://www.w3.org/2001/XMLSchema#decimal"
+        ],
+        "canonical_unit": "ug/m3"
+      },
+      "pde_mg_per_day": {
+        "iri": "https://ontology.pharma-gmp.cn/slpra/drug/pde_mg_per_day",
+        "label": "PDE (mg/天)",
+        "multiplicity": "unspecified",
+        "kind": "property",
+        "datatype_iris": [
+          "http://www.w3.org/2001/XMLSchema#decimal"
+        ],
+        "canonical_unit": "mg/day"
+      },
+      "productIdentifier": {
+        "iri": "https://ontology.pharma-gmp.cn/slpra/drug/productIdentifier",
+        "label": "产品或原料药唯一标识",
+        "description": "原文明示的产品/API标识；不以名称、共同项目、设备型号或试验用药名称替代具体实例身份。存在批次、规格等区分时须能唯一指向该实例，否则不可据此归并。",
+        "multiplicity": "unspecified",
+        "kind": "property",
+        "datatype_iris": [
+          "http://www.w3.org/2001/XMLSchema#string"
+        ]
+      }
+    }
+  },
+  "s3": {
+    "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/Purification",
+    "label": "精制/纯化",
+    "anchor": {
+      "ref": "",
+      "quote": ""
+    },
+    "fields": {
+      "inProcessControl": {
+        "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/inProcessControl",
+        "label": "过程控制",
+        "description": "IPC method and acceptance criteria, e.g. TLC endpoint, HPLC purity.",
+        "multiplicity": "unspecified",
+        "kind": "property",
+        "datatype_iris": [
+          "http://www.w3.org/2001/XMLSchema#string"
+        ]
+      },
+      "outputMassRange_kg": {
+        "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/outputMassRange_kg",
+        "label": "得量范围（kg）",
+        "multiplicity": "unspecified",
+        "kind": "property",
+        "datatype_iris": [
+          "http://www.w3.org/2001/XMLSchema#string"
+        ]
+      },
+      "reactionConditions": {
+        "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/reactionConditions",
+        "label": "反应条件",
+        "description": "Temperature, pressure, atmosphere, duration, catalyst loading, etc.",
+        "multiplicity": "unspecified",
+        "kind": "property",
+        "datatype_iris": [
+          "http://www.w3.org/2001/XMLSchema#string"
+        ]
+      },
+      "stepOrder": {
+        "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/stepOrder",
+        "label": "步骤序号",
+        "multiplicity": "unspecified",
+        "kind": "property",
+        "datatype_iris": [
+          "http://www.w3.org/2001/XMLSchema#integer"
+        ]
+      },
+      "yieldRangePercent": {
+        "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/yieldRangePercent",
+        "label": "收率范围（%）",
+        "multiplicity": "unspecified",
+        "kind": "property",
+        "datatype_iris": [
+          "http://www.w3.org/2001/XMLSchema#string"
+        ]
+      },
+      "producesFinalProduct": {
+        "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/producesFinalProduct",
+        "label": "产出最终产品/API",
+        "description": "Links a synthesis route or its final synthesis step to the DrugProduct or API that is its final output. Process intermediates must use producesIntermediate instead.\n连接合成路线或其最终合成步骤与最终产出的药物产品或原料药（API）；工艺中间体应使用 producesIntermediate。",
+        "multiplicity": "unspecified",
+        "kind": "relationship",
+        "range_class_iris": [
+          "https://ontology.pharma-gmp.cn/slpra/drug/ActivePharmaceuticalIngredient",
+          "https://ontology.pharma-gmp.cn/slpra/drug/BetaLactamDrug",
+          "https://ontology.pharma-gmp.cn/slpra/drug/BiologicalProduct",
+          "https://ontology.pharma-gmp.cn/slpra/drug/ClinicalTrialDrug",
+          "https://ontology.pharma-gmp.cn/slpra/drug/CommercialDrug",
+          "https://ontology.pharma-gmp.cn/slpra/drug/CytotoxicAPI",
+          "https://ontology.pharma-gmp.cn/slpra/drug/CytotoxicDrug",
+          "https://ontology.pharma-gmp.cn/slpra/drug/DrugProduct",
+          "https://ontology.pharma-gmp.cn/slpra/drug/HighActivityDrug",
+          "https://ontology.pharma-gmp.cn/slpra/drug/HighPotencyAPI",
+          "https://ontology.pharma-gmp.cn/slpra/drug/HighSensitizingDrug",
+          "https://ontology.pharma-gmp.cn/slpra/drug/HormonalAPI",
+          "https://ontology.pharma-gmp.cn/slpra/drug/HormonalDrug",
+          "https://ontology.pharma-gmp.cn/slpra/drug/PenicillinDrug",
+          "https://ontology.pharma-gmp.cn/slpra/drug/SterileDrugProduct",
+          "https://ontology.pharma-gmp.cn/slpra/drug/TraditionalChineseMedicine"
+        ]
+      }
+    }
+  }
+}

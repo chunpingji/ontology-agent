@@ -1,0 +1,8 @@
+{
+  "classification": "test_callback_failure",
+  "request_count": 2,
+  "case_seconds": [176.828, 175.297],
+  "usage_captured": false,
+  "engine_quality_scored": false,
+  "cause": "Regression callback validated the persistence command including result_changes as if it were protocol state. The corrected callback validates protocol separately and stores result_changes."
+}

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from app.schemas.evidence import EvidenceAnchor
 from app.services.extraction.document_ir import DocumentIR
 from app.services.extraction.evidence_identity import stable_id
 from app.services.extraction.ontology_guided.contracts import (
@@ -11,6 +12,7 @@ from app.services.extraction.ontology_guided.contracts import (
     SourceSpan,
     VersionedRef,
 )
+from app.services.extraction.ontology_guided.field_bindings import contains
 from app.services.extraction.ontology_guided.records import RecordIndex
 
 
@@ -74,6 +76,64 @@ class MentionRegistry:
             mention_refs=unique,
         )
         self._referents[referent.referent_id] = referent
+        return referent
+
+    def create_record_referent(
+        self, record_view_refs: list[str], *, component_refs: list[EvidenceAnchor],
+        composition_decision: SemanticDecision, subject_role_decision: SemanticDecision,
+    ) -> LocalReferent:
+        """Register proven record composition without inventing a physical mention."""
+        if (
+            composition_decision.check_kind not in {"referent", "record_composition"}
+            or composition_decision.verdict != "supported"
+            or subject_role_decision.check_kind != "subject_role"
+            or subject_role_decision.verdict != "supported"
+            or composition_decision.target_id != subject_role_decision.target_id
+            or not subject_role_decision.support_refs
+        ):
+            raise ValueError("record_referent_requires_composition_and_subject_role_proof")
+        views = {view.record_view_id: view for view in self.records.record_views}
+        selected = sorted(set(record_view_refs))
+        if not selected or not component_refs or any(ref not in views for ref in selected):
+            raise ValueError("record_referent_requires_registered_components")
+        for anchor in [*component_refs, *composition_decision.support_refs,
+                       *subject_role_decision.support_refs]:
+            self.ir.resolve(anchor)
+        component_refs = [self.ir.anchor(
+            anchor.evidence_id, anchor.span_start or 0,
+            anchor.span_end if anchor.span_end is not None
+            else len(self.ir.unit(anchor.evidence_id).text),
+        ) for anchor in component_refs]
+
+        def view_covers(view_id, component):
+            view = views[view_id]
+            return any(contains(source, component) for source in [
+                *view.source_refs, *view.header_refs, *view.note_refs, *view.parent_context_refs,
+            ])
+
+        if (
+            any(not any(view_covers(view, component) for view in selected)
+                for component in component_refs)
+            or any(not any(view_covers(view, component) for component in component_refs)
+                   for view in selected)
+            or any(not any(contains(support, component)
+                           for support in composition_decision.support_refs)
+                   for component in component_refs)
+        ):
+            raise ValueError("record_composition_source_coverage_missing")
+        components = sorted({
+            (anchor.evidence_id, anchor.span_start, anchor.span_end) for anchor in component_refs
+        })
+        identity = [self.ir.analysis_id, selected, components,
+                    composition_decision.decision_id, subject_role_decision.decision_id]
+        referent_id = stable_id("record-referent", identity)
+        if referent_id in self._referents:
+            return self._referents[referent_id]
+        referent = LocalReferent(
+            referent_id=referent_id, kind="record", mention_refs=[], record_view_refs=selected,
+            composition_decision_ref=VersionedRef(id=composition_decision.decision_id, revision=1),
+        )
+        self._referents[referent_id] = referent
         return referent
 
     def merge_referents(

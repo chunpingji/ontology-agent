@@ -1,0 +1,665 @@
+{
+  "scope_id": "toxicity_unknown",
+  "arms": {
+    "A": {
+      "document": {
+        "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport",
+        "label": "CMC 报告",
+        "anchor": {
+          "ref": "",
+          "quote": ""
+        },
+        "fields": {
+          "describes": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/describes",
+            "label": "描述",
+            "description": "Links a CMC report to the drug product / drug substance it documents.",
+            "multiplicity": "unspecified",
+            "kind": "relationship",
+            "range_class_iris": [
+              "https://ontology.pharma-gmp.cn/slpra/drug/BetaLactamDrug",
+              "https://ontology.pharma-gmp.cn/slpra/drug/BiologicalProduct",
+              "https://ontology.pharma-gmp.cn/slpra/drug/ClinicalTrialDrug",
+              "https://ontology.pharma-gmp.cn/slpra/drug/CommercialDrug",
+              "https://ontology.pharma-gmp.cn/slpra/drug/CytotoxicDrug",
+              "https://ontology.pharma-gmp.cn/slpra/drug/DrugProduct",
+              "https://ontology.pharma-gmp.cn/slpra/drug/HighActivityDrug",
+              "https://ontology.pharma-gmp.cn/slpra/drug/HighSensitizingDrug",
+              "https://ontology.pharma-gmp.cn/slpra/drug/HormonalDrug",
+              "https://ontology.pharma-gmp.cn/slpra/drug/PenicillinDrug",
+              "https://ontology.pharma-gmp.cn/slpra/drug/SterileDrugProduct",
+              "https://ontology.pharma-gmp.cn/slpra/drug/TraditionalChineseMedicine"
+            ]
+          }
+        }
+      },
+      "s1": {
+        "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/DrugProduct",
+        "label": "药物产品",
+        "anchor": {
+          "ref": "",
+          "quote": ""
+        },
+        "fields": {
+          "registrationCategory": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/registrationCategory",
+            "label": "注册分类",
+            "description": "NMPA registration classification of the drug, e.g. 化学药品3类, 化学药品1类, 治疗用生物制品.",
+            "multiplicity": "unspecified",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#string"
+            ]
+          },
+          "regulatoryStatus": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/regulatoryStatus",
+            "label": "申报/注册状态",
+            "description": "Current regulatory submission status, e.g. 已申报临床/IND已受理, 已获批临床, 已申报上市/NDA.",
+            "multiplicity": "unspecified",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#string"
+            ]
+          },
+          "targetIndication": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/targetIndication",
+            "label": "目标适应症",
+            "description": "Intended therapeutic indication. Applies both to a clinical trial and to the drug product / substance itself (e.g. 用于革兰氏阴性菌感染的治疗).",
+            "multiplicity": "unspecified",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#string"
+            ]
+          },
+          "appearance": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug/appearance",
+            "label": "性状",
+            "multiplicity": "unspecified",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#string"
+            ]
+          },
+          "casNumber": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug/casNumber",
+            "label": "CAS号",
+            "multiplicity": "unspecified",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#string"
+            ]
+          },
+          "chemicalNameEn": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug/chemicalNameEn",
+            "label": "化学名英文",
+            "multiplicity": "unspecified",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#string"
+            ]
+          },
+          "chemicalNameZh": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug/chemicalNameZh",
+            "label": "化学名中文",
+            "multiplicity": "unspecified",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#string"
+            ]
+          },
+          "dosageForm": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug/dosageForm",
+            "label": "制剂剂型",
+            "multiplicity": "unspecified",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#string"
+            ]
+          },
+          "drugSpecification": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug/drugSpecification",
+            "label": "规格",
+            "description": "Product specification or strength descriptor. For a bulk drug substance this may simply be 原料药; for a finished product e.g. 0.25g/片, 100mg/支.",
+            "multiplicity": "unspecified",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#string"
+            ]
+          },
+          "hasPrionRisk": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug/hasPrionRisk",
+            "label": "是否有朊病毒风险",
+            "multiplicity": "unspecified",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#boolean"
+            ]
+          },
+          "inactivationMethod": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug/inactivationMethod",
+            "label": "灭活方法",
+            "multiplicity": "unspecified",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#string"
+            ]
+          },
+          "isBetaLactam": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug/isBetaLactam",
+            "label": "是否β-内酰胺类药物",
+            "multiplicity": "unspecified",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#boolean"
+            ]
+          },
+          "isCytotoxic": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug/isCytotoxic",
+            "label": "是否细胞毒药物",
+            "multiplicity": "unspecified",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#boolean"
+            ]
+          },
+          "isHighlyActive": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug/isHighlyActive",
+            "label": "是否高活性药物",
+            "multiplicity": "unspecified",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#boolean"
+            ]
+          },
+          "isHighlySensitizing": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug/isHighlySensitizing",
+            "label": "是否高致敏药物",
+            "multiplicity": "unspecified",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#boolean"
+            ]
+          },
+          "isHormonal": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug/isHormonal",
+            "label": "是否激素类药物",
+            "multiplicity": "unspecified",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#boolean"
+            ]
+          },
+          "isOncologyDrug": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug/isOncologyDrug",
+            "label": "是否肿瘤药物",
+            "multiplicity": "unspecified",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#boolean"
+            ]
+          },
+          "isPenicillinType": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug/isPenicillinType",
+            "label": "是否青霉素类药物",
+            "multiplicity": "unspecified",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#boolean"
+            ]
+          },
+          "maximumDailyDose_mg": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug/maximumDailyDose_mg",
+            "label": "最大日剂量 (mg)",
+            "multiplicity": "unspecified",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#decimal"
+            ],
+            "canonical_unit": "mg"
+          },
+          "minimumTherapeuticDose_mg": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug/minimumTherapeuticDose_mg",
+            "label": "最小治疗剂量 (mg)",
+            "multiplicity": "unspecified",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#decimal"
+            ],
+            "canonical_unit": "mg"
+          },
+          "molecularFormula": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug/molecularFormula",
+            "label": "分子式",
+            "multiplicity": "unspecified",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#string"
+            ]
+          },
+          "molecularWeight": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug/molecularWeight",
+            "label": "分子量",
+            "multiplicity": "unspecified",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#decimal"
+            ]
+          },
+          "productIdentifier": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug/productIdentifier",
+            "label": "产品或原料药唯一标识",
+            "description": "原文明示的产品/API标识；不以名称、共同项目、设备型号或试验用药名称替代具体实例身份。存在批次、规格等区分时须能唯一指向该实例，否则不可据此归并。",
+            "multiplicity": "unspecified",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#string"
+            ]
+          },
+          "projectCode": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug/projectCode",
+            "label": "项目代码",
+            "multiplicity": "unspecified",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#string"
+            ]
+          },
+          "projectName": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug/projectName",
+            "label": "项目名称",
+            "multiplicity": "unspecified",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#string"
+            ]
+          },
+          "routeOfAdministration": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug/routeOfAdministration",
+            "label": "给药途径",
+            "multiplicity": "unspecified",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#string"
+            ]
+          },
+          "solubility": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug/solubility",
+            "label": "溶解性",
+            "multiplicity": "unspecified",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#string"
+            ]
+          },
+          "hasSensitizationPotential": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug/hasSensitizationPotential",
+            "label": "has sensitization potential",
+            "multiplicity": "unspecified",
+            "kind": "relationship",
+            "range_class_iris": [
+              "https://ontology.pharma-gmp.cn/slpra/drug/SensitizationPotential"
+            ]
+          }
+        }
+      },
+      "s2": {
+        "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/GenotoxicityProfile",
+        "label": "基因毒性特征",
+        "anchor": {
+          "ref": "",
+          "quote": ""
+        },
+        "fields": {}
+      },
+      "s3": {
+        "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/SensitizationPotential",
+        "label": "致敏潜力",
+        "anchor": {
+          "ref": "",
+          "quote": ""
+        },
+        "fields": {
+          "sensitizationLevel": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug/sensitizationLevel",
+            "label": "致敏级别 (1-5)",
+            "multiplicity": "unspecified",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#integer"
+            ]
+          }
+        }
+      }
+    },
+    "B": {
+      "document": {
+        "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport",
+        "label": "CMC 报告",
+        "anchor": {
+          "ref": "",
+          "quote": ""
+        },
+        "fields": {
+          "describes": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/describes",
+            "label": "描述",
+            "description": "Links a CMC report to the drug product / drug substance it documents.",
+            "multiplicity": "unspecified",
+            "kind": "relationship",
+            "range_class_iris": [
+              "https://ontology.pharma-gmp.cn/slpra/drug/BetaLactamDrug",
+              "https://ontology.pharma-gmp.cn/slpra/drug/BiologicalProduct",
+              "https://ontology.pharma-gmp.cn/slpra/drug/ClinicalTrialDrug",
+              "https://ontology.pharma-gmp.cn/slpra/drug/CommercialDrug",
+              "https://ontology.pharma-gmp.cn/slpra/drug/CytotoxicDrug",
+              "https://ontology.pharma-gmp.cn/slpra/drug/DrugProduct",
+              "https://ontology.pharma-gmp.cn/slpra/drug/HighActivityDrug",
+              "https://ontology.pharma-gmp.cn/slpra/drug/HighSensitizingDrug",
+              "https://ontology.pharma-gmp.cn/slpra/drug/HormonalDrug",
+              "https://ontology.pharma-gmp.cn/slpra/drug/PenicillinDrug",
+              "https://ontology.pharma-gmp.cn/slpra/drug/SterileDrugProduct",
+              "https://ontology.pharma-gmp.cn/slpra/drug/TraditionalChineseMedicine"
+            ]
+          }
+        }
+      },
+      "s1": {
+        "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/DrugProduct",
+        "label": "药物产品",
+        "anchor": {
+          "ref": "",
+          "quote": ""
+        },
+        "fields": {
+          "registrationCategory": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/registrationCategory",
+            "label": "注册分类",
+            "description": "NMPA registration classification of the drug, e.g. 化学药品3类, 化学药品1类, 治疗用生物制品.",
+            "multiplicity": "unspecified",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#string"
+            ]
+          },
+          "regulatoryStatus": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/regulatoryStatus",
+            "label": "申报/注册状态",
+            "description": "Current regulatory submission status, e.g. 已申报临床/IND已受理, 已获批临床, 已申报上市/NDA.",
+            "multiplicity": "unspecified",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#string"
+            ]
+          },
+          "targetIndication": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/targetIndication",
+            "label": "目标适应症",
+            "description": "Intended therapeutic indication. Applies both to a clinical trial and to the drug product / substance itself (e.g. 用于革兰氏阴性菌感染的治疗).",
+            "multiplicity": "unspecified",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#string"
+            ]
+          },
+          "appearance": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug/appearance",
+            "label": "性状",
+            "multiplicity": "unspecified",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#string"
+            ]
+          },
+          "casNumber": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug/casNumber",
+            "label": "CAS号",
+            "multiplicity": "unspecified",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#string"
+            ]
+          },
+          "chemicalNameEn": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug/chemicalNameEn",
+            "label": "化学名英文",
+            "multiplicity": "unspecified",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#string"
+            ]
+          },
+          "chemicalNameZh": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug/chemicalNameZh",
+            "label": "化学名中文",
+            "multiplicity": "unspecified",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#string"
+            ]
+          },
+          "dosageForm": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug/dosageForm",
+            "label": "制剂剂型",
+            "multiplicity": "unspecified",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#string"
+            ]
+          },
+          "drugSpecification": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug/drugSpecification",
+            "label": "规格",
+            "description": "Product specification or strength descriptor. For a bulk drug substance this may simply be 原料药; for a finished product e.g. 0.25g/片, 100mg/支.",
+            "multiplicity": "unspecified",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#string"
+            ]
+          },
+          "hasPrionRisk": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug/hasPrionRisk",
+            "label": "是否有朊病毒风险",
+            "multiplicity": "unspecified",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#boolean"
+            ]
+          },
+          "inactivationMethod": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug/inactivationMethod",
+            "label": "灭活方法",
+            "multiplicity": "unspecified",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#string"
+            ]
+          },
+          "isBetaLactam": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug/isBetaLactam",
+            "label": "是否β-内酰胺类药物",
+            "multiplicity": "unspecified",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#boolean"
+            ]
+          },
+          "isCytotoxic": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug/isCytotoxic",
+            "label": "是否细胞毒药物",
+            "multiplicity": "unspecified",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#boolean"
+            ]
+          },
+          "isHighlyActive": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug/isHighlyActive",
+            "label": "是否高活性药物",
+            "multiplicity": "unspecified",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#boolean"
+            ]
+          },
+          "isHighlySensitizing": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug/isHighlySensitizing",
+            "label": "是否高致敏药物",
+            "multiplicity": "unspecified",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#boolean"
+            ]
+          },
+          "isHormonal": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug/isHormonal",
+            "label": "是否激素类药物",
+            "multiplicity": "unspecified",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#boolean"
+            ]
+          },
+          "isOncologyDrug": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug/isOncologyDrug",
+            "label": "是否肿瘤药物",
+            "multiplicity": "unspecified",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#boolean"
+            ]
+          },
+          "isPenicillinType": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug/isPenicillinType",
+            "label": "是否青霉素类药物",
+            "multiplicity": "unspecified",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#boolean"
+            ]
+          },
+          "maximumDailyDose_mg": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug/maximumDailyDose_mg",
+            "label": "最大日剂量 (mg)",
+            "multiplicity": "unspecified",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#decimal"
+            ],
+            "canonical_unit": "mg"
+          },
+          "minimumTherapeuticDose_mg": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug/minimumTherapeuticDose_mg",
+            "label": "最小治疗剂量 (mg)",
+            "multiplicity": "unspecified",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#decimal"
+            ],
+            "canonical_unit": "mg"
+          },
+          "molecularFormula": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug/molecularFormula",
+            "label": "分子式",
+            "multiplicity": "unspecified",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#string"
+            ]
+          },
+          "molecularWeight": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug/molecularWeight",
+            "label": "分子量",
+            "multiplicity": "unspecified",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#decimal"
+            ]
+          },
+          "productIdentifier": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug/productIdentifier",
+            "label": "产品或原料药唯一标识",
+            "description": "原文明示的产品/API标识；不以名称、共同项目、设备型号或试验用药名称替代具体实例身份。存在批次、规格等区分时须能唯一指向该实例，否则不可据此归并。",
+            "multiplicity": "unspecified",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#string"
+            ]
+          },
+          "projectCode": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug/projectCode",
+            "label": "项目代码",
+            "multiplicity": "unspecified",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#string"
+            ]
+          },
+          "projectName": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug/projectName",
+            "label": "项目名称",
+            "multiplicity": "unspecified",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#string"
+            ]
+          },
+          "routeOfAdministration": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug/routeOfAdministration",
+            "label": "给药途径",
+            "multiplicity": "unspecified",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#string"
+            ]
+          },
+          "solubility": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug/solubility",
+            "label": "溶解性",
+            "multiplicity": "unspecified",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#string"
+            ]
+          },
+          "hasSensitizationPotential": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug/hasSensitizationPotential",
+            "label": "has sensitization potential",
+            "multiplicity": "unspecified",
+            "kind": "relationship",
+            "range_class_iris": [
+              "https://ontology.pharma-gmp.cn/slpra/drug/SensitizationPotential"
+            ]
+          }
+        }
+      },
+      "s2": {
+        "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/GenotoxicityProfile",
+        "label": "基因毒性特征",
+        "anchor": {
+          "ref": "",
+          "quote": ""
+        },
+        "fields": {}
+      },
+      "s3": {
+        "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/SensitizationPotential",
+        "label": "致敏潜力",
+        "anchor": {
+          "ref": "",
+          "quote": ""
+        },
+        "fields": {
+          "sensitizationLevel": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug/sensitizationLevel",
+            "label": "致敏级别 (1-5)",
+            "multiplicity": "unspecified",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#integer"
+            ]
+          }
+        }
+      }
+    }
+  }
+}
