@@ -1,0 +1,41 @@
+{
+  "run_id": "ontology-tool-f4-positive-02",
+  "document": {
+    "path": "source.docx",
+    "sha256": "bc13cc1e5972011f28d3032ff73ff4734565511f7202706dbe32e2c10e2eed0c"
+  },
+  "ir": {
+    "path": "ir.json",
+    "sha256": "bacc6a521ad46964e6d3fdefdd37fe5ecc71de824a15fa9913601d2d3da52743"
+  },
+  "ontology": {
+    "path": "ontology.json",
+    "sha256": "b9febc04eeacc8ba0f431ed5248f783240a75478f2aa9f246805b763efd524b6"
+  },
+  "metadata": {
+    "path": "metadata.json",
+    "sha256": "84a61468d585896e4277a31dc3f33298d7df3450fba594a796dad9bb7fff177b"
+  },
+  "root_class_iri": "urn:validation:MeasurementReport",
+  "model": "Qwen3.6-35B-A3B",
+  "model_revision": "0b21525e972670ed59e1812e170b27c26355381f0656ecc4e25617ece7dac58b",
+  "api_protocol": "responses",
+  "tool_protocol_version": "ontology-tool-extraction-v1",
+  "store": false,
+  "budgets": {
+    "max_model_calls": 4,
+    "max_input_tokens": 32768,
+    "max_output_tokens": 8192,
+    "max_calls_per_lineage": 4,
+    "max_tasks": 1,
+    "max_hops": 1,
+    "max_result_tokens": 4096,
+    "max_tool_calls_per_lineage": 16
+  },
+  "options": {
+    "responses": {
+      "strict_tools": false,
+      "strict_answers": false
+    }
+  }
+}

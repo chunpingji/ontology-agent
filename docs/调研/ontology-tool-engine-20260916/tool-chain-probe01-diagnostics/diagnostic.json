@@ -1,0 +1,116 @@
+{
+  "mode": "raw_mentions_handler_size_diagnostic",
+  "real_qwen_requests": 0,
+  "source_calls": "../tool-chain-probe01/calls.json",
+  "manifest_sha256": "2a462159574368949f6c7ce31bc1bb2dd1ab748304094addaf67ad25c3da8a09",
+  "limits_unchanged": true,
+  "overlay_changed": false,
+  "max_result_tokens": 4096,
+  "actual_tokens": 4660,
+  "characters": 8513,
+  "over_budget": true,
+  "handler_status": "ok",
+  "mentions": 7,
+  "omissions": 25,
+  "omission_codes": {
+    "definition_missing": 25
+  },
+  "coverage": {
+    "requested_units": [
+      "7af9c911fa84ccf07f9423a0d7faa580704ee3ecd1b704ef6100878d89b87cb4",
+      "a19a42e1371bfb33bc3b3d29fab8aed3fc81e1688b8adf5487d5df8d4cc7acf3",
+      "16438631527487298ec0944d6b00559c2dbb71c7e9387096dd808d8c26ccaeda",
+      "ecb41123f3fbbdd3370fa83d7f296bd13e8ca0f3012aec14f1086ec29e6aee49",
+      "1629570ef6fb2b20416ed0d110a760db5cf4869f8c707a8a03c660b8cae76cf2",
+      "67b6e4633c5a397f03e459aeb046364a02fe07ae17503078d05557adc7db864f",
+      "653506c24cc382a0afd0fa90bde189c5c235fd6890b88dc37ded8bb7ce759167",
+      "2ec5433c97df365f29c65c63357a84038a339efeaaf1fa84507a52e8eaeaf198",
+      "5fed0c4a45b772a428ad0fc641bf81015e62516bd9a1d0b5e9c2832f438611e4",
+      "0135b815abaf6d8c4088e1f080b85d8540fe77bd89135124414596a2fcfcfd9b",
+      "e3b9600f70eb6ff186066a7c5270b4fd63c782f3f3e51dfcee1333950be19138",
+      "1d8949662d0c2fb6e7812de5a376d223aae8ed237607ce18778465d10269db9e",
+      "dfb28928e5670944301d0d1fdc0b06dd252d266a781d0a6ee66e5156da202268",
+      "abd57615a899dbd5b0e5786ae51e4e33562b6637e531950ee821db4ab8d03e0f"
+    ],
+    "processed_units": [
+      "7af9c911fa84ccf07f9423a0d7faa580704ee3ecd1b704ef6100878d89b87cb4",
+      "a19a42e1371bfb33bc3b3d29fab8aed3fc81e1688b8adf5487d5df8d4cc7acf3",
+      "16438631527487298ec0944d6b00559c2dbb71c7e9387096dd808d8c26ccaeda",
+      "ecb41123f3fbbdd3370fa83d7f296bd13e8ca0f3012aec14f1086ec29e6aee49",
+      "1629570ef6fb2b20416ed0d110a760db5cf4869f8c707a8a03c660b8cae76cf2",
+      "67b6e4633c5a397f03e459aeb046364a02fe07ae17503078d05557adc7db864f",
+      "653506c24cc382a0afd0fa90bde189c5c235fd6890b88dc37ded8bb7ce759167",
+      "2ec5433c97df365f29c65c63357a84038a339efeaaf1fa84507a52e8eaeaf198",
+      "5fed0c4a45b772a428ad0fc641bf81015e62516bd9a1d0b5e9c2832f438611e4",
+      "0135b815abaf6d8c4088e1f080b85d8540fe77bd89135124414596a2fcfcfd9b",
+      "e3b9600f70eb6ff186066a7c5270b4fd63c782f3f3e51dfcee1333950be19138",
+      "1d8949662d0c2fb6e7812de5a376d223aae8ed237607ce18778465d10269db9e",
+      "dfb28928e5670944301d0d1fdc0b06dd252d266a781d0a6ee66e5156da202268",
+      "abd57615a899dbd5b0e5786ae51e4e33562b6637e531950ee821db4ab8d03e0f"
+    ],
+    "unprocessed_units": []
+  },
+  "component_sizes": {
+    "status": {
+      "tokens": 3,
+      "characters": 4
+    },
+    "data.mentions": {
+      "tokens": 1353,
+      "characters": 2451
+    },
+    "data.coverage": {
+      "tokens": 1610,
+      "characters": 1940
+    },
+    "data.limits": {
+      "tokens": 51,
+      "characters": 157
+    },
+    "data.omissions": {
+      "tokens": 828,
+      "characters": 2926
+    },
+    "evidence_refs": {
+      "tokens": 800,
+      "characters": 939
+    },
+    "issues": {
+      "tokens": 1,
+      "characters": 2
+    }
+  },
+  "component_size_note": "each component tokenized separately; totals are not additive across JSON boundaries",
+  "inference_calls": [
+    {
+      "inputs": 8,
+      "input_chars": 52,
+      "labels": 1,
+      "returned_spans": 2,
+      "elapsed_seconds": 1.3120851409621537
+    },
+    {
+      "inputs": 6,
+      "input_chars": 32,
+      "labels": 1,
+      "returned_spans": 1,
+      "elapsed_seconds": 0.8124672260601074
+    },
+    {
+      "inputs": 8,
+      "input_chars": 52,
+      "labels": 1,
+      "returned_spans": 3,
+      "elapsed_seconds": 0.8875064810272306
+    },
+    {
+      "inputs": 6,
+      "input_chars": 32,
+      "labels": 1,
+      "returned_spans": 1,
+      "elapsed_seconds": 0.7194128369446844
+    }
+  ],
+  "handler_elapsed_seconds": 3.828362638130784,
+  "meaning": "zero Qwen requests; GLiNER handler invoked once on exactly saved tool arguments; raw over-budget output is diagnostic only and never returned to model"
+}

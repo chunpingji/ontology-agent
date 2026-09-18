@@ -14,7 +14,8 @@ CPU 继续保留 `.venv`、`uv.lock`、`Dockerfile` 及 `pyproject.toml` 中的 
 | PyTorch | `2.7.1+cu126`，官方 CUDA 12.6 wheel |
 | CUDA 用户态运行库 | 锁文件中的 CUDA 12.6 / NVIDIA wheel 版本；宿主提供驱动 |
 | sentence-transformers | `5.6.0` |
-| transformers / tokenizers | `5.6.2` / `0.22.2` |
+| transformers / tokenizers | `4.57.6` / `0.22.2` |
+| GLiNER2.5 Python 包 | `gliner2[local]==2.0.0`；离线 boundary checkpoint |
 | 默认 GPU 精度 | `float16`；对照可显式使用 `float32` |
 | 注意力实现 | GPU 适配器使用 `eager`，不依赖 P100 不支持的 Flash Attention |
 | 权重 | 沿用已校验的离线 BGE-M3 / BGE-reranker-v2-m3 制品，不重新下载 |
@@ -46,12 +47,12 @@ uv pip check --python .venv-cuda12/bin/python
 
 在没有 CPU 环境的新机器上，第一条改为 `uv venv --python 3.12 .venv-cuda12`。
 已有 `.venv-cuda12` 时直接执行 sync，不重新创建。锁文件包含基础后端及
-`semantic`、`llm`、`gliner` extras 和 dev 测试工具，不包含模型权重。
+`semantic`、`llm`、`gliner`、`gliner2`、`shacl` extras 和 dev 测试工具，不包含模型权重。
 复现使用已提交的锁；只有明确更新依赖时才重新解析：
 
 ```bash
 uv pip compile pyproject.toml \
-  --extra semantic --extra llm --extra gliner --group dev \
+  --extra semantic --extra llm --extra gliner --extra gliner2 --extra shacl --group dev \
   --no-sources --constraints requirements-cuda12.in \
   --generate-hashes --python-version 3.12 \
   --python-platform x86_64-manylinux_2_28 \

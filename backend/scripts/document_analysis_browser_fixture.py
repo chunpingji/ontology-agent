@@ -23,6 +23,114 @@ DEV = "https://ontology.pharma-gmp.cn/slpra/drug-development/"
 EQUIPMENT = "https://ontology.pharma-gmp.cn/slpra/equipment/Equipment"
 
 
+def seed_tool_graph(service, run, *, label):
+    """Seed a controlled graph contract for real HTTP/UI tests, not extraction quality."""
+    from app.models.document_analysis import DocumentAnalysisArtifact
+    from app.services.document_analysis import current_state
+    from app.services.document_analysis.run_store import content_hash
+    from app.services.extraction.document_ir import DocumentIR
+    from app.services.extraction.ontology_guided.contracts import (
+        GraphNode,
+        GraphProperty,
+        GraphRelationshipGroup,
+        GraphSnapshot,
+        OntologySnapshot,
+        ScopeMember,
+        SubjectRef,
+        TraversalScope,
+        VersionedRef,
+    )
+    from app.services.extraction.ontology_guided.ontology_plan import compile_local_menu
+    from app.services.extraction.ontology_guided.projection import project_graph
+    from app.services.extraction.ontology_guided.records import RecordIndex
+
+    db = service.db
+    ir = DocumentIR.model_validate(service._artifact_payload(run, "structure")[0]["analysis"])
+    ontology = OntologySnapshot.model_validate(
+        service._artifact_payload(run, "ontology_snapshot")[0]
+    )
+    base = GraphSnapshot.model_validate(service._artifact_payload(run, "public_graph")[0]["graph"])
+    root = next(node for node in base.nodes if node.root)
+    root.grounding_kind = "document_root"
+    unit = next(unit for unit in ir.evidence_units if "可选择" in unit.text)
+
+    def anchor(text):
+        start = unit.text.index(text)
+        return ir.anchor(unit.evidence_id, start, start + len(text))
+
+    def ref(name):
+        return VersionedRef(id=name, revision=1)
+
+    nodes = [root]
+    for number, name in enumerate((label, "设备乙", "独立实体丙"), 1):
+        nodes.append(GraphNode(
+            entity_id=f"tool-entity:{number}", revision=1, class_iri=EQUIPMENT,
+            class_label="设备", label=name, grounding_kind="mention",
+            evidence_refs=[anchor(name)], referent_ref=ref(f"referent:{number}"),
+            type_decision_ref=ref(f"type:{number}"),
+            referent_decision_ref=ref(f"referent-decision:{number}"),
+        ))
+    group = GraphRelationshipGroup(
+        candidate_id="tool-choice", revision=1, subject_ref=ref(root.entity_id),
+        object_refs=[ref(nodes[1].entity_id), ref(nodes[2].entity_id)],
+        predicate_iri=DEV + "usesEquipment", predicate_label="使用设备",
+        selection="alternatives", selection_evidence_refs=[anchor("可选择")],
+        modality="possible", scope=TraversalScope.create(), decision_status="supported",
+        structural_valid=True, model_supported=True, policy_eligible=True,
+        proof_ref=ref("tool-proof:group"), decision_refs=[ref("tool-decision:group")],
+        predicate_evidence_refs=[anchor("可选择")],
+        object_evidence_refs=[anchor(label), anchor("设备乙")],
+    )
+    menu = compile_local_menu(ontology, SubjectRef(
+        entity_id=nodes[1].entity_id, revision=1, class_iri=EQUIPMENT,
+    ))
+    predicate = next(iter(menu.properties))
+    scope = TraversalScope.create([
+        ScopeMember(relation_ref=ref(group.candidate_id), member_ref=ref(nodes[1].entity_id)),
+    ])
+    prop = GraphProperty(
+        candidate_id="tool-scoped-property", revision=1, subject_ref=ref(nodes[1].entity_id),
+        predicate_iri=predicate.iri, predicate_label=predicate.label, raw_value="范围示例值",
+        modality="asserted", scope=scope, conditions=["仅在限定场景"],
+        decision_status="supported", structural_valid=True, model_supported=True,
+        policy_eligible=True, proof_ref=ref("tool-proof:property"),
+        decision_refs=[ref("tool-decision:property")], value_evidence_refs=[anchor("范围示例值")],
+        condition_evidence_refs=[anchor("仅在限定场景")],
+    )
+    graph = project_graph(
+        recognition_run_id=str(run.recognition_run_id), run_revision=run.revision,
+        event_head=run.event_head, metadata_snapshot_id=run.metadata_snapshot_id,
+        root_ref=ref(root.entity_id), nodes=nodes, edges=[], properties=[prop],
+        relationship_groups=[group], coverage=[], progress=base.progress,
+        projection="all", artifact_status="ready",
+        extraction_protocol="ontology-tool-extraction-v1",
+    )
+    # Fixture initialization is the only mutation: no consumer can observe the
+    # pre-seed state. The server is made read-only before listening for requests.
+    source_id = run.artifact_manifest["source"]["artifact_id"]
+    source = db.get(DocumentAnalysisArtifact, source_id)
+    source.payload = {**source.payload, "performance_policy": {
+        **source.payload["performance_policy"],
+        "extraction_protocol": "ontology-tool-extraction-v1",
+    }}
+    source.content_hash = content_hash(source.payload)
+    source_ref = service.store.get_artifact(run.recognition_run_id, run.owner_id, "source")
+    source_ref.content_hash = source.content_hash
+    run.artifact_manifest = {**run.artifact_manifest, "source": {
+        **run.artifact_manifest["source"], "content_hash": source.content_hash,
+    }}
+    snapshot_id, prepared = current_state.display_payload(
+        service.store, run, ontology=ontology, ir=ir, metadata=None, index=RecordIndex(ir),
+        graph=graph, dependencies={}, summary={},
+    )
+    current_state.publish_display(service.store, run, prepared, snapshot_id)
+    db.commit()
+    return {"run_id": str(run.recognition_run_id), "filename": run.filename,
+            "label": label, "group_id": group.candidate_id, "property_id": prop.candidate_id,
+            "scope_id": scope.scope_id, "isolated_label": nodes[-1].label,
+            "scope": "controlled persisted graph contract; not engine/Qwen quality validation"}
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--database-url", required=True)
@@ -54,6 +162,8 @@ def main() -> None:
             "SEMANTIC_ALIGNMENT_ENABLED": "false",
             "GLINER_EXTRACTION_ENABLED": "false",
             "LLM_WORD_TREE_SUMMARY_ENABLED": "false",
+            "DOCUMENT_ANALYSIS_EVIDENCE_REPAIR_ENABLED": "false",
+            "DOCUMENT_ANALYSIS_ADAPTIVE_RETRIEVAL_MODE": "disabled",
         }
     )
     import uvicorn
@@ -67,10 +177,14 @@ def main() -> None:
     from app.auth import hash_password
     from app.db import Base, SessionLocal, engine
     from app.main import app
-    from app.models.document_analysis import DocumentAnalysisRun
+    from app.models.document_analysis import (
+        DocumentAnalysisArtifact,
+        DocumentAnalysisRun,
+    )
     from app.models.ontology_meta import ROLE_NAMES, AppRole, AppUser
     from app.services.document_analysis import execution
     from app.services.document_analysis.application import DocumentAnalysisApplication
+    from app.services.document_analysis.run_store import content_hash
     from app.services.extraction.ontology_guided import model_adapter
     from app.services.extraction.ontology_guided.semantic_reranker import (
         RankingPolicy,
@@ -99,6 +213,7 @@ def main() -> None:
                         "candidate_id": candidate["candidate_id"],
                         "target_id": candidate["target_id"],
                         "type_verdict": "supported",
+                        "type_support": [{"evidence_id": target["evidence_id"]}],
                         "role_verdict": "supported",
                         "predicate_verdict": "supported",
                         "applicability_verdict": "supported",
@@ -149,9 +264,12 @@ def main() -> None:
             return [-float(len(text)) for _query, text in pairs]
 
     model_adapter.chat_with_schema = controlled_response
-    execution.configured_model_adapter = lambda: model_adapter.LocalModelRecognitionAdapter(
-        object(), model_identity="browser-controlled-discovery-and-verification-v1"
-    )
+    def configured_controlled_adapter(**_kwargs):
+        return model_adapter.LocalModelRecognitionAdapter(
+            object(), model_identity="browser-controlled-discovery-and-verification-v1"
+        )
+
+    execution.configured_model_adapter = configured_controlled_adapter
     username, password = "browser_reader", secrets.token_urlsafe(24)
     manifest = {
         "scope": "real API/browser integration with controlled persisted recognition fixtures",
@@ -173,7 +291,7 @@ def main() -> None:
             )
         )
         db.commit()
-        for number, label in enumerate(("冻干机甲", "冻干机乙"), 1):
+        for number, label in enumerate(("冻干机甲", "冻干机乙", "设备甲"), 1):
             policy = RankingPolicy(mode="semantic")
             ranker = ControlledRanker() if number == 1 else None
             execution._configured_ranking = lambda: (
@@ -183,6 +301,10 @@ def main() -> None:
             document = Document()
             document.add_heading(f"浏览器隔离报告{number}", level=1)
             document.add_paragraph(f"本报告明确使用设备{label}进行生产。")
+            if number == 3:
+                document.add_paragraph(
+                    "可选择设备甲或设备乙。仅在限定场景，设备甲的属性为范围示例值。另有独立实体丙。"
+                )
             data = io.BytesIO()
             document.save(data)
             data.seek(0)
@@ -197,6 +319,20 @@ def main() -> None:
                 )
             )
             assert created
+            # These two legacy recognition fixtures intentionally exercise the
+            # original controlled adapter, regardless of the current new-run default.
+            source_id = run.artifact_manifest["source"]["artifact_id"]
+            source = db.get(DocumentAnalysisArtifact, source_id)
+            source_policy = dict(source.payload["performance_policy"])
+            source_policy.pop("extraction_protocol", None)
+            source.payload = {**source.payload, "performance_policy": source_policy}
+            source.content_hash = content_hash(source.payload)
+            source_ref = service.store.get_artifact(run.recognition_run_id, run.owner_id, "source")
+            source_ref.content_hash = source.content_hash
+            run.artifact_manifest = {**run.artifact_manifest, "source": {
+                **run.artifact_manifest["source"], "content_hash": source.content_hash,
+            }}
+            db.commit()
             token = service.store.claim(
                 run.recognition_run_id,
                 username,
@@ -206,6 +342,9 @@ def main() -> None:
             )
             db.commit()
             execution._execute_claimed(db, service.store, run, token)
+            if number == 3:
+                manifest["tool_run"] = seed_tool_graph(service, run, label=label)
+                continue
             graph = service.graph_response(run, projection="effective_affirmed")
             if not graph["relationships"]:
                 raise RuntimeError(

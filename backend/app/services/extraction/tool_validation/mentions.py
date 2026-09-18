@@ -7,12 +7,15 @@ import json
 import math
 from time import perf_counter
 
+from app.services.extraction.annotation_execution import ExecutionLost
+from app.services.extraction.gliner2_extractor import Gliner2Extractor
 from app.services.extraction.gliner_extractor import (
     GlinerExtractionError,
     _valid_source_span,
     get_gliner_extractor,
 )
 from app.services.extraction.text_scanner import unicode_words
+from app.services.llm.model_runtime import ModelCancelled, ModelWaitFailure
 
 CHUNK_CHARS = 160
 CHUNK_OVERLAP = 24
@@ -46,6 +49,7 @@ def propose_mentions(
     extractor=None,
     threshold: float = 0.5,
     labels_per_batch: int = LABEL_BATCH_SIZE,
+    required_backend: str | None = None,
 ) -> dict:
     """Suggest mentions for controller-selected sources and whitelisted labels.
 
@@ -128,7 +132,11 @@ def propose_mentions(
         limits = extractor.prepare_strict()
         if not isinstance(limits, dict):
             raise GlinerExtractionError("model_limits_invalid", stage="load")
+        if required_backend is not None and limits.get("backend") != required_backend:
+            raise GlinerExtractionError("model_backend_mismatch", stage="load")
         result["limits"].update(limits)
+    except (ModelCancelled, ExecutionLost, ModelWaitFailure):
+        raise
     except Exception as exc:
         result["execution_status"] = "unavailable"
         result["issues"].append({
@@ -204,6 +212,8 @@ def propose_mentions(
                             if prior is None or mapped["score"] > prior["score"]:
                                 mentions[mapped["id"]] = mapped
                         chunk["status"] = "invalid_output" if invalid else "completed"
+                except (ModelCancelled, ExecutionLost, ModelWaitFailure):
+                    raise
                 except Exception as exc:
                     result["issues"].append({
                         "code": getattr(exc, "code", "inference_failed"),
@@ -235,3 +245,36 @@ def propose_mentions(
         "partial" if incomplete and any_completed else "failed" if incomplete else "completed"
     )
     return result
+
+
+def build_vocabulary_extractor(
+    vocabulary: dict, *, model_path: str, device: str = "cpu", max_len: int = CHUNK_CHARS,
+    manifest: dict | None = None,
+) -> Gliner2Extractor:
+    """Explicit local GLiNER2.5 construction; no application-default model lookup."""
+    descriptions = {label: entry["description"] for label, entry in vocabulary["entries"].items()}
+    return Gliner2Extractor(
+        model_path, descriptions=descriptions, device=device, word_splitter="char", max_len=max_len,
+        manifest=manifest,
+    )
+
+
+def propose_vocabulary_mentions(
+    sources: dict[str, dict], *, vocabulary: dict, extractor,
+    threshold: float = 0.5, labels_per_batch: int = 1,
+) -> dict:
+    """Use injected 2.5 and one full definition per default encoder request.
+
+    Descriptions share the encoder window with source text. The label-only
+    batch default can overflow even for a short source; keep all definitions
+    in separate batches, with the same strict per-request length checks.
+    """
+    if extractor is None:
+        raise ValueError("gliner25_extractor_required")
+    groups = {role: labels for role, labels in vocabulary["groups"].items() if labels}
+    if any(label not in vocabulary["entries"] for labels in groups.values() for label in labels):
+        raise ValueError("vocabulary_label_missing")
+    return propose_mentions(
+        sources, groups=groups, extractor=extractor, threshold=threshold,
+        labels_per_batch=labels_per_batch, required_backend="gliner2.5",
+    )

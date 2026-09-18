@@ -6,6 +6,99 @@ from app.services.extraction.gliner_extractor import GlinerExtractionError
 from app.services.extraction.tool_validation.mentions import propose_mentions
 
 
+def test_vocabulary_ner_requires_explicit_gliner25_and_preserves_roles(monkeypatch):
+    from app.services.extraction.tool_validation.mentions import propose_vocabulary_mentions
+
+    monkeypatch.setattr(
+        "app.services.extraction.tool_validation.mentions.get_gliner_extractor",
+        lambda: pytest.fail("generic tools cannot use the legacy model factory"),
+    )
+    vocabulary = {"entries": {"label": {}, "value": {}}, "groups": {
+        "entity": [], "field_label": ["label"], "field_value": ["value"], "unit": [],
+    }}
+    with pytest.raises(ValueError, match="gliner25_extractor_required"):
+        propose_vocabulary_mentions({}, vocabulary=vocabulary, extractor=None)
+    extractor = StubExtractor()
+    wrong = propose_vocabulary_mentions(
+        {"r": {"text": "HRS-1597"}}, vocabulary=vocabulary, extractor=extractor,
+    )
+    assert wrong["execution_status"] == "unavailable"
+    assert wrong["issues"][0]["code"] == "model_backend_mismatch"
+    extractor.prepare_strict = lambda: {"backend": "gliner2.5", "max_width": None}
+    result = propose_vocabulary_mentions(
+        {"r": {"text": "HRS-1597"}}, vocabulary=vocabulary, extractor=extractor,
+    )
+    assert result["execution_status"] == "completed"
+    assert {span["group"] for span in result["spans"]} == {"field_label", "field_value"}
+    assert result["limits"]["max_width"] is None
+
+
+def test_vocabulary_factory_only_injects_frozen_descriptions(tmp_path):
+    from app.services.extraction.tool_validation.mentions import build_vocabulary_extractor
+
+    extractor = build_vocabulary_extractor(
+        {"entries": {"internal": {"description": "ontology-only definition"}}},
+        model_path=str(tmp_path),
+    )
+    assert extractor.descriptions == {"internal": "ontology-only definition"}
+    assert extractor.model_path == tmp_path
+    assert extractor.word_splitter == "char"
+
+
+@pytest.mark.parametrize("definition_tokens,expected_status", [(300, "completed"), (600, "failed")])
+def test_described_vocabulary_batches_fit_encoder_without_truncating_definitions(
+    definition_tokens, expected_status,
+):
+    from app.services.extraction.tool_validation.mentions import propose_vocabulary_mentions
+
+    labels = ["class-a", "class-b", "class-c"]
+    vocabulary = {
+        "entries": {label: {"description": "x" * definition_tokens} for label in labels},
+        "groups": {"entity": labels},
+    }
+
+    class DescriptionLimitedExtractor(StubExtractor):
+        def prepare_strict(self):
+            return {"backend": "gliner2.5", "encoder_input_limit": 512, "max_len": 160}
+
+        def extract_batch_with_spans_strict(self, texts, batch, threshold=None):
+            schema_tokens = sum(len(vocabulary["entries"][key]["description"]) for key in batch)
+            if max(map(len, texts)) + schema_tokens > 512:
+                raise GlinerExtractionError("encoder_input_limit_exceeded", stage="input")
+            return super().extract_batch_with_spans_strict(texts, batch, threshold)
+
+    extractor = DescriptionLimitedExtractor()
+    result = propose_vocabulary_mentions(
+        {"r": {"text": "HRS-1597"}}, vocabulary=vocabulary, extractor=extractor,
+    )
+    assert result["execution_status"] == expected_status
+    if expected_status == "completed":
+        assert {span["label"] for span in result["spans"]} == set(labels)
+        assert result["coverage"]["covered_refs"] == ["r"]
+        assert not result["issues"]
+    else:
+        assert result["coverage"]["failed_refs"] == ["r"]
+        assert not result["spans"]
+        assert {issue["code"] for issue in result["issues"]} == {"encoder_input_limit_exceeded"}
+
+
+@pytest.mark.parametrize("stage", ["load", "inference"])
+def test_ner_does_not_swallow_task_cancellation(stage):
+    from app.services.llm.model_runtime import ModelCancelled
+
+    extractor = StubExtractor()
+    def cancelled(*args, **kwargs):
+        raise ModelCancelled("cancelled")
+    if stage == "load":
+        extractor.prepare_strict = cancelled
+    else:
+        extractor.extract_batch_with_spans_strict = cancelled
+    with pytest.raises(ModelCancelled):
+        propose_mentions(
+            {"r": {"text": "HRS-1597"}}, groups={"entity": ["name"]}, extractor=extractor,
+        )
+
+
 class StubExtractor:
     def __init__(self, *, needle="HRS-1597", failure=None):
         self.needle = needle

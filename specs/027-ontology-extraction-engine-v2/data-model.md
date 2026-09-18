@@ -1,6 +1,6 @@
 # 数据与状态契约
 
-“新增”均指待实现。现有类型主要在 `backend/app/services/extraction/ontology_guided/contracts.py`。模型字段未另行说明时必需；可空值显式传 null，禁止额外字段和宽松类型转换。[阶段 Schema](contracts/stage-schemas.json) 为机器可读模板。
+类型位于 `backend/app/services/extraction/ontology_guided/contracts.py`、`claim_protocol.py` 与 `tool_contracts.py`；实施进度见 [tasks.md](tasks.md)。模型字段未另行说明时必需；可空值显式传 null，禁止额外字段和宽松类型转换。[阶段 Schema](contracts/stage-schemas.json) 为机器可读模板。
 
 ## 1. 契约层次与引用
 
@@ -12,7 +12,7 @@
 
 模型 `entity_id/claim_id/schema_card_id/mention_ref` 均通过当前上下文解析，不作为路径、URL 或数据库键直接执行。模型临时 ID 映射到持久 ID；新证据包不沿用旧短引用含义。`VersionedRef={id,revision}` 沿用现有类型。
 
-`Quote={evidence_id:str,text:str,context_text:str|null}`，三个字段必需。服务端调用 `resolve_fragment_quote` 唯一定位；context_text 须为同源逐字片段且包含 text。重复文字缺少可唯一定位上下文时不猜测。模型不提供可信坐标，最终 EvidenceAnchor 由 IR 回填身份和半开区间。
+`Quote={evidence_id:str,text:str,context_text:str|null}`，三个字段必需。服务端调用 `resolve_fragment_quote` 唯一定位；context_text 须为同源逐字片段且包含 text，不需消歧时填 null，不以空字符串代替。重复文字缺少可唯一定位上下文时不猜测。模型不提供可信坐标，最终 EvidenceAnchor 由 IR 回填身份和半开区间。resolve_source_anchor 对空串或不含 quote 的上下文返回 `/context_text` 字段错误，不自动改写；query_instances 参数说明明确要求使用成功工具返回的已登记 mention_ref。
 
 ## 2. SchemaCard（新增于 claim_protocol.py）
 
@@ -46,16 +46,17 @@
 | IdentifierProposal | predicate_iri、value_quote | 使用本体属性，不预设编号字段 |
 | PropertyProposal | local_id、subject_id、predicate_iri、value_quote、field_support、unit_support、qualifiers | 原表达完整，模型不填写可信规范化结果 |
 | RelationProposal | local_id、subject_id、predicate_iri、object_ids、selection、bridge_support、selection_support、qualifiers | 对象唯一；单对象 selection=all；多对象保留组 |
+| ReferenceBindingProposal | local_id、source_id、target_id、binding_kind、support | reference_resolution v1；source 是同轮新实体，target 是已登记实体；类型相同且须独立证明 |
 | ExternalLinkProposal | local_id、subject_id、external_candidate_id、identity_support | 候选来自当前 query_instances 的真实返回 |
 | ObservationProposal | subject_id|null、predicate_iri|null、quote、kind、reason | kind=missing/unknown/ambiguous/unbound；不补造主体 |
 
-PropertyProposal 和 RelationProposal 均另含 `bridge_kind`、`bridge_ref_ids`。bridge_kind 复用现有 explicit_assertion/owned_field_group/role_mapped_table/resolved_reference_chain/document_subject_description，并按当前结构和卡片裁选；same_document/same_name/adjacent_only/path_reachability 永不进入可用证明菜单。bridge_ref_ids 只引用上下文中已核验的桥接链；resolved_reference_chain 必须可解析为包含 predicate_assertion 步的完整链。新共指须先经既有局部共指核验形成桥接引用，不能模型编造 proof ID。普通显式叙述可用空数组，但仍需原文 support。桥接类别和引用一起进入声明内容 hash。
+PropertyProposal 和 RelationProposal 均另含 `bridge_kind`、`bridge_ref_ids`。bridge_kind 复用现有 explicit_assertion/owned_field_group/role_mapped_table/resolved_reference_chain/document_subject_description，并按当前结构和卡片裁选；same_document/same_name/adjacent_only/path_reachability 永不进入可用证明菜单。bridge_ref_ids 只引用上下文中已核验的桥接链；resolved_reference_chain 最终须形成包含 predicate_assertion 步的完整链。reference_resolution v1 中同轮新绑定通过 source_assertion.binding_ids 引用独立冻结目标，先核验绑定再核验关系，不要求新绑定在核验前已经成为完整关系桥接；不能模型编造 proof ID。普通显式叙述可用空数组，但仍需原文 support。桥接类别和引用一起进入声明内容 hash。
 
 所有 `local_id` 在同一 DiscoveryEnvelope 内全局唯一，不能与本次上下文已登记 ID 冲突；subject_id/object_ids 只解析到本轮 entities 或已登记的上下文实体，不跨类型引用属性/关系 ID。碰撞、重复和悬空引用在冻结前逐项拒绝，依赖项保持未决；不重命名后静默猜测其指向。local_ref_map 是该唯一命名空间到精确 VersionedRef 的映射。
 
 `Qualifiers={polarity,modality,condition_support,scope_qualifiers}`：polarity=affirmed/negated；modality=asserted/required/possible/planned/unspecified。unspecified 不默认转 asserted。scope_qualifiers 为 `{predicate_iri:str|null,quote:Quote}` 列表，保留本体允许属性或原文维度，不用旧业务枚举。旧产物 polarity=conditional/uncertain 原样保留；不能把历史不明模态自动改为 possible。
 
-冻结函数生成 `FrozenClaimSet={assertion_generation,evidence_revision,content_hash,entities,properties,relations,external_links,observations,local_ref_map}`。服务端生成 claim_ref/hash，覆盖类型、端点、谓词、原值、极性、模态、selection、条件和继承 scope。证据包 hash 单独保存；只补证保持声明 hash，但使核验输入身份变化。record 候选在 freeze 时依据组成来源形成稳定局部候选 ID，核验只接纳/拒绝，不在核验后偷换 ID/hash；组成来源改变才产生新候选代。不以标签或拼接整行冒充物理提及。
+冻结函数生成 `FrozenClaimSet={assertion_generation,evidence_revision,content_hash,entities,properties,relations,external_links,observations,local_ref_map,claim_issues}`。`claim_issues:dict[str,list[str]]` 保留逐 local_id 的机械失败及依赖闭包；问题声明仍保留完整内容，核验只接收可核验目标，图谱不缩短失败的组。服务端生成 claim_ref/hash，覆盖类型、端点、谓词、原值、极性、模态、selection、条件和继承 scope。证据包 hash 单独保存；只补证保持声明 hash，但使核验输入身份变化。record 候选在 freeze 时依据组成来源形成稳定局部候选 ID，核验只接纳/拒绝，不在核验后偷换 ID/hash；组成来源改变才产生新候选代。不以标签或拼接整行冒充物理提及。
 
 ## 4. 独立核验
 
@@ -63,7 +64,7 @@ PropertyProposal 和 RelationProposal 均另含 `bridge_kind`、`bridge_ref_ids`
 
 `VerificationInput={discovery_ref,targets:list[VerificationTargetSpec],local_ref_map:dict[str,VersionedRef],entity_dependencies:list[EntityDependencyView],external_candidates:list[ExternalCandidate],bridge_dependencies:list[BridgeDependencyView],scope_resolutions:list[VerificationScopeResolution]}`。协调器从已确认 discovery_ref 加载 FrozenClaimSet，核对内容和精确依赖后纯派生此视图；不新增声明存储或集合/整包 hash。发现阶段 reasoning、工具交互历史和模型自评不进入核验输入。
 
-target.payload 是 target_kind 判别的完整 EntityProposal / PropertyProposal / RelationProposal / ExternalLinkProposal，不裁掉原值、单位原文、端点、选择、极性、模态、条件、桥接或来源。local_ref_map 来自冻结结果；payload 的局部端点 ID 必须准确解析到同版实体，不能靠标签猜测。当前发现的实体内容只在 entity 类型目标保存一份；entity_dependencies 仅补充已登记的上下文实体，两者精确引用不得重叠。local_ref_map 是唯一允许动态键的引用映射，值仍为封闭 VersionedRef。
+target.payload 是 target_kind 判别的完整 EntityProposal / ReferenceBindingProposal / PropertyProposal / RelationProposal / ExternalLinkProposal，不裁掉原值、单位原文、端点、选择、极性、模态、条件、桥接或来源。local_ref_map 来自冻结结果；payload 的局部端点 ID 必须准确解析到同版实体，不能靠标签猜测。当前发现的实体内容只在 entity 类型目标保存一份；entity_dependencies 仅补充已登记的上下文实体，两者精确引用不得重叠。local_ref_map 是唯一允许动态键的引用映射，值仍为封闭 VersionedRef。
 
 targets 从冻结结果中的待核验声明派生，按声明精确引用恰好覆盖，不能靠另一个手写目标清单检验完整度。冻结前已拒绝的候选与 observation 不变成核验目标，其状态按已有结果保留；不能以省略目标掩盖未核验声明。
 
@@ -76,11 +77,12 @@ targets 从冻结结果中的待核验声明派生，按声明精确引用恰好
 | 目标 | 必需 facet |
 |---|---|
 | entity | type、referent、subject_role |
+| reference_binding | reference_identity、reference_scope、counterevidence |
 | property | subject_binding、field_role、predicate、bridge、value、unit、qualifiers、counterevidence |
 | relation | subject_binding、object_binding、predicate、bridge、selection、qualifiers、counterevidence |
 | external_link | identity_owner、identity_key、identity_scope |
 
-服务端排除不适用 facet，如纯文本 unit、单对象 selection；程序指定的文档根类型/身份按输入来源单独登记，不生成伪造的模型核验目标，但其属性或关系的 subject_binding 仍须证明。模型不能自行跳过维度。响应的目标与 facet 集合须和请求完全相等；禁止重复、遗漏、增加和 hash 改变。supported 必须有合法原文依据，反证必须覆盖。实体组成证明属于 referent/subject_role，模态和条件属于 qualifiers；属性与关系均通过 bridge 核验其桥接类别及引用链。
+服务端排除不适用 facet，如纯文本 unit、单对象 selection；程序指定的文档根类型/身份按输入来源单独登记，不生成伪造的模型核验目标，但其属性或关系的 subject_binding 仍须证明。模型不能自行跳过维度。响应的目标与 facet 集合须和请求完全相等；禁止重复、遗漏、增加和 hash 改变。supported 必须有已授权、可回放原文依据，反证必须覆盖。fact_eligible 约束候选事实发现范围；补证原文即使 fact_eligible=false，仍可核验既有不可改写的冻结声明，不能用补证另开事实发现。实体组成证明属于 referent/subject_role，模态和条件属于 qualifiers；属性与关系均通过 bridge 核验其桥接类别及引用链。
 
 现有 VerificationBundle/ProofGate 保留，新增选择和记录组成证明。accepted 要求机械门、必需语义维度、表示和依赖通过；缺证/表示能力不足为 unresolved，明确错配/反证为 rejected。被支持的 negated 声明可以进入图谱，不等于 rejected。
 
@@ -101,6 +103,8 @@ targets 从冻结结果中的待核验声明派生，按声明精确引用恰好
 - matches：`{predicate_iri|null,document_quote,record_field,record_value,match_kind}`，match_kind=exact_key/key_component/name/alias，只是候选依据。
 - mapped_fields：`{predicate_iri,raw_value,datatype_iri|null}`；metadata：`{name,value}` 字符串列表。未映射元数据不扩展本体。
 - 外链须独立核验，并复用原外部 provenance/版本检查。文档值和外部值不互相覆盖。
+- 仅 identity_owner/key/scope 三项独立核验通过，且原文逐项匹配本体或 profile 声明的完整身份键及适用域时，才设置实体 identity_status=verified。名称或别名匹配仅提供候选，不能标记身份已核验。
+- 身份结果作为原实体的独立元数据保存：`external_provenance:list[ExternalRecordProvenance]` 复用现有外部记录来源类型，保留系统、数据集、记录键、版本与匹配原文；`identity_decision_refs:list[VersionedRef]` 绑定身份核验。二者默认空，旧对象未设置时不序列化，保持旧内容 hash。现有实体（含用户指定根）只允许在证明通过后追加这两项并更新 identity_status；class、referent、entity revision 和原文值保持不变。不新增外部图节点、外部事实属性或跨文档全局合并。
 
 ## 6. 图谱契约
 
@@ -109,7 +113,7 @@ targets 从冻结结果中的待核验声明派生，按声明精确引用恰好
 | 位置 | 扩展 |
 |---|---|
 | LocalReferent | kind=mention/record、record_view_refs、composition_decision_ref；record 不伪造 SourceMention |
-| GraphNode | referent_ref、type_decision_ref、referent_decision_ref、dependency_refs、grounding_kind=document_root/mention/record；record 另绑定 composition_decision_ref，用户指定根由 root_origin 区分 |
+| GraphNode | referent_ref、type_decision_ref、referent_decision_ref、dependency_refs、grounding_kind=document_root/mention/record；record 另绑定 composition_decision_ref，用户指定根由 root_origin 区分；外部身份附加 external_provenance、identity_decision_refs，公开实体与前端保留同样信息 |
 | GraphRelationshipGroup | 复用 GraphEdge 的主体、谓词、证明、状态和来源字段；object_refs 至少两个唯一精确引用；selection、selection_evidence_refs |
 | GraphProperty/GraphEdge/组 | modality、scope:TraversalScope；原 conditions/applicability 与证据保留，新限定不受业务维度枚举限制 |
 | VerificationTarget | 新增与 object_ref 互斥的 object_refs/selection；身份 hash 覆盖组；check_kind 增加 selection/record_composition/modality |
@@ -154,15 +158,16 @@ RunResponse 与 GraphArtifactResponse 新增 `extraction_protocol:str|null`，�
 | request_attempt、completed_attempts | 沿用请求序号和已确认响应收据；工具/阶段不重置。确认收到与 response_status=completed/语义通过不同，incomplete/failed 的收到也有精确收据 |
 | active_instructions | 当前阶段的可信执行规则；每轮 Responses 请求显式发送，阶段切换重新装配 |
 | stage_input_items | 当前阶段初始 input 项；只存一次初始材料，不含后续 output 或工具结果正文，阶段结束后释放 |
-| pending_request | `{attempt,stage,request_hash,reservation_key}` 或 null，request_hash 是完整请求 hash，沿用现有预留读取字段；先保存后请求 |
+| pending_request | `{attempt,stage,request_hash,reservation_key,allowed_tool_names}` 或 null，request_hash 是完整请求 hash，沿用现有预留读取字段；与 reservation 同事务确认后才请求 |
 | turn_refs | 当前阶段按 attempt 引用 ModelTurnResult；直接恢复，不扫描历史 |
 | completed_tool_results | 当前阶段按 attempt+call_id 索引的已确认工具结果引用；不保存结果正文。待处理 call_id 从当前响应的 function_call 与此映射求差集，output item.id 不能替代 call_id |
-| tool_calls_used、materialized_refs | 当前 lineage 模型请求的工具尝试数及当前可用卡片/mention/candidate 引用；每项 kind/id/result_ref/content_hash/context_hash/dependency_refs，类型见[工具契约](contracts/tool-contracts.md)；只保存继续所需映射 |
+| tool_calls_used、materialized_refs | 当前 lineage 模型请求的工具尝试数及当前可用卡片/mention/candidate/关系校验结果引用；每项 kind/id/result_ref/content_hash/context_hash/dependency_refs，类型见[工具契约](contracts/tool-contracts.md)；只保存继续所需映射 |
 | context_authorization | ContextAuthorization\|null；唯一当前已确认授权定位集合，随检索确认更新；尚无补充检索时为 null，从原任务冻结材料重建 |
+| reference_context（可选） | 仅 reference_resolution v1 保存 `{version:1,entity_refs:list[VersionedRef]}`；本 lineage 开始时冻结的有序实体依赖引用，不存实体正文/第二份注册表。旧协议省略该字段；恢复须与原引用及对应实体版本匹配，不重选候选后套用已有请求 |
 | discovery_ref、verification_ref、outcome_ref | 当前已提交业务阶段结果引用 |
 | recovery_kind、recovery_used | none/evidence/reproposal；共享一次恢复机会 |
 
-`ModelTurnResult={attempt,stage,input_hash,response_id,output_items,response_status,incomplete_details,error,usage}`，使用现有 DocumentRunResult。response_id 是本次响应身份，不是继续会话的依赖；output_items 是完整有序 output，保留 message、function_call 和实际返回的 reasoning 等项。response_status 保留 completed/incomplete/failed；非预期状态显式报告协议异常。incomplete_details/error 为原协议对象或 null，refusal 保留在对应 message 内容项中。usage 保留可空的 Responses 嵌套结构，包括 input_tokens/output_tokens/total_tokens、input_tokens_details.cached_tokens 与 output_tokens_details.reasoning_tokens；分项不重复累加，缺报不补 0。每条 DocumentRunRequest.result_ref 指向该请求精确轮次；工具结果以 attempt+call_id 独立保存于既有结果域，当前协议引用它们。每个轮次结果不包含全部 input 历史。
+`ModelTurnResult={attempt,stage,input_hash,allowed_tool_names,response_id,output_items,response_status,incomplete_details,error,usage}`，使用现有 DocumentRunResult。response_id 是本次响应身份，不是继续会话的依赖；output_items 是完整有序 output，保留 message、function_call 和实际返回的 reasoning 等项。response_status 保留 completed/incomplete/failed；非预期状态显式报告协议异常。incomplete_details/error 为原协议对象或 null，refusal 保留在对应 message 内容项中。usage 保留可空的 Responses 嵌套结构，包括 input_tokens/output_tokens/total_tokens、input_tokens_details.cached_tokens 与 output_tokens_details.reasoning_tokens；分项不重复累加，缺报不补 0。每条 DocumentRunRequest.result_ref 指向该请求精确轮次；工具结果以 attempt+call_id 独立保存于既有结果域，当前协议引用它们。每个轮次结果不包含全部 input 历史。`allowed_tool_names` 保存该次实际请求暴露的函数名，空列表表示仅回答；收到响应时必须与 pending_request 一致。暂停恢复使用该不可变权限集合，不能按恢复时剩余预算重算原轮权限；未提供的工具只能返回 blocked/error，不能执行 handler。无需另存 request_mode。
 
 请求采用无服务端会话依赖的 `store=false`，每轮发送 active_instructions 和完整派生 input，不用 previous_response_id/conversation。装配顺序固定为 stage_input_items，随后按 turn_refs 的响应顺序加入完整 output_items，再按该响应的调用顺序从 completed_tool_results 加入 `{type:"function_call_output",call_id,output:JSON字符串}`。派生的完整 input 仅存在于本次请求内存，不再持久化累积正文；恢复只读取当前阶段的精确引用，不扫描历史、不重放工具。工具调用项自己的 id 保留原值但不作配对键。完整 output 先保存再判定是否可消费；incomplete/failed/refusal 不执行其中部分调用，也不生成通过的阶段业务结果。未完成的调用由最后一个可消费响应与已确认结果派生，配齐前不得发下一轮。
 
@@ -170,7 +175,11 @@ RunResponse 与 GraphArtifactResponse 新增 `extraction_protocol:str|null`，�
 
 ModelTurnResult.input_hash 对应 pending_request.request_hash，覆盖 api_protocol、instructions、完整 input items、工具定义、text.format、store/include 等实际请求参数，不引入另一个含义不同的请求 hash。reservation_key 在预留前按现有 call_request_key 对 `[lineage_id,request_attempt]` 的规范 hash 预计算；把同算法纯 helper 放入 current_work.py 供共享核心和存储调用，不从共享核心导入 document_analysis/current_state.py。模型请求的工具每次获准分派前保存 tool_calls_used，校验或执行失败不返还；已完成 call_id 恢复不重复计数，未完成尝试若重做仍受剩余额度约束。控制器必做的 binding/metric/SHACL 单列本地执行次数与耗时，不消耗模型选工具的额度，也不因该额度用完而跳过。
 
-提交顺序：预留→模型请求→提交完整 response 并更新 turn_refs→确认可消费状态→逐工具执行/提交并更新 completed_tool_results→装配下一请求并预留。没有持久化确认不继续。保存响应后暂停可派生待执行调用；保存工具结果后不重复调用。预留后结果未知保持未知费用和未完成，不假定未发出或自动零成本重发；已经收到 incomplete/failed 与未收到结果分别记录。finalize 的数量表示图只在一次本地计算中存在，暂停后必要时重新执行纯本地规范化与 SHACL，不保存图或登记图引用。
+提交顺序：pending 与预留同事务确认→模型请求→提交完整 response 并更新 turn_refs→确认可消费状态→逐工具执行/提交并更新 completed_tool_results→装配下一请求并预留。没有持久化确认不继续。预算拒绝或事务失败时 attempt 与 pending 均不前移，冷继续仍可执行首个未预留请求；预留后结果未知保持未知费用和未完成，不假定未发出或自动零成本重发。保存响应后暂停可派生待执行调用；保存工具结果后不重复调用；已经收到 incomplete/failed 与未收到结果分别记录。finalize 的数量表示图只在一次本地计算中存在，暂停后必要时重新执行纯本地规范化与 SHACL，不保存图或登记图引用。
+
+阶段 instructions 包含从同一回答模型类型生成的 JSON Schema；回答轮的 text.format 另按当前卡片/引用收紧。本地仍严格解析，不剥离 Markdown 围栏。非法答案的纠错输入由已存 ModelTurnResult 重新校验后派生，保留原始 output 并给出 field_path/reason_code/message；发现候选 local_id 与已登记实体 ID 冲突也在此返回精确字段错误，不能重复声明或覆盖已有实体。该校验从当前精确实体依赖派生，正常执行与冷继续一致；不增加协议字段或会话副本，纠错请求照常计入同一预算。bridge_ref_ids 仅能引用已登记桥接，原文记录 ID 不能作为桥接证明。TaskOutcome.controller_checks 保存本次完成路径的 binding/metric/SHACL 次数及本地耗时，沿用独立 outcome 结果，不计入声明内容 hash；没有完成结果的中断计算不冒称已计量。
+
+核验阶段同样从完整 VerificationInput 派生目标集合、content_hash 和 required_facets 检查；阶段纠错与最终 validate_verification 共用 validate_verification_targets，不复制判据。目标缺漏、hash 错配或 facet 缺漏返回字段级协议错误，不能降为部分成功。原文不足及 unsupported/undetermined 仍由已有语义核验和恢复规则处理，不因模型结论不合意触发结构纠错。
 
 DocumentRunCandidate.kind、当前状态 domain 为字符串，body 为 JSON，现有约束没有 kind 枚举；新增关系组与协议结果预计无需数据库迁移。必须修改 collection 白名单和序列化，验证 PostgreSQL 事务/租约路径；不新建表或历史快照树。
 
@@ -181,7 +190,7 @@ DocumentRunCandidate.kind、当前状态 domain 为字符串，body 为 JSON，�
 `ContextAuthorization={task_id,ir_identity,context_policy_hash,record_ids,fragments:list[AuthorizedFragment],bindings:ContextBindingRefs}`：
 
 - ir_identity 为 `{document_hash,parser_version,structure_hash}`，必须匹配冻结 IR。record_ids 是完整当前授权记录，非只有本次新增记录。
-- `AuthorizedFragment={record_id,evidence_id,span_start,span_end,role,fact_eligible}`。跨度为非空半开区间、源于 IR；role 对应 ContextFragment.purpose。位置、角色和事实使用权限均不可仅靠 evidence_id 推断；同证据不同片段/角色分别保存。
+- `AuthorizedFragment={record_id,evidence_id,span_start,span_end,role,fact_eligible}`。跨度为非空半开区间、源于 IR；role 对应 ContextFragment.purpose。位置、角色和事实使用权限均不可仅靠 evidence_id 推断；同证据不同片段/角色分别保存。record_id 可为 null，但仅限原始 base 中已有、同角色且 fact_eligible=false 的辅助片段（例如无唯一记录归属的标题）；null 不授予新来源或事实权限。共享表头属于当前记录时使用当前 record_id，不能任意选第一条记录。inspect_evidence 同样允许辅助单元的 record_id=null，记录目录不为此编造记录。
 - `ContextBindingRefs` 复用 TaskContext 的 endpoint_evidence、proof_dependencies、competing_subject_refs（VersionedRef 列表），以及 subject_evidence_refs、owner_field_refs、required_context_refs、counterevidence_refs、omitted_refs（EvidenceAnchor 列表）。它记录当前归属和必读闭包，不替代实体或关系语义证明。
 - context_policy_hash 覆盖冻结任务 base_target/scope、SchemaCard/menu/profile 与上下文/字段绑定组装版本及配置。原文、字段结构来自冻结 IR/index；subject_label 来自精确主体依赖，field_bindings 按同版策略和 IR/index 重建，不能从模型文本恢复。
 
@@ -232,3 +241,19 @@ plan_model_turn 在当前工具批次处理完毕后调用；已有持久化阶�
 `ContextFeedback={target_id:str|null,facet:str|null,code:str,field_path:str|null,message:str,evidence_ids:list[str]}` 定义在 context.py。字段错误使用 JSON Pointer，非字段错误为 null；target/facet 从服务端检查结果读取，不接受模型自报已通过。反馈说明受违反的约束及允许的下一步，不包含未授权来源或金标答案。
 
 context.py 对 SchemaCard、VerificationInput、ToolObservation、TurnPlan 等仅作 TYPE_CHECKING 类型引用；纯派生函数操作已传入的类型化对象，禁止导入编排器执行逻辑造成 context↔adapter 或 context↔tool_contracts 的运行时循环。持久化仅使用第 8 节的阶段初始输入、active_instructions、turn_refs、completed_tool_results、materialized_refs 和唯一当前 context_authorization；完整 input、待处理 call_id 及这些控制视图均按需派生。
+
+## 10. reference_resolution v1 与连续执行预算
+
+新建运行在 source.performance_policy 顶层冻结 `reference_resolution_version=1` 和 `execution_budget={max_seconds:18000,max_model_calls:32}`（默认 5 小时）；数值由新运行配置确定，进入原有 fingerprint。旧运行缺少字段时不补写、不升级阶段回答或重解释原证明；旧对象未设置的新字段继续省略，以保持原内容 hash。
+
+`protocol.reference_context` 是当前 lineage 的冻结实体引用选择，保存在已有调用协议中。它与 context_authorization 分工：前者固定哪些已登记实体参与这次任务，后者保存原文定位/角色/权限；两者均不保存完整实体或原文副本。该可选字段不是模型输入 Schema 的可选回答字段，不能为容纳它而放宽阶段 Schema 的 required/extra 约束，也不修改旧三字段 Responses 续传示例的唯一状态断言。持久化/恢复校验需覆盖旧协议无字段、新协议精确引用、重复或失效引用、保存后篡改和冷继续不重新选择。
+
+`DiscoveryEnvelope.reference_bindings:list[ReferenceBindingProposal]` 在 v1 回答中必需，没有候选时为空。绑定字段为 `local_id,source_id,target_id,binding_kind:anaphora|coreference,support:list[Quote]`，support 非空。source_id 必须指向同轮 entities，target_id 必须指向本轮授权且已登记的上下文实体；当前最小实现要求同一 class_iri，禁止绑定到文档根，禁止对任意两个既存节点执行合并。同一来源提出不同目标为歧义，不按顺序择一。原文引用、绑定种类、精确端点与 scope 随声明冻结，成为 `target_kind=reference_binding` 的独立目标。reference_identity 证明同一对象、类型/粒度及区分条件无冲突；reference_scope 证明适用范围；counterevidence 处理竞争指向和反证。未决/拒绝绑定不产生规范实体复用。
+
+`RelationProposal.source_assertion:SourceAssertion` 在 v1 必需且非 null。`SourceAssertion={subject_support:list[Quote],object_support:list[ObjectSourceSupport],predicate_support:list[Quote],binding_ids:list[str]}`；`ObjectSourceSupport={object_id,support:list[Quote]}`，每对象 support 和 predicate_support 非空。object_support 必须覆盖关系的精确对象集合；subject_support 或已核验绑定须把实际主体接到当前断言。binding_ids 只引用同轮冻结的 reference_binding 局部 ID，其精确版本进入依赖闭包。完整 source_assertion 进入关系 content_hash，不能用新的主语/对象/谓词引文套用旧核验。
+
+`find_referent_candidates` 参数为已登记 mention_refs、当前菜单 class_iris、当前 scope_id。结果 `ReferentCandidateData={candidates,truncated,excluded_count,identity_status:"not_checked"}`；候选含 candidate_entity_ref、class_iri、mention_refs、source_refs、source_texts、reason、distinctions，并固定 `role="binding",fact_eligible=false`。reason 为 physical_mention/normalized_name/anaphora_context，均非同指判定。候选上限及工具 token 上限由服务端控制；无匹配/截断不证明全文无同指对象。跨运行、未知提及、失配 scope 或菜单类型必须返回工具错误，不能降为空结果。
+
+实体声明身份保留原 claim_ref/hash，规范实体复用及每处提及/证明作为当前映射更新；图谱从已通过的绑定派生，关系、属性的冻结原文、限定和精确依赖不因展示端点复用而丢失。当前映射随既有工作分区保存，冷继续直接读取，无全量历史快照和第二份实体注册表。
+
+连续预算基线复用 `DocumentRunCurrentState`，唯一分区/键为 `execution:budget/current`，body 为 `{started_at:UTC时间,model_calls_baseline:非负整数}`。已有运行经明确授权调整时间上限时，可增加 `max_seconds:有限正数`，覆盖冻结策略中的时间值，不改变原 fingerprint 或请求额度。claim 仅在 queued 的显式启动/继续边界重置时间与调用基线，保留已调整的 max_seconds；已有 running 租约替换保留原行。时间从该次实际 claim 计，排队时间不计入；请求量按累计预留减基线计算，失败不退款。提交已付费结果不检查或扣第二份额度；新预留前、任务及排序安全边界检查预算。达限终态为 paused，stop_reason 分别为 execution_time_budget_exhausted / execution_model_call_budget_exhausted，error 为 null，已有继续入口有效；请求账本与每 lineage 上限保持累计。预算耗尽不表示语义否定或技术失败。

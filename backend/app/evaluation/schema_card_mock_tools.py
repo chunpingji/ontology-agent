@@ -120,7 +120,8 @@ def prepare(args):
     # Retain the existing Equipment concept and three property labels. No instance
     # names/IDs become labels; ProcessEquipment typing remains a Qwen source decision.
     vocabulary = ner_runner.build_extraction_vocabulary(catalog, [EQ + "Equipment"],
-                                                       ontology_dir=args.ontology_dir)
+                                                       ontology_dir=args.ontology_dir,
+                                                       overlay_path=ner_runner.DEFAULT_OVERLAY)
     requested = {EQ + "Equipment", *PROPERTIES}
     vocabulary["entries"] = {k: v for k, v in vocabulary["entries"].items()
                              if v["iri"] in requested}

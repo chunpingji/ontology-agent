@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import json
 from contextvars import ContextVar
 from threading import Event, get_ident
 
@@ -17,8 +18,9 @@ from app.services.extraction.ontology_guided.executor import (
 )
 from app.services.llm import local_client
 from app.services.llm.local_client import LocalModelClient
-from app.services.llm.model_runtime import model_scope, runtime
+from app.services.llm.model_runtime import model_scope, observe, runtime
 from tests.test_extraction.test_model_scheduler import invoke, rows
+from tests.test_extraction.test_native_tool_protocol import response_body
 from tests.test_extraction.test_semantic_ranking_execution import FIRST, SECOND, fixture
 
 
@@ -109,6 +111,81 @@ def test_failed_reservation_wakes_worker_without_model_dispatch_or_batch(tmp_pat
     assert finished.is_set() and not dispatched and not batches
     assert len(writes) == 1 and writes[0][0] == owner
     assert len(writes[0][1]["reservations"]) == 1
+
+
+@pytest.mark.parametrize("fail_after_stream", [False, True])
+def test_worker_stream_reaches_harness_on_owner_before_model_finishes(
+    tmp_path, isolated_model_scheduler, fail_after_stream,
+):
+    """Exercise the coordinator boundary omitted by direct adapter/SDK probes."""
+    bind = isolated_model_scheduler()
+    ontology, arguments = fixture(tmp_path)
+    owner = get_ident()
+    observed, sent, batches = [], [], []
+    first_delta_seen = Event()
+
+    class Body(httpx.AsyncByteStream):
+        async def __aiter__(self):
+            for channel, text in [("reasoning_text", "可读思考"), ("output_text", "checking")]:
+                yield ("data: " + json.dumps({
+                    "type": f"response.{channel}.delta", "delta": text,
+                    "item_id": "i", "output_index": 0, "content_index": 0,
+                    "sequence_number": 1,
+                }) + "\n\n").encode()
+                if channel == "reasoning_text":
+                    # The owner must receive the delta while the HTTP stream is still open.
+                    for _ in range(100):
+                        if first_delta_seen.is_set():
+                            break
+                        await asyncio.sleep(0.01)
+                    assert first_delta_seen.is_set()
+            yield ("data: " + json.dumps({"type": "response.completed",
+                "response": response_body(), "sequence_number": 3}) + "\n\n").encode()
+
+    async def transport(request):
+        sent.append(json.loads(request.content))
+        return httpx.Response(200, headers={"Content-Type": "text/event-stream"}, stream=Body())
+
+    client = LocalModelClient("http://model.test/v1", "test", httpx.MockTransport(transport))
+
+    class Adapter:
+        model_identity = "harness-worker-fixture"
+
+        def inspect(self, task, context, predicate, menu):
+            assert get_ident() != owner
+            context.before_model_call("discovery", 1)
+            observe("model_start", call_id="worker-call", request={"model": "qwen-test"},
+                    schema_card={"predicates": [{"label": predicate.label}]})
+            local_client.responses_create(client, input_items=[], instructions="synthetic")
+            result = {"nested": {"value": "original"}}
+            observe("operation_end", operation_id="tool-1", status="completed", result=result)
+            result["nested"]["value"] = "worker mutation"
+            if fail_after_stream:
+                raise RuntimeError("failure after final observation")
+            return _outcome()
+
+    def observer(kind, payload):
+        assert get_ident() == owner
+        observed.append((kind, payload))
+        if kind == "delta" and payload["channel"] == "thinking":
+            first_delta_seen.set()
+
+    def persist(batch):
+        assert observed[-1][0] == "operation_end"
+        batches.append(batch)
+
+    with model_scope(bind=bind, on_harness_event=observer):
+        OntologyGuidedExecutor(
+            ontology=ontology, engine=object(), adapter=Adapter(), max_tasks=1,
+        ).run(**arguments, batch_hook=persist)
+    assert sent[0].get("stream") is True
+    assert first_delta_seen.is_set()
+    assert [kind for kind, _ in observed] == [
+        "model_start", "delta", "delta", "model_end", "operation_end",
+    ]
+    assert observed[-1][1]["result"] == {"nested": {"value": "original"}}
+    assert len(batches) == 1
+    assert rows(bind)[0].status == "complete"
 
 
 def test_lost_owner_cancels_actual_http_and_keeps_paid_reservation(

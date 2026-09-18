@@ -1,0 +1,61 @@
+{
+  "source_run": "d231338c-f96f-436a-b759-85fc5610578c",
+  "real_model_calls": 0,
+  "scope": "initial admission before first task; not full run coverage or F1",
+  "variants": {
+    "previous_dense": {
+      "executor_version": "ontology-guided-executor-v5.1-ranking-durability+ontology-tool-extraction-v1",
+      "progress": {
+        "tasks_attempted": 0,
+        "model_calls": 0,
+        "model_calls_reserved": 0,
+        "model_calls_unresolved": 0,
+        "records_planned": 1788,
+        "records_examined": 0,
+        "records_incomplete": 0,
+        "records_unattempted": 1788,
+        "phase_counts": {
+          "phase1": 0,
+          "phase2": 0
+        },
+        "supported": 0,
+        "unsupported": 0,
+        "undetermined": 0,
+        "pending_frontiers": 0,
+        "unresolved_claims": 0,
+        "invalidated_count": 0,
+        "stop_reason": "unattempted",
+        "completion": "incomplete",
+        "contract_version": "document-analysis-runs-v1"
+      }
+    },
+    "generic_sparse": {
+      "executor_version": "ontology-guided-executor-v5.1-ranking-durability+incremental-performance-v1+sparse-candidates-v1+ontology-tool-extraction-v1",
+      "progress": {
+        "candidate_policy": "sparse-candidates-v1",
+        "tasks_attempted": 0,
+        "model_calls": 0,
+        "model_calls_reserved": 0,
+        "model_calls_unresolved": 0,
+        "records_planned": 63,
+        "records_examined": 0,
+        "records_incomplete": 0,
+        "records_unattempted": 63,
+        "phase_counts": {
+          "phase1": 0,
+          "phase2": 0
+        },
+        "supported": 0,
+        "unsupported": 0,
+        "undetermined": 0,
+        "pending_frontiers": 0,
+        "unresolved_claims": 0,
+        "invalidated_count": 0,
+        "stop_reason": "candidate_search_incomplete",
+        "completion": "incomplete",
+        "contract_version": "document-analysis-runs-v1"
+      }
+    }
+  },
+  "max_hops": 1
+}

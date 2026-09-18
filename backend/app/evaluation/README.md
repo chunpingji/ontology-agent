@@ -393,10 +393,58 @@ python -m app.evaluation.schema_card_tools \
 
 2026-09-16 实测：126 项定向工程测试通过；真实 Qwen 18 次请求，9/9 case 完成，18/18 原始 Schema 通过。E1 成功关联两个已知编号并保留未知编号，但未证明同源抽取质量提升；E2 最终仍有一条证据不足的清洗使用关系，过滤器备选未成功保留。数值单位校准未评估，未切换线上识别器。
 
-后续架构见[通用本体驱动文档抽取引擎 2.0 设计方案](../../../docs/文档抽取引擎2.0设计方案.md)：以输入本体限定类型和谓词，通过 OpenAI Responses API 标准函数工具对接项目 Qwen，统一处理证据绑定、选择组、修复补证及值校准，最终交付带原文证据的本体约束关系图谱，按通用能力分期和跨文档/本体组合验收。上述领域实验仅作历史验证依据，不构成引擎中的领域策略或实施闭环，也不代表原生工具往返已接通。该文档是设计提案，不代表新增能力已实施、已评测或已部署。
+## 027 通用工具抽取与最终图谱评分
 
-模块接口、机器可读工具/阶段 Schema 与开发依赖已细化至 [027 模块计划](../../../specs/027-ontology-extraction-engine-v2/plan.md)、[任务清单](../../../specs/027-ontology-extraction-engine-v2/tasks.md)和[验收步骤](../../../specs/027-ontology-extraction-engine-v2/quickstart.md)。新评测入口仍为拟新增，不能将其目标命令或合成样例当作本轮模型实测。
+[ontology_tool_engine.py](ontology_tool_engine.py) 已提供 `probe/run/score` 薄入口：
+`run` 装配 `quality_guided_variant.py` 和共享识别核心；`score` 调用同一个
+`ontology_guided_scorer.score_evaluation`，不另建识别或评分引擎。输入本体限定类型和谓词，
+项目 Qwen 经 Responses 的 function_call/function_call_output、call_id、text.format
+交互，以 store=false 续传完整阶段项。原文、工具候选和独立评分参考保持分离。
 
-027 的 [Harness 设计](../../../specs/027-ontology-extraction-engine-v2/harness.md)进一步规定按需上下文、预算内工具反馈循环，以及“可定位失败 → 定向回归”的研发闭环。仍使用本项目 Qwen、标准函数调用和现有运行状态，最终按本体约束关系图谱评分；本次为设计修订，未新增模型实测。
+在 backend 工作目录、使用已准备的应用环境执行；每个输出目录须新建：
 
-用户已确认项目 Qwen 支持 Responses API，027 新设计据此采用平铺函数定义、function_call/function_call_output、call_id 和 text.format；当前状态以 store=false 的本地 input/output 项续传。历史 Chat/JSON 计划实验保持原记录，本次协议修订没有新增模型请求。
+```bash
+.venv/bin/python -m app.evaluation.ontology_tool_engine probe \
+  --output /tmp/ontology-tool-probe --max-model-requests 4
+.venv/bin/python -m app.evaluation.ontology_tool_engine run \
+  --manifest /controlled/ontology-tool-manifest.json --output /tmp/ontology-tool-run
+.venv/bin/python -m app.evaluation.ontology_tool_engine score \
+  --prediction /tmp/ontology-tool-run/evaluation.json \
+  --reference /controlled/gold/ontology-guided-reference-v2.json \
+  --output /tmp/ontology-tool-score
+```
+
+manifest 格式、固定输入及硬预算见 [027 验收步骤](../../../specs/027-ontology-extraction-engine-v2/quickstart.md)。
+`probe` 验证实际端点协议；`run` 保存 evaluation.json、document-ir.json、final-graph.json、
+coverage、调用/成本及协议检查；`score` 只读这些预测并另读参考，不调用模型。
+入口可执行和工程测试通过不等于真实模型质量验收。
+
+`ontology-guided-scorer-v3` 保留 reference-v1：旧声明未提供 modality/scope 时沿用
+asserted/空范围，旧对象省略新增默认字段后再序列化。新 reference-v2 要求顶层显式
+`relationship_groups`（无组写 `[]`），每项属性、单边、组及路径中的边显式填写
+`modality` 与 `scope`。模态值为 asserted/required/possible/planned/unspecified。
+
+- 关系组在 `relationship_groups` 声明，字段复用单边的 subject、predicate_iri、方向、
+  极性、条件、applicability、期望和证据；以至少两个唯一 `objects:EntityMatcher[]`
+  替代 object，并必填 `reference_id` 与 `selection=all|one_of|alternatives|undetermined`。
+  对象排列不影响语义；组不摊平。one_of {A,B} 预测成两条普通边计 2 FP、1 FN。
+- `scope` 为 `[{relation_id,member:EntityMatcher}]`；relation_id 引用参考中期望存在的
+  单边或组的 reference_id，member 须是该父声明的对象。单边仅在需要被引用时添加
+  reference_id。拒绝悬空、循环、重复或冲突的 one_of 范围。
+- 预测范围按父声明的精确 ID/revision 解析，再比较父声明完整语义、所选成员及嵌套范围，
+  不要求预测生成 ID 等于参考 ID。父声明缺失、过期、限定改变或独立原文证明不匹配时，
+  子声明不能计 TP。默认视图漏交付的预期声明仍计 FN。
+
+`metrics.relationship_group` 单列组；`metrics.assertions/overall` 纳入组，保留原单边指标。
+条件、模态和 scope 参与精确匹配，typed applicability 的文字/谓词参与语义比较，来源坐标
+不充当限定语义。未裁决预测仍单列 unscored 与精度上下界；
+`undetermined_reference_assertions` 即使没有预测也显示参考未决数量。原 `paths` 仍只枚举
+实际连续单边路径，不把选择组自动展开成多条事实路径；组及其后继完整范围在声明指标评分。
+
+正式评分继续要求 approved 参考及复核人、时间、受控标注包 hash；文档、本体、根类型和
+scope/focus path 必须与预测和 IR 匹配。旧 CMC 专用银标不能靠补写 approved 或改身份变成
+本轮金标。没有合法批准参考时不报告正式 F1，也不把 JSON/协议合规率或工程 fixture 当质量。
+本节仅说明已实现评分能力；实际模型与质量结果另见本次验证制品，部署状态不由此推定。
+设计依据见 [027 模块计划](../../../specs/027-ontology-extraction-engine-v2/plan.md)、
+[任务清单](../../../specs/027-ontology-extraction-engine-v2/tasks.md)与
+[Harness 设计](../../../specs/027-ontology-extraction-engine-v2/harness.md)。上方 022 与领域实验记录保留其历史范围。

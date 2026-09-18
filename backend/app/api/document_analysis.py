@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import json
 from collections.abc import Iterator
 from typing import Annotated, Literal
 from urllib.parse import quote
@@ -46,6 +47,9 @@ from app.schemas.document_analysis import (
     GraphArtifactResponse,
     GraphProjection,
     GraphRanking,
+    HarnessContextResponse,
+    HarnessResponse,
+    HarnessSnapshot,
     MetadataArtifactResponse,
     ReportDocumentSourceResponse,
     RunControlRequest,
@@ -558,6 +562,55 @@ def _read_sse_batch(
         return app.events_response(run, after_sequence=cursor), run.execution_status
 
 
+@router.get("/runs/{recognition_run_id}/harness", response_model=HarnessResponse)
+def get_document_harness(
+    recognition_run_id: UUID,
+    identity: Identity = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    from app.services.document_analysis.harness import read_harness
+
+    app = _application(db)
+    try:
+        run = app.get_run(recognition_run_id, identity.username)
+        return _json_model(HarnessResponse.model_validate(read_harness(app.store, run)),
+                            headers={"Cache-Control": "private, no-store"})
+    except DocumentAnalysisError as exc:
+        return _error(exc)
+
+
+@router.get("/runs/{recognition_run_id}/harness/context", response_model=HarnessContextResponse)
+def get_document_harness_context(
+    recognition_run_id: UUID,
+    call_id: str = Query(min_length=1, max_length=200),
+    identity: Identity = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    from app.services.document_analysis.current_state import get_row
+
+    app = _application(db)
+    try:
+        run = app.get_run(recognition_run_id, identity.username)
+        context = get_row(app.store, run, "display:harness_context")
+        if not context or context["call_id"] != call_id:
+            raise DocumentAnalysisError("CONTEXT_CHANGED", "当前调用已变化，请查看最新上下文",
+                                        status_code=409)
+        return _json_model(HarnessContextResponse.model_validate(
+            {"recognition_run_id": str(recognition_run_id), **context}),
+                            headers={"Cache-Control": "private, no-store"})
+    except DocumentAnalysisError as exc:
+        return _error(exc)
+
+
+def _read_harness_frame(bind, run_id, owner_id):
+    from app.services.document_analysis.current_state import get_row
+
+    with Session(bind) as db:
+        app = _application(db)
+        run = app.get_run(run_id, owner_id)
+        return get_row(app.store, run, "display:harness")
+
+
 @router.get("/runs/{recognition_run_id}/events")
 async def stream_document_analysis_events(
     recognition_run_id: UUID,
@@ -582,6 +635,7 @@ async def stream_document_analysis_events(
 
     async def frames():
         nonlocal cursor
+        harness_head = None
         loop = asyncio.get_running_loop()
         deadline = loop.time() + settings.document_analysis_sse_window_seconds
         terminal = {"finished", "failed", "blocked_dependency", "paused", "cancelled"}
@@ -598,6 +652,21 @@ async def stream_document_analysis_events(
                 )
             except DocumentAnalysisError:
                 return
+            try:
+                snapshot = await asyncio.to_thread(
+                    _read_harness_frame, bind, recognition_run_id, identity.username,
+                )
+            except DocumentAnalysisError:
+                return
+            head = (snapshot["session_id"], snapshot["sequence"]) if snapshot else None
+            if head is not None and head != harness_head:
+                # This is a current display replacement, not a durable run event.
+                data = {
+                    "recognition_run_id": str(recognition_run_id),
+                    "snapshot": HarnessSnapshot.model_validate(snapshot).model_dump(mode="json"),
+                }
+                yield "event: harness\ndata: " + json.dumps(data, ensure_ascii=False) + "\n\n"
+                harness_head = head
             for sequence, event_type, data in events:
                 event = SseEvent(id=sequence, event=event_type, data=data)
                 yield (

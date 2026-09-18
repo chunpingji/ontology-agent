@@ -213,6 +213,17 @@ def _raw_span(raw, source, field, sources):
         # cannot bypass the same boundary checks as a bare number (25).
         scalar_start = start + len(raw) - len(raw.lstrip())
         before, after = text[:scalar_start], text[end:]
+        # Endpoint policies select a value only after the full interval has
+        # been quoted and independently verified. A scalar citation cannot
+        # hide the other endpoint or the open/closed brackets.
+        for interval in re.finditer(r"[\[(（［][^\[\]()（）［］\r\n]{1,256}[\])）］]", text):
+            if interval.start() < scalar_start and end < interval.end():
+                try:
+                    if parse_quantity(interval[0], datatype="decimal").kind == "range":
+                        raise ValueError("scalar_value_required")
+                except LiteralNormalizationError as exc:
+                    if str(exc) == "empty or reversed interval":
+                        raise ValueError("scalar_value_required") from exc
         if re.search(r"[\d.eE+−－-]$", before) or re.match(r"[\d.eE]", after):
             raise ValueError("numeric_substring_not_full_value")
         if (re.search(r"(?:不超过|不低于|不得过|小于|大于|至少|最多|[<>≤≥约])\s*$", before)

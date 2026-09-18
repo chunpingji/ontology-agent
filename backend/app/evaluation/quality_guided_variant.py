@@ -33,6 +33,7 @@ from app.services.extraction.ontology_guided.executor import (
     RecognitionAdapter,
     TaskOutcome,
 )
+from app.services.extraction.ontology_guided.heuristic_search import HeuristicSearchPolicy
 from app.services.extraction.ontology_guided.ontology_plan import compile_local_menu
 from app.services.extraction.ontology_guided.semantic_reranker import RankingService
 from app.services.llm.model_runtime import model_scope
@@ -93,8 +94,10 @@ class _ObservedAdapter:
     ) -> None:
         self.delegate = delegate
         self.model_identity = delegate.model_identity
+        self.protocol_version = getattr(delegate, "protocol_version", None)
         self.callback = callback
         self.calls: list[AdapterCall] = []
+        self.protocol_results: dict = {}
 
     def inspect(self, task, context, predicate, menu) -> TaskOutcome:
         started = perf_counter()
@@ -121,6 +124,8 @@ class _ObservedAdapter:
             )
             self._record(call)
             raise
+        finally:
+            self.protocol_results.update(deepcopy(getattr(context, "protocol_results", {})))
         call = AdapterCall(
             **common,
             elapsed_seconds=perf_counter() - started,
@@ -182,6 +187,7 @@ class OntologyGuidedEvaluationRunner:
                 return True
             return hop < len(self.focus_path) and predicate.iri == self.focus_path[hop]
 
+        tool_protocol = self.observed_adapter.protocol_version == "ontology-tool-extraction-v1"
         self.executor = OntologyGuidedExecutor(
             ontology=ontology,
             engine=engine or object(),
@@ -193,6 +199,10 @@ class OntologyGuidedEvaluationRunner:
             predicate_filter=predicate_filter,
             ranking_service=ranking_service,
             max_model_calls_per_record=max_model_calls_per_record,
+            current_state=tool_protocol,
+            incremental_performance=tool_protocol,
+            candidate_policy="sparse-candidates-v1" if tool_protocol else None,
+            heuristic_policy=HeuristicSearchPolicy.generic() if tool_protocol else None,
         )
 
     def run(
@@ -264,7 +274,21 @@ class OntologyGuidedEvaluationRunner:
         def publish_model_calls(state):
             if self.model_call_hook is not None:
                 self.model_call_hook(state)
-            self.latest_model_call_state = deepcopy(state)
+            if state.get("current_calls"):
+                latest = self.latest_model_call_state
+                for key in ("version", "recognition_run_id", "run_fingerprint",
+                            "reservation_sequence"):
+                    latest[key] = state[key]
+                for domain in ("lineage_calls", "protocols"):
+                    rows = latest.setdefault(domain, {})
+                    for row in state[domain].values():
+                        rows[row["key"]] = deepcopy(row["value"])
+                latest.setdefault("reservations", []).extend(deepcopy(state["reservations"]))
+                self.observed_adapter.protocol_results.update(deepcopy(
+                    state.get("result_changes", {}),
+                ))
+            else:
+                self.latest_model_call_state = deepcopy(state)
 
         scope = {"run_id": recognition_run_id, "task_id": f"evaluation:{recognition_run_id}"}
         if self.scheduler_bind is not None:
@@ -283,6 +307,7 @@ class OntologyGuidedEvaluationRunner:
                 model_call_hook=publish_model_calls,
             )
         return OntologyGuidedEvaluationResult(
+            executor_version=self.executor.version,
             recognition_run_id=recognition_run_id,
             run_fingerprint=run_fingerprint,
             model_identity=self.observed_adapter.model_identity,
@@ -307,7 +332,7 @@ class OntologyGuidedEvaluationRunner:
                 ),
             },
             model_call_state=deepcopy(
-                getattr(execution, "model_call_state", self.latest_model_call_state)
+                execution.model_call_state or self.latest_model_call_state
             ),
         )
 

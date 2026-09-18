@@ -193,10 +193,11 @@ def test_semantic_admission_requires_committed_epoch_and_source_membership(tmp_p
         search.accept_semantic([rid, rid], "epoch", committed=True)
 
 
-def test_valid_empty_discovery_continues_search_instead_of_technical_block(tmp_path):
+@pytest.mark.parametrize("reason", ["no_candidate_observed", "record_no_claims"])
+def test_valid_empty_discovery_continues_search_instead_of_technical_block(tmp_path, reason):
     search = _search(tmp_path, ["分子量：请参见附录", "附录另有描述"])
     page = search.next_admission()
-    search.observe(page.record_ids[0], "not_checked", True, "no_candidate_observed")
+    search.observe(page.record_ids[0], "not_checked", True, reason)
     assert search.next_admission() is None
     assert search.needs_semantic
     assert search.snapshot()["examined_count"] == 1

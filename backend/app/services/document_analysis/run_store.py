@@ -32,6 +32,7 @@ from app.models.document_analysis import (
     DocumentRunArtifactHead,
     DocumentRunCandidate,
     DocumentRunCandidateHead,
+    DocumentRunCurrentState,
     DocumentVerificationProof,
     DocumentVerificationProofHead,
 )
@@ -670,6 +671,25 @@ class DocumentAnalysisRunStore:
                 # starts one new window; automatic replacement remains running.
                 progress_values.update(last_progress_at=stamp, recovery_attempts=0,
                                        recovery_event_head=run.event_head)
+                from app.services.document_analysis import current_state
+                from app.services.document_analysis.state_artifacts import performance_policy
+
+                if performance_policy(self, run).get("execution_budget") is not None:
+                    # Explicit start/resume resets only this continuous window.
+                    # Lease recovery keeps the same row and cumulative requests.
+                    # Preserve an explicitly adjusted time limit on continuation.
+                    budget_window = current_state.get_row(self, run, "execution:budget") or {}
+                    budget_window.update(
+                        started_at=stamp.isoformat(),
+                        model_calls_baseline=int(
+                            (run.progress or {}).get("model_calls_reserved", 0)
+                        ),
+                    )
+                    current_state.put_rows(
+                        self, run, DocumentRunCurrentState, "execution:budget",
+                        {"current": budget_window},
+                        work_version=run.work_version,
+                    )
             elif not progress_values and run.execution_status in {"running", "pausing"}:
                 progress_values["recovery_attempts"] = execution.recovery_attempts + 1
             changed = self.db.execute(

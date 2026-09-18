@@ -256,11 +256,16 @@ def test_single_row_study_owner_keeps_its_own_pde(data, subject, ref, raw):
 @pytest.mark.parametrize("text,raw,expected_issue", [
     ("温度不超过25℃", "25℃", "scalar_value_required"),
     ("温度50~55℃", "55℃", "scalar_value_required"),
+    ("温度[1,2]℃", "1", "scalar_value_required"),
+    ("温度(1,2]℃", "2", "scalar_value_required"),
+    ("温度[2,1]℃", "1", "scalar_value_required"),
+    ("温度［1，2）℃", "2", "scalar_value_required"),
     ("温度25℃", "5℃", "numeric_substring_not_full_value"),
     ("温度25℃", "25℃", None),
     ("温度不超过25℃", "不超过25℃", None),
     ("温度≤25℃", "≤25℃", None),
     ("温度50~55℃", "50~55℃", None),
+    ("温度[1,2)℃", "[1,2)℃", None),
 ])
 def test_quantity_units_cannot_bypass_source_boundaries_before_metric_check(
     text, raw, expected_issue,

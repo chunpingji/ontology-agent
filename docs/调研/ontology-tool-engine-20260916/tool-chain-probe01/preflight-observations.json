@@ -1,0 +1,9 @@
+{
+  "real_model_requests": 0,
+  "initial_selected_evidence_id": "332f40090c06eff4f9c04e9d2de846cf6dc7e535341ae6a246ccaec1fb376310",
+  "initial_error": "RecordIndex.records_by_evidence contains no data record for table:0,row0 header unit",
+  "actual_selected_evidence_id": "16438631527487298ec0944d6b00559c2dbb71c7e9387096dd808d8c26ccaeda",
+  "actual_record_id": "c54c3238c67bc1e9fa52ed792378ddd68de02b3bd416cef9d369eece2f2971e9",
+  "ir_or_parser_modified": false,
+  "scenario_selection": "explicit test fixture: existing usesEquipment predicate, complete indexed table:6,row1, original RE64611 substring, and directed tool choices; not autonomous discovery"
+}

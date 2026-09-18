@@ -31,3 +31,10 @@ def check_cancelled():
     check = runtime.get().get("should_stop")
     if check and check():
         raise ModelCancelled()
+
+
+def observe(event_type: str, **payload):
+    """Optional display-only callback; never an input or proof source."""
+    callback = runtime.get().get("on_harness_event")
+    if callback is not None:
+        callback(event_type, payload)

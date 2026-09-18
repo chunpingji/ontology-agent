@@ -322,9 +322,14 @@ class DocumentAnalysisApplication:
         from app.services.document_analysis.adaptive_configuration import configured_adaptive_policy
 
         try:
-            adaptive = configured_adaptive_policy(settings)
+            tool_engine = not (origin or {}).get("template_id")
+            adaptive = configured_adaptive_policy(settings) if not tool_engine else None
             if adaptive is not None:
                 adaptive.validate_ontology_context(ontology)
+            if tool_engine:
+                from app.services.document_analysis.execution import freeze_tool_engine_policy
+
+                tool_policy = freeze_tool_engine_policy()
         except (ValueError, OSError) as exc:
             self.storage.discard_run(run_id)
             raise DocumentAnalysisError(
@@ -360,12 +365,14 @@ class DocumentAnalysisApplication:
                 recognition_run_id=run_id,
                 progress=(
                     {"candidate_policy": "sparse-candidates-v1", "completion": "incomplete"}
-                    if settings.document_analysis_evidence_repair_enabled else {}
+                    if (tool_policy.get("candidate_planning") if tool_engine
+                        else settings.document_analysis_evidence_repair_enabled)
+                    else {}
                 ),
                 source_payload={
                     "filename": staged.filename,
                     "document_hash": staged.document_hash,
-                    "performance_policy": {
+                    "performance_policy": tool_policy if tool_engine else {
                         "state_storage_version": CURRENT_STATE_STORAGE_VERSION,
                         "frontier_version": 2,
                         "recognition_inflight": 1,
@@ -399,7 +406,7 @@ class DocumentAnalysisApplication:
                             "proof_menu": "proof-menu-v1", "identity": "physical-mention-v1",
                             "model_call_state_version": 2, "max_lineage_calls": 8}
                            if settings.document_analysis_evidence_repair_enabled else {}),
-                    } if (CURRENT_STATE_STORAGE_VERSION == 4
+                    } if (tool_engine or CURRENT_STATE_STORAGE_VERSION == 4
                           or settings.document_analysis_performance_enabled
                           or settings.document_analysis_evidence_repair_enabled) else {},
                     **({"origin": origin} if origin is not None else {}),
@@ -491,7 +498,9 @@ class DocumentAnalysisApplication:
 
         manifest = dict(run.artifact_manifest or {})
         ontology_entry = manifest.get("ontology_snapshot") or {}
+        protocol = self._extraction_protocol(run)
         return {
+            **({"extraction_protocol": protocol} if protocol is not None else {}),
             "contract_version": CONTRACT_VERSION,
             "recognition_run_id": run.recognition_run_id,
             "run_revision": run.revision,
@@ -530,6 +539,13 @@ class DocumentAnalysisApplication:
             "finished_at": _aware(run.finished_at),
             "expires_at": _aware(run.expires_at),
         }
+
+    def _extraction_protocol(self, run: DocumentAnalysisRun) -> str | None:
+        source_id = ((run.artifact_manifest or {}).get("source") or {}).get("artifact_id")
+        source = self.db.get(DocumentAnalysisArtifact, source_id) if source_id else None
+        return ((source.payload or {}).get("performance_policy") or {}).get(
+            "extraction_protocol"
+        ) if source else None
 
     def _artifact_payload(
         self, run: DocumentAnalysisRun, kind: str
@@ -645,6 +661,11 @@ class DocumentAnalysisApplication:
     def graph_response(self, run: DocumentAnalysisRun, *, projection: str) -> dict[str, Any]:
         if projection not in PUBLIC_TO_INTERNAL_PROJECTION:
             raise DocumentAnalysisError("INVALID_REQUEST", "未知 graph projection", status_code=400)
+        protocol = self._extraction_protocol(run)
+        if projection == "verified" and protocol != "ontology-tool-extraction-v1":
+            raise DocumentAnalysisError(
+                "unsupported_projection", "此运行的冻结协议不支持 verified 投影", status_code=400,
+            )
         compact = self._artifact_payload(run, "public_graph")
         committed = compact or self._artifact_payload(run, "graph")
         summary = self._artifact_payload(run, "ranking_summary")
@@ -652,6 +673,8 @@ class DocumentAnalysisApplication:
         ranking_state = ranking_artifact[0] if ranking_artifact else {}
         if committed is None:
             return {
+                **({"extraction_protocol": protocol, "relationship_groups": [],
+                    "scope_resolutions": []} if protocol is not None else {}),
                 "contract_version": CONTRACT_VERSION,
                 "recognition_run_id": run.recognition_run_id,
                 "run_revision": run.revision,
@@ -702,20 +725,34 @@ class DocumentAnalysisApplication:
             availability=availability,
             projection="all_candidates" if projection == "rejected" else projection,
             stored_payload=payload,
+            extraction_protocol=protocol,
         )
         if projection == "rejected":
             response["projection"] = projection
             for public_name, source_name in (("properties", "properties"),
-                                             ("relationships", "edges")):
+                                             ("relationships", "edges"),
+                                             ("relationship_groups", "relationship_groups")):
+                if public_name not in response:
+                    continue
                 selected = {
                     (item["candidate_id"], item["revision"])
-                    for item in payload["graph"][source_name]
+                    for item in payload["graph"].get(source_name, [])
                     if item["decision_status"] == "unsupported"
                     or item.get("independent_review") == "rejected"
                 }
                 response[public_name] = [
                     item for item in response[public_name]
                     if (item["candidate_id"], item["revision"]) in selected
+                ]
+            if "scope_resolutions" in response:
+                used_scopes = {
+                    item["scope"]["scope_id"]
+                    for name in ("properties", "relationships", "relationship_groups")
+                    for item in response.get(name, []) if item.get("scope")
+                }
+                response["scope_resolutions"] = [
+                    scope for scope in response["scope_resolutions"]
+                    if scope["scope_id"] in used_scopes
                 ]
         response["ranking"]["budget_enabled"] = run.ranking_budget_enabled
         if summary:

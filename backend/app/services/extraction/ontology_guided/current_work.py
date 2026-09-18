@@ -8,6 +8,215 @@ from __future__ import annotations
 
 import json
 from functools import wraps
+from typing import Any, Literal, NotRequired, TypedDict
+
+from app.services.extraction.evidence_identity import evidence_hash
+
+TOOL_PROTOCOL_VERSION = "ontology-tool-extraction-v1"
+
+
+class ModelTurnResult(TypedDict):
+    attempt: int
+    stage: Literal["discovery", "verification"]
+    input_hash: str
+    allowed_tool_names: list[str]
+    response_id: str
+    output_items: list[dict[str, Any]]
+    response_status: str
+    incomplete_details: dict[str, Any] | None
+    error: dict[str, Any] | None
+    usage: dict[str, Any] | None
+
+
+class ToolResultRecord(TypedDict):
+    attempt: int
+    call_id: str
+    result: dict[str, Any]
+
+
+class ToolProtocolState(TypedDict):
+    version: Literal["ontology-tool-extraction-v1"]
+    lineage_id: str
+    base_target: dict[str, Any]
+    scope_id: str
+    api_protocol: Literal["responses"]
+    stage: Literal["discovery", "verification", "finalize"]
+    assertion_generation: int
+    evidence_revision: int
+    evidence_hash: str
+    context_hash: str
+    request_attempt: int
+    completed_attempts: list[int]
+    active_instructions: str
+    stage_input_items: list[dict[str, Any]]
+    pending_request: dict[str, Any] | None
+    turn_refs: list[str]
+    completed_tool_results: list[str]
+    tool_calls_used: int
+    materialized_refs: dict[str, dict[str, Any]]
+    context_authorization: dict[str, Any] | None
+    discovery_ref: str | None
+    verification_ref: str | None
+    outcome_ref: str | None
+    recovery_kind: Literal["none", "evidence", "reproposal"]
+    recovery_used: bool
+    reference_context: NotRequired[dict[str, Any]]
+
+
+def call_request_key(receipt):
+    """Shared reservation identity; the core does not import its persistence layer."""
+    attempt = receipt.get("protocol_attempt")
+    return (
+        evidence_hash([receipt["lineage_id"], attempt])
+        if attempt is not None
+        else str(receipt["sequence"])
+    )
+
+
+def protocol_result_ref(lineage_id: str, field: str, value: dict) -> str:
+    """Exact Responses/tool slots cannot be overwritten by a different paid result."""
+    identity = (
+        value["attempt"] if field == "model_turn"
+        else [value["attempt"], value["call_id"]] if field == "tool_result"
+        else value
+    )
+    return evidence_hash([lineage_id, field, identity])
+
+
+def responses_request_hash(request: dict) -> str:
+    """Hash the complete wire request, including instructions and all input items."""
+    return evidence_hash({"api_protocol": "responses", "request": request})
+
+
+def _digest(value):
+    return (
+        isinstance(value, str) and len(value) == 64
+        and all(char in "0123456789abcdef" for char in value)
+    )
+
+
+def _valid_allowed_tools(names, stage) -> bool:
+    from app.services.extraction.ontology_guided.tool_contracts import TOOL_DEFINITIONS
+
+    return (
+        isinstance(names, list) and all(isinstance(name, str) for name in names)
+        and len(names) == len(set(names))
+        and all(name in TOOL_DEFINITIONS and TOOL_DEFINITIONS[name].model_callable
+                and stage in TOOL_DEFINITIONS[name].allowed_stages for name in names)
+    )
+
+
+def validate_tool_protocol(protocol: dict) -> None:
+    """Validate only the current protocol shape, without loading result history."""
+    required = ToolProtocolState.__required_keys__ - {"reference_context"}
+    if (not isinstance(protocol, dict) or not required <= set(protocol)
+            or set(protocol) - required - {"reference_context"}):
+        raise ValueError("tool protocol must contain only its current state fields")
+    reference_context = protocol.get("reference_context")
+    if "reference_context" in protocol:
+        from app.services.extraction.ontology_guided.contracts import VersionedRef
+
+        if (not isinstance(reference_context, dict)
+                or set(reference_context) != {"version", "entity_refs"}
+                or type(reference_context["version"]) is not int
+                or reference_context["version"] != 1
+                or not isinstance(reference_context["entity_refs"], list)):
+            raise ValueError("reference context invalid")
+        refs = [VersionedRef.model_validate(ref, strict=True)
+                for ref in reference_context["entity_refs"]]
+        if len({(ref.id, ref.revision) for ref in refs}) != len(refs):
+            raise ValueError("reference context duplicates")
+    if (protocol["version"] != TOOL_PROTOCOL_VERSION or protocol["api_protocol"] != "responses"
+            or protocol["stage"] not in {"discovery", "verification", "finalize"}
+            or not isinstance(protocol["lineage_id"], str) or not protocol["lineage_id"]
+            or not isinstance(protocol["base_target"], dict)
+            or not isinstance(protocol["active_instructions"], str)
+            or protocol["recovery_kind"] not in {"none", "evidence", "reproposal"}
+            or type(protocol["recovery_used"]) is not bool):
+        raise ValueError("tool protocol identity or stage is invalid")
+    for field in (
+        "assertion_generation", "evidence_revision", "request_attempt", "tool_calls_used",
+    ):
+        if type(protocol[field]) is not int or protocol[field] < 0:
+            raise ValueError("tool protocol counters must be nonnegative integers")
+    for field in ("scope_id", "evidence_hash", "context_hash"):
+        if not _digest(protocol[field]):
+            raise ValueError("tool protocol dependency hash is invalid")
+    completed = protocol["completed_attempts"]
+    if (not isinstance(completed, list)
+            or any(type(n) is not int or not 1 <= n <= protocol["request_attempt"]
+                   for n in completed)
+            or completed != sorted(set(completed))):
+        raise ValueError("tool protocol response receipts are invalid")
+    for field in ("turn_refs", "completed_tool_results"):
+        refs = protocol[field]
+        if (not isinstance(refs, list)
+                or any(not isinstance(ref, str) or not ref for ref in refs)
+                or len(refs) != len(set(refs))):
+            raise ValueError("tool protocol result references are invalid")
+    if (not isinstance(protocol["stage_input_items"], list)
+            or any(not isinstance(item, dict) for item in protocol["stage_input_items"])):
+        raise ValueError("tool protocol initial input items are invalid")
+    if (not isinstance(protocol["materialized_refs"], dict)
+            or any(not isinstance(key, str) or not key or not isinstance(value, dict)
+                   for key, value in protocol["materialized_refs"].items())):
+        raise ValueError("tool protocol materialized references are invalid")
+    authorization = protocol["context_authorization"]
+    if authorization is not None and (
+        not isinstance(authorization, dict)
+        or {"evidence_revision", "evidence_hash", "context_hash"}.intersection(authorization)
+    ):
+        raise ValueError("current authorization cannot duplicate protocol revision or hashes")
+    for field in ("discovery_ref", "verification_ref", "outcome_ref"):
+        if protocol[field] is not None and (
+            not isinstance(protocol[field], str) or not protocol[field]
+        ):
+            raise ValueError("tool protocol stage result reference is invalid")
+    pending = protocol["pending_request"]
+    if pending is not None and (
+        not isinstance(pending, dict)
+        or set(pending) != {
+            "attempt", "stage", "request_hash", "reservation_key", "allowed_tool_names",
+        }
+        or type(pending["attempt"]) is not int or pending["attempt"] < 1
+        or pending["attempt"] != protocol["request_attempt"]
+        or pending["stage"] not in {"discovery", "verification"}
+        or pending["stage"] != protocol["stage"]
+        or not _digest(pending["request_hash"])
+        or not _valid_allowed_tools(pending["allowed_tool_names"], pending["stage"])
+        or pending["reservation_key"] != call_request_key({
+            "lineage_id": protocol["lineage_id"], "protocol_attempt": pending["attempt"],
+        })
+    ):
+        raise ValueError("tool protocol pending reservation is invalid")
+    evidence_hash(protocol)  # Reject non-JSON values and non-finite protocol numbers.
+
+
+def validate_protocol_result(field: str, value: dict) -> None:
+    if not isinstance(value, dict):
+        raise ValueError("protocol result must be a JSON object")
+    if field == "model_turn":
+        if (set(value) != ModelTurnResult.__required_keys__
+                or type(value["attempt"]) is not int or value["attempt"] < 1
+                or value["stage"] not in {"discovery", "verification"}
+                or not _digest(value["input_hash"])
+                or not _valid_allowed_tools(value["allowed_tool_names"], value["stage"])
+                or not isinstance(value["response_id"], str) or not value["response_id"]
+                or not isinstance(value["response_status"], str) or not value["response_status"]
+                or not isinstance(value["output_items"], list)
+                or any(not isinstance(item, dict) for item in value["output_items"])
+                or any(value[key] is not None and not isinstance(value[key], dict)
+                       for key in ("incomplete_details", "error", "usage"))):
+            raise ValueError("model turn result is invalid")
+    elif field == "tool_result":
+        if (set(value) != ToolResultRecord.__required_keys__
+                or type(value["attempt"]) is not int or value["attempt"] < 1
+                or not isinstance(value["call_id"], str) or not value["call_id"]
+                or not isinstance(value["result"], dict)):
+            raise ValueError("tool result identity is invalid")
+    elif field not in {"discovery", "verification", "outcome"}:
+        raise ValueError("unknown tool protocol result field")
+    evidence_hash(value)
 
 
 def json_value(value):

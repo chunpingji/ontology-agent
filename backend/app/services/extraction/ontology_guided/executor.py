@@ -15,7 +15,7 @@ from dataclasses import asdict
 from threading import get_ident
 from typing import Literal, Protocol
 
-from pydantic import Field
+from pydantic import Field, model_serializer
 
 from app.schemas.evidence import EvidenceAnchor, EvidenceModel
 from app.services.extraction.annotation_execution import ExecutionLost
@@ -35,6 +35,7 @@ from app.services.extraction.ontology_guided.contracts import (
     GraphEdge,
     GraphNode,
     GraphProperty,
+    GraphRelationshipGroup,
     GraphSnapshot,
     LocalMenu,
     MetadataSnapshot,
@@ -43,17 +44,21 @@ from app.services.extraction.ontology_guided.contracts import (
     RunProgress,
     SlotSpec,
     SubjectRef,
+    TraversalScope,
     VerificationTarget,
     VersionedRef,
 )
 from app.services.extraction.ontology_guided.current_work import (
+    TOOL_PROTOCOL_VERSION,
     SlotParts,
     WorkMap,
     WorkSet,
+    call_request_key,
     enable_plan_parts,
     enable_search_parts,
     json_value,
     plan_header,
+    protocol_result_ref,
     restore_search_parts,
     search_current_changes,
 )
@@ -72,12 +77,14 @@ from app.services.extraction.ontology_guided.heuristic_search import (
     HeuristicSearchPolicy,
     HeuristicSlotSearch,
 )
+from app.services.extraction.ontology_guided.lazy_frontier import slot_key, subject_key
 from app.services.extraction.ontology_guided.ontology_plan import (
     CMC_DESCRIBES_SCOPE_VERSION,
     compile_local_menu,
 )
 from app.services.extraction.ontology_guided.projection import (
     effective_proof_gate,
+    frontier_eligibility,
     project_graph,
 )
 from app.services.extraction.ontology_guided.ranking_execution import RankingPreparation
@@ -124,11 +131,25 @@ class TaskOutcome(EvidenceModel):
     reason_code: str = Field(min_length=1)
     reason: str = Field(min_length=1)
     model_calls: int = Field(default=0, ge=0)
+    controller_checks: dict[str, int | float] = Field(default_factory=dict)
     nodes: list[GraphNode] = Field(default_factory=list)
     edges: list[GraphEdge] = Field(default_factory=list)
     properties: list[GraphProperty] = Field(default_factory=list)
+    relationship_groups: list[GraphRelationshipGroup] = Field(default_factory=list)
     proof_payloads: list[dict] = Field(default_factory=list)
     decision_payloads: list[dict] = Field(default_factory=list)
+    reference_resolutions: list[dict] = Field(default_factory=list)
+
+    @model_serializer(mode="wrap")
+    def preserve_legacy_shape(self, handler):
+        data = handler(self)
+        if "relationship_groups" not in self.model_fields_set:
+            data.pop("relationship_groups", None)
+        if "controller_checks" not in self.model_fields_set:
+            data.pop("controller_checks", None)
+        if "reference_resolutions" not in self.model_fields_set:
+            data.pop("reference_resolutions", None)
+        return data
 
 
 class RecognitionAdapter(Protocol):
@@ -211,6 +232,12 @@ class OntologyGuidedExecutor:
         current_state: bool = False,
     ):
         self.current_state = current_state
+        self.tool_protocol = getattr(adapter, "protocol_version", None) == TOOL_PROTOCOL_VERSION
+        self.reference_resolution = self.tool_protocol and bool(
+            getattr(adapter, "reference_resolution", False)
+        )
+        if self.tool_protocol and (not current_state or evidence_repair):
+            raise ValueError("tool protocol requires current state without legacy evidence repair")
         self.ontology = ontology
         self.engine = engine
         self.adapter = adapter
@@ -223,7 +250,8 @@ class OntologyGuidedExecutor:
         self.phase_interleaving = phase_interleaving
         if max_model_calls_per_record < 1:
             raise ValueError("per-record model budget must be positive")
-        self.max_model_calls_per_record = max_model_calls_per_record
+        self.max_model_calls_per_record = (min(max_model_calls_per_record, 4)
+                                           if self.tool_protocol else max_model_calls_per_record)
         self.priority_paths = list(dict.fromkeys(tuple(path) for path in priority_paths or []))
         self.lazy_frontier = lazy_frontier
         self.template_interleaving = template_interleaving
@@ -246,7 +274,8 @@ class OntologyGuidedExecutor:
         if candidate_policy not in {None, CANDIDATE_POLICY_VERSION}:
             raise ValueError("unsupported candidate planning policy")
         if candidate_policy and (
-            not evidence_repair or not incremental_performance or heuristic_policy is None
+            not (evidence_repair or self.tool_protocol)
+            or not incremental_performance or heuristic_policy is None
             or heuristic_policy.version not in {"heuristic-first-v3", "heuristic-first-v4"}
         ):
             raise ValueError("sparse candidate planning requires durable incremental search")
@@ -259,7 +288,7 @@ class OntologyGuidedExecutor:
         if heuristic_policy is not None and heuristic_policy.version == "heuristic-first-v4" \
                 and adaptive_policy is None:
             raise ValueError("v4 requires a frozen adaptive policy")
-        if incremental_performance and not evidence_repair:
+        if incremental_performance and not (evidence_repair or self.tool_protocol):
             raise ValueError("incremental performance requires evidence repair")
         if evidence_repair:
             self.version = type(self).version + "+evidence-repair-v1"
@@ -269,13 +298,15 @@ class OntologyGuidedExecutor:
             self.version += "+adaptive-retrieval-v1"
         if candidate_policy:
             self.version += "+sparse-candidates-v1"
-        if heuristic_policy is not None and not evidence_repair:
+        if heuristic_policy is not None and not evidence_repair and not self.tool_protocol:
             self.version = type(self).version + "+heuristic-first-experiment-v1"
         if layered_recognition:
             self.version += "+" + (DEPENDENCY_READY_VERSION if source_object_recognition
                                    else LAYERED_RECOGNITION_VERSION)
         if cmc_describes_type_scope:
             self.version += "+cmc-describes-" + CMC_DESCRIBES_SCOPE_VERSION
+        if self.tool_protocol:
+            self.version += "+" + TOOL_PROTOCOL_VERSION
 
     @staticmethod
     def root_node(
@@ -323,10 +354,13 @@ class OntologyGuidedExecutor:
         property_repairs: list[dict] | None = None,
         repair_only: bool = False,
         work_hook: Callable[[dict], None] | None = None,
+        protocol_result_loader: Callable[[str, str, str], dict] | None = None,
     ) -> ExecutionResult:
+        has_protocol = self.evidence_repair or self.tool_protocol
+        root_scope = TraversalScope.create() if self.tool_protocol else None
         if self.adaptive_policy is not None:
             self.adaptive_policy.validate_ontology_context(self.ontology)
-        if self.heuristic_policy is not None and not self.evidence_repair and (
+        if self.heuristic_policy is not None and not has_protocol and (
             resume_state is not None or ranking_state is not None or model_call_state is not None
         ):
             raise ValueError("heuristic experiment requires a fresh run; resume is not implemented")
@@ -343,6 +377,8 @@ class OntologyGuidedExecutor:
         work_digest = evidence_hash([recognition_run_id, run_fingerprint])
         pause_counts = work_map()
         applied_model_results = work_map()
+        entity_origins = work_map()
+        reference_resolutions = work_map()
         search_started = time.perf_counter()
         index = RecordIndex(ir)
         search_index = (
@@ -357,7 +393,7 @@ class OntologyGuidedExecutor:
             model_call_state or (resume_state or {}).get("model_call_state") or {}
         )
         if restored_calls and (
-            restored_calls.get("version") != (2 if self.evidence_repair else 1)
+            restored_calls.get("version") != (2 if has_protocol else 1)
             or restored_calls.get("recognition_run_id") != recognition_run_id
             or restored_calls.get("run_fingerprint") != run_fingerprint
         ):
@@ -368,6 +404,21 @@ class OntologyGuidedExecutor:
         reservation_saved = 0
         reservations = list(restored_calls.get("reservations") or [])
         protocols = deepcopy(restored_calls.get("protocols") or {})
+        local_protocol_results = {}
+
+        def load_result(lineage, reference, field):
+            saved = local_protocol_results.get(reference)
+            if saved is not None:
+                if saved["lineage_id"] != lineage or saved["field"] != field:
+                    raise ValueError("protocol_result_reference_mismatch")
+                value = deepcopy(saved["value"])
+            elif protocol_result_loader is not None:
+                value = deepcopy(protocol_result_loader(lineage, reference, field))
+            else:
+                raise ValueError("protocol_result_loader_required")
+            if protocol_result_ref(lineage, field, value) != reference:
+                raise ValueError("protocol_result_reference_mismatch")
+            return value
         from app.services.extraction.ontology_guided.state_delta import freeze_json, thaw_json
 
         if self.incremental_performance:
@@ -436,6 +487,8 @@ class OntologyGuidedExecutor:
             root_class_label=root_class_label,
             filename=filename,
         )
+        if self.tool_protocol:
+            root = root.model_copy(update={"grounding_kind": "document_root"})
         root_subject = SubjectRef(
             entity_id=root.entity_id,
             revision=root.revision,
@@ -529,10 +582,29 @@ class OntologyGuidedExecutor:
         active_hop = 0
         layer_phase = "ready" if dependency_ready else "property"
         registered_subjects = work_map({
-            (root_subject.entity_id, root_subject.revision): {
+            subject_key(root_subject, root_scope): {
                 "subject": root_subject, "hop": 0, "binding_refs": [], "reopen": False,
+                **({"scope": root_scope} if self.tool_protocol else {}),
             },
         })
+        def scope_for_key(key):
+            return registered_subjects[key[:-1]]["scope"] if self.tool_protocol else None
+
+        def slot_subject_is_active(key):
+            return subject_is_active(plans[key].subject, scope_for_key(key))
+
+        def task_key(task):
+            return slot_key(task.subject, task.predicate_iri, task.scope)
+
+        def subject_dependency_ref(subject, scope):
+            identity = (stable_id("subject-scope", [subject.entity_id, scope.scope_id])
+                        if self.tool_protocol else f"subject:{subject.entity_id}")
+            return VersionedRef(id=identity, revision=subject.revision)
+
+        def scoped_subject_dependency(subject, scope):
+            ref = subject_dependency_ref(subject, scope)
+            return f"{ref.id}@{ref.revision}"
+
         slot_completion = SlotCompletionIndex(index)
         if self.current_state:
             slot_completion.receipts = WorkMap()
@@ -541,6 +613,7 @@ class OntologyGuidedExecutor:
         nodes = work_map({root.entity_id: root})
         edges = work_map()
         properties = work_map()
+        relationship_groups = work_map()
         admission_log: list[dict] = []
         frozen_repair = frozen_frontier.get("evidence_repair", {})
         review_replay = ReviewReplay(frozen_frontier.get("expert_review"))
@@ -562,7 +635,7 @@ class OntologyGuidedExecutor:
         def slot_is_active(key):
             if dependency_ready or not layered_recognition or key in expert_reopened_slots:
                 return True
-            registration = registered_subjects.get(key[:2])
+            registration = registered_subjects.get(key[:-1])
             return bool(registration and registration["hop"] == active_hop
                         and predicates[key].kind == layer_phase)
 
@@ -579,7 +652,7 @@ class OntologyGuidedExecutor:
                         and receipt["candidate_ref"] == {
                             "id": candidate.candidate_id, "revision": candidate.revision,
                         }
-                        and subject_is_active(plan.subject)):
+                        and slot_subject_is_active(key)):
                     return True, None
                 slot_completion.reopen(key)
                 search.reopen_satisfied()
@@ -588,7 +661,7 @@ class OntologyGuidedExecutor:
                 }))
             if candidate is None:
                 return False, None
-            if not subject_is_active(plan.subject):
+            if not slot_subject_is_active(key):
                 return False, None
             # Already-admitted work is an actual obligation. Wait for its real
             # verification, preserving failures/retries and coverage unchanged.
@@ -597,13 +670,13 @@ class OntologyGuidedExecutor:
                            for rid in search.admitted)):
                 return True, None
             if any(
-                item.get("slot") == [key[0], key[2]]
+                item.get("slot") == [key[0], key[-1]]
                 and item["status"] in {"queued", "incomplete", "deferred"}
                 for item in evidence_work.items.values()
             ) or any(
                 candidate_tasks.get(claim) is not None
                 and candidate_tasks[claim].subject == plan.subject
-                and candidate_tasks[claim].predicate_iri == key[2]
+                and candidate_tasks[claim].predicate_iri == key[-1]
                 for claim in conflict_claims
             ):
                 return True, None
@@ -645,7 +718,7 @@ class OntologyGuidedExecutor:
                 searches[key].plan = plan
             by_id = {record.record_id: record for record in plan.records}
             search_event("heuristic_admission", {
-                "plan_id": plan.plan_id, "subject_id": key[0], "predicate_iri": key[2],
+                "plan_id": plan.plan_id, "subject_id": key[0], "predicate_iri": key[-1],
                 "stage": page.stage, "source": page.source, "reason": page.reason,
                 "record_ids": list(page.record_ids),
                 "context_record_ids": page.context_record_ids,
@@ -656,7 +729,7 @@ class OntologyGuidedExecutor:
             for position, record_id in enumerate(page.record_ids, 1):
                 record = by_id[record_id]
                 task = RecognitionTask.create(
-                    subject=plan.subject, predicate_iri=key[2],
+                    subject=plan.subject, predicate_iri=key[-1],
                     predicate_kind=predicates[key].kind, record_id=record_id,
                     phase=record.phase, section_node_id=record.section_node_id,
                     source_position=index.record_positions[record_id], **search_tasks[key],
@@ -665,7 +738,7 @@ class OntologyGuidedExecutor:
                 scheduler.enqueue(
                     task, root_branch=plan.subject.is_document_root,
                     template_priority=bool(self.evidence_repair and template_interleaving and any(
-                        path and path[0] == key[2]
+                        path and path[0] == key[-1]
                         for path in subject_priorities.get(plan.subject.entity_id, [])
                     )),
                 )
@@ -693,15 +766,16 @@ class OntologyGuidedExecutor:
             *,
             hop: int,
             reopen: bool = False,
-            binding_edge: GraphEdge | None = None,
+            binding_edge: GraphEdge | GraphRelationshipGroup | None = None,
+            scope: TraversalScope | None = None,
         ) -> None:
             if reopen:
-                scheduler.discard_subject(subject)
+                scheduler.discard_subject(subject, scope=scope)
                 proof_generations[subject.entity_id] = (
                     proof_generations.get(subject.entity_id, 0) + 1
                 )
                 for old_key in list(plans):
-                    if old_key[:2] == (subject.entity_id, subject.revision):
+                    if old_key[:-1] == subject_key(subject, scope):
                         previous = plans.pop(old_key)
                         if self.current_state:
                             searches.pop(old_key, None)
@@ -743,14 +817,14 @@ class OntologyGuidedExecutor:
                           for rid in group.record_ids)]
                     )
                 for slot in menu.properties:
-                    attribute_sources[(subject.entity_id, subject.revision, slot.iri)] = {
+                    attribute_sources[slot_key(subject, slot.iri, scope)] = {
                         rid: sources for rid in source_records
                         if (sources := explicit_attribute_sources(index, rid, slot, owner_refs))
                     }
             ordered_menu = sorted([*menu.relationships, *menu.properties],
                                   key=lambda item: (
-                                      not bool(attribute_sources.get((
-                                          subject.entity_id, subject.revision, item.iri))),
+                                      not bool(attribute_sources.get(
+                                          slot_key(subject, item.iri, scope))),
                                       preferred.get(item.iri, len(paths)),
                                   ))
             # Preferences only determine the first opportunity in each rotation;
@@ -762,10 +836,10 @@ class OntologyGuidedExecutor:
                     subject, predicate, hop
                 ):
                     continue
-                key = (subject.entity_id, subject.revision, predicate.iri)
+                key = slot_key(subject, predicate.iri, scope)
                 if key in plans:
                     if template_interleaving and predicate.iri in preferred:
-                        scheduler.prioritize_slot(subject, predicate.iri)
+                        scheduler.prioritize_slot(subject, predicate.iri, scope=scope)
                     continue
                 plan = plan_slot(
                     subject,
@@ -777,6 +851,8 @@ class OntologyGuidedExecutor:
                     sparse_candidates=bool(self.candidate_policy),
                 )
                 generation = proof_generations.get(subject.entity_id, 0)
+                if self.tool_protocol:
+                    plan.plan_id = stable_id("retrieval-plan-scope", [plan.plan_id, scope.scope_id])
                 if generation:
                     plan.plan_id = stable_id(
                         "retrieval-plan-proof-generation",
@@ -815,11 +891,17 @@ class OntologyGuidedExecutor:
                         if binding_edge else []
                     ),
                 }
+                if self.tool_protocol:
+                    ranking_contexts[plan.plan_id]["dependency_refs"].extend(
+                        ref for step in scope.members
+                        for ref in (step.relation_ref, step.member_ref)
+                    )
                 predicates[key] = predicate
                 events.append(("retrieval_plan_created", plan.model_dump(mode="json")))
                 dependency_hash = evidence_hash([
                     subject.model_dump(mode="json"), predicate.model_dump(mode="json"),
                     ir.analysis_id, menu.menu_id, generation,
+                    *([scope.scope_id] if self.tool_protocol else []),
                 ])
                 if search_index is not None:
                     started = time.perf_counter()
@@ -869,7 +951,8 @@ class OntologyGuidedExecutor:
                         "plan_id": plan.plan_id, "predicate_iri": predicate.iri,
                         "elapsed_seconds": time.perf_counter() - started,
                     })
-                    search_tasks[key] = {"hop": hop, "dependency_hash": dependency_hash}
+                    search_tasks[key] = {"hop": hop, "dependency_hash": dependency_hash,
+                                         **({"scope": scope} if self.tool_protocol else {})}
                     admit_search_page(key)
                     continue
                 if lazy_frontier:
@@ -878,6 +961,7 @@ class OntologyGuidedExecutor:
                         source_positions=index.record_positions,
                         root_branch=subject.is_document_root,
                         template_priority=predicate.iri in preferred,
+                        scope=scope,
                     )
                     continue
                 for record in plan.records:
@@ -892,12 +976,13 @@ class OntologyGuidedExecutor:
                             dependency_hash=dependency_hash,
                             section_node_id=record.section_node_id,
                             source_position=index.record_positions[record.record_id],
+                            scope=scope,
                         ),
                         root_branch=subject.is_document_root,
                     )
 
         if direct is None:
-            add_subject(root_subject, root_menu, hop=0)
+            add_subject(root_subject, root_menu, hop=0, scope=root_scope)
         model_calls = 0
         lineage_calls = work_map()
         candidate_tasks = work_map()
@@ -955,30 +1040,31 @@ class OntologyGuidedExecutor:
                 }
             return state
 
-        def persist_call_boundary():
+        def persist_call_boundary(result_changes=None):
             nonlocal reservation_saved
             if not self.current_state:
                 model_call_hook(current_model_call_state())
                 return
             model_call_hook({
-                "current_calls": 1, "version": 2 if self.evidence_repair else 1,
+                "current_calls": 1, "version": 2 if has_protocol else 1,
                 "recognition_run_id": recognition_run_id, "run_fingerprint": run_fingerprint,
                 "lineage_calls": reserved_calls.drain(), "protocols": protocols.drain(),
                 "reservations": reservations[reservation_saved:],
                 "reservation_sequence": reservation_sequence,
+                **({"result_changes": result_changes} if result_changes else {}),
             })
             reservation_saved = len(reservations)
 
         def current_model_call_state() -> dict:
             return {
-                "version": 2 if self.evidence_repair else 1,
+                "version": 2 if has_protocol else 1,
                 "recognition_run_id": recognition_run_id,
                 "run_fingerprint": run_fingerprint,
                 "lineage_calls": dict(reserved_calls),
                 "reservations": list(reservations) if self.incremental_performance else
                 deepcopy(reservations),
                 **({"protocols": dict(protocols) if self.incremental_performance else
-                    deepcopy(protocols)} if self.evidence_repair else {}),
+                    deepcopy(protocols)} if has_protocol else {}),
             }
 
         call_totals = [0, 0, 0, 0]  # reserved, confirmed, unresolved, deferred types
@@ -999,18 +1085,32 @@ class OntologyGuidedExecutor:
             call_lineage_totals[lineage] = values
 
         def protocol_checkpoint(task, state):
-            if not self.evidence_repair or state.get("lineage_id") != task.claim_lineage_id:
+            if not has_protocol or state.get("lineage_id") != task.claim_lineage_id:
                 raise ModelCallPersistenceFailure("protocol checkpoint lineage mismatch")
+            state = dict(state)
+            result_changes = state.pop("result_changes", None)
+            if self.tool_protocol and state.get("pending_request") is not None:
+                if result_changes:
+                    raise ModelCallPersistenceFailure("pending request cannot publish results")
+                pending = state["pending_request"]
+                reserve_model_call(task, pending["stage"], pending["attempt"], protocol_state=state)
+                return
             protocols[task.claim_lineage_id] = (freeze_json(state) if self.incremental_performance
                                               else deepcopy(state))
             update_call_totals(task.claim_lineage_id)
             if model_call_hook is not None:
                 try:
-                    persist_call_boundary()
+                    persist_call_boundary(result_changes)
                 except Exception as exc:
                     raise ModelCallPersistenceFailure(
                         "protocol checkpoint persistence failed"
                     ) from exc
+            if self.tool_protocol and result_changes:
+                if protocol_result_loader is None:
+                    local_protocol_results.update(deepcopy(result_changes))
+                if (self.progress_hook is not None
+                        and not self.progress_hook("after_protocol_result")):
+                    raise ModelCallPauseRequested("paused after confirmed protocol result")
 
         def remaining_calls(task: RecognitionTask) -> int:
             used = max(
@@ -1026,15 +1126,44 @@ class OntologyGuidedExecutor:
                 remaining = min(remaining, max(0, operation["max_model_calls"] - spent))
             return remaining
 
-        def reserve_model_call(task: RecognitionTask, stage: str, ordinal: int) -> None:
+        def reserve_model_call(
+            task: RecognitionTask, stage: str, ordinal: int, *, protocol_state=None,
+        ) -> None:
             nonlocal reservation_sequence
-            if self.progress_hook is not None and not self.progress_hook("before_model"):
+            if self.tool_protocol:
+                state = protocol_state or protocols.get(task.claim_lineage_id, {})
+                pending = state.get("pending_request")
+                if (pending is None or pending["attempt"] != ordinal or pending["stage"] != stage
+                        or state["lineage_id"] != task.claim_lineage_id):
+                    raise ModelCallPersistenceFailure("request reservation identity mismatch")
+                prior = next((receipt for receipt in reservations
+                              if receipt["lineage_id"] == task.claim_lineage_id
+                              and receipt.get("protocol_attempt") == ordinal), None)
+                if prior is not None:
+                    if (prior["task_id"] != task.task_id or prior["stage"] != stage
+                            or prior.get("input_hash") != pending["request_hash"]
+                            or call_request_key(prior) != pending["reservation_key"]
+                            or (protocol_state is not None and json_value(
+                                protocols.get(task.claim_lineage_id, {})
+                            ) != json_value(protocol_state))):
+                        raise ModelCallPersistenceFailure("request reservation identity changed")
+                    return
+                if protocol_state is None:
+                    raise ModelCallPersistenceFailure("request reservation was not confirmed")
+            if (self.progress_hook is not None
+                    and not self.progress_hook("before_model_reservation" if self.tool_protocol
+                                               else "before_model")):
                 raise ModelCallPauseRequested("execution paused before the model request")
             if not remaining_calls(task):
                 if task.claim_lineage_id in expert_lineages:
                     raise ExpertRepairBudgetExhausted("expert repair model call budget exhausted")
                 raise ModelCallPauseRequested("record model call budget exhausted")
             lineage = task.claim_lineage_id
+            if self.tool_protocol:
+                # Publish the exact pending wire and its reservation together. A
+                # denied budget cannot leave a durable, unreserved pending attempt.
+                protocols[lineage] = (freeze_json(protocol_state) if self.incremental_performance
+                                      else deepcopy(protocol_state))
             reserved_calls[lineage] = max(
                 reserved_calls.get(lineage, 0), lineage_calls.get(lineage, 0)
             ) + 1
@@ -1053,7 +1182,7 @@ class OntologyGuidedExecutor:
                         "run_fingerprint": run_fingerprint}
                        if self.current_state else {}),
                     **({"protocol_attempt": protocols.get(lineage, {}).get("request_attempt")}
-                       if self.evidence_repair else {}),
+                       if has_protocol else {}),
                 }
             )
             if self.incremental_performance:
@@ -1096,18 +1225,10 @@ class OntologyGuidedExecutor:
         def apply_ranking_epoch(epoch) -> None:
             if epoch.epoch_id in applied_epochs:
                 return
-            key = (
-                epoch.subject_ref["entity_id"],
-                epoch.subject_ref["revision"],
-                next(
-                    (
-                        item.predicate_iri
-                        for item in plans.values()
+            key = next((key for key, item in plans.items()
                         if item.plan_id == epoch.plan_id
-                    ),
-                    "",
-                ),
-            )
+                        and item.subject.entity_id == epoch.subject_ref["entity_id"]
+                        and item.subject.revision == epoch.subject_ref["revision"]), None)
             if key not in plans:
                 raise ValueError("ranking epoch references an unavailable subject or plan")
             arguments = ranking_arguments(key)
@@ -1131,9 +1252,10 @@ class OntologyGuidedExecutor:
                 searches[key].plan = plans[key]
             scheduler.reorder_slot(
                 plans[key].subject,
-                key[2],
+                key[-1],
                 epoch.ordered_record_ids,
                 epoch_seq=epoch.epoch_seq,
+                scope=scope_for_key(key),
             )
             applied_epochs.add(epoch.epoch_id)
             unapplied_epochs.pop(epoch.epoch_id, None)
@@ -1148,7 +1270,9 @@ class OntologyGuidedExecutor:
                 return set()
             blocked = set()
             for key, plan in plans.items():
-                upcoming = scheduler.peek_fresh_slot(plan.subject, key[2])
+                upcoming = scheduler.peek_fresh_slot(
+                    plan.subject, key[-1], scope=scope_for_key(key),
+                )
                 if upcoming is None:
                     continue
                 # A historical epoch does not make its unranked tail ready.
@@ -1299,7 +1423,7 @@ class OntologyGuidedExecutor:
                     result = SearchPreparationResult.model_validate(saved_result["result"])
                     key = next((k for k, p in plans.items() if p.plan_id == result.plan_id), None)
                     if (key is not None and slot_is_active(key) and searches[key].needs_semantic
-                            and subject_is_active(plans[key].subject)
+                            and slot_subject_is_active(key)
                             and searches[key].expansion_attempt_id == result.expansion_attempt_id):
                         searches[key].accept_result(result, ranking.gate_evaluations)
                         admit_search_page(key)
@@ -1324,8 +1448,7 @@ class OntologyGuidedExecutor:
                         continue
                     for raw in admission["tasks"]:
                         admitted_task = RecognitionTask.model_validate(raw)
-                        slot = (admitted_task.subject.entity_id, admitted_task.subject.revision,
-                                admitted_task.predicate_iri)
+                        slot = task_key(admitted_task)
                         if slot in plans and self.candidate_policy:
                             epoch = next((item for item in ranking.epochs
                                           if item.epoch_id == admission.get("ranking_epoch_id")),
@@ -1366,7 +1489,7 @@ class OntologyGuidedExecutor:
                 invalidated = (pending_ranking_key not in plans
                                or not slot_is_active(pending_ranking_key)
                                or slot_completion.get(pending_ranking_key) is not None
-                               or not subject_is_active(plans[pending_ranking_key].subject))
+                               or not slot_subject_is_active(pending_ranking_key))
                 if self.incremental_performance and invalidated:
                     pending_ranking.cancel()
                 pending_ranking.drain(publish_preparation)
@@ -1399,7 +1522,7 @@ class OntologyGuidedExecutor:
                     if isinstance(epoch, SearchPreparationResult):
                         if (key in plans and slot_is_active(key)
                                 and plans[key].plan_id == epoch.plan_id
-                                and subject_is_active(plans[key].subject)):
+                                and slot_subject_is_active(key)):
                             accept_preparation_result(epoch)
                         else:
                             ranking.preparation_results[epoch.expansion_attempt_id] = freeze_json({
@@ -1414,7 +1537,7 @@ class OntologyGuidedExecutor:
                         key not in plans
                         or not slot_is_active(key)
                         or plans[key].plan_id != epoch.plan_id
-                        or not subject_is_active(plans[key].subject)
+                        or not slot_subject_is_active(key)
                     ):
                         # Source changes while scoring keep their cost and audit,
                         # but never drive the successor semantic plan.
@@ -1441,21 +1564,19 @@ class OntologyGuidedExecutor:
                         # Close an actually exhausted last page before deciding
                         # whether the dispatch limit left further obligations.
                         for search_key in searches:
-                            if slot_is_active(search_key) and subject_is_active(
-                                plans[search_key].subject
-                            ):
+                            if slot_is_active(search_key) and slot_subject_is_active(search_key):
                                 admit_search_page(search_key)
                     return
                 for search_key in list(searches):
                     if not slot_is_active(search_key):
                         continue
-                    if subject_is_active(plans[search_key].subject):
+                    if slot_subject_is_active(search_key):
                         admit_search_page(search_key)
                     elif self.adaptive_policy:
                         searches[search_key].exhaust_dependency()
                 for search_key, search in searches.items():
                     if (slot_is_active(search_key) and search.needs_semantic
-                            and subject_is_active(plans[search_key].subject)):
+                            and slot_subject_is_active(search_key)):
                         key = search_key
                         break
                 if key is None:
@@ -1491,7 +1612,7 @@ class OntologyGuidedExecutor:
                     (slot for slot, plan in plans.items() if plan.plan_id == paused["plan_id"]),
                     None,
                 )
-                if key is not None and subject_is_active(plans[key].subject):
+                if key is not None and slot_subject_is_active(key):
                     # prepare_next_epoch validates the exact restored epoch's
                     # dependencies before returning a budget pause or retrying
                     # an incomplete technical attempt. No unrelated task may
@@ -1516,9 +1637,7 @@ class OntologyGuidedExecutor:
                 upcoming = scheduler.peek_task()
                 if upcoming is None or upcoming.retry_kind:
                     return
-                key = (
-                    upcoming.subject.entity_id, upcoming.subject.revision, upcoming.predicate_iri,
-                )
+                key = task_key(upcoming)
                 plan = plans[key]
                 if any(
                     epoch.plan_id == plan.plan_id
@@ -1529,7 +1648,7 @@ class OntologyGuidedExecutor:
                     for epoch in ranking.epochs_by_plan.get(plan.plan_id, [])
                 ):
                     return
-                if not subject_is_active(upcoming.subject):
+                if not subject_is_active(upcoming.subject, upcoming.scope):
                     return
             if self.progress_hook is not None and not self.progress_hook("before_ranking"):
                 raise RankingPaused("execution_pause_requested")
@@ -1552,9 +1671,39 @@ class OntologyGuidedExecutor:
                 else:
                     commit_ranking(epoch)
 
-        def subject_is_active(subject: SubjectRef) -> bool:
+        def subject_is_active(subject: SubjectRef, scope: TraversalScope | None = None) -> bool:
             if subject.is_document_root:
                 return True
+            if self.tool_protocol:
+                node = nodes.get(subject.entity_id)
+                if (node is None or node.revision != subject.revision
+                        or node.decision_status != "supported" or node.type_decision_ref is None
+                        or node.referent_decision_ref is None or node.referent_ref is None
+                        or not dependency_index.is_valid_references([
+                            VersionedRef(id=node.entity_id, revision=node.revision),
+                            node.type_decision_ref, node.referent_decision_ref, node.referent_ref,
+                            *node.dependency_refs,
+                        ])):
+                    return False
+                scopes = [scope] if scope is not None else [
+                    item["scope"] for key, item in registered_subjects.items()
+                    if key[:2] == (subject.entity_id, subject.revision)
+                ]
+                return any(
+                    subject_key(subject, value) in registered_subjects
+                    and dependency_index.is_valid(scoped_subject_dependency(subject, value))
+                    and all(
+                        (relation := edges.get(step.relation_ref.id)
+                         or relationship_groups.get(step.relation_ref.id)) is not None
+                        and relation.revision == step.relation_ref.revision
+                        and (member := nodes.get(step.member_ref.id)) is not None
+                        and member.revision == step.member_ref.revision
+                        and dependency_index.is_valid_references(
+                            [step.relation_ref, step.member_ref]
+                        )
+                        for step in value.members
+                    ) for value in scopes
+                )
             node_heads = {item.entity_id: item.revision for item in nodes.values()}
             reached = {root.entity_id}
             changed = True
@@ -1612,7 +1761,7 @@ class OntologyGuidedExecutor:
             if layered_recognition and not dependency_ready:
                 pending_layers = sum(
                     active_hop < item["hop"] <= self.max_hops
-                    and subject_is_active(item["subject"])
+                    and subject_is_active(item["subject"], item.get("scope"))
                     for item in registered_subjects.values()
                 )
                 if layer_phase == "property":
@@ -1621,7 +1770,7 @@ class OntologyGuidedExecutor:
                         for item in registered_subjects.values()
                         if item["hop"] == active_hop
                         and item["subject"].entity_id in menus
-                        and subject_is_active(item["subject"])
+                        and subject_is_active(item["subject"], item.get("scope"))
                     )
                 pending_frontiers += pending_layers
             if self.evidence_repair:
@@ -1667,6 +1816,10 @@ class OntologyGuidedExecutor:
                     and not any(w["status"] in {"queued", "incomplete", "deferred"}
                                 for w in evidence_work.items.values())
                 )
+            if self.tool_protocol:
+                complete = bool(complete and terminal and self.adapter is not None
+                                and not unresolved_calls and not scheduler.pending
+                                and not budget_stopped_slots)
             retrieval_diagnostics = {}
             if self.adaptive_policy:
                 from app.schemas.retrieval_diagnostics import RetrievalDiagnostics
@@ -1688,10 +1841,10 @@ class OntologyGuidedExecutor:
                 **retrieval_diagnostics,
                 **({"candidate_policy": self.candidate_policy} if self.candidate_policy else {}),
                 tasks_attempted=examined + incomplete,
-                model_calls=(call_totals[1] if self.current_state and self.evidence_repair else
+                model_calls=(call_totals[1] if self.current_state and has_protocol else
                              sum(max(lineage_calls.get(key, 0), confirmed.get(key, 0))
                                  for key in set(lineage_calls) | set(confirmed))
-                             if self.evidence_repair else model_calls),
+                             if has_protocol else model_calls),
                 model_calls_reserved=call_totals[0] if self.current_state else sum(
                     reserved_calls.values()),
                 model_calls_unresolved=unresolved_calls,
@@ -1776,6 +1929,7 @@ class OntologyGuidedExecutor:
                         subject_ref=VersionedRef(id=key[0], revision=key[1]),
                         predicate_iri=predicate.iri,
                         predicate_label=predicate.label,
+                        **({"scope": scope_for_key(key)} if self.tool_protocol else {}),
                         phase1=counts["phase1"] if self.current_state else sum(
                             entry.phase == 1 for entry in entries),
                         phase2=counts["phase2"] if self.current_state else sum(
@@ -1858,7 +2012,9 @@ class OntologyGuidedExecutor:
                 coverage=coverage,
                 progress=progress,
                 dependency_index=dependency_index,
-                projection="all",
+                projection="verified" if self.tool_protocol else "all",
+                **({"relationship_groups": list(relationship_groups.values()),
+                    "extraction_protocol": TOOL_PROTOCOL_VERSION} if self.tool_protocol else {}),
                 artifact_status="ready" if complete else "partial",
                 current_content_hash=evidence_hash([work_digest, progress.model_dump(mode="json"),
                                                     run_revision, event_head + completed_tasks])
@@ -1918,7 +2074,28 @@ class OntologyGuidedExecutor:
                     versioned_key(proof_id, int(proof.get("proof_revision", 1))),
                     list(dict.fromkeys(dependencies)),
                 )
-            for candidate in [*outcome.edges, *outcome.properties]:
+            if self.tool_protocol:
+                for resolution in outcome.reference_resolutions:
+                    for field, dependencies_field in (
+                        ("claim_ref", "entity_dependency_refs"),
+                        ("binding_ref", "binding_dependency_refs"),
+                    ):
+                        reference = resolution.get(field)
+                        if reference:
+                            dependency_index.add_proof(
+                                versioned_key(reference["id"], reference["revision"]),
+                                [versioned_key(ref["id"], ref["revision"])
+                                 for ref in resolution.get(dependencies_field, [])],
+                            )
+                for node in outcome.nodes:
+                    refs = [ref for ref in (node.type_decision_ref, node.referent_decision_ref,
+                                             node.composition_decision_ref, node.referent_ref,
+                                             *node.dependency_refs) if ref is not None]
+                    dependency_index.add_proof(
+                        versioned_key(node.entity_id, node.revision),
+                        [versioned_key(ref.id, ref.revision) for ref in refs],
+                    )
+            for candidate in [*outcome.edges, *outcome.properties, *outcome.relationship_groups]:
                 dependencies = [
                     *(
                         [versioned_key(candidate.proof_ref.id, candidate.proof_ref.revision)]
@@ -1935,7 +2112,19 @@ class OntologyGuidedExecutor:
                     ],
                 ]
                 if not task.subject.is_document_root:
-                    dependencies.append(f"subject:{task.subject.entity_id}@{task.subject.revision}")
+                    dependencies.append(scoped_subject_dependency(task.subject, task.scope))
+                if self.tool_protocol:
+                    dependencies.append(versioned_key(
+                        candidate.subject_ref.id, candidate.subject_ref.revision,
+                    ))
+                    endpoints = (candidate.object_refs
+                                 if isinstance(candidate, GraphRelationshipGroup)
+                                 else [candidate.object_ref] if isinstance(candidate, GraphEdge)
+                                 else [])
+                    dependencies.extend(versioned_key(ref.id, ref.revision) for ref in endpoints)
+                    dependencies.extend(versioned_key(ref.id, ref.revision)
+                                        for step in candidate.scope.members
+                                        for ref in (step.relation_ref, step.member_ref))
                 dependency_index.add_proof(
                     versioned_key(candidate.candidate_id, candidate.revision),
                     list(dict.fromkeys(dependencies)),
@@ -2096,11 +2285,76 @@ class OntologyGuidedExecutor:
                     )
                     scheduler.enqueue(recheck, root_branch=original.subject.is_document_root)
 
+        def exact_identity_enrichment(task, current, node, new_refs, outcome):
+            """Bind the append to this lineage's finalized, source-checked link targets."""
+            from app.services.extraction.ontology_guided.claim_protocol import (
+                FrozenClaimSet,
+                VerifiedClaimSet,
+                claim_content_hash,
+            )
+
+            state = protocols.get(task.claim_lineage_id, {})
+            if not all(state.get(field + "_ref") for field in (
+                "discovery", "verification", "outcome",
+            )) or any(ref.revision != 1 for ref in new_refs):
+                return False
+            frozen = FrozenClaimSet.model_validate(load_result(
+                task.claim_lineage_id, state["discovery_ref"], "discovery",
+            ), strict=True)
+            verified = VerifiedClaimSet.model_validate(load_result(
+                task.claim_lineage_id, state["verification_ref"], "verification",
+            ), strict=True)
+            finalized = TaskOutcome.model_validate(load_result(
+                task.claim_lineage_id, state["outcome_ref"], "outcome",
+            ))
+            # Reuse the finalizer's deterministic identity/key/provenance checks;
+            # the coordinator must not accept edited metadata after finalization.
+            if node not in finalized.nodes:
+                return False
+            reference = VersionedRef(id=current.entity_id, revision=current.revision)
+            proposed_decisions = {item["decision_id"]: item for item in outcome.decision_payloads}
+            requested = {ref.id for ref in new_refs}
+            matched = set()
+            for link in frozen.external_links:
+                source_ref = frozen.local_ref_map.get(link.subject_id)
+                resolved = next((item for item in finalized.reference_resolutions
+                                 if item["claim_ref"] == json_value(source_ref)
+                                 and item["entity_ref"] == json_value(reference)), None)
+                if (link.local_id in frozen.claim_issues or source_ref is None
+                        or (source_ref != reference and resolved is None)):
+                    continue
+                dependencies = [source_ref, *(step.relation_ref for step in task.scope.members)]
+                dependencies = [VersionedRef(id=identity, revision=revision)
+                                for identity, revision in sorted({
+                                    (ref.id, ref.revision) for ref in dependencies
+                                })]
+                digest = claim_content_hash("external_link", link, task.scope, dependencies)
+                target_id = evidence_hash({
+                    "claim_ref": frozen.local_ref_map[link.local_id], "content_hash": digest,
+                })
+                target = next((value for value in verified.targets
+                               if value.target_id == target_id and value.content_hash == digest),
+                              None)
+                if (target is None or target.missing_facets or target.validation_issues
+                        or len(target.decisions) != 3
+                        or {value.check_kind for value in target.decisions} != {
+                            "identity_owner", "identity_key", "identity_scope",
+                        }):
+                    continue
+                identities = {value.decision_id for value in target.decisions}
+                if identities <= requested and all(
+                    value.target_id == target_id and value.verdict == "supported"
+                    and value.model_dump(mode="json") == proposed_decisions.get(value.decision_id)
+                    for value in target.decisions
+                ):
+                    matched.update(identities)
+            return bool(requested) and matched == requested
+
         def apply_outcome(
             task: RecognitionTask, outcome: TaskOutcome, excluded_slots: set[tuple],
         ) -> None:
             nonlocal model_calls, completed_tasks, work_digest
-            key = (task.subject.entity_id, task.subject.revision, task.predicate_iri)
+            key = task_key(task)
             plan = plans[key]
             conflicting_node_refs: set[tuple[str, int]] = set()
             canonical_node_refs: dict[tuple[str, int], VersionedRef] = {}
@@ -2108,6 +2362,30 @@ class OntologyGuidedExecutor:
             for node in outcome.nodes:
                 current = accepted_nodes.get(node.entity_id) or nodes.get(node.entity_id)
                 proposed_ref = (node.entity_id, node.revision)
+                if self.tool_protocol and current is not None and node != current:
+                    identity_fields = {
+                        "identity_status", "external_provenance", "identity_decision_refs",
+                    }
+                    new_decisions = [ref for ref in node.identity_decision_refs
+                                     if ref not in current.identity_decision_refs]
+                    if (node.model_dump(exclude=identity_fields)
+                            == current.model_dump(exclude=identity_fields)
+                            and node.identity_status == "verified"
+                            and node.external_provenance
+                            and all(item in node.external_provenance
+                                    for item in current.external_provenance)
+                            and all(ref in node.identity_decision_refs
+                                    for ref in current.identity_decision_refs)
+                            and exact_identity_enrichment(
+                                task, current, node, new_decisions, outcome,
+                            )):
+                        # Independent identity metadata enriches the same referent;
+                        # it never reinterprets its class, root or local identity.
+                        accepted_nodes[node.entity_id] = node
+                        canonical_node_refs[proposed_ref] = VersionedRef(
+                            id=node.entity_id, revision=node.revision,
+                        )
+                        continue
                 if current is not None and current.root:
                     if node != current:
                         conflicting_node_refs.add(proposed_ref)
@@ -2116,6 +2394,26 @@ class OntologyGuidedExecutor:
                 if node.root or node.root_origin == "user_specified":
                     conflicting_node_refs.add(proposed_ref)
                     diagnostics.append("adapter_document_root_proposal_rejected")
+                    continue
+                if self.tool_protocol:
+                    if current and (node.revision < current.revision or (
+                        node.revision == current.revision and node != current
+                    )):
+                        conflicting_node_refs.add(proposed_ref)
+                        diagnostics.append("adapter_node_revision_conflict")
+                        continue
+                    if current and node.revision > current.revision:
+                        dependency_index.invalidate(versioned_key(
+                            current.entity_id, current.revision,
+                        ))
+                        for registration in registered_subjects.values():
+                            old_subject = registration["subject"]
+                            if (old_subject.entity_id == current.entity_id
+                                    and old_subject.revision == current.revision):
+                                dependency_index.invalidate(scoped_subject_dependency(
+                                    old_subject, registration["scope"],
+                                ))
+                    accepted_nodes[node.entity_id] = node
                     continue
                 if self.evidence_repair and current and (
                     current.class_iri != node.class_iri
@@ -2164,9 +2462,26 @@ class OntologyGuidedExecutor:
                 )
             outcome.nodes = list(accepted_nodes.values())
             nodes.update(accepted_nodes)
+            if self.reference_resolution:
+                discovery_ref = protocols.get(task.claim_lineage_id, {}).get("discovery_ref")
+                for resolution in outcome.reference_resolutions:
+                    reference = VersionedRef.model_validate(resolution["entity_ref"])
+                    node = nodes.get(reference.id)
+                    if (discovery_ref is None or node is None
+                            or node.revision != reference.revision
+                            or node.class_iri != resolution["class_iri"]):
+                        raise ValueError("reference_resolution_endpoint_invalid")
+                    reference_resolutions[resolution["claim_ref"]["id"]] = resolution
+                    entity_origins.setdefault(reference.id, {
+                        "lineage_id": task.claim_lineage_id, "discovery_ref": discovery_ref,
+                        "local_id": resolution["local_id"],
+                        "claim_ref": resolution["claim_ref"], "scope": resolution["scope"],
+                    })
             for collection, existing, kind in (
                 (outcome.edges, edges, "edge"),
                 (outcome.properties, properties, "property"),
+                *(((outcome.relationship_groups, relationship_groups, "relationship_group"),)
+                  if self.tool_protocol else ()),
             ):
                 accepted = []
                 heads = dict(existing)
@@ -2174,8 +2489,17 @@ class OntologyGuidedExecutor:
                     references = [candidate.subject_ref]
                     if isinstance(candidate, GraphEdge):
                         references.append(candidate.object_ref)
+                    elif isinstance(candidate, GraphRelationshipGroup):
+                        references.extend(candidate.object_refs)
                     if any((ref.id, ref.revision) in conflicting_node_refs for ref in references):
                         diagnostics.append(f"adapter_{kind}_node_revision_conflict")
+                        continue
+                    if self.tool_protocol and (
+                        candidate.scope != task.scope
+                        or any(nodes.get(ref.id) is None or nodes[ref.id].revision != ref.revision
+                               for ref in references)
+                    ):
+                        diagnostics.append(f"adapter_{kind}_scope_or_endpoint_mismatch")
                         continue
                     if (
                         candidate.subject_ref
@@ -2202,6 +2526,19 @@ class OntologyGuidedExecutor:
                                 "reason": rejection,
                             })
                     current = heads.get(candidate.candidate_id)
+                    if self.tool_protocol:
+                        if current and (candidate.revision < current.revision or (
+                            candidate.revision == current.revision and candidate != current
+                        )):
+                            diagnostics.append(f"adapter_{kind}_revision_conflict")
+                            continue
+                        if current and candidate.revision > current.revision:
+                            dependency_index.invalidate(versioned_key(
+                                current.candidate_id, current.revision,
+                            ))
+                        heads[candidate.candidate_id] = candidate
+                        accepted.append(candidate)
+                        continue
                     if current is not None:
                         unchanged = current.model_dump(exclude={"revision"}) == (
                             candidate.model_dump(exclude={"revision"})
@@ -2255,7 +2592,8 @@ class OntologyGuidedExecutor:
                     and plan.ledger[task.record_id].coverage_state == "examined"
                 ) else "attempted_incomplete",
                 execution_state="finished" if outcome.complete else "retryable_failure",
-                semantic_outcomes=[outcome.semantic_outcome],
+                semantic_outcomes=([] if outcome.reason_code == "record_no_claims"
+                                   else [outcome.semantic_outcome]),
                 task_id=task.task_id,
                 reason_code=outcome.reason_code,
             )
@@ -2290,6 +2628,9 @@ class OntologyGuidedExecutor:
                 pause_counts[task.claim_lineage_id] = pause_counts.get(task.claim_lineage_id, 0) + 1
             if task.claim_lineage_id not in expert_lineages and (paused or (
                 not outcome.complete
+                and (not self.tool_protocol or not protocols.get(
+                    task.claim_lineage_id, {},
+                ).get("outcome_ref"))
                 and (
                     task.retry_kind is None
                     or task.retry_kind.startswith("pause_continuation:")
@@ -2298,6 +2639,10 @@ class OntologyGuidedExecutor:
                 not in {
                     "subject_dependency_invalidated",
                     "record_model_call_budget_exhausted",
+                    "context_budget_exceeded",
+                    "model_budget_exhausted",
+                    "tool_budget_exhausted",
+                    "evidence_record_ambiguous",
                 }
             )):
                 retry = RecognitionTask.create(
@@ -2321,7 +2666,10 @@ class OntologyGuidedExecutor:
                     ),
                     section_node_id=task.section_node_id,
                     source_position=task.source_position,
+                    scope=task.scope,
                 )
+                if self.tool_protocol:
+                    retry = retry.model_copy(update={"task_id": task.task_id})
                 if scheduler.enqueue(retry, root_branch=task.subject.is_document_root):
                     diagnostics.append(
                         "pause_continuation_scheduled"
@@ -2331,6 +2679,8 @@ class OntologyGuidedExecutor:
                 object_node = nodes[edge.object_ref.id]
                 edges[edge.candidate_id] = edge
                 candidate_tasks[edge.candidate_id] = task
+                if self.tool_protocol:
+                    continue
                 process_conflicts(task, edge)
                 if (
                     edge.decision_status == "supported"
@@ -2395,7 +2745,238 @@ class OntologyGuidedExecutor:
             for item in outcome.properties:
                 properties[item.candidate_id] = item
                 candidate_tasks[item.candidate_id] = task
-                process_conflicts(task, item)
+                if not self.tool_protocol:
+                    process_conflicts(task, item)
+            if self.tool_protocol:
+                for group in outcome.relationship_groups:
+                    relationship_groups[group.candidate_id] = group
+                    candidate_tasks[group.candidate_id] = task
+                expand_tool_relations(task, outcome)
+
+        def expand_tool_relations(task, outcome):
+            for relation in [*outcome.edges, *outcome.relationship_groups]:
+                members = (relation.object_refs if isinstance(relation, GraphRelationshipGroup)
+                           else [relation.object_ref])
+                for member in members:
+                    eligibility = frontier_eligibility(
+                        relation, member=member, inherited_scope=task.scope,
+                        dependencies=dependency_index,
+                    )
+                    if not eligibility.eligible:
+                        scheduler.unexplored_frontier.append({
+                            "relation_ref": {"id": relation.candidate_id,
+                                             "revision": relation.revision},
+                            "member_ref": member.model_dump(mode="json"),
+                            "scope": task.scope.model_dump(mode="json"),
+                            "reason": eligibility.reason_code, "logical_records": 0,
+                        })
+                        continue
+                    node = nodes[member.id]
+                    refs = [ref for ref in (node.type_decision_ref, node.referent_decision_ref,
+                                             node.referent_ref, node.composition_decision_ref,
+                                             *node.dependency_refs) if ref is not None]
+                    if (node.root or node.decision_status != "supported"
+                            or not node.type_decision_ref or not node.referent_decision_ref
+                            or not node.referent_ref
+                            or not dependency_index.is_valid_references([member, *refs])):
+                        diagnostics.append("frontier_member_identity_unverified")
+                        continue
+                    subject = SubjectRef(entity_id=node.entity_id, revision=node.revision,
+                                         class_iri=node.class_iri)
+                    scope = eligibility.scope
+                    key = subject_key(subject, scope)
+                    registration = registered_subjects.get(key)
+                    if registration is None:
+                        origin = entity_origins.get(node.entity_id) or next((
+                            item["origin"] for item in registered_subjects.values()
+                            if item["subject"] == subject and "origin" in item
+                        ), None)
+                        if origin is None and node.entity_id in {
+                            item.entity_id for item in outcome.nodes
+                        }:
+                            discovery_ref = protocols.get(task.claim_lineage_id, {}).get(
+                                "discovery_ref"
+                            )
+                            if discovery_ref:
+                                origin = {"lineage_id": task.claim_lineage_id,
+                                          "discovery_ref": discovery_ref}
+                        if origin is None:
+                            diagnostics.append("frontier_entity_origin_missing")
+                            continue
+                        registration = {"subject": subject, "scope": scope, "hop": task.hop + 1,
+                                        "binding_refs": [], "reopen": False, "origin": origin}
+                        registered_subjects[key] = registration
+                    else:
+                        registered_subjects.touch(key)
+                    reference = {"id": relation.candidate_id, "revision": relation.revision}
+                    if reference not in registration["binding_refs"]:
+                        registration["binding_refs"].append(reference)
+                    dependency_index.add_proof(scoped_subject_dependency(subject, scope), [
+                        versioned_key(relation.candidate_id, relation.revision),
+                        versioned_key(node.entity_id, node.revision),
+                        *[versioned_key(ref.id, ref.revision) for step in scope.members
+                          for ref in (step.relation_ref, step.member_ref)],
+                    ])
+                    if layered_recognition and not dependency_ready:
+                        continue
+                    try:
+                        menu = compile_local_menu(self.ontology, subject, engine=self.engine)
+                    except ValueError:
+                        diagnostics.append(f"object_class_outside_frozen_snapshot:{node.class_iri}")
+                        continue
+                    menus[subject.entity_id] = menu
+                    add_subject(subject, menu, hop=task.hop + 1, binding_edge=relation, scope=scope)
+
+        def tool_dependencies(task):
+            from app.services.extraction.ontology_guided.claim_protocol import (
+                EntityDependencyView,
+                FrozenClaimSet,
+                VerificationScopeResolution,
+                VerificationScopeStep,
+            )
+
+            selected_nodes = {
+                root.entity_id: root, task.subject.entity_id: nodes[task.subject.entity_id],
+            }
+            steps = []
+            for step in task.scope.members:
+                relation = (edges.get(step.relation_ref.id)
+                            or relationship_groups.get(step.relation_ref.id))
+                member = nodes.get(step.member_ref.id)
+                if (relation is None or relation.revision != step.relation_ref.revision
+                        or member is None or member.revision != step.member_ref.revision
+                        or not dependency_index.is_valid_references([
+                            step.relation_ref, step.member_ref,
+                        ])):
+                    raise ValueError("scope_dependency_invalidated")
+                endpoints = ([relation.object_ref] if isinstance(relation, GraphEdge)
+                             else relation.object_refs)
+                if step.member_ref not in endpoints:
+                    raise ValueError("scope_member_mismatch")
+                for reference in [relation.subject_ref, *endpoints]:
+                    node = nodes.get(reference.id)
+                    if node is None or node.revision != reference.revision:
+                        raise ValueError("scope_endpoint_revision_mismatch")
+                    selected_nodes[node.entity_id] = node
+                steps.append(VerificationScopeStep(
+                    relation_ref=step.relation_ref, member_ref=step.member_ref,
+                    selection=(relation.selection if isinstance(relation, GraphRelationshipGroup)
+                               else None), polarity=relation.polarity, modality=relation.modality,
+                    conditions=relation.conditions,
+                    applicability=relation.applicability.get("qualifiers", []),
+                    evidence_refs=relation.evidence_refs,
+                ))
+            if self.reference_resolution:
+                pinned = protocols.get(task.claim_lineage_id, {}).get("reference_context")
+                if pinned is not None:
+                    selected_nodes = {}
+                    for reference in pinned["entity_refs"]:
+                        node = nodes.get(reference["id"])
+                        if node is None or node.revision != reference["revision"]:
+                            raise ValueError("reference_context_revision_changed")
+                        selected_nodes[node.entity_id] = node
+                else:
+                    from app.services.extraction.ontology_guided.reference_context import (
+                        select_reference_entities,
+                    )
+
+                    predicate = predicates[task_key(task)]
+                    classes = {task.subject.class_iri}
+                    if isinstance(predicate, EdgeSpec):
+                        classes.update(predicate.range_class_iris)
+                    candidates = {
+                        identity: node for identity, node in nodes.items()
+                        if node.decision_status == "supported"
+                        and node.independent_review != "rejected"
+                        and dependency_index.is_valid_references([
+                            VersionedRef(id=node.entity_id, revision=node.revision),
+                            *node.dependency_refs,
+                        ])
+                    }
+                    for identity in select_reference_entities(
+                        task, index, candidates, entity_origins, reference_resolutions, classes,
+                    ):
+                        selected_nodes[identity] = nodes[identity]
+            views = []
+            for node in selected_nodes.values():
+                reference = VersionedRef(id=node.entity_id, revision=node.revision)
+                proposal = None
+                references = []
+                if not node.root:
+                    references = [ref for ref in (
+                        node.type_decision_ref, node.referent_decision_ref, node.referent_ref,
+                        node.composition_decision_ref, *node.dependency_refs,
+                    ) if ref is not None]
+                    if (node.decision_status != "supported" or not node.type_decision_ref
+                            or not node.referent_decision_ref or not node.referent_ref
+                            or (node.grounding_kind == "record"
+                                and not node.composition_decision_ref)
+                            or not dependency_index.is_valid_references([reference, *references])):
+                        raise ValueError("entity_dependency_invalidated")
+                    origin = entity_origins.get(node.entity_id) or next((item["origin"]
+                                   for item in registered_subjects.values()
+                                   if item["subject"].entity_id == node.entity_id
+                                   and item["subject"].revision == node.revision
+                                   and "origin" in item), None)
+                    if origin is None:
+                        raise ValueError("entity_dependency_origin_missing")
+                    frozen = FrozenClaimSet.model_validate(load_result(
+                        origin["lineage_id"], origin["discovery_ref"], "discovery",
+                    ))
+                    matches = [item for item in frozen.entities if (
+                        item.local_id == origin["local_id"]
+                        and frozen.local_ref_map.get(item.local_id).model_dump(mode="json")
+                        == origin["claim_ref"]
+                    )] if "local_id" in origin else [
+                        item for item in frozen.entities
+                        if frozen.local_ref_map.get(item.local_id) == reference
+                    ]
+                    if len(matches) != 1:
+                        raise ValueError("entity_dependency_origin_mismatch")
+                    proposal = matches[0]
+                payload = {
+                    "entity_ref": reference.model_dump(mode="json"),
+                    "class_iri": node.class_iri, "grounding_kind": node.grounding_kind,
+                    "root_origin": node.root_origin if node.root else None,
+                    "proposal": proposal.model_dump(mode="json") if proposal else None,
+                    "source_refs": [ref.model_dump(mode="json") for ref in node.evidence_refs],
+                    "dependency_refs": [ref.model_dump(mode="json") for ref in references],
+                }
+                views.append(EntityDependencyView.model_validate({
+                    **payload, "content_hash": evidence_hash(payload),
+                }))
+            resolution = VerificationScopeResolution(scope_id=task.scope.scope_id, steps=steps)
+            return {
+                "entity_dependencies": [view.model_dump(mode="json") for view in views],
+                "entity_nodes": [node.model_dump(mode="json") for node in selected_nodes.values()],
+                "bridge_dependencies": [],
+                "scope_resolutions": [resolution.model_dump(mode="json")],
+                **({"reference_resolutions": [
+                    resolution for resolution in reference_resolutions.values()
+                    if resolution["entity_ref"]["id"] in selected_nodes
+                    and resolution["scope"] == task.scope.model_dump(mode="json")
+                    and dependency_index.is_valid_references([
+                        VersionedRef.model_validate(ref)
+                        for ref in resolution["dependency_refs"]
+                    ])
+                ]} if self.reference_resolution else {}),
+            }
+
+        def attach_protocol_results(context, task):
+            state = context.protocol_state
+            references = {ref: "model_turn" for ref in state.get("turn_refs", [])}
+            references.update({ref: "tool_result"
+                               for ref in state.get("completed_tool_results", [])})
+            references.update({entry["result_ref"]: "tool_result"
+                               for entry in state.get("materialized_refs", {}).values()})
+            for field in ("discovery", "verification", "outcome"):
+                if state.get(field + "_ref"):
+                    references[state[field + "_ref"]] = field
+            context.protocol_results = {
+                reference: {"lineage_id": task.claim_lineage_id, "field": field,
+                            "value": load_result(task.claim_lineage_id, reference, field)}
+                for reference, field in references.items()
+            }
 
         def advance_layer():
             nonlocal active_hop, layer_phase
@@ -2408,7 +2989,7 @@ class OntologyGuidedExecutor:
                 or (key in searches and searches[key].status
                     not in {"pass_exhausted", "local_results_only"})
                 for key in active_keys
-                if subject_is_active(plans[key].subject)
+                if slot_subject_is_active(key)
             ) or any(item["status"] in {"queued", "incomplete", "deferred"}
                      for item in evidence_work.items.values()):
                 return False
@@ -2417,7 +2998,7 @@ class OntologyGuidedExecutor:
             else:
                 following = [item["hop"] for item in registered_subjects.values()
                              if active_hop < item["hop"] <= self.max_hops
-                             and subject_is_active(item["subject"])]
+                             and subject_is_active(item["subject"], item.get("scope"))]
                 if not following:
                     return False
                 active_hop = min(following)
@@ -2427,13 +3008,16 @@ class OntologyGuidedExecutor:
             }))
             for registration in registered_subjects.values():
                 subject = registration["subject"]
-                if registration["hop"] != active_hop or not subject_is_active(subject):
+                scope = registration.get("scope")
+                if (registration["hop"] != active_hop
+                        or not subject_is_active(subject, scope)):
                     continue
                 binding = None
                 if not subject.is_document_root:
-                    binding = next((edges[ref["id"]] for ref in registration["binding_refs"]
-                                    if ref["id"] in edges
-                                    and edges[ref["id"]].revision == ref["revision"]
+                    relations = {**edges, **relationship_groups} if self.tool_protocol else edges
+                    binding = next((relations[ref["id"]] for ref in registration["binding_refs"]
+                                    if ref["id"] in relations
+                                    and relations[ref["id"]].revision == ref["revision"]
                                     and dependency_index.is_valid(
                                         f"{ref['id']}@{ref['revision']}"
                                     )), None)
@@ -2449,10 +3033,10 @@ class OntologyGuidedExecutor:
                     continue
                 menus[subject.entity_id] = menu
                 add_subject(subject, menu, hop=active_hop, reopen=registration["reopen"],
-                            binding_edge=binding)
+                            binding_edge=binding, scope=scope)
                 registration["reopen"] = False
                 if self.current_state:
-                    registered_subjects.touch((subject.entity_id, subject.revision))
+                    registered_subjects.touch(subject_key(subject, scope))
             return True
 
         def repair_summary():
@@ -2522,7 +3106,7 @@ class OntologyGuidedExecutor:
                                             "reason_code": reason}}
                     expert_operations[operation_id] = operation
                     for task in tasks:
-                        key = (task.subject.entity_id, task.subject.revision, task.predicate_iri)
+                        key = task_key(task)
                         if key not in plans:
                             raise ValueError("expert repair predicate was not admitted for subject")
                         plans[key] = admit_records(plans[key], index, [task.record_id],
@@ -2609,6 +3193,11 @@ class OntologyGuidedExecutor:
                 "evidence_work": evidence_work.items,
                 "slot_completion": slot_completion.receipts,
             }
+            if self.tool_protocol:
+                maps["relationship_groups"] = relationship_groups
+            if self.reference_resolution:
+                maps["entity_origins"] = entity_origins
+                maps["reference_resolutions"] = reference_resolutions
             plan_rows = {}
             for key in list(plans.changed):
                 plan = plans.get(key)
@@ -2637,6 +3226,8 @@ class OntologyGuidedExecutor:
             result["control"] = {
                 "current": {
                     "version": 1,
+                    **({"extraction_protocol": TOOL_PROTOCOL_VERSION}
+                       if self.tool_protocol else {}),
                     "completed_tasks": completed_tasks,
                     "model_calls": model_calls,
                     "partition_counts": counts,
@@ -2682,6 +3273,9 @@ class OntologyGuidedExecutor:
                 control["version"] != 1
                 or control["run_fingerprint"] != run_fingerprint
                 or control["recognition_run_id"] != recognition_run_id
+                or control.get("extraction_protocol") != (
+                    TOOL_PROTOCOL_VERSION if self.tool_protocol else None
+                )
             ):
                 raise ValueError("current work state identity mismatch")
             for name, count in control["partition_counts"].items():
@@ -2694,6 +3288,10 @@ class OntologyGuidedExecutor:
             nodes = loaded("nodes", GraphNode.model_validate)
             edges = loaded("edges", GraphEdge.model_validate)
             properties = loaded("properties", GraphProperty.model_validate)
+            if self.tool_protocol:
+                relationship_groups = loaded(
+                    "relationship_groups", GraphRelationshipGroup.model_validate,
+                )
             plan_parts = {}
             for item in sorted(
                 direct.get("plan_parts", {}).values(), key=lambda r: r.get("position", 0)
@@ -2741,7 +3339,10 @@ class OntologyGuidedExecutor:
                 },
                 encode=lambda v: json_value({k: x for k, x in v.items() if k != "ontology"}),
             )
-            search_tasks = loaded("search_tasks")
+            search_tasks = loaded("search_tasks", lambda v: {
+                **v, **({"scope": TraversalScope.model_validate(v["scope"])}
+                        if self.tool_protocol else {}),
+            })
             attribute_sources = loaded("attribute_sources")
             lineage_calls = loaded("lineage_calls")
             candidate_tasks = loaded("candidate_tasks", RecognitionTask.model_validate)
@@ -2751,6 +3352,8 @@ class OntologyGuidedExecutor:
             recheck_counts = loaded("recheck_counts")
             pause_counts = loaded("pause_counts")
             applied_model_results = loaded("applied_model_results")
+            entity_origins = loaded("entity_origins")
+            reference_resolutions = loaded("reference_resolutions")
             expert_lineages = loaded("expert_lineages")
             expert_rejected = loaded("expert_rejected")
             expert_review_heads = loaded("expert_review_heads")
@@ -2763,7 +3366,9 @@ class OntologyGuidedExecutor:
             work_digest = control["work_digest"]
             registered_subjects = loaded(
                 "registered_subjects",
-                lambda item: {**item, "subject": SubjectRef.model_validate(item["subject"])},
+                lambda item: {**item, "subject": SubjectRef.model_validate(item["subject"]),
+                              **({"scope": TraversalScope.model_validate(item["scope"])}
+                                 if self.tool_protocol else {})},
             )
             active_hop, layer_phase = control["active_hop"], control["layer_phase"]
             slot_completion.receipts = loaded("slot_completion")
@@ -2958,7 +3563,7 @@ class OntologyGuidedExecutor:
                         # dispatch that work before deciding the run is saturated.
                         if self.adaptive_policy and scheduler.dispatched < scheduler.max_tasks:
                             if any(search.needs_semantic and slot_is_active(key)
-                                   and subject_is_active(plans[key].subject)
+                                   and slot_subject_is_active(key)
                                    for key, search in searches.items()):
                                 continue
                         if scheduler.dispatched < scheduler.max_tasks and advance_layer():
@@ -2987,11 +3592,7 @@ class OntologyGuidedExecutor:
                                 scheduler._retries.appendleft(task)
                                 scheduler.dispatched -= 1
                             break
-                        key = (
-                            task.subject.entity_id,
-                            task.subject.revision,
-                            task.predicate_iri,
-                        )
+                        key = task_key(task)
                         predicate = predicates[key]
                         record = index.by_id[task.record_id]
                         scope_hash = evidence_hash(
@@ -3000,6 +3601,7 @@ class OntologyGuidedExecutor:
                                 [unit.evidence_id for unit in record.source_units],
                                 task.subject.model_dump(mode="json"),
                                 task.predicate_iri,
+                                *([task.scope.scope_id] if self.tool_protocol else []),
                             ]
                         )
                         context_hash = evidence_hash(
@@ -3022,6 +3624,8 @@ class OntologyGuidedExecutor:
                             source_scope_hash=scope_hash,
                             context_hash=context_hash,
                         )
+                        target_seed = target.model_dump(mode="json")
+                        tool_inputs = tool_dependencies(task) if self.tool_protocol else {}
                         subject_sources = list(nodes[task.subject.entity_id].evidence_refs)
                         incoming = [
                             edge
@@ -3037,15 +3641,25 @@ class OntologyGuidedExecutor:
                         ]
                         dependencies = (
                             [
-                                VersionedRef(
-                                    id=f"subject:{task.subject.entity_id}",
-                                    revision=task.subject.revision,
-                                )
+                                subject_dependency_ref(task.subject, task.scope)
                             ]
                             if not task.subject.is_document_root
                             else []
                         )
                         required = [anchor for edge in incoming for anchor in edge.evidence_refs]
+                        if self.tool_protocol:
+                            dependencies.extend(ref for step in task.scope.members
+                                                for ref in (step.relation_ref, step.member_ref))
+                            required.extend(
+                                EvidenceAnchor.model_validate(anchor)
+                                for entity in tool_inputs["entity_dependencies"]
+                                for anchor in entity["source_refs"]
+                            )
+                            required.extend(
+                                EvidenceAnchor.model_validate(anchor)
+                                for resolution in tool_inputs["scope_resolutions"]
+                                for step in resolution["steps"] for anchor in step["evidence_refs"]
+                            )
                         if self.evidence_repair:
                             required.extend(evidence_work.source_refs(task))
                         counters = required_by_lineage.get(task.claim_lineage_id, [])
@@ -3074,10 +3688,19 @@ class OntologyGuidedExecutor:
                         context.incremental_performance = self.incremental_performance
                         context.compact_recognition = dependency_ready
                         context.cmc_describes_type_scope = cmc_describes_type_scope
-                        if self.evidence_repair:
+                        if has_protocol:
                             context.protocol_state = (thaw_json if self.incremental_performance
                                                       else deepcopy)(
                                 protocols.get(task.claim_lineage_id, {}))
+                        if self.tool_protocol:
+                            context.tool_inputs = {
+                                **tool_inputs, "target_seed": target_seed,
+                                "run_fingerprint": run_fingerprint,
+                                "subject_node": nodes[task.subject.entity_id].model_dump(
+                                    mode="json",
+                                ),
+                            }
+                            attach_protocol_results(context, task)
                         if search_index is not None:
                             search_event("context_assembly", {
                                 "task_id": task.task_id,
@@ -3097,7 +3720,7 @@ class OntologyGuidedExecutor:
                                     reason_code="recognition_model_not_configured",
                                     reason="识别模型不可用，局部修复未完成。",
                                 )
-                            elif not subject_is_active(task.subject):
+                            elif not subject_is_active(task.subject, task.scope):
                                 outcome = TaskOutcome(
                                     semantic_outcome="not_checked",
                                     complete=False,
@@ -3105,9 +3728,10 @@ class OntologyGuidedExecutor:
                                     reason="当前主体的肯定可达证明已失效，后续任务保持未完成。",
                                 )
                             elif not remaining_calls(task) and not (
-                                self.evidence_repair and (
+                                has_protocol and (
                                     protocols.get(task.claim_lineage_id, {}).get("outcome")
                                     or protocols.get(task.claim_lineage_id, {}).get("verification")
+                                    or self.tool_protocol and protocols.get(task.claim_lineage_id)
                                 )
                             ):
                                 outcome = TaskOutcome(
@@ -3141,7 +3765,7 @@ class OntologyGuidedExecutor:
                                     outcome = call.future.result()
                                 finally:
                                     call.close()
-                                if not subject_is_active(task.subject):
+                                if not subject_is_active(task.subject, task.scope):
                                     raise ExecutionLost("recognition dependency changed")
                         except (
                             ModelCallPersistenceFailure, ModelCancelled, ExecutionLost,
@@ -3179,7 +3803,7 @@ class OntologyGuidedExecutor:
                             # A completed verification is a durable safe boundary.
                             # Pausing must not discard it and repeat paid requests.
                             stop_after_batch = True
-                    key = (task.subject.entity_id, task.subject.revision, task.predicate_iri)
+                    key = task_key(task)
                     is_expert_task = task.claim_lineage_id in expert_lineages
                     outcome_started = time.perf_counter()
                     apply_outcome(task, outcome, excluded_slots)
@@ -3203,14 +3827,13 @@ class OntologyGuidedExecutor:
                             recheck.model_dump(mode="json") if recheck else None
                         )
                     if (search_index is not None
+                            and outcome.reason_code != "execution_pause_requested"
                             and not (self.evidence_repair and replaying)):
                         search_event("outcome_application", {
                             "task_id": task.task_id,
                             "elapsed_seconds": time.perf_counter() - outcome_started,
                         })
-                        search_key = (
-                            task.subject.entity_id, task.subject.revision, task.predicate_iri,
-                        )
+                        search_key = task_key(task)
                         supported_count = sum(
                             candidate.decision_status == "supported"
                             and candidate.polarity == "affirmed"
@@ -3237,9 +3860,7 @@ class OntologyGuidedExecutor:
                                       else searches[search_key].snapshot()),
                         })
                     if search_index is not None and (layered_recognition or is_expert_task):
-                        search_key = (
-                            task.subject.entity_id, task.subject.revision, task.predicate_iri,
-                        )
+                        search_key = task_key(task)
                         search = searches[search_key]
                         delta_key = ("layered_search_delta" if layered_recognition
                                      else "expert_search_delta")

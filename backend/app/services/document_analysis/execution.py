@@ -145,6 +145,60 @@ class ExecutionStalled(RuntimeError):
     """The owned run has made no durable progress within its operational bound."""
 
 
+class _ExecutionBudget:
+    """One explicit start/resume window; the durable ledger remains cumulative."""
+
+    def __init__(self, policy, baseline, reserved_calls):
+        if (
+            not isinstance(policy, dict)
+            or set(policy) != {"max_seconds", "max_model_calls"}
+            or type(policy["max_seconds"]) not in {int, float}
+            or policy["max_seconds"] <= 0
+            or type(policy["max_model_calls"]) is not int
+            or policy["max_model_calls"] < 1
+            or not isinstance(baseline, dict)
+            or type(baseline.get("model_calls_baseline")) is not int
+            or baseline["model_calls_baseline"] < 0
+        ):
+            raise CheckpointMismatch("invalid continuous execution budget")
+        try:
+            started_at = datetime.fromisoformat(baseline["started_at"])
+            if started_at.tzinfo is None:
+                raise ValueError("execution start must have a timezone")
+        except (KeyError, TypeError, ValueError) as exc:
+            raise CheckpointMismatch("invalid continuous execution start") from exc
+        self.policy = policy
+        self.baseline = baseline["model_calls_baseline"]
+        self.reserved_calls = reserved_calls
+        if self.baseline > self.reserved_calls:
+            raise CheckpointMismatch("continuous execution call baseline exceeds ledger")
+        # An explicit operational time-limit adjustment lives in current state;
+        # the frozen source policy and recognition fingerprint remain unchanged.
+        max_seconds = baseline.get("max_seconds", policy["max_seconds"])
+        if type(max_seconds) not in {int, float} or not 0 < max_seconds < float("inf"):
+            raise CheckpointMismatch("invalid continuous execution time limit")
+        self.deadline = time.monotonic() + max(
+            0, max_seconds - (datetime.now(UTC) - started_at).total_seconds(),
+        )
+        self.reason = None
+
+    def permits(self, boundary):
+        # Never cancel a paid request or interrupt its result publication.
+        if boundary not in {"before_model_reservation", "before_task", "before_ranking"}:
+            return True
+        if time.monotonic() >= self.deadline:
+            self.reason = "execution_time_budget_exhausted"
+        elif self.reserved_calls - self.baseline >= self.policy["max_model_calls"]:
+            self.reason = "execution_model_call_budget_exhausted"
+        return self.reason is None
+
+    def observe_calls(self, state):
+        if state.get("current_calls") == 1:
+            self.reserved_calls += len(state.get("reservations", []))
+        else:
+            self.reserved_calls = sum(state.get("lineage_calls", {}).values())
+
+
 @contextmanager
 def _publication(db, store):
     """Bound the short write transaction after expensive preparation has finished."""
@@ -773,7 +827,127 @@ def _persist_ranking_state(
         raise
 
 
-def _configured_recognition_adapter(performance: dict):
+def freeze_tool_engine_policy() -> dict:
+    """Freeze configured capabilities with the source; never upgrade a resumed run."""
+    from dataclasses import asdict
+
+    from app.services.extraction.ontology_guided.claim_protocol import ExtractionProfile
+    from app.services.extraction.ontology_guided.tool_model_adapter import (
+        validate_responses_options,
+    )
+    from app.services.extraction.tool_validation.vocabulary import VocabularyOverlay
+
+    options = deepcopy(settings.ontology_extraction_options)
+    if set(options) - {"profile", "vocabulary_overlay", "gliner2", "external_sources", "responses"}:
+        raise ValueError("unknown_ontology_extraction_option")
+    options["profile"] = ExtractionProfile.model_validate(
+        options.get("profile", {}), strict=True,
+    ).model_dump(mode="json")
+    if options.get("vocabulary_overlay") is not None:
+        options["vocabulary_overlay"] = VocabularyOverlay.model_validate(
+            options["vocabulary_overlay"], strict=True,
+        ).model_dump(mode="json")
+    capabilities = validate_responses_options(options.pop("responses", {}))
+    return {
+        "state_storage_version": 4, "frontier_version": 2, "recognition_inflight": 1,
+        "extraction_protocol": "ontology-tool-extraction-v1", "api_protocol": "responses",
+        "max_lineage_calls": 4, "model_call_state_version": 2,
+        "reference_resolution_version": 1,
+        "execution_budget": {
+            "max_seconds": settings.document_analysis_execution_max_seconds,
+            "max_model_calls": settings.document_analysis_execution_max_model_calls,
+        },
+        "model": settings.local_llm_model, "model_revision": settings.local_llm_model_revision,
+        "responses": {"strict_tools": False, "strict_answers": False, **capabilities},
+        "extraction_options": options,
+        "candidate_planning": "sparse-candidates-v1",
+        "incremental_performance": "incremental-performance-v1",
+        "heuristic_policy": asdict(HeuristicSearchPolicy.generic()),
+        "request_budget": {
+            "max_input_tokens": settings.evidence_max_input_tokens,
+            "max_output_tokens": settings.evidence_max_output_tokens,
+            "max_context_tokens": settings.evidence_max_context_tokens,
+        },
+    }
+
+
+def _configured_tool_adapter(performance, *, ir, ontology, metadata):
+    from app.services.extraction.external_records import FrozenInstanceReader, ResolvedRecord
+    from app.services.extraction.ontology_guided.claim_protocol import ExtractionProfile
+    from app.services.extraction.ontology_guided.model_adapter import _ConfiguredInputCounter
+    from app.services.extraction.ontology_guided.records import RecordIndex
+    from app.services.extraction.ontology_guided.tool_model_adapter import (
+        ToolModelRecognitionAdapter,
+    )
+    from app.services.extraction.ontology_guided.tool_runtime import ToolLimits
+    from app.services.extraction.tool_validation.mentions import build_vocabulary_extractor
+    from app.services.extraction.tool_validation.vocabulary import (
+        VocabularyOverlay,
+        build_extraction_vocabulary,
+    )
+    from app.services.llm.local_client import get_local_llm
+
+    reference_version = performance.get("reference_resolution_version")
+    if (performance.get("api_protocol") != "responses"
+            or performance.get("state_storage_version") != 4
+            or performance.get("max_lineage_calls") != 4
+            or (reference_version is not None
+                and (type(reference_version) is not int or reference_version != 1))
+            or performance.get("model") != settings.local_llm_model
+            or performance.get("model_revision") != settings.local_llm_model_revision):
+        raise CheckpointMismatch("tool engine frozen configuration mismatch")
+    client = get_local_llm()
+    if client is None or not performance["model_revision"]:
+        raise RuntimeError("required_qwen_responses_unavailable")
+    options = performance["extraction_options"]
+    overlay = (VocabularyOverlay.model_validate(options["vocabulary_overlay"], strict=True)
+               if options.get("vocabulary_overlay") else None)
+    mention_extractor = None
+    if options.get("gliner2"):
+        config = options["gliner2"]
+        vocabulary = build_extraction_vocabulary(
+            ontology, list(ontology.classes), overlay=overlay,
+        )
+        mention_extractor = build_vocabulary_extractor(
+            vocabulary, model_path=config["model_path"], device=config.get("device", "cpu"),
+            manifest=config["manifest"],
+        )
+    sources = options.get("external_sources")
+    reader = None
+    source_ids = ()
+    if sources:
+        records = {key: [ResolvedRecord(**row) for row in rows]
+                   for key, rows in sources["records"].items()}
+        reader = FrozenInstanceReader(
+            records, name_fields=sources["name_fields"],
+            alias_fields=sources.get("alias_fields"),
+            incomplete_sources=sources.get("incomplete_sources", ()),
+        )
+        source_ids = tuple(records)
+    counter = _ConfiguredInputCounter()
+    budget = performance.get("request_budget") or {
+        "max_input_tokens": settings.evidence_max_input_tokens,
+        "max_output_tokens": settings.evidence_max_output_tokens,
+        "max_context_tokens": settings.evidence_max_context_tokens,
+    }
+    return ToolModelRecognitionAdapter(
+        client, index=RecordIndex(ir), ontology=ontology, metadata=metadata,
+        profile=ExtractionProfile.model_validate(options["profile"], strict=True),
+        token_counter=counter.count, model_identity=performance["model"],
+        **budget,
+        tool_limits=ToolLimits(max_result_tokens=min(4096, budget["max_input_tokens"])),
+        mention_extractor=mention_extractor, instance_reader=reader,
+        vocabulary_overlay=overlay, external_source_ids=source_ids,
+        reference_resolution=performance.get("reference_resolution_version") == 1,
+        **performance["responses"],
+    )
+
+
+def _configured_recognition_adapter(performance: dict, *, ir=None, ontology=None, metadata=None):
+    if performance.get("extraction_protocol") == "ontology-tool-extraction-v1":
+        return _configured_tool_adapter(performance, ir=ir, ontology=ontology, metadata=metadata)
+    if performance.get("extraction_protocol") is not None:
+        raise CheckpointMismatch("unknown extraction protocol")
     if performance.get("cmc_describes_type_scope") not in {None, "drug-product-only-v1"}:
         raise CheckpointMismatch("unknown CMC describes type scope")
     if performance.get("cmc_describes_type_scope") and not performance.get(
@@ -872,6 +1046,10 @@ def _validate_model_call_state(
         raise CheckpointMismatch("model call reservation count is invalid")
     if state["version"] == 2:
         from app.services.extraction.ontology_guided.contracts import VerificationTarget
+        from app.services.extraction.ontology_guided.current_work import (
+            TOOL_PROTOCOL_VERSION,
+            validate_tool_protocol,
+        )
 
         if not isinstance(state["protocols"], dict):
             raise CheckpointMismatch("protocol checkpoints are invalid")
@@ -879,7 +1057,12 @@ def _validate_model_call_state(
             if previous and protocol == previous.get("protocols", {}).get(lineage):
                 continue  # This exact protocol was validated at the durable head.
             target = VerificationTarget.model_validate(protocol.get("base_target"))
-            if (protocol.get("version") != "evidence-repair-v1"
+            if protocol.get("version") == TOOL_PROTOCOL_VERSION:
+                try:
+                    validate_tool_protocol(protocol)
+                except (ValueError, TypeError) as exc:
+                    raise CheckpointMismatch(str(exc)) from exc
+            if (protocol.get("version") not in {"evidence-repair-v1", TOOL_PROTOCOL_VERSION}
                     or protocol.get("lineage_id") != lineage or target.claim_ref.id != lineage
                     or len(protocol.get("evidence_hash", "")) != 64):
                 raise CheckpointMismatch("protocol checkpoint identity mismatch")
@@ -940,6 +1123,12 @@ def _persist_model_call_state(
         if not state.get("current_calls"):
             raise CheckpointMismatch("current state requires changed protocol records")
         return current_storage.persist_calls(store, run, token, final_fingerprint, state)
+
+    if state.get("result_changes") or any(
+        protocol.get("version") == "ontology-tool-extraction-v1"
+        for protocol in state.get("protocols", {}).values()
+    ):
+        raise CheckpointMismatch("Responses protocol requires current-state result storage")
 
     from app.services.document_analysis.incremental_state import structural_snapshot
 
@@ -1119,7 +1308,8 @@ def _recognition_fingerprint(
                 "max_objects_per_task": settings.evidence_max_objects_per_task,
                 "max_model_calls_per_record": (
                     performance["max_lineage_calls"]
-                    if performance and performance.get("evidence_repair")
+                    if performance and (performance.get("evidence_repair")
+                                        or performance.get("extraction_protocol"))
                     else settings.document_analysis_max_model_calls_per_record
                 ),
             },
@@ -1761,7 +1951,10 @@ def _execute_claimed(
         run_id=str(run.recognition_run_id), bind=db.get_bind(), should_stop=should_stop,
     ):
         repair = performance.get("evidence_repair") == "evidence-repair-v1"
-        adapter = _configured_recognition_adapter(performance)
+        tool_protocol = performance.get("extraction_protocol") == "ontology-tool-extraction-v1"
+        adapter = (_configured_recognition_adapter(
+            performance, ir=analysis_ir, ontology=ontology, metadata=metadata,
+        ) if tool_protocol else _configured_recognition_adapter(performance))
         ranking_service, ranking_identity = _configured_ranking()
         if not performance and ranking_service.policy.policy_version != "semantic-ranking-v1":
             # A rollout must not silently upgrade the strategy of an older run.
@@ -1848,6 +2041,13 @@ def _execute_claimed(
     model_call_state = _restore_model_call_state(
         db, store, run, final_fingerprint=final_fingerprint
     )
+    execution_budget = None
+    if performance.get("execution_budget") is not None:
+        execution_budget = _ExecutionBudget(
+            performance["execution_budget"],
+            current_storage.get_row(store, run, "execution:budget"),
+            sum((model_call_state or {}).get("lineage_calls", {}).values()),
+        )
 
     def progress_hook(_boundary: str) -> bool:
         check_interrupted()
@@ -1858,11 +2058,17 @@ def _execute_claimed(
             lease_seconds=settings.document_analysis_lease_seconds,
         )
         db.commit()
-        return not execution.pause_requested and not execution.cancel_requested
+        return (
+            not execution.pause_requested and not execution.cancel_requested
+            and (execution_budget is None or execution_budget.permits(_boundary))
+        )
 
     db.commit()  # Release the coherent restore view before model-free hydration.
     current_mode = performance.get("state_storage_version") == 4
     work_version = run.work_version
+    from app.services.document_analysis.harness import HarnessObserver
+
+    harness_observer = HarnessObserver(db.get_bind(), run.recognition_run_id, run.owner_id, token)
 
     def work_hook(changes):
         nonlocal work_version
@@ -1876,6 +2082,7 @@ def _execute_claimed(
             work_version = current_storage.persist_batch(
                 store, run, token, batch=batch, fingerprint=final_fingerprint, ontology=ontology,
                 ir=analysis_ir, metadata=metadata, index=index, expected_version=work_version)
+            harness_observer("graph_update", {"work_version": work_version})
             return
         _persist_recognition_batch(
             db,
@@ -1889,6 +2096,7 @@ def _execute_claimed(
             index=index,
             batch=batch,
         )
+        harness_observer("graph_update", {"event_head": batch.graph.event_head})
 
     def ranking_hook(state: dict) -> None:
         check_interrupted()
@@ -1901,6 +2109,8 @@ def _execute_claimed(
         _persist_model_call_state(
             db, store, run, token, final_fingerprint=final_fingerprint, state=state
         )
+        if execution_budget is not None:
+            execution_budget.observe_calls(state)
 
     from app.services.document_analysis.reviews import repair_operations, review_operations
 
@@ -1914,6 +2124,7 @@ def _execute_claimed(
             run_id=str(run.recognition_run_id),
             bind=db.get_bind(),
             should_stop=should_stop,
+            on_harness_event=harness_observer if tool_protocol else None,
         ):
             result = OntologyGuidedExecutor(
                 ontology=ontology,
@@ -1927,7 +2138,7 @@ def _execute_claimed(
                 current_state=current_mode,
                 max_tasks=settings.evidence_max_tasks,
                 max_model_calls_per_record=(
-                    performance["max_lineage_calls"] if repair
+                    performance["max_lineage_calls"] if repair or tool_protocol
                     else settings.document_analysis_max_model_calls_per_record
                 ),
                 progress_hook=progress_hook,
@@ -1941,11 +2152,13 @@ def _execute_claimed(
                     AdaptivePolicy.model_validate(performance["adaptive_retrieval"])
                     if performance.get("adaptive_retrieval") else None
                 ),
-                heuristic_policy=HeuristicSearchPolicy.durable(
+                heuristic_policy=(HeuristicSearchPolicy(**performance["heuristic_policy"])
+                    if tool_protocol and performance.get("heuristic_policy") else
+                    HeuristicSearchPolicy.durable(
                     incremental=bool(performance.get("incremental_performance")),
                     adaptive=bool(performance.get("adaptive_retrieval")),
                     source_object_candidates=bool(performance.get("source_object_recognition")),
-                ) if repair else None,
+                ) if repair else None),
             ).run(
                 recognition_run_id=str(run.recognition_run_id),
                 run_fingerprint=final_fingerprint,
@@ -1976,6 +2189,11 @@ def _execute_claimed(
                     model_call_state or (checkpoint.model_call_state if checkpoint else None)
                 ),
                 model_call_hook=model_call_hook,
+                protocol_result_loader=(
+                    lambda lineage_id, result_ref, field: current_storage.load_protocol_result(
+                        store, run, lineage_id, result_ref, field,
+                    )
+                ) if tool_protocol else None,
                 property_reviews=expert_reviews,
                 property_repairs=expert_repairs,
                 repair_only=repair_only,
@@ -1989,6 +2207,12 @@ def _execute_claimed(
         if callable(close_ranking_model):
             close_ranking_model()
     check_interrupted()
+    if execution_budget is not None and execution_budget.reason and (
+        result.graph.progress.completion not in {"in_scope_complete", "policy_complete"}
+    ):
+        result.graph.progress = result.graph.progress.model_copy(update={
+            "stop_reason": execution_budget.reason,
+        })
     store.assert_fence(run.recognition_run_id, run.owner_id, token)
     run = store.get_owned(run.recognition_run_id, run.owner_id)
     durable_checkpoint = _restore_recognition_checkpoint(
@@ -2068,6 +2292,16 @@ def _execute_claimed(
     })
     current = store.get_owned(run.recognition_run_id, run.owner_id)
     if _complete_pause_at_boundary(db, store, current, token, public_stage="extracting"):
+        return
+
+    if terminal_progress.stop_reason in {
+        "execution_time_budget_exhausted", "execution_model_call_budget_exhausted",
+    }:
+        _finish(
+            db, store, current, token,
+            status="paused", public_status="paused", public_stage="extracting",
+            progress=terminal_progress, stop_reason=terminal_progress.stop_reason,
+        )
         return
 
     if repair_only:

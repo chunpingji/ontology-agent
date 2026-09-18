@@ -1,0 +1,110 @@
+{
+  "scope": "synthetic_relation_tool_roundtrip",
+  "real_model_requests": 4,
+  "scenarios": [
+    {
+      "scenario": "valid",
+      "status": "passed",
+      "model": "Qwen3.6-35B-A3B",
+      "tool": "validate_graph",
+      "tool_result": {
+        "profile": "ontology-relation-v1",
+        "ontology_status": "passed",
+        "identity_status": "passed",
+        "validation_status": "passed",
+        "semantic_status": "not_checked",
+        "checked_constraints": [
+          "task_subject",
+          "predicate_menu",
+          "range",
+          "source_binding",
+          "exact_mention_identity"
+        ]
+      },
+      "responses": [
+        {
+          "status": "completed",
+          "output_types": [
+            "reasoning",
+            "function_call"
+          ],
+          "usage": {
+            "input_tokens": 501,
+            "input_tokens_details": {
+              "cached_tokens": 0
+            },
+            "output_tokens": 588,
+            "total_tokens": 1089
+          }
+        },
+        {
+          "status": "completed",
+          "output_types": [
+            "reasoning",
+            "message"
+          ],
+          "usage": {
+            "input_tokens": 1096,
+            "input_tokens_details": {
+              "cached_tokens": 0
+            },
+            "output_tokens": 105,
+            "total_tokens": 1201
+          }
+        }
+      ]
+    },
+    {
+      "scenario": "duplicate",
+      "status": "passed",
+      "model": "Qwen3.6-35B-A3B",
+      "tool": "validate_graph",
+      "tool_result": {
+        "profile": "ontology-relation-v1",
+        "ontology_status": "passed",
+        "identity_status": "failed",
+        "validation_status": "failed",
+        "semantic_status": "not_checked",
+        "checked_constraints": [
+          "task_subject",
+          "predicate_menu",
+          "range",
+          "source_binding",
+          "exact_mention_identity"
+        ]
+      },
+      "responses": [
+        {
+          "status": "completed",
+          "output_types": [
+            "reasoning",
+            "function_call"
+          ],
+          "usage": {
+            "input_tokens": 501,
+            "input_tokens_details": {
+              "cached_tokens": 418
+            },
+            "output_tokens": 315,
+            "total_tokens": 816
+          }
+        },
+        {
+          "status": "completed",
+          "output_types": [
+            "reasoning",
+            "message"
+          ],
+          "usage": {
+            "input_tokens": 873,
+            "input_tokens_details": {
+              "cached_tokens": 33
+            },
+            "output_tokens": 282,
+            "total_tokens": 1155
+          }
+        }
+      ]
+    }
+  ]
+}

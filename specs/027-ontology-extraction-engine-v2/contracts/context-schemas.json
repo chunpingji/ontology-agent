@@ -367,6 +367,53 @@
               "type": "string"
             },
             "target_kind": {
+              "const": "reference_binding"
+            },
+            "claim_ref": {
+              "$ref": "context-schemas.json#/$defs/VersionedRef"
+            },
+            "content_hash": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            },
+            "payload": {
+              "$ref": "urn:ontology-tool-extraction:discovery#/$defs/ReferenceBindingProposal"
+            },
+            "scope": {
+              "$ref": "context-schemas.json#/$defs/TraversalScope"
+            },
+            "dependency_refs": {
+              "type": "array",
+              "items": {
+                "$ref": "context-schemas.json#/$defs/VersionedRef"
+              }
+            },
+            "required_facets": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "required": [
+            "target_id",
+            "target_kind",
+            "claim_ref",
+            "content_hash",
+            "payload",
+            "scope",
+            "dependency_refs",
+            "required_facets"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "target_id": {
+              "type": "string"
+            },
+            "target_kind": {
               "const": "property"
             },
             "claim_ref": {
@@ -916,7 +963,10 @@
       "type": "object",
       "properties": {
         "record_id": {
-          "type": "string"
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "evidence_id": {
           "type": "string"

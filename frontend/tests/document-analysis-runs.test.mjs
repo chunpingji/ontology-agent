@@ -69,6 +69,26 @@ function loadApi(fetchImpl, extraGlobals = {}) {
   return exports;
 }
 
+test("normalized quantities preserve interval boundaries, comparison and exact digits", () => {
+  const { formatDocumentGraphQuantity: format } = loadApi(async () => response({}));
+  const quantity = (value, unit = "kg") => format({ normalized_value: value, unit });
+  assert.equal(quantity("0.100000000000000001"), "0.100000000000000001 kg");
+  assert.equal(quantity({ form: "interval", lower: "1", upper: "2",
+    lower_inclusive: true, upper_inclusive: false, target_unit: "kg" }), "[1, 2) kg");
+  assert.equal(quantity({ form: "interval", lower: "1", upper: "2",
+    lower_inclusive: false, upper_inclusive: true }), "(1, 2] kg");
+  for (const [form, endpoint, comparator, symbol] of [
+    ["lower_bound", "lower", "ge", "≥"], ["lower_bound", "lower", "gt", ">"],
+    ["upper_bound", "upper", "le", "≤"], ["upper_bound", "upper", "lt", "<"],
+  ]) {
+    assert.equal(quantity({ form, [endpoint]: "0", comparator }), `${symbol} 0 kg`);
+  }
+  assert.equal(quantity({ form: "scalar", scalar: "0", target_unit: "kg" }), "0 kg");
+  assert.equal(quantity("5", null), "5");
+  assert.equal(quantity(null), null);
+  assert.equal(quantity({ form: "interval", lower: "1", upper: "2" }), null);
+});
+
 test("the retired synchronous Word client and endpoint are absent", () => {
   assert.doesNotMatch(apiSource, /analyzeWordDocument/);
   assert.doesNotMatch(apiSource, /document-analysis\/word/);
@@ -159,6 +179,19 @@ test("status, metadata, graph and source functions are read-only GETs", async ()
     assert.equal(options.method, undefined);
     assert.equal(options.signal, signal);
   }
+});
+
+test("the frozen extraction protocol selects verified without changing legacy defaults", async () => {
+  const requests = [];
+  const api = loadApi(async (url, options) => { requests.push({ url, options }); return response({}); });
+  assert.equal(api.defaultDocumentGraphProjection(null), "effective_affirmed");
+  assert.equal(api.defaultDocumentGraphProjection({}), "effective_affirmed");
+  assert.equal(api.defaultDocumentGraphProjection({ extraction_protocol: "unknown" }), "effective_affirmed");
+  const projection = api.defaultDocumentGraphProjection({ extraction_protocol: "ontology-tool-extraction-v1" });
+  assert.equal(projection, "verified");
+  await api.getDocumentAnalysisGraph("run", projection);
+  assert.equal(requests[0].url, "/api/document-analysis/runs/run/graph?projection=verified");
+  assert.equal(requests[0].options.method, undefined);
 });
 
 test("SSE connection changes distinguish transport failures from named server error frames", () => {
@@ -387,7 +420,7 @@ test("a resume receipt makes the same run eligible for a fresh event subscriptio
   assert.equal(resumed.status, "queued");
   assert.equal(resumed.run_revision, 5);
   assert.equal(api.shouldSubscribeDocumentAnalysisEvents(resumed.status), true);
-  assert.match(panelSource, /\[activeRunId, eventStreamShouldConnect\]/);
+  assert.match(panelSource, /\[activeRunId, eventStreamShouldConnect, harness\.applySnapshot\]/);
   assert.match(
     panelSource,
     /mergeDocumentAnalysisControlReceipt\(previous, receipt\)/,

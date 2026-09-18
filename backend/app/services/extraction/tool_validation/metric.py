@@ -5,11 +5,26 @@ from __future__ import annotations
 from app.services.extraction.literal_normalizer import (
     UNIT_REGISTRY_VERSION,
     LiteralNormalizationError,
+    canonical_unit,
     unit_definition,
 )
 from app.services.extraction.literal_normalizer import normalize_literal as parse_quantity
-from app.services.extraction.ontology_guided.contracts import SlotSpec
-from app.services.extraction.ontology_guided.value_constraints import XSD, normalize_literal
+from app.services.extraction.ontology_guided.claim_protocol import (
+    QuantityPolicy,
+    QuantityValue,
+    VerificationTargetSpec,
+    VerifiedTarget,
+)
+from app.services.extraction.ontology_guided.contracts import SlotSpec, VersionedRef
+from app.services.extraction.ontology_guided.tool_contracts import (
+    BindingData,
+    MetricData,
+    ToolIssue,
+)
+from app.services.extraction.ontology_guided.value_constraints import (
+    NUMERIC_DATATYPES,
+    normalize_literal,
+)
 from app.services.extraction.tool_validation.shacl import (
     build_metric_graph,
     claim_node,
@@ -17,9 +32,6 @@ from app.services.extraction.tool_validation.shacl import (
     validate_graph,
 )
 
-_NUMERIC = {XSD + name for name in (
-    "decimal", "double", "float", "integer", "int", "nonNegativeInteger", "positiveInteger",
-)}
 _INCOMPLETE = {
     "binding_not_checked", "unit_source_missing", "unit_binding_source_missing",
     "unit_unknown", "constraint_unresolved", "scalar_value_required",
@@ -27,6 +39,142 @@ _INCOMPLETE = {
     "shacl_coverage_incomplete", "shacl_missing_fields",
     "owner_record_ambiguous",
 }
+_QUANTITY_INCOMPLETE = _INCOMPLETE | {
+    "quantity_form_not_allowed", "quantity_endpoint_unresolved", "quantity_approximate",
+    "unsupported numeric grammar", "unsupported interval grammar",
+}
+
+
+def _metric_failure(claim_ref: VersionedRef, codes: list[str]) -> MetricData:
+    return MetricData(
+        claim_ref=claim_ref, quantity=None, normalized_literal=None,
+        validation_status=("incomplete" if all(code in _QUANTITY_INCOMPLETE for code in codes)
+                           else "failed"),
+        issues=[ToolIssue(code=code, field_path=None, message=code, evidence_ids=[])
+                for code in dict.fromkeys(codes)],
+    )
+
+
+def normalize_metric(
+    raw: str, slot: SlotSpec, *, quantity_policy: QuantityPolicy,
+    source_unit: str | None, target_unit: str | None, binding: BindingData,
+    verified: VerifiedTarget, target: VerificationTargetSpec, candidate_ref: VersionedRef,
+) -> MetricData:
+    """Pure normalization of one frozen, source-checked claim; SHACL runs separately.
+
+    The controller supplies the binding, complete verified target and controlled
+    unit policy. Neither a model-supplied verdict nor a bare decision ID grants
+    permission to produce a trusted value.
+    """
+    if (candidate_ref != target.claim_ref or binding.claim_ref != candidate_ref
+            or verified.target_id != target.target_id
+            or verified.content_hash != target.content_hash):
+        return _metric_failure(candidate_ref, ["metric_claim_mismatch"])
+    if (target.target_kind != "property" or target.payload.value_quote.text != raw
+            or target.payload.predicate_iri != slot.iri
+            or quantity_policy.predicate_iri != slot.iri):
+        return _metric_failure(candidate_ref, ["metric_claim_mismatch"])
+    if binding.validation_status != "passed" or binding.issues or not binding.resolved_role_refs:
+        codes = [issue.code for issue in binding.issues] or ["binding_not_checked"]
+        result = _metric_failure(candidate_ref, codes)
+        if binding.validation_status != "passed":
+            result.validation_status = binding.validation_status
+        return result
+    if source_unit != binding.source_unit:
+        return _metric_failure(candidate_ref, ["source_unit_conflict"])
+    decisions = verified.decisions
+    if (verified.missing_facets or verified.validation_issues
+            or len(decisions) != len(target.required_facets)
+            or {d.check_kind for d in decisions} != set(target.required_facets)
+            or any(d.target_id != target.target_id or d.verdict != "supported"
+                   or not d.support_refs for d in decisions)):
+        rejected = any(d.verdict == "unsupported" for d in decisions)
+        return _metric_failure(candidate_ref, [
+            "semantic_not_supported" if rejected else "semantic_undetermined",
+        ])
+    if slot.constraint_status != "resolved" or len(set(slot.datatype_iris)) != 1:
+        return _metric_failure(candidate_ref, ["constraint_unresolved"])
+    datatype = slot.datatype_iris[0]
+    if datatype not in NUMERIC_DATATYPES:
+        if target_unit is not None or source_unit is not None or slot.canonical_unit is not None:
+            return _metric_failure(candidate_ref, ["constraint_unresolved"])
+        value, issue = normalize_literal(raw, slot)
+        if issue:
+            return _metric_failure(candidate_ref, [issue])
+        return MetricData(
+            claim_ref=candidate_ref, validation_status="passed", quantity=None,
+            normalized_literal=value, issues=[],
+        )
+    try:
+        parsed = parse_quantity(raw, datatype="decimal", source_unit=source_unit)
+        if parsed.operator == "approx":
+            raise LiteralNormalizationError("quantity_approximate")
+        form = {"number": "scalar", "range": "interval", "comparison": (
+            "lower_bound" if parsed.operator in {"gt", "ge"} else "upper_bound"
+        )}[parsed.kind]
+        if form not in quantity_policy.allowed_forms:
+            raise LiteralNormalizationError("quantity_form_not_allowed")
+        if quantity_policy.endpoint_role is not None and form != "interval":
+            raise LiteralNormalizationError("quantity_endpoint_unresolved")
+        requirement = quantity_policy.unit_requirement
+        if requirement == "physical" and parsed.raw_unit is None:
+            raise LiteralNormalizationError("unit_source_missing")
+        if requirement == "count" and parsed.raw_unit is not None:
+            raise LiteralNormalizationError("unit_missing_or_incompatible")
+        if requirement == "dimensionless" and parsed.dimension not in {None, "ratio"}:
+            raise LiteralNormalizationError("unit_missing_or_incompatible")
+        if requirement == "physical" and parsed.dimension == "ratio":
+            raise LiteralNormalizationError("unit_missing_or_incompatible")
+        if target_unit is not None and canonical_unit(target_unit) not in {
+            canonical_unit(unit) for unit in quantity_policy.allowed_target_units
+        }:
+            raise LiteralNormalizationError("target_unit_not_allowed")
+        destination = target_unit if target_unit is not None else slot.canonical_unit
+        # With no declared destination retain the source unit and its scale.
+        # The list of allowed conversions does not select a preferred unit.
+        destination = destination or parsed.canonical_unit
+        if destination is not None:
+            parsed = parse_quantity(
+                raw, datatype="decimal", source_unit=source_unit, target_unit=destination,
+            )
+        numbers = [parsed.lower, parsed.upper] if form == "interval" else [parsed.normalized_value]
+        scalar_slot = slot.model_copy(update={"canonical_unit": None})
+        for number in numbers:
+            _, issue = normalize_literal(number, scalar_slot)
+            if issue:
+                raise LiteralNormalizationError(issue)
+        lower_bound, upper_bound = form == "lower_bound", form == "upper_bound"
+        cited_unit = source_unit if source_unit is not None else parsed.raw_unit
+        record = {key: str(value) for key, value in parsed.conversion_record.items()}
+        if record:
+            record["mapping_kind"] = (
+                "conversion" if record["from"] != record["to"] else
+                "identity" if cited_unit == record["to"] else "alias"
+            )
+        quantity = QuantityValue(
+            form=form, raw=raw, source_unit=cited_unit, target_unit=parsed.canonical_unit,
+            scalar=parsed.normalized_value if form == "scalar" else None,
+            lower=(parsed.lower if form == "interval" else
+                   parsed.normalized_value if lower_bound else None),
+            upper=(parsed.upper if form == "interval" else
+                   parsed.normalized_value if upper_bound else None),
+            lower_inclusive=(parsed.lower_inclusive if form == "interval" else
+                             parsed.operator == "ge" if lower_bound else None),
+            upper_inclusive=(parsed.upper_inclusive if form == "interval" else
+                             parsed.operator == "le" if upper_bound else None),
+            comparator=parsed.operator if lower_bound or upper_bound else None,
+            endpoint_role=quantity_policy.endpoint_role, datatype_iri=datatype,
+            dimension=parsed.dimension, conversion_record=record,
+        )
+    except LiteralNormalizationError as exc:
+        return _metric_failure(candidate_ref, [str(exc)])
+    value = quantity.scalar
+    if quantity.endpoint_role is not None:
+        value = getattr(quantity, quantity.endpoint_role)
+    return MetricData(
+        claim_ref=candidate_ref, validation_status="passed", quantity=quantity,
+        normalized_literal=value, issues=[],
+    )
 
 
 def validate_metric(
@@ -61,7 +209,7 @@ def validate_metric(
         issues.append("constraint_unresolved")
     else:
         datatype = next(iter(datatypes))
-        numeric = datatype in _NUMERIC
+        numeric = datatype in NUMERIC_DATATYPES
         if numeric:
             try:
                 quantity = parse_quantity(raw, datatype="decimal", source_unit=source_unit)

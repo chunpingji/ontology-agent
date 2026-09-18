@@ -65,7 +65,8 @@ const makeMetadata = (run) => {
   result.section_tree.is_leaf = false;
   return result;
 };
-const makeGraph = (run, projection) => ({
+const makeGraph = (run, projection) => {
+  const graph = {
   ...run, availability: "ready", projection, properties: [],
   graph_snapshot: { snapshot_id: `graph-${run.recognition_run_id}`, root_ref: { entity_id: "root", revision: 1 } },
   entities: [
@@ -92,7 +93,36 @@ const makeGraph = (run, projection) => ({
     epochs: [{ epoch_id: "epoch:accounted", status: "committed", budget_accounted: true,
       query_id: null, subject_ref: null, predicate_iri: null, plan_id: null,
       requested_mode: "semantic", actual_mode: "semantic", degraded: false, reason: null, records: [] }] },
-});
+  };
+  graph.properties = [{ ...graph.relationships[0], object_ref: undefined,
+    candidate_id: "property:" + "e".repeat(64), predicate_iri: "https://ontology.example/sampleCode", predicate_label: "样品编号",
+    direction: "subject_to_value", raw_value: "BATCH-2026-001", normalized_value: null, datatype_iri: null, unit: null,
+    polarity: "conditional", conditions: [{ text: "仅限试验阶段" }],
+  }];
+  graph.coverage.subjects = [{ subject_ref: { entity_id: "root", revision: 1 },
+    predicate_iri: "https://ontology.example/sampleCode", predicate_label: "样品编号",
+    phase_counts: { phase1: 1, phase2: 0 }, records_examined: 1, records_incomplete: 0, records_unattempted: 0, pending_frontiers: 0,
+  }];
+  return graph;
+};
+const harnessCard = { schema_card_id: "card-current", class_iris: [rootIri],
+  predicates: [{ iri: "https://ontology.example/hasRoute", label: "含合成路线", kind: "relationship",
+    min_count: 0, max_count: 1, range_class_iris: ["https://ontology.example/SynthesisRoute"],
+    range_classes: [{ iri: "https://ontology.example/SynthesisRoute", label: "合成路线" }] }],
+  quantity_policies: [{ predicate_iri: "https://ontology.example/hasRoute", allowed_forms: ["interval"], endpoint_role: null,
+    allowed_target_units: ["mg"], unit_requirement: "physical", declaration_ref: "test-policy" }],
+  identity_keys: [], unsupported_constraints: [] };
+const makeHarness = (run) => ({ recognition_run_id: run.recognition_run_id,
+  configuration: { model: "Qwen-browser-fixture", api_protocol: "responses", gliner_enabled: true,
+    mock_enabled: true, vocabulary_enabled: true, request_budget: { max_input_tokens: 24000, max_output_tokens: 4000, max_context_tokens: 32768 } },
+  snapshot: { session_id: "session-1", sequence: 1, output: '{"阶段":"合成浏览器测试"}', thinking: "服务端可读内容（合成）",
+    truncated: [], tool_counts: { propose_mentions: 1 }, updated_at: "2026-09-17T10:00:00Z",
+    call: { call_id: "call-current", stage: "discovery", status: run.status === "running" ? "running" : "completed",
+      model: "Qwen-browser-fixture", subject_label: "CMC 报告", predicate_label: "含合成路线", input_tokens: 1200,
+      started_at: "2026-09-17T10:00:00Z", usage: null },
+    operations: [{ id: "op1", kind: "tool", name: "propose_mentions", status: "success", elapsed_ms: 32,
+      started_at: "2026-09-17T10:00:00Z", arguments: { text: '{"text":"原文"}', truncated: false },
+      result: { text: '{"mentions":["合成路线"]}', truncated: false } }] } });
 const actionsFor = (run) => run.recognition_run_id === "history-12"
   ? ["resume", "cancel", run.ranking_budget_enabled ? "ranking_budget_disable" : "ranking_budget_enable"]
   : run.status === "running" ? ["pause", "cancel"] : [];
@@ -119,6 +149,11 @@ const browser = await chromium.launch({
 });
 const context = await browser.newContext({ viewport: { width: 1440, height: 1100 } });
 await context.addInitScript(() => {
+  const NativeEventSource = window.EventSource;
+  window.__harnessSources = [];
+  window.EventSource = class extends NativeEventSource {
+    constructor(url, options) { super(url, options); window.__harnessSources.push(this); }
+  };
   localStorage.setItem("slpra.token", "synthetic-history-token");
   localStorage.setItem("slpra.identity", JSON.stringify({ username: "analyst", role: "senior_analyst" }));
 });
@@ -181,6 +216,15 @@ await page.route("**/api/**", async (route) => {
       delayedRequest?.();
       await new Promise((resolve) => { releaseDelayed = resolve; });
     }
+    if (artifact === "harness") {
+      if (operation === "context") return route.fulfill({ json: { recognition_run_id: id,
+        call_id: url.searchParams.get("call_id"), schema_card: harnessCard,
+        request: { instructions: "合成指令：仅依据授权原文和本体约束。".repeat(80),
+          input: [{ role: "user", content: [{ type: "input_text", text: JSON.stringify({
+            stage: "discovery", schema_card: harnessCard, source_catalog: [], evidence_units: [{ text: "真实位置的合成原文" }],
+          }) }] }], text: { format: { type: "json_schema", schema: { type: "object" } } } } } });
+      return route.fulfill({ json: makeHarness(run) });
+    }
     if (artifact === "metadata") return route.fulfill({ json: makeMetadata(run) });
     if (artifact === "graph") return route.fulfill({ json: makeGraph(run, url.searchParams.get("projection")) });
     if (artifact === "source") {
@@ -217,7 +261,8 @@ const history = page.getByLabel("文档分析历史", { exact: true });
 const tasks = history.getByRole("button", { name: /^查看分析 / });
 const status = page.getByLabel("文档分析运行状态", { exact: true });
 const workspace = page.getByLabel("文档分析工作区", { exact: true });
-const details = page.getByLabel("文档分析详情", { exact: true });
+const details = page.getByRole("region", { name: "文档分析详情", exact: true });
+const drawer = page.getByRole("dialog", { name: "文档分析详情", exact: true });
 const preview = page.getByLabel("原始文档预览", { exact: true });
 const metadataTab = page.getByRole("tab", { name: "节点元数据", exact: true });
 const graphTab = page.getByRole("tab", { name: "关系图谱", exact: true });
@@ -231,7 +276,7 @@ const assertNoHorizontalOverflow = async () => {
   assert.ok(dimensions.page <= dimensions.viewport + 1, `Page overflows horizontally: ${JSON.stringify(dimensions)}`);
 };
 const close = async () => {
-  await status.getByRole("button", { name: "关闭视图", exact: true }).click();
+  await drawer.getByRole("button", { name: "关闭", exact: true }).click();
   await expect(page).not.toHaveURL(/documentRun=/);
   await expect(status).toHaveCount(0);
 };
@@ -243,6 +288,9 @@ try {
   await tasks.first().click();
   await expect(status).toContainText("history-12");
   await expect(page).toHaveURL(/documentRun=history-12/);
+  await expect(graphTab).toHaveAttribute("aria-selected", "true");
+  await expect(status.locator("details").filter({ has: page.locator("summary", { hasText: /^Harness运行信息$/ }) }).first()).not.toHaveAttribute("open", "");
+  await status.locator("summary").filter({ hasText: /^Harness运行信息$/ }).click();
   await expect(budgetControl).toContainText("已启用");
   await budgetControl.getByRole("button", { name: "禁用排序预算限制", exact: true }).click();
   await expect(budgetControl).toContainText("已禁用");
@@ -251,6 +299,37 @@ try {
   await expect(budgetControl).toContainText("不关闭 embedding 召回或 reranker 精排");
   await expect(status.getByRole("button", { name: "恢复", exact: true })).toBeVisible();
   assert.equal(runs[0].status, "paused", "Changing the ranking budget must not resume the run");
+  const streamPanel = page.getByLabel("Harness实时输出", { exact: true });
+  await expect(streamPanel.getByLabel("LLM 输出文本")).toContainText("合成浏览器测试");
+  const harnessInfo = status.getByLabel("Harness运行信息", { exact: true });
+  await expect(streamPanel.locator("summary")).toHaveCount(0);
+  await expect(harnessInfo.getByText("服务端可读内容（合成）", { exact: true })).not.toBeVisible();
+  await harnessInfo.locator("summary").filter({ hasText: /^Thinking/ }).click();
+  await expect(harnessInfo).toContainText("服务端可读内容（合成）");
+  await harnessInfo.locator("summary").filter({ hasText: /^操作/ }).click();
+  await harnessInfo.locator("summary").filter({ hasText: /工具调用.*实体提及识别/ }).click();
+  await expect(harnessInfo).toContainText('"mentions"');
+  await harnessInfo.locator("summary").filter({ hasText: /^上下文/ }).click();
+  const promptTab = harnessInfo.getByRole("tab", { name: "提示词", exact: true });
+  const schemaTab = harnessInfo.getByRole("tab", { name: "本体 Schema 卡片", exact: true });
+  await expect(promptTab).toHaveAttribute("aria-selected", "true");
+  const promptPanel = harnessInfo.getByRole("tabpanel", { name: "提示词", exact: true });
+  await promptPanel.evaluate((element) => { element.scrollTop = 160; });
+  const priorScroll = await promptPanel.evaluate((element) => element.scrollTop);
+  await schemaTab.click();
+  await expect(harnessInfo.getByRole("tabpanel", { name: "本体 Schema 卡片", exact: true })).toContainText("含合成路线");
+  await harnessInfo.locator("summary").filter({ hasText: /^数量与单位策略$/ }).click();
+  await expect(harnessInfo).toContainText("允许形式：区间");
+  await expect(harnessInfo).toContainText("目标单位：mg");
+  await promptTab.click();
+  assert.equal(await promptPanel.evaluate((element) => element.scrollTop), priorScroll);
+  await page.screenshot({ path: path.join(output, "harness-prompt-tabs.png"), fullPage: true });
+  await schemaTab.click();
+  await page.screenshot({ path: path.join(output, "harness-schema-tabs.png"), fullPage: true });
+  await harnessInfo.locator("summary").filter({ hasText: /^上下文/ }).click();
+  await harnessInfo.locator("summary").filter({ hasText: /^Thinking/ }).click();
+  await harnessInfo.locator("summary").filter({ hasText: /^操作/ }).click();
+  layoutChecks.push("Harness contains Thinking, operations and context; output remains separate; context tabs retain scroll");
   await graphTab.click();
   await expect(details.getByLabel("图谱排序预算限制", { exact: true })).toContainText("已禁用");
   await details.locator("summary").filter({ hasText: "记录处理顺序与检索诊断" }).click();
@@ -277,11 +356,11 @@ try {
   await expect(page.getByRole("tab", { name: "分层元数据", exact: true })).toHaveCount(0);
   const chapter = workspace.getByLabel("Word 章节树", { exact: true }).first();
   await expect(chapter).toBeVisible();
-  const [historyBox, workspaceBox, chapterBox, previewBox, detailsBox] = await Promise.all([
-    history.boundingBox(), workspace.boundingBox(), chapter.boundingBox(), preview.boundingBox(), details.boundingBox(),
+  const [drawerBox, chapterBox, previewBox, detailsBox] = await Promise.all([
+    drawer.boundingBox(), chapter.boundingBox(), preview.boundingBox(), details.boundingBox(),
   ]);
-  assert.ok(historyBox && workspaceBox && chapterBox && previewBox && detailsBox);
-  assert.ok(historyBox.x + historyBox.width <= workspaceBox.x, "History must be left of the analysis workspace");
+  assert.ok(drawerBox && chapterBox && previewBox && detailsBox);
+  assert.ok(Math.abs(drawerBox.width - 1440 * 4 / 5) < 2, "Desktop drawer must occupy 4/5 width");
   assert.ok(chapterBox.x + chapterBox.width <= previewBox.x, "Chapter tree must be left of the preview");
   assert.ok(previewBox.x + previewBox.width <= detailsBox.x, "Metadata/graph details must be right of the preview");
   await assertNoHorizontalOverflow();
@@ -290,13 +369,33 @@ try {
   await expect(graphTab).toHaveAttribute("aria-selected", "true");
   await expect(chapter).toBeVisible();
   await expect(preview.locator(".tiptap")).toBeVisible();
-  const relation = details.getByRole("button").filter({ hasText: "使用设备（合成关系）" });
+  const relation = details.getByLabel("节点属性与关系").getByRole("button").filter({ hasText: "使用设备（合成关系）" });
   await relation.click();
   await expect(details.getByText("主体 → 对象", { exact: true })).toBeVisible();
-  const evidence = details.getByRole("button", { name: sourceRef, exact: true });
+  const nodeDetails = details.getByLabel("节点属性与关系", { exact: true });
+  const visibleDetails = await nodeDetails.innerText();
+  assert.match(visibleDetails, /使用设备（合成关系）/);
+  assert.match(visibleDetails, /合成报告 history-12/);
+  assert.doesNotMatch(visibleDetails, /[a-f0-9]{64}|https:\/\/ontology\.example|候选版本|主体版本|对象版本/);
+  const technical = nodeDetails.locator("details").filter({ hasText: "技术详情（标识与版本）" });
+  await technical.locator("summary").click();
+  await expect(technical).toContainText("relationship:" + "d".repeat(64));
+  await expect(technical).toContainText(sourceRef);
+  await technical.locator("summary").click();
+  await nodeDetails.getByRole("button").filter({ hasText: "样品编号" }).click();
+  await expect(nodeDetails.getByRole("heading", { name: "样品编号", exact: true })).toBeVisible();
+  await expect(nodeDetails).toContainText("BATCH-2026-001");
+  await expect(nodeDetails.getByText("仅限试验阶段", { exact: true })).toBeVisible();
+  assert.doesNotMatch(await nodeDetails.innerText(), /[a-f0-9]{64}|https:\/\/ontology\.example/);
+  await expect(details.getByRole("heading", { name: "覆盖与未完成范围", exact: true })).toHaveCount(0);
+  assert.doesNotMatch(await workspace.innerText(), /计划候选任务|技术未完成|待展开前沿|已检 \/ .*未完成 \/ .*未尝试/);
+  await relation.click();
+  const evidence = details.getByRole("button", { name: "关系或属性依据 · 原文 1", exact: true });
   await evidence.click();
   await expect(workspace.getByText("已从关系图谱定位原文", { exact: true })).toBeVisible();
-  await expect(workspace.getByText("· 1 个物理证据锚点", { exact: true })).toBeVisible();
+  await expect(workspace.getByText("已定位 1 处原文证据，请查看下方高亮内容。", { exact: true })).toBeVisible();
+  assert.doesNotMatch(await workspace.innerText(), /[a-f0-9]{64}|https:\/\/ontology\.example/);
+  assert.doesNotMatch(await status.innerText(), /recognition_run_id|https:\/\/ontology\.example/);
   await expect(graphTab).toHaveAttribute("aria-selected", "true");
   await expect(preview.locator('[data-evidence-id="evidence:0"]')).toContainText(sourceText(runs[0]));
   await expect(preview).not.toContainText(/来源已失效|原文证据未出现在此预览中|来源定位失败/);
@@ -306,6 +405,8 @@ try {
   await graphTab.click();
   await expect(details.getByText("主体 → 对象", { exact: true })).toBeVisible();
   await assertNoHorizontalOverflow();
+  layoutChecks.push("business entity/relationship/property names replace IDs; coverage and unfinished scope hidden; business codes and conditions preserved; technical IDs collapsed; named evidence preserves source refs");
+  await details.getByLabel("可交互关系图谱", { exact: true }).scrollIntoViewIfNeeded();
   await page.screenshot({ path: path.join(output, "graph-source-replay.png"), fullPage: true });
 
   delaySource = true;
@@ -329,8 +430,8 @@ try {
     "Switching detail tabs must preserve the Word preview editor");
   await editor.dispose();
   await page.screenshot({ path: path.join(output, "workspace-desktop.png"), fullPage: true });
-  layoutChecks.push("desktop history/tree/preview/details geometry", "detail tabs preserve chapter tree and preview editor",
-    "compact graph with long labels replays a physical source span while staying on graph tab",
+  layoutChecks.push("desktop 4/5 drawer with tree/preview/metadata geometry", "detail tabs preserve chapter tree and preview editor",
+    "graph canvas with long labels replays a physical source span while staying on graph tab",
     "chapter selection survives an aborted or late source response");
   await close();
   await page.reload();
@@ -343,6 +444,48 @@ try {
   await close();
   await tasks.nth(2).click();
   await expect(status).toContainText("history-10");
+  const runningPanel = page.getByLabel("Harness实时输出", { exact: true });
+  const textPanel = runningPanel.getByLabel("LLM 输出文本");
+  await expect(textPanel).toContainText("合成浏览器测试");
+  const runningSnapshot = makeHarness(runs.find((run) => run.recognition_run_id === "history-10")).snapshot;
+  const sendStream = async (snapshot, connectionEvent = "open") => page.evaluate(({ snapshot, connectionEvent }) => {
+    const source = window.__harnessSources.findLast((item) => item.url.includes("history-10"));
+    source.dispatchEvent(new Event(connectionEvent));
+    source.dispatchEvent(new MessageEvent("harness", { data: JSON.stringify({ recognition_run_id: "history-10", snapshot }) }));
+  }, { snapshot, connectionEvent });
+  const graphReadsBefore = reads.filter((url) => url.endsWith("history-10/graph")).length;
+  const runningInfo = status.getByLabel("Harness运行信息", { exact: true });
+  await expect(runningInfo).not.toHaveAttribute("open", "");
+  const contextReadsBefore = reads.filter((url) => url.endsWith("/harness/context")).length;
+  await sendStream({ ...runningSnapshot, sequence: 2, output: "逐字返回\n".repeat(150), thinking: "后端新的 Thinking 增量" });
+  assert.equal(reads.filter((url) => url.endsWith("/harness/context")).length, contextReadsBefore);
+  await runningInfo.locator("summary").filter({ hasText: /^Harness运行信息$/ }).click();
+  await runningInfo.locator("summary").filter({ hasText: /^Thinking/ }).click();
+  await expect(runningInfo).toContainText("后端新的 Thinking 增量");
+  await runningInfo.locator("summary").filter({ hasText: /^上下文/ }).click();
+  await expect(runningInfo.getByRole("tab", { name: "提示词", exact: true })).toBeVisible();
+  await runningInfo.locator("summary").filter({ hasText: /^Harness运行信息$/ }).click();
+  const closedContextReads = reads.filter((url) => url.endsWith("/harness/context")).length;
+  await sendStream({ ...runningSnapshot, sequence: 3, output: "逐字返回\n".repeat(150), call: { ...runningSnapshot.call, call_id: "call-next" } });
+  await expect(textPanel).toContainText("逐字返回");
+  assert.equal(reads.filter((url) => url.endsWith("/harness/context")).length, closedContextReads);
+
+  await expect(runningPanel.getByLabel("正在接收模型输出")).toBeVisible();
+  await textPanel.evaluate((element) => { element.scrollTop = 0; });
+  await expect(runningPanel.getByRole("button", { name: "回到最新" })).toBeVisible();
+  await sendStream({ ...runningSnapshot, sequence: 4, output: "逐字返回\n".repeat(150) + "新返回" });
+  assert.equal(await textPanel.evaluate((element) => element.scrollTop), 0);
+  await runningPanel.getByRole("button", { name: "回到最新" }).click();
+  assert.ok(await textPanel.evaluate((element) => element.scrollTop > 0));
+  await sendStream({ ...runningSnapshot, sequence: 5, output: "已连接时收到的正文" }, "error");
+  await expect(runningPanel).toContainText("实时未连接");
+  await expect(runningPanel.getByLabel("正在接收模型输出")).toHaveCount(0);
+  await sendStream({ ...runningSnapshot, sequence: 6, output: "流式结束", call: { ...runningSnapshot.call, status: "completed" } });
+  await expect(textPanel).toContainText("流式结束");
+  await expect(runningPanel.getByLabel("正在接收模型输出")).toHaveCount(0);
+  assert.equal(reads.filter((url) => url.endsWith("history-10/graph")).length, graphReadsBefore);
+  layoutChecks.push("stream updates do not reload graph; manual scroll stops follow; reconnect status and end cursor are independent");
+
   await expect(budgetControl).toContainText("运行期间不可调整排序预算限制，请先暂停运行");
   await expect(budgetControl.getByRole("button")).toHaveCount(0);
   await close();
@@ -359,6 +502,7 @@ try {
   const requested = new Promise((resolve) => { delayedRequest = resolve; });
   await tasks.first().click();
   await requested;
+  await close();
   await tasks.nth(1).click();
   await expect(status).toContainText("history-11");
   delayedRunId = null;
@@ -380,17 +524,17 @@ try {
   assert.equal(createCount, 0, "File selection must not upload");
   await page.getByRole("button", { name: "开始分析", exact: true }).click();
   await expect(status).toContainText("new-1");
-  await expect(tasks.first()).toContainText("新上传.docx");
   await close();
+  await expect(tasks.first()).toContainText("新上传.docx");
   await page.goto(`${origin}/analysis?tab=document`);
   await tasks.first().click();
   await expect(status).toContainText("new-1");
   await page.screenshot({ path: path.join(output, "history-desktop.png"), fullPage: true });
   // The shared application shell keeps a fixed sidebar; phone-width shell
   // adaptation is outside this component's layout contract.
-  for (const width of [768]) {
+  for (const width of [768, 390]) {
     await page.setViewportSize({ width, height: 1100 });
-    await expect(history).toBeVisible();
+    await expect(drawer).toBeVisible();
     await expect(preview).toBeVisible();
     await expect(details).toBeVisible();
     await assertNoHorizontalOverflow();
@@ -399,14 +543,16 @@ try {
     await expect(preview.locator(".tiptap")).toBeVisible();
     const treeButton = page.getByRole("button", { name: "章节树", exact: true });
     await treeButton.click();
-    const treeSheet = page.getByRole("dialog");
+    const treeSheet = page.getByRole("dialog", { name: "Word 章节树", exact: true });
     await expect(treeSheet.getByText("合成文档章节", { exact: true })).toBeVisible();
     await page.keyboard.press("Escape");
     await expect(treeSheet).toHaveCount(0);
     await expect(graphTab).toHaveAttribute("aria-selected", "true");
+    await close();
     await tasks.nth(1).click();
     await expect(status).toContainText("history-12");
     await expect(preview.locator(".tiptap")).toContainText("合成预览 history-12");
+    await close();
     await tasks.first().click();
     await expect(status).toContainText("new-1");
     await expect(preview.locator(".tiptap")).toContainText("合成预览 new-1");
@@ -417,11 +563,12 @@ try {
   await page.setViewportSize({ width: 1920, height: 1100 });
   await expect(chapter).toBeVisible();
   await expect(preview.locator(".tiptap")).toBeVisible();
-  const [wideHistory, wideTree, widePreview, wideDetails] = await Promise.all([
-    history.boundingBox(), chapter.boundingBox(), preview.boundingBox(), details.boundingBox(),
+  await metadataTab.click();
+  const [wideDrawer, wideTree, widePreview, wideDetails] = await Promise.all([
+    drawer.boundingBox(), chapter.boundingBox(), preview.boundingBox(), details.boundingBox(),
   ]);
-  assert.ok(wideHistory && wideTree && widePreview && wideDetails);
-  assert.ok(wideHistory.x + wideHistory.width <= wideTree.x);
+  assert.ok(wideDrawer && wideTree && widePreview && wideDetails);
+  assert.ok(Math.abs(wideDrawer.width - 1920 * 4 / 5) < 2);
   assert.ok(wideTree.x + wideTree.width <= widePreview.x);
   assert.ok(widePreview.x + widePreview.width <= wideDetails.x);
   await assertNoHorizontalOverflow();
@@ -429,7 +576,7 @@ try {
   await expect(graphTab).toHaveAttribute("aria-selected", "true");
   await expect(preview.locator(".tiptap")).toBeVisible();
   await page.screenshot({ path: path.join(output, "workspace-1920.png"), fullPage: true });
-  layoutChecks.push("1920px history/tree/preview/details geometry");
+  layoutChecks.push("1920px drawer/tree/preview/details geometry");
   assert.equal(createCount, 1);
   assert.equal(sourceReads, 2);
   assert.deepEqual(writes, [

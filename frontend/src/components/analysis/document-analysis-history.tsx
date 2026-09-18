@@ -62,7 +62,7 @@ export function DocumentAnalysisHistory({
 
   return (
     <Card aria-label="文档分析历史" className={cn("flex min-h-0 flex-col overflow-hidden", className)}>
-      <CardHeader className="shrink-0 space-y-2 border-b p-3">
+      <CardHeader className="shrink-0 space-y-2 border-b p-4">
         <div className="flex items-center justify-between gap-2">
           <CardTitle className="flex items-center gap-2 text-sm"><History className="size-4" />分析历史</CardTitle>
           <Button
@@ -77,9 +77,9 @@ export function DocumentAnalysisHistory({
             <RefreshCw className={cn("size-3.5", loading && "animate-spin")} />
           </Button>
         </div>
-        <p className="text-xs leading-relaxed text-muted-foreground">选择任务，继续查看分析结果。</p>
+        <p className="text-xs leading-relaxed text-muted-foreground">选择一份文档，在详情抽屉中查看分析结果。</p>
       </CardHeader>
-      <CardContent className="min-h-0 max-h-96 flex-1 space-y-3 overflow-y-auto p-2 lg:max-h-none">
+      <CardContent className="min-h-0 flex-1 space-y-3 p-4">
         {error && (
           <div role="alert" className="space-y-2 rounded-md p-2 text-xs text-destructive">
             <span>分析历史加载失败，请重试。</span>
@@ -91,28 +91,29 @@ export function DocumentAnalysisHistory({
           <p className="px-2 py-4 text-xs leading-relaxed text-muted-foreground">{offset === 0 ? "暂无分析历史，上传文档并开始分析后，任务会显示在这里。" : "本页暂无任务，请返回上一页查看。"}</p>
         )}
         {page && page.items.length > 0 && (
-          <ul className="space-y-1.5" aria-label="历史分析任务">
+          <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4" aria-label="历史分析任务">
             {page.items.map((item) => {
               const run = currentRun?.recognition_run_id === item.recognition_run_id
                 && currentRun.run_revision >= item.run_revision ? currentRun : item;
               const selected = item.recognition_run_id === activeRunId;
               const unavailable = ["deleting", "deleted", "expired"].includes(run.status);
               return (
-                <li key={item.recognition_run_id}>
+                <li key={item.recognition_run_id} className="min-w-0">
                   <button
                     type="button"
                     aria-label={`查看分析 ${item.input.filename}，${formatDocumentAnalysisDate(item.created_at)}`}
                     aria-current={selected ? "true" : undefined}
+                    aria-haspopup="dialog"
                     disabled={unavailable}
                     onClick={() => onSelect(item.recognition_run_id)}
                     className={cn(
-                      "w-full min-w-0 space-y-2 rounded-lg border border-transparent p-2.5 text-left transition-colors hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50",
+                      "h-full w-full min-w-0 space-y-3 rounded-xl border bg-card p-4 text-left shadow-sm transition-colors hover:border-primary/40 hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50",
                       selected && "border-primary/40 bg-primary/5 hover:bg-primary/10",
                     )}
                   >
                     <span className="flex items-start gap-2">
                       <FileText className={cn("mt-0.5 size-3.5 shrink-0 text-muted-foreground", selected && "text-primary")} />
-                      <span className="line-clamp-2 min-w-0 flex-1 break-all text-xs font-medium leading-relaxed" title={item.input.filename}>{item.input.filename}</span>
+                      <span className="line-clamp-2 min-w-0 flex-1 break-all text-sm font-medium leading-relaxed" title={item.input.filename}>{item.input.filename}</span>
                       <ChevronRight className={cn("mt-0.5 size-3.5 shrink-0 text-muted-foreground", selected && "text-primary")} />
                     </span>
                     <span className="flex flex-wrap items-center gap-1.5">

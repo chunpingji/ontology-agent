@@ -156,6 +156,40 @@
   },
   {
     "type": "function",
+    "name": "find_referent_candidates",
+    "description": "从当前运行已授权实体召回物理提及、名称变体或指代候选；返回绑定核验材料，不证明共指、不合并实体、不授予新事实发现权限。",
+    "parameters": {
+      "additionalProperties": false,
+      "properties": {
+        "mention_refs": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "type": "array"
+        },
+        "class_iris": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "type": "array"
+        },
+        "scope_id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "mention_refs",
+        "class_iris",
+        "scope_id"
+      ],
+      "type": "object"
+    },
+    "strict": false
+  },
+  {
+    "type": "function",
     "name": "retrieve_evidence",
     "description": "针对当前主体谓词和缺失维度，从同一文档检索完整补充记录；摘要只作定位。",
     "parameters": {
@@ -187,7 +221,9 @@
               "unit",
               "identity_owner",
               "identity_key",
-              "identity_scope"
+              "identity_scope",
+              "reference_identity",
+              "reference_scope"
             ]
           }
         }

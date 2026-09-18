@@ -1,0 +1,63 @@
+{
+  "ir_version": "document-ir-v1",
+  "structure_policy_version": "word-structure-v1",
+  "parser_version": "4",
+  "document_hash": "a677af99167744bd1338a7a60106394ac3ad5c47a42d1159994641f0952a2c88",
+  "original_document_hash": "a677af99167744bd1338a7a60106394ac3ad5c47a42d1159994641f0952a2c88",
+  "structure_hash": "a86bc40448af70b05bf3807ddc3ba06b8eb97c88ec7190804b68b9ccb54ed088",
+  "analysis_id": "3e093f1a4df00642c6e295a0f9c28eae68d9bc76e5c7ec004d425dade9959963",
+  "document_role": "analysis_source",
+  "title": "source",
+  "nodes": [
+    {
+      "node_id": "document",
+      "parent_id": null,
+      "heading": "",
+      "level": 0,
+      "heading_index": null,
+      "direct_block_ids": [
+        "paragraph:0:0"
+      ],
+      "node_type": "document"
+    }
+  ],
+  "blocks": [
+    {
+      "block_id": "paragraph:0:0",
+      "paragraph_index": 0,
+      "fragment_index": 0,
+      "text": "本测量记录的质量为 1500 m。",
+      "style_name": "Normal",
+      "heading_level": 0,
+      "section_node_id": "document",
+      "physical_page_number": null,
+      "body_index": 0,
+      "block_type": "paragraph"
+    }
+  ],
+  "tables": [],
+  "evidence_units": [
+    {
+      "evidence_id": "c6d915ccaad6c0f8c15334de9e4db85a8cdab5097012f930376d5634ddb94070",
+      "kind": "paragraph",
+      "text": "本测量记录的质量为 1500 m。",
+      "section_node_id": "document",
+      "block_id": "paragraph:0:0",
+      "paragraph_index": 0,
+      "fragment_index": 0,
+      "table_path": null,
+      "row_index": null,
+      "column_index": null,
+      "physical_page_number": null,
+      "source_cell_id": null,
+      "paragraph_offset": 0
+    }
+  ],
+  "pagination": {
+    "mode": "single_page_fallback",
+    "physical_page_numbers_available": false,
+    "is_estimated": true,
+    "warning": "Word 未保存可靠分页标记；章节页为逻辑片段，不代表物理页码。"
+  },
+  "diagnostics": []
+}

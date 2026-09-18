@@ -126,6 +126,8 @@ const REASON_LABELS: Record<string, string> = {
   expert_repair_execution_failed: "局部重识别执行失败，已有结果与已用额度已保留。",
   subject_dependency_invalidated: "当前主体的归属证明已失效，需重新核对主体后才能继续。",
   execution_pause_requested: "运行已暂停，恢复运行后继续核验。",
+  execution_time_budget_exhausted: "本次连续运行时间预算已用完，已有结果已保存，继续后处理剩余内容。",
+  execution_model_call_budget_exhausted: "本次连续运行的模型请求预算已用完，已有结果已保存，继续后处理剩余内容。",
   execution_stalled: "识别执行长时间没有进展，已停止并保留已有结果。",
   run_cancelled: "运行已取消，局部重识别已停止。",
   run_deleted: "运行已请求删除，局部重识别已停止。",

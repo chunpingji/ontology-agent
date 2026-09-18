@@ -13,6 +13,11 @@ vm.runInNewContext(ts.transpileModule(
   readFileSync(new URL("../src/lib/document-analysis.ts", import.meta.url), "utf8"),
   { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } },
 ).outputText, { exports: reasons });
+const graphLabels = {};
+vm.runInNewContext(ts.transpileModule(
+  readFileSync(new URL("../src/lib/document-graph.ts", import.meta.url), "utf8"),
+  { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } },
+).outputText, { exports: graphLabels });
 const source = readFileSync(new URL("../src/components/analysis/document-relationship-graph.tsx", import.meta.url), "utf8");
 const compiled = ts.transpileModule(source, {
   compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022,
@@ -27,6 +32,11 @@ vm.runInNewContext(compiled, {
     }
     if (name === "@/lib/utils") return { cn: (...values) => values.filter(Boolean).join(" ") };
     if (name === "@/lib/document-analysis") return reasons;
+    if (name === "@/lib/document-graph") return graphLabels;
+    if (name === "@/lib/api") return { formatDocumentGraphQuantity: () => null };
+    if (name === "@/components/analysis/document-graph-canvas") return {
+      DocumentGraphCanvas: () => React.createElement("div", { "aria-label": "可交互关系图谱" }),
+    };
     return require(name);
   },
   fetch() { assert.fail("rendering ranking diagnostics must never issue requests"); },
@@ -34,10 +44,16 @@ vm.runInNewContext(compiled, {
 
 function render(artifact, runStatus, rankingBudgetEnabled) {
   return renderToStaticMarkup(React.createElement(exports.DocumentRelationshipGraph, {
-    artifact, runStatus, rankingBudgetEnabled, projection: "effective_affirmed", selectedSelectionRef: null,
+    artifact: { properties: [], relationships: [], ...artifact },
+    runStatus, rankingBudgetEnabled, projection: "effective_affirmed", selectedSelectionRef: null,
     onProjectionChange() { assert.fail("render caused projection mutation"); },
     onSelectionRef() { assert.fail("render caused source request"); },
   }));
+}
+
+function visibleContent(html) {
+  return html.split(/<details\b[^>]*><summary\b[^>]*>记录处理顺序与检索诊断/)[0]
+    .replace(/<details\b[^>]*>[\s\S]*?<\/details>/g, "");
 }
 
 function renderTemplateSummary(candidatePolicy) {
@@ -104,10 +120,11 @@ test("committed ranking remains readable before the first graph snapshot", () =>
   assert.match(html, /ranking_timeout/);
   assert.match(html, /counterevidence: -3/);
   assert.match(html, /原始分数不代表事实正确概率/);
-  assert.match(html, /关系图谱尚未形成可读快照/);
+  assert.match(html, /暂无关系图谱/);
+  assert.match(html, /识别结果生成后将在此显示/);
 });
 
-test("candidate completion separates admitted tasks from unchecked search scope", () => {
+test("finished graph results omit coverage and unfinished scope", () => {
   const html = render({ availability: "ready", graph_snapshot: {}, entities: [],
     properties: [], relationships: [], ranking,
     coverage: { candidate_policy: "sparse-candidates-v1", records_planned: 2,
@@ -116,19 +133,14 @@ test("candidate completion separates admitted tasks from unchecked search scope"
       retrieval_diagnostics: { records_soft_pruned: 100, records_reactivatable: 0 } },
     unresolved: { undetermined: 1, unsupported: 2 },
   }, "finished");
-  assert.match(html, /计划候选任务/);
-  assert.match(html, /本轮识别完成说明/);
-  assert.match(html, /搜索范围中 100 项/);
-  assert.match(html, /未入选原文未核验/);
-  assert.match(html, /不表示全文事实已穷尽/);
-  assert.match(html, /语义待定/);
-  assert.doesNotMatch(html, /未尝试范围中 100|覆盖未完成说明/);
+  assert.match(html, /可交互关系图谱/);
+  assert.doesNotMatch(html, /覆盖与未完成范围|计划候选任务|本轮识别完成说明|搜索范围中 100 项|未入选原文未核验|语义待定|待展开前沿/);
   assert.equal(reasons.DOCUMENT_ANALYSIS_STATUS_LABELS.finished, "本轮识别完成");
   assert.equal(reasons.DOCUMENT_ANALYSIS_STATUS_LABELS.paused, "已暂停");
   assert.equal(reasons.DOCUMENT_ANALYSIS_STATUS_LABELS.retryable_failure, "可恢复失败");
 });
 
-test("candidate technical and semantic failures remain visible before completion", () => {
+test("paused graph results omit candidate execution and semantic counters", () => {
   const html = render({ availability: "partial", graph_snapshot: {}, entities: [],
     properties: [], relationships: [], ranking,
     coverage: { candidate_policy: "sparse-candidates-v1", records_planned: 3,
@@ -136,13 +148,12 @@ test("candidate technical and semantic failures remain visible before completion
       pending_frontiers: 0, stop_reason: "task_budget_exhausted", subjects: [] },
     unresolved: { undetermined: 1, unsupported: 0 },
   }, "paused");
-  assert.match(html, /技术未完成/);
-  assert.match(html, /语义待定/);
-  assert.match(html, /覆盖未完成说明/);
-  assert.doesNotMatch(html, /本轮识别完成说明/);
+  assert.match(html, /可交互关系图谱/);
+  assert.match(html, /部分结果/);
+  assert.doesNotMatch(html, /覆盖与未完成范围|技术未完成|语义待定|覆盖未完成说明|本轮识别完成说明/);
 });
 
-test("coverage distinguishes retained phase plans from actual dispatch", () => {
+test("record phase accounting remains absent from the graph result", () => {
   const html = render({ availability: "partial", graph_snapshot: {}, entities: [],
     properties: [], relationships: [], ranking,
     coverage: { records_planned: 9, records_examined: 1, records_incomplete: 0,
@@ -153,12 +164,8 @@ test("coverage distinguishes retained phase plans from actual dispatch", () => {
         records_examined: 1, records_incomplete: 0, records_unattempted: 8, pending_frontiers: 0 }] },
     unresolved: { undetermined: 0, unsupported: 1 },
   });
-  assert.match(html, /第一阶段计划/);
-  assert.match(html, /第二阶段实际执行/);
-  assert.match(html, /实际执行包含已启动但技术未完成/);
-  assert.match(html, /本轮任务预算已用完，仍有原文待检查/);
-  assert.match(html, /<summary[^>]*>技术诊断<\/summary>[\s\S]*?task_budget_exhausted/);
-  assert.match(html, />4<\/td><td[^>]*>1<\/td><td[^>]*>5<\/td><td[^>]*>0<\/td>/);
+  assert.match(html, /可交互关系图谱/);
+  assert.doesNotMatch(html, /第一阶段计划|第二阶段实际执行|实际执行包含已启动但技术未完成|仍有原文待检查|task_budget_exhausted/);
 });
 
 test("a paused ranking explains the current budget before diagnostics, excluding historical failures", () => {
@@ -167,8 +174,8 @@ test("a paused ranking explains the current budget before diagnostics, excluding
     epochs: [...ranking.epochs, { ...ranking.epochs[0], epoch_id: "epoch:paused",
       status: "paused", reason: "ranking_call_budget_exhausted", records: [] }],
   } }, "paused");
-  const visibleNotice = html.split("<details")[0];
-  assert.match(visibleNotice, /语义排序已暂停/);
+  const visibleNotice = visibleContent(html);
+  assert.match(visibleNotice, /排序已暂停/);
   assert.match(visibleNotice, /排序请求预算已用完，恢复不会重置已用额度/);
   assert.doesNotMatch(visibleNotice, /超时|ranking_call_budget_exhausted|ranking_timeout/);
   assert.match(html, /技术码：[\s\S]*ranking_call_budget_exhausted/);
@@ -183,34 +190,28 @@ test("paused timeouts and technical errors are readable without opening diagnost
     const html = render({ availability: "pending", graph_snapshot: null, entities: [], ranking: {
       ...ranking, paused: true, reasons: [code], epochs: [],
     } }, "paused");
-    assert.match(html.split("<details")[0], explanation);
+    assert.match(visibleContent(html), explanation);
     assert.ok(html.includes(code), "The exact technical cause remains available for diagnosis");
   }
 });
 
-test("incomplete work on a running snapshot is coverage information, preserving counts", () => {
+test("running graph results omit incomplete record counts and coverage stop reasons", () => {
   const html = render({ availability: "partial", graph_snapshot: {}, entities: [],
     properties: [], relationships: [], coverage: { records_planned: 9, records_examined: 4,
       records_incomplete: 2, records_unattempted: 5, pending_frontiers: 3, subjects: [],
       stop_reason: "attempted_incomplete" }, unresolved: { undetermined: 1, unsupported: 0 },
   }, "running");
-  assert.match(html, /当前覆盖说明/);
-  assert.match(html, /运行仍在继续/);
-  assert.match(html, /部分原文已尝试处理，但尚未完成识别或验证/);
-  assert.doesNotMatch(html, /停止原因|全文没有关系/);
-  assert.match(html, /已检查<\/span><strong[^>]*>4<\/strong>/);
-  assert.match(html, /技术未完成<\/span><strong[^>]*>2<\/strong>/);
-  assert.match(html, /未尝试<\/span><strong[^>]*>5<\/strong>/);
-  assert.match(html, /技术诊断<\/summary>[\s\S]*attempted_incomplete/);
+  assert.match(html, /可交互关系图谱/);
+  assert.doesNotMatch(html, /当前覆盖说明|技术未完成|未尝试|已检查|待展开前沿|attempted_incomplete|全文没有关系/);
 });
 
 test("a resumed run labels paused ranking evidence as its latest submitted snapshot", () => {
   const html = render({ availability: "pending", graph_snapshot: null, entities: [],
     ranking: { ...ranking, paused: true, reasons: ["ranking_timeout"], epochs: [] },
   }, "running");
-  assert.match(html.split("<details")[0], /最近提交的排序快照/);
-  assert.match(html.split("<details")[0], /运行正在继续/);
-  assert.doesNotMatch(html.split("<details")[0], /语义排序已暂停/);
+  assert.match(visibleContent(html), /最近提交的排序快照/);
+  assert.match(visibleContent(html), /运行正在继续/);
+  assert.doesNotMatch(visibleContent(html), /排序已暂停/);
   assert.doesNotMatch(html, /停止原因/);
 });
 
@@ -241,30 +242,28 @@ test("disabled run control explains that an old budget pause can resume despite 
       ranking: { ...ranking, paused: true, budget_enabled: true, reasons: [code], epochs: [] },
     };
     const html = render(artifact, "paused", false);
-    const notice = html.split("<details")[0];
+    const notice = visibleContent(html);
     assert.match(notice, /此前因排序预算耗尽暂停；预算限制现已禁用，可显式恢复运行，禁用期间不计账/);
     assert.doesNotMatch(notice, /恢复不会重置已用额度/);
-    const coverage = html.slice(html.indexOf("覆盖未完成说明"));
-    assert.match(coverage, /预算限制现已禁用，可显式恢复运行/);
-    assert.doesNotMatch(coverage, /恢复不会重置已用额度/);
+    assert.doesNotMatch(html, /覆盖与未完成范围|覆盖未完成说明/);
     assert.ok(html.includes(code), "The historical cause remains available for diagnosis");
 
-    const continuing = render(artifact, "running", false).split("<details")[0];
+    const continuing = visibleContent(render(artifact, "running", false));
     assert.match(continuing, /此前因排序预算耗尽暂停；预算限制现已禁用，运行正在继续，禁用期间不计账/);
     assert.doesNotMatch(continuing, /可显式恢复运行|恢复不会重置已用额度/);
 
-    const reenabled = render({ ...artifact, ranking: { ...artifact.ranking, budget_enabled: false } },
-      "paused", true).split("<details")[0];
+    const reenabled = visibleContent(render({ ...artifact, ranking: { ...artifact.ranking, budget_enabled: false } },
+      "paused", true));
     assert.match(reenabled, /预算已用完，恢复不会重置已用额度/);
     assert.doesNotMatch(reenabled, /可显式恢复运行|预算限制现已禁用/);
   }
 });
 
 test("disabling the budget preserves explanations of technical pauses", () => {
-  const html = render({ availability: "pending", graph_snapshot: null, entities: [], ranking: {
+  const html = visibleContent(render({ availability: "pending", graph_snapshot: null, entities: [], ranking: {
     ...ranking, paused: true, budget_enabled: true,
     reasons: ["ranking_technical_failure:DataError"], epochs: [],
-  } }, "paused", false).split("<details")[0];
+  } }, "paused", false));
   assert.match(html, /排序发生技术故障，本轮排序尚未完成/);
   assert.doesNotMatch(html, /此前因排序预算耗尽暂停|可显式恢复运行/);
 });

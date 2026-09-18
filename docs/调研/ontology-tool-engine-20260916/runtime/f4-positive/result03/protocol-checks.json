@@ -1,0 +1,9 @@
+{
+  "api_protocol": "responses",
+  "tool_protocol_version": "ontology-tool-extraction-v1",
+  "max_model_requests": 4,
+  "requests_started": 1,
+  "current_protocols_validated": 1,
+  "scope_completion": "incomplete",
+  "quality_status": "not_scored"
+}

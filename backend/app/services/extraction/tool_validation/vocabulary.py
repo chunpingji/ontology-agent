@@ -1,4 +1,4 @@
-"""Local SKOS lexical overlay for the bounded CMC extraction experiment.
+"""Frozen ontology vocabulary, with an explicit legacy experimental compiler.
 
 The overlay contains recall vocabulary, not ontology changes, observed values,
 or validated facts. No report text or scoring reference enters this compiler.
@@ -8,8 +8,16 @@ from __future__ import annotations
 
 import hashlib
 from pathlib import Path
+from typing import Literal as RoleLiteral
 
+from pydantic import Field, model_validator
 from rdflib import RDFS, SKOS, Graph, Literal, Namespace, URIRef
+
+from app.schemas.evidence import EvidenceModel
+from app.services.extraction.evidence_identity import evidence_hash
+from app.services.extraction.ontology_guided.contracts import OntologySnapshot, SubjectRef
+from app.services.extraction.ontology_guided.ontology_lexical import SKOS_ALT_LABEL_IRI
+from app.services.extraction.ontology_guided.ontology_plan import compile_local_menu
 
 PROFILE = "cmc-extraction-vocabulary-v1"
 VOCAB = Namespace("urn:ontology-agent:cmc-extraction-vocabulary:")
@@ -47,12 +55,12 @@ def _load_local(path: Path) -> Graph:
     return Graph().parse(data=path.read_text(encoding="utf-8"), format="turtle")
 
 
-def build_extraction_vocabulary(
+def build_experimental_extraction_vocabulary(
     catalog: dict,
     class_iris: list[str],
     *,
     ontology_dir: str | Path,
-    overlay_path: str | Path = DEFAULT_OVERLAY,
+    overlay_path: str | Path,
 ) -> dict:
     """Compile allowed class/property labels and documented unit vocabulary.
 
@@ -163,5 +171,167 @@ def build_extraction_vocabulary(
                 for source in entry["sources"])
             for entry in result["entries"].values()
         ),
+    )
+    return result
+
+
+class LexicalTerm(EvidenceModel):
+    text: str = Field(min_length=1)
+    language: str | None = None
+
+
+class VocabularyEntry(EvidenceModel):
+    iri: str = Field(min_length=1)
+    role: RoleLiteral["entity", "record_anchor", "field_label", "field_value", "unit"]
+    extraction_label: str | None = None
+    definition: str | None = None
+    labels: list[LexicalTerm] = Field(default_factory=list)
+    aliases: list[LexicalTerm] = Field(default_factory=list)
+    source_refs: list[str] = Field(min_length=1)
+    canonical_unit: str | None = None
+    for_predicates: list[str] = Field(default_factory=list)
+    for_canonical_units: list[str] = Field(default_factory=list)
+
+    @model_validator(mode="after")
+    def require_explicit_source(self):
+        if any(not source.strip() for source in self.source_refs):
+            raise ValueError("vocabulary source references must not be blank")
+        if self.extraction_label is not None and not self.extraction_label.strip():
+            raise ValueError("extraction label must not be blank")
+        if any(not term.text.strip() for term in [*self.labels, *self.aliases]):
+            raise ValueError("vocabulary terms must not be blank")
+        return self
+
+
+class VocabularyOverlay(EvidenceModel):
+    version: str = Field(min_length=1)
+    entries: list[VocabularyEntry]
+
+    @model_validator(mode="after")
+    def unique_entries(self):
+        keys = [(entry.iri, entry.role) for entry in self.entries]
+        if len(keys) != len(set(keys)):
+            raise ValueError("duplicate_vocabulary_role")
+        labels = [entry.extraction_label for entry in self.entries if entry.extraction_label]
+        if len(labels) != len(set(labels)):
+            raise ValueError("duplicate_extraction_label")
+        return self
+
+
+_GENERIC_INSTRUCTIONS = {
+    "entity": _ROLE_INSTRUCTIONS["entity_name"],
+    "record_anchor": _ROLE_INSTRUCTIONS["record_anchor"],
+    "field_label": "抽取原文明示的字段标题或字段名称，不把标题当作字段值。",
+    "field_value": _ROLE_INSTRUCTIONS["attribute_value"],
+    "unit": _ROLE_INSTRUCTIONS["unit"],
+}
+
+
+def build_extraction_vocabulary(
+    snapshot: OntologySnapshot,
+    class_iris: list[str],
+    *,
+    overlay: VocabularyOverlay | None = None,
+) -> dict:
+    """Compile recall hints from frozen input; never open a source or infer facts.
+
+    Roles are keyed by IRI plus role. Direct authoritative aliases win over an
+    explicit overlay; field labels and values remain separate model queries.
+    Missing definitions remain visible instead of acquiring invented semantics.
+    """
+    manual = {(entry.iri, entry.role): entry for entry in overlay.entries} if overlay else {}
+    requested = {}
+    missing = []
+    canonical_units = set()
+    for iri in sorted(set(class_iris)):
+        definition = snapshot.classes.get(iri)
+        if definition is None:
+            missing.append({"iri": iri, "role": "entity", "reason": "class_outside_snapshot"})
+            continue
+        role = "record_anchor" if (iri, "record_anchor") in manual else "entity"
+        requested[iri, role] = definition
+        menu = compile_local_menu(
+            snapshot, SubjectRef(entity_id="vocabulary", revision=1, class_iri=iri)
+        )
+        for prop in menu.properties:
+            requested[prop.iri, "field_label"] = prop
+            requested[prop.iri, "field_value"] = prop
+            if prop.canonical_unit:
+                canonical_units.add(prop.canonical_unit)
+        for edge in menu.relationships:
+            requested[edge.iri, "field_label"] = edge
+    predicates = {iri for iri, role in requested if role.startswith("field_")}
+    for key, entry in manual.items():
+        if entry.role == "unit" and (
+            set(entry.for_predicates) & predicates
+            or set(entry.for_canonical_units) & canonical_units
+        ):
+            requested[key] = None
+    result = {
+        "profile": "ontology-extraction-vocabulary-v1",
+        "entries": {},
+        "groups": {role: [] for role in ("entity", "field_label", "field_value", "unit")},
+        "missing": missing,
+        "metadata": {
+            "ontology_snapshot_id": snapshot.snapshot_id,
+            "ontology_hash": snapshot.ontology_hash,
+            "overlay_hash": evidence_hash(overlay) if overlay else None,
+            "source_text_used": False,
+            "silver_reference_used": False,
+            "direct_aliases_only": True,
+            "truncated": False,
+        },
+    }
+    lexical = snapshot.lexical_context.annotations if snapshot.lexical_context else {}
+    for (iri, role), definition in sorted(requested.items()):
+        entry = manual.get((iri, role))
+        authoritative_definition = definition.description.strip() if definition else ""
+        description = authoritative_definition or (entry.definition or "" if entry else "")
+        if not description.strip():
+            missing.append({"iri": iri, "role": role, "reason": "definition_missing"})
+            continue
+        terms = lexical.get(iri, [])
+        labels = [term for term in terms if term.predicate_iri != SKOS_ALT_LABEL_IRI]
+        if not labels and definition and definition.label.strip():
+            labels = [LexicalTerm(text=definition.label)]
+        labels = labels or (entry.labels if entry else [])
+        if not labels:
+            missing.append({"iri": iri, "role": role, "reason": "preferred_label_missing"})
+            continue
+        labels = sorted(labels, key=lambda term: (term.language != "zh", term.text))
+        aliases = [term for term in terms if term.predicate_iri == SKOS_ALT_LABEL_IRI]
+        aliases = aliases or (entry.aliases if entry else [])
+        pref = labels[0].text
+        alt = list(dict.fromkeys(term.text for term in aliases if term.text != pref))
+        label = (
+            entry.extraction_label if entry and entry.extraction_label
+            else "vocab_" + evidence_hash([iri, role])[:24]
+        )
+        if label in result["entries"]:
+            raise ValueError("duplicate_extraction_label:" + label)
+        sources = [{
+            "kind": "ontology", "snapshot_id": snapshot.snapshot_id,
+            "iri": iri, "field": "definition" if authoritative_definition else "labels",
+        }] if definition else []
+        sources.extend({
+            "kind": "ontology", "snapshot_id": snapshot.snapshot_id, "iri": iri,
+            "predicate": term.predicate_iri, "value": term.text, "language": term.language,
+        } for term in terms)
+        if entry:
+            sources.extend({"kind": "manual_overlay", "source_ref": ref}
+                           for ref in entry.source_refs)
+        compiled = {
+            "iri": iri, "role": role, "pref_label": pref, "alt_labels": alt,
+            "description": _GENERIC_INSTRUCTIONS[role] + description
+            + " 上下文术语提示：" + "、".join([pref, *alt]) + "。",
+            "sources": sources,
+        }
+        if entry and entry.canonical_unit:
+            compiled["canonical_unit"] = entry.canonical_unit
+        result["entries"][label] = compiled
+        result["groups"]["entity" if role == "record_anchor" else role].append(label)
+    result["metadata"].update(
+        requested_entry_count=len(requested), entry_count=len(result["entries"]),
+        missing_count=len(missing),
     )
     return result

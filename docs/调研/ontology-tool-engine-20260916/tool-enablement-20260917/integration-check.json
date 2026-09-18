@@ -1,0 +1,40 @@
+{
+  "mode": "deployed_options_integration_check",
+  "config_content_hash": "ed9654044bed08c1564d5001e7b3872d39e591630cb195b252c9fda6745cf581",
+  "gliner": {
+    "backend": "gliner2.5",
+    "device": "cpu",
+    "checkpoint_revision": "aaecfe45db1d828c963717054ccb868e8ad1f1d5",
+    "status": "no_match",
+    "mention_count": 0,
+    "processed_units": 1,
+    "unprocessed_units": 0,
+    "omissions": 0,
+    "missing_card_entity_definitions": 0
+  },
+  "mock": {
+    "source_counts": {
+      "system-mock-equipment": 211,
+      "system-mock-roles": 5
+    },
+    "query_status": "ok",
+    "candidates": 1,
+    "identity_status": "not_checked"
+  },
+  "vocabulary": {
+    "overlay_entries": 25,
+    "reactor_alt_labels": [
+      "反应釜"
+    ]
+  },
+  "advertised_tools": [
+    "get_schema_card",
+    "inspect_evidence",
+    "propose_mentions",
+    "query_instances",
+    "resolve_source_anchor"
+  ],
+  "qwen_requests": 0,
+  "graph_writes": 0,
+  "fixture_scope": "explicit original name and code from the frozen report; local tool integration, not autonomous extraction or F1"
+}

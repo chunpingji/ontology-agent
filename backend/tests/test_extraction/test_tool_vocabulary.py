@@ -1,5 +1,6 @@
 """The experimental SKOS hints must not invent facts or merge lexical roles."""
 
+from functools import partial
 from pathlib import Path
 
 import pytest
@@ -8,7 +9,11 @@ from rdflib import RDF, RDFS, SKOS, Graph, Literal, URIRef
 from app.services.extraction.tool_validation.vocabulary import (
     DEFAULT_OVERLAY,
     VOCAB,
-    build_extraction_vocabulary,
+    build_experimental_extraction_vocabulary,
+)
+
+build_extraction_vocabulary = partial(
+    build_experimental_extraction_vocabulary, overlay_path=DEFAULT_OVERLAY
 )
 
 DRUG = "https://ontology.pharma-gmp.cn/slpra/drug/"
@@ -190,3 +195,115 @@ def test_all_declared_manual_properties_compile_without_implicit_limits(ontology
     assert len(result["groups"]["values"]) == 75
     assert result["missing"] == []
     assert result["metadata"]["truncated"] is False
+
+
+@pytest.fixture()
+def frozen_snapshot():
+    from app.services.extraction.evidence_identity import evidence_hash
+    from app.services.extraction.ontology_guided.contracts import (
+        ONTOLOGY_LEXICAL_SNAPSHOT_VERSION,
+        OntologyClassDefinition,
+        OntologySnapshot,
+        SlotSpec,
+    )
+    from app.services.extraction.ontology_guided.ontology_lexical import build_lexical_context
+
+    classes = {"urn:Record": OntologyClassDefinition(
+        iri="urn:Record", label="记录", description="一条独立记录", source_hash="frozen",
+        declared_properties=[SlotSpec(
+            iri="urn:mass", label="质量", description="该记录的质量", canonical_unit="mg",
+        ), SlotSpec(iri="urn:unknown", label="未定义")],
+    )}
+    lexical = build_lexical_context({
+        "urn:Record": [{"text": "记录别名", "language": "zh", "predicate_iri": str(SKOS.altLabel)}],
+        "urn:mass": [{"text": "重量", "language": "zh", "predicate_iri": str(SKOS.altLabel)}],
+        "urn:subclass": [{"text": "不可继承别名", "predicate_iri": str(SKOS.altLabel)}],
+    })
+    return OntologySnapshot(
+        snapshot_id="snapshot", version=ONTOLOGY_LEXICAL_SNAPSHOT_VERSION,
+        ontology_hash=evidence_hash({"classes": classes, "lexical_context": lexical}),
+        classes=classes, lexical_context=lexical,
+    )
+
+
+def test_generic_vocabulary_requires_no_overlay_and_keeps_both_field_roles(frozen_snapshot):
+    from app.services.extraction.tool_validation.vocabulary import build_extraction_vocabulary
+
+    result = build_extraction_vocabulary(frozen_snapshot, ["urn:Record"])
+    entries = list(result["entries"].values())
+    assert {(entry["iri"], entry["role"]) for entry in entries} == {
+        ("urn:Record", "entity"), ("urn:mass", "field_label"), ("urn:mass", "field_value"),
+    }
+    assert {entry["role"] for entry in result["missing"]} == {"field_label", "field_value"}
+    assert all(entry["reason"] == "definition_missing" for entry in result["missing"])
+    assert "不可继承别名" not in str(result)
+    assert "cmc" not in str(result)
+    assert all(label.startswith("vocab_") for label in result["entries"])
+    assert result["groups"]["field_label"] != result["groups"]["field_value"]
+    assert all(entry["alt_labels"] == ["重量"] for entry in entries if entry["iri"] == "urn:mass")
+
+
+def test_overlay_roles_sources_and_unit_selection_are_explicit(frozen_snapshot):
+    from app.services.extraction.tool_validation.vocabulary import (
+        VocabularyOverlay,
+        build_extraction_vocabulary,
+    )
+
+    overlay = VocabularyOverlay(version="1", entries=[{
+        "iri": "urn:Record", "role": "record_anchor", "source_refs": ["curated-v1"],
+        "aliases": [{"text": "被权威别名替代"}],
+    }, {
+        "iri": "urn:unit-mg", "role": "unit", "source_refs": ["units-v1"],
+        "labels": [{"text": "毫克", "language": "zh"}], "definition": "质量单位毫克",
+        "for_canonical_units": ["mg"], "canonical_unit": "mg",
+    }, {
+        "iri": "urn:unit-kg", "role": "unit", "source_refs": ["units-v1"],
+        "labels": [{"text": "千克"}], "definition": "质量单位千克",
+        "for_predicates": ["urn:not-selected"], "canonical_unit": "kg",
+    }])
+    result = build_extraction_vocabulary(frozen_snapshot, ["urn:Record"], overlay=overlay)
+    record = by_iri(result, "urn:Record")
+    assert record["role"] == "record_anchor"
+    assert record["alt_labels"] == ["记录别名"]
+    assert len(result["groups"]["entity"]) == 1
+    assert by_iri(result, "urn:unit-mg")["canonical_unit"] == "mg"
+    assert "urn:unit-kg" not in str(result["entries"])
+    assert {row["source_ref"] for row in record["sources"] if row["kind"] == "manual_overlay"} == {
+        "curated-v1",
+    }
+
+
+def test_generic_labels_are_stable_and_overlay_cannot_expand_predicates(frozen_snapshot):
+    from app.services.extraction.tool_validation.vocabulary import (
+        VocabularyOverlay,
+        build_extraction_vocabulary,
+    )
+
+    initial = build_extraction_vocabulary(frozen_snapshot, ["urn:Record"])
+    overlay = VocabularyOverlay(version="1", entries=[{
+        "iri": "urn:outside", "role": "field_value", "source_refs": ["source"],
+        "labels": [{"text": "新字段"}], "definition": "外部词表无权添加谓词",
+    }, {
+        "iri": "urn:mass", "role": "field_value", "source_refs": ["source"],
+        "aliases": [{"text": "不应覆盖已有别名"}],
+    }])
+    result = build_extraction_vocabulary(frozen_snapshot, ["urn:Record"], overlay=overlay)
+    assert set(initial["entries"]) == set(result["entries"])
+    assert "urn:outside" not in str(result["entries"])
+    assert result["metadata"]["overlay_hash"] is not None
+
+
+def test_overlay_rejects_missing_sources_and_colliding_roles():
+    from pydantic import ValidationError
+
+    from app.services.extraction.tool_validation.vocabulary import VocabularyOverlay
+
+    entry = {"iri": "urn:p", "role": "field_label", "source_refs": []}
+    with pytest.raises(ValidationError):
+        VocabularyOverlay(version="v1", entries=[entry])
+    entry["source_refs"] = ["source"]
+    with pytest.raises(ValidationError, match="duplicate_vocabulary_role"):
+        VocabularyOverlay(version="v1", entries=[entry, entry])
+    entry["extraction_label"] = "collision"
+    with pytest.raises(ValidationError, match="duplicate_extraction_label"):
+        VocabularyOverlay(version="v1", entries=[entry, entry | {"role": "field_value"}])

@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from collections import defaultdict, deque
 
+from app.services.extraction.ontology_guided.contracts import VersionedRef
+
 
 class DependencyIndex:
     def __init__(self):
@@ -96,6 +98,14 @@ class DependencyIndex:
             return False
         alternatives = self.requirements.get(claim_id)
         return not alternatives or any(not (proof & self.invalidated) for proof in alternatives)
+
+    def is_valid_references(self, references: list[VersionedRef]) -> bool:
+        """Check the exact recorded revisions, never substitute a newer reference.
+
+        This checks invalidation only. The caller resolves node/relationship
+        references against its authoritative current graph before using them.
+        """
+        return all(self.is_valid(f"{ref.id}@{ref.revision}") for ref in references)
 
     def restore(self, claim_id: str) -> bool:
         """Restore only this binding after a new complete alternative proof.

@@ -7,13 +7,11 @@ at most two new Qwen requests. Vocabulary compilation never reads a reference.
 from __future__ import annotations
 
 import argparse
-import hashlib
 import importlib.metadata
-import re
 import shutil
 from collections import Counter
 from datetime import UTC, datetime
-from pathlib import Path, PurePosixPath
+from pathlib import Path
 from time import monotonic
 
 from app.evaluation.schema_card_evidence import build_sources
@@ -36,12 +34,17 @@ from app.evaluation.schema_card_tools import (
     validate_schema,
     verification_schema,
 )
-from app.services.extraction.gliner2_extractor import Gliner2Extractor
+from app.services.extraction.gliner2_extractor import (
+    Gliner2Extractor,
+    verify_local_checkpoint,
+)
 from app.services.extraction.tool_validation.evidence import get_schema_card, inspect_evidence
 from app.services.extraction.tool_validation.mentions import propose_mentions
 from app.services.extraction.tool_validation.vocabulary import (
     DEFAULT_OVERLAY,
-    build_extraction_vocabulary,
+)
+from app.services.extraction.tool_validation.vocabulary import (
+    build_experimental_extraction_vocabulary as build_extraction_vocabulary,
 )
 
 MODEL_REPO = "fastino/gliner2.5-multi-v1"
@@ -161,46 +164,7 @@ def verify_model_files(model_path):
         raise ValueError("gliner2_model_manifest_invalid")
     if manifest.get("repo") != MODEL_REPO or manifest.get("revision") != MODEL_REVISION:
         raise ValueError("gliner2_frozen_model_identity_mismatch")
-    entries = manifest.get("files")
-    if not isinstance(entries, list) or not entries:
-        raise ValueError("gliner2_model_manifest_files_empty")
-    paths, resolved_paths = set(), set()
-    for entry in entries:
-        if (not isinstance(entry, dict) or not isinstance(entry.get("path"), str)
-                or not entry["path"] or type(entry.get("bytes")) is not int
-                or entry["bytes"] <= 0 or not isinstance(entry.get("sha256"), str)
-                or re.fullmatch(r"[0-9a-f]{64}", entry["sha256"]) is None):
-            raise ValueError("gliner2_model_manifest_entry_invalid")
-        name = entry["path"]
-        relative = PurePosixPath(name)
-        if relative.is_absolute() or ".." in relative.parts:
-            raise ValueError("model_manifest_path_outside_directory")
-        if relative.as_posix() != name or "\\" in name:
-            raise ValueError("gliner2_model_manifest_path_not_canonical")
-        path = model_path / name
-        resolved = path.resolve()
-        if not resolved.is_relative_to(model_path.resolve()):
-            raise ValueError("model_manifest_path_outside_directory")
-        if name in paths or resolved in resolved_paths:
-            raise ValueError("gliner2_model_manifest_duplicate_path:" + name)
-        paths.add(name)
-        resolved_paths.add(resolved)
-    missing = REQUIRED_MODEL_FILES - paths
-    if missing:
-        raise ValueError("gliner2_model_required_files_missing:" + ",".join(sorted(missing)))
-    for entry in entries:
-        path = model_path / entry["path"]
-        if not path.is_file():
-            raise ValueError("gliner2_model_file_missing:" + entry["path"])
-        # The fixed F32 checkpoint is over 1 GB; hash without loading it all into RAM.
-        with path.open("rb") as stream:
-            actual_digest = hashlib.file_digest(stream, "sha256").hexdigest()
-        if path.stat().st_size != entry["bytes"] or actual_digest != entry["sha256"]:
-            raise ValueError("gliner2_model_digest_mismatch:" + entry["path"])
-    config = read(model_path / "config.json")
-    if not isinstance(config, dict) or config.get("architecture") != ARCHITECTURE:
-        raise ValueError("gliner2_model_architecture_mismatch")
-    return manifest
+    return verify_local_checkpoint(model_path, manifest)
 
 
 def package_versions():
@@ -252,7 +216,9 @@ def prepare_tools(baseline, output, cards, cases, ir, ontology_dir, model_path, 
         plan = read(old / "plan/proposal.json")
         validate_schema(plan, read(old / "plan/schema.json"))
         selected = [item["class_iri"] for item in plan["get_schema_card"]]
-        vocabulary = build_extraction_vocabulary(cards, selected, ontology_dir=ontology_dir)
+        vocabulary = build_extraction_vocabulary(
+            cards, selected, ontology_dir=ontology_dir, overlay_path=DEFAULT_OVERLAY
+        )
         if vocabulary["missing"]:
             raise ValueError("extraction_vocabulary_incomplete:" + scope)
         profiles[scope] = vocabulary

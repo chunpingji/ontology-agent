@@ -30,6 +30,7 @@ import {
   UploadCloud,
 } from "lucide-react";
 
+import { DocumentHarnessStream, DocumentHarnessInformation, useDocumentHarness } from "@/components/analysis/document-harness";
 import { DocumentAnalysisHistory } from "@/components/analysis/document-analysis-history";
 import { DocumentRelationshipGraph } from "@/components/analysis/document-relationship-graph";
 import { WordViewer, type DocumentLocation } from "@/components/extraction/word-viewer";
@@ -55,6 +56,7 @@ import {
   deleteDocumentAnalysisRun,
   getAllClassesWithSignal,
   getDocumentAnalysisGraph,
+  defaultDocumentGraphProjection,
   getDocumentAnalysisMetadata,
   getDocumentAnalysisRun,
   getDocumentAnalysisSource,
@@ -78,9 +80,6 @@ import {
 } from "@/lib/api";
 import {
   DOCUMENT_ANALYSIS_STATUS_LABELS as RUN_STATUS_LABELS,
-  documentCoverageLabel,
-  documentCoverageScope,
-  documentRetrievalSummary,
   documentRankingPauseReasons,
   formatDocumentAnalysisDate as formatDate,
   formatDocumentAnalysisReason,
@@ -444,8 +443,15 @@ export function DocumentAnalysisPanel() {
   const [graphState, setGraphState] = useState<{ runId: string; projection: DocumentGraphProjection; value: DocumentAnalysisGraphArtifact } | null>(null);
   const [pollError, setPollError] = useState<{ runId: string; message: string; unavailable: boolean } | null>(null);
   const [pollNonce, setPollNonce] = useState(0);
-  const [projection, setProjection] = useState<DocumentGraphProjection>("effective_affirmed");
-  const [innerTab, setInnerTab] = useState<InnerTab>("metadata");
+  const [projectionChoice, chooseProjection] = useState<{ runId: string | null; value: DocumentGraphProjection } | null>(null);
+  const selectedProjection = projectionChoice?.runId === activeRunId ? projectionChoice?.value : null;
+  const projection = selectedProjection ?? defaultDocumentGraphProjection(
+    runState?.recognition_run_id === activeRunId ? runState : null,
+  );
+  const setProjection = (value: DocumentGraphProjection | null) => chooseProjection(
+    value === null ? null : { runId: activeRunId, value },
+  );
+  const [innerTab, setInnerTab] = useState<InnerTab>("graph");
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [selectedSelectionRef, setSelectedSelectionRef] = useState<{ runId: string; value: string } | null>(null);
   const [sourceReplay, setSourceReplay] = useState<{
@@ -461,6 +467,8 @@ export function DocumentAnalysisPanel() {
   const [controlBusy, setControlBusy] = useState<DocumentAnalysisControlAction | "delete" | null>(null);
   const [controlError, setControlError] = useState<string | null>(null);
   const eventStreamStatus = runState?.recognition_run_id === activeRunId ? runState.status : null;
+  const harness = useDocumentHarness(activeRunId, eventStreamStatus);
+  const [harnessConnection, setHarnessConnection] = useState({ runId: "", connected: false });
   const eventStreamShouldConnect = shouldSubscribeDocumentAnalysisEvents(eventStreamStatus);
 
   useEffect(() => () => {
@@ -484,8 +492,8 @@ export function DocumentAnalysisPanel() {
       if (event.event_head <= eventHeadRef.current.value) return;
       eventHeadRef.current = { runId, value: event.event_head };
       setPollNonce((value) => value + 1);
-    });
-  }, [activeRunId, eventStreamShouldConnect]);
+    }, (connected) => setHarnessConnection({ runId, connected }), harness.applySnapshot);
+  }, [activeRunId, eventStreamShouldConnect, harness.applySnapshot]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -511,10 +519,12 @@ export function DocumentAnalysisPanel() {
     let stopped = false;
 
     const poll = async () => {
+      const runRequest = getDocumentAnalysisRun(runId, controller.signal);
       const [runResult, metadataResult, graphResult] = await Promise.allSettled([
-        getDocumentAnalysisRun(runId, controller.signal),
+        runRequest,
         getDocumentAnalysisMetadata(runId, controller.signal),
-        getDocumentAnalysisGraph(runId, projection, controller.signal),
+        runRequest.then((incoming) => getDocumentAnalysisGraph(runId,
+          selectedProjection ?? defaultDocumentGraphProjection(incoming), controller.signal)),
       ]);
       if (stopped || activeRunIdRef.current !== runId) return;
 
@@ -557,15 +567,16 @@ export function DocumentAnalysisPanel() {
         });
       }
 
-      if (graphResult.status === "fulfilled" && graphResult.value.recognition_run_id === runId && graphResult.value.projection === projection) {
+      if (graphResult.status === "fulfilled" && graphResult.value.recognition_run_id === runId) {
         const incoming = graphResult.value;
+        const receivedProjection = incoming.projection;
         setGraphState((previous) => {
           if (
             previous?.runId === runId
-            && previous.projection === projection
+            && previous.projection === receivedProjection
             && isOlderWatermark(incoming, previous.value)
           ) return previous;
-          return { runId, projection, value: incoming };
+          return { runId, projection: receivedProjection, value: incoming };
         });
       }
 
@@ -581,7 +592,7 @@ export function DocumentAnalysisPanel() {
       controller.abort();
       if (timer) clearTimeout(timer);
     };
-  }, [activeRunId, pollNonce, projection]);
+  }, [activeRunId, pollNonce, selectedProjection]);
 
   const currentRun = runState?.recognition_run_id === activeRunId ? runState : null;
   const currentMetadata = metadataState?.recognition_run_id === activeRunId ? metadataState : null;
@@ -700,8 +711,8 @@ export function DocumentAnalysisPanel() {
       setSelectedNodeId(null);
       setSelectedSelectionRef(null);
       setSourceReplay(null);
-      setProjection("effective_affirmed");
-      setInnerTab("metadata");
+      setProjection(null);
+      setInnerTab("graph");
       replaceRunInUrl(receipt.recognition_run_id);
     } catch (error) {
       if (requestSequence === createSequenceRef.current && !isAbortError(error)) {
@@ -774,6 +785,7 @@ export function DocumentAnalysisPanel() {
       const selection = source.selection;
       const anchor = source.anchors[0] ?? null;
       if (selection?.section_node_id) setSelectedNodeId(selection.section_node_id);
+      previewRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
       setSourceReplay({
         runId,
         selectionRef,
@@ -820,12 +832,15 @@ export function DocumentAnalysisPanel() {
     setSourceLoading(false);
     setSourceError(null);
     setControlError(null);
-    setProjection("effective_affirmed");
-    setInnerTab("metadata");
+    setProjection(null);
+    setInnerTab("graph");
     replaceRunInUrl(runId);
   };
 
   const closeRunView = () => selectRunView(null);
+  const historyFocusRef = useRef<HTMLElement | null>(null);
+  const historyNavRef = useRef<HTMLElement>(null);
+  const previewRef = useRef<HTMLDivElement>(null);
 
   return (
     <div className="space-y-4">
@@ -929,26 +944,34 @@ export function DocumentAnalysisPanel() {
         </CardContent>
       </Card>
 
-      <section aria-label="文档分析布局" className="grid items-start gap-4 lg:grid-cols-[13rem_minmax(0,1fr)]">
-        <nav aria-label="分析历史导航" className="min-w-0 lg:sticky lg:top-4 lg:h-[calc(100vh-7rem)]">
+      <section aria-label="文档分析布局" className="min-w-0">
+        <nav ref={historyNavRef} tabIndex={-1} aria-label="分析历史导航" className="min-w-0">
           <DocumentAnalysisHistory
             key={historyVersion}
             activeRunId={activeRunId}
             currentRun={currentRun}
-            onSelect={selectRunView}
-            className="lg:h-full"
+            onSelect={(runId) => {
+              historyFocusRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+              selectRunView(runId);
+            }}
           />
         </nav>
 
-        <div className="min-w-0 space-y-4">
-          {!activeRunId && (
-            <Card><CardContent className="flex min-h-64 flex-col items-center justify-center gap-3 p-6 text-center">
-              <BookOpen className="size-8 text-muted-foreground" />
-              <p className="text-sm font-medium">选择分析任务查看文档</p>
-              <p className="text-xs text-muted-foreground">从分析历史打开已有任务，或上传文档开始新的分析。</p>
-            </CardContent></Card>
-          )}
-
+        <Sheet open={!!activeRunId} onOpenChange={(open) => { if (!open) closeRunView(); }}>
+          <SheetContent
+            className="w-full max-w-none overflow-hidden p-0 md:w-[80vw] md:max-w-none"
+            onCloseAutoFocus={(event) => {
+              event.preventDefault();
+              const target = historyFocusRef.current;
+              if (target?.isConnected) target.focus();
+              else historyNavRef.current?.focus();
+            }}
+          >
+            <SheetHeader className="shrink-0 border-b px-5 py-4 pr-12">
+              <SheetTitle>文档分析详情</SheetTitle>
+              <SheetDescription className="truncate">{currentRun?.input.filename || "查看文档、元数据与本体约束关系图谱"}</SheetDescription>
+            </SheetHeader>
+            <div className="min-h-0 min-w-0 flex-1 space-y-4 overflow-y-auto p-4">
           {activeRunId && !currentRun && pollError?.runId !== activeRunId && (
             <Card>
               <CardContent className="flex min-h-40 items-center justify-center gap-3 p-6 text-sm text-muted-foreground">
@@ -978,8 +1001,8 @@ export function DocumentAnalysisPanel() {
                       <Badge>{RUN_STATUS_LABELS[currentRun.status]}</Badge>
                       <Badge variant="outline">{STAGE_LABELS[currentRun.stage] || currentRun.stage}</Badge>
                     </div>
-                    <p className="text-xs"><span className="font-medium">{currentRun.input.root_class_label}</span><span className="ml-2 break-all font-mono text-muted-foreground">{currentRun.input.root_class_iri}</span></p>
-                    <p className="break-all font-mono text-[11px] text-muted-foreground">recognition_run_id: {currentRun.recognition_run_id}</p>
+                    <p className="text-xs font-medium">{currentRun.input.root_class_label}</p>
+
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {currentRun.available_actions.includes("pause") && <Button size="sm" variant="outline" disabled={Boolean(controlBusy)} onClick={() => void handleControl("pause")}><Pause />{controlBusy === "pause" ? "正在请求" : "暂停"}</Button>}
@@ -989,53 +1012,55 @@ export function DocumentAnalysisPanel() {
                     <Button size="sm" variant="ghost" onClick={closeRunView}>关闭视图</Button>
                   </div>
                 </div>
-                <section aria-label="排序预算限制" className="space-y-2 rounded-md border p-3 text-xs">
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium">排序预算限制</span>
-                      <Badge variant="outline">{rankingBudgetEnabled ? "已启用" : "已禁用"}</Badge>
+                <DocumentHarnessInformation key={currentRun.recognition_run_id}
+                  runId={currentRun.recognition_run_id} status={currentRun.status}
+                  data={harness.data} error={harness.error}>
+                    <section aria-label="排序预算限制" className="space-y-2 rounded-md border p-3 text-xs">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium">排序预算限制</span>
+                          <Badge variant="outline">{rankingBudgetEnabled ? "已启用" : "已禁用"}</Badge>
+                        </div>
+                        {currentRun.available_actions.includes(rankingBudgetAction) && (
+                          <Button size="sm" variant="outline" disabled={Boolean(controlBusy)} onClick={() => void handleControl(rankingBudgetAction)}>
+                            {controlBusy === rankingBudgetAction ? "正在更新" : rankingBudgetEnabled ? "禁用排序预算限制" : "启用排序预算限制"}
+                          </Button>
+                        )}
+                      </div>
+                      <p className="text-muted-foreground">
+                        {rankingBudgetEnabled
+                          ? "限制累计排序 tokens、记录与请求次数。"
+                          : "预算统计已暂停（显示启用期间累计值）。禁用期间不预扣或累计排序预算；重新启用后从关闭前的累计量继续。"}
+                      </p>
+                      <p className="text-muted-foreground">此开关不关闭 embedding 召回或 reranker 精排；输入长度、超时和单次重试限制仍然生效。切换不会自动恢复运行。</p>
+                      {(currentRun.status === "running" || currentRun.status === "queued") && <p className="text-muted-foreground">运行期间不可调整排序预算限制，请先暂停运行。</p>}
+                    </section>
+
+                    <div className="grid gap-2 text-xs sm:grid-cols-2">
+
+                      <div className="rounded-md bg-muted/40 p-2"><Clock3 className="mr-1 inline size-3.5" /><span className="text-muted-foreground">保留至</span><strong className="ml-2">{formatDate(currentRun.expires_at)}</strong></div>
                     </div>
-                    {currentRun.available_actions.includes(rankingBudgetAction) && (
-                      <Button size="sm" variant="outline" disabled={Boolean(controlBusy)} onClick={() => void handleControl(rankingBudgetAction)}>
-                        {controlBusy === rankingBudgetAction ? "正在更新" : rankingBudgetEnabled ? "禁用排序预算限制" : "启用排序预算限制"}
-                      </Button>
-                    )}
-                  </div>
-                  <p className="text-muted-foreground">
-                    {rankingBudgetEnabled
-                      ? "限制累计排序 tokens、记录与请求次数。"
-                      : "预算统计已暂停（显示启用期间累计值）。禁用期间不预扣或累计排序预算；重新启用后从关闭前的累计量继续。"}
-                  </p>
-                  <p className="text-muted-foreground">此开关不关闭 embedding 召回或 reranker 精排；输入长度、超时和单次重试限制仍然生效。切换不会自动恢复运行。</p>
-                  {(currentRun.status === "running" || currentRun.status === "queued") && <p className="text-muted-foreground">运行期间不可调整排序预算限制，请先暂停运行。</p>}
-                </section>
 
-                <div className="grid gap-2 text-xs sm:grid-cols-2 xl:grid-cols-4">
-                  <div className="rounded-md bg-muted/40 p-2"><span className="text-muted-foreground">运行水位</span><strong className="ml-2">revision {currentRun.run_revision} / event {currentRun.event_head}</strong></div>
-                  <div className="rounded-md bg-muted/40 p-2"><span className="text-muted-foreground">{documentCoverageLabel(currentRun.progress)}覆盖</span><strong className="ml-2">{currentRun.progress.records_examined} 已检 / {currentRun.progress.records_incomplete} 未完成 / {currentRun.progress.records_unattempted} 未尝试</strong></div>
-                  {currentRun.progress.retrieval_diagnostics && (
-                    <div className="rounded-md bg-muted/40 p-2 text-muted-foreground">
-                      {documentRetrievalSummary(currentRun.progress)}
+                    <div className="flex flex-wrap gap-2">
+                      {Object.entries(currentRun.artifacts).map(([name, status]) => <Badge key={name} variant={status === "failed" ? "destructive" : "outline"}>{name}: {ARTIFACT_LABELS[status]}</Badge>)}
+                      <Badge variant="outline">已记账模型调用 {currentRun.progress.model_calls}</Badge>
+                      {(currentRun.progress.model_calls_unresolved ?? 0) > 0 && (
+                        <Badge variant="outline">
+                          已预扣待核实 {currentRun.progress.model_calls_unresolved}
+                        </Badge>
+                      )}
                     </div>
-                  )}
-                  <div className="rounded-md bg-muted/40 p-2"><span className="text-muted-foreground">判定</span><strong className="ml-2">{currentRun.progress.decisions.supported} 支持 / {currentRun.progress.decisions.unsupported} 不支持 / {currentRun.progress.decisions.undetermined} 待定</strong></div>
-                  <div className="rounded-md bg-muted/40 p-2"><Clock3 className="mr-1 inline size-3.5" /><span className="text-muted-foreground">保留至</span><strong className="ml-2">{formatDate(currentRun.expires_at)}</strong></div>
-                </div>
-
-                <p className="text-xs text-muted-foreground">{documentCoverageScope(currentRun.progress)}</p>
-
-                <div className="flex flex-wrap gap-2">
-                  {Object.entries(currentRun.artifacts).map(([name, status]) => <Badge key={name} variant={status === "failed" ? "destructive" : "outline"}>{name}: {ARTIFACT_LABELS[status]}</Badge>)}
-                  <Badge variant="outline">已记账模型调用 {currentRun.progress.model_calls}</Badge>
-                  {(currentRun.progress.model_calls_unresolved ?? 0) > 0 && (
-                    <Badge variant="outline">
-                      已预扣待核实 {currentRun.progress.model_calls_unresolved}
-                    </Badge>
-                  )}
-                  <Badge variant="outline">任务尝试 {currentRun.progress.tasks_attempted}</Badge>
-                  <Badge variant="outline">Phase 1 {currentRun.progress.phase_counts.phase1 ?? 0}</Badge>
-                  <Badge variant="outline">Phase 2 {currentRun.progress.phase_counts.phase2 ?? 0}</Badge>
-                </div>
+                    <details>
+                      <summary className="cursor-pointer">标识与版本</summary>
+                      <div className="mt-2 space-y-1 break-all font-mono">
+                        <p>运行：{currentRun.recognition_run_id}</p>
+                        <p>revision {currentRun.run_revision} / event {currentRun.event_head}</p>
+                        <p>根类型：{currentRun.input.root_class_iri}</p>
+                        <p>模型版本：{harness.data?.configuration.model_revision || "未记录"}</p>
+                        <p>元数据快照：{currentMetadata?.metadata_snapshot?.snapshot_id || "未就绪"}</p>
+                      </div>
+                    </details>
+                </DocumentHarnessInformation>
                 {(currentRun.error || runReason) && (
                   <Alert variant="warning">
                     <TriangleAlert className="size-4" />
@@ -1058,14 +1083,6 @@ export function DocumentAnalysisPanel() {
 
           {activeRunId && !(pollError?.runId === activeRunId && pollError.unavailable) && (
             <section aria-label="文档分析工作区" className="min-w-0 space-y-3">
-              {currentMetadata && (
-                <div className="flex flex-wrap items-center gap-2 break-all text-xs text-muted-foreground">
-                  <Badge variant={currentMetadata.availability === "failed" ? "destructive" : "secondary"}>{ARTIFACT_LABELS[currentMetadata.availability]}</Badge>
-                  <span>run revision {currentMetadata.run_revision} · artifact {currentMetadata.artifact_revision}</span>
-                  {currentMetadata.metadata_snapshot && <span>metadata snapshot: {currentMetadata.metadata_snapshot.snapshot_id}</span>}
-                  {currentMetadata.metadata_snapshot && <Badge variant="outline">{currentMetadata.metadata_snapshot.generation_source}</Badge>}
-                </div>
-              )}
               {currentMetadata?.error && metadataError(currentMetadata.error) && <Alert variant="destructive"><TriangleAlert className="size-4" /><AlertTitle>分层元数据处理失败</AlertTitle><AlertDescription>{metadataError(currentMetadata.error)}</AlertDescription></Alert>}
               {currentMetadata?.pagination?.warning && <Alert variant="warning"><Info className="size-4" /><AlertTitle>分页说明</AlertTitle><AlertDescription>{currentMetadata.pagination.warning}</AlertDescription></Alert>}
               {currentMetadata && currentMetadata.warnings.length > 0 && <Alert><TriangleAlert className="size-4" /><AlertTitle>解析提示</AlertTitle><AlertDescription>{currentMetadata.warnings.join("；")}</AlertDescription></Alert>}
@@ -1074,14 +1091,19 @@ export function DocumentAnalysisPanel() {
                   {sourceLoading ? <Loader2 className="size-4 animate-spin" /> : <Info className="size-4" />}
                   <AlertTitle>{sourceLoading ? "正在校验并定位图谱证据" : "已从关系图谱定位原文"}</AlertTitle>
                   <AlertDescription>
-                    <span className="break-all font-mono text-xs">{currentSelectionRef}</span>
-                    {currentReplay && <span className="ml-2">· {currentReplay.spanCount} 个物理证据锚点</span>}
+                    {currentReplay && <span>已定位 {currentReplay.spanCount} 处原文证据，请查看下方高亮内容。</span>}
                   </AlertDescription>
                 </Alert>
               )}
               {sourceError && <Alert variant="destructive"><TriangleAlert className="size-4" /><AlertTitle>原文证据定位失败</AlertTitle><AlertDescription>{sourceError}</AlertDescription></Alert>}
 
-              <div className="flex justify-end xl:hidden">
+              <Tabs value={innerTab} onValueChange={(value) => setInnerTab(value as InnerTab)}>
+                <TabsList aria-label="文档分析结果视图" className="mb-3 grid w-full grid-cols-2">
+                  <TabsTrigger value="metadata" className="gap-1.5"><FileText className="size-4" />节点元数据</TabsTrigger>
+                  <TabsTrigger value="graph" className="gap-1.5"><GitBranch className="size-4" />关系图谱</TabsTrigger>
+                </TabsList>
+              {currentRun && <DocumentHarnessStream key={activeRunId} status={currentRun.status} data={harness.data} connected={harnessConnection.runId === activeRunId && harnessConnection.connected} error={harness.error} />}
+              <div className="mb-3 flex justify-end xl:hidden">
                 <Sheet>
                   <SheetTrigger asChild><Button variant="outline" size="sm" disabled={!displayTree || !selectedNode}><ListTree />章节树</Button></SheetTrigger>
                   <SheetContent className="overflow-y-auto">
@@ -1091,8 +1113,10 @@ export function DocumentAnalysisPanel() {
                 </Sheet>
               </div>
 
-              <div className="grid min-w-0 gap-3 xl:h-[calc(100vh-12rem)] xl:min-h-[36rem] xl:grid-cols-[10rem_minmax(0,1fr)_minmax(18rem,0.9fr)] 2xl:grid-cols-[12rem_minmax(0,1.3fr)_minmax(22rem,1fr)]">
-                <PanelCard title="Word 章节树" className="hidden xl:flex">
+              <div className={cn("grid min-w-0 gap-3", innerTab === "graph"
+                ? "xl:grid-cols-[10rem_minmax(0,1fr)]"
+                : "xl:grid-cols-[9rem_minmax(0,1fr)_minmax(14rem,0.8fr)]")}>
+                <PanelCard title="Word 章节树" className="hidden h-[32rem] xl:flex">
                   {displayTree && selectedNode ? (
                     <ChapterTreePanel key={`desktop-tree-${analysisKey}`} tree={displayTree} selectedNodeId={selectedNode.node.node_id} onSelect={selectTreeNode} />
                   ) : (
@@ -1100,7 +1124,7 @@ export function DocumentAnalysisPanel() {
                   )}
                 </PanelCard>
 
-                <Card role="region" aria-label="原始文档预览" className="flex h-[32rem] min-h-0 min-w-0 flex-col overflow-hidden xl:h-auto">
+                <Card ref={previewRef} role="region" aria-label="原始文档预览" className="flex h-[32rem] min-h-0 min-w-0 flex-col overflow-hidden">
                   <CardHeader className="flex shrink-0 flex-row flex-wrap items-center justify-between gap-2 space-y-0 border-b p-3">
                     <div className="min-w-0 flex-1">
                       <CardTitle className="text-sm">文档预览</CardTitle>
@@ -1121,14 +1145,7 @@ export function DocumentAnalysisPanel() {
                   </CardContent>
                 </Card>
 
-                <Card role="region" aria-label="文档分析详情" className="flex h-[36rem] min-h-0 min-w-0 flex-col overflow-hidden xl:h-auto">
-                  <Tabs value={innerTab} onValueChange={(value) => setInnerTab(value as InnerTab)} className="flex min-h-0 flex-1 flex-col">
-                    <div className="shrink-0 border-b p-2">
-                      <TabsList aria-label="文档分析结果视图" className="grid w-full grid-cols-2">
-                        <TabsTrigger value="metadata" className="gap-1.5"><FileText className="size-4" />节点元数据</TabsTrigger>
-                        <TabsTrigger value="graph" className="gap-1.5"><GitBranch className="size-4" />关系图谱</TabsTrigger>
-                      </TabsList>
-                    </div>
+                <Card role="region" aria-label="文档分析详情" className={cn("flex min-h-0 min-w-0 flex-col overflow-hidden", innerTab === "graph" ? "order-first col-span-full" : "h-[32rem]")}>
                     <TabsContent value="metadata" className="m-0 min-h-0 flex-1 overflow-auto p-3">
                       {selectedNode ? (
                         <MetadataPanel selected={selectedNode} pagination={currentMetadata?.pagination} />
@@ -1141,7 +1158,6 @@ export function DocumentAnalysisPanel() {
                     <TabsContent value="graph" forceMount className="m-0 min-h-0 flex-1 overflow-auto p-3 data-[state=inactive]:hidden">
                       <DocumentRelationshipGraph
                         key={activeRunId}
-                        compact
                         artifact={currentGraph}
                         runStatus={currentRun?.status}
                         rankingBudgetEnabled={rankingBudgetEnabled}
@@ -1151,12 +1167,14 @@ export function DocumentAnalysisPanel() {
                         selectedSelectionRef={currentSelectionRef}
                       />
                     </TabsContent>
-                  </Tabs>
                 </Card>
               </div>
+              </Tabs>
             </section>
           )}
-        </div>
+            </div>
+          </SheetContent>
+        </Sheet>
       </section>
     </div>
   );

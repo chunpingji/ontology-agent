@@ -1,0 +1,84 @@
+{
+  "run_id": "ontology-tool-cmc-20260916-small02",
+  "document": {
+    "path": "inputs/source.docx",
+    "sha256": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7"
+  },
+  "ir": {
+    "path": "inputs/ir.json",
+    "sha256": "858dddbb762217ede057ed85e659bb6d0349fc90e0c936fbf42756859c882134"
+  },
+  "ontology": {
+    "path": "inputs/ontology.json",
+    "sha256": "1cabf0a4e744160737832cfc5aa4634719765dd786e0ffc5b25473cec5ed80c7"
+  },
+  "metadata": {
+    "path": "inputs/metadata.json",
+    "sha256": "3d1c7a605088733b40b2849e9edf19647f9c278f4d39d9918ddc85d656278937"
+  },
+  "root_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport",
+  "model": "Qwen3.6-35B-A3B",
+  "model_revision": "0b21525e972670ed59e1812e170b27c26355381f0656ecc4e25617ece7dac58b",
+  "budgets": {
+    "max_model_calls": 8,
+    "max_input_tokens": 32768,
+    "max_output_tokens": 8192,
+    "max_tasks": 3,
+    "max_hops": 2,
+    "max_result_tokens": 4096
+  },
+  "options": {
+    "profile": {},
+    "responses": {
+      "strict_tools": false,
+      "strict_answers": false
+    },
+    "gliner2": {
+      "model_path": "/app/models/gliner2.5-multi-v1-20260916",
+      "device": "cpu",
+      "manifest": {
+        "repo": "fastino/gliner2.5-multi-v1",
+        "revision": "aaecfe45db1d828c963717054ccb868e8ad1f1d5",
+        "files": [
+          {
+            "path": "README.md",
+            "bytes": 21622,
+            "sha256": "059ff6387aeeff4925ca02cd8645dd5879bef7f2e6f211949c2e68905029a2ee",
+            "upstream_lfs_sha256": null
+          },
+          {
+            "path": "config.json",
+            "bytes": 3151,
+            "sha256": "8b59a0f426a65859c89cd1ea850c3529c09aa3be3a6fafd8eddfdd17b1bf0146",
+            "upstream_lfs_sha256": null
+          },
+          {
+            "path": "encoder_config/config.json",
+            "bytes": 857,
+            "sha256": "fa4f9ef2903b5369ab172333aae4574e6a476511d7465845cf59f8360ee18716",
+            "upstream_lfs_sha256": null
+          },
+          {
+            "path": "model.safetensors",
+            "bytes": 1149461028,
+            "sha256": "c1ff4ec0bc00031c15530b8f3c33d3677f27949e6a0cb52e1247a6224b6c5395",
+            "upstream_lfs_sha256": "c1ff4ec0bc00031c15530b8f3c33d3677f27949e6a0cb52e1247a6224b6c5395"
+          },
+          {
+            "path": "tokenizer.json",
+            "bytes": 16035853,
+            "sha256": "c62446df87ae18ec98b133f8f84fc449a07cc89bbf8ef192a4cb5f9c53777a7a",
+            "upstream_lfs_sha256": "c62446df87ae18ec98b133f8f84fc449a07cc89bbf8ef192a4cb5f9c53777a7a"
+          },
+          {
+            "path": "tokenizer_config.json",
+            "bytes": 645,
+            "sha256": "0bf3ea0873234bd9bfdd3853c440395009ac6365a925b91654daed5396d655e1",
+            "upstream_lfs_sha256": null
+          }
+        ],
+        "purpose": "User-authorized GLiNER2.5 local CMC/Qwen experiment; offline inference"
+      }
+    }
+  }
+}

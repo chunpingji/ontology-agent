@@ -8,10 +8,11 @@ import { Button } from "@/components/ui/button";
 import { Tree, TreeItem, TreeItemLabel } from "@/components/ui/tree";
 import { useDocumentTree, type DocumentTreeNode } from "@/components/ui/use-document-tree";
 import {
-  getIdentity,
+  getIdentity, formatDocumentGraphQuantity,
   type DocumentAnalysisGraphArtifact, type DocumentGraphAssertionBase,
   type DocumentGraphCoverageSubject, type DocumentGraphEntity,
   type DocumentGraphProperty, type DocumentGraphRelationship,
+  type DocumentGraphRelationshipGroup,
 } from "@/lib/api";
 import {
   DOCUMENT_ANALYSIS_STATUS_LABELS, documentCoverageScope, formatDocumentAnalysisReason,
@@ -48,9 +49,15 @@ function SourceButton({ refs, label, select }: { refs: string[]; label: string; 
   </span>;
 }
 
-function AssertionProof({ item, select }: { item: DocumentGraphAssertionBase; select: Model["select"] }) {
+function AssertionProof({ item, select, graph }: {
+  item: DocumentGraphAssertionBase; select: Model["select"]; graph: DocumentAnalysisGraphArtifact;
+}) {
   const effective = item.policy_eligible && item.structural_valid && item.model_supported
-    && item.polarity === "affirmed" && !item.invalidated;
+    && (graph.extraction_protocol === "ontology-tool-extraction-v1"
+      ? !!item.proof_ref && !!item.decision_refs.length : item.polarity === "affirmed")
+    && !item.invalidated
+    && item.independent_review !== "rejected";
+  const inherited = graph.scope_resolutions?.find((scope) => scope.scope_id === item.scope?.scope_id);
   return <div className="space-y-1">
     <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
       <span>{effective ? "系统验证通过" : item.polarity === "negated" ? "否定陈述"
@@ -63,7 +70,20 @@ function AssertionProof({ item, select }: { item: DocumentGraphAssertionBase; se
       <SourceButton refs={item.source_selection_refs.unit ?? []} label="单位依据" select={select} />
       <SourceButton refs={item.source_selection_refs.condition} label="条件" select={select} />
       <SourceButton refs={item.source_selection_refs.counterevidence} label="反证" select={select} />
+      <SourceButton refs={item.source_selection_refs.selection ?? []} label="组选择依据" select={select} />
     </div>
+    {item.modality && <p className="text-xs text-muted-foreground">
+      {{ asserted: "已陈述事实", required: "要求", possible: "可能", planned: "计划", unspecified: "模态未明确" }[item.modality]}
+      {item.polarity === "negated" && " · 否定"}
+      {item.conditions.length > 0 && ` · 条件：${item.conditions.map((condition) => String(condition.text ?? "")).join("；")}`}
+    </p>}
+    {!!item.scope?.members.length && <div className="text-xs text-muted-foreground">
+      {inherited ? inherited.steps.map((step) => <p key={`${step.relation_ref.id}@${step.relation_ref.revision}:${step.member_ref.entity_id}`}>
+        继承范围：{step.relation_ref.id}@{step.relation_ref.revision} · {step.selection ?? "单对象"} · {step.modality}
+        {" · "}{[...step.conditions, ...step.applicability.map((value) => value.text)].join("；")}
+        <SourceButton refs={step.evidence_selection_ids} label="范围依据" select={select} />
+      </p>) : "范围依赖未解析，不能视为无限定事实"}
+    </div>}
     {!effective && item.reason && <p className="text-xs text-muted-foreground">{item.reason}</p>}
   </div>;
 }
@@ -75,6 +95,7 @@ export function buildTemplateGraphIndex(graph: DocumentAnalysisGraphArtifact) {
   const entities = new Map(graph.entities.map((entity) => [entity.entity_id, entity]));
   const outgoing = new Map<string, DocumentGraphRelationship[]>();
   const edges = new Map<string, Map<string, DocumentGraphRelationship[]>>();
+  const groups = new Map<string, Map<string, DocumentGraphRelationshipGroup[]>>();
   const properties = new Map<string, Map<string, DocumentGraphProperty[]>>();
   const coverage = new Map<string, Map<string, DocumentGraphCoverageSubject>>();
   const add = <T,>(index: Map<string, Map<string, T[]>>, subject: string, predicate: string, item: T) => {
@@ -90,11 +111,22 @@ export function buildTemplateGraphIndex(graph: DocumentAnalysisGraphArtifact) {
     rows.push(edge);
     outgoing.set(edge.subject_ref.entity_id, rows);
   }
+  for (const group of graph.relationship_groups ?? []) {
+    add(groups, group.subject_ref.entity_id, group.predicate_iri, group);
+  }
   for (const item of graph.properties) add(properties, item.subject_ref.entity_id, item.predicate_iri, item);
   for (const item of graph.coverage.subjects) {
     let slots = coverage.get(item.subject_ref.entity_id);
     if (!slots) { slots = new Map(); coverage.set(item.subject_ref.entity_id, slots); }
-    slots.set(item.predicate_iri, item);
+    const previous = slots.get(item.predicate_iri);
+    slots.set(item.predicate_iri, previous ? {
+      ...item, scope: null,
+      records_planned: previous.records_planned + item.records_planned,
+      records_examined: previous.records_examined + item.records_examined,
+      records_incomplete: previous.records_incomplete + item.records_incomplete,
+      records_unattempted: previous.records_unattempted + item.records_unattempted,
+      pending_frontiers: previous.pending_frontiers + item.pending_frontiers,
+    } : item);
   }
   const parent = new Map<string, { subjectId: string; predicate: string; candidateId: string }>();
   const depth = new Map<string, number>();
@@ -117,7 +149,8 @@ export function buildTemplateGraphIndex(graph: DocumentAnalysisGraphArtifact) {
       }
     }
   }
-  return { entities, edges, properties, coverage, roots, parent, depth, rootId };
+  return { entities, edges, groups, properties, coverage, roots, parent, depth, rootId,
+    showIndependent: graph.projection === "verified" };
 }
 
 type GraphIndex = ReturnType<typeof buildTemplateGraphIndex>;
@@ -143,6 +176,8 @@ type GraphTreeNode = DocumentTreeNode & (
   | { kind: "value"; value: DocumentGraphProperty }
   | { kind: "relation"; relation: Predicate; coverage?: DocumentGraphCoverageSubject }
   | { kind: "reference"; target?: DocumentGraphEntity; edge: DocumentGraphRelationship }
+  | { kind: "relationship_group"; group: DocumentGraphRelationshipGroup }
+  | { kind: "member"; target?: DocumentGraphEntity }
 );
 
 /** Project the canonical forest into stable tree occurrences; proofs stay attached
@@ -156,18 +191,21 @@ export function buildTemplateTreeData(index: GraphIndex) {
     ...(root ? [entityKey(root.entity_id)] : []), ...(unassociated.length ? ["unassociated"] : []),
   ] });
   if (unassociated.length) nodes.set("unassociated", { kind: "group",
-    name: `未关联实体（${unassociated.length} 组）`, children: unassociated.map((entity) => entityKey(entity.entity_id)) });
+    name: `未关联实体（${unassociated.length} 组）`, defaultExpanded: index.showIndependent,
+    children: unassociated.map((entity) => entityKey(entity.entity_id)) });
   const incoming = new Map<string, DocumentGraphRelationship>();
   for (const entity of index.entities.values()) {
     const id = entity.entity_id;
     const menu = entity.predicate_menu;
     const properties = index.properties.get(id);
     const edges = index.edges.get(id);
+    const groups = index.groups.get(id);
     const coverage = index.coverage.get(id);
     const fields: Predicate[] = menu?.filter((item) => item.kind === "property")
       ?? [...(properties?.values() ?? [])].map((values) => values[0]);
     const relations: Predicate[] = menu?.filter((item) => item.kind === "relationship")
-      ?? [...(edges?.values() ?? [])].map((values) => values[0]);
+      ?? [...new Map([...edges?.values() ?? [], ...groups?.values() ?? []]
+        .map((values) => [values[0].predicate_iri, values[0]])).values()];
     const propertyGroup = JSON.stringify(["properties", id]);
     const emptyGroup = JSON.stringify(["fields", id]);
     const populated: string[] = [], empty: string[] = [];
@@ -203,8 +241,22 @@ export function buildTemplateTreeData(index: GraphIndex) {
           name: target ? `引用：${target.label} · 跳转到实体` : "目标实体不可用" });
         return ref;
       });
+      for (const group of groups?.get(relation.predicate_iri) ?? []) {
+        const groupId = JSON.stringify(["relationship_group", group.candidate_id, group.revision]);
+        const members = group.object_refs.map((ref) => {
+          const memberId = JSON.stringify(["member", group.candidate_id, ref.entity_id, ref.revision]);
+          const target = index.entities.get(ref.entity_id);
+          nodes.set(memberId, { kind: "member", target, children: [],
+            name: target?.label ?? ref.entity_id });
+          return memberId;
+        });
+        nodes.set(groupId, { kind: "relationship_group", group, children: members,
+          defaultExpanded: true,
+          name: { all: "全部成员", one_of: "恰选一个", alternatives: "可选成员", undetermined: "选择未决" }[group.selection] });
+        targets.push(groupId);
+      }
       nodes.set(key, { kind: "relation", relation, name: relation.predicate_label, children: targets,
-        defaultExpanded: matches.length > 0, coverage: coverage?.get(relation.predicate_iri) });
+        defaultExpanded: targets.length > 0, coverage: coverage?.get(relation.predicate_iri) });
     }
     nodes.set(entityKey(id), { kind: "entity", entity, name: entity.label, children,
       defaultExpanded: (index.depth.get(id) ?? 0) <= 1 });
@@ -238,7 +290,7 @@ export function TemplateGraphTree({ graph, select, onReview, reviewLabel = "专�
     tree.updateDomFocus();
   };
   const tree = useDocumentTree(data, (node, instance) => {
-    if (node.kind === "reference" && node.target) jump(instance, node.target.entity_id);
+    if ((node.kind === "reference" || node.kind === "member") && node.target) jump(instance, node.target.entity_id);
   });
   return <Tree tree={tree} aria-label="关系图谱树" indent={12}>
     {tree.getItems().map((item) => {
@@ -251,24 +303,32 @@ export function TemplateGraphTree({ graph, select, onReview, reviewLabel = "专�
           {node.kind === "entity" ? <div className="space-y-1">
             <p className="font-medium">{node.name} <span className="font-normal text-muted-foreground">{node.entity.class_label}</span></p>
             <SourceButton refs={node.entity.source_selection_refs} label="实体名称" select={select} />
-            {node.incoming && <AssertionProof item={node.incoming} select={select} />}
+            {node.entity.external_provenance?.map((source, index) => <p
+              key={`${source.system}:${source.dataset}:${source.record_key}:${index}`}
+              className="text-xs text-muted-foreground">
+              外部身份：{source.system} / {source.dataset} · {source.record_key}@{source.record_version}（文档事实以原文为依据）
+            </p>)}
+            {node.incoming && <AssertionProof item={node.incoming} select={select} graph={graph} />}
           </div> : node.kind === "value" ? <div className="space-y-1">
             <p>{node.value.raw_value}</p>
-            {node.value.unit && node.value.normalized_value != null &&
-              <p className="text-xs text-muted-foreground">规范化值：{String(node.value.normalized_value)} {node.value.unit}</p>}
+            {formatDocumentGraphQuantity(node.value) != null &&
+              <p className="text-xs text-muted-foreground">规范化值：{formatDocumentGraphQuantity(node.value)}</p>}
             <SourceButton refs={node.value.source_selection_refs.value} label="属性值" select={select} />
-            <AssertionProof item={node.value} select={select} />
+            <AssertionProof item={node.value} select={select} graph={graph} />
             {onReview && <Button size="sm" variant="outline" data-tree-action="review"
               disabled={reviewDisabled} onClick={() => onReview(node.value)}>
               {reviewLabel}
             </Button>}
-          </div> : node.kind === "reference" ? <div className="space-y-1">
+          </div> : node.kind === "relationship_group" ? <div className="space-y-1">
+            <p className="font-medium">{node.name}（{node.group.object_refs.length} 个成员）</p>
+            <AssertionProof item={node.group} select={select} graph={graph} />
+          </div> : node.kind === "reference" || node.kind === "member" ? <div className="space-y-1">
             {node.target ? <button type="button" data-tree-action="reference"
               className="text-left text-primary underline-offset-2 hover:underline"
               data-entity-reference={node.target.entity_id} onClick={() => jump(tree, node.target!.entity_id)}>
               {node.name}
             </button> : <p>{node.name}</p>}
-            <AssertionProof item={node.edge} select={select} />
+            {node.kind === "reference" && <AssertionProof item={node.edge} select={select} graph={graph} />}
           </div> : <div className="space-y-1">
             <p className="font-medium">{node.name}
               {node.kind === "relation" && <span className="ml-2 text-xs font-normal text-muted-foreground">
@@ -341,6 +401,7 @@ export function TemplateDocumentGraphPanel({ model }: { model: Model }) {
         <label className="flex items-center gap-2 text-xs">结果范围
           <select aria-label="图谱结果范围" className="min-w-0 rounded border bg-background p-1"
             value={model.projection} onChange={(event) => model.setProjection(event.target.value as Model["projection"])}>
+            {run.extraction_protocol === "ontology-tool-extraction-v1" && <option value="verified">已验证图谱（含限定与独立实体）</option>}
             <option value="effective_affirmed">有效肯定关系与属性</option>
             <option value="all_candidates">全部候选及待核验结果</option>
             <option value="undetermined">未决结果</option>

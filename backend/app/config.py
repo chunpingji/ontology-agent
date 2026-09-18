@@ -45,11 +45,16 @@ class Settings(BaseSettings):
     local_llm_base_url: str = "http://localhost:11434/v1"
     local_llm_model: str = "qwen2.5:14b"
     local_llm_model_revision: str = ""  # immutable local model artifact identity
+    # Explicit, frozen options for the generic ontology Responses engine. Local
+    # model manifests and instance snapshots are supplied by deployment, not Qwen.
+    ontology_extraction_options: dict = {}
     local_llm_tokenizer_path: str = ""  # local tokenizer.json from the same model artifact
     local_llm_tokenizer_backend: str = "file"  # file | llama_server (explicit local deployment)
     local_llm_server_model_path: str = ""  # must match /props; revision pins the delivered GGUF
     evidence_max_input_tokens: int = 16384
     evidence_max_output_tokens: int = 2048
+    # Optional verified service capacity, distinct from the request input budget.
+    evidence_max_context_tokens: int | None = Field(default=None, ge=1)
     evidence_max_tasks: int = 2048
     evidence_max_regions_per_task: int = 32
     evidence_max_objects_per_task: int = 8
@@ -91,6 +96,8 @@ class Settings(BaseSettings):
     document_analysis_sse_window_seconds: int = 30
     document_analysis_worker_id: str = "document-analysis-worker"
     document_analysis_max_model_calls_per_record: int = Field(default=6, ge=1, le=32)
+    document_analysis_execution_max_seconds: float = Field(default=18000, gt=0)
+    document_analysis_execution_max_model_calls: int = Field(default=32, ge=1)
     document_analysis_performance_enabled: bool = True
     # New runs only. Enhanced retrieval is on; pruning requires reviewed calibration.
     document_analysis_evidence_repair_enabled: bool = True

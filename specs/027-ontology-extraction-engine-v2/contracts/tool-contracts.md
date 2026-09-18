@@ -1,8 +1,8 @@
 # 通用工具的可编码契约
 
-标准请求定义见 [tools.json](tools.json)，包含 10 个 **Responses API function 工具**。用户已确认项目 Qwen 支持 Responses，新 027 运行固定 `api_protocol=responses`；旧 Chat Completions 仅服务已有调用，不为新协议建设双栈或失败回退。制品不由在线代码从 specs 目录加载；实现时由 `tool_contracts.py` 的类型生成同义定义，以契约测试核对。
+标准请求定义见 [tools.json](tools.json)，包含 11 个 **Responses API function 工具**。用户已确认项目 Qwen 支持 Responses，新 027 运行固定 `api_protocol=responses`；旧 Chat Completions 仅服务已有调用，不为新协议建设双栈或失败回退。制品不由在线代码从 specs 目录加载；实现时由 `tool_contracts.py` 的类型生成同义定义，以契约测试核对。
 
-这是完整能力目录，不是每次请求的 tools。当前协议中 `validate_metric`、`validate_graph` 固定由控制器调用，Qwen 可见集合从另外 8 项按第 3 节阶段、恢复模式及预算裁选；标准函数定义不附加非 OpenAI 字段。必检与模型可见性分别验收，不能将十项注册等同于十项模型调用。
+这是完整能力目录，不是每次请求的 tools。当前协议中 `validate_metric` 固定由控制器调用，`validate_graph` 的关系分支可供核验模型调用、属性分支仍由控制器调用；Qwen 可见集合从另外 10 项按第 3 节阶段、恢复模式及预算裁选；标准函数定义不附加非 OpenAI 字段。必检与模型可见性分别验收，不能将十一项注册等同于十一项模型调用。
 
 每个工具为平铺 `{type:"function",name,description,parameters,strict}`，不嵌套 function 对象。基线显式 `strict:false`；具体端点的严格参数生成验收通过后可冻结为 `strict:true`，本次运行冻结后不因失败动态改变。**省略 strict 不等于关闭严格模式**；无论该值为何，参数/结果和语义前置条件均由本地契约复核。
 
@@ -15,6 +15,7 @@ ToolName = Literal[
     "get_schema_card", "inspect_evidence", "resolve_source_anchor",
     "propose_mentions", "check_claim_binding", "query_instances",
     "retrieve_evidence", "propose_repair", "validate_metric", "validate_graph",
+    "find_referent_candidates",
 ]
 ToolStatus = Literal["ok", "no_match", "blocked", "error"]
 
@@ -41,7 +42,7 @@ class ToolDefinition:
     args_type: type[EvidenceModel]
     result_type: type[EvidenceModel]
     allowed_stages: frozenset[str]
-    model_callable: bool         # metric/graph 为 false；不进入 OpenAI 工具定义
+    model_callable: bool         # metric 为 false；graph 仅关系核验分支对模型开放
 ```
 
 每个参数类型按 tools.json 一一声明，`extra="forbid"`；nullable 字段使用无默认值的 `str|None`，仍是必填。入参以 `model_validate_json(..., strict=True)` 校验；模型不可传执行器、semantic_status、owner、租约、任意文件或 URL。运行时 schema 只收紧有效 ID/IRI 枚举，不能把本地检查取消。
@@ -54,11 +55,11 @@ Harness 的错误反馈必须可定位和行动：field_path 仅指本次模型�
 
 拟新增 `ToolContext` 为只读运行时依赖集合：`task, context, index, ontology, menu, cards, frozen_claims, semantic_decisions, materialized_refs, mention_index, external_candidates, metric_result:MetricData|null, instance_reader, mention_extractor, vocabulary, limits, check_cancelled`。metric_result 仅在控制器同次 finalize 的 SHACL 调用中传入，其他调用为 null；不持久化该临时字段。其中 index 等读取对象使用隔离副本或不可变视图；不包含 SQLAlchemy Session、运行仓库写入口或业务提交服务。模型看不到该对象。
 
-`materialized_refs` 是当前协议中已确认结果的引用映射，供上述 cards/mention_index/external_candidates 视图解析，不是另一份实体或图谱存储。每项为 `{kind,id,result_ref,content_hash,context_hash,dependency_refs:list[VersionedRef]}`，kind 为 schema_card/mention/external_candidate；id 只在当前运行、lineage 和依赖下有效。handler 可计算确定的结果 ID，但不能自行登记权限。协调器核对工具结果、引用来源及版本，通过现有结果存储和协议屏障确认 result_ref 与映射后，才回传结果并构造下一轮 ToolContext。映射只引用结果中的对应对象；SHACL 的临时表示图不生成或登记独立引用。
+`materialized_refs` 是当前协议中已确认结果的引用映射，供上述 cards/mention_index/external_candidates 视图解析，不是另一份实体或图谱存储。每项为 `{kind,id,result_ref,content_hash,context_hash,dependency_refs:list[VersionedRef]}`，kind 为 schema_card/mention/external_candidate/relation_validation；id 只在当前运行、lineage 和依赖下有效。handler 可计算确定的结果 ID，但不能自行登记权限。协调器核对工具结果、引用来源及版本，通过现有结果存储和协议屏障确认 result_ref 与映射后，才回传结果并构造下一轮 ToolContext。映射只引用结果中的对应对象；SHACL 的临时表示图不生成或登记独立引用。
 
 `ToolLimits={max_calls_per_response:8,max_calls_per_lineage:16,max_external_candidates:8,max_evidence_units_per_call:16,max_result_tokens:int}`。这些是初始资源上限，运行创建时冻结，可按模型上下文预算调整；不改变事实语义。max_result_tokens 从该请求剩余空间分配，不能默认无限大；完整记录不能保真容纳时返回 blocked/result_budget_exceeded 并保留 deferred 覆盖。
 
-工具调用额度针对模型发出的调用，`tool_calls_used` 在每次获准分派前由协调器预扣并保存；参数错误、未知函数及执行失败的已尝试调用也消耗额度。超出单响应上限的批次不部分执行，额度不足时不进入 handler。控制器必做的 binding/metric/SHACL 不消耗模型选工具的额度，仍受任务执行预算约束并单列本地执行次数/耗时；不能因模型已耗尽工具额度而跳过必检。模型 HTTP 请求继续独立计入[总体方案第 8 节](../../../docs/文档抽取引擎2.0设计方案.md)的四次上限。
+工具调用额度针对模型发出的调用，`tool_calls_used` 在每次获准分派前由协调器预扣并保存；参数错误、未知函数及执行失败的已尝试调用也消耗额度。超出单响应上限的批次不部分执行，额度不足时不进入 handler。控制器必做的 binding/metric/SHACL 不消耗模型选工具的额度，仍受任务执行预算约束并单列本地执行次数/耗时；不能因模型已耗尽工具额度而跳过必检。关系必检的模型调用计入上述工具额度；预算必须容纳缺失检查批次及随后的语义回答。模型 HTTP 请求继续独立计入[总体方案第 8 节](../../../docs/文档抽取引擎2.0设计方案.md)的四次上限。
 
 一次模型工具调用由当前 lineage 内的 `(request_attempt,call_id)` 标识。call_id 取自 Responses 输出的 `type="function_call"` 项；同项的 `id` 是输出项身份，不能替代 call_id。已确认结果恢复时直接加载，不重新扣工具额度、不重复 NER/查询/计算；只有预扣但未确认结果的调用保持未完成，若在原运行契约下重新尝试，则再次预扣并受剩余额度限制。恢复时同时加载 materialized_refs，不能让已返回的 mention/candidate ID 失去解析入口。声明或上下文依赖改变时拒绝不再适用的旧引用；不靠重新执行工具掩盖版本不匹配。控制器 finalize 内未确认的纯本地计算不建立 call_id 或中间恢复点。
 
@@ -86,6 +87,24 @@ def to_function_call_output(call_id: str, result: ToolResult) -> dict: ...
 阶段回答使用 `text.format={type:"json_schema",name,schema,strict}`，输出预算参数为 `max_output_tokens`；阶段 strict 基线同样显式 false，具体能力验收后才冻结 true，与工具 parameters 的 strict 分别配置和验收。编排器检查 response.status、incomplete_details 及输出中的 refusal；非完整响应或 model refusal 属于执行/协议层没有可用回答，保留未完成及原因，不生成声明的 semantic rejected，也不生成原文 negated，不能解释为空候选或空图成功。工具只在通过这些响应检查后分派，语义核验和最终证明门不因协议改变而省略。
 
 ## 2. 各工具输入与输出
+
+### 文档根节点的关系发现与核验
+
+启用 `reference_resolution_version=1` 的运行根据当前主体的已登记身份裁选关系表示：
+主体引用必须与当前文档根节点的 ID、版本相同，依赖视图为用户指定的 `document_root`，
+才允许 `document_subject_description`。该根节点没有正文提及锚点时，发现 Schema 的
+关系 `bridge_kind` 仅提供这一选项；普通实体不提供此选项。有正文锚点的文档根节点仍可
+根据证据使用其他既有表示。以上限制同时用于发现声明冻结及最终原文校验，不按具体领域 IRI 分支。
+
+文档描述声明保留当前主体 ID，`source_assertion.subject_support` 可为空，不以药品名或
+对象描述伪造文档主体提及。对象及谓词须有准确、获授权的原文证据；`subject_binding`
+独立核验声明对当前文档及范围的归属，`object_binding`、`predicate`、条件和否定等维度不省略。
+
+桥接表示错误在冻结时记录并进入既有单次纠正流程；最终原文门禁的问题也通过现有
+`feedback` 传递。改变声明必须增加声明代次、重新冻结并独立核验，不能替换已冻结字段后直接入图。
+纠正至少预留重新提出声明、必需关系工具检查、独立核验三个模型轮次；没有预算或重复原声明时
+保留未完成结果。当前阶段输入保存反馈以支持暂停后继续，不新增历史快照或独立恢复体系。
+已保存的终结 outcome 保持原结果；修复不会自动重做既有运行中的已终结任务。
 
 下列类型均定义于 tool_contracts.py。`Quote`、`SchemaCard`、`QuantityValue`、`ExternalCandidate` 等引用 [data-model.md](../data-model.md)。命名空间、版本和原文身份通过上下文冻结，不在模型参数里重复传入。
 
@@ -139,6 +158,14 @@ def to_function_call_output(call_id: str, result: ToolResult) -> dict: ...
 - 返回候选 ID 按来源/键/版本生成，经协调器登记后才能用于 ExternalLinkProposal；暂停后从已确认结果恢复映射，不重新读取可变来源。
 - 模型只能提出 ExternalLinkProposal，最终身份确认单独核验。外部字段不混为文档属性。
 
+### find_referent_candidates
+
+- Args：`mention_refs:list[str],class_iris:list[str],scope_id:str`。提及必须已登记、类型必须在当前菜单内、作用域必须与任务一致；未知引用、跨运行或失效版本返回 blocked，不降为空候选。
+- Data `ReferentCandidateData`：`candidates:list[ReferentCandidate],truncated:bool,excluded_count:int,identity_status:not_checked`。候选包含 `candidate_entity_ref:VersionedRef,class_iri,mention_refs,source_refs,source_texts,reason,role:binding,fact_eligible:false,distinctions`；source_texts 与 source_refs 一一对应并可逐字回放。
+- 仅对冻结指称消解策略的新运行开放 discovery/verification，`ToolContext.reference_resolution` 默认 false，不能由模型参数打开。读取控制器提供的当前运行实体依赖，并核验内容 hash 与所有原文权限，不扫描未授权原文或其他运行。
+- 按物理提及、空白/字形归一名称、指代上下文召回；原文距离仅排序。最多返回 8 个候选，超出时明确报告 truncated/excluded_count；仍受既有结果 token 上限约束，不能截断原文冒充完整结果。没有候选只代表本次有界查询无匹配。
+- 候选携带绑定/核验来源和原文中可见的批次、实例等区分信息。名称相同、物理距离近或没有冲突均不产生同一实体结论；工具不写图、不发起模型请求。来源必须预先经上下文授权为绑定材料，候选返回不能扩大事实发现权限。
+
 ### retrieve_evidence
 
 - Args：`subject_id:str, predicate_iri:str, missing_facets:list[FacetName]`。发现阶段可为空表示任务初始定位；补证阶段必须对应冻结目标实际缺口。
@@ -174,13 +201,13 @@ def to_function_call_output(call_id: str, result: ToolResult) -> dict: ...
 
 | 阶段 | 模型可请求 | 服务端必做 |
 |---|---|---|
-| discovery | card、inspect、anchor、mentions、instances、retrieve | 引用回放、合法菜单与候选冻结 |
-| verification | card、inspect、anchor、binding、retrieve | 冻结目标逐维度核验；新证据改变核验包身份 |
+| discovery | card、inspect、anchor、mentions、instances、retrieve、referent candidates（新策略） | 引用回放、合法菜单与候选冻结 |
+| verification | card、inspect、anchor、binding、retrieve、关系 graph、referent candidates（新策略） | 冻结关系必须实际调用 graph 并消费结果；独立逐维度语义核验；新证据使旧检查失效 |
 | finalize | 无；不新增 Qwen 轮次 | 控制器按同一 handler 契约执行 binding、metric、graph，完成规范化、SHACL、证明/依赖门与图谱输出 |
 
 recovery 是 `recovery_kind=none|evidence|reproposal` 与 recovery_used 表示的处理模式，不新增 stage。evidence 模式保留声明，在 verification 阶段补证/重验；reproposal 模式回到 discovery 生成新声明，再进入 verification。propose_repair 在这两个阶段仅对已由控制器选择恢复模式、存在真实问题的冻结目标开放；其提案不能改变已冻结的恢复路线或另开周期。allowed_stages 仅包含 discovery/verification/finalize，实际可见集再按模式、缺口、可信前置条件和剩余额度收紧。
 
-本期 metric/graph 的 model_callable=false，所有 discovery/verification tools 列表均排除二者；模型即使主动返回这些名称，也得到 tool_not_allowed，不执行 handler。控制器在语义前置条件满足后先 metric 再 graph；必检结果进入既有声明检查与 ContextFeedback，若存在可修复缺口且还有共享恢复额度，按既定 evidence/reproposal 路线反馈，不增加模型可调用阶段。工具注册、模型可见、实际执行分别统计；不宣称 Qwen 已调用这两项。
+metric 的 model_callable=false；graph 仅对 verification 中的冻结关系开放，属性分支继续拒绝模型调用。控制器在属性语义前置条件满足后先 metric 再 graph；必检结果进入既有声明检查与 ContextFeedback，若存在可修复缺口且还有共享恢复额度，按既定 evidence/reproposal 路线反馈，不增加模型可调用阶段。工具注册、模型可见、实际执行分别统计；不将控制器执行记为 Qwen 调用。
 
 ## 4. 错误与副作用
 
@@ -203,3 +230,9 @@ recovery 是 `recovery_kind=none|evidence|reproposal` 与 recovery_used 表示�
 ## 5. 契约来源
 
 OpenAI Responses 与项目 Qwen 字段契约的依据沿用[总体方案](../../../docs/文档抽取引擎2.0设计方案.md)。Pydantic V2 的 required-nullable、extra=forbid、model_validate_json 和 model_json_schema 依据 [JSON Schema 文档](https://github.com/pydantic/pydantic/blob/main/docs/concepts/json_schema.md)、[V2 迁移文档](https://github.com/pydantic/pydantic/blob/main/docs/migration.md)，2026-09-16 经 Context7 核对。运行代码仍以项目锁定版本验证，不升级依赖来迁就文档示例。
+
+## 关系校验增量（2026-09-17）
+
+validate_graph 保留参数 claim_id、shape_profile_id。关系固定 profile 为 ontology-relation-v1；模型仅在 verification 的冻结关系集合非空时可调用，属性分支仅 finalize 可用。关系结果 RelationValidationData 绑定 claim_ref、content_hash、context_hash、ontology_snapshot_id、menu_hash，分别给出 ontology_status、identity_status、validation_status、semantic_status=not_checked、checked_constraints 和 issues、duplicate_entities（重复 local_id 到现有 VersionedRef），不输出语义 supported。
+
+关系结果登记为 materialized_refs 的 relation_validation 引用，数据只保存在既有 tool_result。当前实体、引用、范围及规则均由服务端上下文读取，模型不能提供替代图或规则。关系检查涵盖已解析菜单内的主体、谓词、range、声明来源及精确提及身份；未解析约束为 incomplete。此范围不是完整 OWL 推理，也不声明运行 SHACL。最终接纳要求当前匹配的工具结果通过及独立原文语义证明，工具调用错误不等于原文否定。

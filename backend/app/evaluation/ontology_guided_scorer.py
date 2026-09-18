@@ -16,7 +16,7 @@ from collections import Counter
 from pathlib import Path
 from typing import Any, Literal
 
-from pydantic import Field, model_validator
+from pydantic import Field, model_serializer, model_validator
 
 from app.evaluation.quality_guided_variant import OntologyGuidedEvaluationResult
 from app.evaluation.semantic_ranking_evaluation import summarize_costs
@@ -25,7 +25,7 @@ from app.services.extraction.document_ir import DocumentIR
 from app.services.extraction.evidence_identity import canonical_json, stable_id
 
 REFERENCE_SCHEMA_VERSION = "ontology-guided-reference-v1"
-SCORER_VERSION = "ontology-guided-scorer-v2"
+SCORER_VERSION = "ontology-guided-scorer-v3"
 
 
 class EntityMatcher(EvidenceModel):
@@ -62,28 +62,53 @@ class ReferenceEntity(EvidenceModel):
     global_identity_expected: bool | None = None
 
 
-class ReferenceProperty(EvidenceModel):
-    subject: EntityMatcher
-    predicate_iri: str = Field(min_length=1)
-    value: Any
-    polarity: Literal["affirmed", "negated", "conditional", "uncertain"] = "affirmed"
-    direction: Literal["outbound"] = "outbound"
-    conditions: list[str] = Field(default_factory=list)
-    applicability: dict[str, Any] = Field(default_factory=dict)
-    expectation: Literal["expected", "forbidden", "undetermined"] = "expected"
-    allowed_evidence_sets: list[list[EvidenceSpan]] = Field(default_factory=list)
+class ReferenceScopeMember(EvidenceModel):
+    """Reference-local parent ID; never a generated prediction candidate ID."""
+    relation_id: str = Field(min_length=1)
+    member: EntityMatcher
 
 
-class ReferenceRelationship(EvidenceModel):
+class ReferenceAssertion(EvidenceModel):
     subject: EntityMatcher
     predicate_iri: str = Field(min_length=1)
-    object: EntityMatcher
     polarity: Literal["affirmed", "negated", "conditional", "uncertain"] = "affirmed"
     direction: Literal["outbound", "inbound"] = "outbound"
     conditions: list[str] = Field(default_factory=list)
     applicability: dict[str, Any] = Field(default_factory=dict)
+    modality: Literal["asserted", "required", "possible", "planned", "unspecified"] = "asserted"
+    scope: list[ReferenceScopeMember] = Field(default_factory=list)
     expectation: Literal["expected", "forbidden", "undetermined"] = "expected"
     allowed_evidence_sets: list[list[EvidenceSpan]] = Field(default_factory=list)
+
+    @model_serializer(mode="wrap")
+    def preserve_legacy_shape(self, handler):
+        data = handler(self)
+        for field in ("modality", "scope", "reference_id"):
+            if field not in self.model_fields_set:
+                data.pop(field, None)
+        return data
+
+
+class ReferenceProperty(ReferenceAssertion):
+    value: Any
+    direction: Literal["outbound"] = "outbound"
+
+
+class ReferenceRelationship(ReferenceAssertion):
+    object: EntityMatcher
+    reference_id: str | None = Field(default=None, min_length=1)
+
+
+class ReferenceRelationshipGroup(ReferenceAssertion):
+    reference_id: str = Field(min_length=1)
+    objects: list[EntityMatcher] = Field(min_length=2)
+    selection: Literal["all", "one_of", "alternatives", "undetermined"]
+
+    @model_validator(mode="after")
+    def unique_members(self):
+        if len({_entity_key(item) for item in self.objects}) != len(self.objects):
+            raise ValueError("reference relationship group repeats a member")
+        return self
 
 
 class ReferencePath(EvidenceModel):
@@ -136,7 +161,9 @@ class QualityThresholds(EvidenceModel):
 
 
 class OntologyGuidedReference(EvidenceModel):
-    schema_version: Literal["ontology-guided-reference-v1"] = REFERENCE_SCHEMA_VERSION
+    schema_version: Literal["ontology-guided-reference-v1", "ontology-guided-reference-v2"] = (
+        REFERENCE_SCHEMA_VERSION
+    )
     reference_id: str = Field(min_length=1)
     document_hash: str = Field(min_length=64, max_length=64)
     ontology_hash: str = Field(min_length=64, max_length=64)
@@ -147,6 +174,7 @@ class OntologyGuidedReference(EvidenceModel):
     entities: list[ReferenceEntity] = Field(default_factory=list)
     properties: list[ReferenceProperty] = Field(default_factory=list)
     relationships: list[ReferenceRelationship] = Field(default_factory=list)
+    relationship_groups: list[ReferenceRelationshipGroup] = Field(default_factory=list)
     paths: list[ReferencePath] = Field(default_factory=list)
     entity_partitions: list[ReferenceEntityPartition] = Field(default_factory=list)
     max_path_traversals: int = Field(default=10000, ge=1, le=1000000)
@@ -160,7 +188,54 @@ class OntologyGuidedReference(EvidenceModel):
             raise ValueError("focus_path reference requires at least one predicate")
         if self.scope_mode == "document_graph" and self.focus_path:
             raise ValueError("document_graph reference cannot carry a focus path")
+        assertions = [*self.properties, *self.relationships, *self.relationship_groups,
+                      *(edge for path in self.paths for edge in path.edges)]
+        if self.schema_version == "ontology-guided-reference-v2":
+            if "relationship_groups" not in self.model_fields_set:
+                raise ValueError("v2 reference requires explicit relationship_groups")
+            if any(not {"modality", "scope"} <= item.model_fields_set for item in assertions):
+                raise ValueError("v2 reference assertions require explicit modality and scope")
+        parents = {}
+        for item in [*self.relationships, *self.relationship_groups]:
+            if item.reference_id is not None:
+                if item.reference_id in parents:
+                    raise ValueError("duplicate reference relationship ID")
+                parents[item.reference_id] = item
+
+        def validate_scope(item, visiting):
+            seen = set()
+            selected = {}
+            for step in item.scope:
+                key = (step.relation_id, _entity_key(step.member))
+                if key in seen:
+                    raise ValueError("duplicate reference scope member")
+                seen.add(key)
+                parent = parents.get(step.relation_id)
+                if parent is None or parent.expectation != "expected":
+                    raise ValueError("reference scope requires an expected parent relationship")
+                if step.relation_id in visiting:
+                    raise ValueError("cyclic reference scope")
+                members = parent.objects if isinstance(parent, ReferenceRelationshipGroup) else [
+                    parent.object
+                ]
+                if _entity_key(step.member) not in {_entity_key(member) for member in members}:
+                    raise ValueError("reference scope member is not a parent object")
+                if (getattr(parent, "selection", None) == "one_of"
+                        and step.relation_id in selected):
+                    raise ValueError("reference scope selects conflicting one_of members")
+                selected[step.relation_id] = step.member
+                validate_scope(parent, visiting | {step.relation_id})
+
+        for item in assertions:
+            validate_scope(item, set())
         return self
+
+    @model_serializer(mode="wrap")
+    def preserve_legacy_shape(self, handler):
+        data = handler(self)
+        if "relationship_groups" not in self.model_fields_set:
+            data.pop("relationship_groups", None)
+        return data
 
 
 def _normal(value: str | None) -> str:
@@ -250,19 +325,82 @@ def score_evaluation(
         raise ValueError("reference scope does not match evaluation run")
     if ir.document_hash != reference.document_hash:
         raise ValueError("reference document hash does not match replay IR")
+    # Revalidate mutable reference objects before using scope IDs as dependencies.
+    reference = OntologyGuidedReference.model_validate(reference.model_dump(mode="json"))
 
     nodes = {node.entity_id: node for node in run.graph.nodes}
+    new_graph = run.graph.projection_policy == "ontology-tool-graph-v1"
+    all_relationships = [*run.graph.edges, *run.graph.relationship_groups]
+    parent_counts = Counter((item.candidate_id, item.revision) for item in all_relationships)
+    parents = {(item.candidate_id, item.revision): item for item in all_relationships
+               if parent_counts[item.candidate_id, item.revision] == 1}
+    reference_parents = {item.reference_id: item for item in [
+        *reference.relationships, *reference.relationship_groups,
+    ] if item.reference_id is not None}
     matchers = [item.entity for item in reference.entities]
     matchers.extend(item.subject for item in reference.properties)
     for edge in [*reference.relationships, *(e for p in reference.paths for e in p.edges)]:
         matchers.extend((edge.subject, edge.object))
+    for group in reference.relationship_groups:
+        matchers.extend((group.subject, *group.objects))
+    for item in [*reference.properties, *reference.relationships, *reference.relationship_groups,
+                 *(edge for path in reference.paths for edge in path.edges)]:
+        matchers.extend(step.member for step in item.scope)
 
     def node_key(node):
         return _node_key(node, matchers)
 
-    def qualifiers(item):
+    def scope_parents(item):
+        result = []
+        for step in item.scope.members:
+            parent = parents.get((step.relation_ref.id, step.relation_ref.revision))
+            if parent is None or not eligible(parent):
+                return None
+            objects = getattr(parent, "object_refs", None) or [parent.object_ref]
+            node = nodes.get(step.member_ref.id)
+            if step.member_ref not in objects or node is None or node.revision != (
+                step.member_ref.revision
+            ):
+                return None
+            result.append((parent, node))
+        return result
+
+    def scope_key(item, visiting):
+        if isinstance(item, ReferenceAssertion):
+            parts = [(reference_relationship_key(reference_parents[step.relation_id], visiting),
+                      _entity_key(step.member)) for step in item.scope]
+        else:
+            if ((new_graph or hasattr(item, "object_refs"))
+                    and "scope" not in item.model_fields_set):
+                return ("missing_scope", item.candidate_id)
+            resolved = scope_parents(item)
+            if resolved is None:
+                return ("unresolved_scope", item.candidate_id)
+            parts = []
+            for parent, member in resolved:
+                identity = (parent.candidate_id, parent.revision)
+                if identity in visiting:
+                    return ("cyclic_scope", item.candidate_id)
+                parts.append((relationship_key(parent, visiting | {identity}), node_key(member)))
+        return tuple(sorted(parts, key=canonical_json))
+
+    def qualifiers(item, visiting=frozenset()):
+        applicability = item.applicability
+        if (isinstance(applicability.get("qualifiers"), list)
+                and all(isinstance(value, dict) for value in applicability["qualifiers"])):
+            # Source coordinates prove the qualifier; they are not its semantics.
+            applicability = {**applicability, "qualifiers": sorted([
+                {key: value for key, value in qualifier.items()
+                 if key not in {"evidence_refs", "evidence_selection_ids"}}
+                for qualifier in applicability["qualifiers"]
+            ], key=canonical_json)}
+        modality = (item.modality if isinstance(item, ReferenceAssertion)
+                    or "modality" in item.model_fields_set
+                    else "unspecified" if new_graph or hasattr(item, "object_refs")
+                    else "asserted")
         return (item.direction, item.polarity,
-                canonical_json(sorted(set(item.conditions))), canonical_json(item.applicability))
+                canonical_json(sorted(set(item.conditions))), canonical_json(applicability),
+                modality, scope_key(item, visiting))
 
     def property_key(item):
         if item.subject_ref.id not in nodes:
@@ -277,18 +415,27 @@ def score_evaluation(
         return ("property", _entity_key(item.subject), item.predicate_iri,
                 canonical_json(item.value), *qualifiers(item))
 
-    def relationship_key(item):
-        if item.subject_ref.id not in nodes or item.object_ref.id not in nodes:
+    def relationship_key(item, visiting=frozenset()):
+        objects = getattr(item, "object_refs", None) or [item.object_ref]
+        if item.subject_ref.id not in nodes or any(ref.id not in nodes for ref in objects):
             return ("dangling_relationship", item.candidate_id)
         if (nodes[item.subject_ref.id].revision != item.subject_ref.revision
-                or nodes[item.object_ref.id].revision != item.object_ref.revision):
+                or any(nodes[ref.id].revision != ref.revision for ref in objects)):
             return ("stale_relationship_endpoint", item.candidate_id)
+        if hasattr(item, "object_refs"):
+            return ("relationship_group", node_key(nodes[item.subject_ref.id]), item.predicate_iri,
+                    tuple(sorted((node_key(nodes[ref.id]) for ref in objects), key=canonical_json)),
+                    item.selection, *qualifiers(item, visiting))
         return ("relationship", node_key(nodes[item.subject_ref.id]), item.predicate_iri,
-                node_key(nodes[item.object_ref.id]), *qualifiers(item))
+                node_key(nodes[item.object_ref.id]), *qualifiers(item, visiting))
 
-    def reference_relationship_key(item):
+    def reference_relationship_key(item, visiting=frozenset()):
+        if isinstance(item, ReferenceRelationshipGroup):
+            return ("relationship_group", _entity_key(item.subject), item.predicate_iri,
+                    tuple(sorted(map(_entity_key, item.objects), key=canonical_json)),
+                    item.selection, *qualifiers(item, visiting))
         return ("relationship", _entity_key(item.subject), item.predicate_iri,
-                _entity_key(item.object), *qualifiers(item))
+                _entity_key(item.object), *qualifiers(item, visiting))
 
     def eligible(item):
         return (item.decision_status == "supported" and item.independent_review != "rejected"
@@ -299,17 +446,21 @@ def score_evaluation(
         "entity": [node for node in nodes.values() if not node.root and eligible(node)],
         "property": [item for item in run.graph.properties if eligible(item)],
         "relationship": [item for item in run.graph.edges if eligible(item)],
+        "relationship_group": [item for item in run.graph.relationship_groups if eligible(item)],
     }
     references = {"entity": reference.entities, "property": reference.properties,
-                  "relationship": reference.relationships}
+                  "relationship": reference.relationships,
+                  "relationship_group": reference.relationship_groups}
     key_functions = {"entity": node_key, "property": property_key,
-                     "relationship": relationship_key}
+                     "relationship": relationship_key, "relationship_group": relationship_key}
     ref_functions = {"entity": lambda item: _entity_key(item.entity),
                      "property": reference_property_key,
-                     "relationship": reference_relationship_key}
+                     "relationship": reference_relationship_key,
+                     "relationship_group": reference_relationship_key}
     scored_predicates = set(reference.scored_predicate_iris)
     fields = ("evidence_refs", "subject_evidence_refs", "object_evidence_refs",
-              "value_evidence_refs", "predicate_evidence_refs", "condition_evidence_refs")
+              "value_evidence_refs", "predicate_evidence_refs", "condition_evidence_refs",
+              "selection_evidence_refs", "unit_evidence_refs")
 
     def anchors(item):
         return [anchor for field in fields for anchor in getattr(item, field, [])]
@@ -332,9 +483,26 @@ def score_evaluation(
             valid = replay_cache[key] and valid
         return valid
 
-    def valid_proof(item, expected):
-        return bool(_evidence_matches(anchors(item), expected.allowed_evidence_sets)
-                    and replayable(item))
+    def valid_proof(item, expected, visiting=frozenset()):
+        if not (_evidence_matches(anchors(item), expected.allowed_evidence_sets)
+                and replayable(item)):
+            return False
+        if not isinstance(expected, ReferenceAssertion) or not expected.scope:
+            return True
+        resolved = scope_parents(item)
+        if resolved is None:
+            return False
+        for step in expected.scope:
+            reference_parent = reference_parents[step.relation_id]
+            options = [(parent, member) for parent, member in resolved
+                       if node_key(member) == _entity_key(step.member)
+                       and relationship_key(parent) == reference_relationship_key(reference_parent)]
+            if not any((parent.candidate_id, parent.revision) not in visiting
+                       and valid_proof(parent, reference_parent, visiting | {
+                           (parent.candidate_id, parent.revision),
+                       }) for parent, _member in options):
+                return False
+        return True
 
     def counts(tp, fp, fn):
         return {"tp": tp, "fp": fp, "fn": fn,
@@ -408,7 +576,8 @@ def score_evaluation(
     metrics["overall"] = counts(*(sum(metrics[kind][name] for kind in candidates)
                                   for name in ("tp", "fp", "fn")))
     metrics["assertions"] = counts(*(sum(metrics[kind][name]
-                                         for kind in ("property", "relationship"))
+                                         for kind in ("property", "relationship",
+                                                      "relationship_group"))
                                      for name in ("tp", "fp", "fn")))
     unknown_total = sum(unscored.values())
     accepted_total = sum(len(items) for items in candidates.values())
@@ -558,14 +727,21 @@ def score_evaluation(
         "unscored_predictions": {"entities": unscored["entity"],
                                  "properties": unscored["property"],
                                  "relationships": unscored["relationship"],
+                                 "relationship_groups": unscored["relationship_group"],
                                  "total": unknown_total,
                                  "fraction": (unknown_total / accepted_total
                                               if accepted_total else 0),
                                  "details": unscored_details},
         "precision_bounds": precision_bounds,
+        "undetermined_reference_assertions": {
+            kind: sum(item.expectation == "undetermined" for item in items)
+            for kind, items in references.items() if kind != "entity"
+        },
         "duplicate_eligible_predictions": {"entities": duplicate_counts["entity"],
                                            "properties": duplicate_counts["property"],
-                                           "relationships": duplicate_counts["relationship"]},
+                                           "relationships": duplicate_counts["relationship"],
+                                           "relationship_groups": duplicate_counts[
+                                               "relationship_group"]},
         "identity_precision": (identity_tp / (identity_tp + identity_fp)
                                if identity_tp + identity_fp else None),
         "identity_counts": {"tp": identity_tp, "fp": identity_fp, "unscored": identity_unknown},

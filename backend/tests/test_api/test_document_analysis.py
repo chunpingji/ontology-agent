@@ -75,6 +75,44 @@ def _create(
     )
 
 
+def test_projection_uses_frozen_protocol_and_graph_get_does_not_start_work(
+    client, db, analyst_headers, tmp_path, monkeypatch,
+):
+    monkeypatch.setattr(settings, "document_analysis_storage_dir", tmp_path / "artifacts")
+    calls = []
+    monkeypatch.setattr(
+        document_analysis, "dispatch_run", lambda *_args, **_kwargs: calls.append(1),
+    )
+    created = _create(client, analyst_headers, _word_bytes(tmp_path), request_key="protocol-view")
+    assert created.status_code == 202
+    run_id = created.json()["recognition_run_id"]
+    calls.clear()
+    url = f"/api/document-analysis/runs/{run_id}"
+    run = db.get(DocumentAnalysisRun, run_id)
+    source = db.get(DocumentAnalysisArtifact, run.artifact_manifest["source"]["artifact_id"])
+    frozen_new = source.payload["performance_policy"]
+    assert frozen_new["extraction_protocol"] == "ontology-tool-extraction-v1"
+    assert frozen_new["api_protocol"] == "responses" and frozen_new["max_lineage_calls"] == 4
+    # Explicit historical fixture: legacy runs have no new protocol marker.
+    source.payload = {**source.payload, "performance_policy": {"state_storage_version": 4}}
+    db.commit()
+    legacy = client.get(f"{url}/graph?projection=verified", headers=analyst_headers)
+    assert legacy.status_code == 400
+    assert legacy.json()["error"]["code"] == "unsupported_projection"
+    assert "extraction_protocol" not in client.get(url, headers=analyst_headers).json()
+
+    source.payload = {**source.payload, "performance_policy": frozen_new}
+    db.commit()
+    status = client.get(url, headers=analyst_headers)
+    assert status.json()["extraction_protocol"] == "ontology-tool-extraction-v1"
+    graph = client.get(f"{url}/graph?projection=verified", headers=analyst_headers)
+    assert graph.status_code == 200, graph.text
+    payload = graph.json()
+    assert payload["projection"] == "verified" and payload["availability"] == "pending"
+    assert payload["relationship_groups"] == payload["scope_resolutions"] == []
+    assert calls == []
+
+
 @pytest.mark.parametrize("state_storage_version", [2, 4])
 def test_current_pause_and_resume_do_not_rewrite_checkpoint_coverage(
     client, db, analyst_headers, tmp_path, monkeypatch, state_storage_version,
@@ -82,9 +120,13 @@ def test_current_pause_and_resume_do_not_rewrite_checkpoint_coverage(
     from copy import deepcopy
 
     from app.models.document_analysis import DocumentRunArtifactHead, DocumentRunCurrentState
-    from app.services.document_analysis import application, current_state
+    from app.services.document_analysis import application, current_state, execution
+    from tests.test_extraction.test_document_analysis_execution_recovery import frozen_legacy_policy
 
     monkeypatch.setattr(application, "CURRENT_STATE_STORAGE_VERSION", state_storage_version)
+    monkeypatch.setattr(execution, "freeze_tool_engine_policy", lambda: frozen_legacy_policy(
+        current_state=state_storage_version == 4, evidence_repair=False,
+    ))
     monkeypatch.setattr(settings, "document_analysis_storage_dir", tmp_path / "artifacts")
     created = _create(client, analyst_headers, _word_bytes(tmp_path), request_key="pause-view")
     run_id = created.json()["recognition_run_id"]
@@ -132,6 +174,13 @@ def test_run_builds_shared_metadata_and_honest_partial_graph(
     monkeypatch.setattr(settings, "document_analysis_storage_dir", storage)
     monkeypatch.setattr(settings, "document_analysis_evidence_repair_enabled", sparse_candidates)
     monkeypatch.setattr(settings, "document_analysis_adaptive_retrieval_mode", "disabled")
+
+    from app.services.document_analysis import execution
+    from tests.test_extraction.test_document_analysis_execution_recovery import frozen_legacy_policy
+
+    monkeypatch.setattr(execution, "freeze_tool_engine_policy", lambda: frozen_legacy_policy(
+        current_state=True, evidence_repair=sparse_candidates,
+    ))
 
     raw = _word_bytes(tmp_path)
     created = _create(client, analyst_headers, raw)
@@ -225,6 +274,12 @@ def test_configured_model_persists_effective_proof_and_replays_role_sources(
     # The response fixture below implements the original adapter's proof protocol.
     monkeypatch.setattr(settings, "document_analysis_evidence_repair_enabled", False)
     monkeypatch.setattr(settings, "document_analysis_adaptive_retrieval_mode", "disabled")
+    from app.services.document_analysis import execution
+    from tests.test_extraction.test_document_analysis_execution_recovery import frozen_legacy_policy
+
+    monkeypatch.setattr(execution, "freeze_tool_engine_policy", lambda: frozen_legacy_policy(
+        current_state=True, evidence_repair=False,
+    ))
 
     def deterministic_model(_client, *, user, **_kwargs):
         request = json.loads(user)
@@ -805,3 +860,86 @@ def test_get_tabs_and_etag_are_side_effect_free(client, db, analyst_headers, tmp
     assert (after.revision, after.event_head, after.artifact_revision) == watermark
     assert db.query(DocumentRecognitionEvent).count() == event_count
     assert db.query(DocumentRunCandidate).count() == candidate_count
+
+
+def test_harness_current_context_is_private_read_only_and_call_bound(
+    client, db, analyst_headers, tmp_path, monkeypatch,
+):
+    from app.services.document_analysis.harness import TEXT_LIMIT, HarnessObserver
+
+    monkeypatch.setattr(settings, "document_analysis_storage_dir", tmp_path / "artifacts")
+    dispatched = []
+    monkeypatch.setattr(document_analysis, "dispatch_run", lambda *a, **kw: dispatched.append(1))
+    created = _create(client, analyst_headers, _word_bytes(tmp_path), request_key="harness").json()
+    run_id = created["recognition_run_id"]
+    dispatched.clear()
+    url = f"/api/document-analysis/runs/{run_id}/harness"
+    empty = client.get(url, headers=analyst_headers)
+    assert empty.status_code == 200 and empty.json()["snapshot"] is None
+    store = DocumentAnalysisRunStore(db)
+    token = store.claim(run_id, "analyst", actor="dispatcher", worker_id="test-harness")
+    db.commit()
+    run = store.get_owned(run_id, "analyst")
+    watermark = (run.revision, run.event_head, run.work_version)
+    db.commit()
+    observer = HarnessObserver(db.get_bind(), run_id, "analyst", token)
+    request = {"model": "qwen-test", "instructions": "合法指令", "input": [
+        {"type": "reasoning", "encrypted_content": "opaque-secret", "summary": []},
+    ]}
+    observer("model_start", {"call_id": "call-1", "stage": "discovery", "input_tokens": 10,
+                             "request": request, "schema_card": {"predicates": []}})
+    observer("delta", {"channel": "output", "text": "x" * (TEXT_LIMIT + 1)})
+    observer("delta", {"channel": "thinking", "text": "服务端可读内容"})
+    observer.flush(force=True)
+    snapshot = client.get(url, headers=analyst_headers).json()["snapshot"]
+    assert snapshot["call"]["status"] == "running"
+    assert len(snapshot["output"]) == TEXT_LIMIT and snapshot["truncated"] == ["output"]
+    assert snapshot["thinking"] == "服务端可读内容"
+    context = client.get(url + "/context?call_id=call-1", headers=analyst_headers)
+    assert context.status_code == 200
+    assert "opaque-secret" not in context.text
+    assert request["input"][0]["encrypted_content"] == "opaque-secret"  # display redaction only
+    stranger = {**analyst_headers, "X-User": "other-owner"}
+    assert client.get(url, headers=stranger).status_code == 404
+    assert client.get(url + "/context?call_id=call-1", headers=stranger).status_code == 404
+    observer("model_start", {"call_id": "call-2", "stage": "verification", "input_tokens": 11,
+                             "request": request, "schema_card": {"predicates": ["second"]}})
+    assert client.get(url + "/context?call_id=call-1", headers=analyst_headers).status_code == 409
+    assert client.get(url + "/context?call_id=call-2", headers=analyst_headers).status_code == 200
+    # A stale execution must never replace the current context.
+    stale = HarnessObserver(db.get_bind(), run_id, "analyst", "invalid-token")
+    stale("model_start", {"call_id": "stale", "stage": "discovery", "input_tokens": 0,
+                          "request": request, "schema_card": {}})
+    latest = client.get(url, headers=analyst_headers).json()["snapshot"]
+    assert latest["call"]["call_id"] == "call-2"
+    db.expire_all()
+    current = store.get_owned(run_id, "analyst")
+    assert (current.revision, current.event_head, current.work_version) == watermark
+    assert not dispatched
+
+
+def test_harness_sse_is_current_display_without_durable_event_id(
+    client, db, analyst_headers, tmp_path, monkeypatch,
+):
+    from app.services.document_analysis.harness import HarnessObserver
+
+    monkeypatch.setattr(settings, "document_analysis_storage_dir", tmp_path / "artifacts")
+    monkeypatch.setattr(settings, "document_analysis_sse_window_seconds", 0.01)
+    monkeypatch.setattr(document_analysis, "dispatch_run", lambda *args, **kwargs: None)
+    run_id = _create(client, analyst_headers, _word_bytes(tmp_path),
+                     request_key="harness-sse").json()["recognition_run_id"]
+    store = DocumentAnalysisRunStore(db)
+    token = store.claim(run_id, "analyst", actor="dispatcher", worker_id="harness-sse")
+    db.commit()
+    observer = HarnessObserver(db.get_bind(), run_id, "analyst", token)
+    observer("model_start", {"call_id": "call-stream", "stage": "discovery", "input_tokens": 1,
+        "request": {"model": "qwen", "input": [], "instructions": "context-not-in-stream"},
+        "schema_card": {}})
+    observer("delta", {"channel": "output", "text": "first incremental output"})
+    observer.flush(force=True)
+    response = client.get(f"/api/document-analysis/runs/{run_id}/events", headers=analyst_headers)
+    assert response.status_code == 200
+    frame = next(frame for frame in response.text.split("\n\n") if "event: harness" in frame)
+    assert not frame.startswith("id:")
+    assert "first incremental output" in frame and "context-not-in-stream" not in frame
+    assert '"status": "running"' in frame

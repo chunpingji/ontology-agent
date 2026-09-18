@@ -200,10 +200,29 @@ def normalize_literal(
         if text.startswith(symbol):
             operator, kind, text = op, "comparison", text[len(symbol) :].lstrip()
             break
-    lower, end = _number(text)
-    suffix = text[end:].strip()
-    upper = None
-    if suffix and suffix[0] in "-–—~～至到":
+    lower_inclusive = upper_inclusive = True
+    bracketed = text.startswith(("[", "("))
+    if bracketed:
+        if kind == "comparison":
+            raise LiteralNormalizationError("comparison range is ambiguous")
+        lower_inclusive = text[0] == "["
+        lower, end = _number(text[1:].lstrip())
+        suffix = text[1:].lstrip()[end:].lstrip()
+        if not suffix.startswith(","):
+            raise LiteralNormalizationError("unsupported interval grammar")
+        upper, end = _number(suffix[1:].lstrip())
+        suffix = suffix[1:].lstrip()[end:].lstrip()
+        if not suffix.startswith(("]", ")")):
+            raise LiteralNormalizationError("unsupported interval grammar")
+        upper_inclusive = suffix[0] == "]"
+        suffix, kind = suffix[1:].strip(), "range"
+        if lower > upper or (lower == upper and not (lower_inclusive and upper_inclusive)):
+            raise LiteralNormalizationError("empty or reversed interval")
+    else:
+        lower, end = _number(text)
+        suffix = text[end:].strip()
+        upper = None
+    if not bracketed and suffix and suffix[0] in "-–—~～至到":
         if kind == "comparison":
             raise LiteralNormalizationError("comparison range is ambiguous")
         upper, end = _number(suffix[1:].lstrip())
@@ -264,6 +283,8 @@ def normalize_literal(
         normalized_value=_decimal_text(lower) if upper is None else None,
         lower=_decimal_text(lower) if upper is not None else None,
         upper=_decimal_text(upper) if upper is not None else None,
+        lower_inclusive=lower_inclusive,
+        upper_inclusive=upper_inclusive,
         raw_unit=raw_unit,
         canonical_unit=unit,
         dimension=dimension,

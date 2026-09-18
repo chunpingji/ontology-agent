@@ -14,6 +14,9 @@ from app.services.extraction.literal_normalizer import (
 )
 
 XSD = "http://www.w3.org/2001/XMLSchema#"
+NUMERIC_DATATYPES = frozenset(XSD + name for name in (
+    "decimal", "double", "float", "integer", "int", "nonNegativeInteger", "positiveInteger",
+))
 UNIT_POLICY_VERSION = "source-bound-units-v1"
 UNIT_NORMALIZATION_VERSION = f"{UNIT_POLICY_VERSION}:{UNIT_REGISTRY_VERSION}"
 CONSTRAINT_REASONS = {
@@ -46,10 +49,7 @@ def normalize_literal(
     if datatype == XSD + "string":
         return value, None
     if slot.canonical_unit:
-        if datatype not in {XSD + n for n in (
-            "decimal", "double", "float", "integer", "int", "nonNegativeInteger",
-            "positiveInteger",
-        )}:
+        if datatype not in NUMERIC_DATATYPES:
             return None, "constraint_unresolved"
         try:
             literal = normalize_registered_literal(
@@ -91,7 +91,7 @@ def normalize_literal(
     elif datatype in {XSD + n for n in ("decimal", "double", "float")}:
         try:
             number = Decimal(value)
-            if number.is_finite() and math.isfinite(float(number)):
+            if number.is_finite() and (datatype == XSD + "decimal" or math.isfinite(float(number))):
                 return str(number), None
         except (InvalidOperation, ValueError, OverflowError):
             pass

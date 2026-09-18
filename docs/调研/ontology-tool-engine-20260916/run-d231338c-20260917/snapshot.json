@@ -1,0 +1,71 @@
+{
+  "observed_at": "2026-09-17 05:35:56.166792+00:00",
+  "run": {
+    "execution_status": "running",
+    "created_at": "2026-09-17 03:40:11.541476+00:00",
+    "updated_at": "2026-09-17 05:35:46.946295+00:00",
+    "stage": "recognition",
+    "progress": {
+      "tasks_attempted": 55,
+      "model_calls": 69,
+      "model_calls_reserved": 70,
+      "model_calls_unresolved": 1,
+      "records_planned": 2533,
+      "records_examined": 1,
+      "records_incomplete": 54,
+      "records_unattempted": 2478,
+      "phase_counts": {
+        "phase1": 21,
+        "phase2": 34
+      },
+      "supported": 1,
+      "unsupported": 0,
+      "undetermined": 26,
+      "pending_frontiers": 0,
+      "unresolved_claims": 26,
+      "invalidated_count": 0,
+      "stop_reason": null,
+      "completion": "incomplete",
+      "contract_version": "document-analysis-runs-v1"
+    },
+    "revision": 938,
+    "event_head": 88
+  },
+  "task_reasons": [
+    {
+      "reason": "_ToolFailure",
+      "count": 8
+    },
+    {
+      "reason": "class_outside_menu",
+      "count": 2
+    },
+    {
+      "reason": "context_budget_exceeded",
+      "count": 17
+    },
+    {
+      "reason": "model_budget_exhausted",
+      "count": 3
+    },
+    {
+      "reason": "record_supported",
+      "count": 1
+    },
+    {
+      "reason": "record_undetermined",
+      "count": 24
+    }
+  ],
+  "graph_partitions": [
+    {
+      "domain": "display:nodes",
+      "count": 2
+    },
+    {
+      "domain": "display:edges",
+      "count": 1
+    }
+  ],
+  "recognition_run_id": "d231338c-f96f-436a-b759-85fc5610578c"
+}

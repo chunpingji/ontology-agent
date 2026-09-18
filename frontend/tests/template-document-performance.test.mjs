@@ -29,6 +29,7 @@ function load(relative, overrides = {}, globals = {}) {
       if (name === "@/components/ui/tree") return load("../src/components/ui/tree.tsx");
       if (name === "@/components/ui/use-document-tree") return load("../src/components/ui/use-document-tree.ts");
       if (name === "@/lib/utils") return load("../src/lib/utils.ts");
+      if (name === "@/lib/api") return load("../src/lib/api.ts", {}, { process: { env: {} } });
       if (name.startsWith("@/components/ui/")) return new Proxy({}, {
         get: () => ({ children }) => React.createElement("div", null, children),
       });
@@ -165,6 +166,53 @@ function graphFixture(levels = 12, width = 5) {
     graph_snapshot: { root_ref: { entity_id: "0:0" } } };
 }
 
+test("relationship groups retain selection, members and sources without adding graph entities or edges", () => {
+  const graph = graphFixture(2, 2);
+  const edge = graph.relationships[0];
+  graph.extraction_protocol = "ontology-tool-extraction-v1";
+  graph.relationships = [];
+  graph.relationship_groups = [{ ...edge, candidate_id: "choice", revision: 1,
+    object_ref: undefined, object_refs: [{ entity_id: "1:0", revision: 1 }, { entity_id: "1:1", revision: 1 }],
+    selection: "one_of", modality: "required", conditions: [],
+    proof_ref: { id: "proof", revision: 1 }, decision_refs: [{ id: "decision", revision: 1 }],
+    source_selection_refs: { ...edge.source_selection_refs, selection: ["choice-source"] } }];
+  const index = graphModule.buildTemplateGraphIndex(graph);
+  assert.equal(index.entities.size, 3);
+  assert.equal(index.edges.size, 0);
+  assert.equal(index.parent.size, 0, "one_of membership does not fabricate factual edges");
+  assert.equal(index.roots.length, 3, "independent verified entities remain available");
+  const tree = graphModule.buildTemplateTreeData(index);
+  assert.equal([...tree.nodes.values()].filter((node) => node.kind === "relationship_group").length, 1);
+  assert.equal([...tree.nodes.values()].filter((node) => node.kind === "member").length, 2);
+  const html = renderToStaticMarkup(React.createElement(graphModule.TemplateGraphTree, { graph, select() {} }));
+  assert.match(html, /恰选一个（2 个成员）/);
+  assert.match(html, /组选择依据原文/);
+  assert.match(html, /系统验证通过/);
+  assert.match(html, /要求/);
+});
+
+test("a scoped property explains a filtered parent and keeps its evidence link", () => {
+  const graph = graphFixture(1, 1);
+  graph.extraction_protocol = "ontology-tool-extraction-v1";
+  graph.relationship_groups = [];
+  graph.properties = [{ candidate_id: "scoped", revision: 1, subject_ref: { entity_id: "0:0", revision: 1 },
+    predicate_iri: "temperature", predicate_label: "温度", raw_value: "20", modality: "asserted", polarity: "affirmed",
+    conditions: [{ text: "加热时" }], scope: { scope_id: "scope", members: [{ relation_ref: { id: "parent", revision: 2 }, member_ref: { entity_id: "0:0", revision: 1 } }] },
+    policy_eligible: true, structural_valid: true, model_supported: true,
+    proof_ref: { id: "proof", revision: 1 }, decision_refs: [{ id: "decision", revision: 1 }],
+    source_selection_refs: { value: [], subject: [], object: [], predicate_bridge: [], condition: [], counterevidence: [] } }];
+  graph.scope_resolutions = [{ scope_id: "scope", steps: [{ relation_ref: { id: "parent", revision: 2 },
+    member_ref: { entity_id: "0:0", revision: 1 }, selection: "alternatives", polarity: "affirmed", modality: "possible",
+    conditions: ["限定场景"], applicability: [], evidence_selection_ids: ["scope-source"] }] }];
+  const html = renderToStaticMarkup(React.createElement(graphModule.TemplateGraphTree, { graph, select() {} }));
+  assert.match(html, /继承范围：parent@2/);
+  assert.match(html, /限定场景/);
+  assert.match(html, /范围依据原文/);
+  assert.match(html, /条件：加热时/);
+  assert.equal(graph.entities.length, 1);
+  assert.equal(graph.relationship_groups.length, 0);
+});
+
 test("layered shared graphs create a linear canonical forest and mount only expanded branches", () => {
   const graph = graphFixture();
   const index = graphModule.buildTemplateGraphIndex(graph);
@@ -231,6 +279,11 @@ test("quantity properties show raw and normalized values with their own unit sou
   assert.match(html, /规范化值：3\.8 kg/);
   assert.match(html, /单位依据原文/);
   assert.match(html, /系统验证通过/);
+  Object.assign(graph.properties[0], { normalized_value: { form: "interval",
+    lower: "3.8", upper: "4", lower_inclusive: true, upper_inclusive: false } });
+  const interval = render();
+  assert.match(interval, /规范化值：\[3\.8, 4\) kg/);
+  assert.doesNotMatch(interval, /\[object Object\]/);
   Object.assign(graph.properties[0], { normalized_value: null, unit: null,
     structural_valid: false, policy_eligible: false,
     reason: "数值/单位核验未通过：原文单位不兼容。模型语义说明：原文支持当前计划的批量下限。" });

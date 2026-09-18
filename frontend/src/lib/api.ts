@@ -1989,6 +1989,7 @@ export interface DocumentAnalysisRunIdentities {
 }
 
 export interface DocumentAnalysisRun {
+  extraction_protocol?: string | null;
   contract_version: typeof DOCUMENT_ANALYSIS_CONTRACT_VERSION;
   recognition_run_id: string;
   run_revision: number;
@@ -2078,6 +2079,7 @@ export type DocumentAnalysisAssertionPolarity =
   | "uncertain";
 
 export type DocumentGraphProjection =
+  | "verified"
   | "effective_affirmed"
   | "all_candidates"
   | "unassociated"
@@ -2096,7 +2098,27 @@ export interface DocumentGraphSnapshotIdentity {
   generated_at: string;
 }
 
+export interface ExternalRecordProvenance {
+  kind: "external_record";
+  system: string;
+  dataset: string;
+  record_key: string;
+  record_version: string;
+  field_path: string;
+  value: unknown;
+  fetched_at?: string | null;
+  applicable_at?: string | null;
+  identity_match_evidence: EvidenceAnchor[];
+  record_snapshot: Record<string, unknown>;
+}
+
 export interface DocumentGraphEntity {
+  grounding_kind?: "document_root" | "mention" | "record" | null;
+  type_decision_ref?: DocumentAnalysisObjectRef | null;
+  referent_decision_ref?: DocumentAnalysisObjectRef | null;
+  composition_decision_ref?: DocumentAnalysisObjectRef | null;
+  external_provenance?: ExternalRecordProvenance[];
+  identity_decision_refs?: DocumentAnalysisObjectRef[];
   entity_id: string;
   revision: number;
   class_iri: string;
@@ -2113,7 +2135,31 @@ export interface DocumentGraphEntity {
   }> | null;
 }
 
+export type DocumentAssertionModality = "asserted" | "required" | "possible" | "planned" | "unspecified";
+export type DocumentRelationSelection = "all" | "one_of" | "alternatives" | "undetermined";
+export interface DocumentGraphScope {
+  scope_id: string;
+  members: Array<{ relation_ref: DocumentAnalysisObjectRef; member_ref: DocumentAnalysisEntityRef }>;
+}
+export interface DocumentGraphScopeResolution {
+  scope_id: string;
+  steps: Array<DocumentGraphScope["members"][number] & {
+    selection: DocumentRelationSelection | null;
+    polarity: DocumentAnalysisAssertionPolarity;
+    modality: DocumentAssertionModality;
+    conditions: string[];
+    applicability: Array<{ predicate_iri: string | null; text: string; evidence_selection_ids: string[] }>;
+    evidence_selection_ids: string[];
+  }>;
+}
+
+export function defaultDocumentGraphProjection(run?: { extraction_protocol?: string | null } | null): DocumentGraphProjection {
+  return run?.extraction_protocol === "ontology-tool-extraction-v1" ? "verified" : "effective_affirmed";
+}
+
 export interface DocumentGraphAssertionBase {
+  modality?: DocumentAssertionModality | null;
+  scope?: DocumentGraphScope | null;
   candidate_id: string;
   revision: number;
   subject_ref: DocumentAnalysisEntityRef;
@@ -2130,6 +2176,7 @@ export interface DocumentGraphAssertionBase {
   decision_refs: DocumentAnalysisObjectRef[];
   dependency_refs: DocumentAnalysisObjectRef[];
   source_selection_refs: {
+    selection?: string[];
     unit?: string[];
     subject: string[];
     object: string[];
@@ -2160,6 +2207,35 @@ export interface DocumentGraphProperty extends DocumentGraphAssertionBase {
     policy_version?: string;
     datatype_iri?: string;
   };
+}
+
+export function formatDocumentGraphQuantity(
+  item: Pick<DocumentGraphProperty, "normalized_value" | "unit">,
+): string | null {
+  const value = item.normalized_value;
+  let text: string;
+  if (value == null) return null;
+  if (typeof value !== "object") {
+    text = String(value);
+  } else {
+    const quantity = value as Record<string, unknown>;
+    if (quantity.form === "scalar" && typeof quantity.scalar === "string") {
+      text = quantity.scalar;
+    } else if (quantity.form === "interval" && typeof quantity.lower === "string"
+      && typeof quantity.upper === "string" && typeof quantity.lower_inclusive === "boolean"
+      && typeof quantity.upper_inclusive === "boolean") {
+      text = `${quantity.lower_inclusive ? "[" : "("}${quantity.lower}, ${quantity.upper}${quantity.upper_inclusive ? "]" : ")"}`;
+    } else if (quantity.form === "lower_bound" && typeof quantity.lower === "string"
+      && (quantity.comparator === "ge" || quantity.comparator === "gt")) {
+      text = `${quantity.comparator === "ge" ? "≥" : ">"} ${quantity.lower}`;
+    } else if (quantity.form === "upper_bound" && typeof quantity.upper === "string"
+      && (quantity.comparator === "le" || quantity.comparator === "lt")) {
+      text = `${quantity.comparator === "le" ? "≤" : "<"} ${quantity.upper}`;
+    } else {
+      return null;
+    }
+  }
+  return item.unit ? `${text} ${item.unit}` : text;
 }
 
 export type DocumentPropertyReviewReason = "incorrect_value" | "incorrect_property"
@@ -2234,7 +2310,14 @@ export interface DocumentGraphRelationship extends DocumentGraphAssertionBase {
   direction: "subject_to_object" | "object_to_subject";
 }
 
+export interface DocumentGraphRelationshipGroup extends DocumentGraphAssertionBase {
+  object_refs: DocumentAnalysisEntityRef[];
+  direction: "subject_to_object" | "object_to_subject";
+  selection: DocumentRelationSelection;
+}
+
 export interface DocumentGraphCoverageSubject {
+  scope?: DocumentGraphScope | null;
   candidate_policy?: "sparse-candidates-v1" | null;
   retrieval_diagnostics?: DocumentRetrievalDiagnostics;
   subject_ref: DocumentAnalysisEntityRef;
@@ -2306,6 +2389,9 @@ export interface DocumentGraphRanking {
 }
 
 export interface DocumentAnalysisGraphArtifact {
+  extraction_protocol?: string | null;
+  relationship_groups?: DocumentGraphRelationshipGroup[];
+  scope_resolutions?: DocumentGraphScopeResolution[];
   contract_version: typeof DOCUMENT_ANALYSIS_CONTRACT_VERSION;
   recognition_run_id: string;
   run_revision: number;
@@ -2343,7 +2429,7 @@ export interface DocumentSourceSelection {
   record_view_ref: string | null;
   source_cell_id: string | null;
   span_refs: string[];
-  selection_role: "entity" | "subject" | "object" | "value" | "unit" | "predicate_bridge" | "condition" | "counterevidence";
+  selection_role: "entity" | "subject" | "object" | "value" | "unit" | "predicate_bridge" | "condition" | "counterevidence" | "selection";
 }
 
 export interface DocumentAnalysisSourceArtifact {
@@ -2601,6 +2687,7 @@ export function subscribeDocumentAnalysisEvents(
   recognitionRunId: string,
   onEvent: (event: DocumentAnalysisRunEvent, eventType: DocumentAnalysisEventType) => void,
   onConnectionChange?: (connected: boolean) => void,
+  onHarness?: (snapshot: HarnessSnapshot) => void,
 ): () => void {
   const identity = getIdentity();
   const query = new URLSearchParams({
@@ -2622,6 +2709,17 @@ export function subscribeDocumentAnalysisEvents(
     "tombstone",
   ];
   const listeners = new Map<DocumentAnalysisEventType, EventListener>();
+  const harnessListener: EventListener = (raw) => {
+    try {
+      const value = JSON.parse((raw as MessageEvent<string>).data);
+      const snapshot = value.snapshot;
+      if (value.recognition_run_id === recognitionRunId && snapshot
+        && typeof snapshot.session_id === "string" && Number.isSafeInteger(snapshot.sequence)
+        && typeof snapshot.output === "string" && typeof snapshot.thinking === "string"
+        && Array.isArray(snapshot.operations)) onHarness?.(snapshot as HarnessSnapshot);
+    } catch { /* Snapshot polling remains available after a malformed frame. */ }
+  };
+  source.addEventListener("harness", harnessListener);
   const opened: EventListener = () => onConnectionChange?.(true);
   const disconnected: EventListener = (event) => {
     // The server also emits named "error" frames; those are still live SSE.
@@ -2636,6 +2734,7 @@ export function subscribeDocumentAnalysisEvents(
     for (const [eventType, listener] of listeners) {
       source.removeEventListener(eventType, listener);
     }
+    source.removeEventListener("harness", harnessListener);
     source.removeEventListener("open", opened);
     source.removeEventListener("error", disconnected);
     source.close();
@@ -4584,3 +4683,66 @@ export const getRecognitionContext = (documentIri: string, templateId?: string |
   signal?: AbortSignal) => fetchAPI<RecognitionContext>(
     `/api/ast-templates/recognition-context?${new URLSearchParams({ document_iri: documentIri,
       ...(templateId ? { template_id: templateId } : {}) })}`, { signal });
+
+export interface HarnessSnapshot {
+  session_id: string;
+  sequence: number;
+  call: {
+    call_id: string; stage: "discovery" | "verification"; model: string;
+    subject_label: string | null; predicate_label: string | null; input_tokens: number;
+    status: string; started_at: string; usage: Record<string, unknown> | null;
+  } | null;
+  output: string;
+  thinking: string;
+  truncated: ("output" | "thinking")[];
+  operations: {
+    id: string; kind: "model" | "tool" | "validation" | "graph"; name: string;
+    status: string; started_at: string; elapsed_ms: number | null;
+    arguments?: { text: string; truncated: boolean } | null;
+    result?: { text: string; truncated: boolean } | null;
+  }[];
+  tool_counts: Record<string, number>;
+  updated_at: string | null;
+}
+
+export interface DocumentHarness {
+  recognition_run_id: string;
+  configuration: {
+    model: string | null; model_revision: string | null; api_protocol: string | null;
+    gliner_enabled: boolean; mock_enabled: boolean; vocabulary_enabled: boolean;
+    request_budget: Record<string, number> | null;
+  };
+  snapshot: HarnessSnapshot | null;
+}
+
+export interface HarnessSchemaCard {
+  schema_card_id: string;
+  class_iris: string[];
+  predicates: {
+    iri: string; label: string; kind: string; description?: string;
+    min_count?: number | null; max_count?: number | null; multiplicity?: string;
+    datatype_iris?: string[]; canonical_unit?: string | null;
+    range_classes?: { iri: string; label: string }[];
+    range_class_iris?: string[]; constraint_status?: string;
+  }[];
+  quantity_policies: {
+    predicate_iri: string; allowed_forms: string[]; endpoint_role: string | null;
+    allowed_target_units: string[]; unit_requirement: string; declaration_ref: string;
+  }[];
+  identity_keys: { class_iri: string; property_iris: string[]; namespace: string | null; scope: string; declaration_ref: string }[];
+  unsupported_constraints: { predicate_iri: string; construct: string; reason_code: string }[];
+}
+
+export interface HarnessContext {
+  recognition_run_id: string;
+  call_id: string;
+  request: { instructions: string; input: Record<string, unknown>[]; text?: { format: unknown }; [key: string]: unknown };
+  schema_card: HarnessSchemaCard;
+  class_labels?: Record<string, string>;
+}
+
+export const getDocumentHarness = (runId: string, signal?: AbortSignal) =>
+  fetchAPI<DocumentHarness>(`${documentRunPath(runId)}/harness`, { signal });
+
+export const getDocumentHarnessContext = (runId: string, callId: string, signal?: AbortSignal) =>
+  fetchAPI<HarnessContext>(`${documentRunPath(runId)}/harness/context?call_id=${encodeURIComponent(callId)}`, { signal });

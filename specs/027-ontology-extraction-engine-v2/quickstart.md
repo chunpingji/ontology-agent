@@ -1,6 +1,6 @@
 # 验收步骤
 
-状态：编码后的目标验收入口；本轮仅检查设计制品，没有运行下列模型或工程验收。标注“拟新增”的命令须在相应任务完成后执行，不可按现有可用命令宣传。
+状态：设计检查与离线 `probe/run/score` 入口已实现；下列各层验收独立记录，不由单层通过推定其余通过。历史设计检查记录保留在末尾，实施结果另列。
 
 研发任务从 [Harness 设计](harness.md)、[模块计划](plan.md) 和 [任务卡模板](tasks.md#每次提交的检查) 定位所需上下文。研发 Harness 的反馈是代码/契约/界面验收结果；运行 Harness 的反馈是 Qwen 工具结果、冻结声明和证明，两层不共用另一套任务状态或 Agent 框架。
 
@@ -23,25 +23,37 @@ python specs/027-ontology-extraction-engine-v2/check_design.py --self-test
 
 使用 backend/pyproject.toml、uv.lock 和已有环境。纯工程测试不下载权重；真实 GLiNER2.5 使用固定本地模型与兼容依赖，真实 Qwen 使用项目配置端点/模型。用户已确认 Qwen 支持 Responses，027 主协议固定为 Responses API；验收具体字段、严格参数、结构化输出和无状态续传，不把协议支持重新当成待猜测条件。旧 Chat Completions 仅做已有调用回归，新运行不建设双栈/回退。确认必需工具可用，缺项明确报告；不得把关闭 NER 作为“完整工具方案通过”。不重启共享后端来替代隔离验证。
 
-GLiNER2.5 的 Python 包固定为 `gliner2[local]==2.0.0`，不是 gliner2==2.5。历史隔离验证采用 Transformers 4.57.6、HF Hub 0.36.2、tokenizers 0.22.2、protobuf 6.33.5，准确清单见已有 `backend/app/evaluation/fixtures/gliner2_runtime_requirements.txt`；应用 CPU/CUDA 当前锁中的 Transformers 为 5.6.2。T21 必须共同求解本能力与应用语义模型的兼容依赖，并回归受影响模型；不能仅添加 extra 或直接覆盖历史版本就宣称应用可用，也不通过 sys.path 混用实验 venv。隔离环境通过和应用环境通过分别记录，本轮不安装或更新依赖。
+应用入口：新建非模板文档识别运行读取 `settings.ontology_extraction_options`（环境变量 `ONTOLOGY_EXTRACTION_OPTIONS` 为 JSON），并将选项冻结进该运行 policy。可配置 `profile`、`vocabulary_overlay`、`gliner2`、`external_sources`、`responses`，结构与下方 manifest 的 `options` 相同。每个声明 lineage 最多 4 次实际模型请求，工具续轮与独立核验共用额度。
 
-应用进程在导入 Hugging Face/Transformers/GLiNER 相关库**之前**设置 `HF_HUB_OFFLINE=1` 和 `TRANSFORMERS_OFFLINE=1`，核对实际进程环境及缓存状态；不能等工厂创建模型后才设置。按 plan M04 拟将权重清单校验统一为 `gliner2_extractor.verify_local_checkpoint(model_path,manifest)`，线上和离线 runner 复用，线上不导入 evaluation。验收本地权重/tokenizer 完整加载、错误 hash 和缺失文件均明确失败、全程无下载请求；历史准备环境和线上环境各自验证。
+当前端点使用 `responses={"strict_tools":false,"strict_answers":false}`；真实 probe 发现 strict 答案仍可能带 Markdown 围栏，不能声明服务端强制 Schema 已验收。本地严格解析与独立核验始终执行。`options.responses.reasoning` 默认省略；显式设置时仅透传标准 `effort` 枚举并冻结进请求 hash。当前端点的两请求对照中，`{"effort":"none"}` 仍返回非空 reasoning，只证明字段被接受，未证明关闭思考，不能据此默认启用。GLiNER/Mock 未配置时不向模型公开对应工具；配置后若必需依赖、权重或来源不可用，明确失败，不能静默替换为成功空结果。`gliner2.manifest` 必须是完整冻结清单对象；`external_sources` 使用显式 records/name_fields/alias_fields，不在通用核心默认绑定设备源。
+
+本次实际环境、协议、小预算图谱与限制见[实施验证记录](../../docs/调研/ontology-tool-engine-20260916/README.md)及[最新分项结果](../../docs/调研/ontology-tool-engine-20260916/latest-run-summary.json)。工程测试、原生协议通过、质量评估与部署分别记录。数量正例已由真实 Qwen 发现与独立核验后将 `1500 mg` 规范化为 `1.5 g` 并入图；负例 `1500 m` 已由单位门禁拒绝，范围仍未完成。`controller_checks` 是检查调用数，须分别核对数值结果和 SHACL 的 `evaluated/conforms/coverage.complete`；工具被调用不等于求值或通过，空图也不等于正确拒绝。
+
+完整 CMC 输入与 216 条系统 Mock 的最新有界运行只实际调用了 `inspect_evidence`；GLiNER2.5、`query_instances` 与 `retrieve_evidence` 虽可见但未调用。主关系回答因单对象选择 `one_of` 被严格拒绝，完整续轮上下文超预算，结果保留 partial；不能把工具配置就绪或摘要进入上下文当作整套工具协作、全文覆盖或 F1 已验收。
+
+另有显式指定原文行、编号和 `tool_choice` 的[四请求集成探针](../../docs/调研/ontology-tool-engine-20260916/tool-chain-probe01/summary.json)。完整协议与严格总结通过，但 `propose_mentions` 超工具结果预算、原文定位参数错误、实例查询引用未授权，三项均被阻止，候选数为零；这类工程夹具不计入自主抽取或同预算质量对照。冻结设备词表还缺少 25 项概念定义，包含 Reactor；未临时修改 overlay 或放宽门禁。
+
+相同参数下的[零 Qwen 预算诊断](../../docs/调研/ontology-tool-engine-20260916/tool-chain-probe01-diagnostics/diagnostic.json)确认 GLiNER 实际执行 4 个批次，返回 7 个 span 和 25 项缺定义观察；完整结果为 4660 tokens，超过 4096 上限。有效实体标签仅 CMCReport，提及类型不正确，故执行覆盖、工具预算和实体识别质量仍须分别验收。
+
+GLiNER2.5 的 Python 包固定为 `gliner2[local]==2.0.0`，不是 gliner2==2.5。新增 `gliner2` extra；CPU `uv.lock` 与 CUDA `requirements-cuda12.lock` 均已共同求解 Transformers 4.57.6、HF Hub 0.36.2、tokenizers 0.22.2、protobuf 6.33.5、peft 0.21.0，保留各自 PyTorch 版本和 sentence-transformers 5.6.0。独立克隆应用 CPU 环境按锁同步后，真实 GLiNER2.5、BGE embedding、BGE CrossEncoder 离线推理通过，受影响模型回归 192 项通过；CUDA 共同依赖解析通过不等于新锁已部署。原应用 venv、共享容器和模型权重未改动，不通过 sys.path 混用实验 venv。
+
+应用进程在导入 Hugging Face/Transformers/GLiNER 相关库**之前**设置 `HF_HUB_OFFLINE=1` 和 `TRANSFORMERS_OFFLINE=1`，核对实际进程环境及缓存状态；不能等工厂创建模型后才设置。已统一为 `gliner2_extractor.verify_local_checkpoint(model_path,manifest)`，线上和离线 runner 复用，线上不导入 evaluation。构造器优先使用运行中冻结的 manifest；无该参数时读取本地 `DOWNLOAD-MANIFEST.json`。验收本地权重/tokenizer 完整加载、错误 hash 和缺失文件均明确失败、全程无下载请求；历史准备环境和线上环境各自验证。
 
 新评测 manifest 至少包含以下字段，路径由操作者指定，不硬编码历史报告：
 
 | 字段 | 内容 |
 |---|---|
-| run_id、output_dir | 新运行与新目录；已存在且非空则拒绝覆盖 |
-| document_path、document_hash、ir_path、ir_hash | 同一原文与 DocumentIR |
-| ontology_path、ontology_hash、root_class_iri | 冻结本体及用户指定根 |
-| metadata_path、metadata_hash | 同源摘要，可含 partial/回退状态 |
-| vocabulary_path、vocabulary_hash、extraction_profile_path | 显式词表/表示和身份映射；无 overlay 可为空 |
-| model_identity、tool_protocol_version、api_protocol、capabilities_path | 项目 Qwen 身份、ontology-tool-extraction-v1、固定 responses、具体字段验收结果 |
-| store、tool_strict、stage_strict、reasoning_encrypted_content | 固定 false；工具与阶段 strict 各自以 false 为基线或冻结已验收 true；是否已验收可请求的加密续传项 |
-| ner_model_path、ner_manifest_hash、ner_required | 离线 GLiNER2.5 身份，完整方案为 true |
-| external_sources | 可为空；每源 ID、冻结版本、字段/身份映射和读取配置 |
+| run_id；命令参数 --output | 新运行与新目录；已存在目录即拒绝覆盖 |
+| document、ir、ontology、metadata | 各为 `{path,sha256}`；相对 manifest 解析，校验同源原文/IR/摘要及 SHA256 |
+| root_class_iri | 冻结本体中的用户指定根 |
+| options.profile、options.vocabulary_overlay | 内嵌冻结的 ExtractionProfile / VocabularyOverlay；无 overlay 可省略 |
+| model、model_revision、tool_protocol_version、api_protocol | 必须匹配项目配置身份；ontology-tool-extraction-v1、固定 responses |
+| store、options.responses | store 固定 false；strict_tools/strict_answers 默认为 false，include 默认为空，reasoning 默认省略；能力以独立 probe 结果为准 |
+| options.gliner2 | `{model_path,manifest,device}`；manifest 内嵌权重身份与逐文件 hash；完整工具方案须配置 |
+| options.external_sources | 可省略；冻结 records/name_fields/alias_fields/incomplete_sources，不读评分参考 |
 | budgets | max_model_calls、max_input_tokens、max_output_tokens、max_calls_per_lineage=4、工具和补证上限 |
-| arm | F0/F1/F2/F3/F4；固定输入和总额度，变化只对应总体方案的消融项 |
+
+`budgets` 另支持 max_tasks、max_hops、max_result_tokens、max_tool_calls_per_lineage；模型总额度在协调器实际请求预留前强制检查。F0—F4 分别冻结 manifest/输出目录，差异由外部对照说明记录，识别器不按 arm 名称分支。未列出的顶层字段一律拒绝。
 
 不得包含 gold/reference 文件路径、参考实体列表或原文答案白名单。评分命令另行读取金标。没有足够参考时仍可完成协议和工程验收，但不声明已证明 F1 提升。
 
@@ -104,9 +116,17 @@ node tests/document-analysis-browser.mjs
 
 验收关系组数量、selection/模态/条件、scope_resolutions、孤立实体和原文点击；切视图/刷新前后不新增模型请求或业务候选。沿用脚本既有截图、请求断言与测试结果，仅保存本次验收输出。该层证明真实 API 与页面协作；Node 源码断言/SSR、受控响应浏览器、真实 Qwen 质量评测分别列结果，互不替代。
 
-## 3. 拟新增离线 CLI 契约
+## 3. 离线 CLI 契约
 
-入口 `python -m app.evaluation.ontology_tool_engine`，放在 M13，当前尚不存在。
+入口 `python -m app.evaluation.ontology_tool_engine`，放在 M13，已实现。工作目录为 backend/：
+
+```bash
+.venv/bin/python -m app.evaluation.ontology_tool_engine probe --output /tmp/new-responses-probe --max-model-requests 4
+.venv/bin/python -m app.evaluation.ontology_tool_engine run --manifest /path/to/manifest.json --output /tmp/new-extraction-run
+.venv/bin/python -m app.evaluation.ontology_tool_engine score --prediction /tmp/new-extraction-run/evaluation.json --reference /path/to/approved-reference.json --output /tmp/new-score
+```
+
+`score` 复用既有正式评分器，参考未经 approved 或文档/本体/根/范围不一致会明确拒绝；不能为得到分数改写参考身份。`run` 除最小制品外保存 evaluation.json 与 document-ir.json 供独立评分。工程入口 `tests/test_extraction/test_tool_engine_cli.py` 覆盖完整项续传、call_id、围栏/未完成拒绝、参考隔离、输入 hash、硬请求预算和拒绝覆盖。
 
 | 子命令 | 参数 | 行为/退出码 |
 |---|---|---|
@@ -137,7 +157,7 @@ capabilities.json 固定 api_protocol=responses，记录实际工具 strict、�
 | store=false 的多轮 input/output 项与每轮 instructions | 原样续传当前阶段完整项，包括 reasoning；不发 previous_response_id/conversation，不依赖远端状态 |
 | 加密 reasoning 项能力与来源边界 | 仅验收可用时 include；返回项不透明保存/续传，不作原文证据、不作 verifier 的发现理由 |
 | 两个阶段中的工具续轮 | 实际调用次数守恒，最多四次；不够时不跳核验 |
-| 无需工具与存在顺序依赖的工具 | plan_model_turn 可直接候选→核验，也可在额度内执行工具→工具→候选→核验；下一工具只读取已确认前轮结果，不固定一轮或强迫调用工具 |
+| 可选工具与关系必检 | 属性可直接候选→核验；有效关系必须候选→validate_graph→语义核验。工具只读取已确认前轮结果；缺少检查时按单响应上限分批，并为语义回答预留预算 |
 | 重复工具/同一证据与同一缺口无进展 | 不能靠重排或重复相同调用延长循环；有足够证据则进入阶段回答，否则保留未完成/未决，必检真理门不变 |
 | 按需 ModelContextView | 摘要/索引帮助选取完整授权证据，范围/角色不丢；完整请求放不下时明确未完成，不裁切为误导片段或新增持久状态 |
 | 独立核验包含冻结声明及授权依赖 | 从 discovery_ref 派生完整 verification_input，不继承发现 reasoning；对象、原单位、selection 或限定变化准确体现在输入，缺内容/错 hash 不发请求 |
@@ -154,7 +174,7 @@ capabilities.json 固定 api_protocol=responses，记录实际工具 strict、�
 | 区间/比较与端点 | 普通 scalar 不截值，显式 endpoint 保留完整来源；边界和比较符不丢 |
 | mg→g 等真实尺度换算及已注册偏移 | 精确数值正确；未知/错量纲/单位 owner 错误未决或拒绝，不补单位 |
 | SHACL 空图、错 focus、异构声明 | 非空/完整 focus 才完成；每声明适用 profile，不拿单一 slot 校验整图；表示图只在 finalize 内临时构建，暂停后可重做纯本地计算，无图引用登记或恢复状态 |
-| 标准工具目录与模型可见集合 | 十项已注册；metric/graph 的 model_callable=false，所有模型阶段均不发送二者，主动请求返回 tool_not_allowed；控制器仍按可信前置条件完成适用必检，finalize 不增模型轮次 |
+| 标准工具目录与模型可见集合 | 十项已注册；validate_metric 只供控制器，validate_graph 仅在 verification 有冻结关系时对模型开放。属性校准与 SHACL 仍由控制器完成，finalize 不增模型轮次 |
 | 来源关闭、未知键、同名冲突、外部值差异 | 局部实体仍保留；身份不伪造，值不覆写 |
 | 新本体/IRI 重命名/等义表达 | 同一算法，无领域分支；不支持构造显式报告 |
 
@@ -183,3 +203,35 @@ capabilities.json 固定 api_protocol=responses，记录实际工具 strict、�
 **本次极简设计收紧后记录**：2026-09-16 实际执行上述仓库检查器 `--self-test`、定向 Ruff 和 `git diff --check` 均通过。4 份 JSON、10 个工具、2 个输出阶段、3 个控制输入 Schema、52 个封闭对象和 1 个类型化引用映射通过；12 份有效输入通过，36 个非法输入及 22 项制品变异被拒绝。另通过 2 项协议输入重建、3 项单位语义 hash 检查，拒绝 3 种非标准 JSON 常量；完整核验、错误反馈及授权恢复样例、135 处本地文件链接、11 段 Python 接口示意、18 个需求到 13 个模块的归属及 26 项无环任务依赖通过。
 
 新增反例覆盖重复权威字段、重复实体副本、丢失完整 output/reasoning，以及同步删去目标和回答后仍能发现未核验声明。仅为设计制品验证，未执行应用测试、真实模型或部署。
+
+## 图谱界面增量验收（FR-19 / T27）
+
+在 `/analysis?tab=document` 检查历史为多列卡片；点击任意卡片，桌面详情抽屉宽度为视口 4/5，手机全宽。关闭恢复卡片焦点；刷新含 documentRun 的 URL 自动恢复详情。打开图谱 tab，核验可缩放/拖拽/适配、点击节点显示该节点属性与入/出关系，孤立节点仍可选；关系组菱形显示选择语义，虚线成员连接不计普通事实边。属性精确数量与继承限定仍可查，证据点击定位同一 Word 预览。全过程只发 GET，不产生或取消模型任务。
+
+### 五项运行缺陷回归（2026-09-17）
+
+详见[输入差异与修复对比](../../docs/调研/ontology-tool-engine-20260916/repair-20260917/README.md)。新增验收必须包含：
+
+- 无记录标题、多记录共享表头能够读取、检索授权并冷继续；辅助片段 null record_id 不得提升事实权限。
+- 实际32768输入/20480输出预算下，20000-token输入可发送；若另设35000总上下文则在请求预留前拒绝。完整续传和强模型独立核验不变。
+- 合法空候选检查完成且继续检索，unknown/ambiguous/unbound仍未决；无候选不能解释为全文否定。
+- 工具协议与通用稀疏规划实际组合执行，包括请求前/模型结果后暂停继续；离线结果记录真实 executor 版本。
+- 多次相同缺定义/来源反馈不消耗重复返回空间；模型超限仍阻断，控制器完整binding/metric/SHACL必检不被模型返回额度误伤。
+
+`budgets.max_context_tokens` 可选，只填经服务能力核实的总上下文容量；max_input_tokens是完整请求的输入额度，max_output_tokens包括推理输出。工程反例通过、真实局部调用成功、正式全文F1验收、部署是不同交付状态，按本轮报告分别核对。
+
+## FR-20 / Drawer 实时观察验收
+
+当前实现与实际结果见 [Harness Drawer 验证记录](../../docs/调研/ontology-tool-engine-20260916/harness-drawer-20260917/README.md)及[布局收纳与线程接线补充验收](../../docs/调研/ontology-tool-engine-20260916/harness-contained-20260917/README.md)。打开 `/analysis?tab=document` 的历史卡片，默认图谱，展开 Harness运行信息检查模型/工具与预算；Thinking、操作、上下文收纳在 Harness运行信息内并默认折叠。关闭外层信息后不继续读取上下文，实时正文仍更新。上下文提示词与 Schema 卡片使用同一实际调用，切换不发模型请求。运行期间上滚正文会停止跟随，可回到最新；暂停/结束后光标停止。
+
+新增只读契约：`GET /api/document-analysis/runs/{run_id}/harness`、`GET /api/document-analysis/runs/{run_id}/harness/context?call_id=...`，严格响应类型见 `backend/app/schemas/document_analysis.py` 的 HarnessResponse/HarnessContextResponse。现有 SSE 增加无 id 的 harness 当前展示帧，保留原运行事件游标；上下文更换返回 CONTEXT_CHANGED / 409，不能将最新卡片配给旧提示词。
+
+2026-09-17 13:08 UTC 加载线程接线修复后，现有运行已恢复并实际生成提示词、窄化 Schema 与可读 Thinking；见[部署核验](../../docs/调研/ontology-tool-engine-20260916/harness-context-deploy-20260917/README.md)。遇到空上下文先核验当前 call/cache 与进程加载时间，不用合成卡片掩盖未采集数据。
+
+本轮无需迁移，未自动重启服务。后端重新加载代码后，仅之后的实际请求生成流式观察；无历史数据时界面明确为空。
+
+## T32 / 关系校验分工验收
+
+本次实现、可复现命令、真实 Qwen 工具探针与部署状态见[关系校验分工记录](../../docs/调研/ontology-tool-engine-20260916/relation-validation-20260917/README.md)。重点反例：模型漏调工具、工具失败仍回答 supported、结果与声明/上下文/菜单版本不匹配、重复创建同一精确提及，均不得接纳关系；同名不同原文位置不得因此合并。
+
+冻结阶段已拒绝的无效候选不再要求模型调用工具；有效冻结关系必须先 validate_graph，再给出独立语义判断。工具结果只证明已列明约束，semantic_status 固定 not_checked。多关系分批时应预留全部工具轮及语义回答预算；暂停后直接使用已确认结果，续传完整 input/output，不重复执行。

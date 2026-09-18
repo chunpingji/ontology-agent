@@ -5,6 +5,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { newPropertyReviewRequestKey } from "@/lib/document-property-review";
 import {
   controlDocumentAnalysisRun, createTemplateDocumentRun, getDocumentAnalysisGraph,
+  defaultDocumentGraphProjection,
   getDocumentAnalysisRankingSummary, getDocumentAnalysisSource, getDocumentAnalysisSourceSelection,
   getIdentity, getTemplateDocumentRun, shouldSubscribeDocumentAnalysisEvents,
   createReportDocumentRun, getReportDocumentRun, getDocumentAnalysisMetadata,
@@ -95,7 +96,7 @@ function useSourceDocumentRun(
   const { username, role } = getIdentity();
   const pageVisible = useSyncExternalStore(subscribeVisibility, readVisibility, () => true);
   const visible = panelVisible && pageVisible;
-  const [projection, setProjection] = useState<DocumentGraphProjection>("effective_affirmed");
+  const [projectionChoice, chooseProjection] = useState<{ runId?: string; value: DocumentGraphProjection } | null>(null);
   const [selection, setSelection] = useState<{ runId: string; ref: string } | null>(null);
   const requestKey = useRef<{ source: string; key: string } | null>(null);
   const sourceKey = JSON.stringify([templateId, jobId, documentIri, username, role]);
@@ -121,6 +122,9 @@ function useSourceDocumentRun(
   });
   const run = latest.data?.run ?? null;
   const runId = run?.recognition_run_id;
+  const projection = projectionChoice && projectionChoice.runId === runId
+    ? projectionChoice.value : defaultDocumentGraphProjection(run);
+  const setProjection = (value: DocumentGraphProjection) => chooseProjection({ runId, value });
   const active = shouldSubscribeDocumentAnalysisEvents(run?.status);
   const artifactsKey = useMemo(() => ["template-document-artifact", username, role, runId],
     [username, role, runId]);

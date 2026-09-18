@@ -3,13 +3,19 @@
 from __future__ import annotations
 
 from collections import deque
+from json import dumps
 
-from pydantic import Field
+from pydantic import Field, model_serializer
 
 from app.schemas.evidence import EvidenceModel
 from app.services.extraction.evidence_identity import stable_id
-from app.services.extraction.ontology_guided.contracts import SubjectRef
-from app.services.extraction.ontology_guided.lazy_frontier import LogicalFrontier, LogicalRecord
+from app.services.extraction.ontology_guided.contracts import SubjectRef, TraversalScope
+from app.services.extraction.ontology_guided.lazy_frontier import (
+    LogicalFrontier,
+    LogicalRecord,
+    slot_key,
+    subject_key,
+)
 
 
 class RecognitionTask(EvidenceModel):
@@ -27,6 +33,14 @@ class RecognitionTask(EvidenceModel):
     source_position: int = Field(default=0, ge=0)
     ranking_epoch_seq: int | None = Field(default=None, ge=1)
     pool_rank: int | None = Field(default=None, ge=1)
+    scope: TraversalScope | None = None
+
+    @model_serializer(mode="wrap")
+    def preserve_legacy_task_shape(self, handler):
+        data = handler(self)
+        if self.scope is None:
+            data.pop("scope", None)
+        return data
 
     @classmethod
     def create(
@@ -43,11 +57,12 @@ class RecognitionTask(EvidenceModel):
         retry_kind: str | None = None,
         section_node_id: str = "",
         source_position: int = 0,
+        scope: TraversalScope | None = None,
     ) -> "RecognitionTask":
-        lineage = claim_lineage_id or stable_id(
-            "claim-lineage",
-            [subject.entity_id, predicate_iri, record_id],
-        )
+        lineage_identity = [subject.entity_id, predicate_iri, record_id]
+        if scope is not None:
+            lineage_identity.append(scope.scope_id)
+        lineage = claim_lineage_id or stable_id("claim-lineage", lineage_identity)
         identity = [
             subject.model_dump(mode="json"),
             predicate_iri,
@@ -55,6 +70,8 @@ class RecognitionTask(EvidenceModel):
             dependency_hash,
             retry_kind,
         ]
+        if scope is not None:
+            identity.append(scope.scope_id)
         return cls(
             task_id=stable_id("recognition-task", identity),
             claim_lineage_id=lineage,
@@ -68,6 +85,7 @@ class RecognitionTask(EvidenceModel):
             retry_kind=retry_kind,
             section_node_id=section_node_id,
             source_position=source_position,
+            **({"scope": scope} if scope is not None else {}),
         )
 
 
@@ -130,6 +148,7 @@ class FrontierScheduler:
             "root_branch": f.root_branch, "arrival_start": f.arrival_start,
             "template_priority": f.template_priority, "content_hash": f.content_hash,
             "record_count": len(f.records),
+            **({"scope": f.scope.model_dump(mode="json")} if f.scope is not None else {}),
         })
         self._logical_records = WorkMap(encode=lambda r: {
             "record": [r.record_id, r.phase, r.section_node_id, r.source_position],
@@ -216,6 +235,7 @@ class FrontierScheduler:
     def enqueue_plan(
         self, plan, *, hop: int, dependency_hash: str, source_positions: dict[str, int],
         root_branch: bool = False, template_priority: bool = False,
+        scope: TraversalScope | None = None,
     ) -> int:
         """Freeze all opportunities without constructing per-record task models.
 
@@ -226,7 +246,7 @@ class FrontierScheduler:
         if hop < 0 or not dependency_hash:
             raise ValueError("logical frontier requires a valid hop and dependency hash")
         self._lazy_format = True
-        key = (plan.subject.entity_id, plan.subject.revision, plan.predicate_iri, dependency_hash)
+        key = (*slot_key(plan.subject, plan.predicate_iri, scope), dependency_hash)
         if key in self._logical_frontiers:
             return 0
         frontier = LogicalFrontier(
@@ -238,6 +258,7 @@ class FrontierScheduler:
             root_branch=root_branch,
             arrival_start=self._next_arrival,
             template_priority=template_priority,
+            scope=scope.model_copy(deep=True) if scope is not None else None,
         )
         for position, record in enumerate(plan.records):
             frontier.records.append(LogicalRecord(
@@ -264,9 +285,11 @@ class FrontierScheduler:
             })
         return admitted
 
-    def prioritize_slot(self, subject: SubjectRef, predicate_iri: str) -> None:
+    def prioritize_slot(
+        self, subject: SubjectRef, predicate_iri: str, *, scope: TraversalScope | None = None,
+    ) -> None:
         """Admit an already proved template successor; never infer proof here."""
-        key = (subject.entity_id, subject.revision, predicate_iri)
+        key = slot_key(subject, predicate_iri, scope)
         if self._raw_priority_slots:
             self._raw_priority_slots.add(key)
         for frontier in self._logical_frontiers.values():
@@ -293,9 +316,7 @@ class FrontierScheduler:
     @staticmethod
     def _dedup_key(task: RecognitionTask) -> tuple:
         return (
-            task.subject.entity_id,
-            task.subject.revision,
-            task.predicate_iri,
+            *slot_key(task.subject, task.predicate_iri, task.scope),
             task.record_id,
             task.dependency_hash,
             task.retry_kind,
@@ -313,7 +334,7 @@ class FrontierScheduler:
             )
             return False
         key = self._dedup_key(task)
-        frontier = self._logical_frontiers.get((key[0], key[1], key[2], key[4]))
+        frontier = self._logical_frontiers.get((*self._slot_key(task), task.dependency_hash))
         if key in self._seen or (
             task.retry_kind is None and frontier and task.record_id in frontier.record_ids
         ):
@@ -340,7 +361,14 @@ class FrontierScheduler:
 
     @staticmethod
     def _slot_key(task):
-        return (task.subject.entity_id, task.subject.revision, task.predicate_iri)
+        return slot_key(task.subject, task.predicate_iri, task.scope)
+
+    @staticmethod
+    def _subject_turn_key(task):
+        if task.scope is None:
+            return task.subject.entity_id
+        return dumps(subject_key(task.subject, task.scope), ensure_ascii=False,
+                     separators=(",", ":"))
 
     def _select_fresh(self, queue, branch, excluded_slots, *, commit=True):
         indexed = ((queue is self._root or queue is self._child)
@@ -351,7 +379,7 @@ class FrontierScheduler:
             available = sorted(
                 (next(iter(bucket.values()))
                  for key, bucket in self._branch_buckets[branch].items()
-                 if key[:3] not in excluded_slots),
+                 if key[:-1] not in excluded_slots),
                 key=self._arrival_of,
             )
         else:
@@ -381,11 +409,11 @@ class FrontierScheduler:
             if commit:
                 self._template_turns[branch] = turn + 1
         subject = self._rotate(
-            [task.subject.entity_id for task in available], self._subject_turns.get(branch)
+            [self._subject_turn_key(task) for task in available], self._subject_turns.get(branch)
         )
         if commit:
             self._subject_turns[branch] = subject
-        candidates = [task for task in available if task.subject.entity_id == subject]
+        candidates = [task for task in available if self._subject_turn_key(task) == subject]
         kind = self._rotate(
             [task.predicate_kind for task in candidates], self._kind_turns.get(subject)
         )
@@ -457,7 +485,7 @@ class FrontierScheduler:
         return task
 
     def peek_task(
-        self, excluded_slots: set[tuple[str, int, str]] | None = None
+        self, excluded_slots: set[tuple] | None = None
     ) -> RecognitionTask | None:
         """Inspect the next opportunity without advancing any scheduler counter."""
         if self.dispatched >= self.max_tasks:
@@ -466,21 +494,23 @@ class FrontierScheduler:
         return self._materialize(task, detach=True) if task is not None else None
 
     def peek_slot(
-        self, excluded_slots: set[tuple[str, int, str]] | None = None
+        self, excluded_slots: set[tuple] | None = None
     ) -> tuple[SubjectRef, str] | None:
         if self.dispatched >= self.max_tasks:
             return None
         task = self._choose_task(excluded_slots or set(), commit=False)
         return (task.subject.model_copy(deep=True), task.predicate_iri) if task else None
 
-    def peek_fresh_slot(self, subject: SubjectRef, predicate_iri: str) -> RecognitionTask | None:
+    def peek_fresh_slot(
+        self, subject: SubjectRef, predicate_iri: str, *, scope: TraversalScope | None = None,
+    ) -> RecognitionTask | None:
         """Inspect one slot's next phase/section opportunity, excluding continuations."""
         if self.dispatched >= self.max_tasks:
             return None
-        key = (subject.entity_id, subject.revision, predicate_iri)
+        key = slot_key(subject, predicate_iri, scope)
         queue = deque(sorted(
             (task for buckets in self._branch_buckets.values()
-             for bucket_key, bucket in buckets.items() if bucket_key[:3] == key
+             for bucket_key, bucket in buckets.items() if bucket_key[:-1] == key
              for task in bucket.values()),
             key=self._arrival_of,
         ))
@@ -494,18 +524,20 @@ class FrontierScheduler:
     def is_exploration_due(self, task: RecognitionTask) -> bool:
         if task.retry_kind:
             return False
-        key = repr((task.subject.entity_id, task.predicate_iri, task.phase))
+        key = repr((self._subject_turn_key(task), task.predicate_iri, task.phase))
         return self._phase_counts.get(key, 0) % 5 == 4
 
-    def discard_subject(self, subject: SubjectRef) -> list[RecognitionTask | LogicalRecord]:
-        """Remove stale obligations without resetting lineage fairness or budgets."""
+    def discard_subject(
+        self, subject: SubjectRef, *, scope: TraversalScope | None = None,
+    ) -> list[RecognitionTask | LogicalRecord]:
+        """Discard an exact revision, optionally restricting it to one new-protocol scope."""
         discarded = []
         for queue in (self._root, self._child, self._retries):
             for task in list(queue):
                 if (task.subject.entity_id, task.subject.revision) == (
                     subject.entity_id,
                     subject.revision,
-                ):
+                ) and (scope is None or task.scope == scope):
                     queue.remove(task)
                     if task.retry_kind is None:
                         self._index_remove(task, "root" if queue is self._root else "child")
@@ -522,6 +554,7 @@ class FrontierScheduler:
         record_ids: list[str],
         *,
         epoch_seq: int | None = None,
+        scope: TraversalScope | None = None,
     ) -> None:
         if len(record_ids) != len(set(record_ids)):
             raise ValueError("ranking order contains duplicate records")
@@ -532,6 +565,7 @@ class FrontierScheduler:
             for position, task in enumerate(queue):
                 if (
                     task.subject == subject
+                    and task.scope == scope
                     and task.predicate_iri == predicate_iri
                     and task.record_id in ranks
                 ):
@@ -558,7 +592,7 @@ class FrontierScheduler:
                         )
 
     def next_task(
-        self, excluded_slots: set[tuple[str, int, str]] | None = None
+        self, excluded_slots: set[tuple] | None = None
     ) -> RecognitionTask | None:
         if self.dispatched >= self.max_tasks:
             blocked = {}
@@ -586,9 +620,9 @@ class FrontierScheduler:
 
     def _choose_task(self, excluded_slots, *, commit):
         task = None
-        root_available = any(key[:3] not in excluded_slots for key in self._branch_buckets["root"])
+        root_available = any(key[:-1] not in excluded_slots for key in self._branch_buckets["root"])
         child_available = any(
-            key[:3] not in excluded_slots for key in self._branch_buckets["child"]
+            key[:-1] not in excluded_slots for key in self._branch_buckets["child"]
         )
         # Required evidence rechecks and bounded continuations are not ordinary
         # retrieval opportunities; scoring a fresh pool cannot block them.
@@ -616,8 +650,8 @@ class FrontierScheduler:
         return len(self._root) + len(self._child) + len(self._retries)
 
     @property
-    def pending_slots(self) -> set[tuple[str, int, str]]:
-        return {key[:3] for buckets in self._branch_buckets.values() for key in buckets} | {
+    def pending_slots(self) -> set[tuple]:
+        return {key[:-1] for buckets in self._branch_buckets.values() for key in buckets} | {
             self._slot_key(task) for task in self._retries
         }
 

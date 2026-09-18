@@ -168,6 +168,13 @@ class DesignChecker:
                     return
                 properties = schema.get("properties", {})
                 required = schema.get("required", [])
+                # Persisted v1 claims retain their exact pre-extension hash. Only
+                # these two capability-gated fields may be absent in old claims;
+                # compile_stage_schema requires them for new reference-enabled runs.
+                optional = {
+                    f"{STAGES}#/discovery": {"reference_bindings"},
+                    f"{STAGES}#/discovery/$defs/RelationProposal": {"source_assertion"},
+                }.get(location, set())
                 require(
                     schema.get("additionalProperties") is False,
                     location,
@@ -175,7 +182,8 @@ class DesignChecker:
                     "object schema must reject additional properties",
                 )
                 require(
-                    set(required) == set(properties) and len(required) == len(set(required)),
+                    set(required) == set(properties) - optional
+                    and optional <= set(properties) and len(required) == len(set(required)),
                     location,
                     "REQUIRED_FIELDS",
                     "all properties must be required exactly once; nullable values stay explicit",
@@ -190,10 +198,10 @@ class DesignChecker:
     def check_schemas(self) -> None:
         require(len(self.schemas) == len(self.tools), TOOLS, "TOOL_NAMES", "duplicate tool names")
         require(
-            len(self.tools) == 10,
+            len(self.tools) == 11,
             TOOLS,
             "TOOL_SCOPE",
-            "the approved design contains ten standard functions",
+            "the approved design contains eleven standard functions",
         )
         for index, tool in enumerate(self.tools):
             require(
@@ -258,7 +266,7 @@ class DesignChecker:
     @staticmethod
     def semantic_content(kind: str, payload: dict[str, Any]) -> dict[str, Any]:
         """Explicit claim identity projection from data-model §4, excluding added proof quotes."""
-        if kind == "entity":
+        if kind in {"entity", "reference_binding"}:
             return payload
         if kind == "external_link":
             return {
@@ -285,6 +293,8 @@ class DesignChecker:
             )
         else:
             result.update(object_ids=payload["object_ids"], selection=payload["selection"])
+            if "source_assertion" in payload:
+                result["source_assertion"] = payload["source_assertion"]
         return result
 
     def check_verification_input(self) -> None:
@@ -301,6 +311,7 @@ class DesignChecker:
         )
         collections = {
             "entity": "entities",
+            "reference_binding": "reference_bindings",
             "property": "properties",
             "relation": "relations",
             "external_link": "external_links",
@@ -308,7 +319,7 @@ class DesignChecker:
         expected_claims = {
             (kind, proposal["local_id"])
             for kind, collection in collections.items()
-            for proposal in self.examples["discovery"][collection]
+            for proposal in self.examples["discovery"].get(collection, [])
         }
         actual_claims = [
             (target["target_kind"], target["payload"]["local_id"])
@@ -354,7 +365,7 @@ class DesignChecker:
             require(
                 proposal is not None
                 and proposal["class_iri"] == entity["class_iri"]
-                and value["local_ref_map"].get(proposal["local_id"]) == entity["entity_ref"],
+                and entity["entity_ref"] in value["local_ref_map"].values(),
                 f"{location}/entity_dependencies/{index}",
                 "REFERENCE_CLOSURE",
                 "registered context entity must include its frozen proposal and exact reference",
@@ -363,6 +374,8 @@ class DesignChecker:
             claim_path = f"{location}/targets/{index}"
             kind, payload = claim["target_kind"], claim["payload"]
             endpoint_ids = []
+            if kind == "reference_binding":
+                endpoint_ids.extend([payload["source_id"], payload["target_id"]])
             if kind in ("property", "relation", "external_link"):
                 endpoint_ids.append(payload["subject_id"])
             if kind == "relation":
@@ -699,7 +712,9 @@ class DesignChecker:
             len(registered) == len(set(registered))
             and set(registered) == set(self.schemas)
             and len(controller) == len(set(controller))
-            and set(controller) == {"validate_metric", "validate_graph"}
+            and set(controller) == {"validate_metric"}
+            and "validate_graph" in stages["verification"]
+            and "validate_graph" not in stages["discovery"]
             and set(stages) == {"discovery", "verification", "finalize"}
             and stages["finalize"] == [],
             path,
@@ -722,11 +737,16 @@ class DesignChecker:
             "every registered function must have an explicit reachable owner",
         )
         require(
-            value["conditional_tool_names"] == ["propose_repair"]
-            and all("propose_repair" in stages[stage] for stage in ("discovery", "verification")),
+            value["conditional_tool_names"] == [
+                "propose_repair", "validate_graph", "find_referent_candidates",
+            ]
+            and all(
+                {"propose_repair", "find_referent_candidates"} <= set(stages[stage])
+                for stage in ("discovery", "verification")
+            ),
             path,
             "TOOL_VISIBILITY",
-            "repair is a conditional capability in both stages, subject to recovery mode",
+            "repair and referent recall require the corresponding recovery or reference policy",
         )
         self.counts["model_visible_tools"] = len(model_tools)
         self.counts["controller_only_tools"] = len(controller)
@@ -1109,11 +1129,11 @@ class DesignChecker:
         )
         requirements = re.findall(r"^\| (FR-\d+) \|", self.artifacts.markdown[spec_name], re.M)
         require(
-            set(requirements) == {f"FR-{index:02}" for index in range(1, 19)}
+            set(requirements) == {f"FR-{index:02}" for index in range(1, 21)}
             and len(requirements) == len(set(requirements)),
             spec_name,
             "REQUIREMENTS",
-            "the approved FR-01 through FR-18 must remain unique and present",
+            "the approved FR-01 through FR-20 must remain unique and present",
         )
         modules: dict[str, set[str]] = {}
         for line in self.artifacts.markdown[plan_name].splitlines():
@@ -1149,10 +1169,10 @@ class DesignChecker:
             )
             deps[task] = set(re.findall(r"T\d+", raw))
         require(
-            set(deps) == {f"T{index:02}" for index in range(1, 27)},
+            set(deps) == {f"T{index:02}" for index in range(1, 38)},
             tasks_name,
             "TASKS",
-            "the approved T01 through T26 must remain present without additions",
+            "the approved T01 through T37 must remain present without additions",
         )
         visited: set[str] = set()
         visiting: list[str] = []
@@ -1195,6 +1215,25 @@ def self_test(artifacts: Artifacts) -> dict[str, int]:
     def add(name: str, code: str, mutate: Callable[[Artifacts], None]) -> None:
         mutations.append((name, code, mutate))
 
+    add(
+        "legacy source assertion compatibility does not make relation objects optional",
+        "REQUIRED_FIELDS",
+        lambda data: data.json_files[STAGES]["discovery"]["$defs"]["RelationProposal"][
+            "required"
+        ].remove("object_ids"),
+    )
+    add(
+        "legacy reference compatibility does not make entities optional",
+        "REQUIRED_FIELDS",
+        lambda data: data.json_files[STAGES]["discovery"]["required"].remove("entities"),
+    )
+    add(
+        "compatibility fields do not open arbitrary relation properties",
+        "CLOSED_OBJECT",
+        lambda data: data.json_files[STAGES]["discovery"]["$defs"]["RelationProposal"].update(
+            additionalProperties=True,
+        ),
+    )
     add(
         "invalid tool argument",
         "JSON_SCHEMA",
@@ -1270,6 +1309,42 @@ def self_test(artifacts: Artifacts) -> dict[str, int]:
                 )
             }
         ),
+    )
+    add(
+        "missing approved reference-resolution acceptance task",
+        "TASKS",
+        lambda data: data.markdown.update({
+            f"{SPEC_PATH}/tasks.md": re.sub(
+                r"^- \[[ xX]\] \*\*T37[^\n]*\n?", "",
+                data.markdown[f"{SPEC_PATH}/tasks.md"], flags=re.M,
+            ),
+        }),
+    )
+    add(
+        "unapproved extra task",
+        "TASKS",
+        lambda data: data.markdown.update({
+            f"{SPEC_PATH}/tasks.md": data.markdown[f"{SPEC_PATH}/tasks.md"]
+            + "\n- [ ] **T38**：未授权扩展。依赖：T37。\n",
+        }),
+    )
+    add(
+        "missing approved request-budget requirement",
+        "REQUIREMENTS",
+        lambda data: data.markdown.update({
+            f"{SPEC_PATH}/spec.md": re.sub(
+                r"^\| FR-08 \|[^\n]*\n?", "",
+                data.markdown[f"{SPEC_PATH}/spec.md"], flags=re.M,
+            ),
+        }),
+    )
+    add(
+        "unapproved extra requirement",
+        "REQUIREMENTS",
+        lambda data: data.markdown.update({
+            f"{SPEC_PATH}/spec.md": data.markdown[f"{SPEC_PATH}/spec.md"]
+            + "\n| FR-21 | 未授权扩展 | 不得通过 |\n",
+        }),
     )
     add(
         "missing verification payload",

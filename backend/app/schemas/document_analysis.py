@@ -11,9 +11,9 @@ from __future__ import annotations
 from typing import Annotated, Any, Literal, Self
 from uuid import UUID
 
-from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, model_validator
+from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, model_serializer, model_validator
 
-from app.schemas.evidence import EvidenceAnchor
+from app.schemas.evidence import EvidenceAnchor, ExternalRecordProvenance
 from app.schemas.retrieval_diagnostics import RetrievalDiagnosticCarrier
 
 CONTRACT_VERSION = "document-analysis-runs-v1"
@@ -61,6 +61,7 @@ RunStage = Literal[
 ]
 ArtifactAvailability = Literal["pending", "ready", "partial", "failed"]
 GraphProjection = Literal[
+    "verified",
     "effective_affirmed",
     "all_candidates",
     "unassociated",
@@ -74,6 +75,8 @@ AvailableAction = Literal[
 ]
 RunOperation = AvailableAction
 AssertionPolarity = Literal["affirmed", "negated", "conditional", "uncertain"]
+AssertionModality = Literal["asserted", "required", "possible", "planned", "unspecified"]
+RelationSelection = Literal["all", "one_of", "alternatives", "undetermined"]
 IndependentReview = Literal["unreviewed", "accepted", "rejected"]
 
 
@@ -223,6 +226,7 @@ class RunFailure(ApiModel):
 
 
 class DocumentAnalysisRunResponse(RunWatermark):
+    extraction_protocol: str | None = None
     status: RunStatus
     stage: RunStage
     ranking_budget_enabled: bool = True
@@ -237,6 +241,13 @@ class DocumentAnalysisRunResponse(RunWatermark):
     paused_at: AwareDatetime | None = None
     finished_at: AwareDatetime | None = None
     expires_at: AwareDatetime | None = None
+
+    @model_serializer(mode="wrap")
+    def preserve_legacy_protocol(self, handler):
+        data = handler(self)
+        if "extraction_protocol" not in self.model_fields_set:
+            data.pop("extraction_protocol", None)
+        return data
 
     @model_validator(mode="after")
     def validate_watermarks_and_actions(self) -> Self:
@@ -372,6 +383,44 @@ class RoleSourceSelectionRefs(ApiModel):
     predicate_bridge: list[str] = Field(default_factory=list)
     condition: list[str] = Field(default_factory=list)
     counterevidence: list[str] = Field(default_factory=list)
+    selection: list[str] = Field(default_factory=list)
+
+    @model_serializer(mode="wrap")
+    def preserve_legacy_roles(self, handler):
+        data = handler(self)
+        if "selection" not in self.model_fields_set:
+            data.pop("selection", None)
+        return data
+
+
+class ScopeMember(ApiModel):
+    relation_ref: RevisionRef
+    member_ref: EntityRef
+
+
+class TraversalScope(ApiModel):
+    scope_id: Digest
+    members: list[ScopeMember]
+
+
+class PublicScopeQualifier(ApiModel):
+    predicate_iri: FullIri | None
+    text: NonEmpty
+    evidence_selection_ids: list[str]
+
+
+class ResolvedScopeMember(ScopeMember):
+    selection: RelationSelection | None
+    polarity: AssertionPolarity
+    modality: AssertionModality
+    conditions: list[str]
+    applicability: list[PublicScopeQualifier]
+    evidence_selection_ids: list[str]
+
+
+class ScopeResolution(ApiModel):
+    scope_id: Digest
+    steps: list[ResolvedScopeMember]
 
 
 class GraphPredicateMenuItem(ApiModel):
@@ -393,6 +442,21 @@ class GraphEntity(ApiModel):
     independent_review: IndependentReview = "unreviewed"
     source_selection_refs: list[str] = Field(default_factory=list)
     predicate_menu: list[GraphPredicateMenuItem] | None = None
+    grounding_kind: Literal["document_root", "mention", "record"] | None = None
+    type_decision_ref: RevisionRef | None = None
+    referent_decision_ref: RevisionRef | None = None
+    composition_decision_ref: RevisionRef | None = None
+    external_provenance: list[ExternalRecordProvenance] = Field(default_factory=list)
+    identity_decision_refs: list[RevisionRef] = Field(default_factory=list)
+
+    @model_serializer(mode="wrap")
+    def preserve_legacy_grounding(self, handler):
+        data = handler(self)
+        for key in ("grounding_kind", "type_decision_ref", "referent_decision_ref",
+                    "composition_decision_ref", "external_provenance", "identity_decision_refs"):
+            if key not in self.model_fields_set:
+                data.pop(key, None)
+        return data
 
 
 class GraphAssertion(ApiModel):
@@ -415,6 +479,16 @@ class GraphAssertion(ApiModel):
     reason_code: str | None = None
     reason: str | None = None
     source_selection_refs: RoleSourceSelectionRefs
+    modality: AssertionModality | None = None
+    scope: TraversalScope | None = None
+
+    @model_serializer(mode="wrap")
+    def preserve_legacy_qualifiers(self, handler):
+        data = handler(self)
+        for key in ("modality", "scope"):
+            if key not in self.model_fields_set:
+                data.pop(key, None)
+        return data
 
 
 class GraphProperty(GraphAssertion):
@@ -431,7 +505,20 @@ class GraphRelationship(GraphAssertion):
     direction: Literal["subject_to_object", "object_to_subject"] = "subject_to_object"
 
 
+class GraphRelationshipGroup(GraphAssertion):
+    object_refs: list[EntityRef] = Field(min_length=2)
+    direction: Literal["subject_to_object", "object_to_subject"] = "subject_to_object"
+    selection: RelationSelection
+
+    @model_validator(mode="after")
+    def unique_members(self) -> Self:
+        if len({ref.entity_id for ref in self.object_refs}) != len(self.object_refs):
+            raise ValueError("relationship group members must identify distinct entities")
+        return self
+
+
 class CoverageSubject(ApiModel, RetrievalDiagnosticCarrier):
+    scope: TraversalScope | None = None
     subject_ref: EntityRef
     predicate_iri: FullIri
     predicate_label: NonEmpty
@@ -444,6 +531,13 @@ class CoverageSubject(ApiModel, RetrievalDiagnosticCarrier):
     executed_phase_counts: PhaseCounts | None = None
     pending_frontiers: int = Field(default=0, ge=0)
     stop_reason: str | None = None
+
+    @model_serializer(mode="wrap")
+    def preserve_legacy_scope(self, handler):
+        data = handler(self)
+        if "scope" not in self.model_fields_set:
+            data.pop("scope", None)
+        return data
 
     @model_validator(mode="after")
     def conserve_records(self) -> Self:
@@ -535,12 +629,15 @@ class EvidenceRepairSummary(ApiModel):
 
 
 class GraphArtifactResponse(RunWatermark):
+    extraction_protocol: str | None = None
     availability: ArtifactAvailability
     projection: GraphProjection = "effective_affirmed"
     graph_snapshot: GraphSnapshotHeader | None = None
     entities: list[GraphEntity] = Field(default_factory=list)
     properties: list[GraphProperty] = Field(default_factory=list)
     relationships: list[GraphRelationship] = Field(default_factory=list)
+    relationship_groups: list[GraphRelationshipGroup] = Field(default_factory=list)
+    scope_resolutions: list[ScopeResolution] = Field(default_factory=list)
     invalidated_refs: list[RevisionRef] = Field(default_factory=list)
     coverage: GraphCoverage = Field(default_factory=GraphCoverage)
     unresolved: GraphUnresolved = Field(default_factory=GraphUnresolved)
@@ -548,19 +645,31 @@ class GraphArtifactResponse(RunWatermark):
     evidence_repair: EvidenceRepairSummary = Field(default_factory=EvidenceRepairSummary)
     error: RunFailure | None = None
 
+    @model_serializer(mode="wrap")
+    def preserve_legacy_graph(self, handler):
+        data = handler(self)
+        for key in ("extraction_protocol", "relationship_groups", "scope_resolutions"):
+            if key not in self.model_fields_set:
+                data.pop(key, None)
+        return data
+
     @model_validator(mode="after")
     def validate_projection(self) -> Self:
         if self.availability == "pending":
             if self.graph_snapshot is not None:
                 raise ValueError("pending graph cannot expose an uncommitted snapshot")
-            if self.entities or self.properties or self.relationships:
+            if self.entities or self.properties or self.relationships or self.relationship_groups:
                 raise ValueError("pending graph cannot expose projected graph items")
         elif self.availability in {"ready", "partial"} and self.graph_snapshot is None:
             raise ValueError("available graph requires a public snapshot header")
 
-        if self.projection == "effective_affirmed":
-            for item in [*self.properties, *self.relationships]:
-                if item.polarity != "affirmed":
+        if (self.projection == "verified"
+                and self.extraction_protocol != "ontology-tool-extraction-v1"):
+            raise ValueError("unsupported_projection")
+        if self.projection in {"effective_affirmed", "verified"}:
+            resolved_scopes = {scope.scope_id: scope for scope in self.scope_resolutions}
+            for item in [*self.properties, *self.relationships, *self.relationship_groups]:
+                if self.projection == "effective_affirmed" and item.polarity != "affirmed":
                     raise ValueError("effective_affirmed cannot include non-affirmed assertions")
                 if not (
                     item.structural_valid
@@ -572,12 +681,27 @@ class GraphArtifactResponse(RunWatermark):
                     and item.independent_review != "rejected"
                 ):
                     raise ValueError(
-                        "effective_affirmed can include only current proof-gate results"
+                        f"{self.projection} can include only current proof-gate results"
                     )
+                if self.extraction_protocol == "ontology-tool-extraction-v1":
+                    if item.scope is None or item.modality is None:
+                        raise ValueError("tool graph assertions must retain modality and scope")
+                    if (isinstance(item, GraphRelationshipGroup)
+                            and item.selection == "undetermined"):
+                        raise ValueError("verified relationship groups require resolved selection")
+                    if item.scope.members:
+                        resolution = resolved_scopes.get(item.scope.scope_id)
+                        if resolution is None or [
+                            (step.relation_ref, step.member_ref) for step in resolution.steps
+                        ] != [
+                            (step.relation_ref, step.member_ref) for step in item.scope.members
+                        ]:
+                            raise ValueError("verified scope requires all exact parent resolutions")
         return self
 
 
 SourceSelectionRole = Literal[
+    "selection",
     "unit",
     "entity",
     "subject",
@@ -707,7 +831,9 @@ class SseEvent(ApiModel):
 
 
 ErrorCode = Literal[
+    "unsupported_projection",
     "INVALID_REQUEST",
+    "CONTEXT_CHANGED",
     "UNAUTHENTICATED",
     "ROLE_FORBIDDEN",
     "RUN_NOT_FOUND",
@@ -795,3 +921,57 @@ __all__ = [
     "SourceSelection",
     "SseEvent",
 ]
+
+
+class HarnessDetail(ApiModel):
+    text: str
+    truncated: bool
+
+
+class HarnessOperation(ApiModel):
+    id: str
+    kind: Literal["model", "tool", "validation", "graph"]
+    name: str
+    status: str
+    started_at: AwareDatetime
+    elapsed_ms: int | None
+    arguments: HarnessDetail | None = None
+    result: HarnessDetail | None = None
+
+
+class HarnessCall(ApiModel):
+    call_id: str
+    stage: Literal["discovery", "verification"]
+    subject_label: str | None = None
+    predicate_label: str | None = None
+    input_tokens: int
+    status: str
+    started_at: AwareDatetime
+    model: str
+    usage: dict[str, Any] | None = None
+
+
+class HarnessSnapshot(ApiModel):
+    session_id: str
+    sequence: int
+    call: HarnessCall | None
+    output: str
+    thinking: str
+    truncated: list[Literal["output", "thinking"]]
+    operations: list[HarnessOperation]
+    tool_counts: dict[str, int]
+    updated_at: AwareDatetime | None
+
+
+class HarnessResponse(ApiModel):
+    recognition_run_id: UUID
+    configuration: dict[str, Any]
+    snapshot: HarnessSnapshot | None
+
+
+class HarnessContextResponse(ApiModel):
+    recognition_run_id: UUID
+    call_id: str
+    request: dict[str, Any]
+    schema_card: dict[str, Any]
+    class_labels: dict[str, str] = Field(default_factory=dict)

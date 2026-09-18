@@ -5,7 +5,17 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 
 from app.services.extraction.evidence_identity import evidence_hash, stable_id
-from app.services.extraction.ontology_guided.contracts import SubjectRef
+from app.services.extraction.ontology_guided.contracts import SubjectRef, TraversalScope
+
+
+def subject_key(subject: SubjectRef, scope: TraversalScope | None = None) -> tuple:
+    """Only explicitly scoped new tasks use the new identity dimensions."""
+    key = (subject.entity_id, subject.revision)
+    return (*key, scope.scope_id) if scope is not None else key
+
+
+def slot_key(subject: SubjectRef, predicate_iri: str, scope: TraversalScope | None = None) -> tuple:
+    return (*subject_key(subject, scope), predicate_iri)
 
 
 @dataclass(slots=True, eq=False)
@@ -41,16 +51,20 @@ class LogicalRecord:
         return self.frontier.dependency_hash
 
     @property
+    def scope(self):
+        return self.frontier.scope
+
+    @property
     def retry_kind(self):
         return None
 
     @property
     def task_id(self):
-        return stable_id(
-            "recognition-task",
-            [self.subject.model_dump(mode="json"), self.predicate_iri, self.record_id,
-             self.dependency_hash, None],
-        )
+        identity = [self.subject.model_dump(mode="json"), self.predicate_iri, self.record_id,
+                    self.dependency_hash, None]
+        if self.scope is not None:
+            identity.append(self.scope.scope_id)
+        return stable_id("recognition-task", identity)
 
     def materialize(self):
         from app.services.extraction.ontology_guided.scheduler import RecognitionTask
@@ -65,6 +79,7 @@ class LogicalRecord:
             dependency_hash=self.dependency_hash,
             section_node_id=self.section_node_id,
             source_position=self.source_position,
+            scope=self.scope,
         )
         task.ranking_epoch_seq = self.ranking_epoch_seq
         task.pool_rank = self.pool_rank
@@ -80,6 +95,7 @@ class LogicalFrontier:
     dependency_hash: str
     root_branch: bool
     arrival_start: int
+    scope: TraversalScope | None = None
     template_priority: bool = False
     records: list[LogicalRecord] = field(default_factory=list)
     record_ids: set[str] = field(default_factory=set)
@@ -87,12 +103,11 @@ class LogicalFrontier:
 
     @property
     def key(self):
-        return (self.subject.entity_id, self.subject.revision,
-                self.predicate_iri, self.dependency_hash)
+        return (*self.slot_key, self.dependency_hash)
 
     @property
     def slot_key(self):
-        return (self.subject.entity_id, self.subject.revision, self.predicate_iri)
+        return slot_key(self.subject, self.predicate_iri, self.scope)
 
     def freeze(self):
         self.record_ids = {record.record_id for record in self.records}
@@ -109,6 +124,7 @@ class LogicalFrontier:
             "dependency_hash": self.dependency_hash,
             "root_branch": self.root_branch,
             "arrival_start": self.arrival_start,
+            **({"scope": self.scope.model_dump(mode="json")} if self.scope is not None else {}),
             "records": [
                 [record.record_id, record.phase, record.section_node_id, record.source_position]
                 for record in self.records
@@ -138,6 +154,7 @@ class LogicalFrontier:
             dependency_hash=raw["dependency_hash"],
             root_branch=raw["root_branch"],
             arrival_start=raw["arrival_start"],
+            scope=TraversalScope.model_validate(raw["scope"]) if "scope" in raw else None,
             template_priority=raw.get("template_priority", False),
         )
         for index, values in enumerate(raw["records"]):

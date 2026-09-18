@@ -20,6 +20,13 @@ from app.models.document_analysis import (
 )
 from app.services.document_analysis.run_store import HeadConflict, content_hash
 from app.services.document_analysis.state_artifacts import performance_policy
+from app.services.extraction.ontology_guided.current_work import (
+    TOOL_PROTOCOL_VERSION,
+    call_request_key,
+    protocol_result_ref,
+    validate_protocol_result,
+    validate_tool_protocol,
+)
 
 
 def enabled(store, run):
@@ -106,7 +113,7 @@ def lock_current(store, run, token, fingerprint):
     return current
 
 
-def _candidate(store, run, token, kind, body, sequence):
+def _candidate(store, run, token, kind, body, sequence, *, identity_nodes=()):
     identity = body.get("candidate_id") or body["entity_id"]
     revision = body["revision"]
     existing = store.db.get(DocumentRunCandidate, (run.recognition_run_id, identity, revision))
@@ -114,7 +121,24 @@ def _candidate(store, run, token, kind, body, sequence):
     refs = [body["proof_ref"]] if body.get("proof_ref") else []
     if existing is not None:
         if existing.payload_hash != digest or existing.kind != kind or existing.proof_refs != refs:
-            raise HeadConflict("immutable candidate revision changed")
+            identity_fields = {"identity_status", "external_provenance", "identity_decision_refs"}
+            before = existing.payload
+            if not (
+                kind == existing.kind == "entity" and body in identity_nodes
+                and existing.proof_refs == refs
+                and content_hash(before) == existing.payload_hash
+                and {key: value for key, value in before.items() if key not in identity_fields}
+                == {key: value for key, value in body.items() if key not in identity_fields}
+                and body.get("identity_status") == "verified"
+                and body.get("external_provenance") and body.get("identity_decision_refs")
+                and all(item in body["external_provenance"]
+                        for item in before.get("external_provenance", []))
+                and all(item in body["identity_decision_refs"]
+                        for item in before.get("identity_decision_refs", []))
+            ):
+                raise HeadConflict("immutable candidate revision changed")
+            existing.payload = deepcopy(body)
+            existing.payload_hash = digest
     else:
         head = store.db.get(DocumentRunCandidateHead, (run.recognition_run_id, identity))
         store.put_candidate(
@@ -133,20 +157,24 @@ def _candidate(store, run, token, kind, body, sequence):
     return {"id": identity, "revision": revision, "kind": kind}
 
 
-def write_work(store, run, token, changes, *, sequence, expected_version, fingerprint):
+def write_work(
+    store, run, token, changes, *, sequence, expected_version, fingerprint, identity_nodes=(),
+):
     current = lock_current(store, run, token, fingerprint)
     if current.work_version != expected_version:
         raise HeadConflict("current work version changed")
     version = expected_version + 1
     for domain, values in changes.items():
-        if domain in {"nodes", "edges", "properties"}:
-            kind = {"nodes": "entity", "edges": "relationship", "properties": "property"}[domain]
+        if domain in {"nodes", "edges", "properties", "relationship_groups"}:
+            kind = {"nodes": "entity", "edges": "relationship", "properties": "property",
+                    "relationship_groups": "relationship_group"}[domain]
             values = {
                 key: {
                     "key": row["key"],
                     "position": row["position"],
                     "candidate_ref": _candidate(
-                        store, current, token, kind, row["value"], sequence
+                        store, current, token, kind, row["value"], sequence,
+                        identity_nodes=identity_nodes,
                     ),
                 }
                 if row
@@ -241,7 +269,7 @@ def restore_work(store, run, fingerprint):
     control = rows["control"]["current"]
     if control["run_fingerprint"] != fingerprint:
         raise HeadConflict("current work fingerprint mismatch")
-    for name in ("nodes", "edges", "properties"):
+    for name in ("nodes", "edges", "properties", "relationship_groups"):
         for row in sorted(rows.get(name, {}).values(), key=lambda r: r.get("position", 0)):
             ref = row.pop("candidate_ref")
             candidate = store.db.get(
@@ -288,6 +316,223 @@ def restore_work(store, run, fingerprint):
     )
 
 
+def load_protocol_result(store, run, lineage_id, result_ref, field):
+    """Read one exact result, never a result-history prefix or a current stage guess."""
+    result = get_row(store, run, "calls:results", result_ref, model=DocumentRunResult)
+    if (result is None or set(result) != {"lineage_id", "field", "value"}
+            or result["lineage_id"] != lineage_id or result["field"] != field):
+        raise HeadConflict("tool protocol result reference mismatch")
+    try:
+        validate_protocol_result(field, result["value"])
+        expected = protocol_result_ref(lineage_id, field, result["value"])
+    except (TypeError, ValueError, KeyError) as exc:
+        raise HeadConflict("tool protocol result is invalid") from exc
+    if result_ref != expected:
+        raise HeadConflict("tool protocol result identity mismatch")
+    return result["value"]
+
+
+def _tool_protocol_results(store, run, protocol, *, unconfirmed_attempts=()):
+    from app.services.extraction.ontology_guided.tool_contracts import (
+        TOOL_DEFINITIONS,
+        ToolErrorResult,
+    )
+
+    lineage = protocol["lineage_id"]
+    turns, previous_attempt = {}, 0
+    for result_ref in protocol["turn_refs"]:
+        result = load_protocol_result(store, run, lineage, result_ref, "model_turn")
+        attempt = result["attempt"]
+        if (attempt <= previous_attempt or attempt not in protocol["completed_attempts"]
+                or result["stage"] != protocol["stage"]):
+            raise HeadConflict("tool protocol turns are not the ordered current stage")
+        request = get_row(
+            store, run, "calls:requests",
+            call_request_key({"lineage_id": lineage, "protocol_attempt": attempt}),
+            model=DocumentRunRequest,
+        )
+        if request is None:
+            raise HeadConflict("model turn has no reserved request")
+        reservation = request["reservation"]
+        if (reservation.get("input_hash") != result["input_hash"]
+                or reservation.get("run_fingerprint") != run.run_fingerprint
+                or reservation["stage"].removeprefix("ontology_guided_") != result["stage"]
+                or (request["result_ref"] != result_ref
+                    and not (attempt in unconfirmed_attempts and request["result_ref"] is None))):
+            raise HeadConflict("model turn does not match its reserved request")
+        turns[attempt] = (result_ref, result)
+        previous_attempt = attempt
+    tools = {}
+    for result_ref in protocol["completed_tool_results"]:
+        result = load_protocol_result(store, run, lineage, result_ref, "tool_result")
+        key = result["attempt"], result["call_id"]
+        if key in tools or key[0] not in turns:
+            raise HeadConflict("tool result has no unique current response call")
+        turn = turns[key[0]][1]
+        calls = [item for item in turn["output_items"] if item.get("type") == "function_call"]
+        ids = [item.get("call_id") for item in calls]
+        refused = any(
+            part.get("type") == "refusal"
+            for item in turn["output_items"] if item.get("type") == "message"
+            for part in item.get("content", []) if isinstance(part, dict)
+        )
+        if (turn["response_status"] != "completed" or turn["error"] is not None
+                or turn["incomplete_details"] is not None or refused
+                or any(not isinstance(call_id, str) or not call_id for call_id in ids)
+                or len(set(ids)) != len(ids) or key[1] not in ids):
+            raise HeadConflict("tool result cannot be attached to an unconsumable response")
+        call = next(item for item in calls if item["call_id"] == key[1])
+        if not turn["allowed_tool_names"]:
+            raise HeadConflict("answer-only response cannot have tool results")
+        try:
+            envelope = result["result"]
+            if call.get("name") not in turn["allowed_tool_names"] and (
+                envelope.get("status") not in {"blocked", "error"}
+                or envelope.get("data") is not None
+            ):
+                raise ValueError("tool result exceeds original request permissions")
+            result_type = (
+                ToolErrorResult if envelope.get("data") is None
+                else TOOL_DEFINITIONS[call["name"]].result_type
+            )
+            result_type.model_validate(envelope, strict=True)
+        except (KeyError, TypeError, ValueError) as exc:
+            raise HeadConflict("stored tool result does not match its result contract") from exc
+        tools[key] = result_ref
+    for field in ("discovery", "verification", "outcome"):
+        result_ref = protocol[field + "_ref"]
+        if result_ref is not None:
+            load_protocol_result(store, run, lineage, result_ref, field)
+    for value in protocol["materialized_refs"].values():
+        if not isinstance(value.get("result_ref"), str):
+            raise HeadConflict("materialized reference has no exact tool result")
+        load_protocol_result(store, run, lineage, value["result_ref"], "tool_result")
+    return turns
+
+
+def _persist_tool_protocol(store, run, protocol, old, result_changes):
+    lineage = protocol["lineage_id"]
+    if old is not None:
+        if old.get("version") != TOOL_PROTOCOL_VERSION:
+            raise HeadConflict("existing protocol cannot switch to Responses")
+        for field in ("scope_id", "api_protocol", "reference_context"):
+            if old.get(field) != protocol.get(field):
+                raise HeadConflict("tool protocol frozen identity changed")
+        for field in (
+            "request_attempt", "assertion_generation", "evidence_revision", "tool_calls_used",
+        ):
+            if protocol[field] < old[field]:
+                raise HeadConflict("tool protocol counters regressed")
+        if protocol["completed_attempts"][:len(old["completed_attempts"])] != old[
+            "completed_attempts"
+        ]:
+            raise HeadConflict("tool protocol response receipts regressed")
+        if old["recovery_used"] and not protocol["recovery_used"]:
+            raise HeadConflict("tool protocol recovery budget regressed")
+        if protocol["evidence_revision"] == old["evidence_revision"]:
+            for field in ("evidence_hash", "context_hash", "context_authorization"):
+                if protocol[field] != old[field]:
+                    raise HeadConflict("current authorization changed without evidence revision")
+        same_stage = (protocol["stage"] == old["stage"]
+                      and protocol["assertion_generation"] == old["assertion_generation"]
+                      and protocol["evidence_revision"] == old["evidence_revision"])
+        if same_stage:
+            for field in ("base_target", "active_instructions", "stage_input_items"):
+                if (field == "stage_input_items" and not old[field] and not old["turn_refs"]
+                        and old["pending_request"] is None):
+                    continue
+                if protocol[field] != old[field]:
+                    raise HeadConflict("current stage initial input changed")
+            for field in ("turn_refs", "completed_tool_results"):
+                if protocol[field][:len(old[field])] != old[field]:
+                    raise HeadConflict("confirmed current stage results changed")
+        if protocol["assertion_generation"] == old["assertion_generation"]:
+            fields = ["discovery_ref"]
+            if protocol["evidence_revision"] == old["evidence_revision"]:
+                fields.extend(["verification_ref", "outcome_ref"])
+            for field in fields:
+                if old[field] is not None and old[field] != protocol[field]:
+                    raise HeadConflict("committed tool protocol stage changed")
+        pending = old["pending_request"]
+        if pending and pending["attempt"] not in protocol["completed_attempts"]:
+            if protocol["pending_request"] != pending:
+                raise HeadConflict("unknown model request cannot be replaced or refunded")
+
+    references = set(protocol["turn_refs"] + protocol["completed_tool_results"])
+    references.update(protocol[field] for field in (
+        "discovery_ref", "verification_ref", "outcome_ref",
+    ) if protocol[field] is not None)
+    references.update(value.get("result_ref") for value in protocol["materialized_refs"].values())
+    changes = {
+        key: value for key, value in result_changes.items() if value["lineage_id"] == lineage
+    }
+    if not set(changes) <= references:
+        raise HeadConflict("result changes must be referenced by the current protocol")
+    put_rows(store, run, DocumentRunResult, "calls:results", changes, immutable=True)
+    store.db.flush()
+    old_completed = old["completed_attempts"] if old else []
+    newly_completed = protocol["completed_attempts"][len(old_completed):]
+    turns = _tool_protocol_results(
+        store, run, protocol, unconfirmed_attempts=newly_completed,
+    )
+    if newly_completed:
+        pending = (old or {}).get("pending_request")
+        if (pending is None or newly_completed != [pending["attempt"]]
+                or pending["attempt"] not in turns):
+            raise HeadConflict("new response receipt has no exact pending request")
+        result = turns[pending["attempt"]][1]
+        if result["allowed_tool_names"] != pending["allowed_tool_names"]:
+            raise HeadConflict("response tool permissions differ from its pending request")
+    authorization = protocol["context_authorization"]
+    if authorization != (old or {}).get("context_authorization"):
+        from app.services.extraction.ontology_guided.context import ContextAuthorization
+
+        try:
+            checked = ContextAuthorization.model_validate(authorization, strict=True)
+        except (TypeError, ValueError) as exc:
+            raise HeadConflict("current authorization has an invalid source contract") from exc
+        if (checked.task_id != protocol["base_target"]["task_id"]
+                or checked.ir_identity.document_hash != run.document_hash):
+            raise HeadConflict("current authorization belongs to another task or document")
+        retrieved = False
+        for change in changes.values():
+            if change["field"] != "tool_result":
+                continue
+            record = change["value"]
+            result = record["result"]
+            data = result.get("data")
+            calls = turns.get(record["attempt"], (None, {}))[1].get("output_items", [])
+            if (result.get("status") == "ok" and isinstance(data, dict)
+                    and data.get("new_evidence") is True
+                    and data.get("context_hash") == protocol["context_hash"]
+                    and any(item.get("type") == "function_call"
+                            and item.get("call_id") == record["call_id"]
+                            and item.get("name") == "retrieve_evidence" for item in calls)):
+                retrieved = True
+        if not retrieved:
+            raise HeadConflict("authorization change requires confirmed new retrieval evidence")
+    for attempt in newly_completed:
+        if attempt not in turns:
+            raise HeadConflict("new response receipt has no exact current turn result")
+        result_ref, result = turns[attempt]
+        request_key = call_request_key({"lineage_id": lineage, "protocol_attempt": attempt})
+        request = get_row(store, run, "calls:requests", request_key, model=DocumentRunRequest)
+        if request is None:
+            raise HeadConflict("completed response has no reserved request")
+        reservation = request["reservation"]
+        if (reservation["stage"].removeprefix("ontology_guided_") != result["stage"]
+                or reservation.get("input_hash") != result["input_hash"]
+                or reservation.get("run_fingerprint") != run.run_fingerprint):
+            raise HeadConflict("response does not match its reserved request")
+        put_rows(store, run, DocumentRunRequest, "calls:requests", {
+            request_key: {
+                **request, "dispatch_state": "completed", "actual_cost": 1,
+                "cost_status": "measured", "result_ref": result_ref,
+            },
+        })
+    return len(newly_completed)
+
+
 def persist_calls(store, run, token, fingerprint, state):
     from app.services.document_analysis.execution import _publication, _validate_model_call_state
 
@@ -310,6 +555,24 @@ def persist_calls(store, run, token, fingerprint, state):
         run.recognition_run_id
     ):
         raise HeadConflict("request run identity mismatch")
+    result_changes = state.get("result_changes", {})
+    try:
+        if not isinstance(result_changes, dict):
+            raise ValueError("result changes must be a mapping")
+        changed_protocols = {row["key"]: row["value"] for row in state["protocols"].values()}
+        for result_ref, result in result_changes.items():
+            if (not isinstance(result, dict) or set(result) != {"lineage_id", "field", "value"}
+                    or not isinstance(result["lineage_id"], str)
+                    or changed_protocols.get(result["lineage_id"], {}).get("version")
+                    != TOOL_PROTOCOL_VERSION):
+                raise ValueError("result change has no current Responses protocol")
+            validate_protocol_result(result["field"], result["value"])
+            if result_ref != protocol_result_ref(
+                result["lineage_id"], result["field"], result["value"],
+            ):
+                raise ValueError("result change identity is invalid")
+    except (ValueError, TypeError, KeyError) as exc:
+        raise HeadConflict("invalid protocol result changes") from exc
     with _publication(store.db, store):
         current = lock_current(store, run, token, fingerprint)
         prior_control = get_row(store, current, "calls:control") or {}
@@ -330,6 +593,20 @@ def persist_calls(store, run, token, fingerprint, state):
                 continue
             if receipt["sequence"] <= sequence:
                 raise HeadConflict("committed request reservation is missing")
+            protocol = changed_protocols.get(receipt["lineage_id"])
+            if protocol is None:
+                saved = get_row(
+                    store, current, "calls:protocols", receipt["lineage_id"],
+                    model=DocumentRunRequest,
+                )
+                protocol = saved["value"] if saved else None
+            if protocol and protocol.get("version") == TOOL_PROTOCOL_VERSION:
+                pending = protocol["pending_request"]
+                if (pending is None or pending["reservation_key"] != request_key
+                        or receipt.get("input_hash") != pending["request_hash"]
+                        or receipt["stage"].removeprefix("ontology_guided_") != pending["stage"]
+                        or receipt.get("run_fingerprint") != fingerprint):
+                    raise HeadConflict("Responses reservation does not match its pending request")
             put_rows(
                 store,
                 current,
@@ -364,6 +641,28 @@ def persist_calls(store, run, token, fingerprint, state):
                         != run.document_hash
                     ):
                         raise HeadConflict("protocol source mismatch")
+                    if prior and protocol.get("version") != prior["value"].get("version"):
+                        raise HeadConflict("frozen protocol version cannot change")
+                    if protocol.get("version") == TOOL_PROTOCOL_VERSION:
+                        pending = protocol["pending_request"]
+                        if pending is not None:
+                            request = get_row(
+                                store, current, "calls:requests", pending["reservation_key"],
+                                model=DocumentRunRequest,
+                            )
+                            receipt = request["reservation"] if request else None
+                            if (receipt is None or receipt["lineage_id"] != row["key"]
+                                    or receipt.get("protocol_attempt") != pending["attempt"]
+                                    or receipt.get("input_hash") != pending["request_hash"]
+                                    or receipt["stage"].removeprefix("ontology_guided_")
+                                    != pending["stage"]):
+                                raise HeadConflict("pending Responses request has no reservation")
+                        confirmed_delta += _persist_tool_protocol(
+                            store, current, protocol, prior["value"] if prior else None,
+                            result_changes,
+                        )
+                        put_rows(store, current, DocumentRunRequest, "calls:" + domain, {key: row})
+                        continue
                     if prior and (
                         protocol.get("request_attempt", 0)
                         < prior["value"].get("request_attempt", 0)
@@ -474,18 +773,16 @@ def persist_calls(store, run, token, fingerprint, state):
         )
 
 
-def call_request_key(receipt):
-    attempt = receipt.get("protocol_attempt")
-    return (
-        content_hash([receipt["lineage_id"], attempt])
-        if attempt is not None
-        else str(receipt["sequence"])
-    )
-
-
 def hydrate_protocol(store, run, row):
     row = deepcopy(row)
     protocol = row["value"]
+    if protocol.get("version") == TOOL_PROTOCOL_VERSION:
+        try:
+            validate_tool_protocol(protocol)
+        except (TypeError, ValueError) as exc:
+            raise HeadConflict("stored current tool protocol is invalid") from exc
+        _tool_protocol_results(store, run, protocol)
+        return row
     for field in ("base_target", "discovery", "verification", "outcome"):
         ref = protocol.pop(field + "_ref", None)
         if ref is not None:
@@ -727,7 +1024,10 @@ def read_display(store, run, kind="public_graph"):
     ):
         return rebuild_display(store, run)
     graph = dict(header["graph"])
-    for field in ("nodes", "edges", "properties"):
+    fields = ("nodes", "edges", "properties") + (
+        ("relationship_groups",) if "relationship_groups" in header.get("member_counts", {}) else ()
+    )
+    for field in fields:
         graph[field] = [
             r["value"]
             for r in sorted(rows.get("display:" + field, {}).values(), key=lambda r: r["position"])
@@ -775,6 +1075,10 @@ def display_payload(
     from app.services.extraction.evidence_identity import stable_id
     from app.services.extraction.ontology_guided.contracts import SubjectRef
     from app.services.extraction.ontology_guided.ontology_plan import compile_local_menu
+    from app.services.extraction.ontology_guided.projection import (
+        TOOL_EXTRACTION_PROTOCOL,
+        TOOL_PROJECTION_POLICY,
+    )
 
     snapshot_id = stable_id(
         "current-graph", [str(run.recognition_run_id), graph.generated_from_hash, graph.event_head]
@@ -792,7 +1096,9 @@ def display_payload(
         )
     members = deepcopy(cache[1])
     updates = {}
-    for field in ("nodes", "edges", "properties"):
+    tool_protocol = graph.projection_policy == TOOL_PROJECTION_POLICY
+    fields = ("nodes", "edges", "properties") + (("relationship_groups",) if tool_protocol else ())
+    for field in fields:
         values = {getattr(v, "entity_id", None) or v.candidate_id: v for v in getattr(graph, field)}
         prior = members.get("display:" + field, set())
         touched = (
@@ -813,7 +1119,7 @@ def display_payload(
             partial = graph.model_copy(
                 update={
                     name: [value] if name == field else []
-                    for name in ("nodes", "edges", "properties")
+                    for name in fields
                 }
             )
             selections[field + ":" + key] = build_selection_registry(
@@ -858,13 +1164,17 @@ def display_payload(
         if changes is not None
         else None
     )
+    def coverage_key(value):
+        return (value.subject_ref.id, value.subject_ref.revision,
+                *((value.scope.scope_id,) if value.scope is not None else ()), value.predicate_iri)
+
     updates["coverage"] = {
-        content_hash([v.subject_ref.id, v.subject_ref.revision, v.predicate_iri]): {
+        content_hash(list(coverage_key(v))): {
             "position": i,
             "value": v.model_dump(mode="json"),
         }
         for i, v in enumerate(graph.coverage)
-        if slots is None or (v.subject_ref.id, v.subject_ref.revision, v.predicate_iri) in slots
+        if slots is None or coverage_key(v) in slots
     }
     if changes is not None:
         updates["coverage"].update(
@@ -876,16 +1186,17 @@ def display_payload(
         )
     header = {
         "partitioned": 1,
+        **({"extraction_protocol": TOOL_EXTRACTION_PROTOCOL} if tool_protocol else {}),
         "snapshot_id": snapshot_id,
         "analysis_id": ir.analysis_id,
         "member_counts": {
             name: len(members.get("display:" + name, ()))
-            for name in ("nodes", "edges", "properties")
+            for name in fields
         },
         "ontology_snapshot_id": ontology.snapshot_id,
         "generated_at": datetime.now(UTC).isoformat(),
         "graph": graph.model_dump(
-            mode="json", exclude={"nodes", "edges", "properties", "coverage"}
+            mode="json", exclude={*fields, "coverage"}
         ),
         "evidence_repair": summary,
     }
@@ -1000,6 +1311,24 @@ def persist_batch(
         current = lock_current(store, run, token, fingerprint)
         if current.work_version != expected_version:
             raise HeadConflict("current work version changed during batch preparation")
+        from app.services.extraction.ontology_guided.projection import TOOL_PROJECTION_POLICY
+
+        identity_nodes = []
+        if (graph.projection_policy == TOOL_PROJECTION_POLICY
+                and any(node.identity_status == "verified" for node in batch.outcome.nodes)):
+            saved = get_row(
+                store, current, "calls:protocols",
+                json.dumps(batch.task.claim_lineage_id, ensure_ascii=False, separators=(",", ":")),
+                model=DocumentRunRequest,
+            )
+            protocol = saved["value"] if saved else {}
+            if protocol.get("version") == TOOL_PROTOCOL_VERSION and protocol.get("outcome_ref"):
+                finalized = load_protocol_result(
+                    store, current, batch.task.claim_lineage_id, protocol["outcome_ref"], "outcome",
+                )
+                accepted = [node.model_dump(mode="json") for node in batch.outcome.nodes
+                            if node.identity_status == "verified"]
+                identity_nodes = [node for node in finalized["nodes"] if node in accepted]
         event = store.append_event(
             current.recognition_run_id,
             current.owner_id,
@@ -1029,6 +1358,7 @@ def persist_batch(
             sequence=event.sequence,
             expected_version=expected_version,
             fingerprint=fingerprint,
+            identity_nodes=identity_nodes,
         )
         body = reads[0]["public_graph"]["current"]
         body["graph"]["run_revision"] = current.revision
@@ -1071,6 +1401,7 @@ def rebuild_display(store, run):
         GraphEdge,
         GraphNode,
         GraphProperty,
+        GraphRelationshipGroup,
         OntologySnapshot,
         RunProgress,
         VersionedRef,
@@ -1087,7 +1418,10 @@ def rebuild_display(store, run):
         for name, values in read_rows(store, run, DocumentRunCurrentState, prefix="work:").items()
     }
     collections = {}
-    for name, model in (("nodes", GraphNode), ("edges", GraphEdge), ("properties", GraphProperty)):
+    models = [("nodes", GraphNode), ("edges", GraphEdge), ("properties", GraphProperty)]
+    if context.get("extraction_protocol"):
+        models.append(("relationship_groups", GraphRelationshipGroup))
+    for name, model in models:
         values = []
         for row in sorted(rows.get(name, {}).values(), key=lambda r: r.get("position", 0)):
             ref = row["candidate_ref"]
@@ -1112,7 +1446,8 @@ def rebuild_display(store, run):
         ],
         progress=RunProgress.model_validate(header["progress"]),
         dependency_index=dependencies,
-        projection="all",
+        projection=header["projection"] if context.get("extraction_protocol") else "all",
+        extraction_protocol=context.get("extraction_protocol"),
         artifact_status=header["artifact_status"],
         **collections,
     )

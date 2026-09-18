@@ -4,10 +4,69 @@ from __future__ import annotations
 
 import re
 from copy import deepcopy
+from dataclasses import dataclass
+from typing import Literal
 
 from app.services.extraction.evidence_identity import evidence_hash
+from app.services.extraction.ontology_guided.claim_protocol import FrozenClaimSet
+from app.services.extraction.ontology_guided.records import RecordIndex
 from app.services.extraction.ontology_guided.scheduler import RecognitionTask
 from app.services.extraction.ontology_guided.value_constraints import CONSTRAINT_REASONS
+
+
+@dataclass(frozen=True)
+class EvidenceRecoveryPlan:
+    action: Literal["none", "supplement", "reproposal"]
+    record_ids: list[str]
+    reason_code: str
+    required_model_calls: int
+
+
+def plan_evidence_recovery(
+    task: RecognitionTask, frozen: FrozenClaimSet, missing_facets: list[str], *,
+    index: RecordIndex, already_seen: set[str], remaining_calls: int, recovery_used: bool,
+    validation_issues: list[str] | None = None,
+) -> EvidenceRecoveryPlan:
+    """Choose one bounded recovery from source quotes; do not mutate a work queue."""
+    from app.services.extraction.ontology_guided.source_assertions import RELATION_BRIDGE_ISSUES
+
+    source_gap = any(code in RELATION_BRIDGE_ISSUES or code.startswith("source_assertion_")
+                     for code in validation_issues or [])
+    if recovery_used or not (missing_facets or source_gap):
+        return EvidenceRecoveryPlan("none", [], "recovery_used" if recovery_used else "no_gap", 0)
+    if source_gap:
+        # A changed source-role assertion is a new proposal, never a rewritten frozen claim.
+        if remaining_calls >= 3:
+            return EvidenceRecoveryPlan("reproposal", [], "source_assertion_requires_revision", 3)
+        return EvidenceRecoveryPlan("none", [], "model_budget_exhausted", 0)
+    quotes = [quote for entity in frozen.entities for quote in entity.mentions]
+    quotes.extend(component.quote for entity in frozen.entities
+                  for component in entity.record_components)
+    quotes.extend(prop.value_quote for prop in frozen.properties)
+    quotes.extend(quote for prop in frozen.properties for quote in prop.field_support)
+    quotes.extend(quote for relation in frozen.relations
+                  for quote in [*relation.bridge_support, *relation.selection_support])
+    quotes.extend(quote for link in frozen.external_links for quote in link.identity_support)
+    terms = {quote.text for quote in quotes if quote.text.strip()}
+    records = [record.record_id for record in index.records
+               if record.record_id != task.record_id and record.record_id not in already_seen
+               and any(unit.evidence_id not in already_seen for unit in record.source_units)
+               and any(term in record.text for term in terms)]
+    required_calls = 3 if frozen.relations else 2
+    if records and remaining_calls >= required_calls:
+        # Retrieval/reproposal, relation validation when applicable, then semantic answer.
+        return EvidenceRecoveryPlan(
+            "supplement", records[:4], "unread_source_match", required_calls,
+        )
+    if set(missing_facets) & {"value", "field_role", "type", "referent"}:
+        if remaining_calls >= required_calls:
+            return EvidenceRecoveryPlan(
+                "reproposal", [], "proposal_requires_revision", required_calls,
+            )
+        return EvidenceRecoveryPlan("none", [], "model_budget_exhausted", 0)
+    return EvidenceRecoveryPlan(
+        "none", [], "model_budget_exhausted" if remaining_calls < 1 else "no_source_clue", 0,
+    )
 
 
 class EvidenceWorkQueue:

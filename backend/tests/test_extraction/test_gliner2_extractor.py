@@ -1,5 +1,6 @@
 """GLiNER2.5 strict adapter contracts without weights or HTTP calls."""
 
+import hashlib
 import json
 import re
 import sys
@@ -154,6 +155,12 @@ def prepared(tmp_path, monkeypatch):
         config = {"architecture": "boundary"} if name == "config.json" else {}
         (checkpoint / name).write_text(json.dumps(config))
     (checkpoint / "model.safetensors").write_bytes(b"test placeholder; loader is mocked")
+    manifest = {"repo": "test-local-boundary", "revision": "fixture-v1", "files": [
+        {"path": name, "bytes": (checkpoint / name).stat().st_size,
+         "sha256": hashlib.sha256((checkpoint / name).read_bytes()).hexdigest()}
+        for name in sorted(adapter.REQUIRED_MODEL_FILES)
+    ]}
+    (checkpoint / "DOWNLOAD-MANIFEST.json").write_text(json.dumps(manifest))
     model = FakeModel()
     loads = []
 
@@ -191,6 +198,27 @@ def test_boundary_loader_records_active_shared_pool_without_fixed_width(prepared
     assert limits["source_augmentation"] == "disabled_default_terminal_period"
     assert limits["preprocessing_error_policy"] == "raise"
     assert extractor.prepare_strict() == limits and len(loads) == 1
+
+
+def test_frozen_manifest_wins_over_changed_sidecar_and_is_copied(prepared):
+    previous, _, loads = prepared
+    sidecar = previous.model_path / "DOWNLOAD-MANIFEST.json"
+    manifest = json.loads(sidecar.read_text())
+    extractor = adapter.Gliner2Extractor(
+        previous.model_path, descriptions=previous.descriptions, manifest=manifest,
+    )
+    manifest["files"][0]["sha256"] = "0" * 64
+    sidecar.write_text("not valid JSON")
+    extractor.prepare_strict()
+    assert len(loads) == 1
+
+
+def test_checkpoint_digest_mismatch_is_rejected_before_model_load(prepared):
+    extractor, _, loads = prepared
+    (extractor.model_path / "model.safetensors").write_bytes(b"altered model")
+    with pytest.raises(GlinerExtractionError, match="local_checkpoint_verification_failed"):
+        extractor.prepare_strict()
+    assert loads == []
 
 
 def test_description_mapping_confidence_coordinates_and_blank_alignment(prepared):

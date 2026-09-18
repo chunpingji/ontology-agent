@@ -50,6 +50,15 @@
     "validate_graph": {
       "claim_id": "p1",
       "shape_profile_id": "quantity-representation-v2"
+    },
+    "find_referent_candidates": {
+      "mention_refs": [
+        "source-mention-example"
+      ],
+      "class_iris": [
+        "urn:CrudeProduct"
+      ],
+      "scope_id": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     }
   },
   "discovery": {
@@ -495,6 +504,12 @@
                 "items": {
                   "$ref": "#/$defs/ObservationProposal"
                 }
+              },
+              "reference_bindings": {
+                "items": {
+                  "$ref": "#/$defs/ReferenceBindingProposal"
+                },
+                "type": "array"
               }
             },
             "required": [
@@ -788,6 +803,17 @@
                     "items": {
                       "type": "string"
                     }
+                  },
+                  "source_assertion": {
+                    "anyOf": [
+                      {
+                        "$ref": "#/$defs/SourceAssertion"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null
                   }
                 },
                 "required": [
@@ -878,6 +904,99 @@
                   "reason"
                 ],
                 "additionalProperties": false
+              },
+              "ReferenceBindingProposal": {
+                "additionalProperties": false,
+                "properties": {
+                  "local_id": {
+                    "type": "string"
+                  },
+                  "source_id": {
+                    "type": "string"
+                  },
+                  "target_id": {
+                    "type": "string"
+                  },
+                  "binding_kind": {
+                    "enum": [
+                      "anaphora",
+                      "coreference"
+                    ],
+                    "type": "string"
+                  },
+                  "support": {
+                    "items": {
+                      "$ref": "#/$defs/Quote"
+                    },
+                    "minItems": 1,
+                    "type": "array"
+                  }
+                },
+                "required": [
+                  "local_id",
+                  "source_id",
+                  "target_id",
+                  "binding_kind",
+                  "support"
+                ],
+                "type": "object"
+              },
+              "SourceAssertion": {
+                "additionalProperties": false,
+                "properties": {
+                  "subject_support": {
+                    "items": {
+                      "$ref": "#/$defs/Quote"
+                    },
+                    "type": "array"
+                  },
+                  "object_support": {
+                    "items": {
+                      "$ref": "#/$defs/ObjectSourceSupport"
+                    },
+                    "type": "array"
+                  },
+                  "predicate_support": {
+                    "items": {
+                      "$ref": "#/$defs/Quote"
+                    },
+                    "minItems": 1,
+                    "type": "array"
+                  },
+                  "binding_ids": {
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  }
+                },
+                "required": [
+                  "subject_support",
+                  "object_support",
+                  "predicate_support",
+                  "binding_ids"
+                ],
+                "type": "object"
+              },
+              "ObjectSourceSupport": {
+                "additionalProperties": false,
+                "properties": {
+                  "object_id": {
+                    "type": "string"
+                  },
+                  "support": {
+                    "items": {
+                      "$ref": "#/$defs/Quote"
+                    },
+                    "minItems": 1,
+                    "type": "array"
+                  }
+                },
+                "required": [
+                  "object_id",
+                  "support"
+                ],
+                "type": "object"
               }
             }
           },
@@ -1168,7 +1287,6 @@
                         "type": "object",
                         "properties": {
                           "name": {
-                            "type": "string",
                             "enum": [
                               "type",
                               "referent",
@@ -1185,8 +1303,11 @@
                               "unit",
                               "identity_owner",
                               "identity_key",
-                              "identity_scope"
-                            ]
+                              "identity_scope",
+                              "reference_identity",
+                              "reference_scope"
+                            ],
+                            "type": "string"
                           },
                           "verdict": {
                             "type": "string",
@@ -2193,14 +2314,14 @@
       "propose_mentions",
       "check_claim_binding",
       "query_instances",
+      "find_referent_candidates",
       "retrieve_evidence",
       "propose_repair",
       "validate_metric",
       "validate_graph"
     ],
     "controller_only_tool_names": [
-      "validate_metric",
-      "validate_graph"
+      "validate_metric"
     ],
     "stage_allowed_tool_names": {
       "discovery": [
@@ -2210,7 +2331,8 @@
         "propose_mentions",
         "query_instances",
         "retrieve_evidence",
-        "propose_repair"
+        "propose_repair",
+        "find_referent_candidates"
       ],
       "verification": [
         "get_schema_card",
@@ -2218,13 +2340,17 @@
         "resolve_source_anchor",
         "check_claim_binding",
         "retrieve_evidence",
-        "propose_repair"
+        "propose_repair",
+        "validate_graph",
+        "find_referent_candidates"
       ],
       "finalize": []
     },
     "conditional_tool_names": [
-      "propose_repair"
+      "propose_repair",
+      "validate_graph",
+      "find_referent_candidates"
     ],
-    "note": "stage_allowed_tool_names 是静态阶段上限；propose_repair 还要求控制器已选择 recovery 模式且冻结目标存在对应 issue，普通 discovery/verification 不直接开放。实际 TurnPlan 继续按前置条件与预算收紧。"
+    "note": "stage_allowed_tool_names 是静态阶段上限；propose_repair 还要求控制器已选择 recovery 模式且冻结目标存在对应 issue，普通 discovery/verification 不直接开放。实际 TurnPlan 继续按前置条件与预算收紧。 validate_graph仅在存在冻结关系时开放；属性分支继续controller-only。 find_referent_candidates仅在reference_resolution新策略开启时开放。"
   }
 }

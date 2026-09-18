@@ -32,6 +32,12 @@
         "items": {
           "$ref": "#/$defs/ObservationProposal"
         }
+      },
+      "reference_bindings": {
+        "items": {
+          "$ref": "#/$defs/ReferenceBindingProposal"
+        },
+        "type": "array"
       }
     },
     "required": [
@@ -325,6 +331,17 @@
             "items": {
               "type": "string"
             }
+          },
+          "source_assertion": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/SourceAssertion"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
           }
         },
         "required": [
@@ -415,6 +432,99 @@
           "reason"
         ],
         "additionalProperties": false
+      },
+      "ReferenceBindingProposal": {
+        "additionalProperties": false,
+        "properties": {
+          "local_id": {
+            "type": "string"
+          },
+          "source_id": {
+            "type": "string"
+          },
+          "target_id": {
+            "type": "string"
+          },
+          "binding_kind": {
+            "enum": [
+              "anaphora",
+              "coreference"
+            ],
+            "type": "string"
+          },
+          "support": {
+            "items": {
+              "$ref": "#/$defs/Quote"
+            },
+            "minItems": 1,
+            "type": "array"
+          }
+        },
+        "required": [
+          "local_id",
+          "source_id",
+          "target_id",
+          "binding_kind",
+          "support"
+        ],
+        "type": "object"
+      },
+      "SourceAssertion": {
+        "additionalProperties": false,
+        "properties": {
+          "subject_support": {
+            "items": {
+              "$ref": "#/$defs/Quote"
+            },
+            "type": "array"
+          },
+          "object_support": {
+            "items": {
+              "$ref": "#/$defs/ObjectSourceSupport"
+            },
+            "type": "array"
+          },
+          "predicate_support": {
+            "items": {
+              "$ref": "#/$defs/Quote"
+            },
+            "minItems": 1,
+            "type": "array"
+          },
+          "binding_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "subject_support",
+          "object_support",
+          "predicate_support",
+          "binding_ids"
+        ],
+        "type": "object"
+      },
+      "ObjectSourceSupport": {
+        "additionalProperties": false,
+        "properties": {
+          "object_id": {
+            "type": "string"
+          },
+          "support": {
+            "items": {
+              "$ref": "#/$defs/Quote"
+            },
+            "minItems": 1,
+            "type": "array"
+          }
+        },
+        "required": [
+          "object_id",
+          "support"
+        ],
+        "type": "object"
       }
     }
   },
@@ -438,7 +548,6 @@
                 "type": "object",
                 "properties": {
                   "name": {
-                    "type": "string",
                     "enum": [
                       "type",
                       "referent",
@@ -455,8 +564,11 @@
                       "unit",
                       "identity_owner",
                       "identity_key",
-                      "identity_scope"
-                    ]
+                      "identity_scope",
+                      "reference_identity",
+                      "reference_scope"
+                    ],
+                    "type": "string"
                   },
                   "verdict": {
                     "type": "string",

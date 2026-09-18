@@ -197,7 +197,7 @@ def prepare_inputs(baseline, metadata_dir, output, ontology_dir, ir, metadata, c
         plan, schema = rebuild_plan(demand, sources, catalog)
         selected = [item["class_iri"] for item in plan["get_schema_card"]]
         vocabulary = c_runner.build_extraction_vocabulary(
-            catalog, selected, ontology_dir=ontology_dir,
+            catalog, selected, ontology_dir=ontology_dir, overlay_path=c_runner.DEFAULT_OVERLAY,
         )
         old_vocabulary = baseline / "C" / scope / "vocabulary.json"
         if vocabulary["missing"] or vocabulary != read(old_vocabulary):

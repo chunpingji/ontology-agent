@@ -26,6 +26,7 @@ from app.services.extraction.ontology_guided.records import RecordIndex
 
 SEARCH_POLICY_VERSION = "heuristic-first-v1"
 QUERY_RULES_VERSION = "ontology-labels-and-registered-aliases-v1"
+GENERIC_QUERY_RULES_VERSION = "ontology-controlled-labels-v1"
 
 # Retrieval vocabulary only: no document names, expected entities or values.
 _ALIASES = (
@@ -75,6 +76,7 @@ class HeuristicSearchPolicy:
             ("heuristic-first-v2", "ontology-labels-and-registered-aliases-v2"),
             ("heuristic-first-v3", "ontology-labels-and-registered-aliases-v2"),
             ("heuristic-first-v4", "ontology-labels-and-registered-aliases-v2"),
+            ("heuristic-first-v3", GENERIC_QUERY_RULES_VERSION),
         }:
             raise ValueError("unsupported heuristic search policy version")
         for name in (
@@ -100,6 +102,11 @@ class HeuristicSearchPolicy:
         return cls(version="heuristic-first-v4" if adaptive else
                    "heuristic-first-v3" if incremental else "heuristic-first-v2",
                    query_rules_version="ontology-labels-and-registered-aliases-v2", **values)
+
+    @classmethod
+    def generic(cls):
+        return cls(version="heuristic-first-v3", query_rules_version=GENERIC_QUERY_RULES_VERSION,
+                   max_cheap_tasks_before_semantic=1)
 
 
 @dataclass(frozen=True)
@@ -192,7 +199,8 @@ class HeuristicSearchIndex:
                         continue
                     add(label, 14 if _identity_field(label) else 3)
         expanded = dict(direct)
-        for group in _ALIASES:
+        aliases = () if policy.query_rules_version == GENERIC_QUERY_RULES_VERSION else _ALIASES
+        for group in aliases:
             normalized = [_normalize(value) for value in group]
             if any(value in direct for value in normalized):
                 expanded.update((value, max(expanded.get(value, 0), 4)) for value in normalized)
@@ -562,7 +570,8 @@ class HeuristicSlotSearch:
         if supported_count < 0 or (supported_count and semantic_outcome != "supported"):
             raise ValueError("supported output count is incompatible with the outcome")
         technical_failure = not complete or (
-            semantic_outcome == "not_checked" and reason_code != "no_candidate_observed"
+            semantic_outcome == "not_checked"
+            and reason_code not in {"no_candidate_observed", "record_no_claims"}
         )
         observation = dict(
             semantic_outcome=semantic_outcome, complete=complete, reason_code=reason_code,

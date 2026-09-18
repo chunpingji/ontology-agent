@@ -8,13 +8,70 @@ This adapter is not registered as the application's default NER backend.
 
 from __future__ import annotations
 
+import hashlib
 import json
 import math
 import os
 import re
-from pathlib import Path
+from copy import deepcopy
+from pathlib import Path, PurePosixPath
 
 from app.services.extraction.gliner_extractor import GlinerExtractionError, _valid_source_span
+
+REQUIRED_MODEL_FILES = frozenset({
+    "config.json", "encoder_config/config.json", "tokenizer_config.json",
+    "tokenizer.json", "model.safetensors",
+})
+
+
+def verify_local_checkpoint(model_path: str | Path, manifest: dict) -> dict:
+    model_path = Path(model_path)
+    if not isinstance(manifest, dict):
+        raise ValueError("gliner2_model_manifest_invalid")
+    if not all(isinstance(manifest.get(key), str) and manifest[key].strip()
+               for key in ("repo", "revision")):
+        raise ValueError("gliner2_model_manifest_identity_missing")
+    entries = manifest.get("files")
+    if not isinstance(entries, list) or not entries:
+        raise ValueError("gliner2_model_manifest_files_empty")
+    paths, resolved_paths = set(), set()
+    for entry in entries:
+        if (not isinstance(entry, dict) or not isinstance(entry.get("path"), str)
+                or not entry["path"] or type(entry.get("bytes")) is not int
+                or entry["bytes"] <= 0 or not isinstance(entry.get("sha256"), str)
+                or re.fullmatch(r"[0-9a-f]{64}", entry["sha256"]) is None):
+            raise ValueError("gliner2_model_manifest_entry_invalid")
+        name = entry["path"]
+        relative = PurePosixPath(name)
+        if relative.is_absolute() or ".." in relative.parts:
+            raise ValueError("model_manifest_path_outside_directory")
+        if relative.as_posix() != name or "\\" in name:
+            raise ValueError("gliner2_model_manifest_path_not_canonical")
+        path = model_path / name
+        resolved = path.resolve()
+        if not resolved.is_relative_to(model_path.resolve()):
+            raise ValueError("model_manifest_path_outside_directory")
+        if name in paths or resolved in resolved_paths:
+            raise ValueError("gliner2_model_manifest_duplicate_path:" + name)
+        paths.add(name)
+        resolved_paths.add(resolved)
+    missing = REQUIRED_MODEL_FILES - paths
+    if missing:
+        raise ValueError("gliner2_model_required_files_missing:" + ",".join(sorted(missing)))
+    for entry in entries:
+        path = model_path / entry["path"]
+        if not path.is_file():
+            raise ValueError("gliner2_model_file_missing:" + entry["path"])
+        # The fixed F32 checkpoint is over 1 GB; hash without loading it all into RAM.
+        with path.open("rb") as stream:
+            actual_digest = hashlib.file_digest(stream, "sha256").hexdigest()
+        if path.stat().st_size != entry["bytes"] or actual_digest != entry["sha256"]:
+            raise ValueError("gliner2_model_digest_mismatch:" + entry["path"])
+    config = json.loads((model_path / "config.json").read_text())
+    if not isinstance(config, dict) or config.get("architecture") != "boundary":
+        raise ValueError("gliner2_model_architecture_mismatch")
+    return manifest
+
 
 
 def _offline_model_class():
@@ -110,6 +167,7 @@ class Gliner2Extractor:
     def __init__(
         self, model_path: str | Path, *, descriptions: dict[str, str],
         device: str = "cpu", word_splitter: str = "char", max_len: int = 160,
+        manifest: dict | None = None,
     ) -> None:
         if (not isinstance(descriptions, dict) or not descriptions
                 or any(not isinstance(key, str) or not key.strip()
@@ -125,6 +183,7 @@ class Gliner2Extractor:
         self.device = device
         self.word_splitter = word_splitter
         self.max_len = max_len
+        self.manifest = deepcopy(manifest)
         self.last_batch_lengths: list[int] = []
         self._model = None
         self._limits = None
@@ -146,6 +205,15 @@ class Gliner2Extractor:
                 raise GlinerExtractionError("local_config_unsupported", stage="load")
             if filename == "config.json" and config.get("architecture") != "boundary":
                 raise GlinerExtractionError("model_architecture_mismatch", stage="load")
+        try:
+            manifest = self.manifest
+            if manifest is None:
+                manifest = json.loads((self.model_path / "DOWNLOAD-MANIFEST.json").read_text())
+            verify_local_checkpoint(self.model_path, manifest)
+        except (OSError, ValueError) as exc:
+            raise GlinerExtractionError(
+                "local_checkpoint_verification_failed", stage="load",
+            ) from exc
 
     def prepare_strict(self) -> dict:
         if self._model is not None:

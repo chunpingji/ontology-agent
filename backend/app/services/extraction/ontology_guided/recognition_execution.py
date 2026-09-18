@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from concurrent.futures import ThreadPoolExecutor
 from contextvars import Context
+from copy import deepcopy
 from queue import Empty, Queue
 from threading import Event
 
@@ -17,6 +18,7 @@ class RecognitionCall:
         self.pool = ThreadPoolExecutor(max_workers=1, thread_name_prefix="recognition-model")
         parent_runtime = runtime.get()
         parent_stop = parent_runtime.get("should_stop")
+        self.harness_observer = parent_runtime.get("on_harness_event")
         # A fresh Context cannot carry an owner's Session via unrelated
         # ContextVars or callbacks. The model scheduler opens its own Session
         # from the shared Engine; Connection/Session binds are not transferable.
@@ -46,12 +48,18 @@ class RecognitionCall:
                 **worker_runtime,
                 should_stop=lambda: self.cancelled.is_set() or bool(parent_stop and parent_stop()),
                 on_model_wait=None,
+                on_harness_event=self.observe if self.harness_observer is not None else None,
             ):
                 if self.cancelled.is_set():
                     raise ModelCancelled()
                 return adapter.inspect(task, context, predicate, menu)
 
         self.future = self.pool.submit(Context().run, invoke)
+
+    def observe(self, event_type, payload):
+        # Display callbacks can write through their own Session, so only the
+        # owner invokes them. Deltas do not need a durability barrier.
+        self.requests.put(("harness", event_type, deepcopy(payload), None, None))
 
     def before_model(self, stage, ordinal):
         self._barrier("request", stage, ordinal)
@@ -78,6 +86,9 @@ class RecognitionCall:
                 kind, stage, ordinal, acknowledged, result = self.requests.get_nowait()
             except Empty:
                 return
+            if kind == "harness":
+                self.harness_observer(stage, ordinal)
+                continue
             try:
                 if kind == "request":
                     reserve(stage, ordinal)
@@ -93,13 +104,16 @@ class RecognitionCall:
 
     def close(self):
         self.cancelled.set()
+        # Cancellation wakes pending barriers and the actual HTTP client. Wait
+        # for final/interrupted observations before draining the owner's queue.
+        self.pool.shutdown(wait=True, cancel_futures=True)
         while True:
             try:
-                _kind, _stage, _ordinal, acknowledged, result = self.requests.get_nowait()
+                kind, stage, ordinal, acknowledged, result = self.requests.get_nowait()
             except Empty:
                 break
+            if kind == "harness":
+                self.harness_observer(stage, ordinal)
+                continue
             result.append(ModelCancelled())
             acknowledged.set()
-        # Cancellation is signalled to the actual client; future.cancel alone
-        # would leave a paid request running outside the execution lifecycle.
-        self.pool.shutdown(wait=True, cancel_futures=True)

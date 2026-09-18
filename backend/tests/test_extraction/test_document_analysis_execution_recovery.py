@@ -97,6 +97,51 @@ def _word_bytes(tmp_path: Path) -> bytes:
     return path.read_bytes()
 
 
+def frozen_legacy_policy(*, current_state, evidence_repair):
+    # These tests hydrate the older frozen execution domains; a new online
+    # default must not silently reinterpret their CountingAdapter contract.
+    legacy_policy = {}
+    if current_state or settings.document_analysis_performance_enabled or evidence_repair:
+        legacy_policy = {
+            "state_storage_version": 4 if current_state else 2, "frontier_version": 2,
+            "recognition_inflight": 1,
+            "template_interleaving": (
+                settings.document_analysis_template_interleaving or evidence_repair
+            ),
+        }
+    if evidence_repair:
+        from app.services.document_analysis.adaptive_configuration import configured_adaptive_policy
+        from app.services.extraction.ontology_guided.value_constraints import (
+            UNIT_NORMALIZATION_VERSION,
+        )
+
+        adaptive = configured_adaptive_policy(settings)
+        legacy_policy.update({
+            "evidence_repair": "evidence-repair-v1",
+            "layered_recognition": "dependency-ready-v1",
+            "source_object_recognition": "source-object-recognition-v1",
+            "cmc_describes_type_scope": "drug-product-only-v1",
+            "expert_review_repair": "expert-review-repair-v1",
+            "candidate_planning": "sparse-candidates-v1",
+            "incremental_performance": "incremental-performance-v1",
+            "state_storage_version": 4 if current_state else 3,
+            **({"state_baseline_interval": 32} if not current_state else {}),
+            "semantic_expansion": "bounded-semantic-v1",
+            "process_granularity": "whole-method-field-v1",
+            "attribute_priority": "source-field-priority-v1",
+            "heuristic_policy": "heuristic-first-v3",
+            **({"heuristic_policy": "heuristic-first-v4",
+                "adaptive_retrieval": adaptive.model_dump(mode="json")} if adaptive else {}),
+            "field_bindings": "ir-field-bindings-v1", "owner_binding": "source-owned-binding-v2",
+            "scope_protocol": "source-quoted-scope-v1", "evidence_work": "evidence-work-v2",
+            "literal_quotes": "source-integer-quotes-v2",
+            "unit_normalization": UNIT_NORMALIZATION_VERSION,
+            "proof_menu": "proof-menu-v1", "identity": "physical-mention-v1",
+            "model_call_state_version": 2, "max_lineage_calls": 8,
+        })
+    return legacy_policy
+
+
 def _create_pending_run(
     client, analyst_headers, tmp_path, monkeypatch, *, key: str, evidence_repair: bool = False,
     current_state: bool = False, adaptive_mode: str = "disabled",
@@ -109,6 +154,10 @@ def _create_pending_run(
     monkeypatch.setattr(settings, "document_analysis_adaptive_retrieval_mode", adaptive_mode)
     monkeypatch.setattr(settings, "document_analysis_storage_dir", tmp_path / "run-artifacts")
     monkeypatch.setattr(document_analysis, "dispatch_run", lambda *_args, **_kwargs: None)
+    legacy_policy = frozen_legacy_policy(
+        current_state=current_state, evidence_repair=evidence_repair,
+    )
+    monkeypatch.setattr(execution_service, "freeze_tool_engine_policy", lambda: legacy_policy)
     response = client.post(
         "/api/document-analysis/runs",
         headers=analyst_headers,
