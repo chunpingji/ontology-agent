@@ -1,0 +1,873 @@
+{
+  "version": "cmc-gliner25-boundary-skos-v1",
+  "run_id": "cmc-tools-21bd95dd58454931",
+  "status": "completed",
+  "started_at": "2026-09-16T04:44:08.478020+00:00",
+  "finished_at": "2026-09-16T05:06:16.931145+00:00",
+  "source_sha256": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+  "baseline_run_id": "cmc-tools-110a04ca3bd54cc3",
+  "model": "Qwen3.6-35B-A3B",
+  "declared_model_revision": "0b21525e972670ed59e1812e170b27c26355381f0656ecc4e25617ece7dac58b",
+  "ontology_hash": "555519c5c92c9555e3ac7cd358918cbf853baf38bb07c21a86bb62e72ff9a469",
+  "max_model_calls": 16,
+  "max_attempts": 1,
+  "timeout_retries": 0,
+  "max_tokens": 8192,
+  "temperature": 0,
+  "input_hashes": {
+    "cases.json": "3cb1670630526a84ec66f29232c954fc63939b251b71b2e50ecac23d3b0bf247",
+    "cards.json": "3b2a50862d1f977adb76044d08360cc03e02629f8bae8de86a142b7e388044a6",
+    "ir.json": "858dddbb762217ede057ed85e659bb6d0349fc90e0c936fbf42756859c882134",
+    "reference.json": "49095440a7572936424e7b7de6a8c9bcee17cd70c5cc86c5b78a35cfaec65097",
+    "acceptance.json": "78c1960afb566ba8cc19742584972483fadccd92e5c73ef070685ceb637aca2e"
+  },
+  "code_hashes": {
+    "schema_card_tools.py": "eefa476d356be85cac6a1da66c6744634fe06bcb15aacd39e0b4a4e13f4220cc",
+    "schema_card_tightened.py": "2fb24c9ae845a6d2be1b27415a5732677c4f2e1bd67d05d4333aa2eb822484d2",
+    "schema_card_evidence.py": "e391d939a269e7864a02aacf0a40ce06bc5962cf980b60470a22594d8522d715",
+    "__init__.py": "e1c8a83f0dc96e983ce56e5f04a289074c4c93a91d1bdd0b4e2b30156f53b785",
+    "evidence.py": "4fd074f4b4bc84ac15a066cfa4e40a82b9d2db8b33f9d7b81730a27fa6a11ff1",
+    "mentions.py": "326a67b269d8a7b6a40e35977d5dfcd713fed49c4127c3a317c2c0a197361df2",
+    "metric.py": "917a310df340845a2c9b37e35c57c816699c801eb53a21d4a6f41b601e125f95",
+    "shacl.py": "e597a4f8a24cc0e0fd9ea29341e159dbac3a2222123bef1a780544a86896eec0",
+    "vocabulary.py": "9baff70abc72d13928bb34ddbdfb3acae2ff6bb84858396309f989918b271c34",
+    "gliner_extractor.py": "4bdd2f1e944889cc048254c8183e116a5638bed79f0b3c57949355798e8bfa38",
+    "schema_card_gliner2.py": "44be66e781ef85255e3489eb0d03a76ae7e2fdc966a376bf050ea4668d662d8e",
+    "gliner2_extractor.py": "f02c91cd4875135b592d186b7e1aa57bedc3f6283bf3c947c7e36cc225020b47",
+    "cmc_extraction_vocabulary.ttl": "c45b99fc23229de77b33ba593da328fd85ee8ceee584fb582857e760807b6456"
+  },
+  "packages": {
+    "gliner2": "2.0.0",
+    "transformers": "4.57.6",
+    "huggingface_hub": "0.36.2",
+    "torch": "2.7.1+cu126",
+    "protobuf": "6.33.5",
+    "tokenizers": "0.22.2"
+  },
+  "gliner2_model": {
+    "repo": "fastino/gliner2.5-multi-v1",
+    "revision": "aaecfe45db1d828c963717054ccb868e8ad1f1d5",
+    "files": [
+      {
+        "path": "README.md",
+        "bytes": 21622,
+        "sha256": "059ff6387aeeff4925ca02cd8645dd5879bef7f2e6f211949c2e68905029a2ee",
+        "upstream_lfs_sha256": null
+      },
+      {
+        "path": "config.json",
+        "bytes": 3151,
+        "sha256": "8b59a0f426a65859c89cd1ea850c3529c09aa3be3a6fafd8eddfdd17b1bf0146",
+        "upstream_lfs_sha256": null
+      },
+      {
+        "path": "encoder_config/config.json",
+        "bytes": 857,
+        "sha256": "fa4f9ef2903b5369ab172333aae4574e6a476511d7465845cf59f8360ee18716",
+        "upstream_lfs_sha256": null
+      },
+      {
+        "path": "model.safetensors",
+        "bytes": 1149461028,
+        "sha256": "c1ff4ec0bc00031c15530b8f3c33d3677f27949e6a0cb52e1247a6224b6c5395",
+        "upstream_lfs_sha256": "c1ff4ec0bc00031c15530b8f3c33d3677f27949e6a0cb52e1247a6224b6c5395"
+      },
+      {
+        "path": "tokenizer.json",
+        "bytes": 16035853,
+        "sha256": "c62446df87ae18ec98b133f8f84fc449a07cc89bbf8ef192a4cb5f9c53777a7a",
+        "upstream_lfs_sha256": "c62446df87ae18ec98b133f8f84fc449a07cc89bbf8ef192a4cb5f9c53777a7a"
+      },
+      {
+        "path": "tokenizer_config.json",
+        "bytes": 645,
+        "sha256": "0bf3ea0873234bd9bfdd3853c440395009ac6365a925b91654daed5396d655e1",
+        "upstream_lfs_sha256": null
+      }
+    ],
+    "purpose": "User-authorized GLiNER2.5 local CMC/Qwen experiment; offline inference"
+  },
+  "qwen_wall_seconds": 1326.906,
+  "ner_wall_seconds": 60.321,
+  "summary": {
+    "scopes": 8,
+    "completed": 7,
+    "new_http_calls": 15,
+    "reused_plan_count": 8,
+    "contracts_passed": 14,
+    "accepted_candidates": 21,
+    "observations": 6,
+    "unresolved": 12,
+    "rejected": 11,
+    "local_checklists_passed": 2,
+    "prompt_tokens": 225457,
+    "completion_tokens": 20434,
+    "usage_reported_calls": 14,
+    "usage_missing_calls": 1,
+    "token_count_scope": "reported_usage_only",
+    "http_seconds": 1326.01,
+    "finish_reasons": {
+      "stop": 14,
+      "error": 1
+    }
+  },
+  "quality_conclusion": "not_passed",
+  "deployment": false,
+  "experiment_scope": {
+    "ir_units": 447,
+    "frozen_cards": 329,
+    "scopes": 8,
+    "scope_units": 87,
+    "distinct_source_units": 86,
+    "full_document_precision_recall": false
+  },
+  "independent_review": {
+    "review_type": "Independent assistant source review; not expert gold or full-document precision/recall",
+    "matching_passed": true,
+    "unreviewed_scope_status": [
+      {
+        "scope_id": "pde_conflict",
+        "status": "failed",
+        "error_code": "model_request_failed",
+        "candidate_proposal_available": false,
+        "reason": "No independent review provided; never treated as quality pass"
+      }
+    ],
+    "coverage": [
+      {
+        "scope_id": "introduction",
+        "subjects_reviewed": 4,
+        "claims_reviewed": 7,
+        "observations_reviewed": 2,
+        "review_input_sha256": "c9fc90e401e62cc3b9cad71cea5af2be18edba0aadbe71d454eeea0525602f29"
+      },
+      {
+        "scope_id": "product_properties",
+        "subjects_reviewed": 3,
+        "claims_reviewed": 7,
+        "observations_reviewed": 2,
+        "review_input_sha256": "4aa3ea3926b58f8ca9f757fcf48ccc5745bb26c472b6d1c3f117b72ad18fdb52"
+      },
+      {
+        "scope_id": "process_equipment",
+        "subjects_reviewed": 5,
+        "claims_reviewed": 7,
+        "observations_reviewed": 3,
+        "review_input_sha256": "88d3962a47ed9c892bafe0f7036bd25aa0131635ebec93728a121d8fb0825c15"
+      },
+      {
+        "scope_id": "quality_condition",
+        "subjects_reviewed": 5,
+        "claims_reviewed": 2,
+        "observations_reviewed": 5,
+        "review_input_sha256": "626325a688da61ba9246dc0668005fd95f6abcb77606965f80356136f5f4cc3b"
+      },
+      {
+        "scope_id": "storage",
+        "subjects_reviewed": 2,
+        "claims_reviewed": 4,
+        "observations_reviewed": 2,
+        "review_input_sha256": "ba27b4f66d88be4e7b6089ae97d712f84b0fd678d57888f500129a78fccd1ad1"
+      },
+      {
+        "scope_id": "residue_missing",
+        "subjects_reviewed": 3,
+        "claims_reviewed": 0,
+        "observations_reviewed": 2,
+        "review_input_sha256": "cd0d5cbbdef289557bc01a4239b46ec4200410a777e7d78d5cf96a70fb338568"
+      },
+      {
+        "scope_id": "toxicity_unknown",
+        "subjects_reviewed": 4,
+        "claims_reviewed": 2,
+        "observations_reviewed": 4,
+        "review_input_sha256": "67c66741d0d7bc17cd7b2b1474d02c7c82b44d27878c90597a2b62692d4d411e"
+      }
+    ],
+    "all_candidates": {
+      "count": 49,
+      "overall_verdicts": {
+        "unsupported": 19,
+        "undetermined": 17,
+        "supported": 13
+      },
+      "content_verdicts": {
+        "supported": 37,
+        "unsupported": 6,
+        "undetermined": 6
+      }
+    },
+    "accepted_claims": {
+      "count": 21,
+      "overall_verdicts": {
+        "unsupported": 9,
+        "undetermined": 9,
+        "supported": 3
+      },
+      "content_verdicts": {
+        "supported": 17,
+        "unsupported": 2,
+        "undetermined": 2
+      }
+    },
+    "accepted_observations": {
+      "count": 6,
+      "overall_verdicts": {
+        "undetermined": 1,
+        "unsupported": 1,
+        "supported": 4
+      },
+      "content_verdicts": {
+        "supported": 5,
+        "undetermined": 1
+      }
+    },
+    "by_scope": {
+      "introduction": {
+        "all_candidates": {
+          "count": 9,
+          "overall_verdicts": {
+            "unsupported": 6,
+            "undetermined": 1,
+            "supported": 2
+          },
+          "content_verdicts": {
+            "supported": 7,
+            "unsupported": 1,
+            "undetermined": 1
+          }
+        },
+        "accepted_claims": {
+          "count": 5,
+          "overall_verdicts": {
+            "unsupported": 4,
+            "undetermined": 1
+          },
+          "content_verdicts": {
+            "supported": 3,
+            "unsupported": 1,
+            "undetermined": 1
+          }
+        },
+        "accepted_observations": {
+          "count": 0,
+          "overall_verdicts": {},
+          "content_verdicts": {}
+        }
+      },
+      "process_equipment": {
+        "all_candidates": {
+          "count": 10,
+          "overall_verdicts": {
+            "supported": 4,
+            "undetermined": 4,
+            "unsupported": 2
+          },
+          "content_verdicts": {
+            "supported": 7,
+            "unsupported": 2,
+            "undetermined": 1
+          }
+        },
+        "accepted_claims": {
+          "count": 2,
+          "overall_verdicts": {
+            "supported": 2
+          },
+          "content_verdicts": {
+            "supported": 2
+          }
+        },
+        "accepted_observations": {
+          "count": 0,
+          "overall_verdicts": {},
+          "content_verdicts": {}
+        }
+      },
+      "product_properties": {
+        "all_candidates": {
+          "count": 9,
+          "overall_verdicts": {
+            "undetermined": 7,
+            "unsupported": 1,
+            "supported": 1
+          },
+          "content_verdicts": {
+            "undetermined": 1,
+            "supported": 7,
+            "unsupported": 1
+          }
+        },
+        "accepted_claims": {
+          "count": 7,
+          "overall_verdicts": {
+            "undetermined": 7
+          },
+          "content_verdicts": {
+            "undetermined": 1,
+            "supported": 6
+          }
+        },
+        "accepted_observations": {
+          "count": 0,
+          "overall_verdicts": {},
+          "content_verdicts": {}
+        }
+      },
+      "quality_condition": {
+        "all_candidates": {
+          "count": 7,
+          "overall_verdicts": {
+            "supported": 2,
+            "undetermined": 1,
+            "unsupported": 4
+          },
+          "content_verdicts": {
+            "supported": 5,
+            "undetermined": 1,
+            "unsupported": 1
+          }
+        },
+        "accepted_claims": {
+          "count": 1,
+          "overall_verdicts": {
+            "supported": 1
+          },
+          "content_verdicts": {
+            "supported": 1
+          }
+        },
+        "accepted_observations": {
+          "count": 0,
+          "overall_verdicts": {},
+          "content_verdicts": {}
+        }
+      },
+      "residue_missing": {
+        "all_candidates": {
+          "count": 2,
+          "overall_verdicts": {
+            "undetermined": 2
+          },
+          "content_verdicts": {
+            "supported": 1,
+            "undetermined": 1
+          }
+        },
+        "accepted_claims": {
+          "count": 0,
+          "overall_verdicts": {},
+          "content_verdicts": {}
+        },
+        "accepted_observations": {
+          "count": 0,
+          "overall_verdicts": {},
+          "content_verdicts": {}
+        }
+      },
+      "storage": {
+        "all_candidates": {
+          "count": 6,
+          "overall_verdicts": {
+            "unsupported": 5,
+            "undetermined": 1
+          },
+          "content_verdicts": {
+            "supported": 5,
+            "undetermined": 1
+          }
+        },
+        "accepted_claims": {
+          "count": 4,
+          "overall_verdicts": {
+            "unsupported": 4
+          },
+          "content_verdicts": {
+            "supported": 4
+          }
+        },
+        "accepted_observations": {
+          "count": 2,
+          "overall_verdicts": {
+            "undetermined": 1,
+            "unsupported": 1
+          },
+          "content_verdicts": {
+            "supported": 1,
+            "undetermined": 1
+          }
+        }
+      },
+      "toxicity_unknown": {
+        "all_candidates": {
+          "count": 6,
+          "overall_verdicts": {
+            "undetermined": 1,
+            "unsupported": 1,
+            "supported": 4
+          },
+          "content_verdicts": {
+            "supported": 5,
+            "unsupported": 1
+          }
+        },
+        "accepted_claims": {
+          "count": 2,
+          "overall_verdicts": {
+            "undetermined": 1,
+            "unsupported": 1
+          },
+          "content_verdicts": {
+            "supported": 1,
+            "unsupported": 1
+          }
+        },
+        "accepted_observations": {
+          "count": 4,
+          "overall_verdicts": {
+            "supported": 4
+          },
+          "content_verdicts": {
+            "supported": 4
+          }
+        }
+      }
+    },
+    "by_destination": {
+      "accepted": {
+        "count": 21,
+        "overall_verdicts": {
+          "unsupported": 9,
+          "undetermined": 9,
+          "supported": 3
+        },
+        "content_verdicts": {
+          "supported": 17,
+          "unsupported": 2,
+          "undetermined": 2
+        }
+      },
+      "observations": {
+        "count": 6,
+        "overall_verdicts": {
+          "undetermined": 1,
+          "unsupported": 1,
+          "supported": 4
+        },
+        "content_verdicts": {
+          "supported": 5,
+          "undetermined": 1
+        }
+      },
+      "rejected": {
+        "count": 10,
+        "overall_verdicts": {
+          "supported": 4,
+          "undetermined": 5,
+          "unsupported": 1
+        },
+        "content_verdicts": {
+          "supported": 6,
+          "unsupported": 1,
+          "undetermined": 3
+        }
+      },
+      "unresolved": {
+        "count": 12,
+        "overall_verdicts": {
+          "unsupported": 8,
+          "supported": 2,
+          "undetermined": 2
+        },
+        "content_verdicts": {
+          "supported": 9,
+          "unsupported": 3
+        }
+      }
+    }
+  },
+  "artifact_check_status": "incomplete",
+  "artifact_check_counts": {
+    "passed": 497,
+    "skipped": 5
+  },
+  "cost_metric": {
+    "http": {
+      "http_calls": 15,
+      "usage_reported_calls": 14,
+      "usage_missing_calls": 1,
+      "reported_prompt_tokens": 225457,
+      "reported_completion_tokens": 20434,
+      "reported_total_tokens": 245891,
+      "token_field_coverage": {
+        "prompt_tokens": {
+          "reported_calls": 14,
+          "missing_or_invalid_calls": 1
+        },
+        "completion_tokens": {
+          "reported_calls": 14,
+          "missing_or_invalid_calls": 1
+        },
+        "total_tokens": {
+          "reported_calls": 14,
+          "missing_or_invalid_calls": 1
+        }
+      },
+      "http_seconds": "1326.010",
+      "http_seconds_reported_calls": 15,
+      "http_seconds_missing_or_invalid_calls": 0,
+      "finish_reasons": {
+        "stop": 14,
+        "unreported": 1
+      }
+    },
+    "precheck": {
+      "saved_metric_invocation_records": 21,
+      "metric_execution_status": {
+        "completed": 21
+      },
+      "metric_validation_status": {
+        "incomplete": 18,
+        "failed": 3
+      },
+      "numeric_slot_candidates": 3,
+      "slot_datatype_missing_candidates": 0,
+      "quantity_parsed_candidates": 3,
+      "numeric_quantity_parse_missing": 0,
+      "shacl_attempt_records": 0,
+      "shacl_evaluated_records": 0,
+      "strict_shacl_covered_conformant_claims": 0,
+      "strict_shacl_actual_focus_visits": 0,
+      "numeric_shacl_attempts": 0,
+      "numeric_strict_shacl_covered_conformant_claims": 0,
+      "numeric_normalized_claims": 0,
+      "numeric_strict_shacl_denominator": 3,
+      "numeric_strict_shacl_pass_fraction": 0.0,
+      "numeric_accepted_by_program": 0,
+      "numeric_scale_or_offset_conversions": 0,
+      "numeric_conversion_audit": {
+        "no_unit_mapping_record": 3
+      },
+      "numeric_unit_mappings": {},
+      "unit_checks_status": {
+        "incomplete": 2,
+        "not_required": 18,
+        "passed": 1
+      },
+      "blocking_issues": {
+        "scalar_value_required": 2,
+        "semantic_not_checked": 21,
+        "unit_source_missing": 2,
+        "raw_value_not_in_quote": 2,
+        "citation_coordinates_invalid": 1,
+        "inactive_subject_slot": 1
+      }
+    },
+    "final": {
+      "saved_metric_invocation_records": 21,
+      "metric_execution_status": {
+        "completed": 21
+      },
+      "metric_validation_status": {
+        "incomplete": 2,
+        "passed": 16,
+        "failed": 3
+      },
+      "numeric_slot_candidates": 3,
+      "slot_datatype_missing_candidates": 0,
+      "quantity_parsed_candidates": 3,
+      "numeric_quantity_parse_missing": 0,
+      "shacl_attempt_records": 16,
+      "shacl_evaluated_records": 16,
+      "strict_shacl_covered_conformant_claims": 16,
+      "strict_shacl_actual_focus_visits": 16,
+      "numeric_shacl_attempts": 0,
+      "numeric_strict_shacl_covered_conformant_claims": 0,
+      "numeric_normalized_claims": 0,
+      "numeric_strict_shacl_denominator": 3,
+      "numeric_strict_shacl_pass_fraction": 0.0,
+      "numeric_accepted_by_program": 0,
+      "numeric_scale_or_offset_conversions": 0,
+      "numeric_conversion_audit": {
+        "no_unit_mapping_record": 3
+      },
+      "numeric_unit_mappings": {},
+      "unit_checks_status": {
+        "incomplete": 2,
+        "not_required": 18,
+        "passed": 1
+      },
+      "blocking_issues": {
+        "scalar_value_required": 2,
+        "unit_source_missing": 2,
+        "raw_value_not_in_quote": 2,
+        "semantic_undetermined": 3,
+        "citation_coordinates_invalid": 1,
+        "inactive_subject_slot": 1
+      }
+    },
+    "numeric_coverage_over_all_frozen_candidates": {
+      "frozen_numeric_candidates": 3,
+      "final_numeric_records": 3,
+      "missing_final_candidate_ids": [],
+      "strict_shacl_covered_conformant_candidates": 0,
+      "strict_shacl_pass_fraction": 0.0,
+      "note": "Includes frozen numeric candidates without final results; not full-document recall or numeric calibration accuracy."
+    }
+  },
+  "scopes": [
+    {
+      "scope_id": "introduction",
+      "status": "complete",
+      "calls": 2,
+      "claims_proposed": 7,
+      "observations_proposed": 2,
+      "claims_accepted": 5,
+      "observations_accepted": 0,
+      "unresolved": 2,
+      "rejected_including_subject_frames": 2,
+      "checklist_evaluated": true,
+      "checklist_all_pass": false,
+      "error_code": null
+    },
+    {
+      "scope_id": "product_properties",
+      "status": "complete",
+      "calls": 2,
+      "claims_proposed": 7,
+      "observations_proposed": 2,
+      "claims_accepted": 7,
+      "observations_accepted": 0,
+      "unresolved": 2,
+      "rejected_including_subject_frames": 0,
+      "checklist_evaluated": true,
+      "checklist_all_pass": true,
+      "error_code": null
+    },
+    {
+      "scope_id": "process_equipment",
+      "status": "complete",
+      "calls": 2,
+      "claims_proposed": 7,
+      "observations_proposed": 3,
+      "claims_accepted": 2,
+      "observations_accepted": 0,
+      "unresolved": 3,
+      "rejected_including_subject_frames": 6,
+      "checklist_evaluated": true,
+      "checklist_all_pass": false,
+      "error_code": null
+    },
+    {
+      "scope_id": "quality_condition",
+      "status": "complete",
+      "calls": 2,
+      "claims_proposed": 2,
+      "observations_proposed": 5,
+      "claims_accepted": 1,
+      "observations_accepted": 0,
+      "unresolved": 5,
+      "rejected_including_subject_frames": 1,
+      "checklist_evaluated": true,
+      "checklist_all_pass": false,
+      "error_code": null
+    },
+    {
+      "scope_id": "storage",
+      "status": "complete",
+      "calls": 2,
+      "claims_proposed": 4,
+      "observations_proposed": 2,
+      "claims_accepted": 4,
+      "observations_accepted": 2,
+      "unresolved": 0,
+      "rejected_including_subject_frames": 0,
+      "checklist_evaluated": true,
+      "checklist_all_pass": false,
+      "error_code": null
+    },
+    {
+      "scope_id": "residue_missing",
+      "status": "complete",
+      "calls": 2,
+      "claims_proposed": 0,
+      "observations_proposed": 2,
+      "claims_accepted": 0,
+      "observations_accepted": 0,
+      "unresolved": 0,
+      "rejected_including_subject_frames": 2,
+      "checklist_evaluated": true,
+      "checklist_all_pass": false,
+      "error_code": null
+    },
+    {
+      "scope_id": "pde_conflict",
+      "status": "failed",
+      "calls": 1,
+      "claims_proposed": null,
+      "observations_proposed": null,
+      "claims_accepted": 0,
+      "observations_accepted": 0,
+      "unresolved": 0,
+      "rejected_including_subject_frames": 0,
+      "checklist_evaluated": false,
+      "checklist_all_pass": false,
+      "error_code": "model_request_failed"
+    },
+    {
+      "scope_id": "toxicity_unknown",
+      "status": "complete",
+      "calls": 2,
+      "claims_proposed": 2,
+      "observations_proposed": 4,
+      "claims_accepted": 2,
+      "observations_accepted": 4,
+      "unresolved": 0,
+      "rejected_including_subject_frames": 0,
+      "checklist_evaluated": true,
+      "checklist_all_pass": true,
+      "error_code": null
+    }
+  ],
+  "limitations": [
+    "PDE candidate HTTP 400; no response or verification; underlying error body not retained; no retry",
+    "Not a single-variable model comparison; model, vocabulary and tool prompt organization changed together",
+    "Independent review uses stricter explicit owner/anchor role checks; old B historical manual totals are not directly comparable",
+    "Actual numeric SHACL 0/3; real scale/offset conversions 0",
+    "No expert gold; no full-document precision/recall",
+    "NER labels come from manual general-knowledge SKOS overlay for selected IRIs; no direct authoritative altLabel coverage",
+    "Frozen B PDE plan contains only one study-record slot"
+  ],
+  "cost_comparison": {
+    "comparison_to_old_B": {
+      "baseline_root": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-tools-20260916/checked",
+      "cost_stages": [
+        "candidates",
+        "verification"
+      ],
+      "historical_plan_calls_excluded": true,
+      "all_declared_scopes": {
+        "B": {
+          "http_calls": 15,
+          "usage_reported_calls": 14,
+          "usage_missing_calls": 1,
+          "reported_prompt_tokens": 151064,
+          "reported_completion_tokens": 20482,
+          "reported_total_tokens": 171546,
+          "token_field_coverage": {
+            "prompt_tokens": {
+              "reported_calls": 14,
+              "missing_or_invalid_calls": 1
+            },
+            "completion_tokens": {
+              "reported_calls": 14,
+              "missing_or_invalid_calls": 1
+            },
+            "total_tokens": {
+              "reported_calls": 14,
+              "missing_or_invalid_calls": 1
+            }
+          },
+          "http_seconds": "1180.328",
+          "http_seconds_reported_calls": 15,
+          "http_seconds_missing_or_invalid_calls": 0,
+          "finish_reasons": {
+            "stop": 14,
+            "unreported": 1
+          }
+        },
+        "C": {
+          "http_calls": 15,
+          "usage_reported_calls": 14,
+          "usage_missing_calls": 1,
+          "reported_prompt_tokens": 225457,
+          "reported_completion_tokens": 20434,
+          "reported_total_tokens": 245891,
+          "token_field_coverage": {
+            "prompt_tokens": {
+              "reported_calls": 14,
+              "missing_or_invalid_calls": 1
+            },
+            "completion_tokens": {
+              "reported_calls": 14,
+              "missing_or_invalid_calls": 1
+            },
+            "total_tokens": {
+              "reported_calls": 14,
+              "missing_or_invalid_calls": 1
+            }
+          },
+          "http_seconds": "1326.010",
+          "http_seconds_reported_calls": 15,
+          "http_seconds_missing_or_invalid_calls": 0,
+          "finish_reasons": {
+            "stop": 14,
+            "unreported": 1
+          }
+        },
+        "delta": {
+          "reported_prompt_tokens": 74393,
+          "reported_completion_tokens": -48,
+          "reported_total_tokens": 74345,
+          "http_seconds": "145.682"
+        },
+        "change_percent": {
+          "reported_prompt_tokens": 49.246,
+          "reported_completion_tokens": -0.234,
+          "reported_total_tokens": 43.338,
+          "http_seconds": 12.343
+        }
+      },
+      "matched_completed_scopes": {
+        "scope_ids": [
+          "introduction",
+          "process_equipment",
+          "product_properties",
+          "quality_condition",
+          "residue_missing",
+          "storage",
+          "toxicity_unknown"
+        ],
+        "B": {
+          "http_calls": 14,
+          "reported_prompt_tokens": 151064,
+          "reported_completion_tokens": 20482,
+          "reported_total_tokens": 171546,
+          "http_seconds": "940.330"
+        },
+        "C": {
+          "http_calls": 14,
+          "reported_prompt_tokens": 225457,
+          "reported_completion_tokens": 20434,
+          "reported_total_tokens": 245891,
+          "http_seconds": "1325.290"
+        },
+        "http_seconds_delta": "384.960",
+        "http_seconds_change_percent": 40.939
+      },
+      "metric_final": {
+        "B": {
+          "saved_metric_invocation_records": 24,
+          "strict_shacl_covered_conformant_claims": 18,
+          "numeric_slot_candidates": 3,
+          "numeric_strict_shacl_covered_conformant_claims": 0,
+          "numeric_scale_or_offset_conversions": 0
+        },
+        "C": {
+          "saved_metric_invocation_records": 21,
+          "strict_shacl_covered_conformant_claims": 16,
+          "numeric_slot_candidates": 3,
+          "numeric_strict_shacl_covered_conformant_claims": 0,
+          "numeric_scale_or_offset_conversions": 0
+        }
+      },
+      "interpretation_limits": [
+        "Both arms completed the same seven scopes. B PDE timed out at candidates (239.998s); C PDE failed at candidates (0.720s). Neither reached PDE verification; missing usage is unknown.",
+        "All-scope HTTP seconds include dissimilar technical failures; use the explicit same-seven-scope comparison for completed-request durations.",
+        "Prompt/model-tool representation and NER model differ; this is not a pure architecture or speed benchmark.",
+        "Neither arm has real numeric SHACL coverage or scale/offset conversion in this report run; no demonstrated unit-calibration improvement.",
+        "Reported tokens omit each arm's one failure with missing usage; percentages apply only to reported usage."
+      ]
+    }
+  }
+}

@@ -1,0 +1,1428 @@
+{
+  "model": "Qwen3.6-35B-A3B",
+  "elapsed_s": 31.377,
+  "stream_events": [
+    {
+      "kind": "delta",
+      "time_s": 25.041,
+      "channel": "thinking",
+      "characters": 2,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 25.042,
+      "channel": "thinking",
+      "characters": 2,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 25.042,
+      "channel": "thinking",
+      "characters": 2,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 25.043,
+      "channel": "thinking",
+      "characters": 2,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 25.043,
+      "channel": "thinking",
+      "characters": 1,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 25.043,
+      "channel": "thinking",
+      "characters": 4,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 25.044,
+      "channel": "thinking",
+      "characters": 5,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 25.044,
+      "channel": "thinking",
+      "characters": 6,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 25.045,
+      "channel": "thinking",
+      "characters": 1,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 25.045,
+      "channel": "thinking",
+      "characters": 2,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 25.045,
+      "channel": "thinking",
+      "characters": 2,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 25.046,
+      "channel": "thinking",
+      "characters": 2,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 25.046,
+      "channel": "thinking",
+      "characters": 2,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 25.046,
+      "channel": "thinking",
+      "characters": 1,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 25.047,
+      "channel": "thinking",
+      "characters": 4,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 25.047,
+      "channel": "thinking",
+      "characters": 2,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 25.047,
+      "channel": "thinking",
+      "characters": 1,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 25.047,
+      "channel": "thinking",
+      "characters": 2,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 25.048,
+      "channel": "thinking",
+      "characters": 2,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 25.048,
+      "channel": "thinking",
+      "characters": 2,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 25.048,
+      "channel": "thinking",
+      "characters": 2,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 25.049,
+      "channel": "thinking",
+      "characters": 1,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 25.049,
+      "channel": "thinking",
+      "characters": 2,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 25.049,
+      "channel": "thinking",
+      "characters": 1,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 25.05,
+      "channel": "thinking",
+      "characters": 4,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 25.05,
+      "channel": "thinking",
+      "characters": 2,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 25.05,
+      "channel": "thinking",
+      "characters": 1,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 25.051,
+      "channel": "thinking",
+      "characters": 2,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 25.051,
+      "channel": "thinking",
+      "characters": 2,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 25.051,
+      "channel": "thinking",
+      "characters": 1,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 25.051,
+      "channel": "thinking",
+      "characters": 3,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 25.052,
+      "channel": "thinking",
+      "characters": 2,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 25.052,
+      "channel": "thinking",
+      "characters": 1,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 25.052,
+      "channel": "thinking",
+      "characters": 4,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 25.063,
+      "channel": "thinking",
+      "characters": 5,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 25.064,
+      "channel": "thinking",
+      "characters": 6,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 25.11,
+      "channel": "thinking",
+      "characters": 1,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 25.111,
+      "channel": "thinking",
+      "characters": 2,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 25.158,
+      "channel": "thinking",
+      "characters": 1,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 25.158,
+      "channel": "thinking",
+      "characters": 1,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 25.206,
+      "channel": "thinking",
+      "characters": 2,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 25.206,
+      "channel": "thinking",
+      "characters": 2,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 25.253,
+      "channel": "thinking",
+      "characters": 2,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 25.253,
+      "channel": "thinking",
+      "characters": 1,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 25.3,
+      "channel": "thinking",
+      "characters": 1,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 25.301,
+      "channel": "thinking",
+      "characters": 2,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 25.347,
+      "channel": "thinking",
+      "characters": 1,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 25.348,
+      "channel": "thinking",
+      "characters": 1,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 25.393,
+      "channel": "thinking",
+      "characters": 2,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 25.44,
+      "channel": "thinking",
+      "characters": 2,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 25.441,
+      "channel": "thinking",
+      "characters": 2,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 25.487,
+      "channel": "thinking",
+      "characters": 1,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 25.488,
+      "channel": "thinking",
+      "characters": 2,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 25.535,
+      "channel": "thinking",
+      "characters": 2,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 25.535,
+      "channel": "thinking",
+      "characters": 4,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 25.582,
+      "channel": "thinking",
+      "characters": 2,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 25.631,
+      "channel": "thinking",
+      "characters": 1,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 25.631,
+      "channel": "thinking",
+      "characters": 2,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 25.679,
+      "channel": "thinking",
+      "characters": 1,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 25.679,
+      "channel": "thinking",
+      "characters": 5,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 25.727,
+      "channel": "thinking",
+      "characters": 1,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 25.728,
+      "channel": "thinking",
+      "characters": 2,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 25.776,
+      "channel": "thinking",
+      "characters": 2,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 25.777,
+      "channel": "thinking",
+      "characters": 2,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 25.826,
+      "channel": "thinking",
+      "characters": 2,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 25.826,
+      "channel": "thinking",
+      "characters": 1,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 25.873,
+      "channel": "thinking",
+      "characters": 2,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 25.874,
+      "channel": "thinking",
+      "characters": 1,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 25.922,
+      "channel": "thinking",
+      "characters": 1,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 25.922,
+      "channel": "thinking",
+      "characters": 1,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 25.969,
+      "channel": "thinking",
+      "characters": 2,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 26.017,
+      "channel": "thinking",
+      "characters": 1,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 26.065,
+      "channel": "thinking",
+      "characters": 2,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 26.066,
+      "channel": "thinking",
+      "characters": 2,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 26.114,
+      "channel": "thinking",
+      "characters": 4,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 26.114,
+      "channel": "thinking",
+      "characters": 1,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 26.161,
+      "channel": "thinking",
+      "characters": 2,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 26.162,
+      "channel": "thinking",
+      "characters": 2,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 26.208,
+      "channel": "thinking",
+      "characters": 2,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 26.253,
+      "channel": "thinking",
+      "characters": 2,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 26.254,
+      "channel": "thinking",
+      "characters": 1,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 26.3,
+      "channel": "thinking",
+      "characters": 1,
+      "status": null
+    },
+    {
+      "kind": "model_end",
+      "time_s": 26.687,
+      "channel": null,
+      "characters": 0,
+      "status": "completed"
+    },
+    {
+      "kind": "delta",
+      "time_s": 28.327,
+      "channel": "thinking",
+      "characters": 2,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 28.374,
+      "channel": "thinking",
+      "characters": 2,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 28.375,
+      "channel": "thinking",
+      "characters": 2,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 28.422,
+      "channel": "thinking",
+      "characters": 2,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 28.423,
+      "channel": "thinking",
+      "characters": 1,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 28.47,
+      "channel": "thinking",
+      "characters": 4,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 28.471,
+      "channel": "thinking",
+      "characters": 5,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 28.522,
+      "channel": "thinking",
+      "characters": 6,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 28.523,
+      "channel": "thinking",
+      "characters": 1,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 28.582,
+      "channel": "thinking",
+      "characters": 2,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 28.582,
+      "channel": "thinking",
+      "characters": 1,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 28.634,
+      "channel": "thinking",
+      "characters": 4,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 28.634,
+      "channel": "thinking",
+      "characters": 2,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 28.683,
+      "channel": "thinking",
+      "characters": 1,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 28.684,
+      "channel": "thinking",
+      "characters": 2,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 28.73,
+      "channel": "thinking",
+      "characters": 2,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 28.731,
+      "channel": "thinking",
+      "characters": 4,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 28.777,
+      "channel": "thinking",
+      "characters": 1,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 28.826,
+      "channel": "thinking",
+      "characters": 1,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 28.827,
+      "channel": "thinking",
+      "characters": 1,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 28.877,
+      "channel": "thinking",
+      "characters": 2,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 28.878,
+      "channel": "thinking",
+      "characters": 1,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 28.927,
+      "channel": "thinking",
+      "characters": 2,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 28.927,
+      "channel": "thinking",
+      "characters": 1,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 28.975,
+      "channel": "thinking",
+      "characters": 4,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 28.976,
+      "channel": "thinking",
+      "characters": 5,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 29.023,
+      "channel": "thinking",
+      "characters": 6,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 29.024,
+      "channel": "thinking",
+      "characters": 1,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 29.071,
+      "channel": "thinking",
+      "characters": 1,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 29.072,
+      "channel": "thinking",
+      "characters": 2,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 29.118,
+      "channel": "thinking",
+      "characters": 3,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 29.166,
+      "channel": "thinking",
+      "characters": 1,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 29.167,
+      "channel": "thinking",
+      "characters": 1,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 29.213,
+      "channel": "thinking",
+      "characters": 2,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 29.214,
+      "channel": "thinking",
+      "characters": 5,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 29.264,
+      "channel": "thinking",
+      "characters": 2,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 29.265,
+      "channel": "thinking",
+      "characters": 3,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 29.312,
+      "channel": "thinking",
+      "characters": 1,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 29.313,
+      "channel": "thinking",
+      "characters": 1,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 29.359,
+      "channel": "thinking",
+      "characters": 1,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 29.36,
+      "channel": "thinking",
+      "characters": 1,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 29.406,
+      "channel": "thinking",
+      "characters": 1,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 29.406,
+      "channel": "thinking",
+      "characters": 2,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 29.453,
+      "channel": "thinking",
+      "characters": 1,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 29.454,
+      "channel": "thinking",
+      "characters": 1,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 29.5,
+      "channel": "thinking",
+      "characters": 1,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 29.5,
+      "channel": "thinking",
+      "characters": 1,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 29.549,
+      "channel": "thinking",
+      "characters": 2,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 29.55,
+      "channel": "thinking",
+      "characters": 1,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 29.606,
+      "channel": "thinking",
+      "characters": 1,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 29.606,
+      "channel": "thinking",
+      "characters": 1,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 29.654,
+      "channel": "thinking",
+      "characters": 1,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 29.654,
+      "channel": "thinking",
+      "characters": 2,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 29.7,
+      "channel": "thinking",
+      "characters": 1,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 29.7,
+      "channel": "thinking",
+      "characters": 2,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 29.744,
+      "channel": "thinking",
+      "characters": 1,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 29.744,
+      "channel": "thinking",
+      "characters": 1,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 29.788,
+      "channel": "thinking",
+      "characters": 2,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 29.789,
+      "channel": "thinking",
+      "characters": 1,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 29.832,
+      "channel": "thinking",
+      "characters": 1,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 29.832,
+      "channel": "thinking",
+      "characters": 2,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 29.875,
+      "channel": "thinking",
+      "characters": 2,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 29.875,
+      "channel": "thinking",
+      "characters": 2,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 29.917,
+      "channel": "thinking",
+      "characters": 1,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 29.962,
+      "channel": "thinking",
+      "characters": 1,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 30.01,
+      "channel": "thinking",
+      "characters": 1,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 30.011,
+      "channel": "thinking",
+      "characters": 1,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 30.058,
+      "channel": "thinking",
+      "characters": 2,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 30.058,
+      "channel": "thinking",
+      "characters": 1,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 30.105,
+      "channel": "thinking",
+      "characters": 1,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 30.106,
+      "channel": "thinking",
+      "characters": 1,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 30.151,
+      "channel": "thinking",
+      "characters": 2,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 30.198,
+      "channel": "thinking",
+      "characters": 2,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 30.244,
+      "channel": "thinking",
+      "characters": 1,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 30.245,
+      "channel": "thinking",
+      "characters": 3,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 30.292,
+      "channel": "thinking",
+      "characters": 2,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 30.293,
+      "channel": "thinking",
+      "characters": 2,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 30.34,
+      "channel": "thinking",
+      "characters": 4,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 30.341,
+      "channel": "thinking",
+      "characters": 1,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 30.389,
+      "channel": "thinking",
+      "characters": 2,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 30.39,
+      "channel": "thinking",
+      "characters": 1,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 30.441,
+      "channel": "thinking",
+      "characters": 5,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 30.441,
+      "channel": "thinking",
+      "characters": 1,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 30.489,
+      "channel": "thinking",
+      "characters": 2,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 30.537,
+      "channel": "thinking",
+      "characters": 2,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 30.587,
+      "channel": "thinking",
+      "characters": 2,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 30.587,
+      "channel": "thinking",
+      "characters": 1,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 30.637,
+      "channel": "thinking",
+      "characters": 2,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 30.637,
+      "channel": "thinking",
+      "characters": 1,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 30.686,
+      "channel": "thinking",
+      "characters": 1,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 30.687,
+      "channel": "thinking",
+      "characters": 1,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 30.735,
+      "channel": "thinking",
+      "characters": 2,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 30.736,
+      "channel": "thinking",
+      "characters": 2,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 30.785,
+      "channel": "thinking",
+      "characters": 1,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 30.785,
+      "channel": "thinking",
+      "characters": 4,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 30.837,
+      "channel": "thinking",
+      "characters": 3,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 30.837,
+      "channel": "thinking",
+      "characters": 1,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 30.889,
+      "channel": "thinking",
+      "characters": 2,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 30.89,
+      "channel": "thinking",
+      "characters": 5,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 30.939,
+      "channel": "thinking",
+      "characters": 2,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 30.939,
+      "channel": "thinking",
+      "characters": 2,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 30.986,
+      "channel": "thinking",
+      "characters": 1,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 30.987,
+      "channel": "thinking",
+      "characters": 1,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 31.032,
+      "channel": "thinking",
+      "characters": 2,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 31.032,
+      "channel": "thinking",
+      "characters": 1,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 31.081,
+      "channel": "thinking",
+      "characters": 2,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 31.081,
+      "channel": "thinking",
+      "characters": 1,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 31.128,
+      "channel": "thinking",
+      "characters": 1,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 31.184,
+      "channel": "output",
+      "characters": 2,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 31.223,
+      "channel": "output",
+      "characters": 5,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 31.224,
+      "channel": "output",
+      "characters": 2,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 31.271,
+      "channel": "output",
+      "characters": 2,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 31.271,
+      "channel": "output",
+      "characters": 1,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 31.318,
+      "channel": "output",
+      "characters": 1,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 31.318,
+      "channel": "output",
+      "characters": 2,
+      "status": null
+    },
+    {
+      "kind": "delta",
+      "time_s": 31.366,
+      "channel": "output",
+      "characters": 2,
+      "status": null
+    },
+    {
+      "kind": "model_end",
+      "time_s": 31.376,
+      "channel": null,
+      "characters": 0,
+      "status": "completed"
+    }
+  ],
+  "tool_call_paired": true,
+  "structured_answer": {
+    "label": "流式验证"
+  },
+  "usage": [
+    {
+      "input_tokens": 298,
+      "input_tokens_details": {
+        "cached_tokens": 0
+      },
+      "output_tokens": 99,
+      "total_tokens": 397
+    },
+    {
+      "input_tokens": 193,
+      "input_tokens_details": {
+        "cached_tokens": 0
+      },
+      "output_tokens": 119,
+      "total_tokens": 312
+    }
+  ]
+}

@@ -266,7 +266,7 @@
     "name": "旋蒸",
     "specification": "50L",
     "material": "玻璃",
-    "location": "",
+    "location": "一般区",
     "area_type": "一般区"
   },
   {
@@ -942,6 +942,15 @@
     "specification": "48盘",
     "material": "304不锈钢",
     "location": "一般区干燥间",
+    "area_type": "一般区"
+  },
+  {
+    "workshop": "642",
+    "equipment_id": "MOCK-MT64201",
+    "name": "物料桶",
+    "specification": "200L",
+    "material": "316L不锈钢",
+    "location": "一般区",
     "area_type": "一般区"
   },
   {
@@ -1879,5 +1888,14 @@
     "material": "玻璃+哈氏合金",
     "location": "646车间洁净区精制间",
     "area_type": "洁净区"
+  },
+  {
+    "workshop": "646",
+    "equipment_id": "MOCK-MT64601",
+    "name": "物料桶",
+    "specification": "200L",
+    "material": "316L不锈钢",
+    "location": "一般区",
+    "area_type": "一般区"
   }
 ]

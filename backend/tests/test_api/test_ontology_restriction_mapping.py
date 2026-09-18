@@ -5,6 +5,8 @@
 
 from __future__ import annotations
 
+import pytest
+
 BASE = "https://ontology.pharma-gmp.cn/slpra/core/"
 CLASSES = "/api/ontology/classes"
 LINKS = "/api/ontology/link-types"
@@ -121,6 +123,74 @@ def test_restriction_requires_role(client, operator_headers):
         headers=operator_headers,
     )
     assert resp.status_code == 403
+
+
+def test_edit_restriction_preserves_identity_and_clears_obsolete_fields(client, analyst_headers):
+    owner = _class(client, analyst_headers, "Drug")
+    rng = _class(client, analyst_headers, "Excipient")
+    prop = _link(client, analyst_headers, "contains", owner, rng)
+    original = client.post(
+        f"{CLASSES}/{owner}/restrictions",
+        json={"kind": "min", "property_iri": prop, "property_kind": "object", "cardinality": 1},
+        headers=analyst_headers,
+    ).json()
+    current = original
+    for expected in (
+        {"kind": "only", "property_iri": prop, "property_kind": "object",
+         "filler_iri": rng, "cardinality": None},
+        {"kind": "max", "property_iri": prop, "property_kind": "object",
+         "filler_iri": None, "cardinality": 2},
+        {"kind": "disjoint", "property_iri": None, "property_kind": None,
+         "filler_iri": rng, "cardinality": None},
+    ):
+        response = client.put(
+            f"/api/ontology/restrictions/{original['id']}",
+            json={**expected, "expected_version": current["version"]},
+            headers=analyst_headers,
+        )
+        assert response.status_code == 200, response.text
+        updated = response.json()
+        assert updated["id"] == original["id"]
+        assert updated["version"] == current["version"] + 1
+        assert {key: updated[key] for key in expected} == expected
+        stored = client.get(f"{CLASSES}/{owner}").json()["restrictions"]
+        assert stored == [updated]
+        current = updated
+
+    # An old edit must not overwrite the newer definition or recreate the row.
+    stale = client.put(
+        f"/api/ontology/restrictions/{original['id']}",
+        json={"kind": "equivalent", "expected_version": original["version"]},
+        headers=analyst_headers,
+    )
+    assert stale.status_code == 409
+    assert client.get(f"{CLASSES}/{owner}").json()["restrictions"] == [current]
+
+
+@pytest.mark.parametrize("kind, changes", [
+    ("only", {"filler_iri": None}),
+    ("only", {"property_iri": None}),
+    ("min", {"cardinality": None}),
+    ("only", {"kind": "unknown"}),
+    ("only", {"property_kind": "unknown"}),
+])
+def test_invalid_restriction_edit_keeps_original(client, analyst_headers, kind, changes):
+    owner = _class(client, analyst_headers, "Drug")
+    rng = _class(client, analyst_headers, "Excipient")
+    prop = _link(client, analyst_headers, "contains", owner, rng)
+    original = client.post(
+        f"{CLASSES}/{owner}/restrictions",
+        json={"kind": kind, "property_iri": prop, "property_kind": "object",
+              **({"cardinality": 1} if kind == "min" else {"filler_iri": rng})},
+        headers=analyst_headers,
+    ).json()
+    response = client.put(
+        f"/api/ontology/restrictions/{original['id']}",
+        json={**changes, "expected_version": original["version"]},
+        headers=analyst_headers,
+    )
+    assert response.status_code == 400
+    assert client.get(f"{CLASSES}/{owner}").json()["restrictions"] == [original]
 
 
 # --- §6 mapping + health ---------------------------------------------------

@@ -1,0 +1,750 @@
+{
+  "schema_version": "ontology-guided-evaluation-run-v1",
+  "evaluator_version": "ontology-guided-evaluator-v1",
+  "core_contract_version": "document-analysis-runs-v1",
+  "executor_version": "ontology-guided-executor-v5.1-ranking-durability",
+  "recognition_run_id": "ontology-tool-f4-positive-04",
+  "run_fingerprint": "ebe529a4bb773e8d5f76de31af5d69a288a71b482a697debbcb704a153fdd721",
+  "model_identity": "Qwen3.6-35B-A3B",
+  "root_class_iri": "urn:validation:MeasurementReport",
+  "scope_mode": "document_graph",
+  "focus_path": [],
+  "ontology_snapshot": {
+    "snapshot_id": "synthetic-quantity-schema",
+    "version": "ontology-guided-snapshot-v1",
+    "ontology_hash": "3c4998b4dddc8459af786fbc74136d7c247c7375575884369f687f7f46f856fd",
+    "classes": {
+      "urn:validation:MeasurementReport": {
+        "iri": "urn:validation:MeasurementReport",
+        "label": "测量记录",
+        "description": "",
+        "parent_iris": [],
+        "declared_properties": [
+          {
+            "iri": "urn:validation:mass",
+            "label": "质量",
+            "description": "本测量记录中的质量数值，保留原文单位。",
+            "declared_by": [],
+            "max_count": null,
+            "constraint_status": "resolved",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#decimal"
+            ],
+            "canonical_unit": "g",
+            "identity_key": false
+          }
+        ],
+        "declared_relationships": [],
+        "source_hash": "c7f3bf048f4470d04b8a08d8a17bc024b2fe3916f308c78e2c04a98fdecda23f"
+      }
+    },
+    "created_from": "frozen_fixture",
+    "diagnostics": []
+  },
+  "metadata_snapshot": {
+    "snapshot_id": "6a87664e8cbd43ab7be25e01dd62d4c56181b893b3a14aaa622034b0be8e3978",
+    "analysis_id": "7e84eadb372e726048af9811a001e9368f6bc6b003b990fd5d8944ef820c11d8",
+    "document_hash": "bc13cc1e5972011f28d3032ff73ff4734565511f7202706dbe32e2c10e2eed0c",
+    "structure_hash": "40fe98c3ea340838c622505b6759a500bea164418dc1ca6a7f663a9eb78a1000",
+    "summary_version": "synthetic-structure-only",
+    "summary_model_identity": null,
+    "generation_source": "structure_only",
+    "source_record_refs": [
+      "7cad5a044ba359f097def20238da4a6dcbfdba81af6df3b08b7810f09856f416"
+    ],
+    "node_summaries": [
+      {
+        "node_id": "document",
+        "heading": "source",
+        "path": [
+          "source"
+        ],
+        "summary": null,
+        "summary_status": "pending",
+        "summary_source": "none",
+        "source_record_refs": [
+          "7cad5a044ba359f097def20238da4a6dcbfdba81af6df3b08b7810f09856f416"
+        ]
+      }
+    ],
+    "dependency_hash": "4f279c7f8c8bdcd340e776eb4730d2ce2f55ab2da2d6743fa9b90df93166fe03",
+    "policy_version": "ontology-guided-metadata-v1"
+  },
+  "root_menu": {
+    "menu_id": "197966cafb28818d3a901c3c1d8a9ae2d0bbc8a114327170b4d838d379181bce",
+    "ontology_snapshot_id": "synthetic-quantity-schema",
+    "subject": {
+      "entity_id": "e79ec1b7598106af7b97f757b781285c34aeef9db9c78db431b10599230e20f2",
+      "revision": 1,
+      "class_iri": "urn:validation:MeasurementReport",
+      "referent_id": null,
+      "is_document_root": true
+    },
+    "properties": [
+      {
+        "iri": "urn:validation:mass",
+        "label": "质量",
+        "description": "本测量记录中的质量数值，保留原文单位。",
+        "declared_by": [],
+        "max_count": null,
+        "constraint_status": "resolved",
+        "kind": "property",
+        "datatype_iris": [
+          "http://www.w3.org/2001/XMLSchema#decimal"
+        ],
+        "canonical_unit": "g",
+        "identity_key": false
+      }
+    ],
+    "relationships": [],
+    "diagnostics": [],
+    "policy_version": "ontology-guided-local-menu-v2"
+  },
+  "graph": {
+    "contract_version": "document-analysis-runs-v1",
+    "recognition_run_id": "ontology-tool-f4-positive-04",
+    "run_revision": 0,
+    "event_head": 1,
+    "metadata_snapshot_id": "6a87664e8cbd43ab7be25e01dd62d4c56181b893b3a14aaa622034b0be8e3978",
+    "root_ref": {
+      "id": "e79ec1b7598106af7b97f757b781285c34aeef9db9c78db431b10599230e20f2",
+      "revision": 1
+    },
+    "projection": "verified",
+    "projection_policy": "ontology-tool-graph-v1",
+    "artifact_status": "partial",
+    "nodes": [
+      {
+        "entity_id": "e79ec1b7598106af7b97f757b781285c34aeef9db9c78db431b10599230e20f2",
+        "revision": 1,
+        "class_iri": "urn:validation:MeasurementReport",
+        "class_label": "测量记录",
+        "label": "source.docx",
+        "root": true,
+        "root_origin": "user_specified",
+        "identity_status": "document_local",
+        "decision_status": "supported",
+        "independent_review": "unreviewed",
+        "evidence_refs": [],
+        "grounding_kind": "document_root"
+      }
+    ],
+    "edges": [],
+    "properties": [],
+    "coverage": [
+      {
+        "retrieval_diagnostics": null,
+        "candidate_policy": null,
+        "subject_ref": {
+          "id": "e79ec1b7598106af7b97f757b781285c34aeef9db9c78db431b10599230e20f2",
+          "revision": 1
+        },
+        "predicate_iri": "urn:validation:mass",
+        "predicate_label": "质量",
+        "phase1": 1,
+        "phase2": 0,
+        "examined": 0,
+        "incomplete": 1,
+        "unattempted": 0,
+        "unresolved_claims": 0,
+        "executed_phase_counts": {
+          "phase1": 1,
+          "phase2": 0
+        },
+        "pending_frontiers": 0,
+        "stop_reason": "task_budget_exhausted",
+        "scope": {
+          "scope_id": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "members": []
+        }
+      }
+    ],
+    "progress": {
+      "tasks_attempted": 1,
+      "model_calls": 4,
+      "model_calls_reserved": 4,
+      "model_calls_unresolved": 0,
+      "records_planned": 1,
+      "records_examined": 0,
+      "records_incomplete": 1,
+      "records_unattempted": 0,
+      "phase_counts": {
+        "phase1": 1,
+        "phase2": 0
+      },
+      "supported": 0,
+      "unsupported": 0,
+      "undetermined": 0,
+      "pending_frontiers": 0,
+      "unresolved_claims": 0,
+      "invalidated_count": 0,
+      "stop_reason": "task_budget_exhausted",
+      "completion": "incomplete",
+      "contract_version": "document-analysis-runs-v1"
+    },
+    "generated_from_hash": "dec017809fc8ee9c031ddf703c64cb3f00ea20b7135a1083c46bc92047af434f",
+    "relationship_groups": []
+  },
+  "retrieval_plans": [],
+  "events": [
+    {
+      "event_type": "retrieval_plan_created",
+      "payload": {
+        "plan_id": "d035c5abbc93e21aa1b73914017c5a9858ed6996d5a5f7d7aaa64708e2bd36a0",
+        "subject": {
+          "entity_id": "e79ec1b7598106af7b97f757b781285c34aeef9db9c78db431b10599230e20f2",
+          "revision": 1,
+          "class_iri": "urn:validation:MeasurementReport",
+          "referent_id": null,
+          "is_document_root": true
+        },
+        "predicate_iri": "urn:validation:mass",
+        "predicate_kind": "property",
+        "metadata_snapshot_id": "6a87664e8cbd43ab7be25e01dd62d4c56181b893b3a14aaa622034b0be8e3978",
+        "ontology_hash": "3c4998b4dddc8459af786fbc74136d7c247c7375575884369f687f7f46f856fd",
+        "phase1_section_limit": 3,
+        "records": [
+          {
+            "record_id": "7cad5a044ba359f097def20238da4a6dcbfdba81af6df3b08b7810f09856f416",
+            "phase": 1,
+            "section_node_id": "document",
+            "record_kind": "paragraph",
+            "rank_score": 4.0,
+            "score_components": {
+              "source_labels": 1.0,
+              "heading": 0.0,
+              "summary": 0.0
+            },
+            "rationale": [
+              "source_label"
+            ],
+            "ranking_epoch_id": null,
+            "ranking_epoch_seq": null,
+            "pool_rank": null,
+            "ranking_mode": "deterministic"
+          }
+        ],
+        "ledger": {
+          "7cad5a044ba359f097def20238da4a6dcbfdba81af6df3b08b7810f09856f416": {
+            "record_id": "7cad5a044ba359f097def20238da4a6dcbfdba81af6df3b08b7810f09856f416",
+            "phase": 1,
+            "coverage_state": "unattempted",
+            "execution_state": "queued",
+            "semantic_outcomes": [],
+            "task_ids": [],
+            "call_ids": [],
+            "reason_codes": []
+          }
+        },
+        "excluded_heading_record_ids": [],
+        "policy_version": "ontology-guided-two-phase-v1",
+        "frozen_record_ids": [
+          "7cad5a044ba359f097def20238da4a6dcbfdba81af6df3b08b7810f09856f416"
+        ],
+        "frozen_record_hash": "fed6d0b96f32582ce71b925214c8bbcc8b15774325ba00b5818b8daa5248d051",
+        "ranking_epoch_ids": []
+      }
+    },
+    {
+      "event_type": "ranking_epoch_committed",
+      "payload": {
+        "epoch_id": "27d2d83d5e2a6910bc266af5c87b4f04524531f4db619b3c8fbb2b1ac21a2385",
+        "epoch_seq": 1,
+        "plan_id": "d035c5abbc93e21aa1b73914017c5a9858ed6996d5a5f7d7aaa64708e2bd36a0",
+        "subject_ref": {
+          "entity_id": "e79ec1b7598106af7b97f757b781285c34aeef9db9c78db431b10599230e20f2",
+          "revision": 1,
+          "class_iri": "urn:validation:MeasurementReport",
+          "referent_id": null,
+          "is_document_root": true
+        },
+        "query_dependency_hash": "fa145d2fc4dd0afdd9e9f4da408ec553d21cc8e5890b85f4af16554b3d0a8d7c",
+        "ranking_dependency_hash": "f0f692f3467a87850014e52d39ac90533e25df6ff32cde9c4e24df4a1a3399e0",
+        "pool_hash": "4daa41d6a96855eb98285f5a8564ad3527a95f19d2cad7c24a0dfbd598398415",
+        "record_ids": [
+          "7cad5a044ba359f097def20238da4a6dcbfdba81af6df3b08b7810f09856f416"
+        ],
+        "ordered_record_ids": [
+          "7cad5a044ba359f097def20238da4a6dcbfdba81af6df3b08b7810f09856f416"
+        ],
+        "queries": [
+          {
+            "query_id": "85b29b411eb38dff2216947e40c8e51968f36366df1f515ed26768486eaed330",
+            "query_version": "subject-slot-query-v1",
+            "run_fingerprint": "ebe529a4bb773e8d5f76de31af5d69a288a71b482a697debbcb704a153fdd721",
+            "subject_ref": {
+              "entity_id": "e79ec1b7598106af7b97f757b781285c34aeef9db9c78db431b10599230e20f2",
+              "revision": 1,
+              "class_iri": "urn:validation:MeasurementReport",
+              "referent_id": null,
+              "is_document_root": true
+            },
+            "predicate_iri": "urn:validation:mass",
+            "retrieval_intent": "discover",
+            "model_text": "{\"allowed_object_types\":[],\"contrast_roles\":[\"产品\",\"API原料\",\"批次\",\"试验来源\",\"工艺步骤\",\"中间体\"],\"document_class\":\"urn:validation:MeasurementReport\",\"document_root\":true,\"intent\":\"寻找讨论当前主体与直接谓词的原文；肯定、否定和条件均可能相关。\",\"literal_spec\":{\"canonical_unit\":\"g\",\"constraint_status\":\"resolved\",\"datatype_iris\":[\"http://www.w3.org/2001/XMLSchema#decimal\"],\"declared_by\":[],\"description\":\"本测量记录中的质量数值，保留原文单位。\",\"identity_key\":false,\"iri\":\"urn:validation:mass\",\"kind\":\"property\",\"label\":\"质量\",\"max_count\":null},\"predicate\":{\"definition\":\"本测量记录中的质量数值，保留原文单位。\",\"iri\":\"urn:validation:mass\",\"label\":\"质量\"},\"subject_class\":\"urn:validation:MeasurementReport\",\"subject_class_label\":\"测量记录\",\"subject_mentions\":[]}",
+            "query_dependency_hash": "fa145d2fc4dd0afdd9e9f4da408ec553d21cc8e5890b85f4af16554b3d0a8d7c",
+            "trusted_context": [],
+            "excluded_sources": [],
+            "dependency_refs": [],
+            "diagnostics": [],
+            "authority": "retrieval_only"
+          },
+          {
+            "query_id": "1ac524be4dd38d03f97bcfea284972561ed31b0e0af11870ff7947cb6280ba5c",
+            "query_version": "subject-slot-query-v1",
+            "run_fingerprint": "ebe529a4bb773e8d5f76de31af5d69a288a71b482a697debbcb704a153fdd721",
+            "subject_ref": {
+              "entity_id": "e79ec1b7598106af7b97f757b781285c34aeef9db9c78db431b10599230e20f2",
+              "revision": 1,
+              "class_iri": "urn:validation:MeasurementReport",
+              "referent_id": null,
+              "is_document_root": true
+            },
+            "predicate_iri": "urn:validation:mass",
+            "retrieval_intent": "counterevidence",
+            "model_text": "{\"allowed_object_types\":[],\"contrast_roles\":[\"产品\",\"API原料\",\"批次\",\"试验来源\",\"工艺步骤\",\"中间体\"],\"document_class\":\"urn:validation:MeasurementReport\",\"document_root\":true,\"intent\":\"寻找明确否定、限制或改变当前主体谓词适用对象的原文。\",\"literal_spec\":{\"canonical_unit\":\"g\",\"constraint_status\":\"resolved\",\"datatype_iris\":[\"http://www.w3.org/2001/XMLSchema#decimal\"],\"declared_by\":[],\"description\":\"本测量记录中的质量数值，保留原文单位。\",\"identity_key\":false,\"iri\":\"urn:validation:mass\",\"kind\":\"property\",\"label\":\"质量\",\"max_count\":null},\"predicate\":{\"definition\":\"本测量记录中的质量数值，保留原文单位。\",\"iri\":\"urn:validation:mass\",\"label\":\"质量\"},\"subject_class\":\"urn:validation:MeasurementReport\",\"subject_class_label\":\"测量记录\",\"subject_mentions\":[]}",
+            "query_dependency_hash": "fa145d2fc4dd0afdd9e9f4da408ec553d21cc8e5890b85f4af16554b3d0a8d7c",
+            "trusted_context": [],
+            "excluded_sources": [],
+            "dependency_refs": [],
+            "diagnostics": [],
+            "authority": "retrieval_only"
+          }
+        ],
+        "retrieval_views": [
+          {
+            "record_id": "7cad5a044ba359f097def20238da4a6dcbfdba81af6df3b08b7810f09856f416",
+            "retrieval_view_hash": "cd4e9e260ece8fadd7b3d7363099ed2b7667d3c7f6fe4529a0b58b8588f2f1dd",
+            "source_snapshot_hash": "bc13cc1e5972011f28d3032ff73ff4734565511f7202706dbe32e2c10e2eed0c",
+            "model_text": "{\"field_group_context\":[],\"headers\":[],\"heading_path\":[\"source\"],\"notes\":[],\"parent_context\":[],\"record\":[\"本测量记录的质量为 1500 mg。\"]}",
+            "structure_text": "source\n本测量记录的质量为 1500 mg。",
+            "metadata_text": "",
+            "source_refs": [
+              {
+                "document_hash": "bc13cc1e5972011f28d3032ff73ff4734565511f7202706dbe32e2c10e2eed0c",
+                "parser_version": "4",
+                "structure_hash": "40fe98c3ea340838c622505b6759a500bea164418dc1ca6a7f663a9eb78a1000",
+                "evidence_id": "9c48bbe121ceb2b6db985b6964d8ab8ebef881f5613026ff3d7658340d0881dc",
+                "section_node_id": "document",
+                "block_id": "paragraph:0:0",
+                "paragraph_index": 0,
+                "fragment_index": 0,
+                "table_path": null,
+                "row_index": null,
+                "column_index": null,
+                "span_start": 0,
+                "span_end": 18,
+                "physical_page_number": null
+              }
+            ],
+            "binding_refs": [],
+            "omitted_refs": [],
+            "source_cell_ids": [],
+            "logical_row_id": null,
+            "token_count": 128,
+            "status": "complete",
+            "view_policy_version": "complete-record-view-v1",
+            "authority": "retrieval_only"
+          }
+        ],
+        "observations": [
+          {
+            "observation_id": "a0222d8756e7ada55266b88fa10eec57df1863e7aa9f138674a3cdbc0c8002ae",
+            "ranking_epoch_id": "27d2d83d5e2a6910bc266af5c87b4f04524531f4db619b3c8fbb2b1ac21a2385",
+            "record_id": "7cad5a044ba359f097def20238da4a6dcbfdba81af6df3b08b7810f09856f416",
+            "query_id": "85b29b411eb38dff2216947e40c8e51968f36366df1f515ed26768486eaed330",
+            "retrieval_intent": "discover",
+            "model_input_hash": "16b919094de85c0eabc6788ec90874b31f6ddc9f919f2de6e682e08868826886",
+            "retrieval_view_hash": "cd4e9e260ece8fadd7b3d7363099ed2b7667d3c7f6fe4529a0b58b8588f2f1dd",
+            "source_snapshot_hash": "bc13cc1e5972011f28d3032ff73ff4734565511f7202706dbe32e2c10e2eed0c",
+            "view_status": "complete",
+            "omitted_refs": [],
+            "window_count": 1,
+            "channel_hits": [
+              "structure:discover",
+              "structure:counterevidence"
+            ],
+            "channel_raw_scores": {
+              "structure:discover": 1.0,
+              "structure:counterevidence": 1.0
+            },
+            "channel_ranks": {
+              "structure:discover": 1,
+              "structure:counterevidence": 1
+            },
+            "raw_rerank_score": null,
+            "intent_rank": 1,
+            "pool_rank": 1,
+            "fused_score": 0.01639344262295082,
+            "protected_reasons": [
+              "exploration",
+              "structure:discover",
+              "structure:counterevidence"
+            ],
+            "score_status": "not_selected",
+            "authority": "retrieval_only",
+            "score_semantics": "raw_relevance_not_probability"
+          },
+          {
+            "observation_id": "fb6309e3a2694027fdfb0b6c34c89436ffa35465c89838f426ace1e73044e983",
+            "ranking_epoch_id": "27d2d83d5e2a6910bc266af5c87b4f04524531f4db619b3c8fbb2b1ac21a2385",
+            "record_id": "7cad5a044ba359f097def20238da4a6dcbfdba81af6df3b08b7810f09856f416",
+            "query_id": "1ac524be4dd38d03f97bcfea284972561ed31b0e0af11870ff7947cb6280ba5c",
+            "retrieval_intent": "counterevidence",
+            "model_input_hash": "4edc584c4f9024dcd08493adb2e5f9cbcf627ae23a52e16c64e70743a083e027",
+            "retrieval_view_hash": "cd4e9e260ece8fadd7b3d7363099ed2b7667d3c7f6fe4529a0b58b8588f2f1dd",
+            "source_snapshot_hash": "bc13cc1e5972011f28d3032ff73ff4734565511f7202706dbe32e2c10e2eed0c",
+            "view_status": "complete",
+            "omitted_refs": [],
+            "window_count": 1,
+            "channel_hits": [
+              "structure:discover",
+              "structure:counterevidence"
+            ],
+            "channel_raw_scores": {
+              "structure:discover": 1.0,
+              "structure:counterevidence": 1.0
+            },
+            "channel_ranks": {
+              "structure:discover": 1,
+              "structure:counterevidence": 1
+            },
+            "raw_rerank_score": null,
+            "intent_rank": 1,
+            "pool_rank": 1,
+            "fused_score": 0.01639344262295082,
+            "protected_reasons": [
+              "exploration",
+              "structure:discover",
+              "structure:counterevidence"
+            ],
+            "score_status": "not_selected",
+            "authority": "retrieval_only",
+            "score_semantics": "raw_relevance_not_probability"
+          }
+        ],
+        "model_identity": {},
+        "policy_hash": "20734a4b1ec7c45da6c5ed61b3e2bf7cd18a183a5cde992341d46032dfeb3a7c",
+        "permission_scope_hash": "e4590e5b9a075dbac571524cbc50ea01781147f742fa4af8e255fdc2714f04f3",
+        "actual_ranking_mode": "deterministic",
+        "degraded": false,
+        "reason": null,
+        "status": "committed",
+        "costs": {
+          "input_pairs": 0,
+          "embedding_inputs": 0,
+          "tokens": 0,
+          "model_calls": 0,
+          "technical_retries": 0,
+          "cache_hits": 0,
+          "token_cache_hits": 0,
+          "elapsed_ms": 0.8268661331385374
+        },
+        "authority": "retrieval_only"
+      }
+    },
+    {
+      "event_type": "task_outcome",
+      "payload": {
+        "task": {
+          "task_id": "f8151445b5fc4493a2a40b15d4e1b9dd995545d85e194e895869c3900d4774c6",
+          "claim_lineage_id": "d0b3b1f88890eb9c22917c68e8c035992d771fbae3990870caaa6ce42540586c",
+          "subject": {
+            "entity_id": "e79ec1b7598106af7b97f757b781285c34aeef9db9c78db431b10599230e20f2",
+            "revision": 1,
+            "class_iri": "urn:validation:MeasurementReport",
+            "referent_id": null,
+            "is_document_root": true
+          },
+          "predicate_iri": "urn:validation:mass",
+          "predicate_kind": "property",
+          "record_id": "7cad5a044ba359f097def20238da4a6dcbfdba81af6df3b08b7810f09856f416",
+          "phase": 1,
+          "hop": 0,
+          "dependency_hash": "c669134c31b5013430c985a42fc610d567b44fd7a5a4d4b117bf3ba7899413b3",
+          "retry_kind": null,
+          "section_node_id": "document",
+          "source_position": 0,
+          "ranking_epoch_seq": 1,
+          "pool_rank": 1,
+          "scope": {
+            "scope_id": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+            "members": []
+          }
+        },
+        "outcome": {
+          "semantic_outcome": "not_checked",
+          "complete": false,
+          "reason_code": "AttributeError",
+          "reason": "原文验证技术失败：AttributeError",
+          "model_calls": 0,
+          "nodes": [],
+          "edges": [],
+          "properties": [],
+          "proof_payloads": [],
+          "decision_payloads": []
+        },
+        "ranking_excluded_slots": []
+      }
+    },
+    {
+      "event_type": "graph_projected",
+      "payload": {
+        "contract_version": "document-analysis-runs-v1",
+        "recognition_run_id": "ontology-tool-f4-positive-04",
+        "run_revision": 0,
+        "event_head": 1,
+        "metadata_snapshot_id": "6a87664e8cbd43ab7be25e01dd62d4c56181b893b3a14aaa622034b0be8e3978",
+        "root_ref": {
+          "id": "e79ec1b7598106af7b97f757b781285c34aeef9db9c78db431b10599230e20f2",
+          "revision": 1
+        },
+        "projection": "verified",
+        "projection_policy": "ontology-tool-graph-v1",
+        "artifact_status": "partial",
+        "nodes": [
+          {
+            "entity_id": "e79ec1b7598106af7b97f757b781285c34aeef9db9c78db431b10599230e20f2",
+            "revision": 1,
+            "class_iri": "urn:validation:MeasurementReport",
+            "class_label": "测量记录",
+            "label": "source.docx",
+            "root": true,
+            "root_origin": "user_specified",
+            "identity_status": "document_local",
+            "decision_status": "supported",
+            "independent_review": "unreviewed",
+            "evidence_refs": [],
+            "grounding_kind": "document_root"
+          }
+        ],
+        "edges": [],
+        "properties": [],
+        "coverage": [
+          {
+            "retrieval_diagnostics": null,
+            "candidate_policy": null,
+            "subject_ref": {
+              "id": "e79ec1b7598106af7b97f757b781285c34aeef9db9c78db431b10599230e20f2",
+              "revision": 1
+            },
+            "predicate_iri": "urn:validation:mass",
+            "predicate_label": "质量",
+            "phase1": 1,
+            "phase2": 0,
+            "examined": 0,
+            "incomplete": 1,
+            "unattempted": 0,
+            "unresolved_claims": 0,
+            "executed_phase_counts": {
+              "phase1": 1,
+              "phase2": 0
+            },
+            "pending_frontiers": 0,
+            "stop_reason": "task_budget_exhausted",
+            "scope": {
+              "scope_id": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+              "members": []
+            }
+          }
+        ],
+        "progress": {
+          "tasks_attempted": 1,
+          "model_calls": 4,
+          "model_calls_reserved": 4,
+          "model_calls_unresolved": 0,
+          "records_planned": 1,
+          "records_examined": 0,
+          "records_incomplete": 1,
+          "records_unattempted": 0,
+          "phase_counts": {
+            "phase1": 1,
+            "phase2": 0
+          },
+          "supported": 0,
+          "unsupported": 0,
+          "undetermined": 0,
+          "pending_frontiers": 0,
+          "unresolved_claims": 0,
+          "invalidated_count": 0,
+          "stop_reason": "task_budget_exhausted",
+          "completion": "incomplete",
+          "contract_version": "document-analysis-runs-v1"
+        },
+        "generated_from_hash": "dec017809fc8ee9c031ddf703c64cb3f00ea20b7135a1083c46bc92047af434f",
+        "relationship_groups": []
+      }
+    }
+  ],
+  "adapter_calls": [
+    {
+      "ordinal": 1,
+      "task_id": "f8151445b5fc4493a2a40b15d4e1b9dd995545d85e194e895869c3900d4774c6",
+      "record_id": "7cad5a044ba359f097def20238da4a6dcbfdba81af6df3b08b7810f09856f416",
+      "subject_id": "e79ec1b7598106af7b97f757b781285c34aeef9db9c78db431b10599230e20f2",
+      "predicate_iri": "urn:validation:mass",
+      "phase": 1,
+      "hop": 0,
+      "context_hash": "bd138e891afe602d16e967aa8caa4b489f99d59675b5b21fceb84c329b8441d6",
+      "elapsed_seconds": 392.36403889302164,
+      "status": "failed",
+      "semantic_outcome": null,
+      "reason_code": null,
+      "error_code": "AttributeError"
+    }
+  ],
+  "diagnostics": [
+    "adapter_failure:AttributeError",
+    "bounded_technical_retry_scheduled",
+    "execution_pause_requested"
+  ],
+  "ranking": {
+    "model_observations": []
+  },
+  "model_call_state": {
+    "version": 2,
+    "recognition_run_id": "ontology-tool-f4-positive-04",
+    "run_fingerprint": "ebe529a4bb773e8d5f76de31af5d69a288a71b482a697debbcb704a153fdd721",
+    "reservation_sequence": 4,
+    "lineage_calls": {
+      "d0b3b1f88890eb9c22917c68e8c035992d771fbae3990870caaa6ce42540586c": 4
+    },
+    "protocols": {
+      "d0b3b1f88890eb9c22917c68e8c035992d771fbae3990870caaa6ce42540586c": {
+        "version": "ontology-tool-extraction-v1",
+        "lineage_id": "d0b3b1f88890eb9c22917c68e8c035992d771fbae3990870caaa6ce42540586c",
+        "base_target": {
+          "target_id": "17540e834e8de28cd694381d1a6e8e2acb8818641333477a1802f83ababa4ea3",
+          "claim_ref": {
+            "id": "d0b3b1f88890eb9c22917c68e8c035992d771fbae3990870caaa6ce42540586c",
+            "revision": 1
+          },
+          "task_id": "f8151445b5fc4493a2a40b15d4e1b9dd995545d85e194e895869c3900d4774c6",
+          "check_kind": "predicate_entailment",
+          "document_context": {
+            "document_hash": "bc13cc1e5972011f28d3032ff73ff4734565511f7202706dbe32e2c10e2eed0c",
+            "document_class_iri": "urn:validation:MeasurementReport",
+            "root_ref": {
+              "id": "e79ec1b7598106af7b97f757b781285c34aeef9db9c78db431b10599230e20f2",
+              "revision": 1
+            }
+          },
+          "subject_ref": {
+            "entity_id": "e79ec1b7598106af7b97f757b781285c34aeef9db9c78db431b10599230e20f2",
+            "revision": 1,
+            "class_iri": "urn:validation:MeasurementReport",
+            "referent_id": null,
+            "is_document_root": true
+          },
+          "predicate_spec_ref": null,
+          "predicate_iri": "urn:validation:mass",
+          "object_ref": null,
+          "literal_hash": null,
+          "assertion_polarity": "affirmed",
+          "applicability": {},
+          "ontology_hash": "3c4998b4dddc8459af786fbc74136d7c247c7375575884369f687f7f46f856fd",
+          "source_scope_hash": "3fa72bf951d2ba43c4db48a021ddfc64d108387a3f6c37764df344c518b32c13",
+          "context_hash": "122e37f2dbe8a420dac2eb80c1c4f412e75a7344ce103acdf33f9654aef64392"
+        },
+        "scope_id": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "api_protocol": "responses",
+        "stage": "finalize",
+        "assertion_generation": 2,
+        "evidence_revision": 1,
+        "evidence_hash": "0959a042998f2f6464844fa8ee24a83ce8c5a2f521d35186371e53b0af83ea07",
+        "context_hash": "bd138e891afe602d16e967aa8caa4b489f99d59675b5b21fceb84c329b8441d6",
+        "request_attempt": 4,
+        "completed_attempts": [
+          1,
+          2,
+          3,
+          4
+        ],
+        "active_instructions": "",
+        "stage_input_items": [],
+        "pending_request": null,
+        "turn_refs": [],
+        "completed_tool_results": [],
+        "tool_calls_used": 0,
+        "materialized_refs": {},
+        "context_authorization": null,
+        "discovery_ref": "a754d4a98c41bef34de80da88b8930ec0a6a821782fcda02a98ae63e9deda141",
+        "verification_ref": "426d99bc4675bc3d03dcd513840c345c13559ac18b09ff4334280a43f9eace61",
+        "outcome_ref": null,
+        "recovery_kind": "reproposal",
+        "recovery_used": true
+      }
+    },
+    "reservations": [
+      {
+        "sequence": 1,
+        "task_id": "f8151445b5fc4493a2a40b15d4e1b9dd995545d85e194e895869c3900d4774c6",
+        "stage": "discovery",
+        "ordinal": 1,
+        "lineage_id": "d0b3b1f88890eb9c22917c68e8c035992d771fbae3990870caaa6ce42540586c",
+        "input_hash": "5a5b89d74c955f5f4e1d996968bcbe02e54160924eefcba30e1cba39dde002b9",
+        "subject_ref": {
+          "entity_id": "e79ec1b7598106af7b97f757b781285c34aeef9db9c78db431b10599230e20f2",
+          "revision": 1,
+          "class_iri": "urn:validation:MeasurementReport",
+          "referent_id": null,
+          "is_document_root": true
+        },
+        "run_fingerprint": "ebe529a4bb773e8d5f76de31af5d69a288a71b482a697debbcb704a153fdd721",
+        "protocol_attempt": 1
+      },
+      {
+        "sequence": 2,
+        "task_id": "f8151445b5fc4493a2a40b15d4e1b9dd995545d85e194e895869c3900d4774c6",
+        "stage": "verification",
+        "ordinal": 2,
+        "lineage_id": "d0b3b1f88890eb9c22917c68e8c035992d771fbae3990870caaa6ce42540586c",
+        "input_hash": "8bfb125be0166a9117b0baaba38cb781415397b711fbdeaa330f1ee271d1d62b",
+        "subject_ref": {
+          "entity_id": "e79ec1b7598106af7b97f757b781285c34aeef9db9c78db431b10599230e20f2",
+          "revision": 1,
+          "class_iri": "urn:validation:MeasurementReport",
+          "referent_id": null,
+          "is_document_root": true
+        },
+        "run_fingerprint": "ebe529a4bb773e8d5f76de31af5d69a288a71b482a697debbcb704a153fdd721",
+        "protocol_attempt": 2
+      },
+      {
+        "sequence": 3,
+        "task_id": "f8151445b5fc4493a2a40b15d4e1b9dd995545d85e194e895869c3900d4774c6",
+        "stage": "discovery",
+        "ordinal": 3,
+        "lineage_id": "d0b3b1f88890eb9c22917c68e8c035992d771fbae3990870caaa6ce42540586c",
+        "input_hash": "70dd938688b554982617698a254db3dba2ff2ec8d3d52bd20069d2c61375cc25",
+        "subject_ref": {
+          "entity_id": "e79ec1b7598106af7b97f757b781285c34aeef9db9c78db431b10599230e20f2",
+          "revision": 1,
+          "class_iri": "urn:validation:MeasurementReport",
+          "referent_id": null,
+          "is_document_root": true
+        },
+        "run_fingerprint": "ebe529a4bb773e8d5f76de31af5d69a288a71b482a697debbcb704a153fdd721",
+        "protocol_attempt": 3
+      },
+      {
+        "sequence": 4,
+        "task_id": "f8151445b5fc4493a2a40b15d4e1b9dd995545d85e194e895869c3900d4774c6",
+        "stage": "verification",
+        "ordinal": 4,
+        "lineage_id": "d0b3b1f88890eb9c22917c68e8c035992d771fbae3990870caaa6ce42540586c",
+        "input_hash": "ad2f2c640d7875074980aeee4491b831a162b66309502763dc1dd6ff98a364f4",
+        "subject_ref": {
+          "entity_id": "e79ec1b7598106af7b97f757b781285c34aeef9db9c78db431b10599230e20f2",
+          "revision": 1,
+          "class_iri": "urn:validation:MeasurementReport",
+          "referent_id": null,
+          "is_document_root": true
+        },
+        "run_fingerprint": "ebe529a4bb773e8d5f76de31af5d69a288a71b482a697debbcb704a153fdd721",
+        "protocol_attempt": 4
+      }
+    ]
+  }
+}

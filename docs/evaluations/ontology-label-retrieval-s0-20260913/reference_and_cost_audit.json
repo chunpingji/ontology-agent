@@ -1,0 +1,86 @@
+{
+  "schema_version": "s0-reference-and-cost-audit-v1",
+  "reference_origin": "assistant-authored synthetic diagnostic; not expert gold",
+  "reference_is_model_input": false,
+  "query_and_pair_checks": [
+    {
+      "variant": "E0",
+      "intent": "discover",
+      "embedding_is_frozen_query": true,
+      "pairs_are_exact_query_and_views": true,
+      "reference_fields_absent": true,
+      "pair_count": 8
+    },
+    {
+      "variant": "E0",
+      "intent": "counterevidence",
+      "embedding_is_frozen_query": true,
+      "pairs_are_exact_query_and_views": true,
+      "reference_fields_absent": true,
+      "pair_count": 8
+    },
+    {
+      "variant": "E1",
+      "intent": "discover",
+      "embedding_is_frozen_query": true,
+      "pairs_are_exact_query_and_views": true,
+      "reference_fields_absent": true,
+      "pair_count": 8
+    },
+    {
+      "variant": "E1",
+      "intent": "counterevidence",
+      "embedding_is_frozen_query": true,
+      "pairs_are_exact_query_and_views": true,
+      "reference_fields_absent": true,
+      "pair_count": 8
+    },
+    {
+      "variant": "E2",
+      "intent": "discover",
+      "embedding_is_frozen_query": true,
+      "pairs_are_exact_query_and_views": true,
+      "reference_fields_absent": true,
+      "pair_count": 8
+    },
+    {
+      "variant": "E2",
+      "intent": "counterevidence",
+      "embedding_is_frozen_query": true,
+      "pairs_are_exact_query_and_views": true,
+      "reference_fields_absent": true,
+      "pair_count": 8
+    }
+  ],
+  "harness_sha256_matches": true,
+  "failed_harness_sha256_matches": true,
+  "costs": {
+    "variant_tokens": {
+      "E0": 6694,
+      "E1": 7684,
+      "E2": 7756
+    },
+    "variant_total_tokens": 22134,
+    "shared_operations": [
+      {
+        "operation": "count_tokens_batch",
+        "input_tokens": 0
+      },
+      {
+        "operation": "count_tokens_batch",
+        "input_tokens": 0
+      },
+      {
+        "operation": "embed",
+        "input_tokens": 340
+      },
+      {
+        "operation": "embed",
+        "input_tokens": 325
+      }
+    ],
+    "shared_record_embedding_tokens": 665,
+    "measured_total_tokens": 22799
+  },
+  "scope": "Exact frozen model inputs contain only the saved ontology queries and source views; synthetic grades and case identifiers are used only for post-inference metric calculation."
+}

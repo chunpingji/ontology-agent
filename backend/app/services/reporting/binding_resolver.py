@@ -431,6 +431,8 @@ class FactSelection:
             result.issues.extend(problems)
             return finish(result)
         subject = selected[0]
+        if p.kind in {"source_text", "source_field"}:
+            return unavailable_value(node, typ, "unavailable", "SOURCE_PROJECTION_UNSUPPORTED")
         if p.kind == "property":
             result = self.property(subject, p.property_iri, typ, node)
         elif p.kind == "record":
@@ -486,6 +488,11 @@ class BindingResolver:
     def resolve(self, binding):
         typ = TypeSpec.model_validate(self.plan["binding_types"][binding.binding_id])
         if binding.kind == "facts":
+            source = self.bundle.get("sources", {}).get(binding.scope.source_slot, {})
+            if source.get("kind") == "finder_demo":
+                from app.services.reporting.finder_selection import FinderSelection
+
+                return FinderSelection.create(self, binding, source)
             for slot in {binding.scope.source_slot, *binding.scope.fact_source_refs}:
                 source = self.bundle.get("sources", {}).get(slot, {})
                 problem = next(
@@ -509,6 +516,14 @@ class BindingResolver:
                 return unavailable_value(
                     binding.binding_id, typ, "invalid", "SOURCE_CONTRACT_MISMATCH"
                 )
+            if record.get("kind") == "mock":
+                from app.services.reporting.demo_sources import resolve_mock
+
+                if not self.bundle.get("demonstration") or binding.kind != "context":
+                    return unavailable_value(
+                        binding.binding_id, typ, "invalid", "DEMO_SOURCE_NOT_ALLOWED"
+                    )
+                return resolve_mock(binding, record, self.inputs, typ, self.scope_id)
             if binding.scope.subject_ref and binding.scope.subject_ref != record.get("subject_id"):
                 return unavailable_value(
                     binding.binding_id, typ, "invalid", "SUBJECT_SCOPE_MISMATCH"

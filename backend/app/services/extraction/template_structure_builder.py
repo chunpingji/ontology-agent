@@ -1,5 +1,7 @@
 """Offline template skeletons; semantic models may enrich but never invent structure."""
 
+import re
+
 from pydantic import model_validator
 
 from app.schemas.evidence import EvidenceAnchor, EvidenceModel
@@ -54,8 +56,89 @@ def origin_status(origin: TemplateOrigin | dict | None, ir: DocumentIR | dict | 
         return "invalid"
 
 
+def _business_label(text: str) -> str:
+    text = " ".join(text.replace("\u200b", "").split()).strip(" ：:*")
+    # Prefer the Chinese title in bilingual labels; retain short acronyms such as QA.
+    bilingual = re.match(r"^([A-Za-z][A-Za-z /ⅠⅡⅢⅣ]*)\s+([\u4e00-\u9fff].*)$", text)
+    if bilingual and len(bilingual[1].strip()) > 4:
+        text = bilingual[2]
+    return text
+
+
+def _generic_title(text: str) -> bool:
+    return not text or text in {"表格", "字段", "段落行文", "未命名分组"} or bool(
+        re.fullmatch(r"(?:SECTION\s*)?[ⅠⅡⅢⅣIVX\d]*\s*部分\s*[一二三四五六七八九十\d]+", text, re.I)
+    )
+
+
+def _caption(text: str) -> str | None:
+    text = _business_label(text)
+    workshop = re.search(r"([A-Za-z0-9-]+)\s*车间\s*设备(?:见下表|如下表|清单|表)[：:]?$", text)
+    if workshop:
+        return f"{workshop[1]} 车间设备表"
+    if _generic_title(text) or len(text) > 48 or re.search(r"[。；;！？!?：:]", text):
+        return None
+    if re.search(r"(?:表|清单|一览|描述|信息|情况|要求|说明|计划|记录)$", text):
+        return text
+    return None
+
+
+def _table_titles(ir: DocumentIR) -> dict[tuple, str]:
+    titles = {}
+
+    def visit(table, preceding=""):
+        path = tuple(table["table_path"])
+        caption = _caption(preceding)
+        if caption:
+            titles[path] = caption
+        width = max((len(row) for row in table["grid"]), default=0)
+        for cell in table["source_cells"]:
+            previous = ""
+            for block in cell["blocks"]:
+                if block["kind"] == "table":
+                    # A nested table consumes the nearest paragraph in its own cell.
+                    visit(block["table"], previous)
+                    previous = ""
+                    continue
+                text = block.get("text", "").strip()
+                if not text:
+                    continue
+                if (path not in titles and cell["row_index"] < 2
+                        and cell["column_span"] == width and not key_value_spans(text)):
+                    caption = _caption(text)
+                    if caption:
+                        titles[path] = caption
+                previous = text
+
+    previous, previous_section = "", None
+    for block in ir.blocks:
+        section = block.get("section_node_id")
+        if section != previous_section:
+            previous = ""
+        previous_section = section
+        if block.get("table_index") is not None:
+            visit(ir.tables[block["table_index"]], previous)
+            previous = ""
+        elif block.get("text", "").strip():
+            previous = block["text"]
+    return titles
+
+
+def template_structure_titles(schema: dict, analysis: dict | None) -> dict[str, str]:
+    """Read-only authoring defaults; never rewrite a stored revision or its hash."""
+    if schema.get("schema_version") != 2 or not analysis:
+        return {}
+    try:
+        sections = build_template_structure(DocumentIR.model_validate(analysis))
+    except ValueError:
+        return {}
+    return {g["id"]: g["title"] for s in sections for g in s["groups"]
+            if not _generic_title(g["title"])}
+
+
 def build_template_structure(ir: DocumentIR) -> list[dict]:
     table_widths = {}
+    table_titles = _table_titles(ir)
 
     def collect_widths(table):
         table_widths[tuple(table["table_path"])] = max(
@@ -124,7 +207,7 @@ def build_template_structure(ir: DocumentIR) -> list[dict]:
                 groups[group_key] = {
                     "id": stable_id("template-group", [section_id, group_key]),
                     "title": (
-                        "表格"
+                        table_titles.get(tuple(unit.table_path), "表格")
                         if unit.table_path
                         else "段落行文"
                         if group_key == "narrative"
@@ -153,6 +236,19 @@ def build_template_structure(ir: DocumentIR) -> list[dict]:
                     "origin": field_origin,
                 }
             )
+        for group in groups.values():
+            if group["title"] == "表格":
+                labels = list(dict.fromkeys(
+                    _business_label(c["label"]) for c in group["candidates"]
+                    if not _generic_title(_business_label(c["label"]))
+                    and len(_business_label(c["label"])) <= 24
+                ))
+                if labels:
+                    group["title"] = "、".join(labels[:3])
+            elif group["title"] == "段落行文" and any(
+                c["evidence_span"].lstrip().startswith("*") for c in group["candidates"]
+            ):
+                group["title"] = "附注说明"
         result.append(
             {
                 "id": section_id,

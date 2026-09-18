@@ -17,7 +17,12 @@ from tests.test_extraction.test_fact_commit import assertions, entity
 
 @pytest.fixture
 def job(db):
-    row = ExtractionJob(id=uuid.uuid4(), source_type="word", status="completed")
+    row = ExtractionJob(
+        id=uuid.uuid4(),
+        source_type="word",
+        source_config={"mode": "template_default"},
+        status="completed",
+    )
     db.add(row)
     db.commit()
     return row

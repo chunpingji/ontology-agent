@@ -169,6 +169,9 @@ class AstTemplate(Base):
     template_family_id: Mapped[str | None] = mapped_column(String(100))
     revision_no: Mapped[int | None] = mapped_column(Integer)
     schema_hash: Mapped[str | None] = mapped_column(String(64))
+    # Explicit per-revision engine selection; NULL retains deployment bindings.
+    recognition_mode: Mapped[str | None] = mapped_column(String(32))
+    finder_profile_id: Mapped[str | None] = mapped_column(String(100))
     sample_text: Mapped[str | None] = mapped_column(Text)
     # 013: 忠于原文结构的 tiptap 样例（供 AI 插槽建议 drawer 忠实预览与结构锚点联动）。
     sample_content_json: Mapped[dict | None] = mapped_column(JSON)

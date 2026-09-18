@@ -1051,7 +1051,42 @@ slpra-dev:producesIntermediate a owl:ObjectProperty ;
     rdfs:domain slpra-dev:SynthesisStep ;
     rdfs:range slpra-dev:ProcessIntermediate ;
     rdfs:label "produces intermediate"@en ;
-    rdfs:label "产出中间体"@zh .
+    rdfs:label "产出中间体"@zh ;
+    rdfs:comment "Links a synthesis step to a non-final process intermediate that it produces. Multiple values are allowed; process order is carried by the synthesis steps, not by the order of these assertions."@en ;
+    rdfs:comment "连接合成步骤及其产出的非最终工艺中间体。允许多个值；工艺顺序由合成步骤表达，不依赖这些断言的排列顺序。"@zh .
+
+slpra-dev:producesFinalProduct a owl:ObjectProperty ;
+    rdfs:domain [ a owl:Class ; owl:unionOf (
+        slpra-dev:SynthesisRoute slpra-dev:SynthesisStep
+    ) ] ;
+    rdfs:range [ a owl:Class ; owl:unionOf (
+        slpra-drug:DrugProduct slpra-drug:ActivePharmaceuticalIngredient
+    ) ] ;
+    rdfs:label "produces final product"@en ;
+    rdfs:label "产出最终产品/API"@zh ;
+    rdfs:comment "Links a synthesis route or its final synthesis step to the DrugProduct or API that is its final output. Process intermediates must use producesIntermediate instead."@en ;
+    rdfs:comment "连接合成路线或其最终合成步骤与最终产出的药物产品或原料药（API）；工艺中间体应使用 producesIntermediate。"@zh .
+
+slpra-dev:hasProcessIntermediate a owl:ObjectProperty ;
+    rdfs:domain [ a owl:Class ; owl:unionOf (
+        slpra-drug:DrugProduct slpra-drug:ActivePharmaceuticalIngredient
+    ) ] ;
+    rdfs:range slpra-dev:ProcessIntermediate ;
+    rdfs:label "has process intermediate"@en ;
+    rdfs:label "含工艺中间体"@zh ;
+    rdfs:comment "Product/API-level multi-valued view derived from an explicitly linked final synthesis route or final synthesis step. It is not derived merely because a report mentions both a product and a route."@en ;
+    rdfs:comment "由已明确关联的最终合成路线或最终合成步骤推导出的产品/API级多值视图；不得仅因同一报告同时提及产品和路线而推导。"@zh ;
+    owl:propertyChainAxiom (
+        [ owl:inverseOf slpra-dev:producesFinalProduct ]
+        slpra-dev:hasStep
+        slpra-dev:producesIntermediate
+    ) ;
+    owl:propertyChainAxiom (
+        [ owl:inverseOf slpra-dev:producesFinalProduct ]
+        [ owl:inverseOf slpra-dev:hasStep ]
+        slpra-dev:hasStep
+        slpra-dev:producesIntermediate
+    ) .
 
 slpra-dev:hasStorageCondition a owl:ObjectProperty ;
     rdfs:domain [ owl:unionOf ( slpra-dev:CMCReport slpra-dev:SynthesisStep slpra-dev:ProcessIntermediate ) ] ;
@@ -1198,6 +1233,16 @@ slpra-dev:inProcessControl a owl:DatatypeProperty ;
     rdfs:label "in-process control"@en ;
     rdfs:label "过程控制"@zh ;
     rdfs:comment "IPC method and acceptance criteria, e.g. TLC endpoint, HPLC purity."@en .
+
+# --- Process Intermediate ---
+
+slpra-dev:intermediateIdentifier a owl:DatatypeProperty ;
+    rdfs:domain slpra-dev:ProcessIntermediate ;
+    rdfs:range xsd:string ;
+    rdfs:label "intermediate identifier"@en ;
+    rdfs:label "中间体标识"@zh ;
+    rdfs:comment "An identifier stated for a process intermediate, e.g. SM5592-A14. A bare value is unique only within an explicitly established project or synthesis-route namespace."@en ;
+    rdfs:comment "原文明示的工艺中间体标识，例如 SM5592-A14。单独标识值仅在已明确建立的项目或合成路线命名空间内具有唯一性。"@zh .
 
 # --- Process Material ---
 

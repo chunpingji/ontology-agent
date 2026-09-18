@@ -67,7 +67,7 @@ class SentenceTransformerEmbedder:
             from sentence_transformers import SentenceTransformer
 
             logger.info("加载 sentence-transformers 模型：%s", self._model_name)
-            self._model = SentenceTransformer(self._model_name)
+            self._model = SentenceTransformer(self._model_name, device="cpu")
         except Exception:  # pragma: no cover - 依赖缺失/下载失败路径
             logger.warning(
                 "sentence-transformers 不可用（未安装或模型加载失败）；语义对齐回退"

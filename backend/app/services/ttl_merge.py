@@ -17,7 +17,8 @@ import json
 import logging
 from pathlib import Path
 
-from rdflib import RDF, RDFS, OWL, XSD, BNode, Graph, Literal, Namespace, URIRef
+from rdflib import OWL, RDF, RDFS, XSD, BNode, Graph, Literal, Namespace, URIRef
+from rdflib.compare import to_canonical_graph
 from sqlalchemy.orm import Session
 
 from app.models.ontology_meta import (
@@ -29,6 +30,12 @@ from app.models.ontology_meta import (
     OntologyDecisionRule,
     OntologyLinkType,
     OntologyRestriction,
+)
+from app.services.ontology_cardinality import (
+    CARDINALITY_PREDICATES,
+    CORE,
+    apply_cardinality_overlay,
+    emit_cardinality_config,
 )
 
 logger = logging.getLogger(__name__)
@@ -72,6 +79,7 @@ MANAGED_PREDICATES = frozenset(
     }
     | DECISION_RULE_PREDICATES
     | CONFLICT_POLICY_PREDICATES
+    | CARDINALITY_PREDICATES
 )
 
 # `dct:source` may legitimately appear on hand-authored subjects, so it is only
@@ -148,8 +156,7 @@ def build_managed_graph(db: Session) -> tuple[Graph, set[URIRef]]:
             g.add((s, RDFS.range, URIRef(class_iri[lt.range_class_id])))
         if lt.inverse_link_id and lt.inverse_link_id in link_iri:
             g.add((s, OWL.inverseOf, URIRef(link_iri[lt.inverse_link_id])))
-        if lt.is_functional:
-            g.add((s, RDF.type, OWL.FunctionalProperty))
+        _emit_property_cardinality(g, s, lt, class_iri)
         if lt.is_symmetric:
             g.add((s, RDF.type, OWL.SymmetricProperty))
         if lt.is_transitive:
@@ -164,6 +171,7 @@ def build_managed_graph(db: Session) -> tuple[Graph, set[URIRef]]:
         if dp.domain_class_id and dp.domain_class_id in class_iri:
             g.add((s, RDFS.domain, URIRef(class_iri[dp.domain_class_id])))
         g.add((s, RDFS.range, _XSD.get(dp.datatype, XSD.string)))
+        _emit_property_cardinality(g, s, dp, class_iri)
 
     # E4 actions (definition only, R10) — typed as slpra:Action for round-trip
     for a in db.query(OntologyAction).filter_by(is_disabled=False).all():
@@ -188,6 +196,7 @@ def build_managed_graph(db: Session) -> tuple[Graph, set[URIRef]]:
         b = BNode(f"r{r.id.hex if hasattr(r.id, 'hex') else r.id}")
         g.add((owner_ref, RDFS.subClassOf, b))
         g.add((b, RDF.type, OWL.Restriction))
+        g.add((b, CORE.restrictionOwner, Literal(str(r.id))))
         if r.on_property_id and r.on_property_id in prop_iri:
             g.add((b, OWL.onProperty, URIRef(prop_iri[r.on_property_id])))
         filler = class_iri.get(r.filler_class_id) if r.filler_class_id else None
@@ -211,6 +220,21 @@ def build_managed_graph(db: Session) -> tuple[Graph, set[URIRef]]:
     _emit_conflict_policies(g, db, subjects)
 
     return g, subjects
+
+
+def _emit_property_cardinality(g: Graph, subject: URIRef, prop, class_iri: dict) -> None:
+    domain = class_iri.get(prop.domain_class_id)
+    multiplicity = getattr(prop, "multiplicity", None) or (
+        "single" if getattr(prop, "is_functional", False) else "unspecified"
+    )
+    emit_cardinality_config(
+        g,
+        subject,
+        URIRef(domain) if domain else None,
+        multiplicity,
+        getattr(prop, "min_cardinality", None),
+        getattr(prop, "max_cardinality", None),
+    )
 
 
 # --------------------------------------------------------------------------- #
@@ -391,11 +415,20 @@ def load_base_graph(ontology_dir: Path) -> Graph:
     g.bind("slpra", SLPRA)
     if not ontology_dir or not Path(ontology_dir).exists():
         return g
+    release_graph = None
     for ttl in sorted(Path(ontology_dir).glob("*.ttl")):
         try:
-            g.parse(str(ttl), format="turtle")
+            parsed = Graph().parse(str(ttl), format="turtle")
+            for prefix, namespace in parsed.namespaces():
+                g.bind(prefix, namespace)
+            for triple in parsed:
+                g.add(triple)
+            if ttl.name == "slpra_managed.ttl":
+                release_graph = parsed
         except Exception as exc:  # pragma: no cover - corrupt source file
             logger.warning("Could not parse %s: %s", ttl, exc)
+    if release_graph is not None:
+        apply_cardinality_overlay(g, release_graph)
     return g
 
 
@@ -440,12 +473,12 @@ def surgical_merge(base: Graph, managed: Graph, managed_subjects: set[URIRef]) -
     Three strip modes (research.md R2, 宪章 II NON-NEGOTIABLE):
       1. predicate-level — whitelisted ``MANAGED_PREDICATES`` on managed subjects.
       2. object-shape-aware — ``(s, owl:equivalentClass, BNode)`` class
-         expressions on managed subjects are dropped (and their BNode subgraph
-         recursively reclaimed), while ``(s, owl:equivalentClass, <namedIRI>)``
-         external alignments are preserved *verbatim* (owl:equivalentClass is
-         deliberately NOT in MANAGED_PREDICATES).
+         expressions are replaced when the managed subject has a new defined
+         class expression; named-IRI external alignments always survive.
       3. per-rule — ``dct:source`` only on DecisionRule_*/ConflictPolicy_* subjects.
-    Everything else on those subjects, and every unmodelled triple, survives.
+    Anonymous subclass axioms survive unless an ownership marker identifies
+    a workbench restriction. Everything else, including unmodelled triples,
+    survives.
     """
     result = Graph()
     for prefix, ns in base.namespaces():
@@ -453,20 +486,73 @@ def surgical_merge(base: Graph, managed: Graph, managed_subjects: set[URIRef]) -
     result.bind("slpra", SLPRA)
     result.bind("dct", DCT)
 
-    # BNode class-expression subgraphs to reclaim: an owl:equivalentClass on a
-    # managed subject whose object is a blank node (workbench-authored axiom).
+    # Retain anonymous class axioms when this projection supplies no defined
+    # class replacement (e.g. editing only a property's quantity configuration).
+    replaced_equivalences = {
+        s for s in managed_subjects
+        if any(isinstance(o, BNode) for o in managed.objects(s, OWL.equivalentClass))
+    }
     reclaimed: set = set()
-    for s in managed_subjects:
+    removed_links: set = set()
+    for s in replaced_equivalences:
         for o in base.objects(s, OWL.equivalentClass):
             if isinstance(o, BNode):
                 reclaimed |= _bnode_closure(base, o)
 
+    # Cardinality ownership is per property, not per domain class: moving a
+    # property to another class must also remove the old domain's owned nodes.
+    for prop in managed_subjects:
+        for node in base.subjects(CORE.cardinalityOwner, prop):
+            reclaimed |= _bnode_closure(base, node)
+            removed_links.update(base.triples((None, RDFS.subClassOf, node)))
+    for owner in managed_subjects:
+        for node in base.objects(owner, RDFS.subClassOf):
+            if any(base.objects(node, CORE.restrictionOwner)):
+                reclaimed |= _bnode_closure(base, node)
+                removed_links.add((owner, RDFS.subClassOf, node))
+
+    # The metadata model currently stores one named domain/range class and cannot
+    # represent an anonymous owl:unionOf expression. Preserve such authoritative
+    # constraints when the managed projection has no replacement. If a named (or
+    # future anonymous) replacement is present, reclaim the old list expression so
+    # it cannot survive as an orphan or combine with the replacement as an OWL
+    # intersection. Domain and range are considered independently.
+    constraint_predicates = (RDFS.domain, RDFS.range)
+    replacements = {
+        (s, predicate): any(managed.objects(s, predicate))
+        for s in managed_subjects
+        for predicate in constraint_predicates
+    }
+    preserved_constraint_closure: set = set()
+    replaced_constraint_closure: set = set()
+    for s in managed_subjects:
+        for predicate in constraint_predicates:
+            for o in base.objects(s, predicate):
+                if not isinstance(o, BNode):
+                    continue
+                closure = _bnode_closure(base, o)
+                if replacements[(s, predicate)]:
+                    replaced_constraint_closure |= closure
+                else:
+                    preserved_constraint_closure |= closure
+    reclaimed |= replaced_constraint_closure
+    reclaimed -= preserved_constraint_closure
+
     for triple in base:
         s, p, o = triple
+        if triple in removed_links:
+            continue
         if s in managed_subjects:
-            if p in MANAGED_PREDICATES:
+            preserve_anonymous_constraint = (
+                p in constraint_predicates
+                and isinstance(o, BNode)
+                and not replacements[(s, p)]
+            )
+            preserve_subclass_expression = p == RDFS.subClassOf and isinstance(o, BNode)
+            if (p in MANAGED_PREDICATES
+                    and not preserve_anonymous_constraint and not preserve_subclass_expression):
                 continue  # (1) predicate-level — re-emitted from metadata
-            if p == OWL.equivalentClass and isinstance(o, BNode):
+            if p == OWL.equivalentClass and isinstance(o, BNode) and s in replaced_equivalences:
                 continue  # (2) object-shape-aware — drop only BNode class exprs
             if p in _PER_RULE_PREDICATES and _is_rule_or_policy_subject(s):
                 continue  # (3) per-rule dct:source
@@ -495,13 +581,13 @@ def serialize_triple(triple) -> str:
 
 
 def diff_graphs(old: Graph, new: Graph) -> tuple[list[str], list[str]]:
-    """Return (added, removed) as N-Triples-style strings (blank nodes ignored
-    for stability — they carry no stable identity across serialisations)."""
-    def _comparable(g: Graph) -> set:
-        return {t for t in g if not isinstance(t[0], BNode) and not isinstance(t[2], BNode)}
+    """Return all changed axioms, with canonical blank-node identities.
 
-    old_t = _comparable(old)
-    new_t = _comparable(new)
+    Ignoring blank nodes hid actual min/max edits from release audit previews.
+    Structural canonicalization keeps a serialization-only roundtrip diff empty.
+    """
+    old_t = set(to_canonical_graph(old))
+    new_t = set(to_canonical_graph(new))
     added = sorted(serialize_triple(t) for t in (new_t - old_t))
     removed = sorted(serialize_triple(t) for t in (old_t - new_t))
     return added, removed

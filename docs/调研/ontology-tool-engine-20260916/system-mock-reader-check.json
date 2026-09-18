@@ -1,0 +1,16 @@
+{
+  "scope": "frozen reader only; synthetic query quotes are not document evidence",
+  "model_requests": 0,
+  "sources": {
+    "system-mock-equipment": {
+      "records_checked": 211,
+      "search_and_exact_resolve": "passed",
+      "identity_verified": false
+    },
+    "system-mock-roles": {
+      "records_checked": 5,
+      "search_and_exact_resolve": "passed",
+      "identity_verified": false
+    }
+  }
+}

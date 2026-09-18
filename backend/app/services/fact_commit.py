@@ -3,7 +3,7 @@
 import uuid
 from datetime import datetime, timedelta, timezone
 
-from sqlalchemy import and_, or_, select, update
+from sqlalchemy import and_, func, or_, select, update
 from sqlalchemy.exc import IntegrityError, OperationalError
 from sqlalchemy.orm import Session
 
@@ -14,11 +14,20 @@ from app.models.evidence import (
     EvidenceJobState,
     EvidenceSnapshot,
 )
+from app.models.extraction import ExtractionJob
 from app.schemas.evidence import Candidate
 from app.services import audit
 from app.services.extraction.candidate_store import CandidateConflict
 from app.services.extraction.evidence_identity import evidence_hash, stable_id
 from app.services.ontology_instance_writer import assertion_record
+
+
+def _recoverable_commit_source():
+    """SQL gate shared by every startup/outbox recovery query."""
+    return or_(
+        func.lower(func.trim(ExtractionJob.source_type)) != "word",
+        ExtractionJob.source_config["mode"].as_string() == "template_default",
+    )
 
 
 class FactCommitService:
@@ -383,7 +392,9 @@ class FactCommitService:
         identities = list(
             self.db.scalars(
                 select(EvidenceCommit.id)
+                .join(ExtractionJob, ExtractionJob.id == EvidenceCommit.job_id)
                 .where(
+                    _recoverable_commit_source(),
                     or_(
                         EvidenceCommit.status == "queued",
                         and_(

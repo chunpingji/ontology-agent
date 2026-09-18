@@ -1,0 +1,7 @@
+{
+  "batch-comparison.json": "d80a2bca85fccd933786534db217431cb62b1e3ef68f2a219cc83ae7bb6b8c4c",
+  "scalar-token-equivalence.json": "9db0211afe8cd5f5e4d8dfd72e8166bd7a6036bff394a0945e485c6b7bf3a75d",
+  "fixed-input-pairs.json": "28b6cc3018030feb5f531736d91b0c85ffc9546095c63fc4db534420dcc881c8",
+  "runtime-source-manifest.json": "8867da881437bbffce6c8f2d0fa9f2b26ed7764a9ca27e319d577bb549d65d81",
+  "batch-experiment.md": "317df9d52a759ab89c905bb5af39c0b99b865aa66e2a20930d654d2e7495fa1d"
+}

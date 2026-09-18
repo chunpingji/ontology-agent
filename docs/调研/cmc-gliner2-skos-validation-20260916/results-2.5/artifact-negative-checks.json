@@ -1,0 +1,43 @@
+{
+  "status": "passed",
+  "copy_method": "shutil.copytree (no hard links)",
+  "checks": [
+    {
+      "case": "raw_http_extra_key_with_unchanged_saved_proposal",
+      "detected": [
+        "introduction/candidates/raw_equals_saved_proposal",
+        "introduction/candidates/raw_http_schema"
+      ],
+      "status": "passed"
+    },
+    {
+      "case": "missing_candidate_id",
+      "detected": [
+        "introduction/candidate_partition"
+      ],
+      "status": "passed"
+    },
+    {
+      "case": "duplicate_candidate_id",
+      "detected": [
+        "introduction/candidate_partition"
+      ],
+      "status": "passed"
+    },
+    {
+      "case": "duplicate_call_ledger",
+      "detected": [
+        "introduction/candidates/no_retry",
+        "introduction/candidates/request_ledger_count"
+      ],
+      "status": "passed"
+    },
+    {
+      "case": "frozen_source_hash_mutation",
+      "detected": [
+        "source_hash_negative_control"
+      ],
+      "status": "passed"
+    }
+  ]
+}

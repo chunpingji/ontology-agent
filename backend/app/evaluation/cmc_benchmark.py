@@ -1,8 +1,9 @@
 """Reproducible, read-only-source CMC graph experiments against the local model.
 
 Run ``python -m app.evaluation.cmc_benchmark --help``. Experimental artifacts stay
-inside explicitly selected directories. Shared model admission writes operational
-scheduler records, but experiments never update production jobs or fact tables.
+inside explicitly selected directories. Active graph runs keep scheduler records
+in a private SQLite database; legacy runners retain their original admission policy.
+Experiments never update production jobs or fact tables.
 """
 
 from __future__ import annotations
@@ -18,8 +19,11 @@ import sys
 import tempfile
 import time
 from collections import Counter
+from copy import deepcopy
 from datetime import UTC, datetime
 from pathlib import Path
+from threading import Lock
+from uuid import uuid4
 
 CMC_CLASS = "https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport"
 DEFAULT_REFERENCE = "upload-23c872fb-3ab1-41de-a705-dd4b162dfa09"
@@ -32,8 +36,20 @@ FROZEN_SETTINGS_KEYS = (
     "evidence_timeout_retries", "gliner_threshold", "word_tree_summary_prompt_version",
     "word_tree_summary_max_output_chars", "word_tree_summary_max_input_chars_per_node",
     "word_tree_summary_max_batch_chars", "word_tree_summary_max_nodes_per_batch",
+    "word_tree_summary_max_concurrency",
+    "semantic_ranking_enabled", "semantic_ranking_mode", "semantic_ranking_failure_policy",
+    "semantic_ranking_embedding_path", "semantic_ranking_embedding_manifest_path",
+    "semantic_ranking_reranker_path", "semantic_ranking_reranker_manifest_path",
+    "semantic_ranking_device", "semantic_ranking_dtype", "semantic_ranking_cuda_version",
+    "semantic_ranking_pool_size", "semantic_ranking_batch_size",
+    "semantic_ranking_max_tokens_per_pair", "semantic_ranking_max_tokens_per_slot",
+    "semantic_ranking_max_tokens_per_run", "semantic_ranking_timeout_seconds",
+    "semantic_ranking_retry_limit",
+    "document_analysis_max_model_calls_per_record",
 )
 RUN_IN_PROGRESS = "run.in_progress.json"
+ACTIVE_QUALITY_MODES = frozenset({"quality_guided", "quality_guided_summary"})
+LEGACY_QUALITY_MODE = "legacy_quality_guided_summary"
 
 
 def read_json(path):
@@ -105,39 +121,69 @@ def slot_snapshot():
 
 
 def prepare(args):
-    from sqlalchemy import text
-
+    """Freeze an independent DOCX or a resolved historical document reference."""
     import app
     from app.config import settings
-    from app.db import engine as db_engine
+    from app.services.document_analysis.artifact_store import _validate_docx
     from app.services.extraction.extraction_tasks import semantic_schema_from_engine
+    from app.services.extraction.ontology_guided.ontology_plan import (
+        ontology_snapshot_from_engine,
+    )
     from app.services.extraction.word_analysis import analyze_word_core
     from app.services.ontology_engine import OntologyEngine
 
     output = Path(args.output).resolve()
-    output.mkdir(parents=True, exist_ok=False)
-    with db_engine.connect() as conn:
-        conn.exec_driver_sql("SET TRANSACTION READ ONLY")
-        rows = list(
-            conn.execute(
-                text(
-                    "SELECT id,source_filename,document_path,source_config,status "
-                    "FROM extraction_jobs "
-                    "WHERE source_config->>'doc_ref' = :iri ORDER BY created_at DESC"
-                ),
-                {"iri": "http://slpra.org/facts#" + args.document_ref},
-            )
-        )
-        if not rows:
-            raise ValueError("document reference has no extraction job")
-        job = dict(rows[0]._mapping)
-    config = job.get("source_config") or {}
-    if config.get("doc_class_iri") != CMC_CLASS:
-        raise ValueError("resolved document is not explicitly typed CMCReport")
-    source = Path(job["document_path"]).resolve()
+    if output.exists():
+        raise FileExistsError("preparation directory already exists; use a new directory")
+    source_docx = getattr(args, "source_docx", None)
+    document_ref = getattr(args, "document_ref", None)
+    if bool(source_docx) == bool(document_ref):
+        raise ValueError("choose exactly one source_docx or document_ref")
+    root_class_iri = getattr(args, "root_class_iri", None)
+    job, config = {}, {}
+    if source_docx:
+        if not root_class_iri:
+            raise ValueError("a local DOCX requires an explicit root_class_iri")
+        source = Path(source_docx).resolve()
+        source_filename = source.name
+        source_origin = "local_docx"
+    else:
+        # The independent local source path never imports or queries the job DB.
+        from sqlalchemy import text
+
+        from app.db import engine as db_engine
+
+        with db_engine.connect() as conn:
+            conn.exec_driver_sql("SET TRANSACTION READ ONLY")
+            rows = list(conn.execute(text(
+                "SELECT id,source_filename,document_path,source_config,status "
+                "FROM extraction_jobs "
+                "WHERE source_config->>'doc_ref' = :iri ORDER BY created_at DESC"
+            ), {"iri": "http://slpra.org/facts#" + document_ref}))
+            if not rows:
+                raise ValueError("document reference has no extraction job")
+            job = dict(rows[0]._mapping)
+        config = job.get("source_config") or {}
+        if config.get("doc_class_iri") != CMC_CLASS:
+            raise ValueError("resolved historical document is not explicitly typed CMCReport")
+        if root_class_iri and root_class_iri != config["doc_class_iri"]:
+            raise ValueError("explicit root differs from the registered document type")
+        root_class_iri = config["doc_class_iri"]
+        source = Path(job["document_path"]).resolve()
+        source_filename = job["source_filename"]
+        source_origin = "registered_document_ref"
     if not source.is_file():
-        raise FileNotFoundError("resolved source document is unavailable")
+        raise FileNotFoundError("source document is unavailable")
+    if source.suffix.lower() != ".docx":
+        raise ValueError("independent evaluation accepts DOCX source files only")
+    if source.stat().st_size > settings.document_analysis_max_upload_bytes:
+        raise ValueError("source document exceeds the configured upload byte limit")
+    _validate_docx(source, settings.document_analysis_max_upload_bytes)
+    source_hash = digest_file(source)
+    output.mkdir(parents=True, exist_ok=False)
     shutil.copy2(source, output / "source.docx")
+    if digest_file(output / "source.docx") != source_hash:
+        raise ValueError("source changed while creating its frozen copy")
     shutil.copytree(settings.ontology_dir, output / "ontology")
     runtime_source = Path(app.__file__).parent
     original_runtime_hash = tree_digest(runtime_source, ".py")
@@ -149,7 +195,7 @@ def prepare(args):
     if original_runtime_hash != tree_digest(output / "runtime" / "app", ".py"):
         raise RuntimeError("source code changed during snapshot; prepare a fresh snapshot")
     started = time.perf_counter()
-    analysis = analyze_word_core(output / "source.docx", source_filename=job["source_filename"])
+    analysis = analyze_word_core(output / "source.docx", source_filename=source_filename)
     parse_seconds = time.perf_counter() - started
     with tempfile.TemporaryDirectory(prefix="cmc-schema-", dir=output) as temporary:
         ontology = OntologyEngine(
@@ -158,40 +204,54 @@ def prepare(args):
         ontology.load()
         try:
             schema = semantic_schema_from_engine(ontology)
+            ontology_snapshot = ontology_snapshot_from_engine(ontology, root_class_iri)
+            if root_class_iri not in ontology_snapshot.classes:
+                raise ValueError("root class is absent from the frozen ontology")
         finally:
             ontology._world.close()
     write_json(output / "ir.json", analysis.ir.model_dump(mode="json"))
     write_json(output / "schema.json", schema)
+    write_json(
+        output / "ontology_snapshot.json",
+        ontology_snapshot.model_dump(mode="json"),
+    )
     packages = {}
-    for name in ("gliner", "torch", "openai", "pydantic", "owlready2", "python-docx"):
+    for name in ("gliner", "torch", "openai", "pydantic", "owlready2", "python-docx",
+                 "sentence-transformers", "transformers", "tokenizers"):
         try:
             packages[name] = importlib.metadata.version(name)
         except importlib.metadata.PackageNotFoundError:
             packages[name] = None
     manifest = {
-        "schema_version": 1,
+        "schema_version": 2,
         "created_at": datetime.now(UTC).isoformat(),
-        "document_ref": args.document_ref,
-        "job_id": str(job["id"]),
-        "source_filename": job["source_filename"],
+        "document_ref": document_ref,
+        "source_origin": source_origin,
+        "job_id": str(job["id"]) if job else None,
+        "source_filename": source_filename,
         "source_path": str(source),
-        "document_hash": digest_file(source),
-        "class_iri": CMC_CLASS,
+        "document_hash": source_hash,
+        "class_iri": root_class_iri,
         "priority_paths": config.get("extraction_priority_paths", []),
-        "production_status_at_prepare": job["status"],
+        "production_status_at_prepare": job.get("status"),
         "evidence_units": len(analysis.ir.evidence_units),
         "nodes": len(analysis.ir.nodes),
         "source_characters": sum(len(unit.text) for unit in analysis.ir.evidence_units),
         "parse_seconds": parse_seconds,
         "runtime_hash": tree_digest(output / "runtime" / "app", ".py"),
         "ontology_hash": tree_digest(output / "ontology", ".ttl"),
+        "ontology_snapshot_id": ontology_snapshot.snapshot_id,
+        "ontology_semantic_hash": ontology_snapshot.ontology_hash,
+        "ontology_snapshot_file_hash": digest_file(output / "ontology_snapshot.json"),
         "schema_hash": digest_file(output / "schema.json"),
         "ir_hash": digest_file(output / "ir.json"),
         "analysis_id": analysis.ir.analysis_id,
         "settings": settings_snapshot(),
         "packages": packages,
         "hardware": {"platform": platform.platform(), "cpu_count": os.cpu_count()},
-        "model_slots": slot_snapshot(),
+        "model_slots": [],
+        "model_slots_status": "not_queried_during_prepare",
+        "reference_is_recognition_input": False,
         "reference_status": "no_human_gold_supplied",
     }
     write_json(output / "manifest.json", manifest)
@@ -208,23 +268,49 @@ def prepare(args):
 def restore_settings(manifest):
     from app.config import settings
 
+    legacy_numeric_defaults = {
+        "semantic_ranking_device": "cpu",
+        "semantic_ranking_dtype": "float32",
+        "semantic_ranking_cuda_version": "12.6",
+    }
+    for key, value in legacy_numeric_defaults.items():
+        if key not in manifest["settings"]:
+            # Historical ranking was CPU/float32. Never inherit a newly enabled
+            # GPU environment for an artifact that did not freeze these fields.
+            setattr(settings, key, value)
     for key, value in manifest["settings"].items():
         setattr(settings, key, value)
     missing = sorted(set(FROZEN_SETTINGS_KEYS) - manifest["settings"].keys())
     if missing:
         emit(
             "legacy_manifest_settings_missing", keys=missing,
-            interpretation="These settings use current process values, not frozen values.",
+            interpretation=(
+                "Missing numeric ranking settings use legacy CPU/float32 defaults; "
+                "other missing settings use current process values, not frozen values."
+            ),
         )
     return missing
 
 
-def validate_prepared(prepared, manifest):
+def validate_prepared(prepared, manifest, *, require_ontology_snapshot=False):
     """Check shared dependencies before either summary or extraction invokes a model."""
     required = ("runtime_hash", "document_hash", "schema_hash", "ir_hash", "analysis_id")
     missing = [key for key in required if key not in manifest]
     if missing:
         raise ValueError(f"prepared manifest missing dependency identities: {', '.join(missing)}")
+    if require_ontology_snapshot:
+        required_snapshot = (
+            "class_iri",
+            "ontology_snapshot_id",
+            "ontology_semantic_hash",
+            "ontology_snapshot_file_hash",
+        )
+        missing = [key for key in required_snapshot if key not in manifest]
+        if missing:
+            raise ValueError(
+                "active ontology-guided evaluation requires a newly frozen ontology "
+                f"snapshot: {', '.join(missing)}"
+            )
     runtime = Path(sys.modules["app"].__file__).parent
     if tree_digest(runtime, ".py") != manifest["runtime_hash"]:
         raise ValueError("runtime differs from frozen preparation; use its runtime PYTHONPATH")
@@ -235,6 +321,10 @@ def validate_prepared(prepared, manifest):
     ):
         if digest_file(prepared / filename) != manifest[key]:
             raise ValueError(f"prepared {label} was modified")
+    if require_ontology_snapshot and digest_file(prepared / "ontology_snapshot.json") != (
+        manifest["ontology_snapshot_file_hash"]
+    ):
+        raise ValueError("prepared ontology snapshot was modified")
 
 
 def summary_metadata(structure):
@@ -294,6 +384,7 @@ def summarize(args):
     started = time.perf_counter()
     client = get_local_llm()
     batches = []
+    batch_lock = Lock()
     original_batch = word_tree_summarizer._apply_batch
 
     def record_partial():
@@ -313,15 +404,16 @@ def summarize(args):
         try:
             return original_batch(batch_client, targets)
         finally:
-            event = {
-                "batch": len(batches) + 1,
-                "nodes": len(targets),
-                "wall_seconds": time.perf_counter() - tick,
-                "node_ids": [target["node_id"] for target in targets],
-            }
-            batches.append(event)
-            record_partial()
-            emit("summary_batch_finished", **event)
+            with batch_lock:
+                event = {
+                    "batch": len(batches) + 1,
+                    "nodes": len(targets),
+                    "wall_seconds": time.perf_counter() - tick,
+                    "node_ids": [target["node_id"] for target in targets],
+                }
+                batches.append(event)
+                record_partial()
+                emit("summary_batch_finished", **event)
 
     # Process-local observation only; production server and model policy are untouched.
     word_tree_summarizer._apply_batch = measured_batch
@@ -361,12 +453,31 @@ def summarize(args):
 
 def run(args):
     """Refuse interrupted segments instead of silently omitting their unrecorded time."""
-    if getattr(args, "focus_path", None) and args.mode != "quality_guided_summary":
-        raise ValueError("focus_path_requires_quality_guided_summary")
+    if getattr(args, "ranking_ablation", None) and args.mode not in ACTIVE_QUALITY_MODES:
+        raise ValueError("ranking ablations require the shared active ontology-guided core")
+    mode = getattr(args, "mode", "")
+    if getattr(args, "focus_path", None) and mode not in {
+        *ACTIVE_QUALITY_MODES,
+        LEGACY_QUALITY_MODE,
+    }:
+        raise ValueError("focus_path_requires_quality_guided_mode")
+    if mode in ACTIVE_QUALITY_MODES and getattr(args, "resume", False):
+        raise ValueError(
+            "active ontology-guided evaluation does not resume process-local state; "
+            "start a new run directory"
+        )
     prepared = Path(args.prepared).resolve()
     manifest = read_json(prepared / "manifest.json")
+    if mode not in ACTIVE_QUALITY_MODES and manifest.get("class_iri", CMC_CLASS) != CMC_CLASS:
+        raise ValueError("non-CMC roots require an active ontology-guided mode")
     missing_settings = restore_settings(manifest)
-    validate_prepared(prepared, manifest)
+    if mode in ACTIVE_QUALITY_MODES and missing_settings:
+        raise ValueError("active evaluation requires all current settings frozen; prepare anew")
+    validate_prepared(
+        prepared,
+        manifest,
+        require_ontology_snapshot=mode in ACTIVE_QUALITY_MODES,
+    )
     output = Path(args.output).resolve()
     marker = output / RUN_IN_PROGRESS
     if marker.exists():
@@ -386,13 +497,27 @@ def run(args):
         "resume": args.resume, "document_hash": manifest["document_hash"],
         "interpretation": "Removed only after the complete segment result is persisted.",
     })
-    _run_segment(args, prepared, manifest, output, missing_settings)
+    try:
+        _run_segment(args, prepared, manifest, output, missing_settings)
+    except BaseException as exc:
+        if mode in ACTIVE_QUALITY_MODES:
+            failure = _evaluation_failure(exc)
+            write_json(marker, {
+                "status": "failed", "failure": failure, "document_hash": manifest["document_hash"],
+                "interpretation": "Preserve this failed run and use a new output directory.",
+            })
+            if not (output / "result.json").exists():
+                write_json(output / "result.json", {
+                    "schema_version": "ontology-guided-evaluation-manifest-v1",
+                    "execution_status": "failed", "failure": failure,
+                    "document_hash": manifest["document_hash"], "mode": mode,
+                    "reference_is_recognition_input": False, "legacy_runner_used": False,
+                })
+        raise
     marker.unlink()
 
 
 def _run_segment(args, prepared, manifest, output, missing_settings):
-    from app.services.extraction.extraction_tasks import GenericExtractionRunner
-    from app.services.extraction.local_semantic_model import configured_generic_runner
     from app.services.extraction.word_analysis import analyze_word_core
 
     started = time.perf_counter()
@@ -402,6 +527,20 @@ def _run_segment(args, prepared, manifest, output, missing_settings):
     parse_seconds = time.perf_counter() - started
     if analysis.ir.analysis_id != manifest["analysis_id"]:
         raise ValueError("runtime parser no longer reproduces the prepared evidence IR")
+    if args.mode in ACTIVE_QUALITY_MODES:
+        return _run_ontology_guided_segment(
+            args,
+            prepared,
+            manifest,
+            output,
+            missing_settings,
+            analysis,
+            started,
+            parse_seconds,
+        )
+
+    from app.services.extraction.extraction_tasks import GenericExtractionRunner
+    from app.services.extraction.local_semantic_model import configured_generic_runner
     # The engine facade supplies the already frozen semantic schema. No OWL store is opened.
     schema = read_json(prepared / "schema.json")
 
@@ -422,7 +561,7 @@ def _run_segment(args, prepared, manifest, output, missing_settings):
     metadata = None
     summary_seconds = 0.0
     if args.mode in {"structure_summary", "structure_summary_gliner", "root_guided_summary",
-                     "quality_guided_summary"}:
+                     LEGACY_QUALITY_MODE}:
         summary = read_json(prepared / "summaries.json")
         if summary["document_hash"] != manifest["document_hash"]:
             raise ValueError("summary belongs to a different document")
@@ -455,10 +594,12 @@ def _run_segment(args, prepared, manifest, output, missing_settings):
     planner_started = time.perf_counter()
     if args.mode == "baseline":
         runner: GenericExtractionRunner = base
-    elif args.mode == "quality_guided_summary":
-        from app.evaluation.quality_guided_variant import build_quality_guided_variant
+    elif args.mode == LEGACY_QUALITY_MODE:
+        from app.evaluation.legacy_quality_guided_variant import (
+            build_legacy_quality_guided_variant,
+        )
 
-        runner = build_quality_guided_variant(
+        runner = build_legacy_quality_guided_variant(
             base, analysis.ir, analysis.structure, metadata=metadata or {},
             focus_path=getattr(args, "focus_path", None) or (),
         )
@@ -566,6 +707,8 @@ def _run_segment(args, prepared, manifest, output, missing_settings):
         measured = {
             "schema_version": 1,
             "mode": args.mode,
+            "legacy_runner_used": True,
+            "artifact_role": "historical_experiment_compatibility_only",
             "document_hash": manifest["document_hash"],
             "runtime_hash": manifest["runtime_hash"],
             "ontology_hash": manifest["ontology_hash"],
@@ -578,7 +721,7 @@ def _run_segment(args, prepared, manifest, output, missing_settings):
                 "deadline_seconds": args.deadline_seconds,
                 "stop_file": getattr(args, "stop_file", None),
                 "focus_path": list(getattr(args, "focus_path", None) or ()),
-                "deadline_policy": "soft_record_boundary" if args.mode == "quality_guided_summary"
+                "deadline_policy": "soft_record_boundary" if args.mode == LEGACY_QUALITY_MODE
                 else "soft_task_boundary",
                 "timeout_s": args.timeout,
                 "timeout_retries": args.timeout_retries,
@@ -616,7 +759,7 @@ def _run_segment(args, prepared, manifest, output, missing_settings):
             "slots_before": before,
             "slots_after": slot_snapshot(),
             "speed_claim": "not_evaluated_quality_objective"
-            if args.mode == "quality_guided_summary" else "complete_run"
+            if args.mode == LEGACY_QUALITY_MODE else "complete_run"
             if result.completion == "complete"
             else "bounded_partial_only",
         }
@@ -642,15 +785,497 @@ def _run_segment(args, prepared, manifest, output, missing_settings):
             close()
 
 
-def score(args):
-    from app.evaluation.graph_metrics import evaluate_graph
+def _apply_frozen_summaries(section_tree, summaries):
+    """Apply only the separately frozen metadata artifact to a detached tree."""
+    tree = section_tree.to_dict()
+    pending = [tree]
+    seen = set()
+    while pending:
+        node = pending.pop()
+        node_id = node["node_id"]
+        if node_id in summaries:
+            node["layer_metadata"] = summaries[node_id]
+            seen.add(node_id)
+        pending.extend(node.get("children", []))
+    missing = sorted(set(summaries) - seen)
+    if missing:
+        raise ValueError("frozen summaries reference unknown structure nodes")
+    return tree
 
-    prepared = Path(args.prepared).resolve()
-    reference = read_json(args.reference) if args.reference else None
-    metrics = evaluate_graph(
-        read_json(Path(args.run) / "run.json"), reference, ir=read_json(prepared / "ir.json")
+
+def _evaluation_failure(exc):
+    """Keep a useful failure category without persisting provider text or credentials."""
+    return {"type": type(exc).__name__, "reason_code": "evaluation_execution_failed"}
+
+
+def scheduler_token_totals(rows):
+    """Unify ranking and chat usage names while keeping input/output distinct."""
+    inputs, outputs = [], []
+    for row in rows:
+        metrics = row.get("metrics") or {}
+        inputs.append(metrics.get("input_tokens") if metrics.get("input_tokens") is not None
+                      else metrics.get("prompt_tokens"))
+        outputs.append(metrics.get("output_tokens") if metrics.get("output_tokens") is not None
+                       else metrics.get("completion_tokens"))
+    return {
+        "measured_input_tokens": sum(value for value in inputs if value is not None),
+        "unknown_token_requests": sum(value is None for value in inputs),
+        "measured_output_tokens": sum(value for value in outputs if value is not None),
+        "unknown_output_token_requests": sum(value is None for value in outputs),
+    }
+
+
+class _ActiveEvaluationAccounting:
+    """Private scheduler and durable pre-call state for one active evaluation."""
+
+    def __init__(self, output, run_id, manifest, args, started):
+        from sqlalchemy import create_engine
+
+        from app.models.model_request import LocalModelPool, LocalModelRequest
+
+        self.output, self.run_id = output, run_id
+        self.manifest, self.args, self.started = manifest, args, started
+        self.ranking_state, self.model_call_state = {}, {}
+        self.ranking_model, self.result, self.runner = None, None, None
+        self.calls = []
+        self.summary_seconds = None
+        self.scheduler_path = output / "scheduler.sqlite3"
+        # Never attach an evaluation to an existing scheduler or the shared DB.
+        with self.scheduler_path.open("xb"):
+            pass
+        self.bind = create_engine(f"sqlite:///{self.scheduler_path}")
+        LocalModelPool.__table__.create(self.bind)
+        LocalModelRequest.__table__.create(self.bind)
+        write_json(output / "execution_status.json", {
+            "status": "running", "recognition_run_id": run_id,
+            "scheduler_database": str(self.scheduler_path),
+            "started_at": datetime.now(UTC).isoformat(),
+        })
+
+    def publish_ranking(self, state):
+        write_json(self.output / "ranking_state.json", state)
+        self.ranking_state = deepcopy(state)
+
+    def publish_model_calls(self, state):
+        write_json(self.output / "model_call_state.json", state)
+        self.model_call_state = deepcopy(state)
+
+    def finish(self, error):
+        from sqlalchemy import select
+        from sqlalchemy.orm import Session
+
+        from app.evaluation.semantic_ranking_evaluation import summarize_costs
+        from app.models.model_request import LocalModelRequest
+
+        finalization_error = None
+        close = getattr(self.ranking_model, "close", None)
+        if callable(close):
+            try:
+                close()
+            except BaseException as exc:
+                finalization_error = exc
+                error = error or exc
+        if self.result is not None:
+            ranking = deepcopy(self.result.ranking)
+            self.model_call_state = deepcopy(self.result.model_call_state)
+            costs = summarize_costs(self.result)
+        else:
+            ranking = deepcopy(self.ranking_state)
+            ranking["model_observations"] = list(
+                getattr(self.ranking_model, "observations", [])
+            )
+            ranking["summary_seconds"] = self.summary_seconds
+            costs = {
+                "measurement_status": "incomplete_execution",
+                "ranking_reserved": ranking.get("service", {}).get("costs", {}),
+                "inspection_calls": len(self.calls),
+                "recognition_model_calls": None,
+                "summary_seconds": self.summary_seconds,
+            }
+        try:
+            with Session(self.bind) as db:
+                rows = [{
+                    "sequence": row.sequence, "request_id": row.request_id,
+                    "logical_call_id": row.logical_call_id, "attempt": row.attempt,
+                    "run_id": row.run_id, "task_id": row.task_id, "stage": row.stage,
+                    "status": row.status, "metrics": row.metrics or {},
+                } for row in db.scalars(select(LocalModelRequest).order_by(
+                    LocalModelRequest.sequence
+                ))]
+        finally:
+            self.bind.dispose()
+        costs["ranking_reserved"] = ranking.get("service", {}).get("costs", {})
+        costs["recognition_reserved"] = self.model_call_state
+        costs["scheduler"] = {
+            "database": str(self.scheduler_path), "requests": len(rows),
+            "status_counts": dict(Counter(row["status"] for row in rows)),
+            "stage_counts": dict(Counter(row["stage"] for row in rows)),
+            "unattributed_requests": sum(
+                row["run_id"] != self.run_id or not row["task_id"] for row in rows
+            ),
+            **scheduler_token_totals(rows),
+            "queue_seconds": sum(row["metrics"].get("queue_seconds") or 0 for row in rows),
+            "request_seconds": sum(row["metrics"].get("request_seconds") or 0 for row in rows),
+        }
+        write_json(self.output / "ranking.json", ranking)
+        write_json(self.output / "model_call_state.json", self.model_call_state)
+        write_json(self.output / "scheduler_requests.json", rows)
+        write_json(self.output / "costs.json", costs)
+        status = {
+            "status": "failed" if error is not None else "finished",
+            "recognition_run_id": self.run_id,
+            "elapsed_seconds": time.perf_counter() - self.started,
+            "finished_at": datetime.now(UTC).isoformat(),
+            "scheduler_database": str(self.scheduler_path),
+        }
+        if error is not None:
+            status["failure"] = _evaluation_failure(error)
+        write_json(self.output / "execution_status.json", status)
+        result_path = self.output / "result.json"
+        measured = read_json(result_path) if result_path.exists() else {
+            "schema_version": "ontology-guided-evaluation-manifest-v1",
+            "document_hash": self.manifest["document_hash"], "mode": self.args.mode,
+            "recognition_run_id": self.run_id,
+            "root_class_iri": self.manifest.get("class_iri"),
+            "reference_is_recognition_input": False, "legacy_runner_used": False,
+            "completion": "execution_failed", "artifact_status": "incomplete",
+            "quality_gate": {"release": "blocked_incomplete_execution", "formal_score": "not_run"},
+        }
+        measured["execution_status"] = status["status"]
+        measured["elapsed_seconds"] = status["elapsed_seconds"]
+        measured["scheduler_database"] = str(self.scheduler_path)
+        if error is not None:
+            measured["failure"] = status["failure"]
+            measured["quality_gate"] = {
+                **measured.get("quality_gate", {}),
+                "release": "blocked_incomplete_execution", "formal_score": "not_run",
+            }
+        measured["output_hashes"] = {
+            path.name: digest_file(path) for path in sorted(self.output.iterdir())
+            if path.is_file() and path.name not in {"result.json", RUN_IN_PROGRESS}
+            and not path.name.endswith((".tmp", "-journal", "-wal", "-shm"))
+        }
+        write_json(result_path, measured)
+        if finalization_error is not None:
+            raise finalization_error
+
+
+def _run_ontology_guided_segment(args, prepared, manifest, output, missing_settings, analysis,
+                                 started, parse_seconds):
+    run_id = getattr(args, "run_id", None) or f"eval-{uuid4()}"
+    accounting = _ActiveEvaluationAccounting(output, run_id, manifest, args, started)
+    error = None
+    try:
+        return _execute_ontology_guided_segment(
+            args, prepared, manifest, output, missing_settings, analysis,
+            started, parse_seconds, accounting,
+        )
+    except BaseException as exc:
+        error = exc
+        raise
+    finally:
+        try:
+            accounting.finish(error)
+        except BaseException as exc:
+            if error is None:
+                raise
+            error.add_note(f"evaluation finalization failed: {type(exc).__name__}")
+
+
+def _execute_ontology_guided_segment(
+    args,
+    prepared,
+    manifest,
+    output,
+    missing_settings,
+    analysis,
+    started,
+    parse_seconds,
+    accounting,
+):
+    """Run the active evaluator directly over the shared production core."""
+    from app.config import settings
+    from app.evaluation.quality_guided_variant import build_quality_guided_variant
+    from app.services.extraction.ontology_guided.contracts import OntologySnapshot
+    from app.services.extraction.ontology_guided.metadata import prepare_metadata
+    from app.services.extraction.ontology_guided.model_adapter import configured_model_adapter
+
+    ontology = OntologySnapshot.model_validate(
+        read_json(prepared / "ontology_snapshot.json"), strict=True
     )
-    write_json(Path(args.run) / "metrics.json", metrics)
+    if ontology.snapshot_id != manifest["ontology_snapshot_id"]:
+        raise ValueError("prepared ontology snapshot identity differs from manifest")
+    if ontology.ontology_hash != manifest["ontology_semantic_hash"]:
+        raise ValueError("prepared ontology semantic hash differs from manifest")
+    root_class_iri = manifest.get("class_iri")
+    if not root_class_iri or root_class_iri not in ontology.classes:
+        raise ValueError("prepared root class is absent from the frozen ontology")
+
+    summary_seconds = 0.0
+    summary_hash = None
+    if args.mode == "quality_guided_summary":
+        summary_path = prepared / "summaries.json"
+        summary = read_json(summary_path)
+        if summary["document_hash"] != manifest["document_hash"]:
+            raise ValueError("summary belongs to a different document")
+        if summary.get("analysis_id", manifest["analysis_id"]) != manifest["analysis_id"]:
+            raise ValueError("summary belongs to a different evidence analysis")
+        section_tree = _apply_frozen_summaries(
+            analysis.structure.section_tree, summary["metadata"]
+        )
+        summary_seconds = summary["generation_seconds"]
+        summary_hash = digest_file(summary_path)
+        summary_version = summary.get("summary_prompt_version") or (
+            manifest["settings"].get("word_tree_summary_prompt_version") or "unknown"
+        )
+        summary_model_identity = summary.get("model_identity")
+    else:
+        section_tree = analysis.structure.section_tree.to_dict()
+        summary_version = manifest["settings"].get(
+            "word_tree_summary_prompt_version", "structure-only"
+        )
+        summary_model_identity = None
+    metadata = prepare_metadata(
+        analysis.ir,
+        section_tree=section_tree,
+        summary_version=summary_version,
+        summary_model_identity=summary_model_identity,
+    )
+    accounting.summary_seconds = summary_seconds
+
+    # CLI execution limits are process-local and recorded below. They do not
+    # mutate the prepared artifact or any online service configuration.
+    settings.evidence_timeout_s = args.timeout
+    settings.evidence_timeout_retries = args.timeout_retries
+    adapter = configured_model_adapter()
+    if adapter is None:
+        raise RuntimeError(
+            "active ontology-guided evaluation requires a configured frozen local model"
+        )
+
+    calls = accounting.calls
+
+    def record_call(call):
+        payload = call.model_dump(mode="json")
+        calls.append(payload)
+        with (output / "calls.jsonl").open("a", encoding="utf-8") as stream:
+            stream.write(json.dumps(payload, ensure_ascii=False) + "\n")
+        emit("ontology_guided_model_call", mode=args.mode, **payload)
+
+    deadline = started + args.deadline_seconds if args.deadline_seconds else None
+
+    def continue_run(boundary):
+        if boundary != "before_model":
+            return True
+        if args.pause_after is not None and len(calls) >= args.pause_after:
+            return False
+        if deadline is not None and time.perf_counter() >= deadline:
+            return False
+        return not (
+            bool(getattr(args, "stop_file", None)) and Path(args.stop_file).exists()
+        )
+
+    before = slot_snapshot()
+    recognition_run_id = accounting.run_id
+    from app.evaluation.semantic_ranking_evaluation import build_ablation_manifest, summarize_costs
+    from app.services.llm.semantic_ranking import configured_ranking_service
+
+    ablation_group = getattr(args, "ranking_ablation", None)
+    config_overrides, policy_overrides = {}, {}
+    if ablation_group:
+        config_overrides = {
+            "enabled": ablation_group != "A",
+            "mode": "dense" if ablation_group == "B" else "semantic",
+        }
+        policy_overrides = {
+            "enable_dense": ablation_group != "A",
+            "enable_reranker": ablation_group in ("C", "D"),
+            "phase_interleaving": ablation_group == "D",
+        }
+    ranking_service, ranking_identity = configured_ranking_service(
+        settings, config_overrides=config_overrides, policy_overrides=policy_overrides,
+    )
+    accounting.ranking_model = ranking_service.model
+    runner = build_quality_guided_variant(
+        ontology=ontology,
+        adapter=adapter,
+        focus_path=tuple(getattr(args, "focus_path", None) or ()),
+        max_hops=max(4, len(getattr(args, "focus_path", None) or ())),
+        max_tasks=settings.evidence_max_tasks,
+        phase1_section_limit=args.max_sections_per_predicate,
+        progress_hook=continue_run,
+        call_hook=record_call,
+        ranking_service=ranking_service,
+        max_model_calls_per_record=settings.document_analysis_max_model_calls_per_record,
+        scheduler_bind=accounting.bind,
+        ranking_hook=accounting.publish_ranking,
+        model_call_hook=accounting.publish_model_calls,
+    )
+    accounting.runner = runner
+    emit("run_started", mode=args.mode, pause_after=args.pause_after, output=str(output))
+    result = runner.run(
+        recognition_run_id=recognition_run_id,
+        ir=analysis.ir,
+        metadata=metadata,
+        root_class_iri=root_class_iri,
+        root_class_label=ontology.classes[root_class_iri].label,
+        filename=manifest["source_filename"],
+    )
+    accounting.result = result
+    result.ranking["summary_seconds"] = summary_seconds
+    elapsed = time.perf_counter() - started
+    run_payload = result.model_dump(mode="json")
+    write_json(output / "run.json", run_payload)
+    write_json(
+        output / "events.json",
+        [event.model_dump(mode="json") for event in result.events],
+    )
+    write_json(output / "retrieval-plans.json", result.retrieval_plans)
+    write_json(output / "ranking.json", result.ranking)
+    write_json(output / "costs.json", summarize_costs(result))
+    output_hashes = {
+        name: digest_file(output / name)
+        for name in (
+            "run.json", "events.json", "retrieval-plans.json", "ranking.json", "costs.json",
+        )
+    }
+    if (output / "calls.jsonl").is_file():
+        output_hashes["calls.jsonl"] = digest_file(output / "calls.jsonl")
+    measured = {
+        "schema_version": "ontology-guided-evaluation-manifest-v1",
+        "created_at": datetime.now(UTC).isoformat(),
+        "mode": args.mode,
+        "evaluator_version": result.evaluator_version,
+        "executor_version": result.executor_version,
+        "core_contract_version": result.core_contract_version,
+        "recognition_run_id": result.recognition_run_id,
+        "run_fingerprint": result.run_fingerprint,
+        "document_hash": manifest["document_hash"],
+        "ontology_snapshot_id": ontology.snapshot_id,
+        "ontology_semantic_hash": ontology.ontology_hash,
+        "metadata_snapshot_id": metadata.snapshot_id,
+        "metadata_dependency_hash": metadata.dependency_hash,
+        "model_identity": result.model_identity,
+        "root_class_iri": result.root_class_iri,
+        "ranking_identity": ranking_identity,
+        "ranking_ablation_group": ablation_group,
+        "model_settings": manifest["settings"],
+        "effective_settings": settings_snapshot(),
+        "unfrozen_setting_keys": missing_settings,
+        "scope": {
+            "mode": result.scope_mode,
+            "focus_path": result.focus_path,
+            "root_class_iri": result.root_class_iri,
+        },
+        "execution_limits": {
+            "max_tasks": settings.evidence_max_tasks,
+            "max_model_calls_per_record": settings.document_analysis_max_model_calls_per_record,
+            "max_hops": max(4, len(result.focus_path)),
+            "phase1_section_limit": args.max_sections_per_predicate,
+            "pause_after": args.pause_after,
+            "deadline_seconds": args.deadline_seconds,
+            "stop_file": getattr(args, "stop_file", None),
+            "timeout_s": args.timeout,
+            "timeout_retries": args.timeout_retries,
+            "deadline_policy": "soft_task_boundary_no_resume",
+        },
+        "input_hashes": {
+            "prepared_manifest": digest_file(prepared / "manifest.json"),
+            "ir": manifest["ir_hash"],
+            "ontology_snapshot": manifest["ontology_snapshot_file_hash"],
+            "summaries": summary_hash,
+            "runtime": manifest["runtime_hash"],
+        },
+        "output_hashes": output_hashes,
+        "completion": result.graph.progress.completion,
+        "artifact_status": result.graph.artifact_status,
+        "diagnostics": result.diagnostics,
+        "model_calls_observed": len(calls),
+        "elapsed_seconds": elapsed,
+        "parse_seconds": parse_seconds,
+        "summary_generation_seconds_separate": summary_seconds,
+        "slots_before": before,
+        "slots_after": slot_snapshot(),
+        "reference_is_recognition_input": False,
+        "quality_gate": {
+            "engineering_run": "executed" if calls else "executed_without_model_calls",
+            "expert_gold": "pending_not_supplied",
+            "independent_real_runs": {
+                "required": 3,
+                "represented_here": 1 if calls else 0,
+            },
+            "formal_score": "pending",
+            "release": "blocked_pending_expert_gold_and_three_independent_runs",
+        },
+        "legacy_runner_used": False,
+    }
+    write_json(output / "ablation.json", build_ablation_manifest(measured, result))
+    output_hashes["ablation.json"] = digest_file(output / "ablation.json")
+    write_json(output / "result.json", measured)
+    emit(
+        "run_finished",
+        mode=args.mode,
+        completion=measured["completion"],
+        model_calls_observed=len(calls),
+        legacy_runner_used=False,
+    )
+
+
+def score(args):
+    prepared = Path(args.prepared).resolve()
+    run_dir = Path(args.run)
+    result_manifest = read_json(run_dir / "result.json")
+    if result_manifest.get("execution_status") == "failed":
+        metrics = {
+            "schema_version": "ontology-guided-score-v1",
+            "status": "failed_execution_not_scored", "formal_quality_gate": "not_run",
+            "reason": "An incomplete failed execution cannot produce a formal quality score.",
+        }
+        write_json(run_dir / "metrics.json", metrics)
+        emit("scored", output=str(run_dir / "metrics.json"))
+        return
+    if result_manifest.get("schema_version") == "ontology-guided-evaluation-manifest-v1":
+        if args.reference is None:
+            metrics = {
+                "schema_version": "ontology-guided-score-v1",
+                "status": "pending_expert_reference",
+                "run_fingerprint": result_manifest["run_fingerprint"],
+                "formal_quality_gate": "not_run",
+                "reason": (
+                    "No approved expert reference was supplied; engineering output is not "
+                    "a quality score."
+                ),
+            }
+        else:
+            from app.evaluation.ontology_guided_scorer import (
+                OntologyGuidedReference,
+                score_evaluation,
+            )
+            from app.evaluation.quality_guided_variant import (
+                OntologyGuidedEvaluationResult,
+            )
+            from app.services.extraction.document_ir import DocumentIR
+
+            metrics = score_evaluation(
+                OntologyGuidedEvaluationResult.model_validate(
+                    read_json(run_dir / "run.json"), strict=True
+                ),
+                OntologyGuidedReference.model_validate(
+                    read_json(args.reference), strict=True
+                ),
+                ir=DocumentIR.model_validate(
+                    read_json(prepared / "ir.json"), strict=True
+                ),
+            )
+            metrics["reference_file_hash"] = digest_file(args.reference)
+    else:
+        from app.evaluation.graph_metrics import evaluate_graph
+
+        reference = read_json(args.reference) if args.reference else None
+        metrics = evaluate_graph(
+            read_json(run_dir / "run.json"), reference, ir=read_json(prepared / "ir.json")
+        )
+    write_json(run_dir / "metrics.json", metrics)
     emit("scored", output=str(Path(args.run) / "metrics.json"))
 
 
@@ -660,7 +1285,13 @@ def parser():
     pre = commands.add_parser(
         "prepare", help="Resolve target read-only and freeze source/code/schema"
     )
-    pre.add_argument("--document-ref", default=DEFAULT_REFERENCE)
+    sources = pre.add_mutually_exclusive_group(required=True)
+    sources.add_argument("--document-ref", default=None,
+                         help="Existing registered CMC document reference")
+    sources.add_argument("--source-docx", default=None,
+                         help="Independent local DOCX; no extraction job or source DB required")
+    pre.add_argument("--root-class-iri", default=None,
+                     help="Required for local DOCX; must exist in the frozen ontology")
     pre.add_argument("--output", required=True)
     pre.set_defaults(function=prepare)
     summary = commands.add_parser(
@@ -674,15 +1305,35 @@ def parser():
     execution.add_argument("--output", required=True)
     execution.add_argument(
         "--mode",
-        choices=("baseline", "structure", "structure_summary", "structure_summary_gliner",
-                 "root_guided", "root_guided_summary", "quality_guided_summary"),
-        required=True,
+        choices=(
+            "quality_guided",
+            "quality_guided_summary",
+            "legacy_quality_guided_summary",
+            "baseline",
+            "structure",
+            "structure_summary",
+            "structure_summary_gliner",
+            "root_guided",
+            "root_guided_summary",
+        ),
+        default="quality_guided",
+        help=(
+            "Active modes quality_guided[/_summary] use the shared production core; "
+            "legacy_quality_guided_summary is frozen compatibility only"
+        ),
+    )
+    execution.add_argument(
+        "--run-id",
+        help="Optional unique evaluation run identity; generated when omitted",
     )
     execution.add_argument(
         "--pause-after",
         type=int,
         default=None,
-        help="Tasks per segment; omit for complete processing, resume preserves budget",
+        help=(
+            "Soft task limit; active ontology-guided runs preserve a partial artifact but "
+            "must restart in a new directory, while explicit legacy modes retain checkpoints"
+        ),
     )
     execution.add_argument("--deadline-seconds", type=float, default=None)
     execution.add_argument("--stop-file", default=None,
@@ -696,6 +1347,11 @@ def parser():
     execution.add_argument("--timeout", type=float, default=120)
     execution.add_argument("--timeout-retries", type=int, default=0)
     execution.add_argument("--resume", action="store_true")
+    execution.add_argument(
+        "--ranking-ablation", choices=("A", "B", "C", "D"), default=None,
+        help="Active-mode frozen ranking factors; A deterministic, B dense, C rerank, "
+             "D rerank plus phase interleaving. All runs remain independently scored.",
+    )
     execution.set_defaults(function=run)
     scoring = commands.add_parser(
         "score", help="Score only the explicitly annotated reference scope"

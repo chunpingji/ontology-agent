@@ -87,15 +87,24 @@ def suggest_slots(
     schema_edges, ontology_context = _build_ontology_context(ontology_engine, doc_class_iri)
     summaries, seen = [], set()
     completed = True
+    batches = []
     for section in sections:
+        for group in section["groups"]:
+            candidates = group["candidates"]
+            for offset in range(0, max(1, len(candidates)), 4):
+                subset = candidates[offset:offset + 4]
+                batches.append((section, {"id": section["id"], "title": section["title"],
+                    "groups": [{"id": group["id"], "title": group["title"], "candidates": [
+                        {k: item[k] for k in ("id", "label", "evidence_span") if k in item}
+                        for item in subset]}]}))
+    for section, bounded in batches:
         user = json.dumps({
-            "section": section, "ontology_menu": ontology_context,
-            "existing_template": existing_template or {},
+            "section": bounded, "ontology_menu": ontology_context,
         }, ensure_ascii=False)
         # Explicit bounded refusal, never silent front-of-document truncation.
         # UTF-8 byte count is a conservative upper bound for byte-based tokenizers.
         if len(user.encode("utf-8")) > 12000:
-            result["diagnostics"].append(f"section_budget_exceeded:{section['id']}")
+            result["diagnostics"].append(f"section_budget_exceeded:{section['id']}:{bounded['groups'][0]['id']}")
             completed = False
             continue
         raw = chat_with_schema(
@@ -109,8 +118,9 @@ def suggest_slots(
         try:
             proposal = _SemanticProposal.model_validate(raw)
             fields = {c["id"]: c for g in section["groups"] for c in g["candidates"]}
+            requested_ids = {c["id"] for g in bounded["groups"] for c in g["candidates"]}
             if proposal.section_id != section["id"] or any(
-                p.id not in fields for p in proposal.fields
+                p.id not in requested_ids for p in proposal.fields
             ):
                 raise ValueError("unknown structural identity")
             for field in proposal.fields:

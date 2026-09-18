@@ -1,0 +1,419 @@
+{
+  "version": "manual-card-vocabulary-20260917-v1",
+  "entries": [
+    {
+      "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/CIPSystem",
+      "role": "entity",
+      "definition": "在不拆卸主要设备的情况下，向设备内部输送及循环清洗介质的在线清洗系统。",
+      "aliases": [
+        {
+          "text": "就地清洗系统",
+          "language": null
+        },
+        {
+          "text": "CIP system",
+          "language": null
+        }
+      ],
+      "source_refs": [
+        "manual-vocabulary-notes.md#manual-general-knowledge"
+      ]
+    },
+    {
+      "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/CapsuleFiller",
+      "role": "entity",
+      "definition": "将物料按设定量装入胶囊壳的胶囊填充设备。",
+      "aliases": [
+        {
+          "text": "胶囊充填机",
+          "language": null
+        },
+        {
+          "text": "capsule filling machine",
+          "language": null
+        }
+      ],
+      "source_refs": [
+        "manual-vocabulary-notes.md#manual-general-knowledge"
+      ]
+    },
+    {
+      "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/Centrifuge",
+      "role": "entity",
+      "definition": "利用旋转产生的离心作用分离不同密度组分的设备。",
+      "aliases": [
+        {
+          "text": "centrifuge",
+          "language": null
+        }
+      ],
+      "source_refs": [
+        "manual-vocabulary-notes.md#manual-general-knowledge"
+      ]
+    },
+    {
+      "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/ChromatographyColumnSystem",
+      "role": "entity",
+      "definition": "以色谱柱为分离部件，通过流动相与固定相的相互作用分离组分的设备系统。",
+      "aliases": [
+        {
+          "text": "色谱柱系统",
+          "language": null
+        },
+        {
+          "text": "chromatography column system",
+          "language": null
+        }
+      ],
+      "source_refs": [
+        "manual-vocabulary-notes.md#manual-general-knowledge"
+      ]
+    },
+    {
+      "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/CleaningEquipment",
+      "role": "entity",
+      "definition": "用于对物体或设备执行清洗操作的设备。",
+      "aliases": [
+        {
+          "text": "cleaning equipment",
+          "language": null
+        }
+      ],
+      "source_refs": [
+        "manual-vocabulary-notes.md#manual-general-knowledge"
+      ]
+    },
+    {
+      "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/CoatingMachine",
+      "role": "entity",
+      "definition": "将包衣材料施加到颗粒或片剂等物体表面的设备。",
+      "aliases": [
+        {
+          "text": "coating machine",
+          "language": null
+        }
+      ],
+      "source_refs": [
+        "manual-vocabulary-notes.md#manual-general-knowledge"
+      ]
+    },
+    {
+      "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/CompressedAirSystem",
+      "role": "entity",
+      "definition": "用于产生、处理、储存或输送压缩空气的公用工程系统。",
+      "aliases": [
+        {
+          "text": "compressed air system",
+          "language": null
+        }
+      ],
+      "source_refs": [
+        "manual-vocabulary-notes.md#manual-general-knowledge"
+      ]
+    },
+    {
+      "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/Dryer",
+      "role": "entity",
+      "definition": "通过移除水分或溶剂以降低物料湿含量的干燥设备。",
+      "aliases": [
+        {
+          "text": "dryer",
+          "language": null
+        }
+      ],
+      "source_refs": [
+        "manual-vocabulary-notes.md#manual-general-knowledge"
+      ]
+    },
+    {
+      "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/ElectricVacuumDryer",
+      "role": "entity",
+      "definition": "采用电加热并在减压条件下干燥物料的设备。",
+      "aliases": [
+        {
+          "text": "电加热真空干燥机",
+          "language": null
+        },
+        {
+          "text": "electric vacuum dryer",
+          "language": null
+        }
+      ],
+      "source_refs": [
+        "manual-vocabulary-notes.md#manual-general-knowledge"
+      ]
+    },
+    {
+      "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/Equipment",
+      "role": "entity",
+      "definition": "承担明确操作或技术功能的设备；具体实例必须由原文提及定位，类别名称不证明实例身份。",
+      "aliases": [
+        {
+          "text": "equipment",
+          "language": null
+        }
+      ],
+      "source_refs": [
+        "manual-vocabulary-notes.md#manual-general-knowledge"
+      ]
+    },
+    {
+      "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/FillingMachine",
+      "role": "entity",
+      "definition": "将物料按设定量装入容器的灌装设备。",
+      "aliases": [
+        {
+          "text": "filling machine",
+          "language": null
+        }
+      ],
+      "source_refs": [
+        "manual-vocabulary-notes.md#manual-general-knowledge"
+      ]
+    },
+    {
+      "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/FilterPress",
+      "role": "entity",
+      "definition": "以压力差使液体通过过滤介质而截留固体的压滤设备。",
+      "aliases": [
+        {
+          "text": "filter press",
+          "language": null
+        }
+      ],
+      "source_refs": [
+        "manual-vocabulary-notes.md#manual-general-knowledge"
+      ]
+    },
+    {
+      "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/Granulator",
+      "role": "entity",
+      "definition": "将粉末或其他细小物料加工为颗粒的设备。",
+      "aliases": [
+        {
+          "text": "granulator",
+          "language": null
+        }
+      ],
+      "source_refs": [
+        "manual-vocabulary-notes.md#manual-general-knowledge"
+      ]
+    },
+    {
+      "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/HVACSystem",
+      "role": "entity",
+      "definition": "为场所提供采暖、通风和空气调节的系统。",
+      "aliases": [
+        {
+          "text": "暖通空调系统",
+          "language": null
+        },
+        {
+          "text": "heating ventilation and air conditioning system",
+          "language": null
+        }
+      ],
+      "source_refs": [
+        "manual-vocabulary-notes.md#manual-general-knowledge"
+      ]
+    },
+    {
+      "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/HotAirBlastDryer",
+      "role": "entity",
+      "definition": "采用鼓风方式输送热空气以干燥物料的设备。",
+      "aliases": [
+        {
+          "text": "热风鼓风干燥机",
+          "language": null
+        },
+        {
+          "text": "hot air blast dryer",
+          "language": null
+        }
+      ],
+      "source_refs": [
+        "manual-vocabulary-notes.md#manual-general-knowledge"
+      ]
+    },
+    {
+      "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/HotAirDryer",
+      "role": "entity",
+      "definition": "利用热空气传热并带走湿分的干燥设备。",
+      "aliases": [
+        {
+          "text": "hot air dryer",
+          "language": null
+        }
+      ],
+      "source_refs": [
+        "manual-vocabulary-notes.md#manual-general-knowledge"
+      ]
+    },
+    {
+      "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/ManualCleaningTool",
+      "role": "entity",
+      "definition": "由人员直接操作以完成清洗工作的器具。",
+      "aliases": [
+        {
+          "text": "手工清洗工具",
+          "language": null
+        },
+        {
+          "text": "manual cleaning tool",
+          "language": null
+        }
+      ],
+      "source_refs": [
+        "manual-vocabulary-notes.md#manual-general-knowledge"
+      ]
+    },
+    {
+      "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/Mixer",
+      "role": "entity",
+      "definition": "使两种或多种物料混合的设备。",
+      "aliases": [
+        {
+          "text": "混合设备",
+          "language": null
+        },
+        {
+          "text": "mixer",
+          "language": null
+        }
+      ],
+      "source_refs": [
+        "manual-vocabulary-notes.md#manual-general-knowledge"
+      ]
+    },
+    {
+      "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/ProcessEquipment",
+      "role": "entity",
+      "definition": "直接用于实施物料处理、转化或分离等工艺操作的设备。",
+      "aliases": [
+        {
+          "text": "工艺设备",
+          "language": null
+        },
+        {
+          "text": "process equipment",
+          "language": null
+        }
+      ],
+      "source_refs": [
+        "manual-vocabulary-notes.md#manual-general-knowledge"
+      ]
+    },
+    {
+      "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/Reactor",
+      "role": "entity",
+      "definition": "用于使物料在规定条件下发生化学反应的设备或容器。",
+      "aliases": [
+        {
+          "text": "反应釜",
+          "language": null
+        },
+        {
+          "text": "化学反应器",
+          "language": null
+        },
+        {
+          "text": "reactor",
+          "language": null
+        }
+      ],
+      "source_refs": [
+        "manual-vocabulary-notes.md#manual-general-knowledge"
+      ]
+    },
+    {
+      "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/RotaryEvaporator",
+      "role": "entity",
+      "definition": "通过旋转容器形成液膜并蒸发溶剂，常配合减压操作的设备。",
+      "aliases": [
+        {
+          "text": "旋转蒸发器",
+          "language": null
+        },
+        {
+          "text": "rotary evaporator",
+          "language": null
+        }
+      ],
+      "source_refs": [
+        "manual-vocabulary-notes.md#manual-general-knowledge"
+      ]
+    },
+    {
+      "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/TabletPress",
+      "role": "entity",
+      "definition": "将粉末或颗粒压制成片的设备。",
+      "aliases": [
+        {
+          "text": "压片设备",
+          "language": null
+        },
+        {
+          "text": "tablet press",
+          "language": null
+        }
+      ],
+      "source_refs": [
+        "manual-vocabulary-notes.md#manual-general-knowledge"
+      ]
+    },
+    {
+      "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/UtilityEquipment",
+      "role": "entity",
+      "definition": "为工艺或设施提供能源、介质或环境条件等公用工程支持的设备。",
+      "aliases": [
+        {
+          "text": "公用工程设备",
+          "language": null
+        },
+        {
+          "text": "utility equipment",
+          "language": null
+        }
+      ],
+      "source_refs": [
+        "manual-vocabulary-notes.md#manual-general-knowledge"
+      ]
+    },
+    {
+      "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/VacuumDryer",
+      "role": "entity",
+      "definition": "在低于环境压力的条件下移除物料中水分或溶剂的干燥设备。",
+      "aliases": [
+        {
+          "text": "真空干燥机",
+          "language": null
+        },
+        {
+          "text": "vacuum dryer",
+          "language": null
+        }
+      ],
+      "source_refs": [
+        "manual-vocabulary-notes.md#manual-general-knowledge"
+      ]
+    },
+    {
+      "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/WaterSystem",
+      "role": "entity",
+      "definition": "用于制备、储存或输送用水的系统；水质等级须由原文另行证明。",
+      "aliases": [
+        {
+          "text": "供水系统",
+          "language": null
+        },
+        {
+          "text": "water system",
+          "language": null
+        }
+      ],
+      "source_refs": [
+        "manual-vocabulary-notes.md#manual-general-knowledge"
+      ]
+    }
+  ]
+}

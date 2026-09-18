@@ -1,0 +1,3864 @@
+{
+  "scope_id": "pde_conflict",
+  "review_status": "model_output_not_expert_gold",
+  "arms": {
+    "A": {
+      "plan": {
+        "get_schema_card": [
+          {
+            "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/SharedLineAssessmentData"
+          },
+          {
+            "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/ActivePharmaceuticalIngredient"
+          }
+        ],
+        "inspect_evidence": [
+          {
+            "ref": "u13"
+          },
+          {
+            "ref": "u14"
+          },
+          {
+            "ref": "u15"
+          },
+          {
+            "ref": "u21"
+          }
+        ],
+        "propose_mentions": [
+          {
+            "group": "entities"
+          },
+          {
+            "group": "values"
+          },
+          {
+            "group": "units"
+          }
+        ]
+      },
+      "candidates": {
+        "subjects": {
+          "document": {
+            "attributes": {},
+            "relations": {
+              "hasSharedLineData": [
+                {
+                  "target_id": "s1",
+                  "evidence": {
+                    "ref": "u0",
+                    "quote": "表1 产品NOAEL、F值",
+                    "span_id": "source:u0"
+                  },
+                  "condition": {
+                    "ref": "",
+                    "quote": "",
+                    "span_id": ""
+                  },
+                  "polarity": "affirmed"
+                }
+              ]
+            },
+            "anchor": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            }
+          },
+          "s1": {
+            "attributes": {
+              "activeIngredient": [
+                {
+                  "raw": "HRS-1597",
+                  "source": {
+                    "ref": "u13",
+                    "quote": "HRS-1597",
+                    "span_id": "source:u13"
+                  },
+                  "field": {
+                    "ref": "u1",
+                    "quote": "活性成分(API)",
+                    "span_id": "source:u1"
+                  },
+                  "unit": {
+                    "ref": "",
+                    "quote": "",
+                    "span_id": ""
+                  },
+                  "condition": {
+                    "ref": "",
+                    "quote": "",
+                    "span_id": ""
+                  }
+                }
+              ],
+              "dosingRegimen": [],
+              "f1": [
+                {
+                  "raw": "5",
+                  "source": {
+                    "ref": "u16",
+                    "quote": "5",
+                    "span_id": "source:u16"
+                  },
+                  "field": {
+                    "ref": "u4",
+                    "quote": "F1",
+                    "span_id": "source:u4"
+                  },
+                  "unit": {
+                    "ref": "",
+                    "quote": "",
+                    "span_id": ""
+                  },
+                  "condition": {
+                    "ref": "",
+                    "quote": "",
+                    "span_id": ""
+                  }
+                },
+                {
+                  "raw": "2",
+                  "source": {
+                    "ref": "u26",
+                    "quote": "2",
+                    "span_id": "source:u26"
+                  },
+                  "field": {
+                    "ref": "u4",
+                    "quote": "F1",
+                    "span_id": "source:u4"
+                  },
+                  "unit": {
+                    "ref": "",
+                    "quote": "",
+                    "span_id": ""
+                  },
+                  "condition": {
+                    "ref": "",
+                    "quote": "",
+                    "span_id": ""
+                  }
+                }
+              ],
+              "f2": [
+                {
+                  "raw": "10",
+                  "source": {
+                    "ref": "u17",
+                    "quote": "10",
+                    "span_id": "source:u17"
+                  },
+                  "field": {
+                    "ref": "u5",
+                    "quote": "F2",
+                    "span_id": "source:u5"
+                  },
+                  "unit": {
+                    "ref": "",
+                    "quote": "",
+                    "span_id": ""
+                  },
+                  "condition": {
+                    "ref": "",
+                    "quote": "",
+                    "span_id": ""
+                  }
+                },
+                {
+                  "raw": "10",
+                  "source": {
+                    "ref": "u27",
+                    "quote": "10",
+                    "span_id": "source:u27"
+                  },
+                  "field": {
+                    "ref": "u5",
+                    "quote": "F2",
+                    "span_id": "source:u5"
+                  },
+                  "unit": {
+                    "ref": "",
+                    "quote": "",
+                    "span_id": ""
+                  },
+                  "condition": {
+                    "ref": "",
+                    "quote": "",
+                    "span_id": ""
+                  }
+                }
+              ],
+              "f3": [
+                {
+                  "raw": "10",
+                  "source": {
+                    "ref": "u18",
+                    "quote": "10",
+                    "span_id": "source:u18"
+                  },
+                  "field": {
+                    "ref": "u6",
+                    "quote": "F3",
+                    "span_id": "source:u6"
+                  },
+                  "unit": {
+                    "ref": "",
+                    "quote": "",
+                    "span_id": ""
+                  },
+                  "condition": {
+                    "ref": "",
+                    "quote": "",
+                    "span_id": ""
+                  }
+                },
+                {
+                  "raw": "10",
+                  "source": {
+                    "ref": "u28",
+                    "quote": "10",
+                    "span_id": "source:u28"
+                  },
+                  "field": {
+                    "ref": "u6",
+                    "quote": "F3",
+                    "span_id": "source:u6"
+                  },
+                  "unit": {
+                    "ref": "",
+                    "quote": "",
+                    "span_id": ""
+                  },
+                  "condition": {
+                    "ref": "",
+                    "quote": "",
+                    "span_id": ""
+                  }
+                }
+              ],
+              "f4": [
+                {
+                  "raw": "1",
+                  "source": {
+                    "ref": "u19",
+                    "quote": "1",
+                    "span_id": "source:u19"
+                  },
+                  "field": {
+                    "ref": "u7",
+                    "quote": "F4",
+                    "span_id": "source:u7"
+                  },
+                  "unit": {
+                    "ref": "",
+                    "quote": "",
+                    "span_id": ""
+                  },
+                  "condition": {
+                    "ref": "",
+                    "quote": "",
+                    "span_id": ""
+                  }
+                },
+                {
+                  "raw": "1",
+                  "source": {
+                    "ref": "u29",
+                    "quote": "1",
+                    "span_id": "source:u29"
+                  },
+                  "field": {
+                    "ref": "u7",
+                    "quote": "F4",
+                    "span_id": "source:u7"
+                  },
+                  "unit": {
+                    "ref": "",
+                    "quote": "",
+                    "span_id": ""
+                  },
+                  "condition": {
+                    "ref": "",
+                    "quote": "",
+                    "span_id": ""
+                  }
+                }
+              ],
+              "f5": [
+                {
+                  "raw": "1",
+                  "source": {
+                    "ref": "u20",
+                    "quote": "1",
+                    "span_id": "source:u20"
+                  },
+                  "field": {
+                    "ref": "u8",
+                    "quote": "F5",
+                    "span_id": "source:u8"
+                  },
+                  "unit": {
+                    "ref": "",
+                    "quote": "",
+                    "span_id": ""
+                  },
+                  "condition": {
+                    "ref": "",
+                    "quote": "",
+                    "span_id": ""
+                  }
+                },
+                {
+                  "raw": "1",
+                  "source": {
+                    "ref": "u30",
+                    "quote": "1",
+                    "span_id": "source:u30"
+                  },
+                  "field": {
+                    "ref": "u8",
+                    "quote": "F5",
+                    "span_id": "source:u8"
+                  },
+                  "unit": {
+                    "ref": "",
+                    "quote": "",
+                    "span_id": ""
+                  },
+                  "condition": {
+                    "ref": "",
+                    "quote": "",
+                    "span_id": ""
+                  }
+                }
+              ],
+              "humanEquivalentDose_mg_per_kg": [],
+              "noaelDuration": [
+                {
+                  "raw": "14天",
+                  "source": {
+                    "ref": "u14",
+                    "quote": "大鼠14天亚急毒试验（试验1）",
+                    "span_id": "source:u14"
+                  },
+                  "field": {
+                    "ref": "u2",
+                    "quote": "试验项目",
+                    "span_id": "source:u2"
+                  },
+                  "unit": {
+                    "ref": "",
+                    "quote": "",
+                    "span_id": ""
+                  },
+                  "condition": {
+                    "ref": "",
+                    "quote": "",
+                    "span_id": ""
+                  }
+                },
+                {
+                  "raw": "14天",
+                  "source": {
+                    "ref": "u24",
+                    "quote": "犬14天亚急毒",
+                    "span_id": "source:u24"
+                  },
+                  "field": {
+                    "ref": "u2",
+                    "quote": "试验项目",
+                    "span_id": "source:u2"
+                  },
+                  "unit": {
+                    "ref": "",
+                    "quote": "",
+                    "span_id": ""
+                  },
+                  "condition": {
+                    "ref": "",
+                    "quote": "",
+                    "span_id": ""
+                  }
+                }
+              ],
+              "noaelSpecies": [
+                {
+                  "raw": "大鼠",
+                  "source": {
+                    "ref": "u14",
+                    "quote": "大鼠14天亚急毒试验（试验1）",
+                    "span_id": "source:u14"
+                  },
+                  "field": {
+                    "ref": "u2",
+                    "quote": "试验项目",
+                    "span_id": "source:u2"
+                  },
+                  "unit": {
+                    "ref": "",
+                    "quote": "",
+                    "span_id": ""
+                  },
+                  "condition": {
+                    "ref": "",
+                    "quote": "",
+                    "span_id": ""
+                  }
+                },
+                {
+                  "raw": "犬",
+                  "source": {
+                    "ref": "u24",
+                    "quote": "犬14天亚急毒",
+                    "span_id": "source:u24"
+                  },
+                  "field": {
+                    "ref": "u2",
+                    "quote": "试验项目",
+                    "span_id": "source:u2"
+                  },
+                  "unit": {
+                    "ref": "",
+                    "quote": "",
+                    "span_id": ""
+                  },
+                  "condition": {
+                    "ref": "",
+                    "quote": "",
+                    "span_id": ""
+                  }
+                }
+              ],
+              "noael_mg_per_kg_per_day": [],
+              "oebBand": [
+                {
+                  "raw": "1",
+                  "source": {
+                    "ref": "u23",
+                    "quote": "1",
+                    "span_id": "source:u23"
+                  },
+                  "field": {
+                    "ref": "u12",
+                    "quote": "OEB",
+                    "span_id": "source:u12"
+                  },
+                  "unit": {
+                    "ref": "",
+                    "quote": "",
+                    "span_id": ""
+                  },
+                  "condition": {
+                    "ref": "",
+                    "quote": "",
+                    "span_id": ""
+                  }
+                },
+                {
+                  "raw": "1",
+                  "source": {
+                    "ref": "u33",
+                    "quote": "1",
+                    "span_id": "source:u33"
+                  },
+                  "field": {
+                    "ref": "u12",
+                    "quote": "OEB",
+                    "span_id": "source:u12"
+                  },
+                  "unit": {
+                    "ref": "",
+                    "quote": "",
+                    "span_id": ""
+                  },
+                  "condition": {
+                    "ref": "",
+                    "quote": "",
+                    "span_id": ""
+                  }
+                }
+              ],
+              "pde_mg_per_day": [
+                {
+                  "raw": "100",
+                  "source": {
+                    "ref": "u21",
+                    "quote": "100",
+                    "span_id": "source:u21"
+                  },
+                  "field": {
+                    "ref": "u9",
+                    "quote": "PDE",
+                    "span_id": "source:u9"
+                  },
+                  "unit": {
+                    "ref": "u10",
+                    "quote": "(mg/天)",
+                    "span_id": "source:u10"
+                  },
+                  "condition": {
+                    "ref": "",
+                    "quote": "",
+                    "span_id": ""
+                  }
+                },
+                {
+                  "raw": "7.5",
+                  "source": {
+                    "ref": "u31",
+                    "quote": "7.5",
+                    "span_id": "source:u31"
+                  },
+                  "field": {
+                    "ref": "u9",
+                    "quote": "PDE",
+                    "span_id": "source:u9"
+                  },
+                  "unit": {
+                    "ref": "u10",
+                    "quote": "(mg/天)",
+                    "span_id": "source:u10"
+                  },
+                  "condition": {
+                    "ref": "",
+                    "quote": "",
+                    "span_id": ""
+                  }
+                }
+              ],
+              "proposedMaxDose_mg": [],
+              "proposedStartingDose_mg": [],
+              "safetyFactor": [],
+              "sourceReference": [
+                {
+                  "raw": "19191-25030-NG",
+                  "source": {
+                    "ref": "u22",
+                    "quote": "19191-25030-NG",
+                    "span_id": "source:u22"
+                  },
+                  "field": {
+                    "ref": "u11",
+                    "quote": "来源",
+                    "span_id": "source:u11"
+                  },
+                  "unit": {
+                    "ref": "",
+                    "quote": "",
+                    "span_id": ""
+                  },
+                  "condition": {
+                    "ref": "",
+                    "quote": "",
+                    "span_id": ""
+                  }
+                },
+                {
+                  "raw": "19191-25031-NG",
+                  "source": {
+                    "ref": "u32",
+                    "quote": "19191-25031-NG",
+                    "span_id": "source:u32"
+                  },
+                  "field": {
+                    "ref": "u11",
+                    "quote": "来源",
+                    "span_id": "source:u11"
+                  },
+                  "unit": {
+                    "ref": "",
+                    "quote": "",
+                    "span_id": ""
+                  },
+                  "condition": {
+                    "ref": "",
+                    "quote": "",
+                    "span_id": ""
+                  }
+                }
+              ],
+              "studyType": [
+                {
+                  "raw": "大鼠14天亚急毒试验（试验1）",
+                  "source": {
+                    "ref": "u14",
+                    "quote": "大鼠14天亚急毒试验（试验1）",
+                    "span_id": "source:u14"
+                  },
+                  "field": {
+                    "ref": "u2",
+                    "quote": "试验项目",
+                    "span_id": "source:u2"
+                  },
+                  "unit": {
+                    "ref": "",
+                    "quote": "",
+                    "span_id": ""
+                  },
+                  "condition": {
+                    "ref": "",
+                    "quote": "",
+                    "span_id": ""
+                  }
+                },
+                {
+                  "raw": "犬14天亚急毒",
+                  "source": {
+                    "ref": "u24",
+                    "quote": "犬14天亚急毒",
+                    "span_id": "source:u24"
+                  },
+                  "field": {
+                    "ref": "u2",
+                    "quote": "试验项目",
+                    "span_id": "source:u2"
+                  },
+                  "unit": {
+                    "ref": "",
+                    "quote": "",
+                    "span_id": ""
+                  },
+                  "condition": {
+                    "ref": "",
+                    "quote": "",
+                    "span_id": ""
+                  }
+                }
+              ]
+            },
+            "relations": {},
+            "anchor": {
+              "ref": "u13",
+              "quote": "HRS-1597",
+              "span_id": "source:u13"
+            }
+          },
+          "s2": {
+            "attributes": {
+              "oel_ug_per_m3": [],
+              "pde_mg_per_day": [],
+              "productIdentifier": []
+            },
+            "relations": {},
+            "anchor": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            }
+          }
+        },
+        "observations": [
+          {
+            "value": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "field": {
+              "ref": "u3",
+              "quote": "NOAEL",
+              "span_id": "source:u3"
+            },
+            "legend": {
+              "ref": "u35",
+              "quote": " NOAEL：无可见损害作用水平；",
+              "span_id": "source:u35"
+            },
+            "condition": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "state": "unmapped",
+            "reason": "NOAEL数值存在但单位缺失，无法映射到mg/kg/天属性"
+          },
+          {
+            "value": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "field": {
+              "ref": "u3",
+              "quote": "NOAEL",
+              "span_id": "source:u3"
+            },
+            "legend": {
+              "ref": "u35",
+              "quote": " NOAEL：无可见损害作用水平；",
+              "span_id": "source:u35"
+            },
+            "condition": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "state": "unmapped",
+            "reason": "NOAEL数值存在但单位缺失，无法映射到mg/kg/天属性"
+          },
+          {
+            "value": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "field": {
+              "ref": "u4",
+              "quote": "F1",
+              "span_id": "source:u4"
+            },
+            "legend": {
+              "ref": "u40",
+              "quote": " F1：考虑种类之间差异的系数；F1 = 5，适用于从大鼠外推到人；F1 = 2，适用于  从犬外推到人",
+              "span_id": "source:u40"
+            },
+            "condition": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "state": "unmapped",
+            "reason": "F1值存在但具体适用条件（大鼠/犬）分散在不同行，需结合试验项目判断，此处作为观察记录"
+          },
+          {
+            "value": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "field": {
+              "ref": "u5",
+              "quote": "F2",
+              "span_id": "source:u5"
+            },
+            "legend": {
+              "ref": "u41",
+              "quote": " F2：考虑个体之间差异的系数；F2 = 10。",
+              "span_id": "source:u41"
+            },
+            "condition": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "state": "unmapped",
+            "reason": "F2值存在但作为固定系数，无需特定条件触发"
+          },
+          {
+            "value": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "field": {
+              "ref": "u6",
+              "quote": "F3",
+              "span_id": "source:u6"
+            },
+            "legend": {
+              "ref": "u42",
+              "quote": " F3：为短期接触急性毒性研究的可变系数；F3 = 10，14天的研究；",
+              "span_id": "source:u42"
+            },
+            "condition": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "state": "unmapped",
+            "reason": "F3值存在，条件为14天研究，已在studyType中体现"
+          },
+          {
+            "value": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "field": {
+              "ref": "u7",
+              "quote": "F4",
+              "span_id": "source:u7"
+            },
+            "legend": {
+              "ref": "u43",
+              "quote": " F4：为用于产生严重毒性数据情况的系数，如非遗传致癌毒性，神经毒性或致畸性；F4 = 1，未观察到严重影响",
+              "span_id": "source:u43"
+            },
+            "condition": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "state": "unmapped",
+            "reason": "F4值存在，条件为未观察到严重影响"
+          },
+          {
+            "value": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "field": {
+              "ref": "u8",
+              "quote": "F5",
+              "span_id": "source:u8"
+            },
+            "legend": {
+              "ref": "u44",
+              "quote": " F5：可变系数，在没有建立NOEL时应用。F5=1，NOAEL",
+              "span_id": "source:u44"
+            },
+            "condition": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "state": "unmapped",
+            "reason": "F5值存在，条件为NOAEL已建立"
+          }
+        ]
+      },
+      "final": {
+        "status": "complete",
+        "accepted": [
+          {
+            "kind": "relation",
+            "subject_id": "document",
+            "subject_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport",
+            "subject_text": "",
+            "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasSharedLineData",
+            "evidence": {
+              "ref": "u0",
+              "quote": "表1 产品NOAEL、F值",
+              "start": 0,
+              "end": 13
+            },
+            "condition": {
+              "ref": "",
+              "quote": ""
+            },
+            "object_id": "s1",
+            "object_text": "HRS-1597",
+            "object_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/SharedLineAssessmentData",
+            "polarity": "affirmed",
+            "candidate_id": "c1",
+            "semantic_status": "supported",
+            "validation_status": "passed"
+          },
+          {
+            "kind": "property",
+            "subject_id": "s1",
+            "subject_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/SharedLineAssessmentData",
+            "subject_text": "HRS-1597",
+            "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/activeIngredient",
+            "evidence": {
+              "ref": "u13",
+              "quote": "HRS-1597",
+              "start": 0,
+              "end": 8
+            },
+            "condition": {
+              "ref": "",
+              "quote": ""
+            },
+            "raw_value": "HRS-1597",
+            "field": {
+              "ref": "u1",
+              "quote": "活性成分(API)",
+              "start": 0,
+              "end": 9
+            },
+            "unit": {
+              "ref": "",
+              "quote": ""
+            },
+            "value_span": {
+              "ref": "u13",
+              "quote": "HRS-1597",
+              "start": 0,
+              "end": 8
+            },
+            "value": "HRS-1597",
+            "candidate_id": "c2",
+            "semantic_status": "supported",
+            "validation_status": "passed"
+          }
+        ],
+        "observations": [],
+        "unresolved": [
+          {
+            "candidate_id": "c3",
+            "subject_id": "s1",
+            "field": "f1",
+            "proposal": {
+              "raw": "5",
+              "source": {
+                "ref": "u16",
+                "quote": "5",
+                "start": 0,
+                "end": 1
+              },
+              "field": {
+                "ref": "u4",
+                "quote": "F1",
+                "start": 0,
+                "end": 2
+              },
+              "unit": {
+                "ref": "",
+                "quote": ""
+              },
+              "condition": {
+                "ref": "",
+                "quote": ""
+              }
+            },
+            "issues": [
+              "owner_record_ambiguous"
+            ],
+            "reason": "owner_record_ambiguous"
+          },
+          {
+            "candidate_id": "c4",
+            "subject_id": "s1",
+            "field": "f1",
+            "proposal": {
+              "raw": "2",
+              "source": {
+                "ref": "u26",
+                "quote": "2",
+                "start": 0,
+                "end": 1
+              },
+              "field": {
+                "ref": "u4",
+                "quote": "F1",
+                "start": 0,
+                "end": 2
+              },
+              "unit": {
+                "ref": "",
+                "quote": ""
+              },
+              "condition": {
+                "ref": "",
+                "quote": ""
+              }
+            },
+            "issues": [
+              "owner_record_ambiguous",
+              "source_quote_not_unique",
+              "semantic_undetermined"
+            ],
+            "reason": "owner_record_ambiguous"
+          },
+          {
+            "candidate_id": "c5",
+            "subject_id": "s1",
+            "field": "f2",
+            "proposal": {
+              "raw": "10",
+              "source": {
+                "ref": "u17",
+                "quote": "10",
+                "start": 0,
+                "end": 2
+              },
+              "field": {
+                "ref": "u5",
+                "quote": "F2",
+                "start": 0,
+                "end": 2
+              },
+              "unit": {
+                "ref": "",
+                "quote": ""
+              },
+              "condition": {
+                "ref": "",
+                "quote": ""
+              }
+            },
+            "issues": [
+              "owner_record_ambiguous"
+            ],
+            "reason": "owner_record_ambiguous"
+          },
+          {
+            "candidate_id": "c6",
+            "subject_id": "s1",
+            "field": "f2",
+            "proposal": {
+              "raw": "10",
+              "source": {
+                "ref": "u27",
+                "quote": "10",
+                "start": 0,
+                "end": 2
+              },
+              "field": {
+                "ref": "u5",
+                "quote": "F2",
+                "start": 0,
+                "end": 2
+              },
+              "unit": {
+                "ref": "",
+                "quote": ""
+              },
+              "condition": {
+                "ref": "",
+                "quote": ""
+              }
+            },
+            "issues": [
+              "owner_record_ambiguous"
+            ],
+            "reason": "owner_record_ambiguous"
+          },
+          {
+            "candidate_id": "c7",
+            "subject_id": "s1",
+            "field": "f3",
+            "proposal": {
+              "raw": "10",
+              "source": {
+                "ref": "u18",
+                "quote": "10",
+                "start": 0,
+                "end": 2
+              },
+              "field": {
+                "ref": "u6",
+                "quote": "F3",
+                "start": 0,
+                "end": 2
+              },
+              "unit": {
+                "ref": "",
+                "quote": ""
+              },
+              "condition": {
+                "ref": "",
+                "quote": ""
+              }
+            },
+            "issues": [
+              "owner_record_ambiguous"
+            ],
+            "reason": "owner_record_ambiguous"
+          },
+          {
+            "candidate_id": "c8",
+            "subject_id": "s1",
+            "field": "f3",
+            "proposal": {
+              "raw": "10",
+              "source": {
+                "ref": "u28",
+                "quote": "10",
+                "start": 0,
+                "end": 2
+              },
+              "field": {
+                "ref": "u6",
+                "quote": "F3",
+                "start": 0,
+                "end": 2
+              },
+              "unit": {
+                "ref": "",
+                "quote": ""
+              },
+              "condition": {
+                "ref": "",
+                "quote": ""
+              }
+            },
+            "issues": [
+              "owner_record_ambiguous",
+              "source_quote_not_unique",
+              "semantic_undetermined"
+            ],
+            "reason": "owner_record_ambiguous"
+          },
+          {
+            "candidate_id": "c9",
+            "subject_id": "s1",
+            "field": "f4",
+            "proposal": {
+              "raw": "1",
+              "source": {
+                "ref": "u19",
+                "quote": "1",
+                "start": 0,
+                "end": 1
+              },
+              "field": {
+                "ref": "u7",
+                "quote": "F4",
+                "start": 0,
+                "end": 2
+              },
+              "unit": {
+                "ref": "",
+                "quote": ""
+              },
+              "condition": {
+                "ref": "",
+                "quote": ""
+              }
+            },
+            "issues": [
+              "owner_record_ambiguous",
+              "source_quote_not_unique",
+              "semantic_undetermined"
+            ],
+            "reason": "owner_record_ambiguous"
+          },
+          {
+            "candidate_id": "c10",
+            "subject_id": "s1",
+            "field": "f4",
+            "proposal": {
+              "raw": "1",
+              "source": {
+                "ref": "u29",
+                "quote": "1",
+                "start": 0,
+                "end": 1
+              },
+              "field": {
+                "ref": "u7",
+                "quote": "F4",
+                "start": 0,
+                "end": 2
+              },
+              "unit": {
+                "ref": "",
+                "quote": ""
+              },
+              "condition": {
+                "ref": "",
+                "quote": ""
+              }
+            },
+            "issues": [
+              "owner_record_ambiguous",
+              "source_quote_not_unique",
+              "semantic_undetermined"
+            ],
+            "reason": "owner_record_ambiguous"
+          },
+          {
+            "candidate_id": "c11",
+            "subject_id": "s1",
+            "field": "f5",
+            "proposal": {
+              "raw": "1",
+              "source": {
+                "ref": "u20",
+                "quote": "1",
+                "start": 0,
+                "end": 1
+              },
+              "field": {
+                "ref": "u8",
+                "quote": "F5",
+                "start": 0,
+                "end": 2
+              },
+              "unit": {
+                "ref": "",
+                "quote": ""
+              },
+              "condition": {
+                "ref": "",
+                "quote": ""
+              }
+            },
+            "issues": [
+              "owner_record_ambiguous",
+              "source_quote_not_unique",
+              "semantic_undetermined"
+            ],
+            "reason": "owner_record_ambiguous"
+          },
+          {
+            "candidate_id": "c12",
+            "subject_id": "s1",
+            "field": "f5",
+            "proposal": {
+              "raw": "1",
+              "source": {
+                "ref": "u30",
+                "quote": "1",
+                "start": 0,
+                "end": 1
+              },
+              "field": {
+                "ref": "u8",
+                "quote": "F5",
+                "start": 0,
+                "end": 2
+              },
+              "unit": {
+                "ref": "",
+                "quote": ""
+              },
+              "condition": {
+                "ref": "",
+                "quote": ""
+              }
+            },
+            "issues": [
+              "owner_record_ambiguous",
+              "source_quote_not_unique",
+              "semantic_undetermined"
+            ],
+            "reason": "owner_record_ambiguous"
+          },
+          {
+            "candidate_id": "c13",
+            "subject_id": "s1",
+            "field": "noaelDuration",
+            "proposal": {
+              "raw": "14天",
+              "source": {
+                "ref": "u14",
+                "quote": "大鼠14天亚急毒试验（试验1）",
+                "start": 0,
+                "end": 15
+              },
+              "field": {
+                "ref": "u2",
+                "quote": "试验项目",
+                "start": 0,
+                "end": 4
+              },
+              "unit": {
+                "ref": "",
+                "quote": ""
+              },
+              "condition": {
+                "ref": "",
+                "quote": ""
+              }
+            },
+            "issues": [
+              "owner_record_ambiguous"
+            ],
+            "reason": "owner_record_ambiguous"
+          },
+          {
+            "candidate_id": "c14",
+            "subject_id": "s1",
+            "field": "noaelDuration",
+            "proposal": {
+              "raw": "14天",
+              "source": {
+                "ref": "u24",
+                "quote": "犬14天亚急毒",
+                "start": 0,
+                "end": 7
+              },
+              "field": {
+                "ref": "u2",
+                "quote": "试验项目",
+                "start": 0,
+                "end": 4
+              },
+              "unit": {
+                "ref": "",
+                "quote": ""
+              },
+              "condition": {
+                "ref": "",
+                "quote": ""
+              }
+            },
+            "issues": [
+              "owner_record_ambiguous"
+            ],
+            "reason": "owner_record_ambiguous"
+          },
+          {
+            "candidate_id": "c15",
+            "subject_id": "s1",
+            "field": "noaelSpecies",
+            "proposal": {
+              "raw": "大鼠",
+              "source": {
+                "ref": "u14",
+                "quote": "大鼠14天亚急毒试验（试验1）",
+                "start": 0,
+                "end": 15
+              },
+              "field": {
+                "ref": "u2",
+                "quote": "试验项目",
+                "start": 0,
+                "end": 4
+              },
+              "unit": {
+                "ref": "",
+                "quote": ""
+              },
+              "condition": {
+                "ref": "",
+                "quote": ""
+              }
+            },
+            "issues": [
+              "owner_record_ambiguous"
+            ],
+            "reason": "owner_record_ambiguous"
+          },
+          {
+            "candidate_id": "c16",
+            "subject_id": "s1",
+            "field": "noaelSpecies",
+            "proposal": {
+              "raw": "犬",
+              "source": {
+                "ref": "u24",
+                "quote": "犬14天亚急毒",
+                "start": 0,
+                "end": 7
+              },
+              "field": {
+                "ref": "u2",
+                "quote": "试验项目",
+                "start": 0,
+                "end": 4
+              },
+              "unit": {
+                "ref": "",
+                "quote": ""
+              },
+              "condition": {
+                "ref": "",
+                "quote": ""
+              }
+            },
+            "issues": [
+              "owner_record_ambiguous"
+            ],
+            "reason": "owner_record_ambiguous"
+          },
+          {
+            "candidate_id": "c17",
+            "subject_id": "s1",
+            "field": "oebBand",
+            "proposal": {
+              "raw": "1",
+              "source": {
+                "ref": "u23",
+                "quote": "1",
+                "start": 0,
+                "end": 1
+              },
+              "field": {
+                "ref": "u12",
+                "quote": "OEB",
+                "start": 0,
+                "end": 3
+              },
+              "unit": {
+                "ref": "",
+                "quote": ""
+              },
+              "condition": {
+                "ref": "",
+                "quote": ""
+              }
+            },
+            "issues": [
+              "owner_record_ambiguous"
+            ],
+            "reason": "owner_record_ambiguous"
+          },
+          {
+            "candidate_id": "c18",
+            "subject_id": "s1",
+            "field": "oebBand",
+            "proposal": {
+              "raw": "1",
+              "source": {
+                "ref": "u33",
+                "quote": "1",
+                "start": 0,
+                "end": 1
+              },
+              "field": {
+                "ref": "u12",
+                "quote": "OEB",
+                "start": 0,
+                "end": 3
+              },
+              "unit": {
+                "ref": "",
+                "quote": ""
+              },
+              "condition": {
+                "ref": "",
+                "quote": ""
+              }
+            },
+            "issues": [
+              "owner_record_ambiguous"
+            ],
+            "reason": "owner_record_ambiguous"
+          },
+          {
+            "candidate_id": "c19",
+            "subject_id": "s1",
+            "field": "pde_mg_per_day",
+            "proposal": {
+              "raw": "100",
+              "source": {
+                "ref": "u21",
+                "quote": "100",
+                "start": 0,
+                "end": 3
+              },
+              "field": {
+                "ref": "u9",
+                "quote": "PDE",
+                "start": 0,
+                "end": 3
+              },
+              "unit": {
+                "ref": "u10",
+                "quote": "(mg/天)",
+                "start": 0,
+                "end": 6
+              },
+              "condition": {
+                "ref": "",
+                "quote": ""
+              }
+            },
+            "issues": [
+              "owner_record_ambiguous"
+            ],
+            "reason": "owner_record_ambiguous"
+          },
+          {
+            "candidate_id": "c20",
+            "subject_id": "s1",
+            "field": "pde_mg_per_day",
+            "proposal": {
+              "raw": "7.5",
+              "source": {
+                "ref": "u31",
+                "quote": "7.5",
+                "start": 0,
+                "end": 3
+              },
+              "field": {
+                "ref": "u9",
+                "quote": "PDE",
+                "start": 0,
+                "end": 3
+              },
+              "unit": {
+                "ref": "u10",
+                "quote": "(mg/天)",
+                "start": 0,
+                "end": 6
+              },
+              "condition": {
+                "ref": "",
+                "quote": ""
+              }
+            },
+            "issues": [
+              "owner_record_ambiguous"
+            ],
+            "reason": "owner_record_ambiguous"
+          },
+          {
+            "candidate_id": "c21",
+            "subject_id": "s1",
+            "field": "sourceReference",
+            "proposal": {
+              "raw": "19191-25030-NG",
+              "source": {
+                "ref": "u22",
+                "quote": "19191-25030-NG",
+                "start": 0,
+                "end": 14
+              },
+              "field": {
+                "ref": "u11",
+                "quote": "来源",
+                "start": 0,
+                "end": 2
+              },
+              "unit": {
+                "ref": "",
+                "quote": ""
+              },
+              "condition": {
+                "ref": "",
+                "quote": ""
+              }
+            },
+            "issues": [
+              "owner_record_ambiguous"
+            ],
+            "reason": "owner_record_ambiguous"
+          },
+          {
+            "candidate_id": "c22",
+            "subject_id": "s1",
+            "field": "sourceReference",
+            "proposal": {
+              "raw": "19191-25031-NG",
+              "source": {
+                "ref": "u32",
+                "quote": "19191-25031-NG",
+                "start": 0,
+                "end": 14
+              },
+              "field": {
+                "ref": "u11",
+                "quote": "来源",
+                "start": 0,
+                "end": 2
+              },
+              "unit": {
+                "ref": "",
+                "quote": ""
+              },
+              "condition": {
+                "ref": "",
+                "quote": ""
+              }
+            },
+            "issues": [
+              "owner_record_ambiguous"
+            ],
+            "reason": "owner_record_ambiguous"
+          },
+          {
+            "candidate_id": "c23",
+            "subject_id": "s1",
+            "field": "studyType",
+            "proposal": {
+              "raw": "大鼠14天亚急毒试验（试验1）",
+              "source": {
+                "ref": "u14",
+                "quote": "大鼠14天亚急毒试验（试验1）",
+                "start": 0,
+                "end": 15
+              },
+              "field": {
+                "ref": "u2",
+                "quote": "试验项目",
+                "start": 0,
+                "end": 4
+              },
+              "unit": {
+                "ref": "",
+                "quote": ""
+              },
+              "condition": {
+                "ref": "",
+                "quote": ""
+              }
+            },
+            "issues": [
+              "owner_record_ambiguous"
+            ],
+            "reason": "owner_record_ambiguous"
+          },
+          {
+            "candidate_id": "c24",
+            "subject_id": "s1",
+            "field": "studyType",
+            "proposal": {
+              "raw": "犬14天亚急毒",
+              "source": {
+                "ref": "u24",
+                "quote": "犬14天亚急毒",
+                "start": 0,
+                "end": 7
+              },
+              "field": {
+                "ref": "u2",
+                "quote": "试验项目",
+                "start": 0,
+                "end": 4
+              },
+              "unit": {
+                "ref": "",
+                "quote": ""
+              },
+              "condition": {
+                "ref": "",
+                "quote": ""
+              }
+            },
+            "issues": [
+              "owner_record_ambiguous"
+            ],
+            "reason": "owner_record_ambiguous"
+          },
+          {
+            "kind": "observation",
+            "candidate_id": "o1",
+            "proposal": {
+              "value": {
+                "ref": "",
+                "quote": ""
+              },
+              "field": {
+                "ref": "u3",
+                "quote": "NOAEL",
+                "start": 0,
+                "end": 5
+              },
+              "legend": {
+                "ref": "u35",
+                "quote": " NOAEL：无可见损害作用水平；",
+                "start": 0,
+                "end": 17
+              },
+              "condition": {
+                "ref": "",
+                "quote": ""
+              },
+              "state": "unmapped",
+              "reason": "NOAEL数值存在但单位缺失，无法映射到mg/kg/天属性"
+            },
+            "issues": [
+              "source_quote_missing"
+            ]
+          },
+          {
+            "kind": "observation",
+            "candidate_id": "o2",
+            "proposal": {
+              "value": {
+                "ref": "",
+                "quote": ""
+              },
+              "field": {
+                "ref": "u3",
+                "quote": "NOAEL",
+                "start": 0,
+                "end": 5
+              },
+              "legend": {
+                "ref": "u35",
+                "quote": " NOAEL：无可见损害作用水平；",
+                "start": 0,
+                "end": 17
+              },
+              "condition": {
+                "ref": "",
+                "quote": ""
+              },
+              "state": "unmapped",
+              "reason": "NOAEL数值存在但单位缺失，无法映射到mg/kg/天属性"
+            },
+            "issues": [
+              "source_quote_missing"
+            ]
+          },
+          {
+            "kind": "observation",
+            "candidate_id": "o3",
+            "proposal": {
+              "value": {
+                "ref": "",
+                "quote": ""
+              },
+              "field": {
+                "ref": "u4",
+                "quote": "F1",
+                "start": 0,
+                "end": 2
+              },
+              "legend": {
+                "ref": "u40",
+                "quote": " F1：考虑种类之间差异的系数；F1 = 5，适用于从大鼠外推到人；F1 = 2，适用于  从犬外推到人",
+                "start": 0,
+                "end": 52
+              },
+              "condition": {
+                "ref": "",
+                "quote": ""
+              },
+              "state": "unmapped",
+              "reason": "F1值存在但具体适用条件（大鼠/犬）分散在不同行，需结合试验项目判断，此处作为观察记录"
+            },
+            "issues": [
+              "source_quote_missing"
+            ]
+          },
+          {
+            "kind": "observation",
+            "candidate_id": "o4",
+            "proposal": {
+              "value": {
+                "ref": "",
+                "quote": ""
+              },
+              "field": {
+                "ref": "u5",
+                "quote": "F2",
+                "start": 0,
+                "end": 2
+              },
+              "legend": {
+                "ref": "u41",
+                "quote": " F2：考虑个体之间差异的系数；F2 = 10。",
+                "start": 0,
+                "end": 24
+              },
+              "condition": {
+                "ref": "",
+                "quote": ""
+              },
+              "state": "unmapped",
+              "reason": "F2值存在但作为固定系数，无需特定条件触发"
+            },
+            "issues": [
+              "source_quote_missing"
+            ]
+          },
+          {
+            "kind": "observation",
+            "candidate_id": "o5",
+            "proposal": {
+              "value": {
+                "ref": "",
+                "quote": ""
+              },
+              "field": {
+                "ref": "u6",
+                "quote": "F3",
+                "start": 0,
+                "end": 2
+              },
+              "legend": {
+                "ref": "u42",
+                "quote": " F3：为短期接触急性毒性研究的可变系数；F3 = 10，14天的研究；",
+                "start": 0,
+                "end": 36
+              },
+              "condition": {
+                "ref": "",
+                "quote": ""
+              },
+              "state": "unmapped",
+              "reason": "F3值存在，条件为14天研究，已在studyType中体现"
+            },
+            "issues": [
+              "source_quote_missing"
+            ]
+          },
+          {
+            "kind": "observation",
+            "candidate_id": "o6",
+            "proposal": {
+              "value": {
+                "ref": "",
+                "quote": ""
+              },
+              "field": {
+                "ref": "u7",
+                "quote": "F4",
+                "start": 0,
+                "end": 2
+              },
+              "legend": {
+                "ref": "u43",
+                "quote": " F4：为用于产生严重毒性数据情况的系数，如非遗传致癌毒性，神经毒性或致畸性；F4 = 1，未观察到严重影响",
+                "start": 0,
+                "end": 54
+              },
+              "condition": {
+                "ref": "",
+                "quote": ""
+              },
+              "state": "unmapped",
+              "reason": "F4值存在，条件为未观察到严重影响"
+            },
+            "issues": [
+              "source_quote_missing",
+              "source_quote_not_unique"
+            ]
+          },
+          {
+            "kind": "observation",
+            "candidate_id": "o7",
+            "proposal": {
+              "value": {
+                "ref": "",
+                "quote": ""
+              },
+              "field": {
+                "ref": "u8",
+                "quote": "F5",
+                "start": 0,
+                "end": 2
+              },
+              "legend": {
+                "ref": "u44",
+                "quote": " F5：可变系数，在没有建立NOEL时应用。F5=1，NOAEL",
+                "start": 0,
+                "end": 32
+              },
+              "condition": {
+                "ref": "",
+                "quote": ""
+              },
+              "state": "unmapped",
+              "reason": "F5值存在，条件为NOAEL已建立"
+            },
+            "issues": [
+              "source_quote_missing",
+              "source_quote_not_unique"
+            ]
+          }
+        ],
+        "rejected": [],
+        "acceptance": {
+          "checks": [
+            {
+              "check": "required_properties",
+              "expected": {
+                "predicate": "studyType",
+                "subject_class": "SharedLineAssessmentData",
+                "value": "大鼠14天亚急毒试验（试验1）",
+                "owner_contains": "大鼠",
+                "row": 1
+              },
+              "pass": false
+            },
+            {
+              "check": "required_properties",
+              "expected": {
+                "predicate": "sourceReference",
+                "subject_class": "SharedLineAssessmentData",
+                "value": "19191-25030-NG",
+                "owner_contains": "大鼠",
+                "row": 1
+              },
+              "pass": false
+            },
+            {
+              "check": "required_properties",
+              "expected": {
+                "predicate": "pde_mg_per_day",
+                "subject_class": "SharedLineAssessmentData",
+                "value": "100",
+                "owner_contains": "大鼠",
+                "row": 1
+              },
+              "pass": false
+            },
+            {
+              "check": "required_properties",
+              "expected": {
+                "predicate": "f1",
+                "subject_class": "SharedLineAssessmentData",
+                "value": "5",
+                "owner_contains": "大鼠",
+                "row": 1
+              },
+              "pass": false
+            },
+            {
+              "check": "required_properties",
+              "expected": {
+                "predicate": "studyType",
+                "subject_class": "SharedLineAssessmentData",
+                "value": "犬14天亚急毒",
+                "owner_contains": "犬",
+                "row": 2
+              },
+              "pass": false
+            },
+            {
+              "check": "required_properties",
+              "expected": {
+                "predicate": "sourceReference",
+                "subject_class": "SharedLineAssessmentData",
+                "value": "19191-25031-NG",
+                "owner_contains": "犬",
+                "row": 2
+              },
+              "pass": false
+            },
+            {
+              "check": "required_properties",
+              "expected": {
+                "predicate": "pde_mg_per_day",
+                "subject_class": "SharedLineAssessmentData",
+                "value": "7.5",
+                "owner_contains": "犬",
+                "row": 2
+              },
+              "pass": false
+            },
+            {
+              "check": "required_properties",
+              "expected": {
+                "predicate": "f1",
+                "subject_class": "SharedLineAssessmentData",
+                "value": "2",
+                "owner_contains": "犬",
+                "row": 2
+              },
+              "pass": false
+            },
+            {
+              "check": "subject_group",
+              "expected": {
+                "name": "rat_study",
+                "required_property_indices": [
+                  0,
+                  1,
+                  2,
+                  3
+                ],
+                "subject_class": "SharedLineAssessmentData",
+                "anchor": {
+                  "table_path": [
+                    "table:10"
+                  ],
+                  "row": 1,
+                  "column": 1
+                }
+              },
+              "pass": false
+            },
+            {
+              "check": "subject_group",
+              "expected": {
+                "name": "dog_study",
+                "required_property_indices": [
+                  4,
+                  5,
+                  6,
+                  7
+                ],
+                "subject_class": "SharedLineAssessmentData",
+                "anchor": {
+                  "table_path": [
+                    "table:10"
+                  ],
+                  "row": 2,
+                  "column": 1
+                }
+              },
+              "pass": false
+            },
+            {
+              "check": "distinct_subject_groups",
+              "pass": false
+            },
+            {
+              "check": "required_observations",
+              "expected": {
+                "quote": "200",
+                "state": "unknown",
+                "column": 2
+              },
+              "pass": false
+            },
+            {
+              "check": "required_observations",
+              "expected": {
+                "quote": "30",
+                "state": "unknown",
+                "column": 2
+              },
+              "pass": false
+            },
+            {
+              "check": "forbidden_predicate",
+              "expected": "noael_mg_per_kg_per_day",
+              "pass": true
+            },
+            {
+              "check": "forbidden_predicate",
+              "expected": "pod_mg_per_kg_per_day",
+              "pass": true
+            }
+          ],
+          "passed": 2,
+          "total": 15,
+          "all_pass": false,
+          "evaluated": true
+        },
+        "extended_acceptance": {
+          "checks": [
+            {
+              "check": "semantic_review_present",
+              "candidate_id": "c1",
+              "pass": true
+            },
+            {
+              "check": "semantic_review_present",
+              "candidate_id": "c2",
+              "pass": true
+            },
+            {
+              "check": "request_budget",
+              "pass": true
+            }
+          ],
+          "evaluated": true,
+          "all_pass": true,
+          "manual_review_required": [
+            "subject_type",
+            "subject_binding",
+            "predicate_or_metric_meaning",
+            "relation_direction_and_endpoints",
+            "source_unit_and_normalization",
+            "polarity_and_unknown",
+            "field_legend_condition_roles",
+            "long_value_completeness"
+          ],
+          "manual_review_status": "not_performed"
+        }
+      }
+    },
+    "B": {
+      "plan": {
+        "get_schema_card": [
+          {
+            "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/SharedLineAssessmentData"
+          },
+          {
+            "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/ActivePharmaceuticalIngredient"
+          }
+        ],
+        "inspect_evidence": [
+          {
+            "ref": "u13"
+          },
+          {
+            "ref": "u14"
+          },
+          {
+            "ref": "u15"
+          },
+          {
+            "ref": "u21"
+          }
+        ],
+        "propose_mentions": [
+          {
+            "group": "entities"
+          },
+          {
+            "group": "values"
+          },
+          {
+            "group": "units"
+          }
+        ]
+      },
+      "candidates": null,
+      "final": {
+        "status": "failed",
+        "error_type": "FileNotFoundError",
+        "error_code": "model_timeout",
+        "accepted": [],
+        "observations": [],
+        "unresolved": [],
+        "rejected": [],
+        "acceptance": {
+          "checks": [
+            {
+              "check": "required_properties",
+              "expected": {
+                "predicate": "studyType",
+                "subject_class": "SharedLineAssessmentData",
+                "value": "大鼠14天亚急毒试验（试验1）",
+                "owner_contains": "大鼠",
+                "row": 1
+              },
+              "pass": false
+            },
+            {
+              "check": "required_properties",
+              "expected": {
+                "predicate": "sourceReference",
+                "subject_class": "SharedLineAssessmentData",
+                "value": "19191-25030-NG",
+                "owner_contains": "大鼠",
+                "row": 1
+              },
+              "pass": false
+            },
+            {
+              "check": "required_properties",
+              "expected": {
+                "predicate": "pde_mg_per_day",
+                "subject_class": "SharedLineAssessmentData",
+                "value": "100",
+                "owner_contains": "大鼠",
+                "row": 1
+              },
+              "pass": false
+            },
+            {
+              "check": "required_properties",
+              "expected": {
+                "predicate": "f1",
+                "subject_class": "SharedLineAssessmentData",
+                "value": "5",
+                "owner_contains": "大鼠",
+                "row": 1
+              },
+              "pass": false
+            },
+            {
+              "check": "required_properties",
+              "expected": {
+                "predicate": "studyType",
+                "subject_class": "SharedLineAssessmentData",
+                "value": "犬14天亚急毒",
+                "owner_contains": "犬",
+                "row": 2
+              },
+              "pass": false
+            },
+            {
+              "check": "required_properties",
+              "expected": {
+                "predicate": "sourceReference",
+                "subject_class": "SharedLineAssessmentData",
+                "value": "19191-25031-NG",
+                "owner_contains": "犬",
+                "row": 2
+              },
+              "pass": false
+            },
+            {
+              "check": "required_properties",
+              "expected": {
+                "predicate": "pde_mg_per_day",
+                "subject_class": "SharedLineAssessmentData",
+                "value": "7.5",
+                "owner_contains": "犬",
+                "row": 2
+              },
+              "pass": false
+            },
+            {
+              "check": "required_properties",
+              "expected": {
+                "predicate": "f1",
+                "subject_class": "SharedLineAssessmentData",
+                "value": "2",
+                "owner_contains": "犬",
+                "row": 2
+              },
+              "pass": false
+            },
+            {
+              "check": "subject_group",
+              "expected": {
+                "name": "rat_study",
+                "required_property_indices": [
+                  0,
+                  1,
+                  2,
+                  3
+                ],
+                "subject_class": "SharedLineAssessmentData",
+                "anchor": {
+                  "table_path": [
+                    "table:10"
+                  ],
+                  "row": 1,
+                  "column": 1
+                }
+              },
+              "pass": false
+            },
+            {
+              "check": "subject_group",
+              "expected": {
+                "name": "dog_study",
+                "required_property_indices": [
+                  4,
+                  5,
+                  6,
+                  7
+                ],
+                "subject_class": "SharedLineAssessmentData",
+                "anchor": {
+                  "table_path": [
+                    "table:10"
+                  ],
+                  "row": 2,
+                  "column": 1
+                }
+              },
+              "pass": false
+            },
+            {
+              "check": "distinct_subject_groups",
+              "pass": false
+            },
+            {
+              "check": "required_observations",
+              "expected": {
+                "quote": "200",
+                "state": "unknown",
+                "column": 2
+              },
+              "pass": false
+            },
+            {
+              "check": "required_observations",
+              "expected": {
+                "quote": "30",
+                "state": "unknown",
+                "column": 2
+              },
+              "pass": false
+            },
+            {
+              "check": "forbidden_predicate",
+              "expected": "noael_mg_per_kg_per_day",
+              "pass": true
+            },
+            {
+              "check": "forbidden_predicate",
+              "expected": "pod_mg_per_kg_per_day",
+              "pass": true
+            }
+          ],
+          "passed": 2,
+          "total": 15,
+          "all_pass": false,
+          "evaluated": false
+        },
+        "extended_acceptance": {
+          "checks": [],
+          "evaluated": false,
+          "all_pass": false,
+          "reason": "technical_failure",
+          "error_code": "model_timeout",
+          "manual_review_required": [
+            "subject_type",
+            "subject_binding",
+            "predicate_or_metric_meaning",
+            "relation_direction_and_endpoints",
+            "source_unit_and_normalization",
+            "polarity_and_unknown",
+            "field_legend_condition_roles",
+            "long_value_completeness"
+          ],
+          "manual_review_status": "not_performed"
+        }
+      }
+    }
+  },
+  "sources": {
+    "u0": {
+      "evidence_id": "92a3f75b9bbfd08d7d78cf00abf14bd4a9688c6860dc1c797081c1e76ccb56c2",
+      "kind": "heading",
+      "text": "表1 产品NOAEL、F值",
+      "section_node_id": "section:102",
+      "block_id": "paragraph:102:0",
+      "paragraph_index": 102,
+      "fragment_index": 0,
+      "table_path": null,
+      "row_index": null,
+      "column_index": null,
+      "physical_page_number": 6,
+      "source_cell_id": null,
+      "paragraph_offset": 0,
+      "ref": "u0",
+      "row_span": 1,
+      "column_span": 1,
+      "logical_rows": [],
+      "column_indices": [],
+      "grid_rows": [],
+      "grid_columns": [],
+      "column_header_refs": [],
+      "is_header": false,
+      "parser_header_candidate": false,
+      "header_status": "not_a_table",
+      "cell_structure_valid": false
+    },
+    "u1": {
+      "evidence_id": "dca816cb575e0e7be16be0de1676be99b360a051a3a9f4d98bb0758166892bd7",
+      "kind": "cell_paragraph",
+      "text": "活性成分(API)",
+      "section_node_id": "section:102",
+      "block_id": "table:10",
+      "paragraph_index": 0,
+      "fragment_index": 0,
+      "table_path": [
+        "table:10"
+      ],
+      "row_index": 0,
+      "column_index": 0,
+      "physical_page_number": 6,
+      "source_cell_id": "table:10/cell:0:0",
+      "paragraph_offset": 0,
+      "ref": "u1",
+      "row_span": 1,
+      "column_span": 1,
+      "logical_rows": [
+        0
+      ],
+      "column_indices": [
+        0
+      ],
+      "grid_rows": [
+        0
+      ],
+      "grid_columns": [
+        0
+      ],
+      "column_header_refs": [],
+      "is_header": true,
+      "parser_header_candidate": true,
+      "header_status": "heuristic_candidate",
+      "cell_structure_valid": true
+    },
+    "u2": {
+      "evidence_id": "c5b56d8605f9cdc88a6f3247a0baf5dfe822e670b792bde2dfd1dd73f5571947",
+      "kind": "cell_paragraph",
+      "text": "试验项目",
+      "section_node_id": "section:102",
+      "block_id": "table:10",
+      "paragraph_index": 0,
+      "fragment_index": 0,
+      "table_path": [
+        "table:10"
+      ],
+      "row_index": 0,
+      "column_index": 1,
+      "physical_page_number": 6,
+      "source_cell_id": "table:10/cell:0:1",
+      "paragraph_offset": 0,
+      "ref": "u2",
+      "row_span": 1,
+      "column_span": 1,
+      "logical_rows": [
+        0
+      ],
+      "column_indices": [
+        1
+      ],
+      "grid_rows": [
+        0
+      ],
+      "grid_columns": [
+        1
+      ],
+      "column_header_refs": [],
+      "is_header": true,
+      "parser_header_candidate": true,
+      "header_status": "heuristic_candidate",
+      "cell_structure_valid": true
+    },
+    "u3": {
+      "evidence_id": "c1ab3d93cd69b2eeada2e21770f8489563084e76298c64e0aa12b31de251e677",
+      "kind": "cell_paragraph",
+      "text": "NOAEL",
+      "section_node_id": "section:102",
+      "block_id": "table:10",
+      "paragraph_index": 0,
+      "fragment_index": 0,
+      "table_path": [
+        "table:10"
+      ],
+      "row_index": 0,
+      "column_index": 2,
+      "physical_page_number": 6,
+      "source_cell_id": "table:10/cell:0:2",
+      "paragraph_offset": 0,
+      "ref": "u3",
+      "row_span": 1,
+      "column_span": 1,
+      "logical_rows": [
+        0
+      ],
+      "column_indices": [
+        2
+      ],
+      "grid_rows": [
+        0
+      ],
+      "grid_columns": [
+        2
+      ],
+      "column_header_refs": [],
+      "is_header": true,
+      "parser_header_candidate": true,
+      "header_status": "heuristic_candidate",
+      "cell_structure_valid": true
+    },
+    "u4": {
+      "evidence_id": "d7fd7fbd3738bf0ef0a91de68791790aafb7eb86a349852dcfb0f3eb34dd3664",
+      "kind": "cell_paragraph",
+      "text": "F1",
+      "section_node_id": "section:102",
+      "block_id": "table:10",
+      "paragraph_index": 0,
+      "fragment_index": 0,
+      "table_path": [
+        "table:10"
+      ],
+      "row_index": 0,
+      "column_index": 3,
+      "physical_page_number": 6,
+      "source_cell_id": "table:10/cell:0:3",
+      "paragraph_offset": 0,
+      "ref": "u4",
+      "row_span": 1,
+      "column_span": 1,
+      "logical_rows": [
+        0
+      ],
+      "column_indices": [
+        3
+      ],
+      "grid_rows": [
+        0
+      ],
+      "grid_columns": [
+        3
+      ],
+      "column_header_refs": [],
+      "is_header": true,
+      "parser_header_candidate": true,
+      "header_status": "heuristic_candidate",
+      "cell_structure_valid": true
+    },
+    "u5": {
+      "evidence_id": "5392219146388b08ece9852f4438d9935ffa774d0f6417db99219f647fc8f44f",
+      "kind": "cell_paragraph",
+      "text": "F2",
+      "section_node_id": "section:102",
+      "block_id": "table:10",
+      "paragraph_index": 0,
+      "fragment_index": 0,
+      "table_path": [
+        "table:10"
+      ],
+      "row_index": 0,
+      "column_index": 4,
+      "physical_page_number": 6,
+      "source_cell_id": "table:10/cell:0:4",
+      "paragraph_offset": 0,
+      "ref": "u5",
+      "row_span": 1,
+      "column_span": 1,
+      "logical_rows": [
+        0
+      ],
+      "column_indices": [
+        4
+      ],
+      "grid_rows": [
+        0
+      ],
+      "grid_columns": [
+        4
+      ],
+      "column_header_refs": [],
+      "is_header": true,
+      "parser_header_candidate": true,
+      "header_status": "heuristic_candidate",
+      "cell_structure_valid": true
+    },
+    "u6": {
+      "evidence_id": "12919c5dbac49b975433262669c85f52e167a700afff3fe3329df25135232f53",
+      "kind": "cell_paragraph",
+      "text": "F3",
+      "section_node_id": "section:102",
+      "block_id": "table:10",
+      "paragraph_index": 0,
+      "fragment_index": 0,
+      "table_path": [
+        "table:10"
+      ],
+      "row_index": 0,
+      "column_index": 5,
+      "physical_page_number": 6,
+      "source_cell_id": "table:10/cell:0:5",
+      "paragraph_offset": 0,
+      "ref": "u6",
+      "row_span": 1,
+      "column_span": 1,
+      "logical_rows": [
+        0
+      ],
+      "column_indices": [
+        5
+      ],
+      "grid_rows": [
+        0
+      ],
+      "grid_columns": [
+        5
+      ],
+      "column_header_refs": [],
+      "is_header": true,
+      "parser_header_candidate": true,
+      "header_status": "heuristic_candidate",
+      "cell_structure_valid": true
+    },
+    "u7": {
+      "evidence_id": "8560e0a77aaf75d281645e79dc5e54101e1c6a9cac8e3659ad2597b787c8bfc2",
+      "kind": "cell_paragraph",
+      "text": "F4",
+      "section_node_id": "section:102",
+      "block_id": "table:10",
+      "paragraph_index": 0,
+      "fragment_index": 0,
+      "table_path": [
+        "table:10"
+      ],
+      "row_index": 0,
+      "column_index": 6,
+      "physical_page_number": 6,
+      "source_cell_id": "table:10/cell:0:6",
+      "paragraph_offset": 0,
+      "ref": "u7",
+      "row_span": 1,
+      "column_span": 1,
+      "logical_rows": [
+        0
+      ],
+      "column_indices": [
+        6
+      ],
+      "grid_rows": [
+        0
+      ],
+      "grid_columns": [
+        6
+      ],
+      "column_header_refs": [],
+      "is_header": true,
+      "parser_header_candidate": true,
+      "header_status": "heuristic_candidate",
+      "cell_structure_valid": true
+    },
+    "u8": {
+      "evidence_id": "5c9d9ff3a51dba6545d5caa7d9b240f146c83fe7ccd936b6bc259c5c9f448f60",
+      "kind": "cell_paragraph",
+      "text": "F5",
+      "section_node_id": "section:102",
+      "block_id": "table:10",
+      "paragraph_index": 0,
+      "fragment_index": 0,
+      "table_path": [
+        "table:10"
+      ],
+      "row_index": 0,
+      "column_index": 7,
+      "physical_page_number": 6,
+      "source_cell_id": "table:10/cell:0:7",
+      "paragraph_offset": 0,
+      "ref": "u8",
+      "row_span": 1,
+      "column_span": 1,
+      "logical_rows": [
+        0
+      ],
+      "column_indices": [
+        7
+      ],
+      "grid_rows": [
+        0
+      ],
+      "grid_columns": [
+        7
+      ],
+      "column_header_refs": [],
+      "is_header": true,
+      "parser_header_candidate": true,
+      "header_status": "heuristic_candidate",
+      "cell_structure_valid": true
+    },
+    "u9": {
+      "evidence_id": "a5c0078c5d94557b6301525fc4d01b29fe158150ac55ce89c095cb5f7673ac1a",
+      "kind": "cell_paragraph",
+      "text": "PDE",
+      "section_node_id": "section:102",
+      "block_id": "table:10",
+      "paragraph_index": 0,
+      "fragment_index": 0,
+      "table_path": [
+        "table:10"
+      ],
+      "row_index": 0,
+      "column_index": 8,
+      "physical_page_number": 6,
+      "source_cell_id": "table:10/cell:0:8",
+      "paragraph_offset": 0,
+      "ref": "u9",
+      "row_span": 1,
+      "column_span": 1,
+      "logical_rows": [
+        0
+      ],
+      "column_indices": [
+        8
+      ],
+      "grid_rows": [
+        0
+      ],
+      "grid_columns": [
+        8
+      ],
+      "column_header_refs": [],
+      "is_header": true,
+      "parser_header_candidate": true,
+      "header_status": "heuristic_candidate",
+      "cell_structure_valid": true
+    },
+    "u10": {
+      "evidence_id": "cfc262f650ff30ead660dabf39df7e6079cfd16d0c8cf8009fc6dde884173072",
+      "kind": "cell_paragraph",
+      "text": "(mg/天)",
+      "section_node_id": "section:102",
+      "block_id": "table:10",
+      "paragraph_index": 1,
+      "fragment_index": 0,
+      "table_path": [
+        "table:10"
+      ],
+      "row_index": 0,
+      "column_index": 8,
+      "physical_page_number": 6,
+      "source_cell_id": "table:10/cell:0:8",
+      "paragraph_offset": 0,
+      "ref": "u10",
+      "row_span": 1,
+      "column_span": 1,
+      "logical_rows": [
+        0
+      ],
+      "column_indices": [
+        8
+      ],
+      "grid_rows": [
+        0
+      ],
+      "grid_columns": [
+        8
+      ],
+      "column_header_refs": [],
+      "is_header": true,
+      "parser_header_candidate": true,
+      "header_status": "heuristic_candidate",
+      "cell_structure_valid": true
+    },
+    "u11": {
+      "evidence_id": "859b49c09fbdbf2c0e0f40faf747883ca12fbe6be4ff4d52998ac3992babb95e",
+      "kind": "cell_paragraph",
+      "text": "来源",
+      "section_node_id": "section:102",
+      "block_id": "table:10",
+      "paragraph_index": 0,
+      "fragment_index": 0,
+      "table_path": [
+        "table:10"
+      ],
+      "row_index": 0,
+      "column_index": 9,
+      "physical_page_number": 6,
+      "source_cell_id": "table:10/cell:0:9",
+      "paragraph_offset": 0,
+      "ref": "u11",
+      "row_span": 1,
+      "column_span": 1,
+      "logical_rows": [
+        0
+      ],
+      "column_indices": [
+        9
+      ],
+      "grid_rows": [
+        0
+      ],
+      "grid_columns": [
+        9
+      ],
+      "column_header_refs": [],
+      "is_header": true,
+      "parser_header_candidate": true,
+      "header_status": "heuristic_candidate",
+      "cell_structure_valid": true
+    },
+    "u12": {
+      "evidence_id": "00dca1ce77ee2c2718865537b3e11a11bf6e93928beb5095f1dffcdb3302826c",
+      "kind": "cell_paragraph",
+      "text": "OEB",
+      "section_node_id": "section:102",
+      "block_id": "table:10",
+      "paragraph_index": 0,
+      "fragment_index": 0,
+      "table_path": [
+        "table:10"
+      ],
+      "row_index": 0,
+      "column_index": 10,
+      "physical_page_number": 6,
+      "source_cell_id": "table:10/cell:0:10",
+      "paragraph_offset": 0,
+      "ref": "u12",
+      "row_span": 1,
+      "column_span": 1,
+      "logical_rows": [
+        0
+      ],
+      "column_indices": [
+        10
+      ],
+      "grid_rows": [
+        0
+      ],
+      "grid_columns": [
+        10
+      ],
+      "column_header_refs": [],
+      "is_header": true,
+      "parser_header_candidate": true,
+      "header_status": "heuristic_candidate",
+      "cell_structure_valid": true
+    },
+    "u13": {
+      "evidence_id": "24354067e73ceeff64d01a289b5866da67bc7f04b691f6c467ad6e1f803f3090",
+      "kind": "cell_paragraph",
+      "text": "HRS-1597",
+      "section_node_id": "section:102",
+      "block_id": "table:10",
+      "paragraph_index": 0,
+      "fragment_index": 0,
+      "table_path": [
+        "table:10"
+      ],
+      "row_index": 1,
+      "column_index": 0,
+      "physical_page_number": 6,
+      "source_cell_id": "table:10/cell:1:0",
+      "paragraph_offset": 0,
+      "ref": "u13",
+      "row_span": 2,
+      "column_span": 1,
+      "logical_rows": [
+        1,
+        2
+      ],
+      "column_indices": [
+        0
+      ],
+      "grid_rows": [
+        1,
+        2
+      ],
+      "grid_columns": [
+        0
+      ],
+      "column_header_refs": [
+        "u1"
+      ],
+      "is_header": false,
+      "parser_header_candidate": false,
+      "header_status": "unconfirmed",
+      "cell_structure_valid": true
+    },
+    "u14": {
+      "evidence_id": "859d82d093815d0491941be31f8a1fb58c2db749cf474d160cec2cc612a2a630",
+      "kind": "cell_paragraph",
+      "text": "大鼠14天亚急毒试验（试验1）",
+      "section_node_id": "section:102",
+      "block_id": "table:10",
+      "paragraph_index": 0,
+      "fragment_index": 0,
+      "table_path": [
+        "table:10"
+      ],
+      "row_index": 1,
+      "column_index": 1,
+      "physical_page_number": 6,
+      "source_cell_id": "table:10/cell:1:1",
+      "paragraph_offset": 0,
+      "ref": "u14",
+      "row_span": 1,
+      "column_span": 1,
+      "logical_rows": [
+        1
+      ],
+      "column_indices": [
+        1
+      ],
+      "grid_rows": [
+        1
+      ],
+      "grid_columns": [
+        1
+      ],
+      "column_header_refs": [
+        "u2"
+      ],
+      "is_header": false,
+      "parser_header_candidate": false,
+      "header_status": "unconfirmed",
+      "cell_structure_valid": true
+    },
+    "u15": {
+      "evidence_id": "4aa76f38c27b0726d4b2b924ad366816fc13f1b5296fded77336d1d173703934",
+      "kind": "cell_paragraph",
+      "text": "200",
+      "section_node_id": "section:102",
+      "block_id": "table:10",
+      "paragraph_index": 0,
+      "fragment_index": 0,
+      "table_path": [
+        "table:10"
+      ],
+      "row_index": 1,
+      "column_index": 2,
+      "physical_page_number": 6,
+      "source_cell_id": "table:10/cell:1:2",
+      "paragraph_offset": 0,
+      "ref": "u15",
+      "row_span": 1,
+      "column_span": 1,
+      "logical_rows": [
+        1
+      ],
+      "column_indices": [
+        2
+      ],
+      "grid_rows": [
+        1
+      ],
+      "grid_columns": [
+        2
+      ],
+      "column_header_refs": [
+        "u3"
+      ],
+      "is_header": false,
+      "parser_header_candidate": false,
+      "header_status": "unconfirmed",
+      "cell_structure_valid": true
+    },
+    "u16": {
+      "evidence_id": "ce7978e34f916839b6615316b357c6b979783fa764b2ccf19afa427e29735023",
+      "kind": "cell_paragraph",
+      "text": "5",
+      "section_node_id": "section:102",
+      "block_id": "table:10",
+      "paragraph_index": 0,
+      "fragment_index": 0,
+      "table_path": [
+        "table:10"
+      ],
+      "row_index": 1,
+      "column_index": 3,
+      "physical_page_number": 6,
+      "source_cell_id": "table:10/cell:1:3",
+      "paragraph_offset": 0,
+      "ref": "u16",
+      "row_span": 1,
+      "column_span": 1,
+      "logical_rows": [
+        1
+      ],
+      "column_indices": [
+        3
+      ],
+      "grid_rows": [
+        1
+      ],
+      "grid_columns": [
+        3
+      ],
+      "column_header_refs": [
+        "u4"
+      ],
+      "is_header": false,
+      "parser_header_candidate": false,
+      "header_status": "unconfirmed",
+      "cell_structure_valid": true
+    },
+    "u17": {
+      "evidence_id": "8cde2e1365d46a44c419a2f521df1a4d5021739d808e06846a35b4ecbd735767",
+      "kind": "cell_paragraph",
+      "text": "10",
+      "section_node_id": "section:102",
+      "block_id": "table:10",
+      "paragraph_index": 0,
+      "fragment_index": 0,
+      "table_path": [
+        "table:10"
+      ],
+      "row_index": 1,
+      "column_index": 4,
+      "physical_page_number": 6,
+      "source_cell_id": "table:10/cell:1:4",
+      "paragraph_offset": 0,
+      "ref": "u17",
+      "row_span": 1,
+      "column_span": 1,
+      "logical_rows": [
+        1
+      ],
+      "column_indices": [
+        4
+      ],
+      "grid_rows": [
+        1
+      ],
+      "grid_columns": [
+        4
+      ],
+      "column_header_refs": [
+        "u5"
+      ],
+      "is_header": false,
+      "parser_header_candidate": false,
+      "header_status": "unconfirmed",
+      "cell_structure_valid": true
+    },
+    "u18": {
+      "evidence_id": "c283830f473de2547bf2e891448a120aeac3c321e4e959598e1c5c2599871a38",
+      "kind": "cell_paragraph",
+      "text": "10",
+      "section_node_id": "section:102",
+      "block_id": "table:10",
+      "paragraph_index": 0,
+      "fragment_index": 0,
+      "table_path": [
+        "table:10"
+      ],
+      "row_index": 1,
+      "column_index": 5,
+      "physical_page_number": 6,
+      "source_cell_id": "table:10/cell:1:5",
+      "paragraph_offset": 0,
+      "ref": "u18",
+      "row_span": 1,
+      "column_span": 1,
+      "logical_rows": [
+        1
+      ],
+      "column_indices": [
+        5
+      ],
+      "grid_rows": [
+        1
+      ],
+      "grid_columns": [
+        5
+      ],
+      "column_header_refs": [
+        "u6"
+      ],
+      "is_header": false,
+      "parser_header_candidate": false,
+      "header_status": "unconfirmed",
+      "cell_structure_valid": true
+    },
+    "u19": {
+      "evidence_id": "71f7d4c966dc76370e610d14240b484478c284502eb8cb3b05db906fff6324d4",
+      "kind": "cell_paragraph",
+      "text": "1",
+      "section_node_id": "section:102",
+      "block_id": "table:10",
+      "paragraph_index": 0,
+      "fragment_index": 0,
+      "table_path": [
+        "table:10"
+      ],
+      "row_index": 1,
+      "column_index": 6,
+      "physical_page_number": 6,
+      "source_cell_id": "table:10/cell:1:6",
+      "paragraph_offset": 0,
+      "ref": "u19",
+      "row_span": 1,
+      "column_span": 1,
+      "logical_rows": [
+        1
+      ],
+      "column_indices": [
+        6
+      ],
+      "grid_rows": [
+        1
+      ],
+      "grid_columns": [
+        6
+      ],
+      "column_header_refs": [
+        "u7"
+      ],
+      "is_header": false,
+      "parser_header_candidate": false,
+      "header_status": "unconfirmed",
+      "cell_structure_valid": true
+    },
+    "u20": {
+      "evidence_id": "7bf5c8a958790ef0356b1c7ee36ccd237318b7e13dfc84fa5666dbd18d65dcf1",
+      "kind": "cell_paragraph",
+      "text": "1",
+      "section_node_id": "section:102",
+      "block_id": "table:10",
+      "paragraph_index": 0,
+      "fragment_index": 0,
+      "table_path": [
+        "table:10"
+      ],
+      "row_index": 1,
+      "column_index": 7,
+      "physical_page_number": 6,
+      "source_cell_id": "table:10/cell:1:7",
+      "paragraph_offset": 0,
+      "ref": "u20",
+      "row_span": 1,
+      "column_span": 1,
+      "logical_rows": [
+        1
+      ],
+      "column_indices": [
+        7
+      ],
+      "grid_rows": [
+        1
+      ],
+      "grid_columns": [
+        7
+      ],
+      "column_header_refs": [
+        "u8"
+      ],
+      "is_header": false,
+      "parser_header_candidate": false,
+      "header_status": "unconfirmed",
+      "cell_structure_valid": true
+    },
+    "u21": {
+      "evidence_id": "2535b270085bd646ca40fdce53ddb61080cfd3756c0a4fbaba1ab22e21546d28",
+      "kind": "cell_paragraph",
+      "text": "100",
+      "section_node_id": "section:102",
+      "block_id": "table:10",
+      "paragraph_index": 0,
+      "fragment_index": 0,
+      "table_path": [
+        "table:10"
+      ],
+      "row_index": 1,
+      "column_index": 8,
+      "physical_page_number": 6,
+      "source_cell_id": "table:10/cell:1:8",
+      "paragraph_offset": 0,
+      "ref": "u21",
+      "row_span": 1,
+      "column_span": 1,
+      "logical_rows": [
+        1
+      ],
+      "column_indices": [
+        8
+      ],
+      "grid_rows": [
+        1
+      ],
+      "grid_columns": [
+        8
+      ],
+      "column_header_refs": [
+        "u9",
+        "u10"
+      ],
+      "is_header": false,
+      "parser_header_candidate": false,
+      "header_status": "unconfirmed",
+      "cell_structure_valid": true
+    },
+    "u22": {
+      "evidence_id": "c397bd6234effb8334de65557943c320be55b79f2aeceee1f2b917933d342c9e",
+      "kind": "cell_paragraph",
+      "text": "19191-25030-NG",
+      "section_node_id": "section:102",
+      "block_id": "table:10",
+      "paragraph_index": 0,
+      "fragment_index": 0,
+      "table_path": [
+        "table:10"
+      ],
+      "row_index": 1,
+      "column_index": 9,
+      "physical_page_number": 6,
+      "source_cell_id": "table:10/cell:1:9",
+      "paragraph_offset": 0,
+      "ref": "u22",
+      "row_span": 1,
+      "column_span": 1,
+      "logical_rows": [
+        1
+      ],
+      "column_indices": [
+        9
+      ],
+      "grid_rows": [
+        1
+      ],
+      "grid_columns": [
+        9
+      ],
+      "column_header_refs": [
+        "u11"
+      ],
+      "is_header": false,
+      "parser_header_candidate": false,
+      "header_status": "unconfirmed",
+      "cell_structure_valid": true
+    },
+    "u23": {
+      "evidence_id": "882305aba097a571b29b4f4cdffbcd2b471cfaadb3181b3d0dee53293e913720",
+      "kind": "cell_paragraph",
+      "text": "1",
+      "section_node_id": "section:102",
+      "block_id": "table:10",
+      "paragraph_index": 0,
+      "fragment_index": 0,
+      "table_path": [
+        "table:10"
+      ],
+      "row_index": 1,
+      "column_index": 10,
+      "physical_page_number": 6,
+      "source_cell_id": "table:10/cell:1:10",
+      "paragraph_offset": 0,
+      "ref": "u23",
+      "row_span": 1,
+      "column_span": 1,
+      "logical_rows": [
+        1
+      ],
+      "column_indices": [
+        10
+      ],
+      "grid_rows": [
+        1
+      ],
+      "grid_columns": [
+        10
+      ],
+      "column_header_refs": [
+        "u12"
+      ],
+      "is_header": false,
+      "parser_header_candidate": false,
+      "header_status": "unconfirmed",
+      "cell_structure_valid": true
+    },
+    "u24": {
+      "evidence_id": "c839f95d57f323df72969ecbebe9824f566c7f6d0c9c6b1b2c4f50e573b74234",
+      "kind": "cell_paragraph",
+      "text": "犬14天亚急毒",
+      "section_node_id": "section:102",
+      "block_id": "table:10",
+      "paragraph_index": 0,
+      "fragment_index": 0,
+      "table_path": [
+        "table:10"
+      ],
+      "row_index": 2,
+      "column_index": 1,
+      "physical_page_number": 6,
+      "source_cell_id": "table:10/cell:2:1",
+      "paragraph_offset": 0,
+      "ref": "u24",
+      "row_span": 1,
+      "column_span": 1,
+      "logical_rows": [
+        2
+      ],
+      "column_indices": [
+        1
+      ],
+      "grid_rows": [
+        2
+      ],
+      "grid_columns": [
+        1
+      ],
+      "column_header_refs": [
+        "u2"
+      ],
+      "is_header": false,
+      "parser_header_candidate": false,
+      "header_status": "unconfirmed",
+      "cell_structure_valid": true
+    },
+    "u25": {
+      "evidence_id": "2399d98788e1fafbee6593d32b565ffe95c57662bac4d2c5dcb12e5bf29455e5",
+      "kind": "cell_paragraph",
+      "text": "30",
+      "section_node_id": "section:102",
+      "block_id": "table:10",
+      "paragraph_index": 0,
+      "fragment_index": 0,
+      "table_path": [
+        "table:10"
+      ],
+      "row_index": 2,
+      "column_index": 2,
+      "physical_page_number": 6,
+      "source_cell_id": "table:10/cell:2:2",
+      "paragraph_offset": 0,
+      "ref": "u25",
+      "row_span": 1,
+      "column_span": 1,
+      "logical_rows": [
+        2
+      ],
+      "column_indices": [
+        2
+      ],
+      "grid_rows": [
+        2
+      ],
+      "grid_columns": [
+        2
+      ],
+      "column_header_refs": [
+        "u3"
+      ],
+      "is_header": false,
+      "parser_header_candidate": false,
+      "header_status": "unconfirmed",
+      "cell_structure_valid": true
+    },
+    "u26": {
+      "evidence_id": "bd0a2033eb08423a2c7e7bacfa8f6698d187cb2cc9a008695cf587544912e04d",
+      "kind": "cell_paragraph",
+      "text": "2",
+      "section_node_id": "section:102",
+      "block_id": "table:10",
+      "paragraph_index": 0,
+      "fragment_index": 0,
+      "table_path": [
+        "table:10"
+      ],
+      "row_index": 2,
+      "column_index": 3,
+      "physical_page_number": 6,
+      "source_cell_id": "table:10/cell:2:3",
+      "paragraph_offset": 0,
+      "ref": "u26",
+      "row_span": 1,
+      "column_span": 1,
+      "logical_rows": [
+        2
+      ],
+      "column_indices": [
+        3
+      ],
+      "grid_rows": [
+        2
+      ],
+      "grid_columns": [
+        3
+      ],
+      "column_header_refs": [
+        "u4"
+      ],
+      "is_header": false,
+      "parser_header_candidate": false,
+      "header_status": "unconfirmed",
+      "cell_structure_valid": true
+    },
+    "u27": {
+      "evidence_id": "a29386192a8d9e7b0d3bd8a449119e6bd1d8125f9fa7aeccb67012d59c31eef7",
+      "kind": "cell_paragraph",
+      "text": "10",
+      "section_node_id": "section:102",
+      "block_id": "table:10",
+      "paragraph_index": 0,
+      "fragment_index": 0,
+      "table_path": [
+        "table:10"
+      ],
+      "row_index": 2,
+      "column_index": 4,
+      "physical_page_number": 6,
+      "source_cell_id": "table:10/cell:2:4",
+      "paragraph_offset": 0,
+      "ref": "u27",
+      "row_span": 1,
+      "column_span": 1,
+      "logical_rows": [
+        2
+      ],
+      "column_indices": [
+        4
+      ],
+      "grid_rows": [
+        2
+      ],
+      "grid_columns": [
+        4
+      ],
+      "column_header_refs": [
+        "u5"
+      ],
+      "is_header": false,
+      "parser_header_candidate": false,
+      "header_status": "unconfirmed",
+      "cell_structure_valid": true
+    },
+    "u28": {
+      "evidence_id": "3795c43202b5c011b5e0d7ce94463294ecfe76a76bf70ef5b0040ed808f40389",
+      "kind": "cell_paragraph",
+      "text": "10",
+      "section_node_id": "section:102",
+      "block_id": "table:10",
+      "paragraph_index": 0,
+      "fragment_index": 0,
+      "table_path": [
+        "table:10"
+      ],
+      "row_index": 2,
+      "column_index": 5,
+      "physical_page_number": 6,
+      "source_cell_id": "table:10/cell:2:5",
+      "paragraph_offset": 0,
+      "ref": "u28",
+      "row_span": 1,
+      "column_span": 1,
+      "logical_rows": [
+        2
+      ],
+      "column_indices": [
+        5
+      ],
+      "grid_rows": [
+        2
+      ],
+      "grid_columns": [
+        5
+      ],
+      "column_header_refs": [
+        "u6"
+      ],
+      "is_header": false,
+      "parser_header_candidate": false,
+      "header_status": "unconfirmed",
+      "cell_structure_valid": true
+    },
+    "u29": {
+      "evidence_id": "4cd3ad44d66e15940f519e3dbf2777bc5804ec6e814acc8bd1c3a353fb2e96d4",
+      "kind": "cell_paragraph",
+      "text": "1",
+      "section_node_id": "section:102",
+      "block_id": "table:10",
+      "paragraph_index": 0,
+      "fragment_index": 0,
+      "table_path": [
+        "table:10"
+      ],
+      "row_index": 2,
+      "column_index": 6,
+      "physical_page_number": 6,
+      "source_cell_id": "table:10/cell:2:6",
+      "paragraph_offset": 0,
+      "ref": "u29",
+      "row_span": 1,
+      "column_span": 1,
+      "logical_rows": [
+        2
+      ],
+      "column_indices": [
+        6
+      ],
+      "grid_rows": [
+        2
+      ],
+      "grid_columns": [
+        6
+      ],
+      "column_header_refs": [
+        "u7"
+      ],
+      "is_header": false,
+      "parser_header_candidate": false,
+      "header_status": "unconfirmed",
+      "cell_structure_valid": true
+    },
+    "u30": {
+      "evidence_id": "a78b8c17dd8ada8058daa59dd8f990fd75b6489f3bbf563a4e187e1167690798",
+      "kind": "cell_paragraph",
+      "text": "1",
+      "section_node_id": "section:102",
+      "block_id": "table:10",
+      "paragraph_index": 0,
+      "fragment_index": 0,
+      "table_path": [
+        "table:10"
+      ],
+      "row_index": 2,
+      "column_index": 7,
+      "physical_page_number": 6,
+      "source_cell_id": "table:10/cell:2:7",
+      "paragraph_offset": 0,
+      "ref": "u30",
+      "row_span": 1,
+      "column_span": 1,
+      "logical_rows": [
+        2
+      ],
+      "column_indices": [
+        7
+      ],
+      "grid_rows": [
+        2
+      ],
+      "grid_columns": [
+        7
+      ],
+      "column_header_refs": [
+        "u8"
+      ],
+      "is_header": false,
+      "parser_header_candidate": false,
+      "header_status": "unconfirmed",
+      "cell_structure_valid": true
+    },
+    "u31": {
+      "evidence_id": "5e801619b129f3615d71e87fa67328b265be34e1ac4e15f20168190d40da0e86",
+      "kind": "cell_paragraph",
+      "text": "7.5",
+      "section_node_id": "section:102",
+      "block_id": "table:10",
+      "paragraph_index": 0,
+      "fragment_index": 0,
+      "table_path": [
+        "table:10"
+      ],
+      "row_index": 2,
+      "column_index": 8,
+      "physical_page_number": 6,
+      "source_cell_id": "table:10/cell:2:8",
+      "paragraph_offset": 0,
+      "ref": "u31",
+      "row_span": 1,
+      "column_span": 1,
+      "logical_rows": [
+        2
+      ],
+      "column_indices": [
+        8
+      ],
+      "grid_rows": [
+        2
+      ],
+      "grid_columns": [
+        8
+      ],
+      "column_header_refs": [
+        "u9",
+        "u10"
+      ],
+      "is_header": false,
+      "parser_header_candidate": false,
+      "header_status": "unconfirmed",
+      "cell_structure_valid": true
+    },
+    "u32": {
+      "evidence_id": "9ad002bba89181c782c007a89280036d5397f26b6451fd3f19d283bff700d9d7",
+      "kind": "cell_paragraph",
+      "text": "19191-25031-NG",
+      "section_node_id": "section:102",
+      "block_id": "table:10",
+      "paragraph_index": 0,
+      "fragment_index": 0,
+      "table_path": [
+        "table:10"
+      ],
+      "row_index": 2,
+      "column_index": 9,
+      "physical_page_number": 6,
+      "source_cell_id": "table:10/cell:2:9",
+      "paragraph_offset": 0,
+      "ref": "u32",
+      "row_span": 1,
+      "column_span": 1,
+      "logical_rows": [
+        2
+      ],
+      "column_indices": [
+        9
+      ],
+      "grid_rows": [
+        2
+      ],
+      "grid_columns": [
+        9
+      ],
+      "column_header_refs": [
+        "u11"
+      ],
+      "is_header": false,
+      "parser_header_candidate": false,
+      "header_status": "unconfirmed",
+      "cell_structure_valid": true
+    },
+    "u33": {
+      "evidence_id": "4f505a7e18c2ea0f0af0403909ed46b2bef54466619ad146696c16975341df8b",
+      "kind": "cell_paragraph",
+      "text": "1",
+      "section_node_id": "section:102",
+      "block_id": "table:10",
+      "paragraph_index": 0,
+      "fragment_index": 0,
+      "table_path": [
+        "table:10"
+      ],
+      "row_index": 2,
+      "column_index": 10,
+      "physical_page_number": 6,
+      "source_cell_id": "table:10/cell:2:10",
+      "paragraph_offset": 0,
+      "ref": "u33",
+      "row_span": 1,
+      "column_span": 1,
+      "logical_rows": [
+        2
+      ],
+      "column_indices": [
+        10
+      ],
+      "grid_rows": [
+        2
+      ],
+      "grid_columns": [
+        10
+      ],
+      "column_header_refs": [
+        "u12"
+      ],
+      "is_header": false,
+      "parser_header_candidate": false,
+      "header_status": "unconfirmed",
+      "cell_structure_valid": true
+    },
+    "u34": {
+      "evidence_id": "2e4aff5248e66f90c52e81304c39d5c37a3f1106d9cb57ed188c8e7ca543c4d8",
+      "kind": "paragraph",
+      "text": "备注：",
+      "section_node_id": "section:102",
+      "block_id": "paragraph:103:0",
+      "paragraph_index": 103,
+      "fragment_index": 0,
+      "table_path": null,
+      "row_index": null,
+      "column_index": null,
+      "physical_page_number": 6,
+      "source_cell_id": null,
+      "paragraph_offset": 0,
+      "ref": "u34",
+      "row_span": 1,
+      "column_span": 1,
+      "logical_rows": [],
+      "column_indices": [],
+      "grid_rows": [],
+      "grid_columns": [],
+      "column_header_refs": [],
+      "is_header": false,
+      "parser_header_candidate": false,
+      "header_status": "not_a_table",
+      "cell_structure_valid": false
+    },
+    "u35": {
+      "evidence_id": "2bf8ee033e1e54e48c65a6e9ccbbc24d55477d54da63c6a7e740478ef0a98026",
+      "kind": "paragraph",
+      "text": " NOAEL：无可见损害作用水平；",
+      "section_node_id": "section:102",
+      "block_id": "paragraph:104:0",
+      "paragraph_index": 104,
+      "fragment_index": 0,
+      "table_path": null,
+      "row_index": null,
+      "column_index": null,
+      "physical_page_number": 6,
+      "source_cell_id": null,
+      "paragraph_offset": 0,
+      "ref": "u35",
+      "row_span": 1,
+      "column_span": 1,
+      "logical_rows": [],
+      "column_indices": [],
+      "grid_rows": [],
+      "grid_columns": [],
+      "column_header_refs": [],
+      "is_header": false,
+      "parser_header_candidate": false,
+      "header_status": "not_a_table",
+      "cell_structure_valid": false
+    },
+    "u36": {
+      "evidence_id": "890e2f6f7419708b856cea1e15c664d4d196dedeb7aa530e22c6917f2de6232b",
+      "kind": "paragraph",
+      "text": " HNSTD：不会致死、导致危及生命的毒性或不可逆结果的最高剂量水平；",
+      "section_node_id": "section:102",
+      "block_id": "paragraph:105:0",
+      "paragraph_index": 105,
+      "fragment_index": 0,
+      "table_path": null,
+      "row_index": null,
+      "column_index": null,
+      "physical_page_number": 6,
+      "source_cell_id": null,
+      "paragraph_offset": 0,
+      "ref": "u36",
+      "row_span": 1,
+      "column_span": 1,
+      "logical_rows": [],
+      "column_indices": [],
+      "grid_rows": [],
+      "grid_columns": [],
+      "column_header_refs": [],
+      "is_header": false,
+      "parser_header_candidate": false,
+      "header_status": "not_a_table",
+      "cell_structure_valid": false
+    },
+    "u37": {
+      "evidence_id": "f5e2b83e1d096fe7de6f2400f6aad57f07d8a386a3981bb35b4b205de09c2ffa",
+      "kind": "paragraph",
+      "text": " PDE：允许日暴露量；",
+      "section_node_id": "section:102",
+      "block_id": "paragraph:106:0",
+      "paragraph_index": 106,
+      "fragment_index": 0,
+      "table_path": null,
+      "row_index": null,
+      "column_index": null,
+      "physical_page_number": 6,
+      "source_cell_id": null,
+      "paragraph_offset": 0,
+      "ref": "u37",
+      "row_span": 1,
+      "column_span": 1,
+      "logical_rows": [],
+      "column_indices": [],
+      "grid_rows": [],
+      "grid_columns": [],
+      "column_header_refs": [],
+      "is_header": false,
+      "parser_header_candidate": false,
+      "header_status": "not_a_table",
+      "cell_structure_valid": false
+    },
+    "u38": {
+      "evidence_id": "edbea9071c7d4c44f57aa989015f966bdffbdc7a79f3ec59955ce7cd3101a313",
+      "kind": "paragraph",
+      "text": " OBE：职业暴露等级；",
+      "section_node_id": "section:102",
+      "block_id": "paragraph:107:0",
+      "paragraph_index": 107,
+      "fragment_index": 0,
+      "table_path": null,
+      "row_index": null,
+      "column_index": null,
+      "physical_page_number": 6,
+      "source_cell_id": null,
+      "paragraph_offset": 0,
+      "ref": "u38",
+      "row_span": 1,
+      "column_span": 1,
+      "logical_rows": [],
+      "column_indices": [],
+      "grid_rows": [],
+      "grid_columns": [],
+      "column_header_refs": [],
+      "is_header": false,
+      "parser_header_candidate": false,
+      "header_status": "not_a_table",
+      "cell_structure_valid": false
+    },
+    "u39": {
+      "evidence_id": "34ff4471afcd350c46a8ec8fe1305e2beda365d19e992494a35d331943ee2855",
+      "kind": "paragraph",
+      "text": " BW：服用下一产品患者体重（50 kg）；",
+      "section_node_id": "section:102",
+      "block_id": "paragraph:108:0",
+      "paragraph_index": 108,
+      "fragment_index": 0,
+      "table_path": null,
+      "row_index": null,
+      "column_index": null,
+      "physical_page_number": 6,
+      "source_cell_id": null,
+      "paragraph_offset": 0,
+      "ref": "u39",
+      "row_span": 1,
+      "column_span": 1,
+      "logical_rows": [],
+      "column_indices": [],
+      "grid_rows": [],
+      "grid_columns": [],
+      "column_header_refs": [],
+      "is_header": false,
+      "parser_header_candidate": false,
+      "header_status": "not_a_table",
+      "cell_structure_valid": false
+    },
+    "u40": {
+      "evidence_id": "c0a7d12964390825f31a80ddd9031fab5ae727d8f45c587ee10fde451d1191aa",
+      "kind": "paragraph",
+      "text": " F1：考虑种类之间差异的系数；F1 = 5，适用于从大鼠外推到人；F1 = 2，适用于  从犬外推到人",
+      "section_node_id": "section:102",
+      "block_id": "paragraph:109:0",
+      "paragraph_index": 109,
+      "fragment_index": 0,
+      "table_path": null,
+      "row_index": null,
+      "column_index": null,
+      "physical_page_number": 6,
+      "source_cell_id": null,
+      "paragraph_offset": 0,
+      "ref": "u40",
+      "row_span": 1,
+      "column_span": 1,
+      "logical_rows": [],
+      "column_indices": [],
+      "grid_rows": [],
+      "grid_columns": [],
+      "column_header_refs": [],
+      "is_header": false,
+      "parser_header_candidate": false,
+      "header_status": "not_a_table",
+      "cell_structure_valid": false
+    },
+    "u41": {
+      "evidence_id": "a81793c0111ea53e0aeb25d6da3787cb98d240b1e342c417cf294dfc352ede6b",
+      "kind": "paragraph",
+      "text": " F2：考虑个体之间差异的系数；F2 = 10。",
+      "section_node_id": "section:102",
+      "block_id": "paragraph:110:0",
+      "paragraph_index": 110,
+      "fragment_index": 0,
+      "table_path": null,
+      "row_index": null,
+      "column_index": null,
+      "physical_page_number": 6,
+      "source_cell_id": null,
+      "paragraph_offset": 0,
+      "ref": "u41",
+      "row_span": 1,
+      "column_span": 1,
+      "logical_rows": [],
+      "column_indices": [],
+      "grid_rows": [],
+      "grid_columns": [],
+      "column_header_refs": [],
+      "is_header": false,
+      "parser_header_candidate": false,
+      "header_status": "not_a_table",
+      "cell_structure_valid": false
+    },
+    "u42": {
+      "evidence_id": "19d11a24e0f95b822c491bfad4469468a1edf00897bbdd81525b74cab99f419e",
+      "kind": "paragraph",
+      "text": " F3：为短期接触急性毒性研究的可变系数；F3 = 10，14天的研究；",
+      "section_node_id": "section:102",
+      "block_id": "paragraph:111:0",
+      "paragraph_index": 111,
+      "fragment_index": 0,
+      "table_path": null,
+      "row_index": null,
+      "column_index": null,
+      "physical_page_number": 6,
+      "source_cell_id": null,
+      "paragraph_offset": 0,
+      "ref": "u42",
+      "row_span": 1,
+      "column_span": 1,
+      "logical_rows": [],
+      "column_indices": [],
+      "grid_rows": [],
+      "grid_columns": [],
+      "column_header_refs": [],
+      "is_header": false,
+      "parser_header_candidate": false,
+      "header_status": "not_a_table",
+      "cell_structure_valid": false
+    },
+    "u43": {
+      "evidence_id": "39673d2f982f27d2a0881aff518b7af8a835df367003102a776962795d275ae8",
+      "kind": "paragraph",
+      "text": " F4：为用于产生严重毒性数据情况的系数，如非遗传致癌毒性，神经毒性或致畸性；F4 = 1，未观察到严重影响",
+      "section_node_id": "section:102",
+      "block_id": "paragraph:112:0",
+      "paragraph_index": 112,
+      "fragment_index": 0,
+      "table_path": null,
+      "row_index": null,
+      "column_index": null,
+      "physical_page_number": 6,
+      "source_cell_id": null,
+      "paragraph_offset": 0,
+      "ref": "u43",
+      "row_span": 1,
+      "column_span": 1,
+      "logical_rows": [],
+      "column_indices": [],
+      "grid_rows": [],
+      "grid_columns": [],
+      "column_header_refs": [],
+      "is_header": false,
+      "parser_header_candidate": false,
+      "header_status": "not_a_table",
+      "cell_structure_valid": false
+    },
+    "u44": {
+      "evidence_id": "a526eabd1621411221c6b308c2f8e5bb2d63302f7a551d00c5a9888c2af398da",
+      "kind": "paragraph",
+      "text": " F5：可变系数，在没有建立NOEL时应用。F5=1，NOAEL",
+      "section_node_id": "section:102",
+      "block_id": "paragraph:113:0",
+      "paragraph_index": 113,
+      "fragment_index": 0,
+      "table_path": null,
+      "row_index": null,
+      "column_index": null,
+      "physical_page_number": 6,
+      "source_cell_id": null,
+      "paragraph_offset": 0,
+      "ref": "u44",
+      "row_span": 1,
+      "column_span": 1,
+      "logical_rows": [],
+      "column_indices": [],
+      "grid_rows": [],
+      "grid_columns": [],
+      "column_header_refs": [],
+      "is_header": false,
+      "parser_header_candidate": false,
+      "header_status": "not_a_table",
+      "cell_structure_valid": false
+    }
+  }
+}

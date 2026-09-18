@@ -5,6 +5,8 @@ from __future__ import annotations
 import io
 import logging
 import threading
+from collections.abc import Callable, Iterable, Iterator
+from contextlib import contextmanager
 from copy import deepcopy
 from dataclasses import dataclass, field
 from functools import wraps
@@ -15,6 +17,13 @@ import owlready2
 import rdflib
 
 from app.config import settings
+from app.services.ontology_cardinality import (
+    CORE,
+    emit_cardinality_config,
+    read_cardinality_config,
+    read_effective_cardinality,
+    remove_cardinality_config,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -141,6 +150,7 @@ class OntologyEngine:
         self._lock = threading.RLock()
         self._semantic_schema = None
         self._world: owlready2.World | None = None
+        self._cardinality_graph: rdflib.Graph | None = None
         self._ontologies: dict[str, owlready2.Ontology] = {}
         self.is_loaded = False
 
@@ -208,6 +218,11 @@ class OntologyEngine:
                 self._discard_partial_world()
                 raise OntologyIntegrityError(message)
 
+            try:
+                self._restore_published_cardinality()
+            except Exception as exc:
+                self._discard_partial_world()
+                raise OntologyIntegrityError("Published cardinality could not be restored") from exc
             self.is_loaded = True
             total = sum(len(list(o.classes())) for o in self._ontologies.values())
             logger.info("Loaded %d modules with %d classes total", len(self._ontologies), total)
@@ -238,6 +253,7 @@ class OntologyEngine:
     def _discard_partial_world(self) -> None:
         """Reset state after a failed load while the caller already holds ``_lock``."""
         self._semantic_schema = None
+        self._cardinality_graph = None
         world = self._world
         self._world = None
         self._ontologies.clear()
@@ -261,6 +277,7 @@ class OntologyEngine:
     def close(self) -> None:
         with self._lock:
             self._semantic_schema = None
+            self._cardinality_graph = None
             if self._world:
                 self._world.close()
                 self._world = None
@@ -275,6 +292,44 @@ class OntologyEngine:
             if self._semantic_schema is None:
                 self._semantic_schema = _build_semantic_schema(self)
             return deepcopy(self._semantic_schema)
+
+    @contextmanager
+    def lexical_read_scope(self) -> Iterator[None]:
+        """Keep a complete definition/lexical snapshot on the same published World.
+
+        Readers nest existing locked methods under this reentrant lock. Missing
+        or failed sources are errors, distinct from a loaded World without labels.
+        """
+        with self._lock:
+            if not self.is_loaded or self._world is None:
+                raise OntologyIntegrityError("World not loaded; cannot freeze lexical context")
+            yield
+
+    def get_lexical_annotations(self, iris: Iterable[str]) -> dict[str, list[dict]]:
+        """Read only full-IRI rdfs:label/skos:altLabel literals for requested IRIs.
+
+        Return empty lists for successfully read IRIs without labels. Exceptions
+        propagate rather than recording failed reads as empty lexical coverage.
+        """
+        from rdflib.namespace import RDFS, SKOS
+
+        with self.lexical_read_scope():
+            graph = self._world.as_rdflib_graph()
+            annotations: dict[str, list[dict]] = {}
+            for iri in sorted(set(iris)):
+                terms = set()
+                for predicate in (RDFS.label, SKOS.altLabel):
+                    for value in graph.objects(rdflib.URIRef(iri), predicate):
+                        if not isinstance(value, rdflib.Literal) or not str(value).strip():
+                            continue
+                        terms.add((str(value), value.language, str(predicate)))
+                annotations[iri] = [
+                    {"text": text, "language": language, "predicate_iri": predicate}
+                    for text, language, predicate in sorted(
+                        terms, key=lambda item: (item[0], item[1] or "", item[2]),
+                    )
+                ]
+            return annotations
 
     def get_modules(self) -> list[ModuleInfo]:
         with self._lock:
@@ -493,7 +548,10 @@ class OntologyEngine:
             props: list[dict] = []
             seen: set[str] = set()
             for prop in self._world.data_properties():
-                if self._cls_in_domain(cls, prop.domain) and prop.iri not in seen:
+                if prop.iri not in seen and (
+                    self._cls_in_domain(cls, prop.domain)
+                    or self._class_constrains_property(class_iri, prop.iri)
+                ):
                     seen.add(prop.iri)
                     # RDF preserves xsd:date and decimal exactly; Python range
                     # adapters can return None or collapse decimal into float.
@@ -538,7 +596,7 @@ class OntologyEngine:
                             "description": "\n".join(
                                 str(c) for c in getattr(prop, "comment", []) or []
                             ),
-                            "max_count": 1 if owlready2.FunctionalProperty in prop.is_a else None,
+                            **self._effective_cardinality(class_iri, prop.iri),
                             "range": ranges,
                             "datatype": (
                                 ranges[0].rsplit("#", 1)[-1].rsplit("/", 1)[-1] if ranges else None
@@ -562,7 +620,10 @@ class OntologyEngine:
             props: list[dict] = []
             seen: set[str] = set()
             for prop in self._world.object_properties():
-                if self._cls_in_domain(cls, prop.domain) and prop.iri not in seen:
+                if prop.iri not in seen and (
+                    self._cls_in_domain(cls, prop.domain)
+                    or self._class_constrains_property(class_iri, prop.iri)
+                ):
                     seen.add(prop.iri)
                     props.append(
                         {
@@ -575,10 +636,42 @@ class OntologyEngine:
                             "range": sorted(
                                 {iri for r in prop.range for iri in self._range_class_iris(r)}
                             ),
-                            "max_count": 1 if owlready2.FunctionalProperty in prop.is_a else None,
+                            **self._effective_cardinality(class_iri, prop.iri),
                         }
                     )
             return props
+
+    def _quantity_graph(self) -> rdflib.Graph:
+        if self._cardinality_graph is not None:
+            return self._cardinality_graph
+        return self._world.as_rdflib_graph()
+
+    def _effective_cardinality(self, class_iri: str, property_iri: str) -> dict:
+        return read_effective_cardinality(
+            self._quantity_graph(), rdflib.URIRef(property_iri), rdflib.URIRef(class_iri),
+        )
+
+    def _class_constrains_property(self, class_iri: str, property_iri: str) -> bool:
+        """Expose a child's own restriction even when domain is declared on its parent."""
+        graph = self._quantity_graph()
+        pending = [rdflib.URIRef(class_iri)]
+        seen = set()
+        while pending:
+            current = pending.pop()
+            if current in seen:
+                continue
+            seen.add(current)
+            if (current, rdflib.OWL.onProperty, rdflib.URIRef(property_iri)) in graph:
+                return True
+            pending.extend(
+                node for node in graph.objects(current, rdflib.RDFS.subClassOf)
+                if isinstance(node, rdflib.BNode)
+            )
+            pending.extend(graph.objects(current, rdflib.OWL.equivalentClass))
+            pending.extend(graph.subjects(rdflib.OWL.equivalentClass, current))
+            for head in graph.objects(current, rdflib.OWL.intersectionOf):
+                pending.extend(graph.items(head))
+        return False
 
     @staticmethod
     def _range_class_iris(expression):
@@ -757,9 +850,14 @@ class OntologyEngine:
                     domain_label = self._get_label(domain_cls) or domain_cls.name
                     for prop in _obj_props_for(domain_cls):
                         pred_label = self._get_label(prop) or prop.name
-                        for rng in prop.range:
-                            rng_iri = getattr(rng, "iri", None)
-                            if not rng_iri:
+                        range_iris = {
+                            iri
+                            for expression in prop.range
+                            for iri in self._range_class_iris(expression)
+                        }
+                        for rng_iri in sorted(range_iris):
+                            rng = self._world.search_one(iri=rng_iri)
+                            if rng is None or not isinstance(rng, owlready2.ThingClass):
                                 continue
                             edge_key = (domain_iri, prop.iri, rng_iri)
                             if edge_key in visited_edges:
@@ -849,8 +947,7 @@ class OntologyEngine:
 
     # ----------------------------------------------------------------- #
     # T-Box write methods (R1, FR-001..005) — used at publish time to
-    # project the editable metadata into the Owlready2 World. Best-effort:
-    # callers wrap in try/except since the World is a publish-time artefact.
+    # project the editable metadata into the Owlready2 World at publish time.
     # ----------------------------------------------------------------- #
     def _target_namespace(self, module: str | None) -> owlready2.Ontology:
         if module and module in self._ontologies:
@@ -904,6 +1001,7 @@ class OntologyEngine:
             if isinstance(rng, owlready2.ThingClass):
                 prop.range = [rng]
             self._apply_labels(prop, label, comment)
+            self._apply_property_cardinality(prop, domain_iri, flags)
 
     @_schema_mutation
     def upsert_data_property(
@@ -926,6 +1024,182 @@ class OntologyEngine:
             if isinstance(dom, owlready2.ThingClass):
                 prop.domain = [dom]
             self._apply_labels(prop, label, comment)
+            datatype = kwargs.get("datatype")
+            if datatype:
+                datatype_iri = datatype if ":" in datatype else str(rdflib.XSD) + datatype
+                self._world.as_rdflib_graph().set((
+                    rdflib.URIRef(iri), rdflib.RDFS.range, rdflib.URIRef(datatype_iri),
+                ))
+            self._apply_property_cardinality(prop, domain_iri, kwargs)
+
+    def _apply_property_cardinality(self, prop, domain_iri: str | None, config: dict) -> None:
+        fields = {"multiplicity", "min_cardinality", "max_cardinality"}
+        if not fields.intersection(config):
+            return
+        source = self._quantity_graph()
+        graph = rdflib.Graph()
+        graph += source
+        ref = rdflib.URIRef(prop.iri)
+        previous = read_cardinality_config(graph, ref)
+        previous.update({name: config[name] for name in fields if name in config})
+        remove_cardinality_config(graph, ref, remove_functional=True)
+        emit_cardinality_config(
+            graph, ref, rdflib.URIRef(domain_iri) if domain_iri else None, **previous,
+        )
+        self._sync_functional(prop, previous["multiplicity"] == "single")
+        self._materialize_cardinality(prop, graph)
+        self._cardinality_graph = graph
+
+    def _materialize_cardinality(self, prop, source: rdflib.Graph) -> None:
+        """Replace owned axioms in the World, with complete nodes before class links."""
+        from app.services.ontology_cardinality import CARDINALITY_PREDICATES
+
+        target = self._world.as_rdflib_graph()
+        ref = rdflib.URIRef(prop.iri)
+        triples = [t for t in source.triples((ref, None, None))
+                   if t[1] in CARDINALITY_PREDICATES]
+        for node in source.subjects(CORE.cardinalityOwner, ref):
+            triples.extend(source.triples((node, None, None)))
+            triples.extend(source.triples((None, rdflib.RDFS.subClassOf, node)))
+        nodes = {value: target.BNode() for triple in triples for value in triple
+                 if isinstance(value, rdflib.BNode)}
+        with prop.namespace:
+            # Owlready2's RDF adapter treats newly added blank nodes as Python
+            # strings in cached is_a lists. Write these owned RDF subgraphs via
+            # the quadstore, then refresh only affected class restriction lists.
+            removals = [t for t in target.triples((ref, None, None))
+                        if t[1] in CARDINALITY_PREDICATES]
+            for node in list(target.subjects(CORE.cardinalityOwner, ref)):
+                removals.extend(target.triples((node, None, None)))
+                removals.extend(target.triples((None, rdflib.RDFS.subClassOf, node)))
+            for triple in removals:
+                subject, predicate, value, datatype = target.store._rdflib_2_owlready(triple)
+                if datatype is None:
+                    self._world._del_obj_triple_spo(subject, predicate, value)
+                else:
+                    self._world._del_data_triple_spod(subject, predicate, value, datatype)
+            self._sync_functional(
+                prop, (ref, rdflib.RDF.type, rdflib.OWL.FunctionalProperty) in source,
+            )
+            for triple in triples:
+                subject, predicate, value, datatype = target.store._rdflib_2_owlready(
+                    tuple(nodes.get(value, value) for value in triple),
+                )
+                if datatype is None:
+                    prop.namespace.ontology._add_obj_triple_spo(subject, predicate, value)
+                else:
+                    prop.namespace.ontology._add_data_triple_spod(
+                        subject, predicate, value, datatype,
+                    )
+            owners = {t[0] for t in [*removals, *triples] if t[1] == rdflib.RDFS.subClassOf}
+            for owner in owners:
+                cls = self._world[str(owner)]
+                if isinstance(cls, owlready2.ThingClass):
+                    cls.is_a._set([
+                        self._world._to_python(
+                            value, main_type=owlready2.ThingClass, default_to_none=True,
+                        )
+                        for value in self._world._get_obj_triples_sp_o(
+                            cls.storid, owlready2.rdfs_subclassof,
+                        )
+                    ])
+
+    def _reopen_world_caches(self) -> None:
+        world = self._world
+        namespaces = {key: onto.base_iri for key, onto in self._ontologies.items()}
+        if world.filename == ":memory:":
+            restored = owlready2.World(clone=world.graph)
+            world.close()
+        else:
+            filename = world.filename
+            world.close()
+            restored = owlready2.World(filename=filename)
+        self._world = restored
+        self._ontologies = {key: restored.get_ontology(iri) for key, iri in namespaces.items()}
+        self._semantic_schema = None
+
+    @staticmethod
+    def _sync_functional(prop, functional: bool) -> None:
+        if functional and owlready2.FunctionalProperty not in prop.is_a:
+            prop.is_a.append(owlready2.FunctionalProperty)
+        elif not functional and owlready2.FunctionalProperty in prop.is_a:
+            prop.is_a.remove(owlready2.FunctionalProperty)
+
+    def _restore_published_cardinality(self) -> None:
+        """Restore only the versioned property configuration from the managed TTL.
+
+        The merged RDF view preserves class restrictions for recognition, while
+        the existing Owlready module/ABox ownership stays intact. Newly edited
+        properties and their named classes must also be visible after a restart.
+        """
+        from app.services.ttl_merge import load_base_graph
+
+        path = self._ontology_dir / "slpra_managed.ttl"
+        if not path.exists():
+            return
+        managed = rdflib.Graph().parse(path, format="turtle")
+        from app.services.extraction.retired_config import reject_execution_annotations
+
+        reject_execution_annotations(managed)
+        property_refs = sorted(set(managed.subjects(CORE.cardinalityConfigVersion, None)))
+        class_refs = set()
+        for ref in property_refs:
+            for predicate in (rdflib.RDFS.domain, rdflib.RDFS.range):
+                class_refs.update(
+                    value for value in managed.objects(ref, predicate)
+                    if (value, rdflib.RDF.type, rdflib.OWL.Class) in managed
+                )
+        pending = list(class_refs)
+        while pending:
+            ref = pending.pop()
+            for parent in managed.objects(ref, rdflib.RDFS.subClassOf):
+                if isinstance(parent, rdflib.URIRef) and parent not in class_refs:
+                    class_refs.add(parent)
+                    pending.append(parent)
+        for ref in sorted(class_refs):
+            if self._world.search_one(iri=str(ref)) is None:
+                self.upsert_class(
+                    str(ref), label=str(managed.value(ref, rdflib.RDFS.label) or ""),
+                    module=next(
+                        (k for k, ns in MODULE_NAMES.items() if str(ref).startswith(ns)), None,
+                    ),
+                )
+        for ref in sorted(class_refs):
+            for parent in managed.objects(ref, rdflib.RDFS.subClassOf):
+                if isinstance(parent, rdflib.URIRef):
+                    self.upsert_class(str(ref), parent_iri=str(parent))
+        for ref in property_refs:
+            domains = [v for v in managed.objects(ref, rdflib.RDFS.domain)
+                       if isinstance(v, rdflib.URIRef)]
+            ranges = [v for v in managed.objects(ref, rdflib.RDFS.range)
+                      if isinstance(v, rdflib.URIRef)]
+            args = {
+                "iri": str(ref),
+                "label": str(managed.value(ref, rdflib.RDFS.label) or ""),
+                "comment": str(managed.value(ref, rdflib.RDFS.comment) or ""),
+                "domain_iri": str(domains[0]) if len(domains) == 1 else None,
+                "module": next(
+                    (k for k, ns in MODULE_NAMES.items() if str(ref).startswith(ns)), None,
+                ),
+            }
+            if (ref, rdflib.RDF.type, rdflib.OWL.DatatypeProperty) in managed:
+                self.upsert_data_property(
+                    **args, datatype=str(ranges[0]) if len(ranges) == 1 else None,
+                )
+            elif (ref, rdflib.RDF.type, rdflib.OWL.ObjectProperty) in managed:
+                self.upsert_link_type(
+                    **args, range_iri=str(ranges[0]) if len(ranges) == 1 else None,
+                )
+            else:
+                raise ValueError(f"Cardinality owner is not a property: {ref}")
+            prop = self._world.search_one(iri=str(ref))
+            self._sync_functional(
+                prop, (ref, rdflib.RDF.type, rdflib.OWL.FunctionalProperty) in managed,
+            )
+        self._cardinality_graph = load_base_graph(self._ontology_dir)
+        for ref in property_refs:
+            self._materialize_cardinality(self._world[str(ref)], self._cardinality_graph)
+        self._world.save()
 
     @_schema_mutation
     def delete_entity(self, iri: str) -> None:
@@ -939,19 +1213,34 @@ class OntologyEngine:
         if comment:
             entity.comment = [owlready2.locstr(comment, lang="zh")]
 
-    def project_entities(self, entities: list[dict]) -> None:
+    def project_entities(
+        self, entities: list[dict], *, published_graph: rdflib.Graph | None = None,
+        publish_callback: Callable[[], None] | None = None,
+    ) -> None:
         """Project a list of metadata payloads into the World, then persist.
 
-        Each payload is a dict with a ``kind`` discriminator. Per-entity errors
-        are logged and skipped so one bad axiom never aborts a whole release.
+        Validate quantity payloads before mutation; any projection failure must
+        reach the publisher so a failed projection cannot be marked published.
         """
         with self._lock:
             if not self._world or not self._ontologies:
-                logger.warning("World not loaded; skipping projection")
-                return
+                raise OntologyIntegrityError("World not loaded; cannot project release")
             for ent in entities:
-                kind = ent.get("kind")
-                try:
+                if ent.get("kind") in ("link_type", "data_property") \
+                        and "multiplicity" in ent:
+                    emit_cardinality_config(
+                        rdflib.Graph(), rdflib.URIRef(ent["iri"]),
+                        rdflib.URIRef(ent["domain_iri"]) if ent.get("domain_iri") else None,
+                        ent["multiplicity"], ent.get("min_cardinality"),
+                        ent.get("max_cardinality"),
+                    )
+            previous_graph = self._cardinality_graph
+            # Establish a transaction boundary without altering the authoritative
+            # TTL. On failure reopen the rolled-back store to clear Python caches.
+            self._world.save()
+            try:
+                for ent in entities:
+                    kind = ent.get("kind")
                     if kind == "class":
                         self.upsert_class(**{k: v for k, v in ent.items() if k != "kind"})
                     elif kind == "link_type":
@@ -959,12 +1248,23 @@ class OntologyEngine:
                     elif kind == "data_property":
                         self.upsert_data_property(**{k: v for k, v in ent.items() if k != "kind"})
                     # actions/restrictions are projected via TTL, not the World
-                except Exception as exc:  # pragma: no cover - best effort
-                    logger.warning("Projection failed for %s: %s", ent.get("iri"), exc)
-            try:
+                if published_graph is not None:
+                    graph = rdflib.Graph()
+                    graph += published_graph
+                    for ref in graph.subjects(CORE.cardinalityConfigVersion, None):
+                        prop = self._world[str(ref)]
+                        if prop is not None:
+                            self._materialize_cardinality(prop, graph)
+                    self._cardinality_graph = graph
+                if publish_callback is not None:
+                    publish_callback()
                 self._world.save()
-            except Exception as exc:  # pragma: no cover
-                logger.warning("World save failed: %s", exc)
+            except Exception as exc:
+                self._world.graph.db.rollback()
+                self._reopen_world_caches()
+                self._cardinality_graph = previous_graph
+                raise OntologyIntegrityError("Release projection rolled back") from exc
+            self._semantic_schema = None
 
     def _individual_to_info(self, ind) -> IndividualInfo:
         label_zh, label_en = self._get_bilingual_labels(ind)

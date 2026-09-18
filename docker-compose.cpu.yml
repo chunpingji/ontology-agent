@@ -1,0 +1,14 @@
+# Explicit CPU deployment; last file wins, including over a GPU-configured .env.
+# Production: docker compose -f docker-compose.yml -f docker-compose.cpu.yml up -d --build backend
+# Development: add -f docker-compose.override.yml before this file.
+services:
+  backend:
+    image: ontology-agent-backend:cpu
+    runtime: runc
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    environment:
+      SEMANTIC_RANKING_DEVICE: cpu
+      SEMANTIC_RANKING_DTYPE: float32
+      NVIDIA_VISIBLE_DEVICES: void

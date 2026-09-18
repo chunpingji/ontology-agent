@@ -1,0 +1,502 @@
+{
+  "type": "object",
+  "properties": {
+    "document": {
+      "type": "object",
+      "properties": {
+        "attributes": {
+          "type": "object",
+          "properties": {},
+          "required": [],
+          "additionalProperties": false
+        },
+        "relations": {
+          "type": "object",
+          "properties": {
+            "hasSharedLineData": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "target_id": {
+                    "type": "string",
+                    "enum": [
+                      "s1",
+                      "s2"
+                    ]
+                  },
+                  "evidence": {
+                    "$ref": "#/$defs/Citation"
+                  },
+                  "condition": {
+                    "$ref": "#/$defs/Citation"
+                  },
+                  "polarity": {
+                    "type": "string",
+                    "enum": [
+                      "affirmed",
+                      "negated"
+                    ]
+                  }
+                },
+                "required": [
+                  "target_id",
+                  "evidence",
+                  "condition",
+                  "polarity"
+                ],
+                "additionalProperties": false
+              },
+              "maxItems": 6
+            }
+          },
+          "required": [
+            "hasSharedLineData"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "attributes",
+        "relations"
+      ],
+      "additionalProperties": false
+    },
+    "s1": {
+      "type": "object",
+      "properties": {
+        "attributes": {
+          "type": "object",
+          "properties": {
+            "activeIngredient": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Value"
+              },
+              "maxItems": 3
+            },
+            "dosingRegimen": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Value"
+              },
+              "maxItems": 3
+            },
+            "f1": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Value"
+              },
+              "maxItems": 3
+            },
+            "f2": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Value"
+              },
+              "maxItems": 3
+            },
+            "f3": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Value"
+              },
+              "maxItems": 3
+            },
+            "f4": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Value"
+              },
+              "maxItems": 3
+            },
+            "f5": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Value"
+              },
+              "maxItems": 3
+            },
+            "humanEquivalentDose_mg_per_kg": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Value"
+              },
+              "maxItems": 3
+            },
+            "noaelDuration": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Value"
+              },
+              "maxItems": 3
+            },
+            "noaelSpecies": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Value"
+              },
+              "maxItems": 3
+            },
+            "noael_mg_per_kg_per_day": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Value"
+              },
+              "maxItems": 3
+            },
+            "oebBand": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Value"
+              },
+              "maxItems": 3
+            },
+            "pde_mg_per_day": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Value"
+              },
+              "maxItems": 3
+            },
+            "proposedMaxDose_mg": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Value"
+              },
+              "maxItems": 3
+            },
+            "proposedStartingDose_mg": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Value"
+              },
+              "maxItems": 3
+            },
+            "safetyFactor": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Value"
+              },
+              "maxItems": 3
+            },
+            "sourceReference": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Value"
+              },
+              "maxItems": 3
+            },
+            "studyType": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Value"
+              },
+              "maxItems": 3
+            }
+          },
+          "required": [
+            "activeIngredient",
+            "dosingRegimen",
+            "f1",
+            "f2",
+            "f3",
+            "f4",
+            "f5",
+            "humanEquivalentDose_mg_per_kg",
+            "noaelDuration",
+            "noaelSpecies",
+            "noael_mg_per_kg_per_day",
+            "oebBand",
+            "pde_mg_per_day",
+            "proposedMaxDose_mg",
+            "proposedStartingDose_mg",
+            "safetyFactor",
+            "sourceReference",
+            "studyType"
+          ],
+          "additionalProperties": false
+        },
+        "relations": {
+          "type": "object",
+          "properties": {},
+          "required": [],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "attributes",
+        "relations"
+      ],
+      "additionalProperties": false
+    },
+    "s2": {
+      "type": "object",
+      "properties": {
+        "attributes": {
+          "type": "object",
+          "properties": {
+            "activeIngredient": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Value"
+              },
+              "maxItems": 3
+            },
+            "dosingRegimen": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Value"
+              },
+              "maxItems": 3
+            },
+            "f1": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Value"
+              },
+              "maxItems": 3
+            },
+            "f2": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Value"
+              },
+              "maxItems": 3
+            },
+            "f3": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Value"
+              },
+              "maxItems": 3
+            },
+            "f4": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Value"
+              },
+              "maxItems": 3
+            },
+            "f5": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Value"
+              },
+              "maxItems": 3
+            },
+            "humanEquivalentDose_mg_per_kg": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Value"
+              },
+              "maxItems": 3
+            },
+            "noaelDuration": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Value"
+              },
+              "maxItems": 3
+            },
+            "noaelSpecies": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Value"
+              },
+              "maxItems": 3
+            },
+            "noael_mg_per_kg_per_day": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Value"
+              },
+              "maxItems": 3
+            },
+            "oebBand": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Value"
+              },
+              "maxItems": 3
+            },
+            "pde_mg_per_day": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Value"
+              },
+              "maxItems": 3
+            },
+            "proposedMaxDose_mg": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Value"
+              },
+              "maxItems": 3
+            },
+            "proposedStartingDose_mg": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Value"
+              },
+              "maxItems": 3
+            },
+            "safetyFactor": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Value"
+              },
+              "maxItems": 3
+            },
+            "sourceReference": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Value"
+              },
+              "maxItems": 3
+            },
+            "studyType": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Value"
+              },
+              "maxItems": 3
+            }
+          },
+          "required": [
+            "activeIngredient",
+            "dosingRegimen",
+            "f1",
+            "f2",
+            "f3",
+            "f4",
+            "f5",
+            "humanEquivalentDose_mg_per_kg",
+            "noaelDuration",
+            "noaelSpecies",
+            "noael_mg_per_kg_per_day",
+            "oebBand",
+            "pde_mg_per_day",
+            "proposedMaxDose_mg",
+            "proposedStartingDose_mg",
+            "safetyFactor",
+            "sourceReference",
+            "studyType"
+          ],
+          "additionalProperties": false
+        },
+        "relations": {
+          "type": "object",
+          "properties": {},
+          "required": [],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "attributes",
+        "relations"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "document",
+    "s1",
+    "s2"
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "Citation": {
+      "type": "object",
+      "properties": {
+        "ref": {
+          "type": "string",
+          "enum": [
+            "",
+            "u0",
+            "u1",
+            "u2",
+            "u3",
+            "u4",
+            "u5",
+            "u6",
+            "u7",
+            "u8",
+            "u9",
+            "u10",
+            "u11",
+            "u12",
+            "u13",
+            "u14",
+            "u15",
+            "u16",
+            "u17",
+            "u18",
+            "u19",
+            "u20",
+            "u21",
+            "u22",
+            "u23",
+            "u24",
+            "u25",
+            "u26",
+            "u27",
+            "u28",
+            "u29",
+            "u30",
+            "u31",
+            "u32",
+            "u33",
+            "u34",
+            "u35",
+            "u36",
+            "u37",
+            "u38",
+            "u39",
+            "u40",
+            "u41",
+            "u42",
+            "u43",
+            "u44"
+          ]
+        },
+        "quote": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "ref",
+        "quote"
+      ],
+      "additionalProperties": false
+    },
+    "Value": {
+      "type": "object",
+      "properties": {
+        "raw": {
+          "type": "string"
+        },
+        "source": {
+          "$ref": "#/$defs/Citation"
+        },
+        "field": {
+          "$ref": "#/$defs/Citation"
+        },
+        "unit": {
+          "$ref": "#/$defs/Citation"
+        },
+        "condition": {
+          "$ref": "#/$defs/Citation"
+        }
+      },
+      "required": [
+        "raw",
+        "source",
+        "field",
+        "unit",
+        "condition"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

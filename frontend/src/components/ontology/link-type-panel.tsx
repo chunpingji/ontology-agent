@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { ChevronDown, ChevronRight } from "lucide-react";
 import {
   createLinkType,
   deleteLinkType,
@@ -9,30 +10,34 @@ import {
   type TBoxLinkType,
 } from "@/lib/api";
 import { Field } from "@/components/ontology/field";
+import { PropertyCardinalityEditor } from "@/components/ontology/property-cardinality-editor";
+import {
+  cardinalityForm,
+  cardinalityPayload,
+  cardinalitySummary,
+  type CardinalityFormState,
+} from "@/lib/property-cardinality";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
 const MANAGED_PREFIX = "https://ontology.pharma-gmp.cn/slpra/core/";
 
 type Mode = "list" | "create" | "edit";
-type FormState = {
+type FormState = CardinalityFormState & {
   slpra_iri: string;
   label: string;
   domain_iri: string;
   range_iri: string;
   inverse_iri: string;
-  min_cardinality: string;
-  max_cardinality: string;
 };
 
 const emptyForm = (domainIri: string | null): FormState => ({
+  ...cardinalityForm(),
   slpra_iri: MANAGED_PREFIX,
   label: "",
   domain_iri: domainIri ?? "",
   range_iri: "",
   inverse_iri: "",
-  min_cardinality: "",
-  max_cardinality: "",
 });
 
 const tail = (iri: string | null | undefined) => (iri ? iri.split("/").pop() : null);
@@ -46,11 +51,13 @@ export function LinkTypePanel({
   focusedLinkIri = null,
   onChanged,
   onFocusLink,
+  renderRestrictions,
 }: {
   selectedClassIri: string | null;
   focusedLinkIri?: string | null;
   onChanged: () => void;
-  onFocusLink?: (iri: string) => void;
+  onFocusLink?: (iri: string | null) => void;
+  renderRestrictions?: (link: TBoxLinkType) => ReactNode;
 }) {
   const [items, setItems] = useState<TBoxLinkType[]>([]);
   const [mode, setMode] = useState<Mode>("list");
@@ -101,15 +108,15 @@ export function LinkTypePanel({
   };
 
   const startEdit = (lt: TBoxLinkType) => {
+    onFocusLink?.(lt.slpra_iri);
     setEditing(lt);
     setForm({
+      ...cardinalityForm(lt),
       slpra_iri: lt.slpra_iri,
       label: lt.label ?? "",
       domain_iri: lt.domain_iri ?? "",
       range_iri: lt.range_iri ?? "",
       inverse_iri: lt.inverse_iri ?? "",
-      min_cardinality: lt.min_cardinality?.toString() ?? "",
-      max_cardinality: lt.max_cardinality?.toString() ?? "",
     });
     setError(null);
     setMsg(null);
@@ -118,11 +125,8 @@ export function LinkTypePanel({
 
   const submitForm = async () => {
     setError(null);
-    const card = {
-      min_cardinality: form.min_cardinality === "" ? null : Number(form.min_cardinality),
-      max_cardinality: form.max_cardinality === "" ? null : Number(form.max_cardinality),
-    };
     try {
+      const card = cardinalityPayload(form, form.domain_iri);
       if (mode === "edit" && editing) {
         await updateLinkType(editing.slpra_iri, {
           label: form.label,
@@ -192,63 +196,74 @@ export function LinkTypePanel({
               <li
                 key={lt.id}
                 ref={focused ? focusedRowRef : undefined}
-                className={`flex items-center justify-between gap-2 px-2 py-1.5 ${
+                data-property-iri={lt.slpra_iri}
+                className={`px-2 py-1.5 ${
                   focused ? "bg-primary/10 ring-1 ring-inset ring-primary/40" : inherited ? "bg-muted/60" : ""
                 }`}
               >
-                <button
-                  type="button"
-                  onClick={() => onFocusLink?.(lt.slpra_iri)}
-                  title="在图谱中高亮该关系"
-                  className="min-w-0 flex-1 cursor-pointer text-left"
-                >
-                  <div className="flex items-center gap-2">
-                    <span className="truncate font-mono text-xs text-muted-foreground">{tail(lt.slpra_iri)}</span>
-                    {lt.label && <span className="truncate text-foreground">{lt.label}</span>}
-                    {inherited && (
-                      <span
-                        className="shrink-0 rounded bg-warning/10 px-1.5 py-0.5 text-[10px] text-warning"
-                        title={`继承自 ${lt.inherited_from_label ?? lt.inherited_from_iri}`}
-                      >
-                        继承自 {lt.inherited_from_label ?? tail(lt.inherited_from_iri)}
+                <div className="flex items-center justify-between gap-2">
+                  <button
+                    type="button"
+                    onClick={() => onFocusLink?.(focused ? null : lt.slpra_iri)}
+                    title="展开关系的类约束，并在图谱中高亮"
+                    aria-expanded={focused}
+                    aria-controls={`link-restrictions-${lt.id}`}
+                    className="min-w-0 flex-1 cursor-pointer text-left"
+                  >
+                    <div className="flex items-center gap-2">
+                      {focused ? <ChevronDown className="h-3.5 w-3.5 shrink-0" /> : <ChevronRight className="h-3.5 w-3.5 shrink-0" />}
+                      <span className="truncate font-mono text-xs text-muted-foreground">{tail(lt.slpra_iri)}</span>
+                      {lt.label && <span className="truncate text-foreground">{lt.label}</span>}
+                      {inherited && (
+                        <span
+                          className="shrink-0 rounded bg-warning/10 px-1.5 py-0.5 text-[10px] text-warning"
+                          title={`继承自 ${lt.inherited_from_label ?? lt.inherited_from_iri}`}
+                        >
+                          继承自 {lt.inherited_from_label ?? tail(lt.inherited_from_iri)}
+                        </span>
+                      )}
+                    </div>
+                    <div className="mt-0.5 flex flex-wrap items-center gap-1 text-[11px] text-muted-foreground">
+                      <span className="rounded bg-muted px-1.5 py-0.5 font-mono">
+                        {tail(lt.domain_iri) ?? "—"} → {tail(lt.range_iri) ?? "—"}
                       </span>
+                      <span className="rounded bg-muted px-1.5 py-0.5">{cardinalitySummary(lt)}</span>
+                      {lt.is_symmetric && <span className="rounded bg-muted px-1.5 py-0.5">symmetric</span>}
+                      {lt.is_transitive && <span className="rounded bg-muted px-1.5 py-0.5">transitive</span>}
+                    </div>
+                  </button>
+                  <div className="flex shrink-0 gap-1">
+                    {inherited ? (
+                      <span className="rounded border border-dashed px-2 py-0.5 text-xs text-muted-foreground">
+                        只读
+                      </span>
+                    ) : (
+                      <>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => startEdit(lt)}
+                          className="h-auto rounded px-2 py-0.5 text-xs text-muted-foreground"
+                        >
+                          编辑
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => remove(lt)}
+                          className="h-auto rounded border-destructive/40 px-2 py-0.5 text-xs text-destructive hover:bg-destructive/10"
+                        >
+                          删除
+                        </Button>
+                      </>
                     )}
                   </div>
-                  <div className="mt-0.5 flex flex-wrap items-center gap-1 text-[11px] text-muted-foreground">
-                    <span className="rounded bg-muted px-1.5 py-0.5 font-mono">
-                      {tail(lt.domain_iri) ?? "—"} → {tail(lt.range_iri) ?? "—"}
-                    </span>
-                    {lt.is_functional && <span className="rounded bg-muted px-1.5 py-0.5">functional</span>}
-                    {lt.is_symmetric && <span className="rounded bg-muted px-1.5 py-0.5">symmetric</span>}
-                    {lt.is_transitive && <span className="rounded bg-muted px-1.5 py-0.5">transitive</span>}
-                  </div>
-                </button>
-                <div className="flex shrink-0 gap-1">
-                  {inherited ? (
-                    <span className="rounded border border-dashed px-2 py-0.5 text-xs text-muted-foreground">
-                      只读
-                    </span>
-                  ) : (
-                    <>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => startEdit(lt)}
-                        className="h-auto rounded px-2 py-0.5 text-xs text-muted-foreground"
-                      >
-                        编辑
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => remove(lt)}
-                        className="h-auto rounded border-destructive/40 px-2 py-0.5 text-xs text-destructive hover:bg-destructive/10"
-                      >
-                        删除
-                      </Button>
-                    </>
-                  )}
                 </div>
+                {focused && renderRestrictions && (
+                  <div id={`link-restrictions-${lt.id}`} className="mt-3 border-t border-border pt-3 pb-1 pl-4">
+                    {renderRestrictions(lt)}
+                  </div>
+                )}
               </li>
             );
           })}
@@ -299,24 +314,10 @@ export function LinkTypePanel({
               className="h-auto rounded px-2 py-1 font-mono text-xs shadow-none"
             />
           </Field>
-          <div className="flex gap-2">
-            <Field label="最小基数 min" className="w-1/2">
-              <Input
-                placeholder="min 基数"
-                value={form.min_cardinality}
-                onChange={(e) => setForm({ ...form, min_cardinality: e.target.value })}
-                className="h-auto rounded px-2 py-1 text-sm shadow-none"
-              />
-            </Field>
-            <Field label="最大基数 max" className="w-1/2">
-              <Input
-                placeholder="max 基数"
-                value={form.max_cardinality}
-                onChange={(e) => setForm({ ...form, max_cardinality: e.target.value })}
-                className="h-auto rounded px-2 py-1 text-sm shadow-none"
-              />
-            </Field>
-          </div>
+          <PropertyCardinalityEditor
+            value={form}
+            onChange={(cardinality) => setForm({ ...form, ...cardinality })}
+          />
           {mode === "create" && (
             <Field label="逆属性 inverse" hint="可选，已存在关系的 IRI">
               <Input

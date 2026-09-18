@@ -1,0 +1,31 @@
+{
+  "input_sha256": "6d9bbce04525013329040d6303698bc655f5e943b362fe4356c25aef1890ed96",
+  "python": "3.12.7",
+  "platform": "Linux-5.15.0-168-generic-x86_64-with-glibc2.35",
+  "versions": {
+    "ranking_state": 116,
+    "graph": 11,
+    "recognition_checkpoint": 11
+  },
+  "models_called": 0,
+  "all_restored_payloads_equal": true,
+  "public_projection_equal": true,
+  "new_json_bytes": 27177787,
+  "immutable_block_count": 10350,
+  "immutable_block_json_bytes": 27146461,
+  "encoded_head_json_bytes": 31326,
+  "new_internal_read_json_bytes": 39404,
+  "compact_service": {
+    "samples": 30,
+    "median_ms": 7.795866520609707,
+    "p95_ms": 8.40204197447747
+  },
+  "encode_total_seconds": 419.7729073972441,
+  "restore_total_seconds": 131.98399206774775,
+  "limitations": [
+    "JSON logical bytes, not disk or WAL",
+    "SQLite isolated service replay, not production PostgreSQL/HTTP/browser",
+    "saved partial run, no new recognition or expert quality measurement",
+    "new format diagnostics only; no old-implementation speed comparison"
+  ]
+}

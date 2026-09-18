@@ -1,0 +1,69 @@
+{
+  "scope_id": "quality_condition",
+  "mentions": [
+    {
+      "id": "mention-hplc-method",
+      "text": "HPLC",
+      "class_iri": "https://ontology.pharma-gmp.cn/slpra/cleaning/HPLCMethod",
+      "evidence_id": "eb97242f159426bfe5f0cb0e79f0571c72b6a08c8b1968efdc5fe3de8ad3b1b1",
+      "evidence": "HPLC"
+    },
+    {
+      "id": "mention-general-area",
+      "text": "一般区",
+      "class_iri": "https://ontology.pharma-gmp.cn/slpra/facility/GeneralArea",
+      "evidence_id": "48ca1378de103138ed5b81cadc51a59226bacfb6558400667fd3c39bbefb979b",
+      "evidence": "（从一般区溶解物料）"
+    }
+  ],
+  "claims": [
+    {
+      "subject_id": "upload-23c872fb-3ab1-41de-a705-dd4b162dfa09",
+      "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasCleaningMethod",
+      "object_id": "mention-hplc-method",
+      "literal_value": "",
+      "polarity": "affirmed",
+      "condition": "",
+      "evidence_id": "48ca1378de103138ed5b81cadc51a59226bacfb6558400667fd3c39bbefb979b",
+      "evidence": "取样送检HPLC和重金属检测，质量标准要同时满足：单个杂质应不得过0.2%总杂应不得过2.0%,重金属残留不得超过百万分之二十，若不符合质量标准，则重复上述全部结晶操作（从一般区溶解物料）。"
+    },
+    {
+      "subject_id": "mention-hplc-method",
+      "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/cleaning/detectionLimit_ug",
+      "object_id": "",
+      "literal_value": "0.2%",
+      "polarity": "affirmed",
+      "condition": "",
+      "evidence_id": "48ca1378de103138ed5b81cadc51a59226bacfb6558400667fd3c39bbefb979b",
+      "evidence": "单个杂质应不得过0.2%"
+    },
+    {
+      "subject_id": "mention-hplc-method",
+      "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/cleaning/quantitationLimit_ug",
+      "object_id": "",
+      "literal_value": "2.0%",
+      "polarity": "affirmed",
+      "condition": "",
+      "evidence_id": "48ca1378de103138ed5b81cadc51a59226bacfb6558400667fd3c39bbefb979b",
+      "evidence": "总杂应不得过2.0%"
+    }
+  ],
+  "open_slots": [
+    {
+      "predicate_hint": "https://ontology.pharma-gmp.cn/slpra/cleaning/detectionLimit_ug",
+      "missing_role": "subject",
+      "expected_type_hint": "https://ontology.pharma-gmp.cn/slpra/cleaning/HPLCMethod",
+      "evidence": "重金属残留不得超过百万分之二十"
+    },
+    {
+      "predicate_hint": "https://ontology.pharma-gmp.cn/slpra/cleaning/quantitationLimit_ug",
+      "missing_role": "subject",
+      "expected_type_hint": "https://ontology.pharma-gmp.cn/slpra/cleaning/HPLCMethod",
+      "evidence": "重金属残留不得超过百万分之二十"
+    }
+  ],
+  "schema_gaps": [
+    "重金属残留检测的具体分析方法名称（如ICP-MS等）未在文本中明确，仅提及'重金属检测'，无法映射到具体的 HPLCMethod 或其他特定分析方法的 IRI。",
+    "百万分之二十 (ppm) 需要转换为 μg 单位以匹配 schema 属性，但原文未提供样品量或体积等换算依据，且 schema 属性名为 detectionLimit_ug/quantitationLimit_ug，通常指绝对量而非浓度百分比，此处存在本体概念与原文表达（浓度限度）的映射歧义。"
+  ]
+}

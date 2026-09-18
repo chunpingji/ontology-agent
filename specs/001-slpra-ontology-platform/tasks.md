@@ -190,6 +190,22 @@ Task: "graph-visualization.tsx"
 
 ---
 
+## 2026-09-15 本体类搜索增量
+
+- [x] S001 在 `/ontology` 类层次加入标签、注释、IRI 关键词筛选，保留父级路径、正确计数与选中联动，并处理加载提示。
+- [x] S002 运行定向静态检查与 quickstart 中的搜索交互验证，记录实际结果。
+- [x] S003 每级类层次按“有子节点优先、英文类名 A–Z”排序，搜索保留排序，原始树不变。
+
+排序增量验证：`npm run lint -- 'src/app/(dashboard)/ontology/page.tsx'`、`./node_modules/.bin/tsc --noEmit` 与定向 `git diff --check` 均通过；未另行运行浏览器验证。
+
+搜索功能验证（2026-09-15，工作目录 `frontend/`，排序增量前）：
+
+- `npm run lint -- 'src/app/(dashboard)/ontology/page.tsx' src/components/tree-view.tsx`：通过。
+- `./node_modules/.bin/tsc --noEmit`：通过。
+- 临时浏览器脚本 `/tmp/ontology-search-check.mjs`：7 组检查通过，覆盖三字段匹配、大小写/空格、深层祖先路径、重复 IRI 计数、结果选中、空状态、模块切换、旧响应与部分详情失败；无页面异常或写请求。
+- `PLAYWRIGHT_MODULE=/opt/dev/chen/jpi-project/jpi-test/zhjszx-replica/node_modules/playwright/test.mjs CHROME_EXECUTABLE=/opt/google/chrome/chrome FRONTEND_URL=http://127.0.0.1:3183 node tests/ontology-restrictions-browser.mjs`：11 项既有编辑/约束回归检查通过。
+- 两次浏览器检查均拦截全部 API，使用合成数据；未执行真实后端集成验收或部署。
+
 ## Notes
 
 - [P] = 不同文件、无依赖；后端端点共用 `ontology.py` 故标记为顺序

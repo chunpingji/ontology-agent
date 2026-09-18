@@ -1,0 +1,398 @@
+{
+  "status": "passed",
+  "scope": "real API/browser integration with controlled persisted recognition fixtures",
+  "api_requests": 61,
+  "checks": [
+    "history card grid",
+    "2/3 desktop and full-width mobile drawer",
+    "close restores card focus",
+    "keyboard node selection with scoped properties and relationships",
+    "D3 group connectors and zoom controls",
+    "mobile no overflow",
+    "real persisted graph",
+    "semantic ranking diagnostics",
+    "degraded ranking",
+    "graph tab preserves chapter tree and preview editor",
+    "source replay keeps graph visible",
+    "source anchor replay",
+    "projection switching",
+    "rapid run switching",
+    "refresh recovery",
+    "protocol-selected verified graph",
+    "group selection without new entities/edges",
+    "independent verified entity",
+    "filtered parent scope explanation and original source link",
+    "legacy protocol restored after tool run",
+    "unchanged database watermarks and model requests",
+    "GET-only browser API traffic"
+  ],
+  "baseline": {
+    "table_counts": {
+      "action_execution": 0,
+      "annotation_executions": 0,
+      "app_role": 3,
+      "app_user": 1,
+      "ast_template_training_pairs": 0,
+      "ast_templates": 0,
+      "audit_log": 0,
+      "calculation_decisions": 0,
+      "condition_definitions": 0,
+      "conditional_assertion_bindings": 0,
+      "document_analyses": 0,
+      "document_analysis_artifact_heads": 15,
+      "document_analysis_artifacts": 13,
+      "document_analysis_candidate_heads": 7,
+      "document_analysis_control_operations": 0,
+      "document_analysis_current_state": 1359,
+      "document_analysis_event_batches": 79,
+      "document_analysis_events": 97,
+      "document_analysis_executions": 3,
+      "document_analysis_proof_heads": 2,
+      "document_analysis_property_repairs": 0,
+      "document_analysis_property_review_heads": 0,
+      "document_analysis_property_reviews": 0,
+      "document_analysis_requests": 290,
+      "document_analysis_results": 171,
+      "document_analysis_run_artifacts": 15,
+      "document_analysis_run_candidates": 7,
+      "document_analysis_runs": 3,
+      "document_analysis_tombstones": 0,
+      "document_analysis_verification_proofs": 2,
+      "electronic_signatures": 0,
+      "entity_shadows": 0,
+      "evidence_assertions": 0,
+      "evidence_candidate_revisions": 0,
+      "evidence_candidates": 0,
+      "evidence_commits": 0,
+      "evidence_coverage": 0,
+      "evidence_job_states": 0,
+      "evidence_reviews": 0,
+      "evidence_snapshots": 0,
+      "extraction_candidates": 0,
+      "extraction_configs": 0,
+      "extraction_jobs": 0,
+      "fact_materialization_run": 0,
+      "generated_reports": 0,
+      "integration_connectors": 0,
+      "local_model_pools": 0,
+      "local_model_requests": 0,
+      "mock_departments": 0,
+      "mock_equipment": 0,
+      "mock_equipment_schedule_overrides": 0,
+      "mock_production_areas": 0,
+      "mock_roles": 0,
+      "mock_team_members": 0,
+      "ontology_action": 0,
+      "ontology_change_log": 0,
+      "ontology_class": 0,
+      "ontology_class_mapping": 0,
+      "ontology_classification_criterion": 0,
+      "ontology_conflict_policy": 0,
+      "ontology_data_property": 0,
+      "ontology_decision_rule": 0,
+      "ontology_decision_rule_revisions": 0,
+      "ontology_link_type": 0,
+      "ontology_property_binding": 0,
+      "ontology_release": 0,
+      "ontology_restriction": 0,
+      "ontology_schema_snapshots": 0,
+      "pde_conflict_decisions": 0,
+      "reasoning_executions": 0,
+      "report_artifacts": 0,
+      "report_bodies": 0,
+      "report_content_reviews": 0,
+      "report_content_versions": 0,
+      "report_contract_decisions": 0,
+      "report_contract_record_reviews": 0,
+      "report_contract_records": 0,
+      "report_contract_revisions": 0,
+      "report_expert_opinions": 0,
+      "report_input_snapshots": 0,
+      "report_output_results": 0,
+      "report_requests": 0,
+      "report_runs": 0,
+      "report_signature_events": 0,
+      "report_signature_snapshots": 0,
+      "report_signatures": 0,
+      "report_signing_envelopes": 0,
+      "report_signing_sessions": 0,
+      "rule_migration_plans": 0,
+      "slot_dismissals": 0,
+      "system_configs": 0,
+      "template_compilations": 0,
+      "template_migration_plans": 0
+    },
+    "runs": [
+      {
+        "id": "5ab70e11-9a28-4d43-bf04-709f87e76199",
+        "revision": 179,
+        "event_head": 33,
+        "artifact_revision": 4,
+        "model_calls": 28
+      },
+      {
+        "id": "5e0e9429-b074-4a51-b124-27f6943de33e",
+        "revision": 100,
+        "event_head": 33,
+        "artifact_revision": 4,
+        "model_calls": 28
+      },
+      {
+        "id": "ff3a051b-ef42-44c0-80bb-180526ea522f",
+        "revision": 77,
+        "event_head": 31,
+        "artifact_revision": 4,
+        "model_calls": 25
+      }
+    ],
+    "controlled_requests": 81
+  },
+  "errors": [],
+  "failures": [],
+  "requests": [
+    {
+      "method": "GET",
+      "path": "/api/document-analysis/runs"
+    },
+    {
+      "method": "GET",
+      "path": "/api/ontology/all-classes"
+    },
+    {
+      "method": "GET",
+      "path": "/api/document-analysis/runs"
+    },
+    {
+      "method": "GET",
+      "path": "/api/ontology/all-classes"
+    },
+    {
+      "method": "GET",
+      "path": "/api/document-analysis/runs/5ab70e11-9a28-4d43-bf04-709f87e76199"
+    },
+    {
+      "method": "GET",
+      "path": "/api/document-analysis/runs/5ab70e11-9a28-4d43-bf04-709f87e76199/metadata"
+    },
+    {
+      "method": "GET",
+      "path": "/api/document-analysis/runs/5ab70e11-9a28-4d43-bf04-709f87e76199/graph"
+    },
+    {
+      "method": "GET",
+      "path": "/api/document-analysis/runs/5ab70e11-9a28-4d43-bf04-709f87e76199"
+    },
+    {
+      "method": "GET",
+      "path": "/api/document-analysis/runs/5ab70e11-9a28-4d43-bf04-709f87e76199/metadata"
+    },
+    {
+      "method": "GET",
+      "path": "/api/document-analysis/runs/5ab70e11-9a28-4d43-bf04-709f87e76199/graph"
+    },
+    {
+      "method": "GET",
+      "path": "/api/document-analysis/runs/5ab70e11-9a28-4d43-bf04-709f87e76199/source"
+    },
+    {
+      "method": "GET",
+      "path": "/api/document-analysis/runs/5e0e9429-b074-4a51-b124-27f6943de33e"
+    },
+    {
+      "method": "GET",
+      "path": "/api/document-analysis/runs/5e0e9429-b074-4a51-b124-27f6943de33e/metadata"
+    },
+    {
+      "method": "GET",
+      "path": "/api/document-analysis/runs/5e0e9429-b074-4a51-b124-27f6943de33e/graph"
+    },
+    {
+      "method": "GET",
+      "path": "/api/document-analysis/runs/5e0e9429-b074-4a51-b124-27f6943de33e"
+    },
+    {
+      "method": "GET",
+      "path": "/api/document-analysis/runs/5e0e9429-b074-4a51-b124-27f6943de33e/metadata"
+    },
+    {
+      "method": "GET",
+      "path": "/api/document-analysis/runs/5e0e9429-b074-4a51-b124-27f6943de33e/graph"
+    },
+    {
+      "method": "GET",
+      "path": "/api/document-analysis/runs/5e0e9429-b074-4a51-b124-27f6943de33e"
+    },
+    {
+      "method": "GET",
+      "path": "/api/document-analysis/runs/5e0e9429-b074-4a51-b124-27f6943de33e/metadata"
+    },
+    {
+      "method": "GET",
+      "path": "/api/document-analysis/runs/5e0e9429-b074-4a51-b124-27f6943de33e/graph"
+    },
+    {
+      "method": "GET",
+      "path": "/api/document-analysis/runs/5ab70e11-9a28-4d43-bf04-709f87e76199"
+    },
+    {
+      "method": "GET",
+      "path": "/api/document-analysis/runs/5ab70e11-9a28-4d43-bf04-709f87e76199/metadata"
+    },
+    {
+      "method": "GET",
+      "path": "/api/document-analysis/runs/5ab70e11-9a28-4d43-bf04-709f87e76199/graph"
+    },
+    {
+      "method": "GET",
+      "path": "/api/document-analysis/runs/5e0e9429-b074-4a51-b124-27f6943de33e"
+    },
+    {
+      "method": "GET",
+      "path": "/api/document-analysis/runs/5e0e9429-b074-4a51-b124-27f6943de33e/metadata"
+    },
+    {
+      "method": "GET",
+      "path": "/api/document-analysis/runs/5e0e9429-b074-4a51-b124-27f6943de33e/graph"
+    },
+    {
+      "method": "GET",
+      "path": "/api/document-analysis/runs"
+    },
+    {
+      "method": "GET",
+      "path": "/api/document-analysis/runs"
+    },
+    {
+      "method": "GET",
+      "path": "/api/ontology/all-classes"
+    },
+    {
+      "method": "GET",
+      "path": "/api/document-analysis/runs/5e0e9429-b074-4a51-b124-27f6943de33e"
+    },
+    {
+      "method": "GET",
+      "path": "/api/document-analysis/runs/5e0e9429-b074-4a51-b124-27f6943de33e/metadata"
+    },
+    {
+      "method": "GET",
+      "path": "/api/document-analysis/runs"
+    },
+    {
+      "method": "GET",
+      "path": "/api/ontology/all-classes"
+    },
+    {
+      "method": "GET",
+      "path": "/api/document-analysis/runs/5e0e9429-b074-4a51-b124-27f6943de33e"
+    },
+    {
+      "method": "GET",
+      "path": "/api/document-analysis/runs/5e0e9429-b074-4a51-b124-27f6943de33e/metadata"
+    },
+    {
+      "method": "GET",
+      "path": "/api/document-analysis/runs/5e0e9429-b074-4a51-b124-27f6943de33e/graph"
+    },
+    {
+      "method": "GET",
+      "path": "/api/document-analysis/runs/ff3a051b-ef42-44c0-80bb-180526ea522f"
+    },
+    {
+      "method": "GET",
+      "path": "/api/document-analysis/runs/ff3a051b-ef42-44c0-80bb-180526ea522f/metadata"
+    },
+    {
+      "method": "GET",
+      "path": "/api/document-analysis/runs/ff3a051b-ef42-44c0-80bb-180526ea522f/graph"
+    },
+    {
+      "method": "GET",
+      "path": "/api/document-analysis/runs/ff3a051b-ef42-44c0-80bb-180526ea522f"
+    },
+    {
+      "method": "GET",
+      "path": "/api/document-analysis/runs/ff3a051b-ef42-44c0-80bb-180526ea522f/metadata"
+    },
+    {
+      "method": "GET",
+      "path": "/api/document-analysis/runs/ff3a051b-ef42-44c0-80bb-180526ea522f/graph"
+    },
+    {
+      "method": "GET",
+      "path": "/api/document-analysis/runs/ff3a051b-ef42-44c0-80bb-180526ea522f"
+    },
+    {
+      "method": "GET",
+      "path": "/api/document-analysis/runs/ff3a051b-ef42-44c0-80bb-180526ea522f/metadata"
+    },
+    {
+      "method": "GET",
+      "path": "/api/document-analysis/runs/ff3a051b-ef42-44c0-80bb-180526ea522f/graph"
+    },
+    {
+      "method": "GET",
+      "path": "/api/document-analysis/runs/ff3a051b-ef42-44c0-80bb-180526ea522f/source"
+    },
+    {
+      "method": "GET",
+      "path": "/api/document-analysis/runs/ff3a051b-ef42-44c0-80bb-180526ea522f"
+    },
+    {
+      "method": "GET",
+      "path": "/api/document-analysis/runs/ff3a051b-ef42-44c0-80bb-180526ea522f/metadata"
+    },
+    {
+      "method": "GET",
+      "path": "/api/document-analysis/runs/ff3a051b-ef42-44c0-80bb-180526ea522f/graph"
+    },
+    {
+      "method": "GET",
+      "path": "/api/document-analysis/runs"
+    },
+    {
+      "method": "GET",
+      "path": "/api/ontology/all-classes"
+    },
+    {
+      "method": "GET",
+      "path": "/api/document-analysis/runs/ff3a051b-ef42-44c0-80bb-180526ea522f"
+    },
+    {
+      "method": "GET",
+      "path": "/api/document-analysis/runs/ff3a051b-ef42-44c0-80bb-180526ea522f/metadata"
+    },
+    {
+      "method": "GET",
+      "path": "/api/document-analysis/runs"
+    },
+    {
+      "method": "GET",
+      "path": "/api/ontology/all-classes"
+    },
+    {
+      "method": "GET",
+      "path": "/api/document-analysis/runs/ff3a051b-ef42-44c0-80bb-180526ea522f"
+    },
+    {
+      "method": "GET",
+      "path": "/api/document-analysis/runs/ff3a051b-ef42-44c0-80bb-180526ea522f/metadata"
+    },
+    {
+      "method": "GET",
+      "path": "/api/document-analysis/runs/ff3a051b-ef42-44c0-80bb-180526ea522f/graph"
+    },
+    {
+      "method": "GET",
+      "path": "/api/document-analysis/runs/5e0e9429-b074-4a51-b124-27f6943de33e"
+    },
+    {
+      "method": "GET",
+      "path": "/api/document-analysis/runs/5e0e9429-b074-4a51-b124-27f6943de33e/metadata"
+    },
+    {
+      "method": "GET",
+      "path": "/api/document-analysis/runs/5e0e9429-b074-4a51-b124-27f6943de33e/graph"
+    }
+  ]
+}

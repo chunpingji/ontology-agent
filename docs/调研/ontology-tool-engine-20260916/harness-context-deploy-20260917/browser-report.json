@@ -1,0 +1,25 @@
+{
+  "status": "passed",
+  "browser": "131.0.6778.85",
+  "actual_context": {
+    "run_id": "cec43de7-977d-4de6-a163-32805716b9fd",
+    "status": "running",
+    "stage": "recognition",
+    "work_version": 15,
+    "model_calls": 34,
+    "context_available": true,
+    "snapshot_sequence": 1,
+    "call_status": "running",
+    "instruction_characters": 6874,
+    "input_items": 4,
+    "schema_predicates": 1,
+    "schema_classes": 13,
+    "thinking_characters": 0,
+    "output_characters": 0
+  },
+  "context_requests": 1,
+  "runtime_errors": [],
+  "writes": [],
+  "scope": "Real restarted backend Harness payload rendered using unchanged current frontend source in isolated Next.js; surrounding API and auth are synthetic; no additional model calls or browser API writes",
+  "frontend_origin": "http://127.0.0.1:53219"
+}

@@ -1,0 +1,1734 @@
+{
+  "reviewer": "assistant-independent-process-quality-storage-residue",
+  "status_definitions": {
+    "supported": "原文和卡片直接支持所述语义及所选角色；整体判定另核主体/锚点/条件。",
+    "unsupported": "原文明确相反，或已知投入/产出、指标角色、否定、条件等被置换。",
+    "undetermined": "缺乏角色、归属、层级、范围或回指证据；不等同矛盾。"
+  },
+  "review_boundary": "Only review-inputs source, cards, original candidate_proposal and indexes; no verification/result/reference/acceptance.",
+  "not_expert_gold": true,
+  "cases": [
+    {
+      "arm": "C",
+      "scope_id": "process_equipment",
+      "review_input": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-gliner25-skos-20260916/review-inputs/process_equipment.json",
+      "review_input_sha256": "88d3962a47ed9c892bafe0f7036bd25aa0131635ebec93728a121d8fb0825c15",
+      "source_artifacts": {
+        "sources.json": "5a6125cd54dc2d5d59c83fac2a28f3c080c93416e2d5c768736ca7f50f3454a8",
+        "subject-cards.json": "6b643b2b2c7c08432a989753655ede59287cde1ac4e66f463dd9e30752cb730a",
+        "candidates/proposal.json": "72ec1f5878d7fae41c00035b39bd526d1dc93b2df8a6f3439698a6fceca111ca"
+      },
+      "subjects": [
+        {
+          "id": "document",
+          "path": "subjects.document",
+          "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport",
+          "proposal": {
+            "attributes": {},
+            "relations": {
+              "usesEquipment": []
+            },
+            "anchor": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            }
+          },
+          "status": "supported",
+          "content_verdict": "supported",
+          "overall_verdict": "supported",
+          "reason": "document是评测预设CMCReport根节点；不依赖局部标题新推断报告类型。",
+          "overall_reason": "document是评测预设CMCReport根节点；不依赖局部标题新推断报告类型。",
+          "supporting_source_refs": []
+        },
+        {
+          "id": "s1",
+          "path": "subjects.s1",
+          "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/SynthesisStep",
+          "proposal": {
+            "attributes": {
+              "inProcessControl": [],
+              "outputMassRange_kg": [],
+              "reactionConditions": [
+                {
+                  "raw": "釜内温度上升至55℃，搅拌溶清。随后氮气保护下加入颗粒活性炭...维持50~55℃继续搅拌1-2小时",
+                  "source": {
+                    "ref": "u2",
+                    "quote": "釜内温度上升至55℃，搅拌溶清。随后氮气保护下加入颗粒活性炭（活性炭投料量/Kg= HRS-1597粗品投入量/kg×0.2），维持50~55℃继续搅拌1-2小时",
+                    "span_id": "source:u2"
+                  },
+                  "field": {
+                    "ref": "u2",
+                    "quote": "步骤一",
+                    "span_id": "source:u2"
+                  },
+                  "unit": {
+                    "ref": "",
+                    "quote": "",
+                    "span_id": ""
+                  },
+                  "condition": {
+                    "ref": "",
+                    "quote": "",
+                    "span_id": ""
+                  }
+                }
+              ],
+              "stepOrder": [
+                {
+                  "raw": "1",
+                  "source": {
+                    "ref": "u2",
+                    "quote": "步骤一",
+                    "span_id": "source:u2"
+                  },
+                  "field": {
+                    "ref": "u2",
+                    "quote": "步骤一",
+                    "span_id": "source:u2"
+                  },
+                  "unit": {
+                    "ref": "",
+                    "quote": "",
+                    "span_id": ""
+                  },
+                  "condition": {
+                    "ref": "",
+                    "quote": "",
+                    "span_id": ""
+                  }
+                }
+              ],
+              "yieldRangePercent": []
+            },
+            "relations": {
+              "nextStep": [],
+              "producesIntermediate": [
+                {
+                  "target_id": "s4",
+                  "evidence": {
+                    "ref": "u2",
+                    "quote": "加入HRS-1597粗品",
+                    "span_id": "source:u2"
+                  },
+                  "condition": {
+                    "ref": "",
+                    "quote": "",
+                    "span_id": ""
+                  },
+                  "polarity": "affirmed"
+                }
+              ],
+              "usesEquipment": [
+                {
+                  "target_id": "s3",
+                  "evidence": {
+                    "ref": "u2",
+                    "quote": "200L反应釜（RE64611）",
+                    "span_id": "source:u2"
+                  },
+                  "condition": {
+                    "ref": "",
+                    "quote": "",
+                    "span_id": ""
+                  },
+                  "polarity": "affirmed"
+                }
+              ]
+            },
+            "anchor": {
+              "ref": "u0",
+              "quote": "HRS-1597结晶纯化",
+              "span_id": "source:u0"
+            }
+          },
+          "status": "supported",
+          "content_verdict": "supported",
+          "overall_verdict": "supported",
+          "reason": "HRS-1597结晶纯化是原文明示的工艺名称，可支持泛化SynthesisStep；锚点是整节工艺而非内部步骤一，其属性须另审层级。",
+          "overall_reason": "HRS-1597结晶纯化是原文明示的工艺名称，可支持泛化SynthesisStep；锚点是整节工艺而非内部步骤一，其属性须另审层级。",
+          "supporting_source_refs": [
+            "u0",
+            "u2"
+          ]
+        },
+        {
+          "id": "s2",
+          "path": "subjects.s2",
+          "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/Crystallization",
+          "proposal": {
+            "attributes": {
+              "inProcessControl": [],
+              "outputMassRange_kg": [],
+              "reactionConditions": [],
+              "stepOrder": [],
+              "yieldRangePercent": []
+            },
+            "relations": {
+              "nextStep": [],
+              "producesIntermediate": [],
+              "usesEquipment": []
+            },
+            "anchor": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            }
+          },
+          "status": "undetermined",
+          "content_verdict": "undetermined",
+          "overall_verdict": "undetermined",
+          "reason": "空锚点且无任何属性/关系，是未实例化的候选槽位；虽有结晶标题，不能凭空替模型选择一个独立实例。",
+          "overall_reason": "空锚点且无任何属性/关系，是未实例化的候选槽位；虽有结晶标题，不能凭空替模型选择一个独立实例。",
+          "supporting_source_refs": [
+            "u0",
+            "u2"
+          ]
+        },
+        {
+          "id": "s3",
+          "path": "subjects.s3",
+          "class_iri": "https://ontology.pharma-gmp.cn/slpra/equipment/Equipment",
+          "proposal": {
+            "attributes": {
+              "equipmentID": [
+                {
+                  "raw": "RE64611",
+                  "source": {
+                    "ref": "u2",
+                    "quote": "RE64611",
+                    "span_id": "source:u2"
+                  },
+                  "field": {
+                    "ref": "u2",
+                    "quote": "200L反应釜（RE64611）",
+                    "span_id": "source:u2"
+                  },
+                  "unit": {
+                    "ref": "",
+                    "quote": "",
+                    "span_id": ""
+                  },
+                  "condition": {
+                    "ref": "",
+                    "quote": "",
+                    "span_id": ""
+                  }
+                }
+              ],
+              "equipmentName": [
+                {
+                  "raw": "200L反应釜",
+                  "source": {
+                    "ref": "u2",
+                    "quote": "200L反应釜",
+                    "span_id": "source:u2"
+                  },
+                  "field": {
+                    "ref": "u2",
+                    "quote": "200L反应釜（RE64611）",
+                    "span_id": "source:u2"
+                  },
+                  "unit": {
+                    "ref": "",
+                    "quote": "",
+                    "span_id": ""
+                  },
+                  "condition": {
+                    "ref": "",
+                    "quote": "",
+                    "span_id": ""
+                  }
+                }
+              ],
+              "isDedicatedEquipment": [],
+              "isInCleanArea": [],
+              "modelSpecification": [],
+              "requiresDedication": [],
+              "requiresInactivationValidation": [],
+              "requiresIndependentHVAC": []
+            },
+            "relations": {},
+            "anchor": {
+              "ref": "u2",
+              "quote": "200L反应釜（RE64611）",
+              "span_id": "source:u2"
+            }
+          },
+          "status": "supported",
+          "content_verdict": "supported",
+          "overall_verdict": "supported",
+          "reason": "200L反应釜（RE64611）明确是被使用的设备，锚点角色和类型正确。",
+          "overall_reason": "200L反应釜（RE64611）明确是被使用的设备，锚点角色和类型正确。",
+          "supporting_source_refs": [
+            "u2"
+          ]
+        },
+        {
+          "id": "s4",
+          "path": "subjects.s4",
+          "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/CrudeProduct",
+          "proposal": {
+            "attributes": {
+              "intermediateIdentifier": [
+                {
+                  "raw": "HRS-1597粗品",
+                  "source": {
+                    "ref": "u2",
+                    "quote": "HRS-1597粗品",
+                    "span_id": "source:u2"
+                  },
+                  "field": {
+                    "ref": "u2",
+                    "quote": "HRS-1597粗品",
+                    "span_id": "source:u2"
+                  },
+                  "unit": {
+                    "ref": "",
+                    "quote": "",
+                    "span_id": ""
+                  },
+                  "condition": {
+                    "ref": "",
+                    "quote": "",
+                    "span_id": ""
+                  }
+                }
+              ]
+            },
+            "relations": {},
+            "anchor": {
+              "ref": "u2",
+              "quote": "HRS-1597粗品",
+              "span_id": "source:u2"
+            }
+          },
+          "status": "supported",
+          "content_verdict": "supported",
+          "overall_verdict": "supported",
+          "reason": "原文明确投入HRS-1597粗品，粗品实体及其局部名称成立；这不支持产出方向或额外唯一标识。",
+          "overall_reason": "原文明确投入HRS-1597粗品，粗品实体及其局部名称成立；这不支持产出方向或额外唯一标识。",
+          "supporting_source_refs": [
+            "u2"
+          ]
+        }
+      ],
+      "claims": [
+        {
+          "id": "c1",
+          "path": "subjects.s1.attributes.reactionConditions[0]",
+          "subject_id": "s1",
+          "field": "reactionConditions",
+          "kind": "property",
+          "proposal": {
+            "raw": "釜内温度上升至55℃，搅拌溶清。随后氮气保护下加入颗粒活性炭...维持50~55℃继续搅拌1-2小时",
+            "source": {
+              "ref": "u2",
+              "quote": "釜内温度上升至55℃，搅拌溶清。随后氮气保护下加入颗粒活性炭（活性炭投料量/Kg= HRS-1597粗品投入量/kg×0.2），维持50~55℃继续搅拌1-2小时",
+              "span_id": "source:u2"
+            },
+            "field": {
+              "ref": "u2",
+              "quote": "步骤一",
+              "span_id": "source:u2"
+            },
+            "unit": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "condition": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            }
+          },
+          "status": "supported",
+          "content_verdict": "supported",
+          "overall_verdict": "supported",
+          "reason": "温度55℃、氮气保护、50~55℃搅拌1-2小时均为该结晶纯化工艺原文条件。raw使用省略号且未保留活性炭投料比例，不是逐字完整条件值；本判定仅支持其已述语义，完整性/逐字契约另记。",
+          "overall_reason": "温度55℃、氮气保护、50~55℃搅拌1-2小时均为该结晶纯化工艺原文条件。raw使用省略号且未保留活性炭投料比例，不是逐字完整条件值；本判定仅支持其已述语义，完整性/逐字契约另记。",
+          "supporting_source_refs": [
+            "u0",
+            "u2"
+          ]
+        },
+        {
+          "id": "c2",
+          "path": "subjects.s1.attributes.stepOrder[0]",
+          "subject_id": "s1",
+          "field": "stepOrder",
+          "kind": "property",
+          "proposal": {
+            "raw": "1",
+            "source": {
+              "ref": "u2",
+              "quote": "步骤一",
+              "span_id": "source:u2"
+            },
+            "field": {
+              "ref": "u2",
+              "quote": "步骤一",
+              "span_id": "source:u2"
+            },
+            "unit": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "condition": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            }
+          },
+          "status": "undetermined",
+          "content_verdict": "supported",
+          "overall_verdict": "undetermined",
+          "reason": "步骤一可规范化为序号1；但s1锚定整个结晶纯化工艺标题，该序号属于内部操作步骤，缺少两者同一层级的证明。",
+          "overall_reason": "步骤一可规范化为序号1；但s1锚定整个结晶纯化工艺标题，该序号属于内部操作步骤，缺少两者同一层级的证明。",
+          "supporting_source_refs": [
+            "u0",
+            "u2"
+          ]
+        },
+        {
+          "id": "c3",
+          "path": "subjects.s1.relations.producesIntermediate[0]",
+          "subject_id": "s1",
+          "field": "producesIntermediate",
+          "kind": "relation",
+          "proposal": {
+            "target_id": "s4",
+            "evidence": {
+              "ref": "u2",
+              "quote": "加入HRS-1597粗品",
+              "span_id": "source:u2"
+            },
+            "condition": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "polarity": "affirmed"
+          },
+          "status": "unsupported",
+          "content_verdict": "unsupported",
+          "overall_verdict": "unsupported",
+          "reason": "产生中间体关系方向错误：证据明确为加入HRS-1597粗品，粗品是本操作投入物，不能作为本步骤产出。",
+          "overall_reason": "产生中间体关系方向错误：证据明确为加入HRS-1597粗品，粗品是本操作投入物，不能作为本步骤产出。",
+          "supporting_source_refs": [
+            "u2"
+          ]
+        },
+        {
+          "id": "c4",
+          "path": "subjects.s1.relations.usesEquipment[0]",
+          "subject_id": "s1",
+          "field": "usesEquipment",
+          "kind": "relation",
+          "proposal": {
+            "target_id": "s3",
+            "evidence": {
+              "ref": "u2",
+              "quote": "200L反应釜（RE64611）",
+              "span_id": "source:u2"
+            },
+            "condition": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "polarity": "affirmed"
+          },
+          "status": "supported",
+          "content_verdict": "supported",
+          "overall_verdict": "supported",
+          "reason": "该工艺操作明确在200L反应釜（RE64611）内进行，使用设备关系与设备目标角色成立。",
+          "overall_reason": "该工艺操作明确在200L反应釜（RE64611）内进行，使用设备关系与设备目标角色成立。",
+          "supporting_source_refs": [
+            "u0",
+            "u2"
+          ]
+        },
+        {
+          "id": "c5",
+          "path": "subjects.s3.attributes.equipmentID[0]",
+          "subject_id": "s3",
+          "field": "equipmentID",
+          "kind": "property",
+          "proposal": {
+            "raw": "RE64611",
+            "source": {
+              "ref": "u2",
+              "quote": "RE64611",
+              "span_id": "source:u2"
+            },
+            "field": {
+              "ref": "u2",
+              "quote": "200L反应釜（RE64611）",
+              "span_id": "source:u2"
+            },
+            "unit": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "condition": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            }
+          },
+          "status": "supported",
+          "content_verdict": "supported",
+          "overall_verdict": "supported",
+          "reason": "RE64611是反应釜括号内编号，局部设备归属明确。",
+          "overall_reason": "RE64611是反应釜括号内编号，局部设备归属明确。",
+          "supporting_source_refs": [
+            "u2"
+          ]
+        },
+        {
+          "id": "c6",
+          "path": "subjects.s3.attributes.equipmentName[0]",
+          "subject_id": "s3",
+          "field": "equipmentName",
+          "kind": "property",
+          "proposal": {
+            "raw": "200L反应釜",
+            "source": {
+              "ref": "u2",
+              "quote": "200L反应釜",
+              "span_id": "source:u2"
+            },
+            "field": {
+              "ref": "u2",
+              "quote": "200L反应釜（RE64611）",
+              "span_id": "source:u2"
+            },
+            "unit": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "condition": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            }
+          },
+          "status": "supported",
+          "content_verdict": "supported",
+          "overall_verdict": "supported",
+          "reason": "200L反应釜为原文明示设备称谓；包含容量不改变其名称/称谓角色。",
+          "overall_reason": "200L反应釜为原文明示设备称谓；包含容量不改变其名称/称谓角色。",
+          "supporting_source_refs": [
+            "u2"
+          ]
+        },
+        {
+          "id": "c7",
+          "path": "subjects.s4.attributes.intermediateIdentifier[0]",
+          "subject_id": "s4",
+          "field": "intermediateIdentifier",
+          "kind": "property",
+          "proposal": {
+            "raw": "HRS-1597粗品",
+            "source": {
+              "ref": "u2",
+              "quote": "HRS-1597粗品",
+              "span_id": "source:u2"
+            },
+            "field": {
+              "ref": "u2",
+              "quote": "HRS-1597粗品",
+              "span_id": "source:u2"
+            },
+            "unit": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "condition": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            }
+          },
+          "status": "undetermined",
+          "content_verdict": "undetermined",
+          "overall_verdict": "undetermined",
+          "reason": "HRS-1597粗品确为粗品称谓，但原文未明确其是工艺中间体标识，更未建立唯一标识命名空间；缺少卡片所需标识角色证明。",
+          "overall_reason": "HRS-1597粗品确为粗品称谓，但原文未明确其是工艺中间体标识，更未建立唯一标识命名空间；缺少卡片所需标识角色证明。",
+          "supporting_source_refs": [
+            "u2"
+          ]
+        }
+      ],
+      "observations": [
+        {
+          "id": "o1",
+          "proposal": {
+            "value": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "field": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "legend": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "condition": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "state": "unknown",
+            "reason": "s2 (结晶/析晶) 的anchor未填写，且文档中未明确区分s1与s2的具体步骤边界，s1已涵盖主要操作描述，s2无独立证据。"
+          },
+          "path": "observations[0]",
+          "status": "undetermined",
+          "content_verdict": "supported",
+          "overall_verdict": "undetermined",
+          "reason": "局部候选确未独立锚定s2，本包也未证明两个独立同层级实例；但所有证据字段为空，不能把生成过程说明登记为可回指的原文unknown观察。",
+          "overall_reason": "局部候选确未独立锚定s2，本包也未证明两个独立同层级实例；但所有证据字段为空，不能把生成过程说明登记为可回指的原文unknown观察。",
+          "supporting_source_refs": [
+            "u0",
+            "u2"
+          ]
+        },
+        {
+          "id": "o2",
+          "proposal": {
+            "value": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "field": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "legend": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "condition": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "state": "unknown",
+            "reason": "s3 (设备) 的isDedicatedEquipment, isInCleanArea, modelSpecification, requiresDedication, requiresInactivationValidation, requiresIndependentHVAC均未在原文中提及。"
+          },
+          "path": "observations[1]",
+          "status": "unsupported",
+          "content_verdict": "unsupported",
+          "overall_verdict": "unsupported",
+          "reason": "将modelSpecification也断言为原文完全未提及过强：200L已经明示设备容量规格。其余专用、洁净区和HVAC等未见于本包；合并观察中有该矛盾且没有证据回指。",
+          "overall_reason": "将modelSpecification也断言为原文完全未提及过强：200L已经明示设备容量规格。其余专用、洁净区和HVAC等未见于本包；合并观察中有该矛盾且没有证据回指。",
+          "supporting_source_refs": [
+            "u2"
+          ]
+        },
+        {
+          "id": "o3",
+          "proposal": {
+            "value": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "field": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "legend": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "condition": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "state": "unknown",
+            "reason": "s1 (合成步骤) 的inProcessControl, outputMassRange_kg, yieldRangePercent未在原文中提及。"
+          },
+          "path": "observations[2]",
+          "status": "undetermined",
+          "content_verdict": "supported",
+          "overall_verdict": "undetermined",
+          "reason": "本局部未给得量、收率或明确IPC方法和验收阈值，作为局部待补项可接受；但无证据字段且不能推及全文缺失，尚不能登记为原文unknown观察。",
+          "overall_reason": "本局部未给得量、收率或明确IPC方法和验收阈值，作为局部待补项可接受；但无证据字段且不能推及全文缺失，尚不能登记为原文unknown观察。",
+          "supporting_source_refs": [
+            "u0",
+            "u1",
+            "u2"
+          ]
+        }
+      ],
+      "notes": [
+        "c1的raw不是逐字原文，源证据quote是原文连续片段；语义支持不替代严格输出契约检查，也不声称条件完整。",
+        "inactive s2未被当作已断言事实；仍按要求列出全部subject槽位。",
+        "本评阅不使用NER建议、模型verification、deterministic结果或参考答案。"
+      ],
+      "coverage": {
+        "subjects": 5,
+        "claims": 7,
+        "observations": 3,
+        "all_indexed_items_reviewed": true
+      },
+      "claim_verdict_counts": {
+        "supported": 4,
+        "undetermined": 2,
+        "unsupported": 1
+      }
+    },
+    {
+      "arm": "C",
+      "scope_id": "quality_condition",
+      "review_input": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-gliner25-skos-20260916/review-inputs/quality_condition.json",
+      "review_input_sha256": "626325a688da61ba9246dc0668005fd95f6abcb77606965f80356136f5f4cc3b",
+      "source_artifacts": {
+        "sources.json": "0b6ef5a7241ac6def2727950e30b9739215b5d20102c60a04aab271ccc30a76f",
+        "subject-cards.json": "2c98bc56326f633a54cfae3bf004bc0a3dc99a5c5e1520ada81cc3e135fa2881",
+        "candidates/proposal.json": "17b9c0c826f9378523c60df60cbe4036125b01e790a80002352900bb2bfef130"
+      },
+      "subjects": [
+        {
+          "id": "document",
+          "path": "subjects.document",
+          "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport",
+          "proposal": {
+            "attributes": {},
+            "relations": {
+              "hasCleaningResidue": []
+            },
+            "anchor": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            }
+          },
+          "status": "supported",
+          "content_verdict": "supported",
+          "overall_verdict": "supported",
+          "reason": "document是预设CMCReport根节点。",
+          "overall_reason": "document是预设CMCReport根节点。",
+          "supporting_source_refs": []
+        },
+        {
+          "id": "s1",
+          "path": "subjects.s1",
+          "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/Crystallization",
+          "proposal": {
+            "attributes": {
+              "inProcessControl": [
+                {
+                  "raw": "取样送检HPLC和重金属检测，质量标准要同时满足：单个杂质应不得过0.2%总杂应不得过2.0%,重金属残留不得超过百万分之二十，若不符合质量标准，则重复上述全部结晶操作（从一般区溶解物料）。",
+                  "source": {
+                    "ref": "u2",
+                    "quote": "取样送检HPLC和重金属检测，质量标准要同时满足：单个杂质应不得过0.2%总杂应不得过2.0%,重金属残留不得超过百万分之二十，若不符合质量标准，则重复上述全部结晶操作（从一般区溶解物料）。",
+                    "span_id": "source:u2"
+                  },
+                  "field": {
+                    "ref": "u2",
+                    "quote": "取样送检HPLC和重金属检测，质量标准要同时满足：单个杂质应不得过0.2%总杂应不得过2.0%,重金属残留不得超过百万分之二十，若不符合质量标准，则重复上述全部结晶操作（从一般区溶解物料）。",
+                    "span_id": "source:u2"
+                  },
+                  "unit": {
+                    "ref": "",
+                    "quote": "",
+                    "span_id": ""
+                  },
+                  "condition": {
+                    "ref": "",
+                    "quote": "",
+                    "span_id": ""
+                  }
+                }
+              ],
+              "outputMassRange_kg": [],
+              "reactionConditions": [],
+              "stepOrder": [],
+              "yieldRangePercent": []
+            },
+            "relations": {
+              "nextStep": [
+                {
+                  "target_id": "s2",
+                  "evidence": {
+                    "ref": "u0",
+                    "quote": "HRS-1597结晶纯化",
+                    "span_id": "source:u0"
+                  },
+                  "condition": {
+                    "ref": "",
+                    "quote": "",
+                    "span_id": ""
+                  },
+                  "polarity": "affirmed"
+                }
+              ]
+            },
+            "anchor": {
+              "ref": "u0",
+              "quote": "HRS-1597结晶纯化",
+              "span_id": "source:u0"
+            }
+          },
+          "status": "supported",
+          "content_verdict": "supported",
+          "overall_verdict": "supported",
+          "reason": "标题明确为结晶纯化，正文也称全部结晶操作，可支持该局部结晶工艺主体。",
+          "overall_reason": "标题明确为结晶纯化，正文也称全部结晶操作，可支持该局部结晶工艺主体。",
+          "supporting_source_refs": [
+            "u0",
+            "u2"
+          ]
+        },
+        {
+          "id": "s2",
+          "path": "subjects.s2",
+          "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/Purification",
+          "proposal": {
+            "attributes": {
+              "inProcessControl": [],
+              "outputMassRange_kg": [],
+              "reactionConditions": [],
+              "stepOrder": [],
+              "yieldRangePercent": []
+            },
+            "relations": {
+              "nextStep": []
+            },
+            "anchor": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            }
+          },
+          "status": "undetermined",
+          "content_verdict": "undetermined",
+          "overall_verdict": "undetermined",
+          "reason": "空锚点且无独立属性；标题含纯化不能独立证明另一个先后有序的工艺实例。",
+          "overall_reason": "空锚点且无独立属性；标题含纯化不能独立证明另一个先后有序的工艺实例。",
+          "supporting_source_refs": [
+            "u0",
+            "u2"
+          ]
+        },
+        {
+          "id": "s3",
+          "path": "subjects.s3",
+          "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/Residue",
+          "proposal": {
+            "attributes": {
+              "residueSolubility": [],
+              "residueSolubilityTemperature": [],
+              "residueSolvent": []
+            },
+            "relations": {},
+            "anchor": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            }
+          },
+          "status": "undetermined",
+          "content_verdict": "undetermined",
+          "overall_verdict": "undetermined",
+          "reason": "残留物槽位未锚定；这里的重金属残留是产品质量指标，不能代填清洗残留物实例。",
+          "overall_reason": "残留物槽位未锚定；这里的重金属残留是产品质量指标，不能代填清洗残留物实例。",
+          "supporting_source_refs": [
+            "u2"
+          ]
+        },
+        {
+          "id": "s4",
+          "path": "subjects.s4",
+          "class_iri": "https://ontology.pharma-gmp.cn/slpra/facility/GeneralArea",
+          "proposal": {
+            "attributes": {},
+            "relations": {},
+            "anchor": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            }
+          },
+          "status": "undetermined",
+          "content_verdict": "undetermined",
+          "overall_verdict": "undetermined",
+          "reason": "一般区在条件动作中被提及，但候选锚点为空，未提出可供核验的具体区域实例。",
+          "overall_reason": "一般区在条件动作中被提及，但候选锚点为空，未提出可供核验的具体区域实例。",
+          "supporting_source_refs": [
+            "u2"
+          ]
+        }
+      ],
+      "claims": [
+        {
+          "id": "c1",
+          "path": "subjects.s1.attributes.inProcessControl[0]",
+          "subject_id": "s1",
+          "field": "inProcessControl",
+          "kind": "property",
+          "proposal": {
+            "raw": "取样送检HPLC和重金属检测，质量标准要同时满足：单个杂质应不得过0.2%总杂应不得过2.0%,重金属残留不得超过百万分之二十，若不符合质量标准，则重复上述全部结晶操作（从一般区溶解物料）。",
+            "source": {
+              "ref": "u2",
+              "quote": "取样送检HPLC和重金属检测，质量标准要同时满足：单个杂质应不得过0.2%总杂应不得过2.0%,重金属残留不得超过百万分之二十，若不符合质量标准，则重复上述全部结晶操作（从一般区溶解物料）。",
+              "span_id": "source:u2"
+            },
+            "field": {
+              "ref": "u2",
+              "quote": "取样送检HPLC和重金属检测，质量标准要同时满足：单个杂质应不得过0.2%总杂应不得过2.0%,重金属残留不得超过百万分之二十，若不符合质量标准，则重复上述全部结晶操作（从一般区溶解物料）。",
+              "span_id": "source:u2"
+            },
+            "unit": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "condition": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            }
+          },
+          "status": "supported",
+          "content_verdict": "supported",
+          "overall_verdict": "supported",
+          "reason": "完整原文保留HPLC和重金属检测、三项必须同时满足的阈值，以及不符合时从一般区溶解物料开始重复全部结晶操作；适合作为该结晶工艺的完整IPC文本。",
+          "overall_reason": "完整原文保留HPLC和重金属检测、三项必须同时满足的阈值，以及不符合时从一般区溶解物料开始重复全部结晶操作；适合作为该结晶工艺的完整IPC文本。",
+          "supporting_source_refs": [
+            "u0",
+            "u1",
+            "u2"
+          ]
+        },
+        {
+          "id": "c2",
+          "path": "subjects.s1.relations.nextStep[0]",
+          "subject_id": "s1",
+          "field": "nextStep",
+          "kind": "relation",
+          "proposal": {
+            "target_id": "s2",
+            "evidence": {
+              "ref": "u0",
+              "quote": "HRS-1597结晶纯化",
+              "span_id": "source:u0"
+            },
+            "condition": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "polarity": "affirmed"
+          },
+          "status": "undetermined",
+          "content_verdict": "undetermined",
+          "overall_verdict": "undetermined",
+          "reason": "组合标题HRS-1597结晶纯化未证明结晶后另有独立纯化步骤；目标s2未锚定，缺少两个步骤的身份和先后方向证据。",
+          "overall_reason": "组合标题HRS-1597结晶纯化未证明结晶后另有独立纯化步骤；目标s2未锚定，缺少两个步骤的身份和先后方向证据。",
+          "supporting_source_refs": [
+            "u0",
+            "u2"
+          ]
+        }
+      ],
+      "observations": [
+        {
+          "id": "o1",
+          "proposal": {
+            "value": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "field": {
+              "ref": "u2",
+              "quote": "单个杂质应不得过0.2%",
+              "span_id": "source:u2"
+            },
+            "legend": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "condition": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "state": "unmapped",
+            "reason": "单个杂质限度0.2%属于IPC标准，未映射到具体属性字段"
+          },
+          "path": "observations[0]",
+          "status": "unsupported",
+          "content_verdict": "supported",
+          "overall_verdict": "unsupported",
+          "reason": "单个杂质限度及0.2%被原文直接支持；但同一原始候选c1已通过inProcessControl字段完整映射这项标准。没有独立数值字段不等于未映射，state=unmapped缺乏依据。",
+          "overall_reason": "单个杂质限度及0.2%被原文直接支持；但同一原始候选c1已通过inProcessControl字段完整映射这项标准。没有独立数值字段不等于未映射，state=unmapped缺乏依据。",
+          "supporting_source_refs": [
+            "u2"
+          ]
+        },
+        {
+          "id": "o2",
+          "proposal": {
+            "value": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "field": {
+              "ref": "u2",
+              "quote": "总杂应不得过2.0%",
+              "span_id": "source:u2"
+            },
+            "legend": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "condition": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "state": "unmapped",
+            "reason": "总杂限度2.0%属于IPC标准，未映射到具体属性字段"
+          },
+          "path": "observations[1]",
+          "status": "unsupported",
+          "content_verdict": "supported",
+          "overall_verdict": "unsupported",
+          "reason": "总杂限度及2.0%被原文直接支持；但已包含在同一候选c1的inProcessControl属性，state=unmapped与该已有映射冲突，不能改解为缺少独立数值字段。",
+          "overall_reason": "总杂限度及2.0%被原文直接支持；但已包含在同一候选c1的inProcessControl属性，state=unmapped与该已有映射冲突，不能改解为缺少独立数值字段。",
+          "supporting_source_refs": [
+            "u2"
+          ]
+        },
+        {
+          "id": "o3",
+          "proposal": {
+            "value": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "field": {
+              "ref": "u2",
+              "quote": "重金属残留不得超过百万分之二十",
+              "span_id": "source:u2"
+            },
+            "legend": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "condition": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "state": "unmapped",
+            "reason": "重金属限度属于IPC标准，未映射到具体属性字段"
+          },
+          "path": "observations[2]",
+          "status": "unsupported",
+          "content_verdict": "supported",
+          "overall_verdict": "unsupported",
+          "reason": "重金属限度百万分之二十被原文直接支持，且已完整包含在c1的inProcessControl；未拆成独立数值属性不构成unmapped。",
+          "overall_reason": "重金属限度百万分之二十被原文直接支持，且已完整包含在c1的inProcessControl；未拆成独立数值属性不构成unmapped。",
+          "supporting_source_refs": [
+            "u2"
+          ]
+        },
+        {
+          "id": "o4",
+          "proposal": {
+            "value": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "field": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "legend": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "condition": {
+              "ref": "u2",
+              "quote": "若不符合质量标准",
+              "span_id": "source:u2"
+            },
+            "state": "conditional",
+            "reason": "重复结晶操作的条件动作"
+          },
+          "path": "observations[3]",
+          "status": "supported",
+          "content_verdict": "supported",
+          "overall_verdict": "supported",
+          "reason": "若不符合质量标准才重复结晶，condition保留触发条件，reason说明动作，未提升为无条件下一步关系。",
+          "overall_reason": "若不符合质量标准才重复结晶，condition保留触发条件，reason说明动作，未提升为无条件下一步关系。",
+          "supporting_source_refs": [
+            "u2"
+          ]
+        },
+        {
+          "id": "o5",
+          "proposal": {
+            "value": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "field": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "legend": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "condition": {
+              "ref": "u2",
+              "quote": "从一般区溶解物料",
+              "span_id": "source:u2"
+            },
+            "state": "conditional",
+            "reason": "重复操作时的物料来源条件"
+          },
+          "path": "observations[4]",
+          "status": "unsupported",
+          "content_verdict": "unsupported",
+          "overall_verdict": "unsupported",
+          "reason": "从一般区溶解物料说明重复全部结晶操作的起始动作；reason将其改称物料来源条件，置换了原文动作角色，不能据此断言物料来源。",
+          "overall_reason": "从一般区溶解物料说明重复全部结晶操作的起始动作；reason将其改称物料来源条件，置换了原文动作角色，不能据此断言物料来源。",
+          "supporting_source_refs": [
+            "u2"
+          ]
+        }
+      ],
+      "notes": [
+        "三个阈值观察的原文内容正确，但同一阈值已由c1完整属性文本承载，不能把未拆成独立数值属性改称未映射；三项overall据此修正为unsupported。",
+        "条件规则完整存于c1文本不等于已建立可执行条件关系；c2的无条件nextStep没有充分证明。"
+      ],
+      "coverage": {
+        "subjects": 5,
+        "claims": 2,
+        "observations": 5,
+        "all_indexed_items_reviewed": true
+      },
+      "claim_verdict_counts": {
+        "supported": 1,
+        "undetermined": 1
+      }
+    },
+    {
+      "arm": "C",
+      "scope_id": "storage",
+      "review_input": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-gliner25-skos-20260916/review-inputs/storage.json",
+      "review_input_sha256": "ba27b4f66d88be4e7b6089ae97d712f84b0fd678d57888f500129a78fccd1ad1",
+      "source_artifacts": {
+        "sources.json": "289e1f351691a045573e9ba0c9c87a61f0e0b186d9d39b0e43180139cfa9dfb6",
+        "subject-cards.json": "2aec50f657ed11518a5e72cba60e1efc9d936e1482412ec776bfcb8b0bf6ba70",
+        "candidates/proposal.json": "58310ba4ca6b6d480d1a957a5343f52da10e0c247d3d0ac9a1697d2219659726"
+      },
+      "subjects": [
+        {
+          "id": "document",
+          "path": "subjects.document",
+          "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport",
+          "proposal": {
+            "attributes": {},
+            "relations": {
+              "hasStorageCondition": [
+                {
+                  "target_id": "s1",
+                  "evidence": {
+                    "ref": "u6",
+                    "quote": "HRS-1597",
+                    "span_id": "source:u6"
+                  },
+                  "condition": {
+                    "ref": "",
+                    "quote": "",
+                    "span_id": ""
+                  },
+                  "polarity": "affirmed"
+                }
+              ]
+            },
+            "anchor": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            }
+          },
+          "status": "supported",
+          "content_verdict": "supported",
+          "overall_verdict": "supported",
+          "reason": "document是预设CMCReport根节点。",
+          "overall_reason": "document是预设CMCReport根节点。",
+          "supporting_source_refs": []
+        },
+        {
+          "id": "s1",
+          "path": "subjects.s1",
+          "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/StorageCondition",
+          "proposal": {
+            "attributes": {
+              "lightProtection": [],
+              "packagingType": [
+                {
+                  "raw": "双层聚乙烯薄膜袋外加药品包装用复合袋",
+                  "source": {
+                    "ref": "u7",
+                    "quote": "双层聚乙烯薄膜袋外加药品包装用复合袋",
+                    "span_id": "source:u7"
+                  },
+                  "field": {
+                    "ref": "u3",
+                    "quote": "包装方式",
+                    "span_id": "source:u3"
+                  },
+                  "unit": {
+                    "ref": "",
+                    "quote": "",
+                    "span_id": ""
+                  },
+                  "condition": {
+                    "ref": "",
+                    "quote": "",
+                    "span_id": ""
+                  }
+                }
+              ],
+              "shelfLife": [
+                {
+                  "raw": "有效期24M",
+                  "source": {
+                    "ref": "u9",
+                    "quote": "有效期24M",
+                    "span_id": "source:u9"
+                  },
+                  "field": {
+                    "ref": "u5",
+                    "quote": "有效期/复测期",
+                    "span_id": "source:u5"
+                  },
+                  "unit": {
+                    "ref": "u9",
+                    "quote": "M",
+                    "span_id": "evidence:u9:5:6"
+                  },
+                  "condition": {
+                    "ref": "",
+                    "quote": "",
+                    "span_id": ""
+                  }
+                }
+              ],
+              "storageHumidity": [],
+              "storageTemperature": [
+                {
+                  "raw": "不超过25℃",
+                  "source": {
+                    "ref": "u8",
+                    "quote": "不超过25℃",
+                    "span_id": "source:u8"
+                  },
+                  "field": {
+                    "ref": "u4",
+                    "quote": "存放条件（温度、湿度、是否避光）",
+                    "span_id": "source:u4"
+                  },
+                  "unit": {
+                    "ref": "u8",
+                    "quote": "℃",
+                    "span_id": "evidence:u8:17:18"
+                  },
+                  "condition": {
+                    "ref": "",
+                    "quote": "",
+                    "span_id": ""
+                  }
+                }
+              ]
+            },
+            "relations": {},
+            "anchor": {
+              "ref": "u6",
+              "quote": "HRS-1597",
+              "span_id": "source:u6"
+            }
+          },
+          "status": "unsupported",
+          "content_verdict": "unsupported",
+          "overall_verdict": "unsupported",
+          "reason": "锚点u6 HRS-1597明确位于中间体/成品列，是适用物料名称，不是存放条件记录或完整要求短语；不能以同一行共现将物料实体改型为StorageCondition。",
+          "overall_reason": "锚点u6 HRS-1597明确位于中间体/成品列，是适用物料名称，不是存放条件记录或完整要求短语；不能以同一行共现将物料实体改型为StorageCondition。",
+          "supporting_source_refs": [
+            "u2",
+            "u6",
+            "u7",
+            "u8",
+            "u9"
+          ]
+        }
+      ],
+      "claims": [
+        {
+          "id": "c1",
+          "path": "subjects.document.relations.hasStorageCondition[0]",
+          "subject_id": "document",
+          "field": "hasStorageCondition",
+          "kind": "relation",
+          "proposal": {
+            "target_id": "s1",
+            "evidence": {
+              "ref": "u6",
+              "quote": "HRS-1597",
+              "span_id": "source:u6"
+            },
+            "condition": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "polarity": "affirmed"
+          },
+          "status": "unsupported",
+          "content_verdict": "supported",
+          "overall_verdict": "unsupported",
+          "reason": "本报告存放条件表确有一条HRS-1597物料的储存要求；但关系目标s1实际锚定物料名称，目标类型/角色错误，单独HRS-1597引用也不是存放条件关系证明。",
+          "overall_reason": "本报告存放条件表确有一条HRS-1597物料的储存要求；但关系目标s1实际锚定物料名称，目标类型/角色错误，单独HRS-1597引用也不是存放条件关系证明。",
+          "supporting_source_refs": [
+            "u0",
+            "u2",
+            "u4",
+            "u6",
+            "u8"
+          ]
+        },
+        {
+          "id": "c2",
+          "path": "subjects.s1.attributes.packagingType[0]",
+          "subject_id": "s1",
+          "field": "packagingType",
+          "kind": "property",
+          "proposal": {
+            "raw": "双层聚乙烯薄膜袋外加药品包装用复合袋",
+            "source": {
+              "ref": "u7",
+              "quote": "双层聚乙烯薄膜袋外加药品包装用复合袋",
+              "span_id": "source:u7"
+            },
+            "field": {
+              "ref": "u3",
+              "quote": "包装方式",
+              "span_id": "source:u3"
+            },
+            "unit": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "condition": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            }
+          },
+          "status": "unsupported",
+          "content_verdict": "supported",
+          "overall_verdict": "unsupported",
+          "reason": "包装方式及完整双层袋外加复合袋文本有明确列头和值对应；整体归属到以物料名称冒充StorageCondition的s1，主体角色不成立。",
+          "overall_reason": "包装方式及完整双层袋外加复合袋文本有明确列头和值对应；整体归属到以物料名称冒充StorageCondition的s1，主体角色不成立。",
+          "supporting_source_refs": [
+            "u3",
+            "u6",
+            "u7"
+          ]
+        },
+        {
+          "id": "c3",
+          "path": "subjects.s1.attributes.shelfLife[0]",
+          "subject_id": "s1",
+          "field": "shelfLife",
+          "kind": "property",
+          "proposal": {
+            "raw": "有效期24M",
+            "source": {
+              "ref": "u9",
+              "quote": "有效期24M",
+              "span_id": "source:u9"
+            },
+            "field": {
+              "ref": "u5",
+              "quote": "有效期/复测期",
+              "span_id": "source:u5"
+            },
+            "unit": {
+              "ref": "u9",
+              "quote": "M",
+              "span_id": "evidence:u9:5:6"
+            },
+            "condition": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            }
+          },
+          "status": "unsupported",
+          "content_verdict": "supported",
+          "overall_verdict": "unsupported",
+          "reason": "有效期24M及M单位字符均为原文，不需要擅自换算才能支持原文值；整体仍因s1错误记录锚点而不成立。",
+          "overall_reason": "有效期24M及M单位字符均为原文，不需要擅自换算才能支持原文值；整体仍因s1错误记录锚点而不成立。",
+          "supporting_source_refs": [
+            "u5",
+            "u6",
+            "u9"
+          ]
+        },
+        {
+          "id": "c4",
+          "path": "subjects.s1.attributes.storageTemperature[0]",
+          "subject_id": "s1",
+          "field": "storageTemperature",
+          "kind": "property",
+          "proposal": {
+            "raw": "不超过25℃",
+            "source": {
+              "ref": "u8",
+              "quote": "不超过25℃",
+              "span_id": "source:u8"
+            },
+            "field": {
+              "ref": "u4",
+              "quote": "存放条件（温度、湿度、是否避光）",
+              "span_id": "source:u4"
+            },
+            "unit": {
+              "ref": "u8",
+              "quote": "℃",
+              "span_id": "evidence:u8:17:18"
+            },
+            "condition": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            }
+          },
+          "status": "unsupported",
+          "content_verdict": "supported",
+          "overall_verdict": "unsupported",
+          "reason": "不超过25℃完整保留温度上限方向且单位正确，绝非湿度或避光判断；整体仍因s1物料/条件记录角色置换而不成立。",
+          "overall_reason": "不超过25℃完整保留温度上限方向且单位正确，绝非湿度或避光判断；整体仍因s1物料/条件记录角色置换而不成立。",
+          "supporting_source_refs": [
+            "u4",
+            "u6",
+            "u8"
+          ]
+        }
+      ],
+      "observations": [
+        {
+          "id": "o1",
+          "proposal": {
+            "value": {
+              "ref": "u8",
+              "quote": "密封，双层聚乙烯薄膜袋，不超过25℃保存",
+              "span_id": "source:u8"
+            },
+            "field": {
+              "ref": "u4",
+              "quote": "存放条件（温度、湿度、是否避光）",
+              "span_id": "source:u4"
+            },
+            "legend": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "condition": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "state": "unmapped",
+            "reason": "原文包含密封、包装、温度上限，但未明确提及湿度数值或是否避光的具体布尔值（如'避光'或'不避光'），仅列出了字段名。"
+          },
+          "path": "observations[0]",
+          "status": "undetermined",
+          "content_verdict": "supported",
+          "overall_verdict": "undetermined",
+          "reason": "原文只在表头列出湿度和是否避光，值单元未给相应要求，该缺证判断成立；但state=unmapped的value引用整个已部分映射的存放描述，未指明究竟是密封要求无字段还是湿度/避光值缺失。缺值不等于未映射，整体观察状态待定。",
+          "overall_reason": "原文只在表头列出湿度和是否避光，值单元未给相应要求，该缺证判断成立；但state=unmapped的value引用整个已部分映射的存放描述，未指明究竟是密封要求无字段还是湿度/避光值缺失。缺值不等于未映射，整体观察状态待定。",
+          "supporting_source_refs": [
+            "u4",
+            "u8"
+          ]
+        },
+        {
+          "id": "o2",
+          "proposal": {
+            "value": {
+              "ref": "u9",
+              "quote": "有效期24M",
+              "span_id": "source:u9"
+            },
+            "field": {
+              "ref": "u5",
+              "quote": "有效期/复测期",
+              "span_id": "source:u5"
+            },
+            "legend": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "condition": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "state": "unmapped",
+            "reason": "原文使用缩写'M'表示月，需结合上下文或标准确认单位，但已提取为shelfLife属性。"
+          },
+          "path": "observations[1]",
+          "status": "unsupported",
+          "content_verdict": "undetermined",
+          "overall_verdict": "unsupported",
+          "reason": "有效期24M原文存在，但M的规范释义在本包缺少规则或释义证据；更关键的是同一候选c3已将该值映射至shelfLife且提供M单位引用。state=unmapped与已有映射冲突，单位待校准不等于未映射，不能只用reason的解释改写state含义。",
+          "overall_reason": "有效期24M原文存在，但M的规范释义在本包缺少规则或释义证据；更关键的是同一候选c3已将该值映射至shelfLife且提供M单位引用。state=unmapped与已有映射冲突，单位待校准不等于未映射，不能只用reason的解释改写state含义。",
+          "supporting_source_refs": [
+            "u5",
+            "u9"
+          ]
+        }
+      ],
+      "notes": [
+        "三个属性的原文内容均成立，但不能以内容正确掩盖s1由物料名称变成条件记录的类型/角色错误。",
+        "表格结构支持包装/温度/有效期属于同一物料行；它可辅助定位一个待建立的储存要求记录，但不会自动修改当前候选的错误锚点。",
+        "o2复核修正：不得将unmapped自行重释为单位待校准；已有shelfLife映射的原始候选证明该观察状态不成立。"
+      ],
+      "coverage": {
+        "subjects": 2,
+        "claims": 4,
+        "observations": 2,
+        "all_indexed_items_reviewed": true
+      },
+      "claim_verdict_counts": {
+        "unsupported": 4
+      }
+    },
+    {
+      "arm": "C",
+      "scope_id": "residue_missing",
+      "review_input": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-gliner25-skos-20260916/review-inputs/residue_missing.json",
+      "review_input_sha256": "cd0d5cbbdef289557bc01a4239b46ec4200410a777e7d78d5cf96a70fb338568",
+      "source_artifacts": {
+        "sources.json": "361efedd805e8654446408c2f5263b28739335488f2e10a8960d0d1ba8142c24",
+        "subject-cards.json": "bcd264f0cb13b3fc26ab7c204586b5aeac6002abf9724b6d72fba6d44d2e07ac",
+        "candidates/proposal.json": "9782ddc2e9644b1b0ff32abfa20f8c9b0c0f02eec0e8451ee6559767b08ab7e7"
+      },
+      "subjects": [
+        {
+          "id": "document",
+          "path": "subjects.document",
+          "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport",
+          "proposal": {
+            "attributes": {},
+            "relations": {
+              "hasCleaningResidue": [],
+              "usesEquipment": []
+            },
+            "anchor": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            }
+          },
+          "status": "supported",
+          "content_verdict": "supported",
+          "overall_verdict": "supported",
+          "reason": "document是预设CMCReport根节点。",
+          "overall_reason": "document是预设CMCReport根节点。",
+          "supporting_source_refs": []
+        },
+        {
+          "id": "s1",
+          "path": "subjects.s1",
+          "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/Residue",
+          "proposal": {
+            "attributes": {
+              "residueSolubility": [],
+              "residueSolubilityTemperature": [],
+              "residueSolvent": []
+            },
+            "relations": {},
+            "anchor": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            }
+          },
+          "status": "undetermined",
+          "content_verdict": "undetermined",
+          "overall_verdict": "undetermined",
+          "reason": "残留物槽位无锚点或属性，原文只有章节标题和N/A，不能据此实例化残留物，也不能推断现实不存在残留。",
+          "overall_reason": "残留物槽位无锚点或属性，原文只有章节标题和N/A，不能据此实例化残留物，也不能推断现实不存在残留。",
+          "supporting_source_refs": [
+            "u0",
+            "u1"
+          ]
+        },
+        {
+          "id": "s2",
+          "path": "subjects.s2",
+          "class_iri": "https://ontology.pharma-gmp.cn/slpra/equipment/CleaningEquipment",
+          "proposal": {
+            "attributes": {
+              "equipmentID": [],
+              "equipmentName": [],
+              "isDedicatedEquipment": [],
+              "isInCleanArea": [],
+              "modelSpecification": [],
+              "requiresDedication": [],
+              "requiresInactivationValidation": [],
+              "requiresIndependentHVAC": []
+            },
+            "relations": {},
+            "anchor": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            }
+          },
+          "status": "undetermined",
+          "content_verdict": "undetermined",
+          "overall_verdict": "undetermined",
+          "reason": "清洗设备槽位无锚点或属性，章节标题不指称具体清洗设备，未提出实体事实。",
+          "overall_reason": "清洗设备槽位无锚点或属性，章节标题不指称具体清洗设备，未提出实体事实。",
+          "supporting_source_refs": [
+            "u0",
+            "u1"
+          ]
+        }
+      ],
+      "claims": [],
+      "observations": [
+        {
+          "id": "o1",
+          "proposal": {
+            "value": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "field": {
+              "ref": "u0",
+              "quote": "3.5.2设备清洗残留物基本信息",
+              "span_id": "source:u0"
+            },
+            "legend": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "condition": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "state": "not_applicable",
+            "reason": "Section header indicates topic, but content is N/A."
+          },
+          "path": "observations[0]",
+          "status": "undetermined",
+          "content_verdict": "supported",
+          "overall_verdict": "undetermined",
+          "reason": "该节正文确实为N/A，标题与其节归属可核对；但观察只引用标题且无N/A含义图例，不能唯一决定not_applicable而排除not_available/未提供。",
+          "overall_reason": "该节正文确实为N/A，标题与其节归属可核对；但观察只引用标题且无N/A含义图例，不能唯一决定not_applicable而排除not_available/未提供。",
+          "supporting_source_refs": [
+            "u0",
+            "u1"
+          ]
+        },
+        {
+          "id": "o2",
+          "proposal": {
+            "value": {
+              "ref": "u1",
+              "quote": "N/A",
+              "span_id": "source:u1"
+            },
+            "field": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "legend": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "condition": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "state": "not_applicable",
+            "reason": "Content is explicitly N/A, indicating no data available for residue information."
+          },
+          "path": "observations[1]",
+          "status": "undetermined",
+          "content_verdict": "undetermined",
+          "overall_verdict": "undetermined",
+          "reason": "N/A字符存在且可回指，但reason解释为no data available，state却是not_applicable；两种语义不等价，原文无缩写释义，规范状态待定。",
+          "overall_reason": "N/A字符存在且可回指，但reason解释为no data available，state却是not_applicable；两种语义不等价，原文无缩写释义，规范状态待定。",
+          "supporting_source_refs": [
+            "u0",
+            "u1"
+          ]
+        }
+      ],
+      "notes": [
+        "零claims没有将N/A补造为残留物或设备事实，这是正确的保守行为。",
+        "两个观察描述同一个N/A，不应算两份独立证据；原始N/A标记可保留，规范为不适用/不可用需额外释义依据。"
+      ],
+      "coverage": {
+        "subjects": 3,
+        "claims": 0,
+        "observations": 2,
+        "all_indexed_items_reviewed": true
+      },
+      "claim_verdict_counts": {}
+    }
+  ]
+}

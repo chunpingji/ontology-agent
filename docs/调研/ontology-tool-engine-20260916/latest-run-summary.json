@@ -1,0 +1,134 @@
+{
+  "status": "completed_with_limits",
+  "comparison_scope": "修复后有界工程验证；输出上限已提高至16384，不属于原8192上限的同预算F0—F4质量比较。",
+  "runs": [
+    {
+      "run": "f4-positive05",
+      "status": "completed",
+      "output": "runtime/f4-positive/result05",
+      "requests": 2,
+      "usage": {"input_tokens": 7356, "output_tokens": 11056, "total_tokens": 18412},
+      "elapsed_seconds": 208.60754046705551,
+      "completion": "in_scope_complete",
+      "artifact_status": "ready",
+      "diagnostics": [],
+      "discovery_batches": 1,
+      "verification_batches": 1,
+      "model_tool_calls": [],
+      "controller_checks": {"binding": 1, "metric": 1, "shacl": 1},
+      "accepted_properties": [
+        {"predicate_iri": "urn:validation:mass", "raw_value": "1500 mg", "normalized_value": "1.5", "source_unit": "mg", "target_unit": "g", "conversion_factor": "0.001", "reason_code": "claim_verified"}
+      ],
+      "controller_detail_check": {
+        "output": "runtime/f4-positive/offline05-controller-check/offline-check.json",
+        "mode": "offline_saved_output_diagnostic",
+        "real_model_requests": 0,
+        "saved_responses_consumed": 2,
+        "binding": "passed",
+        "metric": "passed",
+        "shacl": {"profile": "quantity-representation-v2", "evaluated": true, "conforms": true, "coverage_complete": true, "validation_status": "passed"}
+      },
+      "conclusion": "真实Qwen发现与独立核验后，控制器规范化1500 mg为1.5 g并通过SHACL，最终属性入图。该单例不是全文质量或F1验收。"
+    },
+    {
+      "run": "f4-negative03",
+      "status": "completed",
+      "manifest": "runtime/f4-negative/manifest03.json",
+      "output": "runtime/f4-negative/result03",
+      "requests": 4,
+      "usage": {"input_tokens": 13693, "output_tokens": 24478, "total_tokens": 38171},
+      "elapsed_seconds": 437.62074129702523,
+      "completion": "incomplete",
+      "artifact_status": "partial",
+      "diagnostics": ["execution_pause_requested"],
+      "discovery_batches": 2,
+      "verification_batches": 2,
+      "controller_checks": {"binding": 2, "metric": 2, "shacl": 2},
+      "accepted_properties": [],
+      "outcome_reason_code": "unit_missing_or_incompatible",
+      "controller_detail_check": {
+        "output": "runtime/f4-negative/offline03-controller-check/offline-check.json",
+        "mode": "offline_saved_output_diagnostic",
+        "real_model_requests": 0,
+        "saved_responses_consumed": 4,
+        "binding": {"calls": 2, "passed": 2},
+        "metric": {"calls": 2, "failed": 2, "reason_code": "unit_missing_or_incompatible", "quantity": null},
+        "shacl": {"calls": 2, "evaluated_count": 0, "conforms": null, "reason_code": "shacl_not_evaluated"}
+      },
+      "conclusion": "真实模型两代提出1500 m质量属性并完成核验，控制器均因m与g量纲不兼容拒绝规范化，属性不入图。SHACL未求值不能称通过；达到预算后范围仍未完成。"
+    },
+    {
+      "run": "cmc-mock03",
+      "status": "completed",
+      "manifest": "runtime/manifest-cmc-mock03.json",
+      "input": {"ir_units": 447, "summary_nodes": 32, "ontology_classes": 329, "system_mock_records": 216},
+      "output": "runtime/cmc-mock03",
+      "budgets": {"max_model_calls": 8, "max_tasks": 3, "max_input_tokens": 32768, "max_output_tokens": 16384},
+      "requests": 3,
+      "usage": {"input_tokens": 26996, "output_tokens": 11807, "total_tokens": 38803},
+      "inspection_elapsed_seconds": 268.95626124716364,
+      "completion": "incomplete",
+      "artifact_status": "partial",
+      "progress": {"tasks_attempted": 2, "inspection_attempts": 3, "records_planned": 1032, "records_examined": 0, "records_incomplete": 2, "records_unattempted": 1030, "stop_reason": "task_budget_exhausted"},
+      "diagnostics": ["adapter_failure:RecognitionModelFailure", "bounded_technical_retry_scheduled"],
+      "reason_codes": ["context_budget_exceeded", "record_undetermined"],
+      "first_discovery": {
+        "json_complete": true,
+        "schema_valid": false,
+        "field_path": "relations[0]",
+        "reason_code": "single_object_requires_all",
+        "additional_unaccepted_content": "模型为单对象选择one_of，并提出当前card之外的Reactor实体；均未接受或入图。",
+        "correction": "保留完整output及派生错误反馈时超出输入预算，未发送第二次请求；随后既有有界技术重试仍超预算。"
+      },
+      "tools": {
+        "offered": ["get_schema_card", "inspect_evidence", "resolve_source_anchor", "propose_mentions", "query_instances", "retrieve_evidence"],
+        "model_calls": {"inspect_evidence": 1, "propose_mentions": 0, "query_instances": 0, "retrieve_evidence": 0},
+        "inspect_evidence": {"status": "ok", "coverage_complete": true},
+        "gliner_checkpoint_prepared": true,
+        "system_mock_records_configured": 216,
+        "initial_summary_catalog": {"observed_source_catalog_records": 1, "summary_entries": 1, "summary_source": "llm"}
+      },
+      "controller_checks": {"binding": 0, "metric": 0, "shacl": 0},
+      "accepted_graph": {"user_root_nodes": 1, "additional_nodes": 0, "edges": 0, "properties": 0, "relationship_groups": 0},
+      "mock_overlap_diagnostic": "system-mock-document-overlap.json",
+      "conclusion": "有界真实运行使用完整文档、现有摘要及已配置GLiNER2.5和系统Mock，但只实际调用inspect_evidence。主关系任务结构错误后的完整上下文超预算，另一任务仅原文缺失未决；NER、摘要检索工具及Mock查询未获实际调用验收，全文图谱和F1未验收。"
+    }
+  ],
+  "latest_real_model_totals": {"requests": 9, "input_tokens": 48045, "output_tokens": 47341, "total_tokens": 95386},
+  "separate_directed_tool_probe": {
+    "output": "tool-chain-probe01",
+    "requests": 4,
+    "usage": {"input_tokens": 31273, "output_tokens": 7246, "total_tokens": 38519},
+    "scenario": "工程夹具显式选定usesEquipment、完整table:6,row1、原文RE64611编号，并通过标准tool_choice指定工具；不是自主发现或F1评测。",
+    "protocol_status": "completed",
+    "wire_hash_and_full_output_pairing": "passed",
+    "strict_summary_matches_results": true,
+    "tools": [
+      {"name": "propose_mentions", "status": "blocked", "reason_code": "result_budget_exceeded"},
+      {"name": "resolve_source_anchor", "status": "blocked", "reason_code": "citation_quote_not_in_source", "detail": "模型返回context_text为空字符串，未作为null自动修复。"},
+      {"name": "query_instances", "status": "blocked", "reason_code": "reference_outside_scope", "detail": "模型把未登记字面编号作为mention_ref，授权门禁拒绝。"}
+    ],
+    "actual_candidate_count": 0,
+    "tool_chain_passed": false,
+    "identity_validations": 0,
+    "graph_writes": 0,
+    "frozen_vocabulary_check": {"output": "tool-chain-probe01/vocabulary-check.json", "entries": 2, "missing_definitions": 25, "includes_missing_reactor_definition": true, "overlay_changed": false},
+    "raw_handler_diagnostic": {
+      "output": "tool-chain-probe01-diagnostics/diagnostic.json",
+      "raw_output": "tool-chain-probe01-diagnostics/raw-tool-result.json",
+      "real_qwen_requests": 0,
+      "real_gliner_inference_batches": 4,
+      "processed_units": 14,
+      "unprocessed_units": 0,
+      "mentions": 7,
+      "definition_missing_omissions": 25,
+      "result_tokens": 4660,
+      "result_characters": 8513,
+      "max_result_tokens": 4096,
+      "interpretation": "相同原参数与词表下真实GLiNER返回了span，但有效实体标签仅CMCReport，编号等提及被错误归为该类型；模型执行不等于实体分类正确。预算前结果包含大量覆盖引用与重复缺定义观察，未返回Qwen。"
+    },
+    "conclusion": "四次真实协议请求及严格结果总结完成，但三次工具调用均被现有门禁阻止，未产生外部候选，不代表GLiNER/Mock协作通过。"
+  },
+  "quality_status": "not_scored",
+  "accounting_note": "offline目录只消费已保存模型返回，零新模型请求，不将其fixture计数/usage累加到真实请求成本。"
+}

@@ -1,0 +1,21 @@
+# Explicit GPU override; the base deployment now uses the same CUDA 12.6 default.
+# docker compose -f docker-compose.yml -f docker-compose.cuda12.yml config --quiet
+services:
+  backend:
+    image: ontology-agent-backend:cuda12-2.7.1
+    runtime: nvidia
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.cuda12
+    environment:
+      # Docker exposes only the requested physical card; it becomes logical cuda:0.
+      SEMANTIC_RANKING_DEVICE: cuda:0
+      SEMANTIC_RANKING_DTYPE: ${SEMANTIC_RANKING_DTYPE:-float16}
+      SEMANTIC_RANKING_CUDA_VERSION: "12.6"
+      NVIDIA_VISIBLE_DEVICES: ${SEMANTIC_RANKING_GPU_ID:?Set one physical GPU index or UUID}
+      NVIDIA_DRIVER_CAPABILITIES: compute,utility
+      SEMANTIC_RANKING_FAILURE_POLICY: ${SEMANTIC_RANKING_FAILURE_POLICY:-pause}
+      SEMANTIC_RANKING_BATCH_SIZE: ${SEMANTIC_RANKING_BATCH_SIZE:-4}
+      SEMANTIC_RANKING_MAX_TOKENS_PER_PAIR: ${SEMANTIC_RANKING_MAX_TOKENS_PER_PAIR:-4096}
+      SEMANTIC_RANKING_TIMEOUT_SECONDS: ${SEMANTIC_RANKING_TIMEOUT_SECONDS:-1200}
+      DOCUMENT_ANALYSIS_DISPATCH_CONCURRENCY: ${DOCUMENT_ANALYSIS_DISPATCH_CONCURRENCY:-1}

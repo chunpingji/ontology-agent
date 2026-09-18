@@ -1,0 +1,1009 @@
+{
+  "scope_id": "process_equipment",
+  "source_units": {
+    "u0": {
+      "evidence_id": "63c9cc94a162d7b088843eb62fedcf9f50775e6d381d083eb86aaa506264f0c3",
+      "kind": "heading",
+      "text": "HRS-1597结晶纯化",
+      "section_node_id": "section:67",
+      "block_id": "paragraph:67:0",
+      "paragraph_index": 67,
+      "fragment_index": 0,
+      "table_path": null,
+      "row_index": null,
+      "column_index": null,
+      "physical_page_number": 5,
+      "source_cell_id": null,
+      "paragraph_offset": 0,
+      "ref": "u0",
+      "row_span": 1,
+      "column_span": 1,
+      "logical_rows": [],
+      "column_indices": [],
+      "grid_rows": [],
+      "grid_columns": [],
+      "column_header_refs": [],
+      "is_header": false,
+      "parser_header_candidate": false,
+      "header_status": "not_a_table",
+      "cell_structure_valid": false
+    },
+    "u1": {
+      "evidence_id": "1cb1094eaf59300defb9cb6d1399e860d782a84df20c9ad61124f3a652c1a709",
+      "kind": "cell_paragraph",
+      "text": "投料",
+      "section_node_id": "section:67",
+      "block_id": "table:0",
+      "paragraph_index": 0,
+      "fragment_index": 0,
+      "table_path": [
+        "table:0"
+      ],
+      "row_index": 0,
+      "column_index": 0,
+      "physical_page_number": 5,
+      "source_cell_id": "table:0/cell:0:0",
+      "paragraph_offset": 0,
+      "ref": "u1",
+      "row_span": 1,
+      "column_span": 1,
+      "logical_rows": [
+        0
+      ],
+      "column_indices": [
+        0
+      ],
+      "grid_rows": [
+        0
+      ],
+      "grid_columns": [
+        0
+      ],
+      "column_header_refs": [],
+      "is_header": false,
+      "parser_header_candidate": true,
+      "header_status": "unconfirmed",
+      "cell_structure_valid": true
+    },
+    "u2": {
+      "evidence_id": "332f40090c06eff4f9c04e9d2de846cf6dc7e535341ae6a246ccaec1fb376310",
+      "kind": "cell_paragraph",
+      "text": "步骤一：200L反应釜（RE64611）内加入AR级别丙酮(丙酮投料量/L= HRS-1597粗品投入量/kg×13.5*0.79)和纯化水(纯化水投料量/L= HRS-1597粗品投入量/kg×1.5*1)，氮气置换4次。加入HRS-1597粗品，釜内温度上升至55℃，搅拌溶清。随后氮气保护下加入颗粒活性炭（活性炭投料量/Kg= HRS-1597粗品投入量/kg×0.2），维持50~55℃继续搅拌1-2小时。",
+      "section_node_id": "section:67",
+      "block_id": "table:0",
+      "paragraph_index": 0,
+      "fragment_index": 0,
+      "table_path": [
+        "table:0"
+      ],
+      "row_index": 0,
+      "column_index": 1,
+      "physical_page_number": 5,
+      "source_cell_id": "table:0/cell:0:1",
+      "paragraph_offset": 0,
+      "ref": "u2",
+      "row_span": 1,
+      "column_span": 1,
+      "logical_rows": [
+        0
+      ],
+      "column_indices": [
+        1
+      ],
+      "grid_rows": [
+        0
+      ],
+      "grid_columns": [
+        1
+      ],
+      "column_header_refs": [],
+      "is_header": false,
+      "parser_header_candidate": true,
+      "header_status": "unconfirmed",
+      "cell_structure_valid": true
+    }
+  },
+  "discovery_qwen": {
+    "frames": [
+      {
+        "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/Purification",
+        "anchor": {
+          "ref": "u0",
+          "quote": "HRS-1597结晶纯化"
+        }
+      },
+      {
+        "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/SynthesisStep",
+        "anchor": {
+          "ref": "u2",
+          "quote": "步骤一：200L反应釜（RE64611）内加入AR级别丙酮(丙酮投料量/L= HRS-1597粗品投入量/kg×13.5*0.79)和纯化水(纯化水投料量/L= HRS-1597粗品投入量/kg×1.5*1)，氮气置换4次。加入HRS-1597粗品，釜内温度上升至55℃，搅拌溶清。随后氮气保护下加入颗粒活性炭（活性炭投料量/Kg= HRS-1597粗品投入量/kg×0.2），维持50~55℃继续搅拌1-2小时。"
+        }
+      },
+      {
+        "class_iri": "https://ontology.pharma-gmp.cn/slpra/equipment/Equipment",
+        "anchor": {
+          "ref": "u2",
+          "quote": "200L反应釜（RE64611）"
+        }
+      },
+      {
+        "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/CrudeProduct",
+        "anchor": {
+          "ref": "u2",
+          "quote": "HRS-1597粗品"
+        }
+      }
+    ],
+    "observations": [
+      {
+        "value": {
+          "ref": "u2",
+          "quote": "200L"
+        },
+        "field": {
+          "ref": "u2",
+          "quote": "200L反应釜"
+        },
+        "legend": {
+          "ref": "",
+          "quote": ""
+        },
+        "condition": {
+          "ref": "",
+          "quote": ""
+        },
+        "state": "unknown",
+        "reason": "原文数值200L未明确指定单位是体积还是其他，且作为设备规格描述的一部分，保留为unknown观察以符合'缺少原文单位的数值保留unknown观察'规则（此处200L虽通常指体积，但严格遵循指令不臆造单位，且原文未单独列出单位列）"
+      },
+      {
+        "value": {
+          "ref": "u2",
+          "quote": "RE64611"
+        },
+        "field": {
+          "ref": "u2",
+          "quote": "设备编号"
+        },
+        "legend": {
+          "ref": "",
+          "quote": ""
+        },
+        "condition": {
+          "ref": "",
+          "quote": ""
+        },
+        "state": "unknown",
+        "reason": "原文中RE64611为设备编号，但无明确字段标签，引用原文定位"
+      },
+      {
+        "value": {
+          "ref": "u2",
+          "quote": "AR级别"
+        },
+        "field": {
+          "ref": "u2",
+          "quote": "丙酮"
+        },
+        "legend": {
+          "ref": "",
+          "quote": ""
+        },
+        "condition": {
+          "ref": "",
+          "quote": ""
+        },
+        "state": "unknown",
+        "reason": "丙酮的纯度等级为AR级别，原文描述"
+      },
+      {
+        "value": {
+          "ref": "u2",
+          "quote": "HRS-1597粗品投入量/kg×13.5*0.79"
+        },
+        "field": {
+          "ref": "u2",
+          "quote": "丙酮投料量/L"
+        },
+        "legend": {
+          "ref": "",
+          "quote": ""
+        },
+        "condition": {
+          "ref": "",
+          "quote": ""
+        },
+        "state": "conditional",
+        "reason": "丙酮投料量依赖于HRS-1597粗品投入量，为条件性数据"
+      },
+      {
+        "value": {
+          "ref": "u2",
+          "quote": "HRS-1597粗品投入量/kg×1.5*1"
+        },
+        "field": {
+          "ref": "u2",
+          "quote": "纯化水投料量/L"
+        },
+        "legend": {
+          "ref": "",
+          "quote": ""
+        },
+        "condition": {
+          "ref": "",
+          "quote": ""
+        },
+        "state": "conditional",
+        "reason": "纯化水投料量依赖于HRS-1597粗品投入量，为条件性数据"
+      },
+      {
+        "value": {
+          "ref": "u2",
+          "quote": "4次"
+        },
+        "field": {
+          "ref": "u2",
+          "quote": "氮气置换次数"
+        },
+        "legend": {
+          "ref": "",
+          "quote": ""
+        },
+        "condition": {
+          "ref": "",
+          "quote": ""
+        },
+        "state": "unknown",
+        "reason": "氮气置换次数为4次，原文描述"
+      },
+      {
+        "value": {
+          "ref": "u2",
+          "quote": "55℃"
+        },
+        "field": {
+          "ref": "u2",
+          "quote": "釜内温度"
+        },
+        "legend": {
+          "ref": "",
+          "quote": ""
+        },
+        "condition": {
+          "ref": "",
+          "quote": ""
+        },
+        "state": "unknown",
+        "reason": "加入HRS-1597粗品后釜内温度上升至55℃"
+      },
+      {
+        "value": {
+          "ref": "u2",
+          "quote": "HRS-1597粗品投入量/kg×0.2"
+        },
+        "field": {
+          "ref": "u2",
+          "quote": "活性炭投料量/Kg"
+        },
+        "legend": {
+          "ref": "",
+          "quote": ""
+        },
+        "condition": {
+          "ref": "",
+          "quote": ""
+        },
+        "state": "conditional",
+        "reason": "活性炭投料量依赖于HRS-1597粗品投入量，为条件性数据"
+      },
+      {
+        "value": {
+          "ref": "u2",
+          "quote": "50~55℃"
+        },
+        "field": {
+          "ref": "u2",
+          "quote": "搅拌温度"
+        },
+        "legend": {
+          "ref": "",
+          "quote": ""
+        },
+        "condition": {
+          "ref": "",
+          "quote": "氮气保护下"
+        },
+        "state": "conditional",
+        "reason": "维持50~55℃继续搅拌1-2小时，条件为氮气保护下"
+      },
+      {
+        "value": {
+          "ref": "u2",
+          "quote": "1-2小时"
+        },
+        "field": {
+          "ref": "u2",
+          "quote": "搅拌时间"
+        },
+        "legend": {
+          "ref": "",
+          "quote": ""
+        },
+        "condition": {
+          "ref": "",
+          "quote": "氮气保护下，维持50~55℃"
+        },
+        "state": "conditional",
+        "reason": "搅拌时间为1-2小时，条件为氮气保护下且温度维持50~55℃"
+      }
+    ]
+  },
+  "claims_qwen": {
+    "document": {
+      "attributes": {},
+      "relations": {
+        "usesEquipment": []
+      }
+    },
+    "s1": {
+      "attributes": {
+        "inProcessControl": [],
+        "outputMassRange_kg": [],
+        "reactionConditions": [],
+        "stepOrder": [],
+        "yieldRangePercent": []
+      },
+      "relations": {
+        "nextStep": [],
+        "usesEquipment": []
+      }
+    },
+    "s2": {
+      "attributes": {
+        "inProcessControl": [],
+        "outputMassRange_kg": [],
+        "reactionConditions": [
+          {
+            "raw": "55℃",
+            "source": {
+              "ref": "u2",
+              "quote": "釜内温度上升至55℃"
+            },
+            "field": {
+              "ref": "u2",
+              "quote": "步骤一：200L反应釜（RE64611）内加入AR级别丙酮(丙酮投料量/L= HRS-1597粗品投入量/kg×13.5*0.79)和纯化水(纯化水投料量/L= HRS-1597粗品投入量/kg×1.5*1)，氮气置换4次。加入HRS-1597粗品，釜内温度上升至55℃，搅拌溶清。随后氮气保护下加入颗粒活性炭（活性炭投料量/Kg= HRS-1597粗品投入量/kg×0.2），维持50~55℃继续搅拌1-2小时。"
+            },
+            "unit": {
+              "ref": "u2",
+              "quote": "℃"
+            },
+            "condition": {
+              "ref": "",
+              "quote": ""
+            }
+          },
+          {
+            "raw": "50~55℃",
+            "source": {
+              "ref": "u2",
+              "quote": "维持50~55℃继续搅拌1-2小时"
+            },
+            "field": {
+              "ref": "u2",
+              "quote": "步骤一：200L反应釜（RE64611）内加入AR级别丙酮(丙酮投料量/L= HRS-1597粗品投入量/kg×13.5*0.79)和纯化水(纯化水投料量/L= HRS-1597粗品投入量/kg×1.5*1)，氮气置换4次。加入HRS-1597粗品，釜内温度上升至55℃，搅拌溶清。随后氮气保护下加入颗粒活性炭（活性炭投料量/Kg= HRS-1597粗品投入量/kg×0.2），维持50~55℃继续搅拌1-2小时。"
+            },
+            "unit": {
+              "ref": "u2",
+              "quote": "℃"
+            },
+            "condition": {
+              "ref": "",
+              "quote": ""
+            }
+          },
+          {
+            "raw": "1-2小时",
+            "source": {
+              "ref": "u2",
+              "quote": "维持50~55℃继续搅拌1-2小时"
+            },
+            "field": {
+              "ref": "u2",
+              "quote": "步骤一：200L反应釜（RE64611）内加入AR级别丙酮(丙酮投料量/L= HRS-1597粗品投入量/kg×13.5*0.79)和纯化水(纯化水投料量/L= HRS-1597粗品投入量/kg×1.5*1)，氮气置换4次。加入HRS-1597粗品，釜内温度上升至55℃，搅拌溶清。随后氮气保护下加入颗粒活性炭（活性炭投料量/Kg= HRS-1597粗品投入量/kg×0.2），维持50~55℃继续搅拌1-2小时。"
+            },
+            "unit": {
+              "ref": "u2",
+              "quote": "小时"
+            },
+            "condition": {
+              "ref": "",
+              "quote": ""
+            }
+          }
+        ],
+        "stepOrder": [
+          {
+            "raw": "步骤一",
+            "source": {
+              "ref": "u2",
+              "quote": "步骤一"
+            },
+            "field": {
+              "ref": "u2",
+              "quote": "步骤一：200L反应釜（RE64611）内加入AR级别丙酮(丙酮投料量/L= HRS-1597粗品投入量/kg×13.5*0.79)和纯化水(纯化水投料量/L= HRS-1597粗品投入量/kg×1.5*1)，氮气置换4次。加入HRS-1597粗品，釜内温度上升至55℃，搅拌溶清。随后氮气保护下加入颗粒活性炭（活性炭投料量/Kg= HRS-1597粗品投入量/kg×0.2），维持50~55℃继续搅拌1-2小时。"
+            },
+            "unit": {
+              "ref": "",
+              "quote": ""
+            },
+            "condition": {
+              "ref": "",
+              "quote": ""
+            }
+          }
+        ],
+        "yieldRangePercent": []
+      },
+      "relations": {
+        "nextStep": [],
+        "usesEquipment": [
+          {
+            "target_id": "s3",
+            "evidence": {
+              "ref": "u2",
+              "quote": "200L反应釜（RE64611）"
+            },
+            "condition": {
+              "ref": "",
+              "quote": ""
+            },
+            "polarity": "affirmed"
+          }
+        ]
+      }
+    },
+    "s3": {
+      "attributes": {
+        "equipmentID": [
+          {
+            "raw": "RE64611",
+            "source": {
+              "ref": "u2",
+              "quote": "200L反应釜（RE64611）"
+            },
+            "field": {
+              "ref": "u2",
+              "quote": "200L反应釜（RE64611）"
+            },
+            "unit": {
+              "ref": "",
+              "quote": ""
+            },
+            "condition": {
+              "ref": "",
+              "quote": ""
+            }
+          }
+        ],
+        "equipmentName": [
+          {
+            "raw": "200L反应釜",
+            "source": {
+              "ref": "u2",
+              "quote": "200L反应釜（RE64611）"
+            },
+            "field": {
+              "ref": "u2",
+              "quote": "200L反应釜（RE64611）"
+            },
+            "unit": {
+              "ref": "",
+              "quote": ""
+            },
+            "condition": {
+              "ref": "",
+              "quote": ""
+            }
+          }
+        ],
+        "isDedicatedEquipment": [],
+        "isInCleanArea": [],
+        "modelSpecification": [],
+        "requiresDedication": [],
+        "requiresInactivationValidation": [],
+        "requiresIndependentHVAC": []
+      },
+      "relations": {}
+    }
+  },
+  "rechecked_result": {
+    "scope_id": "process_equipment",
+    "calls": [],
+    "status": "complete",
+    "accepted": [
+      {
+        "subject_id": "s2",
+        "subject_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/SynthesisStep",
+        "subject_text": "步骤一：200L反应釜（RE64611）内加入AR级别丙酮(丙酮投料量/L= HRS-1597粗品投入量/kg×13.5*0.79)和纯化水(纯化水投料量/L= HRS-1597粗品投入量/kg×1.5*1)，氮气置换4次。加入HRS-1597粗品，釜内温度上升至55℃，搅拌溶清。随后氮气保护下加入颗粒活性炭（活性炭投料量/Kg= HRS-1597粗品投入量/kg×0.2），维持50~55℃继续搅拌1-2小时。",
+        "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/reactionConditions",
+        "evidence": {
+          "ref": "u2",
+          "quote": "维持50~55℃继续搅拌1-2小时"
+        },
+        "condition": {
+          "ref": "",
+          "quote": ""
+        },
+        "kind": "property",
+        "value": "1-2小时",
+        "raw_value": "1-2小时",
+        "field": {
+          "ref": "u2",
+          "quote": "步骤一：200L反应釜（RE64611）内加入AR级别丙酮(丙酮投料量/L= HRS-1597粗品投入量/kg×13.5*0.79)和纯化水(纯化水投料量/L= HRS-1597粗品投入量/kg×1.5*1)，氮气置换4次。加入HRS-1597粗品，釜内温度上升至55℃，搅拌溶清。随后氮气保护下加入颗粒活性炭（活性炭投料量/Kg= HRS-1597粗品投入量/kg×0.2），维持50~55℃继续搅拌1-2小时。"
+        },
+        "unit": {
+          "ref": "u2",
+          "quote": "小时"
+        }
+      },
+      {
+        "subject_id": "s2",
+        "subject_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/SynthesisStep",
+        "subject_text": "步骤一：200L反应釜（RE64611）内加入AR级别丙酮(丙酮投料量/L= HRS-1597粗品投入量/kg×13.5*0.79)和纯化水(纯化水投料量/L= HRS-1597粗品投入量/kg×1.5*1)，氮气置换4次。加入HRS-1597粗品，釜内温度上升至55℃，搅拌溶清。随后氮气保护下加入颗粒活性炭（活性炭投料量/Kg= HRS-1597粗品投入量/kg×0.2），维持50~55℃继续搅拌1-2小时。",
+        "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/usesEquipment",
+        "evidence": {
+          "ref": "u2",
+          "quote": "200L反应釜（RE64611）"
+        },
+        "condition": {
+          "ref": "",
+          "quote": ""
+        },
+        "kind": "relation",
+        "object_id": "s3",
+        "object_text": "200L反应釜（RE64611）",
+        "object_class_iri": "https://ontology.pharma-gmp.cn/slpra/equipment/Equipment",
+        "polarity": "affirmed"
+      },
+      {
+        "subject_id": "s3",
+        "subject_class_iri": "https://ontology.pharma-gmp.cn/slpra/equipment/Equipment",
+        "subject_text": "200L反应釜（RE64611）",
+        "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/equipment/equipmentID",
+        "evidence": {
+          "ref": "u2",
+          "quote": "200L反应釜（RE64611）"
+        },
+        "condition": {
+          "ref": "",
+          "quote": ""
+        },
+        "kind": "property",
+        "value": "RE64611",
+        "raw_value": "RE64611",
+        "field": {
+          "ref": "u2",
+          "quote": "200L反应釜（RE64611）"
+        },
+        "unit": {
+          "ref": "",
+          "quote": ""
+        }
+      },
+      {
+        "subject_id": "s3",
+        "subject_class_iri": "https://ontology.pharma-gmp.cn/slpra/equipment/Equipment",
+        "subject_text": "200L反应釜（RE64611）",
+        "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/equipment/equipmentName",
+        "evidence": {
+          "ref": "u2",
+          "quote": "200L反应釜（RE64611）"
+        },
+        "condition": {
+          "ref": "",
+          "quote": ""
+        },
+        "kind": "property",
+        "value": "200L反应釜",
+        "raw_value": "200L反应釜",
+        "field": {
+          "ref": "u2",
+          "quote": "200L反应釜（RE64611）"
+        },
+        "unit": {
+          "ref": "",
+          "quote": ""
+        }
+      }
+    ],
+    "observations": [],
+    "rejected": [
+      {
+        "kind": "frame",
+        "proposal": {
+          "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/CrudeProduct",
+          "anchor": {
+            "ref": "u2",
+            "quote": "HRS-1597粗品"
+          }
+        },
+        "reason": "citation_quote_ambiguous"
+      },
+      {
+        "kind": "observation",
+        "proposal": {
+          "value": {
+            "ref": "u2",
+            "quote": "200L"
+          },
+          "field": {
+            "ref": "u2",
+            "quote": "200L反应釜"
+          },
+          "legend": {
+            "ref": "",
+            "quote": ""
+          },
+          "condition": {
+            "ref": "",
+            "quote": ""
+          },
+          "state": "unknown",
+          "reason": "原文数值200L未明确指定单位是体积还是其他，且作为设备规格描述的一部分，保留为unknown观察以符合'缺少原文单位的数值保留unknown观察'规则（此处200L虽通常指体积，但严格遵循指令不臆造单位，且原文未单独列出单位列）"
+        },
+        "reason": "unknown_observation_requires_marker_or_unresolved_number"
+      },
+      {
+        "kind": "observation",
+        "proposal": {
+          "value": {
+            "ref": "u2",
+            "quote": "RE64611"
+          },
+          "field": {
+            "ref": "u2",
+            "quote": "设备编号"
+          },
+          "legend": {
+            "ref": "",
+            "quote": ""
+          },
+          "condition": {
+            "ref": "",
+            "quote": ""
+          },
+          "state": "unknown",
+          "reason": "原文中RE64611为设备编号，但无明确字段标签，引用原文定位"
+        },
+        "reason": "citation_quote_not_in_source"
+      },
+      {
+        "kind": "observation",
+        "proposal": {
+          "value": {
+            "ref": "u2",
+            "quote": "AR级别"
+          },
+          "field": {
+            "ref": "u2",
+            "quote": "丙酮"
+          },
+          "legend": {
+            "ref": "",
+            "quote": ""
+          },
+          "condition": {
+            "ref": "",
+            "quote": ""
+          },
+          "state": "unknown",
+          "reason": "丙酮的纯度等级为AR级别，原文描述"
+        },
+        "reason": "citation_quote_ambiguous"
+      },
+      {
+        "kind": "observation",
+        "proposal": {
+          "value": {
+            "ref": "u2",
+            "quote": "HRS-1597粗品投入量/kg×13.5*0.79"
+          },
+          "field": {
+            "ref": "u2",
+            "quote": "丙酮投料量/L"
+          },
+          "legend": {
+            "ref": "",
+            "quote": ""
+          },
+          "condition": {
+            "ref": "",
+            "quote": ""
+          },
+          "state": "conditional",
+          "reason": "丙酮投料量依赖于HRS-1597粗品投入量，为条件性数据"
+        },
+        "reason": "conditional_observation_missing_condition"
+      },
+      {
+        "kind": "observation",
+        "proposal": {
+          "value": {
+            "ref": "u2",
+            "quote": "HRS-1597粗品投入量/kg×1.5*1"
+          },
+          "field": {
+            "ref": "u2",
+            "quote": "纯化水投料量/L"
+          },
+          "legend": {
+            "ref": "",
+            "quote": ""
+          },
+          "condition": {
+            "ref": "",
+            "quote": ""
+          },
+          "state": "conditional",
+          "reason": "纯化水投料量依赖于HRS-1597粗品投入量，为条件性数据"
+        },
+        "reason": "conditional_observation_missing_condition"
+      },
+      {
+        "kind": "observation",
+        "proposal": {
+          "value": {
+            "ref": "u2",
+            "quote": "4次"
+          },
+          "field": {
+            "ref": "u2",
+            "quote": "氮气置换次数"
+          },
+          "legend": {
+            "ref": "",
+            "quote": ""
+          },
+          "condition": {
+            "ref": "",
+            "quote": ""
+          },
+          "state": "unknown",
+          "reason": "氮气置换次数为4次，原文描述"
+        },
+        "reason": "citation_quote_not_in_source"
+      },
+      {
+        "kind": "observation",
+        "proposal": {
+          "value": {
+            "ref": "u2",
+            "quote": "55℃"
+          },
+          "field": {
+            "ref": "u2",
+            "quote": "釜内温度"
+          },
+          "legend": {
+            "ref": "",
+            "quote": ""
+          },
+          "condition": {
+            "ref": "",
+            "quote": ""
+          },
+          "state": "unknown",
+          "reason": "加入HRS-1597粗品后釜内温度上升至55℃"
+        },
+        "reason": "citation_quote_ambiguous"
+      },
+      {
+        "kind": "observation",
+        "proposal": {
+          "value": {
+            "ref": "u2",
+            "quote": "HRS-1597粗品投入量/kg×0.2"
+          },
+          "field": {
+            "ref": "u2",
+            "quote": "活性炭投料量/Kg"
+          },
+          "legend": {
+            "ref": "",
+            "quote": ""
+          },
+          "condition": {
+            "ref": "",
+            "quote": ""
+          },
+          "state": "conditional",
+          "reason": "活性炭投料量依赖于HRS-1597粗品投入量，为条件性数据"
+        },
+        "reason": "conditional_observation_missing_condition"
+      },
+      {
+        "kind": "observation",
+        "proposal": {
+          "value": {
+            "ref": "u2",
+            "quote": "50~55℃"
+          },
+          "field": {
+            "ref": "u2",
+            "quote": "搅拌温度"
+          },
+          "legend": {
+            "ref": "",
+            "quote": ""
+          },
+          "condition": {
+            "ref": "",
+            "quote": "氮气保护下"
+          },
+          "state": "conditional",
+          "reason": "维持50~55℃继续搅拌1-2小时，条件为氮气保护下"
+        },
+        "reason": "citation_quote_not_in_source"
+      },
+      {
+        "kind": "observation",
+        "proposal": {
+          "value": {
+            "ref": "u2",
+            "quote": "1-2小时"
+          },
+          "field": {
+            "ref": "u2",
+            "quote": "搅拌时间"
+          },
+          "legend": {
+            "ref": "",
+            "quote": ""
+          },
+          "condition": {
+            "ref": "",
+            "quote": "氮气保护下，维持50~55℃"
+          },
+          "state": "conditional",
+          "reason": "搅拌时间为1-2小时，条件为氮气保护下且温度维持50~55℃"
+        },
+        "reason": "citation_quote_not_in_source"
+      },
+      {
+        "subject_id": "s2",
+        "field": "reactionConditions",
+        "proposal": {
+          "raw": "55℃",
+          "source": {
+            "ref": "u2",
+            "quote": "釜内温度上升至55℃"
+          },
+          "field": {
+            "ref": "u2",
+            "quote": "步骤一：200L反应釜（RE64611）内加入AR级别丙酮(丙酮投料量/L= HRS-1597粗品投入量/kg×13.5*0.79)和纯化水(纯化水投料量/L= HRS-1597粗品投入量/kg×1.5*1)，氮气置换4次。加入HRS-1597粗品，釜内温度上升至55℃，搅拌溶清。随后氮气保护下加入颗粒活性炭（活性炭投料量/Kg= HRS-1597粗品投入量/kg×0.2），维持50~55℃继续搅拌1-2小时。"
+          },
+          "unit": {
+            "ref": "u2",
+            "quote": "℃"
+          },
+          "condition": {
+            "ref": "",
+            "quote": ""
+          }
+        },
+        "reason": "citation_quote_ambiguous"
+      },
+      {
+        "subject_id": "s2",
+        "field": "reactionConditions",
+        "proposal": {
+          "raw": "50~55℃",
+          "source": {
+            "ref": "u2",
+            "quote": "维持50~55℃继续搅拌1-2小时"
+          },
+          "field": {
+            "ref": "u2",
+            "quote": "步骤一：200L反应釜（RE64611）内加入AR级别丙酮(丙酮投料量/L= HRS-1597粗品投入量/kg×13.5*0.79)和纯化水(纯化水投料量/L= HRS-1597粗品投入量/kg×1.5*1)，氮气置换4次。加入HRS-1597粗品，釜内温度上升至55℃，搅拌溶清。随后氮气保护下加入颗粒活性炭（活性炭投料量/Kg= HRS-1597粗品投入量/kg×0.2），维持50~55℃继续搅拌1-2小时。"
+          },
+          "unit": {
+            "ref": "u2",
+            "quote": "℃"
+          },
+          "condition": {
+            "ref": "",
+            "quote": ""
+          }
+        },
+        "reason": "citation_quote_ambiguous"
+      },
+      {
+        "subject_id": "s2",
+        "field": "stepOrder",
+        "proposal": {
+          "raw": "步骤一",
+          "source": {
+            "ref": "u2",
+            "quote": "步骤一"
+          },
+          "field": {
+            "ref": "u2",
+            "quote": "步骤一：200L反应釜（RE64611）内加入AR级别丙酮(丙酮投料量/L= HRS-1597粗品投入量/kg×13.5*0.79)和纯化水(纯化水投料量/L= HRS-1597粗品投入量/kg×1.5*1)，氮气置换4次。加入HRS-1597粗品，釜内温度上升至55℃，搅拌溶清。随后氮气保护下加入颗粒活性炭（活性炭投料量/Kg= HRS-1597粗品投入量/kg×0.2），维持50~55℃继续搅拌1-2小时。"
+          },
+          "unit": {
+            "ref": "",
+            "quote": ""
+          },
+          "condition": {
+            "ref": "",
+            "quote": ""
+          }
+        },
+        "reason": "datatype_mismatch"
+      }
+    ],
+    "discovery_contract_pass": true,
+    "frames": {
+      "s1": {
+        "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/Purification",
+        "anchor": {
+          "ref": "u0",
+          "quote": "HRS-1597结晶纯化"
+        }
+      },
+      "s2": {
+        "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/SynthesisStep",
+        "anchor": {
+          "ref": "u2",
+          "quote": "步骤一：200L反应釜（RE64611）内加入AR级别丙酮(丙酮投料量/L= HRS-1597粗品投入量/kg×13.5*0.79)和纯化水(纯化水投料量/L= HRS-1597粗品投入量/kg×1.5*1)，氮气置换4次。加入HRS-1597粗品，釜内温度上升至55℃，搅拌溶清。随后氮气保护下加入颗粒活性炭（活性炭投料量/Kg= HRS-1597粗品投入量/kg×0.2），维持50~55℃继续搅拌1-2小时。"
+        }
+      },
+      "s3": {
+        "class_iri": "https://ontology.pharma-gmp.cn/slpra/equipment/Equipment",
+        "anchor": {
+          "ref": "u2",
+          "quote": "200L反应釜（RE64611）"
+        }
+      }
+    },
+    "claims_contract_pass": true,
+    "acceptance": {
+      "checks": [
+        {
+          "check": "required_properties",
+          "expected": {
+            "predicate": "equipmentID",
+            "value": "RE64611"
+          },
+          "pass": true
+        },
+        {
+          "check": "required_relations",
+          "expected": {
+            "predicate": "usesEquipment",
+            "object_contains": "RE64611"
+          },
+          "pass": true
+        },
+        {
+          "check": "forbidden_predicate",
+          "expected": "producesFinalProduct",
+          "pass": true
+        },
+        {
+          "check": "forbidden_predicate",
+          "expected": "producesIntermediate",
+          "pass": true
+        },
+        {
+          "check": "forbidden_predicate",
+          "expected": "locatedIn",
+          "pass": true
+        }
+      ],
+      "passed": 5,
+      "total": 5,
+      "all_pass": true,
+      "passed_with_no_rejections": false
+    }
+  }
+}

@@ -1,0 +1,140 @@
+{
+  "runs": [
+    {
+      "run": "cmc-small02",
+      "output": "runtime/small02",
+      "requests": 2,
+      "usage": {
+        "input_tokens": 17414,
+        "output_tokens": 11161,
+        "total_tokens": 28575
+      },
+      "completion": "incomplete",
+      "progress": {
+        "tasks_attempted": 2,
+        "model_calls": 2,
+        "model_calls_reserved": 2,
+        "model_calls_unresolved": 0,
+        "records_planned": 1032,
+        "records_examined": 0,
+        "records_incomplete": 2,
+        "records_unattempted": 1030,
+        "phase_counts": {
+          "phase1": 1,
+          "phase2": 1
+        },
+        "supported": 0,
+        "unsupported": 0,
+        "undetermined": 1,
+        "pending_frontiers": 1030,
+        "unresolved_claims": 1,
+        "invalidated_count": 0,
+        "stop_reason": "task_budget_exhausted",
+        "completion": "incomplete",
+        "contract_version": "document-analysis-runs-v1"
+      },
+      "discovery_batches": 1,
+      "verification_batches": 1,
+      "reason_codes": [
+        "context_budget_exceeded",
+        "record_undetermined"
+      ],
+      "controller_checks": {
+        "binding": 0,
+        "metric": 0,
+        "shacl": 0,
+        "elapsed_seconds": 0.001314409077167511
+      }
+    },
+    {
+      "run": "f4-positive02",
+      "output": "runtime/f4-positive/result02",
+      "requests": 3,
+      "usage": {
+        "input_tokens": 10863,
+        "output_tokens": 19268,
+        "total_tokens": 30131
+      },
+      "completion": "incomplete",
+      "progress": {
+        "tasks_attempted": 1,
+        "model_calls": 3,
+        "model_calls_reserved": 3,
+        "model_calls_unresolved": 0,
+        "records_planned": 1,
+        "records_examined": 0,
+        "records_incomplete": 1,
+        "records_unattempted": 0,
+        "phase_counts": {
+          "phase1": 1,
+          "phase2": 0
+        },
+        "supported": 0,
+        "unsupported": 0,
+        "undetermined": 0,
+        "pending_frontiers": 1,
+        "unresolved_claims": 0,
+        "invalidated_count": 0,
+        "stop_reason": "task_budget_exhausted",
+        "completion": "incomplete",
+        "contract_version": "document-analysis-runs-v1"
+      },
+      "discovery_batches": 0,
+      "verification_batches": 0,
+      "reason_codes": [
+        "model_budget_exhausted"
+      ],
+      "controller_checks": {}
+    },
+    {
+      "run": "f4-negative02",
+      "output": "runtime/f4-negative/result02",
+      "requests": 4,
+      "usage": {
+        "input_tokens": 17367,
+        "output_tokens": 7554,
+        "total_tokens": 24921
+      },
+      "completion": "incomplete",
+      "progress": {
+        "tasks_attempted": 1,
+        "model_calls": 4,
+        "model_calls_reserved": 4,
+        "model_calls_unresolved": 0,
+        "records_planned": 1,
+        "records_examined": 0,
+        "records_incomplete": 1,
+        "records_unattempted": 0,
+        "phase_counts": {
+          "phase1": 1,
+          "phase2": 0
+        },
+        "supported": 0,
+        "unsupported": 0,
+        "undetermined": 0,
+        "pending_frontiers": 0,
+        "unresolved_claims": 0,
+        "invalidated_count": 0,
+        "stop_reason": "task_budget_exhausted",
+        "completion": "incomplete",
+        "contract_version": "document-analysis-runs-v1"
+      },
+      "discovery_batches": 1,
+      "verification_batches": 0,
+      "reason_codes": [
+        "model_budget_exhausted"
+      ],
+      "controller_checks": {}
+    }
+  ],
+  "findings": {
+    "cmc": "One truncated JSON at output token limit, status incorrectly completed; subsequent full-context request rejected by context budget. Another predicate produced valid empty envelope with missing observation and remained undetermined.",
+    "f4_positive": "Fence-wrapped first response, then two truncated JSON corrections. No accepted discovery.",
+    "f4_negative": "Accepted discovery; independent verification called native tools. Final verification JSON had unescaped quotes, was incomplete across targets, and exhausted request budget.",
+    "mock": "small02 retains original inputs and has no external_sources; not Mock collaboration acceptance.",
+    "quantity": "No actual controller metric/SHACL path completed; engineering tests are separate."
+  },
+  "formal_quality_status": "not_scored; no approved reference for frozen ontology/root/scope",
+  "no_gold_in_recognition": true,
+  "new_complete_runtime": "runtime-complete-environment.json"
+}

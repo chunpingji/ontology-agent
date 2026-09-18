@@ -1,0 +1,631 @@
+{
+  "captured_at": "2026-09-18 02:07:12.770993+00:00",
+  "run_id": "eeacc490-241a-4df2-87e6-f4ed0c2a22a6",
+  "run": {
+    "stage": "recognition",
+    "execution_status": "running",
+    "created_at": "2026-09-18 00:57:09.920877+00:00",
+    "updated_at": "2026-09-18 02:06:17.414546+00:00",
+    "progress": {
+      "candidate_policy": "sparse-candidates-v1",
+      "tasks_attempted": 17,
+      "model_calls": 39,
+      "model_calls_reserved": 40,
+      "model_calls_unresolved": 1,
+      "records_planned": 71,
+      "records_examined": 7,
+      "records_incomplete": 10,
+      "records_unattempted": 54,
+      "phase_counts": {
+        "phase1": 17,
+        "phase2": 0
+      },
+      "supported": 5,
+      "unsupported": 0,
+      "undetermined": 4,
+      "pending_frontiers": 0,
+      "unresolved_claims": 4,
+      "invalidated_count": 0,
+      "stop_reason": null,
+      "completion": "incomplete",
+      "contract_version": "document-analysis-runs-v1"
+    },
+    "work_version": 21,
+    "event_head": 26,
+    "error": null
+  },
+  "execution": {
+    "status": "active",
+    "heartbeat_at": "2026-09-18 02:07:12.717248+00:00",
+    "last_progress_at": "2026-09-18 02:06:16.928332+00:00",
+    "recovery_attempts": 0
+  },
+  "graph_counts": {
+    "nodes": 6,
+    "edges": 0,
+    "properties": 0,
+    "relationship_groups": 0
+  },
+  "policy": {
+    "state_storage_version": 4,
+    "frontier_version": 2,
+    "recognition_inflight": 1,
+    "extraction_protocol": "ontology-tool-extraction-v1",
+    "api_protocol": "responses",
+    "max_lineage_calls": 4,
+    "model_call_state_version": 2,
+    "reference_resolution_version": 1,
+    "execution_budget": {
+      "max_seconds": 1800.0,
+      "max_model_calls": 32
+    },
+    "model": "Qwen3.6-35B-A3B",
+    "responses": {
+      "strict_tools": false,
+      "strict_answers": false
+    },
+    "candidate_planning": "sparse-candidates-v1",
+    "incremental_performance": "incremental-performance-v1",
+    "heuristic_policy": {
+      "version": "heuristic-first-v3",
+      "query_rules_version": "ontology-controlled-labels-v1",
+      "initial_page_size": 8,
+      "expanded_page_size": 16,
+      "exploration_page_size": 32,
+      "max_exploration_pages": 1,
+      "semantic_page_size": 8,
+      "primary_section_limit": 3,
+      "max_cheap_tasks_before_semantic": 1,
+      "source_object_candidates": false
+    },
+    "request_budget": {
+      "max_input_tokens": 32768,
+      "max_output_tokens": 20480,
+      "max_context_tokens": null
+    }
+  },
+  "capabilities": {
+    "profile": true,
+    "gliner2": true,
+    "external_sources": true,
+    "vocabulary_overlay": true
+  },
+  "timing": [
+    {
+      "stage": "discovery",
+      "status": "complete",
+      "count": 21,
+      "avg_seconds": "83.50",
+      "sum_seconds": "1753.42",
+      "queue_seconds": "0.71"
+    },
+    {
+      "stage": "discovery",
+      "status": "running",
+      "count": 1,
+      "avg_seconds": null,
+      "sum_seconds": null,
+      "queue_seconds": "0.04"
+    },
+    {
+      "stage": "ranking_count_tokens_batch",
+      "status": "completed",
+      "count": 39,
+      "avg_seconds": "1.04",
+      "sum_seconds": "40.71",
+      "queue_seconds": "0.84"
+    },
+    {
+      "stage": "ranking_embed",
+      "status": "completed",
+      "count": 38,
+      "avg_seconds": "0.42",
+      "sum_seconds": "15.84",
+      "queue_seconds": "0.83"
+    },
+    {
+      "stage": "ranking_score_pairs",
+      "status": "completed",
+      "count": 4,
+      "avg_seconds": "2.59",
+      "sum_seconds": "10.34",
+      "queue_seconds": "0.13"
+    },
+    {
+      "stage": "verification",
+      "status": "complete",
+      "count": 18,
+      "avg_seconds": "79.00",
+      "sum_seconds": "1422.08",
+      "queue_seconds": "0.55"
+    },
+    {
+      "stage": "word_tree_summary",
+      "status": "complete",
+      "count": 6,
+      "avg_seconds": "25.50",
+      "sum_seconds": "152.98",
+      "queue_seconds": "0.14"
+    },
+    {
+      "stage": "word_tree_summary",
+      "status": "failed",
+      "count": 1,
+      "avg_seconds": "15.91",
+      "sum_seconds": "15.91",
+      "queue_seconds": "0.01"
+    }
+  ],
+  "state_events": [
+    {
+      "sequence": 1,
+      "created_at": "2026-09-18 00:57:09.920877+00:00",
+      "status": "queued",
+      "stop_reason": null
+    },
+    {
+      "sequence": 2,
+      "created_at": "2026-09-18 00:57:10.180740+00:00",
+      "status": "running",
+      "stop_reason": null
+    },
+    {
+      "sequence": 4,
+      "created_at": "2026-09-18 00:57:11.394311+00:00",
+      "status": "running",
+      "stop_reason": null
+    },
+    {
+      "sequence": 14,
+      "created_at": "2026-09-18 01:29:34.618549+00:00",
+      "status": "paused",
+      "stop_reason": "execution_time_budget_exhausted"
+    },
+    {
+      "sequence": 15,
+      "created_at": "2026-09-18 01:41:09.800829+00:00",
+      "status": "queued",
+      "stop_reason": null
+    }
+  ],
+  "result_fields": {
+    "tool_result": 15,
+    "verification": 16,
+    "outcome": 16,
+    "model_turn": 39,
+    "discovery": 17
+  },
+  "outcomes": [
+    {
+      "lineage_id": "bd32bdcb4a4903654578ab4885652b3da20eac852f834f56806df3aebbb332ee",
+      "task_id": "3f2dee1a7ef836fc72fc4ca94fdfa7888ac8b458b7fb4aa8c2ba2d32f2218374",
+      "predicate": "hasCleaningMethod",
+      "semantic_outcome": "undetermined",
+      "complete": false,
+      "reason_code": "subject_role_not_supported",
+      "reason": "subject_role_not_supported；entity_dependency_not_verified；source_assertion_subject_endpoint_unbound；source_assertion_subject_not_reviewed",
+      "model_calls": 4,
+      "nodes": 0,
+      "edges": 0
+    },
+    {
+      "lineage_id": "07f006a1c29aca1d98bce3fe3be3f03a12b583f585094b58e28b1982445a3d58",
+      "task_id": "186de969d47b2fdfb6f2584d5c3a1aeea7b20658cb0ef275de4d28a59fb2e6c5",
+      "predicate": "hasCleaningMethod",
+      "semantic_outcome": "supported",
+      "complete": false,
+      "reason_code": "source_assertion_predicate_not_reviewed",
+      "reason": "source_assertion_predicate_not_reviewed；source_assertion_subject_endpoint_unbound",
+      "model_calls": 3,
+      "nodes": 1,
+      "edges": 0
+    },
+    {
+      "lineage_id": "1f1b0f1e2f205919914d42d2bf59b6bb2b25d56ac5839541d96dbb67137e1769",
+      "task_id": "b43238647d041bc7ec084fbd389e831eb7d62db8fff1ff4542908eb0e183ba4e",
+      "predicate": "hasCleaningMethod",
+      "semantic_outcome": "supported",
+      "complete": false,
+      "reason_code": "source_assertion_subject_endpoint_unbound",
+      "reason": "source_assertion_subject_endpoint_unbound",
+      "model_calls": 3,
+      "nodes": 1,
+      "edges": 0
+    },
+    {
+      "lineage_id": "46b97ad642924a74ae142a1f408398fb7cb975b844d17f8ee22303a679c2e4f9",
+      "task_id": "8da3272d3d1b75f3868b0dde0820a5f44b7cc935b1741dcd3e39cfdc573b9632",
+      "predicate": "hasDegradationPathway",
+      "semantic_outcome": "undetermined",
+      "complete": false,
+      "reason_code": "subject_role:support_missing",
+      "reason": "subject_role:support_missing；subject_role_not_supported；predicate:support_missing；qualifiers:support_missing；predicate_not_supported；qualifiers_not_supported；entity_dependency_not_verified；source_assertion_predicate_not_reviewed；source_assertion_subject_missing",
+      "model_calls": 3,
+      "nodes": 0,
+      "edges": 0
+    },
+    {
+      "lineage_id": "d2e27032ee78aa75da84550d88a314cb30f52fce5c7c3264bc0f746ec0add87a",
+      "task_id": "d2b0d6821fb325048e1fbfa253b62f0ae830df713805a43763e457008eaed439",
+      "predicate": "hasCleaningResidue",
+      "semantic_outcome": "not_checked",
+      "complete": true,
+      "reason_code": "record_no_claims",
+      "reason": "已检查当前记录，未提出可核验声明；不表示全文没有此类事实。",
+      "model_calls": 1,
+      "nodes": 0,
+      "edges": 0
+    },
+    {
+      "lineage_id": "eb04c02ca1aa75eb1fbce89c67f2c9b73f74d64efddfd6ee6b6ecb899c9d63e8",
+      "task_id": "8a9cfc63ba1c717bfb086045885a8b4390710c4a08dfb9d9bcbc1ff510952b9a",
+      "predicate": "hasProductionPlan",
+      "semantic_outcome": "supported",
+      "complete": false,
+      "reason_code": "predicate:source_excerpt_mismatch",
+      "reason": "predicate:source_excerpt_mismatch；predicate:support_missing；predicate_not_supported；source_assertion_predicate_not_reviewed；source_assertion_subject_endpoint_unbound",
+      "model_calls": 3,
+      "nodes": 1,
+      "edges": 0
+    },
+    {
+      "lineage_id": "33dd29867916da3e4792be426ba3ec8538fd8df2259283a4f05e95d277d256bf",
+      "task_id": "a2fb226254744ff0c7a97443cb7ad37093ab4c773cb60c5a08e6c0694b950a99",
+      "predicate": "hasProductionRiskAssessment",
+      "semantic_outcome": "not_checked",
+      "complete": true,
+      "reason_code": "record_no_claims",
+      "reason": "已检查当前记录，未提出可核验声明；不表示全文没有此类事实。",
+      "model_calls": 1,
+      "nodes": 0,
+      "edges": 0
+    },
+    {
+      "lineage_id": "158787871799ef654c451593482caf3c4f6312a7464f2da7c05450c100fb0662",
+      "task_id": "7a2fe070ed85c26465d2a8052192815328ed1f25851d28d43cd36ca36fbe63d0",
+      "predicate": "hasQualityRiskAssessment",
+      "semantic_outcome": "undetermined",
+      "complete": false,
+      "reason_code": "source_assertion_fact_source_missing",
+      "reason": "source_assertion_fact_source_missing；relation_fact_source_missing；record_composition_source_coverage_missing",
+      "model_calls": 3,
+      "nodes": 0,
+      "edges": 0
+    },
+    {
+      "lineage_id": "a752ce120dd4c978d937523402f65274c50874fb6bd7e55ff773b3a005bb7780",
+      "task_id": "a5bdc3c7e7d8272e38439d839b6f00f130ff8e24982db1433bbd9fc82910fdd1",
+      "predicate": "hasProductionRiskAssessment",
+      "semantic_outcome": "not_checked",
+      "complete": true,
+      "reason_code": "record_no_claims",
+      "reason": "已检查当前记录，未提出可核验声明；不表示全文没有此类事实。",
+      "model_calls": 1,
+      "nodes": 0,
+      "edges": 0
+    },
+    {
+      "lineage_id": "9ff8c5670c37b98cf485afe72a5629b33f7c62e6c4a2bee4dc7ea8e038654580",
+      "task_id": "d1892ff0c425c297553ccf93e02936b77e808df91d62871b1b039f29ce6a9e52",
+      "predicate": "describes",
+      "semantic_outcome": "not_checked",
+      "complete": true,
+      "reason_code": "record_no_claims",
+      "reason": "已检查当前记录，未提出可核验声明；不表示全文没有此类事实。",
+      "model_calls": 1,
+      "nodes": 0,
+      "edges": 0
+    },
+    {
+      "lineage_id": "9ed778ef7d7963b3b0be9f2c03004734ae4d27a334548e6f845636e042460140",
+      "task_id": "8f535dcd1a229c035afab7bd48d6e89239a8dbf3b1e91ea58d6f6b4b8cdd9237",
+      "predicate": "hasCleaningResidue",
+      "semantic_outcome": "undetermined",
+      "complete": false,
+      "reason_code": "type:source_excerpt_mismatch",
+      "reason": "type:source_excerpt_mismatch；type:support_missing；referent:source_excerpt_mismatch；referent:support_missing；subject_role:source_excerpt_mismatch；subject_role:support_missing；type_not_supported；referent_not_supported；subject_role_not_supported；object_binding:source_excerpt_mismatch；object_binding:support_missing；predicate:source_excerpt_mismatch；predicate:support_missing；object_binding_not_supported；predicate_not_supported；entity_dependency_not_verified；source_assertion_predicate_not_reviewed；source_assertion_subject_endpoint_unbound；source_assertion_object_not_reviewed",
+      "model_calls": 2,
+      "nodes": 0,
+      "edges": 0
+    },
+    {
+      "lineage_id": "e6032a64005101e60de6c034da7ecc6418249e83febb176d17abaa3fa27f8ac4",
+      "task_id": "49e00189bf773f302db4b3beaa3434cd6f745359f6de1ec050e262ec6f2a23fe",
+      "predicate": "hasDegradationPathway",
+      "semantic_outcome": "supported",
+      "complete": false,
+      "reason_code": "source_assertion_subject_endpoint_unbound",
+      "reason": "source_assertion_subject_endpoint_unbound",
+      "model_calls": 3,
+      "nodes": 1,
+      "edges": 0
+    },
+    {
+      "lineage_id": "98ebd1abdd7acf9c214f97cd3c73f20d5952870b6d9529f4ed61eea6eab3a761",
+      "task_id": "8289c893580e7454d9c5e360917c9afe4c07a4548c30b2c0d44e1339ca5ff2d3",
+      "predicate": "hasSafetyRiskAssessment",
+      "semantic_outcome": "not_checked",
+      "complete": true,
+      "reason_code": "record_no_claims",
+      "reason": "已检查当前记录，未提出可核验声明；不表示全文没有此类事实。",
+      "model_calls": 1,
+      "nodes": 0,
+      "edges": 0
+    },
+    {
+      "lineage_id": "60e168fd71c6d4a0f9f40c8a546319d9dbc5618e384a92b9f62e973684808f91",
+      "task_id": "050f50ab5c39a2d47996ed11930539ae1cc0228eae6ea5b013f79feac35975a2",
+      "predicate": "describes",
+      "semantic_outcome": "not_checked",
+      "complete": true,
+      "reason_code": "record_no_claims",
+      "reason": "已检查当前记录，未提出可核验声明；不表示全文没有此类事实。",
+      "model_calls": 1,
+      "nodes": 0,
+      "edges": 0
+    },
+    {
+      "lineage_id": "1144f07f806e880174108999fca77c84c96d1b7c22d5e6869c02627e088d7c99",
+      "task_id": "a94dc0f9e55fc08b22d1c3248de4ada2facec87f5bf6d20d9a776f40fd59ce83",
+      "predicate": "describes",
+      "semantic_outcome": "supported",
+      "complete": false,
+      "reason_code": "source_assertion_subject_endpoint_unbound",
+      "reason": "source_assertion_subject_endpoint_unbound",
+      "model_calls": 4,
+      "nodes": 1,
+      "edges": 0
+    },
+    {
+      "lineage_id": "6591e80e2299f17d0a044205f790c8ea126569f2128a491719894688d3b0d63c",
+      "task_id": "6ff3526e28bec6fbed2838a4f8754ea58e880756cca620d2426ce04b5110b5aa",
+      "predicate": "hasCleaningResidue",
+      "semantic_outcome": "not_checked",
+      "complete": true,
+      "reason_code": "record_no_claims",
+      "reason": "已检查当前记录，未提出可核验声明；不表示全文没有此类事实。",
+      "model_calls": 1,
+      "nodes": 0,
+      "edges": 0
+    }
+  ],
+  "outcome_reasons": {
+    "subject_role_not_supported": 1,
+    "source_assertion_predicate_not_reviewed": 1,
+    "source_assertion_subject_endpoint_unbound": 3,
+    "subject_role:support_missing": 1,
+    "record_no_claims": 7,
+    "predicate:source_excerpt_mismatch": 1,
+    "source_assertion_fact_source_missing": 1,
+    "type:source_excerpt_mismatch": 1
+  },
+  "attempts": [
+    {
+      "predicate": "hasSafetyRiskAssessment",
+      "task_id": "8289c893580e7454d9c5e360917c9afe4c07a4548c30b2c0d44e1339ca5ff2d3",
+      "semantic_outcome": "not_checked",
+      "complete": true,
+      "reason_code": "record_no_claims",
+      "supported_count": 0,
+      "technical_failure": false
+    },
+    {
+      "predicate": "hasProductionRiskAssessment",
+      "task_id": "a2fb226254744ff0c7a97443cb7ad37093ab4c773cb60c5a08e6c0694b950a99",
+      "semantic_outcome": "not_checked",
+      "complete": true,
+      "reason_code": "record_no_claims",
+      "supported_count": 0,
+      "technical_failure": false
+    },
+    {
+      "predicate": "hasCleaningMethod",
+      "task_id": "186de969d47b2fdfb6f2584d5c3a1aeea7b20658cb0ef275de4d28a59fb2e6c5",
+      "semantic_outcome": "supported",
+      "complete": false,
+      "reason_code": "source_assertion_predicate_not_reviewed",
+      "supported_count": 0,
+      "technical_failure": true
+    },
+    {
+      "predicate": "hasCleaningResidue",
+      "task_id": "8f535dcd1a229c035afab7bd48d6e89239a8dbf3b1e91ea58d6f6b4b8cdd9237",
+      "semantic_outcome": "undetermined",
+      "complete": false,
+      "reason_code": "type:source_excerpt_mismatch",
+      "supported_count": 0,
+      "technical_failure": true
+    },
+    {
+      "predicate": "hasDegradationPathway",
+      "task_id": "ac28fd414dfca7188e5456295ebbf70d828c8f6bc64b0afe35515d9cba9c858c",
+      "semantic_outcome": "not_checked",
+      "complete": false,
+      "reason_code": "required_relation_validation_missing",
+      "supported_count": 0,
+      "technical_failure": true
+    },
+    {
+      "predicate": "hasCleaningResidue",
+      "task_id": "d2b0d6821fb325048e1fbfa253b62f0ae830df713805a43763e457008eaed439",
+      "semantic_outcome": "not_checked",
+      "complete": true,
+      "reason_code": "record_no_claims",
+      "supported_count": 0,
+      "technical_failure": false
+    },
+    {
+      "predicate": "hasCleaningMethod",
+      "task_id": "b43238647d041bc7ec084fbd389e831eb7d62db8fff1ff4542908eb0e183ba4e",
+      "semantic_outcome": "supported",
+      "complete": false,
+      "reason_code": "source_assertion_subject_endpoint_unbound",
+      "supported_count": 0,
+      "technical_failure": true
+    },
+    {
+      "predicate": "describes",
+      "task_id": "a94dc0f9e55fc08b22d1c3248de4ada2facec87f5bf6d20d9a776f40fd59ce83",
+      "semantic_outcome": "supported",
+      "complete": false,
+      "reason_code": "source_assertion_subject_endpoint_unbound",
+      "supported_count": 0,
+      "technical_failure": true
+    },
+    {
+      "predicate": "hasQualityRiskAssessment",
+      "task_id": "7a2fe070ed85c26465d2a8052192815328ed1f25851d28d43cd36ca36fbe63d0",
+      "semantic_outcome": "undetermined",
+      "complete": false,
+      "reason_code": "source_assertion_fact_source_missing",
+      "supported_count": 0,
+      "technical_failure": true
+    },
+    {
+      "predicate": "describes",
+      "task_id": "d1892ff0c425c297553ccf93e02936b77e808df91d62871b1b039f29ce6a9e52",
+      "semantic_outcome": "not_checked",
+      "complete": true,
+      "reason_code": "record_no_claims",
+      "supported_count": 0,
+      "technical_failure": false
+    },
+    {
+      "predicate": "hasDegradationPathway",
+      "task_id": "8da3272d3d1b75f3868b0dde0820a5f44b7cc935b1741dcd3e39cfdc573b9632",
+      "semantic_outcome": "undetermined",
+      "complete": false,
+      "reason_code": "subject_role:support_missing",
+      "supported_count": 0,
+      "technical_failure": true
+    },
+    {
+      "predicate": "hasDegradationPathway",
+      "task_id": "49e00189bf773f302db4b3beaa3434cd6f745359f6de1ec050e262ec6f2a23fe",
+      "semantic_outcome": "supported",
+      "complete": false,
+      "reason_code": "source_assertion_subject_endpoint_unbound",
+      "supported_count": 0,
+      "technical_failure": true
+    },
+    {
+      "predicate": "hasCleaningMethod",
+      "task_id": "3f2dee1a7ef836fc72fc4ca94fdfa7888ac8b458b7fb4aa8c2ba2d32f2218374",
+      "semantic_outcome": "undetermined",
+      "complete": false,
+      "reason_code": "subject_role_not_supported",
+      "supported_count": 0,
+      "technical_failure": true
+    },
+    {
+      "predicate": "describes",
+      "task_id": "050f50ab5c39a2d47996ed11930539ae1cc0228eae6ea5b013f79feac35975a2",
+      "semantic_outcome": "not_checked",
+      "complete": true,
+      "reason_code": "record_no_claims",
+      "supported_count": 0,
+      "technical_failure": false
+    },
+    {
+      "predicate": "hasCleaningResidue",
+      "task_id": "6ff3526e28bec6fbed2838a4f8754ea58e880756cca620d2426ce04b5110b5aa",
+      "semantic_outcome": "not_checked",
+      "complete": true,
+      "reason_code": "record_no_claims",
+      "supported_count": 0,
+      "technical_failure": false
+    },
+    {
+      "predicate": "hasProductionPlan",
+      "task_id": "8a9cfc63ba1c717bfb086045885a8b4390710c4a08dfb9d9bcbc1ff510952b9a",
+      "semantic_outcome": "supported",
+      "complete": false,
+      "reason_code": "predicate:source_excerpt_mismatch",
+      "supported_count": 0,
+      "technical_failure": true
+    },
+    {
+      "predicate": "hasProductionRiskAssessment",
+      "task_id": "a5bdc3c7e7d8272e38439d839b6f00f130ff8e24982db1433bbd9fc82910fdd1",
+      "semantic_outcome": "not_checked",
+      "complete": true,
+      "reason_code": "record_no_claims",
+      "supported_count": 0,
+      "technical_failure": false
+    }
+  ],
+  "attempt_reasons": {
+    "record_no_claims": 7,
+    "source_assertion_predicate_not_reviewed": 1,
+    "type:source_excerpt_mismatch": 1,
+    "required_relation_validation_missing": 1,
+    "source_assertion_subject_endpoint_unbound": 3,
+    "source_assertion_fact_source_missing": 1,
+    "subject_role:support_missing": 1,
+    "subject_role_not_supported": 1,
+    "predicate:source_excerpt_mismatch": 1
+  },
+  "relation_bridges": {
+    "explicit_assertion": 10
+  },
+  "turn_stages": {
+    "discovery": 21,
+    "verification": 18
+  },
+  "response_statuses": {
+    "completed": 39
+  },
+  "usage": {
+    "input_tokens": 391662,
+    "output_tokens": 130213,
+    "total_tokens": 521875
+  },
+  "tool_calls": {
+    "validate_graph": 8,
+    "check_claim_binding": 1,
+    "resolve_source_anchor": 3,
+    "propose_mentions": 3
+  },
+  "root": {
+    "entity_id": "4fffb77c63e4d2833dbb719780b00bd3650462ced45a3429b493d026a1df846c",
+    "root_origin": "user_specified",
+    "grounding_kind": "document_root",
+    "evidence_refs": []
+  },
+  "source_gate_reproduction": [
+    {
+      "lineage_id": "1f1b0f1e2f205919914d42d2bf59b6bb2b25d56ac5839541d96dbb67137e1769",
+      "predicate": "hasCleaningMethod",
+      "original_issues": [
+        "source_assertion_subject_endpoint_unbound"
+      ],
+      "document_description_issues": []
+    },
+    {
+      "lineage_id": "e6032a64005101e60de6c034da7ecc6418249e83febb176d17abaa3fa27f8ac4",
+      "predicate": "hasDegradationPathway",
+      "original_issues": [
+        "source_assertion_subject_endpoint_unbound"
+      ],
+      "document_description_issues": []
+    },
+    {
+      "lineage_id": "1144f07f806e880174108999fca77c84c96d1b7c22d5e6869c02627e088d7c99",
+      "predicate": "describes",
+      "original_issues": [
+        "source_assertion_subject_endpoint_unbound"
+      ],
+      "document_description_issues": []
+    }
+  ],
+  "quote_mismatch_examples": [
+    {
+      "lineage_id": "eb04c02ca1aa75eb1fbce89c67f2c9b73f74d64efddfd6ee6b6ecb899c9d63e8",
+      "facet": "predicate",
+      "evidence_id": "f590d56428f0472784e94cbe6c174e3ead3f4566f6d424be1deb52814be9de61",
+      "quote": "计划于...进行临床样品的生产",
+      "source_length": 76,
+      "exact_substring_match": false
+    }
+  ]
+}

@@ -1,5 +1,10 @@
 "use client";
 
+import Link from "next/link";
+import { useRecognitionContext, useTemplateFinder } from "@/components/analysis/use-template-finder";
+import { reportDocumentError } from "./report-word-workspace";
+import type { RecognitionContext } from "@/lib/api";
+
 import { useEffect, useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
@@ -54,6 +59,11 @@ import {
   type ReportOrDocument,
 } from "@/lib/api";
 import { cn } from "@/lib/utils";
+import { BatchRecordDrawer } from "./batch-record-drawer";
+import { useBatchDemo } from "./use-batch-demo";
+import { FinderReportActions } from "./finder-report-actions";
+import { FinderRiskReportActions } from "./finder-risk-report-actions";
+import { useIdentity } from "@/lib/use-identity";
 
 /**
  * 文档预览页「操作」弹出菜单（报告中心详情页 · 右上角，紧邻分享按钮）。
@@ -179,8 +189,43 @@ function AnimatedNarrativeText({ text }: { text: string }) {
   );
 }
 
-export function DocumentActionsMenu({ item }: { item: ReportOrDocument }) {
+export function DocumentActionsMenu({ item, templateId }: { item: ReportOrDocument; templateId?: string | null }) {
+  const { identity } = useIdentity();
+  const isWord = item.kind === "uploaded-document" && /\.docx?$/i.test(item.title.trim());
+  const context = useRecognitionContext(isWord ? item.iri : undefined, templateId);
+  if (!isWord) return <NormalDocumentActionsMenu item={item} />;
+  if (context.isLoading) return <Button variant="outline" disabled>读取操作…</Button>;
+  if (context.error) return <span role="alert" className="text-xs text-destructive">{reportDocumentError(context.error)}</span>;
+  if (context.data?.selection_required) return <Button variant="outline" disabled>请先选择模板</Button>;
+  if (context.data?.selected?.recognition_mode === "finder_legacy") {
+    return <FinderActions key={JSON.stringify([identity.username, identity.role, item.iri,
+      context.data.selected.template_id, context.data.source_job_id])} item={item} context={context.data} />;
+  }
+  return <NormalDocumentActionsMenu item={item} />;
+}
+
+function FinderActions({ item, context }: { item: ReportOrDocument; context: RecognitionContext }) {
+  const templateId = context.selected!.template_id;
+  const model = useTemplateFinder(templateId, context.source_job_id, true, false);
+  return <div className="flex items-center gap-2">
+    <Button variant="outline" asChild><Link href={{ pathname: `/reports/${encodeURIComponent(item.key)}`,
+      query: { template_id: templateId, kind: item.kind, title: item.title, type: item.type,
+        ...(item.iri ? { iri: item.iri } : {}) } }}>查看本体指引1.0图谱</Link></Button>
+    <Button disabled={!model.canStart} onClick={model.start}>
+      {model.running ? "本体指引1.0识别中…" : model.status?.execution_id ? "重新识别" : "开始本体指引1.0识别"}
+    </Button>
+    {context.selection_locked
+      ? <FinderRiskReportActions templateId={templateId} sourceJobId={context.source_job_id} documentTitle={item.title} finder={model} />
+      : <FinderReportActions templateId={templateId} sourceJobId={context.source_job_id} documentTitle={item.title} />}
+    {model.error && <span role="alert" className="text-xs text-destructive">{reportDocumentError(model.error)}</span>}
+  </div>;
+}
+
+function NormalDocumentActionsMenu({ item }: { item: ReportOrDocument }) {
   const queryClient = useQueryClient();
+  const demo = useBatchDemo(item.kind === "uploaded-document" && /\.docx$/i.test(item.title) ? item.iri : undefined);
+  const [batchOpen, setBatchOpen] = useState(false);
+  const pendingBatchRef = useRef(false);
   // 瞬时提示（info/success/error）：自动消隐。生成过程的「生成中」态由 mutation 的
   // pending 独立驱动（常驻至落定），二者互斥渲染。
   const [notice, setNotice] = useState<Notice | null>(null);
@@ -498,7 +543,7 @@ export function DocumentActionsMenu({ item }: { item: ReportOrDocument }) {
   const currentIndex = completed ? stages.length : Math.max(0, stages.findIndex(([key]) => key === progress?.stage));
 
   return (
-    <Sheet open={drawerOpen} onOpenChange={setDrawerOpen}>
+    <><Sheet open={drawerOpen} onOpenChange={setDrawerOpen}>
       {busy ? (
         <SheetTrigger asChild>
           <Button type="button">
@@ -519,12 +564,25 @@ export function DocumentActionsMenu({ item }: { item: ReportOrDocument }) {
             align="end"
             className="w-64"
             onCloseAutoFocus={(event) => {
+              if (pendingBatchRef.current) {
+                event.preventDefault();
+                pendingBatchRef.current = false;
+                setBatchOpen(true);
+                return;
+              }
               if (!pendingRiskDrawerRef.current) return;
               event.preventDefault();
               pendingRiskDrawerRef.current = false;
               void openRiskDrawer();
             }}
           >
+            {demo.data?.available && <DropdownMenuItem className="items-start gap-3 py-2.5" onSelect={() => {
+              pendingBatchRef.current = true;
+              setMenuOpen(false);
+            }}>
+              <span className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary"><ClipboardCheck className="size-4" /></span>
+              <div className="space-y-0.5"><p className="text-sm font-medium">生成批记录报告</p><p className="text-xs text-muted-foreground">从静态图谱生成批记录演示草稿</p></div>
+            </DropdownMenuItem>}
             {ACTIONS.map(({ key, label, desc, Icon, tint }) => (
               <DropdownMenuItem
                 key={key}
@@ -864,5 +922,7 @@ export function DocumentActionsMenu({ item }: { item: ReportOrDocument }) {
         </div>
       ) : null}
     </Sheet>
+      {demo.data?.available && <BatchRecordDrawer key={item.iri} data={demo.data} open={batchOpen} onOpenChange={setBatchOpen} />}
+    </>
   );
 }

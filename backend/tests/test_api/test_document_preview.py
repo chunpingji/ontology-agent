@@ -23,7 +23,8 @@ def preview_job(db, tmp_path, monkeypatch):
     document.save(source)
     job = ExtractionJob(
         source_type="word", source_filename=source.name, document_path=str(source),
-        source_config={"doc_class_iri": "urn:CMCReport"}, status="reviewing",
+        source_config={"mode": "doc_repo_preview", "doc_class_iri": "urn:CMCReport"},
+        status="reviewing",
     )
     db.add(job)
     db.commit()
@@ -83,9 +84,14 @@ def test_word_preview_is_model_free_and_does_not_overwrite_extraction(
     assert preview_job.status == "reviewing"
 
 
-def test_current_annotation_cache_still_returns_existing_results(
-    client, preview_job, analyst_headers,
+def test_template_default_current_annotation_cache_still_returns_existing_results(
+    client, db, preview_job, analyst_headers,
 ):
+    preview_job.source_config = {
+        **(preview_job.source_config or {}),
+        "mode": "template_default",
+    }
+    db.commit()
     cached = {
         "_version": extraction._ANNOTATOR_VERSION,
         "_parser_version": PARSER_VERSION,

@@ -10,7 +10,9 @@ from dataclasses import dataclass, field
 
 from docx import Document
 
-from app.evaluation.quality_guided_variant import build_quality_guided_variant
+from app.evaluation.legacy_quality_guided_variant import (
+    build_legacy_quality_guided_variant as build_quality_guided_variant,
+)
 from app.schemas.evidence import TaskBudget
 from app.services.extraction.extraction_tasks import GenericExtractionRunner
 from app.services.extraction.word_analysis import analyze_word_core

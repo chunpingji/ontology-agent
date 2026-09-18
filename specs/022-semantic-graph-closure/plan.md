@@ -1,0 +1,217 @@
+# Implementation Plan: 主体感知语义精排与图谱闭环
+
+**Branch**: `022-semantic-graph-closure` | **Date**: 2026-09-08 | **Spec**: [spec.md](spec.md)
+
+## Summary
+
+2026-09-14 对象识别修复按[显式对象契约](contracts/source-object-recognition.md)实施：
+新运行冻结 `source-object-recognition-v1` 与 `dependency-ready-v1`，复用现有搜索、
+字段绑定、调度和当前状态；过滤属性标签造成的关系启发式命中，扩展同字段组属性优先，
+缩短模型任务传输和语义筛选等待。工程、实际请求复原、真实模型评测与部署分别验收。
+类型粒度按用户澄清冻结 `cmc_describes_type_scope=drug-product-only-v1`：仅收敛
+CMCReport.describes 的局部菜单、模型 schema 和服务端验收到 DrugProduct，保持
+原文药品角色及描述关系独立核验。两种状态存储均恢复冻结粒度，旧协议不可跨粒度复用。
+
+2026-09-13 候选完成与租约活性修复：按[候选完成契约](contracts/candidate-completion.md)
+先修订 021 FR-022/023/029 和本规范 FR-006/AR-005/PF-009，再在新运行冻结
+`candidate_planning=sparse-candidates-v1`。共享全文只作搜索域，按实际准入候选建立
+任务/台账；策略阶段结束与全文穷尽分开。公共 progress/coverage 暴露 candidate_policy，
+progress 使用 policy_complete，前端说明实际候选口径。旧运行不改身份或预算，新策略
+须新建运行；无进展旧运行有限恢复后失败并保留制品。受控工程、专用 PostgreSQL、真实
+模型质量和生产部署分别验收；不修改历史冻结评测输出。
+
+2026-09-11 后续启用授权：默认 `enhanced`，部署增强视图及 v4 搜索但不启用未经校准的低分剪枝。实施顺序：模式契约 → 默认值/Compose 注入 → 配置、无剪枝和恢复回归 → 保存在途任务后重新部署 → 核对实际策略、数据库版本和旧运行。此前关闭态验收记录保留为历史；专家质量门仍待完成。实际结果见[部署记录](adaptive-retrieval-deployment.md)。
+
+2026-09-11 后续实施授权已交付默认关闭的 v4 工程实现。依据
+[专题方案](../../docs/剪枝和增强语义检索视图方案.md)和
+[自适应检索契约](contracts/adaptive-retrieval.md)，先完成专题 AR-P0 契约闭合，再允许
+AR-P1 改变线上准入结果；状态、空池、决策和恢复已有受控验证，样本材料与整体 P0 退出仍待完成。
+新增政策为 `heuristic-first-v4`，不覆盖 v1/v2/v3 的补位、成功停搜、快照形状与冻结测试。
+本次完成代码和隔离工程测试，未进行真实模型质量验收或部署；详见
+[实施记录](adaptive-retrieval-validation.md)。历史 P0–P5/IP/ER 完成项不作为 AR 阶段通过证据。
+
+2026-09-11按 [在线增量契约](contracts/incremental-performance.md)推进IP-001–IP-005：
+先实现有界基线/增量链及结构hash、写者缓存与原子恢复，再实现H2小批升级与失效停派，
+然后接入完整清洗字段粒度门和同源属性的有限优先，最后做冻结22 MB检查点的保存回放与定向回归。
+复用既有制品及运行表，不新增数据库结构、不修改TTL、不重启在途运行。
+
+当前实施按[证据修复契约](contracts/evidence-repair.md)推进：R0契约→R1菜单→R2属性/IR字段→
+R3证据工单/冻结重验→R4恢复/公开状态→R5工程及真实验证。旧适配器协议保留，
+新协议显式版本化，由唯一协调器提交阶段制品；共享核心不导入evaluation，TTL不改写。
+
+v6后继续修复范围误填：先以原文引用约束发现阶段的scope_qualifiers，再独立核验与归属门，
+保留条件原值和来源、版本化缓存；先覆盖无条件/真实条件/身份假条件/越权引用与旧状态反例，
+随后用新目录复测本机设备及计划路径。固定代码的重复验收不得混入v5/v6结果。
+
+2026-09-10后续按用户要求进行跨记录证据定向实证，协议见
+[joint-evidence-validation-plan.md](joint-evidence-validation-plan.md)。隔离任务驱动器
+比较现有上下文与增加互补原文的上下文，复用正式适配器、引用协议、独立验证和证明门。
+本轮不改线上识别核心，不实现自动证据分组、身份合并、持久未决重验或冲突裁决；
+源选择是登记后的诊断干预，不能替代全文启发式召回验收。父关系结果决定后续属性是否
+执行，工程受控响应与本机真实模型结果分开报告。本体零修改、离线执行、冻结新制品，
+沿用021原文权限与022必要证据闭包要求，无宪章豁免。
+
+2026-09-10后续增加用户授权的HRS-5592启发式实验，协议见
+[heuristic-validation-plan.md](heuristic-validation-plan.md)，绝对耗时和业务核对见
+[heuristic-validation.md](heuristic-validation.md)。共享核心显式开启H0/H1准入、按需H2、
+H3有界补查及补搜等待配额；默认关闭，不接受恢复输入，不改变已有运行政策hash。
+使用冻结源码/本体/原件、隔离SQLite调度和JSON观察器，主识别在途1，保留完整覆盖及
+发现/独立核验/证明门。实验不替代生产恢复、继续检索、增量仓储或T017质量验收。
+
+2026-09-10 性能增量按 spec 的 PF-001–PF-010 实施，具体契约见
+[performance.md](contracts/performance.md)，本次验证见 [performance-validation.md](performance-validation.md)。
+用户后续收紧验收为仅测试新方案，停止新旧性能对照；保留恢复等价、覆盖/费用、稳定性
+与绝对指标，体感交由用户主观评价。真实模板改为单组新方案有界测试，不运行旧配置组。
+实施顺序为基线→公共读取/前端→不可变引用→单写者确认→分词/队列→惰性前沿与模板公平。
+使用现有 PostgreSQL 制品表保存运行专属不可变块与引用；检查点显式 schema_version，
+所有引用带 artifact_id/content_hash/schema_version，随运行引用索引清理；旧格式单独解析。
+图批次同时写紧凑公共图（有效性依赖、源引用和冻结菜单）与定位索引，排序持久化同时写
+摘要；GET 仅读取制品，不回填。状态身份暴露结构/图/排序摘要版本，来源定位单独端口。
+执行器仍是唯一领域写者，工作线程只执行冻结的模型输入，经协调器队列确认预扣；
+协调器等待模型时继续 drain ranking、检查控制/租约，结果回主线程后才写图与任务状态。
+调度保存完整逻辑机会和小游标，保留既有轮转/重试次序；模板路径增强单独冻结版本。
+不修改向量精度，不引入跨运行共享或外部存储，不自动启用双任务识别。
+
+研究依据：Context7 2026-09-10 查询 TanStack Query v5 的动态 refetchInterval、enabled
+与 AbortSignal；SQLAlchemy 2.0 官方说明 Session 为线程独占状态，工作线程不携带 Session。
+宪章检查：规范/澄清先行，API契约先于实现；逐任务原子提交与源证明不变；本体零修改，
+离线零新增依赖；工程回放、专用PG并发、真实模板/质量门分别记账，无豁免。
+
+模板面板迁移增量按 [kernel-panel-migration.md](kernel-panel-migration.md) 的 M1–M5 执行，
+补齐新适配器并复用 DocumentAnalysisRun 生命周期，最终以真实模板验证新内核输出。
+2026-09-09 的模板迁移阶段仅完成工程收尾及 TDD/回归，M5 当时暂停。
+2026-09-10 性能增量另记本次无模型回放、真实排序批次实验和仍待完成的模板/质量门，
+不以工程通过替代业务金标准。
+
+在 021 唯一新核心中接入主体查询、完整视图、多路候选、池内精排和公平调度，同时补齐主体原文验证、必要闭包、迟到冲突失效、持久恢复与公共诊断。先保证确定性共同基线与闭环，再以同一执行器接入可选本地语义模型。排序永不赋予事实权限。
+
+## Technical Context
+
+- Python 3.11+；既有 FastAPI/Pydantic/SQLAlchemy，前端 Next.js/React/TypeScript，版本沿锁文件。
+- 复用 `ontology_guided` 领域核心、DocumentAnalysisRun 租约/事件/制品和当前 API。
+- 模型使用现有 semantic extra 的 Sentence Transformers，本地路径、local_files_only、trust_remote_code=False、完整文件 manifest hash；未安装或未配置时不隐式下载。
+- CPU 排序依赖和两套完整模型制品已准备并真实验证，见 [cpu-ranking.md](cpu-ranking.md)；正式质量仍依赖专家参考、独立文档及预注册验收协议。
+- CUDA 12 增量保留该 CPU 环境；另建已验证的 PyTorch `2.7.1` / `cu126` GPU 环境，使用
+  显式 `cuda:N/float16`。官方 wheel 发布与本机实测分开，状态见 [gpu-ranking.md](gpu-ranking.md)。
+- 测试采用可控逐对分数与本地模型客户端响应，不生成虚假真实模型报告。保留专用 PostgreSQL/真实浏览器的证据边界。
+- 有界初值：pool 64、batch 16、discover/counterevidence 双意图、每意图至多一模板、整记录无法容纳则 not_rerankable；阶段冷启 1:1 后 4:1，每阶段五次一次原始台账探索。
+- 精排耗时/输入对/token/重试分开计账；持久模型调度复用已有 request ticket；配置冻结到 run fingerprint。
+
+## Adaptive Retrieval Review Gate（工程已落地，质量门待验）
+
+专题任务使用 AR-P0–AR-P5 前缀，区别于 022 初始实施阶段。P0 文档写出目标契约不等于
+P0 已验收；下列代码/测试影响已按实施记录映射，样本与校准门继续约束线上启用：
+
+| 契约闭合项 | 后续代码与测试落点 | 必须保留或新增的判据 |
+|---|---|---|
+| 搜索处置和继续规则 | `heuristic_search.py`、`executor.py`、启发式/增量性能测试 | 拆分未评估/已评分待处置/软剪枝/可重激活/准入/依赖耗尽；v3 一个 supported 停搜反例原样保留；v4 多值和反证继续 |
+| 空池与活性 | `semantic_reranker.py`、`ranking_execution.py`、`executor.py`、恢复测试 | 区分新池、已评分待决策、门全拒、无可评分和技术暂停；没有 epoch 时也能持久推进或停止，不能卡在 `needs_semantic` |
+| 完整池与准入子集 | `contracts.py`、`semantic_reranker.py`、`heuristic_search.py`、排序/准入测试 | `exact_pool` 不变；小型 `AdmissionDecision` 引用 committed epoch 与 observations，校验精确子集/依赖/幂等；前置全拒不造 epoch |
+| 命中归属与组映射 | `retrieval_views.py`、`semantic_retrieval.py`、H0–H2 检索与任务测试 | 锚点级 source/context/structure 归属；组 ID 映射原始 record，重叠去重、上下文成员不自动获得 coverage |
+| v4 冻结与恢复 | `heuristic_search.py` 白名单、`resume_state`、执行冻结/状态制品、旧快照测试 | 仅 v4 写 `resume_state.schema_version=1`；旧形状/hash/省略规则不变，v1 仍不支持恢复，v2/v3 严格相等恢复不变 |
+| 持久与成本 | `ranking_execution.py`、状态制品/增量保存、费用与崩溃测试 | 门评估引用、cache hit/miss、费用和决策先持久再准入；不复制 observations/原文/向量或新增平行全量台账 |
+| 覆盖与公开投影 | 核心 `contracts.py`、`public_projection.py`、公共 schema、`frontend/src/lib/api.ts` 及实际调用方 | 新候选模式只统计实际准入任务，soft_pruned 独立诊断；policy_complete 明确非全文穷尽。旧冻结运行保留原子集关系及 adaptive_search_saturated 暂停，覆盖恒等式不变 |
+| 长输入与视图版本 | 视图构建/精排和长输入反例 | 各视图独立可用性；`not_rerankable` 不产生低分；必要来源/反证受保护；P2/P3 后重新采集影子数据 |
+| 样本与质量门 | 新验证协议和评测制品，禁止识别输入混入参考 | 两份 HRS 都是开发暴露样本；未暴露保留样本与至少三个真实新 run 分别满足；金标隔离 |
+
+设计保留 `RankingEpoch` 的 record 级全集和完整双意图评分；组视图仅改变召回入口。
+v4 根据 committed observations 派生引用式准入决定，不从 epoch 删除被拒记录。
+正常路径的 `used` 已排除历次 committed 池，风险集中在未入 epoch 的前置拒绝和新增子集
+处置链；不得以改批次缓存键为由认定正常路径反复评分。H3 当前是恢复资格后按页准入
+（默认一页32条），v4 需让软剪枝过滤与显式重激活同时约束 H0–H3。
+
+后续实施次序：AR-P0 契约与保留/新增测试映射 → AR-P1 observations 影子决策、持久屏障
+和公开诊断 → AR-P2 锚点、祖先/字段角色视图 → AR-P3 受控兄弟与组级召回 → AR-P4
+基于最终视图重新采集、校准并验证主动剪枝 → AR-P5 独立真实质量和交付。
+前置门非空只获得下一阶段资格，H2准入仍依赖完整epoch；三道门共享扩搜尝试身份，
+owner负责完成结果提交，阶段水位和技术恢复不重复计轮。任何提前启用的主动准入门也须先过 AR-P0
+及其工程/质量门，不能借 instrumentation 名义改变生产结果。
+不引入外部向量库或新的业务实体；运行身份、原文权限、本体和独立证明门保持原边界。
+
+## Constitution Check
+
+| 原则 | 设计前/后检查 |
+|---|---|
+| 规范驱动 | specify/clarify 已完成；先契约再实现；tasks 与 SR/FR 追踪 |
+| 本体权威/保真 | 不修改 TTL、domain/range 或事实提交边界 |
+| 可追溯 | 排序仅追加观察；模型/输入/政策冻结；晚到响应校验 token 与精确版本 |
+| 契约/测试 | 内部与公共契约先写；纯领域、API、恢复、前端和评分定向测试 |
+| 最小复杂度 | 无向量库、无新运行域，缓存限 run 权限域；复用事件制品 |
+| 离线 | 无隐式出网；排序可选降级与主验证失败分开 |
+
+原 022 两次设计检查均无豁免。新增 AR 设计遵守先契约、后实现及复用制品原则；
+AR-P0 闭合和实现后复审尚未验收。真实质量/发布/清理门不由本工程状态代替。
+
+## Project Structure
+
+- `backend/app/services/extraction/ontology_guided/retrieval_query.py`、`retrieval_views.py`、`semantic_retrieval.py`、`semantic_reranker.py`、`retrieval_fusion.py`：新增纯领域排序。
+- 同目录 `retrieval.py`、`scheduler.py`、`contracts.py`：完整全集、阶段/槽位/章节轮转与语义任务身份。
+- 同目录 `executor.py`、`context.py`、`model_adapter.py`、`dependencies.py`：调度接入、主体原文、必要闭包与冲突失效。
+- `backend/app/services/llm/semantic_ranking.py`：本地模型适配、离线制品及调度。
+- `backend/app/services/document_analysis/`、`backend/app/schemas/document_analysis.py`、`backend/app/config.py`：冻结配置、排序提交/恢复/只读投影。
+- `frontend/src/lib/api.ts`、`frontend/src/components/analysis/document-relationship-graph.tsx`：阶段真实执行与排序诊断。
+- `backend/app/evaluation/`：完整 tuple 引用门、检索/路径/消融指标及成本输出。
+
+## Execution and Recovery
+
+每个语义任务键仅依赖主体/谓词/record 与证明输入；不含 pool、plan 排位或 reranker。首次到达槽位惰性建池，保存完整 queries/views/epoch/observations；评分提交 hook 必须在调度消费前成功。`ranking_execution.py` 在私有线程准备，每次实际调用前由主线程持久化预扣成本屏障；其他已就绪槽位可继续执行。历史临时排除集合与每条任务结果一起保存，恢复不依赖新的线程时序。已提交结果从 checkpoint 回放，不能恢复时重新调用模型改变次序。缺少分值整池确定性降级或暂停；评分成功不更新 RecallLedger。
+
+主体原文从当前有效节点/入边的精确引用装配，为 binding only，当前 target 原文才授予新事实提议权限。已知必要来源缺失或超预算返回 incomplete；条件/反证逐字引用。迟到冲突以主体/谓词/对象或属性值及适用域建立订阅，先阻断旧候选及递归资格；保存新反证来源和未决状态，有限重验不通过即保持阻断。
+
+模型适配器以独立 discovery / verification 两次请求实现候选与验证隔离。验证输入只携带冻结候选、精确 target 及有权限的完整原文，不继承提议阶段 verdict。桥接类别必须有独立 bridge_entailment 决策。第二次请求无预算、完整上下文超限或响应目标不一致均保持未完成，不能凭提议直接入有效图。
+
+真实诊断发现模型会将文档根实体 ID 和本体类名误写为原文引用。根验证请求须明确程序绑定，并在实际响应 schema 中约束根 `subject_support=[]`；局部主体继续要求可回放归属证明。类型、归属、反证等独立 verdict 及四组 support 数组均显式必填，缺项作为协议失败，不能与模型明确返回的 undetermined 混记。根绑定不授予谓词或桥接支持。
+
+每次请求前由执行器调用 fenced 持久预扣 hook，在线保存独立 `recognition-model-calls` 制品，评测保存在独立运行目录。状态绑定 run/fingerprint，预扣历史单调追加；恢复按已完成与预扣额度的较大者约束后续调用，预扣未完成不冒充完成调用。软暂停保留刚完成的结果；owner 丢失、取消和持久化失败直接中止。全部剩余记录无法完整精排时仍进入确定性探索，明确标记不可精排且不产生精排分数。
+
+## CUDA 12 Increment
+
+1. 在既有 `LocalSemanticRanking` 和配置冻结链增加设备/dtype；按用户后续指令，应用与
+   基础 Compose 默认 CUDA 12.6/float16，CPU 以独立覆盖保留。物理卡须显式选择并通过
+   可用性、索引及实际 runtime 检查。线上、文档检查和
+   评测继续使用同一适配器，不另建识别执行器或把 GPU 写入领域证明规则。
+2. tokenizer 继续核对完整输入和真实长度；模型在冻结目标设备/dtype 上加载，权重读取
+   前重验 manifest。embedding 保持 L2、reranker 保持原始单 logit；检查有限性、形状与
+   全部输入对应，不以 FP16 作为允许截断或缺项的理由。
+3. 模型身份冻结设备/dtype、包版本、实际 CUDA runtime、驱动/卡型及影响推理的数值
+   政策；运行记录关联实际设备。CPU/GPU 或数值环境漂移要求新运行，不复用旧向量、
+   分值或提交身份。同一环境的已提交 epoch 仍无调用恢复。
+4. GPU 初始化失败、OOM、非法输出按技术失败处理，只允许既有整池暂停/确定性降级；
+   不隐式改为 CPU 语义推理、不保留部分分数。超时、取消和租约丢失终止并回收私有
+   worker 后释放调度槽，失败仍写调用/预扣与可核对原因。
+5. GPU 依赖、完整模型制品和 CPU 环境各自冻结。先做受影响回归与真实合成冒烟，再用
+   同一 prepared DOCX、显式谓词、完整共同记录池验证 CPU/GPU。输入/预算一致时分列
+   冷加载、热态、排队、请求、总墙钟与内存；先验证输入身份，再计算分数/排名差异。
+6. 固定池 A–D 仍要求共同数值环境。设备/dtype 对照另登记比较因素；不放宽既有共同
+   环境验证来接纳混合 CPU/GPU 组，T017 的专家材料和正式质量门保持原要求。
+
+## Dependencies and Ownership
+
+T041 预算开关增量：新增 run 独立布尔字段及 Alembic 迁移（旧运行默认 true），复用控制
+端口的 owner/角色、CAS、幂等与审计。领域 `RankingService.budget_enabled` 不进入
+RankingPolicy/模型身份/fingerprint；恢复以当前 run 控制值优先于旧 snapshot。
+关闭期间停止预算预扣、累计量及预算观察追加，缓存和语义结果仍持久化；每轮显式区分
+未记账与零成本。只允许暂停/可恢复失败态修改，运行中先走现有软暂停边界。
+前端通过同源 API 提供启用/禁用操作及状态；实际部署后以无模型调用的开关往返验证可用性。
+
+本轮暂停修复（T040）：领域层追加明确未派发回执并复用原预留；执行器只在终态计算
+停止原因，应用响应叠加当前暂停/恢复状态而不改 checkpoint；UI 以中文解释具体排序原因。
+专项测试覆盖屏障超时、恢复崩溃、旧状态不补造额度、终态与 API 快照一致性。
+
+1. 规范、研究、数据模型、契约与任务先完成。
+2. 排序领域/调度、离线适配/评分、在线/API/UI 可以按文件独立实现；executor 集成由主代理串行完成。
+3. 关键输入/顺序/恢复/证明反例先于实现或与对应实现同批建立，最终组合测试核对公共图谱水位。
+4. 真实质量先冻结独立标注与主指标；CPU 制品已就绪，缺专家标注和协议时保留 pending。P5 可选补充精排另列，不让其阻塞首期必要闭包。
+5. CUDA 增量由 T032 文档契约 → T033 适配器/冻结链，T034 隔离环境可并行；两者齐备后
+   执行 T035 回归与 T036 同文档真实对照。只按实际结果更新 GPU 验收记录。
+
+
+后续低分剪枝授权：契约新增 trial → 保守后置门/公开待校准标记 → 本机模型分数冒烟与开发阈值制品 → 回归及配置核验 → 保存活动任务后部署并恢复原策略。独立专家验收继续待完成。
+
+低分剪枝试运行已按进一步授权实现并部署，54 项相关后端测试及前端检查通过；详见[启用记录](pruning-trial-deployment.md)。独立质量门仍待验。
+
+## 当前状态实施计划（2026-09-13）
+
+按已授权的[状态简化分析](../../docs/关系图谱暂停继续的状态存储简化分析.md)实施新冻结格式。复用运行入口和候选/证明版本表，新增按运行/业务键覆盖的当前分区，以及独立结果和请求行；不生成 state_block、前驱链或周期基线。执行器直接输出变化的业务分区并直接加载完整运行状态。展示只保存最新缓存。任务工作版本与公开控制版本分离；现有协调线程在事务内提交变化及小型批次回执。候选原始任务和修复基线独立于旧检查点。
+
+实施次序：明确契约 → 当前状态与恢复 → 分区/结果/请求存储及迁移 → 展示和审核修复 → 定向回归和规模检查。无新依赖、模型服务或运行清理；本体定义及识别义务不变。宪章检查：复用服务/数据库/执行权，原文证明和既有审核不变，仅按暂停继续需求实现必要原子边界。

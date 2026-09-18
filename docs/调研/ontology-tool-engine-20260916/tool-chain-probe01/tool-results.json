@@ -1,0 +1,56 @@
+[
+  {
+    "attempt": 1,
+    "call_id": "call_HH2X4QOGUR3CDWRus6NH3UlP0vHbYm2K",
+    "tool_name": "propose_mentions",
+    "result": {
+      "status": "blocked",
+      "data": null,
+      "evidence_refs": [],
+      "issues": [
+        {
+          "code": "result_budget_exceeded",
+          "field_path": null,
+          "message": "检查未通过：result_budget_exceeded；请核对当前授权引用和参数。",
+          "evidence_ids": []
+        }
+      ]
+    }
+  },
+  {
+    "attempt": 2,
+    "call_id": "call_1Cz6rgnbtQgsiOFGal04fSddv468u1tK",
+    "tool_name": "resolve_source_anchor",
+    "result": {
+      "status": "blocked",
+      "data": null,
+      "evidence_refs": [],
+      "issues": [
+        {
+          "code": "citation_quote_not_in_source",
+          "field_path": null,
+          "message": "检查未通过：citation_quote_not_in_source；请核对当前授权引用和参数。",
+          "evidence_ids": []
+        }
+      ]
+    }
+  },
+  {
+    "attempt": 3,
+    "call_id": "call_6Y7lvjGBVMllDmZx8PGp88yEeuRbPnSO",
+    "tool_name": "query_instances",
+    "result": {
+      "status": "blocked",
+      "data": null,
+      "evidence_refs": [],
+      "issues": [
+        {
+          "code": "reference_outside_scope",
+          "field_path": "/mention_ref",
+          "message": "检查未通过：reference_outside_scope；请核对当前授权引用和参数。",
+          "evidence_ids": []
+        }
+      ]
+    }
+  }
+]

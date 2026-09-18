@@ -1,0 +1,261 @@
+{
+  "recognition_run_id": "d231338c-f96f-436a-b759-85fc5610578c",
+  "source_record_count": 149,
+  "method": "Frozen input, in-memory assemble_context and _inspect_evidence; no model request or persistence; evidence_repair disabled as frozen.",
+  "failures": [
+    {
+      "task_id": "cb643bfd5605db6bf771b523f5128b4a3f399db5bf17ccb0dc2c6f76e7f1dfd6",
+      "lineage_id": "a7b79f0fa46d9e95aea1899310d010f9e7dfe2c05338c0e2fa15684625acd73d",
+      "predicate": "https://ontology.pharma-gmp.cn/slpra/drug-development/describes",
+      "reproduced": "_ToolFailure",
+      "fragment_count": 47,
+      "bad_fragments": [
+        {
+          "error": "_ToolFailure",
+          "code": "evidence_record_ambiguous",
+          "purpose": "named_object_binding",
+          "evidence_id": "a12ea4599752196aea860348b9925591aef4cb8e012bfebbbdcb083b39ee0cc2",
+          "record_matches": 0
+        },
+        {
+          "error": "_ToolFailure",
+          "code": "evidence_record_ambiguous",
+          "purpose": "named_object_binding",
+          "evidence_id": "fa900f648603f265958d08e5063a924de88fc4142d3663f0a4ee36169ef37ee1",
+          "record_matches": 0
+        },
+        {
+          "error": "_ToolFailure",
+          "code": "evidence_record_ambiguous",
+          "purpose": "named_object_binding",
+          "evidence_id": "8cc28cce152dbe727e4a375f773d586f37d9d4bb4d8bccba332d77b3d6ca3ca6",
+          "record_matches": 0
+        },
+        {
+          "error": "_ToolFailure",
+          "code": "evidence_record_ambiguous",
+          "purpose": "named_object_binding",
+          "evidence_id": "5c23d3a2303fc88cbe84bc0ad47d48c51f07ad2285cce87f7548ebf4b9b96192",
+          "record_matches": 0
+        },
+        {
+          "error": "_ToolFailure",
+          "code": "evidence_record_ambiguous",
+          "purpose": "named_object_binding",
+          "evidence_id": "2f9f696b0134f4dbc67e0536063fdd664c3a5e5c56a585adc0e1608cf46a3e11",
+          "record_matches": 0
+        },
+        {
+          "error": "_ToolFailure",
+          "code": "evidence_record_ambiguous",
+          "purpose": "named_object_binding",
+          "evidence_id": "0ae03597d320b90652dab7a27235796a3883ec381127a7344b1bfc08af0e2eab",
+          "record_matches": 0
+        },
+        {
+          "error": "_ToolFailure",
+          "code": "evidence_record_ambiguous",
+          "purpose": "named_object_binding",
+          "evidence_id": "4262f85d49a94908139a302aeb41a578563158bb342afd6504cdd104ac228fa1",
+          "record_matches": 5
+        },
+        {
+          "error": "_ToolFailure",
+          "code": "evidence_record_ambiguous",
+          "purpose": "named_object_binding",
+          "evidence_id": "2ea01240b7f712bceef471a4bb214d1b0cb5d9705e7c87da7c36bdbb518482e8",
+          "record_matches": 5
+        },
+        {
+          "error": "_ToolFailure",
+          "code": "evidence_record_ambiguous",
+          "purpose": "named_object_binding",
+          "evidence_id": "2fed08fd7ad3c191f0295614d0faac007feb9731a3052a954f58149f19fabbb6",
+          "record_matches": 5
+        },
+        {
+          "error": "_ToolFailure",
+          "code": "evidence_record_ambiguous",
+          "purpose": "named_object_binding",
+          "evidence_id": "90afd40e5594e0e6a815a0a6687aa8c48b9a7049d70e4f9dc95447fda08a9c04",
+          "record_matches": 5
+        },
+        {
+          "error": "_ToolFailure",
+          "code": "evidence_record_ambiguous",
+          "purpose": "named_object_binding",
+          "evidence_id": "38b99c7aac6eaf4c89eaf90a232ec94890964253d53d1cea4ed5de2f12f0b02c",
+          "record_matches": 6
+        },
+        {
+          "error": "_ToolFailure",
+          "code": "evidence_record_ambiguous",
+          "purpose": "named_object_binding",
+          "evidence_id": "b7775151145670f10365ebd540881f1ce70743f04be019862f73ae4ce103c35b",
+          "record_matches": 6
+        },
+        {
+          "error": "_ToolFailure",
+          "code": "evidence_record_ambiguous",
+          "purpose": "named_object_binding",
+          "evidence_id": "754b036a6f97123058d503599be2a9d34a660555f50b67d8fa270c2f9b44dcf9",
+          "record_matches": 6
+        },
+        {
+          "error": "_ToolFailure",
+          "code": "evidence_record_ambiguous",
+          "purpose": "named_object_binding",
+          "evidence_id": "5ebc2d42dd375ce8d23c1eca0ddc035303da7cecd701f03b35cdad81a3ff5534",
+          "record_matches": 6
+        },
+        {
+          "error": "_ToolFailure",
+          "code": "evidence_record_ambiguous",
+          "purpose": "named_object_binding",
+          "evidence_id": "79d06a076ca6a2c99a748887abb78495d584259c38f8ea1777673e89b2d41813",
+          "record_matches": 6
+        },
+        {
+          "error": "_ToolFailure",
+          "code": "evidence_record_ambiguous",
+          "purpose": "named_object_binding",
+          "evidence_id": "0d9c1dc47f6f7fc4670cc26d1638123bd61fc2b2516f8ce5b017e34656289323",
+          "record_matches": 2
+        },
+        {
+          "error": "_ToolFailure",
+          "code": "evidence_record_ambiguous",
+          "purpose": "named_object_binding",
+          "evidence_id": "35cfa52b5e290de29a59e39e8a660defd7e11f4032e16d0d37db677b179a6731",
+          "record_matches": 2
+        }
+      ]
+    },
+    {
+      "task_id": "523752e515e14b59a4f968f259bc35d87d48af4efbbcfd2b77b6f90947a6e30e",
+      "lineage_id": "7a576f995595b002a96f5c5f0836c520e05eb3c98aaafbfcd28da4a6cdeec8a9",
+      "predicate": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasCleaningResidue",
+      "reproduced": "_ToolFailure",
+      "fragment_count": 2,
+      "bad_fragments": [
+        {
+          "error": "_ToolFailure",
+          "code": "evidence_record_ambiguous",
+          "purpose": "named_object_binding",
+          "evidence_id": "4093590603a5b5d8b2627f7047f508d7f37bef5d32766a2b552924c3af3dcfcd",
+          "record_matches": 0
+        }
+      ]
+    },
+    {
+      "task_id": "9ad5316437ecbf8fd66603c47b8132a41af8742ba1184292dcaa3ba6c7e84d10",
+      "lineage_id": "88e38abf52e8453424ec687c0e56d7ce4e4dc8556fa0af94e8787b10b660ef4c",
+      "predicate": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasCleaningResidue",
+      "reproduced": "_ToolFailure",
+      "fragment_count": 9,
+      "bad_fragments": [
+        {
+          "error": "_ToolFailure",
+          "code": "evidence_record_ambiguous",
+          "purpose": "named_object_binding",
+          "evidence_id": "0982b44140051e04a16c949fc7c0ff12ae0dd78fc68353cf84c81a7e65450539",
+          "record_matches": 0
+        },
+        {
+          "error": "_ToolFailure",
+          "code": "evidence_record_ambiguous",
+          "purpose": "named_object_binding",
+          "evidence_id": "2bbec1f0e8afae9e27d7fe20d6463b08163fad8eb1d49af15e16d7dfb98fc686",
+          "record_matches": 0
+        }
+      ]
+    },
+    {
+      "task_id": "c0975c723cabf533936e73a761f900b3a23365c0335e2a88290dad19b317d596",
+      "lineage_id": "a122aca8b1e9a348409905da4e93cf8e3174c3e56697d9085f5d7260ebc94b37",
+      "predicate": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasDegradationPathway",
+      "reproduced": "_ToolFailure",
+      "fragment_count": 8,
+      "bad_fragments": [
+        {
+          "error": "_ToolFailure",
+          "code": "evidence_record_ambiguous",
+          "purpose": "named_object_binding",
+          "evidence_id": "3d9dcb507a73afd23885d58bd750c164f0a76068c375b5bd3b3658609c98a65f",
+          "record_matches": 0
+        }
+      ]
+    },
+    {
+      "task_id": "e26597b87ddbec390473c7c22e87c9fe3b377e8bd63be8e6dbf94dbf3fb90f9a",
+      "lineage_id": "5000989f9a80e26932169623d88819a417de63d06e08d40ce911c1e0e867fe5d",
+      "predicate": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasDegradationPathway",
+      "reproduced": "_ToolFailure",
+      "fragment_count": 8,
+      "bad_fragments": [
+        {
+          "error": "_ToolFailure",
+          "code": "evidence_record_ambiguous",
+          "purpose": "named_object_binding",
+          "evidence_id": "3d9dcb507a73afd23885d58bd750c164f0a76068c375b5bd3b3658609c98a65f",
+          "record_matches": 0
+        }
+      ]
+    },
+    {
+      "task_id": "6bd1a11e8187eb3e58d0567f8080eef511216a2ecbf6ee58884f5a7c8673bf5c",
+      "lineage_id": "2dcf6e6e100d6cdc8d46687ea8bcdb4512c958686f9d7613304688423579104e",
+      "predicate": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasCleaningResidue",
+      "reproduced": "_ToolFailure",
+      "fragment_count": 9,
+      "bad_fragments": [
+        {
+          "error": "_ToolFailure",
+          "code": "evidence_record_ambiguous",
+          "purpose": "named_object_binding",
+          "evidence_id": "0982b44140051e04a16c949fc7c0ff12ae0dd78fc68353cf84c81a7e65450539",
+          "record_matches": 0
+        },
+        {
+          "error": "_ToolFailure",
+          "code": "evidence_record_ambiguous",
+          "purpose": "named_object_binding",
+          "evidence_id": "2bbec1f0e8afae9e27d7fe20d6463b08163fad8eb1d49af15e16d7dfb98fc686",
+          "record_matches": 0
+        }
+      ]
+    },
+    {
+      "task_id": "33d9d766e953f74853f0a418b168f5ff553afce112b40d74355447b00a71879b",
+      "lineage_id": "cfc6e8214807cc05c92ee0c09ecd05b53316c504decdeb45657969cf3e5d92fd",
+      "predicate": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasDegradationPathway",
+      "reproduced": "_ToolFailure",
+      "fragment_count": 8,
+      "bad_fragments": [
+        {
+          "error": "_ToolFailure",
+          "code": "evidence_record_ambiguous",
+          "purpose": "named_object_binding",
+          "evidence_id": "3d9dcb507a73afd23885d58bd750c164f0a76068c375b5bd3b3658609c98a65f",
+          "record_matches": 0
+        }
+      ]
+    },
+    {
+      "task_id": "b202b2416bd9526b2a46f2bf1ed405ae1e250f9ae0efd684d7e975d8f5c8beb3",
+      "lineage_id": "3db3c4cac1a407076181b99d5960ad7587a9d4e42fa8464d4d1e632d1acc462f",
+      "predicate": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasDegradationPathway",
+      "reproduced": "_ToolFailure",
+      "fragment_count": 8,
+      "bad_fragments": [
+        {
+          "error": "_ToolFailure",
+          "code": "evidence_record_ambiguous",
+          "purpose": "named_object_binding",
+          "evidence_id": "3d9dcb507a73afd23885d58bd750c164f0a76068c375b5bd3b3658609c98a65f",
+          "record_matches": 0
+        }
+      ]
+    }
+  ]
+}

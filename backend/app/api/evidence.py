@@ -26,7 +26,7 @@ from app.models.evidence import (
     EvidenceCommit,
     EvidenceJobState,
 )
-from app.models.extraction import ExtractionJob
+from app.models.extraction import AnnotationExecution, ExtractionJob
 from app.schemas.evidence import Candidate, CandidateRef, EvidenceModel
 from app.services.extraction.candidate_store import CandidateConflict, CandidateStore
 from app.services.extraction.candidate_validation import validate_entered_candidate
@@ -124,6 +124,9 @@ def _job(db, job_id):
     job = db.get(ExtractionJob, job_id)
     if job is None:
         raise HTTPException(404, "extraction job not found")
+    from app.api.extraction import _require_result_capability
+
+    _require_result_capability(job)
     return job
 
 
@@ -227,7 +230,7 @@ def _graph_schema(job, candidates, schema):
 @router.get("/jobs/{job_id}/evidence")
 @profiled("evidence_read")
 def list_evidence(job_id: UUID, db: Session = Depends(get_db), engine=Depends(get_ontology_engine),
-                  debug: bool = False):
+                  debug: bool = False, view: Literal["all", "latest_run"] = "all"):
     from app.services.reasoning.calculation_review import job_calculations
     from app.services.reasoning.rule_service import required_checks
 
@@ -251,16 +254,28 @@ def list_evidence(job_id: UUID, db: Session = Depends(get_db), engine=Depends(ge
         versions = [run["extractor_version"]]
     schema = semantic_schema_from_engine(engine)
     candidates = CandidateStore(db).list(job_id)
+    if view == "latest_run" and run is not None and "candidates" in run:
+        active_ids = {candidate["candidate_id"] for candidate in run["candidates"]}
+        # Read the current stored revisions so user review/edits remain visible.
+        # Historical runs stay in the store and the default all-candidate view.
+        candidates = [candidate for candidate in candidates
+                      if candidate.candidate_id in active_ids]
     labels = {}
     for iri, definition in schema.items():
         labels[iri] = definition.get("label")
         for predicate in [*definition.get("properties", []), *definition.get("relationships", [])]:
             labels[predicate["iri"]] = predicate.get("label")
     graph_schema = _graph_schema(job, candidates, schema)
+    execution = db.get(AnnotationExecution, job_id, populate_existing=True)
+    from app.services.extraction.annotation_execution import public_progress
+
+    execution_status = ((public_progress(db, job_id) or {}).get("status", execution.status)
+                        if execution else None)
     return {
         "schema_version": 1,
         "candidates": [_candidate_json(c, labels) for c in candidates],
         "graph_schema": graph_schema,
+        "execution_status": execution_status,
         "calculation_required": bool(required_checks([
             {"source_slot_id": "document", "class_iri": graph_schema["document_class_iri"]}
         ])),
@@ -568,6 +583,9 @@ def review_candidate(
         store = CandidateStore(db)
         current = store.get(candidate_id)
         row = db.get(EvidenceCandidateRecord, candidate_id)
+        if row is None:
+            raise LookupError("candidate not found")
+        _job(db, row.job_id)
         edits = req.edited_payload
         if edits is not None:
             allowed = {
@@ -628,6 +646,9 @@ def resolve_candidate(
         store = CandidateStore(db)
         store.get(candidate_id)
         row = db.get(EvidenceCandidateRecord, candidate_id)
+        if row is None:
+            raise LookupError("candidate not found")
+        _job(db, row.job_id)
         return _candidate_json(
             store.resolve(
                 candidate_id,
@@ -663,6 +684,7 @@ def get_commit(commit_id: str, db: Session = Depends(get_db)):
     commit = db.get(EvidenceCommit, commit_id, populate_existing=True)
     if commit is None:
         raise HTTPException(404, "commit not found")
+    _job(db, commit.job_id)
     return _commit_json(commit)
 
 
@@ -698,6 +720,7 @@ def get_provenance(assertion_id: str, db: Session = Depends(get_db)):
     commit = db.get(EvidenceCommit, assertion.commit_id) if assertion else None
     if assertion is None or commit is None or commit.status != "succeeded":
         raise HTTPException(404, "published assertion not found")
+    _job(db, commit.job_id)
     candidate = Candidate.model_validate(assertion.payload["candidate"])
     replays = []
     for source in candidate.provenance:

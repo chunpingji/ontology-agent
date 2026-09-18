@@ -30,7 +30,10 @@ def unresolved_template(db, evidence_api_job):
     row = AstTemplate(name="Migrated draft", version="v2.2", schema_json=schema, status="draft")
     db.add(row)
     db.flush()
-    evidence_api_job.source_config = {"template_id": str(row.id)}
+    evidence_api_job.source_config = {
+        **(evidence_api_job.source_config or {}),
+        "template_id": str(row.id),
+    }
     db.commit()
     return row
 
@@ -78,7 +81,7 @@ def test_other_configuration_requirements_are_actionable(
     client, db, analyst_headers, evidence_api_job, unresolved_template, kind
 ):
     if kind == "missing":
-        evidence_api_job.source_config = {}
+        evidence_api_job.source_config = {"mode": "template_default"}
         code, target = "TEMPLATE_NOT_FOUND", None
     elif kind == "legacy":
         unresolved_template.schema_json = {"sections": []}

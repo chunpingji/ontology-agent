@@ -42,6 +42,9 @@ export function formatRelationSourceRef(
   if (typeof ref.section === "string" && ref.section.trim()) {
     parts.push(`§ ${ref.section.trim()}`);
   }
+  if (typeof ref.paragraph_index === "number" && Number.isInteger(ref.paragraph_index)) {
+    parts.push(`段落 ${ref.paragraph_index + 1}`);
+  }
 
   const table = numericPart(ref, "table", "表");
   const row = numericPart(ref, "row", "行");

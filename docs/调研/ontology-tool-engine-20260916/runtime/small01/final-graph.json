@@ -1,0 +1,371 @@
+{
+  "contract_version": "document-analysis-runs-v1",
+  "recognition_run_id": "ontology-tool-cmc-20260916-small01",
+  "run_revision": 0,
+  "event_head": 3,
+  "metadata_snapshot_id": "fd782f2db11d28a01e27bcddcbc0f1a710c204541f4823eb5ade472fb9694ec8",
+  "root_ref": {
+    "id": "040592c63f6f69e174a82e88dbd1311410ef65f9e8c9864e20d301ecf3e27606",
+    "revision": 1
+  },
+  "projection": "verified",
+  "projection_policy": "ontology-tool-graph-v1",
+  "artifact_status": "partial",
+  "nodes": [
+    {
+      "entity_id": "040592c63f6f69e174a82e88dbd1311410ef65f9e8c9864e20d301ecf3e27606",
+      "revision": 1,
+      "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport",
+      "class_label": "CMC 报告",
+      "label": "source.docx",
+      "root": true,
+      "root_origin": "user_specified",
+      "identity_status": "document_local",
+      "decision_status": "supported",
+      "independent_review": "unreviewed",
+      "evidence_refs": [],
+      "grounding_kind": "document_root"
+    }
+  ],
+  "edges": [],
+  "properties": [],
+  "coverage": [
+    {
+      "retrieval_diagnostics": null,
+      "candidate_policy": null,
+      "subject_ref": {
+        "id": "040592c63f6f69e174a82e88dbd1311410ef65f9e8c9864e20d301ecf3e27606",
+        "revision": 1
+      },
+      "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/describes",
+      "predicate_label": "描述",
+      "phase1": 26,
+      "phase2": 60,
+      "examined": 0,
+      "incomplete": 1,
+      "unattempted": 85,
+      "unresolved_claims": 0,
+      "executed_phase_counts": {
+        "phase1": 1,
+        "phase2": 0
+      },
+      "pending_frontiers": 85,
+      "stop_reason": "task_budget_exhausted",
+      "scope": {
+        "scope_id": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "members": []
+      }
+    },
+    {
+      "retrieval_diagnostics": null,
+      "candidate_policy": null,
+      "subject_ref": {
+        "id": "040592c63f6f69e174a82e88dbd1311410ef65f9e8c9864e20d301ecf3e27606",
+        "revision": 1
+      },
+      "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasCleaningMethod",
+      "predicate_label": "含清洗方法",
+      "phase1": 0,
+      "phase2": 86,
+      "examined": 0,
+      "incomplete": 1,
+      "unattempted": 85,
+      "unresolved_claims": 0,
+      "executed_phase_counts": {
+        "phase1": 0,
+        "phase2": 1
+      },
+      "pending_frontiers": 86,
+      "stop_reason": "task_budget_exhausted",
+      "scope": {
+        "scope_id": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "members": []
+      }
+    },
+    {
+      "retrieval_diagnostics": null,
+      "candidate_policy": null,
+      "subject_ref": {
+        "id": "040592c63f6f69e174a82e88dbd1311410ef65f9e8c9864e20d301ecf3e27606",
+        "revision": 1
+      },
+      "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasCleaningResidue",
+      "predicate_label": "含清洗残留物",
+      "phase1": 6,
+      "phase2": 80,
+      "examined": 0,
+      "incomplete": 0,
+      "unattempted": 86,
+      "unresolved_claims": 0,
+      "executed_phase_counts": {
+        "phase1": 0,
+        "phase2": 0
+      },
+      "pending_frontiers": 86,
+      "stop_reason": "task_budget_exhausted",
+      "scope": {
+        "scope_id": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "members": []
+      }
+    },
+    {
+      "retrieval_diagnostics": null,
+      "candidate_policy": null,
+      "subject_ref": {
+        "id": "040592c63f6f69e174a82e88dbd1311410ef65f9e8c9864e20d301ecf3e27606",
+        "revision": 1
+      },
+      "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasDegradationPathway",
+      "predicate_label": "含降解途径",
+      "phase1": 2,
+      "phase2": 84,
+      "examined": 0,
+      "incomplete": 0,
+      "unattempted": 86,
+      "unresolved_claims": 0,
+      "executed_phase_counts": {
+        "phase1": 0,
+        "phase2": 0
+      },
+      "pending_frontiers": 86,
+      "stop_reason": "task_budget_exhausted",
+      "scope": {
+        "scope_id": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "members": []
+      }
+    },
+    {
+      "retrieval_diagnostics": null,
+      "candidate_policy": null,
+      "subject_ref": {
+        "id": "040592c63f6f69e174a82e88dbd1311410ef65f9e8c9864e20d301ecf3e27606",
+        "revision": 1
+      },
+      "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasProductionPlan",
+      "predicate_label": "含备样生产计划",
+      "phase1": 0,
+      "phase2": 86,
+      "examined": 0,
+      "incomplete": 0,
+      "unattempted": 86,
+      "unresolved_claims": 0,
+      "executed_phase_counts": {
+        "phase1": 0,
+        "phase2": 0
+      },
+      "pending_frontiers": 86,
+      "stop_reason": "task_budget_exhausted",
+      "scope": {
+        "scope_id": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "members": []
+      }
+    },
+    {
+      "retrieval_diagnostics": null,
+      "candidate_policy": null,
+      "subject_ref": {
+        "id": "040592c63f6f69e174a82e88dbd1311410ef65f9e8c9864e20d301ecf3e27606",
+        "revision": 1
+      },
+      "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasProductionRiskAssessment",
+      "predicate_label": "含生产风险评估",
+      "phase1": 0,
+      "phase2": 86,
+      "examined": 0,
+      "incomplete": 0,
+      "unattempted": 86,
+      "unresolved_claims": 0,
+      "executed_phase_counts": {
+        "phase1": 0,
+        "phase2": 0
+      },
+      "pending_frontiers": 86,
+      "stop_reason": "task_budget_exhausted",
+      "scope": {
+        "scope_id": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "members": []
+      }
+    },
+    {
+      "retrieval_diagnostics": null,
+      "candidate_policy": null,
+      "subject_ref": {
+        "id": "040592c63f6f69e174a82e88dbd1311410ef65f9e8c9864e20d301ecf3e27606",
+        "revision": 1
+      },
+      "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasQualityRiskAssessment",
+      "predicate_label": "含质量风险评估",
+      "phase1": 0,
+      "phase2": 86,
+      "examined": 0,
+      "incomplete": 0,
+      "unattempted": 86,
+      "unresolved_claims": 0,
+      "executed_phase_counts": {
+        "phase1": 0,
+        "phase2": 0
+      },
+      "pending_frontiers": 86,
+      "stop_reason": "task_budget_exhausted",
+      "scope": {
+        "scope_id": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "members": []
+      }
+    },
+    {
+      "retrieval_diagnostics": null,
+      "candidate_policy": null,
+      "subject_ref": {
+        "id": "040592c63f6f69e174a82e88dbd1311410ef65f9e8c9864e20d301ecf3e27606",
+        "revision": 1
+      },
+      "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasSafetyRiskAssessment",
+      "predicate_label": "含安全风险评估",
+      "phase1": 9,
+      "phase2": 77,
+      "examined": 0,
+      "incomplete": 0,
+      "unattempted": 86,
+      "unresolved_claims": 0,
+      "executed_phase_counts": {
+        "phase1": 0,
+        "phase2": 0
+      },
+      "pending_frontiers": 86,
+      "stop_reason": "task_budget_exhausted",
+      "scope": {
+        "scope_id": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "members": []
+      }
+    },
+    {
+      "retrieval_diagnostics": null,
+      "candidate_policy": null,
+      "subject_ref": {
+        "id": "040592c63f6f69e174a82e88dbd1311410ef65f9e8c9864e20d301ecf3e27606",
+        "revision": 1
+      },
+      "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasSharedLineData",
+      "predicate_label": "含共线评估数据",
+      "phase1": 13,
+      "phase2": 73,
+      "examined": 0,
+      "incomplete": 0,
+      "unattempted": 86,
+      "unresolved_claims": 0,
+      "executed_phase_counts": {
+        "phase1": 0,
+        "phase2": 0
+      },
+      "pending_frontiers": 86,
+      "stop_reason": "task_budget_exhausted",
+      "scope": {
+        "scope_id": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "members": []
+      }
+    },
+    {
+      "retrieval_diagnostics": null,
+      "candidate_policy": null,
+      "subject_ref": {
+        "id": "040592c63f6f69e174a82e88dbd1311410ef65f9e8c9864e20d301ecf3e27606",
+        "revision": 1
+      },
+      "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasStorageCondition",
+      "predicate_label": "存放条件",
+      "phase1": 2,
+      "phase2": 84,
+      "examined": 0,
+      "incomplete": 0,
+      "unattempted": 86,
+      "unresolved_claims": 0,
+      "executed_phase_counts": {
+        "phase1": 0,
+        "phase2": 0
+      },
+      "pending_frontiers": 86,
+      "stop_reason": "task_budget_exhausted",
+      "scope": {
+        "scope_id": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "members": []
+      }
+    },
+    {
+      "retrieval_diagnostics": null,
+      "candidate_policy": null,
+      "subject_ref": {
+        "id": "040592c63f6f69e174a82e88dbd1311410ef65f9e8c9864e20d301ecf3e27606",
+        "revision": 1
+      },
+      "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasSynthesisRoute",
+      "predicate_label": "含合成路线",
+      "phase1": 2,
+      "phase2": 84,
+      "examined": 0,
+      "incomplete": 0,
+      "unattempted": 86,
+      "unresolved_claims": 0,
+      "executed_phase_counts": {
+        "phase1": 0,
+        "phase2": 0
+      },
+      "pending_frontiers": 86,
+      "stop_reason": "task_budget_exhausted",
+      "scope": {
+        "scope_id": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "members": []
+      }
+    },
+    {
+      "retrieval_diagnostics": null,
+      "candidate_policy": null,
+      "subject_ref": {
+        "id": "040592c63f6f69e174a82e88dbd1311410ef65f9e8c9864e20d301ecf3e27606",
+        "revision": 1
+      },
+      "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/usesEquipment",
+      "predicate_label": "使用设备",
+      "phase1": 12,
+      "phase2": 74,
+      "examined": 0,
+      "incomplete": 0,
+      "unattempted": 86,
+      "unresolved_claims": 0,
+      "executed_phase_counts": {
+        "phase1": 0,
+        "phase2": 0
+      },
+      "pending_frontiers": 86,
+      "stop_reason": "task_budget_exhausted",
+      "scope": {
+        "scope_id": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "members": []
+      }
+    }
+  ],
+  "progress": {
+    "tasks_attempted": 2,
+    "model_calls": 6,
+    "model_calls_reserved": 6,
+    "model_calls_unresolved": 0,
+    "records_planned": 1032,
+    "records_examined": 0,
+    "records_incomplete": 2,
+    "records_unattempted": 1030,
+    "phase_counts": {
+      "phase1": 1,
+      "phase2": 1
+    },
+    "supported": 0,
+    "unsupported": 0,
+    "undetermined": 0,
+    "pending_frontiers": 1031,
+    "unresolved_claims": 0,
+    "invalidated_count": 0,
+    "stop_reason": "task_budget_exhausted",
+    "completion": "incomplete",
+    "contract_version": "document-analysis-runs-v1"
+  },
+  "generated_from_hash": "a8959c6b8092d54d4493f6e8a0874452c2c7386abf7e323762e3e904477d1ef8",
+  "relationship_groups": []
+}

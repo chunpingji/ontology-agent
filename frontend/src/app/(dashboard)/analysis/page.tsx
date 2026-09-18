@@ -22,7 +22,7 @@ export default function AnalysisPage() {
         </Link>
       </div>
       <p className="mb-5 text-sm text-muted-foreground">
-        风险推理、图谱查询，以及独立于抽取作业和知识图谱的 Word 即时结构分析。
+        风险推理、图谱查询，以及由本体类型指引的 Word 分层元数据与关系图谱分析。
       </p>
 
       <Suspense fallback={<AnalysisTabsFallback />}>

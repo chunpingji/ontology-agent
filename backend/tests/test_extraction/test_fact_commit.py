@@ -4,6 +4,7 @@ import owlready2
 import pytest
 from rdflib import OWL, RDF, RDFS, XSD, URIRef
 
+from app.models.evidence import EvidenceCommit
 from app.models.extraction import ExtractionJob
 from app.schemas.evidence import (
     BindingEvidence,
@@ -19,7 +20,12 @@ from app.services.ontology_instance_writer import EvidenceInstanceWriter
 
 @pytest.fixture
 def evidence_job(db):
-    job = ExtractionJob(id=uuid.uuid4(), source_type="word", status="completed")
+    job = ExtractionJob(
+        id=uuid.uuid4(),
+        source_type="word",
+        source_config={"mode": "template_default"},
+        status="completed",
+    )
     db.add(job)
     db.commit()
     return job
@@ -115,6 +121,48 @@ def prepare(db, job):
         store.review(c.candidate_id, c.revision, "confirmed", "已核对", "analyst")
         for c in candidates
     ]
+
+
+def test_startup_recovery_skips_retired_word_commit_writers(db, evidence_job):
+    retired = ExtractionJob(
+        id=uuid.uuid4(),
+        source_type="word",
+        source_config={"mode": "auto"},
+        status="completed",
+    )
+    excel = ExtractionJob(id=uuid.uuid4(), source_type="excel", status="completed")
+    db.add_all([retired, excel])
+    db.flush()
+
+    def queued(identity, job_id):
+        return EvidenceCommit(
+            id=identity,
+            job_id=job_id,
+            idempotency_key=identity,
+            content_hash=identity.ljust(64, "0")[:64],
+            manifest={"items": []},
+            status="queued",
+            actor="test",
+        )
+
+    db.add_all(
+        [
+            queued("retired", retired.id),
+            queued("template", evidence_job.id),
+            queued("excel", excel.id),
+        ]
+    )
+    db.commit()
+
+    service = FactCommitService(db, None)
+    applied = []
+    service.apply = lambda identity: applied.append(identity)
+
+    recovered = service.recover_pending()
+
+    assert set(recovered) == {"template", "excel"}
+    assert set(applied) == {"template", "excel"}
+    assert db.get(EvidenceCommit, "retired").status == "queued"
 
 
 def test_review_is_cas_and_never_implicitly_commits(db, evidence_job):

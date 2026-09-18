@@ -40,7 +40,8 @@ def source_job(db, tmp_path, monkeypatch):
     doc.add_paragraph("执行互斥测试文档")
     doc.save(path)
     job = ExtractionJob(source_type="word", source_filename=path.name,
-                        document_path=str(path), status="paused", source_config={})
+                        document_path=str(path), status="paused",
+                        source_config={"mode": "template_default"})
     db.add(job)
     db.commit()
     monkeypatch.setattr(extraction, "_annotation_cache_path", lambda _: tmp_path / "cache.json")
@@ -260,4 +261,3 @@ def test_excel_get_preview_does_not_start_recognition(db, source_job, fake_engin
     assert result["preview_only"] is True
     assert result["content"]
     assert db.get(AnnotationExecution, source_job) is None
-

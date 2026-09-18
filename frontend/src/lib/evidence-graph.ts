@@ -1,4 +1,35 @@
-import type { EvidenceCandidate, EvidenceClassSchema, EvidenceGraphSchema } from "./api";
+import type { EvidenceBranchProgress, EvidenceCandidate, EvidenceClassSchema, EvidenceGraphSchema } from "./api";
+
+export function branchProgressText(progress?: EvidenceBranchProgress, executionStatus?: string | null): string {
+  if (!progress) return "尚无分支处理记录";
+  const active = executionStatus === "running" || executionStatus === "queued";
+  const labels: Record<EvidenceBranchProgress["status"], string> = {
+    queued: "等待识别",
+    extracting_entities: active ? "正在识别关联对象" : "关联对象识别尚未完成",
+    searching_entities: "已检查部分原文，继续寻找关联对象",
+    entities_failed: "关联对象识别未完成，存在校验失败",
+    awaiting_relation: "已识别关联对象，等待关系验证",
+    extracting_relation: active ? "正在验证关系" : "关系验证尚未完成",
+    relation_failed: "关系验证未通过",
+    relation_checked: "已检查部分关系，尚未形成有效肯定关系",
+    identified: progress.coverage_complete ? "已识别有效关系" : "已识别有效关系，覆盖尚未完成",
+    no_match: progress.coverage_complete ? "本轮处理完成，未形成有效肯定关系" : "尚未完成关系识别",
+  };
+  let label = labels[progress.status] ?? "分支状态待核对";
+  if (progress.status === "identified" && progress.property_status) {
+    const propertyLabels = {
+      queued: "关联实体属性等待识别",
+      extracting: active ? "正在识别关联实体属性" : "关联实体属性识别尚未完成",
+      incomplete: "关联实体属性识别未完成，存在校验失败",
+      partial: "已检查部分关联实体属性",
+      complete: "关联实体属性检查完成",
+      not_applicable: "本体未声明关联实体的数据属性",
+    };
+    label += `；${propertyLabels[progress.property_status]}`;
+  }
+  const prefixes: Record<string, string> = { paused: "已暂停", pausing: "正在暂停", failed: "运行失败", cancelled: "已取消", interrupted: "运行已中断" };
+  return prefixes[executionStatus ?? ""] ? `${prefixes[executionStatus!]}；${label}` : label;
+}
 
 export function evidenceLabel(candidate: EvidenceCandidate): string {
   return candidate.kind === "entity" ? candidate.text

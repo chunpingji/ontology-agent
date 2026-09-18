@@ -1,0 +1,63 @@
+{
+  "ir_version": "document-ir-v1",
+  "structure_policy_version": "word-structure-v1",
+  "parser_version": "4",
+  "document_hash": "bc13cc1e5972011f28d3032ff73ff4734565511f7202706dbe32e2c10e2eed0c",
+  "original_document_hash": "bc13cc1e5972011f28d3032ff73ff4734565511f7202706dbe32e2c10e2eed0c",
+  "structure_hash": "40fe98c3ea340838c622505b6759a500bea164418dc1ca6a7f663a9eb78a1000",
+  "analysis_id": "7e84eadb372e726048af9811a001e9368f6bc6b003b990fd5d8944ef820c11d8",
+  "document_role": "analysis_source",
+  "title": "source",
+  "nodes": [
+    {
+      "node_id": "document",
+      "parent_id": null,
+      "heading": "",
+      "level": 0,
+      "heading_index": null,
+      "direct_block_ids": [
+        "paragraph:0:0"
+      ],
+      "node_type": "document"
+    }
+  ],
+  "blocks": [
+    {
+      "block_id": "paragraph:0:0",
+      "paragraph_index": 0,
+      "fragment_index": 0,
+      "text": "本测量记录的质量为 1500 mg。",
+      "style_name": "Normal",
+      "heading_level": 0,
+      "section_node_id": "document",
+      "physical_page_number": null,
+      "body_index": 0,
+      "block_type": "paragraph"
+    }
+  ],
+  "tables": [],
+  "evidence_units": [
+    {
+      "evidence_id": "9c48bbe121ceb2b6db985b6964d8ab8ebef881f5613026ff3d7658340d0881dc",
+      "kind": "paragraph",
+      "text": "本测量记录的质量为 1500 mg。",
+      "section_node_id": "document",
+      "block_id": "paragraph:0:0",
+      "paragraph_index": 0,
+      "fragment_index": 0,
+      "table_path": null,
+      "row_index": null,
+      "column_index": null,
+      "physical_page_number": null,
+      "source_cell_id": null,
+      "paragraph_offset": 0
+    }
+  ],
+  "pagination": {
+    "mode": "single_page_fallback",
+    "physical_page_numbers_available": false,
+    "is_estimated": true,
+    "warning": "Word 未保存可靠分页标记；章节页为逻辑片段，不代表物理页码。"
+  },
+  "diagnostics": []
+}

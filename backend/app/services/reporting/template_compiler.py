@@ -18,7 +18,7 @@ from app.services.reporting.template_v2 import (
     TypeSpec,
 )
 
-COMPILER_VERSION = "output-compiler-v2.2"
+COMPILER_VERSION = "output-compiler-v2.5"
 XSD = "http://www.w3.org/2001/XMLSchema#"
 DATATYPES = {
     XSD + name: kind
@@ -179,6 +179,9 @@ class Compiler:
     def __init__(self, template, schema, contracts):
         self.template = TemplateV2.model_validate(template).model_copy(deep=True)
         self.authored_hash = evidence_hash(self.template)
+        from app.services.reporting.section_narrative import expand_sections
+
+        self.section_issues = expand_sections(self.template)
         self.schema, self.contracts = deepcopy(schema), deepcopy(contracts)
         self.diagnostics, self.contract_hashes = [], {}
         self.generated_contracts = {}
@@ -320,6 +323,8 @@ class Compiler:
                 if p.kind == "entities"
                 else result
             )
+        if p.kind in {"source_text", "source_field"}:
+            return TypeSpec(kind="string")
         if p.kind == "relation_presence":
             return TypeSpec(kind="boolean")
         if p.kind in {"record", "records"}:
@@ -404,6 +409,10 @@ class Compiler:
         return result
 
     def record_type(self, p, base, path):
+        # A records projection evaluates each field on one source row. Using the
+        # collection here incorrectly makes every Mock field a nested list.
+        if p.kind == "records" and base.kind == "list":
+            base = base.item_type
         fields = {}
         for key, field in p.fields.items():
             typ = self.projection_type(field.value, base, path + ".fields." + key)
@@ -443,6 +452,11 @@ class Compiler:
                         self.graph[key].add(self.dependency("binding", item.scope.root.binding_ref))
                     for condition in item.scope.condition_refs:
                         self.graph[key].add(self.dependency("condition", condition))
+                elif item.kind in {"context", "workflow"}:
+                    source = self.template.record_sources.get(item.scope.record_slot)
+                    if source:
+                        for ref in source.input_filters.values():
+                            self.graph[key].add(self.dependency("input", ref.input_id))
                 elif item.kind == "derived":
                     for child in expression_refs(item.model_dump(mode="json")):
                         self.graph[key].add(self.dependency("input", child["input_id"]))
@@ -811,6 +825,20 @@ class Compiler:
         from app.services.reporting.template_v2 import CalculationCheck
 
         t = self.template
+        for section_id, message in self.section_issues:
+            self.error("SECTION_NARRATIVE_UNCONFIGURED", section_id, message=message)
+        from app.services.reporting.demo_sources import validate_record_source
+
+        for source in t.record_sources.values():
+            validate_record_source(source)
+        for binding in t.definitions.bindings.values():
+            if (
+                binding.kind in {"context", "workflow"}
+                and binding.scope.record_slot in t.record_sources
+            ):
+                source = t.record_sources[binding.scope.record_slot]
+                if binding.kind != "context" or binding.contract_ref != source.contract_ref:
+                    self.error("SOURCE_CONTRACT_MISMATCH", binding.binding_id)
         for slot in t.source_slots:
             self.require_class(slot.class_iri, "source_slots." + slot.source_slot_id)
         model = self.contracts.get(t.ontology_release_ref)

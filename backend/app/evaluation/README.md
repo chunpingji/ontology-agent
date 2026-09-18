@@ -1,67 +1,151 @@
 # CMCReport 文档图谱实测环境
 
-## 质量优先实验（新增）
+## 活动 ontology-guided 质量评测
 
-`quality_guided_summary` 使用当前主体的直接本体菜单逐批审阅逻辑记录；每条记录完成对象发现和关系验证后，再展开已验证对象。范围外记录必须通过生产独立绑定和 `verify_reference`，不能由摘要或同名自动授权。表格引用逐单元原子回放；可靠身份归并后重写版本化端点和依赖，晚到竞争主体会触发保守撤销。
+`quality_guided`（CLI 默认）和 `quality_guided_summary` 现在都是
+[quality_guided_variant.py](quality_guided_variant.py) 的薄适配器，直接调用线上同一个
+`OntologyGuidedExecutor`、类型化契约、两阶段检索、证明门与投影。评测模块只增加运行身份、调用耗时和制品封装，不实现第二套识别算法，也不读取评分参考。`quality_guided` 使用冻结结构，`quality_guided_summary` 额外使用同一 preparation 内已冻结的摘要；标题和摘要仍只影响检索排序，不能成为事实证明。
 
-该模式不以性能收益验收。新建输入/代码快照后，使用以下方式运行；省略 `--deadline-seconds` 和 `--pause-after`，仍保留单请求安全超时和总任务上限。不要把旧 600 秒预算实验与此模式的全程运行作速度比。
+活动模式必须通过当前 `prepare` 新建输入快照。manifest v2 额外保存
+`ontology_snapshot.json`、显式根类型、语义哈希和文件哈希；旧 preparation 或 `fork_experiment` 没有该制品时会失败关闭，不能静默从实时本体重建。独立 `--source-docx` 入口要求 `--root-class-iri`，不查询旧作业数据库或模型端点；活动 executor 使用该冻结根类型，可选择冻结本体内的非 CMC 根。以下示例省略软截止，让完整覆盖由共享核心和任务上限决定：
 
 ```bash
-export CMC_EVAL_IMAGE=sha256:cda2fd0551b14071dccba56c19888315e96b7ce7e04dd9610434eb57ba7f6c15
-CMC_QUALITY_DIR=/app/data/evaluations/cmc-quality-example
+CMC_QUALITY_DIR=/app/data/evaluations/cmc-ontology-guided-example
 
-docker compose -f docker-compose.yml -f backend/app/evaluation/compose.yaml \
-  run --rm --no-deps --entrypoint python -T backend \
-  -m app.evaluation.fork_experiment \
-  --source /app/data/evaluations/cmc-root-guided-20260908-03 \
+python -m app.evaluation.cmc_benchmark prepare \
+  --source-docx /controlled/sources/independent-cmc-01.docx \
+  --root-class-iri https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport \
   --output "$CMC_QUALITY_DIR"
 
-docker compose -f docker-compose.yml -f backend/app/evaluation/compose.yaml \
-  run --rm --no-deps --entrypoint python -T \
-  -w "$CMC_QUALITY_DIR" -e "PYTHONPATH=$CMC_QUALITY_DIR/runtime" backend \
-  -m app.evaluation.cmc_benchmark run \
-  --prepared "$CMC_QUALITY_DIR" --output "$CMC_QUALITY_DIR/quality-01" \
+python -m app.evaluation.cmc_benchmark summarize \
+  --prepared "$CMC_QUALITY_DIR" --timeout 600
+
+python -m app.evaluation.cmc_benchmark run --prepared "$CMC_QUALITY_DIR" \
+  --output "$CMC_QUALITY_DIR/quality-01" \
   --mode quality_guided_summary --timeout 600 --timeout-retries 0
 ```
 
-本模式的暂停在逻辑记录边界进行，一条记录的发现与绑定不会被软截止拆开。检查 `plan.json` 的 `coverage/routes/instance_merges/invalidations`，以及 checkpoint 中的未完成队列；`route_negative_not_extracted` 表示路由筛除、并未穷尽事实抽取，不等于原文没有事实。即便已选中记录都处理完，也不能据此宣称全文图谱完整。
+本地原件必须通过 DOCX 和大小检查，复制后核验哈希，原件保持不变；输出目录必须新建。
+互斥的 `--document-ref` 兼容入口仅接受旧抽取作业中已登记为 CMCReport 的 doc_ref，
+不接受 DocumentAnalysisRun ID；显式根不得与登记类型冲突。legacy 模式仍限定 CMC 根。
 
-评分继续使用下文的 `score` 命令与同一冻结参考，不给模型提供参考答案。已知 CMCReport 根排除在主抽取评分外；引用可回放、生产语义验证通过、独立参考匹配须分别报告。
+每个活动结果保存 `run.json`（版本化公共图、metadata、本体快照、coverage 和事件）、
+`result.json`（`ontology-guided-evaluation-manifest-v1`）、`events.json`、
+`retrieval-plans.json` 与 `calls.jsonl`。manifest 明示 `legacy_runner_used=false`，冻结输入/输出哈希、模型身份、scope、执行限制和完成度；参考答案始终为 `reference_is_recognition_input=false`。活动模式当前不接受旧 process-local checkpoint 恢复；软暂停结果必须保留并以新的 run ID/目录重跑，不能冒充完整覆盖。
 
-当前工作区质量实现为 runner v5.2 / atomic-citations v4：模型引用仅允许 `evidence_id` 与可选精确 `text`，模型坐标与自由 `context` 被 schema 和解码器共同拒绝；程序负责唯一定位。路由表格按物理单元格、多段原文、实际列头和合并行列配对。标题/摘要及检索排序均不授予事实权限。
+`--focus-path` 只允许活动 quality 模式或显式 legacy 模式。公共 executor 按 hop 只调度路径中的正式关系，同时保留已到达主体的直接属性；任一步不在冻结 local menu 时失败关闭。未调度关系属于 scope 外，不能据焦点评测声称全文完整。
 
-v5.1 另修复恢复 checkpoint 时的审核门禁：上游边即使 validation=passed，只要 review=rejected，也不能继续驱动下游调用；同时检查路径方向、根、当前端点和依赖版本。冻结 08 实际执行 v5，不包含此后续修复；该实验是新运行、候选审核状态保持 pending，两者的验证结论不得混写。
-
-08 已在确认身份验证状态丢失后安全软暂停：第一跳通过，识别到独立 API，但 API 归属与产品属性未通过 reference，完整链路尚未验证。工作区模型上下文现为 `model-context-v6-verified-identity`，把类型/身份验证状态保留到模型投影，未支持的身份键只留原始审计和初次实体类型验证，不作为下游可靠身份。runner v5.2 同时修复记录路由的独立提示出口，并将身份验证状态纳入路由缓存键。冻结 08 不含这些修复，不能用工作区代码直接恢复或声称修复已在该真实实验中生效。全部原始输出、剩余队列和独立评分见质量报告第 6 节。
-
-新增 `--focus-path` 用于验证正式本体内的一条递归关系路径。例如在上述 run 命令中追加：
-
-```text
---focus-path https://ontology.pharma-gmp.cn/slpra/drug-development/describes https://ontology.pharma-gmp.cn/slpra/drug/hasActiveIngredient
-```
-
-该路径已经由现有本体支持，不需要新增 CMCReport→API 直连或扩大 DrugProduct 定义。焦点关系使用 `staged_retrieval`，第一阶段按局部 range 类型及其字段线索召回最多三个高相关章节，第二阶段保留所有其余非标题记录；各阶段按章节轮转，首个类型/关系拒绝不会终止后续召回。相邻同章节完整段落字段块只加入 binding 上下文，不能冒充新事实目标。关系候选与产品属性任务各处理一个后轮转，通过的关系立即展开对象。
-
-焦点实验只调度所给关系路径及已到达主体的直接属性，不覆盖其他 CMCReport 根关系。输入身份包含焦点路径，不能以不同路径恢复 checkpoint。阶段计划是检索清单，实际进度以 coverage/checkpoint 为准；出现一条完整路径也不代表全文无遗漏。API 不在既有银标中时须单独审阅原文归属，不能将 unscored 当作正确。
-
-完成或正常软暂停后，可只读导出该次运行的图谱；下面命令输出 JSON，不读取参考答案，也不会合并其他运行的候选：
+正式评分使用独立 [ontology_guided_scorer.py](ontology_guided_scorer.py) 和
+`ontology-guided-reference-v1`。参考必须带 `expert_review.status=approved`、复核人、时间和受控标注包 hash，且文档、本体、根类、scope/focus path 必须与 run 完全一致；draft、assistant silver 或哈希不一致都会拒绝正式评分。评分结果另记录实际 reference 文件 hash。只有参考同时声明带来源的 precision/recall/F1、禁止断言和完整覆盖阈值时才会给出 pass/fail，否则 `formal_quality_gate=not_configured`：
 
 ```bash
-cd backend
-.venv/bin/python -m app.evaluation.quality_graph_export /absolute/path/quality-01/run.json
+python -m app.evaluation.cmc_benchmark score --prepared "$CMC_QUALITY_DIR" \
+  --run "$CMC_QUALITY_DIR/quality-01" \
+  --reference /controlled/gold/ontology_guided_reference_v1.json
 ```
 
-输出含 `full_validated_candidate_graph` 与 `root_reachable_positive_graph`。前者完整保留 passed 候选（包括否定/条件），后者排除非肯定、条件、审核拒绝、陈旧引用和不可达依赖。导出并不等于专家确认。独立审计入口为 `app.evaluation.quality_analysis --prepared DIR --run DIR --reference FILE`，活动运行存在 marker 时拒绝正式评分。
+未提供参考时只生成 `pending_expert_reference`，不会把模型自评或工程 fixture 计为质量分数。当前仓库实现已有确定性及受控语义排序工程测试，**尚未执行三个独立真实模型新运行，也没有经业务专家批准的新金标**；因此 result manifest 的 release gate 固定为 blocked，不能声称 AC-T30 质量侧或生产发布完成。
 
-新增只读拒绝审计入口 `python -m app.evaluation.rejection_analysis --run DIR`，在正常结束或安全软暂停后输出 JSON，不读取银标、不修改原始产物。它区分类型/绑定/归属拒绝、空召回、模型拒答和身份未获支持，预算/协议错误另计；拒绝理由缺失时如实标记。通过 trace 及真实任务顺序判断是否继续了不同记录，队列存在仅表示 pending，不算已经执行。未进入最终候选图的被拒绝关系/属性仍从 trace 审计；c0/e0 等别名只能在各自请求作用域内解释。该工具不判断拒绝语义正误或计算准确率，仍需独立原文审阅。09 已冻结后才新增此离线工具，它不参与09抽取。
+### 022 主体感知排序与独立评分
 
-本轮诊断与本体 API/制剂口径问题见[质量优先实测报告](../../../docs/CMCReport质量优先图谱识别实测报告.md)。不应为提高得分自行扩大 `DrugProduct` 定义或修改冻结参考。
+活动 runner 接受同一个 `RankingService`，CLI 通过线上共用的
+`configured_ranking_service(settings)` 构造。未启用时冻结 deterministic；显式启用而
+制品缺失时按已冻结政策对整个池降级或暂停。结果新增 `ranking.json`、`costs.json`，
+`run.json.ranking` 保存查询、视图、池成员、原始分数、提交顺序与真实模型成本；
+`result.json.ranking_identity` 保存请求配置、模型身份及不可用原因；`ablation.json`
+保存可直接比较的公共输入、预算和注册因素。评分不改变图谱。
+
+本地适配使用已锁定的 Sentence Transformers 接口，严格 `local_files_only=True`、
+`trust_remote_code=False`、CPU、L2 向量及单 logit 输出。首次实际调用才创建私有模型进程；
+tokenizer 和每种模型权重首次加载前均与父进程冻结的制品身份再次核验，防止先分词、
+后加载期间文件替换仍沿用旧身份。
+超时/取消先终止该进程再释放共享调度槽。所有输入在真实 tokenizer 下检查完整 token 数，
+超过配置或模型上限时失败，不能静默截断。`score_pairs` 的负分是正常检索分数。
+
+启用前需要为 embedding/reranker 各交付一个本地目录及 `sha256sum` 格式清单，清单路径
+相对各自模型根，必须覆盖所有配置、tokenizer 和安全权重文件，禁止遗漏和符号链接。
+空清单不能通过。配置项为 `SEMANTIC_RANKING_ENABLED`、
+`SEMANTIC_RANKING_EMBEDDING_PATH` / `SEMANTIC_RANKING_EMBEDDING_MANIFEST_PATH`、
+`SEMANTIC_RANKING_RERANKER_PATH` / `SEMANTIC_RANKING_RERANKER_MANIFEST_PATH`，
+其余池/批大小、token、时间、重试与失败政策见 `app/config.py`。准备新 manifest 会冻结
+这些配置；旧 preparation 缺少字段时须重新 prepare。模型权重不提交 Git，也不在评测时下载。
+
+2026-09-08 本地核验：开发 `.venv` 缺少 torch、Sentence Transformers、transformers、
+tokenizers；本地只有旧 BGE/GLiNER 目录，`models/MODELS.sha256` 为空，未发现 reranker。
+适配器测试用受控子进程和临时制品验证程序边界，没有加载这些真实权重。
+
+同一 preparation 的活动运行可显式选择 A–D 注册因素：
+
+```bash
+python -m app.evaluation.cmc_benchmark run --prepared "$CMC_QUALITY_DIR" \
+  --output "$CMC_QUALITY_DIR/ranking-C-01" --mode quality_guided_summary \
+  --ranking-ablation C --timeout 600 --timeout-retries 0
+```
+
+A 为确定性排序，B 增加稠密召回，C 增加联合编码精排，D 再启用阶段交错；
+各组共用主体、谓词、章节公平策略及必要原文验证。A–C 关闭阶段交错。B 仅需 embedding，
+C/D 需要两种制品。运行目录和 run ID 独立，不得把降级为 deterministic 的 C/D
+冒充正常语义组；manifest 保留全部失败与新增成本。未指定组别时沿用正式配置。
+
+`ontology-guided-scorer-v2` 继续读取隔离的 `ontology-guided-reference-v1`，新增可选字段：
+条件 `conditions`、适用域 `applicability`、方向 `direction`、专家未决
+`expectation=undetermined`、`annotation_complete`、`paths`、实体 `local_id` /
+`aliases` / `mention_evidence_sets` 和 `global_identity_expected`。每个 expected 断言必须
+有非空 `allowed_evidence_sets` 才能计 TP；匹配 tuple 但原文证明错误计 FP 且金标仍为 FN。
+未配置证明、未裁决或范围外接受项单列 unscored 和精度上下界，并阻止正式 pass。
+没有预测而有正例时 P=N/A、R=0、F1=0；重复边只能匹配一个 TP，重复接受计 FP。
+`metrics.assertions` 单列关系/属性，`semantic_match_metrics` 和独立证明结果分开；
+显式 mention 来源约束在同一实体的全部端点声明间共享，过期主体/对象 revision
+不能匹配正确 tuple；多跳证明必须来自同一条实际连续路径，不能借用同名节点的其他路径。
+`max_path_traversals` 限制路径枚举，达到上限时报告 truncated 并阻止正式通过。
+不能用包含实体的 overall 冒充“完整断言精度提升”。全局身份无明确标注时不生成可信身份分数；
+可选 `entity_partitions=[{local_id,class_iri,mention_spans}]` 以独立物理 mention 分区
+计算错误合并/拆分：一个输出节点命中多个独立分区为错误合并，一个分区映射多个输出
+节点为错误拆分；未映射节点单列未评分。缺少该参考时显示 not_annotated，不用节点数替代。
+
+固定查询/原始 record 的排序诊断位于 `semantic_ranking_evaluation.py`：
+
+```bash
+python -m app.evaluation.semantic_ranking_evaluation \
+  --reference /controlled/gold/query-record-reference.json \
+  --observation /controlled/results/fixed-pool-observation.json \
+  --k 10 --output /controlled/results/retrieval-metrics.json
+```
+
+两个输入均绑定 `query_id`、`document_hash`、`query_content_hash`。参考含
+`records=[{record_id, grade:0..3, role:support|counterevidence|conditional|context}]` 和
+`annotation_complete`；观察含 `pool_record_ids`、`ranking_record_ids`、
+`dispatch_record_ids`、`assembled_record_ids`、`assembled_source_ids`。可选
+`assertions[].equivalent_evidence_sets[]` 明确 `target_record_ids` 与绑定-only
+`binding_source_ids`。工具按原始 record 去重，分别计算 Recall@pool、nDCG@K、MRR、
+支持/反证召回及入池/读取/装配闭包；零相关查询不记为 1，未裁决只作局部观察。
+
+`validate_ablation_pair` 比较 `semantic-ranking-ablation-v1` 的 `shared` 和 `factors`，
+共同 scope 包含显式根类型，根类型不同不能作为同输入消融比较；
+仅允许独立预注册的因素差异；固定池子实验额外检查 query/pool/view hashes 及相同记录集合。
+CLI 每轮生成的 `ablation.json` 可直接按 `fixed_pool=False` 比较；
+`build_ablation_manifest(result_manifest, run, epoch_id=...)` 可导出明确池的机器可比身份，
+若两个动态运行未形成同一池则固定池核验拒绝，须另用共同候选池进行子实验。
+固定池的可执行导出、三轮 A–D 预登记运行和聚合入口为
+`python -m app.evaluation.fixed_pool_benchmark`，完整命令及协议格式见
+[固定池运行说明](FIXED_POOL.md)。它从完整 epoch 冻结共同原文输入，使用独立调度库，
+对缺组、内容漂移、失败成本和未裁决参考实施显式门禁。
+运行级 A–D 动态前沿结果不能冒充 B/C 固定池子实验。检索参考只进入独立评分器，
+不会传给执行器。真实精度增量、置信区间、样本规模与成本门槛尚待独立协议和专家标注，
+这些工程指标不会自动宣告质量收益。
+
+### 历史 runner 兼容边界
+
+旧 runner v5.2 已移到 [legacy_quality_guided_variant.py](legacy_quality_guided_variant.py)，只由显式 `--mode legacy_quality_guided_summary` 调用，用于仓库回归或历史协议兼容。冻结 08/09 归档仍运行各自 runtime，不修改、不转换，也不能作为新核心的质量证明。旧 `quality_graph_export`、`quality_analysis`、`rejection_analysis` 和旧 checkpoint 格式仅适用于这些 legacy candidate artifacts，不适用于新的 `ontology-guided-evaluation-run-v1`。
+
+历史 runner 的 atomic-citations v4 已机械迁到公共
+[citations.py](../services/extraction/ontology_guided/citations.py)，evaluation 原路径只保留兼容导出；精确 quote 回放位于纯 [source_citations.py](../services/extraction/ontology_guided/source_citations.py)，公共核心不再依赖 `GenericExtractionRunner`。历史实测结论见[质量优先实测报告](../../../docs/CMCReport质量优先图谱识别实测报告.md)，不得为提高得分修改冻结参考或扩大本体口径。
 
 此工具对 `upload-23c872fb-3ab1-41de-a705-dd4b162dfa09` 执行隔离对照实验。入口是 `python -m app.evaluation.cmc_benchmark`，使用 Docker Compose 的独立一次性容器，继承 `backend` 服务已配置的本地模型、精确 tokenizer、可选 GLiNER 权重及持久数据卷。
 
 本次四组预算内试验已结束，结果见[实测报告](../../../docs/CMCReport结构摘要图谱识别实测报告.md)和[可离线复算归档](../../../docs/evaluations/cmc-23c872fb-20260907-02/README.md)。本次额外使用 `--deadline-seconds 600`，实际只尝试了 1/4/3/5 个任务，没有达到 24 次上限；所有组仍为全文未完成。以下命令是通用复现步骤，不应把只设任务上限的运行与本轮软时间预算直接混比。
 
-`prepare` 在数据库只读事务中按文档引用定位最新抽取作业，核对其显式类型为 `CMCReport`，然后复制原文、本体和运行代码，生成独立证据 IR、语义 schema 及清单。准备阶段的 OWL 存储位于实验临时目录；`run` 使用冻结的 schema，不打开生产 OWL 存储。所有实验输出写入指定评测目录，不更新生产抽取作业、不提交候选、不写事实图谱。
+历史兼容入口 `prepare --document-ref` 在数据库只读事务中按文档引用定位最新抽取作业，核对其显式类型为 `CMCReport`，然后复制原文、本体和运行代码，生成独立证据 IR、legacy 语义 schema、公共核心 `ontology_snapshot.json` 及清单。独立新输入可用上文的 `--source-docx` 入口绕开旧作业查询。准备阶段的 OWL 存储位于实验临时目录；活动 run 使用冻结本体快照，legacy 模式才读取旧 schema，二者都不打开生产 OWL 存储。所有实验输出写入指定评测目录，不更新生产抽取作业、不提交候选、不写中央事实图谱。
 
 这不等于整个实验没有数据库写入。摘要和抽取复用现有共享模型调度器，可能产生 `LocalModelPool`、`LocalModelRequest` 等调度与用量记录；这些属于模型运行记录。只读保证针对 `prepare` 的源作业查询，生产抽取作业、候选和事实数据不由本评测提交或更新。
 
@@ -275,3 +359,92 @@ python -m app.evaluation.root_guided_analysis \
 ```
 
 该命令输出 JSON 到 stdout，不修改输入。首路径要求参考匹配的实体和关系端点真实连接；它是补充指标，不改变主评分的参考分母。没有快照时不会用模型自评或调用结束时间推算首个正确结果。
+
+## 7. CMCReport Schema 卡片与工具协作验证
+
+`schema_card_tools` 在冻结的 8 scopes 上执行 Qwen 工具规划、固定主体候选和语义核验，A/B 仅切换已有 GLiNER 工具。引用/归属、单位规范化与 SHACL 使用 `services/extraction/tool_validation`，不依赖线上作业状态，不提交事实。需要本地 Qwen、GLiNER 权重及 `shacl` extra；不下载权重或隐式访问云模型。
+
+```bash
+python -m app.evaluation.schema_card_tools \
+  --baseline /path/to/frozen-tightened-run --output /path/to/new-tool-run
+```
+
+`--prepare-only` 无模型调用；`--ner-only` 仅跑本地 GLiNER。每片段 Qwen 上限 3 次，总上限 48 次，关闭重试与截断追加请求。候选、工具结果、Schema、原始响应及最终门分别保存；银标只在识别后评分。
+
+本次上下文 span 解释器修正使用 `schema_card_tools_finalize --source <已结束工具实验> --output <新目录>`，复用原计划/候选，仅补尚未执行的第三次请求，保留原错误，累计不超过原预算。详见[规范](../../../specs/026-cmc-tool-validation/spec.md)和[实测记录](../../../docs/调研/cmc-qwen-tool-assisted-validation-20260916/results/README.md)。
+
+### GLiNER2.5 与 SKOS C 组
+
+`schema_card_gliner2` 使用固定的官方 GLiNER2.5 多语言 boundary checkpoint，按本地本体直接 SKOS 别名及明确标注的人工 overlay 编译标签/描述。复用旧 B 的工具计划，替换工具提及，再执行每片段最多两次、全轮最多 16 次 Qwen 请求。
+
+运行需要独立环境中的 `gliner2==2.0.0`（包含 2.5 架构）、本地已校验权重及离线开关。先以 `--ner-only` 完成工具推理，再以新输出目录和 `--prepared-tools <NER 目录>` 进入 Qwen；复用时核对代码、输入、依赖与工具摘要。详见[运行说明](../../../specs/026-cmc-tool-validation/quickstart.md)及[GLiNER2/SKOS 验证记录](../../../docs/调研/cmc-gliner2-skos-validation-20260916/README.md)。该入口不替换线上默认抽取器，NER 与 SHACL 均不能独立证明语义正确。
+
+## Schema 卡片 + 现有摘要检索 D 组
+
+`schema_card_summary_tools` 在 C 组工具协议前复用 `prepare_metadata`、`RecordIndex` 和 `plan_slot`，以固定类／谓词需求从全文完整记录检索原文；摘要只参与排序。新评测适配跨需求组内查询等权汇总，最多选择 6 个完整记录／12,000 去重原文字符，保留摘要启用／屏蔽的检索对照；不代表生产逐谓词执行器或语义精排。
+
+先 `--prepare-only`，再 `--ner-only`，最后用 `--prepared-tools` 在新输出目录执行至多 16 次项目 Qwen 请求。历史摘要、旧 C 制品、权威本体和线上识别器保持原状，不将旧固定片段银标用于新范围的质量评分。入口参数见[隔离验证说明](../../../specs/026-cmc-tool-validation/quickstart.md)，结果与原文复核见[摘要检索验证](../../../docs/调研/cmc-summary-retrieval-validation-20260916/README.md)。
+
+## 静态 Mock 设备实例 E0/E1/E2
+
+`schema_card_mock_tools` 使用同源 D 输入中的全文 IR、本体和摘要，围绕 usesEquipment 从全文检索三条完整记录，也可能命中清洗语境。E0 不给模型 Mock；E1 使用相同原文/NER 并增加静态设备候选；E2 再将 Mock 名称/编号加入检索排序。工具是明确命名的 `mock_equipment/equipment_archive` 冻结静态来源，不代表数据库管理页或实时设备服务。
+
+仍分 `--prepare-only`、`--ner-only` 和新目录 `--prepared-tools` 三阶段；每 case 至多两次、全轮至多18次Qwen。限定设备类型、编号/名称/规格和报告 usesEquipment，显式保留 one_of，外部字段与原文属性分别保存。NER原始结果全量留存，模型可见候选上限48；输入消息超60,000字符不发请求。见[运行说明](../../../specs/026-cmc-tool-validation/quickstart.md)及[三组验证](../../../docs/调研/cmc-mock-entity-validation-20260916/README.md)。
+
+2026-09-16 实测：126 项定向工程测试通过；真实 Qwen 18 次请求，9/9 case 完成，18/18 原始 Schema 通过。E1 成功关联两个已知编号并保留未知编号，但未证明同源抽取质量提升；E2 最终仍有一条证据不足的清洗使用关系，过滤器备选未成功保留。数值单位校准未评估，未切换线上识别器。
+
+## 027 通用工具抽取与最终图谱评分
+
+[ontology_tool_engine.py](ontology_tool_engine.py) 已提供 `probe/run/score` 薄入口：
+`run` 装配 `quality_guided_variant.py` 和共享识别核心；`score` 调用同一个
+`ontology_guided_scorer.score_evaluation`，不另建识别或评分引擎。输入本体限定类型和谓词，
+项目 Qwen 经 Responses 的 function_call/function_call_output、call_id、text.format
+交互，以 store=false 续传完整阶段项。原文、工具候选和独立评分参考保持分离。
+
+在 backend 工作目录、使用已准备的应用环境执行；每个输出目录须新建：
+
+```bash
+.venv/bin/python -m app.evaluation.ontology_tool_engine probe \
+  --output /tmp/ontology-tool-probe --max-model-requests 4
+.venv/bin/python -m app.evaluation.ontology_tool_engine run \
+  --manifest /controlled/ontology-tool-manifest.json --output /tmp/ontology-tool-run
+.venv/bin/python -m app.evaluation.ontology_tool_engine score \
+  --prediction /tmp/ontology-tool-run/evaluation.json \
+  --reference /controlled/gold/ontology-guided-reference-v2.json \
+  --output /tmp/ontology-tool-score
+```
+
+manifest 格式、固定输入及硬预算见 [027 验收步骤](../../../specs/027-ontology-extraction-engine-v2/quickstart.md)。
+`probe` 验证实际端点协议；`run` 保存 evaluation.json、document-ir.json、final-graph.json、
+coverage、调用/成本及协议检查；`score` 只读这些预测并另读参考，不调用模型。
+入口可执行和工程测试通过不等于真实模型质量验收。
+
+`ontology-guided-scorer-v3` 保留 reference-v1：旧声明未提供 modality/scope 时沿用
+asserted/空范围，旧对象省略新增默认字段后再序列化。新 reference-v2 要求顶层显式
+`relationship_groups`（无组写 `[]`），每项属性、单边、组及路径中的边显式填写
+`modality` 与 `scope`。模态值为 asserted/required/possible/planned/unspecified。
+
+- 关系组在 `relationship_groups` 声明，字段复用单边的 subject、predicate_iri、方向、
+  极性、条件、applicability、期望和证据；以至少两个唯一 `objects:EntityMatcher[]`
+  替代 object，并必填 `reference_id` 与 `selection=all|one_of|alternatives|undetermined`。
+  对象排列不影响语义；组不摊平。one_of {A,B} 预测成两条普通边计 2 FP、1 FN。
+- `scope` 为 `[{relation_id,member:EntityMatcher}]`；relation_id 引用参考中期望存在的
+  单边或组的 reference_id，member 须是该父声明的对象。单边仅在需要被引用时添加
+  reference_id。拒绝悬空、循环、重复或冲突的 one_of 范围。
+- 预测范围按父声明的精确 ID/revision 解析，再比较父声明完整语义、所选成员及嵌套范围，
+  不要求预测生成 ID 等于参考 ID。父声明缺失、过期、限定改变或独立原文证明不匹配时，
+  子声明不能计 TP。默认视图漏交付的预期声明仍计 FN。
+
+`metrics.relationship_group` 单列组；`metrics.assertions/overall` 纳入组，保留原单边指标。
+条件、模态和 scope 参与精确匹配，typed applicability 的文字/谓词参与语义比较，来源坐标
+不充当限定语义。未裁决预测仍单列 unscored 与精度上下界；
+`undetermined_reference_assertions` 即使没有预测也显示参考未决数量。原 `paths` 仍只枚举
+实际连续单边路径，不把选择组自动展开成多条事实路径；组及其后继完整范围在声明指标评分。
+
+正式评分继续要求 approved 参考及复核人、时间、受控标注包 hash；文档、本体、根类型和
+scope/focus path 必须与预测和 IR 匹配。旧 CMC 专用银标不能靠补写 approved 或改身份变成
+本轮金标。没有合法批准参考时不报告正式 F1，也不把 JSON/协议合规率或工程 fixture 当质量。
+本节仅说明已实现评分能力；实际模型与质量结果另见本次验证制品，部署状态不由此推定。
+设计依据见 [027 模块计划](../../../specs/027-ontology-extraction-engine-v2/plan.md)、
+[任务清单](../../../specs/027-ontology-extraction-engine-v2/tasks.md)与
+[Harness 设计](../../../specs/027-ontology-extraction-engine-v2/harness.md)。上方 022 与领域实验记录保留其历史范围。

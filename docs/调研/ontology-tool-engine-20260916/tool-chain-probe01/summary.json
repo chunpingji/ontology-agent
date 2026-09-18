@@ -1,0 +1,83 @@
+{
+  "mode": "explicitly_directed_tool_integration_probe",
+  "requests": 4,
+  "usage": {
+    "input_tokens": 31273,
+    "output_tokens": 7246,
+    "total_tokens": 38519
+  },
+  "errors": [],
+  "tools": [
+    {
+      "name": "propose_mentions",
+      "status": "blocked",
+      "issues": [
+        "result_budget_exceeded"
+      ]
+    },
+    {
+      "name": "resolve_source_anchor",
+      "status": "blocked",
+      "issues": [
+        "citation_quote_not_in_source"
+      ]
+    },
+    {
+      "name": "query_instances",
+      "status": "blocked",
+      "issues": [
+        "reference_outside_scope"
+      ]
+    }
+  ],
+  "answer": {
+    "tool_names": [
+      "propose_mentions",
+      "resolve_source_anchor",
+      "query_instances"
+    ],
+    "candidate_ids": [],
+    "identity_status": "not_checked",
+    "graph_written": false
+  },
+  "graph_writes": 0,
+  "identity_validations": 0,
+  "f1_status": "not_scored",
+  "scenario_selection": "explicit fixture: usesEquipment, indexed table:6,row1, original RE64611 quote, and directed tools; not autonomous discovery",
+  "tool_chain": {
+    "all_requested_tools_available": false,
+    "unavailable_tools": [
+      "propose_mentions",
+      "resolve_source_anchor",
+      "query_instances"
+    ],
+    "query_attempted": true,
+    "candidate_count": 0,
+    "query_statuses": [
+      "blocked"
+    ],
+    "all_tool_statuses_ok": false
+  },
+  "status": "protocol_completed",
+  "review": {
+    "strict_summary_matches_actual_tool_results": true,
+    "request_hash_and_full_output_pairing": "passed; see protocol-checks.json",
+    "tool_chain_passed": false,
+    "availability_note": "unavailable_tools表示本次未得到可用工具结果；blocked并不等同缺少工具实现或权重加载失败。",
+    "frozen_vocabulary": {"effective_entries": 2, "definition_missing": 25, "includes_Reactor": true, "diagnostic": "vocabulary-check.json"},
+    "zero_qwen_raw_handler_diagnostic": {
+      "path": "../tool-chain-probe01-diagnostics/diagnostic.json",
+      "raw_result_path": "../tool-chain-probe01-diagnostics/raw-tool-result.json",
+      "real_qwen_requests": 0,
+      "gliner_inference_batches": 4,
+      "mentions": 7,
+      "omissions": 25,
+      "tokens": 4660,
+      "max_result_tokens": 4096,
+      "note": "真实NER批次执行，但有效实体标签仅CMCReport，返回类型并不正确；超额结果只用于离线诊断，没有注入原Qwen对话。"
+    },
+    "anchor_failure": "Qwen返回context_text为空字符串；严格定位器拒绝，没有自动改为null。",
+    "instance_failure": "前轮未登记mention，Qwen仍将RE64611字面文本作为mention_ref，被权限校验拒绝。",
+    "conclusion": "协议完成与工具成功分开计量：3次工具分派均blocked，0外部候选，未验证身份、不写图，不是GLiNER/Mock协作成功。"
+  }
+}

@@ -1,0 +1,66 @@
+{
+  "status": "passed",
+  "browser": "131.0.6778.85",
+  "createCount": 1,
+  "sourceReads": 2,
+  "budgetRequests": [
+    {
+      "operation": "disable",
+      "body": {
+        "expected_revision": 1,
+        "request_key": "document-run-ranking_budget_disable:6f7bd6dc-9cb8-4734-9ac4-1ad36138b7b0",
+        "reason": "用户在文档分析页面禁用排序预算限制"
+      }
+    },
+    {
+      "operation": "enable",
+      "body": {
+        "expected_revision": 2,
+        "request_key": "document-run-ranking_budget_enable:5bd8db10-d80b-4fad-8da3-3a5d01d722ad",
+        "reason": "用户在文档分析页面启用排序预算限制"
+      }
+    },
+    {
+      "operation": "enable",
+      "body": {
+        "expected_revision": 3,
+        "request_key": "document-run-ranking_budget_enable:0b91329a-443c-40f2-85ec-ad365c4fba15",
+        "reason": "用户在文档分析页面启用排序预算限制"
+      }
+    }
+  ],
+  "output": "/tmp/document-harness-browser-final",
+  "layoutChecks": [
+    "Harness collapsed configuration, real-data text, Thinking and tool detail; context tabs retain scroll",
+    "explicit budget disable/enable keeps run paused, preserves accounting and handles CAS conflicts",
+    "business entity/relationship/property names replace IDs; coverage and unfinished scope hidden; business codes and conditions preserved; technical IDs collapsed; named evidence preserves source refs",
+    "desktop 4/5 drawer with tree/preview/metadata geometry",
+    "detail tabs preserve chapter tree and preview editor",
+    "graph canvas with long labels replays a physical source span while staying on graph tab",
+    "chapter selection survives an aborted or late source response",
+    "stream updates do not reload graph; manual scroll stops follow; reconnect status and end cursor are independent",
+    "read-only and running states do not expose budget mutation controls",
+    "768px history navigation, chapter sheet and preview remain usable without page overflow",
+    "390px history navigation, chapter sheet and preview remain usable without page overflow",
+    "1920px drawer/tree/preview/details geometry"
+  ],
+  "writes": [
+    {
+      "method": "POST",
+      "pathname": "/api/document-analysis/runs/history-12/ranking-budget/disable"
+    },
+    {
+      "method": "POST",
+      "pathname": "/api/document-analysis/runs/history-12/ranking-budget/enable"
+    },
+    {
+      "method": "POST",
+      "pathname": "/api/document-analysis/runs/history-12/ranking-budget/enable"
+    },
+    {
+      "method": "POST",
+      "pathname": "/api/document-analysis/runs"
+    }
+  ],
+  "scope": "Synthetic API UI regression; no backend or model execution"
+}

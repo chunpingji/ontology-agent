@@ -2,6 +2,7 @@
 
 import {
   useCallback,
+  useEffect,
   useMemo,
   useRef,
   useState,
@@ -9,29 +10,36 @@ import {
   type DragEvent,
   type ReactNode,
 } from "react";
+import { usePathname, useSearchParams } from "next/navigation";
 import {
+  Ban,
   BookOpen,
+  Clock3,
   File,
   FileText,
   FolderTree,
+  GitBranch,
   Info,
   ListTree,
   Loader2,
-  PanelRight,
+  Pause,
+  Play,
   RefreshCw,
+  Trash2,
   TriangleAlert,
   UploadCloud,
 } from "lucide-react";
 
-import {
-  WordViewer,
-  type DocumentLocation,
-} from "@/components/extraction/word-viewer";
+import { DocumentHarnessStream, DocumentHarnessInformation, useDocumentHarness } from "@/components/analysis/document-harness";
+import { DocumentAnalysisHistory } from "@/components/analysis/document-analysis-history";
+import { DocumentRelationshipGraph } from "@/components/analysis/document-relationship-graph";
+import { WordViewer, type DocumentLocation } from "@/components/extraction/word-viewer";
 import { TreeView, type TreeDataItem } from "@/components/tree-view";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import {
   Sheet,
   SheetContent,
@@ -41,21 +49,48 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-  analyzeWordDocument,
+  controlDocumentAnalysisRun,
+  createDocumentAnalysisRun,
+  deleteDocumentAnalysisRun,
+  getAllClassesWithSignal,
+  getDocumentAnalysisGraph,
+  defaultDocumentGraphProjection,
+  getDocumentAnalysisMetadata,
+  getDocumentAnalysisRun,
+  getDocumentAnalysisSource,
+  mergeDocumentAnalysisControlReceipt,
+  shouldSubscribeDocumentAnalysisEvents,
+  subscribeDocumentAnalysisEvents,
+  type DocumentAnalysisControlAction,
+  type DocumentAnalysisGraphArtifact,
+  type DocumentAnalysisMetadataArtifact,
+  type DocumentAnalysisRun,
+  type DocumentAnalysisStatus,
+  type DocumentGraphProjection,
+  type EvidenceAnchor,
+  type OntologyClassFlat,
   type SummarySource,
   type SummaryStatus,
   type WordChapterNode,
-  type WordDocumentAnalysis,
   type WordPageNode,
   type WordPaginationMetadata,
   type WordSourceRange,
 } from "@/lib/api";
+import {
+  DOCUMENT_ANALYSIS_STATUS_LABELS as RUN_STATUS_LABELS,
+  documentRankingPauseReasons,
+  formatDocumentAnalysisDate as formatDate,
+  formatDocumentAnalysisReason,
+  formatDocumentRankingPause,
+} from "@/lib/document-analysis";
 import { cn } from "@/lib/utils";
 
 type SelectedTreeNode =
   | { kind: "chapter"; node: WordChapterNode }
   | { kind: "page"; node: WordPageNode; parent: WordChapterNode };
+type InnerTab = "metadata" | "graph";
 
 const SUMMARY_SOURCE_LABELS: Record<SummarySource, string> = {
   llm: "AI 生成",
@@ -85,19 +120,58 @@ const BREAK_SOURCE_LABELS: Record<string, string> = {
   lastRendered: "Word 渲染分页",
 };
 
+const STAGE_LABELS: Record<string, string> = {
+  accepted: "已受理",
+  storing_source: "保存源文件",
+  converting: "转换文档",
+  parsing: "解析结构",
+  preparing_metadata: "生成分层元数据",
+  freezing_inputs: "冻结运行输入",
+  planning: "规划识别任务",
+  extracting: "识别关系图谱",
+  projecting: "生成图谱投影",
+  finalizing: "提交最终快照",
+  complete: "处理完成",
+};
+
+const ARTIFACT_LABELS = {
+  pending: "等待中",
+  ready: "已就绪",
+  partial: "部分可用",
+  failed: "失败",
+} as const;
+
 function errorMessage(error: unknown): string {
   if (!(error instanceof Error)) return "请求失败，请稍后重试。";
   const apiBody = error.message.startsWith("API ") && error.message.includes(":")
-    ? error.message.slice(error.message.indexOf(":") + 1).trim() : null;
+    ? error.message.slice(error.message.indexOf(":") + 1).trim()
+    : null;
   if (apiBody) {
     try {
-      const detail = (JSON.parse(apiBody) as { detail?: unknown }).detail;
+      const parsed = JSON.parse(apiBody) as {
+        detail?: unknown;
+        error?: { message?: unknown };
+      };
+      const detail = parsed.detail ?? parsed.error?.message;
       if (typeof detail === "string") return detail;
     } catch {
-      // Keep the original request error when the body is not JSON.
+      // Keep the transport error when an upstream proxy did not return JSON.
     }
   }
   return error.message;
+}
+
+function metadataError(error: DocumentAnalysisMetadataArtifact["error"]): string | null {
+  if (!error) return null;
+  return error.safe_detail || error.code || "分层元数据不可用。";
+}
+
+function isAbortError(error: unknown): boolean {
+  return error instanceof DOMException && error.name === "AbortError";
+}
+
+function isUnavailableRunError(error: unknown): boolean {
+  return error instanceof Error && /^API (404|410):/.test(error.message);
 }
 
 function pageLabel(page: WordPageNode): string {
@@ -121,28 +195,21 @@ function buildTreeIndex(root: WordChapterNode): Map<string, SelectedTreeNode> {
 
 function chapterToTreeItem(chapter: WordChapterNode): TreeDataItem {
   const children = chapter.children.map(chapterToTreeItem);
-  // A single page adds no navigation value: selecting the leaf chapter already
-  // focuses the same source range. Only expose page fragments when the chapter
-  // actually spans multiple pages.
   if (chapter.is_leaf && chapter.pages.length > 1) {
-    children.push(
-      ...chapter.pages.map((page) => ({
-        id: page.node_id,
-        name: pageLabel(page),
-        icon: File,
-      })),
-    );
+    children.push(...chapter.pages.map((page) => ({
+      id: page.node_id,
+      name: pageLabel(page),
+      icon: File,
+    })));
   }
-
   return {
     id: chapter.node_id,
     name: chapter.heading || "未命名章节",
-    icon:
-      chapter.node_type === "document"
-        ? BookOpen
-        : children.length > 0
-          ? FolderTree
-          : FileText,
+    icon: chapter.node_type === "document"
+      ? BookOpen
+      : children.length > 0
+        ? FolderTree
+        : FileText,
     children: children.length > 0 ? children : undefined,
   };
 }
@@ -158,23 +225,20 @@ function selectedLocation(selected: SelectedTreeNode): DocumentLocation {
       blockIds: selected.node.block_ids,
     };
   }
-
-  const chapter = selected.node;
-  if (chapter.node_type === "document") {
-    return { kind: "document", nodeId: chapter.node_id };
+  if (selected.node.node_type === "document") {
+    return { kind: "document", nodeId: selected.node.node_id };
   }
   return {
     kind: "section",
-    nodeId: chapter.node_id,
-    anchorBlockId: chapter.source_range.anchor_block_id,
-    startBlockId: chapter.source_range.start_block_id,
-    endBlockId: chapter.source_range.end_block_id,
+    nodeId: selected.node.node_id,
+    anchorBlockId: selected.node.source_range.anchor_block_id,
+    startBlockId: selected.node.source_range.start_block_id,
+    endBlockId: selected.node.source_range.end_block_id,
   };
 }
 
 function SummaryBadge({ source }: { source: SummarySource }) {
-  const variant = source === "llm" ? "default" : "outline";
-  return <Badge variant={variant}>{SUMMARY_SOURCE_LABELS[source]}</Badge>;
+  return <Badge variant={source === "llm" ? "default" : "outline"}>{SUMMARY_SOURCE_LABELS[source]}</Badge>;
 }
 
 function MetaRow({ label, value }: { label: string; value: ReactNode }) {
@@ -203,24 +267,15 @@ function ChapterMetadata({ chapter }: { chapter: WordChapterNode }) {
     <div className="space-y-5">
       <div>
         <div className="mb-2 flex flex-wrap items-center gap-2">
-          <Badge variant="secondary">
-            {chapter.node_type === "document" ? "文档根" : `${chapter.level} 级章节`}
-          </Badge>
+          <Badge variant="secondary">{chapter.node_type === "document" ? "文档根" : `${chapter.level} 级章节`}</Badge>
           <SummaryBadge source={meta.summary_source} />
         </div>
         <h3 className="break-words text-base font-semibold">{chapter.heading}</h3>
-        {chapter.path.length > 0 && (
-          <p className="mt-1 break-words text-xs text-muted-foreground">
-            {chapter.path.join(" / ")}
-          </p>
-        )}
+        {chapter.path.length > 0 && <p className="mt-1 break-words text-xs text-muted-foreground">{chapter.path.join(" / ")}</p>}
       </div>
-
       <section className="space-y-2">
         <h4 className="text-sm font-medium">内容摘要</h4>
-        <p className="whitespace-pre-wrap rounded-lg bg-muted/50 p-3 text-sm leading-relaxed">
-          {meta.content_summary || "暂无摘要。"}
-        </p>
+        <p className="whitespace-pre-wrap rounded-lg bg-muted/50 p-3 text-sm leading-relaxed">{meta.content_summary || "暂无摘要。"}</p>
         <dl className="space-y-2">
           <MetaRow label="摘要状态" value={SUMMARY_STATUS_LABELS[meta.summary_status]} />
           <MetaRow label="摘要模型" value={meta.summary_model ?? "—"} />
@@ -228,7 +283,6 @@ function ChapterMetadata({ chapter }: { chapter: WordChapterNode }) {
           <MetaRow label="生成时间" value={meta.generated_at ?? "—"} />
         </dl>
       </section>
-
       <section className="space-y-2">
         <h4 className="text-sm font-medium">结构统计</h4>
         <dl className="space-y-2">
@@ -239,12 +293,10 @@ function ChapterMetadata({ chapter }: { chapter: WordChapterNode }) {
           <MetaRow label="章节页" value={meta.page_count} />
         </dl>
       </section>
-
       <section className="space-y-2">
         <h4 className="text-sm font-medium">来源范围</h4>
         <SourceRangeDetails range={chapter.source_range} />
       </section>
-
       <section className="space-y-2">
         <h4 className="text-sm font-medium">标识与校验</h4>
         <dl className="space-y-2 font-mono text-xs">
@@ -261,19 +313,13 @@ function PageMetadata({ page, parent }: { page: WordPageNode; parent: WordChapte
   return (
     <div className="space-y-5">
       <div>
-        <div className="mb-2 flex flex-wrap items-center gap-2">
-          <Badge variant="secondary">{pageLabel(page)}</Badge>
-          <SummaryBadge source={meta.summary_source} />
-        </div>
+        <div className="mb-2 flex flex-wrap items-center gap-2"><Badge variant="secondary">{pageLabel(page)}</Badge><SummaryBadge source={meta.summary_source} /></div>
         <h3 className="break-words text-base font-semibold">{parent.heading}</h3>
         <p className="mt-1 text-xs text-muted-foreground">叶章节内容片段</p>
       </div>
-
       <section className="space-y-2">
         <h4 className="text-sm font-medium">内容摘要</h4>
-        <p className="whitespace-pre-wrap rounded-lg bg-muted/50 p-3 text-sm leading-relaxed">
-          {meta.content_summary || "暂无摘要。"}
-        </p>
+        <p className="whitespace-pre-wrap rounded-lg bg-muted/50 p-3 text-sm leading-relaxed">{meta.content_summary || "暂无摘要。"}</p>
         <dl className="space-y-2">
           <MetaRow label="摘要状态" value={SUMMARY_STATUS_LABELS[meta.summary_status]} />
           <MetaRow label="摘要模型" value={meta.summary_model ?? "—"} />
@@ -281,46 +327,28 @@ function PageMetadata({ page, parent }: { page: WordPageNode; parent: WordChapte
           <MetaRow label="生成时间" value={meta.generated_at ?? "—"} />
         </dl>
       </section>
-
       <section className="space-y-2">
         <h4 className="text-sm font-medium">页片段统计</h4>
         <dl className="space-y-2">
           <MetaRow label="页序号" value={page.ordinal_in_leaf} />
           <MetaRow label="物理页码" value={page.physical_page_number ?? "不可用"} />
-          <MetaRow
-            label="分页来源"
-            value={page.break_source ? BREAK_SOURCE_LABELS[page.break_source] ?? page.break_source : "—"}
-          />
+          <MetaRow label="分页来源" value={page.break_source ? BREAK_SOURCE_LABELS[page.break_source] ?? page.break_source : "—"} />
           <MetaRow label="段落" value={meta.paragraph_count} />
           <MetaRow label="表格" value={meta.table_count} />
           <MetaRow label="字符" value={meta.character_count} />
           <MetaRow label="来源块" value={page.block_ids.length} />
         </dl>
       </section>
-
-      <section className="space-y-2">
-        <h4 className="text-sm font-medium">来源范围</h4>
-        <SourceRangeDetails range={page.source_range} />
-      </section>
-
+      <section className="space-y-2"><h4 className="text-sm font-medium">来源范围</h4><SourceRangeDetails range={page.source_range} /></section>
       <section className="space-y-2">
         <h4 className="text-sm font-medium">标识与校验</h4>
-        <dl className="space-y-2 font-mono text-xs">
-          <MetaRow label="节点 ID" value={page.node_id} />
-          <MetaRow label="内容哈希" value={meta.content_hash || "—"} />
-        </dl>
+        <dl className="space-y-2 font-mono text-xs"><MetaRow label="节点 ID" value={page.node_id} /><MetaRow label="内容哈希" value={meta.content_hash || "—"} /></dl>
       </section>
     </div>
   );
 }
 
-function MetadataPanel({
-  selected,
-  pagination,
-}: {
-  selected: SelectedTreeNode;
-  pagination?: WordPaginationMetadata;
-}) {
+function MetadataPanel({ selected, pagination }: { selected: SelectedTreeNode; pagination?: WordPaginationMetadata | null }) {
   return (
     <div className="space-y-5">
       {pagination && (
@@ -328,37 +356,18 @@ function MetadataPanel({
           <h3 className="text-sm font-medium">分页可信度</h3>
           <dl className="space-y-2">
             <MetaRow label="分页模式" value={PAGINATION_MODE_LABELS[pagination.mode]} />
-            <MetaRow
-              label="物理页码"
-              value={pagination.physical_page_numbers_available ? "可用" : "不可用"}
-            />
+            <MetaRow label="物理页码" value={pagination.physical_page_numbers_available ? "可用" : "不可用"} />
             <MetaRow label="是否估算" value={pagination.is_estimated ? "是" : "否"} />
           </dl>
-          {pagination.warning && (
-            <p className="text-xs leading-relaxed text-muted-foreground">
-              {pagination.warning}
-            </p>
-          )}
+          {pagination.warning && <p className="text-xs leading-relaxed text-muted-foreground">{pagination.warning}</p>}
         </section>
       )}
-      {selected.kind === "chapter" ? (
-        <ChapterMetadata chapter={selected.node} />
-      ) : (
-        <PageMetadata page={selected.node} parent={selected.parent} />
-      )}
+      {selected.kind === "chapter" ? <ChapterMetadata chapter={selected.node} /> : <PageMetadata page={selected.node} parent={selected.parent} />}
     </div>
   );
 }
 
-function ChapterTreePanel({
-  tree,
-  selectedNodeId,
-  onSelect,
-}: {
-  tree: TreeDataItem;
-  selectedNodeId: string;
-  onSelect: (nodeId: string) => void;
-}) {
+function ChapterTreePanel({ tree, selectedNodeId, onSelect }: { tree: TreeDataItem; selectedNodeId: string; onSelect: (nodeId: string) => void }) {
   return (
     <TreeView
       data={tree}
@@ -370,46 +379,11 @@ function ChapterTreePanel({
   );
 }
 
-function PanelCard({
-  title,
-  children,
-  className,
-}: {
-  title: string;
-  children: ReactNode;
-  className?: string;
-}) {
+function PanelCard({ title, children, className }: { title: string; children: ReactNode; className?: string }) {
   return (
-    <Card className={cn("min-h-0 overflow-hidden", className)}>
-      <CardHeader className="border-b p-4">
-        <CardTitle className="text-sm">{title}</CardTitle>
-      </CardHeader>
-      <CardContent className="h-[calc(100%-3.25rem)] overflow-y-auto p-3">
-        {children}
-      </CardContent>
-    </Card>
-  );
-}
-
-function LoadingDocument({ filename }: { filename: string }) {
-  return (
-    <Card>
-      <CardContent className="flex min-h-72 flex-col items-center justify-center gap-5 p-8 text-center">
-        <div className="rounded-full bg-primary/10 p-4 text-primary">
-          <Loader2 className="size-8 animate-spin" />
-        </div>
-        <div className="space-y-2">
-          <h3 className="font-medium">正在即时分析 Word 文档</h3>
-          <p className="max-w-xl break-all text-sm text-muted-foreground">{filename}</p>
-          <p className="max-w-xl text-sm text-muted-foreground">
-            正在构建章节树、识别分页并生成分层摘要。分析结果只返回当前页面，不创建抽取作业。
-          </p>
-        </div>
-        <div className="w-full max-w-md space-y-2">
-          <Skeleton className="h-2 w-full" />
-          <Skeleton className="mx-auto h-2 w-4/5" />
-        </div>
-      </CardContent>
+    <Card role="region" aria-label={title} className={cn("flex min-h-0 min-w-0 flex-col overflow-hidden", className)}>
+      <CardHeader className="shrink-0 border-b p-3"><CardTitle className="text-sm">{title}</CardTitle></CardHeader>
+      <CardContent className="min-h-0 flex-1 overflow-auto p-3">{children}</CardContent>
     </Card>
   );
 }
@@ -420,84 +394,453 @@ function formatFileSize(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-export function DocumentAnalysisPanel() {
-  const inputRef = useRef<HTMLInputElement>(null);
-  const requestIdRef = useRef(0);
-  const [sourceFile, setSourceFile] = useState<File | null>(null);
-  const [analysis, setAnalysis] = useState<WordDocumentAnalysis | null>(null);
-  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [isDragging, setIsDragging] = useState(false);
-  const [analysisError, setAnalysisError] = useState<string | null>(null);
+function uniqueRequestKey(prefix: string): string {
+  const random = globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  return `${prefix}:${random}`;
+}
 
-  const runAnalysis = useCallback(async (file: File) => {
-    const suffix = file.name.slice(file.name.lastIndexOf(".")).toLowerCase();
+function classLabel(item: OntologyClassFlat): string {
+  return item.label || item.name || item.iri;
+}
+
+function isOlderWatermark(
+  incoming: { run_revision: number; artifact_revision: number; event_head: number },
+  current: { run_revision: number; artifact_revision: number; event_head: number },
+): boolean {
+  return incoming.run_revision < current.run_revision
+    || incoming.artifact_revision < current.artifact_revision
+    || incoming.event_head < current.event_head;
+}
+
+export function DocumentAnalysisPanel() {
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const inputRef = useRef<HTMLInputElement>(null);
+  const createControllerRef = useRef<AbortController | null>(null);
+  const sourceControllerRef = useRef<AbortController | null>(null);
+  const createSequenceRef = useRef(0);
+
+  const [sourceFile, setSourceFile] = useState<File | null>(null);
+  const [rootClassIri, setRootClassIri] = useState("");
+  const [classSearch, setClassSearch] = useState("");
+  const [classes, setClasses] = useState<OntologyClassFlat[]>([]);
+  const [classesError, setClassesError] = useState<string | null>(null);
+  const [classesLoading, setClassesLoading] = useState(true);
+  const [draftRequestKey, setDraftRequestKey] = useState<string | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
+  const [createError, setCreateError] = useState<string | null>(null);
+  const [createdRunId, setCreatedRunId] = useState<string | null>(null);
+  const [historyVersion, setHistoryVersion] = useState(0);
+
+  const urlRunId = searchParams.get("documentRun")?.trim() || null;
+  const activeRunId = urlRunId || createdRunId;
+  const activeRunIdRef = useRef<string | null>(activeRunId);
+  const eventHeadRef = useRef<{ runId: string | null; value: number }>({ runId: null, value: 0 });
+
+  const [runState, setRunState] = useState<DocumentAnalysisRun | null>(null);
+  const [metadataState, setMetadataState] = useState<DocumentAnalysisMetadataArtifact | null>(null);
+  const [graphState, setGraphState] = useState<{ runId: string; projection: DocumentGraphProjection; value: DocumentAnalysisGraphArtifact } | null>(null);
+  const [pollError, setPollError] = useState<{ runId: string; message: string; unavailable: boolean } | null>(null);
+  const [pollNonce, setPollNonce] = useState(0);
+  const [projectionChoice, chooseProjection] = useState<{ runId: string | null; value: DocumentGraphProjection } | null>(null);
+  const selectedProjection = projectionChoice?.runId === activeRunId ? projectionChoice?.value : null;
+  const projection = selectedProjection ?? defaultDocumentGraphProjection(
+    runState?.recognition_run_id === activeRunId ? runState : null,
+  );
+  const setProjection = (value: DocumentGraphProjection | null) => chooseProjection(
+    value === null ? null : { runId: activeRunId, value },
+  );
+  const [innerTab, setInnerTab] = useState<InnerTab>("graph");
+  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
+  const [selectedSelectionRef, setSelectedSelectionRef] = useState<{ runId: string; value: string } | null>(null);
+  const [sourceReplay, setSourceReplay] = useState<{
+    runId: string;
+    selectionRef: string;
+    content: Record<string, unknown> | null;
+    anchor: EvidenceAnchor | null;
+    sectionNodeId: string | null;
+    spanCount: number;
+  } | null>(null);
+  const [sourceLoading, setSourceLoading] = useState(false);
+  const [sourceError, setSourceError] = useState<string | null>(null);
+  const [controlBusy, setControlBusy] = useState<DocumentAnalysisControlAction | "delete" | null>(null);
+  const [controlError, setControlError] = useState<string | null>(null);
+  const eventStreamStatus = runState?.recognition_run_id === activeRunId ? runState.status : null;
+  const harness = useDocumentHarness(activeRunId, eventStreamStatus);
+  const [harnessConnection, setHarnessConnection] = useState({ runId: "", connected: false });
+  const eventStreamShouldConnect = shouldSubscribeDocumentAnalysisEvents(eventStreamStatus);
+
+  useEffect(() => () => {
+    createSequenceRef.current += 1;
+    createControllerRef.current?.abort();
+    sourceControllerRef.current?.abort();
+  }, []);
+
+  useEffect(() => {
+    activeRunIdRef.current = activeRunId;
+    if (eventHeadRef.current.runId !== activeRunId) {
+      eventHeadRef.current = { runId: activeRunId, value: 0 };
+    }
+  }, [activeRunId]);
+
+  useEffect(() => {
+    if (!activeRunId || !eventStreamShouldConnect) return;
+    const runId = activeRunId;
+    return subscribeDocumentAnalysisEvents(runId, (event) => {
+      if (activeRunIdRef.current !== runId || event.recognition_run_id !== runId) return;
+      if (event.event_head <= eventHeadRef.current.value) return;
+      eventHeadRef.current = { runId, value: event.event_head };
+      setPollNonce((value) => value + 1);
+    }, (connected) => setHarnessConnection({ runId, connected }), harness.applySnapshot);
+  }, [activeRunId, eventStreamShouldConnect, harness.applySnapshot]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    getAllClassesWithSignal(controller.signal)
+      .then((items) => {
+        setClasses([...items].sort((a, b) => classLabel(a).localeCompare(classLabel(b), "zh-Hans-CN")));
+        setClassesError(null);
+      })
+      .catch((error: unknown) => {
+        if (!isAbortError(error)) setClassesError(errorMessage(error));
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setClassesLoading(false);
+      });
+    return () => controller.abort();
+  }, []);
+
+  useEffect(() => {
+    if (!activeRunId) return;
+    const runId = activeRunId;
+    const controller = new AbortController();
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    let stopped = false;
+
+    const poll = async () => {
+      const runRequest = getDocumentAnalysisRun(runId, controller.signal);
+      const [runResult, metadataResult, graphResult] = await Promise.allSettled([
+        runRequest,
+        getDocumentAnalysisMetadata(runId, controller.signal),
+        runRequest.then((incoming) => getDocumentAnalysisGraph(runId,
+          selectedProjection ?? defaultDocumentGraphProjection(incoming), controller.signal)),
+      ]);
+      if (stopped || activeRunIdRef.current !== runId) return;
+
+      let nextStatus: DocumentAnalysisStatus | null = null;
+      if (runResult.status === "fulfilled" && runResult.value.recognition_run_id === runId) {
+        const incoming = runResult.value;
+        nextStatus = incoming.status;
+        if (eventHeadRef.current.runId === runId) {
+          eventHeadRef.current.value = Math.max(eventHeadRef.current.value, incoming.event_head);
+        }
+        setRunState((previous) => {
+          if (
+            previous?.recognition_run_id === runId
+            && isOlderWatermark(incoming, previous)
+          ) return previous;
+          return incoming;
+        });
+        setPollError((previous) => previous?.runId === runId ? null : previous);
+      } else if (runResult.status === "rejected" && !isAbortError(runResult.reason)) {
+        const unavailable = isUnavailableRunError(runResult.reason);
+        setPollError({ runId, message: errorMessage(runResult.reason), unavailable });
+        if (unavailable) {
+          sourceControllerRef.current?.abort();
+          setRunState((previous) => previous?.recognition_run_id === runId ? null : previous);
+          setMetadataState((previous) => previous?.recognition_run_id === runId ? null : previous);
+          setGraphState((previous) => previous?.runId === runId ? null : previous);
+          setSourceReplay((previous) => previous?.runId === runId ? null : previous);
+          setSelectedSelectionRef((previous) => previous?.runId === runId ? null : previous);
+        }
+      }
+
+      if (metadataResult.status === "fulfilled" && metadataResult.value.recognition_run_id === runId) {
+        const incoming = metadataResult.value;
+        setMetadataState((previous) => {
+          if (
+            previous?.recognition_run_id === runId
+            && isOlderWatermark(incoming, previous)
+          ) return previous;
+          return incoming;
+        });
+      }
+
+      if (graphResult.status === "fulfilled" && graphResult.value.recognition_run_id === runId) {
+        const incoming = graphResult.value;
+        const receivedProjection = incoming.projection;
+        setGraphState((previous) => {
+          if (
+            previous?.runId === runId
+            && previous.projection === receivedProjection
+            && isOlderWatermark(incoming, previous.value)
+          ) return previous;
+          return { runId, projection: receivedProjection, value: incoming };
+        });
+      }
+
+      if (!stopped) {
+        const terminal = nextStatus && ["finished", "cancelled", "deleted", "expired"].includes(nextStatus);
+        timer = setTimeout(poll, terminal ? 10_000 : 2_000);
+      }
+    };
+
+    void poll();
+    return () => {
+      stopped = true;
+      controller.abort();
+      if (timer) clearTimeout(timer);
+    };
+  }, [activeRunId, pollNonce, selectedProjection]);
+
+  const currentRun = runState?.recognition_run_id === activeRunId ? runState : null;
+  const currentMetadata = metadataState?.recognition_run_id === activeRunId ? metadataState : null;
+  const currentGraph = graphState?.runId === activeRunId && graphState.projection === projection ? graphState.value : null;
+  const rankingBudgetEnabled = currentRun?.ranking_budget_enabled
+    ?? currentGraph?.ranking?.budget_enabled ?? true;
+  const rankingBudgetAction = rankingBudgetEnabled ? "ranking_budget_disable" : "ranking_budget_enable";
+  const currentReplay = sourceReplay?.runId === activeRunId ? sourceReplay : null;
+  const currentSelectionRef = selectedSelectionRef?.runId === activeRunId ? selectedSelectionRef.value : null;
+  const runReason = currentRun?.progress.stop_reason;
+  const runReasonText = runReason === "ranking_paused"
+    ? formatDocumentRankingPause(
+      currentGraph?.ranking,
+      currentRun?.status === "running" || currentRun?.status === "queued",
+      rankingBudgetEnabled,
+    )
+    : runReason ? formatDocumentAnalysisReason(runReason, currentRun?.error?.safe_detail) : currentRun?.error?.safe_detail;
+  const runReasonCodes = [...new Set([
+    runReason,
+    currentRun?.error?.code,
+    ...(runReason === "ranking_paused" ? documentRankingPauseReasons(currentGraph?.ranking) : []),
+  ].filter((code): code is string => Boolean(code)))];
+
+  const filteredClasses = useMemo(() => {
+    const query = classSearch.trim().toLocaleLowerCase();
+    if (!query) return classes;
+    return classes.filter((item) => (
+      classLabel(item).toLocaleLowerCase().includes(query)
+      || item.name.toLocaleLowerCase().includes(query)
+      || item.iri.toLocaleLowerCase().includes(query)
+    ));
+  }, [classSearch, classes]);
+  const selectedClass = classes.find((item) => item.iri === rootClassIri) ?? null;
+  const classOptions = selectedClass && !filteredClasses.some((item) => item.iri === selectedClass.iri)
+    ? [selectedClass, ...filteredClasses]
+    : filteredClasses;
+
+  const chapterTree = currentMetadata?.section_tree ?? null;
+  const nodeIndex = useMemo(() => chapterTree ? buildTreeIndex(chapterTree) : new Map<string, SelectedTreeNode>(), [chapterTree]);
+  const displayTree = useMemo(() => chapterTree ? chapterToTreeItem(chapterTree) : null, [chapterTree]);
+  const selectedNode = chapterTree
+    ? nodeIndex.get(selectedNodeId ?? "") ?? nodeIndex.get(chapterTree.node_id) ?? null
+    : null;
+  const activeLocation = useMemo(() => selectedNode ? selectedLocation(selectedNode) : null, [selectedNode]);
+  const previewContent = currentReplay?.content ?? currentMetadata?.content ?? null;
+  const analysisKey = currentMetadata?.metadata_snapshot?.snapshot_id
+    || currentMetadata?.analysis?.structure_hash
+    || activeRunId
+    || "document";
+
+  const replaceRunInUrl = useCallback((runId: string | null) => {
+    const params = new URLSearchParams(window.location.search);
+    if (runId) {
+      params.set("tab", "document");
+      params.set("documentRun", runId);
+    } else {
+      params.delete("documentRun");
+    }
+    params.delete("job_id");
+    params.delete("node_id");
+    const query = params.toString();
+    // Persist client-only selection before a refresh can interrupt navigation.
+    window.history.replaceState(null, "", query ? `${pathname}?${query}` : pathname);
+  }, [pathname]);
+
+  const chooseFile = useCallback((file: File) => {
+    const suffix = file.name.includes(".") ? file.name.slice(file.name.lastIndexOf(".")).toLowerCase() : "";
     if (suffix !== ".doc" && suffix !== ".docx") {
-      setAnalysisError("仅支持 .doc 或 .docx 文件。");
+      setCreateError("仅支持 .doc 或 .docx 文件。");
       return;
     }
-
-    const requestId = ++requestIdRef.current;
     setSourceFile(file);
-    setAnalysis(null);
-    setSelectedNodeId(null);
-    setAnalysisError(null);
-    setIsAnalyzing(true);
-    try {
-      const result = await analyzeWordDocument(file);
-      if (requestId !== requestIdRef.current) return;
-      setAnalysis(result);
-      setSelectedNodeId(result.section_tree.node_id);
-    } catch (error) {
-      if (requestId !== requestIdRef.current) return;
-      setAnalysisError(errorMessage(error));
-    } finally {
-      if (requestId === requestIdRef.current) setIsAnalyzing(false);
-    }
+    setDraftRequestKey(null);
+    setCreateError(null);
   }, []);
 
   const handleFileInput = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.currentTarget.files?.[0];
     event.currentTarget.value = "";
-    if (file) void runAnalysis(file);
+    if (file) chooseFile(file);
   };
 
   const handleDrop = (event: DragEvent<HTMLDivElement>) => {
     event.preventDefault();
     setIsDragging(false);
-    if (isAnalyzing) return;
     const file = event.dataTransfer.files?.[0];
-    if (file) void runAnalysis(file);
+    if (file) chooseFile(file);
   };
 
-  const clearAnalysis = () => {
-    requestIdRef.current += 1;
-    setSourceFile(null);
-    setAnalysis(null);
+  const handleStart = async () => {
+    if (!sourceFile || !rootClassIri || isCreating) return;
+    const activeRunAtStart = activeRunIdRef.current;
+    const requestKey = draftRequestKey ?? uniqueRequestKey("browser-document-run");
+    setDraftRequestKey(requestKey);
+    const requestSequence = ++createSequenceRef.current;
+    createControllerRef.current?.abort();
+    const controller = new AbortController();
+    createControllerRef.current = controller;
+    setIsCreating(true);
+    setCreateError(null);
+    try {
+      const receipt = await createDocumentAnalysisRun(
+        sourceFile,
+        rootClassIri,
+        requestKey,
+        "generate_summary",
+        controller.signal,
+      );
+      setHistoryVersion((value) => value + 1);
+      if (
+        requestSequence !== createSequenceRef.current
+        || activeRunIdRef.current !== activeRunAtStart
+      ) return;
+      setCreatedRunId(receipt.recognition_run_id);
+      setDraftRequestKey(null);
+      setSelectedNodeId(null);
+      setSelectedSelectionRef(null);
+      setSourceReplay(null);
+      setProjection(null);
+      setInnerTab("graph");
+      replaceRunInUrl(receipt.recognition_run_id);
+    } catch (error) {
+      if (requestSequence === createSequenceRef.current && !isAbortError(error)) {
+        setCreateError(errorMessage(error));
+      }
+    } finally {
+      if (requestSequence === createSequenceRef.current) setIsCreating(false);
+    }
+  };
+
+  const handleControl = async (action: DocumentAnalysisControlAction | "delete") => {
+    if (!currentRun || controlBusy || !currentRun.available_actions.includes(action)) return;
+    if (action === "cancel" && !window.confirm("取消后本运行不可恢复，已提交的快照仍会保留。确定取消吗？")) return;
+    if (action === "delete" && !window.confirm("删除会清理本运行的独占源文件与产物，完成后不可恢复。确定删除吗？")) return;
+    setControlBusy(action);
+    setControlError(null);
+    try {
+      const requestKey = uniqueRequestKey(`document-run-${action}`);
+      let receipt;
+      if (action === "delete") {
+        receipt = await deleteDocumentAnalysisRun(
+          currentRun.recognition_run_id,
+          currentRun.run_revision,
+          requestKey,
+        );
+      } else {
+        receipt = await controlDocumentAnalysisRun(
+          currentRun.recognition_run_id,
+          action,
+          currentRun.run_revision,
+          requestKey,
+          action === "ranking_budget_enable" ? "用户在文档分析页面启用排序预算限制"
+            : action === "ranking_budget_disable" ? "用户在文档分析页面禁用排序预算限制"
+              : `用户在文档分析页面请求${action}`,
+        );
+      }
+      if (activeRunIdRef.current === currentRun.recognition_run_id) {
+        setRunState((previous) => mergeDocumentAnalysisControlReceipt(previous, receipt));
+        setPollNonce((value) => value + 1);
+      }
+      setHistoryVersion((value) => value + 1);
+    } catch (error) {
+      if (activeRunIdRef.current === currentRun.recognition_run_id) {
+        setControlError(errorMessage(error));
+      }
+    } finally {
+      setControlBusy(null);
+    }
+  };
+
+  const handleSelectionRef = async (selectionRef: string) => {
+    const runId = activeRunIdRef.current;
+    if (!runId) return;
+    setSelectedSelectionRef({ runId, value: selectionRef });
+    setSourceError(null);
+    setSourceLoading(true);
+    sourceControllerRef.current?.abort();
+    const controller = new AbortController();
+    sourceControllerRef.current = controller;
+    try {
+      const source = await getDocumentAnalysisSource(runId, selectionRef, controller.signal);
+      if (
+        activeRunIdRef.current !== runId
+        || source.recognition_run_id !== runId
+        || sourceControllerRef.current !== controller
+      ) return;
+      if (currentMetadata?.analysis?.analysis_id && source.analysis_id !== currentMetadata.analysis.analysis_id) {
+        throw new Error("来源定位与当前解析快照不一致，已拒绝显示。");
+      }
+      const selection = source.selection;
+      const anchor = source.anchors[0] ?? null;
+      if (selection?.section_node_id) setSelectedNodeId(selection.section_node_id);
+      previewRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      setSourceReplay({
+        runId,
+        selectionRef,
+        content: source.content,
+        anchor,
+        sectionNodeId: selection?.section_node_id ?? null,
+        spanCount: source.anchors.length || selection?.span_refs.length || 0,
+      });
+    } catch (error) {
+      if (
+        activeRunIdRef.current === runId
+        && sourceControllerRef.current === controller
+        && !isAbortError(error)
+      ) setSourceError(errorMessage(error));
+    } finally {
+      if (
+        activeRunIdRef.current === runId
+        && sourceControllerRef.current === controller
+        && !controller.signal.aborted
+      ) setSourceLoading(false);
+    }
+  };
+
+  const selectTreeNode = (nodeId: string) => {
+    sourceControllerRef.current?.abort();
+    sourceControllerRef.current = null;
+    setSourceLoading(false);
+    setSelectedNodeId(nodeId);
+    setSourceReplay(null);
+    setSelectedSelectionRef(null);
+    setSourceError(null);
+  };
+
+  const selectRunView = (runId: string | null) => {
+    activeRunIdRef.current = runId;
+    createSequenceRef.current += 1;
+    createControllerRef.current?.abort();
+    sourceControllerRef.current?.abort();
+    setIsCreating(false);
+    setCreatedRunId(runId);
     setSelectedNodeId(null);
-    setAnalysisError(null);
-    setIsAnalyzing(false);
-    if (inputRef.current) inputRef.current.value = "";
+    setSelectedSelectionRef(null);
+    setSourceReplay(null);
+    setSourceLoading(false);
+    setSourceError(null);
+    setControlError(null);
+    setProjection(null);
+    setInnerTab("graph");
+    replaceRunInUrl(runId);
   };
 
-  const chapterTree = analysis?.section_tree;
-  const nodeIndex = useMemo(
-    () => (chapterTree ? buildTreeIndex(chapterTree) : new Map<string, SelectedTreeNode>()),
-    [chapterTree],
-  );
-  const displayTree = useMemo(
-    () => (chapterTree ? chapterToTreeItem(chapterTree) : null),
-    [chapterTree],
-  );
-  const selected = chapterTree
-    ? nodeIndex.get(selectedNodeId ?? "") ?? nodeIndex.get(chapterTree.node_id) ?? null
-    : null;
-
-  const activeLocation = useMemo(
-    () => (selected ? selectedLocation(selected) : null),
-    [selected],
-  );
-  const analysisKey = chapterTree?.layer_metadata.content_hash || analysis?.filename || "word";
+  const closeRunView = () => selectRunView(null);
+  const historyFocusRef = useRef<HTMLElement | null>(null);
+  const historyNavRef = useRef<HTMLElement>(null);
+  const previewRef = useRef<HTMLDivElement>(null);
 
   return (
     <div className="space-y-4">
@@ -509,195 +852,330 @@ export function DocumentAnalysisPanel() {
         onChange={handleFileInput}
       />
 
-      {!analysis && !isAnalyzing && (
-        <Card>
-          <CardContent className="p-5 sm:p-8">
-            <div
-              role="button"
-              tabIndex={0}
-              onClick={() => inputRef.current?.click()}
-              onKeyDown={(event) => {
-                if (event.key === "Enter" || event.key === " ") {
-                  event.preventDefault();
-                  inputRef.current?.click();
-                }
-              }}
-              onDragOver={(event) => {
-                event.preventDefault();
-                setIsDragging(true);
-              }}
-              onDragLeave={() => setIsDragging(false)}
-              onDrop={handleDrop}
-              className={cn(
-                "flex min-h-80 cursor-pointer flex-col items-center justify-center gap-5 rounded-xl border border-dashed p-8 text-center outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring",
-                isDragging
-                  ? "border-primary bg-primary/5"
-                  : "border-border bg-muted/20 hover:border-primary/50 hover:bg-muted/40",
-              )}
-            >
-              <div className="rounded-full bg-primary/10 p-5 text-primary">
-                <UploadCloud className="size-10" />
+      <Card aria-label="创建文档分析运行">
+        <CardHeader className="border-b p-4">
+          <CardTitle className="text-base">上传文档并指定本体类型</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4 p-4">
+          <div className="grid gap-4 lg:grid-cols-[minmax(15rem,0.9fr)_minmax(20rem,1.1fr)_auto] lg:items-end">
+            <div className="space-y-2">
+              <span className="text-sm font-medium">Word 文件</span>
+              <div
+                role="button"
+                tabIndex={0}
+                onClick={() => inputRef.current?.click()}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    inputRef.current?.click();
+                  }
+                }}
+                onDragOver={(event) => { event.preventDefault(); setIsDragging(true); }}
+                onDragLeave={() => setIsDragging(false)}
+                onDrop={handleDrop}
+                className={cn(
+                  "flex h-20 cursor-pointer items-center gap-3 rounded-lg border border-dashed px-4 outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring",
+                  isDragging ? "border-primary bg-primary/5" : "hover:border-primary/50 hover:bg-muted/30",
+                )}
+              >
+                <UploadCloud className="size-6 shrink-0 text-primary" />
+                <span className="min-w-0">
+                  <span className="block truncate text-sm font-medium">{sourceFile?.name || "选择或拖入 .doc / .docx"}</span>
+                  <span className="block text-xs text-muted-foreground">{sourceFile ? formatFileSize(sourceFile.size) : "选择文件不会上传或启动分析"}</span>
+                </span>
               </div>
-              <div className="space-y-2">
-                <h2 className="text-lg font-semibold">上传 Word 文档即时分析</h2>
-                <p className="text-sm text-muted-foreground">
-                  拖拽 .doc / .docx 到此处，或点击选择文件
-                </p>
-              </div>
-              <Button type="button" onClick={(event) => {
-                event.stopPropagation();
-                inputRef.current?.click();
-              }}>
-                <FileText />
-                选择 Word 文档
-              </Button>
-              <p className="max-w-2xl text-xs leading-relaxed text-muted-foreground">
-                文件仅用于本次临时解析，不创建 ExtractionJob，不执行分类、实体识别、关系抽取或知识图谱写入；刷新或关闭页面后结果即丢弃。
-              </p>
             </div>
-          </CardContent>
-        </Card>
-      )}
 
-      {analysisError && (
-        <Alert variant="destructive">
-          <TriangleAlert className="h-4 w-4" />
-          <AlertTitle>Word 文档分析失败</AlertTitle>
-          <AlertDescription>{analysisError}</AlertDescription>
-        </Alert>
-      )}
-
-      {isAnalyzing && sourceFile && <LoadingDocument filename={sourceFile.name} />}
-
-      {analysis && chapterTree && displayTree && selected && !isAnalyzing && (
-        <>
-          <Card>
-            <CardContent className="flex flex-col gap-3 p-4 xl:flex-row xl:items-center xl:justify-between">
-              <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
-                <div className="mr-2 min-w-0">
-                  <p className="truncate text-sm font-medium">{analysis.filename}</p>
-                  {sourceFile && (
-                    <p className="text-xs text-muted-foreground">
-                      {formatFileSize(sourceFile.size)} · 本次页面内临时分析
-                    </p>
-                  )}
-                </div>
-                <Badge variant="outline">
-                  {PAGINATION_MODE_LABELS[analysis.pagination.mode]}
-                </Badge>
-                <SummaryBadge source={chapterTree.layer_metadata.summary_source} />
-              </div>
-
-              <div className="flex flex-wrap items-center gap-2">
-                <Sheet>
-                  <SheetTrigger asChild>
-                    <Button variant="outline" size="sm" className="lg:hidden">
-                      <ListTree />章节树
-                    </Button>
-                  </SheetTrigger>
-                  <SheetContent className="overflow-y-auto">
-                    <SheetHeader>
-                      <SheetTitle>Word 章节树</SheetTitle>
-                      <SheetDescription>
-                        选择章节以联动原文；跨页章节可继续选择页片段。
-                      </SheetDescription>
-                    </SheetHeader>
-                    <ChapterTreePanel
-                      key={`mobile-tree-${analysisKey}`}
-                      tree={displayTree}
-                      selectedNodeId={selected.node.node_id}
-                      onSelect={setSelectedNodeId}
-                    />
-                  </SheetContent>
-                </Sheet>
-                <Sheet>
-                  <SheetTrigger asChild>
-                    <Button variant="outline" size="sm" className="xl:hidden">
-                      <PanelRight />节点元数据
-                    </Button>
-                  </SheetTrigger>
-                  <SheetContent className="overflow-y-auto">
-                    <SheetHeader>
-                      <SheetTitle>节点元数据</SheetTitle>
-                      <SheetDescription>摘要、来源范围与分页可信度。</SheetDescription>
-                    </SheetHeader>
-                    <MetadataPanel selected={selected} pagination={analysis.pagination} />
-                  </SheetContent>
-                </Sheet>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => sourceFile && void runAnalysis(sourceFile)}
-                >
-                  <RefreshCw />重新分析
-                </Button>
-                <Button variant="outline" size="sm" onClick={() => inputRef.current?.click()}>
-                  <UploadCloud />选择其他文件
-                </Button>
-                <Button variant="ghost" size="sm" onClick={clearAnalysis}>
-                  清空
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-
-          {analysis.pagination.warning && (
-            <Alert variant="warning">
-              <Info className="h-4 w-4" />
-              <AlertTitle>分页说明</AlertTitle>
-              <AlertDescription>{analysis.pagination.warning}</AlertDescription>
-            </Alert>
-          )}
-
-          {analysis.warnings.length > 0 && (
-            <Alert>
-              <TriangleAlert className="h-4 w-4" />
-              <AlertTitle>解析提示</AlertTitle>
-              <AlertDescription>{analysis.warnings.join("；")}</AlertDescription>
-            </Alert>
-          )}
-
-          <div className="grid h-[calc(100vh-14rem)] min-h-[38rem] gap-4 lg:grid-cols-[minmax(15rem,0.8fr)_minmax(0,2.3fr)] xl:grid-cols-[minmax(15rem,0.8fr)_minmax(0,2.3fr)_minmax(18rem,0.9fr)]">
-            <PanelCard title="Word 章节树" className="hidden lg:block">
-              <ChapterTreePanel
-                key={`desktop-tree-${analysisKey}`}
-                tree={displayTree}
-                selectedNodeId={selected.node.node_id}
-                onSelect={setSelectedNodeId}
-              />
-            </PanelCard>
-
-            <Card className="min-h-0 overflow-hidden">
-              <CardHeader className="flex-row items-center justify-between space-y-0 border-b p-4">
-                <CardTitle className="min-w-0 truncate text-sm">
-                  {analysis.filename || "Word 原文"}
-                </CardTitle>
-                <Badge variant="outline" className="ml-3 shrink-0">
-                  {selected.kind === "page"
-                    ? pageLabel(selected.node)
-                    : selected.node.node_type === "document"
-                      ? "全文"
-                      : `${selected.node.level} 级章节`}
-                </Badge>
-              </CardHeader>
-              <CardContent className="h-[calc(100%-3.25rem)] overflow-auto bg-muted/40 p-4">
-                <WordViewer
-                  content={analysis.content}
-                  activeLocation={activeLocation}
-                  fitTables
+            <div className="space-y-2">
+              <label htmlFor="document-root-class-search" className="text-sm font-medium">本体类型（必选）</label>
+              <div className="grid h-20 grid-rows-2 gap-2">
+                <Input
+                  id="document-root-class-search"
+                  value={classSearch}
+                  onChange={(event) => setClassSearch(event.target.value)}
+                  placeholder="搜索类型标签、名称或完整 IRI"
+                  aria-label="搜索本体类型"
                 />
+                <select
+                  aria-label="选择本体类型"
+                  value={rootClassIri}
+                  onChange={(event) => {
+                    setRootClassIri(event.target.value);
+                    setDraftRequestKey(null);
+                    setCreateError(null);
+                  }}
+                  disabled={classesLoading || Boolean(classesError)}
+                  className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+                >
+                  <option value="">{classesLoading ? "正在读取本体类型…" : "请选择根类型"}</option>
+                  {classOptions.map((item) => <option key={item.iri} value={item.iri}>{classLabel(item)} · {item.iri}</option>)}
+                </select>
+              </div>
+            </div>
+
+            <Button
+              type="button"
+              size="lg"
+              disabled={!sourceFile || !rootClassIri || isCreating}
+              onClick={() => void handleStart()}
+              className="lg:mb-0.5"
+            >
+              {isCreating ? <Loader2 className="animate-spin" /> : <Play />}
+              {isCreating ? "正在创建运行" : "开始分析"}
+            </Button>
+          </div>
+
+          {selectedClass && (
+            <div className="rounded-md bg-muted/40 p-2 text-xs">
+              <span className="font-medium">已选：{classLabel(selectedClass)}</span>
+              <span className="ml-2 break-all font-mono text-muted-foreground">{selectedClass.iri}</span>
+            </div>
+          )}
+          {classesError && <Alert variant="destructive"><TriangleAlert className="size-4" /><AlertTitle>本体类型加载失败</AlertTitle><AlertDescription>{classesError}</AlertDescription></Alert>}
+          {createError && <Alert variant="destructive"><TriangleAlert className="size-4" /><AlertTitle>无法创建文档分析运行</AlertTitle><AlertDescription>{createError}</AlertDescription></Alert>}
+          {currentRun && (
+            <p className="text-xs text-muted-foreground">
+              当前运行的文件与本体类型已冻结；上方选择仅作为下一次显式启动的草稿，不会修改或取消当前运行。
+            </p>
+          )}
+          <p className="text-xs leading-relaxed text-muted-foreground">
+            点击“开始分析”后才会上传文件，并在后台生成分层元数据与关系图谱。结果是系统分析产物，不会自动审核或提交业务事实；关闭页面不会取消运行，数据按页面显示的保留期限清理。
+          </p>
+        </CardContent>
+      </Card>
+
+      <section aria-label="文档分析布局" className="min-w-0">
+        <nav ref={historyNavRef} tabIndex={-1} aria-label="分析历史导航" className="min-w-0">
+          <DocumentAnalysisHistory
+            key={historyVersion}
+            activeRunId={activeRunId}
+            currentRun={currentRun}
+            onSelect={(runId) => {
+              historyFocusRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+              selectRunView(runId);
+            }}
+          />
+        </nav>
+
+        <Sheet open={!!activeRunId} onOpenChange={(open) => { if (!open) closeRunView(); }}>
+          <SheetContent
+            className="w-full max-w-none overflow-hidden p-0 md:w-[80vw] md:max-w-none"
+            onCloseAutoFocus={(event) => {
+              event.preventDefault();
+              const target = historyFocusRef.current;
+              if (target?.isConnected) target.focus();
+              else historyNavRef.current?.focus();
+            }}
+          >
+            <SheetHeader className="shrink-0 border-b px-5 py-4 pr-12">
+              <SheetTitle>文档分析详情</SheetTitle>
+              <SheetDescription className="truncate">{currentRun?.input.filename || "查看文档、元数据与本体约束关系图谱"}</SheetDescription>
+            </SheetHeader>
+            <div className="min-h-0 min-w-0 flex-1 space-y-4 overflow-y-auto p-4">
+          {activeRunId && !currentRun && pollError?.runId !== activeRunId && (
+            <Card>
+              <CardContent className="flex min-h-40 items-center justify-center gap-3 p-6 text-sm text-muted-foreground">
+                <Loader2 className="size-5 animate-spin" />正在只读恢复运行 {activeRunId}
               </CardContent>
             </Card>
+          )}
 
-            <PanelCard title="节点元数据" className="hidden xl:block">
-              <MetadataPanel
-                selected={selected}
-                pagination={analysis.pagination}
-              />
-            </PanelCard>
-          </div>
-        </>
-      )}
+          {pollError?.runId === activeRunId && (
+            <Alert variant="destructive">
+              <TriangleAlert className="size-4" />
+              <AlertTitle>{pollError.unavailable ? "分析结果已删除、过期或不可访问" : "运行读取失败"}</AlertTitle>
+              <AlertDescription className="flex flex-wrap items-center justify-between gap-2">
+                <span>{pollError.message}</span>
+                <Button variant="outline" size="sm" onClick={() => setPollNonce((value) => value + 1)}><RefreshCw />重试只读请求</Button>
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {currentRun && (
+            <Card aria-label="文档分析运行状态">
+              <CardContent className="space-y-4 p-4">
+                <div className="flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
+                  <div className="min-w-0 space-y-2">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="break-all text-sm font-semibold">{currentRun.input.filename}</p>
+                      <Badge>{RUN_STATUS_LABELS[currentRun.status]}</Badge>
+                      <Badge variant="outline">{STAGE_LABELS[currentRun.stage] || currentRun.stage}</Badge>
+                    </div>
+                    <p className="text-xs font-medium">{currentRun.input.root_class_label}</p>
+
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {currentRun.available_actions.includes("pause") && <Button size="sm" variant="outline" disabled={Boolean(controlBusy)} onClick={() => void handleControl("pause")}><Pause />{controlBusy === "pause" ? "正在请求" : "暂停"}</Button>}
+                    {currentRun.available_actions.includes("resume") && <Button size="sm" variant="outline" disabled={Boolean(controlBusy)} onClick={() => void handleControl("resume")}><Play />{controlBusy === "resume" ? "正在请求" : "恢复"}</Button>}
+                    {currentRun.available_actions.includes("cancel") && <Button size="sm" variant="outline" disabled={Boolean(controlBusy)} onClick={() => void handleControl("cancel")}><Ban />{controlBusy === "cancel" ? "正在请求" : "取消"}</Button>}
+                    {currentRun.available_actions.includes("delete") && <Button size="sm" variant="destructive" disabled={Boolean(controlBusy)} onClick={() => void handleControl("delete")}><Trash2 />{controlBusy === "delete" ? "正在请求" : "删除"}</Button>}
+                    <Button size="sm" variant="ghost" onClick={closeRunView}>关闭视图</Button>
+                  </div>
+                </div>
+                <DocumentHarnessInformation key={currentRun.recognition_run_id}
+                  runId={currentRun.recognition_run_id} status={currentRun.status}
+                  data={harness.data} error={harness.error}>
+                    <section aria-label="排序预算限制" className="space-y-2 rounded-md border p-3 text-xs">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium">排序预算限制</span>
+                          <Badge variant="outline">{rankingBudgetEnabled ? "已启用" : "已禁用"}</Badge>
+                        </div>
+                        {currentRun.available_actions.includes(rankingBudgetAction) && (
+                          <Button size="sm" variant="outline" disabled={Boolean(controlBusy)} onClick={() => void handleControl(rankingBudgetAction)}>
+                            {controlBusy === rankingBudgetAction ? "正在更新" : rankingBudgetEnabled ? "禁用排序预算限制" : "启用排序预算限制"}
+                          </Button>
+                        )}
+                      </div>
+                      <p className="text-muted-foreground">
+                        {rankingBudgetEnabled
+                          ? "限制累计排序 tokens、记录与请求次数。"
+                          : "预算统计已暂停（显示启用期间累计值）。禁用期间不预扣或累计排序预算；重新启用后从关闭前的累计量继续。"}
+                      </p>
+                      <p className="text-muted-foreground">此开关不关闭 embedding 召回或 reranker 精排；输入长度、超时和单次重试限制仍然生效。切换不会自动恢复运行。</p>
+                      {(currentRun.status === "running" || currentRun.status === "queued") && <p className="text-muted-foreground">运行期间不可调整排序预算限制，请先暂停运行。</p>}
+                    </section>
+
+                    <div className="grid gap-2 text-xs sm:grid-cols-2">
+
+                      <div className="rounded-md bg-muted/40 p-2"><Clock3 className="mr-1 inline size-3.5" /><span className="text-muted-foreground">保留至</span><strong className="ml-2">{formatDate(currentRun.expires_at)}</strong></div>
+                    </div>
+
+                    <div className="flex flex-wrap gap-2">
+                      {Object.entries(currentRun.artifacts).map(([name, status]) => <Badge key={name} variant={status === "failed" ? "destructive" : "outline"}>{name}: {ARTIFACT_LABELS[status]}</Badge>)}
+                      <Badge variant="outline">已记账模型调用 {currentRun.progress.model_calls}</Badge>
+                      {(currentRun.progress.model_calls_unresolved ?? 0) > 0 && (
+                        <Badge variant="outline">
+                          已预扣待核实 {currentRun.progress.model_calls_unresolved}
+                        </Badge>
+                      )}
+                    </div>
+                    <details>
+                      <summary className="cursor-pointer">标识与版本</summary>
+                      <div className="mt-2 space-y-1 break-all font-mono">
+                        <p>运行：{currentRun.recognition_run_id}</p>
+                        <p>revision {currentRun.run_revision} / event {currentRun.event_head}</p>
+                        <p>根类型：{currentRun.input.root_class_iri}</p>
+                        <p>模型版本：{harness.data?.configuration.model_revision || "未记录"}</p>
+                        <p>元数据快照：{currentMetadata?.metadata_snapshot?.snapshot_id || "未就绪"}</p>
+                      </div>
+                    </details>
+                </DocumentHarnessInformation>
+                {(currentRun.error || runReason) && (
+                  <Alert variant="warning">
+                    <TriangleAlert className="size-4" />
+                    <AlertTitle>运行说明</AlertTitle>
+                    <AlertDescription>
+                      <p>{runReasonText || "运行未完整结束。"}</p>
+                      {runReasonCodes.length > 0 && (
+                        <details className="mt-2 text-xs">
+                          <summary className="cursor-pointer">技术诊断</summary>
+                          <p className="mt-1 break-all font-mono">{runReasonCodes.join("、")}</p>
+                        </details>
+                      )}
+                    </AlertDescription>
+                  </Alert>
+                )}
+                {controlError && <Alert variant="destructive"><TriangleAlert className="size-4" /><AlertTitle>运行控制失败</AlertTitle><AlertDescription>{controlError}</AlertDescription></Alert>}
+              </CardContent>
+            </Card>
+          )}
+
+          {activeRunId && !(pollError?.runId === activeRunId && pollError.unavailable) && (
+            <section aria-label="文档分析工作区" className="min-w-0 space-y-3">
+              {currentMetadata?.error && metadataError(currentMetadata.error) && <Alert variant="destructive"><TriangleAlert className="size-4" /><AlertTitle>分层元数据处理失败</AlertTitle><AlertDescription>{metadataError(currentMetadata.error)}</AlertDescription></Alert>}
+              {currentMetadata?.pagination?.warning && <Alert variant="warning"><Info className="size-4" /><AlertTitle>分页说明</AlertTitle><AlertDescription>{currentMetadata.pagination.warning}</AlertDescription></Alert>}
+              {currentMetadata && currentMetadata.warnings.length > 0 && <Alert><TriangleAlert className="size-4" /><AlertTitle>解析提示</AlertTitle><AlertDescription>{currentMetadata.warnings.join("；")}</AlertDescription></Alert>}
+              {currentSelectionRef && (
+                <Alert>
+                  {sourceLoading ? <Loader2 className="size-4 animate-spin" /> : <Info className="size-4" />}
+                  <AlertTitle>{sourceLoading ? "正在校验并定位图谱证据" : "已从关系图谱定位原文"}</AlertTitle>
+                  <AlertDescription>
+                    {currentReplay && <span>已定位 {currentReplay.spanCount} 处原文证据，请查看下方高亮内容。</span>}
+                  </AlertDescription>
+                </Alert>
+              )}
+              {sourceError && <Alert variant="destructive"><TriangleAlert className="size-4" /><AlertTitle>原文证据定位失败</AlertTitle><AlertDescription>{sourceError}</AlertDescription></Alert>}
+
+              <Tabs value={innerTab} onValueChange={(value) => setInnerTab(value as InnerTab)}>
+                <TabsList aria-label="文档分析结果视图" className="mb-3 grid w-full grid-cols-2">
+                  <TabsTrigger value="metadata" className="gap-1.5"><FileText className="size-4" />节点元数据</TabsTrigger>
+                  <TabsTrigger value="graph" className="gap-1.5"><GitBranch className="size-4" />关系图谱</TabsTrigger>
+                </TabsList>
+              {currentRun && <DocumentHarnessStream key={activeRunId} status={currentRun.status} data={harness.data} connected={harnessConnection.runId === activeRunId && harnessConnection.connected} error={harness.error} />}
+              <div className="mb-3 flex justify-end xl:hidden">
+                <Sheet>
+                  <SheetTrigger asChild><Button variant="outline" size="sm" disabled={!displayTree || !selectedNode}><ListTree />章节树</Button></SheetTrigger>
+                  <SheetContent className="overflow-y-auto">
+                    <SheetHeader><SheetTitle>Word 章节树</SheetTitle><SheetDescription>选择章节以联动原文；跨页章节可继续选择页片段。</SheetDescription></SheetHeader>
+                    {displayTree && selectedNode && <ChapterTreePanel key={`mobile-tree-${analysisKey}`} tree={displayTree} selectedNodeId={selectedNode.node.node_id} onSelect={selectTreeNode} />}
+                  </SheetContent>
+                </Sheet>
+              </div>
+
+              <div className={cn("grid min-w-0 gap-3", innerTab === "graph"
+                ? "xl:grid-cols-[10rem_minmax(0,1fr)]"
+                : "xl:grid-cols-[9rem_minmax(0,1fr)_minmax(14rem,0.8fr)]")}>
+                <PanelCard title="Word 章节树" className="hidden h-[32rem] xl:flex">
+                  {displayTree && selectedNode ? (
+                    <ChapterTreePanel key={`desktop-tree-${analysisKey}`} tree={displayTree} selectedNodeId={selectedNode.node.node_id} onSelect={selectTreeNode} />
+                  ) : (
+                    <p className="py-6 text-xs text-muted-foreground">{currentMetadata ? "章节结构尚未就绪" : "正在读取章节结构…"}</p>
+                  )}
+                </PanelCard>
+
+                <Card ref={previewRef} role="region" aria-label="原始文档预览" className="flex h-[32rem] min-h-0 min-w-0 flex-col overflow-hidden">
+                  <CardHeader className="flex shrink-0 flex-row flex-wrap items-center justify-between gap-2 space-y-0 border-b p-3">
+                    <div className="min-w-0 flex-1">
+                      <CardTitle className="text-sm">文档预览</CardTitle>
+                      <p className="mt-1 truncate text-xs text-muted-foreground" title={currentMetadata?.filename || currentRun?.input.filename}>{currentMetadata?.filename || currentRun?.input.filename || "Word 原文"}</p>
+                    </div>
+                    {selectedNode && <Badge variant="outline" className="shrink-0">{selectedNode.kind === "page" ? pageLabel(selectedNode.node) : selectedNode.node.node_type === "document" ? "全文" : `${selectedNode.node.level} 级章节`}</Badge>}
+                  </CardHeader>
+                  <CardContent className="min-h-0 flex-1 overflow-auto bg-muted/40 p-3">
+                    {previewContent ? (
+                      <WordViewer content={previewContent} activeLocation={currentReplay?.anchor ? null : activeLocation} activeAnchor={currentReplay?.anchor ?? null} fitTables />
+                    ) : (
+                      <div className="flex h-full flex-col items-center justify-center gap-3 text-center">
+                        {!currentMetadata ? <Loader2 className="size-6 animate-spin text-muted-foreground" /> : <FileText className="size-8 text-muted-foreground" />}
+                        <p className="text-sm font-medium">{currentMetadata ? "文档结构尚未就绪" : "正在读取文档预览"}</p>
+                        <p className="text-xs text-muted-foreground">原文解析完成后将在此显示。</p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                <Card role="region" aria-label="文档分析详情" className={cn("flex min-h-0 min-w-0 flex-col overflow-hidden", innerTab === "graph" ? "order-first col-span-full" : "h-[32rem]")}>
+                    <TabsContent value="metadata" className="m-0 min-h-0 flex-1 overflow-auto p-3">
+                      {selectedNode ? (
+                        <MetadataPanel selected={selectedNode} pagination={currentMetadata?.pagination} />
+                      ) : !currentMetadata ? (
+                        <div className="space-y-3"><p className="text-xs text-muted-foreground">正在读取已提交的分层元数据…</p><Skeleton className="h-3 w-full" /><Skeleton className="h-3 w-4/5" /></div>
+                      ) : (
+                        <p className="py-6 text-sm text-muted-foreground">节点元数据尚未就绪。</p>
+                      )}
+                    </TabsContent>
+                    <TabsContent value="graph" forceMount className="m-0 min-h-0 flex-1 overflow-auto p-3 data-[state=inactive]:hidden">
+                      <DocumentRelationshipGraph
+                        key={activeRunId}
+                        artifact={currentGraph}
+                        runStatus={currentRun?.status}
+                        rankingBudgetEnabled={rankingBudgetEnabled}
+                        projection={projection}
+                        onProjectionChange={setProjection}
+                        onSelectionRef={(selectionRef) => void handleSelectionRef(selectionRef)}
+                        selectedSelectionRef={currentSelectionRef}
+                      />
+                    </TabsContent>
+                </Card>
+              </div>
+              </Tabs>
+            </section>
+          )}
+            </div>
+          </SheetContent>
+        </Sheet>
+      </section>
     </div>
   );
 }

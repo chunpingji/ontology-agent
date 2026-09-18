@@ -1,0 +1,1131 @@
+{
+  "review_type": "Independent assistant source review; not expert gold or full-document precision/recall",
+  "matching_passed": true,
+  "unreviewed_scope_status": [
+    {
+      "scope_id": "pde_conflict",
+      "status": "failed",
+      "error_code": "model_request_failed",
+      "candidate_proposal_available": false,
+      "reason": "No independent review provided; never treated as quality pass"
+    }
+  ],
+  "coverage": [
+    {
+      "scope_id": "introduction",
+      "subjects_reviewed": 4,
+      "claims_reviewed": 7,
+      "observations_reviewed": 2,
+      "review_input_sha256": "c9fc90e401e62cc3b9cad71cea5af2be18edba0aadbe71d454eeea0525602f29"
+    },
+    {
+      "scope_id": "product_properties",
+      "subjects_reviewed": 3,
+      "claims_reviewed": 7,
+      "observations_reviewed": 2,
+      "review_input_sha256": "4aa3ea3926b58f8ca9f757fcf48ccc5745bb26c472b6d1c3f117b72ad18fdb52"
+    },
+    {
+      "scope_id": "process_equipment",
+      "subjects_reviewed": 5,
+      "claims_reviewed": 7,
+      "observations_reviewed": 3,
+      "review_input_sha256": "88d3962a47ed9c892bafe0f7036bd25aa0131635ebec93728a121d8fb0825c15"
+    },
+    {
+      "scope_id": "quality_condition",
+      "subjects_reviewed": 5,
+      "claims_reviewed": 2,
+      "observations_reviewed": 5,
+      "review_input_sha256": "626325a688da61ba9246dc0668005fd95f6abcb77606965f80356136f5f4cc3b"
+    },
+    {
+      "scope_id": "storage",
+      "subjects_reviewed": 2,
+      "claims_reviewed": 4,
+      "observations_reviewed": 2,
+      "review_input_sha256": "ba27b4f66d88be4e7b6089ae97d712f84b0fd678d57888f500129a78fccd1ad1"
+    },
+    {
+      "scope_id": "residue_missing",
+      "subjects_reviewed": 3,
+      "claims_reviewed": 0,
+      "observations_reviewed": 2,
+      "review_input_sha256": "cd0d5cbbdef289557bc01a4239b46ec4200410a777e7d78d5cf96a70fb338568"
+    },
+    {
+      "scope_id": "toxicity_unknown",
+      "subjects_reviewed": 4,
+      "claims_reviewed": 2,
+      "observations_reviewed": 4,
+      "review_input_sha256": "67c66741d0d7bc17cd7b2b1474d02c7c82b44d27878c90597a2b62692d4d411e"
+    }
+  ],
+  "all_candidates": {
+    "count": 49,
+    "overall_verdicts": {
+      "unsupported": 19,
+      "undetermined": 17,
+      "supported": 13
+    },
+    "content_verdicts": {
+      "supported": 37,
+      "unsupported": 6,
+      "undetermined": 6
+    }
+  },
+  "accepted_claims": {
+    "count": 21,
+    "overall_verdicts": {
+      "unsupported": 9,
+      "undetermined": 9,
+      "supported": 3
+    },
+    "content_verdicts": {
+      "supported": 17,
+      "unsupported": 2,
+      "undetermined": 2
+    }
+  },
+  "accepted_observations": {
+    "count": 6,
+    "overall_verdicts": {
+      "undetermined": 1,
+      "unsupported": 1,
+      "supported": 4
+    },
+    "content_verdicts": {
+      "supported": 5,
+      "undetermined": 1
+    }
+  },
+  "by_scope": {
+    "introduction": {
+      "all_candidates": {
+        "count": 9,
+        "overall_verdicts": {
+          "unsupported": 6,
+          "undetermined": 1,
+          "supported": 2
+        },
+        "content_verdicts": {
+          "supported": 7,
+          "unsupported": 1,
+          "undetermined": 1
+        }
+      },
+      "accepted_claims": {
+        "count": 5,
+        "overall_verdicts": {
+          "unsupported": 4,
+          "undetermined": 1
+        },
+        "content_verdicts": {
+          "supported": 3,
+          "unsupported": 1,
+          "undetermined": 1
+        }
+      },
+      "accepted_observations": {
+        "count": 0,
+        "overall_verdicts": {},
+        "content_verdicts": {}
+      }
+    },
+    "process_equipment": {
+      "all_candidates": {
+        "count": 10,
+        "overall_verdicts": {
+          "supported": 4,
+          "undetermined": 4,
+          "unsupported": 2
+        },
+        "content_verdicts": {
+          "supported": 7,
+          "unsupported": 2,
+          "undetermined": 1
+        }
+      },
+      "accepted_claims": {
+        "count": 2,
+        "overall_verdicts": {
+          "supported": 2
+        },
+        "content_verdicts": {
+          "supported": 2
+        }
+      },
+      "accepted_observations": {
+        "count": 0,
+        "overall_verdicts": {},
+        "content_verdicts": {}
+      }
+    },
+    "product_properties": {
+      "all_candidates": {
+        "count": 9,
+        "overall_verdicts": {
+          "undetermined": 7,
+          "unsupported": 1,
+          "supported": 1
+        },
+        "content_verdicts": {
+          "undetermined": 1,
+          "supported": 7,
+          "unsupported": 1
+        }
+      },
+      "accepted_claims": {
+        "count": 7,
+        "overall_verdicts": {
+          "undetermined": 7
+        },
+        "content_verdicts": {
+          "undetermined": 1,
+          "supported": 6
+        }
+      },
+      "accepted_observations": {
+        "count": 0,
+        "overall_verdicts": {},
+        "content_verdicts": {}
+      }
+    },
+    "quality_condition": {
+      "all_candidates": {
+        "count": 7,
+        "overall_verdicts": {
+          "supported": 2,
+          "undetermined": 1,
+          "unsupported": 4
+        },
+        "content_verdicts": {
+          "supported": 5,
+          "undetermined": 1,
+          "unsupported": 1
+        }
+      },
+      "accepted_claims": {
+        "count": 1,
+        "overall_verdicts": {
+          "supported": 1
+        },
+        "content_verdicts": {
+          "supported": 1
+        }
+      },
+      "accepted_observations": {
+        "count": 0,
+        "overall_verdicts": {},
+        "content_verdicts": {}
+      }
+    },
+    "residue_missing": {
+      "all_candidates": {
+        "count": 2,
+        "overall_verdicts": {
+          "undetermined": 2
+        },
+        "content_verdicts": {
+          "supported": 1,
+          "undetermined": 1
+        }
+      },
+      "accepted_claims": {
+        "count": 0,
+        "overall_verdicts": {},
+        "content_verdicts": {}
+      },
+      "accepted_observations": {
+        "count": 0,
+        "overall_verdicts": {},
+        "content_verdicts": {}
+      }
+    },
+    "storage": {
+      "all_candidates": {
+        "count": 6,
+        "overall_verdicts": {
+          "unsupported": 5,
+          "undetermined": 1
+        },
+        "content_verdicts": {
+          "supported": 5,
+          "undetermined": 1
+        }
+      },
+      "accepted_claims": {
+        "count": 4,
+        "overall_verdicts": {
+          "unsupported": 4
+        },
+        "content_verdicts": {
+          "supported": 4
+        }
+      },
+      "accepted_observations": {
+        "count": 2,
+        "overall_verdicts": {
+          "undetermined": 1,
+          "unsupported": 1
+        },
+        "content_verdicts": {
+          "supported": 1,
+          "undetermined": 1
+        }
+      }
+    },
+    "toxicity_unknown": {
+      "all_candidates": {
+        "count": 6,
+        "overall_verdicts": {
+          "undetermined": 1,
+          "unsupported": 1,
+          "supported": 4
+        },
+        "content_verdicts": {
+          "supported": 5,
+          "unsupported": 1
+        }
+      },
+      "accepted_claims": {
+        "count": 2,
+        "overall_verdicts": {
+          "undetermined": 1,
+          "unsupported": 1
+        },
+        "content_verdicts": {
+          "supported": 1,
+          "unsupported": 1
+        }
+      },
+      "accepted_observations": {
+        "count": 4,
+        "overall_verdicts": {
+          "supported": 4
+        },
+        "content_verdicts": {
+          "supported": 4
+        }
+      }
+    }
+  },
+  "by_destination": {
+    "accepted": {
+      "count": 21,
+      "overall_verdicts": {
+        "unsupported": 9,
+        "undetermined": 9,
+        "supported": 3
+      },
+      "content_verdicts": {
+        "supported": 17,
+        "unsupported": 2,
+        "undetermined": 2
+      }
+    },
+    "observations": {
+      "count": 6,
+      "overall_verdicts": {
+        "undetermined": 1,
+        "unsupported": 1,
+        "supported": 4
+      },
+      "content_verdicts": {
+        "supported": 5,
+        "undetermined": 1
+      }
+    },
+    "rejected": {
+      "count": 10,
+      "overall_verdicts": {
+        "supported": 4,
+        "undetermined": 5,
+        "unsupported": 1
+      },
+      "content_verdicts": {
+        "supported": 6,
+        "unsupported": 1,
+        "undetermined": 3
+      }
+    },
+    "unresolved": {
+      "count": 12,
+      "overall_verdicts": {
+        "unsupported": 8,
+        "supported": 2,
+        "undetermined": 2
+      },
+      "content_verdicts": {
+        "supported": 9,
+        "unsupported": 3
+      }
+    }
+  },
+  "records": [
+    {
+      "scope_id": "introduction",
+      "candidate_id": "c1",
+      "kind": "relation",
+      "path": "subjects.document.relations.hasProductionPlan[0]",
+      "subject_id": "document",
+      "field": "hasProductionPlan",
+      "program_destination": "accepted",
+      "overall_verdict": "unsupported",
+      "content_verdict": "supported",
+      "reason": "字段/关系内容本身有原文支持，但提交的s1锚点“HRS-1597”在原句明确承担新分子/药物名称角色，不是计划提及。以该错角色锚点作为计划主体的当前整体声明不支持；应先改为u1中的本次临床备样计划提及再提交。",
+      "program_issues": [],
+      "matching": "scope + original id/path/subject/field/kind + exact original proposal + frozen proposal excluding coordinates/span_id/replay_issue metadata"
+    },
+    {
+      "scope_id": "introduction",
+      "candidate_id": "c2",
+      "kind": "property",
+      "path": "subjects.s1.attributes.plannedBatchSizeMax_kg[0]",
+      "subject_id": "s1",
+      "field": "plannedBatchSizeMax_kg",
+      "program_destination": "unresolved",
+      "overall_verdict": "unsupported",
+      "content_verdict": "supported",
+      "reason": "字段/关系内容本身有原文支持，但提交的s1锚点“HRS-1597”在原句明确承担新分子/药物名称角色，不是计划提及。以该错角色锚点作为计划主体的当前整体声明不支持；应先改为u1中的本次临床备样计划提及再提交。",
+      "program_issues": [
+        "scalar_value_required",
+        "unit_source_missing"
+      ],
+      "matching": "scope + original id/path/subject/field/kind + exact original proposal + frozen proposal excluding coordinates/span_id/replay_issue metadata"
+    },
+    {
+      "scope_id": "introduction",
+      "candidate_id": "c3",
+      "kind": "property",
+      "path": "subjects.s1.attributes.plannedBatchSizeMin_kg[0]",
+      "subject_id": "s1",
+      "field": "plannedBatchSizeMin_kg",
+      "program_destination": "unresolved",
+      "overall_verdict": "unsupported",
+      "content_verdict": "supported",
+      "reason": "字段/关系内容本身有原文支持，但提交的s1锚点“HRS-1597”在原句明确承担新分子/药物名称角色，不是计划提及。以该错角色锚点作为计划主体的当前整体声明不支持；应先改为u1中的本次临床备样计划提及再提交。",
+      "program_issues": [
+        "scalar_value_required",
+        "unit_source_missing"
+      ],
+      "matching": "scope + original id/path/subject/field/kind + exact original proposal + frozen proposal excluding coordinates/span_id/replay_issue metadata"
+    },
+    {
+      "scope_id": "introduction",
+      "candidate_id": "c4",
+      "kind": "property",
+      "path": "subjects.s1.attributes.plannedProductionDate[0]",
+      "subject_id": "s1",
+      "field": "plannedProductionDate",
+      "program_destination": "accepted",
+      "overall_verdict": "unsupported",
+      "content_verdict": "supported",
+      "reason": "字段/关系内容本身有原文支持，但提交的s1锚点“HRS-1597”在原句明确承担新分子/药物名称角色，不是计划提及。以该错角色锚点作为计划主体的当前整体声明不支持；应先改为u1中的本次临床备样计划提及再提交。",
+      "program_issues": [],
+      "matching": "scope + original id/path/subject/field/kind + exact original proposal + frozen proposal excluding coordinates/span_id/replay_issue metadata"
+    },
+    {
+      "scope_id": "introduction",
+      "candidate_id": "c5",
+      "kind": "property",
+      "path": "subjects.s1.attributes.productionPurpose[0]",
+      "subject_id": "s1",
+      "field": "productionPurpose",
+      "program_destination": "accepted",
+      "overall_verdict": "unsupported",
+      "content_verdict": "supported",
+      "reason": "字段/关系内容本身有原文支持，但提交的s1锚点“HRS-1597”在原句明确承担新分子/药物名称角色，不是计划提及。以该错角色锚点作为计划主体的当前整体声明不支持；应先改为u1中的本次临床备样计划提及再提交。",
+      "program_issues": [],
+      "matching": "scope + original id/path/subject/field/kind + exact original proposal + frozen proposal excluding coordinates/span_id/replay_issue metadata"
+    },
+    {
+      "scope_id": "introduction",
+      "candidate_id": "c6",
+      "kind": "property",
+      "path": "subjects.s2.attributes.productIdentifier[0]",
+      "subject_id": "s2",
+      "field": "productIdentifier",
+      "program_destination": "accepted",
+      "overall_verdict": "unsupported",
+      "content_verdict": "unsupported",
+      "reason": "u1称HRS-1597为新分子，并叙述多次不同时间和用途的供样；未将其明示为能够唯一指向具体产品/API实例的标识。Schema卡片明确禁止以名称或共同项目替代具体实例身份，因此不能将该名称直接写入productIdentifier。此判断不否定HRS-1597这个原文名称存在。",
+      "program_issues": [],
+      "matching": "scope + original id/path/subject/field/kind + exact original proposal + frozen proposal excluding coordinates/span_id/replay_issue metadata"
+    },
+    {
+      "scope_id": "introduction",
+      "candidate_id": "c7",
+      "kind": "relation",
+      "path": "subjects.s3.relations.producesFinalProduct[0]",
+      "subject_id": "s3",
+      "field": "producesFinalProduct",
+      "program_destination": "accepted",
+      "overall_verdict": "undetermined",
+      "content_verdict": "undetermined",
+      "reason": "u2仅说明本次修改涉及“HRS-1597结晶纯化步骤”，因杂质未达过控标准增加两次重结晶。没有明示该步骤属于最终合成步骤，也未明示它直接产出最终API；关系可能成立但目前证据不足。步骤名称及药名共现不能补足最终产出角色，亦不能据缺证判断该关系为假。",
+      "program_issues": [],
+      "matching": "scope + original id/path/subject/field/kind + exact original proposal + frozen proposal excluding coordinates/span_id/replay_issue metadata"
+    },
+    {
+      "scope_id": "introduction",
+      "candidate_id": "o1",
+      "kind": "observation",
+      "path": "observations[0]",
+      "subject_id": null,
+      "field": null,
+      "program_destination": "rejected",
+      "overall_verdict": "supported",
+      "content_verdict": "supported",
+      "reason": "u1明确给出“642和646车间”为计划生产地点，s1卡片所列字段只有批次数、批量上下限、生产时间、用途，没有地点属性或关系。将地点作为未映射观察保留符合当前卡片范围；不是原文缺失地点。",
+      "program_issues": [
+        "source_quote_missing",
+        "semantic_state_unsupported",
+        "semantic_legend_unsupported",
+        "semantic_condition_unsupported"
+      ],
+      "matching": "scope + original id/path/subject/field/kind + exact original proposal + frozen proposal excluding coordinates/span_id/replay_issue metadata"
+    },
+    {
+      "scope_id": "introduction",
+      "candidate_id": "o2",
+      "kind": "observation",
+      "path": "observations[1]",
+      "subject_id": null,
+      "field": null,
+      "program_destination": "rejected",
+      "overall_verdict": "supported",
+      "content_verdict": "supported",
+      "reason": "u2直接给出“杂质含量未达过控标准”这一修改原因以及“增加两次重结晶操作”。s3卡片虽有inProcessControl，但定义为方法和验收标准，不等同于实际未达标结果、修改原因或重结晶次数；其他槽位也不承载这些内容，保留为未映射观察有依据。",
+      "program_issues": [
+        "source_quote_missing",
+        "semantic_state_unsupported",
+        "semantic_legend_unsupported",
+        "semantic_condition_unsupported"
+      ],
+      "matching": "scope + original id/path/subject/field/kind + exact original proposal + frozen proposal excluding coordinates/span_id/replay_issue metadata"
+    },
+    {
+      "scope_id": "product_properties",
+      "candidate_id": "c1",
+      "kind": "relation",
+      "path": "subjects.document.relations.describes[0]",
+      "subject_id": "document",
+      "field": "describes",
+      "program_destination": "accepted",
+      "overall_verdict": "undetermined",
+      "content_verdict": "undetermined",
+      "reason": "本条整体声明仍缺少目标/主体s1的DrugProduct角色与实例绑定证明；字面字段值受支持不等于整体归属已经确定。",
+      "program_issues": [],
+      "matching": "scope + original id/path/subject/field/kind + exact original proposal + frozen proposal excluding coordinates/span_id/replay_issue metadata"
+    },
+    {
+      "scope_id": "product_properties",
+      "candidate_id": "c2",
+      "kind": "property",
+      "path": "subjects.s1.attributes.appearance[0]",
+      "subject_id": "s1",
+      "field": "appearance",
+      "program_destination": "accepted",
+      "overall_verdict": "undetermined",
+      "content_verdict": "supported",
+      "reason": "本条整体声明仍缺少目标/主体s1的DrugProduct角色与实例绑定证明；字面字段值受支持不等于整体归属已经确定。",
+      "program_issues": [],
+      "matching": "scope + original id/path/subject/field/kind + exact original proposal + frozen proposal excluding coordinates/span_id/replay_issue metadata"
+    },
+    {
+      "scope_id": "product_properties",
+      "candidate_id": "c3",
+      "kind": "property",
+      "path": "subjects.s1.attributes.dosageForm[0]",
+      "subject_id": "s1",
+      "field": "dosageForm",
+      "program_destination": "accepted",
+      "overall_verdict": "undetermined",
+      "content_verdict": "supported",
+      "reason": "本条整体声明仍缺少目标/主体s1的DrugProduct角色与实例绑定证明；字面字段值受支持不等于整体归属已经确定。",
+      "program_issues": [],
+      "matching": "scope + original id/path/subject/field/kind + exact original proposal + frozen proposal excluding coordinates/span_id/replay_issue metadata"
+    },
+    {
+      "scope_id": "product_properties",
+      "candidate_id": "c4",
+      "kind": "property",
+      "path": "subjects.s1.attributes.isCytotoxic[0]",
+      "subject_id": "s1",
+      "field": "isCytotoxic",
+      "program_destination": "accepted",
+      "overall_verdict": "undetermined",
+      "content_verdict": "supported",
+      "reason": "本条整体声明仍缺少目标/主体s1的DrugProduct角色与实例绑定证明；字面字段值受支持不等于整体归属已经确定。",
+      "program_issues": [],
+      "matching": "scope + original id/path/subject/field/kind + exact original proposal + frozen proposal excluding coordinates/span_id/replay_issue metadata"
+    },
+    {
+      "scope_id": "product_properties",
+      "candidate_id": "c5",
+      "kind": "property",
+      "path": "subjects.s1.attributes.isOncologyDrug[0]",
+      "subject_id": "s1",
+      "field": "isOncologyDrug",
+      "program_destination": "accepted",
+      "overall_verdict": "undetermined",
+      "content_verdict": "supported",
+      "reason": "本条整体声明仍缺少目标/主体s1的DrugProduct角色与实例绑定证明；字面字段值受支持不等于整体归属已经确定。",
+      "program_issues": [],
+      "matching": "scope + original id/path/subject/field/kind + exact original proposal + frozen proposal excluding coordinates/span_id/replay_issue metadata"
+    },
+    {
+      "scope_id": "product_properties",
+      "candidate_id": "c6",
+      "kind": "property",
+      "path": "subjects.s1.attributes.projectName[0]",
+      "subject_id": "s1",
+      "field": "projectName",
+      "program_destination": "accepted",
+      "overall_verdict": "undetermined",
+      "content_verdict": "supported",
+      "reason": "本条整体声明仍缺少目标/主体s1的DrugProduct角色与实例绑定证明；字面字段值受支持不等于整体归属已经确定。",
+      "program_issues": [],
+      "matching": "scope + original id/path/subject/field/kind + exact original proposal + frozen proposal excluding coordinates/span_id/replay_issue metadata"
+    },
+    {
+      "scope_id": "product_properties",
+      "candidate_id": "c7",
+      "kind": "property",
+      "path": "subjects.s1.attributes.solubility[0]",
+      "subject_id": "s1",
+      "field": "solubility",
+      "program_destination": "accepted",
+      "overall_verdict": "undetermined",
+      "content_verdict": "supported",
+      "reason": "本条整体声明仍缺少目标/主体s1的DrugProduct角色与实例绑定证明；字面字段值受支持不等于整体归属已经确定。",
+      "program_issues": [],
+      "matching": "scope + original id/path/subject/field/kind + exact original proposal + frozen proposal excluding coordinates/span_id/replay_issue metadata"
+    },
+    {
+      "scope_id": "product_properties",
+      "candidate_id": "o1",
+      "kind": "observation",
+      "path": "observations[0]",
+      "subject_id": null,
+      "field": null,
+      "program_destination": "unresolved",
+      "overall_verdict": "unsupported",
+      "content_verdict": "unsupported",
+      "reason": "这是一条打包多个缺项的观察。多数所列字段在本包确未见值，但“未提供……给药途径”与u3明示的“口服片剂”中的“口服”相冲突：原文已经提供途径信息，不能因没有独立“给药途径”标题就称该信息未提供。应拆分缺项；途径与具体主体的绑定可以未决，但不能把已有原文内容说成缺失。",
+      "program_issues": [
+        "source_quote_missing"
+      ],
+      "matching": "scope + original id/path/subject/field/kind + exact original proposal + frozen proposal excluding coordinates/span_id/replay_issue metadata"
+    },
+    {
+      "scope_id": "product_properties",
+      "candidate_id": "o2",
+      "kind": "observation",
+      "path": "observations[1]",
+      "subject_id": null,
+      "field": null,
+      "program_destination": "unresolved",
+      "overall_verdict": "supported",
+      "content_verdict": "supported",
+      "reason": "在本包u0-u5内未见API职业暴露限值、PDE或唯一实例标识，保留为本轮输入的unknown有依据；u0项目名称不能代替API唯一标识。此支持仅针对当前包的信息缺口，不表示全文未提供这些值，也不据此确认空锚点s2为实际API实体。",
+      "program_issues": [
+        "source_quote_missing"
+      ],
+      "matching": "scope + original id/path/subject/field/kind + exact original proposal + frozen proposal excluding coordinates/span_id/replay_issue metadata"
+    },
+    {
+      "scope_id": "process_equipment",
+      "candidate_id": "c1",
+      "kind": "property",
+      "path": "subjects.s1.attributes.reactionConditions[0]",
+      "subject_id": "s1",
+      "field": "reactionConditions",
+      "program_destination": "rejected",
+      "overall_verdict": "supported",
+      "content_verdict": "supported",
+      "reason": "温度55℃、氮气保护、50~55℃搅拌1-2小时均为该结晶纯化工艺原文条件。raw使用省略号且未保留活性炭投料比例，不是逐字完整条件值；本判定仅支持其已述语义，完整性/逐字契约另记。",
+      "program_issues": [
+        "raw_value_not_in_quote",
+        "source_quote_not_unique",
+        "semantic_undetermined"
+      ],
+      "matching": "scope + original id/path/subject/field/kind + exact original proposal + frozen proposal excluding coordinates/span_id/replay_issue metadata"
+    },
+    {
+      "scope_id": "process_equipment",
+      "candidate_id": "c2",
+      "kind": "property",
+      "path": "subjects.s1.attributes.stepOrder[0]",
+      "subject_id": "s1",
+      "field": "stepOrder",
+      "program_destination": "rejected",
+      "overall_verdict": "undetermined",
+      "content_verdict": "supported",
+      "reason": "步骤一可规范化为序号1；但s1锚定整个结晶纯化工艺标题，该序号属于内部操作步骤，缺少两者同一层级的证明。",
+      "program_issues": [
+        "raw_value_not_in_quote",
+        "source_quote_not_unique",
+        "semantic_undetermined"
+      ],
+      "matching": "scope + original id/path/subject/field/kind + exact original proposal + frozen proposal excluding coordinates/span_id/replay_issue metadata"
+    },
+    {
+      "scope_id": "process_equipment",
+      "candidate_id": "c3",
+      "kind": "relation",
+      "path": "subjects.s1.relations.producesIntermediate[0]",
+      "subject_id": "s1",
+      "field": "producesIntermediate",
+      "program_destination": "rejected",
+      "overall_verdict": "unsupported",
+      "content_verdict": "unsupported",
+      "reason": "产生中间体关系方向错误：证据明确为加入HRS-1597粗品，粗品是本操作投入物，不能作为本步骤产出。",
+      "program_issues": [
+        "citation_ref_missing",
+        "inactive_subject_slot",
+        "source_quote_not_unique",
+        "semantic_role_unsupported",
+        "semantic_predicate_unsupported",
+        "semantic_binding_unsupported",
+        "semantic_applicability_unsupported",
+        "semantic_counterevidence_unsupported",
+        "semantic_support_missing"
+      ],
+      "matching": "scope + original id/path/subject/field/kind + exact original proposal + frozen proposal excluding coordinates/span_id/replay_issue metadata"
+    },
+    {
+      "scope_id": "process_equipment",
+      "candidate_id": "c4",
+      "kind": "relation",
+      "path": "subjects.s1.relations.usesEquipment[0]",
+      "subject_id": "s1",
+      "field": "usesEquipment",
+      "program_destination": "rejected",
+      "overall_verdict": "supported",
+      "content_verdict": "supported",
+      "reason": "该工艺操作明确在200L反应釜（RE64611）内进行，使用设备关系与设备目标角色成立。",
+      "program_issues": [
+        "source_quote_not_unique"
+      ],
+      "matching": "scope + original id/path/subject/field/kind + exact original proposal + frozen proposal excluding coordinates/span_id/replay_issue metadata"
+    },
+    {
+      "scope_id": "process_equipment",
+      "candidate_id": "c5",
+      "kind": "property",
+      "path": "subjects.s3.attributes.equipmentID[0]",
+      "subject_id": "s3",
+      "field": "equipmentID",
+      "program_destination": "accepted",
+      "overall_verdict": "supported",
+      "content_verdict": "supported",
+      "reason": "RE64611是反应釜括号内编号，局部设备归属明确。",
+      "program_issues": [],
+      "matching": "scope + original id/path/subject/field/kind + exact original proposal + frozen proposal excluding coordinates/span_id/replay_issue metadata"
+    },
+    {
+      "scope_id": "process_equipment",
+      "candidate_id": "c6",
+      "kind": "property",
+      "path": "subjects.s3.attributes.equipmentName[0]",
+      "subject_id": "s3",
+      "field": "equipmentName",
+      "program_destination": "accepted",
+      "overall_verdict": "supported",
+      "content_verdict": "supported",
+      "reason": "200L反应釜为原文明示设备称谓；包含容量不改变其名称/称谓角色。",
+      "program_issues": [],
+      "matching": "scope + original id/path/subject/field/kind + exact original proposal + frozen proposal excluding coordinates/span_id/replay_issue metadata"
+    },
+    {
+      "scope_id": "process_equipment",
+      "candidate_id": "c7",
+      "kind": "property",
+      "path": "subjects.s4.attributes.intermediateIdentifier[0]",
+      "subject_id": "s4",
+      "field": "intermediateIdentifier",
+      "program_destination": "rejected",
+      "overall_verdict": "undetermined",
+      "content_verdict": "undetermined",
+      "reason": "HRS-1597粗品确为粗品称谓，但原文未明确其是工艺中间体标识，更未建立唯一标识命名空间；缺少卡片所需标识角色证明。",
+      "program_issues": [
+        "citation_coordinates_invalid",
+        "inactive_subject_slot",
+        "semantic_role_unsupported",
+        "semantic_predicate_unsupported",
+        "semantic_binding_unsupported",
+        "semantic_applicability_unsupported",
+        "semantic_counterevidence_unsupported",
+        "semantic_support_missing",
+        "semantic_undetermined"
+      ],
+      "matching": "scope + original id/path/subject/field/kind + exact original proposal + frozen proposal excluding coordinates/span_id/replay_issue metadata"
+    },
+    {
+      "scope_id": "process_equipment",
+      "candidate_id": "o1",
+      "kind": "observation",
+      "path": "observations[0]",
+      "subject_id": null,
+      "field": null,
+      "program_destination": "unresolved",
+      "overall_verdict": "undetermined",
+      "content_verdict": "supported",
+      "reason": "局部候选确未独立锚定s2，本包也未证明两个独立同层级实例；但所有证据字段为空，不能把生成过程说明登记为可回指的原文unknown观察。",
+      "program_issues": [
+        "source_quote_missing"
+      ],
+      "matching": "scope + original id/path/subject/field/kind + exact original proposal + frozen proposal excluding coordinates/span_id/replay_issue metadata"
+    },
+    {
+      "scope_id": "process_equipment",
+      "candidate_id": "o2",
+      "kind": "observation",
+      "path": "observations[1]",
+      "subject_id": null,
+      "field": null,
+      "program_destination": "unresolved",
+      "overall_verdict": "unsupported",
+      "content_verdict": "unsupported",
+      "reason": "将modelSpecification也断言为原文完全未提及过强：200L已经明示设备容量规格。其余专用、洁净区和HVAC等未见于本包；合并观察中有该矛盾且没有证据回指。",
+      "program_issues": [
+        "source_quote_missing"
+      ],
+      "matching": "scope + original id/path/subject/field/kind + exact original proposal + frozen proposal excluding coordinates/span_id/replay_issue metadata"
+    },
+    {
+      "scope_id": "process_equipment",
+      "candidate_id": "o3",
+      "kind": "observation",
+      "path": "observations[2]",
+      "subject_id": null,
+      "field": null,
+      "program_destination": "unresolved",
+      "overall_verdict": "undetermined",
+      "content_verdict": "supported",
+      "reason": "本局部未给得量、收率或明确IPC方法和验收阈值，作为局部待补项可接受；但无证据字段且不能推及全文缺失，尚不能登记为原文unknown观察。",
+      "program_issues": [
+        "source_quote_missing",
+        "source_quote_not_unique"
+      ],
+      "matching": "scope + original id/path/subject/field/kind + exact original proposal + frozen proposal excluding coordinates/span_id/replay_issue metadata"
+    },
+    {
+      "scope_id": "quality_condition",
+      "candidate_id": "c1",
+      "kind": "property",
+      "path": "subjects.s1.attributes.inProcessControl[0]",
+      "subject_id": "s1",
+      "field": "inProcessControl",
+      "program_destination": "accepted",
+      "overall_verdict": "supported",
+      "content_verdict": "supported",
+      "reason": "完整原文保留HPLC和重金属检测、三项必须同时满足的阈值，以及不符合时从一般区溶解物料开始重复全部结晶操作；适合作为该结晶工艺的完整IPC文本。",
+      "program_issues": [],
+      "matching": "scope + original id/path/subject/field/kind + exact original proposal + frozen proposal excluding coordinates/span_id/replay_issue metadata"
+    },
+    {
+      "scope_id": "quality_condition",
+      "candidate_id": "c2",
+      "kind": "relation",
+      "path": "subjects.s1.relations.nextStep[0]",
+      "subject_id": "s1",
+      "field": "nextStep",
+      "program_destination": "rejected",
+      "overall_verdict": "undetermined",
+      "content_verdict": "undetermined",
+      "reason": "组合标题HRS-1597结晶纯化未证明结晶后另有独立纯化步骤；目标s2未锚定，缺少两个步骤的身份和先后方向证据。",
+      "program_issues": [
+        "citation_ref_missing",
+        "inactive_subject_slot"
+      ],
+      "matching": "scope + original id/path/subject/field/kind + exact original proposal + frozen proposal excluding coordinates/span_id/replay_issue metadata"
+    },
+    {
+      "scope_id": "quality_condition",
+      "candidate_id": "o1",
+      "kind": "observation",
+      "path": "observations[0]",
+      "subject_id": null,
+      "field": null,
+      "program_destination": "unresolved",
+      "overall_verdict": "unsupported",
+      "content_verdict": "supported",
+      "reason": "单个杂质限度及0.2%被原文直接支持；但同一原始候选c1已通过inProcessControl字段完整映射这项标准。没有独立数值字段不等于未映射，state=unmapped缺乏依据。",
+      "program_issues": [
+        "source_quote_missing"
+      ],
+      "matching": "scope + original id/path/subject/field/kind + exact original proposal + frozen proposal excluding coordinates/span_id/replay_issue metadata"
+    },
+    {
+      "scope_id": "quality_condition",
+      "candidate_id": "o2",
+      "kind": "observation",
+      "path": "observations[1]",
+      "subject_id": null,
+      "field": null,
+      "program_destination": "unresolved",
+      "overall_verdict": "unsupported",
+      "content_verdict": "supported",
+      "reason": "总杂限度及2.0%被原文直接支持；但已包含在同一候选c1的inProcessControl属性，state=unmapped与该已有映射冲突，不能改解为缺少独立数值字段。",
+      "program_issues": [
+        "source_quote_missing"
+      ],
+      "matching": "scope + original id/path/subject/field/kind + exact original proposal + frozen proposal excluding coordinates/span_id/replay_issue metadata"
+    },
+    {
+      "scope_id": "quality_condition",
+      "candidate_id": "o3",
+      "kind": "observation",
+      "path": "observations[2]",
+      "subject_id": null,
+      "field": null,
+      "program_destination": "unresolved",
+      "overall_verdict": "unsupported",
+      "content_verdict": "supported",
+      "reason": "重金属限度百万分之二十被原文直接支持，且已完整包含在c1的inProcessControl；未拆成独立数值属性不构成unmapped。",
+      "program_issues": [
+        "source_quote_missing"
+      ],
+      "matching": "scope + original id/path/subject/field/kind + exact original proposal + frozen proposal excluding coordinates/span_id/replay_issue metadata"
+    },
+    {
+      "scope_id": "quality_condition",
+      "candidate_id": "o4",
+      "kind": "observation",
+      "path": "observations[3]",
+      "subject_id": null,
+      "field": null,
+      "program_destination": "unresolved",
+      "overall_verdict": "supported",
+      "content_verdict": "supported",
+      "reason": "若不符合质量标准才重复结晶，condition保留触发条件，reason说明动作，未提升为无条件下一步关系。",
+      "program_issues": [
+        "source_quote_missing"
+      ],
+      "matching": "scope + original id/path/subject/field/kind + exact original proposal + frozen proposal excluding coordinates/span_id/replay_issue metadata"
+    },
+    {
+      "scope_id": "quality_condition",
+      "candidate_id": "o5",
+      "kind": "observation",
+      "path": "observations[4]",
+      "subject_id": null,
+      "field": null,
+      "program_destination": "unresolved",
+      "overall_verdict": "unsupported",
+      "content_verdict": "unsupported",
+      "reason": "从一般区溶解物料说明重复全部结晶操作的起始动作；reason将其改称物料来源条件，置换了原文动作角色，不能据此断言物料来源。",
+      "program_issues": [
+        "source_quote_missing"
+      ],
+      "matching": "scope + original id/path/subject/field/kind + exact original proposal + frozen proposal excluding coordinates/span_id/replay_issue metadata"
+    },
+    {
+      "scope_id": "storage",
+      "candidate_id": "c1",
+      "kind": "relation",
+      "path": "subjects.document.relations.hasStorageCondition[0]",
+      "subject_id": "document",
+      "field": "hasStorageCondition",
+      "program_destination": "accepted",
+      "overall_verdict": "unsupported",
+      "content_verdict": "supported",
+      "reason": "本报告存放条件表确有一条HRS-1597物料的储存要求；但关系目标s1实际锚定物料名称，目标类型/角色错误，单独HRS-1597引用也不是存放条件关系证明。",
+      "program_issues": [],
+      "matching": "scope + original id/path/subject/field/kind + exact original proposal + frozen proposal excluding coordinates/span_id/replay_issue metadata"
+    },
+    {
+      "scope_id": "storage",
+      "candidate_id": "c2",
+      "kind": "property",
+      "path": "subjects.s1.attributes.packagingType[0]",
+      "subject_id": "s1",
+      "field": "packagingType",
+      "program_destination": "accepted",
+      "overall_verdict": "unsupported",
+      "content_verdict": "supported",
+      "reason": "包装方式及完整双层袋外加复合袋文本有明确列头和值对应；整体归属到以物料名称冒充StorageCondition的s1，主体角色不成立。",
+      "program_issues": [],
+      "matching": "scope + original id/path/subject/field/kind + exact original proposal + frozen proposal excluding coordinates/span_id/replay_issue metadata"
+    },
+    {
+      "scope_id": "storage",
+      "candidate_id": "c3",
+      "kind": "property",
+      "path": "subjects.s1.attributes.shelfLife[0]",
+      "subject_id": "s1",
+      "field": "shelfLife",
+      "program_destination": "accepted",
+      "overall_verdict": "unsupported",
+      "content_verdict": "supported",
+      "reason": "有效期24M及M单位字符均为原文，不需要擅自换算才能支持原文值；整体仍因s1错误记录锚点而不成立。",
+      "program_issues": [],
+      "matching": "scope + original id/path/subject/field/kind + exact original proposal + frozen proposal excluding coordinates/span_id/replay_issue metadata"
+    },
+    {
+      "scope_id": "storage",
+      "candidate_id": "c4",
+      "kind": "property",
+      "path": "subjects.s1.attributes.storageTemperature[0]",
+      "subject_id": "s1",
+      "field": "storageTemperature",
+      "program_destination": "accepted",
+      "overall_verdict": "unsupported",
+      "content_verdict": "supported",
+      "reason": "不超过25℃完整保留温度上限方向且单位正确，绝非湿度或避光判断；整体仍因s1物料/条件记录角色置换而不成立。",
+      "program_issues": [],
+      "matching": "scope + original id/path/subject/field/kind + exact original proposal + frozen proposal excluding coordinates/span_id/replay_issue metadata"
+    },
+    {
+      "scope_id": "storage",
+      "candidate_id": "o1",
+      "kind": "observation",
+      "path": "observations[0]",
+      "subject_id": null,
+      "field": null,
+      "program_destination": "observations",
+      "overall_verdict": "undetermined",
+      "content_verdict": "supported",
+      "reason": "原文只在表头列出湿度和是否避光，值单元未给相应要求，该缺证判断成立；但state=unmapped的value引用整个已部分映射的存放描述，未指明究竟是密封要求无字段还是湿度/避光值缺失。缺值不等于未映射，整体观察状态待定。",
+      "program_issues": [],
+      "matching": "scope + original id/path/subject/field/kind + exact original proposal + frozen proposal excluding coordinates/span_id/replay_issue metadata"
+    },
+    {
+      "scope_id": "storage",
+      "candidate_id": "o2",
+      "kind": "observation",
+      "path": "observations[1]",
+      "subject_id": null,
+      "field": null,
+      "program_destination": "observations",
+      "overall_verdict": "unsupported",
+      "content_verdict": "undetermined",
+      "reason": "有效期24M原文存在，但M的规范释义在本包缺少规则或释义证据；更关键的是同一候选c3已将该值映射至shelfLife且提供M单位引用。state=unmapped与已有映射冲突，单位待校准不等于未映射，不能只用reason的解释改写state含义。",
+      "program_issues": [],
+      "matching": "scope + original id/path/subject/field/kind + exact original proposal + frozen proposal excluding coordinates/span_id/replay_issue metadata"
+    },
+    {
+      "scope_id": "residue_missing",
+      "candidate_id": "o1",
+      "kind": "observation",
+      "path": "observations[0]",
+      "subject_id": null,
+      "field": null,
+      "program_destination": "rejected",
+      "overall_verdict": "undetermined",
+      "content_verdict": "supported",
+      "reason": "该节正文确实为N/A，标题与其节归属可核对；但观察只引用标题且无N/A含义图例，不能唯一决定not_applicable而排除not_available/未提供。",
+      "program_issues": [
+        "source_quote_missing",
+        "semantic_legend_unsupported",
+        "semantic_condition_unsupported"
+      ],
+      "matching": "scope + original id/path/subject/field/kind + exact original proposal + frozen proposal excluding coordinates/span_id/replay_issue metadata"
+    },
+    {
+      "scope_id": "residue_missing",
+      "candidate_id": "o2",
+      "kind": "observation",
+      "path": "observations[1]",
+      "subject_id": null,
+      "field": null,
+      "program_destination": "rejected",
+      "overall_verdict": "undetermined",
+      "content_verdict": "undetermined",
+      "reason": "N/A字符存在且可回指，但reason解释为no data available，state却是not_applicable；两种语义不等价，原文无缩写释义，规范状态待定。",
+      "program_issues": [
+        "semantic_field_unsupported",
+        "semantic_legend_unsupported",
+        "semantic_condition_unsupported"
+      ],
+      "matching": "scope + original id/path/subject/field/kind + exact original proposal + frozen proposal excluding coordinates/span_id/replay_issue metadata"
+    },
+    {
+      "scope_id": "toxicity_unknown",
+      "candidate_id": "c1",
+      "kind": "relation",
+      "path": "subjects.document.relations.describes[0]",
+      "subject_id": "document",
+      "field": "describes",
+      "program_destination": "accepted",
+      "overall_verdict": "undetermined",
+      "content_verdict": "supported",
+      "reason": "文档描述该行对象这一内容有依据，但 describes 卡片要求的目标实体类型及所选 DrugProduct 绑定尚未确定，整体保留未决。",
+      "program_issues": [],
+      "matching": "scope + original id/path/subject/field/kind + exact original proposal + frozen proposal excluding coordinates/span_id/replay_issue metadata"
+    },
+    {
+      "scope_id": "toxicity_unknown",
+      "candidate_id": "c2",
+      "kind": "property",
+      "path": "subjects.s1.attributes.productIdentifier[0]",
+      "subject_id": "s1",
+      "field": "productIdentifier",
+      "program_destination": "accepted",
+      "overall_verdict": "unsupported",
+      "content_verdict": "unsupported",
+      "reason": "名称到唯一实例标识的投射与卡片明确排除条款冲突，因此内容及整体均 unsupported；主体类型缺证本身仍为 undetermined，不作为反证。",
+      "program_issues": [],
+      "matching": "scope + original id/path/subject/field/kind + exact original proposal + frozen proposal excluding coordinates/span_id/replay_issue metadata"
+    },
+    {
+      "scope_id": "toxicity_unknown",
+      "candidate_id": "o1",
+      "kind": "observation",
+      "path": "observations[0]",
+      "subject_id": null,
+      "field": null,
+      "program_destination": "observations",
+      "overall_verdict": "supported",
+      "content_verdict": "supported",
+      "reason": "HRS-1597 同一数据行的生殖发育毒性列为“—”，列头和值的表格坐标一致。原文图例明确“—”代表相关研究数据不充分，unknown 忠实保留未知状态，不能改成无毒性、阳性或已完成研究。",
+      "program_issues": [],
+      "matching": "scope + original id/path/subject/field/kind + exact original proposal + frozen proposal excluding coordinates/span_id/replay_issue metadata"
+    },
+    {
+      "scope_id": "toxicity_unknown",
+      "candidate_id": "o2",
+      "kind": "observation",
+      "path": "observations[1]",
+      "subject_id": null,
+      "field": null,
+      "program_destination": "observations",
+      "overall_verdict": "supported",
+      "content_verdict": "supported",
+      "reason": "HRS-1597 同一数据行的基因毒性列为“×”，列头和值的表格坐标一致。原文图例明确“×”代表没有相应毒性，因此本表报告的是基因毒性否定；这是对报告断言的忠实记录，不外推为所有试验或所有条件下的绝对无风险。",
+      "program_issues": [],
+      "matching": "scope + original id/path/subject/field/kind + exact original proposal + frozen proposal excluding coordinates/span_id/replay_issue metadata"
+    },
+    {
+      "scope_id": "toxicity_unknown",
+      "candidate_id": "o3",
+      "kind": "observation",
+      "path": "observations[2]",
+      "subject_id": null,
+      "field": null,
+      "program_destination": "observations",
+      "overall_verdict": "supported",
+      "content_verdict": "supported",
+      "reason": "HRS-1597 同一数据行的致癌性列为“—”，列头和值的表格坐标一致。原文图例明确“—”代表相关研究数据不充分，unknown 忠实保留未知状态，不能改成无毒性、阳性或已完成研究。",
+      "program_issues": [],
+      "matching": "scope + original id/path/subject/field/kind + exact original proposal + frozen proposal excluding coordinates/span_id/replay_issue metadata"
+    },
+    {
+      "scope_id": "toxicity_unknown",
+      "candidate_id": "o4",
+      "kind": "observation",
+      "path": "observations[3]",
+      "subject_id": null,
+      "field": null,
+      "program_destination": "observations",
+      "overall_verdict": "supported",
+      "content_verdict": "supported",
+      "reason": "HRS-1597 同一数据行的致敏性列为“—”，列头和值的表格坐标一致。原文图例明确“—”代表相关研究数据不充分，unknown 忠实保留未知状态，不能改成无毒性、阳性或已完成研究。",
+      "program_issues": [],
+      "matching": "scope + original id/path/subject/field/kind + exact original proposal + frozen proposal excluding coordinates/span_id/replay_issue metadata"
+    }
+  ]
+}

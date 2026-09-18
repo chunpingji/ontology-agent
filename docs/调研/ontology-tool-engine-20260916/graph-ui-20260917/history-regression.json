@@ -1,0 +1,63 @@
+{
+  "status": "passed",
+  "browser": "131.0.6778.85",
+  "createCount": 1,
+  "sourceReads": 2,
+  "budgetRequests": [
+    {
+      "operation": "disable",
+      "body": {
+        "expected_revision": 1,
+        "request_key": "document-run-ranking_budget_disable:3ef8329c-b83a-4933-8572-41b754e743dd",
+        "reason": "用户在文档分析页面禁用排序预算限制"
+      }
+    },
+    {
+      "operation": "enable",
+      "body": {
+        "expected_revision": 2,
+        "request_key": "document-run-ranking_budget_enable:cb5cc7ee-66b4-4b64-912b-3395618137d6",
+        "reason": "用户在文档分析页面启用排序预算限制"
+      }
+    },
+    {
+      "operation": "enable",
+      "body": {
+        "expected_revision": 3,
+        "request_key": "document-run-ranking_budget_enable:8a32a8da-3c35-4bf0-a3a7-23e0edc5394e",
+        "reason": "用户在文档分析页面启用排序预算限制"
+      }
+    }
+  ],
+  "output": "/tmp/document-graph-ui-pd1rqqqw/history-final",
+  "layoutChecks": [
+    "explicit budget disable/enable keeps run paused, preserves accounting and handles CAS conflicts",
+    "desktop 2/3 drawer with tree/preview/metadata geometry",
+    "detail tabs preserve chapter tree and preview editor",
+    "graph canvas with long labels replays a physical source span while staying on graph tab",
+    "chapter selection survives an aborted or late source response",
+    "read-only and running states do not expose budget mutation controls",
+    "768px history navigation, chapter sheet and preview remain usable without page overflow",
+    "390px history navigation, chapter sheet and preview remain usable without page overflow",
+    "1920px drawer/tree/preview/details geometry"
+  ],
+  "writes": [
+    {
+      "method": "POST",
+      "pathname": "/api/document-analysis/runs/history-12/ranking-budget/disable"
+    },
+    {
+      "method": "POST",
+      "pathname": "/api/document-analysis/runs/history-12/ranking-budget/enable"
+    },
+    {
+      "method": "POST",
+      "pathname": "/api/document-analysis/runs/history-12/ranking-budget/enable"
+    },
+    {
+      "method": "POST",
+      "pathname": "/api/document-analysis/runs"
+    }
+  ],
+  "scope": "Synthetic API UI regression; no backend or model execution"
+}

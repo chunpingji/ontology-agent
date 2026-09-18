@@ -1,0 +1,115 @@
+{
+  "schema_version": "s0-ontology-lexical-real-model-diagnostic-v1",
+  "run_id": "9bb47241a8024282aeb5c6ecd096831f",
+  "status": "failed",
+  "scope": {
+    "synthetic_input": true,
+    "main_llm_called": false,
+    "business_facts_written": false,
+    "gold_quality_evaluation": false,
+    "ranking_only": true,
+    "shared_database_used": false
+  },
+  "harness_sha256": "2b5ecb7d5799a213545d6690532f7f9fc38b9867314d240d263c5d3365558d8b",
+  "code_sha256": {
+    "app/services/extraction/ontology_guided/retrieval_query.py": "3c1c0796948da27764c488c96c2ba64f8b53f7d306c0a8b46ac8d9fc6dca7cd1",
+    "app/services/extraction/ontology_guided/lexical_query.py": "aa313bfce9fb3a694bb9806fc6d4503d3429d629c64159c5fd4f2f78ca023c85",
+    "app/services/extraction/ontology_guided/ontology_lexical.py": "de22761a776c1ac8a3ce3e648a882e07197da394a78a4272215c5e18739c6705",
+    "app/services/llm/semantic_ranking.py": "4180b93b2166436ccada612d354037efb8fb093894a7aa913457cf31c3a625c6"
+  },
+  "ontology_sources": {
+    "/opt/dev/chen/ontology-agent/ontology/slpra/slpra-drug-development.ttl": "ea90db5a324036c71a6e6b559b48aa14d202de75d2e491989791859abe2f8e25",
+    "/opt/dev/chen/ontology-agent/ontology/slpra/slpra-equipment.ttl": "f3d8682598f19c8448fa0eeefe66e060a0eff7bfc0d1dd9da71e3087ac95d998"
+  },
+  "query_scope": {
+    "root_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport",
+    "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/usesEquipment",
+    "declared_range_class_iris": [
+      "https://ontology.pharma-gmp.cn/slpra/equipment/Equipment"
+    ],
+    "focused_target_class_iris": [
+      "https://ontology.pharma-gmp.cn/slpra/equipment/Reactor"
+    ],
+    "note": "Fixed synthetic ranking-only target scope, not complete ontology execution."
+  },
+  "configuration": {
+    "mode": "rerank",
+    "device": "cpu",
+    "dtype": "float32",
+    "cuda_version": "12.6",
+    "batch_size": 4,
+    "max_tokens_per_pair": 1024,
+    "timeout_seconds": 600,
+    "embedding_path": "/opt/dev/chen/ontology-agent/backend/models/semantic-ranking/bge-m3/5617a9f61b028005a4858fdac845db406aefb181",
+    "embedding_manifest_path": "/opt/dev/chen/ontology-agent/backend/models/semantic-ranking/bge-m3/5617a9f61b028005a4858fdac845db406aefb181.sha256",
+    "reranker_path": "/opt/dev/chen/ontology-agent/backend/models/semantic-ranking/bge-reranker-v2-m3/953dc6f6f85a1b2dbfca4c34a2796e7dde08d41e",
+    "reranker_manifest_path": "/opt/dev/chen/ontology-agent/backend/models/semantic-ranking/bge-reranker-v2-m3/953dc6f6f85a1b2dbfca4c34a2796e7dde08d41e.sha256"
+  },
+  "model_identity": {
+    "adapter": "offline-semantic-ranking-v2",
+    "artifacts": {
+      "embedding": {
+        "manifest_sha256": "55020286f89e3f4aff275a70035f677605e15065921afe7832cad842f855993a",
+        "tokenizer_sha256": "21106b6d7dab2952c1d496fb21d5dc9db75c28ed361a05f5020bbba27810dd08"
+      },
+      "reranker": {
+        "manifest_sha256": "505e20b19c5937824d54b3b91e2b64f3f023413d183e8d18ccdbd0f51f74197a",
+        "tokenizer_sha256": "69564b696052886ed0ac63fa393e928384e0f8caada38c1f4864a9bfbf379c15"
+      }
+    },
+    "device": "cpu",
+    "dtype": "float32",
+    "cuda_version": null,
+    "numeric_environment": {
+      "attention": "default"
+    },
+    "normalization": "l2",
+    "score_semantics": "raw_single_logit",
+    "input_policy": "complete-no-truncation-v1",
+    "execution": {
+      "mode": "rerank",
+      "batch_size": 4,
+      "max_tokens_per_pair": 1024,
+      "timeout_seconds": 600,
+      "cpu_threads": {
+        "OMP_NUM_THREADS": "4",
+        "MKL_NUM_THREADS": "4"
+      }
+    },
+    "packages": {
+      "sentence-transformers": "5.6.0",
+      "transformers": "5.6.2",
+      "torch": "2.12.1+cpu",
+      "tokenizers": "0.22.2",
+      "numpy": "2.5.0",
+      "safetensors": "0.8.0"
+    }
+  },
+  "measured_model_calls": 2,
+  "measured_input_tokens": 0,
+  "scheduler_request_count": 2,
+  "scheduler_statuses": [
+    "completed"
+  ],
+  "error": {
+    "type": "RankingModelUnavailable",
+    "reason": "ranking_batch_limit"
+  },
+  "elapsed_seconds": 57.18967821600381,
+  "artifact_sha256": {
+    "scheduler_requests.json": "2d368339183b47da5eb4c4594f237b5bd9ec250ee3ad03d06c9c329ac77c0e5e",
+    "E2-ontology_snapshot.json": "489a18bff75d7a8fce69ec41204cface3137e82ece0349460a0df4ce0a5227a5",
+    "E2-queries.json": "a3633bbb809b3c2a73dc84cfc2f06621707df2f32f91767f15fe7450adce5a7d",
+    "retrieval_views.json": "827270d49b42a045a3f1b86f4a904d00493b16ddffb51b88c8e3e52fbba825b9",
+    "scheduler.sqlite3": "17ddb3a0550547f907be09c73adde66d7ea4bd84bc5d06b506be084f6441070f",
+    "E0-queries.json": "a0338469497df0058f7e9eff78ce6dd9fe3b3ffcf0f7b51d83a6cbd9d91372e9",
+    "model_observations.json": "b11ff0b92a93269925a83b905d79699fa5e30a7a13d832de5526751366e09e65",
+    "metadata.json": "1cf7c05d42e5c0df698ebd03f27dc6b9377f3493073b6721cc3f9eb4476f8111",
+    "document_ir.json": "56e6a10a9068ac39ba924abf8ba305682e067c948b7408866000742796dddd5b",
+    "E1-ontology_snapshot.json": "08863e67f96edc9bf88613a84ddf16f60440ed5ae2cd55036e4a1cbfc7549648",
+    "source_annotations.json": "50e13b275c7b645b7773cf320c836d92a03f26954c3a1b890ab6bf5a4a470c84",
+    "E1-queries.json": "208164ac54221557a4e02e8899493fc8619150cb96b5220b95679e1b01a0deda",
+    "synthetic_relevance.json": "dfda28137d57a58224f10f7b004e1fbc662955dd3ee4bbcd25f9be80967d21df",
+    "synthetic.docx": "a9cdb7c850a42f0ab834e3f8d85e814b1b1131450a841ece4d28dddc0b47ae1b"
+  }
+}

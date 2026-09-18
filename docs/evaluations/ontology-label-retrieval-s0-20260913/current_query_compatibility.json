@@ -1,0 +1,65 @@
+{
+  "comparisons": [
+    {
+      "variant": "E0",
+      "intent": "discover",
+      "model_text_identical": true,
+      "query_dependency_hash_identical": true,
+      "query_id_identical": true,
+      "full_query_identical": true
+    },
+    {
+      "variant": "E0",
+      "intent": "counterevidence",
+      "model_text_identical": true,
+      "query_dependency_hash_identical": true,
+      "query_id_identical": true,
+      "full_query_identical": true
+    },
+    {
+      "variant": "E1",
+      "intent": "discover",
+      "model_text_identical": true,
+      "query_dependency_hash_identical": true,
+      "query_id_identical": true,
+      "full_query_identical": true
+    },
+    {
+      "variant": "E1",
+      "intent": "counterevidence",
+      "model_text_identical": true,
+      "query_dependency_hash_identical": true,
+      "query_id_identical": true,
+      "full_query_identical": true
+    },
+    {
+      "variant": "E2",
+      "intent": "discover",
+      "model_text_identical": true,
+      "query_dependency_hash_identical": true,
+      "query_id_identical": true,
+      "full_query_identical": true
+    },
+    {
+      "variant": "E2",
+      "intent": "counterevidence",
+      "model_text_identical": true,
+      "query_dependency_hash_identical": true,
+      "query_id_identical": true,
+      "full_query_identical": true
+    }
+  ],
+  "measured_code_sha256": {
+    "app/services/extraction/ontology_guided/retrieval_query.py": "3c1c0796948da27764c488c96c2ba64f8b53f7d306c0a8b46ac8d9fc6dca7cd1",
+    "app/services/extraction/ontology_guided/lexical_query.py": "aa313bfce9fb3a694bb9806fc6d4503d3429d629c64159c5fd4f2f78ca023c85",
+    "app/services/extraction/ontology_guided/ontology_lexical.py": "de22761a776c1ac8a3ce3e648a882e07197da394a78a4272215c5e18739c6705",
+    "app/services/llm/semantic_ranking.py": "4180b93b2166436ccada612d354037efb8fb093894a7aa913457cf31c3a625c6"
+  },
+  "current_code_sha256": {
+    "app/services/extraction/ontology_guided/retrieval_query.py": "85ecaceea884f5a9a38379136ceef55fff5353f14697112f209dd609b9a69f48",
+    "app/services/extraction/ontology_guided/lexical_query.py": "aa313bfce9fb3a694bb9806fc6d4503d3429d629c64159c5fd4f2f78ca023c85",
+    "app/services/extraction/ontology_guided/ontology_lexical.py": "de22761a776c1ac8a3ce3e648a882e07197da394a78a4272215c5e18739c6705",
+    "app/services/llm/semantic_ranking.py": "4180b93b2166436ccada612d354037efb8fb093894a7aa913457cf31c3a625c6"
+  },
+  "scope": "No model calls; regenerate frozen sample queries with current builder."
+}

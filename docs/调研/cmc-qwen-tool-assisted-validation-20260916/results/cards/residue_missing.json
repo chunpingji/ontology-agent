@@ -1,0 +1,369 @@
+{
+  "scope_id": "residue_missing",
+  "arms": {
+    "A": {
+      "document": {
+        "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport",
+        "label": "CMC 报告",
+        "anchor": {
+          "ref": "",
+          "quote": ""
+        },
+        "fields": {
+          "hasCleaningResidue": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasCleaningResidue",
+            "label": "含清洗残留物",
+            "description": "Links a CMC report to the residue information for cleaning validation.",
+            "multiplicity": "unspecified",
+            "kind": "relationship",
+            "range_class_iris": [
+              "https://ontology.pharma-gmp.cn/slpra/drug/ActiveSubstanceResidue",
+              "https://ontology.pharma-gmp.cn/slpra/drug/CleaningAgentResidue",
+              "https://ontology.pharma-gmp.cn/slpra/drug/MicrobialResidue",
+              "https://ontology.pharma-gmp.cn/slpra/drug/ParticulateResidue",
+              "https://ontology.pharma-gmp.cn/slpra/drug/Residue"
+            ]
+          },
+          "usesEquipment": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/usesEquipment",
+            "label": "使用设备",
+            "description": "Links a synthesis step or CMC report to the equipment required.",
+            "multiplicity": "unspecified",
+            "kind": "relationship",
+            "range_class_iris": [
+              "https://ontology.pharma-gmp.cn/slpra/equipment/CIPSystem",
+              "https://ontology.pharma-gmp.cn/slpra/equipment/CapsuleFiller",
+              "https://ontology.pharma-gmp.cn/slpra/equipment/Centrifuge",
+              "https://ontology.pharma-gmp.cn/slpra/equipment/ChromatographyColumnSystem",
+              "https://ontology.pharma-gmp.cn/slpra/equipment/CleaningEquipment",
+              "https://ontology.pharma-gmp.cn/slpra/equipment/CoatingMachine",
+              "https://ontology.pharma-gmp.cn/slpra/equipment/CompressedAirSystem",
+              "https://ontology.pharma-gmp.cn/slpra/equipment/Dryer",
+              "https://ontology.pharma-gmp.cn/slpra/equipment/ElectricVacuumDryer",
+              "https://ontology.pharma-gmp.cn/slpra/equipment/Equipment",
+              "https://ontology.pharma-gmp.cn/slpra/equipment/FillingMachine",
+              "https://ontology.pharma-gmp.cn/slpra/equipment/FilterPress",
+              "https://ontology.pharma-gmp.cn/slpra/equipment/Granulator",
+              "https://ontology.pharma-gmp.cn/slpra/equipment/HVACSystem",
+              "https://ontology.pharma-gmp.cn/slpra/equipment/HotAirBlastDryer",
+              "https://ontology.pharma-gmp.cn/slpra/equipment/HotAirDryer",
+              "https://ontology.pharma-gmp.cn/slpra/equipment/ManualCleaningTool",
+              "https://ontology.pharma-gmp.cn/slpra/equipment/Mixer",
+              "https://ontology.pharma-gmp.cn/slpra/equipment/ProcessEquipment",
+              "https://ontology.pharma-gmp.cn/slpra/equipment/Reactor",
+              "https://ontology.pharma-gmp.cn/slpra/equipment/RotaryEvaporator",
+              "https://ontology.pharma-gmp.cn/slpra/equipment/TabletPress",
+              "https://ontology.pharma-gmp.cn/slpra/equipment/UtilityEquipment",
+              "https://ontology.pharma-gmp.cn/slpra/equipment/VacuumDryer",
+              "https://ontology.pharma-gmp.cn/slpra/equipment/WaterSystem"
+            ]
+          }
+        }
+      },
+      "s1": {
+        "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/Residue",
+        "label": "残留物",
+        "anchor": {
+          "ref": "",
+          "quote": ""
+        },
+        "fields": {
+          "residueSolubility": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/residueSolubility",
+            "label": "残留物溶解度",
+            "description": "Qualitative solubility descriptor: 易溶, 溶解, 微溶, 几乎不溶.",
+            "multiplicity": "unspecified",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#string"
+            ]
+          },
+          "residueSolubilityTemperature": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/residueSolubilityTemperature",
+            "label": "溶解度测试温度",
+            "multiplicity": "unspecified",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#string"
+            ]
+          },
+          "residueSolvent": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/residueSolvent",
+            "label": "残留物清洗溶剂",
+            "description": "Solvent used to dissolve the residue for cleaning, e.g. 丙酮, 乙醇+水, 丙酮+2N三氟乙酸水溶液.",
+            "multiplicity": "unspecified",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#string"
+            ]
+          }
+        }
+      },
+      "s2": {
+        "class_iri": "https://ontology.pharma-gmp.cn/slpra/equipment/CleaningEquipment",
+        "label": "清洗设备",
+        "anchor": {
+          "ref": "",
+          "quote": ""
+        },
+        "fields": {
+          "equipmentID": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/equipmentID",
+            "label": "设备编号",
+            "multiplicity": "unspecified",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#string"
+            ]
+          },
+          "equipmentName": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/equipmentName",
+            "label": "设备名称",
+            "multiplicity": "unspecified",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#string"
+            ]
+          },
+          "isDedicatedEquipment": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/isDedicatedEquipment",
+            "label": "is dedicated equipment",
+            "multiplicity": "unspecified",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#boolean"
+            ]
+          },
+          "isInCleanArea": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/isInCleanArea",
+            "label": "is in clean area",
+            "multiplicity": "unspecified",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#boolean"
+            ]
+          },
+          "modelSpecification": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/modelSpecification",
+            "label": "规格型号",
+            "multiplicity": "unspecified",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#string"
+            ]
+          },
+          "requiresDedication": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/requiresDedication",
+            "label": "requires dedication",
+            "description": "Set by SWRL rules based on drug product classification.",
+            "multiplicity": "unspecified",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#boolean"
+            ]
+          },
+          "requiresInactivationValidation": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/requiresInactivationValidation",
+            "label": "requires inactivation validation",
+            "multiplicity": "unspecified",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#boolean"
+            ]
+          },
+          "requiresIndependentHVAC": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/requiresIndependentHVAC",
+            "label": "requires independent HVAC",
+            "multiplicity": "unspecified",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#boolean"
+            ]
+          }
+        }
+      }
+    },
+    "B": {
+      "document": {
+        "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport",
+        "label": "CMC 报告",
+        "anchor": {
+          "ref": "",
+          "quote": ""
+        },
+        "fields": {
+          "hasCleaningResidue": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasCleaningResidue",
+            "label": "含清洗残留物",
+            "description": "Links a CMC report to the residue information for cleaning validation.",
+            "multiplicity": "unspecified",
+            "kind": "relationship",
+            "range_class_iris": [
+              "https://ontology.pharma-gmp.cn/slpra/drug/ActiveSubstanceResidue",
+              "https://ontology.pharma-gmp.cn/slpra/drug/CleaningAgentResidue",
+              "https://ontology.pharma-gmp.cn/slpra/drug/MicrobialResidue",
+              "https://ontology.pharma-gmp.cn/slpra/drug/ParticulateResidue",
+              "https://ontology.pharma-gmp.cn/slpra/drug/Residue"
+            ]
+          },
+          "usesEquipment": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/usesEquipment",
+            "label": "使用设备",
+            "description": "Links a synthesis step or CMC report to the equipment required.",
+            "multiplicity": "unspecified",
+            "kind": "relationship",
+            "range_class_iris": [
+              "https://ontology.pharma-gmp.cn/slpra/equipment/CIPSystem",
+              "https://ontology.pharma-gmp.cn/slpra/equipment/CapsuleFiller",
+              "https://ontology.pharma-gmp.cn/slpra/equipment/Centrifuge",
+              "https://ontology.pharma-gmp.cn/slpra/equipment/ChromatographyColumnSystem",
+              "https://ontology.pharma-gmp.cn/slpra/equipment/CleaningEquipment",
+              "https://ontology.pharma-gmp.cn/slpra/equipment/CoatingMachine",
+              "https://ontology.pharma-gmp.cn/slpra/equipment/CompressedAirSystem",
+              "https://ontology.pharma-gmp.cn/slpra/equipment/Dryer",
+              "https://ontology.pharma-gmp.cn/slpra/equipment/ElectricVacuumDryer",
+              "https://ontology.pharma-gmp.cn/slpra/equipment/Equipment",
+              "https://ontology.pharma-gmp.cn/slpra/equipment/FillingMachine",
+              "https://ontology.pharma-gmp.cn/slpra/equipment/FilterPress",
+              "https://ontology.pharma-gmp.cn/slpra/equipment/Granulator",
+              "https://ontology.pharma-gmp.cn/slpra/equipment/HVACSystem",
+              "https://ontology.pharma-gmp.cn/slpra/equipment/HotAirBlastDryer",
+              "https://ontology.pharma-gmp.cn/slpra/equipment/HotAirDryer",
+              "https://ontology.pharma-gmp.cn/slpra/equipment/ManualCleaningTool",
+              "https://ontology.pharma-gmp.cn/slpra/equipment/Mixer",
+              "https://ontology.pharma-gmp.cn/slpra/equipment/ProcessEquipment",
+              "https://ontology.pharma-gmp.cn/slpra/equipment/Reactor",
+              "https://ontology.pharma-gmp.cn/slpra/equipment/RotaryEvaporator",
+              "https://ontology.pharma-gmp.cn/slpra/equipment/TabletPress",
+              "https://ontology.pharma-gmp.cn/slpra/equipment/UtilityEquipment",
+              "https://ontology.pharma-gmp.cn/slpra/equipment/VacuumDryer",
+              "https://ontology.pharma-gmp.cn/slpra/equipment/WaterSystem"
+            ]
+          }
+        }
+      },
+      "s1": {
+        "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/Residue",
+        "label": "残留物",
+        "anchor": {
+          "ref": "",
+          "quote": ""
+        },
+        "fields": {
+          "residueSolubility": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/residueSolubility",
+            "label": "残留物溶解度",
+            "description": "Qualitative solubility descriptor: 易溶, 溶解, 微溶, 几乎不溶.",
+            "multiplicity": "unspecified",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#string"
+            ]
+          },
+          "residueSolubilityTemperature": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/residueSolubilityTemperature",
+            "label": "溶解度测试温度",
+            "multiplicity": "unspecified",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#string"
+            ]
+          },
+          "residueSolvent": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/residueSolvent",
+            "label": "残留物清洗溶剂",
+            "description": "Solvent used to dissolve the residue for cleaning, e.g. 丙酮, 乙醇+水, 丙酮+2N三氟乙酸水溶液.",
+            "multiplicity": "unspecified",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#string"
+            ]
+          }
+        }
+      },
+      "s2": {
+        "class_iri": "https://ontology.pharma-gmp.cn/slpra/equipment/CleaningEquipment",
+        "label": "清洗设备",
+        "anchor": {
+          "ref": "",
+          "quote": ""
+        },
+        "fields": {
+          "equipmentID": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/equipmentID",
+            "label": "设备编号",
+            "multiplicity": "unspecified",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#string"
+            ]
+          },
+          "equipmentName": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/equipmentName",
+            "label": "设备名称",
+            "multiplicity": "unspecified",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#string"
+            ]
+          },
+          "isDedicatedEquipment": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/isDedicatedEquipment",
+            "label": "is dedicated equipment",
+            "multiplicity": "unspecified",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#boolean"
+            ]
+          },
+          "isInCleanArea": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/isInCleanArea",
+            "label": "is in clean area",
+            "multiplicity": "unspecified",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#boolean"
+            ]
+          },
+          "modelSpecification": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/modelSpecification",
+            "label": "规格型号",
+            "multiplicity": "unspecified",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#string"
+            ]
+          },
+          "requiresDedication": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/requiresDedication",
+            "label": "requires dedication",
+            "description": "Set by SWRL rules based on drug product classification.",
+            "multiplicity": "unspecified",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#boolean"
+            ]
+          },
+          "requiresInactivationValidation": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/requiresInactivationValidation",
+            "label": "requires inactivation validation",
+            "multiplicity": "unspecified",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#boolean"
+            ]
+          },
+          "requiresIndependentHVAC": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/requiresIndependentHVAC",
+            "label": "requires independent HVAC",
+            "multiplicity": "unspecified",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#boolean"
+            ]
+          }
+        }
+      }
+    }
+  }
+}

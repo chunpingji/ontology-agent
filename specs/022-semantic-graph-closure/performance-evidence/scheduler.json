@@ -1,0 +1,32 @@
+{
+  "scope": "synthetic 6 frozen slots x 1000 records; no model, DB, HTTP or browser",
+  "measured_date_utc": "2026-09-10",
+  "harness_path": "/tmp/ontology-scheduler-performance.py",
+  "provenance": "Original observed tool output preserved without rerunning the benchmark",
+  "logical_opportunities": 6000,
+  "json_bytes": 199456,
+  "peek": {
+    "median_ms": 0.455,
+    "samples_ms": [
+      0.509,
+      0.378,
+      0.455,
+      0.536,
+      0.449,
+      0.516,
+      0.415
+    ]
+  },
+  "restore": {
+    "median_ms": 33.078,
+    "samples_ms": [
+      87.179,
+      33.078,
+      32.531,
+      32.257,
+      33.405,
+      33.924,
+      32.764
+    ]
+  }
+}

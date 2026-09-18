@@ -1,0 +1,125 @@
+{
+  "runs": [
+    {
+      "run": "cmc-small01",
+      "requests": 6,
+      "usage": {
+        "input_tokens": 61770,
+        "output_tokens": 8385,
+        "total_tokens": 70155
+      },
+      "completion": "incomplete",
+      "progress": {
+        "tasks_attempted": 2,
+        "model_calls": 6,
+        "model_calls_reserved": 6,
+        "model_calls_unresolved": 0,
+        "records_planned": 1032,
+        "records_examined": 0,
+        "records_incomplete": 2,
+        "records_unattempted": 1030,
+        "phase_counts": {
+          "phase1": 1,
+          "phase2": 1
+        },
+        "supported": 0,
+        "unsupported": 0,
+        "undetermined": 0,
+        "pending_frontiers": 1031,
+        "unresolved_claims": 0,
+        "invalidated_count": 0,
+        "stop_reason": "task_budget_exhausted",
+        "completion": "incomplete",
+        "contract_version": "document-analysis-runs-v1"
+      },
+      "formed_discovery_batches": 0,
+      "formed_verification_batches": 0,
+      "controller_path_accepted": false,
+      "failure": "Qwen final JSON does not conform to requested stage schema; strict local parser rejected it",
+      "output": "runtime/small01"
+    },
+    {
+      "run": "f4-positive01",
+      "requests": 3,
+      "usage": {
+        "input_tokens": 15788,
+        "output_tokens": 5737,
+        "total_tokens": 21525
+      },
+      "completion": "incomplete",
+      "progress": {
+        "tasks_attempted": 1,
+        "model_calls": 3,
+        "model_calls_reserved": 3,
+        "model_calls_unresolved": 0,
+        "records_planned": 1,
+        "records_examined": 0,
+        "records_incomplete": 1,
+        "records_unattempted": 0,
+        "phase_counts": {
+          "phase1": 1,
+          "phase2": 0
+        },
+        "supported": 0,
+        "unsupported": 0,
+        "undetermined": 0,
+        "pending_frontiers": 1,
+        "unresolved_claims": 0,
+        "invalidated_count": 0,
+        "stop_reason": "task_budget_exhausted",
+        "completion": "incomplete",
+        "contract_version": "document-analysis-runs-v1"
+      },
+      "formed_discovery_batches": 0,
+      "formed_verification_batches": 0,
+      "controller_path_accepted": false,
+      "failure": "Qwen final JSON does not conform to requested stage schema; strict local parser rejected it",
+      "output": "runtime/f4-positive/result01"
+    },
+    {
+      "run": "f4-negative01",
+      "requests": 3,
+      "usage": {
+        "input_tokens": 13029,
+        "output_tokens": 4130,
+        "total_tokens": 17159
+      },
+      "completion": "incomplete",
+      "progress": {
+        "tasks_attempted": 1,
+        "model_calls": 3,
+        "model_calls_reserved": 3,
+        "model_calls_unresolved": 0,
+        "records_planned": 1,
+        "records_examined": 0,
+        "records_incomplete": 1,
+        "records_unattempted": 0,
+        "phase_counts": {
+          "phase1": 1,
+          "phase2": 0
+        },
+        "supported": 0,
+        "unsupported": 0,
+        "undetermined": 0,
+        "pending_frontiers": 1,
+        "unresolved_claims": 0,
+        "invalidated_count": 0,
+        "stop_reason": "task_budget_exhausted",
+        "completion": "incomplete",
+        "contract_version": "document-analysis-runs-v1"
+      },
+      "formed_discovery_batches": 0,
+      "formed_verification_batches": 0,
+      "controller_path_accepted": false,
+      "failure": "Qwen final JSON does not conform to requested stage schema; strict local parser rejected it",
+      "output": "runtime/f4-negative/result01"
+    }
+  ],
+  "formal_score": {
+    "status": "not_scored",
+    "command_exit_code": 1,
+    "error_type": "ValidationError",
+    "reason": "existing CMC reference uses legacy format; no approved OntologyGuidedReference for this frozen root/snapshot/scope"
+  },
+  "interpretation": "native tools execute; document extraction and numeric controller acceptance remain unverified; no F1 improvement claim"
+}

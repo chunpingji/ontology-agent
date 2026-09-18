@@ -1,0 +1,23 @@
+{
+  "tasks_attempted": 2,
+  "model_calls": 6,
+  "model_calls_reserved": 6,
+  "model_calls_unresolved": 0,
+  "records_planned": 1032,
+  "records_examined": 0,
+  "records_incomplete": 2,
+  "records_unattempted": 1030,
+  "phase_counts": {
+    "phase1": 1,
+    "phase2": 1
+  },
+  "supported": 0,
+  "unsupported": 0,
+  "undetermined": 0,
+  "pending_frontiers": 1031,
+  "unresolved_claims": 0,
+  "invalidated_count": 0,
+  "stop_reason": "task_budget_exhausted",
+  "completion": "incomplete",
+  "contract_version": "document-analysis-runs-v1"
+}

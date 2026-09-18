@@ -175,6 +175,10 @@ As a platform user, I open an item from Report Center into **报告详情 (Repor
 
 **Report Center (报告中心)**
 
+2026-09-14 后续明确需求：报告列表只读取摘要字段，由后端直接分页；列表不加载详情编辑器。
+该项授权仅替代本页历史逐任务聚合方式，以及 FR-027 对本项只读分页接口的限制。
+保留已有报告可见性、详情、下载、删除和上传行为，不新增数据副本或历史回放。
+
 - **FR-021**: The Report Center page MUST let users browse both platform-generated reports and user-managed documents organized by category, with each item showing title, type, date, and size.
 - **FR-022**: Users MUST be able to preview and download an item; authorized users MUST be able to upload documents and delete items.
 - **FR-023**: The page MUST provide an upload affordance (button and drag-and-drop area) and MUST show a defined empty state for categories with no items.

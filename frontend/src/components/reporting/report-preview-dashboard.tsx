@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
 import { groupsIn, type OutputGroup, type OutputUnit, type ReportRun, type TemplateV2 } from "@/lib/reporting-v2";
-import { outputCoverage, summarizeCoverage, type ReportInputSnapshot, type ReportOutputResult } from "@/lib/report-preview";
+import { isOutputConfigurationRequirement, outputCoverage, summarizeCoverage, type ReportInputSnapshot, type ReportOutputResult } from "@/lib/report-preview";
 import { OutputPreview } from "./output-preview";
 
 const statuses: Record<string, { label: string; dot: string }> = {
@@ -40,8 +40,10 @@ export function ReportPreviewDashboard({ template, templateName, snapshot, outpu
     outputCoverage(unit.output_id, ancestors, snapshot, outputs)]));
   const selectedUnit = entries.find(({ unit }) => unit.output_id === selected)?.unit;
   const selectedCoverage = states.get(selected);
-  function jumpToMissing() {
-    const missing = entries.find(({ unit }) => ["missing", "failed"].includes(states.get(unit.output_id)!.state));
+  function jumpToMissing(configurationOnly = false) {
+    const missing = entries.find(({ unit }) => snapshot && states.get(unit.output_id)!.requirements.some((item) =>
+      item.activation !== "inactive" && !item.satisfied
+      && isOutputConfigurationRequirement(item, snapshot) === configurationOnly));
     if (!missing) return;
     setExpanded((previous) => new Set([...previous, ...missing.ancestors]));
     setSelected(missing.unit.output_id);
@@ -81,7 +83,8 @@ export function ReportPreviewDashboard({ template, templateName, snapshot, outpu
 
   type Step = { title: string; desc: string; state: "done" | "active" | "pending"; detail?: ReactNode };
   const resolving = refreshing || (generating && !snapshot);
-  const steps: Step[] = [
+  const reportMode = generating || (isReport && !refreshing);
+  const allSteps: Step[] = [
     { title: "数据抽取解析", desc: resolving ? "正在读取来源与已审核数据…" : snapshot ? "已完成 · 已固定来源与输入" : hasSources ? "来源已关联 · 等待检查" : "请先关联源文档",
       state: resolving ? "active" : snapshot ? "done" : "pending" },
     { title: "模板匹配", desc: resolving ? "正在校验模板…" : snapshot ? `已完成 · ${templateName || template?.doc_no || "当前模板"}` : "等待校验当前模板",
@@ -92,18 +95,24 @@ export function ReportPreviewDashboard({ template, templateName, snapshot, outpu
         <div className="flex justify-between text-xs"><span className="text-muted-foreground">已满足要求</span><span className="font-semibold">{coverage.satisfied} / {coverage.total}</span></div>
         <div className="flex justify-between text-xs"><span className="text-muted-foreground">未满足要求</span><span className={cn("font-semibold", coverage.missing > 0 && "text-destructive")}>{coverage.missing}</span></div>
         <div className="flex justify-between text-xs"><span className="text-muted-foreground">不适用</span><span className="font-semibold">{coverage.inactive}</span></div>
+        {coverage.configurationMissing > 0 && <div className="flex justify-between text-xs"><span className="text-muted-foreground">内容待配置</span><span className="font-semibold text-destructive">{coverage.configurationMissing}</span></div>}
       </div> : undefined },
     { title: "AI 行文生成", desc: generating ? "生成中…" : isReport && current?.execution_status === "completed" ? "已完成" : isReport && current?.execution_status === "failed" ? "生成失败 · 可重试未完成内容" : "等待生成报告",
       state: generating ? "active" : isReport && current?.execution_status === "completed" ? "done" : "pending" },
     { title: "DOCX 报告渲染", desc: generating ? "生成中…" : isReport && onDownload ? "已完成 · 已生成 Word 文档" : "等待中",
       state: generating ? "active" : isReport && onDownload ? "done" : "pending" },
   ];
+  const steps = reportMode ? allSteps : allSteps.slice(0, 3);
   const progress = Math.round(steps.filter((step) => step.state === "done").length / steps.length * 100);
   return <div className="grid grid-cols-1 overflow-hidden rounded-lg border bg-card lg:grid-cols-[minmax(0,1fr)_420px]">
     <section aria-label="生成进度" className="flex min-w-0 flex-col gap-5 p-6 lg:border-r">
       <div className="space-y-2"><div className="flex items-center justify-between">
-        <span className="text-[15px] font-semibold">生成进度</span><span className="text-sm font-semibold text-primary">{progress}%</span>
+        <span className="text-[15px] font-semibold">{reportMode ? "报告生成进度" : "覆盖率检查进度"}</span><span className="text-sm font-semibold text-primary">{progress}%</span>
       </div><Progress value={progress} className="h-2" /></div>
+      {!reportMode && coverage && !refreshing && <p role="status" className="rounded border bg-muted/40 px-3 py-2 text-sm">
+        覆盖率检查已完成。{coverage.missing > 0 ? `仍有 ${coverage.missing} 项输入要求未满足。` : "输入要求均已满足。"}
+        点击「生成报告」可继续生成正文。
+      </p>}
       <div className="flex flex-col">{steps.map((step, index) => <div key={step.title} className="flex gap-4">
         <div className="flex flex-col items-center gap-1">
           <div className={cn("flex size-7 shrink-0 items-center justify-center rounded-full", step.state === "done" && "bg-success text-success-foreground", step.state === "active" && "bg-primary text-primary-foreground", step.state === "pending" && "border-2 border-border")}>
@@ -118,15 +127,19 @@ export function ReportPreviewDashboard({ template, templateName, snapshot, outpu
     </section>
     <section aria-label="报告结构" className="flex min-h-0 min-w-0 flex-col border-t lg:border-t-0">
       <div className="flex items-center justify-between border-b px-5 py-3">
-        <div className="flex items-center gap-2"><ListTree className="size-4" /><span className="text-sm font-semibold">报告结构</span>
+        <div className="flex items-center gap-2"><ListTree className="size-4" /><span className="text-sm font-semibold">报告结构 · 输入要求满足率</span>
           <span className={cn("text-sm font-semibold tabular-nums", !coverage ? "text-muted-foreground" : coverage.percent >= 80 ? "text-success" : coverage.percent >= 50 ? "text-amber-500" : "text-destructive")}>{coverage ? `${coverage.percent}%` : "待检查"}</span>
         </div>
         {coverage && <div className="flex items-center gap-1.5">
           <CoverageBadge tone="success" count={coverage.satisfied} label="已满足" />
-          <CoverageBadge tone="destructive" count={coverage.missing} label="未满足" onClick={coverage.missing ? jumpToMissing : undefined} />
+          <CoverageBadge tone="destructive" count={coverage.missing} label="未满足" onClick={coverage.missing ? () => jumpToMissing() : undefined} />
           <CoverageBadge tone="muted" count={coverage.inactive} label="不适用" />
         </div>}
       </div>
+      {coverage && coverage.configurationMissing > 0 && <button type="button" onClick={() => jumpToMissing(true)}
+        className="border-b px-5 py-2 text-left text-xs text-destructive hover:bg-muted/40">
+        {coverage.configurationMissing} 项内容待配置，单独列示，不计入输入要求满足率。
+      </button>}
       <div ref={tree} className="max-h-[44vh] min-h-0 flex-1 overflow-y-auto px-4 py-3">
         {template?.sections.map((section) => <div key={section.section_id} className="mb-2">
           <div className="rounded bg-muted/50 px-2 py-1 text-sm font-semibold">{section.title || "未命名章节"}</div>
@@ -137,7 +150,7 @@ export function ReportPreviewDashboard({ template, templateName, snapshot, outpu
       {selectedUnit && selectedCoverage && <div className="max-h-[36vh] overflow-y-auto border-t px-4 py-3 text-sm space-y-3">
         <div className="flex items-center justify-between gap-2"><strong>{selectedUnit.title}</strong><span className="text-xs text-muted-foreground">{statuses[selectedCoverage.state].label}</span></div>
         {selectedCoverage.requirements.map((item, index) => <div key={`${item.requirement_id}-${item.execution_scope_id}-${index}`} className="rounded border p-2 text-xs">
-          <p>{template?.definitions.inputs[item.input_id]?.label || item.input_id}{item.field_path.length ? ` · ${item.field_path.join(" / ")}` : ""}</p>
+          <p>{template?.definitions.inputs[item.input_id]?.label || selectedUnit.title}{item.field_path.length ? ` · ${item.field_path.join(" / ")}` : ""}</p>
           <p className={item.activation !== "inactive" && !item.satisfied ? "text-destructive" : "text-muted-foreground"}>{item.activation === "inactive" ? "不适用" : item.satisfied ? "已满足" : "未满足"}</p>
           {snapshot?.blocking_issues.filter((issue) => item.issue_refs.includes(issue.issue_id)).map((issue) => <p key={issue.issue_id}>{issue.message || issue.code}</p>)}
         </div>)}

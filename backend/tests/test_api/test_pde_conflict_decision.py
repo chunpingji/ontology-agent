@@ -2,13 +2,22 @@
 
 import uuid
 
+from app.models.extraction import ExtractionJob
+
 
 def _url(job_id: str) -> str:
     return f"/api/extraction/jobs/{job_id}/pde-conflict/decision"
 
 
+def _job(db) -> str:
+    row = ExtractionJob(id=uuid.uuid4(), source_type="excel", status="completed")
+    db.add(row)
+    db.commit()
+    return str(row.id)
+
+
 def test_decision_get_default_pending(client, db, analyst_headers):
-    job_id = str(uuid.uuid4())
+    job_id = _job(db)
     r = client.get(_url(job_id), headers=analyst_headers)
     assert r.status_code == 200
     body = r.json()
@@ -19,7 +28,7 @@ def test_decision_get_default_pending(client, db, analyst_headers):
 
 
 def test_decision_post_creates_then_cas_updates(client, db, analyst_headers):
-    job_id = str(uuid.uuid4())
+    job_id = _job(db)
     url = _url(job_id)
 
     # 首次：expected_version 0 → v1
@@ -50,13 +59,13 @@ def test_decision_post_creates_then_cas_updates(client, db, analyst_headers):
 
 
 def test_decision_invalid_choice_422(client, db, analyst_headers):
-    job_id = str(uuid.uuid4())
+    job_id = _job(db)
     r = client.post(_url(job_id), headers=analyst_headers,
                     json={"chosen": "bogus", "expected_version": 0})
     assert r.status_code == 422
 
 
 def test_decision_requires_identity(client, db):
-    job_id = str(uuid.uuid4())
+    job_id = _job(db)
     r = client.post(_url(job_id), json={"chosen": "derived", "expected_version": 0})
     assert r.status_code == 403

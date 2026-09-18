@@ -20,13 +20,17 @@ def test_docx_and_preview_share_values_and_citations():
     assert rendered["execution_status"] == "completed"
     assert "E-01" in plain_text(rendered["body_ast"])
     doc = Document(BytesIO(render_docx(rendered["body_ast"])))
+    from tests.test_reporting.test_docx_layout import assert_black_text
+
+    assert_black_text(doc)
     assert doc.tables[0].cell(1, 0).text == "E-01"
     citations = rendered["output_results"][0]["citations"]
     assert citations[0]["input_ref"]["field_path"] == ["code"]
     assert citations[0]["fact_refs"]
 
 
-def test_assisted_cannot_omit_or_add_references():
+@pytest.mark.parametrize("partial_draft", [False, True])
+def test_assisted_cannot_omit_or_add_references(partial_draft):
     from app.services.reporting.input_resolver import typed_value
     from app.services.reporting.narrative_renderer import assisted_nodes
 
@@ -49,8 +53,42 @@ def test_assisted_cannot_omit_or_add_references():
         {"nodes": [{"kind": "signature_region", "signature_region_id": "qa"}]},
     ):
         with pytest.raises(ReportingError) as error:
-            assisted_nodes(render, inputs, {}, policy, Budget(), lambda *args: proposal)
+            assisted_nodes(render, inputs, {}, policy, Budget(), lambda *args: proposal,
+                           partial_draft=partial_draft)
         assert error.value.code == "OUTPUT_REFERENCE_INVALID"
+
+
+def test_partial_draft_sends_missing_scalar_as_gap_without_relaxing_model_errors():
+    from app.services.reporting.input_resolver import typed_value, unavailable_value
+    from app.services.reporting.narrative_renderer import assisted_nodes
+
+    render = NarrativeRender.model_validate({
+        "kind": "narrative", "mode": "assisted", "prompt": {
+            "policy_ref": "prompt", "input_refs": [{"input_id": "name"}, {"input_id": "route"}],
+            "required_refs": [{"input_id": "name"}, {"input_id": "route"}],
+        },
+    })
+    inputs = {"name": typed_value("name", {"kind": "string"}, "产品A"),
+              "route": unavailable_value("route", {"kind": "string"})}
+    policy = {"model": "fixture", "max_input_tokens": 8192}
+
+    def provider(_system, payload, *_args):
+        assert [i["value"] for i in payload["inputs"]] == [
+            "产品A", {"status": "missing", "value": "（待补充）"},
+        ]
+        return {"nodes": [{"kind": "input_ref", "input_id": key} for key in inputs]}
+
+    nodes, _ = assisted_nodes(render, inputs, {}, policy, Budget(), provider, partial_draft=True)
+    assert [n.input_id for n in nodes] == ["name", "route"]
+    assert inputs["route"].state == "missing" and inputs["route"].value is None
+    with pytest.raises(ReportingError, match="INPUT_CONSUMPTION_BLOCKED"):
+        assisted_nodes(render, inputs, {}, policy, Budget(), provider)
+
+    def unavailable(*_args):
+        raise ReportingError("MODEL_UNAVAILABLE")
+
+    with pytest.raises(ReportingError, match="MODEL_UNAVAILABLE"):
+        assisted_nodes(render, inputs, {}, policy, Budget(), unavailable, partial_draft=True)
 
 
 def workflow_output(typ, records, render):

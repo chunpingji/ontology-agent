@@ -1,4 +1,4 @@
-import { fetchAPI, identityHeaders } from "./api";
+import { fetchAPI, identityHeaders, type AiStructureSection, type StaticDemoProfile } from "./api";
 
 export interface InputRef {
   kind?: "input_ref";
@@ -69,8 +69,17 @@ export interface OutputGroup {
   groups?: OutputGroup[];
   origin?: Record<string, unknown> | null;
 }
+export interface SectionNarrative {
+  enabled: boolean;
+  instructions: string;
+  policy_ref: string;
+  input_refs: InputRef[];
+  required_refs: InputRef[];
+  claim_refs: string[];
+}
 export interface TemplateV2 {
   schema_version: 2;
+  demo_profile?: StaticDemoProfile | null;
   template_family_id: string;
   template_revision_id: string;
   revision_no: number;
@@ -79,10 +88,11 @@ export interface TemplateV2 {
   style_profile_ref: string;
   publication_policy_ref: string;
   definitions: { bindings: Record<string, BindingDefinition>; inputs: Record<string, InputDefinition> };
+  record_sources?: Record<string, RecordSource>;
   source_slots: { source_slot_id: string; kind: "document" | "external"; class_iri: string; required?: boolean }[];
   calculation_checks?: { check_id: string; source_slot: string; contract_ref: string }[];
   sections: { section_id: string; title: string; groups: OutputGroup[]; origin?: Record<string, unknown> | null;
-    completeness_requirements?: Record<string, unknown>[] }[];
+    completeness_requirements?: Record<string, unknown>[]; narrative?: SectionNarrative | null }[];
   migration_issues?: { code: string; old_id: string; message: string }[];
   [key: string]: unknown;
 }
@@ -122,6 +132,7 @@ export interface ReportRun {
   execution_status: string;
   material_status: string;
   review_status: string;
+  demonstration?: boolean;
   template_status: string;
   phase: string;
   lease_expires_at?: string | null;
@@ -178,6 +189,42 @@ export function groupsIn(groups: OutputGroup[]): OutputGroup[] {
 }
 export function unitsIn(template: TemplateV2): OutputUnit[] {
   return template.sections.flatMap((section) => groupsIn(section.groups).flatMap((group) => group.units));
+}
+
+export function isUploadDocumentContainer(section: TemplateV2["sections"][number]): boolean {
+  // The parser's filename fallback has no heading origin. An actual heading
+  // called "upload" has an origin and must remain an editable section.
+  return section.title === "upload" && !section.origin;
+}
+
+export function applyStructureTitles(template: TemplateV2, titles: Record<string, string> = {}): TemplateV2 {
+  const next = structuredClone(template);
+  for (const section of next.sections) {
+    for (const group of groupsIn(section.groups)) {
+      if (["表格", "字段", "段落行文", "未命名分组", ""].includes(group.title.trim()) && titles[group.group_id]?.trim()) {
+        group.title = titles[group.group_id];
+      }
+    }
+  }
+  return next;
+}
+
+export function materializeTemplateStructure(
+  template: TemplateV2, skeleton: AiStructureSection[],
+): TemplateV2 {
+  // A response must not replace sections authored while analysis was running.
+  if (template.sections.length || !skeleton.length) return template;
+  return { ...template, sections: skeleton.map((section) => ({
+    section_id: section.id, title: section.title, origin: section.origin ? { ...section.origin } : null,
+    groups: section.groups.map((group) => ({
+      group_id: group.id, title: group.title, origin: group.origin ? { ...group.origin } : null,
+      units: group.candidates.map((candidate) => ({
+        output_id: candidate.id, title: candidate.semantic_label || candidate.label,
+        origin: { ...candidate.origin }, bindings: [], inputs: [],
+        render: { kind: "narrative" as const, mode: "composed" as const, nodes: [] },
+      })),
+    })),
+  })) };
 }
 export function consumersOf(template: TemplateV2, inputId: string): OutputUnit[] {
   return unitsIn(template).filter((unit) => unit.inputs.some((input) => input.input_ref === inputId));
@@ -257,8 +304,8 @@ export function emptyTemplate(): TemplateV2 {
 }
 export const requestKey = () => crypto.randomUUID();
 export const reportGet = <T>(path: string) => fetchAPI<T>("/api/" + path);
-export const reportPost = <T>(path: string, body: unknown) =>
-  fetchAPI<T>("/api/" + path, { method: "POST", body: JSON.stringify(body) });
+export const reportPost = <T>(path: string, body: unknown, signal?: AbortSignal) =>
+  fetchAPI<T>("/api/" + path, { method: "POST", body: JSON.stringify(body), signal });
 export const compileTemplate = (id: string, hash: string, draft?: TemplateV2) =>
   reportPost<Compilation>("ast-templates/" + id + "/compile", { expected_hash: hash, draft_schema: draft });
 export async function downloadArtifact(runId: string, artifactId: string): Promise<void> {
@@ -330,4 +377,93 @@ export function automaticChecks(template: TemplateV2, rules: RegisteredContract[
     }
   }
   return checks;
+}
+
+export interface RecordSource {
+  provider: "assessment_team" | "approver_team" | "equipment" | "production_areas" | "equipment_schedules";
+  contract_ref: string;
+  filters: Record<string, string | string[]>;
+  input_filters?: Record<string, InputRef>;
+}
+export interface SemanticSourceOption {
+  key: string;
+  kind: "graph" | "mock";
+  label: string;
+  provider?: RecordSource["provider"];
+  contract_ref?: string;
+  available_count: number | null;
+  state: string;
+  fields: { key: string; label: string; projection: Projection; available?: number; preview_values?: string[] }[];
+}
+export interface SemanticPatch {
+  output_id: string;
+  unit: OutputUnit;
+  bindings: Record<string, BindingDefinition>;
+  inputs: Record<string, InputDefinition>;
+  record_sources: Record<string, RecordSource>;
+}
+export interface SemanticSuggestion {
+  completion: "complete" | "incomplete";
+  patches: SemanticPatch[];
+  diagnostics: { output_id?: string; code: string; message: string }[];
+  options: SemanticSourceOption[];
+}
+export function applySemanticPatches(current: TemplateV2, baseline: TemplateV2, patches: SemanticPatch[]): TemplateV2 {
+  if (current.template_revision_id !== baseline.template_revision_id
+    || current.ontology_release_ref !== baseline.ontology_release_ref
+    || JSON.stringify(current.source_slots) !== JSON.stringify(baseline.source_slots)) return current;
+  const next = structuredClone(current);
+  const before = new Map(unitsIn(baseline).map((unit) => [unit.output_id, unit]));
+  for (const patch of patches) {
+    const unit = unitsIn(next).find((item) => item.output_id === patch.output_id);
+    const old = before.get(patch.output_id);
+    if (!unit || !old || JSON.stringify(unit) !== JSON.stringify(old)) continue;
+    if (old.bindings.some(({ binding_ref: key }) => JSON.stringify(current.definitions.bindings[key]) !== JSON.stringify(baseline.definitions.bindings[key]))
+      || old.inputs.some(({ input_ref: key }) => JSON.stringify(current.definitions.inputs[key]) !== JSON.stringify(baseline.definitions.inputs[key]))
+      || JSON.stringify(current.record_sources) !== JSON.stringify(baseline.record_sources)) continue;
+    Object.assign(unit, structuredClone(patch.unit));
+    Object.assign(next.definitions.bindings, structuredClone(patch.bindings));
+    Object.assign(next.definitions.inputs, structuredClone(patch.inputs));
+    if (Object.keys(patch.record_sources).length) next.record_sources = { ...next.record_sources, ...structuredClone(patch.record_sources) };
+  }
+  return syncBindingDependencies(next);
+}
+
+/** Reassemble untouched column placeholders from one physical sample header into a table Slot. */
+export function coalesceUnconfiguredTables(template: TemplateV2): TemplateV2 {
+  const next = structuredClone(template);
+  for (const section of next.sections) for (const group of groupsIn(section.groups)) {
+    const tables = new Map<string, OutputUnit[]>();
+    const editedTables = new Set<string>();
+    for (const unit of group.units) {
+      const anchor = unit.origin?.label_anchor as { table_path?: string[]; row_index?: number; column_index?: number } | undefined;
+      if (!anchor?.table_path?.length || anchor.row_index !== 0) continue;
+      const key = JSON.stringify(anchor.table_path);
+      if (unit.inputs.length || unit.bindings.length || unit.render.kind !== "narrative"
+        || unit.render.mode === "assisted" || unit.render.nodes?.length) { editedTables.add(key); continue; }
+      tables.set(key, [...tables.get(key) || [], unit]);
+    }
+    for (const [key, headers] of tables) {
+      const columns = headers.map((unit) => (unit.origin?.label_anchor as { column_index?: number }).column_index);
+      if (headers.length < 3 || editedTables.has(key) || new Set(columns).size !== headers.length) continue;
+      const first = headers[0];
+      first.origin = { ...first.origin, slot_columns: headers.map((unit) => ({ output_id: unit.output_id, title: unit.title, origin: structuredClone(unit.origin) })) };
+      first.title = headers.map((unit) => unit.title).join(" / ");
+      const mergedIds = new Set(headers.slice(1).map((unit) => unit.output_id));
+      group.units = group.units.filter((unit) => !mergedIds.has(unit.output_id));
+    }
+  }
+  return next;
+}
+
+// 从忠于原文结构的 tiptap 文档提取纯文本（供 legacy 无 sample_text 时的行文 Prompt 生成）。
+export function tiptapToText(node: unknown): string {
+  if (!node || typeof node !== "object") return "";
+  const n = node as { type?: string; text?: string; content?: unknown[] };
+  if (n.type === "text" && typeof n.text === "string") return n.text;
+  const inner = Array.isArray(n.content)
+    ? n.content.map(tiptapToText).join("")
+    : "";
+  // 段落级节点之间补换行，尽量保留原文段落边界。
+  return n.type === "paragraph" || n.type === "heading" ? `${inner}\n` : inner;
 }

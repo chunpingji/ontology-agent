@@ -1,0 +1,20 @@
+{
+  "read_only": true,
+  "database_sources": {
+    "system-mock-equipment": 211,
+    "system-mock-roles": 5
+  },
+  "snapshot_version": "hash of exact source API row",
+  "field_mapping": "only existing data_properties[].iri; unmapped labels and IDs remain recall metadata",
+  "identity_keys_added": false,
+  "sources_without_explicit_class_mapping": [
+    "mock_departments",
+    "mock_production_areas"
+  ],
+  "static_equipment_archive_used": false,
+  "snapshot_sha256": "da13fb1fc3d6f7bb01a6dd650707ec009525cb715712c76617e2e3a8e944e041",
+  "source_version_hashes": {
+    "system-mock-equipment": "0e9a45dd0dc7624bb24743f0b489262b742e114afecfaa7696ee5e0d98489d7c",
+    "system-mock-roles": "161578a53871091d6c5975a45cda24ca2828468a3f67d7944dfcead0db42b051"
+  }
+}

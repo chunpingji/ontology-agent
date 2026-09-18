@@ -1,0 +1,41 @@
+{
+  "run": "f4-positive03",
+  "output": "runtime/f4-positive/result03",
+  "purpose": "针对已观察输出截断，仅提高输出上限的有界工程验证；不属于原同预算质量对照。",
+  "comparison": {
+    "baseline": "runtime/f4-positive/result02",
+    "changed_budget": {
+      "max_output_tokens": {"before": 8192, "after": 16384}
+    },
+    "max_input_tokens": 32768,
+    "max_model_calls": 4,
+    "max_tasks": 1,
+    "frozen_input_hashes_unchanged": true,
+    "discovery_instructions_sha256": "6cfd95d4eeea5e537988cf6141e8baf368a01466fada510861df057cdae10722",
+    "discovery_instructions_unchanged": true,
+    "reasoning_option": "omitted"
+  },
+  "requests": 1,
+  "usage": {"input_tokens": 3404, "output_tokens": 3988, "total_tokens": 7392},
+  "elapsed_seconds": 69.32633047713898,
+  "completion": "incomplete",
+  "artifact_status": "partial",
+  "discovery_json_complete": true,
+  "discovery_schema_valid": true,
+  "discovery_frozen": false,
+  "verification_batches": 0,
+  "controller_checks": {},
+  "accepted_properties": 0,
+  "diagnostics": ["adapter_failure:ValueError", "bounded_technical_retry_scheduled"],
+  "offline_diagnostic": {
+    "real_model_requests": 0,
+    "saved_responses_consumed": 1,
+    "exception_type": "ValueError",
+    "reason_code": "local_id_conflicts_with_registered_entity",
+    "field_path": "entities[0].local_id",
+    "finding": "模型将已注册主体 ID 作为新 EntityProposal 的 local_id，冻结边界按既有规则拒绝。"
+  },
+  "conclusion": "较大输出上限下本次得到完整合法 JSON，但动态实体命名冲突尚未反馈给模型纠正；未到达数值规范化或 SHACL，不代表单位校准验收通过。",
+  "negative_and_mock_model_runs_started": false,
+  "quality_status": "not_scored"
+}

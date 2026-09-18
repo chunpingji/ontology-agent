@@ -1,0 +1,99 @@
+{
+  "source_run": "d231338c-f96f-436a-b759-85fc5610578c",
+  "records": 149,
+  "original_failure_tasks": 8,
+  "original_tasks_rechecked": 8,
+  "current_failed_tasks_checked": 11,
+  "remaining_context_failures": 0,
+  "real_qwen_requests": 0,
+  "tasks": [
+    {
+      "task_id": "cb643bfd5605db6bf771b523f5128b4a3f399db5bf17ccb0dc2c6f76e7f1dfd6",
+      "lineage_id": "a7b79f0fa46d9e95aea1899310d010f9e7dfe2c05338c0e2fa15684625acd73d",
+      "predicate": "https://ontology.pharma-gmp.cn/slpra/drug-development/describes",
+      "reproduced": false,
+      "fragment_count": 47,
+      "bad_fragments": []
+    },
+    {
+      "task_id": "523752e515e14b59a4f968f259bc35d87d48af4efbbcfd2b77b6f90947a6e30e",
+      "lineage_id": "7a576f995595b002a96f5c5f0836c520e05eb3c98aaafbfcd28da4a6cdeec8a9",
+      "predicate": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasCleaningResidue",
+      "reproduced": false,
+      "fragment_count": 2,
+      "bad_fragments": []
+    },
+    {
+      "task_id": "9ad5316437ecbf8fd66603c47b8132a41af8742ba1184292dcaa3ba6c7e84d10",
+      "lineage_id": "88e38abf52e8453424ec687c0e56d7ce4e4dc8556fa0af94e8787b10b660ef4c",
+      "predicate": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasCleaningResidue",
+      "reproduced": false,
+      "fragment_count": 9,
+      "bad_fragments": []
+    },
+    {
+      "task_id": "c0975c723cabf533936e73a761f900b3a23365c0335e2a88290dad19b317d596",
+      "lineage_id": "a122aca8b1e9a348409905da4e93cf8e3174c3e56697d9085f5d7260ebc94b37",
+      "predicate": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasDegradationPathway",
+      "reproduced": false,
+      "fragment_count": 8,
+      "bad_fragments": []
+    },
+    {
+      "task_id": "e26597b87ddbec390473c7c22e87c9fe3b377e8bd63be8e6dbf94dbf3fb90f9a",
+      "lineage_id": "5000989f9a80e26932169623d88819a417de63d06e08d40ce911c1e0e867fe5d",
+      "predicate": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasDegradationPathway",
+      "reproduced": false,
+      "fragment_count": 8,
+      "bad_fragments": []
+    },
+    {
+      "task_id": "6bd1a11e8187eb3e58d0567f8080eef511216a2ecbf6ee58884f5a7c8673bf5c",
+      "lineage_id": "2dcf6e6e100d6cdc8d46687ea8bcdb4512c958686f9d7613304688423579104e",
+      "predicate": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasCleaningResidue",
+      "reproduced": false,
+      "fragment_count": 9,
+      "bad_fragments": []
+    },
+    {
+      "task_id": "33d9d766e953f74853f0a418b168f5ff553afce112b40d74355447b00a71879b",
+      "lineage_id": "cfc6e8214807cc05c92ee0c09ecd05b53316c504decdeb45657969cf3e5d92fd",
+      "predicate": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasDegradationPathway",
+      "reproduced": false,
+      "fragment_count": 8,
+      "bad_fragments": []
+    },
+    {
+      "task_id": "b202b2416bd9526b2a46f2bf1ed405ae1e250f9ae0efd684d7e975d8f5c8beb3",
+      "lineage_id": "3db3c4cac1a407076181b99d5960ad7587a9d4e42fa8464d4d1e632d1acc462f",
+      "predicate": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasDegradationPathway",
+      "reproduced": false,
+      "fragment_count": 8,
+      "bad_fragments": []
+    },
+    {
+      "task_id": "f57f16b52eae6e0dbe1f14a670aee861481240d8ce7383f543587170088ef53e",
+      "lineage_id": "94cf2425799cb7facb844c628e3b6c745317dbbc5773e2c9401e0250c73ceae2",
+      "predicate": "https://ontology.pharma-gmp.cn/slpra/drug-development/producesFinalProduct",
+      "reproduced": false,
+      "fragment_count": 47,
+      "bad_fragments": []
+    },
+    {
+      "task_id": "42289ae9c8da5d1ba4f5ac1c5f45ac21007941bf03bb396bfb42d19af088e7cb",
+      "lineage_id": "597a0b734c6a1bd42b7a613d0a9f7856d095abc4d12c691f28ec1ae8a8e879a2",
+      "predicate": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasStorageCondition",
+      "reproduced": false,
+      "fragment_count": 2,
+      "bad_fragments": []
+    },
+    {
+      "task_id": "6b3829bd516fc28d84df4a01f7e4c146e4948f2b019f078e29c504bcc9141da6",
+      "lineage_id": "2775acf30a9f8963528bbbc2d1900aa1c23b406427b89d508e465d8000ee779b",
+      "predicate": "https://ontology.pharma-gmp.cn/slpra/drug-development/producesFinalProduct",
+      "reproduced": false,
+      "fragment_count": 47,
+      "bad_fragments": []
+    }
+  ]
+}

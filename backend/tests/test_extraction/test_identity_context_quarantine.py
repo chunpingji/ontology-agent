@@ -9,7 +9,9 @@ from copy import deepcopy
 
 import pytest
 
-from app.evaluation.quality_guided_variant import build_quality_guided_variant
+from app.evaluation.legacy_quality_guided_variant import (
+    build_legacy_quality_guided_variant as build_quality_guided_variant,
+)
 from app.schemas.evidence import CandidateRef, ExtractionTask, TaskBudget, TypeVerification
 from app.services.extraction.evidence_scope import build_scope
 from app.services.extraction.extraction_tasks import GenericExtractionRunner

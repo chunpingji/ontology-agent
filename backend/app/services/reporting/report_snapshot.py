@@ -4,7 +4,7 @@ from copy import deepcopy
 
 from app.services.extraction.evidence_identity import evidence_hash
 from app.services.reporting.binding_resolver import BindingResolver, FactSelection
-from app.services.reporting.condition_resolver import evaluate_condition
+from app.services.reporting.condition_resolver import evaluate_condition, evaluate_expression
 from app.services.reporting.input_resolver import (
     RESOLVER_VERSION,
     apply_constraints,
@@ -189,7 +189,9 @@ def resolve_snapshot(plan, bundle):
             if comparison["status"] in {"unknown", "incompatible"}:
                 problem = issue(
                     "incomplete" if comparison["status"] == "unknown" else "invalid",
-                    comparison["code"], slot, blocks=True,
+                    comparison["code"],
+                    slot,
+                    blocks=True,
                     message="来源模型版本无法验证或字段定义不兼容，请核对来源版本及受影响字段",
                     refs=[comparison["ontology_release"]],
                 ).model_dump(mode="json")
@@ -223,6 +225,50 @@ def resolve_snapshot(plan, bundle):
         }
         all_blockers.update({i["issue_id"]: i for i in resolved["blocking_issues"]})
         coverage.extend({**item, "execution_scope_id": scope_id} for item in resolved["coverage"])
+    # Empty authoring placeholders are configuration gaps, not completed report material.
+    from app.services.reporting.template_compiler import walk_groups
+
+    units = {
+        u.output_id: u for s in template.sections for g, _ in walk_groups(s.groups) for u in g.units
+    }
+    for instance in instances:
+        unit = units[instance["output_id"]]
+        activation = (
+            evaluate_expression(unit.when, scope_values[instance["execution_scope_id"]])["result"]
+            if unit.when
+            else "TRUE"
+        )
+        if (
+            unit.render.kind == "narrative"
+            and unit.render.mode == "composed"
+            and not unit.render.nodes
+            and activation != "FALSE"
+        ):
+            problem = issue(
+                "missing",
+                "SLOT_CONFIGURATION_MISSING",
+                unit.output_id,
+                message="内容项尚未配置数据来源、字段或呈现内容。",
+            )
+            all_blockers[problem.issue_id] = problem.model_dump(mode="json")
+            coverage.append(
+                {
+                    "requirement_id": problem.issue_id,
+                    "input_id": unit.output_id,
+                    "field_path": [],
+                    "origin_refs": [unit.output_id],
+                    "required": True,
+                    "activation": "active" if activation == "TRUE" else "pending",
+                    "satisfied": False,
+                    "issue_refs": [problem.issue_id],
+                    "execution_scope_id": instance["execution_scope_id"],
+                }
+            )
+    if not instances:
+        problem = issue(
+            "missing", "TEMPLATE_STRUCTURE_MISSING", "report", message="尚未定义报告内容项。"
+        )
+        all_blockers[problem.issue_id] = problem.model_dump(mode="json")
     if len(instances) > template.budget.max_units:
         problem = issue("incomplete", "OUTPUT_BUDGET_EXCEEDED", "report")
         all_blockers[problem.issue_id] = problem.model_dump(mode="json")

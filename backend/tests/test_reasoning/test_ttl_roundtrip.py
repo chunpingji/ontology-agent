@@ -15,6 +15,7 @@ managed BNode MUST be re-emitted identically.
 from __future__ import annotations
 
 from rdflib import OWL, RDF, RDFS, BNode, Graph, Literal, Namespace, URIRef
+from rdflib.collection import Collection
 from rdflib.compare import isomorphic
 
 from app.services.ttl_merge import surgical_merge
@@ -67,6 +68,57 @@ def _reparse(g: Graph) -> Graph:
     return out
 
 
+def _add_union_constraint(
+    graph: Graph,
+    subject: URIRef,
+    predicate: URIRef,
+    name: str,
+    members: list[URIRef],
+) -> BNode:
+    expression = BNode(f"{name}-expression")
+    head = BNode(f"{name}-list")
+    graph.add((subject, predicate, expression))
+    graph.add((expression, RDF.type, OWL.Class))
+    graph.add((expression, OWL.unionOf, head))
+    Collection(graph, head, members)
+    return expression
+
+
+def _union_members(graph: Graph, subject: URIRef, predicate: URIRef) -> set[URIRef]:
+    expression = graph.value(subject, predicate)
+    assert isinstance(expression, BNode)
+    head = graph.value(expression, OWL.unionOf)
+    assert head is not None
+    return set(graph.items(head))
+
+
+def _add_property_chain(
+    graph: Graph,
+    predicate: URIRef,
+    name: str,
+    members: list[URIRef | BNode],
+) -> None:
+    head = BNode(f"{name}-list")
+    graph.add((predicate, OWL.propertyChainAxiom, head))
+    Collection(graph, head, members)
+
+
+def _property_chains(graph: Graph, predicate: URIRef) -> set[tuple[tuple[str, URIRef], ...]]:
+    chains = set()
+    for head in graph.objects(predicate, OWL.propertyChainAxiom):
+        members = []
+        for member in graph.items(head):
+            inverse = graph.value(member, OWL.inverseOf)
+            if inverse is not None:
+                assert isinstance(inverse, URIRef)
+                members.append(("inverse", inverse))
+            else:
+                assert isinstance(member, URIRef)
+                members.append(("direct", member))
+        chains.add(tuple(members))
+    return chains
+
+
 def test_roundtrip_is_stable_and_preserves_external_axioms():
     base = _base_graph()
     managed = _managed_graph()
@@ -97,3 +149,87 @@ def test_roundtrip_is_stable_and_preserves_external_axioms():
         (cexpr,) = eq_bnodes
         assert (cexpr, OWL.someValuesFrom, FILLER) in merged
         assert (cexpr, OWL.onProperty, P) in merged
+
+
+def test_union_and_property_chains_survive_when_metadata_cannot_replace_them():
+    prop = URIRef(DRUG.producesFinalProduct)
+    derived_prop = URIRef(DRUG.hasProcessIntermediate)
+    route = URIRef(DRUG.SynthesisRoute)
+    step = URIRef(DRUG.SynthesisStep)
+    product = URIRef(DRUG.DrugProduct)
+    api = URIRef(DRUG.ActivePharmaceuticalIngredient)
+    has_step = URIRef(DRUG.hasStep)
+    produces_intermediate = URIRef(DRUG.producesIntermediate)
+    base = Graph()
+    base.add((prop, RDF.type, OWL.ObjectProperty))
+    _add_union_constraint(base, prop, RDFS.domain, "domain", [route, step])
+    _add_union_constraint(base, prop, RDFS.range, "range", [product, api])
+    base.add((derived_prop, RDF.type, OWL.ObjectProperty))
+    inverse_final_route = BNode("inverse-final-route")
+    inverse_final_step = BNode("inverse-final-step")
+    inverse_has_step = BNode("inverse-has-step")
+    base.add((inverse_final_route, OWL.inverseOf, prop))
+    base.add((inverse_final_step, OWL.inverseOf, prop))
+    base.add((inverse_has_step, OWL.inverseOf, has_step))
+    _add_property_chain(
+        base,
+        derived_prop,
+        "route-chain",
+        [inverse_final_route, has_step, produces_intermediate],
+    )
+    _add_property_chain(
+        base,
+        derived_prop,
+        "final-step-chain",
+        [inverse_final_step, inverse_has_step, has_step, produces_intermediate],
+    )
+    managed = Graph()
+    managed.add((prop, RDF.type, OWL.ObjectProperty))
+    managed.add((prop, RDFS.label, Literal("managed label")))
+    managed.add((derived_prop, RDF.type, OWL.ObjectProperty))
+    managed.add((derived_prop, RDFS.label, Literal("managed derived label")))
+
+    managed_subjects = {prop, derived_prop}
+    merged1 = surgical_merge(base, managed, managed_subjects)
+    merged2 = surgical_merge(_reparse(merged1), managed, managed_subjects)
+
+    assert isomorphic(merged1, merged2)
+    expected_chains = {
+        (
+            ("inverse", prop),
+            ("direct", has_step),
+            ("direct", produces_intermediate),
+        ),
+        (
+            ("inverse", prop),
+            ("inverse", has_step),
+            ("direct", has_step),
+            ("direct", produces_intermediate),
+        ),
+    }
+    for merged in (merged1, merged2):
+        assert _union_members(merged, prop, RDFS.domain) == {route, step}
+        assert _union_members(merged, prop, RDFS.range) == {product, api}
+        assert _property_chains(merged, derived_prop) == expected_chains
+
+
+def test_named_domain_replacement_reclaims_only_the_old_domain_union():
+    prop = URIRef(DRUG.producesFinalProduct)
+    old_route = URIRef(DRUG.OldRoute)
+    old_step = URIRef(DRUG.OldStep)
+    product = URIRef(DRUG.DrugProduct)
+    api = URIRef(DRUG.ActivePharmaceuticalIngredient)
+    replacement = URIRef(DRUG.SynthesisRoute)
+    base = Graph()
+    old_domain = _add_union_constraint(base, prop, RDFS.domain, "old-domain", [old_route, old_step])
+    _add_union_constraint(base, prop, RDFS.range, "preserved-range", [product, api])
+    managed = Graph()
+    managed.add((prop, RDFS.domain, replacement))
+
+    merged = surgical_merge(base, managed, {prop})
+
+    assert list(merged.objects(prop, RDFS.domain)) == [replacement]
+    assert not list(merged.triples((old_domain, None, None)))
+    assert not list(merged.triples((None, RDF.first, old_route)))
+    assert not list(merged.triples((None, RDF.first, old_step)))
+    assert _union_members(merged, prop, RDFS.range) == {product, api}

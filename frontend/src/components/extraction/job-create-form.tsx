@@ -35,11 +35,12 @@ export function JobCreateForm({ onCreated }: { onCreated: (job: ExtractionJob) =
   useEffect(() => {
     listExtractionConfigs()
       .then((cs) => {
-        setConfigs(cs);
+        const supported = cs.filter((config) => config.source_type !== "word");
+        setConfigs(supported);
         // 默认选中首个配置并同步其源类型，避免类型与配置不匹配。
-        if (cs.length && !configId) {
-          setConfigId(cs[0].id);
-          setSourceType(cs[0].source_type);
+        if (supported.length && !configId) {
+          setConfigId(supported[0].id);
+          setSourceType(supported[0].source_type);
         }
       })
       .catch((e) => setError(String(e)));
@@ -111,7 +112,6 @@ export function JobCreateForm({ onCreated }: { onCreated: (job: ExtractionJob) =
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="excel">Excel (.xlsx)</SelectItem>
-            <SelectItem value="word">Word (.docx)</SelectItem>
             <SelectItem value="database">数据库（只读反射）</SelectItem>
           </SelectContent>
         </Select>
@@ -122,7 +122,7 @@ export function JobCreateForm({ onCreated }: { onCreated: (job: ExtractionJob) =
           <Label>上传文件</Label>
           <Input
             type="file"
-            accept=".xlsx,.docx"
+            accept=".xlsx,.xls"
             onChange={(e) => setFile(e.target.files?.[0] ?? null)}
             className="text-muted-foreground file:mr-3 file:rounded file:border-0 file:bg-primary file:px-3 file:py-2 file:text-sm file:text-primary-foreground hover:file:bg-primary/90"
           />

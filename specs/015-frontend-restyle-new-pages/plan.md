@@ -6,6 +6,12 @@
 
 ## Summary
 
+2026-09-14 报告列表优化：后续用户已明确授权后端摘要分页。对本项采用
+`reports.py` → `report_listing.py` 的显式列查询及既有可见性过滤，`GET /api/reports` 返回页及总数；
+前端使用现有 React Query 的独立文档查询和报告无限分页，轻量工具解除编辑器依赖。
+无需数据库迁移或新增依赖。验收包含 SQL 不读取大字段、权限及分页、请求数量、追加页/错误行为和
+浏览器资源加载。下文 frontend-only 和无自动测试条款描述原 015 范围，不约束此次已授权优化。
+
 Adopt the `design.pen` visual language as the platform's single UI source of truth — re-skinning the entire application shell and **every** existing dashboard page with **zero functional regression** — and build the five new operational pages `design.pen` introduces: **Connector (数据源接入)**, **Data Mapping (数据映射)**, **Report Center (报告中心)**, **Report Detail (报告详情)**, and **Approval (审批工作台)**.
 
 This is a **frontend-only, presentation-layer** feature. The technical approach is **re-skin + compose, not rebuild**: the platform already ships a shadcn "new-york" design-token contract (feature 005 — `globals.css` + `tailwind.config.ts`), a typed API client (`lib/api.ts`) covering every capability the new pages surface, React Query, and per-page logic that must be preserved verbatim. The genuinely new build is: (1) an in-place **evolution of the existing token contract** to match `design.pen` (neutral base ramp, `--sidebar-*` token family, self-hosted fonts); (2) a **YAGNI-scoped delta of shared shadcn primitives** the in-scope pages need but the library lacks today (breadcrumb, dropdown-menu, tooltip, progress, switch, checkbox, avatar, accordion wrapper, pagination, sidebar shell, data-table); (3) the **five new pages**, each composed from those shared components over **existing** `lib/api.ts` calls; and (4) **superseding** the legacy `/integration` and `/approvals` routes with redirects, carrying all their functionality onto the new pages. **No backend contract, data model, business logic, or migration changes** (FR-027) — Report Center/Detail and Approval are composed client-side over endpoints that already exist.
