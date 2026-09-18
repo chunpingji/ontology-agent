@@ -1,0 +1,30 @@
+{
+  "introduction": {
+    "required": [{"subject_id": "document", "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/describes", "object": "HRS-1597", "polarity": "affirmed"}],
+    "forbidden": [{"predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug/hasActiveIngredient"}]
+  },
+  "product_properties": {
+    "required": [
+      {"subject": "HRS-1597", "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug/appearance", "literal_value": "类白色到白色粉末"},
+      {"subject": "HRS-1597", "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug/dosageForm", "literal_value": "口服片剂"}
+    ],
+    "forbidden": [{"predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug/isOncologyDrug", "literal_value": "true", "polarity": "affirmed"}]
+  },
+  "process_equipment": {
+    "required": [{"predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/usesEquipment", "object": "RE64611", "polarity": "affirmed"}],
+    "forbidden": [{"predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug/hasActiveIngredient"}]
+  },
+  "quality_condition": {"gap_required": true, "forbidden": [{"predicate_iri": "hasAcceptanceCriterion"}]},
+  "storage": {
+    "required": [{"predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/storageTemperature", "literal_value": "不超过25℃"}]
+  },
+  "residue_missing": {"no_claims": true, "gap_required": true},
+  "pde_conflict": {
+    "required": [
+      {"predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/pde_mg_per_day", "literal_value": "100"},
+      {"predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/pde_mg_per_day", "literal_value": "7.5"}
+    ],
+    "forbidden": [{"predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug/pde_mg_per_day", "literal_value": "7.5"}]
+  },
+  "toxicity_unknown": {"gap_required": true}
+}

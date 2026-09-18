@@ -1,0 +1,927 @@
+{
+  "scope_id": "toxicity_unknown",
+  "source_units": {
+    "u0": {
+      "evidence_id": "eb0575248a78ff735ebb476bb8796c408ce27326b0510d76dc6c1a125b3b13a0",
+      "kind": "heading",
+      "text": "表2 产品毒性信息",
+      "section_node_id": "section:116",
+      "block_id": "paragraph:116:0",
+      "paragraph_index": 116,
+      "fragment_index": 0,
+      "table_path": null,
+      "row_index": null,
+      "column_index": null,
+      "physical_page_number": 6,
+      "source_cell_id": null,
+      "paragraph_offset": 0,
+      "ref": "u0",
+      "row_span": 1,
+      "column_span": 1,
+      "logical_rows": [],
+      "column_indices": [],
+      "grid_rows": [],
+      "grid_columns": [],
+      "column_header_refs": [],
+      "is_header": false,
+      "parser_header_candidate": false,
+      "header_status": "not_a_table",
+      "cell_structure_valid": false
+    },
+    "u1": {
+      "evidence_id": "5b80ea646144f5c0ec5ddf76ec45df8bce3b27fcc23d6b2a0fd30b59e2cb61fb",
+      "kind": "cell_paragraph",
+      "text": "产品名称",
+      "section_node_id": "section:116",
+      "block_id": "table:11",
+      "paragraph_index": 0,
+      "fragment_index": 0,
+      "table_path": [
+        "table:11"
+      ],
+      "row_index": 0,
+      "column_index": 0,
+      "physical_page_number": 6,
+      "source_cell_id": "table:11/cell:0:0",
+      "paragraph_offset": 0,
+      "ref": "u1",
+      "row_span": 1,
+      "column_span": 1,
+      "logical_rows": [
+        0
+      ],
+      "column_indices": [
+        0
+      ],
+      "grid_rows": [
+        0
+      ],
+      "grid_columns": [
+        0
+      ],
+      "column_header_refs": [],
+      "is_header": true,
+      "parser_header_candidate": true,
+      "header_status": "heuristic_candidate",
+      "cell_structure_valid": true
+    },
+    "u2": {
+      "evidence_id": "01e3cd4d68ab1e76d99c13dd8e339477ede2993b4f027ba381232aea338ed1f0",
+      "kind": "cell_paragraph",
+      "text": "生殖发育毒性",
+      "section_node_id": "section:116",
+      "block_id": "table:11",
+      "paragraph_index": 0,
+      "fragment_index": 0,
+      "table_path": [
+        "table:11"
+      ],
+      "row_index": 0,
+      "column_index": 1,
+      "physical_page_number": 6,
+      "source_cell_id": "table:11/cell:0:1",
+      "paragraph_offset": 0,
+      "ref": "u2",
+      "row_span": 1,
+      "column_span": 1,
+      "logical_rows": [
+        0
+      ],
+      "column_indices": [
+        1
+      ],
+      "grid_rows": [
+        0
+      ],
+      "grid_columns": [
+        1
+      ],
+      "column_header_refs": [],
+      "is_header": true,
+      "parser_header_candidate": true,
+      "header_status": "heuristic_candidate",
+      "cell_structure_valid": true
+    },
+    "u3": {
+      "evidence_id": "d3905dd8b3d65d9430c31bc03a46ee6a5514c7cda4f3b1ac630306cea1961eeb",
+      "kind": "cell_paragraph",
+      "text": "基因毒性",
+      "section_node_id": "section:116",
+      "block_id": "table:11",
+      "paragraph_index": 0,
+      "fragment_index": 0,
+      "table_path": [
+        "table:11"
+      ],
+      "row_index": 0,
+      "column_index": 2,
+      "physical_page_number": 6,
+      "source_cell_id": "table:11/cell:0:2",
+      "paragraph_offset": 0,
+      "ref": "u3",
+      "row_span": 1,
+      "column_span": 1,
+      "logical_rows": [
+        0
+      ],
+      "column_indices": [
+        2
+      ],
+      "grid_rows": [
+        0
+      ],
+      "grid_columns": [
+        2
+      ],
+      "column_header_refs": [],
+      "is_header": true,
+      "parser_header_candidate": true,
+      "header_status": "heuristic_candidate",
+      "cell_structure_valid": true
+    },
+    "u4": {
+      "evidence_id": "8eda55bceff855d78f5626f972e47f03e467c49a350ceca2f7500c172df6742e",
+      "kind": "cell_paragraph",
+      "text": "致癌性",
+      "section_node_id": "section:116",
+      "block_id": "table:11",
+      "paragraph_index": 0,
+      "fragment_index": 0,
+      "table_path": [
+        "table:11"
+      ],
+      "row_index": 0,
+      "column_index": 3,
+      "physical_page_number": 6,
+      "source_cell_id": "table:11/cell:0:3",
+      "paragraph_offset": 0,
+      "ref": "u4",
+      "row_span": 1,
+      "column_span": 1,
+      "logical_rows": [
+        0
+      ],
+      "column_indices": [
+        3
+      ],
+      "grid_rows": [
+        0
+      ],
+      "grid_columns": [
+        3
+      ],
+      "column_header_refs": [],
+      "is_header": true,
+      "parser_header_candidate": true,
+      "header_status": "heuristic_candidate",
+      "cell_structure_valid": true
+    },
+    "u5": {
+      "evidence_id": "de2cd0864e328256c943ae0963229ddce72dc5a3a19e3bb37d20b7873347330f",
+      "kind": "cell_paragraph",
+      "text": "致敏性",
+      "section_node_id": "section:116",
+      "block_id": "table:11",
+      "paragraph_index": 0,
+      "fragment_index": 0,
+      "table_path": [
+        "table:11"
+      ],
+      "row_index": 0,
+      "column_index": 4,
+      "physical_page_number": 6,
+      "source_cell_id": "table:11/cell:0:4",
+      "paragraph_offset": 0,
+      "ref": "u5",
+      "row_span": 1,
+      "column_span": 1,
+      "logical_rows": [
+        0
+      ],
+      "column_indices": [
+        4
+      ],
+      "grid_rows": [
+        0
+      ],
+      "grid_columns": [
+        4
+      ],
+      "column_header_refs": [],
+      "is_header": true,
+      "parser_header_candidate": true,
+      "header_status": "heuristic_candidate",
+      "cell_structure_valid": true
+    },
+    "u6": {
+      "evidence_id": "77fd655d1783a0c2eb855743ab41b8ab776b8879a4016e2a76ff1ab55caf0aa5",
+      "kind": "cell_paragraph",
+      "text": "HRS-1597",
+      "section_node_id": "section:116",
+      "block_id": "table:11",
+      "paragraph_index": 0,
+      "fragment_index": 0,
+      "table_path": [
+        "table:11"
+      ],
+      "row_index": 1,
+      "column_index": 0,
+      "physical_page_number": 6,
+      "source_cell_id": "table:11/cell:1:0",
+      "paragraph_offset": 0,
+      "ref": "u6",
+      "row_span": 1,
+      "column_span": 1,
+      "logical_rows": [
+        1
+      ],
+      "column_indices": [
+        0
+      ],
+      "grid_rows": [
+        1
+      ],
+      "grid_columns": [
+        0
+      ],
+      "column_header_refs": [
+        "u1"
+      ],
+      "is_header": false,
+      "parser_header_candidate": false,
+      "header_status": "unconfirmed",
+      "cell_structure_valid": true
+    },
+    "u7": {
+      "evidence_id": "e0961fabea6068ef718f23444d23c89376d5f894d05a7c746e45601de7999d0b",
+      "kind": "cell_paragraph",
+      "text": "—",
+      "section_node_id": "section:116",
+      "block_id": "table:11",
+      "paragraph_index": 0,
+      "fragment_index": 0,
+      "table_path": [
+        "table:11"
+      ],
+      "row_index": 1,
+      "column_index": 1,
+      "physical_page_number": 6,
+      "source_cell_id": "table:11/cell:1:1",
+      "paragraph_offset": 0,
+      "ref": "u7",
+      "row_span": 1,
+      "column_span": 1,
+      "logical_rows": [
+        1
+      ],
+      "column_indices": [
+        1
+      ],
+      "grid_rows": [
+        1
+      ],
+      "grid_columns": [
+        1
+      ],
+      "column_header_refs": [
+        "u2"
+      ],
+      "is_header": false,
+      "parser_header_candidate": false,
+      "header_status": "unconfirmed",
+      "cell_structure_valid": true
+    },
+    "u8": {
+      "evidence_id": "36c860473268df555e3ba949da03e2382f785102bb6e47a44da580afe2083a37",
+      "kind": "cell_paragraph",
+      "text": "×",
+      "section_node_id": "section:116",
+      "block_id": "table:11",
+      "paragraph_index": 0,
+      "fragment_index": 0,
+      "table_path": [
+        "table:11"
+      ],
+      "row_index": 1,
+      "column_index": 2,
+      "physical_page_number": 6,
+      "source_cell_id": "table:11/cell:1:2",
+      "paragraph_offset": 0,
+      "ref": "u8",
+      "row_span": 1,
+      "column_span": 1,
+      "logical_rows": [
+        1
+      ],
+      "column_indices": [
+        2
+      ],
+      "grid_rows": [
+        1
+      ],
+      "grid_columns": [
+        2
+      ],
+      "column_header_refs": [
+        "u3"
+      ],
+      "is_header": false,
+      "parser_header_candidate": false,
+      "header_status": "unconfirmed",
+      "cell_structure_valid": true
+    },
+    "u9": {
+      "evidence_id": "5d10857419ef096af355a6c479931d6228f1b3ea809eef23f3e605974971efe2",
+      "kind": "cell_paragraph",
+      "text": "—",
+      "section_node_id": "section:116",
+      "block_id": "table:11",
+      "paragraph_index": 0,
+      "fragment_index": 0,
+      "table_path": [
+        "table:11"
+      ],
+      "row_index": 1,
+      "column_index": 3,
+      "physical_page_number": 6,
+      "source_cell_id": "table:11/cell:1:3",
+      "paragraph_offset": 0,
+      "ref": "u9",
+      "row_span": 1,
+      "column_span": 1,
+      "logical_rows": [
+        1
+      ],
+      "column_indices": [
+        3
+      ],
+      "grid_rows": [
+        1
+      ],
+      "grid_columns": [
+        3
+      ],
+      "column_header_refs": [
+        "u4"
+      ],
+      "is_header": false,
+      "parser_header_candidate": false,
+      "header_status": "unconfirmed",
+      "cell_structure_valid": true
+    },
+    "u10": {
+      "evidence_id": "e799ecdf5d2e9224f95e0128fcec71cc2324235f43001a4da3bb201a90cbe6d5",
+      "kind": "cell_paragraph",
+      "text": "—",
+      "section_node_id": "section:116",
+      "block_id": "table:11",
+      "paragraph_index": 0,
+      "fragment_index": 0,
+      "table_path": [
+        "table:11"
+      ],
+      "row_index": 1,
+      "column_index": 4,
+      "physical_page_number": 6,
+      "source_cell_id": "table:11/cell:1:4",
+      "paragraph_offset": 0,
+      "ref": "u10",
+      "row_span": 1,
+      "column_span": 1,
+      "logical_rows": [
+        1
+      ],
+      "column_indices": [
+        4
+      ],
+      "grid_rows": [
+        1
+      ],
+      "grid_columns": [
+        4
+      ],
+      "column_header_refs": [
+        "u5"
+      ],
+      "is_header": false,
+      "parser_header_candidate": false,
+      "header_status": "unconfirmed",
+      "cell_structure_valid": true
+    },
+    "u11": {
+      "evidence_id": "3c294326188460eb8a1283c4c680a7ec4f53825f3fece0548be87229fa5c83a9",
+      "kind": "paragraph",
+      "text": "备注：“√”代表有相应毒性；“×”代表没有相应的毒性 ；“—”代表相关的研究数据不充分。",
+      "section_node_id": "section:116",
+      "block_id": "paragraph:117:0",
+      "paragraph_index": 117,
+      "fragment_index": 0,
+      "table_path": null,
+      "row_index": null,
+      "column_index": null,
+      "physical_page_number": 6,
+      "source_cell_id": null,
+      "paragraph_offset": 0,
+      "ref": "u11",
+      "row_span": 1,
+      "column_span": 1,
+      "logical_rows": [],
+      "column_indices": [],
+      "grid_rows": [],
+      "grid_columns": [],
+      "column_header_refs": [],
+      "is_header": false,
+      "parser_header_candidate": false,
+      "header_status": "not_a_table",
+      "cell_structure_valid": false
+    },
+    "u12": {
+      "evidence_id": "9ef82f6e3de531f45deee053ff73b4bf352cc28bcd9d42eb22861fe7d5aaa9e7",
+      "kind": "paragraph",
+      "text": "部门起草人/日期：",
+      "section_node_id": "section:116",
+      "block_id": "paragraph:122:0",
+      "paragraph_index": 122,
+      "fragment_index": 0,
+      "table_path": null,
+      "row_index": null,
+      "column_index": null,
+      "physical_page_number": 6,
+      "source_cell_id": null,
+      "paragraph_offset": 0,
+      "ref": "u12",
+      "row_span": 1,
+      "column_span": 1,
+      "logical_rows": [],
+      "column_indices": [],
+      "grid_rows": [],
+      "grid_columns": [],
+      "column_header_refs": [],
+      "is_header": false,
+      "parser_header_candidate": false,
+      "header_status": "not_a_table",
+      "cell_structure_valid": false
+    },
+    "u13": {
+      "evidence_id": "4e826cba0fa9b762de557d6df465ac56ab80dc61f438745d13fa71e986af9a40",
+      "kind": "paragraph",
+      "text": "部门负责人/日期：",
+      "section_node_id": "section:116",
+      "block_id": "paragraph:123:0",
+      "paragraph_index": 123,
+      "fragment_index": 0,
+      "table_path": null,
+      "row_index": null,
+      "column_index": null,
+      "physical_page_number": 6,
+      "source_cell_id": null,
+      "paragraph_offset": 0,
+      "ref": "u13",
+      "row_span": 1,
+      "column_span": 1,
+      "logical_rows": [],
+      "column_indices": [],
+      "grid_rows": [],
+      "grid_columns": [],
+      "column_header_refs": [],
+      "is_header": false,
+      "parser_header_candidate": false,
+      "header_status": "not_a_table",
+      "cell_structure_valid": false
+    },
+    "u14": {
+      "evidence_id": "e627f38d15370e1c6b10a40b5adfd599d26b43c0dc97c2e5d62e818f33a2b3ca",
+      "kind": "paragraph",
+      "text": "QA批准人/日期：",
+      "section_node_id": "section:116",
+      "block_id": "paragraph:124:0",
+      "paragraph_index": 124,
+      "fragment_index": 0,
+      "table_path": null,
+      "row_index": null,
+      "column_index": null,
+      "physical_page_number": 6,
+      "source_cell_id": null,
+      "paragraph_offset": 0,
+      "ref": "u14",
+      "row_span": 1,
+      "column_span": 1,
+      "logical_rows": [],
+      "column_indices": [],
+      "grid_rows": [],
+      "grid_columns": [],
+      "column_header_refs": [],
+      "is_header": false,
+      "parser_header_candidate": false,
+      "header_status": "not_a_table",
+      "cell_structure_valid": false
+    }
+  },
+  "discovery_qwen": {
+    "frames": [
+      {
+        "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/HighSensitizingDrug",
+        "anchor": {
+          "ref": "u6",
+          "quote": "HRS-1597"
+        }
+      }
+    ],
+    "observations": [
+      {
+        "value": {
+          "ref": "u7",
+          "quote": "—"
+        },
+        "field": {
+          "ref": "u2",
+          "quote": "生殖发育毒性"
+        },
+        "legend": {
+          "ref": "u11",
+          "quote": "“—”代表相关的研究数据不充分"
+        },
+        "condition": {
+          "ref": "u11",
+          "quote": "备注：“√”代表有相应毒性；“×”代表没有相应的毒性 ；“—”代表相关的研究数据不充分。"
+        },
+        "state": "not_applicable",
+        "reason": "Symbol '—' indicates insufficient data, not a factual negative result."
+      },
+      {
+        "value": {
+          "ref": "u8",
+          "quote": "×"
+        },
+        "field": {
+          "ref": "u3",
+          "quote": "基因毒性"
+        },
+        "legend": {
+          "ref": "u11",
+          "quote": "“×”代表没有相应的毒性"
+        },
+        "condition": {
+          "ref": "u11",
+          "quote": "备注：“√”代表有相应毒性；“×”代表没有相应的毒性 ；“—”代表相关的研究数据不充分。"
+        },
+        "state": "negated",
+        "reason": "Symbol '×' explicitly denotes absence of toxicity."
+      },
+      {
+        "value": {
+          "ref": "u9",
+          "quote": "—"
+        },
+        "field": {
+          "ref": "u4",
+          "quote": "致癌性"
+        },
+        "legend": {
+          "ref": "u11",
+          "quote": "“—”代表相关的研究数据不充分"
+        },
+        "condition": {
+          "ref": "u11",
+          "quote": "备注：“√”代表有相应毒性；“×”代表没有相应的毒性 ；“—”代表相关的研究数据不充分。"
+        },
+        "state": "not_applicable",
+        "reason": "Symbol '—' indicates insufficient data, not a factual negative result."
+      },
+      {
+        "value": {
+          "ref": "u10",
+          "quote": "—"
+        },
+        "field": {
+          "ref": "u5",
+          "quote": "致敏性"
+        },
+        "legend": {
+          "ref": "u11",
+          "quote": "“—”代表相关的研究数据不充分"
+        },
+        "condition": {
+          "ref": "u11",
+          "quote": "备注：“√”代表有相应毒性；“×”代表没有相应的毒性 ；“—”代表相关的研究数据不充分。"
+        },
+        "state": "not_applicable",
+        "reason": "Symbol '—' indicates insufficient data, not a factual negative result."
+      }
+    ]
+  },
+  "claims_qwen": {
+    "document": {
+      "attributes": {},
+      "relations": {
+        "describes": [
+          {
+            "target_id": "s1",
+            "evidence": {
+              "ref": "u6",
+              "quote": "HRS-1597"
+            },
+            "condition": {
+              "ref": "",
+              "quote": ""
+            },
+            "polarity": "affirmed"
+          }
+        ]
+      }
+    },
+    "s1": {
+      "attributes": {
+        "registrationCategory": [],
+        "regulatoryStatus": [],
+        "targetIndication": [],
+        "appearance": [],
+        "casNumber": [],
+        "chemicalNameEn": [],
+        "chemicalNameZh": [],
+        "dosageForm": [],
+        "drugSpecification": [],
+        "hasPrionRisk": [],
+        "inactivationMethod": [],
+        "isBetaLactam": [],
+        "isCytotoxic": [
+          {
+            "raw": "×",
+            "source": {
+              "ref": "u8",
+              "quote": "×"
+            },
+            "field": {
+              "ref": "u3",
+              "quote": "基因毒性"
+            },
+            "unit": {
+              "ref": "",
+              "quote": ""
+            },
+            "condition": {
+              "ref": "u11",
+              "quote": "“×”代表没有相应的毒性"
+            }
+          }
+        ],
+        "isHighlyActive": [],
+        "isHighlySensitizing": [],
+        "isHormonal": [],
+        "isOncologyDrug": [],
+        "isPenicillinType": [],
+        "maximumDailyDose_mg": [],
+        "minimumTherapeuticDose_mg": [],
+        "molecularFormula": [],
+        "molecularWeight": [],
+        "productIdentifier": [],
+        "projectCode": [],
+        "projectName": [],
+        "routeOfAdministration": [],
+        "solubility": []
+      },
+      "relations": {}
+    }
+  },
+  "rechecked_result": {
+    "scope_id": "toxicity_unknown",
+    "calls": [],
+    "status": "complete",
+    "accepted": [
+      {
+        "subject_id": "document",
+        "subject_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport",
+        "subject_text": "",
+        "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/describes",
+        "evidence": {
+          "ref": "u6",
+          "quote": "HRS-1597"
+        },
+        "condition": {
+          "ref": "",
+          "quote": ""
+        },
+        "kind": "relation",
+        "object_id": "s1",
+        "object_text": "HRS-1597",
+        "object_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/HighSensitizingDrug",
+        "polarity": "affirmed"
+      }
+    ],
+    "observations": [
+      {
+        "value": {
+          "ref": "u8",
+          "quote": "×"
+        },
+        "field": {
+          "ref": "u3",
+          "quote": "基因毒性"
+        },
+        "legend": {
+          "ref": "u11",
+          "quote": "“×”代表没有相应的毒性"
+        },
+        "condition": {
+          "ref": "u11",
+          "quote": "备注：“√”代表有相应毒性；“×”代表没有相应的毒性 ；“—”代表相关的研究数据不充分。"
+        },
+        "state": "negated",
+        "reason": "Symbol '×' explicitly denotes absence of toxicity."
+      }
+    ],
+    "rejected": [
+      {
+        "kind": "observation",
+        "proposal": {
+          "value": {
+            "ref": "u7",
+            "quote": "—"
+          },
+          "field": {
+            "ref": "u2",
+            "quote": "生殖发育毒性"
+          },
+          "legend": {
+            "ref": "u11",
+            "quote": "“—”代表相关的研究数据不充分"
+          },
+          "condition": {
+            "ref": "u11",
+            "quote": "备注：“√”代表有相应毒性；“×”代表没有相应的毒性 ；“—”代表相关的研究数据不充分。"
+          },
+          "state": "not_applicable",
+          "reason": "Symbol '—' indicates insufficient data, not a factual negative result."
+        },
+        "reason": "source_state_mismatch"
+      },
+      {
+        "kind": "observation",
+        "proposal": {
+          "value": {
+            "ref": "u9",
+            "quote": "—"
+          },
+          "field": {
+            "ref": "u4",
+            "quote": "致癌性"
+          },
+          "legend": {
+            "ref": "u11",
+            "quote": "“—”代表相关的研究数据不充分"
+          },
+          "condition": {
+            "ref": "u11",
+            "quote": "备注：“√”代表有相应毒性；“×”代表没有相应的毒性 ；“—”代表相关的研究数据不充分。"
+          },
+          "state": "not_applicable",
+          "reason": "Symbol '—' indicates insufficient data, not a factual negative result."
+        },
+        "reason": "source_state_mismatch"
+      },
+      {
+        "kind": "observation",
+        "proposal": {
+          "value": {
+            "ref": "u10",
+            "quote": "—"
+          },
+          "field": {
+            "ref": "u5",
+            "quote": "致敏性"
+          },
+          "legend": {
+            "ref": "u11",
+            "quote": "“—”代表相关的研究数据不充分"
+          },
+          "condition": {
+            "ref": "u11",
+            "quote": "备注：“√”代表有相应毒性；“×”代表没有相应的毒性 ；“—”代表相关的研究数据不充分。"
+          },
+          "state": "not_applicable",
+          "reason": "Symbol '—' indicates insufficient data, not a factual negative result."
+        },
+        "reason": "source_state_mismatch"
+      },
+      {
+        "subject_id": "s1",
+        "field": "isCytotoxic",
+        "proposal": {
+          "raw": "×",
+          "source": {
+            "ref": "u8",
+            "quote": "×"
+          },
+          "field": {
+            "ref": "u3",
+            "quote": "基因毒性"
+          },
+          "unit": {
+            "ref": "",
+            "quote": ""
+          },
+          "condition": {
+            "ref": "u11",
+            "quote": "“×”代表没有相应的毒性"
+          }
+        },
+        "reason": "status_marker_is_not_literal"
+      }
+    ],
+    "discovery_contract_pass": true,
+    "frames": {
+      "s1": {
+        "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/HighSensitizingDrug",
+        "anchor": {
+          "ref": "u6",
+          "quote": "HRS-1597"
+        }
+      }
+    },
+    "claims_contract_pass": true,
+    "acceptance": {
+      "checks": [
+        {
+          "check": "required_observations",
+          "expected": {
+            "quote": "—",
+            "state": "unknown",
+            "column": 1
+          },
+          "pass": false
+        },
+        {
+          "check": "required_observations",
+          "expected": {
+            "quote": "×",
+            "state": "negated",
+            "column": 2
+          },
+          "pass": true
+        },
+        {
+          "check": "required_observations",
+          "expected": {
+            "quote": "—",
+            "state": "unknown",
+            "column": 3
+          },
+          "pass": false
+        },
+        {
+          "check": "required_observations",
+          "expected": {
+            "quote": "—",
+            "state": "unknown",
+            "column": 4
+          },
+          "pass": false
+        },
+        {
+          "check": "forbidden_predicate",
+          "expected": "hasSafetyRiskAssessment",
+          "pass": true
+        },
+        {
+          "check": "forbidden_predicate",
+          "expected": "hasToxicityProfile",
+          "pass": true
+        },
+        {
+          "check": "forbidden_predicate",
+          "expected": "basedOnToxicityProfile",
+          "pass": true
+        },
+        {
+          "check": "forbidden_predicate",
+          "expected": "hasSensitizationPotential",
+          "pass": true
+        },
+        {
+          "check": "forbidden_predicate",
+          "expected": "isHighlySensitizing",
+          "pass": true
+        },
+        {
+          "check": "forbidden_predicate",
+          "expected": "isCytotoxic",
+          "pass": true
+        },
+        {
+          "check": "forbidden_predicate",
+          "expected": "isGenotoxic",
+          "pass": true
+        },
+        {
+          "check": "forbidden_predicate",
+          "expected": "isCarcinogenic",
+          "pass": true
+        }
+      ],
+      "passed": 9,
+      "total": 12,
+      "all_pass": false,
+      "passed_with_no_rejections": false
+    }
+  }
+}

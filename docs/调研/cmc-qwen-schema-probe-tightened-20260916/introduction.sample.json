@@ -1,0 +1,914 @@
+{
+  "scope_id": "introduction",
+  "source_units": {
+    "u0": {
+      "evidence_id": "4f6f8e6434cb0346abf1afd6a20accdc0cee4668165cbe013230d8ee9c88e685",
+      "kind": "heading",
+      "text": "简介",
+      "section_node_id": "section:25",
+      "block_id": "paragraph:25:1",
+      "paragraph_index": 25,
+      "fragment_index": 1,
+      "table_path": null,
+      "row_index": null,
+      "column_index": null,
+      "physical_page_number": 3,
+      "source_cell_id": null,
+      "paragraph_offset": 0,
+      "ref": "u0",
+      "row_span": 1,
+      "column_span": 1,
+      "logical_rows": [],
+      "column_indices": [],
+      "grid_rows": [],
+      "grid_columns": [],
+      "column_header_refs": [],
+      "is_header": false,
+      "parser_header_candidate": false,
+      "header_status": "not_a_table",
+      "cell_structure_valid": false
+    },
+    "u1": {
+      "evidence_id": "e7ea5dada6b23ad6052384f5a6c6b75296797baf482c2fe0842911a1646a1e87",
+      "kind": "paragraph",
+      "text": "HRS-1597为上海闵行于2024年07月转移至连云港一所的APLNR激动剂新分子，适应症为减肥增肌。其开发形式经过多次变化且亚急毒和毒理样品需求量不断增长。于2025年08月供样亚急毒样品，供样形式为原料药。2025年09月供样毒理批样品，供样形式为原料药。本次备样用于Ⅰ期临床，计划在2026年6月于642和646车间，完成本次临床样品生产及检测，批量3.8- 6.6kg。 ",
+      "section_node_id": "section:25",
+      "block_id": "paragraph:26:0",
+      "paragraph_index": 26,
+      "fragment_index": 0,
+      "table_path": null,
+      "row_index": null,
+      "column_index": null,
+      "physical_page_number": 3,
+      "source_cell_id": null,
+      "paragraph_offset": 0,
+      "ref": "u1",
+      "row_span": 1,
+      "column_span": 1,
+      "logical_rows": [],
+      "column_indices": [],
+      "grid_rows": [],
+      "grid_columns": [],
+      "column_header_refs": [],
+      "is_header": false,
+      "parser_header_candidate": false,
+      "header_status": "not_a_table",
+      "cell_structure_valid": false
+    },
+    "u2": {
+      "evidence_id": "1c49577f568efc41e492dc4105b3b06243c7220b9d4ad21bd814907650429dc3",
+      "kind": "paragraph",
+      "text": "本次修改仅对于HRS-1597结晶纯化步骤，由于中控过程杂质含量未达过控标准，增加两次重结晶操作，其余内容不做修改。",
+      "section_node_id": "section:25",
+      "block_id": "paragraph:27:0",
+      "paragraph_index": 27,
+      "fragment_index": 0,
+      "table_path": null,
+      "row_index": null,
+      "column_index": null,
+      "physical_page_number": 3,
+      "source_cell_id": null,
+      "paragraph_offset": 0,
+      "ref": "u2",
+      "row_span": 1,
+      "column_span": 1,
+      "logical_rows": [],
+      "column_indices": [],
+      "grid_rows": [],
+      "grid_columns": [],
+      "column_header_refs": [],
+      "is_header": false,
+      "parser_header_candidate": false,
+      "header_status": "not_a_table",
+      "cell_structure_valid": false
+    }
+  },
+  "discovery_qwen": {
+    "frames": [
+      {
+        "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/ClinicalSampleProductionPlan",
+        "anchor": {
+          "ref": "u1",
+          "quote": "本次备样用于Ⅰ期临床，计划在2026年6月于642和646车间，完成本次临床样品生产及检测，批量3.8- 6.6kg。"
+        }
+      }
+    ],
+    "observations": [
+      {
+        "value": {
+          "ref": "u1",
+          "quote": "本次备样用于Ⅰ期临床"
+        },
+        "field": {
+          "ref": "u1",
+          "quote": "本次备样用于Ⅰ期临床"
+        },
+        "legend": {
+          "ref": "u1",
+          "quote": "Ⅰ期临床"
+        },
+        "condition": {
+          "ref": "",
+          "quote": ""
+        },
+        "state": "not_applicable",
+        "reason": "计划生产用途为Ⅰ期临床，非共线评估所需的毒理/最大日剂量场景，故F因子等共线评估数据不适用。"
+      },
+      {
+        "value": {
+          "ref": "u1",
+          "quote": "计划在2026年6月"
+        },
+        "field": {
+          "ref": "u1",
+          "quote": "计划生产时间"
+        },
+        "legend": {
+          "ref": "u1",
+          "quote": "2026年6月"
+        },
+        "condition": {
+          "ref": "",
+          "quote": ""
+        },
+        "state": "not_applicable",
+        "reason": "计划生产时间为未来时间，非已执行的毒理或临床批次时间，不适用于共线评估的历史数据追溯。"
+      },
+      {
+        "value": {
+          "ref": "u1",
+          "quote": "于642和646车间"
+        },
+        "field": {
+          "ref": "u1",
+          "quote": "生产地点"
+        },
+        "legend": {
+          "ref": "u1",
+          "quote": "642和646车间"
+        },
+        "condition": {
+          "ref": "",
+          "quote": ""
+        },
+        "state": "not_applicable",
+        "reason": "计划生产地点为未来车间，非已执行的毒理或临床批次地点，不适用于共线评估。"
+      },
+      {
+        "value": {
+          "ref": "u1",
+          "quote": "批量3.8- 6.6kg"
+        },
+        "field": {
+          "ref": "u1",
+          "quote": "预计批量上限（kg）"
+        },
+        "legend": {
+          "ref": "u1",
+          "quote": "6.6"
+        },
+        "condition": {
+          "ref": "",
+          "quote": ""
+        },
+        "state": "not_applicable",
+        "reason": "计划批量为临床备样规模，非共线评估所需的毒理或临床批次规模，不适用于共线评估。"
+      },
+      {
+        "value": {
+          "ref": "u1",
+          "quote": "批量3.8- 6.6kg"
+        },
+        "field": {
+          "ref": "u1",
+          "quote": "预计批量下限（kg）"
+        },
+        "legend": {
+          "ref": "u1",
+          "quote": "3.8"
+        },
+        "condition": {
+          "ref": "",
+          "quote": ""
+        },
+        "state": "not_applicable",
+        "reason": "计划批量为临床备样规模，非共线评估所需的毒理或临床批次规模，不适用于共线评估。"
+      },
+      {
+        "value": {
+          "ref": "u1",
+          "quote": "HRS-1597"
+        },
+        "field": {
+          "ref": "u1",
+          "quote": "HRS-1597"
+        },
+        "legend": {
+          "ref": "u1",
+          "quote": "HRS-1597"
+        },
+        "condition": {
+          "ref": "",
+          "quote": ""
+        },
+        "state": "not_applicable",
+        "reason": "活性成分名称虽存在，但因本计划为临床备样且无共线评估所需毒理数据，故整体共线评估数据框架不适用。"
+      },
+      {
+        "value": {
+          "ref": "u1",
+          "quote": "适应症为减肥增肌"
+        },
+        "field": {
+          "ref": "u1",
+          "quote": "适应症"
+        },
+        "legend": {
+          "ref": "u1",
+          "quote": "减肥增肌"
+        },
+        "condition": {
+          "ref": "",
+          "quote": ""
+        },
+        "state": "not_applicable",
+        "reason": "适应症信息存在，但非共线评估直接所需的毒理/剂量参数，且整体评估不适用。"
+      },
+      {
+        "value": {
+          "ref": "u1",
+          "quote": "于2025年08月供样亚急毒样品"
+        },
+        "field": {
+          "ref": "u1",
+          "quote": "亚急毒供样时间"
+        },
+        "legend": {
+          "ref": "u1",
+          "quote": "2025年08月"
+        },
+        "condition": {
+          "ref": "",
+          "quote": ""
+        },
+        "state": "not_applicable",
+        "reason": "亚急毒供样时间为历史事件，非本次临床备样计划的一部分，不适用于本次计划评估。"
+      },
+      {
+        "value": {
+          "ref": "u1",
+          "quote": "于2025年09月供样毒理批样品"
+        },
+        "field": {
+          "ref": "u1",
+          "quote": "毒理批供样时间"
+        },
+        "legend": {
+          "ref": "u1",
+          "quote": "2025年09月"
+        },
+        "condition": {
+          "ref": "",
+          "quote": ""
+        },
+        "state": "not_applicable",
+        "reason": "毒理批供样时间为历史事件，非本次临床备样计划的一部分，不适用于本次计划评估。"
+      },
+      {
+        "value": {
+          "ref": "u2",
+          "quote": "本次修改仅对于HRS-1597结晶纯化步骤"
+        },
+        "field": {
+          "ref": "u2",
+          "quote": "修改范围"
+        },
+        "legend": {
+          "ref": "u2",
+          "quote": "结晶纯化步骤"
+        },
+        "condition": {
+          "ref": "",
+          "quote": ""
+        },
+        "state": "not_applicable",
+        "reason": "工艺修改描述为历史/当前状态，非本次临床备样计划的具体执行参数，不适用于本次计划评估。"
+      },
+      {
+        "value": {
+          "ref": "u2",
+          "quote": "由于中控过程杂质含量未达过控标准"
+        },
+        "field": {
+          "ref": "u2",
+          "quote": "修改原因"
+        },
+        "legend": {
+          "ref": "u2",
+          "quote": "中控过程杂质含量未达过控标准"
+        },
+        "condition": {
+          "ref": "",
+          "quote": ""
+        },
+        "state": "not_applicable",
+        "reason": "修改原因为历史背景，非本次临床备样计划的具体执行参数，不适用于本次计划评估。"
+      },
+      {
+        "value": {
+          "ref": "u2",
+          "quote": "增加两次重结晶操作"
+        },
+        "field": {
+          "ref": "u2",
+          "quote": "修改内容"
+        },
+        "legend": {
+          "ref": "u2",
+          "quote": "增加两次重结晶操作"
+        },
+        "condition": {
+          "ref": "",
+          "quote": ""
+        },
+        "state": "not_applicable",
+        "reason": "修改内容为工艺变更描述，非本次临床备样计划的具体执行参数，不适用于本次计划评估。"
+      }
+    ]
+  },
+  "claims_qwen": {
+    "document": {
+      "attributes": {},
+      "relations": {
+        "hasProductionPlan": [
+          {
+            "target_id": "s1",
+            "evidence": {
+              "ref": "u1",
+              "quote": "本次备样用于Ⅰ期临床，计划在2026年6月于642和646车间，完成本次临床样品生产及检测，批量3.8- 6.6kg。"
+            },
+            "condition": {
+              "ref": "",
+              "quote": ""
+            },
+            "polarity": "affirmed"
+          }
+        ]
+      }
+    },
+    "s1": {
+      "attributes": {
+        "plannedBatchCount": [],
+        "plannedBatchSizeMax_kg": [
+          {
+            "raw": "6.6",
+            "source": {
+              "ref": "u1",
+              "quote": "批量3.8- 6.6kg"
+            },
+            "field": {
+              "ref": "u1",
+              "quote": "批量"
+            },
+            "unit": {
+              "ref": "u1",
+              "quote": "kg"
+            },
+            "condition": {
+              "ref": "",
+              "quote": ""
+            }
+          }
+        ],
+        "plannedBatchSizeMin_kg": [
+          {
+            "raw": "3.8",
+            "source": {
+              "ref": "u1",
+              "quote": "批量3.8- 6.6kg"
+            },
+            "field": {
+              "ref": "u1",
+              "quote": "批量"
+            },
+            "unit": {
+              "ref": "u1",
+              "quote": "kg"
+            },
+            "condition": {
+              "ref": "",
+              "quote": ""
+            }
+          }
+        ],
+        "plannedProductionDate": [
+          {
+            "raw": "2026年06月",
+            "source": {
+              "ref": "u1",
+              "quote": "计划在2026年6月"
+            },
+            "field": {
+              "ref": "u1",
+              "quote": "计划"
+            },
+            "unit": {
+              "ref": "",
+              "quote": ""
+            },
+            "condition": {
+              "ref": "",
+              "quote": ""
+            }
+          }
+        ],
+        "productionPurpose": [
+          {
+            "raw": "Ⅰ期临床",
+            "source": {
+              "ref": "u1",
+              "quote": "本次备样用于Ⅰ期临床"
+            },
+            "field": {
+              "ref": "u1",
+              "quote": "用于"
+            },
+            "unit": {
+              "ref": "",
+              "quote": ""
+            },
+            "condition": {
+              "ref": "",
+              "quote": ""
+            }
+          }
+        ]
+      },
+      "relations": {}
+    }
+  },
+  "rechecked_result": {
+    "scope_id": "introduction",
+    "calls": [],
+    "status": "complete",
+    "accepted": [
+      {
+        "subject_id": "document",
+        "subject_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport",
+        "subject_text": "",
+        "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasProductionPlan",
+        "evidence": {
+          "ref": "u1",
+          "quote": "本次备样用于Ⅰ期临床，计划在2026年6月于642和646车间，完成本次临床样品生产及检测，批量3.8- 6.6kg。"
+        },
+        "condition": {
+          "ref": "",
+          "quote": ""
+        },
+        "kind": "relation",
+        "object_id": "s1",
+        "object_text": "本次备样用于Ⅰ期临床，计划在2026年6月于642和646车间，完成本次临床样品生产及检测，批量3.8- 6.6kg。",
+        "object_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/ClinicalSampleProductionPlan",
+        "polarity": "affirmed"
+      },
+      {
+        "subject_id": "s1",
+        "subject_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/ClinicalSampleProductionPlan",
+        "subject_text": "本次备样用于Ⅰ期临床，计划在2026年6月于642和646车间，完成本次临床样品生产及检测，批量3.8- 6.6kg。",
+        "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/plannedBatchSizeMax_kg",
+        "evidence": {
+          "ref": "u1",
+          "quote": "批量3.8- 6.6kg"
+        },
+        "condition": {
+          "ref": "",
+          "quote": ""
+        },
+        "kind": "property",
+        "value": "6.6",
+        "raw_value": "6.6",
+        "field": {
+          "ref": "u1",
+          "quote": "批量"
+        },
+        "unit": {
+          "ref": "u1",
+          "quote": "kg"
+        }
+      },
+      {
+        "subject_id": "s1",
+        "subject_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/ClinicalSampleProductionPlan",
+        "subject_text": "本次备样用于Ⅰ期临床，计划在2026年6月于642和646车间，完成本次临床样品生产及检测，批量3.8- 6.6kg。",
+        "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/productionPurpose",
+        "evidence": {
+          "ref": "u1",
+          "quote": "本次备样用于Ⅰ期临床"
+        },
+        "condition": {
+          "ref": "",
+          "quote": ""
+        },
+        "kind": "property",
+        "value": "Ⅰ期临床",
+        "raw_value": "Ⅰ期临床",
+        "field": {
+          "ref": "u1",
+          "quote": "用于"
+        },
+        "unit": {
+          "ref": "",
+          "quote": ""
+        }
+      }
+    ],
+    "observations": [],
+    "rejected": [
+      {
+        "kind": "observation",
+        "proposal": {
+          "value": {
+            "ref": "u1",
+            "quote": "本次备样用于Ⅰ期临床"
+          },
+          "field": {
+            "ref": "u1",
+            "quote": "本次备样用于Ⅰ期临床"
+          },
+          "legend": {
+            "ref": "u1",
+            "quote": "Ⅰ期临床"
+          },
+          "condition": {
+            "ref": "",
+            "quote": ""
+          },
+          "state": "not_applicable",
+          "reason": "计划生产用途为Ⅰ期临床，非共线评估所需的毒理/最大日剂量场景，故F因子等共线评估数据不适用。"
+        },
+        "reason": "observation_state_not_supported"
+      },
+      {
+        "kind": "observation",
+        "proposal": {
+          "value": {
+            "ref": "u1",
+            "quote": "计划在2026年6月"
+          },
+          "field": {
+            "ref": "u1",
+            "quote": "计划生产时间"
+          },
+          "legend": {
+            "ref": "u1",
+            "quote": "2026年6月"
+          },
+          "condition": {
+            "ref": "",
+            "quote": ""
+          },
+          "state": "not_applicable",
+          "reason": "计划生产时间为未来时间，非已执行的毒理或临床批次时间，不适用于共线评估的历史数据追溯。"
+        },
+        "reason": "citation_quote_not_in_source"
+      },
+      {
+        "kind": "observation",
+        "proposal": {
+          "value": {
+            "ref": "u1",
+            "quote": "于642和646车间"
+          },
+          "field": {
+            "ref": "u1",
+            "quote": "生产地点"
+          },
+          "legend": {
+            "ref": "u1",
+            "quote": "642和646车间"
+          },
+          "condition": {
+            "ref": "",
+            "quote": ""
+          },
+          "state": "not_applicable",
+          "reason": "计划生产地点为未来车间，非已执行的毒理或临床批次地点，不适用于共线评估。"
+        },
+        "reason": "citation_quote_not_in_source"
+      },
+      {
+        "kind": "observation",
+        "proposal": {
+          "value": {
+            "ref": "u1",
+            "quote": "批量3.8- 6.6kg"
+          },
+          "field": {
+            "ref": "u1",
+            "quote": "预计批量上限（kg）"
+          },
+          "legend": {
+            "ref": "u1",
+            "quote": "6.6"
+          },
+          "condition": {
+            "ref": "",
+            "quote": ""
+          },
+          "state": "not_applicable",
+          "reason": "计划批量为临床备样规模，非共线评估所需的毒理或临床批次规模，不适用于共线评估。"
+        },
+        "reason": "citation_quote_not_in_source"
+      },
+      {
+        "kind": "observation",
+        "proposal": {
+          "value": {
+            "ref": "u1",
+            "quote": "批量3.8- 6.6kg"
+          },
+          "field": {
+            "ref": "u1",
+            "quote": "预计批量下限（kg）"
+          },
+          "legend": {
+            "ref": "u1",
+            "quote": "3.8"
+          },
+          "condition": {
+            "ref": "",
+            "quote": ""
+          },
+          "state": "not_applicable",
+          "reason": "计划批量为临床备样规模，非共线评估所需的毒理或临床批次规模，不适用于共线评估。"
+        },
+        "reason": "citation_quote_not_in_source"
+      },
+      {
+        "kind": "observation",
+        "proposal": {
+          "value": {
+            "ref": "u1",
+            "quote": "HRS-1597"
+          },
+          "field": {
+            "ref": "u1",
+            "quote": "HRS-1597"
+          },
+          "legend": {
+            "ref": "u1",
+            "quote": "HRS-1597"
+          },
+          "condition": {
+            "ref": "",
+            "quote": ""
+          },
+          "state": "not_applicable",
+          "reason": "活性成分名称虽存在，但因本计划为临床备样且无共线评估所需毒理数据，故整体共线评估数据框架不适用。"
+        },
+        "reason": "observation_state_not_supported"
+      },
+      {
+        "kind": "observation",
+        "proposal": {
+          "value": {
+            "ref": "u1",
+            "quote": "适应症为减肥增肌"
+          },
+          "field": {
+            "ref": "u1",
+            "quote": "适应症"
+          },
+          "legend": {
+            "ref": "u1",
+            "quote": "减肥增肌"
+          },
+          "condition": {
+            "ref": "",
+            "quote": ""
+          },
+          "state": "not_applicable",
+          "reason": "适应症信息存在，但非共线评估直接所需的毒理/剂量参数，且整体评估不适用。"
+        },
+        "reason": "observation_state_not_supported"
+      },
+      {
+        "kind": "observation",
+        "proposal": {
+          "value": {
+            "ref": "u1",
+            "quote": "于2025年08月供样亚急毒样品"
+          },
+          "field": {
+            "ref": "u1",
+            "quote": "亚急毒供样时间"
+          },
+          "legend": {
+            "ref": "u1",
+            "quote": "2025年08月"
+          },
+          "condition": {
+            "ref": "",
+            "quote": ""
+          },
+          "state": "not_applicable",
+          "reason": "亚急毒供样时间为历史事件，非本次临床备样计划的一部分，不适用于本次计划评估。"
+        },
+        "reason": "citation_quote_not_in_source"
+      },
+      {
+        "kind": "observation",
+        "proposal": {
+          "value": {
+            "ref": "u1",
+            "quote": "于2025年09月供样毒理批样品"
+          },
+          "field": {
+            "ref": "u1",
+            "quote": "毒理批供样时间"
+          },
+          "legend": {
+            "ref": "u1",
+            "quote": "2025年09月"
+          },
+          "condition": {
+            "ref": "",
+            "quote": ""
+          },
+          "state": "not_applicable",
+          "reason": "毒理批供样时间为历史事件，非本次临床备样计划的一部分，不适用于本次计划评估。"
+        },
+        "reason": "citation_quote_not_in_source"
+      },
+      {
+        "kind": "observation",
+        "proposal": {
+          "value": {
+            "ref": "u2",
+            "quote": "本次修改仅对于HRS-1597结晶纯化步骤"
+          },
+          "field": {
+            "ref": "u2",
+            "quote": "修改范围"
+          },
+          "legend": {
+            "ref": "u2",
+            "quote": "结晶纯化步骤"
+          },
+          "condition": {
+            "ref": "",
+            "quote": ""
+          },
+          "state": "not_applicable",
+          "reason": "工艺修改描述为历史/当前状态，非本次临床备样计划的具体执行参数，不适用于本次计划评估。"
+        },
+        "reason": "citation_quote_not_in_source"
+      },
+      {
+        "kind": "observation",
+        "proposal": {
+          "value": {
+            "ref": "u2",
+            "quote": "由于中控过程杂质含量未达过控标准"
+          },
+          "field": {
+            "ref": "u2",
+            "quote": "修改原因"
+          },
+          "legend": {
+            "ref": "u2",
+            "quote": "中控过程杂质含量未达过控标准"
+          },
+          "condition": {
+            "ref": "",
+            "quote": ""
+          },
+          "state": "not_applicable",
+          "reason": "修改原因为历史背景，非本次临床备样计划的具体执行参数，不适用于本次计划评估。"
+        },
+        "reason": "citation_quote_not_in_source"
+      },
+      {
+        "kind": "observation",
+        "proposal": {
+          "value": {
+            "ref": "u2",
+            "quote": "增加两次重结晶操作"
+          },
+          "field": {
+            "ref": "u2",
+            "quote": "修改内容"
+          },
+          "legend": {
+            "ref": "u2",
+            "quote": "增加两次重结晶操作"
+          },
+          "condition": {
+            "ref": "",
+            "quote": ""
+          },
+          "state": "not_applicable",
+          "reason": "修改内容为工艺变更描述，非本次临床备样计划的具体执行参数，不适用于本次计划评估。"
+        },
+        "reason": "citation_quote_not_in_source"
+      },
+      {
+        "subject_id": "s1",
+        "field": "plannedBatchSizeMin_kg",
+        "proposal": {
+          "raw": "3.8",
+          "source": {
+            "ref": "u1",
+            "quote": "批量3.8- 6.6kg"
+          },
+          "field": {
+            "ref": "u1",
+            "quote": "批量"
+          },
+          "unit": {
+            "ref": "u1",
+            "quote": "kg"
+          },
+          "condition": {
+            "ref": "",
+            "quote": ""
+          }
+        },
+        "reason": "scalar_value_required"
+      },
+      {
+        "subject_id": "s1",
+        "field": "plannedProductionDate",
+        "proposal": {
+          "raw": "2026年06月",
+          "source": {
+            "ref": "u1",
+            "quote": "计划在2026年6月"
+          },
+          "field": {
+            "ref": "u1",
+            "quote": "计划"
+          },
+          "unit": {
+            "ref": "",
+            "quote": ""
+          },
+          "condition": {
+            "ref": "",
+            "quote": ""
+          }
+        },
+        "reason": "raw_value_not_in_quote"
+      }
+    ],
+    "discovery_contract_pass": true,
+    "frames": {
+      "s1": {
+        "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/ClinicalSampleProductionPlan",
+        "anchor": {
+          "ref": "u1",
+          "quote": "本次备样用于Ⅰ期临床，计划在2026年6月于642和646车间，完成本次临床样品生产及检测，批量3.8- 6.6kg。"
+        }
+      }
+    },
+    "claims_contract_pass": true,
+    "acceptance": {
+      "checks": [
+        {
+          "check": "required_properties",
+          "expected": {
+            "predicate": "plannedProductionDate",
+            "value": "2026-06"
+          },
+          "pass": false
+        },
+        {
+          "check": "required_relations",
+          "expected": {
+            "predicate": "describes",
+            "subject_id": "document",
+            "object_contains": "HRS-1597"
+          },
+          "pass": false
+        },
+        {
+          "check": "required_relations",
+          "expected": {
+            "predicate": "hasProductionPlan",
+            "subject_id": "document"
+          },
+          "pass": true
+        },
+        {
+          "check": "forbidden_predicate",
+          "expected": "outputMassRange_kg",
+          "pass": true
+        }
+      ],
+      "passed": 2,
+      "total": 4,
+      "all_pass": false,
+      "passed_with_no_rejections": false
+    }
+  }
+}

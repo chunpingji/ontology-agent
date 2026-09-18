@@ -1,0 +1,393 @@
+{
+  "document": {
+    "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport",
+    "label": "CMC 报告",
+    "anchor": {
+      "ref": "",
+      "quote": ""
+    },
+    "fields": {
+      "usesEquipment": {
+        "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/usesEquipment",
+        "label": "使用设备",
+        "description": "Links a synthesis step or CMC report to the equipment required.",
+        "multiplicity": "unspecified",
+        "kind": "relationship",
+        "range_class_iris": [
+          "https://ontology.pharma-gmp.cn/slpra/equipment/CIPSystem",
+          "https://ontology.pharma-gmp.cn/slpra/equipment/CapsuleFiller",
+          "https://ontology.pharma-gmp.cn/slpra/equipment/Centrifuge",
+          "https://ontology.pharma-gmp.cn/slpra/equipment/ChromatographyColumnSystem",
+          "https://ontology.pharma-gmp.cn/slpra/equipment/CleaningEquipment",
+          "https://ontology.pharma-gmp.cn/slpra/equipment/CoatingMachine",
+          "https://ontology.pharma-gmp.cn/slpra/equipment/CompressedAirSystem",
+          "https://ontology.pharma-gmp.cn/slpra/equipment/Dryer",
+          "https://ontology.pharma-gmp.cn/slpra/equipment/ElectricVacuumDryer",
+          "https://ontology.pharma-gmp.cn/slpra/equipment/Equipment",
+          "https://ontology.pharma-gmp.cn/slpra/equipment/FillingMachine",
+          "https://ontology.pharma-gmp.cn/slpra/equipment/FilterPress",
+          "https://ontology.pharma-gmp.cn/slpra/equipment/Granulator",
+          "https://ontology.pharma-gmp.cn/slpra/equipment/HVACSystem",
+          "https://ontology.pharma-gmp.cn/slpra/equipment/HotAirBlastDryer",
+          "https://ontology.pharma-gmp.cn/slpra/equipment/HotAirDryer",
+          "https://ontology.pharma-gmp.cn/slpra/equipment/ManualCleaningTool",
+          "https://ontology.pharma-gmp.cn/slpra/equipment/Mixer",
+          "https://ontology.pharma-gmp.cn/slpra/equipment/ProcessEquipment",
+          "https://ontology.pharma-gmp.cn/slpra/equipment/Reactor",
+          "https://ontology.pharma-gmp.cn/slpra/equipment/RotaryEvaporator",
+          "https://ontology.pharma-gmp.cn/slpra/equipment/TabletPress",
+          "https://ontology.pharma-gmp.cn/slpra/equipment/UtilityEquipment",
+          "https://ontology.pharma-gmp.cn/slpra/equipment/VacuumDryer",
+          "https://ontology.pharma-gmp.cn/slpra/equipment/WaterSystem"
+        ]
+      }
+    }
+  },
+  "s1": {
+    "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/SynthesisStep",
+    "label": "合成步骤",
+    "anchor": {
+      "ref": "",
+      "quote": ""
+    },
+    "fields": {
+      "inProcessControl": {
+        "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/inProcessControl",
+        "label": "过程控制",
+        "description": "IPC method and acceptance criteria, e.g. TLC endpoint, HPLC purity.",
+        "multiplicity": "unspecified",
+        "kind": "property",
+        "datatype_iris": [
+          "http://www.w3.org/2001/XMLSchema#string"
+        ]
+      },
+      "outputMassRange_kg": {
+        "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/outputMassRange_kg",
+        "label": "得量范围（kg）",
+        "multiplicity": "unspecified",
+        "kind": "property",
+        "datatype_iris": [
+          "http://www.w3.org/2001/XMLSchema#string"
+        ]
+      },
+      "reactionConditions": {
+        "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/reactionConditions",
+        "label": "反应条件",
+        "description": "Temperature, pressure, atmosphere, duration, catalyst loading, etc.",
+        "multiplicity": "unspecified",
+        "kind": "property",
+        "datatype_iris": [
+          "http://www.w3.org/2001/XMLSchema#string"
+        ]
+      },
+      "stepOrder": {
+        "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/stepOrder",
+        "label": "步骤序号",
+        "multiplicity": "unspecified",
+        "kind": "property",
+        "datatype_iris": [
+          "http://www.w3.org/2001/XMLSchema#integer"
+        ]
+      },
+      "yieldRangePercent": {
+        "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/yieldRangePercent",
+        "label": "收率范围（%）",
+        "multiplicity": "unspecified",
+        "kind": "property",
+        "datatype_iris": [
+          "http://www.w3.org/2001/XMLSchema#string"
+        ]
+      },
+      "nextStep": {
+        "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/nextStep",
+        "label": "下一步骤",
+        "description": "Ordered chain linking synthesis steps within a route.",
+        "multiplicity": "unspecified",
+        "kind": "relationship",
+        "range_class_iris": [
+          "https://ontology.pharma-gmp.cn/slpra/drug-development/ColumnChromatography",
+          "https://ontology.pharma-gmp.cn/slpra/drug-development/Concentration",
+          "https://ontology.pharma-gmp.cn/slpra/drug-development/Crystallization",
+          "https://ontology.pharma-gmp.cn/slpra/drug-development/Deprotection",
+          "https://ontology.pharma-gmp.cn/slpra/drug-development/Drying",
+          "https://ontology.pharma-gmp.cn/slpra/drug-development/Extraction",
+          "https://ontology.pharma-gmp.cn/slpra/drug-development/Filtration",
+          "https://ontology.pharma-gmp.cn/slpra/drug-development/Purification",
+          "https://ontology.pharma-gmp.cn/slpra/drug-development/Reaction",
+          "https://ontology.pharma-gmp.cn/slpra/drug-development/SaltFormation",
+          "https://ontology.pharma-gmp.cn/slpra/drug-development/SynthesisStep"
+        ]
+      },
+      "producesIntermediate": {
+        "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/producesIntermediate",
+        "label": "产出中间体",
+        "description": "Links a synthesis step to a non-final process intermediate that it produces. Multiple values are allowed; process order is carried by the synthesis steps, not by the order of these assertions.\n连接合成步骤及其产出的非最终工艺中间体。允许多个值；工艺顺序由合成步骤表达，不依赖这些断言的排列顺序。",
+        "multiplicity": "unspecified",
+        "kind": "relationship",
+        "range_class_iris": [
+          "https://ontology.pharma-gmp.cn/slpra/drug-development/CrudeProduct",
+          "https://ontology.pharma-gmp.cn/slpra/drug-development/ProcessIntermediate"
+        ]
+      },
+      "usesEquipment": {
+        "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/usesEquipment",
+        "label": "使用设备",
+        "description": "Links a synthesis step or CMC report to the equipment required.",
+        "multiplicity": "unspecified",
+        "kind": "relationship",
+        "range_class_iris": [
+          "https://ontology.pharma-gmp.cn/slpra/equipment/CIPSystem",
+          "https://ontology.pharma-gmp.cn/slpra/equipment/CapsuleFiller",
+          "https://ontology.pharma-gmp.cn/slpra/equipment/Centrifuge",
+          "https://ontology.pharma-gmp.cn/slpra/equipment/ChromatographyColumnSystem",
+          "https://ontology.pharma-gmp.cn/slpra/equipment/CleaningEquipment",
+          "https://ontology.pharma-gmp.cn/slpra/equipment/CoatingMachine",
+          "https://ontology.pharma-gmp.cn/slpra/equipment/CompressedAirSystem",
+          "https://ontology.pharma-gmp.cn/slpra/equipment/Dryer",
+          "https://ontology.pharma-gmp.cn/slpra/equipment/ElectricVacuumDryer",
+          "https://ontology.pharma-gmp.cn/slpra/equipment/Equipment",
+          "https://ontology.pharma-gmp.cn/slpra/equipment/FillingMachine",
+          "https://ontology.pharma-gmp.cn/slpra/equipment/FilterPress",
+          "https://ontology.pharma-gmp.cn/slpra/equipment/Granulator",
+          "https://ontology.pharma-gmp.cn/slpra/equipment/HVACSystem",
+          "https://ontology.pharma-gmp.cn/slpra/equipment/HotAirBlastDryer",
+          "https://ontology.pharma-gmp.cn/slpra/equipment/HotAirDryer",
+          "https://ontology.pharma-gmp.cn/slpra/equipment/ManualCleaningTool",
+          "https://ontology.pharma-gmp.cn/slpra/equipment/Mixer",
+          "https://ontology.pharma-gmp.cn/slpra/equipment/ProcessEquipment",
+          "https://ontology.pharma-gmp.cn/slpra/equipment/Reactor",
+          "https://ontology.pharma-gmp.cn/slpra/equipment/RotaryEvaporator",
+          "https://ontology.pharma-gmp.cn/slpra/equipment/TabletPress",
+          "https://ontology.pharma-gmp.cn/slpra/equipment/UtilityEquipment",
+          "https://ontology.pharma-gmp.cn/slpra/equipment/VacuumDryer",
+          "https://ontology.pharma-gmp.cn/slpra/equipment/WaterSystem"
+        ]
+      }
+    }
+  },
+  "s2": {
+    "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/Crystallization",
+    "label": "结晶/析晶",
+    "anchor": {
+      "ref": "",
+      "quote": ""
+    },
+    "fields": {
+      "inProcessControl": {
+        "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/inProcessControl",
+        "label": "过程控制",
+        "description": "IPC method and acceptance criteria, e.g. TLC endpoint, HPLC purity.",
+        "multiplicity": "unspecified",
+        "kind": "property",
+        "datatype_iris": [
+          "http://www.w3.org/2001/XMLSchema#string"
+        ]
+      },
+      "outputMassRange_kg": {
+        "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/outputMassRange_kg",
+        "label": "得量范围（kg）",
+        "multiplicity": "unspecified",
+        "kind": "property",
+        "datatype_iris": [
+          "http://www.w3.org/2001/XMLSchema#string"
+        ]
+      },
+      "reactionConditions": {
+        "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/reactionConditions",
+        "label": "反应条件",
+        "description": "Temperature, pressure, atmosphere, duration, catalyst loading, etc.",
+        "multiplicity": "unspecified",
+        "kind": "property",
+        "datatype_iris": [
+          "http://www.w3.org/2001/XMLSchema#string"
+        ]
+      },
+      "stepOrder": {
+        "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/stepOrder",
+        "label": "步骤序号",
+        "multiplicity": "unspecified",
+        "kind": "property",
+        "datatype_iris": [
+          "http://www.w3.org/2001/XMLSchema#integer"
+        ]
+      },
+      "yieldRangePercent": {
+        "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/yieldRangePercent",
+        "label": "收率范围（%）",
+        "multiplicity": "unspecified",
+        "kind": "property",
+        "datatype_iris": [
+          "http://www.w3.org/2001/XMLSchema#string"
+        ]
+      },
+      "nextStep": {
+        "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/nextStep",
+        "label": "下一步骤",
+        "description": "Ordered chain linking synthesis steps within a route.",
+        "multiplicity": "unspecified",
+        "kind": "relationship",
+        "range_class_iris": [
+          "https://ontology.pharma-gmp.cn/slpra/drug-development/ColumnChromatography",
+          "https://ontology.pharma-gmp.cn/slpra/drug-development/Concentration",
+          "https://ontology.pharma-gmp.cn/slpra/drug-development/Crystallization",
+          "https://ontology.pharma-gmp.cn/slpra/drug-development/Deprotection",
+          "https://ontology.pharma-gmp.cn/slpra/drug-development/Drying",
+          "https://ontology.pharma-gmp.cn/slpra/drug-development/Extraction",
+          "https://ontology.pharma-gmp.cn/slpra/drug-development/Filtration",
+          "https://ontology.pharma-gmp.cn/slpra/drug-development/Purification",
+          "https://ontology.pharma-gmp.cn/slpra/drug-development/Reaction",
+          "https://ontology.pharma-gmp.cn/slpra/drug-development/SaltFormation",
+          "https://ontology.pharma-gmp.cn/slpra/drug-development/SynthesisStep"
+        ]
+      },
+      "producesIntermediate": {
+        "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/producesIntermediate",
+        "label": "产出中间体",
+        "description": "Links a synthesis step to a non-final process intermediate that it produces. Multiple values are allowed; process order is carried by the synthesis steps, not by the order of these assertions.\n连接合成步骤及其产出的非最终工艺中间体。允许多个值；工艺顺序由合成步骤表达，不依赖这些断言的排列顺序。",
+        "multiplicity": "unspecified",
+        "kind": "relationship",
+        "range_class_iris": [
+          "https://ontology.pharma-gmp.cn/slpra/drug-development/CrudeProduct",
+          "https://ontology.pharma-gmp.cn/slpra/drug-development/ProcessIntermediate"
+        ]
+      },
+      "usesEquipment": {
+        "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/usesEquipment",
+        "label": "使用设备",
+        "description": "Links a synthesis step or CMC report to the equipment required.",
+        "multiplicity": "unspecified",
+        "kind": "relationship",
+        "range_class_iris": [
+          "https://ontology.pharma-gmp.cn/slpra/equipment/CIPSystem",
+          "https://ontology.pharma-gmp.cn/slpra/equipment/CapsuleFiller",
+          "https://ontology.pharma-gmp.cn/slpra/equipment/Centrifuge",
+          "https://ontology.pharma-gmp.cn/slpra/equipment/ChromatographyColumnSystem",
+          "https://ontology.pharma-gmp.cn/slpra/equipment/CleaningEquipment",
+          "https://ontology.pharma-gmp.cn/slpra/equipment/CoatingMachine",
+          "https://ontology.pharma-gmp.cn/slpra/equipment/CompressedAirSystem",
+          "https://ontology.pharma-gmp.cn/slpra/equipment/Dryer",
+          "https://ontology.pharma-gmp.cn/slpra/equipment/ElectricVacuumDryer",
+          "https://ontology.pharma-gmp.cn/slpra/equipment/Equipment",
+          "https://ontology.pharma-gmp.cn/slpra/equipment/FillingMachine",
+          "https://ontology.pharma-gmp.cn/slpra/equipment/FilterPress",
+          "https://ontology.pharma-gmp.cn/slpra/equipment/Granulator",
+          "https://ontology.pharma-gmp.cn/slpra/equipment/HVACSystem",
+          "https://ontology.pharma-gmp.cn/slpra/equipment/HotAirBlastDryer",
+          "https://ontology.pharma-gmp.cn/slpra/equipment/HotAirDryer",
+          "https://ontology.pharma-gmp.cn/slpra/equipment/ManualCleaningTool",
+          "https://ontology.pharma-gmp.cn/slpra/equipment/Mixer",
+          "https://ontology.pharma-gmp.cn/slpra/equipment/ProcessEquipment",
+          "https://ontology.pharma-gmp.cn/slpra/equipment/Reactor",
+          "https://ontology.pharma-gmp.cn/slpra/equipment/RotaryEvaporator",
+          "https://ontology.pharma-gmp.cn/slpra/equipment/TabletPress",
+          "https://ontology.pharma-gmp.cn/slpra/equipment/UtilityEquipment",
+          "https://ontology.pharma-gmp.cn/slpra/equipment/VacuumDryer",
+          "https://ontology.pharma-gmp.cn/slpra/equipment/WaterSystem"
+        ]
+      }
+    }
+  },
+  "s3": {
+    "class_iri": "https://ontology.pharma-gmp.cn/slpra/equipment/Equipment",
+    "label": "设备",
+    "anchor": {
+      "ref": "",
+      "quote": ""
+    },
+    "fields": {
+      "equipmentID": {
+        "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/equipmentID",
+        "label": "设备编号",
+        "multiplicity": "unspecified",
+        "kind": "property",
+        "datatype_iris": [
+          "http://www.w3.org/2001/XMLSchema#string"
+        ]
+      },
+      "equipmentName": {
+        "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/equipmentName",
+        "label": "设备名称",
+        "multiplicity": "unspecified",
+        "kind": "property",
+        "datatype_iris": [
+          "http://www.w3.org/2001/XMLSchema#string"
+        ]
+      },
+      "isDedicatedEquipment": {
+        "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/isDedicatedEquipment",
+        "label": "is dedicated equipment",
+        "multiplicity": "unspecified",
+        "kind": "property",
+        "datatype_iris": [
+          "http://www.w3.org/2001/XMLSchema#boolean"
+        ]
+      },
+      "isInCleanArea": {
+        "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/isInCleanArea",
+        "label": "is in clean area",
+        "multiplicity": "unspecified",
+        "kind": "property",
+        "datatype_iris": [
+          "http://www.w3.org/2001/XMLSchema#boolean"
+        ]
+      },
+      "modelSpecification": {
+        "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/modelSpecification",
+        "label": "规格型号",
+        "multiplicity": "unspecified",
+        "kind": "property",
+        "datatype_iris": [
+          "http://www.w3.org/2001/XMLSchema#string"
+        ]
+      },
+      "requiresDedication": {
+        "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/requiresDedication",
+        "label": "requires dedication",
+        "description": "Set by SWRL rules based on drug product classification.",
+        "multiplicity": "unspecified",
+        "kind": "property",
+        "datatype_iris": [
+          "http://www.w3.org/2001/XMLSchema#boolean"
+        ]
+      },
+      "requiresInactivationValidation": {
+        "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/requiresInactivationValidation",
+        "label": "requires inactivation validation",
+        "multiplicity": "unspecified",
+        "kind": "property",
+        "datatype_iris": [
+          "http://www.w3.org/2001/XMLSchema#boolean"
+        ]
+      },
+      "requiresIndependentHVAC": {
+        "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/requiresIndependentHVAC",
+        "label": "requires independent HVAC",
+        "multiplicity": "unspecified",
+        "kind": "property",
+        "datatype_iris": [
+          "http://www.w3.org/2001/XMLSchema#boolean"
+        ]
+      }
+    }
+  },
+  "s4": {
+    "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/CrudeProduct",
+    "label": "粗品",
+    "anchor": {
+      "ref": "",
+      "quote": ""
+    },
+    "fields": {
+      "intermediateIdentifier": {
+        "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/intermediateIdentifier",
+        "label": "中间体标识",
+        "description": "An identifier stated for a process intermediate, e.g. SM5592-A14. A bare value is unique only within an explicitly established project or synthesis-route namespace.\n原文明示的工艺中间体标识，例如 SM5592-A14。单独标识值仅在已明确建立的项目或合成路线命名空间内具有唯一性。",
+        "multiplicity": "unspecified",
+        "kind": "property",
+        "datatype_iris": [
+          "http://www.w3.org/2001/XMLSchema#string"
+        ]
+      }
+    }
+  }
+}

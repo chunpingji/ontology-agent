@@ -1,4 +1,5 @@
 import asyncio
+import json
 from concurrent.futures import ThreadPoolExecutor
 from datetime import timedelta
 from threading import Lock
@@ -61,6 +62,43 @@ def invoke(client, **options):
 def rows(bind):
     with Session(bind) as db:
         return list(db.scalars(select(LocalModelRequest).order_by(LocalModelRequest.sequence)))
+
+
+@pytest.mark.parametrize("second_result", ["success", "truncated", "malformed"])
+def test_summary_truncation_retry_increases_budget_keeps_schema_and_is_bounded(
+    request_db, second_result,
+):
+    sent = []
+
+    async def transport(request):
+        sent.append(json.loads(request.content))
+        response = reply()
+        if len(sent) == 1 or second_result == "truncated":
+            response["choices"][0]["finish_reason"] = "length"
+        elif second_result == "malformed":
+            response["choices"][0]["message"]["content"] = "invalid JSON"
+        return httpx.Response(200, json=response)
+
+    client = LocalModelClient("http://model.test/v1", "test", httpx.MockTransport(transport))
+    with model_scope(bind=request_db):
+        def run():
+            return chat_with_schema(
+                client, system="summary", user="source", schema={"type": "object"},
+                max_tokens=512, truncation_max_tokens=1024, max_attempts=2,
+                raise_on_error=True, total_timeout_s=3,
+            )
+
+        if second_result == "success":
+            assert run() == {"ok": True}
+        else:
+            with pytest.raises(StructuredModelError):
+                run()
+    assert [r["max_tokens"] for r in sent] == [512, 1024]
+    assert all(r["response_format"]["type"] == "json_schema" for r in sent)
+    requests = rows(request_db)
+    assert len(requests) == 2
+    assert len({r.logical_call_id for r in requests}) == 1
+    assert requests[0].deadline_at >= requests[1].deadline_at - timedelta(milliseconds=20)
 
 
 def test_fifo_capacity_and_expired_slot_fencing(request_db):

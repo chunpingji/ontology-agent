@@ -1,0 +1,305 @@
+{
+  "contract_version": "document-analysis-runs-v1",
+  "recognition_run_id": "ontology-tool-f4-positive-05",
+  "run_revision": 0,
+  "event_head": 1,
+  "metadata_snapshot_id": "6a87664e8cbd43ab7be25e01dd62d4c56181b893b3a14aaa622034b0be8e3978",
+  "root_ref": {
+    "id": "77e06fd610083a9a5a0e065cabad2fa036fbe0f029eeb4be2298bfb973da274a",
+    "revision": 1
+  },
+  "projection": "verified",
+  "projection_policy": "ontology-tool-graph-v1",
+  "artifact_status": "ready",
+  "nodes": [
+    {
+      "entity_id": "77e06fd610083a9a5a0e065cabad2fa036fbe0f029eeb4be2298bfb973da274a",
+      "revision": 1,
+      "class_iri": "urn:validation:MeasurementReport",
+      "class_label": "测量记录",
+      "label": "source.docx",
+      "root": true,
+      "root_origin": "user_specified",
+      "identity_status": "document_local",
+      "decision_status": "supported",
+      "independent_review": "unreviewed",
+      "evidence_refs": [],
+      "grounding_kind": "document_root"
+    }
+  ],
+  "edges": [],
+  "properties": [
+    {
+      "candidate_id": "6f98e9a7cbd4fd89216bf8fdf2a2f7a0c8a5f582b240b47b4248585d32035e75",
+      "revision": 1,
+      "subject_ref": {
+        "id": "77e06fd610083a9a5a0e065cabad2fa036fbe0f029eeb4be2298bfb973da274a",
+        "revision": 1
+      },
+      "predicate_iri": "urn:validation:mass",
+      "predicate_label": "质量",
+      "raw_value": "1500 mg",
+      "normalized_value": "1.5",
+      "normalization_record": {
+        "form": "scalar",
+        "raw": "1500 mg",
+        "source_unit": "mg",
+        "target_unit": "g",
+        "scalar": "1.5",
+        "lower": null,
+        "upper": null,
+        "lower_inclusive": null,
+        "upper_inclusive": null,
+        "comparator": null,
+        "endpoint_role": null,
+        "datatype_iri": "http://www.w3.org/2001/XMLSchema#decimal",
+        "dimension": "mass",
+        "conversion_record": {
+          "registry_version": "si-subset-v3-unit-aliases",
+          "from": "mg",
+          "to": "g",
+          "factor": "0.001",
+          "offset": "0",
+          "mapping_kind": "conversion"
+        }
+      },
+      "unit_evidence_refs": [
+        {
+          "document_hash": "bc13cc1e5972011f28d3032ff73ff4734565511f7202706dbe32e2c10e2eed0c",
+          "parser_version": "4",
+          "structure_hash": "40fe98c3ea340838c622505b6759a500bea164418dc1ca6a7f663a9eb78a1000",
+          "evidence_id": "9c48bbe121ceb2b6db985b6964d8ab8ebef881f5613026ff3d7658340d0881dc",
+          "section_node_id": "document",
+          "block_id": "paragraph:0:0",
+          "paragraph_index": 0,
+          "fragment_index": 0,
+          "table_path": null,
+          "row_index": null,
+          "column_index": null,
+          "span_start": 15,
+          "span_end": 17,
+          "physical_page_number": null
+        }
+      ],
+      "direction": "outbound",
+      "polarity": "affirmed",
+      "conditions": [],
+      "applicability": {},
+      "decision_status": "supported",
+      "structural_valid": true,
+      "model_supported": true,
+      "policy_eligible": true,
+      "independent_review": "unreviewed",
+      "proof_ref": {
+        "id": "17d3cd7dc90577390bfe26c766a641ad5ee9f20f2321279c12f5b77a9f81a0ea",
+        "revision": 1
+      },
+      "decision_refs": [
+        {
+          "id": "e014fa266d50356cfa35a1d69149bb3abebf8a46ccc901cd39086fff120461a8",
+          "revision": 1
+        },
+        {
+          "id": "67ff285779af7a3cb622b7a962147537ea9a9274f968aec8dbee09e9423074ba",
+          "revision": 1
+        },
+        {
+          "id": "917265580fcf4fb9081fb720e0554b1abc4e6b9afca03228271dd6467098797a",
+          "revision": 1
+        },
+        {
+          "id": "f98311401ad22d29144af7a5770f7752681576742bbce09eb4331b9943381411",
+          "revision": 1
+        },
+        {
+          "id": "c10cef44154dd8f36fcdf9a6415fb32aa990514da9e0181270c5c27c5068733c",
+          "revision": 1
+        },
+        {
+          "id": "d9ce305499628efc24a81a0f833343f3107aac6d7ee370b54c10c3575955cc62",
+          "revision": 1
+        },
+        {
+          "id": "79817ed23ecefeafdddebec2f9e8844a2e6df9a169f552c10bd34a9b61f3542b",
+          "revision": 1
+        },
+        {
+          "id": "66eb419d59fff2b48fb238fae29278ab4434c14b507147b1695888f5fec3e64f",
+          "revision": 1
+        }
+      ],
+      "dependency_refs": [
+        {
+          "id": "77e06fd610083a9a5a0e065cabad2fa036fbe0f029eeb4be2298bfb973da274a",
+          "revision": 1
+        }
+      ],
+      "evidence_refs": [
+        {
+          "document_hash": "bc13cc1e5972011f28d3032ff73ff4734565511f7202706dbe32e2c10e2eed0c",
+          "parser_version": "4",
+          "structure_hash": "40fe98c3ea340838c622505b6759a500bea164418dc1ca6a7f663a9eb78a1000",
+          "evidence_id": "9c48bbe121ceb2b6db985b6964d8ab8ebef881f5613026ff3d7658340d0881dc",
+          "section_node_id": "document",
+          "block_id": "paragraph:0:0",
+          "paragraph_index": 0,
+          "fragment_index": 0,
+          "table_path": null,
+          "row_index": null,
+          "column_index": null,
+          "span_start": 10,
+          "span_end": 17,
+          "physical_page_number": null
+        },
+        {
+          "document_hash": "bc13cc1e5972011f28d3032ff73ff4734565511f7202706dbe32e2c10e2eed0c",
+          "parser_version": "4",
+          "structure_hash": "40fe98c3ea340838c622505b6759a500bea164418dc1ca6a7f663a9eb78a1000",
+          "evidence_id": "9c48bbe121ceb2b6db985b6964d8ab8ebef881f5613026ff3d7658340d0881dc",
+          "section_node_id": "document",
+          "block_id": "paragraph:0:0",
+          "paragraph_index": 0,
+          "fragment_index": 0,
+          "table_path": null,
+          "row_index": null,
+          "column_index": null,
+          "span_start": 0,
+          "span_end": 10,
+          "physical_page_number": null
+        },
+        {
+          "document_hash": "bc13cc1e5972011f28d3032ff73ff4734565511f7202706dbe32e2c10e2eed0c",
+          "parser_version": "4",
+          "structure_hash": "40fe98c3ea340838c622505b6759a500bea164418dc1ca6a7f663a9eb78a1000",
+          "evidence_id": "9c48bbe121ceb2b6db985b6964d8ab8ebef881f5613026ff3d7658340d0881dc",
+          "section_node_id": "document",
+          "block_id": "paragraph:0:0",
+          "paragraph_index": 0,
+          "fragment_index": 0,
+          "table_path": null,
+          "row_index": null,
+          "column_index": null,
+          "span_start": 15,
+          "span_end": 17,
+          "physical_page_number": null
+        }
+      ],
+      "subject_evidence_refs": [
+        {
+          "document_hash": "bc13cc1e5972011f28d3032ff73ff4734565511f7202706dbe32e2c10e2eed0c",
+          "parser_version": "4",
+          "structure_hash": "40fe98c3ea340838c622505b6759a500bea164418dc1ca6a7f663a9eb78a1000",
+          "evidence_id": "9c48bbe121ceb2b6db985b6964d8ab8ebef881f5613026ff3d7658340d0881dc",
+          "section_node_id": "document",
+          "block_id": "paragraph:0:0",
+          "paragraph_index": 0,
+          "fragment_index": 0,
+          "table_path": null,
+          "row_index": null,
+          "column_index": null,
+          "span_start": 0,
+          "span_end": 5,
+          "physical_page_number": null
+        }
+      ],
+      "value_evidence_refs": [
+        {
+          "document_hash": "bc13cc1e5972011f28d3032ff73ff4734565511f7202706dbe32e2c10e2eed0c",
+          "parser_version": "4",
+          "structure_hash": "40fe98c3ea340838c622505b6759a500bea164418dc1ca6a7f663a9eb78a1000",
+          "evidence_id": "9c48bbe121ceb2b6db985b6964d8ab8ebef881f5613026ff3d7658340d0881dc",
+          "section_node_id": "document",
+          "block_id": "paragraph:0:0",
+          "paragraph_index": 0,
+          "fragment_index": 0,
+          "table_path": null,
+          "row_index": null,
+          "column_index": null,
+          "span_start": 10,
+          "span_end": 17,
+          "physical_page_number": null
+        }
+      ],
+      "predicate_evidence_refs": [
+        {
+          "document_hash": "bc13cc1e5972011f28d3032ff73ff4734565511f7202706dbe32e2c10e2eed0c",
+          "parser_version": "4",
+          "structure_hash": "40fe98c3ea340838c622505b6759a500bea164418dc1ca6a7f663a9eb78a1000",
+          "evidence_id": "9c48bbe121ceb2b6db985b6964d8ab8ebef881f5613026ff3d7658340d0881dc",
+          "section_node_id": "document",
+          "block_id": "paragraph:0:0",
+          "paragraph_index": 0,
+          "fragment_index": 0,
+          "table_path": null,
+          "row_index": null,
+          "column_index": null,
+          "span_start": 6,
+          "span_end": 8,
+          "physical_page_number": null
+        }
+      ],
+      "condition_evidence_refs": [],
+      "counterevidence_refs": [],
+      "reason_code": "claim_verified",
+      "reason": "所有适用核验维度及确定性检查通过。",
+      "modality": "asserted",
+      "scope": {
+        "scope_id": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "members": []
+      }
+    }
+  ],
+  "coverage": [
+    {
+      "retrieval_diagnostics": null,
+      "candidate_policy": null,
+      "subject_ref": {
+        "id": "77e06fd610083a9a5a0e065cabad2fa036fbe0f029eeb4be2298bfb973da274a",
+        "revision": 1
+      },
+      "predicate_iri": "urn:validation:mass",
+      "predicate_label": "质量",
+      "phase1": 1,
+      "phase2": 0,
+      "examined": 1,
+      "incomplete": 0,
+      "unattempted": 0,
+      "unresolved_claims": 0,
+      "executed_phase_counts": {
+        "phase1": 1,
+        "phase2": 0
+      },
+      "pending_frontiers": 0,
+      "stop_reason": "queue_exhausted",
+      "scope": {
+        "scope_id": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "members": []
+      }
+    }
+  ],
+  "progress": {
+    "tasks_attempted": 1,
+    "model_calls": 2,
+    "model_calls_reserved": 2,
+    "model_calls_unresolved": 0,
+    "records_planned": 1,
+    "records_examined": 1,
+    "records_incomplete": 0,
+    "records_unattempted": 0,
+    "phase_counts": {
+      "phase1": 1,
+      "phase2": 0
+    },
+    "supported": 1,
+    "unsupported": 0,
+    "undetermined": 0,
+    "pending_frontiers": 0,
+    "unresolved_claims": 0,
+    "invalidated_count": 0,
+    "stop_reason": "queue_exhausted",
+    "completion": "in_scope_complete",
+    "contract_version": "document-analysis-runs-v1"
+  },
+  "generated_from_hash": "e136f383989c9ef925267d13baa3c3b3adb0214238ef9b1c5f9a656f0e415ce9",
+  "relationship_groups": []
+}

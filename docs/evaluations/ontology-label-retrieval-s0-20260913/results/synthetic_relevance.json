@@ -1,0 +1,61 @@
+{
+  "origin": "assistant-authored synthetic diagnostic; not expert gold",
+  "records": [
+    {
+      "record_id": "60b176e897c8369818cd58704244e49f2a61c69f7f4a78b5f90889d474a1e60e",
+      "case_id": "alias_support",
+      "text": "本报告设备清单列出反应釜 R-101，物料在该釜内混合反应。",
+      "synthetic_relevance_grade": 3,
+      "role": "support"
+    },
+    {
+      "record_id": "0270c4dffac9f77601461c489cc70247d59d0bfbb71415d8cc119524ed0dc8ba",
+      "case_id": "english_support",
+      "text": "The CMC report lists Reactor R-202 as the vessel used for synthesis.",
+      "synthetic_relevance_grade": 3,
+      "role": "support"
+    },
+    {
+      "record_id": "11d9c933db46b50305378b5a36a0467533ee165d4681b4b61f00c7617652fb1d",
+      "case_id": "label_support",
+      "text": "本报告工艺使用反应器 R-103 完成缩合反应。",
+      "synthetic_relevance_grade": 3,
+      "role": "support"
+    },
+    {
+      "record_id": "d21888fbb1c356eb0997cde359e9e1a5386715a86dd44cdbf5ea7abc2ba1a712",
+      "case_id": "alias_counter",
+      "text": "本报告明确不使用反应釜 R-303，该设备的租用计划已取消。",
+      "synthetic_relevance_grade": 3,
+      "role": "counterevidence"
+    },
+    {
+      "record_id": "574e9cf112a4f8e3b990b2487293c3218723a1d8c3ff46fc369b955ae7daf764",
+      "case_id": "alias_conditional",
+      "text": "仅在放大批次阶段，本报告工艺才使用反应釜 R-404。",
+      "synthetic_relevance_grade": 3,
+      "role": "conditional"
+    },
+    {
+      "record_id": "06f46a289b2ed4bd8e287a976f4773ce9d480fd6e27c3589f031d4feda17f253",
+      "case_id": "generic_context",
+      "text": "培训资料介绍反应器的工作原理，不涉及本报告选用的设备。",
+      "synthetic_relevance_grade": 1,
+      "role": "context"
+    },
+    {
+      "record_id": "40d637eef83bf573a780c1d93d418927c3c9cedf3a7ade2459164430ff4b76a6",
+      "case_id": "unrelated_admin",
+      "text": "行政会议室的桌椅按照日程进行整理。",
+      "synthetic_relevance_grade": 0,
+      "role": "irrelevant"
+    },
+    {
+      "record_id": "e9ffc72ed1c58311e7edc0c01487fbb244605183470e88d6ff2e22a77feffbca",
+      "case_id": "unrelated_product",
+      "text": "成品包装盒采用蓝色图案，产品名称印在外包装正面。",
+      "synthetic_relevance_grade": 0,
+      "role": "irrelevant"
+    }
+  ]
+}

@@ -1,0 +1,406 @@
+{
+  "reviewer": "assistant-independent-storage",
+  "status_definitions": {
+    "supported": "原文与卡片支持被审阅内容；overall 还要求主体类型、锚点角色、属性或关系归属成立。",
+    "unsupported": "原文或卡片明确矛盾、方向错误或实体角色置换；不把单纯缺证并入此类。",
+    "undetermined": "缺少充分原文证据、记录归属或状态解释，无法确认；不等同否定。"
+  },
+  "review_boundary": "Only source-only review-inputs/storage.json: original source, cards, candidate proposal and indexes. No D results, verification, checker verdicts, references or acceptance files read.",
+  "not_expert_gold": true,
+  "cases": [
+    {
+      "arm": "D",
+      "scope_id": "storage",
+      "review_input": "/opt/dev/chen/ontology-agent/output/schema-card-qwen-cmc-summary-retrieval-20260916/review-inputs/storage.json",
+      "review_input_sha256": "d657611a43187e96de5827a603f0ff3daf5f12bb5eac29f548841031b2d96912",
+      "source_artifacts": {
+        "sources.json": "f4ed1406c43d5c9e4319941fa563619af5ce05a2d4aa1acb620fe8656bd91988",
+        "subject-cards.json": "2aec50f657ed11518a5e72cba60e1efc9d936e1482412ec776bfcb8b0bf6ba70",
+        "candidates/proposal.json": "d1bef8f09689a1717d1a1f9a8b46d1fb7f5abce8d9121113b6ff645c00da91d3"
+      },
+      "subjects": [
+        {
+          "id": "document",
+          "path": "subjects.document",
+          "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport",
+          "proposal": {
+            "attributes": {},
+            "relations": {
+              "hasStorageCondition": [
+                {
+                  "target_id": "s1",
+                  "evidence": {
+                    "ref": "u0",
+                    "quote": "工艺",
+                    "span_id": "source:u0"
+                  },
+                  "condition": {
+                    "ref": "",
+                    "quote": "",
+                    "span_id": ""
+                  },
+                  "polarity": "affirmed"
+                }
+              ]
+            },
+            "anchor": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            }
+          },
+          "status": "supported",
+          "content_verdict": "supported",
+          "overall_verdict": "supported",
+          "reason": "document 是本次输入固定的 CMCReport 根节点，不把空锚点当作新抽取实体。",
+          "overall_reason": "固定文档根的类型来自输入卡片；这里只接受该输入上下文，不据局部章节另行证明整份文档分类。",
+          "supporting_source_refs": []
+        },
+        {
+          "id": "s1",
+          "path": "subjects.s1",
+          "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/StorageCondition",
+          "proposal": {
+            "attributes": {
+              "lightProtection": [],
+              "packagingType": [
+                {
+                  "raw": "双层聚乙烯薄膜袋外加药品包装用复合袋",
+                  "source": {
+                    "ref": "u8",
+                    "quote": "双层聚乙烯薄膜袋外加药品包装用复合袋",
+                    "span_id": "source:u8"
+                  },
+                  "field": {
+                    "ref": "u4",
+                    "quote": "包装方式",
+                    "span_id": "source:u4"
+                  },
+                  "unit": {
+                    "ref": "",
+                    "quote": "",
+                    "span_id": ""
+                  },
+                  "condition": {
+                    "ref": "",
+                    "quote": "",
+                    "span_id": ""
+                  }
+                }
+              ],
+              "shelfLife": [
+                {
+                  "raw": "有效期24M",
+                  "source": {
+                    "ref": "u10",
+                    "quote": "有效期24M",
+                    "span_id": "source:u10"
+                  },
+                  "field": {
+                    "ref": "u6",
+                    "quote": "有效期/复测期",
+                    "span_id": "source:u6"
+                  },
+                  "unit": {
+                    "ref": "u10",
+                    "quote": "M",
+                    "span_id": "evidence:u10:5:6"
+                  },
+                  "condition": {
+                    "ref": "",
+                    "quote": "",
+                    "span_id": ""
+                  }
+                }
+              ],
+              "storageHumidity": [],
+              "storageTemperature": [
+                {
+                  "raw": "不超过25℃",
+                  "source": {
+                    "ref": "u9",
+                    "quote": "不超过25℃",
+                    "span_id": "evidence:u9:15:17"
+                  },
+                  "field": {
+                    "ref": "u5",
+                    "quote": "存放条件（温度、湿度、是否避光）",
+                    "span_id": "source:u5"
+                  },
+                  "unit": {
+                    "ref": "u9",
+                    "quote": "℃",
+                    "span_id": "evidence:u9:17:18"
+                  },
+                  "condition": {
+                    "ref": "",
+                    "quote": "",
+                    "span_id": ""
+                  }
+                }
+              ]
+            },
+            "relations": {},
+            "anchor": {
+              "ref": "u7",
+              "quote": "HRS-1597",
+              "span_id": "source:u7"
+            }
+          },
+          "status": "unsupported",
+          "content_verdict": "unsupported",
+          "overall_verdict": "unsupported",
+          "reason": "s1 声明为 StorageCondition，但锚点 u7 HRS-1597 位于中间体/成品列；这是材料名称，不是存放条件记录。",
+          "overall_reason": "表头 u3 与同列 u7 明确证明锚点的材料角色，和 StorageCondition 类型不符，不能把同一行存在存放条件视作角色转换。",
+          "supporting_source_refs": [
+            "u3",
+            "u7"
+          ]
+        }
+      ],
+      "claims": [
+        {
+          "id": "c1",
+          "path": "subjects.document.relations.hasStorageCondition[0]",
+          "subject_id": "document",
+          "field": "hasStorageCondition",
+          "kind": "relation",
+          "proposal": {
+            "target_id": "s1",
+            "evidence": {
+              "ref": "u0",
+              "quote": "工艺",
+              "span_id": "source:u0"
+            },
+            "condition": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "polarity": "affirmed"
+          },
+          "status": "unsupported",
+          "content_verdict": "unsupported",
+          "overall_verdict": "unsupported",
+          "reason": "hasStorageCondition 的目标 s1 锚定材料名称 HRS-1597，和卡片限定的 StorageCondition 目标角色相矛盾；所引 u0 工艺也不表达该具体关系。",
+          "overall_reason": "目标类型与锚点角色不符。u1 及表格只能表明报告记载了存放条件，不能把当前材料锚点自动改成条件记录；原候选保持不修正。",
+          "supporting_source_refs": [
+            "u0",
+            "u1",
+            "u3",
+            "u7"
+          ]
+        },
+        {
+          "id": "c2",
+          "path": "subjects.s1.attributes.packagingType[0]",
+          "subject_id": "s1",
+          "field": "packagingType",
+          "kind": "property",
+          "proposal": {
+            "raw": "双层聚乙烯薄膜袋外加药品包装用复合袋",
+            "source": {
+              "ref": "u8",
+              "quote": "双层聚乙烯薄膜袋外加药品包装用复合袋",
+              "span_id": "source:u8"
+            },
+            "field": {
+              "ref": "u4",
+              "quote": "包装方式",
+              "span_id": "source:u4"
+            },
+            "unit": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "condition": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            }
+          },
+          "status": "unsupported",
+          "content_verdict": "supported",
+          "overall_verdict": "unsupported",
+          "reason": "u8 原文明示完整包装方式，与同列字段 u4 对应，raw 原样保留。",
+          "overall_reason": "包装值和字段有据，但声明主体 s1 是被错标成 StorageCondition 的材料名；有效属性内容不能修复主体类型错误。",
+          "supporting_source_refs": [
+            "u4",
+            "u7",
+            "u8"
+          ]
+        },
+        {
+          "id": "c3",
+          "path": "subjects.s1.attributes.shelfLife[0]",
+          "subject_id": "s1",
+          "field": "shelfLife",
+          "kind": "property",
+          "proposal": {
+            "raw": "有效期24M",
+            "source": {
+              "ref": "u10",
+              "quote": "有效期24M",
+              "span_id": "source:u10"
+            },
+            "field": {
+              "ref": "u6",
+              "quote": "有效期/复测期",
+              "span_id": "source:u6"
+            },
+            "unit": {
+              "ref": "u10",
+              "quote": "M",
+              "span_id": "evidence:u10:5:6"
+            },
+            "condition": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            }
+          },
+          "status": "unsupported",
+          "content_verdict": "supported",
+          "overall_verdict": "unsupported",
+          "reason": "u10 有效期24M 与字段 u6 有效期/复测期对应，原始字符串及单位字形 M 均有据；没有据此断言单位已归一化或进行换算。",
+          "overall_reason": "原文有效期内容有据，但 s1 锚点是材料名，不是 StorageCondition；因此完整主谓值声明不成立。",
+          "supporting_source_refs": [
+            "u6",
+            "u7",
+            "u10"
+          ]
+        },
+        {
+          "id": "c4",
+          "path": "subjects.s1.attributes.storageTemperature[0]",
+          "subject_id": "s1",
+          "field": "storageTemperature",
+          "kind": "property",
+          "proposal": {
+            "raw": "不超过25℃",
+            "source": {
+              "ref": "u9",
+              "quote": "不超过25℃",
+              "span_id": "evidence:u9:15:17"
+            },
+            "field": {
+              "ref": "u5",
+              "quote": "存放条件（温度、湿度、是否避光）",
+              "span_id": "source:u5"
+            },
+            "unit": {
+              "ref": "u9",
+              "quote": "℃",
+              "span_id": "evidence:u9:17:18"
+            },
+            "condition": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            }
+          },
+          "status": "unsupported",
+          "content_verdict": "supported",
+          "overall_verdict": "unsupported",
+          "reason": "u9 明示不超过25℃，u5 的温度字段支持该温度上限，℃ 字形有据；完整 quote 可在原文定位，不能仅因 span_id 指向其内部数字片段否定原文内容。",
+          "overall_reason": "温度上限、单位与字段对应有据，但 s1 的材料锚点不支持其 StorageCondition 类型，完整声明仍存在主体角色错误。",
+          "supporting_source_refs": [
+            "u5",
+            "u7",
+            "u9"
+          ]
+        }
+      ],
+      "observations": [
+        {
+          "id": "o1",
+          "proposal": {
+            "value": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "field": {
+              "ref": "u5",
+              "quote": "存放条件（温度、湿度、是否避光）",
+              "span_id": "source:u5"
+            },
+            "legend": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "condition": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "state": "unknown",
+            "reason": "存放条件字段包含湿度和避光要求，但单元格u9内容'密封，双层聚乙烯薄膜袋，不超过25℃保存'中未提及湿度和避光信息，故为未知。"
+          },
+          "path": "observations[0]",
+          "status": "undetermined",
+          "content_verdict": "supported",
+          "overall_verdict": "undetermined",
+          "reason": "u9 仅记载密封、包装与温度，没有湿度或是否避光的明确值；将这些值保持未知是合理的局部缺证判断，不能据此补出湿度值或 lightProtection=false。",
+          "overall_reason": "value 引用为空且结构化引用只有表头 u5，原文没有显式 unknown 状态；缺少可回指的值及具体记录归属，因此整体状态声明保留未决，而非判成错误或未映射。",
+          "supporting_source_refs": [
+            "u5",
+            "u9"
+          ]
+        },
+        {
+          "id": "o2",
+          "proposal": {
+            "value": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "field": {
+              "ref": "u5",
+              "quote": "存放条件（温度、湿度、是否避光）",
+              "span_id": "source:u5"
+            },
+            "legend": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "condition": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "state": "unknown",
+            "reason": "存放条件字段包含避光要求，但单元格u9内容中未提及是否避光，故为未知。"
+          },
+          "path": "observations[1]",
+          "status": "undetermined",
+          "content_verdict": "supported",
+          "overall_verdict": "undetermined",
+          "reason": "u9 未明确写出是否避光，保持未知的局部缺证判断有据，不能把未提及等同不需要避光。",
+          "overall_reason": "value 引用为空且结构化引用只有表头 u5，原文没有显式 unknown 状态；缺少可回指的值及具体记录归属，因此整体状态声明保留未决，而非判成错误或未映射。 o2 的避光内容与 o1 部分重复，不能另计新增覆盖。",
+          "supporting_source_refs": [
+            "u5",
+            "u9"
+          ]
+        }
+      ],
+      "coverage": {
+        "subjects": 2,
+        "claims": 4,
+        "observations": 2,
+        "all_indexed_items_reviewed": true
+      },
+      "notes": [
+        "逐项审阅全部 2 subjects、4 claims、2 observations；原始 proposal 与 path 未修正。",
+        "3 个属性的原文内容受到支持，但 4 个完整声明均受目标或主体角色置换影响。",
+        "有效期 M 的原文字形成立不等于其规范单位和换算已校准；本候选没有提出归一化数值。",
+        "unknown 仅解释局部缺证，不能扩展成全文不存在，也不是 unmapped。",
+        "这是独立助手的原文审阅，不是领域专家金标、全文精确率或召回率测量。"
+      ]
+    }
+  ]
+}

@@ -1,9 +1,11 @@
 """Synthetic account and evidence fixtures exercise immutable signing transactions."""
 
 from copy import deepcopy
+from hashlib import sha256
 from uuid import uuid4
 
 import pytest
+from docx import Document
 from sqlalchemy import select
 
 from app.auth import hash_password
@@ -19,10 +21,12 @@ from app.models.reporting import (
 )
 from app.services import audit
 from app.services.extraction.evidence_identity import evidence_hash
+from app.services.reporting.docx_layout import freeze_layout
 from app.services.reporting.report_run_service import ReportRunService, frozen_row
 from app.services.reporting.report_signing import ReportSigning
 from app.services.reporting.template_compiler import require_valid
 from app.services.reporting.template_v2 import ReportingError
+from tests.test_reporting.test_docx_layout import styled_sample
 from tests.test_reporting.test_fact_selector import property_value
 from tests.test_reporting.test_output_contracts import compile_example, template
 from tests.test_reporting.test_output_resolution import bundle
@@ -32,6 +36,13 @@ from tests.test_reporting.test_output_resolution import bundle
 def reporting_run(db, tmp_path, monkeypatch):
     monkeypatch.setattr("app.services.reporting.report_run_service.ARTIFACT_ROOT", tmp_path)
     value = template()
+    path = tmp_path / "sample.docx"
+    styled_sample(path)
+    value["sections"][0]["groups"][0]["units"][0]["origin"] = {
+        "document_hash": sha256(path.read_bytes()).hexdigest(),
+        "label_anchor": {"table_path": ["table:0"], "row_index": 0,
+                         "column_index": 0, "paragraph_index": 0},
+    }
     plan = require_valid(compile_example(value))
     source = bundle(property_value("code", "E", "urn:code", "E-01"))
     source.update(template=plan["template"], template_status="published")
@@ -48,8 +59,11 @@ def reporting_run(db, tmp_path, monkeypatch):
             }
         ],
     )
+    template_row = AstTemplate(id=uuid4(), name="synthetic", version="v2", schema_json=value,
+                               sample_docx_path=str(path))
+    source["docx_layout"] = freeze_layout(template_row, value)
     source["source_bundle_id"] = evidence_hash(source)
-    template_row = AstTemplate(id=uuid4(), name="synthetic", version="v2", schema_json=value)
+    path.unlink()
     db.add(template_row)
     db.flush()
     frozen_row(
@@ -162,6 +176,11 @@ def test_frozen_envelope_preserves_body_and_replays_artifact(db, reporting_run):
     envelope = service.envelope(session.id, payload, qa)
     db.commit()
     artifact = service.envelope_artifact(envelope)
+    document = Document(artifact.file_path)
+    assert document.sections[0].header.tables[0].cell(0, 0).text == "模板页眉"
+    assert document.sections[0].footer._element.xpath(".//w:fldSimple/@w:instr") == ["PAGE"]
+    assert document.tables[0].cell(1, 0).text == "E-01"
+    assert "SAMPLE" not in document.element.body.xml
     saved_bytes = service.runs.download(reporting_run.id, artifact.id).file_hash
     assert envelope.payload["final_ast"]["children"][0] == body["body_ast"]
     assert service.runs.body(reporting_run.id).payload == body

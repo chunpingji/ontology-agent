@@ -1,0 +1,1601 @@
+{
+  "scope_id": "process_equipment",
+  "review_status": "model_output_not_expert_gold",
+  "arms": {
+    "A": {
+      "plan": {
+        "get_schema_card": [
+          {
+            "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/SynthesisStep"
+          },
+          {
+            "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/Crystallization"
+          },
+          {
+            "class_iri": "https://ontology.pharma-gmp.cn/slpra/equipment/Equipment"
+          },
+          {
+            "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/CrudeProduct"
+          }
+        ],
+        "inspect_evidence": [
+          {
+            "ref": "u2"
+          },
+          {
+            "ref": "u0"
+          },
+          {
+            "ref": "u1"
+          }
+        ],
+        "propose_mentions": [
+          {
+            "group": "entities"
+          },
+          {
+            "group": "values"
+          },
+          {
+            "group": "units"
+          }
+        ]
+      },
+      "candidates": {
+        "subjects": {
+          "document": {
+            "attributes": {},
+            "relations": {
+              "usesEquipment": []
+            },
+            "anchor": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            }
+          },
+          "s1": {
+            "attributes": {
+              "inProcessControl": [],
+              "outputMassRange_kg": [],
+              "reactionConditions": [
+                {
+                  "raw": "50~55℃",
+                  "source": {
+                    "ref": "u2",
+                    "quote": "维持50~55℃",
+                    "span_id": "evidence:u2:191:193"
+                  },
+                  "field": {
+                    "ref": "u2",
+                    "quote": "维持50~55℃",
+                    "span_id": "evidence:u2:191:193"
+                  },
+                  "unit": {
+                    "ref": "u2",
+                    "quote": "℃",
+                    "span_id": "evidence:u2:196:197"
+                  },
+                  "condition": {
+                    "ref": "",
+                    "quote": "",
+                    "span_id": ""
+                  }
+                },
+                {
+                  "raw": "1-2小时",
+                  "source": {
+                    "ref": "u2",
+                    "quote": "继续搅拌1-2小时",
+                    "span_id": "evidence:u2:201:202"
+                  },
+                  "field": {
+                    "ref": "u2",
+                    "quote": "继续搅拌1-2小时",
+                    "span_id": "evidence:u2:201:202"
+                  },
+                  "unit": {
+                    "ref": "",
+                    "quote": "",
+                    "span_id": ""
+                  },
+                  "condition": {
+                    "ref": "",
+                    "quote": "",
+                    "span_id": ""
+                  }
+                }
+              ],
+              "stepOrder": [
+                {
+                  "raw": "1",
+                  "source": {
+                    "ref": "u2",
+                    "quote": "步骤一",
+                    "span_id": "evidence:u2:0:207"
+                  },
+                  "field": {
+                    "ref": "u2",
+                    "quote": "步骤一",
+                    "span_id": "evidence:u2:0:207"
+                  },
+                  "unit": {
+                    "ref": "",
+                    "quote": "",
+                    "span_id": ""
+                  },
+                  "condition": {
+                    "ref": "",
+                    "quote": "",
+                    "span_id": ""
+                  }
+                }
+              ],
+              "yieldRangePercent": []
+            },
+            "relations": {
+              "nextStep": [],
+              "producesIntermediate": [],
+              "usesEquipment": [
+                {
+                  "target_id": "s3",
+                  "evidence": {
+                    "ref": "u2",
+                    "quote": "200L反应釜（RE64611）",
+                    "span_id": "evidence:u2:0:207"
+                  },
+                  "condition": {
+                    "ref": "",
+                    "quote": "",
+                    "span_id": ""
+                  },
+                  "polarity": "affirmed"
+                }
+              ]
+            },
+            "anchor": {
+              "ref": "u2",
+              "quote": "步骤一",
+              "span_id": "evidence:u2:0:207"
+            }
+          },
+          "s2": {
+            "attributes": {
+              "inProcessControl": [],
+              "outputMassRange_kg": [],
+              "reactionConditions": [],
+              "stepOrder": [],
+              "yieldRangePercent": []
+            },
+            "relations": {
+              "nextStep": [],
+              "producesIntermediate": [],
+              "usesEquipment": []
+            },
+            "anchor": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            }
+          },
+          "s3": {
+            "attributes": {
+              "equipmentID": [
+                {
+                  "raw": "RE64611",
+                  "source": {
+                    "ref": "u2",
+                    "quote": "RE64611",
+                    "span_id": "evidence:u2:14:19"
+                  },
+                  "field": {
+                    "ref": "u2",
+                    "quote": "RE64611",
+                    "span_id": "evidence:u2:14:19"
+                  },
+                  "unit": {
+                    "ref": "",
+                    "quote": "",
+                    "span_id": ""
+                  },
+                  "condition": {
+                    "ref": "",
+                    "quote": "",
+                    "span_id": ""
+                  }
+                }
+              ],
+              "equipmentName": [
+                {
+                  "raw": "200L反应釜",
+                  "source": {
+                    "ref": "u2",
+                    "quote": "200L反应釜",
+                    "span_id": "evidence:u2:4:7"
+                  },
+                  "field": {
+                    "ref": "u2",
+                    "quote": "200L反应釜",
+                    "span_id": "evidence:u2:4:7"
+                  },
+                  "unit": {
+                    "ref": "",
+                    "quote": "",
+                    "span_id": ""
+                  },
+                  "condition": {
+                    "ref": "",
+                    "quote": "",
+                    "span_id": ""
+                  }
+                }
+              ],
+              "isDedicatedEquipment": [],
+              "isInCleanArea": [],
+              "modelSpecification": [],
+              "requiresDedication": [],
+              "requiresInactivationValidation": [],
+              "requiresIndependentHVAC": []
+            },
+            "relations": {},
+            "anchor": {
+              "ref": "u2",
+              "quote": "200L反应釜（RE64611）",
+              "span_id": "evidence:u2:4:7"
+            }
+          },
+          "s4": {
+            "attributes": {
+              "intermediateIdentifier": [
+                {
+                  "raw": "HRS-1597粗品",
+                  "source": {
+                    "ref": "u2",
+                    "quote": "HRS-1597粗品",
+                    "span_id": "evidence:u2:39:42"
+                  },
+                  "field": {
+                    "ref": "u2",
+                    "quote": "HRS-1597粗品",
+                    "span_id": "evidence:u2:39:42"
+                  },
+                  "unit": {
+                    "ref": "",
+                    "quote": "",
+                    "span_id": ""
+                  },
+                  "condition": {
+                    "ref": "",
+                    "quote": "",
+                    "span_id": ""
+                  }
+                }
+              ]
+            },
+            "relations": {},
+            "anchor": {
+              "ref": "u2",
+              "quote": "HRS-1597粗品",
+              "span_id": "evidence:u2:39:42"
+            }
+          }
+        },
+        "observations": [
+          {
+            "value": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "field": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "legend": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "condition": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "state": "unknown",
+            "reason": "s2 (结晶/析晶) 的anchor为空，且文档中未明确区分s1与s2的具体步骤边界或s2的具体操作内容，s2无独立证据支持其属性或关系。"
+          },
+          {
+            "value": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "field": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "legend": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "condition": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "state": "unknown",
+            "reason": "s1 (合成步骤) 的producesIntermediate关系目标s4 (粗品) 在原文中是作为投料原料(HRS-1597粗品投入量)出现的，而非s1的产出。s1的产出未在文本中明确说明。"
+          },
+          {
+            "value": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "field": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "legend": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "condition": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "state": "unknown",
+            "reason": "s1的reactionConditions中温度55℃是升温过程，50~55℃是维持过程，原文未明确区分哪些属于严格的'反应条件'属性定义，且s1作为'步骤一'可能涵盖投料和反应，但s2作为结晶步骤无数据。此处仅提取明确的维持条件。"
+          }
+        ]
+      },
+      "final": {
+        "status": "complete",
+        "accepted": [
+          {
+            "kind": "property",
+            "subject_id": "s3",
+            "subject_class_iri": "https://ontology.pharma-gmp.cn/slpra/equipment/Equipment",
+            "subject_text": "200L反应釜（RE64611）",
+            "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/equipment/equipmentID",
+            "evidence": {
+              "ref": "u2",
+              "quote": "RE64611",
+              "start": 12,
+              "end": 19
+            },
+            "condition": {
+              "ref": "",
+              "quote": ""
+            },
+            "raw_value": "RE64611",
+            "field": {
+              "ref": "u2",
+              "quote": "RE64611",
+              "start": 12,
+              "end": 19
+            },
+            "unit": {
+              "ref": "",
+              "quote": ""
+            },
+            "value_span": {
+              "ref": "u2",
+              "quote": "RE64611",
+              "start": 12,
+              "end": 19
+            },
+            "value": "RE64611",
+            "candidate_id": "c5",
+            "semantic_status": "supported",
+            "validation_status": "passed"
+          },
+          {
+            "kind": "property",
+            "subject_id": "s3",
+            "subject_class_iri": "https://ontology.pharma-gmp.cn/slpra/equipment/Equipment",
+            "subject_text": "200L反应釜（RE64611）",
+            "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/equipment/equipmentName",
+            "evidence": {
+              "ref": "u2",
+              "quote": "200L反应釜",
+              "start": 4,
+              "end": 11
+            },
+            "condition": {
+              "ref": "",
+              "quote": ""
+            },
+            "raw_value": "200L反应釜",
+            "field": {
+              "ref": "u2",
+              "quote": "200L反应釜",
+              "start": 4,
+              "end": 11
+            },
+            "unit": {
+              "ref": "",
+              "quote": ""
+            },
+            "value_span": {
+              "ref": "u2",
+              "quote": "200L反应釜",
+              "start": 4,
+              "end": 11
+            },
+            "value": "200L反应釜",
+            "candidate_id": "c6",
+            "semantic_status": "supported",
+            "validation_status": "passed"
+          }
+        ],
+        "observations": [],
+        "unresolved": [
+          {
+            "candidate_id": "c1",
+            "subject_id": "s1",
+            "field": "reactionConditions",
+            "proposal": {
+              "raw": "50~55℃",
+              "source": {
+                "ref": "u2",
+                "quote": "维持50~55℃",
+                "start": 189,
+                "end": 197
+              },
+              "field": {
+                "ref": "u2",
+                "quote": "维持50~55℃",
+                "start": 189,
+                "end": 197
+              },
+              "unit": {
+                "ref": "u2",
+                "quote": "℃",
+                "start": 196,
+                "end": 197
+              },
+              "condition": {
+                "ref": "",
+                "quote": ""
+              }
+            },
+            "issues": [
+              "source_quote_not_unique",
+              "semantic_undetermined"
+            ],
+            "reason": "source_quote_not_unique"
+          },
+          {
+            "candidate_id": "c2",
+            "subject_id": "s1",
+            "field": "reactionConditions",
+            "proposal": {
+              "raw": "1-2小时",
+              "source": {
+                "ref": "u2",
+                "quote": "继续搅拌1-2小时",
+                "start": 197,
+                "end": 206
+              },
+              "field": {
+                "ref": "u2",
+                "quote": "继续搅拌1-2小时",
+                "start": 197,
+                "end": 206
+              },
+              "unit": {
+                "ref": "",
+                "quote": ""
+              },
+              "condition": {
+                "ref": "",
+                "quote": ""
+              }
+            },
+            "issues": [
+              "source_quote_not_unique",
+              "semantic_undetermined"
+            ],
+            "reason": "source_quote_not_unique"
+          },
+          {
+            "kind": "observation",
+            "candidate_id": "o1",
+            "proposal": {
+              "value": {
+                "ref": "",
+                "quote": ""
+              },
+              "field": {
+                "ref": "",
+                "quote": ""
+              },
+              "legend": {
+                "ref": "",
+                "quote": ""
+              },
+              "condition": {
+                "ref": "",
+                "quote": ""
+              },
+              "state": "unknown",
+              "reason": "s2 (结晶/析晶) 的anchor为空，且文档中未明确区分s1与s2的具体步骤边界或s2的具体操作内容，s2无独立证据支持其属性或关系。"
+            },
+            "issues": [
+              "source_quote_missing",
+              "source_quote_not_unique"
+            ]
+          },
+          {
+            "kind": "observation",
+            "candidate_id": "o2",
+            "proposal": {
+              "value": {
+                "ref": "",
+                "quote": ""
+              },
+              "field": {
+                "ref": "",
+                "quote": ""
+              },
+              "legend": {
+                "ref": "",
+                "quote": ""
+              },
+              "condition": {
+                "ref": "",
+                "quote": ""
+              },
+              "state": "unknown",
+              "reason": "s1 (合成步骤) 的producesIntermediate关系目标s4 (粗品) 在原文中是作为投料原料(HRS-1597粗品投入量)出现的，而非s1的产出。s1的产出未在文本中明确说明。"
+            },
+            "issues": [
+              "source_quote_missing"
+            ]
+          },
+          {
+            "kind": "observation",
+            "candidate_id": "o3",
+            "proposal": {
+              "value": {
+                "ref": "",
+                "quote": ""
+              },
+              "field": {
+                "ref": "",
+                "quote": ""
+              },
+              "legend": {
+                "ref": "",
+                "quote": ""
+              },
+              "condition": {
+                "ref": "",
+                "quote": ""
+              },
+              "state": "unknown",
+              "reason": "s1的reactionConditions中温度55℃是升温过程，50~55℃是维持过程，原文未明确区分哪些属于严格的'反应条件'属性定义，且s1作为'步骤一'可能涵盖投料和反应，但s2作为结晶步骤无数据。此处仅提取明确的维持条件。"
+            },
+            "issues": [
+              "source_quote_missing",
+              "source_quote_not_unique"
+            ]
+          }
+        ],
+        "rejected": [
+          {
+            "candidate_id": "c3",
+            "subject_id": "s1",
+            "field": "stepOrder",
+            "proposal": {
+              "raw": "1",
+              "source": {
+                "ref": "u2",
+                "quote": "步骤一",
+                "start": 0,
+                "end": 3
+              },
+              "field": {
+                "ref": "u2",
+                "quote": "步骤一",
+                "start": 0,
+                "end": 3
+              },
+              "unit": {
+                "ref": "",
+                "quote": ""
+              },
+              "condition": {
+                "ref": "",
+                "quote": ""
+              }
+            },
+            "issues": [
+              "raw_value_not_in_quote",
+              "source_quote_not_unique",
+              "semantic_undetermined"
+            ],
+            "reason": "raw_value_not_in_quote"
+          },
+          {
+            "candidate_id": "c4",
+            "subject_id": "s1",
+            "field": "usesEquipment",
+            "proposal": {
+              "target_id": "s3",
+              "evidence": {
+                "ref": "u2",
+                "quote": "200L反应釜（RE64611）",
+                "start": 4,
+                "end": 20
+              },
+              "condition": {
+                "ref": "",
+                "quote": ""
+              },
+              "polarity": "affirmed"
+            },
+            "issues": [
+              "source_quote_not_unique"
+            ],
+            "reason": "source_quote_not_unique"
+          },
+          {
+            "candidate_id": "c7",
+            "subject_id": "s4",
+            "field": "intermediateIdentifier",
+            "proposal": {
+              "raw": "HRS-1597粗品",
+              "source": {
+                "ref": "u2",
+                "quote": "HRS-1597粗品",
+                "start": -1,
+                "end": -1,
+                "replay_issue": "citation_span_id_mismatch"
+              },
+              "field": {
+                "ref": "u2",
+                "quote": "HRS-1597粗品",
+                "start": -1,
+                "end": -1,
+                "replay_issue": "citation_span_id_mismatch"
+              },
+              "unit": {
+                "ref": "",
+                "quote": ""
+              },
+              "condition": {
+                "ref": "",
+                "quote": ""
+              }
+            },
+            "issues": [
+              "citation_coordinates_invalid",
+              "inactive_subject_slot",
+              "semantic_role_unsupported",
+              "semantic_predicate_unsupported",
+              "semantic_binding_unsupported",
+              "semantic_applicability_unsupported",
+              "semantic_counterevidence_unsupported",
+              "semantic_support_missing",
+              "semantic_undetermined"
+            ],
+            "reason": "citation_coordinates_invalid"
+          },
+          {
+            "kind": "frame",
+            "subject_id": "s4",
+            "reason": "source_coordinates_mismatch",
+            "proposal": {
+              "ref": "u2",
+              "quote": "HRS-1597粗品",
+              "start": -1,
+              "end": -1,
+              "replay_issue": "citation_span_id_mismatch"
+            }
+          }
+        ],
+        "acceptance": {
+          "checks": [
+            {
+              "check": "required_properties",
+              "expected": {
+                "predicate": "equipmentID",
+                "value": "RE64611"
+              },
+              "pass": true
+            },
+            {
+              "check": "required_relations",
+              "expected": {
+                "predicate": "usesEquipment",
+                "object_contains": "RE64611"
+              },
+              "pass": false
+            },
+            {
+              "check": "forbidden_predicate",
+              "expected": "producesFinalProduct",
+              "pass": true
+            },
+            {
+              "check": "forbidden_predicate",
+              "expected": "producesIntermediate",
+              "pass": true
+            },
+            {
+              "check": "forbidden_predicate",
+              "expected": "locatedIn",
+              "pass": true
+            }
+          ],
+          "passed": 4,
+          "total": 5,
+          "all_pass": false,
+          "evaluated": true
+        },
+        "extended_acceptance": {
+          "checks": [
+            {
+              "check": "semantic_review_present",
+              "candidate_id": "c5",
+              "pass": true
+            },
+            {
+              "check": "semantic_review_present",
+              "candidate_id": "c6",
+              "pass": true
+            },
+            {
+              "check": "request_budget",
+              "pass": true
+            }
+          ],
+          "evaluated": true,
+          "all_pass": true,
+          "manual_review_required": [
+            "subject_type",
+            "subject_binding",
+            "predicate_or_metric_meaning",
+            "relation_direction_and_endpoints",
+            "source_unit_and_normalization",
+            "polarity_and_unknown",
+            "field_legend_condition_roles",
+            "long_value_completeness"
+          ],
+          "manual_review_status": "not_performed"
+        }
+      }
+    },
+    "B": {
+      "plan": {
+        "get_schema_card": [
+          {
+            "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/SynthesisStep"
+          },
+          {
+            "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/Crystallization"
+          },
+          {
+            "class_iri": "https://ontology.pharma-gmp.cn/slpra/equipment/Equipment"
+          },
+          {
+            "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/CrudeProduct"
+          }
+        ],
+        "inspect_evidence": [
+          {
+            "ref": "u2"
+          },
+          {
+            "ref": "u0"
+          },
+          {
+            "ref": "u1"
+          }
+        ],
+        "propose_mentions": [
+          {
+            "group": "entities"
+          },
+          {
+            "group": "values"
+          },
+          {
+            "group": "units"
+          }
+        ]
+      },
+      "candidates": {
+        "subjects": {
+          "document": {
+            "attributes": {},
+            "relations": {
+              "usesEquipment": []
+            },
+            "anchor": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            }
+          },
+          "s1": {
+            "attributes": {
+              "inProcessControl": [],
+              "outputMassRange_kg": [],
+              "reactionConditions": [
+                {
+                  "raw": "50~55℃",
+                  "source": {
+                    "ref": "u2",
+                    "quote": "维持50~55℃",
+                    "span_id": "evidence:u2:191:193"
+                  },
+                  "field": {
+                    "ref": "u2",
+                    "quote": "维持50~55℃",
+                    "span_id": "evidence:u2:191:193"
+                  },
+                  "unit": {
+                    "ref": "u2",
+                    "quote": "℃",
+                    "span_id": "evidence:u2:196:197"
+                  },
+                  "condition": {
+                    "ref": "",
+                    "quote": "",
+                    "span_id": ""
+                  }
+                },
+                {
+                  "raw": "1-2小时",
+                  "source": {
+                    "ref": "u2",
+                    "quote": "继续搅拌1-2小时",
+                    "span_id": "evidence:u2:201:202"
+                  },
+                  "field": {
+                    "ref": "u2",
+                    "quote": "继续搅拌1-2小时",
+                    "span_id": "evidence:u2:201:202"
+                  },
+                  "unit": {
+                    "ref": "",
+                    "quote": "",
+                    "span_id": ""
+                  },
+                  "condition": {
+                    "ref": "",
+                    "quote": "",
+                    "span_id": ""
+                  }
+                }
+              ],
+              "stepOrder": [
+                {
+                  "raw": "1",
+                  "source": {
+                    "ref": "u2",
+                    "quote": "步骤一",
+                    "span_id": "evidence:u2:0:207"
+                  },
+                  "field": {
+                    "ref": "u2",
+                    "quote": "步骤一",
+                    "span_id": "evidence:u2:0:207"
+                  },
+                  "unit": {
+                    "ref": "",
+                    "quote": "",
+                    "span_id": ""
+                  },
+                  "condition": {
+                    "ref": "",
+                    "quote": "",
+                    "span_id": ""
+                  }
+                }
+              ],
+              "yieldRangePercent": []
+            },
+            "relations": {
+              "nextStep": [],
+              "producesIntermediate": [],
+              "usesEquipment": [
+                {
+                  "target_id": "s3",
+                  "evidence": {
+                    "ref": "u2",
+                    "quote": "200L反应釜（RE64611）",
+                    "span_id": "evidence:u2:4:7"
+                  },
+                  "condition": {
+                    "ref": "",
+                    "quote": "",
+                    "span_id": ""
+                  },
+                  "polarity": "affirmed"
+                }
+              ]
+            },
+            "anchor": {
+              "ref": "u2",
+              "quote": "步骤一：200L反应釜（RE64611）内加入AR级别丙酮(丙酮投料量/L= HRS-1597粗品投入量/kg×13.5*0.79)和纯化水(纯化水投料量/L= HRS-1597粗品投入量/kg×1.5*1)，氮气置换4次。加入HRS-1597粗品，釜内温度上升至55℃，搅拌溶清。随后氮气保护下加入颗粒活性炭（活性炭投料量/Kg= HRS-1597粗品投入量/kg×0.2），维持50~55℃继续搅拌1-2小时。",
+              "span_id": "source:u2"
+            }
+          },
+          "s2": {
+            "attributes": {
+              "inProcessControl": [],
+              "outputMassRange_kg": [],
+              "reactionConditions": [],
+              "stepOrder": [],
+              "yieldRangePercent": []
+            },
+            "relations": {
+              "nextStep": [],
+              "producesIntermediate": [],
+              "usesEquipment": []
+            },
+            "anchor": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            }
+          },
+          "s3": {
+            "attributes": {
+              "equipmentID": [
+                {
+                  "raw": "RE64611",
+                  "source": {
+                    "ref": "u2",
+                    "quote": "RE64611",
+                    "span_id": "evidence:u2:14:19"
+                  },
+                  "field": {
+                    "ref": "u2",
+                    "quote": "RE64611",
+                    "span_id": "evidence:u2:14:19"
+                  },
+                  "unit": {
+                    "ref": "",
+                    "quote": "",
+                    "span_id": ""
+                  },
+                  "condition": {
+                    "ref": "",
+                    "quote": "",
+                    "span_id": ""
+                  }
+                }
+              ],
+              "equipmentName": [
+                {
+                  "raw": "200L反应釜",
+                  "source": {
+                    "ref": "u2",
+                    "quote": "200L反应釜",
+                    "span_id": "evidence:u2:4:7"
+                  },
+                  "field": {
+                    "ref": "u2",
+                    "quote": "200L反应釜",
+                    "span_id": "evidence:u2:4:7"
+                  },
+                  "unit": {
+                    "ref": "",
+                    "quote": "",
+                    "span_id": ""
+                  },
+                  "condition": {
+                    "ref": "",
+                    "quote": "",
+                    "span_id": ""
+                  }
+                }
+              ],
+              "isDedicatedEquipment": [],
+              "isInCleanArea": [],
+              "modelSpecification": [],
+              "requiresDedication": [],
+              "requiresInactivationValidation": [],
+              "requiresIndependentHVAC": []
+            },
+            "relations": {},
+            "anchor": {
+              "ref": "u2",
+              "quote": "200L反应釜（RE64611）",
+              "span_id": "evidence:u2:4:7"
+            }
+          },
+          "s4": {
+            "attributes": {
+              "intermediateIdentifier": [
+                {
+                  "raw": "HRS-1597粗品",
+                  "source": {
+                    "ref": "u2",
+                    "quote": "HRS-1597粗品",
+                    "span_id": "evidence:u2:39:42"
+                  },
+                  "field": {
+                    "ref": "u2",
+                    "quote": "HRS-1597粗品",
+                    "span_id": "evidence:u2:39:42"
+                  },
+                  "unit": {
+                    "ref": "",
+                    "quote": "",
+                    "span_id": ""
+                  },
+                  "condition": {
+                    "ref": "",
+                    "quote": "",
+                    "span_id": ""
+                  }
+                }
+              ]
+            },
+            "relations": {},
+            "anchor": {
+              "ref": "u2",
+              "quote": "HRS-1597粗品",
+              "span_id": "evidence:u2:39:42"
+            }
+          }
+        },
+        "observations": [
+          {
+            "value": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "field": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "legend": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "condition": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "state": "unknown",
+            "reason": "s2 (结晶/析晶) 的 anchor 为空，且文档中未明确区分 s1 和 s2 的具体步骤边界，s1 已占用步骤一。s2 无对应文本证据。"
+          },
+          {
+            "value": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "field": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "legend": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "condition": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "state": "unknown",
+            "reason": "s1 产出中间体 s4 的关系未建立，因为 s1 是投料/溶解/活性炭处理步骤，通常不直接产出最终中间体或作为结晶步骤的产出方，且 s2 为空。"
+          }
+        ]
+      },
+      "final": {
+        "status": "complete",
+        "accepted": [
+          {
+            "kind": "property",
+            "subject_id": "s3",
+            "subject_class_iri": "https://ontology.pharma-gmp.cn/slpra/equipment/Equipment",
+            "subject_text": "200L反应釜（RE64611）",
+            "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/equipment/equipmentID",
+            "evidence": {
+              "ref": "u2",
+              "quote": "RE64611",
+              "start": 12,
+              "end": 19
+            },
+            "condition": {
+              "ref": "",
+              "quote": ""
+            },
+            "raw_value": "RE64611",
+            "field": {
+              "ref": "u2",
+              "quote": "RE64611",
+              "start": 12,
+              "end": 19
+            },
+            "unit": {
+              "ref": "",
+              "quote": ""
+            },
+            "value_span": {
+              "ref": "u2",
+              "quote": "RE64611",
+              "start": 12,
+              "end": 19
+            },
+            "value": "RE64611",
+            "candidate_id": "c5",
+            "semantic_status": "supported",
+            "validation_status": "passed"
+          },
+          {
+            "kind": "property",
+            "subject_id": "s3",
+            "subject_class_iri": "https://ontology.pharma-gmp.cn/slpra/equipment/Equipment",
+            "subject_text": "200L反应釜（RE64611）",
+            "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/equipment/equipmentName",
+            "evidence": {
+              "ref": "u2",
+              "quote": "200L反应釜",
+              "start": 4,
+              "end": 11
+            },
+            "condition": {
+              "ref": "",
+              "quote": ""
+            },
+            "raw_value": "200L反应釜",
+            "field": {
+              "ref": "u2",
+              "quote": "200L反应釜",
+              "start": 4,
+              "end": 11
+            },
+            "unit": {
+              "ref": "",
+              "quote": ""
+            },
+            "value_span": {
+              "ref": "u2",
+              "quote": "200L反应釜",
+              "start": 4,
+              "end": 11
+            },
+            "value": "200L反应釜",
+            "candidate_id": "c6",
+            "semantic_status": "supported",
+            "validation_status": "passed"
+          }
+        ],
+        "observations": [],
+        "unresolved": [
+          {
+            "candidate_id": "c1",
+            "subject_id": "s1",
+            "field": "reactionConditions",
+            "proposal": {
+              "raw": "50~55℃",
+              "source": {
+                "ref": "u2",
+                "quote": "维持50~55℃",
+                "start": 189,
+                "end": 197
+              },
+              "field": {
+                "ref": "u2",
+                "quote": "维持50~55℃",
+                "start": 189,
+                "end": 197
+              },
+              "unit": {
+                "ref": "u2",
+                "quote": "℃",
+                "start": 196,
+                "end": 197
+              },
+              "condition": {
+                "ref": "",
+                "quote": ""
+              }
+            },
+            "issues": [
+              "source_quote_not_unique",
+              "semantic_undetermined"
+            ],
+            "reason": "source_quote_not_unique"
+          },
+          {
+            "candidate_id": "c2",
+            "subject_id": "s1",
+            "field": "reactionConditions",
+            "proposal": {
+              "raw": "1-2小时",
+              "source": {
+                "ref": "u2",
+                "quote": "继续搅拌1-2小时",
+                "start": 197,
+                "end": 206
+              },
+              "field": {
+                "ref": "u2",
+                "quote": "继续搅拌1-2小时",
+                "start": 197,
+                "end": 206
+              },
+              "unit": {
+                "ref": "",
+                "quote": ""
+              },
+              "condition": {
+                "ref": "",
+                "quote": ""
+              }
+            },
+            "issues": [
+              "source_quote_not_unique",
+              "semantic_undetermined"
+            ],
+            "reason": "source_quote_not_unique"
+          },
+          {
+            "kind": "observation",
+            "candidate_id": "o1",
+            "proposal": {
+              "value": {
+                "ref": "",
+                "quote": ""
+              },
+              "field": {
+                "ref": "",
+                "quote": ""
+              },
+              "legend": {
+                "ref": "",
+                "quote": ""
+              },
+              "condition": {
+                "ref": "",
+                "quote": ""
+              },
+              "state": "unknown",
+              "reason": "s2 (结晶/析晶) 的 anchor 为空，且文档中未明确区分 s1 和 s2 的具体步骤边界，s1 已占用步骤一。s2 无对应文本证据。"
+            },
+            "issues": [
+              "source_quote_missing"
+            ]
+          },
+          {
+            "kind": "observation",
+            "candidate_id": "o2",
+            "proposal": {
+              "value": {
+                "ref": "",
+                "quote": ""
+              },
+              "field": {
+                "ref": "",
+                "quote": ""
+              },
+              "legend": {
+                "ref": "",
+                "quote": ""
+              },
+              "condition": {
+                "ref": "",
+                "quote": ""
+              },
+              "state": "unknown",
+              "reason": "s1 产出中间体 s4 的关系未建立，因为 s1 是投料/溶解/活性炭处理步骤，通常不直接产出最终中间体或作为结晶步骤的产出方，且 s2 为空。"
+            },
+            "issues": [
+              "source_quote_missing",
+              "source_quote_not_unique"
+            ]
+          }
+        ],
+        "rejected": [
+          {
+            "candidate_id": "c3",
+            "subject_id": "s1",
+            "field": "stepOrder",
+            "proposal": {
+              "raw": "1",
+              "source": {
+                "ref": "u2",
+                "quote": "步骤一",
+                "start": 0,
+                "end": 3
+              },
+              "field": {
+                "ref": "u2",
+                "quote": "步骤一",
+                "start": 0,
+                "end": 3
+              },
+              "unit": {
+                "ref": "",
+                "quote": ""
+              },
+              "condition": {
+                "ref": "",
+                "quote": ""
+              }
+            },
+            "issues": [
+              "raw_value_not_in_quote",
+              "source_quote_not_unique",
+              "semantic_undetermined"
+            ],
+            "reason": "raw_value_not_in_quote"
+          },
+          {
+            "candidate_id": "c4",
+            "subject_id": "s1",
+            "field": "usesEquipment",
+            "proposal": {
+              "target_id": "s3",
+              "evidence": {
+                "ref": "u2",
+                "quote": "200L反应釜（RE64611）",
+                "start": 4,
+                "end": 20
+              },
+              "condition": {
+                "ref": "",
+                "quote": ""
+              },
+              "polarity": "affirmed"
+            },
+            "issues": [
+              "source_quote_not_unique"
+            ],
+            "reason": "source_quote_not_unique"
+          },
+          {
+            "candidate_id": "c7",
+            "subject_id": "s4",
+            "field": "intermediateIdentifier",
+            "proposal": {
+              "raw": "HRS-1597粗品",
+              "source": {
+                "ref": "u2",
+                "quote": "HRS-1597粗品",
+                "start": -1,
+                "end": -1,
+                "replay_issue": "citation_span_id_mismatch"
+              },
+              "field": {
+                "ref": "u2",
+                "quote": "HRS-1597粗品",
+                "start": -1,
+                "end": -1,
+                "replay_issue": "citation_span_id_mismatch"
+              },
+              "unit": {
+                "ref": "",
+                "quote": ""
+              },
+              "condition": {
+                "ref": "",
+                "quote": ""
+              }
+            },
+            "issues": [
+              "citation_coordinates_invalid",
+              "inactive_subject_slot",
+              "semantic_role_unsupported",
+              "semantic_predicate_unsupported",
+              "semantic_binding_unsupported",
+              "semantic_applicability_unsupported",
+              "semantic_counterevidence_unsupported",
+              "semantic_support_missing",
+              "semantic_undetermined"
+            ],
+            "reason": "citation_coordinates_invalid"
+          },
+          {
+            "kind": "frame",
+            "subject_id": "s4",
+            "reason": "source_coordinates_mismatch",
+            "proposal": {
+              "ref": "u2",
+              "quote": "HRS-1597粗品",
+              "start": -1,
+              "end": -1,
+              "replay_issue": "citation_span_id_mismatch"
+            }
+          }
+        ],
+        "acceptance": {
+          "checks": [
+            {
+              "check": "required_properties",
+              "expected": {
+                "predicate": "equipmentID",
+                "value": "RE64611"
+              },
+              "pass": true
+            },
+            {
+              "check": "required_relations",
+              "expected": {
+                "predicate": "usesEquipment",
+                "object_contains": "RE64611"
+              },
+              "pass": false
+            },
+            {
+              "check": "forbidden_predicate",
+              "expected": "producesFinalProduct",
+              "pass": true
+            },
+            {
+              "check": "forbidden_predicate",
+              "expected": "producesIntermediate",
+              "pass": true
+            },
+            {
+              "check": "forbidden_predicate",
+              "expected": "locatedIn",
+              "pass": true
+            }
+          ],
+          "passed": 4,
+          "total": 5,
+          "all_pass": false,
+          "evaluated": true
+        },
+        "extended_acceptance": {
+          "checks": [
+            {
+              "check": "semantic_review_present",
+              "candidate_id": "c5",
+              "pass": true
+            },
+            {
+              "check": "semantic_review_present",
+              "candidate_id": "c6",
+              "pass": true
+            },
+            {
+              "check": "request_budget",
+              "pass": true
+            }
+          ],
+          "evaluated": true,
+          "all_pass": true,
+          "manual_review_required": [
+            "subject_type",
+            "subject_binding",
+            "predicate_or_metric_meaning",
+            "relation_direction_and_endpoints",
+            "source_unit_and_normalization",
+            "polarity_and_unknown",
+            "field_legend_condition_roles",
+            "long_value_completeness"
+          ],
+          "manual_review_status": "not_performed"
+        }
+      }
+    }
+  },
+  "sources": {
+    "u0": {
+      "evidence_id": "63c9cc94a162d7b088843eb62fedcf9f50775e6d381d083eb86aaa506264f0c3",
+      "kind": "heading",
+      "text": "HRS-1597结晶纯化",
+      "section_node_id": "section:67",
+      "block_id": "paragraph:67:0",
+      "paragraph_index": 67,
+      "fragment_index": 0,
+      "table_path": null,
+      "row_index": null,
+      "column_index": null,
+      "physical_page_number": 5,
+      "source_cell_id": null,
+      "paragraph_offset": 0,
+      "ref": "u0",
+      "row_span": 1,
+      "column_span": 1,
+      "logical_rows": [],
+      "column_indices": [],
+      "grid_rows": [],
+      "grid_columns": [],
+      "column_header_refs": [],
+      "is_header": false,
+      "parser_header_candidate": false,
+      "header_status": "not_a_table",
+      "cell_structure_valid": false
+    },
+    "u1": {
+      "evidence_id": "1cb1094eaf59300defb9cb6d1399e860d782a84df20c9ad61124f3a652c1a709",
+      "kind": "cell_paragraph",
+      "text": "投料",
+      "section_node_id": "section:67",
+      "block_id": "table:0",
+      "paragraph_index": 0,
+      "fragment_index": 0,
+      "table_path": [
+        "table:0"
+      ],
+      "row_index": 0,
+      "column_index": 0,
+      "physical_page_number": 5,
+      "source_cell_id": "table:0/cell:0:0",
+      "paragraph_offset": 0,
+      "ref": "u1",
+      "row_span": 1,
+      "column_span": 1,
+      "logical_rows": [
+        0
+      ],
+      "column_indices": [
+        0
+      ],
+      "grid_rows": [
+        0
+      ],
+      "grid_columns": [
+        0
+      ],
+      "column_header_refs": [],
+      "is_header": false,
+      "parser_header_candidate": true,
+      "header_status": "unconfirmed",
+      "cell_structure_valid": true
+    },
+    "u2": {
+      "evidence_id": "332f40090c06eff4f9c04e9d2de846cf6dc7e535341ae6a246ccaec1fb376310",
+      "kind": "cell_paragraph",
+      "text": "步骤一：200L反应釜（RE64611）内加入AR级别丙酮(丙酮投料量/L= HRS-1597粗品投入量/kg×13.5*0.79)和纯化水(纯化水投料量/L= HRS-1597粗品投入量/kg×1.5*1)，氮气置换4次。加入HRS-1597粗品，釜内温度上升至55℃，搅拌溶清。随后氮气保护下加入颗粒活性炭（活性炭投料量/Kg= HRS-1597粗品投入量/kg×0.2），维持50~55℃继续搅拌1-2小时。",
+      "section_node_id": "section:67",
+      "block_id": "table:0",
+      "paragraph_index": 0,
+      "fragment_index": 0,
+      "table_path": [
+        "table:0"
+      ],
+      "row_index": 0,
+      "column_index": 1,
+      "physical_page_number": 5,
+      "source_cell_id": "table:0/cell:0:1",
+      "paragraph_offset": 0,
+      "ref": "u2",
+      "row_span": 1,
+      "column_span": 1,
+      "logical_rows": [
+        0
+      ],
+      "column_indices": [
+        1
+      ],
+      "grid_rows": [
+        0
+      ],
+      "grid_columns": [
+        1
+      ],
+      "column_header_refs": [],
+      "is_header": false,
+      "parser_header_candidate": true,
+      "header_status": "unconfirmed",
+      "cell_structure_valid": true
+    }
+  }
+}

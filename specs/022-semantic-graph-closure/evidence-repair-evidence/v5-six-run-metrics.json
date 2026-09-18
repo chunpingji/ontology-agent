@@ -1,0 +1,2173 @@
+{
+  "source_sha256": "2c1174bf616f30dd28c655fef4261c167762de807c8ad79e148fb8ef18e16436",
+  "group_limits": {
+    "automatic": {
+      "deadline_seconds": 1200.0,
+      "main_recognition_in_flight": 1,
+      "max_calls": 48,
+      "max_hops": 4,
+      "max_model_calls_per_record": 8,
+      "max_tasks": 24,
+      "stop_after_focus_paths": true
+    },
+    "directed": {
+      "deadline_seconds": 1200,
+      "max_calls": 48,
+      "max_model_calls_per_record": 8,
+      "max_tasks": 32
+    }
+  },
+  "inactive_cross_group_config_differences": {
+    "semantic_ranking_pool_size": {
+      "automatic": 16,
+      "directed": 64
+    }
+  },
+  "timing_scope": "overlapping stage durations must not be summed as wall time",
+  "production_postgresql_performance": "not_measured",
+  "schema_version": "evidence-repair-reviewed-metrics-v1",
+  "code_group": "v5_before_owner_guard",
+  "source_review_method": "DOCX XML anchors, field roles, values, same-parent source ownership",
+  "independent_expert_reference": false,
+  "runs": [
+    {
+      "group": "directed",
+      "repetition": 1,
+      "run_id": "joint-0830a9598ff543ddb5e5b7b75cb4e331",
+      "private_artifact_directory": "/tmp/ontology-evidence-repair-directed-hrs5592-20260910-v5-r1",
+      "manifest_sha256": "cce16b4ce61c35e8e7b30c390155cfd7fce5e509cb6fa4611fce88c80c17c654",
+      "frozen_app_inventory_sha256": "60a04d604d6118a34aad361c1ef397b3c73b2f232eabb7c5cdc4c5765fa10b5e",
+      "recognition_seconds": 813.2934773430461,
+      "failure": null,
+      "model_request_stages": {
+        "ontology_guided_discovery": {
+          "cache_tokens": 5202,
+          "completion_tokens": 2364,
+          "input_tokens": null,
+          "predicted_ms": 43189.361999999994,
+          "prompt_ms": 280441.471,
+          "prompt_tokens": 75445,
+          "queue_seconds": 0.2340000000000001,
+          "request_seconds": 331.496,
+          "requests": 16,
+          "status_counts": {
+            "complete": 16
+          },
+          "unknown_metrics": {
+            "input_tokens": 16
+          }
+        },
+        "ontology_guided_verification": {
+          "cache_tokens": 7350,
+          "completion_tokens": 7202,
+          "input_tokens": null,
+          "predicted_ms": 128951.088,
+          "prompt_ms": 342829.738,
+          "prompt_tokens": 93053,
+          "queue_seconds": 0.132,
+          "request_seconds": 478.492,
+          "requests": 16,
+          "status_counts": {
+            "complete": 16
+          },
+          "unknown_metrics": {
+            "input_tokens": 16
+          }
+        }
+      },
+      "source_review_scope": "six focus predicates; extra facts explicitly unscored",
+      "expert_quality_gate": "not_passed",
+      "stop_reason": "registered_tasks_finished",
+      "blocked_children_count": 0,
+      "tasks": [
+        {
+          "case": "production_plan",
+          "arm": "current",
+          "status": "supported",
+          "seconds": 32.76954883802682,
+          "started_seconds": 0.0011556500103324652,
+          "ended_seconds": 32.77070580306463,
+          "model_calls": 2,
+          "complete": true,
+          "source_review": "source_and_ownership_checked"
+        },
+        {
+          "case": "production_plan-child-1-value",
+          "arm": "current",
+          "status": "supported",
+          "seconds": 30.65174951206427,
+          "started_seconds": 62.197135149966925,
+          "ended_seconds": 92.84889619902242,
+          "model_calls": 2,
+          "complete": true,
+          "source_review": "source_and_ownership_checked"
+        },
+        {
+          "case": "production_plan-child-2-value",
+          "arm": "current",
+          "status": "supported",
+          "seconds": 26.822324346052483,
+          "started_seconds": 92.85361087496858,
+          "ended_seconds": 119.67594196402933,
+          "model_calls": 2,
+          "complete": true,
+          "source_review": "source_and_ownership_checked"
+        },
+        {
+          "case": "production_plan-child-3-wrong_document_date",
+          "arm": "current",
+          "status": "unsupported",
+          "seconds": 63.70187972392887,
+          "started_seconds": 119.67948818404693,
+          "ended_seconds": 183.3813685780624,
+          "model_calls": 4,
+          "complete": true,
+          "source_review": "wrong_document_date_actually_rejected"
+        },
+        {
+          "case": "equipment",
+          "arm": "current",
+          "status": "supported",
+          "seconds": 92.59405989502557,
+          "started_seconds": 407.9237964639906,
+          "ended_seconds": 500.51785699499305,
+          "model_calls": 2,
+          "complete": true,
+          "source_review": "source_and_ownership_checked"
+        },
+        {
+          "case": "equipment-child-1-value",
+          "arm": "current",
+          "status": "supported",
+          "seconds": 75.54053623904474,
+          "started_seconds": 662.0052897050045,
+          "ended_seconds": 737.5458265310153,
+          "model_calls": 2,
+          "complete": true,
+          "source_review": "source_and_ownership_checked"
+        },
+        {
+          "case": "equipment-child-2-value",
+          "arm": "current",
+          "status": "supported",
+          "seconds": 75.74034747399855,
+          "started_seconds": 737.5489496120717,
+          "ended_seconds": 813.2893009990221,
+          "model_calls": 2,
+          "complete": true,
+          "source_review": "source_and_ownership_checked"
+        },
+        {
+          "case": "production_plan",
+          "arm": "joint",
+          "status": "supported",
+          "seconds": 29.42165992304217,
+          "started_seconds": 32.77269404300023,
+          "ended_seconds": 62.194355227053165,
+          "model_calls": 2,
+          "complete": true,
+          "source_review": "source_and_ownership_checked"
+        },
+        {
+          "case": "production_plan-child-1-value",
+          "arm": "joint",
+          "status": "supported",
+          "seconds": 29.69663053692784,
+          "started_seconds": 183.3845399770653,
+          "ended_seconds": 213.08117186103482,
+          "model_calls": 2,
+          "complete": true,
+          "source_review": "source_and_ownership_checked"
+        },
+        {
+          "case": "production_plan-child-2-value",
+          "arm": "joint",
+          "status": "supported",
+          "seconds": 28.07521254301537,
+          "started_seconds": 213.0850195189705,
+          "ended_seconds": 241.16023613500874,
+          "model_calls": 2,
+          "complete": true,
+          "source_review": "source_and_ownership_checked"
+        },
+        {
+          "case": "production_plan-child-3-wrong_document_date",
+          "arm": "joint",
+          "status": "unsupported",
+          "seconds": 65.59344773809426,
+          "started_seconds": 241.16479866497684,
+          "ended_seconds": 306.75824695802294,
+          "model_calls": 4,
+          "complete": true,
+          "source_review": "wrong_document_date_actually_rejected"
+        },
+        {
+          "case": "equipment",
+          "arm": "joint",
+          "status": "supported",
+          "seconds": 101.15934852301143,
+          "started_seconds": 306.7616918439744,
+          "ended_seconds": 407.92104101506993,
+          "model_calls": 2,
+          "complete": true,
+          "source_review": "source_and_ownership_checked"
+        },
+        {
+          "case": "equipment-child-1-value",
+          "arm": "joint",
+          "status": "supported",
+          "seconds": 83.01028328400571,
+          "started_seconds": 500.5207397469785,
+          "ended_seconds": 583.5310236420482,
+          "model_calls": 2,
+          "complete": true,
+          "source_review": "source_and_ownership_checked"
+        },
+        {
+          "case": "equipment-child-2-value",
+          "arm": "joint",
+          "status": "supported",
+          "seconds": 78.46691761992406,
+          "started_seconds": 583.5343128000386,
+          "ended_seconds": 662.0012312199688,
+          "model_calls": 2,
+          "complete": true,
+          "source_review": "source_and_ownership_checked"
+        }
+      ],
+      "source_review_counts": {
+        "source_and_ownership_checked": 12,
+        "wrong_document_date_actually_rejected": 2
+      }
+    },
+    {
+      "group": "directed",
+      "repetition": 2,
+      "run_id": "joint-d2d262f0caae4cd79043f1ca986fcc16",
+      "private_artifact_directory": "/tmp/ontology-evidence-repair-directed-hrs5592-20260910-v5-r2",
+      "manifest_sha256": "455fd5a0c2619685ced9691f3c63636bbd4abbc32d61974eff9072aaa13cd1d3",
+      "frozen_app_inventory_sha256": "60a04d604d6118a34aad361c1ef397b3c73b2f232eabb7c5cdc4c5765fa10b5e",
+      "recognition_seconds": 811.3668145780684,
+      "failure": null,
+      "model_request_stages": {
+        "ontology_guided_discovery": {
+          "cache_tokens": 5202,
+          "completion_tokens": 2376,
+          "input_tokens": null,
+          "predicted_ms": 43088.047999999995,
+          "prompt_ms": 279810.88399999996,
+          "prompt_tokens": 75220,
+          "queue_seconds": 0.2340000000000001,
+          "request_seconds": 330.495,
+          "requests": 16,
+          "status_counts": {
+            "complete": 16
+          },
+          "unknown_metrics": {
+            "input_tokens": 16
+          }
+        },
+        "ontology_guided_verification": {
+          "cache_tokens": 7350,
+          "completion_tokens": 7187,
+          "input_tokens": null,
+          "predicted_ms": 129406.184,
+          "prompt_ms": 341838.116,
+          "prompt_tokens": 92689,
+          "queue_seconds": 0.139,
+          "request_seconds": 477.60400000000004,
+          "requests": 16,
+          "status_counts": {
+            "complete": 16
+          },
+          "unknown_metrics": {
+            "input_tokens": 16
+          }
+        }
+      },
+      "source_review_scope": "six focus predicates; extra facts explicitly unscored",
+      "expert_quality_gate": "not_passed",
+      "stop_reason": "registered_tasks_finished",
+      "blocked_children_count": 0,
+      "tasks": [
+        {
+          "case": "production_plan",
+          "arm": "current",
+          "status": "supported",
+          "seconds": 32.16534948500339,
+          "started_seconds": 0.0011589759960770607,
+          "ended_seconds": 32.166510832030326,
+          "model_calls": 2,
+          "complete": true,
+          "source_review": "source_and_ownership_checked"
+        },
+        {
+          "case": "production_plan-child-1-value",
+          "arm": "current",
+          "status": "supported",
+          "seconds": 30.477018074016087,
+          "started_seconds": 61.48545140400529,
+          "ended_seconds": 91.96247069805395,
+          "model_calls": 2,
+          "complete": true,
+          "source_review": "source_and_ownership_checked"
+        },
+        {
+          "case": "production_plan-child-2-value",
+          "arm": "current",
+          "status": "supported",
+          "seconds": 26.006678111036308,
+          "started_seconds": 91.97056212800089,
+          "ended_seconds": 117.97724086407106,
+          "model_calls": 2,
+          "complete": true,
+          "source_review": "source_and_ownership_checked"
+        },
+        {
+          "case": "production_plan-child-3-wrong_document_date",
+          "arm": "current",
+          "status": "unsupported",
+          "seconds": 63.20401068800129,
+          "started_seconds": 117.98087930702604,
+          "ended_seconds": 181.18489084905013,
+          "model_calls": 4,
+          "complete": true,
+          "source_review": "wrong_document_date_actually_rejected"
+        },
+        {
+          "case": "equipment",
+          "arm": "current",
+          "status": "supported",
+          "seconds": 93.12005687598139,
+          "started_seconds": 402.5573756090598,
+          "ended_seconds": 495.67743332497776,
+          "model_calls": 2,
+          "complete": true,
+          "source_review": "source_and_ownership_checked"
+        },
+        {
+          "case": "equipment-child-1-value",
+          "arm": "current",
+          "status": "supported",
+          "seconds": 77.29135520604905,
+          "started_seconds": 657.4668915419606,
+          "ended_seconds": 734.7582476660609,
+          "model_calls": 2,
+          "complete": true,
+          "source_review": "source_and_ownership_checked"
+        },
+        {
+          "case": "equipment-child-2-value",
+          "arm": "current",
+          "status": "supported",
+          "seconds": 76.60112706199288,
+          "started_seconds": 734.7618190910434,
+          "ended_seconds": 811.3629494149936,
+          "model_calls": 2,
+          "complete": true,
+          "source_review": "source_and_ownership_checked"
+        },
+        {
+          "case": "production_plan",
+          "arm": "joint",
+          "status": "supported",
+          "seconds": 29.31319439492654,
+          "started_seconds": 32.16977921605576,
+          "ended_seconds": 61.482974695041776,
+          "model_calls": 2,
+          "complete": true,
+          "source_review": "source_and_ownership_checked"
+        },
+        {
+          "case": "production_plan-child-1-value",
+          "arm": "joint",
+          "status": "supported",
+          "seconds": 28.9408475299133,
+          "started_seconds": 181.18987065705005,
+          "ended_seconds": 210.1307191720698,
+          "model_calls": 2,
+          "complete": true,
+          "source_review": "source_and_ownership_checked"
+        },
+        {
+          "case": "production_plan-child-2-value",
+          "arm": "joint",
+          "status": "supported",
+          "seconds": 27.7683143139584,
+          "started_seconds": 210.13453359901905,
+          "ended_seconds": 237.9028487179894,
+          "model_calls": 2,
+          "complete": true,
+          "source_review": "source_and_ownership_checked"
+        },
+        {
+          "case": "production_plan-child-3-wrong_document_date",
+          "arm": "joint",
+          "status": "unsupported",
+          "seconds": 65.52202759799547,
+          "started_seconds": 237.90900287707336,
+          "ended_seconds": 303.43103170907125,
+          "model_calls": 4,
+          "complete": true,
+          "source_review": "wrong_document_date_actually_rejected"
+        },
+        {
+          "case": "equipment",
+          "arm": "joint",
+          "status": "supported",
+          "seconds": 99.11738605401479,
+          "started_seconds": 303.43703628203366,
+          "ended_seconds": 402.55442317505367,
+          "model_calls": 2,
+          "complete": true,
+          "source_review": "source_and_ownership_checked"
+        },
+        {
+          "case": "equipment-child-1-value",
+          "arm": "joint",
+          "status": "supported",
+          "seconds": 82.4650839100359,
+          "started_seconds": 495.6805645429995,
+          "ended_seconds": 578.1456543609966,
+          "model_calls": 2,
+          "complete": true,
+          "source_review": "source_and_ownership_checked"
+        },
+        {
+          "case": "equipment-child-2-value",
+          "arm": "joint",
+          "status": "supported",
+          "seconds": 79.31220437306911,
+          "started_seconds": 578.1507154089632,
+          "ended_seconds": 657.4629205230158,
+          "model_calls": 2,
+          "complete": true,
+          "source_review": "source_and_ownership_checked"
+        }
+      ],
+      "source_review_counts": {
+        "source_and_ownership_checked": 12,
+        "wrong_document_date_actually_rejected": 2
+      }
+    },
+    {
+      "group": "directed",
+      "repetition": 3,
+      "run_id": "joint-d8ef581096584af59f0bc2b5fe6e08d1",
+      "private_artifact_directory": "/tmp/ontology-evidence-repair-directed-hrs5592-20260910-v5-r3",
+      "manifest_sha256": "7dfb1aab5d943e6442d0e53088a6933de6191fb96d2796502f436072bfcf7f9d",
+      "frozen_app_inventory_sha256": "60a04d604d6118a34aad361c1ef397b3c73b2f232eabb7c5cdc4c5765fa10b5e",
+      "recognition_seconds": 812.2630651200889,
+      "failure": null,
+      "model_request_stages": {
+        "ontology_guided_discovery": {
+          "cache_tokens": 5202,
+          "completion_tokens": 2394,
+          "input_tokens": null,
+          "predicted_ms": 43830.541,
+          "prompt_ms": 280216.106,
+          "prompt_tokens": 75331,
+          "queue_seconds": 0.2350000000000001,
+          "request_seconds": 331.38800000000003,
+          "requests": 16,
+          "status_counts": {
+            "complete": 16
+          },
+          "unknown_metrics": {
+            "input_tokens": 16
+          }
+        },
+        "ontology_guided_verification": {
+          "cache_tokens": 7350,
+          "completion_tokens": 7141,
+          "input_tokens": null,
+          "predicted_ms": 128666.13400000002,
+          "prompt_ms": 342291.247,
+          "prompt_tokens": 92820,
+          "queue_seconds": 0.13600000000000004,
+          "request_seconds": 477.44500000000005,
+          "requests": 16,
+          "status_counts": {
+            "complete": 16
+          },
+          "unknown_metrics": {
+            "input_tokens": 16
+          }
+        }
+      },
+      "source_review_scope": "six focus predicates; extra facts explicitly unscored",
+      "expert_quality_gate": "not_passed",
+      "stop_reason": "registered_tasks_finished",
+      "blocked_children_count": 0,
+      "tasks": [
+        {
+          "case": "production_plan",
+          "arm": "current",
+          "status": "supported",
+          "seconds": 32.222836349974386,
+          "started_seconds": 0.0009883500169962645,
+          "ended_seconds": 32.22382624109741,
+          "model_calls": 2,
+          "complete": true,
+          "source_review": "source_and_ownership_checked"
+        },
+        {
+          "case": "production_plan-child-1-value",
+          "arm": "current",
+          "status": "supported",
+          "seconds": 30.38429477403406,
+          "started_seconds": 61.4449686500011,
+          "ended_seconds": 91.82926411903463,
+          "model_calls": 2,
+          "complete": true,
+          "source_review": "source_and_ownership_checked"
+        },
+        {
+          "case": "production_plan-child-2-value",
+          "arm": "current",
+          "status": "supported",
+          "seconds": 26.462561484077014,
+          "started_seconds": 91.83258283301257,
+          "ended_seconds": 118.29514483700041,
+          "model_calls": 2,
+          "complete": true,
+          "source_review": "source_and_ownership_checked"
+        },
+        {
+          "case": "production_plan-child-3-wrong_document_date",
+          "arm": "current",
+          "status": "unsupported",
+          "seconds": 63.579718858003616,
+          "started_seconds": 118.29835326503962,
+          "ended_seconds": 181.87807302898727,
+          "model_calls": 4,
+          "complete": true,
+          "source_review": "wrong_document_date_actually_rejected"
+        },
+        {
+          "case": "equipment",
+          "arm": "current",
+          "status": "supported",
+          "seconds": 93.99290807102807,
+          "started_seconds": 405.4675159690669,
+          "ended_seconds": 499.46042578609195,
+          "model_calls": 2,
+          "complete": true,
+          "source_review": "source_and_ownership_checked"
+        },
+        {
+          "case": "equipment-child-1-value",
+          "arm": "current",
+          "status": "supported",
+          "seconds": 75.61625121801626,
+          "started_seconds": 660.7163116390584,
+          "ended_seconds": 736.3325639970135,
+          "model_calls": 2,
+          "complete": true,
+          "source_review": "source_and_ownership_checked"
+        },
+        {
+          "case": "equipment-child-2-value",
+          "arm": "current",
+          "status": "supported",
+          "seconds": 75.91942177305464,
+          "started_seconds": 736.3378524089931,
+          "ended_seconds": 812.2572753540007,
+          "model_calls": 2,
+          "complete": true,
+          "source_review": "source_and_ownership_checked"
+        },
+        {
+          "case": "production_plan",
+          "arm": "joint",
+          "status": "supported",
+          "seconds": 29.216079848003574,
+          "started_seconds": 32.226086392998695,
+          "ended_seconds": 61.44216742704157,
+          "model_calls": 2,
+          "complete": true,
+          "source_review": "source_and_ownership_checked"
+        },
+        {
+          "case": "production_plan-child-1-value",
+          "arm": "joint",
+          "status": "supported",
+          "seconds": 28.65071612095926,
+          "started_seconds": 181.88195262709633,
+          "ended_seconds": 210.5326701180311,
+          "model_calls": 2,
+          "complete": true,
+          "source_review": "source_and_ownership_checked"
+        },
+        {
+          "case": "production_plan-child-2-value",
+          "arm": "joint",
+          "status": "supported",
+          "seconds": 28.219613665016368,
+          "started_seconds": 210.5378079030197,
+          "ended_seconds": 238.75742294208612,
+          "model_calls": 2,
+          "complete": true,
+          "source_review": "source_and_ownership_checked"
+        },
+        {
+          "case": "production_plan-child-3-wrong_document_date",
+          "arm": "joint",
+          "status": "unsupported",
+          "seconds": 66.29863001895137,
+          "started_seconds": 238.76530961808749,
+          "ended_seconds": 305.06394098105375,
+          "model_calls": 4,
+          "complete": true,
+          "source_review": "wrong_document_date_actually_rejected"
+        },
+        {
+          "case": "equipment",
+          "arm": "joint",
+          "status": "supported",
+          "seconds": 100.39325086702593,
+          "started_seconds": 305.0703921869863,
+          "ended_seconds": 405.4636441670591,
+          "model_calls": 2,
+          "complete": true,
+          "source_review": "source_and_ownership_checked"
+        },
+        {
+          "case": "equipment-child-1-value",
+          "arm": "joint",
+          "status": "supported",
+          "seconds": 82.33291127509438,
+          "started_seconds": 499.4653648129897,
+          "ended_seconds": 581.7982772240648,
+          "model_calls": 2,
+          "complete": true,
+          "source_review": "source_and_ownership_checked"
+        },
+        {
+          "case": "equipment-child-2-value",
+          "arm": "joint",
+          "status": "supported",
+          "seconds": 78.90809463290498,
+          "started_seconds": 581.8037336420966,
+          "ended_seconds": 660.7118291980587,
+          "model_calls": 2,
+          "complete": true,
+          "source_review": "source_and_ownership_checked"
+        }
+      ],
+      "source_review_counts": {
+        "source_and_ownership_checked": 12,
+        "wrong_document_date_actually_rejected": 2
+      }
+    },
+    {
+      "group": "automatic",
+      "repetition": 1,
+      "run_id": "heuristic-5624b75e823c4bca9a3b3b7cf9cd759f",
+      "private_artifact_directory": "/tmp/ontology-evidence-repair-auto-hrs5592-20260910-v5-r1",
+      "manifest_sha256": "e7b5c3894ad877be84b6054835ac97d3ad4143219f875dad8e2b641426dfc181",
+      "frozen_app_inventory_sha256": "60a04d604d6118a34aad361c1ef397b3c73b2f232eabb7c5cdc4c5765fa10b5e",
+      "recognition_seconds": 470.004858723958,
+      "failure": null,
+      "model_request_stages": {
+        "ontology_guided_discovery": {
+          "cache_tokens": 1867,
+          "completion_tokens": 1389,
+          "input_tokens": null,
+          "predicted_ms": 25473.369000000002,
+          "prompt_ms": 164977.981,
+          "prompt_tokens": 43842,
+          "queue_seconds": 0.19600000000000006,
+          "request_seconds": 194.45000000000002,
+          "requests": 10,
+          "status_counts": {
+            "complete": 10
+          },
+          "unknown_metrics": {
+            "input_tokens": 10
+          }
+        },
+        "ontology_guided_verification": {
+          "cache_tokens": 1923,
+          "completion_tokens": 4008,
+          "input_tokens": null,
+          "predicted_ms": 71811.274,
+          "prompt_ms": 188392.53499999997,
+          "prompt_tokens": 49672,
+          "queue_seconds": 0.09,
+          "request_seconds": 263.08399999999995,
+          "requests": 9,
+          "status_counts": {
+            "complete": 9
+          },
+          "unknown_metrics": {
+            "input_tokens": 9
+          }
+        }
+      },
+      "source_review_scope": "six focus predicates; extra facts explicitly unscored",
+      "expert_quality_gate": "not_passed",
+      "progress": {
+        "completion": "incomplete",
+        "contract_version": "document-analysis-runs-v1",
+        "invalidated_count": 0,
+        "model_calls": 19,
+        "model_calls_reserved": 19,
+        "model_calls_unresolved": 0,
+        "pending_frontiers": 0,
+        "phase_counts": {
+          "phase1": 5,
+          "phase2": 3
+        },
+        "records_examined": 8,
+        "records_incomplete": 0,
+        "records_planned": 18655,
+        "records_unattempted": 18647,
+        "stop_reason": "adaptive_search_saturated",
+        "supported": 7,
+        "tasks_attempted": 8,
+        "undetermined": 0,
+        "unresolved_claims": 0,
+        "unsupported": 0
+      },
+      "task_batches": 10,
+      "reserved_main_requests": 19,
+      "requested_stop_reason": "registered_focus_paths_reached",
+      "timings": {
+        "context_assembly": {
+          "count": 10,
+          "max_seconds": 0.026514876051805913,
+          "min_seconds": 0.000806041993200779,
+          "total_seconds": 0.08853303699288517
+        },
+        "heuristic_admission": {
+          "count": 66,
+          "max_seconds": 0.0009184350492432714,
+          "min_seconds": 8.911499753594398e-05,
+          "total_seconds": 0.01038362574763596
+        },
+        "heuristic_complete": {
+          "count": 1,
+          "max_seconds": 469.8296375880018,
+          "min_seconds": 469.8296375880018,
+          "total_seconds": 469.8296375880018
+        },
+        "heuristic_index_ready": {
+          "count": 1,
+          "max_seconds": 0.19320214493200183,
+          "min_seconds": 0.19320214493200183,
+          "total_seconds": 0.19320214493200183
+        },
+        "heuristic_slot_prepared": {
+          "count": 65,
+          "max_seconds": 0.11627606605179608,
+          "min_seconds": 0.002185072051361203,
+          "total_seconds": 0.9756714269751683
+        },
+        "model_and_ranking_configuration": {
+          "count": 1,
+          "max_seconds": 0.5476593830389902,
+          "min_seconds": 0.5476593830389902,
+          "total_seconds": 0.5476593830389902
+        },
+        "ontology_guided_discovery": {
+          "count": 10,
+          "max_seconds": 41.61171054595616,
+          "min_seconds": 9.389173830975778,
+          "total_seconds": 195.76417242805474
+        },
+        "ontology_guided_verification": {
+          "count": 9,
+          "max_seconds": 52.104689082014374,
+          "min_seconds": 19.685658009024337,
+          "total_seconds": 264.1117744849762
+        },
+        "ontology_load_and_snapshot": {
+          "count": 1,
+          "max_seconds": 1.0260484690079466,
+          "min_seconds": 1.0260484690079466,
+          "total_seconds": 1.0260484690079466
+        },
+        "outcome_application": {
+          "count": 10,
+          "max_seconds": 0.8958463580347598,
+          "min_seconds": 0.012007892015390098,
+          "total_seconds": 2.110913811950013
+        },
+        "parse_docx_and_ir": {
+          "count": 1,
+          "max_seconds": 1.090515170013532,
+          "min_seconds": 1.090515170013532,
+          "total_seconds": 1.090515170013532
+        },
+        "recognition_input_tokenization": {
+          "count": 19,
+          "max_seconds": 0.16900261607952416,
+          "min_seconds": 0.02020178292877972,
+          "total_seconds": 0.7544445074163377
+        },
+        "root_menu_and_record_index": {
+          "count": 1,
+          "max_seconds": 0.16059070697519928,
+          "min_seconds": 0.16059070697519928,
+          "total_seconds": 0.16059070697519928
+        },
+        "structure_metadata": {
+          "count": 1,
+          "max_seconds": 0.21919681096915156,
+          "min_seconds": 0.21919681096915156,
+          "total_seconds": 0.21919681096915156
+        },
+        "task_inspection": {
+          "count": 10,
+          "max_seconds": 93.78408341191243,
+          "min_seconds": 15.578932545962743,
+          "total_seconds": 460.42693161277566
+        }
+      },
+      "local_persistence": {
+        "batch_graph": {
+          "bytes": 908432,
+          "count": 10,
+          "seconds": 0.023491292959079146
+        },
+        "checkpoint": {
+          "bytes": 125096841,
+          "count": 10,
+          "seconds": 2.2240574778988957
+        },
+        "effective_graph": {
+          "bytes": 453893,
+          "count": 11,
+          "seconds": 0.01511580205988139
+        },
+        "jsonl": {
+          "bytes": 4981459,
+          "count": 282,
+          "seconds": 0.23440235329326242
+        },
+        "model_reservation": {
+          "bytes": 16121097,
+          "count": 77,
+          "seconds": 0.386456067324616
+        },
+        "snapshot": {
+          "bytes": 36159790,
+          "count": 11,
+          "seconds": 0.6253314759815112
+        }
+      },
+      "search_stages": {
+        "H0": {
+          "events": 27,
+          "first_event_seconds": 0.2857622579904273,
+          "status": "observed"
+        },
+        "H1": {
+          "events": 39,
+          "first_event_seconds": 0.3235260749934241,
+          "status": "observed"
+        },
+        "H2": {
+          "events": 0,
+          "first_event_seconds": null,
+          "status": "not_triggered"
+        },
+        "H3": {
+          "events": 0,
+          "first_event_seconds": null,
+          "status": "not_triggered"
+        }
+      },
+      "sql": {
+        "finalization": {
+          "count": 1,
+          "seconds": 0.00018402293790131807,
+          "statements": {
+            "SELECT": 1
+          }
+        },
+        "recognition": {
+          "count": 310,
+          "seconds": 0.05626352096442133,
+          "statements": {
+            "INSERT": 57,
+            "SELECT": 57,
+            "UPDATE": 196
+          }
+        },
+        "setup": {
+          "count": 4,
+          "seconds": 0.004582481109537184,
+          "statements": {
+            "CREATE": 4
+          }
+        }
+      },
+      "model_requests_by_search_stage": {
+        "H0": {
+          "request_seconds": 367.42199999999997,
+          "requests": 13
+        },
+        "H1": {
+          "request_seconds": 90.112,
+          "requests": 6
+        }
+      },
+      "coverage_counts": {
+        "phase1": 1117,
+        "phase2": 17538,
+        "examined": 8,
+        "unattempted": 18647,
+        "incomplete": 0,
+        "pending_frontiers": 0,
+        "unresolved_claims": 0
+      },
+      "candidates": [
+        {
+          "candidate_id": "989fd3b67e952465d7135f1e1f95f22b3c9c9b66f4d80a020c3211264f51b325",
+          "revision": 1,
+          "predicate": "usesEquipment",
+          "effective": true,
+          "decision_status": "supported",
+          "reason_code": "candidate_supported",
+          "source_review": "source_and_ownership_checked",
+          "first_effective_seconds": 95.81584873399697,
+          "source_table": 9,
+          "source_row": 3,
+          "subject_id": "56869cc6030029c89991b5e07bb2914a75de73cdb36e51d6949d8e313dcb1062",
+          "object_id": "b1f02c57c064fc7e2b114661ebc0a6b34ecc01b98a320f6480b5df8e309df95c"
+        },
+        {
+          "candidate_id": "2f7408c463a69c177d5a25282d26096b43a723fba278e5e744e975b5cd5979bf",
+          "revision": 1,
+          "predicate": "equipmentID",
+          "effective": true,
+          "decision_status": "supported",
+          "reason_code": "candidate_supported",
+          "source_review": "source_and_ownership_checked",
+          "first_effective_seconds": 171.65471170900855,
+          "source_row": 3,
+          "subject_id": "b1f02c57c064fc7e2b114661ebc0a6b34ecc01b98a320f6480b5df8e309df95c"
+        },
+        {
+          "candidate_id": "50753dc98e001741c5babbbe4436fb7800782d1ceb5f6f9609ff0fd1cf44fb33",
+          "revision": 1,
+          "predicate": "hasProductionPlan",
+          "effective": true,
+          "decision_status": "supported",
+          "reason_code": "candidate_supported",
+          "source_review": "source_and_ownership_checked",
+          "first_effective_seconds": 204.23205106297974,
+          "source_paragraph": 26,
+          "subject_id": "56869cc6030029c89991b5e07bb2914a75de73cdb36e51d6949d8e313dcb1062",
+          "object_id": "2732b250d2968fb4f4f51a5227eb60f8dc9d3c104258b75e1ba1eb46441344ff"
+        },
+        {
+          "candidate_id": "20cf5d434b0187e9730fdda66b246093a601b16cc905c3055c2501b4db1bd1f1",
+          "revision": 1,
+          "predicate": "plannedProductionDate",
+          "effective": true,
+          "decision_status": "supported",
+          "reason_code": "candidate_supported",
+          "source_review": "source_and_ownership_checked",
+          "first_effective_seconds": 233.95003105001524,
+          "source_paragraph": 26,
+          "subject_id": "2732b250d2968fb4f4f51a5227eb60f8dc9d3c104258b75e1ba1eb46441344ff"
+        },
+        {
+          "candidate_id": "ec6ea9cf91f425653ed03ce9889c3b4252c3d553497ac003ad6daf83517ca56a",
+          "revision": 1,
+          "predicate": "describes",
+          "effective": true,
+          "decision_status": "supported",
+          "reason_code": "candidate_supported",
+          "source_review": "unscored",
+          "first_effective_seconds": 367.0539507489884,
+          "object_class": "ClinicalTrialDrug"
+        },
+        {
+          "candidate_id": "b0ff4f1bf6294e4f4724aedde19e2d4871d2d00d490427d0f4b5c05dfecd2256",
+          "revision": 1,
+          "predicate": "plannedBatchCount",
+          "effective": true,
+          "decision_status": "supported",
+          "reason_code": "candidate_supported",
+          "source_review": "source_and_ownership_checked",
+          "first_effective_seconds": 398.04129932494834,
+          "source_paragraph": 26,
+          "subject_id": "2732b250d2968fb4f4f51a5227eb60f8dc9d3c104258b75e1ba1eb46441344ff"
+        },
+        {
+          "candidate_id": "93012640a6ff1d308fdd6fae1fbef8e2ce2a501cd1412f85a49cb24182c3bd98",
+          "revision": 1,
+          "predicate": "modelSpecification",
+          "effective": true,
+          "decision_status": "supported",
+          "reason_code": "candidate_supported",
+          "source_review": "source_and_ownership_checked",
+          "first_effective_seconds": 469.68354180594906,
+          "source_row": 3,
+          "subject_id": "b1f02c57c064fc7e2b114661ebc0a6b34ecc01b98a320f6480b5df8e309df95c"
+        }
+      ],
+      "applied_candidate_history": [
+        {
+          "batch": "0001.json",
+          "candidate_id": "989fd3b67e952465d7135f1e1f95f22b3c9c9b66f4d80a020c3211264f51b325",
+          "revision": 1,
+          "predicate": "usesEquipment",
+          "decision_status": "supported",
+          "policy_eligible": true,
+          "reason_code": "candidate_supported"
+        },
+        {
+          "batch": "0002.json",
+          "candidate_id": "2f7408c463a69c177d5a25282d26096b43a723fba278e5e744e975b5cd5979bf",
+          "revision": 1,
+          "predicate": "equipmentID",
+          "decision_status": "supported",
+          "policy_eligible": true,
+          "reason_code": "candidate_supported"
+        },
+        {
+          "batch": "0003.json",
+          "candidate_id": "50753dc98e001741c5babbbe4436fb7800782d1ceb5f6f9609ff0fd1cf44fb33",
+          "revision": 1,
+          "predicate": "hasProductionPlan",
+          "decision_status": "supported",
+          "policy_eligible": true,
+          "reason_code": "candidate_supported"
+        },
+        {
+          "batch": "0004.json",
+          "candidate_id": "20cf5d434b0187e9730fdda66b246093a601b16cc905c3055c2501b4db1bd1f1",
+          "revision": 1,
+          "predicate": "plannedProductionDate",
+          "decision_status": "supported",
+          "policy_eligible": true,
+          "reason_code": "candidate_supported"
+        },
+        {
+          "batch": "0005.json",
+          "candidate_id": "d4b13d438b03bdaf12c4d6e1ae40b7c6fde0bab8ade0a96e0b6187f0fad59ff0",
+          "revision": 1,
+          "predicate": "cleanedBy",
+          "decision_status": "unsupported",
+          "policy_eligible": false,
+          "reason_code": "missing_predicate_support"
+        },
+        {
+          "batch": "0007.json",
+          "candidate_id": "dd4e1fca88a610f502311c2c1f9afdc9a5893e686185251858d4905b68df13d8",
+          "revision": 1,
+          "predicate": "describes",
+          "decision_status": "undetermined",
+          "policy_eligible": false,
+          "reason_code": "field_role_not_supported"
+        },
+        {
+          "batch": "0008.json",
+          "candidate_id": "ec6ea9cf91f425653ed03ce9889c3b4252c3d553497ac003ad6daf83517ca56a",
+          "revision": 1,
+          "predicate": "describes",
+          "decision_status": "supported",
+          "policy_eligible": true,
+          "reason_code": "candidate_supported"
+        },
+        {
+          "batch": "0009.json",
+          "candidate_id": "b0ff4f1bf6294e4f4724aedde19e2d4871d2d00d490427d0f4b5c05dfecd2256",
+          "revision": 1,
+          "predicate": "plannedBatchCount",
+          "decision_status": "supported",
+          "policy_eligible": true,
+          "reason_code": "candidate_supported"
+        },
+        {
+          "batch": "0010.json",
+          "candidate_id": "93012640a6ff1d308fdd6fae1fbef8e2ce2a501cd1412f85a49cb24182c3bd98",
+          "revision": 1,
+          "predicate": "modelSpecification",
+          "decision_status": "supported",
+          "policy_eligible": true,
+          "reason_code": "candidate_supported"
+        }
+      ],
+      "missing_focus_targets": [],
+      "source_review_counts": {
+        "source_and_ownership_checked": 6,
+        "unscored": 1
+      },
+      "correct_first_effective_seconds": {
+        "usesEquipment": 95.81584873399697,
+        "equipmentID": 171.65471170900855,
+        "modelSpecification": 469.68354180594906,
+        "hasProductionPlan": 204.23205106297974,
+        "plannedProductionDate": 233.95003105001524,
+        "plannedBatchCount": 398.04129932494834
+      },
+      "same_parent_complete_path_seconds": {
+        "usesEquipment": 469.68354180594906,
+        "hasProductionPlan": 398.04129932494834
+      },
+      "evidence_repair_summary": {
+        "enabled": true,
+        "reason_counts": {
+          "applicability_not_supported": 1,
+          "bridge_entailment_not_supported": 1,
+          "entity_reference_not_specific": 1,
+          "evidence_unresolved": 2,
+          "field_role_not_supported": 2,
+          "field_role_source_missing": 1,
+          "predicate_entailment_not_supported": 1,
+          "type_not_supported": 1
+        },
+        "rechecks": 0,
+        "status_counts": {
+          "awaiting_evidence": 1,
+          "resolved": 1
+        },
+        "total": 2
+      },
+      "retry_kind_counts": {
+        "first_inspection": 8,
+        "rediscovery:1": 2
+      }
+    },
+    {
+      "group": "automatic",
+      "repetition": 2,
+      "run_id": "heuristic-1046d4f3f83d4e059c9854a4f73e9a10",
+      "private_artifact_directory": "/tmp/ontology-evidence-repair-auto-hrs5592-20260910-v5-r2",
+      "manifest_sha256": "758d17d63edc16a97cec596c0f1212dcb40d2c2afe9db041469a403d85b2625b",
+      "frozen_app_inventory_sha256": "60a04d604d6118a34aad361c1ef397b3c73b2f232eabb7c5cdc4c5765fa10b5e",
+      "recognition_seconds": 469.4470751370536,
+      "failure": null,
+      "model_request_stages": {
+        "ontology_guided_discovery": {
+          "cache_tokens": 1867,
+          "completion_tokens": 1349,
+          "input_tokens": null,
+          "predicted_ms": 24786.237,
+          "prompt_ms": 164346.283,
+          "prompt_tokens": 43695,
+          "queue_seconds": 0.19000000000000006,
+          "request_seconds": 193.161,
+          "requests": 10,
+          "status_counts": {
+            "complete": 10
+          },
+          "unknown_metrics": {
+            "input_tokens": 10
+          }
+        },
+        "ontology_guided_verification": {
+          "cache_tokens": 1923,
+          "completion_tokens": 4067,
+          "input_tokens": null,
+          "predicted_ms": 73104.08899999999,
+          "prompt_ms": 187382.95500000002,
+          "prompt_tokens": 49482,
+          "queue_seconds": 0.08399999999999999,
+          "request_seconds": 263.473,
+          "requests": 9,
+          "status_counts": {
+            "complete": 9
+          },
+          "unknown_metrics": {
+            "input_tokens": 9
+          }
+        }
+      },
+      "source_review_scope": "six focus predicates; extra facts explicitly unscored",
+      "expert_quality_gate": "not_passed",
+      "progress": {
+        "completion": "incomplete",
+        "contract_version": "document-analysis-runs-v1",
+        "invalidated_count": 0,
+        "model_calls": 19,
+        "model_calls_reserved": 19,
+        "model_calls_unresolved": 0,
+        "pending_frontiers": 0,
+        "phase_counts": {
+          "phase1": 5,
+          "phase2": 3
+        },
+        "records_examined": 8,
+        "records_incomplete": 0,
+        "records_planned": 18655,
+        "records_unattempted": 18647,
+        "stop_reason": "adaptive_search_saturated",
+        "supported": 7,
+        "tasks_attempted": 8,
+        "undetermined": 0,
+        "unresolved_claims": 0,
+        "unsupported": 0
+      },
+      "task_batches": 10,
+      "reserved_main_requests": 19,
+      "requested_stop_reason": "registered_focus_paths_reached",
+      "timings": {
+        "context_assembly": {
+          "count": 10,
+          "max_seconds": 0.024104125099256635,
+          "min_seconds": 0.0007307549240067601,
+          "total_seconds": 0.08413085294887424
+        },
+        "heuristic_admission": {
+          "count": 66,
+          "max_seconds": 0.0006483920151367784,
+          "min_seconds": 9.367603342980146e-05,
+          "total_seconds": 0.009754719445481896
+        },
+        "heuristic_complete": {
+          "count": 1,
+          "max_seconds": 469.07847282104194,
+          "min_seconds": 469.07847282104194,
+          "total_seconds": 469.07847282104194
+        },
+        "heuristic_index_ready": {
+          "count": 1,
+          "max_seconds": 0.18682990199886262,
+          "min_seconds": 0.18682990199886262,
+          "total_seconds": 0.18682990199886262
+        },
+        "heuristic_slot_prepared": {
+          "count": 65,
+          "max_seconds": 0.09589326300192624,
+          "min_seconds": 0.0018856459064409137,
+          "total_seconds": 0.9139768917812034
+        },
+        "model_and_ranking_configuration": {
+          "count": 1,
+          "max_seconds": 0.56709918694105,
+          "min_seconds": 0.56709918694105,
+          "total_seconds": 0.56709918694105
+        },
+        "ontology_guided_discovery": {
+          "count": 10,
+          "max_seconds": 42.299708170001395,
+          "min_seconds": 9.714898696052842,
+          "total_seconds": 194.54003831988666
+        },
+        "ontology_guided_verification": {
+          "count": 9,
+          "max_seconds": 51.89017330005299,
+          "min_seconds": 19.667977096047252,
+          "total_seconds": 264.8142040981911
+        },
+        "ontology_load_and_snapshot": {
+          "count": 1,
+          "max_seconds": 1.0350684429286048,
+          "min_seconds": 1.0350684429286048,
+          "total_seconds": 1.0350684429286048
+        },
+        "outcome_application": {
+          "count": 10,
+          "max_seconds": 1.0528605800354853,
+          "min_seconds": 0.012829354032874107,
+          "total_seconds": 2.140879060025327
+        },
+        "parse_docx_and_ir": {
+          "count": 1,
+          "max_seconds": 1.1205817660083994,
+          "min_seconds": 1.1205817660083994,
+          "total_seconds": 1.1205817660083994
+        },
+        "recognition_input_tokenization": {
+          "count": 19,
+          "max_seconds": 0.1590055989800021,
+          "min_seconds": 0.013720035087317228,
+          "total_seconds": 0.8313325812341645
+        },
+        "root_menu_and_record_index": {
+          "count": 1,
+          "max_seconds": 0.15967812400776893,
+          "min_seconds": 0.15967812400776893,
+          "total_seconds": 0.15967812400776893
+        },
+        "structure_metadata": {
+          "count": 1,
+          "max_seconds": 0.23338949505705386,
+          "min_seconds": 0.23338949505705386,
+          "total_seconds": 0.23338949505705386
+        },
+        "task_inspection": {
+          "count": 10,
+          "max_seconds": 94.25391885195859,
+          "min_seconds": 15.024507974972948,
+          "total_seconds": 459.9722967640264
+        }
+      },
+      "local_persistence": {
+        "batch_graph": {
+          "bytes": 911960,
+          "count": 10,
+          "seconds": 0.024737347150221467
+        },
+        "checkpoint": {
+          "bytes": 125125439,
+          "count": 10,
+          "seconds": 2.278707428020425
+        },
+        "effective_graph": {
+          "bytes": 455551,
+          "count": 11,
+          "seconds": 0.015485133975744247
+        },
+        "jsonl": {
+          "bytes": 4983586,
+          "count": 282,
+          "seconds": 0.23398395639378577
+        },
+        "model_reservation": {
+          "bytes": 16210923,
+          "count": 77,
+          "seconds": 0.44461479946039617
+        },
+        "snapshot": {
+          "bytes": 36162646,
+          "count": 11,
+          "seconds": 0.622392354067415
+        }
+      },
+      "search_stages": {
+        "H0": {
+          "events": 27,
+          "first_event_seconds": 0.27553524204995483,
+          "status": "observed"
+        },
+        "H1": {
+          "events": 39,
+          "first_event_seconds": 0.31015059305354953,
+          "status": "observed"
+        },
+        "H2": {
+          "events": 0,
+          "first_event_seconds": null,
+          "status": "not_triggered"
+        },
+        "H3": {
+          "events": 0,
+          "first_event_seconds": null,
+          "status": "not_triggered"
+        }
+      },
+      "sql": {
+        "finalization": {
+          "count": 1,
+          "seconds": 0.0001928539713844657,
+          "statements": {
+            "SELECT": 1
+          }
+        },
+        "recognition": {
+          "count": 308,
+          "seconds": 0.043916518916375935,
+          "statements": {
+            "INSERT": 57,
+            "SELECT": 57,
+            "UPDATE": 194
+          }
+        },
+        "setup": {
+          "count": 4,
+          "seconds": 0.0051493990467861295,
+          "statements": {
+            "CREATE": 4
+          }
+        }
+      },
+      "model_requests_by_search_stage": {
+        "H0": {
+          "request_seconds": 365.95099999999996,
+          "requests": 13
+        },
+        "H1": {
+          "request_seconds": 90.68299999999999,
+          "requests": 6
+        }
+      },
+      "coverage_counts": {
+        "phase1": 1117,
+        "phase2": 17538,
+        "examined": 8,
+        "unattempted": 18647,
+        "incomplete": 0,
+        "pending_frontiers": 0,
+        "unresolved_claims": 0
+      },
+      "candidates": [
+        {
+          "candidate_id": "0479a2e2ba900ed6c909ddaf254915639a87b2bb81da2e8dc169bf5a71146e1b",
+          "revision": 1,
+          "predicate": "usesEquipment",
+          "effective": true,
+          "decision_status": "supported",
+          "reason_code": "candidate_supported",
+          "source_review": "source_and_ownership_checked",
+          "first_effective_seconds": 96.09656520897988,
+          "source_table": 9,
+          "source_row": 3,
+          "subject_id": "d12c1099c3e425fd4ac3b99ab9fb4b5579e72012d3376262f18fbf1bb6108726",
+          "object_id": "b1f02c57c064fc7e2b114661ebc0a6b34ecc01b98a320f6480b5df8e309df95c"
+        },
+        {
+          "candidate_id": "2f7408c463a69c177d5a25282d26096b43a723fba278e5e744e975b5cd5979bf",
+          "revision": 1,
+          "predicate": "equipmentID",
+          "effective": true,
+          "decision_status": "supported",
+          "reason_code": "candidate_supported",
+          "source_review": "source_and_ownership_checked",
+          "first_effective_seconds": 172.72281414503232,
+          "source_row": 3,
+          "subject_id": "b1f02c57c064fc7e2b114661ebc0a6b34ecc01b98a320f6480b5df8e309df95c"
+        },
+        {
+          "candidate_id": "fc9541ae32016c167f2f88f9f920951ddbbeada1d266e58f94aef77dc107d371",
+          "revision": 1,
+          "predicate": "hasProductionPlan",
+          "effective": true,
+          "decision_status": "supported",
+          "reason_code": "candidate_supported",
+          "source_review": "source_and_ownership_checked",
+          "first_effective_seconds": 205.4290803000331,
+          "source_paragraph": 26,
+          "subject_id": "d12c1099c3e425fd4ac3b99ab9fb4b5579e72012d3376262f18fbf1bb6108726",
+          "object_id": "2732b250d2968fb4f4f51a5227eb60f8dc9d3c104258b75e1ba1eb46441344ff"
+        },
+        {
+          "candidate_id": "20cf5d434b0187e9730fdda66b246093a601b16cc905c3055c2501b4db1bd1f1",
+          "revision": 1,
+          "predicate": "plannedProductionDate",
+          "effective": true,
+          "decision_status": "supported",
+          "reason_code": "candidate_supported",
+          "source_review": "source_and_ownership_checked",
+          "first_effective_seconds": 236.33519853604957,
+          "source_paragraph": 26,
+          "subject_id": "2732b250d2968fb4f4f51a5227eb60f8dc9d3c104258b75e1ba1eb46441344ff"
+        },
+        {
+          "candidate_id": "2ed0802c081ff9f258df914726c352827f7776f48b15e791d74a186c878dc2e5",
+          "revision": 1,
+          "predicate": "describes",
+          "effective": true,
+          "decision_status": "supported",
+          "reason_code": "candidate_supported",
+          "source_review": "unscored",
+          "first_effective_seconds": 367.4464504600037,
+          "object_class": "DrugProduct"
+        },
+        {
+          "candidate_id": "b0ff4f1bf6294e4f4724aedde19e2d4871d2d00d490427d0f4b5c05dfecd2256",
+          "revision": 1,
+          "predicate": "plannedBatchCount",
+          "effective": true,
+          "decision_status": "supported",
+          "reason_code": "candidate_supported",
+          "source_review": "source_and_ownership_checked",
+          "first_effective_seconds": 397.72281227703206,
+          "source_paragraph": 26,
+          "subject_id": "2732b250d2968fb4f4f51a5227eb60f8dc9d3c104258b75e1ba1eb46441344ff"
+        },
+        {
+          "candidate_id": "93012640a6ff1d308fdd6fae1fbef8e2ce2a501cd1412f85a49cb24182c3bd98",
+          "revision": 1,
+          "predicate": "modelSpecification",
+          "effective": true,
+          "decision_status": "supported",
+          "reason_code": "candidate_supported",
+          "source_review": "source_and_ownership_checked",
+          "first_effective_seconds": 468.94607667496894,
+          "source_row": 3,
+          "subject_id": "b1f02c57c064fc7e2b114661ebc0a6b34ecc01b98a320f6480b5df8e309df95c"
+        }
+      ],
+      "applied_candidate_history": [
+        {
+          "batch": "0001.json",
+          "candidate_id": "0479a2e2ba900ed6c909ddaf254915639a87b2bb81da2e8dc169bf5a71146e1b",
+          "revision": 1,
+          "predicate": "usesEquipment",
+          "decision_status": "supported",
+          "policy_eligible": true,
+          "reason_code": "candidate_supported"
+        },
+        {
+          "batch": "0002.json",
+          "candidate_id": "2f7408c463a69c177d5a25282d26096b43a723fba278e5e744e975b5cd5979bf",
+          "revision": 1,
+          "predicate": "equipmentID",
+          "decision_status": "supported",
+          "policy_eligible": true,
+          "reason_code": "candidate_supported"
+        },
+        {
+          "batch": "0003.json",
+          "candidate_id": "fc9541ae32016c167f2f88f9f920951ddbbeada1d266e58f94aef77dc107d371",
+          "revision": 1,
+          "predicate": "hasProductionPlan",
+          "decision_status": "supported",
+          "policy_eligible": true,
+          "reason_code": "candidate_supported"
+        },
+        {
+          "batch": "0004.json",
+          "candidate_id": "20cf5d434b0187e9730fdda66b246093a601b16cc905c3055c2501b4db1bd1f1",
+          "revision": 1,
+          "predicate": "plannedProductionDate",
+          "decision_status": "supported",
+          "policy_eligible": true,
+          "reason_code": "candidate_supported"
+        },
+        {
+          "batch": "0005.json",
+          "candidate_id": "d4b13d438b03bdaf12c4d6e1ae40b7c6fde0bab8ade0a96e0b6187f0fad59ff0",
+          "revision": 1,
+          "predicate": "cleanedBy",
+          "decision_status": "unsupported",
+          "policy_eligible": false,
+          "reason_code": "missing_predicate_support"
+        },
+        {
+          "batch": "0007.json",
+          "candidate_id": "16bae9fcc58cbd9d2539992252abaebf431b1972e6957f6635c1788611ff5aa4",
+          "revision": 1,
+          "predicate": "describes",
+          "decision_status": "undetermined",
+          "policy_eligible": false,
+          "reason_code": "field_role_not_supported"
+        },
+        {
+          "batch": "0008.json",
+          "candidate_id": "2ed0802c081ff9f258df914726c352827f7776f48b15e791d74a186c878dc2e5",
+          "revision": 1,
+          "predicate": "describes",
+          "decision_status": "supported",
+          "policy_eligible": true,
+          "reason_code": "candidate_supported"
+        },
+        {
+          "batch": "0009.json",
+          "candidate_id": "b0ff4f1bf6294e4f4724aedde19e2d4871d2d00d490427d0f4b5c05dfecd2256",
+          "revision": 1,
+          "predicate": "plannedBatchCount",
+          "decision_status": "supported",
+          "policy_eligible": true,
+          "reason_code": "candidate_supported"
+        },
+        {
+          "batch": "0010.json",
+          "candidate_id": "93012640a6ff1d308fdd6fae1fbef8e2ce2a501cd1412f85a49cb24182c3bd98",
+          "revision": 1,
+          "predicate": "modelSpecification",
+          "decision_status": "supported",
+          "policy_eligible": true,
+          "reason_code": "candidate_supported"
+        }
+      ],
+      "missing_focus_targets": [],
+      "source_review_counts": {
+        "source_and_ownership_checked": 6,
+        "unscored": 1
+      },
+      "correct_first_effective_seconds": {
+        "usesEquipment": 96.09656520897988,
+        "equipmentID": 172.72281414503232,
+        "modelSpecification": 468.94607667496894,
+        "hasProductionPlan": 205.4290803000331,
+        "plannedProductionDate": 236.33519853604957,
+        "plannedBatchCount": 397.72281227703206
+      },
+      "same_parent_complete_path_seconds": {
+        "usesEquipment": 468.94607667496894,
+        "hasProductionPlan": 397.72281227703206
+      },
+      "evidence_repair_summary": {
+        "enabled": true,
+        "reason_counts": {
+          "applicability_not_supported": 1,
+          "bridge_entailment_not_supported": 1,
+          "entity_reference_not_specific": 1,
+          "evidence_unresolved": 2,
+          "field_role_not_supported": 2,
+          "field_role_source_missing": 1,
+          "predicate_entailment_not_supported": 1,
+          "type_not_supported": 1
+        },
+        "rechecks": 0,
+        "status_counts": {
+          "awaiting_evidence": 1,
+          "resolved": 1
+        },
+        "total": 2
+      },
+      "retry_kind_counts": {
+        "first_inspection": 8,
+        "rediscovery:1": 2
+      }
+    },
+    {
+      "group": "automatic",
+      "repetition": 3,
+      "run_id": "heuristic-f9a92181b29145d39f2398cb61d53a35",
+      "private_artifact_directory": "/tmp/ontology-evidence-repair-auto-hrs5592-20260910-v5-r3",
+      "manifest_sha256": "c93b6ba5c74208f0160fb5f58e16564228883ffc9f580d3f13675a6a5cae2d21",
+      "frozen_app_inventory_sha256": "60a04d604d6118a34aad361c1ef397b3c73b2f232eabb7c5cdc4c5765fa10b5e",
+      "recognition_seconds": 647.1897388980724,
+      "failure": null,
+      "model_request_stages": {
+        "ontology_guided_discovery": {
+          "cache_tokens": 2829,
+          "completion_tokens": 1988,
+          "input_tokens": null,
+          "predicted_ms": 36074.74,
+          "prompt_ms": 228766.894,
+          "prompt_tokens": 60754,
+          "queue_seconds": 0.18100000000000005,
+          "request_seconds": 270.007,
+          "requests": 12,
+          "status_counts": {
+            "complete": 12
+          },
+          "unknown_metrics": {
+            "input_tokens": 12
+          }
+        },
+        "ontology_guided_verification": {
+          "cache_tokens": 3903,
+          "completion_tokens": 5785,
+          "input_tokens": null,
+          "predicted_ms": 99544.851,
+          "prompt_ms": 258547.6,
+          "prompt_tokens": 69120,
+          "queue_seconds": 0.10200000000000001,
+          "request_seconds": 362.05100000000004,
+          "requests": 11,
+          "status_counts": {
+            "complete": 11
+          },
+          "unknown_metrics": {
+            "input_tokens": 11
+          }
+        }
+      },
+      "source_review_scope": "six focus predicates; extra facts explicitly unscored",
+      "expert_quality_gate": "not_passed",
+      "progress": {
+        "completion": "incomplete",
+        "contract_version": "document-analysis-runs-v1",
+        "invalidated_count": 0,
+        "model_calls": 23,
+        "model_calls_reserved": 23,
+        "model_calls_unresolved": 0,
+        "pending_frontiers": 0,
+        "phase_counts": {
+          "phase1": 5,
+          "phase2": 5
+        },
+        "records_examined": 10,
+        "records_incomplete": 0,
+        "records_planned": 18655,
+        "records_unattempted": 18645,
+        "stop_reason": "adaptive_search_saturated",
+        "supported": 8,
+        "tasks_attempted": 10,
+        "undetermined": 1,
+        "unresolved_claims": 1,
+        "unsupported": 0
+      },
+      "task_batches": 12,
+      "reserved_main_requests": 23,
+      "requested_stop_reason": "registered_focus_paths_reached",
+      "timings": {
+        "context_assembly": {
+          "count": 12,
+          "max_seconds": 0.029838355956599116,
+          "min_seconds": 0.000705188955180347,
+          "total_seconds": 0.12255675671622157
+        },
+        "heuristic_admission": {
+          "count": 65,
+          "max_seconds": 0.00027919490821659565,
+          "min_seconds": 9.20359743759036e-05,
+          "total_seconds": 0.00906166317872703
+        },
+        "heuristic_complete": {
+          "count": 1,
+          "max_seconds": 646.8089517969638,
+          "min_seconds": 646.8089517969638,
+          "total_seconds": 646.8089517969638
+        },
+        "heuristic_index_ready": {
+          "count": 1,
+          "max_seconds": 0.1851363469613716,
+          "min_seconds": 0.1851363469613716,
+          "total_seconds": 0.1851363469613716
+        },
+        "heuristic_slot_prepared": {
+          "count": 65,
+          "max_seconds": 0.09443169401492923,
+          "min_seconds": 0.002147967927157879,
+          "total_seconds": 0.9544242951087654
+        },
+        "model_and_ranking_configuration": {
+          "count": 1,
+          "max_seconds": 0.5592042809585109,
+          "min_seconds": 0.5592042809585109,
+          "total_seconds": 0.5592042809585109
+        },
+        "ontology_guided_discovery": {
+          "count": 12,
+          "max_seconds": 45.070468860911205,
+          "min_seconds": 8.096075827023014,
+          "total_seconds": 271.5264532157453
+        },
+        "ontology_guided_verification": {
+          "count": 11,
+          "max_seconds": 51.68149027705658,
+          "min_seconds": 17.359932300052606,
+          "total_seconds": 363.4492044261424
+        },
+        "ontology_load_and_snapshot": {
+          "count": 1,
+          "max_seconds": 1.0403314010472968,
+          "min_seconds": 1.0403314010472968,
+          "total_seconds": 1.0403314010472968
+        },
+        "outcome_application": {
+          "count": 12,
+          "max_seconds": 1.1054876289563254,
+          "min_seconds": 0.011236918973736465,
+          "total_seconds": 2.2624178417026997
+        },
+        "parse_docx_and_ir": {
+          "count": 1,
+          "max_seconds": 1.1035125259077176,
+          "min_seconds": 1.1035125259077176,
+          "total_seconds": 1.1035125259077176
+        },
+        "recognition_input_tokenization": {
+          "count": 23,
+          "max_seconds": 0.17348897305782884,
+          "min_seconds": 0.011183726019226015,
+          "total_seconds": 1.005298881791532
+        },
+        "root_menu_and_record_index": {
+          "count": 1,
+          "max_seconds": 0.16361965599935502,
+          "min_seconds": 0.16361965599935502,
+          "total_seconds": 0.16361965599935502
+        },
+        "structure_metadata": {
+          "count": 1,
+          "max_seconds": 0.23127409303560853,
+          "min_seconds": 0.23127409303560853,
+          "total_seconds": 0.23127409303560853
+        },
+        "task_inspection": {
+          "count": 12,
+          "max_seconds": 95.0668061899487,
+          "min_seconds": 16.864028522977605,
+          "total_seconds": 635.6814449357335
+        }
+      },
+      "local_persistence": {
+        "batch_graph": {
+          "bytes": 1235891,
+          "count": 12,
+          "seconds": 0.0313299159752205
+        },
+        "checkpoint": {
+          "bytes": 160855036,
+          "count": 12,
+          "seconds": 2.789857422118075
+        },
+        "effective_graph": {
+          "bytes": 537621,
+          "count": 13,
+          "seconds": 0.01870937820058316
+        },
+        "jsonl": {
+          "bytes": 5227550,
+          "count": 310,
+          "seconds": 0.25788810616359115
+        },
+        "model_reservation": {
+          "bytes": 18590903,
+          "count": 93,
+          "seconds": 0.497519628261216
+        },
+        "snapshot": {
+          "bytes": 36538855,
+          "count": 11,
+          "seconds": 0.617505298811011
+        }
+      },
+      "search_stages": {
+        "H0": {
+          "events": 27,
+          "first_event_seconds": 0.27643209497909993,
+          "status": "observed"
+        },
+        "H1": {
+          "events": 38,
+          "first_event_seconds": 0.3109342420939356,
+          "status": "observed"
+        },
+        "H2": {
+          "events": 0,
+          "first_event_seconds": null,
+          "status": "not_triggered"
+        },
+        "H3": {
+          "events": 0,
+          "first_event_seconds": null,
+          "status": "not_triggered"
+        }
+      },
+      "sql": {
+        "finalization": {
+          "count": 1,
+          "seconds": 0.00016153906472027302,
+          "statements": {
+            "SELECT": 1
+          }
+        },
+        "recognition": {
+          "count": 389,
+          "seconds": 0.06338873750064522,
+          "statements": {
+            "INSERT": 69,
+            "SELECT": 69,
+            "UPDATE": 251
+          }
+        },
+        "setup": {
+          "count": 4,
+          "seconds": 0.005150659941136837,
+          "statements": {
+            "CREATE": 4
+          }
+        }
+      },
+      "model_requests_by_search_stage": {
+        "H0": {
+          "request_seconds": 506.49300000000005,
+          "requests": 14
+        },
+        "H1": {
+          "request_seconds": 125.565,
+          "requests": 9
+        }
+      },
+      "coverage_counts": {
+        "phase1": 1117,
+        "phase2": 17538,
+        "examined": 10,
+        "unattempted": 18645,
+        "incomplete": 0,
+        "pending_frontiers": 0,
+        "unresolved_claims": 1
+      },
+      "candidates": [
+        {
+          "candidate_id": "4700794c5b325a26bcce7047301fcee84cd2667f7a2681071b9026794ffd280e",
+          "revision": 1,
+          "predicate": "hasProductionPlan",
+          "effective": true,
+          "decision_status": "supported",
+          "reason_code": "candidate_supported",
+          "source_review": "source_and_ownership_checked",
+          "first_effective_seconds": 220.77076817909256,
+          "source_paragraph": 26,
+          "subject_id": "375dabef28d31591f3843ca7c6c7752e85e121d44161a51b5139d3a53593585f",
+          "object_id": "2732b250d2968fb4f4f51a5227eb60f8dc9d3c104258b75e1ba1eb46441344ff"
+        },
+        {
+          "candidate_id": "30f1f211d233b29846c83615df538614941889fc6a6dbad8285523fe290d6f65",
+          "revision": 1,
+          "predicate": "describes",
+          "effective": true,
+          "decision_status": "supported",
+          "reason_code": "candidate_supported",
+          "source_review": "unscored",
+          "first_effective_seconds": 328.0294474690454,
+          "object_class": "ClinicalTrialDrug"
+        },
+        {
+          "candidate_id": "20cf5d434b0187e9730fdda66b246093a601b16cc905c3055c2501b4db1bd1f1",
+          "revision": 1,
+          "predicate": "plannedProductionDate",
+          "effective": true,
+          "decision_status": "supported",
+          "reason_code": "candidate_supported",
+          "source_review": "source_and_ownership_checked",
+          "first_effective_seconds": 358.4091253930237,
+          "source_paragraph": 26,
+          "subject_id": "2732b250d2968fb4f4f51a5227eb60f8dc9d3c104258b75e1ba1eb46441344ff"
+        },
+        {
+          "candidate_id": "b0ff4f1bf6294e4f4724aedde19e2d4871d2d00d490427d0f4b5c05dfecd2256",
+          "revision": 1,
+          "predicate": "plannedBatchCount",
+          "effective": true,
+          "decision_status": "supported",
+          "reason_code": "candidate_supported",
+          "source_review": "source_and_ownership_checked",
+          "first_effective_seconds": 384.7493754060706,
+          "source_paragraph": 26,
+          "subject_id": "2732b250d2968fb4f4f51a5227eb60f8dc9d3c104258b75e1ba1eb46441344ff"
+        },
+        {
+          "candidate_id": "37fbc24c73f35d42ae678583c064db5c6500022783b648236cdceba535758b0c",
+          "revision": 1,
+          "predicate": "usesEquipment",
+          "effective": true,
+          "decision_status": "supported",
+          "reason_code": "candidate_supported",
+          "source_review": "source_and_ownership_checked",
+          "first_effective_seconds": 450.52999689709395,
+          "source_table": 8,
+          "source_row": 7,
+          "subject_id": "375dabef28d31591f3843ca7c6c7752e85e121d44161a51b5139d3a53593585f",
+          "object_id": "c7bef594d19f7898a78d35e775eec7511676dc55dc93f90e51d9179feb27d842"
+        },
+        {
+          "candidate_id": "2c93dcc06d853f1975279b5b9dad29674a59bd7468e9bb40511df8d5a847947b",
+          "revision": 1,
+          "predicate": "currentDevelopmentStage",
+          "effective": true,
+          "decision_status": "supported",
+          "reason_code": "candidate_supported",
+          "source_review": "unscored",
+          "first_effective_seconds": 477.5469010610832,
+          "object_class": "DevelopmentPhase"
+        },
+        {
+          "candidate_id": "86692e24b63363e1857acd2b2d0d17a01643e3f35527528bea0a0ace38db0a69",
+          "revision": 1,
+          "predicate": "equipmentID",
+          "effective": true,
+          "decision_status": "supported",
+          "reason_code": "candidate_supported",
+          "source_review": "source_or_ownership_review_failed",
+          "first_effective_seconds": 553.0934161490295,
+          "subject_id": "c7bef594d19f7898a78d35e775eec7511676dc55dc93f90e51d9179feb27d842",
+          "value_sources": [
+            [
+              "table:9",
+              30,
+              2
+            ]
+          ],
+          "subject_sources": [
+            [
+              "table:8",
+              7,
+              1
+            ],
+            [
+              "table:9",
+              30,
+              12
+            ]
+          ],
+          "error_type": "AssertionError"
+        },
+        {
+          "candidate_id": "e58a6e7e829e82782bae7e2f6d4e72304ad5b2707848da6604ed3d0e8866e1c4",
+          "revision": 1,
+          "predicate": "modelSpecification",
+          "effective": true,
+          "decision_status": "supported",
+          "reason_code": "candidate_supported",
+          "source_review": "source_or_ownership_review_failed",
+          "first_effective_seconds": 646.6666666120291,
+          "subject_id": "c7bef594d19f7898a78d35e775eec7511676dc55dc93f90e51d9179feb27d842",
+          "value_sources": [
+            [
+              "table:9",
+              30,
+              3
+            ]
+          ],
+          "subject_sources": [
+            [
+              "table:8",
+              7,
+              1
+            ],
+            [
+              "table:9",
+              30,
+              1
+            ]
+          ],
+          "error_type": "AssertionError"
+        }
+      ],
+      "applied_candidate_history": [
+        {
+          "batch": "0001.json",
+          "candidate_id": "687c1a41341e54fd1547647f7f7ae3573f0edceabb311a80210a67579a325e59",
+          "revision": 1,
+          "predicate": "usesEquipment",
+          "decision_status": "undetermined",
+          "policy_eligible": false,
+          "reason_code": "applicability_not_supported"
+        },
+        {
+          "batch": "0002.json",
+          "candidate_id": "687c1a41341e54fd1547647f7f7ae3573f0edceabb311a80210a67579a325e59",
+          "revision": 2,
+          "predicate": "usesEquipment",
+          "decision_status": "undetermined",
+          "policy_eligible": false,
+          "reason_code": "applicability_not_supported"
+        },
+        {
+          "batch": "0003.json",
+          "candidate_id": "4700794c5b325a26bcce7047301fcee84cd2667f7a2681071b9026794ffd280e",
+          "revision": 1,
+          "predicate": "hasProductionPlan",
+          "decision_status": "supported",
+          "policy_eligible": true,
+          "reason_code": "candidate_supported"
+        },
+        {
+          "batch": "0004.json",
+          "candidate_id": "8958c61fadc52e15d8c5ad23bb46d7f465f7c4976d2f59b2def543336f4fcf00",
+          "revision": 1,
+          "predicate": "describes",
+          "decision_status": "undetermined",
+          "policy_eligible": false,
+          "reason_code": "field_role_not_supported"
+        },
+        {
+          "batch": "0004.json",
+          "candidate_id": "dba79bbe6ccae9d527d9e804a1c74c1592272324ff30bae070d73879657928f0",
+          "revision": 1,
+          "predicate": "describes",
+          "decision_status": "undetermined",
+          "policy_eligible": false,
+          "reason_code": "field_role_not_supported"
+        },
+        {
+          "batch": "0005.json",
+          "candidate_id": "30f1f211d233b29846c83615df538614941889fc6a6dbad8285523fe290d6f65",
+          "revision": 1,
+          "predicate": "describes",
+          "decision_status": "supported",
+          "policy_eligible": true,
+          "reason_code": "candidate_supported"
+        },
+        {
+          "batch": "0006.json",
+          "candidate_id": "20cf5d434b0187e9730fdda66b246093a601b16cc905c3055c2501b4db1bd1f1",
+          "revision": 1,
+          "predicate": "plannedProductionDate",
+          "decision_status": "supported",
+          "policy_eligible": true,
+          "reason_code": "candidate_supported"
+        },
+        {
+          "batch": "0007.json",
+          "candidate_id": "b0ff4f1bf6294e4f4724aedde19e2d4871d2d00d490427d0f4b5c05dfecd2256",
+          "revision": 1,
+          "predicate": "plannedBatchCount",
+          "decision_status": "supported",
+          "policy_eligible": true,
+          "reason_code": "candidate_supported"
+        },
+        {
+          "batch": "0008.json",
+          "candidate_id": "37fbc24c73f35d42ae678583c064db5c6500022783b648236cdceba535758b0c",
+          "revision": 1,
+          "predicate": "usesEquipment",
+          "decision_status": "supported",
+          "policy_eligible": true,
+          "reason_code": "candidate_supported"
+        },
+        {
+          "batch": "0009.json",
+          "candidate_id": "2c93dcc06d853f1975279b5b9dad29674a59bd7468e9bb40511df8d5a847947b",
+          "revision": 1,
+          "predicate": "currentDevelopmentStage",
+          "decision_status": "supported",
+          "policy_eligible": true,
+          "reason_code": "candidate_supported"
+        },
+        {
+          "batch": "0010.json",
+          "candidate_id": "86692e24b63363e1857acd2b2d0d17a01643e3f35527528bea0a0ace38db0a69",
+          "revision": 1,
+          "predicate": "equipmentID",
+          "decision_status": "supported",
+          "policy_eligible": true,
+          "reason_code": "candidate_supported"
+        },
+        {
+          "batch": "0012.json",
+          "candidate_id": "e58a6e7e829e82782bae7e2f6d4e72304ad5b2707848da6604ed3d0e8866e1c4",
+          "revision": 1,
+          "predicate": "modelSpecification",
+          "decision_status": "supported",
+          "policy_eligible": true,
+          "reason_code": "candidate_supported"
+        }
+      ],
+      "missing_focus_targets": [
+        "equipmentID",
+        "modelSpecification"
+      ],
+      "source_review_counts": {
+        "source_and_ownership_checked": 4,
+        "unscored": 2,
+        "source_or_ownership_review_failed": 2
+      },
+      "correct_first_effective_seconds": {
+        "usesEquipment": 450.52999689709395,
+        "equipmentID": null,
+        "modelSpecification": null,
+        "hasProductionPlan": 220.77076817909256,
+        "plannedProductionDate": 358.4091253930237,
+        "plannedBatchCount": 384.7493754060706
+      },
+      "same_parent_complete_path_seconds": {
+        "usesEquipment": null,
+        "hasProductionPlan": 384.7493754060706
+      },
+      "evidence_repair_summary": {
+        "enabled": true,
+        "reason_counts": {
+          "applicability_not_supported": 1,
+          "entity_reference_not_specific": 1,
+          "field_role_not_supported": 1
+        },
+        "rechecks": 0,
+        "status_counts": {
+          "awaiting_evidence": 1,
+          "resolved": 1
+        },
+        "total": 2
+      },
+      "retry_kind_counts": {
+        "rediscovery:1": 2,
+        "first_inspection": 10
+      }
+    }
+  ],
+  "ontology_snapshot_hash": "25a0576f6f6d0efb002c44c5449dfba4329144da3868f9b6234a4038d3d68b6c",
+  "model": {
+    "name": "Qwen3.6-35B-A3B",
+    "revision": "0b21525e972670ed59e1812e170b27c26355381f0656ecc4e25617ece7dac58b",
+    "temperature": 0.1,
+    "inflight": 1,
+    "semantic_ranking_enabled": false,
+    "forced_cache_clear": false
+  }
+}

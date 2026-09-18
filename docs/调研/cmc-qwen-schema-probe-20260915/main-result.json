@@ -1,0 +1,497 @@
+{
+  "run_id": "schema-probe-67039239109b453185fe",
+  "document_ref": "upload-23c872fb-3ab1-41de-a705-dd4b162dfa09",
+  "root_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport",
+  "source_filename": "HRS-1597原料临床备样生产信息表_--DP-C-PI-S-X2419_2601_04-原 - PDE-冲突.docx",
+  "source_sha256": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+  "evidence_unit_count": 447,
+  "selected_evidence_units": 86,
+  "started_at": "2026-09-15T23:50:29.510300+00:00",
+  "model": "Qwen3.6-35B-A3B",
+  "declared_model_revision": "0b21525e972670ed59e1812e170b27c26355381f0656ecc4e25617ece7dac58b",
+  "ontology_hash": "555519c5c92c9555e3ac7cd358918cbf853baf38bb07c21a86bb62e72ff9a469",
+  "ttl_hashes": {
+    "fixtures/slpra-samples.ttl": "77a7f7ed9193967cbd80cc167eba0ab4fc7ffa69ae868b63757eeffe26c94739",
+    "lib/bfo.ttl": "ec724ed85f64a975add34d1d833053c1eaea953de72c7481a6377c702aa49a8f",
+    "slpra-cleaning.ttl": "f0f7ff3e1f173e5e464260f8849f5f05d2323b58075ab7cb26f1f9c51bffd7ef",
+    "slpra-contamination.ttl": "f9d7c866546cfdf60ed6efb9a96ca6be33973e7910099957ac7afd6aab63a19e",
+    "slpra-document.ttl": "7e2d7bc2851c686190016bd9af3e580be9c4054b3a84aa2738945fda09f396ce",
+    "slpra-drug-development.ttl": "ea90db5a324036c71a6e6b559b48aa14d202de75d2e491989791859abe2f8e25",
+    "slpra-drug.ttl": "f4acbc4277938be189380b99eb572a171fc9c340b17e821ac8c232a67b31ef53",
+    "slpra-equipment.ttl": "f3d8682598f19c8448fa0eeefe66e060a0eff7bfc0d1dd9da71e3087ac95d998",
+    "slpra-facility.ttl": "a8b25041ca48fc91d76f42316759879adc325bda7d4cdb63b8e937c649b1299d",
+    "slpra-integration.ttl": "49e7c2caa01ccf80a450a0fc05950aa30ffd7cab24784229e6b40dd541c49146",
+    "slpra-personnel.ttl": "372e04810a5a5a4f072eb7c186e3185c6c2b27b55a2b51fcf8a1625311690d89",
+    "slpra-risk.ttl": "4e48152d685b757fc1a9e61e6124e5ce70de52da843bcc17ee015c5e936ea3ab"
+  },
+  "script_sha256": "c3752eac0f3232bc701896fa7e265e2c36f9f14adef404bba5958d9aa4fd71cb",
+  "cases_sha256": "f19d109cf2a8a9ceb2fc976cede537740815b2c32504a8ddb057ba1ab33422e2",
+  "reference_sha256": "e4214646154c62d3c12025911e94a54a05fc9f59de21cbeefe0422cfb739afeb",
+  "reference_is_model_input": false,
+  "reference_level": "assistant_silver",
+  "schema_fallback": false,
+  "max_attempts": 1,
+  "temperature": 0,
+  "max_output_tokens_per_call": 3500,
+  "case_count": 8,
+  "card_count": 329,
+  "status": "completed",
+  "results": [
+    {
+      "scope_id": "introduction",
+      "status": "complete",
+      "calls": [
+        {
+          "http_call": 1,
+          "usage": {
+            "completion_tokens": 529,
+            "prompt_tokens": 1039,
+            "total_tokens": 1568,
+            "completion_tokens_details": null,
+            "prompt_tokens_details": {
+              "audio_tokens": null,
+              "cached_tokens": 131
+            }
+          },
+          "finish_reason": "stop",
+          "seconds": 12.684
+        },
+        {
+          "http_call": 2,
+          "usage": {
+            "completion_tokens": 2163,
+            "prompt_tokens": 10794,
+            "total_tokens": 12957,
+            "completion_tokens_details": null,
+            "prompt_tokens_details": {
+              "audio_tokens": null,
+              "cached_tokens": 291
+            }
+          },
+          "finish_reason": "stop",
+          "seconds": 77.62
+        }
+      ],
+      "request_contract_pass": true,
+      "source_preserved": true,
+      "anchors_grounded": true,
+      "extraction_contract_pass": true,
+      "checker_errors": [
+        "mention_evidence_id_mismatch",
+        "predicate_not_allowed_for_subject"
+      ],
+      "silver_assertions": {
+        "checks": [
+          false,
+          true
+        ],
+        "passed": 1,
+        "total": 2,
+        "all_pass": false
+      }
+    },
+    {
+      "scope_id": "product_properties",
+      "status": "complete",
+      "calls": [
+        {
+          "http_call": 1,
+          "usage": {
+            "completion_tokens": 292,
+            "prompt_tokens": 914,
+            "total_tokens": 1206,
+            "completion_tokens_details": null,
+            "prompt_tokens_details": {
+              "audio_tokens": null,
+              "cached_tokens": 131
+            }
+          },
+          "finish_reason": "stop",
+          "seconds": 8.268
+        },
+        {
+          "http_call": 2,
+          "usage": {
+            "completion_tokens": 1174,
+            "prompt_tokens": 10427,
+            "total_tokens": 11601,
+            "completion_tokens_details": null,
+            "prompt_tokens_details": {
+              "audio_tokens": null,
+              "cached_tokens": 291
+            }
+          },
+          "finish_reason": "stop",
+          "seconds": 59.937
+        }
+      ],
+      "request_contract_pass": true,
+      "source_preserved": true,
+      "anchors_grounded": true,
+      "extraction_contract_pass": true,
+      "checker_errors": [
+        "predicate_not_allowed_for_subject",
+        "predicate_not_allowed_for_subject",
+        "predicate_not_allowed_for_subject",
+        "predicate_not_allowed_for_subject",
+        "predicate_not_allowed_for_subject",
+        "predicate_not_allowed_for_subject"
+      ],
+      "silver_assertions": {
+        "checks": [
+          true,
+          true,
+          true
+        ],
+        "passed": 3,
+        "total": 3,
+        "all_pass": true
+      }
+    },
+    {
+      "scope_id": "process_equipment",
+      "status": "complete",
+      "calls": [
+        {
+          "http_call": 1,
+          "usage": {
+            "completion_tokens": 409,
+            "prompt_tokens": 1035,
+            "total_tokens": 1444,
+            "completion_tokens_details": null,
+            "prompt_tokens_details": {
+              "audio_tokens": null,
+              "cached_tokens": 131
+            }
+          },
+          "finish_reason": "stop",
+          "seconds": 10.124
+        },
+        {
+          "http_call": 2,
+          "usage": {
+            "completion_tokens": 1104,
+            "prompt_tokens": 11449,
+            "total_tokens": 12553,
+            "completion_tokens_details": null,
+            "prompt_tokens_details": {
+              "audio_tokens": null,
+              "cached_tokens": 291
+            }
+          },
+          "finish_reason": "stop",
+          "seconds": 63.107
+        }
+      ],
+      "request_contract_pass": true,
+      "source_preserved": true,
+      "anchors_grounded": true,
+      "extraction_contract_pass": true,
+      "checker_errors": [],
+      "silver_assertions": {
+        "checks": [
+          true,
+          true
+        ],
+        "passed": 2,
+        "total": 2,
+        "all_pass": true
+      }
+    },
+    {
+      "scope_id": "quality_condition",
+      "status": "complete",
+      "calls": [
+        {
+          "http_call": 1,
+          "usage": {
+            "completion_tokens": 322,
+            "prompt_tokens": 935,
+            "total_tokens": 1257,
+            "completion_tokens_details": null,
+            "prompt_tokens_details": {
+              "audio_tokens": null,
+              "cached_tokens": 131
+            }
+          },
+          "finish_reason": "stop",
+          "seconds": 8.737
+        },
+        {
+          "http_call": 2,
+          "usage": {
+            "completion_tokens": 1138,
+            "prompt_tokens": 6163,
+            "total_tokens": 7301,
+            "completion_tokens_details": null,
+            "prompt_tokens_details": {
+              "audio_tokens": null,
+              "cached_tokens": 291
+            }
+          },
+          "finish_reason": "stop",
+          "seconds": 41.736
+        },
+        {
+          "http_call": 3,
+          "usage": {
+            "completion_tokens": 1226,
+            "prompt_tokens": 6163,
+            "total_tokens": 7389,
+            "completion_tokens_details": null,
+            "prompt_tokens_details": {
+              "audio_tokens": null,
+              "cached_tokens": 291
+            }
+          },
+          "finish_reason": "stop",
+          "seconds": 122.869
+        }
+      ],
+      "request_contract_pass": true,
+      "source_preserved": true,
+      "anchors_grounded": true,
+      "extraction_contract_pass": true,
+      "checker_errors": [
+        "predicate_not_allowed_for_subject"
+      ],
+      "expansion_checker_errors": [
+        "mention_evidence_id_mismatch",
+        "range_or_endpoint_mismatch"
+      ],
+      "silver_assertions": {
+        "checks": [
+          true,
+          true
+        ],
+        "passed": 2,
+        "total": 2,
+        "all_pass": true
+      },
+      "expanded_silver_assertions": {
+        "checks": [
+          true,
+          true
+        ],
+        "passed": 2,
+        "total": 2,
+        "all_pass": true
+      }
+    },
+    {
+      "scope_id": "storage",
+      "status": "complete",
+      "calls": [
+        {
+          "http_call": 1,
+          "usage": {
+            "completion_tokens": 305,
+            "prompt_tokens": 945,
+            "total_tokens": 1250,
+            "completion_tokens_details": null,
+            "prompt_tokens_details": {
+              "audio_tokens": null,
+              "cached_tokens": 0
+            }
+          },
+          "finish_reason": "stop",
+          "seconds": 12.096
+        },
+        {
+          "http_call": 2,
+          "usage": {
+            "completion_tokens": 1181,
+            "prompt_tokens": 7582,
+            "total_tokens": 8763,
+            "completion_tokens_details": null,
+            "prompt_tokens_details": {
+              "audio_tokens": null,
+              "cached_tokens": 0
+            }
+          },
+          "finish_reason": "stop",
+          "seconds": 117.645
+        }
+      ],
+      "request_contract_pass": true,
+      "source_preserved": true,
+      "anchors_grounded": true,
+      "extraction_contract_pass": true,
+      "checker_errors": [
+        "predicate_not_allowed_for_subject",
+        "predicate_not_allowed_for_subject"
+      ],
+      "silver_assertions": {
+        "checks": [
+          true
+        ],
+        "passed": 1,
+        "total": 1,
+        "all_pass": true
+      }
+    },
+    {
+      "scope_id": "residue_missing",
+      "status": "complete",
+      "calls": [
+        {
+          "http_call": 1,
+          "usage": {
+            "completion_tokens": 247,
+            "prompt_tokens": 879,
+            "total_tokens": 1126,
+            "completion_tokens_details": null,
+            "prompt_tokens_details": {
+              "audio_tokens": null,
+              "cached_tokens": 0
+            }
+          },
+          "finish_reason": "stop",
+          "seconds": 9.991
+        },
+        {
+          "http_call": 2,
+          "usage": {
+            "completion_tokens": 497,
+            "prompt_tokens": 8477,
+            "total_tokens": 8974,
+            "completion_tokens_details": null,
+            "prompt_tokens_details": {
+              "audio_tokens": null,
+              "cached_tokens": 0
+            }
+          },
+          "finish_reason": "stop",
+          "seconds": 45.638
+        }
+      ],
+      "request_contract_pass": true,
+      "source_preserved": true,
+      "anchors_grounded": true,
+      "extraction_contract_pass": true,
+      "checker_errors": [
+        "predicate_not_allowed_for_subject"
+      ],
+      "silver_assertions": {
+        "checks": [
+          false,
+          false
+        ],
+        "passed": 0,
+        "total": 2,
+        "all_pass": false
+      }
+    },
+    {
+      "scope_id": "pde_conflict",
+      "status": "complete",
+      "calls": [
+        {
+          "http_call": 1,
+          "usage": {
+            "completion_tokens": 618,
+            "prompt_tokens": 1229,
+            "total_tokens": 1847,
+            "completion_tokens_details": null,
+            "prompt_tokens_details": {
+              "audio_tokens": null,
+              "cached_tokens": 0
+            }
+          },
+          "finish_reason": "stop",
+          "seconds": 15.465
+        },
+        {
+          "http_call": 2,
+          "usage": {
+            "completion_tokens": 2637,
+            "prompt_tokens": 16199,
+            "total_tokens": 18836,
+            "completion_tokens_details": null,
+            "prompt_tokens_details": {
+              "audio_tokens": null,
+              "cached_tokens": 291
+            }
+          },
+          "finish_reason": "stop",
+          "seconds": 108.936
+        }
+      ],
+      "request_contract_pass": true,
+      "source_preserved": true,
+      "anchors_grounded": true,
+      "extraction_contract_pass": true,
+      "checker_errors": [
+        "condition_not_in_source"
+      ],
+      "silver_assertions": {
+        "checks": [
+          false,
+          false,
+          true
+        ],
+        "passed": 1,
+        "total": 3,
+        "all_pass": false
+      }
+    },
+    {
+      "scope_id": "toxicity_unknown",
+      "status": "complete",
+      "calls": [
+        {
+          "http_call": 1,
+          "usage": {
+            "completion_tokens": 418,
+            "prompt_tokens": 954,
+            "total_tokens": 1372,
+            "completion_tokens_details": null,
+            "prompt_tokens_details": {
+              "audio_tokens": null,
+              "cached_tokens": 131
+            }
+          },
+          "finish_reason": "stop",
+          "seconds": 10.542
+        },
+        {
+          "http_call": 2,
+          "usage": {
+            "completion_tokens": 1303,
+            "prompt_tokens": 8757,
+            "total_tokens": 10060,
+            "completion_tokens_details": null,
+            "prompt_tokens_details": {
+              "audio_tokens": null,
+              "cached_tokens": 291
+            }
+          },
+          "finish_reason": "stop",
+          "seconds": 54.57
+        }
+      ],
+      "request_contract_pass": true,
+      "source_preserved": true,
+      "anchors_grounded": true,
+      "extraction_contract_pass": true,
+      "checker_errors": [
+        "mention_text_not_in_evidence",
+        "predicate_not_allowed_for_subject",
+        "predicate_not_allowed_for_subject",
+        "predicate_not_allowed_for_subject",
+        "predicate_not_allowed_for_subject"
+      ],
+      "silver_assertions": {
+        "checks": [
+          true
+        ],
+        "passed": 1,
+        "total": 1,
+        "all_pass": true
+      }
+    }
+  ],
+  "finished_at": "2026-09-16T00:03:31.133160+00:00",
+  "http_calls": 17,
+  "http_seconds": 779.965
+}

@@ -1,0 +1,167 @@
+{
+  "subjects": {
+    "document": {
+      "attributes": {},
+      "relations": {
+        "hasStorageCondition": [
+          {
+            "target_id": "s1",
+            "evidence": {
+              "ref": "u0",
+              "quote": "工艺",
+              "span_id": "source:u0"
+            },
+            "condition": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "polarity": "affirmed"
+          }
+        ]
+      },
+      "anchor": {
+        "ref": "",
+        "quote": "",
+        "span_id": ""
+      }
+    },
+    "s1": {
+      "attributes": {
+        "lightProtection": [],
+        "packagingType": [
+          {
+            "raw": "双层聚乙烯薄膜袋外加药品包装用复合袋",
+            "source": {
+              "ref": "u8",
+              "quote": "双层聚乙烯薄膜袋外加药品包装用复合袋",
+              "span_id": "source:u8"
+            },
+            "field": {
+              "ref": "u4",
+              "quote": "包装方式",
+              "span_id": "source:u4"
+            },
+            "unit": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            },
+            "condition": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            }
+          }
+        ],
+        "shelfLife": [
+          {
+            "raw": "有效期24M",
+            "source": {
+              "ref": "u10",
+              "quote": "有效期24M",
+              "span_id": "source:u10"
+            },
+            "field": {
+              "ref": "u6",
+              "quote": "有效期/复测期",
+              "span_id": "source:u6"
+            },
+            "unit": {
+              "ref": "u10",
+              "quote": "M",
+              "span_id": "evidence:u10:5:6"
+            },
+            "condition": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            }
+          }
+        ],
+        "storageHumidity": [],
+        "storageTemperature": [
+          {
+            "raw": "不超过25℃",
+            "source": {
+              "ref": "u9",
+              "quote": "不超过25℃",
+              "span_id": "evidence:u9:15:17"
+            },
+            "field": {
+              "ref": "u5",
+              "quote": "存放条件（温度、湿度、是否避光）",
+              "span_id": "source:u5"
+            },
+            "unit": {
+              "ref": "u9",
+              "quote": "℃",
+              "span_id": "evidence:u9:17:18"
+            },
+            "condition": {
+              "ref": "",
+              "quote": "",
+              "span_id": ""
+            }
+          }
+        ]
+      },
+      "relations": {},
+      "anchor": {
+        "ref": "u7",
+        "quote": "HRS-1597",
+        "span_id": "source:u7"
+      }
+    }
+  },
+  "observations": [
+    {
+      "value": {
+        "ref": "",
+        "quote": "",
+        "span_id": ""
+      },
+      "field": {
+        "ref": "u5",
+        "quote": "存放条件（温度、湿度、是否避光）",
+        "span_id": "source:u5"
+      },
+      "legend": {
+        "ref": "",
+        "quote": "",
+        "span_id": ""
+      },
+      "condition": {
+        "ref": "",
+        "quote": "",
+        "span_id": ""
+      },
+      "state": "unknown",
+      "reason": "存放条件字段包含湿度和避光要求，但单元格u9内容'密封，双层聚乙烯薄膜袋，不超过25℃保存'中未提及湿度和避光信息，故为未知。"
+    },
+    {
+      "value": {
+        "ref": "",
+        "quote": "",
+        "span_id": ""
+      },
+      "field": {
+        "ref": "u5",
+        "quote": "存放条件（温度、湿度、是否避光）",
+        "span_id": "source:u5"
+      },
+      "legend": {
+        "ref": "",
+        "quote": "",
+        "span_id": ""
+      },
+      "condition": {
+        "ref": "",
+        "quote": "",
+        "span_id": ""
+      },
+      "state": "unknown",
+      "reason": "存放条件字段包含避光要求，但单元格u9内容中未提及是否避光，故为未知。"
+    }
+  ]
+}

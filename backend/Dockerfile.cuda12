@@ -1,0 +1,25 @@
+# syntax=docker/dockerfile:1
+# Separate CUDA 12.6 variant. The CPU Dockerfile and uv.lock remain unchanged.
+# CUDA user-space libraries come from the hash-locked PyTorch/NVIDIA wheels;
+# the host provides the NVIDIA driver through NVIDIA Container Toolkit.
+FROM python:3.12.7-slim-bookworm
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    default-jre-headless \
+    libreoffice-writer \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+COPY requirements-cuda12.lock ./requirements-cuda12.lock
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install --require-hashes -r requirements-cuda12.lock
+
+ENV HF_HUB_OFFLINE=1 \
+    TRANSFORMERS_OFFLINE=1 \
+    OMP_NUM_THREADS=4 \
+    MKL_NUM_THREADS=4
+
+COPY . .
+
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]

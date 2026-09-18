@@ -25,7 +25,7 @@ import {
 import { EmptyState } from "@/components/ui/empty-state";
 import { cn } from "@/lib/utils";
 import { downloadReportById, type ReportOrDocument } from "@/lib/api";
-import { formatBytes, saveBlob } from "./reading-pane";
+import { formatBytes, saveBlob } from "@/lib/file-utils";
 
 function detailHref(item: ReportOrDocument) {
   const query: Record<string, string> = {
@@ -123,6 +123,7 @@ export function ItemList({
                 ) : (
                   <Link
                     href={detailHref(item)}
+                    prefetch={false}
                     className="min-w-0 truncate text-sm font-medium text-foreground hover:text-primary hover:underline"
                     title={item.title}
                   >
@@ -167,7 +168,7 @@ export function ItemList({
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                       <DropdownMenuItem asChild>
-                        <Link href={detailHref(item)}>
+                        <Link href={detailHref(item)} prefetch={false}>
                           <Eye />
                           预览
                         </Link>

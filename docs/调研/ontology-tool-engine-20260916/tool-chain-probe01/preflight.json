@@ -1,0 +1,31 @@
+{
+  "run_id": "ontology-tool-chain-integration-01",
+  "source_manifest_sha256": "2a462159574368949f6c7ce31bc1bb2dd1ab748304094addaf67ad25c3da8a09",
+  "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+  "record_id": "c54c3238c67bc1e9fa52ed792378ddd68de02b3bd416cef9d369eece2f2971e9",
+  "selected_evidence_id": "16438631527487298ec0944d6b00559c2dbb71c7e9387096dd808d8c26ccaeda",
+  "selected_original_quote": "RE64611",
+  "selected_unit_in_authorized_context": true,
+  "legal_predicate": "https://ontology.pharma-gmp.cn/slpra/drug-development/usesEquipment",
+  "schema_card_id": "e09a86e008b525104d9925a77199f7028fe7df259dc35c55d765356cde4f20af",
+  "range_class_count": 25,
+  "source_ids": [
+    "system-mock-equipment",
+    "system-mock-roles"
+  ],
+  "available_tools": [
+    "get_schema_card",
+    "inspect_evidence",
+    "resolve_source_anchor",
+    "propose_mentions",
+    "query_instances",
+    "retrieve_evidence"
+  ],
+  "initial_input_tokens": 6839,
+  "max_total_context_tokens": 32768,
+  "max_output_tokens": 4096,
+  "max_model_requests": 4,
+  "real_model_requests": 0,
+  "graph_writes": 0,
+  "scenario_selection": "engineer-selected actual source and existing ontology predicate; not autonomous discovery or F1"
+}

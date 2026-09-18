@@ -527,9 +527,10 @@ class ContractRegistry:
 
     def load(self, ref, *, published=True):
         from app.services.reasoning.rule_service import method
+        from app.services.reporting.demo_sources import builtin_contract
         from app.services.reporting.template_preparation import builtin_profile
 
-        builtin = method(ref) or builtin_profile(ref)
+        builtin = method(ref) or builtin_profile(ref) or builtin_contract(ref)
         if builtin:
             return builtin
         row = self.db.get(ContractRevision, ref)

@@ -1,0 +1,51 @@
+{
+  "scope": "isolated dependency validation, no deployment or weight download",
+  "cpu_environment": "/tmp/ontology-gliner25-lock-7e6nakwi/.venv",
+  "cpu_versions": {
+    "gliner2": "2.0.0",
+    "transformers": "4.57.6",
+    "huggingface-hub": "0.36.2",
+    "tokenizers": "0.22.2",
+    "peft": "0.21.0",
+    "protobuf": "6.33.5",
+    "torch": "2.12.1+cpu",
+    "sentence-transformers": "5.6.0",
+    "pyshacl": "0.31.0"
+  },
+  "lock_sha256": {
+    "backend/pyproject.toml": "45ee71a6738cbf9c631004f6facf7cb7b14bcc789dfec6bd7bc09b8b9bfd442c",
+    "backend/uv.lock": "d2887af0842b5d1b79def5a3d0462791bda994ce9164b82a9f8b63c65c53f1e9",
+    "backend/requirements-cuda12.in": "db9e0325e9a82f204bb707d3fbf2589af79623246643823e826bb9c6234c1f96",
+    "backend/requirements-cuda12.lock": "ce27ce9278af8f2f392884d5fb1fae48d61ef38301dbe77e7b11333c0bf7789c"
+  },
+  "cuda_lock": {
+    "joint_resolution": "passed",
+    "torch": "2.7.1+cu126",
+    "new_locked_environment_installed": false
+  },
+  "real_cpu_inference": {
+    "gliner25_synthetic_span": "passed; 12 mg",
+    "bge_small_embedding": "passed; shape [2,512], finite",
+    "bge_reranker": "passed; shape [1], finite"
+  },
+  "tests": [
+    {
+      "scope": "affected GLiNER/semantic model regressions in CPU clone before SHACL extra",
+      "passed": 192
+    },
+    {
+      "scope": "GLiNER2 + historical schema-card tests after frozen manifest change",
+      "passed": 118
+    },
+    {
+      "scope": "CLI + GLiNER2 + evaluator in CPU clone",
+      "passed": 97
+    }
+  ],
+  "f4_runtime": {
+    "path": "/tmp/ontology-tool-shacl-runtime-20260916",
+    "pyshacl": "0.31.0",
+    "rdflib": "7.6.0",
+    "isolation": "new standard venv with inherited application base; no shared package mutation"
+  }
+}

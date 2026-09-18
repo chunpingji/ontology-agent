@@ -23,6 +23,7 @@ from sqlalchemy import (
     String,
     Text,
     UniqueConstraint,
+    true,
 )
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -79,6 +80,13 @@ class DocumentAnalysisRun(Base):
     graph_snapshot_id: Mapped[str | None] = mapped_column(String(200))
 
     revision: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    work_version: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, server_default="0")
+    work_batch_id: Mapped[str | None] = mapped_column(String(200))
+    request_version: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, server_default="0")
+    ranking_version: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, server_default="0")
     event_head: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     artifact_revision: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     stage: Mapped[str] = mapped_column(String(32), nullable=False, default="ingest")
@@ -88,6 +96,9 @@ class DocumentAnalysisRun(Base):
     stop_reason: Mapped[str | None] = mapped_column(String(100))
     control_action: Mapped[str | None] = mapped_column(String(32))
     control_version: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    ranking_budget_enabled: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=True, server_default=true(),
+    )
     deletion_state: Mapped[str] = mapped_column(String(32), nullable=False, default="none")
     progress: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
     artifact_manifest: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
@@ -125,6 +136,13 @@ class DocumentAnalysisExecution(Base):
     worker_id: Mapped[str | None] = mapped_column(String(200))
     lease_expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     heartbeat_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    recovery_event_head: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, server_default="0"
+    )
+    recovery_attempts: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, server_default="0"
+    )
+    last_progress_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     pause_requested: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     cancel_requested: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
@@ -242,10 +260,57 @@ class DocumentRecognitionEventBatch(Base):
     content_hash: Mapped[str] = mapped_column(String(64), nullable=False)
     first_sequence: Mapped[int] = mapped_column(Integer, nullable=False)
     last_sequence: Mapped[int] = mapped_column(Integer, nullable=False)
-    checkpoint_artifact_id: Mapped[str] = mapped_column(
-        String(200), ForeignKey("document_analysis_artifacts.artifact_id"), nullable=False
+    checkpoint_artifact_id: Mapped[str | None] = mapped_column(
+        String(200), ForeignKey("document_analysis_artifacts.artifact_id"), nullable=True
     )
+    committed_work_version: Mapped[int | None] = mapped_column(Integer)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+
+
+class DocumentRunCurrentState(Base):
+    """Current business partitions. No predecessor or historical snapshot rows."""
+
+    __tablename__ = "document_analysis_current_state"
+
+    recognition_run_id: Mapped[uuid.UUID] = mapped_column(
+        GUID(), ForeignKey("document_analysis_runs.recognition_run_id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+    domain: Mapped[str] = mapped_column(String(64), primary_key=True)
+    business_key: Mapped[str] = mapped_column(String(200), primary_key=True)
+    work_version: Mapped[int] = mapped_column(Integer, nullable=False)
+    content_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    payload: Mapped[dict] = mapped_column(JSON, nullable=False)
+
+
+class DocumentRunResult(Base):
+    """One exact paid result, independent of graph publication."""
+
+    __tablename__ = "document_analysis_results"
+
+    recognition_run_id: Mapped[uuid.UUID] = mapped_column(
+        GUID(), ForeignKey("document_analysis_runs.recognition_run_id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+    domain: Mapped[str] = mapped_column(String(64), primary_key=True)
+    result_key: Mapped[str] = mapped_column(String(200), primary_key=True)
+    content_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    payload: Mapped[dict] = mapped_column(JSON, nullable=False)
+
+
+class DocumentRunRequest(Base):
+    """Latest dispatch/accounting state of one request or lineage protocol."""
+
+    __tablename__ = "document_analysis_requests"
+
+    recognition_run_id: Mapped[uuid.UUID] = mapped_column(
+        GUID(), ForeignKey("document_analysis_runs.recognition_run_id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+    domain: Mapped[str] = mapped_column(String(64), primary_key=True)
+    request_key: Mapped[str] = mapped_column(String(200), primary_key=True)
+    content_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    payload: Mapped[dict] = mapped_column(JSON, nullable=False)
 
 
 class DocumentRunCandidate(Base):

@@ -12,13 +12,18 @@ from app.services.extraction.ontology_guided.contracts import (
     GraphEdge,
     GraphNode,
     GraphProperty,
+    GraphRelationshipGroup,
     GraphSnapshot,
 )
 from app.services.extraction.ontology_guided.dependencies import DependencyIndex
-from app.services.extraction.ontology_guided.projection import project_graph
+from app.services.extraction.ontology_guided.projection import (
+    TOOL_EXTRACTION_PROTOCOL,
+    project_graph,
+)
 from app.services.extraction.ontology_guided.records import RecordIndex
 
 PUBLIC_TO_INTERNAL_PROJECTION = {
+    "verified": "verified",
     "effective_affirmed": "effective",
     "all_candidates": "all",
     "unassociated": "unassociated",
@@ -27,6 +32,91 @@ PUBLIC_TO_INTERNAL_PROJECTION = {
     "undetermined": "undetermined",
     "rejected": "rejected",
 }
+
+
+def public_ranking_payload(state: dict[str, Any]) -> dict[str, Any]:
+    """Project committed diagnostics without exposing query text or cache contents."""
+    service = state.get("service") or {}
+    epochs = []
+    for epoch in [*(service.get("epochs") or []), *(service.get("pending_epochs") or [])]:
+        if epoch.get("status") not in {"committed", "paused"}:
+            continue
+        observations = epoch.get("observations") or []
+        by_record: dict[str, list[dict]] = {}
+        for observation in observations:
+            by_record.setdefault(observation["record_id"], []).append(observation)
+        records = []
+        for rank, record_id in enumerate(epoch.get("ordered_record_ids") or [], start=1):
+            values = by_record.get(record_id, [])
+            channels = sorted({
+                channel
+                for value in values
+                for channel in value.get("channel_hits", [])
+            })
+            records.append({
+                "record_id": record_id,
+                "rank": rank,
+                "channels": channels,
+                "intent_ranks": {
+                    value["retrieval_intent"]: value["intent_rank"]
+                    for value in values
+                    if value.get("retrieval_intent") and value.get("intent_rank") is not None
+                },
+                "raw_scores": {
+                    value["retrieval_intent"]: value["raw_rerank_score"]
+                    for value in values
+                    if value.get("retrieval_intent") and value.get("raw_rerank_score") is not None
+                },
+            })
+        subject = epoch.get("subject_ref") or {}
+        queries = epoch.get("queries") or []
+        epochs.append({
+            "epoch_id": epoch["epoch_id"],
+            "status": epoch["status"],
+            "query_id": queries[0].get("query_id") if queries else None,
+            "subject_ref": {
+                "entity_id": subject.get("entity_id") or subject.get("id"),
+                "revision": subject["revision"],
+            } if subject else None,
+            "predicate_iri": queries[0].get("predicate_iri") if queries else None,
+            "plan_id": epoch.get("plan_id"),
+            "requested_mode": (service.get("policy") or {}).get("mode", "deterministic"),
+            "actual_mode": epoch.get("actual_ranking_mode", "deterministic"),
+            "degraded": bool(epoch.get("degraded", False)),
+            "reason": epoch.get("reason") or None,
+            "budget_accounted": (epoch.get("costs") or {}).get("budget_accounted", True),
+            "records": records,
+        })
+    costs = service.get("costs") or {}
+    observations = service.get("model_observations") or []
+    inference_observations = [
+        item for item in observations if item.get("operation") in {"embed", "score_pairs"}
+    ]
+    measured = [item for item in inference_observations if item.get("input_tokens") is not None]
+    return {
+        "requested_mode": (service.get("policy") or {}).get("mode", "deterministic"),
+        "budget_enabled": service.get("budget_enabled", True),
+        "actual_modes": sorted({
+            epoch["actual_mode"] for epoch in epochs if epoch["status"] == "committed"
+        }),
+        "degraded": any(epoch["degraded"] for epoch in epochs),
+        "paused": any(epoch["status"] == "paused" for epoch in epochs),
+        "reasons": sorted({epoch["reason"] for epoch in epochs if epoch["reason"]}),
+        "committed_epochs": sum(epoch["status"] == "committed" for epoch in epochs),
+        "epochs": epochs,
+        "cost": {
+            "model_calls": costs.get("model_calls", 0),
+            "observed_requests": len(inference_observations),
+            "input_pairs": costs.get("input_pairs", 0),
+            "input_tokens": costs.get("tokens", 0),
+            "reserved_input_tokens": costs.get("tokens", 0),
+            "measured_input_tokens": sum(item["input_tokens"] for item in measured),
+            "unknown_request_count": max(0, costs.get("model_calls", 0) - len(measured)),
+            "queue_seconds": sum(item.get("queue_seconds") or 0 for item in observations),
+            "retries": costs.get("technical_retries", 0),
+            "elapsed_seconds": costs.get("elapsed_ms", 0) / 1000,
+        },
+    }
 
 
 def _generic_ref(value) -> dict[str, Any] | None:
@@ -56,15 +146,15 @@ def build_selection_registry(
 ) -> dict[str, dict[str, Any]]:
     """Register every graph citation as an opaque, run-owned source selection."""
 
-    record_by_evidence: dict[str, tuple[str, str]] = {}
-    for record, view in zip(index.records, index.record_views, strict=True):
-        for unit in [
-            *record.source_units,
-            *record.header_units,
-            *record.note_units,
-            *record.parent_units,
-        ]:
-            record_by_evidence.setdefault(unit.evidence_id, (record.record_id, view.record_view_id))
+    record_by_evidence = getattr(index, "_selection_record_index", None)
+    if record_by_evidence is None:
+        record_by_evidence = {}
+        for record, view in zip(index.records, index.record_views, strict=True):
+            for unit in [*record.source_units, *record.header_units, *record.note_units,
+                         *record.parent_units]:
+                record_by_evidence.setdefault(unit.evidence_id,
+                                             (record.record_id, view.record_view_id))
+        index._selection_record_index = record_by_evidence
 
     registry: dict[str, dict[str, Any]] = {}
 
@@ -109,11 +199,17 @@ def build_selection_registry(
         for role, anchors in role_anchors.items():
             for anchor in anchors:
                 add(anchor, role)
-    for item in graph.edges:
+    for item in [*graph.edges, *graph.relationship_groups]:
         role_anchors = _edge_role_anchors(item)
         for role, anchors in role_anchors.items():
             for anchor in anchors:
                 add(anchor, role)
+    for item in [*graph.properties, *graph.edges, *graph.relationship_groups]:
+        if "scope" not in item.model_fields_set:
+            continue
+        for qualifier in item.applicability.get("qualifiers", []):
+            for anchor in qualifier.get("evidence_refs", []):
+                add(EvidenceAnchor.model_validate(anchor), "condition")
     return registry
 
 
@@ -140,6 +236,7 @@ def _property_role_anchors(item: GraphProperty) -> dict[str, list[EvidenceAnchor
         # it traceable but do not invent a subject/predicate distinction.
         value = item.evidence_refs
     return {
+        "unit": item.unit_evidence_refs,
         "subject": subject,
         "object": [],
         "value": value,
@@ -149,7 +246,9 @@ def _property_role_anchors(item: GraphProperty) -> dict[str, list[EvidenceAnchor
     }
 
 
-def _edge_role_anchors(item: GraphEdge) -> dict[str, list[EvidenceAnchor]]:
+def _edge_role_anchors(
+    item: GraphEdge | GraphRelationshipGroup,
+) -> dict[str, list[EvidenceAnchor]]:
     predicate = item.predicate_evidence_refs
     subject = item.subject_evidence_refs
     object_refs = item.object_evidence_refs
@@ -157,6 +256,8 @@ def _edge_role_anchors(item: GraphEdge) -> dict[str, list[EvidenceAnchor]]:
         # Flattened legacy proposals remain visible as endpoint evidence only.
         object_refs = item.evidence_refs
     return {
+        **({"selection": item.selection_evidence_refs}
+           if isinstance(item, GraphRelationshipGroup) else {}),
         "subject": subject,
         "object": object_refs,
         "value": [],
@@ -177,6 +278,15 @@ def _entity(item: GraphNode, registry: dict[str, dict[str, Any]]) -> dict[str, A
         "verified": "verified_external",
     }.get(item.identity_status, item.identity_status)
     return {
+        **{key: (_generic_ref(getattr(item, key)) if key.endswith("_ref")
+                  else getattr(item, key))
+           for key in ("grounding_kind", "type_decision_ref", "referent_decision_ref",
+                       "composition_decision_ref") if key in item.model_fields_set},
+        **({"external_provenance": [value.model_dump(mode="json")
+                                    for value in item.external_provenance]}
+           if "external_provenance" in item.model_fields_set else {}),
+        **({"identity_decision_refs": [_generic_ref(ref) for ref in item.identity_decision_refs]}
+           if "identity_decision_refs" in item.model_fields_set else {}),
         "entity_id": item.entity_id,
         "revision": item.revision,
         "class_iri": item.class_iri,
@@ -203,6 +313,7 @@ def _property(
         "direction": "subject_to_value",
         "raw_value": item.raw_value,
         "normalized_value": item.normalized_value,
+        "normalization_record": item.normalization_record,
         "polarity": item.polarity,
         "conditions": [{"text": value} for value in item.conditions],
         "applicability": item.applicability,
@@ -217,13 +328,14 @@ def _property(
         "source_selection_refs": _selection_roles(registry, _property_role_anchors(item)),
         "reason_code": item.reason_code or None,
         "reason": item.reason or None,
-        "datatype_iri": None,
-        "unit": None,
+        "datatype_iri": item.normalization_record.get("datatype_iri"),
+        "unit": item.normalization_record.get("target_unit", item.normalization_record.get("to")),
+        **_assertion_qualifiers(item, registry),
     }
 
 
 def _relationship(
-    item: GraphEdge,
+    item: GraphEdge | GraphRelationshipGroup,
     registry: dict[str, dict[str, Any]],
     invalidated: set[str],
 ) -> dict[str, Any]:
@@ -231,7 +343,9 @@ def _relationship(
         "candidate_id": item.candidate_id,
         "revision": item.revision,
         "subject_ref": _entity_ref(item.subject_ref),
-        "object_ref": _entity_ref(item.object_ref),
+        **({"object_refs": [_entity_ref(ref) for ref in item.object_refs],
+            "selection": item.selection} if isinstance(item, GraphRelationshipGroup)
+           else {"object_ref": _entity_ref(item.object_ref)}),
         "predicate_iri": item.predicate_iri,
         "predicate_label": item.predicate_label,
         "direction": ("subject_to_object" if item.direction == "outbound" else "object_to_subject"),
@@ -249,7 +363,78 @@ def _relationship(
         "source_selection_refs": _selection_roles(registry, _edge_role_anchors(item)),
         "reason_code": item.reason_code or None,
         "reason": item.reason or None,
+        **_assertion_qualifiers(item, registry),
     }
+
+
+def _public_scope(scope) -> dict[str, Any]:
+    return {"scope_id": scope.scope_id, "members": [
+        {"relation_ref": _generic_ref(step.relation_ref),
+         "member_ref": _entity_ref(step.member_ref)} for step in scope.members
+    ]}
+
+
+def _public_applicability(item, registry) -> list[dict[str, Any]]:
+    return [
+        {"predicate_iri": qualifier.get("predicate_iri"), "text": qualifier["text"],
+         "evidence_selection_ids": _refs_for(registry, [
+             EvidenceAnchor.model_validate(anchor)
+             for anchor in qualifier.get("evidence_refs", [])
+         ], "condition")}
+        for qualifier in item.applicability.get("qualifiers", [])
+    ]
+
+
+def _assertion_qualifiers(item, registry) -> dict[str, Any]:
+    result = {}
+    if "modality" in item.model_fields_set:
+        result["modality"] = item.modality
+    if "scope" in item.model_fields_set:
+        result["scope"] = _public_scope(item.scope)
+        result["applicability"] = (
+            {"qualifiers": _public_applicability(item, registry)} if item.applicability else {}
+        )
+    return result
+
+
+def public_scope_resolutions(
+    base: GraphSnapshot, graph: GraphSnapshot, registry: dict[str, dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """Explain only returned scopes from exact current parents, even if parents are filtered."""
+    parents = {(item.candidate_id, item.revision): item
+               for item in [*base.edges, *base.relationship_groups]}
+    scopes = {item.scope.scope_id: item.scope
+              for item in [*graph.edges, *graph.properties, *graph.relationship_groups]
+              if item.scope.members}
+    result = []
+    for scope in scopes.values():
+        steps = []
+        for member in scope.members:
+            parent = parents.get((member.relation_ref.id, member.relation_ref.revision))
+            if parent is None:
+                break
+            objects = (parent.object_refs if isinstance(parent, GraphRelationshipGroup)
+                       else [parent.object_ref])
+            if member.member_ref not in objects:
+                break
+            roles = _selection_roles(registry, _edge_role_anchors(parent))
+            applicability = _public_applicability(parent, registry)
+            steps.append({
+                "relation_ref": _generic_ref(member.relation_ref),
+                "member_ref": _entity_ref(member.member_ref),
+                "selection": (parent.selection
+                              if isinstance(parent, GraphRelationshipGroup) else None),
+                "polarity": parent.polarity, "modality": parent.modality,
+                "conditions": parent.conditions, "applicability": applicability,
+                "evidence_selection_ids": list(dict.fromkeys([
+                    *(ref for refs in roles.values() for ref in refs),
+                    *(ref for qualifier in applicability
+                      for ref in qualifier["evidence_selection_ids"]),
+                ])),
+            })
+        else:
+            result.append({"scope_id": scope.scope_id, "steps": steps})
+    return result
 
 
 def public_graph_payload(
@@ -261,10 +446,13 @@ def public_graph_payload(
     availability: str,
     projection: str,
     stored_payload: dict[str, Any],
+    extraction_protocol: str | None = None,
 ) -> dict[str, Any]:
     """Filter one stored all-candidate snapshot without causing side effects."""
 
     internal_projection = PUBLIC_TO_INTERNAL_PROJECTION[projection]
+    if projection == "verified" and extraction_protocol != TOOL_EXTRACTION_PROTOCOL:
+        raise ValueError("unsupported_projection")
     base = GraphSnapshot.model_validate(stored_payload["graph"])
     dependency_index = DependencyIndex.from_snapshot(stored_payload.get("dependency_index"))
     graph = project_graph(
@@ -276,13 +464,15 @@ def public_graph_payload(
         nodes=base.nodes,
         edges=base.edges,
         properties=base.properties,
+        relationship_groups=base.relationship_groups,
+        extraction_protocol=extraction_protocol,
         coverage=base.coverage,
         progress=base.progress,
         dependency_index=dependency_index,
         projection=internal_projection,
         artifact_status=base.artifact_status,
     )
-    if projection == "effective_affirmed":
+    if projection == "effective_affirmed" and extraction_protocol is None:
         graph.edges = [
             item
             for item in graph.edges
@@ -317,8 +507,13 @@ def public_graph_payload(
     registry = dict(stored_payload.get("selection_registry") or {})
     invalidated = set(dependency_index.invalidated)
     generated_at = stored_payload.get("generated_at") or datetime.now(UTC).isoformat()
+    from app.schemas.retrieval_diagnostics import diagnostic_payload
+
     coverage_subjects = [
         {
+            **diagnostic_payload(item),
+            **({"scope": _public_scope(item.scope) if item.scope is not None else None}
+               if "scope" in item.model_fields_set else {}),
             "subject_ref": _entity_ref(item.subject_ref),
             "predicate_iri": item.predicate_iri,
             "predicate_label": item.predicate_label,
@@ -327,13 +522,23 @@ def public_graph_payload(
             "records_incomplete": item.incomplete,
             "records_unattempted": item.unattempted,
             "phase_counts": {"phase1": item.phase1, "phase2": item.phase2},
-            "pending_frontiers": 0,
-            "stop_reason": None,
+            "executed_phase_counts": (
+                item.executed_phase_counts
+                if "executed_phase_counts" in item.model_fields_set
+                else None
+            ),
+            "pending_frontiers": getattr(item, "pending_frontiers", 0),
+            "stop_reason": getattr(item, "stop_reason", None),
         }
         for item in graph.coverage
     ]
     progress = graph.progress
     return {
+        **({"extraction_protocol": extraction_protocol,
+            "relationship_groups": [_relationship(item, registry, invalidated)
+                                    for item in graph.relationship_groups],
+            "scope_resolutions": public_scope_resolutions(base, graph, registry)}
+           if extraction_protocol is not None else {}),
         "contract_version": "document-analysis-runs-v1",
         "recognition_run_id": recognition_run_id,
         "run_revision": run_revision,
@@ -347,14 +552,17 @@ def public_graph_payload(
             "metadata_snapshot_id": base.metadata_snapshot_id,
             "ontology_snapshot_id": stored_payload["ontology_snapshot_id"],
             "root_ref": _entity_ref(base.root_ref),
-            "projection_policy": base.projection_policy,
+            "projection_policy": (graph.projection_policy if extraction_protocol is not None
+                                  else base.projection_policy),
             "generated_at": generated_at,
         },
         "entities": [_entity(item, registry) for item in graph.nodes],
         "properties": [_property(item, registry, invalidated) for item in graph.properties],
         "relationships": [_relationship(item, registry, invalidated) for item in graph.edges],
         "invalidated_refs": _versioned_refs(invalidated),
+        "ranking": public_ranking_payload(stored_payload.get("ranking_state") or {}),
         "coverage": {
+            **diagnostic_payload(progress),
             "subjects": coverage_subjects,
             "records_planned": progress.records_planned,
             "records_examined": progress.records_examined,
@@ -363,6 +571,10 @@ def public_graph_payload(
             "phase2_started": progress.phase_counts.get("phase2", 0) > 0,
             "pending_frontiers": progress.pending_frontiers,
             "stop_reason": progress.stop_reason,
+        },
+        "evidence_repair": {
+            key: value for key, value in stored_payload.get("evidence_repair", {}).items()
+            if key in {"enabled", "total", "status_counts", "reason_counts", "rechecks"}
         },
         "unresolved": {
             "unsupported": progress.unsupported,

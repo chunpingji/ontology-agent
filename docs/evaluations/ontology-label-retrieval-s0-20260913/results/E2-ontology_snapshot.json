@@ -1,0 +1,95 @@
+{
+  "snapshot_id": "f18dacbc373295b045255ee82b70ac69f210f2bcb836dafdca2376f9b5a608f5",
+  "version": "ontology-guided-snapshot-v2",
+  "ontology_hash": "de800267266847801b3baecad2d48e0c7e500f1501eee287dc6b0b0c351a219a",
+  "classes": {
+    "https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport": {
+      "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport",
+      "label": "CMC 报告",
+      "description": "Chemistry, Manufacturing, and Controls documentation: drug substance/product specification, manufacturing process, analytical methods.",
+      "parent_iris": [],
+      "declared_properties": [],
+      "declared_relationships": [],
+      "source_hash": "1467390805c09fcd0cbfda49bbcdee68bc56b0462a6e4b8192d8687f42961b18"
+    },
+    "https://ontology.pharma-gmp.cn/slpra/equipment/Equipment": {
+      "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/Equipment",
+      "label": "设备",
+      "description": "",
+      "parent_iris": [],
+      "declared_properties": [],
+      "declared_relationships": [],
+      "source_hash": "43c1fa924635e29374371ac48b14c9982a8cd07128123d455c580d76b8771719"
+    },
+    "https://ontology.pharma-gmp.cn/slpra/equipment/Reactor": {
+      "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/Reactor",
+      "label": "反应器",
+      "description": "",
+      "parent_iris": [],
+      "declared_properties": [],
+      "declared_relationships": [],
+      "source_hash": "1fb59c6cbb27589361c0e4afad83d9d1683acf28fc9e56e85e06026e7386e047"
+    }
+  },
+  "created_from": "frozen_fixture",
+  "diagnostics": [],
+  "lexical_context": {
+    "version": "v1",
+    "annotations": {
+      "https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport": [
+        {
+          "text": "CMC Report",
+          "language": "en",
+          "predicate_iri": "http://www.w3.org/2000/01/rdf-schema#label"
+        },
+        {
+          "text": "CMC 报告",
+          "language": "zh",
+          "predicate_iri": "http://www.w3.org/2000/01/rdf-schema#label"
+        }
+      ],
+      "https://ontology.pharma-gmp.cn/slpra/drug-development/usesEquipment": [
+        {
+          "text": "uses equipment",
+          "language": "en",
+          "predicate_iri": "http://www.w3.org/2000/01/rdf-schema#label"
+        },
+        {
+          "text": "使用设备",
+          "language": "zh",
+          "predicate_iri": "http://www.w3.org/2000/01/rdf-schema#label"
+        }
+      ],
+      "https://ontology.pharma-gmp.cn/slpra/equipment/Equipment": [
+        {
+          "text": "Equipment",
+          "language": "en",
+          "predicate_iri": "http://www.w3.org/2000/01/rdf-schema#label"
+        },
+        {
+          "text": "设备",
+          "language": "zh",
+          "predicate_iri": "http://www.w3.org/2000/01/rdf-schema#label"
+        }
+      ],
+      "https://ontology.pharma-gmp.cn/slpra/equipment/Reactor": [
+        {
+          "text": "Reactor",
+          "language": "en",
+          "predicate_iri": "http://www.w3.org/2000/01/rdf-schema#label"
+        },
+        {
+          "text": "反应器",
+          "language": "zh",
+          "predicate_iri": "http://www.w3.org/2000/01/rdf-schema#label"
+        },
+        {
+          "text": "反应釜",
+          "language": "zh",
+          "predicate_iri": "http://www.w3.org/2004/02/skos/core#altLabel"
+        }
+      ]
+    },
+    "context_hash": "71274fa645031cd5bb5af0bae051aef9dce288aa8ab4b07dd28c26c9beb7aa73"
+  }
+}

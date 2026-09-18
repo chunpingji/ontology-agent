@@ -14,6 +14,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /app
 
+# Set before application/model imports; offline loaders also check cached library state.
+ENV HF_HUB_OFFLINE=1 \
+    TRANSFORMERS_OFFLINE=1
+
 # —— 重、稳定依赖层（几乎不变）——————————————————————————————————————————————
 # 把本地 NER（gliner）+ 语义对齐（semantic）的重依赖（torch/gliner/
 # sentence-transformers 及其传递依赖）钉在 `COPY pyproject.toml` **之前**，使其
@@ -30,7 +34,7 @@ RUN --mount=type=cache,target=/root/.cache/pip \
 # 只装增量（fastapi 等基础依赖 + llm extra 的 openai），秒级完成、无大轮子重下。
 COPY pyproject.toml .
 RUN --mount=type=cache,target=/root/.cache/pip \
-    pip install -e ".[gliner,semantic,llm]"
+    pip install -e ".[gliner,gliner2,semantic,llm,shacl]"
 
 COPY . .
 

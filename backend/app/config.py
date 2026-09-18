@@ -1,9 +1,17 @@
 from pathlib import Path
+from typing import Literal
 
+from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
+    template_finder_config_path: Path = (
+        Path(__file__).resolve().parent / "services/template_finder/profiles/bindings.json"
+    )
+    template_finder_storage_dir: Path = (
+        Path(__file__).resolve().parent.parent / "data/template-finder"
+    )
     database_url: str = "postgresql://slpra:slpra_dev@localhost:5432/slpra"
     ontology_dir: Path = Path(__file__).resolve().parent.parent.parent / "ontology" / "slpra"
     owl_store_path: Path = Path(__file__).resolve().parent.parent / "data" / "slpra.sqlite3"
@@ -37,11 +45,16 @@ class Settings(BaseSettings):
     local_llm_base_url: str = "http://localhost:11434/v1"
     local_llm_model: str = "qwen2.5:14b"
     local_llm_model_revision: str = ""  # immutable local model artifact identity
+    # Explicit, frozen options for the generic ontology Responses engine. Local
+    # model manifests and instance snapshots are supplied by deployment, not Qwen.
+    ontology_extraction_options: dict = {}
     local_llm_tokenizer_path: str = ""  # local tokenizer.json from the same model artifact
     local_llm_tokenizer_backend: str = "file"  # file | llama_server (explicit local deployment)
     local_llm_server_model_path: str = ""  # must match /props; revision pins the delivered GGUF
     evidence_max_input_tokens: int = 16384
     evidence_max_output_tokens: int = 2048
+    # Optional verified service capacity, distinct from the request input budget.
+    evidence_max_context_tokens: int | None = Field(default=None, ge=1)
     evidence_max_tasks: int = 2048
     evidence_max_regions_per_task: int = 32
     evidence_max_objects_per_task: int = 8
@@ -63,8 +76,9 @@ class Settings(BaseSettings):
     word_tree_summary_max_input_chars_per_node: int = 6000
     word_tree_summary_max_batch_chars: int = 24000
     word_tree_summary_max_nodes_per_batch: int = 20
+    word_tree_summary_max_concurrency: int = Field(default=2, ge=1, le=8)
     word_tree_summary_max_output_chars: int = 300
-    word_tree_summary_prompt_version: str = "word-tree-summary-v1"
+    word_tree_summary_prompt_version: str = "word-tree-summary-v2"
 
     # Ontology-guided document analysis (021).  Source files and derived
     # artifacts are owned by a DocumentAnalysisRun, never by ExtractionJob.
@@ -74,10 +88,53 @@ class Settings(BaseSettings):
     document_analysis_max_upload_bytes: int = 50 * 1024 * 1024
     document_analysis_retention_days: int = 7
     document_analysis_lease_seconds: int = 120
+    document_analysis_no_progress_timeout_seconds: float = Field(default=900, ge=120)
+    document_analysis_max_recovery_attempts_without_progress: int = Field(default=3, ge=1)
+    document_analysis_publish_timeout_seconds: float = Field(default=30, gt=0)
     document_analysis_dispatch_poll_seconds: float = 1.0
-    document_analysis_dispatch_concurrency: int = 2
+    document_analysis_dispatch_concurrency: int = 1
     document_analysis_sse_window_seconds: int = 30
     document_analysis_worker_id: str = "document-analysis-worker"
+    document_analysis_max_model_calls_per_record: int = Field(default=6, ge=1, le=32)
+    document_analysis_execution_max_seconds: float = Field(default=18000, gt=0)
+    document_analysis_execution_max_model_calls: int = Field(default=32, ge=1)
+    document_analysis_performance_enabled: bool = True
+    # New runs only. Enhanced retrieval is on; pruning requires reviewed calibration.
+    document_analysis_evidence_repair_enabled: bool = True
+    document_analysis_adaptive_retrieval_mode: Literal[
+        "disabled", "observation", "enhanced", "trial", "enforce"
+    ] = "enhanced"
+    document_analysis_adaptive_calibration_path: str = ""
+    document_analysis_template_interleaving: bool = False
+
+    # 022: optional offline ranking; independent from entity alignment and
+    # the required recognition model. CUDA 12.6/FP16 is the deployment default;
+    # CPU remains an explicit cpu/float32 option. Limits are frozen into each run.
+    semantic_ranking_enabled: bool = False
+    # Default for newly created runs. Existing runs use their audited control flag.
+    semantic_ranking_budget_enabled: bool = True
+    semantic_ranking_mode: Literal["deterministic", "semantic"] = "semantic"
+    semantic_ranking_failure_policy: Literal["deterministic", "pause"] = "pause"
+    semantic_ranking_embedding_path: str = ""
+    semantic_ranking_embedding_manifest_path: str = ""
+    semantic_ranking_reranker_path: str = ""
+    semantic_ranking_reranker_manifest_path: str = ""
+    semantic_ranking_device: str = Field(default="cuda:0", pattern=r"^(cpu|cuda:(0|[1-9][0-9]*))$")
+    semantic_ranking_dtype: Literal["float32", "float16"] = "float16"
+    semantic_ranking_cuda_version: Literal["12.6"] = "12.6"
+    semantic_ranking_pool_size: int = Field(default=64, ge=1, le=1024)
+    semantic_ranking_batch_size: int = Field(default=4, ge=1, le=256)
+    semantic_ranking_max_tokens_per_pair: int = Field(default=4096, ge=64, le=32768)
+    semantic_ranking_max_tokens_per_slot: int = Field(default=524288, ge=64)
+    semantic_ranking_max_tokens_per_run: int = Field(default=4194304, ge=64)
+    semantic_ranking_timeout_seconds: float = Field(default=1200.0, gt=0, le=3600)
+    semantic_ranking_retry_limit: int = Field(default=1, ge=0, le=3)
+
+    @model_validator(mode="after")
+    def semantic_ranking_precision_matches_device(self):
+        if self.semantic_ranking_device == "cpu" and self.semantic_ranking_dtype != "float32":
+            raise ValueError("CPU semantic ranking requires float32")
+        return self
 
     # 能力十三：LLM 模板设计辅助 + 报告生成增强（013-llm-template-report-enhance）。
     # 三个独立开关默认关——离线为正常态（Constitution VI）。

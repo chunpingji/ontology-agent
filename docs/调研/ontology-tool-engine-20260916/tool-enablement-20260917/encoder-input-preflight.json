@@ -1,0 +1,88 @@
+{
+  "mode": "encoder_input_preflight",
+  "encoder_limit": 512,
+  "checks": [
+    {
+      "role": "entity",
+      "labels": 8,
+      "tokens": [
+        828
+      ],
+      "status": "encoder_input_limit_exceeded"
+    },
+    {
+      "role": "entity",
+      "labels": 1,
+      "tokens": [
+        131
+      ],
+      "status": "accepted"
+    },
+    {
+      "role": "entity",
+      "labels": 8,
+      "tokens": [
+        815
+      ],
+      "status": "encoder_input_limit_exceeded"
+    },
+    {
+      "role": "entity",
+      "labels": 1,
+      "tokens": [
+        120
+      ],
+      "status": "accepted"
+    },
+    {
+      "role": "entity",
+      "labels": 8,
+      "tokens": [
+        790
+      ],
+      "status": "encoder_input_limit_exceeded"
+    },
+    {
+      "role": "entity",
+      "labels": 1,
+      "tokens": [
+        110
+      ],
+      "status": "accepted"
+    },
+    {
+      "role": "entity",
+      "labels": 2,
+      "tokens": [
+        232
+      ],
+      "status": "accepted"
+    },
+    {
+      "role": "entity",
+      "labels": 1,
+      "tokens": [
+        126
+      ],
+      "status": "accepted"
+    },
+    {
+      "role": "field_label",
+      "labels": 1,
+      "tokens": [
+        105
+      ],
+      "status": "accepted"
+    },
+    {
+      "role": "field_label",
+      "labels": 1,
+      "tokens": [
+        105
+      ],
+      "status": "accepted"
+    }
+  ],
+  "qwen_requests": 0,
+  "inference_calls": 0
+}

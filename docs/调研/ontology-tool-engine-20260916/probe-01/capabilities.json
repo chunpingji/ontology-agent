@@ -1,0 +1,38 @@
+{
+  "api_protocol": "responses",
+  "model": "Qwen3.6-35B-A3B",
+  "model_revision": "0b21525e972670ed59e1812e170b27c26355381f0656ecc4e25617ece7dac58b",
+  "max_model_requests": 4,
+  "actual_model_requests": 2,
+  "store": false,
+  "previous_response_id_used": false,
+  "conversation_used": false,
+  "baseline_tool_strict": false,
+  "baseline_passed": false,
+  "strict_parameter_generation": "not_attempted",
+  "structured_output": "not_attempted",
+  "stateless_full_item_continuation": "not_attempted",
+  "encrypted_reasoning": "not_attempted",
+  "controller_tools_exposed": false,
+  "observed_output_types": [
+    "function_call",
+    "message",
+    "reasoning"
+  ],
+  "scenarios": [
+    {
+      "tool_strict": false,
+      "status": "failed",
+      "call_ids": [
+        "call_Vs6WCCV59wSc3IkesfCjWRixAKqlNFjg"
+      ],
+      "output_item_ids": [
+        "fc_Vs6WCCV59wSc3IkesfCjWRixAKqlNFjg"
+      ],
+      "distinct_pairing_ids_observed": true,
+      "error_type": "StructuredModelError",
+      "reason_code": "responses_protocol_or_transport_failure"
+    }
+  ],
+  "status": "incomplete"
+}

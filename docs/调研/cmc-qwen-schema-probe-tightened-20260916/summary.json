@@ -1,0 +1,236 @@
+{
+  "document_ref": "upload-23c872fb-3ab1-41de-a705-dd4b162dfa09",
+  "source_sha256": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+  "model": "Qwen3.6-35B-A3B",
+  "declared_model_revision": "0b21525e972670ed59e1812e170b27c26355381f0656ecc4e25617ece7dac58b",
+  "ontology_hash": "555519c5c92c9555e3ac7cd358918cbf853baf38bb07c21a86bb62e72ff9a469",
+  "run_id": "tightened-090af44d1e7a467aa362",
+  "recheck_run_id": "recheck-7b2680a25b6e48899e1f",
+  "started_at": "2026-09-16T00:36:27.134474+00:00",
+  "finished_at": "2026-09-16T00:45:33.981892+00:00",
+  "scope_count": 8,
+  "distinct_source_units": 86,
+  "full_document_units": 447,
+  "actual_model_calls": 16,
+  "native_json_contract_pass": 16,
+  "new_model_calls_for_recheck": 0,
+  "schema_fallback": false,
+  "retries": 0,
+  "finish_reasons": {
+    "stop": 16
+  },
+  "prompt_tokens": 66237,
+  "completion_tokens": 18689,
+  "http_seconds_sum": 545.192,
+  "wall_seconds": 546.847,
+  "reference_level": "assistant_silver",
+  "reference_sha256": "49095440a7572936424e7b7de6a8c9bcee17cd70c5cc86c5b78a35cfaec65097",
+  "reference_changed_after_model_calls": false,
+  "engineering_tests": {
+    "passed": 112,
+    "warnings": 4,
+    "ruff": "passed"
+  },
+  "original_job": {
+    "id": "e8b24ffa-9fbc-40e1-987f-9585d9b42676",
+    "verified_status": "paused"
+  },
+  "decision": "not_accepted_for_automatic_fact_submission",
+  "important_limit": "保留候选通过机械约束，不保证类型/指标/条件语义正确；不是全文或跨文档precision/recall。",
+  "scopes": [
+    {
+      "scope_id": "introduction",
+      "status": "complete",
+      "actual_model_calls": 2,
+      "initial_counts": {
+        "accepted": 3,
+        "observations": 3,
+        "rejected": 11
+      },
+      "rechecked_counts": {
+        "accepted": 3,
+        "observations": 0,
+        "rejected": 14
+      },
+      "checks_passed": 2,
+      "checks_total": 4,
+      "checklist_pass": false,
+      "pass_with_no_rejections": false
+    },
+    {
+      "scope_id": "product_properties",
+      "status": "complete",
+      "actual_model_calls": 2,
+      "initial_counts": {
+        "accepted": 7,
+        "observations": 3,
+        "rejected": 2
+      },
+      "rechecked_counts": {
+        "accepted": 7,
+        "observations": 0,
+        "rejected": 5
+      },
+      "checks_passed": 4,
+      "checks_total": 4,
+      "checklist_pass": true,
+      "pass_with_no_rejections": false
+    },
+    {
+      "scope_id": "process_equipment",
+      "status": "complete",
+      "actual_model_calls": 2,
+      "initial_counts": {
+        "accepted": 2,
+        "observations": 1,
+        "rejected": 15
+      },
+      "rechecked_counts": {
+        "accepted": 4,
+        "observations": 0,
+        "rejected": 14
+      },
+      "checks_passed": 5,
+      "checks_total": 5,
+      "checklist_pass": true,
+      "pass_with_no_rejections": false
+    },
+    {
+      "scope_id": "quality_condition",
+      "status": "complete",
+      "actual_model_calls": 2,
+      "initial_counts": {
+        "accepted": 0,
+        "observations": 1,
+        "rejected": 5
+      },
+      "rechecked_counts": {
+        "accepted": 1,
+        "observations": 1,
+        "rejected": 4
+      },
+      "checks_passed": 4,
+      "checks_total": 5,
+      "checklist_pass": false,
+      "pass_with_no_rejections": false
+    },
+    {
+      "scope_id": "storage",
+      "status": "complete",
+      "actual_model_calls": 2,
+      "initial_counts": {
+        "accepted": 4,
+        "observations": 5,
+        "rejected": 0
+      },
+      "rechecked_counts": {
+        "accepted": 4,
+        "observations": 4,
+        "rejected": 1
+      },
+      "checks_passed": 4,
+      "checks_total": 6,
+      "checklist_pass": false,
+      "pass_with_no_rejections": false
+    },
+    {
+      "scope_id": "residue_missing",
+      "status": "complete",
+      "actual_model_calls": 2,
+      "initial_counts": {
+        "accepted": 0,
+        "observations": 1,
+        "rejected": 0
+      },
+      "rechecked_counts": {
+        "accepted": 0,
+        "observations": 1,
+        "rejected": 0
+      },
+      "checks_passed": 4,
+      "checks_total": 4,
+      "checklist_pass": true,
+      "pass_with_no_rejections": true
+    },
+    {
+      "scope_id": "pde_conflict",
+      "status": "complete",
+      "actual_model_calls": 2,
+      "initial_counts": {
+        "accepted": 22,
+        "observations": 12,
+        "rejected": 4
+      },
+      "rechecked_counts": {
+        "accepted": 24,
+        "observations": 9,
+        "rejected": 5
+      },
+      "checks_passed": 15,
+      "checks_total": 15,
+      "checklist_pass": true,
+      "pass_with_no_rejections": false
+    },
+    {
+      "scope_id": "toxicity_unknown",
+      "status": "complete",
+      "actual_model_calls": 2,
+      "initial_counts": {
+        "accepted": 1,
+        "observations": 1,
+        "rejected": 4
+      },
+      "rechecked_counts": {
+        "accepted": 1,
+        "observations": 1,
+        "rejected": 4
+      },
+      "checks_passed": 9,
+      "checks_total": 12,
+      "checklist_pass": false,
+      "pass_with_no_rejections": false
+    }
+  ],
+  "initial_checker": {
+    "accepted": 39,
+    "observations": 27,
+    "rejected": 41,
+    "accepted_label": "retained_candidates_not_verified_facts",
+    "required_checklist_pass_scopes": 2,
+    "checklist_pass_with_no_rejections": 1,
+    "rejection_reasons": {
+      "citation_quote_not_in_source": 14,
+      "scalar_value_required": 1,
+      "raw_value_not_in_quote": 4,
+      "citation_quote_ambiguous": 10,
+      "conditional_observation_missing_condition": 3,
+      "datatype_mismatch": 1,
+      "relation_target_not_in_evidence": 2,
+      "unit_unknown": 2,
+      "source_state_mismatch": 3,
+      "status_marker_is_not_literal": 1
+    }
+  },
+  "rechecked": {
+    "accepted": 44,
+    "observations": 16,
+    "rejected": 47,
+    "accepted_label": "retained_candidates_not_verified_facts",
+    "required_checklist_pass_scopes": 4,
+    "checklist_pass_with_no_rejections": 1,
+    "rejection_reasons": {
+      "observation_state_not_supported": 3,
+      "citation_quote_not_in_source": 14,
+      "scalar_value_required": 1,
+      "raw_value_not_in_quote": 1,
+      "unknown_observation_requires_marker_or_unresolved_number": 7,
+      "citation_quote_ambiguous": 10,
+      "conditional_observation_missing_condition": 3,
+      "datatype_mismatch": 1,
+      "unknown_number_has_source_unit": 1,
+      "relation_target_not_in_evidence": 2,
+      "source_state_mismatch": 3,
+      "status_marker_is_not_literal": 1
+    }
+  }
+}

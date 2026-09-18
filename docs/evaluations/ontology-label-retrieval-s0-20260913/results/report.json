@@ -1,0 +1,375 @@
+{
+  "schema_version": "s0-ontology-lexical-real-model-diagnostic-v1",
+  "run_id": "3cf14cec290c48908fb0252b46ef1c71",
+  "status": "passed",
+  "scope": {
+    "synthetic_input": true,
+    "main_llm_called": false,
+    "business_facts_written": false,
+    "gold_quality_evaluation": false,
+    "ranking_only": true,
+    "shared_database_used": false
+  },
+  "harness_sha256": "264ffcb3967c6c7aa30b0c03b02ad029a9c394c68445038e15744d868cbeb23e",
+  "code_sha256": {
+    "app/services/extraction/ontology_guided/retrieval_query.py": "3c1c0796948da27764c488c96c2ba64f8b53f7d306c0a8b46ac8d9fc6dca7cd1",
+    "app/services/extraction/ontology_guided/lexical_query.py": "aa313bfce9fb3a694bb9806fc6d4503d3429d629c64159c5fd4f2f78ca023c85",
+    "app/services/extraction/ontology_guided/ontology_lexical.py": "de22761a776c1ac8a3ce3e648a882e07197da394a78a4272215c5e18739c6705",
+    "app/services/llm/semantic_ranking.py": "4180b93b2166436ccada612d354037efb8fb093894a7aa913457cf31c3a625c6"
+  },
+  "ontology_sources": {
+    "/opt/dev/chen/ontology-agent/ontology/slpra/slpra-drug-development.ttl": "ea90db5a324036c71a6e6b559b48aa14d202de75d2e491989791859abe2f8e25",
+    "/opt/dev/chen/ontology-agent/ontology/slpra/slpra-equipment.ttl": "f3d8682598f19c8448fa0eeefe66e060a0eff7bfc0d1dd9da71e3087ac95d998"
+  },
+  "query_scope": {
+    "root_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport",
+    "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/usesEquipment",
+    "declared_range_class_iris": [
+      "https://ontology.pharma-gmp.cn/slpra/equipment/Equipment"
+    ],
+    "focused_target_class_iris": [
+      "https://ontology.pharma-gmp.cn/slpra/equipment/Reactor"
+    ],
+    "note": "Fixed synthetic ranking-only target scope, not complete ontology execution."
+  },
+  "configuration": {
+    "mode": "rerank",
+    "device": "cpu",
+    "dtype": "float32",
+    "cuda_version": "12.6",
+    "batch_size": 4,
+    "max_tokens_per_pair": 1024,
+    "timeout_seconds": 600,
+    "embedding_path": "/opt/dev/chen/ontology-agent/backend/models/semantic-ranking/bge-m3/5617a9f61b028005a4858fdac845db406aefb181",
+    "embedding_manifest_path": "/opt/dev/chen/ontology-agent/backend/models/semantic-ranking/bge-m3/5617a9f61b028005a4858fdac845db406aefb181.sha256",
+    "reranker_path": "/opt/dev/chen/ontology-agent/backend/models/semantic-ranking/bge-reranker-v2-m3/953dc6f6f85a1b2dbfca4c34a2796e7dde08d41e",
+    "reranker_manifest_path": "/opt/dev/chen/ontology-agent/backend/models/semantic-ranking/bge-reranker-v2-m3/953dc6f6f85a1b2dbfca4c34a2796e7dde08d41e.sha256"
+  },
+  "model_identity": {
+    "adapter": "offline-semantic-ranking-v2",
+    "artifacts": {
+      "embedding": {
+        "manifest_sha256": "55020286f89e3f4aff275a70035f677605e15065921afe7832cad842f855993a",
+        "tokenizer_sha256": "21106b6d7dab2952c1d496fb21d5dc9db75c28ed361a05f5020bbba27810dd08"
+      },
+      "reranker": {
+        "manifest_sha256": "505e20b19c5937824d54b3b91e2b64f3f023413d183e8d18ccdbd0f51f74197a",
+        "tokenizer_sha256": "69564b696052886ed0ac63fa393e928384e0f8caada38c1f4864a9bfbf379c15"
+      }
+    },
+    "device": "cpu",
+    "dtype": "float32",
+    "cuda_version": null,
+    "numeric_environment": {
+      "attention": "default"
+    },
+    "normalization": "l2",
+    "score_semantics": "raw_single_logit",
+    "input_policy": "complete-no-truncation-v1",
+    "execution": {
+      "mode": "rerank",
+      "batch_size": 4,
+      "max_tokens_per_pair": 1024,
+      "timeout_seconds": 600,
+      "cpu_threads": {
+        "OMP_NUM_THREADS": "4",
+        "MKL_NUM_THREADS": "4"
+      }
+    },
+    "packages": {
+      "sentence-transformers": "5.6.0",
+      "transformers": "5.6.2",
+      "torch": "2.12.1+cpu",
+      "tokenizers": "0.22.2",
+      "numpy": "2.5.0",
+      "safetensors": "0.8.0"
+    }
+  },
+  "variant_elapsed_seconds": {
+    "E0": 27.823565554921515,
+    "E1": 20.054366863914765,
+    "E2": 20.001445433008485
+  },
+  "ranking_summary": [
+    {
+      "variant": "E0",
+      "intent": "discover",
+      "query_version": "subject-slot-query-v1",
+      "dense": {
+        "synthetic_recall_at_3": 0.4,
+        "synthetic_recall_at_5": 0.8,
+        "synthetic_ndcg_at_5": 0.7092912526226147,
+        "alias_support_rank": 2,
+        "alias_counter_rank": 5,
+        "alias_conditional_rank": 6,
+        "ordered_case_ids": [
+          "generic_context",
+          "alias_support",
+          "english_support",
+          "label_support",
+          "alias_counter",
+          "alias_conditional",
+          "unrelated_product",
+          "unrelated_admin"
+        ]
+      },
+      "rerank": {
+        "synthetic_recall_at_3": 0.4,
+        "synthetic_recall_at_5": 0.8,
+        "synthetic_ndcg_at_5": 0.7092912526226147,
+        "alias_support_rank": 4,
+        "alias_counter_rank": 5,
+        "alias_conditional_rank": 6,
+        "ordered_case_ids": [
+          "generic_context",
+          "label_support",
+          "english_support",
+          "alias_support",
+          "alias_counter",
+          "alias_conditional",
+          "unrelated_product",
+          "unrelated_admin"
+        ]
+      }
+    },
+    {
+      "variant": "E0",
+      "intent": "counterevidence",
+      "query_version": "subject-slot-query-v1",
+      "dense": {
+        "synthetic_recall_at_3": 0.4,
+        "synthetic_recall_at_5": 0.8,
+        "synthetic_ndcg_at_5": 0.8165832016561192,
+        "alias_support_rank": 3,
+        "alias_counter_rank": 4,
+        "alias_conditional_rank": 5,
+        "ordered_case_ids": [
+          "english_support",
+          "generic_context",
+          "alias_support",
+          "alias_counter",
+          "alias_conditional",
+          "label_support",
+          "unrelated_product",
+          "unrelated_admin"
+        ]
+      },
+      "rerank": {
+        "synthetic_recall_at_3": 0.4,
+        "synthetic_recall_at_5": 0.8,
+        "synthetic_ndcg_at_5": 0.7092912526226147,
+        "alias_support_rank": 4,
+        "alias_counter_rank": 6,
+        "alias_conditional_rank": 5,
+        "ordered_case_ids": [
+          "generic_context",
+          "label_support",
+          "english_support",
+          "alias_support",
+          "alias_conditional",
+          "alias_counter",
+          "unrelated_product",
+          "unrelated_admin"
+        ]
+      }
+    },
+    {
+      "variant": "E1",
+      "intent": "discover",
+      "query_version": "subject-slot-query-v2",
+      "dense": {
+        "synthetic_recall_at_3": 0.4,
+        "synthetic_recall_at_5": 0.8,
+        "synthetic_ndcg_at_5": 0.7092912526226147,
+        "alias_support_rank": 2,
+        "alias_counter_rank": 6,
+        "alias_conditional_rank": 5,
+        "ordered_case_ids": [
+          "generic_context",
+          "alias_support",
+          "english_support",
+          "label_support",
+          "alias_conditional",
+          "alias_counter",
+          "unrelated_product",
+          "unrelated_admin"
+        ]
+      },
+      "rerank": {
+        "synthetic_recall_at_3": 0.4,
+        "synthetic_recall_at_5": 0.8,
+        "synthetic_ndcg_at_5": 0.7092912526226147,
+        "alias_support_rank": 4,
+        "alias_counter_rank": 3,
+        "alias_conditional_rank": 6,
+        "ordered_case_ids": [
+          "generic_context",
+          "label_support",
+          "alias_counter",
+          "alias_support",
+          "english_support",
+          "alias_conditional",
+          "unrelated_product",
+          "unrelated_admin"
+        ]
+      }
+    },
+    {
+      "variant": "E1",
+      "intent": "counterevidence",
+      "query_version": "subject-slot-query-v2",
+      "dense": {
+        "synthetic_recall_at_3": 0.4,
+        "synthetic_recall_at_5": 0.8,
+        "synthetic_ndcg_at_5": 0.8165832016561192,
+        "alias_support_rank": 3,
+        "alias_counter_rank": 6,
+        "alias_conditional_rank": 5,
+        "ordered_case_ids": [
+          "english_support",
+          "generic_context",
+          "alias_support",
+          "label_support",
+          "alias_conditional",
+          "alias_counter",
+          "unrelated_product",
+          "unrelated_admin"
+        ]
+      },
+      "rerank": {
+        "synthetic_recall_at_3": 0.4,
+        "synthetic_recall_at_5": 0.8,
+        "synthetic_ndcg_at_5": 0.8165832016561192,
+        "alias_support_rank": 5,
+        "alias_counter_rank": 4,
+        "alias_conditional_rank": 6,
+        "ordered_case_ids": [
+          "label_support",
+          "generic_context",
+          "english_support",
+          "alias_counter",
+          "alias_support",
+          "alias_conditional",
+          "unrelated_admin",
+          "unrelated_product"
+        ]
+      }
+    },
+    {
+      "variant": "E2",
+      "intent": "discover",
+      "query_version": "subject-slot-query-v2",
+      "dense": {
+        "synthetic_recall_at_3": 0.4,
+        "synthetic_recall_at_5": 0.8,
+        "synthetic_ndcg_at_5": 0.8165832016561192,
+        "alias_support_rank": 1,
+        "alias_counter_rank": 6,
+        "alias_conditional_rank": 5,
+        "ordered_case_ids": [
+          "alias_support",
+          "generic_context",
+          "english_support",
+          "label_support",
+          "alias_conditional",
+          "alias_counter",
+          "unrelated_product",
+          "unrelated_admin"
+        ]
+      },
+      "rerank": {
+        "synthetic_recall_at_3": 0.4,
+        "synthetic_recall_at_5": 0.8,
+        "synthetic_ndcg_at_5": 0.8546456263113074,
+        "alias_support_rank": 2,
+        "alias_counter_rank": 1,
+        "alias_conditional_rank": 5,
+        "ordered_case_ids": [
+          "alias_counter",
+          "alias_support",
+          "generic_context",
+          "label_support",
+          "alias_conditional",
+          "english_support",
+          "unrelated_product",
+          "unrelated_admin"
+        ]
+      }
+    },
+    {
+      "variant": "E2",
+      "intent": "counterevidence",
+      "query_version": "subject-slot-query-v2",
+      "dense": {
+        "synthetic_recall_at_3": 0.4,
+        "synthetic_recall_at_5": 0.8,
+        "synthetic_ndcg_at_5": 0.8165832016561192,
+        "alias_support_rank": 1,
+        "alias_counter_rank": 4,
+        "alias_conditional_rank": 5,
+        "ordered_case_ids": [
+          "alias_support",
+          "generic_context",
+          "english_support",
+          "alias_counter",
+          "alias_conditional",
+          "label_support",
+          "unrelated_product",
+          "unrelated_admin"
+        ]
+      },
+      "rerank": {
+        "synthetic_recall_at_3": 0.4,
+        "synthetic_recall_at_5": 0.8,
+        "synthetic_ndcg_at_5": 0.8546456263113074,
+        "alias_support_rank": 2,
+        "alias_counter_rank": 1,
+        "alias_conditional_rank": 5,
+        "ordered_case_ids": [
+          "alias_counter",
+          "alias_support",
+          "generic_context",
+          "label_support",
+          "alias_conditional",
+          "english_support",
+          "unrelated_product",
+          "unrelated_admin"
+        ]
+      }
+    }
+  ],
+  "measured_model_calls": 19,
+  "measured_input_tokens": 22799,
+  "scheduler_request_count": 19,
+  "scheduler_statuses": [
+    "completed"
+  ],
+  "elapsed_seconds": 139.3789012680063,
+  "artifact_sha256": {
+    "E0-counterevidence-model_inputs.json": "8400951f130971d62f0e413a39bcc81fa9ef488cb53875db97ce062ae137740a",
+    "E0-model_observations.json": "62f5299e5b1423e48db64ce85deefa30669c1ea589c8f408d94a0b43f10f0054",
+    "scheduler_requests.json": "8a6e7e7771bbde681488aafd0ee54b6888de29b29dcf32eaa7ff4f34c98a3a5f",
+    "E2-ontology_snapshot.json": "489a18bff75d7a8fce69ec41204cface3137e82ece0349460a0df4ce0a5227a5",
+    "record_embeddings.json": "3cfe6e2fbd3180662b5f763fa38d55999d2cf60380138e8a1fb93fe2a1ff3e45",
+    "results.json": "0dd26f477d47fa30b0013192451a0992a4eabbc7c94ef9540f9c9f087a474120",
+    "E2-queries.json": "221048b82808fcf5f7dc4c4089b970efeef432484e383d0e40a0e8b59386f4d3",
+    "E2-counterevidence-model_inputs.json": "cbbc63f458fe9ff832f06b7ef506af4e13788dadab1c0d38fd534be8dfd3ea41",
+    "retrieval_views.json": "d7a0d56240b509c74387332f562408304100fa1a3c3fdb0b43c8eae40695c716",
+    "scheduler.sqlite3": "db935c3e207981e581f179d873c2eabebc0de0b84b6e6dfd547b3889225c80ac",
+    "E0-discover-model_inputs.json": "7e071a9e2606bd89d9a5acc4fe189f2c465a83c84c0f82adeca44f6740eb433f",
+    "E2-model_observations.json": "d6e275a4240ca6a40093de3a8e0c70aaf71ccb71d218b164a10f5ad5460aecf1",
+    "E0-queries.json": "3dd14f498bbcf27925879a483d37b2a90e74a1ad8832d961ca5efa02f3b5db6c",
+    "E2-discover-model_inputs.json": "5875e180f9eb62f5ffc3c238fb72ebe7286ae46fec13c0449fd9f0555f9fb954",
+    "E1-discover-model_inputs.json": "41e6a5e2bdec5d93add7aecb3812714ee2fa1ab363a436dbbe9d86588d19dffe",
+    "model_observations.json": "f4393f2e7ff224c3cb13a9de402b142fa32b799ae88ce4c7ff833cb5b9f50cc4",
+    "metadata.json": "7998745f6e247ce898739686e9f5ecdeacd30191408c1e02cbdbb7c7deaac4a1",
+    "document_ir.json": "d2bd339e947eec9bf761b30ccef2fca82d142043542f5ece379e03a0edde4e14",
+    "E1-counterevidence-model_inputs.json": "d232b74e64ed5750cde7d8f1333df39dcd77dedb9c7c6698260d14f5090183fc",
+    "E1-ontology_snapshot.json": "08863e67f96edc9bf88613a84ddf16f60440ed5ae2cd55036e4a1cbfc7549648",
+    "source_annotations.json": "50e13b275c7b645b7773cf320c836d92a03f26954c3a1b890ab6bf5a4a470c84",
+    "E1-model_observations.json": "a77815c085db8082cda8d3f7a7fce80561e806943e1fbd65ce61f304da5e8296",
+    "E1-queries.json": "d0e6e623d515501b75b96b756cb87e31fe18e5f31942c727c01e0b93399e3de7",
+    "synthetic_relevance.json": "ecb9510ef64854ce0b51f7117a04118b39d13e42ee4d36af24af7651d03c9825",
+    "synthetic.docx": "3b8803a02935028b04e33a41a880237139b93aa2b06350ca8c658b5372fadbd4"
+  }
+}

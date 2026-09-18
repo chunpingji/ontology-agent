@@ -1,0 +1,44 @@
+[
+  {
+    "query_id": "4002c6790072273fb6eaaf5941096caa846a90f089908af58cfbe3b98f1773fb",
+    "query_version": "subject-slot-query-v1",
+    "run_fingerprint": "0a653c740102faab044bd07be3070a26d7ff393f624633f138a7d5674087f7ff",
+    "subject_ref": {
+      "entity_id": "synthetic-report",
+      "revision": 1,
+      "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport",
+      "referent_id": null,
+      "is_document_root": true
+    },
+    "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/usesEquipment",
+    "retrieval_intent": "discover",
+    "model_text": "{\"allowed_object_types\":[{\"definition\":\"\",\"iri\":\"https://ontology.pharma-gmp.cn/slpra/equipment/Reactor\",\"label\":\"反应器\"}],\"contrast_roles\":[\"产品\",\"API原料\",\"批次\",\"试验来源\",\"工艺步骤\",\"中间体\"],\"document_class\":\"https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport\",\"document_root\":true,\"intent\":\"寻找讨论当前主体与直接谓词的原文；肯定、否定和条件均可能相关。\",\"literal_spec\":null,\"predicate\":{\"definition\":\"Links a synthesis step or CMC report to the equipment required.\",\"iri\":\"https://ontology.pharma-gmp.cn/slpra/drug-development/usesEquipment\",\"label\":\"使用设备\"},\"subject_class\":\"https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport\",\"subject_class_label\":\"CMC 报告\",\"subject_mentions\":[]}",
+    "query_dependency_hash": "4a55c6b49bddb7752017bbdeb478ba81fef301536a34bbbdadeab7aa310e3af7",
+    "trusted_context": [],
+    "excluded_sources": [],
+    "dependency_refs": [],
+    "diagnostics": [],
+    "authority": "retrieval_only"
+  },
+  {
+    "query_id": "c2ef68cfc5d23abfbf7b7ae732f35e04857213f0a523c3b052765b59aa2b2865",
+    "query_version": "subject-slot-query-v1",
+    "run_fingerprint": "0a653c740102faab044bd07be3070a26d7ff393f624633f138a7d5674087f7ff",
+    "subject_ref": {
+      "entity_id": "synthetic-report",
+      "revision": 1,
+      "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport",
+      "referent_id": null,
+      "is_document_root": true
+    },
+    "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/usesEquipment",
+    "retrieval_intent": "counterevidence",
+    "model_text": "{\"allowed_object_types\":[{\"definition\":\"\",\"iri\":\"https://ontology.pharma-gmp.cn/slpra/equipment/Reactor\",\"label\":\"反应器\"}],\"contrast_roles\":[\"产品\",\"API原料\",\"批次\",\"试验来源\",\"工艺步骤\",\"中间体\"],\"document_class\":\"https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport\",\"document_root\":true,\"intent\":\"寻找明确否定、限制或改变当前主体谓词适用对象的原文。\",\"literal_spec\":null,\"predicate\":{\"definition\":\"Links a synthesis step or CMC report to the equipment required.\",\"iri\":\"https://ontology.pharma-gmp.cn/slpra/drug-development/usesEquipment\",\"label\":\"使用设备\"},\"subject_class\":\"https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport\",\"subject_class_label\":\"CMC 报告\",\"subject_mentions\":[]}",
+    "query_dependency_hash": "4a55c6b49bddb7752017bbdeb478ba81fef301536a34bbbdadeab7aa310e3af7",
+    "trusted_context": [],
+    "excluded_sources": [],
+    "dependency_refs": [],
+    "diagnostics": [],
+    "authority": "retrieval_only"
+  }
+]

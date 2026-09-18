@@ -1,0 +1,893 @@
+{
+  "run_id": "cmc-mock-70bd86d8226d4d36",
+  "report_id": "upload-23c872fb-3ab1-41de-a705-dd4b162dfa09",
+  "outcome": "execution_complete_quality_not_fully_passed",
+  "quality_gain_established": false,
+  "deployed": false,
+  "source_sha256": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+  "model": "Qwen3.6-35B-A3B",
+  "declared_model_revision": "0b21525e972670ed59e1812e170b27c26355381f0656ecc4e25617ece7dac58b",
+  "gliner_model": {
+    "repo": "fastino/gliner2.5-multi-v1",
+    "revision": "aaecfe45db1d828c963717054ccb868e8ad1f1d5"
+  },
+  "input_hashes": {
+    "source.docx": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+    "ir.json": "858dddbb762217ede057ed85e659bb6d0349fc90e0c936fbf42756859c882134",
+    "cards.json": "3b2a50862d1f977adb76044d08360cc03e02629f8bae8de86a142b7e388044a6",
+    "mock-equipment.json": "7cd6148df2575179441e44e68ed8d6f5c7bdcfa7dd7f10ac4391686fb1c9fa35",
+    "retrieval.json": "533888a4969392f80ca3415276b423b39d8929d08ff3af943da25b87ed9f34b1",
+    "scope-cards.json": "1c57990a2c2498acd285a899bf1409c99c71906c07bc80bb2bb1e3038c6a6846",
+    "vocabulary.json": "7144d3b3fe9c3d28d453b5fabf716305b6c41b7822583c2e2a367c74e1fc0f4e"
+  },
+  "technical": {
+    "integrity_passed": true,
+    "integrity_failures": 0,
+    "unique_ner_inputs": 5,
+    "model_view_omitted_spans_across_cases": 0,
+    "model_view_truncated_any_case": false,
+    "raw_responses": 18,
+    "raw_schema_passes": 18,
+    "complete_cases": 9,
+    "http": {
+      "http_calls": 18,
+      "finish_reasons": {
+        "stop": 18
+      },
+      "http_status_codes": {
+        "unreported": 18
+      },
+      "prompt_tokens": {
+        "reported_sum": 142441,
+        "reported_calls": 18,
+        "unknown_calls": 0,
+        "all_calls_total": 142441
+      },
+      "completion_tokens": {
+        "reported_sum": 9313,
+        "reported_calls": 18,
+        "unknown_calls": 0,
+        "all_calls_total": 9313
+      },
+      "total_tokens": {
+        "reported_sum": 151754,
+        "reported_calls": 18,
+        "unknown_calls": 0,
+        "all_calls_total": 151754
+      },
+      "http_seconds": {
+        "reported_sum": 634.855,
+        "reported_calls": 18,
+        "unknown_calls": 0
+      }
+    },
+    "numeric_calibration": "not_evaluated_text_slots_only"
+  },
+  "integrity_checks": 1006,
+  "ner": {
+    "unique_inputs": 5,
+    "spans_over_unique_inputs": 207,
+    "spans_across_cases": 359,
+    "omitted_model_view_spans": 0,
+    "wall_seconds": 36.841
+  },
+  "qwen_wall_seconds": 635.888,
+  "new_summary_calls": 0,
+  "arms": {
+    "E0": {
+      "complete_cases": 3,
+      "program_destinations": {
+        "accepted": {
+          "count": 12,
+          "by_kind": {
+            "entity": 3,
+            "property": 6,
+            "relation": 3
+          }
+        },
+        "unresolved": {
+          "count": 0,
+          "by_kind": {}
+        },
+        "rejected": {
+          "count": 0,
+          "by_kind": {}
+        }
+      },
+      "source_only_review": {
+        "all": {
+          "count": 12,
+          "overall": {
+            "supported": 12
+          },
+          "content": {
+            "supported": 12
+          },
+          "overall_supported_count": 12,
+          "content_supported_count": 12
+        },
+        "accepted": {
+          "count": 12,
+          "overall": {
+            "supported": 12
+          },
+          "content": {
+            "supported": 12
+          },
+          "overall_supported_count": 12,
+          "content_supported_count": 12
+        },
+        "unresolved": {
+          "count": 0,
+          "overall": {},
+          "content": {},
+          "overall_supported_count": 0,
+          "content_supported_count": 0
+        },
+        "rejected": {
+          "count": 0,
+          "overall": {},
+          "content": {},
+          "overall_supported_count": 0,
+          "content_supported_count": 0
+        },
+        "not_finalized": {
+          "count": 0,
+          "overall": {},
+          "content": {},
+          "overall_supported_count": 0,
+          "content_supported_count": 0
+        },
+        "accepted_by_kind": {
+          "entity": {
+            "count": 3,
+            "overall": {
+              "supported": 3
+            },
+            "content": {
+              "supported": 3
+            },
+            "overall_supported_count": 3,
+            "content_supported_count": 3
+          },
+          "property": {
+            "count": 6,
+            "overall": {
+              "supported": 6
+            },
+            "content": {
+              "supported": 6
+            },
+            "overall_supported_count": 6,
+            "content_supported_count": 6
+          },
+          "relation": {
+            "count": 3,
+            "overall": {
+              "supported": 3
+            },
+            "content": {
+              "supported": 3
+            },
+            "overall_supported_count": 3,
+            "content_supported_count": 3
+          },
+          "observation": {
+            "count": 0,
+            "overall": {},
+            "content": {},
+            "overall_supported_count": 0,
+            "content_supported_count": 0
+          }
+        }
+      },
+      "retrieval_and_identifier_coverage": {
+        "selected_source_coverage": {
+          "primary": {
+            "equipment_ids": [
+              "CT64610",
+              "DE64603",
+              "RE64611"
+            ],
+            "full_report_id_denominator": 6,
+            "full_report_id_coverage": 0.5,
+            "mention_occurrences": 3,
+            "full_report_mention_denominator": 18,
+            "full_report_mention_coverage": 0.16666666666666666
+          },
+          "context": {
+            "equipment_ids": [],
+            "full_report_id_denominator": 6,
+            "full_report_id_coverage": 0.0,
+            "mention_occurrences": 0,
+            "full_report_mention_denominator": 18,
+            "full_report_mention_coverage": 0.0
+          }
+        },
+        "selected_ids_union": [
+          "CT64610",
+          "DE64603",
+          "RE64611"
+        ],
+        "unselected_report_ids": [
+          "PF64216",
+          "PF64616",
+          "RE64613"
+        ],
+        "stages": {
+          "candidate": {
+            "cases_with_output": 3,
+            "total_selected_cases": 3,
+            "source_bound_predicted_ids": [
+              "CT64610",
+              "DE64603",
+              "RE64611"
+            ],
+            "selected_primary_reference_denominator": 3,
+            "selected_all_reference_denominator": 3,
+            "primary_output_id_coverage_fraction_over_all_selected": 1.0,
+            "primary_ids_without_stage_evaluation": [],
+            "outside_selected_reference_ids": [],
+            "multi_identifier_merge_count": 0,
+            "anchor_identifier_conflict_count": 0,
+            "primary_alternative_statuses": {},
+            "context_alternative_statuses": {},
+            "meaning": "Output coverage over all selected reference IDs, not entity semantic accuracy or recall of the full report. Failed cases remain in coverage denominators."
+          },
+          "final": {
+            "cases_with_output": 3,
+            "total_selected_cases": 3,
+            "source_bound_predicted_ids": [
+              "CT64610",
+              "DE64603",
+              "RE64611"
+            ],
+            "selected_primary_reference_denominator": 3,
+            "selected_all_reference_denominator": 3,
+            "primary_output_id_coverage_fraction_over_all_selected": 1.0,
+            "primary_ids_without_stage_evaluation": [],
+            "outside_selected_reference_ids": [],
+            "multi_identifier_merge_count": 0,
+            "anchor_identifier_conflict_count": 0,
+            "primary_alternative_statuses": {},
+            "context_alternative_statuses": {},
+            "meaning": "Output coverage over all selected reference IDs, not entity semantic accuracy or recall of the full report. Failed cases remain in coverage denominators."
+          }
+        },
+        "invalid_final_external_links": 0
+      },
+      "technical": {
+        "cases": 3,
+        "case_statuses": {
+          "complete": 3
+        },
+        "contracts_passed": 6,
+        "http": {
+          "http_calls": 6,
+          "finish_reasons": {
+            "stop": 6
+          },
+          "http_status_codes": {
+            "unreported": 6
+          },
+          "prompt_tokens": {
+            "reported_sum": 38566,
+            "reported_calls": 6,
+            "unknown_calls": 0,
+            "all_calls_total": 38566
+          },
+          "completion_tokens": {
+            "reported_sum": 2443,
+            "reported_calls": 6,
+            "unknown_calls": 0,
+            "all_calls_total": 2443
+          },
+          "total_tokens": {
+            "reported_sum": 41009,
+            "reported_calls": 6,
+            "unknown_calls": 0,
+            "all_calls_total": 41009
+          },
+          "http_seconds": {
+            "reported_sum": 190.346,
+            "reported_calls": 6,
+            "unknown_calls": 0
+          }
+        },
+        "metrics": {
+          "precheck": {
+            "saved_invocations": 6,
+            "validation_statuses": {
+              "incomplete": 6
+            },
+            "strict_focus_covered_conformant_text_claims": 0,
+            "shacl_evaluated": 0,
+            "numeric_slots": 0,
+            "numeric_calibration": "not_evaluated_text_slots_only",
+            "numeric_pass_fraction": null
+          },
+          "final": {
+            "saved_invocations": 6,
+            "validation_statuses": {
+              "passed": 6
+            },
+            "strict_focus_covered_conformant_text_claims": 6,
+            "shacl_evaluated": 6,
+            "numeric_slots": 0,
+            "numeric_calibration": "not_evaluated_text_slots_only",
+            "numeric_pass_fraction": null
+          }
+        },
+        "external_link_count": 0
+      }
+    },
+    "E1": {
+      "complete_cases": 3,
+      "program_destinations": {
+        "accepted": {
+          "count": 13,
+          "by_kind": {
+            "entity": 3,
+            "property": 6,
+            "relation": 2,
+            "observation": 2
+          }
+        },
+        "unresolved": {
+          "count": 1,
+          "by_kind": {
+            "relation": 1
+          }
+        },
+        "rejected": {
+          "count": 0,
+          "by_kind": {}
+        }
+      },
+      "source_only_review": {
+        "all": {
+          "count": 14,
+          "overall": {
+            "supported": 13,
+            "unsupported": 1
+          },
+          "content": {
+            "supported": 14
+          },
+          "overall_supported_count": 13,
+          "content_supported_count": 14
+        },
+        "accepted": {
+          "count": 13,
+          "overall": {
+            "supported": 13
+          },
+          "content": {
+            "supported": 13
+          },
+          "overall_supported_count": 13,
+          "content_supported_count": 13
+        },
+        "unresolved": {
+          "count": 1,
+          "overall": {
+            "unsupported": 1
+          },
+          "content": {
+            "supported": 1
+          },
+          "overall_supported_count": 0,
+          "content_supported_count": 1
+        },
+        "rejected": {
+          "count": 0,
+          "overall": {},
+          "content": {},
+          "overall_supported_count": 0,
+          "content_supported_count": 0
+        },
+        "not_finalized": {
+          "count": 0,
+          "overall": {},
+          "content": {},
+          "overall_supported_count": 0,
+          "content_supported_count": 0
+        },
+        "accepted_by_kind": {
+          "entity": {
+            "count": 3,
+            "overall": {
+              "supported": 3
+            },
+            "content": {
+              "supported": 3
+            },
+            "overall_supported_count": 3,
+            "content_supported_count": 3
+          },
+          "property": {
+            "count": 6,
+            "overall": {
+              "supported": 6
+            },
+            "content": {
+              "supported": 6
+            },
+            "overall_supported_count": 6,
+            "content_supported_count": 6
+          },
+          "relation": {
+            "count": 2,
+            "overall": {
+              "supported": 2
+            },
+            "content": {
+              "supported": 2
+            },
+            "overall_supported_count": 2,
+            "content_supported_count": 2
+          },
+          "observation": {
+            "count": 2,
+            "overall": {
+              "supported": 2
+            },
+            "content": {
+              "supported": 2
+            },
+            "overall_supported_count": 2,
+            "content_supported_count": 2
+          }
+        }
+      },
+      "retrieval_and_identifier_coverage": {
+        "selected_source_coverage": {
+          "primary": {
+            "equipment_ids": [
+              "CT64610",
+              "DE64603",
+              "RE64611"
+            ],
+            "full_report_id_denominator": 6,
+            "full_report_id_coverage": 0.5,
+            "mention_occurrences": 3,
+            "full_report_mention_denominator": 18,
+            "full_report_mention_coverage": 0.16666666666666666
+          },
+          "context": {
+            "equipment_ids": [],
+            "full_report_id_denominator": 6,
+            "full_report_id_coverage": 0.0,
+            "mention_occurrences": 0,
+            "full_report_mention_denominator": 18,
+            "full_report_mention_coverage": 0.0
+          }
+        },
+        "selected_ids_union": [
+          "CT64610",
+          "DE64603",
+          "RE64611"
+        ],
+        "unselected_report_ids": [
+          "PF64216",
+          "PF64616",
+          "RE64613"
+        ],
+        "stages": {
+          "candidate": {
+            "cases_with_output": 3,
+            "total_selected_cases": 3,
+            "source_bound_predicted_ids": [
+              "CT64610",
+              "DE64603",
+              "RE64611"
+            ],
+            "selected_primary_reference_denominator": 3,
+            "selected_all_reference_denominator": 3,
+            "primary_output_id_coverage_fraction_over_all_selected": 1.0,
+            "primary_ids_without_stage_evaluation": [],
+            "outside_selected_reference_ids": [],
+            "multi_identifier_merge_count": 0,
+            "anchor_identifier_conflict_count": 0,
+            "primary_alternative_statuses": {},
+            "context_alternative_statuses": {},
+            "meaning": "Output coverage over all selected reference IDs, not entity semantic accuracy or recall of the full report. Failed cases remain in coverage denominators."
+          },
+          "final": {
+            "cases_with_output": 3,
+            "total_selected_cases": 3,
+            "source_bound_predicted_ids": [
+              "CT64610",
+              "DE64603",
+              "RE64611"
+            ],
+            "selected_primary_reference_denominator": 3,
+            "selected_all_reference_denominator": 3,
+            "primary_output_id_coverage_fraction_over_all_selected": 1.0,
+            "primary_ids_without_stage_evaluation": [],
+            "outside_selected_reference_ids": [],
+            "multi_identifier_merge_count": 0,
+            "anchor_identifier_conflict_count": 0,
+            "primary_alternative_statuses": {},
+            "context_alternative_statuses": {},
+            "meaning": "Output coverage over all selected reference IDs, not entity semantic accuracy or recall of the full report. Failed cases remain in coverage denominators."
+          }
+        },
+        "invalid_final_external_links": 0
+      },
+      "technical": {
+        "cases": 3,
+        "case_statuses": {
+          "complete": 3
+        },
+        "contracts_passed": 6,
+        "http": {
+          "http_calls": 6,
+          "finish_reasons": {
+            "stop": 6
+          },
+          "http_status_codes": {
+            "unreported": 6
+          },
+          "prompt_tokens": {
+            "reported_sum": 52350,
+            "reported_calls": 6,
+            "unknown_calls": 0,
+            "all_calls_total": 52350
+          },
+          "completion_tokens": {
+            "reported_sum": 2719,
+            "reported_calls": 6,
+            "unknown_calls": 0,
+            "all_calls_total": 2719
+          },
+          "total_tokens": {
+            "reported_sum": 55069,
+            "reported_calls": 6,
+            "unknown_calls": 0,
+            "all_calls_total": 55069
+          },
+          "http_seconds": {
+            "reported_sum": 250.859,
+            "reported_calls": 6,
+            "unknown_calls": 0
+          }
+        },
+        "metrics": {
+          "precheck": {
+            "saved_invocations": 6,
+            "validation_statuses": {
+              "incomplete": 6
+            },
+            "strict_focus_covered_conformant_text_claims": 0,
+            "shacl_evaluated": 0,
+            "numeric_slots": 0,
+            "numeric_calibration": "not_evaluated_text_slots_only",
+            "numeric_pass_fraction": null
+          },
+          "final": {
+            "saved_invocations": 6,
+            "validation_statuses": {
+              "passed": 6
+            },
+            "strict_focus_covered_conformant_text_claims": 6,
+            "shacl_evaluated": 6,
+            "numeric_slots": 0,
+            "numeric_calibration": "not_evaluated_text_slots_only",
+            "numeric_pass_fraction": null
+          }
+        },
+        "external_link_count": 2
+      }
+    },
+    "E2": {
+      "complete_cases": 3,
+      "program_destinations": {
+        "accepted": {
+          "count": 10,
+          "by_kind": {
+            "entity": 2,
+            "property": 4,
+            "relation": 2,
+            "observation": 2
+          }
+        },
+        "unresolved": {
+          "count": 9,
+          "by_kind": {
+            "entity": 3,
+            "property": 4,
+            "relation": 2
+          }
+        },
+        "rejected": {
+          "count": 0,
+          "by_kind": {}
+        }
+      },
+      "source_only_review": {
+        "all": {
+          "count": 19,
+          "overall": {
+            "supported": 9,
+            "unsupported": 9,
+            "undetermined": 1
+          },
+          "content": {
+            "supported": 17,
+            "undetermined": 2
+          },
+          "overall_supported_count": 9,
+          "content_supported_count": 17
+        },
+        "accepted": {
+          "count": 10,
+          "overall": {
+            "supported": 9,
+            "undetermined": 1
+          },
+          "content": {
+            "supported": 9,
+            "undetermined": 1
+          },
+          "overall_supported_count": 9,
+          "content_supported_count": 9
+        },
+        "unresolved": {
+          "count": 9,
+          "overall": {
+            "unsupported": 9
+          },
+          "content": {
+            "supported": 8,
+            "undetermined": 1
+          },
+          "overall_supported_count": 0,
+          "content_supported_count": 8
+        },
+        "rejected": {
+          "count": 0,
+          "overall": {},
+          "content": {},
+          "overall_supported_count": 0,
+          "content_supported_count": 0
+        },
+        "not_finalized": {
+          "count": 0,
+          "overall": {},
+          "content": {},
+          "overall_supported_count": 0,
+          "content_supported_count": 0
+        },
+        "accepted_by_kind": {
+          "entity": {
+            "count": 2,
+            "overall": {
+              "supported": 2
+            },
+            "content": {
+              "supported": 2
+            },
+            "overall_supported_count": 2,
+            "content_supported_count": 2
+          },
+          "property": {
+            "count": 4,
+            "overall": {
+              "supported": 4
+            },
+            "content": {
+              "supported": 4
+            },
+            "overall_supported_count": 4,
+            "content_supported_count": 4
+          },
+          "relation": {
+            "count": 2,
+            "overall": {
+              "undetermined": 1,
+              "supported": 1
+            },
+            "content": {
+              "undetermined": 1,
+              "supported": 1
+            },
+            "overall_supported_count": 1,
+            "content_supported_count": 1
+          },
+          "observation": {
+            "count": 2,
+            "overall": {
+              "supported": 2
+            },
+            "content": {
+              "supported": 2
+            },
+            "overall_supported_count": 2,
+            "content_supported_count": 2
+          }
+        }
+      },
+      "retrieval_and_identifier_coverage": {
+        "selected_source_coverage": {
+          "primary": {
+            "equipment_ids": [
+              "CT64610",
+              "PF64216",
+              "PF64616",
+              "RE64611"
+            ],
+            "full_report_id_denominator": 6,
+            "full_report_id_coverage": 0.6666666666666666,
+            "mention_occurrences": 6,
+            "full_report_mention_denominator": 18,
+            "full_report_mention_coverage": 0.3333333333333333
+          },
+          "context": {
+            "equipment_ids": [],
+            "full_report_id_denominator": 6,
+            "full_report_id_coverage": 0.0,
+            "mention_occurrences": 0,
+            "full_report_mention_denominator": 18,
+            "full_report_mention_coverage": 0.0
+          }
+        },
+        "selected_ids_union": [
+          "CT64610",
+          "PF64216",
+          "PF64616",
+          "RE64611"
+        ],
+        "unselected_report_ids": [
+          "DE64603",
+          "RE64613"
+        ],
+        "stages": {
+          "candidate": {
+            "cases_with_output": 3,
+            "total_selected_cases": 3,
+            "source_bound_predicted_ids": [
+              "CT64610",
+              "PF64216",
+              "PF64616",
+              "RE64611"
+            ],
+            "selected_primary_reference_denominator": 4,
+            "selected_all_reference_denominator": 4,
+            "primary_output_id_coverage_fraction_over_all_selected": 1.0,
+            "primary_ids_without_stage_evaluation": [],
+            "outside_selected_reference_ids": [],
+            "multi_identifier_merge_count": 1,
+            "anchor_identifier_conflict_count": 2,
+            "primary_alternative_statuses": {
+              "one_of_preserved": 1,
+              "split_or_unconditional_or_incomplete": 1
+            },
+            "context_alternative_statuses": {},
+            "meaning": "Output coverage over all selected reference IDs, not entity semantic accuracy or recall of the full report. Failed cases remain in coverage denominators."
+          },
+          "final": {
+            "cases_with_output": 3,
+            "total_selected_cases": 3,
+            "source_bound_predicted_ids": [
+              "CT64610",
+              "RE64611"
+            ],
+            "selected_primary_reference_denominator": 4,
+            "selected_all_reference_denominator": 4,
+            "primary_output_id_coverage_fraction_over_all_selected": 0.5,
+            "primary_ids_without_stage_evaluation": [],
+            "outside_selected_reference_ids": [],
+            "multi_identifier_merge_count": 0,
+            "anchor_identifier_conflict_count": 0,
+            "primary_alternative_statuses": {
+              "not_output": 2
+            },
+            "context_alternative_statuses": {},
+            "meaning": "Output coverage over all selected reference IDs, not entity semantic accuracy or recall of the full report. Failed cases remain in coverage denominators."
+          }
+        },
+        "invalid_final_external_links": 0
+      },
+      "technical": {
+        "cases": 3,
+        "case_statuses": {
+          "complete": 3
+        },
+        "contracts_passed": 6,
+        "http": {
+          "http_calls": 6,
+          "finish_reasons": {
+            "stop": 6
+          },
+          "http_status_codes": {
+            "unreported": 6
+          },
+          "prompt_tokens": {
+            "reported_sum": 51525,
+            "reported_calls": 6,
+            "unknown_calls": 0,
+            "all_calls_total": 51525
+          },
+          "completion_tokens": {
+            "reported_sum": 4151,
+            "reported_calls": 6,
+            "unknown_calls": 0,
+            "all_calls_total": 4151
+          },
+          "total_tokens": {
+            "reported_sum": 55676,
+            "reported_calls": 6,
+            "unknown_calls": 0,
+            "all_calls_total": 55676
+          },
+          "http_seconds": {
+            "reported_sum": 193.65,
+            "reported_calls": 6,
+            "unknown_calls": 0
+          }
+        },
+        "metrics": {
+          "precheck": {
+            "saved_invocations": 8,
+            "validation_statuses": {
+              "incomplete": 8
+            },
+            "strict_focus_covered_conformant_text_claims": 0,
+            "shacl_evaluated": 0,
+            "numeric_slots": 0,
+            "numeric_calibration": "not_evaluated_text_slots_only",
+            "numeric_pass_fraction": null
+          },
+          "final": {
+            "saved_invocations": 8,
+            "validation_statuses": {
+              "passed": 4,
+              "failed": 4
+            },
+            "strict_focus_covered_conformant_text_claims": 4,
+            "shacl_evaluated": 4,
+            "numeric_slots": 0,
+            "numeric_calibration": "not_evaluated_text_slots_only",
+            "numeric_pass_fraction": null
+          }
+        },
+        "external_link_count": 2
+      }
+    }
+  },
+  "accepted_without_independent_support": [
+    {
+      "arm": "E2",
+      "scope_id": "record-be0b530ec6ae",
+      "id": "r1",
+      "kind": "relation",
+      "program_destination": "accepted",
+      "overall_verdict": "undetermined",
+      "content_verdict": "undetermined",
+      "program_model_verdict": "supported",
+      "reason": "u8直接证明针对该反应釜的内壁清洗要求，而非本报告的生产使用/设备需求关系；清洗对象在本报告被提及并不足以独立证明usesEquipment。HRS-1597成品是表格分组对象，不能补出缺少的使用关系。本包既未直接支持该关系，也未明确否定它。",
+      "program_issues": [],
+      "entity_dimensions": {}
+    }
+  ],
+  "evidence_hashes": {
+    "artifact-audit.json": "0272afe7b9aa455e3c9f9ad839090cc83e141d8ea3743b9e312a94ef439b60e1",
+    "reference.json": "baebe8e16138e52f87cb790976ce2d72ace9f26a7fc608346a9a5eea84f66a54",
+    "reference-scores.json": "a29127e8fa6e82f187f515d45524747dcf003571014efe7ea762b4ff82cd76c4",
+    "reviews-matched.json": "f9563a553dcfa407315d25d8c45d9aed6078e1850c9afc6cd705253fd0232b12",
+    "review-e0-e1.json": "76b283e0b48593e7bdc706ca15bd4ba4df4b072bc9ba4784ce4109e9839d70c0",
+    "review-e2.json": "5df9425c5a17fe57ea78cb5632b92be4c543b89edf8da32c3b14d72b8e99f9e8",
+    "engineering-checks.json": "4c61551518c884344dbbb581484e153a1f5c7bd1406ec12558b03846e364dfc9",
+    "scope-cards.json": "1c57990a2c2498acd285a899bf1409c99c71906c07bc80bb2bb1e3038c6a6846"
+  },
+  "limits": [
+    "Only static mock_equipment/equipment_archive equipment records were tested.",
+    "Independent assistant reference and source review are not expert gold.",
+    "Identifier coverage is not semantic accuracy or full graph recall.",
+    "Accepted observations are counted separately from entity/property/relation claims.",
+    "E2 changes retrieval; only E0/E1 share all selected records and NER.",
+    "String SHACL coverage does not evaluate numeric quantities or unit conversion.",
+    "Reference scorer does not read semantic reviews; matched reviews complete that separate stage."
+  ]
+}

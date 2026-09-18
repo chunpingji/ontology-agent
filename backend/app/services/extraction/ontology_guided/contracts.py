@@ -10,20 +10,27 @@ from __future__ import annotations
 
 from typing import Any, Literal
 
-from pydantic import Field, model_validator
+from pydantic import Field, model_serializer, model_validator
 
-from app.schemas.evidence import EvidenceAnchor, EvidenceModel
+from app.schemas.evidence import EvidenceAnchor, EvidenceModel, ExternalRecordProvenance
+from app.schemas.retrieval_diagnostics import RetrievalDiagnosticCarrier
 from app.services.extraction.evidence_identity import evidence_hash, stable_id
+from app.services.extraction.ontology_guided.ontology_lexical import OntologyLexicalContext
 
 CONTRACT_VERSION = "document-analysis-runs-v1"
 ONTOLOGY_SNAPSHOT_VERSION = "ontology-guided-snapshot-v1"
+ONTOLOGY_LEXICAL_SNAPSHOT_VERSION = "ontology-guided-snapshot-v2"
 METADATA_POLICY_VERSION = "ontology-guided-metadata-v1"
 RETRIEVAL_POLICY_VERSION = "ontology-guided-two-phase-v1"
+SPARSE_RETRIEVAL_POLICY_VERSION = "ontology-guided-sparse-candidates-v1"
+CANDIDATE_POLICY_VERSION = "sparse-candidates-v1"
 PROOF_POLICY_VERSION = "ontology-guided-proof-v1"
 PROJECTION_POLICY_VERSION = "ontology-guided-graph-v2"
 
 SemanticVerdict = Literal["supported", "unsupported", "undetermined", "not_checked"]
 AssertionPolarity = Literal["affirmed", "negated", "conditional", "uncertain"]
+AssertionModality = Literal["asserted", "required", "possible", "planned", "unspecified"]
+RelationSelection = Literal["all", "one_of", "alternatives", "undetermined"]
 CoverageState = Literal["unattempted", "attempted_incomplete", "examined"]
 ExecutionState = Literal[
     "queued", "running", "finished", "retryable_failure", "blocked_dependency", "paused"
@@ -33,6 +40,39 @@ ExecutionState = Literal[
 class VersionedRef(EvidenceModel):
     id: str = Field(min_length=1)
     revision: int = Field(ge=1)
+
+
+class ScopeMember(EvidenceModel):
+    relation_ref: VersionedRef
+    member_ref: VersionedRef
+
+
+def _scope_member_key(member: ScopeMember) -> tuple[str, int, str, int]:
+    return (
+        member.relation_ref.id, member.relation_ref.revision,
+        member.member_ref.id, member.member_ref.revision,
+    )
+
+
+class TraversalScope(EvidenceModel):
+    scope_id: str = Field(min_length=64, max_length=64)
+    members: list[ScopeMember] = Field(default_factory=list)
+
+    @model_validator(mode="after")
+    def canonical_members(self):
+        members = sorted(self.members, key=_scope_member_key)
+        if len({_scope_member_key(member) for member in members}) != len(members):
+            raise ValueError("traversal scope cannot repeat a relation member")
+        if self.scope_id != evidence_hash(members):
+            raise ValueError("traversal scope identity must match its canonical members")
+        # Bypass assignment validation only for this already-validated canonical order.
+        object.__setattr__(self, "members", members)
+        return self
+
+    @classmethod
+    def create(cls, members: list[ScopeMember] | None = None) -> "TraversalScope":
+        ordered = sorted(members or [], key=_scope_member_key)
+        return cls(scope_id=evidence_hash(ordered), members=ordered)
 
 
 class SubjectRef(EvidenceModel):
@@ -70,9 +110,30 @@ class SourceMention(EvidenceModel):
 class LocalReferent(EvidenceModel):
     referent_id: str = Field(min_length=1)
     revision: int = Field(default=1, ge=1)
-    mention_refs: list[str] = Field(min_length=1)
+    mention_refs: list[str] = Field(default_factory=list)
     coreference_proof_refs: list[VersionedRef] = Field(default_factory=list)
     alternative_refs: list[str] = Field(default_factory=list)
+    kind: Literal["mention", "record"] = "mention"
+    record_view_refs: list[str] = Field(default_factory=list)
+    composition_decision_ref: VersionedRef | None = None
+
+    @model_validator(mode="after")
+    def grounded_referent(self):
+        if self.kind == "mention" and not self.mention_refs:
+            raise ValueError("mention referent requires physical mention references")
+        if self.kind == "record" and (
+            not self.record_view_refs or self.composition_decision_ref is None
+        ):
+            raise ValueError("record referent requires record views and composition decision")
+        return self
+
+    @model_serializer(mode="wrap")
+    def preserve_legacy_referent_shape(self, handler):
+        data = handler(self)
+        for name in ("kind", "record_view_refs", "composition_decision_ref"):
+            if name not in self.model_fields_set:
+                data.pop(name, None)
+        return data
 
 
 class EntityInterpretation(EvidenceModel):
@@ -106,8 +167,20 @@ class PredicateSpec(EvidenceModel):
     label: str = Field(min_length=1)
     description: str = ""
     declared_by: list[str] = Field(default_factory=list)
-    max_count: int | None = Field(default=None, ge=1)
+    multiplicity: Literal["unspecified", "single", "multiple"] = "unspecified"
+    min_count: int | None = Field(default=None, ge=0)
+    max_count: int | None = Field(default=None, ge=0)
     constraint_status: Literal["resolved", "constraint_unresolved"] = "resolved"
+
+    @model_serializer(mode="wrap")
+    def preserve_legacy_quantity_shape(self, handler):
+        data = handler(self)
+        # Restore old artifacts without inserting a new declaration into their
+        # recorded payload/hash. New engine snapshots explicitly set both fields.
+        for name in ("multiplicity", "min_count"):
+            if name not in self.model_fields_set:
+                data.pop(name, None)
+        return data
 
 
 class SlotSpec(PredicateSpec):
@@ -149,6 +222,28 @@ class OntologySnapshot(EvidenceModel):
     classes: dict[str, OntologyClassDefinition]
     created_from: Literal["ontology_engine", "frozen_fixture"] = "ontology_engine"
     diagnostics: list[str] = Field(default_factory=list)
+    lexical_context: OntologyLexicalContext | None = None
+
+    @model_serializer(mode="wrap")
+    def preserve_legacy_lexical_shape(self, handler):
+        data = handler(self)
+        if self.lexical_context is None:
+            data.pop("lexical_context", None)
+        return data
+
+    @model_validator(mode="after")
+    def validate_lexical_identity(self):
+        if self.version == ONTOLOGY_LEXICAL_SNAPSHOT_VERSION and self.lexical_context is None:
+            raise ValueError("ontology snapshot v2 requires its frozen lexical context")
+        if self.lexical_context is not None:
+            if self.version != ONTOLOGY_LEXICAL_SNAPSHOT_VERSION:
+                raise ValueError("ontology lexical context requires snapshot v2")
+            expected = evidence_hash({
+                "classes": self.classes, "lexical_context": self.lexical_context,
+            })
+            if self.ontology_hash != expected:
+                raise ValueError("ontology snapshot hash does not match its lexical content")
+        return self
 
 
 class LocalMenu(EvidenceModel):
@@ -239,6 +334,10 @@ class PlannedRecord(EvidenceModel):
     rank_score: float = 0
     score_components: dict[str, float] = Field(default_factory=dict)
     rationale: list[str] = Field(default_factory=list)
+    ranking_epoch_id: str | None = None
+    ranking_epoch_seq: int | None = Field(default=None, ge=1)
+    pool_rank: int | None = Field(default=None, ge=1)
+    ranking_mode: Literal["deterministic", "semantic"] = "deterministic"
 
 
 class RecallEntry(EvidenceModel):
@@ -264,6 +363,19 @@ class RetrievalPlan(EvidenceModel):
     ledger: dict[str, RecallEntry]
     excluded_heading_record_ids: list[str] = Field(default_factory=list)
     policy_version: str = RETRIEVAL_POLICY_VERSION
+    frozen_record_ids: list[str] = Field(default_factory=list)
+    frozen_record_hash: str = ""
+    ranking_epoch_ids: list[str] = Field(default_factory=list)
+    # The document owns the record universe once. Sparse plans reference that
+    # immutable search domain; only admitted recognition work appears below.
+    search_scope_ref: dict[str, Any] | None = None
+
+    @model_serializer(mode="wrap")
+    def serialize_plan(self, handler):
+        result = handler(self)
+        if result.get("search_scope_ref") is None:
+            result.pop("search_scope_ref", None)
+        return result
 
     @model_validator(mode="after")
     def conserved_records(self):
@@ -272,6 +384,27 @@ class RetrievalPlan(EvidenceModel):
             raise ValueError("retrieval phases must be disjoint")
         if set(ids) != set(self.ledger):
             raise ValueError("retrieval ledger must cover every planned record exactly once")
+        if self.policy_version == SPARSE_RETRIEVAL_POLICY_VERSION:
+            scope = self.search_scope_ref
+            if (not isinstance(scope, dict)
+                    or set(scope) != {"scope_id", "record_count", "record_hash"}
+                    or not isinstance(scope["scope_id"], str) or not scope["scope_id"]
+                    or type(scope["record_count"]) is not int or scope["record_count"] < len(ids)
+                    or not isinstance(scope["record_hash"], str)
+                    or len(scope["record_hash"]) != 64
+                    or self.frozen_record_ids or self.frozen_record_hash):
+                raise ValueError("sparse retrieval requires one shared record universe reference")
+        elif self.search_scope_ref is not None:
+            raise ValueError("shared search scope requires the sparse retrieval policy")
+        elif self.frozen_record_hash:
+            from app.services.extraction.evidence_identity import evidence_hash
+
+            if (
+                len(self.frozen_record_ids) != len(set(self.frozen_record_ids))
+                or set(ids) != set(self.frozen_record_ids)
+                or evidence_hash(self.frozen_record_ids) != self.frozen_record_hash
+            ):
+                raise ValueError("retrieval plan must conserve its frozen record universe")
         return self
 
 
@@ -292,6 +425,9 @@ class VerificationTarget(EvidenceModel):
         "global_identity",
         "predicate_entailment",
         "applicability",
+        "selection",
+        "record_composition",
+        "modality",
     ]
     document_context: DocumentContext
     subject_ref: SubjectRef
@@ -304,6 +440,29 @@ class VerificationTarget(EvidenceModel):
     ontology_hash: str = Field(min_length=1)
     source_scope_hash: str = Field(min_length=1)
     context_hash: str = Field(min_length=1)
+    object_refs: list[VersionedRef] = Field(default_factory=list)
+    selection: RelationSelection | None = None
+
+    @model_validator(mode="after")
+    def coherent_group_target(self):
+        if self.object_refs:
+            if self.object_ref is not None or len(self.object_refs) < 2:
+                raise ValueError("group target requires multiple objects and no single object")
+            if len({ref.id for ref in self.object_refs}) != len(self.object_refs):
+                raise ValueError("group target objects must identify distinct entities")
+            if self.selection is None:
+                raise ValueError("group target requires selection semantics")
+        elif self.selection is not None or self.check_kind == "selection":
+            raise ValueError("selection verification requires a group target")
+        return self
+
+    @model_serializer(mode="wrap")
+    def preserve_legacy_target_shape(self, handler):
+        data = handler(self)
+        for name in ("object_refs", "selection"):
+            if name not in self.model_fields_set:
+                data.pop(name, None)
+        return data
 
     @classmethod
     def create(cls, **values: Any) -> "VerificationTarget":
@@ -320,6 +479,11 @@ class VerificationTarget(EvidenceModel):
             "source_scope_hash": values["source_scope_hash"],
             "context_hash": values["context_hash"],
         }
+        # Old targets retain exactly their frozen identity; new group inputs
+        # explicitly bind both the full endpoint set and its selection meaning.
+        for name in ("object_refs", "selection"):
+            if name in values:
+                identity[name] = values[name]
         return cls(target_id=stable_id("verification-target", identity), **values)
 
 
@@ -408,7 +572,19 @@ class PredicateEvidence(EvidenceModel):
     applicability_refs: list[VersionedRef] = Field(default_factory=list)
     dependency_refs: list[VersionedRef] = Field(default_factory=list)
     verdict: SemanticVerdict
+    unit_evidence_refs: list[EvidenceAnchor] = Field(default_factory=list)
+    normalization_record: dict[str, Any] = Field(default_factory=dict)
     proof_policy_version: str = PROOF_POLICY_VERSION
+    selection_support_refs: list[EvidenceAnchor] = Field(default_factory=list)
+    modality_support_refs: list[EvidenceAnchor] = Field(default_factory=list)
+
+    @model_serializer(mode="wrap")
+    def preserve_legacy_proof_shape(self, handler):
+        data = handler(self)
+        for name in ("selection_support_refs", "modality_support_refs"):
+            if name not in self.model_fields_set:
+                data.pop(name, None)
+        return data
 
 
 class VerificationBundle(EvidenceModel):
@@ -432,9 +608,42 @@ class GraphNode(EvidenceModel):
     root: bool = False
     root_origin: Literal["user_specified", "recognized"] = "recognized"
     identity_status: Literal["document_local", "verified", "undetermined"] = "document_local"
+    external_provenance: list[ExternalRecordProvenance] = Field(default_factory=list)
+    identity_decision_refs: list[VersionedRef] = Field(default_factory=list)
     decision_status: SemanticVerdict = "supported"
     independent_review: Literal["unreviewed", "accepted", "rejected"] = "unreviewed"
     evidence_refs: list[EvidenceAnchor] = Field(default_factory=list)
+    referent_ref: VersionedRef | None = None
+    type_decision_ref: VersionedRef | None = None
+    referent_decision_ref: VersionedRef | None = None
+    dependency_refs: list[VersionedRef] = Field(default_factory=list)
+    grounding_kind: Literal["document_root", "mention", "record"] = "mention"
+    composition_decision_ref: VersionedRef | None = None
+
+    @model_validator(mode="after")
+    def coherent_grounding(self):
+        if "grounding_kind" not in self.model_fields_set:
+            return self
+        if self.grounding_kind == "document_root":
+            if not self.root:
+                raise ValueError("document root grounding requires a root node")
+        elif self.root or self.referent_ref is None:
+            raise ValueError("mention or record grounding requires a non-root referent")
+        if self.grounding_kind == "record" and self.composition_decision_ref is None:
+            raise ValueError("record node requires its composition decision")
+        return self
+
+    @model_serializer(mode="wrap")
+    def preserve_legacy_node_shape(self, handler):
+        data = handler(self)
+        for name in (
+            "referent_ref", "type_decision_ref", "referent_decision_ref", "dependency_refs",
+            "grounding_kind", "composition_decision_ref",
+            "external_provenance", "identity_decision_refs",
+        ):
+            if name not in self.model_fields_set:
+                data.pop(name, None)
+        return data
 
 
 class GraphProperty(EvidenceModel):
@@ -445,6 +654,8 @@ class GraphProperty(EvidenceModel):
     predicate_label: str = Field(min_length=1)
     raw_value: str
     normalized_value: Any = None
+    normalization_record: dict[str, Any] = Field(default_factory=dict)
+    unit_evidence_refs: list[EvidenceAnchor] = Field(default_factory=list)
     direction: Literal["outbound"] = "outbound"
     polarity: AssertionPolarity = "affirmed"
     conditions: list[str] = Field(default_factory=list)
@@ -465,6 +676,16 @@ class GraphProperty(EvidenceModel):
     counterevidence_refs: list[EvidenceAnchor] = Field(default_factory=list)
     reason_code: str = ""
     reason: str = ""
+    modality: AssertionModality = "unspecified"
+    scope: TraversalScope = Field(default_factory=TraversalScope.create)
+
+    @model_serializer(mode="wrap")
+    def preserve_legacy_property_shape(self, handler):
+        data = handler(self)
+        for name in ("modality", "scope"):
+            if name not in self.model_fields_set:
+                data.pop(name, None)
+        return data
 
 
 class GraphEdge(EvidenceModel):
@@ -494,9 +715,63 @@ class GraphEdge(EvidenceModel):
     counterevidence_refs: list[EvidenceAnchor] = Field(default_factory=list)
     reason_code: str = ""
     reason: str = ""
+    modality: AssertionModality = "unspecified"
+    scope: TraversalScope = Field(default_factory=TraversalScope.create)
+
+    @model_serializer(mode="wrap")
+    def preserve_legacy_edge_shape(self, handler):
+        data = handler(self)
+        for name in ("modality", "scope"):
+            if name not in self.model_fields_set:
+                data.pop(name, None)
+        return data
 
 
-class CoverageSummary(EvidenceModel):
+class GraphRelationshipGroup(EvidenceModel):
+    candidate_id: str = Field(min_length=1)
+    revision: int = Field(ge=1)
+    subject_ref: VersionedRef
+    object_refs: list[VersionedRef] = Field(min_length=2)
+    selection: RelationSelection
+    selection_evidence_refs: list[EvidenceAnchor] = Field(default_factory=list)
+    predicate_iri: str = Field(min_length=1)
+    predicate_label: str = Field(min_length=1)
+    direction: Literal["outbound", "inbound"] = "outbound"
+    polarity: AssertionPolarity = "affirmed"
+    modality: AssertionModality = "unspecified"
+    scope: TraversalScope = Field(default_factory=TraversalScope.create)
+    conditions: list[str] = Field(default_factory=list)
+    applicability: dict[str, Any] = Field(default_factory=dict)
+    decision_status: SemanticVerdict
+    structural_valid: bool = False
+    model_supported: bool = False
+    policy_eligible: bool = False
+    independent_review: Literal["unreviewed", "accepted", "rejected"] = "unreviewed"
+    proof_ref: VersionedRef | None = None
+    decision_refs: list[VersionedRef] = Field(default_factory=list)
+    dependency_refs: list[VersionedRef] = Field(default_factory=list)
+    evidence_refs: list[EvidenceAnchor] = Field(default_factory=list)
+    subject_evidence_refs: list[EvidenceAnchor] = Field(default_factory=list)
+    object_evidence_refs: list[EvidenceAnchor] = Field(default_factory=list)
+    predicate_evidence_refs: list[EvidenceAnchor] = Field(default_factory=list)
+    condition_evidence_refs: list[EvidenceAnchor] = Field(default_factory=list)
+    counterevidence_refs: list[EvidenceAnchor] = Field(default_factory=list)
+    reason_code: str = ""
+    reason: str = ""
+
+    @model_validator(mode="after")
+    def coherent_selection(self):
+        if len({ref.id for ref in self.object_refs}) != len(self.object_refs):
+            raise ValueError("relationship group objects must identify distinct entities")
+        supported = (
+            self.decision_status == "supported" or self.model_supported or self.policy_eligible
+        )
+        if supported and (self.selection == "undetermined" or not self.selection_evidence_refs):
+            raise ValueError("supported relationship group requires proven selection semantics")
+        return self
+
+
+class CoverageSummary(RetrievalDiagnosticCarrier):
     subject_ref: VersionedRef
     predicate_iri: str = Field(min_length=1)
     predicate_label: str = Field(min_length=1)
@@ -506,11 +781,26 @@ class CoverageSummary(EvidenceModel):
     incomplete: int = Field(default=0, ge=0)
     unattempted: int = Field(default=0, ge=0)
     unresolved_claims: int = Field(default=0, ge=0)
+    executed_phase_counts: dict[str, int] = Field(
+        default_factory=lambda: {"phase1": 0, "phase2": 0}
+    )
+    pending_frontiers: int = Field(default=0, ge=0)
+    stop_reason: str | None = None
+    scope: TraversalScope | None = None
+
+    @model_serializer(mode="wrap")
+    def preserve_legacy_scope(self, handler):
+        data = handler(self)
+        if self.scope is None:
+            data.pop("scope", None)
+        return data
 
 
-class RunProgress(EvidenceModel):
+class RunProgress(RetrievalDiagnosticCarrier):
     tasks_attempted: int = Field(default=0, ge=0)
     model_calls: int = Field(default=0, ge=0)
+    model_calls_reserved: int = Field(default=0, ge=0)
+    model_calls_unresolved: int = Field(default=0, ge=0)
     records_planned: int = Field(default=0, ge=0)
     records_examined: int = Field(default=0, ge=0)
     records_incomplete: int = Field(default=0, ge=0)
@@ -523,7 +813,7 @@ class RunProgress(EvidenceModel):
     unresolved_claims: int = Field(default=0, ge=0)
     invalidated_count: int = Field(default=0, ge=0)
     stop_reason: str | None = None
-    completion: Literal["incomplete", "in_scope_complete"] = "incomplete"
+    completion: Literal["incomplete", "in_scope_complete", "policy_complete"] = "incomplete"
     contract_version: str = CONTRACT_VERSION
 
     @model_validator(mode="after")
@@ -532,10 +822,14 @@ class RunProgress(EvidenceModel):
             self.records_examined + self.records_incomplete + self.records_unattempted
         ):
             raise ValueError("planned records must equal examined + incomplete + unattempted")
-        if self.completion == "in_scope_complete" and (
+        if self.completion in {"in_scope_complete", "policy_complete"} and (
             self.records_incomplete or self.records_unattempted or self.pending_frontiers
         ):
             raise ValueError("in-scope completion cannot hide unfinished coverage")
+        if self.completion == "policy_complete" and (
+            self.candidate_policy != CANDIDATE_POLICY_VERSION or self.model_calls_unresolved
+        ):
+            raise ValueError("candidate policy completion cannot hide unresolved work")
         return self
 
 
@@ -547,7 +841,8 @@ class GraphSnapshot(EvidenceModel):
     metadata_snapshot_id: str | None = None
     root_ref: VersionedRef
     projection: Literal[
-        "effective", "all", "unassociated", "negated", "conditional", "undetermined", "rejected"
+        "effective", "all", "unassociated", "negated", "conditional", "undetermined", "rejected",
+        "verified",
     ] = "effective"
     projection_policy: str = PROJECTION_POLICY_VERSION
     artifact_status: Literal["pending", "building", "ready", "partial", "failed"]
@@ -557,6 +852,14 @@ class GraphSnapshot(EvidenceModel):
     coverage: list[CoverageSummary] = Field(default_factory=list)
     progress: RunProgress = Field(default_factory=RunProgress)
     generated_from_hash: str = Field(min_length=64, max_length=64)
+    relationship_groups: list[GraphRelationshipGroup] = Field(default_factory=list)
+
+    @model_serializer(mode="wrap")
+    def preserve_legacy_snapshot_shape(self, handler):
+        data = handler(self)
+        if "relationship_groups" not in self.model_fields_set:
+            data.pop("relationship_groups", None)
+        return data
 
     @classmethod
     def empty_root(

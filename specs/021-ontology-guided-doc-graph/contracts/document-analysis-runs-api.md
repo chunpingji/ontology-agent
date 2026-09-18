@@ -6,6 +6,8 @@
 
 前缀：`/api/document-analysis/runs`
 
+2026-09-14 状态存储补充：新建运行冻结 `state_storage_version=4`，按[当前状态契约](../../022-semantic-graph-closure/contracts/current-state.md)继续同一运行；没有历史检查点选择参数。API 的暂停/继续、公开图投影、部分完成状态及审核契约保持不变。服务端 `work_version`、`request_version`、`ranking_version` 分别管理工作与独立账目提交，公共 `run_revision` 继续用于客户端刷新及控制操作。已有文档分析运行按其原冻结格式读取和继续；这与下文禁止恢复旧 word 端点作业是不同范围。
+
 本契约完全替换旧 `POST /api/document-analysis/word`。不提供双读、双写、旧 response adapter、旧 checkpoint 恢复或算法选择开关。
 
 ## 1. 通用规则
@@ -51,6 +53,7 @@
 | 415 | UNSUPPORTED_SOURCE_TYPE | 非 `.doc`/`.docx` 或实际类型不符 |
 | 422 | EMPTY_SOURCE / INVALID_WORD / INVALID_ROOT_CLASS | 可读但不满足启动条件 |
 | 503 | ONTOLOGY_UNAVAILABLE | 创建前无法冻结/校验本体；不调用模型 |
+| 503 | ADAPTIVE_CONFIGURATION_INVALID | 自适应检索配置或校准制品无效；未创建运行、不调用模型，修正配置后可重试 |
 
 后台转换、摘要或模型故障在已创建 run 的 `status/error/progress` 中表示，不把已接受的 202 事后改成 HTTP 错误。
 
@@ -63,6 +66,26 @@
 - 客户端只接受当前 `recognition_run_id` 且水位不低于本地水位的响应；迟到响应不得覆盖当前运行。
 
 ## 2. 创建运行
+
+### 2.0 历史任务列表（2026-09-09 补充）
+
+`GET /api/document-analysis/runs?limit=10&offset=0`，认证和 owner 边界沿用通用规则。
+`limit` 默认 20，范围 1—100；`offset` 默认 0，非负。非法参数返回 400 `INVALID_REQUEST`。
+按 `created_at DESC, recognition_run_id DESC` 稳定排序，返回：
+
+```json
+{
+  "contract_version": "document-analysis-runs-v1",
+  "items": [],
+  "has_more": false
+}
+```
+
+每个 item 包含 `RunWatermark` 全部字段、`status`、`stage`、`input`（与创建回执一致）、
+`created_at`、`expires_at`；不携带源文件、图谱、内部路径、owner 或执行凭据。
+仅查询当前 owner 的 `document_graph` 运行；排除已删除、墓碑和 `expires_at <= now` 的运行。
+正在删除的运行返回 `deleting`，前端禁用其查看入口。列表查询不触发模型、派发、租约或清理写入。
+分页为当前数据库视图；创建任务后前端回到首页刷新，读取失败保留错误提示并允许重试。
 
 ```http
 POST /api/document-analysis/runs
@@ -163,6 +186,8 @@ GET /api/document-analysis/runs/{recognition_run_id}
     "graph": "partial"
   },
   "progress": {
+    "candidate_policy": "sparse-candidates-v1",
+    "completion": "incomplete",
     "tasks_attempted": 12,
     "model_calls": 20,
     "records_planned": 117,
@@ -303,6 +328,7 @@ GET /api/document-analysis/runs/{recognition_run_id}/graph?projection=effective_
   "relationships": [],
   "invalidated_refs": [],
   "coverage": {
+    "candidate_policy": "sparse-candidates-v1",
     "subjects": [],
     "records_planned": 117,
     "records_examined": 8,
@@ -329,6 +355,15 @@ Property/relationship item 还必须包含：
 - subject、object/value、predicate bridge、condition、counterevidence 的 `source_selection_refs`，不能只返回两端 span。
 
 根 seed 不计为抽取 TP；仅根的空图必须同时显示运行/coverage，不能称“全文无关系”。
+
+新运行的 `candidate_policy=sparse-candidates-v1` 表示 `records_*` 只统计实际准入的
+主体—谓词候选任务；同一原文跨槽位可分别计数，未入选全文记录属于搜索诊断而非
+unattempted。`progress.completion=policy_complete` 与
+`stop_reason=candidate_search_exhausted` 表示本轮策略结束，状态为 finished，
+不代表全文事实穷尽。失败、预算不足与未执行的必要补验仍阻止该完成结论；已完成
+核验的语义未决/冲突独立保留并展示，不要求其转为有效肯定事实才结束运行。
+旧载荷省略新字段、保留原冻结口径；完整判据与迁移见
+[候选完成契约](../../022-semantic-graph-closure/contracts/candidate-completion.md)。
 
 ## 6. 读取原文与定位
 

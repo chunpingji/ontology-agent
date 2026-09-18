@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 import asyncio
+import json
 from collections.abc import Iterator
-from typing import Annotated
+from typing import Annotated, Literal
 from urllib.parse import quote
 from uuid import UUID
 
@@ -39,26 +40,47 @@ from app.schemas.document_analysis import (
     ApiErrorResponse,
     CreateRunRequest,
     CreateRunResponse,
+    CreateTemplateRunRequest,
     DeleteRunRequest,
+    DocumentAnalysisRunListResponse,
     DocumentAnalysisRunResponse,
     GraphArtifactResponse,
     GraphProjection,
+    GraphRanking,
+    HarnessContextResponse,
+    HarnessResponse,
+    HarnessSnapshot,
     MetadataArtifactResponse,
+    ReportDocumentSourceResponse,
     RunControlRequest,
     RunControlResponse,
     SourceArtifactResponse,
     SourceQuery,
+    SourceSelectionResponse,
     SseEvent,
+    TemplateRunResponse,
+)
+from app.schemas.document_analysis_review import (
+    CreatePropertyRepair,
+    CreatePropertyReview,
+    PropertyRepairList,
+    PropertyRepairResponse,
+    PropertyReviewList,
+    PropertyReviewResponse,
 )
 from app.services.document_analysis.application import (
     DocumentAnalysisApplication,
     DocumentAnalysisError,
+    graph_etag,
     weak_etag,
 )
 from app.services.document_analysis.execution import (
     dispatch_run,
     notify_document_analysis_dispatcher,
 )
+from app.services.document_analysis.report_documents import ReportDocumentRuns
+from app.services.document_analysis.reviews import DocumentPropertyReviewService
+from app.services.document_analysis.template_runs import TemplateDocumentRuns
 
 
 class DocumentAnalysisRoute(APIRoute):
@@ -192,6 +214,100 @@ def _wake_dispatcher_or_fallback(
     background_tasks.add_task(dispatch_run, recognition_run_id, bind=bind)
 
 
+@router.get("/templates/{template_id}/sources/{job_id}/runs", response_model=TemplateRunResponse)
+def get_template_document_run(
+    template_id: UUID,
+    job_id: UUID,
+    identity: Identity = Depends(get_current_user),
+    db: Session = Depends(get_db),
+    engine: object = Depends(get_ontology_engine),
+):
+    application = _application(db, engine)
+    run = TemplateDocumentRuns(application).latest(identity.username, template_id, job_id)
+    return {"run": application.status_response(run, role=identity.role) if run else None}
+
+
+@router.post("/templates/{template_id}/sources/{job_id}/runs",
+             response_model=CreateRunResponse, status_code=202)
+async def create_template_document_run(
+    template_id: UUID,
+    job_id: UUID,
+    body: CreateTemplateRunRequest,
+    background_tasks: BackgroundTasks,
+    identity: Identity = Depends(get_current_user),
+    db: Session = Depends(get_db),
+    engine: object = Depends(get_ontology_engine),
+):
+    if identity.role != "senior_analyst":
+        raise DocumentAnalysisError("ROLE_FORBIDDEN", "当前角色无运行写权限", status_code=403)
+    application = _application(db, engine)
+    run, created = await TemplateDocumentRuns(application).create(
+        identity.username, template_id, job_id, body.request_key)
+    if created:
+        _wake_dispatcher_or_fallback(background_tasks, run.recognition_run_id, bind=db.get_bind())
+    return application.create_response(run, idempotent_replay=not created)
+
+
+@router.get("/documents/source", response_model=ReportDocumentSourceResponse)
+def get_report_document_source(
+    document_iri: str = Query(min_length=1),
+    identity: Identity = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    # The document library is shared by authenticated users; analysis runs are owned.
+    result = ReportDocumentRuns(_application(db)).preview(document_iri)
+    return _json_model(ReportDocumentSourceResponse.model_validate(result), headers={
+        "Cache-Control": "private, no-store",
+    })
+
+
+@router.get("/documents/runs", response_model=TemplateRunResponse)
+def get_report_document_run(
+    document_iri: str = Query(min_length=1),
+    identity: Identity = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    application = _application(db)
+    run = ReportDocumentRuns(application).latest(identity.username, document_iri)
+    return _json_model(TemplateRunResponse.model_validate({
+        "run": application.status_response(run, role=identity.role) if run else None,
+    }), headers={"Cache-Control": "private, no-store"})
+
+
+@router.post("/documents/runs", response_model=CreateRunResponse, status_code=202)
+async def create_report_document_run(
+    body: CreateTemplateRunRequest,
+    background_tasks: BackgroundTasks,
+    document_iri: str = Query(min_length=1),
+    template_id: UUID | None = Query(default=None),
+    identity: Identity = Depends(get_current_user),
+    db: Session = Depends(get_db),
+    engine: object = Depends(get_ontology_engine),
+):
+    if identity.role != "senior_analyst":
+        raise DocumentAnalysisError("ROLE_FORBIDDEN", "当前角色无运行写权限", status_code=403)
+    application = _application(db, engine)
+    if template_id is not None:
+        from fastapi import HTTPException
+
+        from app.services.template_finder.service import context
+
+        try:
+            selected = context(db, document_iri, template_id)["selected"]
+        except HTTPException as exc:
+            raise DocumentAnalysisError(exc.detail["code"], exc.detail["message"],
+                                        status_code=exc.status_code) from exc
+        if selected["recognition_mode"] != "ontology_guided":
+            raise DocumentAnalysisError("RECOGNITION_MODE_MISMATCH",
+                                        "该模板请使用对应的 Finder 或静态演示入口", status_code=409)
+    run, created = await ReportDocumentRuns(application).create(
+        identity.username, document_iri, body.request_key,
+    )
+    if created:
+        _wake_dispatcher_or_fallback(background_tasks, run.recognition_run_id, bind=db.get_bind())
+    return application.create_response(run, idempotent_replay=not created)
+
+
 @router.post("/runs", response_model=CreateRunResponse, status_code=202)
 async def create_document_analysis_run(
     request: Request,
@@ -252,6 +368,19 @@ async def create_document_analysis_run(
     return response
 
 
+@router.get("/runs", response_model=DocumentAnalysisRunListResponse)
+def list_document_analysis_runs(
+    limit: int = Query(default=20, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+    identity: Identity = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    response = DocumentAnalysisRunListResponse.model_validate(
+        _application(db).list_runs(identity.username, limit=limit, offset=offset)
+    )
+    return _json_model(response, headers={"Cache-Control": "no-store"})
+
+
 @router.get("/runs/{recognition_run_id}", response_model=DocumentAnalysisRunResponse)
 def get_document_analysis_run(
     recognition_run_id: UUID,
@@ -284,6 +413,7 @@ def get_document_analysis_metadata(
     app = _application(db)
     try:
         run = app.get_run(recognition_run_id, identity.username)
+        app.assert_artifacts_readable(run)
         etag = weak_etag(run)
         cached = _if_not_modified(if_none_match, etag)
         if cached is not None:
@@ -305,7 +435,8 @@ def get_document_analysis_graph(
     app = _application(db)
     try:
         run = app.get_run(recognition_run_id, identity.username)
-        etag = weak_etag(run)
+        app.assert_artifacts_readable(run)
+        etag = graph_etag(run, projection)
         cached = _if_not_modified(if_none_match, etag)
         if cached is not None:
             return cached
@@ -313,6 +444,63 @@ def get_document_analysis_graph(
             app.graph_response(run, projection=projection)
         )
         return _json_model(response, headers={"ETag": etag})
+    except DocumentAnalysisError as exc:
+        return _error(exc)
+
+
+@router.get("/runs/{recognition_run_id}/ranking-summary", response_model=GraphRanking)
+def get_document_analysis_ranking_summary(
+    recognition_run_id: UUID,
+    expected_summary_id: str | None = Query(default=None),
+    expected_budget_enabled: bool | None = Query(default=None),
+    identity: Identity = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    app = _application(db)
+    try:
+        run = app.get_run(recognition_run_id, identity.username)
+        app.assert_artifacts_readable(run)
+
+        def check_version():
+            summary_id = ((run.artifact_manifest or {}).get("ranking_summary") or {}).get(
+                "artifact_id", ""
+            )
+            if (
+                expected_summary_id is not None and expected_summary_id != summary_id
+                or expected_budget_enabled is not None
+                and expected_budget_enabled != run.ranking_budget_enabled
+            ):
+                raise DocumentAnalysisError(
+                    "RUN_REVISION_CONFLICT", "排序摘要已更新，请同步运行版本", status_code=409,
+                    retryable=True, current_revision=run.revision,
+                )
+
+        check_version()
+        response = GraphRanking.model_validate(app.ranking_summary_response(run))
+        # A commit may occur after the artifact reader last refreshed the run.
+        # Re-read after the payload, before accepting the client's immutable key.
+        run = app.get_run(recognition_run_id, identity.username)
+        app.assert_artifacts_readable(run)
+        check_version()
+        return _json_model(response, headers={"Cache-Control": "private, no-store"})
+    except DocumentAnalysisError as exc:
+        return _error(exc)
+
+
+@router.get("/runs/{recognition_run_id}/source-selection", response_model=SourceSelectionResponse)
+def get_document_analysis_source_selection(
+    recognition_run_id: UUID,
+    selection_ref: str = Query(min_length=1),
+    identity: Identity = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    app = _application(db)
+    try:
+        run = app.get_run(recognition_run_id, identity.username)
+        response = SourceSelectionResponse.model_validate(
+            app.source_selection_response(run, selection_ref=selection_ref)
+        )
+        return _json_model(response, headers={"Cache-Control": "private, no-store"})
     except DocumentAnalysisError as exc:
         return _error(exc)
 
@@ -338,6 +526,7 @@ def get_document_analysis_source(
     app = _application(db)
     try:
         run = app.get_run(recognition_run_id, identity.username)
+        app.assert_artifacts_readable(run)
         if query.format == "original":
             path, media_type, filename, document_hash = app.original_source(run)
             encoded = quote(filename, safe="")
@@ -373,6 +562,55 @@ def _read_sse_batch(
         return app.events_response(run, after_sequence=cursor), run.execution_status
 
 
+@router.get("/runs/{recognition_run_id}/harness", response_model=HarnessResponse)
+def get_document_harness(
+    recognition_run_id: UUID,
+    identity: Identity = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    from app.services.document_analysis.harness import read_harness
+
+    app = _application(db)
+    try:
+        run = app.get_run(recognition_run_id, identity.username)
+        return _json_model(HarnessResponse.model_validate(read_harness(app.store, run)),
+                            headers={"Cache-Control": "private, no-store"})
+    except DocumentAnalysisError as exc:
+        return _error(exc)
+
+
+@router.get("/runs/{recognition_run_id}/harness/context", response_model=HarnessContextResponse)
+def get_document_harness_context(
+    recognition_run_id: UUID,
+    call_id: str = Query(min_length=1, max_length=200),
+    identity: Identity = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    from app.services.document_analysis.current_state import get_row
+
+    app = _application(db)
+    try:
+        run = app.get_run(recognition_run_id, identity.username)
+        context = get_row(app.store, run, "display:harness_context")
+        if not context or context["call_id"] != call_id:
+            raise DocumentAnalysisError("CONTEXT_CHANGED", "当前调用已变化，请查看最新上下文",
+                                        status_code=409)
+        return _json_model(HarnessContextResponse.model_validate(
+            {"recognition_run_id": str(recognition_run_id), **context}),
+                            headers={"Cache-Control": "private, no-store"})
+    except DocumentAnalysisError as exc:
+        return _error(exc)
+
+
+def _read_harness_frame(bind, run_id, owner_id):
+    from app.services.document_analysis.current_state import get_row
+
+    with Session(bind) as db:
+        app = _application(db)
+        run = app.get_run(run_id, owner_id)
+        return get_row(app.store, run, "display:harness")
+
+
 @router.get("/runs/{recognition_run_id}/events")
 async def stream_document_analysis_events(
     recognition_run_id: UUID,
@@ -397,6 +635,7 @@ async def stream_document_analysis_events(
 
     async def frames():
         nonlocal cursor
+        harness_head = None
         loop = asyncio.get_running_loop()
         deadline = loop.time() + settings.document_analysis_sse_window_seconds
         terminal = {"finished", "failed", "blocked_dependency", "paused", "cancelled"}
@@ -413,6 +652,21 @@ async def stream_document_analysis_events(
                 )
             except DocumentAnalysisError:
                 return
+            try:
+                snapshot = await asyncio.to_thread(
+                    _read_harness_frame, bind, recognition_run_id, identity.username,
+                )
+            except DocumentAnalysisError:
+                return
+            head = (snapshot["session_id"], snapshot["sequence"]) if snapshot else None
+            if head is not None and head != harness_head:
+                # This is a current display replacement, not a durable run event.
+                data = {
+                    "recognition_run_id": str(recognition_run_id),
+                    "snapshot": HarnessSnapshot.model_validate(snapshot).model_dump(mode="json"),
+                }
+                yield "event: harness\ndata: " + json.dumps(data, ensure_ascii=False) + "\n\n"
+                harness_head = head
             for sequence, event_type, data in events:
                 event = SseEvent(id=sequence, event=event_type, data=data)
                 yield (
@@ -435,6 +689,61 @@ async def stream_document_analysis_events(
             "X-Accel-Buffering": "no",
         },
     )
+
+
+@router.get("/runs/{recognition_run_id}/reviews", response_model=PropertyReviewList)
+def list_property_reviews(
+    recognition_run_id: UUID,
+    identity: Identity = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    result = DocumentPropertyReviewService(db, identity).listing(recognition_run_id)
+    return _json_model(PropertyReviewList.model_validate(result),
+                       headers={"Cache-Control": "private, no-store"})
+
+
+@router.post("/runs/{recognition_run_id}/reviews", response_model=PropertyReviewResponse)
+def create_property_review(
+    recognition_run_id: UUID,
+    request: CreatePropertyReview,
+    identity: Identity = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    result, replay = DocumentPropertyReviewService(db, identity).create_review(
+        recognition_run_id, request,
+    )
+    return _json_model(PropertyReviewResponse.model_validate(result),
+                       status_code=200 if replay else 201,
+                       headers={"Cache-Control": "private, no-store"})
+
+
+@router.get("/runs/{recognition_run_id}/repairs", response_model=PropertyRepairList)
+def list_property_repairs(
+    recognition_run_id: UUID,
+    identity: Identity = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    result = DocumentPropertyReviewService(db, identity).repairs(recognition_run_id)
+    return _json_model(PropertyRepairList.model_validate(result),
+                       headers={"Cache-Control": "private, no-store"})
+
+
+@router.post("/runs/{recognition_run_id}/repairs", response_model=PropertyRepairResponse,
+             status_code=202)
+def create_property_repair(
+    recognition_run_id: UUID,
+    request: CreatePropertyRepair,
+    background_tasks: BackgroundTasks,
+    identity: Identity = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    result, replay = DocumentPropertyReviewService(db, identity).create_repair(
+        recognition_run_id, request,
+    )
+    if not replay:
+        _wake_dispatcher_or_fallback(background_tasks, recognition_run_id, bind=db.get_bind())
+    return _json_model(PropertyRepairResponse.model_validate(result), status_code=202,
+                       headers={"Cache-Control": "private, no-store"})
 
 
 def _control_response(
@@ -522,6 +831,25 @@ def cancel_document_analysis_run(
 ):
     return _control_response(
         action="cancel",
+        recognition_run_id=recognition_run_id,
+        request=request,
+        identity=identity,
+        db=db,
+        background_tasks=background_tasks,
+    )
+
+
+@router.post("/runs/{recognition_run_id}/ranking-budget/{mode}", response_model=RunControlResponse)
+def set_document_analysis_ranking_budget(
+    recognition_run_id: UUID,
+    mode: Literal["enable", "disable"],
+    request: RunControlRequest,
+    background_tasks: BackgroundTasks,
+    identity: Identity = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    return _control_response(
+        action=f"ranking_budget_{mode}",
         recognition_run_id=recognition_run_id,
         request=request,
         identity=identity,

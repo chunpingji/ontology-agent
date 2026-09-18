@@ -1,0 +1,681 @@
+{
+  "sampled_at": "2026-09-14 03:54:22.826296+00:00",
+  "run_id": "98935847-00e1-4e39-b7ff-cc318d57b959",
+  "wall_seconds": 1107.538959980011,
+  "stages": {
+    "word_tree_summary": {
+      "requests": 6,
+      "ended": 6,
+      "statuses": {
+        "complete": 5,
+        "failed": 1
+      },
+      "wall_union_seconds": 95.99276781082153,
+      "request_sum_seconds": 121.307,
+      "request_min_seconds": 8.564,
+      "request_median_seconds": 14.9595,
+      "request_max_seconds": 46.818,
+      "totals": {
+        "cache_n": 360,
+        "cache_tokens": 360,
+        "completion_tokens": 3584,
+        "elapsed_seconds": 121.441,
+        "predicted_ms": 60578.888,
+        "predicted_n": 3584,
+        "prompt_ms": 47165.008,
+        "prompt_n": 7702,
+        "prompt_tokens": 8062,
+        "queue_seconds": 0.135,
+        "request_seconds": 121.307
+      }
+    },
+    "ontology_guided_discovery": {
+      "requests": 23,
+      "ended": 22,
+      "statuses": {
+        "complete": 22,
+        "running": 1
+      },
+      "wall_union_seconds": 495.3684153556824,
+      "request_sum_seconds": 477.21,
+      "request_min_seconds": 7.8,
+      "request_median_seconds": 20.9025,
+      "request_max_seconds": 41.41,
+      "totals": {
+        "cache_n": 9975,
+        "cache_tokens": 9975,
+        "completion_tokens": 4070,
+        "elapsed_seconds": 477.639,
+        "predicted_ms": 69244.992,
+        "predicted_n": 4070,
+        "prompt_ms": 395431.946,
+        "prompt_n": 98603,
+        "prompt_tokens": 108578,
+        "queue_seconds": 0.429,
+        "request_seconds": 477.21
+      }
+    },
+    "ontology_guided_verification": {
+      "requests": 13,
+      "ended": 13,
+      "statuses": {
+        "complete": 13
+      },
+      "wall_union_seconds": 473.2874114513397,
+      "request_sum_seconds": 473.294,
+      "request_min_seconds": 19.556,
+      "request_median_seconds": 38.203,
+      "request_max_seconds": 52.894,
+      "totals": {
+        "cache_n": 6408,
+        "cache_tokens": 6408,
+        "completion_tokens": 5885,
+        "elapsed_seconds": 473.551,
+        "predicted_ms": 106508.93,
+        "predicted_n": 5885,
+        "prompt_ms": 358642.971,
+        "prompt_n": 88989,
+        "prompt_tokens": 95397,
+        "queue_seconds": 0.258,
+        "request_seconds": 473.294
+      }
+    }
+  },
+  "model_union_seconds": 1064.6485946178436,
+  "outside_model_seconds": 42.89036536216736,
+  "model_wall_percent": 96.12741701087053,
+  "queue_seconds": 0.835,
+  "recognition": {
+    "completed_requests": 35,
+    "request_sum_seconds": 950.504,
+    "prompt_seconds": 754.074917,
+    "generation_seconds": 175.753922,
+    "prompt_tokens": 203975,
+    "completion_tokens": 9955,
+    "cache_tokens": 16383,
+    "prompt_percent": 79.33421816215397,
+    "cache_percent": 8.031866650324794
+  },
+  "event_costs": [
+    {
+      "sequence": 6,
+      "after_seconds": 169.68597984313965,
+      "predicate": "https://ontology.pharma-gmp.cn/slpra/drug-development/describes",
+      "task_id": "aae576c004aadba03e7c1cc4f535ef54584ea95db7d4f6628c63f9cd7b02549f",
+      "retry_kind": null,
+      "lineage_id": "cc7d96c622f0013d90944b0606ea0786e451db3c3471986d24be711dc3494fc6",
+      "semantic_outcome": "supported",
+      "reason_code": "record_supported",
+      "request_count": 2,
+      "request_seconds": 51.618
+    },
+    {
+      "sequence": 7,
+      "after_seconds": 199.7190818786621,
+      "predicate": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasCleaningMethod",
+      "task_id": "be0cc5740dbd866f596bfd48dd4fda6f67d3985f21188e911c8531ddecb0a05e",
+      "retry_kind": null,
+      "lineage_id": "301026e624b7503915dbd9a98dfdb54270906111dbc8aa06bbb1c442f43ddb93",
+      "semantic_outcome": "not_checked",
+      "reason_code": "discovery_citation_invalid",
+      "request_count": 1,
+      "request_seconds": 28.08
+    },
+    {
+      "sequence": 8,
+      "after_seconds": 228.1788568496704,
+      "predicate": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasCleaningMethod",
+      "task_id": "c78e2b59dd2c240b03fe42e8628e8ecfaee5b4ae9959a013fee23390e8c5c166",
+      "retry_kind": "technical_once",
+      "lineage_id": "301026e624b7503915dbd9a98dfdb54270906111dbc8aa06bbb1c442f43ddb93",
+      "semantic_outcome": "not_checked",
+      "reason_code": "discovery_citation_invalid",
+      "request_count": 1,
+      "request_seconds": 27.961
+    },
+    {
+      "sequence": 9,
+      "after_seconds": 237.50175189971924,
+      "predicate": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasCleaningResidue",
+      "task_id": "68468043943699257780baf4e26a0f8cc29a88327ece7d512906b57b9c2ad33a",
+      "retry_kind": null,
+      "lineage_id": "c4b5466922427c22f9631012155e175890d48f3b638f7ba25dc423b9b927b908",
+      "semantic_outcome": "not_checked",
+      "reason_code": "no_candidate_observed",
+      "request_count": 1,
+      "request_seconds": 8.717
+    },
+    {
+      "sequence": 10,
+      "after_seconds": 270.4369418621063,
+      "predicate": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasDegradationPathway",
+      "task_id": "9bc6ad2bd9befcd89c66a828a54a19cf1aaac95aea936bea627ac7d74917bf59",
+      "retry_kind": null,
+      "lineage_id": "b48aaabddb99ad7056c1dde35d26db41c73f99c9b293c83fa1ce2a9ae1e05100",
+      "semantic_outcome": "supported",
+      "reason_code": "record_supported",
+      "request_count": 2,
+      "request_seconds": 31.975
+    },
+    {
+      "sequence": 11,
+      "after_seconds": 301.17030596733093,
+      "predicate": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasProductionPlan",
+      "task_id": "41681a0827b2fa316e98ccfff6e60fbfe9ed33423704f0e0edc840c0c579d126",
+      "retry_kind": null,
+      "lineage_id": "fa35d881eaf50ae2ce82e5d5bc16444661fb38efe25fcec1f1bb0c6a1b1907f7",
+      "semantic_outcome": "supported",
+      "reason_code": "record_supported",
+      "request_count": 2,
+      "request_seconds": 29.743000000000002
+    },
+    {
+      "sequence": 12,
+      "after_seconds": 317.9183259010315,
+      "predicate": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasProductionRiskAssessment",
+      "task_id": "659327e6f66396555b63707f02d7073c1781439f8673bdb28c68d2deeb3fff0a",
+      "retry_kind": null,
+      "lineage_id": "9baf135005c6974625e2524c57a5326f0f78a4a0640f1ca2264229422c115c67",
+      "semantic_outcome": "not_checked",
+      "reason_code": "no_candidate_observed",
+      "request_count": 1,
+      "request_seconds": 16.184
+    },
+    {
+      "sequence": 13,
+      "after_seconds": 333.5565187931061,
+      "predicate": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasQualityRiskAssessment",
+      "task_id": "68eb41236405d08fff05fa4378fd8dd2f380dc957f16b2e0fd80c325101c226e",
+      "retry_kind": null,
+      "lineage_id": "8f3ee878dbce425c8d1a756ee937a93946b850b047dd3dd7434d535fcb0632f5",
+      "semantic_outcome": "not_checked",
+      "reason_code": "no_candidate_observed",
+      "request_count": 1,
+      "request_seconds": 15.044
+    },
+    {
+      "sequence": 14,
+      "after_seconds": 364.49792098999023,
+      "predicate": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasSafetyRiskAssessment",
+      "task_id": "2f0268477c191774d91092c1e37c4503f17aa2e9d298b6a92c77dec8f877d296",
+      "retry_kind": null,
+      "lineage_id": "94031cd026b7602de6f74cf55e871aa22f8c299e5b1a024a0c4608bc57d1daa4",
+      "semantic_outcome": "undetermined",
+      "reason_code": "record_undetermined",
+      "request_count": 2,
+      "request_seconds": 30.055
+    },
+    {
+      "sequence": 15,
+      "after_seconds": 431.7831537723541,
+      "predicate": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasSharedLineData",
+      "task_id": "3b3c565bcd7cdfaca40856d91ecbf7b13df4751d7e87327a4cf437724e3637b4",
+      "retry_kind": null,
+      "lineage_id": "935ca5deb11667728f32d545bf7710ec864d2293f61a605376900b29d6ff6af1",
+      "semantic_outcome": "supported",
+      "reason_code": "record_supported",
+      "request_count": 2,
+      "request_seconds": 65.97200000000001
+    },
+    {
+      "sequence": 16,
+      "after_seconds": 440.1644928455353,
+      "predicate": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasStorageCondition",
+      "task_id": "08b91f7fe0f292328747c1e0db9c8cd34601daa8d179c6f2bc42ea9fc98de0d6",
+      "retry_kind": null,
+      "lineage_id": "c4c8895011b412885fa818039f1c6c23ddce2c4a2d3bfd59f497e121509b2460",
+      "semantic_outcome": "not_checked",
+      "reason_code": "no_candidate_observed",
+      "request_count": 1,
+      "request_seconds": 7.8
+    },
+    {
+      "sequence": 17,
+      "after_seconds": 470.5562069416046,
+      "predicate": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasSynthesisRoute",
+      "task_id": "2e889bb213263b774d8c80192a0fef047ba7c1f0cc18ed094a2d105c9fb8a154",
+      "retry_kind": null,
+      "lineage_id": "3b338ca93b8bd799cbc7cc041ee2a5bf01c70ba4baf62517bf7090e00f484f62",
+      "semantic_outcome": "supported",
+      "reason_code": "record_supported",
+      "request_count": 2,
+      "request_seconds": 29.519
+    },
+    {
+      "sequence": 18,
+      "after_seconds": 565.0399618148804,
+      "predicate": "https://ontology.pharma-gmp.cn/slpra/drug-development/usesEquipment",
+      "task_id": "b98bb3e3b44cd2abf26a2fd9c54c4b7f546edb442b8557ced42a908811947ec0",
+      "retry_kind": null,
+      "lineage_id": "2408419e01ce048934736b5ee2e090dfde76dc92db4d2edaa8b44dc6033760a7",
+      "semantic_outcome": "supported",
+      "reason_code": "record_supported",
+      "request_count": 2,
+      "request_seconds": 93.27199999999999
+    },
+    {
+      "sequence": 19,
+      "after_seconds": 586.9274699687958,
+      "predicate": "https://ontology.pharma-gmp.cn/slpra/drug-development/describes",
+      "task_id": "c2f837098bbaeef178e43831b3bcc68855f120da364f399e72ecf1919e76dffc",
+      "retry_kind": null,
+      "lineage_id": "8a473a5dd61e88f4792481595689dc4ab798895faf77e76b8750038a633e3206",
+      "semantic_outcome": "not_checked",
+      "reason_code": "no_candidate_observed",
+      "request_count": 1,
+      "request_seconds": 21.229
+    },
+    {
+      "sequence": 20,
+      "after_seconds": 618.2290029525757,
+      "predicate": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasCleaningMethod",
+      "task_id": "8c558816c28b36e9a19eb8bece3504c6c2d8661bbe923db17d0f9a0d612b0e1a",
+      "retry_kind": null,
+      "lineage_id": "2732f5fc3d62b86fce60d154c941b7d36d12426f8a009eff185634a442a37de9",
+      "semantic_outcome": "not_checked",
+      "reason_code": "discovery_citation_invalid",
+      "request_count": 1,
+      "request_seconds": 30.803
+    },
+    {
+      "sequence": 21,
+      "after_seconds": 687.0933938026428,
+      "predicate": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasCleaningMethod",
+      "task_id": "4577b64fda1d5fb4d9783f2f536ec14fb84697b80e0d4576fb4f9ebedd6a9fbe",
+      "retry_kind": "technical_once",
+      "lineage_id": "2732f5fc3d62b86fce60d154c941b7d36d12426f8a009eff185634a442a37de9",
+      "semantic_outcome": "undetermined",
+      "reason_code": "record_undetermined",
+      "request_count": 2,
+      "request_seconds": 67.812
+    },
+    {
+      "sequence": 22,
+      "after_seconds": 769.314915895462,
+      "predicate": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasCleaningResidue",
+      "task_id": "ef1a33dd590da5d4f92dfc19913806e14fc145c49ed169ad5c272d1f2b9b7de2",
+      "retry_kind": null,
+      "lineage_id": "b0e917c76d0d37e392be10ce3aa27a4313a4a3001cc976286cef922aee5bf7f5",
+      "semantic_outcome": "undetermined",
+      "reason_code": "record_undetermined",
+      "request_count": 2,
+      "request_seconds": 80.975
+    },
+    {
+      "sequence": 23,
+      "after_seconds": 808.9883899688721,
+      "predicate": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasCleaningMethod",
+      "task_id": "106420d11623a10aeaf21f6062701f8792437a429c74687e1af1c65b6d0181ec",
+      "retry_kind": "rediscovery:1",
+      "lineage_id": "2732f5fc3d62b86fce60d154c941b7d36d12426f8a009eff185634a442a37de9",
+      "semantic_outcome": "not_checked",
+      "reason_code": "discovery_citation_invalid",
+      "request_count": 1,
+      "request_seconds": 39.134
+    },
+    {
+      "sequence": 24,
+      "after_seconds": 819.9479148387909,
+      "predicate": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasDegradationPathway",
+      "task_id": "d968823bb9bfd4aa5f986a7ae7590e75bc19e95562c4aed5a3d00efde7ce27b6",
+      "retry_kind": null,
+      "lineage_id": "3db980a18dbdd726484af914246520bffc2e919319bc086cdab237dc2d8dc9b0",
+      "semantic_outcome": "not_checked",
+      "reason_code": "no_candidate_observed",
+      "request_count": 1,
+      "request_seconds": 10.455
+    },
+    {
+      "sequence": 25,
+      "after_seconds": 871.5033638477325,
+      "predicate": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasCleaningResidue",
+      "task_id": "fc6808195fc59fd69baff2ce355ffa431c490c65fad756a9e8066c8a7fe8f6e1",
+      "retry_kind": "positive_evidence:1",
+      "lineage_id": "b0e917c76d0d37e392be10ce3aa27a4313a4a3001cc976286cef922aee5bf7f5",
+      "semantic_outcome": "supported",
+      "reason_code": "record_supported",
+      "request_count": 1,
+      "request_seconds": 50.598
+    },
+    {
+      "sequence": 26,
+      "after_seconds": 890.130931854248,
+      "predicate": "https://ontology.pharma-gmp.cn/slpra/drug-development/describes",
+      "task_id": "49d39ab367f7b98c23418a53870c8807aa3c1837e9a68c736ecec589d733cf45",
+      "retry_kind": null,
+      "lineage_id": "859511f8ed2fdef0f50065808ad0dbef33500b54cee3f6744b08131258cf35be",
+      "semantic_outcome": "not_checked",
+      "reason_code": "no_candidate_observed",
+      "request_count": 1,
+      "request_seconds": 18.058
+    },
+    {
+      "sequence": 27,
+      "after_seconds": 954.7854359149933,
+      "predicate": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasCleaningMethod",
+      "task_id": "d1241157cd8d4a17fc33e449b543ab72438b76639ba926fb91b7e7b2ff748253",
+      "retry_kind": null,
+      "lineage_id": "d96e2a487b2d6af1b184b79799c06c12415ebffd6bbfc7f8da4b1228fb4a5e89",
+      "semantic_outcome": "supported",
+      "reason_code": "record_supported",
+      "request_count": 2,
+      "request_seconds": 63.696
+    },
+    {
+      "sequence": 28,
+      "after_seconds": 1034.9298629760742,
+      "predicate": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasCleaningResidue",
+      "task_id": "ea72cf9dd9dd8c93293fd6292659efddaaa38420a971d4968235908192ec6df8",
+      "retry_kind": null,
+      "lineage_id": "2d565aa9cc7f55db50496cd03b853493459de7e273399260588f15f20c725c76",
+      "semantic_outcome": "undetermined",
+      "reason_code": "record_undetermined",
+      "request_count": 2,
+      "request_seconds": 78.91
+    },
+    {
+      "sequence": 29,
+      "after_seconds": 1088.9524569511414,
+      "predicate": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasCleaningResidue",
+      "task_id": "9804c279b53978a38f045812ace1d3d6a18fae0cff24ea6be3d0899c24f61ecd",
+      "retry_kind": "positive_evidence:1",
+      "lineage_id": "2d565aa9cc7f55db50496cd03b853493459de7e273399260588f15f20c725c76",
+      "semantic_outcome": "supported",
+      "reason_code": "record_supported",
+      "request_count": 1,
+      "request_seconds": 52.894
+    }
+  ],
+  "failure_costs": [
+    {
+      "sequence": 7,
+      "after_seconds": 199.7190818786621,
+      "predicate": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasCleaningMethod",
+      "task_id": "be0cc5740dbd866f596bfd48dd4fda6f67d3985f21188e911c8531ddecb0a05e",
+      "retry_kind": null,
+      "lineage_id": "301026e624b7503915dbd9a98dfdb54270906111dbc8aa06bbb1c442f43ddb93",
+      "semantic_outcome": "not_checked",
+      "reason_code": "discovery_citation_invalid",
+      "request_count": 1,
+      "request_seconds": 28.08
+    },
+    {
+      "sequence": 8,
+      "after_seconds": 228.1788568496704,
+      "predicate": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasCleaningMethod",
+      "task_id": "c78e2b59dd2c240b03fe42e8628e8ecfaee5b4ae9959a013fee23390e8c5c166",
+      "retry_kind": "technical_once",
+      "lineage_id": "301026e624b7503915dbd9a98dfdb54270906111dbc8aa06bbb1c442f43ddb93",
+      "semantic_outcome": "not_checked",
+      "reason_code": "discovery_citation_invalid",
+      "request_count": 1,
+      "request_seconds": 27.961
+    },
+    {
+      "sequence": 20,
+      "after_seconds": 618.2290029525757,
+      "predicate": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasCleaningMethod",
+      "task_id": "8c558816c28b36e9a19eb8bece3504c6c2d8661bbe923db17d0f9a0d612b0e1a",
+      "retry_kind": null,
+      "lineage_id": "2732f5fc3d62b86fce60d154c941b7d36d12426f8a009eff185634a442a37de9",
+      "semantic_outcome": "not_checked",
+      "reason_code": "discovery_citation_invalid",
+      "request_count": 1,
+      "request_seconds": 30.803
+    },
+    {
+      "sequence": 23,
+      "after_seconds": 808.9883899688721,
+      "predicate": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasCleaningMethod",
+      "task_id": "106420d11623a10aeaf21f6062701f8792437a429c74687e1af1c65b6d0181ec",
+      "retry_kind": "rediscovery:1",
+      "lineage_id": "2732f5fc3d62b86fce60d154c941b7d36d12426f8a009eff185634a442a37de9",
+      "semantic_outcome": "not_checked",
+      "reason_code": "discovery_citation_invalid",
+      "request_count": 1,
+      "request_seconds": 39.134
+    }
+  ],
+  "failed_citation_seconds": 125.978,
+  "predicate_costs": {
+    "https://ontology.pharma-gmp.cn/slpra/drug-development/describes": {
+      "requests": 4,
+      "request_seconds": 90.905,
+      "outcomes": {
+        "record_supported": 1,
+        "no_candidate_observed": 2
+      }
+    },
+    "https://ontology.pharma-gmp.cn/slpra/drug-development/hasCleaningMethod": {
+      "requests": 8,
+      "request_seconds": 257.486,
+      "outcomes": {
+        "discovery_citation_invalid": 4,
+        "record_undetermined": 1,
+        "record_supported": 1
+      }
+    },
+    "https://ontology.pharma-gmp.cn/slpra/drug-development/hasCleaningResidue": {
+      "requests": 7,
+      "request_seconds": 272.094,
+      "outcomes": {
+        "no_candidate_observed": 1,
+        "record_undetermined": 2,
+        "record_supported": 2
+      }
+    },
+    "https://ontology.pharma-gmp.cn/slpra/drug-development/hasDegradationPathway": {
+      "requests": 3,
+      "request_seconds": 42.43,
+      "outcomes": {
+        "record_supported": 1,
+        "no_candidate_observed": 1
+      }
+    },
+    "https://ontology.pharma-gmp.cn/slpra/drug-development/hasProductionPlan": {
+      "requests": 2,
+      "request_seconds": 29.743000000000002,
+      "outcomes": {
+        "record_supported": 1
+      }
+    },
+    "https://ontology.pharma-gmp.cn/slpra/drug-development/hasProductionRiskAssessment": {
+      "requests": 1,
+      "request_seconds": 16.184,
+      "outcomes": {
+        "no_candidate_observed": 1
+      }
+    },
+    "https://ontology.pharma-gmp.cn/slpra/drug-development/hasQualityRiskAssessment": {
+      "requests": 1,
+      "request_seconds": 15.044,
+      "outcomes": {
+        "no_candidate_observed": 1
+      }
+    },
+    "https://ontology.pharma-gmp.cn/slpra/drug-development/hasSafetyRiskAssessment": {
+      "requests": 2,
+      "request_seconds": 30.055,
+      "outcomes": {
+        "record_undetermined": 1
+      }
+    },
+    "https://ontology.pharma-gmp.cn/slpra/drug-development/hasSharedLineData": {
+      "requests": 2,
+      "request_seconds": 65.97200000000001,
+      "outcomes": {
+        "record_supported": 1
+      }
+    },
+    "https://ontology.pharma-gmp.cn/slpra/drug-development/hasStorageCondition": {
+      "requests": 1,
+      "request_seconds": 7.8,
+      "outcomes": {
+        "no_candidate_observed": 1
+      }
+    },
+    "https://ontology.pharma-gmp.cn/slpra/drug-development/hasSynthesisRoute": {
+      "requests": 2,
+      "request_seconds": 29.519,
+      "outcomes": {
+        "record_supported": 1
+      }
+    },
+    "https://ontology.pharma-gmp.cn/slpra/drug-development/usesEquipment": {
+      "requests": 2,
+      "request_seconds": 93.27199999999999,
+      "outcomes": {
+        "record_supported": 1
+      }
+    }
+  },
+  "first_supported": {
+    "https://ontology.pharma-gmp.cn/slpra/drug-development/describes": 169.68597984313965,
+    "https://ontology.pharma-gmp.cn/slpra/drug-development/hasDegradationPathway": 270.4369418621063,
+    "https://ontology.pharma-gmp.cn/slpra/drug-development/hasProductionPlan": 301.17030596733093,
+    "https://ontology.pharma-gmp.cn/slpra/drug-development/hasSharedLineData": 431.7831537723541,
+    "https://ontology.pharma-gmp.cn/slpra/drug-development/hasSynthesisRoute": 470.5562069416046,
+    "https://ontology.pharma-gmp.cn/slpra/drug-development/usesEquipment": 565.0399618148804,
+    "https://ontology.pharma-gmp.cn/slpra/drug-development/hasCleaningResidue": 871.5033638477325,
+    "https://ontology.pharma-gmp.cn/slpra/drug-development/hasCleaningMethod": 954.7854359149933
+  },
+  "state": {
+    "rows": 1053,
+    "payload_bytes": 992039,
+    "domains": {
+      "work:nodes": 12,
+      "work:menus": 1,
+      "work:subject_priorities": 1,
+      "work:registered_subjects": 10,
+      "work:proof_heads": 13,
+      "work:edges": 11,
+      "work:ranking_contexts": 12,
+      "work:scheduler:control": 1,
+      "calls:control": 1,
+      "work:plans": 12,
+      "work:predicates": 12,
+      "work:search_tasks": 12,
+      "work:scheduler:arrival": 80,
+      "work:lineage_calls": 19,
+      "work:candidate_tasks": 11,
+      "work:applied_model_results": 19,
+      "work:plan_parts": 150,
+      "work:search_parts": 421,
+      "work:searches": 12,
+      "work:scheduler:subject_turns": 1,
+      "work:scheduler:kind_turns": 1,
+      "work:scheduler:section_turns": 12,
+      "work:scheduler:phase_turns": 12,
+      "work:scheduler:seen": 80,
+      "work:scheduler:template_turns": 1,
+      "work:dependencies:requirements": 35,
+      "work:dependencies:subscriptions": 8,
+      "display:nodes": 12,
+      "display:selections": 23,
+      "display:menus": 12,
+      "work:scheduler:phase_counts": 12,
+      "display:edges": 11,
+      "work:coverage": 12,
+      "display:ranking_summary": 1,
+      "work:scheduler:predicate_turns": 1,
+      "work:evidence_work": 6,
+      "display:public_graph": 1,
+      "work:control": 1,
+      "work:projection": 1
+    },
+    "bytes_by_domain": {
+      "work:nodes": 3602,
+      "work:menus": 27515,
+      "work:subject_priorities": 192,
+      "work:registered_subjects": 5465,
+      "work:proof_heads": 3354,
+      "work:edges": 3367,
+      "work:ranking_contexts": 2714,
+      "work:scheduler:control": 45346,
+      "calls:control": 217,
+      "work:plans": 16293,
+      "work:predicates": 31034,
+      "work:search_tasks": 5342,
+      "work:scheduler:arrival": 15420,
+      "work:lineage_calls": 3638,
+      "work:candidate_tasks": 10967,
+      "work:applied_model_results": 7932,
+      "work:plan_parts": 137882,
+      "work:search_parts": 422158,
+      "work:searches": 7226,
+      "work:scheduler:subject_turns": 136,
+      "work:scheduler:kind_turns": 204,
+      "work:scheduler:section_turns": 4431,
+      "work:scheduler:phase_turns": 4226,
+      "work:scheduler:seen": 51188,
+      "work:scheduler:template_turns": 72,
+      "work:dependencies:requirements": 17552,
+      "work:dependencies:subscriptions": 4357,
+      "display:nodes": 16204,
+      "display:selections": 50363,
+      "display:menus": 16106,
+      "work:scheduler:phase_counts": 4298,
+      "display:edges": 45547,
+      "work:coverage": 10296,
+      "display:ranking_summary": 395,
+      "work:scheduler:predicate_turns": 304,
+      "work:evidence_work": 11296,
+      "display:public_graph": 1926,
+      "work:control": 1548,
+      "work:projection": 1926
+    }
+  },
+  "current_graph": {
+    "nodes": {
+      "supported": 8,
+      "undetermined": 4
+    },
+    "edges": {
+      "supported": 9,
+      "undetermined": 2
+    },
+    "properties": {}
+  },
+  "largest_request_gaps": [
+    {
+      "seconds": 18.578773021697998,
+      "after_seconds": 98.93789386749268
+    },
+    {
+      "seconds": 2.84716796875,
+      "after_seconds": 0.0
+    },
+    {
+      "seconds": 2.139281988143921,
+      "after_seconds": 169.41236782073975
+    },
+    {
+      "seconds": 1.000234842300415,
+      "after_seconds": 1034.6067869663239
+    },
+    {
+      "seconds": 0.9203140735626221,
+      "after_seconds": 470.28569984436035
+    },
+    {
+      "seconds": 0.9199559688568115,
+      "after_seconds": 954.4577248096466
+    },
+    {
+      "seconds": 0.8968648910522461,
+      "after_seconds": 686.7873859405518
+    },
+    {
+      "seconds": 0.8718340396881104,
+      "after_seconds": 1088.5005588531494
+    },
+    {
+      "seconds": 0.8612411022186279,
+      "after_seconds": 768.9477818012238
+    },
+    {
+      "seconds": 0.8289730548858643,
+      "after_seconds": 364.26166677474976
+    }
+  ]
+}

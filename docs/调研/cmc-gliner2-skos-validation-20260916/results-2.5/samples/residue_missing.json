@@ -1,0 +1,498 @@
+{
+  "scope_id": "residue_missing",
+  "source": {
+    "u0": {
+      "evidence_id": "58825513a350603d84e1078f57e62bacf4a16c0bab909e88c217b40e5e955809",
+      "kind": "heading",
+      "text": "3.5.2设备清洗残留物基本信息",
+      "section_node_id": "section:79",
+      "block_id": "paragraph:79:0",
+      "paragraph_index": 79,
+      "fragment_index": 0,
+      "table_path": null,
+      "row_index": null,
+      "column_index": null,
+      "physical_page_number": 5,
+      "source_cell_id": null,
+      "paragraph_offset": 0,
+      "ref": "u0",
+      "row_span": 1,
+      "column_span": 1,
+      "logical_rows": [],
+      "column_indices": [],
+      "grid_rows": [],
+      "grid_columns": [],
+      "column_header_refs": [],
+      "is_header": false,
+      "parser_header_candidate": false,
+      "header_status": "not_a_table",
+      "cell_structure_valid": false
+    },
+    "u1": {
+      "evidence_id": "72e4e463466bb3bd559a9723f42f09014be5d86ce051481cc5623a19fa87ca8e",
+      "kind": "paragraph",
+      "text": "N/A",
+      "section_node_id": "section:79",
+      "block_id": "paragraph:80:0",
+      "paragraph_index": 80,
+      "fragment_index": 0,
+      "table_path": null,
+      "row_index": null,
+      "column_index": null,
+      "physical_page_number": 5,
+      "source_cell_id": null,
+      "paragraph_offset": 0,
+      "ref": "u1",
+      "row_span": 1,
+      "column_span": 1,
+      "logical_rows": [],
+      "column_indices": [],
+      "grid_rows": [],
+      "grid_columns": [],
+      "column_header_refs": [],
+      "is_header": false,
+      "parser_header_candidate": false,
+      "header_status": "not_a_table",
+      "cell_structure_valid": false
+    }
+  },
+  "plan": {
+    "get_schema_card": [
+      {
+        "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/Residue"
+      },
+      {
+        "class_iri": "https://ontology.pharma-gmp.cn/slpra/equipment/CleaningEquipment"
+      }
+    ],
+    "inspect_evidence": [
+      {
+        "ref": "u0"
+      },
+      {
+        "ref": "u1"
+      }
+    ],
+    "propose_mentions": [
+      {
+        "group": "entities"
+      },
+      {
+        "group": "values"
+      }
+    ]
+  },
+  "candidate_proposal": {
+    "subjects": {
+      "document": {
+        "attributes": {},
+        "relations": {
+          "hasCleaningResidue": [],
+          "usesEquipment": []
+        },
+        "anchor": {
+          "ref": "",
+          "quote": "",
+          "span_id": ""
+        }
+      },
+      "s1": {
+        "attributes": {
+          "residueSolubility": [],
+          "residueSolubilityTemperature": [],
+          "residueSolvent": []
+        },
+        "relations": {},
+        "anchor": {
+          "ref": "",
+          "quote": "",
+          "span_id": ""
+        }
+      },
+      "s2": {
+        "attributes": {
+          "equipmentID": [],
+          "equipmentName": [],
+          "isDedicatedEquipment": [],
+          "isInCleanArea": [],
+          "modelSpecification": [],
+          "requiresDedication": [],
+          "requiresInactivationValidation": [],
+          "requiresIndependentHVAC": []
+        },
+        "relations": {},
+        "anchor": {
+          "ref": "",
+          "quote": "",
+          "span_id": ""
+        }
+      }
+    },
+    "observations": [
+      {
+        "value": {
+          "ref": "",
+          "quote": "",
+          "span_id": ""
+        },
+        "field": {
+          "ref": "u0",
+          "quote": "3.5.2设备清洗残留物基本信息",
+          "span_id": "source:u0"
+        },
+        "legend": {
+          "ref": "",
+          "quote": "",
+          "span_id": ""
+        },
+        "condition": {
+          "ref": "",
+          "quote": "",
+          "span_id": ""
+        },
+        "state": "not_applicable",
+        "reason": "Section header indicates topic, but content is N/A."
+      },
+      {
+        "value": {
+          "ref": "u1",
+          "quote": "N/A",
+          "span_id": "source:u1"
+        },
+        "field": {
+          "ref": "",
+          "quote": "",
+          "span_id": ""
+        },
+        "legend": {
+          "ref": "",
+          "quote": "",
+          "span_id": ""
+        },
+        "condition": {
+          "ref": "",
+          "quote": "",
+          "span_id": ""
+        },
+        "state": "not_applicable",
+        "reason": "Content is explicitly N/A, indicating no data available for residue information."
+      }
+    ]
+  },
+  "semantic_verification": {
+    "types": {},
+    "claims": {},
+    "observations": {
+      "o1": {
+        "state": "supported",
+        "field": "supported",
+        "legend": "unsupported",
+        "condition": "unsupported",
+        "support": [
+          {
+            "ref": "u0",
+            "quote": "3.5.2设备清洗残留物基本信息"
+          }
+        ],
+        "counterevidence_support": [],
+        "reason": "field和condition引用为空，无法支持其语义有效性。"
+      },
+      "o2": {
+        "state": "supported",
+        "field": "unsupported",
+        "legend": "unsupported",
+        "condition": "unsupported",
+        "support": [
+          {
+            "ref": "u1",
+            "quote": "N/A"
+          }
+        ],
+        "counterevidence_support": [],
+        "reason": "field、legend和condition引用为空，无法支持其语义有效性。"
+      }
+    }
+  },
+  "final_result": {
+    "arm": "C",
+    "scope_id": "residue_missing",
+    "status": "complete",
+    "calls": [
+      {
+        "http_call": 1,
+        "usage": {
+          "completion_tokens": 617,
+          "prompt_tokens": 7401,
+          "total_tokens": 8018,
+          "completion_tokens_details": null,
+          "prompt_tokens_details": {
+            "audio_tokens": null,
+            "cached_tokens": 493
+          }
+        },
+        "finish_reason": "stop",
+        "seconds": 38.093,
+        "stage": "candidates"
+      },
+      {
+        "http_call": 1,
+        "usage": {
+          "completion_tokens": 241,
+          "prompt_tokens": 3049,
+          "total_tokens": 3290,
+          "completion_tokens_details": null,
+          "prompt_tokens_details": {
+            "audio_tokens": null,
+            "cached_tokens": 298
+          }
+        },
+        "finish_reason": "stop",
+        "seconds": 15.1,
+        "stage": "verification"
+      }
+    ],
+    "accepted": [],
+    "observations": [],
+    "unresolved": [],
+    "rejected": [
+      {
+        "kind": "observation",
+        "candidate_id": "o1",
+        "proposal": {
+          "value": {
+            "ref": "",
+            "quote": ""
+          },
+          "field": {
+            "ref": "u0",
+            "quote": "3.5.2设备清洗残留物基本信息",
+            "start": 0,
+            "end": 16
+          },
+          "legend": {
+            "ref": "",
+            "quote": ""
+          },
+          "condition": {
+            "ref": "",
+            "quote": ""
+          },
+          "state": "not_applicable",
+          "reason": "Section header indicates topic, but content is N/A."
+        },
+        "issues": [
+          "source_quote_missing",
+          "semantic_legend_unsupported",
+          "semantic_condition_unsupported"
+        ]
+      },
+      {
+        "kind": "observation",
+        "candidate_id": "o2",
+        "proposal": {
+          "value": {
+            "ref": "u1",
+            "quote": "N/A",
+            "start": 0,
+            "end": 3
+          },
+          "field": {
+            "ref": "",
+            "quote": ""
+          },
+          "legend": {
+            "ref": "",
+            "quote": ""
+          },
+          "condition": {
+            "ref": "",
+            "quote": ""
+          },
+          "state": "not_applicable",
+          "reason": "Content is explicitly N/A, indicating no data available for residue information."
+        },
+        "issues": [
+          "semantic_field_unsupported",
+          "semantic_legend_unsupported",
+          "semantic_condition_unsupported"
+        ]
+      }
+    ],
+    "contract_passes": 2,
+    "plan_reused": true,
+    "new_request_budget": 2,
+    "ner": {
+      "execution_status": "completed",
+      "coverage": {
+        "requested_refs": [
+          "u0",
+          "u1"
+        ],
+        "attempted_refs": [
+          "u0",
+          "u1"
+        ],
+        "covered_refs": [
+          "u0",
+          "u1"
+        ],
+        "unattempted_refs": [],
+        "failed_refs": [],
+        "meaning": "all requested group windows executed; not semantic or recall coverage"
+      },
+      "timing": {
+        "load_seconds": 5e-06,
+        "inference_seconds": 0.487801
+      },
+      "issues": [],
+      "limits": {
+        "chunk_chars": 160,
+        "overlap_chars": 24,
+        "batch_size": 8,
+        "labels_per_batch": 1,
+        "source_truncated": false,
+        "encoder_truncation": "preprocessor_checked_encoder_internal_not_instrumented",
+        "long_values_require_context": true,
+        "backend": "gliner2.5",
+        "model_family": "GLiNER2.5",
+        "architecture": "boundary",
+        "package_version": "2.0.0",
+        "device": "cuda:0",
+        "max_len": 160,
+        "max_width": null,
+        "span_width_policy": "no_fixed_width_within_encoded_window",
+        "candidate_pool": "shared",
+        "shared_candidate_budget": {
+          "pool_boundary_top_k": 32,
+          "pool_size": 192,
+          "min_pool_per_query": 8
+        },
+        "encoder_max_positions": 512,
+        "tokenizer_max_length": null,
+        "encoder_input_limit": 512,
+        "encoder_limit_policy": "conservative_512_and_declared_limit",
+        "word_splitter": "char",
+        "checkpoint_default_splitter": "whitespace",
+        "splitter_quality_verified": false,
+        "word_truncation": "rejected_before_inference",
+        "source_collator": "checked_transform_pad_and_boundary_metadata",
+        "source_augmentation": "disabled_default_terminal_period",
+        "preprocessing_error_policy": "raise",
+        "candidate_validation": "active_spans_and_decision_scores_before_decode",
+        "overlap_policy": "allow"
+      },
+      "span_count": 0
+    },
+    "frames": {},
+    "metric_checks": [],
+    "type_checks": {
+      "document": []
+    },
+    "proposed_claim_count": 0,
+    "proposed_observation_count": 2,
+    "proposed_subject_count": 0,
+    "acceptance": {
+      "checks": [
+        {
+          "check": "required_observations",
+          "expected": {
+            "quote": "N/A",
+            "state": "not_applicable"
+          },
+          "pass": false
+        },
+        {
+          "check": "forbidden_predicate",
+          "expected": "hasCleaningResidue",
+          "pass": true
+        },
+        {
+          "check": "forbidden_predicate",
+          "expected": "producesResidue",
+          "pass": true
+        },
+        {
+          "check": "no_facts",
+          "pass": true
+        }
+      ],
+      "passed": 3,
+      "total": 4,
+      "all_pass": false,
+      "evaluated": true
+    },
+    "extended_acceptance": {
+      "checks": [
+        {
+          "check": "request_budget",
+          "pass": true
+        }
+      ],
+      "evaluated": true,
+      "all_pass": true,
+      "manual_review_required": [
+        "subject_type",
+        "subject_binding",
+        "predicate_or_metric_meaning",
+        "relation_direction_and_endpoints",
+        "source_unit_and_normalization",
+        "polarity_and_unknown",
+        "field_legend_condition_roles",
+        "long_value_completeness"
+      ],
+      "manual_review_status": "not_performed"
+    }
+  },
+  "note": "Program outcomes are validation candidates, not verified business facts; read independent review separately.",
+  "frozen_checklist": {
+    "checks": [
+      {
+        "check": "required_observations",
+        "expected": {
+          "quote": "N/A",
+          "state": "not_applicable"
+        },
+        "pass": false
+      },
+      {
+        "check": "forbidden_predicate",
+        "expected": "hasCleaningResidue",
+        "pass": true
+      },
+      {
+        "check": "forbidden_predicate",
+        "expected": "producesResidue",
+        "pass": true
+      },
+      {
+        "check": "no_facts",
+        "pass": true
+      }
+    ],
+    "passed": 3,
+    "total": 4,
+    "all_pass": false,
+    "evaluated": true
+  },
+  "extended_checks": {
+    "checks": [
+      {
+        "check": "request_budget",
+        "pass": true
+      }
+    ],
+    "evaluated": true,
+    "all_pass": true,
+    "manual_review_required": [
+      "subject_type",
+      "subject_binding",
+      "predicate_or_metric_meaning",
+      "relation_direction_and_endpoints",
+      "source_unit_and_normalization",
+      "polarity_and_unknown",
+      "field_legend_condition_roles",
+      "long_value_completeness"
+    ],
+    "manual_review_status": "not_performed"
+  }
+}

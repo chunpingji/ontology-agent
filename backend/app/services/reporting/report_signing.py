@@ -63,6 +63,8 @@ class ReportSigning:
         if request[2]:
             return self.db.get(ReportContentVersion, request[2]["result_id"])
         run = self.runs.get(run_id)
+        if run.source_bundle.get("demonstration"):
+            raise ReportingError("DEMO_REPORT_ONLY", "演示草稿不进入正式签署流程", status=409)
         body = self.runs.body(run_id, payload["attempt"])
         data = verify_frozen(body)
         if data["body_hash"] != payload["expected_body_hash"]:
@@ -485,7 +487,11 @@ class ReportSigning:
         return self.runs.artifact(
             run,
             body,
-            render_docx(data["final_ast"], style["definition"]),
+            render_docx(
+                data["final_ast"], style["definition"],
+                layout=run.source_bundle.get("docx_layout"),
+                layout_nodes=verify_frozen(body).get("layout_nodes"),
+            ),
             "docx",
             envelope_id=envelope.id,
             purpose=data["purpose"],

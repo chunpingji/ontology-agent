@@ -158,7 +158,10 @@ def delete_config(config_id: UUID, db: Session = Depends(get_db)):
 
 @router.get("/jobs", response_model=list[ExtractionJobResponse])
 def list_jobs(db: Session = Depends(get_db)):
-    return db.query(ExtractionJob).order_by(ExtractionJob.created_at.desc()).all()
+    mode = ExtractionJob.source_config["mode"].as_string()
+    return db.query(ExtractionJob).filter(
+        or_(mode.is_(None), mode != "finder_template_demo"),
+    ).order_by(ExtractionJob.created_at.desc()).all()
 
 
 async def _run_pipeline_bg(job_id, config_id, file_path, engine, db: Session):
@@ -442,7 +445,7 @@ def get_job(job_id: UUID, db: Session = Depends(get_db)):
     return job
 
 
-_ANNOTATOR_VERSION = 29
+_ANNOTATOR_VERSION = 32
 
 
 def _annotation_cache_path(job_id) -> Path:
@@ -856,6 +859,25 @@ def _claim_annotation(job_id, db, *, mode="continue", actor="evidence-extractor"
     if job is None:
         raise HTTPException(404, "作业不存在")
     _require_annotation_capability(job)
+    from app.models.extraction import AstTemplate
+
+    config = job.source_config or {}
+    previous = db.get(AnnotationExecution, job_id)
+    continuing = mode in {"resume", "continue"} and previous is not None
+    selected = (config.get("recognition_template_id") if continuing else
+                (template_id or config.get("template_id")))
+    selected_row = db.get(AstTemplate, UUID(str(selected))) if selected else None
+    if template_id and not continuing and selected_row is None:
+        raise HTTPException(404, "模板不存在")
+    if selected_row and not continuing:
+        from app.services.template_finder.policy import require_normal
+
+        if (selected_row.iri_pattern and config.get("doc_class_iri")
+                and selected_row.iri_pattern not in config["doc_class_iri"]):
+            raise HTTPException(422, "源文档登记类型与模板不匹配")
+        require_normal(selected_row)
+    if selected_row and not continuing and (selected_row.schema_json or {}).get("demo_profile"):
+        raise HTTPException(409, "演示模板使用共享静态图谱，无需抽取")
     if job.source_type not in ("word", "excel"):
         raise HTTPException(422, "仅 Word/Excel 作业支持关系识别")
     if not job.document_path or not Path(job.document_path).is_file():
@@ -882,11 +904,11 @@ def _claim_annotation(job_id, db, *, mode="continue", actor="evidence-extractor"
                 raise HTTPException(422, "本轮已达到处理上限，请检查未通过的任务和抽取配置")
         if mode in {"rerun", "start", "auxiliary"}:
             _backfill_job_document_context(job, db)
-            _set_annotation_template(job, template_id, db)
+            _set_annotation_template(job, selected, db)
         else:
             _backfill_job_document_context(job, db)
-            if "extraction_priority_paths" not in (job.source_config or {}):
-                _set_annotation_template(job, None, db)
+            if not continuing or "extraction_priority_paths" not in (job.source_config or {}):
+                _set_annotation_template(job, selected, db)
         # Validate before touching files; the claim still holds the row write lock.
         if mode in {"rerun", "start", "auxiliary"}:
             _clear_annotation_checkpoint(job_id)
@@ -1671,6 +1693,7 @@ def get_risk_report(
         db.query(GeneratedReport)
         .filter(
             GeneratedReport.job_id == job_id,
+            GeneratedReport.report_type != "batch_record_demo",
             GeneratedReport.deleted_at.is_(None),
             or_(
                 GeneratedReport.report_status == "completed",
@@ -1718,6 +1741,8 @@ def get_report_status(
     report = db.get(GeneratedReport, report_id)
     if not report or report.job_id != job_id or report.deleted_at is not None:
         raise HTTPException(404, "报告不存在")
+    if report.report_type == "batch_record_demo" and report.actor != identity.username:
+        raise HTTPException(404, "报告不存在")
     return {
         "id": str(report.id),
         "job_id": str(report.job_id),
@@ -1749,6 +1774,8 @@ def download_report_by_id(
     report = db.get(GeneratedReport, report_id)
     if not report or report.job_id != job_id or report.deleted_at is not None:
         raise HTTPException(404, "报告不存在")
+    if report.report_type == "batch_record_demo" and report.actor != identity.username:
+        raise HTTPException(404, "报告不存在")
     if report.report_status not in {None, "completed"}:
         raise HTTPException(409, f"报告尚未完成（status={report.report_status}）")
 
@@ -1764,7 +1791,8 @@ def download_report_by_id(
 
     job = db.get(ExtractionJob, job_id)
     src_name = (job.source_filename or "report").replace(".docx", "") if job else "report"
-    download_name = f"风险评估表_{src_name}.docx"
+    prefix = "批记录报告_演示草稿" if report.report_type == "batch_record_demo" else "风险评估表"
+    download_name = f"{prefix}_{src_name}.docx"
     return FileResponse(
         path=str(file_path),
         media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
@@ -1817,22 +1845,26 @@ def list_reports(
     identity: Identity = Depends(get_current_user),
 ):
     """List all historical reports for a job (011 FR-API-002)."""
+    from app.services.reporting.report_listing import visible_report_conditions
+
     job = db.get(ExtractionJob, job_id)
     if not job:
         raise HTTPException(404, "作业不存在")
-    return (
+    reports = (
         db.query(GeneratedReport)
         .filter(
             GeneratedReport.job_id == job_id,
-            GeneratedReport.deleted_at.is_(None),
-            or_(
-                GeneratedReport.report_status == "completed",
-                and_(GeneratedReport.report_status.is_(None), GeneratedReport.file_size > 0),
-            ),
+            *visible_report_conditions(identity.username),
         )
         .order_by(GeneratedReport.created_at.desc())
         .all()
     )
+    return [
+        GeneratedReportResponse.model_validate(report).model_copy(
+            update={"demonstration": bool((report.narratives or {}).get("demonstration"))}
+        )
+        for report in reports
+    ]
 
 
 @router.delete("/jobs/{job_id}/reports/{report_id}", status_code=204)
@@ -1847,6 +1879,8 @@ def delete_report(
 
     report = db.get(GeneratedReport, report_id)
     if not report or report.job_id != job_id:
+        raise HTTPException(404, "报告不存在")
+    if report.report_type == "batch_record_demo" and report.actor != identity.username:
         raise HTTPException(404, "报告不存在")
     if report.deleted_at is not None:
         raise HTTPException(404, "报告不存在")

@@ -1,0 +1,90 @@
+{
+  "run_id": "ebbfeb74-97e2-4ccb-abb6-0cbd8f54e416",
+  "new_scheme_only": true,
+  "integrity_restore_passed": true,
+  "restore_added_model_requests": 0,
+  "same_fingerprint_after_pause": true,
+  "submitted_batches": 8,
+  "distinct_task_ids": 8,
+  "distinct_record_opportunities": 7,
+  "technical_retry_batches": 1,
+  "pre_pause_tasks_not_redispatched": true,
+  "main_reserved_calls": 11,
+  "main_observed_calls": 11,
+  "main_unresolved_calls": 0,
+  "ranking_durable_costs": {
+    "input_pairs": 260,
+    "embedding_inputs": 291,
+    "tokens": 281702,
+    "model_calls": 139,
+    "technical_retries": 1,
+    "cache_hits": 592,
+    "token_cache_hits": 1102,
+    "elapsed_ms": 1171011.5740001202
+  },
+  "request_accounting": {
+    "tokenizer": {
+      "requests": 74,
+      "statuses": {
+        "completed": 74
+      },
+      "token_metric": null,
+      "known_input_tokens_subtotal": null,
+      "unmeasured_input_request_ids": [],
+      "input_measurement_complete": null
+    },
+    "ranking_inference": {
+      "requests": 139,
+      "statuses": {
+        "completed": 138,
+        "failed": 1
+      },
+      "token_metric": "input_tokens",
+      "known_input_tokens_subtotal": 279647,
+      "unmeasured_input_request_ids": [
+        "be086330f6814082a20ab032c7780d25"
+      ],
+      "input_measurement_complete": false
+    },
+    "main_inference": {
+      "requests": 11,
+      "statuses": {
+        "complete": 11
+      },
+      "token_metric": "prompt_tokens",
+      "known_input_tokens_subtotal": 54325,
+      "unmeasured_input_request_ids": [],
+      "input_measurement_complete": true
+    }
+  },
+  "all_candidate_relationships": 15,
+  "non_negated_candidate_relationships": 4,
+  "negated_candidate_relationships": 11,
+  "effective_affirmed_relationships": 0,
+  "unresolved_claims": 1,
+  "semantic_quality_issue": "11 negated describes candidates reuse a chemical-description sentence as an entity label while enumerating ontology subclasses; not validated as trustworthy negative facts.",
+  "database_backup_sha256": "7a1c20f4fcce58b624b1dc0322863ab4911886811e9e5971b84c974bd470fdbf",
+  "limitations": [
+    "bounded diagnostic failed ANALYSIS_INCOMPLETE/task_budget_exhausted; not full-template acceptance",
+    "known token subtotals exclude one unmeasured failed rerank; durable reservations are retained",
+    "no comparison to the old implementation"
+  ],
+  "negated_object_labels": {
+    "distinct_labels": 1,
+    "distinct_classes": 11,
+    "all_description_prefix": true
+  },
+  "ranking_reserved_minus_known_tokens": 2055,
+  "ranking_reservation_gap_is_observed_usage": false,
+  "source_evidence_sha256": {
+    "manifest.json": "c4e002a76f0495d520744a0ab0e7a65f7881d9988c69ff9ee7abcafcacb9eea5",
+    "report.json": "db2035bcee0a3fc1d145700c4ec398119d09ed4fa403e03816e3e36fa2f91236",
+    "batches.json": "8adb7f9da0b00414a58761ff2bf72b91fa4b40f4f2152a726a6059c7ed5265d6",
+    "scheduler.json": "14dec8a45f02fb44d7ba956318edd6820b60d55f21e31be74ec9ed4912ffe2e8",
+    "pause-state.json": "e0420cac3c4badf12f25e716910e1f0bf34006148eed26ffb726fb978afeca11",
+    "template-acceptance.json": "d3cf25edb5cc41382b18ac8ebd515d57d81f7428d54b56bdc27f985a3c475ca1",
+    "ranking-state.json": "b72d2dd2f1017a8d333ae0e16063b06f94381eaa1f91348d12eb106e11116b75",
+    "model-call-state.json": "f88cfc55dee848c413cd795fb00bf67eaa2f248b951da31b09b9a4cb1f73faca",
+    "recognition-checkpoint.json": "1f03f4fc3881101835add2b5827191da93eb7f1f0a714935c9cc9191680968a4"
+  }
+}

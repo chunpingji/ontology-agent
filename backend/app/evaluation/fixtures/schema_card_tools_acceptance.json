@@ -1,0 +1,32 @@
+{
+  "version": "cmc-tools-v1",
+  "reference_level": "assistant_silver_and_engineering_counterexamples",
+  "source_sha256": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+  "reference_is_model_input": false,
+  "required_checklist": "schema_card_tightened_acceptance.json (unchanged)",
+  "all_extra_candidates_require_semantic_review": true,
+  "manual_review_dimensions": [
+    "subject_type", "subject_binding", "predicate_or_metric_meaning",
+    "relation_direction_and_endpoints", "source_unit_and_normalization",
+    "polarity_and_unknown", "field_legend_condition_roles", "long_value_completeness"
+  ],
+  "forbidden_types": {
+    "product_properties": ["HighSensitizingDrug"],
+    "toxicity_unknown": ["HighSensitizingDrug"]
+  },
+  "engineering_cases": [
+    "wrong_owner_across_pde_rows", "source_coordinate_out_of_scope",
+    "duplicate_celsius_requires_position", "unit_denominator_truncation",
+    "missing_noael_source_unit", "same_dimension_wrong_metric",
+    "inequality_or_range_not_exact_scalar", "false_specialized_type",
+    "action_is_not_condition", "header_is_not_legend",
+    "empty_graph_vacuous_conformance", "wrong_target_uncovered",
+    "min_count_failure_is_incomplete_not_false", "true_business_exceedance_preserved",
+    "gliner_failure_not_empty_success", "model_budget_no_retry"
+  ],
+  "notes": [
+    "调用前冻结；新增检查不能输入提示或NER标签。",
+    "机械拦截、独立Qwen判断和最终人工辅助复核分别报告，不以模型两次同意自称金标。",
+    "SHACL只验证表示契约，不验证专业事实。局部清单通过不等于全文质量通过。"
+  ]
+}

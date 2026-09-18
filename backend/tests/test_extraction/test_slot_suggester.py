@@ -400,3 +400,26 @@ class TestTiptapToText:
         }
         out = tiptap_to_text(doc)
         assert out == long
+
+
+def test_large_single_section_is_split_at_complete_field_boundaries(tmp_path):
+    doc = Document()
+    doc.add_heading("单一章节", 1)
+    for index in range(20):
+        doc.add_paragraph(f"字段{index}：" + "值" * 120)
+    path = tmp_path / "many-fields.docx"
+    doc.save(path)
+    content = parse_word_to_tiptap(path)
+    calls = []
+    client = _make_client({})
+    original = client.chat.completions.create.side_effect
+    async def capture(**kwargs):
+        payload = json.loads(kwargs["messages"][1]["content"])
+        calls.extend(c["id"] for g in payload["section"]["groups"] for c in g["candidates"])
+        return await original(**kwargs)
+    client.chat.completions.create.side_effect = capture
+    result = suggest_slots(client, "", content_json=content)
+    expected = [c["id"] for s in result["sections"] for g in s["groups"] for c in g["candidates"]]
+    assert result["completion"] == "complete"
+    assert calls == expected
+    assert client.chat.completions.create.call_count > 1

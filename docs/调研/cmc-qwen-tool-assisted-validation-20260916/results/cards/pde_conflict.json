@@ -1,0 +1,491 @@
+{
+  "scope_id": "pde_conflict",
+  "arms": {
+    "A": {
+      "document": {
+        "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport",
+        "label": "CMC 报告",
+        "anchor": {
+          "ref": "",
+          "quote": ""
+        },
+        "fields": {
+          "hasSharedLineData": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasSharedLineData",
+            "label": "含共线评估数据",
+            "multiplicity": "unspecified",
+            "kind": "relationship",
+            "range_class_iris": [
+              "https://ontology.pharma-gmp.cn/slpra/drug-development/SharedLineAssessmentData"
+            ]
+          }
+        }
+      },
+      "s1": {
+        "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/SharedLineAssessmentData",
+        "label": "共线评估数据",
+        "anchor": {
+          "ref": "",
+          "quote": ""
+        },
+        "fields": {
+          "activeIngredient": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/activeIngredient",
+            "label": "活性成分（API）",
+            "multiplicity": "unspecified",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#string"
+            ]
+          },
+          "dosingRegimen": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/dosingRegimen",
+            "label": "给药方案",
+            "description": "E.g. QD口服, 21天为一个治疗周期.",
+            "multiplicity": "unspecified",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#string"
+            ]
+          },
+          "f1": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/f1",
+            "label": "F1",
+            "multiplicity": "unspecified",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#decimal"
+            ]
+          },
+          "f2": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/f2",
+            "label": "F2",
+            "multiplicity": "unspecified",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#decimal"
+            ]
+          },
+          "f3": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/f3",
+            "label": "F3",
+            "multiplicity": "unspecified",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#decimal"
+            ]
+          },
+          "f4": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/f4",
+            "label": "F4",
+            "multiplicity": "unspecified",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#decimal"
+            ]
+          },
+          "f5": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/f5",
+            "label": "F5",
+            "multiplicity": "unspecified",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#decimal"
+            ]
+          },
+          "humanEquivalentDose_mg_per_kg": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/humanEquivalentDose_mg_per_kg",
+            "label": "人体等效剂量（mg/kg）",
+            "multiplicity": "unspecified",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#decimal"
+            ],
+            "canonical_unit": "mg/kg"
+          },
+          "noaelDuration": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/noaelDuration",
+            "label": "NOAEL 试验周期",
+            "description": "E.g. 28天重复给药.",
+            "multiplicity": "unspecified",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#string"
+            ]
+          },
+          "noaelSpecies": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/noaelSpecies",
+            "label": "NOAEL 动物种属",
+            "description": "E.g. SD大鼠, Beagle犬.",
+            "multiplicity": "unspecified",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#string"
+            ]
+          },
+          "noael_mg_per_kg_per_day": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/noael_mg_per_kg_per_day",
+            "label": "NOAEL（mg/kg/天）",
+            "description": "No Observed Adverse Effect Level from repeat-dose toxicity study.",
+            "multiplicity": "unspecified",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#decimal"
+            ],
+            "canonical_unit": "mg/kg/day"
+          },
+          "oebBand": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/oebBand",
+            "label": "OEB",
+            "multiplicity": "unspecified",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#string"
+            ]
+          },
+          "pde_mg_per_day": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/pde_mg_per_day",
+            "label": "PDE（mg/天）",
+            "multiplicity": "unspecified",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#decimal"
+            ],
+            "canonical_unit": "mg/day"
+          },
+          "proposedMaxDose_mg": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/proposedMaxDose_mg",
+            "label": "拟定最高剂量（mg）",
+            "multiplicity": "unspecified",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#decimal"
+            ],
+            "canonical_unit": "mg"
+          },
+          "proposedStartingDose_mg": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/proposedStartingDose_mg",
+            "label": "拟定临床起始剂量（mg）",
+            "multiplicity": "unspecified",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#decimal"
+            ],
+            "canonical_unit": "mg"
+          },
+          "safetyFactor": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/safetyFactor",
+            "label": "安全系数（F值）",
+            "description": "Composite safety factor per ICH S9 (oncology) or standard PDE derivation: product of F1-F5.",
+            "multiplicity": "unspecified",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#decimal"
+            ]
+          },
+          "sourceReference": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/sourceReference",
+            "label": "来源",
+            "multiplicity": "unspecified",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#string"
+            ]
+          },
+          "studyType": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/studyType",
+            "label": "试验项目",
+            "multiplicity": "unspecified",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#string"
+            ]
+          }
+        }
+      },
+      "s2": {
+        "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/ActivePharmaceuticalIngredient",
+        "label": "活性药物成分",
+        "anchor": {
+          "ref": "",
+          "quote": ""
+        },
+        "fields": {
+          "oel_ug_per_m3": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug/oel_ug_per_m3",
+            "label": "职业暴露限值 (μg/m³)",
+            "multiplicity": "unspecified",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#decimal"
+            ],
+            "canonical_unit": "ug/m3"
+          },
+          "pde_mg_per_day": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug/pde_mg_per_day",
+            "label": "PDE (mg/天)",
+            "multiplicity": "unspecified",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#decimal"
+            ],
+            "canonical_unit": "mg/day"
+          },
+          "productIdentifier": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug/productIdentifier",
+            "label": "产品或原料药唯一标识",
+            "description": "原文明示的产品/API标识；不以名称、共同项目、设备型号或试验用药名称替代具体实例身份。存在批次、规格等区分时须能唯一指向该实例，否则不可据此归并。",
+            "multiplicity": "unspecified",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#string"
+            ]
+          }
+        }
+      }
+    },
+    "B": {
+      "document": {
+        "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport",
+        "label": "CMC 报告",
+        "anchor": {
+          "ref": "",
+          "quote": ""
+        },
+        "fields": {
+          "hasSharedLineData": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasSharedLineData",
+            "label": "含共线评估数据",
+            "multiplicity": "unspecified",
+            "kind": "relationship",
+            "range_class_iris": [
+              "https://ontology.pharma-gmp.cn/slpra/drug-development/SharedLineAssessmentData"
+            ]
+          }
+        }
+      },
+      "s1": {
+        "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/SharedLineAssessmentData",
+        "label": "共线评估数据",
+        "anchor": {
+          "ref": "",
+          "quote": ""
+        },
+        "fields": {
+          "activeIngredient": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/activeIngredient",
+            "label": "活性成分（API）",
+            "multiplicity": "unspecified",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#string"
+            ]
+          },
+          "dosingRegimen": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/dosingRegimen",
+            "label": "给药方案",
+            "description": "E.g. QD口服, 21天为一个治疗周期.",
+            "multiplicity": "unspecified",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#string"
+            ]
+          },
+          "f1": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/f1",
+            "label": "F1",
+            "multiplicity": "unspecified",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#decimal"
+            ]
+          },
+          "f2": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/f2",
+            "label": "F2",
+            "multiplicity": "unspecified",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#decimal"
+            ]
+          },
+          "f3": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/f3",
+            "label": "F3",
+            "multiplicity": "unspecified",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#decimal"
+            ]
+          },
+          "f4": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/f4",
+            "label": "F4",
+            "multiplicity": "unspecified",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#decimal"
+            ]
+          },
+          "f5": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/f5",
+            "label": "F5",
+            "multiplicity": "unspecified",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#decimal"
+            ]
+          },
+          "humanEquivalentDose_mg_per_kg": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/humanEquivalentDose_mg_per_kg",
+            "label": "人体等效剂量（mg/kg）",
+            "multiplicity": "unspecified",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#decimal"
+            ],
+            "canonical_unit": "mg/kg"
+          },
+          "noaelDuration": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/noaelDuration",
+            "label": "NOAEL 试验周期",
+            "description": "E.g. 28天重复给药.",
+            "multiplicity": "unspecified",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#string"
+            ]
+          },
+          "noaelSpecies": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/noaelSpecies",
+            "label": "NOAEL 动物种属",
+            "description": "E.g. SD大鼠, Beagle犬.",
+            "multiplicity": "unspecified",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#string"
+            ]
+          },
+          "noael_mg_per_kg_per_day": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/noael_mg_per_kg_per_day",
+            "label": "NOAEL（mg/kg/天）",
+            "description": "No Observed Adverse Effect Level from repeat-dose toxicity study.",
+            "multiplicity": "unspecified",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#decimal"
+            ],
+            "canonical_unit": "mg/kg/day"
+          },
+          "oebBand": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/oebBand",
+            "label": "OEB",
+            "multiplicity": "unspecified",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#string"
+            ]
+          },
+          "pde_mg_per_day": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/pde_mg_per_day",
+            "label": "PDE（mg/天）",
+            "multiplicity": "unspecified",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#decimal"
+            ],
+            "canonical_unit": "mg/day"
+          },
+          "proposedMaxDose_mg": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/proposedMaxDose_mg",
+            "label": "拟定最高剂量（mg）",
+            "multiplicity": "unspecified",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#decimal"
+            ],
+            "canonical_unit": "mg"
+          },
+          "proposedStartingDose_mg": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/proposedStartingDose_mg",
+            "label": "拟定临床起始剂量（mg）",
+            "multiplicity": "unspecified",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#decimal"
+            ],
+            "canonical_unit": "mg"
+          },
+          "safetyFactor": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/safetyFactor",
+            "label": "安全系数（F值）",
+            "description": "Composite safety factor per ICH S9 (oncology) or standard PDE derivation: product of F1-F5.",
+            "multiplicity": "unspecified",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#decimal"
+            ]
+          },
+          "sourceReference": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/sourceReference",
+            "label": "来源",
+            "multiplicity": "unspecified",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#string"
+            ]
+          },
+          "studyType": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/studyType",
+            "label": "试验项目",
+            "multiplicity": "unspecified",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#string"
+            ]
+          }
+        }
+      },
+      "s2": {
+        "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/ActivePharmaceuticalIngredient",
+        "label": "活性药物成分",
+        "anchor": {
+          "ref": "",
+          "quote": ""
+        },
+        "fields": {
+          "oel_ug_per_m3": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug/oel_ug_per_m3",
+            "label": "职业暴露限值 (μg/m³)",
+            "multiplicity": "unspecified",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#decimal"
+            ],
+            "canonical_unit": "ug/m3"
+          },
+          "pde_mg_per_day": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug/pde_mg_per_day",
+            "label": "PDE (mg/天)",
+            "multiplicity": "unspecified",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#decimal"
+            ],
+            "canonical_unit": "mg/day"
+          },
+          "productIdentifier": {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug/productIdentifier",
+            "label": "产品或原料药唯一标识",
+            "description": "原文明示的产品/API标识；不以名称、共同项目、设备型号或试验用药名称替代具体实例身份。存在批次、规格等区分时须能唯一指向该实例，否则不可据此归并。",
+            "multiplicity": "unspecified",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#string"
+            ]
+          }
+        }
+      }
+    }
+  }
+}

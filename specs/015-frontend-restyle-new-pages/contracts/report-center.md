@@ -2,9 +2,28 @@
 
 **Feature**: 015 | Routes: `/reports`, `/reports/[reportId]` | User Stories 5 & 6 | Clarify Q1 (unified center)
 
-## Backend surface (existing — composed client-side, **no new endpoint**, research R2)
+## Backend surface（2026-09-14 报告列表优化）
 
-Documents `listDocuments` (`/api/entities?module=document`) · generated reports `listReports(jobId)` aggregated over `listExtractionJobs` · content `getAnnotatedDocument(jobId)` · download `downloadReportById` · linked entities `listExtractedFrom(docIri)`.
+用户已明确授权列表摘要查询、后端分页和解除编辑器依赖，替代历史 R2 的逐任务聚合。
+文档继续使用 `/api/entities?module=document`，报告改用 `GET /api/reports?page=1&page_size=25`。
+详情、下载、上传及删除沿用既有接口。
+
+### GET /api/reports
+
+- `page` 从 1 开始；`page_size` 默认 25，范围 1–100；非法参数返回 422。
+- 响应为 `{items, total, page, page_size}`；超过末页返回空 `items`，仍返回可见总数。
+- 每项仅含 `id`、`job_id`、`source_filename`、`report_type`、`file_size`、`created_at`。
+  SQL 也只查询这些列，不加载 `rules_summary`、正文 AST、图谱、模板或 narratives。
+- 顺序为 `created_at DESC, id DESC`。查询直接分页报告，不枚举任务。
+- 可见性沿用既有按任务报告列表：排除已删除及未完成报告；兼容状态为空且文件大小大于零的
+  旧报告；`batch_record_demo` 仅对原 actor 可见，其他报告保持既有共享语义。认证沿用现有门禁。
+- 列表读取不调用模型、不修改报告和历史内容；详情接口继续提供完整报告。
+
+文档及报告摘要使用独立查询并行加载，先完成的内容先展示；失败保留其他已加载内容并允许重试。
+“加载更多”追加下一页，不重复请求文档或前面的报告页；页面缓存按用户隔离。删除后刷新报告页，
+使分页位置和总数与服务端一致。分类按当前已加载条目统计。
+列表的字节格式化、下载工具来自轻量模块，不依赖详情编辑器；详情链接关闭自动预取。
+缺少查询参数的既有报告深链接按摘要页查找条目，正常列表导航不触发该查找。
 
 ## Report Center behavior (FR-021–023)
 
@@ -22,7 +41,7 @@ Documents `listDocuments` (`/api/entities?module=document`) · generated reports
 
 ## Invariants
 
-- **Presentation-only**: no new backend logic (clarify Q1, FR-027). Cross-job report aggregation is a bounded client fan-out; if bounded for responsiveness the UI shows a count / "load more" (no silent truncation, research R2).
+- 当前列表允许上述已授权的只读摘要分页接口；其他写入契约不扩展。不增加存储、快照或历史清理。
 - Full in-browser DOCX fidelity is **not** required — preview is best-effort; the authoritative file is always downloadable (FR-024).
 - Delete/upload gated by role (FR-022).
 
@@ -30,3 +49,5 @@ Documents `listDocuments` (`/api/entities?module=document`) · generated reports
 
 - Browse categories → open item preview/download → upload a document → view empty-category state (quickstart).
 - Detail: outline navigation moves the pane; related-info shows linked entities; breadcrumb returns to center.
+- 首屏仅请求文档及报告摘要；跨任务分页不漏掉旧任务中的新报告，列表 SQL 不读取大字段；
+  权限/状态过滤与原列表一致，加载更多保留旧页，首次报告失败不遮挡文档，报告后续页失败可重试。

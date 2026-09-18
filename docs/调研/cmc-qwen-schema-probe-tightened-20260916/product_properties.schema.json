@@ -1,0 +1,365 @@
+{
+  "type": "object",
+  "properties": {
+    "document": {
+      "type": "object",
+      "properties": {
+        "attributes": {
+          "type": "object",
+          "properties": {},
+          "required": [],
+          "additionalProperties": false
+        },
+        "relations": {
+          "type": "object",
+          "properties": {
+            "describes": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "target_id": {
+                    "type": "string",
+                    "enum": [
+                      "s1"
+                    ]
+                  },
+                  "evidence": {
+                    "$ref": "#/$defs/Citation"
+                  },
+                  "condition": {
+                    "$ref": "#/$defs/Citation"
+                  },
+                  "polarity": {
+                    "type": "string",
+                    "enum": [
+                      "affirmed",
+                      "negated"
+                    ]
+                  }
+                },
+                "required": [
+                  "target_id",
+                  "evidence",
+                  "condition",
+                  "polarity"
+                ],
+                "additionalProperties": false
+              },
+              "maxItems": 6
+            }
+          },
+          "required": [
+            "describes"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "attributes",
+        "relations"
+      ],
+      "additionalProperties": false
+    },
+    "s1": {
+      "type": "object",
+      "properties": {
+        "attributes": {
+          "type": "object",
+          "properties": {
+            "registrationCategory": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Value"
+              },
+              "maxItems": 3
+            },
+            "regulatoryStatus": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Value"
+              },
+              "maxItems": 3
+            },
+            "targetIndication": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Value"
+              },
+              "maxItems": 3
+            },
+            "appearance": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Value"
+              },
+              "maxItems": 3
+            },
+            "casNumber": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Value"
+              },
+              "maxItems": 3
+            },
+            "chemicalNameEn": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Value"
+              },
+              "maxItems": 3
+            },
+            "chemicalNameZh": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Value"
+              },
+              "maxItems": 3
+            },
+            "dosageForm": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Value"
+              },
+              "maxItems": 3
+            },
+            "drugSpecification": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Value"
+              },
+              "maxItems": 3
+            },
+            "hasPrionRisk": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Value"
+              },
+              "maxItems": 3
+            },
+            "inactivationMethod": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Value"
+              },
+              "maxItems": 3
+            },
+            "isBetaLactam": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Value"
+              },
+              "maxItems": 3
+            },
+            "isCytotoxic": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Value"
+              },
+              "maxItems": 3
+            },
+            "isHighlyActive": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Value"
+              },
+              "maxItems": 3
+            },
+            "isHighlySensitizing": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Value"
+              },
+              "maxItems": 3
+            },
+            "isHormonal": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Value"
+              },
+              "maxItems": 3
+            },
+            "isOncologyDrug": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Value"
+              },
+              "maxItems": 3
+            },
+            "isPenicillinType": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Value"
+              },
+              "maxItems": 3
+            },
+            "maximumDailyDose_mg": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Value"
+              },
+              "maxItems": 3
+            },
+            "minimumTherapeuticDose_mg": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Value"
+              },
+              "maxItems": 3
+            },
+            "molecularFormula": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Value"
+              },
+              "maxItems": 3
+            },
+            "molecularWeight": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Value"
+              },
+              "maxItems": 3
+            },
+            "productIdentifier": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Value"
+              },
+              "maxItems": 3
+            },
+            "projectCode": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Value"
+              },
+              "maxItems": 3
+            },
+            "projectName": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Value"
+              },
+              "maxItems": 3
+            },
+            "routeOfAdministration": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Value"
+              },
+              "maxItems": 3
+            },
+            "solubility": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Value"
+              },
+              "maxItems": 3
+            }
+          },
+          "required": [
+            "registrationCategory",
+            "regulatoryStatus",
+            "targetIndication",
+            "appearance",
+            "casNumber",
+            "chemicalNameEn",
+            "chemicalNameZh",
+            "dosageForm",
+            "drugSpecification",
+            "hasPrionRisk",
+            "inactivationMethod",
+            "isBetaLactam",
+            "isCytotoxic",
+            "isHighlyActive",
+            "isHighlySensitizing",
+            "isHormonal",
+            "isOncologyDrug",
+            "isPenicillinType",
+            "maximumDailyDose_mg",
+            "minimumTherapeuticDose_mg",
+            "molecularFormula",
+            "molecularWeight",
+            "productIdentifier",
+            "projectCode",
+            "projectName",
+            "routeOfAdministration",
+            "solubility"
+          ],
+          "additionalProperties": false
+        },
+        "relations": {
+          "type": "object",
+          "properties": {},
+          "required": [],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "attributes",
+        "relations"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "document",
+    "s1"
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "Citation": {
+      "type": "object",
+      "properties": {
+        "ref": {
+          "type": "string",
+          "enum": [
+            "",
+            "u0",
+            "u1",
+            "u2",
+            "u3",
+            "u4",
+            "u5"
+          ]
+        },
+        "quote": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "ref",
+        "quote"
+      ],
+      "additionalProperties": false
+    },
+    "Value": {
+      "type": "object",
+      "properties": {
+        "raw": {
+          "type": "string"
+        },
+        "source": {
+          "$ref": "#/$defs/Citation"
+        },
+        "field": {
+          "$ref": "#/$defs/Citation"
+        },
+        "unit": {
+          "$ref": "#/$defs/Citation"
+        },
+        "condition": {
+          "$ref": "#/$defs/Citation"
+        }
+      },
+      "required": [
+        "raw",
+        "source",
+        "field",
+        "unit",
+        "condition"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

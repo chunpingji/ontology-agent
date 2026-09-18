@@ -55,7 +55,7 @@ export function ReportHistoryList({ reports, onDownload, onView, canDownload }: 
                   hour: "2-digit", minute: "2-digit", second: "2-digit",
                 })}
               </TableCell>
-              <TableCell className="text-xs">{r.actor}</TableCell>
+              <TableCell className="text-xs">{r.actor}{(r.demonstration || r.narratives?.demonstration) && <Badge variant="outline" className="ml-2">演示草稿</Badge>}</TableCell>
               <TableCell className="text-center text-xs">{r.rules_fired_count}</TableCell>
               <TableCell>
                 {cov ? (

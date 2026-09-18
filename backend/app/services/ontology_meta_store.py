@@ -12,13 +12,15 @@ single Git commit.
 from __future__ import annotations
 
 import logging
+import os
 import subprocess
+import tempfile
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 
 from fastapi import HTTPException
-from rdflib import OWL, RDF, RDFS, URIRef
+from rdflib import OWL, RDF, RDFS, Graph, URIRef
 from sqlalchemy import update
 from sqlalchemy.orm import Session
 
@@ -52,6 +54,7 @@ from app.models.ontology_meta import (
 from app.models.reasoning import AuditLog
 from app.services import ttl_merge
 from app.services.extraction.transforms import validate_transform_config
+from app.services.ontology_cardinality import read_cardinality_config
 from app.services.reasoning import interpreter
 from app.services.reasoning.defaults import (
     VERIFIED_EXTERNAL_ALIGNMENTS,
@@ -330,6 +333,7 @@ class OntologyMetaStore:
             "domain_iri": self._iri_of_class(lt.domain_class_id),
             "range_iri": self._iri_of_class(lt.range_class_id),
             "inverse_iri": inv.slpra_iri if inv else None,
+            "multiplicity": lt.multiplicity,
             "min_cardinality": lt.min_cardinality,
             "max_cardinality": lt.max_cardinality,
             "is_functional": lt.is_functional,
@@ -350,6 +354,9 @@ class OntologyMetaStore:
             "datatype": dp.datatype,
             "unit": dp.unit,
             "controlled_vocab": dp.controlled_vocab,
+            "multiplicity": dp.multiplicity,
+            "min_cardinality": dp.min_cardinality,
+            "max_cardinality": dp.max_cardinality,
             "status": dp.status,
             "version": dp.version,
             "is_disabled": dp.is_disabled,
@@ -458,7 +465,7 @@ class OntologyMetaStore:
             raise HTTPException(status_code=400, detail="IRI 已存在")
         domain_id = self._domain_range_id(payload.domain_iri)
         range_id = self._domain_range_id(payload.range_iri)
-        self._check_cardinality(payload.min_cardinality, payload.max_cardinality)
+        cardinality = self._cardinality_values(payload, domain_id=domain_id, is_link=True)
         inv_id = None
         if payload.inverse_iri:
             inv = self.db.query(OntologyLinkType).filter_by(slpra_iri=payload.inverse_iri).first()
@@ -473,9 +480,7 @@ class OntologyMetaStore:
             domain_class_id=domain_id,
             range_class_id=range_id,
             inverse_link_id=inv_id,
-            min_cardinality=payload.min_cardinality,
-            max_cardinality=payload.max_cardinality,
-            is_functional=payload.is_functional,
+            **cardinality,
             is_symmetric=payload.is_symmetric,
             is_transitive=payload.is_transitive,
             created_by=uid,
@@ -491,24 +496,25 @@ class OntologyMetaStore:
         lt = self.db.query(OntologyLinkType).filter_by(slpra_iri=iri).first()
         if not lt:
             raise HTTPException(status_code=404, detail=f"关系不存在：{iri}")
-        self._check_cardinality(payload.min_cardinality, payload.max_cardinality)
         changes: dict = {"updated_by": self._user_id(actor)}
+        supplied = payload.model_fields_set
         for f in (
             "label",
             "comment",
-            "min_cardinality",
-            "max_cardinality",
-            "is_functional",
             "is_symmetric",
             "is_transitive",
         ):
             v = getattr(payload, f, None)
-            if v is not None:
+            if f in supplied and v is not None:
                 changes[f] = v
-        if payload.domain_iri:
+        if "domain_iri" in supplied:
             changes["domain_class_id"] = self._domain_range_id(payload.domain_iri)
         if payload.range_iri:
             changes["range_class_id"] = self._domain_range_id(payload.range_iri)
+        changes.update(self._cardinality_values(
+            payload, current=lt, is_link=True,
+            domain_id=changes.get("domain_class_id", lt.domain_class_id),
+        ))
         lt = self._cas_update(OntologyLinkType, lt.id, payload.expected_version, changes)
         self.audit("link_type.update", iri, actor)
         return self.link_type_detail(lt)
@@ -531,6 +537,51 @@ class OntologyMetaStore:
     def _check_cardinality(self, lo: int | None, hi: int | None) -> None:
         if lo is not None and hi is not None and lo > hi:
             raise HTTPException(status_code=400, detail="min_cardinality 不得大于 max_cardinality")
+
+    def _cardinality_values(self, payload, *, domain_id, current=None, is_link=False) -> dict:
+        """Merge only supplied fields, then validate the complete quantity policy."""
+        supplied = payload.model_fields_set
+        values = {
+            name: getattr(payload, name) if current is None or name in supplied
+            else getattr(current, name)
+            for name in ("multiplicity", "min_cardinality", "max_cardinality")
+        }
+        if is_link and "is_functional" in supplied:
+            legacy = payload.is_functional
+            if "multiplicity" in supplied:
+                if legacy != (values["multiplicity"] == "single"):
+                    raise HTTPException(
+                        status_code=400, detail="is_functional 与 multiplicity 冲突",
+                    )
+            elif legacy:
+                values["multiplicity"] = "single"
+            elif values["multiplicity"] == "single":
+                values["multiplicity"] = "unspecified"
+        self._validate_cardinality_values(values, domain_id=domain_id)
+        values["cardinality_seeded"] = True
+        if is_link:
+            values["is_functional"] = values["multiplicity"] == "single"
+        return values
+
+    def _validate_cardinality_values(self, values: dict, *, domain_id) -> None:
+        mode = values["multiplicity"]
+        lo, hi = values["min_cardinality"], values["max_cardinality"]
+        if mode not in {"unspecified", "single", "multiple"}:
+            raise HTTPException(status_code=400, detail="非法 multiplicity")
+        for number in (lo, hi):
+            if number is not None and (type(number) is not int or number < 0):
+                raise HTTPException(status_code=400, detail="属性数量必须为非负整数或 null")
+        if mode == "single":
+            if hi is not None and hi != 1:
+                raise HTTPException(status_code=400, detail="single 的最大数量必须为 1")
+            hi = values["max_cardinality"] = 1
+        elif mode == "multiple" and hi is not None and hi < 2:
+            raise HTTPException(status_code=400, detail="multiple 的最大数量须至少为 2 或 null")
+        self._check_cardinality(lo, hi)
+        if domain_id is None and (
+            lo is not None or hi is not None and not (mode == "single" and hi == 1)
+        ):
+            raise HTTPException(status_code=400, detail="数字数量约束需要明确的定义域类")
 
     # =================================================================== #
     # E3 Data property CRUD (+ risk wizard)
@@ -585,6 +636,7 @@ class OntologyMetaStore:
         if self.db.query(OntologyDataProperty).filter_by(slpra_iri=payload.slpra_iri).first():
             raise HTTPException(status_code=400, detail="IRI 已存在")
         domain_id = self._domain_range_id(payload.domain_iri)
+        cardinality = self._cardinality_values(payload, domain_id=domain_id)
         uid = self._user_id(actor)
         dp = OntologyDataProperty(
             slpra_iri=payload.slpra_iri,
@@ -594,6 +646,7 @@ class OntologyMetaStore:
             datatype=payload.datatype,
             unit=getattr(payload, "unit", None),
             controlled_vocab=getattr(payload, "controlled_vocab", None),
+            **cardinality,
             created_by=uid,
             updated_by=uid,
         )
@@ -607,15 +660,20 @@ class OntologyMetaStore:
         dp = self.db.query(OntologyDataProperty).filter_by(slpra_iri=iri).first()
         if not dp:
             raise HTTPException(status_code=404, detail=f"数据属性不存在：{iri}")
+        self._initialize_data_cardinality(dp)
         if payload.datatype is not None and payload.datatype not in DATATYPES:
             raise HTTPException(status_code=400, detail=f"非法 datatype：{payload.datatype}")
         changes: dict = {"updated_by": self._user_id(actor)}
+        supplied = payload.model_fields_set
         for f in ("label", "comment", "datatype", "unit", "controlled_vocab"):
             v = getattr(payload, f, None)
-            if v is not None:
+            if f in supplied and v is not None:
                 changes[f] = v
-        if payload.domain_iri:
+        if "domain_iri" in supplied:
             changes["domain_class_id"] = self._domain_range_id(payload.domain_iri)
+        changes.update(self._cardinality_values(
+            payload, current=dp, domain_id=changes.get("domain_class_id", dp.domain_class_id),
+        ))
         dp = self._cas_update(OntologyDataProperty, dp.id, payload.expected_version, changes)
         self.audit("data_property.update", iri, actor)
         return self.data_property_detail(dp)
@@ -624,6 +682,7 @@ class OntologyMetaStore:
         dp = self.db.query(OntologyDataProperty).filter_by(slpra_iri=iri).first()
         if not dp:
             raise HTTPException(status_code=404, detail=f"数据属性不存在：{iri}")
+        self._initialize_data_cardinality(dp)
         self._cas_update(OntologyDataProperty, dp.id, expected_version, {"is_disabled": True})
         self.audit("data_property.delete", iri, actor)
 
@@ -1107,17 +1166,24 @@ class OntologyMetaStore:
         if not r:
             raise HTTPException(status_code=404, detail="约束不存在")
         merged = _Merged(r, payload, self)
+        if merged.kind not in RESTRICTION_KINDS:
+            raise HTTPException(status_code=400, detail=f"非法约束类型：{merged.kind}")
+        if payload.property_kind and payload.property_kind not in PROPERTY_KINDS:
+            raise HTTPException(status_code=400, detail="非法 property_kind")
         self._validate_restriction(merged)
+        supplied = payload.model_fields_set
         changes: dict = {"updated_by": self._user_id(actor)}
         if payload.kind is not None:
             changes["kind"] = payload.kind
-        if payload.property_kind is not None:
+        if "property_kind" in supplied:
             changes["property_kind"] = payload.property_kind
-        if payload.cardinality is not None:
+        if "cardinality" in supplied:
             changes["cardinality"] = payload.cardinality
-        if payload.property_iri is not None:
-            changes["on_property_id"] = self._property_id(payload.property_iri)
-        if payload.filler_iri is not None:
+        if "property_iri" in supplied:
+            changes["on_property_id"] = (
+                self._property_id(payload.property_iri) if payload.property_iri else None
+            )
+        if "filler_iri" in supplied:
             changes["filler_class_id"] = self._optional_class_id(payload.filler_iri)
         r = self._cas_update(OntologyRestriction, r.id, payload.expected_version, changes)
         self.audit("restriction.update", self._iri_of_class(r.owner_class_id), actor)
@@ -1646,20 +1712,24 @@ class OntologyMetaStore:
                     }
                 )
 
-        # cardinality contradictions on link types
-        for lt in self.db.query(OntologyLinkType).filter_by(is_disabled=False).all():
-            if (
-                lt.min_cardinality is not None
-                and lt.max_cardinality is not None
-                and lt.min_cardinality > lt.max_cardinality
-            ):
-                blocking.append(
-                    {
+        for model in (OntologyLinkType, OntologyDataProperty):
+            for prop in self.db.query(model).filter_by(is_disabled=False).all():
+                try:
+                    self._validate_cardinality_values({
+                        name: getattr(prop, name) for name in (
+                            "multiplicity", "min_cardinality", "max_cardinality",
+                        )
+                    }, domain_id=prop.domain_class_id)
+                    if isinstance(prop, OntologyLinkType) and prop.is_functional != (
+                        prop.multiplicity == "single"
+                    ):
+                        raise HTTPException(status_code=400, detail="单值声明与 functional 不一致")
+                except HTTPException as exc:
+                    blocking.append({
                         "code": "cardinality_conflict",
-                        "message": f"基数矛盾 min>max：{lt.label}",
-                        "entity_iri": lt.slpra_iri,
-                    }
-                )
+                        "message": f"{prop.label}：{exc.detail}",
+                        "entity_iri": prop.slpra_iri,
+                    })
 
         # E11 classification criteria (spec 006, T018 / FR-014): a defined
         # criterion projects an owl:equivalentClass axiom — block the release if
@@ -1831,6 +1901,7 @@ class OntologyMetaStore:
         return r
 
     def create_release(self, title: str, actor: str) -> dict:
+        self._initialize_legacy_data_cardinalities()
         now = _now()
         seq = (
             self.db.query(OntologyRelease)
@@ -1868,7 +1939,14 @@ class OntologyMetaStore:
                         entity_table=table,
                         entity_id=e.id,
                         change_kind=kind,
-                        after={"slpra_iri": e.slpra_iri, "label": e.label},
+                        after={
+                            "slpra_iri": e.slpra_iri, "label": e.label,
+                            **({name: getattr(e, name) for name in (
+                                "multiplicity", "min_cardinality", "max_cardinality",
+                            )} if isinstance(e, (OntologyDataProperty, OntologyLinkType)) else {}),
+                            **({"is_functional": e.is_functional}
+                               if isinstance(e, OntologyLinkType) else {}),
+                        },
                     )
                 )
         # E11 criteria are not IRI-bearing (class expressions hung off a target
@@ -1920,20 +1998,46 @@ class OntologyMetaStore:
             self.db.commit()
             raise HTTPException(status_code=409, detail="存在阻断校验项，无法发布")
 
-        # 1) project to Owlready2 World (best effort)
-        projection_succeeded = False
-        try:
-            self.engine.project_entities(self._projection_payloads())
-            projection_succeeded = True
-        except Exception as exc:  # pragma: no cover
-            logger.warning("World projection failed: %s", exc)
-
-        # 2) surgical TTL export + diff
+        # Build the actual diff before changing either published representation.
         preview, added, removed = ttl_merge.export_diff(self.db, settings.ontology_dir)
+        published_graph = Graph().parse(data=preview, format="turtle")
+        out_file = Path(settings.ontology_dir) / "slpra_managed.ttl"
+        previous_ttl = None
+        ttl_written = False
+
+        def publish_ttl() -> None:
+            nonlocal ttl_written
+            self._write_ttl(preview.encode("utf-8"))
+            ttl_written = True
+
+        try:
+            previous_ttl = out_file.read_bytes() if out_file.exists() else None
+            self.engine.project_entities(
+                self._projection_payloads(), published_graph=published_graph,
+                publish_callback=publish_ttl,
+            )
+        except Exception as exc:
+            self.db.rollback()
+            if ttl_written:
+                try:
+                    if previous_ttl is None:
+                        out_file.unlink(missing_ok=True)
+                    else:
+                        self._write_ttl(previous_ttl)
+                except Exception as restore_exc:
+                    logger.error("Release TTL restoration failed: %s", type(restore_exc).__name__)
+                    raise HTTPException(
+                        status_code=500,
+                        detail="发布失败且 TTL 恢复失败；批次未发布，请检查存储状态",
+                    ) from restore_exc
+            logger.warning("Ontology publish rolled back: %s", type(exc).__name__)
+            raise HTTPException(
+                status_code=409, detail="本体投影或 TTL 写入失败；批次未发布",
+            ) from exc
         r.ttl_diff = preview
 
-        # 3) write merged TTL + one Git commit (best effort)
-        sha = self._write_and_commit(r.release_no, preview)
+        # The TTL and World are durable before optional Git archival.
+        sha = self._commit_ttl(r.release_no)
         r.ttl_commit_sha = sha
 
         # 4) finalise lifecycle
@@ -1944,10 +2048,9 @@ class OntologyMetaStore:
         from app.services.extraction.extraction_tasks import semantic_schema_from_engine
         from app.services.ontology_model_context import capture_schema
 
-        if projection_succeeded:
-            r.semantic_snapshot_ref = capture_schema(
-                self.db, semantic_schema_from_engine(self.engine), actor
-            )
+        r.semantic_snapshot_ref = capture_schema(
+            self.db, semantic_schema_from_engine(self.engine), actor
+        )
         for table, model in (
             ("ontology_class", OntologyClass),
             ("ontology_link_type", OntologyLinkType),
@@ -2000,6 +2103,16 @@ class OntologyMetaStore:
                     "comment": lt.comment,
                     "domain_iri": self._iri_of_class(lt.domain_class_id),
                     "range_iri": self._iri_of_class(lt.range_class_id),
+                    "multiplicity": lt.multiplicity,
+                    "min_cardinality": lt.min_cardinality,
+                    "max_cardinality": lt.max_cardinality,
+                    "is_functional": lt.is_functional,
+                    "is_symmetric": lt.is_symmetric,
+                    "is_transitive": lt.is_transitive,
+                    "inverse_iri": (
+                        self.db.get(OntologyLinkType, lt.inverse_link_id).slpra_iri
+                        if lt.inverse_link_id else None
+                    ),
                 }
             )
         for dp in self.db.query(OntologyDataProperty).filter_by(is_disabled=False).all():
@@ -2010,16 +2123,39 @@ class OntologyMetaStore:
                     "label": dp.label,
                     "comment": dp.comment,
                     "domain_iri": self._iri_of_class(dp.domain_class_id),
+                    "datatype": dp.datatype,
+                    "unit": dp.unit,
+                    "multiplicity": dp.multiplicity,
+                    "min_cardinality": dp.min_cardinality,
+                    "max_cardinality": dp.max_cardinality,
                 }
             )
         return payloads
 
-    def _write_and_commit(self, release_no: str, ttl: str) -> str | None:
+    def _write_ttl(self, content: bytes) -> None:
+        """Replace the managed TTL atomically; propagate every filesystem failure."""
+        out_dir = Path(settings.ontology_dir)
+        out_dir.mkdir(parents=True, exist_ok=True)
+        out_file = out_dir / "slpra_managed.ttl"
+        temporary = None
+        try:
+            with tempfile.NamedTemporaryFile(
+                dir=out_dir, prefix=".slpra_managed-", suffix=".tmp", delete=False,
+            ) as staged:
+                temporary = Path(staged.name)
+                staged.write(content)
+                staged.flush()
+                os.fsync(staged.fileno())
+            temporary.chmod(out_file.stat().st_mode & 0o777 if out_file.exists() else 0o644)
+            temporary.replace(out_file)
+        finally:
+            if temporary is not None:
+                temporary.unlink(missing_ok=True)
+
+    def _commit_ttl(self, release_no: str) -> str | None:
         try:
             out_dir = Path(settings.ontology_dir)
-            out_dir.mkdir(parents=True, exist_ok=True)
             out_file = out_dir / "slpra_managed.ttl"
-            out_file.write_text(ttl, encoding="utf-8")
             subprocess.run(
                 ["git", "add", str(out_file)],
                 cwd=str(out_dir),
@@ -2064,18 +2200,21 @@ class OntologyMetaStore:
         parents = self._link_class_parents(base)
         links = self._seed_link_types(base)
         data = self._seed_data_properties(base)
+        self.db.flush()
+        cardinalities = self._initialize_legacy_data_cardinalities(base)
 
         total = classes + links + data
-        if total or parents:
+        if total or parents or cardinalities:
             self.db.commit()
         logger.info(
             "project_from_ttl seeded %d rows (%d classes, %d relations, %d data props), "
-            "linked %d parents",
+            "linked %d parents, initialized %d legacy cardinalities",
             total,
             classes,
             links,
             data,
             parents,
+            cardinalities,
         )
         return total
 
@@ -2162,6 +2301,7 @@ class OntologyMetaStore:
                     is_functional=(s, RDF.type, OWL.FunctionalProperty) in base,
                     is_symmetric=(s, RDF.type, OWL.SymmetricProperty) in base,
                     is_transitive=(s, RDF.type, OWL.TransitiveProperty) in base,
+                    **read_cardinality_config(base, s),
                     status=STATUS_PUBLISHED,
                 )
             )
@@ -2200,11 +2340,39 @@ class OntologyMetaStore:
                     comment=str(comment) if comment else None,
                     domain_class_id=self._class_id_or_none(domain),
                     datatype=self._xsd_to_datatype(rng),
+                    **read_cardinality_config(base, s),
                     status=STATUS_PUBLISHED,
                 )
             )
             seeded += 1
         return seeded
+
+    def _initialize_legacy_data_cardinalities(self, base=None) -> int:
+        rows = self.db.query(OntologyDataProperty).filter_by(cardinality_seeded=False).all()
+        if rows and base is None:
+            base = ttl_merge.load_base_graph(Path(settings.ontology_dir))
+        return sum(self._initialize_data_cardinality(dp, base) for dp in rows)
+
+    def _initialize_data_cardinality(self, dp: OntologyDataProperty, base=None) -> bool:
+        """Fill only fields absent before migration; never rewrite any existing draft field."""
+        if dp.cardinality_seeded:
+            return False
+        changes = {"cardinality_seeded": True, "updated_at": dp.updated_at}
+        if (dp.multiplicity == "unspecified"
+                and dp.min_cardinality is None and dp.max_cardinality is None):
+            if base is None:
+                base = ttl_merge.load_base_graph(Path(settings.ontology_dir))
+            changes.update(read_cardinality_config(base, URIRef(dp.slpra_iri)))
+        result = self.db.execute(
+            update(OntologyDataProperty)
+            .where(OntologyDataProperty.id == dp.id,
+                   OntologyDataProperty.version == dp.version,
+                   OntologyDataProperty.cardinality_seeded.is_(False))
+            .values(**changes)
+        )
+        if not result.rowcount:
+            self.db.refresh(dp)
+        return bool(result.rowcount)
 
     def _class_id_or_none(self, iri) -> uuid.UUID | None:
         """Resolve a domain/range IRI to a seeded class id, or None if unmanaged
@@ -2246,15 +2414,16 @@ class _Merged:
     used to validate the *resulting* state before a CAS update."""
 
     def __init__(self, r: OntologyRestriction, payload, store: "OntologyMetaStore"):
+        supplied = payload.model_fields_set
         self.kind = payload.kind if payload.kind is not None else r.kind
-        self.cardinality = payload.cardinality if payload.cardinality is not None else r.cardinality
+        self.cardinality = payload.cardinality if "cardinality" in supplied else r.cardinality
         self.property_iri = (
             payload.property_iri
-            if payload.property_iri is not None
+            if "property_iri" in supplied
             else store._property_iri(r.on_property_id)
         )
         self.filler_iri = (
             payload.filler_iri
-            if payload.filler_iri is not None
+            if "filler_iri" in supplied
             else store._iri_of_class(r.filler_class_id)
         )

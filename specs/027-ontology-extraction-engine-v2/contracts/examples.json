@@ -1,0 +1,2356 @@
+{
+  "note": "合成协议示例，用于结构/引用检查，不是真实模型返回或质量金标。新核验输入的声明/依赖/hash按data-model定义生成；未执行的工具参数仅验证类型，引用必须由真实上下文登记后才可执行。",
+  "source": "主体S在条件C下关联类型T的对象甲或类型T的对象乙，二者恰选其一。",
+  "tool_arguments": {
+    "get_schema_card": {
+      "subject_id": "s",
+      "predicate_iri": "urn:example:relatesTo"
+    },
+    "inspect_evidence": {
+      "evidence_ids": [
+        "ev-1"
+      ]
+    },
+    "resolve_source_anchor": {
+      "evidence_id": "ev-1",
+      "quote": "对象甲",
+      "context_text": null
+    },
+    "propose_mentions": {
+      "evidence_ids": [
+        "ev-1"
+      ],
+      "schema_card_id": "card-1"
+    },
+    "check_claim_binding": {
+      "claim_id": "claim-1"
+    },
+    "query_instances": {
+      "mention_ref": "mention-1",
+      "class_iri": "urn:example:T",
+      "source_ids": [
+        "source-1"
+      ]
+    },
+    "retrieve_evidence": {
+      "subject_id": "s",
+      "predicate_iri": "urn:example:relatesTo",
+      "missing_facets": [
+        "bridge"
+      ]
+    },
+    "propose_repair": {
+      "claim_id": "claim-1",
+      "issue_code": "citation_quote_not_in_source"
+    },
+    "validate_metric": {
+      "claim_id": "property-1",
+      "target_unit_id": null
+    },
+    "validate_graph": {
+      "claim_id": "p1",
+      "shape_profile_id": "quantity-representation-v2"
+    },
+    "find_referent_candidates": {
+      "mention_refs": [
+        "source-mention-example"
+      ],
+      "class_iris": [
+        "urn:CrudeProduct"
+      ],
+      "scope_id": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    }
+  },
+  "discovery": {
+    "entities": [
+      {
+        "local_id": "e1",
+        "class_iri": "urn:example:T",
+        "representation": "mention",
+        "mentions": [
+          {
+            "evidence_id": "ev-1",
+            "text": "对象甲",
+            "context_text": null
+          }
+        ],
+        "record_components": [],
+        "identifier_claims": []
+      },
+      {
+        "local_id": "e2",
+        "class_iri": "urn:example:T",
+        "representation": "mention",
+        "mentions": [
+          {
+            "evidence_id": "ev-1",
+            "text": "对象乙",
+            "context_text": null
+          }
+        ],
+        "record_components": [],
+        "identifier_claims": []
+      }
+    ],
+    "properties": [],
+    "relations": [
+      {
+        "local_id": "r1",
+        "subject_id": "s",
+        "predicate_iri": "urn:example:relatesTo",
+        "object_ids": [
+          "e1",
+          "e2"
+        ],
+        "selection": "one_of",
+        "bridge_support": [
+          {
+            "evidence_id": "ev-1",
+            "text": "主体S在条件C下关联类型T的对象甲或类型T的对象乙，二者恰选其一。",
+            "context_text": null
+          }
+        ],
+        "selection_support": [
+          {
+            "evidence_id": "ev-1",
+            "text": "类型T的对象甲或类型T的对象乙，二者恰选其一",
+            "context_text": null
+          }
+        ],
+        "qualifiers": {
+          "polarity": "affirmed",
+          "modality": "asserted",
+          "condition_support": [
+            {
+              "evidence_id": "ev-1",
+              "text": "在条件C下",
+              "context_text": null
+            }
+          ],
+          "scope_qualifiers": []
+        },
+        "bridge_kind": "explicit_assertion",
+        "bridge_ref_ids": []
+      }
+    ],
+    "external_links": [],
+    "observations": []
+  },
+  "verification": {
+    "verifications": [
+      {
+        "target_id": "entity:e1",
+        "content_hash": "80bf36a89cc5dbbfa0c0037247ae2ce659c0b68786d257b7b1577dc7f2c0a734",
+        "facets": [
+          {
+            "name": "type",
+            "verdict": "supported",
+            "support": [
+              {
+                "evidence_id": "ev-1",
+                "text": "主体S在条件C下关联类型T的对象甲或类型T的对象乙，二者恰选其一。",
+                "context_text": null
+              }
+            ],
+            "counterevidence_support": [],
+            "reason": "仅演示逐目标逐维度引用结构；不是独立语义评测。"
+          },
+          {
+            "name": "referent",
+            "verdict": "supported",
+            "support": [
+              {
+                "evidence_id": "ev-1",
+                "text": "主体S在条件C下关联类型T的对象甲或类型T的对象乙，二者恰选其一。",
+                "context_text": null
+              }
+            ],
+            "counterevidence_support": [],
+            "reason": "仅演示逐目标逐维度引用结构；不是独立语义评测。"
+          },
+          {
+            "name": "subject_role",
+            "verdict": "supported",
+            "support": [
+              {
+                "evidence_id": "ev-1",
+                "text": "主体S在条件C下关联类型T的对象甲或类型T的对象乙，二者恰选其一。",
+                "context_text": null
+              }
+            ],
+            "counterevidence_support": [],
+            "reason": "仅演示逐目标逐维度引用结构；不是独立语义评测。"
+          }
+        ]
+      },
+      {
+        "target_id": "entity:e2",
+        "content_hash": "52094eecafe275655c589ac1ba1e12c069446f048b101fa6525fb224634df9bd",
+        "facets": [
+          {
+            "name": "type",
+            "verdict": "supported",
+            "support": [
+              {
+                "evidence_id": "ev-1",
+                "text": "主体S在条件C下关联类型T的对象甲或类型T的对象乙，二者恰选其一。",
+                "context_text": null
+              }
+            ],
+            "counterevidence_support": [],
+            "reason": "仅演示逐目标逐维度引用结构；不是独立语义评测。"
+          },
+          {
+            "name": "referent",
+            "verdict": "supported",
+            "support": [
+              {
+                "evidence_id": "ev-1",
+                "text": "主体S在条件C下关联类型T的对象甲或类型T的对象乙，二者恰选其一。",
+                "context_text": null
+              }
+            ],
+            "counterevidence_support": [],
+            "reason": "仅演示逐目标逐维度引用结构；不是独立语义评测。"
+          },
+          {
+            "name": "subject_role",
+            "verdict": "supported",
+            "support": [
+              {
+                "evidence_id": "ev-1",
+                "text": "主体S在条件C下关联类型T的对象甲或类型T的对象乙，二者恰选其一。",
+                "context_text": null
+              }
+            ],
+            "counterevidence_support": [],
+            "reason": "仅演示逐目标逐维度引用结构；不是独立语义评测。"
+          }
+        ]
+      },
+      {
+        "target_id": "relation:r1",
+        "content_hash": "0198a65ac31ab4419179557c2ef30efae928907e16ed44b83cff9c50aad799fc",
+        "facets": [
+          {
+            "name": "subject_binding",
+            "verdict": "supported",
+            "support": [
+              {
+                "evidence_id": "ev-1",
+                "text": "主体S在条件C下关联类型T的对象甲或类型T的对象乙，二者恰选其一。",
+                "context_text": null
+              }
+            ],
+            "counterevidence_support": [],
+            "reason": "合成上下文把主体S登记为文档根，原句明确以主体S为关系主体；仅演示协议。"
+          },
+          {
+            "name": "object_binding",
+            "verdict": "supported",
+            "support": [
+              {
+                "evidence_id": "ev-1",
+                "text": "主体S在条件C下关联类型T的对象甲或类型T的对象乙，二者恰选其一。",
+                "context_text": null
+              }
+            ],
+            "counterevidence_support": [],
+            "reason": "仅演示逐目标逐维度引用结构；不是独立语义评测。"
+          },
+          {
+            "name": "predicate",
+            "verdict": "supported",
+            "support": [
+              {
+                "evidence_id": "ev-1",
+                "text": "主体S在条件C下关联类型T的对象甲或类型T的对象乙，二者恰选其一。",
+                "context_text": null
+              }
+            ],
+            "counterevidence_support": [],
+            "reason": "仅演示逐目标逐维度引用结构；不是独立语义评测。"
+          },
+          {
+            "name": "bridge",
+            "verdict": "supported",
+            "support": [
+              {
+                "evidence_id": "ev-1",
+                "text": "主体S在条件C下关联类型T的对象甲或类型T的对象乙，二者恰选其一。",
+                "context_text": null
+              }
+            ],
+            "counterevidence_support": [],
+            "reason": "仅演示逐目标逐维度引用结构；不是独立语义评测。"
+          },
+          {
+            "name": "selection",
+            "verdict": "supported",
+            "support": [
+              {
+                "evidence_id": "ev-1",
+                "text": "主体S在条件C下关联类型T的对象甲或类型T的对象乙，二者恰选其一。",
+                "context_text": null
+              }
+            ],
+            "counterevidence_support": [],
+            "reason": "仅演示逐目标逐维度引用结构；不是独立语义评测。"
+          },
+          {
+            "name": "qualifiers",
+            "verdict": "supported",
+            "support": [
+              {
+                "evidence_id": "ev-1",
+                "text": "主体S在条件C下关联类型T的对象甲或类型T的对象乙，二者恰选其一。",
+                "context_text": null
+              }
+            ],
+            "counterevidence_support": [],
+            "reason": "仅演示逐目标逐维度引用结构；不是独立语义评测。"
+          },
+          {
+            "name": "counterevidence",
+            "verdict": "supported",
+            "support": [
+              {
+                "evidence_id": "ev-1",
+                "text": "主体S在条件C下关联类型T的对象甲或类型T的对象乙，二者恰选其一。",
+                "context_text": null
+              }
+            ],
+            "counterevidence_support": [],
+            "reason": "仅演示逐目标逐维度引用结构；不是独立语义评测。"
+          }
+        ]
+      }
+    ]
+  },
+  "fixture_context": {
+    "protocol_version": "ontology-tool-extraction-v1",
+    "registered_entities": [
+      {
+        "entity_id": "s",
+        "revision": 1,
+        "class_iri": "urn:example:SourceType",
+        "origin": "user_specified_document_root"
+      }
+    ],
+    "registered_evidence": [
+      {
+        "evidence_id": "ev-1",
+        "record_id": "record-1",
+        "source_key": "source"
+      }
+    ],
+    "allowed_class_iris": [
+      "urn:example:SourceType",
+      "urn:example:T"
+    ],
+    "allowed_predicate_iris": [
+      "urn:example:relatesTo"
+    ],
+    "api_protocol": "responses"
+  },
+  "tool_error_example": {
+    "note": "合成的 Harness 错误反馈：quote 不在原文内；保留原参数，工具不代改。纠正是否可继续由剩余预算决定。",
+    "response_output": [
+      {
+        "type": "function_call",
+        "id": "fc_bad_quote",
+        "call_id": "call_bad_quote",
+        "name": "resolve_source_anchor",
+        "arguments": "{\"evidence_id\":\"ev-1\",\"quote\":\"原文中不存在的对象\",\"context_text\":null}",
+        "status": "completed"
+      }
+    ],
+    "tool_output": {
+      "type": "function_call_output",
+      "call_id": "call_bad_quote",
+      "output": "{\"status\":\"blocked\",\"data\":null,\"evidence_refs\":[\"ev-1\"],\"issues\":[{\"code\":\"citation_quote_not_in_source\",\"field_path\":\"/quote\",\"message\":\"quote 未在指定授权原文中匹配；可读取 ev-1 后提交逐字引文，不能改用未授权来源。\",\"evidence_ids\":[\"ev-1\"]}]}"
+    }
+  },
+  "responses_exchange": {
+    "note": "合成 wire-format 示例。model 是项目配置模型名的占位符，执行前由现有配置替换；其余引用来自 fixture_context。没有真实请求/用量。 current_protocol 只保存阶段初始输入与制品引用；continuation_request.input 是即时派生的线缆示例。 此恢复样例仅一个 request_attempt，call_id 唯一性只在该响应批次内检查；运行时结果按 (request_attempt,call_id) 配对。",
+    "request": {
+      "model": "PROJECT_QWEN_MODEL",
+      "instructions": "基于授权原文和本体卡片抽取；工具结果不自动证明事实。最终提交 discovery Schema 的候选，保留条件与选择组。",
+      "input": [
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "input_text",
+              "text": "{\"task\":{\"subject_id\":\"s\",\"predicate_iri\":\"urn:example:relatesTo\",\"stage\":\"discovery\"},\"allowed_class_iris\":[\"urn:example:SourceType\",\"urn:example:T\"],\"registered_entities\":[{\"entity_id\":\"s\",\"revision\":1,\"class_iri\":\"urn:example:SourceType\",\"origin\":\"user_specified_document_root\"}],\"evidence_catalog\":[{\"evidence_id\":\"ev-1\",\"record_id\":\"record-1\",\"role\":\"target\"}]}"
+            }
+          ]
+        }
+      ],
+      "tools": [
+        {
+          "type": "function",
+          "name": "inspect_evidence",
+          "description": "读取当前任务授权的完整原文单元及记录角色；不自动授予事实资格。",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "evidence_ids": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            },
+            "required": [
+              "evidence_ids"
+            ],
+            "additionalProperties": false
+          },
+          "strict": false
+        }
+      ],
+      "tool_choice": "auto",
+      "store": false,
+      "max_output_tokens": 2048
+    },
+    "response": {
+      "id": "resp_example_01",
+      "object": "response",
+      "status": "completed",
+      "output": [
+        {
+          "type": "function_call",
+          "id": "fc_example_01",
+          "call_id": "call_01",
+          "name": "inspect_evidence",
+          "arguments": "{\"evidence_ids\":[\"ev-1\"]}",
+          "status": "completed"
+        }
+      ],
+      "error": null,
+      "incomplete_details": null
+    },
+    "tool_outputs": [
+      {
+        "type": "function_call_output",
+        "call_id": "call_01",
+        "output": "{\"status\":\"ok\",\"data\":{\"units\":[{\"evidence_id\":\"ev-1\",\"record_id\":\"record-1\",\"text\":\"主体S在条件C下关联类型T的对象甲或类型T的对象乙，二者恰选其一。\",\"span_start\":0,\"span_end\":33,\"role\":\"target\",\"fact_eligible\":true,\"table\":null}],\"omitted_ids\":[],\"coverage_complete\":true},\"evidence_refs\":[\"ev-1\"],\"issues\":[]}"
+      }
+    ],
+    "continuation_request": {
+      "model": "PROJECT_QWEN_MODEL",
+      "instructions": "基于授权原文和本体卡片抽取；工具结果不自动证明事实。最终提交 discovery Schema 的候选，保留条件与选择组。",
+      "input": [
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "input_text",
+              "text": "{\"task\":{\"subject_id\":\"s\",\"predicate_iri\":\"urn:example:relatesTo\",\"stage\":\"discovery\"},\"allowed_class_iris\":[\"urn:example:SourceType\",\"urn:example:T\"],\"registered_entities\":[{\"entity_id\":\"s\",\"revision\":1,\"class_iri\":\"urn:example:SourceType\",\"origin\":\"user_specified_document_root\"}],\"evidence_catalog\":[{\"evidence_id\":\"ev-1\",\"record_id\":\"record-1\",\"role\":\"target\"}]}"
+            }
+          ]
+        },
+        {
+          "type": "function_call",
+          "id": "fc_example_01",
+          "call_id": "call_01",
+          "name": "inspect_evidence",
+          "arguments": "{\"evidence_ids\":[\"ev-1\"]}",
+          "status": "completed"
+        },
+        {
+          "type": "function_call_output",
+          "call_id": "call_01",
+          "output": "{\"status\":\"ok\",\"data\":{\"units\":[{\"evidence_id\":\"ev-1\",\"record_id\":\"record-1\",\"text\":\"主体S在条件C下关联类型T的对象甲或类型T的对象乙，二者恰选其一。\",\"span_start\":0,\"span_end\":33,\"role\":\"target\",\"fact_eligible\":true,\"table\":null}],\"omitted_ids\":[],\"coverage_complete\":true},\"evidence_refs\":[\"ev-1\"],\"issues\":[]}"
+        }
+      ],
+      "tools": [],
+      "store": false,
+      "max_output_tokens": 4096,
+      "text": {
+        "format": {
+          "type": "json_schema",
+          "name": "discovery",
+          "schema": {
+            "type": "object",
+            "properties": {
+              "entities": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/EntityProposal"
+                }
+              },
+              "properties": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/PropertyProposal"
+                }
+              },
+              "relations": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/RelationProposal"
+                }
+              },
+              "external_links": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/ExternalLinkProposal"
+                }
+              },
+              "observations": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/ObservationProposal"
+                }
+              },
+              "reference_bindings": {
+                "items": {
+                  "$ref": "#/$defs/ReferenceBindingProposal"
+                },
+                "type": "array"
+              }
+            },
+            "required": [
+              "entities",
+              "properties",
+              "relations",
+              "external_links",
+              "observations"
+            ],
+            "additionalProperties": false,
+            "$defs": {
+              "Quote": {
+                "type": "object",
+                "properties": {
+                  "evidence_id": {
+                    "type": "string"
+                  },
+                  "text": {
+                    "type": "string"
+                  },
+                  "context_text": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "evidence_id",
+                  "text",
+                  "context_text"
+                ],
+                "additionalProperties": false
+              },
+              "Qualifiers": {
+                "type": "object",
+                "properties": {
+                  "polarity": {
+                    "type": "string",
+                    "enum": [
+                      "affirmed",
+                      "negated"
+                    ]
+                  },
+                  "modality": {
+                    "type": "string",
+                    "enum": [
+                      "asserted",
+                      "required",
+                      "possible",
+                      "planned",
+                      "unspecified"
+                    ]
+                  },
+                  "condition_support": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/$defs/Quote"
+                    }
+                  },
+                  "scope_qualifiers": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "predicate_iri": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "quote": {
+                          "$ref": "#/$defs/Quote"
+                        }
+                      },
+                      "required": [
+                        "predicate_iri",
+                        "quote"
+                      ],
+                      "additionalProperties": false
+                    }
+                  }
+                },
+                "required": [
+                  "polarity",
+                  "modality",
+                  "condition_support",
+                  "scope_qualifiers"
+                ],
+                "additionalProperties": false
+              },
+              "EntityProposal": {
+                "type": "object",
+                "properties": {
+                  "local_id": {
+                    "type": "string"
+                  },
+                  "class_iri": {
+                    "type": "string"
+                  },
+                  "representation": {
+                    "type": "string",
+                    "enum": [
+                      "mention",
+                      "record"
+                    ]
+                  },
+                  "mentions": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/$defs/Quote"
+                    }
+                  },
+                  "record_components": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "role": {
+                          "type": "string",
+                          "enum": [
+                            "subject",
+                            "field",
+                            "value",
+                            "context"
+                          ]
+                        },
+                        "quote": {
+                          "$ref": "#/$defs/Quote"
+                        }
+                      },
+                      "required": [
+                        "role",
+                        "quote"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "identifier_claims": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "predicate_iri": {
+                          "type": "string"
+                        },
+                        "value_quote": {
+                          "$ref": "#/$defs/Quote"
+                        }
+                      },
+                      "required": [
+                        "predicate_iri",
+                        "value_quote"
+                      ],
+                      "additionalProperties": false
+                    }
+                  }
+                },
+                "required": [
+                  "local_id",
+                  "class_iri",
+                  "representation",
+                  "mentions",
+                  "record_components",
+                  "identifier_claims"
+                ],
+                "additionalProperties": false
+              },
+              "PropertyProposal": {
+                "type": "object",
+                "properties": {
+                  "local_id": {
+                    "type": "string"
+                  },
+                  "subject_id": {
+                    "type": "string"
+                  },
+                  "predicate_iri": {
+                    "type": "string"
+                  },
+                  "value_quote": {
+                    "$ref": "#/$defs/Quote"
+                  },
+                  "field_support": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/$defs/Quote"
+                    }
+                  },
+                  "unit_support": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/$defs/Quote"
+                    }
+                  },
+                  "qualifiers": {
+                    "$ref": "#/$defs/Qualifiers"
+                  },
+                  "bridge_kind": {
+                    "type": "string",
+                    "enum": [
+                      "explicit_assertion",
+                      "owned_field_group",
+                      "role_mapped_table",
+                      "resolved_reference_chain",
+                      "document_subject_description"
+                    ]
+                  },
+                  "bridge_ref_ids": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "required": [
+                  "local_id",
+                  "subject_id",
+                  "predicate_iri",
+                  "value_quote",
+                  "field_support",
+                  "unit_support",
+                  "qualifiers",
+                  "bridge_kind",
+                  "bridge_ref_ids"
+                ],
+                "additionalProperties": false
+              },
+              "RelationProposal": {
+                "type": "object",
+                "properties": {
+                  "local_id": {
+                    "type": "string"
+                  },
+                  "subject_id": {
+                    "type": "string"
+                  },
+                  "predicate_iri": {
+                    "type": "string"
+                  },
+                  "object_ids": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "selection": {
+                    "type": "string",
+                    "enum": [
+                      "all",
+                      "one_of",
+                      "alternatives",
+                      "undetermined"
+                    ]
+                  },
+                  "bridge_support": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/$defs/Quote"
+                    }
+                  },
+                  "selection_support": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/$defs/Quote"
+                    }
+                  },
+                  "qualifiers": {
+                    "$ref": "#/$defs/Qualifiers"
+                  },
+                  "bridge_kind": {
+                    "type": "string",
+                    "enum": [
+                      "explicit_assertion",
+                      "owned_field_group",
+                      "role_mapped_table",
+                      "resolved_reference_chain",
+                      "document_subject_description"
+                    ]
+                  },
+                  "bridge_ref_ids": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "source_assertion": {
+                    "anyOf": [
+                      {
+                        "$ref": "#/$defs/SourceAssertion"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null
+                  }
+                },
+                "required": [
+                  "local_id",
+                  "subject_id",
+                  "predicate_iri",
+                  "object_ids",
+                  "selection",
+                  "bridge_support",
+                  "selection_support",
+                  "qualifiers",
+                  "bridge_kind",
+                  "bridge_ref_ids"
+                ],
+                "additionalProperties": false
+              },
+              "ExternalLinkProposal": {
+                "type": "object",
+                "properties": {
+                  "local_id": {
+                    "type": "string"
+                  },
+                  "subject_id": {
+                    "type": "string"
+                  },
+                  "external_candidate_id": {
+                    "type": "string"
+                  },
+                  "identity_support": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/$defs/Quote"
+                    }
+                  }
+                },
+                "required": [
+                  "local_id",
+                  "subject_id",
+                  "external_candidate_id",
+                  "identity_support"
+                ],
+                "additionalProperties": false
+              },
+              "ObservationProposal": {
+                "type": "object",
+                "properties": {
+                  "subject_id": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "predicate_iri": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "quote": {
+                    "$ref": "#/$defs/Quote"
+                  },
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "missing",
+                      "unknown",
+                      "ambiguous",
+                      "unbound"
+                    ]
+                  },
+                  "reason": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "subject_id",
+                  "predicate_iri",
+                  "quote",
+                  "kind",
+                  "reason"
+                ],
+                "additionalProperties": false
+              },
+              "ReferenceBindingProposal": {
+                "additionalProperties": false,
+                "properties": {
+                  "local_id": {
+                    "type": "string"
+                  },
+                  "source_id": {
+                    "type": "string"
+                  },
+                  "target_id": {
+                    "type": "string"
+                  },
+                  "binding_kind": {
+                    "enum": [
+                      "anaphora",
+                      "coreference"
+                    ],
+                    "type": "string"
+                  },
+                  "support": {
+                    "items": {
+                      "$ref": "#/$defs/Quote"
+                    },
+                    "minItems": 1,
+                    "type": "array"
+                  }
+                },
+                "required": [
+                  "local_id",
+                  "source_id",
+                  "target_id",
+                  "binding_kind",
+                  "support"
+                ],
+                "type": "object"
+              },
+              "SourceAssertion": {
+                "additionalProperties": false,
+                "properties": {
+                  "subject_support": {
+                    "items": {
+                      "$ref": "#/$defs/Quote"
+                    },
+                    "type": "array"
+                  },
+                  "object_support": {
+                    "items": {
+                      "$ref": "#/$defs/ObjectSourceSupport"
+                    },
+                    "type": "array"
+                  },
+                  "predicate_support": {
+                    "items": {
+                      "$ref": "#/$defs/Quote"
+                    },
+                    "minItems": 1,
+                    "type": "array"
+                  },
+                  "binding_ids": {
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  }
+                },
+                "required": [
+                  "subject_support",
+                  "object_support",
+                  "predicate_support",
+                  "binding_ids"
+                ],
+                "type": "object"
+              },
+              "ObjectSourceSupport": {
+                "additionalProperties": false,
+                "properties": {
+                  "object_id": {
+                    "type": "string"
+                  },
+                  "support": {
+                    "items": {
+                      "$ref": "#/$defs/Quote"
+                    },
+                    "minItems": 1,
+                    "type": "array"
+                  }
+                },
+                "required": [
+                  "object_id",
+                  "support"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "strict": false
+        }
+      }
+    },
+    "continuation_response": {
+      "id": "resp_example_02",
+      "object": "response",
+      "status": "completed",
+      "output": [
+        {
+          "type": "message",
+          "id": "msg_example_02",
+          "role": "assistant",
+          "status": "completed",
+          "content": [
+            {
+              "type": "output_text",
+              "text": "{\"entities\":[{\"local_id\":\"e1\",\"class_iri\":\"urn:example:T\",\"representation\":\"mention\",\"mentions\":[{\"evidence_id\":\"ev-1\",\"text\":\"对象甲\",\"context_text\":null}],\"record_components\":[],\"identifier_claims\":[]},{\"local_id\":\"e2\",\"class_iri\":\"urn:example:T\",\"representation\":\"mention\",\"mentions\":[{\"evidence_id\":\"ev-1\",\"text\":\"对象乙\",\"context_text\":null}],\"record_components\":[],\"identifier_claims\":[]}],\"properties\":[],\"relations\":[{\"local_id\":\"r1\",\"subject_id\":\"s\",\"predicate_iri\":\"urn:example:relatesTo\",\"object_ids\":[\"e1\",\"e2\"],\"selection\":\"one_of\",\"bridge_support\":[{\"evidence_id\":\"ev-1\",\"text\":\"主体S在条件C下关联类型T的对象甲或类型T的对象乙，二者恰选其一。\",\"context_text\":null}],\"selection_support\":[{\"evidence_id\":\"ev-1\",\"text\":\"类型T的对象甲或类型T的对象乙，二者恰选其一\",\"context_text\":null}],\"qualifiers\":{\"polarity\":\"affirmed\",\"modality\":\"asserted\",\"condition_support\":[{\"evidence_id\":\"ev-1\",\"text\":\"在条件C下\",\"context_text\":null}],\"scope_qualifiers\":[]},\"bridge_kind\":\"explicit_assertion\",\"bridge_ref_ids\":[]}],\"external_links\":[],\"observations\":[]}",
+              "annotations": []
+            }
+          ]
+        }
+      ],
+      "error": null,
+      "incomplete_details": null
+    },
+    "current_protocol": {
+      "stage_input_items": [
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "input_text",
+              "text": "{\"task\":{\"subject_id\":\"s\",\"predicate_iri\":\"urn:example:relatesTo\",\"stage\":\"discovery\"},\"allowed_class_iris\":[\"urn:example:SourceType\",\"urn:example:T\"],\"registered_entities\":[{\"entity_id\":\"s\",\"revision\":1,\"class_iri\":\"urn:example:SourceType\",\"origin\":\"user_specified_document_root\"}],\"evidence_catalog\":[{\"evidence_id\":\"ev-1\",\"record_id\":\"record-1\",\"role\":\"target\"}]}"
+            }
+          ]
+        }
+      ],
+      "turn_refs": [
+        "response"
+      ],
+      "completed_tool_results": [
+        "tool_outputs/0"
+      ]
+    }
+  },
+  "verification_exchange": {
+    "note": "新阶段独立请求，只有完整冻结声明及授权材料。实体、关系组、限定和根来源均明确；不包含 discovery 消息、工具历史或 reasoning。",
+    "verification_input": {
+      "discovery_ref": "result-discovery-1",
+      "targets": [
+        {
+          "target_id": "entity:e1",
+          "target_kind": "entity",
+          "claim_ref": {
+            "id": "e1",
+            "revision": 1
+          },
+          "content_hash": "80bf36a89cc5dbbfa0c0037247ae2ce659c0b68786d257b7b1577dc7f2c0a734",
+          "payload": {
+            "local_id": "e1",
+            "class_iri": "urn:example:T",
+            "representation": "mention",
+            "mentions": [
+              {
+                "evidence_id": "ev-1",
+                "text": "对象甲",
+                "context_text": null
+              }
+            ],
+            "record_components": [],
+            "identifier_claims": []
+          },
+          "scope": {
+            "scope_id": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+            "members": []
+          },
+          "dependency_refs": [],
+          "required_facets": [
+            "type",
+            "referent",
+            "subject_role"
+          ]
+        },
+        {
+          "target_id": "entity:e2",
+          "target_kind": "entity",
+          "claim_ref": {
+            "id": "e2",
+            "revision": 1
+          },
+          "content_hash": "52094eecafe275655c589ac1ba1e12c069446f048b101fa6525fb224634df9bd",
+          "payload": {
+            "local_id": "e2",
+            "class_iri": "urn:example:T",
+            "representation": "mention",
+            "mentions": [
+              {
+                "evidence_id": "ev-1",
+                "text": "对象乙",
+                "context_text": null
+              }
+            ],
+            "record_components": [],
+            "identifier_claims": []
+          },
+          "scope": {
+            "scope_id": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+            "members": []
+          },
+          "dependency_refs": [],
+          "required_facets": [
+            "type",
+            "referent",
+            "subject_role"
+          ]
+        },
+        {
+          "target_id": "relation:r1",
+          "target_kind": "relation",
+          "claim_ref": {
+            "id": "r1",
+            "revision": 1
+          },
+          "content_hash": "0198a65ac31ab4419179557c2ef30efae928907e16ed44b83cff9c50aad799fc",
+          "payload": {
+            "local_id": "r1",
+            "subject_id": "s",
+            "predicate_iri": "urn:example:relatesTo",
+            "object_ids": [
+              "e1",
+              "e2"
+            ],
+            "selection": "one_of",
+            "bridge_support": [
+              {
+                "evidence_id": "ev-1",
+                "text": "主体S在条件C下关联类型T的对象甲或类型T的对象乙，二者恰选其一。",
+                "context_text": null
+              }
+            ],
+            "selection_support": [
+              {
+                "evidence_id": "ev-1",
+                "text": "类型T的对象甲或类型T的对象乙，二者恰选其一",
+                "context_text": null
+              }
+            ],
+            "qualifiers": {
+              "polarity": "affirmed",
+              "modality": "asserted",
+              "condition_support": [
+                {
+                  "evidence_id": "ev-1",
+                  "text": "在条件C下",
+                  "context_text": null
+                }
+              ],
+              "scope_qualifiers": []
+            },
+            "bridge_kind": "explicit_assertion",
+            "bridge_ref_ids": []
+          },
+          "scope": {
+            "scope_id": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+            "members": []
+          },
+          "dependency_refs": [
+            {
+              "id": "s",
+              "revision": 1
+            },
+            {
+              "id": "e1",
+              "revision": 1
+            },
+            {
+              "id": "e2",
+              "revision": 1
+            }
+          ],
+          "required_facets": [
+            "subject_binding",
+            "object_binding",
+            "predicate",
+            "bridge",
+            "selection",
+            "qualifiers",
+            "counterevidence"
+          ]
+        }
+      ],
+      "local_ref_map": {
+        "s": {
+          "id": "s",
+          "revision": 1
+        },
+        "e1": {
+          "id": "e1",
+          "revision": 1
+        },
+        "e2": {
+          "id": "e2",
+          "revision": 1
+        },
+        "r1": {
+          "id": "r1",
+          "revision": 1
+        }
+      },
+      "entity_dependencies": [
+        {
+          "entity_ref": {
+            "id": "s",
+            "revision": 1
+          },
+          "class_iri": "urn:example:SourceType",
+          "grounding_kind": "document_root",
+          "root_origin": "user_specified_document_root",
+          "proposal": null,
+          "source_refs": [
+            {
+              "document_hash": "6a9a1ac57da367b51666bf965b3af5a7b08c90ae859ae9d45a51d82306337db3",
+              "parser_version": "synthetic-ir-v1",
+              "structure_hash": "083a179a3abf13b198e0cef466a8d4d2ae253de48f98bbd102c029d2b46fee91",
+              "evidence_id": "ev-1",
+              "section_node_id": "section-1",
+              "block_id": "block-ev-1",
+              "paragraph_index": 0,
+              "fragment_index": null,
+              "table_path": null,
+              "row_index": null,
+              "column_index": null,
+              "span_start": 0,
+              "span_end": 33,
+              "physical_page_number": null
+            }
+          ],
+          "dependency_refs": [],
+          "content_hash": "e64fb790fb0f9d9f222b6497628efd2e7521acda3b220aaf56b3033117000bd6"
+        }
+      ],
+      "external_candidates": [],
+      "bridge_dependencies": [],
+      "scope_resolutions": []
+    },
+    "request": {
+      "model": "PROJECT_QWEN_MODEL",
+      "instructions": "独立核验冻结声明。逐一检查 verification_input.targets 的指定维度，对照完整 claims、精确依赖、本体卡片及授权原文；不得重提声明，不继承发现阶段的推理或结论。",
+      "input": [
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "input_text",
+              "text": "{\"task_id\":\"task-1\",\"subject_ref\":{\"id\":\"s\",\"revision\":1},\"predicate_iri\":\"urn:example:relatesTo\",\"scope\":{\"scope_id\":\"4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945\",\"members\":[]},\"stage\":\"verification\",\"context_hash\":\"3210da7d1c54dda5639dcac5645d694cadd61e23b351666c7c9bca0cbc9ebfd5\",\"evidence_hash\":\"d484d2efb29b7d58dd8bd9382fe22be32c8c0cc4e23fd7a76c718916b7bbf302\",\"schema_card\":{\"schema_card_id\":\"card-1\",\"subject_ref\":{\"id\":\"s\",\"revision\":1},\"class_iris\":[\"urn:example:SourceType\"],\"ontology_snapshot_id\":\"synthetic-ontology-1\",\"menu_id\":\"menu-1\",\"predicates\":[{\"iri\":\"urn:example:relatesTo\",\"label\":\"关联\",\"description\":\"主体指向原文指定的类型 T 对象；保留选择组和限定。\",\"declared_by\":[\"urn:example:SourceType\"],\"multiplicity\":\"multiple\",\"min_count\":null,\"max_count\":null,\"constraint_status\":\"resolved\",\"kind\":\"relationship\",\"range_class_iris\":[\"urn:example:T\"],\"range_classes\":[{\"iri\":\"urn:example:T\",\"label\":\"类型T\",\"description\":\"合成测试类型\",\"parent_iris\":[],\"identity_property_iris\":[],\"direct_field_labels\":[]}]}],\"quantity_policies\":[],\"identity_keys\":[],\"unsupported_constraints\":[]},\"source_catalog\":[{\"record_id\":\"record-1\",\"title\":null,\"summary\":null,\"summary_source\":null,\"authorized_evidence_ids\":[\"ev-1\"]}],\"evidence_units\":[{\"evidence_id\":\"ev-1\",\"record_id\":\"record-1\",\"text\":\"主体S在条件C下关联类型T的对象甲或类型T的对象乙，二者恰选其一。\",\"span_start\":0,\"span_end\":33,\"role\":\"target\",\"fact_eligible\":true,\"table\":null}],\"registered_refs\":[{\"id\":\"s\",\"revision\":1},{\"id\":\"e1\",\"revision\":1},{\"id\":\"e2\",\"revision\":1},{\"id\":\"r1\",\"revision\":1}],\"verification_input\":{\"discovery_ref\":\"result-discovery-1\",\"targets\":[{\"target_id\":\"entity:e1\",\"target_kind\":\"entity\",\"claim_ref\":{\"id\":\"e1\",\"revision\":1},\"content_hash\":\"80bf36a89cc5dbbfa0c0037247ae2ce659c0b68786d257b7b1577dc7f2c0a734\",\"payload\":{\"local_id\":\"e1\",\"class_iri\":\"urn:example:T\",\"representation\":\"mention\",\"mentions\":[{\"evidence_id\":\"ev-1\",\"text\":\"对象甲\",\"context_text\":null}],\"record_components\":[],\"identifier_claims\":[]},\"scope\":{\"scope_id\":\"4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945\",\"members\":[]},\"dependency_refs\":[],\"required_facets\":[\"type\",\"referent\",\"subject_role\"]},{\"target_id\":\"entity:e2\",\"target_kind\":\"entity\",\"claim_ref\":{\"id\":\"e2\",\"revision\":1},\"content_hash\":\"52094eecafe275655c589ac1ba1e12c069446f048b101fa6525fb224634df9bd\",\"payload\":{\"local_id\":\"e2\",\"class_iri\":\"urn:example:T\",\"representation\":\"mention\",\"mentions\":[{\"evidence_id\":\"ev-1\",\"text\":\"对象乙\",\"context_text\":null}],\"record_components\":[],\"identifier_claims\":[]},\"scope\":{\"scope_id\":\"4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945\",\"members\":[]},\"dependency_refs\":[],\"required_facets\":[\"type\",\"referent\",\"subject_role\"]},{\"target_id\":\"relation:r1\",\"target_kind\":\"relation\",\"claim_ref\":{\"id\":\"r1\",\"revision\":1},\"content_hash\":\"0198a65ac31ab4419179557c2ef30efae928907e16ed44b83cff9c50aad799fc\",\"payload\":{\"local_id\":\"r1\",\"subject_id\":\"s\",\"predicate_iri\":\"urn:example:relatesTo\",\"object_ids\":[\"e1\",\"e2\"],\"selection\":\"one_of\",\"bridge_support\":[{\"evidence_id\":\"ev-1\",\"text\":\"主体S在条件C下关联类型T的对象甲或类型T的对象乙，二者恰选其一。\",\"context_text\":null}],\"selection_support\":[{\"evidence_id\":\"ev-1\",\"text\":\"类型T的对象甲或类型T的对象乙，二者恰选其一\",\"context_text\":null}],\"qualifiers\":{\"polarity\":\"affirmed\",\"modality\":\"asserted\",\"condition_support\":[{\"evidence_id\":\"ev-1\",\"text\":\"在条件C下\",\"context_text\":null}],\"scope_qualifiers\":[]},\"bridge_kind\":\"explicit_assertion\",\"bridge_ref_ids\":[]},\"scope\":{\"scope_id\":\"4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945\",\"members\":[]},\"dependency_refs\":[{\"id\":\"s\",\"revision\":1},{\"id\":\"e1\",\"revision\":1},{\"id\":\"e2\",\"revision\":1}],\"required_facets\":[\"subject_binding\",\"object_binding\",\"predicate\",\"bridge\",\"selection\",\"qualifiers\",\"counterevidence\"]}],\"local_ref_map\":{\"s\":{\"id\":\"s\",\"revision\":1},\"e1\":{\"id\":\"e1\",\"revision\":1},\"e2\":{\"id\":\"e2\",\"revision\":1},\"r1\":{\"id\":\"r1\",\"revision\":1}},\"entity_dependencies\":[{\"entity_ref\":{\"id\":\"s\",\"revision\":1},\"class_iri\":\"urn:example:SourceType\",\"grounding_kind\":\"document_root\",\"root_origin\":\"user_specified_document_root\",\"proposal\":null,\"source_refs\":[{\"document_hash\":\"6a9a1ac57da367b51666bf965b3af5a7b08c90ae859ae9d45a51d82306337db3\",\"parser_version\":\"synthetic-ir-v1\",\"structure_hash\":\"083a179a3abf13b198e0cef466a8d4d2ae253de48f98bbd102c029d2b46fee91\",\"evidence_id\":\"ev-1\",\"section_node_id\":\"section-1\",\"block_id\":\"block-ev-1\",\"paragraph_index\":0,\"fragment_index\":null,\"table_path\":null,\"row_index\":null,\"column_index\":null,\"span_start\":0,\"span_end\":33,\"physical_page_number\":null}],\"dependency_refs\":[],\"content_hash\":\"e64fb790fb0f9d9f222b6497628efd2e7521acda3b220aaf56b3033117000bd6\"}],\"external_candidates\":[],\"bridge_dependencies\":[],\"scope_resolutions\":[]},\"tool_observations\":[],\"feedback\":[],\"turn\":{\"stage\":\"verification\",\"mode\":\"answer\",\"allowed_tool_names\":[],\"model_calls_remaining\":1,\"reserved_model_calls\":0,\"reason_code\":\"verification_answer_reserved\"}}"
+            }
+          ]
+        }
+      ],
+      "tools": [],
+      "store": false,
+      "max_output_tokens": 4096,
+      "text": {
+        "format": {
+          "type": "json_schema",
+          "name": "verification",
+          "schema": {
+            "type": "object",
+            "properties": {
+              "verifications": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "target_id": {
+                      "type": "string"
+                    },
+                    "content_hash": {
+                      "type": "string"
+                    },
+                    "facets": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "name": {
+                            "enum": [
+                              "type",
+                              "referent",
+                              "subject_role",
+                              "subject_binding",
+                              "object_binding",
+                              "field_role",
+                              "predicate",
+                              "bridge",
+                              "selection",
+                              "qualifiers",
+                              "counterevidence",
+                              "value",
+                              "unit",
+                              "identity_owner",
+                              "identity_key",
+                              "identity_scope",
+                              "reference_identity",
+                              "reference_scope"
+                            ],
+                            "type": "string"
+                          },
+                          "verdict": {
+                            "type": "string",
+                            "enum": [
+                              "supported",
+                              "unsupported",
+                              "undetermined"
+                            ]
+                          },
+                          "support": {
+                            "type": "array",
+                            "items": {
+                              "$ref": "#/$defs/Quote"
+                            }
+                          },
+                          "counterevidence_support": {
+                            "type": "array",
+                            "items": {
+                              "$ref": "#/$defs/Quote"
+                            }
+                          },
+                          "reason": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "name",
+                          "verdict",
+                          "support",
+                          "counterevidence_support",
+                          "reason"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "target_id",
+                    "content_hash",
+                    "facets"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "required": [
+              "verifications"
+            ],
+            "additionalProperties": false,
+            "$defs": {
+              "Quote": {
+                "type": "object",
+                "properties": {
+                  "evidence_id": {
+                    "type": "string"
+                  },
+                  "text": {
+                    "type": "string"
+                  },
+                  "context_text": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "evidence_id",
+                  "text",
+                  "context_text"
+                ],
+                "additionalProperties": false
+              }
+            }
+          },
+          "strict": false
+        }
+      }
+    },
+    "response": {
+      "id": "resp_verification_01",
+      "object": "response",
+      "status": "completed",
+      "output": [
+        {
+          "type": "message",
+          "id": "msg_verification_01",
+          "role": "assistant",
+          "status": "completed",
+          "content": [
+            {
+              "type": "output_text",
+              "text": "{\"verifications\":[{\"target_id\":\"entity:e1\",\"content_hash\":\"80bf36a89cc5dbbfa0c0037247ae2ce659c0b68786d257b7b1577dc7f2c0a734\",\"facets\":[{\"name\":\"type\",\"verdict\":\"supported\",\"support\":[{\"evidence_id\":\"ev-1\",\"text\":\"主体S在条件C下关联类型T的对象甲或类型T的对象乙，二者恰选其一。\",\"context_text\":null}],\"counterevidence_support\":[],\"reason\":\"仅演示逐目标逐维度引用结构；不是独立语义评测。\"},{\"name\":\"referent\",\"verdict\":\"supported\",\"support\":[{\"evidence_id\":\"ev-1\",\"text\":\"主体S在条件C下关联类型T的对象甲或类型T的对象乙，二者恰选其一。\",\"context_text\":null}],\"counterevidence_support\":[],\"reason\":\"仅演示逐目标逐维度引用结构；不是独立语义评测。\"},{\"name\":\"subject_role\",\"verdict\":\"supported\",\"support\":[{\"evidence_id\":\"ev-1\",\"text\":\"主体S在条件C下关联类型T的对象甲或类型T的对象乙，二者恰选其一。\",\"context_text\":null}],\"counterevidence_support\":[],\"reason\":\"仅演示逐目标逐维度引用结构；不是独立语义评测。\"}]},{\"target_id\":\"entity:e2\",\"content_hash\":\"52094eecafe275655c589ac1ba1e12c069446f048b101fa6525fb224634df9bd\",\"facets\":[{\"name\":\"type\",\"verdict\":\"supported\",\"support\":[{\"evidence_id\":\"ev-1\",\"text\":\"主体S在条件C下关联类型T的对象甲或类型T的对象乙，二者恰选其一。\",\"context_text\":null}],\"counterevidence_support\":[],\"reason\":\"仅演示逐目标逐维度引用结构；不是独立语义评测。\"},{\"name\":\"referent\",\"verdict\":\"supported\",\"support\":[{\"evidence_id\":\"ev-1\",\"text\":\"主体S在条件C下关联类型T的对象甲或类型T的对象乙，二者恰选其一。\",\"context_text\":null}],\"counterevidence_support\":[],\"reason\":\"仅演示逐目标逐维度引用结构；不是独立语义评测。\"},{\"name\":\"subject_role\",\"verdict\":\"supported\",\"support\":[{\"evidence_id\":\"ev-1\",\"text\":\"主体S在条件C下关联类型T的对象甲或类型T的对象乙，二者恰选其一。\",\"context_text\":null}],\"counterevidence_support\":[],\"reason\":\"仅演示逐目标逐维度引用结构；不是独立语义评测。\"}]},{\"target_id\":\"relation:r1\",\"content_hash\":\"0198a65ac31ab4419179557c2ef30efae928907e16ed44b83cff9c50aad799fc\",\"facets\":[{\"name\":\"subject_binding\",\"verdict\":\"supported\",\"support\":[{\"evidence_id\":\"ev-1\",\"text\":\"主体S在条件C下关联类型T的对象甲或类型T的对象乙，二者恰选其一。\",\"context_text\":null}],\"counterevidence_support\":[],\"reason\":\"合成上下文把主体S登记为文档根，原句明确以主体S为关系主体；仅演示协议。\"},{\"name\":\"object_binding\",\"verdict\":\"supported\",\"support\":[{\"evidence_id\":\"ev-1\",\"text\":\"主体S在条件C下关联类型T的对象甲或类型T的对象乙，二者恰选其一。\",\"context_text\":null}],\"counterevidence_support\":[],\"reason\":\"仅演示逐目标逐维度引用结构；不是独立语义评测。\"},{\"name\":\"predicate\",\"verdict\":\"supported\",\"support\":[{\"evidence_id\":\"ev-1\",\"text\":\"主体S在条件C下关联类型T的对象甲或类型T的对象乙，二者恰选其一。\",\"context_text\":null}],\"counterevidence_support\":[],\"reason\":\"仅演示逐目标逐维度引用结构；不是独立语义评测。\"},{\"name\":\"bridge\",\"verdict\":\"supported\",\"support\":[{\"evidence_id\":\"ev-1\",\"text\":\"主体S在条件C下关联类型T的对象甲或类型T的对象乙，二者恰选其一。\",\"context_text\":null}],\"counterevidence_support\":[],\"reason\":\"仅演示逐目标逐维度引用结构；不是独立语义评测。\"},{\"name\":\"selection\",\"verdict\":\"supported\",\"support\":[{\"evidence_id\":\"ev-1\",\"text\":\"主体S在条件C下关联类型T的对象甲或类型T的对象乙，二者恰选其一。\",\"context_text\":null}],\"counterevidence_support\":[],\"reason\":\"仅演示逐目标逐维度引用结构；不是独立语义评测。\"},{\"name\":\"qualifiers\",\"verdict\":\"supported\",\"support\":[{\"evidence_id\":\"ev-1\",\"text\":\"主体S在条件C下关联类型T的对象甲或类型T的对象乙，二者恰选其一。\",\"context_text\":null}],\"counterevidence_support\":[],\"reason\":\"仅演示逐目标逐维度引用结构；不是独立语义评测。\"},{\"name\":\"counterevidence\",\"verdict\":\"supported\",\"support\":[{\"evidence_id\":\"ev-1\",\"text\":\"主体S在条件C下关联类型T的对象甲或类型T的对象乙，二者恰选其一。\",\"context_text\":null}],\"counterevidence_support\":[],\"reason\":\"仅演示逐目标逐维度引用结构；不是独立语义评测。\"}]}]}",
+              "annotations": []
+            }
+          ]
+        }
+      ],
+      "error": null,
+      "incomplete_details": null
+    }
+  },
+  "tool_protocol_error_examples": [
+    {
+      "case": "unknown_function",
+      "response_output": [
+        {
+          "type": "function_call",
+          "id": "fc_unknown_function",
+          "call_id": "call_unknown_function",
+          "name": "invented_search",
+          "arguments": "{}",
+          "status": "completed"
+        }
+      ],
+      "observation_before_pause": {
+        "request_attempt": 1,
+        "call": {
+          "call_id": "call_unknown_function",
+          "name": "invented_search",
+          "arguments_json": "{}"
+        },
+        "parsed_arguments": null,
+        "result_ref": "result-unknown_function",
+        "result": {
+          "status": "error",
+          "data": null,
+          "evidence_refs": [],
+          "issues": [
+            {
+              "code": "unknown_tool",
+              "field_path": null,
+              "message": "函数未注册；只能选择当前阶段提供的函数。",
+              "evidence_ids": []
+            }
+          ]
+        }
+      },
+      "observation_after_resume": {
+        "request_attempt": 1,
+        "call": {
+          "call_id": "call_unknown_function",
+          "name": "invented_search",
+          "arguments_json": "{}"
+        },
+        "parsed_arguments": null,
+        "result_ref": "result-unknown_function",
+        "result": {
+          "status": "error",
+          "data": null,
+          "evidence_refs": [],
+          "issues": [
+            {
+              "code": "unknown_tool",
+              "field_path": null,
+              "message": "函数未注册；只能选择当前阶段提供的函数。",
+              "evidence_ids": []
+            }
+          ]
+        }
+      },
+      "tool_output": {
+        "type": "function_call_output",
+        "call_id": "call_unknown_function",
+        "output": "{\"status\":\"error\",\"data\":null,\"evidence_refs\":[],\"issues\":[{\"code\":\"unknown_tool\",\"field_path\":null,\"message\":\"函数未注册；只能选择当前阶段提供的函数。\",\"evidence_ids\":[]}]}"
+      },
+      "dispatch_count": 0,
+      "tool_calls_used_before_pause": 1,
+      "tool_calls_used_after_resume": 1,
+      "correction": {
+        "response_output": [
+          {
+            "type": "function_call",
+            "id": "fc_corrected_unknown_function",
+            "call_id": "call_corrected_unknown_function",
+            "name": "inspect_evidence",
+            "arguments": "{\"evidence_ids\":[\"ev-1\"]}",
+            "status": "completed"
+          }
+        ],
+        "observation": {
+          "request_attempt": 2,
+          "call": {
+            "call_id": "call_corrected_unknown_function",
+            "name": "inspect_evidence",
+            "arguments_json": "{\"evidence_ids\":[\"ev-1\"]}"
+          },
+          "parsed_arguments": {
+            "evidence_ids": [
+              "ev-1"
+            ]
+          },
+          "result_ref": "result-corrected-unknown_function",
+          "result": {
+            "status": "ok",
+            "data": {
+              "units": [
+                {
+                  "evidence_id": "ev-1",
+                  "record_id": "record-1",
+                  "text": "主体S在条件C下关联类型T的对象甲或类型T的对象乙，二者恰选其一。",
+                  "span_start": 0,
+                  "span_end": 33,
+                  "role": "target",
+                  "fact_eligible": true,
+                  "table": null
+                }
+              ],
+              "omitted_ids": [],
+              "coverage_complete": true
+            },
+            "evidence_refs": [
+              "ev-1"
+            ],
+            "issues": []
+          }
+        },
+        "tool_output": {
+          "type": "function_call_output",
+          "call_id": "call_corrected_unknown_function",
+          "output": "{\"status\":\"ok\",\"data\":{\"units\":[{\"evidence_id\":\"ev-1\",\"record_id\":\"record-1\",\"text\":\"主体S在条件C下关联类型T的对象甲或类型T的对象乙，二者恰选其一。\",\"span_start\":0,\"span_end\":33,\"role\":\"target\",\"fact_eligible\":true,\"table\":null}],\"omitted_ids\":[],\"coverage_complete\":true},\"evidence_refs\":[\"ev-1\"],\"issues\":[]}"
+        },
+        "dispatch_count": 1,
+        "tool_calls_used": 2,
+        "model_calls_used": 2
+      }
+    },
+    {
+      "case": "invalid_json",
+      "response_output": [
+        {
+          "type": "function_call",
+          "id": "fc_invalid_json",
+          "call_id": "call_invalid_json",
+          "name": "inspect_evidence",
+          "arguments": "{\"evidence_ids\": [",
+          "status": "completed"
+        }
+      ],
+      "observation_before_pause": {
+        "request_attempt": 1,
+        "call": {
+          "call_id": "call_invalid_json",
+          "name": "inspect_evidence",
+          "arguments_json": "{\"evidence_ids\": ["
+        },
+        "parsed_arguments": null,
+        "result_ref": "result-invalid_json",
+        "result": {
+          "status": "error",
+          "data": null,
+          "evidence_refs": [],
+          "issues": [
+            {
+              "code": "invalid_tool_arguments",
+              "field_path": null,
+              "message": "arguments 不是完整 JSON；按当前工具参数 Schema 提交合法 JSON 对象。",
+              "evidence_ids": []
+            }
+          ]
+        }
+      },
+      "observation_after_resume": {
+        "request_attempt": 1,
+        "call": {
+          "call_id": "call_invalid_json",
+          "name": "inspect_evidence",
+          "arguments_json": "{\"evidence_ids\": ["
+        },
+        "parsed_arguments": null,
+        "result_ref": "result-invalid_json",
+        "result": {
+          "status": "error",
+          "data": null,
+          "evidence_refs": [],
+          "issues": [
+            {
+              "code": "invalid_tool_arguments",
+              "field_path": null,
+              "message": "arguments 不是完整 JSON；按当前工具参数 Schema 提交合法 JSON 对象。",
+              "evidence_ids": []
+            }
+          ]
+        }
+      },
+      "tool_output": {
+        "type": "function_call_output",
+        "call_id": "call_invalid_json",
+        "output": "{\"status\":\"error\",\"data\":null,\"evidence_refs\":[],\"issues\":[{\"code\":\"invalid_tool_arguments\",\"field_path\":null,\"message\":\"arguments 不是完整 JSON；按当前工具参数 Schema 提交合法 JSON 对象。\",\"evidence_ids\":[]}]}"
+      },
+      "dispatch_count": 0,
+      "tool_calls_used_before_pause": 1,
+      "tool_calls_used_after_resume": 1,
+      "correction": {
+        "response_output": [
+          {
+            "type": "function_call",
+            "id": "fc_corrected_invalid_json",
+            "call_id": "call_corrected_invalid_json",
+            "name": "inspect_evidence",
+            "arguments": "{\"evidence_ids\":[\"ev-1\"]}",
+            "status": "completed"
+          }
+        ],
+        "observation": {
+          "request_attempt": 2,
+          "call": {
+            "call_id": "call_corrected_invalid_json",
+            "name": "inspect_evidence",
+            "arguments_json": "{\"evidence_ids\":[\"ev-1\"]}"
+          },
+          "parsed_arguments": {
+            "evidence_ids": [
+              "ev-1"
+            ]
+          },
+          "result_ref": "result-corrected-invalid_json",
+          "result": {
+            "status": "ok",
+            "data": {
+              "units": [
+                {
+                  "evidence_id": "ev-1",
+                  "record_id": "record-1",
+                  "text": "主体S在条件C下关联类型T的对象甲或类型T的对象乙，二者恰选其一。",
+                  "span_start": 0,
+                  "span_end": 33,
+                  "role": "target",
+                  "fact_eligible": true,
+                  "table": null
+                }
+              ],
+              "omitted_ids": [],
+              "coverage_complete": true
+            },
+            "evidence_refs": [
+              "ev-1"
+            ],
+            "issues": []
+          }
+        },
+        "tool_output": {
+          "type": "function_call_output",
+          "call_id": "call_corrected_invalid_json",
+          "output": "{\"status\":\"ok\",\"data\":{\"units\":[{\"evidence_id\":\"ev-1\",\"record_id\":\"record-1\",\"text\":\"主体S在条件C下关联类型T的对象甲或类型T的对象乙，二者恰选其一。\",\"span_start\":0,\"span_end\":33,\"role\":\"target\",\"fact_eligible\":true,\"table\":null}],\"omitted_ids\":[],\"coverage_complete\":true},\"evidence_refs\":[\"ev-1\"],\"issues\":[]}"
+        },
+        "dispatch_count": 1,
+        "tool_calls_used": 2,
+        "model_calls_used": 2
+      }
+    }
+  ],
+  "context_authorization_resume_example": {
+    "note": "协调器在同一屏障保存工具结果引用和 protocol.context_authorization；权限描述及版本/hash仅存当前协议一份。恢复从冻结 IR 重建 TaskContext，expected_restored_context 是派生结果的测试预期。",
+    "frozen_ir": {
+      "identity": {
+        "document_hash": "6a9a1ac57da367b51666bf965b3af5a7b08c90ae859ae9d45a51d82306337db3",
+        "parser_version": "synthetic-ir-v1",
+        "structure_hash": "083a179a3abf13b198e0cef466a8d4d2ae253de48f98bbd102c029d2b46fee91"
+      },
+      "records": [
+        {
+          "record_id": "record-1",
+          "evidence_ids": [
+            "ev-1"
+          ]
+        },
+        {
+          "record_id": "record-2",
+          "evidence_ids": [
+            "ev-2"
+          ]
+        }
+      ],
+      "units": [
+        {
+          "evidence_id": "ev-1",
+          "text": "主体S在条件C下关联类型T的对象甲或类型T的对象乙，二者恰选其一。"
+        },
+        {
+          "evidence_id": "ev-2",
+          "text": "补充原文：主体S只在条件C满足时适用上述关联。"
+        }
+      ]
+    },
+    "context_policy": {
+      "task_id": "task-1",
+      "base_target": {
+        "target_id": "synthetic-base-target",
+        "claim_ref": {
+          "id": "s",
+          "revision": 1
+        },
+        "task_id": "task-1",
+        "check_kind": "predicate_entailment",
+        "document_context": {
+          "document_hash": "6a9a1ac57da367b51666bf965b3af5a7b08c90ae859ae9d45a51d82306337db3",
+          "document_class_iri": "urn:example:SourceType",
+          "root_ref": {
+            "id": "s",
+            "revision": 1
+          }
+        },
+        "subject_ref": {
+          "entity_id": "s",
+          "revision": 1,
+          "class_iri": "urn:example:SourceType",
+          "referent_id": null,
+          "is_document_root": true
+        },
+        "predicate_spec_ref": null,
+        "predicate_iri": "urn:example:relatesTo",
+        "object_ref": null,
+        "literal_hash": null,
+        "assertion_polarity": "affirmed",
+        "applicability": {},
+        "ontology_hash": "094d279bf528b7ead9dc9d6f707f3eb31c144306af391134f53f9f534e06e4a9",
+        "source_scope_hash": "a8f6784da638ef2ae6a765ab47dbd235984c8854f93659283ed37a239dd55bda",
+        "context_hash": "5abc5a7908960c8a923409de3a74bb04a2b617c85e1798d65bc982ad43566616"
+      },
+      "scope": {
+        "scope_id": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "members": []
+      },
+      "schema_card": {
+        "schema_card_id": "card-1",
+        "subject_ref": {
+          "id": "s",
+          "revision": 1
+        },
+        "class_iris": [
+          "urn:example:SourceType"
+        ],
+        "ontology_snapshot_id": "synthetic-ontology-1",
+        "menu_id": "menu-1",
+        "predicates": [
+          {
+            "iri": "urn:example:relatesTo",
+            "label": "关联",
+            "description": "主体指向原文指定的类型 T 对象；保留选择组和限定。",
+            "declared_by": [
+              "urn:example:SourceType"
+            ],
+            "multiplicity": "multiple",
+            "min_count": null,
+            "max_count": null,
+            "constraint_status": "resolved",
+            "kind": "relationship",
+            "range_class_iris": [
+              "urn:example:T"
+            ],
+            "range_classes": [
+              {
+                "iri": "urn:example:T",
+                "label": "类型T",
+                "description": "合成测试类型",
+                "parent_iris": [],
+                "identity_property_iris": [],
+                "direct_field_labels": []
+              }
+            ]
+          }
+        ],
+        "quantity_policies": [],
+        "identity_keys": [],
+        "unsupported_constraints": []
+      },
+      "context_assembler_version": "synthetic-context-v1",
+      "field_binding_version": "ir-field-bindings-v1",
+      "profile_id": null,
+      "subject_label": "主体S",
+      "entity_dependencies": [
+        {
+          "entity_ref": {
+            "id": "s",
+            "revision": 1
+          },
+          "class_iri": "urn:example:SourceType",
+          "grounding_kind": "document_root",
+          "root_origin": "user_specified_document_root",
+          "proposal": null,
+          "source_refs": [
+            {
+              "document_hash": "6a9a1ac57da367b51666bf965b3af5a7b08c90ae859ae9d45a51d82306337db3",
+              "parser_version": "synthetic-ir-v1",
+              "structure_hash": "083a179a3abf13b198e0cef466a8d4d2ae253de48f98bbd102c029d2b46fee91",
+              "evidence_id": "ev-1",
+              "section_node_id": "section-1",
+              "block_id": "block-ev-1",
+              "paragraph_index": 0,
+              "fragment_index": null,
+              "table_path": null,
+              "row_index": null,
+              "column_index": null,
+              "span_start": 0,
+              "span_end": 33,
+              "physical_page_number": null
+            }
+          ],
+          "dependency_refs": [],
+          "content_hash": "e64fb790fb0f9d9f222b6497628efd2e7521acda3b220aaf56b3033117000bd6"
+        },
+        {
+          "entity_ref": {
+            "id": "e1",
+            "revision": 1
+          },
+          "class_iri": "urn:example:T",
+          "grounding_kind": "mention",
+          "root_origin": null,
+          "proposal": {
+            "local_id": "e1",
+            "class_iri": "urn:example:T",
+            "representation": "mention",
+            "mentions": [
+              {
+                "evidence_id": "ev-1",
+                "text": "对象甲",
+                "context_text": null
+              }
+            ],
+            "record_components": [],
+            "identifier_claims": []
+          },
+          "source_refs": [
+            {
+              "document_hash": "6a9a1ac57da367b51666bf965b3af5a7b08c90ae859ae9d45a51d82306337db3",
+              "parser_version": "synthetic-ir-v1",
+              "structure_hash": "083a179a3abf13b198e0cef466a8d4d2ae253de48f98bbd102c029d2b46fee91",
+              "evidence_id": "ev-1",
+              "section_node_id": "section-1",
+              "block_id": "block-ev-1",
+              "paragraph_index": 0,
+              "fragment_index": null,
+              "table_path": null,
+              "row_index": null,
+              "column_index": null,
+              "span_start": 0,
+              "span_end": 33,
+              "physical_page_number": null
+            }
+          ],
+          "dependency_refs": [],
+          "content_hash": "69b8a278a3f5ad0527c95043b006a024f1ed261225d5de148669a4ffd49af830"
+        },
+        {
+          "entity_ref": {
+            "id": "e2",
+            "revision": 1
+          },
+          "class_iri": "urn:example:T",
+          "grounding_kind": "mention",
+          "root_origin": null,
+          "proposal": {
+            "local_id": "e2",
+            "class_iri": "urn:example:T",
+            "representation": "mention",
+            "mentions": [
+              {
+                "evidence_id": "ev-1",
+                "text": "对象乙",
+                "context_text": null
+              }
+            ],
+            "record_components": [],
+            "identifier_claims": []
+          },
+          "source_refs": [
+            {
+              "document_hash": "6a9a1ac57da367b51666bf965b3af5a7b08c90ae859ae9d45a51d82306337db3",
+              "parser_version": "synthetic-ir-v1",
+              "structure_hash": "083a179a3abf13b198e0cef466a8d4d2ae253de48f98bbd102c029d2b46fee91",
+              "evidence_id": "ev-1",
+              "section_node_id": "section-1",
+              "block_id": "block-ev-1",
+              "paragraph_index": 0,
+              "fragment_index": null,
+              "table_path": null,
+              "row_index": null,
+              "column_index": null,
+              "span_start": 0,
+              "span_end": 33,
+              "physical_page_number": null
+            }
+          ],
+          "dependency_refs": [],
+          "content_hash": "57255a2751cada53b5809b5e8e2b9b76223d32a49c97958caace64b83c2344ff"
+        }
+      ],
+      "context_records_version": "ir-context-records-v1",
+      "repair_enabled": true
+    },
+    "assembled_context_payload": {
+      "target": {
+        "target_id": "synthetic-base-target",
+        "claim_ref": {
+          "id": "s",
+          "revision": 1
+        },
+        "task_id": "task-1",
+        "check_kind": "predicate_entailment",
+        "document_context": {
+          "document_hash": "6a9a1ac57da367b51666bf965b3af5a7b08c90ae859ae9d45a51d82306337db3",
+          "document_class_iri": "urn:example:SourceType",
+          "root_ref": {
+            "id": "s",
+            "revision": 1
+          }
+        },
+        "subject_ref": {
+          "entity_id": "s",
+          "revision": 1,
+          "class_iri": "urn:example:SourceType",
+          "referent_id": null,
+          "is_document_root": true
+        },
+        "predicate_spec_ref": null,
+        "predicate_iri": "urn:example:relatesTo",
+        "object_ref": null,
+        "literal_hash": null,
+        "assertion_polarity": "affirmed",
+        "applicability": {},
+        "ontology_hash": "094d279bf528b7ead9dc9d6f707f3eb31c144306af391134f53f9f534e06e4a9",
+        "source_scope_hash": "a8f6784da638ef2ae6a765ab47dbd235984c8854f93659283ed37a239dd55bda",
+        "context_hash": "5abc5a7908960c8a923409de3a74bb04a2b617c85e1798d65bc982ad43566616"
+      },
+      "record_id": "record-1",
+      "fragments": [
+        {
+          "anchor": {
+            "document_hash": "6a9a1ac57da367b51666bf965b3af5a7b08c90ae859ae9d45a51d82306337db3",
+            "parser_version": "synthetic-ir-v1",
+            "structure_hash": "083a179a3abf13b198e0cef466a8d4d2ae253de48f98bbd102c029d2b46fee91",
+            "evidence_id": "ev-1",
+            "section_node_id": "section-1",
+            "block_id": "block-ev-1",
+            "paragraph_index": 0,
+            "fragment_index": null,
+            "table_path": null,
+            "row_index": null,
+            "column_index": null,
+            "span_start": 0,
+            "span_end": 33,
+            "physical_page_number": null
+          },
+          "text": "主体S在条件C下关联类型T的对象甲或类型T的对象乙，二者恰选其一。",
+          "purpose": "target",
+          "fact_eligible": true
+        },
+        {
+          "anchor": {
+            "document_hash": "6a9a1ac57da367b51666bf965b3af5a7b08c90ae859ae9d45a51d82306337db3",
+            "parser_version": "synthetic-ir-v1",
+            "structure_hash": "083a179a3abf13b198e0cef466a8d4d2ae253de48f98bbd102c029d2b46fee91",
+            "evidence_id": "ev-2",
+            "section_node_id": "section-1",
+            "block_id": "block-ev-2",
+            "paragraph_index": 1,
+            "fragment_index": null,
+            "table_path": null,
+            "row_index": null,
+            "column_index": null,
+            "span_start": 0,
+            "span_end": 23,
+            "physical_page_number": null
+          },
+          "text": "补充原文：主体S只在条件C满足时适用上述关联。",
+          "purpose": "required_context",
+          "fact_eligible": false
+        }
+      ],
+      "endpoint_evidence": [],
+      "proof_dependencies": [],
+      "competing_subject_refs": [],
+      "subject_evidence_refs": [
+        {
+          "document_hash": "6a9a1ac57da367b51666bf965b3af5a7b08c90ae859ae9d45a51d82306337db3",
+          "parser_version": "synthetic-ir-v1",
+          "structure_hash": "083a179a3abf13b198e0cef466a8d4d2ae253de48f98bbd102c029d2b46fee91",
+          "evidence_id": "ev-1",
+          "section_node_id": "section-1",
+          "block_id": "block-ev-1",
+          "paragraph_index": 0,
+          "fragment_index": null,
+          "table_path": null,
+          "row_index": null,
+          "column_index": null,
+          "span_start": 0,
+          "span_end": 3,
+          "physical_page_number": null
+        }
+      ],
+      "owner_field_refs": [
+        {
+          "document_hash": "6a9a1ac57da367b51666bf965b3af5a7b08c90ae859ae9d45a51d82306337db3",
+          "parser_version": "synthetic-ir-v1",
+          "structure_hash": "083a179a3abf13b198e0cef466a8d4d2ae253de48f98bbd102c029d2b46fee91",
+          "evidence_id": "ev-1",
+          "section_node_id": "section-1",
+          "block_id": "block-ev-1",
+          "paragraph_index": 0,
+          "fragment_index": null,
+          "table_path": null,
+          "row_index": null,
+          "column_index": null,
+          "span_start": 0,
+          "span_end": 3,
+          "physical_page_number": null
+        }
+      ],
+      "required_context_refs": [
+        {
+          "document_hash": "6a9a1ac57da367b51666bf965b3af5a7b08c90ae859ae9d45a51d82306337db3",
+          "parser_version": "synthetic-ir-v1",
+          "structure_hash": "083a179a3abf13b198e0cef466a8d4d2ae253de48f98bbd102c029d2b46fee91",
+          "evidence_id": "ev-2",
+          "section_node_id": "section-1",
+          "block_id": "block-ev-2",
+          "paragraph_index": 1,
+          "fragment_index": null,
+          "table_path": null,
+          "row_index": null,
+          "column_index": null,
+          "span_start": 0,
+          "span_end": 23,
+          "physical_page_number": null
+        }
+      ],
+      "counterevidence_refs": [],
+      "omitted_refs": [],
+      "subject_label": "主体S",
+      "context_records_version": "ir-context-records-v1",
+      "field_bindings": [],
+      "task_id": "task-1",
+      "context_policy_hash": "23916c162d94d0c3ea684d663a8cd2938f485e14765216e858416601157edcb8",
+      "record_ids": [
+        "record-1",
+        "record-2"
+      ],
+      "evidence_revision": 2
+    },
+    "confirmed_result_ref": "result-retrieve-1",
+    "inspect_call": {
+      "call_id": "call_inspect_resumed",
+      "name": "inspect_evidence",
+      "arguments_json": "{\"evidence_ids\":[\"ev-2\"]}"
+    },
+    "inspect_result": {
+      "status": "ok",
+      "data": {
+        "units": [
+          {
+            "evidence_id": "ev-2",
+            "record_id": "record-2",
+            "text": "补充原文：主体S只在条件C满足时适用上述关联。",
+            "span_start": 0,
+            "span_end": 23,
+            "role": "required_context",
+            "fact_eligible": false,
+            "table": null
+          }
+        ],
+        "omitted_ids": [],
+        "coverage_complete": true
+      },
+      "evidence_refs": [
+        "ev-2"
+      ],
+      "issues": []
+    },
+    "current_protocol": {
+      "lineage_id": "lineage-1",
+      "scope_id": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "evidence_revision": 2,
+      "evidence_hash": "dddbae849930ea571177e5ff4e363e7e646d1f8df7d64c0d445f4008d02f0a06",
+      "context_hash": "f686ab25165470d117c2a4d3fd3a793cea5c9a3531f2b8a77336eb6d22cc7572",
+      "completed_tool_results": [
+        "result-retrieve-1"
+      ],
+      "tool_calls_used": 2,
+      "context_authorization": {
+        "task_id": "task-1",
+        "ir_identity": {
+          "document_hash": "6a9a1ac57da367b51666bf965b3af5a7b08c90ae859ae9d45a51d82306337db3",
+          "parser_version": "synthetic-ir-v1",
+          "structure_hash": "083a179a3abf13b198e0cef466a8d4d2ae253de48f98bbd102c029d2b46fee91"
+        },
+        "context_policy_hash": "23916c162d94d0c3ea684d663a8cd2938f485e14765216e858416601157edcb8",
+        "record_ids": [
+          "record-1",
+          "record-2"
+        ],
+        "fragments": [
+          {
+            "record_id": "record-1",
+            "evidence_id": "ev-1",
+            "span_start": 0,
+            "span_end": 33,
+            "role": "target",
+            "fact_eligible": true
+          },
+          {
+            "record_id": "record-2",
+            "evidence_id": "ev-2",
+            "span_start": 0,
+            "span_end": 23,
+            "role": "required_context",
+            "fact_eligible": false
+          }
+        ],
+        "bindings": {
+          "endpoint_evidence": [],
+          "proof_dependencies": [],
+          "competing_subject_refs": [],
+          "subject_evidence_refs": [
+            {
+              "document_hash": "6a9a1ac57da367b51666bf965b3af5a7b08c90ae859ae9d45a51d82306337db3",
+              "parser_version": "synthetic-ir-v1",
+              "structure_hash": "083a179a3abf13b198e0cef466a8d4d2ae253de48f98bbd102c029d2b46fee91",
+              "evidence_id": "ev-1",
+              "section_node_id": "section-1",
+              "block_id": "block-ev-1",
+              "paragraph_index": 0,
+              "fragment_index": null,
+              "table_path": null,
+              "row_index": null,
+              "column_index": null,
+              "span_start": 0,
+              "span_end": 3,
+              "physical_page_number": null
+            }
+          ],
+          "owner_field_refs": [
+            {
+              "document_hash": "6a9a1ac57da367b51666bf965b3af5a7b08c90ae859ae9d45a51d82306337db3",
+              "parser_version": "synthetic-ir-v1",
+              "structure_hash": "083a179a3abf13b198e0cef466a8d4d2ae253de48f98bbd102c029d2b46fee91",
+              "evidence_id": "ev-1",
+              "section_node_id": "section-1",
+              "block_id": "block-ev-1",
+              "paragraph_index": 0,
+              "fragment_index": null,
+              "table_path": null,
+              "row_index": null,
+              "column_index": null,
+              "span_start": 0,
+              "span_end": 3,
+              "physical_page_number": null
+            }
+          ],
+          "required_context_refs": [
+            {
+              "document_hash": "6a9a1ac57da367b51666bf965b3af5a7b08c90ae859ae9d45a51d82306337db3",
+              "parser_version": "synthetic-ir-v1",
+              "structure_hash": "083a179a3abf13b198e0cef466a8d4d2ae253de48f98bbd102c029d2b46fee91",
+              "evidence_id": "ev-2",
+              "section_node_id": "section-1",
+              "block_id": "block-ev-2",
+              "paragraph_index": 1,
+              "fragment_index": null,
+              "table_path": null,
+              "row_index": null,
+              "column_index": null,
+              "span_start": 0,
+              "span_end": 23,
+              "physical_page_number": null
+            }
+          ],
+          "counterevidence_refs": [],
+          "omitted_refs": []
+        }
+      }
+    },
+    "expected_restored_context": {
+      "task_id": "task-1",
+      "fragments": [
+        {
+          "record_id": "record-1",
+          "evidence_id": "ev-1",
+          "span_start": 0,
+          "span_end": 33,
+          "role": "target",
+          "fact_eligible": true,
+          "text": "主体S在条件C下关联类型T的对象甲或类型T的对象乙，二者恰选其一。"
+        },
+        {
+          "record_id": "record-2",
+          "evidence_id": "ev-2",
+          "span_start": 0,
+          "span_end": 23,
+          "role": "required_context",
+          "fact_eligible": false,
+          "text": "补充原文：主体S只在条件C满足时适用上述关联。"
+        }
+      ],
+      "bindings": {
+        "endpoint_evidence": [],
+        "proof_dependencies": [],
+        "competing_subject_refs": [],
+        "subject_evidence_refs": [
+          {
+            "document_hash": "6a9a1ac57da367b51666bf965b3af5a7b08c90ae859ae9d45a51d82306337db3",
+            "parser_version": "synthetic-ir-v1",
+            "structure_hash": "083a179a3abf13b198e0cef466a8d4d2ae253de48f98bbd102c029d2b46fee91",
+            "evidence_id": "ev-1",
+            "section_node_id": "section-1",
+            "block_id": "block-ev-1",
+            "paragraph_index": 0,
+            "fragment_index": null,
+            "table_path": null,
+            "row_index": null,
+            "column_index": null,
+            "span_start": 0,
+            "span_end": 3,
+            "physical_page_number": null
+          }
+        ],
+        "owner_field_refs": [
+          {
+            "document_hash": "6a9a1ac57da367b51666bf965b3af5a7b08c90ae859ae9d45a51d82306337db3",
+            "parser_version": "synthetic-ir-v1",
+            "structure_hash": "083a179a3abf13b198e0cef466a8d4d2ae253de48f98bbd102c029d2b46fee91",
+            "evidence_id": "ev-1",
+            "section_node_id": "section-1",
+            "block_id": "block-ev-1",
+            "paragraph_index": 0,
+            "fragment_index": null,
+            "table_path": null,
+            "row_index": null,
+            "column_index": null,
+            "span_start": 0,
+            "span_end": 3,
+            "physical_page_number": null
+          }
+        ],
+        "required_context_refs": [
+          {
+            "document_hash": "6a9a1ac57da367b51666bf965b3af5a7b08c90ae859ae9d45a51d82306337db3",
+            "parser_version": "synthetic-ir-v1",
+            "structure_hash": "083a179a3abf13b198e0cef466a8d4d2ae253de48f98bbd102c029d2b46fee91",
+            "evidence_id": "ev-2",
+            "section_node_id": "section-1",
+            "block_id": "block-ev-2",
+            "paragraph_index": 1,
+            "fragment_index": null,
+            "table_path": null,
+            "row_index": null,
+            "column_index": null,
+            "span_start": 0,
+            "span_end": 23,
+            "physical_page_number": null
+          }
+        ],
+        "counterevidence_refs": [],
+        "omitted_refs": []
+      },
+      "evidence_revision": 2,
+      "evidence_hash": "dddbae849930ea571177e5ff4e363e7e646d1f8df7d64c0d445f4008d02f0a06",
+      "context_hash": "f686ab25165470d117c2a4d3fd3a793cea5c9a3531f2b8a77336eb6d22cc7572",
+      "target": {
+        "target_id": "86452a2613a10c7456bbf908a46d0ef553c86a873148f1f539be3e0baf630c5a",
+        "claim_ref": {
+          "id": "s",
+          "revision": 1
+        },
+        "task_id": "task-1",
+        "check_kind": "predicate_entailment",
+        "document_context": {
+          "document_hash": "6a9a1ac57da367b51666bf965b3af5a7b08c90ae859ae9d45a51d82306337db3",
+          "document_class_iri": "urn:example:SourceType",
+          "root_ref": {
+            "id": "s",
+            "revision": 1
+          }
+        },
+        "subject_ref": {
+          "entity_id": "s",
+          "revision": 1,
+          "class_iri": "urn:example:SourceType",
+          "referent_id": null,
+          "is_document_root": true
+        },
+        "predicate_spec_ref": null,
+        "predicate_iri": "urn:example:relatesTo",
+        "object_ref": null,
+        "literal_hash": null,
+        "assertion_polarity": "affirmed",
+        "applicability": {},
+        "ontology_hash": "094d279bf528b7ead9dc9d6f707f3eb31c144306af391134f53f9f534e06e4a9",
+        "source_scope_hash": "26efef250e11a93d98c0e98f834c962ec5d1890a3210a69f03f07d5cc3837cdb",
+        "context_hash": "f686ab25165470d117c2a4d3fd3a793cea5c9a3531f2b8a77336eb6d22cc7572"
+      }
+    }
+  },
+  "tool_visibility": {
+    "registered_tool_names": [
+      "get_schema_card",
+      "inspect_evidence",
+      "resolve_source_anchor",
+      "propose_mentions",
+      "check_claim_binding",
+      "query_instances",
+      "find_referent_candidates",
+      "retrieve_evidence",
+      "propose_repair",
+      "validate_metric",
+      "validate_graph"
+    ],
+    "controller_only_tool_names": [
+      "validate_metric"
+    ],
+    "stage_allowed_tool_names": {
+      "discovery": [
+        "get_schema_card",
+        "inspect_evidence",
+        "resolve_source_anchor",
+        "propose_mentions",
+        "query_instances",
+        "retrieve_evidence",
+        "propose_repair",
+        "find_referent_candidates"
+      ],
+      "verification": [
+        "get_schema_card",
+        "inspect_evidence",
+        "resolve_source_anchor",
+        "check_claim_binding",
+        "retrieve_evidence",
+        "propose_repair",
+        "validate_graph",
+        "find_referent_candidates"
+      ],
+      "finalize": []
+    },
+    "conditional_tool_names": [
+      "propose_repair",
+      "validate_graph",
+      "find_referent_candidates"
+    ],
+    "note": "stage_allowed_tool_names 是静态阶段上限；propose_repair 还要求控制器已选择 recovery 模式且冻结目标存在对应 issue，普通 discovery/verification 不直接开放。实际 TurnPlan 继续按前置条件与预算收紧。 validate_graph仅在存在冻结关系时开放；属性分支继续controller-only。 find_referent_candidates仅在reference_resolution新策略开启时开放。"
+  }
+}

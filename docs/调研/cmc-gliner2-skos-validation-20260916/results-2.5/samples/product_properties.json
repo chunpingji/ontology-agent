@@ -1,0 +1,1724 @@
+{
+  "scope_id": "product_properties",
+  "source": {
+    "u0": {
+      "evidence_id": "7e40b958711ea6960b4883abb79b631567b8cc3a7354ad43fd8b0dcdc818037d",
+      "kind": "paragraph",
+      "text": "项目名称：HRS-1597",
+      "section_node_id": "section:29",
+      "block_id": "paragraph:33:0",
+      "paragraph_index": 33,
+      "fragment_index": 0,
+      "table_path": null,
+      "row_index": null,
+      "column_index": null,
+      "physical_page_number": 3,
+      "source_cell_id": null,
+      "paragraph_offset": 0,
+      "ref": "u0",
+      "row_span": 1,
+      "column_span": 1,
+      "logical_rows": [],
+      "column_indices": [],
+      "grid_rows": [],
+      "grid_columns": [],
+      "column_header_refs": [],
+      "is_header": false,
+      "parser_header_candidate": false,
+      "header_status": "not_a_table",
+      "cell_structure_valid": false
+    },
+    "u1": {
+      "evidence_id": "c56a1c0abab309a9f15c8db4f6f0fa054d05e7024e9068cfef4bd11a50ce090a",
+      "kind": "paragraph",
+      "text": "性状：类白色到白色粉末",
+      "section_node_id": "section:29",
+      "block_id": "paragraph:38:0",
+      "paragraph_index": 38,
+      "fragment_index": 0,
+      "table_path": null,
+      "row_index": null,
+      "column_index": null,
+      "physical_page_number": 3,
+      "source_cell_id": null,
+      "paragraph_offset": 0,
+      "ref": "u1",
+      "row_span": 1,
+      "column_span": 1,
+      "logical_rows": [],
+      "column_indices": [],
+      "grid_rows": [],
+      "grid_columns": [],
+      "column_header_refs": [],
+      "is_header": false,
+      "parser_header_candidate": false,
+      "header_status": "not_a_table",
+      "cell_structure_valid": false
+    },
+    "u2": {
+      "evidence_id": "d2a9e68c8d5c11e4f2e430014cc7960c2bc2c90ac4586d64449b4c7b11a0a0fb",
+      "kind": "paragraph",
+      "text": "溶解性： DCM易溶，H2O、Heptane难溶",
+      "section_node_id": "section:29",
+      "block_id": "paragraph:39:0",
+      "paragraph_index": 39,
+      "fragment_index": 0,
+      "table_path": null,
+      "row_index": null,
+      "column_index": null,
+      "physical_page_number": 3,
+      "source_cell_id": null,
+      "paragraph_offset": 0,
+      "ref": "u2",
+      "row_span": 1,
+      "column_span": 1,
+      "logical_rows": [],
+      "column_indices": [],
+      "grid_rows": [],
+      "grid_columns": [],
+      "column_header_refs": [],
+      "is_header": false,
+      "parser_header_candidate": false,
+      "header_status": "not_a_table",
+      "cell_structure_valid": false
+    },
+    "u3": {
+      "evidence_id": "43f9fdc379f20eff81318db18d2aa7ae509b407f3a6bb03fde019ea4ec5f5e57",
+      "kind": "paragraph",
+      "text": "制剂剂型：口服片剂 ",
+      "section_node_id": "section:29",
+      "block_id": "paragraph:42:0",
+      "paragraph_index": 42,
+      "fragment_index": 0,
+      "table_path": null,
+      "row_index": null,
+      "column_index": null,
+      "physical_page_number": 3,
+      "source_cell_id": null,
+      "paragraph_offset": 0,
+      "ref": "u3",
+      "row_span": 1,
+      "column_span": 1,
+      "logical_rows": [],
+      "column_indices": [],
+      "grid_rows": [],
+      "grid_columns": [],
+      "column_header_refs": [],
+      "is_header": false,
+      "parser_header_candidate": false,
+      "header_status": "not_a_table",
+      "cell_structure_valid": false
+    },
+    "u4": {
+      "evidence_id": "f6d5c3353e371f53884516a227d0dc11fc5f2b947f8e2ec9608cd32894549d47",
+      "kind": "paragraph",
+      "text": "是否是肿瘤药物：否",
+      "section_node_id": "section:29",
+      "block_id": "paragraph:43:0",
+      "paragraph_index": 43,
+      "fragment_index": 0,
+      "table_path": null,
+      "row_index": null,
+      "column_index": null,
+      "physical_page_number": 3,
+      "source_cell_id": null,
+      "paragraph_offset": 0,
+      "ref": "u4",
+      "row_span": 1,
+      "column_span": 1,
+      "logical_rows": [],
+      "column_indices": [],
+      "grid_rows": [],
+      "grid_columns": [],
+      "column_header_refs": [],
+      "is_header": false,
+      "parser_header_candidate": false,
+      "header_status": "not_a_table",
+      "cell_structure_valid": false
+    },
+    "u5": {
+      "evidence_id": "9d8516f9fbaa216fa3475cedc170ac1cb95489220b6ea84bfe8d8acad22a0bdf",
+      "kind": "paragraph",
+      "text": "是否细胞毒药物：否",
+      "section_node_id": "section:29",
+      "block_id": "paragraph:44:0",
+      "paragraph_index": 44,
+      "fragment_index": 0,
+      "table_path": null,
+      "row_index": null,
+      "column_index": null,
+      "physical_page_number": 3,
+      "source_cell_id": null,
+      "paragraph_offset": 0,
+      "ref": "u5",
+      "row_span": 1,
+      "column_span": 1,
+      "logical_rows": [],
+      "column_indices": [],
+      "grid_rows": [],
+      "grid_columns": [],
+      "column_header_refs": [],
+      "is_header": false,
+      "parser_header_candidate": false,
+      "header_status": "not_a_table",
+      "cell_structure_valid": false
+    }
+  },
+  "plan": {
+    "get_schema_card": [
+      {
+        "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/DrugProduct"
+      },
+      {
+        "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/ActivePharmaceuticalIngredient"
+      }
+    ],
+    "inspect_evidence": [
+      {
+        "ref": "u0"
+      },
+      {
+        "ref": "u1"
+      },
+      {
+        "ref": "u2"
+      },
+      {
+        "ref": "u3"
+      },
+      {
+        "ref": "u4"
+      },
+      {
+        "ref": "u5"
+      }
+    ],
+    "propose_mentions": [
+      {
+        "group": "entities"
+      },
+      {
+        "group": "values"
+      },
+      {
+        "group": "units"
+      }
+    ]
+  },
+  "candidate_proposal": {
+    "subjects": {
+      "document": {
+        "attributes": {},
+        "relations": {
+          "describes": [
+            {
+              "target_id": "s1",
+              "evidence": {
+                "ref": "u0",
+                "quote": "项目名称：HRS-1597",
+                "span_id": "source:u0"
+              },
+              "condition": {
+                "ref": "",
+                "quote": "",
+                "span_id": ""
+              },
+              "polarity": "affirmed"
+            }
+          ]
+        },
+        "anchor": {
+          "ref": "",
+          "quote": "",
+          "span_id": ""
+        }
+      },
+      "s1": {
+        "attributes": {
+          "registrationCategory": [],
+          "regulatoryStatus": [],
+          "targetIndication": [],
+          "appearance": [
+            {
+              "raw": "类白色到白色粉末",
+              "source": {
+                "ref": "u1",
+                "quote": "性状：类白色到白色粉末",
+                "span_id": "source:u1"
+              },
+              "field": {
+                "ref": "u1",
+                "quote": "性状",
+                "span_id": "source:u1"
+              },
+              "unit": {
+                "ref": "",
+                "quote": "",
+                "span_id": ""
+              },
+              "condition": {
+                "ref": "",
+                "quote": "",
+                "span_id": ""
+              }
+            }
+          ],
+          "casNumber": [],
+          "chemicalNameEn": [],
+          "chemicalNameZh": [],
+          "dosageForm": [
+            {
+              "raw": "口服片剂",
+              "source": {
+                "ref": "u3",
+                "quote": "制剂剂型：口服片剂 ",
+                "span_id": "source:u3"
+              },
+              "field": {
+                "ref": "u3",
+                "quote": "制剂剂型",
+                "span_id": "source:u3"
+              },
+              "unit": {
+                "ref": "",
+                "quote": "",
+                "span_id": ""
+              },
+              "condition": {
+                "ref": "",
+                "quote": "",
+                "span_id": ""
+              }
+            }
+          ],
+          "drugSpecification": [],
+          "hasPrionRisk": [],
+          "inactivationMethod": [],
+          "isBetaLactam": [],
+          "isCytotoxic": [
+            {
+              "raw": "否",
+              "source": {
+                "ref": "u5",
+                "quote": "是否细胞毒药物：否",
+                "span_id": "source:u5"
+              },
+              "field": {
+                "ref": "u5",
+                "quote": "是否细胞毒药物",
+                "span_id": "source:u5"
+              },
+              "unit": {
+                "ref": "",
+                "quote": "",
+                "span_id": ""
+              },
+              "condition": {
+                "ref": "",
+                "quote": "",
+                "span_id": ""
+              }
+            }
+          ],
+          "isHighlyActive": [],
+          "isHighlySensitizing": [],
+          "isHormonal": [],
+          "isOncologyDrug": [
+            {
+              "raw": "否",
+              "source": {
+                "ref": "u4",
+                "quote": "是否是肿瘤药物：否",
+                "span_id": "source:u4"
+              },
+              "field": {
+                "ref": "u4",
+                "quote": "是否是肿瘤药物",
+                "span_id": "source:u4"
+              },
+              "unit": {
+                "ref": "",
+                "quote": "",
+                "span_id": ""
+              },
+              "condition": {
+                "ref": "",
+                "quote": "",
+                "span_id": ""
+              }
+            }
+          ],
+          "isPenicillinType": [],
+          "maximumDailyDose_mg": [],
+          "minimumTherapeuticDose_mg": [],
+          "molecularFormula": [],
+          "molecularWeight": [],
+          "productIdentifier": [],
+          "projectCode": [],
+          "projectName": [
+            {
+              "raw": "HRS-1597",
+              "source": {
+                "ref": "u0",
+                "quote": "项目名称：HRS-1597",
+                "span_id": "source:u0"
+              },
+              "field": {
+                "ref": "u0",
+                "quote": "项目名称",
+                "span_id": "source:u0"
+              },
+              "unit": {
+                "ref": "",
+                "quote": "",
+                "span_id": ""
+              },
+              "condition": {
+                "ref": "",
+                "quote": "",
+                "span_id": ""
+              }
+            }
+          ],
+          "routeOfAdministration": [],
+          "solubility": [
+            {
+              "raw": "DCM易溶，H2O、Heptane难溶",
+              "source": {
+                "ref": "u2",
+                "quote": "溶解性： DCM易溶，H2O、Heptane难溶",
+                "span_id": "source:u2"
+              },
+              "field": {
+                "ref": "u2",
+                "quote": "溶解性",
+                "span_id": "source:u2"
+              },
+              "unit": {
+                "ref": "",
+                "quote": "",
+                "span_id": ""
+              },
+              "condition": {
+                "ref": "",
+                "quote": "",
+                "span_id": ""
+              }
+            }
+          ]
+        },
+        "relations": {
+          "hasActiveIngredient": []
+        },
+        "anchor": {
+          "ref": "u0",
+          "quote": "HRS-1597",
+          "span_id": "source:u0"
+        }
+      },
+      "s2": {
+        "attributes": {
+          "oel_ug_per_m3": [],
+          "pde_mg_per_day": [],
+          "productIdentifier": []
+        },
+        "relations": {},
+        "anchor": {
+          "ref": "",
+          "quote": "",
+          "span_id": ""
+        }
+      }
+    },
+    "observations": [
+      {
+        "value": {
+          "ref": "",
+          "quote": "",
+          "span_id": ""
+        },
+        "field": {
+          "ref": "",
+          "quote": "",
+          "span_id": ""
+        },
+        "legend": {
+          "ref": "",
+          "quote": "",
+          "span_id": ""
+        },
+        "condition": {
+          "ref": "",
+          "quote": "",
+          "span_id": ""
+        },
+        "state": "unknown",
+        "reason": "未提供注册分类、申报状态、适应症、CAS号、化学名、规格、朊病毒风险、灭活方法、β-内酰胺、高活性、高致敏、激素、日剂量、分子式、分子量、给药途径、API标识等信息"
+      },
+      {
+        "value": {
+          "ref": "",
+          "quote": "",
+          "span_id": ""
+        },
+        "field": {
+          "ref": "",
+          "quote": "",
+          "span_id": ""
+        },
+        "legend": {
+          "ref": "",
+          "quote": "",
+          "span_id": ""
+        },
+        "condition": {
+          "ref": "",
+          "quote": "",
+          "span_id": ""
+        },
+        "state": "unknown",
+        "reason": "未提供API的职业暴露限值、PDE、唯一标识等信息"
+      }
+    ]
+  },
+  "semantic_verification": {
+    "types": {
+      "s1": {
+        "type": "supported",
+        "support": [
+          {
+            "ref": "u0",
+            "quote": "项目名称：HRS-1597"
+          },
+          {
+            "ref": "u3",
+            "quote": "制剂剂型：口服片剂"
+          }
+        ],
+        "counterevidence_support": [],
+        "reason": "原文u0明确提及项目名称HRS-1597，u3明确提及制剂剂型为口服片剂，符合药物产品（DrugProduct）的特征描述。"
+      }
+    },
+    "claims": {
+      "c1": {
+        "role": "supported",
+        "predicate": "supported",
+        "binding": "supported",
+        "applicability": "supported",
+        "counterevidence": "supported",
+        "unit": "supported",
+        "support": [
+          {
+            "ref": "u0",
+            "quote": "项目名称：HRS-1597"
+          }
+        ],
+        "counterevidence_support": [],
+        "reason": "原文u0提供了项目名称，CMC报告通常描述特定项目，主体s1由u0锚定，关系成立。"
+      },
+      "c2": {
+        "role": "supported",
+        "predicate": "supported",
+        "binding": "supported",
+        "applicability": "supported",
+        "counterevidence": "supported",
+        "unit": "supported",
+        "support": [
+          {
+            "ref": "u1",
+            "quote": "性状：类白色到白色粉末"
+          }
+        ],
+        "counterevidence_support": [],
+        "reason": "原文u1明确陈述性状为'类白色到白色粉末'，与字段appearance匹配。"
+      },
+      "c3": {
+        "role": "supported",
+        "predicate": "supported",
+        "binding": "supported",
+        "applicability": "supported",
+        "counterevidence": "supported",
+        "unit": "supported",
+        "support": [
+          {
+            "ref": "u3",
+            "quote": "制剂剂型：口服片剂"
+          }
+        ],
+        "counterevidence_support": [],
+        "reason": "原文u3明确陈述制剂剂型为'口服片剂'，与字段dosageForm匹配。"
+      },
+      "c4": {
+        "role": "supported",
+        "predicate": "supported",
+        "binding": "supported",
+        "applicability": "supported",
+        "counterevidence": "supported",
+        "unit": "supported",
+        "support": [
+          {
+            "ref": "u5",
+            "quote": "是否细胞毒药物：否"
+          }
+        ],
+        "counterevidence_support": [],
+        "reason": "原文u5明确陈述'是否细胞毒药物：否'，与字段isCytotoxic匹配。"
+      },
+      "c5": {
+        "role": "supported",
+        "predicate": "supported",
+        "binding": "supported",
+        "applicability": "supported",
+        "counterevidence": "supported",
+        "unit": "supported",
+        "support": [
+          {
+            "ref": "u4",
+            "quote": "是否是肿瘤药物：否"
+          }
+        ],
+        "counterevidence_support": [],
+        "reason": "原文u4明确陈述'是否是肿瘤药物：否'，与字段isOncologyDrug匹配。"
+      },
+      "c6": {
+        "role": "supported",
+        "predicate": "supported",
+        "binding": "supported",
+        "applicability": "supported",
+        "counterevidence": "supported",
+        "unit": "supported",
+        "support": [
+          {
+            "ref": "u0",
+            "quote": "项目名称：HRS-1597"
+          }
+        ],
+        "counterevidence_support": [],
+        "reason": "原文u0明确陈述项目名称为'HRS-1597'，与字段projectName匹配。"
+      },
+      "c7": {
+        "role": "supported",
+        "predicate": "supported",
+        "binding": "supported",
+        "applicability": "supported",
+        "counterevidence": "supported",
+        "unit": "supported",
+        "support": [
+          {
+            "ref": "u2",
+            "quote": "溶解性： DCM易溶，H2O、Heptane难溶"
+          }
+        ],
+        "counterevidence_support": [],
+        "reason": "原文u2明确陈述溶解性为'DCM易溶，H2O、Heptane难溶'，与字段solubility匹配。"
+      }
+    },
+    "observations": {
+      "o1": {
+        "state": "supported",
+        "field": "supported",
+        "legend": "supported",
+        "condition": "supported",
+        "support": [
+          {
+            "ref": "u0",
+            "quote": "项目名称：HRS-1597"
+          },
+          {
+            "ref": "u1",
+            "quote": "性状：类白色到白色粉末"
+          },
+          {
+            "ref": "u2",
+            "quote": "溶解性： DCM易溶，H2O、Heptane难溶"
+          },
+          {
+            "ref": "u3",
+            "quote": "制剂剂型：口服片剂"
+          },
+          {
+            "ref": "u4",
+            "quote": "是否是肿瘤药物：否"
+          },
+          {
+            "ref": "u5",
+            "quote": "是否细胞毒药物：否"
+          }
+        ],
+        "counterevidence_support": [],
+        "reason": "原文仅提供了项目名称、性状、溶解性、剂型、是否肿瘤药物、是否细胞毒药物。未提供注册分类、申报状态、适应症、CAS号、化学名、规格、朊病毒风险、灭活方法、β-内酰胺、高活性、高致敏、激素、日剂量、分子式、分子量、给药途径等信息，故状态为unknown，字段、图例、条件均无对应原文支持，判定为supported（即对'未知'状态的描述是准确的）。"
+      },
+      "o2": {
+        "state": "supported",
+        "field": "supported",
+        "legend": "supported",
+        "condition": "supported",
+        "support": [
+          {
+            "ref": "u0",
+            "quote": "项目名称：HRS-1597"
+          },
+          {
+            "ref": "u1",
+            "quote": "性状：类白色到白色粉末"
+          },
+          {
+            "ref": "u2",
+            "quote": "溶解性： DCM易溶，H2O、Heptane难溶"
+          },
+          {
+            "ref": "u3",
+            "quote": "制剂剂型：口服片剂"
+          },
+          {
+            "ref": "u4",
+            "quote": "是否是肿瘤药物：否"
+          },
+          {
+            "ref": "u5",
+            "quote": "是否细胞毒药物：否"
+          }
+        ],
+        "counterevidence_support": [],
+        "reason": "原文未提供API的职业暴露限值、PDE、唯一标识等信息，故状态为unknown，字段、图例、条件均无对应原文支持，判定为supported（即对'未知'状态的描述是准确的）。"
+      }
+    }
+  },
+  "final_result": {
+    "arm": "C",
+    "scope_id": "product_properties",
+    "status": "complete",
+    "calls": [
+      {
+        "http_call": 1,
+        "usage": {
+          "completion_tokens": 1884,
+          "prompt_tokens": 43152,
+          "total_tokens": 45036,
+          "completion_tokens_details": null,
+          "prompt_tokens_details": {
+            "audio_tokens": null,
+            "cached_tokens": 493
+          }
+        },
+        "finish_reason": "stop",
+        "seconds": 236.015,
+        "stage": "candidates"
+      },
+      {
+        "http_call": 1,
+        "usage": {
+          "completion_tokens": 1803,
+          "prompt_tokens": 7669,
+          "total_tokens": 9472,
+          "completion_tokens_details": null,
+          "prompt_tokens_details": {
+            "audio_tokens": null,
+            "cached_tokens": 298
+          }
+        },
+        "finish_reason": "stop",
+        "seconds": 59.348,
+        "stage": "verification"
+      }
+    ],
+    "accepted": [
+      {
+        "kind": "relation",
+        "subject_id": "document",
+        "subject_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport",
+        "subject_text": "",
+        "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/describes",
+        "evidence": {
+          "ref": "u0",
+          "quote": "项目名称：HRS-1597",
+          "start": 0,
+          "end": 13
+        },
+        "condition": {
+          "ref": "",
+          "quote": ""
+        },
+        "object_id": "s1",
+        "object_text": "HRS-1597",
+        "object_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/DrugProduct",
+        "polarity": "affirmed",
+        "candidate_id": "c1",
+        "semantic_status": "supported",
+        "validation_status": "passed"
+      },
+      {
+        "kind": "property",
+        "subject_id": "s1",
+        "subject_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/DrugProduct",
+        "subject_text": "HRS-1597",
+        "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug/appearance",
+        "evidence": {
+          "ref": "u1",
+          "quote": "性状：类白色到白色粉末",
+          "start": 0,
+          "end": 11
+        },
+        "condition": {
+          "ref": "",
+          "quote": ""
+        },
+        "raw_value": "类白色到白色粉末",
+        "field": {
+          "ref": "u1",
+          "quote": "性状",
+          "start": 0,
+          "end": 2
+        },
+        "unit": {
+          "ref": "",
+          "quote": ""
+        },
+        "value_span": {
+          "ref": "u1",
+          "quote": "类白色到白色粉末",
+          "start": 3,
+          "end": 11
+        },
+        "value": "类白色到白色粉末",
+        "candidate_id": "c2",
+        "semantic_status": "supported",
+        "validation_status": "passed"
+      },
+      {
+        "kind": "property",
+        "subject_id": "s1",
+        "subject_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/DrugProduct",
+        "subject_text": "HRS-1597",
+        "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug/dosageForm",
+        "evidence": {
+          "ref": "u3",
+          "quote": "制剂剂型：口服片剂 ",
+          "start": 0,
+          "end": 10
+        },
+        "condition": {
+          "ref": "",
+          "quote": ""
+        },
+        "raw_value": "口服片剂",
+        "field": {
+          "ref": "u3",
+          "quote": "制剂剂型",
+          "start": 0,
+          "end": 4
+        },
+        "unit": {
+          "ref": "",
+          "quote": ""
+        },
+        "value_span": {
+          "ref": "u3",
+          "quote": "口服片剂",
+          "start": 5,
+          "end": 9
+        },
+        "value": "口服片剂",
+        "candidate_id": "c3",
+        "semantic_status": "supported",
+        "validation_status": "passed"
+      },
+      {
+        "kind": "property",
+        "subject_id": "s1",
+        "subject_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/DrugProduct",
+        "subject_text": "HRS-1597",
+        "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug/isCytotoxic",
+        "evidence": {
+          "ref": "u5",
+          "quote": "是否细胞毒药物：否",
+          "start": 0,
+          "end": 9
+        },
+        "condition": {
+          "ref": "",
+          "quote": ""
+        },
+        "raw_value": "否",
+        "field": {
+          "ref": "u5",
+          "quote": "是否细胞毒药物",
+          "start": 0,
+          "end": 7
+        },
+        "unit": {
+          "ref": "",
+          "quote": ""
+        },
+        "value_span": {
+          "ref": "u5",
+          "quote": "否",
+          "start": 8,
+          "end": 9
+        },
+        "value": false,
+        "candidate_id": "c4",
+        "semantic_status": "supported",
+        "validation_status": "passed"
+      },
+      {
+        "kind": "property",
+        "subject_id": "s1",
+        "subject_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/DrugProduct",
+        "subject_text": "HRS-1597",
+        "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug/isOncologyDrug",
+        "evidence": {
+          "ref": "u4",
+          "quote": "是否是肿瘤药物：否",
+          "start": 0,
+          "end": 9
+        },
+        "condition": {
+          "ref": "",
+          "quote": ""
+        },
+        "raw_value": "否",
+        "field": {
+          "ref": "u4",
+          "quote": "是否是肿瘤药物",
+          "start": 0,
+          "end": 7
+        },
+        "unit": {
+          "ref": "",
+          "quote": ""
+        },
+        "value_span": {
+          "ref": "u4",
+          "quote": "否",
+          "start": 8,
+          "end": 9
+        },
+        "value": false,
+        "candidate_id": "c5",
+        "semantic_status": "supported",
+        "validation_status": "passed"
+      },
+      {
+        "kind": "property",
+        "subject_id": "s1",
+        "subject_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/DrugProduct",
+        "subject_text": "HRS-1597",
+        "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug/projectName",
+        "evidence": {
+          "ref": "u0",
+          "quote": "项目名称：HRS-1597",
+          "start": 0,
+          "end": 13
+        },
+        "condition": {
+          "ref": "",
+          "quote": ""
+        },
+        "raw_value": "HRS-1597",
+        "field": {
+          "ref": "u0",
+          "quote": "项目名称",
+          "start": 0,
+          "end": 4
+        },
+        "unit": {
+          "ref": "",
+          "quote": ""
+        },
+        "value_span": {
+          "ref": "u0",
+          "quote": "HRS-1597",
+          "start": 5,
+          "end": 13
+        },
+        "value": "HRS-1597",
+        "candidate_id": "c6",
+        "semantic_status": "supported",
+        "validation_status": "passed"
+      },
+      {
+        "kind": "property",
+        "subject_id": "s1",
+        "subject_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/DrugProduct",
+        "subject_text": "HRS-1597",
+        "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug/solubility",
+        "evidence": {
+          "ref": "u2",
+          "quote": "溶解性： DCM易溶，H2O、Heptane难溶",
+          "start": 0,
+          "end": 24
+        },
+        "condition": {
+          "ref": "",
+          "quote": ""
+        },
+        "raw_value": "DCM易溶，H2O、Heptane难溶",
+        "field": {
+          "ref": "u2",
+          "quote": "溶解性",
+          "start": 0,
+          "end": 3
+        },
+        "unit": {
+          "ref": "",
+          "quote": ""
+        },
+        "value_span": {
+          "ref": "u2",
+          "quote": "DCM易溶，H2O、Heptane难溶",
+          "start": 5,
+          "end": 24
+        },
+        "value": "DCM易溶，H2O、Heptane难溶",
+        "candidate_id": "c7",
+        "semantic_status": "supported",
+        "validation_status": "passed"
+      }
+    ],
+    "observations": [],
+    "unresolved": [
+      {
+        "kind": "observation",
+        "candidate_id": "o1",
+        "proposal": {
+          "value": {
+            "ref": "",
+            "quote": ""
+          },
+          "field": {
+            "ref": "",
+            "quote": ""
+          },
+          "legend": {
+            "ref": "",
+            "quote": ""
+          },
+          "condition": {
+            "ref": "",
+            "quote": ""
+          },
+          "state": "unknown",
+          "reason": "未提供注册分类、申报状态、适应症、CAS号、化学名、规格、朊病毒风险、灭活方法、β-内酰胺、高活性、高致敏、激素、日剂量、分子式、分子量、给药途径、API标识等信息"
+        },
+        "issues": [
+          "source_quote_missing"
+        ]
+      },
+      {
+        "kind": "observation",
+        "candidate_id": "o2",
+        "proposal": {
+          "value": {
+            "ref": "",
+            "quote": ""
+          },
+          "field": {
+            "ref": "",
+            "quote": ""
+          },
+          "legend": {
+            "ref": "",
+            "quote": ""
+          },
+          "condition": {
+            "ref": "",
+            "quote": ""
+          },
+          "state": "unknown",
+          "reason": "未提供API的职业暴露限值、PDE、唯一标识等信息"
+        },
+        "issues": [
+          "source_quote_missing"
+        ]
+      }
+    ],
+    "rejected": [],
+    "contract_passes": 2,
+    "plan_reused": true,
+    "new_request_budget": 2,
+    "ner": {
+      "execution_status": "completed",
+      "coverage": {
+        "requested_refs": [
+          "u0",
+          "u1",
+          "u2",
+          "u3",
+          "u4",
+          "u5"
+        ],
+        "attempted_refs": [
+          "u0",
+          "u1",
+          "u2",
+          "u3",
+          "u4",
+          "u5"
+        ],
+        "covered_refs": [
+          "u0",
+          "u1",
+          "u2",
+          "u3",
+          "u4",
+          "u5"
+        ],
+        "unattempted_refs": [],
+        "failed_refs": [],
+        "meaning": "all requested group windows executed; not semantic or recall coverage"
+      },
+      "timing": {
+        "load_seconds": 6e-06,
+        "inference_seconds": 2.049254
+      },
+      "issues": [],
+      "limits": {
+        "chunk_chars": 160,
+        "overlap_chars": 24,
+        "batch_size": 8,
+        "labels_per_batch": 1,
+        "source_truncated": false,
+        "encoder_truncation": "preprocessor_checked_encoder_internal_not_instrumented",
+        "long_values_require_context": true,
+        "backend": "gliner2.5",
+        "model_family": "GLiNER2.5",
+        "architecture": "boundary",
+        "package_version": "2.0.0",
+        "device": "cuda:0",
+        "max_len": 160,
+        "max_width": null,
+        "span_width_policy": "no_fixed_width_within_encoded_window",
+        "candidate_pool": "shared",
+        "shared_candidate_budget": {
+          "pool_boundary_top_k": 32,
+          "pool_size": 192,
+          "min_pool_per_query": 8
+        },
+        "encoder_max_positions": 512,
+        "tokenizer_max_length": null,
+        "encoder_input_limit": 512,
+        "encoder_limit_policy": "conservative_512_and_declared_limit",
+        "word_splitter": "char",
+        "checkpoint_default_splitter": "whitespace",
+        "splitter_quality_verified": false,
+        "word_truncation": "rejected_before_inference",
+        "source_collator": "checked_transform_pad_and_boundary_metadata",
+        "source_augmentation": "disabled_default_terminal_period",
+        "preprocessing_error_policy": "raise",
+        "candidate_validation": "active_spans_and_decision_scores_before_decode",
+        "overlap_policy": "allow"
+      },
+      "span_count": 139
+    },
+    "frames": {
+      "s1": {
+        "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/DrugProduct",
+        "anchor": {
+          "ref": "u0",
+          "quote": "HRS-1597",
+          "start": 5,
+          "end": 13
+        }
+      }
+    },
+    "metric_checks": [
+      {
+        "candidate_id": "c2",
+        "metric": {
+          "tool": "validate_metric",
+          "candidate_id": "c2",
+          "execution_status": "completed",
+          "validation_status": "passed",
+          "raw_value": "类白色到白色粉末",
+          "source_unit": null,
+          "structural_checks": {
+            "source_binding": "passed",
+            "datatype": "passed"
+          },
+          "unit_checks": {
+            "status": "not_required",
+            "registry_version": "si-subset-v3-unit-aliases"
+          },
+          "quantity": null,
+          "normalized_value": "类白色到白色粉末",
+          "conversion_record": {},
+          "semantic_status": "supported",
+          "fact_eligible": false,
+          "shacl": {
+            "profile": "metric-representation-v1",
+            "options": {
+              "inference": "none",
+              "advanced": false,
+              "js": false,
+              "inplace": false,
+              "do_owl_imports": false,
+              "meta_shacl": false,
+              "abort_on_first": false,
+              "allow_infos": false,
+              "allow_warnings": false
+            },
+            "execution_status": "completed",
+            "validation_status": "passed",
+            "evaluated": true,
+            "conforms": true,
+            "report": [],
+            "report_text": "Validation Report\nConforms: True\n",
+            "coverage": {
+              "expected_focus_nodes": [
+                "urn:ontology-agent:claim:c2"
+              ],
+              "actual_focus_nodes": [
+                "urn:ontology-agent:claim:c2"
+              ],
+              "executed_shapes": [
+                "urn:ontology-agent:shapes:metric-representation-v1:Claim",
+                "urn:ontology-agent:shapes:metric-representation-v1:Predicate",
+                "urn:ontology-agent:shapes:metric-representation-v1:Raw",
+                "urn:ontology-agent:shapes:metric-representation-v1:Value"
+              ],
+              "missing_focus_nodes": [],
+              "complete": true,
+              "unexpected_focus_nodes": []
+            },
+            "issues": []
+          },
+          "issues": []
+        }
+      },
+      {
+        "candidate_id": "c3",
+        "metric": {
+          "tool": "validate_metric",
+          "candidate_id": "c3",
+          "execution_status": "completed",
+          "validation_status": "passed",
+          "raw_value": "口服片剂",
+          "source_unit": null,
+          "structural_checks": {
+            "source_binding": "passed",
+            "datatype": "passed"
+          },
+          "unit_checks": {
+            "status": "not_required",
+            "registry_version": "si-subset-v3-unit-aliases"
+          },
+          "quantity": null,
+          "normalized_value": "口服片剂",
+          "conversion_record": {},
+          "semantic_status": "supported",
+          "fact_eligible": false,
+          "shacl": {
+            "profile": "metric-representation-v1",
+            "options": {
+              "inference": "none",
+              "advanced": false,
+              "js": false,
+              "inplace": false,
+              "do_owl_imports": false,
+              "meta_shacl": false,
+              "abort_on_first": false,
+              "allow_infos": false,
+              "allow_warnings": false
+            },
+            "execution_status": "completed",
+            "validation_status": "passed",
+            "evaluated": true,
+            "conforms": true,
+            "report": [],
+            "report_text": "Validation Report\nConforms: True\n",
+            "coverage": {
+              "expected_focus_nodes": [
+                "urn:ontology-agent:claim:c3"
+              ],
+              "actual_focus_nodes": [
+                "urn:ontology-agent:claim:c3"
+              ],
+              "executed_shapes": [
+                "urn:ontology-agent:shapes:metric-representation-v1:Claim",
+                "urn:ontology-agent:shapes:metric-representation-v1:Predicate",
+                "urn:ontology-agent:shapes:metric-representation-v1:Raw",
+                "urn:ontology-agent:shapes:metric-representation-v1:Value"
+              ],
+              "missing_focus_nodes": [],
+              "complete": true,
+              "unexpected_focus_nodes": []
+            },
+            "issues": []
+          },
+          "issues": []
+        }
+      },
+      {
+        "candidate_id": "c4",
+        "metric": {
+          "tool": "validate_metric",
+          "candidate_id": "c4",
+          "execution_status": "completed",
+          "validation_status": "passed",
+          "raw_value": "否",
+          "source_unit": null,
+          "structural_checks": {
+            "source_binding": "passed",
+            "datatype": "passed"
+          },
+          "unit_checks": {
+            "status": "not_required",
+            "registry_version": "si-subset-v3-unit-aliases"
+          },
+          "quantity": null,
+          "normalized_value": false,
+          "conversion_record": {},
+          "semantic_status": "supported",
+          "fact_eligible": false,
+          "shacl": {
+            "profile": "metric-representation-v1",
+            "options": {
+              "inference": "none",
+              "advanced": false,
+              "js": false,
+              "inplace": false,
+              "do_owl_imports": false,
+              "meta_shacl": false,
+              "abort_on_first": false,
+              "allow_infos": false,
+              "allow_warnings": false
+            },
+            "execution_status": "completed",
+            "validation_status": "passed",
+            "evaluated": true,
+            "conforms": true,
+            "report": [],
+            "report_text": "Validation Report\nConforms: True\n",
+            "coverage": {
+              "expected_focus_nodes": [
+                "urn:ontology-agent:claim:c4"
+              ],
+              "actual_focus_nodes": [
+                "urn:ontology-agent:claim:c4"
+              ],
+              "executed_shapes": [
+                "urn:ontology-agent:shapes:metric-representation-v1:Claim",
+                "urn:ontology-agent:shapes:metric-representation-v1:Predicate",
+                "urn:ontology-agent:shapes:metric-representation-v1:Raw",
+                "urn:ontology-agent:shapes:metric-representation-v1:Value"
+              ],
+              "missing_focus_nodes": [],
+              "complete": true,
+              "unexpected_focus_nodes": []
+            },
+            "issues": []
+          },
+          "issues": []
+        }
+      },
+      {
+        "candidate_id": "c5",
+        "metric": {
+          "tool": "validate_metric",
+          "candidate_id": "c5",
+          "execution_status": "completed",
+          "validation_status": "passed",
+          "raw_value": "否",
+          "source_unit": null,
+          "structural_checks": {
+            "source_binding": "passed",
+            "datatype": "passed"
+          },
+          "unit_checks": {
+            "status": "not_required",
+            "registry_version": "si-subset-v3-unit-aliases"
+          },
+          "quantity": null,
+          "normalized_value": false,
+          "conversion_record": {},
+          "semantic_status": "supported",
+          "fact_eligible": false,
+          "shacl": {
+            "profile": "metric-representation-v1",
+            "options": {
+              "inference": "none",
+              "advanced": false,
+              "js": false,
+              "inplace": false,
+              "do_owl_imports": false,
+              "meta_shacl": false,
+              "abort_on_first": false,
+              "allow_infos": false,
+              "allow_warnings": false
+            },
+            "execution_status": "completed",
+            "validation_status": "passed",
+            "evaluated": true,
+            "conforms": true,
+            "report": [],
+            "report_text": "Validation Report\nConforms: True\n",
+            "coverage": {
+              "expected_focus_nodes": [
+                "urn:ontology-agent:claim:c5"
+              ],
+              "actual_focus_nodes": [
+                "urn:ontology-agent:claim:c5"
+              ],
+              "executed_shapes": [
+                "urn:ontology-agent:shapes:metric-representation-v1:Claim",
+                "urn:ontology-agent:shapes:metric-representation-v1:Predicate",
+                "urn:ontology-agent:shapes:metric-representation-v1:Raw",
+                "urn:ontology-agent:shapes:metric-representation-v1:Value"
+              ],
+              "missing_focus_nodes": [],
+              "complete": true,
+              "unexpected_focus_nodes": []
+            },
+            "issues": []
+          },
+          "issues": []
+        }
+      },
+      {
+        "candidate_id": "c6",
+        "metric": {
+          "tool": "validate_metric",
+          "candidate_id": "c6",
+          "execution_status": "completed",
+          "validation_status": "passed",
+          "raw_value": "HRS-1597",
+          "source_unit": null,
+          "structural_checks": {
+            "source_binding": "passed",
+            "datatype": "passed"
+          },
+          "unit_checks": {
+            "status": "not_required",
+            "registry_version": "si-subset-v3-unit-aliases"
+          },
+          "quantity": null,
+          "normalized_value": "HRS-1597",
+          "conversion_record": {},
+          "semantic_status": "supported",
+          "fact_eligible": false,
+          "shacl": {
+            "profile": "metric-representation-v1",
+            "options": {
+              "inference": "none",
+              "advanced": false,
+              "js": false,
+              "inplace": false,
+              "do_owl_imports": false,
+              "meta_shacl": false,
+              "abort_on_first": false,
+              "allow_infos": false,
+              "allow_warnings": false
+            },
+            "execution_status": "completed",
+            "validation_status": "passed",
+            "evaluated": true,
+            "conforms": true,
+            "report": [],
+            "report_text": "Validation Report\nConforms: True\n",
+            "coverage": {
+              "expected_focus_nodes": [
+                "urn:ontology-agent:claim:c6"
+              ],
+              "actual_focus_nodes": [
+                "urn:ontology-agent:claim:c6"
+              ],
+              "executed_shapes": [
+                "urn:ontology-agent:shapes:metric-representation-v1:Claim",
+                "urn:ontology-agent:shapes:metric-representation-v1:Predicate",
+                "urn:ontology-agent:shapes:metric-representation-v1:Raw",
+                "urn:ontology-agent:shapes:metric-representation-v1:Value"
+              ],
+              "missing_focus_nodes": [],
+              "complete": true,
+              "unexpected_focus_nodes": []
+            },
+            "issues": []
+          },
+          "issues": []
+        }
+      },
+      {
+        "candidate_id": "c7",
+        "metric": {
+          "tool": "validate_metric",
+          "candidate_id": "c7",
+          "execution_status": "completed",
+          "validation_status": "passed",
+          "raw_value": "DCM易溶，H2O、Heptane难溶",
+          "source_unit": null,
+          "structural_checks": {
+            "source_binding": "passed",
+            "datatype": "passed"
+          },
+          "unit_checks": {
+            "status": "not_required",
+            "registry_version": "si-subset-v3-unit-aliases"
+          },
+          "quantity": null,
+          "normalized_value": "DCM易溶，H2O、Heptane难溶",
+          "conversion_record": {},
+          "semantic_status": "supported",
+          "fact_eligible": false,
+          "shacl": {
+            "profile": "metric-representation-v1",
+            "options": {
+              "inference": "none",
+              "advanced": false,
+              "js": false,
+              "inplace": false,
+              "do_owl_imports": false,
+              "meta_shacl": false,
+              "abort_on_first": false,
+              "allow_infos": false,
+              "allow_warnings": false
+            },
+            "execution_status": "completed",
+            "validation_status": "passed",
+            "evaluated": true,
+            "conforms": true,
+            "report": [],
+            "report_text": "Validation Report\nConforms: True\n",
+            "coverage": {
+              "expected_focus_nodes": [
+                "urn:ontology-agent:claim:c7"
+              ],
+              "actual_focus_nodes": [
+                "urn:ontology-agent:claim:c7"
+              ],
+              "executed_shapes": [
+                "urn:ontology-agent:shapes:metric-representation-v1:Claim",
+                "urn:ontology-agent:shapes:metric-representation-v1:Predicate",
+                "urn:ontology-agent:shapes:metric-representation-v1:Raw",
+                "urn:ontology-agent:shapes:metric-representation-v1:Value"
+              ],
+              "missing_focus_nodes": [],
+              "complete": true,
+              "unexpected_focus_nodes": []
+            },
+            "issues": []
+          },
+          "issues": []
+        }
+      }
+    ],
+    "type_checks": {
+      "document": [],
+      "s1": []
+    },
+    "proposed_claim_count": 7,
+    "proposed_observation_count": 2,
+    "proposed_subject_count": 1,
+    "acceptance": {
+      "checks": [
+        {
+          "check": "required_properties",
+          "expected": {
+            "predicate": "appearance",
+            "value": "类白色到白色粉末",
+            "owner_contains": "HRS-1597"
+          },
+          "pass": true
+        },
+        {
+          "check": "required_properties",
+          "expected": {
+            "predicate": "dosageForm",
+            "value": "口服片剂",
+            "owner_contains": "HRS-1597"
+          },
+          "pass": true
+        },
+        {
+          "check": "required_properties",
+          "expected": {
+            "predicate": "isOncologyDrug",
+            "value": false,
+            "owner_contains": "HRS-1597"
+          },
+          "pass": true
+        },
+        {
+          "check": "required_properties",
+          "expected": {
+            "predicate": "isCytotoxic",
+            "value": false,
+            "owner_contains": "HRS-1597"
+          },
+          "pass": true
+        }
+      ],
+      "passed": 4,
+      "total": 4,
+      "all_pass": true,
+      "evaluated": true
+    },
+    "extended_acceptance": {
+      "checks": [
+        {
+          "check": "forbidden_specialized_type",
+          "expected": "HighSensitizingDrug",
+          "pass": true
+        },
+        {
+          "check": "semantic_review_present",
+          "candidate_id": "c1",
+          "pass": true
+        },
+        {
+          "check": "semantic_review_present",
+          "candidate_id": "c2",
+          "pass": true
+        },
+        {
+          "check": "semantic_review_present",
+          "candidate_id": "c3",
+          "pass": true
+        },
+        {
+          "check": "semantic_review_present",
+          "candidate_id": "c4",
+          "pass": true
+        },
+        {
+          "check": "semantic_review_present",
+          "candidate_id": "c5",
+          "pass": true
+        },
+        {
+          "check": "semantic_review_present",
+          "candidate_id": "c6",
+          "pass": true
+        },
+        {
+          "check": "semantic_review_present",
+          "candidate_id": "c7",
+          "pass": true
+        },
+        {
+          "check": "request_budget",
+          "pass": true
+        }
+      ],
+      "evaluated": true,
+      "all_pass": true,
+      "manual_review_required": [
+        "subject_type",
+        "subject_binding",
+        "predicate_or_metric_meaning",
+        "relation_direction_and_endpoints",
+        "source_unit_and_normalization",
+        "polarity_and_unknown",
+        "field_legend_condition_roles",
+        "long_value_completeness"
+      ],
+      "manual_review_status": "not_performed"
+    }
+  },
+  "note": "Program outcomes are validation candidates, not verified business facts; read independent review separately.",
+  "frozen_checklist": {
+    "checks": [
+      {
+        "check": "required_properties",
+        "expected": {
+          "predicate": "appearance",
+          "value": "类白色到白色粉末",
+          "owner_contains": "HRS-1597"
+        },
+        "pass": true
+      },
+      {
+        "check": "required_properties",
+        "expected": {
+          "predicate": "dosageForm",
+          "value": "口服片剂",
+          "owner_contains": "HRS-1597"
+        },
+        "pass": true
+      },
+      {
+        "check": "required_properties",
+        "expected": {
+          "predicate": "isOncologyDrug",
+          "value": false,
+          "owner_contains": "HRS-1597"
+        },
+        "pass": true
+      },
+      {
+        "check": "required_properties",
+        "expected": {
+          "predicate": "isCytotoxic",
+          "value": false,
+          "owner_contains": "HRS-1597"
+        },
+        "pass": true
+      }
+    ],
+    "passed": 4,
+    "total": 4,
+    "all_pass": true,
+    "evaluated": true
+  },
+  "extended_checks": {
+    "checks": [
+      {
+        "check": "forbidden_specialized_type",
+        "expected": "HighSensitizingDrug",
+        "pass": true
+      },
+      {
+        "check": "semantic_review_present",
+        "candidate_id": "c1",
+        "pass": true
+      },
+      {
+        "check": "semantic_review_present",
+        "candidate_id": "c2",
+        "pass": true
+      },
+      {
+        "check": "semantic_review_present",
+        "candidate_id": "c3",
+        "pass": true
+      },
+      {
+        "check": "semantic_review_present",
+        "candidate_id": "c4",
+        "pass": true
+      },
+      {
+        "check": "semantic_review_present",
+        "candidate_id": "c5",
+        "pass": true
+      },
+      {
+        "check": "semantic_review_present",
+        "candidate_id": "c6",
+        "pass": true
+      },
+      {
+        "check": "semantic_review_present",
+        "candidate_id": "c7",
+        "pass": true
+      },
+      {
+        "check": "request_budget",
+        "pass": true
+      }
+    ],
+    "evaluated": true,
+    "all_pass": true,
+    "manual_review_required": [
+      "subject_type",
+      "subject_binding",
+      "predicate_or_metric_meaning",
+      "relation_direction_and_endpoints",
+      "source_unit_and_normalization",
+      "polarity_and_unknown",
+      "field_legend_condition_roles",
+      "long_value_completeness"
+    ],
+    "manual_review_status": "not_performed"
+  }
+}

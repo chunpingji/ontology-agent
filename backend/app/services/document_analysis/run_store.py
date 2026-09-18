@@ -10,6 +10,7 @@ from __future__ import annotations
 import hmac
 import json
 import secrets
+import time
 from datetime import datetime, timedelta, timezone
 from hashlib import sha256
 from typing import Any, Callable
@@ -31,6 +32,7 @@ from app.models.document_analysis import (
     DocumentRunArtifactHead,
     DocumentRunCandidate,
     DocumentRunCandidateHead,
+    DocumentRunCurrentState,
     DocumentVerificationProof,
     DocumentVerificationProofHead,
 )
@@ -154,12 +156,35 @@ class InvalidRunState(RunStoreError):
     code = "INVALID_RUN_STATE"
 
 
+class PublicationTimeout(TimeoutError):
+    """The write transaction exceeded its operational publication bound."""
+
+
 class DocumentAnalysisRunStore:
     """SQLAlchemy repository for the independent DocumentAnalysisRun aggregate."""
 
     def __init__(self, db: Session, *, clock: Callable[[], datetime] = utcnow) -> None:
         self.db = db
         self._clock = clock
+
+    def check_publication_deadline(self):
+        deadline = getattr(self, "publication_deadline", None)
+        if deadline is not None and time.monotonic() >= deadline:
+            raise PublicationTimeout("document analysis publication deadline exceeded")
+
+    def _progress_watermark(self, run, execution):
+        if (execution.last_progress_at is not None
+                and execution.recovery_event_head == run.event_head):
+            return {}
+        latest = self.db.scalar(select(DocumentRecognitionEvent.created_at).where(
+            DocumentRecognitionEvent.recognition_run_id == run.recognition_run_id,
+            DocumentRecognitionEvent.sequence <= run.event_head,
+        ).order_by(DocumentRecognitionEvent.sequence.desc()).limit(1)) if run.event_head else None
+        return {
+            "recovery_event_head": run.event_head,
+            "recovery_attempts": 0,
+            "last_progress_at": latest or run.started_at or run.created_at,
+        }
 
     def create_run(
         self,
@@ -174,6 +199,7 @@ class DocumentAnalysisRunStore:
         ontology_snapshot_hash: str = "",
         source_artifact_ref: str | None = None,
         metadata_mode: str = "generate_summary",
+        ranking_budget_enabled: bool = True,
         scope_mode: str = "document_graph",
         focus_path: list[str] | None = None,
         provisional_fingerprint: str | None = None,
@@ -287,6 +313,7 @@ class DocumentAnalysisRunStore:
             root_class_label=root_class_label,
             ontology_snapshot_hash=ontology_snapshot_hash,
             metadata_mode=metadata_mode,
+            ranking_budget_enabled=ranking_budget_enabled,
             scope_mode=scope_mode,
             focus_path=focus,
             provisional_fingerprint=provisional_fingerprint,
@@ -423,6 +450,7 @@ class DocumentAnalysisRunStore:
         root_class_label: str = "",
         ontology_snapshot_hash: str = "",
         metadata_mode: str = "generate_summary",
+        ranking_budget_enabled: bool = True,
         scope_mode: str = "document_graph",
         focus_path: list[str] | None = None,
         provisional_fingerprint: str | None = None,
@@ -452,6 +480,7 @@ class DocumentAnalysisRunStore:
             root_class_label=root_class_label,
             ontology_snapshot_hash=ontology_snapshot_hash,
             metadata_mode=metadata_mode,
+            ranking_budget_enabled=ranking_budget_enabled,
             scope_mode=scope_mode,
             focus_path=focus_path,
             provisional_fingerprint=provisional_fingerprint,
@@ -483,6 +512,37 @@ class DocumentAnalysisRunStore:
                 ),
             },
         )
+
+    def list_owned(
+        self, owner_id: str, *, limit: int = 20, offset: int = 0
+    ) -> tuple[list[DocumentAnalysisRun], bool]:
+        """List retained online runs without claiming work or cleaning artifacts."""
+
+        if not 1 <= limit <= 100 or offset < 0:
+            raise ValueError("limit must be 1-100 and offset must be nonnegative")
+        rows = list(
+            self.db.scalars(
+                select(DocumentAnalysisRun)
+                .where(
+                    DocumentAnalysisRun.owner_id == owner_id,
+                    DocumentAnalysisRun.scope_mode == "document_graph",
+                    DocumentAnalysisRun.deletion_state != "deleted",
+                    DocumentAnalysisRun.execution_status.not_in(["deleted", "expired"]),
+                    or_(
+                        DocumentAnalysisRun.expires_at.is_(None),
+                        DocumentAnalysisRun.expires_at > self._clock(),
+                    ),
+                )
+                .order_by(
+                    DocumentAnalysisRun.created_at.desc(),
+                    DocumentAnalysisRun.recognition_run_id.desc(),
+                )
+                .offset(offset)
+                .limit(limit + 1)
+                .execution_options(populate_existing=True)
+            )
+        )
+        return rows[:limit], len(rows) > limit
 
     def get_owned(
         self,
@@ -587,6 +647,7 @@ class DocumentAnalysisRunStore:
             self.get_owned(recognition_run_id, owner_id)
             execution = self._execution_for_update(recognition_run_id)
             run = self._run_for_update(recognition_run_id, owner_id)
+            stamp = self._clock()
             if run.deletion_state != "none" or run.execution_status not in {
                 "queued",
                 "running",
@@ -604,6 +665,33 @@ class DocumentAnalysisRunStore:
             if not available:
                 raise LeaseBusy(run_id=str(recognition_run_id))
             generation = execution.generation
+            progress_values = self._progress_watermark(run, execution)
+            if run.execution_status == "queued":
+                # Queue delay is not execution failure. An explicit resume also
+                # starts one new window; automatic replacement remains running.
+                progress_values.update(last_progress_at=stamp, recovery_attempts=0,
+                                       recovery_event_head=run.event_head)
+                from app.services.document_analysis import current_state
+                from app.services.document_analysis.state_artifacts import performance_policy
+
+                if performance_policy(self, run).get("execution_budget") is not None:
+                    # Explicit start/resume resets only this continuous window.
+                    # Lease recovery keeps the same row and cumulative requests.
+                    # Preserve an explicitly adjusted time limit on continuation.
+                    budget_window = current_state.get_row(self, run, "execution:budget") or {}
+                    budget_window.update(
+                        started_at=stamp.isoformat(),
+                        model_calls_baseline=int(
+                            (run.progress or {}).get("model_calls_reserved", 0)
+                        ),
+                    )
+                    current_state.put_rows(
+                        self, run, DocumentRunCurrentState, "execution:budget",
+                        {"current": budget_window},
+                        work_version=run.work_version,
+                    )
+            elif not progress_values and run.execution_status in {"running", "pausing"}:
+                progress_values["recovery_attempts"] = execution.recovery_attempts + 1
             changed = self.db.execute(
                 update(DocumentAnalysisExecution)
                 .where(
@@ -625,6 +713,7 @@ class DocumentAnalysisRunStore:
                     pause_requested=run.execution_status == "pausing",
                     cancel_requested=False,
                     updated_at=stamp,
+                    **progress_values,
                 )
                 .execution_options(synchronize_session=False)
             )
@@ -733,9 +822,18 @@ class DocumentAnalysisRunStore:
         recognition_run_id: UUID | str,
         owner_id: str,
         execution_token: str,
+        *,
+        for_update: bool = False,
     ) -> DocumentAnalysisExecution:
         """Reject missing, expired, revoked, cross-run, or stale-generation tokens."""
 
+        if for_update:
+            _run, execution = self._lock_fence(
+                recognition_run_id, owner_id, execution_token, self._clock(),
+            )
+            # Waiting for another writer can cross the original lease deadline.
+            self._check_fence(execution, execution_token, self._clock())
+            return execution
         run = self.get_owned(recognition_run_id, owner_id)
         if run.deletion_state != "none":
             raise FenceViolation("run is being deleted", run_id=str(recognition_run_id))
@@ -760,6 +858,10 @@ class DocumentAnalysisRunStore:
         stamp = self._clock()
         with self.db.begin_nested():
             _run, execution = self._lock_fence(recognition_run_id, owner_id, execution_token, stamp)
+            # Lock acquisition may outlive the lease. Never acknowledge a renewal
+            # against a timestamp captured before waiting, or revive an expired owner.
+            stamp = self._clock()
+            self._check_fence(execution, execution_token, stamp)
             changed = self.db.execute(
                 update(DocumentAnalysisExecution)
                 .where(
@@ -774,6 +876,7 @@ class DocumentAnalysisRunStore:
                     heartbeat_at=stamp,
                     lease_expires_at=stamp + timedelta(seconds=lease_seconds),
                     updated_at=stamp,
+                    **self._progress_watermark(_run, execution),
                 )
                 .execution_options(synchronize_session=False)
             )
@@ -974,7 +1077,8 @@ class DocumentAnalysisRunStore:
         batch_hash: str,
         first_sequence: int,
         last_sequence: int,
-        checkpoint_artifact_id: str,
+        checkpoint_artifact_id: str | None = None,
+        committed_work_version: int | None = None,
     ) -> DocumentRecognitionEventBatch:
         """Append one immutable, fenced batch receipt in the caller transaction."""
 
@@ -1012,9 +1116,12 @@ class DocumentAnalysisRunStore:
                     is None
                 ):
                     raise HeadConflict("batch event range is not owned by this run")
-            checkpoint = self.db.get(DocumentAnalysisArtifact, checkpoint_artifact_id)
-            if checkpoint is None or checkpoint.artifact_kind != "recognition_checkpoint":
-                raise ArtifactConflict("batch checkpoint artifact is missing or invalid")
+            if checkpoint_artifact_id is not None:
+                checkpoint = self.db.get(DocumentAnalysisArtifact, checkpoint_artifact_id)
+                if checkpoint is None or checkpoint.artifact_kind != "recognition_checkpoint":
+                    raise ArtifactConflict("batch checkpoint artifact is missing or invalid")
+            elif committed_work_version != run.work_version or not committed_work_version:
+                raise HeadConflict("batch current work version is invalid")
             row = DocumentRecognitionEventBatch(
                 recognition_run_id=run.recognition_run_id,
                 batch_id=batch_id,
@@ -1022,6 +1129,7 @@ class DocumentAnalysisRunStore:
                 first_sequence=first_sequence,
                 last_sequence=last_sequence,
                 checkpoint_artifact_id=checkpoint_artifact_id,
+                committed_work_version=committed_work_version,
                 created_at=self._clock(),
             )
             self.db.add(row)
@@ -1473,7 +1581,7 @@ class DocumentAnalysisRunStore:
             bool,
         ]
     ):
-        """Apply pause/resume/cancel/delete with a run or control-version CAS."""
+        """Apply lifecycle/budget controls with a run or control-version CAS."""
 
         if expected_revision is None and expected_version is None:
             raise ValueError("an expected run or control version is required")
@@ -1552,6 +1660,16 @@ class DocumentAnalysisRunStore:
                 self._revoke_execution(execution)
                 execution.pause_requested = False
                 execution.cancel_requested = False
+                execution.recovery_attempts = 0
+                execution.last_progress_at = stamp
+                execution.recovery_event_head = run.event_head
+            elif action in {"ranking_budget_enable", "ranking_budget_disable"}:
+                if run.execution_status not in {"paused", "failed"}:
+                    raise InvalidRunState("only paused/failed runs can change ranking budgets")
+                if run.expires_at is not None and _aware(run.expires_at) <= stamp:
+                    raise InvalidRunState("an expired run cannot change ranking budgets")
+                values["ranking_budget_enabled"] = action == "ranking_budget_enable"
+                self._revoke_execution(execution)
             elif action == "cancel":
                 if run.execution_status in TERMINAL_EXECUTION_STATUSES:
                     raise InvalidRunState("terminal run cannot be cancelled again")
@@ -1646,7 +1764,13 @@ class DocumentAnalysisRunStore:
         restored = dict(payload)
         if not hmac.compare_digest(digest, content_hash(restored)):
             raise InvalidRunState("delete tombstone result failed integrity verification")
-        if set(restored) != _DELETE_CONTROL_RESULT_FIELDS:
+        if (
+            set(restored) - {"ranking_budget_enabled"} != _DELETE_CONTROL_RESULT_FIELDS
+            or (
+                "ranking_budget_enabled" in restored
+                and not isinstance(restored["ranking_budget_enabled"], bool)
+            )
+        ):
             raise InvalidRunState("delete tombstone result contains unsafe fields")
         if (
             restored.get("recognition_run_id") != str(recognition_run_id)
@@ -1856,10 +1980,12 @@ class DocumentAnalysisRunStore:
         execution_token: str,
         stamp: datetime,
     ) -> tuple[DocumentAnalysisRun, DocumentAnalysisExecution]:
+        self.check_publication_deadline()
         self.get_owned(recognition_run_id, owner_id)
         execution = self._execution_for_update(recognition_run_id)
         self._check_fence(execution, execution_token, stamp)
         run = self._run_for_update(recognition_run_id, owner_id)
+        self._check_fence(execution, execution_token, self._clock())
         if run.deletion_state != "none":
             raise FenceViolation("run is being deleted", run_id=str(recognition_run_id))
         return run, execution

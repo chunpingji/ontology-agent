@@ -1,0 +1,1564 @@
+{
+  "scope_id": "process_equipment",
+  "source": {
+    "u0": {
+      "evidence_id": "63c9cc94a162d7b088843eb62fedcf9f50775e6d381d083eb86aaa506264f0c3",
+      "kind": "heading",
+      "text": "HRS-1597结晶纯化",
+      "section_node_id": "section:67",
+      "block_id": "paragraph:67:0",
+      "paragraph_index": 67,
+      "fragment_index": 0,
+      "table_path": null,
+      "row_index": null,
+      "column_index": null,
+      "physical_page_number": 5,
+      "source_cell_id": null,
+      "paragraph_offset": 0,
+      "ref": "u0",
+      "row_span": 1,
+      "column_span": 1,
+      "logical_rows": [],
+      "column_indices": [],
+      "grid_rows": [],
+      "grid_columns": [],
+      "column_header_refs": [],
+      "is_header": false,
+      "parser_header_candidate": false,
+      "header_status": "not_a_table",
+      "cell_structure_valid": false
+    },
+    "u1": {
+      "evidence_id": "1cb1094eaf59300defb9cb6d1399e860d782a84df20c9ad61124f3a652c1a709",
+      "kind": "cell_paragraph",
+      "text": "投料",
+      "section_node_id": "section:67",
+      "block_id": "table:0",
+      "paragraph_index": 0,
+      "fragment_index": 0,
+      "table_path": [
+        "table:0"
+      ],
+      "row_index": 0,
+      "column_index": 0,
+      "physical_page_number": 5,
+      "source_cell_id": "table:0/cell:0:0",
+      "paragraph_offset": 0,
+      "ref": "u1",
+      "row_span": 1,
+      "column_span": 1,
+      "logical_rows": [
+        0
+      ],
+      "column_indices": [
+        0
+      ],
+      "grid_rows": [
+        0
+      ],
+      "grid_columns": [
+        0
+      ],
+      "column_header_refs": [],
+      "is_header": false,
+      "parser_header_candidate": true,
+      "header_status": "unconfirmed",
+      "cell_structure_valid": true
+    },
+    "u2": {
+      "evidence_id": "332f40090c06eff4f9c04e9d2de846cf6dc7e535341ae6a246ccaec1fb376310",
+      "kind": "cell_paragraph",
+      "text": "步骤一：200L反应釜（RE64611）内加入AR级别丙酮(丙酮投料量/L= HRS-1597粗品投入量/kg×13.5*0.79)和纯化水(纯化水投料量/L= HRS-1597粗品投入量/kg×1.5*1)，氮气置换4次。加入HRS-1597粗品，釜内温度上升至55℃，搅拌溶清。随后氮气保护下加入颗粒活性炭（活性炭投料量/Kg= HRS-1597粗品投入量/kg×0.2），维持50~55℃继续搅拌1-2小时。",
+      "section_node_id": "section:67",
+      "block_id": "table:0",
+      "paragraph_index": 0,
+      "fragment_index": 0,
+      "table_path": [
+        "table:0"
+      ],
+      "row_index": 0,
+      "column_index": 1,
+      "physical_page_number": 5,
+      "source_cell_id": "table:0/cell:0:1",
+      "paragraph_offset": 0,
+      "ref": "u2",
+      "row_span": 1,
+      "column_span": 1,
+      "logical_rows": [
+        0
+      ],
+      "column_indices": [
+        1
+      ],
+      "grid_rows": [
+        0
+      ],
+      "grid_columns": [
+        1
+      ],
+      "column_header_refs": [],
+      "is_header": false,
+      "parser_header_candidate": true,
+      "header_status": "unconfirmed",
+      "cell_structure_valid": true
+    }
+  },
+  "plan": {
+    "get_schema_card": [
+      {
+        "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/SynthesisStep"
+      },
+      {
+        "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/Crystallization"
+      },
+      {
+        "class_iri": "https://ontology.pharma-gmp.cn/slpra/equipment/Equipment"
+      },
+      {
+        "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/CrudeProduct"
+      }
+    ],
+    "inspect_evidence": [
+      {
+        "ref": "u2"
+      },
+      {
+        "ref": "u0"
+      },
+      {
+        "ref": "u1"
+      }
+    ],
+    "propose_mentions": [
+      {
+        "group": "entities"
+      },
+      {
+        "group": "values"
+      },
+      {
+        "group": "units"
+      }
+    ]
+  },
+  "candidate_proposal": {
+    "subjects": {
+      "document": {
+        "attributes": {},
+        "relations": {
+          "usesEquipment": []
+        },
+        "anchor": {
+          "ref": "",
+          "quote": "",
+          "span_id": ""
+        }
+      },
+      "s1": {
+        "attributes": {
+          "inProcessControl": [],
+          "outputMassRange_kg": [],
+          "reactionConditions": [
+            {
+              "raw": "釜内温度上升至55℃，搅拌溶清。随后氮气保护下加入颗粒活性炭...维持50~55℃继续搅拌1-2小时",
+              "source": {
+                "ref": "u2",
+                "quote": "釜内温度上升至55℃，搅拌溶清。随后氮气保护下加入颗粒活性炭（活性炭投料量/Kg= HRS-1597粗品投入量/kg×0.2），维持50~55℃继续搅拌1-2小时",
+                "span_id": "source:u2"
+              },
+              "field": {
+                "ref": "u2",
+                "quote": "步骤一",
+                "span_id": "source:u2"
+              },
+              "unit": {
+                "ref": "",
+                "quote": "",
+                "span_id": ""
+              },
+              "condition": {
+                "ref": "",
+                "quote": "",
+                "span_id": ""
+              }
+            }
+          ],
+          "stepOrder": [
+            {
+              "raw": "1",
+              "source": {
+                "ref": "u2",
+                "quote": "步骤一",
+                "span_id": "source:u2"
+              },
+              "field": {
+                "ref": "u2",
+                "quote": "步骤一",
+                "span_id": "source:u2"
+              },
+              "unit": {
+                "ref": "",
+                "quote": "",
+                "span_id": ""
+              },
+              "condition": {
+                "ref": "",
+                "quote": "",
+                "span_id": ""
+              }
+            }
+          ],
+          "yieldRangePercent": []
+        },
+        "relations": {
+          "nextStep": [],
+          "producesIntermediate": [
+            {
+              "target_id": "s4",
+              "evidence": {
+                "ref": "u2",
+                "quote": "加入HRS-1597粗品",
+                "span_id": "source:u2"
+              },
+              "condition": {
+                "ref": "",
+                "quote": "",
+                "span_id": ""
+              },
+              "polarity": "affirmed"
+            }
+          ],
+          "usesEquipment": [
+            {
+              "target_id": "s3",
+              "evidence": {
+                "ref": "u2",
+                "quote": "200L反应釜（RE64611）",
+                "span_id": "source:u2"
+              },
+              "condition": {
+                "ref": "",
+                "quote": "",
+                "span_id": ""
+              },
+              "polarity": "affirmed"
+            }
+          ]
+        },
+        "anchor": {
+          "ref": "u0",
+          "quote": "HRS-1597结晶纯化",
+          "span_id": "source:u0"
+        }
+      },
+      "s2": {
+        "attributes": {
+          "inProcessControl": [],
+          "outputMassRange_kg": [],
+          "reactionConditions": [],
+          "stepOrder": [],
+          "yieldRangePercent": []
+        },
+        "relations": {
+          "nextStep": [],
+          "producesIntermediate": [],
+          "usesEquipment": []
+        },
+        "anchor": {
+          "ref": "",
+          "quote": "",
+          "span_id": ""
+        }
+      },
+      "s3": {
+        "attributes": {
+          "equipmentID": [
+            {
+              "raw": "RE64611",
+              "source": {
+                "ref": "u2",
+                "quote": "RE64611",
+                "span_id": "source:u2"
+              },
+              "field": {
+                "ref": "u2",
+                "quote": "200L反应釜（RE64611）",
+                "span_id": "source:u2"
+              },
+              "unit": {
+                "ref": "",
+                "quote": "",
+                "span_id": ""
+              },
+              "condition": {
+                "ref": "",
+                "quote": "",
+                "span_id": ""
+              }
+            }
+          ],
+          "equipmentName": [
+            {
+              "raw": "200L反应釜",
+              "source": {
+                "ref": "u2",
+                "quote": "200L反应釜",
+                "span_id": "source:u2"
+              },
+              "field": {
+                "ref": "u2",
+                "quote": "200L反应釜（RE64611）",
+                "span_id": "source:u2"
+              },
+              "unit": {
+                "ref": "",
+                "quote": "",
+                "span_id": ""
+              },
+              "condition": {
+                "ref": "",
+                "quote": "",
+                "span_id": ""
+              }
+            }
+          ],
+          "isDedicatedEquipment": [],
+          "isInCleanArea": [],
+          "modelSpecification": [],
+          "requiresDedication": [],
+          "requiresInactivationValidation": [],
+          "requiresIndependentHVAC": []
+        },
+        "relations": {},
+        "anchor": {
+          "ref": "u2",
+          "quote": "200L反应釜（RE64611）",
+          "span_id": "source:u2"
+        }
+      },
+      "s4": {
+        "attributes": {
+          "intermediateIdentifier": [
+            {
+              "raw": "HRS-1597粗品",
+              "source": {
+                "ref": "u2",
+                "quote": "HRS-1597粗品",
+                "span_id": "source:u2"
+              },
+              "field": {
+                "ref": "u2",
+                "quote": "HRS-1597粗品",
+                "span_id": "source:u2"
+              },
+              "unit": {
+                "ref": "",
+                "quote": "",
+                "span_id": ""
+              },
+              "condition": {
+                "ref": "",
+                "quote": "",
+                "span_id": ""
+              }
+            }
+          ]
+        },
+        "relations": {},
+        "anchor": {
+          "ref": "u2",
+          "quote": "HRS-1597粗品",
+          "span_id": "source:u2"
+        }
+      }
+    },
+    "observations": [
+      {
+        "value": {
+          "ref": "",
+          "quote": "",
+          "span_id": ""
+        },
+        "field": {
+          "ref": "",
+          "quote": "",
+          "span_id": ""
+        },
+        "legend": {
+          "ref": "",
+          "quote": "",
+          "span_id": ""
+        },
+        "condition": {
+          "ref": "",
+          "quote": "",
+          "span_id": ""
+        },
+        "state": "unknown",
+        "reason": "s2 (结晶/析晶) 的anchor未填写，且文档中未明确区分s1与s2的具体步骤边界，s1已涵盖主要操作描述，s2无独立证据。"
+      },
+      {
+        "value": {
+          "ref": "",
+          "quote": "",
+          "span_id": ""
+        },
+        "field": {
+          "ref": "",
+          "quote": "",
+          "span_id": ""
+        },
+        "legend": {
+          "ref": "",
+          "quote": "",
+          "span_id": ""
+        },
+        "condition": {
+          "ref": "",
+          "quote": "",
+          "span_id": ""
+        },
+        "state": "unknown",
+        "reason": "s3 (设备) 的isDedicatedEquipment, isInCleanArea, modelSpecification, requiresDedication, requiresInactivationValidation, requiresIndependentHVAC均未在原文中提及。"
+      },
+      {
+        "value": {
+          "ref": "",
+          "quote": "",
+          "span_id": ""
+        },
+        "field": {
+          "ref": "",
+          "quote": "",
+          "span_id": ""
+        },
+        "legend": {
+          "ref": "",
+          "quote": "",
+          "span_id": ""
+        },
+        "condition": {
+          "ref": "",
+          "quote": "",
+          "span_id": ""
+        },
+        "state": "unknown",
+        "reason": "s1 (合成步骤) 的inProcessControl, outputMassRange_kg, yieldRangePercent未在原文中提及。"
+      }
+    ]
+  },
+  "semantic_verification": {
+    "types": {
+      "s1": {
+        "type": "supported",
+        "support": [
+          {
+            "ref": "u2",
+            "quote": "步骤一：200L反应釜（RE64611）内加入AR级别丙酮...加入HRS-1597粗品...维持50~55℃继续搅拌1-2小时"
+          }
+        ],
+        "counterevidence_support": [],
+        "reason": "原文u2明确描述为“步骤一”，包含具体的投料、温度控制和搅拌操作，符合合成步骤的定义。"
+      },
+      "s3": {
+        "type": "supported",
+        "support": [
+          {
+            "ref": "u2",
+            "quote": "200L反应釜（RE64611）"
+          }
+        ],
+        "counterevidence_support": [],
+        "reason": "原文u2明确提及设备名称“200L反应釜”及编号“RE64611”，主体归属正确。"
+      }
+    },
+    "claims": {
+      "c1": {
+        "role": "supported",
+        "predicate": "supported",
+        "binding": "supported",
+        "applicability": "supported",
+        "counterevidence": "supported",
+        "unit": "supported",
+        "support": [
+          {
+            "ref": "u2",
+            "quote": "釜内温度上升至55℃，搅拌溶清。随后氮气保护下加入颗粒活性炭...维持50~55℃继续搅拌1-2小时"
+          }
+        ],
+        "counterevidence_support": [],
+        "reason": "原文描述了温度变化、保护气氛（氮气）和搅拌时长，符合reactionConditions定义。"
+      },
+      "c2": {
+        "role": "supported",
+        "predicate": "supported",
+        "binding": "supported",
+        "applicability": "supported",
+        "counterevidence": "supported",
+        "unit": "supported",
+        "support": [
+          {
+            "ref": "u2",
+            "quote": "步骤一"
+          }
+        ],
+        "counterevidence_support": [],
+        "reason": "原文u2开头明确标注“步骤一”，对应stepOrder为1。"
+      },
+      "c3": {
+        "role": "unsupported",
+        "predicate": "unsupported",
+        "binding": "unsupported",
+        "applicability": "unsupported",
+        "counterevidence": "unsupported",
+        "unit": "supported",
+        "support": [],
+        "counterevidence_support": [
+          {
+            "ref": "u2",
+            "quote": "加入HRS-1597粗品"
+          }
+        ],
+        "reason": "原文表述为“加入HRS-1597粗品”，表明HRS-1597粗品是反应物（原料），而非该步骤的产出物（producesIntermediate）。该步骤产出的是纯化后的产品，而非粗品。"
+      },
+      "c4": {
+        "role": "supported",
+        "predicate": "supported",
+        "binding": "supported",
+        "applicability": "supported",
+        "counterevidence": "supported",
+        "unit": "supported",
+        "support": [
+          {
+            "ref": "u2",
+            "quote": "200L反应釜（RE64611）"
+          }
+        ],
+        "counterevidence_support": [],
+        "reason": "原文明确指出在“200L反应釜（RE64611）”中进行操作，s3主体为该设备，关系成立。"
+      },
+      "c5": {
+        "role": "supported",
+        "predicate": "supported",
+        "binding": "supported",
+        "applicability": "supported",
+        "counterevidence": "supported",
+        "unit": "supported",
+        "support": [
+          {
+            "ref": "u2",
+            "quote": "RE64611"
+          }
+        ],
+        "counterevidence_support": [],
+        "reason": "原文u2中“200L反应釜（RE64611）”明确将RE64611标识为设备ID。"
+      },
+      "c6": {
+        "role": "supported",
+        "predicate": "supported",
+        "binding": "supported",
+        "applicability": "supported",
+        "counterevidence": "supported",
+        "unit": "supported",
+        "support": [
+          {
+            "ref": "u2",
+            "quote": "200L反应釜"
+          }
+        ],
+        "counterevidence_support": [],
+        "reason": "原文u2中“200L反应釜”明确为设备名称。"
+      },
+      "c7": {
+        "role": "unsupported",
+        "predicate": "unsupported",
+        "binding": "unsupported",
+        "applicability": "unsupported",
+        "counterevidence": "unsupported",
+        "unit": "supported",
+        "support": [],
+        "counterevidence_support": [
+          {
+            "ref": "u2",
+            "quote": "加入HRS-1597粗品"
+          }
+        ],
+        "reason": "原文中“HRS-1597粗品”是作为投入原料出现的，并非由s1步骤产出。s1步骤产出的是纯化后的HRS-1597（虽未明确命名，但非粗品）。因此s4（CrudeProduct）作为产出中间体的断言错误。"
+      }
+    },
+    "observations": {
+      "o1": {
+        "state": "supported",
+        "field": "supported",
+        "legend": "supported",
+        "condition": "supported",
+        "support": [
+          {
+            "ref": "u2",
+            "quote": "步骤一"
+          }
+        ],
+        "counterevidence_support": [],
+        "reason": "原文仅描述了“步骤一”的操作，s2（结晶/析晶）作为独立步骤在原文中无对应文本或明确边界，且s1已涵盖主要操作，故s2状态为unknown/undetermined是合理的观察。"
+      },
+      "o2": {
+        "state": "supported",
+        "field": "supported",
+        "legend": "supported",
+        "condition": "supported",
+        "support": [
+          {
+            "ref": "u2",
+            "quote": "200L反应釜（RE64611）"
+          }
+        ],
+        "counterevidence_support": [],
+        "reason": "原文仅提及设备名称和ID，未提及isDedicatedEquipment, isInCleanArea等属性，故这些字段状态为unknown/undetermined是合理的观察。"
+      },
+      "o3": {
+        "state": "supported",
+        "field": "supported",
+        "legend": "supported",
+        "condition": "supported",
+        "support": [
+          {
+            "ref": "u2",
+            "quote": "步骤一：200L反应釜（RE64611）内加入AR级别丙酮...维持50~55℃继续搅拌1-2小时"
+          }
+        ],
+        "counterevidence_support": [],
+        "reason": "原文未提及过程控制（IPC）、得量范围或收率，故这些字段状态为unknown/undetermined是合理的观察。"
+      }
+    }
+  },
+  "final_result": {
+    "arm": "C",
+    "scope_id": "process_equipment",
+    "status": "complete",
+    "calls": [
+      {
+        "http_call": 1,
+        "usage": {
+          "completion_tokens": 2180,
+          "prompt_tokens": 35808,
+          "total_tokens": 37988,
+          "completion_tokens_details": null,
+          "prompt_tokens_details": {
+            "audio_tokens": null,
+            "cached_tokens": 493
+          }
+        },
+        "finish_reason": "stop",
+        "seconds": 199.342,
+        "stage": "candidates"
+      },
+      {
+        "http_call": 1,
+        "usage": {
+          "completion_tokens": 1777,
+          "prompt_tokens": 9395,
+          "total_tokens": 11172,
+          "completion_tokens_details": null,
+          "prompt_tokens_details": {
+            "audio_tokens": null,
+            "cached_tokens": 298
+          }
+        },
+        "finish_reason": "stop",
+        "seconds": 66.496,
+        "stage": "verification"
+      }
+    ],
+    "accepted": [
+      {
+        "kind": "property",
+        "subject_id": "s3",
+        "subject_class_iri": "https://ontology.pharma-gmp.cn/slpra/equipment/Equipment",
+        "subject_text": "200L反应釜（RE64611）",
+        "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/equipment/equipmentID",
+        "evidence": {
+          "ref": "u2",
+          "quote": "RE64611",
+          "start": 12,
+          "end": 19
+        },
+        "condition": {
+          "ref": "",
+          "quote": ""
+        },
+        "raw_value": "RE64611",
+        "field": {
+          "ref": "u2",
+          "quote": "200L反应釜（RE64611）",
+          "start": 4,
+          "end": 20
+        },
+        "unit": {
+          "ref": "",
+          "quote": ""
+        },
+        "value_span": {
+          "ref": "u2",
+          "quote": "RE64611",
+          "start": 12,
+          "end": 19
+        },
+        "value": "RE64611",
+        "candidate_id": "c5",
+        "semantic_status": "supported",
+        "validation_status": "passed"
+      },
+      {
+        "kind": "property",
+        "subject_id": "s3",
+        "subject_class_iri": "https://ontology.pharma-gmp.cn/slpra/equipment/Equipment",
+        "subject_text": "200L反应釜（RE64611）",
+        "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/equipment/equipmentName",
+        "evidence": {
+          "ref": "u2",
+          "quote": "200L反应釜",
+          "start": 4,
+          "end": 11
+        },
+        "condition": {
+          "ref": "",
+          "quote": ""
+        },
+        "raw_value": "200L反应釜",
+        "field": {
+          "ref": "u2",
+          "quote": "200L反应釜（RE64611）",
+          "start": 4,
+          "end": 20
+        },
+        "unit": {
+          "ref": "",
+          "quote": ""
+        },
+        "value_span": {
+          "ref": "u2",
+          "quote": "200L反应釜",
+          "start": 4,
+          "end": 11
+        },
+        "value": "200L反应釜",
+        "candidate_id": "c6",
+        "semantic_status": "supported",
+        "validation_status": "passed"
+      }
+    ],
+    "observations": [],
+    "unresolved": [
+      {
+        "kind": "observation",
+        "candidate_id": "o1",
+        "proposal": {
+          "value": {
+            "ref": "",
+            "quote": ""
+          },
+          "field": {
+            "ref": "",
+            "quote": ""
+          },
+          "legend": {
+            "ref": "",
+            "quote": ""
+          },
+          "condition": {
+            "ref": "",
+            "quote": ""
+          },
+          "state": "unknown",
+          "reason": "s2 (结晶/析晶) 的anchor未填写，且文档中未明确区分s1与s2的具体步骤边界，s1已涵盖主要操作描述，s2无独立证据。"
+        },
+        "issues": [
+          "source_quote_missing"
+        ]
+      },
+      {
+        "kind": "observation",
+        "candidate_id": "o2",
+        "proposal": {
+          "value": {
+            "ref": "",
+            "quote": ""
+          },
+          "field": {
+            "ref": "",
+            "quote": ""
+          },
+          "legend": {
+            "ref": "",
+            "quote": ""
+          },
+          "condition": {
+            "ref": "",
+            "quote": ""
+          },
+          "state": "unknown",
+          "reason": "s3 (设备) 的isDedicatedEquipment, isInCleanArea, modelSpecification, requiresDedication, requiresInactivationValidation, requiresIndependentHVAC均未在原文中提及。"
+        },
+        "issues": [
+          "source_quote_missing"
+        ]
+      },
+      {
+        "kind": "observation",
+        "candidate_id": "o3",
+        "proposal": {
+          "value": {
+            "ref": "",
+            "quote": ""
+          },
+          "field": {
+            "ref": "",
+            "quote": ""
+          },
+          "legend": {
+            "ref": "",
+            "quote": ""
+          },
+          "condition": {
+            "ref": "",
+            "quote": ""
+          },
+          "state": "unknown",
+          "reason": "s1 (合成步骤) 的inProcessControl, outputMassRange_kg, yieldRangePercent未在原文中提及。"
+        },
+        "issues": [
+          "source_quote_missing",
+          "source_quote_not_unique"
+        ]
+      }
+    ],
+    "rejected": [
+      {
+        "candidate_id": "c1",
+        "subject_id": "s1",
+        "field": "reactionConditions",
+        "proposal": {
+          "raw": "釜内温度上升至55℃，搅拌溶清。随后氮气保护下加入颗粒活性炭...维持50~55℃继续搅拌1-2小时",
+          "source": {
+            "ref": "u2",
+            "quote": "釜内温度上升至55℃，搅拌溶清。随后氮气保护下加入颗粒活性炭（活性炭投料量/Kg= HRS-1597粗品投入量/kg×0.2），维持50~55℃继续搅拌1-2小时",
+            "start": 125,
+            "end": 206
+          },
+          "field": {
+            "ref": "u2",
+            "quote": "步骤一",
+            "start": 0,
+            "end": 3
+          },
+          "unit": {
+            "ref": "",
+            "quote": ""
+          },
+          "condition": {
+            "ref": "",
+            "quote": ""
+          }
+        },
+        "issues": [
+          "raw_value_not_in_quote",
+          "source_quote_not_unique",
+          "semantic_undetermined"
+        ],
+        "reason": "raw_value_not_in_quote"
+      },
+      {
+        "candidate_id": "c2",
+        "subject_id": "s1",
+        "field": "stepOrder",
+        "proposal": {
+          "raw": "1",
+          "source": {
+            "ref": "u2",
+            "quote": "步骤一",
+            "start": 0,
+            "end": 3
+          },
+          "field": {
+            "ref": "u2",
+            "quote": "步骤一",
+            "start": 0,
+            "end": 3
+          },
+          "unit": {
+            "ref": "",
+            "quote": ""
+          },
+          "condition": {
+            "ref": "",
+            "quote": ""
+          }
+        },
+        "issues": [
+          "raw_value_not_in_quote",
+          "source_quote_not_unique",
+          "semantic_undetermined"
+        ],
+        "reason": "raw_value_not_in_quote"
+      },
+      {
+        "candidate_id": "c3",
+        "subject_id": "s1",
+        "field": "producesIntermediate",
+        "proposal": {
+          "target_id": "s4",
+          "evidence": {
+            "ref": "u2",
+            "quote": "加入HRS-1597粗品",
+            "start": 112,
+            "end": 124
+          },
+          "condition": {
+            "ref": "",
+            "quote": ""
+          },
+          "polarity": "affirmed"
+        },
+        "issues": [
+          "citation_ref_missing",
+          "inactive_subject_slot",
+          "source_quote_not_unique",
+          "semantic_role_unsupported",
+          "semantic_predicate_unsupported",
+          "semantic_binding_unsupported",
+          "semantic_applicability_unsupported",
+          "semantic_counterevidence_unsupported",
+          "semantic_support_missing"
+        ],
+        "reason": "citation_ref_missing"
+      },
+      {
+        "candidate_id": "c4",
+        "subject_id": "s1",
+        "field": "usesEquipment",
+        "proposal": {
+          "target_id": "s3",
+          "evidence": {
+            "ref": "u2",
+            "quote": "200L反应釜（RE64611）",
+            "start": 4,
+            "end": 20
+          },
+          "condition": {
+            "ref": "",
+            "quote": ""
+          },
+          "polarity": "affirmed"
+        },
+        "issues": [
+          "source_quote_not_unique"
+        ],
+        "reason": "source_quote_not_unique"
+      },
+      {
+        "candidate_id": "c7",
+        "subject_id": "s4",
+        "field": "intermediateIdentifier",
+        "proposal": {
+          "raw": "HRS-1597粗品",
+          "source": {
+            "ref": "u2",
+            "quote": "HRS-1597粗品",
+            "start": -1,
+            "end": -1,
+            "replay_issue": "citation_span_id_mismatch"
+          },
+          "field": {
+            "ref": "u2",
+            "quote": "HRS-1597粗品",
+            "start": -1,
+            "end": -1,
+            "replay_issue": "citation_span_id_mismatch"
+          },
+          "unit": {
+            "ref": "",
+            "quote": ""
+          },
+          "condition": {
+            "ref": "",
+            "quote": ""
+          }
+        },
+        "issues": [
+          "citation_coordinates_invalid",
+          "inactive_subject_slot",
+          "semantic_role_unsupported",
+          "semantic_predicate_unsupported",
+          "semantic_binding_unsupported",
+          "semantic_applicability_unsupported",
+          "semantic_counterevidence_unsupported",
+          "semantic_support_missing",
+          "semantic_undetermined"
+        ],
+        "reason": "citation_coordinates_invalid"
+      },
+      {
+        "kind": "frame",
+        "subject_id": "s4",
+        "reason": "source_coordinates_mismatch",
+        "proposal": {
+          "ref": "u2",
+          "quote": "HRS-1597粗品",
+          "start": -1,
+          "end": -1,
+          "replay_issue": "citation_span_id_mismatch"
+        }
+      }
+    ],
+    "contract_passes": 2,
+    "plan_reused": true,
+    "new_request_budget": 2,
+    "ner": {
+      "execution_status": "completed",
+      "coverage": {
+        "requested_refs": [
+          "u0",
+          "u1",
+          "u2"
+        ],
+        "attempted_refs": [
+          "u0",
+          "u1",
+          "u2"
+        ],
+        "covered_refs": [
+          "u0",
+          "u1",
+          "u2"
+        ],
+        "unattempted_refs": [],
+        "failed_refs": [],
+        "meaning": "all requested group windows executed; not semantic or recall coverage"
+      },
+      "timing": {
+        "load_seconds": 5e-06,
+        "inference_seconds": 2.026419
+      },
+      "issues": [],
+      "limits": {
+        "chunk_chars": 160,
+        "overlap_chars": 24,
+        "batch_size": 8,
+        "labels_per_batch": 1,
+        "source_truncated": false,
+        "encoder_truncation": "preprocessor_checked_encoder_internal_not_instrumented",
+        "long_values_require_context": true,
+        "backend": "gliner2.5",
+        "model_family": "GLiNER2.5",
+        "architecture": "boundary",
+        "package_version": "2.0.0",
+        "device": "cuda:0",
+        "max_len": 160,
+        "max_width": null,
+        "span_width_policy": "no_fixed_width_within_encoded_window",
+        "candidate_pool": "shared",
+        "shared_candidate_budget": {
+          "pool_boundary_top_k": 32,
+          "pool_size": 192,
+          "min_pool_per_query": 8
+        },
+        "encoder_max_positions": 512,
+        "tokenizer_max_length": null,
+        "encoder_input_limit": 512,
+        "encoder_limit_policy": "conservative_512_and_declared_limit",
+        "word_splitter": "char",
+        "checkpoint_default_splitter": "whitespace",
+        "splitter_quality_verified": false,
+        "word_truncation": "rejected_before_inference",
+        "source_collator": "checked_transform_pad_and_boundary_metadata",
+        "source_augmentation": "disabled_default_terminal_period",
+        "preprocessing_error_policy": "raise",
+        "candidate_validation": "active_spans_and_decision_scores_before_decode",
+        "overlap_policy": "allow"
+      },
+      "span_count": 78
+    },
+    "frames": {
+      "s1": {
+        "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/SynthesisStep",
+        "anchor": {
+          "ref": "u0",
+          "quote": "HRS-1597结晶纯化",
+          "start": 0,
+          "end": 12
+        }
+      },
+      "s3": {
+        "class_iri": "https://ontology.pharma-gmp.cn/slpra/equipment/Equipment",
+        "anchor": {
+          "ref": "u2",
+          "quote": "200L反应釜（RE64611）",
+          "start": 4,
+          "end": 20
+        }
+      }
+    },
+    "metric_checks": [
+      {
+        "candidate_id": "c1",
+        "metric": {
+          "tool": "validate_metric",
+          "candidate_id": "c1",
+          "execution_status": "completed",
+          "validation_status": "failed",
+          "raw_value": "釜内温度上升至55℃，搅拌溶清。随后氮气保护下加入颗粒活性炭...维持50~55℃继续搅拌1-2小时",
+          "source_unit": null,
+          "structural_checks": {
+            "source_binding": "failed",
+            "datatype": "not_checked"
+          },
+          "unit_checks": {
+            "status": "not_required",
+            "registry_version": "si-subset-v3-unit-aliases"
+          },
+          "quantity": null,
+          "normalized_value": null,
+          "conversion_record": null,
+          "semantic_status": "undetermined",
+          "fact_eligible": false,
+          "shacl": {
+            "profile": "metric-representation-v1",
+            "options": {
+              "inference": "none",
+              "advanced": false,
+              "js": false,
+              "inplace": false,
+              "do_owl_imports": false,
+              "meta_shacl": false,
+              "abort_on_first": false,
+              "allow_infos": false,
+              "allow_warnings": false
+            },
+            "execution_status": "not_run",
+            "validation_status": "incomplete",
+            "evaluated": false,
+            "conforms": null,
+            "report": [],
+            "report_text": null,
+            "coverage": {
+              "expected_focus_nodes": [],
+              "actual_focus_nodes": [],
+              "executed_shapes": [],
+              "missing_focus_nodes": [],
+              "complete": false
+            },
+            "issues": [
+              "preconditions_incomplete"
+            ]
+          },
+          "issues": [
+            "raw_value_not_in_quote",
+            "semantic_undetermined"
+          ]
+        }
+      },
+      {
+        "candidate_id": "c2",
+        "metric": {
+          "tool": "validate_metric",
+          "candidate_id": "c2",
+          "execution_status": "completed",
+          "validation_status": "failed",
+          "raw_value": "1",
+          "source_unit": null,
+          "structural_checks": {
+            "source_binding": "failed",
+            "datatype": "not_checked"
+          },
+          "unit_checks": {
+            "status": "passed",
+            "registry_version": "si-subset-v3-unit-aliases"
+          },
+          "quantity": {
+            "kind": "number",
+            "operator": "eq",
+            "source_value": "1",
+            "source_lower": null,
+            "source_upper": null,
+            "source_unit": null,
+            "dimension": null
+          },
+          "normalized_value": null,
+          "conversion_record": null,
+          "semantic_status": "undetermined",
+          "fact_eligible": false,
+          "shacl": {
+            "profile": "metric-representation-v1",
+            "options": {
+              "inference": "none",
+              "advanced": false,
+              "js": false,
+              "inplace": false,
+              "do_owl_imports": false,
+              "meta_shacl": false,
+              "abort_on_first": false,
+              "allow_infos": false,
+              "allow_warnings": false
+            },
+            "execution_status": "not_run",
+            "validation_status": "incomplete",
+            "evaluated": false,
+            "conforms": null,
+            "report": [],
+            "report_text": null,
+            "coverage": {
+              "expected_focus_nodes": [],
+              "actual_focus_nodes": [],
+              "executed_shapes": [],
+              "missing_focus_nodes": [],
+              "complete": false
+            },
+            "issues": [
+              "preconditions_incomplete"
+            ]
+          },
+          "issues": [
+            "raw_value_not_in_quote",
+            "semantic_undetermined"
+          ]
+        }
+      },
+      {
+        "candidate_id": "c5",
+        "metric": {
+          "tool": "validate_metric",
+          "candidate_id": "c5",
+          "execution_status": "completed",
+          "validation_status": "passed",
+          "raw_value": "RE64611",
+          "source_unit": null,
+          "structural_checks": {
+            "source_binding": "passed",
+            "datatype": "passed"
+          },
+          "unit_checks": {
+            "status": "not_required",
+            "registry_version": "si-subset-v3-unit-aliases"
+          },
+          "quantity": null,
+          "normalized_value": "RE64611",
+          "conversion_record": {},
+          "semantic_status": "supported",
+          "fact_eligible": false,
+          "shacl": {
+            "profile": "metric-representation-v1",
+            "options": {
+              "inference": "none",
+              "advanced": false,
+              "js": false,
+              "inplace": false,
+              "do_owl_imports": false,
+              "meta_shacl": false,
+              "abort_on_first": false,
+              "allow_infos": false,
+              "allow_warnings": false
+            },
+            "execution_status": "completed",
+            "validation_status": "passed",
+            "evaluated": true,
+            "conforms": true,
+            "report": [],
+            "report_text": "Validation Report\nConforms: True\n",
+            "coverage": {
+              "expected_focus_nodes": [
+                "urn:ontology-agent:claim:c5"
+              ],
+              "actual_focus_nodes": [
+                "urn:ontology-agent:claim:c5"
+              ],
+              "executed_shapes": [
+                "urn:ontology-agent:shapes:metric-representation-v1:Claim",
+                "urn:ontology-agent:shapes:metric-representation-v1:Predicate",
+                "urn:ontology-agent:shapes:metric-representation-v1:Raw",
+                "urn:ontology-agent:shapes:metric-representation-v1:Value"
+              ],
+              "missing_focus_nodes": [],
+              "complete": true,
+              "unexpected_focus_nodes": []
+            },
+            "issues": []
+          },
+          "issues": []
+        }
+      },
+      {
+        "candidate_id": "c6",
+        "metric": {
+          "tool": "validate_metric",
+          "candidate_id": "c6",
+          "execution_status": "completed",
+          "validation_status": "passed",
+          "raw_value": "200L反应釜",
+          "source_unit": null,
+          "structural_checks": {
+            "source_binding": "passed",
+            "datatype": "passed"
+          },
+          "unit_checks": {
+            "status": "not_required",
+            "registry_version": "si-subset-v3-unit-aliases"
+          },
+          "quantity": null,
+          "normalized_value": "200L反应釜",
+          "conversion_record": {},
+          "semantic_status": "supported",
+          "fact_eligible": false,
+          "shacl": {
+            "profile": "metric-representation-v1",
+            "options": {
+              "inference": "none",
+              "advanced": false,
+              "js": false,
+              "inplace": false,
+              "do_owl_imports": false,
+              "meta_shacl": false,
+              "abort_on_first": false,
+              "allow_infos": false,
+              "allow_warnings": false
+            },
+            "execution_status": "completed",
+            "validation_status": "passed",
+            "evaluated": true,
+            "conforms": true,
+            "report": [],
+            "report_text": "Validation Report\nConforms: True\n",
+            "coverage": {
+              "expected_focus_nodes": [
+                "urn:ontology-agent:claim:c6"
+              ],
+              "actual_focus_nodes": [
+                "urn:ontology-agent:claim:c6"
+              ],
+              "executed_shapes": [
+                "urn:ontology-agent:shapes:metric-representation-v1:Claim",
+                "urn:ontology-agent:shapes:metric-representation-v1:Predicate",
+                "urn:ontology-agent:shapes:metric-representation-v1:Raw",
+                "urn:ontology-agent:shapes:metric-representation-v1:Value"
+              ],
+              "missing_focus_nodes": [],
+              "complete": true,
+              "unexpected_focus_nodes": []
+            },
+            "issues": []
+          },
+          "issues": []
+        }
+      },
+      {
+        "candidate_id": "c7",
+        "metric": {
+          "tool": "validate_metric",
+          "candidate_id": "c7",
+          "execution_status": "completed",
+          "validation_status": "failed",
+          "raw_value": "HRS-1597粗品",
+          "source_unit": null,
+          "structural_checks": {
+            "source_binding": "failed",
+            "datatype": "not_checked"
+          },
+          "unit_checks": {
+            "status": "not_required",
+            "registry_version": "si-subset-v3-unit-aliases"
+          },
+          "quantity": null,
+          "normalized_value": null,
+          "conversion_record": null,
+          "semantic_status": "undetermined",
+          "fact_eligible": false,
+          "shacl": {
+            "profile": "metric-representation-v1",
+            "options": {
+              "inference": "none",
+              "advanced": false,
+              "js": false,
+              "inplace": false,
+              "do_owl_imports": false,
+              "meta_shacl": false,
+              "abort_on_first": false,
+              "allow_infos": false,
+              "allow_warnings": false
+            },
+            "execution_status": "not_run",
+            "validation_status": "incomplete",
+            "evaluated": false,
+            "conforms": null,
+            "report": [],
+            "report_text": null,
+            "coverage": {
+              "expected_focus_nodes": [],
+              "actual_focus_nodes": [],
+              "executed_shapes": [],
+              "missing_focus_nodes": [],
+              "complete": false
+            },
+            "issues": [
+              "preconditions_incomplete"
+            ]
+          },
+          "issues": [
+            "citation_coordinates_invalid",
+            "inactive_subject_slot",
+            "semantic_undetermined"
+          ]
+        }
+      }
+    ],
+    "type_checks": {
+      "document": [],
+      "s1": [
+        "source_quote_not_unique"
+      ],
+      "s3": []
+    },
+    "proposed_claim_count": 7,
+    "proposed_observation_count": 3,
+    "proposed_subject_count": 2,
+    "acceptance": {
+      "checks": [
+        {
+          "check": "required_properties",
+          "expected": {
+            "predicate": "equipmentID",
+            "value": "RE64611"
+          },
+          "pass": true
+        },
+        {
+          "check": "required_relations",
+          "expected": {
+            "predicate": "usesEquipment",
+            "object_contains": "RE64611"
+          },
+          "pass": false
+        },
+        {
+          "check": "forbidden_predicate",
+          "expected": "producesFinalProduct",
+          "pass": true
+        },
+        {
+          "check": "forbidden_predicate",
+          "expected": "producesIntermediate",
+          "pass": true
+        },
+        {
+          "check": "forbidden_predicate",
+          "expected": "locatedIn",
+          "pass": true
+        }
+      ],
+      "passed": 4,
+      "total": 5,
+      "all_pass": false,
+      "evaluated": true
+    },
+    "extended_acceptance": {
+      "checks": [
+        {
+          "check": "semantic_review_present",
+          "candidate_id": "c5",
+          "pass": true
+        },
+        {
+          "check": "semantic_review_present",
+          "candidate_id": "c6",
+          "pass": true
+        },
+        {
+          "check": "request_budget",
+          "pass": true
+        }
+      ],
+      "evaluated": true,
+      "all_pass": true,
+      "manual_review_required": [
+        "subject_type",
+        "subject_binding",
+        "predicate_or_metric_meaning",
+        "relation_direction_and_endpoints",
+        "source_unit_and_normalization",
+        "polarity_and_unknown",
+        "field_legend_condition_roles",
+        "long_value_completeness"
+      ],
+      "manual_review_status": "not_performed"
+    }
+  },
+  "note": "Program outcomes are validation candidates, not verified business facts; read independent review separately.",
+  "frozen_checklist": {
+    "checks": [
+      {
+        "check": "required_properties",
+        "expected": {
+          "predicate": "equipmentID",
+          "value": "RE64611"
+        },
+        "pass": true
+      },
+      {
+        "check": "required_relations",
+        "expected": {
+          "predicate": "usesEquipment",
+          "object_contains": "RE64611"
+        },
+        "pass": false
+      },
+      {
+        "check": "forbidden_predicate",
+        "expected": "producesFinalProduct",
+        "pass": true
+      },
+      {
+        "check": "forbidden_predicate",
+        "expected": "producesIntermediate",
+        "pass": true
+      },
+      {
+        "check": "forbidden_predicate",
+        "expected": "locatedIn",
+        "pass": true
+      }
+    ],
+    "passed": 4,
+    "total": 5,
+    "all_pass": false,
+    "evaluated": true
+  },
+  "extended_checks": {
+    "checks": [
+      {
+        "check": "semantic_review_present",
+        "candidate_id": "c5",
+        "pass": true
+      },
+      {
+        "check": "semantic_review_present",
+        "candidate_id": "c6",
+        "pass": true
+      },
+      {
+        "check": "request_budget",
+        "pass": true
+      }
+    ],
+    "evaluated": true,
+    "all_pass": true,
+    "manual_review_required": [
+      "subject_type",
+      "subject_binding",
+      "predicate_or_metric_meaning",
+      "relation_direction_and_endpoints",
+      "source_unit_and_normalization",
+      "polarity_and_unknown",
+      "field_legend_condition_roles",
+      "long_value_completeness"
+    ],
+    "manual_review_status": "not_performed"
+  }
+}

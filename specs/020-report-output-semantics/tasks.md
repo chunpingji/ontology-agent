@@ -67,4 +67,7 @@ T001→T002→T003→T004～T006→US1→US2→US3→US4→US5→验证。US1编
 
 ## 本地验证结论
 
+- [x] T038 用户调整：进入模板定义前保存模板与输出样例，附件重试保持模板身份，验证持久编辑与历史列表往返；结果见 [template-entry-validation.md](template-entry-validation.md)。
+- [x] T039 保存等待修复：消除大解析 JSON 重复传输，新增附件 204 确认响应及保存超时，成功状态不依赖导航完成；验证大样例、停滞请求、停滞导航及提交失败，见 [template-save-latency-validation.md](template-save-latency-validation.md)。
+
 T001～T036 的实现与本地检查见 [validation.md](validation.md)。全量后端 1034 passed；隔离 PostgreSQL 5 passed；前端 15 项 Node 测试和 8 项浏览器检查通过。全仓既有 lint 错误、真实来源/业务审核、独立模型质量、性能与部署验收如实记录；T037 保持未完成。

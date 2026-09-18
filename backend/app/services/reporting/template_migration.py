@@ -183,7 +183,7 @@ def migrate_template(
             "RANGE_BOUNDARY_UNRESOLVED",
         )
 
-    def groups(items):
+    def groups(items, section):
         output = []
         for group in items:
             target_group = {
@@ -191,7 +191,7 @@ def migrate_template(
                 "title": group.get("title", ""),
                 "origin": deepcopy(group.get("origin")),
                 "units": [],
-                "groups": groups(group.get("groups", [])),
+                "groups": groups(group.get("groups", []), section),
             }
             risk_unit = None
             for slot in group.get("slots", []):
@@ -245,6 +245,42 @@ def migrate_template(
                         "required": True,
                     }
                 source = slot.get("source", {})
+                legacy_semantics = None
+                if source.get("kind") == "semantic":
+                    from pydantic import TypeAdapter
+
+                    from app.services.reporting.ast_template import CoverageBinding, coverage_key
+
+                    entries = [
+                        TypeAdapter(CoverageBinding).validate_python(c)
+                        for c in section.get("coverage", [])
+                    ]
+                    requested = source.get("coverage_refs", [])
+                    keys = [coverage_key(c) for c in entries]
+                    ambiguous = any(keys.count(key) != 1 for key in requested)
+                    selected = [
+                        c.model_dump(mode="json")
+                        for c in entries
+                        if not requested or coverage_key(c) in requested
+                    ]
+                    legacy_semantics = {
+                        "coverage": selected if not ambiguous else [],
+                        "coverage_refs": requested,
+                        "prompt": (
+                            source.get("prompt")
+                            if source.get("prompt") is not None
+                            else section.get("prompt")
+                        ),
+                        "required": slot.get("required", False),
+                        "on_missing": slot.get("on_missing", "annotate"),
+                        "missing_placeholder": slot.get("missing_placeholder"),
+                    }
+                    if ambiguous:
+                        problem(
+                            old_id,
+                            "旧 coverage_refs 短名不唯一或不存在，请选择完整关系路径。",
+                            "LEGACY_COVERAGE_AMBIGUOUS",
+                        )
                 if source.get("kind") == "snapshot":
                     binding_id = "snapshot:" + evidence_hash(
                         {
@@ -319,6 +355,14 @@ def migrate_template(
                         "nodes": [{"kind": "input_ref", "input_id": input_id}],
                     },
                 }
+                if legacy_semantics is not None:
+                    unit["origin"] = {**(unit.get("origin") or {}), "legacy_slot": legacy_semantics}
+                    # Generic semantic Slots remain empty until a validated field choice is made.
+                    # Retain known baseline mappings and their existing review requirements.
+                    if not known:
+                        definitions["inputs"].pop(input_id, None)
+                        unit["bindings"], unit["inputs"] = [], []
+                        unit["render"]["nodes"] = []
                 if known and input_id == "batch_range":
                     unit["title"] = "预计批量范围（kg）"
                     unit["bindings"].append({"binding_ref": "production_plan"})
@@ -415,7 +459,7 @@ def migrate_template(
                     }
                 )
                 problem(old_id, "确认精确输入契约、主体/时间/完整性及最低材料要求；原定义已保留。")
-                if source.get("prompt"):
+                if source.get("prompt") or (legacy_semantics or {}).get("prompt"):
                     problem(
                         old_id,
                         "原行文须拆分为授权引用与逐声明前提，不能直接执行旧 Prompt。",
@@ -432,7 +476,7 @@ def migrate_template(
                 "section_id": section["section_id"],
                 "title": section.get("title", ""),
                 "origin": deepcopy(section.get("origin")),
-                "groups": groups(section.get("groups", [])),
+                "groups": groups(section.get("groups", []), section),
             }
         )
         if section.get("prompt") or section.get("coverage"):

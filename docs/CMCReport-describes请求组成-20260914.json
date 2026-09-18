@@ -1,0 +1,130 @@
+{
+  "analysis_date_utc": "2026-09-14",
+  "run_id": "98935847-00e1-4e39-b7ff-cc318d57b959",
+  "document_sha256": "1156ca7b694c5af10afa393a5df4158ad4f9528901eab560ae2cf96e55b6d44b",
+  "task_id": "aae576c004aadba03e7c1cc4f535ef54584ea95db7d4f6628c63f9cd7b02549f",
+  "method": "Reconstructed from saved context and protocol with model dispatch replaced by a local collector. Character counts describe request components, not token counts or the full HTTP body.",
+  "request_binding_verified": true,
+  "measurements": [
+    {
+      "stage": "ontology_guided_discovery",
+      "system_characters": 1046,
+      "user_characters": 10707,
+      "schema_characters": 3882,
+      "user_field_characters": {
+        "target": 1259,
+        "subject": 214,
+        "subject_label": 42,
+        "owner_field_refs": 45,
+        "subject_binding": 251,
+        "predicate": 3241,
+        "allowed_object_classes": 732,
+        "subject_evidence_refs": 2,
+        "required_counterevidence": 2,
+        "fragments": 2108,
+        "stage": 11,
+        "protocol_version": 20,
+        "scope_protocol_version": 24,
+        "literal_quote_version": 26,
+        "unit_normalization_version": 49,
+        "assertion_generation": 1,
+        "proof_menu": 506,
+        "field_bindings": 1482,
+        "whole_method_fields": 2,
+        "method_granularity_instruction": 284
+      },
+      "fragment_count": 19,
+      "source_characters": 496,
+      "fact_characters": 13,
+      "fragment_roles": {
+        "target": 1,
+        "field_group_binding": 18
+      },
+      "field_binding_count": 1,
+      "allowed_class_count": 12,
+      "schema_definition_count": 6,
+      "new_model_calls": 0,
+      "component_characters": 15635
+    },
+    {
+      "stage": "ontology_guided_verification",
+      "system_characters": 1536,
+      "user_characters": 12740,
+      "schema_characters": 8920,
+      "user_field_characters": {
+        "target": 1259,
+        "subject": 214,
+        "subject_label": 42,
+        "owner_field_refs": 45,
+        "subject_binding": 251,
+        "predicate": 3241,
+        "allowed_object_classes": 732,
+        "subject_evidence_refs": 2,
+        "required_counterevidence": 2,
+        "fragments": 2108,
+        "stage": 14,
+        "candidates": 2016,
+        "protocol_version": 20,
+        "scope_protocol_version": 24,
+        "literal_quote_version": 26,
+        "unit_normalization_version": 49,
+        "assertion_generation": 1,
+        "proof_menu": 506,
+        "field_bindings": 1482,
+        "whole_method_fields": 2,
+        "method_granularity_instruction": 284
+      },
+      "fragment_count": 19,
+      "source_characters": 496,
+      "fact_characters": 13,
+      "fragment_roles": {
+        "target": 1,
+        "field_group_binding": 18
+      },
+      "field_binding_count": 1,
+      "allowed_class_count": 12,
+      "schema_definition_count": 11,
+      "new_model_calls": 0,
+      "component_characters": 23196
+    }
+  ],
+  "actual_model_requests": [
+    {
+      "stage": "ontology_guided_discovery",
+      "metrics": {
+        "queue_seconds": 0.026,
+        "prompt_tokens": 4481,
+        "completion_tokens": 146,
+        "cache_tokens": 0,
+        "prompt_ms": 17442.516,
+        "predicted_ms": 2590.728,
+        "cache_n": 0,
+        "prompt_n": 4481,
+        "predicted_n": 146,
+        "request_seconds": 20.576,
+        "elapsed_seconds": 20.602
+      },
+      "started_at": "2026-09-14 03:37:52.804003+00:00",
+      "finished_at": "2026-09-14 03:38:13.379847+00:00"
+    },
+    {
+      "stage": "ontology_guided_verification",
+      "metrics": {
+        "queue_seconds": 0.023,
+        "prompt_tokens": 5712,
+        "completion_tokens": 478,
+        "cache_tokens": 0,
+        "prompt_ms": 22194.158,
+        "predicted_ms": 8503.785,
+        "cache_n": 0,
+        "prompt_n": 5712,
+        "predicted_n": 478,
+        "request_seconds": 31.042,
+        "elapsed_seconds": 31.064
+      },
+      "started_at": "2026-09-14 03:38:13.658492+00:00",
+      "finished_at": "2026-09-14 03:38:44.699704+00:00"
+    }
+  ],
+  "new_model_calls": 0
+}

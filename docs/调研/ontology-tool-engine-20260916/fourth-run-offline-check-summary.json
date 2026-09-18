@@ -1,0 +1,17 @@
+{
+  "mode": "offline_saved_output_diagnostic",
+  "source": "runtime/f4-positive/result04/calls.json",
+  "output": "runtime/f4-positive/offline04-after-shacl-fix",
+  "real_model_requests": 0,
+  "saved_responses_consumed": 4,
+  "errors": [],
+  "controller_checks": {"binding": 1, "metric": 1, "shacl": 1},
+  "binding": "passed",
+  "metric": {"validation_status": "incomplete", "quantity": null, "reason": "semantic_undetermined"},
+  "shacl": {"evaluated": false, "conforms": null, "reason": "shacl_not_evaluated"},
+  "accepted_properties": 0,
+  "nodes_including_user_root": 2,
+  "completion": "incomplete",
+  "finding": "SHACL 返回字段读取错误已修复；独立核验 counterevidence facet 缺少支持选区时仍保留未决，不进行数值规范化，也不将未执行 SHACL 当成通过。",
+  "accounting_note": "离线目录中普通 CLI 的模型计数/用量是消费原始4个返回的fixture记录，不是新模型请求，不与真实运行汇总相加。"
+}

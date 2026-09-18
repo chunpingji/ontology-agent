@@ -26,6 +26,7 @@ from app.services.document_analysis.artifact_store import (
 from app.services.document_analysis.public_projection import (
     PUBLIC_TO_INTERNAL_PROJECTION,
     public_graph_payload,
+    public_ranking_payload,
 )
 from app.services.document_analysis.run_store import (
     DocumentAnalysisRunStore,
@@ -36,11 +37,18 @@ from app.services.document_analysis.run_store import (
     RunNotFound,
     content_hash,
 )
+from app.services.document_analysis.state_artifacts import decode_state
 from app.services.extraction.evidence_identity import evidence_hash
-from app.services.extraction.ontology_guided.contracts import CONTRACT_VERSION
+from app.services.extraction.ontology_guided.contracts import (
+    CONTRACT_VERSION,
+    OntologySnapshot,
+    SubjectRef,
+)
 from app.services.extraction.ontology_guided.ontology_plan import (
+    compile_local_menu,
     ontology_snapshot_from_engine,
 )
+from app.services.extraction.ontology_guided.value_constraints import UNIT_NORMALIZATION_VERSION
 
 PUBLIC_STATUS = {
     "queued": "queued",
@@ -102,7 +110,8 @@ def _absolute_iri(value: str) -> bool:
 
 
 def _request_hash(
-    *, filename: str, document_hash: str, root_class_iri: str, metadata_mode: str
+    *, filename: str, document_hash: str, root_class_iri: str, metadata_mode: str,
+    origin: dict | None = None,
 ) -> str:
     return content_hash(
         {
@@ -113,6 +122,7 @@ def _request_hash(
             "metadata_mode": metadata_mode,
             "scope_mode": "document_graph",
             "focus_path": [],
+            **({"origin": origin} if origin is not None else {}),
         }
     )
 
@@ -150,7 +160,12 @@ def _available_actions(run: DocumentAnalysisRun, role: str | None) -> list[str]:
     if status in {"queued", "running"}:
         return ["pause", "cancel", "delete"]
     if status in {"paused", "retryable_failure"}:
-        return ["resume", "cancel", "delete"]
+        actions = ["resume", "cancel", "delete"]
+        if run.expires_at is None or _aware(run.expires_at) > datetime.now(UTC):
+            actions.append(
+                "ranking_budget_disable" if run.ranking_budget_enabled else "ranking_budget_enable"
+            )
+        return actions
     if status == "blocked_dependency":
         return ["cancel", "delete"]
     if status in {"finished", "cancelled"}:
@@ -168,10 +183,17 @@ def _progress(run: DocumentAnalysisRun) -> dict[str, Any]:
     return {
         "tasks_attempted": attempted,
         "model_calls": int(source.get("model_calls", 0)),
+        "model_calls_reserved": int(source.get("model_calls_reserved", 0)),
+        "model_calls_unresolved": int(source.get("model_calls_unresolved", 0)),
         "records_planned": int(source.get("records_planned", 0)),
         "records_examined": int(source.get("records_examined", 0)),
         "records_incomplete": int(source.get("records_incomplete", 0)),
         "records_unattempted": int(source.get("records_unattempted", 0)),
+        **({"retrieval_diagnostics": source["retrieval_diagnostics"]}
+           if source.get("retrieval_diagnostics") is not None else {}),
+        **({"candidate_policy": source["candidate_policy"],
+            "completion": source.get("completion", "incomplete")}
+           if source.get("candidate_policy") is not None else {}),
         "phase_counts": {
             "phase1": int(phase_counts.get("phase1", 0)),
             "phase2": int(phase_counts.get("phase2", 0)),
@@ -183,7 +205,10 @@ def _progress(run: DocumentAnalysisRun) -> dict[str, Any]:
             "not_checked": max(0, attempted - supported - unsupported - undetermined),
         },
         "pending_frontiers": int(source.get("pending_frontiers", 0)),
-        "stop_reason": source.get("stop_reason") or run.stop_reason,
+        "stop_reason": (
+            None if run.execution_status in {"queued", "running", "pausing"}
+            else run.stop_reason or source.get("stop_reason")
+        ),
         "contract_version": CONTRACT_VERSION,
         "event_head": run.event_head,
         "artifact_revision": run.artifact_revision,
@@ -204,6 +229,9 @@ def _run_error(run: DocumentAnalysisRun) -> dict[str, Any] | None:
     }
 
 
+CURRENT_STATE_STORAGE_VERSION = 4
+
+
 class DocumentAnalysisApplication:
     def __init__(self, db: Session, *, ontology_engine: object) -> None:
         self.db = db
@@ -219,6 +247,7 @@ class DocumentAnalysisApplication:
         root_class_iri: str,
         request_key: str,
         metadata_mode: str,
+        origin: dict | None = None,
     ) -> tuple[DocumentAnalysisRun, bool]:
         if not request_key or len(request_key) > 200:
             raise DocumentAnalysisError(
@@ -251,6 +280,7 @@ class DocumentAnalysisApplication:
             document_hash=staged.document_hash,
             root_class_iri=root_class_iri,
             metadata_mode=metadata_mode,
+            origin=origin,
         )
         existing = self.db.scalar(
             select(DocumentAnalysisRun).where(
@@ -289,6 +319,23 @@ class DocumentAnalysisApplication:
                 "所选类型不在当前本体或不符合根类型策略",
                 status_code=422,
             )
+        from app.services.document_analysis.adaptive_configuration import configured_adaptive_policy
+
+        try:
+            tool_engine = not (origin or {}).get("template_id")
+            adaptive = configured_adaptive_policy(settings) if not tool_engine else None
+            if adaptive is not None:
+                adaptive.validate_ontology_context(ontology)
+            if tool_engine:
+                from app.services.document_analysis.execution import freeze_tool_engine_policy
+
+                tool_policy = freeze_tool_engine_policy()
+        except (ValueError, OSError) as exc:
+            self.storage.discard_run(run_id)
+            raise DocumentAnalysisError(
+                "ADAPTIVE_CONFIGURATION_INVALID", "自适应检索配置或校准制品无效",
+                status_code=503, retryable=True,
+            ) from exc
         provisional_fingerprint = evidence_hash(
             {
                 "request_hash": request_digest,
@@ -313,12 +360,56 @@ class DocumentAnalysisApplication:
                 ontology_snapshot_hash=ontology.ontology_hash,
                 metadata_mode=metadata_mode,
                 scope_mode="document_graph",
+                ranking_budget_enabled=settings.semantic_ranking_budget_enabled,
                 provisional_fingerprint=provisional_fingerprint,
                 recognition_run_id=run_id,
-                progress={},
+                progress=(
+                    {"candidate_policy": "sparse-candidates-v1", "completion": "incomplete"}
+                    if (tool_policy.get("candidate_planning") if tool_engine
+                        else settings.document_analysis_evidence_repair_enabled)
+                    else {}
+                ),
                 source_payload={
                     "filename": staged.filename,
                     "document_hash": staged.document_hash,
+                    "performance_policy": tool_policy if tool_engine else {
+                        "state_storage_version": CURRENT_STATE_STORAGE_VERSION,
+                        "frontier_version": 2,
+                        "recognition_inflight": 1,
+                        "template_interleaving": (
+                            settings.document_analysis_template_interleaving
+                            or settings.document_analysis_evidence_repair_enabled
+                        ),
+                        **({"evidence_repair": "evidence-repair-v1",
+                            "layered_recognition": "dependency-ready-v1",
+                            "source_object_recognition": "source-object-recognition-v1",
+                            "cmc_describes_type_scope": "drug-product-only-v1",
+                            "expert_review_repair": "expert-review-repair-v1",
+                            "candidate_planning": "sparse-candidates-v1",
+                            "incremental_performance": "incremental-performance-v1",
+                            **({"state_storage_version": 4}
+                               if CURRENT_STATE_STORAGE_VERSION == 4 else
+                               {"state_storage_version": 3, "state_baseline_interval": 32}),
+                            "semantic_expansion": "bounded-semantic-v1",
+                            "process_granularity": "whole-method-field-v1",
+                            "attribute_priority": "source-field-priority-v1",
+                            "heuristic_policy": "heuristic-first-v3",
+                            **({"heuristic_policy": "heuristic-first-v4",
+                                "adaptive_retrieval": adaptive.model_dump(mode="json")}
+                               if adaptive else {}),
+                            "field_bindings": "ir-field-bindings-v1",
+                            "owner_binding": "source-owned-binding-v2",
+                            "scope_protocol": "source-quoted-scope-v1",
+                            "evidence_work": "evidence-work-v2",
+                            "literal_quotes": "source-integer-quotes-v2",
+                            "unit_normalization": UNIT_NORMALIZATION_VERSION,
+                            "proof_menu": "proof-menu-v1", "identity": "physical-mention-v1",
+                            "model_call_state_version": 2, "max_lineage_calls": 8}
+                           if settings.document_analysis_evidence_repair_enabled else {}),
+                    } if (tool_engine or CURRENT_STATE_STORAGE_VERSION == 4
+                          or settings.document_analysis_performance_enabled
+                          or settings.document_analysis_evidence_repair_enabled) else {},
+                    **({"origin": origin} if origin is not None else {}),
                 },
                 ontology_artifact_id=ontology.snapshot_id,
                 ontology_payload=ontology.model_dump(mode="json"),
@@ -345,6 +436,33 @@ class DocumentAnalysisApplication:
         if not created:
             self.storage.discard_run(run_id)
         return run, created
+
+    def list_runs(self, owner_id: str, *, limit: int = 20, offset: int = 0) -> dict[str, Any]:
+        runs, has_more = self.store.list_owned(owner_id, limit=limit, offset=offset)
+        return {
+            "contract_version": CONTRACT_VERSION,
+            "items": [
+                {
+                    "contract_version": CONTRACT_VERSION,
+                    "recognition_run_id": run.recognition_run_id,
+                    "run_revision": run.revision,
+                    "event_head": run.event_head,
+                    "artifact_revision": run.artifact_revision,
+                    "status": _status(run),
+                    "stage": _stage(run),
+                    "input": {
+                        "filename": run.filename,
+                        "root_class_iri": run.root_class_iri,
+                        "root_class_label": run.root_class_label,
+                        "metadata_mode": run.metadata_mode,
+                    },
+                    "created_at": _aware(run.created_at),
+                    "expires_at": _aware(run.expires_at),
+                }
+                for run in runs
+            ],
+            "has_more": has_more,
+        }
 
     def get_run(self, run_id: UUID | str, owner_id: str) -> DocumentAnalysisRun:
         try:
@@ -376,9 +494,13 @@ class DocumentAnalysisApplication:
         }
 
     def status_response(self, run: DocumentAnalysisRun, *, role: str | None) -> dict[str, Any]:
+        from app.services.document_analysis.reviews import reviewed_snapshot_id
+
         manifest = dict(run.artifact_manifest or {})
         ontology_entry = manifest.get("ontology_snapshot") or {}
+        protocol = self._extraction_protocol(run)
         return {
+            **({"extraction_protocol": protocol} if protocol is not None else {}),
             "contract_version": CONTRACT_VERSION,
             "recognition_run_id": run.recognition_run_id,
             "run_revision": run.revision,
@@ -386,6 +508,7 @@ class DocumentAnalysisApplication:
             "artifact_revision": run.artifact_revision,
             "status": _status(run),
             "stage": _stage(run),
+            "ranking_budget_enabled": run.ranking_budget_enabled,
             "input": {
                 "filename": run.filename,
                 "root_class_iri": run.root_class_iri,
@@ -397,7 +520,10 @@ class DocumentAnalysisApplication:
                 "analysis_id": run.analysis_id,
                 "ontology_snapshot_id": ontology_entry.get("artifact_id"),
                 "metadata_snapshot_id": run.metadata_snapshot_id,
-                "graph_snapshot_id": run.graph_snapshot_id,
+                "graph_snapshot_id": reviewed_snapshot_id(self.db, run),
+                "structure_snapshot_id": (manifest.get("source_header") or {}).get("artifact_id")
+                or (manifest.get("structure") or {}).get("artifact_id"),
+                "ranking_summary_id": (manifest.get("ranking_summary") or {}).get("artifact_id"),
                 "fingerprint_status": "frozen" if run.run_fingerprint else "provisional",
             },
             "artifacts": {
@@ -414,9 +540,34 @@ class DocumentAnalysisApplication:
             "expires_at": _aware(run.expires_at),
         }
 
+    def _extraction_protocol(self, run: DocumentAnalysisRun) -> str | None:
+        source_id = ((run.artifact_manifest or {}).get("source") or {}).get("artifact_id")
+        source = self.db.get(DocumentAnalysisArtifact, source_id) if source_id else None
+        return ((source.payload or {}).get("performance_policy") or {}).get(
+            "extraction_protocol"
+        ) if source else None
+
     def _artifact_payload(
         self, run: DocumentAnalysisRun, kind: str
     ) -> tuple[dict[str, Any], str] | None:
+        self.assert_artifacts_readable(run)
+        from app.services.document_analysis.current_state import (
+            enabled,
+            read_display,
+            read_ranking_summary,
+        )
+
+        if kind in {"graph", "public_graph", "source_selections", "ranking_summary"} and enabled(
+            self.store, run
+        ):
+            body = (read_display(self.store, run) if kind in {
+                "graph", "public_graph", "source_selections",
+            } else read_ranking_summary(self.store, run))
+            if body is not None and kind == "source_selections":
+                source, _ = self._artifact_payload(run, "source_header")
+                body = {**source, "selection_registry": body["selection_registry"]}
+            if body is not None:
+                return body, body.get("graph", {}).get("artifact_status", "ready")
         ref = self.store.get_artifact(run.recognition_run_id, run.owner_id, kind)
         if ref is None:
             return None
@@ -431,7 +582,14 @@ class DocumentAnalysisApplication:
                 retryable=True,
                 current_revision=run.revision,
             )
-        return dict(artifact.payload), _availability(ref.status)
+        return decode_state(self.store, run, dict(artifact.payload)), _availability(ref.status)
+
+    @staticmethod
+    def assert_artifacts_readable(run: DocumentAnalysisRun) -> None:
+        if run.expires_at is not None and _aware(run.expires_at) <= datetime.now(UTC):
+            raise DocumentAnalysisError("RUN_EXPIRED", "运行已过期", status_code=410)
+        if run.deletion_state != "none":
+            raise DocumentAnalysisError("RUN_DELETED", "运行正在删除或已删除", status_code=410)
 
     def metadata_response(self, run: DocumentAnalysisRun) -> dict[str, Any]:
         committed = self._artifact_payload(run, "metadata")
@@ -503,9 +661,20 @@ class DocumentAnalysisApplication:
     def graph_response(self, run: DocumentAnalysisRun, *, projection: str) -> dict[str, Any]:
         if projection not in PUBLIC_TO_INTERNAL_PROJECTION:
             raise DocumentAnalysisError("INVALID_REQUEST", "未知 graph projection", status_code=400)
-        committed = self._artifact_payload(run, "graph")
+        protocol = self._extraction_protocol(run)
+        if projection == "verified" and protocol != "ontology-tool-extraction-v1":
+            raise DocumentAnalysisError(
+                "unsupported_projection", "此运行的冻结协议不支持 verified 投影", status_code=400,
+            )
+        compact = self._artifact_payload(run, "public_graph")
+        committed = compact or self._artifact_payload(run, "graph")
+        summary = self._artifact_payload(run, "ranking_summary")
+        ranking_artifact = None if summary else self._artifact_payload(run, "ranking_state")
+        ranking_state = ranking_artifact[0] if ranking_artifact else {}
         if committed is None:
             return {
+                **({"extraction_protocol": protocol, "relationship_groups": [],
+                    "scope_resolutions": []} if protocol is not None else {}),
                 "contract_version": CONTRACT_VERSION,
                 "recognition_run_id": run.recognition_run_id,
                 "run_revision": run.revision,
@@ -518,7 +687,13 @@ class DocumentAnalysisApplication:
                 "properties": [],
                 "relationships": [],
                 "invalidated_refs": [],
+                "ranking": {
+                    **(summary[0] if summary else public_ranking_payload(ranking_state)),
+                    "budget_enabled": run.ranking_budget_enabled,
+                },
                 "coverage": {
+                    **({"candidate_policy": run.progress["candidate_policy"]}
+                       if (run.progress or {}).get("candidate_policy") is not None else {}),
                     "subjects": [],
                     "records_planned": 0,
                     "records_examined": 0,
@@ -537,17 +712,116 @@ class DocumentAnalysisApplication:
                 "error": None,
             }
         payload, availability = committed
+        from app.services.document_analysis.reviews import review_overlay
+
+        payload = review_overlay(self.db, run, payload)
+        if ranking_artifact:
+            payload["ranking_state"] = ranking_state
         response = public_graph_payload(
             recognition_run_id=str(run.recognition_run_id),
             run_revision=run.revision,
             event_head=run.event_head,
             artifact_revision=run.artifact_revision,
             availability=availability,
-            projection=projection,
+            projection="all_candidates" if projection == "rejected" else projection,
             stored_payload=payload,
+            extraction_protocol=protocol,
         )
+        if projection == "rejected":
+            response["projection"] = projection
+            for public_name, source_name in (("properties", "properties"),
+                                             ("relationships", "edges"),
+                                             ("relationship_groups", "relationship_groups")):
+                if public_name not in response:
+                    continue
+                selected = {
+                    (item["candidate_id"], item["revision"])
+                    for item in payload["graph"].get(source_name, [])
+                    if item["decision_status"] == "unsupported"
+                    or item.get("independent_review") == "rejected"
+                }
+                response[public_name] = [
+                    item for item in response[public_name]
+                    if (item["candidate_id"], item["revision"]) in selected
+                ]
+            if "scope_resolutions" in response:
+                used_scopes = {
+                    item["scope"]["scope_id"]
+                    for name in ("properties", "relationships", "relationship_groups")
+                    for item in response.get(name, []) if item.get("scope")
+                }
+                response["scope_resolutions"] = [
+                    scope for scope in response["scope_resolutions"]
+                    if scope["scope_id"] in used_scopes
+                ]
+        response["ranking"]["budget_enabled"] = run.ranking_budget_enabled
+        if summary:
+            response["ranking"] = {**summary[0], "budget_enabled": run.ranking_budget_enabled}
+        # A checkpoint graph is immutable replay evidence. Its last batch can
+        # predate a pause or resume; overlay only the current execution cause,
+        # leaving its coverage counts and per-slot results intact.
+        if run.execution_status in {"queued", "running", "pausing"}:
+            response["coverage"]["stop_reason"] = None
+        elif run.stop_reason:
+            response["coverage"]["stop_reason"] = (
+                "service_failure" if run.stop_reason == "recognition_model_not_configured"
+                else run.stop_reason
+            )
         response["error"] = None
+        if compact:
+            menus = payload.get("predicate_menus") or {}
+            for entity in response["entities"]:
+                if entity["entity_id"] in menus:
+                    entity["predicate_menu"] = menus[entity["entity_id"]]
+            return response
+        frozen_ontology = self._artifact_payload(run, "ontology_snapshot")
+        if frozen_ontology:
+            ontology = OntologySnapshot.model_validate(frozen_ontology[0])
+            for entity in response["entities"]:
+                if entity["class_iri"] not in ontology.classes:
+                    # External range classes may lack a local definition. An
+                    # unknown menu is distinct from an explicitly empty menu.
+                    continue
+                menu = compile_local_menu(ontology, SubjectRef(
+                    entity_id=entity["entity_id"], revision=entity["revision"],
+                    class_iri=entity["class_iri"],
+                    is_document_root=entity["seed_origin"] == "user_selected",
+                ))
+                entity["predicate_menu"] = [
+                    {"predicate_iri": item.iri, "predicate_label": item.label, "kind": item.kind}
+                    for item in [*menu.relationships, *menu.properties]
+                ]
         return response
+
+    def ranking_summary_response(self, run: DocumentAnalysisRun) -> dict[str, Any]:
+        summary = self._artifact_payload(run, "ranking_summary")
+        if summary:
+            result = summary[0]
+        else:
+            legacy = self._artifact_payload(run, "ranking_state")
+            result = public_ranking_payload(legacy[0] if legacy else {})
+        return {**result, "budget_enabled": run.ranking_budget_enabled}
+
+    def source_selection_response(
+        self, run: DocumentAnalysisRun, *, selection_ref: str
+    ) -> dict[str, Any]:
+        compact = self._artifact_payload(run, "source_selections")
+        if not compact:
+            legacy = self.source_response(run, selection_ref=selection_ref)
+            return {
+                key: value for key, value in legacy.items() if key not in {"filename", "content"}
+            }
+        payload = compact[0]
+        registered = payload["selection_registry"].get(selection_ref)
+        if registered is None:
+            raise DocumentAnalysisError("RUN_NOT_FOUND", "来源定位不存在", status_code=404)
+        return {
+            "contract_version": CONTRACT_VERSION,
+            "recognition_run_id": run.recognition_run_id,
+            **{key: payload[key] for key in ("analysis_id", "document_hash", "structure_hash")},
+            "selection": {key: value for key, value in registered.items() if key != "anchors"},
+            "anchors": list(registered.get("anchors") or []),
+        }
 
     def source_response(
         self, run: DocumentAnalysisRun, *, selection_ref: str | None
@@ -564,7 +838,9 @@ class DocumentAnalysisApplication:
         selection = None
         anchors: list[dict[str, Any]] = []
         if selection_ref is not None:
-            graph = self._artifact_payload(run, "graph")
+            graph = self._artifact_payload(run, "source_selections") or self._artifact_payload(
+                run, "graph"
+            )
             registry = (graph[0].get("selection_registry") if graph else None) or {}
             registered = registry.get(selection_ref)
             if registered is None:
@@ -771,6 +1047,7 @@ class DocumentAnalysisApplication:
     ) -> tuple[DocumentAnalysisRun, bool]:
         if role not in WRITE_ROLES:
             raise DocumentAnalysisError("ROLE_FORBIDDEN", "当前角色无运行写权限", status_code=403)
+        previous_ranking_budget_enabled = run.ranking_budget_enabled
         try:
             outcome = self.store.request_control(
                 run.recognition_run_id,
@@ -790,6 +1067,15 @@ class DocumentAnalysisApplication:
             if receipt is None:
                 raise InvalidRunState("idempotent control operation has no receipt")
             if not replay:
+                cancelled_repairs = []
+                if action in {"cancel", "delete"}:
+                    from app.services.document_analysis.reviews import (
+                        cancel_pending_repair_operations,
+                    )
+
+                    cancelled_repairs = cancel_pending_repair_operations(
+                        self.db, updated, action=action,
+                    )
                 public_status = _status(updated)
                 event_type = "tombstone" if action == "delete" else "run_state"
                 self.store.append_owner_event(
@@ -806,6 +1092,17 @@ class DocumentAnalysisApplication:
                         "artifact_revision": updated.artifact_revision,
                         "status": public_status,
                         "stage": _stage(updated),
+                        **({"cancelled_repair_operation_ids": cancelled_repairs}
+                           if cancelled_repairs else {}),
+                        **({
+                            "action": action,
+                            "actor": run.owner_id,
+                            "actor_role": role,
+                            "reason": reason,
+                            "ranking_budget_enabled": updated.ranking_budget_enabled,
+                            "previous_ranking_budget_enabled": previous_ranking_budget_enabled,
+                            "control_version": updated.control_version,
+                        } if action in {"ranking_budget_enable", "ranking_budget_disable"} else {}),
                     },
                 )
             final_run = self.store.get_owned(
@@ -858,6 +1155,7 @@ class DocumentAnalysisApplication:
             "status": _status(run),
             "stage": _stage(run),
             "operation": action,
+            "ranking_budget_enabled": run.ranking_budget_enabled,
             "operation_status": "accepted",
             "available_actions": _available_actions(run, role),
         }
@@ -894,3 +1192,14 @@ def weak_etag(run: DocumentAnalysisRun) -> str:
     return (
         f'W/"run:{run.recognition_run_id}:revision:{run.revision}:artifact:{run.artifact_revision}"'
     )
+
+
+def graph_etag(run: DocumentAnalysisRun, projection: str) -> str:
+    manifest = run.artifact_manifest or {}
+    digest = content_hash({
+        "projection": projection, "graph": run.graph_snapshot_id,
+        "summary": manifest.get("ranking_summary"), "status": _status(run),
+        "stop_reason": run.stop_reason, "budget_enabled": run.ranking_budget_enabled,
+        "revision": run.revision, "artifact_revision": run.artifact_revision,
+    })
+    return f'W/"graph:{run.recognition_run_id}:{digest}"'

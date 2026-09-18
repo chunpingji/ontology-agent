@@ -5,8 +5,9 @@ from __future__ import annotations
 import re
 from collections import defaultdict, deque
 
-from app.services.extraction.evidence_identity import stable_id
+from app.services.extraction.evidence_identity import evidence_hash, stable_id
 from app.services.extraction.ontology_guided.contracts import (
+    SPARSE_RETRIEVAL_POLICY_VERSION,
     EdgeSpec,
     MetadataSnapshot,
     PlannedRecord,
@@ -46,19 +47,31 @@ def plan_slot(
     *,
     ontology_hash: str,
     phase1_section_limit: int = 3,
+    sparse_candidates: bool = False,
 ) -> RetrievalPlan:
     """Partition all non-heading records into disjoint primary/fallback phases."""
     if phase1_section_limit < 1:
         raise ValueError("phase1_section_limit must be positive")
     if metadata.analysis_id != index.ir.analysis_id:
         raise ValueError("metadata and record index belong to different analyses")
+    if sparse_candidates:
+        from app.services.extraction.ontology_guided.candidate_planning import shared_scope
+
+        scope = shared_scope(index)[2]
+        return RetrievalPlan(
+            plan_id=stable_id("candidate-retrieval-plan", [
+                subject_ref, slot_spec, metadata.snapshot_id, ontology_hash, scope,
+                SPARSE_RETRIEVAL_POLICY_VERSION,
+            ]),
+            subject=subject_ref, predicate_iri=slot_spec.iri, predicate_kind=slot_spec.kind,
+            metadata_snapshot_id=metadata.snapshot_id, ontology_hash=ontology_hash,
+            phase1_section_limit=phase1_section_limit, records=[], ledger={},
+            policy_version=SPARSE_RETRIEVAL_POLICY_VERSION, search_scope_ref=dict(scope),
+        )
     terms = _terms(slot_spec)
     node_metadata = {node.node_id: node for node in metadata.node_summaries}
     grouped: dict[str, list[dict]] = defaultdict(list)
-    positions = {
-        record.record_id: min(index.positions[unit.evidence_id] for unit in record.source_units)
-        for record in index.records
-    }
+    positions = index.source_positions
     for record in index.records:
         node = node_metadata.get(record.section_node_id)
         source_score = _match_score(
@@ -152,7 +165,31 @@ def plan_slot(
         phase1_section_limit=phase1_section_limit,
         records=planned,
         ledger=ledger,
+        frozen_record_ids=[record.record_id for record in index.records],
+        frozen_record_hash=evidence_hash([record.record_id for record in index.records]),
     )
+
+
+def validate_record_universe(plan: RetrievalPlan, index: RecordIndex) -> None:
+    """Compare with independently rebuilt U, not merely two mutable plan lists."""
+    from app.services.extraction.ontology_guided.candidate_planning import is_sparse, shared_scope
+
+    if is_sparse(plan):
+        _ids, universe, reference = shared_scope(index)
+        ids = [record.record_id for record in plan.records]
+        if (plan.search_scope_ref != reference or plan.frozen_record_ids or plan.frozen_record_hash
+                or len(ids) != len(set(ids)) or set(ids) != set(plan.ledger)
+                or not set(ids) <= universe):
+            raise ValueError("candidate plan differs from its shared record universe")
+        return
+    expected = [record.record_id for record in index.records]
+    if (
+        plan.frozen_record_ids != expected
+        or plan.frozen_record_hash != evidence_hash(expected)
+        or {record.record_id for record in plan.records} != set(expected)
+        or set(plan.ledger) != set(expected)
+    ):
+        raise ValueError("retrieval plan differs from the frozen RecordIndex universe")
 
 
 def mark_record(
@@ -169,8 +206,7 @@ def mark_record(
     """Return a revised immutable plan while preserving coverage conservation."""
     if record_id not in plan.ledger:
         raise ValueError("record is outside this retrieval plan")
-    updated = plan.model_copy(deep=True)
-    entry = updated.ledger[record_id]
+    entry = plan.ledger[record_id].model_copy(deep=True)
     entry.coverage_state = coverage_state
     entry.execution_state = execution_state
     if semantic_outcomes is not None:
@@ -181,4 +217,10 @@ def mark_record(
         entry.call_ids.append(call_id)
     if reason_code and reason_code not in entry.reason_codes:
         entry.reason_codes.append(reason_code)
-    return RetrievalPlan.model_validate(updated.model_dump(mode="json"))
+    entry = type(entry).model_validate(entry.model_dump(mode="json"))
+    from app.services.extraction.ontology_guided.current_work import WorkMap
+
+    if isinstance(plan.ledger, WorkMap):
+        plan.ledger[record_id] = entry
+        return plan.model_copy()
+    return plan.model_copy(update={"ledger": {**plan.ledger, record_id: entry}})

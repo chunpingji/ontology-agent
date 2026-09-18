@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useInfiniteQuery, useQuery, useQueryClient, type InfiniteData } from "@tanstack/react-query";
 import { AlertCircle } from "lucide-react";
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -21,15 +21,14 @@ import {
   deleteDocument,
   deleteReport,
   docTypeLabel,
-  listReportCenterItems,
+  listReportCenterDocuments,
+  listReportCenterReports,
   phaseIriByLabel,
   phaseLabel,
   type PreparedUpload,
-  type ReportCenterResult,
+  type ReportCenterPage as ReportPage,
   type ReportOrDocument,
 } from "@/lib/api";
-
-const INITIAL_MAX_JOBS = 25;
 
 /** 已构造的上传占位 → 乐观列表条目（key=预测 IRI，与后端物化后的条目 key 逐字节一致）。 */
 function ghostItem(prepared: PreparedUpload, status: "processing" | "ready"): ReportOrDocument {
@@ -49,22 +48,45 @@ function ghostItem(prepared: PreparedUpload, status: "processing" | "ready"): Re
 }
 
 export default function ReportCenterPage() {
-  const { role } = useIdentity();
+  const { identity, role } = useIdentity();
   const canDelete = role === "senior_analyst";
   const queryClient = useQueryClient();
 
   const [selected, setSelected] = useState<string | null>(null);
-  const [maxJobs, setMaxJobs] = useState(INITIAL_MAX_JOBS);
+  const [deleteError, setDeleteError] = useState(false);
   // 乐观占位（上传中/刚完成、后端列表尚未刷新出的条目）。key=预测 IRI。
   const [optimistic, setOptimistic] = useState<ReportOrDocument[]>([]);
 
-  const queryKey = useMemo(() => ["report-center", maxJobs] as const, [maxJobs]);
-  const query = useQuery({
-    queryKey,
-    queryFn: () => listReportCenterItems({ maxJobs }),
+  const documentsKey = useMemo(
+    () => ["report-center", identity.username, role, "documents"] as const,
+    [identity.username, role],
+  );
+  const reportsKey = useMemo(
+    () => ["report-center", identity.username, role, "reports"] as const,
+    [identity.username, role],
+  );
+  const documents = useQuery({
+    queryKey: documentsKey,
+    queryFn: ({ signal }) => listReportCenterDocuments(signal),
+    retry: false,
+  });
+  const reports = useInfiniteQuery({
+    queryKey: reportsKey,
+    initialPageParam: 1,
+    queryFn: ({ pageParam, signal }) => listReportCenterReports(pageParam, signal),
+    getNextPageParam: (last) =>
+      last.page * last.page_size < last.total ? last.page + 1 : undefined,
+    retry: false,
   });
 
-  const backendItems = useMemo(() => query.data?.items ?? [], [query.data]);
+  const reportItems = useMemo(
+    () => reports.data?.pages.flatMap((page) => page.items) ?? [],
+    [reports.data],
+  );
+  const backendItems = useMemo(
+    () => [...(documents.data ?? []), ...reportItems],
+    [documents.data, reportItems],
+  );
   const backendKeys = useMemo(
     () => new Set(backendItems.map((item) => item.key)),
     [backendItems],
@@ -103,12 +125,12 @@ export default function ReportCenterPage() {
         prev.map((item) => (target.has(item.key) ? { ...item, status: "ready" } : item)),
       );
       // 刷新后，把后端已确认列出的占位从占位集剔除（事件驱动对账，非副作用轮询）。
-      query.refetch().then((result) => {
-        const confirmed = new Set((result.data?.items ?? []).map((item) => item.key));
+      documents.refetch().then((result) => {
+        const confirmed = new Set((result.data ?? []).map((item) => item.key));
         setOptimistic((prev) => prev.filter((item) => !confirmed.has(item.key)));
       });
     },
-    [query],
+    [documents],
   );
 
   const handleDelete = useCallback(
@@ -116,12 +138,24 @@ export default function ReportCenterPage() {
       if (typeof window !== "undefined" && !window.confirm(`确认删除"${item.title}"？`)) {
         return;
       }
-      // Optimistic UI removal.
+      const queryKey = item.kind === "generated-report" ? reportsKey : documentsKey;
+      await queryClient.cancelQueries({ queryKey });
+      setDeleteError(false);
       setOptimistic((prev) => prev.filter((entry) => entry.key !== item.key));
-      queryClient.setQueryData<ReportCenterResult>(queryKey, (prev) =>
-        prev ? { ...prev, items: prev.items.filter((entry) => entry.key !== item.key) } : prev,
-      );
-      // Persist deletion to backend.
+      if (item.kind === "generated-report") {
+        queryClient.setQueryData<InfiniteData<ReportPage>>(reportsKey, (prev) => prev && ({
+          ...prev,
+          pages: prev.pages.map((page) => ({
+            ...page,
+            items: page.items.filter((entry) => entry.key !== item.key),
+            total: Math.max(0, page.total - 1),
+          })),
+        }));
+      } else {
+        queryClient.setQueryData<ReportOrDocument[]>(documentsKey, (prev) =>
+          prev?.filter((entry) => entry.key !== item.key),
+        );
+      }
       try {
         if (item.kind === "generated-report" && item.jobId && item.reportId) {
           await deleteReport(item.jobId, item.reportId);
@@ -129,13 +163,16 @@ export default function ReportCenterPage() {
           await deleteDocument(item.iri);
         }
       } catch {
-        queryClient.invalidateQueries({ queryKey });
+        setDeleteError(true);
+      } finally {
+        // 删除会改变 offset，刷新已加载页以补齐条目和总数；失败时也恢复服务端列表。
+        await queryClient.invalidateQueries({ queryKey });
       }
     },
-    [queryClient, queryKey],
+    [queryClient, reportsKey, documentsKey],
   );
 
-  const data = query.data;
+  const totalReports = reports.data?.pages[0]?.total ?? 0;
   const filtered = selected ? allItems.filter((item) => item.category === selected) : allItems;
 
   return (
@@ -147,71 +184,89 @@ export default function ReportCenterPage() {
         </p>
       </div>
 
-      {query.isLoading ? (
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[240px_1fr]">
-          <Skeleton className="h-64 w-full" />
-          <div className="space-y-2">
-            <Skeleton className="h-10 w-full" />
-            <Skeleton className="h-10 w-full" />
-            <Skeleton className="h-10 w-full" />
-            <Skeleton className="h-10 w-full" />
-          </div>
-        </div>
-      ) : query.isError ? (
+      {deleteError && (
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
-          <AlertTitle>加载失败</AlertTitle>
+          <AlertTitle>删除失败</AlertTitle>
+          <AlertDescription>未能删除该条目，请稍后重试。</AlertDescription>
+        </Alert>
+      )}
+
+      {[
+        { label: "文档", failed: documents.isError, refetch: documents.refetch },
+        { label: "报告", failed: reports.isError && !reports.isFetchNextPageError, refetch: reports.refetch },
+      ].map(({ label, failed, refetch }) => failed && (
+        <Alert key={label} variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>{label}加载失败</AlertTitle>
           <AlertDescription>
-            无法加载报告中心内容，请稍后重试。
+            无法加载{label}，请稍后重试。
             <Button
               variant="link"
               className="h-auto p-0 pl-2 text-destructive"
-              onClick={() => query.refetch()}
+              onClick={() => void refetch()}
             >
               重试
             </Button>
           </AlertDescription>
         </Alert>
-      ) : (
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[240px_1fr]">
-          <Card className="sticky top-20 h-fit self-start">
-            <CardHeader className="p-4 pb-2">
-              <CardTitle className="text-sm">分类</CardTitle>
-            </CardHeader>
-            <CardContent className="p-2 pt-0">
-              {/* 上传目标即此处选中的分类——单一分类入口，避免二次选择。 */}
-              <CategoryTree items={allItems} selected={selected} onSelect={setSelected} />
-            </CardContent>
-          </Card>
+      ))}
 
-          <div className="space-y-4">
-            <Upload phaseIri={uploadPhaseIri} onStart={handleUploadStart} onEnd={handleUploadEnd} />
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[240px_1fr]">
+        <Card className="sticky top-20 h-fit self-start">
+          <CardHeader className="p-4 pb-2">
+            <CardTitle className="text-sm">分类</CardTitle>
+          </CardHeader>
+          <CardContent className="p-2 pt-0">
+            {/* 上传目标即此处选中的分类——单一分类入口，避免二次选择。 */}
+            <CategoryTree items={allItems} selected={selected} onSelect={setSelected} />
+          </CardContent>
+        </Card>
 
+        <div className="space-y-4">
+          <Upload phaseIri={uploadPhaseIri} onStart={handleUploadStart} onEnd={handleUploadEnd} />
+
+          {(documents.isPending || reports.isPending) && (
+            <p role="status" className="text-sm text-muted-foreground">
+              {documents.isPending && "正在加载文档…"}
+              {reports.isPending && "正在加载报告…"}
+            </p>
+          )}
+          {allItems.length === 0 && (documents.isPending || reports.isPending) ? (
+            <div className="space-y-2">
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-10 w-full" />
+            </div>
+          ) : (
             <ItemList
               items={filtered}
               canDelete={canDelete}
               onDelete={handleDelete}
               selectedCategory={selected}
             />
+          )}
 
-            {data?.truncated && (
-              <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-border bg-muted px-4 py-2.5 text-sm text-muted-foreground">
-                <span>
-                  已扫描 {data.jobsScanned} / {data.totalJobs} 个任务，报告可能未完全加载。
-                </span>
+          {reports.data && (
+            <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-border bg-muted px-4 py-2.5 text-sm text-muted-foreground">
+              <span>
+                已加载 {reportItems.length} / {totalReports} 份报告
+                {reports.isFetchNextPageError && "，更多报告加载失败。"}
+              </span>
+              {reports.hasNextPage && (
                 <Button
                   variant="outline"
                   size="sm"
-                  disabled={query.isFetching}
-                  onClick={() => setMaxJobs((prev) => prev * 2)}
+                  disabled={reports.isFetching}
+                  onClick={() => void reports.fetchNextPage()}
                 >
-                  加载更多
+                  {reports.isFetchingNextPage ? "加载中…" : reports.isFetchNextPageError ? "重试加载更多" : "加载更多"}
                 </Button>
-              </div>
-            )}
-          </div>
+              )}
+            </div>
+          )}
         </div>
-      )}
+      </div>
     </div>
   );
 }

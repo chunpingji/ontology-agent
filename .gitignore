@@ -9,6 +9,7 @@ frontend/tsconfig.tsbuildinfo
 __pycache__/
 *.pyc
 .venv/
+.venv-cuda12/
 venv/
 *.egg-info/
 .pytest_cache/
@@ -22,6 +23,10 @@ data/uploads
 .env.*
 
 evaluations/
+# Retain this bounded, frozen S0 diagnostic with its implementation documentation.
+!/docs/evaluations/
+/docs/evaluations/*
+!/docs/evaluations/ontology-label-retrieval-s0-20260913/
 
 # Host-specific local compose overrides (ports etc.)
 docker-compose.override.yml

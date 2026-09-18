@@ -1,0 +1,589 @@
+{
+  "snapshot_id": "fd782f2db11d28a01e27bcddcbc0f1a710c204541f4823eb5ade472fb9694ec8",
+  "analysis_id": "5f6992c2a638b88af184de4d32753e2b8612a45210bb3056e736dca810aed934",
+  "document_hash": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+  "structure_hash": "9884bcf00666c64f5a487ed06a090da42399649f9d83bfaa952b5b77651971f2",
+  "summary_version": "word-tree-summary-v1",
+  "summary_model_identity": "0b21525e972670ed59e1812e170b27c26355381f0656ecc4e25617ece7dac58b",
+  "generation_source": "model_summary",
+  "source_record_refs": [
+    "8b2edc216cdb4e79befc1f618869ae370ed415e356ff0b3c45fe0e94da2ccac1",
+    "54d86c1a566dd3c40c4a7115558d167bbdb9aece51dbf553bc288d89202e53f7",
+    "76305f371707589b230ba3c8bbfcb271c3faa30d209d42d3dd7906de4cf94449",
+    "14c8d78c231d3ecec5ffc8dc7fadeb3605617df308d85cb4a3e3f1a0755f1be5",
+    "26c25ed35be1209765a68fff890cb767fac7823684a60455ce2033de3da1f789",
+    "cfef485b9ef85e2e66e3f929f788245b3f2e616ca5c8bf9c44773cc6675fb917",
+    "e39ea4eaee473e73af5cdbd563bf0573095cfcc22e9c908bdd3e16cd9396ecc5",
+    "b8f262d0893b8a94f8c674c07863ada3badfab51184bd29261534d3fa9cad7cf",
+    "5e6cb580b9cc6e97edd8c672d35f7127249f62c4ba472aa7e88a4d3e82f1b2b1",
+    "51bc66ef9050a797eff84b5b6312ba4ae239c9feb1f9ef1c5ea3eb325b08dc7d",
+    "63c9abf2b15aacbb8d4085f5c89976377e996fd58da854f54a0f220656f44ff2",
+    "9fa189c9ed051fa971bee9291b028a195437c861f3f6cc6205254b48028ef2d1",
+    "5598f9ecfb7652fd306223ba677a0f26da613303a594db10d838959969c99d47",
+    "c27c0df745436de66aaa39a2fbd3cf59bccea18c98e0bd1199aeeadda5988fcc",
+    "04f7bb194eee6afdd6a7bc46c9625dbc939a6616a078fa6edb86752965446b9b",
+    "5a7ef56d4026d175e41442c7f426d0b467ebd322db4be216a80107c0e1638e57",
+    "211d04c9b8a6a10cfd48d2c8c6617abcff684dc7a8107b8df29e9586f495a43e",
+    "134401c02ad2c05afe91d7bba4ed188142e0b4ad636be2c89301cd2b0c354084",
+    "7092b36befff424c7983499a9581ce26641f3799ab71c80868ccc49f2bfe3a51",
+    "b7df2c44b080286b40b89249347851159794e5625367b4737f011b562aff86aa",
+    "f163841e5bfde6015cab7c3efd86a55addccc9ac56a2af38637ab166c3594dec",
+    "2d3f7a283b7643ffc0bf5711e3340cfe9ea9e31e90e769f74e64d7621b4dc6bb",
+    "3a1d614b4bbcf140b82182810060f06fd8a1130470b597c3744f41f09df0c2c3",
+    "a269f22531dc14b30dbc6eb94c09beea3e675b0034445cb8e4bfaaca0e710c8c",
+    "b9e2557d8a4717cf09adb5555d147c5ad5928019b0922a253770eba43dec7c8e",
+    "16f4183adfc2c3eedcfd092c33bd9c30c78d83639da19c9e8549adc570acccc1",
+    "ad481c876bd4af401562916b970ec0e758cfe1aead8fea9edef1ad4c0d192372",
+    "43304be57a6a03a4aded0ab79da1066d2e1ee0519d5d40644c27eebb79162877",
+    "a7c5154e038cf467ffe26ce239e70525a5afc820b55ac1c67ce468b065a50f61",
+    "b008bebba8dc1736a098cc3df56e155068d82f0b37c19f47260907d4c877a865",
+    "2b0b0319cd2aacd8ec484e615f587a39e75a0d6389f39e4bdad7a81836ef45c1",
+    "c809a984fd5396f27ea4ad93af64c69bc7517cfc14372cbae90257c50be70a40",
+    "71ddef8bc26f4946cc660e169022dc15f8a0db62f9a115daf77052c85fbe1d70",
+    "5798867d27a142abf1c1ffbdb3dcc3260150b9f0763e5d9c0bba909d9bd765af",
+    "8439d967cf9abf192ab2c76bf220f75d768985adf62dad23a417c08663dcd84e",
+    "be0b530ec6ae738dd0e81be4e1052ce8749178a3883d8f85298bb7ccc894453e",
+    "725fa739059ee09a039f56757d1a1a529c8f53f19eb887d689d2ebe71f27318d",
+    "03c5cc7150998db05503aa5c093b94959b9052f3666461e929d52bc647f694b9",
+    "bac2c19fcc9b0c764524b07a00da0c6056f889774a40f6b4d8287274af98c661",
+    "c54c3238c67bc1e9fa52ed792378ddd68de02b3bd416cef9d369eece2f2971e9",
+    "d29114c4e0c5edec1ed5918dc4075ee72abef7c0787c63ea016218945f368b2d",
+    "f8e266dcb127ff11bd775fb0fe72162950f8347bf384dfa1af8d1277d0aac083",
+    "8717014d83b3a775f33fe098947737aa30ae5a953c04d22898e648a2627961d3",
+    "0c9a7e82c53bd0fd1416b995decd9c3ec51ee0a1e76d5280b80776e55f6c6b20",
+    "66fffae11e21820c0dd815eeb562cdf5c3a89d9da252f12dba3def40674f2167",
+    "26f052fce62d3d2abc7cc328095aa55de34003d68abdb7042d79b285961132c2",
+    "4633c9991eb42fe6be4a4de22af898cb7b139b1c9642711eec2bd99100ee5991",
+    "65cf470b185fea7e03878f34df9c39d5f0275ec8d7856f7d871cc38ed7e0228f",
+    "e97227e1092cc44379cf0a78323ef6ac96751ef796bdfb37d56401fd76e9557f",
+    "d696146bef766ca3be49c5d2af995d31689985eb3740152f1af4098910ded57c",
+    "4fd8c6a6443e2d1495167e6e92a66d5f9919083f0911161e617d6a287d3c30b4",
+    "37ebb907465399e5bd1eb347cf30132b613984caa3c9782607d851b5c9351173",
+    "aa402f7f154ca0264b47c7c14dec32d9da452a6e314054d89926dd505a503cb7",
+    "cc7e9240e6b102c17dd080a462548cc6fb5fc7b3d33f4f6a7a664bd64478711b",
+    "fd98233edfb8a715f6fc43259fa0c8d970a18d4e1aa3ed730e90ccd640ba1a6a",
+    "5145e8750c16f6dc1dbf7abe4d26958366e37c3f76ed37432bd74f5ff5f4a8dc",
+    "65a8f87af96e0c1f8729d0fc2ac3722f96192aea725530f8ef9b172940266266",
+    "681d89fe0e1873c403f73b9369013bb0130def12cfa8cb6160351269d68a5c0f",
+    "fb9d6ff8067c7eefc819654fbca61caccae9da8198d58ee535276594d7039102",
+    "8937716e2751201b9e60979aa6d7464f48a9a769a7311bcbc20a4a3f43418cfb",
+    "546108936a53fd4839022aa43bbf38b2eb73b5782299d0372c74f59a3733d619",
+    "9a56f1df1acfe347b23a3f39d7b63b0c8f97ea272da4d6cf0a13c2f75c23a9f6",
+    "cfda398ad8df2d269fd33d0f3a48b0bab1aa4b09ab018957cf3081804fd272ac",
+    "2755f146634e5e18b099a339ff4bb07485169c7ddd316038e989b90c3fdc4863",
+    "135c33b24d70a8cf8b35cb6258e7e7d89e43b53ede92d5ef6272096720fb0b96",
+    "74f25dd111cfe0cd157de71b6984a2c8d92f481595bd7d9a9b857ffa6094c035",
+    "02f9794ef1c2bd392acfc7cdba9ca1c7a9e5be252377cf89903509f7293ebc54",
+    "339f86c5d4f4065fbc7c4347418e5daccebc4c867f806ca4a500bbe42f9b44e3",
+    "4817ba899a49b3ba525500e4b235c9c4d15bf508a3423665d77ac8d5b603b368",
+    "a02531de5630fc9a40d0c9d6588f79feec9545866d0f9f5221028af5cbddcac5",
+    "ba09be06d75219f0f903f253be3579664701e61e3bbd698acf6f1291f21e2c68",
+    "51a946664059a74c68f9d6bb60970458a2b5be83b14338fd5c78f8409ef8664a",
+    "6255257d92189c93cda6b7fc29d02d103c0df2118be6ed6dc73d468c1a13c775",
+    "38a3de7099cbd4232d6720926dbb681850f3e0bb588a02cc3a74a4aa9efd7cb2",
+    "03b36161843fb295f89bd698eaae314b6ec6be538c92b7257cf5d26ef6d78e5b",
+    "147e961d701b1e40992f5921eabeb8ab03356d63eb12a49e7100e7ec95064fea",
+    "9fd1e668d76186332b2f82280089be684277d5b441c54b713cdf09278fd7be06",
+    "e22457da6b738e1d9d01ebca18b7ae9c4672364763886bea2da7854990fa6bc1",
+    "516b09911c97f75e63edbbde10617cb76d6e9f6cc733062cfb96e71c4d8e161e",
+    "9315201a34c64fe40470ef9c23724f29d2fe1f3a33846f47357c58160900d7b2",
+    "6094b2eee336c3f6434e909d9cf6d9d6ef02a5341b6e372d3f6fcec24c6ded1f",
+    "00c0089217b8edcc4d49297459fea22f333e272f29467a0abcb8fc6bd0bc4edb",
+    "b751854d57332a205487b69ff984172613cc5a275e2f8851081cc7f416be07f1",
+    "36e3a87e521d6c0711ac414b4e6648fbc52eb922e275e001b56add94e20c1730",
+    "f20726de9b348ea7fbca216621ac24fb241a7dc5613660492dc62d16c9b4afb6",
+    "5b5f83d6131c4d5a4ed411b055af088eab7705b2cce28914fccf0aaef58cc779"
+  ],
+  "node_summaries": [
+    {
+      "node_id": "document",
+      "heading": "HRXS-P-2419(HRS-1597)",
+      "path": [
+        "HRXS-P-2419(HRS-1597)"
+      ],
+      "summary": "章节路径：HRXS-P-2419(HRS-1597) 直接子章节摘要： - HRXS-P-2419(HRS-1597)：文档标识为HRXS-P-2419(HRS-1597)。 - 研发项目临床备样生产信息：文档归属江苏恒瑞医药股份有限公司，编号DP-C-PI-S-X2419 2601 04，涉及研发项目HRS-1597临床备样生产信息，时间为2026年05月。 - 简介：HRS-1597为APLNR激动剂，适应症为减肥增肌，由上海闵行转移至连云港。本次备样用于Ⅰ期临床，计划2026年6月在642和646车间生产，批量3.8-6.6kg。",
+      "summary_status": "failed",
+      "summary_source": "extractive_fallback",
+      "source_record_refs": []
+    },
+    {
+      "node_id": "section:4",
+      "heading": "HRXS-P-2419(HRS-1597)",
+      "path": [
+        "HRXS-P-2419(HRS-1597)"
+      ],
+      "summary": "文档标识为HRXS-P-2419(HRS-1597)。",
+      "summary_status": "completed",
+      "summary_source": "llm",
+      "source_record_refs": []
+    },
+    {
+      "node_id": "section:5",
+      "heading": "研发项目临床备样生产信息",
+      "path": [
+        "研发项目临床备样生产信息"
+      ],
+      "summary": "文档归属江苏恒瑞医药股份有限公司，编号DP-C-PI-S-X2419 2601 04，涉及研发项目HRS-1597临床备样生产信息，时间为2026年05月。",
+      "summary_status": "completed",
+      "summary_source": "llm",
+      "source_record_refs": []
+    },
+    {
+      "node_id": "section:6",
+      "heading": "绝密▲长期",
+      "path": [
+        "研发项目临床备样生产信息",
+        "绝密▲长期"
+      ],
+      "summary": "文档归属江苏恒瑞医药股份有限公司，编号DP-C-PI-S-X2419 2601 04，涉及研发项目HRS-1597临床备样生产信息，时间为2026年05月。",
+      "summary_status": "completed",
+      "summary_source": "llm",
+      "source_record_refs": [
+        "8b2edc216cdb4e79befc1f618869ae370ed415e356ff0b3c45fe0e94da2ccac1"
+      ]
+    },
+    {
+      "node_id": "section:19",
+      "heading": "江苏恒瑞医药股份有限公司",
+      "path": [
+        "研发项目临床备样生产信息",
+        "绝密▲长期",
+        "江苏恒瑞医药股份有限公司"
+      ],
+      "summary": "文档归属江苏恒瑞医药股份有限公司，时间为2026年05月，涉及研发项目临床备样生产信息。",
+      "summary_status": "completed",
+      "summary_source": "llm",
+      "source_record_refs": [
+        "54d86c1a566dd3c40c4a7115558d167bbdb9aece51dbf553bc288d89202e53f7"
+      ]
+    },
+    {
+      "node_id": "section:25",
+      "heading": "简介",
+      "path": [
+        "简介"
+      ],
+      "summary": "HRS-1597为APLNR激动剂，适应症为减肥增肌，由上海闵行转移至连云港。本次备样用于Ⅰ期临床，计划2026年6月在642和646车间生产，批量3.8-6.6kg。因中控过程杂质含量未达过控标准，本次修改仅增加两次重结晶操作，其余内容不变。",
+      "summary_status": "completed",
+      "summary_source": "llm",
+      "source_record_refs": [
+        "76305f371707589b230ba3c8bbfcb271c3faa30d209d42d3dd7906de4cf94449",
+        "14c8d78c231d3ecec5ffc8dc7fadeb3605617df308d85cb4a3e3f1a0755f1be5"
+      ]
+    },
+    {
+      "node_id": "section:28",
+      "heading": "产品的基本性质",
+      "path": [
+        "产品的基本性质"
+      ],
+      "summary": "HRS-1597为三氮唑类磺酰胺化合物，口服片剂，非肿瘤、细胞毒、高致敏、激素、青霉素及高毒高活药物，无需灭活。",
+      "summary_status": "completed",
+      "summary_source": "llm",
+      "source_record_refs": []
+    },
+    {
+      "node_id": "section:29",
+      "heading": "产品的结构",
+      "path": [
+        "产品的基本性质",
+        "产品的结构"
+      ],
+      "summary": "产品HRS-1597（项目代码HRXS-P-2419）为三氮唑类磺酰胺化合物，分子式C23H28N6O5S，分子量500.60，性状为类白色到白色粉末，口服片剂。非肿瘤、细胞毒、高致敏、激素、青霉素及高毒高活药物，无需灭活。",
+      "summary_status": "completed",
+      "summary_source": "llm",
+      "source_record_refs": [
+        "26c25ed35be1209765a68fff890cb767fac7823684a60455ce2033de3da1f789",
+        "cfef485b9ef85e2e66e3f929f788245b3f2e616ca5c8bf9c44773cc6675fb917",
+        "e39ea4eaee473e73af5cdbd563bf0573095cfcc22e9c908bdd3e16cd9396ecc5",
+        "b8f262d0893b8a94f8c674c07863ada3badfab51184bd29261534d3fa9cad7cf",
+        "5e6cb580b9cc6e97edd8c672d35f7127249f62c4ba472aa7e88a4d3e82f1b2b1",
+        "51bc66ef9050a797eff84b5b6312ba4ae239c9feb1f9ef1c5ea3eb325b08dc7d",
+        "63c9abf2b15aacbb8d4085f5c89976377e996fd58da854f54a0f220656f44ff2",
+        "9fa189c9ed051fa971bee9291b028a195437c861f3f6cc6205254b48028ef2d1",
+        "5598f9ecfb7652fd306223ba677a0f26da613303a594db10d838959969c99d47",
+        "c27c0df745436de66aaa39a2fbd3cf59bccea18c98e0bd1199aeeadda5988fcc",
+        "04f7bb194eee6afdd6a7bc46c9625dbc939a6616a078fa6edb86752965446b9b",
+        "5a7ef56d4026d175e41442c7f426d0b467ebd322db4be216a80107c0e1638e57",
+        "211d04c9b8a6a10cfd48d2c8c6617abcff684dc7a8107b8df29e9586f495a43e",
+        "134401c02ad2c05afe91d7bba4ed188142e0b4ad636be2c89301cd2b0c354084",
+        "7092b36befff424c7983499a9581ce26641f3799ab71c80868ccc49f2bfe3a51",
+        "b7df2c44b080286b40b89249347851159794e5625367b4737f011b562aff86aa",
+        "f163841e5bfde6015cab7c3efd86a55addccc9ac56a2af38637ab166c3594dec",
+        "2d3f7a283b7643ffc0bf5711e3340cfe9ea9e31e90e769f74e64d7621b4dc6bb",
+        "3a1d614b4bbcf140b82182810060f06fd8a1130470b597c3744f41f09df0c2c3"
+      ]
+    },
+    {
+      "node_id": "section:51",
+      "heading": "工艺",
+      "path": [
+        "工艺"
+      ],
+      "summary": "结晶纯化工艺涉及200L反应釜（RE64611）溶解脱色、压滤、500L结晶釜（RE64613）降温析晶、离心机（CT64610）甩滤及真空干燥箱（DE64603）干燥。参考得量3.0~6.0kg，收率50.0%~85.0%。成品密封冷藏保存，有效期24个月。设备清洗主要使用丙酮和纯化水。",
+      "summary_status": "partial",
+      "summary_source": "llm",
+      "source_record_refs": []
+    },
+    {
+      "node_id": "section:52",
+      "heading": "工艺描述",
+      "path": [
+        "工艺",
+        "工艺描述"
+      ],
+      "summary": "工艺章节包含合成路线图及工艺描述。",
+      "summary_status": "partial",
+      "summary_source": "llm",
+      "source_record_refs": [
+        "a269f22531dc14b30dbc6eb94c09beea3e675b0034445cb8e4bfaaca0e710c8c",
+        "b9e2557d8a4717cf09adb5555d147c5ad5928019b0922a253770eba43dec7c8e"
+      ]
+    },
+    {
+      "node_id": "section:67",
+      "heading": "HRS-1597结晶纯化",
+      "path": [
+        "工艺",
+        "HRS-1597结晶纯化"
+      ],
+      "summary": "结晶纯化工艺：HRS-1597粗品在200L反应釜（RE64611）中溶于丙酮和纯化水，氮气保护下加活性炭脱色。经钛棒和囊式滤芯（PF64216或PF64616）压滤至500L结晶釜（RE64613）。梯度降温至30~35℃，加晶种析出固体，随后滴加纯化水。离心甩滤（CT64610），用丙酮水混合液冲洗。检测HPLC及重金属，若不合格则重复结晶。滤饼在真空干燥箱（DE64603）中45~50℃干燥18~24小时，密封冷藏保存。",
+      "summary_status": "completed",
+      "summary_source": "llm",
+      "source_record_refs": [
+        "16f4183adfc2c3eedcfd092c33bd9c30c78d83639da19c9e8549adc570acccc1",
+        "ad481c876bd4af401562916b970ec0e758cfe1aead8fea9edef1ad4c0d192372",
+        "43304be57a6a03a4aded0ab79da1066d2e1ee0519d5d40644c27eebb79162877"
+      ]
+    },
+    {
+      "node_id": "section:70",
+      "heading": "得量收率范围",
+      "path": [
+        "工艺",
+        "得量收率范围"
+      ],
+      "summary": "HRS-1597参考得量3.0~6.0kg，参考收率50.0%~85.0%。",
+      "summary_status": "completed",
+      "summary_source": "llm",
+      "source_record_refs": [
+        "a7c5154e038cf467ffe26ce239e70525a5afc820b55ac1c67ce468b065a50f61"
+      ]
+    },
+    {
+      "node_id": "section:72",
+      "heading": "中间体及成品的其他相关信息",
+      "path": [
+        "工艺",
+        "中间体及成品的其他相关信息"
+      ],
+      "summary": "HRS-1597为白色或类白色粉末，室温稳定。",
+      "summary_status": "completed",
+      "summary_source": "llm",
+      "source_record_refs": [
+        "b008bebba8dc1736a098cc3df56e155068d82f0b37c19f47260907d4c877a865"
+      ]
+    },
+    {
+      "node_id": "section:73",
+      "heading": "存放条件",
+      "path": [
+        "工艺",
+        "存放条件"
+      ],
+      "summary": "HRS-1597采用双层聚乙烯薄膜袋外加药品包装用复合袋包装，密封，不超过25℃保存，有效期24个月。",
+      "summary_status": "completed",
+      "summary_source": "llm",
+      "source_record_refs": [
+        "2b0b0319cd2aacd8ec484e615f587a39e75a0d6389f39e4bdad7a81836ef45c1",
+        "c809a984fd5396f27ea4ad93af64c69bc7517cfc14372cbae90257c50be70a40"
+      ]
+    },
+    {
+      "node_id": "section:76",
+      "heading": "溶解度信息",
+      "path": [
+        "工艺",
+        "溶解度信息"
+      ],
+      "summary": "提及中间体、中间态及成品溶解度，清洁方式优先级为酸或碱水溶液优于溶剂，三类溶剂优于二类溶剂。",
+      "summary_status": "completed",
+      "summary_source": "llm",
+      "source_record_refs": [
+        "71ddef8bc26f4946cc660e169022dc15f8a0db62f9a115daf77052c85fbe1d70"
+      ]
+    },
+    {
+      "node_id": "section:78",
+      "heading": "3.5.1中间体及成品的溶解度测定结果",
+      "path": [
+        "工艺",
+        "3.5.1中间体及成品的溶解度测定结果"
+      ],
+      "summary": "HRS-1597在中性条件下，25℃时在丙酮中略溶。",
+      "summary_status": "completed",
+      "summary_source": "llm",
+      "source_record_refs": [
+        "5798867d27a142abf1c1ffbdb3dcc3260150b9f0763e5d9c0bba909d9bd765af"
+      ]
+    },
+    {
+      "node_id": "section:79",
+      "heading": "3.5.2设备清洗残留物基本信息",
+      "path": [
+        "工艺",
+        "3.5.2设备清洗残留物基本信息"
+      ],
+      "summary": "设备清洗残留物基本信息为N/A。",
+      "summary_status": "completed",
+      "summary_source": "llm",
+      "source_record_refs": [
+        "8439d967cf9abf192ab2c76bf220f75d768985adf62dad23a417c08663dcd84e"
+      ]
+    },
+    {
+      "node_id": "section:81",
+      "heading": "设备清洗方法",
+      "path": [
+        "工艺",
+        "设备清洗方法"
+      ],
+      "summary": "设备清洗方法：200L反应釜（RE64611）及压滤器串联清洗，包括纯化水冲洗、丙酮回流洗涤、纯化水回流及搅拌洗涤、氮气吹干。500L反应釜（RE64613）及穿墙管道串联清洗，步骤类似。离心机（CT64610）用纯化水冲洗、丙酮擦拭、纯化水冲洗后晾干。真空干燥箱（DE64603）用丙酮和纯化水擦拭，干燥盘单独清洁。",
+      "summary_status": "completed",
+      "summary_source": "llm",
+      "source_record_refs": [
+        "be0b530ec6ae738dd0e81be4e1052ce8749178a3883d8f85298bb7ccc894453e",
+        "725fa739059ee09a039f56757d1a1a529c8f53f19eb887d689d2ebe71f27318d",
+        "03c5cc7150998db05503aa5c093b94959b9052f3666461e929d52bc647f694b9",
+        "bac2c19fcc9b0c764524b07a00da0c6056f889774a40f6b4d8287274af98c661"
+      ]
+    },
+    {
+      "node_id": "section:84",
+      "heading": "设备需求",
+      "path": [
+        "工艺",
+        "设备需求"
+      ],
+      "summary": "设备需求涉及200L反应釜（RE64611）、钛棒过滤器（PF64216或PF64616）、500L反应釜（RE64613）、离心机（CT64610）和真空干燥箱（DE64603）。主要残留物为HRS-1597，清洁溶剂主要为丙酮。",
+      "summary_status": "completed",
+      "summary_source": "llm",
+      "source_record_refs": [
+        "c54c3238c67bc1e9fa52ed792378ddd68de02b3bd416cef9d369eece2f2971e9",
+        "d29114c4e0c5edec1ed5918dc4075ee72abef7c0787c63ea016218945f368b2d",
+        "f8e266dcb127ff11bd775fb0fe72162950f8347bf384dfa1af8d1277d0aac083",
+        "8717014d83b3a775f33fe098947737aa30ae5a953c04d22898e648a2627961d3",
+        "0c9a7e82c53bd0fd1416b995decd9c3ec51ee0a1e76d5280b80776e55f6c6b20"
+      ]
+    },
+    {
+      "node_id": "section:86",
+      "heading": "物料信息",
+      "path": [
+        "工艺",
+        "物料信息"
+      ],
+      "summary": "物料信息包括丙酮（AR及工业级）、颗粒活性炭、囊式滤芯、钛棒滤芯、HRS-1597晶种、纯化水、药用低密度聚乙烯袋及药品包装用复合袋。",
+      "summary_status": "completed",
+      "summary_source": "llm",
+      "source_record_refs": [
+        "66fffae11e21820c0dd815eeb562cdf5c3a89d9da252f12dba3def40674f2167",
+        "26f052fce62d3d2abc7cc328095aa55de34003d68abdb7042d79b285961132c2",
+        "4633c9991eb42fe6be4a4de22af898cb7b139b1c9642711eec2bd99100ee5991",
+        "65cf470b185fea7e03878f34df9c39d5f0275ec8d7856f7d871cc38ed7e0228f",
+        "e97227e1092cc44379cf0a78323ef6ac96751ef796bdfb37d56401fd76e9557f",
+        "d696146bef766ca3be49c5d2af995d31689985eb3740152f1af4098910ded57c",
+        "4fd8c6a6443e2d1495167e6e92a66d5f9919083f0911161e617d6a287d3c30b4",
+        "37ebb907465399e5bd1eb347cf30132b613984caa3c9782607d851b5c9351173",
+        "aa402f7f154ca0264b47c7c14dec32d9da452a6e314054d89926dd505a503cb7"
+      ]
+    },
+    {
+      "node_id": "section:87",
+      "heading": "安全评估",
+      "path": [
+        "安全评估"
+      ],
+      "summary": "反应无异常放热、高压、气体产生等危险，热稳定性和化学稳定性良好。结论为无危险反应步骤，风险可以接受。",
+      "summary_status": "completed",
+      "summary_source": "llm",
+      "source_record_refs": [
+        "cc7e9240e6b102c17dd080a462548cc6fb5fc7b3d33f4f6a7a664bd64478711b",
+        "fd98233edfb8a715f6fc43259fa0c8d970a18d4e1aa3ed730e90ccd640ba1a6a",
+        "5145e8750c16f6dc1dbf7abe4d26958366e37c3f76ed37432bd74f5ff5f4a8dc",
+        "65a8f87af96e0c1f8729d0fc2ac3722f96192aea725530f8ef9b172940266266",
+        "681d89fe0e1873c403f73b9369013bb0130def12cfa8cb6160351269d68a5c0f",
+        "fb9d6ff8067c7eefc819654fbca61caccae9da8198d58ee535276594d7039102",
+        "8937716e2751201b9e60979aa6d7464f48a9a769a7311bcbc20a4a3f43418cfb",
+        "546108936a53fd4839022aa43bbf38b2eb73b5782299d0372c74f59a3733d619",
+        "9a56f1df1acfe347b23a3f39d7b63b0c8f97ea272da4d6cf0a13c2f75c23a9f6"
+      ]
+    },
+    {
+      "node_id": "section:89",
+      "heading": "HRS-1597备样工艺各步骤安全风险分析及控制建议",
+      "path": [
+        "HRS-1597备样工艺各步骤安全风险分析及控制建议"
+      ],
+      "summary": "HRS-1597备样工艺步骤1的质量控制需注意：在严格氮气保护下进行活性炭吸附脱色以防止氧化，并严格控制晶种点以避免自发析晶。",
+      "summary_status": "completed",
+      "summary_source": "llm",
+      "source_record_refs": [
+        "cfda398ad8df2d269fd33d0f3a48b0bab1aa4b09ab018957cf3081804fd272ac"
+      ]
+    },
+    {
+      "node_id": "section:91",
+      "heading": "质量控制",
+      "path": [
+        "HRS-1597备样工艺各步骤安全风险分析及控制建议",
+        "质量控制"
+      ],
+      "summary": "HRS-1597备样工艺步骤1的质量控制需注意：在严格氮气保护下进行活性炭吸附脱色以防止氧化，并严格控制晶种点以避免自发析晶。",
+      "summary_status": "completed",
+      "summary_source": "llm",
+      "source_record_refs": []
+    },
+    {
+      "node_id": "section:92",
+      "heading": "各步工序制备过程质量控制注意事项",
+      "path": [
+        "HRS-1597备样工艺各步骤安全风险分析及控制建议",
+        "质量控制",
+        "各步工序制备过程质量控制注意事项"
+      ],
+      "summary": "HRS-1597备样工艺步骤1的质量控制需注意：在严格氮气保护下进行活性炭吸附脱色以防止氧化，并严格控制晶种点以避免自发析晶。",
+      "summary_status": "completed",
+      "summary_source": "llm",
+      "source_record_refs": [
+        "2755f146634e5e18b099a339ff4bb07485169c7ddd316038e989b90c3fdc4863",
+        "135c33b24d70a8cf8b35cb6258e7e7d89e43b53ede92d5ef6272096720fb0b96"
+      ]
+    },
+    {
+      "node_id": "section:94",
+      "heading": "4共线评估所需资料",
+      "path": [
+        "4共线评估所需资料"
+      ],
+      "summary": "HRS-1597在酸、碱条件下稳定，在氧化、光照、高温下降解。日剂量40-800mg。大鼠和犬亚急毒NOAEL分别为200和30，PDE分别为100和7.5mg/天，OEB为1。无基因毒性，生殖发育毒性、致癌性、致敏性数据不充分。",
+      "summary_status": "completed",
+      "summary_source": "llm",
+      "source_record_refs": []
+    },
+    {
+      "node_id": "section:95",
+      "heading": "4.1降解途径",
+      "path": [
+        "4共线评估所需资料",
+        "4.1降解途径"
+      ],
+      "summary": "HRS-1597在酸、碱条件下稳定，在氧化、光照、高温下降解。生产贮运需避免氧化、光照、高温。降解产物结构及清洁方法暂未明确。",
+      "summary_status": "completed",
+      "summary_source": "llm",
+      "source_record_refs": [
+        "74f25dd111cfe0cd157de71b6984a2c8d92f481595bd7d9a9b857ffa6094c035",
+        "02f9794ef1c2bd392acfc7cdba9ca1c7a9e5be252377cf89903509f7293ebc54"
+      ]
+    },
+    {
+      "node_id": "section:98",
+      "heading": "4.2临床及临床前反馈数据",
+      "path": [
+        "4共线评估所需资料",
+        "4.2临床及临床前反馈数据"
+      ],
+      "summary": "HRS-1597日剂量为最小40mg、最大800mg，给药频率为每日一次。包含产品NOAEL及F值数据。",
+      "summary_status": "completed",
+      "summary_source": "llm",
+      "source_record_refs": []
+    },
+    {
+      "node_id": "section:99",
+      "heading": "4.2.1日剂量",
+      "path": [
+        "4共线评估所需资料",
+        "4.2临床及临床前反馈数据",
+        "4.2.1日剂量"
+      ],
+      "summary": "共线评估所需资料中，产品日剂量为最小40mg、最大800mg，给药频率为每日一次。",
+      "summary_status": "completed",
+      "summary_source": "llm",
+      "source_record_refs": [
+        "339f86c5d4f4065fbc7c4347418e5daccebc4c867f806ca4a500bbe42f9b44e3"
+      ]
+    },
+    {
+      "node_id": "section:101",
+      "heading": "4.2.2产品NOAEL、F值",
+      "path": [
+        "4共线评估所需资料",
+        "4.2临床及临床前反馈数据",
+        "4.2.2产品NOAEL、F值"
+      ],
+      "summary": "共线评估所需资料中包含产品NOAEL及F值数据。",
+      "summary_status": "completed",
+      "summary_source": "llm",
+      "source_record_refs": []
+    },
+    {
+      "node_id": "section:102",
+      "heading": "表1 产品NOAEL、F值",
+      "path": [
+        "4共线评估所需资料",
+        "表1 产品NOAEL、F值"
+      ],
+      "summary": "HRS-1597毒性数据：大鼠14天亚急毒试验NOAEL为200，PDE为100mg/天，OEB为1；犬14天亚急毒NOAEL为30，PDE为7.5mg/天，OEB为1。",
+      "summary_status": "completed",
+      "summary_source": "llm",
+      "source_record_refs": [
+        "4817ba899a49b3ba525500e4b235c9c4d15bf508a3423665d77ac8d5b603b368",
+        "a02531de5630fc9a40d0c9d6588f79feec9545866d0f9f5221028af5cbddcac5",
+        "ba09be06d75219f0f903f253be3579664701e61e3bbd698acf6f1291f21e2c68",
+        "51a946664059a74c68f9d6bb60970458a2b5be83b14338fd5c78f8409ef8664a",
+        "6255257d92189c93cda6b7fc29d02d103c0df2118be6ed6dc73d468c1a13c775",
+        "38a3de7099cbd4232d6720926dbb681850f3e0bb588a02cc3a74a4aa9efd7cb2",
+        "03b36161843fb295f89bd698eaae314b6ec6be538c92b7257cf5d26ef6d78e5b",
+        "147e961d701b1e40992f5921eabeb8ab03356d63eb12a49e7100e7ec95064fea",
+        "9fd1e668d76186332b2f82280089be684277d5b441c54b713cdf09278fd7be06",
+        "e22457da6b738e1d9d01ebca18b7ae9c4672364763886bea2da7854990fa6bc1",
+        "516b09911c97f75e63edbbde10617cb76d6e9f6cc733062cfb96e71c4d8e161e",
+        "9315201a34c64fe40470ef9c23724f29d2fe1f3a33846f47357c58160900d7b2",
+        "6094b2eee336c3f6434e909d9cf6d9d6ef02a5341b6e372d3f6fcec24c6ded1f"
+      ]
+    },
+    {
+      "node_id": "section:115",
+      "heading": "4.2.3产品毒性信息",
+      "path": [
+        "4共线评估所需资料",
+        "表1 产品NOAEL、F值",
+        "4.2.3产品毒性信息"
+      ],
+      "summary": "共线评估所需资料中包含产品毒性信息。",
+      "summary_status": "completed",
+      "summary_source": "llm",
+      "source_record_refs": []
+    },
+    {
+      "node_id": "section:116",
+      "heading": "表2 产品毒性信息",
+      "path": [
+        "4共线评估所需资料",
+        "表2 产品毒性信息"
+      ],
+      "summary": "HRS-1597无基因毒性（×），生殖发育毒性、致癌性、致敏性数据不充分（—）。",
+      "summary_status": "completed",
+      "summary_source": "llm",
+      "source_record_refs": [
+        "00c0089217b8edcc4d49297459fea22f333e272f29467a0abcb8fc6bd0bc4edb",
+        "b751854d57332a205487b69ff984172613cc5a275e2f8851081cc7f416be07f1",
+        "36e3a87e521d6c0711ac414b4e6648fbc52eb922e275e001b56add94e20c1730",
+        "f20726de9b348ea7fbca216621ac24fb241a7dc5613660492dc62d16c9b4afb6",
+        "5b5f83d6131c4d5a4ed411b055af088eab7705b2cce28914fccf0aaef58cc779"
+      ]
+    }
+  ],
+  "dependency_hash": "31d4a2f9ea013661afac673bbcb27f37e766bd86c06e05cae62ea7f925cda66a",
+  "policy_version": "ontology-guided-metadata-v1"
+}

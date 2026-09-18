@@ -1,0 +1,209 @@
+{
+  "review_type": "Independent assistant source review; not expert gold or full-document precision/recall",
+  "matching_passed": true,
+  "unreviewed_scope_status": [
+    {
+      "scope_id": "introduction",
+      "status": "failed",
+      "error_code": "model_request_failed",
+      "candidate_proposal_available": false,
+      "reason": "No independent review provided; never treated as quality pass"
+    },
+    {
+      "scope_id": "pde_conflict",
+      "status": "failed",
+      "error_code": "model_request_failed",
+      "candidate_proposal_available": false,
+      "reason": "No independent review provided; never treated as quality pass"
+    },
+    {
+      "scope_id": "process_equipment",
+      "status": "failed",
+      "error_code": "model_request_failed",
+      "candidate_proposal_available": false,
+      "reason": "No independent review provided; never treated as quality pass"
+    },
+    {
+      "scope_id": "product_properties",
+      "status": "failed",
+      "error_code": "model_request_failed",
+      "candidate_proposal_available": false,
+      "reason": "No independent review provided; never treated as quality pass"
+    },
+    {
+      "scope_id": "quality_condition",
+      "status": "failed",
+      "error_code": "model_request_failed",
+      "candidate_proposal_available": false,
+      "reason": "No independent review provided; never treated as quality pass"
+    },
+    {
+      "scope_id": "residue_missing",
+      "status": "failed",
+      "error_code": "model_request_failed",
+      "candidate_proposal_available": false,
+      "reason": "No independent review provided; never treated as quality pass"
+    },
+    {
+      "scope_id": "toxicity_unknown",
+      "status": "failed",
+      "error_code": "model_request_failed",
+      "candidate_proposal_available": false,
+      "reason": "No independent review provided; never treated as quality pass"
+    }
+  ],
+  "coverage": [
+    {
+      "scope_id": "storage",
+      "subjects_reviewed": 2,
+      "claims_reviewed": 4,
+      "observations_reviewed": 2,
+      "review_input_sha256": "d657611a43187e96de5827a603f0ff3daf5f12bb5eac29f548841031b2d96912"
+    }
+  ],
+  "all_candidates": {
+    "count": 6,
+    "overall_verdicts": {
+      "unsupported": 4,
+      "undetermined": 2
+    },
+    "content_verdicts": {
+      "unsupported": 1,
+      "supported": 5
+    }
+  },
+  "accepted_claims": {
+    "count": 0,
+    "overall_verdicts": {},
+    "content_verdicts": {}
+  },
+  "accepted_observations": {
+    "count": 0,
+    "overall_verdicts": {},
+    "content_verdicts": {}
+  },
+  "by_scope": {
+    "storage": {
+      "all_candidates": {
+        "count": 6,
+        "overall_verdicts": {
+          "unsupported": 4,
+          "undetermined": 2
+        },
+        "content_verdicts": {
+          "unsupported": 1,
+          "supported": 5
+        }
+      },
+      "accepted_claims": {
+        "count": 0,
+        "overall_verdicts": {},
+        "content_verdicts": {}
+      },
+      "accepted_observations": {
+        "count": 0,
+        "overall_verdicts": {},
+        "content_verdicts": {}
+      }
+    }
+  },
+  "by_destination": {
+    "not_finalized_model_failure": {
+      "count": 6,
+      "overall_verdicts": {
+        "unsupported": 4,
+        "undetermined": 2
+      },
+      "content_verdicts": {
+        "unsupported": 1,
+        "supported": 5
+      }
+    }
+  },
+  "records": [
+    {
+      "scope_id": "storage",
+      "candidate_id": "c1",
+      "kind": "relation",
+      "path": "subjects.document.relations.hasStorageCondition[0]",
+      "subject_id": "document",
+      "field": "hasStorageCondition",
+      "program_destination": "not_finalized_model_failure",
+      "overall_verdict": "unsupported",
+      "content_verdict": "unsupported",
+      "reason": "目标类型与锚点角色不符。u1 及表格只能表明报告记载了存放条件，不能把当前材料锚点自动改成条件记录；原候选保持不修正。",
+      "program_issues": [],
+      "matching": "scope + original id/path/subject/field/kind + exact original proposal + frozen proposal excluding coordinates/span_id/replay_issue metadata"
+    },
+    {
+      "scope_id": "storage",
+      "candidate_id": "c2",
+      "kind": "property",
+      "path": "subjects.s1.attributes.packagingType[0]",
+      "subject_id": "s1",
+      "field": "packagingType",
+      "program_destination": "not_finalized_model_failure",
+      "overall_verdict": "unsupported",
+      "content_verdict": "supported",
+      "reason": "包装值和字段有据，但声明主体 s1 是被错标成 StorageCondition 的材料名；有效属性内容不能修复主体类型错误。",
+      "program_issues": [],
+      "matching": "scope + original id/path/subject/field/kind + exact original proposal + frozen proposal excluding coordinates/span_id/replay_issue metadata"
+    },
+    {
+      "scope_id": "storage",
+      "candidate_id": "c3",
+      "kind": "property",
+      "path": "subjects.s1.attributes.shelfLife[0]",
+      "subject_id": "s1",
+      "field": "shelfLife",
+      "program_destination": "not_finalized_model_failure",
+      "overall_verdict": "unsupported",
+      "content_verdict": "supported",
+      "reason": "原文有效期内容有据，但 s1 锚点是材料名，不是 StorageCondition；因此完整主谓值声明不成立。",
+      "program_issues": [],
+      "matching": "scope + original id/path/subject/field/kind + exact original proposal + frozen proposal excluding coordinates/span_id/replay_issue metadata"
+    },
+    {
+      "scope_id": "storage",
+      "candidate_id": "c4",
+      "kind": "property",
+      "path": "subjects.s1.attributes.storageTemperature[0]",
+      "subject_id": "s1",
+      "field": "storageTemperature",
+      "program_destination": "not_finalized_model_failure",
+      "overall_verdict": "unsupported",
+      "content_verdict": "supported",
+      "reason": "温度上限、单位与字段对应有据，但 s1 的材料锚点不支持其 StorageCondition 类型，完整声明仍存在主体角色错误。",
+      "program_issues": [],
+      "matching": "scope + original id/path/subject/field/kind + exact original proposal + frozen proposal excluding coordinates/span_id/replay_issue metadata"
+    },
+    {
+      "scope_id": "storage",
+      "candidate_id": "o1",
+      "kind": "observation",
+      "path": "observations[0]",
+      "subject_id": null,
+      "field": null,
+      "program_destination": "not_finalized_model_failure",
+      "overall_verdict": "undetermined",
+      "content_verdict": "supported",
+      "reason": "value 引用为空且结构化引用只有表头 u5，原文没有显式 unknown 状态；缺少可回指的值及具体记录归属，因此整体状态声明保留未决，而非判成错误或未映射。",
+      "program_issues": [],
+      "matching": "scope + original id/path/subject/field/kind + exact original proposal + frozen proposal excluding coordinates/span_id/replay_issue metadata"
+    },
+    {
+      "scope_id": "storage",
+      "candidate_id": "o2",
+      "kind": "observation",
+      "path": "observations[1]",
+      "subject_id": null,
+      "field": null,
+      "program_destination": "not_finalized_model_failure",
+      "overall_verdict": "undetermined",
+      "content_verdict": "supported",
+      "reason": "value 引用为空且结构化引用只有表头 u5，原文没有显式 unknown 状态；缺少可回指的值及具体记录归属，因此整体状态声明保留未决，而非判成错误或未映射。 o2 的避光内容与 o1 部分重复，不能另计新增覆盖。",
+      "program_issues": [],
+      "matching": "scope + original id/path/subject/field/kind + exact original proposal + frozen proposal excluding coordinates/span_id/replay_issue metadata"
+    }
+  ]
+}

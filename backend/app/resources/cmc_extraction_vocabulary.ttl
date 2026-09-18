@@ -1,0 +1,919 @@
+# Experimental extraction vocabulary only. Never merge into authoritative ontology/slpra.
+# Explicitly authored by the assistant from generic domain knowledge at user request.
+# These lexical hints are not report facts, expert gold, type assertions, or unit conversions.
+# No report-specific values, silver reference strings, subclass synonym inheritance, or sameAs.
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix lex: <urn:ontology-agent:cmc-extraction-vocabulary:> .
+@prefix dev: <https://ontology.pharma-gmp.cn/slpra/drug-development/> .
+@prefix drug: <https://ontology.pharma-gmp.cn/slpra/drug/> .
+@prefix equip: <https://ontology.pharma-gmp.cn/slpra/equipment/> .
+@prefix fac: <https://ontology.pharma-gmp.cn/slpra/facility/> .
+
+lex:ManualGeneralKnowledge
+    skos:prefLabel "实验性手工通用知识词表"@zh ;
+    skos:definition "由助手依据通用知识显式编写，用户授权用于本次抽取实验；未经领域专家确认，不从报告具体值或银标反向生成。"@zh .
+
+
+dev:ClinicalSampleProductionPlan
+    lex:role "record_anchor" ;
+    lex:extractionLabel "临床样品生产计划名称"@zh ;
+    skos:prefLabel "临床备样生产计划"@zh ;
+    skos:altLabel "临床样品生产计划", "临床试验样品制备计划", "clinical sample production plan" ;
+    skos:definition "抽取明确描述临床试验样品生产安排的计划名称或完整计划短语，不能抽历史供样日期当当前计划。"@zh ;
+    lex:source lex:ManualGeneralKnowledge .
+
+drug:ActivePharmaceuticalIngredient
+    lex:role "entity_name" ;
+    lex:extractionLabel "活性成分或原料药名称"@zh ;
+    skos:prefLabel "活性药物成分"@zh ;
+    skos:altLabel "原料药", "活性成分", "API", "active pharmaceutical ingredient" ;
+    skos:definition "仅抽上下文明确承担药物活性成分或原料药角色的物质名称。溶剂、辅料或一般化学式并不因此成为API。"@zh ;
+    lex:source lex:ManualGeneralKnowledge .
+
+dev:Purification
+    lex:role "record_anchor" ;
+    lex:extractionLabel "纯化步骤名称"@zh ;
+    skos:prefLabel "纯化"@zh ;
+    skos:altLabel "精制", "purification" ;
+    skos:definition "抽取具体纯化操作或步骤的名称。纯化不自动意味着最终产品步骤，也不等于结晶这一特定操作。"@zh ;
+    lex:source lex:ManualGeneralKnowledge .
+
+dev:SharedLineAssessmentData
+    lex:role "record_anchor" ;
+    lex:extractionLabel "独立毒理或共线评估记录名称"@zh ;
+    skos:prefLabel "共线评估数据"@zh ;
+    skos:altLabel "共线风险评估数据", "shared-line assessment data" ;
+    skos:definition "抽取独立研究或评估记录的完整标题、试验名称。每条试验记录分别定位，产品名、共享API单元、表头不能替代单条记录身份。"@zh ;
+    lex:source lex:ManualGeneralKnowledge .
+
+dev:SynthesisStep
+    lex:role "record_anchor" ;
+    lex:extractionLabel "合成工艺步骤名称"@zh ;
+    skos:prefLabel "合成步骤"@zh ;
+    skos:altLabel "合成工艺步骤", "工艺步骤", "synthesis step" ;
+    skos:definition "抽取具体步骤或单元操作名称及其明确序号上下文；不得把投入的物料名称当步骤或产出。"@zh ;
+    lex:source lex:ManualGeneralKnowledge .
+
+dev:Crystallization
+    lex:role "record_anchor" ;
+    lex:extractionLabel "结晶操作或步骤名称"@zh ;
+    skos:prefLabel "结晶"@zh ;
+    skos:altLabel "析晶", "crystallization" ;
+    skos:definition "抽取形成晶体的具体操作或工艺步骤名称，包括原文明示的再次结晶操作；不能仅因属于纯化就判为结晶。"@zh ;
+    lex:source lex:ManualGeneralKnowledge .
+
+equip:Equipment
+    lex:role "entity_name" ;
+    lex:extractionLabel "工艺设备名称或明确称谓"@zh ;
+    skos:prefLabel "设备"@zh ;
+    skos:altLabel "equipment" ;
+    skos:definition "抽取上下文明确作为设备的名称或称谓。编号与型号由各自属性分别抽取，设备类别词不证明具体实例。"@zh ;
+    lex:source lex:ManualGeneralKnowledge .
+
+dev:CrudeProduct
+    lex:role "entity_name" ;
+    lex:extractionLabel "工艺粗品名称"@zh ;
+    skos:prefLabel "粗品"@zh ;
+    skos:altLabel "未精制产物", "crude product" ;
+    skos:definition "抽取原文明确作为粗品或未精制产物的名称，不能将名称自动视为唯一中间体标识。"@zh ;
+    lex:source lex:ManualGeneralKnowledge .
+
+drug:DrugProduct
+    lex:role "entity_name" ;
+    lex:extractionLabel "药品或制剂产品名称"@zh ;
+    skos:prefLabel "药物产品"@zh ;
+    skos:altLabel "药品产品", "制剂产品", "drug product" ;
+    skos:definition "抽取原文明示为药品或制剂产品的名称。原料药、溶剂或项目名不因共现自动成为制剂实例；名称不证明风险子类或唯一身份。"@zh ;
+    lex:source lex:ManualGeneralKnowledge .
+
+drug:Residue
+    lex:role "entity_name" ;
+    lex:extractionLabel "清洗残留物名称"@zh ;
+    skos:prefLabel "残留物"@zh ;
+    skos:altLabel "残留物质", "residue" ;
+    skos:definition "抽取原文明示存在或待评价的具体残留物名称。残留章节标题、不适用标记和空白不证明存在残留物或没有残留。"@zh ;
+    lex:source lex:ManualGeneralKnowledge .
+
+fac:GeneralArea
+    lex:role "entity_name" ;
+    lex:extractionLabel "一般生产区域名称"@zh ;
+    skos:prefLabel "一般区"@zh ;
+    skos:altLabel "一般生产区", "general production area" ;
+    skos:definition "抽取明确标为一般区的区域名称；不把普通车间、洁净区或房间默认归为一般区。"@zh ;
+    lex:source lex:ManualGeneralKnowledge .
+
+equip:CleaningEquipment
+    lex:role "entity_name" ;
+    lex:extractionLabel "清洗设备名称"@zh ;
+    skos:prefLabel "清洗设备"@zh ;
+    skos:altLabel "清洗装置", "cleaning equipment" ;
+    skos:definition "抽取用于执行清洗操作的设备名称；被清洗的工艺设备不一定是清洗设备。"@zh ;
+    lex:source lex:ManualGeneralKnowledge .
+
+dev:StorageCondition
+    lex:role "record_anchor" ;
+    lex:extractionLabel "存放要求记录或完整要求短语"@zh ;
+    skos:prefLabel "存放条件"@zh ;
+    skos:altLabel "储存条件", "贮存条件", "storage conditions" ;
+    skos:definition "抽取储存要求的记录标题或完整要求短语，并由局部记录确定所适用物料。产品名本身不是存放条件。"@zh ;
+    lex:source lex:ManualGeneralKnowledge .
+
+drug:GenotoxicityProfile
+    lex:role "record_anchor" ;
+    lex:extractionLabel "基因毒性评价记录名称"@zh ;
+    skos:prefLabel "基因毒性特征"@zh ;
+    skos:altLabel "遗传毒性特征", "genotoxicity profile" ;
+    skos:definition "抽取具体基因毒性评价或研究记录的名称；类别表头和单独符号不构成独立实体。基因毒性不等于细胞毒性。"@zh ;
+    lex:source lex:ManualGeneralKnowledge .
+
+drug:SensitizationPotential
+    lex:role "record_anchor" ;
+    lex:extractionLabel "致敏性评价记录名称"@zh ;
+    skos:prefLabel "致敏潜力"@zh ;
+    skos:altLabel "致敏可能性", "sensitization potential" ;
+    skos:definition "抽取致敏评价的具体记录名称；未知标记不证明高致敏风险，评价对象不等于高致敏药物类别。"@zh ;
+    lex:source lex:ManualGeneralKnowledge .
+
+dev:plannedBatchCount
+    lex:role "attribute_value" ;
+    lex:extractionLabel "计划生产批次数值"@zh ;
+    skos:prefLabel "计划生产批次数"@zh ;
+    skos:altLabel "计划批次数", "拟生产批数", "planned batch count" ;
+    skos:definition "抽取计划批次的计数，不把批量质量或工艺操作次数作为生产批数。"@zh ;
+    lex:source lex:ManualGeneralKnowledge .
+
+dev:plannedBatchSizeMax_kg
+    lex:role "attribute_value" ;
+    lex:extractionLabel "预计单批质量上限值"@zh ;
+    skos:prefLabel "预计批量上限"@zh ;
+    skos:altLabel "计划批量上限", "单批质量上限", "planned batch size upper bound" ;
+    skos:definition "仅抽计划单批质量区间的上端点及必要上下文；与总产量、投料量、批次数区别，单位必须来自原文。"@zh ;
+    lex:source lex:ManualGeneralKnowledge .
+
+dev:plannedBatchSizeMin_kg
+    lex:role "attribute_value" ;
+    lex:extractionLabel "预计单批质量下限值"@zh ;
+    skos:prefLabel "预计批量下限"@zh ;
+    skos:altLabel "计划批量下限", "单批质量下限", "planned batch size lower bound" ;
+    skos:definition "仅抽计划单批质量区间的下端点及必要上下文；保留与同一区间上端点共享的原文单位。"@zh ;
+    lex:source lex:ManualGeneralKnowledge .
+
+dev:plannedProductionDate
+    lex:role "attribute_value" ;
+    lex:extractionLabel "计划生产年月或日期值"@zh ;
+    skos:prefLabel "计划生产时间"@zh ;
+    skos:altLabel "计划生产日期", "计划生产月份", "planned production date" ;
+    skos:definition "抽取本次生产计划对应年月或日期，保留原格式，不把历史转移、供样或检测日期替代当前计划。"@zh ;
+    lex:source lex:ManualGeneralKnowledge .
+
+dev:productionPurpose
+    lex:role "attribute_value" ;
+    lex:extractionLabel "生产用途原文值"@zh ;
+    skos:prefLabel "生产用途"@zh ;
+    skos:altLabel "生产目的", "批次用途", "production purpose" ;
+    skos:definition "抽取生产批次明确的用途或目的及适用限定，不能由开发阶段名自行推断用途。"@zh ;
+    lex:source lex:ManualGeneralKnowledge .
+
+drug:oel_ug_per_m3
+    lex:role "attribute_value" ;
+    lex:extractionLabel "职业暴露限值数值"@zh ;
+    skos:prefLabel "职业暴露限值"@zh ;
+    skos:altLabel "OEL", "occupational exposure limit" ;
+    skos:definition "抽取职业吸入暴露限值及原单位；与职业暴露分级OEB、PDE和药品给药剂量严格区分。"@zh ;
+    lex:source lex:ManualGeneralKnowledge .
+
+drug:pde_mg_per_day
+    lex:role "attribute_value" ;
+    lex:extractionLabel "原料药允许日暴露量数值"@zh ;
+    skos:prefLabel "允许日暴露量"@zh ;
+    skos:altLabel "PDE", "允许每日暴露量", "permitted daily exposure" ;
+    skos:definition "抽取归属于明确API的允许日暴露量，保持推导研究及适用对象。PDE不是最大日剂量、治疗剂量、NOAEL或OEL。"@zh ;
+    lex:source lex:ManualGeneralKnowledge .
+
+drug:productIdentifier
+    lex:role "attribute_value" ;
+    lex:extractionLabel "明确产品或原料药标识值"@zh ;
+    skos:prefLabel "产品或原料药唯一标识"@zh ;
+    skos:altLabel "产品标识", "原料药标识", "product identifier" ;
+    skos:definition "只抽被原文明确作为具体产品或API实例标识的字符。产品名称、项目名、项目代码和共同研究编号不自动具备唯一实例身份；存在批次或规格时保留区分。"@zh ;
+    lex:source lex:ManualGeneralKnowledge .
+
+dev:inProcessControl
+    lex:role "attribute_value" ;
+    lex:extractionLabel "过程控制方法和完整验收标准"@zh ;
+    skos:prefLabel "过程控制"@zh ;
+    skos:altLabel "中间过程控制", "中控", "IPC", "in-process control" ;
+    skos:definition "抽取过程检测方法与完整联合验收标准，保留各项阈值、比较符和触发后的动作。已发生的不合格情况或修订原因不等于验收标准，检测方法名本身不等于条件。"@zh ;
+    lex:source lex:ManualGeneralKnowledge .
+
+dev:outputMassRange_kg
+    lex:role "attribute_value" ;
+    lex:extractionLabel "工艺产出质量范围值"@zh ;
+    skos:prefLabel "得量范围"@zh ;
+    skos:altLabel "产出质量范围", "产物得量范围", "output mass range" ;
+    skos:definition "抽取步骤产出物的质量范围及单位，不能把原料投入质量、溶剂加入量或计划批量映射为得量。"@zh ;
+    lex:source lex:ManualGeneralKnowledge .
+
+dev:reactionConditions
+    lex:role "attribute_value" ;
+    lex:extractionLabel "工艺操作条件完整原文值"@zh ;
+    skos:prefLabel "反应条件"@zh ;
+    skos:altLabel "工艺操作条件", "reaction conditions" ;
+    skos:definition "抽取与操作明确绑定的温度、时间、气氛、压力等完整条件，保留升降温动作、区间、上限与持续时间，不能截成一个孤立数值。"@zh ;
+    lex:source lex:ManualGeneralKnowledge .
+
+dev:stepOrder
+    lex:role "attribute_value" ;
+    lex:extractionLabel "工艺步骤序号值"@zh ;
+    skos:prefLabel "步骤序号"@zh ;
+    skos:altLabel "工序顺序号", "步骤次序", "step order" ;
+    skos:definition "抽取明确步骤编号或次序值；重复操作次数、批次数及设备编号不是步骤序号。"@zh ;
+    lex:source lex:ManualGeneralKnowledge .
+
+dev:yieldRangePercent
+    lex:role "attribute_value" ;
+    lex:extractionLabel "收率范围原文值"@zh ;
+    skos:prefLabel "收率范围"@zh ;
+    skos:altLabel "产率范围", "yield range" ;
+    skos:definition "抽取产物收率百分比或区间，保留基准与范围；纯度、杂质比例及转化率不自动等同收率。"@zh ;
+    lex:source lex:ManualGeneralKnowledge .
+
+dev:activeIngredient
+    lex:role "attribute_value" ;
+    lex:extractionLabel "评估记录活性成分名称值"@zh ;
+    skos:prefLabel "活性成分"@zh ;
+    skos:altLabel "API", "活性药物成分", "active ingredient" ;
+    skos:definition "抽取评估记录中明确标作活性成分的名称，不把溶剂或辅料作为API；共享API名称不合并不同试验记录。"@zh ;
+    lex:source lex:ManualGeneralKnowledge .
+
+dev:dosingRegimen
+    lex:role "attribute_value" ;
+    lex:extractionLabel "给药方案完整原文值"@zh ;
+    skos:prefLabel "给药方案"@zh ;
+    skos:altLabel "给药方案描述", "dosing regimen" ;
+    skos:definition "抽取给药剂量、途径、频率及周期的完整方案表述。频率和总疗程不可互换，不能由单位猜测给药方案。"@zh ;
+    lex:source lex:ManualGeneralKnowledge .
+
+dev:f1
+    lex:role "attribute_value" ;
+    lex:extractionLabel "F1系数值"@zh ;
+    skos:prefLabel "F1"@zh ;
+    skos:altLabel "F1系数", "种间外推系数" ;
+    skos:definition "仅抽原文F1对应系数。常见PDE方法用其处理种间外推，但本工具不计算、不补默认值，不与F2至F5合并。"@zh ;
+    lex:source lex:ManualGeneralKnowledge .
+
+dev:f2
+    lex:role "attribute_value" ;
+    lex:extractionLabel "F2系数值"@zh ;
+    skos:prefLabel "F2"@zh ;
+    skos:altLabel "F2系数", "个体差异系数" ;
+    skos:definition "仅抽原文F2对应系数。常见PDE方法用其处理个体差异，但不补默认值，不与F1或其他修正系数互换。"@zh ;
+    lex:source lex:ManualGeneralKnowledge .
+
+dev:f3
+    lex:role "attribute_value" ;
+    lex:extractionLabel "F3系数值"@zh ;
+    skos:prefLabel "F3"@zh ;
+    skos:altLabel "F3系数", "研究时长修正系数" ;
+    skos:definition "仅抽原文F3对应系数。研究时长相关解释必须由原文或批准规则确定；不据试验天数自行计算。"@zh ;
+    lex:source lex:ManualGeneralKnowledge .
+
+dev:f4
+    lex:role "attribute_value" ;
+    lex:extractionLabel "F4系数值"@zh ;
+    skos:prefLabel "F4"@zh ;
+    skos:altLabel "F4系数", "严重毒性修正系数" ;
+    skos:definition "仅抽原文F4对应系数，不由药物类别、致敏性或其他毒性名称猜测其数值。"@zh ;
+    lex:source lex:ManualGeneralKnowledge .
+
+dev:f5
+    lex:role "attribute_value" ;
+    lex:extractionLabel "F5系数值"@zh ;
+    skos:prefLabel "F5"@zh ;
+    skos:altLabel "F5系数", "效应水平修正系数" ;
+    skos:definition "仅抽原文F5对应系数，不把NOAEL数值、LOAEL数值或是否存在NOAEL直接当作F5。"@zh ;
+    lex:source lex:ManualGeneralKnowledge .
+
+dev:humanEquivalentDose_mg_per_kg
+    lex:role "attribute_value" ;
+    lex:extractionLabel "人体等效剂量数值"@zh ;
+    skos:prefLabel "人体等效剂量"@zh ;
+    skos:altLabel "人等效剂量", "HED", "human equivalent dose" ;
+    skos:definition "抽取人体等效剂量及完整源单位；不能把动物NOAEL、PDE或临床单次剂量直接作为HED。"@zh ;
+    lex:source lex:ManualGeneralKnowledge .
+
+dev:noaelDuration
+    lex:role "attribute_value" ;
+    lex:extractionLabel "NOAEL研究时长原文值"@zh ;
+    skos:prefLabel "NOAEL试验周期"@zh ;
+    skos:altLabel "NOAEL研究时长", "毒理研究持续时间" ;
+    skos:definition "抽取用于该NOAEL研究的持续时间，保留对应试验身份；给药间隔、疗程和临床周期不是默认同义词。"@zh ;
+    lex:source lex:ManualGeneralKnowledge .
+
+dev:noaelSpecies
+    lex:role "attribute_value" ;
+    lex:extractionLabel "NOAEL研究动物种属值"@zh ;
+    skos:prefLabel "NOAEL动物种属"@zh ;
+    skos:altLabel "NOAEL试验种属", "毒理试验动物种属" ;
+    skos:definition "抽取该NOAEL研究的动物种属、品系等原文信息；不能因别条研究同属一API就共用动物种属。"@zh ;
+    lex:source lex:ManualGeneralKnowledge .
+
+dev:noael_mg_per_kg_per_day
+    lex:role "attribute_value" ;
+    lex:extractionLabel "未观察到不良反应剂量数值"@zh ;
+    skos:prefLabel "未观察到不良反应水平"@zh ;
+    skos:altLabel "NOAEL", "无可见损害作用水平", "no observed adverse effect level" ;
+    skos:definition "抽取对应研究的NOAEL数值，保留种属、时长与原文单位；没有源单位就保持缺失，不能从属性的mg/kg/day补造，也不能替代PDE。"@zh ;
+    lex:source lex:ManualGeneralKnowledge .
+
+dev:oebBand
+    lex:role "attribute_value" ;
+    lex:extractionLabel "职业暴露分级值"@zh ;
+    skos:prefLabel "职业暴露分级"@zh ;
+    skos:altLabel "OEB", "职业暴露等级", "occupational exposure band" ;
+    skos:definition "抽取明确的暴露分级或等级标签；OEB等级不等于OEL质量浓度数值，不据PDE自行分级。"@zh ;
+    lex:source lex:ManualGeneralKnowledge .
+
+dev:pde_mg_per_day
+    lex:role "attribute_value" ;
+    lex:extractionLabel "独立评估记录允许日暴露量数值"@zh ;
+    skos:prefLabel "允许日暴露量"@zh ;
+    skos:altLabel "PDE", "允许每日暴露量", "permitted daily exposure" ;
+    skos:definition "抽取单条毒理或共线评估记录的PDE值；不同试验分别归属，不能选共享API名合并数值，也不能用最大日剂量或NOAEL替代。"@zh ;
+    lex:source lex:ManualGeneralKnowledge .
+
+dev:proposedMaxDose_mg
+    lex:role "attribute_value" ;
+    lex:extractionLabel "拟定最高给药剂量数值"@zh ;
+    skos:prefLabel "拟定最高剂量"@zh ;
+    skos:altLabel "拟定最大剂量", "proposed maximum dose" ;
+    skos:definition "抽取拟用于临床的最高给药剂量，保留单次或每日等明确基准；不是PDE、OEL或已经确认的最大日剂量。"@zh ;
+    lex:source lex:ManualGeneralKnowledge .
+
+dev:proposedStartingDose_mg
+    lex:role "attribute_value" ;
+    lex:extractionLabel "拟定临床起始剂量数值"@zh ;
+    skos:prefLabel "拟定临床起始剂量"@zh ;
+    skos:altLabel "拟定起始剂量", "proposed starting dose" ;
+    skos:definition "抽取拟定临床首次或起始给药剂量及基准；不把最低治疗剂量、PDE或后续最高剂量作为起始剂量。"@zh ;
+    lex:source lex:ManualGeneralKnowledge .
+
+dev:safetyFactor
+    lex:role "attribute_value" ;
+    lex:extractionLabel "综合安全系数数值"@zh ;
+    skos:prefLabel "安全系数"@zh ;
+    skos:altLabel "综合修正系数", "safety factor" ;
+    skos:definition "抽取原文明示的综合安全系数。F1至F5只是可能的分项，不能将任一分项自动视为乘积或在工具中补算。"@zh ;
+    lex:source lex:ManualGeneralKnowledge .
+
+dev:sourceReference
+    lex:role "attribute_value" ;
+    lex:extractionLabel "数据来源文献或报告原文值"@zh ;
+    skos:prefLabel "来源"@zh ;
+    skos:altLabel "数据来源", "参考来源", "source reference" ;
+    skos:definition "抽取具体数据所引用的报告、文献或资料标识，保留其对应研究记录；表头来源二字不作为值。"@zh ;
+    lex:source lex:ManualGeneralKnowledge .
+
+dev:studyType
+    lex:role "attribute_value" ;
+    lex:extractionLabel "完整试验项目名称值"@zh ;
+    skos:prefLabel "试验项目"@zh ;
+    skos:altLabel "研究项目", "试验名称", "study name" ;
+    skos:definition "抽取该条试验项目的完整名称，保留区分不同研究的物种、时长、研究标记等限定；不要仅抽共有研究类别。"@zh ;
+    lex:source lex:ManualGeneralKnowledge .
+
+equip:equipmentID
+    lex:role "attribute_value" ;
+    lex:extractionLabel "明确设备编号值"@zh ;
+    skos:prefLabel "设备编号"@zh ;
+    skos:altLabel "设备编码", "设备位号", "equipment identifier" ;
+    skos:definition "抽取被原文明示为具体设备编号或位号的字符；型号、容积、房间号与项目编号不得替代设备身份。"@zh ;
+    lex:source lex:ManualGeneralKnowledge .
+
+equip:equipmentName
+    lex:role "attribute_value" ;
+    lex:extractionLabel "设备名称属性值"@zh ;
+    skos:prefLabel "设备名称"@zh ;
+    skos:altLabel "设备品名", "equipment name" ;
+    skos:definition "抽取设备的名称描述，保留必要的类别限定；编号和型号由对应字段处理，不据名称自动合并实例。"@zh ;
+    lex:source lex:ManualGeneralKnowledge .
+
+equip:isDedicatedEquipment
+    lex:role "attribute_value" ;
+    lex:extractionLabel "设备当前专用状态原文值"@zh ;
+    skos:prefLabel "是否专用设备"@zh ;
+    skos:altLabel "设备专用性", "dedicated equipment status" ;
+    skos:definition "抽取原文明示的当前专用状态及否定或未知符号；专用要求不等于设备已经专用。"@zh ;
+    lex:source lex:ManualGeneralKnowledge .
+
+equip:isInCleanArea
+    lex:role "attribute_value" ;
+    lex:extractionLabel "设备所在洁净区域状态值"@zh ;
+    skos:prefLabel "是否位于洁净区"@zh ;
+    skos:altLabel "洁净区内设备状态", "in clean area status" ;
+    skos:definition "抽取设备是否位于洁净区的明确原文判断；区域名称不自动证明洁净级别或设备位置。"@zh ;
+    lex:source lex:ManualGeneralKnowledge .
+
+equip:modelSpecification
+    lex:role "attribute_value" ;
+    lex:extractionLabel "设备规格型号值"@zh ;
+    skos:prefLabel "规格型号"@zh ;
+    skos:altLabel "设备型号", "型号规格", "model specification" ;
+    skos:definition "抽取原文明示的设备型号与规格描述，不能将它作为设备唯一编号。"@zh ;
+    lex:source lex:ManualGeneralKnowledge .
+
+equip:requiresDedication
+    lex:role "attribute_value" ;
+    lex:extractionLabel "设备专用要求原文值"@zh ;
+    skos:prefLabel "是否要求专用"@zh ;
+    skos:altLabel "专用设备要求", "dedication requirement" ;
+    skos:definition "仅抽原文明示的专用要求及适用条件；不得根据风险类型或名称在抽取中推理生成规则结论。"@zh ;
+    lex:source lex:ManualGeneralKnowledge .
+
+equip:requiresInactivationValidation
+    lex:role "attribute_value" ;
+    lex:extractionLabel "灭活验证要求原文值"@zh ;
+    skos:prefLabel "是否要求灭活验证"@zh ;
+    skos:altLabel "灭活验证要求", "inactivation validation requirement" ;
+    skos:definition "仅抽明确的灭活验证要求，保留条件和否定；不能把已验证状态、灭活方法或风险类别当成要求成立。"@zh ;
+    lex:source lex:ManualGeneralKnowledge .
+
+equip:requiresIndependentHVAC
+    lex:role "attribute_value" ;
+    lex:extractionLabel "独立空调系统要求原文值"@zh ;
+    skos:prefLabel "是否要求独立空调系统"@zh ;
+    skos:altLabel "独立HVAC要求", "independent HVAC requirement" ;
+    skos:definition "仅抽独立空气处理系统的明确要求和适用条件，不把房间温度或通风次数当此布尔要求。"@zh ;
+    lex:source lex:ManualGeneralKnowledge .
+
+dev:intermediateIdentifier
+    lex:role "attribute_value" ;
+    lex:extractionLabel "明确工艺中间体标识值"@zh ;
+    skos:prefLabel "中间体标识"@zh ;
+    skos:altLabel "工艺中间体编号", "中间体代码", "intermediate identifier" ;
+    skos:definition "抽取被原文明确作为中间体标识的字符，并保留项目或路线命名空间；粗品名称、起始物料名称或共有项目名不自动具备标识角色。"@zh ;
+    lex:source lex:ManualGeneralKnowledge .
+
+dev:lightProtection
+    lex:role "attribute_value" ;
+    lex:extractionLabel "避光储存要求原文值"@zh ;
+    skos:prefLabel "是否避光"@zh ;
+    skos:altLabel "避光要求", "light protection requirement" ;
+    skos:definition "抽取原文明示的避光要求或否定，不能因表头提到是否避光而为未填写数据补造值。"@zh ;
+    lex:source lex:ManualGeneralKnowledge .
+
+dev:packagingType
+    lex:role "attribute_value" ;
+    lex:extractionLabel "完整包装方式原文值"@zh ;
+    skos:prefLabel "包装方式"@zh ;
+    skos:altLabel "包装形式", "包装要求", "packaging type" ;
+    skos:definition "抽取完整多层包装材料及内外层组合，保留外加包装和封装要求；不要只抽单层袋名或材料名。"@zh ;
+    lex:source lex:ManualGeneralKnowledge .
+
+dev:shelfLife
+    lex:role "attribute_value" ;
+    lex:extractionLabel "有效期或复测期原文值"@zh ;
+    skos:prefLabel "有效期或复测期"@zh ;
+    skos:altLabel "有效期限或复测期限", "shelf life or retest period" ;
+    skos:definition "抽取期限及原时间单位，保留它是有效期还是复测期；两者由同一属性容纳但不是等价业务概念，不互换、不换算成未给出的到期日。"@zh ;
+    lex:source lex:ManualGeneralKnowledge .
+
+dev:storageHumidity
+    lex:role "attribute_value" ;
+    lex:extractionLabel "存放湿度要求原文值"@zh ;
+    skos:prefLabel "存放湿度"@zh ;
+    skos:altLabel "储存湿度", "贮存湿度", "storage humidity" ;
+    skos:definition "抽取明确湿度要求及区间或比较限定，表头存在而值缺失时不补unknown或默认湿度。"@zh ;
+    lex:source lex:ManualGeneralKnowledge .
+
+dev:storageTemperature
+    lex:role "attribute_value" ;
+    lex:extractionLabel "存放温度要求原文值"@zh ;
+    skos:prefLabel "存放温度"@zh ;
+    skos:altLabel "储存温度", "贮存温度", "storage temperature" ;
+    skos:definition "抽取完整储存温度表达，包括上下限、区间、室温等；温度上限不可变成恒温标量，也不是触发条件。"@zh ;
+    lex:source lex:ManualGeneralKnowledge .
+
+drug:sensitizationLevel
+    lex:role "attribute_value" ;
+    lex:extractionLabel "原文明示致敏级别值"@zh ;
+    skos:prefLabel "致敏级别"@zh ;
+    skos:altLabel "致敏性等级", "sensitization level" ;
+    skos:definition "只抽明确的致敏等级，不由药物名称或未知符号推成高致敏等级，也不在无等级标度时补造数值。"@zh ;
+    lex:source lex:ManualGeneralKnowledge .
+
+dev:registrationCategory
+    lex:role "attribute_value" ;
+    lex:extractionLabel "药品注册分类原文值"@zh ;
+    skos:prefLabel "注册分类"@zh ;
+    skos:altLabel "药品注册类别", "registration category" ;
+    skos:definition "抽取原文明示的监管注册类别，保留分类制度上下文；药理分类、制剂剂型与申报状态不是注册分类。"@zh ;
+    lex:source lex:ManualGeneralKnowledge .
+
+dev:regulatoryStatus
+    lex:role "attribute_value" ;
+    lex:extractionLabel "申报或注册状态原文值"@zh ;
+    skos:prefLabel "申报或注册状态"@zh ;
+    skos:altLabel "申报状态", "注册状态", "regulatory status" ;
+    skos:definition "抽取监管申请、受理或批准的明确状态与限定；提出申请、获准临床和获准上市不得混同。"@zh ;
+    lex:source lex:ManualGeneralKnowledge .
+
+dev:targetIndication
+    lex:role "attribute_value" ;
+    lex:extractionLabel "目标适应症原文值"@zh ;
+    skos:prefLabel "目标适应症"@zh ;
+    skos:altLabel "适应症", "治疗适应症", "therapeutic indication" ;
+    skos:definition "抽取明确的治疗或预防目标适应症；作用靶点、作用机制或临床阶段不自动等于适应症。"@zh ;
+    lex:source lex:ManualGeneralKnowledge .
+
+drug:appearance
+    lex:role "attribute_value" ;
+    lex:extractionLabel "药品性状原文值"@zh ;
+    skos:prefLabel "性状"@zh ;
+    skos:altLabel "外观性状", "appearance" ;
+    skos:definition "抽取对应药品或物料的颜色、形态等完整性状值；不抽字段标题，不把制剂剂型自动作为性状。"@zh ;
+    lex:source lex:ManualGeneralKnowledge .
+
+drug:casNumber
+    lex:role "attribute_value" ;
+    lex:extractionLabel "CAS登记号值"@zh ;
+    skos:prefLabel "CAS号"@zh ;
+    skos:altLabel "CAS登记号", "CAS registry number" ;
+    skos:definition "抽取明确CAS标识角色的登记号；不能根据一般连字符编号或名称猜测CAS号。"@zh ;
+    lex:source lex:ManualGeneralKnowledge .
+
+drug:chemicalNameEn
+    lex:role "attribute_value" ;
+    lex:extractionLabel "英文化学名称值"@zh ;
+    skos:prefLabel "化学名英文"@zh ;
+    skos:altLabel "英文化学名", "English chemical name" ;
+    skos:definition "抽取原文标明的英文化学名称，保持完整命名；项目代码、商品名和分子式不自动等同化学名。"@zh ;
+    lex:source lex:ManualGeneralKnowledge .
+
+drug:chemicalNameZh
+    lex:role "attribute_value" ;
+    lex:extractionLabel "中文化学名称值"@zh ;
+    skos:prefLabel "化学名中文"@zh ;
+    skos:altLabel "中文化学名", "Chinese chemical name" ;
+    skos:definition "抽取原文明示中文化学名称，不翻译、补全或以项目名替代。"@zh ;
+    lex:source lex:ManualGeneralKnowledge .
+
+drug:dosageForm
+    lex:role "attribute_value" ;
+    lex:extractionLabel "制剂剂型原文值"@zh ;
+    skos:prefLabel "制剂剂型"@zh ;
+    skos:altLabel "剂型", "药物剂型", "dosage form" ;
+    skos:definition "抽取明确制剂形式，保留原有描述；给药途径可在文字中出现但不把途径单独等同剂型。"@zh ;
+    lex:source lex:ManualGeneralKnowledge .
+
+drug:drugSpecification
+    lex:role "attribute_value" ;
+    lex:extractionLabel "药品规格原文值"@zh ;
+    skos:prefLabel "规格"@zh ;
+    skos:altLabel "药品规格", "制剂规格", "drug specification" ;
+    skos:definition "抽取明确产品规格或含量强度及原基准，保留原料药规格描述；片重、包装重量与剂量不自动等于药物规格。"@zh ;
+    lex:source lex:ManualGeneralKnowledge .
+
+drug:hasPrionRisk
+    lex:role "attribute_value" ;
+    lex:extractionLabel "朊病毒风险原文判断值"@zh ;
+    skos:prefLabel "是否有朊病毒风险"@zh ;
+    skos:altLabel "朊病毒风险", "prion risk status" ;
+    skos:definition "抽取原文对朊病毒风险的明确判断或未决符号；来源类别或一般生物制品名不证明风险阳性。"@zh ;
+    lex:source lex:ManualGeneralKnowledge .
+
+drug:inactivationMethod
+    lex:role "attribute_value" ;
+    lex:extractionLabel "灭活方法完整原文值"@zh ;
+    skos:prefLabel "灭活方法"@zh ;
+    skos:altLabel "灭活处理方法", "inactivation method" ;
+    skos:definition "抽取明确灭活方法及条件，区分消毒、清洗和灭活；要求验证不等于方法已有效。"@zh ;
+    lex:source lex:ManualGeneralKnowledge .
+
+drug:isBetaLactam
+    lex:role "attribute_value" ;
+    lex:extractionLabel "β内酰胺类别原文判断值"@zh ;
+    skos:prefLabel "是否β内酰胺类药物"@zh ;
+    skos:altLabel "β-内酰胺类药物判断", "beta-lactam status" ;
+    skos:definition "仅抽原文对β内酰胺分类的判断，不据项目名推药物结构，也不把所有抗菌药等同β内酰胺。"@zh ;
+    lex:source lex:ManualGeneralKnowledge .
+
+drug:isCytotoxic
+    lex:role "attribute_value" ;
+    lex:extractionLabel "细胞毒性原文判断值"@zh ;
+    skos:prefLabel "是否细胞毒药物"@zh ;
+    skos:altLabel "细胞毒药物判断", "cytotoxic status" ;
+    skos:definition "抽取明确细胞毒性判断；基因毒性阴性、非肿瘤药物或其他毒性字段不能替代细胞毒性结论。"@zh ;
+    lex:source lex:ManualGeneralKnowledge .
+
+drug:isHighlyActive
+    lex:role "attribute_value" ;
+    lex:extractionLabel "高活性药物原文判断值"@zh ;
+    skos:prefLabel "是否高活性药物"@zh ;
+    skos:altLabel "高活性分类判断", "high activity status" ;
+    skos:definition "仅抽原文明示的高活性分类判断，不能根据一般受体活性、低剂量或未证实阈值自行分类。"@zh ;
+    lex:source lex:ManualGeneralKnowledge .
+
+drug:isHighlySensitizing
+    lex:role "attribute_value" ;
+    lex:extractionLabel "高致敏性原文判断值"@zh ;
+    skos:prefLabel "是否高致敏药物"@zh ;
+    skos:altLabel "高致敏分类判断", "high sensitization status" ;
+    skos:definition "仅抽高致敏性的明确判断；致敏数据不足、一般致敏潜力和名称均不能证明高致敏。"@zh ;
+    lex:source lex:ManualGeneralKnowledge .
+
+drug:isHormonal
+    lex:role "attribute_value" ;
+    lex:extractionLabel "激素类药物原文判断值"@zh ;
+    skos:prefLabel "是否激素类药物"@zh ;
+    skos:altLabel "激素药物分类判断", "hormonal drug status" ;
+    skos:definition "抽取原文明示激素类别判断，不因作用于受体或内分泌适应症就认定激素类。"@zh ;
+    lex:source lex:ManualGeneralKnowledge .
+
+drug:isOncologyDrug
+    lex:role "attribute_value" ;
+    lex:extractionLabel "肿瘤药物原文判断值"@zh ;
+    skos:prefLabel "是否肿瘤药物"@zh ;
+    skos:altLabel "抗肿瘤药物判断", "oncology drug status" ;
+    skos:definition "抽取原文对肿瘤药物的分类判断；该状态不自动等同细胞毒性。"@zh ;
+    lex:source lex:ManualGeneralKnowledge .
+
+drug:isPenicillinType
+    lex:role "attribute_value" ;
+    lex:extractionLabel "青霉素类别原文判断值"@zh ;
+    skos:prefLabel "是否青霉素类药物"@zh ;
+    skos:altLabel "青霉素类判断", "penicillin type status" ;
+    skos:definition "只抽明确青霉素类判断，不能把β内酰胺上位类别或其他抗菌药默认细化为青霉素。"@zh ;
+    lex:source lex:ManualGeneralKnowledge .
+
+drug:maximumDailyDose_mg
+    lex:role "attribute_value" ;
+    lex:extractionLabel "最大日剂量数值"@zh ;
+    skos:prefLabel "最大日剂量"@zh ;
+    skos:altLabel "最高日剂量", "maximum daily dose" ;
+    skos:definition "抽取每日最大给药剂量及原文日基准；不是PDE、NOAEL或单次最高剂量，量纲相近不证明指标相同。"@zh ;
+    lex:source lex:ManualGeneralKnowledge .
+
+drug:minimumTherapeuticDose_mg
+    lex:role "attribute_value" ;
+    lex:extractionLabel "最小治疗剂量数值"@zh ;
+    skos:prefLabel "最小治疗剂量"@zh ;
+    skos:altLabel "最低治疗剂量", "minimum therapeutic dose" ;
+    skos:definition "抽取明确的最低有效治疗剂量及基准；拟定起始剂量、PDE与检出限不可替代。"@zh ;
+    lex:source lex:ManualGeneralKnowledge .
+
+drug:molecularFormula
+    lex:role "attribute_value" ;
+    lex:extractionLabel "分子式原文值"@zh ;
+    skos:prefLabel "分子式"@zh ;
+    skos:altLabel "分子化学式", "molecular formula" ;
+    skos:definition "抽取明确属于当前药物或物料的分子式；原句中其他溶剂的化学式不可迁移为药物分子式。"@zh ;
+    lex:source lex:ManualGeneralKnowledge .
+
+drug:molecularWeight
+    lex:role "attribute_value" ;
+    lex:extractionLabel "分子量数值"@zh ;
+    skos:prefLabel "分子量"@zh ;
+    skos:altLabel "相对分子质量", "molecular weight" ;
+    skos:definition "抽取明确的分子量/相对分子质量值及其字段角色，不把物料质量、含量或质量浓度作为分子量。"@zh ;
+    lex:source lex:ManualGeneralKnowledge .
+
+drug:projectCode
+    lex:role "attribute_value" ;
+    lex:extractionLabel "项目代码原文值"@zh ;
+    skos:prefLabel "项目代码"@zh ;
+    skos:altLabel "项目编号", "project code" ;
+    skos:definition "抽取明确项目层级的代码，不把它自动升级为具体药品批次、设备或试验记录的唯一标识。"@zh ;
+    lex:source lex:ManualGeneralKnowledge .
+
+drug:projectName
+    lex:role "attribute_value" ;
+    lex:extractionLabel "项目名称原文值"@zh ;
+    skos:prefLabel "项目名称"@zh ;
+    skos:altLabel "项目名", "project name" ;
+    skos:definition "抽取项目名称对应的原值；名字可以由代码字符组成，但名称角色本身不证明全局唯一实例身份。"@zh ;
+    lex:source lex:ManualGeneralKnowledge .
+
+drug:routeOfAdministration
+    lex:role "attribute_value" ;
+    lex:extractionLabel "给药途径原文值"@zh ;
+    skos:prefLabel "给药途径"@zh ;
+    skos:altLabel "用药途径", "route of administration" ;
+    skos:definition "抽取原文明示的给药途径，也可来自完整剂型表述中的途径词；给药频率或周期不等于途径。"@zh ;
+    lex:source lex:ManualGeneralKnowledge .
+
+drug:solubility
+    lex:role "attribute_value" ;
+    lex:extractionLabel "完整溶剂与溶解性原文值"@zh ;
+    skos:prefLabel "溶解性"@zh ;
+    skos:altLabel "溶解性质", "solubility" ;
+    skos:definition "抽取各溶剂与对应溶解程度的完整组合，保留并列对象及极性；溶剂名称不是图例，也不是该药品的活性成分。"@zh ;
+    lex:source lex:ManualGeneralKnowledge .
+
+dev:residueSolubility
+    lex:role "attribute_value" ;
+    lex:extractionLabel "残留物溶解性原文值"@zh ;
+    skos:prefLabel "残留物溶解度"@zh ;
+    skos:altLabel "残留物溶解性", "residue solubility" ;
+    skos:definition "抽取具体残留物在明确溶剂中的溶解程度，保留对应条件和对象；原药溶解性不可无依据移作清洗残留物溶解性。"@zh ;
+    lex:source lex:ManualGeneralKnowledge .
+
+dev:residueSolubilityTemperature
+    lex:role "attribute_value" ;
+    lex:extractionLabel "残留物溶解测试温度原文值"@zh ;
+    skos:prefLabel "溶解度测试温度"@zh ;
+    skos:altLabel "溶解性测试温度", "solubility test temperature" ;
+    skos:definition "抽取残留物溶解性测试明确使用的温度，保留比较符或区间；反应温度和存放温度不能作为测试温度。"@zh ;
+    lex:source lex:ManualGeneralKnowledge .
+
+dev:residueSolvent
+    lex:role "attribute_value" ;
+    lex:extractionLabel "残留物清洗溶剂完整名称值"@zh ;
+    skos:prefLabel "残留物清洗溶剂"@zh ;
+    skos:altLabel "清洗残留物所用溶剂", "residue cleaning solvent" ;
+    skos:definition "抽取用于溶解或清除具体残留物的溶剂及混合组成，保留配比和浓度；工艺反应溶剂不自动等于清洗溶剂。"@zh ;
+    lex:source lex:ManualGeneralKnowledge .
+
+lex:UnitKg
+    lex:role "unit" ;
+    lex:extractionLabel "千克单位"@zh ;
+    skos:prefLabel "千克"@zh ;
+    skos:altLabel "kg", "公斤", "kilogram" ;
+    skos:definition "质量单位千克。保留原词，不在词表阶段换算。"@zh ;
+    lex:canonicalUnit "kg" ;
+    lex:forCanonicalUnit "kg", "mg" ;
+    lex:forProperty dev:outputMassRange_kg ;
+    lex:source lex:ManualGeneralKnowledge .
+
+lex:UnitG
+    lex:role "unit" ;
+    lex:extractionLabel "克单位"@zh ;
+    skos:prefLabel "克"@zh ;
+    skos:altLabel "g", "gram" ;
+    skos:definition "质量单位克，与千克或毫克的尺度不同，不互为同义词。"@zh ;
+    lex:canonicalUnit "g" ;
+    lex:forCanonicalUnit "kg", "mg" ;
+    lex:forProperty dev:outputMassRange_kg ;
+    lex:source lex:ManualGeneralKnowledge .
+
+lex:UnitMg
+    lex:role "unit" ;
+    lex:extractionLabel "毫克单位"@zh ;
+    skos:prefLabel "毫克"@zh ;
+    skos:altLabel "mg", "milligram" ;
+    skos:definition "质量单位毫克，不包含每日或每公斤体重分母。"@zh ;
+    lex:canonicalUnit "mg" ;
+    lex:forCanonicalUnit "kg", "mg" ;
+    lex:forProperty dev:outputMassRange_kg ;
+    lex:source lex:ManualGeneralKnowledge .
+
+lex:UnitUg
+    lex:role "unit" ;
+    lex:extractionLabel "微克单位"@zh ;
+    skos:prefLabel "微克"@zh ;
+    skos:altLabel "μg", "µg", "ug", "microgram" ;
+    skos:definition "质量单位微克；希腊字形变体仅作词形提示。"@zh ;
+    lex:canonicalUnit "ug" ;
+    lex:forCanonicalUnit "kg", "mg" ;
+    lex:forProperty dev:outputMassRange_kg ;
+    lex:source lex:ManualGeneralKnowledge .
+
+lex:UnitMgDay
+    lex:role "unit" ;
+    lex:extractionLabel "毫克每日单位"@zh ;
+    skos:prefLabel "毫克每日"@zh ;
+    skos:altLabel "mg/day", "mg/天", "毫克/天" ;
+    skos:definition "质量按日计量单位；与单纯mg或mg/kg/day不同。单位不能证明PDE指标身份。"@zh ;
+    lex:canonicalUnit "mg/day" ;
+    lex:forCanonicalUnit "mg/day" ;
+    lex:source lex:ManualGeneralKnowledge .
+
+lex:UnitUgDay
+    lex:role "unit" ;
+    lex:extractionLabel "微克每日单位"@zh ;
+    skos:prefLabel "微克每日"@zh ;
+    skos:altLabel "μg/day", "ug/day", "μg/天", "微克/天" ;
+    skos:definition "微克每日；不得丢失每日分母或仅截取微克。"@zh ;
+    lex:canonicalUnit "ug/day" ;
+    lex:forCanonicalUnit "mg/day" ;
+    lex:source lex:ManualGeneralKnowledge .
+
+lex:UnitMgKgDay
+    lex:role "unit" ;
+    lex:extractionLabel "毫克每千克每日单位"@zh ;
+    skos:prefLabel "毫克每千克每日"@zh ;
+    skos:altLabel "mg/kg/day", "mg/kg/天", "毫克/千克/天" ;
+    skos:definition "同时包含质量与时间两级分母；不能截成mg/kg或mg/day。毒理给药上下文可能按体重计量，但千克指何种对象必须由原文证明。"@zh ;
+    lex:canonicalUnit "mg/kg/day" ;
+    lex:forCanonicalUnit "mg/kg/day" ;
+    lex:source lex:ManualGeneralKnowledge .
+
+lex:UnitUgKgDay
+    lex:role "unit" ;
+    lex:extractionLabel "微克每千克每日单位"@zh ;
+    skos:prefLabel "微克每千克每日"@zh ;
+    skos:altLabel "μg/kg/day", "ug/kg/day", "微克/千克/天" ;
+    skos:definition "微克尺度并含千克和每日分母，单位原文缺失时不补造。千克可在给药上下文指体重，但单位本身不证明其对象角色。"@zh ;
+    lex:canonicalUnit "ug/kg/day" ;
+    lex:forCanonicalUnit "mg/kg/day" ;
+    lex:source lex:ManualGeneralKnowledge .
+
+lex:UnitMgKg
+    lex:role "unit" ;
+    lex:extractionLabel "毫克每千克单位"@zh ;
+    skos:prefLabel "毫克每千克"@zh ;
+    skos:altLabel "mg/kg", "毫克/千克" ;
+    skos:definition "质量与质量之比，不含每日时间分母；不可截取更长表达式的前缀。千克可指体重或其他材料质量，须由指标原文确定。"@zh ;
+    lex:canonicalUnit "mg/kg" ;
+    lex:forCanonicalUnit "mg/kg" ;
+    lex:source lex:ManualGeneralKnowledge .
+
+lex:UnitUgM3
+    lex:role "unit" ;
+    lex:extractionLabel "微克每立方米单位"@zh ;
+    skos:prefLabel "微克每立方米"@zh ;
+    skos:altLabel "μg/m³", "µg/m³", "ug/m3", "微克/立方米" ;
+    skos:definition "质量浓度单位微克每立方米，完整保留体积分母及立方幂。"@zh ;
+    lex:canonicalUnit "ug/m3" ;
+    lex:forCanonicalUnit "ug/m3" ;
+    lex:source lex:ManualGeneralKnowledge .
+
+lex:UnitMgM3
+    lex:role "unit" ;
+    lex:extractionLabel "毫克每立方米单位"@zh ;
+    skos:prefLabel "毫克每立方米"@zh ;
+    skos:altLabel "mg/m³", "mg/m3", "毫克/立方米" ;
+    skos:definition "质量浓度单位毫克每立方米，不与微克尺度混淆。"@zh ;
+    lex:canonicalUnit "mg/m3" ;
+    lex:forCanonicalUnit "ug/m3" ;
+    lex:source lex:ManualGeneralKnowledge .
+
+lex:UnitCelsius
+    lex:role "unit" ;
+    lex:extractionLabel "摄氏温度单位"@zh ;
+    skos:prefLabel "摄氏度"@zh ;
+    skos:altLabel "℃", "°C", "摄氏度", "degree Celsius" ;
+    skos:definition "摄氏温度单位；单位抽取不能删除值中的不超过、区间或正负容差。"@zh ;
+    lex:canonicalUnit "°C" ;
+    lex:forProperty dev:reactionConditions, dev:storageTemperature, dev:residueSolubilityTemperature ;
+    lex:source lex:ManualGeneralKnowledge .
+
+lex:UnitPercent
+    lex:role "unit" ;
+    lex:extractionLabel "百分比单位"@zh ;
+    skos:prefLabel "百分比"@zh ;
+    skos:altLabel "%", "％", "percent" ;
+    skos:definition "无量纲百分比；纯度、杂质与收率虽可使用该单位，但指标不可互换。"@zh ;
+    lex:canonicalUnit "%" ;
+    lex:forProperty dev:yieldRangePercent, dev:inProcessControl ;
+    lex:source lex:ManualGeneralKnowledge .
+
+lex:UnitHour
+    lex:role "unit" ;
+    lex:extractionLabel "小时单位"@zh ;
+    skos:prefLabel "小时"@zh ;
+    skos:altLabel "h", "hr", "hour" ;
+    skos:definition "时间单位小时，不由数值或工艺常识推断。"@zh ;
+    lex:canonicalUnit "h" ;
+    lex:forProperty dev:reactionConditions, dev:noaelDuration, dev:dosingRegimen ;
+    lex:source lex:ManualGeneralKnowledge .
+
+lex:UnitMinute
+    lex:role "unit" ;
+    lex:extractionLabel "分钟单位"@zh ;
+    skos:prefLabel "分钟"@zh ;
+    skos:altLabel "min", "minute" ;
+    skos:definition "时间单位分钟，区分分钟符号与其他上下文缩写。"@zh ;
+    lex:canonicalUnit "min" ;
+    lex:forProperty dev:reactionConditions, dev:dosingRegimen ;
+    lex:source lex:ManualGeneralKnowledge .
+
+lex:UnitDay
+    lex:role "unit" ;
+    lex:extractionLabel "天单位"@zh ;
+    skos:prefLabel "天"@zh ;
+    skos:altLabel "日", "day", "d" ;
+    skos:definition "日历或持续时间单位天，不能截取复合剂量单位中的分母当独立持续时间。"@zh ;
+    lex:canonicalUnit "day" ;
+    lex:forProperty dev:noaelDuration, dev:shelfLife, dev:dosingRegimen ;
+    lex:source lex:ManualGeneralKnowledge .
+
+lex:UnitMonth
+    lex:role "unit" ;
+    lex:extractionLabel "月期限单位"@zh ;
+    skos:prefLabel "月"@zh ;
+    skos:altLabel "个月", "month", "M" ;
+    skos:definition "用于期限的月单位；M有多种含义，只有明确有效期/复测期上下文时才作月的候选，不执行日数换算。"@zh ;
+    lex:canonicalUnit "month" ;
+    lex:forProperty dev:shelfLife ;
+    lex:source lex:ManualGeneralKnowledge .
+
+lex:UnitYear
+    lex:role "unit" ;
+    lex:extractionLabel "年期限单位"@zh ;
+    skos:prefLabel "年"@zh ;
+    skos:altLabel "year", "yr" ;
+    skos:definition "用于期限的年单位，不能据此生成原文未给的到期日期。"@zh ;
+    lex:canonicalUnit "year" ;
+    lex:forProperty dev:shelfLife ;
+    lex:source lex:ManualGeneralKnowledge .

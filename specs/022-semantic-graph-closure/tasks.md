@@ -1,0 +1,284 @@
+# Tasks: 022 Semantic Graph Closure
+
+## 显式对象识别修复 — SO（2026-09-14）
+
+契约：[source-object-recognition.md](contracts/source-object-recognition.md)。
+
+- [x] SO01 区分对象候选与属性标签，保留语义检索、探索及多对象机会。
+- [x] SO02 已证明对象按依赖就绪展开，同源字段组属性获得既有优先份额。
+- [x] SO03 精简请求身份、schema 和无关说明，保留独立核验与闭合引用校验。
+- [x] SO04 新运行冻结策略；当前状态及旧恢复路径的调度/费用边界回归。
+- [x] SO05 复原实际 HRS-1597 请求与候选，不调用模型，核对成本变化。
+- [x] SO06 首个 describes 任务的两次真实模型请求验证及后端部署；[实测与部署记录](../../docs/CMCReport对象识别修复验证-20260914.md)。
+- [x] SO07 按用户明确范围将 CMCReport.describes 收敛至 DrugProduct，撤回 API 范围扩展；完成类型/角色反例、冻结恢复和原报告两阶段实测。整图与完整属性路径质量尚未实测，不以此定向结果代替。
+- [x] SO08 修复精排重复文本跨批次覆盖已付费向量造成的运行中断；澄清字段组联合证明并补齐清洗流程诊断文案，恢复原运行并核验越过失败位置。整图仍执行中，见[中断修复记录](../../docs/HRS1597分析中断修复-20260914.md)。
+
+## 候选台账与完成修复 — CC（2026-09-13）
+
+契约：[candidate-completion.md](contracts/candidate-completion.md)。本清单独立于历史
+AR/IP/PF 的通过记录；代码实现、工程验证、真实质量与部署分别记录。
+
+- [x] CC01 修订 021/022 全文交叉积要求、候选守恒、策略完成及旧运行兼容契约。
+- [x] CC02 新运行冻结 sparse-candidates-v1；共享全文搜索，实际准入才建立任务和台账。
+- [x] CC03 policy_complete 有限收束；技术失败、必要补验未执行、预算及前沿义务阻止完成，已核验的语义未决/冲突独立保留。
+- [x] CC04 续期与慢提交保持 fencing；持久限制无进展恢复，耗尽后失败并保留制品。
+- [x] CC05 API/前端同步候选口径与本轮完成；覆盖零候选、失败、暂停及旧载荷反例。
+- [x] CC06 定向领域/恢复/API/前端回归及静态检查；专用 PostgreSQL skip 单独报告。
+- [ ] CC07 使用新运行验证真实模型完成时间、任务/费用和事实质量；生产部署另行记录。
+
+本次工程验收：29 文件后端整合 356 passed；独立 PostgreSQL 6 passed、0 skipped；
+前端两个 Node 文件、TypeScript、定向 ESLint/Ruff 通过。详见
+[独立验证记录](candidate-completion-validation.md)，不与历史或分次通过数累加。
+后续用户授权的重新部署已完成，见[部署记录](candidate-completion-deployment.md)；
+CC07 的真实模型新运行耗时与质量仍待独立验收。
+
+2026-09-11 后续启用授权：默认 `enhanced`，部署增强视图及 v4 搜索但不启用未经校准的低分剪枝。实施顺序：模式契约 → 默认值/Compose 注入 → 配置、无剪枝和恢复回归 → 保存在途任务后重新部署 → 核对实际策略、数据库版本和旧运行。此前关闭态验收记录保留为历史；专家质量门仍待完成。实际结果见[部署记录](adaptive-retrieval-deployment.md)。
+
+## 剪枝与增强检索视图 — AR（增强检索已默认部署，校准剪枝质量门待验）
+
+后续用户已授权实施，[方案](../../docs/剪枝和增强语义检索视图方案.md)与
+[自适应检索契约](contracts/adaptive-retrieval.md)已对应默认关闭的代码。
+本轮 [203 项定向回归](adaptive-retrieval-validation.md)通过；勾选只代表列明的工程工作，
+不继承历史 P0–P5/IP/ER 的通过结论。AR-P0 材料与整体退出仍未完成；
+开发主动策略只在隔离入口执行，线上 observation 保持原结果，未启用或部署主动剪枝。
+
+- [x] AR-P0-01 冻结六类搜索处置及技术未决转换，拆开 `deferred_record_ids` 的候选/续轮/停止/统计职责；列明 v3 一个 supported 停搜测试保留及 v4 多值、反证和有界继续反例。
+- [x] AR-P0-02 冻结空池、前门非空通过、前置全拒、已评分待处置、无可评分及技术暂停的不同结果；按门阶段水位和 expansion_attempt_id 计轮，为 `prepare_next_epoch=None` 后持久推进/停止编写活性验收，不造空 epoch、不永久等待。
+- [x] AR-P0-03 冻结从 observations 派生的 `AdmissionDecision` schema 与 `accept_semantic` 新校验：committed epoch、精确池子集、依赖、幂等及重复/越池/错版本拒绝；保持 `exact_pool`。
+- [x] AR-P0-04 冻结组 ID 到 record/锚点/task 映射与重叠去重，明确组级命中不授予全成员 coverage；把 H0/H1/H2 锚点级归属丢失列作修复任务。
+- [x] AR-P0-05 冻结 `heuristic-first-v4` 白名单、指纹和仅 v4 的 `resume_state.schema_version=1`；列出 v1/v2/v3 原形状/hash/省略字段兼容测试，v1 仍不支持恢复、v2/v3 保留严格恢复，不默认补字段。
+- [ ] AR-P0-06 冻结门评估集合、输入 hash、cache hit/miss、请求/费用引用、决策和游标的持久屏障；核对全拒无 epoch 的审计、失租/回滚/崩溃恢复及固定增量成本。
+- [x] AR-P0-07 原冻结策略同步核心 `contracts.py`、公共 schema/投影、前端类型及调用方的字段与测试；保持 `soft_pruned ⊆ unattempted`、`adaptive_search_saturated` 暂停与原完整覆盖判据。新候选策略口径由 CC 任务单独验收。
+- [x] AR-P0-08 冻结 `not_rerankable` 与多视图独立可用性、低分必要证据/否定/条件保护、H0–H3 重激活和停止规则；同时覆盖无 epoch 但仍有技术/预算义务的反例。
+- [ ] AR-P0-09 审核 FR-003/FR-005/SC-002 及增量契约的版本化适用范围，保证旧测试保留、v4 另测；两份 HRS 均登记开发暴露，冻结未暴露保留样本与至少三个真实新运行的不同要求。
+- [ ] AR-P0-10 完成以上契约与代码/测试映射的交叉评审，确认无未定公共字段/状态转换后记录 P0 通过；本次文档编辑不自动勾选。
+- [x] AR-P1-01 完成 observation 的制品/决策与费用审计，定向对比 v3 的任务次序、模型请求、tokens 和停止原因相同；视图仍为旧版，不能据此校准增强视图。
+- [x] AR-P1-02 交付关闭态隔离 v4 六类处置、按门阶段候选集合、有类型空/非空结果、小决策及 accept 校验、旧/新快照、费用屏障和公开诊断；保留旧测试并补活性/重放/覆盖，线上启用仍受质量门约束。
+- [x] AR-P2-01 实施跨 H0–H2 锚点归属和自身/祖先/字段角色视图、分视图完整性与缓存身份，不为上下文命中授予事实权限。
+- [x] AR-P3-01 实施受控兄弟及组级召回、record/task 映射、重叠去重和证据角色保护；核对超预算视图不连带淘汰其他视图。
+- [ ] AR-P4-01 在最终查询/视图/模型/策略版本上重新采集影子数据并校准准入阈值；P1 旧视图数据不作为新阈值校准证据。
+- [x] AR-P4-02 交付由校准制品控制的前置/后置门、候选上限、组触发/显式继续与工程恢复用例；费用保留。廉价门不按关键词缺失淘汰，真实校准及体积/费用收益另由 AR-P0-06、AR-P4-01、AR-P5 验收，未启用线上剪枝。
+- [ ] AR-P5-01 完成独立真实验证及交付：有效证据组、关系/属性/完整路径、反证、首达时间、费用、误剪/重激活和未核验范围同时报告；至少三个新运行不替代未暴露文档样本，发布/部署状态另列。
+
+AR-P0-06：已完成门/决策屏障、四处崩溃恢复及不可变载荷共享；专用 PG 和原规模/扩大历史的
+固定成本回放仍待验。AR-P0-09：规格版本化和两份 HRS 的样本定级已落实，未暴露材料与真实运行待提供。
+AR-P0-10：代码/测试映射已记录，因上述材料门未闭合，整体 P0 不勾选。
+
+## 在线增量与有界扩搜 — 2026-09-11
+
+- [x] IP00 按HRS-1597线上快照修订需求、契约、方案和验收边界。
+- [x] IP01 实施存储v3增量/周期基线、结构hash及回滚/所有权/费用恢复；已完成原大小/两倍历史固定增量回放。ER06的PostgreSQL验收另列。
+- [x] IP02 实施H2的8/16/32/64逐批扩搜、完整小池核验及失效停派，保持预算与恢复。
+- [x] IP03 实施清洗表完整字段粒度门与独立单步正反例，不自动合并同名实体或修改本体。
+- [x] IP04 实施同源明确属性有限优先及普通关系保底，保存调度顺序并补请求task关联。
+- [x] IP05 完成受影响回归（272通过、2项专用PostgreSQL检查跳过）、冻结状态回放和原件结构诊断；Ruff通过，未部署、未执行全文真实模型质量评测。
+
+## Evidence repair implementation — 2026-09-10
+
+- [x] ER00 冻结证据聚合、属性协议、ProofMenu、阶段恢复及验收契约。
+- [x] ER01 同源ProofMenu、请求枚举/返回校验和完整必需检查集。
+- [x] ER02 独立属性协议、IR字段映射、字段角色与owner原子引用，覆盖错列/假条件/同名异行反例。
+- [x] ER03 持久冻结候选与响应、定向补证、重复证据去重、有限重验及最多两类型分支；未核类型保留未决。
+- [x] ER04 启发式恢复、费用和阶段制品持久化、失租/跨用户隔离、覆盖及公开诊断。
+- [x] ER05 定向回归、恢复/成本检查与本机HRS-5592指定目标真实模型验收，记录未达和未执行项。
+  最终核心组合274项通过，审阅/费用13项通过（含新增审阅5项）；此前专用PostgreSQL12项通过。
+  v5跨表误挂、v6设备未决和v7/v8整数失败均保留。v9同版本定向/自动各三轮完成，
+  自动六目标与两条同父路径每轮均正确，首达428.85–431.37秒、每轮17请求；
+  定向36项正例正确、6项错误日期实际拒绝，无漏执行。仅指定开发样本目标验收通过；
+  额外describes未评分，全文未完成，T017全图/独立专家质量门保持未勾选。
+- [ ] ER06 第4.4节完整验收：v3增量、周期基线及不可变历史热保存已实施并通过SQLite回放；专用PostgreSQL锁/并发验收未配置，首次基线批量写入仍未优化。
+- [ ] ER07 全部停放类型假设的后续游标，以及未形成候选的纯检索反证订阅。
+- [x] ER08 修复v6的无来源范围误填：条件逐字引用协议、身份假条件/真实条件回归、版本恢复门及新本机验证；不放宽归属或删除真实限制。
+  同轮继续修复补证/重新提议相互阻塞，以及v7诊断暴露的整数引用含单位；新政策分别冻结，
+  最终代码用独立新目录验证，不把诊断阶段混入重复验收。
+  v8自动首轮进一步暴露整数引用技术失败，其余五轮未派发；v2将来源/数字/定位短语绑定为
+  可回放的完整对象分支，274项工程测试通过。v9独立本机诊断六项目标正确、两条同父路径
+  在428.37秒首达，17请求；其后同版本重复组已按ER05完成，不把诊断计入三轮。
+
+实现与本轮工程/真实验证统一见 [evidence-repair-validation.md](evidence-repair-validation.md)。
+新协议默认关闭；历史性能部署不代表本轮修复已部署。ER06/ER07明确保留剩余验收与实现差距；本轮细节见[增量性能验证](incremental-performance-validation.md)。
+一般跨记录显式指代链自动构建、未注册单位换算和一般多值基数仍未完成，相关断言保守未决。
+
+## Phase 1 — Specification and baseline
+
+- [x] T001 完成 `spec.md` 的需求、澄清与 `checklists/requirements.md`，核对 021 实现差距。
+- [x] T002 完成 `plan.md`、`research.md`、`data-model.md`、`contracts/ranking.md` 和工程/真实质量边界。
+
+## Phase 2 — Subject-aware complete ranking (US1)
+
+- [x] T003 [P] [US1] 在 `backend/tests/test_extraction/test_semantic_ranking.py` 覆盖查询隔离、视图/完整 U、配额去重、全池排名/失败、负分及多意图成本。
+- [x] T004 [US1] 实现 `ontology_guided/retrieval_query.py`、`retrieval_views.py`、`semantic_retrieval.py`、`semantic_reranker.py`、`retrieval_fusion.py` 的纯领域模型/排序与预算。
+- [x] T005 [US1] 修改 `ontology_guided/retrieval.py`、`contracts.py`，绑定冻结全集及检索/证明不同身份，记录排序观察。
+- [x] T006 [P] [US1] 在 `backend/app/services/llm/semantic_ranking.py` 实现可选本地离线模型、不可变身份、有限执行及调度；添加模型适配测试。
+
+## Phase 3 — Actual graph closure (US2)
+
+- [x] T007 [P] [US2] 在 `ontology_guided/scheduler.py` 实现分支/主体/种类/谓词/阶段/章节/探索及有限续执行公平性，增加实际派发/恢复反例。
+- [x] T008 [US2] 修改 `ontology_guided/executor.py`，接入惰性排序/持久回放、语义任务去重和逐槽位完整覆盖。
+- [x] T009 [US2] 修改 `ontology_guided/context.py`、`model_adapter.py`，装配主体/必要原文、预算与条件/反证，严守主体桥接和原文权限。
+- [x] T010 [US2] 修改 `ontology_guided/dependencies.py`、`executor.py`，接通迟到冲突订阅、旧断言及递归资格阻断/未决义务。
+- [x] T011 [US2] 新增 `backend/tests/test_extraction/test_semantic_graph_closure.py`，用真实解析/本体/适配器受控响应验证两跳正例、高相似度假边、低分实际续检、迟到反证与必要闭包。
+
+## Phase 4 — Online durability and visibility (US3)
+
+- [x] T012 [P] [US3] 修改 `backend/app/config.py`、`document_analysis/execution.py`，冻结模型/政策与预算并持久提交排序状态，覆盖恢复/漂移/晚到响应。
+- [x] T013 [US3] 修改 `document_analysis/public_projection.py`、`schemas/document_analysis.py`，公开只读排序与每阶段计划/实际计数，添加 API/公共投影测试。
+- [x] T014 [US3] 修改 `frontend/src/lib/api.ts`、`document-relationship-graph.tsx` 及实际 Node 测试，显示独立检索诊断、降级与真实覆盖，读取不调用模型。
+
+## Phase 5 — Quality measurement (US4)
+
+- [x] T015 [P] [US4] 修复 `backend/app/evaluation/ontology_guided_scorer.py` 完整 tuple/等价引用/空预测/未裁决门；添加评分反例。
+- [x] T016 [US4] 实现检索/路径/成本及固定池消融校验工具，接入 `quality_guided_variant.py` 和活动 `README.md`；参考与识别输入隔离；补充独立 Word 原件 preparation 入口，不依赖旧抽取作业。
+- [ ] T017 [US4] 冻结专家标注、独立文档、模型制品和质量/成本阈值后运行至少三个真实新 run 及 A–D 固定池/动态前沿验收；记录外部材料缺口，不用模拟代替。
+
+  CPU 后续准备已完成：锁定依赖、两套完整校验制品、宿主/Compose 真实冒烟，以及获准上传
+  文档 86 条记录/172 个双意图输入对的完整排序与零调用恢复均通过，见 [cpu-ranking.md](cpu-ranking.md)。
+  这些运行不提供专家参考或事实 P/R，也不是 A–D 三轮质量对照，因此 T017 保持未勾选。
+
+  2026-09-09 按用户要求实际核验验收材料并调用正式评分入口，得到
+  `pending_expert_reference / not_run`；新增可供裁决的原文审阅包与运行协议草案。
+  本轮没有合格专家参考、独立文档或获批阈值，未把诊断运行追认为正式验收，详见
+  [本次验收记录](acceptance.md)。
+
+## Phase 6 — Integration and delivery
+
+- [x] T018 运行必要领域/恢复/API/评分/边界/前端静态和类型检查，将命令、结果、SR01–SR26 与外部门写入 `validation.md`。
+- [x] T019 完成 `quickstart.md` 可执行操作/验收说明，更新目标方案的实际实施状态与 021 继承关系，复核差异保护用户文件。
+
+## Phase 7 — 本轮复核发现的闭环缺口
+
+此前 T009 的受控验证复用了同一次模型回答，未满足继承方案要求的独立调用。
+此前工程结果不能证明这一要求已落实；本轮增加以下明确验收项。
+
+- [x] T020 [US2] 拆分真实 discovery / verification 请求，冻结候选与精确 target，独立核验桥接类别、主体、端点、极性、条件及必要反证；拒绝错目标、缺项和重复响应。
+- [x] T021 [US2/US3] 每次实际模型请求前持久预扣预算，取消/owner 丢失中止派发；崩溃恢复不刷新额度；完成结果先保存再软暂停。
+- [x] T022 [US1] 全部剩余记录不可精排时继续确定性原文探索，保留 not_rerankable 观察，不记录虚假排序成功。
+- [x] T023 [US4] 活动评测隔离 scheduler 数据库并绑定 run/task/stage，冻结逐记录调用预算，异常也保留排序费用、请求和预扣状态。
+- [x] T024 [US3] 在专用 PostgreSQL 实际验证执行租约/并发/模型调度，记录真实迁移边界；补验可执行的在线持久恢复。
+- [x] T025 [US2/US4] 以获准 DOCX 创建新 preparation，验证真实主模型独立请求与 CPU 排序集成；工程实验不代替 T017 专家质量门。
+- [x] T026 运行本轮受影响回归与静态检查，更新 validation/quickstart 和实际剩余项。
+- [x] T027 [US4] 补可执行固定池导出、A–D 共池重放及至少三轮显式协议汇总，拒绝漏组、漂移、复制运行及未裁决参考；不以单池替代动态前沿或事实质量。
+- [x] T028 [US3] 用隔离数据库/服务及真实浏览器验证图谱、排序、证据回放、切换与刷新，断言无新增模型调用和非 GET 写请求，保留截图与 trace。
+- [x] T029 [US2] 修复真实诊断暴露的文档根引用协议：程序核对根身份/版本并约束空根主体引用，局部主体原文门禁不变；独立 verdict 显式必填，以新运行身份真实复测。
+- [x] T030 [US3/US4] 修复同一 TTL 因属性枚举顺序不同而生成不同本体快照身份的问题；验证乱序等价、真实语义变更失效以及实际独立 preparation 重现，不改写旧快照。
+
+- [x] T031 [US3] 区分真实有界任务预算停止与记录技术未完成；根/子槽位停止原因不把未尝试记录写成已尝试失败，保留原实验制品。
+
+## Phase 8 — CUDA 12 GPU 增量与 CPU 保留
+
+- [x] T032 [US1/US3/US4] 增补 spec/plan/contracts/quickstart 的显式设备、精度、离线
+  环境、数值身份和失败清理契约；新增 [GPU 验收记录](gpu-ranking.md)，不改写 CPU 历史证据。
+- [x] T033 [US1/US3] 在配置、`LocalSemanticRanking` 与运行冻结/恢复链增加显式单卡
+  CUDA 12 / float16 支持；CPU/float32 默认不变；保持完整输入、L2 与 raw logit，
+  GPU 不可用不静默 CPU 回退，失败/取消/超时清理并保留费用。
+- [x] T034 [P] [US1] 准备独立 GPU 环境，核验 PyTorch 2.7.1/cu126 的实际驱动、
+  卡型、runtime 和本地依赖/模型身份；保留现有 CPU 环境，以实测登记支持范围。
+- [x] T035 [US1/US3] 完成 CPU 默认回归及 GPU 设备/dtype、数值漂移、输入完整性、
+  非有限输出、不可用/OOM/取消/超时、零调用恢复的受影响测试，记录真实执行范围。
+- [x] T036 [US4] 给现有冒烟/文档排序脚本补显式 device/dtype 和实际数值环境记录，
+  使用同一冻结 DOCX、谓词、完整共同输入及预算分别执行 CPU/GPU；核验完整原文、
+  双意图原始分数、排名差异、冷/热成本与恢复，把新制品链接和结果填入 GPU 记录。
+
+CUDA 增量依赖：T032→T033；T034 可与 T033 并行；T033/T034→T035/T036。
+GPU 工程/环境完成不会勾选 T017，也不改变独立专家、文档样本及预注册质量/成本门。
+
+## Phase 9 — 默认引擎改为 GPU
+
+- [x] T037 按后续指令将应用与基础 Compose 默认切到 CUDA 12.6/float16，采用已验收
+  batch/超时/并发，保留 CPU 显式覆盖与旧冻结身份；验证默认和覆盖配置、受影响回归，
+  核对共享运行状态并记录实际生效边界，见 [gpu-default.md](gpu-default.md)。
+
+- [x] T038 按后续授权打开本机线上排序开关和完整模型路径，仅切换 backend；验证
+  实际 Settings、双策略启用、GPU 双模型请求、接口健康及旧运行制品保留，见
+  [gpu-online.md](gpu-online.md)。
+
+- [x] T039 修复真实 PostgreSQL 运行 ID 长度导致的 `DataError`、暂停排序恢复及
+  冷启动制品校验期间的调度续租；保留身份、费用与失败证据，通过专项回归并恢复
+  用户当前任务，核验真实 GPU 双模型和 semantic epoch 提交，见
+  [ranking-dataerror.md](ranking-dataerror.md)。
+
+- [x] T040 修复排序预扣等待跨超时后的未派发记账与停止原因快照不一致；保留冻结额度、
+  已提交图谱和旧失败记录，验证明确未派发预留的单次复用、旧状态保守恢复及中文诊断，
+  记录当前运行实际状态和上线边界，见 [暂停修复记录](ranking-pause-followup.md)。
+
+- [x] T041 支持运行级排序预算 enable/disable：默认启用，禁用期间不预扣也不累计预算，
+  重新启用沿用历史量；增加暂停态 CAS/幂等/鉴权审计操作及 UI，同身份恢复预算暂停，
+  保留原图谱、数值阈值与技术执行限制；完成迁移、领域/API/UI回归与实际可用性验证，
+  见 [预算开关验收](budget-control.md)。
+
+## Phase 10 — 模板面板迁移与工程收尾
+
+- [x] T042 模板面板接通新运行桥接、共享内核、原文绑定、优先路径及分支状态；
+  保留新旧执行域、原文权限、owner 与冻结身份边界，见
+  [迁移与收尾记录](kernel-panel-migration.md)。
+- [x] T043 完成排序持久化等待屏障修复及失败诊断隔离回归，执行受影响后端测试、
+  前端契约/状态测试和静态检查。按用户最新指令以相关用例通过收尾。
+- [ ] T044 性能工作后继续模板真实金标准、逐项原文回放、切源迟到响应及识别阶段
+  暂停/恢复实测；当前运行保留暂停，旧 B 路径通过不能替代本项。
+
+依赖：T001→T002→各测试/实现；T004–T007 分文件可并行，T008 串行整合；T012 与 T008 按契约协作，T013→T014。T017 依赖 T015/T016 与独立外部材料。P5 的可选补充精排 E0/E1、F0/F1 后续研究单列，不用它替代本期 T009/T010。T018 不因 T017 材料缺失停止可完成工程验收。T017 的明确缺口与补验步骤见 `validation.md` 和 `quickstart.md`，不以本次受控测试勾选。
+
+## Phase 11 — 性能增量（2026-09-10）
+
+- [x] T045 完成PF需求/澄清、计划与performance契约，执行Spec Kit前置检查（`spec.md`、`plan.md`、`contracts/performance.md`）。
+- [x] T046 固定无模型回放/大队列/共享节点夹具与独立性能报告工具，保留历史原件（`backend/scripts/benchmark_document_state.py`、`backend/tests/test_extraction/test_scheduler_performance.py`）。
+- [x] T047 紧凑公共图/排序摘要/定位索引，GET只读兼容、版本与ETag、权限回归（`backend/app/services/document_analysis/read_artifacts.py`、`backend/app/api/document_analysis.py`）。
+- [x] T048 SSE合并刷新、断线退避、隐藏取消、图/摘要分离、文档缓存与树索引/引用（`frontend/src/components/analysis/use-template-document-run.ts`、`template-document-graph-panel.tsx`）。
+- [x] T049 不可变运行制品引用、轻量快照/检查点、完整性与保留清理、逐批原子恢复（`backend/app/services/document_analysis/state_artifacts.py`、`execution.py`）。
+- [x] T050 单协调器持续处理确认，冻结模型工作请求与预扣屏障、暂停/取消/失租语义（`backend/app/services/extraction/ontology_guided/recognition_execution.py`、`executor.py`）。
+- [x] T051 新版本双意图重试预算，旧策略兼容与费用保全（`backend/app/services/extraction/ontology_guided/semantic_reranker.py`）。
+- [x] T052 精确分词批量/缓存、检索视图与记录索引、无全队列复制的纯选择（`backend/app/services/llm/semantic_ranking.py`、`ontology_guided/retrieval_views.py`、`records.py`、`scheduler.py`）。
+- [x] T053 惰性逻辑前沿与有界实例化、旧格式恢复、任务/公平/覆盖等价（`backend/app/services/extraction/ontology_guided/lazy_frontier.py`、`scheduler.py`）。
+- [x] T054 模板路径公平增强与冻结批次实验入口，保留尾部探索与完整覆盖（`backend/app/services/extraction/ontology_guided/scheduler.py`、`backend/app/config.py`）。
+- [x] T055 必要后端/API/边界、专用PG故障、前端静态/行为与无模型性能回放；更新验收（`performance-validation.md`、`backend/tests/test_extraction/test_performance_postgresql.py`）。
+- [x] T056 仅测试新方案真实模板及batch4/8/16，固定输入/模型/预算，按实际证据记账（`backend/scripts/benchmark_template_document_run.py`、`check_document_semantic_ranking.py`）。
+  batch4/8/16及单组新方案8任务诊断已结束；后者7/3444机会、11主请求，预算耗尽而未完成。
+  暂停恢复同身份、无任务重做；模板核心断言未通过，否定候选存在实体类型疑点。
+  本项表示测试已执行并记录，T017/T044质量门仍未通过；不做原方案性能对照，体感由用户评价。
+- [ ] T057 条件门：有资源余量证据后才试两个在途任务；未通过门则维持单任务，不默认上线。
+
+依赖：T045→T046/T047/T048；T049→T050；T051/T052可按文件并行；T052→T053→T054；
+各实现→T055→T056。T057是条件实验，不把未启用并行称为工程缺陷或性能收益。
+T017/T044仍是独立质量/真实模板门，不能以本阶段夹具通过替代。
+
+## Phase 12 — 指定原件的启发式实验验证（2026-09-10）
+
+此阶段对应用户授权的验证测试，范围见`heuristic-validation-plan.md`；不将方案H01–H06
+生产工作包全部视为已完成，不覆盖或恢复旧评测身份。
+
+- [x] T058 核验指定原件、本机模型与当前本体；冻结预算/源码/配置，建立识别外诊断参考。
+- [x] T059 默认关闭的共享启发式策略及小池开关；保留完整U、技术失败、独立证明、累计费用、补搜公平和旧政策hash；新增37项定向测试，合计95项受影响测试通过。
+- [x] T060 构建独立冻结/执行工具，记录请求、阶段、批次图、覆盖及首达时间；隔离调度库，不接生产业务状态。
+- [x] T061 完成真实本机运行及独立结果核对，报告绝对耗时、节点未达原因和未实现范围（`heuristic-validation.md`）。48任务/73主请求，1244.01秒，预算耗尽，最终7条系统有效关系/0属性；全文未完成，业务质量未达标。
+
+依赖：T058→T059/T060→T061。T061完成只表示实验已执行并报告，不表示全文识别成功、
+专家金标验收或部署通过。生产恢复、完整pass/继续义务、关键路径4:1配额、属性协议改进及
+H05/H06仍单列后续工作。
+
+## Phase 13 — 跨记录互补证据定向实证（2026-09-10）
+
+范围见[joint-evidence-validation-plan.md](joint-evidence-validation-plan.md)。本阶段是验证，
+不把实验驱动器的显式证据干预称为生产自动聚合/重验功能。
+
+- [x] T062 冻结原件、本体、本机模型、current/joint源选择及限额；登记类型张力、否定和归属反例。
+- [x] T063 建立受控双阶段响应回归，核对证据权限、上下文身份、未决重验缺口和父关系后属性调度；新增独立验证runner，线上核心不修改。
+- [x] T064 执行真实本机对照，独立核对关系/属性/原文引用并记录关键节点耗时和未达原因；见[joint-evidence-validation.md](joint-evidence-validation.md)。16任务/32请求，829.27秒，0有效属性；46项回归通过，全部原始响应离线精确复现。支持补证机制，未达成更快获得正确关系/属性的优化目标。
+
+依赖：T062→T063→T064。实验执行完毕不等于质量门、自动检索、生产部署验收通过。
+
+
+后续低分剪枝授权：契约新增 trial → 保守后置门/公开待校准标记 → 本机模型分数冒烟与开发阈值制品 → 回归及配置核验 → 保存活动任务后部署并恢复原策略。独立专家验收继续待完成。
+
+低分剪枝试运行已按进一步授权实现并部署，54 项相关后端测试及前端检查通过；详见[启用记录](pruning-trial-deployment.md)。独立质量门仍待验。
+
+## 当前状态暂停继续实施
+
+- [x] CS01 对齐最终极简需求、数据模型与当前状态契约。
+- [x] CS02 执行器完整工作状态直接恢复，变化从业务更新点产生。
+- [x] CS03 当前分区、独立结果及请求账本，工作版本和原子提交。
+- [x] CS04 最新展示缓存、候选原始任务及修复边界，冻结旧格式。
+- [x] CS05 冷恢复、费用/结果连续性、版本冲突及规模回归；记录实测限制。
+- [x] CS06 配置独立 PostgreSQL 测试库并执行竞争及付费结果恢复验收；20 passed、0 skipped，包含当前工作版本竞争和旧/新格式已付费响应恢复。测试结构由当前 metadata 建表并 stamp，不代表完整历史迁移链通过。
+- [x] CS07 按后续授权备份业务 PostgreSQL 库，实际执行 0039→0040 迁移并重启业务后端；版本、受影响表行数、原任务状态及访问入口已核验。
+
+实现、工程及部署证据见 [current-state-validation.md](current-state-validation.md)。未执行历史清理或真实模型整轮性能/质量评测。

@@ -1,0 +1,43 @@
+{
+  "snapshot_id": "2d4530d2482035ae8bd4a3640a5ce18f2551f28efabd84a291735dfa194c642e",
+  "analysis_id": "84fca3b3887132e8adc1e215302f83ec4a81c505ebb7f0a3c29989fec026f6b9",
+  "document_hash": "3b8803a02935028b04e33a41a880237139b93aa2b06350ca8c658b5372fadbd4",
+  "structure_hash": "6f03204b698acd3a2c9288d054911a8efb8b13e30d3a8e24d9514e466def0537",
+  "summary_version": "s0-synthetic-v1",
+  "summary_model_identity": null,
+  "generation_source": "structure_only",
+  "source_record_refs": [
+    "60b176e897c8369818cd58704244e49f2a61c69f7f4a78b5f90889d474a1e60e",
+    "0270c4dffac9f77601461c489cc70247d59d0bfbb71415d8cc119524ed0dc8ba",
+    "11d9c933db46b50305378b5a36a0467533ee165d4681b4b61f00c7617652fb1d",
+    "d21888fbb1c356eb0997cde359e9e1a5386715a86dd44cdbf5ea7abc2ba1a712",
+    "574e9cf112a4f8e3b990b2487293c3218723a1d8c3ff46fc369b955ae7daf764",
+    "06f46a289b2ed4bd8e287a976f4773ce9d480fd6e27c3589f031d4feda17f253",
+    "40d637eef83bf573a780c1d93d418927c3c9cedf3a7ade2459164430ff4b76a6",
+    "e9ffc72ed1c58311e7edc0c01487fbb244605183470e88d6ff2e22a77feffbca"
+  ],
+  "node_summaries": [
+    {
+      "node_id": "document",
+      "heading": "synthetic",
+      "path": [
+        "synthetic"
+      ],
+      "summary": null,
+      "summary_status": "pending",
+      "summary_source": "none",
+      "source_record_refs": [
+        "60b176e897c8369818cd58704244e49f2a61c69f7f4a78b5f90889d474a1e60e",
+        "0270c4dffac9f77601461c489cc70247d59d0bfbb71415d8cc119524ed0dc8ba",
+        "11d9c933db46b50305378b5a36a0467533ee165d4681b4b61f00c7617652fb1d",
+        "d21888fbb1c356eb0997cde359e9e1a5386715a86dd44cdbf5ea7abc2ba1a712",
+        "574e9cf112a4f8e3b990b2487293c3218723a1d8c3ff46fc369b955ae7daf764",
+        "06f46a289b2ed4bd8e287a976f4773ce9d480fd6e27c3589f031d4feda17f253",
+        "40d637eef83bf573a780c1d93d418927c3c9cedf3a7ade2459164430ff4b76a6",
+        "e9ffc72ed1c58311e7edc0c01487fbb244605183470e88d6ff2e22a77feffbca"
+      ]
+    }
+  ],
+  "dependency_hash": "9b7b12889629a4dde65f10c354d0176622d6036c2e961e0e2a5ca143636d7070",
+  "policy_version": "ontology-guided-metadata-v1"
+}

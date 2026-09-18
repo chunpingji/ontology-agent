@@ -6,9 +6,11 @@
 
 ## Summary
 
-以一个持久、owner 隔离的 `DocumentAnalysisRun` 直接替换当前同步、临时的 Word 文档分析路径。用户上传 Word 并显式选择合法根类后，服务端只构建一次 DocumentIR，在识别前冻结 MetadataSnapshot 与 OntologySnapshot；标题和摘要只能为检索排序，不能成为事实证据。识别核心按当前已证明主体的本体直接菜单，对每个主体—谓词执行守恒的两阶段记录召回，分别验证物理提及、局部指称、类型、身份角色和具体谓词桥接，只让具有当前完整证明的肯定边驱动下一跳。
+以一个持久、owner 隔离的 `DocumentAnalysisRun` 直接替换当前同步、临时的 Word 文档分析路径。用户上传 Word 并显式选择合法根类后，服务端只构建一次 DocumentIR，在识别前冻结 MetadataSnapshot 与 OntologySnapshot；标题和摘要只能为检索排序，不能成为事实证据。识别核心按当前已证明主体的本体直接菜单，在共享全文搜索域中定向召回，只为实际准入候选建立任务及守恒台账，分别验证物理提及、局部指称、类型、身份角色和具体谓词桥接，只让具有当前完整证明的肯定边驱动下一跳。旧冻结运行保留原两阶段全文政策。
 
-运行、任务、对象 revision、proof、覆盖、事件水位、不可变图快照、租约和删除墓碑统一以 PostgreSQL 为权威存储。FastAPI 请求只负责验证、持久化和 202 应答；重工作由可恢复的 PostgreSQL dispatcher/worker 领取，lifespan 活跃时 API 只发送唤醒信号，`BackgroundTasks` 仅保留给不运行 lifespan 的测试/嵌入调用作兼容执行。页面保留 `/analysis?tab=document`，改为显式开始并提供恰好“分层元数据”和“关系图谱”两个结果 Tab；两个 Tab 只读同一运行及水位，不重复解析、摘要或模型调用。新分析产物不进入旧 CandidateStore，不自动审核或提交中央事实。
+2026-09-13 活性修复依据[候选完成契约](../022-semantic-graph-closure/contracts/candidate-completion.md)：新运行冻结 `candidate_planning=sparse-candidates-v1`；候选策略完成与全文穷尽分开。租约续期不随历史事件更新运行 revision，慢提交与失租按 fencing 校验；旧运行不改身份/预算，有限恢复后仍无进展须失败并保留制品。此处描述验收目标，实际测试和部署分别登记。
+
+运行、任务、对象 revision、proof、覆盖、事件水位、不可变图快照、租约和删除墓碑统一以 PostgreSQL 为权威存储。FastAPI 请求只负责验证、持久化和 202 应答；重工作由可恢复的 PostgreSQL dispatcher/worker 领取，lifespan 活跃时 API 只发送唤醒信号，`BackgroundTasks` 仅保留给不运行 lifespan 的测试/嵌入调用作兼容执行。页面保留 `/analysis?tab=document`，显式开始分析；按 2026-09-09 布局调整，分析历史位于左侧，章节树与原文预览共享显示，右侧提供恰好“节点元数据”和“关系图谱”两个结果 Tab。两个 Tab 只读同一运行及水位，不重复解析、摘要或模型调用。新分析产物不进入旧 CandidateStore，不自动审核或提交中央事实。
 
 ## Technical Context
 
@@ -57,6 +59,16 @@
 **Phase 1 gate result**: 任务化工程主体已在当前工作区落地并完成本地机制回归；G-C03、独立专家金标/批准 SLO/保留集、真实 PostgreSQL 和浏览器/真实模型结果仍是发布外部门。任何一个未满足时，开发结果只能保持非生产状态，不能执行旧域破坏性清理或开放正式入口。
 
 ## Architecture and Boundaries
+
+### 2026-09-10 报告树形交互适配
+
+用户已确认评估方案，澄清为仅迁移报告目录和共享 `TemplateGraphTree`，不扩展全站其他树。采用 ReUI Radix Tree 的 MIT 源码与 Headless Tree 1.6.3；新增 core/react 两个依赖用于统一键盘、焦点、选择和可见节点管理，复用已安装 Radix Slot、Lucide、主题变量，局部转换 Tailwind 4 样式为现有 Tailwind 3。运行时无外网请求。
+
+目录以 node_id/source_range 适配，图谱保留现有 O(V+E) 生成森林和引用跳转，转换为具有稳定 ID 的实体/谓词/断言/引用节点。非 button 的 treeitem 容器承载独立折叠与证据按钮；同步数据更新后重建可见树并保留有效状态。用户、文档、run、projection 构成重置边界。无需虚拟化、拖放、迁移数据库或变更 API。
+
+宪章检查（设计前/后）：范围和验收已补充 spec；本体、后端和事实提交均无修改；新增依赖直接服务已批准交互；MIT 声明随本地源码保存；离线运行满足要求。实施与检查任务见 `tree-interaction-tasks.md`，可执行验收见 `tree-interaction-quickstart.md`。
+
+2026-09-09 历史入口补充：沿用既有运行表和鉴权，通过 run store 的 owner 过滤与有界分页提供轻量列表，application 复用公开状态映射，路由新增只读集合 GET。前端复用 `api.ts`、现有卡片/按钮及 `documentRun` URL 恢复逻辑；创建后刷新首页，历史列表与当前结果分别取消过期请求。不新增依赖或迁移，不改变模型执行、保留期限和事实提交边界；宪章前后检查均无新增例外。
 
 1. **一份原文与冻结输入**：`analyze_word_core()`、`DocumentIR`、`parse_docx_structure()`、`table_records()` 和 `WordViewer` 继续定义物理来源。运行级 SourceArtifact、RecordIndex 和 MetadataSnapshot 引用同一 `analysis_id`；识别前冻结完整 fingerprint。
 2. **在线/评测共用领域核心**：将 evaluation 中已验证的 staged retrieval、citation、instance/resolution 和 reconciliation 机制抽入 `app.services.extraction.ontology_guided`。生产代码不能 import `app.evaluation`；活动评测只做薄适配，历史冻结归档不改。
@@ -194,3 +206,8 @@ scripts/
 | 追加式 event/object/proof revision 与水位完整 GraphSnapshot | 失租约、重验、merge/split、依赖失效、SSE 重连和两个 Tab 必须看到同一可重建水位。 | 就地更新候选或前端拼增量节点会丢失旧判断、静默漂移引用，并可能把新节点与旧边组合成从未提交过的图。 |
 | PostgreSQL durable dispatcher、唯一 lease 与 fencing token | 浏览器断开/进程重启后仍须恢复，迟到模型响应不得写入，且 air-gap 部署不能依赖新中间件。 | FastAPI `BackgroundTasks`/进程内队列不持久；Celery/Redis 是未批准的新依赖和部署面。`BackgroundTasks` 仅可 best-effort 唤醒数据库队列。 |
 | 运行级 artifact 授权、引用计数和最小 tombstone | 原文敏感、同 hash 不授予跨 owner 访问；删除必须保护共享解析并阻止旧 generation 复写。 | 按路径/hash 粗删或完全删除 run 身份会误删共享内容，且迟到 worker 可重建已删除数据。 |
+
+
+## 报告预览专家意见入口（2026-09-11）
+
+按用户进一步要求实施可保存、重读及导出的专家意见入口；需求、权限、版本、幂等及验收见[契约](contracts/expert-opinions.md)。该意见不自动变更图谱或校准质量状态。

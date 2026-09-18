@@ -29,6 +29,12 @@ def test_ranges_comparisons_and_explicit_conversion():
     assert value.raw_unit == "g"
 
 
+@pytest.mark.parametrize("raw", ["(1,1] kg", "[1,1) kg", "(1,1) kg", "[2,1] kg"])
+def test_empty_or_reversed_bracket_intervals_are_rejected(raw):
+    with pytest.raises(LiteralNormalizationError, match="empty or reversed interval"):
+        normalize_literal(raw, datatype="decimal")
+
+
 @pytest.mark.parametrize("raw", ["五毫克", "NaN", "1abc", "1..2mg", "2–1 mg", "大概一些"])
 def test_unknown_numeric_grammar_is_rejected_without_business_rules(raw):
     with pytest.raises(LiteralNormalizationError):

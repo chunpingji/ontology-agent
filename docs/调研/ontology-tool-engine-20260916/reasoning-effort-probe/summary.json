@@ -1,0 +1,41 @@
+{
+  "model": "Qwen3.6-35B-A3B",
+  "model_revision": "0b21525e972670ed59e1812e170b27c26355381f0656ecc4e25617ece7dac58b",
+  "actual_model_requests": 2,
+  "api_protocol": "responses",
+  "private_extra_body_used": false,
+  "scenarios": [
+    {
+      "scenario": "baseline",
+      "status": "returned",
+      "response_status": "completed",
+      "reasoning_items": 1,
+      "reasoning_text_chars": 522,
+      "valid_answer": true,
+      "usage": {
+        "input_tokens": 53,
+        "input_tokens_details": {
+          "cached_tokens": 0
+        },
+        "output_tokens": 266,
+        "total_tokens": 319
+      }
+    },
+    {
+      "scenario": "effort_none",
+      "status": "returned",
+      "response_status": "completed",
+      "reasoning_items": 1,
+      "reasoning_text_chars": 317,
+      "valid_answer": true,
+      "usage": {
+        "input_tokens": 53,
+        "input_tokens_details": {
+          "cached_tokens": 36
+        },
+        "output_tokens": 171,
+        "total_tokens": 224
+      }
+    }
+  ]
+}

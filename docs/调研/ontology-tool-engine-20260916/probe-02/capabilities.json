@@ -1,0 +1,50 @@
+{
+  "api_protocol": "responses",
+  "model": "Qwen3.6-35B-A3B",
+  "model_revision": "0b21525e972670ed59e1812e170b27c26355381f0656ecc4e25617ece7dac58b",
+  "max_model_requests": 4,
+  "actual_model_requests": 4,
+  "store": false,
+  "previous_response_id_used": false,
+  "conversation_used": false,
+  "baseline_tool_strict": false,
+  "baseline_passed": true,
+  "strict_parameter_generation": "failed",
+  "strict_answer_format": "failed",
+  "structured_output": "passed",
+  "stateless_full_item_continuation": "passed",
+  "encrypted_reasoning": "not_attempted",
+  "controller_tools_exposed": false,
+  "observed_output_types": [
+    "function_call",
+    "message",
+    "reasoning"
+  ],
+  "scenarios": [
+    {
+      "tool_strict": false,
+      "status": "passed",
+      "call_ids": [
+        "call_mJGrDyqtQ0QxmtcCwGcU2qFaknCxy9PS"
+      ],
+      "output_item_ids": [
+        "fc_mJGrDyqtQ0QxmtcCwGcU2qFaknCxy9PS"
+      ],
+      "distinct_pairing_ids_observed": true
+    },
+    {
+      "tool_strict": true,
+      "status": "failed",
+      "call_ids": [
+        "call_JkENO8RQzirBCAYrAG7W7IqyjJ20iqT4"
+      ],
+      "output_item_ids": [
+        "fc_JkENO8RQzirBCAYrAG7W7IqyjJ20iqT4"
+      ],
+      "distinct_pairing_ids_observed": true,
+      "error_type": "StructuredModelError",
+      "reason_code": "responses_protocol_or_transport_failure"
+    }
+  ],
+  "status": "completed"
+}

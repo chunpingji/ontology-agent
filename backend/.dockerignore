@@ -1,5 +1,6 @@
 # Virtual envs / build artifacts (rebuilt inside the image by `uv sync`)
 .venv/
+.venv-cuda12/
 venv/
 *.egg-info/
 dist/

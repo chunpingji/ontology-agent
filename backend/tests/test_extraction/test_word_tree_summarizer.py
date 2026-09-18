@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import json
+from copy import deepcopy
+from threading import Barrier, Event, Lock, get_ident
 
 import pytest
 from docx import Document
@@ -10,6 +12,7 @@ from docx import Document
 from app.config import settings
 from app.services.extraction import word_tree_summarizer
 from app.services.extraction.docx_structure import parse_docx_structure
+from app.services.llm.model_runtime import ModelCancelled, model_scope, runtime
 
 
 def _structure(tmp_path):
@@ -18,6 +21,8 @@ def _structure(tmp_path):
     doc.add_paragraph("父章节直接内容。")
     doc.add_heading("子章节", level=2)
     doc.add_paragraph("子章节正文。")
+    doc.add_page_break()
+    doc.add_paragraph("子章节第二页正文。")
     doc.add_heading("另一个子章节", level=2)
     doc.add_paragraph("另一个子章节正文。")
     path = tmp_path / "summary.docx"
@@ -30,6 +35,8 @@ def _enable(monkeypatch):
     monkeypatch.setattr(settings, "llm_word_tree_summary_enabled", True)
     monkeypatch.setattr(settings, "word_tree_summary_max_nodes_per_batch", 20)
     monkeypatch.setattr(settings, "word_tree_summary_max_batch_chars", 24000)
+    monkeypatch.setattr(settings, "word_tree_summary_max_concurrency", 2)
+    monkeypatch.setattr(settings, "local_llm_max_concurrency", 2)
 
 
 def test_summary_order_is_pages_then_deepest_sections_then_root(tmp_path, monkeypatch):
@@ -142,3 +149,190 @@ def test_pause_or_lease_loss_stops_remaining_summary_calls(tmp_path, monkeypatch
     else:
         word_tree_summarizer.summarize_word_tree(structure, object(), should_stop_fn=should_stop)
     assert calls == [1]
+
+
+def _reply(nodes):
+    return {"summaries": [
+        {"node_id": n["node_id"], "content_summary": "HRS-5592：仅限临床备样，未批准商业生产。"}
+        for n in nodes
+    ]}
+
+
+def test_single_page_reuses_generation_without_changing_source_or_scope(tmp_path, monkeypatch):
+    _enable(monkeypatch)
+    doc = Document()
+    doc.add_heading("临床备样", level=1)
+    doc.add_paragraph("HRS-5592：仅限临床备样，未批准商业生产。")
+    path = tmp_path / "single.docx"
+    doc.save(path)
+    structure = parse_docx_structure(path)
+    before = deepcopy((structure.blocks, structure.sections, structure.tables,
+                       structure.paragraphs))
+    leaf = structure.section_tree.children[0]
+    original_hash = leaf.layer_metadata.content_hash
+    calls = []
+
+    def chat(_client, **kwargs):
+        nodes = json.loads(kwargs["user"])["nodes"]
+        calls.extend(n["node_id"] for n in nodes)
+        return _reply(nodes)
+
+    monkeypatch.setattr(word_tree_summarizer, "chat_with_schema", chat)
+    word_tree_summarizer.summarize_word_tree(structure, object())
+    page = leaf.pages[0]
+    assert page.node_id in calls and leaf.node_id not in calls
+    assert leaf.layer_metadata.content_summary == page.page_metadata.content_summary
+    assert leaf.layer_metadata.generated_at == page.page_metadata.generated_at
+    assert leaf.layer_metadata.summary_source == "llm"
+    assert leaf.layer_metadata.summary_scope == "subtree"
+    assert page.page_metadata.summary_scope == "page_segment"
+    assert leaf.layer_metadata.content_hash == original_hash
+    assert before == (structure.blocks, structure.sections, structure.tables, structure.paragraphs)
+
+
+def test_parent_deduplicates_only_successful_pages_and_keeps_failed_source(tmp_path, monkeypatch):
+    _enable(monkeypatch)
+    structure = _structure(tmp_path)
+    leaf = structure.section_tree.children[0].children[0]
+    first, second = leaf.pages
+    prompts = {}
+
+    def chat(_client, **kwargs):
+        nodes = json.loads(kwargs["user"])["nodes"]
+        prompts.update({n["node_id"]: n["content"] for n in nodes})
+        return _reply([n for n in nodes if n["node_id"] != second.node_id])
+
+    monkeypatch.setattr(word_tree_summarizer, "chat_with_schema", chat)
+    word_tree_summarizer.summarize_word_tree(structure, object())
+    assert first.page_metadata.summary_status == "completed"
+    assert second.page_metadata.summary_source == "extractive_fallback"
+    material = prompts[leaf.node_id]
+    assert "子章节正文。" not in material
+    assert "子章节第二页正文。" in material
+    assert "HRS-5592：仅限临床备样，未批准商业生产。" in material
+    assert "父章节直接内容。" in prompts[structure.section_tree.children[0].node_id]
+    assert leaf.layer_metadata.summary_status == "partial"
+    assert structure.section_tree.layer_metadata.summary_status == "partial"
+
+
+@pytest.mark.parametrize("truncated", ["input", "output"])
+def test_partial_page_cannot_hide_its_original_source(tmp_path, monkeypatch, truncated):
+    _enable(monkeypatch)
+    structure = _structure(tmp_path)
+    leaf = structure.section_tree.children[0].children[0]
+    page = leaf.pages[0]
+    original = word_tree_summarizer._page_material(structure, page)
+    if truncated == "input":
+        monkeypatch.setattr(settings, "word_tree_summary_max_input_chars_per_node", 3)
+    else:
+        monkeypatch.setattr(settings, "word_tree_summary_max_output_chars", 3)
+    monkeypatch.setattr(word_tree_summarizer, "chat_with_schema", lambda _c, **kw:
+                        _reply(json.loads(kw["user"])["nodes"]))
+    word_tree_summarizer._apply_batch(object(), [{
+        "node_id": page.node_id, "material": original, "metadata": page.page_metadata,
+    }])
+    assert page.page_metadata.summary_status == "partial"
+    assert "子章节正文。" in word_tree_summarizer._chapter_material(structure, leaf)
+
+
+@pytest.mark.parametrize("capacity", [1, 2])
+def test_parallel_siblings_keep_parent_barrier_and_callbacks_on_owner(
+    tmp_path, monkeypatch, capacity,
+):
+    _enable(monkeypatch)
+    monkeypatch.setattr(settings, "word_tree_summary_max_nodes_per_batch", 1)
+    monkeypatch.setattr(settings, "local_llm_max_concurrency", capacity)
+    doc = Document()
+    for i in range(4):
+        doc.add_heading(f"章节{i}", level=1)
+        doc.add_paragraph(f"HRS-5592，批号{i}，未批准商业生产。")
+    path = tmp_path / "siblings.docx"
+    doc.save(path)
+    structure = parse_docx_structure(path)
+    owner = get_ident()
+    lock, barrier = Lock(), Barrier(capacity)
+    state = {"active": 0, "peak": 0, "pages_done": 0}
+    events, callbacks = [], []
+
+    def callback(event=None):
+        assert get_ident() == owner
+        callbacks.append(True)
+        if event:
+            events.append(event)
+
+    def chat(_client, **kwargs):
+        assert get_ident() != owner
+        assert runtime.get()["run_id"] == "owned-run"
+        assert runtime.get()["job_id"] == "owned-job"
+        assert runtime.get()["on_model_wait"] is None
+        assert runtime.get()["stage"] == "word_tree_summary"
+        nodes = json.loads(kwargs["user"])["nodes"]
+        is_page = ":page:" in nodes[0]["node_id"]
+        with lock:
+            state["active"] += 1
+            state["peak"] = max(state["peak"], state["active"])
+        try:
+            if is_page:
+                barrier.wait(timeout=3)
+                with lock:
+                    state["pages_done"] += 1
+            else:
+                assert state["pages_done"] == 4
+                assert "HRS-5592" in nodes[0]["content"]
+            runtime.get()["progress"]({"node_id": nodes[0]["node_id"]})
+            return _reply(nodes)
+        finally:
+            with lock:
+                state["active"] -= 1
+
+    monkeypatch.setattr(word_tree_summarizer, "chat_with_schema", chat)
+    with model_scope(run_id="owned-run", job_id="owned-job", progress=callback,
+                     on_model_wait=callback):
+        word_tree_summarizer.summarize_word_tree(structure, object())
+    assert state["peak"] == capacity and state["active"] == 0
+    assert len(events) == 5 and callbacks
+    assert structure.section_tree.layer_metadata.summary_status == "completed"
+
+
+def test_cancel_parallel_summary_closes_requests_and_does_not_start_parents(
+    tmp_path, monkeypatch, isolated_model_scheduler,
+):
+    import asyncio
+
+    import httpx
+
+    from app.services.llm import local_client
+    from app.services.llm.local_client import LocalModelClient
+
+    from .test_model_scheduler import rows
+
+    _enable(monkeypatch)
+    monkeypatch.setattr(settings, "word_tree_summary_max_nodes_per_batch", 1)
+    monkeypatch.setattr(local_client, "POLL_SECONDS", 0.01)
+    bind = isolated_model_scheduler()
+    both_started = Event()
+    lock = Lock()
+    sent, closed = [], []
+
+    async def transport(_request):
+        with lock:
+            sent.append(True)
+            if len(sent) == 2:
+                both_started.set()
+        try:
+            await asyncio.sleep(3)
+            raise AssertionError("cancellation must close the request first")
+        finally:
+            with lock:
+                closed.append(True)
+
+    client = LocalModelClient("http://model.test/v1", "test", httpx.MockTransport(transport))
+    with model_scope(bind=bind, run_id="summary-cancel", should_stop=both_started.is_set):
+        with pytest.raises(ModelCancelled):
+            word_tree_summarizer.summarize_word_tree(_structure(tmp_path), client)
+    assert len(sent) == len(closed) == 2
+    requests = rows(bind)
+    assert len(requests) == 2
+    assert {r.status for r in requests} == {"cancelled"}
+    assert {r.run_id for r in requests} == {"summary-cancel"}
+    assert {r.stage for r in requests} == {"word_tree_summary"}

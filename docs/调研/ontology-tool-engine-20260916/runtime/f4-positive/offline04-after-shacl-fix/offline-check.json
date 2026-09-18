@@ -1,0 +1,134 @@
+{
+  "mode": "offline_saved_output_diagnostic",
+  "real_model_requests": 0,
+  "source_calls": "/tmp/ontology-tool-engine-20260916/f4-positive/result04/calls.json",
+  "saved_responses_consumed": 4,
+  "exit_code": 2,
+  "errors": [],
+  "controller_calls": [
+    {
+      "tool": "check_claim_binding",
+      "result": {
+        "status": "ok",
+        "data": {
+          "claim_ref": {
+            "id": "3e5db102ac2f9f5b7e07407b55e74f29001968248f80e655688018d627fbba75",
+            "revision": 2
+          },
+          "validation_status": "passed",
+          "resolved_role_refs": [
+            {
+              "document_hash": "bc13cc1e5972011f28d3032ff73ff4734565511f7202706dbe32e2c10e2eed0c",
+              "parser_version": "4",
+              "structure_hash": "40fe98c3ea340838c622505b6759a500bea164418dc1ca6a7f663a9eb78a1000",
+              "evidence_id": "9c48bbe121ceb2b6db985b6964d8ab8ebef881f5613026ff3d7658340d0881dc",
+              "section_node_id": "document",
+              "block_id": "paragraph:0:0",
+              "paragraph_index": 0,
+              "fragment_index": 0,
+              "table_path": null,
+              "row_index": null,
+              "column_index": null,
+              "span_start": 10,
+              "span_end": 17,
+              "physical_page_number": null
+            },
+            {
+              "document_hash": "bc13cc1e5972011f28d3032ff73ff4734565511f7202706dbe32e2c10e2eed0c",
+              "parser_version": "4",
+              "structure_hash": "40fe98c3ea340838c622505b6759a500bea164418dc1ca6a7f663a9eb78a1000",
+              "evidence_id": "9c48bbe121ceb2b6db985b6964d8ab8ebef881f5613026ff3d7658340d0881dc",
+              "section_node_id": "document",
+              "block_id": "paragraph:0:0",
+              "paragraph_index": 0,
+              "fragment_index": 0,
+              "table_path": null,
+              "row_index": null,
+              "column_index": null,
+              "span_start": 6,
+              "span_end": 8,
+              "physical_page_number": null
+            },
+            {
+              "document_hash": "bc13cc1e5972011f28d3032ff73ff4734565511f7202706dbe32e2c10e2eed0c",
+              "parser_version": "4",
+              "structure_hash": "40fe98c3ea340838c622505b6759a500bea164418dc1ca6a7f663a9eb78a1000",
+              "evidence_id": "9c48bbe121ceb2b6db985b6964d8ab8ebef881f5613026ff3d7658340d0881dc",
+              "section_node_id": "document",
+              "block_id": "paragraph:0:0",
+              "paragraph_index": 0,
+              "fragment_index": 0,
+              "table_path": null,
+              "row_index": null,
+              "column_index": null,
+              "span_start": 15,
+              "span_end": 17,
+              "physical_page_number": null
+            }
+          ],
+          "source_unit": "mg",
+          "issues": []
+        },
+        "evidence_refs": [
+          "9c48bbe121ceb2b6db985b6964d8ab8ebef881f5613026ff3d7658340d0881dc"
+        ],
+        "issues": []
+      }
+    },
+    {
+      "tool": "validate_metric",
+      "result": {
+        "status": "ok",
+        "data": {
+          "claim_ref": {
+            "id": "3e5db102ac2f9f5b7e07407b55e74f29001968248f80e655688018d627fbba75",
+            "revision": 2
+          },
+          "validation_status": "incomplete",
+          "quantity": null,
+          "normalized_literal": null,
+          "issues": [
+            {
+              "code": "semantic_undetermined",
+              "field_path": null,
+              "message": "semantic_undetermined",
+              "evidence_ids": []
+            }
+          ]
+        },
+        "evidence_refs": [],
+        "issues": []
+      }
+    },
+    {
+      "tool": "validate_graph",
+      "result": {
+        "status": "ok",
+        "data": {
+          "profile": "quantity-representation-v2",
+          "evaluated": false,
+          "conforms": null,
+          "validation_status": "incomplete",
+          "report": [],
+          "coverage": {
+            "expected": [],
+            "actual": [],
+            "missing": [],
+            "executed_shapes": [],
+            "complete": false
+          }
+        },
+        "evidence_refs": [],
+        "issues": [
+          {
+            "code": "shacl_not_evaluated",
+            "field_path": null,
+            "message": "检查未通过：shacl_not_evaluated；请核对当前授权引用和参数。",
+            "evidence_ids": []
+          }
+        ]
+      }
+    }
+  ],
+  "note": "Model transport is replaced with saved responses; request/accounting counters and response usage in ordinary CLI artifacts describe consumed fixtures, not new model requests or new model quality evidence."
+}

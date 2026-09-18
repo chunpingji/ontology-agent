@@ -410,6 +410,16 @@ export function WordViewer({
           return false;
         });
         if (!selected) throw new Error("原文证据未出现在此预览中");
+        // ProseMirror does not publish a native selection in an unfocused,
+        // read-only editor. Mirror the validated editor range into the DOM.
+        const start = editor.view.domAtPos(editor.state.selection.from);
+        const end = editor.view.domAtPos(editor.state.selection.to);
+        const range = editor.view.dom.ownerDocument.createRange();
+        range.setStart(start.node, start.offset);
+        range.setEnd(end.node, end.offset);
+        const selection = editor.view.dom.ownerDocument.getSelection();
+        selection?.removeAllRanges();
+        selection?.addRange(range);
         const nodes = wrapperRef.current?.querySelectorAll<HTMLElement>("[data-evidence-id]");
         nodes?.forEach((node) => {
           if (node.dataset.evidenceId === unit.evidence_id) {

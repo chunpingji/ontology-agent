@@ -1,0 +1,260 @@
+{
+  "analysis_date_utc": "2026-09-14",
+  "source_run_id": "98935847-00e1-4e39-b7ff-cc318d57b959",
+  "document_sha256": "1156ca7b694c5af10afa393a5df4158ad4f9528901eab560ae2cf96e55b6d44b",
+  "candidate_selection": {
+    "before": {
+      "H0": 26,
+      "H1": 9
+    },
+    "after": {
+      "H0": 2,
+      "H1": 2
+    }
+  },
+  "reconstructed_request": {
+    "request_binding_verified": true,
+    "new_model_calls": 0,
+    "before": [
+      {
+        "stage": "ontology_guided_discovery",
+        "system_characters": 1046,
+        "user_characters": 10707,
+        "schema_characters": 3882,
+        "user_field_characters": {
+          "target": 1259,
+          "subject": 214,
+          "subject_label": 42,
+          "owner_field_refs": 45,
+          "subject_binding": 251,
+          "predicate": 3241,
+          "allowed_object_classes": 732,
+          "subject_evidence_refs": 2,
+          "required_counterevidence": 2,
+          "fragments": 2108,
+          "stage": 11,
+          "protocol_version": 20,
+          "scope_protocol_version": 24,
+          "literal_quote_version": 26,
+          "unit_normalization_version": 49,
+          "assertion_generation": 1,
+          "proof_menu": 506,
+          "field_bindings": 1482,
+          "whole_method_fields": 2,
+          "method_granularity_instruction": 284
+        },
+        "fragment_count": 19,
+        "source_characters": 496,
+        "fact_characters": 13,
+        "fragment_roles": {
+          "target": 1,
+          "field_group_binding": 18
+        },
+        "field_binding_count": 1,
+        "allowed_class_count": 12,
+        "schema_definition_count": 6,
+        "new_model_calls": 0,
+        "component_characters": 15635
+      },
+      {
+        "stage": "ontology_guided_verification",
+        "system_characters": 1536,
+        "user_characters": 12740,
+        "schema_characters": 8920,
+        "user_field_characters": {
+          "target": 1259,
+          "subject": 214,
+          "subject_label": 42,
+          "owner_field_refs": 45,
+          "subject_binding": 251,
+          "predicate": 3241,
+          "allowed_object_classes": 732,
+          "subject_evidence_refs": 2,
+          "required_counterevidence": 2,
+          "fragments": 2108,
+          "stage": 14,
+          "candidates": 2016,
+          "protocol_version": 20,
+          "scope_protocol_version": 24,
+          "literal_quote_version": 26,
+          "unit_normalization_version": 49,
+          "assertion_generation": 1,
+          "proof_menu": 506,
+          "field_bindings": 1482,
+          "whole_method_fields": 2,
+          "method_granularity_instruction": 284
+        },
+        "fragment_count": 19,
+        "source_characters": 496,
+        "fact_characters": 13,
+        "fragment_roles": {
+          "target": 1,
+          "field_group_binding": 18
+        },
+        "field_binding_count": 1,
+        "allowed_class_count": 12,
+        "schema_definition_count": 11,
+        "new_model_calls": 0,
+        "component_characters": 23196
+      }
+    ],
+    "after": [
+      {
+        "stage": "ontology_guided_discovery",
+        "system_characters": 1156,
+        "user_characters": 7570,
+        "schema_characters": 2892,
+        "user_field_characters": {
+          "target": 69,
+          "subject": 122,
+          "subject_label": 42,
+          "owner_field_refs": 45,
+          "subject_binding": 70,
+          "predicate": 2489,
+          "allowed_object_classes": 732,
+          "subject_evidence_refs": 2,
+          "required_counterevidence": 2,
+          "fragments": 2108,
+          "stage": 11,
+          "proof_menu": 276,
+          "field_bindings": 1291,
+          "document_class_iri": 65
+        },
+        "fragment_count": 19,
+        "source_characters": 496,
+        "fact_characters": 13,
+        "fragment_roles": {
+          "target": 1,
+          "field_group_binding": 18
+        },
+        "field_binding_count": 1,
+        "allowed_class_count": 12,
+        "schema_definition_count": 4,
+        "new_model_calls": 0
+      },
+      {
+        "stage": "ontology_guided_verification",
+        "system_characters": 1646,
+        "user_characters": 7966,
+        "schema_characters": 5620,
+        "user_field_characters": {
+          "target": 69,
+          "subject": 122,
+          "subject_label": 42,
+          "owner_field_refs": 45,
+          "subject_binding": 70,
+          "predicate": 2489,
+          "allowed_object_classes": 732,
+          "subject_evidence_refs": 2,
+          "required_counterevidence": 2,
+          "fragments": 2108,
+          "stage": 14,
+          "candidates": 379,
+          "proof_menu": 276,
+          "field_bindings": 1291,
+          "document_class_iri": 65
+        },
+        "fragment_count": 19,
+        "source_characters": 496,
+        "fact_characters": 13,
+        "fragment_roles": {
+          "target": 1,
+          "field_group_binding": 18
+        },
+        "field_binding_count": 1,
+        "allowed_class_count": 12,
+        "schema_definition_count": 8,
+        "new_model_calls": 0
+      }
+    ],
+    "total_characters": {
+      "before": 38831,
+      "after": 26850
+    }
+  },
+  "real_model_check": {
+    "evaluation_id": "eval-source-object-c46c821b65c24beaac33e526e88b4d3c",
+    "elapsed_seconds": 35.807,
+    "new_model_calls": 2,
+    "failure": null,
+    "model_requests": [
+      {
+        "stage": "ontology_guided_discovery",
+        "status": "complete",
+        "metrics": {
+          "queue_seconds": 0.025,
+          "prompt_tokens": 3082,
+          "completion_tokens": 153,
+          "cache_tokens": 0,
+          "prompt_ms": 11992.616,
+          "predicted_ms": 2649.713,
+          "cache_n": 0,
+          "prompt_n": 3082,
+          "predicted_n": 153,
+          "request_seconds": 15.78,
+          "elapsed_seconds": 15.805
+        },
+        "started_at": "2026-09-14 05:50:04.641629+00:00",
+        "finished_at": "2026-09-14 05:50:20.420988+00:00"
+      },
+      {
+        "stage": "ontology_guided_verification",
+        "status": "complete",
+        "metrics": {
+          "queue_seconds": 0.019,
+          "prompt_tokens": 3374,
+          "completion_tokens": 346,
+          "cache_tokens": 0,
+          "prompt_ms": 13025.37,
+          "predicted_ms": 6400.946,
+          "cache_n": 0,
+          "prompt_n": 3374,
+          "predicted_n": 346,
+          "request_seconds": 19.727,
+          "elapsed_seconds": 19.746
+        },
+        "started_at": "2026-09-14 05:50:20.508039+00:00",
+        "finished_at": "2026-09-14 05:50:40.235185+00:00"
+      }
+    ],
+    "result": {
+      "complete": true,
+      "semantic_outcome": "undetermined",
+      "reason_code": "record_undetermined",
+      "model_calls": 2,
+      "nodes": [
+        {
+          "label": "HRS-1597",
+          "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/DrugProduct"
+        }
+      ],
+      "edges": [
+        {
+          "decision_status": "undetermined",
+          "policy_eligible": false
+        }
+      ]
+    },
+    "verification": [
+      {
+        "type_verdict": "undetermined",
+        "role_verdict": "supported",
+        "subject_binding_verdict": "supported",
+        "predicate_verdict": "supported",
+        "applicability_verdict": "supported",
+        "counterevidence_verdict": "supported",
+        "bridge_verdict": "supported"
+      }
+    ],
+    "production_run_modified": false
+  },
+  "comparison": {
+    "before_request_seconds": 51.618,
+    "after_request_seconds": 35.507,
+    "before_prompt_tokens": 10193,
+    "after_prompt_tokens": 6456,
+    "request_seconds_reduction_percent": 31.21,
+    "prompt_tokens_reduction_percent": 36.66,
+    "limitation": "One task on the same source and frozen ontology; excludes summary preparation and full-graph completion. Type is undetermined, not a fully verified describes result."
+  }
+}

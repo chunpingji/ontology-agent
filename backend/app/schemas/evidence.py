@@ -328,6 +328,7 @@ class ExtractionTask(EvidenceModel):
     target_class_iris: list[str] = Field(default_factory=list)
     target_evidence_ids: list[str] = Field(min_length=1)
     target_ranges: list[EvidenceRange] = Field(default_factory=list)
+    target_record_id: str | None = None
     object_candidates: list[CandidateRef] = Field(default_factory=list)
     competing_subjects: list[CandidateRef] = Field(default_factory=list)
     scope: EvidenceScope | None = None

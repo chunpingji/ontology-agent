@@ -1,0 +1,20 @@
+{
+  "scope": "GLiNER2.5 implementation checks completed before frozen NER/Qwen run in this task; documentation-only finalization did not rerun them",
+  "pytest": {
+    "cwd": "backend",
+    "command": ".venv/bin/python -m pytest -p no:cacheprovider -q tests/test_extraction/test_schema_card_gliner2.py tests/test_extraction/test_gliner2_extractor.py tests/test_extraction/test_tool_vocabulary.py tests/test_extraction/test_tool_mentions.py tests/test_extraction/test_schema_card_tools.py tests/test_extraction/test_tool_evidence.py tests/test_extraction/test_tool_metric.py tests/test_extraction/test_tool_shacl.py tests/test_extraction/test_gliner_strict.py tests/test_extraction/test_gliner_extractor.py tests/test_extraction/test_ontology_guided_boundaries.py tests/test_extraction/test_schema_card_tightened.py tests/test_extraction/test_schema_card_evidence.py",
+    "passed": 403,
+    "warnings": 4,
+    "test_files": 13
+  },
+  "ruff": {
+    "status": "passed",
+    "cache_disabled": true,
+    "scope": "Changed GLiNER2 adapter, runner, vocabulary/tool modules and corresponding tests"
+  },
+  "not_claimed": [
+    "whole repository test suite",
+    "deployment",
+    "expert-gold quality acceptance"
+  ]
+}

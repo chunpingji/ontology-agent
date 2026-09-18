@@ -1032,10 +1032,11 @@ def annotate_word(
     返回 ``(doc_json, warnings, triples, checkpoint_or_None)``。
     checkpoint 非 None 表示标注被暂停（doc_json 仍为完整结构，但标注可能不完整）。
     """
-    from docx import Document
     from docx.oxml.ns import qn
 
-    doc = Document(str(file_path))
+    from app.services.extraction.docx_reader import load_docx_for_reading
+
+    doc = load_docx_for_reading(file_path)
 
     if ir is None and structure is not None:
         from app.services.extraction.document_ir import build_document_ir

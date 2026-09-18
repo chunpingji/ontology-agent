@@ -1,0 +1,29 @@
+{
+  "snapshot_id": "05092dbb26de73aa6d1a2cd08c5c03198cb092862ee0a41f514cf19ce3056345",
+  "analysis_id": "3e093f1a4df00642c6e295a0f9c28eae68d9bc76e5c7ec004d425dade9959963",
+  "document_hash": "a677af99167744bd1338a7a60106394ac3ad5c47a42d1159994641f0952a2c88",
+  "structure_hash": "a86bc40448af70b05bf3807ddc3ba06b8eb97c88ec7190804b68b9ccb54ed088",
+  "summary_version": "synthetic-structure-only",
+  "summary_model_identity": null,
+  "generation_source": "structure_only",
+  "source_record_refs": [
+    "09b46b3444d183fd0c8e53adbdf293bb196e73a88138542ee7d13de2b55afe29"
+  ],
+  "node_summaries": [
+    {
+      "node_id": "document",
+      "heading": "source",
+      "path": [
+        "source"
+      ],
+      "summary": null,
+      "summary_status": "pending",
+      "summary_source": "none",
+      "source_record_refs": [
+        "09b46b3444d183fd0c8e53adbdf293bb196e73a88138542ee7d13de2b55afe29"
+      ]
+    }
+  ],
+  "dependency_hash": "647bc334aad60e78bf274ce474c11968721ecc28caf9cb8cb9cf376baeaadd7d",
+  "policy_version": "ontology-guided-metadata-v1"
+}

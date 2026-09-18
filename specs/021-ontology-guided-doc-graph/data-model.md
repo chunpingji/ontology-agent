@@ -450,7 +450,7 @@ Manifest 每项保存 `source job/object ID、table/file absolute resolved path�
 3. 类型、局部共指和全局身份 verdict 独立；无全局身份不否定局部实体。
 4. 关系/属性必须有当前精确谓词的 PredicateEvidence；双端存在或父路径不是 proof。
 5. summary/heading/hint 不出现在 fact-eligible source refs。
-6. phase1∪phase2 等于 scope 内全部目标记录，且交集为空；拒绝不删记录。
+6. 新 `sparse-candidates-v1` 的 phase1∪phase2 等于已准入候选集合，且交集为空；共享全文搜索域独立保留，不逐槽位复制为任务或台账。旧冻结运行仍要求其并集等于 scope 内全部目标记录。拒绝不删除已入台账的记录，未入选不作否定证明。
 7. 只有当前有效的 affirmed、unconditional proof path 可递归；根 seed 是唯一无入边例外。
 8. event/object/proof 引用不静默升级 revision；合并/拆分通过 ResolutionEvent。
 9. 技术失败、模型拒答、原文否定和人工拒绝分别保存。

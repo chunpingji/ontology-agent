@@ -1,0 +1,314 @@
+{
+  "run_id": "cmc-summary-tools-653cb0cb7f744de5",
+  "status": "completed",
+  "source_sha256": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+  "analysis_id": "5f6992c2a638b88af184de4d32753e2b8612a45210bb3056e736dca810aed934",
+  "model": "Qwen3.6-35B-A3B",
+  "declared_model_revision": "0b21525e972670ed59e1812e170b27c26355381f0656ecc4e25617ece7dac58b",
+  "gliner2_model": {
+    "repo": "fastino/gliner2.5-multi-v1",
+    "revision": "aaecfe45db1d828c963717054ccb868e8ad1f1d5",
+    "files": [
+      {
+        "path": "README.md",
+        "bytes": 21622,
+        "sha256": "059ff6387aeeff4925ca02cd8645dd5879bef7f2e6f211949c2e68905029a2ee",
+        "upstream_lfs_sha256": null
+      },
+      {
+        "path": "config.json",
+        "bytes": 3151,
+        "sha256": "8b59a0f426a65859c89cd1ea850c3529c09aa3be3a6fafd8eddfdd17b1bf0146",
+        "upstream_lfs_sha256": null
+      },
+      {
+        "path": "encoder_config/config.json",
+        "bytes": 857,
+        "sha256": "fa4f9ef2903b5369ab172333aae4574e6a476511d7465845cf59f8360ee18716",
+        "upstream_lfs_sha256": null
+      },
+      {
+        "path": "model.safetensors",
+        "bytes": 1149461028,
+        "sha256": "c1ff4ec0bc00031c15530b8f3c33d3677f27949e6a0cb52e1247a6224b6c5395",
+        "upstream_lfs_sha256": "c1ff4ec0bc00031c15530b8f3c33d3677f27949e6a0cb52e1247a6224b6c5395"
+      },
+      {
+        "path": "tokenizer.json",
+        "bytes": 16035853,
+        "sha256": "c62446df87ae18ec98b133f8f84fc449a07cc89bbf8ef192a4cb5f9c53777a7a",
+        "upstream_lfs_sha256": "c62446df87ae18ec98b133f8f84fc449a07cc89bbf8ef192a4cb5f9c53777a7a"
+      },
+      {
+        "path": "tokenizer_config.json",
+        "bytes": 645,
+        "sha256": "0bf3ea0873234bd9bfdd3853c440395009ac6365a925b91654daed5396d655e1",
+        "upstream_lfs_sha256": null
+      }
+    ],
+    "purpose": "User-authorized GLiNER2.5 local CMC/Qwen experiment; offline inference"
+  },
+  "packages": {
+    "gliner2": "2.0.0",
+    "transformers": "4.57.6",
+    "huggingface_hub": "0.36.2",
+    "torch": "2.7.1+cu126",
+    "protobuf": "6.33.5",
+    "tokenizers": "0.22.2"
+  },
+  "metadata_hashes": {
+    "metadata.json": "91ca5544d6f2c03bf4d7f51e6e5ce1cf9474906f127ba6295efbee65e0fedfe0",
+    "section-tree.json": "269add908c49abb5b84fd3e4f593af5e1951d7d72d1849569a092371db926e31",
+    "summaries.json": "e5bf9a23060050d59155d1bd04410a7ad5b4131b00012db415da7c7e10afd15f",
+    "manifest.json": "14a8be49a6df4b8aa6151ec716fe2f038c568e9027e2b1718857492252376405"
+  },
+  "input_hashes": {
+    "source.docx": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7",
+    "ir.json": "858dddbb762217ede057ed85e659bb6d0349fc90e0c936fbf42756859c882134",
+    "cards.json": "3b2a50862d1f977adb76044d08360cc03e02629f8bae8de86a142b7e388044a6",
+    "cases.json": "a5ec136bcf40cd38a73d34683c97aa2ce90653303c9c86150595db11151f35c7",
+    "vocabularies.json": "b07ffa2feab64cecd96f5cd4b669abb79d842961d7e663054a4bcf681577a458"
+  },
+  "summary": {
+    "scopes": 8,
+    "completed": 0,
+    "new_http_calls": 9,
+    "contracts_passed": 1,
+    "accepted_candidates": 0,
+    "observations": 0,
+    "unresolved": 0,
+    "rejected": 0,
+    "prompt_tokens": 18324,
+    "completion_tokens": 9383,
+    "usage_reported_calls": 2,
+    "usage_missing_calls": 7,
+    "token_count_scope": "reported_usage_only",
+    "http_seconds": 229.299,
+    "finish_reasons": {
+      "error": 7,
+      "stop": 1,
+      "length": 1
+    },
+    "arm": "D",
+    "quality_scoring": "not_performed_on_old_scope_silver",
+    "complete_document_quality_claimed": false
+  },
+  "ner_wall_seconds": 161.286,
+  "qwen_wall_seconds": 230.223,
+  "experiment_execution_finished": true,
+  "end_to_end_validation_passed": false,
+  "complete_scopes": 0,
+  "planned_scopes": 8,
+  "ner_completed_scopes": 8,
+  "ner_spans": 5079,
+  "new_summary_calls": 0,
+  "historical_summary_generation_seconds": 951.256618,
+  "scope_results": [
+    {
+      "scope_id": "introduction",
+      "status": "failed",
+      "failure_stage": "candidates",
+      "error_type": "StructuredModelError",
+      "error_code": "model_request_failed",
+      "contract_passes": 0,
+      "calls": [
+        {
+          "http_call": 1,
+          "error_type": "BadRequestError",
+          "status_code": 400,
+          "seconds": 1.315,
+          "stage": "candidates"
+        }
+      ]
+    },
+    {
+      "scope_id": "product_properties",
+      "status": "failed",
+      "failure_stage": "candidates",
+      "error_type": "StructuredModelError",
+      "error_code": "model_request_failed",
+      "contract_passes": 0,
+      "calls": [
+        {
+          "http_call": 1,
+          "error_type": "BadRequestError",
+          "status_code": 400,
+          "seconds": 0.582,
+          "stage": "candidates"
+        }
+      ]
+    },
+    {
+      "scope_id": "process_equipment",
+      "status": "failed",
+      "failure_stage": "candidates",
+      "error_type": "StructuredModelError",
+      "error_code": "model_request_failed",
+      "contract_passes": 0,
+      "calls": [
+        {
+          "http_call": 1,
+          "error_type": "BadRequestError",
+          "status_code": 400,
+          "seconds": 0.398,
+          "stage": "candidates"
+        }
+      ]
+    },
+    {
+      "scope_id": "quality_condition",
+      "status": "failed",
+      "failure_stage": "candidates",
+      "error_type": "StructuredModelError",
+      "error_code": "model_request_failed",
+      "contract_passes": 0,
+      "calls": [
+        {
+          "http_call": 1,
+          "error_type": "BadRequestError",
+          "status_code": 400,
+          "seconds": 0.289,
+          "stage": "candidates"
+        }
+      ]
+    },
+    {
+      "scope_id": "storage",
+      "status": "failed",
+      "failure_stage": "verification",
+      "error_type": "StructuredModelError",
+      "error_code": "model_output_truncated",
+      "contract_passes": 1,
+      "calls": [
+        {
+          "http_call": 1,
+          "usage": {
+            "completion_tokens": 1191,
+            "prompt_tokens": 13659,
+            "total_tokens": 14850,
+            "completion_tokens_details": null,
+            "prompt_tokens_details": {
+              "audio_tokens": null,
+              "cached_tokens": 493
+            }
+          },
+          "finish_reason": "stop",
+          "seconds": 74.639,
+          "stage": "candidates"
+        },
+        {
+          "http_call": 1,
+          "usage": {
+            "completion_tokens": 8192,
+            "prompt_tokens": 4665,
+            "total_tokens": 12857,
+            "completion_tokens_details": null,
+            "prompt_tokens_details": {
+              "audio_tokens": null,
+              "cached_tokens": 298
+            }
+          },
+          "finish_reason": "length",
+          "seconds": 150.458,
+          "stage": "verification"
+        }
+      ]
+    },
+    {
+      "scope_id": "residue_missing",
+      "status": "failed",
+      "failure_stage": "candidates",
+      "error_type": "StructuredModelError",
+      "error_code": "model_request_failed",
+      "contract_passes": 0,
+      "calls": [
+        {
+          "http_call": 1,
+          "error_type": "BadRequestError",
+          "status_code": 400,
+          "seconds": 0.743,
+          "stage": "candidates"
+        }
+      ]
+    },
+    {
+      "scope_id": "pde_conflict",
+      "status": "failed",
+      "failure_stage": "candidates",
+      "error_type": "StructuredModelError",
+      "error_code": "model_request_failed",
+      "contract_passes": 0,
+      "calls": [
+        {
+          "http_call": 1,
+          "error_type": "BadRequestError",
+          "status_code": 400,
+          "seconds": 0.297,
+          "stage": "candidates"
+        }
+      ]
+    },
+    {
+      "scope_id": "toxicity_unknown",
+      "status": "failed",
+      "failure_stage": "candidates",
+      "error_type": "StructuredModelError",
+      "error_code": "model_request_failed",
+      "contract_passes": 0,
+      "calls": [
+        {
+          "http_call": 1,
+          "error_type": "BadRequestError",
+          "status_code": 400,
+          "seconds": 0.578,
+          "stage": "candidates"
+        }
+      ]
+    }
+  ],
+  "independent_review": {
+    "reviewed_scope": "storage",
+    "claims": {
+      "supported": 0,
+      "unsupported": 4,
+      "undetermined": 0
+    },
+    "observations": {
+      "supported": 0,
+      "unsupported": 0,
+      "undetermined": 2
+    },
+    "all_reviewed_proposals_not_finalized": true,
+    "other_scopes": "candidate_request_failed_no_proposal"
+  },
+  "numeric_calibration_status": "not_evaluated",
+  "causal_summary_quality_gain": "not_demonstrated_same_model_inputs",
+  "not_deployed": true,
+  "masked_input_equivalence": {
+    "passed_checks": 293,
+    "failed_checks": 0,
+    "actual_candidate_requests": 8,
+    "actual_verification_requests_conditional_on_same_candidate": 1,
+    "independent_model_rerun": false
+  },
+  "artifact_checks": {
+    "passed": 379,
+    "skipped": 31,
+    "failed": 2,
+    "model_contract_failure_checks": 2,
+    "artifact_integrity_failure_checks": 0,
+    "raw_schema_passed": 1,
+    "raw_schema_failed": 1,
+    "raw_schema_missing": 7
+  },
+  "engineering_tests": {
+    "passed": 77,
+    "warnings": 4,
+    "ruff": "passed"
+  },
+  "document_checks": {
+    "local_links": "passed",
+    "json_parse": "passed",
+    "scoped_git_diff_check": "passed"
+  }
+}
