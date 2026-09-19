@@ -24,16 +24,19 @@
 # ============================================================
 
 slpra-risk:RiskAssessmentProcess a owl:Class ;
+    rdfs:comment "针对药品生产及共线生产中的质量风险，识别危害、分析风险并依据既定准则评价风险可接受性的系统性过程。"@zh ;
     rdfs:subClassOf obo:BFO_0000015 ;
     rdfs:label "Risk Assessment Process"@en ;
     rdfs:label "风险评估过程"@zh .
 
 slpra-risk:HazardIdentification a owl:Class ;
+    rdfs:comment "系统识别可能损害药品质量或患者安全的危害来源、污染事件及其发生条件的风险评估过程。"@zh ;
     rdfs:subClassOf slpra-risk:RiskAssessmentProcess ;
     rdfs:label "Hazard Identification"@en ;
     rdfs:label "危害识别"@zh .
 
 slpra-risk:ExposureAssessment a owl:Class ;
+    rdfs:comment "在确定的污染或共线生产情景下，评价污染物可能接触受影响对象的途径、暴露量、频率及持续时间的风险评估过程。"@zh ;
     rdfs:subClassOf slpra-risk:RiskAssessmentProcess ;
     rdfs:label "Exposure Assessment"@en ;
     rdfs:label "暴露评估"@zh .
@@ -57,6 +60,7 @@ slpra-risk:PDECalculation a owl:Class ;
     rdfs:comment "Permitted Daily Exposure calculation. PDE = (PoD × BW) / (F1 × F2 × F3 × F4 × F5 × MF)."@en .
 
 slpra-risk:RiskEvaluation a owl:Class ;
+    rdfs:comment "将风险分析结果与预先确定的风险接受准则进行比较，判断风险可接受性及后续控制需要的评估过程。"@zh ;
     rdfs:subClassOf slpra-risk:RiskAssessmentProcess ;
     rdfs:label "Risk Evaluation"@en ;
     rdfs:label "风险评价"@zh .
@@ -66,25 +70,30 @@ slpra-risk:RiskEvaluation a owl:Class ;
 # ============================================================
 
 slpra-risk:RiskScore a owl:Class ;
+    rdfs:comment "按照既定风险评估方法对风险大小进行量化或半定量表征的评分，其数值含义和取值范围由该方法确定。"@zh ;
     rdfs:subClassOf obo:BFO_0000019 ;
     rdfs:label "Risk Score"@en ;
     rdfs:label "风险评分"@zh .
 
 slpra-risk:RiskLevel a owl:Class ;
+    rdfs:comment "依据适用评估方法和分级准则，用有序类别表达风险程度的分类结果，例如高风险、中风险或低风险。"@zh ;
     rdfs:subClassOf obo:BFO_0000019 ;
     rdfs:label "Risk Level"@en ;
     rdfs:label "风险级别"@zh .
 
 # Risk Level Individuals
 slpra-risk:HighRisk a slpra-risk:RiskLevel ;
+    rdfs:comment "按照适用风险评估方法及其分级准则被归为较高风险程度的级别；具体判定边界由该方法确定。"@zh ;
     rdfs:label "High Risk"@en ;
     rdfs:label "高风险"@zh .
 
 slpra-risk:MediumRisk a slpra-risk:RiskLevel ;
+    rdfs:comment "按照适用风险评估方法及其分级准则被归为中等风险程度的级别；具体判定边界由该方法确定。"@zh ;
     rdfs:label "Medium Risk"@en ;
     rdfs:label "中风险"@zh .
 
 slpra-risk:LowRisk a slpra-risk:RiskLevel ;
+    rdfs:comment "按照适用风险评估方法及其分级准则被归为较低风险程度的级别；具体判定边界及可接受性由该方法和接受准则确定。"@zh ;
     rdfs:label "Low Risk"@en ;
     rdfs:label "低风险"@zh .
 
@@ -93,6 +102,7 @@ slpra-risk:LowRisk a slpra-risk:RiskLevel ;
 # ============================================================
 
 slpra-risk:RiskAssessmentReport a owl:Class ;
+    rdfs:comment "记载风险评估范围、依据、方法、结果和控制建议的报告，并关联承担评估与审批职责的团队。"@zh ;
     rdfs:subClassOf obo:BFO_0000031 ;
     rdfs:subClassOf [
         a owl:Restriction ;
@@ -151,11 +161,13 @@ slpra-risk:SharedLineAssessmentScenario a owl:Class ;
     rdfs:comment "One of 8 shared-line scenarios (a–h) defined in 《药品共线生产质量风险管理指南》(CFDI 2023-03-06)."@en .
 
 slpra-risk:ClinicalWithCommercialScenario a owl:Class ;
+    rdfs:comment "临床试验用药品与商业化药品拟共用或实际共用生产线的风险评估情景，关注不同开发阶段产品之间的共线质量风险。"@zh ;
     rdfs:subClassOf slpra-risk:SharedLineAssessmentScenario ;
     rdfs:label "Clinical Trial Drug + Commercial Drug Shared Line"@en ;
     rdfs:label "情形(a)：临床试验用药品与商业化药品共线生产"@zh .
 
 slpra-risk:TCMSharedLineScenario a owl:Class ;
+    rdfs:comment "涉及中药产品拟共用或实际共用生产线的风险评估情景，结合所涉及物料、生产工艺及残留特征评价共线风险。"@zh ;
     rdfs:subClassOf slpra-risk:SharedLineAssessmentScenario ;
     rdfs:label "Traditional Chinese Medicine Shared Line"@en ;
     rdfs:label "情形(b)：中药产品共线生产"@zh .
@@ -179,11 +191,13 @@ slpra-risk:HormonalCytotoxicHighPotencyScenario a owl:Class ;
     rdfs:comment "Covers hormonal, cytotoxic, and high-potency chemical drugs; may require independent HVAC or equipment dedication based on OEB/inactivation properties."@en .
 
 slpra-risk:CellTherapySharedLineScenario a owl:Class ;
+    rdfs:comment "涉及细胞治疗产品拟共用或实际共用生产线的风险评估情景，关注活细胞材料、产品身份及相关生物性污染的共线风险。"@zh ;
     rdfs:subClassOf slpra-risk:SharedLineAssessmentScenario ;
     rdfs:label "Cell Therapy Product Shared Line"@en ;
     rdfs:label "情形(f)：细胞治疗产品共线生产"@zh .
 
 slpra-risk:NarcoticPsychotropicPrecursorScenario a owl:Class ;
+    rdfs:comment "涉及麻醉药品、精神药品或药品类易制毒化学品拟共用或实际共用生产线的风险评估情景，包含产品质量风险及相应特殊管理背景。"@zh ;
     rdfs:subClassOf slpra-risk:SharedLineAssessmentScenario ;
     rdfs:label "Narcotic / Psychotropic / Precursor Chemical Shared Line"@en ;
     rdfs:label "情形(g)：麻醉药品、精神药品和药品类易制毒化学品共线生产"@zh .
@@ -199,6 +213,7 @@ slpra-risk:PenicillinBetaLactamScenario a owl:Class ;
 # ============================================================
 
 slpra-risk:CompatibilityAssessment a owl:Class ;
+    rdfs:comment "针对一台设备与一种药品的生产适用性或共线使用相容性所形成的评估记录，载明相容性结论及必要的适用条件。"@zh ;
     rdfs:subClassOf obo:BFO_0000031 ;
     rdfs:subClassOf [
         a owl:Restriction ;
@@ -220,21 +235,25 @@ slpra-risk:CompatibilityAssessment a owl:Class ;
 # ============================================================
 
 slpra-risk:assessesProduct a owl:ObjectProperty ;
+    rdfs:comment "将风险评估过程关联到作为该次评估对象的药品。"@zh ;
     rdfs:domain slpra-risk:RiskAssessmentProcess ;
     rdfs:range slpra-drug:DrugProduct ;
     rdfs:label "assesses product"@en .
 
 slpra-risk:assessesEquipment a owl:ObjectProperty ;
+    rdfs:comment "将风险评估过程关联到作为该次评估对象的设备。"@zh ;
     rdfs:domain slpra-risk:RiskAssessmentProcess ;
     rdfs:range slpra-equip:Equipment ;
     rdfs:label "assesses equipment"@en .
 
 slpra-risk:identifiesHazard a owl:ObjectProperty ;
+    rdfs:comment "将危害识别过程关联到其识别和考察的污染事件，用于表达本次识别所针对的污染危害。"@zh ;
     rdfs:domain slpra-risk:HazardIdentification ;
     rdfs:range slpra-contam:ContaminationEvent ;
     rdfs:label "identifies hazard"@en .
 
 slpra-risk:producesReport a owl:ObjectProperty ;
+    rdfs:comment "将风险评估过程关联到汇集该过程评估依据、结果及结论的风险评估报告。"@zh ;
     rdfs:domain slpra-risk:RiskAssessmentProcess ;
     rdfs:range slpra-risk:RiskAssessmentReport ;
     rdfs:label "produces report"@en .
@@ -247,37 +266,44 @@ slpra-risk:basedOnSourceDocument a owl:ObjectProperty ;
     rdfs:comment "Links a generated risk assessment report to the regulatory document whose validated relationship graph supplied the assessment facts."@en .
 
 slpra-risk:hasRiskScore a owl:ObjectProperty ;
+    rdfs:comment "将风险评估报告关联到报告采用或得出的风险评分，评分含义由报告所用评估方法确定。"@zh ;
     rdfs:domain slpra-risk:RiskAssessmentReport ;
     rdfs:range slpra-risk:RiskScore ;
     rdfs:label "has risk score"@en .
 
 slpra-risk:hasRiskLevel a owl:ObjectProperty ;
+    rdfs:comment "将风险评估报告关联到其给出的风险级别，具体分级依据由适用评估准则确定。"@zh ;
     rdfs:domain slpra-risk:RiskAssessmentReport ;
     rdfs:range slpra-risk:RiskLevel ;
     rdfs:label "has risk level"@en .
 
 slpra-risk:involvesScenario a owl:ObjectProperty ;
+    rdfs:comment "将风险评估过程关联到其所涉及的共线生产评估情景，用于明确评估的产品组合与生产背景。"@zh ;
     rdfs:domain slpra-risk:RiskAssessmentProcess ;
     rdfs:range slpra-risk:SharedLineAssessmentScenario ;
     rdfs:label "involves scenario"@en .
 
 slpra-risk:assessesEquipmentFor a owl:ObjectProperty ;
+    rdfs:comment "将设备与产品相容性评估记录关联到该条评估所针对的设备。"@zh ;
     rdfs:domain slpra-risk:CompatibilityAssessment ;
     rdfs:range slpra-equip:Equipment ;
     rdfs:label "assesses equipment for"@en .
 
 slpra-risk:assessesProductFor a owl:ObjectProperty ;
+    rdfs:comment "将设备与产品相容性评估记录关联到该条评估所针对的药品。"@zh ;
     rdfs:domain slpra-risk:CompatibilityAssessment ;
     rdfs:range slpra-drug:DrugProduct ;
     rdfs:label "assesses product for"@en .
 
 slpra-risk:hasAssessmentTeam a owl:ObjectProperty ;
+    rdfs:comment "将风险评估报告关联到承担该报告风险分析与评价职责的评估小组。"@zh ;
     rdfs:domain slpra-risk:RiskAssessmentReport ;
     rdfs:range slpra-risk:AssessmentTeam ;
     rdfs:label "has assessment team"@en ;
     rdfs:label "含评估小组"@zh .
 
 slpra-risk:hasApproverTeam a owl:ObjectProperty ;
+    rdfs:comment "将风险评估报告关联到承担该报告审查和批准职责的审批人小组。"@zh ;
     rdfs:domain slpra-risk:RiskAssessmentReport ;
     rdfs:range slpra-risk:ApproverTeam ;
     rdfs:label "has approver team"@en ;
@@ -300,26 +326,31 @@ slpra-risk:includesRole a owl:ObjectProperty ;
 # ============================================================
 
 slpra-risk:hasInputPDE a owl:DatatypeProperty ;
+    rdfs:comment "MACO 计算采用的前序产品或目标残留物的每日允许暴露量（PDE），以毫克每天表示，是基于健康的暴露限值输入。"@zh ;
     rdfs:domain slpra-risk:MACOCalculation ;
     rdfs:range xsd:decimal ;
     rdfs:label "input PDE (mg/day)"@en .
 
 slpra-risk:hasInputMBS a owl:DatatypeProperty ;
+    rdfs:comment "MACO 计算采用的后续产品最小批量，以千克表示；参与计算时应与后续产品日剂量采用一致的产品计量基准，并将质量单位统一后代入公式。"@zh ;
     rdfs:domain slpra-risk:MACOCalculation ;
     rdfs:range xsd:decimal ;
     rdfs:label "input minimum batch size (kg)"@en .
 
 slpra-risk:hasInputTDD a owl:DatatypeProperty ;
+    rdfs:comment "MACO 计算采用的后续产品每日总用量，以毫克表示；按最不利暴露情形确定清洁限度时采用最大日用量，并与批量参数使用一致的产品质量或活性成分计量基准。"@zh ;
     rdfs:domain slpra-risk:MACOCalculation ;
     rdfs:range xsd:decimal ;
     rdfs:label "input total daily dose next product (mg)"@en .
 
 slpra-risk:hasMinTherapeuticDose a owl:DatatypeProperty ;
+    rdfs:comment "基于治疗剂量的 MACO 计算所采用的前序产品最小治疗剂量，以毫克表示，具体给药与剂量基准由计算依据界定。"@zh ;
     rdfs:domain slpra-risk:MACOCalculation ;
     rdfs:range xsd:decimal ;
     rdfs:label "minimum therapeutic dose previous product (mg)"@en .
 
 slpra-risk:maco_mg a owl:DatatypeProperty ;
+    rdfs:comment "计算得到的最大允许携带量（MACO），即在所评估产品顺序与批量条件下，允许由前序产品转入后续产品的目标残留物总质量，以毫克表示。"@zh ;
     rdfs:domain slpra-risk:MACOCalculation ;
     rdfs:range xsd:decimal ;
     rdfs:label "calculated MACO (mg)"@en .
@@ -331,60 +362,70 @@ slpra-risk:hasMACOMethod a owl:DatatypeProperty ;
     rdfs:comment "One of: PDE-based, dose-based, general-limit."@en .
 
 slpra-risk:pod_mg_per_kg_per_day a owl:DatatypeProperty ;
+    rdfs:comment "PDE 计算采用的毒理学出发点（PoD），为关键研究选定的剂量水平，如未观察到不良作用剂量或其他有依据的起始点，以毫克每千克体重每天表示。"@zh ;
     rdfs:domain slpra-risk:PDECalculation ;
     rdfs:range xsd:decimal ;
     rdfs:label "Point of Departure (mg/kg/day)"@en ;
     rdfs:label "NOAEL/起始剂量 (mg/kg/天)"@zh .
 
 slpra-risk:bodyWeightCorrection_kg a owl:DatatypeProperty ;
+    rdfs:comment "PDE 计算用于将按单位体重表示的毒理学剂量换算为每日总暴露量的体重参数，以千克表示。"@zh ;
     rdfs:domain slpra-risk:PDECalculation ;
     rdfs:range xsd:decimal ;
     rdfs:label "body weight correction (kg)"@en ;
     rdfs:label "体重校正因子 (kg)"@zh .
 
 slpra-risk:adjustmentFactor_F1 a owl:DatatypeProperty ;
+    rdfs:comment "PDE 计算中用于处理研究动物与人之间种属差异的调整因子 F1，为无量纲数值。"@zh ;
     rdfs:domain slpra-risk:PDECalculation ;
     rdfs:range xsd:decimal ;
     rdfs:label "F1 interspecies factor"@en ;
     rdfs:label "F1 种间差异系数"@zh .
 
 slpra-risk:adjustmentFactor_F2 a owl:DatatypeProperty ;
+    rdfs:comment "PDE 计算中用于处理人群个体间敏感性差异的调整因子 F2，为无量纲数值。"@zh ;
     rdfs:domain slpra-risk:PDECalculation ;
     rdfs:range xsd:decimal ;
     rdfs:label "F2 interindividual factor"@en ;
     rdfs:label "F2 个体间差异系数"@zh .
 
 slpra-risk:adjustmentFactor_F3 a owl:DatatypeProperty ;
+    rdfs:comment "PDE 计算中用于处理关键毒理学研究持续时间与目标暴露期限差异的调整因子 F3，为无量纲数值。"@zh ;
     rdfs:domain slpra-risk:PDECalculation ;
     rdfs:range xsd:decimal ;
     rdfs:label "F3 study duration factor"@en ;
     rdfs:label "F3 研究期限系数"@zh .
 
 slpra-risk:adjustmentFactor_F4 a owl:DatatypeProperty ;
+    rdfs:comment "PDE 计算中用于考虑所观察毒性效应性质及严重程度的调整因子 F4，为无量纲数值。"@zh ;
     rdfs:domain slpra-risk:PDECalculation ;
     rdfs:range xsd:decimal ;
     rdfs:label "F4 severity factor"@en ;
     rdfs:label "F4 严重毒性系数"@zh .
 
 slpra-risk:adjustmentFactor_F5 a owl:DatatypeProperty ;
+    rdfs:comment "PDE 计算中用于处理未建立未观察到不良作用剂量（NOAEL）、需以最低观察到不良作用剂量（LOAEL）等作为出发点时不确定性的调整因子 F5，为无量纲数值。"@zh ;
     rdfs:domain slpra-risk:PDECalculation ;
     rdfs:range xsd:decimal ;
     rdfs:label "F5 NOAEL/LOAEL factor"@en ;
     rdfs:label "F5 NOAEL/LOAEL 系数"@zh .
 
 slpra-risk:modifyingFactor_MF a owl:DatatypeProperty ;
+    rdfs:comment "PDE 计算中根据具体毒理学资料和科学判断采用的附加修正因子 MF，用于处理其他调整因子未充分覆盖的不确定性，为无量纲数值。"@zh ;
     rdfs:domain slpra-risk:PDECalculation ;
     rdfs:range xsd:decimal ;
     rdfs:label "modifying factor MF"@en ;
     rdfs:label "修正因子 MF"@zh .
 
 slpra-risk:calculatedPDE_mg_per_day a owl:DatatypeProperty ;
+    rdfs:comment "由选定毒理学出发点、体重参数及调整因子计算得到的每日允许暴露量（PDE），以毫克每天表示，用于表征规定暴露条件下的基于健康的每日暴露限值。"@zh ;
     rdfs:domain slpra-risk:PDECalculation ;
     rdfs:range xsd:decimal ;
     rdfs:label "calculated PDE (mg/day)"@en ;
     rdfs:label "PDE 计算值 (mg/天)"@zh .
 
 slpra-risk:riskScoreValue a owl:DatatypeProperty ;
+    rdfs:comment "风险评分的数值表示，具体量纲、尺度和判定意义由所采用的风险评估方法规定。"@zh ;
     rdfs:domain slpra-risk:RiskScore ;
     rdfs:range xsd:decimal ;
     rdfs:label "risk score value"@en .
@@ -396,21 +437,25 @@ slpra-risk:compatibilityResult a owl:DatatypeProperty ;
     rdfs:comment "One of: compatible, conditional, incompatible."@en .
 
 slpra-risk:compatibilityCondition a owl:DatatypeProperty ;
+    rdfs:comment "设备与药品相容性结论成立所需满足的条件或使用限制，以文字记录具体适用要求。"@zh ;
     rdfs:domain slpra-risk:CompatibilityAssessment ;
     rdfs:range xsd:string ;
     rdfs:label "compatibility condition"@en .
 
 slpra-risk:requiresEnhancedDocumentation a owl:DatatypeProperty ;
+    rdfs:comment "表示风险评估报告是否要求补充或强化支持评估结论的研究、验证或生产管理资料的布尔值。"@zh ;
     rdfs:domain slpra-risk:RiskAssessmentReport ;
     rdfs:range xsd:boolean ;
     rdfs:label "requires enhanced documentation"@en .
 
 slpra-risk:requiresTSERiskAssessment a owl:DatatypeProperty ;
+    rdfs:comment "表示风险评估报告是否要求开展传染性海绵状脑病（TSE）相关风险评估的布尔值。"@zh ;
     rdfs:domain slpra-risk:RiskAssessmentReport ;
     rdfs:range xsd:boolean ;
     rdfs:label "requires TSE risk assessment"@en .
 
 slpra-risk:requiresAsepticIntegrity a owl:DatatypeProperty ;
+    rdfs:comment "表示风险评估报告是否要求评价共线生产条件下无菌保障措施完整性及有效性的布尔值。"@zh ;
     rdfs:domain slpra-risk:RiskAssessmentReport ;
     rdfs:range xsd:boolean ;
     rdfs:label "requires aseptic integrity assessment"@en .

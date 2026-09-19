@@ -27,11 +27,13 @@ slpra-pers:Agent a owl:Class ;
     rdfs:comment "Any party that can bear a GxP role and be held accountable in QRM — a natural person or an organization."@en .
 
 slpra-pers:Person a owl:Class ;
+    rdfs:comment "以自然人身份参与药品研发、生产或质量管理活动的责任主体，可在具体组织和职责安排下承担相应 GxP 角色。"@zh ;
     rdfs:subClassOf slpra-pers:Agent ;
     rdfs:label "Person"@en ;
     rdfs:label "自然人（岗位人员）"@zh .
 
 slpra-pers:Organization a owl:Class ;
+    rdfs:comment "具有组织边界和职责分工、能够作为药品相关活动责任主体的组织实体，包括企业、持有人和部门等；其组织身份与所承担的 GxP 角色分别表示。"@zh ;
     rdfs:subClassOf slpra-pers:Agent ;
     rdfs:label "Organization"@en ;
     rdfs:label "组织"@zh .

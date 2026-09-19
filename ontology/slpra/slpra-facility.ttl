@@ -18,36 +18,43 @@
 # ============================================================
 
 slpra-facil:Facility a owl:Class ;
+    rdfs:comment "为制药生产及其环境控制提供空间、围护或通行条件的实体设施，包括生产区域、房间及其附属设施。"@zh ;
     rdfs:subClassOf obo:BFO_0000040 ;
     rdfs:label "Facility"@en ;
     rdfs:label "设施"@zh .
 
 slpra-facil:ProductionArea a owl:Class ;
+    rdfs:comment "为实施制药生产及直接相关操作而划定的厂房区域，可由一个或多个生产房间及相关空间构成。"@zh ;
     rdfs:subClassOf slpra-facil:Facility ;
     rdfs:label "Production Area"@en ;
     rdfs:label "生产区域"@zh .
 
 slpra-facil:CleanArea a owl:Class ;
+    rdfs:comment "对空气中悬浮粒子及适用的微生物污染水平实施规定控制，并通过设计和运行减少污染引入、产生与滞留的生产区域。"@zh ;
     rdfs:subClassOf slpra-facil:ProductionArea ;
     rdfs:label "Clean Area"@en ;
     rdfs:label "洁净区"@zh .
 
 slpra-facil:ClassAArea a owl:Class ;
+    rdfs:comment "按适用的药品生产质量管理要求划分为A级的洁净区域，通常用于无菌生产中产品或无菌接触表面暴露的关键操作。"@zh ;
     rdfs:subClassOf slpra-facil:CleanArea ;
     rdfs:label "Class A Area (ISO 4.8)"@en ;
     rdfs:label "A级区"@zh .
 
 slpra-facil:ClassBArea a owl:Class ;
+    rdfs:comment "按适用的药品生产质量管理要求划分为B级的洁净区域，通常作为采用A级局部保护的无菌配制或灌装操作的背景环境。"@zh ;
     rdfs:subClassOf slpra-facil:CleanArea ;
     rdfs:label "Class B Area (ISO 5)"@en ;
     rdfs:label "B级区"@zh .
 
 slpra-facil:ClassCArea a owl:Class ;
+    rdfs:comment "按适用的药品生产质量管理要求划分为C级的洁净区域，可用于与其环境控制水平相适应的药液配制等工序，具体用途取决于产品和工艺要求。"@zh ;
     rdfs:subClassOf slpra-facil:CleanArea ;
     rdfs:label "Class C Area (ISO 7)"@en ;
     rdfs:label "C级区"@zh .
 
 slpra-facil:ClassDArea a owl:Class ;
+    rdfs:comment "按适用的药品生产质量管理要求划分为D级的洁净区域，可用于与其环境控制水平相适应的物料或器具准备等工序，具体用途取决于产品和工艺要求。"@zh ;
     rdfs:subClassOf slpra-facil:CleanArea ;
     rdfs:label "Class D Area (ISO 8)"@en ;
     rdfs:label "D级区"@zh .
@@ -57,6 +64,7 @@ slpra-facil:ClassDArea a owl:Class ;
                   slpra-facil:ClassCArea slpra-facil:ClassDArea ) .
 
 slpra-facil:GeneralArea a owl:Class ;
+    rdfs:comment "未按洁净区等级管理、用于适用生产或辅助操作的生产区域，仍可具有与其用途相应的卫生和环境控制要求。"@zh ;
     rdfs:subClassOf slpra-facil:ProductionArea ;
     rdfs:label "General Area"@en ;
     rdfs:label "一般区"@zh .
@@ -65,16 +73,19 @@ slpra-facil:GeneralArea a owl:Class ;
     owl:members ( slpra-facil:CleanArea slpra-facil:GeneralArea ) .
 
 slpra-facil:ProductionRoom a owl:Class ;
+    rdfs:comment "具有明确空间边界、用于实施制药生产或直接相关操作的房间，是设备布置和生产环境管理的空间单元。"@zh ;
     rdfs:subClassOf slpra-facil:Facility ;
     rdfs:label "Production Room"@en ;
     rdfs:label "生产房间"@zh .
 
 slpra-facil:Airlock a owl:Class ;
+    rdfs:comment "设置在相邻区域之间、通过围护和门的受控启闭减少空气及污染物直接交换的过渡空间，可供人员或物料通过。"@zh ;
     rdfs:subClassOf slpra-facil:Facility ;
     rdfs:label "Airlock"@en ;
     rdfs:label "气锁/缓冲间"@zh .
 
 slpra-facil:MaterialPassthrough a owl:Class ;
+    rdfs:comment "设置于相邻区域分隔处、用于传递物料或器具并限制区域之间直接开放连通的传递设施。"@zh ;
     rdfs:subClassOf slpra-facil:Facility ;
     rdfs:label "Material Passthrough"@en ;
     rdfs:label "传递窗"@zh .
@@ -84,21 +95,25 @@ slpra-facil:MaterialPassthrough a owl:Class ;
 # ============================================================
 
 slpra-facil:MaterialFlow a owl:Class ;
+    rdfs:comment "物料、产品或器具在生产设施内按相关操作需要移动和传递的过程，包括进入、工序间转运及移出。"@zh ;
     rdfs:subClassOf obo:BFO_0000015 ;
     rdfs:label "Material Flow"@en ;
     rdfs:label "物料流"@zh .
 
 slpra-facil:PersonnelFlow a owl:Class ;
+    rdfs:comment "人员在生产设施中进入、离开及在不同区域之间移动的过程。"@zh ;
     rdfs:subClassOf obo:BFO_0000015 ;
     rdfs:label "Personnel Flow"@en ;
     rdfs:label "人员流"@zh .
 
 slpra-facil:AirFlow a owl:Class ;
+    rdfs:comment "空气在生产空间内或不同空间之间发生定向运动和交换的过程，可由送排风、压差等因素形成。"@zh ;
     rdfs:subClassOf obo:BFO_0000015 ;
     rdfs:label "Air Flow"@en ;
     rdfs:label "气流"@zh .
 
 slpra-facil:EnvironmentalMonitoring a owl:Class ;
+    rdfs:comment "按照规定方案对生产环境中的悬浮粒子、微生物或温湿度等适用参数进行采样、测量和评价的活动。"@zh ;
     rdfs:subClassOf obo:BFO_0000015 ;
     rdfs:label "Environmental Monitoring"@en ;
     rdfs:label "环境监测"@zh .
@@ -108,25 +123,30 @@ slpra-facil:EnvironmentalMonitoring a owl:Class ;
 # ============================================================
 
 slpra-facil:containsEquipment a owl:ObjectProperty ;
+    rdfs:comment "将生产房间关联到位于该房间内的设备。"@zh ;
     rdfs:domain slpra-facil:ProductionRoom ;
     rdfs:label "contains equipment"@en .
 
 slpra-facil:hasCleanlinessClass a owl:ObjectProperty ;
+    rdfs:comment "将生产区域关联到表示其规定洁净级别的对象，用于记录该区域采用的洁净分级。"@zh ;
     rdfs:domain slpra-facil:ProductionArea ;
     rdfs:label "has cleanliness class"@en .
 
 slpra-facil:adjacentTo a owl:ObjectProperty ;
+    rdfs:comment "将生产房间关联到在空间布置上与其相邻的另一生产房间；相邻关系本身不表示存在直接通行或空气连通。"@zh ;
     a owl:SymmetricProperty ;
     rdfs:domain slpra-facil:ProductionRoom ;
     rdfs:range slpra-facil:ProductionRoom ;
     rdfs:label "adjacent to"@en .
 
 slpra-facil:connectedViaAirlock a owl:ObjectProperty ;
+    rdfs:comment "将生产房间关联到与其相通、用于衔接其他区域的气锁或缓冲间。"@zh ;
     rdfs:domain slpra-facil:ProductionRoom ;
     rdfs:range slpra-facil:Airlock ;
     rdfs:label "connected via airlock"@en .
 
 slpra-facil:belongsToArea a owl:ObjectProperty ;
+    rdfs:comment "将生产房间关联到在设施划分中包含该房间的生产区域。"@zh ;
     rdfs:domain slpra-facil:ProductionRoom ;
     rdfs:range slpra-facil:ProductionArea ;
     rdfs:label "belongs to area"@en .
@@ -136,36 +156,43 @@ slpra-facil:belongsToArea a owl:ObjectProperty ;
 # ============================================================
 
 slpra-facil:pressureDifferential_Pa a owl:DatatypeProperty ;
+    rdfs:comment "生产房间相对于指定参考空间的空气压力差，单位为帕；数值的正负方向取决于采用的参考约定。"@zh ;
     rdfs:domain slpra-facil:ProductionRoom ;
     rdfs:range xsd:decimal ;
     rdfs:label "pressure differential (Pa)"@en .
 
 slpra-facil:airChangesPerHour a owl:DatatypeProperty ;
+    rdfs:comment "生产房间每小时通风空气体积与该房间容积之比，用于表示每小时的换气次数。"@zh ;
     rdfs:domain slpra-facil:ProductionRoom ;
     rdfs:range xsd:decimal ;
     rdfs:label "air changes per hour"@en .
 
 slpra-facil:particleLimit_0_5um a owl:DatatypeProperty ;
+    rdfs:comment "洁净区空气中粒径大于或等于0.5微米的悬浮粒子数量上限，以每立方米空气的粒子数表示；适用运行状态由对应控制要求确定。"@zh ;
     rdfs:domain slpra-facil:CleanArea ;
     rdfs:range xsd:integer ;
     rdfs:label "particle limit ≥0.5μm (/m³)"@en .
 
 slpra-facil:particleLimit_5um a owl:DatatypeProperty ;
+    rdfs:comment "洁净区空气中粒径大于或等于5微米的悬浮粒子数量上限，以每立方米空气的粒子数表示；适用运行状态由对应控制要求确定。"@zh ;
     rdfs:domain slpra-facil:CleanArea ;
     rdfs:range xsd:integer ;
     rdfs:label "particle limit ≥5μm (/m³)"@en .
 
 slpra-facil:temperature_C a owl:DatatypeProperty ;
+    rdfs:comment "生产房间空气温度的数值，单位为摄氏度。"@zh ;
     rdfs:domain slpra-facil:ProductionRoom ;
     rdfs:range xsd:decimal ;
     rdfs:label "temperature (°C)"@en .
 
 slpra-facil:relativeHumidity_percent a owl:DatatypeProperty ;
+    rdfs:comment "生产房间空气中水蒸气分压与同温度下饱和水蒸气压之比，以百分数表示。"@zh ;
     rdfs:domain slpra-facil:ProductionRoom ;
     rdfs:range xsd:decimal ;
     rdfs:label "relative humidity (%)"@en .
 
 slpra-facil:roomName a owl:DatatypeProperty ;
+    rdfs:comment "生产房间在设施或生产管理记录中使用的名称。"@zh ;
     rdfs:domain slpra-facil:ProductionRoom ;
     rdfs:range xsd:string ;
     rdfs:label "room name"@en .

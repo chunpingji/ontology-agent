@@ -67,6 +67,7 @@ slpra-dev:PreclinicalStudy a owl:Class ;
     rdfs:comment "Umbrella class for all nonclinical studies conducted prior to first-in-human dosing."@en .
 
 slpra-dev:PharmacologyStudy a owl:Class ;
+    rdfs:comment "研究候选药物与生物系统相互作用、作用机制及其预期和非预期药理效应的临床前研究，包括主要药效学、次要药效学和安全药理学研究。"@zh ;
     rdfs:subClassOf slpra-dev:PreclinicalStudy ;
     rdfs:label "Pharmacology Study"@en ;
     rdfs:label "药理学研究"@zh ;
@@ -101,30 +102,35 @@ slpra-dev:PharmacokineticsStudy a owl:Class ;
     rdfs:comment "Nonclinical studies characterizing absorption, distribution, metabolism, and excretion of the drug candidate."@en .
 
 slpra-dev:AbsorptionStudy a owl:Class ;
+    rdfs:comment "研究药物从给药部位进入体循环的速率、程度及影响因素的药代动力学研究。"@zh ;
     rdfs:subClassOf slpra-dev:PharmacokineticsStudy ;
     rdfs:label "Absorption Study"@en ;
     rdfs:label "吸收研究"@zh ;
     skos:notation "2.2.1" .
 
 slpra-dev:DistributionStudy a owl:Class ;
+    rdfs:comment "研究药物及其相关物质在血液、组织和器官中的分布、结合及随时间变化的药代动力学研究。"@zh ;
     rdfs:subClassOf slpra-dev:PharmacokineticsStudy ;
     rdfs:label "Distribution Study"@en ;
     rdfs:label "分布研究"@zh ;
     skos:notation "2.2.2" .
 
 slpra-dev:MetabolismStudy a owl:Class ;
+    rdfs:comment "研究药物在体内发生的生物转化、代谢途径、代谢产物及参与酶系的药代动力学研究。"@zh ;
     rdfs:subClassOf slpra-dev:PharmacokineticsStudy ;
     rdfs:label "Metabolism Study"@en ;
     rdfs:label "代谢研究"@zh ;
     skos:notation "2.2.3" .
 
 slpra-dev:ExcretionStudy a owl:Class ;
+    rdfs:comment "研究药物及其代谢产物经尿、粪、胆汁或其他途径排出机体的程度、速率和物质平衡的药代动力学研究。"@zh ;
     rdfs:subClassOf slpra-dev:PharmacokineticsStudy ;
     rdfs:label "Excretion Study"@en ;
     rdfs:label "排泄研究"@zh ;
     skos:notation "2.2.4" .
 
 slpra-dev:ToxicologyStudy a owl:Class ;
+    rdfs:comment "在规定给药途径、剂量和观察条件下，研究候选药物不良生物学作用、靶器官、剂量反应关系及可逆性的临床前安全性研究。"@zh ;
     rdfs:subClassOf slpra-dev:PreclinicalStudy ;
     rdfs:label "Toxicology Study"@en ;
     rdfs:label "毒理学研究"@zh ;
@@ -180,24 +186,28 @@ slpra-dev:CMCDevelopment a owl:Class ;
     rdfs:comment "Chemistry, Manufacturing, and Controls development: drug substance/product process development, formulation, analytical method development, quality standards."@en .
 
 slpra-dev:DrugSubstanceProcessDev a owl:Class ;
+    rdfs:comment "开发、优化和表征原料药制备路线及生产操作的药学研究，涉及物料选择、反应与分离纯化步骤、工艺参数和杂质控制。"@zh ;
     rdfs:subClassOf slpra-dev:CMCDevelopment ;
     rdfs:label "Drug Substance Process Development"@en ;
     rdfs:label "原料药工艺开发"@zh ;
     skos:notation "2.4.1" .
 
 slpra-dev:DrugProductFormulationDev a owl:Class ;
+    rdfs:comment "围绕给药需求开发药品剂型、处方组成及制剂生产工艺，并评价其质量、性能和可制造性的药学研究。"@zh ;
     rdfs:subClassOf slpra-dev:CMCDevelopment ;
     rdfs:label "Drug Product Formulation Development"@en ;
     rdfs:label "制剂处方工艺开发"@zh ;
     skos:notation "2.4.2" .
 
 slpra-dev:AnalyticalMethodDev a owl:Class ;
+    rdfs:comment "根据待测物、样品基质和预定检测用途，选择并优化样品处理、测量原理和分析条件，建立适用分析方法的研究活动。"@zh ;
     rdfs:subClassOf slpra-dev:CMCDevelopment ;
     rdfs:label "Analytical Method Development"@en ;
     rdfs:label "分析方法开发"@zh ;
     skos:notation "2.4.3" .
 
 slpra-dev:QualityStandardEstablishment a owl:Class ;
+    rdfs:comment "依据产品质量特性、工艺认识和研究数据，确定检验项目、分析方法及可接受限度，形成质量标准的药学研究活动。"@zh ;
     rdfs:subClassOf slpra-dev:CMCDevelopment ;
     rdfs:label "Quality Standard Establishment"@en ;
     rdfs:label "质量标准建立"@zh ;
@@ -285,6 +295,7 @@ slpra-dev:BLASubmission a owl:Class ;
     rdfs:comment "Biologics License Application submission to NMPA for marketing authorization of a biological product."@en .
 
 slpra-dev:RegulatoryReview a owl:Class ;
+    rdfs:comment "药品监管机构及其技术机构对注册申报资料和相关证据进行评价，并按适用程序形成审评意见或行政决定的活动。"@zh ;
     rdfs:subClassOf obo:BFO_0000015 ;
     rdfs:label "Regulatory Review"@en ;
     rdfs:label "审评审批"@zh ;
@@ -321,6 +332,7 @@ slpra-dev:MarketingAuthorization a owl:Class ;
 # --- 1.5 Post-Market (Phase_PostMarket) ---
 
 slpra-dev:PostMarketActivity a owl:Class ;
+    rdfs:comment "药品获得上市许可后，为持续评价和管理其质量、安全性、有效性及许可状态而开展的研究、监测和管理活动。"@zh ;
     rdfs:subClassOf obo:BFO_0000015 ;
     rdfs:label "Post-Market Activity"@en ;
     rdfs:label "上市后活动"@zh ;
@@ -334,12 +346,14 @@ slpra-dev:Pharmacovigilance a owl:Class ;
     rdfs:comment "Ongoing science and activities relating to the detection, assessment, understanding and prevention of adverse effects or any other drug-related problem."@en .
 
 slpra-dev:SpontaneousReporting a owl:Class ;
+    rdfs:comment "医务人员、患者或其他报告者在常规使用情境下主动报告疑似药品不良反应或安全性问题的药物警戒活动；报告本身不等于因果关系已获确认。"@zh ;
     rdfs:subClassOf slpra-dev:Pharmacovigilance ;
     rdfs:label "Spontaneous Reporting"@en ;
     rdfs:label "自发报告"@zh ;
     skos:notation "5.2.1" .
 
 slpra-dev:IntensiveMonitoring a owl:Class ;
+    rdfs:comment "针对特定药品、人群或安全性问题，按预定方案主动、系统地收集并评价用药及不良事件信息的药物警戒活动。"@zh ;
     rdfs:subClassOf slpra-dev:Pharmacovigilance ;
     rdfs:label "Intensive Monitoring"@en ;
     rdfs:label "重点监测"@zh ;
@@ -353,12 +367,14 @@ slpra-dev:RiskManagementPlan a owl:Class ;
     rdfs:comment "ICH E2E: a set of pharmacovigilance activities and interventions designed to identify, characterize, prevent, or minimize risks relating to a medicinal product."@en .
 
 slpra-dev:LifecycleManagement a owl:Class ;
+    rdfs:comment "本模块指药品上市后持续维护其质量知识、获益风险评价、变更控制和注册状态的管理活动。"@zh ;
     rdfs:subClassOf slpra-dev:PostMarketActivity ;
     rdfs:label "Lifecycle Management"@en ;
     rdfs:label "全生命周期管理"@zh ;
     skos:notation "5.3" .
 
 slpra-dev:ProcessChangeManagement a owl:Class ;
+    rdfs:comment "对已上市药品生产工艺拟发生的变更进行影响评价、必要的研究或验证、实施控制及相应注册管理的活动。"@zh ;
     rdfs:subClassOf slpra-dev:LifecycleManagement ;
     rdfs:label "Post-Approval Process Change"@en ;
     rdfs:label "上市后工艺变更"@zh ;
@@ -378,36 +394,43 @@ slpra-dev:ReRegistration a owl:Class ;
 # --- 2.1 Discovery & Preclinical Documents ---
 
 slpra-dev:TargetValidationReport a owl:Class ;
+    rdfs:comment "记录拟干预生物靶点与疾病的关联、作用机制和实验验证方法、结果及局限性的研究报告，用于支持靶点选择。"@zh ;
     rdfs:subClassOf slpra-doc:RegulatoryDocument ;
     rdfs:label "Target Validation Report"@en ;
     rdfs:label "靶点验证报告"@zh .
 
 slpra-dev:HTSReport a owl:Class ;
+    rdfs:comment "记录高通量筛选的模型与方法、筛选规模、质量控制、命中结果及复筛确认情况的研究报告。"@zh ;
     rdfs:subClassOf slpra-doc:RegulatoryDocument ;
     rdfs:label "HTS Screening Report"@en ;
     rdfs:label "高通量筛选报告"@zh .
 
 slpra-dev:LeadOptimizationReport a owl:Class ;
+    rdfs:comment "记录先导化合物的结构优化策略，以及药效、选择性、药代、安全性和成药性等评价结果的研究报告。"@zh ;
     rdfs:subClassOf slpra-doc:RegulatoryDocument ;
     rdfs:label "Lead Optimization Report"@en ;
     rdfs:label "先导化合物优化报告"@zh .
 
 slpra-dev:CandidateSelectionReport a owl:Class ;
+    rdfs:comment "汇总候选药物的药理、安全性、药代和可开发性等证据，并说明其遴选依据与未解决问题的研究报告。"@zh ;
     rdfs:subClassOf slpra-doc:RegulatoryDocument ;
     rdfs:label "Candidate Selection Report"@en ;
     rdfs:label "候选药物遴选报告"@zh .
 
 slpra-dev:PharmacologyStudyReport a owl:Class ;
+    rdfs:comment "记录药理学研究的目的、试验设计、方法、结果及解释的报告，内容可涉及主要药效学、次要药效学或安全药理学。"@zh ;
     rdfs:subClassOf slpra-doc:RegulatoryDocument ;
     rdfs:label "Pharmacology Study Report"@en ;
     rdfs:label "药理学研究报告"@zh .
 
 slpra-dev:PKStudyReport a owl:Class ;
+    rdfs:comment "记录药代动力学试验的设计、样品检测、数据分析和结果，描述药物暴露及吸收、分布、代谢或排泄特征的研究报告。"@zh ;
     rdfs:subClassOf slpra-doc:RegulatoryDocument ;
     rdfs:label "Pharmacokinetics Study Report"@en ;
     rdfs:label "药代动力学研究报告"@zh .
 
 slpra-dev:ToxicologyStudyReport a owl:Class ;
+    rdfs:comment "记录毒理学研究的试验条件、暴露水平、毒性观察、剂量反应关系和研究结论的报告，并保留种属、给药途径及研究周期等适用条件。"@zh ;
     rdfs:subClassOf slpra-doc:RegulatoryDocument ;
     rdfs:label "Toxicology Study Report"@en ;
     rdfs:label "毒理学研究报告"@zh .
@@ -427,11 +450,13 @@ slpra-dev:InvestigatorBrochure a owl:Class ;
     rdfs:comment "ICH E6(R2) required compilation of clinical and nonclinical data relevant to the investigational product."@en .
 
 slpra-dev:ClinicalTrialProtocol a owl:Class ;
+    rdfs:comment "预先规定临床试验目的、设计、受试者选择、干预措施、终点评价、统计方法及组织管理要求的方案文件。"@zh ;
     rdfs:subClassOf slpra-doc:RegulatoryDocument ;
     rdfs:label "Clinical Trial Protocol"@en ;
     rdfs:label "临床试验方案"@zh .
 
 slpra-dev:InformedConsentForm a owl:Class ;
+    rdfs:comment "向受试者或其法定代理人说明临床试验目的、程序、可能风险与获益、替代选择及相关权利，并用于记录其自愿参与决定的文件。"@zh ;
     rdfs:subClassOf slpra-doc:RegulatoryDocument ;
     rdfs:label "Informed Consent Form (ICF)"@en ;
     rdfs:label "知情同意书（ICF）"@zh .
@@ -495,11 +520,13 @@ slpra-dev:PSUR a owl:Class ;
     rdfs:comment "ICH E2C(R2): periodic benefit-risk evaluation report submitted to health authorities."@en .
 
 slpra-dev:ADRReport a owl:Class ;
+    rdfs:comment "记录疑似药品不良反应个例或相关事件的用药、反应表现、时间关系、结局及评价信息的报告；报告状态与因果关系确认状态应区分。"@zh ;
     rdfs:subClassOf slpra-doc:RegulatoryDocument ;
     rdfs:label "Adverse Drug Reaction Report"@en ;
     rdfs:label "药品不良反应报告"@zh .
 
 slpra-dev:RMPDocument a owl:Class ;
+    rdfs:comment "记载药品重要已识别风险、潜在风险和缺失信息，以及拟采取的药物警戒、风险最小化措施和效果评价安排的计划文档。"@zh ;
     rdfs:subClassOf slpra-doc:RegulatoryDocument ;
     rdfs:label "Risk Management Plan Document"@en ;
     rdfs:label "风险管理计划文档"@zh .
@@ -521,6 +548,7 @@ slpra-dev:RegulatoryMilestone a owl:Class ;
     rdfs:comment "An information entity representing a key regulatory decision point in the drug development lifecycle."@en .
 
 slpra-dev:INDApproval a owl:Class ;
+    rdfs:comment "表征特定药物临床试验已按适用监管程序获得开展许可或相应资格的法规里程碑信息，区别于申请提交或受理。"@zh ;
     rdfs:subClassOf slpra-dev:RegulatoryMilestone ;
     rdfs:label "IND Approval (Clinical Trial Authorization)"@en ;
     rdfs:label "IND 批准（临床试验许可）"@zh .
@@ -532,11 +560,13 @@ slpra-dev:EndOfPhaseIIMeeting a owl:Class ;
     rdfs:comment "Pre-Phase III communication meeting with health authority to agree on Phase III trial design."@en .
 
 slpra-dev:PreNDAMeeting a owl:Class ;
+    rdfs:comment "表征申请人在上市申请前与监管机构就申报资料准备、关键研究结果及拟申报事项进行沟通的法规里程碑信息。"@zh ;
     rdfs:subClassOf slpra-dev:RegulatoryMilestone ;
     rdfs:label "Pre-NDA Meeting"@en ;
     rdfs:label "NDA 前沟通会"@zh .
 
 slpra-dev:NDAAcceptance a owl:Class ;
+    rdfs:comment "表征药品或生物制品上市申请已被监管机构正式受理并进入相应审评程序的法规里程碑信息；受理不等同于批准上市。"@zh ;
     rdfs:subClassOf slpra-dev:RegulatoryMilestone ;
     rdfs:label "NDA/BLA Acceptance"@en ;
     rdfs:label "NDA/BLA 受理"@zh .
@@ -644,6 +674,7 @@ slpra-dev:submittedTo a owl:ObjectProperty ;
 # ============================================================
 
 slpra-dev:sampleSize a owl:DatatypeProperty ;
+    rdfs:comment "临床试验规定或报告的受试者数量，以整数记录；计划、入组或实际分析人数的口径由相应试验资料说明。"@zh ;
     rdfs:domain slpra-dev:ClinicalTrial ;
     rdfs:range xsd:integer ;
     rdfs:label "sample size"@en ;
@@ -671,18 +702,21 @@ slpra-dev:subjectPopulation a owl:DatatypeProperty ;
     rdfs:comment "Description of enrolled subjects, e.g. healthy volunteers, target indication patients."@en .
 
 slpra-dev:primaryEndpoint a owl:DatatypeProperty ;
+    rdfs:comment "临床试验预先指定、用于回答主要研究问题的结局指标及其评价方式的文字描述。"@zh ;
     rdfs:domain slpra-dev:ClinicalTrial ;
     rdfs:range xsd:string ;
     rdfs:label "primary endpoint"@en ;
     rdfs:label "主要终点"@zh .
 
 slpra-dev:milestoneDate a owl:DatatypeProperty ;
+    rdfs:comment "特定法规里程碑发生或生效的日期，其事件口径由里程碑类型及对应记录确定。"@zh ;
     rdfs:domain slpra-dev:RegulatoryMilestone ;
     rdfs:range xsd:date ;
     rdfs:label "milestone date"@en ;
     rdfs:label "里程碑日期"@zh .
 
 slpra-dev:submissionDate a owl:DatatypeProperty ;
+    rdfs:comment "注册申报资料向相应药品监管机构提交的日期，区别于受理日期和批准日期。"@zh ;
     rdfs:domain slpra-dev:RegulatorySubmission ;
     rdfs:range xsd:date ;
     rdfs:label "submission date"@en ;
@@ -807,51 +841,61 @@ slpra-dev:SynthesisStep a owl:Class ;
     rdfs:comment "A single unit operation within a synthesis route (e.g. Suzuki coupling, deprotection, salt formation, purification)."@en .
 
 slpra-dev:Reaction a owl:Class ;
+    rdfs:comment "在规定条件下通过化学键或化学组成的变化，将反应物转化为目标产物及可能副产物的合成步骤。"@zh ;
     rdfs:subClassOf slpra-dev:SynthesisStep ;
     rdfs:label "Reaction"@en ;
     rdfs:label "反应"@zh .
 
 slpra-dev:Extraction a owl:Class ;
+    rdfs:comment "利用物质在不同相或介质间的溶解或分配差异，将目标组分转移并与其他组分分离的工艺步骤。"@zh ;
     rdfs:subClassOf slpra-dev:SynthesisStep ;
     rdfs:label "Extraction"@en ;
     rdfs:label "萃取"@zh .
 
 slpra-dev:Filtration a owl:Class ;
+    rdfs:comment "利用过滤介质截留颗粒并使流体通过，实现固液分离的工艺步骤；本模块亦包括以离心力驱动的甩滤操作。"@zh ;
     rdfs:subClassOf slpra-dev:SynthesisStep ;
     rdfs:label "Filtration"@en ;
     rdfs:label "过滤/甩滤"@zh .
 
 slpra-dev:Concentration a owl:Class ;
+    rdfs:comment "通过移除部分溶剂或分散介质，提高目标物料含量或减小料液体积的工艺步骤。"@zh ;
     rdfs:subClassOf slpra-dev:SynthesisStep ;
     rdfs:label "Concentration"@en ;
     rdfs:label "浓缩"@zh .
 
 slpra-dev:Crystallization a owl:Class ;
+    rdfs:comment "通过控制过饱和度及成核、生长条件，使目标物质以晶体形式从溶液或其他适用体系中析出，以实现分离、纯化或固态性质控制的工艺步骤。"@zh ;
     rdfs:subClassOf slpra-dev:SynthesisStep ;
     rdfs:label "Crystallization"@en ;
     rdfs:label "结晶/析晶"@zh .
 
 slpra-dev:Drying a owl:Class ;
+    rdfs:comment "通过传热、传质或降低压力等方式去除物料中的水分或残留溶剂，使其达到规定干燥要求的工艺步骤。"@zh ;
     rdfs:subClassOf slpra-dev:SynthesisStep ;
     rdfs:label "Drying"@en ;
     rdfs:label "干燥"@zh .
 
 slpra-dev:Purification a owl:Class ;
+    rdfs:comment "利用组分在物理或化学性质上的差异去除杂质，提高目标物质纯度的工艺步骤，可包括重结晶、色谱分离等操作。"@zh ;
     rdfs:subClassOf slpra-dev:SynthesisStep ;
     rdfs:label "Purification"@en ;
     rdfs:label "精制/纯化"@zh .
 
 slpra-dev:ColumnChromatography a owl:Class ;
+    rdfs:comment "使混合物通过装有固定相的柱，利用各组分在固定相和流动相之间相互作用或分配的差异实现分离纯化的工艺步骤。"@zh ;
     rdfs:subClassOf slpra-dev:Purification ;
     rdfs:label "Column Chromatography"@en ;
     rdfs:label "柱层析"@zh .
 
 slpra-dev:SaltFormation a owl:Class ;
+    rdfs:comment "使可成盐的化合物与适当酸、碱或对离子反应，形成所需盐形式的工艺步骤。"@zh ;
     rdfs:subClassOf slpra-dev:SynthesisStep ;
     rdfs:label "Salt Formation"@en ;
     rdfs:label "成盐"@zh .
 
 slpra-dev:Deprotection a owl:Class ;
+    rdfs:comment "在适当反应条件下移除合成过程中引入的保护基，恢复目标官能团的工艺步骤。"@zh ;
     rdfs:subClassOf slpra-dev:SynthesisStep ;
     rdfs:label "Deprotection"@en ;
     rdfs:label "脱保护"@zh .
@@ -867,6 +911,7 @@ slpra-dev:ProcessIntermediate a owl:Class ;
     rdfs:comment "A chemical entity produced at an intermediate synthesis step, not the final API."@en .
 
 slpra-dev:CrudeProduct a owl:Class ;
+    rdfs:comment "完成某一制备步骤后获得、仍需进一步精制或纯化的目标物料；本模块将其作为尚未成为最终原料药的工艺中间体。"@zh ;
     rdfs:subClassOf slpra-dev:ProcessIntermediate ;
     rdfs:label "Crude Product"@en ;
     rdfs:label "粗品"@zh .
@@ -882,21 +927,25 @@ slpra-dev:ProcessMaterial a owl:Class ;
     rdfs:comment "A material consumed in drug substance manufacturing: starting material, solvent, reagent, catalyst, or process aid."@en .
 
 slpra-dev:StartingMaterial a owl:Class ;
+    rdfs:comment "在所描述合成路线起始位置投入、用于制备目标原料药或中间体的物料；作为工艺起始投入的记录不自动等同于已获确认的注册起始物料界定。"@zh ;
     rdfs:subClassOf slpra-dev:ProcessMaterial ;
     rdfs:label "Starting Material"@en ;
     rdfs:label "起始物料"@zh .
 
 slpra-dev:Solvent a owl:Class ;
+    rdfs:comment "在制药工艺中用于溶解、分散、传递或分离物质的液体介质，包括用于反应、萃取、洗涤和结晶的溶剂或混合溶剂。"@zh ;
     rdfs:subClassOf slpra-dev:ProcessMaterial ;
     rdfs:label "Solvent"@en ;
     rdfs:label "溶剂"@zh .
 
 slpra-dev:Reagent a owl:Class ;
+    rdfs:comment "在工艺步骤中利用其化学性质参与反应或实现特定化学处理的物料；其作用和用量由具体工艺说明。"@zh ;
     rdfs:subClassOf slpra-dev:ProcessMaterial ;
     rdfs:label "Reagent"@en ;
     rdfs:label "试剂"@zh .
 
 slpra-dev:Catalyst a owl:Class ;
+    rdfs:comment "通过提供不同反应途径改变反应速率、在理想催化循环中再生且不改变反应平衡位置的工艺物料。"@zh ;
     rdfs:subClassOf slpra-dev:ProcessMaterial ;
     rdfs:label "Catalyst"@en ;
     rdfs:label "催化剂"@zh .
@@ -928,36 +977,42 @@ slpra-dev:DegradationPathway a owl:Class ;
     rdfs:comment "A characterized forced-degradation pathway of the drug substance used for cleaning validation and stability assessment."@en .
 
 slpra-dev:AcidDegradation a owl:Class ;
+    rdfs:comment "在酸性应力条件下发生的药物降解过程，用于研究酸敏感性和相关降解产物；具体条件由试验记录限定。"@zh ;
     rdfs:subClassOf slpra-dev:DegradationPathway ;
     rdfs:label "Acid Degradation"@en ;
     rdfs:label "酸降解"@zh ;
     skos:altLabel "酸"@zh .
 
 slpra-dev:AlkalineDegradation a owl:Class ;
+    rdfs:comment "在碱性应力条件下发生的药物降解过程，用于研究碱敏感性和相关降解产物；具体条件由试验记录限定。"@zh ;
     rdfs:subClassOf slpra-dev:DegradationPathway ;
     rdfs:label "Alkaline Degradation"@en ;
     rdfs:label "碱降解"@zh ;
     skos:altLabel "碱"@zh .
 
 slpra-dev:OxidativeDegradation a owl:Class ;
+    rdfs:comment "在氧化剂或其他氧化应力作用下发生的药物降解过程，用于研究氧化敏感性和相关降解产物。"@zh ;
     rdfs:subClassOf slpra-dev:DegradationPathway ;
     rdfs:label "Oxidative Degradation"@en ;
     rdfs:label "氧化降解"@zh ;
     skos:altLabel "氧化"@zh .
 
 slpra-dev:PhotoDegradation a owl:Class ;
+    rdfs:comment "在光照应力作用下发生的药物降解过程，其评价与光源、光谱、照射量及其他试验条件有关。"@zh ;
     rdfs:subClassOf slpra-dev:DegradationPathway ;
     rdfs:label "Photo Degradation"@en ;
     rdfs:label "光降解"@zh ;
     skos:altLabel "光"@zh .
 
 slpra-dev:ThermalDegradation a owl:Class ;
+    rdfs:comment "在热应力作用下发生的药物降解过程，其评价与温度、作用时间及试验环境有关。"@zh ;
     rdfs:subClassOf slpra-dev:DegradationPathway ;
     rdfs:label "Thermal Degradation"@en ;
     rdfs:label "热降解"@zh ;
     skos:altLabel "温降解"@zh , "热"@zh , "温"@zh .
 
 slpra-dev:HumidityDegradation a owl:Class ;
+    rdfs:comment "在水分或高湿应力作用下发生的药物降解过程，其评价与湿度、水分接触方式、温度及作用时间有关。"@zh ;
     rdfs:subClassOf slpra-dev:DegradationPathway ;
     rdfs:label "Humidity Degradation"@en ;
     rdfs:label "湿降解"@zh ;
@@ -1017,12 +1072,14 @@ slpra-dev:describes a owl:ObjectProperty ;
     rdfs:comment "Links a CMC report to the drug product / drug substance it documents."@en .
 
 slpra-dev:hasSynthesisRoute a owl:ObjectProperty ;
+    rdfs:comment "连接 CMC 报告与该报告描述的具体合成路线，表示文档内容归属。"@zh ;
     rdfs:domain slpra-dev:CMCReport ;
     rdfs:range slpra-dev:SynthesisRoute ;
     rdfs:label "has synthesis route"@en ;
     rdfs:label "含合成路线"@zh .
 
 slpra-dev:hasStep a owl:ObjectProperty ;
+    rdfs:comment "连接合成路线与构成该路线的工艺步骤；步骤先后关系由步骤序号或步骤间的顺序关系另行表达。"@zh ;
     rdfs:domain slpra-dev:SynthesisRoute ;
     rdfs:range slpra-dev:SynthesisStep ;
     rdfs:label "has step"@en ;
@@ -1043,6 +1100,7 @@ slpra-dev:usesEquipment a owl:ObjectProperty ;
     rdfs:comment "Links a synthesis step or CMC report to the equipment required."@en .
 
 slpra-dev:usesMaterial a owl:ObjectProperty ;
+    rdfs:comment "连接工艺步骤或其他工艺描述主体与其明确使用的工艺物料，表示投入或使用关系，不表示该物料是产出物。"@zh ;
     rdfs:range slpra-dev:ProcessMaterial ;
     rdfs:label "uses material"@en ;
     rdfs:label "使用物料"@zh .
@@ -1117,24 +1175,28 @@ slpra-dev:hasDegradationPathway a owl:ObjectProperty ;
     rdfs:comment "Links a CMC report or parent degradation pathway to its sub-pathways."@en .
 
 slpra-dev:hasSafetyRiskAssessment a owl:ObjectProperty ;
+    rdfs:comment "连接 CMC 报告与其中记载的生产作业及职业安全风险评估信息。"@zh ;
     rdfs:domain slpra-dev:CMCReport ;
     rdfs:range slpra-dev:SafetyRiskAssessment ;
     rdfs:label "has safety risk assessment"@en ;
     rdfs:label "含安全风险评估"@zh .
 
 slpra-dev:hasQualityRiskAssessment a owl:ObjectProperty ;
+    rdfs:comment "连接 CMC 报告与其中记载的产品质量风险评估信息，例如杂质、降解或污染相关风险。"@zh ;
     rdfs:domain slpra-dev:CMCReport ;
     rdfs:range slpra-dev:QualityRiskAssessment ;
     rdfs:label "has quality risk assessment"@en ;
     rdfs:label "含质量风险评估"@zh .
 
 slpra-dev:hasProductionRiskAssessment a owl:ObjectProperty ;
+    rdfs:comment "连接 CMC 报告与其中记载的生产风险评估信息，涉及人员、设备、物料、操作及其他生产环节。"@zh ;
     rdfs:domain slpra-dev:CMCReport ;
     rdfs:range slpra-dev:ProductionRiskAssessment ;
     rdfs:label "has production risk assessment"@en ;
     rdfs:label "含生产风险评估"@zh .
 
 slpra-dev:hasSharedLineData a owl:ObjectProperty ;
+    rdfs:comment "连接 CMC 报告与其中提供的共线生产评估数据，包括毒理、给药和暴露限值等评估输入。"@zh ;
     rdfs:domain slpra-dev:CMCReport ;
     rdfs:range slpra-dev:SharedLineAssessmentData ;
     rdfs:label "has shared-line assessment data"@en ;
@@ -1190,6 +1252,7 @@ slpra-dev:processBasis a owl:DatatypeProperty ;
     rdfs:comment "工艺路线所依据的源文章节或受控文件引用，例如3.1.1合成路线图。"@zh .
 
 slpra-dev:processDescription a owl:DatatypeProperty ;
+    rdfs:comment "对合成路线所代表的整体工艺及其主要操作、衔接关系和控制要点的文字说明。"@zh ;
     rdfs:domain slpra-dev:SynthesisRoute ;
     rdfs:range xsd:string ;
     rdfs:label "process description"@en ;
@@ -1203,18 +1266,21 @@ slpra-dev:reactionType a owl:DatatypeProperty ;
     rdfs:comment "E.g. Suzuki coupling, amide condensation, deprotection."@en .
 
 slpra-dev:stepOrder a owl:DatatypeProperty ;
+    rdfs:comment "工艺步骤在所属合成路线中采用的整数顺序编号；该编号仅在相应路线和编号规则内解释。"@zh ;
     rdfs:domain slpra-dev:SynthesisStep ;
     rdfs:range xsd:integer ;
     rdfs:label "step order"@en ;
     rdfs:label "步骤序号"@zh .
 
 slpra-dev:yieldRangePercent a owl:DatatypeProperty ;
+    rdfs:comment "工艺步骤记录的收率或收率区间，以百分数表示并以文本保留范围和限定条件；理论量、投料量或其他计算基准由工艺资料确定。"@zh ;
     rdfs:domain slpra-dev:SynthesisStep ;
     rdfs:range xsd:string ;
     rdfs:label "yield range (%)"@en ;
     rdfs:label "收率范围（%）"@zh .
 
 slpra-dev:outputMassRange_kg a owl:DatatypeProperty ;
+    rdfs:comment "工艺步骤产出物料的质量或质量范围，以千克为单位并以文本保留上下限及限定条件。"@zh ;
     rdfs:domain slpra-dev:SynthesisStep ;
     rdfs:range xsd:string ;
     rdfs:label "output mass range (kg)"@en ;
@@ -1270,12 +1336,14 @@ slpra-dev:storageTemperature a owl:DatatypeProperty ;
     rdfs:comment "E.g. 2-8℃, -20±5℃, 室温."@en .
 
 slpra-dev:storageHumidity a owl:DatatypeProperty ;
+    rdfs:comment "物料存放条件中的湿度要求，以文本记录湿度指标、单位、范围或定性要求。"@zh ;
     rdfs:domain slpra-dev:StorageCondition ;
     rdfs:range xsd:string ;
     rdfs:label "storage humidity"@en ;
     rdfs:label "存放湿度"@zh .
 
 slpra-dev:lightProtection a owl:DatatypeProperty ;
+    rdfs:comment "存放条件是否要求采取避光措施的布尔值；未提供该要求时不等同于明确无需避光。"@zh ;
     rdfs:domain slpra-dev:StorageCondition ;
     rdfs:range xsd:boolean ;
     rdfs:label "light protection required"@en ;
@@ -1305,6 +1373,7 @@ slpra-dev:degradationCondition a owl:DatatypeProperty ;
     rdfs:comment "E.g. 0.1mol/L HCl, 60℃/4h."@en .
 
 slpra-dev:degradationPercent a owl:DatatypeProperty ;
+    rdfs:comment "在所述降解试验条件下报告的降解程度，以百分数表示；计算基准和检测方法应结合相应试验说明理解。"@zh ;
     rdfs:domain slpra-dev:DegradationPathway ;
     rdfs:range xsd:decimal ;
     rdfs:label "degradation percent (%)"@en ;
@@ -1348,18 +1417,21 @@ slpra-dev:safetyFactor a owl:DatatypeProperty ;
     rdfs:comment "Composite safety factor per ICH S9 (oncology) or standard PDE derivation: product of F1-F5."@en .
 
 slpra-dev:humanEquivalentDose_mg_per_kg a owl:DatatypeProperty ;
+    rdfs:comment "依据适用的种属间外推方法由非临床剂量换算的人体等效剂量，以每千克体重的毫克数记录；该值不直接等同于临床推荐剂量或起始剂量。"@zh ;
     rdfs:domain slpra-dev:SharedLineAssessmentData ;
     rdfs:range xsd:decimal ;
     rdfs:label "human equivalent dose (mg/kg)"@en ;
     rdfs:label "人体等效剂量（mg/kg）"@zh .
 
 slpra-dev:proposedStartingDose_mg a owl:DatatypeProperty ;
+    rdfs:comment "共线评估资料中记录的拟定临床起始给药剂量，以毫克表示；给药频次、给药途径及按次或其他剂量口径由给药方案限定。"@zh ;
     rdfs:domain slpra-dev:SharedLineAssessmentData ;
     rdfs:range xsd:decimal ;
     rdfs:label "proposed clinical starting dose (mg)"@en ;
     rdfs:label "拟定临床起始剂量（mg）"@zh .
 
 slpra-dev:proposedMaxDose_mg a owl:DatatypeProperty ;
+    rdfs:comment "共线评估资料中记录的拟定最高临床给药剂量，以毫克表示；给药频次和剂量口径由相应方案限定，不自动解释为最大日剂量。"@zh ;
     rdfs:domain slpra-dev:SharedLineAssessmentData ;
     rdfs:range xsd:decimal ;
     rdfs:label "proposed maximum dose (mg)"@en ;
@@ -1381,11 +1453,13 @@ slpra-dev:riskCategory a owl:DatatypeProperty ;
     rdfs:comment "E.g. 投料操作, 反应过程, 离心/甩滤, 干燥操作, 废液处理."@en .
 
 slpra-dev:riskDescription a owl:DatatypeProperty ;
+    rdfs:comment "对某项风险的危险源、发生情境、可能事件及后果的文字说明，需结合所属评估对象和范围理解。"@zh ;
     rdfs:range xsd:string ;
     rdfs:label "risk description"@en ;
     rdfs:label "风险描述"@zh .
 
 slpra-dev:controlMeasure a owl:DatatypeProperty ;
+    rdfs:comment "针对所述风险拟定或实施的预防、降低、监测或管理措施的文字说明；措施的记载不等同于其有效性已得到验证。"@zh ;
     rdfs:range xsd:string ;
     rdfs:label "control measure"@en ;
     rdfs:label "控制措施"@zh .
@@ -1407,66 +1481,77 @@ slpra-dev:residueSolubility a owl:DatatypeProperty ;
     rdfs:comment "Qualitative solubility descriptor: 易溶, 溶解, 微溶, 几乎不溶."@en .
 
 slpra-dev:residueSolubilityTemperature a owl:DatatypeProperty ;
+    rdfs:comment "评价残留物在指定介质中溶解度时采用的试验温度，以文本保留温度值、单位或定性条件。"@zh ;
     rdfs:domain slpra-drug:Residue ;
     rdfs:range xsd:string ;
     rdfs:label "solubility test temperature"@en ;
     rdfs:label "溶解度测试温度"@zh .
 
 slpra-dev:activeIngredient a owl:DatatypeProperty ;
+    rdfs:comment "共线评估数据所针对的活性成分或原料药的名称、代号等文字标识；本字段为名称记录，不单独证明不同记录指向同一批次或实例。"@zh ;
     rdfs:domain slpra-dev:SharedLineAssessmentData ;
     rdfs:range xsd:string ;
     rdfs:label "active ingredient"@en ;
     rdfs:label "活性成分（API）"@zh .
 
 slpra-dev:studyType a owl:DatatypeProperty ;
+    rdfs:comment "提供该项毒理学数据的研究或试验类型，以文字记录，例如重复给药毒性试验；具体种属、周期和途径由相关研究信息限定。"@zh ;
     rdfs:domain slpra-dev:SharedLineAssessmentData ;
     rdfs:range xsd:string ;
     rdfs:label "toxicology study type"@en ;
     rdfs:label "试验项目"@zh .
 
 slpra-dev:f1 a owl:DatatypeProperty ;
+    rdfs:comment "PDE 推导中用于考虑试验物种与人之间差异的无量纲调整因子 F1，其取值依赖所采用的外推方法和证据。"@zh ;
     rdfs:domain slpra-dev:SharedLineAssessmentData ;
     rdfs:range xsd:decimal ;
     rdfs:label "PDE adjustment factor F1"@en ;
     rdfs:label "F1"@zh .
 
 slpra-dev:f2 a owl:DatatypeProperty ;
+    rdfs:comment "PDE 推导中用于考虑人群个体间差异的无量纲调整因子 F2，其取值应有相应评价依据。"@zh ;
     rdfs:domain slpra-dev:SharedLineAssessmentData ;
     rdfs:range xsd:decimal ;
     rdfs:label "PDE adjustment factor F2"@en ;
     rdfs:label "F2"@zh .
 
 slpra-dev:f3 a owl:DatatypeProperty ;
+    rdfs:comment "PDE 推导中用于考虑研究持续时间及其对预期长期暴露支持程度的无量纲调整因子 F3。"@zh ;
     rdfs:domain slpra-dev:SharedLineAssessmentData ;
     rdfs:range xsd:decimal ;
     rdfs:label "PDE adjustment factor F3"@en ;
     rdfs:label "F3"@zh .
 
 slpra-dev:f4 a owl:DatatypeProperty ;
+    rdfs:comment "PDE 推导中用于考虑毒性效应性质或严重程度等特定因素的无量纲调整因子 F4，适用情形和取值由毒理评价确定。"@zh ;
     rdfs:domain slpra-dev:SharedLineAssessmentData ;
     rdfs:range xsd:decimal ;
     rdfs:label "PDE adjustment factor F4"@en ;
     rdfs:label "F4"@zh .
 
 slpra-dev:f5 a owl:DatatypeProperty ;
+    rdfs:comment "PDE 推导中，在未建立未观察到不良作用剂量（NOAEL）、需依据最低观察到不良作用剂量（LOAEL）等数据外推时，用于考虑起始点不确定性的无量纲调整因子 F5；具体适用范围和取值按所采用的毒理学推导方法确定。"@zh ;
     rdfs:domain slpra-dev:SharedLineAssessmentData ;
     rdfs:range xsd:decimal ;
     rdfs:label "PDE adjustment factor F5"@en ;
     rdfs:label "F5"@zh .
 
 slpra-dev:pde_mg_per_day a owl:DatatypeProperty ;
+    rdfs:comment "共线评估数据中采用的允许每日暴露量（PDE），表示基于毒理学评价，在规定暴露途径等条件下每日终生暴露而预期不产生明显健康风险的剂量，以毫克/天记录。"@zh ;
     rdfs:domain slpra-dev:SharedLineAssessmentData ;
     rdfs:range xsd:decimal ;
     rdfs:label "PDE (mg/day)"@en ;
     rdfs:label "PDE（mg/天）"@zh .
 
 slpra-dev:sourceReference a owl:DatatypeProperty ;
+    rdfs:comment "共线评估数据所依据的研究报告、文献或其他资料的引用信息，用于确定数据出处及适用背景。"@zh ;
     rdfs:domain slpra-dev:SharedLineAssessmentData ;
     rdfs:range xsd:string ;
     rdfs:label "source reference"@en ;
     rdfs:label "来源"@zh .
 
 slpra-dev:oebBand a owl:DatatypeProperty ;
+    rdfs:comment "共线评估数据记录的职业暴露分级（OEB）代码或名称；分级依据和浓度界限由所采用的体系确定，不能直接作为职业暴露限值数值。"@zh ;
     rdfs:domain slpra-dev:SharedLineAssessmentData ;
     rdfs:range xsd:string ;
     rdfs:label "OEB band"@en ;
@@ -1482,6 +1567,7 @@ slpra-dev:plannedProductionDate a owl:DatatypeProperty ;
     rdfs:comment "Planned production month, e.g. 2026-02."@en .
 
 slpra-dev:plannedBatchCount a owl:DatatypeProperty ;
+    rdfs:comment "临床备样生产计划中拟生产的批次数量，以整数记录，区别于已完成或已放行的批次数。"@zh ;
     rdfs:domain slpra-dev:ClinicalSampleProductionPlan ;
     rdfs:range xsd:integer ;
     rdfs:label "planned batch count"@en ;
@@ -1495,12 +1581,14 @@ slpra-dev:productionPurpose a owl:DatatypeProperty ;
     rdfs:comment "Intended use of the produced batch, e.g. 临床I期试验."@en .
 
 slpra-dev:plannedBatchSizeMin_kg a owl:DatatypeProperty ;
+    rdfs:comment "临床备样生产计划中预计单批生产规模的下限，以千克记录。"@zh ;
     rdfs:domain slpra-dev:ClinicalSampleProductionPlan ;
     rdfs:range xsd:decimal ;
     rdfs:label "planned minimum batch size (kg)"@en ;
     rdfs:label "预计批量下限（kg）"@zh .
 
 slpra-dev:plannedBatchSizeMax_kg a owl:DatatypeProperty ;
+    rdfs:comment "临床备样生产计划中预计单批生产规模的上限，以千克记录。"@zh ;
     rdfs:domain slpra-dev:ClinicalSampleProductionPlan ;
     rdfs:range xsd:decimal ;
     rdfs:label "planned maximum batch size (kg)"@en ;

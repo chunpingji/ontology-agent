@@ -20,41 +20,49 @@
 # ============================================================
 
 slpra-clean:CleaningProcess a owl:Class ;
+    rdfs:comment "用于清除或降低设备、器具及接触表面残留污染的处理过程，本模块将清洗及其配套的灭活、原位灭菌步骤归入这一过程类别。各步骤的处理目标和效果分别由相应工艺条件与评价标准确定。"@zh ;
     rdfs:subClassOf obo:BFO_0000015 ;
     rdfs:label "Cleaning Process"@en ;
     rdfs:label "清洁过程"@zh .
 
 slpra-clean:ManualCleaning a owl:Class ;
+    rdfs:comment "由操作人员直接实施刷洗、擦拭、冲洗等操作，去除设备、器具或接触表面残留物和污染物的清洁过程。"@zh ;
     rdfs:subClassOf slpra-clean:CleaningProcess ;
     rdfs:label "Manual Cleaning"@en ;
     rdfs:label "手动清洁"@zh .
 
 slpra-clean:CIPCleaning a owl:Class ;
+    rdfs:comment "在设备和管路保持安装状态、无需拆卸主要部件的条件下，通过受控循环、喷淋或冲洗清洗介质，对其内部接触表面实施清洁的过程，即原位清洗。"@zh ;
     rdfs:subClassOf slpra-clean:CleaningProcess ;
     rdfs:label "CIP Cleaning"@en ;
     rdfs:label "CIP在线清洁"@zh .
 
 slpra-clean:SIPSterilization a owl:Class ;
+    rdfs:comment "在设备或管路保持装配状态下，对其内部实施原位灭菌的过程，通常采用受控蒸汽处理，以达到规定的无菌保证要求；该过程的终点是灭菌效果，不能仅凭灭菌操作认定残留物已被清除。"@zh ;
     rdfs:subClassOf slpra-clean:CleaningProcess ;
     rdfs:label "SIP Sterilization"@en ;
     rdfs:label "SIP灭菌"@zh .
 
 slpra-clean:InactivationProcess a owl:Class ;
+    rdfs:comment "通过物理或化学处理，降低或消除目标微生物、病毒或其他生物活性物质活性的过程。灭活效果针对规定的处理对象和活性终点，不等同于物质去除或达到无菌状态。"@zh ;
     rdfs:subClassOf slpra-clean:CleaningProcess ;
     rdfs:label "Inactivation Process"@en ;
     rdfs:label "灭活过程"@zh .
 
 slpra-clean:HeatInactivation a owl:Class ;
+    rdfs:comment "以热作用降低或消除目标微生物、病毒或其他生物活性物质活性的灭活过程，其效果取决于温度、作用时间及处理对象。"@zh ;
     rdfs:subClassOf slpra-clean:InactivationProcess ;
     rdfs:label "Heat Inactivation"@en ;
     rdfs:label "热灭活"@zh .
 
 slpra-clean:ChemicalInactivation a owl:Class ;
+    rdfs:comment "利用化学试剂的作用，降低或消除目标微生物、病毒或其他生物活性物质活性的灭活过程。试剂种类、浓度和接触条件共同限定处理效果。"@zh ;
     rdfs:subClassOf slpra-clean:InactivationProcess ;
     rdfs:label "Chemical Inactivation"@en ;
     rdfs:label "化学灭活"@zh .
 
 slpra-clean:pHInactivation a owl:Class ;
+    rdfs:comment "通过调节并维持规定的酸性或碱性条件，降低或消除目标微生物、病毒或其他生物活性物质活性的灭活过程。"@zh ;
     rdfs:subClassOf slpra-clean:InactivationProcess ;
     rdfs:label "pH Inactivation"@en ;
     rdfs:label "pH灭活"@zh .
@@ -64,16 +72,19 @@ slpra-clean:pHInactivation a owl:Class ;
 # ============================================================
 
 slpra-clean:SamplingProcess a owl:Class ;
+    rdfs:comment "按照规定位置、范围和操作方式，从设备表面、淋洗液或其他指定介质取得样品，以评价清洁后残留或污染状况的过程。"@zh ;
     rdfs:subClassOf obo:BFO_0000015 ;
     rdfs:label "Sampling Process"@en ;
     rdfs:label "取样过程"@zh .
 
 slpra-clean:SwabSampling a owl:Class ;
+    rdfs:comment "使用适宜的擦拭介质对规定面积的设备表面进行擦拭，收集并转移表面残留物供后续检测的取样过程。"@zh ;
     rdfs:subClassOf slpra-clean:SamplingProcess ;
     rdfs:label "Swab Sampling"@en ;
     rdfs:label "擦拭取样"@zh .
 
 slpra-clean:RinseSampling a owl:Class ;
+    rdfs:comment "使用规定的淋洗介质接触设备内部或指定表面，并收集淋洗液供检测，以评价所覆盖区域残留状况的取样过程。"@zh ;
     rdfs:subClassOf slpra-clean:SamplingProcess ;
     rdfs:label "Rinse Sampling"@en ;
     rdfs:label "淋洗取样"@zh .
@@ -83,21 +94,25 @@ slpra-clean:RinseSampling a owl:Class ;
 # ============================================================
 
 slpra-clean:AnalyticalMethod a owl:Class ;
+    rdfs:comment "对清洁验证样品或受检表面的目标物及相关指标进行识别、检测、定量或定性评价的分析操作过程。"@zh ;
     rdfs:subClassOf obo:BFO_0000015 ;
     rdfs:label "Analytical Method"@en ;
     rdfs:label "分析方法"@zh .
 
 slpra-clean:HPLCMethod a owl:Class ;
+    rdfs:comment "利用高效液相色谱分离样品中的组分，并结合检测器信号对目标残留物进行鉴别或定量的分析方法。"@zh ;
     rdfs:subClassOf slpra-clean:AnalyticalMethod ;
     rdfs:label "HPLC Method"@en ;
     rdfs:label "HPLC法"@zh .
 
 slpra-clean:TOCMethod a owl:Class ;
+    rdfs:comment "通过测定样品中总有机碳含量评价有机物残留水平的分析方法；其结果反映总体有机碳负荷，通常不能单独区分具体有机物。"@zh ;
     rdfs:subClassOf slpra-clean:AnalyticalMethod ;
     rdfs:label "TOC Method"@en ;
     rdfs:label "TOC法"@zh .
 
 slpra-clean:UVSpectrophotometry a owl:Class ;
+    rdfs:comment "利用目标物对特定波长紫外光的吸收进行检测或定量的分析方法，其适用性取决于目标物吸收特性及样品中其他成分的干扰。"@zh ;
     rdfs:subClassOf slpra-clean:AnalyticalMethod ;
     rdfs:label "UV Spectrophotometry"@en ;
     rdfs:label "紫外分光光度法"@zh .
@@ -113,16 +128,19 @@ slpra-clean:VisualInspection a owl:Class ;
 # ============================================================
 
 slpra-clean:CleaningValidationProtocol a owl:Class ;
+    rdfs:comment "事先规定清洁验证范围、设备与产品、清洁程序、取样安排、分析方法、接受标准和实施职责，用于指导清洁效果验证的方案文件。"@zh ;
     rdfs:subClassOf obo:BFO_0000031 ;
     rdfs:label "Cleaning Validation Protocol"@en ;
     rdfs:label "清洁验证方案"@zh .
 
 slpra-clean:CleaningRecord a owl:Class ;
+    rdfs:comment "记录实际清洁操作及其执行情况的文件，包括被清洁对象、所用程序、实施时间、关键操作参数、执行人员和相关检查结果。"@zh ;
     rdfs:subClassOf obo:BFO_0000031 ;
     rdfs:label "Cleaning Record"@en ;
     rdfs:label "清洁记录"@zh .
 
 slpra-clean:CleaningHoldTimeStudy a owl:Class ;
+    rdfs:comment "用于确定设备清洁完成后在规定保存条件下可维持清洁状态多久的研究资料，记载研究安排、考察时间点、检测数据及所支持的保持时限。"@zh ;
     rdfs:subClassOf obo:BFO_0000031 ;
     rdfs:label "Cleaning Hold Time Study"@en ;
     rdfs:label "清洁保持时间研究"@zh .
@@ -132,6 +150,7 @@ slpra-clean:CleaningHoldTimeStudy a owl:Class ;
 # ============================================================
 
 slpra-clean:CleaningHoldTime a owl:Class ;
+    rdfs:comment "设备清洁完成后，在规定保存条件下至再次使用前可维持既定清洁状态的时间区间，其起点为清洁完成时。"@zh ;
     rdfs:subClassOf obo:BFO_0000038 ;
     rdfs:label "Cleaning Hold Time"@en ;
     rdfs:label "清洁保持时间"@zh .
@@ -141,36 +160,43 @@ slpra-clean:CleaningHoldTime a owl:Class ;
 # ============================================================
 
 slpra-clean:validatesCleaningOf a owl:ObjectProperty ;
+    rdfs:comment "将清洁验证方案关联到该方案拟验证其清洁效果的设备，用于确定验证对象。"@zh ;
     rdfs:domain slpra-clean:CleaningValidationProtocol ;
     rdfs:range slpra-equip:Equipment ;
     rdfs:label "validates cleaning of"@en .
 
 slpra-clean:usesMethod a owl:ObjectProperty ;
+    rdfs:comment "将清洁验证方案关联到其中规定用于评价残留或其他清洁指标的分析方法。"@zh ;
     rdfs:domain slpra-clean:CleaningValidationProtocol ;
     rdfs:range slpra-clean:AnalyticalMethod ;
     rdfs:label "uses method"@en .
 
 slpra-clean:hasSamplingPoint a owl:ObjectProperty ;
+    rdfs:comment "将清洁验证方案关联到其中指定的设备取样表面，用于确定残留或污染检查的位置。"@zh ;
     rdfs:domain slpra-clean:CleaningValidationProtocol ;
     rdfs:range slpra-equip:EquipmentSurface ;
     rdfs:label "has sampling point"@en .
 
 slpra-clean:usesSamplingMethod a owl:ObjectProperty ;
+    rdfs:comment "将清洁验证方案关联到其中采用的取样过程，如擦拭取样或淋洗取样。"@zh ;
     rdfs:domain slpra-clean:CleaningValidationProtocol ;
     rdfs:range slpra-clean:SamplingProcess ;
     rdfs:label "uses sampling method"@en .
 
 slpra-clean:removesResidue a owl:ObjectProperty ;
+    rdfs:comment "将清洁过程关联到该过程所去除或降低的残留物，用于说明处理对象；达到何种残留水平由相应检测结果与接受标准判定。"@zh ;
     rdfs:domain slpra-clean:CleaningProcess ;
     rdfs:range slpra-drug:Residue ;
     rdfs:label "removes residue"@en .
 
 slpra-clean:hasInactivationStep a owl:ObjectProperty ;
+    rdfs:comment "将清洁过程关联到作为其组成步骤的灭活过程，用于表达清洁流程中的活性降低或消除处理。"@zh ;
     rdfs:domain slpra-clean:CleaningProcess ;
     rdfs:range slpra-clean:InactivationProcess ;
     rdfs:label "has inactivation step"@en .
 
 slpra-clean:followsProtocol a owl:ObjectProperty ;
+    rdfs:comment "将清洁过程关联到其执行所遵循的清洁验证方案，表达过程与规定验证安排之间的对应关系。"@zh ;
     rdfs:domain slpra-clean:CleaningProcess ;
     rdfs:range slpra-clean:CleaningValidationProtocol ;
     rdfs:label "follows protocol"@en .
@@ -180,31 +206,37 @@ slpra-clean:followsProtocol a owl:ObjectProperty ;
 # ============================================================
 
 slpra-clean:residueLimit_ug_per_cm2 a owl:DatatypeProperty ;
+    rdfs:comment "清洁验证方案规定的单位表面积残留质量接受上限，以微克每平方厘米表示，用于评价指定表面的残留水平。"@zh ;
     rdfs:domain slpra-clean:CleaningValidationProtocol ;
     rdfs:range xsd:decimal ;
     rdfs:label "residue limit (μg/cm²)"@en .
 
 slpra-clean:residueLimit_ppm a owl:DatatypeProperty ;
+    rdfs:comment "清洁验证方案规定的、以百万分率（ppm）表示的残留接受上限；具体介质、残留对象及计量基准由方案界定。"@zh ;
     rdfs:domain slpra-clean:CleaningValidationProtocol ;
     rdfs:range xsd:decimal ;
     rdfs:label "residue limit (ppm)"@en .
 
 slpra-clean:recoveryFactor_percent a owl:DatatypeProperty ;
+    rdfs:comment "在规定的表面、介质和取样条件下，取样过程回收的目标物量相对于已知目标物量的百分比，用于表征该取样过程的回收能力。"@zh ;
     rdfs:domain slpra-clean:SamplingProcess ;
     rdfs:range xsd:decimal ;
     rdfs:label "recovery factor (%)"@en .
 
 slpra-clean:detectionLimit_ug a owl:DatatypeProperty ;
+    rdfs:comment "分析方法在规定条件下能够检出的目标物最低质量，以微克表示；检出能力本身不表示该水平已满足准确、精密定量的要求。"@zh ;
     rdfs:domain slpra-clean:AnalyticalMethod ;
     rdfs:range xsd:decimal ;
     rdfs:label "detection limit (μg)"@en .
 
 slpra-clean:quantitationLimit_ug a owl:DatatypeProperty ;
+    rdfs:comment "分析方法在规定条件下能够以满足要求的准确度和精密度进行定量的目标物最低质量，以微克表示。"@zh ;
     rdfs:domain slpra-clean:AnalyticalMethod ;
     rdfs:range xsd:decimal ;
     rdfs:label "quantitation limit (μg)"@en .
 
 slpra-clean:holdTime_hours a owl:DatatypeProperty ;
+    rdfs:comment "清洁保持时间区间的持续时长，以小时表示，对应设备清洁完成后在规定保存条件下维持清洁状态的时间。"@zh ;
     rdfs:domain slpra-clean:CleaningHoldTime ;
     rdfs:range xsd:decimal ;
     rdfs:label "hold time (hours)"@en .

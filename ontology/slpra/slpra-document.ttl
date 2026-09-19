@@ -25,31 +25,37 @@ slpra-doc:RegulatoryDocument a owl:Class ;
     rdfs:comment "An R&D-phase document tracked as a first-class traceability/compliance anchor (ALCOA+). Its lifecycle metadata (type/version/status/development phase/source system/SHA) is the fact; its internal business entities are extraction candidates."@en .
 
 slpra-doc:INDDossier a owl:Class ;
+    rdfs:comment "为申请开展药物临床试验而组织提交的申报资料，涵盖支持拟议临床试验的药学、非临床及临床研究计划等信息。"@zh ;
     rdfs:subClassOf slpra-doc:RegulatoryDocument ;
     rdfs:label "IND Dossier"@en ;
     rdfs:label "IND 申报资料"@zh .
 
 slpra-doc:TechTransferReport a owl:Class ;
+    rdfs:comment "记录药品工艺、分析方法或相关技术由转出方向接收方转移的范围、实施过程、结果及遗留事项的报告。"@zh ;
     rdfs:subClassOf slpra-doc:RegulatoryDocument ;
     rdfs:label "Technology Transfer Report"@en ;
     rdfs:label "技术转移报告"@zh .
 
 slpra-doc:ProcessValidationReport a owl:Class ;
+    rdfs:comment "记录依据工艺验证方案取得的数据、偏差处理和评价结论，用于论证生产工艺能否持续产出符合预定质量要求产品的报告。"@zh ;
     rdfs:subClassOf slpra-doc:RegulatoryDocument ;
     rdfs:label "Process Validation Report"@en ;
     rdfs:label "工艺验证报告"@zh .
 
 slpra-doc:StabilityReport a owl:Class ;
+    rdfs:comment "记录药品或相关物料在规定储存条件和考察时间内质量属性变化的研究结果，用于支持有效期、复验期或储存条件的报告。"@zh ;
     rdfs:subClassOf slpra-doc:RegulatoryDocument ;
     rdfs:label "Stability Report"@en ;
     rdfs:label "稳定性报告"@zh .
 
 slpra-doc:NDA_BLADossier a owl:Class ;
+    rdfs:comment "用于申请新药上市许可或生物制品许可的申报资料，汇集支持产品质量、安全性和有效性评价的研究与生产信息。"@zh ;
     rdfs:subClassOf slpra-doc:RegulatoryDocument ;
     rdfs:label "NDA/BLA Dossier"@en ;
     rdfs:label "NDA/BLA 申报资料"@zh .
 
 slpra-doc:PVReport a owl:Class ;
+    rdfs:comment "记录药物安全性信息的收集、分析和评价结果，以及相关风险管理事项的药物警戒报告，可覆盖临床开发或上市后阶段。"@zh ;
     rdfs:subClassOf slpra-doc:RegulatoryDocument ;
     rdfs:label "Pharmacovigilance Report"@en ;
     rdfs:label "药物警戒报告"@zh .
@@ -109,6 +115,7 @@ slpra-doc:Phase_PostMarket a slpra-doc:DevelopmentPhase ;
 # business entities as documents (US2). Range is constrained.
 
 slpra-doc:hasDevelopmentPhase a owl:ObjectProperty ;
+    rdfs:comment "将文档或业务实体关联到其所处或对应的药物研发生命周期阶段，提供研发及合规评价的阶段背景。"@zh ;
     rdfs:range slpra-doc:DevelopmentPhase ;
     rdfs:label "has development phase"@en ;
     rdfs:label "处于研发阶段"@zh .
@@ -131,24 +138,28 @@ slpra-doc:documentName a owl:DatatypeProperty ;
     rdfs:comment "The stable display name of a regulatory document record, including its filename extension when available."@en .
 
 slpra-doc:documentVersion a owl:DatatypeProperty ;
+    rdfs:comment "用于区分同一法规文档不同修订版的版本标识，按文档管理规则以字符串记录。"@zh ;
     rdfs:domain slpra-doc:RegulatoryDocument ;
     rdfs:range xsd:string ;
     rdfs:label "document version"@en ;
     rdfs:label "文档版本"@zh .
 
 slpra-doc:approvalStatus a owl:DatatypeProperty ;
+    rdfs:comment "法规文档在审查、批准或生效流程中所处的状态，按其文档管理流程使用的状态名称记录。"@zh ;
     rdfs:domain slpra-doc:RegulatoryDocument ;
     rdfs:range xsd:string ;
     rdfs:label "approval status"@en ;
     rdfs:label "审批状态"@zh .
 
 slpra-doc:sourceSystem a owl:DatatypeProperty ;
+    rdfs:comment "提供或管理该法规文档记录的来源系统名称或标识。"@zh ;
     rdfs:domain slpra-doc:RegulatoryDocument ;
     rdfs:range xsd:string ;
     rdfs:label "source system"@en ;
     rdfs:label "来源系统"@zh .
 
 slpra-doc:contentHash a owl:DatatypeProperty ;
+    rdfs:comment "对法规文档内容计算得到的 SHA-256 摘要，用于校验内容一致性及区分内容变化。"@zh ;
     rdfs:domain slpra-doc:RegulatoryDocument ;
     rdfs:range xsd:string ;
     rdfs:label "content hash (SHA-256)"@en ;

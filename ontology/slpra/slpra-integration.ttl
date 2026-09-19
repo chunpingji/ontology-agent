@@ -41,8 +41,10 @@
 # Declarative literal contracts. These annotations describe stored scalars;
 # source units must still be quoted and independently bound before conversion.
 slpra-integ:canonicalUnit a owl:AnnotationProperty ;
+    rdfs:comment "标注数据属性所存储数值采用的规范单位，便于解释和换算；该单位注释不证明原始资料中的数值已使用相同单位。"@zh ;
     rdfs:label "标准单位"@zh ; rdfs:range xsd:string .
 slpra-integ:identityKey a owl:AnnotationProperty ;
+    rdfs:comment "标注某数据属性是否可作为实体身份核对的标识依据；为真时仍须结合标识作用域及批次等区分信息，不自动授予全局唯一性。"@zh ;
     rdfs:label "实体身份证据属性"@zh ; rdfs:range xsd:boolean .
 
 slpra-equip:equipmentID slpra-integ:identityKey true .
@@ -419,6 +421,7 @@ ncit:C63018 a owl:Class ;
 
 # Equipment → Cleaning Process
 slpra-equip:cleanedBy a owl:ObjectProperty ;
+    rdfs:comment "连接设备与用于清洁该设备的清洁过程，表示设备接受该处理的关系。"@zh ;
     rdfs:domain slpra-equip:Equipment ;
     rdfs:range slpra-clean:CleaningProcess ;
     rdfs:label "cleaned by"@en ;

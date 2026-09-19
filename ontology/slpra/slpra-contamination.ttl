@@ -71,16 +71,19 @@ slpra-contam:ConfusionEvent a owl:Class ;
     rdfs:comment "Product/material mix-up due to system design flaws or human error."@en .
 
 slpra-contam:LabelMixup a owl:Class ;
+    rdfs:comment "标签在选择、发放、使用或核对环节发生错误对应，使产品或物料的标识与其实际身份不一致的混淆事件。"@zh ;
     rdfs:subClassOf slpra-contam:ConfusionEvent ;
     rdfs:label "Label Mixup"@en ;
     rdfs:label "标签混淆"@zh .
 
 slpra-contam:MaterialMixup a owl:Class ;
+    rdfs:comment "在接收、储存、转运或使用环节，将不同品种、批次或状态的物料错误识别、替换或混用的混淆事件。"@zh ;
     rdfs:subClassOf slpra-contam:ConfusionEvent ;
     rdfs:label "Material Mixup"@en ;
     rdfs:label "物料混淆"@zh .
 
 slpra-contam:DocumentMixup a owl:Class ;
+    rdfs:comment "在文件发放、使用或归档环节，将不对应当前产品、批次、操作或有效版本的文件错误使用或关联的混淆事件。"@zh ;
     rdfs:subClassOf slpra-contam:ConfusionEvent ;
     rdfs:label "Document Mixup"@en ;
     rdfs:label "文件混淆"@zh .
@@ -97,33 +100,39 @@ slpra-contam:DocumentMixup a owl:Class ;
 # ============================================================
 
 slpra-contam:hasContaminationSource a owl:ObjectProperty ;
+    rdfs:comment "将污染事件关联到作为污染物来源的药品，用于确定污染从哪一种产品转出。"@zh ;
     rdfs:domain slpra-contam:ContaminationEvent ;
     rdfs:range slpra-drug:DrugProduct ;
     rdfs:label "has contamination source"@en ;
     rdfs:label "污染源产品（前品）"@zh .
 
 slpra-contam:hasContaminationTarget a owl:ObjectProperty ;
+    rdfs:comment "将污染事件关联到受到该污染影响的药品，用于确定污染转入的产品。"@zh ;
     rdfs:domain slpra-contam:ContaminationEvent ;
     rdfs:range slpra-drug:DrugProduct ;
     rdfs:label "has contamination target"@en ;
     rdfs:label "受污染产品（后品）"@zh .
 
 slpra-contam:mediatedByEquipment a owl:ObjectProperty ;
+    rdfs:comment "将污染事件关联到在污染传递过程中充当媒介的设备。"@zh ;
     rdfs:domain slpra-contam:ContaminationEvent ;
     rdfs:range slpra-equip:Equipment ;
     rdfs:label "mediated by equipment"@en .
 
 slpra-contam:occursInFacility a owl:ObjectProperty ;
+    rdfs:comment "将污染事件关联到其发生所在的生产区域，表达事件的设施空间位置。"@zh ;
     rdfs:domain slpra-contam:ContaminationEvent ;
     rdfs:range slpra-facil:ProductionArea ;
     rdfs:label "occurs in facility"@en .
 
 slpra-contam:involvesSurface a owl:ObjectProperty ;
+    rdfs:comment "将污染事件关联到参与污染滞留或转移的设备表面，可为产品接触表面或非接触表面。"@zh ;
     rdfs:domain slpra-contam:ContaminationEvent ;
     rdfs:range slpra-equip:EquipmentSurface ;
     rdfs:label "involves surface"@en .
 
 slpra-contam:hasContaminationSeverity a owl:ObjectProperty ;
+    rdfs:comment "将污染事件关联到用于表征该事件严重程度的等级，本模型以风险级别类别承载该分级结果，具体分级含义由适用评估方法确定。"@zh ;
     rdfs:domain slpra-contam:ContaminationEvent ;
     rdfs:range slpra-risk:RiskLevel ;
     rdfs:label "has contamination severity"@en .
@@ -133,11 +142,13 @@ slpra-contam:hasContaminationSeverity a owl:ObjectProperty ;
 # ============================================================
 
 slpra-contam:involvedPersonnel a owl:DatatypeProperty ;
+    rdfs:comment "表示机械转移污染事件是否涉及人员作为转移媒介的布尔值，包括经衣物、手套或人员接触传递污染物的情况。"@zh ;
     rdfs:domain slpra-contam:MechanicalTransfer ;
     rdfs:range xsd:boolean ;
     rdfs:label "involved personnel"@en .
 
 slpra-contam:estimatedExposure_ug a owl:DatatypeProperty ;
+    rdfs:comment "在所评估污染情景中估算的污染物暴露质量，以微克表示；暴露对象和时间基准由具体评估情景界定，该数值本身不是允许暴露限值。"@zh ;
     rdfs:domain slpra-contam:ContaminationEvent ;
     rdfs:range xsd:decimal ;
     rdfs:label "estimated exposure (μg)"@en .

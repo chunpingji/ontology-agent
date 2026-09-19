@@ -21,128 +21,153 @@
 # ============================================================
 
 slpra-equip:Equipment a owl:Class ;
+    rdfs:comment "用于制药生产、物料处理、环境保障或清洗操作的装置、器械及其组合，是承载相应工艺功能的实体。"@zh ;
     rdfs:subClassOf obo:BFO_0000040 ;
     rdfs:label "Equipment"@en ;
     rdfs:label "设备"@zh .
 
 slpra-equip:ProcessEquipment a owl:Class ;
+    rdfs:comment "直接用于药品或其中间物料的反应、分离、混合、成型、灌装等工艺操作的设备。"@zh ;
     rdfs:subClassOf slpra-equip:Equipment ;
     rdfs:label "Process Equipment"@en ;
     rdfs:label "生产设备"@zh .
 
 slpra-equip:Reactor a owl:Class ;
+    rdfs:comment "为物料的化学或生物化学反应提供容纳空间及所需混合、传热等条件的生产设备，包括反应釜等形式。"@zh ;
     rdfs:subClassOf slpra-equip:ProcessEquipment ;
     rdfs:label "Reactor"@en ;
     rdfs:label "反应器"@zh ;
     skos:altLabel "反应釜"@zh .
 
 slpra-equip:Centrifuge a owl:Class ;
+    rdfs:comment "通过旋转产生离心作用，利用物料组分的密度等差异实现固液或液液分离的生产设备。"@zh ;
     rdfs:subClassOf slpra-equip:ProcessEquipment ;
     rdfs:label "Centrifuge"@en ;
     rdfs:label "离心机"@zh .
 
 slpra-equip:Dryer a owl:Class ;
+    rdfs:comment "通过传热、减压或气体交换等方式降低物料中水分或其他溶剂含量的生产设备。"@zh ;
     rdfs:subClassOf slpra-equip:ProcessEquipment ;
     rdfs:label "Dryer"@en ;
     rdfs:label "干燥设备"@zh .
 
 slpra-equip:HotAirDryer a owl:Class ;
+    rdfs:comment "使加热空气在箱体内循环并与物料进行传热和传质，以去除物料中水分或溶剂的箱式干燥设备。"@zh ;
     rdfs:subClassOf slpra-equip:Dryer ;
     rdfs:label "Hot Air Circulating Dryer"@en ;
     rdfs:label "热风循环干燥箱"@zh .
 
 slpra-equip:VacuumDryer a owl:Class ;
+    rdfs:comment "在低于环境大气压力的条件下促使物料中的水分或溶剂蒸发，并将蒸气移出的箱式干燥设备。"@zh ;
     rdfs:subClassOf slpra-equip:Dryer ;
     rdfs:label "Vacuum Dryer"@en ;
     rdfs:label "真空干燥箱"@zh .
 
 slpra-equip:HotAirBlastDryer a owl:Class ;
+    rdfs:comment "采用电加热和风机强制送风，使箱内热空气与物料进行传热和传质的箱式干燥设备。"@zh ;
     rdfs:subClassOf slpra-equip:Dryer ;
     rdfs:label "Hot Air Blast Dryer"@en ;
     rdfs:label "电热鼓风干燥箱"@zh ;
     skos:altLabel "鼓风干燥"@zh .
 
 slpra-equip:ElectricVacuumDryer a owl:Class ;
+    rdfs:comment "采用电加热提供干燥所需热量，并在减压条件下去除物料中水分或溶剂的真空干燥箱。"@zh ;
     rdfs:subClassOf slpra-equip:VacuumDryer ;
     rdfs:label "Electric Heated Vacuum Dryer"@en ;
     rdfs:label "电热真空干燥箱"@zh .
 
 slpra-equip:RotaryEvaporator a owl:Class ;
+    rdfs:comment "通过旋转蒸发容器扩大液体蒸发表面，并结合加热及通常采用的减压条件，进行溶剂蒸发、浓缩或回收的设备。"@zh ;
     rdfs:subClassOf slpra-equip:ProcessEquipment ;
     rdfs:label "Rotary Evaporator"@en ;
     rdfs:label "旋蒸"@zh .
 
 slpra-equip:Granulator a owl:Class ;
+    rdfs:comment "通过润湿黏结、压实或其他成粒方式，将粉末等物料制成具有一定粒度颗粒的生产设备。"@zh ;
     rdfs:subClassOf slpra-equip:ProcessEquipment ;
     rdfs:label "Granulator"@en ;
     rdfs:label "制粒机"@zh .
 
 slpra-equip:Mixer a owl:Class ;
+    rdfs:comment "通过搅拌、翻转、剪切等机械作用，使两种或多种物料组分达到所需分布均匀程度的生产设备。"@zh ;
     rdfs:subClassOf slpra-equip:ProcessEquipment ;
     rdfs:label "Mixer"@en ;
     rdfs:label "混合机"@zh .
 
 slpra-equip:TabletPress a owl:Class ;
+    rdfs:comment "利用冲模对粉末或颗粒等物料施加压力，使其形成规定形状片剂的生产设备。"@zh ;
     rdfs:subClassOf slpra-equip:ProcessEquipment ;
     rdfs:label "Tablet Press"@en ;
     rdfs:label "压片机"@zh .
 
 slpra-equip:CapsuleFiller a owl:Class ;
+    rdfs:comment "将粉末、颗粒、微丸或其他适用内容物按规定装量填入胶囊壳的生产设备。"@zh ;
     rdfs:subClassOf slpra-equip:ProcessEquipment ;
     rdfs:label "Capsule Filler"@en ;
     rdfs:label "胶囊填充机"@zh .
 
 slpra-equip:CoatingMachine a owl:Class ;
+    rdfs:comment "将包衣材料施加于片剂、颗粒、微丸等基体表面，形成具有保护、掩味、释药调节或其他功能覆盖层的生产设备。"@zh ;
     rdfs:subClassOf slpra-equip:ProcessEquipment ;
     rdfs:label "Coating Machine"@en ;
     rdfs:label "包衣机"@zh .
 
 slpra-equip:FillingMachine a owl:Class ;
+    rdfs:comment "按规定装量将液体、粉末或其他适用物料装入瓶、袋、安瓿等容器的生产设备。"@zh ;
     rdfs:subClassOf slpra-equip:ProcessEquipment ;
     rdfs:label "Filling Machine"@en ;
     rdfs:label "灌装机"@zh .
 
 slpra-equip:ChromatographyColumnSystem a owl:Class ;
+    rdfs:comment "使物料随流动相通过装填固定相的柱体，利用各组分与两相相互作用的差异实现分离或纯化的工艺设备系统。"@zh ;
     rdfs:subClassOf slpra-equip:ProcessEquipment ;
     rdfs:label "Chromatography Column System"@en ;
     rdfs:label "微压柱系统"@zh .
 
 slpra-equip:FilterPress a owl:Class ;
+    rdfs:comment "利用压差推动流体通过过滤介质，使固体被截留而液体通过，以实现固液分离的过滤设备。"@zh ;
     rdfs:subClassOf slpra-equip:ProcessEquipment ;
     rdfs:label "Filter Press"@en ;
     rdfs:label "压滤器"@zh .
 
 slpra-equip:UtilityEquipment a owl:Class ;
+    rdfs:comment "为制药生产及其环境提供空气、水或其他公用介质与运行条件的辅助设备或系统。"@zh ;
     rdfs:subClassOf slpra-equip:Equipment ;
     rdfs:label "Utility Equipment"@en ;
     rdfs:label "公用设备"@zh .
 
 slpra-equip:HVACSystem a owl:Class ;
+    rdfs:comment "通过空气处理、输送和排放，对生产环境的温度、湿度、通风及空气洁净条件进行调节的暖通空调系统。"@zh ;
     rdfs:subClassOf slpra-equip:UtilityEquipment ;
     rdfs:label "HVAC System"@en ;
     rdfs:label "暖通空调系统"@zh .
 
 slpra-equip:WaterSystem a owl:Class ;
+    rdfs:comment "对制药生产所需用水进行制备、储存或分配，并维持其适用水质条件的设备系统。"@zh ;
     rdfs:subClassOf slpra-equip:UtilityEquipment ;
     rdfs:label "Water System"@en ;
     rdfs:label "水系统"@zh .
 
 slpra-equip:CompressedAirSystem a owl:Class ;
+    rdfs:comment "对空气进行压缩、处理、储存或输送，为工艺操作及气动装置提供所需压力和质量空气的设备系统。"@zh ;
     rdfs:subClassOf slpra-equip:UtilityEquipment ;
     rdfs:label "Compressed Air System"@en ;
     rdfs:label "压缩空气系统"@zh .
 
 slpra-equip:CleaningEquipment a owl:Class ;
+    rdfs:comment "用于向待清洁对象施加清洗介质或机械作用，以去除设备、器具或表面残留物及污染物的设备或工具。"@zh ;
     rdfs:subClassOf slpra-equip:Equipment ;
     rdfs:label "Cleaning Equipment"@en ;
     rdfs:label "清洗设备"@zh .
 
 slpra-equip:CIPSystem a owl:Class ;
+    rdfs:comment "在主要设备和管路保持安装状态的条件下，制备、输送或循环清洗介质以清洁其内部接触表面的设备系统。"@zh ;
     rdfs:subClassOf slpra-equip:CleaningEquipment ;
     rdfs:label "CIP System"@en ;
     rdfs:label "在线清洗系统"@zh .
 
 slpra-equip:ManualCleaningTool a owl:Class ;
+    rdfs:comment "由操作人员直接操持，用于刷洗、擦拭、冲洗等清洁操作的工具，包括适用的刷具、擦拭器具等。"@zh ;
     rdfs:subClassOf slpra-equip:CleaningEquipment ;
     rdfs:label "Manual Cleaning Tool"@en ;
     rdfs:label "手动清洗工具"@zh .
@@ -152,16 +177,19 @@ slpra-equip:ManualCleaningTool a owl:Class ;
 # ============================================================
 
 slpra-equip:EquipmentSurface a owl:Class ;
+    rdfs:comment "设备形成内外接触界面的实体表层，包括与产品接触的表面以及不直接接触产品的表面。"@zh ;
     rdfs:subClassOf obo:BFO_0000040 ;
     rdfs:label "Equipment Surface"@en ;
     rdfs:label "设备表面"@zh .
 
 slpra-equip:ProductContactSurface a owl:Class ;
+    rdfs:comment "在规定生产或使用条件下直接接触产品、原料或中间物料的设备表面。"@zh ;
     rdfs:subClassOf slpra-equip:EquipmentSurface ;
     rdfs:label "Product Contact Surface"@en ;
     rdfs:label "产品接触面"@zh .
 
 slpra-equip:NonContactSurface a owl:Class ;
+    rdfs:comment "在规定生产或使用条件下不直接接触产品、原料或中间物料的设备表面，例如设备外壁或支架表面。"@zh ;
     rdfs:subClassOf slpra-equip:EquipmentSurface ;
     rdfs:label "Non-Contact Surface"@en ;
     rdfs:label "非接触面"@zh .
@@ -174,36 +202,43 @@ slpra-equip:NonContactSurface a owl:Class ;
 # ============================================================
 
 slpra-equip:ConstructionMaterial a owl:Class ;
+    rdfs:comment "用于构成设备主体或部件的实体材料，其性质影响设备的耐腐蚀性、机械性能及与工艺介质的相容性。"@zh ;
     rdfs:subClassOf obo:BFO_0000040 ;
     rdfs:label "Construction Material"@en ;
     rdfs:label "构造材料"@zh .
 
 slpra-equip:StainlessSteel304 a owl:Class ;
+    rdfs:comment "以铬、镍为主要合金元素的304牌号奥氏体不锈钢，可作为制药设备或部件的构造材料。"@zh ;
     rdfs:subClassOf slpra-equip:ConstructionMaterial ;
     rdfs:label "304 Stainless Steel"@en ;
     rdfs:label "304不锈钢"@zh .
 
 slpra-equip:StainlessSteel316L a owl:Class ;
+    rdfs:comment "含钼且具有低碳含量的316L牌号奥氏体不锈钢，可作为制药设备或部件的构造材料。"@zh ;
     rdfs:subClassOf slpra-equip:ConstructionMaterial ;
     rdfs:label "316L Stainless Steel"@en ;
     rdfs:label "316L不锈钢"@zh .
 
 slpra-equip:SS304WithHALARCoating a owl:Class ;
+    rdfs:comment "以304不锈钢为基材，并在相应表面覆有HALAR乙烯-三氟氯乙烯共聚物层的复合构造材料。"@zh ;
     rdfs:subClassOf slpra-equip:ConstructionMaterial ;
     rdfs:label "304 SS with HALAR Coating"@en ;
     rdfs:label "304不锈钢衬HALAR"@zh .
 
 slpra-equip:SS316LWithHALARCoating a owl:Class ;
+    rdfs:comment "以316L不锈钢为基材，并在相应表面覆有HALAR乙烯-三氟氯乙烯共聚物层的复合构造材料。"@zh ;
     rdfs:subClassOf slpra-equip:ConstructionMaterial ;
     rdfs:label "316L SS with HALAR Coating"@en ;
     rdfs:label "316L不锈钢衬HALAR"@zh .
 
 slpra-equip:BorosilicateGlass a owl:Class ;
+    rdfs:comment "以二氧化硅和氧化硼为主要成分、具有相应耐热和化学稳定性的玻璃材料，可用于设备容器或部件。"@zh ;
     rdfs:subClassOf slpra-equip:ConstructionMaterial ;
     rdfs:label "Borosilicate Glass"@en ;
     rdfs:label "硼硅玻璃"@zh .
 
 slpra-equip:PTFE a owl:Class ;
+    rdfs:comment "由四氟乙烯聚合形成的含氟聚合物材料，具有较高的化学惰性，可用于设备部件、密封件或衬层。"@zh ;
     rdfs:subClassOf slpra-equip:ConstructionMaterial ;
     rdfs:label "PTFE"@en ;
     rdfs:label "聚四氟乙烯"@zh .
@@ -213,21 +248,25 @@ slpra-equip:PTFE a owl:Class ;
 # ============================================================
 
 slpra-equip:SurfaceCoating a owl:Class ;
+    rdfs:comment "附着于设备基材表面、用于提供耐腐蚀、隔离或其他表面性能的材料覆盖层。"@zh ;
     rdfs:subClassOf obo:BFO_0000040 ;
     rdfs:label "Surface Coating"@en ;
     rdfs:label "表面涂层"@zh .
 
 slpra-equip:HALARCoating a owl:Class ;
+    rdfs:comment "以HALAR乙烯-三氟氯乙烯共聚物为主要材料、覆于设备基材表面的含氟聚合物涂层。"@zh ;
     rdfs:subClassOf slpra-equip:SurfaceCoating ;
     rdfs:label "HALAR Coating (ECTFE)"@en ;
     rdfs:label "HALAR涂层"@zh .
 
 slpra-equip:PTFECoating a owl:Class ;
+    rdfs:comment "以聚四氟乙烯为主要材料、覆于设备基材表面的含氟聚合物涂层。"@zh ;
     rdfs:subClassOf slpra-equip:SurfaceCoating ;
     rdfs:label "PTFE Coating"@en ;
     rdfs:label "PTFE涂层"@zh .
 
 slpra-equip:GlassLining a owl:Class ;
+    rdfs:comment "通过烧结等工艺将玻璃质釉层结合到金属基材上而形成的设备内衬，用于提供与工艺介质接触的玻璃质表面。"@zh ;
     rdfs:subClassOf slpra-equip:SurfaceCoating ;
     rdfs:label "Glass Lining"@en ;
     rdfs:label "搪瓷内衬"@zh .
@@ -237,16 +276,19 @@ slpra-equip:GlassLining a owl:Class ;
 # ============================================================
 
 slpra-equip:CleanabilityRating a owl:Class ;
+    rdfs:comment "依据设备结构、表面特性及清洁操作可达性等因素，对设备去除残留物和污染物的难易程度所作的等级评价。"@zh ;
     rdfs:subClassOf obo:BFO_0000019 ;
     rdfs:label "Cleanability Rating"@en ;
     rdfs:label "可清洁性评级"@zh .
 
 slpra-equip:SurfaceRoughness a owl:Class ;
+    rdfs:comment "设备表面微观轮廓高低起伏的程度，是描述表面纹理并可能影响残留附着及清洁效果的表面质量特征。"@zh ;
     rdfs:subClassOf obo:BFO_0000019 ;
     rdfs:label "Surface Roughness"@en ;
     rdfs:label "表面粗糙度"@zh .
 
 slpra-equip:EquipmentComplexity a owl:Class ;
+    rdfs:comment "设备在组件构成、内部流路及操作结构等方面的复杂程度，可影响其拆装、清洁和检查的难易程度。"@zh ;
     rdfs:subClassOf obo:BFO_0000019 ;
     rdfs:label "Equipment Complexity"@en ;
     rdfs:label "设备复杂度"@zh .
@@ -256,11 +298,13 @@ slpra-equip:EquipmentComplexity a owl:Class ;
 # ============================================================
 
 slpra-equip:SharedEquipmentRole a owl:Class ;
+    rdfs:comment "设备在指定生产安排中供不同产品使用时承担的共用角色，包括不同产品按计划先后使用同一设备的情形。"@zh ;
     rdfs:subClassOf obo:BFO_0000023 ;
     rdfs:label "Shared Equipment Role"@en ;
     rdfs:label "共线设备角色"@zh .
 
 slpra-equip:DedicatedEquipmentRole a owl:Class ;
+    rdfs:comment "设备在指定生产安排中被限定用于特定产品、产品组或工序时承担的专用角色。"@zh ;
     rdfs:subClassOf obo:BFO_0000023 ;
     rdfs:label "Dedicated Equipment Role"@en ;
     rdfs:label "专用设备角色"@zh .
@@ -273,39 +317,46 @@ slpra-equip:DedicatedEquipmentRole a owl:Class ;
 # ============================================================
 
 slpra-equip:hasSurface a owl:ObjectProperty ;
+    rdfs:comment "将设备关联到属于该设备的表面，包括产品接触面或非接触面。"@zh ;
     rdfs:domain slpra-equip:Equipment ;
     rdfs:range slpra-equip:EquipmentSurface ;
     rdfs:label "has surface"@en .
 
 slpra-equip:constructedOf a owl:ObjectProperty ;
+    rdfs:comment "将设备关联到构成其主体或部件的材料，用于表示设备材质。"@zh ;
     rdfs:domain slpra-equip:Equipment ;
     rdfs:range slpra-equip:ConstructionMaterial ;
     rdfs:label "constructed of"@en ;
     rdfs:label "主体材质"@zh .
 
 slpra-equip:hasSurfaceCoating a owl:ObjectProperty ;
+    rdfs:comment "将设备表面关联到附着于该表面的涂层或内衬材料层。"@zh ;
     rdfs:domain slpra-equip:EquipmentSurface ;
     rdfs:range slpra-equip:SurfaceCoating ;
     rdfs:label "has surface coating"@en .
 
 slpra-equip:locatedIn a owl:ObjectProperty ;
+    rdfs:comment "将设备关联到其安装或所在的生产房间。"@zh ;
     rdfs:domain slpra-equip:Equipment ;
     rdfs:range slpra-facil:ProductionRoom ;
     rdfs:label "located in"@en ;
     rdfs:label "安装位置"@zh .
 
 slpra-equip:hasCleanabilityRating a owl:ObjectProperty ;
+    rdfs:comment "将设备关联到针对该设备清洁难易程度作出的可清洁性评级。"@zh ;
     rdfs:domain slpra-equip:Equipment ;
     rdfs:range slpra-equip:CleanabilityRating ;
     rdfs:label "has cleanability rating"@en .
 
 slpra-equip:hasEquipmentRole a owl:ObjectProperty ;
+    rdfs:comment "将设备关联到其在指定生产安排中承担的共用设备角色或专用设备角色。"@zh ;
     rdfs:domain slpra-equip:Equipment ;
     rdfs:range [ a owl:Class ;
         owl:unionOf ( slpra-equip:SharedEquipmentRole slpra-equip:DedicatedEquipmentRole ) ] ;
     rdfs:label "has equipment role"@en .
 
 slpra-equip:usedInProductionOf a owl:ObjectProperty ;
+    rdfs:comment "将设备关联到使用该设备开展生产操作的药品产品，表示设备与所生产产品之间的用途关系。"@zh ;
     rdfs:domain slpra-equip:Equipment ;
     rdfs:range slpra-drug:DrugProduct ;
     rdfs:label "used in production of"@en ;
@@ -316,44 +367,52 @@ slpra-equip:usedInProductionOf a owl:ObjectProperty ;
 # ============================================================
 
 slpra-equip:equipmentID a owl:DatatypeProperty ;
+    rdfs:comment "用于标识设备的管理编号，以字符串记录。"@zh ;
     rdfs:domain slpra-equip:Equipment ;
     rdfs:range xsd:string ;
     rdfs:label "equipment ID"@en ;
     rdfs:label "设备编号"@zh .
 
 slpra-equip:equipmentName a owl:DatatypeProperty ;
+    rdfs:comment "设备在生产或设备管理记录中使用的名称。"@zh ;
     rdfs:domain slpra-equip:Equipment ;
     rdfs:range xsd:string ;
     rdfs:label "equipment name"@en ;
     rdfs:label "设备名称"@zh .
 
 slpra-equip:modelSpecification a owl:DatatypeProperty ;
+    rdfs:comment "描述设备型号及规格的文本，可包括用于区分设备设计或配置的标识。"@zh ;
     rdfs:domain slpra-equip:Equipment ;
     rdfs:range xsd:string ;
     rdfs:label "model specification"@en ;
     rdfs:label "规格型号"@zh .
 
 slpra-equip:surfaceArea_cm2 a owl:DatatypeProperty ;
+    rdfs:comment "所描述设备表面的面积数值，单位为平方厘米。"@zh ;
     rdfs:domain slpra-equip:EquipmentSurface ;
     rdfs:range xsd:decimal ;
     rdfs:label "surface area (cm²)"@en .
 
 slpra-equip:surfaceRoughness_Ra a owl:DatatypeProperty ;
+    rdfs:comment "设备表面轮廓算术平均偏差Ra的数值，单位为微米，用于表征表面粗糙度。"@zh ;
     rdfs:domain slpra-equip:EquipmentSurface ;
     rdfs:range xsd:decimal ;
     rdfs:label "surface roughness Ra (μm)"@en .
 
 slpra-equip:cleanabilityScore a owl:DatatypeProperty ;
+    rdfs:comment "可清洁性评级对应的整数评分，现有标签约定为1至5分；分值高低所代表的清洁难易方向由所采用的评分规则确定。"@zh ;
     rdfs:domain slpra-equip:CleanabilityRating ;
     rdfs:range xsd:integer ;
     rdfs:label "cleanability score (1-5)"@en .
 
 slpra-equip:isDedicatedEquipment a owl:DatatypeProperty ;
+    rdfs:comment "表示设备是否在指定生产安排中被作为专用设备使用的布尔值。"@zh ;
     rdfs:domain slpra-equip:Equipment ;
     rdfs:range xsd:boolean ;
     rdfs:label "is dedicated equipment"@en .
 
 slpra-equip:isInCleanArea a owl:DatatypeProperty ;
+    rdfs:comment "表示设备是否位于具有规定洁净要求的生产区域内的布尔值。"@zh ;
     rdfs:domain slpra-equip:Equipment ;
     rdfs:range xsd:boolean ;
     rdfs:label "is in clean area"@en .
@@ -365,11 +424,13 @@ slpra-equip:requiresDedication a owl:DatatypeProperty ;
     rdfs:comment "Set by SWRL rules based on drug product classification."@en .
 
 slpra-equip:requiresInactivationValidation a owl:DatatypeProperty ;
+    rdfs:comment "表示该设备相关的污染控制措施是否要求开展灭活过程验证的布尔值，不表示验证已经完成。"@zh ;
     rdfs:domain slpra-equip:Equipment ;
     rdfs:range xsd:boolean ;
     rdfs:label "requires inactivation validation"@en .
 
 slpra-equip:requiresIndependentHVAC a owl:DatatypeProperty ;
+    rdfs:comment "表示该设备所处生产环境是否要求配置独立暖通空调系统的布尔值，不表示相应系统已经配置。"@zh ;
     rdfs:domain slpra-equip:Equipment ;
     rdfs:range xsd:boolean ;
     rdfs:label "requires independent HVAC"@en .
