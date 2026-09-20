@@ -11,8 +11,10 @@ from app.services.extraction.ontology_guided.context import assemble_context
 from app.services.extraction.ontology_guided.contracts import (
     GraphProperty,
     LocalMenu,
+    ScopeMember,
     SlotSpec,
     SubjectRef,
+    TraversalScope,
 )
 from app.services.extraction.ontology_guided.dependencies import DependencyIndex
 from app.services.extraction.ontology_guided.expert_review import (
@@ -22,6 +24,7 @@ from app.services.extraction.ontology_guided.expert_review import (
     local_repair_tasks,
 )
 from app.services.extraction.ontology_guided.ontology_plan import compile_local_menu
+from app.services.extraction.ontology_guided.record_discovery import RecordDiscoveryTask
 from app.services.extraction.ontology_guided.repair_adapter import EvidenceRepairAdapter
 from app.services.extraction.ontology_guided.scheduler import RecognitionTask
 from tests.test_extraction.test_evidence_repair import _ontology, repaired_response
@@ -120,6 +123,30 @@ def test_review_events_freeze_after_validated_prefix_and_replay_idempotently():
         ReviewReplay().admit([review], [], after_outcomes=0)
 
 
+@pytest.mark.parametrize("reason", ["incorrect_value", "incorrect_property"])
+@pytest.mark.parametrize("scope", [
+    None,
+    TraversalScope.create(),
+    TraversalScope.create([ScopeMember(
+        relation_ref={"id": "scoped-relation", "revision": 2},
+        member_ref={"id": "subject", "revision": 1},
+    )]),
+])
+def test_expert_repair_preserves_original_scope_for_source_local_tasks(reason, scope):
+    _candidate, review, menu, index = _review_fixture()
+    original = RecognitionTask.model_validate(review["original_task"])
+    original.scope = scope
+    review.update(reason_code=reason, original_task=original.model_dump(mode="json"))
+    tasks, status = local_repair_tasks(review, {"operation_id": "scoped-repair"}, menu, index)
+    assert status is None and tasks
+    assert all(task.scope == scope for task in tasks)
+    assert all(task.claim_lineage_id != original.claim_lineage_id for task in tasks)
+    if scope is not None:
+        # 027/028 can build their predicate context using the original scope ID.
+        assert all(task.scope.scope_id == scope.scope_id for task in tasks)
+        assert all(task.scope.members == scope.members for task in tasks)
+
+
 def test_expert_feedback_cannot_reuse_prior_protocol_or_change_evidence_permissions(
     tmp_path, monkeypatch,
 ):
@@ -155,6 +182,55 @@ def test_expert_feedback_cannot_reuse_prior_protocol_or_change_evidence_permissi
     count = len(requests)
     adapter.inspect(task, context, predicate, menu)
     assert len(requests) == count
+
+
+@pytest.mark.parametrize("reason,predicate", [
+    ("incorrect_value", "urn:value"), ("incorrect_property", "urn:other"),
+])
+def test_record_property_repair_uses_verified_owner_without_inventing_original_task(
+    reason, predicate,
+):
+    _candidate, review, menu, index = _review_fixture()
+    original = RecordDiscoveryTask.create(
+        run_fingerprint="run", record_id="record", schema_card_id="card",
+        analysis_scope_ref="analysis-scope", dependency_hash="record-dependencies",
+    ).model_copy(update={"scope": TraversalScope.create([ScopeMember(
+        relation_ref={"id": "scoped-relation", "revision": 2},
+        member_ref={"id": "subject", "revision": 1},
+    )])})
+    review.update(original_task=original.model_dump(mode="json"), reason_code=reason,
+                  subject=menu.subject.model_dump(mode="json"),
+                  subject_ref={"id": menu.subject.entity_id, "revision": menu.subject.revision})
+    before = deepcopy(review)
+    tasks, status = local_repair_tasks(review, {"operation_id": "record-repair"}, menu, index)
+    assert status is None and len(tasks) == 1
+    assert tasks[0].subject == menu.subject
+    assert tasks[0].predicate_kind == "property" and tasks[0].predicate_iri == predicate
+    assert tasks[0].record_id == original.record_id and tasks[0].scope == original.scope
+    assert tasks[0].claim_lineage_id != original.claim_lineage_id
+    assert review == before and "subject" not in review["original_task"]
+
+
+@pytest.mark.parametrize("change", ["class", "revision", "property", "missing_owner"])
+def test_record_property_repair_rejects_owner_or_menu_mismatch(change):
+    _candidate, review, menu, index = _review_fixture()
+    original = RecordDiscoveryTask.create(
+        run_fingerprint="run", record_id="record", schema_card_id="card",
+        analysis_scope_ref="scope", dependency_hash="dependencies",
+    )
+    review.update(original_task=original.model_dump(mode="json"),
+                  subject=menu.subject.model_dump(mode="json"),
+                  subject_ref={"id": menu.subject.entity_id, "revision": menu.subject.revision})
+    if change == "class":
+        review["subject"]["class_iri"] = "urn:DifferentClass"
+    elif change == "revision":
+        review["subject_ref"]["revision"] += 1
+    elif change == "property":
+        review["predicate_iri"] = "urn:NotInMenu"
+    else:
+        review.pop("subject")
+    with pytest.raises(ValueError):
+        local_repair_tasks(review, {"operation_id": "record-repair"}, menu, index)
 
 
 def executor_review_fixture(tmp_path):

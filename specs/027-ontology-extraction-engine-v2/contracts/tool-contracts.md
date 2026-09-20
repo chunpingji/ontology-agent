@@ -137,8 +137,10 @@ def to_function_call_output(call_id: str, result: ToolResult) -> dict: ...
 - Data `MentionData`：`mentions:list[MentionSuggestion], coverage:MentionCoverage, limits:MentionLimits, omissions:list[ToolIssue]`。
 - `MentionSuggestion={mention_ref,evidence_id,start:int,end:int,text,class_iris:list[str],predicate_iris:list[str],role,score:float}`；role=entity/field_label/field_value/unit。score 仅为提及模型分数。
 - `MentionCoverage={requested_units:list[str],processed_units:list[str],unprocessed_units:list[str]}`；processed 仅包含全部请求标签/窗口均完成的单元，失败或未执行单元进入 unprocessed，并在 omissions 说明原因。
+- 当前卡片的部分概念缺定义或名称时，保留其余标签的有效建议，工具信封为 `ok`，Harness 显示“返回不完整”；`omissions` 保留非空原因码、明确说明及有限的缺失概念 IRI 示例，涉及单元列入 unprocessed。全部词条不可用时返回 `blocked` 及具体原因，不调用模型；卡片范围外的词条缺失不影响本次覆盖。
 - `MentionLimits={labels_per_batch:int,window_chars:int,overlap_chars:int,word_limit:int,encoder_token_limit:int,candidate_pool_limit:int,max_returned_mentions:int}`。依次映射 mentions 的标签批次、字符窗/重叠、extractor 的 max_len/encoder_input_limit/shared_candidate_budget 及本次结果预算；不把 160 字符窗记为 160 tokens，不把单窗口共享候选池误称全文候选上限。返回裁选须在 omissions 给出实际省略数量/范围，不能把裁选后空集合记为无命中。
 - 显式注入当前 GLiNER2.5 `Gliner2Extractor`，不走旧 GLiNER 默认工厂；标签由本体/SKOS/显式 overlay 编译。返回 mention_ref 可供后续查询，不授予实体事实资格。
+- 关系对象发现保留当前关系合法 range 类的一层数据属性（含合法继承属性）的 `field_label` / `field_value` 词条作为召回线索，不沿目标类的出边扩展类型或字段。建议保留属性 IRI 和字段角色，不将字段值自动标为实体；这些词条不加入当前主体可断言的谓词菜单。由字段和值表达的记录对象可用 `representation=record` 提出，仍须核验原文记录组成、归属、类型、对象及关系；不因其他非必需属性缺失就否定对象。NER 未命中不阻止依据已授权原文提出有逐字引文的候选。
 - 提及 ID 与 AnchorData 使用同一物理跨度规则；提交结果后登记其引用及标签映射。同跨度的不同标签可共用 mention_ref 返回不同建议行，每行 score 保留该标签原始分数，不把其中最高分赋给全部类型。
 - 只有全部声明范围执行完成且无提及时才 no_match；未加载、部分执行或 span 失败按 blocked/error 保留缺测。Qwen 仍看完整原文。
 

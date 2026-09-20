@@ -490,6 +490,101 @@ class RankingService:
                            "adaptive_requests": _FrozenDict(self.adaptive_requests)})
         return result
 
+    def discovery_embeddings(self, views, *, permission_scope, checkpoint):
+        """Batch record/card encoding through the existing paid cache and budget.
+
+        The owner calls this before dispatching discovery. Confirmed vectors and
+        reservations use the same ranking partitions as predicate retrieval.
+        Failure pauses discovery instead of expanding an exhaustive fallback.
+        """
+        if self.policy.mode != "semantic" or self.model is None:
+            raise RankingPaused("semantic_ranking_model_unavailable")
+        started = time.monotonic()
+        set_deadline = getattr(self.model, "set_deadline", None)
+        if callable(set_deadline):
+            set_deadline(started + self.policy.ranking_timeout)
+
+        def check_deadline():
+            if time.monotonic() - started >= self.policy.ranking_timeout:
+                raise RankingPaused("ranking_timeout")
+
+        scope_hash = evidence_hash(permission_scope)
+        keys = {identity: evidence_hash([scope_hash, text, self.model_identity, "embedding"])
+                for identity, text in views.items()}
+        missing = list({keys[identity]: text for identity, text in views.items()
+                        if keys[identity] not in self._cache}.items())
+        slot_key = evidence_hash([scope_hash, "record-discovery"])
+        if self.budget_enabled:
+            self.costs["cache_hits"] += len(views) - len(missing)
+
+        def persist():
+            try:
+                checkpoint()
+            except (ModelCancelled, ExecutionLost):
+                raise
+            except Exception as exc:
+                raise RankingPersistenceError("record ranking persistence failed") from exc
+
+        try:
+            for offset in range(0, len(missing), self.policy.batch_size):
+                check_deadline()
+                batch = missing[offset:offset + self.policy.batch_size]
+                texts = [text for _, text in batch]
+                counts = self.model.count_tokens_batch(texts)
+                check_deadline()
+                if len(counts) != len(texts) or any(
+                    type(count) is not int or count < 0 for count in counts
+                ):
+                    raise RankingPaused("ranking_invalid_token_count")
+                if any(count > self.policy.max_tokens_per_pair for count in counts):
+                    raise RankingPaused("ranking_input_too_long")
+                tokens = sum(counts)
+                if self.budget_enabled and (
+                    self.costs["tokens"] + tokens > self.policy.max_ranking_tokens_per_run
+                    or self.slot_costs.get(slot_key, 0) + tokens
+                    > self.policy.max_ranking_tokens_per_slot
+                ):
+                    raise RankingPaused("ranking_token_budget_exhausted")
+                request_key = evidence_hash([slot_key, self.model_identity, texts])
+                attempts = self._request_attempts.get(request_key, 0)
+                if attempts > self.policy.technical_retry_limit:
+                    raise RankingPaused("ranking_call_budget_exhausted")
+                self._request_attempts[request_key] = attempts + 1
+                if self.budget_enabled:
+                    self.costs["tokens"] += tokens
+                    self.costs["embedding_inputs"] += len(texts)
+                    self.costs["model_calls"] += 1
+                    self.costs["technical_retries"] += bool(attempts)
+                    self.slot_costs[slot_key] = self.slot_costs.get(slot_key, 0) + tokens
+                persist()
+                check_deadline()
+                vectors = self.model.embed(texts)
+                check_deadline()
+                if getattr(self.model, "identity", {}) != self.model_identity:
+                    raise RankingPaused("ranking_model_identity_changed")
+                if len(vectors) != len(texts):
+                    raise RankingPaused("ranking_model_returned_incomplete_batch")
+                for vector in vectors:
+                    cosine_scores(vector, {"self": vector})
+                if len({len(vector) for vector in vectors}) != 1:
+                    raise RankingPaused("ranking_invalid_vectors")
+                self._cache.update((key, _freeze(vector))
+                                   for (key, _), vector in zip(batch, vectors, strict=True))
+                self._cache_snapshots.pop("cache", None)
+                persist()
+            if len({len(self._cache[key]) for key in keys.values()}) > 1:
+                raise RankingPaused("ranking_invalid_vectors")
+        except (ModelCancelled, ExecutionLost, RankingPersistenceError, RankingPaused):
+            raise
+        except Exception as exc:
+            raise RankingPaused(_failure_reason(exc)) from exc
+        finally:
+            if callable(set_deadline):
+                set_deadline(None)
+            if self.budget_enabled:
+                self.costs["elapsed_ms"] += (time.monotonic() - started) * 1000
+        return {identity: self._cache[key] for identity, key in keys.items()}
+
     def fork(self, *, before_model_hook=None):
         """Private mutable bookkeeping; only frozen snapshot payloads are shared."""
         if self.current_state:

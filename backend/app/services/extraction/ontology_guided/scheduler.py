@@ -493,6 +493,161 @@ class FrontierScheduler:
         task = self._choose_task(excluded_slots or set(), commit=False)
         return self._materialize(task, detach=True) if task is not None else None
 
+    def peek_work_unit_candidates(
+        self, *, excluded_slots: set[tuple] | None = None, limit: int = 4,
+    ) -> list[RecognitionTask]:
+        """Preview compatible current opportunities, without consuming lazy records.
+
+        Every sibling is its own slot's current phase/section/rank opportunity.
+        Filtering a slot's records by the seed record first would illegally skip
+        a higher ranked record or a due exploration turn.
+        """
+        from app.services.extraction.ontology_guided.recognition_batch import compatible_members
+
+        if type(limit) is not int or limit < 1:
+            raise ValueError("work_unit_candidate_limit_invalid")
+        capacity = min(limit, self.max_tasks - self.dispatched)
+        if capacity <= 0:
+            return []
+        excluded = set(excluded_slots or ())
+        seed = self._choose_task(excluded, commit=False)
+        if seed is None:
+            return []
+        seed_task = self._materialize(seed, detach=True)
+        candidates = [seed_task]
+        if seed.retry_kind:
+            return candidates
+        capacity = min(capacity, self._work_unit_fair_capacity(excluded))
+        excluded.add(self._slot_key(seed))
+        while len(candidates) < capacity:
+            task = self._choose_task(excluded, commit=False)
+            if task is None or task.retry_kind:
+                break
+            excluded.add(self._slot_key(task))
+            if compatible_members(seed_task, task):
+                candidates.append(self._materialize(task, detach=True))
+        return candidates
+
+    def consume_work_unit(
+        self, selected_task_ids: list[str], *, run_fingerprint: str, policy,
+        excluded_slots: set[tuple] | None = None,
+    ):
+        """Consume only measured members and charge the existing logical task limit."""
+        from app.services.extraction.ontology_guided.recognition_batch import RecognitionWorkUnit
+
+        if (not selected_task_ids or len(set(selected_task_ids)) != len(selected_task_ids)
+                or len(selected_task_ids) > self.max_tasks - self.dispatched):
+            raise ValueError("work_unit_selection_invalid")
+        selected = set(selected_task_ids)
+        queued = {
+            task.task_id: (task, queue, branch)
+            for queue, branch in ((self._root, "root"), (self._child, "child"),
+                                  (self._retries, "retry"))
+            for task in queue if task.task_id in selected
+        }
+        if set(queued) != selected:
+            raise ValueError("work_unit_task_not_pending")
+        if any(task.retry_kind is None and self._slot_key(task) in (excluded_slots or set())
+               for task, _queue, _branch in queued.values()):
+            raise ValueError("work_unit_task_not_ready")
+        if len(selected_task_ids) > self._work_unit_fair_capacity(excluded_slots or set()):
+            raise ValueError("work_unit_selection_exceeds_fair_turn")
+        # Validate the entire selection before any mutation, including each
+        # predicate's original next record, not merely its queue membership.
+        for task_id in selected_task_ids:
+            task, queue, branch = queued[task_id]
+            if branch == "retry":
+                if len(selected_task_ids) != 1 or task is not self._retries[0]:
+                    raise ValueError("work_unit_retry_must_be_singleton")
+                continue
+            excluded = self.pending_slots - {self._slot_key(task)}
+            current = self._select_fresh(queue, branch, excluded, commit=False)
+            if current.task_id != task_id:
+                raise ValueError("work_unit_selection_skips_current_record")
+        unit = RecognitionWorkUnit.create(
+            run_fingerprint=run_fingerprint, policy=policy,
+            members=[self._materialize(queued[task_id][0], detach=True)
+                     for task_id in selected_task_ids],
+        )
+        for task_id in selected_task_ids:
+            task, queue, branch = queued[task_id]
+            if branch == "retry":
+                queue.remove(task)
+                self._fresh_since_retry = False
+            else:
+                self._consume_fresh_exact(task, queue, branch, excluded_slots or set())
+                self._turn += 1
+                self._fresh_since_retry = True
+            self.dispatched += 1
+        return unit
+
+    def _work_unit_fair_capacity(self, excluded_slots):
+        """Stop a unit before an existing 2:1 rotation owes its other branch a turn.
+
+        Advancing a modulo-three cursor by three same-kind members would retain
+        the same cursor forever. Capacity respects all existing branch, source
+        and template rotations, so an atomic unit cannot hide an owed turn.
+        """
+        root = any(key[:-1] not in excluded_slots for key in self._branch_buckets["root"])
+        child = any(key[:-1] not in excluded_slots for key in self._branch_buckets["child"])
+        capacity = 4
+        if root and child:
+            capacity = 2 if self._turn % 3 == 0 else 1
+        if not self._source_priority_tasks and not self.template_interleaving:
+            return capacity
+        branch = "child" if child and (self._turn % 3 in (0, 1) or not root) else "root"
+        queue = self._child if branch == "child" else self._root
+        available = [task for task in queue if self._slot_key(task) not in excluded_slots]
+        if self._source_priority_tasks:
+            priority = any(task.task_id in self._source_priority_tasks for task in available)
+            ordinary = any(task.task_id not in self._source_priority_tasks for task in available)
+            if priority and ordinary:
+                turn = self._source_turns.get(branch, 0)
+                capacity = min(capacity, 2 if turn % 3 == 0 else 1)
+        if self.template_interleaving:
+            def preferred(task):
+                return (isinstance(task, LogicalRecord) and task.frontier.template_priority
+                        or self._slot_key(task) in self._raw_priority_slots)
+
+            if any(preferred(task) for task in available) and any(
+                not preferred(task) for task in available
+            ):
+                turn = self._template_turns.get(branch, 0)
+                capacity = min(capacity, 2 if turn % 3 == 0 else 1)
+        return capacity
+
+    def _consume_fresh_exact(self, task, queue, branch, excluded_slots):
+        """Advance the original fairness counters for an already measured member.
+
+        Re-running selection after a sibling advances a branch-wide source turn
+        could choose a different record. The unit must consume the exact IDs it
+        measured, while leaving other predicates' phase/section turns untouched.
+        """
+        if self._source_priority_tasks:
+            available = [value for value in queue
+                         if self._slot_key(value) not in excluded_slots]
+            priority = any(value.task_id in self._source_priority_tasks for value in available)
+            ordinary = any(value.task_id not in self._source_priority_tasks for value in available)
+            if priority and ordinary:
+                self._source_turns[branch] = self._source_turns.get(branch, 0) + 1
+        if self.template_interleaving:
+            self._template_turns[branch] = self._template_turns.get(branch, 0) + 1
+        subject = self._subject_turn_key(task)
+        self._subject_turns[branch] = subject
+        self._kind_turns[subject] = task.predicate_kind
+        self._predicate_turns[repr((subject, task.predicate_kind))] = task.predicate_iri
+        slot = repr((subject, task.predicate_iri))
+        self._phase_turns[slot] = self._phase_turns.get(slot, 0) + 1
+        phase = repr((subject, task.predicate_iri, task.phase))
+        count = self._phase_counts.get(phase, 0)
+        self._phase_counts[phase] = count + 1
+        if count % 5 != 4:
+            self._section_turns[phase] = task.section_node_id
+        queue.remove(task)
+        self._index_remove(task, branch)
+        if isinstance(task, LogicalRecord):
+            task.pending = False
+
     def peek_slot(
         self, excluded_slots: set[tuple] | None = None
     ) -> tuple[SubjectRef, str] | None:

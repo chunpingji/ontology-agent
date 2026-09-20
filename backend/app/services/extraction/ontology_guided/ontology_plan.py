@@ -33,11 +33,11 @@ DRUG_PRODUCT_IRI = "https://ontology.pharma-gmp.cn/slpra/drug/DrugProduct"
 CMC_DESCRIBES_SCOPE_VERSION = "drug-product-only-v1"
 
 
-def scope_cmc_describes(predicate: PredicateSpec, subject: SubjectRef) -> PredicateSpec:
+def scope_cmc_describes(predicate: PredicateSpec, subject: SubjectRef | str) -> PredicateSpec:
     """Limit this task's type granularity without changing the frozen ontology."""
     if not (
         isinstance(predicate, EdgeSpec)
-        and subject.class_iri == CMC_REPORT_IRI
+        and (subject if isinstance(subject, str) else subject.class_iri) == CMC_REPORT_IRI
         and predicate.iri == CMC_DESCRIBES_IRI
         and DRUG_PRODUCT_IRI in predicate.range_class_iris
         and predicate.constraint_status == "resolved"
@@ -232,7 +232,12 @@ def _ontology_snapshot_from_engine(
             "iri": iri,
             "label": raw["label"],
             "description": description,
-            "parent_iris": sorted(raw["parent_iris"]),
+            # Module trees omit parents declared in another loaded module. Preserve
+            # those direct links without importing classes outside this snapshot.
+            "parent_iris": sorted(set(raw["parent_iris"]) | {
+                parent for parent in getattr(detail, "parent_iris", []) or []
+                if parent in raw_classes
+            }),
             "declared_properties": [item.model_dump(mode="json") for item in properties],
             "declared_relationships": [item.model_dump(mode="json") for item in relationships],
         }
@@ -477,6 +482,31 @@ def _merge_relationships(
     return merged
 
 
+def compile_class_predicates(
+    ontology: OntologySnapshot, class_iri: str, *, cmc_describes_type_scope: bool = False,
+) -> tuple[list[SlotSpec], list[EdgeSpec], list[str]]:
+    """Project declarations for a type without inventing an instance identity."""
+    if class_iri not in ontology.classes:
+        raise ValueError("subject class is absent from frozen ontology snapshot")
+    owners = [*_ancestors(ontology, class_iri), class_iri]
+    property_declarations = [
+        deepcopy(prop) for owner in owners
+        for prop in ontology.classes[owner].declared_properties
+    ]
+    relationship_declarations = [
+        deepcopy(edge) for owner in owners
+        for edge in ontology.classes[owner].declared_relationships
+    ]
+    diagnostics = list(ontology.diagnostics)
+    properties = _merge_properties(property_declarations, diagnostics)
+    relationships = _merge_relationships(
+        relationship_declarations, snapshot=ontology, diagnostics=diagnostics,
+    )
+    if cmc_describes_type_scope:
+        relationships = [scope_cmc_describes(edge, class_iri) for edge in relationships]
+    return properties, relationships, list(dict.fromkeys(diagnostics))
+
+
 def compile_local_menu(
     ontology: OntologySnapshot,
     subject: SubjectRef,
@@ -494,24 +524,9 @@ def compile_local_menu(
     # Menu compilation is deliberately a pure projection of ``ontology``;
     # querying a mutable engine here would invalidate the run fingerprint.
     _ = engine
-    if subject.class_iri not in ontology.classes:
-        raise ValueError("subject class is absent from frozen ontology snapshot")
-    owners = [*_ancestors(ontology, subject.class_iri), subject.class_iri]
-    property_declarations: list[SlotSpec] = []
-    relationship_declarations: list[EdgeSpec] = []
-    for owner in owners:
-        definition = ontology.classes[owner]
-        property_declarations.extend(deepcopy(definition.declared_properties))
-        relationship_declarations.extend(deepcopy(definition.declared_relationships))
-    diagnostics = list(ontology.diagnostics)
-    properties = _merge_properties(property_declarations, diagnostics)
-    relationships = _merge_relationships(
-        relationship_declarations,
-        snapshot=ontology,
-        diagnostics=diagnostics,
+    properties, relationships, diagnostics = compile_class_predicates(
+        ontology, subject.class_iri, cmc_describes_type_scope=cmc_describes_type_scope,
     )
-    if cmc_describes_type_scope:
-        relationships = [scope_cmc_describes(edge, subject) for edge in relationships]
     identity = {
         "ontology_snapshot_id": ontology.snapshot_id,
         "subject": subject.model_dump(mode="json"),

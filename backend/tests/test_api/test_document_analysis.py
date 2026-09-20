@@ -93,6 +93,10 @@ def test_projection_uses_frozen_protocol_and_graph_get_does_not_start_work(
     frozen_new = source.payload["performance_policy"]
     assert frozen_new["extraction_protocol"] == "ontology-tool-extraction-v1"
     assert frozen_new["api_protocol"] == "responses" and frozen_new["max_lineage_calls"] == 4
+    assert frozen_new["recognition_batching"] == {
+        "version": "predicate-batch-v1", "max_members": 4,
+    }
+    assert frozen_new["model_call_state_version"] == 3
     # Explicit historical fixture: legacy runs have no new protocol marker.
     source.payload = {**source.payload, "performance_policy": {"state_storage_version": 4}}
     db.commit()
@@ -111,6 +115,106 @@ def test_projection_uses_frozen_protocol_and_graph_get_does_not_start_work(
     assert payload["projection"] == "verified" and payload["availability"] == "pending"
     assert payload["relationship_groups"] == payload["scope_resolutions"] == []
     assert calls == []
+
+
+@pytest.mark.parametrize("stage", ["discovery", "verification"])
+def test_batch_transport_failure_reports_unknown_request_and_keeps_coverage(
+    client, db, analyst_headers, tmp_path, monkeypatch, stage,
+):
+    from app.services.document_analysis import current_state, execution
+    from app.services.llm import local_client
+    from tests.test_extraction.test_document_analysis_execution_recovery import _claim
+
+    monkeypatch.setattr(settings, "document_analysis_storage_dir", tmp_path / "artifacts")
+    monkeypatch.setattr(settings, "ontology_extraction_options", {})
+    monkeypatch.setattr(settings, "semantic_ranking_enabled", False)
+    monkeypatch.setattr(settings, "local_llm_model_revision", "batch-failure-test")
+    monkeypatch.setattr(settings, "evidence_max_input_tokens", 1000000)
+    monkeypatch.setattr(settings, "evidence_max_context_tokens", None)
+    monkeypatch.setattr(document_analysis, "dispatch_run", lambda *_a, **_kw: None)
+    monkeypatch.setattr(local_client, "get_local_llm", lambda: object())
+    monkeypatch.setattr(
+        model_adapter._ConfiguredInputCounter, "count", lambda _self, value: len(value),
+    )
+    calls = []
+
+    def transport(_client, **kwargs):
+        view = json.loads(kwargs["input_items"][0]["content"][0]["text"])
+        calls.append(view["stage"])
+        if view["stage"] == stage:
+            if stage == "verification":
+                assert all(member["verification_input"]["targets"] for member in view["members"])
+            raise local_client.StructuredModelError("model_request_failed")
+        answer = {"members": [{"task_id": member["task_id"], "result": {
+            key: [] for key in (
+                "entities", "properties", "relations", "external_links", "observations",
+                "reference_bindings",
+            )
+        }} for member in view["members"]]}
+        # A verification transport failure requires an actual frozen target.
+        # Empty discoveries now close locally and cannot exercise this boundary.
+        units = {unit["unit_id"]: unit for unit in view["evidence_units"]}
+        for member, entry in zip(view["members"], answer["members"]):
+            if member["predicate_iri"] == USES_EQUIPMENT:
+                evidence = next(
+                    ref for ref in member["evidence_refs"]
+                    if ref["fact_eligible"] and "设备甲" in units[ref["unit_id"]]["text"]
+                )
+                entry["result"]["entities"] = [{
+                    "local_id": "device", "class_iri": EQUIPMENT, "representation": "mention",
+                    "mentions": [{"evidence_id": evidence["evidence_id"], "text": "设备甲",
+                                  "context_text": None}],
+                    "record_components": [], "identifier_claims": [],
+                }]
+        assert any(member["result"]["entities"] for member in answer["members"])
+        return local_client.ResponseTurn(
+            "test-discovery", [{"type": "message", "role": "assistant", "content": [
+                {"type": "output_text", "text": json.dumps(answer)},
+            ]}], "completed", None, None, None,
+        )
+
+    monkeypatch.setattr(local_client, "responses_create", transport)
+    created = _create(
+        client, analyst_headers, _word_bytes(tmp_path, "本报告使用设备甲。"),
+        request_key=f"batch-transport-{stage}",
+    )
+    assert created.status_code == 202, created.text
+    run_id = created.json()["recognition_run_id"]
+    # This regression exercises the frozen predicate-batch protocol. New runs now
+    # discover record entities first, whose requests have no batch members.
+    run = db.get(DocumentAnalysisRun, run_id)
+    source = db.get(DocumentAnalysisArtifact, run.artifact_manifest["source"]["artifact_id"])
+    source.payload = {**source.payload, "performance_policy": {
+        key: value for key, value in source.payload["performance_policy"].items()
+        if key not in {"recognition_pipeline", "record_discovery"}
+    }}
+    db.commit()
+    store, token = _claim(db, run_id)
+    execution._execute_claimed(db, store, store.get_owned(run_id, "analyst"), token)
+    run = store.get_owned(run_id, "analyst")
+    assert run.execution_status == "failed"
+    expected = ["discovery"] if stage == "discovery" else ["discovery", "verification"]
+    assert calls == expected
+    response = client.get(f"/api/document-analysis/runs/{run_id}", headers=analyst_headers)
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["error"]["code"] == "MODEL_REQUEST_OUTCOME_UNKNOWN"
+    assert payload["error"]["retryable"] is False
+    assert "不会自动重发" in payload["error"]["safe_detail"]
+    assert payload["progress"]["stop_reason"] == "model_calls_unresolved"
+    assert payload["progress"]["model_calls"] == len(calls) - 1
+    assert payload["progress"]["model_calls_reserved"] == len(calls)
+    assert payload["progress"]["model_calls_unresolved"] == 1
+    assert payload["progress"]["records_examined"] == 0
+    work = current_state.restore_work(store, run, run.run_fingerprint).work_state
+    saved = current_state.restore_calls(store, run, run.run_fingerprint)
+    active = work["control"]["current"]["active_unit_ref"]
+    assert saved["protocols"][active]["pending_request"]["stage"] == stage
+    # Reading the run or graph never retries an unknown model request.
+    graph = client.get(f"/api/document-analysis/runs/{run_id}/graph", headers=analyst_headers)
+    assert graph.status_code == 200
+    assert graph.json()["coverage"]["stop_reason"] == "model_calls_unresolved"
+    assert calls == expected
 
 
 @pytest.mark.parametrize("state_storage_version", [2, 4])
@@ -887,12 +991,20 @@ def test_harness_current_context_is_private_read_only_and_call_bound(
         {"type": "reasoning", "encrypted_content": "opaque-secret", "summary": []},
     ]}
     observer("model_start", {"call_id": "call-1", "stage": "discovery", "input_tokens": 10,
-                             "request": request, "schema_card": {"predicates": []}})
+                             "request": request, "schema_card": {"predicates": []},
+                             "member_count": 2, "members": [
+                                 {"task_id": "member-1", "predicate_iri": "urn:code",
+                                  "predicate_label": "编号"},
+                                 {"task_id": "member-2", "predicate_iri": "urn:quantity",
+                                  "predicate_label": "数量"},
+                             ]})
     observer("delta", {"channel": "output", "text": "x" * (TEXT_LIMIT + 1)})
     observer("delta", {"channel": "thinking", "text": "服务端可读内容"})
     observer.flush(force=True)
     snapshot = client.get(url, headers=analyst_headers).json()["snapshot"]
     assert snapshot["call"]["status"] == "running"
+    assert snapshot["call"]["member_count"] == 2
+    assert [member["predicate_label"] for member in snapshot["call"]["members"]] == ["编号", "数量"]
     assert len(snapshot["output"]) == TEXT_LIMIT and snapshot["truncated"] == ["output"]
     assert snapshot["thinking"] == "服务端可读内容"
     context = client.get(url + "/context?call_id=call-1", headers=analyst_headers)
@@ -943,3 +1055,158 @@ def test_harness_sse_is_current_display_without_durable_event_id(
     assert not frame.startswith("id:")
     assert "first incremental output" in frame and "context-not-in-stream" not in frame
     assert '"status": "running"' in frame
+
+
+@pytest.mark.parametrize("stage", ["discovery", "verification"])
+@pytest.mark.parametrize("task_kind", ["record_discovery", "property_disambiguation"])
+def test_record_harness_preserves_class_cards_without_inventing_a_subject(
+    client, db, analyst_headers, tmp_path, monkeypatch, stage, task_kind,
+):
+    from app.services.document_analysis.harness import HarnessObserver
+
+    monkeypatch.setattr(settings, "document_analysis_storage_dir", tmp_path / "artifacts")
+    dispatched = []
+    monkeypatch.setattr(document_analysis, "dispatch_run", lambda *args, **kw: dispatched.append(1))
+    run_id = _create(client, analyst_headers, _word_bytes(tmp_path),
+                     request_key="record-harness").json()["recognition_run_id"]
+    dispatched.clear()
+    store = DocumentAnalysisRunStore(db)
+    token = store.claim(run_id, "analyst", actor="dispatcher", worker_id="record-harness")
+    db.commit()
+    run = store.get_owned(run_id, "analyst")
+    watermark = run.revision, run.event_head, run.work_version
+    card = {
+        "kind": "record_discovery", "schema_card_id": "record-card",
+        "ontology_snapshot_id": "ontology", "analysis_scope_ref": "document-scope",
+        "class_cards": [{
+            "class_iri": iri, "label": label,
+            "properties": [{"iri": "urn:code", "label": prop_label, "kind": "property"}],
+            "quantity_policies": [], "identity_keys": [], "unsupported_constraints": [],
+        } for iri, label, prop_label in (("urn:Device", "装置", "型号"),
+                                       ("urn:Component", "部件", "规格"))],
+    }
+    observer = HarnessObserver(db.get_bind(), run_id, "analyst", token)
+    observer("model_start", {
+        "call_id": "record-call", "stage": stage, "input_tokens": 12,
+        "request": {"model": "qwen-test", "instructions": "按类卡识别", "input": []},
+        "schema_card": card, "predicate_label": "型号", "subject_label": None,
+        "task_kind": task_kind,
+    })
+    observer("model_end", {"status": "completed", "usage": {"total_tokens": 15}})
+    url = f"/api/document-analysis/runs/{run_id}/harness"
+    response = client.get(url, headers=analyst_headers)
+    assert response.status_code == 200
+    call = response.json()["snapshot"]["call"]
+    assert call["task_kind"] == task_kind and call["stage"] == stage
+    assert call["subject_label"] is None and call["predicate_label"] is None
+    assert call["members"] == [] and call["status"] == "completed"
+    context = client.get(url + "/context?call_id=record-call", headers=analyst_headers)
+    assert context.status_code == 200 and context.json()["schema_card"] == card
+    assert "subject_ref" not in context.json()["schema_card"]
+    assert "predicates" not in context.json()["schema_card"]
+    db.expire_all()
+    current = store.get_owned(run_id, "analyst")
+    assert (current.revision, current.event_head, current.work_version) == watermark
+    assert not dispatched
+
+
+def test_harness_projects_current_attribute_work_without_writing_or_starting_models(
+    client, db, analyst_headers, tmp_path, monkeypatch,
+):
+    from copy import deepcopy
+
+    from app.models.document_analysis import DocumentRunCurrentState
+    from app.services.document_analysis.current_state import put_rows, read_rows, write_work
+    from app.services.extraction.ontology_guided.current_work import WorkMap
+
+    monkeypatch.setattr(settings, "document_analysis_storage_dir", tmp_path / "artifacts")
+    dispatched = []
+    monkeypatch.setattr(document_analysis, "dispatch_run", lambda *args, **kw: dispatched.append(1))
+    raw = _word_bytes(tmp_path)
+    run_id = _create(client, analyst_headers, raw, request_key="attribute-harness").json()[
+        "recognition_run_id"
+    ]
+    other_id = _create(client, analyst_headers, raw, request_key="other-attribute-harness").json()[
+        "recognition_run_id"
+    ]
+    dispatched.clear()
+    store = DocumentAnalysisRunStore(db)
+    token = store.claim(run_id, "analyst", actor="dispatcher", worker_id="attribute-harness")
+    db.commit()
+    run = store.get_owned(run_id, "analyst")
+    url = f"/api/document-analysis/runs/{run_id}/harness"
+    assert client.get(url, headers=analyst_headers).json()["attribute_disambiguations"] == []
+    rows = {}
+    for field_id, value, status, work_status, reason, candidates in [
+        ("missing-value", None, "unresolved", "examined", "attribute_value_missing", []),
+        ("ambiguous", "A-01", "unresolved", "examined", "attribute_ambiguous", [{}, {}]),
+        ("resolved", "B-01", "resolved", "examined", None, [{}]),
+        ("failed", "C-01", "unresolved", "incomplete", "model_timeout", [{}]),
+        ("active", "D-01", "pending", "active", None, [{}, {}]),
+    ]:
+        rows[field_id] = {
+            "task": {"task_id": "task-" + field_id, "purpose": "property_disambiguation",
+                     "field_id": field_id, "record_id": "record-" + field_id},
+            "attribute_field": {"field_id": field_id, "record_id": "record-" + field_id,
+                                "label": "编号", "value": value},
+            "attribute_options": candidates, "attribute_status": status,
+            "status": work_status, "reason_code": reason, "disambiguation_attempts": 1,
+        }
+    rows["pending"] = {
+        "task": {"task_id": "task-pending", "purpose": "property_disambiguation",
+                 "field_id": "pending", "record_id": "record-pending"},
+        "status": "pending",
+    }
+    rows["ordinary"] = {"task": {"task_id": "ordinary"}, "status": "examined"}
+    work = WorkMap(rows)
+    stored_rows = work.drain()
+    run = write_work(
+        store, run, token, {"record_discovery": stored_rows}, sequence=run.event_head,
+        expected_version=run.work_version, fingerprint=run.run_fingerprint,
+    )
+    other = store.get_owned(other_id, "analyst")
+    foreign = deepcopy(rows["resolved"])
+    foreign["attribute_field"]["label"] = "FOREIGN_FIELD"
+    put_rows(store, other, DocumentRunCurrentState, "work:record_discovery",
+             WorkMap({"foreign": foreign}).drain(), work_version=other.work_version)
+    db.commit()
+    watermark = run.revision, run.event_head, run.work_version
+    count = db.query(DocumentRunCurrentState).count()
+    response = client.get(url, headers=analyst_headers)
+    assert response.status_code == 200
+    fields = {item["field_id"]: item for item in response.json()["attribute_disambiguations"]}
+    assert set(fields) == {"missing-value", "ambiguous", "resolved", "failed", "pending", "active"}
+    assert fields["ambiguous"]["candidate_count"] == 2
+    assert fields["ambiguous"]["attribute_status"] == "unresolved"
+    assert fields["resolved"]["attribute_status"] == "resolved"
+    assert fields["failed"]["work_status"] == "incomplete"
+    assert fields["failed"]["reason_code"] == "model_timeout"
+    assert fields["active"]["work_status"] == "active"
+    assert fields["active"]["attribute_status"] == "pending"
+    assert fields["missing-value"]["value"] is None
+    assert fields["pending"]["label"] is None and fields["pending"]["candidate_count"] is None
+    assert fields["pending"]["attribute_status"] == "pending"
+    assert "FOREIGN_FIELD" not in response.text
+    stranger = {**analyst_headers, "X-User": "other-owner"}
+    assert client.get(url, headers=stranger).status_code == 404
+    db.expire_all()
+    current = store.get_owned(run_id, "analyst")
+    assert (current.revision, current.event_head, current.work_version) == watermark
+    assert db.query(DocumentRunCurrentState).count() == count
+    assert read_rows(store, current, DocumentRunCurrentState,
+                     prefix="work:record_discovery")["work:record_discovery"] == stored_rows
+    assert not dispatched
+
+    # A changed current row replaces the displayed result; no prior attempt is appended.
+    updated = {**rows["ambiguous"], "attribute_status": "resolved",
+               "reason_code": None, "disambiguation_attempts": 2}
+    work["ambiguous"] = updated
+    write_work(store, current, token, {"record_discovery": work.drain()},
+               sequence=current.event_head, expected_version=current.work_version,
+               fingerprint=current.run_fingerprint)
+    db.commit()
+    latest = client.get(url, headers=analyst_headers).json()["attribute_disambiguations"]
+    assert len(latest) == 6
+    assert next(item for item in latest if item["field_id"] == "ambiguous")[
+        "attribute_status"
+    ] == "resolved"

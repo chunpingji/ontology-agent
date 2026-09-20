@@ -11,6 +11,89 @@ pytest_plugins = ["tests.test_extraction.test_tool_engine_freeze"]
 
 
 @pytest.mark.parametrize("change", [False, True])
+def test_empty_targets_recover_with_a_new_proposal_instead_of_empty_verification(
+    source, monkeypatch, change,
+):
+    from app.services.extraction.ontology_guided import evidence_work
+    from app.services.llm import local_client
+
+    adapter, task, context, predicate, menu, storage, requests = setup_adapter(
+        source, monkeypatch, budget=6,
+    )
+    monkeypatch.setattr(evidence_work, "plan_evidence_recovery", lambda *_a, **_kw:
+                        evidence_work.EvidenceRecoveryPlan("supplement", [], "unread_source", 3))
+    transport = local_client.responses_create
+
+    def respond(client, **kwargs):
+        turn = transport(client, **kwargs)
+        view = json.loads(kwargs["input_items"][0]["content"][0]["text"])
+        if view["stage"] == "verification":
+            assert view["verification_input"]["targets"]
+        elif len(requests) == 1 or not change:
+            payload = copy.deepcopy(source["proposal"])
+            for entity in payload["entities"]:
+                entity["mentions"] = [source["quote"]("原文中没有这个名称")]
+            turn.output_items[0]["content"][0]["text"] = json.dumps(payload)
+        return turn
+
+    monkeypatch.setattr(local_client, "responses_create", respond)
+    outcome = adapter.inspect(task, context, predicate, menu)
+    assert storage["protocol"]["recovery_kind"] == "reproposal"
+    assert storage["protocol"]["assertion_generation"] == (2 if change else 1)
+    assert len(requests) == len(storage["reservations"]) == (4 if change else 2)
+    assert outcome.complete == change
+    assert bool(outcome.relationship_groups) == change
+    frozen = next(row["value"] for row in storage["results"].values()
+                  if row["field"] == "discovery")
+    assert any("source_excerpt_mismatch" in issues for issues in frozen["claim_issues"].values())
+
+
+def test_legacy_empty_supplement_closes_without_spending_remaining_calls(source, monkeypatch):
+    from app.services.extraction.ontology_guided import evidence_work
+    from app.services.llm import local_client
+
+    adapter, task, context, predicate, menu, storage, requests = setup_adapter(
+        source, monkeypatch, budget=6,
+    )
+    monkeypatch.setattr(evidence_work, "plan_evidence_recovery", lambda *_a, **_kw:
+                        evidence_work.EvidenceRecoveryPlan("supplement", [], "unread_source", 3))
+    transport = local_client.responses_create
+    checkpoint = context._protocol_hook
+
+    def invalid_discovery(client, **kwargs):
+        turn = transport(client, **kwargs)
+        payload = copy.deepcopy(source["proposal"])
+        for entity in payload["entities"]:
+            entity["mentions"] = [source["quote"]("原文中没有这个名称")]
+        turn.output_items[0]["content"][0]["text"] = json.dumps(payload)
+        return turn
+
+    def pause_before_recovery(value):
+        checkpoint(value)
+        if value["recovery_used"]:
+            raise RuntimeError("pause before recovery")
+
+    monkeypatch.setattr(local_client, "responses_create", invalid_discovery)
+    context.bind_protocol_hook(pause_before_recovery)
+    with pytest.raises(RuntimeError, match="pause before recovery"):
+        adapter.inspect(task, context, predicate, menu)
+    assert len(requests) == 1
+    context.protocol_state = copy.deepcopy(storage["protocol"])
+    context.protocol_results = copy.deepcopy(storage["results"])
+    context.protocol_state.update(
+        stage="verification", recovery_kind="evidence",
+        active_instructions=adapter._stage_instructions("verification"),
+    )
+    context.bind_protocol_hook(checkpoint)
+    context.remaining_model_calls = 0
+    outcome = adapter.inspect(task, context, predicate, menu)
+    assert not outcome.complete and not outcome.relationship_groups
+    assert len(requests) == len(storage["reservations"]) == 1
+    assert storage["protocol"]["request_attempt"] == 1
+    assert storage["protocol"]["assertion_generation"] == 1
+
+
+@pytest.mark.parametrize("change", [False, True])
 def test_reproposal_rechecks_changed_claims_and_does_not_loop(source, monkeypatch, change):
     from app.services.llm import local_client
 
@@ -119,18 +202,26 @@ def test_reproposal_receives_specific_frozen_source_errors_without_expanding_sco
 
 
 @pytest.mark.parametrize("new_evidence,cold_resume", [(False, False), (True, False), (True, True)])
+@pytest.mark.parametrize("legacy_input", [False, True])
 def test_supplement_reverifies_only_after_confirming_new_authorized_sources(
-    source, monkeypatch, new_evidence, cold_resume,
+    source, monkeypatch, new_evidence, cold_resume, legacy_input,
 ):
     from types import SimpleNamespace
 
     from app.services.extraction.ontology_guided import evidence_work, tool_runtime
     from app.services.extraction.ontology_guided.contracts import MetadataSnapshot
+    from app.services.extraction.ontology_guided.model_context_projection import (
+        MODEL_CONTEXT_INSTRUCTIONS,
+    )
     from app.services.llm import local_client
 
     adapter, task, context, predicate, menu, storage, requests = setup_adapter(
         source, monkeypatch, budget=6,
     )
+    if legacy_input:
+        instructions = adapter._stage_instructions
+        monkeypatch.setattr(adapter, "_stage_instructions", lambda *args, **kwargs:
+                            instructions(*args, **kwargs).replace(MODEL_CONTEXT_INSTRUCTIONS, ""))
     index = source["index"]
     adapter.metadata = MetadataSnapshot(
         snapshot_id="metadata", analysis_id=index.ir.analysis_id,
@@ -198,9 +289,18 @@ def test_supplement_reverifies_only_after_confirming_new_authorized_sources(
     assert len([row for row in storage["results"].values() if row["field"] == "discovery"]) == 1
     if new_evidence:
         view = json.loads(requests[-1]["input_items"][0]["content"][0]["text"])
-        extra = [unit for unit in view["evidence_units"] if unit["evidence_id"] not in seen]
+        from app.services.extraction.ontology_guided.model_reference_projection import (
+            project_reference_payload,
+        )
+
+        seen_wire = project_reference_payload({"evidence_ids": sorted(seen)})["evidence_ids"]
+        extra = [unit for unit in view["evidence_units"] if unit["evidence_id"] not in seen_wire]
         assert extra and all(not unit["fact_eligible"] for unit in extra)
-        assert view["context_hash"] == storage["protocol"]["context_hash"]
+        assert view["context_hash"] == project_reference_payload({
+            "context_hash": storage["protocol"]["context_hash"],
+        })["context_hash"]
+        assert ("shared_context" in view) is not legacy_input
+        assert ("subject_ref" in view["schema_card"]) is legacy_input
         assert outcome.complete and outcome.relationship_groups
         assert len([row for row in storage["results"].values()
                     if row["field"] == "tool_result"]) == 3

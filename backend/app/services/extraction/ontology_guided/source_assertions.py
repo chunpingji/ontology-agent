@@ -56,6 +56,7 @@ def relation_bridge_issue(bridge_kind, subject_ref, root_ref, entity_dependencie
 
 def validate_source_assertion(
     claim, *, context, verification_input, decisions, reference_proofs=None,
+    reference_dependencies=None, reference_evidence=None, reference_is_valid=None,
 ) -> SourceAssertionResult:
     """Require replayable endpoint roles and an independently checked assertion.
 
@@ -125,6 +126,12 @@ def validate_source_assertion(
         claim, assertion.binding_ids, verification_input, reference_proofs or {},
         anchors, issues, context,
     )
+    prior_sources, prior_steps = _prior_bindings(
+        claim, getattr(assertion, "binding_dependency_refs", []),
+        reference_dependencies or [], reference_evidence or {}, reference_is_valid,
+        verification_input, context, issues,
+    )
+    binding_steps.extend(prior_steps)
 
     def endpoint_sources(endpoint):
         ref = local_refs.get(endpoint)
@@ -136,6 +143,7 @@ def validate_source_assertion(
             if current in visited:
                 continue
             visited.add(current)
+            candidates.extend(prior_sources.get(current, ()))
             proposal = entity_proposals.get(current)
             if proposal is not None:
                 candidates.extend(_entity_sources(proposal, anchors))
@@ -272,6 +280,59 @@ def _verified_bindings(claim, identities, verification_input, proofs, anchors, i
             decision_ref=VersionedRef(id=identity_decision.decision_id, revision=1),
         ))
     return graph, steps
+
+
+def _prior_bindings(
+    claim, requested, views, evidence, is_valid, verification_input, context, issues,
+):
+    """Resolve only advertised old proofs selected by the frozen relationship."""
+    if not requested:
+        return {}, []
+    from app.services.extraction.evidence_identity import evidence_hash
+    from app.services.extraction.ontology_guided.reference_dependencies import (
+        validate_reference_dependency,
+    )
+
+    permitted = {}
+    for view in views:
+        key = ref_key(view.binding_ref)
+        if key in permitted:
+            issues.append("reference_dependency_duplicate_authorization")
+            return {}, []
+        permitted[key] = view
+    if len({ref_key(ref) for ref in requested}) != len(requested):
+        issues.append("reference_dependency_duplicate_reference")
+        return {}, []
+    dependencies = {ref_key(ref) for ref in claim.dependency_refs}
+    sources, steps, owners = {}, [], {}
+    for reference in requested:
+        key = ref_key(reference)
+        view = permitted.get(key)
+        if view is None or key not in evidence:
+            issues.append("reference_dependency_not_authorized")
+            continue
+        if any(ref_key(ref) not in dependencies for ref in view.dependency_refs):
+            issues.append("reference_dependency_reference_closure")
+            continue
+        try:
+            resolved = validate_reference_dependency(
+                view, evidence=evidence[key], current_context=context, current_scope=claim.scope,
+                current_entities=verification_input.entity_dependencies,
+                is_valid_reference=is_valid,
+            )
+        except ValueError as exc:
+            code = str(exc)
+            issues.append(code if code.startswith("reference_dependency_")
+                          and "\n" not in code else "reference_dependency_invalid")
+            continue
+        for signature in resolved.source_signatures:
+            signature_key = tuple(sorted(evidence_hash(anchor) for anchor in signature))
+            prior = owners.setdefault(signature_key, resolved.entity_ref)
+            if prior != resolved.entity_ref:
+                issues.append("reference_dependency_conflicting_targets")
+            sources.setdefault(ref_key(resolved.entity_ref), []).append(list(signature))
+        steps.append(resolved.step)
+    return sources, steps
 
 
 def validate_reference_binding(claim, *, context, verification_input, decisions):

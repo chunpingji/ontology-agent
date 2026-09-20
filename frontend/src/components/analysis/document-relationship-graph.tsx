@@ -30,6 +30,7 @@ import {
 } from "@/lib/document-analysis";
 import { cn } from "@/lib/utils";
 import { DocumentGraphCanvas } from "@/components/analysis/document-graph-canvas";
+import { AttributeCalibrationList } from "@/components/analysis/attribute-calibration-list";
 import {
   assertionQualifier, entityRefKey, graphClassLabel, graphEntityLabel, graphPredicateLabel, graphPredicateLabels,
   graphQualifierText, graphScopeStepLabel, GROUP_SELECTION_LABELS, MODALITY_LABELS, type GraphSelection,
@@ -388,6 +389,9 @@ export function DocumentRelationshipGraph({
           </div>
         </details>
       )}
+
+      {artifact && <AttributeCalibrationList candidates={artifact.attribute_candidates ?? []}
+        select={onSelectionRef} />}
 
       {!artifact ? (
         <div className="min-h-64 animate-pulse rounded-lg border bg-muted/20" />

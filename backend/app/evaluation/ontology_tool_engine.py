@@ -18,7 +18,7 @@ from uuid import uuid4
 os.environ["HF_HUB_OFFLINE"] = "1"
 os.environ["TRANSFORMERS_OFFLINE"] = "1"
 
-from pydantic import ConfigDict, Field  # noqa: E402
+from pydantic import ConfigDict, Field, field_validator, model_validator  # noqa: E402
 
 from app.schemas.evidence import EvidenceModel  # noqa: E402
 from app.services.extraction.evidence_identity import canonical_json  # noqa: E402
@@ -218,7 +218,7 @@ class RunBudgets(EvidenceModel):
     max_calls_per_lineage: Literal[4] = 4
     max_tasks: int = Field(default=2048, ge=1)
     max_hops: int = Field(default=4, ge=0)
-    max_result_tokens: int = Field(default=4096, ge=1)
+    max_result_tokens: int = Field(default=8192, ge=1)
     max_tool_calls_per_lineage: int = Field(default=16, ge=1)
 
 
@@ -236,8 +236,52 @@ class RunManifest(EvidenceModel):
     api_protocol: Literal["responses"] = "responses"
     tool_protocol_version: Literal["ontology-tool-extraction-v1"] = "ontology-tool-extraction-v1"
     store: Literal[False] = False
+    reference_resolution_version: Literal[1] | None = None
+    recognition_pipeline: Literal["record-entity-first-v1"] | None = None
+    scope_mode: Literal["document_graph", "focus_path"] = "document_graph"
+    focus_path: list[str] = Field(default_factory=list)
     budgets: RunBudgets
     options: dict = Field(default_factory=dict)
+
+    @field_validator("reference_resolution_version", mode="before")
+    @classmethod
+    def exact_reference_version(cls, value):
+        if value is not None and (type(value) is not int or value != 1):
+            raise ValueError("invalid_reference_resolution_version")
+        return value
+
+    @model_validator(mode="after")
+    def frozen_batch_policy(self):
+        if ((self.scope_mode == "focus_path") != bool(self.focus_path)
+                or len(self.focus_path) > self.budgets.max_hops):
+            raise ValueError("invalid_frozen_analysis_scope")
+        if self.recognition_pipeline is not None:
+            from app.services.extraction.ontology_guided.record_discovery import (
+                RecordDiscoveryPolicy,
+            )
+
+            policy = RecordDiscoveryPolicy.model_validate(
+                self.options.get("record_discovery", {}), strict=True,
+            )
+            if self.reference_resolution_version != 1:
+                raise ValueError("record_pipeline_requires_reference_resolution")
+            object.__setattr__(self, "options", {
+                **self.options, "record_discovery": policy.model_dump(mode="json"),
+            })
+        elif "record_discovery" in self.options:
+            raise ValueError("record_policy_requires_record_pipeline")
+        if "batching" in self.options or self.recognition_pipeline is not None:
+            from app.services.extraction.ontology_guided.recognition_batch import (
+                RecognitionBatchPolicy,
+            )
+
+            policy = RecognitionBatchPolicy.model_validate(
+                self.options.get("batching", {}), strict=True,
+            )
+            object.__setattr__(self, "options", {
+                **self.options, "batching": policy.model_dump(mode="json"),
+            })
+        return self
 
 
 def load_run_inputs(path: Path):
@@ -279,8 +323,15 @@ def _run_adapter(manifest, ir, ontology, metadata):
             or manifest.model_revision != settings.local_llm_model_revision):
         raise ValueError("configured_model_identity_mismatch")
     options = manifest.options
-    if set(options) - {"profile", "vocabulary_overlay", "gliner2", "external_sources", "responses"}:
+    if set(options) - {
+        "profile", "vocabulary_overlay", "gliner2", "external_sources", "responses", "batching",
+        "record_discovery",
+    }:
         raise ValueError("unknown_ontology_extraction_option")
+    from app.services.extraction.ontology_guided.recognition_batch import RecognitionBatchPolicy
+
+    batching = (RecognitionBatchPolicy.model_validate(options["batching"], strict=True)
+                if "batching" in options else None)
     responses = validate_responses_options(options.get("responses", {}))
     overlay = (VocabularyOverlay.model_validate(options["vocabulary_overlay"], strict=True)
                if options.get("vocabulary_overlay") else None)
@@ -322,7 +373,11 @@ def _run_adapter(manifest, ir, ontology, metadata):
             max_result_tokens=manifest.budgets.max_result_tokens,
             max_calls_per_lineage=manifest.budgets.max_tool_calls_per_lineage,
         ), mention_extractor=extractor, instance_reader=reader,
-        vocabulary_overlay=overlay, external_source_ids=source_ids, **responses,
+        vocabulary_overlay=overlay, external_source_ids=source_ids,
+        recognition_batching=batching,
+        recognition_pipeline=manifest.recognition_pipeline,
+        record_discovery=options.get("record_discovery"),
+        reference_resolution=manifest.reference_resolution_version == 1, **responses,
     )
 
 
@@ -331,6 +386,7 @@ def run_manifest(path: Path, output: Path, *, adapter_factory=None) -> int:
     from app.evaluation.semantic_ranking_evaluation import summarize_costs
     from app.services.extraction.ontology_guided.current_work import validate_tool_protocol
     from app.services.extraction.ontology_guided.executor import ModelCallPauseRequested
+    from app.services.llm.model_runtime import model_scope
 
     manifest, ir, ontology, metadata = load_run_inputs(path)
     _new_output(output)
@@ -341,15 +397,22 @@ def run_manifest(path: Path, output: Path, *, adapter_factory=None) -> int:
     _write(output / "manifest.json", frozen_manifest)
     _write(output / "document-ir.json", ir.model_dump(mode="json"))
     adapter = (adapter_factory or _run_adapter)(manifest, ir, ontology, metadata)
+    if getattr(adapter, "recognition_pipeline", None) != manifest.recognition_pipeline:
+        raise ValueError("adapter_recognition_pipeline_differs_from_frozen_manifest")
+    if manifest.recognition_pipeline is not None and (
+        adapter.record_discovery.model_dump(mode="json") != manifest.options["record_discovery"]
+    ):
+        raise ValueError("adapter_record_policy_differs_from_frozen_manifest")
     requests_started = 0
     inspect = adapter.inspect
+    inspect_unit = getattr(adapter, "inspect_work_unit", None)
+    inspect_record = getattr(adapter, "inspect_record", None)
 
     def budget_gate(stage):
         return not (stage == "before_task"
                     and requests_started >= manifest.budgets.max_model_calls)
 
-    def inspect_budgeted(task, context, predicate, menu):
-        nonlocal requests_started
+    def bind_request_budget(context):
         reserve = context.before_model_call
         checkpoint = context._protocol_hook
 
@@ -368,28 +431,69 @@ def run_manifest(path: Path, output: Path, *, adapter_factory=None) -> int:
 
         context.bind_model_call_hook(reserve_budgeted)
         context.bind_protocol_hook(checkpoint_budgeted)
+
+    def inspect_budgeted(task, context, predicate, menu):
+        bind_request_budget(context)
         return inspect(task, context, predicate, menu)
 
+    def inspect_unit_budgeted(unit, context, menu):
+        bind_request_budget(context)
+        return inspect_unit(unit, context, menu)
+
     adapter.inspect = inspect_budgeted
+    if manifest.recognition_pipeline is not None:
+        def inspect_record_budgeted(task, context, card):
+            bind_request_budget(context)
+            return inspect_record(task, context, card)
+
+        adapter.inspect_record = inspect_record_budgeted
+    if getattr(adapter, "recognition_batching", None) is not None:
+        adapter.inspect_work_unit = inspect_unit_budgeted
 
     runner = build_quality_guided_variant(
         ontology=ontology, adapter=adapter, progress_hook=budget_gate,
         max_hops=manifest.budgets.max_hops, max_tasks=manifest.budgets.max_tasks,
         max_model_calls_per_record=manifest.budgets.max_calls_per_lineage,
+        focus_path=tuple(manifest.focus_path),
     )
-    result = runner.run(
-        recognition_run_id=manifest.run_id, ir=ir, metadata=metadata,
-        root_class_iri=manifest.root_class_iri,
-        root_class_label=ontology.classes[manifest.root_class_iri].label,
-        filename=Path(manifest.document.path).name,
-    )
+    timings = {"model": [], "tool": []}
+    in_flight = {}
+    active_call = None
+
+    def observe_cost(event_type, payload):
+        nonlocal active_call
+        if event_type == "model_start":
+            active_call = payload["call_id"]
+            in_flight[active_call] = "model", monotonic()
+        elif event_type == "operation_start" and payload["kind"] in {"tool", "validation"}:
+            in_flight[payload["operation_id"]] = "tool", monotonic()
+        elif event_type in {"model_end", "operation_end"}:
+            identity = active_call if event_type == "model_end" else payload["operation_id"]
+            pending = in_flight.pop(identity, None)
+            if pending is not None:
+                kind, started = pending
+                timings[kind].append(monotonic() - started)
+
+    run_started = monotonic()
+    with model_scope(on_harness_event=observe_cost):
+        result = runner.run(
+            recognition_run_id=manifest.run_id, ir=ir, metadata=metadata,
+            root_class_iri=manifest.root_class_iri,
+            root_class_label=ontology.classes[manifest.root_class_iri].label,
+            filename=Path(manifest.document.path).name,
+        )
+    elapsed_seconds = monotonic() - run_started
     protocol_results = runner.observed_adapter.protocol_results
     protocols = result.model_call_state.get("protocols", {})
     for protocol in protocols.values():
         validate_tool_protocol(protocol)
     _write(output / "evaluation.json", result.model_dump(mode="json"))
     _write(output / "final-graph.json", result.graph.model_dump(mode="json"))
-    _write(output / "coverage.json", result.graph.progress.model_dump(mode="json"))
+    _write(output / "coverage.json", {
+        **result.graph.progress.model_dump(mode="json"),
+        **({"record_discovery": result.record_discovery_coverage}
+           if manifest.recognition_pipeline is not None else {}),
+    })
     _write(output / "calls.json", {
         "model_call_state": result.model_call_state, "protocol_results": protocol_results,
     })
@@ -403,10 +507,81 @@ def run_manifest(path: Path, output: Path, *, adapter_factory=None) -> int:
     for key in ("input_tokens", "output_tokens", "total_tokens"):
         values = [(row.get("usage") or {}).get(key) for row in turns]
         usage[key] = sum(values) if values and all(type(v) is int for v in values) else None
+    member_outcomes = [row for row in protocol_results.values()
+                       if row["field"] == "outcome" and row.get("member_task_id")]
+    latest_outcomes = {}
+    for row in member_outcomes:
+        identity = (row["lineage_id"], row["member_task_id"])
+        version = row["result_version"]["last_participating_request_attempt"]
+        if version >= latest_outcomes.get(identity, (-1, None))[0]:
+            latest_outcomes[identity] = version, row["value"]
+    members = {(unit_id, member["task_id"]) for unit_id, protocol in protocols.items()
+               for member in protocol.get("work_unit", {}).get("members", [])}
+    incomplete_members = sum(
+        not latest_outcomes.get(identity, (None, {}))[1].get("complete", False)
+        for identity in members
+    )
+    from app.services.extraction.ontology_guided.record_discovery import RECORD_PROTOCOL
+
+    record_protocols = {lineage: protocol for lineage, protocol in protocols.items()
+                        if protocol["version"] == RECORD_PROTOCOL}
+    record_outcomes = {
+        lineage: protocol_results[protocol["outcome_ref"]]["value"]
+        for lineage, protocol in record_protocols.items() if protocol.get("outcome_ref")
+    }
+    receipts = result.model_call_state.get("reservations", [])
+    record_receipts = [row for row in receipts if "record_task_id" in row]
+    record_returned = sum(row["field"] == "model_turn" and row["lineage_id"] in record_protocols
+                          for row in protocol_results.values())
+    inspection_seconds = sum(call.elapsed_seconds for call in result.adapter_calls) + sum(
+        call["elapsed_seconds"]
+        for call in [*result.work_unit_calls, *result.record_discovery_calls]
+    )
     _write(output / "metrics.json", {
         "scoring_status": "not_scored", "reason": "reference_is_separate",
         "cost": {**summarize_costs(result), "responses_returned": len(turns),
-                 "response_usage": usage, "controller_checks": controller},
+                 "response_usage": usage, "controller_checks": controller,
+                 "inspection_calls": (len(result.adapter_calls) + len(result.work_unit_calls)
+                                      + len(result.record_discovery_calls)),
+                 "inspection_elapsed_seconds": inspection_seconds,
+                 "work_unit_calls": len(result.work_unit_calls),
+                 "work_unit_elapsed_seconds": sum(
+                     call["elapsed_seconds"] for call in result.work_unit_calls),
+                 "record_discovery_calls": len(result.record_discovery_calls),
+                 "record_model_requests": len(record_receipts),
+                 "record_responses_returned": record_returned,
+                 "record_discovery_elapsed_seconds": sum(
+                     call["elapsed_seconds"] for call in result.record_discovery_calls),
+                 "request_member_counts": [len(row["member_task_ids"]) for row in turns
+                                           if "member_task_ids" in row],
+                 "request_task_counts": [len(row["member_task_ids"])
+                                         if "member_task_ids" in row else 1 for row in receipts],
+                 "physical_requests_reserved": result.model_call_state.get(
+                     "reservation_sequence", len(result.model_call_state.get("reservations", []))),
+                 "total_elapsed_seconds": elapsed_seconds,
+                 **{kind + "_elapsed_seconds": (
+                     None if any(pending[0] == kind for pending in in_flight.values())
+                     else sum(timings[kind])
+                 ) for kind in timings}},
+        "batching": {
+            "policy": manifest.options.get("batching"),
+            "members_total": len(members), "members_with_outcomes": len(latest_outcomes),
+            "members_without_outcomes": len(members - set(latest_outcomes)),
+            "incomplete_members": incomplete_members,
+            "incomplete_rate": incomplete_members / len(members) if members else None,
+            "quality_status": "not_scored",
+        },
+        **({"record_discovery": {
+            "pipeline": manifest.recognition_pipeline,
+            "policy": manifest.options["record_discovery"],
+            "coverage": result.record_discovery_coverage,
+            "tasks_started": len(record_protocols),
+            "tasks_with_outcomes": len(record_outcomes),
+            "tasks_without_outcomes": len(record_protocols) - len(record_outcomes),
+            "unfinished_tasks": (result.record_discovery_coverage["tasks_incomplete"]
+                                 + result.record_discovery_coverage["tasks_unattempted"]),
+            "quality_status": "not_scored",
+        }} if manifest.recognition_pipeline is not None else {}),
     })
     _write(output / "protocol-checks.json", {
         "api_protocol": manifest.api_protocol,

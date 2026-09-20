@@ -8,6 +8,7 @@ cannot be a heading in the preview while remaining invisible to extraction.
 
 from __future__ import annotations
 
+import re
 from dataclasses import asdict, dataclass, field
 from hashlib import sha256
 from pathlib import Path
@@ -24,7 +25,13 @@ from app.services.extraction.text_scanner import (
 
 _PT = 12700  # one point in EMU
 _PROSE_ENDINGS = "。；;，,！？!?"
-PARSER_VERSION = 4
+PARSER_VERSION = 8
+_TOC_PAGE_SUFFIX = re.compile(
+    r"(?:\t+|[.．…·]{2,}| {2,})\s*(?:\d+|[ivxlcdmIVXLCDM]+)\s*$"
+)
+_TABLE_CAPTION_PREFIX = re.compile(
+    r"^(?:表\s*[\d一二三四五六七八九十百零〇]+|table\s+\d+)", re.IGNORECASE,
+)
 
 
 @dataclass
@@ -106,6 +113,7 @@ class ParagraphBlock:
     physical_page_number: int | None
     body_index: int
     block_type: Literal["paragraph"] = "paragraph"
+    navigation_role: Literal["toc_heading", "toc_entry"] | None = None
 
 
 @dataclass
@@ -247,7 +255,7 @@ class DocStructure:
 
 
 def heading_level_from_style(style_name: str | None) -> int:
-    """Map built-in/localized Heading and TOC style names to levels 1..6."""
+    """Map heading styles, including TOC styles reused by body headings."""
     if not style_name:
         return 0
     text = style_name.strip()
@@ -260,10 +268,15 @@ def heading_level_from_style(style_name: str | None) -> int:
         number = first_ascii_number(text)
         if number:
             return max(1, min(6, int(number)))
+    return min(6, _toc_style_level(style_name))
+
+
+def _toc_style_level(style_name: str | None) -> int:
+    low = compact_space((style_name or "").lower())
     for prefix in ("toc", "目录"):
         if low.startswith(prefix):
-            suffix = low[len(prefix):].strip()
-            if suffix in ("1", "2", "3", "4", "5", "6"):
+            suffix = low[len(prefix):]
+            if suffix in ("1", "2", "3", "4", "5", "6", "7", "8", "9"):
                 return int(suffix)
     return 0
 
@@ -340,6 +353,35 @@ def _semantic_bold_heading_level(paragraph, text: str) -> int:
     return 2
 
 
+def _is_table_caption(paragraph, text: str) -> bool:
+    """Keep styled captions and numbered table labels out of visual headings."""
+    from docx.oxml.ns import qn
+
+    style_name = paragraph.style.name if paragraph.style else ""
+    if compact_space(style_name).lower() in {"caption", "题注", "表题"}:
+        return True
+    if not _TABLE_CAPTION_PREFIX.match(text):
+        return False
+    # A number alone is ambiguous (e.g. a section discussing Table 1). Require
+    # a neighboring table, allowing only empty spacing paragraphs in between.
+    for direction in ("getnext", "getprevious"):
+        sibling = getattr(paragraph._p, direction)()
+        while sibling is not None:
+            if sibling.tag == qn("w:tbl"):
+                return True
+            if sibling.tag != qn("w:p"):
+                break
+            if any((node.text or "").strip() for node in sibling.iter(qn("w:t"))):
+                break
+            if any(
+                node.tag in {qn("w:drawing"), qn("w:pict"), qn("w:object"), qn("w:sectPr")}
+                for node in sibling.iter()
+            ):
+                break
+            sibling = getattr(sibling, direction)()
+    return False
+
+
 def infer_heading_level(paragraph) -> int:
     """Infer one heading level using shared, deterministic Word semantics."""
     text = (paragraph.text or "").strip()
@@ -351,11 +393,18 @@ def infer_heading_level(paragraph) -> int:
     outline_level = _outline_heading_level(paragraph)
     if outline_level:
         return outline_level
-    style_level = heading_level_from_style(
-        paragraph.style.name if paragraph.style else None
-    )
+    style_name = paragraph.style.name if paragraph.style else None
+    # TOC styles are also reused for prose and field values. Preserve explicit
+    # outline metadata above, but do not promote these obvious body paragraphs.
+    if _toc_style_level(style_name) and _toc_style_body_text(text):
+        return 0
+    style_level = heading_level_from_style(style_name)
     if style_level:
         return style_level
+    # Explicit headings above take precedence. Captions may be bold or large,
+    # but must stay inside their section rather than adopt the next heading.
+    if _is_table_caption(paragraph, text):
+        return 0
     # Field paragraphs are document data even when their label is bold.  Some
     # enterprise templates put the value in the following paragraph/table, so an
     # empty ``label:`` must not become a visual heading either.  Keep numbered
@@ -373,8 +422,90 @@ def infer_heading_level(paragraph) -> int:
     return _semantic_bold_heading_level(paragraph, text)
 
 
-def _cell_text(cell) -> str:
-    return " ".join(p.text.strip() for p in cell.paragraphs if p.text.strip()).strip()
+def _toc_field_paragraphs(paragraphs: list) -> set[int]:
+    """Locate rendered TOC field results, retaining nested PAGEREF boundaries."""
+    from docx.oxml.ns import qn
+
+    fields: list[dict] = []
+    result: set[int] = set()
+    for index, paragraph in enumerate(paragraphs):
+        for element in paragraph._element.iter():
+            if _is_in_revision(element):
+                continue
+            if element.tag == qn("w:fldChar"):
+                kind = element.get(qn("w:fldCharType"))
+                if kind == "begin":
+                    fields.append({"instruction": "", "is_toc": False})
+                elif kind == "separate" and fields:
+                    instruction = fields[-1]["instruction"].strip().split(maxsplit=1)
+                    fields[-1]["is_toc"] = bool(instruction and instruction[0].upper() == "TOC")
+                elif kind == "end" and fields:
+                    fields.pop()
+            elif element.tag == qn("w:instrText") and fields:
+                fields[-1]["instruction"] += element.text or ""
+            elif element.tag == qn("w:t") and any(field["is_toc"] for field in fields):
+                result.add(index)
+    return result
+
+
+def _toc_style_body_text(text: str) -> bool:
+    compact = compact_space(text)
+    field = key_value_spans(text)
+    return (compact.endswith(tuple(_PROSE_ENDINGS))
+            or bool(field and field[1][1] > field[1][0]))
+
+
+def _document_heading_levels(
+    paragraphs: list,
+) -> tuple[list[int], dict[int, str], dict[int, str]]:
+    """Resolve TOC regions before building either the flat view or canonical blocks.
+
+    A TOC style alone is insufficient: enterprise templates also use it for real
+    body headings. Require a TOC title, a TOC field, or a page-number suffix.
+    """
+    levels = [infer_heading_level(paragraph) for paragraph in paragraphs]
+    field_entries = _toc_field_paragraphs(paragraphs)
+    toc_sections: dict[int, str] = {}
+    navigation_roles: dict[int, str] = {}
+    in_toc = False
+    has_page_numbers = False
+    in_toc_field = False
+    for index, paragraph in enumerate(paragraphs):
+        text = (paragraph.text or "").strip()
+        if not text:
+            continue
+        if in_toc_field and index not in field_entries:
+            in_toc = False
+        in_toc_field = index in field_entries
+        if compact_space(text).lower() in {"目录", "目次", "contents", "tableofcontents"}:
+            toc_sections[index] = text
+            navigation_roles[index] = "toc_heading"
+            levels[index] = levels[index] or 1
+            in_toc = True
+            has_page_numbers = False
+            continue
+        toc_style = _toc_style_level(paragraph.style.name if paragraph.style else None)
+        page_suffix = _TOC_PAGE_SUFFIX.search(text)
+        has_page = page_suffix is not None and bool(text[:page_suffix.start()].strip())
+        is_entry = (
+            index in field_entries
+            or (has_page and (in_toc or toc_style))
+            or (in_toc and toc_style and not has_page_numbers
+                and not _toc_style_body_text(text))
+        )
+        if is_entry:
+            if not in_toc:
+                # Anchor an untitled TOC to its first source paragraph, keeping
+                # that paragraph as content rather than inventing source text.
+                toc_sections[index] = "目录"
+                has_page_numbers = False
+            levels[index] = 0
+            navigation_roles[index] = "toc_entry"
+            in_toc = True
+            has_page_numbers = has_page_numbers or has_page
+        else:
+            in_toc = False
+    return levels, toc_sections, navigation_roles
 
 
 def _row_has_horizontal_merge(row) -> bool:
@@ -437,7 +568,21 @@ def _table_to_struct(
 ) -> DocTable:
     table_path = table_path or [f"table:{table_index}"]
     source_cells, grid = _source_table_cells(table, table_path)
-    cells = [[_cell_text(cell) for cell in row.cells] for row in table.rows]
+    # Expand merged values from the same grid used for source evidence. Reading
+    # row.cells separately drops omitted leading cells and shifts header bindings.
+    # Missing slots and ordinary empty cells stay empty; only merge IDs repeat.
+    text_by_cell = {
+        cell["cell_id"]: " ".join(
+            block["text"].strip() for block in cell["blocks"]
+            if block["kind"] == "paragraph" and block["text"].strip()
+        )
+        for cell in source_cells
+    }
+    width = max((len(row) for row in grid), default=0)
+    cells = [
+        [text_by_cell.get(cell_id, "") for cell_id in row] + [""] * (width - len(row))
+        for row in grid
+    ]
     header_count = _detect_header_rows(table)
     headers = _canonical_headers(cells, header_count)
     rows: list[dict[str, str]] = []
@@ -517,6 +662,9 @@ def _source_table_cells(table, table_path: list[str]) -> tuple[list[dict], list[
                 for col in range(column, column + span):
                     next_active[col] = origin
             column += span
+        after = tr.find("w:trPr/w:gridAfter", tr.nsmap)
+        if after is not None:
+            row.extend([None] * int(after.get(qn("w:val"), "0")))
         grid.append(row)
         active = next_active
     return cells, grid
@@ -624,6 +772,8 @@ def _table_has_leading_page_break(table) -> bool:
 def build_chapter_tree(
     title: str,
     sections: list[DocSection],
+    *,
+    toc_heading_indices: set[int] | None = None,
 ) -> tuple[ChapterNode, dict[int, ChapterNode]]:
     """Build a deterministic explicit tree from flat section level + order."""
     root = ChapterNode(
@@ -638,6 +788,9 @@ def build_chapter_tree(
     for section in sections:
         if section.level <= 0:
             continue
+        # A TOC is a leaf region even when the next real heading starts at H2+.
+        if toc_heading_indices and stack[-1].heading_index in toc_heading_indices:
+            stack.pop()
         while len(stack) > 1 and stack[-1].level >= section.level:
             stack.pop()
         parent = stack[-1]
@@ -860,8 +1013,10 @@ def parse_docx_structure(
             section_tree=empty_root,
         )
 
-    # Compatibility view: retain the exact non-empty paragraph ordering and the
-    # existing deterministic heading inference.
+    # Resolve TOC entries once so every downstream view shares membership.
+    source_paragraphs = list(doc.paragraphs)
+    heading_levels, toc_sections, navigation_roles = _document_heading_levels(source_paragraphs)
+    # Compatibility view: retain the exact non-empty paragraph ordering.
     sections: list[DocSection] = []
     paragraphs: list[str] = []
     headings: list[str] = []
@@ -869,39 +1024,43 @@ def parse_docx_structure(
     first_visual_heading = ""
 
     current = DocSection(heading="", level=0)
-    for paragraph_index, paragraph in enumerate(doc.paragraphs):
+    for paragraph_index, paragraph in enumerate(source_paragraphs):
         text = (paragraph.text or "").strip()
         if not text:
             continue
-        level = infer_heading_level(paragraph)
+        level = heading_levels[paragraph_index]
         paragraphs.append(text)
-        if level > 0:
-            headings.append(text)
-            if not first_visual_heading:
-                first_visual_heading = text
-            if level == 1 and not first_level_one:
-                first_level_one = text
+        if level > 0 or paragraph_index in toc_sections:
+            heading = toc_sections.get(paragraph_index, text)
+            headings.append(heading)
+            if paragraph_index not in toc_sections:
+                if not first_visual_heading:
+                    first_visual_heading = text
+                if level == 1 and not first_level_one:
+                    first_level_one = text
             if current.heading or current.paras:
                 sections.append(current)
             current = DocSection(
-                heading=text,
-                level=level,
+                heading=heading,
+                level=level or 1,
                 heading_index=paragraph_index,
             )
-        else:
+        if level == 0:
             current.paras.append(text)
             current.para_indices.append(paragraph_index)
     if current.heading or current.paras:
         sections.append(current)
 
     title = first_level_one or first_visual_heading or fallback_title
-    root, node_by_heading_index = build_chapter_tree(title, sections)
+    root, node_by_heading_index = build_chapter_tree(
+        title, sections, toc_heading_indices=set(toc_sections),
+    )
 
     # Canonical body walk.  Paragraph/table membership, page events and stable
     # coordinates all come from this one order-preserving pass.
-    paragraph_by_element = {paragraph._element: paragraph for paragraph in doc.paragraphs}
+    paragraph_by_element = {paragraph._element: paragraph for paragraph in source_paragraphs}
     paragraph_index_by_element = {
-        paragraph._element: index for index, paragraph in enumerate(doc.paragraphs)
+        paragraph._element: index for index, paragraph in enumerate(source_paragraphs)
     }
     table_by_element = {
         table._element: (table, index) for index, table in enumerate(doc.tables)
@@ -939,9 +1098,8 @@ def parse_docx_structure(
         if paragraph is not None:
             paragraph_index = paragraph_index_by_element[child]
             raw_text = paragraph.text or ""
-            stripped_text = raw_text.strip()
-            level = infer_heading_level(paragraph) if stripped_text else 0
-            if level and paragraph_index in node_by_heading_index:
+            level = heading_levels[paragraph_index]
+            if paragraph_index in node_by_heading_index:
                 active_node = node_by_heading_index[paragraph_index]
 
             before, inline_breaks, section_type = scan_paragraph_breaks(paragraph)
@@ -974,6 +1132,7 @@ def parse_docx_structure(
                     section_node_id=active_node.node_id,
                     physical_page_number=current_page,
                     body_index=body_index,
+                    navigation_role=navigation_roles.get(paragraph_index),
                 )
                 blocks.append(block)
                 active_node.direct_block_ids.append(block.block_id)

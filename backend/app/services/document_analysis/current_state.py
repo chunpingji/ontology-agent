@@ -21,12 +21,16 @@ from app.models.document_analysis import (
 from app.services.document_analysis.run_store import HeadConflict, content_hash
 from app.services.document_analysis.state_artifacts import performance_policy
 from app.services.extraction.ontology_guided.current_work import (
+    TOOL_BATCH_PROTOCOL_VERSION,
     TOOL_PROTOCOL_VERSION,
     call_request_key,
     protocol_result_ref,
+    validate_batch_tool_protocol,
+    validate_member_result_version,
     validate_protocol_result,
     validate_tool_protocol,
 )
+from app.services.extraction.ontology_guided.record_discovery import RECORD_PROTOCOL
 
 
 def enabled(store, run):
@@ -316,20 +320,65 @@ def restore_work(store, run, fingerprint):
     )
 
 
-def load_protocol_result(store, run, lineage_id, result_ref, field):
-    """Read one exact result, never a result-history prefix or a current stage guess."""
+def load_protocol_record(
+    store, run, lineage_id, result_ref, field, *, member_task_id=None, result_version=None,
+):
+    """Load an exact owned result and verify the immutable wrapper's own version."""
     result = get_row(store, run, "calls:results", result_ref, model=DocumentRunResult)
-    if (result is None or set(result) != {"lineage_id", "field", "value"}
-            or result["lineage_id"] != lineage_id or result["field"] != field):
+    required = {"lineage_id", "field", "value"}
+    if member_task_id is not None:
+        required |= {"member_task_id", "result_version"}
+    if (result is None or set(result) != required
+            or result["lineage_id"] != lineage_id or result["field"] != field
+            or (member_task_id is not None and result["member_task_id"] != member_task_id)
+            or (result_version is not None and result.get("result_version") != result_version)):
         raise HeadConflict("tool protocol result reference mismatch")
     try:
         validate_protocol_result(field, result["value"])
-        expected = protocol_result_ref(lineage_id, field, result["value"])
+        if member_task_id is not None:
+            validate_member_result_version(result["result_version"])
+        expected = protocol_result_ref(
+            lineage_id, field, result["value"], member_task_id=member_task_id,
+            result_version=result.get("result_version"),
+        )
     except (TypeError, ValueError, KeyError) as exc:
         raise HeadConflict("tool protocol result is invalid") from exc
     if result_ref != expected:
         raise HeadConflict("tool protocol result identity mismatch")
-    return result["value"]
+    return result
+
+
+def load_protocol_result(
+    store, run, lineage_id, result_ref, field, *, member_task_id=None, result_version=None,
+):
+    return load_protocol_record(
+        store, run, lineage_id, result_ref, field, member_task_id=member_task_id,
+        result_version=result_version,
+    )["value"]
+
+
+def check_record_receipt(protocol, receipt, fingerprint, *, pending=True):
+    """A record request has one exact task owner, without batch participants."""
+    task = protocol["task"]
+    if (protocol.get("version") != RECORD_PROTOCOL
+            or receipt.get("lineage_id") != protocol["lineage_id"]
+            or receipt.get("record_task_id") != task["task_id"]
+            or receipt.get("task_id") != task["task_id"]
+            or receipt.get("record_id") != task["record_id"]
+            or receipt.get("schema_card_id") != task["schema_card_id"]
+            or receipt.get("run_fingerprint") != fingerprint
+            or any(key in receipt for key in (
+                "subject_ref", "member_task_ids", "member_lineage_ids", "stage_group_seq",
+            ))):
+        raise HeadConflict("record reservation owner differs from its task")
+    if pending:
+        request = protocol["pending_request"]
+        if (request is None or receipt.get("protocol_attempt") != request["attempt"]
+                or receipt.get("ordinal") != request["attempt"]
+                or receipt.get("input_hash") != request["request_hash"]
+                or receipt["stage"].removeprefix("ontology_guided_") != request["stage"]
+                or call_request_key(receipt) != request["reservation_key"]):
+            raise HeadConflict("record reservation differs from its pending request")
 
 
 def _tool_protocol_results(store, run, protocol, *, unconfirmed_attempts=()):
@@ -354,6 +403,8 @@ def _tool_protocol_results(store, run, protocol, *, unconfirmed_attempts=()):
         if request is None:
             raise HeadConflict("model turn has no reserved request")
         reservation = request["reservation"]
+        if protocol.get("version") == RECORD_PROTOCOL:
+            check_record_receipt(protocol, reservation, run.run_fingerprint, pending=False)
         if (reservation.get("input_hash") != result["input_hash"]
                 or reservation.get("run_fingerprint") != run.run_fingerprint
                 or reservation["stage"].removeprefix("ontology_guided_") != result["stage"]
@@ -377,6 +428,7 @@ def _tool_protocol_results(store, run, protocol, *, unconfirmed_attempts=()):
             for part in item.get("content", []) if isinstance(part, dict)
         )
         if (turn["response_status"] != "completed" or turn["error"] is not None
+                or "reference_error" in turn
                 or turn["incomplete_details"] is not None or refused
                 or any(not isinstance(call_id, str) or not call_id for call_id in ids)
                 or len(set(ids)) != len(ids) or key[1] not in ids):
@@ -410,14 +462,228 @@ def _tool_protocol_results(store, run, protocol, *, unconfirmed_attempts=()):
     return turns
 
 
-def _persist_tool_protocol(store, run, protocol, old, result_changes):
+def _record_source_records(store, run, task):
+    """Resolve exactly the frozen source members against this run's owned IR."""
+    from app.models.document_analysis import DocumentAnalysisArtifact
+    from app.services.extraction.document_ir import DocumentIR
+    from app.services.extraction.ontology_guided.records import RecordIndex
+
+    source_ref = store.get_artifact(run.recognition_run_id, run.owner_id, "metadata")
+    source = store.db.get(DocumentAnalysisArtifact, source_ref.artifact_id) if source_ref else None
+    if (source is None or not source.payload or source.content_hash != source_ref.content_hash
+            or content_hash(source.payload) != source.content_hash):
+        raise HeadConflict("record feedback has no authoritative original source")
+    try:
+        ir = DocumentIR.model_validate(source.payload["analysis"], strict=True)
+        index = RecordIndex(ir)
+        identities = task.get("source_record_ids") or [task["record_id"]]
+        sections = task.get("reading_section_ids", [])
+        if (ir.document_hash != run.document_hash or task["record_id"] not in identities
+                or len(identities) != len(set(identities))
+                or len(sections) != len(set(sections))
+                or any(section not in index.nodes_by_id for section in sections)):
+            raise ValueError("record source group does not match the frozen task")
+        records = {identity: index.by_id[identity] for identity in identities}
+    except (KeyError, TypeError, ValueError) as exc:
+        raise HeadConflict("record source is outside its original document or group") from exc
+    return ir, records
+
+
+def _check_record_authorization(store, run, task, authorization):
+    """A group grants facts only from each explicitly named record's own source."""
+    ir, records = _record_source_records(store, run, task)
+    if (set(authorization.record_ids) != set(records)
+            or authorization.ir_identity.parser_version != ir.parser_version
+            or authorization.ir_identity.structure_hash != ir.structure_hash):
+        raise HeadConflict("record source authorization differs from its frozen source group")
+    try:
+        for fragment in authorization.fragments:
+            ir.anchor(fragment.evidence_id, fragment.span_start, fragment.span_end)
+            if fragment.record_id is None:
+                if fragment.fact_eligible:
+                    raise ValueError("unassigned source cannot grant facts")
+                continue
+            record = records[fragment.record_id]
+            units = (record.source_units if fragment.fact_eligible else (
+                *record.source_units, *record.header_units,
+                *record.parent_units, *record.note_units,
+            ))
+            if fragment.evidence_id not in {unit.evidence_id for unit in units}:
+                raise ValueError("fragment source does not belong to its authorized record")
+    except (KeyError, TypeError, ValueError) as exc:
+        raise HeadConflict("record authorization source is outside its original group") from exc
+
+
+def _check_record_reopening(store, run, protocol, old, authority):
+    """Authorize a new record generation only from its published pending feedback."""
+    from app.schemas.evidence import EvidenceAnchor
+    from app.services.extraction.ontology_guided.contracts import VersionedRef
+
     lineage = protocol["lineage_id"]
+    row = get_row(store, run, "work:record_discovery",
+                  json.dumps(lineage, ensure_ascii=False, separators=(",", ":")))
+    current = (row or {}).get("value", {})
+    prior_work = (authority or {}).get("value", {})
+    feedback_hash = protocol.get("record_feedback_hash")
+    if (not isinstance(feedback_hash, str) or len(feedback_hash) != 64
+            or any(char not in "0123456789abcdef" for char in feedback_hash)
+            or feedback_hash == old.get("record_feedback_hash")
+            or current.get("task") != old["task"]
+            or current.get("status") != "active"
+            or current.get("feedback_hash") != feedback_hash
+            or current.get("consumed_feedback_hash") != feedback_hash
+            or current.get("generation") != protocol["assertion_generation"]
+            or prior_work.get("status") != "pending"
+            or prior_work.get("consumed_feedback_hash") == feedback_hash
+            or any(prior_work.get(key) != current.get(key) for key in (
+                "task", "outcome_ref", "feedback_hash", "feedback_refs", "feedback_source_refs",
+            ))
+            or old["outcome_ref"] is None or current.get("outcome_ref") != old["outcome_ref"]
+            or protocol["assertion_generation"] != old["assertion_generation"] + 1
+            or protocol["evidence_revision"] != old["evidence_revision"] + 1
+            or old["pending_request"] is not None or protocol["pending_request"] is not None
+            or protocol["request_attempt"] != old["request_attempt"]
+            or protocol["completed_attempts"] != old["completed_attempts"]
+            or protocol["stage"] != "discovery"
+            or any(protocol[field] is not None
+                   for field in ("discovery_ref", "verification_ref", "outcome_ref"))
+            or any(protocol[field] for field in (
+                "turn_refs", "completed_tool_results", "stage_input_items", "materialized_refs",
+            ))):
+        raise HeadConflict("record reopening has no exact published feedback authority")
+    maximum = performance_policy(store, run).get("max_lineage_calls", 4)
+    if maximum - old["request_attempt"] < 2:
+        raise HeadConflict("record reopening has no remaining discovery and verification budget")
+    allowed_target_changes = {"target_id", "source_scope_hash", "context_hash"}
+    if ({key: value for key, value in protocol["base_target"].items()
+         if key not in allowed_target_changes}
+            != {key: value for key, value in old["base_target"].items()
+                if key not in allowed_target_changes}):
+        raise HeadConflict("record reopening changed frozen source or task identity")
+    try:
+        refs = [VersionedRef.model_validate(value, strict=True)
+                for value in current.get("feedback_refs", [])]
+        anchors = [EvidenceAnchor.model_validate(value, strict=True)
+                   for value in current.get("feedback_source_refs", [])]
+    except (TypeError, ValueError) as exc:
+        raise HeadConflict("record feedback references are invalid") from exc
+    before_refs = {(value["id"], value["revision"])
+                   for value in (old.get("reference_context") or {}).get("entity_refs", [])}
+    after_refs = {(value["id"], value["revision"])
+                  for value in (protocol.get("reference_context") or {}).get("entity_refs", [])}
+    authorized_refs = {(ref.id, ref.revision) for ref in refs}
+    if protocol["task"].get("purpose") == "property_disambiguation":
+        permitted_references = after_refs == authorized_refs
+    else:
+        replaced = {(identity, revision) for identity, revision in before_refs - after_refs
+                    if any(new_id == identity and new_revision > revision
+                           for new_id, new_revision in after_refs & authorized_refs)}
+        permitted_references = (before_refs - after_refs == replaced
+                                and after_refs - before_refs <= authorized_refs)
+    if not permitted_references:
+        raise HeadConflict("record reopening changed unauthorized entity references")
+    for ref in refs:
+        candidate = store.db.get(
+            DocumentRunCandidate, (run.recognition_run_id, ref.id, ref.revision),
+        )
+        head = store.db.get(DocumentRunCandidateHead, (run.recognition_run_id, ref.id))
+        if (candidate is None or head is None or head.revision != ref.revision
+                or candidate.kind != "entity"
+                or content_hash(candidate.payload) != candidate.payload_hash):
+            raise HeadConflict("record feedback entity is not a current owned candidate")
+    if not anchors:
+        raise HeadConflict("record feedback has no authoritative original source")
+    ir, records = _record_source_records(store, run, protocol["task"])
+    try:
+        evidence = {unit.evidence_id: unit for record in records.values()
+                    for unit in record.source_units}
+        for anchor in anchors:
+            unit = evidence[anchor.evidence_id]
+            start, end = anchor.span_start, anchor.span_end
+            if (ir.document_hash != run.document_hash or start is None or end is None
+                    or end > len(unit.text)
+                    or anchor != ir.anchor(anchor.evidence_id, start, end)):
+                raise ValueError("feedback anchor differs from original record source")
+    except (KeyError, TypeError, ValueError) as exc:
+        raise HeadConflict("record feedback source is outside its original record") from exc
+
+
+def _check_record_answer_correction(store, run, protocol, old, result_changes):
+    """Allow one correction input while retaining the exact paid answer and source scope."""
+    from app.services.extraction.ontology_guided.claim_protocol import (
+        DiscoveryEnvelope,
+        VerificationEnvelope,
+    )
+    from app.services.extraction.ontology_guided.tool_model_adapter import (
+        ToolModelRecognitionAdapter,
+        parse_stage_answer,
+    )
+
+    changed = {"stage_input_items", "turn_refs", "completed_tool_results"}
+    stage = protocol["stage"]
+    if (stage not in {"discovery", "verification"}
+            or old[stage + "_ref"] is not None or old["outcome_ref"] is not None
+            or old["pending_request"] is not None or not old["turn_refs"]
+            or protocol["turn_refs"] or protocol["completed_tool_results"] or result_changes
+            or {key: value for key, value in protocol.items() if key not in changed}
+            != {key: value for key, value in old.items() if key not in changed}):
+        raise HeadConflict("record correction must preserve its committed state")
+    try:
+        before_items, after_items = deepcopy(old["stage_input_items"]), deepcopy(
+            protocol["stage_input_items"],
+        )
+        before = json.loads(before_items[0]["content"][0].pop("text"))
+        after = json.loads(after_items[0]["content"][0].pop("text"))
+        correction = after.pop("answer_correction")
+        turn = after.pop("turn")
+        before.pop("turn")
+        reserve = 1 if stage == "discovery" else 0
+        if (before_items != after_items or before != after
+                or "answer_correction" in before
+                or set(correction) != {"previous_answer", "issues"}
+                or not isinstance(correction["issues"], list) or not correction["issues"]
+                or turn != {
+                    "stage": stage, "mode": "answer", "allowed_tool_names": [],
+                    "model_calls_remaining": turn.get("model_calls_remaining"),
+                    "reserved_model_calls": reserve, "reason_code": "answer_correction",
+                }
+                or type(turn["model_calls_remaining"]) is not int
+                or turn["model_calls_remaining"] < reserve + 1):
+            raise ValueError("correction changed the frozen input or repeated a correction")
+        turns = _tool_protocol_results(store, run, old)
+        last = turns[old["completed_attempts"][-1]][1]
+        answer = parse_stage_answer(
+            ToolModelRecognitionAdapter._turn(last),
+            DiscoveryEnvelope if stage == "discovery" else VerificationEnvelope,
+        )
+        if correction["previous_answer"] != answer.model_dump(mode="json"):
+            raise ValueError("correction does not reference the last paid answer")
+    except (AttributeError, IndexError, KeyError, TypeError, ValueError) as exc:
+        raise HeadConflict("record correction has no exact answer and source authority") from exc
+
+
+def _persist_tool_protocol(store, run, protocol, old, result_changes, *, record_authority=None):
+    lineage = protocol["lineage_id"]
+    record_reopening = False
     if old is not None:
-        if old.get("version") != TOOL_PROTOCOL_VERSION:
+        if (protocol.get("version") not in {TOOL_PROTOCOL_VERSION, RECORD_PROTOCOL}
+                or old.get("version") != protocol["version"]):
             raise HeadConflict("existing protocol cannot switch to Responses")
+        if protocol["version"] == RECORD_PROTOCOL:
+            record_reopening = protocol["assertion_generation"] != old["assertion_generation"]
+            if record_reopening:
+                _check_record_reopening(store, run, protocol, old, record_authority)
+            elif (protocol.get("record_feedback_hash") != old.get("record_feedback_hash")
+                  or protocol["evidence_revision"] != old["evidence_revision"]
+                  or protocol["base_target"] != old["base_target"]):
+                raise HeadConflict("record authority changed without a new authorized generation")
         for field in ("scope_id", "api_protocol", "reference_context"):
+            if field == "reference_context" and record_reopening:
+                continue
             if old.get(field) != protocol.get(field):
                 raise HeadConflict("tool protocol frozen identity changed")
+        if protocol["version"] == RECORD_PROTOCOL and old.get("task") != protocol["task"]:
+            raise HeadConflict("record protocol frozen task changed")
         for field in (
             "request_attempt", "assertion_generation", "evidence_revision", "tool_calls_used",
         ):
@@ -436,7 +702,12 @@ def _persist_tool_protocol(store, run, protocol, old, result_changes):
         same_stage = (protocol["stage"] == old["stage"]
                       and protocol["assertion_generation"] == old["assertion_generation"]
                       and protocol["evidence_revision"] == old["evidence_revision"])
-        if same_stage:
+        correcting = (same_stage and protocol["version"] == RECORD_PROTOCOL
+                      and old["stage_input_items"]
+                      and protocol["stage_input_items"] != old["stage_input_items"])
+        if correcting:
+            _check_record_answer_correction(store, run, protocol, old, result_changes)
+        if same_stage and not correcting:
             for field in ("base_target", "active_instructions", "stage_input_items"):
                 if (field == "stage_input_items" and not old[field] and not old["turn_refs"]
                         and old["pending_request"] is None):
@@ -494,7 +765,17 @@ def _persist_tool_protocol(store, run, protocol, old, result_changes):
         if (checked.task_id != protocol["base_target"]["task_id"]
                 or checked.ir_identity.document_hash != run.document_hash):
             raise HeadConflict("current authorization belongs to another task or document")
-        retrieved = False
+        if protocol["version"] == RECORD_PROTOCOL:
+            if old is not None and not record_reopening:
+                raise HeadConflict("record source authorization cannot change after registration")
+            _check_record_authorization(store, run, protocol["task"], checked)
+            # The coordinator registers the initial record authority before any request.
+            if not record_reopening and (protocol["request_attempt"]
+                                         or protocol["completed_attempts"]):
+                raise HeadConflict("record source authority must precede model requests")
+            retrieved = True
+        else:
+            retrieved = False
         for change in changes.values():
             if change["field"] != "tool_result":
                 continue
@@ -533,6 +814,36 @@ def _persist_tool_protocol(store, run, protocol, old, result_changes):
     return len(newly_completed)
 
 
+
+def _validate_result_changes(protocols, changes):
+    try:
+        if not isinstance(changes, dict):
+            raise ValueError("result changes must be a mapping")
+        for ref, result in changes.items():
+            required = {"lineage_id", "field", "value"}
+            protocol = protocols.get(result["lineage_id"], {})
+            batch = protocol.get("version") == TOOL_BATCH_PROTOCOL_VERSION
+            owner = result.get("member_task_id")
+            if batch and result["field"] in {"discovery", "verification", "outcome"}:
+                required |= {"member_task_id", "result_version"}
+                if owner not in protocol["member_states"]:
+                    raise ValueError("batch result owner is not a member")
+                validate_member_result_version(result.get("result_version"))
+            if (not isinstance(result, dict) or set(result) != required
+                    or protocol.get("version") not in {TOOL_PROTOCOL_VERSION,
+                                                       TOOL_BATCH_PROTOCOL_VERSION,
+                                                       RECORD_PROTOCOL}):
+                raise ValueError("result change has no current Responses protocol")
+            validate_protocol_result(result["field"], result["value"])
+            if ref != protocol_result_ref(
+                result["lineage_id"], result["field"], result["value"], member_task_id=owner,
+                result_version=result.get("result_version"),
+            ):
+                raise ValueError("result change identity is invalid")
+    except (ValueError, TypeError, KeyError) as exc:
+        raise HeadConflict("invalid protocol result changes") from exc
+
+
 def persist_calls(store, run, token, fingerprint, state):
     from app.services.document_analysis.execution import _publication, _validate_model_call_state
 
@@ -545,7 +856,7 @@ def persist_calls(store, run, token, fingerprint, state):
             "lineage_calls": {r["key"]: r["value"] for r in state["lineage_calls"].values()},
             **(
                 {"protocols": {r["key"]: r["value"] for r in state["protocols"].values()}}
-                if state["version"] == 2
+                if state["version"] in (2, 3)
                 else {}
             ),
         },
@@ -556,25 +867,24 @@ def persist_calls(store, run, token, fingerprint, state):
     ):
         raise HeadConflict("request run identity mismatch")
     result_changes = state.get("result_changes", {})
-    try:
-        if not isinstance(result_changes, dict):
-            raise ValueError("result changes must be a mapping")
-        changed_protocols = {row["key"]: row["value"] for row in state["protocols"].values()}
-        for result_ref, result in result_changes.items():
-            if (not isinstance(result, dict) or set(result) != {"lineage_id", "field", "value"}
-                    or not isinstance(result["lineage_id"], str)
-                    or changed_protocols.get(result["lineage_id"], {}).get("version")
-                    != TOOL_PROTOCOL_VERSION):
-                raise ValueError("result change has no current Responses protocol")
-            validate_protocol_result(result["field"], result["value"])
-            if result_ref != protocol_result_ref(
-                result["lineage_id"], result["field"], result["value"],
-            ):
-                raise ValueError("result change identity is invalid")
-    except (ValueError, TypeError, KeyError) as exc:
-        raise HeadConflict("invalid protocol result changes") from exc
+    changed_protocols = {row["key"]: row["value"] for row in state["protocols"].values()}
+    _validate_result_changes(changed_protocols, result_changes)
     with _publication(store.db, store):
         current = lock_current(store, run, token, fingerprint)
+        record_authorities = {
+            lineage: get_row(store, current, "work:record_discovery",
+                             json.dumps(lineage, ensure_ascii=False, separators=(",", ":")))
+            for lineage, protocol in changed_protocols.items()
+            if protocol.get("version") == RECORD_PROTOCOL
+            and protocol.get("record_feedback_hash") is not None
+        }
+        if state.get("work_changes"):
+            if state["reservations"] or state.get("result_changes"):
+                raise HeadConflict("initial work-unit boundary cannot contain paid results")
+            current = write_work(
+                store, current, token, state["work_changes"], sequence=current.event_head or None,
+                expected_version=state["expected_work_version"], fingerprint=fingerprint,
+            )
         prior_control = get_row(store, current, "calls:control") or {}
         sequence = prior_control.get("reservation_sequence", 0)
         if state["reservation_sequence"] < sequence:
@@ -600,6 +910,14 @@ def persist_calls(store, run, token, fingerprint, state):
                     model=DocumentRunRequest,
                 )
                 protocol = saved["value"] if saved else None
+            if protocol and protocol.get("version") == TOOL_BATCH_PROTOCOL_VERSION:
+                from app.services.document_analysis.batch_current_state import check_receipt
+
+                check_receipt(protocol, receipt, fingerprint)
+            if "record_task_id" in receipt:
+                if protocol is None or protocol.get("version") != RECORD_PROTOCOL:
+                    raise HeadConflict("record reservation has no record protocol")
+                check_record_receipt(protocol, receipt, fingerprint)
             if protocol and protocol.get("version") == TOOL_PROTOCOL_VERSION:
                 pending = protocol["pending_request"]
                 if (pending is None or pending["reservation_key"] != request_key
@@ -625,8 +943,9 @@ def persist_calls(store, run, token, fingerprint, state):
             )
         store.db.flush()
         progress = dict(current.progress or {})
-        reserved_delta = confirmed_delta = 0
-        for domain in ("lineage_calls", "protocols"):
+        reserved_delta = len(fresh) if state["version"] == 3 else 0
+        confirmed_delta = 0
+        for domain in (("protocols",) if state["version"] == 3 else ("lineage_calls", "protocols")):
             for key, row in state[domain].items():
                 prior = get_row(store, current, "calls:" + domain, key, model=DocumentRunRequest)
                 if domain == "lineage_calls":
@@ -636,14 +955,35 @@ def persist_calls(store, run, token, fingerprint, state):
                 if domain == "protocols":
                     protocol = row["value"]
                     prior = hydrate_protocol(store, current, prior) if prior else None
-                    if (
-                        protocol["base_target"]["document_context"]["document_hash"]
-                        != run.document_hash
-                    ):
+                    targets = ([member["base_target"]
+                                for member in protocol["member_states"].values()]
+                               if protocol.get("version") == TOOL_BATCH_PROTOCOL_VERSION
+                               else [protocol["base_target"]])
+                    if any(target["document_context"]["document_hash"] != run.document_hash
+                           for target in targets):
                         raise HeadConflict("protocol source mismatch")
                     if prior and protocol.get("version") != prior["value"].get("version"):
                         raise HeadConflict("frozen protocol version cannot change")
-                    if protocol.get("version") == TOOL_PROTOCOL_VERSION:
+                    if protocol.get("version") == TOOL_BATCH_PROTOCOL_VERSION:
+                        from app.services.document_analysis.batch_current_state import (
+                            check_receipt,
+                            persist_protocol,
+                        )
+
+                        pending = protocol["pending_request"]
+                        if pending is not None:
+                            request = get_row(store, current, "calls:requests",
+                                              pending["reservation_key"], model=DocumentRunRequest)
+                            if request is None:
+                                raise HeadConflict("pending batch request has no reservation")
+                            check_receipt(protocol, request["reservation"], fingerprint)
+                        confirmed_delta += persist_protocol(
+                            store, current, protocol, prior["value"] if prior else None,
+                            result_changes,
+                        )
+                        put_rows(store, current, DocumentRunRequest, "calls:" + domain, {key: row})
+                        continue
+                    if protocol.get("version") in {TOOL_PROTOCOL_VERSION, RECORD_PROTOCOL}:
                         pending = protocol["pending_request"]
                         if pending is not None:
                             request = get_row(
@@ -657,9 +997,11 @@ def persist_calls(store, run, token, fingerprint, state):
                                     or receipt["stage"].removeprefix("ontology_guided_")
                                     != pending["stage"]):
                                 raise HeadConflict("pending Responses request has no reservation")
+                            if protocol["version"] == RECORD_PROTOCOL:
+                                check_record_receipt(protocol, receipt, fingerprint)
                         confirmed_delta += _persist_tool_protocol(
                             store, current, protocol, prior["value"] if prior else None,
-                            result_changes,
+                            result_changes, record_authority=record_authorities.get(row["key"]),
                         )
                         put_rows(store, current, DocumentRunRequest, "calls:" + domain, {key: row})
                         continue
@@ -748,7 +1090,7 @@ def persist_calls(store, run, token, fingerprint, state):
                     row = {**row, "value": compact}
                 put_rows(store, current, DocumentRunRequest, "calls:" + domain, {key: row})
         progress["model_calls_reserved"] = progress.get("model_calls_reserved", 0) + reserved_delta
-        if state["version"] == 2:
+        if state["version"] in (2, 3):
             progress["model_calls"] = progress.get("model_calls", 0) + confirmed_delta
         progress["model_calls_unresolved"] = max(
             0, progress["model_calls_reserved"] - progress.get("model_calls", 0)
@@ -771,12 +1113,22 @@ def persist_calls(store, run, token, fingerprint, state):
             },
             work_version=current.work_version,
         )
+    return current.work_version
 
 
 def hydrate_protocol(store, run, row):
     row = deepcopy(row)
     protocol = row["value"]
-    if protocol.get("version") == TOOL_PROTOCOL_VERSION:
+    if protocol.get("version") == TOOL_BATCH_PROTOCOL_VERSION:
+        from app.services.document_analysis.batch_current_state import protocol_results
+
+        try:
+            validate_batch_tool_protocol(protocol)
+        except (TypeError, ValueError, KeyError) as exc:
+            raise HeadConflict("stored current batch protocol is invalid") from exc
+        protocol_results(store, run, protocol)
+        return row
+    if protocol.get("version") in {TOOL_PROTOCOL_VERSION, RECORD_PROTOCOL}:
         try:
             validate_tool_protocol(protocol)
         except (TypeError, ValueError) as exc:
@@ -810,6 +1162,29 @@ def restore_calls(store, run, fingerprint):
             )
             for row in rows.get("calls:" + domain, {}).values()
         }
+    if result["version"] == 3:
+        requests = read_rows(store, run, DocumentRunRequest, prefix="calls:requests")
+        receipts = sorted(
+            (row["reservation"] for row in requests.get("calls:requests", {}).values()),
+            key=lambda receipt: receipt["sequence"],
+        )
+        if [receipt["sequence"] for receipt in receipts] != list(
+            range(1, result["reservation_sequence"] + 1)
+        ):
+            raise HeadConflict("stored physical reservation sequence is invalid")
+        result["reservations"] = receipts
+        result["lineage_calls"] = {}
+        for receipt in receipts:
+            lineages = ([receipt["lineage_id"]] if "record_task_id" in receipt
+                        else receipt["member_lineage_ids"])
+            for lineage in lineages:
+                result["lineage_calls"][lineage] = result["lineage_calls"].get(lineage, 0) + 1
+        from app.services.document_analysis.execution import _validate_model_call_state
+
+        _validate_model_call_state({key: result[key] for key in (
+            "version", "recognition_run_id", "run_fingerprint", "reservations",
+            "lineage_calls", "protocols",
+        )})
     return result
 
 
@@ -1024,7 +1399,7 @@ def read_display(store, run, kind="public_graph"):
     ):
         return rebuild_display(store, run)
     graph = dict(header["graph"])
-    fields = ("nodes", "edges", "properties") + (
+    fields = ("nodes", "edges", "properties", "attribute_candidates") + (
         ("relationship_groups",) if "relationship_groups" in header.get("member_counts", {}) else ()
     )
     for field in fields:
@@ -1097,15 +1472,24 @@ def display_payload(
     members = deepcopy(cache[1])
     updates = {}
     tool_protocol = graph.projection_policy == TOOL_PROJECTION_POLICY
-    fields = ("nodes", "edges", "properties") + (("relationship_groups",) if tool_protocol else ())
+    fields = ("nodes", "edges", "properties", "attribute_candidates") + (
+        ("relationship_groups",) if tool_protocol else ()
+    )
     for field in fields:
         values = {getattr(v, "entity_id", None) or v.candidate_id: v for v in getattr(graph, field)}
         prior = members.get("display:" + field, set())
-        touched = (
-            {r["key"] for r in changes.get(field, {}).values() if r}
-            if changes is not None
-            else set(values)
-        ) | (set(values) - prior)
+        if field == "attribute_candidates" and changes is not None:
+            touched = {
+                candidate["candidate_id"]
+                for row in changes.get("record_discovery", {}).values() if row
+                for candidate in row["value"].get("attribute_candidates", [])
+            }
+        else:
+            touched = (
+                {r["key"] for r in changes.get(field, {}).values() if r}
+                if changes is not None else set(values)
+            )
+        touched |= set(values) - prior
         selected = {key: values[key] for key in touched if key in values}
         positions = {key: i for i, key in enumerate(values)}
         updates[field] = {
@@ -1278,14 +1662,42 @@ def persist_batch(
     from app.services.document_analysis.execution import _publication
     from app.services.document_analysis.reviews import mark_repair_operation
 
-    digest = content_hash(
-        {
-            "fingerprint": fingerprint,
-            "task": batch.task.model_dump(mode="json"),
-            "outcome": batch.outcome.model_dump(mode="json"),
-            "changes": batch.work_changes,
-        }
+    unit = getattr(batch, "work_unit", None)
+    record_task = getattr(batch.task, "kind", None) == "record_discovery"
+    member_outcomes = getattr(batch, "member_outcomes", {})
+    protocols = getattr(batch, "protocol_state_changes", {})
+    results = getattr(batch, "protocol_result_changes", {})
+    record_review_boundary = (
+        record_task and batch.outcome.reason_code == "expert_review_boundary"
     )
+    if record_review_boundary and (
+        unit is not None or member_outcomes or protocols or results
+        or getattr(batch, "model_call_state", {}) or getattr(batch, "task_outcomes", [])
+        or batch.outcome.semantic_outcome != "not_checked" or batch.outcome.complete
+        or any(getattr(batch.outcome, field) for field in (
+            "model_calls", "controller_checks", "nodes", "edges", "properties",
+            "relationship_groups", "proof_payloads", "decision_payloads", "reference_resolutions",
+        ))
+    ):
+        raise HeadConflict("record review boundary cannot carry recognition changes")
+    if unit is not None:
+        tasks = {task.task_id: task for task in unit.members}
+        if not member_outcomes or set(member_outcomes) - set(tasks):
+            raise HeadConflict("batch publication requires explicit member outcomes")
+        event_results = {
+            "work_unit": unit.model_dump(mode="json"),
+            "member_outcomes": {key: outcome.model_dump(mode="json")
+                                for key, outcome in member_outcomes.items()},
+        }
+        outcomes = list(member_outcomes.values())
+    else:
+        event_results = {"task": batch.task.model_dump(mode="json"),
+                         "outcome": batch.outcome.model_dump(mode="json")}
+        outcomes = [batch.outcome]
+    digest = content_hash({"fingerprint": fingerprint, **event_results,
+                           "changes": batch.work_changes,
+                           **({"protocols": protocols, "results": results}
+                              if unit is not None or record_task else {})})
     receipt = store.event_batch_receipt(
         run.recognition_run_id, run.owner_id, token, batch_id=batch.batch_id, batch_hash=digest
     )
@@ -1314,7 +1726,80 @@ def persist_batch(
         from app.services.extraction.ontology_guided.projection import TOOL_PROJECTION_POLICY
 
         identity_nodes = []
-        if (graph.projection_policy == TOOL_PROJECTION_POLICY
+        if unit is not None:
+            from app.services.document_analysis.batch_current_state import persist_protocol
+
+            _validate_result_changes(protocols, results)
+            for unit_id, protocol in protocols.items():
+                if (unit_id != unit.work_unit_id
+                        or protocol["work_unit"] != unit.model_dump(mode="json")):
+                    raise HeadConflict("publication protocol belongs to another work unit")
+                key = json.dumps(unit_id, ensure_ascii=False, separators=(",", ":"))
+                saved = get_row(store, current, "calls:protocols", key, model=DocumentRunRequest)
+                if saved is None:
+                    raise HeadConflict("batch publication has no current unit")
+                prior = hydrate_protocol(store, current, saved)["value"]
+                if (protocol["request_attempt"] != prior["request_attempt"]
+                        or protocol["completed_attempts"] != prior["completed_attempts"]
+                        or protocol["pending_request"] != prior["pending_request"]):
+                    raise HeadConflict("publication cannot reserve or confirm model requests")
+                persist_protocol(store, current, protocol, prior, results)
+                put_rows(store, current, DocumentRunRequest, "calls:protocols",
+                         {key: {**saved, "value": protocol}})
+            store.db.flush()
+            unit_key = json.dumps(unit.work_unit_id, ensure_ascii=False, separators=(",", ":"))
+            saved = get_row(store, current, "calls:protocols", unit_key, model=DocumentRunRequest)
+            protocol = saved["value"] if saved else {}
+            for task_id, outcome in member_outcomes.items():
+                ref = protocol.get("outcome_refs", {}).get(task_id)
+                if ref is None:
+                    raise HeadConflict("published batch member has no finalized owned result")
+                finalized = load_protocol_result(store, current, unit.work_unit_id, ref, "outcome",
+                                                 member_task_id=task_id)
+                if finalized != outcome.model_dump(mode="json"):
+                    raise HeadConflict("published batch outcome differs from its finalized result")
+                identity_nodes.extend(node for node in finalized["nodes"]
+                                      if node.get("identity_status") == "verified")
+        elif record_task:
+            if batch.outcome.edges or batch.outcome.relationship_groups:
+                raise HeadConflict("record discovery cannot publish relationships")
+            lineage = batch.task.claim_lineage_id
+            task_value = batch.task.model_dump(mode="json")
+            _validate_result_changes(protocols, results)
+            if set(protocols) - {lineage}:
+                raise HeadConflict("record publication has a foreign protocol")
+            key = json.dumps(lineage, ensure_ascii=False, separators=(",", ":"))
+            saved = get_row(store, current, "calls:protocols", key, model=DocumentRunRequest)
+            if saved is None:
+                raise HeadConflict("record publication has no current protocol")
+            prior = hydrate_protocol(store, current, saved)["value"]
+            if prior.get("version") != RECORD_PROTOCOL or prior.get("task") != task_value:
+                raise HeadConflict("record publication protocol belongs to another task")
+            protocol = protocols.get(lineage, prior)
+            try:
+                validate_tool_protocol(protocol)
+            except (TypeError, ValueError, KeyError) as exc:
+                raise HeadConflict("record publication protocol is invalid") from exc
+            if (protocol.get("version") != RECORD_PROTOCOL or protocol.get("task") != task_value
+                    or any(protocol[field] != prior[field] for field in (
+                        "request_attempt", "completed_attempts", "pending_request",
+                    ))):
+                raise HeadConflict("record publication cannot change request ownership or receipts")
+            _persist_tool_protocol(store, current, protocol, prior, results)
+            put_rows(store, current, DocumentRunRequest, "calls:protocols",
+                     {key: {**saved, "value": protocol}})
+            ref = protocol.get("outcome_ref")
+            if ref is None:
+                raise HeadConflict("published record has no finalized owned result")
+            finalized = load_protocol_result(store, current, lineage, ref, "outcome")
+            if record_review_boundary and protocol["pending_request"] is not None:
+                raise HeadConflict("record review boundary has an unresolved model request")
+            if not record_review_boundary and finalized != batch.outcome.model_dump(mode="json"):
+                raise HeadConflict("published record outcome differs from its finalized result")
+            if not record_review_boundary:
+                identity_nodes = [node for node in finalized["nodes"]
+                                  if node.get("identity_status") == "verified"]
+        elif (graph.projection_policy == TOOL_PROJECTION_POLICY
                 and any(node.identity_status == "verified" for node in batch.outcome.nodes)):
             saved = get_row(
                 store, current, "calls:protocols",
@@ -1345,11 +1830,11 @@ def persist_batch(
                 "status": "running",
                 "stage": "extracting",
                 "progress": graph.progress.model_dump(mode="json"),
-                "task": batch.task.model_dump(mode="json"),
-                "outcome": batch.outcome.model_dump(mode="json"),
+                **event_results,
             },
         )
-        write_proofs(store, current, token, batch.outcome, event.sequence)
+        for outcome in outcomes:
+            write_proofs(store, current, token, outcome, event.sequence)
         current = write_work(
             store,
             current,
@@ -1394,6 +1879,7 @@ def persist_batch(
 
 def rebuild_display(store, run):
     from app.models.document_analysis import DocumentAnalysisArtifact
+    from app.schemas.attribute_calibration import AttributeCalibrationCandidate
     from app.services.document_analysis.state_artifacts import decode_state
     from app.services.extraction.document_ir import DocumentIR
     from app.services.extraction.ontology_guided.contracts import (
@@ -1451,6 +1937,11 @@ def rebuild_display(store, run):
         artifact_status=header["artifact_status"],
         **collections,
     )
+    graph.attribute_candidates = [
+        AttributeCalibrationCandidate.model_validate(candidate)
+        for row in rows.get("record_discovery", {}).values()
+        for candidate in row["value"].get("attribute_candidates", [])
+    ]
     ontology_ref = store.get_artifact(run.recognition_run_id, run.owner_id, "ontology_snapshot")
     source_ref = store.get_artifact(run.recognition_run_id, run.owner_id, "structure")
     ontology = OntologySnapshot.model_validate(

@@ -26,8 +26,20 @@ class RetrievalDiagnostics(EvidenceModel):
         return result
 
 
+class RecordDiscoveryDiagnostics(EvidenceModel):
+    policy: Literal["semantic-record-discovery-v1"] = "semantic-record-discovery-v1"
+    mode: Literal["semantic", "deterministic"]
+    reading_groups: int = Field(ge=0)
+    ranked_groups: int = Field(ge=0)
+    remaining_pairs: int = Field(ge=0)
+    admitted_pairs: int = Field(ge=0)
+    unselected_pairs: int = Field(ge=0)
+    unselected_groups: int = Field(ge=0)
+
+
 class RetrievalDiagnosticCarrier(EvidenceModel):
     retrieval_diagnostics: RetrievalDiagnostics | None = None
+    record_discovery: RecordDiscoveryDiagnostics | None = None
     # Search scope is distinct from admitted recognition work in the new policy.
     # Omit this field for immutable legacy payloads and their fingerprints.
     candidate_policy: Literal["sparse-candidates-v1"] | None = None
@@ -37,6 +49,8 @@ class RetrievalDiagnosticCarrier(EvidenceModel):
         result = handler(self)
         if self.retrieval_diagnostics is None:
             result.pop("retrieval_diagnostics", None)
+        if self.record_discovery is None:
+            result.pop("record_discovery", None)
         if self.candidate_policy is None:
             result.pop("candidate_policy", None)
         if result.get("completion") is None:
@@ -55,8 +69,10 @@ class RetrievalDiagnosticCarrier(EvidenceModel):
 
 def diagnostic_payload(value):
     diagnostic = getattr(value, "retrieval_diagnostics", None)
+    discovery = getattr(value, "record_discovery", None)
     candidate_policy = getattr(value, "candidate_policy", None)
     return {
         **({"retrieval_diagnostics": diagnostic.model_dump(mode="json")} if diagnostic else {}),
+        **({"record_discovery": discovery.model_dump(mode="json")} if discovery else {}),
         **({"candidate_policy": candidate_policy} if candidate_policy else {}),
     }

@@ -87,6 +87,8 @@ def _material_for_blocks(
         block = by_id.get(block_id)
         if block is None:
             continue
+        if isinstance(block, ParagraphBlock) and block.navigation_role is not None:
+            continue
         if (
             isinstance(block, ParagraphBlock)
             and block.heading_level > 0
@@ -101,11 +103,41 @@ def _material_for_blocks(
 
 def _page_material(structure: DocStructure, page: PageNode) -> str:
     body = _material_for_blocks(structure, page.block_ids, include_headings=True)
-    return f"章节页 {page.ordinal_in_leaf}\n{body}".strip()
+    return f"章节页 {page.ordinal_in_leaf}\n{body}".strip() if body else ""
+
+
+def _prepare_summary_sources(structure: DocStructure, nodes: list[ChapterNode]) -> None:
+    """Keep navigation in the tree while excluding it from every summary layer."""
+    def mark_empty(metadata):
+        metadata.content_summary = None
+        metadata.summary_status = "completed"
+        metadata.summary_source = "empty"
+        metadata.summary_model = None
+        metadata.generated_at = None
+
+    for node in reversed(nodes):
+        for page in node.pages:
+            if not _page_material(structure, page):
+                mark_empty(page.page_metadata)
+        if (not _material_for_blocks(structure, node.direct_block_ids, include_headings=True)
+                and all(child.layer_metadata.summary_source == "empty" for child in node.children)):
+            mark_empty(node.layer_metadata)
+
+
+def _navigation_heading(structure: DocStructure, node: ChapterNode) -> bool:
+    return any(
+        isinstance(block, ParagraphBlock) and block.paragraph_index == node.heading_index
+        and block.navigation_role is not None for block in structure.blocks
+    )
 
 
 def _chapter_material(structure: DocStructure, node: ChapterNode) -> str:
-    parts = [f"章节路径：{' / '.join(node.path) if node.path else node.heading}"]
+    if node.layer_metadata.summary_source == "empty":
+        return ""
+    # Untitled body paragraphs can remain in the same structural TOC section.
+    # Retain that body, without presenting its navigation heading as content.
+    parts = ([] if _navigation_heading(structure, node) else
+             [f"章节路径：{' / '.join(node.path) if node.path else node.heading}"])
     covered = {
         block_id for page in node.pages if _usable_page_summary(page)
         for block_id in page.block_ids
@@ -118,17 +150,20 @@ def _chapter_material(structure: DocStructure, node: ChapterNode) -> str:
         parts.append(f"当前章节直接内容：\n{direct}")
     if node.children:
         child_lines = [
-            f"- {child.heading}：{child.layer_metadata.content_summary or '无摘要'}"
-            for child in node.children
+            f"- {'正文' if _navigation_heading(structure, child) else child.heading}："
+            f"{child.layer_metadata.content_summary or '无摘要'}"
+            for child in node.children if child.layer_metadata.summary_source != "empty"
         ]
-        parts.append("直接子章节摘要：\n" + "\n".join(child_lines))
+        if child_lines:
+            parts.append("直接子章节摘要：\n" + "\n".join(child_lines))
     elif node.pages:
         page_lines = [
             f"- 章节页 {page.ordinal_in_leaf}："
             f"{page.page_metadata.content_summary or '无摘要'}"
-            for page in node.pages
+            for page in node.pages if page.page_metadata.summary_source != "empty"
         ]
-        parts.append("页摘要：\n" + "\n".join(page_lines))
+        if page_lines:
+            parts.append("页摘要：\n" + "\n".join(page_lines))
     return "\n\n".join(parts)
 
 
@@ -349,6 +384,7 @@ def fallback_word_tree_summaries(structure: DocStructure) -> ChapterNode | None:
         return None
 
     all_nodes = _chapters(root)
+    _prepare_summary_sources(structure, all_nodes)
     prompt_version = settings.word_tree_summary_prompt_version
     generated_at = datetime.now(UTC).isoformat()
     for node in all_nodes:
@@ -392,6 +428,7 @@ def summarize_word_tree(
         return None
 
     all_nodes = _chapters(root)
+    _prepare_summary_sources(structure, all_nodes)
     all_pages = [page for node in all_nodes for page in node.pages]
     prompt_version = settings.word_tree_summary_prompt_version
     for node in all_nodes:

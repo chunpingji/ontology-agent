@@ -9,7 +9,12 @@ from __future__ import annotations
 from copy import deepcopy
 
 from app.services.extraction.evidence_identity import evidence_hash, stable_id
-from app.services.extraction.ontology_guided.contracts import GraphProperty
+from app.services.extraction.ontology_guided.contracts import (
+    GraphProperty,
+    SubjectRef,
+    VersionedRef,
+)
+from app.services.extraction.ontology_guided.record_discovery import RecordDiscoveryTask
 from app.services.extraction.ontology_guided.scheduler import RecognitionTask
 
 EXPERT_REVIEW_VERSION = "expert-review-repair-v1"
@@ -77,10 +82,20 @@ def local_repair_tasks(review: dict, operation: dict, menu, index) -> tuple[list
         raise ValueError("local repair requires an explicit rejection")
     if review.get("reason_code") == "incorrect_subject":
         return [], "expert_subject_localization_required"
-    original = RecognitionTask.model_validate(review["original_task"])
-    if (original.subject != menu.subject or original.predicate_iri != review["predicate_iri"]
-            or original.predicate_kind != "property"):
-        raise ValueError("expert repair source task does not match its local menu")
+    record_origin = review["original_task"].get("kind") == "record_discovery"
+    if record_origin:
+        original = RecordDiscoveryTask.model_validate(review["original_task"])
+        subject = SubjectRef.model_validate(review.get("subject"))
+        if (subject != menu.subject or VersionedRef.model_validate(review["subject_ref"])
+                != VersionedRef(id=subject.entity_id, revision=subject.revision)
+                or not any(p.iri == review["predicate_iri"] for p in menu.properties)):
+            raise ValueError("expert repair source task does not match its local menu")
+    else:
+        original = RecognitionTask.model_validate(review["original_task"])
+        subject = original.subject
+        if (subject != menu.subject or original.predicate_iri != review["predicate_iri"]
+                or original.predicate_kind != "property"):
+            raise ValueError("expert repair source task does not match its local menu")
     target_predicates = [p for p in menu.properties if (
         p.iri != review["predicate_iri"] if review.get("reason_code") == "incorrect_property"
         else p.iri == review["predicate_iri"]
@@ -97,8 +112,10 @@ def local_repair_tasks(review: dict, operation: dict, menu, index) -> tuple[list
             if len(tasks) >= limit:
                 return tasks, "expert_repair_task_limit"
             tasks.append(RecognitionTask.create(
-                subject=original.subject, predicate_iri=predicate.iri, predicate_kind="property",
-                record_id=record.record_id, phase=original.phase, hop=original.hop,
+                subject=subject, predicate_iri=predicate.iri, predicate_kind="property",
+                record_id=record.record_id,
+                phase=1 if record_origin else original.phase,
+                hop=0 if record_origin else original.hop,
                 dependency_hash=evidence_hash([
                     EXPERT_REVIEW_VERSION, original.dependency_hash, menu.menu_id,
                     predicate.model_dump(mode="json"), record.record_id, feedback,
@@ -107,8 +124,11 @@ def local_repair_tasks(review: dict, operation: dict, menu, index) -> tuple[list
                     operation["operation_id"], predicate.iri, record.record_id,
                 ]),
                 retry_kind=f"expert_review:{operation['operation_id']}",
-                section_node_id=original.section_node_id,
-                source_position=original.source_position,
+                section_node_id=(getattr(record, "section_node_id", "") if record_origin
+                                 else original.section_node_id),
+                source_position=(getattr(index, "source_positions", {}).get(record.record_id, 0)
+                                 if record_origin else original.source_position),
+                scope=original.scope,
             ))
     truncated = review.get("source_record_count", len(records)) > len(records)
     return tasks, ("expert_repair_task_limit" if tasks and truncated else

@@ -85,6 +85,8 @@ def execute_claim(db, run_id):
 def queue_repair(
     client, db, analyst_headers, tmp_path: Path, monkeypatch, evidence_repair,
 ):
+    from tests.test_extraction.test_document_analysis_execution_recovery import frozen_legacy_policy
+
     monkeypatch.setattr(settings, "document_analysis_storage_dir", tmp_path / "artifacts")
     monkeypatch.setattr(settings, "document_analysis_evidence_repair_enabled", evidence_repair)
     monkeypatch.setattr(settings, "document_analysis_performance_enabled", False)
@@ -92,8 +94,17 @@ def queue_repair(
     monkeypatch.setattr(settings, "semantic_ranking_enabled", False)
     monkeypatch.setattr(document_analysis, "notify_document_analysis_dispatcher", lambda: True)
     monkeypatch.setattr(application, "ontology_snapshot_from_engine", lambda *_args: ontology())
+    # These tests exercise the historical checkpoint publication and recovery
+    # contract. Freeze it independently of the default record-discovery pipeline.
+    legacy_policy = frozen_legacy_policy(current_state=False, evidence_repair=evidence_repair)
+    monkeypatch.setattr(execution, "freeze_tool_engine_policy", lambda: legacy_policy)
     adapter = CorrectingAdapter()
-    monkeypatch.setattr(execution, "_configured_recognition_adapter", lambda _performance: adapter)
+
+    def configured_adapter(performance, *, ir=None, ontology=None, metadata=None):
+        assert performance == legacy_policy
+        return adapter
+
+    monkeypatch.setattr(execution, "_configured_recognition_adapter", configured_adapter)
     word = Document()
     word.add_paragraph("外观为白色片剂。")
     path = tmp_path / "source.docx"
@@ -220,7 +231,10 @@ def test_missing_recognition_model_finishes_repair_with_explicit_failure(
     run_id, adapter, _base, _target, _original_hash = queue_repair(
         client, db, analyst_headers, tmp_path, monkeypatch, True,
     )
-    monkeypatch.setattr(execution, "_configured_recognition_adapter", lambda _performance: None)
+    monkeypatch.setattr(
+        execution, "_configured_recognition_adapter",
+        lambda _performance, *, ir=None, ontology=None, metadata=None: None,
+    )
     store = DocumentAnalysisRunStore(db)
     token = store.claim(run_id, "analyst", actor="test", worker_id="missing-model")
     db.commit()

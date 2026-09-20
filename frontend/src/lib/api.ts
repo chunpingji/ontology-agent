@@ -1957,10 +1957,22 @@ export interface DocumentRetrievalDiagnostics {
   pruning_quality?: "unvalidated";
 }
 
+export interface DocumentRecordDiscoveryDiagnostics {
+  policy: "semantic-record-discovery-v1";
+  mode: "semantic" | "deterministic";
+  reading_groups: number;
+  ranked_groups: number;
+  remaining_pairs: number;
+  admitted_pairs: number;
+  unselected_pairs: number;
+  unselected_groups: number;
+}
+
 export interface DocumentAnalysisProgress {
   candidate_policy?: "sparse-candidates-v1" | null;
   completion?: "incomplete" | "policy_complete";
   retrieval_diagnostics?: DocumentRetrievalDiagnostics;
+  record_discovery?: DocumentRecordDiscoveryDiagnostics;
   tasks_attempted: number;
   model_calls: number;
   model_calls_reserved?: number;
@@ -2336,6 +2348,7 @@ export interface DocumentGraphCoverageSubject {
 export interface DocumentGraphCoverage {
   candidate_policy?: "sparse-candidates-v1" | null;
   retrieval_diagnostics?: DocumentRetrievalDiagnostics;
+  record_discovery?: DocumentRecordDiscoveryDiagnostics;
   subjects: DocumentGraphCoverageSubject[];
   records_planned: number;
   records_examined: number;
@@ -2388,6 +2401,45 @@ export interface DocumentGraphRanking {
   }[];
 }
 
+export interface DocumentParsedAttributeValue {
+  value: string | boolean | null;
+  datatype_iri: string | null;
+  quantity: {
+    kind: "number" | "range" | "comparison";
+    operator?: string | null;
+    scalar?: string | null;
+    lower?: string | null;
+    upper?: string | null;
+    lower_inclusive?: boolean | null;
+    upper_inclusive?: boolean | null;
+    source_unit?: string | null;
+    dimension?: string | null;
+  } | null;
+  precision: string | null;
+  issues: string[];
+}
+
+export interface DocumentAttributeCandidate {
+  candidate_id: string;
+  record_id: string;
+  field_id: string | null;
+  field_label: string;
+  raw_value: string;
+  parsed_value: DocumentParsedAttributeValue | null;
+  options: Array<{
+    subject_ref: DocumentAnalysisObjectRef;
+    subject_label: string | null;
+    class_iri: string;
+    predicate_iri: string;
+    predicate_label: string | null;
+  }>;
+  status: "pending" | "rejected_mapping" | "resolved";
+  reason_codes: string[];
+  checks: Record<string, string>;
+  source_claim_id: string | null;
+  source_selection_refs: { label: string[]; value: string[] };
+}
+
 export interface DocumentAnalysisGraphArtifact {
   extraction_protocol?: string | null;
   relationship_groups?: DocumentGraphRelationshipGroup[];
@@ -2402,6 +2454,7 @@ export interface DocumentAnalysisGraphArtifact {
   graph_snapshot: DocumentGraphSnapshotIdentity | null;
   entities: DocumentGraphEntity[];
   properties: DocumentGraphProperty[];
+  attribute_candidates: DocumentAttributeCandidate[];
   relationships: DocumentGraphRelationship[];
   invalidated_refs: DocumentAnalysisObjectRef[];
   coverage: DocumentGraphCoverage;
@@ -4689,7 +4742,10 @@ export interface HarnessSnapshot {
   sequence: number;
   call: {
     call_id: string; stage: "discovery" | "verification"; model: string;
+    task_kind?: "recognition" | "record_discovery" | "property_disambiguation";
     subject_label: string | null; predicate_label: string | null; input_tokens: number;
+    member_count?: number;
+    members?: { task_id: string; predicate_iri: string; predicate_label: string }[];
     status: string; started_at: string; usage: Record<string, unknown> | null;
   } | null;
   output: string;
@@ -4705,6 +4761,19 @@ export interface HarnessSnapshot {
   updated_at: string | null;
 }
 
+export interface HarnessAttributeDisambiguation {
+  task_id: string;
+  field_id: string;
+  record_id: string;
+  label: string | null;
+  value: string | null;
+  candidate_count: number | null;
+  attribute_status: "pending" | "resolved" | "unresolved";
+  work_status: "pending" | "active" | "examined" | "incomplete";
+  reason_code: string | null;
+  disambiguation_attempts: number;
+}
+
 export interface DocumentHarness {
   recognition_run_id: string;
   configuration: {
@@ -4713,18 +4782,18 @@ export interface DocumentHarness {
     request_budget: Record<string, number> | null;
   };
   snapshot: HarnessSnapshot | null;
+  attribute_disambiguations?: HarnessAttributeDisambiguation[];
 }
 
-export interface HarnessSchemaCard {
-  schema_card_id: string;
-  class_iris: string[];
-  predicates: {
-    iri: string; label: string; kind: string; description?: string;
-    min_count?: number | null; max_count?: number | null; multiplicity?: string;
-    datatype_iris?: string[]; canonical_unit?: string | null;
-    range_classes?: { iri: string; label: string }[];
-    range_class_iris?: string[]; constraint_status?: string;
-  }[];
+export interface HarnessPredicate {
+  iri: string; label: string; kind: string; description?: string;
+  min_count?: number | null; max_count?: number | null; multiplicity?: string;
+  datatype_iris?: string[]; canonical_unit?: string | null;
+  range_classes?: { iri: string; label: string }[];
+  range_class_iris?: string[]; constraint_status?: string;
+}
+
+interface HarnessCardConstraints {
   quantity_policies: {
     predicate_iri: string; allowed_forms: string[]; endpoint_role: string | null;
     allowed_target_units: string[]; unit_requirement: string; declaration_ref: string;
@@ -4733,11 +4802,31 @@ export interface HarnessSchemaCard {
   unsupported_constraints: { predicate_iri: string; construct: string; reason_code: string }[];
 }
 
+export interface HarnessPredicateSchemaCard extends HarnessCardConstraints {
+  schema_card_id: string;
+  class_iris: string[];
+  predicates: HarnessPredicate[];
+}
+
+export interface HarnessRecordSchemaCard {
+  kind: "record_discovery";
+  schema_card_id: string;
+  ontology_snapshot_id: string;
+  analysis_scope_ref: string;
+  class_cards: (HarnessCardConstraints & {
+    class_iri: string;
+    label: string;
+    properties: HarnessPredicate[];
+  })[];
+}
+
+export type HarnessSchemaCard = HarnessPredicateSchemaCard | HarnessRecordSchemaCard;
+
 export interface HarnessContext {
   recognition_run_id: string;
   call_id: string;
   request: { instructions: string; input: Record<string, unknown>[]; text?: { format: unknown }; [key: string]: unknown };
-  schema_card: HarnessSchemaCard;
+  schema_card: HarnessSchemaCard | { members: { task_id: string; card: HarnessSchemaCard }[] };
   class_labels?: Record<string, string>;
 }
 

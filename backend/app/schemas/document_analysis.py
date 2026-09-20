@@ -13,6 +13,7 @@ from uuid import UUID
 
 from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, model_serializer, model_validator
 
+from app.schemas.attribute_value import ParsedAttributeValue
 from app.schemas.evidence import EvidenceAnchor, ExternalRecordProvenance
 from app.schemas.retrieval_diagnostics import RetrievalDiagnosticCarrier
 
@@ -628,6 +629,34 @@ class EvidenceRepairSummary(ApiModel):
     rechecks: int = Field(default=0, ge=0)
 
 
+class AttributeCalibrationOption(ApiModel):
+    subject_ref: RevisionRef
+    subject_label: str | None = None
+    class_iri: str
+    predicate_iri: str
+    predicate_label: str | None = None
+
+
+class AttributeCalibrationSelections(ApiModel):
+    label: list[str] = Field(default_factory=list)
+    value: list[str] = Field(default_factory=list)
+
+
+class GraphAttributeCandidate(ApiModel):
+    candidate_id: NonEmpty
+    record_id: NonEmpty
+    field_id: str | None = None
+    field_label: str
+    raw_value: str
+    parsed_value: ParsedAttributeValue | None = None
+    options: list[AttributeCalibrationOption] = Field(default_factory=list)
+    status: Literal["pending", "rejected_mapping", "resolved"]
+    reason_codes: list[str] = Field(default_factory=list)
+    checks: dict[str, str] = Field(default_factory=dict)
+    source_claim_id: str | None = None
+    source_selection_refs: AttributeCalibrationSelections
+
+
 class GraphArtifactResponse(RunWatermark):
     extraction_protocol: str | None = None
     availability: ArtifactAvailability
@@ -635,6 +664,7 @@ class GraphArtifactResponse(RunWatermark):
     graph_snapshot: GraphSnapshotHeader | None = None
     entities: list[GraphEntity] = Field(default_factory=list)
     properties: list[GraphProperty] = Field(default_factory=list)
+    attribute_candidates: list[GraphAttributeCandidate] = Field(default_factory=list)
     relationships: list[GraphRelationship] = Field(default_factory=list)
     relationship_groups: list[GraphRelationshipGroup] = Field(default_factory=list)
     scope_resolutions: list[ScopeResolution] = Field(default_factory=list)
@@ -658,7 +688,8 @@ class GraphArtifactResponse(RunWatermark):
         if self.availability == "pending":
             if self.graph_snapshot is not None:
                 raise ValueError("pending graph cannot expose an uncommitted snapshot")
-            if self.entities or self.properties or self.relationships or self.relationship_groups:
+            if (self.entities or self.properties or self.relationships
+                    or self.relationship_groups or self.attribute_candidates):
                 raise ValueError("pending graph cannot expose projected graph items")
         elif self.availability in {"ready", "partial"} and self.graph_snapshot is None:
             raise ValueError("available graph requires a public snapshot header")
@@ -939,11 +970,22 @@ class HarnessOperation(ApiModel):
     result: HarnessDetail | None = None
 
 
+class HarnessMember(ApiModel):
+    task_id: str
+    predicate_iri: str
+    predicate_label: str
+
+
 class HarnessCall(ApiModel):
     call_id: str
     stage: Literal["discovery", "verification"]
+    task_kind: Literal[
+        "recognition", "record_discovery", "property_disambiguation"
+    ] = "recognition"
     subject_label: str | None = None
     predicate_label: str | None = None
+    member_count: int = Field(default=1, ge=1, le=4)
+    members: list[HarnessMember] = Field(default_factory=list)
     input_tokens: int
     status: str
     started_at: AwareDatetime
@@ -963,10 +1005,24 @@ class HarnessSnapshot(ApiModel):
     updated_at: AwareDatetime | None
 
 
+class HarnessAttributeDisambiguation(ApiModel):
+    task_id: NonEmpty
+    field_id: NonEmpty
+    record_id: NonEmpty
+    label: str | None = None
+    value: str | None = None
+    candidate_count: int | None = Field(default=None, ge=0)
+    attribute_status: Literal["pending", "resolved", "unresolved"]
+    work_status: Literal["pending", "active", "examined", "incomplete"]
+    reason_code: str | None = None
+    disambiguation_attempts: int = Field(ge=0)
+
+
 class HarnessResponse(ApiModel):
     recognition_run_id: UUID
     configuration: dict[str, Any]
     snapshot: HarnessSnapshot | None
+    attribute_disambiguations: list[HarnessAttributeDisambiguation] = Field(default_factory=list)
 
 
 class HarnessContextResponse(ApiModel):

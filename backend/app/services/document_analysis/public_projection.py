@@ -6,6 +6,7 @@ from collections.abc import Iterable
 from datetime import UTC, datetime
 from typing import Any
 
+from app.schemas.attribute_calibration import AttributeCalibrationCandidate
 from app.schemas.evidence import EvidenceAnchor
 from app.services.extraction.evidence_identity import stable_id
 from app.services.extraction.ontology_guided.contracts import (
@@ -194,6 +195,11 @@ def build_selection_registry(
     for node in graph.nodes:
         for anchor in node.evidence_refs:
             add(anchor, "entity")
+    for candidate in graph.attribute_candidates:
+        for anchor in candidate.label_refs:
+            add(anchor, "predicate_bridge")
+        for anchor in candidate.value_refs:
+            add(anchor, "value")
     for item in graph.properties:
         role_anchors = _property_role_anchors(item)
         for role, anchors in role_anchors.items():
@@ -296,6 +302,34 @@ def _entity(item: GraphNode, registry: dict[str, dict[str, Any]]) -> dict[str, A
         "identity_state": identity_state,
         "independent_review": item.independent_review,
         "source_selection_refs": _refs_for(registry, item.evidence_refs, "entity"),
+    }
+
+
+def _attribute_candidate(
+    item: AttributeCalibrationCandidate, base: GraphSnapshot,
+    registry: dict[str, dict[str, Any]], menus: dict[str, list[dict[str, Any]]],
+) -> dict[str, Any]:
+    entities = {(node.entity_id, node.revision): node for node in base.nodes}
+    options = []
+    for option in item.options:
+        subject = option["subject_ref"]
+        node = entities.get((subject["id"], subject["revision"]))
+        predicate = next((value for value in menus.get(subject["id"], [])
+                          if value["predicate_iri"] == option["predicate_iri"]), {})
+        options.append({
+            "subject_ref": subject,
+            "subject_label": node.label if node else None,
+            "class_iri": option["class_iri"],
+            "predicate_iri": option["predicate_iri"],
+            "predicate_label": predicate.get("predicate_label"),
+        })
+    return {
+        **item.model_dump(mode="json", exclude={"label_refs", "value_refs", "options"}),
+        "options": options,
+        "source_selection_refs": {
+            "label": _refs_for(registry, item.label_refs, "predicate_bridge"),
+            "value": _refs_for(registry, item.value_refs, "value"),
+        },
     }
 
 
@@ -558,6 +592,10 @@ def public_graph_payload(
         },
         "entities": [_entity(item, registry) for item in graph.nodes],
         "properties": [_property(item, registry, invalidated) for item in graph.properties],
+        "attribute_candidates": [
+            _attribute_candidate(item, base, registry, stored_payload.get("predicate_menus") or {})
+            for item in base.attribute_candidates if item.status != "resolved"
+        ],
         "relationships": [_relationship(item, registry, invalidated) for item in graph.edges],
         "invalidated_refs": _versioned_refs(invalidated),
         "ranking": public_ranking_payload(stored_payload.get("ranking_state") or {}),

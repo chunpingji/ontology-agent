@@ -1,0 +1,391 @@
+{
+  "variants": [
+    "028 predicate batch",
+    "029 record entity first"
+  ],
+  "shared_inputs": {
+    "document": {
+      "path": "inputs/source.docx",
+      "sha256": "e94822808601e73f4ba4c715c664812d4a01e42f0e4e84a6b08a3653b915daf7"
+    },
+    "ir": {
+      "path": "inputs/ir.json",
+      "sha256": "858dddbb762217ede057ed85e659bb6d0349fc90e0c936fbf42756859c882134"
+    },
+    "ontology": {
+      "path": "inputs/ontology.json",
+      "sha256": "1cabf0a4e744160737832cfc5aa4634719765dd786e0ffc5b25473cec5ed80c7"
+    },
+    "metadata": {
+      "path": "inputs/metadata.json",
+      "sha256": "3d1c7a605088733b40b2849e9edf19647f9c278f4d39d9918ddc85d656278937"
+    }
+  },
+  "code_archive_sha256": "3a4058e18b921a7f268cf5a3f61581f528c580528241eb68ce2055803deb95e0",
+  "model": "Qwen3.6-35B-A3B",
+  "model_revision": "0b21525e972670ed59e1812e170b27c26355381f0656ecc4e25617ece7dac58b",
+  "budgets": {
+    "max_model_calls": 8,
+    "max_input_tokens": 32768,
+    "max_output_tokens": 8192,
+    "max_tasks": 128,
+    "max_hops": 2,
+    "max_result_tokens": 4096,
+    "max_calls_per_lineage": 4,
+    "max_context_tokens": 131072
+  },
+  "gliner2": "disabled in both groups",
+  "external_instances": "disabled in both groups",
+  "reference": null,
+  "purpose": "bounded diagnostic; not whole-document quality acceptance",
+  "date": "2026-09-19",
+  "formal_quality_status": "not_scored",
+  "whole_document_acceptance": false,
+  "final_tree_model_acceptance": false,
+  "unmeasured": [
+    "first_usable_result_seconds",
+    "peak_resources",
+    "cache_state"
+  ],
+  "shared_snapshot_excludes_later_fixes": [
+    "repeated-type focus path filtering",
+    "transitive endpoint alias ambiguity grouping",
+    "relationship-page semantic accumulation"
+  ],
+  "results": {
+    "baseline": {
+      "metrics": {
+        "scoring_status": "not_scored",
+        "reason": "reference_is_separate",
+        "cost": {
+          "ranking": {
+            "count_tokens": {
+              "calls": 0,
+              "failed_calls": 0,
+              "inputs": 0,
+              "tokens": null,
+              "elapsed_seconds": 0,
+              "queue_seconds": null,
+              "compute_seconds": null
+            },
+            "embed": {
+              "calls": 0,
+              "failed_calls": 0,
+              "inputs": 0,
+              "tokens": null,
+              "elapsed_seconds": 0,
+              "queue_seconds": null,
+              "compute_seconds": null
+            },
+            "score_pairs": {
+              "calls": 0,
+              "failed_calls": 0,
+              "inputs": 0,
+              "tokens": null,
+              "elapsed_seconds": 0,
+              "queue_seconds": null,
+              "compute_seconds": null
+            }
+          },
+          "inspection_calls": 2,
+          "recognition_model_calls": 8,
+          "inspection_elapsed_seconds": 1534.2827759641223,
+          "summary_seconds": null,
+          "peak_resources": null,
+          "cache_state": "not_measured",
+          "ranking_measurement_status": "not_measured",
+          "responses_returned": 8,
+          "response_usage": {
+            "input_tokens": 145833,
+            "output_tokens": 54593,
+            "total_tokens": 200426
+          },
+          "controller_checks": {
+            "binding": 1,
+            "metric": 0,
+            "shacl": 0,
+            "elapsed_seconds": 0.04282307485118508
+          },
+          "work_unit_calls": 2,
+          "work_unit_elapsed_seconds": 1534.2827759641223,
+          "record_discovery_calls": 0,
+          "record_model_requests": 0,
+          "record_responses_returned": 0,
+          "record_discovery_elapsed_seconds": 0,
+          "request_member_counts": [
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1
+          ],
+          "request_task_counts": [
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1
+          ],
+          "physical_requests_reserved": 8,
+          "total_elapsed_seconds": 1535.8396259869915,
+          "model_elapsed_seconds": 1532.6775423302315,
+          "tool_elapsed_seconds": 0.03907996695488691
+        },
+        "batching": {
+          "policy": {
+            "version": "predicate-batch-v1",
+            "max_members": 4
+          },
+          "members_total": 2,
+          "members_with_outcomes": 2,
+          "members_without_outcomes": 0,
+          "incomplete_members": 2,
+          "incomplete_rate": 1.0,
+          "quality_status": "not_scored"
+        }
+      },
+      "coverage": {
+        "candidate_policy": "sparse-candidates-v1",
+        "tasks_attempted": 2,
+        "model_calls": 8,
+        "model_calls_reserved": 8,
+        "model_calls_unresolved": 0,
+        "records_planned": 75,
+        "records_examined": 0,
+        "records_incomplete": 2,
+        "records_unattempted": 73,
+        "phase_counts": {
+          "phase1": 2,
+          "phase2": 0
+        },
+        "supported": 1,
+        "unsupported": 0,
+        "undetermined": 1,
+        "pending_frontiers": 0,
+        "unresolved_claims": 1,
+        "invalidated_count": 0,
+        "stop_reason": "attempted_incomplete",
+        "completion": "incomplete",
+        "contract_version": "document-analysis-runs-v1"
+      },
+      "protocol_checks": {
+        "api_protocol": "responses",
+        "tool_protocol_version": "ontology-tool-extraction-v1",
+        "max_model_requests": 8,
+        "requests_started": 8,
+        "current_protocols_validated": 2,
+        "scope_completion": "incomplete",
+        "quality_status": "not_scored"
+      },
+      "graph_counts": {
+        "nodes": 2,
+        "properties": 0,
+        "edges": 0,
+        "relationship_groups": 0,
+        "nonroot_nodes": 1,
+        "supported_nonroot_nodes": 1
+      },
+      "outcomes": [
+        {
+          "complete": false,
+          "reason_code": "type_not_supported",
+          "semantic_outcome": "undetermined"
+        },
+        {
+          "complete": false,
+          "reason_code": "source_assertion_fact_source_missing",
+          "semantic_outcome": "supported"
+        }
+      ],
+      "manifest_sha256": "6cf29a35e5f2c630c254aa2de3f43875d02f47acc70e58c0421bcc9183b0689d"
+    },
+    "record": {
+      "metrics": {
+        "scoring_status": "not_scored",
+        "reason": "reference_is_separate",
+        "cost": {
+          "ranking": {
+            "count_tokens": {
+              "calls": 0,
+              "failed_calls": 0,
+              "inputs": 0,
+              "tokens": null,
+              "elapsed_seconds": 0,
+              "queue_seconds": null,
+              "compute_seconds": null
+            },
+            "embed": {
+              "calls": 0,
+              "failed_calls": 0,
+              "inputs": 0,
+              "tokens": null,
+              "elapsed_seconds": 0,
+              "queue_seconds": null,
+              "compute_seconds": null
+            },
+            "score_pairs": {
+              "calls": 0,
+              "failed_calls": 0,
+              "inputs": 0,
+              "tokens": null,
+              "elapsed_seconds": 0,
+              "queue_seconds": null,
+              "compute_seconds": null
+            }
+          },
+          "inspection_calls": 4,
+          "recognition_model_calls": 8,
+          "inspection_elapsed_seconds": 695.3655373270158,
+          "summary_seconds": null,
+          "peak_resources": null,
+          "cache_state": "not_measured",
+          "ranking_measurement_status": "not_measured",
+          "responses_returned": 8,
+          "response_usage": {
+            "input_tokens": 68624,
+            "output_tokens": 25209,
+            "total_tokens": 93833
+          },
+          "controller_checks": {
+            "binding": 0,
+            "metric": 0,
+            "shacl": 0,
+            "elapsed_seconds": 0.0064484127797186375
+          },
+          "work_unit_calls": 2,
+          "work_unit_elapsed_seconds": 343.57828889088705,
+          "record_discovery_calls": 2,
+          "record_model_requests": 6,
+          "record_responses_returned": 6,
+          "record_discovery_elapsed_seconds": 351.7872484361287,
+          "request_member_counts": [
+            1,
+            1
+          ],
+          "request_task_counts": [
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1
+          ],
+          "physical_requests_reserved": 8,
+          "total_elapsed_seconds": 698.8612451129593,
+          "model_elapsed_seconds": 694.0285694494378,
+          "tool_elapsed_seconds": 3.169686533510685e-05
+        },
+        "batching": {
+          "policy": {
+            "version": "predicate-batch-v1",
+            "max_members": 4
+          },
+          "members_total": 2,
+          "members_with_outcomes": 1,
+          "members_without_outcomes": 1,
+          "incomplete_members": 1,
+          "incomplete_rate": 0.5,
+          "quality_status": "not_scored"
+        },
+        "record_discovery": {
+          "pipeline": "record-entity-first-v1",
+          "policy": {
+            "version": "record-discovery-v1",
+            "max_classes_per_card": 4,
+            "endpoint_page_size": 8
+          },
+          "coverage": {
+            "analysis_scope_ref": "26901764f307bfd2d7d2ea6f9514276310a9fc85afc7abb0614d2b72c46e531e",
+            "schema_cards_total": 28,
+            "tasks_planned": 2408,
+            "tasks_examined": 2,
+            "tasks_incomplete": 0,
+            "tasks_unattempted": 2406,
+            "records_with_attempts": 1
+          },
+          "tasks_started": 2,
+          "tasks_with_outcomes": 2,
+          "tasks_without_outcomes": 0,
+          "unfinished_tasks": 2406,
+          "quality_status": "not_scored"
+        }
+      },
+      "coverage": {
+        "candidate_policy": "sparse-candidates-v1",
+        "tasks_attempted": 3,
+        "model_calls": 8,
+        "model_calls_reserved": 8,
+        "model_calls_unresolved": 0,
+        "records_planned": 2483,
+        "records_examined": 3,
+        "records_incomplete": 0,
+        "records_unattempted": 2480,
+        "phase_counts": {
+          "phase1": 1,
+          "phase2": 0
+        },
+        "supported": 0,
+        "unsupported": 0,
+        "undetermined": 0,
+        "pending_frontiers": 1,
+        "unresolved_claims": 0,
+        "invalidated_count": 0,
+        "stop_reason": "candidate_search_incomplete",
+        "completion": "incomplete",
+        "contract_version": "document-analysis-runs-v1",
+        "record_discovery": {
+          "analysis_scope_ref": "26901764f307bfd2d7d2ea6f9514276310a9fc85afc7abb0614d2b72c46e531e",
+          "schema_cards_total": 28,
+          "tasks_planned": 2408,
+          "tasks_examined": 2,
+          "tasks_incomplete": 0,
+          "tasks_unattempted": 2406,
+          "records_with_attempts": 1
+        }
+      },
+      "protocol_checks": {
+        "api_protocol": "responses",
+        "tool_protocol_version": "ontology-tool-extraction-v1",
+        "max_model_requests": 8,
+        "requests_started": 8,
+        "current_protocols_validated": 4,
+        "scope_completion": "incomplete",
+        "quality_status": "not_scored"
+      },
+      "graph_counts": {
+        "nodes": 1,
+        "properties": 0,
+        "edges": 0,
+        "relationship_groups": 0,
+        "nonroot_nodes": 0,
+        "supported_nonroot_nodes": 0
+      },
+      "outcomes": [
+        {
+          "complete": true,
+          "reason_code": "type_not_supported",
+          "semantic_outcome": "unsupported"
+        },
+        {
+          "complete": true,
+          "reason_code": "record_no_claims",
+          "semantic_outcome": "not_checked"
+        },
+        {
+          "complete": true,
+          "reason_code": "record_no_claims",
+          "semantic_outcome": "not_checked"
+        }
+      ],
+      "manifest_sha256": "901d5b25ca0442906668b8fbc815539e7490d6125f2e42c15ab0e06ab714a611"
+    }
+  }
+}

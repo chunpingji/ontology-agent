@@ -12,6 +12,7 @@ from typing import Any, Literal
 
 from pydantic import Field, model_serializer, model_validator
 
+from app.schemas.attribute_calibration import AttributeCalibrationCandidate
 from app.schemas.evidence import EvidenceAnchor, EvidenceModel, ExternalRecordProvenance
 from app.schemas.retrieval_diagnostics import RetrievalDiagnosticCarrier
 from app.services.extraction.evidence_identity import evidence_hash, stable_id
@@ -849,6 +850,7 @@ class GraphSnapshot(EvidenceModel):
     nodes: list[GraphNode]
     edges: list[GraphEdge] = Field(default_factory=list)
     properties: list[GraphProperty] = Field(default_factory=list)
+    attribute_candidates: list[AttributeCalibrationCandidate] = Field(default_factory=list)
     coverage: list[CoverageSummary] = Field(default_factory=list)
     progress: RunProgress = Field(default_factory=RunProgress)
     generated_from_hash: str = Field(min_length=64, max_length=64)

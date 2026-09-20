@@ -12,6 +12,7 @@ from typing import Generic, Literal, Mapping, TypeVar
 
 from pydantic import ConfigDict, Field, model_validator
 
+from app.schemas.attribute_value import ParsedAttributeValue
 from app.schemas.evidence import EvidenceAnchor, EvidenceModel
 from app.services.extraction.ontology_guided.claim_protocol import (
     ConstraintIssue,
@@ -313,6 +314,7 @@ class MetricData(_ToolModel):
     validation_status: ValidationStatus
     quantity: QuantityValue | None
     normalized_literal: str | bool | None
+    parsed_value: ParsedAttributeValue | None = None
     issues: list[ToolIssue]
 
 
@@ -341,6 +343,7 @@ class ShaclData(_ToolModel):
     validation_status: ValidationStatus
     report: list[ShaclIssue]
     coverage: FocusCoverage
+    blocked_by: list[str] = Field(default_factory=list)
 
 
 RELATION_PROFILE = "ontology-relation-v1"
@@ -410,7 +413,8 @@ TOOL_DEFINITIONS: Mapping[ToolName, ToolDefinition] = MappingProxyType({
         ),
         ToolDefinition(
             "propose_mentions",
-            "依据当前本体卡片及受控词表建议提及跨度和类型角色；不确认实体身份。",
+            "依据当前本体卡片及受控词表建议提及；结果按原文单元和物理跨度分组，"
+            "各 roles 独立保留类型、谓词及分数，共用 mention_ref；不确认实体身份。",
             ProposeMentionsArgs, ToolResult[MentionData], frozenset({"discovery"}), True,
         ),
         ToolDefinition(

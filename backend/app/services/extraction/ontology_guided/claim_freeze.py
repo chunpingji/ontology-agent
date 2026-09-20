@@ -20,18 +20,38 @@ from app.services.extraction.ontology_guided.claim_protocol import (
 )
 from app.services.extraction.ontology_guided.context import TaskContext, replay_fragment
 from app.services.extraction.ontology_guided.contracts import EdgeSpec, SlotSpec, VersionedRef
+from app.services.extraction.ontology_guided.record_discovery import (
+    RecordDiscoverySchemaCard,
+    RecordDiscoveryTarget,
+    RecordDiscoveryTask,
+    resolve_record_property,
+)
 from app.services.extraction.ontology_guided.records import RecordIndex
 from app.services.extraction.ontology_guided.scheduler import RecognitionTask
 from app.services.extraction.ontology_guided.source_citations import resolve_fragment_quote
+from app.services.extraction.ontology_guided.value_observation import normalize_field_support
 
 
-def freeze_proposal(
+def freeze_proposal(proposal, *, task, **options):
+    if not isinstance(task, RecognitionTask):
+        raise ValueError("predicate_task_required")
+    return _freeze_proposal(proposal, task=task, **options)
+
+
+def freeze_record_proposal(proposal, *, task, **options):
+    if not isinstance(task, RecordDiscoveryTask):
+        raise ValueError("record_task_required")
+    return _freeze_proposal(proposal, task=task, **options)
+
+
+def _freeze_proposal(
     proposal: DiscoveryEnvelope, *, task: RecognitionTask, context: TaskContext,
     card: SchemaCard, index: RecordIndex, generation: int,
     entity_dependencies: Sequence[EntityDependencyView] = (),
     external_candidates: Sequence[ExternalCandidate] = (),
     bridge_dependencies: Sequence[BridgeDependencyView] = (),
     reference_resolution: bool = False,
+    reference_dependencies=(),
 ) -> FrozenClaimSet:
     """Keep every proposal, recording local failures and their exact dependency closure.
 
@@ -41,13 +61,32 @@ def freeze_proposal(
     Observations remain untrusted hints and do not grant evidence or coverage.
     """
     proposal = DiscoveryEnvelope.model_validate(proposal.model_dump(mode="json"), strict=True)
+    proposal = normalize_field_support(proposal, context=context, index=index)
     if type(generation) is not int or generation < 1:
         raise ValueError("invalid_assertion_generation")
     evidence_revision = context.protocol_state.get("evidence_revision", 1)
     if type(evidence_revision) is not int or evidence_revision < 1:
         raise ValueError("invalid_evidence_revision")
-    subject_ref = VersionedRef(id=task.subject.entity_id, revision=task.subject.revision)
-    if (
+    record_discovery = isinstance(task, RecordDiscoveryTask)
+    registered_relation = (not record_discovery and task.predicate_kind == "relationship"
+                           and context.tool_inputs.get("recognition_pipeline")
+                           == "record-entity-first-v1")
+    subject_ref = (None if record_discovery else
+                   VersionedRef(id=task.subject.entity_id, revision=task.subject.revision))
+    if record_discovery:
+        if (
+            not isinstance(context.target, RecordDiscoveryTarget)
+            or not isinstance(card, RecordDiscoverySchemaCard)
+            or context.target.task_id != task.task_id
+            or task.schema_card_id != card.schema_card_id
+            or context.target.schema_card_id != card.schema_card_id
+            or context.target.analysis_scope_ref != task.analysis_scope_ref
+            or task.analysis_scope_ref != card.analysis_scope_ref
+            or context.record_id != task.record_id
+            or context.target.document_context.document_hash != index.ir.document_hash
+        ):
+            raise ValueError("freeze_context_identity_mismatch")
+    elif (
         context.target.task_id != task.task_id
         or context.target.subject_ref != task.subject
         or context.target.predicate_iri != task.predicate_iri
@@ -61,8 +100,8 @@ def freeze_proposal(
     for fragment in context.fragments:
         replay_fragment(index.ir, fragment)
 
-    local_ref_map = {task.subject.entity_id: subject_ref}
-    entity_classes = {task.subject.entity_id: task.subject.class_iri}
+    local_ref_map = {} if record_discovery else {task.subject.entity_id: subject_ref}
+    entity_classes = {} if record_discovery else {task.subject.entity_id: task.subject.class_iri}
     for dependency in entity_dependencies:
         EntityDependencyView.model_validate(dependency.model_dump(mode="json"), strict=True)
         identity = dependency.entity_ref.id
@@ -134,6 +173,18 @@ def freeze_proposal(
                 continue
         return False
 
+    def is_deferred_attribute_value(anchor):
+        if (not record_discovery or task.purpose == "property_disambiguation"
+                or anchor is None):
+            return False
+        return any(
+            anchor.evidence_id == source.get("evidence_id")
+            and anchor.span_start < source.get("span_end", 0)
+            and anchor.span_end > source.get("span_start", 0)
+            for field in context.tool_inputs.get("deferred_property_fields", [])
+            for source in field.get("value_refs", [])
+        )
+
     allowed_classes = allowed_entity_classes(card)
     from app.services.extraction.ontology_guided.claim_identity import duplicate_mentions
 
@@ -148,6 +199,13 @@ def freeze_proposal(
     predicates = {predicate.iri: predicate for predicate in card.predicates}
     for kind, payload in proposals:
         identity = payload.local_id
+        if registered_relation and kind in {"entity", "property", "external_link",
+                                           "reference_binding"}:
+            issue(identity, "claim_kind_outside_registered_relation")
+            continue
+        if record_discovery and kind in {"relation", "external_link"}:
+            issue(identity, "claim_kind_outside_record_discovery")
+            continue
         for quote in iter_quotes(payload):
             check_quote(identity, quote)
         for endpoint in endpoint_ids(payload):
@@ -156,6 +214,23 @@ def freeze_proposal(
         if kind == "entity":
             if payload.class_iri not in allowed_classes:
                 issue(identity, "class_outside_menu")
+            if record_discovery and payload.representation == "record":
+                def composition_signature(entity):
+                    return sorted(
+                        (component.role, evidence_hash(quote_anchor(component.quote)))
+                        for component in entity.record_components
+                    )
+                try:
+                    signature = composition_signature(payload)
+                    if any(
+                        dep.class_iri == payload.class_iri and dep.grounding_kind == "record"
+                        and dep.proposal is not None
+                        and composition_signature(dep.proposal) == signature
+                        for dep in entity_dependencies
+                    ):
+                        issue(identity, "record_entity_already_registered")
+                except ValueError:
+                    issue(identity, "record_composition_source_invalid")
             if payload.representation == "mention":
                 for quote in payload.mentions:
                     check_quote(identity, quote, fact_required=True)
@@ -178,7 +253,9 @@ def freeze_proposal(
             for identifier in payload.identifier_claims:
                 if identifier.predicate_iri not in identity_keys:
                     issue(identity, "identity_property_outside_menu")
-                check_quote(identity, identifier.value_quote, fact_required=True)
+                value_anchor = check_quote(identity, identifier.value_quote, fact_required=True)
+                if is_deferred_attribute_value(value_anchor):
+                    issue(identity, "attribute_deferred_to_disambiguation")
             continue
         if kind == "reference_binding":
             fresh = {entity.local_id for entity in proposal.entities}
@@ -203,19 +280,29 @@ def freeze_proposal(
                 issue(identity, "identity_fact_source_missing")
             continue
 
-        predicate = predicates.get(payload.predicate_iri)
+        if record_discovery:
+            try:
+                predicate = resolve_record_property(
+                    card, entity_classes.get(payload.subject_id), payload.predicate_iri,
+                )
+            except ValueError:
+                predicate = None
+        else:
+            predicate = predicates.get(payload.predicate_iri)
         expected_type = SlotSpec if kind == "property" else EdgeSpec
         if (
             not isinstance(predicate, expected_type)
-            or payload.predicate_iri != task.predicate_iri
+            or not record_discovery and payload.predicate_iri != task.predicate_iri
         ):
             issue(identity, "predicate_outside_menu")
         elif predicate.constraint_status != "resolved":
             issue(identity, "ontology_constraint_unresolved")
-        if payload.subject_id != task.subject.entity_id:
+        if not record_discovery and payload.subject_id != task.subject.entity_id:
             issue(identity, "subject_outside_task")
         if kind == "property":
-            check_quote(identity, payload.value_quote, fact_required=True)
+            value_anchor = check_quote(identity, payload.value_quote, fact_required=True)
+            if is_deferred_attribute_value(value_anchor):
+                issue(identity, "attribute_deferred_to_disambiguation")
         else:
             if reference_resolution:
                 from app.services.extraction.ontology_guided.source_assertions import (
@@ -230,6 +317,13 @@ def freeze_proposal(
                     issue(identity, bridge_issue)
             if reference_resolution and payload.source_assertion is None:
                 issue(identity, "source_assertion_required")
+            assertion = payload.source_assertion
+            known_bindings = {(view.binding_ref.id, view.binding_ref.revision): view
+                              for view in reference_dependencies}
+            for ref in assertion.binding_dependency_refs if assertion else []:
+                view = known_bindings.get((ref.id, ref.revision))
+                if view is None or view.entity_ref not in local_ref_map.values():
+                    issue(identity, "binding_reference_outside_dependencies")
             if not reference_resolution and payload.source_assertion is not None:
                 issue(identity, "reference_resolution_not_enabled")
             if payload.source_assertion is not None:
@@ -256,7 +350,8 @@ def freeze_proposal(
                 issue(identity, "qualifier_predicate_outside_menu")
         assertion = getattr(payload, "source_assertion", None)
         if (payload.bridge_kind == "resolved_reference_chain" and not payload.bridge_ref_ids
-                and not (assertion and assertion.binding_ids)):
+                and not (assertion and (assertion.binding_ids
+                                       or assertion.binding_dependency_refs))):
             issue(identity, "bridge_reference_missing")
         for bridge_id in payload.bridge_ref_ids:
             bridge = bridges.get(bridge_id)

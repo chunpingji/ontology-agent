@@ -29,6 +29,7 @@ from app.services.extraction.ontology_guided.contracts import (
     SubjectRef,
 )
 from app.services.extraction.ontology_guided.executor import (
+    ModelCallPauseRequested,
     OntologyGuidedExecutor,
     RecognitionAdapter,
     TaskOutcome,
@@ -81,6 +82,9 @@ class OntologyGuidedEvaluationResult(EvidenceModel):
     retrieval_plans: list[dict[str, Any]] = Field(default_factory=list)
     events: list[EvaluationEvent] = Field(default_factory=list)
     adapter_calls: list[AdapterCall] = Field(default_factory=list)
+    work_unit_calls: list[dict[str, Any]] = Field(default_factory=list)
+    record_discovery_calls: list[dict[str, Any]] = Field(default_factory=list)
+    record_discovery_coverage: dict[str, Any] = Field(default_factory=dict)
     diagnostics: list[str] = Field(default_factory=list)
     ranking: dict[str, Any] = Field(default_factory=dict)
     model_call_state: dict[str, Any] = Field(default_factory=dict)
@@ -98,6 +102,27 @@ class _ObservedAdapter:
         self.callback = callback
         self.calls: list[AdapterCall] = []
         self.protocol_results: dict = {}
+        self.work_unit_calls: list[dict] = []
+        self.record_calls: list[dict] = []
+
+    def __getattr__(self, name):
+        return getattr(self.delegate, name)
+
+    def inspect_work_unit(self, unit, context, menu):
+        started = perf_counter()
+        status, errors = "failed", {}
+        try:
+            result = self.delegate.inspect_work_unit(unit, context, menu)
+            status, errors = "complete", result.member_errors
+            return result
+        finally:
+            self.protocol_results.update(deepcopy(context.protocol_results))
+            self.work_unit_calls.append({
+                "work_unit_id": unit.work_unit_id,
+                "member_task_ids": [task.task_id for task in unit.members],
+                "member_count": len(unit.members), "status": status,
+                "member_errors": deepcopy(errors), "elapsed_seconds": perf_counter() - started,
+            })
 
     def inspect(self, task, context, predicate, menu) -> TaskOutcome:
         started = perf_counter()
@@ -135,6 +160,33 @@ class _ObservedAdapter:
         )
         self._record(call)
         return outcome
+
+    def inspect_record(self, task, context, card):
+        started = perf_counter()
+        status = "failed"
+        outcome, error = None, None
+        try:
+            result = self.delegate.inspect_record(task, context, card)
+            outcome = result
+            status = "complete" if result.complete else "incomplete"
+            return result
+        except BaseException as exc:
+            error = {"error_code": type(exc).__name__,
+                     "reason_code": getattr(exc, "reason_code", None) or str(exc)}
+            if isinstance(exc, ModelCallPauseRequested):
+                status = "paused"
+            raise
+        finally:
+            self.protocol_results.update(deepcopy(context.protocol_results))
+            self.record_calls.append({
+                "task_id": task.task_id, "record_id": task.record_id,
+                "schema_card_id": task.schema_card_id, "status": status,
+                "lineage_id": task.claim_lineage_id,
+                "semantic_outcome": outcome.semantic_outcome if outcome else None,
+                "reason_code": outcome.reason_code if outcome else (error or {}).get("reason_code"),
+                "error_code": (error or {}).get("error_code"),
+                "elapsed_seconds": perf_counter() - started,
+            })
 
     def _record(self, call: AdapterCall) -> None:
         self.calls.append(call)
@@ -196,10 +248,14 @@ class OntologyGuidedEvaluationRunner:
             max_tasks=max_tasks,
             phase1_section_limit=phase1_section_limit,
             progress_hook=progress_hook,
-            predicate_filter=predicate_filter,
+            predicate_filter=(
+                None if getattr(self.observed_adapter, "recognition_pipeline", None) is not None
+                else predicate_filter
+            ),
             ranking_service=ranking_service,
             max_model_calls_per_record=max_model_calls_per_record,
             current_state=tool_protocol,
+            record_focus_paths=[self.focus_path] if self.focus_path else [],
             incremental_performance=tool_protocol,
             candidate_policy="sparse-candidates-v1" if tool_protocol else None,
             heuristic_policy=HeuristicSearchPolicy.generic() if tool_protocol else None,
@@ -257,6 +313,14 @@ class OntologyGuidedEvaluationRunner:
                 "scope_mode": "focus_path" if self.focus_path else "document_graph",
                 "focus_path": self.focus_path,
                 "max_model_calls_per_record": self.max_model_calls_per_record,
+                **({"reference_resolution_version": 1}
+                   if getattr(self.observed_adapter, "reference_resolution", False) else {}),
+                **({"recognition_batching": self.observed_adapter.recognition_batching.model_dump(
+                    mode="json",
+                )} if getattr(self.observed_adapter, "recognition_batching", None) else {}),
+                **({"recognition_pipeline": self.executor.recognition_pipeline,
+                    "record_discovery": self.executor.record_policy.model_dump(mode="json")}
+                   if self.executor.record_pipeline else {}),
                 "ranking_policy": (
                     self.ranking_service.policy.model_dump(mode="json")
                     if self.ranking_service else {"mode": "deterministic"}
@@ -271,10 +335,25 @@ class OntologyGuidedEvaluationRunner:
                 self.ranking_hook(state)
             self.latest_ranking_state = deepcopy(state)
 
+        record_work, record_control = {}, {}
+
+        def observe_record_work(changes):
+            if not self.executor.record_pipeline or not changes:
+                return
+            record_control.update((changes.get("control", {}).get("current") or {}).get(
+                "record_discovery", {},
+            ))
+            for key, row in changes.get("record_discovery", {}).items():
+                if row is None:
+                    record_work.pop(key, None)
+                else:
+                    record_work[key] = deepcopy(row["value"])
+
         def publish_model_calls(state):
             if self.model_call_hook is not None:
                 self.model_call_hook(state)
             if state.get("current_calls"):
+                observe_record_work(state.get("work_changes"))
                 latest = self.latest_model_call_state
                 for key in ("version", "recognition_run_id", "run_fingerprint",
                             "reservation_sequence"):
@@ -289,6 +368,10 @@ class OntologyGuidedEvaluationRunner:
                 ))
             else:
                 self.latest_model_call_state = deepcopy(state)
+
+        def observe_batch(batch):
+            observe_record_work(batch.work_changes)
+            self.observed_adapter.protocol_results.update(deepcopy(batch.protocol_result_changes))
 
         scope = {"run_id": recognition_run_id, "task_id": f"evaluation:{recognition_run_id}"}
         if self.scheduler_bind is not None:
@@ -305,7 +388,24 @@ class OntologyGuidedEvaluationRunner:
                 ranking_hook=publish_ranking,
                 model_call_state=model_call_state,
                 model_call_hook=publish_model_calls,
+                work_hook=observe_record_work if self.executor.record_pipeline else None,
+                batch_hook=observe_batch if self.executor.record_pipeline else None,
             )
+        discovery_coverage = {}
+        if self.executor.record_pipeline:
+            total = record_control["total"]
+            examined = sum(row["status"] == "examined" for row in record_work.values())
+            discovery_coverage = {
+                "selection": execution.graph.progress.record_discovery.model_dump(mode="json"),
+                "analysis_scope_ref": record_control["catalog_hash"],
+                "schema_cards_total": len(record_control["card_ids"]),
+                "tasks_planned": total,
+                "tasks_examined": examined,
+                "tasks_incomplete": len(record_work) - examined,
+                "tasks_unattempted": total - len(record_work),
+                "records_with_attempts": len({row["task"]["record_id"]
+                                              for row in record_work.values()}),
+            }
         return OntologyGuidedEvaluationResult(
             executor_version=self.executor.version,
             recognition_run_id=recognition_run_id,
@@ -324,6 +424,9 @@ class OntologyGuidedEvaluationRunner:
                 for event_type, payload in execution.events
             ],
             adapter_calls=self.observed_adapter.calls,
+            work_unit_calls=self.observed_adapter.work_unit_calls,
+            record_discovery_calls=self.observed_adapter.record_calls,
+            record_discovery_coverage=discovery_coverage,
             diagnostics=execution.diagnostics,
             ranking={
                 **execution.ranking_state,

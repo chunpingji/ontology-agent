@@ -19,6 +19,7 @@ import {
 } from "@/lib/document-analysis";
 import { useTemplateDocumentRun } from "./use-template-document-run";
 import { PropertyReviewDialog } from "./property-review-dialog";
+import { AttributeCalibrationList } from "./attribute-calibration-list";
 import { freezePropertyReviewTarget, type PropertyReviewTarget } from "@/lib/document-property-review";
 
 type Model = ReturnType<typeof useTemplateDocumentRun>;
@@ -369,6 +370,14 @@ export function TemplateDocumentGraphPanel({ model }: { model: Model }) {
           {model.running && <Loader2 className="size-3.5 animate-spin" />}
         </div>
         <p className="text-xs text-muted-foreground">{documentCoverageScope(run.progress)}</p>
+        {run.progress.record_discovery && (
+          <p className="text-xs text-muted-foreground" role="status">
+            {run.progress.record_discovery.mode === "semantic" ? "语义筛选" : "词项筛选"}
+            {` ${run.progress.record_discovery.ranked_groups}/${run.progress.record_discovery.reading_groups} 组原文`}
+            {` · 实体发现待处理 ${run.progress.record_discovery.remaining_pairs} 项`}
+            {` · 未入选 ${run.progress.record_discovery.unselected_pairs} 项组合（未经识别）`}
+          </p>
+        )}
         {run.progress.candidate_policy === "sparse-candidates-v1" && (
           <p className="text-xs text-muted-foreground" role="status">
             入选候选 {run.progress.records_planned} 项 · 已核验 {run.progress.records_examined} 项
@@ -418,6 +427,8 @@ export function TemplateDocumentGraphPanel({ model }: { model: Model }) {
       {model.sourceError && <p role="alert" className="text-xs text-destructive">原文定位失败：{model.sourceError.message}</p>}
     </div>
     <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-3">
+      {graph && <AttributeCalibrationList candidates={graph.attribute_candidates ?? []}
+        select={model.select} />}
       {graph && <ReviewableGraphTree key={JSON.stringify([username, role, run?.recognition_run_id, model.projection])}
         graph={graph} model={model} />}
       {!root && <p className="text-sm text-muted-foreground">{model.loading ? "正在读取运行…"

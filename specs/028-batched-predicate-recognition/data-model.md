@@ -1,6 +1,6 @@
 # 028 内部数据与协议
 
-状态：拟实施契约，以下新类型尚不存在。需求见 [spec.md](spec.md)，函数落点见 [plan.md](plan.md)。类型片段省略校验器及原有通用字段；不作为已实现的库 API 示例。
+状态：内部契约已实现，本机工程验收通过。需求见 [spec.md](spec.md)，函数落点见 [plan.md](plan.md)。类型片段省略校验器及运行字段；完整类型以 recognition_batch.py/current_work.py 为准。
 
 ## 1. 执行粒度
 
@@ -12,9 +12,11 @@
 
 一个工作单元可因核验拆组产生多个当前提交。工作单元不是新运行或数据库表。
 
+组包保留原分支、来源优先和模板优先的公平轮转：当两侧都有待办时，不跨过当前连续配额吞并成员；无竞争侧时仍可合至冻结容量。每个实际消费成员分别计逻辑任务、phase 和 section 次数。
+
 ## 2. 工作单元与授权
 
-拟在 `ontology_guided/recognition_batch.py` 定义纯契约及组包函数，不持有模型客户端、数据库、图谱或线程池：
+在 `ontology_guided/recognition_batch.py` 定义纯契约及组包函数，不持有模型客户端、数据库、图谱或线程池：
 
 ```python
 class RecognitionBatchPolicy(EvidenceModel):
@@ -64,6 +66,8 @@ class BatchDiscoveryEnvelope(EvidenceModel):
 
 每个 result 只处理该成员谓词；多个值/对象/选择组沿用既有语义。identifier_claims 仍按原标识属性约束，不代表另一个属性任务已完成。
 
+批次请求在提示正文和 `text.format.schema` 中使用同一份按当前成员收窄的回答 Schema。关系发现中的新记录对象写入 `entities`，字段、范围上下限和单位原文写入 `record_components` 的 `role/quote` 数组；新对象入图后再启动其属性任务。关系任务禁止的 `properties=[]` 不代表应清空 `entities`。`object_ids` 只能引用实体，不能引用关系自身；`bridge_ref_ids` 只引用已登记桥接依赖，原文证据 ID 写入 quote，无桥接依赖时为 `[]`。
+
 解析与隔离：
 
 1. 非 completed、拒绝、截断或非合法 JSON：保存技术结果，不提取部分候选。
@@ -71,9 +75,13 @@ class BatchDiscoveryEnvelope(EvidenceModel):
 3. 外层可定位且 ID 唯一：逐成员严格解析 result、冻结候选；某成员非法不抹去其他合法成员。
 4. 缺失成员记 `member_answer_missing`，禁止补成空数组；显式空回答只表达当前授权范围无候选，不推断全文否定。
 
+已确认的错误回答可在原成员剩余额度内单独修正，单成员与多成员适用同一规则。后续请求的成员上下文 `answer_correction` 包含该成员上次最终回答、错误路径和原因，不包含 Thinking 或兄弟成员回答。发现修正须预留后续独立核验及关系检查额度；传输结局未知时不发修正请求。反馈随既有 `stage_input_items` 保存，不新增恢复存储或重置调用额度。
+
 Schema 要求完整成员集合；运行时先验证外层原始映射，再逐项调用原严格解析器。不能只依赖递归类型校验而使一项结构错误阻断全部合法成员。额外字段仍拒绝。
 
 ## 4. 独立核验输出
+
+记录实体的 `referent=supported` 引文须覆盖全部 `record_components` 原文，沿用最终入图的覆盖门禁。只引用标题或引导句时记录 `record_composition_source_coverage_missing`；有余额可携具体错误单独修正该成员核验，冻结候选、证据权限及其他成员结果保持不变。余额不足时保留未决，不能用模型的 supported 覆盖确定性失败。
 
 ```python
 class MemberVerificationAnswer(EvidenceModel):
@@ -84,7 +92,9 @@ class BatchVerificationEnvelope(EvidenceModel):
     members: list[MemberVerificationAnswer]
 ```
 
-每个成员先用原 `build_verification_input()` 建完整目标，再组装一次批量请求。回答逐成员调用原 `validate_verification()`，精确核对 target_id、content_hash、facet、原文和反证。目标路由同样使用复合键。
+每个成员先用原 `build_verification_input()` 建完整目标。零目标成员直接保存原 `VerifiedClaimSet(targets=[])`，仅非空成员进入批量核验请求。回答逐成员调用原 `validate_verification()`，精确核对 target_id、content_hash、facet、原文和反证。目标路由同样使用复合键。
+
+空结果是确定性制品，不是模型响应：不新增 reservation、model_turn、usage 或 request_attempt，结果版本沿用该成员最近实际参与请求的 `stage_group_seq` 和 `last_participating_request_attempt`。`claim_issues` 和 observations 不删除；无候选按原规则完成，未决观察和无效候选保留未完成语义。混合批次的空成员不承担其他成员的后续核验成本，且剩余额度为零也可完成本地收尾。
 
 核验超限按**完整成员及其依赖闭包**拆组，不拆单个 target、关系选择组或 facet。组中可混合属性和关系；成员关系须先拿到本成员的 validate_graph 结果。已核验成员从后续请求移除，不重复消费其额度。
 
@@ -96,11 +106,13 @@ class BatchVerificationEnvelope(EvidenceModel):
 {"member_task_id":"task-related","claim_id":"claim-r1","shape_profile_id":"现有关系 profile"}
 ```
 
-- `build_tool_definitions()` 添加当轮允许成员枚举；执行时仍核验该成员的阶段、工具可用性及前置条件。
+- `build_member_tool_definitions()` 添加当轮允许成员枚举；执行时仍核验该成员的阶段、工具可用性及前置条件。
 - 新 `dispatch_member_tool()` 校验成员后，剥离路由字段，把其余参数与原 call_id 交给原 `dispatch_tool()` 和成员 ToolContext。保存的模型响应保持原样。
 - ToolResultRecord 增加 member_task_id；内部 result 仍为原 ToolResult。function_call_output 继续按原 call_id 配对，不新增工具传输协议。
 - 恢复校验成员归属与保存的调用参数、允许成员及上下文一致。materialized_refs、relation_checks、registered_mentions 均按成员隔离。
 - 每响应默认 8 个工具调用是整个响应上限；原每 lineage 工具额度 16 改为对应逻辑成员继承，不能因新 unit 清零。继续在 dispatch 前持久化该成员累计 tool_calls_used，即便未保存结果也不退回。恢复读取当前成员累计值；新 unit 若再次包含同一逻辑 lineage，继承既有协议中该 lineage 已持久化累计值的最大值，不求和、不只数 tool_result。单 in-flight 和唯一成员持有者保证此值单调。
+- 无法解析或未知成员的工具调用不执行，其单条 tool_result 保存 `member_task_id=null` 和 blocked/error。该次尝试对当前响应所有参与成员各扣一次工具额度，防止用无效路由绕过预算。
+- 已预留但未确认的只读工具允许继续时重新尝试并再次计费；已确认工具结果直接复用，不重复执行。
 - retrieve_evidence 的 predicate_iri 必须等于路由成员谓词，只更新该成员授权与证据版本。读取 sibling 原文的可见性不授予事实发现或引用权限。
 - 外部查询等需要新 mention_ref 的操作仍须等待前一步成功结果，不能在同轮猜测引用。
 
@@ -161,7 +173,7 @@ receipt = {
 
 一次请求包含 4 个成员：实际次数 +1，每成员参与次数各 +1，token usage 只记一次。请求组内成员都计参与，即便某成员该轮没有工具调用；组包可先排除无需参与者。
 
-成员参与次数从 calls:requests 派生，运行内存可增量缓存，不新增持久计数副本。restore_calls 当前返回空 reservations，必须补读请求行，不能从空列表恢复额度。全局及连续运行预算按真实 receipt 计，失败和未知结局均消耗已预留额度。
+成员参与次数从 calls:requests 派生，运行内存可增量缓存，不新增持久计数副本。批量 restore_calls 读取真实请求行恢复 reservations，不能从空列表恢复额度。全局及连续运行预算按真实 receipt 计，失败和未知结局均消耗已预留额度。
 
 不把成员剩余额度相加当作批次可用额度。某请求是否可发，由**所有实际参与成员均有余额**、全局余额、连续执行窗口共同决定。工作单元可有多组后续核验，各组仅扣其参与成员；没有独立的“批次再赠 4 次”额度，也不将旧单成员上限机械用作整组所有拆分请求的总上限。
 
@@ -184,4 +196,8 @@ HeuristicSlotSearch.observe 的 attempt_id 改为由 unit_id、member_task_id、
 
 应用标记精确绑定 `(unit_id, member_task_id, result_version, outcome_ref)`，表示同一结果已发布，不永久封闭该成员。确定性检查发现需要补证的缺口时，由协调器调用原恢复决策；有授权、有剩余额度的成员仍能在原 unit 生成新 evidence_revision/generation 和新结果引用，旧引用的应用幂等性不阻断真实的新结果。作废哪些 verification/outcome 引用依原证据/声明版本规则决定，其他成员不受影响。
 
+没有核验目标的成员需要恢复时，使用已有 reproposal 流程，不能对空声明发起 evidence 核验；补证及重提仍共享原恢复机会与调用预算。冷继续同时检查当前组最后确认的模型 attempt 和成员阶段/结果版本，旧 discovery/verification 引用不能遮蔽尚未消费的新响应。已付费的旧空核验响应及工具结果保留；先完成工具配对，再本地收尾或只为非空成员组包，未知请求继续阻断。
+
 因核验拆组而先交付部分成员时，其余成员继续由 active unit 唯一持有；不能同时放回 scheduler。技术重试和补证只缩小 stage_member_ids，不另建 unit 或初始化成员状态。确需交回原调度队列时，任务只携带原 unit/member 引用，重新激活同一成员状态；generation、evidence_revision、authorization、recovery_used 和阶段引用一并保留。不得同时存在活动 unit 待办和同成员排队待办。
+
+物理提及的 canonical 复用沿用冻结的 reference_resolution_version。新在线运行既有默认值为 1；缺少该策略的历史模式保持原身份语义，批处理不隐式升级身份规则。

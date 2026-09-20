@@ -39,7 +39,9 @@ from app.services.document_analysis.run_store import (
 )
 from app.services.extraction.document_ir import DocumentIR
 from app.services.extraction.evidence_identity import stable_id
+from app.services.extraction.ontology_guided.contracts import GraphNode, SubjectRef
 from app.services.extraction.ontology_guided.dependencies import DependencyIndex
+from app.services.extraction.ontology_guided.record_discovery import RecordDiscoveryTask
 from app.services.extraction.ontology_guided.records import RecordIndex
 from app.services.extraction.ontology_guided.scheduler import RecognitionTask
 
@@ -328,12 +330,34 @@ class DocumentPropertyReviewService:
             raise DocumentAnalysisError(
                 "REPAIR_UNAVAILABLE", "候选缺少可回放原始任务", status_code=409,
             )
-        task = RecognitionTask.model_validate(original)
         prop = candidate.payload
-        if (task.subject.entity_id != prop["subject_ref"]["id"]
-                or task.subject.revision != prop["subject_ref"]["revision"]
-                or task.predicate_iri != prop["predicate_iri"]):
-            raise HeadConflict("candidate original task target mismatch")
+        record_origin = original.get("kind") == "record_discovery"
+        if record_origin:
+            task = RecordDiscoveryTask.model_validate(original)
+            subject_ref = prop["subject_ref"]
+            subject_key = (run.recognition_run_id, subject_ref["id"], subject_ref["revision"])
+            subject_candidate = self.db.get(DocumentRunCandidate, subject_key)
+            subject_head = self.db.get(DocumentRunCandidateHead, subject_key[:2])
+            displayed_subject = next((node for node in graph["graph"]["nodes"]
+                                      if node["entity_id"] == subject_ref["id"]
+                                      and node["revision"] == subject_ref["revision"]), None)
+            if (subject_candidate is None or subject_candidate.kind != "entity"
+                    or subject_head is None or subject_head.revision != subject_ref["revision"]
+                    or content_hash(subject_candidate.payload) != subject_candidate.payload_hash
+                    or displayed_subject is None
+                    or content_hash(displayed_subject) != subject_candidate.payload_hash):
+                raise HeadConflict("candidate property subject mismatch")
+            node = GraphNode.model_validate(subject_candidate.payload)
+            if (node.entity_id != subject_ref["id"] or node.revision != subject_ref["revision"]):
+                raise HeadConflict("candidate property subject identity mismatch")
+            subject = SubjectRef(entity_id=node.entity_id, revision=node.revision,
+                                 class_iri=node.class_iri, is_document_root=node.root)
+        else:
+            task = RecognitionTask.model_validate(original)
+            if (task.subject.entity_id != prop["subject_ref"]["id"]
+                    or task.subject.revision != prop["subject_ref"]["revision"]
+                    or task.predicate_iri != prop["predicate_iri"]):
+                raise HeadConflict("candidate original task target mismatch")
         structured = self.application._artifact_payload(run, "structure")
         if structured is None:
             raise DocumentAnalysisError("REPAIR_UNAVAILABLE", "原文结构不可用", status_code=409)
@@ -358,6 +382,7 @@ class DocumentPropertyReviewService:
             "reason": request.reason, "reason_code": request.reason_code,
             "after_outcomes": checkpoint.get("completed_tasks", len(outcomes)),
             "subject_ref": prop["subject_ref"],
+            **({"subject": subject.model_dump(mode="json")} if record_origin else {}),
             "predicate_iri": prop["predicate_iri"], "original_task": original,
             "record_ids": list(dict.fromkeys(records))[:16],
             "source_record_count": len(set(records)),

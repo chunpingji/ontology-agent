@@ -17,11 +17,13 @@ from typing import Literal, Protocol
 
 from pydantic import Field, model_serializer
 
+from app.schemas.attribute_calibration import AttributeCalibrationCandidate
 from app.schemas.evidence import EvidenceAnchor, EvidenceModel
 from app.services.extraction.annotation_execution import ExecutionLost
 from app.services.extraction.document_ir import DocumentIR
 from app.services.extraction.evidence_identity import evidence_hash, stable_id
 from app.services.extraction.ontology_guided.candidate_planning import admit_records, shared_scope
+from app.services.extraction.ontology_guided.claim_protocol import compile_schema_card
 from app.services.extraction.ontology_guided.context import (
     TaskContext,
     assemble_context,
@@ -49,6 +51,7 @@ from app.services.extraction.ontology_guided.contracts import (
     VersionedRef,
 )
 from app.services.extraction.ontology_guided.current_work import (
+    TOOL_BATCH_PROTOCOL_VERSION,
     TOOL_PROTOCOL_VERSION,
     SlotParts,
     WorkMap,
@@ -57,6 +60,7 @@ from app.services.extraction.ontology_guided.current_work import (
     enable_plan_parts,
     enable_search_parts,
     json_value,
+    member_result_version,
     plan_header,
     protocol_result_ref,
     restore_search_parts,
@@ -88,7 +92,24 @@ from app.services.extraction.ontology_guided.projection import (
     project_graph,
 )
 from app.services.extraction.ontology_guided.ranking_execution import RankingPreparation
+from app.services.extraction.ontology_guided.recognition_batch import (
+    MemberContext,
+    RecognitionBatchContext,
+    RecognitionWorkUnit,
+    pack_work_unit,
+)
 from app.services.extraction.ontology_guided.recognition_execution import RecognitionCall
+from app.services.extraction.ontology_guided.record_discovery import (
+    RECORD_PIPELINE,
+    RECORD_PROTOCOL,
+    CandidateChanges,
+    RecordDiscoveryPolicy,
+    RecordDiscoveryTask,
+    compile_discovery_catalog,
+    compile_record_schema_card,
+    reference_pages,
+    resolve_record_property,
+)
 from app.services.extraction.ontology_guided.records import RecordIndex
 from app.services.extraction.ontology_guided.retrieval import (
     mark_record,
@@ -139,6 +160,7 @@ class TaskOutcome(EvidenceModel):
     proof_payloads: list[dict] = Field(default_factory=list)
     decision_payloads: list[dict] = Field(default_factory=list)
     reference_resolutions: list[dict] = Field(default_factory=list)
+    attribute_candidates: list[AttributeCalibrationCandidate] = Field(default_factory=list)
 
     @model_serializer(mode="wrap")
     def preserve_legacy_shape(self, handler):
@@ -149,6 +171,8 @@ class TaskOutcome(EvidenceModel):
             data.pop("controller_checks", None)
         if "reference_resolutions" not in self.model_fields_set:
             data.pop("reference_resolutions", None)
+        if not self.attribute_candidates:
+            data.pop("attribute_candidates", None)
         return data
 
 
@@ -180,8 +204,12 @@ class ExecutionBatch(EvidenceModel):
     """Serializable safe-boundary state emitted after one logical task attempt."""
 
     batch_id: str = Field(min_length=1)
-    task: RecognitionTask
-    outcome: TaskOutcome
+    task: RecognitionTask | RecordDiscoveryTask | None = None
+    outcome: TaskOutcome | None = None
+    work_unit: RecognitionWorkUnit | None = None
+    member_outcomes: dict[str, TaskOutcome] = Field(default_factory=dict)
+    protocol_state_changes: dict[str, dict] = Field(default_factory=dict)
+    protocol_result_changes: dict[str, dict] = Field(default_factory=dict)
     task_outcomes: list[dict]
     frontier: dict
     recall_ledger: dict
@@ -202,6 +230,12 @@ class ExecutionBatch(EvidenceModel):
 
 class OntologyGuidedExecutor:
     version = "ontology-guided-executor-v5.1-ranking-durability"
+
+    @classmethod
+    def pipeline_version(cls, pipeline=None):
+        if pipeline not in {None, RECORD_PIPELINE}:
+            raise ValueError("unknown_recognition_pipeline")
+        return cls.version + ("+" + pipeline if pipeline else "")
 
     def __init__(
         self,
@@ -230,9 +264,20 @@ class OntologyGuidedExecutor:
         source_object_recognition: bool = False,
         cmc_describes_type_scope: bool = False,
         current_state: bool = False,
+        record_focus_paths=(),
     ):
         self.current_state = current_state
+        self.recognition_pipeline = getattr(adapter, "recognition_pipeline", None)
+        self.record_pipeline = self.recognition_pipeline == RECORD_PIPELINE
+        self.record_policy = (getattr(adapter, "record_discovery", None)
+                              or RecordDiscoveryPolicy()) if self.record_pipeline else None
+        self.record_focus_paths = tuple(tuple(path) for path in record_focus_paths)
+        if self.recognition_pipeline not in {None, RECORD_PIPELINE}:
+            raise ValueError("unknown_recognition_pipeline")
         self.tool_protocol = getattr(adapter, "protocol_version", None) == TOOL_PROTOCOL_VERSION
+        self.batch_policy = getattr(adapter, "recognition_batching", None)
+        if self.batch_policy is not None and not self.tool_protocol:
+            raise ValueError("recognition batching requires the tool protocol")
         self.reference_resolution = self.tool_protocol and bool(
             getattr(adapter, "reference_resolution", False)
         )
@@ -307,6 +352,10 @@ class OntologyGuidedExecutor:
             self.version += "+cmc-describes-" + CMC_DESCRIBES_SCOPE_VERSION
         if self.tool_protocol:
             self.version += "+" + TOOL_PROTOCOL_VERSION
+        if self.record_pipeline:
+            if not self.tool_protocol or self.batch_policy is None or not self.reference_resolution:
+                raise ValueError("record pipeline requires current tool batching and references")
+            self.version += "+" + RECORD_PIPELINE
 
     @staticmethod
     def root_node(
@@ -355,8 +404,12 @@ class OntologyGuidedExecutor:
         repair_only: bool = False,
         work_hook: Callable[[dict], None] | None = None,
         protocol_result_loader: Callable[[str, str, str], dict] | None = None,
+        protocol_record_loader: Callable[..., dict] | None = None,
     ) -> ExecutionResult:
         has_protocol = self.evidence_repair or self.tool_protocol
+        call_state_version = 3 if self.batch_policy is not None else (2 if has_protocol else 1)
+        active_unit_ref = None
+        discovery_turn = True
         root_scope = TraversalScope.create() if self.tool_protocol else None
         if self.adaptive_policy is not None:
             self.adaptive_policy.validate_ontology_context(self.ontology)
@@ -379,6 +432,8 @@ class OntologyGuidedExecutor:
         applied_model_results = work_map()
         entity_origins = work_map()
         reference_resolutions = work_map()
+        record_discovery = work_map()
+        record_relation_inputs = work_map()
         search_started = time.perf_counter()
         index = RecordIndex(ir)
         search_index = (
@@ -393,7 +448,7 @@ class OntologyGuidedExecutor:
             model_call_state or (resume_state or {}).get("model_call_state") or {}
         )
         if restored_calls and (
-            restored_calls.get("version") != (2 if has_protocol else 1)
+            restored_calls.get("version") != call_state_version
             or restored_calls.get("recognition_run_id") != recognition_run_id
             or restored_calls.get("run_fingerprint") != run_fingerprint
         ):
@@ -401,24 +456,72 @@ class OntologyGuidedExecutor:
         reserved_calls = work_map(restored_calls.get("lineage_calls") or {})
         reservation_sequence = restored_calls.get("reservation_sequence",
                                                   len(restored_calls.get("reservations") or []))
-        reservation_saved = 0
         reservations = list(restored_calls.get("reservations") or [])
+        reservation_saved = len(reservations) if self.current_state and self.batch_policy else 0
         protocols = deepcopy(restored_calls.get("protocols") or {})
         local_protocol_results = {}
+        member_owners = {
+            member["task_id"]: unit_id
+            for unit_id, protocol in protocols.items()
+            if protocol.get("version") == TOOL_BATCH_PROTOCOL_VERSION
+            for member in protocol["work_unit"]["members"]
+        }
+        lineage_tool_calls = {}
 
-        def load_result(lineage, reference, field):
+        def remember_tool_costs(protocol):
+            if protocol.get("version") == TOOL_BATCH_PROTOCOL_VERSION:
+                for member in protocol["work_unit"]["members"]:
+                    lineage = member["claim_lineage_id"]
+                    used = protocol["member_states"][member["task_id"]]["tool_calls_used"]
+                    lineage_tool_calls[lineage] = max(lineage_tool_calls.get(lineage, 0), used)
+            else:
+                lineage = protocol.get("lineage_id")
+                if lineage:
+                    lineage_tool_calls[lineage] = max(
+                        lineage_tool_calls.get(lineage, 0), protocol.get("tool_calls_used", 0),
+                    )
+
+        for saved_protocol in protocols.values():
+            remember_tool_costs(saved_protocol)
+
+        def task_protocol(task):
+            owner = member_owners.get(task.task_id)
+            if owner is not None:
+                from app.services.extraction.ontology_guided.context import member_protocol_view
+
+                return member_protocol_view(json_value(protocols[owner]), task.task_id)
+            return protocols.get(task.claim_lineage_id, {})
+
+        def task_result_owner(task):
+            owner = member_owners.get(task.task_id)
+            return (owner or task.claim_lineage_id,
+                    {"member_task_id": task.task_id} if owner is not None else {})
+
+        def load_record(lineage, reference, field, *, member_task_id=None):
             saved = local_protocol_results.get(reference)
             if saved is not None:
-                if saved["lineage_id"] != lineage or saved["field"] != field:
-                    raise ValueError("protocol_result_reference_mismatch")
-                value = deepcopy(saved["value"])
+                record = deepcopy(saved)
+            elif protocol_record_loader is not None:
+                record = protocol_record_loader(
+                    lineage, reference, field, member_task_id=member_task_id,
+                )
             elif protocol_result_loader is not None:
-                value = deepcopy(protocol_result_loader(lineage, reference, field))
+                record = {"lineage_id": lineage, "field": field,
+                          "value": deepcopy(protocol_result_loader(lineage, reference, field))}
             else:
                 raise ValueError("protocol_result_loader_required")
-            if protocol_result_ref(lineage, field, value) != reference:
+            if (record["lineage_id"] != lineage or record["field"] != field
+                    or record.get("member_task_id") != member_task_id):
                 raise ValueError("protocol_result_reference_mismatch")
-            return value
+            kwargs = ({"member_task_id": member_task_id,
+                       "result_version": record["result_version"]}
+                      if member_task_id is not None else {})
+            if protocol_result_ref(lineage, field, record["value"], **kwargs) != reference:
+                raise ValueError("protocol_result_reference_mismatch")
+            return record
+
+        def load_result(lineage, reference, field, *, member_task_id=None):
+            return load_record(lineage, reference, field, member_task_id=member_task_id)["value"]
         from app.services.extraction.ontology_guided.state_delta import freeze_json, thaw_json
 
         if self.incremental_performance:
@@ -445,8 +548,8 @@ class OntologyGuidedExecutor:
                 or reservation["ordinal"] < 1
             ):
                 raise ValueError("invalid model call reservation")
-            lineage = reservation["lineage_id"]
-            reservation_counts[lineage] = reservation_counts.get(lineage, 0) + 1
+            for lineage in reservation.get("member_lineage_ids", [reservation["lineage_id"]]):
+                reservation_counts[lineage] = reservation_counts.get(lineage, 0) + 1
         if any(count > reserved_calls.get(key, 0) for key, count in reservation_counts.items()):
             raise ValueError("model call reservation count mismatch")
         restored_ranking = ranking_state or (resume_state or {}).get("ranking_state") or {}
@@ -506,6 +609,139 @@ class OntologyGuidedExecutor:
             self.ontology, root_subject, engine=self.engine,
             cmc_describes_type_scope=cmc_describes_type_scope,
         )
+        discovery_catalog = None
+        discovery_cards = {}
+        if self.record_pipeline:
+            discovery_catalog = compile_discovery_catalog(
+                self.ontology, root_class_iri, max_hops=self.max_hops,
+                cmc_describes_type_scope=cmc_describes_type_scope,
+                focus_paths=self.record_focus_paths,
+            )
+            classes = sorted(discovery_catalog.class_depths)
+            group = []
+            for iri in classes:
+                trial = compile_record_schema_card(
+                    self.ontology, class_iris=[*group, iri],
+                    analysis_scope_ref=discovery_catalog.analysis_scope_ref,
+                    profile=self.adapter.profile,
+                )
+                # Freeze groups before any request. A single oversize class stays
+                # intact and gets an explicit capacity result when attempted.
+                if group and (len(group) >= self.record_policy.max_classes_per_card
+                              or self.adapter.token_counter(trial.model_dump_json())
+                              > self.adapter.max_input_tokens // 3):
+                    card = compile_record_schema_card(
+                        self.ontology, class_iris=group,
+                        analysis_scope_ref=discovery_catalog.analysis_scope_ref,
+                        profile=self.adapter.profile,
+                    )
+                    discovery_cards[card.schema_card_id] = card
+                    group = []
+                group.append(iri)
+            if group:
+                card = compile_record_schema_card(
+                    self.ontology, class_iris=group,
+                    analysis_scope_ref=discovery_catalog.analysis_scope_ref,
+                    profile=self.adapter.profile,
+                )
+                discovery_cards[card.schema_card_id] = card
+        contextual = self.record_policy.contextual if self.record_policy else None
+        ordinary_cards = list(discovery_cards)
+        discovery_slots = []
+        attribute_fields = {}
+        deferred_fields = {}
+        reading_sources = {}
+        reading_sections = {}
+        if contextual is not None:
+            from .attribute_disambiguation import compile_attribute_card, extract_attribute_fields
+            from .reading_groups import build_reading_groups
+            from .table_reading import table_reading_groups
+
+            ordinary_cards = list(discovery_cards)
+            labels = {prop.label for card in discovery_cards.values() for prop in card.predicates}
+            groups = build_reading_groups(
+                index, field_labels=labels, max_section_chars=contextual.max_section_chars,
+                max_group_chars=contextual.max_group_chars,
+                max_records=contextual.max_group_records,
+            )
+            for group in groups:
+                for identity in group.record_ids:
+                    reading_sources[identity] = list(group.record_ids)
+                    reading_sections[identity] = list(group.section_node_ids)
+            for sources in table_reading_groups(
+                index, max_group_chars=contextual.max_group_chars,
+                max_records=contextual.max_group_records,
+                max_data_rows=contextual.max_table_rows_per_group,
+            ):
+                for identity in sources:
+                    reading_sources[identity] = list(sources)
+                    # Only the bounded table batch is authorized, never the
+                    # whole section or rows outside this group.
+                    reading_sections[identity] = []
+            for record in index.records:
+                reading_sources.setdefault(record.record_id, [record.record_id])
+            for field in extract_attribute_fields(
+                index, property_labels=labels, reading_groups=groups,
+            ):
+                attribute_fields[field.field_id] = field
+                # A merged table cell may belong to multiple logical rows. All
+                # those views must defer the same physical value, not just its
+                # canonical field record.
+                field_records = {field.record_id}
+                for ref in field.value_refs:
+                    field_records.update(
+                        record.record_id
+                        for record in index.records_by_evidence.get(ref.evidence_id, [])
+                        if any(unit.evidence_id == ref.evidence_id for unit in record.source_units)
+                    )
+                for identity in sorted(field_records):
+                    deferred_fields.setdefault(identity, []).append(field)
+            exclusive = {field.record_id for field in attribute_fields.values()
+                         if field.exclusive_record}
+            # A physical field is admitted once, outside the record × class-card product.
+            field_slots_by_group = {}
+            for field in attribute_fields.values():
+                card = compile_attribute_card(
+                    field, self.ontology, class_iris=list(discovery_catalog.class_depths),
+                    analysis_scope_ref=discovery_catalog.analysis_scope_ref,
+                    profile=self.adapter.profile,
+                )
+                discovery_cards[card.schema_card_id] = card
+                group_key = tuple(reading_sources[field.record_id])
+                slot = (
+                    [field.record_id], [card.schema_card_id], field.field_id,
+                )
+                field_slots_by_group.setdefault(group_key, []).append(slot)
+            # Only source groups and unique fields exist before retrieval; the
+            # ordinary groups contain no preallocated class-card combinations.
+            admitted = set()
+            pending_field_slots = []
+            for record in index.records:
+                group_key = tuple(reading_sources[record.record_id])
+                if group_key in admitted:
+                    continue
+                admitted.add(group_key)
+                sources = [identity for identity in group_key if identity not in exclusive]
+                if sources:
+                    discovery_slots.append((sources, [], None))
+                    discovery_slots.extend(pending_field_slots)
+                    pending_field_slots = []
+                    discovery_slots.extend(field_slots_by_group.pop(group_key, []))
+                else:
+                    pending_field_slots.extend(field_slots_by_group.pop(group_key, []))
+            discovery_slots.extend(pending_field_slots)
+            for slots in field_slots_by_group.values():
+                discovery_slots.extend(slots)
+        discovery_search = None
+        if self.record_pipeline:
+            from .record_search import RecordSearch
+
+            if contextual is None:
+                discovery_slots = [([record.record_id], [], None) for record in index.records]
+            discovery_search = RecordSearch(
+                discovery_slots, cards=discovery_cards, ordinary_cards=ordinary_cards,
+                ontology=self.ontology, index=index, policy=self.record_policy,
+            )
         frozen_layered = frozen_frontier.get("layered_recognition")
         if frozen_layered and frozen_layered.get("version") not in {
             LAYERED_RECOGNITION_VERSION, DEPENDENCY_READY_VERSION,
@@ -821,7 +1057,9 @@ class OntologyGuidedExecutor:
                         rid: sources for rid in source_records
                         if (sources := explicit_attribute_sources(index, rid, slot, owner_refs))
                     }
-            ordered_menu = sorted([*menu.relationships, *menu.properties],
+            ordered_menu = sorted([
+                *menu.relationships, *([] if self.record_pipeline else menu.properties),
+            ],
                                   key=lambda item: (
                                       not bool(attribute_sources.get(
                                           slot_key(subject, item.iri, scope))),
@@ -830,6 +1068,11 @@ class OntologyGuidedExecutor:
             # Preferences only determine the first opportunity in each rotation;
             # the full menu, both phases and source exploration remain scheduled.
             for predicate in ordered_menu:
+                if self.record_pipeline and not any(
+                    source == subject.class_iri and iri == predicate.iri
+                    for source, iri, _target, _depth in discovery_catalog.relation_routes
+                ):
+                    continue
                 if layered_recognition and not dependency_ready and predicate.kind != layer_phase:
                     continue
                 if self.predicate_filter is not None and not self.predicate_filter(
@@ -878,7 +1121,8 @@ class OntologyGuidedExecutor:
                             trust_state="supported",
                         )
                         for anchor in (
-                            nodes[subject.entity_id].evidence_refs if binding_edge else []
+                            nodes[subject.entity_id].evidence_refs
+                            if binding_edge or self.record_pipeline else []
                         )
                     ],
                     "dependency_refs": (
@@ -928,17 +1172,27 @@ class OntologyGuidedExecutor:
                             "permission_scope_hash": evidence_hash(recognition_run_id),
                             "query_dependency_hash": queries[0].query_dependency_hash,
                         }
+                    tool_attribute = self.tool_protocol and predicate.kind == "property"
+                    seed_record_ids = list(dict.fromkeys(
+                        record.record_id
+                        for anchor in (nodes[subject.entity_id].evidence_refs
+                                       if binding_edge and (self.evidence_repair or tool_attribute)
+                                       else [])
+                        for record in index.records_by_evidence.get(anchor.evidence_id, [])
+                    ))
+                    # A proved entity's exact source can express several fields
+                    # without their ontology labels. Prioritize it for discovery;
+                    # each property still requires its own claim and verification.
+                    priority_record_ids = list(dict.fromkeys([
+                        *attribute_sources.get(key, {}),
+                        *(seed_record_ids if tool_attribute else []),
+                    ]))
                     searches[key] = search_type(
                         plan=plan, predicate=predicate, search_index=search_index,
                         policy=self.heuristic_policy,
-                        priority_record_ids=list(attribute_sources.get(key, {})),
+                        priority_record_ids=priority_record_ids,
                         run_fingerprint=run_fingerprint,
-                        seed_record_ids=list(dict.fromkeys(
-                            record.record_id
-                            for anchor in (nodes[subject.entity_id].evidence_refs
-                                           if binding_edge and self.evidence_repair else [])
-                            for record in index.records_by_evidence.get(anchor.evidence_id, [])
-                        )),
+                        seed_record_ids=seed_record_ids,
                         subject_mentions=[
                             item.text for item in ranking_contexts[plan.plan_id]["mentions"]
                         ],
@@ -1040,27 +1294,29 @@ class OntologyGuidedExecutor:
                 }
             return state
 
-        def persist_call_boundary(result_changes=None):
+        def persist_call_boundary(result_changes=None, *, work_changes=None):
             nonlocal reservation_saved
             if not self.current_state:
                 model_call_hook(current_model_call_state())
                 return
             model_call_hook({
-                "current_calls": 1, "version": 2 if has_protocol else 1,
+                "current_calls": 1, "version": call_state_version,
                 "recognition_run_id": recognition_run_id, "run_fingerprint": run_fingerprint,
                 "lineage_calls": reserved_calls.drain(), "protocols": protocols.drain(),
                 "reservations": reservations[reservation_saved:],
                 "reservation_sequence": reservation_sequence,
                 **({"result_changes": result_changes} if result_changes else {}),
+                **({"work_changes": work_changes} if work_changes is not None else {}),
             })
             reservation_saved = len(reservations)
 
         def current_model_call_state() -> dict:
             return {
-                "version": 2 if has_protocol else 1,
+                "version": call_state_version,
                 "recognition_run_id": recognition_run_id,
                 "run_fingerprint": run_fingerprint,
                 "lineage_calls": dict(reserved_calls),
+                **({"reservation_sequence": reservation_sequence} if self.batch_policy else {}),
                 "reservations": list(reservations) if self.incremental_performance else
                 deepcopy(reservations),
                 **({"protocols": dict(protocols) if self.incremental_performance else
@@ -1071,6 +1327,13 @@ class OntologyGuidedExecutor:
         call_lineage_totals = {}
 
         def update_call_totals(lineage):
+            if self.batch_policy is not None:
+                confirmed = len(protocols.get(lineage, {}).get("completed_attempts", []))
+                call_totals[1] += confirmed - call_lineage_totals.get(lineage, 0)
+                call_lineage_totals[lineage] = confirmed
+                call_totals[0] = reservation_sequence
+                call_totals[2] = max(0, reservation_sequence - call_totals[1])
+                return
             if not self.current_state:
                 return
             protocol = protocols.get(lineage, {})
@@ -1084,7 +1347,10 @@ class OntologyGuidedExecutor:
                 call_totals[i] += value - old[i]
             call_lineage_totals[lineage] = values
 
-        def protocol_checkpoint(task, state):
+        def protocol_checkpoint(task, state, *, durable=True):
+            if isinstance(task, RecognitionWorkUnit):
+                batch_protocol_checkpoint(task, state)
+                return
             if not has_protocol or state.get("lineage_id") != task.claim_lineage_id:
                 raise ModelCallPersistenceFailure("protocol checkpoint lineage mismatch")
             state = dict(state)
@@ -1098,7 +1364,7 @@ class OntologyGuidedExecutor:
             protocols[task.claim_lineage_id] = (freeze_json(state) if self.incremental_performance
                                               else deepcopy(state))
             update_call_totals(task.claim_lineage_id)
-            if model_call_hook is not None:
+            if durable and model_call_hook is not None:
                 try:
                     persist_call_boundary(result_changes)
                 except Exception as exc:
@@ -1106,9 +1372,9 @@ class OntologyGuidedExecutor:
                         "protocol checkpoint persistence failed"
                     ) from exc
             if self.tool_protocol and result_changes:
-                if protocol_result_loader is None:
+                if protocol_result_loader is None or not durable:
                     local_protocol_results.update(deepcopy(result_changes))
-                if (self.progress_hook is not None
+                if (durable and self.progress_hook is not None
                         and not self.progress_hook("after_protocol_result")):
                     raise ModelCallPauseRequested("paused after confirmed protocol result")
 
@@ -1130,6 +1396,9 @@ class OntologyGuidedExecutor:
             task: RecognitionTask, stage: str, ordinal: int, *, protocol_state=None,
         ) -> None:
             nonlocal reservation_sequence
+            if isinstance(task, RecognitionWorkUnit):
+                reserve_batch_model_call(task, stage, ordinal, protocol_state=protocol_state)
+                return
             if self.tool_protocol:
                 state = protocol_state or protocols.get(task.claim_lineage_id, {})
                 pending = state.get("pending_request")
@@ -1167,8 +1436,8 @@ class OntologyGuidedExecutor:
             reserved_calls[lineage] = max(
                 reserved_calls.get(lineage, 0), lineage_calls.get(lineage, 0)
             ) + 1
-            update_call_totals(lineage)
             reservation_sequence += 1
+            update_call_totals(lineage)
             reservations.append(
                 {
                     "sequence": reservation_sequence,
@@ -1178,7 +1447,10 @@ class OntologyGuidedExecutor:
                     "lineage_id": lineage,
                     **({"input_hash": protocols.get(lineage, {}).get(
                         "pending_request", {}).get("request_hash"),
-                        "subject_ref": task.subject.model_dump(mode="json"),
+                        **({"record_task_id": task.task_id, "record_id": task.record_id,
+                            "schema_card_id": task.schema_card_id}
+                           if isinstance(task, RecordDiscoveryTask) else
+                           {"subject_ref": task.subject.model_dump(mode="json")}),
                         "run_fingerprint": run_fingerprint}
                        if self.current_state else {}),
                     **({"protocol_attempt": protocols.get(lineage, {}).get("request_attempt")}
@@ -1193,6 +1465,93 @@ class OntologyGuidedExecutor:
                 except Exception as exc:
                     raise ModelCallPersistenceFailure(
                         "model call reservation persistence failed"
+                    ) from exc
+
+        def batch_protocol_checkpoint(unit, state, *, durable=True):
+            if state.get("lineage_id") != unit.work_unit_id:
+                raise ModelCallPersistenceFailure("batch checkpoint owner mismatch")
+            state = deepcopy(state)
+            result_changes = state.pop("result_changes", {})
+            if state.get("pending_request") is not None:
+                if result_changes or not durable:
+                    raise ModelCallPersistenceFailure("pending batch cannot publish results")
+                pending = state["pending_request"]
+                reserve_batch_model_call(unit, pending["stage"], pending["attempt"],
+                                         protocol_state=state)
+                return
+            protocols[unit.work_unit_id] = (freeze_json(state) if self.incremental_performance
+                                            else deepcopy(state))
+            remember_tool_costs(state)
+            local_protocol_results.update(deepcopy(result_changes))
+            update_call_totals(unit.work_unit_id)
+            if durable and model_call_hook is not None:
+                try:
+                    persist_call_boundary(result_changes)
+                except Exception as exc:
+                    raise ModelCallPersistenceFailure(
+                        "batch checkpoint persistence failed"
+                    ) from exc
+                if protocol_record_loader is not None:
+                    for reference in result_changes:
+                        local_protocol_results.pop(reference, None)
+            if (durable and result_changes and self.progress_hook is not None
+                    and not self.progress_hook("after_protocol_result")):
+                raise ModelCallPauseRequested("paused after confirmed batch result")
+
+        def reserve_batch_model_call(unit, stage, ordinal, *, protocol_state=None):
+            nonlocal reservation_sequence
+            state = protocol_state or protocols.get(unit.work_unit_id, {})
+            pending = state.get("pending_request")
+            if (pending is None or pending["attempt"] != ordinal or pending["stage"] != stage
+                    or state["lineage_id"] != unit.work_unit_id):
+                raise ModelCallPersistenceFailure("batch reservation identity mismatch")
+            member_ids = list(state["stage_member_ids"])
+            members = {member.task_id: member for member in unit.members}
+            if not member_ids or not set(member_ids) <= set(members):
+                raise ModelCallPersistenceFailure("batch reservation members invalid")
+            prior = next((r for r in reservations if r["lineage_id"] == unit.work_unit_id
+                          and r.get("protocol_attempt") == ordinal), None)
+            if prior is not None:
+                if (prior["member_task_ids"] != member_ids or prior["stage"] != stage
+                        or prior.get("input_hash") != pending["request_hash"]
+                        or prior["stage_group_seq"] != state["stage_group_seq"]
+                        or call_request_key(prior) != pending["reservation_key"]
+                        or protocol_state is not None and json_value(
+                            protocols.get(unit.work_unit_id, {})
+                        ) != json_value(protocol_state)):
+                    raise ModelCallPersistenceFailure("batch reservation identity changed")
+                return
+            if protocol_state is None:
+                raise ModelCallPersistenceFailure("batch reservation was not confirmed")
+            if (self.progress_hook is not None
+                    and not self.progress_hook("before_model_reservation")):
+                raise ModelCallPauseRequested("execution paused before batch request")
+            if any(not remaining_calls(members[identity]) for identity in member_ids):
+                raise ModelCallPauseRequested("member model call budget exhausted")
+            protocols[unit.work_unit_id] = (freeze_json(state) if self.incremental_performance
+                                            else deepcopy(state))
+            for identity in member_ids:
+                lineage = members[identity].claim_lineage_id
+                reserved_calls[lineage] = reserved_calls.get(lineage, 0) + 1
+            reservation_sequence += 1
+            receipt = {
+                "sequence": reservation_sequence, "task_id": unit.work_unit_id,
+                "stage": stage, "ordinal": ordinal, "lineage_id": unit.work_unit_id,
+                "protocol_attempt": ordinal, "input_hash": pending["request_hash"],
+                "subject_ref": unit.members[0].subject.model_dump(mode="json"),
+                "run_fingerprint": run_fingerprint,
+                "member_task_ids": member_ids,
+                "member_lineage_ids": [members[i].claim_lineage_id for i in member_ids],
+                "stage_group_seq": state["stage_group_seq"],
+            }
+            reservations.append(freeze_json(receipt) if self.incremental_performance else receipt)
+            update_call_totals(unit.work_unit_id)
+            if model_call_hook is not None:
+                try:
+                    persist_call_boundary()
+                except Exception as exc:
+                    raise ModelCallPersistenceFailure(
+                        "batch reservation persistence failed"
                     ) from exc
 
         def persist_ranking_boundary():
@@ -1754,9 +2113,18 @@ class OntologyGuidedExecutor:
                 unattempted = sum(entry.coverage_state == "unattempted" for entry in ledger_entries)
                 semantic = [value for entry in ledger_entries for value in entry.semantic_outcomes]
                 semantic_count = semantic.count
+            if self.record_pipeline:
+                records_planned += len(record_discovery) + discovery_search.pending
+                examined += sum(row["status"] == "examined" for row in record_discovery.values())
+                incomplete += sum(row["status"] in {"active", "incomplete"}
+                                  for row in record_discovery.values())
+                unattempted += discovery_search.pending
+                incomplete += sum(row["status"] == "pending" for row in record_discovery.values())
             pending_frontiers = sum(
                 item.get("logical_records", 1) for item in scheduler.unexplored_frontier
             )
+            if active_unit_ref is not None:
+                pending_frontiers += 1
             pending_layers = 0
             if layered_recognition and not dependency_ready:
                 pending_layers = sum(
@@ -1789,6 +2157,7 @@ class OntologyGuidedExecutor:
                 and not pending_frontiers
                 and not conflict_claims
                 and not ranking_paused
+                and not (discovery_search and discovery_search.unselected)
                 and not any(w["status"] in {"queued", "incomplete", "deferred"}
                             for w in evidence_work.items.values())
             )
@@ -1852,6 +2221,8 @@ class OntologyGuidedExecutor:
                 records_examined=examined,
                 records_incomplete=incomplete,
                 records_unattempted=unattempted,
+                record_discovery=(discovery_search.diagnostics(ranking.policy.mode)
+                                  if discovery_search else None),
                 phase_counts={
                     "phase1": totals["executed_phase1"] if self.current_state else sum(
                         entry.phase == 1 and entry.coverage_state != "unattempted"
@@ -1873,6 +2244,8 @@ class OntologyGuidedExecutor:
                     if not terminal
                     else "ranking_paused"
                     if ranking_paused
+                    else "model_calls_unresolved"
+                    if self.tool_protocol and unresolved_calls
                     else "layered_policy_complete" if complete and self.candidate_policy
                     and layered_recognition and not dependency_ready
                     else "candidate_search_exhausted" if complete and self.candidate_policy
@@ -2019,7 +2392,12 @@ class OntologyGuidedExecutor:
                 current_content_hash=evidence_hash([work_digest, progress.model_dump(mode="json"),
                                                     run_revision, event_head + completed_tasks])
                 if self.current_state else None,
-            )
+            ).model_copy(update={"attribute_candidates": [
+                AttributeCalibrationCandidate.model_validate(candidate)
+                for row in record_discovery.values()
+                for candidate in row.get("attribute_candidates", [])
+                if candidate["status"] != "resolved"
+            ]})
 
         def validate_resume_boundary() -> None:
             nonlocal resume_validated
@@ -2111,7 +2489,7 @@ class OntologyGuidedExecutor:
                         for reference in candidate.dependency_refs
                     ],
                 ]
-                if not task.subject.is_document_root:
+                if not isinstance(task, RecordDiscoveryTask) and not task.subject.is_document_root:
                     dependencies.append(scoped_subject_dependency(task.subject, task.scope))
                 if self.tool_protocol:
                     dependencies.append(versioned_key(
@@ -2293,19 +2671,20 @@ class OntologyGuidedExecutor:
                 claim_content_hash,
             )
 
-            state = protocols.get(task.claim_lineage_id, {})
+            state = task_protocol(task)
             if not all(state.get(field + "_ref") for field in (
                 "discovery", "verification", "outcome",
             )) or any(ref.revision != 1 for ref in new_refs):
                 return False
+            owner, owner_args = task_result_owner(task)
             frozen = FrozenClaimSet.model_validate(load_result(
-                task.claim_lineage_id, state["discovery_ref"], "discovery",
+                owner, state["discovery_ref"], "discovery", **owner_args,
             ), strict=True)
             verified = VerifiedClaimSet.model_validate(load_result(
-                task.claim_lineage_id, state["verification_ref"], "verification",
+                owner, state["verification_ref"], "verification", **owner_args,
             ), strict=True)
             finalized = TaskOutcome.model_validate(load_result(
-                task.claim_lineage_id, state["outcome_ref"], "outcome",
+                owner, state["outcome_ref"], "outcome", **owner_args,
             ))
             # Reuse the finalizer's deterministic identity/key/provenance checks;
             # the coordinator must not accept edited metadata after finalization.
@@ -2352,10 +2731,27 @@ class OntologyGuidedExecutor:
 
         def apply_outcome(
             task: RecognitionTask, outcome: TaskOutcome, excluded_slots: set[tuple],
+            *, batch_member=False, result_version=None, outcome_ref=None,
         ) -> None:
             nonlocal model_calls, completed_tasks, work_digest
-            key = task_key(task)
-            plan = plans[key]
+            is_record = isinstance(task, RecordDiscoveryTask)
+            key = None if is_record else task_key(task)
+            plan = None if is_record else plans[key]
+            previous_nodes = {n.entity_id: nodes.get(n.entity_id) for n in outcome.nodes}
+            if is_record:
+                card = discovery_cards[task.schema_card_id]
+                if outcome.edges or outcome.relationship_groups:
+                    raise ValueError("record_discovery_cannot_publish_relations")
+                if outcome.nodes or outcome.properties:
+                    state = task_protocol(task)
+                    if not state.get("outcome_ref") or outcome.model_dump(
+                        mode="json",
+                    ) != load_result(
+                        task.claim_lineage_id, state["outcome_ref"], "outcome",
+                    ):
+                        raise ValueError("record_outcome_not_finalized")
+                    if any(node.class_iri not in card.class_iris for node in outcome.nodes):
+                        raise ValueError("record_entity_class_outside_card")
             conflicting_node_refs: set[tuple[str, int]] = set()
             canonical_node_refs: dict[tuple[str, int], VersionedRef] = {}
             accepted_nodes: dict[str, GraphNode] = {}
@@ -2463,7 +2859,7 @@ class OntologyGuidedExecutor:
             outcome.nodes = list(accepted_nodes.values())
             nodes.update(accepted_nodes)
             if self.reference_resolution:
-                discovery_ref = protocols.get(task.claim_lineage_id, {}).get("discovery_ref")
+                discovery_ref = task_protocol(task).get("discovery_ref")
                 for resolution in outcome.reference_resolutions:
                     reference = VersionedRef.model_validate(resolution["entity_ref"])
                     node = nodes.get(reference.id)
@@ -2471,9 +2867,22 @@ class OntologyGuidedExecutor:
                             or node.revision != reference.revision
                             or node.class_iri != resolution["class_iri"]):
                         raise ValueError("reference_resolution_endpoint_invalid")
-                    reference_resolutions[resolution["claim_ref"]["id"]] = resolution
+                    stored_resolution = deepcopy(resolution)
+                    if is_record and resolution.get("binding_ref"):
+                        state = json_value(task_protocol(task))
+                        stored_resolution["binding_origin"] = {
+                            "lineage_id": task.claim_lineage_id,
+                            "task": task.model_dump(mode="json"),
+                            "discovery_ref": state["discovery_ref"],
+                            "verification_ref": state["verification_ref"],
+                            "target": state["base_target"],
+                            "entity_refs": state["reference_context"]["entity_refs"],
+                        }
+                    reference_resolutions[resolution["claim_ref"]["id"]] = stored_resolution
                     entity_origins.setdefault(reference.id, {
-                        "lineage_id": task.claim_lineage_id, "discovery_ref": discovery_ref,
+                        "lineage_id": member_owners.get(task.task_id, task.claim_lineage_id),
+                        **({"member_task_id": task.task_id} if batch_member else {}),
+                        "discovery_ref": discovery_ref,
                         "local_id": resolution["local_id"],
                         "claim_ref": resolution["claim_ref"], "scope": resolution["scope"],
                     })
@@ -2501,7 +2910,16 @@ class OntologyGuidedExecutor:
                     ):
                         diagnostics.append(f"adapter_{kind}_scope_or_endpoint_mismatch")
                         continue
-                    if (
+                    if is_record:
+                        try:
+                            resolve_record_property(
+                                card, nodes[candidate.subject_ref.id].class_iri,
+                                candidate.predicate_iri,
+                            )
+                        except ValueError:
+                            diagnostics.append("adapter_property_target_mismatch")
+                            continue
+                    elif (
                         candidate.subject_ref
                         != VersionedRef(id=task.subject.entity_id, revision=task.subject.revision)
                         or candidate.predicate_iri != task.predicate_iri
@@ -2579,27 +2997,60 @@ class OntologyGuidedExecutor:
                     heads[candidate.candidate_id] = candidate
                     accepted.append(candidate)
                 collection[:] = accepted
-            model_calls += outcome.model_calls
-            lineage_calls[task.claim_lineage_id] = (
-                lineage_calls.get(task.claim_lineage_id, 0) + outcome.model_calls
-            )
+            if not batch_member:
+                model_calls += outcome.model_calls
+                lineage_calls[task.claim_lineage_id] = (
+                    lineage_calls.get(task.claim_lineage_id, 0) + outcome.model_calls
+                )
+            else:
+                model_calls = call_totals[1]
             update_call_totals(task.claim_lineage_id)
-            plan = mark_record(
-                plan,
-                task.record_id,
-                coverage_state="examined" if outcome.complete or (
-                    self.evidence_repair and not self.candidate_policy and task.retry_kind
-                    and plan.ledger[task.record_id].coverage_state == "examined"
-                ) else "attempted_incomplete",
-                execution_state="finished" if outcome.complete else "retryable_failure",
-                semantic_outcomes=([] if outcome.reason_code == "record_no_claims"
-                                   else [outcome.semantic_outcome]),
-                task_id=task.task_id,
-                reason_code=outcome.reason_code,
-            )
-            plans[key] = plan
-            if self.candidate_policy:
-                searches[key].plan = plan
+            if is_record:
+                from .attribute_calibration import merge_candidates
+
+                prior = record_discovery[task.claim_lineage_id]
+                record_discovery[task.claim_lineage_id] = {
+                    **prior, "status": "examined" if outcome.complete else "incomplete",
+                    "reason_code": outcome.reason_code,
+                    "outcome_ref": task_protocol(task).get("outcome_ref"),
+                    "attribute_candidates": [candidate.model_dump(mode="json") for candidate
+                                             in merge_candidates(
+                                                 prior.get("attribute_candidates", []), outcome,
+                                             )],
+                    **({"attribute_status": "resolved" if outcome.properties else "unresolved",
+                        "disambiguation_attempts": prior.get("disambiguation_attempts", 0)
+                        + int(task_protocol(task).get("request_attempt", 0)
+                              > prior.get("attribute_request_attempt", 0)),
+                        "attribute_request_attempt": task_protocol(task).get("request_attempt", 0),
+                        } if task.purpose == "property_disambiguation" else {}),
+                }
+            else:
+                semantic_outcomes = ([] if outcome.reason_code == "record_no_claims"
+                                     else [outcome.semantic_outcome])
+                if self.record_pipeline and task.predicate_kind == "relationship":
+                    row = record_relation_inputs.get(task.claim_lineage_id)
+                    if row is not None and row["task"]["task_id"] == task.task_id:
+                        semantic_outcomes = list(dict.fromkeys([
+                            *row.get("semantic_outcomes", []), *semantic_outcomes,
+                        ]))
+                        record_relation_inputs[task.claim_lineage_id] = {
+                            **row, "semantic_outcomes": semantic_outcomes,
+                        }
+                plan = mark_record(
+                    plan,
+                    task.record_id,
+                    coverage_state="examined" if outcome.complete or (
+                        self.evidence_repair and not self.candidate_policy and task.retry_kind
+                        and plan.ledger[task.record_id].coverage_state == "examined"
+                    ) else "attempted_incomplete",
+                    execution_state="finished" if outcome.complete else "retryable_failure",
+                    semantic_outcomes=semantic_outcomes,
+                    task_id=task.task_id,
+                    reason_code=outcome.reason_code,
+                )
+                plans[key] = plan
+                if self.candidate_policy:
+                    searches[key].plan = plan
             payload = {
                 "task": task.model_dump(mode="json"),
                 "outcome": outcome.model_dump(mode="json"),
@@ -2608,13 +3059,16 @@ class OntologyGuidedExecutor:
             if self.current_state:
                 work_digest = evidence_hash([work_digest, payload])
             if self.current_state:
-                protocol = protocols.get(task.claim_lineage_id, {})
+                protocol = task_protocol(task)
                 applied_model_results[task.claim_lineage_id] = {
                     "task_id": task.task_id,
                     "request_attempt": protocol.get("request_attempt", 0),
                     "evidence_revision": protocol.get("evidence_revision", 0),
                     "assertion_generation": protocol.get("assertion_generation", 0),
                     "outcome_hash": evidence_hash(outcome.model_dump(mode="json")),
+                    **({"work_unit_id": member_owners[task.task_id],
+                        "outcome_ref": outcome_ref, "result_version": result_version}
+                       if batch_member else {}),
                 }
             completed_tasks += 1
             if self.current_state:
@@ -2626,7 +3080,8 @@ class OntologyGuidedExecutor:
             paused = not outcome.complete and outcome.reason_code == "execution_pause_requested"
             if paused:
                 pause_counts[task.claim_lineage_id] = pause_counts.get(task.claim_lineage_id, 0) + 1
-            if task.claim_lineage_id not in expert_lineages and (paused or (
+            if (not is_record and not batch_member
+                    and task.claim_lineage_id not in expert_lineages) and (paused or (
                 not outcome.complete
                 and (not self.tool_protocol or not protocols.get(
                     task.claim_lineage_id, {},
@@ -2751,7 +3206,358 @@ class OntologyGuidedExecutor:
                 for group in outcome.relationship_groups:
                     relationship_groups[group.candidate_id] = group
                     candidate_tasks[group.candidate_id] = task
-                expand_tool_relations(task, outcome)
+                if not batch_member and not is_record:
+                    expand_tool_relations(task, outcome)
+            if is_record:
+                changed = [node for node in outcome.nodes
+                           if previous_nodes.get(node.entity_id) != node]
+                created_ids = {node.entity_id for node in changed
+                               if previous_nodes[node.entity_id] is None}
+                changed_ids = {node.entity_id for node in changed}
+                # A new, independently proved alias also changes endpoint evidence.
+                changed_ids.update(item["entity_ref"]["id"]
+                                   for item in outcome.reference_resolutions
+                                   if item.get("binding_ref"))
+                apply_candidate_changes(CandidateChanges(
+                    created_entity_refs=[VersionedRef(id=n.entity_id, revision=n.revision)
+                                         for n in changed if previous_nodes[n.entity_id] is None],
+                    changed_entity_refs=[
+                        VersionedRef(id=identity, revision=nodes[identity].revision)
+                        for identity in sorted(changed_ids)
+                        if identity not in created_ids and identity in nodes
+                    ],
+                    property_refs=[VersionedRef(id=p.candidate_id, revision=p.revision)
+                                   for p in outcome.properties],
+                    affected_record_ids=[task.record_id],
+                ))
+            if self.record_pipeline:
+                observe_record_gaps(task)
+                if not is_record and task.predicate_kind == "relationship":
+                    finish_relation_page(task, outcome)
+
+        def discovery_feedback(task, source_refs, entity_refs, reason, *, input_signature=None):
+            if remaining_calls(task) < 2 or not source_refs:
+                return False
+            row = record_discovery.get(task.claim_lineage_id)
+            state = task_protocol(task)
+            if (row is None or row["status"] == "active" or not row.get("outcome_ref")
+                    or state.get("pending_request") is not None):
+                return False
+            units = {unit.evidence_id for record_id in (task.source_record_ids or [task.record_id])
+                     for unit in index.by_id[record_id].source_units}
+            if any(anchor.evidence_id not in units for anchor in source_refs):
+                return False
+            for anchor in source_refs:
+                index.ir.resolve(anchor)
+            feedback_hash = evidence_hash([
+                task.record_id, source_refs, entity_refs, reason,
+                *([input_signature] if input_signature is not None else []),
+            ])
+            if feedback_hash in {row.get("feedback_hash"), row.get("consumed_feedback_hash")}:
+                return False
+            record_discovery[task.claim_lineage_id] = {
+                **row, "status": "pending", "feedback_hash": feedback_hash,
+                "feedback_reason": reason,
+                "feedback_refs": json_value(entity_refs),
+                "feedback_source_refs": json_value(source_refs),
+            }
+            return True
+
+        def observe_record_gaps(task):
+            from .claim_protocol import FrozenClaimSet
+            from .reference_context import has_reference_hint
+            from .source_citations import resolve_fragment_quote
+
+            state = task_protocol(task)
+            if not state.get("discovery_ref"):
+                return
+            owner, owner_args = task_result_owner(task)
+            frozen = FrozenClaimSet.model_validate(load_result(
+                owner, state["discovery_ref"], "discovery", **owner_args,
+            ))
+            observations = [item for item in frozen.observations
+                            if item.kind in {"missing", "unbound", "ambiguous", "unknown"}]
+            # Semantic ordering can visit an anaphoric paragraph before its
+            # antecedent. Retain that explicit source hint for the existing
+            # bounded late-owner feedback; it is not an identity decision.
+            reference_hints = [
+                index.ir.anchor(unit.evidence_id, 0, len(unit.text))
+                for rid in (task.source_record_ids or [task.record_id])
+                for unit in index.by_id[rid].source_units
+                if has_reference_hint(unit.text)
+            ] if (isinstance(task, RecordDiscoveryTask) and not frozen.reference_bindings
+                  and task.purpose == "entity_discovery") else []
+            if not observations and not reference_hints:
+                return
+            context = (prepare_record_context(task)[0] if isinstance(task, RecordDiscoveryTask)
+                       else prepare_member_context(task))
+            anchors = list(reference_hints)
+            for item in observations:
+                try:
+                    anchor, _ = resolve_fragment_quote(
+                        item.quote.evidence_id, item.quote.text, context.fragments,
+                        context_text=item.quote.context_text, fact_required=True,
+                    )
+                except ValueError:
+                    continue
+                anchors.append(anchor)
+            if isinstance(task, RecordDiscoveryTask):
+                if task.purpose == "property_disambiguation":
+                    return  # Field work is awakened by its exact candidate/input signature.
+                row = record_discovery[task.claim_lineage_id]
+                record_discovery[task.claim_lineage_id] = {
+                    **row, "gap_refs": json_value(anchors),
+                }
+                return
+            predicate = predicates[task_key(task)]
+            if not isinstance(predicate, EdgeSpec):
+                return
+            attempted_cards = {row["task"]["schema_card_id"] for row in record_discovery.values()
+                               if task.record_id in (row["task"].get("source_record_ids")
+                                                     or [row["task"]["record_id"]])}
+            if anchors:
+                discovery_search.admit_feedback(
+                    task.record_id, set(predicate.range_class_iris), attempted_cards,
+                )
+            for row in list(record_discovery.values()):
+                candidate = RecordDiscoveryTask.model_validate(row["task"])
+                card = discovery_cards[candidate.schema_card_id]
+                if (task.record_id not in (candidate.source_record_ids or [candidate.record_id])
+                        or not set(card.class_iris).intersection(predicate.range_class_iris)):
+                    continue
+                inputs = tool_dependencies(candidate, ignore_pinned=True, include_bindings=False)
+                refs = [VersionedRef.model_validate(entity["entity_ref"])
+                        for entity in inputs["entity_dependencies"]]
+                discovery_feedback(candidate, anchors, refs, "missing_relation_endpoint")
+
+        def register_entity_subject(reference):
+            node = nodes[reference.id]
+            if node.root:
+                return
+            subject = SubjectRef(entity_id=node.entity_id, revision=node.revision,
+                                 class_iri=node.class_iri)
+            refs = [ref for ref in (node.type_decision_ref, node.referent_decision_ref,
+                                   node.referent_ref, node.composition_decision_ref,
+                                   *node.dependency_refs) if ref is not None]
+            if (node.decision_status != "supported" or node.independent_review == "rejected"
+                    or not node.type_decision_ref or not node.referent_decision_ref
+                    or not node.referent_ref
+                    or (node.grounding_kind == "record" and not node.composition_decision_ref)
+                    or not dependency_index.is_valid_references([reference, *refs])):
+                raise ValueError("record_entity_identity_unverified")
+            origin = entity_origins.get(node.entity_id)
+            if origin is None:
+                raise ValueError("record_entity_origin_missing")
+            key = subject_key(subject, root_scope)
+            if key not in registered_subjects:
+                registered_subjects[key] = {
+                    "subject": subject, "scope": root_scope,
+                    "hop": discovery_catalog.class_depths[node.class_iri],
+                    "binding_refs": [], "reopen": False, "origin": origin,
+                }
+            dependency_index.add_proof(scoped_subject_dependency(subject, root_scope), [
+                versioned_key(reference.id, reference.revision),
+                *(versioned_key(ref.id, ref.revision) for ref in refs),
+            ])
+            menu = compile_local_menu(self.ontology, subject, engine=self.engine)
+            menus[node.entity_id] = menu
+            add_subject(subject, menu, hop=registered_subjects[key]["hop"], scope=root_scope)
+
+        def relation_input_signature(task):
+            from .reference_context import select_reference_entities
+
+            predicate = predicates[task_key(task)]
+            selected = select_reference_entities(
+                task, index, nodes, entity_origins, reference_resolutions,
+                {task.subject.class_iri, *predicate.range_class_iris}, limit=None,
+            )
+            references = [VersionedRef(id=identity, revision=nodes[identity].revision)
+                          for identity in selected]
+            bindings = [item["binding_ref"] for item in reference_resolutions.values()
+                        if item.get("binding_ref") and item["entity_ref"]["id"] in selected
+                        and any(ref["evidence_id"] in {
+                            unit.evidence_id for unit in index.by_id[task.record_id].source_units
+                        } for ref in item["source_refs"])]
+            return evidence_hash([task.subject, task.predicate_iri, task.record_id,
+                                  task.scope, references, bindings])
+
+        def relation_pages(task):
+            predicate = predicates[task_key(task)]
+            candidates = {identity: node for identity, node in nodes.items()
+                          if node.decision_status == "supported"
+                          and node.independent_review != "rejected"
+                          and dependency_index.is_valid_references([
+                              VersionedRef(id=node.entity_id, revision=node.revision),
+                              *node.dependency_refs,
+                          ])}
+            pages = reference_pages(
+                task, index, candidates, entity_origins, reference_resolutions,
+                {task.subject.class_iri, *predicate.range_class_iris},
+                page_size=self.record_policy.endpoint_page_size,
+            )
+            result = [[{"id": identity, "revision": nodes[identity].revision}
+                       for identity in dict.fromkeys([
+                           root.entity_id, task.subject.entity_id, *page,
+                       ])] for page in pages]
+            return [page for page in result if any(
+                nodes[ref["id"]].class_iri in predicate.range_class_iris for ref in page
+            )]
+
+        def hold_relation_for_endpoints(task):
+            """Keep dependency-blocked work without spending a recognition call."""
+            key = task_key(task)
+            predicate = predicates[key]
+            previous = record_relation_inputs.get(task.claim_lineage_id, {})
+            record_relation_inputs[task.claim_lineage_id] = {
+                **previous, "task": task.model_dump(mode="json"),
+                "dependency_hash": relation_input_signature(task),
+                "page_refs": [], "remaining_pages": [], "status": "waiting_endpoints",
+            }
+            plans[key] = mark_record(
+                plans[key], task.record_id,
+                coverage_state=plans[key].ledger[task.record_id].coverage_state,
+                execution_state="blocked_dependency", reason_code="relation_endpoint_missing",
+            )
+            if self.candidate_policy:
+                searches[key].plan = plans[key]
+            classes = set(predicate.range_class_iris)
+            if discovery_search.prioritize(task.record_id, classes):
+                return
+            # Only an existing source-located discovery gap can reopen examined
+            # work. An absent endpoint alone is not new evidence for another call.
+            for row in list(record_discovery.values()):
+                candidate = RecordDiscoveryTask.model_validate(row["task"])
+                if (not row.get("gap_refs") or candidate.purpose != "entity_discovery"
+                        or task.record_id not in (candidate.source_record_ids
+                                                  or [candidate.record_id])
+                        or not classes.intersection(
+                            discovery_cards[candidate.schema_card_id].class_iris,
+                        )):
+                    continue
+                inputs = tool_dependencies(candidate, ignore_pinned=True, include_bindings=False)
+                refs = [VersionedRef.model_validate(entity["entity_ref"])
+                        for entity in inputs["entity_dependencies"]]
+                anchors = [EvidenceAnchor.model_validate(ref) for ref in row["gap_refs"]]
+                discovery_feedback(candidate, anchors, refs,
+                                   "missing_relation_endpoint:" + ",".join(sorted(classes)))
+
+        def defer_unready_relation(excluded_slots):
+            if not self.record_pipeline or active_unit_ref is not None or expert_pending:
+                return False
+            task = scheduler.peek_task(excluded_slots)
+            if (task is None or task.predicate_kind != "relationship"
+                    or relation_pages(task)):
+                return False
+            deferred = scheduler.next_task(excluded_slots=excluded_slots)
+            if deferred.task_id != task.task_id:
+                raise ValueError("relation_admission_task_changed")
+            # Only actual recognition work consumes the logical task budget.
+            scheduler.dispatched -= 1
+            hold_relation_for_endpoints(task)
+            if work_hook is not None:
+                work_hook(current_work_changes())
+            return True
+
+        def queue_relation_page(task, *, refresh=False):
+            row = record_relation_inputs[task.claim_lineage_id]
+            pages = relation_pages(task) if refresh else row.get("remaining_pages", [])
+            if not pages:
+                if refresh:
+                    hold_relation_for_endpoints(task)
+                else:
+                    record_relation_inputs[task.claim_lineage_id] = {**row, "status": "examined"}
+                return
+            signature = relation_input_signature(task) if refresh else row["dependency_hash"]
+            dependency_hash = evidence_hash([signature, pages[0]])
+            retry = RecognitionTask.create(
+                subject=task.subject, predicate_iri=task.predicate_iri,
+                predicate_kind="relationship", record_id=task.record_id,
+                phase=task.phase, hop=task.hop, scope=task.scope,
+                dependency_hash=dependency_hash, claim_lineage_id=task.claim_lineage_id,
+                retry_kind="candidate_page:" + dependency_hash,
+                section_node_id=task.section_node_id, source_position=task.source_position,
+            )
+            admitted = remaining_calls(task) > 0 and scheduler.enqueue(
+                retry, root_branch=retry.subject.is_document_root,
+            )
+            semantic_outcomes = row.get("semantic_outcomes", [])
+            if refresh:
+                # New endpoints reopen remaining work, not already proved edges.
+                # Preserve supported coverage only while its exact proof is valid.
+                semantic_outcomes = ["supported"] if any(
+                    candidate_tasks.get(edge.candidate_id) is not None
+                    and candidate_tasks[edge.candidate_id].claim_lineage_id == task.claim_lineage_id
+                    and edge.decision_status == "supported" and effective_proof_gate(edge)
+                    and dependency_index.is_valid(versioned_key(edge.candidate_id, edge.revision))
+                    for edge in edges.values()
+                ) else []
+            record_relation_inputs[task.claim_lineage_id] = {
+                "task": retry.model_dump(mode="json"), "dependency_hash": signature,
+                "page_refs": pages[0], "remaining_pages": pages[1:],
+                "status": "pending" if admitted else "incomplete",
+                "semantic_outcomes": semantic_outcomes,
+            }
+            key = task_key(task)
+            plans[key] = mark_record(
+                plans[key], task.record_id,
+                coverage_state=("unattempted" if plans[key].ledger[
+                    task.record_id].coverage_state == "unattempted" else "attempted_incomplete"),
+                execution_state="queued" if admitted else "retryable_failure",
+                semantic_outcomes=semantic_outcomes,
+                task_id=retry.task_id,
+                reason_code=("candidate_page_pending" if admitted
+                             else "candidate_page_budget_exhausted"),
+            )
+            if self.candidate_policy:
+                searches[key].plan = plans[key]
+
+        def finish_relation_page(task, outcome):
+            row = record_relation_inputs.get(task.claim_lineage_id)
+            if row is None or row["task"]["task_id"] != task.task_id:
+                return
+            if not outcome.complete:
+                record_relation_inputs[task.claim_lineage_id] = {**row, "status": "incomplete"}
+                return
+            refresh = relation_input_signature(task) != row["dependency_hash"]
+            queue_relation_page(task, refresh=refresh)
+
+        def apply_candidate_changes(changes):
+            references = [*changes.created_entity_refs, *changes.changed_entity_refs]
+            for reference in references:
+                register_entity_subject(reference)
+            affected_classes = {nodes[ref.id].class_iri for ref in references}
+            affected_ids = {ref.id for ref in references}
+            for lineage, row in list(record_relation_inputs.items()):
+                original = RecognitionTask.model_validate(row["task"])
+                predicate = predicates[task_key(original)]
+                if (original.subject.entity_id not in affected_ids
+                        and not affected_classes.intersection(predicate.range_class_iris)):
+                    continue
+                if (row.get("status") in {"pending", "active"}
+                        or relation_input_signature(original) == row["dependency_hash"]):
+                    continue
+                queue_relation_page(original, refresh=True)
+            if references:
+                # Attribute retries are coalesced at the end of normal discovery.
+                for row in list(record_discovery.values()):
+                    if not row.get("gap_refs") or row["status"] not in {"examined", "incomplete"}:
+                        continue
+                    task = RecordDiscoveryTask.model_validate(row["task"])
+                    if task.purpose == "property_disambiguation":
+                        continue
+                    if not affected_classes.intersection(
+                        discovery_cards[task.schema_card_id].class_iris,
+                    ):
+                        continue
+                    inputs = tool_dependencies(task, ignore_pinned=True, include_bindings=False)
+                    refs = [VersionedRef.model_validate(entity["entity_ref"])
+                            for entity in inputs["entity_dependencies"]]
+                    if affected_ids.intersection(ref.id for ref in refs):
+                        discovery_feedback(
+                            task, [EvidenceAnchor.model_validate(ref) for ref in row["gap_refs"]],
+                            refs, "late_owner_for_unbound_source",
+                        )
+                events.append(("candidate_changes", changes.model_dump(mode="json")))
 
         def expand_tool_relations(task, outcome):
             for relation in [*outcome.edges, *outcome.relationship_groups]:
@@ -2794,11 +3600,14 @@ class OntologyGuidedExecutor:
                         if origin is None and node.entity_id in {
                             item.entity_id for item in outcome.nodes
                         }:
-                            discovery_ref = protocols.get(task.claim_lineage_id, {}).get(
+                            discovery_ref = task_protocol(task).get(
                                 "discovery_ref"
                             )
                             if discovery_ref:
-                                origin = {"lineage_id": task.claim_lineage_id,
+                                origin = {"lineage_id": member_owners.get(
+                                    task.task_id, task.claim_lineage_id),
+                                          **({"member_task_id": task.task_id}
+                                             if task.task_id in member_owners else {}),
                                           "discovery_ref": discovery_ref}
                         if origin is None:
                             diagnostics.append("frontier_entity_origin_missing")
@@ -2827,7 +3636,8 @@ class OntologyGuidedExecutor:
                     menus[subject.entity_id] = menu
                     add_subject(subject, menu, hop=task.hop + 1, binding_edge=relation, scope=scope)
 
-        def tool_dependencies(task):
+        def tool_dependencies(task, *, selected_refs=None, include_bindings=True,
+                              ignore_pinned=False):
             from app.services.extraction.ontology_guided.claim_protocol import (
                 EntityDependencyView,
                 FrozenClaimSet,
@@ -2835,9 +3645,33 @@ class OntologyGuidedExecutor:
                 VerificationScopeStep,
             )
 
-            selected_nodes = {
+            is_record = isinstance(task, RecordDiscoveryTask)
+            attribute_bindings = None
+            if is_record and task.purpose == "property_disambiguation":
+                sections = {index.by_id[identity].section_node_id for identity in
+                            reading_sources.get(task.record_id, [task.record_id])}
+                attribute_bindings = []
+                for resolution in reference_resolutions.values():
+                    node = nodes.get(resolution["entity_ref"]["id"])
+                    binding = resolution.get("binding_ref")
+                    if (node is None or not binding
+                            or resolution["entity_ref"]["revision"] != node.revision
+                            or resolution["scope"] != task.scope.model_dump(mode="json")
+                            or not any(ref["section_node_id"] in sections
+                                       for ref in resolution["source_refs"])
+                            or not dependency_index.is_valid_references([
+                                VersionedRef.model_validate(ref) for ref in [
+                                    resolution["entity_ref"], binding,
+                                    *resolution["dependency_refs"],
+                                ]
+                            ])):
+                        continue
+                    attribute_bindings.append(resolution)
+            selected_nodes = ({root.entity_id: root} if is_record else {
                 root.entity_id: root, task.subject.entity_id: nodes[task.subject.entity_id],
-            }
+            })
+            if is_record and root.class_iri not in discovery_cards[task.schema_card_id].class_iris:
+                selected_nodes = {}
             steps = []
             for step in task.scope.members:
                 relation = (edges.get(step.relation_ref.id)
@@ -2867,7 +3701,8 @@ class OntologyGuidedExecutor:
                     evidence_refs=relation.evidence_refs,
                 ))
             if self.reference_resolution:
-                pinned = protocols.get(task.claim_lineage_id, {}).get("reference_context")
+                pinned = ({"entity_refs": selected_refs} if selected_refs is not None else
+                          None if ignore_pinned else task_protocol(task).get("reference_context"))
                 if pinned is not None:
                     selected_nodes = {}
                     for reference in pinned["entity_refs"]:
@@ -2880,8 +3715,9 @@ class OntologyGuidedExecutor:
                         select_reference_entities,
                     )
 
-                    predicate = predicates[task_key(task)]
-                    classes = {task.subject.class_iri}
+                    predicate = None if is_record else predicates[task_key(task)]
+                    classes = (set(discovery_cards[task.schema_card_id].class_iris) if is_record
+                               else {task.subject.class_iri})
                     if isinstance(predicate, EdgeSpec):
                         classes.update(predicate.range_class_iris)
                     candidates = {
@@ -2893,10 +3729,26 @@ class OntologyGuidedExecutor:
                             *node.dependency_refs,
                         ])
                     }
-                    for identity in select_reference_entities(
-                        task, index, candidates, entity_origins, reference_resolutions, classes,
-                    ):
-                        selected_nodes[identity] = nodes[identity]
+                    if is_record and task.purpose == "property_disambiguation":
+                        sections = {index.by_id[r].section_node_id
+                                    for r in reading_sources.get(task.record_id, [task.record_id])}
+                        for identity, candidate in candidates.items():
+                            if candidate.class_iri in classes and (any(
+                                ref.section_node_id in sections for ref in candidate.evidence_refs
+                            ) or any(resolution["entity_ref"]["id"] == identity
+                                     for resolution in attribute_bindings)):
+                                selected_nodes[identity] = candidate
+                    else:
+                        records = (task.source_record_ids or [task.record_id]) if is_record else [
+                            task.record_id,
+                        ]
+                        for record_id in records:
+                            local = task.model_copy(update={"record_id": record_id})
+                            for identity in select_reference_entities(
+                                local, index, candidates, entity_origins, reference_resolutions,
+                                classes, limit=None if self.record_pipeline else 8,
+                            ):
+                                selected_nodes[identity] = nodes[identity]
             views = []
             for node in selected_nodes.values():
                 reference = VersionedRef(id=node.entity_id, revision=node.revision)
@@ -2922,6 +3774,7 @@ class OntologyGuidedExecutor:
                         raise ValueError("entity_dependency_origin_missing")
                     frozen = FrozenClaimSet.model_validate(load_result(
                         origin["lineage_id"], origin["discovery_ref"], "discovery",
+                        member_task_id=origin.get("member_task_id"),
                     ))
                     matches = [item for item in frozen.entities if (
                         item.local_id == origin["local_id"]
@@ -2946,13 +3799,79 @@ class OntologyGuidedExecutor:
                     **payload, "content_hash": evidence_hash(payload),
                 }))
             resolution = VerificationScopeResolution(scope_id=task.scope.scope_id, steps=steps)
+            binding_inputs = {}
+            if self.record_pipeline and not is_record and include_bindings:
+                from .context import assemble_record_discovery_context
+                from .record_binding_evidence import restore_record_binding
+
+                binding_views, binding_evidence, source_refs = [], {}, []
+                units = {unit.evidence_id for unit in index.by_id[task.record_id].source_units}
+                for saved in reference_resolutions.values():
+                    origin = saved.get("binding_origin")
+                    if (not origin or not saved.get("binding_ref")
+                            or saved["entity_ref"]["id"] not in selected_nodes
+                            or not any(ref["evidence_id"] in units
+                                       for ref in saved["source_refs"])):
+                        continue
+                    ref = VersionedRef.model_validate(saved["binding_ref"])
+                    if not dependency_index.is_valid_references([
+                        ref, *(VersionedRef.model_validate(value)
+                               for value in saved["dependency_refs"]),
+                    ]):
+                        continue
+                    origin_task = RecordDiscoveryTask.model_validate(origin["task"])
+                    original = tool_dependencies(
+                        origin_task, selected_refs=origin["entity_refs"], include_bindings=False,
+                    )
+                    origin_dependencies = [EntityDependencyView.model_validate(value)
+                                           for value in original["entity_dependencies"]]
+                    card = discovery_cards[origin_task.schema_card_id]
+                    original_context = assemble_record_discovery_context(
+                        origin_task, card, index,
+                        document_context=DocumentContext.model_validate(
+                            origin["target"]["document_context"],
+                        ),
+                        ontology_hash=self.ontology.ontology_hash,
+                        entity_dependencies=origin_dependencies,
+                    )
+                    view, evidence = restore_record_binding(
+                        ref, origin={**origin, "task_scope": origin_task.scope},
+                        context=original_context, card=card, dependencies=origin_dependencies,
+                        nodes=[GraphNode.model_validate(value)
+                               for value in original["entity_nodes"]],
+                        load_result=load_result,
+                    )
+                    if not dependency_index.is_valid_references(view.dependency_refs):
+                        continue
+                    binding_views.append(view.model_dump(mode="json"))
+                    binding_evidence[(ref.id, ref.revision)] = evidence
+                    source_refs.extend(fragment.bounded_anchor().model_dump(mode="json")
+                                       for fragment in original_context.fragments)
+                valid_refs = frozenset(
+                    (reference["id"], reference["revision"]) for view in binding_views
+                    for reference in view["dependency_refs"]
+                ) | frozenset(
+                    (reference.id, reference.revision) for entity in views
+                    for reference in entity.dependency_refs
+                    if dependency_index.is_valid_references([reference])
+                )
+                binding_inputs = {
+                    "reference_dependencies": binding_views,
+                    "reference_evidence": binding_evidence,
+                    "reference_is_valid": lambda ref: (ref.id, ref.revision) in valid_refs,
+                    "reference_source_refs": source_refs,
+                }
             return {
+                **binding_inputs,
                 "entity_dependencies": [view.model_dump(mode="json") for view in views],
                 "entity_nodes": [node.model_dump(mode="json") for node in selected_nodes.values()],
                 "bridge_dependencies": [],
                 "scope_resolutions": [resolution.model_dump(mode="json")],
                 **({"reference_resolutions": [
-                    resolution for resolution in reference_resolutions.values()
+                    resolution for resolution in (
+                        reference_resolutions.values() if attribute_bindings is None
+                        else attribute_bindings
+                    )
                     if resolution["entity_ref"]["id"] in selected_nodes
                     and resolution["scope"] == task.scope.model_dump(mode="json")
                     and dependency_index.is_valid_references([
@@ -2977,6 +3896,150 @@ class OntologyGuidedExecutor:
                             "value": load_result(task.claim_lineage_id, reference, field)}
                 for reference, field in references.items()
             }
+
+        def prepare_member_context(task):
+            key = task_key(task)
+            predicate = predicates[key]
+            record = index.by_id[task.record_id]
+            scope_hash = evidence_hash(
+                [
+                    record.record_id,
+                    [unit.evidence_id for unit in record.source_units],
+                    task.subject.model_dump(mode="json"),
+                    task.predicate_iri,
+                    *([task.scope.scope_id] if self.tool_protocol else []),
+                ]
+            )
+            context_hash = evidence_hash(
+                [index.source_text(record.record_id, include_context=True), scope_hash]
+            )
+            target = VerificationTarget.create(
+                run_fingerprint=run_fingerprint,
+                claim_ref=VersionedRef(id=task.claim_lineage_id, revision=1),
+                task_id=task.task_id,
+                check_kind="predicate_entailment",
+                document_context=DocumentContext(
+                    document_hash=ir.document_hash,
+                    document_class_iri=root_class_iri,
+                    root_ref=VersionedRef(id=root.entity_id, revision=root.revision),
+                ),
+                subject_ref=task.subject,
+                predicate_iri=task.predicate_iri,
+                assertion_polarity="affirmed",
+                ontology_hash=self.ontology.ontology_hash,
+                source_scope_hash=scope_hash,
+                context_hash=context_hash,
+            )
+            target_seed = target.model_dump(mode="json")
+            selected_refs = None
+            if self.record_pipeline and task.predicate_kind == "relationship":
+                row = record_relation_inputs.get(task.claim_lineage_id)
+                if row is None:
+                    pages = relation_pages(task)
+                    row = {"task": task.model_dump(mode="json"),
+                           "dependency_hash": relation_input_signature(task),
+                           "page_refs": pages[0], "remaining_pages": pages[1:], "status": "active"}
+                    record_relation_inputs[task.claim_lineage_id] = row
+                if row["task"]["task_id"] == task.task_id:
+                    selected_refs = row["page_refs"]
+                # A restored/older paid task always retains its frozen authorization.
+                pinned = task_protocol(task).get("reference_context")
+                if pinned is not None:
+                    selected_refs = pinned["entity_refs"]
+            tool_inputs = (tool_dependencies(task, selected_refs=selected_refs)
+                           if self.tool_protocol else {})
+            subject_sources = list(nodes[task.subject.entity_id].evidence_refs)
+            incoming = [
+                edge
+                for edge in edges.values()
+                if edge.object_ref.id == task.subject.entity_id
+                and edge.object_ref.revision == task.subject.revision
+                and edge.decision_status == "supported"
+                and edge.polarity == "affirmed"
+                and effective_proof_gate(edge)
+                and dependency_index.is_valid(
+                    versioned_key(edge.candidate_id, edge.revision)
+                )
+            ]
+            dependencies = (
+                [
+                    subject_dependency_ref(task.subject, task.scope)
+                ]
+                if not task.subject.is_document_root
+                else []
+            )
+            required = [anchor for edge in incoming for anchor in edge.evidence_refs]
+            if self.tool_protocol:
+                dependencies.extend(ref for step in task.scope.members
+                                    for ref in (step.relation_ref, step.member_ref))
+                required.extend(
+                    EvidenceAnchor.model_validate(anchor)
+                    for entity in tool_inputs["entity_dependencies"]
+                    for anchor in entity["source_refs"]
+                )
+                required.extend(EvidenceAnchor.model_validate(anchor)
+                                for anchor in tool_inputs.get("reference_source_refs", []))
+                required.extend(
+                    EvidenceAnchor.model_validate(anchor)
+                    for resolution in tool_inputs["scope_resolutions"]
+                    for step in resolution["steps"] for anchor in step["evidence_refs"]
+                )
+            if self.evidence_repair:
+                required.extend(evidence_work.source_refs(task))
+            counters = required_by_lineage.get(task.claim_lineage_id, [])
+            context_started = time.perf_counter()
+            context = assemble_context(
+                target,
+                task.record_id,
+                index,
+                subject_evidence_refs=subject_sources,
+                required_context_refs=required,
+                counterevidence_refs=counters,
+                retrieval_context_refs=(searches[key].group_context_refs(task.record_id)
+                                        if self.adaptive_policy else None),
+                proof_dependencies=dependencies,
+                subject_label=nodes[task.subject.entity_id].label,
+                predicate=predicate,
+                ontology=self.ontology,
+                repair_enabled=self.evidence_repair,
+            )
+            operation_id = expert_lineages.get(task.claim_lineage_id)
+            if operation_id:
+                operation = expert_operations[operation_id]
+                context.expert_feedback = repair_feedback(
+                    operation["target"], operation,
+                )
+            context.incremental_performance = self.incremental_performance
+            context.compact_recognition = dependency_ready
+            context.cmc_describes_type_scope = cmc_describes_type_scope
+            if has_protocol:
+                context.protocol_state = (thaw_json if self.incremental_performance
+                                          else deepcopy)(
+                    task_protocol(task))
+            if self.tool_protocol:
+                context.tool_inputs = {
+                    **tool_inputs, "target_seed": target_seed,
+                    **({"recognition_pipeline": RECORD_PIPELINE} if self.record_pipeline else {}),
+                    "run_fingerprint": run_fingerprint,
+                    "subject_node": nodes[task.subject.entity_id].model_dump(
+                        mode="json",
+                    ),
+                }
+                if not self.batch_policy:
+                    attach_protocol_results(context, task)
+            if search_index is not None:
+                search_event("context_assembly", {
+                    "task_id": task.task_id,
+                    "elapsed_seconds": time.perf_counter() - context_started,
+                })
+            context.remaining_model_calls = remaining_calls(task)
+            if not self.batch_policy:
+                context.bind_model_call_hook(
+                    lambda stage, ordinal, bound_task=task: reserve_model_call(
+                        bound_task, stage, ordinal
+                    )
+                )
+            return context
 
         def advance_layer():
             nonlocal active_hop, layer_phase
@@ -3108,7 +4171,20 @@ class OntologyGuidedExecutor:
                     for task in tasks:
                         key = task_key(task)
                         if key not in plans:
-                            raise ValueError("expert repair predicate was not admitted for subject")
+                            if not self.record_pipeline or target["original_task"].get(
+                                "kind",
+                            ) != "record_discovery":
+                                raise ValueError(
+                                    "expert repair predicate was not admitted for subject",
+                                )
+                            predicate = next(p for p in menu.properties
+                                             if p.iri == task.predicate_iri)
+                            plan = plan_slot(
+                                task.subject, predicate, index, metadata,
+                                ontology_hash=self.ontology.ontology_hash, sparse_candidates=True,
+                            )
+                            plans[key] = enable_plan_parts(plan)
+                            predicates[key] = predicate
                         plans[key] = admit_records(plans[key], index, [task.record_id],
                                                    phase=task.phase)
                         if key in searches:
@@ -3126,7 +4202,15 @@ class OntologyGuidedExecutor:
                 expert_operations.touch(operation_id)
             result = operation["result"]
             result["tasks_attempted"] += 1
-            result["model_calls"] += outcome.model_calls
+            if self.batch_policy:
+                # Expert repairs are singleton work units with their own paid
+                # lineages; result.model_calls=0 is not their physical cost.
+                result["model_calls"] = sum(
+                    reserved_calls.get(lineage, 0)
+                    for lineage, owner in expert_lineages.items() if owner == operation_id
+                )
+            else:
+                result["model_calls"] += outcome.model_calls
             result["replacement_candidate_refs"] = [
                 {"id": candidate.candidate_id, "revision": candidate.revision}
                 for candidate in properties.values()
@@ -3195,6 +4279,10 @@ class OntologyGuidedExecutor:
             }
             if self.tool_protocol:
                 maps["relationship_groups"] = relationship_groups
+            if self.record_pipeline:
+                maps["record_discovery"] = record_discovery
+                maps["record_relation_inputs"] = record_relation_inputs
+                maps["record_searches"] = discovery_search.rows
             if self.reference_resolution:
                 maps["entity_origins"] = entity_origins
                 maps["reference_resolutions"] = reference_resolutions
@@ -3229,7 +4317,15 @@ class OntologyGuidedExecutor:
                     **({"extraction_protocol": TOOL_PROTOCOL_VERSION}
                        if self.tool_protocol else {}),
                     "completed_tasks": completed_tasks,
+                    **({"record_discovery": {
+                        "turn": discovery_turn,
+                        "catalog_hash": discovery_catalog.analysis_scope_ref,
+                        "card_ids": list(discovery_cards),
+                        "search_scope_hash": discovery_search.scope_hash,
+                        "total": len(record_discovery) + discovery_search.pending,
+                    }} if self.record_pipeline else {}),
                     "model_calls": model_calls,
+                    **({"active_unit_ref": active_unit_ref} if self.batch_policy else {}),
                     "partition_counts": counts,
                     "work_digest": work_digest,
                     "run_fingerprint": run_fingerprint,
@@ -3269,6 +4365,19 @@ class OntologyGuidedExecutor:
 
         if direct is not None:
             control = direct["control"]["current"]
+            active_unit_ref = control.get("active_unit_ref")
+            if self.record_pipeline:
+                saved_discovery = control.get("record_discovery", {})
+                if (saved_discovery.get("catalog_hash") != discovery_catalog.analysis_scope_ref
+                        or saved_discovery.get("card_ids") != list(discovery_cards)
+                        or saved_discovery.get("search_scope_hash") != discovery_search.scope_hash):
+                    raise ValueError("record_discovery_scope_changed")
+                discovery_turn = saved_discovery["turn"]
+                discovery_search.restore(direct.get("record_searches", {}))
+            if active_unit_ref is not None and (
+                not self.batch_policy or active_unit_ref not in protocols
+            ):
+                raise ValueError("active_work_unit_missing")
             if (
                 control["version"] != 1
                 or control["run_fingerprint"] != run_fingerprint
@@ -3345,7 +4454,13 @@ class OntologyGuidedExecutor:
             })
             attribute_sources = loaded("attribute_sources")
             lineage_calls = loaded("lineage_calls")
-            candidate_tasks = loaded("candidate_tasks", RecognitionTask.model_validate)
+            candidate_tasks = loaded(
+                "candidate_tasks", lambda value: (RecordDiscoveryTask if
+                    value.get("kind") == "record_discovery"
+                    else RecognitionTask).model_validate(value),
+            )
+            record_discovery = loaded("record_discovery")
+            record_relation_inputs = loaded("record_relation_inputs")
             required_by_lineage = loaded(
                 "required_by_lineage", lambda v: [EvidenceAnchor.model_validate(a) for a in v]
             )
@@ -3453,13 +4568,637 @@ class OntologyGuidedExecutor:
             for plan in plans.values():
                 validate_record_universe(plan, index)
 
+        def prepare_batch_context(unit, inputs=None):
+            inputs = inputs or {}
+            members = []
+            for task in unit.members:
+                member = inputs.get(task.task_id)
+                if member is None:
+                    member = MemberContext(
+                        task_id=task.task_id, context=prepare_member_context(task),
+                        card=compile_schema_card(
+                            menus[task.subject.entity_id], predicate_iri=task.predicate_iri,
+                            profile=self.adapter.profile, scope=task.scope,
+                        ),
+                    )
+                members.append(member)
+            state = json_value(protocols.get(unit.work_unit_id, {}))
+            records = {}
+            shared = {ref: "model_turn" for ref in state.get("turn_refs", [])}
+            shared.update({ref: "tool_result" for ref in state.get("completed_tool_results", [])})
+            for member_state in state.get("member_states", {}).values():
+                shared.update({entry["result_ref"]: "tool_result"
+                               for entry in member_state["materialized_refs"].values()})
+            for ref, field in shared.items():
+                records[ref] = load_record(unit.work_unit_id, ref, field)
+            for field in ("discovery", "verification", "outcome"):
+                for task_id, ref in state.get(field + "_refs", {}).items():
+                    records[ref] = load_record(
+                        unit.work_unit_id, ref, field, member_task_id=task_id,
+                    )
+            return RecognitionBatchContext(
+                work_unit_id=unit.work_unit_id, members=members,
+                protocol_state=state, protocol_results=records,
+                remaining_model_calls_by_member={
+                    t.task_id: remaining_calls(t) for t in unit.members
+                },
+            )
+
+        def select_record_task():
+            nonlocal active_unit_ref
+            if active_unit_ref is not None:
+                state = protocols[active_unit_ref]
+                if state["version"] != RECORD_PROTOCOL:
+                    return None
+                return RecordDiscoveryTask.model_validate(json_value(state)["task"])
+            if scheduler.dispatched >= scheduler.max_tasks:
+                return None
+            for row in record_discovery.values():
+                if row["status"] == "pending" and row.get("feedback_hash"):
+                    scheduler.dispatched += 1
+                    return RecordDiscoveryTask.model_validate(row["task"])
+            discovery_search.prepare(
+                ranking, persist_ranking_boundary if ranking_hook is not None else lambda: None,
+            )
+            selected = discovery_search.take()
+            if selected is None:
+                return None
+            source_ids, card_id, field_id = selected
+            record = index.by_id[source_ids[0]]
+            task = RecordDiscoveryTask.create(
+                run_fingerprint=run_fingerprint, record_id=record.record_id,
+                schema_card_id=card_id, analysis_scope_ref=discovery_catalog.analysis_scope_ref,
+                dependency_hash=evidence_hash([ir.document_hash, record.record_id,
+                                               index.source_text(record.record_id,
+                                                                 include_context=True), card_id,
+                                               *([source_ids, field_id] if contextual else [])]),
+                source_record_ids=source_ids, field_id=field_id,
+                reading_section_ids=reading_sections.get(record.record_id, []),
+            )
+            record_discovery[task.claim_lineage_id] = {
+                "task": task.model_dump(mode="json"), "status": "pending",
+                "outcome_ref": None, "reason_code": None,
+            }
+            scheduler.dispatched += 1
+            return task
+
+        def calibration_state(task, inputs, candidates):
+            from .attribute_calibration import calibration_inputs
+
+            return calibration_inputs(
+                task, candidates, inputs, [*edges.values(), *relationship_groups.values()], index,
+                is_valid=lambda relation: (
+                    relation.decision_status == "supported" and effective_proof_gate(relation)
+                    and dependency_index.is_valid(versioned_key(
+                        relation.candidate_id, relation.revision,
+                    ))
+                ),
+            )
+
+        def schedule_attribute_calibration():
+            """Coalesce relevant changes after discovery; retain the original paid lineage."""
+            if not self.record_pipeline or scheduler.dispatched >= scheduler.max_tasks:
+                return False
+            from .attribute_disambiguation import attribute_options
+            from .claim_protocol import EntityDependencyView
+
+            queued = False
+            for lineage, row in list(record_discovery.items()):
+                if (row["status"] not in {"examined", "incomplete"}
+                        or not row.get("attribute_candidates") or row.get("calibration_attempts", 0)
+                        or remaining_calls(RecordDiscoveryTask.model_validate(row["task"])) < 2):
+                    continue
+                task = RecordDiscoveryTask.model_validate(row["task"])
+                candidates = [AttributeCalibrationCandidate.model_validate(value)
+                              for value in row["attribute_candidates"]]
+                inputs = tool_dependencies(task, ignore_pinned=True, include_bindings=False)
+                signature, related, source_context = calibration_state(task, inputs, candidates)
+                if signature == row.get("calibration_input_signature"):
+                    continue
+                refs = [VersionedRef.model_validate(entity["entity_ref"])
+                        for entity in inputs["entity_dependencies"]]
+                sources = [ref for candidate in candidates for ref in candidate.value_refs]
+                if task.purpose == "property_disambiguation":
+                    field = attribute_fields[task.field_id]
+                    options, reason, _ = attribute_options(
+                        field, discovery_cards[task.schema_card_id], index,
+                        [EntityDependencyView.model_validate(value)
+                         for value in inputs["entity_dependencies"]],
+                        context_record_ids=reading_sources[field.record_id],
+                        max_candidates=contextual.max_attribute_candidates,
+                        reference_resolutions=inputs.get("reference_resolutions", []),
+                    )
+                    if reason or row.get("disambiguation_attempts", 0) >= (
+                        contextual.max_disambiguation_attempts
+                    ):
+                        continue
+                    refs = list({option["subject_ref"]["id"]:
+                                 VersionedRef.model_validate(option["subject_ref"])
+                                 for option in options}.values())
+                if discovery_feedback(task, sources, refs, "attribute_calibration_ready",
+                                      input_signature=signature):
+                    record_discovery[lineage] = {
+                        **record_discovery[lineage], "calibration_attempts": 1,
+                        "calibration_context_refs": json_value(source_context),
+                        "calibration_relations": related,
+                    }
+                    queued = True
+            if queued:
+                # Publish pending feedback before the following active generation.
+                if model_call_hook is not None:
+                    persist_call_boundary(work_changes=current_work_changes())
+                elif work_hook is not None:
+                    work_hook(current_work_changes())
+            return queued
+
+        def prepare_record_context(task):
+            from .claim_protocol import EntityDependencyView
+            from .context import assemble_record_discovery_context
+
+            card = discovery_cards[task.schema_card_id]
+            row = record_discovery.get(task.claim_lineage_id, {})
+            feedback_hash = row.get("feedback_hash")
+            pending_feedback = bool(feedback_hash and feedback_hash != task_protocol(task).get(
+                "record_feedback_hash",
+            ))
+            feedback_refs = None
+            if pending_feedback:
+                frozen_refs = task_protocol(task).get(
+                    "reference_context", {},
+                ).get("entity_refs", [])
+                feedback_refs = list({ref["id"]: ref
+                                      for ref in [*frozen_refs, *row["feedback_refs"]]}.values())
+            inputs = tool_dependencies(
+                task,
+                selected_refs=(row["feedback_refs"] if pending_feedback
+                               and task.purpose == "property_disambiguation" else feedback_refs),
+            )
+            candidates = [AttributeCalibrationCandidate.model_validate(value)
+                          for value in row.get("attribute_candidates", [])]
+            if not row.get("calibration_input_signature") or pending_feedback:
+                signature, related, relation_sources = calibration_state(task, inputs, candidates)
+                row = {**row, "calibration_input_signature": signature}
+                if row.get("calibration_attempts"):
+                    row.update(calibration_relations=related,
+                               calibration_context_refs=json_value(relation_sources))
+                record_discovery[task.claim_lineage_id] = row
+            if row.get("calibration_attempts"):
+                current_relations = {**edges, **relationship_groups}
+                for source in row.get("calibration_relations", []):
+                    current = current_relations.get(source["candidate_id"])
+                    if (current is None or current.revision != source["revision"]
+                            or not effective_proof_gate(current)
+                            or not dependency_index.is_valid(versioned_key(
+                                current.candidate_id, current.revision,
+                            ))):
+                        raise ExecutionLost("calibration_dependency_invalidated")
+                inputs["attribute_calibration"] = {
+                    "candidates": [candidate.model_dump(mode="json") for candidate in candidates],
+                    "related_relations": row.get("calibration_relations", []),
+                }
+            if task.purpose == "property_disambiguation":
+                from .attribute_calibration import field_candidate
+                from .attribute_disambiguation import attribute_options, field_payload
+
+                field = attribute_fields[task.field_id]
+                options, reason, signature = attribute_options(
+                    field, card, index,
+                    [EntityDependencyView.model_validate(value)
+                     for value in inputs["entity_dependencies"]],
+                    context_record_ids=reading_sources[task.record_id],
+                    max_candidates=contextual.max_attribute_candidates,
+                    reference_resolutions=inputs.get("reference_resolutions", []),
+                )
+                inputs["attribute_disambiguation"] = {
+                    **field_payload(field), "options": options, "reason_code": reason,
+                    "signature": signature,
+                }
+                record_discovery[task.claim_lineage_id] = {
+                    **row, "attribute_field": field_payload(field), "attribute_options": options,
+                    "attribute_signature": signature,
+                    "attribute_status": row.get("attribute_status", "pending"),
+                    "disambiguation_attempts": row.get("disambiguation_attempts", 0),
+                    "attribute_candidates": row.get("attribute_candidates", [field_candidate(
+                        task, field_payload(field), options, reason=reason, card=card,
+                    ).model_dump(mode="json")]),
+                }
+            elif contextual:
+                from .attribute_disambiguation import field_payload
+
+                inputs["deferred_property_fields"] = [
+                    field_payload(field) for record_id in task.source_record_ids
+                    for field in deferred_fields.get(record_id, [])
+                ]
+            context = assemble_record_discovery_context(
+                task, card, index,
+                document_context=DocumentContext(
+                    document_hash=ir.document_hash, document_class_iri=root_class_iri,
+                    root_ref=VersionedRef(id=root.entity_id, revision=root.revision),
+                ),
+                ontology_hash=self.ontology.ontology_hash,
+                entity_dependencies=[EntityDependencyView.model_validate(value)
+                                     for value in inputs["entity_dependencies"]],
+                binding_context_refs=[*[
+                    EvidenceAnchor.model_validate(ref)
+                    for ref in row.get("calibration_context_refs", [])
+                ], *(
+                    [EvidenceAnchor.model_validate(ref)
+                     for resolution in inputs.get("reference_resolutions", [])
+                     for ref in [*resolution["source_refs"],
+                                 *resolution.get("binding_source_refs", [])]]
+                    if task.purpose == "property_disambiguation" else []
+                )],
+            )
+            context.protocol_state = json_value(task_protocol(task))
+            context.tool_inputs = {
+                **inputs, "schema_card": card.model_dump(mode="json"),
+                "target_seed": context.target.model_dump(mode="json"),
+                "run_fingerprint": run_fingerprint, "recognition_pipeline": RECORD_PIPELINE,
+                **({"record_feedback_hash": feedback_hash, "record_feedback": {
+                    "hash": feedback_hash, "refs": row["feedback_refs"],
+                    "source_refs": row["feedback_source_refs"],
+                    "reason": row.get("feedback_reason"),
+                }} if feedback_hash else {}),
+            }
+            context.remaining_model_calls = remaining_calls(task)
+            attach_protocol_results(context, task)
+            return context, card
+
+        def execute_record_task(task):
+            nonlocal active_unit_ref, discovery_turn, model_calls
+            context, card = prepare_record_context(task)
+            prior_calls = reserved_calls.get(task.claim_lineage_id, 0)
+            row = record_discovery[task.claim_lineage_id]
+            reopening = bool(row.get("feedback_hash") and row["feedback_hash"]
+                             != context.protocol_state.get("record_feedback_hash"))
+            record_discovery[task.claim_lineage_id] = {
+                **row, "status": "active",
+                **({"consumed_feedback_hash": row["feedback_hash"],
+                    "generation": context.protocol_state["assertion_generation"] + 1}
+                   if reopening else {}),
+            }
+            # The first protocol checkpoint includes this admitted current task.
+            first_checkpoint = not bool(context.protocol_state) or reopening
+
+            def checkpoint(state):
+                nonlocal first_checkpoint, active_unit_ref
+                active_unit_ref = task.claim_lineage_id
+                if first_checkpoint:
+                    if state.get("pending_request") is not None:
+                        raise ModelCallPersistenceFailure("record admission must precede request")
+                    protocol_checkpoint(task, state, durable=False)
+                    first_checkpoint = False
+                    if model_call_hook is not None:
+                        persist_call_boundary(work_changes=current_work_changes())
+                    elif work_hook is not None:
+                        work_hook(current_work_changes())
+                else:
+                    protocol_checkpoint(task, state)
+
+            try:
+                call = RecognitionCall(self.adapter, task, context, None, card)
+                try:
+                    checked_at = time.monotonic()
+                    while not call.future.done():
+                        call.drain(
+                            lambda stage, ordinal: reserve_model_call(task, stage, ordinal),
+                            checkpoint,
+                        )
+                        drain_ranking_during_model()
+                        if time.monotonic() - checked_at >= 0.5:
+                            if self.progress_hook is not None:
+                                self.progress_hook("model_wait")
+                            checked_at = time.monotonic()
+                        call.cancelled.wait(0.01)
+                    outcome = call.future.result()
+                finally:
+                    call.close()
+            except (ModelCallPersistenceFailure, ModelCancelled, ExecutionLost, ModelWaitFailure):
+                raise
+            except ModelCallPauseRequested:
+                diagnostics.append("execution_pause_requested")
+                return True
+            except Exception as exc:
+                diagnostics.append(f"adapter_failure:{type(exc).__name__}")
+                outcome = TaskOutcome(
+                    semantic_outcome="not_checked", complete=False,
+                    reason_code=getattr(exc, "reason_code", None) or str(exc) or type(exc).__name__,
+                    reason="当前记录的实体和属性识别未完成。",
+                    model_calls=reserved_calls.get(task.claim_lineage_id, 0) - prior_calls,
+                )
+            if protocols.get(task.claim_lineage_id, {}).get("pending_request") is not None:
+                diagnostics.append("model_request_outcome_unknown")
+                return True
+            staged_protocols, staged_results = {}, {}
+            state = json_value(task_protocol(task))
+            if not state.get("outcome_ref"):
+                # Technical failures have an exact owned outcome too; publishing
+                # it and the incomplete work row is one graph transaction.
+                value = outcome.model_dump(mode="json")
+                reference = protocol_result_ref(task.claim_lineage_id, "outcome", value)
+                staged_results[reference] = {
+                    "lineage_id": task.claim_lineage_id, "field": "outcome", "value": value,
+                }
+                # Stage-local inputs and response refs must move together. Paid
+                # responses and tool results remain in the independent ledger.
+                state.update(
+                    stage="finalize", outcome_ref=reference,
+                    active_instructions="", stage_input_items=[],
+                    turn_refs=[], completed_tool_results=[],
+                )
+                staged_protocols[task.claim_lineage_id] = state
+                protocol_checkpoint(
+                    task, {**state, "result_changes": staged_results}, durable=False,
+                )
+            finalized = outcome.model_copy(deep=True)
+            apply_outcome(task, outcome, set())
+            model_calls = call_totals[1]
+            active_unit_ref = None
+            discovery_turn = False
+            if batch_hook is not None:
+                batch_hook(ExecutionBatch(
+                    batch_id=stable_id("record-discovery-batch", [
+                        run_fingerprint, task.task_id,
+                        task_protocol(task).get("outcome_ref"), finalized,
+                    ]), task=task, outcome=finalized,
+                    protocol_state_changes=staged_protocols, protocol_result_changes=staged_results,
+                    task_outcomes=[], frontier={}, recall_ledger={}, dependency_index={},
+                    graph=snapshot_graph(), diagnostics=list(dict.fromkeys(diagnostics)),
+                    evidence_repair_summary=repair_summary(),
+                    work_changes=current_work_changes(),
+                ))
+                protocols.changed.pop(task.claim_lineage_id, None)
+            elif model_call_hook is not None:
+                persist_call_boundary(staged_results, work_changes=current_work_changes())
+            elif work_hook is not None:
+                work_hook(current_work_changes())
+            return self.progress_hook is not None and not self.progress_hook("after_model")
+
+        def select_work_unit(excluded_slots):
+            nonlocal active_unit_ref
+            if active_unit_ref is not None:
+                unit = RecognitionWorkUnit.model_validate(
+                    json_value(protocols[active_unit_ref])["work_unit"],
+                )
+                return unit, prepare_batch_context(unit)
+            candidates = ([expert_pending[0]] if expert_pending else
+                          scheduler.peek_work_unit_candidates(
+                              excluded_slots=excluded_slots, limit=self.batch_policy.max_members,
+                          ))
+            if self.record_pipeline and not expert_pending:
+                candidates = [task for task in candidates if task.predicate_kind != "relationship"
+                              or relation_pages(task)]
+            if not candidates:
+                return None, None
+            inputs = {}
+            for task in candidates:
+                inputs[task.task_id] = MemberContext(
+                    task_id=task.task_id, context=prepare_member_context(task),
+                    card=compile_schema_card(
+                        menus[task.subject.entity_id], predicate_iri=task.predicate_iri,
+                        profile=self.adapter.profile, scope=task.scope,
+                    ),
+                )
+
+            def fits(members):
+                selected = {m.task_id for m in members}
+                unit = RecognitionWorkUnit.create(
+                    run_fingerprint=run_fingerprint, policy=self.batch_policy,
+                    members=[task for task in candidates if task.task_id in selected],
+                )
+                context = prepare_batch_context(unit, inputs)
+                return self.adapter.work_unit_fits(
+                    unit, context, menus[unit.members[0].subject.entity_id],
+                )
+
+            selected = pack_work_unit(
+                candidates, inputs, policy=self.batch_policy, measure_request=fits,
+                readiness=lambda task: subject_is_active(task.subject, task.scope),
+            )
+            # A seed that exceeds capacity must become an explicit incomplete
+            # member; leaving it in the queue would stall every later opportunity.
+            selected = selected or [candidates[0].task_id]
+            if expert_pending:
+                unit = RecognitionWorkUnit.create(
+                    run_fingerprint=run_fingerprint, policy=self.batch_policy,
+                    members=[expert_pending.pop(0)],
+                )
+            else:
+                unit = scheduler.consume_work_unit(
+                    selected, run_fingerprint=run_fingerprint, policy=self.batch_policy,
+                    excluded_slots=excluded_slots,
+                )
+            for task in unit.members:
+                member_owners[task.task_id] = unit.work_unit_id
+            context = prepare_batch_context(unit, inputs)
+            if not context.protocol_state:
+                initial = self.adapter.initialize_work_unit(
+                    unit, context, menus[unit.members[0].subject.entity_id],
+                )
+                for task in unit.members:
+                    initial["member_states"][task.task_id]["tool_calls_used"] = (
+                        lineage_tool_calls.get(task.claim_lineage_id, 0)
+                    )
+                batch_protocol_checkpoint(unit, initial, durable=False)
+                context.protocol_state = deepcopy(initial)
+            active_unit_ref = unit.work_unit_id
+            if model_call_hook is not None:
+                persist_call_boundary(
+                    work_changes=current_work_changes() if self.current_state else None,
+                )
+            elif self.current_state and work_hook is not None:
+                work_hook(current_work_changes())
+            return unit, context
+
+        def execute_work_unit(unit, context, excluded_slots):
+            nonlocal active_unit_ref
+            errors = {}
+            try:
+                call = RecognitionCall(
+                    self.adapter, unit, context, None,
+                    menus[unit.members[0].subject.entity_id], work_unit=True,
+                )
+                try:
+                    checked_at = time.monotonic()
+                    while not call.future.done():
+                        call.drain(
+                            lambda stage, ordinal: reserve_batch_model_call(unit, stage, ordinal),
+                            lambda state: batch_protocol_checkpoint(unit, state),
+                        )
+                        drain_ranking_during_model()
+                        if time.monotonic() - checked_at >= 0.5:
+                            if self.progress_hook is not None:
+                                self.progress_hook("model_wait")
+                            checked_at = time.monotonic()
+                        call.cancelled.wait(0.01)
+                    reviewed = call.future.result()
+                    errors = reviewed.member_errors
+                finally:
+                    call.close()
+            except (ModelCallPersistenceFailure, ModelCancelled, ExecutionLost, ModelWaitFailure):
+                raise
+            except ModelCallPauseRequested:
+                diagnostics.append("execution_pause_requested")
+                return True
+            except Exception as exc:
+                diagnostics.append(f"adapter_failure:{type(exc).__name__}")
+                reason = getattr(exc, "reason_code", None) or type(exc).__name__
+                errors = {task.task_id: reason for task in unit.members}
+            if protocols[unit.work_unit_id].get("pending_request") is not None:
+                # A worker may raise or return member errors. Neither confirms
+                # a pending request or authorizes publication of member outcomes.
+                diagnostics.append("model_request_outcome_unknown")
+                return True
+            if any(not subject_is_active(t.subject, t.scope) for t in unit.members):
+                raise ExecutionLost("recognition dependency changed")
+            # Workers only publish stage artifacts. Finalization sees the current
+            # canonical graph and stages outcomes for one atomic graph boundary.
+            context = prepare_batch_context(
+                unit, {member.task_id: member for member in context.members},
+            )
+            staged_protocols, staged_results, outcomes, accepted_outcomes = {}, {}, {}, {}
+
+            def stage_checkpoint(state):
+                saved = deepcopy(state)
+                changes = saved.pop("result_changes", {})
+                batch_protocol_checkpoint(unit, {**saved, "result_changes": changes}, durable=False)
+                staged_protocols[unit.work_unit_id] = saved
+                staged_results.update(changes)
+                context.protocol_results.update(deepcopy(changes))
+
+            context.bind_protocol_hook(stage_checkpoint)
+
+            def stage_member_outcome(task, outcome, *, close_recovery=False):
+                saved = deepcopy(context.protocol_state)
+                version = member_result_version(saved, task.task_id)
+                value = outcome.model_dump(mode="json")
+                ref = protocol_result_ref(
+                    unit.work_unit_id, "outcome", value,
+                    member_task_id=task.task_id, result_version=version,
+                )
+                saved["outcome_refs"][task.task_id] = ref
+                if close_recovery and saved["member_states"][task.task_id]["recovery_used"]:
+                    saved["member_states"][task.task_id]["recovery_kind"] = "none"
+                context.save_protocol(saved, result_changes={ref: {
+                    "lineage_id": unit.work_unit_id, "member_task_id": task.task_id,
+                    "result_version": version, "field": "outcome", "value": value,
+                }})
+
+            for task in unit.members:
+                protocol = context.protocol_state
+                existing = protocol["outcome_refs"].get(task.task_id)
+                version = member_result_version(protocol, task.task_id)
+                applied = applied_model_results.get(task.claim_lineage_id, {})
+                if (existing is not None and task.task_id not in errors
+                        and version == context.protocol_results[existing]["result_version"]
+                        and applied.get("work_unit_id") == unit.work_unit_id
+                        and applied.get("outcome_ref") == existing
+                        and applied.get("result_version") == context.protocol_results[
+                            existing]["result_version"]):
+                    continue
+                if (task.task_id in protocol["verification_refs"]
+                        and task.task_id not in errors):
+                    resolutions = [r for r in reference_resolutions.values()
+                                   if dependency_index.is_valid_references([
+                                       VersionedRef.model_validate(ref)
+                                       for ref in r["dependency_refs"]
+                                   ])]
+                    outcome = self.adapter.finalize_reviewed_member(
+                        task, context,
+                        current_entities={(n.entity_id, n.revision): n for n in nodes.values()},
+                        current_resolutions=resolutions,
+                    )
+                elif existing is not None and task.task_id not in errors:
+                    outcome = TaskOutcome.model_validate(
+                        context.protocol_results[existing]["value"],
+                    )
+                else:
+                    reason = errors.get(task.task_id, "member_answer_missing")
+                    outcome = TaskOutcome(
+                        semantic_outcome="not_checked", complete=False,
+                        reason_code=reason, reason="该成员尚未完成独立原文核验。",
+                    )
+                    stage_member_outcome(task, outcome, close_recovery=True)
+                ref = context.protocol_state["outcome_refs"][task.task_id]
+                if context.protocol_results[ref]["result_version"] != member_result_version(
+                    context.protocol_state, task.task_id,
+                ):
+                    # A paid reproposal may produce identical invalid content.
+                    # Record its actual attempt while retaining the same facts;
+                    # an old applied marker cannot erase this new observation.
+                    stage_member_outcome(task, outcome, close_recovery=True)
+                ref = context.protocol_state["outcome_refs"][task.task_id]
+                version = context.protocol_results[ref]["result_version"]
+                outcomes[task.task_id] = outcome.model_copy(deep=True)
+                apply_outcome(task, outcome, excluded_slots, batch_member=True,
+                              outcome_ref=ref, result_version=version)
+                accepted_outcomes[task.task_id] = outcome
+                if task.claim_lineage_id in expert_lineages:
+                    observe_expert_task(task, outcome)
+                if search_index is not None and task_key(task) in searches:
+                    key = task_key(task)
+                    supported = sum(
+                        item.decision_status == "supported" and item.polarity == "affirmed"
+                        and not item.conditions and not item.applicability
+                        and effective_proof_gate(item)
+                        and dependency_index.is_valid(versioned_key(
+                            item.candidate_id, item.revision,
+                        ))
+                        for item in [*outcome.edges, *outcome.properties,
+                                     *outcome.relationship_groups]
+                    )
+                    searches[key].observe(
+                        task.record_id, semantic_outcome=outcome.semantic_outcome,
+                        complete=outcome.complete, reason_code=outcome.reason_code,
+                        supported_count=supported,
+                        attempt_id=stable_id("member-result", [unit.work_unit_id, task.task_id,
+                                                               version, ref]),
+                    )
+                    if layered_recognition and task.claim_lineage_id not in expert_lineages:
+                        admit_search_page(key)
+            # Child work is admitted only after every member uses the canonical
+            # entities established by the preceding member's accepted outcome.
+            for task in unit.members:
+                if task.task_id in accepted_outcomes:
+                    expand_tool_relations(task, accepted_outcomes[task.task_id])
+            if not self.adapter.work_unit_pending_recovery(context):
+                active_unit_ref = None
+            if outcomes and batch_hook is not None:
+                batch_hook(ExecutionBatch(
+                    batch_id=stable_id("recognition-batch", [
+                        run_fingerprint, unit.work_unit_id, context.protocol_state["outcome_refs"],
+                    ]), work_unit=unit, member_outcomes=outcomes,
+                    protocol_state_changes=staged_protocols, protocol_result_changes=staged_results,
+                    task_outcomes=[] if self.current_state else list(task_outcomes),
+                    frontier={} if self.current_state else current_frontier(),
+                    recall_ledger={} if self.current_state else current_recall_ledger(),
+                    dependency_index={} if self.current_state else dependency_index.snapshot(),
+                    graph=snapshot_graph(), diagnostics=list(dict.fromkeys(diagnostics)),
+                    ranking_state={} if self.current_state else current_ranking_state(),
+                    model_call_state={} if self.current_state else current_model_call_state(),
+                    evidence_repair_summary=repair_summary(),
+                    work_changes=current_work_changes() if self.current_state else None,
+                ))
+                if self.current_state:
+                    # The batch transaction persisted these exact staged rows.
+                    protocols.changed.pop(unit.work_unit_id, None)
+                if protocol_record_loader is not None:
+                    for reference in staged_results:
+                        local_protocol_results.pop(reference, None)
+            elif staged_protocols and model_call_hook is not None:
+                persist_call_boundary(staged_results)
+            if self.progress_hook is not None and not self.progress_hook("after_model"):
+                diagnostics.append("execution_pause_requested")
+                return True
+            return False
+
         def publish_review_boundary():
             if batch_hook is None or not review_replay.events:
                 return
             original = review_replay.events[-1]["payload"]
-            task = RecognitionTask.model_validate(
-                original.get("original_task") or original["target"]["original_task"],
-            )
+            source = original.get("original_task") or original["target"]["original_task"]
+            task = (RecordDiscoveryTask if source.get("kind") == "record_discovery"
+                    else RecognitionTask).model_validate(source)
             batch_hook(ExecutionBatch(
                 batch_id=stable_id("expert-review-boundary", [
                     run_fingerprint, completed_tasks, review_replay.snapshot(),
@@ -3505,11 +5244,33 @@ class OntologyGuidedExecutor:
                             apply_review_events()
                             if len(review_replay.events) != before:
                                 publish_review_boundary()
-                        if repair_only and not expert_pending:
+                        if repair_only and not expert_pending and active_unit_ref is None:
                             break
                         if self.adapter is None and not expert_pending:
                             diagnostics.append("recognition_model_not_configured")
                             break
+                    record_active = (active_unit_ref is not None
+                                     and protocols[active_unit_ref]["version"] == RECORD_PROTOCOL)
+                    if self.record_pipeline and not expert_pending and not repair_only and (
+                        record_active or active_unit_ref is None and (
+                            discovery_turn or not scheduler.pending
+                        )
+                    ):
+                        if self.progress_hook is not None and not self.progress_hook("before_task"):
+                            diagnostics.append("execution_pause_requested")
+                            break
+                        try:
+                            record_task = select_record_task()
+                        except RankingPaused as exc:
+                            ranking_paused = True
+                            diagnostics.append(f"ranking_paused:{exc}")
+                            if ranking_hook is not None:
+                                persist_ranking_boundary()
+                            break
+                        if record_task is not None:
+                            if execute_record_task(record_task):
+                                break
+                            continue
                     try:
                         if not expert_pending:
                             prepare_ranking()
@@ -3533,8 +5294,10 @@ class OntologyGuidedExecutor:
                         )}
                         if resume_cursor < len(resume_outcomes) else blocked_ranking_slots()
                     )
-                    if pending_ranking is not None and not expert_pending and (
-                        recovering_ranking_pause or scheduler.peek_task(excluded_slots) is None
+                    if (pending_ranking is not None and not expert_pending
+                        and active_unit_ref is None and (
+                            recovering_ranking_pause or scheduler.peek_task(excluded_slots) is None
+                        )
                     ):
                         if self.progress_hook is not None and not self.progress_hook(
                             "ranking_wait"
@@ -3551,6 +5314,17 @@ class OntologyGuidedExecutor:
                     ):
                         diagnostics.append("execution_pause_requested")
                         break
+                    if defer_unready_relation(excluded_slots):
+                        discovery_turn = True
+                        continue
+                    if self.batch_policy and resume_cursor == len(resume_outcomes):
+                        unit, batch_context = select_work_unit(excluded_slots)
+                        if unit is not None:
+                            if execute_work_unit(unit, batch_context, excluded_slots):
+                                break
+                            if self.record_pipeline:
+                                discovery_turn = True
+                            continue
                     task = (expert_pending.pop(0) if expert_pending else
                             scheduler.next_task(excluded_slots=excluded_slots))
                     if task is None:
@@ -3567,6 +5341,9 @@ class OntologyGuidedExecutor:
                                    for key, search in searches.items()):
                                 continue
                         if scheduler.dispatched < scheduler.max_tasks and advance_layer():
+                            continue
+                        if schedule_attribute_calibration():
+                            discovery_turn = True
                             continue
                         break
                     replaying = resume_cursor < len(resume_outcomes)
@@ -3594,124 +5371,7 @@ class OntologyGuidedExecutor:
                             break
                         key = task_key(task)
                         predicate = predicates[key]
-                        record = index.by_id[task.record_id]
-                        scope_hash = evidence_hash(
-                            [
-                                record.record_id,
-                                [unit.evidence_id for unit in record.source_units],
-                                task.subject.model_dump(mode="json"),
-                                task.predicate_iri,
-                                *([task.scope.scope_id] if self.tool_protocol else []),
-                            ]
-                        )
-                        context_hash = evidence_hash(
-                            [index.source_text(record.record_id, include_context=True), scope_hash]
-                        )
-                        target = VerificationTarget.create(
-                            run_fingerprint=run_fingerprint,
-                            claim_ref=VersionedRef(id=task.claim_lineage_id, revision=1),
-                            task_id=task.task_id,
-                            check_kind="predicate_entailment",
-                            document_context=DocumentContext(
-                                document_hash=ir.document_hash,
-                                document_class_iri=root_class_iri,
-                                root_ref=VersionedRef(id=root.entity_id, revision=root.revision),
-                            ),
-                            subject_ref=task.subject,
-                            predicate_iri=task.predicate_iri,
-                            assertion_polarity="affirmed",
-                            ontology_hash=self.ontology.ontology_hash,
-                            source_scope_hash=scope_hash,
-                            context_hash=context_hash,
-                        )
-                        target_seed = target.model_dump(mode="json")
-                        tool_inputs = tool_dependencies(task) if self.tool_protocol else {}
-                        subject_sources = list(nodes[task.subject.entity_id].evidence_refs)
-                        incoming = [
-                            edge
-                            for edge in edges.values()
-                            if edge.object_ref.id == task.subject.entity_id
-                            and edge.object_ref.revision == task.subject.revision
-                            and edge.decision_status == "supported"
-                            and edge.polarity == "affirmed"
-                            and effective_proof_gate(edge)
-                            and dependency_index.is_valid(
-                                versioned_key(edge.candidate_id, edge.revision)
-                            )
-                        ]
-                        dependencies = (
-                            [
-                                subject_dependency_ref(task.subject, task.scope)
-                            ]
-                            if not task.subject.is_document_root
-                            else []
-                        )
-                        required = [anchor for edge in incoming for anchor in edge.evidence_refs]
-                        if self.tool_protocol:
-                            dependencies.extend(ref for step in task.scope.members
-                                                for ref in (step.relation_ref, step.member_ref))
-                            required.extend(
-                                EvidenceAnchor.model_validate(anchor)
-                                for entity in tool_inputs["entity_dependencies"]
-                                for anchor in entity["source_refs"]
-                            )
-                            required.extend(
-                                EvidenceAnchor.model_validate(anchor)
-                                for resolution in tool_inputs["scope_resolutions"]
-                                for step in resolution["steps"] for anchor in step["evidence_refs"]
-                            )
-                        if self.evidence_repair:
-                            required.extend(evidence_work.source_refs(task))
-                        counters = required_by_lineage.get(task.claim_lineage_id, [])
-                        context_started = time.perf_counter()
-                        context = assemble_context(
-                            target,
-                            task.record_id,
-                            index,
-                            subject_evidence_refs=subject_sources,
-                            required_context_refs=required,
-                            counterevidence_refs=counters,
-                            retrieval_context_refs=(searches[key].group_context_refs(task.record_id)
-                                                    if self.adaptive_policy else None),
-                            proof_dependencies=dependencies,
-                            subject_label=nodes[task.subject.entity_id].label,
-                            predicate=predicate,
-                            ontology=self.ontology,
-                            repair_enabled=self.evidence_repair,
-                        )
-                        operation_id = expert_lineages.get(task.claim_lineage_id)
-                        if operation_id:
-                            operation = expert_operations[operation_id]
-                            context.expert_feedback = repair_feedback(
-                                operation["target"], operation,
-                            )
-                        context.incremental_performance = self.incremental_performance
-                        context.compact_recognition = dependency_ready
-                        context.cmc_describes_type_scope = cmc_describes_type_scope
-                        if has_protocol:
-                            context.protocol_state = (thaw_json if self.incremental_performance
-                                                      else deepcopy)(
-                                protocols.get(task.claim_lineage_id, {}))
-                        if self.tool_protocol:
-                            context.tool_inputs = {
-                                **tool_inputs, "target_seed": target_seed,
-                                "run_fingerprint": run_fingerprint,
-                                "subject_node": nodes[task.subject.entity_id].model_dump(
-                                    mode="json",
-                                ),
-                            }
-                            attach_protocol_results(context, task)
-                        if search_index is not None:
-                            search_event("context_assembly", {
-                                "task_id": task.task_id,
-                                "elapsed_seconds": time.perf_counter() - context_started,
-                            })
-                        context.remaining_model_calls = remaining_calls(task)
-                        context.bind_model_call_hook(
-                            lambda stage, ordinal, bound_task=task: reserve_model_call(
-                                bound_task, stage, ordinal
-                            )
-                        )
+                        context = prepare_member_context(task)
                         reservations_before = len(reservations)
                         try:
                             if self.adapter is None:

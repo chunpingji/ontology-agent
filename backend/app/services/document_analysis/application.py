@@ -191,6 +191,8 @@ def _progress(run: DocumentAnalysisRun) -> dict[str, Any]:
         "records_unattempted": int(source.get("records_unattempted", 0)),
         **({"retrieval_diagnostics": source["retrieval_diagnostics"]}
            if source.get("retrieval_diagnostics") is not None else {}),
+        **({"record_discovery": source["record_discovery"]}
+           if source.get("record_discovery") is not None else {}),
         **({"candidate_policy": source["candidate_policy"],
             "completion": source.get("completion", "incomplete")}
            if source.get("candidate_policy") is not None else {}),

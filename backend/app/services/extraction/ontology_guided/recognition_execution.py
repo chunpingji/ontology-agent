@@ -12,7 +12,7 @@ from app.services.llm.model_runtime import ModelCancelled, model_scope, runtime
 
 
 class RecognitionCall:
-    def __init__(self, adapter, task, context, predicate, menu):
+    def __init__(self, adapter, task, context, predicate, menu, *, work_unit=False):
         self.cancelled = Event()
         self.requests = Queue()
         self.pool = ThreadPoolExecutor(max_workers=1, thread_name_prefix="recognition-model")
@@ -38,7 +38,7 @@ class RecognitionCall:
         # coordinator's task, graph/menu or accounting callback.
         task = task.model_copy(deep=True)
         context = context.model_copy(deep=True)
-        predicate = predicate.model_copy(deep=True)
+        predicate = predicate.model_copy(deep=True) if predicate is not None else None
         menu = menu.model_copy(deep=True)
         context.bind_model_call_hook(self.before_model)
         context.bind_protocol_hook(self.protocol_checkpoint)
@@ -52,6 +52,12 @@ class RecognitionCall:
             ):
                 if self.cancelled.is_set():
                     raise ModelCancelled()
+                if work_unit:
+                    return adapter.inspect_work_unit(task, context, menu)
+                from .record_discovery import RecordDiscoveryTask
+
+                if isinstance(task, RecordDiscoveryTask):
+                    return adapter.inspect_record(task, context, menu)
                 return adapter.inspect(task, context, predicate, menu)
 
         self.future = self.pool.submit(Context().run, invoke)

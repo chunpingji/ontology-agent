@@ -19,6 +19,9 @@ from app.services.extraction.ontology_guided.contracts import (
     VersionedRef,
 )
 from app.services.extraction.ontology_guided.current_work import validate_tool_protocol
+from app.services.extraction.ontology_guided.model_reference_projection import (
+    project_reference_payload,
+)
 from app.services.extraction.ontology_guided.tool_model_adapter import ToolModelRecognitionAdapter
 from app.services.extraction.ontology_guided.tool_runtime import ToolLimits
 from app.services.llm.local_client import ResponseTurn
@@ -117,11 +120,11 @@ def setup_adapter(
             ]
         else:
             if view["stage"] == "discovery":
-                answer = source["proposal"]
+                answer = project_reference_payload(source["proposal"])
             else:
                 answer = {"verifications": []}
                 for target in view["verification_input"]["targets"]:
-                    quote = source["quote"](source["source_unit"].text)
+                    quote = project_reference_payload(source["quote"](source["source_unit"].text))
                     answer["verifications"].append(
                         {
                             "target_id": target["target_id"],
@@ -191,7 +194,9 @@ def test_relation_requires_tool_result_before_independent_verifier_and_gate(sour
     assert json.loads(result["output"])["data"]["validation_status"] == "passed"
     for request in (requests[0], requests[2]):
         assert request["instructions"]
-        assert "阶段回答JSON Schema" in request["instructions"]
+        assert "阶段回答JSON Schema" not in request["instructions"]
+        assert request["text_format"]["schema"]["properties"]
+        assert "inspect_evidence" not in {tool["name"] for tool in request.get("tools") or []}
         assert "validate_metric" not in {
             tool["name"] for tool in request.get("tools") or []
         }
@@ -406,7 +411,7 @@ def test_invalid_stage_answer_receives_derived_feedback_without_relaxing_parser(
         duplicate = copy.deepcopy(invalid_payload["entities"][0])
         duplicate.update(local_id=task.subject.entity_id, class_iri=task.subject.class_iri)
         invalid_payload["entities"].insert(0, duplicate)
-    invalid_text = json.dumps(invalid_payload)
+    invalid_text = json.dumps(project_reference_payload(invalid_payload))
 
     def invalid_first(client, **kwargs):
         turn = valid_transport(client, **kwargs)
@@ -428,7 +433,9 @@ def test_invalid_stage_answer_receives_derived_feedback_without_relaxing_parser(
     outcome = adapter.inspect(task, context, predicate, menu)
     assert outcome.complete
     correction_request = requests[0 if cold_resume else 1]
-    assert correction_request["input_items"][-2]["content"][0]["text"] == invalid_text
+    assert json.loads(correction_request["input_items"][-2]["content"][0]["text"]) == json.loads(
+        invalid_text,
+    )
     feedback = json.loads(correction_request["input_items"][-1]["content"][0]["text"])
     assert feedback["kind"] == "stage_answer_invalid"
     if invalid_kind == "schema":
@@ -495,7 +502,9 @@ def test_verifier_protocol_errors_receive_feedback_without_changing_claims(
     outcome = adapter.inspect(task, context, predicate, menu)
     assert outcome.complete and len(outcome.relationship_groups) == 1
     correction = requests[0 if cold_resume else 3]
-    assert correction["input_items"][-2]["content"][0]["text"] == invalid_text
+    assert json.loads(correction["input_items"][-2]["content"][0]["text"]) == json.loads(
+        invalid_text,
+    )
     feedback = json.loads(correction["input_items"][-1]["content"][0]["text"])
     assert feedback["stage"] == "verification"
     assert [issue["field_path"] for issue in feedback["issues"]] == [field_path]
@@ -620,7 +629,14 @@ def test_observation_uses_actual_request_and_narrowed_card(source, monkeypatch):
         assert start["request"]["input"] == request["input_items"]
         assert start["request"]["instructions"] == request["instructions"]
         input_view = json.loads(request["input_items"][0]["content"][0]["text"])
-        assert start["schema_card"] == input_view["schema_card"]
+        # The model inherits exact duplicate identity/range fields. Harness keeps
+        # the full validated card; reconstruct only those fields and compare all.
+        input_card = copy.deepcopy(input_view["schema_card"])
+        input_card.setdefault("subject_ref", input_view["subject_ref"])
+        for item in input_card["predicates"]:
+            if "range_classes" in item:
+                item.setdefault("range_class_iris", [c["iri"] for c in item["range_classes"]])
+        assert project_reference_payload(start["schema_card"]) == input_card
         assert len(start["schema_card"]["predicates"]) == 1
     assert any(kind == "operation_start" and data["kind"] == "validation"
                for kind, data in events)

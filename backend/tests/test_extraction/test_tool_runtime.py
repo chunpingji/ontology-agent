@@ -19,6 +19,7 @@ from app.services.extraction.ontology_guided.claim_protocol import (
     RelationProposal,
     VerificationTargetSpec,
     claim_content_hash,
+    compile_schema_card,
 )
 from app.services.extraction.ontology_guided.context import ContextFragment, assemble_context
 from app.services.extraction.ontology_guided.contracts import (
@@ -243,7 +244,7 @@ def test_anchor_uses_same_physical_identity_as_ner_without_registering(tool_cont
     assert not ctx.frozen_claims
 
 
-@pytest.mark.parametrize("context_text", ["", "unrelated text"])
+@pytest.mark.parametrize("context_text", ["unrelated text", " ", "not in source: A", "null A"])
 def test_anchor_context_error_identifies_the_field_without_rewriting_it(
     tool_context, context_text,
 ):
@@ -255,9 +256,69 @@ def test_anchor_context_error_identifies_the_field_without_rewriting_it(
     result = runtime.dispatch_tool(request, tool_context)
     assert result.status == "blocked" and result.data is None
     assert result.issues[0].code == "citation_quote_not_in_source"
-    assert result.issues[0].field_path == "/context_text"
+    if "A" not in context_text:
+        assert result.issues[0].field_path == "/context_text"
     assert json.loads(request.arguments_json)["context_text"] == context_text
     assert not tool_context.registered_mentions
+
+
+@pytest.mark.parametrize("context_text", ["", "null"])
+def test_absent_anchor_context_resolves_unique_quote_without_rewriting_call(
+    tool_context, context_text,
+):
+    unit = next(u for u in tool_context.index.ir.evidence_units if u.text == "A")
+    request = call(
+        "resolve_source_anchor", evidence_id=unit.evidence_id, quote="A", context_text=context_text,
+    )
+    original = request.model_dump_json()
+    result = runtime.dispatch_tool(request, tool_context)
+    expected = runtime.dispatch_tool(
+        call("resolve_source_anchor", evidence_id=unit.evidence_id, quote="A", context_text=None),
+        tool_context,
+    )
+    assert result.status == "ok" and result == expected
+    assert request.model_dump_json() == original
+    assert not tool_context.registered_mentions
+
+
+@pytest.mark.parametrize("quote,code", [
+    ("alpha", "citation_quote_ambiguous"),
+    ("missing", "citation_quote_not_in_source"),
+    ("", "citation_quote_not_in_source"),
+])
+@pytest.mark.parametrize("context_text", ["", "null"])
+def test_absent_context_still_requires_unique_exact_nonempty_quote(
+    tool_context, quote, code, context_text,
+):
+    unit = next(u for u in tool_context.index.ir.evidence_units if u.text.startswith("First"))
+    fragment = ContextFragment(
+        anchor=tool_context.index.ir.anchor(unit.evidence_id, 0, len(unit.text)),
+        text=unit.text, purpose="target", fact_eligible=True,
+    )
+    ctx = replace(tool_context, context=tool_context.context.model_copy(
+        update={"fragments": [fragment]},
+    ))
+    result = runtime.dispatch_tool(
+        call("resolve_source_anchor", evidence_id=unit.evidence_id, quote=quote,
+             context_text=context_text),
+        ctx,
+    )
+    assert result.status == "blocked" and result.data is None
+    assert result.issues[0].code == code and not result.evidence_refs
+
+
+@pytest.mark.parametrize("context_text", ["", "null"])
+def test_absent_context_does_not_authorize_foreign_evidence(tool_context, context_text):
+    unit = next(u for u in tool_context.index.ir.evidence_units if u.text == "B")
+    result = runtime.dispatch_tool(
+        call("resolve_source_anchor", evidence_id=unit.evidence_id, quote="B",
+             context_text=context_text),
+        tool_context,
+    )
+    assert result.status == "blocked" and result.data is None
+    assert result.issues[0].code == "reference_outside_scope"
+    assert result.issues[0].field_path == "/evidence_id"
+    assert not result.evidence_refs
 
 
 def test_binding_keeps_complete_interval_and_does_not_claim_semantic_support(tool_context):
@@ -337,6 +398,76 @@ def test_model_tools_are_advertised_with_reference_gates(tool_context):
         "get_schema_card", "inspect_evidence", "resolve_source_anchor", "propose_mentions",
         "query_instances", "retrieve_evidence",
     }
+
+
+@pytest.mark.parametrize("limit", [1, 16])
+def test_tool_schemas_expose_authorized_evidence_and_read_limit(tool_context, limit):
+    card = compile_schema_card(
+        tool_context.menu, predicate_iri=tool_context.task.predicate_iri,
+        profile=tool_context.profile, scope=tool_context.scope,
+    )
+    ctx = replace(
+        tool_context, stage="discovery", cards={card.schema_card_id: card},
+        mention_extractor=object(), ontology_snapshot=object(),
+        limits=replace(tool_context.limits, max_evidence_units_per_call=limit),
+    )
+    schemas = {tool["name"]: tool["parameters"]["properties"]
+               for tool in runtime.build_tool_definitions(ctx, ctx.stage)}
+    authorized = sorted({f.anchor.evidence_id for f in ctx.context.fragments})
+    for name in ("inspect_evidence", "propose_mentions"):
+        ids = schemas[name]["evidence_ids"]
+        assert ids["items"]["enum"] == authorized
+        assert ids["minItems"] == 1 and ids["maxItems"] == limit
+        assert ids["uniqueItems"] is True
+        assert "evidence_id" in ids["description"] and "unit_id" in ids["description"]
+    assert schemas["resolve_source_anchor"]["evidence_id"]["enum"] == authorized
+    assert schemas["propose_mentions"]["schema_card_id"]["enum"] == [card.schema_card_id]
+    context_schema = schemas["resolve_source_anchor"]["context_text"]
+    assert {"type": "null"} in context_schema["anyOf"]
+    assert next(s for s in context_schema["anyOf"] if s["type"] == "string")["minLength"] == 1
+
+
+@pytest.mark.parametrize("name", ["inspect_evidence", "propose_mentions"])
+def test_evidence_read_limit_does_not_report_exhausted_tool_calls(tool_context, name):
+    card = compile_schema_card(
+        tool_context.menu, predicate_iri=tool_context.task.predicate_iri,
+        profile=tool_context.profile, scope=tool_context.scope,
+    )
+    ctx = replace(
+        tool_context, stage="discovery", cards={card.schema_card_id: card},
+        limits=replace(tool_context.limits, max_evidence_units_per_call=1),
+    )
+    ids = list(dict.fromkeys(f.anchor.evidence_id for f in ctx.context.fragments))[:2]
+    assert len(ids) == 2
+    args = {"evidence_ids": ids}
+    if name == "propose_mentions":
+        args["schema_card_id"] = card.schema_card_id
+    result = runtime.dispatch_tool(call(name, **args), ctx)
+    assert result.status == "blocked" and result.data is None and not result.evidence_refs
+    assert result.issues[0].code == "evidence_unit_limit_exceeded"
+    assert result.issues[0].field_path == "/evidence_ids"
+    assert "maxItems" in result.issues[0].message
+
+
+def test_batch_evidence_enum_union_does_not_expand_member_permission(tool_context):
+    first, second = tool_context.context.fragments[:2]
+    assert first.anchor.evidence_id != second.anchor.evidence_id
+    contexts = {
+        task_id: replace(tool_context, context=tool_context.context.model_copy(
+            update={"fragments": [fragment]},
+        )) for task_id, fragment in (("member-a", first), ("member-b", second))
+    }
+    tools = runtime.build_member_tool_definitions(contexts, "verification")
+    schema = next(t["parameters"]["properties"] for t in tools if t["name"] == "inspect_evidence")
+    assert schema["evidence_ids"]["items"]["enum"] == sorted([
+        first.anchor.evidence_id, second.anchor.evidence_id,
+    ])
+    result = runtime.dispatch_member_tool(
+        call("inspect_evidence", member_task_id="member-a",
+             evidence_ids=[second.anchor.evidence_id]), contexts,
+    )
+    assert result.status == "blocked" and result.data is None and not result.evidence_refs
+    assert result.issues[0].code == "reference_outside_scope"
 
 
 def test_result_limit_blocks_instead_of_truncating_a_record(tool_context):

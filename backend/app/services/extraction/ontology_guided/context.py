@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 from collections.abc import Callable
+from copy import deepcopy
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Literal
 
@@ -23,6 +24,7 @@ from app.services.extraction.ontology_guided.field_bindings import (
     FieldBinding,
     field_bindings,
 )
+from app.services.extraction.ontology_guided.record_discovery import RecordDiscoveryTarget
 from app.services.extraction.ontology_guided.records import RecordIndex
 
 if TYPE_CHECKING:
@@ -33,6 +35,10 @@ if TYPE_CHECKING:
         VerificationInput,
     )
     from app.services.extraction.ontology_guided.contracts import GraphNode, TraversalScope
+    from app.services.extraction.ontology_guided.recognition_batch import (
+        MemberContext,
+        RecognitionWorkUnit,
+    )
     from app.services.extraction.ontology_guided.scheduler import RecognitionTask
     from app.services.extraction.ontology_guided.tool_contracts import EvidenceUnit, ToolObservation
     from app.services.extraction.ontology_guided.tool_model_adapter import TurnPlan
@@ -104,6 +110,7 @@ class SourceCatalogEntry:
     summary: str | None
     summary_source: str | None
     authorized_evidence_ids: list[str]
+    section_id: str | None = None
 
 
 @dataclass(frozen=True)
@@ -158,7 +165,7 @@ class ContextFragment(EvidenceModel):
 class TaskContext(EvidenceModel):
     context_id: str = Field(min_length=1)
     context_hash: str = Field(min_length=64, max_length=64)
-    target: VerificationTarget
+    target: VerificationTarget | RecordDiscoveryTarget
     record_id: str = Field(min_length=1)
     fragments: list[ContextFragment] = Field(min_length=1)
     endpoint_evidence: list[VersionedRef] = Field(default_factory=list)
@@ -263,6 +270,11 @@ def _bind_context_target(
             [[fragment.anchor, fragment.fact_eligible, fragment.purpose] for fragment in fragments]
         ),
     )
+    if isinstance(target, RecordDiscoveryTarget):
+        return RecordDiscoveryTarget(
+            target_id=stable_id("record-context-target", [target.target_id, target_values]),
+            **target_values,
+        )
     return VerificationTarget.create(run_fingerprint=target.target_id, **target_values)
 
 
@@ -300,10 +312,16 @@ def assemble_context(
     predicate=None,
     ontology=None,
     repair_enabled: bool = False,
+    source_record_ids=(),
 ) -> TaskContext:
     record = index.by_id.get(record_ref)
     if record is None:
         raise ValueError("record does not belong to the frozen index")
+    records = [index.by_id[identity] for identity in source_record_ids] if source_record_ids else [
+        record,
+    ]
+    if record not in records:
+        raise ValueError("primary_record_outside_reading_group")
     if repair_enabled:
         # A whole-source owner reference and its explicit complete span mean
         # the same thing. Resolve that boundary before the citation gate so a
@@ -318,10 +336,10 @@ def assemble_context(
     fragments: list[ContextFragment] = []
     seen: set[str] = set()
     for purpose, eligible, units in (
-        ("record_heading_or_header", False, record.header_units),
-        ("parent_table_context", False, record.parent_units),
-        ("target", True, record.source_units),
-        ("table_note_metadata", False, record.note_units),
+        ("record_heading_or_header", False, [u for r in records for u in r.header_units]),
+        ("parent_table_context", False, [u for r in records for u in r.parent_units]),
+        ("target", True, [u for r in records for u in r.source_units]),
+        ("table_note_metadata", False, [u for r in records for u in r.note_units]),
     ):
         for unit in units:
             if unit.evidence_id in seen or not unit.text:
@@ -337,7 +355,11 @@ def assemble_context(
                 )
             )
     omitted: list[EvidenceAnchor] = []
-    fields, owners = field_group_context(index, record_ref, subject_label)
+    fields, owners = [], []
+    for source in records:
+        local_fields, local_owners = field_group_context(index, source.record_id, subject_label)
+        fields.extend(unit for unit in local_fields if unit not in fields)
+        owners.extend(ref for ref in local_owners if ref not in owners)
     for purpose, units in (
         ("field_group_binding", fields),
         ("named_object_binding", named_object_context(index, record_ref, predicate, ontology)),
@@ -378,7 +400,9 @@ def assemble_context(
                 fragments.append(
                     ContextFragment(anchor=anchor, text=index.ir.resolve(anchor), purpose=purpose)
                 )
-    bindings = field_bindings(index, record_ref) if repair_enabled else []
+    bindings = [binding for r in records for binding in field_bindings(index, r.record_id)] if (
+        repair_enabled
+    ) else []
     references = ContextBindingRefs(
         endpoint_evidence=endpoint_evidence or [],
         proof_dependencies=proof_dependencies or [],
@@ -437,6 +461,54 @@ def assemble_context(
         budget_status=budget_status,
         field_bindings=bindings,
         repair_enabled=repair_enabled,
+    )
+
+
+def assemble_record_discovery_context(
+    task, card, index, *, document_context, ontology_hash, entity_dependencies=(),
+    token_counter=None, max_input_tokens=None, binding_context_refs=(),
+):
+    """Share record assembly, without assuming a subject or borrowing root privileges."""
+    if task.schema_card_id != card.schema_card_id:
+        raise ValueError("record_schema_card_mismatch")
+    target = RecordDiscoveryTarget(
+        target_id=stable_id("record-target", task.model_dump(mode="json")),
+        task_id=task.task_id, document_context=document_context,
+        schema_card_id=card.schema_card_id, analysis_scope_ref=task.analysis_scope_ref,
+        ontology_hash=ontology_hash, source_scope_hash=task.dependency_hash,
+        context_hash=task.dependency_hash,
+    )
+    heading_refs = []
+    from .table_reading import table_lead_in_refs
+
+    table_refs = table_lead_in_refs(index, task.source_record_ids or [task.record_id])
+    if task.source_record_ids:
+        from .reading_groups import heading_context
+
+        heading_refs = list({(ref.evidence_id, ref.span_start, ref.span_end): ref
+                             for record_id in task.source_record_ids
+                             for ref in heading_context(index, record_id)}.values())
+        if any(identity not in index.nodes_by_id for identity in task.reading_section_ids):
+            raise ValueError("reading_section_outside_document")
+        heading_refs.extend(index.ir.anchor(unit.evidence_id, 0, len(unit.text))
+                            for unit in index.ir.evidence_units if unit.kind == "heading"
+                            and unit.section_node_id in task.reading_section_ids
+                            and not getattr(unit, "navigation_role", None))
+        # Co-read fields/continuations can establish ownership, but only explicit
+        # source_record_ids grant new fact/value permission for this task.
+        heading_refs.extend(index.ir.anchor(unit.evidence_id, 0, len(unit.text))
+                            for record in index.records
+                            if record.section_node_id in task.reading_section_ids
+                            and record.record_id not in task.source_record_ids
+                            for unit in record.source_units)
+    return assemble_context(
+        target, task.record_id, index, repair_enabled=True,
+        source_record_ids=task.source_record_ids,
+        required_context_refs=[*heading_refs, *table_refs, *binding_context_refs, *[
+            anchor for dep in entity_dependencies for anchor in dep.source_refs
+        ]],
+        proof_dependencies=[ref for dep in entity_dependencies for ref in dep.dependency_refs],
+        token_counter=token_counter, max_input_tokens=max_input_tokens,
     )
 
 
@@ -790,3 +862,136 @@ def build_model_context(
         verification_input=verification_input, tool_observations=confirmed_results,
         feedback=list(feedback or []), turn=turn,
     )
+
+
+class _MemberProtocolView(dict):
+    """A detached read view; protocol writes belong to the work-unit owner."""
+
+    def _readonly(self, *args, **kwargs):
+        raise TypeError("member_protocol_view_is_read_only")
+
+    __setitem__ = __delitem__ = clear = pop = popitem = setdefault = update = _readonly
+    __ior__ = _readonly
+
+    def __deepcopy__(self, memo):
+        return _MemberProtocolView(deepcopy(dict(self), memo))
+
+
+def member_protocol_view(unit_protocol: dict, task_id: str) -> dict:
+    """Project all original per-task fields without silently resetting revisions."""
+    from app.services.extraction.ontology_guided.current_work import (
+        TOOL_BATCH_PROTOCOL_VERSION,
+        TOOL_PROTOCOL_VERSION,
+    )
+
+    if unit_protocol.get("version") != TOOL_BATCH_PROTOCOL_VERSION:
+        raise ValueError("member_protocol_batch_version_required")
+    member = unit_protocol.get("member_states", {}).get(task_id)
+    tasks = {task["task_id"]: task for task in unit_protocol["work_unit"]["members"]}
+    if member is None or task_id not in tasks:
+        raise ValueError("member_protocol_unknown_task")
+    if any(name not in member for name in (
+        "evidence_revision", "assertion_generation", "base_target", "context_hash",
+        "evidence_hash", "scope_id",
+    )):
+        raise ValueError("member_protocol_state_incomplete")
+    shared = {
+        key: deepcopy(unit_protocol[key]) for key in (
+            "api_protocol", "stage", "request_attempt", "completed_attempts",
+            "active_instructions", "stage_input_items", "pending_request", "turn_refs",
+            "completed_tool_results",
+        ) if key in unit_protocol
+    }
+    return _MemberProtocolView({
+        **shared, **deepcopy(member), "version": TOOL_PROTOCOL_VERSION,
+        "lineage_id": tasks[task_id]["claim_lineage_id"],
+        **{f"{field}_ref": unit_protocol.get(f"{field}_refs", {}).get(task_id)
+           for field in ("discovery", "verification", "outcome")},
+    })
+
+
+def build_batch_model_context(
+    unit: RecognitionWorkUnit, members: list[MemberContext], *,
+    stage: Literal["discovery", "verification"], stage_member_ids: list[str] | None = None,
+    results: dict[str, dict] | None = None,
+) -> dict:
+    """Deduplicate source text while preserving every member's exact source permission.
+
+    ``results`` optionally supplies existing validated, rendered model views, so
+    catalog, table geometry, registered entities and feedback keep their original
+    representation. This derived transport view is never a new authorization.
+    """
+    if stage not in ("discovery", "verification"):
+        raise ValueError("batch_context_stage_invalid")
+    tasks = {task.task_id: task for task in unit.members}
+    by_id = {member.task_id: member for member in members}
+    selected = list(tasks) if stage_member_ids is None else list(stage_member_ids)
+    if (len(by_id) != len(members) or set(by_id) != set(tasks) or not selected
+            or len(set(selected)) != len(selected) or not set(selected) <= set(tasks)):
+        raise ValueError("batch_context_members_invalid")
+    texts, views = {}, []
+    for task_id in selected:
+        member = by_id[task_id]
+        task, context = tasks[task_id], member.context
+        if (context.target.task_id != task_id or context.target.subject_ref != task.subject
+                or context.target.predicate_iri != task.predicate_iri
+                or context.record_id != task.record_id
+                or context.budget_status != "within_budget" or context.omitted_refs):
+            raise ValueError("batch_context_member_identity_or_sources_invalid")
+        if results is None:
+            view = {
+                "task_id": task_id, "predicate_iri": task.predicate_iri, "stage": stage,
+                "subject_ref": member.card.subject_ref.model_dump(mode="json"),
+                "scope": task.scope.model_dump(mode="json") if task.scope else None,
+                "schema_card": member.card.model_dump(mode="json"),
+                "context_hash": context.context_hash,
+                "source_scope_hash": context.target.source_scope_hash,
+                "proof_dependencies": [ref.model_dump(mode="json")
+                                       for ref in context.proof_dependencies],
+                "field_bindings": [binding.model_dump(mode="json")
+                                   for binding in context.field_bindings],
+                "counterevidence_refs": [ref.model_dump(mode="json")
+                                         for ref in context.counterevidence_refs],
+                "registered_refs": [ref.model_dump(mode="json")
+                                    for ref in [member.card.subject_ref,
+                                                *context.endpoint_evidence]],
+                "evidence_units": [{
+                    "evidence_id": fragment.anchor.evidence_id,
+                    "text": fragment.text, "span_start": fragment.anchor.span_start or 0,
+                    "span_end": (fragment.anchor.span_start or 0) + len(fragment.text),
+                    "role": fragment.purpose, "fact_eligible": fragment.fact_eligible,
+                } for fragment in context.fragments],
+            }
+        else:
+            if task_id not in results:
+                raise ValueError("batch_context_rendered_member_missing")
+            view = deepcopy(results[task_id])
+            if (view.get("task_id") != task_id or view.get("stage") != stage
+                    or view.get("context_hash") != context.context_hash):
+                raise ValueError("batch_context_rendered_identity_mismatch")
+        units = view.pop("evidence_units")
+        expected = {(fragment.anchor.evidence_id, fragment.anchor.span_start or 0,
+                     (fragment.anchor.span_start or 0) + len(fragment.text),
+                     fragment.text, fragment.fact_eligible) for fragment in context.fragments}
+        actual = {(value["evidence_id"], value["span_start"], value["span_end"],
+                   value["text"], value["fact_eligible"]) for value in units}
+        if actual != expected:
+            raise ValueError("batch_context_rendered_permission_mismatch")
+        references = []
+        for value in units:
+            shared = {
+                "document_hash": context.target.document_context.document_hash,
+                "evidence_id": value["evidence_id"], "span_start": value["span_start"],
+                "span_end": value["span_end"], "text_hash": evidence_hash(value["text"]),
+            }
+            unit_id = stable_id("batch-evidence-unit", shared)
+            texts.setdefault(unit_id, {"unit_id": unit_id, **shared, "text": value["text"]})
+            references.append({"unit_id": unit_id, **{
+                key: item for key, item in value.items() if key != "text"
+            }})
+        view["evidence_refs"] = references
+        views.append(view)
+    return {
+        "work_unit_id": unit.work_unit_id, "stage": stage,
+        "members": views, "evidence_units": list(texts.values()),
+    }

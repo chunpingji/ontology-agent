@@ -13,6 +13,8 @@ from typing import Any, Literal, NotRequired, TypedDict
 from app.services.extraction.evidence_identity import evidence_hash
 
 TOOL_PROTOCOL_VERSION = "ontology-tool-extraction-v1"
+TOOL_BATCH_PROTOCOL_VERSION = "ontology-tool-batch-v1"
+MODEL_REFERENCE_ERRORS = frozenset({"unknown_model_reference", "model_reference_collision"})
 
 
 class ModelTurnResult(TypedDict):
@@ -26,6 +28,7 @@ class ModelTurnResult(TypedDict):
     incomplete_details: dict[str, Any] | None
     error: dict[str, Any] | None
     usage: dict[str, Any] | None
+    reference_error: NotRequired[Literal["unknown_model_reference", "model_reference_collision"]]
 
 
 class ToolResultRecord(TypedDict):
@@ -73,8 +76,21 @@ def call_request_key(receipt):
     )
 
 
-def protocol_result_ref(lineage_id: str, field: str, value: dict) -> str:
+def protocol_result_ref(
+    lineage_id: str, field: str, value: dict, *, member_task_id: str | None = None,
+    result_version: dict | None = None,
+) -> str:
     """Exact Responses/tool slots cannot be overwritten by a different paid result."""
+    if member_task_id is not None or result_version is not None:
+        if field not in {"discovery", "verification", "outcome"}:
+            raise ValueError("only member stage results have an owner version")
+        validate_member_result_version(result_version)
+        if not isinstance(member_task_id, str) or not member_task_id:
+            raise ValueError("member result owner is required")
+        return evidence_hash({
+            "lineage_id": lineage_id, "member_task_id": member_task_id,
+            "result_version": result_version, "field": field, "value": value,
+        })
     identity = (
         value["attempt"] if field == "model_turn"
         else [value["attempt"], value["call_id"]] if field == "tool_result"
@@ -108,9 +124,48 @@ def _valid_allowed_tools(names, stage) -> bool:
 
 def validate_tool_protocol(protocol: dict) -> None:
     """Validate only the current protocol shape, without loading result history."""
+    if isinstance(protocol, dict) and protocol.get("version") == TOOL_BATCH_PROTOCOL_VERSION:
+        validate_batch_tool_protocol(protocol)
+        return
+    from .record_discovery import RECORD_PROTOCOL
+
+    if isinstance(protocol, dict) and protocol.get("version") == RECORD_PROTOCOL:
+        validate_record_tool_protocol(protocol)
+        return
+    _validate_single_tool_protocol(protocol)
+
+
+def validate_record_tool_protocol(protocol: dict) -> None:
+    from .record_discovery import RECORD_PROTOCOL, RecordDiscoveryTarget, RecordDiscoveryTask
+
+    _validate_single_tool_protocol(protocol, record=True)
+    task = RecordDiscoveryTask.model_validate(protocol["task"], strict=True)
+    target = RecordDiscoveryTarget.model_validate(protocol["base_target"], strict=True)
+    if (protocol["version"] != RECORD_PROTOCOL or task.task_id != target.task_id
+            or task.claim_lineage_id != protocol["lineage_id"]
+            or task.schema_card_id != target.schema_card_id
+            or task.analysis_scope_ref != target.analysis_scope_ref
+            or task.scope.scope_id != protocol["scope_id"]):
+        raise ValueError("record_protocol_task_mismatch")
+    pending = protocol["pending_request"]
+    if "record_feedback_hash" in protocol and not _digest(protocol["record_feedback_hash"]):
+        raise ValueError("record_feedback_hash_invalid")
+    if pending and not set(pending["allowed_tool_names"]) <= {
+        "inspect_evidence", "resolve_source_anchor", "propose_mentions",
+        "find_referent_candidates", "check_claim_binding",
+    }:
+        raise ValueError("record_protocol_tool_outside_scope")
+
+
+def _validate_single_tool_protocol(protocol: dict, *, record=False) -> None:
+    from .record_discovery import RECORD_PROTOCOL
+
     required = ToolProtocolState.__required_keys__ - {"reference_context"}
+    optional = {"reference_context"} | ({"record_feedback_hash"} if record else set())
+    if record:
+        required = required | {"task"}
     if (not isinstance(protocol, dict) or not required <= set(protocol)
-            or set(protocol) - required - {"reference_context"}):
+            or set(protocol) - required - optional):
         raise ValueError("tool protocol must contain only its current state fields")
     reference_context = protocol.get("reference_context")
     if "reference_context" in protocol:
@@ -126,7 +181,8 @@ def validate_tool_protocol(protocol: dict) -> None:
                 for ref in reference_context["entity_refs"]]
         if len({(ref.id, ref.revision) for ref in refs}) != len(refs):
             raise ValueError("reference context duplicates")
-    if (protocol["version"] != TOOL_PROTOCOL_VERSION or protocol["api_protocol"] != "responses"
+    if (protocol["version"] != (RECORD_PROTOCOL if record else TOOL_PROTOCOL_VERSION)
+            or protocol["api_protocol"] != "responses"
             or protocol["stage"] not in {"discovery", "verification", "finalize"}
             or not isinstance(protocol["lineage_id"], str) or not protocol["lineage_id"]
             or not isinstance(protocol["base_target"], dict)
@@ -195,8 +251,27 @@ def validate_tool_protocol(protocol: dict) -> None:
 def validate_protocol_result(field: str, value: dict) -> None:
     if not isinstance(value, dict):
         raise ValueError("protocol result must be a JSON object")
+    batch_keys = ({"stage_group_seq", "member_task_ids"} if field == "model_turn"
+                  else {"stage_group_seq", "member_task_id"})
+    batch = "stage_group_seq" in value
+    if batch:
+        if type(value["stage_group_seq"]) is not int or value["stage_group_seq"] < 1:
+            raise ValueError("batch result stage group is invalid")
+        owners = value.get("member_task_ids") if field == "model_turn" else [
+            value.get("member_task_id")
+        ]
+        if (field == "tool_result" and value.get("member_task_id") is None
+                and value.get("result", {}).get("status") in {"blocked", "error"}
+                and value.get("result", {}).get("data") is None):
+            owners = ["unrouted"]
+        if (not isinstance(owners, list) or not owners
+                or any(not isinstance(owner, str) or not owner for owner in owners)
+                or len(owners) != len(set(owners))):
+            raise ValueError("batch result members are invalid")
     if field == "model_turn":
-        if (set(value) != ModelTurnResult.__required_keys__
+        required = (ModelTurnResult.__required_keys__ - {"reference_error"}
+                    | (batch_keys if batch else set()))
+        if (not required <= set(value) or set(value) - required - {"reference_error"}
                 or type(value["attempt"]) is not int or value["attempt"] < 1
                 or value["stage"] not in {"discovery", "verification"}
                 or not _digest(value["input_hash"])
@@ -206,10 +281,14 @@ def validate_protocol_result(field: str, value: dict) -> None:
                 or not isinstance(value["output_items"], list)
                 or any(not isinstance(item, dict) for item in value["output_items"])
                 or any(value[key] is not None and not isinstance(value[key], dict)
-                       for key in ("incomplete_details", "error", "usage"))):
+                       for key in ("incomplete_details", "error", "usage"))
+                or ("reference_error" in value and (
+                    not isinstance(value["reference_error"], str)
+                    or value["reference_error"] not in MODEL_REFERENCE_ERRORS
+                ))):
             raise ValueError("model turn result is invalid")
     elif field == "tool_result":
-        if (set(value) != ToolResultRecord.__required_keys__
+        if (set(value) != ToolResultRecord.__required_keys__ | (batch_keys if batch else set())
                 or type(value["attempt"]) is not int or value["attempt"] < 1
                 or not isinstance(value["call_id"], str) or not value["call_id"]
                 or not isinstance(value["result"], dict)):
@@ -217,6 +296,126 @@ def validate_protocol_result(field: str, value: dict) -> None:
     elif field not in {"discovery", "verification", "outcome"}:
         raise ValueError("unknown tool protocol result field")
     evidence_hash(value)
+
+
+
+def validate_member_result_version(version: dict) -> None:
+    if (not isinstance(version, dict) or set(version) != {
+        "stage_group_seq", "last_participating_request_attempt",
+        "assertion_generation", "evidence_revision",
+    } or any(type(value) is not int or value < 0 for value in version.values())):
+        raise ValueError("member result version is invalid")
+
+
+def member_result_version(protocol: dict, task_id: str) -> dict:
+    member = protocol["member_states"][task_id]
+    return {
+        "stage_group_seq": member["last_stage_group_seq"],
+        "last_participating_request_attempt": member["last_participating_request_attempt"],
+        "assertion_generation": member["assertion_generation"],
+        "evidence_revision": member["evidence_revision"],
+    }
+
+
+def validate_batch_tool_protocol(protocol: dict) -> None:
+    """Validate the bounded current unit, preserving each member's authorization."""
+    from app.services.extraction.ontology_guided.contracts import VerificationTarget
+    from app.services.extraction.ontology_guided.recognition_batch import RecognitionWorkUnit
+
+    required = {
+        "version", "lineage_id", "work_unit", "member_states", "api_protocol", "stage",
+        "stage_member_ids", "stage_group_seq", "request_attempt", "completed_attempts",
+        "active_instructions", "stage_input_items", "pending_request", "turn_refs",
+        "completed_tool_results", "discovery_refs", "verification_refs", "outcome_refs",
+    }
+    if not isinstance(protocol, dict) or set(protocol) != required:
+        raise ValueError("batch protocol must contain only its current state fields")
+    unit = RecognitionWorkUnit.model_validate(protocol["work_unit"], strict=True)
+    members = {task.task_id: task for task in unit.members}
+    if (protocol["version"] != TOOL_BATCH_PROTOCOL_VERSION
+            or protocol["lineage_id"] != unit.work_unit_id
+            or protocol["api_protocol"] != "responses"
+            or protocol["stage"] not in {"discovery", "verification", "finalize"}
+            or not isinstance(protocol["member_states"], dict)
+            or set(protocol["member_states"]) != set(members)):
+        raise ValueError("batch protocol identity or members are invalid")
+    for field in ("request_attempt", "stage_group_seq"):
+        if type(protocol[field]) is not int or protocol[field] < (field == "stage_group_seq"):
+            raise ValueError("batch protocol counter is invalid")
+    ids = protocol["stage_member_ids"]
+    if (not isinstance(ids, list) or not ids or any(x not in members for x in ids)
+            or len(ids) != len(set(ids))):
+        raise ValueError("batch stage members are invalid")
+    completed = protocol["completed_attempts"]
+    if (not isinstance(completed, list)
+            or any(type(n) is not int or not 1 <= n <= protocol["request_attempt"]
+                   for n in completed) or completed != sorted(set(completed))):
+        raise ValueError("batch protocol response receipts are invalid")
+    for field in ("turn_refs", "completed_tool_results"):
+        refs = protocol[field]
+        if (not isinstance(refs, list) or any(not isinstance(x, str) or not x for x in refs)
+                or len(refs) != len(set(refs))):
+            raise ValueError("batch result references are invalid")
+    if (not isinstance(protocol["active_instructions"], str)
+            or not isinstance(protocol["stage_input_items"], list)
+            or any(not isinstance(x, dict) for x in protocol["stage_input_items"])):
+        raise ValueError("batch initial input is invalid")
+    member_fields = {
+        "base_target", "scope_id", "assertion_generation", "evidence_revision", "evidence_hash",
+        "context_hash", "context_authorization", "tool_calls_used", "materialized_refs",
+        "recovery_kind", "recovery_used", "last_participating_request_attempt",
+        "last_stage_group_seq",
+    }
+    for task_id, state in protocol["member_states"].items():
+        if (not isinstance(state, dict) or not member_fields <= set(state)
+                or set(state) - member_fields - {"reference_context"}):
+            raise ValueError("batch member state fields are invalid")
+        task = members[task_id]
+        view = {key: value for key, value in state.items()
+                if key not in {"last_participating_request_attempt", "last_stage_group_seq"}}
+        view.update({
+            "version": TOOL_PROTOCOL_VERSION, "lineage_id": task.claim_lineage_id,
+            "api_protocol": "responses", "stage": protocol["stage"], "request_attempt": 0,
+            "completed_attempts": [], "active_instructions": "", "stage_input_items": [],
+            "pending_request": None, "turn_refs": [], "completed_tool_results": [],
+            "discovery_ref": None, "verification_ref": None, "outcome_ref": None,
+        })
+        validate_tool_protocol(view)
+        target = VerificationTarget.model_validate(state["base_target"], strict=True)
+        if (target.task_id != task_id or target.claim_ref.id != task.claim_lineage_id
+                or target.subject_ref != task.subject or target.predicate_iri != task.predicate_iri
+                or (task.scope is not None and state["scope_id"] != task.scope.scope_id)):
+            raise ValueError("batch member target identity is invalid")
+        version = member_result_version(protocol, task_id)
+        validate_member_result_version(version)
+        if (version["last_participating_request_attempt"] > protocol["request_attempt"]
+                or version["stage_group_seq"] > protocol["stage_group_seq"]):
+            raise ValueError("batch member participation exceeds unit")
+    for field in ("discovery_refs", "verification_refs", "outcome_refs"):
+        refs = protocol[field]
+        if (not isinstance(refs, dict) or set(refs) - set(members)
+                or any(not isinstance(ref, str) or not ref for ref in refs.values())):
+            raise ValueError("batch member result references are invalid")
+    pending = protocol["pending_request"]
+    if pending is not None and (
+        not isinstance(pending, dict) or set(pending) != {
+            "attempt", "stage", "request_hash", "reservation_key", "allowed_tool_names",
+            "stage_group_seq", "member_task_ids",
+        }
+        or type(pending["attempt"]) is not int
+        or pending["attempt"] != protocol["request_attempt"] or pending["attempt"] < 1
+        or type(pending["stage_group_seq"]) is not int
+        or pending["stage"] not in {"discovery", "verification"}
+        or pending["stage"] != protocol["stage"]
+        or pending["stage_group_seq"] != protocol["stage_group_seq"]
+        or pending["member_task_ids"] != ids or not _digest(pending["request_hash"])
+        or not _valid_allowed_tools(pending["allowed_tool_names"], pending["stage"])
+        or pending["reservation_key"] != call_request_key({
+            "lineage_id": protocol["lineage_id"], "protocol_attempt": pending["attempt"],
+        })
+    ):
+        raise ValueError("batch pending request is invalid")
+    evidence_hash(protocol)
 
 
 def json_value(value):

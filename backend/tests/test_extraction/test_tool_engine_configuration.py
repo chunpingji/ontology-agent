@@ -1,5 +1,8 @@
 """The new online domain freezes Responses capabilities and explicit local tools."""
 
+from copy import deepcopy
+from types import SimpleNamespace
+
 import pytest
 
 from app.config import settings
@@ -9,6 +12,8 @@ from app.services.extraction.ontology_guided.contracts import (
     OntologyClassDefinition,
     OntologySnapshot,
 )
+from app.services.extraction.ontology_guided.executor import OntologyGuidedExecutor
+from app.services.extraction.ontology_guided.record_discovery import RECORD_PIPELINE
 from app.services.extraction.ontology_guided.tool_model_adapter import ToolModelRecognitionAdapter
 
 pytest_plugins = ["tests.test_extraction.test_tool_engine_freeze"]
@@ -28,6 +33,18 @@ def test_new_factory_uses_frozen_config_without_legacy_domain_policies(source, m
     options["responses"]["reasoning"]["effort"] = "high"
     assert frozen["responses"]["strict_tools"] is False
     assert frozen["max_lineage_calls"] == 4
+    assert frozen["recognition_pipeline"] == RECORD_PIPELINE
+    assert frozen["record_discovery"] == {
+        "version": "record-discovery-v2", "max_classes_per_card": 4, "endpoint_page_size": 8,
+        "candidate_cards_per_record": 2, "minimum_similarity": 0.25,
+        "attribute_calibration": "source-observations-v1",
+        "table_reading": "bounded-table-rows-v2",
+        "contextual": {
+            "version": "contextual-discovery-v2", "max_section_chars": 240,
+            "max_group_chars": 1200, "max_group_records": 8, "max_table_rows_per_group": 4,
+            "max_attribute_candidates": 8, "max_disambiguation_attempts": 2,
+        },
+    }
     assert frozen["candidate_planning"] == "sparse-candidates-v1"
     assert frozen["heuristic_policy"]["query_rules_version"] == "ontology-controlled-labels-v1"
     frozen_budget = dict(frozen["request_budget"])
@@ -57,7 +74,41 @@ def test_new_factory_uses_frozen_config_without_legacy_domain_policies(source, m
     assert adapter.instance_reader is adapter.mention_extractor is None
     assert adapter.max_input_tokens == frozen_budget["max_input_tokens"]
     assert adapter.max_output_tokens == frozen_budget["max_output_tokens"]
+    assert adapter.tool_limits.max_result_tokens == min(8192, frozen_budget["max_input_tokens"])
     assert adapter.index.ir.document_hash == ir.document_hash
+    assert adapter.recognition_batching.max_members == 4
+    assert adapter.recognition_pipeline == RECORD_PIPELINE
+    assert adapter.record_discovery.max_classes_per_card == 4
+    assert adapter.record_discovery.endpoint_page_size == 8
+    assert adapter.record_discovery.contextual.max_disambiguation_attempts == 2
+    assert adapter.record_discovery.candidate_cards_per_record == 2
+    assert adapter.record_discovery.minimum_similarity == 0.25
+    old_record = deepcopy(frozen)
+    old_record["record_discovery"].pop("contextual")
+    old_record_adapter = execution._configured_recognition_adapter(
+        old_record, ir=ir, ontology=ontology, metadata=metadata,
+    )
+    assert old_record_adapter.record_discovery.contextual is None
+    assert old_record_adapter.record_discovery.model_dump(mode="json") == (
+        old_record["record_discovery"]
+    )
+    # A changed default cannot upgrade a saved single-task run during restoration.
+    legacy = deepcopy(frozen)
+    legacy.pop("recognition_pipeline")
+    legacy.pop("record_discovery")
+    legacy_batch_adapter = execution._configured_recognition_adapter(
+        legacy, ir=ir, ontology=ontology, metadata=metadata,
+    )
+    assert legacy_batch_adapter.recognition_batching.max_members == 4
+    assert legacy_batch_adapter.recognition_pipeline is None
+    legacy.pop("recognition_batching")
+    legacy["model_call_state_version"] = 2
+    legacy_adapter = execution._configured_recognition_adapter(
+        legacy, ir=ir, ontology=ontology, metadata=metadata,
+    )
+    assert legacy_adapter.recognition_batching is None
+    assert legacy_adapter.recognition_pipeline is None
+    assert legacy_adapter.record_discovery is None
     monkeypatch.setattr(settings, "local_llm_model_revision", "changed-revision")
     with pytest.raises(execution.CheckpointMismatch):
         execution._configured_recognition_adapter(
@@ -101,3 +152,49 @@ def test_invalid_reference_policy_stops_before_loading_model(monkeypatch, versio
     with pytest.raises(execution.CheckpointMismatch,
                        match="^tool engine frozen configuration mismatch$"):
         execution._configured_recognition_adapter(frozen)
+
+
+@pytest.mark.parametrize("pipeline,policy", [
+    ("unknown", {"version": "record-discovery-v2", "max_classes_per_card": 4}),
+    ([], {}), (RECORD_PIPELINE, None),
+    (RECORD_PIPELINE, {"version": "record-discovery-v2", "max_classes_per_card": 0}),
+    (None, {"version": "record-discovery-v2", "max_classes_per_card": 4}),
+])
+def test_invalid_record_policy_stops_before_loading_model(monkeypatch, pipeline, policy):
+    from app.services.llm import local_client
+
+    def no_client():
+        pytest.fail("invalid record pipeline must not acquire a model client")
+
+    monkeypatch.setattr(settings, "ontology_extraction_options", {})
+    monkeypatch.setattr(local_client, "get_local_llm", no_client)
+    frozen = execution.freeze_tool_engine_policy()
+    frozen.update(recognition_pipeline=pipeline, record_discovery=policy)
+    with pytest.raises(execution.CheckpointMismatch, match="invalid frozen record discovery"):
+        execution._configured_recognition_adapter(frozen)
+
+
+def test_fingerprint_keeps_old_executor_identity_and_freezes_new_pipeline(source, monkeypatch):
+    captured = []
+    monkeypatch.setattr(
+        execution, "evidence_hash", lambda value: captured.append(value) or "digest",
+    )
+    run = SimpleNamespace(
+        document_hash="d" * 64, root_class_iri="urn:Source", metadata_mode="structure_only",
+        scope_mode="document_graph", focus_path=[],
+    )
+    metadata = SimpleNamespace(dependency_hash="metadata")
+    ontology = SimpleNamespace(ontology_hash="ontology", version="v1")
+    legacy = {"state_storage_version": 4}
+    execution._recognition_fingerprint(
+        run, source["index"].ir, metadata, ontology, None, performance=legacy,
+    )
+    execution._recognition_fingerprint(
+        run, source["index"].ir, metadata, ontology, None,
+        performance={**legacy, "recognition_pipeline": RECORD_PIPELINE},
+    )
+    assert captured[0]["protocol"]["executor"] == OntologyGuidedExecutor.version
+    assert captured[1]["protocol"]["executor"] == (
+        OntologyGuidedExecutor.version + "+" + RECORD_PIPELINE
+    )
+    assert legacy == {"state_storage_version": 4}

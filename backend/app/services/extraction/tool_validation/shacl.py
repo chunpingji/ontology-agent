@@ -359,6 +359,8 @@ def validate_metric_result(
     return ShaclData(
         profile=result["profile"], evaluated=result["evaluated"], conforms=result["conforms"],
         validation_status=result["validation_status"],
+        blocked_by=(list(dict.fromkeys(issue.code for issue in metric.issues))
+                    or result["issues"]) if not result["evaluated"] else [],
         report=[ShaclIssue(
             focus_node=row["focusNode"], path=row["resultPath"], value=row["value"],
             source_shape=row["sourceShape"], constraint_component=row["sourceConstraintComponent"],

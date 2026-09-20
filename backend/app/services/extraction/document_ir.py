@@ -7,7 +7,13 @@ from hashlib import sha256
 from pathlib import Path
 from typing import Any, Literal
 
-from pydantic import Field, PrivateAttr, model_validator
+from pydantic import (
+    Field,
+    PrivateAttr,
+    SerializerFunctionWrapHandler,
+    model_serializer,
+    model_validator,
+)
 
 from app.schemas.evidence import EvidenceAnchor, EvidenceModel
 from app.services.extraction.docx_structure import DocStructure, ParagraphBlock, TableBlock
@@ -31,6 +37,16 @@ class EvidenceUnit(EvidenceModel):
     physical_page_number: int | None = None
     source_cell_id: str | None = None
     paragraph_offset: int = 0
+    navigation_role: Literal["toc_heading", "toc_entry"] | None = None
+
+    @model_serializer(mode="wrap")
+    def preserve_legacy_shape(self, handler: SerializerFunctionWrapHandler) -> dict[str, Any]:
+        payload = handler(self)
+        # Frozen IR predates this field. Do not insert a default into its hashed
+        # representation when loading or serializing those existing artifacts.
+        if "navigation_role" not in self.model_fields_set:
+            payload.pop("navigation_role", None)
+        return payload
 
 
 class DocumentIR(EvidenceModel):
@@ -169,6 +185,7 @@ def build_document_ir(file_path: str | Path, structure: DocStructure, *,
                 paragraph_index=block.paragraph_index, fragment_index=block.fragment_index,
                 paragraph_offset=offsets.get(block.paragraph_index, 0),
                 physical_page_number=block.physical_page_number,
+                navigation_role=block.navigation_role,
             )
             offsets[block.paragraph_index] = offsets.get(block.paragraph_index, 0) + len(block.text)
         elif isinstance(block, TableBlock):

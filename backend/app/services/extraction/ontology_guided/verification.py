@@ -179,10 +179,47 @@ def observe_value(
     )
 
 
-def build_generic_proof_menu(card, context, required_facets, *, reference_bindings=False) -> dict:
+def resolve_claim_subject(claim, verification_input, context):
+    from .contracts import SubjectRef
+
+    payload = claim.payload
+    if claim.target_kind == "entity":
+        return SubjectRef(entity_id=claim.claim_ref.id, revision=claim.claim_ref.revision,
+                          class_iri=payload.class_iri)
+    ref = verification_input.local_ref_map[
+        payload.source_id if claim.target_kind == "reference_binding" else payload.subject_id
+    ]
+    fresh = next((target.payload for target in verification_input.targets
+                  if target.target_kind == "entity" and target.claim_ref == ref), None)
+    existing = next((entity for entity in verification_input.entity_dependencies
+                     if entity.entity_ref == ref), None)
+    if fresh is None and existing is None:
+        # Legacy predicate callers still receive an ineligible proof for a
+        # missing dependency, using only their explicitly authorized subject.
+        if isinstance(context.target, VerificationTarget):
+            subject = context.target.subject_ref
+            if (subject.entity_id, subject.revision) == (ref.id, ref.revision):
+                return subject
+        raise ValueError("entity_reference_missing")
+    return SubjectRef(
+        entity_id=ref.id, revision=ref.revision, class_iri=(fresh or existing).class_iri,
+        is_document_root=(existing is not None and existing.grounding_kind == "document_root"
+                          and ref == context.target.document_context.root_ref),
+    )
+
+
+def build_generic_proof_menu(
+    card, context, required_facets, *, reference_bindings=False, subject=None,
+) -> dict:
     """Only structure selects bridges; ontology IRIs never select hidden policy."""
     available = {"explicit_assertion"}
-    if context.target.subject_ref.is_document_root:
+    if subject is None:
+        from .record_discovery import RecordDiscoveryTarget
+
+        if isinstance(context.target, RecordDiscoveryTarget):
+            raise ValueError("record_claim_subject_required")
+        subject = context.target.subject_ref
+    if subject.is_document_root:
         available.add("document_subject_description")
     if any(binding.kind == "field_group" for binding in context.field_bindings):
         available.add("owned_field_group")
@@ -214,6 +251,7 @@ class ProofGate:
     def evaluate_frozen_claim(
         self, claim, decisions, *, entity_proofs, proof_menu, checks, context,
         verification_input, reference_proofs=None,
+        reference_evidence=None, reference_is_valid=None,
     ) -> VerificationBundle:
         """027 gate: exact facets and dependencies, with no predicate-name policy."""
         from app.services.extraction.ontology_guided.claim_protocol import (
@@ -225,7 +263,6 @@ class ProofGate:
         from app.services.extraction.ontology_guided.contracts import (
             BridgeStep,
             GraphNode,
-            SubjectRef,
         )
 
         payload = claim.payload
@@ -368,6 +405,8 @@ class ProofGate:
             source_assertion = validate_source_assertion(
                 claim, context=context, verification_input=verification_input,
                 decisions=decisions, reference_proofs=reference_proofs,
+                reference_dependencies=getattr(verification_input, "reference_dependencies", []),
+                reference_evidence=reference_evidence, reference_is_valid=reference_is_valid,
             )
             issues.extend(source_assertion.issues)
         elif claim.target_kind == "reference_binding":
@@ -389,23 +428,15 @@ class ProofGate:
             return [VersionedRef(id=decision.decision_id, revision=1)] if decision else []
 
         local_refs = verification_input.local_ref_map
-        subject = context.target.subject_ref
-        if claim.target_kind == "entity":
-            subject = SubjectRef(entity_id=claim.claim_ref.id, revision=claim.claim_ref.revision,
-                                 class_iri=payload.class_iri)
-        else:
-            subject_ref = local_refs[payload.source_id if claim.target_kind == "reference_binding"
-                                     else payload.subject_id]
-            if subject_ref.id != subject.entity_id or subject_ref.revision != subject.revision:
-                entity = next((t.payload for t in verification_input.targets
-                               if t.target_kind == "entity" and t.claim_ref == subject_ref), None)
-                existing = next((e for e in verification_input.entity_dependencies
-                                 if e.entity_ref == subject_ref), None)
-                subject = SubjectRef(entity_id=subject_ref.id, revision=subject_ref.revision,
-                                     class_iri=(entity or existing).class_iri)
+        subject = resolve_claim_subject(claim, verification_input, context)
         objects = ([local_refs[oid] for oid in payload.object_ids]
                    if claim.target_kind == "relation" else [])
-        target_data = context.target.model_dump(mode="json")
+        from .record_discovery import RecordDiscoveryTarget
+
+        target_data = context.target.model_dump(mode="json", exclude=(
+            {"kind", "schema_card_id", "analysis_scope_ref"}
+            if isinstance(context.target, RecordDiscoveryTarget) else set()
+        ))
         target_data.update(
             target_id=claim.target_id, claim_ref=claim.claim_ref, subject_ref=subject,
             check_kind="type" if claim.target_kind == "entity" else "predicate_entailment",

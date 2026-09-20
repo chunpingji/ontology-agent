@@ -32,6 +32,7 @@ from app.services.extraction.ontology_guided.claim_protocol import (
     PropertyProposal,
     QuantityPolicy,
     Quote,
+    ReferenceBindingProposal,
     RelationProposal,
     SchemaCard,
     VerificationTargetSpec,
@@ -58,6 +59,13 @@ from app.services.extraction.ontology_guided.contracts import (
     VersionedRef,
 )
 from app.services.extraction.ontology_guided.field_bindings import contains, field_bindings
+from app.services.extraction.ontology_guided.ontology_plan import compile_local_menu
+from app.services.extraction.ontology_guided.record_discovery import (
+    RecordDiscoverySchemaCard,
+    RecordDiscoveryTarget,
+    RecordDiscoveryTask,
+    resolve_claim_schema,
+)
 from app.services.extraction.ontology_guided.records import RecordIndex
 from app.services.extraction.ontology_guided.retrieval import plan_slot
 from app.services.extraction.ontology_guided.scheduler import RecognitionTask
@@ -142,10 +150,10 @@ class ToolLimits:
 
 @dataclass(frozen=True)
 class ToolContext:
-    task: RecognitionTask
+    task: RecognitionTask | RecordDiscoveryTask
     context: TaskContext
     index: RecordIndex
-    menu: LocalMenu
+    menu: LocalMenu | RecordDiscoverySchemaCard
     profile: ExtractionProfile
     scope: TraversalScope
     stage: ToolStage
@@ -155,7 +163,7 @@ class ToolContext:
     entity_dependencies: Mapping[str, EntityDependencyView]
     limits: ToolLimits
     measure_result_tokens: Callable[[str], int]
-    cards: Mapping[str, SchemaCard] = field(default_factory=dict)
+    cards: Mapping[str, SchemaCard | RecordDiscoverySchemaCard] = field(default_factory=dict)
     authorization: ContextAuthorization | None = None
     verified_claims: Mapping[str, VerifiedTarget] = field(default_factory=dict)
     binding_result: BindingData | None = None
@@ -170,12 +178,13 @@ class ToolContext:
     instance_queries: Mapping[str, InstanceQuery] = field(default_factory=dict)
     metadata: MetadataSnapshot | None = None
     base_context: TaskContext | None = None
-    target_seed: VerificationTarget | None = None
+    target_seed: VerificationTarget | RecordDiscoveryTarget | None = None
     run_fingerprint: str | None = None
     subject_node: GraphNode | None = None
     evidence_revision: int = 1
     check_cancelled: Callable[[], None] = runtime_check_cancelled
     reference_resolution: bool = False
+    evidence_text_in_prompt: bool = False
 
     def __post_init__(self):
         if self.stage not in ("discovery", "verification", "finalize"):
@@ -197,10 +206,32 @@ class _ToolFailure(ValueError):
 
 def _issue(code, path=None, evidence_ids=()):
     message = f"检查未通过：{code}；请核对当前授权引用和参数。"
-    if code == "result_budget_exceeded":
+    if code == "definition_missing":
+        message = (
+            "本体或显式词表缺少概念定义，相关标签未参与提及识别；"
+            "请核对概念定义或词表配置。空结果不能证明原文中不存在实体。"
+        )
+    elif code == "preferred_label_missing":
+        message = (
+            "本体或显式词表缺少概念名称，相关标签未参与提及识别；"
+            "请核对概念标签或词表配置。"
+        )
+    elif code == "mention_vocabulary_empty":
+        message = "当前本体卡片没有可用于提及识别的词条，本次未执行识别。"
+    elif code == "result_budget_exceeded":
         message = (
             "完整工具结果超过预算，本次未返回数据或授予引用；"
             "可缩小原文单元列表或谓词范围后在剩余调用预算内重试。"
+        )
+    elif code == "evidence_unit_limit_exceeded":
+        message = (
+            "evidence_ids 超过单次读取上限；按工具 Schema 的 maxItems 拆分列表，"
+            "仅选择当前任务需要的原文单元。"
+        )
+    elif code == "reference_outside_scope" and path and path.startswith("/evidence_id"):
+        message = (
+            "请从当前成员授权引用中完整复制 evidence_id；"
+            "unit_id 仅用于查找共享原文，不能作为工具的 evidence_id。"
         )
     elif code == "citation_quote_not_in_source" and path == "/context_text":
         message = "context_text 必须为包含 quote 的同源逐字片段；不需要消歧时请填 null。"
@@ -256,6 +287,13 @@ def parse_tool_arguments(name: ToolName, arguments_json: str) -> EvidenceModel:
 
 def _permitted(name, ctx, caller):
     definition = TOOL_DEFINITIONS.get(name)
+    if isinstance(ctx.task, RecordDiscoveryTask):
+        allowed = {"inspect_evidence", "resolve_source_anchor", "propose_mentions",
+                   "find_referent_candidates", "check_claim_binding"}
+        if caller == "controller":
+            allowed.update({"validate_metric", "validate_graph"})
+        if name not in allowed:
+            return False
     if name == "find_referent_candidates" and not ctx.reference_resolution:
         return False
     if name == "validate_graph" and caller == "model" and (
@@ -276,6 +314,11 @@ def build_tool_definitions(ctx: ToolContext, stage: str, *, strict: bool = False
     if stage != ctx.stage:
         raise ValueError("tool stage differs from current context")
     unavailable = set()
+    evidence_ids = sorted({fragment.anchor.evidence_id for fragment in ctx.context.fragments})
+    if not evidence_ids:
+        unavailable.update({"inspect_evidence", "resolve_source_anchor", "propose_mentions"})
+    if ctx.evidence_text_in_prompt:
+        unavailable.add("inspect_evidence")
     if ctx.mention_extractor is None or ctx.ontology_snapshot is None:
         unavailable.add("propose_mentions")
     if ctx.instance_reader is None or not ctx.external_source_ids:
@@ -294,27 +337,122 @@ def build_tool_definitions(ctx: ToolContext, stage: str, *, strict: bool = False
         if name in _HANDLERS and name not in unavailable and _permitted(name, ctx, "model")
     ]
     for definition in definitions:
+        properties = definition["parameters"]["properties"]
+        if "evidence_ids" in properties:
+            properties["evidence_ids"].update(
+                minItems=1, maxItems=ctx.limits.max_evidence_units_per_call, uniqueItems=True,
+                description=(
+                    "从当前成员授权引用中完整复制 evidence_id，不使用共享文本的 unit_id。"
+                    f"每次最多 {ctx.limits.max_evidence_units_per_call} 个且不得重复；"
+                    "只读取本次需要的原文，结果超预算时缩小列表。"
+                ),
+            )
+            properties["evidence_ids"]["items"]["enum"] = evidence_ids
+        if "evidence_id" in properties:
+            properties["evidence_id"].update(
+                enum=evidence_ids,
+                description="完整复制当前成员授权的 evidence_id；不是共享文本的 unit_id。",
+            )
+        if "schema_card_id" in properties and ctx.cards:
+            properties["schema_card_id"]["enum"] = sorted(ctx.cards)
+        if definition["name"] == "resolve_source_anchor":
+            properties["quote"]["minLength"] = 1
+            for option in properties["context_text"]["anyOf"]:
+                if option.get("type") == "string":
+                    option["minLength"] = 1
         if definition["name"] == "validate_graph":
-            properties = definition["parameters"]["properties"]
             properties["claim_id"]["enum"] = sorted(
                 t.claim_ref.id for t in ctx.frozen_claims.values() if t.target_kind == "relation"
             )
             properties["shape_profile_id"]["enum"] = [RELATION_PROFILE]
         if definition["name"] == "query_instances":
-            properties = definition["parameters"]["properties"]
             properties["source_ids"]["items"]["enum"] = sorted(set(ctx.external_source_ids))
             properties["class_iri"]["enum"] = sorted(_instance_classes(ctx))
         if definition["name"] == "find_referent_candidates":
-            properties = definition["parameters"]["properties"]
             properties["class_iris"]["items"]["enum"] = sorted(_instance_classes(ctx))
             properties["scope_id"]["enum"] = [ctx.scope.scope_id]
     return definitions
 
 
 def _instance_classes(ctx):
+    if isinstance(ctx.task, RecordDiscoveryTask):
+        return set(ctx.menu.class_iris)
     return {ctx.task.subject.class_iri} | {
         iri for edge in ctx.menu.relationships for iri in edge.range_class_iris
     }
+
+
+def build_member_tool_definitions(contexts, stage, *, strict=False):
+    """Expose member routing while retaining each member's runtime authorization."""
+    from copy import deepcopy
+
+    definitions = {}
+    for task_id, ctx in contexts.items():
+        for definition in build_tool_definitions(ctx, stage, strict=strict):
+            name = definition["name"]
+            if name not in definitions:
+                definition = deepcopy(definition)
+                parameters = definition["parameters"]
+                parameters["properties"]["member_task_id"] = {"type": "string", "enum": []}
+                parameters["required"] = [*parameters.get("required", []), "member_task_id"]
+                definitions[name] = definition
+            current = definitions[name]["parameters"]["properties"]
+            current["member_task_id"]["enum"].append(task_id)
+            # Union schema hints only; dispatch still checks the selected member.
+            for key, value in definition["parameters"]["properties"].items():
+                if key == "member_task_id":
+                    continue
+                if "enum" in value:
+                    current[key]["enum"] = sorted(set(current[key]["enum"]) | set(value["enum"]))
+                if "enum" in value.get("items", {}):
+                    current[key]["items"]["enum"] = sorted(
+                        set(current[key]["items"]["enum"]) | set(value["items"]["enum"])
+                    )
+    return list(definitions.values())
+
+
+def route_member_tool(call, contexts):
+    """Parse only routing; preserve call_id and leave business arguments strict."""
+    def unique(pairs):
+        result = {}
+        for key, value in pairs:
+            if key in result:
+                raise ValueError("duplicate key")
+            result[key] = value
+        return result
+
+    try:
+        args = json.loads(call.arguments_json, object_pairs_hook=unique)
+        if not isinstance(args, dict):
+            raise ValueError("arguments must be an object")
+        task_id = args.pop("member_task_id", None)
+        if not isinstance(task_id, str) or task_id not in contexts:
+            raise _ToolFailure("member_tool_owner_invalid", "/member_task_id")
+        return task_id, call.model_copy(update={"arguments_json": canonical_json(args)})
+    except _ToolFailure:
+        raise
+    except (TypeError, ValueError) as exc:
+        raise _ToolFailure("invalid_tool_arguments") from exc
+
+
+def dispatch_member_tool(call, contexts, *, caller="model"):
+    """A sibling's visible evidence or references grant no permission to this member."""
+    try:
+        task_id, routed = route_member_tool(call, contexts)
+    except _ToolFailure as exc:
+        return _error(exc.code, exc.field_path)
+    ctx = contexts[task_id]
+    if call.name == "retrieve_evidence":
+        try:
+            args = parse_tool_arguments(routed.name, routed.arguments_json)
+        except _ToolFailure as exc:
+            return _error(exc.code, exc.field_path)
+        if args.predicate_iri != ctx.task.predicate_iri:
+            return _error("predicate_not_permitted", "/predicate_iri")
+    offered = {item["name"] for item in build_tool_definitions(ctx, ctx.stage)}
+    if caller == "model" and call.name not in offered:
+        return _error("tool_not_offered")
+    return dispatch_tool(routed, ctx, caller=caller)
 
 
 def dispatch_tool(
@@ -341,6 +479,10 @@ def dispatch_tool(
         "blocked" if validation == "failed" else "incomplete" if validation == "incomplete"
         else result.status
     )
+    if result.status == "ok" and isinstance(result.data, MentionData) and (
+        result.data.omissions or result.data.coverage.unprocessed_units
+    ):
+        display_status = "incomplete"
     observe("operation_end", operation_id=operation_id, status=display_status,
             result=result.model_dump(mode="json"))
     return result
@@ -369,7 +511,9 @@ def _dispatch_tool(
         result = handler(args, ctx)
         ctx.check_cancelled()
         if caller == "model":
-            encoded = canonical_json(result.model_dump(mode="json"))
+            from .model_reference_projection import project_reference_payload
+
+            encoded = canonical_json(project_reference_payload(project_tool_result(result)))
             size = ctx.measure_result_tokens(encoded)
             if type(size) is not int or size < 0:
                 raise ValueError("invalid result token measurement")
@@ -384,20 +528,67 @@ def _dispatch_tool(
         return _error("tool_execution_failed", status="error", result_type=result_type)
 
 
-def to_function_call_output(call_id: str, result: ToolResult) -> dict:
+def project_tool_result(result: ToolResult | Mapping) -> dict:
+    """Share physical mention fields only in model input; keep stored contracts intact.
+
+    Accept saved result dictionaries as well as typed results so initial requests,
+    subsequent tool rounds and resumed requests use the same representation.
+    An already projected dictionary is returned without another transformation.
+    """
+    payload = dict(result) if isinstance(result, Mapping) else result.model_dump(mode="json")
+    data = payload.get("data")
+    if not isinstance(data, Mapping) or not {
+        "mentions", "coverage", "limits", "omissions",
+    }.issubset(data):
+        return payload
+    units = {}
+    physical_mentions = {}
+    for mention in data["mentions"]:
+        evidence_id = mention["evidence_id"]
+        if evidence_id not in units:
+            units[evidence_id] = {"evidence_id": evidence_id, "mentions": []}
+        key = (
+            evidence_id, mention["mention_ref"], mention["start"], mention["end"], mention["text"],
+        )
+        if key not in physical_mentions:
+            physical = {name: mention[name] for name in (
+                "mention_ref", "start", "end", "text",
+            )}
+            physical["roles"] = []
+            physical_mentions[key] = physical
+            units[evidence_id]["mentions"].append(physical)
+        physical_mentions[key]["roles"].append({name: mention[name] for name in (
+            "role", "class_iris", "predicate_iris", "score",
+        )})
+    payload["data"] = {
+        **{name: value for name, value in data.items() if name != "mentions"},
+        "units": list(units.values()),
+    }
+    return payload
+
+
+def to_function_call_output(call_id: str, result: ToolResult | Mapping) -> dict:
     return {
         "type": "function_call_output",
         "call_id": call_id,
-        "output": canonical_json(result.model_dump(mode="json")),
+        "output": canonical_json(project_tool_result(result)),
     }
 
 
 def _validate_context(ctx):
     target = ctx.context.target
-    if (
-        ctx.menu.subject != ctx.task.subject
-        or target.subject_ref != ctx.task.subject
-        or target.task_id != ctx.task.task_id
+    if isinstance(ctx.task, RecordDiscoveryTask):
+        if (not isinstance(ctx.menu, RecordDiscoverySchemaCard)
+                or not isinstance(target, RecordDiscoveryTarget)
+                or ctx.menu.schema_card_id != ctx.task.schema_card_id
+                or target.schema_card_id != ctx.task.schema_card_id
+                or ctx.menu.analysis_scope_ref != ctx.task.analysis_scope_ref
+                or target.analysis_scope_ref != ctx.task.analysis_scope_ref
+                or ctx.scope != ctx.task.scope):
+            raise _ToolFailure("reference_version_mismatch")
+    elif (ctx.menu.subject != ctx.task.subject or target.subject_ref != ctx.task.subject):
+        raise _ToolFailure("reference_version_mismatch")
+    if (target.task_id != ctx.task.task_id
         or ctx.context.record_id != ctx.task.record_id
         or target.document_context.document_hash != ctx.index.ir.document_hash
     ):
@@ -504,7 +695,7 @@ def _inspect_evidence(args: InspectEvidenceArgs, ctx: ToolContext) -> ToolResult
     if not ids or len(ids) != len(set(ids)):
         raise _ToolFailure("invalid_tool_arguments", "/evidence_ids")
     if len(ids) > ctx.limits.max_evidence_units_per_call:
-        raise _ToolFailure("tool_budget_exhausted", "/evidence_ids")
+        raise _ToolFailure("evidence_unit_limit_exceeded", "/evidence_ids")
     allowed = {fragment.anchor.evidence_id for fragment in ctx.context.fragments}
     for position, identity in enumerate(ids):
         if identity not in allowed:
@@ -568,12 +759,13 @@ def _resolve_source_anchor(
 ) -> ToolResult[AnchorData]:
     if args.evidence_id not in {f.anchor.evidence_id for f in ctx.context.fragments}:
         raise _ToolFailure("reference_outside_scope", "/evidence_id")
-    if args.context_text is not None and (
-        not args.context_text or args.quote not in args.context_text
-    ):
+    # Tolerate empty/null sentinels for an optional disambiguator at this boundary.
+    # Preserve the raw call; never rewrite source context or frozen claims.
+    context_text = None if args.context_text in ("", "null") else args.context_text
+    if context_text is not None and args.quote not in context_text:
         raise _ToolFailure("citation_quote_not_in_source", "/context_text")
     anchor = _quote(
-        Quote(evidence_id=args.evidence_id, text=args.quote, context_text=args.context_text), ctx
+        Quote(evidence_id=args.evidence_id, text=args.quote, context_text=context_text), ctx
     )
     key = ctx.index.physical_mention_key(anchor.evidence_id, anchor.span_start, anchor.span_end)
     mention_ref = stable_id("source-mention", [ctx.index.ir.analysis_id, key, args.quote])
@@ -637,6 +829,19 @@ def _owner_issues(owners, value, ctx):
     return []
 
 
+def _claim_schema(ctx, claim):
+    if isinstance(ctx.task, RecordDiscoveryTask):
+        try:
+            return resolve_claim_schema(
+                ctx.menu, claim.payload, ctx.local_ref_map,
+                [target.payload for target in ctx.frozen_claims.values()
+                 if target.target_kind == "entity"], list(ctx.entity_dependencies.values()),
+            )
+        except (ValueError, KeyError) as exc:
+            raise _ToolFailure("reference_outside_scope", "/claim_id") from exc
+    return compile_schema_card(ctx.menu, predicate_iri=None, profile=ctx.profile, scope=ctx.scope)
+
+
 def _check_claim_binding(args: CheckClaimBindingArgs, ctx: ToolContext) -> ToolResult[BindingData]:
     claim = ctx.frozen_claims.get(args.claim_id)
     if claim is None:
@@ -649,17 +854,23 @@ def _check_claim_binding(args: CheckClaimBindingArgs, ctx: ToolContext) -> ToolR
         raise _ToolFailure("reference_outside_scope", "/claim_id")
     payload = claim.payload
     resolved, issues, source_unit = [], [], None
+    card = _claim_schema(ctx, claim)
     if isinstance(payload, EntityProposal):
-        card = compile_schema_card(
-            ctx.menu, predicate_iri=None, profile=ctx.profile, scope=ctx.scope
-        )
         if payload.class_iri not in card.class_iris:
             issues.append(_issue("entity_type_outside_menu"))
         quotes = payload.mentions or [part.quote for part in payload.record_components]
         resolved.extend(_quote(quote, ctx) for quote in quotes)
+    elif isinstance(payload, ReferenceBindingProposal):
+        source_class, source_refs, source_root = _entity(payload.source_id, claim, ctx)
+        target_class, target_refs, target_root = _entity(payload.target_id, claim, ctx)
+        if source_root or target_root or source_class != target_class:
+            raise _ToolFailure("reference_outside_scope", "/claim_id")
+        resolved.extend([*source_refs, *target_refs, *(_quote(q, ctx) for q in payload.support)])
     else:
         subject_class, owners, root = _entity(payload.subject_id, claim, ctx)
-        if ctx.local_ref_map[payload.subject_id] != VersionedRef(
+        if not isinstance(ctx.task, RecordDiscoveryTask) and ctx.local_ref_map[
+            payload.subject_id
+        ] != VersionedRef(
             id=ctx.task.subject.entity_id,
             revision=ctx.task.subject.revision,
         ):
@@ -671,13 +882,16 @@ def _check_claim_binding(args: CheckClaimBindingArgs, ctx: ToolContext) -> ToolR
             predicate = next(
                 (
                     item
-                    for item in (*ctx.menu.properties, *ctx.menu.relationships)
+                    for item in card.predicates
                     if item.iri == payload.predicate_iri
                 ),
                 None,
             )
             expected = SlotSpec if isinstance(payload, PropertyProposal) else EdgeSpec
-            if not isinstance(predicate, expected) or subject_class != ctx.task.subject.class_iri:
+            valid_class = (subject_class in card.class_iris
+                           if isinstance(ctx.task, RecordDiscoveryTask)
+                           else subject_class == ctx.task.subject.class_iri)
+            if not isinstance(predicate, expected) or not valid_class:
                 raise _ToolFailure("reference_outside_scope", "/claim_id")
             if predicate.constraint_status != "resolved":
                 issues.append(_issue("constraint_unresolved"))
@@ -776,7 +990,7 @@ def _check_claim_binding(args: CheckClaimBindingArgs, ctx: ToolContext) -> ToolR
                     or any(
                         policy.predicate_iri == predicate.iri
                         and policy.unit_requirement == "physical"
-                        for policy in ctx.profile.quantity_policies
+                        for policy in card.quantity_policies
                     )
                 ):
                     issues.append(_issue("unit_source_missing"))
@@ -828,7 +1042,11 @@ def _check_claim_binding(args: CheckClaimBindingArgs, ctx: ToolContext) -> ToolR
 
 def _propose_mentions(args: ProposeMentionsArgs, ctx: ToolContext) -> ToolResult[MentionData]:
     card = ctx.cards.get(args.schema_card_id)
-    if (card is None or card.menu_id != ctx.menu.menu_id
+    record_task = isinstance(ctx.task, RecordDiscoveryTask)
+    if record_task:
+        if card is None or card != ctx.menu:
+            raise _ToolFailure("reference_outside_scope", "/schema_card_id")
+    elif (card is None or card.menu_id != ctx.menu.menu_id
             or card.subject_ref != VersionedRef(
                 id=ctx.task.subject.entity_id, revision=ctx.task.subject.revision,
             )):
@@ -842,6 +1060,18 @@ def _propose_mentions(args: ProposeMentionsArgs, ctx: ToolContext) -> ToolResult
         ctx.ontology_snapshot, card.class_iris, overlay=ctx.vocabulary_overlay,
     )
     predicates = {predicate.iri for predicate in card.predicates}
+    # Range fields are recall hints for a record object, not additional predicates
+    # the current subject may assert. Reuse the frozen one-hop menu, including
+    # inherited properties, without following the range's outgoing relationships.
+    for predicate in card.predicates:
+        if isinstance(predicate, EdgeSpec):
+            for class_iri in predicate.range_class_iris:
+                if class_iri in ctx.ontology_snapshot.classes:
+                    target_menu = compile_local_menu(
+                        ctx.ontology_snapshot,
+                        ctx.task.subject.model_copy(update={"class_iri": class_iri}),
+                    )
+                    predicates.update(prop.iri for prop in target_menu.properties)
     vocabulary["entries"] = {
         label: entry for label, entry in vocabulary["entries"].items()
         if entry["role"] in ("entity", "record_anchor", "unit") or entry["iri"] in predicates
@@ -853,6 +1083,22 @@ def _propose_mentions(args: ProposeMentionsArgs, ctx: ToolContext) -> ToolResult
     vocabulary["missing"] = [entry for entry in vocabulary["missing"]
                              if entry["role"] in ("entity", "record_anchor", "unit")
                              or entry["iri"] in predicates]
+    # Keep one issue per reason and bounded examples, not one issue per omitted role.
+    missing_by_reason = {}
+    for entry in vocabulary["missing"]:
+        missing_by_reason.setdefault(entry["reason"], []).append(entry["iri"])
+    omissions = []
+    for reason, iris in missing_by_reason.items():
+        iris = list(dict.fromkeys(iris))
+        issue = _issue(reason)
+        issue.message += f"涉及 {len(iris)} 个概念：" + "、".join(iris[:3])
+        issue.message += " 等。" if len(iris) > 3 else "。"
+        omissions.append(issue)
+    if not vocabulary["entries"]:
+        return ToolResult[MentionData](
+            status="blocked", data=None, evidence_refs=[],
+            issues=omissions or [_issue("mention_vocabulary_empty")],
+        )
     sources, units = {}, {}
     for unit in inspected.data.units:
         key = stable_id("ner-source", [unit.evidence_id, unit.span_start, unit.span_end])
@@ -886,11 +1132,6 @@ def _propose_mentions(args: ProposeMentionsArgs, ctx: ToolContext) -> ToolResult
             predicate_iris=[entry["iri"]] if role in ("field_label", "field_value") else [],
             role=role, score=span["score"],
         ))
-    # Missing vocabulary entries often share one reason; the tool exposes reasons,
-    # so repeating the same issue per entry adds no information to model context.
-    omissions = [_issue(reason) for reason in dict.fromkeys(
-        item["reason"] for item in vocabulary["missing"]
-    )]
     if len(suggestions) > ctx.limits.max_returned_mentions:
         omissions.append(_issue("mention_limit_exceeded"))
     covered = set(raw["coverage"]["covered_refs"])
@@ -900,6 +1141,9 @@ def _propose_mentions(args: ProposeMentionsArgs, ctx: ToolContext) -> ToolResult
     unprocessed = [identity for identity in args.evidence_ids if identity not in processed]
     if unprocessed:
         omissions.append(_issue("mention_windows_incomplete", evidence_ids=unprocessed))
+    if vocabulary["missing"]:
+        # Successful windows cover only compiled labels, not the omitted schema labels.
+        processed, unprocessed = [], list(args.evidence_ids)
     data = MentionData(
         mentions=suggestions[:ctx.limits.max_returned_mentions],
         coverage=MentionCoverage(requested_units=args.evidence_ids, processed_units=processed,
@@ -1329,12 +1573,11 @@ def _metric_inputs(claim_id, ctx):
     if (target is None or not isinstance(target.payload, PropertyProposal)
             or target.scope != ctx.scope):
         raise _ToolFailure("reference_outside_scope", "/claim_id")
-    slot = next((p for p in ctx.menu.properties if p.iri == target.payload.predicate_iri), None)
+    card = _claim_schema(ctx, target)
+    slot = next((p for p in card.predicates if isinstance(p, SlotSpec)
+                 and p.iri == target.payload.predicate_iri), None)
     if slot is None:
         raise _ToolFailure("reference_outside_scope", "/claim_id")
-    card = compile_schema_card(
-        ctx.menu, predicate_iri=slot.iri, profile=ctx.profile, scope=ctx.scope,
-    )
     policy = next((p for p in card.quantity_policies if p.predicate_iri == slot.iri), None)
     if policy is None:
         policy = QuantityPolicy(
@@ -1426,7 +1669,12 @@ def _validate_graph(args: ValidateGraphArgs, ctx: ToolContext):
     )
     issues = []
     if not value.evaluated:
-        issues.append(_issue("shacl_not_evaluated"))
+        issues.extend(_issue(code) for code in value.blocked_by)
+        issues.append(ToolIssue(
+            code="shacl_not_evaluated", field_path=None,
+            message="前置检查未通过，SHACL 尚未执行：" + "、".join(value.blocked_by),
+            evidence_ids=[],
+        ))
     elif not value.coverage.complete:
         issues.append(_issue("shacl_coverage_incomplete"))
     elif value.conforms is False:

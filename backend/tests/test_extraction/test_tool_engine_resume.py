@@ -378,6 +378,31 @@ def test_answer_only_response_retains_raw_call_but_cannot_confirm_tool_execution
         persist(current_run, protocol, results=changes)
 
 
+@pytest.mark.parametrize("reason", ["unknown_model_reference", "model_reference_collision"])
+def test_rejected_reference_turn_is_paid_but_cannot_confirm_any_tool_result(current_run, reason):
+    protocol = protocol_state()
+    reserve(current_run, protocol, allowed_tool_names=["inspect_evidence"])
+    output = [{"type": "function_call", "id": "fc-1", "call_id": "call-1",
+               "name": "inspect_evidence", "arguments": '{"evidence_ids":["@r:unknown"]}'}]
+    result_ref, changes = turn_change(protocol, output=output)
+    changes[result_ref]["value"]["reference_error"] = reason
+    persist(current_run, protocol, results=changes)
+    stored_protocol = deepcopy(protocol)
+    receipt = request_row(current_run, 1)
+    assert receipt["result_ref"] == result_ref and receipt["actual_cost"] == 1
+    assert receipt["cost_status"] == "measured" and receipt["dispatch_state"] == "completed"
+    store, run, _token = current_run
+    paid = current_state.load_protocol_result(store, run, "e", result_ref, "model_turn")
+    assert paid["output_items"] == output and paid["reference_error"] == reason
+    assert paid["error"] is None and paid["response_status"] == "completed"
+    _tool_ref, tool_changes = tool_change(protocol)
+    with pytest.raises(HeadConflict, match="unconsumable response"):
+        persist(current_run, protocol, results=tool_changes)
+    restored = current_state.restore_calls(store, run, run.run_fingerprint)
+    assert restored["protocols"]["e"] == stored_protocol
+    assert request_row(current_run, 1) == receipt
+
+
 def test_unoffered_tool_preserves_blocked_observation_but_cannot_confirm_success(current_run):
     protocol = protocol_state()
     reserve(current_run, protocol, allowed_tool_names=["inspect_evidence"])

@@ -1,6 +1,19 @@
 # 同主体多谓词批量识别：编码级重构方案
 
-日期：2026-09-18。状态：**设计，未实施**。对应 [需求](spec.md)、[内部契约](data-model.md)、[实施任务](tasks.md)、[验收](quickstart.md)。下文明确区分已核实入口与拟新增接口，不把示例签名当作当前代码。
+日期：2026-09-18。状态：**编码方案已实施，本机工程验收通过**。对应 [需求](spec.md)、[内部契约](data-model.md)、[实施任务](tasks.md)、[验收](quickstart.md)。下文保留设计依据；实际接口落点见下一节，示例签名省略部分运行参数。
+
+
+## 实际代码落点
+
+- `recognition_batch.py`：工作单元、成员回答、严格解析、动态 schema 和纯组包；`scheduler.py`：非消费预览及精确消费。
+- `context.py`：共享文本视图和只读成员协议投影；`executor.py` 中 `prepare_member_context` / `prepare_batch_context` 复用原证据组装。
+- `batch_model_adapter.py`：原 `ToolModelRecognitionAdapter` 的批量入口实现，复用原工具、冻结和核验函数；不是另一套执行器或线程池。
+- `executor.py`：`select_work_unit` / `execute_work_unit` 及协调器按最新实体逐成员 finalize/apply，统一物理调用计数。
+- `current_work.py`、`document_analysis/batch_current_state.py`：内部 v3 账本与成员引用校验；`current_state.persist_calls` 在初始边界同事务保存队列、协议和 active_unit_ref；`persist_batch` 同事务发布成员 outcome、图、证明和覆盖。
+- 新在线运行默认使用 `{"version":"predicate-batch-v1","max_members":4}`，可通过 `ontology_extraction_options.batching` 覆盖容量，冻结到 `recognition_batching`。已有运行不升级。
+- 机器契约以 Python 类型及 `compile_batch_stage_schema` 为权威；`test_recognition_batch.py` 从真实类型构造 schema 和正反例，不另维护手写 JSON Schema 副本。
+
+具体工程测试、真实模型预检及未完成验收见 [quickstart.md](quickstart.md)。
 
 ## 1. 核心方案
 
@@ -160,6 +173,10 @@ def plan_verification_groups(frozen_members, *, measure_request, remaining) -> l
 
 ## 7. 工具循环与补证
 
+核验组包前逐成员构建 `VerificationInput`。目标为空时复用单任务的确定性 `VerifiedClaimSet(targets=[])` 与 finalizer，保留该成员最近实际参与请求的版本，不预留或生成核验模型请求；只有目标非空的成员进入新核验组。结果引用是确定性制品，不表示发生过模型调用。无效候选的 claim_issues 与未决观察继续保留；需要恢复且没有可核验声明的成员走原重新提案路径。旧阶段中已保存的响应和工具配对先处理，未知请求保持阻断；新增核验请求在发送入口拒绝空目标成员。
+
+冷继续不能仅以阶段引用是否存在判断是否结束：重提或补证保留旧证明期间，当前组可能已保存新的付费响应。比较阶段/结果版本与最后确认的 attempt，先消费尚未处理的响应，防止旧失败结果遮蔽新候选或跳过待执行工具。单任务补证入口同样检查目标数量，零目标采用重提；历史空核验阶段在处理已保存工具后确定性结束，不再请求模型。
+
 所有工具保留原业务参数，新批次外层只增加 member_task_id，按 data-model 中 dispatch_member_tool 路由。工具调用上限仍按整次响应检查，call_id 仍全响应唯一，函数项 id 不替代 call_id。
 
 执行同轮工具仍为原顺序循环。每完成一个工具结果即通过 owner barrier 保存；所有 pending 配对完成后才发下一模型请求。此次效率收益来自共享模型请求，不增加线程池。
@@ -254,7 +271,7 @@ current_state.persist_batch 中 verified identity 的授权核对改为逐成员
 {"recognition_batching":{"version":"predicate-batch-v1","max_members":4},"model_call_state_version":3}
 ```
 
-在现有 ontology_extraction_options 中加入经过严格校验的 batching 配置，再由 freeze_tool_engine_policy 规范化为冻结策略，避免双份可变配置。旧 run 缺该策略时严格使用原单任务协议，不从当前设置自动升级。新运行内部 state version 与策略进入 fingerprint；环境改变不能改写已启动 unit。
+freeze_tool_engine_policy 在未配置 batching 时使用 RecognitionBatchPolicy 默认值（max_members=4），显式配置仍须经过严格校验，再规范化为冻结策略，避免双份可变配置。旧 run 缺该策略时严格使用原单任务协议，不从当前设置自动升级。新运行内部 state version 与策略进入 fingerprint；环境改变不能改写已启动 unit。
 
 公开 extraction_protocol 沿用 v1；新增内部 TOOL_BATCH_PROTOCOL_VERSION，仅在当前协议验证/恢复/结果分派处按显式版本分支。不得把所有 `TOOL_PROTOCOL_VERSION` 字符串机械替换为新值，否则会破坏 verified 投影、旧恢复和协议能力判断。
 
@@ -282,7 +299,7 @@ current_state.persist_batch 中 verified identity 的授权核对改为逐成员
 4. 真实请求预算与当前状态冷继续。
 5. 协调器 canonical 物化、覆盖和原子发布。
 6. 调度集成、冻结配置、Harness 必要字段及评测入口。
-7. 工程验收后再运行真实对照，最后决定默认启用。
+7. 工程验收后按用户要求默认启用；真实模型对照继续用于质量、成本及容量调优。
 
 步骤 3–5 必须一起通过闭环测试后才允许在线新运行启用。控制 max_members=1 可作为同路径诊断配置，但不是把已冻结多成员 unit 原地改写为单成员；停止启用只影响后续新运行，已有运行按原策略继续。
 

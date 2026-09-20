@@ -14,6 +14,7 @@ from app.services.extraction.ontology_guided.claim_protocol import (
     DiscoveryEnvelope,
     ExtractionProfile,
     FrozenClaimSet,
+    IdentityKeySpec,
     PropertyProposal,
     SchemaCard,
     VerificationEnvelope,
@@ -166,6 +167,58 @@ def test_card_preserves_unresolved_multiple_ranges_and_tightens_stage_menu():
     assert schema['$defs']['RelationProposal']['properties']['predicate_iri']['enum'] == [
         'urn:alpha:links'
     ]
+
+
+def test_empty_verification_targets_require_empty_answer_without_invalid_enums():
+    card = compile_schema_card(make_menu('urn:alpha:'), predicate_iri=None,
+                               profile=ExtractionProfile(), scope=TraversalScope.create())
+    schema = compile_stage_schema('verification', card=card, evidence_ids=['ev-1'], targets=[])
+    assert schema['properties']['verifications']['maxItems'] == 0
+    assert '"enum": []' not in json.dumps(schema)
+    for field in ('target_id', 'content_hash'):
+        assert 'enum' not in schema['$defs']['TargetVerification']['properties'][field]
+
+
+@pytest.mark.parametrize(('predicate', 'forbidden', 'allowed', 'proposal'), [
+    ('links', 'properties', 'relations', 'RelationProposal'),
+    ('amount', 'relations', 'properties', 'PropertyProposal'),
+])
+def test_single_predicate_discovery_forbids_other_claim_kinds_without_empty_enums(
+    predicate, forbidden, allowed, proposal,
+):
+    card = compile_schema_card(make_menu('urn:alpha:'), predicate_iri='urn:alpha:' + predicate,
+                               profile=ExtractionProfile(), scope=TraversalScope.create())
+    schema = compile_stage_schema('discovery', card=card, evidence_ids=['ev-1'], targets=[])
+    assert schema['properties'][forbidden]['maxItems'] == 0
+    assert 'maxItems' not in schema['properties'][allowed]
+    assert schema['$defs'][proposal]['properties']['predicate_iri']['enum'] == [
+        'urn:alpha:' + predicate
+    ]
+    assert schema['$defs']['EntityProposal']['properties']['identifier_claims']['maxItems'] == 0
+    assert '"enum": []' not in json.dumps(schema)
+
+
+def test_declared_identity_keys_keep_their_iri_restriction():
+    card = compile_schema_card(make_menu('urn:alpha:'), predicate_iri=None,
+                               profile=ExtractionProfile(identity_keys=[IdentityKeySpec(
+                                   class_iri='urn:alpha:Source', property_iris=['urn:alpha:code'],
+                                   namespace=None, scope='document', declaration_ref='key-1',
+                               )]), scope=TraversalScope.create())
+    schema = compile_stage_schema('discovery', card=card, evidence_ids=['ev-1'], targets=[])
+    assert schema['$defs']['IdentifierProposal']['properties']['predicate_iri']['enum'] == [
+        'urn:alpha:code'
+    ]
+    assert 'maxItems' not in schema['$defs']['EntityProposal']['properties']['identifier_claims']
+    assert '"enum": []' not in json.dumps(schema)
+
+
+def test_discovery_without_allowed_relation_bridges_requires_empty_relations():
+    card = compile_schema_card(make_menu('urn:alpha:'), predicate_iri='urn:alpha:links',
+                               profile=ExtractionProfile(), scope=TraversalScope.create())
+    schema = compile_stage_schema('discovery', card=card, evidence_ids=['ev-1'], targets=[],
+                                  relation_bridges=[])
+    assert schema['properties']['relations']['maxItems'] == 0
+    assert '"enum": []' not in json.dumps(schema)
 
 
 def build_frozen_example(examples, mutation=None):

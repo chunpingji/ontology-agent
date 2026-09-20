@@ -11,7 +11,7 @@ from uuid import uuid4
 from sqlalchemy.orm import Session
 
 from app.models.document_analysis import DocumentRunCurrentState
-from app.services.document_analysis.current_state import get_row, put_rows
+from app.services.document_analysis.current_state import get_row, put_rows, read_rows
 from app.services.document_analysis.run_store import DocumentAnalysisRunStore
 from app.services.document_analysis.state_artifacts import performance_policy
 
@@ -50,10 +50,29 @@ def configuration(store, run):
 
 
 def read_harness(store, run):
+    work = read_rows(store, run, DocumentRunCurrentState, prefix="work:record_discovery")
+    attributes = []
+    for entry in work.get("work:record_discovery", {}).values():
+        row = entry["value"]
+        task = row["task"]
+        if task.get("purpose") != "property_disambiguation":
+            continue
+        field = row.get("attribute_field") or {}
+        attributes.append({
+            "task_id": task["task_id"], "field_id": field.get("field_id") or task["field_id"],
+            "record_id": field.get("record_id") or task["record_id"],
+            "label": field.get("label"), "value": field.get("value"),
+            "candidate_count": (len(row["attribute_options"])
+                                if "attribute_options" in row else None),
+            "attribute_status": row.get("attribute_status", "pending"),
+            "work_status": row.get("status", "pending"), "reason_code": row.get("reason_code"),
+            "disambiguation_attempts": row.get("disambiguation_attempts", 0),
+        })
     return {
         "recognition_run_id": str(run.recognition_run_id),
         "configuration": configuration(store, run),
         "snapshot": get_row(store, run, "display:harness"),
+        "attribute_disambiguations": sorted(attributes, key=lambda item: item["field_id"]),
     }
 
 
@@ -74,12 +93,23 @@ class HarnessObserver:
         now = datetime.now(UTC).isoformat()
         if event_type == "model_start":
             call_id = payload["call_id"]
+            record_discovery = payload["schema_card"].get("kind") == "record_discovery"
             self.state.update(output="", thinking="", truncated=[])
             self.state["call"] = {key: payload.get(key) for key in (
                 "call_id", "stage", "subject_label", "predicate_label", "input_tokens",
             )}
-            self.state["call"].update(status="running", started_at=now,
-                                      model=payload["request"]["model"], usage=None)
+            self.state["call"].update(
+                status="running", started_at=now, model=payload["request"]["model"], usage=None,
+                member_count=payload.get("member_count", 1),
+                members=deepcopy(payload.get("members", [])),
+                task_kind=("property_disambiguation"
+                           if payload.get("task_kind") == "property_disambiguation"
+                           else "record_discovery" if record_discovery else "recognition"),
+            )
+            if record_discovery:
+                self.state["call"].update(
+                    subject_label=None, predicate_label=None, member_count=1, members=[],
+                )
             self.context = {"call_id": call_id, "request": _public(payload["request"]),
                             "schema_card": deepcopy(payload["schema_card"]),
                             "class_labels": deepcopy(payload.get("class_labels", {}))}

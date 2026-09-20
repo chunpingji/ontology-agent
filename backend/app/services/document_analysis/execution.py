@@ -193,7 +193,9 @@ class _ExecutionBudget:
         return self.reason is None
 
     def observe_calls(self, state):
-        if state.get("current_calls") == 1:
+        if state.get("version") == 3:
+            self.reserved_calls = state["reservation_sequence"]
+        elif state.get("current_calls") == 1:
             self.reserved_calls += len(state.get("reservations", []))
         else:
             self.reserved_calls = sum(state.get("lineage_calls", {}).values())
@@ -832,13 +834,21 @@ def freeze_tool_engine_policy() -> dict:
     from dataclasses import asdict
 
     from app.services.extraction.ontology_guided.claim_protocol import ExtractionProfile
+    from app.services.extraction.ontology_guided.recognition_batch import RecognitionBatchPolicy
+    from app.services.extraction.ontology_guided.record_discovery import (
+        RECORD_PIPELINE,
+        ContextualDiscoveryPolicy,
+        RecordDiscoveryPolicy,
+    )
     from app.services.extraction.ontology_guided.tool_model_adapter import (
         validate_responses_options,
     )
     from app.services.extraction.tool_validation.vocabulary import VocabularyOverlay
 
     options = deepcopy(settings.ontology_extraction_options)
-    if set(options) - {"profile", "vocabulary_overlay", "gliner2", "external_sources", "responses"}:
+    if set(options) - {
+        "profile", "vocabulary_overlay", "gliner2", "external_sources", "responses", "batching",
+    }:
         raise ValueError("unknown_ontology_extraction_option")
     options["profile"] = ExtractionProfile.model_validate(
         options.get("profile", {}), strict=True,
@@ -847,11 +857,19 @@ def freeze_tool_engine_policy() -> dict:
         options["vocabulary_overlay"] = VocabularyOverlay.model_validate(
             options["vocabulary_overlay"], strict=True,
         ).model_dump(mode="json")
+    batching = RecognitionBatchPolicy.model_validate(
+        options.pop("batching", {}), strict=True,
+    ).model_dump(mode="json")
     capabilities = validate_responses_options(options.pop("responses", {}))
     return {
         "state_storage_version": 4, "frontier_version": 2, "recognition_inflight": 1,
         "extraction_protocol": "ontology-tool-extraction-v1", "api_protocol": "responses",
-        "max_lineage_calls": 4, "model_call_state_version": 2,
+        "max_lineage_calls": 4, "model_call_state_version": 3,
+        "recognition_batching": batching,
+        "recognition_pipeline": RECORD_PIPELINE,
+        "record_discovery": RecordDiscoveryPolicy(
+            contextual=ContextualDiscoveryPolicy(),
+        ).model_dump(mode="json"),
         "reference_resolution_version": 1,
         "execution_budget": {
             "max_seconds": settings.document_analysis_execution_max_seconds,
@@ -875,6 +893,10 @@ def _configured_tool_adapter(performance, *, ir, ontology, metadata):
     from app.services.extraction.external_records import FrozenInstanceReader, ResolvedRecord
     from app.services.extraction.ontology_guided.claim_protocol import ExtractionProfile
     from app.services.extraction.ontology_guided.model_adapter import _ConfiguredInputCounter
+    from app.services.extraction.ontology_guided.record_discovery import (
+        RECORD_PIPELINE,
+        RecordDiscoveryPolicy,
+    )
     from app.services.extraction.ontology_guided.records import RecordIndex
     from app.services.extraction.ontology_guided.tool_model_adapter import (
         ToolModelRecognitionAdapter,
@@ -896,6 +918,26 @@ def _configured_tool_adapter(performance, *, ir, ontology, metadata):
             or performance.get("model") != settings.local_llm_model
             or performance.get("model_revision") != settings.local_llm_model_revision):
         raise CheckpointMismatch("tool engine frozen configuration mismatch")
+    batching = performance.get("recognition_batching")
+    if batching is not None:
+        from app.services.extraction.ontology_guided.recognition_batch import RecognitionBatchPolicy
+
+        try:
+            batching = RecognitionBatchPolicy.model_validate(batching, strict=True)
+        except (TypeError, ValueError) as exc:
+            raise CheckpointMismatch("invalid frozen recognition batching policy") from exc
+    pipeline = performance.get("recognition_pipeline")
+    record_policy = performance.get("record_discovery")
+    if ((pipeline is not None and pipeline != RECORD_PIPELINE)
+            or (pipeline is None and record_policy is not None)):
+        raise CheckpointMismatch("invalid frozen record discovery pipeline")
+    if pipeline == RECORD_PIPELINE:
+        try:
+            record_policy = RecordDiscoveryPolicy.model_validate(record_policy, strict=True)
+        except (TypeError, ValueError) as exc:
+            raise CheckpointMismatch("invalid frozen record discovery policy") from exc
+    if performance.get("model_call_state_version", 2) != (3 if batching or pipeline else 2):
+        raise CheckpointMismatch("batching and model call state versions disagree")
     client = get_local_llm()
     if client is None or not performance["model_revision"]:
         raise RuntimeError("required_qwen_responses_unavailable")
@@ -935,10 +977,13 @@ def _configured_tool_adapter(performance, *, ir, ontology, metadata):
         profile=ExtractionProfile.model_validate(options["profile"], strict=True),
         token_counter=counter.count, model_identity=performance["model"],
         **budget,
-        tool_limits=ToolLimits(max_result_tokens=min(4096, budget["max_input_tokens"])),
+        tool_limits=ToolLimits(max_result_tokens=min(8192, budget["max_input_tokens"])),
         mention_extractor=mention_extractor, instance_reader=reader,
         vocabulary_overlay=overlay, external_source_ids=source_ids,
         reference_resolution=performance.get("reference_resolution_version") == 1,
+        recognition_batching=batching,
+        recognition_pipeline=pipeline,
+        record_discovery=record_policy,
         **performance["responses"],
     )
 
@@ -1003,7 +1048,7 @@ def _validate_model_call_state(
 ) -> None:
     """Validate private pre-request reservations without accepting request payloads."""
     expected = {"version", "recognition_run_id", "run_fingerprint", "lineage_calls", "reservations"}
-    if isinstance(state, dict) and state.get("version") == 2:
+    if isinstance(state, dict) and state.get("version") in (2, 3):
         expected.add("protocols")
     if not isinstance(state, dict) or set(state) != expected:
         raise CheckpointMismatch("model call reservation envelope is invalid")
@@ -1011,7 +1056,7 @@ def _validate_model_call_state(
     reservations = state["reservations"]
     if (
         type(state["version"]) is not int
-        or state["version"] not in (1, 2)
+        or state["version"] not in (1, 2, 3)
         or not isinstance(state["recognition_run_id"], str)
         or not isinstance(state["run_fingerprint"], str)
         or not isinstance(counts, dict)
@@ -1022,6 +1067,9 @@ def _validate_model_call_state(
         )
     ):
         raise CheckpointMismatch("model call reservation values are invalid")
+    if state["version"] == 3:
+        _validate_batch_model_call_state(state, check_paid_prefix=check_paid_prefix)
+        return
     observed: dict[str, int] = {}
     for sequence, reservation in enumerate(reservations, 1):
         if (
@@ -1075,6 +1123,86 @@ def _validate_model_call_state(
             paid = {r["protocol_attempt"] for r in reservations if r["lineage_id"] == lineage}
             if check_paid_prefix and not set(completed) <= paid:
                 raise CheckpointMismatch("protocol receipt has no reservation")
+
+
+
+def _validate_batch_model_call_state(state, *, check_paid_prefix):
+    from app.services.extraction.ontology_guided.current_work import (
+        validate_batch_tool_protocol,
+        validate_tool_protocol,
+    )
+    from app.services.extraction.ontology_guided.record_discovery import RECORD_PROTOCOL
+
+    if not isinstance(state["protocols"], dict):
+        raise CheckpointMismatch("batch protocols are invalid")
+    observed = {}
+    paid = {}
+    for sequence, receipt in enumerate(state["reservations"], 1):
+        record = isinstance(receipt, dict) and "record_task_id" in receipt
+        required = {"sequence", "task_id", "stage", "ordinal", "lineage_id", "protocol_attempt"}
+        required |= ({"record_task_id", "record_id", "schema_card_id"} if record else
+                     {"member_task_ids", "member_lineage_ids", "stage_group_seq"})
+        optional = {"input_hash", "run_fingerprint"} | (set() if record else {"subject_ref"})
+        counters = ("ordinal", "protocol_attempt") + (() if record else ("stage_group_seq",))
+        if (not isinstance(receipt, dict) or not required <= set(receipt)
+                or set(receipt) - required - optional
+                or type(receipt["sequence"]) is not int or receipt["sequence"] != sequence
+                or any(type(receipt[key]) is not int or receipt[key] < 1
+                       for key in counters)
+                or any(not isinstance(receipt[key], str) or not receipt[key]
+                       for key in ("task_id", "stage", "lineage_id"))):
+            raise CheckpointMismatch("batch reservation identity is invalid")
+        if record:
+            if (any(not isinstance(receipt[key], str) or not receipt[key]
+                    for key in ("record_task_id", "record_id", "schema_card_id"))
+                    or receipt["record_task_id"] != receipt["task_id"]):
+                raise CheckpointMismatch("record reservation owner is invalid")
+            if check_paid_prefix:
+                protocol = state["protocols"].get(receipt["lineage_id"], {})
+                try:
+                    current_storage.check_record_receipt(
+                        protocol, receipt, state["run_fingerprint"], pending=False,
+                    )
+                except (HeadConflict, ValueError, TypeError, KeyError) as exc:
+                    raise CheckpointMismatch("record reservation identity mismatch") from exc
+            lineage = receipt["lineage_id"]
+            observed[lineage] = observed.get(lineage, 0) + 1
+            paid.setdefault(lineage, set()).add(receipt["protocol_attempt"])
+            continue
+        ids, lineages = receipt["member_task_ids"], receipt["member_lineage_ids"]
+        if (not isinstance(ids, list) or not isinstance(lineages, list)
+                or not ids or len(ids) != len(lineages)
+                or any(not isinstance(x, str) or not x for x in ids + lineages)
+                or len(ids) != len(set(ids)) or len(lineages) != len(set(lineages))):
+            raise CheckpointMismatch("batch reservation participants are invalid")
+        if check_paid_prefix:
+            protocol = state["protocols"].get(receipt["lineage_id"], {})
+            members = {task["task_id"]: task for task in protocol.get("work_unit", {}).get(
+                "members", [],
+            )}
+            if (any(task_id not in members for task_id in ids)
+                    or lineages != [members[task_id]["claim_lineage_id"] for task_id in ids]
+                    or any(receipt.get("subject_ref", members[task_id]["subject"])
+                           != members[task_id]["subject"] for task_id in ids)):
+                raise CheckpointMismatch("batch reservation member identity mismatch")
+        for lineage in lineages:
+            observed[lineage] = observed.get(lineage, 0) + 1
+        paid.setdefault(receipt["lineage_id"], set()).add(receipt["protocol_attempt"])
+    if check_paid_prefix and observed != state["lineage_calls"]:
+        raise CheckpointMismatch("batch member participation must be derived from receipts")
+    for unit_id, protocol in state["protocols"].items():
+        try:
+            if protocol.get("version") == RECORD_PROTOCOL:
+                validate_tool_protocol(protocol)
+            else:
+                validate_batch_tool_protocol(protocol)
+        except (ValueError, TypeError, KeyError) as exc:
+            raise CheckpointMismatch("invalid batch protocol") from exc
+        if protocol["lineage_id"] != unit_id:
+            raise CheckpointMismatch("batch protocol identity mismatch")
+        if (check_paid_prefix
+                and not set(protocol["completed_attempts"]) <= paid.get(unit_id, set())):
+            raise CheckpointMismatch("batch response has no reservation")
 
 
 def _restore_model_call_state(
@@ -1332,7 +1460,9 @@ def _recognition_fingerprint(
                 "projection": PROJECTION_POLICY_VERSION,
                 "predicate_policy": PredicatePolicyRegistry.version,
                 "eligibility": EligibilityPolicy.version,
-                "executor": OntologyGuidedExecutor.version,
+                "executor": OntologyGuidedExecutor.pipeline_version(
+                    (performance or {}).get("recognition_pipeline"),
+                ),
                 "adapter": ADAPTER_VERSION,
                 "citations": TASK_CITATION_VERSION,
                 "context_records": CONTEXT_RECORDS_VERSION,
@@ -1365,7 +1495,7 @@ def _rebase_graph(
         progress=graph.progress,
         projection="all",
         artifact_status=graph.artifact_status,
-    )
+    ).model_copy(update={"attribute_candidates": graph.attribute_candidates})
 
 
 def _prepare_batch_objects(db, run, batch):
@@ -1775,6 +1905,11 @@ def _execute_claimed(
     origin = (source_artifact.payload or {}).get("origin")
     performance = performance_policy(store, run)
     priority_paths = [tuple(path) for path in (origin or {}).get("priority_paths", [])]
+    record_focus_paths = []
+    if performance.get("recognition_pipeline") is not None and run.scope_mode == "focus_path":
+        if not run.focus_path:
+            raise CheckpointMismatch("record discovery focus scope has no path")
+        record_focus_paths = [tuple(run.focus_path)]
     ontology_artifact = _artifact(
         db, store, run.recognition_run_id, run.owner_id, "ontology_snapshot"
     )
@@ -2046,7 +2181,9 @@ def _execute_claimed(
         execution_budget = _ExecutionBudget(
             performance["execution_budget"],
             current_storage.get_row(store, run, "execution:budget"),
-            sum((model_call_state or {}).get("lineage_calls", {}).values()),
+            (model_call_state.get("reservation_sequence", 0)
+             if model_call_state.get("version") == 3
+             else sum((model_call_state or {}).get("lineage_calls", {}).values())),
         )
 
     def progress_hook(_boundary: str) -> bool:
@@ -2105,10 +2242,15 @@ def _execute_claimed(
         )
 
     def model_call_hook(state: dict) -> None:
+        nonlocal work_version
         check_interrupted()
-        _persist_model_call_state(
+        if state.get("work_changes"):
+            state = {**state, "expected_work_version": work_version}
+        committed_work_version = _persist_model_call_state(
             db, store, run, token, final_fingerprint=final_fingerprint, state=state
         )
+        if committed_work_version is not None:
+            work_version = committed_work_version
         if execution_budget is not None:
             execution_budget.observe_calls(state)
 
@@ -2144,6 +2286,8 @@ def _execute_claimed(
                 progress_hook=progress_hook,
                 ranking_service=ranking_service,
                 priority_paths=priority_paths,
+                **({"record_focus_paths": record_focus_paths}
+                   if performance.get("recognition_pipeline") is not None else {}),
                 lazy_frontier=performance.get("frontier_version") == 2,
                 template_interleaving=performance.get("template_interleaving", False),
                 evidence_repair=repair,
@@ -2190,10 +2334,15 @@ def _execute_claimed(
                 ),
                 model_call_hook=model_call_hook,
                 protocol_result_loader=(
-                    lambda lineage_id, result_ref, field: current_storage.load_protocol_result(
-                        store, run, lineage_id, result_ref, field,
+                    lambda unit_id, ref, field, **owner: current_storage.load_protocol_result(
+                        store, run, unit_id, ref, field, **owner,
                     )
                 ) if tool_protocol else None,
+                protocol_record_loader=(
+                    lambda unit_id, ref, field, **owner: current_storage.load_protocol_record(
+                        store, run, unit_id, ref, field, **owner,
+                    )
+                ) if performance.get("recognition_batching") else None,
                 property_reviews=expert_reviews,
                 property_repairs=expert_repairs,
                 repair_only=repair_only,
@@ -2292,6 +2441,22 @@ def _execute_claimed(
     })
     current = store.get_owned(run.recognition_run_id, run.owner_id)
     if _complete_pause_at_boundary(db, store, current, token, public_stage="extracting"):
+        return
+
+    if terminal_progress.stop_reason == "model_calls_unresolved":
+        _finish(
+            db, store, current, token,
+            status="failed", public_status="retryable_failure", public_stage="extracting",
+            progress=terminal_progress, stop_reason="model_calls_unresolved",
+            error={
+                "code": "MODEL_REQUEST_OUTCOME_UNKNOWN",
+                "message": (
+                    "模型请求未取得可确认的完整响应，已保留已有结果和调用计数；"
+                    "继续运行不会自动重发该请求。请检查模型服务后新建分析运行。"
+                ),
+                "retryable": False,
+            },
+        )
         return
 
     if terminal_progress.stop_reason in {

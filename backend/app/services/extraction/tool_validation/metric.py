@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from app.schemas.attribute_value import ParsedAttributeValue
 from app.services.extraction.literal_normalizer import (
     UNIT_REGISTRY_VERSION,
     LiteralNormalizationError,
@@ -25,6 +26,7 @@ from app.services.extraction.ontology_guided.value_constraints import (
     NUMERIC_DATATYPES,
     normalize_literal,
 )
+from app.services.extraction.ontology_guided.value_observation import parse_attribute_value
 from app.services.extraction.tool_validation.shacl import (
     build_metric_graph,
     claim_node,
@@ -45,9 +47,11 @@ _QUANTITY_INCOMPLETE = _INCOMPLETE | {
 }
 
 
-def _metric_failure(claim_ref: VersionedRef, codes: list[str]) -> MetricData:
+def _metric_failure(
+    claim_ref: VersionedRef, codes: list[str], *, parsed_value: ParsedAttributeValue | None = None,
+) -> MetricData:
     return MetricData(
-        claim_ref=claim_ref, quantity=None, normalized_literal=None,
+        claim_ref=claim_ref, quantity=None, normalized_literal=None, parsed_value=parsed_value,
         validation_status=("incomplete" if all(code in _QUANTITY_INCOMPLETE for code in codes)
                            else "failed"),
         issues=[ToolIssue(code=code, field_path=None, message=code, evidence_ids=[])
@@ -66,22 +70,30 @@ def normalize_metric(
     unit policy. Neither a model-supplied verdict nor a bare decision ID grants
     permission to produce a trusted value.
     """
+    parsed_value = parse_attribute_value(
+        raw, expected_datatype=slot.datatype_iris[0] if len(slot.datatype_iris) == 1 else None,
+        source_unit=source_unit,
+    )
+
+    def failure(codes):
+        return _metric_failure(candidate_ref, codes, parsed_value=parsed_value)
+
     if (candidate_ref != target.claim_ref or binding.claim_ref != candidate_ref
             or verified.target_id != target.target_id
             or verified.content_hash != target.content_hash):
-        return _metric_failure(candidate_ref, ["metric_claim_mismatch"])
+        return failure(["metric_claim_mismatch"])
     if (target.target_kind != "property" or target.payload.value_quote.text != raw
             or target.payload.predicate_iri != slot.iri
             or quantity_policy.predicate_iri != slot.iri):
-        return _metric_failure(candidate_ref, ["metric_claim_mismatch"])
+        return failure(["metric_claim_mismatch"])
     if binding.validation_status != "passed" or binding.issues or not binding.resolved_role_refs:
         codes = [issue.code for issue in binding.issues] or ["binding_not_checked"]
-        result = _metric_failure(candidate_ref, codes)
+        result = failure(codes)
         if binding.validation_status != "passed":
             result.validation_status = binding.validation_status
         return result
     if source_unit != binding.source_unit:
-        return _metric_failure(candidate_ref, ["source_unit_conflict"])
+        return failure(["source_unit_conflict"])
     decisions = verified.decisions
     if (verified.missing_facets or verified.validation_issues
             or len(decisions) != len(target.required_facets)
@@ -89,21 +101,21 @@ def normalize_metric(
             or any(d.target_id != target.target_id or d.verdict != "supported"
                    or not d.support_refs for d in decisions)):
         rejected = any(d.verdict == "unsupported" for d in decisions)
-        return _metric_failure(candidate_ref, [
+        return failure([
             "semantic_not_supported" if rejected else "semantic_undetermined",
         ])
     if slot.constraint_status != "resolved" or len(set(slot.datatype_iris)) != 1:
-        return _metric_failure(candidate_ref, ["constraint_unresolved"])
+        return failure(["constraint_unresolved"])
     datatype = slot.datatype_iris[0]
     if datatype not in NUMERIC_DATATYPES:
         if target_unit is not None or source_unit is not None or slot.canonical_unit is not None:
-            return _metric_failure(candidate_ref, ["constraint_unresolved"])
+            return failure(["constraint_unresolved"])
         value, issue = normalize_literal(raw, slot)
         if issue:
-            return _metric_failure(candidate_ref, [issue])
+            return failure([issue])
         return MetricData(
             claim_ref=candidate_ref, validation_status="passed", quantity=None,
-            normalized_literal=value, issues=[],
+            normalized_literal=value, parsed_value=parsed_value, issues=[],
         )
     try:
         parsed = parse_quantity(raw, datatype="decimal", source_unit=source_unit)
@@ -167,13 +179,13 @@ def normalize_metric(
             dimension=parsed.dimension, conversion_record=record,
         )
     except LiteralNormalizationError as exc:
-        return _metric_failure(candidate_ref, [str(exc)])
+        return failure([str(exc)])
     value = quantity.scalar
     if quantity.endpoint_role is not None:
         value = getattr(quantity, quantity.endpoint_role)
     return MetricData(
         claim_ref=candidate_ref, validation_status="passed", quantity=quantity,
-        normalized_literal=value, issues=[],
+        normalized_literal=value, parsed_value=parsed_value, issues=[],
     )
 
 
@@ -193,6 +205,10 @@ def validate_metric(
         "tool": "validate_metric", "candidate_id": candidate_id,
         "execution_status": "completed", "validation_status": "incomplete",
         "raw_value": raw, "source_unit": source_unit,
+        "parsed_value": parse_attribute_value(
+            raw, expected_datatype=slot.datatype_iris[0] if len(slot.datatype_iris) == 1 else None,
+            source_unit=source_unit,
+        ).model_dump(mode="json"),
         "structural_checks": {
             "source_binding": "not_checked" if binding_issues is None else (
                 "failed" if binding_issues else "passed"

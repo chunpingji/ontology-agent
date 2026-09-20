@@ -32,6 +32,7 @@ from app.services.extraction.ontology_guided.contracts import (
 )
 from app.services.extraction.ontology_guided.evidence_work import plan_evidence_recovery
 from app.services.extraction.ontology_guided.mentions import MentionRegistry
+from app.services.llm.model_runtime import model_scope
 
 from .test_tool_engine_context import authorized_context as _authorized_context_fixture
 from .test_tool_runtime import add_property, call
@@ -191,7 +192,93 @@ def test_repeated_missing_definitions_do_not_consume_model_result_budget(tool_co
     ), ctx)
     assert result.status == "ok"
     assert [item.code for item in result.data.omissions] == ["definition_missing"]
-    assert not result.data.coverage.unprocessed_units
+    assert result.data.coverage.processed_units == []
+    assert result.data.coverage.unprocessed_units == [ctx.context.fragments[0].anchor.evidence_id]
+    message = result.data.omissions[0].message
+    assert "25 个概念" in message and "urn:Missing0" in message
+    assert "urn:Missing24" not in message
+
+
+@pytest.mark.parametrize("hits", [False, True])
+@pytest.mark.parametrize("field, reason", [
+    ("description", "definition_missing"), ("label", "preferred_label_missing"),
+])
+def test_missing_vocabulary_keeps_partial_results_but_displays_incomplete(
+    tool_context, hits, field, reason,
+):
+    ctx, card = ner_context(tool_context, extractor=FakeGliner25(hits=hits))
+    definition = ctx.ontology_snapshot.classes["urn:Entity"]
+    ctx = replace(ctx, ontology_snapshot=ctx.ontology_snapshot.model_copy(update={
+        "classes": {"urn:Entity": definition.model_copy(update={field: ""})},
+    }))
+    identity = ctx.context.fragments[0].anchor.evidence_id
+    events = []
+    with model_scope(on_harness_event=lambda kind, data: events.append((kind, data))):
+        result = runtime.dispatch_tool(call(
+            "propose_mentions", evidence_ids=[identity], schema_card_id=card.schema_card_id,
+        ), ctx)
+    # Keep usable field suggestions available to the existing materialization path.
+    assert result.status == "ok"
+    assert bool(result.data.mentions) is hits
+    assert all(item.role != "entity" for item in result.data.mentions)
+    assert result.data.coverage.processed_units == []
+    assert result.data.coverage.unprocessed_units == [identity]
+    assert [item.code for item in result.data.omissions] == [reason]
+    assert "未参与提及识别" in result.data.omissions[0].message
+    assert "urn:Entity" in result.data.omissions[0].message
+    assert "授权引用和参数" not in result.data.omissions[0].message
+    assert events[-1][0] == "operation_end"
+    assert events[-1][1]["status"] == "incomplete"
+    assert events[-1][1]["result"] == result.model_dump(mode="json")
+
+
+def test_all_definitions_missing_blocks_before_loading_model(tool_context, monkeypatch):
+    extractor = FakeGliner25()
+    monkeypatch.setattr(extractor, "prepare_strict", lambda: pytest.fail("no usable vocabulary"))
+    ctx, card = ner_context(tool_context, extractor=extractor)
+    definition = ctx.ontology_snapshot.classes["urn:Entity"]
+    definition = definition.model_copy(update={
+        "description": "",
+        "declared_properties": [slot.model_copy(update={"description": ""})
+                                for slot in definition.declared_properties],
+    })
+    ctx = replace(ctx, ontology_snapshot=ctx.ontology_snapshot.model_copy(update={
+        "classes": {"urn:Entity": definition},
+    }))
+    result = runtime.dispatch_tool(call(
+        "propose_mentions", evidence_ids=[ctx.context.fragments[0].anchor.evidence_id],
+        schema_card_id=card.schema_card_id,
+    ), ctx)
+    assert result.status == "blocked" and result.data is None
+    assert result.evidence_refs == []
+    assert [item.code for item in result.issues] == ["definition_missing"]
+    assert "2 个概念" in result.issues[0].message
+    assert "urn:Entity" in result.issues[0].message and "urn:mass" in result.issues[0].message
+
+
+def test_missing_definitions_outside_card_do_not_mark_coverage_incomplete(tool_context):
+    ctx, card = ner_context(tool_context, extractor=FakeGliner25(hits=False))
+    definition = ctx.ontology_snapshot.classes["urn:Entity"]
+    extra_slot = definition.declared_properties[0].model_copy(update={
+        "iri": "urn:unrequested", "description": "",
+    })
+    definition = definition.model_copy(update={
+        "declared_properties": [*definition.declared_properties, extra_slot],
+    })
+    ctx = replace(ctx, ontology_snapshot=ctx.ontology_snapshot.model_copy(update={
+        "classes": {"urn:Entity": definition},
+    }))
+    identity = ctx.context.fragments[0].anchor.evidence_id
+    events = []
+    with model_scope(on_harness_event=lambda kind, data: events.append((kind, data))):
+        result = runtime.dispatch_tool(call(
+            "propose_mentions", evidence_ids=[identity], schema_card_id=card.schema_card_id,
+        ), ctx)
+    assert result.status == "no_match"
+    assert result.data.omissions == []
+    assert result.data.coverage.processed_units == [identity]
+    assert result.data.coverage.unprocessed_units == []
+    assert events[-1][1]["status"] == "no_match"
 
 
 def external_context(ctx, *, incomplete=False):

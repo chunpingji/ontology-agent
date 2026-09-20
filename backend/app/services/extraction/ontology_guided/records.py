@@ -53,7 +53,7 @@ class RecordIndex:
         self.nodes_by_id = {node["node_id"]: node for node in self.ir.nodes}
         self.headings_by_parent = defaultdict(list)
         for unit in self.ir.evidence_units:
-            if unit.kind == "heading" and not unit.table_path:
+            if unit.kind == "heading" and not unit.table_path and unit.navigation_role is None:
                 parent = self.nodes_by_id[unit.section_node_id].get("parent_id")
                 self.headings_by_parent[parent].append(unit)
         self.record_views = [self._view(record) for record in self.records]
@@ -67,9 +67,13 @@ class RecordIndex:
         for group in self.field_groups:
             for record_id in group.record_ids:
                 self.field_groups_by_record[record_id].append(group)
+        from .table_reading import find_table_lead_ins
+
+        self.table_lead_ins = find_table_lead_ins(self)
 
     def _ordered(self, units) -> tuple[EvidenceUnit, ...]:
-        unique = {unit.evidence_id: unit for unit in units if unit.text}
+        unique = {unit.evidence_id: unit for unit in units
+                  if unit.text and unit.navigation_role is None}
         return tuple(sorted(unique.values(), key=lambda item: self.positions[item.evidence_id]))
 
     def _build_records(self) -> list[IndexedRecord]:
@@ -139,7 +143,8 @@ class RecordIndex:
 
         paragraphs: dict[tuple[str, int], list[EvidenceUnit]] = defaultdict(list)
         for unit in self.ir.evidence_units:
-            if unit.table_path or unit.kind == "heading" or not unit.text:
+            if (unit.table_path or unit.kind == "heading" or not unit.text
+                    or unit.navigation_role is not None):
                 continue
             paragraphs[(unit.section_node_id, unit.paragraph_index)].append(unit)
         for (section_node_id, paragraph_index), units in paragraphs.items():

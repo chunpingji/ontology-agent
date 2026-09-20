@@ -8,9 +8,29 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import { getDocumentHarness, getDocumentHarnessContext, shouldSubscribeDocumentAnalysisEvents,
   type DocumentAnalysisStatus, type DocumentHarness, type HarnessContext,
-  type HarnessSchemaCard, type HarnessSnapshot } from "@/lib/api";
+  type HarnessPredicateSchemaCard, type HarnessSchemaCard, type HarnessSnapshot } from "@/lib/api";
 
 const PHASES = { discovery: "声明发现", verification: "独立核验" };
+const RECORD_PHASES = { discovery: "识别记录中的实体和属性", verification: "核验实体和属性" };
+const ATTRIBUTE_PHASES = { discovery: "属性消歧", verification: "属性归属核验" };
+const phaseLabel = (stage: keyof typeof PHASES, taskKind?: string) =>
+  (taskKind === "property_disambiguation" ? ATTRIBUTE_PHASES
+    : taskKind === "record_discovery" ? RECORD_PHASES : PHASES)[stage];
+const ATTRIBUTE_STATUS = { pending: "待消歧", resolved: "已确认归属", unresolved: "未决" };
+const ATTRIBUTE_WORK_STATUS = {
+  pending: "待处理", active: "执行中", examined: "本轮已处理", incomplete: "本轮未完成",
+};
+const ATTRIBUTE_REASONS: Record<string, string> = {
+  attribute_value_missing: "原文字段缺少值",
+  ontology_property_missing: "本体中没有匹配的合法属性",
+  attribute_subject_missing: "尚未找到相关已登记主体",
+  attribute_candidate_capacity: "候选主体与属性对超出本轮容量",
+  attribute_ambiguous: "原文仍支持多个归属解释",
+  attribute_not_supported: "属性归属未通过原文核验",
+  attribute_subject_unresolved: "原文尚不足以确定字段主体",
+  attribute_deferred_to_disambiguation: "该字段已交由独立消歧任务处理",
+  attribute_answer_outside_scope: "模型回答超出授权字段或候选范围",
+};
 const TOOL_NAMES: Record<string, string> = {
   get_schema_card: "读取本体约束", inspect_evidence: "读取原文证据", propose_mentions: "实体提及识别",
   resolve_source_anchor: "定位原文引用", query_instances: "查询外部实体", retrieve_evidence: "检索证据",
@@ -79,11 +99,43 @@ export function HarnessConfiguration({ data }: { data: DocumentHarness | null })
   </div>;
 }
 
+export function HarnessAttributeDisambiguations({ data, status }: {
+  data: DocumentHarness | null; status: DocumentAnalysisStatus;
+}) {
+  const attributes = data?.attribute_disambiguations || [];
+  const pending = attributes.filter((item) => item.attribute_status !== "resolved").length;
+  const activeStatus = status === "running" ? "执行中" : status === "paused" ? "已暂停"
+    : status === "queued" ? "等待执行" : "执行已停止";
+  return <Fold title={`待消歧属性与处理结果 · ${pending} 项待处理，共 ${attributes.length} 项`}>
+    {attributes.length ? <div className="mt-3 overflow-x-auto"><table aria-label="属性消歧结果" className="w-full min-w-[36rem] text-left text-xs">
+      <thead><tr className="border-b text-muted-foreground">{["原文字段", "原文值", "候选主体/属性对", "处理结果", "原因"].map((title) => <th key={title} className="px-3 py-2 font-medium">{title}</th>)}</tr></thead>
+      <tbody>{attributes.map((item) => <tr key={item.field_id} className="border-b align-top last:border-0">
+        <td className="max-w-48 whitespace-pre-wrap break-words px-3 py-3">{item.label ?? "尚未准备字段"}</td>
+        <td className="max-w-64 whitespace-pre-wrap break-words px-3 py-3">{item.value == null || item.value === "" ? "未提供值" : item.value}</td>
+        <td className="px-3 py-3">{item.candidate_count == null ? "尚未准备" : `${item.candidate_count} 对`}</td>
+        <td className="px-3 py-3"><p>{ATTRIBUTE_STATUS[item.attribute_status]}</p><p className="mt-1 text-muted-foreground">{item.work_status === "active" ? activeStatus : ATTRIBUTE_WORK_STATUS[item.work_status]} · 已尝试 {item.disambiguation_attempts} 轮</p></td>
+        <td className="max-w-64 break-words px-3 py-3">{item.reason_code ? ATTRIBUTE_REASONS[item.reason_code] || item.reason_code : item.work_status === "pending" ? "等待处理" : "—"}</td>
+      </tr>)}</tbody>
+    </table></div> : <p className="mt-2 text-xs text-muted-foreground">当前没有待消歧属性记录。</p>}
+  </Fold>;
+}
+
 function SchemaCard({ card, classLabels = {} }: { card: HarnessSchemaCard; classLabels?: Record<string, string> }) {
   const [raw, setRaw] = useState(false);
-  const labels = new Map(card.predicates.flatMap((p) => (p.range_classes || []).map((c) => [c.iri, c.label])));
   return <><div className="flex flex-wrap items-center justify-between gap-2"><h4 className="font-semibold">本体 Schema 卡片 <Badge variant="secondary">已窄化</Badge></h4><Button size="sm" variant="ghost" onClick={() => setRaw(!raw)}>{raw ? "结构化" : "原始 JSON"}</Button></div>
-    {raw ? <JsonBlock value={card} /> : <div className="space-y-4 pt-3 text-xs">
+    {raw ? <JsonBlock value={card} /> : "class_cards" in card ? <div className="space-y-6 pt-3">
+      {card.class_cards.map((entry) => <section key={entry.class_iri} aria-label={`${entry.label}的属性约束`} className="space-y-3 border-b pb-4 last:border-0">
+        <h5 className="text-sm font-semibold" title={entry.class_iri}>{entry.label || shortName(entry.class_iri)}</h5>
+        <SchemaDetails card={{ ...entry, class_iris: [entry.class_iri], predicates: entry.properties }} classLabels={{ ...classLabels, [entry.class_iri]: entry.label }} />
+      </section>)}
+    </div> : <SchemaDetails card={card} classLabels={classLabels} />}</>;
+}
+
+function SchemaDetails({ card, classLabels }: {
+  card: Omit<HarnessPredicateSchemaCard, "schema_card_id">; classLabels: Record<string, string>;
+}) {
+  const labels = new Map(card.predicates.flatMap((p) => (p.range_classes || []).map((c) => [c.iri, c.label])));
+  return <div className="space-y-4 pt-3 text-xs">
       <section><p className="mb-2 text-muted-foreground">允许类型</p><div className="flex flex-wrap gap-2">{card.class_iris.map((iri) => <Badge title={iri} key={iri} variant="outline">{classLabels[iri] || labels.get(iri) || shortName(iri)}</Badge>)}</div></section>
       {card.predicates.map((p) => <section key={p.iri} className="space-y-3 rounded-lg border p-4">
         <div className="flex flex-wrap items-center gap-2"><strong className="text-sm">{p.label || "未命名谓词"}</strong><Badge variant="secondary">{p.kind === "relationship" ? "关系" : "属性"}</Badge></div>
@@ -108,8 +160,34 @@ function SchemaCard({ card, classLabels = {} }: { card: HarnessSchemaCard; class
       <Fold title={`未解析约束 · ${card.unsupported_constraints?.length || 0}`}>{card.unsupported_constraints?.length ? card.unsupported_constraints.map((issue, index) => <div key={index} className="mt-2 rounded-md bg-muted/40 p-3">
         <p>{card.predicates.find((p) => p.iri === issue.predicate_iri)?.label || shortName(issue.predicate_iri)} · {issue.construct}</p><p className="mt-1 text-muted-foreground">{issue.reason_code}</p>
       </div>) : <p className="mt-2 text-muted-foreground">无</p>}</Fold>
-    </div>}</>;
+    </div>;
 }
+const SOURCE_INPUT_FIELDS = new Set(["source_catalog", "evidence_units", "evidence_refs"]);
+const isObject = (value: unknown): value is Record<string, unknown> =>
+  value !== null && typeof value === "object" && !Array.isArray(value);
+
+function splitPromptInput(input: Record<string, unknown>): {
+  task: Record<string, unknown>; sources: Record<string, unknown>;
+} {
+  const task: Record<string, unknown> = {};
+  const sources: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(input)) {
+    if (SOURCE_INPUT_FIELDS.has(key)) sources[key] = value;
+    else if (key === "members" && Array.isArray(value)) {
+      const members = value.map((member) => isObject(member) ? splitPromptInput(member) : null);
+      task.members = value.map((member, index) => members[index]?.task ?? member);
+      sources.members = members.flatMap((member, index) => member && Object.keys(member.sources).length
+        ? [{ task_id: isObject(value[index]) ? value[index].task_id : undefined, ...member.sources }]
+        : []);
+    } else if (key === "shared_context" && isObject(value)) {
+      const { source_sections, ...other } = value;
+      if (source_sections !== undefined) sources.shared_context = { source_sections };
+      if (Object.keys(other).length) task.shared_context = other;
+    } else if (key !== "schema_card") task[key] = value;
+  }
+  return { task, sources };
+}
+
 function Prompt({ context }: { context: HarnessContext }) {
   const [raw, setRaw] = useState(false);
   let task: Record<string, unknown> = {};
@@ -120,14 +198,29 @@ function Prompt({ context }: { context: HarnessContext }) {
     try { answerSchema = JSON.parse(embeddedSchema); } catch { answerSchema = embeddedSchema; }
   }
   try { const content = context.request.input[0]?.content;
-    if (Array.isArray(content) && typeof content[0]?.text === "string") task = JSON.parse(content[0].text);
+    if (Array.isArray(content) && typeof content[0]?.text === "string") {
+      const parsed: unknown = JSON.parse(content[0].text);
+      if (isObject(parsed)) task = parsed;
+    }
   } catch { /* Original input remains available, never synthesize missing fields. */ }
+  const sections = splitPromptInput(task);
+  const taskKind = task.purpose === "property_disambiguation"
+    || (isObject(task.task) && task.task.purpose === "property_disambiguation")
+    || isObject(task.attribute_disambiguation) ? "property_disambiguation"
+    : "kind" in context.schema_card ? context.schema_card.kind : undefined;
+  const title = task.stage === "verification"
+    ? taskKind === "property_disambiguation" ? "当前属性归属核验目标"
+      : taskKind === "record_discovery" ? "当前实体与属性核验目标" : "当前声明核验目标"
+    : task.stage === "discovery"
+      ? taskKind === "property_disambiguation" ? "当前属性消歧任务"
+        : taskKind === "record_discovery" ? "当前实体与属性发现任务" : "当前声明发现任务"
+      : "当前任务";
   return <><div className="flex items-center justify-between"><h4 className="font-semibold">提示词</h4><Button size="sm" variant="ghost" onClick={() => setRaw(!raw)}>{raw ? "结构化" : "原始输入"}</Button></div>
     {raw ? <><p className="text-xs text-muted-foreground">实际提交字段；不透明推理字段已隐藏。</p><JsonBlock value={context.request} /></> : <div className="space-y-4 pt-3">
       <section className="rounded-md bg-muted/40 p-4"><p className="mb-2 text-xs font-medium">指令 · instructions</p><p className="whitespace-pre-wrap break-words text-xs leading-6">{instructionText}</p></section>
-      <p className="text-xs font-medium">当前任务输入 · {PHASES[task.stage as keyof typeof PHASES] || "见原始输入"}</p>
-      <Fold title="当前任务与核验目标"><JsonBlock value={Object.fromEntries(Object.entries(task).filter(([key]) => !["schema_card", "source_catalog", "evidence_units"].includes(key)))} /></Fold>
-      <Fold title="授权原文与摘要 · 查看输入片段"><JsonBlock value={{ source_catalog: task.source_catalog, evidence_units: task.evidence_units }} /></Fold>
+      <p className="text-xs font-medium">当前任务输入 · {phaseLabel(task.stage as keyof typeof PHASES, taskKind) || "见原始输入"}</p>
+      <Fold title={title}><JsonBlock value={sections.task} /><p className="mt-2 text-xs text-muted-foreground">本体约束见“本体 Schema 卡片”页。</p></Fold>
+      <Fold title="授权原文与摘要 · 查看输入片段"><JsonBlock value={sections.sources} /></Fold>
       <Fold title="阶段返回 JSON Schema · 查看回答结构"><JsonBlock value={answerSchema || "本次请求未单列回答 JSON Schema；查看原始输入。"} /></Fold>
       <Fold title="本轮消息与工具返回 · 按提交顺序"><JsonBlock value={context.request.input} /></Fold>
     </div>}</>;
@@ -150,7 +243,7 @@ function ContextPanel({ runId, callId, open }: { runId: string; callId: string |
     : <Tabs defaultValue="prompt">
       <TabsList className="grid w-full grid-cols-2" aria-label="上下文视图"><TabsTrigger value="prompt" className="gap-2"><FileText className="size-4" />提示词</TabsTrigger><TabsTrigger value="schema" className="gap-2"><Network className="size-4" />本体 Schema 卡片</TabsTrigger></TabsList>
       <TabsContent value="prompt" forceMount className="h-[28rem] overflow-auto rounded-lg border p-4 data-[state=inactive]:hidden"><Prompt context={current} /></TabsContent>
-      <TabsContent value="schema" forceMount className="h-[28rem] overflow-auto rounded-lg border p-4 data-[state=inactive]:hidden"><SchemaCard card={current.schema_card} classLabels={current.class_labels} /></TabsContent>
+      <TabsContent value="schema" forceMount className="h-[28rem] overflow-auto rounded-lg border p-4 data-[state=inactive]:hidden">{"members" in current.schema_card ? <div className="space-y-6">{current.schema_card.members.map((member) => <section key={member.task_id} className="border-b pb-4 last:border-0"><SchemaCard card={member.card} classLabels={current.class_labels} /></section>)}</div> : <SchemaCard card={current.schema_card} classLabels={current.class_labels} />}</TabsContent>
     </Tabs>}
     <p className="mt-3 border-t pt-3 text-xs text-muted-foreground">两页关联同一次模型调用；切换只改变展示，保留各自滚动位置。</p>
   </div>;
@@ -167,7 +260,7 @@ export function DocumentHarnessStream({ status, data, connected, error }: {
   useEffect(() => { if (following.current && outputRef.current) outputRef.current.scrollTop = outputRef.current.scrollHeight; }, [snapshot?.output, call?.call_id]);
   return <section aria-label="Harness实时输出" className="mb-3 min-w-0 overflow-hidden rounded-lg border bg-background">
     <div className="flex flex-wrap items-center justify-between gap-2 border-b px-4 py-3 text-xs">
-      <div className="flex flex-wrap items-center gap-2"><Radio className={cn("size-4", writing ? "text-primary" : "text-muted-foreground")} /><strong>LLM 实时输出</strong><span className="text-muted-foreground">{call ? `${call.model} · ${PHASES[call.stage]}` : "等待模型调用"}</span></div>
+      <div className="flex flex-wrap items-center gap-2"><Radio className={cn("size-4", writing ? "text-primary" : "text-muted-foreground")} /><strong>LLM 实时输出</strong><span className="text-muted-foreground">{call ? `${call.model} · ${phaseLabel(call.stage, call.task_kind)}` : "等待模型调用"}</span></div>
       <Badge title={snapshot?.updated_at ? `最近返回 ${new Date(snapshot.updated_at).toLocaleTimeString()}` : undefined} variant="outline">{live ? connected ? "实时已连接" : "实时未连接 · 定时读取" : "实时已停止"}</Badge>
     </div>
     <div className="relative px-4 py-2">
@@ -204,6 +297,7 @@ export function DocumentHarnessInformation({ runId, status, data, error, childre
     <div className="space-y-3 border-t p-4">
       {error && <p role="status" className="text-destructive">{error}</p>}
       <HarnessConfiguration data={data} />
+      <HarnessAttributeDisambiguations data={data} status={status} />
       <div className="flex flex-wrap items-start gap-x-6 border-t text-foreground">
         <details className="min-w-0 py-2 open:w-full"><summary className="cursor-pointer text-xs font-medium"><Brain className="mr-2 inline size-4 text-muted-foreground" />Thinking <span className="ml-2 font-normal text-muted-foreground">{snapshot?.thinking ? "模型返回内容" : "暂无内容"}</span></summary><JsonBlock value={snapshot?.thinking || "模型尚未返回可读 Thinking 内容。"} />{snapshot?.truncated.includes("thinking") && <p className="text-xs text-muted-foreground">仅显示末尾 128 Ki 字符。</p>}</details>
         <details className="min-w-0 py-2 open:w-full"><summary className="cursor-pointer text-xs font-medium"><Wrench className="mr-2 inline size-4 text-muted-foreground" />操作 <span className="ml-2 font-normal text-muted-foreground">最近 {snapshot?.operations.length || 0} 项</span></summary>
@@ -214,7 +308,7 @@ export function DocumentHarnessInformation({ runId, status, data, error, childre
           </details>) : <p className="text-xs text-muted-foreground">尚无操作记录</p>}</div><p className="mt-2 text-xs text-muted-foreground">模型和工具返回需经完整校验后才进入关系图谱。</p>
         </details>
         <details className="min-w-0 py-2 open:w-full" onToggle={(event) => { if (event.target === event.currentTarget) setContextOpen(event.currentTarget.open); }}><summary className="cursor-pointer text-xs font-medium"><Terminal className="mr-2 inline size-4 text-muted-foreground" />上下文 <span className="ml-2 font-normal text-muted-foreground">当前调用 · 只读</span></summary>
-          {call && <div className="mt-3 flex flex-wrap gap-x-6 gap-y-2 rounded-md bg-primary/5 p-3 text-xs"><span>主体：{call.subject_label || "当前任务主体"}</span><span>目标谓词：{call.predicate_label || "当前任务谓词"}</span><span>{PHASES[call.stage]}</span></div>}
+          {call && <div className="mt-3 flex flex-wrap gap-x-6 gap-y-2 rounded-md bg-primary/5 p-3 text-xs">{(!call.task_kind || call.task_kind === "recognition") && <><span>主体：{call.subject_label || "当前任务主体"}</span><span>本轮：{call.members?.length ? call.members.map((member) => member.predicate_label).join("、") : call.predicate_label || "当前任务谓词"}{(call.member_count || 1) > 1 && `（${call.member_count} 项）`}</span></>}<span>{phaseLabel(call.stage, call.task_kind)}</span></div>}
           <ContextPanel runId={runId} callId={call?.call_id} open={expanded && contextOpen} />
         </details>
       </div>

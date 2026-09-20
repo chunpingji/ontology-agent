@@ -5,6 +5,7 @@
 @prefix skos:  <http://www.w3.org/2004/02/skos/core#> .
 @prefix obo:   <http://purl.obolibrary.org/obo/> .
 @prefix slpra-doc: <https://ontology.pharma-gmp.cn/slpra/document/> .
+@prefix slpra-dev: <https://ontology.pharma-gmp.cn/slpra/drug-development/> .
 
 <https://ontology.pharma-gmp.cn/slpra/document/>
     a owl:Ontology ;
@@ -164,3 +165,19 @@ slpra-doc:contentHash a owl:DatatypeProperty ;
     rdfs:range xsd:string ;
     rdfs:label "content hash (SHA-256)"@en ;
     rdfs:label "内容哈希 (SHA-256)"@zh .
+
+# CMC report metadata; other RegulatoryDocument subclasses do not inherit these fields.
+
+slpra-doc:documentNumber a owl:DatatypeProperty ;
+    rdfs:domain slpra-dev:CMCReport ;
+    rdfs:range xsd:string ;
+    rdfs:label "document number"@en ;
+    rdfs:label "文档编号"@zh ;
+    rdfs:comment "原文明确标注的文档管理编号；按字符串保留，仅在相应文档管理范围内解释，不声明全局唯一。"@zh .
+
+slpra-doc:confidentialityLevel a owl:DatatypeProperty ;
+    rdfs:domain slpra-dev:CMCReport ;
+    rdfs:range xsd:string ;
+    rdfs:label "confidentiality level"@en ;
+    rdfs:label "密级"@zh ;
+    rdfs:comment "原文明确标注的文档保密级别；保留原文表述，不预设等级枚举、排序或访问控制含义。"@zh .

@@ -14,14 +14,18 @@ def normalized_reference_name(text: str) -> str:
     return "".join(unicodedata.normalize("NFKC", text).split()).casefold()
 
 
+def has_reference_hint(text):
+    return bool(re.search(
+        r"该|此|其|上述|前述|本品|它|\b(?:it|its|they|their|this|that|these|those)\b",
+        text, re.IGNORECASE,
+    ))
+
+
 def select_reference_entities(task, index, nodes, origins, resolutions, classes, *, limit=8):
     record = index.by_id[task.record_id]
     text = normalized_reference_name(record.text)
     units = {unit.evidence_id for unit in record.source_units}
-    has_anaphora = bool(re.search(
-        r"该|此|其|上述|前述|本品|它|\b(?:it|its|they|their|this|that|these|those)\b",
-        record.text, re.IGNORECASE,
-    ))
+    has_anaphora = has_reference_hint(record.text)
     aliases = {}
     for resolution in resolutions.values():
         if resolution["scope"] != task.scope.model_dump(mode="json"):
